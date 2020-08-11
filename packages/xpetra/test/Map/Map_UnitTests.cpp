@@ -554,6 +554,10 @@ namespace {
   {
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA  // Note: get Kokkos interface for Epetra is only available if Tpetra is also enabled!
+    typedef typename N::device_type device_type;
+    typedef typename device_type::execution_space execution_space;
+    typedef Kokkos::RangePolicy<execution_space, int> range_type;
+
     // create a comm
     auto comm = getDefaultComm();
     const auto numProcs = comm->getSize();
@@ -577,8 +581,15 @@ namespace {
       auto localMap = m.getLocalMap();
 
       TEST_EQUALITY(localMap.getNodeNumElements(), numDofsPerProc);
-      for (int i = 0; i < numDofsPerProc; i++)
-        TEST_EQUALITY(localMap.getGlobalElement(i), offset + i);
+      for (int i = 0; i < numDofsPerProc; i++) {
+        // localMap.getGlobalElement is device only
+        GO globalElement;
+        Kokkos::parallel_reduce("read GO element", range_type (0, 1),
+          KOKKOS_LAMBDA(int dummy, GO& ge) {
+            ge = localMap.getGlobalElement(i);
+          }, globalElement);
+        TEST_EQUALITY(globalElement, offset + i);
+      }
     }
     {
       // Permuted map
@@ -596,8 +607,15 @@ namespace {
       auto localMap = m.getLocalMap();
 
       TEST_EQUALITY(localMap.getNodeNumElements(), numDofsPerProc);
-      for (int i = 0; i < numDofsPerProc; i++)
-        TEST_EQUALITY(localMap.getGlobalElement(i), elementList[i]);
+      for (int i = 0; i < numDofsPerProc; i++) {
+        // localMap.getGlobalElement is device only
+        GO globalElement;
+        Kokkos::parallel_reduce("read GO element", range_type (0, 1),
+          KOKKOS_LAMBDA(int dummy, GO& ge) {
+            ge = localMap.getGlobalElement(i);
+          }, globalElement);
+        TEST_EQUALITY(globalElement, elementList[i]);
+      }
     }
     {
       // Sparse map
@@ -615,8 +633,15 @@ namespace {
       auto localMap = m.getLocalMap();
 
       TEST_EQUALITY(localMap.getNodeNumElements(), numDofsPerProc);
-      for (int i = 0; i < numDofsPerProc; i++)
-        TEST_EQUALITY(localMap.getGlobalElement(i), elementList[i]);
+      for (int i = 0; i < numDofsPerProc; i++) {
+        // localMap.getGlobalElement is device only
+        GO globalElement;
+        Kokkos::parallel_reduce("read GO element", range_type (0, 1),
+          KOKKOS_LAMBDA(int dummy, GO& ge) {
+            ge = localMap.getGlobalElement(i);
+          }, globalElement);
+        TEST_EQUALITY(globalElement, elementList[i]);
+      }
     }
 #endif
 #endif

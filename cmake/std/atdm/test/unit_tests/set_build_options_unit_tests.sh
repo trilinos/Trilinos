@@ -11,6 +11,7 @@ ATDM_CONFIG_SCRIPT_DIR=`readlink -f ${CURRENT_SCRIPTS_DIR}/../..`
 unset ATDM_CONFIG_SYSTEM_NAME
 unset ATDM_CONFIG_SYSTEM_DIR
 
+
 testAllDefaults() {
   ATDM_CONFIG_BUILD_NAME=default
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
@@ -114,6 +115,39 @@ testCompilerIntel() {
   ATDM_CONFIG_BUILD_NAME=intel-18
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} INTEL-18.0.5
+
+}
+
+
+testNompi() {
+
+  ATDM_CONFIG_BUILD_NAME=default
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_MPI} ON
+
+  ATDM_CONFIG_BUILD_NAME=default-mpi
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_MPI} ON
+
+  ATDM_CONFIG_BUILD_NAME=default-MPI
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_MPI} ON
+
+  ATDM_CONFIG_BUILD_NAME=default-mpi-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_MPI} ON
+
+  ATDM_CONFIG_BUILD_NAME=default-no-mpi
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_MPI} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default-NO-MPI
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_MPI} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default-no-mpi-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_MPI} OFF
 
 }
 

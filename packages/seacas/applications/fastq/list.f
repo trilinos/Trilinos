@@ -1,36 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: list.f,v 1.4 2000/11/13 15:39:04 gdsjaar Exp $
-C $Log: list.f,v $
-C Revision 1.4  2000/11/13 15:39:04  gdsjaar
-C Cleaned up unused variables and labels.
-C
-C Removed some real to int conversion warnings.
-C
-C Revision 1.3  1998/07/14 18:19:18  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.2  1998/07/13 16:49:34  gdsjaar
-C Added missing commas to format statements
-C
-C Revision 1.1.1.1  1990/11/30 11:11:16  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:11:14  gdsjaar
-c Initial revision
-c
-CC* FILE: [.MAIN]LIST.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE LIST (MP, ML, MS, MR, MSC, MCOM, ICOM, JCOM, CIN, RIN,
      &   IIN, KIN, N, IPOINT, COOR, IPBOUN, ILINE, LTYPE, NINT, FACTOR,
      &   LCON, ILBOUN, ISBOUN, ISIDE, NLPS, IFLINE, ILLIST, IBARST,
@@ -42,27 +15,27 @@ C
      &   DEFSCH, DEFSIZ, TITLE, OPTIM, THREE, EIGHT, NINE, VAXVMS,
      &   WROTE, TIME1, VERSN, BATCH)
 C***********************************************************************
-C
+
 C  SUBROUTINE LIST = LISTS POINTS, LINES, REGIONS, SCHEMES, AND BOUNDARY
 C                    DEFINITIONS
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINE CALLED BY:
 C     FASTQ = A PROGRAM TO QUICKLY PREPARE QMESH INPUT
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINES CALLED:
 C     CHECK  = CHECKS 2 VALUES FOR BEING OUT OF PRESCRIBED BOUNDS
-C
+
 C***********************************************************************
-C
+
 C  VARIABLES USED:
 C     IANS   = LOGICAL RESPONSE FROM YES-NO QUESTION
-C
+
 C***********************************************************************
-C
+
       DIMENSION IPOINT(MP), COOR(2, MP), IPBOUN(MP)
       DIMENSION ILINE(ML), LTYPE(ML), NINT(ML), FACTOR(ML), LCON(3, ML)
       DIMENSION ILBOUN(ML), ISBOUN(ML)
@@ -81,17 +54,17 @@ C
       DIMENSION IFHOLE(MR), NHPR(MR), IHLIST(MR*2), IRGFLG(MR)
       DIMENSION NUMBER(MSC), N(29)
       DIMENSION KIN(MCOM), CIN(MCOM), IIN(MCOM), RIN(MCOM)
-C
+
       CHARACTER*72 SCHEME, DEFSCH, CIN, DUMMY*10, VERSN*9
       CHARACTER*72 TITLE, NUMBER*80, CHOICE*7
-C
+
       LOGICAL IANS, OPTIM, ADDLNK, EIGHT, NINE, VAXVMS, WROTE, BATCH
       LOGICAL LGROUP, THREE
-C
+
       IZ = 0
       ADDLNK = .FALSE.
       BATCH = .FALSE.
-C
+
   100 CONTINUE
       IF (ICOM .GT. JCOM) THEN
          CALL MESAGE (' ')
@@ -99,9 +72,9 @@ C
      &      KIN, CIN, IIN, RIN)
          ICOM = 1
       END IF
-C
+
 C  LIST OUT THE POINTS
-C
+
       IF ((CIN(ICOM)(1:1) .EQ. 'P') .OR. (CIN(ICOM)(1:1) .EQ. 'p')) THEN
          ICOM = ICOM+1
          IF (N(1) .GT. 0) THEN
@@ -141,9 +114,9 @@ C
             CALL MESAGE ('*-----------------------------------*')
          END IF
   120    CONTINUE
-C
+
 C  LIST OUT THE LINES
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'L') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'l')) THEN
          ICOM = ICOM+1
@@ -189,9 +162,9 @@ C
             CALL MESAGE ('*----------------------------------*')
          END IF
   140    CONTINUE
-C
+
 C  LIST OUT THE SIDES
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'SI') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'si')) THEN
          ICOM = ICOM+1
@@ -242,16 +215,16 @@ C
             CALL MESAGE ('*----------------------------------*')
          END IF
   170    CONTINUE
-C
+
 C  SPAWN A PROCESS
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'SP') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'sp')) THEN
          ICOM = ICOM+1
          CALL SPAWN(VAXVMS)
-C
+
 C  LIST OUT SCHEMES
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'S') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 's')) THEN
          ICOM = ICOM+1
@@ -297,9 +270,9 @@ C
             CALL MESAGE (' ')
          END IF
   190    CONTINUE
-C
+
 C  LIST OUT THE BAR SETS
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'BA') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ba')) THEN
          ICOM = ICOM+1
@@ -352,9 +325,9 @@ C
             CALL MESAGE ('*-------------------------------------*')
          END IF
   220    CONTINUE
-C
+
 C  LIST OUT THE RENUMBERING CARDS
-C
+
       ELSE IF ((CIN(ICOM)(1:3) .EQ. 'REN') .OR.
      &   (CIN(ICOM)(1:3) .EQ. 'ren')) THEN
          ICOM = ICOM+1
@@ -386,9 +359,9 @@ C
      &         ('*-------------------------------------------*')
             CALL MESAGE (' ')
          END IF
-C
+
 C  LIST OUT THE REGIONS
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'R') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'r')) THEN
          ICOM = ICOM+1
@@ -460,9 +433,9 @@ C
             CALL MESAGE ('*------------------------------------*')
          END IF
   280    CONTINUE
-C
+
 C  LIST OUT THE GROUPS
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'G') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'g')) THEN
          ICOM = ICOM+1
@@ -522,9 +495,9 @@ C
             CALL MESAGE ('*-----------------------------------*')
          END IF
   330    CONTINUE
-C
+
 C  LIST OUT THE HOLES
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'HO') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ho')) THEN
          ICOM = ICOM+1
@@ -578,9 +551,9 @@ C
             CALL MESAGE ('*----------------------------------*')
          END IF
   360    CONTINUE
-C
+
 C  LIST OUT THE REGIONS IN THE BODY
-C
+
       ELSE IF ((CIN(ICOM)(1:3) .EQ. 'BOD') .OR.
      &   (CIN(ICOM)(1:3) .EQ. 'bod')) THEN
          ICOM = ICOM+1
@@ -598,9 +571,9 @@ C
          ICOM = ICOM+1
          CALL MESAGE (' ')
          RETURN
-C
+
 C  LIST OUT BOUNDARY CONDITIONS
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'B') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'b')) THEN
          ICOM = ICOM+1
@@ -614,9 +587,9 @@ C
          CHOICE = 'ELEMENT'
          CALL LISTBF(ML, N(27), CHOICE, LINKSB, ISBF, NSPF, IFSB,
      &      LISTSB, IWTSBF)
-C
+
 C  LIST OUT THE THREE NODE QUAD GENERATION FLAG
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'T') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 't')) THEN
          ICOM = ICOM+1
@@ -633,9 +606,9 @@ C
             CALL MESAGE ('*---------------------------------------*')
             CALL MESAGE (' ')
          END IF
-C
+
 C  LIST OUT THE EIGHT NODE QUAD GENERATION FLAG
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'EI') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ei')) THEN
          ICOM = ICOM+1
@@ -652,9 +625,9 @@ C
             CALL MESAGE ('*---------------------------------------*')
             CALL MESAGE (' ')
          END IF
-C
+
 C  LIST OUT THE NINE NODE QUAD GENERATION FLAG
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'N') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'n')) THEN
          ICOM = ICOM+1
@@ -671,9 +644,9 @@ C
             CALL MESAGE ('*--------------------------------------*')
             CALL MESAGE (' ')
          END IF
-C
+
 C  EXIT OPTION - EXITS FASTQ
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'EX') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ex')) THEN
          ICOM = ICOM+1
@@ -686,16 +659,16 @@ C
      &         TIME1, BATCH, VERSN)
          ENDIF
          GO TO 100
-C
+
 C  PRINT HELP MESAGE
-C
+
       ELSE
          ICOM = ICOM+1
          CALL HELP_FQ(4)
-C
+
       END IF
       GO TO 100
-C
+
 10000 FORMAT(
      &   '  POINT            X(R)               Y(Z)        BOUNDARY',/,
      &   '   NO.         COORDINATE         COORDINATE        FLAG',/,
@@ -744,5 +717,5 @@ C
      &   ' -----  -------------------------------------------')
 10230 FORMAT(1X, I5, 2X, A72)
 10240 FORMAT(8X, A8)
-C
+
       END

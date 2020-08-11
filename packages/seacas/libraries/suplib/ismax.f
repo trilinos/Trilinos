@@ -1,29 +1,29 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C-------------------------------------------------------------     ************
 C                                                                     ISMAX
 C                                                                  ************
       INTEGER FUNCTION ISMAX(N,SX,INCX)
-C
+
 C        FINDS THE INDEX OF ELEMENT WITH MAX. VALUE.
 C        JACK DONGARRA, LINPACK, 3/11/78.
-C
+
       INTEGER I,INCX,IX,N
       REAL SX(*),SMAX
-C
+
       ISMAX = 0
       IF (N .LT. 0) STOP
       IF (N .EQ. 0) RETURN
       ISMAX = 1
       IF (N .EQ. 1) RETURN
       IF (INCX .EQ. 1) GO TO 20
-C
+
 C        CODE FOR INCREMENT NOT EQUAL TO 1
-C
+
       IX = 1
       IF (INCX .LE. 0) IX = (-N+1)*INCX + 1
       SMAX = SX(IX)
@@ -35,9 +35,9 @@ C
     5   IX = IX + INCX
    10 CONTINUE
       RETURN
-C
+
 C        CODE FOR INCREMENT EQUAL TO 1
-C
+
    20 SMAX = SX(1)
       DO 30 I = 2,N,1
         IF (SX(I) .LE. SMAX) GO TO 30

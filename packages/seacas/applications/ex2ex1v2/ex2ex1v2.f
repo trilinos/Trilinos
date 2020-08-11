@@ -1,9 +1,8 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
-
 
       PROGRAM EX2EX1V2
 C=======================================================================
@@ -69,9 +68,9 @@ C      --A - the dynamic memory base array
       if (MDEBUG) then
          call mlist()
       end if
-c
+
 c       make netCDF and exodus errors not show up
-c
+
 c      call ncpopt (0)
       call exopts (0,ierr)
 
@@ -89,9 +88,8 @@ C .. Get filename from command line.  If not specified, emit error message
         GOTO 140
       end if
 
-c
 c       open the netcdf file
-c
+
       net = 11
       CALL get_argument(1,netfil, lnam)
 
@@ -120,18 +118,18 @@ C       open the output database and write the initial variables
          GOTO 140
       END IF
       write(*,*) 'Output file name: ',ndbfil(1:lnam)
-c
+
 c       get initialization parameters from regular netcdf file
-c
+
       CALL EXGINI (netid, title, ndim, numnp, numel,
      &       nelblk, numnps, numess, nerr)
       if (nerr .lt. 0) then
         call exerr('ex2ex1v2', 'Error from exgini', exlmsg)
         goto 140
       endif
-c
+
 c       get the length of the node sets node list
-c
+
       if (numnps .gt. 0) then
          CALL EXINQ (netid, EXNSNL, lnpsnl, dummy, cdummy, nerr)
          if (nerr .lt. 0) then
@@ -141,27 +139,27 @@ c
       else
          lnpsnl = 0
       endif
-c
+
       if (numess .gt. 0) then
-c
+
 c       get the length of the side sets node list
-c
+
         CALL EXINQ (netid, EXSSNL, lessnl, dummy, cdummy, nerr)
         if (nerr .lt. 0) then
            call exerr('ex2ex1v2', 'Error from exqini', exlmsg)
            goto 140
         endif
-c
+
 c       get the length of the side sets distribution factor list
-c
+
          CALL EXINQ (netid, EXSSDF, lessdl, dummy, cdummy, nerr)
          if (nerr .lt. 0) then
            call exerr('ex2ex1v2', 'Error from exqini', exlmsg)
            goto 140
          endif
-c
+
 c       get the length of the side sets element list
-c
+
          CALL EXINQ (netid, EXSSEL, lessel, dummy, cdummy, nerr)
          if (nerr .lt. 0) then
            call exerr('ex2ex1v2', 'Error from exqini', exlmsg)
@@ -172,9 +170,9 @@ c
          lessel = 0
          lessdl = 0
       endif
-c
+
 c       write the initialization information to the EXODUS 1.0 database
-c
+
       CALL DBOINI (NDB, TITLE, NDIM, NUMNP, NUMEL, NELBLK,
      &   NUMNPS, LNPSNL, NUMESS, LESSEL, LESSNL)
 
@@ -237,9 +235,9 @@ C   -- no element order map in the EXODUS II file; create a dummy one
       CALL DBOMAP (NDB, NUMEL, A(KMAPEL))
 
       CALL MDDEL ('MAPEL')
-c
+
 c       Read in the element block ID array
-c
+
       call MDRSRV ('IDELB', kidelb, nelblk)
       call exgebi (netid, a(kidelb), nerr)
       if (nerr .lt. 0) then
@@ -322,7 +320,6 @@ C   --Read the node sets
       CALL MDRSRV ('XFACNP', KXFACN, LNPSNL)    ! Expanded df list array
       CALL MDSTAT (NERR, MEM)
 
-
       if (numnps .gt. 0) then
          call exgcns (netid, a(kidns), a(knnns), a(kndns), a(kixnns),
      &                a(kixdns), a(klstns), a(kfacns), nerr)
@@ -331,11 +328,11 @@ C   --Read the node sets
             goto 140
          endif
       endif
-C
+
 C     Massage node sets distribution factors to include '1' for node sets
 C       without Dfs by walking KNDNS array, checking for 0, and filling where
 C       necessary.
-C
+
       do 64 i=0, numnps-1
         if (ia(kndns+i) .eq. 0) then
           do 60 ii=0, ia(knnns+i)-1
@@ -434,11 +431,11 @@ c         write(*,*)' # of nodes: ',nness
           isoff=isoff+nsess
 104     continue
       endif
-C
+
 C     Massage side sets distribution factors to include '1' for side sets
 C       without Dfs by walking KNDSS array, checking for 0, and filling where
 C       necessary.
-C
+
       do 110 i=0, numess-1
         if (ia(kndss+i) .eq. 0) then
           do 106 ii=0, ia(knnss+i)-1
@@ -513,7 +510,6 @@ C   --Read the QA records
          CALL DBOQA (NDB, NQAREC, c(kqarec), NINFO, c(kinfo))
       END IF
 
-
 C   --Read in the number of element variable names
 
       call exgvp (netid, 'e', nvarel, nerr)
@@ -521,17 +517,17 @@ C   --Read in the number of element variable names
          call exerr('ex2ex1v2', 'Error from exgvp', exlmsg)
          goto 140
       endif
-c
+
 C   --Read in the number of global variable names
-c
+
       call exgvp (netid, 'g', nvargl, nerr)
       if (nerr .lt. 0) then
          call exerr('ex2ex1v2', 'Error from exgvp', exlmsg)
          goto 140
       endif
-c
+
 C   --Read in the number of nodal variable names
-c
+
       call exgvp (netid, 'n', nvarnp, nerr)
       if (nerr .lt. 0) then
          call exerr('ex2ex1v2', 'Error from exgvp', exlmsg)
@@ -543,9 +539,9 @@ c
       call mdrsrv ('ISEVOK', kievok, nvarel*nelblk)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 130
-c
+
 c       read in the element variable truth table
-c
+
       if (nvarel .gt. 0) then
         call exgvtt (netid, nelblk, nvarel, a(kievok), nerr)
         if (nerr .gt. 0) then
@@ -559,9 +555,9 @@ c
           goto 140
         endif
       end if
-c
+
 c       read in the element variable names
-c
+
       ixev = 1
       if (nvarel .gt. 0) then
         call exgvan (netid, 'e', nvarel,mames(ixev), nerr)
@@ -570,9 +566,9 @@ c
            goto 140
         endif
       end if
-c
+
 c       read in the global variable names
-c
+
       ixgv = ixev + nvarel
       if (nvargl .gt. 0) then
         call exgvan (netid, 'g', nvargl,mames(ixgv), nerr)
@@ -581,9 +577,9 @@ c
            goto 140
         endif
       end if
-c
+
 c       read in the nodal variable names
-c
+
       ixnv = ixgv + nvargl
       if (nvarnp .gt. 0) then
         call exgvan (netid, 'n', nvarnp, mames(ixnv), nerr)
@@ -592,19 +588,18 @@ c
            goto 140
         endif
       end if
-c
+
 c       read in the history variable names
-c
+
       ixhv = ixnv + nvarnp
-c
+
 c       read coordinate names
-c
+
       call exgcon (netid, mameco, nerr)
       if (nerr .lt. 0) then
          call exerr('ex2ex1v2', 'Error from exgcon', exlmsg)
          goto 140
       endif
-
 
       CALL DBPINI ('V', NTXT, TITLE, NDIM, NUMNP, NUMEL, NELBLK,
      &      NUMNPS, LNPSNL, NUMESS, LESSEL, LESSNL,
@@ -622,8 +617,6 @@ c
      &   names(ixhv), names(ixgv), names(ixnv), names(ixev),
      &   A(KIEVOK))
 
-
-
       CALL MDRSRV ('VARHI', KVARHI, NVARHI)
       CALL MDRSRV ('VARGL', KVARGL, NVARGL)
       CALL MDRSRV ('VARNP', KVARNP, NVARNP * NUMNP)
@@ -631,10 +624,9 @@ c
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 130
 
-c
 c       read in the number of history time steps and the number of
 C       whole time steps
-c
+
       call exinq (netid, EXTIMS, ntime, s, name, nerr)
       if (nerr .lt. 0) then
          call exerr('ex2ex1v2', 'Error from exqini', exlmsg)
@@ -647,9 +639,7 @@ c
       endif
       numstp = ntime
 
-c
 c       read the time step information
-c
 
       istep = 0
       call exgtim(netid, istep+1, wtime, nerr)
@@ -661,9 +651,9 @@ c
       do 300 ihstep=1,numstp
 
         write (*,'(4x,"processing time step ", i4)') ihstep
-c
+
 c         get history information
-c
+
         whotim = .true.
         call exgtim(netid, ihstep, wtime, nerr)
         if (nerr .lt. 0) then
@@ -671,18 +661,17 @@ c
            goto 140
         endif
         htime = wtime
-c
+
 c          If a whole time step, do global, nodal, and element
 c          variables for the time step.
-c
+
         if ((whotim) .or. (wtime .eq. htime)) then
 
           whotim =.true.
           istep = istep + 1
 
-c
 c           get the global variable values
-c
+
           if( nvargl .gt. 0) then
             call exggv (netid, istep, nvargl, a(kvargl), nerr)
             if (nerr .lt. 0) then
@@ -690,9 +679,9 @@ c
                goto 140
             endif
           end if
-c
+
 c           get the nodal variable values
-c
+
           do 210 j=1, nvarnp
             call exgnv (netid, istep, j, numnp,
      &         a(kvarnp+(j-1)*numnp), nerr)
@@ -702,19 +691,18 @@ c
             endif
 210       continue
 
-c
 c           get element variable values
-c
+
           if (nvarel .gt. 0) then
             ielo=0
             do 250 k = 1,nelblk
               l=(k-1)*nvarel
               do 240 j=1, nvarel
-c
+
 c                If truth table indicates element values are available
 c                for the element variable, get the values for the
 c                element variable.
-c
+
                 if(a(kievok+l +j-1) .ne. 0) then
                   call exgev (netid, istep, j, a(kidelb+k-1),
      &                 a(knelb+k-1), a(kvarel+ielo), nerr)
@@ -735,8 +723,6 @@ c
      &      NVAREL, NELBLK, a(knelb), a(kievok),
      &      HTIME, WHOTIM, A(KVARHI), A(KVARGL), A(KVARNP),
      &      A(KVAREL))
-
-
 
 300   continue
 
@@ -759,9 +745,9 @@ c
       GOTO 140
 
   140 CONTINUE
-c
+
 c       close all files
-c
+
       CLOSE (NDB, IOSTAT=IDUM)
 
       if (netid .ge. 0 ) call exclos (netid, ierr)
@@ -775,7 +761,6 @@ c
       call mdlist(6)
       return
       end
-
 
       subroutine rdqain (ndb, nqarec, qarec, ninfo, info)
       include 'exodusII.inc'

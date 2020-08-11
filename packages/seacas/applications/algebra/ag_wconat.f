@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -10,7 +10,6 @@ C=======================================================================
      *   BLKTYP, IDELB, NEWNOD, NODIX, LNSCR, ATRSCR)
 C=======================================================================
 
-C
 C   --*** WCONAT *** Write the element block connectivity and
 C   --               attribute information to the output database file
 C   --   WCONAT modified for EXODUSIIV2 8/29/95

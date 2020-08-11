@@ -1,71 +1,52 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: qual2.f,v 1.2 2000/11/13 15:39:05 gdsjaar Exp $
-C $Log: qual2.f,v $
-C Revision 1.2  2000/11/13 15:39:05  gdsjaar
-C Cleaned up unused variables and labels.
-C
-C Removed some real to int conversion warnings.
-C
-C Revision 1.1.1.1  1990/11/30 11:14:12  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:14:11  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.PAVING]QUAL2.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE QUAL2 (MXND, MXCORN, MLN, NCORN, LCORN, LNODES, ICOMB,
      &   BNSIZE, ANGLE, LXN, ITEST, LTEST, QUAL, POSBL2, POSBL3, ROWCHN,
      &   ISTART, IEND)
 C***********************************************************************
-C
+
 C  SUBROTINE QUAL2 = CHECKS THE QUALITY OF A SEMICIRCLE INTERPRETATION
-C
+
 C***********************************************************************
-C
+
       DIMENSION LNODES (MLN, MXND), ANGLE (MXND), LCORN (MXCORN)
       DIMENSION BNSIZE (2, MXND)
       DIMENSION ICOMB (MXCORN), ITEST (2), LTEST (2), LXN (4, MXND)
-C
+
       LOGICAL ERR, POSBL2, POSBL3, ROWCHN, SHRUNK
-C
+
       REAL NICKS, NICKC
 
 C ... See note below regarding bug...
       ISTEP = 0
-C
+
 C  ASSUME PERFECT QUALITY
-C
+
       QUAL = 0.
       POSBL2 = .FALSE.
       POSBL3 = .FALSE.
       ROWCHN = .FALSE.
-C
+
 C  FIRST GET THE INTERVAL LENGTHS TO THE CHOSEN CORNERS
-C
+
       ILEN = 2
       CALL SPACED (MXND, MXCORN, MLN, ILEN, NCORN, LCORN, LNODES, ICOMB,
      &   ITEST, LTEST, ERR)
       IF (ERR) RETURN
-C
+
 C  SEE IF A SEMICIRCLE INTERPRETATION IS POSSIBLE WITH
 C  THESE INTERVALS
-C
+
       IF ( (LTEST(1) .GE. 2) .AND. (LTEST(2) .GE. 2) ) THEN
          POSBL2 = .TRUE.
       ENDIF
-C
+
 C  NOT ADD UP THE NICKS FOR BAD ANGLES
-C
+
       DO 100 I =1, NCORN
          NODE = LCORN (I)
          IF (ICOMB (I) .EQ. 1) THEN
@@ -74,9 +55,9 @@ C
             QUAL = QUAL + NICKS (ANGLE (NODE), LXN (1, NODE))
          ENDIF
   100 CONTINUE
-C
+
 C  NOW SEE IF A TRIANGLE INTERPRETATION IS WARRANTED
-C
+
       IF (LTEST (1) .GT. LTEST (2)) THEN
          I1 = ITEST (1)
          L1 = LTEST (1)
@@ -90,10 +71,10 @@ C
       ENDIF
       LDIF = (L1 - L2) / 2
       IF (LDIF .GT. L1 / 2) LDIF = L1 - LDIF
-C
+
 C  THIS TESTS THE FORCED TRIANGLE - THE NEW ROW MUST BE
 C  ENDED AT A CURRENT SIDE NODE
-C
+
       IF (L1 .EQ. L2) THEN
          NCHG1 = JUMPLP (MXND, MLN, LNODES, I1, LDIF)
          NCHG2 = JUMPLP (MXND, MLN, LNODES, I2, LDIF)
@@ -123,10 +104,10 @@ C
          ELSE
             POSBL3 = .FALSE.
          ENDIF
-C
+
 C  SEE IF THE ROW NEEDS ADJUSTED SO THAT A RECTANGLE REMAINS POSSIBLE
 C  WITH A SIGNIFICANTLY REDUCED ELEMENT SIZE ON THE LONG SIDE
-C
+
       ELSE
 C ... There is a bug here since ISTEP is not defined
 C     Since it has been 'kindof' working for several years,
@@ -139,9 +120,9 @@ C     and we add that initialization to the beginning of this routine
             ROWCHN = .TRUE.
             ISTART = I2
             IEND = I1
-C
+
 C  CHECK THE SIZE REDUCTIONS AND TRIANGLE INTERPRETATION
-C
+
          ELSE
             DO 110 ISTEP = LDIF + 1, L1 / 2 - 1
                NCHG1 = JUMPLP (MXND, MLN, LNODES, I1, ISTEP)
@@ -153,12 +134,12 @@ C
                   IEND = I1
                   GOTO 120
                ENDIF
-C
+
   110       CONTINUE
   120       CONTINUE
          ENDIF
       ENDIF
-C
+
       RETURN
-C
+
       END

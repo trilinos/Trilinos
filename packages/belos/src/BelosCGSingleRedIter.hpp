@@ -264,31 +264,28 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
   
   // 
   // State Storage
-  // 
+  //
   // Residual
   Teuchos::RCP<MV> R_;
-  //
   // Preconditioned residual
   Teuchos::RCP<MV> Z_;
-  //
   // Operator applied to preconditioned residual
   Teuchos::RCP<MV> AZ_;
-  //
-  // This is the additional storage needed for single-reduction CG (Chronopoulos/Gear)
-  // R_ views the first vector and AZ_ views the second vector
-  Teuchos::RCP<MV> S_;
-
-  // This is the additional storage needed for merging convergence detection and inner products
-  // (Option "Fold Convergence Detection Into Allreduce")
-  // Z_ views the first vector and R2_ views the second
-  Teuchos::RCP<MV> T_;
-  Teuchos::RCP<MV> R2_;
-  //
   // Direction vector
   Teuchos::RCP<MV> P_;
-  //
-  // Operator applied to direction vector (S)
+  // Operator applied to direction vector
   Teuchos::RCP<MV> AP_;
+  //
+  // W_ = (R_, AZ_, Z_)
+  Teuchos::RCP<MV> W_;
+  // S_ = (R_, AZ_)
+  Teuchos::RCP<MV> S_;
+  // T_ = (Z_, R_)
+  Teuchos::RCP<MV> T_;
+  // U_ = (AZ_, Z_)
+  Teuchos::RCP<MV> U_;
+  // V_ = (AP_, P_)
+  Teuchos::RCP<MV> V_;
 
 };
 
@@ -334,25 +331,41 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
 	  Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
 	  TEUCHOS_TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
 			     "Belos::CGSingleRedIter::setStateSize(): linear problem does not specify multivectors to clone from.");
-	  S_ = MVT::Clone( *tmp, 2 );
-          if (foldConvergenceDetectionIntoAllreduce_) {
-            T_ = MVT::Clone( *tmp, 2 );
-            // Z_ will view the first column of T_, R2_ will view the second.
-            std::vector<int> index(1,0);
-            Z_ = MVT::CloneViewNonConst( *T_, index );
-            index[0] = 1;
-            R2_ = MVT::CloneViewNonConst( *T_, index );
-          }
-          else
-            Z_ = MVT::Clone( *tmp, 1 );
-	  P_ = MVT::Clone( *tmp, 1 );
-	  AP_ = MVT::Clone( *tmp, 1 );
 
-          // R_ will view the first column of S_, AZ_ will view the second.
+          // W_ = (R_, AZ_, Z_)
+          W_ = MVT::Clone( *tmp, 3 );
+          std::vector<int> index2(2,0);
           std::vector<int> index(1,0);
-	  R_ = MVT::CloneViewNonConst( *S_, index );
+
+          // S_ = (R_, AZ_)
+          index2[0] = 0;
+          index2[1] = 1;
+          S_ = MVT::CloneViewNonConst( *W_, index2 );
+
+          // U_ = (AZ_, Z_)
+          index2[0] = 1;
+          index2[1] = 2;
+          U_ = MVT::CloneViewNonConst( *W_, index2 );
+
+          index[0] = 0;
+          R_ = MVT::CloneViewNonConst( *W_, index );
           index[0] = 1;
-          AZ_ = MVT::CloneViewNonConst( *S_, index );
+          AZ_ = MVT::CloneViewNonConst( *W_, index );
+          index[0] = 2;
+          Z_ = MVT::CloneViewNonConst( *W_, index );
+
+          // T_ = (R_, Z_)
+          index2[0] = 0;
+          index2[1] = 2;
+          T_ = MVT::CloneViewNonConst( *W_, index2 );
+
+          // V_ = (AP_, P_)
+          V_ = MVT::Clone( *tmp, 2 );
+          index[0] = 0;
+          AP_ = MVT::CloneViewNonConst( *V_, index );
+          index[0] = 1;
+	  P_ = MVT::CloneViewNonConst( *V_, index );
+
 	}
 	
 	// State storage has now been initialized.
@@ -408,13 +421,13 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
       else {
         MVT::Assign( *R_, *Z_ );
       }
-      MVT::Assign( *Z_, *P_ );
 
       // Multiply the current preconditioned residual vector by A and store in AZ_
       lp_->applyOp( *Z_, *AZ_ );
 
-      // Logically, AP_ = AZ_
-      MVT::Assign( *AZ_, *AP_ );
+      // P_ := Z_
+      // Logically, AP_ := AZ_
+      MVT::Assign( *U_, *V_);
     }
     else {
 
@@ -471,13 +484,12 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
     TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, CGIterateFailure,
                         "Belos::CGSingleRedIter::iterate(): current linear system has more than one vector!" );
 
-    if (foldConvergenceDetectionIntoAllreduce_) {
-      // Compute first <S_,T_> a.k.a. <R_,Z_>, <AZ_,Z_> and <R_,R2_> combined (also computes unneeded <AZ_,R2_>)
-      MVT::Assign( *R_, *R2_ );
+    if (foldConvergenceDetectionIntoAllreduce_ && convTest_->getResNormType() == Belos::TwoNorm) {
+      // Compute first <S_,T_> a.k.a. <R_,Z_>, <AZ_,Z_> and <R_,R_> combined (also computes unneeded <AZ_,R_>)
       MVT::MvTransMv( one, *S_, *T_, sHt );
-      rHz_ = sHt(0,0);
-      delta = sHt(1,0);
-      rHr_ = sHt(0,1);
+      rHz_ = sHt(0,1);
+      delta = sHt(1,1);
+      rHr_ = sHt(0,0);
     } else {
       // Compute first <s,z> a.k.a. <r,z> and <Az,z> combined
       MVT::MvTransMv( one, *S_, *Z_, sHz );
@@ -496,7 +508,7 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
     ////////////////////////////////////////////////////////////////
     // Iterate until the status test tells us to stop.
     //
-    if (foldConvergenceDetectionIntoAllreduce_) {
+    if (foldConvergenceDetectionIntoAllreduce_ && convTest_->getResNormType() == Belos::TwoNorm) {
       ////////////////////////////////////////////////////////////////
       // Iterate until the status test tells us to stop.
       //
@@ -515,9 +527,8 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
         if ( lp_->getLeftPrec() != Teuchos::null ) {
           lp_->applyLeftPrec( *R_, *Z_ );
           if ( lp_->getRightPrec() != Teuchos::null ) {
-            Teuchos::RCP<MV> tmp = MVT::Clone( *Z_, 1 );
-            lp_->applyRightPrec( *Z_, *tmp );
-            MVT::Assign( *tmp, *Z_ );
+            Teuchos::RCP<MV> tmp = MVT::CloneCopy( *Z_ );
+            lp_->applyRightPrec( *tmp, *Z_ );
           }
         }
         else if ( lp_->getRightPrec() != Teuchos::null ) {
@@ -530,23 +541,23 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
         // Multiply the current preconditioned residual vector by A and store in AZ_
         lp_->applyOp( *Z_, *AZ_ );
         //
-        // Compute <S_,T_> a.k.a. <R_,Z_>, <AZ_,Z_> and <R_,R2_> combined (also computes unneeded <AZ_,R2_>)
-        MVT::Assign( *R_, *R2_ );
+        // Compute <S_,T_> a.k.a. <R_,Z_>, <AZ_,Z_> and <R_,R_> combined (also computes unneeded <AZ_,R_>)
         MVT::MvTransMv( one, *S_, *T_, sHt );
         //
         // Update scalars.
         rHz_old = rHz_;
-        rHz_ = sHt(0,0);
-        delta = sHt(1,0);
-        rHr_ = sHt(0,1);
+        rHz_ = sHt(0,1);
+        delta = sHt(1,1);
+        rHr_ = sHt(0,0);
+
+        // Increment the iteration
+        iter_++;
         //
         // Check the status test, now that the solution and residual have been updated
         //
         if (stest_->checkStatus(this) == Passed) {
           break;
         }
-        // Increment the iteration
-        iter_++;
         //
         beta = rHz_ / rHz_old;
         alpha = rHz_ / (delta - (beta*rHz_ / alpha));
@@ -554,17 +565,14 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
         // Check that alpha is a positive number!
         TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha) <= zero, CGIterateFailure,
                                     "Belos::CGSingleRedIter::iterate(): non-positive value for p^H*A*p encountered!" );
+
         //
         // Update the direction vector P_ := Z_ + beta * P_
-        //
-        MVT::MvAddMv( one, *Z_, beta, *P_, *P_ );
-        //
         // Update AP_ through recurrence relation AP_ := AZ_ + beta * AP_
-        // NOTE: This increases the number of vector updates by 1, in exchange for
-        //       reducing the collectives from 2 to 1.
+        // Hence: V_ = (AP_, P_) := (AZ_, Z_) + beta (AP_, P_) = U_ + beta * V_
         //
-        MVT::MvAddMv( one, *AZ_, beta, *AP_, *AP_ );
-        //
+        MVT::MvAddMv( one, *U_, beta, *V_, *V_ );
+
       } // end while (1)
     } else {
       ////////////////////////////////////////////////////////////////
@@ -579,30 +587,30 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
         // Compute the new residual R_ := R_ - alpha * AP_
         //
         MVT::MvAddMv( one, *R_, -alpha, *AP_, *R_ );
+
+        // Increment the iteration
+        iter_++;
         //
         // Check the status test, now that the solution and residual have been updated
         //
         if (stest_->checkStatus(this) == Passed) {
           break;
         }
-        // Increment the iteration
-        iter_++;
         //
         // Apply preconditioner to new residual to update Z_
         //
         if ( lp_->getLeftPrec() != Teuchos::null ) {
           lp_->applyLeftPrec( *R_, *Z_ );
           if ( lp_->getRightPrec() != Teuchos::null ) {
-            Teuchos::RCP<MV> tmp = MVT::Clone( *Z_, 1 );
-            lp_->applyRightPrec( *Z_, *tmp );
-            Z_ = tmp;
+            Teuchos::RCP<MV> tmp = MVT::CloneCopy( *Z_ );
+            lp_->applyRightPrec( *tmp, *Z_ );
           }
         }
         else if ( lp_->getRightPrec() != Teuchos::null ) {
           lp_->applyRightPrec( *R_, *Z_ );
         }
         else {
-          Z_ = R_;
+          MVT::Assign( *R_, *Z_ );
         }
         //
         // Multiply the current preconditioned residual vector by A and store in AZ_
@@ -622,17 +630,14 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
         // Check that alpha is a positive number!
         TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha) <= zero, CGIterateFailure,
                                     "Belos::CGSingleRedIter::iterate(): non-positive value for p^H*A*p encountered!" );
+
         //
         // Update the direction vector P_ := Z_ + beta * P_
-        //
-        MVT::MvAddMv( one, *Z_, beta, *P_, *P_ );
-        //
         // Update AP_ through recurrence relation AP_ := AZ_ + beta * AP_
-        // NOTE: This increases the number of vector updates by 1, in exchange for
-        //       reducing the collectives from 2 to 1.
+        // Hence: V_ = (AP_, P_) := (AZ_, Z_) + beta (AP_, P_) = U_ + beta * V_
         //
-        MVT::MvAddMv( one, *AZ_, beta, *AP_, *AP_ );
-        //
+        MVT::MvAddMv( one, *U_, beta, *V_, *V_ );
+
       } // end while (1)
     }
   }

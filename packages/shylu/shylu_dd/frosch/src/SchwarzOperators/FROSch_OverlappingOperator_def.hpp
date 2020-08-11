@@ -126,7 +126,7 @@ namespace FROSch {
         XTmp_->putScalar(ScalarTraits<SC>::zero());
         ConstXMapPtr yMap = y.getMap();
         ConstXMapPtr yOverlapMap = YOverlap_->getMap();
-        if (Combine_ == Restricted){
+        if (Combine_ == Restricted) {
             GO globID = 0;
             LO localID = 0;
             for (UN i=0; i<y.getNumVectors(); i++) {

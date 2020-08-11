@@ -200,13 +200,15 @@ void StepperBackwardEuler<Scalar>::setInitialConditions(
   // Check if we need Stepper storage for xDot
   if (initialState->getXDot() == Teuchos::null)
     this->setStepperXDot(initialState->getX()->clone_v());
+  else
+    this->setStepperXDot(initialState->getXDot());
 
   StepperImplicit<Scalar>::setInitialConditions(solutionHistory);
 
   if (this->getUseFSAL()) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"StepperBackwardEuler::setInitialConditions()");
-    *out << "\nWarning -- The First-Step-As-Last (FSAL) principle is not "
+    *out << "\nWarning -- The First-Same-As-Last (FSAL) principle is not "
          << "needed with Backward Euler.  The default is to set useFSAL=false, "
          << "however useFSAL=true will also work but have no affect "
          << "(i.e., no-op).\n" << std::endl;
@@ -244,8 +246,9 @@ void StepperBackwardEuler<Scalar>::takeStep(
 
     RCP<const Thyra::VectorBase<Scalar> > xOld = currentState->getX();
     RCP<Thyra::VectorBase<Scalar> > x    = workingState->getX();
-
-    RCP<Thyra::VectorBase<Scalar> > xDot = this->getStepperXDot(workingState);
+    if (workingState->getXDot() != Teuchos::null)
+      this->setStepperXDot(workingState->getXDot());
+    RCP<Thyra::VectorBase<Scalar> > xDot = this->getStepperXDot();
 
     computePredictor(solutionHistory);
     if (workingState->getSolutionStatus() == Status::FAILED)

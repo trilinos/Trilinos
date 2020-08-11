@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -24,7 +24,6 @@ warning will return a positive number. Possible causes of errors
 include:
   -  data file not properly opened with call to ex_create() or ex_open()
   -  no time steps have been stored in the file.
-
 
 \param[in]  exoid       exodus file ID returned from a previous call to
 ex_create() or ex_open().

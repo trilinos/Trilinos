@@ -93,8 +93,8 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(false,"FROSch::GDSWStarInterfacePartitionOfUnity : ERROR: Specify a valid Distance Function.");
         }
-        this->LocalPartitionOfUnity_ = XMultiVectorPtrVecPtr(2);
-        this->PartitionOfUnityMaps_ = XMapPtrVecPtr(2);
+        this->LocalPartitionOfUnity_ = ConstXMultiVectorPtrVecPtr(2);
+        this->PartitionOfUnityMaps_ = ConstXMapPtrVecPtr(2);
     }
 
     template <class SC,class LO,class GO,class NO>

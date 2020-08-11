@@ -98,11 +98,13 @@ void StepperTrapezoidal<Scalar>::setInitialConditions (
   // Check if we need Stepper storage for xDot
   if (initialState->getXDot() == Teuchos::null)
     this->setStepperXDot(initialState->getX()->clone_v());
+  else
+    this->setStepperXDot(initialState->getXDot());
 
   StepperImplicit<Scalar>::setInitialConditions(solutionHistory);
 
   TEUCHOS_TEST_FOR_EXCEPTION( !(this->getUseFSAL()), std::logic_error,
-    "Error - The First-Step-As-Last (FSAL) principle is required\n"
+    "Error - The First-Same-As-Last (FSAL) principle is required\n"
     "        for the Trapezoidal Stepper (i.e., useFSAL=true)!\n");
 //   There are at least two ways around this, but are not implemented.
 //    - Do a solve for xDotOld, xDot_{n-1}, at each time step as for the
@@ -139,7 +141,9 @@ void StepperTrapezoidal<Scalar>::takeStep(
     RCP<const Thyra::VectorBase<Scalar> > xOld    = currentState->getX();
     RCP<const Thyra::VectorBase<Scalar> > xDotOld = currentState->getXDot();
     RCP<Thyra::VectorBase<Scalar> > x    = workingState->getX();
-    RCP<Thyra::VectorBase<Scalar> > xDot = workingState->getXDot();
+    if (workingState->getXDot() != Teuchos::null)
+      this->setStepperXDot(workingState->getXDot());
+    RCP<Thyra::VectorBase<Scalar> > xDot = this->getStepperXDot();
 
     const Scalar time  = workingState->getTime();
     const Scalar dt    = workingState->getTimeStep();

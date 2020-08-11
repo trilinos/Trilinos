@@ -1,19 +1,19 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
       SUBROUTINE MXLIST (UNIT, OFFSET,
      *   DICT, DPOINT, LDICT, NNAMES,
      *   VOID, LVOID, NVOIDS, CHRCOL)
-C
+
       IMPLICIT INTEGER (A-Z)
-C
+
 C     This routine lists the contents of the tables of the
 C     memory manager.
-C
+
 C***********************************************************************
-C
+
 C     UNIT     Output unit number
 C     OFFSET   Offset to internal reference vector
 C     DICT     Dictionary table
@@ -27,11 +27,11 @@ C     LVOID    Dimension of void table
 C     NVOIDS   Number of voids
                DIMENSION VOID(LVOID,CHRCOL,2), NVOIDS(2)
 C     CHRCOL   Column number for character tables
-C
+
 C***********************************************************************
-C
+
       CHARACTER*8 TNAME1, TNAME2
-C
+
       TOFF = OFFSET
       DO 290 ICOL = 1, CHRCOL
          IF (ICOL .EQ. 2) THEN
@@ -39,7 +39,7 @@ C
             WRITE (UNIT, 10090)
          END IF
 C        DICTIONARY.
-C
+
          MNDICT = 0
          MCDICT = 0
          DO 100 I = 1, NNAMES(ICOL)
@@ -58,9 +58,9 @@ C
             END IF
   110    CONTINUE
          WRITE (UNIT,10040) MNDICT, MCDICT
-C
+
 C        VOID TABLE.
-C
+
          MNVOID = 0
          DO 120 I = 1, NVOIDS(ICOL)
             MNVOID = MNVOID + VOID(I,ICOL,2)
@@ -69,12 +69,12 @@ C
          WRITE (UNIT,10060) (I,VOID(I,ICOL,1)+TOFF,
      *      VOID(I,ICOL,2),I=1,NVOIDS(ICOL))
          WRITE (UNIT,10050) MNVOID
-C
+
 C        OUTPUT ORDERED LIST OF TABLES.
-C
+
 C        First sort dictionary into location order with unresolved
 C        allocations first.
-C
+
          JSTRT = 2
          DO 150 I = 1, NNAMES(ICOL)-1
             IF (DPOINT(I,ICOL,2) .GE. 0) THEN
@@ -125,9 +125,9 @@ C
                END IF
   190       CONTINUE
   200    CONTINUE
-C
+
 C        STARTING STUFF FOR LOOP
-C
+
          DO 210 IDICT = 1, NNAMES(ICOL)
             IF (DPOINT(IDICT,ICOL,2) .GE. 0) GO TO 220
   210    CONTINUE
@@ -142,12 +142,12 @@ C
             NXTLOC = 0
          END IF
          IVOID = 1
-C
+
          WRITE (UNIT, 10080)
          ILIST = 0
-C
+
 C        Deferred space names first.
-C
+
          DTOT = 0
          DCTOT = 0
          DO 230 IDICT = 1, NNAMES(ICOL)
@@ -165,9 +165,9 @@ C
   240    CONTINUE
          IF (IDICT .GT. 1) WRITE (UNIT, 10030)
      *      'DEFERRED TOTAL', DTOT, DCTOT
-C
+
 C        LOOP
-C
+
          TOTAL = 0
          SUBTOT = 0
          CSTOT = 0
@@ -241,9 +241,9 @@ C
          WRITE (UNIT, 10030) 'BLOCK SIZE', SUBTOT, CSTOT
          WRITE (UNIT, 10030) 'ALLOCATED TOTAL', TOTAL, CTOT
          WRITE (UNIT, 10030) '    GRAND TOTAL', TOTAL+DTOT, CTOT+DCTOT
-C
+
 C        SORT DICTIONARY BACK INTO NAME ORDER
-C
+
          DO 280 I = 1, NNAMES(ICOL)-1
             DO 270 J = I+1, NNAMES(ICOL)
                IF (DICT(J,ICOL) .LT. DICT(I,ICOL)) THEN

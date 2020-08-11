@@ -101,7 +101,7 @@ namespace FROSch {
         this->IsComputed_ = true;
 
         // Store current Phi in ParameterList_
-        if ( this->ParameterList_->get("Store Phi",false) ){
+        if ( this->ParameterList_->get("Store Phi",false) ) {
             FROSCH_NOTIFICATION("FROSch::CoarseOperator",this->Verbose_,"Storing current Phi in Parameterlist.");
             this->ParameterList_->set("RCP(Phi)", Phi_);
         }
@@ -274,6 +274,23 @@ namespace FROSch {
                         tmpCoarseMatrix->doExport(*k0,*CoarseSolveExporters_[j],INSERT);
                     }
                 }
+                k0 = tmpCoarseMatrix;
+
+            } else if (!DistributionList_->get("Type","linear").compare("ZoltanDual")) {
+                //ZoltanDual
+                CoarseSolveExporters_[0] = Xpetra::ExportFactory<LO,GO,NO>::Build(k0->getMap(),GatheringMaps_[0]);
+                XMatrixPtr tmpCoarseMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0],k0->getGlobalMaxNumRowEntries());
+                tmpCoarseMatrix->doExport(*k0,*CoarseSolveExporters_[0],Xpetra::INSERT);
+
+                for (UN j=1; j<GatheringMaps_.size(); j++) {
+                    tmpCoarseMatrix->fillComplete();
+                    k0 = tmpCoarseMatrix;
+                    CoarseSolveExporters_[j] = Xpetra::ExportFactory<LO,GO,NO>::Build(GatheringMaps_[j-1],GatheringMaps_[j]);
+                    tmpCoarseMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j],k0->getGlobalMaxNumRowEntries());
+                    tmpCoarseMatrix->doExport(*k0,*CoarseSolveExporters_[j],Xpetra::INSERT);
+                }
+
+                tmpCoarseMatrix->fillComplete();
                 k0 = tmpCoarseMatrix;
 
             } else if (!DistributionList_->get("Type","linear").compare("Zoltan2")) {
@@ -684,7 +701,158 @@ namespace FROSch {
                 }
 #endif
             }
-        } else if(!DistributionList_->get("Type","linear").compare("Zoltan2")) {
+        } else if (!DistributionList_->get("Type","linear").compare("ZoltanDual")) {
+            //ZoltanDual provides a partition of the coarse problem with Zoltan2 inlcuding the
+            //build of a Repeated map suited for the next level
+            //GatheringSteps to communicate Matrix
+            int gatheringSteps = DistributionList_->get("GatheringSteps",1);
+            GatheringMaps_.resize(gatheringSteps);
+            CoarseSolveExporters_.resize(gatheringSteps);
+
+            double gatheringFactor = pow(double(this->MpiComm_->getSize())/double(NumProcsCoarseSolve_),1.0/double(gatheringSteps));
+            LO numProcsGatheringStep = this->MpiComm_->getSize();
+            GO numGlobalIndices = CoarseMap_->getMaxAllGlobalIndex();
+            GO numMyRows;
+            numMyRows = 0;
+
+            if (this->MpiComm_->getRank()%(this->MpiComm_->getSize()/NumProcsCoarseSolve_) == 0 && this->MpiComm_->getRank()/(this->MpiComm_->getSize()/NumProcsCoarseSolve_) < NumProcsCoarseSolve_) {
+                if (this->MpiComm_->getRank()==0) {
+                    numMyRows = numGlobalIndices - (numGlobalIndices/NumProcsCoarseSolve_)*(NumProcsCoarseSolve_-1);
+                } else {
+                    numMyRows = numGlobalIndices/NumProcsCoarseSolve_;
+                }
+            }
+
+            XMapPtr tmpCoarseMap = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,numMyRows,0,this->MpiComm_);
+            if (tmpCoarseMap->getNodeNumElements()>0) {
+                OnCoarseSolveComm_=true;
+            }
+            CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
+
+            //Gathering Steps for RepeatedMap#################################################
+            //-> Have to test that
+            RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout));
+
+            int MLgatheringSteps = DistributionList_->get("MLGatheringSteps",2);
+            MLGatheringMaps_.resize(MLgatheringSteps);
+            MLCoarseSolveExporters_.resize(MLgatheringSteps);
+            double MLgatheringFactor = pow(double(this->MpiComm_->getSize())/double(NumProcsCoarseSolve_),1.0/double(MLgatheringSteps));
+            GO MLnumGlobalIndices = SubdomainConnectGraph_->getRowMap()->getMaxAllGlobalIndex()+1;
+            GO MLnumMyRows;
+
+            MLGatheringMaps_[0] =  Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getMap()->lib(),-1,1,0,this->K_->getMap()->getComm());
+            for (int i=1; i<MLgatheringSteps-1; i++) {
+                MLnumMyRows = 0;
+                numProcsGatheringStep = LO(numProcsGatheringStep/MLgatheringFactor);
+                if (this->MpiComm_->getRank()%(this->MpiComm_->getSize()/numProcsGatheringStep) == 0 && this->MpiComm_->getRank()/(this->MpiComm_->getSize()/numProcsGatheringStep) < numProcsGatheringStep) {
+                    if (this->MpiComm_->getRank()==0) {
+                        MLnumMyRows = MLnumGlobalIndices - (MLnumGlobalIndices/numProcsGatheringStep)*(numProcsGatheringStep-1);
+                    } else {
+                        MLnumMyRows = MLnumGlobalIndices/numProcsGatheringStep;
+                    }
+                }
+                MLGatheringMaps_[i] = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,MLnumMyRows,0,this->MpiComm_);
+
+            }
+
+            MLnumMyRows = 0;
+            if (this->MpiComm_->getRank()%(this->MpiComm_->getSize()/NumProcsCoarseSolve_) == 0 && this->MpiComm_->getRank()/(this->MpiComm_->getSize()/NumProcsCoarseSolve_) < NumProcsCoarseSolve_) {
+                if (this->MpiComm_->getRank()==0) {
+                    MLnumMyRows = MLnumGlobalIndices - (MLnumGlobalIndices/NumProcsCoarseSolve_)*(NumProcsCoarseSolve_-1);
+                } else {
+                    MLnumMyRows = MLnumGlobalIndices/NumProcsCoarseSolve_;
+                }
+            }
+            MLGatheringMaps_[MLgatheringSteps-1] = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,MLnumMyRows,0,this->MpiComm_);
+            for (UN j=1; j<MLGatheringMaps_.size(); j++) {
+                MLCoarseSolveExporters_[j] = Xpetra::ExportFactory<LO,GO,NO>::Build(MLGatheringMaps_[j-1],MLGatheringMaps_[j]);
+            }
+            int nSubs = this->MpiComm_->getSize();
+            GOVec RowsCoarseSolve;
+            if (OnCoarseSolveComm_) {
+                int start = (nSubs*(CoarseSolveComm_->getRank()))/NumProcsCoarseSolve_;
+                int end = (nSubs*(CoarseSolveComm_->getRank()+1))/NumProcsCoarseSolve_;
+                RowsCoarseSolve.resize(end-start);
+                for (int i = 0; i<end-start; i++) {
+                    RowsCoarseSolve[i] = start+i;
+                }
+            }
+            Teuchos::ArrayView< const GO > CList = MLGatheringMaps_[MLgatheringSteps-1]->getNodeElementList();
+            //MLCoarseMap_ =  Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,CList,0,CoarseSolveComm_);->Should work but does not WHY?!?!
+            MLCoarseMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),MLGatheringMaps_[MLgatheringSteps-1]->getGlobalNumElements(),0,CoarseSolveComm_);
+
+            //#####################################################################
+            // Build Repeated Map Zoltan2
+            // build ElementNodeList_ to have adjacent entities to one subdomain
+            this->buildElementNodeList();
+            // Connectivity Graph on the CoarseSolveComm_
+            this->buildCoarseGraph();
+            //Build Repeatd Map on CoarseComm------------
+            //Initialize Maps...
+            ConstXMapPtr UniqueMap;
+            XMapPtr UniqueMapAll;
+            XMapPtr tmpRepMap;
+            ConstXMapPtr ConstRepMap;
+            GOVec uniEle;
+
+            if (OnCoarseSolveComm_) {
+                //Coarse DofsMaps so far only one Block will work
+                ConstXMapPtrVecPtr2D CoarseDofsMaps(1);
+                FROSch::BuildRepMapZoltan(SubdomainConnectGraph_,ElementNodeList_, DistributionList_,MLCoarseMap_->getComm(),CoarseSolveRepeatedMap_);
+                ConstRepMap = CoarseSolveRepeatedMap_;
+                ConstXMapPtrVecPtr NodesMapVector(1);
+                //MapVector for next Level
+                //So far only one Block is allowed ; needs to be adapetd fpr Block Ops
+                ConstXMapPtrVecPtr RepMapVector(1);
+                //Create DofMaps according to counting the interface entities
+                ConstXMapPtrVecPtr DMap(CoarseDofsPerNode_);
+                ConstXMapPtrVecPtr DMapRep(CoarseDofsPerNode_);
+
+                tmpRepMap = this->BuildRepeatedMapCoarseLevel(ConstRepMap,CoarseDofsPerNode_,DMapRep,PartitionType_);
+                RepMapCoarse_ = tmpRepMap;
+                RepMapVector[0] = tmpRepMap;
+
+                NodesMapVector[0] = ConstRepMap;
+                //Pass Repeated Map Vector on to the next Level
+
+                //Create uniqueMap following the repeatedMap
+                //Create uniqueNodeMap so that dof belonging to one node are on the same process
+                UniqueMap = FROSch::BuildUniqueMap<LO,GO,NO>(CoarseSolveRepeatedMap_);
+                UniqueMapAll = this->BuildRepeatedMapCoarseLevel(UniqueMap,CoarseDofsPerNode_,DMap,PartitionType_);
+
+                uniEle = UniqueMapAll->getNodeElementList();
+                //Set DofOderingVec and DofsPerNodeVec to ParameterList for the next Level
+                //Create Here DofsMaps for the next Level->DofOrdering will become redundant
+                Teuchos::ArrayRCP<DofOrdering> dofOrderings(1);
+                dofOrderings[0] = Custom; //special Ordering for Coarse Level
+                Teuchos::ArrayRCP<UN> dofsPerNodeVector(1);
+                dofsPerNodeVector[0] = CoarseDofsPerNode_;
+                CoarseDofsMaps[0] = DMapRep;
+
+                sublist(this->ParameterList_,"CoarseSolver")->set("Repeated Map Vector",RepMapVector);
+                sublist(this->ParameterList_,"CoarseSolver")->set("Dofs Maps Vector",CoarseDofsMaps);
+                sublist(this->ParameterList_,"CoarseSolver")->set("DofOrdering Vector",dofOrderings);
+                sublist(this->ParameterList_,"CoarseSolver")->set("DofsPerNode Vector",dofsPerNodeVector);
+                sublist(this->ParameterList_,"CoarseSolver")->set("Nodes Map Vector",NodesMapVector);
+            }
+
+            Teuchos::RCP<Xpetra::Map<LO,GO,NO> > tmpMap = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,uniEle,0,this->MpiComm_);
+
+            for (int i=0; i<gatheringSteps-1; i++) {
+                numMyRows = 0;
+                numProcsGatheringStep = LO(numProcsGatheringStep/gatheringFactor);
+                if (this->MpiComm_->getRank()%(this->MpiComm_->getSize()/numProcsGatheringStep) == 0 && this->MpiComm_->getRank()/(this->MpiComm_->getSize()/numProcsGatheringStep) < numProcsGatheringStep) {
+                    if (this->MpiComm_->getRank()==0) {
+                        numMyRows = numGlobalIndices - (numGlobalIndices/numProcsGatheringStep)*(numProcsGatheringStep-1);
+                    } else {
+                        numMyRows = numGlobalIndices/numProcsGatheringStep;
+                    }
+                }
+                GatheringMaps_[i] = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,numMyRows,0,this->MpiComm_);
+            }
+            GatheringMaps_[gatheringSteps-1] = tmpMap;
+            CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,tmpMap->getNodeElementList(),0,CoarseSolveComm_);
+        } else if (!DistributionList_->get("Type","linear").compare("Zoltan2")) {
 #ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
             GatheringMaps_.resize(1);
             CoarseSolveExporters_.resize(1);

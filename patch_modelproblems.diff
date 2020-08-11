@@ -1,0 +1,2305 @@
+diff --git a/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Basis_decl.hpp b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Basis_decl.hpp
+new file mode 100644
+index 0000000000..627a56f1d3
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Basis_decl.hpp
+@@ -0,0 +1,79 @@
++//@HEADER
++// ************************************************************************
++//
++//               ShyLU: Hybrid preconditioner package
++//                 Copyright 2012 Sandia Corporation
++//
++// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
++// the U.S. Government retains certain rights in this software.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
++//
++// ************************************************************************
++//@HEADER
++
++#ifndef _FROSCH_ELEMENT_DECL_HPP
++#define _FROSCH_ELEMENT_DECL_HPP
++
++#ifndef FROSCH_ASSERT
++#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
++#endif
++
++#include <FROSch_Monomials_decl.hpp>
++
++namespace FROSch {
++    
++    template <int dimension = 3,
++    int order = 1,
++    class SC = Xpetra::Operator<>::scalar_type>
++    class Basis {
++        
++    public:
++        
++        typedef Teuchos::Array<SC> SCVec;
++        typedef Teuchos::ArrayPtr<SCVec> SCVec2DPtr;
++        
++        Basis(SCVec2DPtr &referenceCoordinates);
++        
++        SC evaluateBasisFunction(int iBasisFunction,SCVec &x);
++        
++        SC evaluateGradBasisFunction(int iBasisFunction,SCVec &x, int row);
++        
++        SC evaluateHessianBasisFunction(int iBasisFunction,SCVec &x, int row, int col);
++        
++    private:
++        
++        Teuchos::SerialDenseMatrix Coefficients_:
++        
++    };
++    
++}
++
++#endif
+diff --git a/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Basis_def.hpp b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Basis_def.hpp
+new file mode 100644
+index 0000000000..f45d8d9ac6
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Basis_def.hpp
+@@ -0,0 +1,138 @@
++//@HEADER
++// ************************************************************************
++//
++//               ShyLU: Hybrid preconditioner package
++//                 Copyright 2012 Sandia Corporation
++//
++// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
++// the U.S. Government retains certain rights in this software.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
++//
++// ************************************************************************
++//@HEADER
++
++#ifndef _FROSCH_ELEMENT_DEF_HPP
++#define _FROSCH_ELEMENT_DEF_HPP
++
++#include <FROSch_Element_decl.hpp>
++
++namespace FROSch {
++    
++    template <int dimension, int order, class SC>
++    Basis<order,SC>::Basis(SCVec2DPtr &referenceCoordinates) :
++        Coefficients_ (referenceCoordinates->size(),referenceCoordinates->size())
++    {
++        switch (dimension) {
++            case 2:
++                switch (order) {
++                    case 0:
++                        FROSCH_ASSERT(referenceCoordinates->size()==1,"referenceCoordinates->size()!=1");
++                        break;
++                    case 1:
++                        FROSCH_ASSERT(referenceCoordinates->size()==3,"referenceCoordinates->size()!=4");
++                        break;
++                    case 2:
++                        FROSCH_ASSERT(referenceCoordinates->size()==6,"referenceCoordinates->size()!=6");
++                        break;
++                    default:
++                        FROSCH_ASSERT(false,"referenceCoordinates->size() !e {1,3,6}");
++                        break;
++                }
++                break;
++            case 3:
++                switch (order) {
++                    case 0:
++                        FROSCH_ASSERT(referenceCoordinates->size()==1,"referenceCoordinates->size()!=1");
++                        break;
++                    case 1:
++                        FROSCH_ASSERT(referenceCoordinates->size()==4,"referenceCoordinates->size()!=4");
++                        break;
++                    case 2:
++                        FROSCH_ASSERT(referenceCoordinates->size()==10,"referenceCoordinates->size()!=10");
++                        break;
++                    default:
++                        FROSCH_ASSERT(false,"referenceCoordinates->size() !e {1,4,10}");
++                        break;
++                }
++                break;
++            default:
++                FROSCH_ASSERT(false,"dimension !e {2,3}");
++                break;
++        }
++        
++        Teuchos::SerialDenseMatrix A(referenceCoordinates->size(),referenceCoordinates->size());
++        Teuchos::SerialDenseMatrix B(referenceCoordinates->size(),referenceCoordinates->size());
++        
++        for (int i=0; i<referenceCoordinates->size(); i++) {
++            for (int j=0; j<referenceCoordinates->size(); j++) {
++                A(i,j) = monomials(i,referenceCoordinates[j]);
++                B(i,j) = (SC) i==j;
++            }
++        }
++        
++        Teuchos::SerialDenseSolver solveForCoefficients();
++        solveForCoefficients.setMatrix(A);
++        solveForCoefficients.setVectors(Coefficients_,B);
++        solveForCoefficients.solve();
++    }
++
++    template <int dimension, int order, class SC>
++    SC Basis<dimension,order,SC>::evaluateBasisFunction(int iBasisFunction,SCVec &x)
++    {
++        SC val = 0.0;
++        for (int i=0; i<Coefficients_.numCols(); i++) {
++            val += monomials(iBasisFunction,x);
++        }
++        return val;
++    }
++    
++    template <int dimension, int order, class SC>
++    SC Basis<dimension,order,SC>::evaluateGradBasisFunction(int iBasisFunction,SCVec &x, int row)
++    {
++        SC val = 0.0;
++        for (int i=0; i<Coefficients_.numCols(); i++) {
++            val += monomials(iBasisFunction,x,row);
++        }
++        return val;
++    }
++    
++    template <int dimension, int order, class SC>
++    SC Basis<dimension,order,SC>::evaluateHessianBasisFunction(int iBasisFunction,SCVec &x, int row, int col)
++    {
++        SC val = 0.0;
++        for (int i=0; i<Coefficients_.numCols(); i++) {
++            val += monomials(iBasisFunction,x,row,col);
++        }
++        return val;
++    }
++}
++
++#endif
+diff --git a/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_BoundaryConditions_decl.hpp b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_BoundaryConditions_decl.hpp
+new file mode 100644
+index 0000000000..8a353e64fd
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_BoundaryConditions_decl.hpp
+@@ -0,0 +1,81 @@
++//@HEADER
++// ************************************************************************
++//
++//               ShyLU: Hybrid preconditioner package
++//                 Copyright 2012 Sandia Corporation
++//
++// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
++// the U.S. Government retains certain rights in this software.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
++//
++// ************************************************************************
++//@HEADER
++
++#ifndef _FROSCH_TRIANGULATION_DECL_HPP
++#define _FROSCH_TRIANGULATION_DECL_HPP
++
++namespace FROSch {
++    
++    template <int dimension = 3>
++    class Triangulation {
++        
++    public:
++        
++        Triangulation(CrsMatrixPtr k,
++                                     ParameterListPtr parameterList);
++        
++        virtual int initialize()
++        {
++            FROSCH_ASSERT(false,"AlgebraicOverlappingOperator cannot be built without input parameters.");
++            return 0;
++        };
++        
++        int initialize(int overlap,
++                       MapPtr repeatedMap = Teuchos::null);
++        
++        int compute();
++        
++        void describe(Teuchos::FancyOStream &out,
++                      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
++        
++        std::string description() const;
++        
++    private:
++        
++        int setUpAlgebraicOverlappingOperator();
++        
++        int buildOverlappingMatrices(int overlap,
++                                     MapPtr repeatedMap);
++    };
++    
++}
++
++#endif
+diff --git a/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_BoundaryConditions_def.hpp b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_BoundaryConditions_def.hpp
+new file mode 100644
+index 0000000000..8a353e64fd
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_BoundaryConditions_def.hpp
+@@ -0,0 +1,81 @@
++//@HEADER
++// ************************************************************************
++//
++//               ShyLU: Hybrid preconditioner package
++//                 Copyright 2012 Sandia Corporation
++//
++// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
++// the U.S. Government retains certain rights in this software.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
++//
++// ************************************************************************
++//@HEADER
++
++#ifndef _FROSCH_TRIANGULATION_DECL_HPP
++#define _FROSCH_TRIANGULATION_DECL_HPP
++
++namespace FROSch {
++    
++    template <int dimension = 3>
++    class Triangulation {
++        
++    public:
++        
++        Triangulation(CrsMatrixPtr k,
++                                     ParameterListPtr parameterList);
++        
++        virtual int initialize()
++        {
++            FROSCH_ASSERT(false,"AlgebraicOverlappingOperator cannot be built without input parameters.");
++            return 0;
++        };
++        
++        int initialize(int overlap,
++                       MapPtr repeatedMap = Teuchos::null);
++        
++        int compute();
++        
++        void describe(Teuchos::FancyOStream &out,
++                      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
++        
++        std::string description() const;
++        
++    private:
++        
++        int setUpAlgebraicOverlappingOperator();
++        
++        int buildOverlappingMatrices(int overlap,
++                                     MapPtr repeatedMap);
++    };
++    
++}
++
++#endif
+diff --git a/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_DifferentialOperator_decl.hpp b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_DifferentialOperator_decl.hpp
+new file mode 100644
+index 0000000000..8a353e64fd
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_DifferentialOperator_decl.hpp
+@@ -0,0 +1,81 @@
++//@HEADER
++// ************************************************************************
++//
++//               ShyLU: Hybrid preconditioner package
++//                 Copyright 2012 Sandia Corporation
++//
++// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
++// the U.S. Government retains certain rights in this software.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
++//
++// ************************************************************************
++//@HEADER
++
++#ifndef _FROSCH_TRIANGULATION_DECL_HPP
++#define _FROSCH_TRIANGULATION_DECL_HPP
++
++namespace FROSch {
++    
++    template <int dimension = 3>
++    class Triangulation {
++        
++    public:
++        
++        Triangulation(CrsMatrixPtr k,
++                                     ParameterListPtr parameterList);
++        
++        virtual int initialize()
++        {
++            FROSCH_ASSERT(false,"AlgebraicOverlappingOperator cannot be built without input parameters.");
++            return 0;
++        };
++        
++        int initialize(int overlap,
++                       MapPtr repeatedMap = Teuchos::null);
++        
++        int compute();
++        
++        void describe(Teuchos::FancyOStream &out,
++                      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
++        
++        std::string description() const;
++        
++    private:
++        
++        int setUpAlgebraicOverlappingOperator();
++        
++        int buildOverlappingMatrices(int overlap,
++                                     MapPtr repeatedMap);
++    };
++    
++}
++
++#endif
+diff --git a/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_DifferentialOperator_def.hpp b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_DifferentialOperator_def.hpp
+new file mode 100644
+index 0000000000..a52e0cbae8
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_DifferentialOperator_def.hpp
+@@ -0,0 +1,111 @@
++//@HEADER
++// ************************************************************************
++//
++//               ShyLU: Hybrid preconditioner package
++//                 Copyright 2012 Sandia Corporation
++//
++// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
++// the U.S. Government retains certain rights in this software.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
++//
++// ************************************************************************
++//@HEADER
++
++#ifndef _FROSCH_ALGEBRAICOVERLAPPINGOPERATOR_DEF_HPP
++#define _FROSCH_ALGEBRAICOVERLAPPINGOPERATOR_DEF_HPP
++
++#include <FROSch_AlgebraicOverlappingOperator_decl.hpp>
++
++namespace FROSch {
++    
++    template <class SC,class LO,class GO,class NO>
++    AlgebraicOverlappingOperator<SC,LO,GO,NO>::AlgebraicOverlappingOperator(CrsMatrixPtr k,
++                                                                            ParameterListPtr parameterList) :
++    OverlappingOperator<SC,LO,GO,NO> (k,parameterList)
++    {
++        
++    }
++    
++    template <class SC,class LO,class GO,class NO>
++    int AlgebraicOverlappingOperator<SC,LO,GO,NO>::initialize(int overlap, MapPtr repeatedMap)
++    {
++        if (repeatedMap.is_null()) {
++            repeatedMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap(),1);
++        }
++        this->buildOverlappingMatrices(overlap,repeatedMap);
++        this->initializeOverlappingOperator();
++        
++        this->IsInitialized_ = true;
++        this->IsComputed_ = false;
++        return 0; // RETURN VALUE!!!
++    }
++    
++    template <class SC,class LO,class GO,class NO>
++    int AlgebraicOverlappingOperator<SC,LO,GO,NO>::compute()
++    {
++        FROSCH_ASSERT(this->IsInitialized_,"ERROR: AlgebraicOverlappingOperator has to be initialized before calling compute()");
++        this->computeOverlappingOperator();
++        
++        this->IsComputed_ = true;
++        return 0; // RETURN VALUE!!!
++    }
++
++    template <class SC,class LO,class GO,class NO>
++    void AlgebraicOverlappingOperator<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
++                                                             const Teuchos::EVerbosityLevel verbLevel) const
++    {
++        FROSCH_ASSERT(false,"describe() has be implemented properly...");
++    }
++    
++    template <class SC,class LO,class GO,class NO>
++    std::string AlgebraicOverlappingOperator<SC,LO,GO,NO>::description() const
++    {
++        return "Algebraic Overlapping Operator";
++    }
++    
++    template <class SC,class LO,class GO,class NO>
++    int AlgebraicOverlappingOperator<SC,LO,GO,NO>::buildOverlappingMatrices(int overlap,
++                                                                            MapPtr repeatedMap)
++    {
++        //if (this->Verbose_) std::cout << "WARNING: Can we just copy the pointers like that without changing the matrix...?\n";
++
++        this->OverlappingMap_ = repeatedMap;
++        this->OverlappingMatrix_ = this->K_;
++        for (int i=0; i<overlap; i++) {
++            ExtendOverlapByOneLayer(this->OverlappingMatrix_,this->OverlappingMap_);
++        }
++
++        return 0;
++    }
++    
++}
++
++#endif
+diff --git a/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Element_decl.hpp b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Element_decl.hpp
+new file mode 100644
+index 0000000000..d9c92af1fd
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Element_decl.hpp
+@@ -0,0 +1,91 @@
++//@HEADER
++// ************************************************************************
++//
++//               ShyLU: Hybrid preconditioner package
++//                 Copyright 2012 Sandia Corporation
++//
++// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
++// the U.S. Government retains certain rights in this software.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
++//
++// ************************************************************************
++//@HEADER
++
++#ifndef _FROSCH_ELEMENT_DECL_HPP
++#define _FROSCH_ELEMENT_DECL_HPP
++
++#ifndef FROSCH_ASSERT
++#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
++#endif
++
++namespace FROSch {
++    
++    template <int dimension = 3,
++    int dofsPerNode = 1,
++    class SC = Xpetra::Operator<>::scalar_type,
++    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
++    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type>
++    class Element {
++        
++    public:
++        
++        typedef Teuchos::Array<LO> LOVec;
++        
++        typedef Teuchos::Array<GO> GOVec;
++        
++        typedef Teuchos::Array<SC> SCVec;
++        typedef Teuchos::Array<SCVec> SCVec2D;
++        
++        Element(LO localElementID,
++                GO globalElementID,
++                ReferenceElementPtr &referenceElement);
++        
++        int AddNode(LO localNodeID,
++                    GO globalNodeID,
++                    SCVec &coordinates);
++        
++    private:
++        
++        LO localElementID;
++        
++        GO globalElementID;
++        
++        LOVec localNodeIDs;
++        
++        GOVec globalNodeIDs;
++        
++        SCVec2D nodeCoordinates_:
++        
++    };
++    
++}
++
++#endif
+diff --git a/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Element_def.hpp b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Element_def.hpp
+new file mode 100644
+index 0000000000..d8a60c5279
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Element_def.hpp
+@@ -0,0 +1,76 @@
++//@HEADER
++// ************************************************************************
++//
++//               ShyLU: Hybrid preconditioner package
++//                 Copyright 2012 Sandia Corporation
++//
++// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
++// the U.S. Government retains certain rights in this software.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
++//
++// ************************************************************************
++//@HEADER
++
++#ifndef _FROSCH_ELEMENT_DEF_HPP
++#define _FROSCH_ELEMENT_DEF_HPP
++
++#include <FROSch_Element_decl.hpp>
++
++namespace FROSch {
++    
++    template <int dimension, int dofsPerNode, class SC,class LO,class GO,class NO>
++    Element<dimension,dofsPerNode,SC,LO,GO,NO>::Element(LO localID,
++                                                        GO globalID) :
++        localElementID (localID),
++        globalElementID (globalID),
++        localNodeIDs (0),
++        globalNodeIDs (0),
++        Coordinates_ (0)
++    {
++        
++    }
++
++    
++    template <int dimension, int dofsPerNode, class SC,class LO,class GO,class NO>
++    int Element<dimension,dofsPerNode,SC,LO,GO,NO>::AddNode(LO localID,
++                                                            GO globalID,
++                                                            SCVec &coordinates)
++    {
++        FROSCH_ASSERT(coordinates.size()==dimension,"coordinates.size()!=dimension");
++        
++        localNodeIDs.push_back(localID);
++        globalNodeIDs.push_back(globalID);
++        Coordinates.push_back(coordinates);
++        return 0;
++    }
++}
++
++#endif
+diff --git a/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Monomials_decl.hpp b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Monomials_decl.hpp
+new file mode 100644
+index 0000000000..b1fe13c058
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Monomials_decl.hpp
+@@ -0,0 +1,400 @@
++//@HEADER
++// ************************************************************************
++//
++//               ShyLU: Hybrid preconditioner package
++//                 Copyright 2012 Sandia Corporation
++//
++// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
++// the U.S. Government retains certain rights in this software.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
++//
++// ************************************************************************
++//@HEADER
++
++#ifndef _FROSCH_MONOMIALS_DECL_HPP
++#define _FROSCH_MONOMIALS_DECL_HPP
++
++namespace FROSch {
++    
++    // c
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC c(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        return (SC) 1.0;
++    }
++    
++    // x
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC x(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        return (SC) x[0];
++    }
++    // y
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC y(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        return (SC) x[1];
++    }
++    // z
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC z(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        return (SC) x[2];
++    }
++    
++    // xx
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC xx(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        return (SC) x[0]*x[0];
++    }
++    // xy
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC xy(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        return (SC) x[0]*x[1];
++    }
++    // xz
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC xz(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        return (SC) x[0]*x[2];
++    }
++    
++    // yx
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC xx(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        return (SC) x[1]*x[0];
++    }
++    // yy
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC xy(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        return (SC) x[1]*x[1];
++    }
++    // yz
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC xz(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        return (SC) x[1]*x[2];
++    }
++    
++    // zx
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC xx(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        return (SC) x[2]*x[0];
++    }
++    // zy
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC xy(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        return (SC) x[2]*x[1];
++    }
++    // zz
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC xz(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        return (SC) x[2]*x[2];
++    }
++    
++    // grad(x)
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC gradx(SCVec &x, int i)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        switch (i) {
++            case 0:
++                return 1.0;
++                break;
++            case 1:
++                return 0.0;
++                break;
++            case 1:
++                return 0.0;
++                break;
++            default:
++                FROSCH_ASSERT(false,"i !e {0,1,2}");
++                break;
++        }
++        return (SC) x[0];
++    }
++    // grad(y)
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC grady(SCVec &x, int i)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        switch (i) {
++            case 0:
++                return 0.0;
++                break;
++            case 1:
++                return 1.0;
++                break;
++            case 1:
++                return 0.0;
++                break;
++            default:
++                FROSCH_ASSERT(false,"i !e {0,1,2}");
++                break;
++        }
++        return (SC) x[0];
++    }
++    // grad(z)
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC gradz(SCVec &x, int i)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        switch (i) {
++            case 0:
++                return 0.0;
++                break;
++            case 1:
++                return 0.0;
++                break;
++            case 1:
++                return 1.0;
++                break;
++            default:
++                FROSCH_ASSERT(false,"i !e {0,1,2}");
++                break;
++        }
++        return (SC) x[0];
++    }
++    
++    // grad(xx)
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC xx(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        switch (i) {
++            case 0:
++                return 2.0*x[0];
++                break;
++            case 1:
++                return 0.0;
++                break;
++            case 1:
++                return 0.0;
++                break;
++            default:
++                FROSCH_ASSERT(false,"i !e {0,1,2}");
++                break;
++        }
++        return (SC) x[0];
++    }
++    // grad(xy)
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC xy(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        switch (i) {
++            case 0:
++                return x[1];
++                break;
++            case 1:
++                return x[0];
++                break;
++            case 1:
++                return 0.0;
++                break;
++            default:
++                FROSCH_ASSERT(false,"i !e {0,1,2}");
++                break;
++        }
++        return (SC) x[0];
++    }
++    // grad(xz)
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC xz(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        switch (i) {
++            case 0:
++                return x[2];
++                break;
++            case 1:
++                return 0.0;
++                break;
++            case 1:
++                return x[0];
++                break;
++            default:
++                FROSCH_ASSERT(false,"i !e {0,1,2}");
++                break;
++        }
++        return (SC) x[0];
++    }
++    
++    // grad(yx)
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC yx(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        switch (i) {
++            case 0:
++                return x[1];
++                break;
++            case 1:
++                return x[0];
++                break;
++            case 1:
++                return 0.0;
++                break;
++            default:
++                FROSCH_ASSERT(false,"i !e {0,1,2}");
++                break;
++        }
++        return (SC) x[0];
++    }
++    // grad(yy)
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC yy(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        switch (i) {
++            case 0:
++                return 0.0;
++                break;
++            case 1:
++                return 2.0*x[1];
++                break;
++            case 1:
++                return 0.0;
++                break;
++            default:
++                FROSCH_ASSERT(false,"i !e {0,1,2}");
++                break;
++        }
++        return (SC) x[0];
++    }
++    // grad(yz)
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC yz(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        switch (i) {
++            case 0:
++                return 0.0;
++                break;
++            case 1:
++                return x[2];
++                break;
++            case 1:
++                return x[1];
++                break;
++            default:
++                FROSCH_ASSERT(false,"i !e {0,1,2}");
++                break;
++        }
++        return (SC) x[0];
++    }
++    
++    // grad(zx)
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC zx(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        switch (i) {
++            case 0:
++                return x[2];
++                break;
++            case 1:
++                return 0.0;
++                break;
++            case 1:
++                return x[0];
++                break;
++            default:
++                FROSCH_ASSERT(false,"i !e {0,1,2}");
++                break;
++        }
++        return (SC) x[0];
++    }
++    // grad(zy)
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC zy(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        switch (i) {
++            case 0:
++                return 0.0;
++                break;
++            case 1:
++                return x[2];
++                break;
++            case 1:
++                return x[1];
++                break;
++            default:
++                FROSCH_ASSERT(false,"i !e {0,1,2}");
++                break;
++        }
++        return (SC) x[0];
++    }
++    // grad(zz)
++    template <int dimension = 3,class SC = Xpetra::Operator<>::scalar_type>
++    inline SC zz(SCVec &x)
++    {
++        FROSCH_ASSERT(x.size()==dimension,"x.size()!=dimension");
++        switch (i) {
++            case 0:
++                return 0.0;
++                break;
++            case 1:
++                return 0.0;
++                break;
++            case 1:
++                return 2.0*x[2];
++                break;
++            default:
++                FROSCH_ASSERT(false,"i !e {0,1,2}");
++                break;
++        }
++        return (SC) x[0];
++    }
++    
++}
++#endif
+diff --git a/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_QuadratureRule_decl.hpp b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_QuadratureRule_decl.hpp
+new file mode 100644
+index 0000000000..8a353e64fd
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_QuadratureRule_decl.hpp
+@@ -0,0 +1,81 @@
++//@HEADER
++// ************************************************************************
++//
++//               ShyLU: Hybrid preconditioner package
++//                 Copyright 2012 Sandia Corporation
++//
++// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
++// the U.S. Government retains certain rights in this software.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
++//
++// ************************************************************************
++//@HEADER
++
++#ifndef _FROSCH_TRIANGULATION_DECL_HPP
++#define _FROSCH_TRIANGULATION_DECL_HPP
++
++namespace FROSch {
++    
++    template <int dimension = 3>
++    class Triangulation {
++        
++    public:
++        
++        Triangulation(CrsMatrixPtr k,
++                                     ParameterListPtr parameterList);
++        
++        virtual int initialize()
++        {
++            FROSCH_ASSERT(false,"AlgebraicOverlappingOperator cannot be built without input parameters.");
++            return 0;
++        };
++        
++        int initialize(int overlap,
++                       MapPtr repeatedMap = Teuchos::null);
++        
++        int compute();
++        
++        void describe(Teuchos::FancyOStream &out,
++                      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
++        
++        std::string description() const;
++        
++    private:
++        
++        int setUpAlgebraicOverlappingOperator();
++        
++        int buildOverlappingMatrices(int overlap,
++                                     MapPtr repeatedMap);
++    };
++    
++}
++
++#endif
+diff --git a/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_QuadratureRule_def.hpp b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_QuadratureRule_def.hpp
+new file mode 100644
+index 0000000000..a52e0cbae8
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_QuadratureRule_def.hpp
+@@ -0,0 +1,111 @@
++//@HEADER
++// ************************************************************************
++//
++//               ShyLU: Hybrid preconditioner package
++//                 Copyright 2012 Sandia Corporation
++//
++// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
++// the U.S. Government retains certain rights in this software.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
++//
++// ************************************************************************
++//@HEADER
++
++#ifndef _FROSCH_ALGEBRAICOVERLAPPINGOPERATOR_DEF_HPP
++#define _FROSCH_ALGEBRAICOVERLAPPINGOPERATOR_DEF_HPP
++
++#include <FROSch_AlgebraicOverlappingOperator_decl.hpp>
++
++namespace FROSch {
++    
++    template <class SC,class LO,class GO,class NO>
++    AlgebraicOverlappingOperator<SC,LO,GO,NO>::AlgebraicOverlappingOperator(CrsMatrixPtr k,
++                                                                            ParameterListPtr parameterList) :
++    OverlappingOperator<SC,LO,GO,NO> (k,parameterList)
++    {
++        
++    }
++    
++    template <class SC,class LO,class GO,class NO>
++    int AlgebraicOverlappingOperator<SC,LO,GO,NO>::initialize(int overlap, MapPtr repeatedMap)
++    {
++        if (repeatedMap.is_null()) {
++            repeatedMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap(),1);
++        }
++        this->buildOverlappingMatrices(overlap,repeatedMap);
++        this->initializeOverlappingOperator();
++        
++        this->IsInitialized_ = true;
++        this->IsComputed_ = false;
++        return 0; // RETURN VALUE!!!
++    }
++    
++    template <class SC,class LO,class GO,class NO>
++    int AlgebraicOverlappingOperator<SC,LO,GO,NO>::compute()
++    {
++        FROSCH_ASSERT(this->IsInitialized_,"ERROR: AlgebraicOverlappingOperator has to be initialized before calling compute()");
++        this->computeOverlappingOperator();
++        
++        this->IsComputed_ = true;
++        return 0; // RETURN VALUE!!!
++    }
++
++    template <class SC,class LO,class GO,class NO>
++    void AlgebraicOverlappingOperator<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
++                                                             const Teuchos::EVerbosityLevel verbLevel) const
++    {
++        FROSCH_ASSERT(false,"describe() has be implemented properly...");
++    }
++    
++    template <class SC,class LO,class GO,class NO>
++    std::string AlgebraicOverlappingOperator<SC,LO,GO,NO>::description() const
++    {
++        return "Algebraic Overlapping Operator";
++    }
++    
++    template <class SC,class LO,class GO,class NO>
++    int AlgebraicOverlappingOperator<SC,LO,GO,NO>::buildOverlappingMatrices(int overlap,
++                                                                            MapPtr repeatedMap)
++    {
++        //if (this->Verbose_) std::cout << "WARNING: Can we just copy the pointers like that without changing the matrix...?\n";
++
++        this->OverlappingMap_ = repeatedMap;
++        this->OverlappingMatrix_ = this->K_;
++        for (int i=0; i<overlap; i++) {
++            ExtendOverlapByOneLayer(this->OverlappingMatrix_,this->OverlappingMap_);
++        }
++
++        return 0;
++    }
++    
++}
++
++#endif
+diff --git a/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_ReferenceElement_decl.hpp b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_ReferenceElement_decl.hpp
+new file mode 100644
+index 0000000000..f3a4d1a4d5
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_ReferenceElement_decl.hpp
+@@ -0,0 +1,78 @@
++//@HEADER
++// ************************************************************************
++//
++//               ShyLU: Hybrid preconditioner package
++//                 Copyright 2012 Sandia Corporation
++//
++// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
++// the U.S. Government retains certain rights in this software.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
++//
++// ************************************************************************
++//@HEADER
++
++#ifndef _FROSCH_ELEMENT_DECL_HPP
++#define _FROSCH_ELEMENT_DECL_HPP
++
++#ifndef FROSCH_ASSERT
++#define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
++#endif
++
++namespace FROSch {
++    
++    struct
++    
++    template <int dimension = 3,
++    int dofsPerNode = 1,
++    class SC = Xpetra::Operator<>::scalar_type,
++    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
++    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type>
++    class Element {
++        
++    public:        
++                
++        ReferenceElement(GeometryPtr &geometry,
++                         QuadratureRulePtr &quadratureRule,
++                         BasisPtr &basis);
++        
++    private:
++        
++        GeometryPtr Geometry_;
++        
++        QuadratureRulePtr QuadratureRule_;
++        
++        BasisfunctionVecPtr BasisFunctions_;
++        
++    };
++    
++}
++
++#endif
+diff --git a/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_ReferenceElement_def.hpp b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_ReferenceElement_def.hpp
+new file mode 100644
+index 0000000000..d8a60c5279
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_ReferenceElement_def.hpp
+@@ -0,0 +1,76 @@
++//@HEADER
++// ************************************************************************
++//
++//               ShyLU: Hybrid preconditioner package
++//                 Copyright 2012 Sandia Corporation
++//
++// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
++// the U.S. Government retains certain rights in this software.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
++//
++// ************************************************************************
++//@HEADER
++
++#ifndef _FROSCH_ELEMENT_DEF_HPP
++#define _FROSCH_ELEMENT_DEF_HPP
++
++#include <FROSch_Element_decl.hpp>
++
++namespace FROSch {
++    
++    template <int dimension, int dofsPerNode, class SC,class LO,class GO,class NO>
++    Element<dimension,dofsPerNode,SC,LO,GO,NO>::Element(LO localID,
++                                                        GO globalID) :
++        localElementID (localID),
++        globalElementID (globalID),
++        localNodeIDs (0),
++        globalNodeIDs (0),
++        Coordinates_ (0)
++    {
++        
++    }
++
++    
++    template <int dimension, int dofsPerNode, class SC,class LO,class GO,class NO>
++    int Element<dimension,dofsPerNode,SC,LO,GO,NO>::AddNode(LO localID,
++                                                            GO globalID,
++                                                            SCVec &coordinates)
++    {
++        FROSCH_ASSERT(coordinates.size()==dimension,"coordinates.size()!=dimension");
++        
++        localNodeIDs.push_back(localID);
++        globalNodeIDs.push_back(globalID);
++        Coordinates.push_back(coordinates);
++        return 0;
++    }
++}
++
++#endif
+diff --git a/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Triangulation_decl.hpp b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Triangulation_decl.hpp
+new file mode 100644
+index 0000000000..f4a1c46d43
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Triangulation_decl.hpp
+@@ -0,0 +1,75 @@
++//@HEADER
++// ************************************************************************
++//
++//               ShyLU: Hybrid preconditioner package
++//                 Copyright 2012 Sandia Corporation
++//
++// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
++// the U.S. Government retains certain rights in this software.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
++//
++// ************************************************************************
++//@HEADER
++
++#ifndef _FROSCH_TRIANGULATION_DECL_HPP
++#define _FROSCH_TRIANGULATION_DECL_HPP
++
++namespace FROSch {
++    
++    template <int dimension = 3,
++    int dofsPerNode = 1,
++    class SC = Xpetra::Operator<>::scalar_type,
++    class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
++    class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type>
++    class Triangulation {
++        
++    public:
++        
++        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
++        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
++        
++        typedef Teuchos::RCP<Element<dimension,SC,LO,GO> > ElementPtr;
++        typedef Teuchos::Array<ElementPtr> ElementPtrVec;
++        
++        
++        Triangulation();
++        
++        int AddLocalElement(ElementPtr &localElement);
++        
++    private:
++        
++        ElementPtrVec ElementList_;
++        
++    };
++    
++}
++
++#endif
+diff --git a/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Triangulation_def.hpp b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Triangulation_def.hpp
+new file mode 100644
+index 0000000000..6e551d8512
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/src/Assembly/FROSch_Triangulation_def.hpp
+@@ -0,0 +1,65 @@
++//@HEADER
++// ************************************************************************
++//
++//               ShyLU: Hybrid preconditioner package
++//                 Copyright 2012 Sandia Corporation
++//
++// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
++// the U.S. Government retains certain rights in this software.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
++//
++// ************************************************************************
++//@HEADER
++
++#ifndef _FROSCH_TRIANGULATION_DEF_HPP
++#define _FROSCH_TRIANGULATION_DEF_HPP
++
++#include <FROSch_Triangulation_decl.hpp>
++
++namespace FROSch {
++    
++    template <int dimension, int dofsPerNode,class SC,class LO,class GO>
++    Triangulation<SC,LO,GO>::Triangulation() :
++        ElementList_ (0)
++    {
++        
++    }
++    
++    template <int dimension,class SC,class LO,class GO>
++    int Triangulation<dofsPerNode>::AddLocalElement(ElementPtr &localElement);
++    {
++        ElementList_.push_back(localElement);
++        return 0;
++    }
++    
++}
++
++#endif
+diff --git a/packages/shylu/shylu_dd/frosch/test/Xpetra_Modelproblems/CMakeLists.txt b/packages/shylu/shylu_dd/frosch/test/Xpetra_Modelproblems/CMakeLists.txt
+new file mode 100644
+index 0000000000..50b890a942
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/test/Xpetra_Modelproblems/CMakeLists.txt
+@@ -0,0 +1,44 @@
++TRIBITS_ADD_EXECUTABLE(
++    laplacian_epetra
++    SOURCES main.cpp
++)
++
++TRIBITS_COPY_FILES_TO_BINARY_DIR(EpetraCopyFiles
++    DEST_FILES ParametersGDSW.xml ParametersRGDSW.xml
++    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
++    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
++    EXEDEPS laplacian_epetra
++)
++
++#AH 04/05/2018: Adding Tests
++TRIBITS_ADD_TEST(
++    laplacian_epetra
++    NAME test_laplacian_epetra_2d_gdsw
++    ARGS "--DIM=2"
++    COMM mpi
++    NUM_MPI_PROCS 4
++)
++
++TRIBITS_ADD_TEST(
++    laplacian_epetra
++    NAME test_laplacian_epetra_3d_gdsw
++    ARGS "--DIM=3"
++    COMM mpi
++    NUM_MPI_PROCS 8
++)
++
++TRIBITS_ADD_TEST(
++    laplacian_epetra
++    NAME test_laplacian_epetra_2d_rgdsw
++    ARGS "--DIM=2 --RGDSW"
++    COMM mpi
++    NUM_MPI_PROCS 4
++)
++
++TRIBITS_ADD_TEST(
++    laplacian_epetra
++    NAME test_laplacian_epetra_3d_rgdsw
++    ARGS "--DIM=3 --RGDSW"
++    COMM mpi
++    NUM_MPI_PROCS 8
++)
+diff --git a/packages/shylu/shylu_dd/frosch/test/Xpetra_Modelproblems/ParametersGDSW.xml b/packages/shylu/shylu_dd/frosch/test/Xpetra_Modelproblems/ParametersGDSW.xml
+new file mode 100644
+index 0000000000..384785f6b1
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/test/Xpetra_Modelproblems/ParametersGDSW.xml
+@@ -0,0 +1,152 @@
++<ParameterList name="LaplacianGDSW">
++    
++    <ParameterList name="Solver">
++        <Parameter name="Solver"                                            type="string"   value="GMRES"/>
++        <Parameter name="PreconditionerPosition"                            type="string"   value="left"/>
++        <ParameterList name="GMRES">
++            <Parameter name="Num Blocks"                                    type="int"      value="200"/>
++            <Parameter name="Maximum Iterations"                            type="int"      value="200"/>
++            <Parameter name="Maximum Restarts"                              type="int"      value="0"/>
++            <Parameter name="Block Size"                                    type="int"      value="1"/>
++            <Parameter name="Convergence Tolerance"                         type="double"   value="1.0e-6"/>
++            <!--
++             <Parameter name="Implicit Residual Scaling"                    type="string"   value=""/>
++             -->
++            <Parameter name="Explicit Residual Scaling"                     type="string"   value="Norm of Preconditioned Initial Residual"/>
++            <Parameter name="Deflation Quorum"                              type="int"      value="-1"/>
++            <Parameter name="Orthogonalization"                             type="string"   value="DGKS"/>
++            <Parameter name="Verbosity"                                     type="int"      value="47"/>
++            <Parameter name="Output Frequency"                              type="int"      value="1"/>
++            <Parameter name="Output Style"                                  type="int"      value="1"/>
++            <Parameter name="Show Maximum Residual Norm Only"               type="bool"     value="false"/>
++        </ParameterList>
++        <ParameterList name="Flexible GMRES">
++            <Parameter name="Num Blocks"                                    type="int"      value="200"/>
++            <Parameter name="Maximum Iterations"                            type="int"      value="200"/>
++            <Parameter name="Maximum Restarts"                              type="int"      value="0"/>
++            <Parameter name="Block Size"                                    type="int"      value="1"/>
++            <Parameter name="Adaptive Block Size"                           type="bool"     value="true"/>
++            <Parameter name="Convergence Tolerance"                         type="double"   value="1.0e-6"/>
++            <!--
++             <Parameter name="Implicit Residual Scaling"                    type="string"   value=""/>
++             <Parameter name="Explicit Residual Scaling"                    type="string"   value=""/>
++             -->
++            <Parameter name="Orthogonalization"                             type="string"   value="DGKS"/>
++            <Parameter name="Verbosity"                                     type="int"      value="47"/>
++            <Parameter name="Output Frequency"                              type="int"      value="1"/>
++            <Parameter name="Output Style"                                  type="int"      value="1"/>
++            <Parameter name="Show Maximum Residual Norm Only"               type="bool"     value="false"/>
++        </ParameterList>
++    </ParameterList>
++    
++    <ParameterList name="GDSWPreconditioner">
++        <Parameter name="Dimension"                                         type="int"      value="2"/>
++        <Parameter name="DofsPerNode"                                       type="int"      value="1"/>
++        <Parameter name="DofOrdering"                                       type="string"   value="NodeWise"/>
++        <Parameter name="Overlap"                                           type="int"      value="1"/>
++        
++        <ParameterList name="OneLevelOperator">
++            <ParameterList name="Solver">
++                <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
++                <Parameter name="Solver"                                    type="string"   value="Klu"/>
++                <ParameterList name="Amesos">
++                    <Parameter name="MatrixProperty"                        type="string"   value="general"/>
++                    <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
++                    <Parameter name="PrintTiming"                           type="bool"     value="false"/>
++                    <Parameter name="PrintStatus"                           type="bool"     value="false"/>
++                    <Parameter name="MaxProcs"                              type="int"      value="1"/>
++                    <Parameter name="OutputLevel"                           type="int"      value="1"/>
++                    <!-- Mumps -->
++                    <ParameterList name="mumps">
++                        <Parameter name="ICNTL(2)"                          type="int"      value="-1"/>
++                        <Parameter name="ICNTL(3)"                          type="int"      value="-1"/>
++                        <Parameter name="ICNTL(14)"                         type="int"      value="20"/>
++                    </ParameterList>
++                </ParameterList>
++                <ParameterList name="Amesos2">
++                    
++                </ParameterList>
++            </ParameterList>
++        </ParameterList>
++        
++        <ParameterList name="GDSWOperator">
++            <ParameterList name="Blocks">
++                <ParameterList name="1">
++                    <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
++                    <Parameter name="Rotations"                             type="bool"     value="false"/>
++                    <ParameterList name="Custom">
++                        <Parameter name="Vertices: translations"            type="bool"     value="true"/>
++                        <Parameter name="ShortEdges: translations"          type="bool"     value="true"/>
++                        <Parameter name="ShortEdges: rotations"             type="bool"     value="true"/>
++                        <Parameter name="StraightEdges: translations"       type="bool"     value="true"/>
++                        <Parameter name="StraightEdges: rotations"          type="bool"     value="true"/>
++                        <Parameter name="Edges: translations"               type="bool"     value="true"/>
++                        <Parameter name="Edges: rotations"                  type="bool"     value="true"/>
++                        <Parameter name="Faces: translations"               type="bool"     value="true"/>
++                        <Parameter name="Faces: rotations"                  type="bool"     value="true"/>
++                    </ParameterList>
++                </ParameterList>
++            </ParameterList>
++            
++            <ParameterList name="ExtensionSolver">
++                <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
++                <Parameter name="Solver"                                    type="string"   value="Klu"/>
++                <ParameterList name="Amesos">
++                    <Parameter name="MatrixProperty"                        type="string"   value="general"/>
++                    <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
++                    <Parameter name="PrintTiming"                           type="bool"     value="false"/>
++                    <Parameter name="PrintStatus"                           type="bool"     value="false"/>
++                    <Parameter name="MaxProcs"                              type="int"      value="1"/>
++                    <Parameter name="OutputLevel"                           type="int"      value="1"/>
++                    <!-- Mumps -->
++                    <ParameterList name="mumps">
++                        <Parameter name="ICNTL(2)"                          type="int"      value="-1"/>
++                        <Parameter name="ICNTL(3)"                          type="int"      value="-1"/>
++                        <Parameter name="ICNTL(14)"                         type="int"      value="20"/>
++                    </ParameterList>
++                </ParameterList>
++                <ParameterList name="Amesos2">
++                    
++                </ParameterList>
++            </ParameterList>
++            
++            <ParameterList name="Distribution">
++                <Parameter name="Type"                                      type="string"   value="linear"/>
++                <Parameter name="GatheringSteps"                            type="int"      value="1"/>
++                <Parameter name="NumProcs"                                  type="int"      value="1"/>
++                <!-- How to use NumProcs
++                 -> 0 stands for all processes
++                 -> 1 stands for 1 process
++                 -> -1 stands corresponds to MaxProcs -1 from Mumps
++                 -> n stands for a factor of 1/n
++                 -> -n stands for the n-th root
++                 -->
++                <Parameter name="Factor"                                    type="double"   value="1.0"/>
++                <!-- NumProcs = Factor * NumProcs -->
++            </ParameterList>
++            
++            <ParameterList name="CoarseSolver">
++                <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
++                <Parameter name="Solver"                                    type="string"   value="Klu"/>
++                <ParameterList name="Amesos">
++                    <Parameter name="MatrixProperty"                        type="string"   value="general"/>
++                    <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
++                    <Parameter name="PrintTiming"                           type="bool"     value="false"/>
++                    <Parameter name="PrintStatus"                           type="bool"     value="false"/>
++                    <Parameter name="MaxProcs"                              type="int"      value="1"/>
++                    <Parameter name="OutputLevel"                           type="int"      value="1"/>
++                    <!-- Mumps -->
++                    <ParameterList name="mumps">
++                        <Parameter name="ICNTL(2)"                          type="int"      value="-1"/>
++                        <Parameter name="ICNTL(3)"                          type="int"      value="-1"/>
++                        <Parameter name="ICNTL(14)"                         type="int"      value="20"/>
++                    </ParameterList>
++                </ParameterList>
++                <ParameterList name="Amesos2">
++                    
++                </ParameterList>
++            </ParameterList>
++            
++        </ParameterList>
++    </ParameterList>
++</ParameterList>
+diff --git a/packages/shylu/shylu_dd/frosch/test/Xpetra_Modelproblems/ParametersRGDSW.xml b/packages/shylu/shylu_dd/frosch/test/Xpetra_Modelproblems/ParametersRGDSW.xml
+new file mode 100644
+index 0000000000..f11f76aa7d
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/test/Xpetra_Modelproblems/ParametersRGDSW.xml
+@@ -0,0 +1,142 @@
++<ParameterList name="LaplacianRGDSW">
++    
++    <ParameterList name="Solver">
++        <Parameter name="Solver"                                            type="string"   value="GMRES"/>
++        <Parameter name="PreconditionerPosition"                            type="string"   value="left"/>
++        <ParameterList name="GMRES">
++            <Parameter name="Num Blocks"                        type="int"      value="200"/>
++            <Parameter name="Maximum Iterations"                type="int"      value="200"/>
++            <Parameter name="Maximum Restarts"                  type="int"      value="0"/>
++            <Parameter name="Block Size"                        type="int"      value="1"/>
++            <Parameter name="Convergence Tolerance"             type="double"   value="1.0e-6"/>
++            <!--
++             <Parameter name="Implicit Residual Scaling"         type="string"   value=""/>
++             -->
++            <Parameter name="Explicit Residual Scaling"         type="string"   value="Norm of Preconditioned Initial Residual"/>
++            <Parameter name="Deflation Quorum"                  type="int"      value="-1"/>
++            <Parameter name="Orthogonalization"                 type="string"   value="DGKS"/>
++            <Parameter name="Verbosity"                         type="int"      value="47"/>
++            <Parameter name="Output Frequency"                  type="int"      value="1"/>
++            <Parameter name="Output Style"                      type="int"      value="1"/>
++            <Parameter name="Show Maximum Residual Norm Only"   type="bool"     value="false"/>
++        </ParameterList>
++        <ParameterList name="Flexible GMRES">
++            <Parameter name="Num Blocks"                        type="int"      value="200"/>
++            <Parameter name="Maximum Iterations"                type="int"      value="200"/>
++            <Parameter name="Maximum Restarts"                  type="int"      value="0"/>
++            <Parameter name="Block Size"                        type="int"      value="1"/>
++            <Parameter name="Adaptive Block Size"               type="bool"     value="true"/>
++            <Parameter name="Convergence Tolerance"             type="double"   value="1.0e-6"/>
++            <!--
++             <Parameter name="Implicit Residual Scaling"         type="string"   value=""/>
++             <Parameter name="Explicit Residual Scaling"         type="string"   value=""/>
++             -->
++            <Parameter name="Orthogonalization"                 type="string"   value="DGKS"/>
++            <Parameter name="Verbosity"                         type="int"      value="47"/>
++            <Parameter name="Output Frequency"                  type="int"      value="1"/>
++            <Parameter name="Output Style"                      type="int"      value="1"/>
++            <Parameter name="Show Maximum Residual Norm Only"   type="bool"     value="false"/>
++        </ParameterList>
++    </ParameterList>
++    
++    <ParameterList name="RGDSWPreconditioner">
++        <Parameter name="Dimension"                                         type="int"      value="3"/>
++        <Parameter name="DofsPerNode"                                       type="int"      value="1"/>
++        <Parameter name="DofOrdering"                                       type="string"   value="NodeWise"/>
++        <Parameter name="Overlap"                                           type="int"      value="1"/>
++        
++        <ParameterList name="OneLevelOperator">
++            <ParameterList name="Solver">
++                <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
++                <Parameter name="Solver"                                    type="string"   value="Klu"/>
++                <ParameterList name="Amesos">
++                    <Parameter name="MatrixProperty"                        type="string"   value="general"/>
++                    <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
++                    <Parameter name="PrintTiming"                           type="bool"     value="false"/>
++                    <Parameter name="PrintStatus"                           type="bool"     value="false"/>
++                    <Parameter name="MaxProcs"                              type="int"      value="1"/>
++                    <Parameter name="OutputLevel"                           type="int"      value="1"/>
++                    <!-- Mumps -->
++                    <ParameterList name="mumps">
++                        <Parameter name="ICNTL(2)"                          type="int"      value="-1"/>
++                        <Parameter name="ICNTL(3)"                          type="int"      value="-1"/>
++                        <Parameter name="ICNTL(14)"                         type="int"      value="20"/>
++                    </ParameterList>
++                </ParameterList>
++                <ParameterList name="Amesos2">
++                    
++                </ParameterList>
++            </ParameterList>
++        </ParameterList>
++        
++        <ParameterList name="RGDSWOperator">
++            <ParameterList name="Blocks">
++                <ParameterList name="1">
++                    <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
++                    <Parameter name="Option"                                type="int"      value="1"/>
++                    <Parameter name="Rotations"                             type="bool"     value="false"/>
++                </ParameterList>
++            </ParameterList>
++            
++            <ParameterList name="ExtensionSolver">
++                <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
++                <Parameter name="Solver"                                    type="string"   value="Klu"/>
++                <ParameterList name="Amesos">
++                    <Parameter name="MatrixProperty"                        type="string"   value="general"/>
++                    <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
++                    <Parameter name="PrintTiming"                           type="bool"     value="false"/>
++                    <Parameter name="PrintStatus"                           type="bool"     value="false"/>
++                    <Parameter name="MaxProcs"                              type="int"      value="1"/>
++                    <Parameter name="OutputLevel"                           type="int"      value="1"/>
++                    <!-- Mumps -->
++                    <ParameterList name="mumps">
++                        <Parameter name="ICNTL(2)"                          type="int"      value="-1"/>
++                        <Parameter name="ICNTL(3)"                          type="int"      value="-1"/>
++                        <Parameter name="ICNTL(14)"                         type="int"      value="20"/>
++                    </ParameterList>
++                </ParameterList>
++                <ParameterList name="Amesos2">
++                    
++                </ParameterList>
++            </ParameterList>
++            
++            <ParameterList name="Distribution">
++                <Parameter name="Type"                                      type="string"   value="linear"/>
++                <Parameter name="GatheringSteps"                            type="int"      value="1"/>
++                <Parameter name="NumProcs"                                  type="int"      value="1"/>
++                <!-- How to use NumProcs
++                 -> 0 stands for all processes
++                 -> 1 stands for 1 process
++                 -> -1 stands corresponds to MaxProcs -1 from Mumps
++                 -> n stands for a factor of 1/n
++                 -> -n stands for the n-th root
++                 -->
++                <Parameter name="Factor"                                    type="double"   value="1.0"/>
++                <!-- NumProcs = Factor * NumProcs -->
++            </ParameterList>
++            
++            <ParameterList name="CoarseSolver">
++                <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
++                <Parameter name="Solver"                                    type="string"   value="Klu"/>
++                <ParameterList name="Amesos">
++                    <Parameter name="MatrixProperty"                        type="string"   value="general"/>
++                    <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
++                    <Parameter name="PrintTiming"                           type="bool"     value="false"/>
++                    <Parameter name="PrintStatus"                           type="bool"     value="false"/>
++                    <Parameter name="MaxProcs"                              type="int"      value="1"/>
++                    <Parameter name="OutputLevel"                           type="int"      value="1"/>
++                    <!-- Mumps -->
++                    <ParameterList name="mumps">
++                        <Parameter name="ICNTL(2)"                          type="int"      value="-1"/>
++                        <Parameter name="ICNTL(3)"                          type="int"      value="-1"/>
++                        <Parameter name="ICNTL(14)"                         type="int"      value="20"/>
++                    </ParameterList>
++                </ParameterList>
++                <ParameterList name="Amesos2">
++                    
++                </ParameterList>
++            </ParameterList>
++            
++        </ParameterList>
++    </ParameterList>
++</ParameterList>
+diff --git a/packages/shylu/shylu_dd/frosch/test/Xpetra_Modelproblems/main.cpp b/packages/shylu/shylu_dd/frosch/test/Xpetra_Modelproblems/main.cpp
+new file mode 100644
+index 0000000000..82bbba07e3
+--- /dev/null
++++ b/packages/shylu/shylu_dd/frosch/test/Xpetra_Modelproblems/main.cpp
+@@ -0,0 +1,229 @@
++//@HEADER
++// ************************************************************************
++//
++//               ShyLU: Hybrid preconditioner package
++//                 Copyright 2012 Sandia Corporation
++//
++// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
++// the U.S. Government retains certain rights in this software.
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++// 1. Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//
++// 2. Redistributions in binary form must reproduce the above copyright
++// notice, this list of conditions and the following disclaimer in the
++// documentation and/or other materials provided with the distribution.
++//
++// 3. Neither the name of the Corporation nor the names of the
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
++// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
++//
++// ************************************************************************
++//@HEADER
++
++//#ifdef HAVE_MPI
++#include <mpi.h>
++#include <Epetra_MpiComm.h>
++
++#include <Epetra_Map.h>
++#include <Epetra_CrsMatrix.h>
++
++#include <Galeri_Maps.h>
++#include <Galeri_CrsMatrices.h>
++
++#include <Teuchos_CommandLineProcessor.hpp>
++#include <Teuchos_XMLParameterListCoreHelpers.hpp>
++
++#include <Xpetra_CrsMatrixWrap.hpp>
++#include <Xpetra_EpetraCrsMatrix.hpp>
++
++#include <BelosOperatorT.hpp>
++#include <BelosXpetraAdapter.hpp>
++#include <BelosSolverFactory.hpp>
++//#include <BelosPseudoBlockGmresSolMgr.hpp>
++
++#include <FROSch_GDSWPreconditioner_def.hpp>
++#include <FROSch_RGDSWPreconditioner_def.hpp>
++
++typedef unsigned UN;
++typedef double SC;
++typedef int LO;
++typedef int GO;
++typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode; // Hier Default verwenden???
++typedef EpetraNode NO;
++
++using namespace std;
++using namespace Teuchos;
++using namespace Xpetra;
++using namespace FROSch;
++using namespace Belos;
++
++int main(int argc, char *argv[])
++{
++	MPI_Init(&argc,&argv);
++
++	{
++
++		Epetra_MpiComm CommWorld(MPI_COMM_WORLD);
++
++		CommandLineProcessor My_CLP;
++
++		int M = 4;
++		My_CLP.setOption("M",&M,"H / h.");
++		int Dimension = 3;
++		My_CLP.setOption("DIM",&Dimension,"Dimension.");
++		int Overlap = 1;
++		My_CLP.setOption("OL",&Overlap,"Overlap.");
++		bool Reduced = false;
++		My_CLP.setOption("RGDSW","GDSW",&Reduced,"Using the reduced coarse space.");
++
++		My_CLP.recogniseAllOptions(true);
++		My_CLP.throwExceptions(false);
++		CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
++		if(parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
++			MPI_Finalize();
++			return 0;
++		}
++
++		int N;
++		MPI_Comm COMM;
++		int color=1;
++		//bool onFirstLevelComm=false;
++		if (Dimension == 2) {
++			N = (int) (pow(CommWorld.NumProc(),1/2.) + 100*numeric_limits<double>::epsilon()); // 1/H
++			if (CommWorld.MyPID()<N*N) {
++				color=0;
++			}
++		} else if (Dimension == 3) {
++			N = (int) (pow(CommWorld.NumProc(),1/3.) + 100*numeric_limits<double>::epsilon()); // 1/H
++			if (CommWorld.MyPID()<N*N*N) {
++				color=0;
++			}
++		} else {
++			assert(false);
++		}
++
++		MPI_Comm_split(CommWorld.Comm(),color,CommWorld.MyPID(),&COMM);
++		RCP<Epetra_MpiComm> Comm(new Epetra_MpiComm(COMM));
++
++		if (color==0) {
++
++			RCP<ParameterList> parameterList;
++			if (!Reduced) {
++				parameterList = getParametersFromXmlFile("ParametersGDSW.xml");
++			} else {
++				parameterList = getParametersFromXmlFile("ParametersRGDSW.xml");
++			}
++			if (Comm->MyPID()==0) {
++				cout << "--------------------------------------------------------------------------------\nPARAMETERS:" << endl;
++				parameterList->print(cout);
++				cout << "--------------------------------------------------------------------------------\n\n";
++			}
++
++			if (Comm->MyPID()==0) cout << "ASSEMBLY...";
++
++			ParameterList GalerList;
++			GalerList.set("nx", N*M);
++			GalerList.set("ny", N*M);
++			GalerList.set("nz", N*M);
++			GalerList.set("mx", N);
++			GalerList.set("my", N);
++			GalerList.set("mz", N);
++
++			RCP<Epetra_Map> UniqueMap;
++			RCP<Epetra_Map> RepeatedMap;
++			RCP<Epetra_CrsMatrix> K;
++
++			if (Dimension==2) {
++				UniqueMap.reset(Galeri::CreateMap("Cartesian2D", *Comm, GalerList));
++				K.reset(Galeri::CreateCrsMatrix("Laplace2D", UniqueMap.get(), GalerList));
++			} else if (Dimension==3) {
++				UniqueMap.reset(Galeri::CreateMap("Cartesian3D", *Comm, GalerList));
++				K.reset(Galeri::CreateCrsMatrix("Laplace3D", UniqueMap.get(), GalerList));
++			}
++
++			EpetraCrsMatrixT<GO,NO> xK(K);
++			RCP<CrsMatrix<SC,LO,GO,NO> > xCrsMat = rcpFromRef(xK);
++			RCP<Matrix<SC,LO,GO,NO> > xMat = rcp(new CrsMatrixWrap<SC,LO,GO,NO>(xCrsMat));
++
++			if (Comm->MyPID()==0) cout << "done" << endl << "CONSTRUCTING PRECONDITIONER...";
++			RCP<SchwarzPreconditioner<SC,LO,GO,NO> > Preconditioner;
++			if (!Reduced) {
++				RCP<GDSWPreconditioner<SC,LO,GO,NO> > TmpPrec(new GDSWPreconditioner<SC,LO,GO,NO>(xMat,sublist(parameterList,"GDSWPreconditioner")));
++				if (Comm->MyPID()==0) cout << "INITIALIZE...";
++				TmpPrec->initialize(Dimension,1);
++				Preconditioner = TmpPrec;
++			} else {
++				RCP<RGDSWPreconditioner<SC,LO,GO,NO> > TmpPrec(new RGDSWPreconditioner<SC,LO,GO,NO>(xMat,sublist(parameterList,"RGDSWPreconditioner")));
++				if (Comm->MyPID()==0) cout << "INITIALIZE...";
++				TmpPrec->initialize(Dimension,1);
++				Preconditioner = TmpPrec;
++			}
++
++			if (Comm->MyPID()==0) cout << "COMPUTE...";
++			Preconditioner->compute();
++			if (Comm->MyPID()==0) cout << "done" << endl << "SOLVING EQUATION SYSTEM...";
++
++			//RCP<Epetra_Operator> matrix = K;
++			RCP<Epetra_MultiVector> solution(new Epetra_MultiVector(*UniqueMap,1));
++			EpetraMultiVectorT<GO,NO> eSolution(solution);
++			RCP<MultiVector<SC,LO,GO,NO> > xSolution = rcpFromRef(eSolution);
++
++			RCP<Epetra_MultiVector> rightHandSide(new Epetra_MultiVector(*UniqueMap,1));
++			EpetraMultiVectorT<GO,NO> eRightHandSide(rightHandSide);
++			RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = rcpFromRef(eRightHandSide);
++
++			xSolution->putScalar(0.0);
++			xRightHandSide->putScalar(1.0);
++
++			RCP<OperatorT<MultiVector<SC,LO,GO,NO> > > OpK = rcp(new XpetraOp<SC, LO, GO, NO>(xMat));
++			RCP<OperatorT<MultiVector<SC,LO,GO,NO> > > OpP = rcp(new XpetraOp<SC, LO, GO, NO>(Preconditioner));
++
++			RCP<LinearProblem<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > > > belosLinearProblem(new LinearProblem<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > >(OpK,xSolution,xRightHandSide));
++			SolverFactory<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > > belosFactory;
++			RCP<ParameterList> solverParameterList = sublist(parameterList,"Solver");
++			RCP<SolverManager<SC,MultiVector<SC,LO,GO,NO>,OperatorT<MultiVector<SC,LO,GO,NO> > > > belosSoverManager = belosFactory.create(solverParameterList->get("Solver","GMRES"),sublist(solverParameterList,solverParameterList->get("Solver","GMRES")));
++			belosSoverManager->setProblem(belosLinearProblem);
++
++			if (!solverParameterList->get("PreconditionerPosition","left").compare("left")) {
++				belosLinearProblem->setLeftPrec(OpP);
++			} else if (!solverParameterList->get("PreconditionerPosition","left").compare("right")) {
++				belosLinearProblem->setRightPrec(OpP);
++			} else {
++				FROSCH_ASSERT(false,"PreconditionerPosition unknown...");
++			}
++
++			belosLinearProblem->setProblem(xSolution,xRightHandSide);
++			belosSoverManager->solve();
++			belosSoverManager->getNumIters();
++
++			if (Comm->MyPID()==0) cout << "done" << endl;
++
++		}
++
++		MPI_Comm_free(&COMM);
++
++	}
++
++	MPI_Finalize();
++
++	return(EXIT_SUCCESS);
++}

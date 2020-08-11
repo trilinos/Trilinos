@@ -1,21 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: pltvcm.f,v 1.3 1993/07/19 17:06:44 gdsjaar Exp $
-C $Log: pltvcm.f,v $
-C Revision 1.3  1993/07/19 17:06:44  gdsjaar
-C Changed hex constants back to preceding X, --needed on cray. Works
-C either way on other systems.
-C
-c Revision 1.2  1993/07/16  17:33:22  gdsjaar
-c Integer constant too big on sun, replaced it with hexadecimal notation
-c
-c Revision 1.1  1993/07/16  16:49:47  gdsjaar
-c Changed plt to library rather than single source file.
-c
 C=======================================================================
       SUBROUTINE PLTVCM(N,MASK,XX0,YY0,XX1,YY1)
       REAL DEVCAP(23)

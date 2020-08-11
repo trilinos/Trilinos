@@ -1,20 +1,15 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: getwav.f,v 1.1 1991/02/21 15:43:25 gdsjaar Exp $
-C $Log: getwav.f,v $
-C Revision 1.1  1991/02/21 15:43:25  gdsjaar
-C Initial revision
-C
       SUBROUTINE GETWAV (MAT, WAVE, NELBLK, LABEL)
       DIMENSION MAT(6,*), WAVE(*)
       DIMENSION IDUM(4), RV(4), KV(4)
       CHARACTER*16 LABEL(*), CV(4)
       CHARACTER*32 PRMPT
-C
+
       WRITE (*, 20)
    20 FORMAT (/,'   Input WAVESPEED, and NAME: ')
       DO 40 IBLK=1,NELBLK

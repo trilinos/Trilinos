@@ -84,7 +84,7 @@ public:
 
   /// Sort the entities in this partition by EntityKey without changing
   /// the number or sizes of buckets.
-  void default_sort_if_needed();
+  void default_sort_if_needed(bool mustSortFacesByNodeIds=false);
   void sort(const EntitySorterBase& sorter);
 
   void set_flag_needs_to_be_sorted(bool flag) { m_updated_since_sort = flag; }

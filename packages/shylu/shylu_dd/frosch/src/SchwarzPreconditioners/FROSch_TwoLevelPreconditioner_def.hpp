@@ -127,7 +127,7 @@ namespace FROSch {
         ////////////
         FROSCH_ASSERT(dofOrdering == NodeWise || dofOrdering == DimensionWise || dofOrdering == Custom,"ERROR: Specify a valid DofOrdering.");
         int ret = 0;
-
+        
         //////////
         // Maps //
         //////////

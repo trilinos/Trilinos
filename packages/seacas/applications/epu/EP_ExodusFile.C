@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -338,9 +338,7 @@ size_t Excn::ExodusFile::get_free_descriptor_count()
 {
 // Returns maximum number of files that one process can have open
 // at one time. (POSIX)
-#if defined(__PUMAGON__)
-  int fdmax = FOPEN_MAX;
-#elif defined(_WIN32)
+#if defined(_WIN32)
   int fdmax = _getmaxstdio();
 #else
   int fdmax = sysconf(_SC_OPEN_MAX);

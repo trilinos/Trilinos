@@ -50,7 +50,8 @@ namespace Tacho {
         const int ierr = Chol<ArgUplo,ArgAlgo>
           ::invoke(member, _A);
 
-        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+        Kokkos::single(Kokkos::PerTeam(member), 
+          [&, ierr]() { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
             _A.set_future();
             r_val = ierr;
           });

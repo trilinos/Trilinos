@@ -2,10 +2,11 @@
 //
 // ***********************************************************************
 //
-//   Zoltan2: A package of combinatorial algorithms for scientific computing
-//                  Copyright 2012 Sandia Corporation
+//                            Sphynx
+//           Copyright 2020 National Technology & Engineering
+//                  Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,10 +24,10 @@
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
 // EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -39,7 +40,6 @@
 //                    Erik Boman        (egboman@sandia.gov)
 //                    Siva Rajamanickam (srajama@sandia.gov)
 //                    Karen Devine      (kddevin@sandia.gov)
-//
 //
 // ***********************************************************************
 //
@@ -517,6 +517,7 @@ namespace Zoltan2 {
     bool isHermitian = true;
     bool relLockTol = false;
     bool lock = false;
+    bool useFullOrtho = true;
 
     // Information to output in a verbose run
     int numfailed = 0;
@@ -533,6 +534,10 @@ namespace Zoltan2 {
     pe = params_->getEntryPtr("sphynx_maxiterations");
     if (pe)
       maxIterations = pe->getValue<int>(&maxIterations);
+
+    pe = params_->getEntryPtr("sphynx_use_full_ortho");
+    if (pe)
+      useFullOrtho = pe->getValue<bool>(&useFullOrtho);
 
   
     // Set Anasazi verbosity level
@@ -558,14 +563,38 @@ namespace Zoltan2 {
     anasaziParams.set("Orthogonalization", ortho);
     anasaziParams.set("Use Locking", lock);
     anasaziParams.set("Relative Locking Tolerance", relLockTol);
-
+    anasaziParams.set("Full Ortho", useFullOrtho);
 
     // Create and set initial vectors
     RCP<mvector_t> ivec( new mvector_t(laplacian_->getRangeMap(), numEigenVectors));
-    Anasazi::MultiVecTraits<scalar_t, mvector_t>::MvRandom(*ivec);
-    for (size_t i = 0; i < ivec->getLocalLength(); i++)
-      ivec->replaceLocalValue(i,0,1.);
-    
+    std::string initialGuess = params_->get("sphynx_initial_guess", "random");
+    if (initialGuess == "random") {
+      // 0-th vector constant 1, rest random
+      Anasazi::MultiVecTraits<scalar_t, mvector_t>::MvRandom(*ivec);
+      ivec->getVectorNonConst(0)->putScalar(1.);
+    }
+    else if (initialGuess == "constants") {
+      // 0-th vector constant 1, other vectors constant per block
+      // Create numEigenVectors blocks, but only use numEigenVectors-1 of them.
+      // This assures orthogonality.
+      ivec->getVectorNonConst(0)->putScalar(1.);
+      for (int j = 1; j < numEigenVectors; j++)
+        ivec->getVectorNonConst(j)->putScalar(0.);
+
+      auto map = laplacian_->getRangeMap();
+      gno_t blockSize = map->getGlobalNumElements() / numEigenVectors;
+      TEUCHOS_TEST_FOR_EXCEPTION(blockSize <= 0, std::runtime_error, "Blocksize too small for \"constants\" initial guess. Try \"random\".");
+
+      for (size_t lid = 0; lid < ivec->getLocalLength(); lid++) {
+        gno_t gid = map->getGlobalElement(lid);
+        for (int j = 1; j < numEigenVectors; j++){
+          if (((j-1)*blockSize <= gid) && (j*blockSize > gid))
+            ivec->replaceLocalValue(lid,j,1.);
+        }
+      }
+    }
+    else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unknown value for \"sphynx_initial_guess\": " << initialGuess);
 
     // Create the eigenproblem to be solved
     using problem_t = Anasazi::BasicEigenproblem<scalar_t, mvector_t, op_t>;
@@ -665,7 +694,7 @@ namespace Zoltan2 {
       Teuchos::ParameterList smootherParamList;
       smootherParamList.set("chebyshev: degree", 3);
       smootherParamList.set("chebyshev: ratio eigenvalue", 7.0);
-      smootherParamList.set("chebyshev: eigenvalue max iterations", 100);
+      smootherParamList.set("chebyshev: eigenvalue max iterations", 10);
       paramList.set("smoother: params", smootherParamList);
       paramList.set("use kokkos refactor", false); 
 
@@ -678,7 +707,7 @@ namespace Zoltan2 {
 	Teuchos::ParameterList coarseParamList;
 	coarseParamList.set("chebyshev: degree", 3);
 	coarseParamList.set("chebyshev: ratio eigenvalue", 7.0);
-	coarseParamList.set("chebyshev: eigenvalue max iterations", 100);
+	coarseParamList.set("chebyshev: eigenvalue max iterations", 10);
 	paramList.set("coarse: params", coarseParamList);
 
 	paramList.set("max levels", 5);

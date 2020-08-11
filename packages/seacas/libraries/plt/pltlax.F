@@ -1,29 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: pltlax.F,v 1.4 2000/10/25 13:36:38 gdsjaar Exp $
-C $Log: pltlax.F,v $
-C Revision 1.4  2000/10/25 13:36:38  gdsjaar
-C Modified intrinsic functions to use generic versions to avoid warnings on SGI 64-bit compiles
-C
-C Revision 1.3  1998/04/01 22:26:36  gdsjaar
-C Added missing needsdoubleescape
-C
-C Revision 1.2  1998/03/24 17:53:11  gdsjaar
-C Missed a couple places where double escapes are needed
-C
-C Revision 1.1  1997/09/10 15:38:05  gdsjaar
-C Some of the axis labelling code needed the 'NeedsDoubleEscape' ifdefs
-C for the Sun (and presumably other) systems. This removes the
-C extraneous trailing '-' on the plot labels.  Needed to change to .f
-C file to .F files and add the necessary code to the Imakefile.
-C
-C Revision 1.1  1993/07/16 16:48:34  gdsjaar
-C Changed plt to library rather than single source file.
-C
 C=======================================================================
       SUBROUTINE PLTLAX(X,Y,XLENG,YLENG,TYPE,MINEXP,MAXEXP,LABEL,UNITS)
       REAL DEVCAP(23)

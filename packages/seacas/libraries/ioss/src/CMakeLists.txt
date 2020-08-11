@@ -1,4 +1,3 @@
-
 IF (${PROJECT_NAME}_ENABLE_Kokkos)
   SET(SEACAS_HAVE_KOKKOS ON)
 ENDIF()
@@ -65,7 +64,9 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
-
+IF (MINGW)
+  target_link_libraries(Ioss psapi)
+ENDIF ()
 
 if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
    # add a target to generate API documentation with Doxygen

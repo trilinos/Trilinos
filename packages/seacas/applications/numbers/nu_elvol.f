@@ -1,20 +1,14 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
-C    See packages/seacas/LICENSE for details
-
-C     $Id: elvol.f,v 1.1 1991/11/06 20:02:49 gdsjaar Exp $
-C     $Log: elvol.f,v $
-C     Revision 1.1  1991/11/06 20:02:49  gdsjaar
-C     Initial revision
 C
+C    See packages/seacas/LICENSE for details
 
       SUBROUTINE ELVOL (NDIM, CRD, DISP, IX, NUMNP, NUMEL, NNODE,
      &     VOLUME)
-C
+
 C     ... ESTIMATE TIMESTEP FOR MESH --- BRICKS ONLY
-C
+
       DIMENSION CRD(NUMNP, *), DISP(numnp, *), IX(NNODE,*)
       DIMENSION GRADOP(8,8)
       REAL volume(*)

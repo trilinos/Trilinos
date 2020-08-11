@@ -89,6 +89,8 @@
 #include "Intrepid_Basis.hpp"
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid_HGRAD_TET_C1_FEM.hpp"
+#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid_HGRAD_TRI_C1_FEM.hpp"
 #include "Intrepid_RealSpaceTools.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_Utils.hpp"
@@ -168,12 +170,15 @@
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
-typedef Sacado::Fad::SFad<double,3>      Fad3; //# ind. vars fixed at 3
 typedef shards::CellTopology             ShardsCellTopology;
 typedef Intrepid::FunctionSpaceTools     IntrepidFSTools;
 typedef Intrepid::RealSpaceTools<double> IntrepidRSTools;
 typedef Intrepid::CellTools<double>      IntrepidCTools;
 typedef Intrepid::FieldContainer<double> IntrepidFieldContainer;
+
+
+// Number of dimensions
+int spaceDim;
 
 /**********************************************************************************/
 /******** FUNCTION DECLARATIONS FOR EXACT SOLUTION AND SOURCE TERMS ***************/
@@ -297,6 +302,8 @@ void getBasis(Teuchos::RCP<Intrepid::Basis<double,IntrepidFieldContainer > > &ba
                const ShardsCellTopology & cellTopology,
                int order);
 
+int getDimension(const ShardsCellTopology & cellTopology);
+
 /**********************************************************************************/
 /**********************************************************************************/
 /**********************************************************************************/
@@ -347,7 +354,7 @@ int main(int argc, char *argv[]) {
   Teuchos::CommandLineProcessor clp(false);
 
   std::string optMeshFile = "unit_cube_10int_hex.exo";
-  clp.setOption("mesh",  &optMeshFile, "Exodus hexahedral or tetrahedral mesh file with nodeset define for boundary");
+  clp.setOption("mesh",  &optMeshFile, "Exodus hexahedra, tetrahedral, quadrilateral or triangle mesh file with nodeset define for boundary");
   std::string optXmlFile  = "";
   clp.setOption("xml",   &optXmlFile,  "xml file containing ML solver options");
   bool optPrintLocalStats = false; clp.setOption("localstats", "nolocalstats", &optPrintLocalStats, "print per-process statistics");
@@ -428,10 +435,6 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /*********************************** READ MESH ************************************/
   /**********************************************************************************/
-
-  // 3-D meshes only
-   int spaceDim = 3;
-
   stk::io::StkMeshIoBroker broker(Comm.GetMpiComm());
   broker.property_add(Ioss::Property("MAXIMUM_NAME_LENGTH", 180));
   broker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "rcb"));
@@ -517,9 +520,12 @@ int main(int argc, char *argv[]) {
     else if(part.primary_entity_rank() == ELEMENT_RANK) {
       // Here the topology is defined from the mesh. Note that it is assumed
       // that all parts with elements (aka ELEMENT_RANK) have the same topology type
-      cellType = stk::mesh::get_cell_topology(metaData.get_topology( part ));
+      auto myCell = stk::mesh::get_cell_topology(metaData.get_topology( part ));
+      if(myCell.getCellTopologyData()) {
+	cellType =  myCell;
+      }
     }
-
+    
   } // end loop over mesh parts
 
   int numNodesPerElem = cellType.getNodeCount();  
@@ -563,6 +569,7 @@ int main(int argc, char *argv[]) {
   // Define cubature of the specified degree for the cellType
   Intrepid::DefaultCubatureFactory<double>  cubFactory;
   int cubDegree = 2;
+
   RCP<Intrepid::Cubature<double> > cellCubature = cubFactory.create(cellType, cubDegree);
 
   int cubDim       = cellCubature -> getDimension();
@@ -586,6 +593,7 @@ int main(int argc, char *argv[]) {
 
   // Select basis from the cell topology
   int order = 1;
+  spaceDim = getDimension(cellType);
   RCP<Intrepid::Basis<double, IntrepidFieldContainer > >  HGradBasis;
   getBasis(HGradBasis, cellType, order);
 
@@ -624,7 +632,7 @@ int main(int argc, char *argv[]) {
   /******************************** STASH COORDINATES *******************************/
   /**********************************************************************************/
   // Put coordinates in multivector for output
-  Epetra_MultiVector nCoord(globalMapG,3);    
+  Epetra_MultiVector nCoord(globalMapG,spaceDim);    
   // Loop over elements
   
   for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
@@ -640,7 +648,8 @@ int main(int argc, char *argv[]) {
 	int lid = globalMapG.LID((int)bulkData.identifier(nodes[inode]) -1);
 	nCoord[0][lid] = coord[0];
 	nCoord[1][lid] = coord[1];
-	nCoord[2][lid] = coord[2];
+	if(spaceDim==3)
+	  nCoord[2][lid] = coord[2];
       }
     }      
   } // end loop over elements
@@ -704,7 +713,7 @@ int main(int argc, char *argv[]) {
           double *coord = stk::mesh::field_data(*coords, nodes[inode]);
           cellWorkset(cellCounter, inode, 0) = coord[0];
           cellWorkset(cellCounter, inode, 1) = coord[1];
-          cellWorkset(cellCounter, inode, 2) = coord[2];
+          if(spaceDim==3) cellWorkset(cellCounter, inode, 2) = coord[2];
         }
         cellCounter++;
       }
@@ -909,7 +918,7 @@ int main(int argc, char *argv[]) {
       // look up exact value of function on boundary
       double x  = coord[0];
       double y  = coord[1];
-      double z  = coord[2];
+      double z  = (spaceDim==3) ? coord[2] : 0;
       lhsVector[lid]=rhsVector[0][lid]=exactSolution(x, y, z);
     }
   } // end loop over boundary nodes
@@ -953,7 +962,7 @@ int main(int argc, char *argv[]) {
       // look up exact value of function on boundary
       double x  = coord[0];
       double y  = coord[1];
-      double z  = coord[2];
+      double z  = (spaceDim==3) ? coord[2] : 0;
       int gNodeId = bulkData.identifier(node) - 1;
       //exactNodalVals[0][gNodeId]=exactSolution(x, y, z);
       int lid = globalMapG.LID(gNodeId);
@@ -1097,7 +1106,8 @@ void evaluateMaterialTensor(ArrayOut &        matTensorValues,
 
       double x = evaluationPoints(cell, pt, 0);
       double y = evaluationPoints(cell, pt, 1);
-      double z = evaluationPoints(cell, pt, 2);
+      double z = 0.0;
+      if(spaceDim==3) z = evaluationPoints(cell, pt, 2);
 
       materialTensor<double>(material, x, y, z);
 
@@ -1122,8 +1132,10 @@ void evaluateSourceTerm(ArrayOut &       sourceTermValues,
     for(int pt = 0; pt < numPoints; pt++){
 
       Sacado::Fad::SFad<double,3> x = evaluationPoints(cell, pt, 0);
-      Sacado::Fad::SFad<double,3> y = evaluationPoints(cell, pt, 1);
-      Sacado::Fad::SFad<double,3> z = evaluationPoints(cell, pt, 2);
+      Sacado::Fad::SFad<double,3> y = evaluationPoints(cell, pt, 1);      
+      Sacado::Fad::SFad<double,3> z;
+      if(spaceDim==3) 
+	z = evaluationPoints(cell, pt, 2);
 
       sourceTermValues(cell, pt) = sourceTerm<Sacado::Fad::SFad<double,3> >(x, y, z).val();
     }
@@ -1143,7 +1155,9 @@ void evaluateExactSolution(ArrayOut &       exactSolutionValues,
 
       double x = evaluationPoints(cell, pt, 0);
       double y = evaluationPoints(cell, pt, 1);
-      double z = evaluationPoints(cell, pt, 2);
+      double z=0.0;
+      if(spaceDim==3) 
+	z = evaluationPoints(cell, pt, 2);
 
       exactSolutionValues(cell, pt) = exactSolution<double>(x, y, z);
     }
@@ -1167,7 +1181,9 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 
       double x = evaluationPoints(cell, pt, 0);
       double y = evaluationPoints(cell, pt, 1);
-      double z = evaluationPoints(cell, pt, 2);
+      double z = 0.0;
+      if(spaceDim==3)
+	z = evaluationPoints(cell, pt, 2);
 
       exactSolutionGrad<double>(gradient, x, y, z);
 
@@ -1296,17 +1312,33 @@ void getBasis(Teuchos::RCP<Intrepid::Basis<double,IntrepidFieldContainer > > &ba
          basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_HEX_C1_FEM<double, IntrepidFieldContainer > );
          break;
 
+       case shards::Triangle<3>::key:
+         basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_TRI_C1_FEM<double, IntrepidFieldContainer > );
+         break;
+
+       case shards::Quadrilateral<4>::key:
+         basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double, IntrepidFieldContainer > );
+         break;
+
+
        default:
-         TEUCHOS_TEST_FOR_EXCEPTION( ( (cellTopology.getKey() != shards::Tetrahedron<4>::key)             &&
-                               (cellTopology.getKey() != shards::Hexahedron<8>::key) ),
-                                std::invalid_argument,
-                               "Unknown cell topology for basis selction. Please use Hexahedron_8 or Tetrahedron_4.");
+         TEUCHOS_TEST_FOR_EXCEPTION(1,std::invalid_argument,
+				    "Unknown cell topology for basis selction. Please use Hexahedron_8 or Tetrahedron_4, Quadrilateral_4 or Triangle_3");
 
      }
 
 }
 
-
-
-
-
+int getDimension( const ShardsCellTopology & cellTopology) {
+  switch (cellTopology.getKey()) {    
+  case shards::Tetrahedron<4>::key:
+  case shards::Hexahedron<8>::key:
+    return 3;
+  case shards::Triangle<3>::key:
+  case shards::Quadrilateral<4>::key:
+    return 2;
+  default:
+    TEUCHOS_TEST_FOR_EXCEPTION(1,std::invalid_argument,
+			       "Unknown cell topology for basis selction. Please use Hexahedron_8 or Tetrahedron_4, Quadrilateral_4 or Triangle_3");    
+  }
+}

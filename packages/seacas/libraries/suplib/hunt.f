@@ -1,16 +1,16 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
       subroutine hunt(a,n,x,jlo)
 
 C ... find jlo such that a(jlo) .le. x .and. a(jlo+1) .gt. x
 C     (if jlo .ne. n)
-C
+
 C     Start search at passed in 'jlo' position
-C
+
       DIMENSION a(n)
 
       integer jlo, low, high

@@ -1,51 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Log: chkerr.f,v $
-C Revision 1.3  2009/03/25 12:36:42  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.2  1997/11/11 14:55:53  gdsjaar
-C Added 'external blkdat' to main program to ensure that the block data
-C gets linked into the executable. Wasn't happening on dec alpha
-C systems.
-C
-C Removed unreachable lines in several routines
-C
-C Fixed variable name spelling in contor.f
-C
-C Unsplit strings that were split across lines
-C
-C Removed old error variables left over from exodusIIv1
-C
-C Upped version number
-C
-C Revision 1.1  1994/04/07 19:55:29  gdsjaar
-C Initial checkin of ACCESS/graphics/blotII2
-C
-c Revision 1.3  1993/07/28  15:58:32  gdsjaar
-c Fixed junky looking output
-c
-c Revision 1.2  1993/07/27  20:27:18  gdsjaar
-c Added error checking, set to non-verbose exodus II file opening,
-c cleaned up dbiv0 routine, removed some unused variables.
-c
-c Revision 1.1  1993/07/27  19:35:17  gdsjaar
-c Added file for error checking in exodus II calls.
-c
-c Revision 1.3  1993/06/24  15:27:20  gdsjaar
-c Added more error flags and messages.
-c
-c Revision 1.2  1993/03/03  17:44:44  gdsjaar
-c Fixed problem with assumed length strings.
-c
-c Revision 1.1  1992/06/08  22:23:07  gdsjaar
-c New routine to check error status of exo2 library calls
-c
 C=======================================================================
       subroutine chkerr (routine, caller, ierr)
 C=======================================================================

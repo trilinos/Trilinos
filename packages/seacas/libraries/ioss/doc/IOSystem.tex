@@ -161,7 +161,7 @@ element model and can transfer bulk data to/from the database from/to
 the Sierra datastructures. It also contains metadata about that portion
 of the finite element model. Each specific
 \code{GroupingEntity} type has a few required properties and
-fields and some optional properties and fields. 
+fields and some optional properties and fields.
 
 The \code{Ioss::GroupingEntity}'s define the basic finite
 element model. For example, a model with two element blocks, a nodeset,
@@ -232,7 +232,7 @@ Int \code{size\_} -- The number of bytes required to store
 the entire \code{Field}. Equal to \code{rawCount\_
 * sizeof(type\_) * (rawStorage\_ components)}. }
 \item {
-std::vector{\textless} Iotr::Transform * {\textgreater} 
+std::vector{\textless} Iotr::Transform * {\textgreater}
 \code{ransforms\_} -- A list of transforms which are
 applied to this field. \textit{Note that the transforms are implemented
 at the Field level, but are not yet functional in Sierra
@@ -285,7 +285,7 @@ nature. Examples would be element connectivity or nodal coordinates.
 \item [\code{ATTRIBUTE}] A field which is used to define an attribute
 on an \code{EntityBlock} derived class.  Examples would be thickness
 of the elements in a shell element block or the radius of particles in
-a particle element block. 
+a particle element block.
 \item [\code{TRANSIENT}] A field which is typically calculated
 at multiple steps or times in an analysis. These are typically
 ``results'' data. Examples would be nodal displacement or element
@@ -387,7 +387,7 @@ All classes derived from \code{EntityBlock} provide the properties:
 And the fields:
 \begin{quote}
 \begin{tabular}{lll}
-\code{ids}          & (Integer) & scalar \\ 
+\code{ids}          & (Integer) & scalar \\
 \code{connectivity} & (Integer) & topology\_node\_count \\
 \end{tabular}
 \end{quote}
@@ -649,7 +649,7 @@ coordinate example above, the local position of global node `5' is `2'.
 If the boolean `\code{must\_exist}' is true, then it is an
 error if the specified node does not exist; otherwise if
 \code{must\_exist} is false, then the function returns `0' if
-a node with that global id does not exist. 
+a node with that global id does not exist.
 \item [\code{virtual int  maximum\_symbol\_length()}]-- Return
 the maximum length of the `field names' that the database can handle;
 return 0 if it is unlimited. This is used by the restart system which
@@ -726,17 +726,17 @@ itself. This is currently handled via an
 
 \begin{source}
  namespace IoXX \{
- 
+
  \ \ const IOFactory* IOFactory::factory()\{
  \ \ \ \ static IOFactory registerThis;
  \ \ \ \ return \&registerThis;
  \ \ \}
- 
+
  \ \ IOFactory::IOFactory()
  \ \ \ \ : Ioss::IOFactory({\textquotedbl}database\_type{\textquotedbl}) \{
  \ \ \ \ Ioss::IOFactory::alias({\textquotedbl}database\_type{\textquotedbl}, {\textquotedbl}alias\_for\_database\_type{\textquotedbl});
  \ \ \}
- 
+
  \ \ Ioss::DatabaseIO* IOFactory::make\_IO(const std::string\& filename,
  \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Ioss::EventInterest db\_usage) const
  \ \ \{ return new DatabaseIO(NULL, filename, db\_usage); \}
@@ -794,8 +794,8 @@ library. For example, the \code{ioex} library (exodusII)
 requires the exodusII,  nemesis, and netcdf libraries and that is specified as:
 \begin{source}
 lib ioex
-  : 
-    [ glob $(io_system-root)/src/exodusII/*.C ] 
+  :
+    [ glob $(io_system-root)/src/exodusII/*.C ]
     ioss
     /sierra/utility//utility
     /tpl/exodus//exodus
@@ -817,8 +817,8 @@ will be used. Later on in the file, the Ioex library build
 instructions are defined as:
 \begin{source}
 lib ioex
-  : 
-    [ glob $(io_system-root)/src/exodusII/*.C ] 
+  :
+    [ glob $(io_system-root)/src/exodusII/*.C ]
     ioss
     /sierra/utility//utility
     /tpl/exodus//exodus
@@ -841,8 +841,8 @@ an application that uses the IO libraries.  The build system is told
 this in the following code block for the \code{io\_shell} executable:
 \begin{source}
 exe io_shell
-  : 
-    $(io_system-root)/src/main/Main_io_shell.C 
+  :
+    $(io_system-root)/src/main/Main_io_shell.C
     ioinit
     ioss
     iotr

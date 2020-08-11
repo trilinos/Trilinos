@@ -192,7 +192,7 @@ namespace FROSch {
                 if (this->Verbose_) cerr << "MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getDomainMap().isSameAs(OperatorVector_[0]->getDomainMap())\n";
                 ret -= 1;
             }
-            if (!op->getRangeMap()->isSameAs(*OperatorVector_[0]->getRangeMap())){
+            if (!op->getRangeMap()->isSameAs(*OperatorVector_[0]->getRangeMap())) {
                 if (this->Verbose_) cerr << "MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())\n";
                 ret -= 10;
             }
@@ -226,7 +226,7 @@ namespace FROSch {
             if (this->Verbose_) cerr << "MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getDomainMap().isSameAs(OperatorVector_[0]->getDomainMap())\n";
             ret -= 1;
         }
-        if (!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())){
+        if (!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())) {
             if (this->Verbose_) cerr << "MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())\n";
             ret -= 10;
         }

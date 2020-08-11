@@ -244,7 +244,13 @@ atdm_config_add_libs_to_var ATDM_CONFIG_BOOST_LIBS ${BOOST_ROOT}/lib .a \
 # However, set the direct libs for HDF5 and NetCDF in case we use that option
 # for building (see env var ATDM_CONFIG_USE_SPARC_TPL_FIND_SETTINGS).
 
-export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
+if [[ "${ATDM_CONFIG_USE_MPI}" == "ON" ]] ; then
+  USE_HDF5_ROOT="${HDF5_ROOT}"
+else
+  USE_HDF5_ROOT="${SPARC_SERIAL_HDF5_ROOT}"
+fi
+
+export ATDM_CONFIG_HDF5_LIBS="-L${USE_HDF5_ROOT}/lib;${USE_HDF5_ROOT}/lib/libhdf5_hl.a;${USE_HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 
 if [[ "${PNETCDF_ROOT}" == "" ]] ; then
   export PNETCDF_ROOT=${NETCDF_ROOT}

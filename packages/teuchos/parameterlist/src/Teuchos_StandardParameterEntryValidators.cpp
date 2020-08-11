@@ -307,7 +307,7 @@ long long AnyNumberParameterEntryValidator::getLongLong(
   if( acceptedTypes_.allowLongLong() && anyValue.type() == typeid(long long) )
     return any_cast<long long>(anyValue);
   if( acceptedTypes_.allowDouble() && anyValue.type() == typeid(double) )
-    return as<int>(any_cast<double>(anyValue));
+    return as<long long>(any_cast<double>(anyValue));
   if( acceptedTypes_.allowString() && anyValue.type() == typeid(std::string) )
     return convertStringToLongLong(any_cast<std::string>(anyValue));
   throwTypeError(entry,paramName,sublistName);

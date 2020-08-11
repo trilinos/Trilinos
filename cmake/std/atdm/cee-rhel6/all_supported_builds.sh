@@ -8,14 +8,26 @@ if [[ "${HOSTNAME}" == "ascicgpu"* ]] ; then
   export ATDM_CONFIG_ALL_SUPPORTED_BUILDS=(
     cee-rhel6_cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3_shared_opt # SPARC Nightly build
     cee-rhel6_cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3_shared_dbg # SPARC Nightly build
+    ### SPARC MINI BUILDS ####
+    cee-rhel6_mini_cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3_static_opt
+    cee-rhel6_mini_cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3_static_dbg
+    cee-rhel6_mini-no-mpi_cuda-10.1.243_gcc-7.2.0_static_opt
     )
 else
   export ATDM_CONFIG_ALL_SUPPORTED_BUILDS=(
-    #cee-rhel6_clang-9.0.1_openmpi-4.0.3_serial_static_dbg    # SPARC has installs with this build
+    #cee-rhel6_clang-9.0.1_openmpi-4.0.3_serial_static_dbg     # SPARC has installs with this build
     cee-rhel6_clang-9.0.1_openmpi-4.0.3_serial_static_opt      # SPARC CI build
     cee-rhel6_gnu-7.2.0_openmpi-4.0.3_serial_shared_opt        # SPARC CI build
     cee-rhel6_intel-18.0.2_mpich2-3.2_openmp_static_opt        # SPARC CI build
     cee-rhel6_intel-19.0.3_intelmpi-2018.4_serial_static_opt   # SPARC Nightly bulid
+    cee-rhel6_mini_clang-9.0.1_openmpi-4.0.3_serial_static_opt
+    #### SPARC MINI BUILDS ####
+    cee-rhel6_mini_gnu-7.2.0_openmpi-4.0.3_serial_static_opt
+    cee-rhel6_mini_clang-9.0.1_openmpi-4.0.3_serial_static_opt
+    cee-rhel6_mini-no-mpi_gnu-7.2.0_serial_static_opt
+    cee-rhel6_mini-no-mpi_clang-9.0.1_serial_static_opt
+    cee-rhel6_mini_intel-18.0.2_mpich2-3.2_static_opt
+    cee-rhel6_mini-no-mpi_intel-18.0.2_mpich2-3.2_static_opt
     )
 fi
 

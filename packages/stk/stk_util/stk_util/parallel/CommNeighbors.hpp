@@ -62,6 +62,10 @@
 #if OMPI_MAJOR_VERSION == 2
 #undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
 #endif
+#if OMPI_MAJOR_VERSION == 10
+//This is the IBM Spectrum MPI, which also has slow MPI_Neighbor functions.
+#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
+#endif
 
 #endif
 
@@ -73,7 +77,6 @@
 #ifdef __INTEL_COMPILER
 #undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
 #endif
-#define STK_MPI_SUPPORTS_NEIGHBOR_COMM
 
 //Finally: if the user explicitly enables or disables mpi-neighbor-comm
 //by defining one of the following macros (e.g., with cmake option or with
@@ -141,6 +144,10 @@ public:
    *  Sets 'size() == 0' and 'remaining() == capacity()'.
    */
   void reset_buffers();
+
+  /** send procs become recv procs, send buffers become recv buffers...
+  */
+  void swap_send_recv();
 
   virtual ~CommNeighbors();
 

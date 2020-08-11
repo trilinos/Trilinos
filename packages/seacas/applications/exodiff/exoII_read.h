@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef EXOII_READ_H
@@ -190,7 +190,7 @@ protected:
   Side_Set<INT> * ssets{nullptr};   // Array.
 
   double *nodes{nullptr}; // Matrix;  dimension by num_nodes (row major form).
-                 //          I.e., all x's then all y's, etc.
+                          //          I.e., all x's then all y's, etc.
 
   INT *node_map{nullptr};   // Array; num_nodes long when filled.
   INT *elmt_map{nullptr};   // Array; num_elmts long when filled.
@@ -205,12 +205,12 @@ protected:
   std::vector<std::string> ns_vars;
   std::vector<std::string> ss_vars;
 
-  int      num_times{0};
+  int     num_times{0};
   double *times{nullptr};
 
-  int      cur_time{0};    // Current timestep number of the results (0 means none).
+  int      cur_time{0};          // Current timestep number of the results (0 means none).
   double **results{nullptr};     // Array of pointers (to arrays of results data);
-                        // length is number of nodal variables.
+                                 // length is number of nodal variables.
   double *global_vals{nullptr};  // Array of global variables for the current timestep.
   double *global_vals2{nullptr}; // Array of global variables used if interpolating.
 

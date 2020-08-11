@@ -93,8 +93,8 @@ namespace FROSch {
         DDInterface_->resetGlobalDofs(dofsMaps);
         Volumes_ = DDInterface_->getInterior()->deepCopy();
 
-        this->LocalPartitionOfUnity_ = XMultiVectorPtrVecPtr(1);
-        this->PartitionOfUnityMaps_ = XMapPtrVecPtr(1);
+        this->LocalPartitionOfUnity_ = ConstXMultiVectorPtrVecPtr(1);
+        this->PartitionOfUnityMaps_ = ConstXMapPtrVecPtr(1);
     }
 
     template <class SC,class LO,class GO,class NO>

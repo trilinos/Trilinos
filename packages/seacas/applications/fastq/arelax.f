@@ -1,18 +1,17 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: arelax.f,v 1.2 1999/06/17 19:16:50 gdsjaar Exp $
       SUBROUTINE ARELAX (MXND, XN, YN, LXK, KXL, NXL, LLL, ARFACT)
 C***********************************************************************
-C
+
 C  SUBROUTINE ARELAX = CALCULATES UNDER - RELAXATION FACTOR FOR AREA PULL
 C                      AND LAPLACIAN SMOOTHER
-C
+
 C***********************************************************************
-C
+
 C  NOTE:
 C     THE AREA PULL AND LAPLACIAN SMOOTHER WILL OVER - CORRECT
 C     AND BECOME UNSTABLE WHEN TYPICAL MESH ELEMENTS ARE MUCH
@@ -26,23 +25,23 @@ C     SITUATIONS AN ALTERNATE SMOOTHER  (SUCH AS THE CENTROID - AREA -
 C     PULL) SHOULD BE USED.
 C     THE FACTOR RETURNED BY THIS ROUTINE MAY BE LARGER THAN ONE,
 C     WHICH MEANS THAT OVER - RELAXATION IS APPROPRIATE.
-C
+
 C***********************************************************************
-C
+
       DIMENSION NODES (4), LXK (4, MXND), KXL (2, 3 * MXND)
       DIMENSION NXL (2, 3 * MXND)
       DIMENSION XN (MXND), YN (MXND)
-C
+
       LOGICAL CCW
-C
+
       ARFACT = 1.0
       RATSUM = 0.
       NUM = 0
-C
+
       DO 100 MYL = 1, LLL
-C
+
 C  SKIP BOUNDARY LINES
-C
+
          IF (KXL(1, myL) .gt. 0 .and. KXL (2, myL) .GT. 0) THEN
             CCW = .TRUE.
             CALL GNXKA (MXND, XN, YN, KXL (1, MYL), NODES, AREA1, LXK,
@@ -61,11 +60,11 @@ C
             ENDIF
          ENDIF
   100 CONTINUE
-C
+
       IF (NUM .LE. 0) RETURN
       ASPECT = RATSUM / DBLE(NUM)
       ARFACT = AMIN1 (2.0 / ASPECT, 1.5)
-C
+
       RETURN
-C
+
       END

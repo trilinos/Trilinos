@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -55,7 +55,7 @@ C      --These parameters define the mesh display (see MSHLIN of /MSHOPT/)
       include 'sizes.blk'
       include 'linthc.blk'
       include 'sphele.blk'
-C
+
 C=======================================================================
 C                             D E T O U R
 
@@ -80,7 +80,6 @@ C                        P A T H L I N E
       include 'lnvars.blk'
 C=======================================================================
 C                             T P L O T
-
 
       include 'tpvars.blk'
 C=======================================================================

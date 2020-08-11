@@ -476,6 +476,8 @@ namespace FROSch {
                 }
             }
 
+            NumEntity_ = globalVec;
+
             if (Verbose_) {
                 cout
                 << "\n" << setw(FROSCH_INDENT) << " "
@@ -716,6 +718,12 @@ namespace FROSch {
     typename DDInterface<SC,LO,GO,NO>::EntitySetPtrConstVecPtr & DDInterface<SC,LO,GO,NO>::getEntitySetVector() const
     {
         return EntitySetVector_;
+    }
+
+    template <class SC,class LO,class GO,class NO>
+    typename DDInterface<SC,LO,GO,NO>::GOVec DDInterface<SC,LO,GO,NO>::getNumEnt() const
+    {
+        return NumEntity_;
     }
 
     template <class SC,class LO,class GO,class NO>

@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
       block data cdrabc
@@ -24,7 +24,6 @@ C See packages/seacas/LICENSE for details
 
       logical*4 onode
       common /vconod/ onode
-
 
 #if defined(CRAY)
       data kwrdsz /64/
@@ -67,4 +66,3 @@ C to object file on some compilers...
       data kidsiz /0/
       end
 
-C $Id: cdrabc.F,v 1.3 2004/12/09 14:19:03 gdsjaar Exp $

@@ -116,8 +116,8 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(false,"FROSch::GDSWInterfacePartitionOfUnity : ERROR: Specify a valid Type.");
         }
-        this->LocalPartitionOfUnity_ = XMultiVectorPtrVecPtr(5);
-        this->PartitionOfUnityMaps_ = XMapPtrVecPtr(5);
+        this->LocalPartitionOfUnity_ = ConstXMultiVectorPtrVecPtr(5);
+        this->PartitionOfUnityMaps_ = ConstXMapPtrVecPtr(5);
     }
 
     template <class SC,class LO,class GO,class NO>

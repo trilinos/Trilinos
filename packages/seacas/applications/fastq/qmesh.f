@@ -1,67 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: qmesh.f,v 1.8 2007/07/24 13:10:18 gdsjaar Exp $
-C $Log: qmesh.f,v $
-C Revision 1.8  2007/07/24 13:10:18  gdsjaar
-C Fix problem with boundary condition memory overwrite.
-C
-C Remove old ls5 and r25 terminal tests
-C
-C Revision 1.7  2007/04/04 22:00:37  gdsjaar
-C Fix some bugs.
-C
-C Revision 1.6  2004/01/21 05:18:40  gdsjaar
-C Initialized several variables identified by valgrind.
-C
-C Revision 1.5  2000/11/13 15:39:05  gdsjaar
-C Cleaned up unused variables and labels.
-C
-C Removed some real to int conversion warnings.
-C
-C Revision 1.4  1999/06/21 22:43:40  gdsjaar
-C Fixed more uninitialized variables; one was causing core dump on g77
-C compiled executable.
-C
-C VERSN was not consistently defined -- now 10 characters everywhere
-C
-C Updated so full version string output
-C
-C Added capability to debug memory using unit specified in EXT99
-C variable. Similar to STRTUP in SUPLIB
-C
-C Cleaned up some other code
-C
-C Upped version
-C
-C Revision 1.3  1998/09/04 16:17:40  gdsjaar
-C Fixed array bounds read error.
-C
-C Took easy route to fixing lots of uninitialized array memory reads by
-C calling mdfill(0).  It looks like Fastq assumes this in many
-C locations.
-C
-C Revision 1.2  1998/07/14 18:19:47  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.1.1.1  1990/11/30 11:14:07  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:14:04  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.QMESH]QMESH.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE QMESH (A, IA, MP, ML, MS, MR, MSC, MCOM, ICOM, JCOM,
      &   CIN, RIN, IIN, KIN, IUNIT, IDUMP, N, IPOINT, COOR, IPBOUN,
      &   ILINE, LTYPE, NINT, FACTOR, LCON, ILBOUN, ISBOUN, ISIDE, NLPS,
@@ -76,27 +18,20 @@ C
      &   NPNOLD, NPEOLD, NNXK, REMESH, REXMIN, REXMAX, REYMIN, REYMAX,
      &   IDIVIS, SIZMIN, EMAX, EMIN)
 
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO QMESH TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
 C***********************************************************************
-C
+
 C  QMESH: A QUADRILATERAL MESH GENERATION PROGRAM
-C
+
 C***********************************************************************
-C
+
 C  ORIGINALLY WRITTEN BY:
 C     RONDALL E JONES  DIV 2642  SANDIA LABORATORIES  ALBUQUERQUE
 C  REWRITTEN AND UPDATED BY:
 C     TEDDY D. BLACKER  DIV 1522 SANDIA LABORATORIES  ALBUQUERQUE
 C     DECEMBER 1985
-C
+
 C***********************************************************************
-C
+
       DIMENSION A(1), IA(1)
       DIMENSION IPOINT(MP), COOR(2, MP), IPBOUN(MP)
       DIMENSION ILINE(ML), LTYPE(ML), NINT(ML), FACTOR(ML), LCON(3, ML)
@@ -113,27 +48,27 @@ C
       DIMENSION LINKP(2, MP), LINKL(2, ML), LINKS(2, MS), LINKB(2, MS)
       DIMENSION LINKR(2, MR), LINKSC(2, MR), LINKPB(2, MP)
       DIMENSION LINKLB(2, ML), LINKSB(2, ML), IRGFLG(MR)
-C
+
       DIMENSION AMESUR(NPEOLD), XNOLD(NPNOLD), YNOLD(NPNOLD)
       DIMENSION NXKOLD(NNXK, NPEOLD), MMPOLD(3, NPROLD)
       DIMENSION LINKEG(2, MLINK), LISTEG(4 * NPEOLD), BMESUR(NPNOLD)
-C
+
       DIMENSION N(29), CIN(MCOM), IIN(MCOM), RIN(MCOM), KIN(MCOM)
-C
+
       DIMENSION K(30), IDUMMY(1)
-C
+
       CHARACTER*72 SCHEME, DEFSCH, SCHSTR, CIN
       CHARACTER DEV1*3
-C
+
       LOGICAL NOROOM, EVEN, ERR, CCW, IANS, LGROUP
       LOGICAL RECT, REAL, STEP, TEST, REMESH
       LOGICAL BAR, ADDLNK, EIGHT, NINE, PENTAG, TRIANG, TRNSIT, FINAL
       LOGICAL HALFC, COUNT, FILL, ERRCHK, THREE, BATCH, GRAPH
-C
+
       DATA IEXIT, IOVER, IQUIT /1, 2, 3/
-C
+
 C  INITIALIZE
-C
+
       IZ = 0
       IPNTR  = 0
       IPNTR1 = 0
@@ -164,16 +99,16 @@ C
       TRNSIT = .FALSE.
       FILL = .FALSE.
       GRAPH = .FALSE.
-C
+
 C  HEADER
-C
+
       CALL MESAGE (' ')
       CALL MESAGE ('MESH PROCESSING BEGUN')
       CALL MESAGE (' ')
-C
+
 C  FILL IN ANY MISSING INTERVALS ACCORDING TO SIZE AND CHECK THE
 C  VALIDITY OF REGION DATA
-C
+
       ERRCHK = .FALSE.
       DO 130 I = 1, N(9)
          CALL LTSORT (MR, LINKR, ABS(IRPB(I)), IPNTR1, ADDLNK)
@@ -253,10 +188,10 @@ C
          END IF
   130 CONTINUE
       ERRCHK = .TRUE.
-C
+
 C  FIND THE MAXIMUM NUMBER OF LINES/REGION, PERIMETER POINTS/REGION,
 C  AND HOLES/REGION
-C
+
       DO 140 I = 1, N(2)
          MAX1 = MAX0(NINT(I), MAX1)
   140 CONTINUE
@@ -275,16 +210,16 @@ C
       MAXNP = (MAX1 * MAXNL) + 1
       MAXPRM = 1 + MAX4
       MAX3 = MAX3 + 1
-C
+
 C  GET INITIAL SPACE IN ARRAY A FOR PERIMETER GENERATION
-C
+
 C  K(1) = X ARRAY OF THE PERIMETER
 C  K(2) = Y ARRAY OF THE PERIMETER
 C  K(3) = NID ARRAY OF THE PERIMETER
 C  K(4) = LINE LIST
 C  K(5) = NO OF NODES PER SIDE LIST
 C  K(6) = WORK ARRAY FOR M1 GENERATION
-C
+
       CALL MDRSRV ('X', K(1), MAXNP)
       CALL MDRSRV ('Y', K(2), MAXNP)
       CALL MDRSRV ('NID', K(3), MAXNP)
@@ -297,31 +232,25 @@ C
          CALL MDEROR (6)
          STOP ' '
       END IF
-C
+
 C  LOOP THROUGH THE GROUPS/REGIONS AND BAR SETS IN THE BODY LIST
 C  CHECK CONNECTIVITY AND CALCULATE THE DIMENSIONS NEEDED FOR MESHING
 C  NO PERIMETER INFORMATION IS SAVED THIS TIME THROUGH
-C
+
       REAL = .FALSE.
       COUNT = .TRUE.
       DO 210 I = 1, N(9)
          CALL LTSORT (MR, LINKR, ABS(IRPB(I)), IPNTR1, ADDLNK)
          CALL LTSORT (MS, LINKB, ABS(IRPB(I)), IPNTR2, ADDLNK)
-C
+
 C  CHECK A REGION OR GROUP
-C
+
          IF ((IRPB(I) .GT. 0) .AND. (IRPB(I) .LE. N(22)) .AND.
      &      (IPNTR1 .GT. 0)) THEN
             IF (IRGFLG(IPNTR1) .LE. -1) THEN
                WRITE (*, 10000) IRPB(I)
                L = IPNTR1
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO CHKRGN TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
+
                CALL CHKRGN (IA, L, MP, ML, MS, MR, MSC, N(24), IPOINT,
      &            COOR, IPBOUN, ILINE, LTYPE, NINT, FACTOR, LCON,
      &            ILBOUN, ISBOUN, ISIDE, NLPS, IFLINE, ILLIST, IREGN,
@@ -347,13 +276,7 @@ C
                   IF (IPNTR1 .GT. 0) THEN
                      WRITE (*, 10020) ABS(ISLIST(J))
                      L = IPNTR1
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO CHKRGN TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
+
                      CALL CHKRGN (IA, L, MP, ML, MS, MR, MSC, N(24),
      &                  IPOINT, COOR, IPBOUN, ILINE, LTYPE, NINT,
      &                  FACTOR, LCON, ILBOUN, ISBOUN, ISIDE, NLPS,
@@ -372,9 +295,9 @@ C
                   END IF
   180          CONTINUE
             END IF
-C
+
 C  WRITE AN ERROR FOR THIS REGION IN THE BODY LIST
-C
+
          ELSE IF (IRPB(I) .GT. 0) THEN
             WRITE (*, 10030) IRPB(I)
             CALL LTSORT (MR, LINKR, ABS(IRPB(I)), IPNTR, ADDLNK)
@@ -382,9 +305,9 @@ C
             IMINUS = -IPNTR
             CALL LTSORT (MR, LINKR, ABS(IRPB(I)), IMINUS, ADDLNK)
             ADDLNK = .FALSE.
-C
+
 C  CHECK A BAR SET
-C
+
          ELSE IF ((IRPB(I) .LT. 0) .AND. (ABS(IRPB(I)) .LE. N(21))
      &      .AND. (IPNTR2 .GT. 0)) THEN
             L = IPNTR2
@@ -407,13 +330,7 @@ C
                ELSE
                   IP3 = 0
                END IF
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO PLINE TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
+
                CALL PLINE (MP, ML, MAXNP, 1, 1, IPOINT, COOR, LINKP,
      &            ILINE(KK), LTYPE(KK), NINT(KK), FACTOR(KK), IP1, IP2,
      &            IP3, A(K(1)), A(K(2)), IA(K(3)), IPBOUN(IP1),
@@ -437,18 +354,18 @@ C
                NPER = NPER + NINT(KK) + 1
   190       CONTINUE
             IBARST(L) = -IBARST(L)
-C
+
 C  WHEN CHECKING THE MAXIMUMS - ADD ENOUGH FOR ONE MORE INTERVAL
 C  ON THE LINE AS THIS LINE MAY BE INCREMENTED BY ONE IF THE
 C  PERIMETER IS ODD
-C
+
             MAXNBC = MAX0(MAXNBC, KNBC + 3)
             MAXSBC = MAX0(MAXSBC, KSBC + 3)
             MXND = MAX0(MXND, NPER)
             MXNPER = MAX0(MXNPER, NPER + 2)
-C
+
 C  WRITE AN ERROR FOR THIS BAR SET IN THE BODY LIST
-C
+
          ELSE
             WRITE (*, 10060) ABS(IRPB(I))
             ADDLNK = .FALSE.
@@ -460,19 +377,19 @@ C
          END IF
   200    CONTINUE
   210 CONTINUE
-C
+
 C  RESET ALL USED POINTS AND LINES
-C
+
       DO 220 I = 1, N(1)
          IPOINT(I) = ABS(IPOINT(I))
   220 CONTINUE
       DO 230 I = 1, N(2)
          NINT(I) = ABS(NINT(I))
   230 CONTINUE
-C
+
 C  RELEASE THE OLD ARRAYS, AND THEN
 C  DIMENSION BASED ON THE MAXIMUMS CALCULATED
-C
+
       CALL MDDEL ('X')
       CALL MDDEL ('Y')
       CALL MDDEL ('NID')
@@ -485,7 +402,7 @@ C
          CALL MDEROR (6)
          STOP ' '
       END IF
-C
+
 C  K(1) = X ARRAY OF THE PERIMETER
 C  K(2) = Y ARRAY OF THE PERIMETER
 C  K(3) = NID ARRAY(S) OF THE PERIMETER(S) [HOLES CAUSE MULTIPLE PERIMS]
@@ -512,9 +429,9 @@ C  K(23) = BNSIZE ARRAY FOR SIZE DIFFERENTIAL IN FILL ROUTINES
 C  K(24) = LNODES ARRAY FOR CONNECTIVITY OF THE INSIDE PERIMETER
 C          NODES IN FILL ROUTINES
 C  NOTE: LINES IN THIS CONTEXT REFERS TO CONNECTIONS OF ELEMENT NODES
-C
+
 C  MAKE ROOM IN LINE LIST FOR HOLES
-C
+
       MXND = INT(MXND * MXRXG * 1.2)
       MXNL = MXNL + ( (MXRXG + MAX4) * MAX2 * MAX3)
       MLN = 8
@@ -554,9 +471,9 @@ C
          CALL MDEROR (6)
          STOP ' '
       END IF
-C
+
 C  SET UP THE LOOP FOR PROCESSING GROUPS
-C
+
       IF (LGROUP) THEN
   240    CONTINUE
          IF (STEP .AND. (N(22) .GT. 0)) THEN
@@ -578,9 +495,9 @@ C
             I1 = 1
             I2 = N(22)
          END IF
-C
+
 C  BEGIN PROCESSING GROUPS
-C
+
          REAL = .TRUE.
          COUNT = .FALSE.
          DO 310 IGRP = I1, I2
@@ -605,20 +522,14 @@ C
                      NOROOM = .FALSE.
                      CALL MESAGE (' ')
                      WRITE (*, 10080) ABS(IREGN(L))
-C
+
 C  CALCULATE THE PERIMETER OF THE REGION
-C
+
   260                CONTINUE
                      NPRM = 1
                      JJHOLE = 0
                      KNBC = 0
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO PERIM TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
+
                      CALL PERIM (MP, ML, MS, NSPR(L), MXNL, MXNPER,
      &                  MAXNBC, MAXSBC, KNBC, KSBC, ABS (IREGN(L)),
      &                  IPOINT, COOR, IPBOUN, ILINE, LTYPE, NINT,
@@ -632,9 +543,9 @@ C
      &                  MMPOLD, LINKEG, LISTEG, BMESUR, MLINK, NPROLD,
      &                  NPNOLD, NPEOLD, NNXK, REMESH, REXMIN, REXMAX,
      &                  REYMIN, REYMAX, IDIVIS, SIZMIN, EMAX, EMIN)
-C
+
 C  GET THE REGION SCHEME
-C
+
                      CALL LTSORT (MR, LINKSC, ABS(IREGN(L)), IPNTR,
      &                  ADDLNK)
                      CALL RGNSCH (MCOM, ICOM, JCOM, CIN, IIN, RIN, KIN,
@@ -647,11 +558,11 @@ C
                         GO TO 260
                      ELSE IF (ICODE .EQ. IQUIT) THEN
                         GO TO 270
-C
+
 C  GENERATE INITIAL GRID
-C
+
 C  CALCULATE A "TRANSITION" MAPPED MESH
-C
+
                      ELSE IF (TRNSIT) THEN
                         CALL BMSCHM (NPER, KKK, LLL, NNN, ML, MS,
      &                     NSPR(L), ISLIST(IFSIDE(L)), NINT, IFLINE,
@@ -661,9 +572,9 @@ C
      &                     IA(K(9)), IA(K(10)), IA(K(11)), IA(K(12)),
      &                     IA(K(13)), A(K(16)), A(K(17)), IA(K(18)),
      &                     IA(K(21)), IAVAIL, NAVAIL, CCW, HALFC, ERR)
-C
+
 C  CALCULATE A "TRIANGULAR" MAPPED MESH
-C
+
                      ELSE IF (TRIANG) THEN
                         CALL TMSCHM (NPER, KKK, LLL, NNN, ML, MS,
      &                     NSPR(L), ISLIST(IFSIDE(L)), NINT, IFLINE,
@@ -673,9 +584,9 @@ C
      &                     IA(K(9)), IA(K(10)), IA(K(11)), IA(K(12)),
      &                     IA(K(13)), A(K(16)), A(K(17)), IA(K(18)),
      &                     IA(K(21)), IAVAIL, NAVAIL, CCW, ERR)
-C
+
 C  CALCULATE A "PENTAGON" MAPPED MESH
-C
+
                      ELSE IF (PENTAG) THEN
                         CALL UMSCHM (IA, NPER, KKK, LLL, NNN, ML, MS,
      &                     NSPR(L), ISLIST(IFSIDE(L)), NINT, IFLINE,
@@ -685,16 +596,11 @@ C
      &                     IA(K(9)), IA(K(10)), IA(K(11)), IA(K(12)),
      &                     IA(K(13)), A(K(16)), A(K(17)), IA(K(18)),
      &                     IA(K(21)), IAVAIL, NAVAIL, CCW, ERR)
-C
+
 C  USE THE PAVING TECHNIQUE TO FILL THE INITIAL REGION
-C
+
                      ELSE IF (FILL) THEN
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO PMSCHM TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
+
                         CALL PMSCHM (NPER, NPRM, MXND, MLN, MP, ML, MS,
      &                     MR, NL, MXNL, MXNPER, MAXPRM, MAXNB, MAXNBC,
      &                     MAXSBC, KNBC, KSBC, KNUM, IPOINT, COOR,
@@ -751,9 +657,9 @@ C
                            END IF
                            GO TO 260
                         END IF
-C
+
 C  PROCESS A "NORMAL" REGION
-C
+
                      ELSE
                         CALL MMSCHM (NPER, KKK, LLL, NNN, ML, MS,
      &                     NSPR(L), ISLIST(IFSIDE(L)), NINT, IFLINE,
@@ -764,9 +670,9 @@ C
      &                     IA(K(13)), IAVAIL, NAVAIL, CCW, REAL, SCHSTR,
      &                     M1, ERR)
                      END IF
-C
+
 C  FLAG THE REGION IF AN ERROR HAS OCCURRED
-C
+
                      IF (ERR) THEN
                         CALL MESAGE ('ERROR IN INITIAL GRID GENERATION')
                         CALL MESAGE ('** REGION PROCESSING ABORTED **')
@@ -783,19 +689,14 @@ C
                         END IF
                         GO TO 270
                      END IF
-C
+
 C  BEGIN FULL SCHEME CONTROL FOR A GROUP SUB-REGION
-C
+
                      RECT = .NOT.(PENTAG .OR. TRIANG .OR.
      &                  TRNSIT .OR. FILL)
                      IF (STEP) CALL MINMAX_FQ (MXNPER, NPER, A(K(1)),
      &                  A(K(2)), XMIN, XMAX, YMIN, YMAX)
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO PSCHEM TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
+
                      CALL PSCHEM (MP, ML, MS, MR, N, IPOINT, COOR,
      &                  IPBOUN, ILINE, LTYPE, NINT, FACTOR, LCON,
      &                  ILBOUN, ISBOUN, ISIDE, NLPS, IFLINE, ILLIST,
@@ -901,9 +802,9 @@ C
                      END IF
                   END IF
   270          CONTINUE
-C
+
 C  BEGIN FULL SCHEME CONTROL FOR A GROUP REGION
-C
+
                NNNOLD = 0
                KKKOLD = 0
                RECT = .FALSE.
@@ -915,7 +816,7 @@ C
      &            IREGN(IGPNTR), IPNTR, N(24), MSC, SCHEME, DEFSCH,
      &            SCHSTR, LENSCH, NPER, PENTAG, TRIANG, TRNSIT, HALFC,
      &            FILL, ICODE, REMESH)
-C
+
                IF (ICODE .EQ. IEXIT) THEN
                   CALL CHKKXL (MXND, IA(K(10)), IA(K(11)), LLL, ERR)
                   IF (ERR) THEN
@@ -978,10 +879,10 @@ C
                ELSE IF (ICODE .EQ. IQUIT) THEN
                   GO TO 300
                END IF
-C
+
                IF (STEP) CALL MINMAX_FQ (MXND, NNN, A(K(7)), A(K(8)),
      &            XMIN, XMAX, YMIN, YMAX)
-C
+
                CALL PSCHEM (MP, ML, MS, MR, N, IPOINT, COOR, IPBOUN,
      &            ILINE, LTYPE, NINT, FACTOR, LCON, ILBOUN, ISBOUN,
      &            ISIDE, NLPS, IFLINE, ILLIST, IREGN, NSPR, IFSIDE,
@@ -1105,20 +1006,20 @@ C
             END IF
   300       CONTINUE
   310    CONTINUE
-C
+
 C  END OF THIS SET OF GROUPS
 C     IF STEPPING THROUGH, SEE IF ANY MORE GROUPS
 C        ARE TO BE PROCESSED
-C
+
          IF (STEP) THEN
             CALL INTRUP ('PROCESS ADDITIONAL GROUPS', IANS, MCOM,
      &         ICOM, JCOM, CIN, IIN, RIN, KIN)
             IF (IANS) GO TO 240
          END IF
       END IF
-C
+
 C  SET UP THE LOOP FOR PROCESSING REGIONS
-C
+
   320 CONTINUE
       IF (STEP .AND. (N(22) .GT. 0)) THEN
          CALL MESAGE (' ')
@@ -1138,9 +1039,9 @@ C
          I1 = 1
          I2 = N(22)
       END IF
-C
+
 C  BEGIN PROCESSING REGIONS
-C
+
       REAL = .TRUE.
       COUNT = .FALSE.
       DO 350 I = I1, I2
@@ -1150,9 +1051,9 @@ C
             NOROOM = .FALSE.
             CALL MESAGE (' ')
             WRITE (*, 10090) ABS(IREGN(L))
-C
+
 C  CALCULATE THE PERIMETER OF THE REGION
-C
+
   330       CONTINUE
             NNN = 0
             KKK = 0
@@ -1171,9 +1072,9 @@ C
      &         NXKOLD, MMPOLD, LINKEG, LISTEG, BMESUR, MLINK, NPROLD,
      &         NPNOLD, NPEOLD, NNXK, REMESH, REXMIN, REXMAX, REYMIN,
      &         REYMAX, IDIVIS, SIZMIN, EMAX, EMIN)
-C
+
 C  GET THE REGION SCHEME
-C
+
             CALL LTSORT (MR, LINKSC, ABS(IREGN(L)), IPNTR, ADDLNK)
             CALL RGNSCH (MCOM, ICOM, JCOM, CIN, IIN, RIN, KIN, STEP,
      &         IREGN(L), IPNTR, N(24), MSC, SCHEME, DEFSCH, SCHSTR,
@@ -1185,11 +1086,11 @@ C
                GO TO 330
             ELSE IF (ICODE .EQ. IQUIT) THEN
                GO TO 350
-C
+
 C  GENERATE INITIAL GRID
-C
+
 C  CALCULATE A "TRANSITION" MAPPED MESH
-C
+
             ELSE IF (TRNSIT) THEN
                CALL BMSCHM (NPER, KKK, LLL, NNN, ML, MS, NSPR(L),
      &            ISLIST(IFSIDE(L)), NINT, IFLINE, NLPS, ILLIST, LINKL,
@@ -1198,9 +1099,9 @@ C
      &            IA(K(9)), IA(K(10)), IA(K(11)), IA(K(12)), IA(K(13)),
      &            A(K(16)), A(K(17)), IA(K(18)), IA(K(21)), IAVAIL,
      &            NAVAIL, CCW, HALFC, ERR)
-C
+
 C  CALCULATE A "TRIANGULAR" MAPPED MESH
-C
+
             ELSE IF (TRIANG) THEN
                CALL TMSCHM (NPER, KKK, LLL, NNN, ML, MS, NSPR(L),
      &            ISLIST(IFSIDE(L)), NINT, IFLINE, NLPS, ILLIST, LINKL,
@@ -1209,9 +1110,9 @@ C
      &            IA(K(9)), IA(K(10)), IA(K(11)), IA(K(12)), IA(K(13)),
      &            A(K(16)), A(K(17)), IA(K(18)), IA(K(21)), IAVAIL,
      &            NAVAIL, CCW, ERR)
-C
+
 C  CALCULATE A "PENTAGON" MAPPED MESH
-C
+
             ELSE IF (PENTAG) THEN
                CALL UMSCHM (IA, NPER, KKK, LLL, NNN, ML, MS, NSPR(L),
      &            ISLIST(IFSIDE(L)), NINT, IFLINE, NLPS, ILLIST, LINKL,
@@ -1220,9 +1121,9 @@ C
      &            IA(K(9)), IA(K(10)), IA(K(11)), IA(K(12)), IA(K(13)),
      &            A(K(16)), A(K(17)), IA(K(18)), IA(K(21)), IAVAIL,
      &            NAVAIL, CCW, ERR)
-C
+
 C  USE THE PAVING TECHNIQUE TO FILL THE INITIAL REGION
-C
+
             ELSE IF (FILL) THEN
                CALL PMSCHM (NPER, NPRM, MXND, MLN, MP, ML, MS, MR, NL,
      &            MXNL, MXNPER, MAXPRM, MAXNB, MAXNBC, MAXSBC, KNBC,
@@ -1277,9 +1178,9 @@ C
                   END IF
                   GO TO 330
                END IF
-C
+
 C  PROCESS A "NORMAL" REGION
-C
+
             ELSE
                CALL MMSCHM (NPER, KKK, LLL, NNN, ML, MS, NSPR(L),
      &            ISLIST(IFSIDE(L)), NINT, IFLINE, NLPS, ILLIST, LINKL,
@@ -1288,9 +1189,9 @@ C
      &            IA(K(9)), IA(K(10)), IA(K(11)), IA(K(12)), IA(K(13)),
      &            IAVAIL, NAVAIL, CCW, REAL, SCHSTR, M1, ERR)
             END IF
-C
+
 C  FLAG THE REGION IF AN ERROR HAS OCCURRED
-C
+
             IF (ERR) THEN
                CALL MESAGE ('ERROR IN INITIAL GRID GENERATION')
                CALL MESAGE ('** REGION PROCESSING ABORTED **')
@@ -1309,15 +1210,15 @@ C
   340          CONTINUE
                GO TO 350
             END IF
-C
+
 C  BEGIN FULL SCHEME CONTROL
-C
+
             RECT = .NOT.(PENTAG .OR. TRIANG .OR. TRNSIT .OR. FILL)
             IF (STEP) CALL MINMAX_FQ (MXNPER, NPER, A(K(1)), A(K(2)),
      *        XMIN, XMAX, YMIN, YMAX)
             NNNOLD = 0
             KKKOLD = 0
-C
+
             CALL PSCHEM (MP, ML, MS, MR, N, IPOINT, COOR, IPBOUN, ILINE,
      &         LTYPE, NINT, FACTOR, LCON, ILBOUN, ISBOUN, ISIDE, NLPS,
      &         IFLINE, ILLIST, IREGN, NSPR, IFSIDE, ISLIST, NPPF, IFPB,
@@ -1434,20 +1335,20 @@ C
          END IF
          END IF
   350 CONTINUE
-C
+
 C  END OF THIS SET OF REGIONS
 C     IF STEPPING THROUGH, SEE IF ANY MORE REGIONS
 C        ARE TO BE PROCESSED
-C
+
   360 CONTINUE
       IF (STEP) THEN
          CALL INTRUP ('PROCESS ADDITIONAL REGIONS', IANS, MCOM,
      &      ICOM, JCOM, CIN, IIN, RIN, KIN)
          IF (IANS) GO TO 320
       END IF
-C
+
 C  SET UP THE LOOP FOR PROCESSING BAR SETS
-C
+
   370 CONTINUE
   380 CONTINUE
       IF (STEP .AND. (N(21) .GT. 0)) THEN
@@ -1467,26 +1368,21 @@ C
          I1 = 1
          I2 = N(21)
       END IF
-C
+
 C  BEGIN PROCESSING BAR SETS
-C
+
       REAL = .TRUE.
       COUNT = .FALSE.
       DO 440 I = I1, I2
          CALL LTSORT (MS, LINKB, I, IPNTR, ADDLNK)
-C
+
 C  SEE IF THIS BAR SET IS FOR SPRINGS
-C
+
          IF ((IPNTR .GT. 0) .AND. (IBARST(IPNTR) .LT. 0) .AND.
      &      (JMAT(IPNTR) .LT. 0)) THEN
             L = IPNTR
             WRITE (*, 10130) ABS(IBARST(L))
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO SPRING TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
+
             CALL SPRING (MP, ML, MS, MXNPER, MXND, MAXNBC, MAXSBC, L,
      &         IPOINT, COOR, IPBOUN, LINKP, ILINE, LTYPE, NINT, FACTOR,
      &         LCON, ILBOUN, ISBOUN, LINKL, NLPB, JFLINE, JLLIST,
@@ -1517,9 +1413,9 @@ C
   390          CONTINUE
                GO TO 430
             END IF
-C
+
 C  PROCESS A REGULAR BARSET
-C
+
          ELSE IF ((IPNTR .GT. 0) .AND. (IBARST(IPNTR) .LT. 0)) THEN
             L = IPNTR
             WRITE (*, 10120) ABS(IBARST(L))
@@ -1530,9 +1426,9 @@ C
             KNBC = 0
             KSBC = 0
             LLL = 1
-C
+
 C  LOOP THROUGH ALL THE LINES IN THE BAR SETS
-C
+
             DO 410 J = JFLINE(L), JFLINE(L) + NLPB(L) - 1
                CALL LTSORT (ML, LINKL, JLLIST(J), KK, ADDLNK)
                CALL LTSORT (MP, LINKP, LCON(1, KK), IP1, ADDLNK)
@@ -1546,9 +1442,9 @@ C
                ELSE
                   IP3 = 0
                END IF
-C
+
 C  CALCULATE NODES IN THE BAR SET LINE
-C
+
                CALL PLINE (MP, ML, MXNPER, MAXNBC, MAXSBC, IPOINT,
      &            COOR, LINKP, ILINE(KK), LTYPE(KK), NINT(KK),
      &            FACTOR(KK), IP1, IP2, IP3, A(K(1)), A(K(2)), IA(K(3)),
@@ -1578,9 +1474,9 @@ C
   400             CONTINUE
                   GO TO 430
                END IF
-C
+
 C  ADD THESE NODES AND ELEMENTS TO THE CURRENT LIST
-C
+
                NNN0 = NNN + 1
                NNN = NNN + ABS(NINT(KK)) + 1
                IF (JCENT(L) .GT. 0) THEN
@@ -1591,17 +1487,17 @@ C
                CALL MAK2EL (MP, MXNPER, MXND, NNN0, NNN, KKK, A(K(1)),
      &            A(K(2)), IA(K(3)), A(K(7)), A(K(8)), IA(K(9)),
      &            IA(K(10)), COOR, IP3)
-C
+
 C  MARK THESE POINTS AND THE LINE AS BEING USED
-C
+
                NINT(KK) = -ABS(NINT(KK))
                IPOINT(IP1) = -ABS(IPOINT(IP1))
                IPOINT(IP2) = -ABS(IPOINT(IP2))
   410       CONTINUE
          ENDIF
-C
+
 C  WRITE OUT THE BAR SET ELEMENTS AND BOUNDARY CONDITIONS
-C
+
          IF ((IPNTR .GT. 0) .AND. (IBARST(IPNTR) .LT. 0)) THEN
             BAR = .TRUE.
             KSBC = 0
@@ -1642,15 +1538,15 @@ C
             IBARST(L) = ABS(IBARST(L))
             WRITE (*, 10140) IBARST(L)
          END IF
-C
+
 C  END OF THIS BAR SET
-C
+
   430    CONTINUE
   440 CONTINUE
-C
+
 C  END OF THIS GROUP OF BAR SETS
 C  IF STEPPING THROUGH, SEE IF ANY MORE BAR SETS ARE TO BE PROCESSED
-C
+
       IF (STEP .AND. (N(21) .GT. 0)) THEN
          IF ((ICOM .LE. JCOM) .AND. ((CIN(ICOM)(1:1) .EQ. 'Y') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'y'))) THEN
@@ -1677,9 +1573,9 @@ C
          END IF
          IF (IANS) GO TO 380
       END IF
-C
+
 C  RESTORE THE DATA BASE TO ITS INITIAL CONDITION
-C
+
   450 CONTINUE
       DO 460 I = 1, N(1)
          IPOINT(I) = ABS(IPOINT(I))
@@ -1707,7 +1603,7 @@ C
          CALL LTSORT (MR, LINKR, IREGN(I), IPLUS, ADDLNK)
          ADDLNK = .FALSE.
   510 CONTINUE
-C
+
       CALL MDDEL ('X')
       CALL MDDEL ('Y')
       CALL MDDEL ('NID')
@@ -1744,7 +1640,7 @@ C
          STOP ' '
       END IF
       RETURN
-C
+
 10000 FORMAT (' INITIAL CHECK BEGUN FOR REGION:', I5)
 10010 FORMAT (' INITIAL CHECK BEGUN FOR GROUP:', I5)
 10020 FORMAT (' ...INITIAL CHECK BEGUN FOR REGION:', I5)

@@ -64,13 +64,13 @@ using LocalCrsGraph = Kokkos::StaticCrsGraph<LocalOrdinalType, Kokkos::LayoutLef
 template<class LocalOrdinalType, class GlobalOrdinalType, class DeviceType>
 using LocalMap = typename Tpetra::Map<LocalOrdinalType, GlobalOrdinalType, DeviceType>::local_map_type;
 
-template<class LO, class GO, class DT>
-LocalCrsGraph<LO, DT>
+template<class LO, class GO, class NT>
+LocalCrsGraph<LO, typename NT::device_type>
 makeDiagonalGraph (const LO lclNumRows,
-                   const LocalMap<LO, GO, DT>& rowMap,
-                   const LocalMap<LO, GO, DT>& colMap)
+                   const Tpetra::Map<LO, GO, NT>& rowMap,
+                   const Tpetra::Map<LO, GO, NT>& colMap)
 {
-  using crs_graph_type = LocalCrsGraph<LO, DT>;
+  using crs_graph_type = LocalCrsGraph<LO, typename NT::device_type>;
   using row_map_type = typename crs_graph_type::row_map_type::non_const_type;
   using entries_type = typename crs_graph_type::entries_type::non_const_type;
 
@@ -95,15 +95,15 @@ makeDiagonalGraph (const LO lclNumRows,
 }
 
 
-template<class LO, class GO, class DT>
-LocalCrsGraph<LO, DT>
+template<class LO, class GO, class NT>
+LocalCrsGraph<LO, typename NT::device_type>
 makeTriangularGraph (const LO lclNumRows,
-                     const LocalMap<LO, GO, DT>& rowMap,
-                     const LocalMap<LO, GO, DT>& colMap,
+                     const Tpetra::Map<LO, GO, NT>& rowMap,
+                     const Tpetra::Map<LO, GO, NT>& colMap,
                      const bool lowerTriangular, // false means upper
                      const bool explicitDiagonal)
 {
-  using crs_graph_type = LocalCrsGraph<LO, DT>;
+  using crs_graph_type = LocalCrsGraph<LO, typename NT::device_type>;
   using row_map_type = typename crs_graph_type::row_map_type::non_const_type;
   using entries_type = typename crs_graph_type::entries_type::non_const_type;
   using size_type = typename crs_graph_type::size_type;
@@ -199,13 +199,13 @@ makeTriangularGraph (const LO lclNumRows,
 }
 
 
-template<class LO, class GO, class DT>
-LocalCrsGraph<LO, DT>
+template<class LO, class GO, class NT>
+LocalCrsGraph<LO, typename NT::device_type>
 makeTridiagonalGraph (const LO lclNumRows,
-                      const LocalMap<LO, GO, DT>& rowMap,
-                      const LocalMap<LO, GO, DT>& colMap)
+                      const Tpetra::Map<LO, GO, NT>& rowMap,
+                      const Tpetra::Map<LO, GO, NT>& colMap)
 {
-  using crs_graph_type = LocalCrsGraph<LO, DT>;
+  using crs_graph_type = LocalCrsGraph<LO, typename NT::device_type>;
   using row_map_type = typename crs_graph_type::row_map_type::non_const_type;
   using entries_type = typename crs_graph_type::entries_type::non_const_type;
   using size_type = typename crs_graph_type::size_type;
@@ -307,8 +307,9 @@ TEUCHOS_UNIT_TEST(DetermineLocalTriangularStructure, Test0)
 
   using LO = Tpetra::Map<>::local_ordinal_type;
   using GO = Tpetra::Map<>::global_ordinal_type;
+  using NT = Tpetra::Map<>::node_type;
   using DT = Tpetra::Map<>::device_type;
-  using map_type = Tpetra::Map<LO, GO>;
+  using map_type = Tpetra::Map<LO, GO, NT>;
   //using local_map_type = LocalMap<LO, GO, DT>;
   //using local_crs_graph_type = LocalCrsGraph<LO, DT>;
   using result_type = Tpetra::Details::LocalTriangularStructureResult<LO>;
@@ -340,7 +341,7 @@ TEUCHOS_UNIT_TEST(DetermineLocalTriangularStructure, Test0)
       out << "Diagonal graph" << endl;
       Teuchos::OSTab tab3 (out);
 
-      auto graph = makeDiagonalGraph<LO, GO, DT> (lclNumRows, lclRowMap, lclColMap);
+      auto graph = makeDiagonalGraph<LO, GO, NT> (lclNumRows, *rowMap, *colMap);
       for (bool ignoreMapsForTriangularStructure : {false, true}) {
         const LO expectedLclNumDiag = lclNumRows;
         const LO expectedMaxNumRowEnt = (lclNumRows < LO (1)) ? lclNumRows : LO (1);
@@ -361,7 +362,7 @@ TEUCHOS_UNIT_TEST(DetermineLocalTriangularStructure, Test0)
             << " diagonal" << endl;
         Teuchos::OSTab tab3 (out);
 
-        auto graph = makeTriangularGraph<LO, GO, DT> (lclNumRows, lclRowMap, lclColMap,
+        auto graph = makeTriangularGraph<LO, GO, NT> (lclNumRows, *rowMap, *colMap,
                                                       lowerTriangular, explicitDiagonal);
         for (bool ignoreMapsForTriangularStructure : {false, true}) {
           const LO expectedLclNumDiag = explicitDiagonal ? lclNumRows : LO (0);
@@ -386,7 +387,7 @@ TEUCHOS_UNIT_TEST(DetermineLocalTriangularStructure, Test0)
       out << "Tridiagonal graph" << endl;
       Teuchos::OSTab tab3 (out);
 
-      auto graph = makeTridiagonalGraph<LO, GO, DT> (lclNumRows, lclRowMap, lclColMap);
+      auto graph = makeTridiagonalGraph<LO, GO, NT> (lclNumRows, *rowMap, *colMap);
       for (bool ignoreMapsForTriangularStructure : {false, true}) {
         const LO expectedLclNumDiag = lclNumRows;
         const LO expectedMaxNumRowEnt = (lclNumRows < LO (3)) ? lclNumRows : LO (3);
@@ -424,7 +425,7 @@ TEUCHOS_UNIT_TEST(DetermineLocalTriangularStructure, Test0)
       out << "Diagonal graph" << endl;
       Teuchos::OSTab tab3 (out);
 
-      auto graph = makeDiagonalGraph<LO, GO, DT> (lclNumRows, lclRowMap, lclColMap);
+      auto graph = makeDiagonalGraph<LO, GO, NT> (lclNumRows, *rowMap, *colMap);
       for (bool ignoreMapsForTriangularStructure : {false, true}) {
         const LO expectedLclNumDiag = lclNumRows;
         const LO expectedMaxNumRowEnt = (lclNumRows < LO (1)) ? lclNumRows : LO (1);
@@ -449,7 +450,7 @@ TEUCHOS_UNIT_TEST(DetermineLocalTriangularStructure, Test0)
             << " diagonal" << endl;
         Teuchos::OSTab tab3 (out);
 
-        auto graph = makeTriangularGraph<LO, GO, DT> (lclNumRows, lclRowMap, lclColMap,
+        auto graph = makeTriangularGraph<LO, GO, NT> (lclNumRows, *rowMap, *colMap,
                                                       lowerTriangular, explicitDiagonal);
         for (bool ignoreMapsForTriangularStructure : {false, true}) {
           const LO expectedLclNumDiag = explicitDiagonal ? lclNumRows : LO (0);
@@ -480,7 +481,7 @@ TEUCHOS_UNIT_TEST(DetermineLocalTriangularStructure, Test0)
       out << "Tridiagonal graph" << endl;
       Teuchos::OSTab tab3 (out);
 
-      auto graph = makeTridiagonalGraph<LO, GO, DT> (lclNumRows, lclRowMap, lclColMap);
+      auto graph = makeTridiagonalGraph<LO, GO, NT> (lclNumRows, *rowMap, *colMap);
       for (bool ignoreMapsForTriangularStructure : {false, true}) {
         const LO expectedLclNumDiag = lclNumRows;
         const LO expectedMaxNumRowEnt = (lclNumRows < LO (3)) ? lclNumRows : LO (3);

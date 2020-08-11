@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_CodeTypes.h>
@@ -191,7 +191,7 @@ namespace Ioex {
     if (isParallel && no_collective_calls) {
       // Can't output a nice error message on processor 0 and throw a consistent error.
       // Have to just write message on processors that have issue and throw exception.
-      if (exodusFilePtr < 0) {
+      if (m_exodusFilePtr < 0) {
         std::ostringstream errmsg;
         std::string        open_create = is_input() ? "open input" : "create output";
         fmt::print(errmsg, "ERROR: Unable to {} exodus decomposed database file '{}'\n",
@@ -209,19 +209,19 @@ namespace Ioex {
     }
 
     // Check for valid exodus_file_ptr (valid >= 0; invalid < 0)
-    int global_file_ptr = exodusFilePtr;
+    int global_file_ptr = m_exodusFilePtr;
     if (isParallel) {
-      global_file_ptr = util().global_minmax(exodusFilePtr, Ioss::ParallelUtils::DO_MIN);
+      global_file_ptr = util().global_minmax(m_exodusFilePtr, Ioss::ParallelUtils::DO_MIN);
     }
 
     if (global_file_ptr < 0) {
       if (write_message || error_msg != nullptr || bad_count != nullptr) {
         Ioss::IntVector status;
         if (isParallel) {
-          util().all_gather(exodusFilePtr, status);
+          util().all_gather(m_exodusFilePtr, status);
         }
         else {
-          status.push_back(exodusFilePtr);
+          status.push_back(m_exodusFilePtr);
         }
 
         std::string open_create = is_input() ? "open input" : "create output";
@@ -288,7 +288,7 @@ namespace Ioex {
     double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
 
     int app_opt_val = ex_opts(EX_VERBOSE);
-    exodusFilePtr   = ex_open(decoded_filename().c_str(), EX_READ | mode, &cpu_word_size,
+    m_exodusFilePtr   = ex_open(decoded_filename().c_str(), EX_READ | mode, &cpu_word_size,
                             &io_word_size, &version);
 
     if (do_timer) {
@@ -356,7 +356,7 @@ namespace Ioex {
 #endif
     int app_opt_val = ex_opts(EX_VERBOSE);
     if (fileExists) {
-      exodusFilePtr = ex_open(decoded_filename().c_str(), EX_WRITE | mode, &cpu_word_size,
+      m_exodusFilePtr = ex_open(decoded_filename().c_str(), EX_WRITE | mode, &cpu_word_size,
                               &io_word_size, &version);
     }
     else {
@@ -374,22 +374,22 @@ namespace Ioex {
           mode |= EX_ALL_INT64_DB;
         }
       }
-      exodusFilePtr = ex_create(decoded_filename().c_str(), mode, &cpu_word_size, &dbRealWordSize);
+      m_exodusFilePtr = ex_create(decoded_filename().c_str(), mode, &cpu_word_size, &dbRealWordSize);
     }
 
     is_ok = check_valid_file_ptr(write_message, error_msg, bad_count, abort_if_error);
 
     if (is_ok) {
-      ex_set_max_name_length(exodusFilePtr, maximumNameLength);
+      ex_set_max_name_length(m_exodusFilePtr, maximumNameLength);
 
       // Check properties handled post-create/open...
       if (properties.exists("COMPRESSION_LEVEL")) {
         int comp_level = properties.get("COMPRESSION_LEVEL").get_int();
-        ex_set_option(exodusFilePtr, EX_OPT_COMPRESSION_LEVEL, comp_level);
+        ex_set_option(m_exodusFilePtr, EX_OPT_COMPRESSION_LEVEL, comp_level);
       }
       if (properties.exists("COMPRESSION_SHUFFLE")) {
         int shuffle = properties.get("COMPRESSION_SHUFFLE").get_int();
-        ex_set_option(exodusFilePtr, EX_OPT_COMPRESSION_SHUFFLE, shuffle);
+        ex_set_option(m_exodusFilePtr, EX_OPT_COMPRESSION_SHUFFLE, shuffle);
       }
       if (properties.exists("COMPRESSION_METHOD")) {
         auto method                    = properties.get("COMPRESSION_METHOD").get_string();
@@ -412,7 +412,7 @@ namespace Ioex {
                      " 'zlib' will be used instead.\n\n",
                      method);
         }
-        ex_set_option(exodusFilePtr, EX_OPT_COMPRESSION_TYPE, exo_method);
+        ex_set_option(m_exodusFilePtr, EX_OPT_COMPRESSION_TYPE, exo_method);
       }
     }
     ex_opts(app_opt_val); // Reset back to what it was.

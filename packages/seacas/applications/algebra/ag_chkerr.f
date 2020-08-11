@@ -1,19 +1,18 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       subroutine chkerr (routine, caller, ierr)
 C=======================================================================
 C     Modified 9/13/95 for EXODUSIIV2 API calls
-C
+
 C     This subroutine should be called after an EXODUSIIV2 subroutine has
 C     been invoked.  The arguments of this subroutine are as follows:
 C     routine - IN - The exodusIIv2 subroutine
 C     caller  - IN - The subroutine invoking the exodusII call
 C     ierr    - IN - The error code returned from the exodusII call
-C
 
       include 'exodusII.inc'
 

@@ -1,35 +1,35 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 c ======================================================================
 c ======================================================================
 c ======================================================================
 c ======================================================================
-c
+
 c ROUTINE:              getins
-c
+
 c DESCRIPTION:          This routine is in charge of getting user
 c                       input and keeping track of where
 c                       it is coming from.
-c
+
 c AUTHOR:               John H. Glick
 c                       Sandia National Laboratories
 c                       Division 1511
-c
+
 c DATE:                 December 20, 1988
-c
+
 c TYPE OF SUBPROGRAM:   subroutine
-c
+
 c USAGE:               call getins (id, maxfld, nfield,
 c                                    kvalue, cvalue, ivalue, rvalue,
 c                                    line, iostat, prompt,
 c                                    lprom, *)
-c
+
 c PARAMETERS:
-c
+
 c     character*(*) id  -- (input)
 c                        = 'parse' if the input line should be read
 c                        and parsed by the free field reader.  If so,
@@ -85,27 +85,27 @@ c                         Prompt to be displayed to user.
 c     integer lprom -- (input)
 c                         Length of prompt string.
 c     * -- Alternate return in case of fatal error.
-c
+
 c CALLS:                prterr (etclib), filhnd (BLOT),
 c                       lenstr (strlib),
 c                       frefld (SUPES), exname (SUPES)
-c
+
 c GLOBAL VARIABLES REFERENCED:
-c
+
 c     none
-c
+
 c CALLING ROUTINE(S):   comand (BLOT)
-c
+
 c SYSTEM DEPENDENCIES:  none
-c
+
 c ======================================================================
 c ======================================================================
-c
+
       subroutine getins (id, maxfld, nfield, kvalue, cvalue,
      &   ivalue, rvalue, line, iostat, prompt, lprom, *)
-c
+
 c ***********************************************************************
-c
+
 c        parameters
 
       character*(*) id
@@ -118,9 +118,8 @@ c        parameters
       character*(*) prompt
       integer lprom
 
-c
 c ***********************************************************************
-c
+
 c        local declarations
 
       integer maxstk
@@ -192,17 +191,16 @@ c          logical unit where instructions are currently being read from.
       logical batch
 
 c ***********************************************************************
-c
+
 c     data statements
-c
+
       data recred / maxstk*0 /
       data first / .TRUE. /
       data cmdfile(1:7) / 'CMDFILE' /
-c
+
 c ***********************************************************************
 c ***********************************************************************
-c
-c
+
       iostat = 0
       if ( id .eq. 'parse' ) then
          parse = .TRUE.
@@ -225,9 +223,9 @@ c           field of the command line
 c   an instruction file was specified
             call exname ( 7, name( 1 ), ln )
 c   get name of file
-c
+
 c                 open file
-c
+
             if ( batch() ) then
                call filhnd ( 7, name(1)(:ln), .TRUE., ecode,
      &            'o', 'f', 's', 0, *150)
@@ -263,9 +261,9 @@ c   no instruction file was specified
          first = .FALSE.
 
       endif
-c
+
 c              get an instruction
-c
+
   100 continue
 
       gotins = .FALSE.
@@ -274,9 +272,9 @@ c
 
       if ( nin .eq. 7 )
      &   recred( stkpnt ) = recred( stkpnt ) + 1
-c
+
 c              read instruction
-c
+
       if ( parse ) then
          call frefld ( nin, 0, prompt(:lprom), maxfld, ios,
      &      nfield, kvalue, cval2, ivalue, rvalue )
@@ -288,16 +286,16 @@ c
         end if
 10010     format ( a )
       endif
-c
+
 c           check for an error in reading instruction
-c
+
       if ( ios .gt. 0 ) then
 c   error in reading instruction
          call prterr ('FATAL',
      &      'error reading an instruction in getins')
          return 1
       else if ( ios .lt. 0 ) then
-c
+
 c              end of file read from input stream.
 
          if ( nin .ne. 0 ) then
@@ -338,26 +336,24 @@ c  job.  If a batch job, print error.
 
          endif
 
-
       else
          gotins = .TRUE.
       endif
 
       if ( .not. gotins ) go to 110
 
-c
 c              if id = 'line', just return the line of input
-c
+
       if ( .not. parse ) then
 
          try = .FALSE.
          quit = .TRUE.
 
       else
-c
+
 c              check if command specifies that instructions
 c              are to be read from a different source
-c
+
          ln = lenstr ( cval2(1) )
          if ( cval2(1)(1:ln) .eq. cmdfile(1:ln) ) then
 
@@ -431,9 +427,9 @@ c            increment stack pointer
      &'Nesting of instruction files is greater than maximum allowed')
             return 1
          endif
-c
+
 c              open instruction file
-c
+
 C ... We have a problem on systems with case-sensitive file names.
 C     FREFLD converts all strings to uppercase.  Therefore, the filename
 C     specified in 'file' will be all uppercase.  Since the file is
@@ -492,10 +488,9 @@ c                       skip records that have already been read
 
       endif
 
-c
 c              return to the top of the routine to read
 c              another instruction, if necessary
-c
+
       if ( .not. quit ) go to 100
       return
 

@@ -1,29 +1,18 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: getdum.f,v 1.1 1990/11/30 11:08:00 gdsjaar Exp $
-C $Log: getdum.f,v $
-C Revision 1.1  1990/11/30 11:08:00  gdsjaar
-C Initial revision
-C
-C
-CC* FILE: [.MAIN]GETDUM.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE GETDUM (I, DUMMY, LEN)
 C***********************************************************************
-C
+
 C  SUBROUTINE GETDUM = GETS AN INTEGER INTO A DUMMY CHARACTER STRING
-C
+
 C***********************************************************************
-C
+
       CHARACTER*72 DUMMY
-C
+
       DUMMY = ' '
       IF (I .LT. -9999) THEN
          WRITE(DUMMY(1:6),10050)I
@@ -57,12 +46,12 @@ C
          LEN = 5
       ENDIF
       RETURN
-C
+
 10000 FORMAT (I1)
 10010 FORMAT (I2)
 10020 FORMAT (I3)
 10030 FORMAT (I4)
 10040 FORMAT (I5)
 10050 FORMAT (I6)
-C
+
       END

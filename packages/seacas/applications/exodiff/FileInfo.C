@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <FileInfo.h>
@@ -276,12 +276,6 @@ namespace {
 
   bool do_stat(const std::string &filename, struct stat *s)
   {
-#if defined(__PUMAGON__)
-    // Portland pgCC compiler on janus has 'char*' instead of 'const char*' for
-    // first argument to stat function.
-    return (stat((char *)filename.c_str(), s) == 0);
-#else
     return (stat(filename.c_str(), s) == 0);
-#endif
   }
 } // namespace

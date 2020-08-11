@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -10,7 +10,7 @@
 #include "exodusII_int.h" // for EX_FATAL, etc
 
 /*!
- * Internal function used to put a homogenous `blocks` array that
+ * Internal function used to put a homogeneous `blocks` array that
  * contains all blocks of that specified type that will be defined.
  * Permits some optimizations and safer for N->1 parallel.
  * Arbitrary  polyhedra are handled in more general routine; not here.

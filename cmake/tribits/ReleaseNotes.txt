@@ -2,6 +2,15 @@
 Release Notes for TriBITS
 ----------------------------------------
 
+2020/06/16:
+
+(*) MINOR: The variables <Package>_FORTRAN_COMPILER and
+    <Package>_FORTRAN_FLAGS in the <Package>Config.cmake files (in the build
+    dir and the install dir) are deprecated.  Plese use the new varibles
+    <Package>_Fortran_COMPILER and <Package>_Fortran_FLAGS.  (Justification:
+    In raw CMake, the compiler is called 'Fortran', not 'FORTRAN'.  Also, the
+    name 'Fortran' is already used in the <Project>Config.cmake file.)
+
 2020/04/16:
 
 (*) MAJOR: TriBITS Core: CMAKE_CXX_STANDARD is now always set to at least 11

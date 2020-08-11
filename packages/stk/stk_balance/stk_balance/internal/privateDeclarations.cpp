@@ -11,6 +11,7 @@
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stk_mesh/base/FieldBase.hpp>  // for field_data
 #include <stk_mesh/base/GetEntities.hpp>  // for field_data
+#include <stk_mesh/base/ForEachEntity.hpp>
 #include "stk_mesh/base/FEMHelpers.hpp"
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
@@ -593,19 +594,16 @@ std::vector<int> getLocalIdsOfEntitiesNotSelected(const stk::mesh::BulkData &stk
 {
     selector = (!selector) & stkMeshBulkData.mesh_meta_data().locally_owned_part();
     std::vector<int> local_ids;
-    size_t num_total_elements = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(), stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
+    size_t numLocalElements = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(), stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
 
-    const stk::mesh::BucketVector &buckets = stkMeshBulkData.get_buckets(stk::topology::ELEMENT_RANK, selector);
-    for (size_t i=0; i<buckets.size(); i++)
-    {
-        const stk::mesh::Bucket &bucket = *buckets[i];
-        for (size_t j=0;j<bucket.size();j++)
-        {
-            unsigned local_id = get_local_id(localIds, bucket[j]);
-            ThrowRequireWithSierraHelpMsg(local_id < num_total_elements);
-            local_ids.push_back(local_id);
-        }
-    }
+    stk::mesh::for_each_entity_run(stkMeshBulkData, stk::topology::ELEMENT_RANK, selector,
+      [&local_ids,&numLocalElements,&localIds]
+      (const stk::mesh::BulkData& mesh, stk::mesh::Entity elem) {
+        unsigned local_id = get_local_id(localIds, elem);
+        ThrowRequireWithSierraHelpMsg(local_id < numLocalElements);
+        local_ids.push_back(local_id);
+      }
+    );
     return local_ids;
 }
 

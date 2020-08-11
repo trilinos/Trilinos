@@ -179,6 +179,15 @@ namespace FROSch {
         return "GDSW Coarse Operator";
     }
 
+    template<class SC,class LO,class GO,class NO>
+    typename GDSWCoarseOperator<SC,LO,GO,NO>::XMapPtr GDSWCoarseOperator<SC,LO,GO,NO>::BuildRepeatedMapCoarseLevel(ConstXMapPtr &nodesMap,
+                                                UN dofsPerNode,
+                                                ConstXMapPtrVecPtr dofsMaps,
+                                                UN partitionType)
+    {
+      FROSCH_ASSERT(false,"For GDSWCoarseOperator the ZoltanDual Option is not implemented!");
+    }
+
     template <class SC,class LO,class GO,class NO>
     int GDSWCoarseOperator<SC,LO,GO,NO>::buildCoarseSpace(UN dimension,
                                                           ConstXMapPtr nodesMap)
@@ -319,6 +328,10 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(resetCoarseSpaceBlockTime,"GDSWCoarseOperator::resetCoarseSpaceBlock");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
+
+        if (!this->DistributionList_->get("Type","linear").compare("ZoltanDual")) {
+            FROSCH_ASSERT(false,"RGDSWCoarseOperator:: Distribution Type ZoltanDual only works for IPOUHarmonicCoarseOperator");
+        }
 
         // Process the parameter list
         stringstream blockIdStringstream;

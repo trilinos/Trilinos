@@ -93,6 +93,8 @@ observeStartIntegrator(const Tempus::Integrator<Scalar>& integrator)
        << "============================================================================\n"
        << "  Step       Time         dt  Abs Error  Rel Error  Order  nFail  dCompTime"
        << std::endl;
+
+  this->observeTimeStep();
 }
 
 template <typename Scalar>
@@ -108,7 +110,7 @@ void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::
 observeNextTimeStep(const Tempus::Integrator<Scalar>& )
 {
-  this->observeTimeStep();
+  //Nothing to do
 }
 
 template <typename Scalar>
@@ -143,7 +145,6 @@ void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::
 observeEndTimeStep(const Tempus::Integrator<Scalar>& integrator)
 {
-
   using Teuchos::RCP;
   RCP<Tempus::SolutionStateMetaData<Scalar> > csmd =
     integrator.getSolutionHistory()->getCurrentState()->getMetaData();
@@ -168,6 +169,7 @@ observeEndTimeStep(const Tempus::Integrator<Scalar>& integrator)
         <<std::setw(11)<<std::setprecision(3)<<steppertime
         <<std::endl;
   }
+  this->observeTimeStep();
 }
 
 
@@ -176,7 +178,7 @@ void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::
 observeEndIntegrator(const Tempus::Integrator<Scalar>& integrator)
 {
-  this->observeTimeStep();
+  //this->observeTimeStep();
 
   std::string exitStatus;
   //const Scalar runtime = integrator.getIntegratorTimer()->totalElapsedTime();

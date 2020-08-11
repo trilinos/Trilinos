@@ -40,7 +40,7 @@
 #include "stk_mesh/base/NgpMesh.hpp"
 #include "stk_mesh/base/NgpField.hpp"
 #include "stk_mesh/base/GetNgpField.hpp"
-#include "stk_mesh/base/ForEachEntity.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
 
 namespace stk {
 namespace performance_tests {
@@ -146,24 +146,61 @@ void calculate_centroid_using_coord_field(const stk::mesh::BulkData &bulk, stk::
 }
 
 inline
-std::vector<double> get_centroid_average(stk::mesh::BulkData &bulk, stk::mesh::Field<double, stk::mesh::Cartesian3d> &centroid)
+std::vector<double> get_centroid_average_from_host(stk::mesh::BulkData &bulk, stk::mesh::Field<double, stk::mesh::Cartesian3d> &centroid, const stk::mesh::Selector& selector)
 {
   std::vector<double> average = {0, 0, 0};
   size_t numElems = 0;
   for(const stk::mesh::Bucket *bucket : bulk.buckets(stk::topology::ELEM_RANK))
   {
-    for(stk::mesh::Entity elem : *bucket)
-    {
-      double *elemCentroid = stk::mesh::field_data(centroid, elem);
-      for(size_t dim = 0; dim < 3; dim++) {
-        average[dim] += elemCentroid[dim];
+    if(selector(*bucket)) {
+      for(stk::mesh::Entity elem : *bucket)
+      {
+        double *elemCentroid = stk::mesh::field_data(centroid, elem);
+        for(size_t dim = 0; dim < 3; dim++) {
+          average[dim] += elemCentroid[dim];
+        }
+        numElems++;
       }
-      numElems++;
     }
   }
 
   for(size_t dim = 0; dim < 3; dim++) {
     average[dim] /= numElems;
+  }
+
+  return average;
+}
+
+inline
+std::vector<double> get_centroid_average_from_device(stk::mesh::BulkData &bulk, stk::mesh::Field<double, stk::mesh::Cartesian3d> &centroid, const stk::mesh::Selector& selector)
+{
+  stk::mesh::NgpField<double>& ngpField = stk::mesh::get_updated_ngp_field<double>(centroid);
+  stk::mesh::NgpMesh& ngpMesh = bulk.get_updated_ngp_mesh();
+
+  typedef Kokkos::View<double*, stk::mesh::MemSpace> DeviceAverageView;
+  typedef typename DeviceAverageView::HostMirror HostAverageView;
+
+  DeviceAverageView deviceAverageView = DeviceAverageView("averageVew", 4);
+  HostAverageView hostAverageView = Kokkos::create_mirror_view(deviceAverageView);
+
+  Kokkos::deep_copy(deviceAverageView, 0.0);
+
+  stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
+                                 KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem)
+                                 {
+                                   for(size_t dim = 0; dim < 3; dim++) {
+                                     Kokkos::atomic_add(&deviceAverageView(dim), ngpField(elem, dim));
+                                   }
+                                   Kokkos::atomic_increment(&deviceAverageView(3));
+                                 });
+
+  Kokkos::deep_copy(hostAverageView, deviceAverageView);
+
+  std::vector<double> average = {0, 0, 0};
+  unsigned numElems = hostAverageView(3);
+
+  for(size_t dim = 0; dim < 3; dim++) {
+    average[dim] = hostAverageView(dim) / numElems;
   }
 
   return average;

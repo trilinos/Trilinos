@@ -685,7 +685,6 @@ packCrsGraph
   using crs_graph_type = CrsGraph<LO, GO, NT>;
   using packet_type = typename crs_graph_type::packet_type;
   using buffer_device_type = typename crs_graph_type::buffer_device_type;
-  using execution_space = typename buffer_device_type::execution_space;
   using exports_view_type = Kokkos::DualView<packet_type*, buffer_device_type>;
   using local_graph_type = typename crs_graph_type::local_graph_type;
   using local_map_type = typename Tpetra::Map<LO, GO, NT>::local_map_type;

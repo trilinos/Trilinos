@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
       SUBROUTINE PMESH (NPNODE, NPELEM, MXNFLG, MXSFLG, NPNBC, NPSBC,
      &   MAXKXN, NNN, KKK, NNXK, NBCNOD, NBCSID, NNLIST, NVLIST, NODES,
@@ -10,11 +10,11 @@ C    See packages/seacas/LICENSE for details
      &   LABNB, LABSB, LABM, LABW, CENTK, ILOOK, XMIN, XMAX, YMIN, YMAX,
      &   XX1, XX2, YY1, YY2, TITLE, DEV1, EIGHT, NINE, VERSN, VAXVMS)
 C***********************************************************************
-C
+
 C  SUBROUTINE PMESH = PLOTS ALL FLAGGED ELEMENTS IN THE MESH
-C
+
 C***********************************************************************
-C
+
 C  VARIABLES USED:
 C     AREACG = .TRUE. IF AREA AND C.G. REPORT ARE TO BE CALCULATED AND
 C              PLOTTED
@@ -22,9 +22,9 @@ C     LABE   = .TRUE. IF ELEMENT NUMBERS ARE TO BE PLOTTED
 C     LABN   = .TRUE. IF NODE NUMBERS ARE TO BE PLOTTED
 C     LABNB  = .TRUE. IF NODE BOUNDARY NUMBERS ARE TO BE PLOTTED
 C     LABSB  = .TRUE. IF SIDE BOUNDARY NUMBERS ARE TO BE PLOTTED
-C
+
 C***********************************************************************
-C
+
       DIMENSION CENTK(2, NPELEM), ILOOK(NNXK*MAXKXN)
       DIMENSION MAPGXD(NPNODE), MAPDXG(NPNODE)
       DIMENSION XN(NPNODE), YN(NPNODE), NXK(NNXK, NPELEM), MAT(NPELEM)
@@ -33,15 +33,15 @@ C
       DIMENSION NNFLG(MXNFLG), NNPTR(MXNFLG)
       DIMENSION NSFLG(MXSFLG), NVPTR(MXSFLG), NVLEN(MXSFLG)
       DIMENSION XDUM(2), YDUM(2)
-C
+
       LOGICAL LABE, LABN, LABNB, LABSB, LABO, ADD, AXIS, LABM, EIGHT
       LOGICAL NINE, NEW, LABW, CPUIFC, AREACG
-C
+
       CHARACTER*72 DUMMY, TITLE
       CHARACTER DEV1*3, CDUMMY*4, DATE*8, TIME*8, VERSN*9
-C
+
 C  INITIALIZE THE PLOTTING SURFACE
-C
+
       CALL PLTBGN
       CALL PLTSTV (2, 160.)
       XDIMR = XMAX - XMIN
@@ -66,9 +66,9 @@ C
          XX1 = XMIN
          XX2 = XMAX
       END IF
-C
+
 C  SET UP SCALING EXTREMES FOR AXIS
-C
+
       IF (AXIS) THEN
          XDUM(1) = XX1 - (XDIMR*.05)
          XDUM(2) = XX2 + (XDIMR*.05)
@@ -78,18 +78,18 @@ C
       ELSE
          SHRINK = .1
       END IF
-C
+
 C  SHRINK TO FIT A BORDER ON THE PLOT
-C
+
       XX1 = XX1 - (XDIMR*SHRINK)
       XX2 = XX2 + (XDIMR*SHRINK)
       YY1 = YY1 - (YDIMR*SHRINK)
       YY2 = YY2 + (YDIMR*SHRINK)
       CALL MPORT2 (XX1, XX2, YY1, YY2)
       CALL PLTFRM (0)
-C
+
 C  PLOT THE TITLE AND THE TRACE
-C
+
       CALL STRLNG (TITLE, LEN)
       IF ((LEN .GT. 1) .OR. (TITLE(1:1) .NE. ' ')) THEN
          CALL PLTXHL (TITLE(1:LEN), XLEN)
@@ -108,18 +108,18 @@ C
       CALL EXTIME (TIME)
       DUMMY(32:39) = TIME
       CALL PLTXTH (0., 0., DUMMY(1:39))
-C
+
 C  DRAW THE AXIS IF REQUIRED AND SET CLIPPING WITHIN THE AXIS
-C
+
       IF (AXIS) CALL SETAXS (XDUM, YDUM)
       IF (CPUIFC(.TRUE.)) GO TO 340
-C
+
 C  FLAG NODES TO BE PLOTTED
-C
+
       DO 100 I = 1, NNN
          ILOOK(I) = 0
   100 CONTINUE
-C
+
       DO 120 I = 1, KKK
          IF (NXK(1, I) .GT. 0) THEN
             DO 110 J = 1, NNXK
@@ -127,9 +127,9 @@ C
   110       CONTINUE
          END IF
   120 CONTINUE
-C
+
 C  PLOT THE NUMBERS ASSOCIATED WITH NODES
-C
+
       IF ((LABN) .OR. (LABNB) .OR. (LABSB) .OR. (LABW)) THEN
          DO 240 I = 1, NNN
             IF (CPUIFC(.TRUE.)) GO TO 340
@@ -138,9 +138,9 @@ C
                DUMMY = ' '
                CALL MP2PT (1, XN(I), YN(I), X1, Y1, MASK)
                IF (MOD(MASK, 2) .NE. 0) THEN
-C
+
 C  PLOT THE NODE NUMBERS
-C
+
                   IF (LABN) THEN
                      CALL PLTSTD (1, 3.)
                      CALL GETDUM (I, DUMMY, LEN)
@@ -148,9 +148,9 @@ C
                      CALL PLTXHE (X1, Y1)
                      ADD = .TRUE.
                   END IF
-C
+
 C  PLOT THE NODAL BOUNDARY CONDITION FLAGS
-C
+
                   IF (LABNB) THEN
                      CALL PLTSTD (1, 5.)
                      J1 = 1
@@ -184,9 +184,9 @@ C
                         END IF
   160                CONTINUE
                   END IF
-C
+
 C  PLOT THE WEIGHTING FACTORS
-C
+
                   IF (LABW) THEN
                      CALL PLTSTD (1, 5.)
                      DO 170 J = 1, NNLIST
@@ -219,9 +219,9 @@ C
   190                   CONTINUE
   200                CONTINUE
                   END IF
-C
+
 C  PLOT THE SIDE BOUNDARY CONDITION FLAGS
-C
+
                   IF (LABSB) THEN
                      J1 = 1
                      ADD = .FALSE.
@@ -234,9 +234,9 @@ C
                      DO 230 J = J1, NVLIST, 2
                         IF ((NSIDEN(J) .EQ. I) .AND.
      &                     (ILOOK(NSIDEN(J + 1)) .GT. 0)) THEN
-C
+
 C  SEE IF THIS USE OF THE NODE IS THE SAME SIDE AS BEFORE
-C
+
                            IF ((ADD) .AND. (NSIDEN(J + 1) .NE. JE) .AND.
      &                        (.NOT.NEW)) THEN
                               J1HOLD = J
@@ -271,9 +271,9 @@ C
                            END IF
                         END IF
   230                CONTINUE
-C
+
 C  GO BACK AND PICK UP OTHER SIDES USING THIS NODE
-C
+
                      IF (J1HOLD .GT. 0) THEN
                         J1 = J1HOLD
                         J1HOLD = 0
@@ -282,14 +282,14 @@ C
                         GO TO 210
                      END IF
                   END IF
-C
+
                END IF
             END IF
   240    CONTINUE
       END IF
-C
+
 C  PLOT THE ELEMENT NUMBERS IF NEEDED
-C
+
       IF ((LABE) .OR. (LABO) .OR. (LABM)) THEN
          DO 250 IJK = 1, KKK
             IF (CPUIFC(.TRUE.)) GO TO 340
@@ -321,9 +321,9 @@ C
             END IF
   250    CONTINUE
       END IF
-C
+
 C  PLOT THE ELEMENTS
-C
+
       DO 260 I = 1, MAXKXN*NNXK
          ILOOK(I) = 0
   260 CONTINUE
@@ -358,16 +358,16 @@ C
      &            ((K .EQ. 5) .AND. (.NOT.EIGHT) .AND. (.NOT.NINE)))
      &            K = 1
                INUM2 = NXK(K, I)
-C
+
 C  CALCULATE AREA AND C.G. OF ELEMENT
-C
+
                IF (AREACG) THEN
                   XBAR = XBAR + XN(INUM1)
                   YBAR = YBAR + YN(INUM1)
                   EAREA = EAREA + 0.5 * (XN(INUM1) - XN(INUM2))
      &               * (YN(INUM1) + YN(INUM2))
                END IF
-C
+
                IF (INUM2 .GT. INUM1) THEN
                   IHOLD = INUM1
                   INUM1 = INUM2
@@ -409,7 +409,7 @@ C
                   GO TO 290
                END IF
   310       CONTINUE
-C
+
             IF (AREACG) THEN
                AREA = AREA + EAREA
                XCG = XCG + EAREA*XBAR/REAL(JEND)
@@ -422,14 +422,14 @@ C
          YCG = YCG/AREA
       END IF
   330 CONTINUE
-C
+
 C  CONCLUDE THE PLOT SESSION
-C
+
   340 CONTINUE
       CALL PLTSTD (1, 7.)
-C
+
 C  PLOT SYMBOL AT C.G. AND REPORT AREA AND C.G.
-C
+
       IF (AREACG) THEN
          WRITE (DUMMY, 10040) 'AREA', AREA
          CALL STRLNG (DUMMY, LEN)
@@ -461,8 +461,8 @@ C
       END IF
       CALL PLTBEL
       CALL PLTFLU
-C
+
       RETURN
-C
+
 10040 FORMAT (A, ': ', G11.4)
       END

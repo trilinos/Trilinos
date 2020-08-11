@@ -54,40 +54,17 @@
 #include "stk_unit_test_utils/stk_mesh_fixtures/SelectorFixture.hpp"  // for SelectorFixture
 
 
+namespace {
 
-namespace stk {
-namespace mesh {
-namespace utest {
-
-struct ReversePartition
+struct ReverseSorter : public stk::mesh::EntitySorterBase
 {
-  void operator()(impl::Partition& p)
+  virtual void sort(stk::mesh::BulkData &bulk, stk::mesh::EntityVector& entityVector) const
   {
-    for (stk::mesh::BucketVector::iterator b_i = p.begin(); b_i != p.end(); ++b_i) {
-      stk::mesh::Bucket & b = **b_i;
-
-      std::reverse(b.m_entities.begin(), b.m_entities.begin()+b.size());
-      //std::reverse(b.m_relations.begin(), b.m_relations.end());
-
-      const unsigned n = b.size();
-      for ( unsigned i = 0 ; i < n ; ++i)
-      {
-        b.mesh().mesh_index(b[i]).bucket_ordinal = i;
-
-        // TODO: remove when m_mesh_index disappears from EntityImpl.
-#if ENTITY_IMPL_HAS_VESTIGAL_MESH_INDEX
-        b.m_entities[i].m_entityImpl->set_bucket_and_ordinal(*b_i, i);
-#endif
-      }
-    }
+    std::sort(entityVector.begin(), entityVector.end(),
+              [&bulk](const stk::mesh::Entity lhs, const stk::mesh::Entity rhs)->bool
+              { return bulk.entity_key(lhs) > bulk.entity_key(rhs); });
   }
 };
-
-}
-}
-}
-
-namespace {
 
 using stk::mesh::fixtures::SelectorFixture ;
 
@@ -193,7 +170,7 @@ void initialize_unsorted(SelectorFixture& fixture)
   for (size_t i = 0; i < num_partitions; ++i)
   {
     stk::mesh::impl::Partition &partition = *partitions[i];
-    stk::mesh::utest::ReversePartition()(partition);
+    partition.sort(ReverseSorter());
   }
 }
 

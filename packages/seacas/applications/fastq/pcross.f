@@ -1,40 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: pcross.f,v 1.4 2000/11/13 15:39:05 gdsjaar Exp $
-C $Log: pcross.f,v $
-C Revision 1.4  2000/11/13 15:39:05  gdsjaar
-C Cleaned up unused variables and labels.
-C
-C Removed some real to int conversion warnings.
-C
-C Revision 1.3  1999/06/17 19:02:22  gdsjaar
-C Fixed several problems related to holes.  In several places, a
-C nonpositive integer was being used to index into an array.  This seems
-C to fix all of those cases.  I'm not sure if I fixed the true cause of
-C these errors or just the symptom though...
-C
-C Revision 1.2  1998/07/14 18:19:30  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.1.1.1  1990/11/30 11:13:11  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:13:10  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.PAVING]PCROSS.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE PCROSS (MXND, MXCORN, MLN, MXLOOP, MAXPRM, NUID,
      &   XN, YN, ZN, LXK, KXL, NXL, LXN, ANGLE, LNODES, BNSIZE, LINKPR,
      &   KPERIM, NODE, NODE1, NODE2, KKKOLD, LLLOLD, NNNOLD, IAVAIL,
@@ -42,46 +11,46 @@ C
      &   KKK, NNN, LCORN, NCORN, NLOOP, NEXTN1, KLOOP, GRAPH, VIDEO,
      &   KREG, NOROOM, ERR)
 C***********************************************************************
-C
+
 C  SUBROUTINE PCROSS = CHECKS TO SEE IF ANY PERIMETERS CROSS AND HOOKS
 C                      THEM TOGETHER IF THEY DO
-C
+
 C***********************************************************************
-C
+
       COMMON /TIMING/ TIMEA, TIMEP, TIMEC, TIMEPC, TIMEAJ, TIMES
-C
+
       DIMENSION XN (MXND), YN (MXND), ZN (MXND), NUID (MXND)
       DIMENSION LXK (4, MXND), KXL (2, 3*MXND)
       DIMENSION NXL (2, 3*MXND), LXN (4, MXND)
       DIMENSION ANGLE (MXND), LNODES (MLN, MXND), BNSIZE (2, MXND)
       DIMENSION LCORN (MXCORN)
       DIMENSION NLOOP (MXLOOP), NEXTN1 (MXLOOP), LINKPR (3, MAXPRM)
-C
+
       CHARACTER*3 DEV1
-C
+
       LOGICAL DONE,  ERR, NOROOM, DONE1
       LOGICAL GRAPH, BOK, LCROSS, LMATCH
       LOGICAL VIDEO, PMATCH
-C
+
 C  FIND THE FIRST OVERLAPPING LINE STARTING AT THE CURRENT NODE
-C
+
       CALL GETIME (TIME1)
       ERR = .FALSE.
       PMATCH = .TRUE.
-C
+
   100 CONTINUE
       if (node1 .eq. 0) return
       N1 = NODE1
       KOUNT = 0
-C
+
   110 CONTINUE
       N0 = LNODES (2, N1)
       N2 = LNODES (3, N1)
       N3 = LNODES (3, N2)
       KOUNT = KOUNT + 1
-C
+
 C  CHECK FOR COMPLETION
-C
+
       IF ((N1 .EQ. NODE2) .AND. (KOUNT .GT. 1)) THEN
          GOTO 140
       ELSEIF (KOUNT .GT. NLOOP (1) + 1) THEN
@@ -89,25 +58,25 @@ C
          ERR = .TRUE.
          GOTO 140
       ENDIF
-C
+
 C  LOOP THROUGH ALL THE REMAINING PERIMETERS CHECKING FOR CROSSINGS
-C
+
       IPERIM = LINKPR (2, KPERIM)
   120 CONTINUE
-C
+
       IF (IPERIM .EQ. KPERIM) THEN
          N1 = N2
          GOTO 110
       ENDIF
-C
+
       KOUNT2 = 0
       N1TEST = LINKPR (1, IPERIM)
-C
+
   130 CONTINUE
       N0TEST = LNODES (2, N1TEST)
       N2TEST = LNODES (3, N1TEST)
       N3TEST = LNODES (3, N2TEST)
-C
+
       CALL INTSCT (XN(N1), YN(N1), XN(N2), YN(N2), XN(N1TEST),
      &   YN(N1TEST), XN(N2TEST), YN(N2TEST), U, W, LCROSS)
       IF (.NOT. LCROSS) THEN
@@ -124,10 +93,10 @@ C
          ENDIF
          GOTO 130
       ENDIF
-C
+
 C  AN INTERSECTION HAS OCCURRED.
 C  GET THE BEST SEAM FROM THIS INTERSECTION
-C
+
       IF ((GRAPH) .OR. (VIDEO)) THEN
          CALL RPLOTL (MXND, XN, YN, ZN, NXL, XMIN, XMAX,
      &      YMIN, YMAX, ZMIN, ZMAX, LLL, DEV1, KREG)
@@ -164,10 +133,10 @@ C
          ENDIF
          GOTO 130
       ENDIF
-C
+
 C  NOW CHECK TO SEE IF THE ATTACHMENT WOULD CAUSE
 C  LINES ON THE BOUNDARY TO CROSS
-C
+
       CALL BCROSS (MXND, MLN, XN, YN, ZN, LXK, KXL, NXL, LXN, LNODES,
      &   I1, I2, J1, J2, NLOOP(1), BOK, LLL, XMIN, XMAX, YMIN, YMAX,
      &   ZMIN, ZMAX, DEV1, KREG, ERR)
@@ -186,16 +155,16 @@ C
          ENDIF
          GOTO 130
       ENDIF
-C
+
 C  NOW THAT THE APPROPRIATE COLLAPSE HAS BEEN FOUND, THE TWO LINES
 C  MUST BE JOINED AND THE PERIMETER LINKS RESTABLISHED
-C
+
       CALL SEW2 (MXND, MLN, NUID, LXK, KXL, NXL, LXN, LNODES,
      &   IAVAIL, NAVAIL, LLL, KKK, NNN, I1, I2, J1, J2, NOROOM, ERR)
       IF ((NOROOM) .OR. (ERR)) GOTO 140
-C
+
 C  UPDATE THE CURRENT NODE
-C
+
       IF (J1 .EQ. NODE) THEN
          NDUM = NODE
          NODE = I2
@@ -207,7 +176,7 @@ C
          IF (NODE1 .EQ. NDUM) NODE1 = I1
          IF (NODE2 .EQ. NDUM) NODE2 = I1
       ENDIF
-C
+
       NLOOP (1) = NLOOP (1) + LINKPR (3, IPERIM) - 2
       LINKPR (3, KPERIM) = NLOOP (1)
       JPERIM = LINKPR (2, IPERIM)
@@ -216,9 +185,9 @@ C
       LINKPR (2, IPERIM) = LINKPR (2, JPERIM)
       LINKPR (3, IPERIM) = LINKPR (3, JPERIM)
       IF (LINKPR (2, KPERIM) .EQ. KPERIM) LINKPR (2, KPERIM) = 0
-C
+
 C  NOW SMOOTH AND PLOT THE CURRENT MESH
-C
+
       NNN2 = 1
       CALL GETIME (TIME2)
       TIMEPC = TIMEPC + TIME2 - TIME1
@@ -237,9 +206,9 @@ C
             CALL SFLUSH
          ENDIF
       ENDIF
-C
+
 C  NOW TRY TO PINCH THE CONNECTION
-C
+
       CALL LUPANG (MXND, MLN, XN, YN, ZN, LXK, KXL, NXL, LXN, NLOOP (1),
      &   ANGLE, LNODES, I2, LLL, XMIN, XMAX, YMIN, YMAX, ZMIN, ZMAX,
      &   DEV1, KREG, ERR)
@@ -255,10 +224,10 @@ C
       IF ((NOROOM) .OR. (ERR)) GOTO 140
       IF (LINKPR(2, KPERIM) .NE. 0) GO TO 100
       CALL GETIME (TIME1)
-C
+
   140 CONTINUE
       CALL GETIME (TIME2)
       TIMEPC = TIMEPC + TIME2 - TIME1
       RETURN
-C
+
       END

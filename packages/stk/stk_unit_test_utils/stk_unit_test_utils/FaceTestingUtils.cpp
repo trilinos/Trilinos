@@ -80,10 +80,10 @@ unsigned read_file_count_sides(std::string filename)
     return count_sides_in_mesh(mesh);
 }
 
-bool is_face_fully_connected(const stk::mesh::BulkData& mesh, stk::mesh::MeshIndex faceMeshIndex)
+bool is_face_fully_connected(const stk::mesh::BulkData& mesh, stk::mesh::Entity elem)
 {
-    const unsigned num_expected_faces = faceMeshIndex.bucket->topology().num_faces();
-    if (num_expected_faces != mesh.num_faces(stk::mesh::impl::get_entity(faceMeshIndex)))
+    const unsigned num_expected_faces = mesh.bucket(elem).topology().num_faces();
+    if (num_expected_faces != mesh.num_faces(elem))
         return false;
     return true;
 }
@@ -92,9 +92,9 @@ bool fully_connected_elements_to_faces(const stk::mesh::BulkData& bulk)
 {
     bool fully_connected = true;
     stk::mesh::for_each_entity_run(bulk, stk::topology::ELEMENT_RANK,
-        [&fully_connected](const stk::mesh::BulkData& mesh, const stk::mesh::MeshIndex& meshIndex)
+        [&fully_connected](const stk::mesh::BulkData& mesh, stk::mesh::Entity elem)
         {
-          fully_connected &= is_face_fully_connected(mesh,meshIndex);
+          fully_connected &= is_face_fully_connected(mesh, elem);
         }
     );
     return fully_connected;
@@ -139,9 +139,9 @@ unsigned count_shared_faces_between_different_elements(const stk::mesh::BulkData
 {
     unsigned shared_face_count = 0;
     stk::mesh::for_each_entity_run(bulk, stk::topology::FACE_RANK,
-        [&shared_face_count](const stk::mesh::BulkData& mesh, const stk::mesh::MeshIndex& meshIndex)
+        [&shared_face_count](const stk::mesh::BulkData& mesh, stk::mesh::Entity face)
         {
-          if (is_face_shared_between_different_elements(mesh,stk::mesh::impl::get_entity(meshIndex)))
+          if (is_face_shared_between_different_elements(mesh, face))
               ++shared_face_count;
         }
     );
@@ -187,10 +187,8 @@ unsigned count_shared_faces_between_same_element(const stk::mesh::BulkData& bulk
 {
     unsigned shared_face_count = 0;
     stk::mesh::for_each_entity_run(bulk, stk::topology::FACE_RANK,
-      [&shared_face_count](const stk::mesh::BulkData& mesh, const stk::mesh::MeshIndex& meshIndex)
+      [&shared_face_count](const stk::mesh::BulkData& mesh, stk::mesh::Entity face)
       {
-        stk::mesh::Entity face = stk::mesh::impl::get_entity(meshIndex);
-
         if (is_face_shared_between_same_element(mesh,face))
             ++shared_face_count;
       }
@@ -242,10 +240,10 @@ stk::mesh::EntityVector get_faces_at_x_equal_half(const stk::mesh::BulkData& bul
 {
     stk::mesh::EntityVector faces_at_x_equal_half;
     stk::mesh::for_each_entity_run(bulk, stk::topology::FACE_RANK,
-      [&faces_at_x_equal_half](const stk::mesh::BulkData& mesh, const stk::mesh::MeshIndex& meshIndex)
+      [&faces_at_x_equal_half](const stk::mesh::BulkData& mesh, stk::mesh::Entity face)
       {
-        if (is_face_at_x_equal_half(mesh,stk::mesh::impl::get_entity(meshIndex)))
-            faces_at_x_equal_half.push_back(stk::mesh::impl::get_entity(meshIndex));
+        if (is_face_at_x_equal_half(mesh, face))
+            faces_at_x_equal_half.push_back(face);
       }
     );
     return faces_at_x_equal_half;

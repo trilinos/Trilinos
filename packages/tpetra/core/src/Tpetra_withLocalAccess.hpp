@@ -821,6 +821,57 @@ namespace Tpetra {
     };
 
     /// \brief Specialization of WithLocalAccess that implements the
+    ///   "base class" of the user providing one GlobalObject
+    ///   arguments, and a function that takes one arguments.
+    ///   Required to workaround a compile error with intel-19 in c++14 mode.
+    template<class FirstLocalAccessType>
+    struct WithLocalAccess<FirstLocalAccessType> {
+      using current_user_function_type =
+        typename ArgsToFunction<FirstLocalAccessType>::type;
+
+      static void
+      withLocalAccess (current_user_function_type userFunction,
+                       FirstLocalAccessType first)
+      {
+        // The "master" local object is the scope guard for local
+        // data.  Its constructor may allocate temporary storage, copy
+        // data to the desired memory space, etc.  Its destructor will
+        // put everything back.  "Put everything back" could be a
+        // no-op, or it could copy data back so where they need to go
+        // and/or free temporary storage.
+        //
+        // Users define this function and the type it returns by
+        // specializing GetMasterLocalObject for LocalAccess
+        // specializations.
+        auto first_lcl_master = getMasterLocalObject (first);
+
+        // The "nonowning" local object is a nonowning view of the
+        // "master" local object.  This is the only local object that
+        // users see, and they see it as input to their function.
+        // Subsequent slices / subviews view this nonowning local
+        // object.  All such nonowning views must have lifetime
+        // contained within the lifetime of the master local object.
+        //
+        // Users define this function and the type it returns by
+        // specializing GetNonowningLocalObject (see above).
+        //
+        // Constraining the nonowning views' lifetime to this scope
+        // means that master local object types may use low-cost
+        // ownership models, like that of std::unique_ptr.  There
+        // should be no need for reference counting (in the manner of
+        // std::shared_ptr) or Herb Sutter's deferred_heap.
+        auto first_lcl_view = getNonowningLocalObject (first, first_lcl_master);
+
+        // Curry the user's function by fixing the first argument.
+
+        WithLocalAccess<>::withLocalAccess
+          ([=] () {
+             userFunction (first_lcl_view);
+           });
+      }
+    };
+
+    /// \brief Specialization of WithLocalAccess that implements the
     ///   "recursion case."
     ///
     /// \tparam FirstLocalAccessType Specialization of LocalAccess.
@@ -866,17 +917,6 @@ namespace Tpetra {
         auto first_lcl_view = getNonowningLocalObject (first, first_lcl_master);
 
         // Curry the user's function by fixing the first argument.
-
-        // The commented-out implementation requires C++14, because it
-        // uses a generic lambda (the special case where parameters
-        // are "auto").  We do have the types of the arguments,
-        // though, from ArgsToFunction, so we don't need this feature.
-
-        // WithLocalAccess<Rest...>::withLocalAccess
-        //   (rest...,
-        //    [=] (auto ... args) {
-        //      userFunction (first_lcl_view, args...);
-        //    });
 
         WithLocalAccess<Rest...>::withLocalAccess
           ([=] (with_local_access_function_argument_type<Rest>... args) {

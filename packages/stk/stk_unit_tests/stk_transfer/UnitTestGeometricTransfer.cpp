@@ -86,7 +86,7 @@ using EntityKey = uint64_t;
 class MockMeshA_Common
 {
 public:
-  using EntityProc = stk::search::IdentProc<EntityKey, unsigned>;
+  using EntityProc = stk::search::IdentProc<EntityKey>;
   using EntityProcVec = std::vector<EntityProc>;
   using BoundingBox = std::pair<stk::search::Box<double>, EntityProc>;
 
@@ -102,7 +102,7 @@ public:
 class MockMeshB_Common
 {
 public:
-  using EntityProc = stk::search::IdentProc<EntityKey, unsigned>;
+  using EntityProc = stk::search::IdentProc<EntityKey>;
   using EntityProcVec = std::vector<EntityProc>;
   using BoundingBox = std::pair<stk::search::Sphere<double>, EntityProc>;
 
@@ -581,9 +581,9 @@ public:
       {
         ASSERT_EQ(2u, from_entity_keys_masked.size());
         EXPECT_EQ(0u, from_entity_keys_masked[0].id());
-        EXPECT_EQ(1u, from_entity_keys_masked[0].proc());
+        EXPECT_EQ(1, from_entity_keys_masked[0].proc());
         EXPECT_EQ(0u, from_entity_keys_masked[1].id());
-        EXPECT_EQ(2u, from_entity_keys_masked[1].proc());
+        EXPECT_EQ(2, from_entity_keys_masked[1].proc());
       }else {
         EXPECT_EQ(3u, FromElem->elemToUse);
         EXPECT_EQ(0u, from_entity_keys_masked.size());
@@ -595,15 +595,15 @@ public:
       if( FromElem->elemToUse == 0)
       {
         ASSERT_EQ(0u, from_entity_keys_masked.size());
-        EXPECT_EQ(0u, to_entity_keys_masked[0].proc());
+        EXPECT_EQ(0, to_entity_keys_masked[0].proc());
       }else {
         EXPECT_EQ(3u, FromElem->elemToUse);
         ASSERT_EQ(2u, from_entity_keys_masked.size());
         EXPECT_EQ(3u, from_entity_keys_masked[0].id());
-        EXPECT_EQ(1u, from_entity_keys_masked[0].proc());
+        EXPECT_EQ(1, from_entity_keys_masked[0].proc());
         EXPECT_EQ(3u, from_entity_keys_masked[1].id());
-        EXPECT_EQ(2u, from_entity_keys_masked[1].proc());
-        EXPECT_EQ(1u, to_entity_keys_masked[0].proc());
+        EXPECT_EQ(2, from_entity_keys_masked[1].proc());
+        EXPECT_EQ(1, to_entity_keys_masked[0].proc());
       }
       EXPECT_EQ(ToPoints->point_ids[0], to_entity_keys_masked[0].id());
     }
@@ -613,9 +613,9 @@ public:
       EXPECT_EQ(ToPoints->point_ids[1], to_entity_keys_masked[0].id());
 
       if( FromElem->elemToUse == 0)
-        EXPECT_EQ(0u, to_entity_keys_masked[0].proc());
+        EXPECT_EQ(0, to_entity_keys_masked[0].proc());
       else
-        EXPECT_EQ(1u, to_entity_keys_masked[0].proc());
+        EXPECT_EQ(1, to_entity_keys_masked[0].proc());
 
       ASSERT_EQ(0u, from_entity_keys_masked.size());
     }

@@ -108,7 +108,7 @@ int main (int argc, char *argv[]) {
 #elif defined(TACHO_HAVE_SCOTCH)
     GraphTools_Scotch T(G);
 #else
-    GraphTools_CAMD T(G);
+    GraphTools T(G);
 #endif
     T.reorder(verbose);
     
