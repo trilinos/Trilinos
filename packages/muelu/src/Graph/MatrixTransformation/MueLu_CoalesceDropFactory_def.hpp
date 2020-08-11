@@ -1085,12 +1085,13 @@ namespace MueLu {
 	    // Do symmetrization of the cut matrix
 	    // NOTE: We assume nested row/column maps here
 	    for (LO row = 0; row < numRows; row++) {
-	      for (LO col = rows[row]; col < rows_stop[row]; col++) {
+	      for (LO colidx = rows[row]; colidx < rows_stop[row]; colidx++) {
+		LO col = columns[colidx];
 		if(col >= numRows) continue;
 		
 		bool found = false;
 		for(LO t_col = rows[col] ; !found && t_col  < rows_stop[col]; t_col++) {
-		  if (t_col == row) 
+		  if (columns[t_col] == row) 
 		    found = true;
 		}
 		// We didn't find the transpose buddy, so let's symmetrize, unless we'd be symmetrizing

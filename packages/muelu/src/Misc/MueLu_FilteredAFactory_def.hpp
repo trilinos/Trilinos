@@ -177,7 +177,8 @@ namespace MueLu {
 
       Xpetra::IO<SC,LO,GO,NO>::Write("filteredA.dat", *filteredA);
 
-     { //original filtered A
+     { //original filtered A  and actual A
+       Xpetra::IO<SC,LO,GO,NO>::Write("A.dat", *A);
        RCP<Matrix> origFilteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries());
        BuildNew(*A, *G, lumping, dirichlet_threshold,*origFilteredA);
        origFilteredA->fillComplete(A->getDomainMap(), A->getRangeMap(), fillCompleteParams);
@@ -448,7 +449,7 @@ namespace MueLu {
     RCP<CrsMatrix> filteredAcrs = dynamic_cast<const CrsMatrixWrap*>(&filteredA)->getCrsMatrix();
     filteredAcrs->getAllValues(rowptr,inds,vals_const);
     vals = arcp_const_cast<SC>(vals_const);
-    vals.assign(vals.size(),SC_INVALID);
+    Array<bool> vals_dropped_indicator(vals.size(),false);
   
     // In the badAggNeighbors loop, if the entry has any number besides NAN, I add it to the diagExtra and then zero the guy.
     
@@ -514,6 +515,7 @@ namespace MueLu {
     size_t numNewDrops=0;
     size_t numOldDrops=0;
     size_t numFixedDiags=0;
+    size_t numSymDrops = 0;
 
     for(LO i=0; i<numAggs; i++) {
       LO numNodesInAggregate = nodesInAgg.ptr[i+1] - nodesInAgg.ptr[i];
@@ -549,19 +551,36 @@ namespace MueLu {
 	A.getLocalRowView(row, indsA, valsA);
 	for(LO k=0; k<(LO)indsA.size(); k++) {
 	  if(indsA[k] < (LO)numRows) {
-	    int node = amalgInfo->ComputeLocalNode(indsA[k]);
-	    int agg = vertex2AggId[node];
+	    LO node = amalgInfo->ComputeLocalNode(indsA[k]);
+	    LO agg = vertex2AggId[node];
 	    if(!std::binary_search(goodAggNeighbors.begin(),goodAggNeighbors.end(),agg))
 	      badAggNeighbors.push_back(agg);
 	  }
 	}	
       }
       sort_and_unique(badAggNeighbors);
-  
-      // NTS: I we abandon the "new graph" idea, we can pre-fill with a marker and keep the diagExtra/diagIndex as a vector.
-      // Then at this point we can loop through any badAggNeighbors and blitz their entries throwing them on the diagonal.
-      // Finally, after the sweep, we update all the diagonals and check them.
 
+      // For each of the badAggNeighbors, we go and blitz their connections to dofs in this aggregate.
+      // We remove the INVALID marker when we do this so we don't wind up doubling this up lated      
+      for(LO b=0; b<(LO)badAggNeighbors.size(); b++) {
+	LO bad_agg = badAggNeighbors[b];
+	for (LO k=nodesInAgg.ptr[bad_agg]; k < nodesInAgg.ptr[bad_agg+1]; k++) {
+	  LO bad_node = nodesInAgg.nodes[k];
+	  for(LO j = 0; j < (LO)blkSize; j++) {
+	    LO bad_row = amalgInfo->ComputeLocalDOF(bad_node,j);
+	    size_t index_start = rowptr[bad_row];	
+	    A.getLocalRowView(bad_row, indsA, valsA);
+	    for(LO l = 0; l < (LO)indsA.size(); l++) {
+	      if(indsA[l] < (LO)numRows && vertex2AggId[amalgInfo->ComputeLocalNode(indsA[l])] == i && vals_dropped_indicator[index_start+l] == false) {
+		vals_dropped_indicator[index_start + l] = true;
+		vals[index_start + l] = ZERO;
+		diagExtra[bad_row] += valsA[l];
+		numSymDrops++;
+	      }
+	    }
+	  }
+	}
+      }
 
       // Now lets fill the rows in this aggregate and figure out the diagonal lumping
       // We loop over each node in the aggregate and then over the neighbors of that node
@@ -585,9 +604,16 @@ namespace MueLu {
 	    if (indsA[l] == row) {
 	      diagIndex[row] = l;
 	      vals[index_start + l] = valsA[l];
-	      //	      printf("Keeping diagonal w/ value %8.2e\n",vals[numInds]);
 	      continue;
 	    }
+
+	    // If we've already dropped this guy (from symmetry above), then continue onward
+	    if(vals_dropped_indicator[index_start +l] == true) {
+	      if(is_good) numOldDrops++;
+	      else numNewDrops++;
+	      continue;
+	    }
+
 	    
 	    // FIXME: I'm assuming vertex2AggId is only length of the rowmap, so
 	    // we won'd do secondary dropping on off-processor neighbors
@@ -605,6 +631,7 @@ namespace MueLu {
 	      else numNewDrops++;
 	      diagExtra[row] += valsA[l];
 	      vals[index_start+l]=ZERO;
+	      vals_dropped_indicator[index_start+l]=true;
 	    }
 	  } //end for l "indsA.size()" loop
 	    
@@ -658,11 +685,10 @@ namespace MueLu {
       }// end k loop over number of nodes in this agg
     }//end i loop over numAggs
 
-    // Copy all the goop out
+    // Copy all the goop out	     
     for(LO row=0; row<(LO)numRows; row++) {      
       filteredA.replaceLocalValues(row, inds(rowptr[row],rowptr[row+1]-rowptr[row]), vals(rowptr[row],rowptr[row+1]-rowptr[row]));
     }
-    //    filteredAcrs->setAllValues(arcp_const_cast<size_t>(rowptr),arcp_const_cast<LO>(inds),vals);	      
 
     size_t g_newDrops = 0, g_oldDrops = 0, g_fixedDiags=0;
     
@@ -671,6 +697,7 @@ namespace MueLu {
     MueLu_sumAll(A.getRowMap()->getComm(), numFixedDiags, g_fixedDiags);
     GetOStream(Runtime0)<< "Filtering out "<<g_newDrops<<" edges, in addition to the "<<g_oldDrops<<" edges dropped earlier"<<std::endl;
     GetOStream(Runtime0)<< "Fixing "<< g_fixedDiags<<" zero diagonal values" <<std::endl;
+    printf("CMS: numSymDrops = %d\n",(int)numSymDrops);
   }
 
 
