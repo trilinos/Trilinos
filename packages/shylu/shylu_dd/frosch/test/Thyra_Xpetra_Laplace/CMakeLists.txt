@@ -315,6 +315,8 @@ NUM_MPI_PROCS 4
 #  )
 #ENDIF() # IF(ShyLU_DDFROSch_ENABLE_MueLu)
 
+
+
 TRIBITS_ADD_TEST(
 thyra_xpetra_laplace
 NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM3_DPN1_ORD0_TPETRA
@@ -545,6 +547,15 @@ COMM mpi
 NUM_MPI_PROCS 8
 )
 
+IF(HAVE_SHYLU_DDFROSCH_ZOLTAN2)
+TRIBITS_ADD_TEST(
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_GDSW_ML_DIM2_DPN1_ORD0_TPETRA
+ARGS "--M=3 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSW_ML.xml --USETPETRA"
+COMM mpi
+NUM_MPI_PROCS 4
+)
+ENDIF()
 ################################################
 # TwoLevelPreconditioner_IPOUHarmonic_GDSWStar #
 ################################################

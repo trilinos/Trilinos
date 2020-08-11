@@ -549,6 +549,7 @@ namespace Ioss {
 
     // Values for the file decomposition
     int    m_spatialDimension{3};
+    int    m_commonNodeCount{0};
     size_t m_globalElementCount{0};
     size_t m_elementCount{0};
     size_t m_elementOffset{0};

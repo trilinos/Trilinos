@@ -424,7 +424,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
 
   // Options
   //int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer // unreferenced
-  std::string myalg("MSAK");
+  std::string myalg("KK");
   if(!params.is_null()) {
     if(params->isParameter("cuda: jacobi algorithm"))
       myalg = params->get("cuda: jacobi algorithm",myalg);

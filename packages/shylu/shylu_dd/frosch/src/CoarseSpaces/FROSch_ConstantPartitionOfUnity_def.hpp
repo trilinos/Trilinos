@@ -39,6 +39,7 @@
 // ************************************************************************
 //@HEADER
 
+
 #ifndef _FROSCH_CONSTANTPARTITIONOFUNITY_DEF_HPP
 #define _FROSCH_CONSTANTPARTITIONOFUNITY_DEF_HPP
 
@@ -66,7 +67,7 @@ namespace FROSch {
     DDInterface_ (ddInterface)
     {
         FROSCH_TIMER_START_LEVELID(constantPartitionOfUnityTime,"ConstantPartitionOfUnity::ConstantPartitionOfUnity");
-
+      
         if (!this->ParameterList_->get("Type","Full").compare("Full")) {
             UseVolumes_ = true;
         } else if (!this->ParameterList_->get("Type","Full").compare("Volumes")) {
@@ -76,7 +77,8 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(false,"FROSch::ConstantPartitionOfUnity : ERROR: Specify a valid Type.");
         }
-
+        this->MpiComm_->barrier();this->MpiComm_->barrier();this->MpiComm_->barrier();
+        if(this->Verbose_)std::cout<<"CPart1\n";
         CommunicationStrategy communicationStrategy = CreateOneToOneMap;
         if (!this->ParameterList_->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsMatrix")) {
             communicationStrategy = CommCrsMatrix;
@@ -123,7 +125,9 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(computePartitionOfUnityTime,"ConstantPartitionOfUnity::computePartitionOfUnity");
         // Interface
+
         UN dofsPerNode = DDInterface_->getInterior()->getEntity(0)->getDofsPerNode();
+
         UN numInteriorDofs = dofsPerNode*DDInterface_->getInterior()->getEntity(0)->getNumNodes();
 
         if (UseVolumes_) Volumes_->buildEntityMap(DDInterface_->getNodesMap());
