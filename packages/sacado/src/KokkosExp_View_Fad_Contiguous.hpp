@@ -374,7 +374,6 @@ struct SacadoViewFill<
       team_policy policy( (output.extent(0)+team_size-1)/team_size ,
                           team_size , stride );
       Kokkos::parallel_for( policy, *this );
-      execution_space().fence();
     }
 };
 #endif
