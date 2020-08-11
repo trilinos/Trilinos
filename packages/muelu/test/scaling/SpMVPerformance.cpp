@@ -155,12 +155,13 @@ private:
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 class LinearSystem : public System {
-public:
   using MultiVector = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using Matrix = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
-  LinearSystem(Xpetra::UnderlyingLib l)
-    : lib(l)
+public:
+  LinearSystem(Xpetra::UnderlyingLib l, int n)
+    : lib(l),
+      numVectors(n)
   { }
 
   void apply() override {
@@ -174,6 +175,7 @@ public:
   }
 
   Xpetra::UnderlyingLib lib;
+  int numVectors;
 
   Teuchos::RCP<Matrix> A;
   Teuchos::RCP<MultiVector> X;
@@ -182,51 +184,53 @@ public:
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 class SystemLoader {
+  using Map = Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+  using MultiVector = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using CoordScalar = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
+  using RealValuedMultiVector = Xpetra::MultiVector<CoordScalar, LocalOrdinal, GlobalOrdinal, Node>;
+
 public:
   SystemLoader(Teuchos::CommandLineProcessor& c)
-    : clp(c)
+    : clp(c),
+      comm(Teuchos::DefaultComm<int>::getComm()),
+      galeriParameters(clp, 100, 100, 100, "Laplace2D"),
+      xpetraParameters(clp)
   { }
 
-  void fill(LinearSystem<Scalar, LocalOrdinal, GlobalOrdinal, Node>& data) {
-    using Map = Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
-    using MultiVector = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    using CoordScalar = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
-    using RealValuedMultiVector = Xpetra::MultiVector<CoordScalar, LocalOrdinal, GlobalOrdinal, Node>;
-
-    bool binaryFormat = "";
-    std::string matrixFile = "";
-    std::string rhsFile = "";
-    std::string rowMapFile = "";
-    std::string colMapFile = "";
-    std::string domainMapFile = "";
-    std::string rangeMapFile = "";
-    std::string coordFile = "";
-    std::string nullFile = "";
-    std::string materialFile = "";
-    Teuchos::RCP<RealValuedMultiVector> coordinates;
-    Teuchos::RCP<MultiVector> nullspace, material;
-    std::ostringstream galeriStream;
-
-    Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
-    Teuchos::RCP<const Map> map;
-    int numVectors = 4;
-    GlobalOrdinal nx = 100, ny = 100, nz = 100;
-    Galeri::Xpetra::Parameters<GlobalOrdinal> galeriParameters(clp, nx, ny, nz, "Laplace2D");
-    Xpetra::Parameters xpetraParameters(clp);
-
+  void fill(LinearSystem<Scalar, LocalOrdinal, GlobalOrdinal, Node>& system) {
     MatrixLoad<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
-        comm, data.lib,
+        comm, system.lib,
         binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile,
         domainMapFile, rangeMapFile, coordFile, nullFile, materialFile,
-        map, data.A,
+        map, system.A,
         coordinates, nullspace, material,
-        data.X, data.B, numVectors,
+        system.X, system.B, system.numVectors,
         galeriParameters, xpetraParameters,
         galeriStream);
   }
 
 private:
   Teuchos::CommandLineProcessor& clp;
+  Teuchos::RCP<const Teuchos::Comm<int>> comm;
+  Galeri::Xpetra::Parameters<GlobalOrdinal> galeriParameters;
+  Xpetra::Parameters xpetraParameters;
+
+  bool binaryFormat;
+  std::string matrixFile = "";
+  std::string rhsFile = "";
+  std::string rowMapFile = "";
+  std::string colMapFile = "";
+  std::string domainMapFile = "";
+  std::string rangeMapFile = "";
+  std::string coordFile = "";
+  std::string nullFile = "";
+  std::string materialFile = "";
+
+  Teuchos::RCP<const Map> map;
+  Teuchos::RCP<RealValuedMultiVector> coordinates;
+  Teuchos::RCP<MultiVector> nullspace;
+  Teuchos::RCP<MultiVector> material;
+  std::ostringstream galeriStream;
 };
 
 
@@ -236,6 +240,8 @@ int main_ETI(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int
 
   int numRuns = 1;
   clp.setOption("num-runs", &numRuns, "number of times to run operation");
+  int numVectors = 1;
+  clp.setOption("multivector", &numVectors, "number of rhs to solve simultaneously");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -245,7 +251,7 @@ int main_ETI(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
 
-  LinearSystem<Scalar, LocalOrdinal, GlobalOrdinal, Node> system(lib);
+  LinearSystem<Scalar, LocalOrdinal, GlobalOrdinal, Node> system(lib, numVectors);
   SystemLoader<Scalar, LocalOrdinal, GlobalOrdinal, Node> systemLoader(clp);
   systemLoader.fill(system);
 
