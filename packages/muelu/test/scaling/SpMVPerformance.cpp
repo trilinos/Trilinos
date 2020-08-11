@@ -129,9 +129,8 @@ public:
   { }
 
   void measure() override {
-    Teuchos::TimeMonitor subTimer(*Teuchos::TimeMonitor::getNewTimer(name));
-
     for (int i=0; i<numRuns; i++) {
+      Teuchos::TimeMonitor subTimer(*Teuchos::TimeMonitor::getNewTimer(name));
       system.apply();
     }
   }
