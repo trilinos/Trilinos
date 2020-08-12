@@ -1355,8 +1355,6 @@ private:
 
   inline bool internal_add_node_sharing_called() const;
 
-  void internal_sync_comm_list_owners();
-
   // Forbidden
   BulkData();
   BulkData( const BulkData & );
@@ -1627,7 +1625,8 @@ void sync_to_host_and_mark_modified(MetaData& meta);
 } // namespace mesh
 } // namespace stk
 
+#include "EntityLessInlinedMethods.hpp"
 #include "BulkDataInlinedMethods.hpp"
 
-
 #endif //  stk_mesh_BulkData_hpp
+
