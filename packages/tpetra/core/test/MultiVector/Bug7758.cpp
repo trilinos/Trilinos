@@ -141,7 +141,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, CyclicToDefault, Scalar,LO,GO,Node)
 
   int nMyEntries = 0;
   for (size_t i = 0; i < nGlobalEntries; i++) {
-    if (i % np == me) {
+    if (int(i % np) == me) {
       myEntries[nMyEntries++] = i;
     }
   }
