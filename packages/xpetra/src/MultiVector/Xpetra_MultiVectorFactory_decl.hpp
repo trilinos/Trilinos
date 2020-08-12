@@ -64,7 +64,22 @@
 
 namespace Xpetra {
 
+/*!
+  @class MultiVectorFactory
+  @brief Factory for any type of Xpetra::MultiVector and its derived classes
 
+  Creates instances of \c Xpetra::MulitVector and \c Xpetra::BlockedMultiVector ,
+  depending on the type of map, i.e. \c Xpetra::Map vs. \c Xpetra::BlockedMap .
+
+  @tparam Scalar
+  @tparam LocalOrdinal
+  @tparam GlobalOrdinal
+  @tparam Node
+
+  \note Although this class can gerenate \c Xpetra::BlockedMultiVector ,
+  it always returns \c Xpetra::MultiVector .
+  Don't forget to cast to \c Xpetra::BlockedMultiVector , if you need the blocked layout directly.
+*/
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
