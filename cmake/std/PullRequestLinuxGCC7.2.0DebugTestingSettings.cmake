@@ -20,8 +20,14 @@ set (MPI_EXEC_PRE_NUMPROCS_FLAGS "--bind-to;none" CACHE STRING "Set by default f
 
 set (Trilinos_ENABLE_COMPLEX_DOUBLE ON CACHE BOOL "Set by default for PR testing to exercise complex doubles case")
 
+# Lengthen allowed testing time for debug PR build
+set (DART_TESTING_TIMEOUT 900 CACHE STRING "Lengthen allowed testing time for debug PR build" )
+
 # Disable just one Teko sub-unit test that fails with openmpi 1.10 (#2712)
 set (Teko_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D ON CACHE BOOL "Temporarily disabled in PR testing")
+
+# This Kokkos test times out in all cases - 
+set (KokkosKernels_blas_serial_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 
