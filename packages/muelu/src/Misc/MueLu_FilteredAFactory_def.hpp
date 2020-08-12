@@ -494,6 +494,7 @@ namespace MueLu {
 	for(LO k=0; k<(LO)indsA.size(); k++) {
 	  int node = amalgInfo->ComputeLocalNode(indsA[k]);
 	  vals[index_start+k] = (indsA[k] == row || filter[node]) ? valsA[k] : ZERO;
+	  if(row==indsA[k]) diagIndex[row] = k;
 	}
 	  
 	// Reset filtering array
@@ -634,29 +635,42 @@ namespace MueLu {
 	      vals_dropped_indicator[index_start+l]=true;
 	    }
 	  } //end for l "indsA.size()" loop
-	    
-	  if (diagIndex[row] != INVALID) {
-	    size_t diagIndexInMatrix =  index_start + diagIndex[row];
-	    SC diagA = valsA[diagIndex[row]];
-	    //	    printf("diag_vals pre update =  %8.2e\n", vals[diagIndex] );
-	    vals[diagIndexInMatrix] += diagExtra[row];
-	    SC A_rowsum=ZERO, A_absrowsum = ZERO, F_rowsum = ZERO;
-	    
-	    if( (dirichletThresh >= 0.0 && TST::real(vals[diagIndexInMatrix]) <= dirichletThresh) ||  TST::real(vals[diagIndexInMatrix]) == ZERO) {
-	      
-	      //#define LOTS_OF_PRINTING
-#ifdef LOTS_OF_PRINTING	      
-	      printf("WARNING: row %d (diagIndex=%d) diag(Afiltered) = %8.2e diag(A)=%8.2e numInds = %d\n",row,diagIndex[row],vals[diagIndexInMatrix],diagA,(LO)indsA.size());
-#endif
-	      for(LO l = 0; l < (LO)indsA.size(); l++) {		  
-	        A_rowsum += valsA[l];
-   	        A_absrowsum+=std::abs(valsA[l]);
-	      }
-	      for(LO l = 0; l < (LO)indsA.size(); l++) 
-		F_rowsum += vals[index_start+l];
-#ifdef LOTS_OF_PRINTING	      
-	      printf("       : A rowsum = %8.2e |A| rowsum = %8.2e rowsum = %8.2e\n",A_rowsum,A_absrowsum,F_rowsum);
+	  
+	}//end m "blkSize" loop
 
+	// Clear filtering array
+	for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
+	  filter[indsG[j]]=false;
+	
+      }// end k loop over number of nodes in this agg
+    }//end i loop over numAggs
+    
+    // Now do the diagonal modifications in one, final pass
+    for(LO row=0; row <(LO)numRows; row++) {
+      if (diagIndex[row] != INVALID) {
+	size_t index_start = rowptr[row];	
+	size_t diagIndexInMatrix =  index_start + diagIndex[row];
+	//	    printf("diag_vals pre update =  %8.2e\n", vals[diagIndex] );
+	vals[diagIndexInMatrix] += diagExtra[row];
+	SC A_rowsum=ZERO, A_absrowsum = ZERO, F_rowsum = ZERO;
+	
+	const bool LOTS_OF_PRINTING=1;//DEBUG
+
+	if( (dirichletThresh >= 0.0 && TST::real(vals[diagIndexInMatrix]) <= dirichletThresh) ||  TST::real(vals[diagIndexInMatrix]) == ZERO) {
+	  
+	  if(LOTS_OF_PRINTING>0) {
+	    A.getLocalRowView(row, indsA, valsA);
+	    SC diagA = valsA[diagIndex[row]];	    
+	    printf("WARNING: row %d (diagIndex=%d) diag(Afiltered) = %8.2e diag(A)=%8.2e numInds = %d\n",row,diagIndex[row],vals[diagIndexInMatrix],diagA,(LO)indsA.size());
+	    
+	    for(LO l = 0; l < (LO)indsA.size(); l++) {		  
+	      A_rowsum += valsA[l];
+	      A_absrowsum+=std::abs(valsA[l]);
+	    }
+	    for(LO l = 0; l < (LO)indsA.size(); l++) 
+	      F_rowsum += vals[index_start+l];
+	    printf("       : A rowsum = %8.2e |A| rowsum = %8.2e rowsum = %8.2e\n",A_rowsum,A_absrowsum,F_rowsum);	    
+	    if(LOTS_OF_PRINTING > 1){
 	      printf("        Avals =");
 	      for(LO l = 0; l < (LO)indsA.size(); l++)
 		printf("%d(%8.2e)[%d] ",(LO)indsA[l],valsA[l],(LO)l);
@@ -665,25 +679,16 @@ namespace MueLu {
 	      for(LO l = 0; l < (LO)indsA.size(); l++)
 		if(vals[index_start+l] != ZERO)
 		  printf("%d(%8.2e)[%d] ",(LO)indsA[l],vals[index_start+l],(LO)l);
-	      printf("\n");
-#endif
-
-	      vals[diagIndexInMatrix] = TST::one();
-	      numFixedDiags++;
 	    }
 	  }
-	  else {
-	    GetOStream(Runtime0)<<"WARNING: Row "<<row<<" has no diagonal "<<std::endl;
-	  }
-	  
-	}//end m "blkSize" loop
-
-	// Clear filtering array
-	for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
-	  filter[indsG[j]]=false;
-
-      }// end k loop over number of nodes in this agg
-    }//end i loop over numAggs
+	  vals[diagIndexInMatrix] = TST::one();
+	  numFixedDiags++;
+	}
+      }
+      else {
+        GetOStream(Runtime0)<<"WARNING: Row "<<row<<" has no diagonal "<<std::endl;
+      }
+    }/*end row "numRows" loop"*/
 
     // Copy all the goop out	     
     for(LO row=0; row<(LO)numRows; row++) {      
