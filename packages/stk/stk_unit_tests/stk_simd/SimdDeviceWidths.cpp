@@ -31,20 +31,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "gtest/gtest.h"
-
-#ifndef STK_KOKKOS_SIMD
-#define STK_KOKKOS_SIMD
-#endif
-
 #include "Kokkos_Core.hpp"
-#include "stk_simd/Simd.hpp"
+
+#include "SimdDeviceWidths.hpp"
+
+namespace stk {
+namespace unit_test_util {
 
 int get_float_width_on_device()
 {
-  int result;
+  int result = 0;
 
-  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const int& i, int& width) {
+  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(int i, int& width) {
     stk::simd::Float f;
     width = f._data.size();
   }, result);
@@ -54,9 +52,9 @@ int get_float_width_on_device()
 
 int get_double_width_on_device()
 {
-  int result;
+  int result = 0;
 
-  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const int& i, int& width) {
+  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(int i, int& width) {
     stk::simd::Double d;
     width = d._data.size();
   }, result);
@@ -64,16 +62,4 @@ int get_double_width_on_device()
   return result;
 }
 
-#ifdef KOKKOS_ENABLE_CUDA
-TEST( SimdInfoDevice, checkWidths )
-{
-  EXPECT_EQ(get_float_width_on_device(), 1);
-  EXPECT_EQ(get_double_width_on_device(), 1);
-}
-
-TEST( SimdInfoDevice, printWidths )
-{
-  std::cout << "width of stk::simd::Float on device " << get_float_width_on_device() << std::endl;
-  std::cout << "width of stk::simd::Double on device " << get_double_width_on_device() << std::endl;
-}
-#endif
+} }

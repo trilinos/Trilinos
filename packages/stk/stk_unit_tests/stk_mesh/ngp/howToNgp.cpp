@@ -837,7 +837,6 @@ void test_vector_field_size_and_values(stk::mesh::BulkData& bulk,
   stk::mesh::NgpField<double>& ngpField = stk::mesh::get_updated_ngp_field<double>(stkField);
   const stk::mesh::NgpMesh& ngpMesh = bulk.get_updated_ngp_mesh();
 
-  const unsigned fieldLength = stkField.max_size(stkField.entity_rank());
   const double tol = 1.e-12;
   const stk::mesh::Part& block1 = *bulk.mesh_meta_data().get_part("block_1");
   stk::mesh::for_each_entity_run(ngpMesh, ngpField.get_rank(), block1,
@@ -849,7 +848,6 @@ void test_vector_field_size_and_values(stk::mesh::BulkData& bulk,
 
                   stk::mesh::EntityFieldData<double> vals = ngpField(meshIdx);
                   NGP_EXPECT_EQ(vals.size(), ngpField.get_num_components_per_entity(meshIdx));
-                  NGP_EXPECT_EQ(fieldLength, vals.size());
                   NGP_EXPECT_NEAR(1.0, vals[0], tol);
                   NGP_EXPECT_NEAR(2.0, vals[1], tol);
                   NGP_EXPECT_NEAR(3.0, vals[2], tol);

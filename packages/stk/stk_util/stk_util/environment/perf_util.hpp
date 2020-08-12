@@ -100,7 +100,7 @@ void print_timers_and_memory(NameItr name_itr, TimerItr timer_itr, int count)
 // Use this version to produce output compatible with the compare_test_result_timings.py
 // It will also do parallel reductions for you.
 inline
-void parallel_print_time_without_output_and_hwm(MPI_Comm comm, double time_on_this_proc, std::ostream& out = std::cout)
+void parallel_print_time_without_output_and_hwm(MPI_Comm comm, double time_on_this_proc, std::ostream& out = std::cout, size_t gpu_memory_usage = 0)
 {
   size_t hwm_max = 0, hwm_min = 0, hwm_avg = 0;
   get_memory_high_water_mark_across_processors(comm, hwm_max, hwm_min, hwm_avg);
@@ -110,6 +110,9 @@ void parallel_print_time_without_output_and_hwm(MPI_Comm comm, double time_on_th
 
   double max_time = 0.0, min_time = 0.0, avg_time = 0.0;
   get_max_min_avg(comm, time_on_this_proc, max_time, min_time, avg_time);
+
+  size_t max_gpu_mem = 0, min_gpu_mem = 0, avg_gpu_mem = 0;
+  get_max_min_avg(comm, gpu_memory_usage, max_gpu_mem, min_gpu_mem, avg_gpu_mem);
 
   int rank = stk::parallel_machine_rank(comm);
 
@@ -127,6 +130,13 @@ void parallel_print_time_without_output_and_hwm(MPI_Comm comm, double time_on_th
     out << std::setw(6) << std::fixed << std::setprecision(4) << "Min No-output time " << min_time << " sec" << std::endl;
     out << std::setw(6) << std::fixed << std::setprecision(4) << "Avg No-output time " << avg_time << " sec" << std::endl;
     out << std::setw(6) << std::fixed << std::setprecision(4) << "Max No-output time " << max_time << " sec" << std::endl;
+
+    if(gpu_memory_usage > 0.0) {
+      out << std::endl;
+      out << std::setw(6) << std::fixed << std::setprecision(4) << "Min Recorded GPU memory usage " << min_gpu_mem / bytes_in_MB << " MB" << std::endl;
+      out << std::setw(6) << std::fixed << std::setprecision(4) << "Avg Recorded GPU memory usage " << avg_gpu_mem / bytes_in_MB << " MB" << std::endl;
+      out << std::setw(6) << std::fixed << std::setprecision(4) << "Max Recorded GPU memory usage " << max_gpu_mem / bytes_in_MB << " MB" << std::endl;
+    }
   }
 }
 

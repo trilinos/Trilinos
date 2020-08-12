@@ -933,7 +933,7 @@ int main_(int argc, char *argv[]) {
 
 //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
       bool zeroInitGuess = false;
-      vCycle(0, numLevels,
+      vCycle(0, numLevels, "V",
              regX, regB, regMatrices,
              regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
              regInterfaceScalings, smootherParams,zeroInitGuess);

@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//
+// 
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,46 +30,62 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
-#include "gtest/gtest.h"
+#include <stddef.h>                     // for size_t, ptrdiff_t
+#include <stk_util/environment/memory_util.hpp>  // for cpu_time
+#include <gtest/gtest.h>
+#include <iostream>
 
-#include "stk_unit_test_utils/PrintType.hpp"
+//inline T* kokkos_malloc_on_device(const std::string& debuggingName) 
+//{
+//  return static_cast<T*>(Kokkos::kokkos_malloc<Kokkos::CudaSpace>(debuggingName, sizeof(T)));
+//}
+//
+//inline void kokkos_free_on_device(void* ptr) 
+//{ 
+//  Kokkos::kokkos_free<Kokkos::CudaSpace>(ptr); 
+//}
 
-#ifndef STK_KOKKOS_SIMD
-#define STK_KOKKOS_SIMD
-#endif
 
-#ifndef USE_STK_SIMD_NONE
-#define USE_STK_SIMD_NONE
-#endif
-
-#include "stk_simd/Simd.hpp"
-
-TEST( SimdInfoScalar, printWidths )
+TEST(GPUMemoryInfo, alwaysZeroOnCPU)
 {
-  std::cout << "stk::simd::nfloats " << stk::simd::nfloats << std::endl;
-  std::cout << "stk::simd::ndoubles " << stk::simd::ndoubles << std::endl;
+#ifndef __CUDACC__
+  size_t used;
+  size_t free;
+
+  stk::get_gpu_memory_info(used, free);
+  EXPECT_EQ(used, 0u);
+  ASSERT_EQ(free, 0u);
+#endif
 }
 
-TEST( SimdInfoScalar, printTypes )
+TEST(GPUMemoryInfo, singleAllocationOnGPU)
 {
-  std::cout << "Datatype stored by stk::simd::Float is ";
-  stk::simd::Float f;
-  stk::unit_test_util::print_type(f._data);
+#ifdef __CUDACC__
+  size_t initialUsed, initialFree, initialTotal;
+  size_t finalUsed, finalFree, finalTotal;
 
-  std::cout << "Datatype stored by stk::simd::Double is ";
-  stk::simd::Double d;
-  stk::unit_test_util::print_type(d._data);
-}
+  constexpr size_t allocationSize = sizeof(double) * 100000000;
 
-using FloatDataScalar = SIMD_NAMESPACE::simd<float, SIMD_NAMESPACE::simd_abi::scalar>;
-using DoubleDataScalar = SIMD_NAMESPACE::simd<double, SIMD_NAMESPACE::simd_abi::scalar>;
+  cudaSetDevice(0);
 
-TEST( SimdInfoScalar, checkTypes )
-{
-  stk::simd::Float f;
-  EXPECT_TRUE((std::is_same<decltype(f._data), FloatDataScalar>::value));
+  stk::get_gpu_memory_info(initialUsed, initialFree);
+  initialTotal = initialUsed + initialFree;
+  std::cout << "InitialUsed: " << initialUsed << "\tInitialFree: " << initialFree << "\tInitialTotal: " << initialTotal << std::endl;
 
-  stk::simd::Double d;
-  EXPECT_TRUE((std::is_same<decltype(d._data), DoubleDataScalar>::value));
+  double* allocatedMemory = static_cast<double*>(Kokkos::kokkos_malloc<Kokkos::CudaSpace>(allocationSize));
+
+  stk::get_gpu_memory_info(finalUsed, finalFree);
+  finalTotal = finalUsed + finalFree;
+  std::cout << "FinalUsed: " << finalUsed << "\tFinalFree: " << finalFree << "\tFinalTotal: " << finalTotal << std::endl;
+
+  EXPECT_EQ(initialTotal, finalTotal);
+
+  EXPECT_GT(finalUsed - initialUsed, allocationSize);
+  EXPECT_GT(initialFree - finalFree, allocationSize);
+  EXPECT_EQ(finalUsed - initialUsed, initialFree - finalFree);
+
+  Kokkos::kokkos_free<Kokkos::CudaSpace>(allocatedMemory);
+#endif
 }

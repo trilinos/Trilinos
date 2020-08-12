@@ -688,8 +688,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
     const SerialDenseVector<int,Scalar> & c    = implicitTableau_->c();
 
     bool pass = true;
-    this->stageX_ = workingState->getX();
-    Thyra::assign(this->stageX_.ptr(), *(currentState->getX()));
+    Thyra::assign(workingState->getX().ptr(), *(currentState->getX()));
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
     this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
@@ -726,11 +725,11 @@ void StepperIMEX_RK<Scalar>::takeStep(
           // stageG_[i] is not needed.
           assign(stageG_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
         } else {
-          Thyra::assign(this->stageX_.ptr(), *xTilde_);
+          Thyra::assign(workingState->getX().ptr(), *xTilde_);
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
           this->stepperObserver_->observeBeforeImplicitExplicitly(solutionHistory, *this);
 #endif
-          evalImplicitModelExplicitly(this->stageX_, ts, dt, i, stageG_[i]);
+          evalImplicitModelExplicitly(workingState->getX(), ts, dt, i, stageG_[i]);
         }
       } else {
         // Implicit stage for the ImplicitODE_DAE
@@ -752,7 +751,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
           StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
 
         const Thyra::SolveStatus<Scalar> sStatus =
-          this->solveImplicitODE(this->stageX_, stageG_[i], ts, p);
+          this->solveImplicitODE(workingState->getX(), stageG_[i], ts, p);
 
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass = false;
 
@@ -763,7 +762,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
           StepperRKAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
 
         // Update contributions to stage values
-        Thyra::V_StVpStV(stageG_[i].ptr(), -alpha, *this->stageX_, alpha, *xTilde_);
+        Thyra::V_StVpStV(stageG_[i].ptr(), -alpha, *workingState->getX(), alpha, *xTilde_);
       }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -771,7 +770,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
 #endif
       this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
         StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
-      evalExplicitModel(this->stageX_, tHats, dt, i, stageF_[i]);
+      evalExplicitModel(workingState->getX(), tHats, dt, i, stageF_[i]);
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
       this->stepperObserver_->observeEndStage(solutionHistory, *this);
 #endif
@@ -837,7 +836,6 @@ void StepperIMEX_RK<Scalar>::describe(
   if (verbLevel == Teuchos::VERB_HIGH)
    implicitTableau_->describe(out, verbLevel);
   out << "  xTilde_            = " << xTilde_  << std::endl;
-  out << "  stageX_            = " << this->stageX_  << std::endl;
   out << "  stageF_.size()     = " << stageF_.size() << std::endl;
   int numStages = stageF_.size();
   for (int i=0; i<numStages; ++i)

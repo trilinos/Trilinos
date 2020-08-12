@@ -13,6 +13,7 @@
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stk_unit_test_utils/StkMeshFromGeneratedMesh.h>
 #include <stk_util/environment/WallTime.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 #include <test_utils/OptionsForTesting.hpp>
 #include <integrationtest/MeshUtilsForBoundingVolumes.hpp>
 #include <unit_tests/UnitTestUtils.hpp>
@@ -876,10 +877,7 @@ TEST(LoadBalance, MxN_decomposition)
 TEST(LoadBalance, findBoundaryNodesAndFaces)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
-    int numProcs = -1;
-    MPI_Comm_size(communicator, &numProcs);
-    int me;
-    MPI_Comm_rank(communicator, &me);
+    int numProcs = stk::parallel_machine_size(communicator);
 
     Options options = getOptionsForTest("generated:3x3x3");
 
@@ -893,29 +891,17 @@ TEST(LoadBalance, findBoundaryNodesAndFaces)
         stk::mesh::PartVector add_parts(1, &skin_part);
         stk::mesh::skin_mesh(stkMeshBulkData, stkMeshBulkData.mesh_meta_data().locally_owned_part(), add_parts);
 
-        const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, skin_part);
-        const stk::mesh::BucketVector &faceBuckets = stkMeshBulkData.get_buckets(stk::topology::FACE_RANK, skin_part);
+        unsigned numNodes = stk::mesh::count_selected_entities(skin_part, stkMeshBulkData.buckets(stk::topology::NODE_RANK));
 
-        unsigned numNodes = 0;
-        for(size_t i = 0; i < nodeBuckets.size(); i++)
-        {
-            numNodes += nodeBuckets[i]->size();
-        }
+        unsigned numFaces = stk::mesh::count_selected_entities(skin_part, stkMeshBulkData.buckets(stk::topology::FACE_RANK));
 
-        unsigned numFaces = 0;
-        for(size_t i = 0; i < faceBuckets.size(); i++)
-        {
-            numFaces += faceBuckets[i]->size();
-        }
-
-        std::vector<size_t> counts;
-        stk::mesh::count_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(), stkMeshBulkData, counts);
+        unsigned numElems = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(), stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
 
         if(!options.overRideTest())
         {
             EXPECT_EQ(56u, numNodes);
             EXPECT_EQ(54u, numFaces);
-            EXPECT_EQ(27u, counts[stk::topology::ELEMENT_RANK]);
+            EXPECT_EQ(27u, numElems);
         }
     }
 }

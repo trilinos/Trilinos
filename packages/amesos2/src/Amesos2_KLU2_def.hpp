@@ -236,57 +236,63 @@ KLU2<Matrix,Vector>::solve_impl(
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
+  bool bDidAssignX;
+  bool bDidAssignB;
   {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
+    const bool initialize_data = true;
+    const bool do_not_initialize_data = false;
     if ( single_proc_optimization() && nrhs == 1 ) {
       // no msp creation
-      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(B, bValues_, as<size_t>(ld_rhs));
+      bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(initialize_data, B, bValues_, as<size_t>(ld_rhs));
 
-      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(X, xValues_, as<size_t>(ld_rhs));
+      bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs));
     }
     else {
       if ( is_contiguous_ == true ) {
-        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(B, bValues_,
+        bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(initialize_data, B, bValues_,
               as<size_t>(ld_rhs),
               ROOTED, this->rowIndexBase_);
       }
       else {
-        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(B, bValues_,
+        bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(initialize_data, B, bValues_,
               as<size_t>(ld_rhs),
               CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
       }
 
       // see Amesos2_Tacho_def.hpp for an explanation of why we 'get' X
       if ( is_contiguous_ == true ) {
-        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(X, xValues_,
+        bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
               as<size_t>(ld_rhs),
               ROOTED, this->rowIndexBase_);
       }
       else {
-        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-          host_solve_array_t>::do_get(X, xValues_,
+        bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
               as<size_t>(ld_rhs),
               CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
       }
 
-      // TODO: klu_tsolve is going to put the solution x into the input b.
+      // klu_tsolve is going to put the solution x into the input b.
       // Copy b to x then solve in x.
       // We do not want to solve in b, then copy to x, because if b was assigned
       // then the solve will change b permanently and mess up the next test cycle.
-      // However if b was actually a copy (not assigned) then we can avoid this
-      // deep_copy and just assign xValues_ = bValues_.
-      // This comes up in a few places, see #7158, so planning to fix them all
-      // at the same time with some system to track what get_1d_copy_helper_kokkos_view
-      // actually did.
-      Kokkos::deep_copy(xValues_, bValues_);
+      // However if b was actually a copy (bDidAssignB = false) then we can avoid
+      // this deep_copy and just assign xValues_ = bValues_.
+      if(bDidAssignB) {
+        Kokkos::deep_copy(xValues_, bValues_); // need deep_copy or solve will change adapter's b memory which should never happen
+      }
+      else {
+        xValues_ = bValues_; // safe because bValues_ does not point straight to adapter's memory space
+      }
     }
   }
 
@@ -380,7 +386,9 @@ KLU2<Matrix,Vector>::solve_impl(
     } // end root_
   } //end else
 
-  {
+  // if bDidAssignX, then we solved straight to the adapter's X memory space without
+  // requiring additional memory allocation, so the x data is already in place.
+  if(!bDidAssignX) {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
