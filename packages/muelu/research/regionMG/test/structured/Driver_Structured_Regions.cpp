@@ -189,7 +189,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int  cacheSize = 0;                                      clp.setOption("cachesize",               &cacheSize,           "cache size (in KB)");
   bool useStackedTimer   = false;                          clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
   bool showTimerSummary = true;                            clp.setOption("show-timer-summary", "no-show-timer-summary", &showTimerSummary, "Switch on/off the timer summary at the end of the run.");
-  bool useFastMatVec = true;                               clp.setOption("fastMV", "no-fastMV", &useFastMatVec, "Use the fast MatVec implementation (or not)");
   std::string cycleType = "V";                             clp.setOption("cycleType", &cycleType, "{Multigrid cycle type. Possible values: V, W.");
 
   clp.recogniseAllOptions(true);
@@ -730,7 +729,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // Set data for fast MatVec
   // for (auto levelSmootherParams : smootherParams) {
   for(LO levelIdx = 0; levelIdx < numLevels; ++levelIdx) {
-    smootherParams[levelIdx]->set("Use fast MatVec", useFastMatVec);
     smootherParams[levelIdx]->set("Fast MatVec: interface LIDs",
                                   regionMatVecLIDsPerLevel[levelIdx]);
     smootherParams[levelIdx]->set("Fast MatVec: interface importer",
@@ -858,19 +856,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         ////////////////////////////////////////////////////////////////////////
         // SWITCH BACK TO NON-LEVEL VARIABLES
         ////////////////////////////////////////////////////////////////////////
-        {
-          if (useFastMatVec)
-          {
-            computeResidual(regRes, regX, regB, regionGrpMats, *smootherParams[0]);
-          }
-          else
-          {
-            computeResidual(regRes, regX, regB, regionGrpMats,
-                revisedRowMapPerGrp, rowImportPerGrp);
-          }
-
-          scaleInterfaceDOFs(regRes, regInterfaceScalings[0], true);
-        }
+        computeResidual(regRes, regX, regB, regionGrpMats, *smootherParams[0]);
+        scaleInterfaceDOFs(regRes, regInterfaceScalings[0], true);
 
         compRes = VectorFactory::Build(dofMap, true);
         regionalToComposite(regRes, compRes, rowImportPerGrp);
