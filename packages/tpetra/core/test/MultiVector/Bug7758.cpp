@@ -99,7 +99,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, DefaultToDefault, Scalar,LO,GO,Node)
 
   // Check result; all vector entries should be srcScalar
   auto data = defaultVecTgt.getLocalViewHost();
-  for (int i = 0; i < defaultVecTgt.getLocalLength(); i++)
+  for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++)
     if (data(i,0) != srcScalar) ierr++;
   if (ierr > 0) 
     std::cout << "TEST FAILED:  DEFAULT-TO-DEFAULT TEST HAD " << ierr 
@@ -140,7 +140,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, CyclicToDefault, Scalar,LO,GO,Node)
   // One-to-one cyclic map:  deal out entries like cards
 
   int nMyEntries = 0;
-  for (int i = 0; i < nGlobalEntries; i++) {
+  for (size_t i = 0; i < nGlobalEntries; i++) {
     if (i % np == me) {
       myEntries[nMyEntries++] = i;
     }
@@ -173,7 +173,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, CyclicToDefault, Scalar,LO,GO,Node)
   // Check result; all vector entries should be srcScalar
 
   auto data = defaultVecTgt.getLocalViewHost();
-  for (int i = 0; i < defaultVecTgt.getLocalLength(); i++)
+  for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++)
     if (data(i,0) != srcScalar) ierr++;
   if (ierr > 0) 
     std::cout << "TEST FAILED:  CYCLIC-TO-DEFAULT TEST HAD " << ierr 
@@ -214,10 +214,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OverlapToDefault, Scalar,LO,GO,Node)
 
     // Overlap map; some entries are stored on two procs
     int nMyEntries = 0;
-    for (int i = 0; i < defaultMap->getNodeNumElements()/2; i++) {
+    for (size_t i = 0; i < defaultMap->getNodeNumElements()/2; i++) {
       myEntries[nMyEntries++] = defaultMap->getGlobalElement(i);
     }
-    for (int i = 0; i < defaultMap->getNodeNumElements(); i++) {
+    for (size_t i = 0; i < defaultMap->getNodeNumElements(); i++) {
       myEntries[nMyEntries++] =
         (defaultMap->getMaxGlobalIndex() + 1 + i) % nGlobalEntries;
     }
@@ -247,9 +247,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OverlapToDefault, Scalar,LO,GO,Node)
     defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
     auto data = defaultVecTgt.getLocalViewHost();
-    for (int i = 0; i < defaultVecTgt.getLocalLength()/2; i++)
-      if (data(i,0) != 2 * srcScalar) ierr++;  // overlapped
-    for (int i = defaultVecTgt.getLocalLength()/2;
+    for (size_t i = 0; i < defaultVecTgt.getLocalLength()/2; i++)
+      if (data(i,0) != srcScalar+srcScalar) ierr++;  // overlapped
+    for (size_t i = defaultVecTgt.getLocalLength()/2;
              i < defaultVecTgt.getLocalLength(); i++)
       if (data(i,0) != srcScalar) ierr++;  // not overlapped
     if (ierr > 0) 
@@ -292,10 +292,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, SupersetToDefault, Scalar,LO,GO,Node)
 
     // Superset map; some entries are stored on two procs
     int nMyEntries = 0;
-    for (int i = 0; i < defaultMap->getNodeNumElements(); i++) {
+    for (size_t i = 0; i < defaultMap->getNodeNumElements(); i++) {
       myEntries[nMyEntries++] = defaultMap->getGlobalElement(i);
     }
-    for (int i = 0; i < defaultMap->getNodeNumElements()/2; i++) {
+    for (size_t i = 0; i < defaultMap->getNodeNumElements()/2; i++) {
       myEntries[nMyEntries++] =
         (defaultMap->getMaxGlobalIndex() + 1 + i) % nGlobalEntries;
     }
@@ -325,9 +325,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, SupersetToDefault, Scalar,LO,GO,Node)
     defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
     auto data = defaultVecTgt.getLocalViewHost();
-    for (int i = 0; i < defaultVecTgt.getLocalLength()/2; i++)
-      if (data(i,0) != 2 * srcScalar) ierr++;  // overlapped
-    for (int i = defaultVecTgt.getLocalLength()/2;
+    for (size_t i = 0; i < defaultVecTgt.getLocalLength()/2; i++)
+      if (data(i,0) != srcScalar+srcScalar) ierr++;  // overlapped
+    for (size_t i = defaultVecTgt.getLocalLength()/2;
              i < defaultVecTgt.getLocalLength(); i++)
       if (data(i,0) != srcScalar) ierr++;  // not overlapped
     if (ierr > 0) 
