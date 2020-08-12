@@ -42,7 +42,7 @@
 #include <string>                       // for string
 #include <vector>                       // for vector, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
-#include <stk_mesh/base/EntityLess.hpp>
+#include <stk_mesh/base/EntitySorterBase.hpp>
 
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }

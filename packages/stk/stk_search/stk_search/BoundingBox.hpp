@@ -36,6 +36,7 @@
 #ifndef STK_SEARCH_BOUNDINGBOX_HPP
 #define STK_SEARCH_BOUNDINGBOX_HPP
 
+#include <array>
 #include <stk_math/StkVector.hpp>
 #include <stk_search/Box.hpp>
 #include <stk_search/Plane.hpp>

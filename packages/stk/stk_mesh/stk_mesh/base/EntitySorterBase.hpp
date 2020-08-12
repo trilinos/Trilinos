@@ -31,35 +31,20 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef STK_ENTITYLESS_HPP
-#define STK_ENTITYLESS_HPP
+#ifndef STK_ENTITYSORTERBASE_HPP
+#define STK_ENTITYSORTERBASE_HPP
 
 #include <stk_mesh/base/Types.hpp>
 
 namespace stk {
 namespace mesh {
 
-class EntityLess {
+class EntitySorterBase
+{
 public:
-#ifdef SIERRA_MIGRATION
-  EntityLess(const BulkData& mesh);
-#else
-  inline EntityLess(const BulkData& mesh);
-#endif
-  /** \brief  Comparison operator */
-  inline bool operator()(const Entity lhs, const Entity rhs) const;
-  inline bool operator()(const Entity lhs, const EntityKey & rhs) const;
-  inline bool operator()( const EntityProc & lhs, const EntityProc & rhs) const;
-  inline bool operator()( const EntityProc & lhs, const Entity rhs) const;
-  inline bool operator()( const EntityProc & lhs, const EntityKey & rhs) const;
-  inline EntityLess& operator=(const EntityLess& rhs);
-private:
-  const BulkData* m_mesh;
-#ifdef SIERRA_MIGRATION
-  const bool m_shouldSortFacesByNodeIds;
-  const EntityRank m_sideRank;
-#endif
-}; //struct EntityLess
+    virtual ~EntitySorterBase() {}
+    virtual void sort(stk::mesh::BulkData &bulk, stk::mesh::EntityVector& entityVector) const = 0;
+};
 
 }
 }

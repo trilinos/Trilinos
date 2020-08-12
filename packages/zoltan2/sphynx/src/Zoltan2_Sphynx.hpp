@@ -694,10 +694,10 @@ namespace Zoltan2 {
       Teuchos::ParameterList smootherParamList;
       smootherParamList.set("chebyshev: degree", 3);
       smootherParamList.set("chebyshev: ratio eigenvalue", 7.0);
-      smootherParamList.set("chebyshev: eigenvalue max iterations", 10);
+      smootherParamList.set("chebyshev: eigenvalue max iterations", irregular_ ? 100 : 10);
       paramList.set("smoother: params", smootherParamList);
-      paramList.set("use kokkos refactor", false); 
-
+      paramList.set("use kokkos refactor", true); 
+      paramList.set("transpose: use implicit", true);
 
       if(irregular_) {
 	
@@ -707,7 +707,6 @@ namespace Zoltan2 {
 	Teuchos::ParameterList coarseParamList;
 	coarseParamList.set("chebyshev: degree", 3);
 	coarseParamList.set("chebyshev: ratio eigenvalue", 7.0);
-	coarseParamList.set("chebyshev: eigenvalue max iterations", 10);
 	paramList.set("coarse: params", coarseParamList);
 
 	paramList.set("max levels", 5);
