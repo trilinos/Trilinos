@@ -812,8 +812,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     fclose(fp);
 #endif
 
-    //    printRegionalObject<Vector>("regB 0", regB, myRank, *fos);
-
     Array<RCP<Vector> > regRes(maxRegPerProc);
     for (int j = 0; j < maxRegPerProc; j++) { // step 1
       regRes[j] = VectorFactory::Build(revisedRowMapPerGrp[j], true);
@@ -895,8 +893,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         /////////////////////////////////////////////////////////////////////////
         // SWITCH TO RECURSIVE STYLE --> USE LEVEL CONTAINER VARIABLES
         /////////////////////////////////////////////////////////////////////////
-
-        //      printRegionalObject<Vector>("regB 2", regB, myRank, *fos);
 
         bool zeroInitGuess = true;
         scaleInterfaceDOFs(regRes, regInterfaceScalings[0], false);
