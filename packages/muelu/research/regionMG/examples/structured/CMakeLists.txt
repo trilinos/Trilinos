@@ -208,7 +208,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     NUM_MPI_PROCS 1
     )
 
-TRIBITS_ADD_TEST(
+  TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Linear_Elasticity3D_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=7 --ny=7 --nz=7 --smootherIts=2 --tol=1.0e-8 --convergence-log=Elasticity3D_linear_4.log"
@@ -216,7 +216,7 @@ TRIBITS_ADD_TEST(
     NUM_MPI_PROCS 4
     )
 
-TRIBITS_ADD_TEST(
+  TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Linear_Elasticity3D_repartitioning_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --tol=1.0e-8  --coarseSolverType=amg --keep-coarse-coords --coarseAmgXml=amg_3dof_rebalance.xml"
@@ -224,7 +224,7 @@ TRIBITS_ADD_TEST(
     NUM_MPI_PROCS 4
     )
 
-TRIBITS_ADD_TEST(
+  TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_Tpetra_Wcycle"
     ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --cycleType=W"
@@ -232,7 +232,7 @@ TRIBITS_ADD_TEST(
     NUM_MPI_PROCS 1
     )
 
-TRIBITS_ADD_TEST(
+  TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_Tpetra_Wcycle"
     ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --cycleType=W"
@@ -244,70 +244,70 @@ TRIBITS_ADD_TEST(
   ASSERT_DEFINED(PYTHONINTERP_FOUND)
   IF (PYTHONINTERP_FOUND)
 
-	TRIBITS_ADD_ADVANCED_TEST(
-	  Structured_Region_Star2D_Tpetra_GS_MPI_4_regression
-	  TEST_0
-	    EXEC StructuredRegionDriver
- 	    ARGS --linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --convergence-log=Star2D_GS_4.log --smootherType=Gauss
-		NUM_MPI_PROCS 4
-	  TEST_1
-	    CMND ${PYTHON_EXECUTABLE}
-	    ARGS compare_residual_history.py gold_files/Star2D_GS_4.log.gold Star2D_GS_4.log 1.0e-12
-	    STANDARD_PASS_OUTPUT
-	  FAIL_FAST
-	  COMM serial mpi
-	  OVERALL_NUM_MPI_PROCS 4
-	  )
+    TRIBITS_ADD_ADVANCED_TEST(
+      Structured_Region_Star2D_Tpetra_GS_MPI_4_regression
+      TEST_0
+        EXEC StructuredRegionDriver
+        ARGS --linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --convergence-log=Star2D_GS_4.log --smootherType=Gauss
+      NUM_MPI_PROCS 4
+      TEST_1
+        CMND ${PYTHON_EXECUTABLE}
+        ARGS compare_residual_history.py gold_files/Star2D_GS_4.log.gold Star2D_GS_4.log 1.0e-12
+        STANDARD_PASS_OUTPUT
+      FAIL_FAST
+      COMM serial mpi
+      OVERALL_NUM_MPI_PROCS 4
+      )
 
-	TRIBITS_ADD_ADVANCED_TEST(
-	  Structured_Region_Linear_Brick3D_Tpetra_MPI_4_regression
-	  TEST_0
-	    EXEC StructuredRegionDriver
- 	    ARGS --linAlgebra=Tpetra --xml=structured_linear_1dof.xml --matrixType=Brick3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Brick3D_linear_4.log
-		NUM_MPI_PROCS 4
-	  TEST_1
-	    CMND ${PYTHON_EXECUTABLE}
-	    ARGS compare_residual_history.py gold_files/Brick3D_linear_4.log.gold Brick3D_linear_4.log 1.0e-12
-	    STANDARD_PASS_OUTPUT
-	  FAIL_FAST
-	  COMM serial mpi
-	  OVERALL_NUM_MPI_PROCS 4
-	  )
+    TRIBITS_ADD_ADVANCED_TEST(
+      Structured_Region_Linear_Brick3D_Tpetra_MPI_4_regression
+      TEST_0
+        EXEC StructuredRegionDriver
+        ARGS --linAlgebra=Tpetra --xml=structured_linear_1dof.xml --matrixType=Brick3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Brick3D_linear_4.log
+      NUM_MPI_PROCS 4
+      TEST_1
+        CMND ${PYTHON_EXECUTABLE}
+        ARGS compare_residual_history.py gold_files/Brick3D_linear_4.log.gold Brick3D_linear_4.log 1.0e-12
+        STANDARD_PASS_OUTPUT
+      FAIL_FAST
+      COMM serial mpi
+      OVERALL_NUM_MPI_PROCS 4
+      )
 
-  TRIBITS_ADD_ADVANCED_TEST(
-	  Structured_Region_Linear_Elasticity3D_Tpetra_MPI_4_regression
-	  TEST_0
-	    EXEC StructuredRegionDriver
- 	    ARGS --linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Elasticity3D_linear_4.log
-		NUM_MPI_PROCS 4
-	  TEST_1
-	    CMND ${PYTHON_EXECUTABLE}
-	    ARGS compare_residual_history.py gold_files/Elasticity3D_linear_4.log.gold Elasticity3D_linear_4.log 1.0e-12
-	    STANDARD_PASS_OUTPUT
-	  FAIL_FAST
-	  COMM serial mpi
-	  OVERALL_NUM_MPI_PROCS 4
-	  )
+    TRIBITS_ADD_ADVANCED_TEST(
+      Structured_Region_Linear_Elasticity3D_Tpetra_MPI_4_regression
+      TEST_0
+        EXEC StructuredRegionDriver
+        ARGS --linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Elasticity3D_linear_4.log
+      NUM_MPI_PROCS 4
+      TEST_1
+        CMND ${PYTHON_EXECUTABLE}
+        ARGS compare_residual_history.py gold_files/Elasticity3D_linear_4.log.gold Elasticity3D_linear_4.log 1.0e-12
+        STANDARD_PASS_OUTPUT
+      FAIL_FAST
+      COMM serial mpi
+      OVERALL_NUM_MPI_PROCS 4
+      )
 
-  TRIBITS_ADD_ADVANCED_TEST(
-	  Structured_Region_Linear_R_Tpetra_MPI_4_regression
-	  TEST_0
-	    EXEC StructuredRegionDriver
- 	    ARGS --linAlgebra=Tpetra --xml=structured_linear_1dof_comp.xml --matrixType=Brick3D --nx=19 --ny=19 --nz=10 --smootherIts=2 --convergence-log=Brick3D_linear_4_comp.log
-		NUM_MPI_PROCS 4
-	  TEST_1
-	    EXEC StructuredRegionDriver
- 	    ARGS --linAlgebra=Tpetra --xml=structured_linear_R_1dof.xml --matrixType=Brick3D --nx=19 --ny=19 --nz=10 --smootherIts=2 --convergence-log=Brick3D_linear_R_4_comp.log
-		NUM_MPI_PROCS 4
-	  TEST_2
-	    CMND ${PYTHON_EXECUTABLE}
-	    ARGS compare_residual_history.py Brick3D_linear_4_comp.log Brick3D_linear_R_4_comp.log 1.0e-12
-	    STANDARD_PASS_OUTPUT
-	  FAIL_FAST
-	  COMM serial mpi
-	  OVERALL_NUM_MPI_PROCS 4
-	  )
+    TRIBITS_ADD_ADVANCED_TEST(
+      Structured_Region_Linear_R_Tpetra_MPI_4_regression
+      TEST_0
+        EXEC StructuredRegionDriver
+        ARGS --linAlgebra=Tpetra --xml=structured_linear_1dof_comp.xml --matrixType=Brick3D --nx=19 --ny=19 --nz=10 --smootherIts=2 --convergence-log=Brick3D_linear_4_comp.log
+      NUM_MPI_PROCS 4
+      TEST_1
+        EXEC StructuredRegionDriver
+        ARGS --linAlgebra=Tpetra --xml=structured_linear_R_1dof.xml --matrixType=Brick3D --nx=19 --ny=19 --nz=10 --smootherIts=2 --convergence-log=Brick3D_linear_R_4_comp.log
+      NUM_MPI_PROCS 4
+      TEST_2
+        CMND ${PYTHON_EXECUTABLE}
+        ARGS compare_residual_history.py Brick3D_linear_4_comp.log Brick3D_linear_R_4_comp.log 1.0e-12
+        STANDARD_PASS_OUTPUT
+      FAIL_FAST
+      COMM serial mpi
+      OVERALL_NUM_MPI_PROCS 4
+      )
 
-ENDIF()
+  ENDIF()
 
 ENDIF()
