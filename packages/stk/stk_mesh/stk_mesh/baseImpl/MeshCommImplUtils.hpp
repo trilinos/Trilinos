@@ -122,9 +122,6 @@ bool all_ghost_ids_are_found_in_comm_data(const PairIterEntityComm& comm_data,
 void comm_shared_procs(const EntityCommInfoVector& commInfoVec,
                        std::vector<int>& sharingProcs);
 
-void intersect_with(std::vector<int>& sharingProcsIntersection,
-                    const PairIterEntityComm& sharedComm);
-
 void fill_sorted_procs(const PairIterEntityComm& ec, std::vector<int>& procs);
 
 void fill_ghosting_procs(const PairIterEntityComm& ec, unsigned ghost_id, std::vector<int>& procs);
