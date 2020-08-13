@@ -172,7 +172,9 @@ namespace { // (anonymous)
       if (srcLen <= maxNumToPrint) {
         auto dst_h = Kokkos::create_mirror_view (dst);
         auto src_h = Kokkos::create_mirror_view (src);
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (src_h, src);
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (dst_h, dst);
 
         os << "  src: [";
@@ -387,6 +389,7 @@ namespace { // (anonymous)
                      "CopyOffsetsImpl (implementation of copyOffsets): In order"
                      " to call this specialization, src and dst must have the "
                      "the same array_layout.");
+      // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
       Kokkos::deep_copy (dst, src);
     }
   };
@@ -498,6 +501,7 @@ namespace { // (anonymous)
       output_space_copy_type
         outputSpaceCopy (view_alloc ("outputSpace", WithoutInitializing),
                          src.extent (0));
+      // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
       Kokkos::deep_copy (outputSpaceCopy, src);
 
       // The output View's execution space can access

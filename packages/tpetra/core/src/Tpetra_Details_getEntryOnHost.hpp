@@ -63,6 +63,7 @@ getEntryOnHost (const ViewType& x,
   static_assert (ViewType::Rank == 1, "x must be a rank-1 Kokkos::View.");
   // Get a 0-D subview of the entry of the array, and copy to host scalar.
   typename ViewType::non_const_value_type val;
+  // DEEP_COPY REVIEW - DEVICE-TO-HOST
   Kokkos::deep_copy(val, Kokkos::subview(x, ind));
   return val;
 }

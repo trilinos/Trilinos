@@ -715,6 +715,7 @@ public:
 
       row_map_type ptr_d = graph.getLocalGraph ().row_map;
       nc_host_row_map_type ptr_h_nc = Kokkos::create_mirror_view (ptr_d);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy (ptr_h_nc, ptr_d);
       ptrHost_ = ptr_h_nc;
     }
@@ -724,6 +725,7 @@ public:
 
       entries_type ind_d = graph.getLocalGraph ().entries;
       nc_host_entries_type ind_h_nc = Kokkos::create_mirror_view (ind_d);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy (ind_h_nc, ind_d);
       indHost_ = ind_h_nc;
     }
@@ -781,6 +783,7 @@ public:
 
       row_map_type ptr_d = graph.getLocalGraph ().row_map;
       nc_host_row_map_type ptr_h_nc = Kokkos::create_mirror_view (ptr_d);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy (ptr_h_nc, ptr_d);
       ptrHost_ = ptr_h_nc;
     }
@@ -790,6 +793,7 @@ public:
 
       entries_type ind_d = graph.getLocalGraph ().entries;
       nc_host_entries_type ind_h_nc = Kokkos::create_mirror_view (ind_d);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy (ind_h_nc, ind_d);
       indHost_ = ind_h_nc;
     }
@@ -968,6 +972,7 @@ public:
          prefix << "The matrix's values need sync on both device and host.");
 #endif // HAVE_TPETRA_DEBUG
       this->modify_host ();
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (getValuesHost (), alpha);
     }
     else {
@@ -976,6 +981,7 @@ public:
       // device.  Also, prefer modifying on device if neither side is
       // marked as modified.
       this->modify_device ();
+      // DEEP_COPY REVIEW - VALUE-TO_DEVICE
       Kokkos::deep_copy (this->getValuesDevice (), alpha);
     }
   }
@@ -3755,6 +3761,7 @@ public:
 
     // The code below works on host, so use a host View.
     auto diagOffsetsHost = Kokkos::create_mirror_view (diagOffsets);
+    // DEEP_COPY REVIEW - DEVICE-TO-HOST
     Kokkos::deep_copy (diagOffsetsHost, diagOffsets);
     // We're filling diag on host for now.
     diag.template modify<typename decltype (diagOffsetsHost)::memory_space> ();

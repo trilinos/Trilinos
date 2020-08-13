@@ -147,6 +147,7 @@ lclNormImpl (const RV& normsOut,
 
   if (lclNumRows == 0) {
     const mag_type zeroMag = Kokkos::ArithTraits<mag_type>::zero ();
+    // DEEP_COPY REVIEW - VALUE-TO-DEVICE
     Kokkos::deep_copy (normsOut, zeroMag);
   }
   else { // lclNumRows != 0
@@ -252,6 +253,7 @@ gblNormImpl (const RV& normsOut,
     // MPI doesn't allow aliasing of arguments, so we have to make
     // a copy of the local sum.
     RV lclNorms ("MV::normImpl lcl", numVecs);
+    // DEEP_COPY REVIEW - HOST-TO-DEVICE
     Kokkos::deep_copy (lclNorms, normsOut);
     const mag_type* const lclSum = lclNorms.data ();
     mag_type* const gblSum = normsOut.data ();

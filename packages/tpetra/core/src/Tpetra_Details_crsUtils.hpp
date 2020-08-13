@@ -177,12 +177,14 @@ pad_crs_arrays(
     os << *prefix << "On input: ";
     auto row_ptr_beg_h =
       Kokkos::create_mirror_view(hostSpace, row_ptr_beg);
+    // DEEP_COPY REVIEW - NOT TESTED
     Kokkos::deep_copy(row_ptr_beg_h, row_ptr_beg);
     verbosePrintArray(os, row_ptr_beg_h, "row_ptr_beg before scan",
                       maxNumToPrint);
     os << ", ";
     auto row_ptr_end_h =
       Kokkos::create_mirror_view(hostSpace, row_ptr_end);
+    // DEEP_COPY REVIEW - NOT TESTED
     Kokkos::deep_copy(row_ptr_end_h, row_ptr_end);
     verbosePrintArray(os, row_ptr_end_h, "row_ptr_end before scan",
                       maxNumToPrint);
@@ -216,9 +218,11 @@ pad_crs_arrays(
   {
     auto row_ptr_end_h = create_mirror_view(
       hostSpace, row_ptr_end, verbose, prefix.get());
+    // DEEP_COPY REVIEW - DEVICE-TO-HOST
     Kokkos::deep_copy(row_ptr_end_h, row_ptr_end);
     auto row_ptr_beg_h = create_mirror_view(
       hostSpace, row_ptr_beg, verbose, prefix.get());
+    // DEEP_COPY REVIEW - DEVICE-TO-HOST
     Kokkos::deep_copy(row_ptr_beg_h, row_ptr_beg);
 
     auto newAllocPerRow_h = create_mirror_view(
@@ -264,6 +268,7 @@ pad_crs_arrays(
     if (increase == 0) {
       return;
     }
+    // DEEP_COPY REVIEW - HOST-TO-DEVICE
     Kokkos::deep_copy(newAllocPerRow, newAllocPerRow_h);
   }
 
@@ -340,6 +345,7 @@ pad_crs_arrays(
     os << *prefix;
     auto row_ptr_beg_h =
       Kokkos::create_mirror_view(hostSpace, row_ptr_beg);
+    // DEEP_COPY REVIEW - NOT TESTED
     Kokkos::deep_copy(row_ptr_beg_h, row_ptr_beg);
     verbosePrintArray(os, row_ptr_beg_h, "row_ptr_beg after scan",
                       maxNumToPrint);
@@ -348,6 +354,7 @@ pad_crs_arrays(
     os << *prefix;
     auto row_ptr_end_h =
       Kokkos::create_mirror_view(hostSpace, row_ptr_end);
+    // DEEP_COPY REVIEW - NOT TESTED
     Kokkos::deep_copy(row_ptr_end_h, row_ptr_end);
     verbosePrintArray(os, row_ptr_end_h, "row_ptr_end after scan",
                       maxNumToPrint);
@@ -365,8 +372,10 @@ pad_crs_arrays(
 
   if (verbose) {
     auto indices_h = Kokkos::create_mirror_view(hostSpace, indices);
+    // DEEP_COPY REVIEW - NOT TESTED
     Kokkos::deep_copy(indices_h, indices);
     auto values_h = Kokkos::create_mirror_view(hostSpace, values);
+    // DEEP_COPY REVIEW - NOT TESTED
     Kokkos::deep_copy(values_h, values);
     std::ostringstream os;
     os << "On output: ";

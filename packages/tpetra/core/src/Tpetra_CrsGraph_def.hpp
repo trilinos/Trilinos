@@ -382,6 +382,7 @@ namespace Tpetra {
     in_view_type numAllocPerRowIn (numEntPerRow.getRawPtr (), lclNumRows);
     nc_view_type numAllocPerRowOut ("Tpetra::CrsGraph::numAllocPerRow",
                                     lclNumRows);
+    // DEEP_COPY REVIEW - HOST-TO-DEVICE
     Kokkos::deep_copy (numAllocPerRowOut, numAllocPerRowIn);
     k_numAllocPerRow_ = numAllocPerRowOut;
 
@@ -518,6 +519,7 @@ namespace Tpetra {
     in_view_type numAllocPerRowIn (numEntPerRow.getRawPtr (), lclNumRows);
     nc_view_type numAllocPerRowOut ("Tpetra::CrsGraph::numAllocPerRow",
                                     lclNumRows);
+    // DEEP_COPY REVIEW - HOST-TO-DEVICE
     Kokkos::deep_copy (numAllocPerRowOut, numAllocPerRowIn);
     k_numAllocPerRow_ = numAllocPerRowOut;
 
@@ -1249,6 +1251,7 @@ namespace Tpetra {
         std::cerr << os.str();
       }
       row_ent_type numRowEnt (ViewAllocateWithoutInitializing (label), numRows);
+      // DEEP_COPY REVIEW - VALUE-TO-DEVICE
       Kokkos::deep_copy (numRowEnt, static_cast<size_t> (0)); // fill w/ 0s
       this->k_numRowEntries_ = numRowEnt; // "commit" our allocation
     }
@@ -2380,6 +2383,7 @@ namespace Tpetra {
       // of create_mirror_view might actually be a new allocation.
       // This helps with debugging when there are two memory spaces.
       typename row_map_type::HostMirror ptr_h = create_mirror_view (k_rowPtrs_);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy (ptr_h, k_rowPtrs_);
       if (debug_) {
         TEUCHOS_TEST_FOR_EXCEPTION
@@ -2404,6 +2408,7 @@ namespace Tpetra {
       ret_view_type ptr_d (ViewAllocateWithoutInitializing ("ptr"), size);
       ::Tpetra::Details::copyOffsets (ptr_d, k_rowPtrs_);
       typename ret_view_type::HostMirror ptr_h = create_mirror_view (ptr_d);
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (ptr_h, ptr_d);
       ptr_st = Kokkos::Compat::persistingView (ptr_h);
     }
@@ -3011,6 +3016,7 @@ namespace Tpetra {
       // an assignment of View<row_offset_type*, ...> to View<size_t*,
       // ...> unless size_t == row_offset_type.
       input_view_type ptr_decoy (rowPointers.getRawPtr (), size); // never used
+      // DEEP_COPY REVIEW - HOST-TO-DEVICE
       Kokkos::deep_copy (Kokkos::Impl::if_c<same,
                            nc_row_map_type,
                            input_view_type>::select (ptr_rot, ptr_decoy),
@@ -3032,6 +3038,7 @@ namespace Tpetra {
         // execution space would avoid the double copy.
         //
         View<size_t*, layout_type ,execution_space > ptr_st ("Tpetra::CrsGraph::ptr", size);
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (ptr_st, ptr_in);
         // Copy on device (casting from size_t to row_offset_type,
         // with bounds checking if necessary) to ptr_rot.  This
@@ -5134,6 +5141,7 @@ namespace Tpetra {
     row_ptrs_type row_ptrs_beg(
       view_alloc("row_ptrs_beg", WithoutInitializing),
       k_rowPtrs_.extent(0));
+    // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
     Kokkos::deep_copy(row_ptrs_beg, k_rowPtrs_);
 
     const size_t N = row_ptrs_beg.extent(0) == 0 ? size_t(0) :
@@ -5700,6 +5708,7 @@ namespace Tpetra {
         Kokkos::MemoryUnmanaged> exports_a_h (exports_a.getRawPtr (), newSize);
       exports.clear_sync_state ();
       exports.modify_host ();
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (exports.view_host (), exports_a_h);
     }
     // packCrsGraphNew requires a valid localGraph.
@@ -6611,7 +6620,7 @@ namespace Tpetra {
           }
         } // whether lclColInd is a valid local column index
       } // for each local row
-
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (offsets, offsets_h);
     } // whether the graph is fill complete
 
@@ -6748,6 +6757,7 @@ namespace Tpetra {
       copyBackIfNeeded (const host_offsets_type& hostOffsets,
                         const device_offsets_type& deviceOffsets)
       {
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (hostOffsets, deviceOffsets);
       }
     };
@@ -7635,7 +7645,9 @@ namespace Tpetra {
     {
       typename local_graph_type::row_map_type::const_type::HostMirror k_rowPtrs_host_this = Kokkos::create_mirror_view(this->k_rowPtrs_);
       typename local_graph_type::row_map_type::const_type::HostMirror k_rowPtrs_host_graph= Kokkos::create_mirror_view(graph.k_rowPtrs_);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy(k_rowPtrs_host_this, this->k_rowPtrs_);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy(k_rowPtrs_host_graph, graph.k_rowPtrs_);
       for(size_t i=0; output && i<k_rowPtrs_host_this.extent(0); i++)
         output = k_rowPtrs_host_this(i) == k_rowPtrs_host_graph(i) ? output : false;
@@ -7647,7 +7659,9 @@ namespace Tpetra {
     {
       typename local_graph_type::entries_type::non_const_type::HostMirror k_lclInds1D_host_this = Kokkos::create_mirror_view(this->k_lclInds1D_);
       typename local_graph_type::entries_type::non_const_type::HostMirror k_lclInds1D_host_graph= Kokkos::create_mirror_view(graph.k_lclInds1D_);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy(k_lclInds1D_host_this, this->k_lclInds1D_);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy(k_lclInds1D_host_graph, graph.k_lclInds1D_);
       for(size_t i=0; output && i < k_lclInds1D_host_this.extent(0); i++)
         output = k_lclInds1D_host_this(i) == k_lclInds1D_host_graph(i) ? output : false;
@@ -7659,7 +7673,9 @@ namespace Tpetra {
     {
       typename t_GlobalOrdinal_1D::HostMirror k_gblInds1D_host_this  = Kokkos::create_mirror_view(this->k_gblInds1D_);
       typename t_GlobalOrdinal_1D::HostMirror k_gblInds1D_host_graph = Kokkos::create_mirror_view(graph.k_gblInds1D_);
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy(k_gblInds1D_host_this, this->k_gblInds1D_);
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy(k_gblInds1D_host_graph, graph.k_gblInds1D_);
       for(size_t i=0; output && i<k_gblInds1D_host_this.extent(0); i++)
         output = k_gblInds1D_host_this(i) == k_gblInds1D_host_graph(i) ? output : false;
@@ -7677,7 +7693,9 @@ namespace Tpetra {
     {
       typename local_graph_type::row_map_type::HostMirror lclGraph_rowmap_host_this  = Kokkos::create_mirror_view(this->lclGraph_.row_map);
       typename local_graph_type::row_map_type::HostMirror lclGraph_rowmap_host_graph = Kokkos::create_mirror_view(graph.lclGraph_.row_map);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy(lclGraph_rowmap_host_this, this->lclGraph_.row_map);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy(lclGraph_rowmap_host_graph, graph.lclGraph_.row_map);
       for(size_t i=0; output && i<lclGraph_rowmap_host_this.extent(0); i++)
         output = lclGraph_rowmap_host_this(i) == lclGraph_rowmap_host_graph(i) ? output : false;
@@ -7688,7 +7706,9 @@ namespace Tpetra {
     {
       typename local_graph_type::entries_type::HostMirror lclGraph_entries_host_this = Kokkos::create_mirror_view(this->lclGraph_.entries);
       typename local_graph_type::entries_type::HostMirror lclGraph_entries_host_graph = Kokkos::create_mirror_view(graph.lclGraph_.entries);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy(lclGraph_entries_host_this, this->lclGraph_.entries);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy(lclGraph_entries_host_graph, graph.lclGraph_.entries);
       for(size_t i=0; output && i<lclGraph_entries_host_this.extent(0); i++)
         output = lclGraph_entries_host_this(i) == lclGraph_entries_host_graph(i) ? output : false;
@@ -7699,7 +7719,9 @@ namespace Tpetra {
     {
       typename local_graph_type::row_block_type::HostMirror lclGraph_rbo_host_this = Kokkos::create_mirror_view(this->lclGraph_.row_block_offsets);
       typename local_graph_type::row_block_type::HostMirror lclGraph_rbo_host_graph = Kokkos::create_mirror_view(graph.lclGraph_.row_block_offsets);
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy(lclGraph_rbo_host_this, this->lclGraph_.row_block_offsets);
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy(lclGraph_rbo_host_graph, graph.lclGraph_.row_block_offsets);
       for(size_t i=0; output && i < lclGraph_rbo_host_this.extent(0); i++)
         output = lclGraph_rbo_host_this(i) == lclGraph_rbo_host_graph(i) ? output : false;

@@ -84,6 +84,7 @@ localRowCounts (const RowGraph<LO, GO, NT>& G)
     entPerRow_h[i] = offset_type (lclNumEnt);
     maxNumEnt = maxNumEnt < lclNumEnt ? lclNumEnt : maxNumEnt;
   }
+  // DEEP_COPY REVIEW - HOST-TO-DEVICE
   Kokkos::deep_copy (entPerRow, entPerRow_h);
   return {entPerRow, maxNumEnt};
 }
@@ -131,6 +132,7 @@ localRowOffsetsFromFillCompleteCrsGraph (const CrsGraph<LO, GO, NT>& G)
   auto G_lcl = G.getLocalGraph ();
   offsets_type ptr (view_alloc ("ptr", WithoutInitializing),
                     G_lcl.row_map.extent (0));
+  // DEEP_COPY REVIEW - NOT TESTED
   Kokkos::deep_copy (ptr, G_lcl.row_map);
 
   const offset_type nnz = G.getNodeNumEntries ();

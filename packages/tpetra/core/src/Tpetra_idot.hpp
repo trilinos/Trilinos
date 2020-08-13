@@ -118,6 +118,8 @@ void idotLocal(const ResultView& localResult,
       auto Y_lcl_other = Y.template getLocalView<other_memory_space>();
       typename decltype (Y_lcl)::non_const_type
         Y_lcl_nc (Kokkos::ViewAllocateWithoutInitializing("Y_lcl"), Y_lcl_other.extent(0), Y_numVecs);
+
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (Y_lcl_nc, Y_lcl_other);
       Y_lcl = Y_lcl_nc;
     }
@@ -157,6 +159,7 @@ void idotLocal(const ResultView& localResult,
         //Get a copy of Y's column if needed. If X has k columns but Y has 1, only copy to YLocalCol_nc once.
         if(vec == 0 || Y_numVecs > 1) {
           auto YLocalCol_other_space = Kokkos::subview(Ycol->template getLocalView<other_memory_space>(), rowRange, 0);
+          // DEEP_COPY REVIEW - NOT TESTED
           Kokkos::deep_copy(YLocalCol_nc, YLocalCol_other_space);
         }
         YLocalCol = YLocalCol_nc;
@@ -206,6 +209,7 @@ void blockingDotImpl(
     result_dev_view_type localDeviceResult(Kokkos::ViewAllocateWithoutInitializing("DeviceLocalDotResult"), numVecs);
     idotLocal<SC, LO, GO, NT, result_dev_view_type, mirror_mem_space>(localDeviceResult, X, Y);
     //NOTE: no fence is required: deep_copy will fence.
+    // DEEP_COPY REVIEW - DEVICE-TO-HOST
     Kokkos::deep_copy(localHostResult, localDeviceResult);
   }
   result_host_view_type globalHostResultOwning;
@@ -220,6 +224,7 @@ void blockingDotImpl(
     globalHostResultNonowning = unmanaged_result_host_view_type(globalHostResultOwning.data(), numVecs);
   }
   Teuchos::reduceAll<int, dot_type> (*X.getMap()->getComm(), Teuchos::REDUCE_SUM, numVecs, localHostResult.data(), globalHostResultNonowning.data());
+  // DEEP_COPY REVIEW - DEVICE-TO-HOST
   Kokkos::deep_copy(globalResult, globalHostResultNonowning);
 }
 
@@ -314,6 +319,7 @@ idotImpl(const ResultView& globalResult,
     {
       result_host_view_type hostLocalResult(Kokkos::ViewAllocateWithoutInitializing("hostLocalResult"), numVecs);
       //The deep copy fences.
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy(hostLocalResult, nonowningLocalResult);
       return iallreduce(hostLocalResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
     }

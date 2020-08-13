@@ -148,6 +148,7 @@ public:
     else {
       // No need to initialize, if we're going to copy into it anyway.
       outView_nc = nc_output_view_type (view_alloc (std::string (label), WithoutInitializing), inSize);
+      // DEEP_COPY REVIEW - HOST-TO-DEVICE
       Kokkos::deep_copy (outView_nc, inView);
     }
     return outView_nc; // this casts back to const
@@ -181,6 +182,7 @@ public:
     output_view_type outView =
       Kokkos::create_mirror_view (out_mem_space (), inView);
     if (copy) {
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy (outView, inView);
     }
     return outView;

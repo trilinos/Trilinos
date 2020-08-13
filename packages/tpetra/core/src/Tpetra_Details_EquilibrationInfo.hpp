@@ -138,14 +138,18 @@ struct EquilibrationInfo {
   void
   assign (const EquilibrationInfo<ScalarType, SrcDeviceType>& src)
   {
+    // DEEP_COPY_REVIEW
     Kokkos::deep_copy (rowNorms, src.rowNorms);
+    // DEEP_COPY_REVIEW
     Kokkos::deep_copy (rowDiagonalEntries, src.rowDiagonalEntries);
+    // DEEP_COPY_REVIEW
     Kokkos::deep_copy (colNorms, src.colNorms);
     if (src.colDiagonalEntries.extent (0) == 0) {
       colDiagonalEntries =
         Kokkos::View<val_type*, device_type> ("colDiagonalEntries", 0);
     }
     else {
+      // DEEP_COPY_REVIEW
       Kokkos::deep_copy (colDiagonalEntries, src.colDiagonalEntries);
     }
     if (src.rowScaledColNorms.extent (0) == 0) {
@@ -153,6 +157,7 @@ struct EquilibrationInfo {
         Kokkos::View<mag_type*, device_type> ("rowScaledColNorms", 0);
     }
     else {
+      // DEEP_COPY_REVIEW
       Kokkos::deep_copy (rowScaledColNorms, src.rowScaledColNorms);
     }
 

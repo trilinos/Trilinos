@@ -283,6 +283,7 @@ public:
                            src.val_.extent (0));
     // val and src.val_ have the same entry types, unlike (possibly)
     // ptr and src.ptr_.  Thus, we can use Kokkos::deep_copy here.
+    // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
     Kokkos::deep_copy (val, src.val_);
 
     this->ptr_ = ptr;

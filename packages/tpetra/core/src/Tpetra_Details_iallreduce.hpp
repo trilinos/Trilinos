@@ -712,6 +712,7 @@ struct Iallreduce<PacketType,
     // MPI is disabled, so comm is a SerialComm.
     // Avoid needing to check the SerialComm case in Impl::iallreduce.
     // That lets Impl::iallreduce not need to know about DeviceType.
+    // DEEP_COPY REVIEW - DEVICE-TO-DEVICE - NOT TESTED FOR MPI BUILD
     ::Kokkos::deep_copy (recvbuf, sendbuf);
     // This request has already finished.  There's nothing more to do.
     return Impl::emptyCommRequest ();
@@ -774,6 +775,7 @@ struct Iallreduce<PacketType,
     // MPI is disabled, so comm is a SerialComm.
     // Avoid needing to check the SerialComm case in Impl::iallreduce.
     // That lets Impl::iallreduce not need to know about DeviceType.
+    // DEEP_COPY REVIEW - DEVICE-TO-DEVICE - NOT TESTED FOR MPI BUILD
     ::Kokkos::deep_copy (recvbuf, sendbuf);
     // This request has already finished.  There's nothing more to do.
     return Impl::emptyCommRequest ();
