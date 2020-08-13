@@ -56,7 +56,7 @@ namespace FROSch {
                                                                          ParameterListPtr parameterList) :
     HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList)
     {
-        FROSCH_TIMER_START_LEVELID(iPOUHarmonicCoarseOperatorTime,"IPOUHarmonicCoarseOperator::IPOUHarmonicCoarseOperator");
+        FROSCH_DETAILTIMER_START_LEVELID(iPOUHarmonicCoarseOperatorTime,"IPOUHarmonicCoarseOperator::IPOUHarmonicCoarseOperator");
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -193,7 +193,7 @@ namespace FROSch {
                                                                    GOVecPtr dirichletBoundaryDofs,
                                                                    ConstXMultiVectorPtr nodeList)
     {
-        FROSCH_TIMER_START_LEVELID(buildCoarseSpaceTime,"IPOUHarmonicCoarseOperator::buildCoarseSpace");
+        FROSCH_DETAILTIMER_START_LEVELID(buildCoarseSpaceTime,"IPOUHarmonicCoarseOperator::buildCoarseSpace");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
 
         // Das könnte man noch ändern
@@ -217,7 +217,7 @@ namespace FROSch {
                                                                   GOVecPtr2D dirichletBoundaryDofsVec,
                                                                   ConstXMultiVectorPtrVecPtr nodeListVec)
     {
-        FROSCH_TIMER_START_LEVELID(buildCoarseSpaceTime,"IPOUHarmonicCoarseOperator::buildCoarseSpace");
+        FROSCH_DETAILTIMER_START_LEVELID(buildCoarseSpaceTime,"IPOUHarmonicCoarseOperator::buildCoarseSpace");
         // Das könnte man noch ändern
         // TODO: DAS SOLLTE ALLES IN EINE FUNKTION IN HARMONICCOARSEOPERATOR
         for (UN i=0; i<repeatedNodesMapVec.size(); i++) {
@@ -243,7 +243,7 @@ namespace FROSch {
                                                                        GOVecPtr dirichletBoundaryDofs,
                                                                        ConstXMultiVectorPtr nodeList)
     {
-        FROSCH_TIMER_START_LEVELID(resetCoarseSpaceBlockTime,"IPOUHarmonicCoarseOperator::resetCoarseSpaceBlock");
+        FROSCH_DETAILTIMER_START_LEVELID(resetCoarseSpaceBlockTime,"IPOUHarmonicCoarseOperator::resetCoarseSpaceBlock");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
 
@@ -268,35 +268,35 @@ namespace FROSch {
 
             if (this->Verbose_) {
                 cout
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "-----------------------------------------------------------------------------------------"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| "
                 << left << setw(74) << "IPOUHarmonicCoarseOperator " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "========================================================================================="
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(41) << "Block" << right
                 << " | " << setw(41) << blockId
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
                 << " | " << setw(41) << dimension
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
                 << " | " << setw(41) << dofsPerNode
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(41) << "Interface partition of unity type" << right
                 << " | " << setw(41) << coarseSpaceList->sublist("InterfacePartitionOfUnity").get("Type","GDSW")
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(41) << "Dimension of the null space" << right
                 << " | " << setw(41) << nullSpaceBasis->getNumVectors()
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << endl;
             }
@@ -418,7 +418,7 @@ namespace FROSch {
 
         return 0;
     }
-    
+
 }
 
 #endif

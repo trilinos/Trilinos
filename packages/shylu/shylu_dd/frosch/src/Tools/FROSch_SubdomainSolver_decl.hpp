@@ -42,35 +42,11 @@
 #ifndef _FROSCH_SUBDOMAINSOLVER_DECL_hpp
 #define _FROSCH_SUBDOMAINSOLVER_DECL_hpp
 
-#ifndef FROSCH_ASSERT
-#define FROSCH_ASSERT(A,S) TEUCHOS_TEST_FOR_EXCEPTION(!(A),std::logic_error,S);
-#endif
-
-#ifndef FROSCH_TIMER_START
-#define FROSCH_TIMER_START(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S))));
-#endif
-
-#ifndef FROSCH_TIMER_START_LEVELID
-#define FROSCH_TIMER_START_LEVELID(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S) + " (Level " + std::to_string(this->LevelID_) + std::string(")"))));
-#endif
-
-#ifndef FROSCH_TIMER_STOP
-#define FROSCH_TIMER_STOP(A) A.reset();
-#endif
-
-#ifndef FROSCH_WARNING
-#define FROSCH_WARNING(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cerr << std::setw(FROSCH_INDENT) << " " << CLASS << " : WARNING: " << OUTPUT << std::endl;
-#endif
-
-#ifndef FROSCH_NOTIFICATION
-#define FROSCH_NOTIFICATION(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cout << std::setw(FROSCH_INDENT) << " " << CLASS << " : NOTIFICATION: " << OUTPUT << std::endl;
-#endif
-
-#ifndef FROSCH_TEST_OUTPUT
-#define FROSCH_TEST_OUTPUT(COMM,VERBOSE,OUTPUT) COMM->barrier(); COMM->barrier(); COMM->barrier(); if (VERBOSE) std::cout << std::setw(FROSCH_INDENT) << " " << OUTPUT << std::endl;
-#endif
-
 #include <ShyLU_DDFROSch_config.h>
+
+#include <FROSch_Output.h>
+#include <FROSch_Timers.h>
+
 #include <FROSch_Tools_decl.hpp>
 
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
@@ -226,6 +202,7 @@ namespace FROSch {
         */
         SubdomainSolver(ConstXMatrixPtr k,
                         ParameterListPtr parameterList,
+                        string description = "undefined",
                         GOVecPtr blockCoarseSize=null);
 
         //! Destructor
@@ -317,6 +294,9 @@ namespace FROSch {
         //! Paremter list
         ParameterListPtr ParameterList_;
 
+        //! Description of the solver
+        string Description_;
+
         mutable XMultiVectorPtr YTmp_;
 
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
@@ -354,8 +334,8 @@ namespace FROSch {
         RCP<Thyra::LinearOpWithSolveBase<SC> > LOWS_;
 #endif
 
-        Teuchos::RCP<TwoLevelBlockPreconditioner<SC,LO,GO,NO> > TLBP;
-        Teuchos::RCP<TwoLevelPreconditioner<SC,LO,GO,NO> > TLP;
+        RCP<TwoLevelBlockPreconditioner<SC,LO,GO,NO> > TLBP;
+        RCP<TwoLevelPreconditioner<SC,LO,GO,NO> > TLP;
 
         bool IsInitialized_ = false;
 

@@ -53,13 +53,15 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     SubdomainSolver<SC,LO,GO,NO>::SubdomainSolver(ConstXMatrixPtr k,
                                                   ParameterListPtr parameterList,
+                                                  string description,
                                                   GOVecPtr blockCoarseSize) :
     K_ (k),
     ParameterList_ (parameterList),
+    Description_ (description),
     IsInitialized_ (false),
     IsComputed_ (false)
     {
-        FROSCH_TIMER_START(subdomainSolverTime,"SubdomainSolver::SubdomainSolver");
+        FROSCH_TIMER_START_SUBDOMAINSOLVER(subdomainSolverTime,"SubdomainSolver::SubdomainSolver");
         FROSCH_ASSERT(!K_.is_null(),"FROSch::SubdomainSolver : ERROR: K_ is null.");
         if (!ParameterList_->get("SolverType","Amesos").compare("Amesos")) {
 #ifdef HAVE_SHYLU_DDFROSCH_AMESOS
@@ -307,7 +309,7 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     SubdomainSolver<SC,LO,GO,NO>::~SubdomainSolver()
     {
-        FROSCH_TIMER_START(subdomainSolverTime,"SubdomainSolver::~SubdomainSolver");
+        FROSCH_TIMER_START_SUBDOMAINSOLVER(subdomainSolverTime,"SubdomainSolver::~SubdomainSolver");
 #ifdef HAVE_SHYLU_DDFROSCH_AMESOS
         AmesosSolver_.reset();
 #endif
@@ -342,7 +344,7 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     int SubdomainSolver<SC,LO,GO,NO>::initialize()
     {
-        FROSCH_TIMER_START(initializeTime,"SubdomainSolver::initialize");
+        FROSCH_TIMER_START_SUBDOMAINSOLVER(initializeTime,"SubdomainSolver::initialize");
 #ifdef HAVE_SHYLU_DDFROSCH_AMESOS
         if (!ParameterList_->get("SolverType","Amesos").compare("Amesos")) {
             IsInitialized_ = true;
@@ -399,7 +401,7 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     int SubdomainSolver<SC,LO,GO,NO>::compute()
     {
-        FROSCH_TIMER_START(computeTime,"SubdomainSolver::compute");
+        FROSCH_TIMER_START_SUBDOMAINSOLVER(computeTime,"SubdomainSolver::compute");
         FROSCH_ASSERT(this->IsInitialized_,"ERROR: SubdomainSolver has to be initialized before calling compute()");
 #ifdef HAVE_SHYLU_DDFROSCH_AMESOS
         if (!ParameterList_->get("SolverType","Amesos").compare("Amesos")) {
@@ -476,7 +478,7 @@ namespace FROSch {
                                              SC alpha,
                                              SC beta) const
     {
-        FROSCH_TIMER_START(applyTime,"SubdomainSolver::apply");
+        FROSCH_TIMER_START_SUBDOMAINSOLVER(applyTime,"SubdomainSolver::apply");
         FROSCH_ASSERT(IsComputed_,"!IsComputed_.");
 
 #if defined(HAVE_SHYLU_DDFROSCH_AMESOS) && defined(HAVE_SHYLU_DDFROSCH_EPETRA)
@@ -624,7 +626,7 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     string SubdomainSolver<SC,LO,GO,NO>::description() const
     {
-        return "Subdomain Solver";
+        return "Subdomain Solver"; // Add this->Description_;
     }
 
     template<class SC,class LO,class GO,class NO>
@@ -643,7 +645,7 @@ namespace FROSch {
     int SubdomainSolver<SC,LO,GO,NO>::resetMatrix(ConstXMatrixPtr k,
                                                    bool reuseInitialize)
     {
-        FROSCH_TIMER_START(resetMatrixTime,"SubdomainSolver::resetMatrix");
+        FROSCH_TIMER_START_SUBDOMAINSOLVER(resetMatrixTime,"SubdomainSolver::resetMatrix");
         K_ = k;
         FROSCH_ASSERT(!K_.is_null(),"FROSch::SubdomainSolver : ERROR: K_ is null.");
         if (!ParameterList_->get("SolverType","Amesos").compare("Amesos")) {

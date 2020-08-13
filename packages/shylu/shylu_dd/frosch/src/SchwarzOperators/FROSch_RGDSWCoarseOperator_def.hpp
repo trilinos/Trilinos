@@ -56,7 +56,7 @@ namespace FROSch {
                                                           ParameterListPtr parameterList) :
     GDSWCoarseOperator<SC,LO,GO,NO> (k,parameterList)
     {
-        FROSCH_TIMER_START_LEVELID(rGDSWCoarseOperatorTime,"RGDSWCoarseOperator::RGDSWCoarseOperator");
+        FROSCH_DETAILTIMER_START_LEVELID(rGDSWCoarseOperatorTime,"RGDSWCoarseOperator::RGDSWCoarseOperator");
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -68,7 +68,7 @@ namespace FROSch {
                                                                 GOVecPtr dirichletBoundaryDofs,
                                                                 ConstXMultiVectorPtr nodeList)
     {
-        FROSCH_TIMER_START_LEVELID(resetCoarseSpaceBlockTime,"RGDSWCoarseOperator::resetCoarseSpaceBlock");
+        FROSCH_DETAILTIMER_START_LEVELID(resetCoarseSpaceBlockTime,"RGDSWCoarseOperator::resetCoarseSpaceBlock");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
 
@@ -137,31 +137,31 @@ namespace FROSch {
 
             if (this->Verbose_) {
                 cout
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "-----------------------------------------------------------------------------------------"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| "
                 << left << setw(74) << "RGDSWCoarseOperator " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "========================================================================================="
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(41) << "Block" << right
                 << " | " << setw(41) << blockId
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
                 << " | " << setw(41) << dimension
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
                 << " | " << setw(41) << dofsPerNode
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(41) << "Option" << right
                 << " | " << setw(41) << option
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << endl;
             }
@@ -218,23 +218,23 @@ namespace FROSch {
 
                 if (this->Verbose_) {
                     cout
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << setw(89) << "-----------------------------------------------------------------------------------------"
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| "
                     << left << setw(74) << "> RGDSW coarse space " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
                     << " |"
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << setw(89) << "========================================================================================="
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << setw(20) << "Coarse nodes " << " | " << setw(19) << " Translations" << right
                     << " | " << setw(41) << boolalpha << useForCoarseSpace << noboolalpha
                     << " |"
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << setw(20) << "Coarse nodes " << " | " << setw(19) << " Rotations" << right
                     << " | " << setw(41) << boolalpha << useRotations << noboolalpha
                     << " |"
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << setw(89) << "-----------------------------------------------------------------------------------------"
                     << endl;
                 }
@@ -258,7 +258,7 @@ namespace FROSch {
                                                                                                                            EntitySetPtrVecPtr entitySetVector,
                                                                                                                            DistanceFunction distanceFunction)
     {
-        FROSCH_TIMER_START_LEVELID(computeTranslationsTime,"RGDSWCoarseOperator::computeTranslations");
+        FROSCH_DETAILTIMER_START_LEVELID(computeTranslationsTime,"RGDSWCoarseOperator::computeTranslations");
         XMultiVectorPtrVecPtr translations(this->DofsPerNode_[blockId]);
         XMapPtr serialGammaMap = MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap()->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
         for (UN i=0; i<this->DofsPerNode_[blockId]; i++) {
@@ -310,7 +310,7 @@ namespace FROSch {
                                                                                                                         EntitySetPtrVecPtr entitySetVector,
                                                                                                                         DistanceFunction distanceFunction)
     {
-        FROSCH_TIMER_START_LEVELID(computeRotationsTime,"RGDSWCoarseOperator::computeRotations");
+        FROSCH_DETAILTIMER_START_LEVELID(computeRotationsTime,"RGDSWCoarseOperator::computeRotations");
         FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"dimension of the nodeList is wrong.");
         FROSCH_ASSERT(dimension==this->DofsPerNode_[blockId],"dimension!=this->DofsPerNode_[blockId]");
 

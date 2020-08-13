@@ -57,13 +57,13 @@ namespace FROSch {
     CoarseOperator<SC,LO,GO,NO> (k,parameterList),
     AssembledInterfaceCoarseSpace_ (new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_))
     {
-        FROSCH_TIMER_START_LEVELID(harmonicCoarseOperatorTime,"HarmonicCoarseOperator::HarmonicCoarseOperator");
+        FROSCH_DETAILTIMER_START_LEVELID(harmonicCoarseOperatorTime,"HarmonicCoarseOperator::HarmonicCoarseOperator");
     }
 
     template <class SC,class LO,class GO,class NO>
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeCoarseSpace(CoarseSpacePtr coarseSpace)
     {
-        FROSCH_TIMER_START_LEVELID(computeCoarseSpaceTime,"HarmonicCoarseOperator::computeCoarseSpace");
+        FROSCH_DETAILTIMER_START_LEVELID(computeCoarseSpaceTime,"HarmonicCoarseOperator::computeCoarseSpace");
         XMapPtr repeatedMap = AssembleSubdomainMap(NumberOfBlocks_,DofsMaps_,DofsPerNode_);
 
         // Build local saddle point problem
@@ -123,7 +123,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int HarmonicCoarseOperator<SC,LO,GO,NO>::assembleInterfaceCoarseSpace()
     {
-        FROSCH_TIMER_START_LEVELID(assembleInterfaceCoarseSpaceTime,"HarmonicCoarseOperator::assembleInterfaceCoarseSpace");
+        FROSCH_DETAILTIMER_START_LEVELID(assembleInterfaceCoarseSpaceTime,"HarmonicCoarseOperator::assembleInterfaceCoarseSpace");
         LO ii=0;
         for (UN i=0; i<NumberOfBlocks_; i++) {
             if (!InterfaceCoarseSpaces_[i].is_null()) {
@@ -141,7 +141,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int HarmonicCoarseOperator<SC,LO,GO,NO>::addZeroCoarseSpaceBlock(ConstXMapPtr dofsMap)
     {
-        FROSCH_TIMER_START_LEVELID(addZeroCoarseSpaceBlockTime,"HarmonicCoarseOperator::addZeroCoarseSpaceBlock");
+        FROSCH_DETAILTIMER_START_LEVELID(addZeroCoarseSpaceBlockTime,"HarmonicCoarseOperator::addZeroCoarseSpaceBlock");
         // Das könnte man noch ändern
         GammaDofs_->resize(GammaDofs_.size()+1);
         IDofs_->resize(IDofs_.size()+1);
@@ -206,7 +206,7 @@ namespace FROSch {
                                                                     ConstXMultiVectorPtr nodeList,
                                                                     EntitySetConstPtr interior)
     {
-        FROSCH_TIMER_START_LEVELID(computeVolumeFunctionsTime,"HarmonicCoarseOperator::computeVolumeFunctions");
+        FROSCH_DETAILTIMER_START_LEVELID(computeVolumeFunctionsTime,"HarmonicCoarseOperator::computeVolumeFunctions");
         // Process the parameter list
         stringstream blockIdStringstream;
         blockIdStringstream << blockId+1;
@@ -254,23 +254,23 @@ namespace FROSch {
 
             if (this->Verbose_) {
                 cout
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "-----------------------------------------------------------------------------------------"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| "
                 << left << setw(74) << "> RGDSW coarse space " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "========================================================================================="
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(20) << "Volumes " << " | " << setw(19) << " Translations" << right
                 << " | " << setw(41) << boolalpha << useForCoarseSpace << noboolalpha
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(20) << "Volumes " << " | " << setw(19) << " Rotations" << right
                 << " | " << setw(41) << boolalpha << useRotations << noboolalpha
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << endl;
             }
@@ -282,7 +282,7 @@ namespace FROSch {
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeTranslations(UN blockId,
                                                                                                                                  EntitySetConstPtr entitySet)
     {
-        FROSCH_TIMER_START_LEVELID(computeTranslationsTime,"HarmonicCoarseOperator::computeTranslations");
+        FROSCH_DETAILTIMER_START_LEVELID(computeTranslationsTime,"HarmonicCoarseOperator::computeTranslations");
         XMultiVectorPtrVecPtr translations(this->DofsPerNode_[blockId]);
         XMapPtr serialGammaMap = MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap()->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
         for (UN i=0; i<this->DofsPerNode_[blockId]; i++) {
@@ -306,7 +306,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::assembleCoarseMap()
     {
-        FROSCH_TIMER_START_LEVELID(assembleCoarseMapTime,"HarmonicCoarseOperator::assembleCoarseMap");
+        FROSCH_DETAILTIMER_START_LEVELID(assembleCoarseMapTime,"HarmonicCoarseOperator::assembleCoarseMap");
         GOVec mapVector(0);
         GO tmp = 0;
         for (UN i=0; i<NumberOfBlocks_; i++) {
@@ -331,7 +331,7 @@ namespace FROSch {
                                                                                                                               EntitySetConstPtr entitySet,
                                                                                                                               UN discardRotations)
     {
-        FROSCH_TIMER_START_LEVELID(computeRotationsTime,"HarmonicCoarseOperator::computeRotations");
+        FROSCH_DETAILTIMER_START_LEVELID(computeRotationsTime,"HarmonicCoarseOperator::computeRotations");
         FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"FROSch::HarmonicCoarseOperator : ERROR: Dimension of the nodeList is wrong.");
         FROSCH_ASSERT(dimension==this->DofsPerNode_[blockId],"FROSch::HarmonicCoarseOperator : ERROR: Dimension!=this->DofsPerNode_[blockId]");
 
@@ -493,7 +493,7 @@ namespace FROSch {
                                                                                                                          ConstXMapPtr repeatedMap,
                                                                                                                          SC treshold)
     {
-        FROSCH_TIMER_START_LEVELID(detectLinearDependenciesTime,"HarmonicCoarseOperator::detectLinearDependencies");
+        FROSCH_DETAILTIMER_START_LEVELID(detectLinearDependenciesTime,"HarmonicCoarseOperator::detectLinearDependencies");
         LOVecPtr linearDependentVectors(AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements()); //if (this->Verbose_) cout << AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors() << " " << AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength() << " " << indicesGammaDofsAll.size() << endl;
         if (AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors()>0 && AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength()>0) {
             //Construct matrix phiGamma
@@ -573,7 +573,7 @@ namespace FROSch {
             linearDependentVectors.resize(tmp);
         }
 
-        FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print statistics");
+        FROSCH_DETAILTIMER_START_LEVELID(printStatisticsTime,"print statistics");
         // Statistics on linear dependencies
         GO global = AssembledInterfaceCoarseSpace_->getBasisMap()->getMaxAllGlobalIndex();
         if (AssembledInterfaceCoarseSpace_->getBasisMap()->lib()==UseEpetra || AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalNumElements()>0) {
@@ -606,15 +606,15 @@ namespace FROSch {
 
         if (this->Verbose_) {
             cout
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "-----------------------------------------------------------------------------------------"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| "
             << left << setw(74) << "> Local Linear Dependencies of Coarse Basis Functions Statistics " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "========================================================================================="
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(20) << " " << right
             << " | " << setw(10) << "total"
             << " | " << setw(10) << "avg"
@@ -622,9 +622,9 @@ namespace FROSch {
             << " | " << setw(10) << "max"
             << " | " << setw(10) << "global sum"
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "-----------------------------------------------------------------------------------------"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(20) << "Basis functions" << right
             << " | " << setw(10) << global
             << " | " << setw(10) << setprecision(5) << avgVec[0]
@@ -632,7 +632,7 @@ namespace FROSch {
             << " | " << setw(10) << maxVec[0]
             << " | " << setw(10) << sumVec[0]
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(20) << "Dependent" << right
             << " | " << setw(10) << " "
             << " | " << setw(10) << setprecision(5) << avgVec[1]
@@ -640,7 +640,7 @@ namespace FROSch {
             << " | " << setw(10) << maxVec[1]
             << " | " << setw(10) << sumVec[1]
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(20) << "Independent" << right
             << " | " << setw(10) << " "
             << " | " << setw(10) << setprecision(5) << avgVec[2]
@@ -648,11 +648,11 @@ namespace FROSch {
             << " | " << setw(10) << maxVec[2]
             << " | " << setw(10) << sumVec[2]
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "-----------------------------------------------------------------------------------------"
             << endl;
         }
-        FROSCH_TIMER_STOP(printStatisticsTime);
+        FROSCH_DETAILTIMER_STOP(printStatisticsTime);
 
         return linearDependentVectors;
     }
@@ -664,27 +664,27 @@ namespace FROSch {
                                                                                                                          XMatrixPtr kII,
                                                                                                                          XMatrixPtr kIGamma)
     {
-        FROSCH_TIMER_START_LEVELID(computeExtensionsTime,"HarmonicCoarseOperator::computeExtensions");
+        FROSCH_DETAILTIMER_START_LEVELID(computeExtensionsTime,"HarmonicCoarseOperator::computeExtensions");
 
         if (this->Verbose_) {
             cout
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "-----------------------------------------------------------------------------------------"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| "
             << left << setw(74) << "> Extensions solver" << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "========================================================================================="
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(41) << "Solver type" << right
             << " | " << setw(41) << this->ParameterList_->sublist("ExtensionSolver").get("SolverType","Amesos")
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(41) << "Solver" << right
             << " | " << setw(41) << this->ParameterList_->sublist("ExtensionSolver").get("Solver","Mumps")
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "-----------------------------------------------------------------------------------------"
             << endl;
         }
@@ -733,7 +733,9 @@ namespace FROSch {
 
         // Jetzt der solver für kII
         if (indicesIDofsAll.size()>0) {
-            ExtensionSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(kII,sublist(this->ParameterList_,"ExtensionSolver")));
+            ExtensionSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(kII,
+                                                                    sublist(this->ParameterList_,"ExtensionSolver"),
+                                                                    string("ExtensionSolver (Level ") + to_string(this->LevelID_) + string(")")));
             ExtensionSolver_->initialize();
             ExtensionSolver_->compute();
             ExtensionSolver_->apply(*mVtmp,*mVPhiI);
@@ -787,7 +789,7 @@ namespace FROSch {
                                                                                                                                  ConstXMapPtr map,
                                                                                                                                  TwoDArray<int> &couplingIDsToRemove)
     {
-        FROSCH_TIMER_START_LEVELID(removeCouplingBetweenDofsTime,"HarmonicCoarseOperator::removeCouplingBetweenDofs");
+        FROSCH_DETAILTIMER_START_LEVELID(removeCouplingBetweenDofsTime,"HarmonicCoarseOperator::removeCouplingBetweenDofs");
 
         ConstUNVecView numLocalBlockRows = AssembledInterfaceCoarseSpace_->getLocalSubspaceSizes();
         FROSCH_ASSERT(numLocalBlockRows.size()==NumberOfBlocks_,"FROSch::HarmonicCoarseOperator : ERROR: numLocalBlockRows.size()!=NumberOfBlocks_");
@@ -871,7 +873,7 @@ namespace FROSch {
     int HarmonicCoarseOperator<SC,LO,GO,NO>::buildElementNodeList()
     {
         //get elements belonging to one subdomain
-        FROSCH_TIMER_START_LEVELID(buildElementNodeListTime,"CoarseOperator::buildElementNodeList");
+        FROSCH_DETAILTIMER_START_LEVELID(buildElementNodeListTime,"CoarseOperator::buildElementNodeList");
 
         Teuchos::ArrayView<const GO> elements =  KRowMap_->getNodeElementList();
         UN maxNumElements = -1;
@@ -926,7 +928,7 @@ namespace FROSch {
     template<class SC,class LO, class GO, class NO>
     int HarmonicCoarseOperator<SC,LO,GO,NO>::buildGlobalGraph(Teuchos::RCP<DDInterface<SC,LO,GO,NO> > theDDInterface)
     {
-        FROSCH_TIMER_START_LEVELID(buildGlobalGraphTime,"HarmonicCoarseOperator::buildGlobalGraph");
+        FROSCH_DETAILTIMER_START_LEVELID(buildGlobalGraphTime,"HarmonicCoarseOperator::buildGlobalGraph");
         std::map<GO,int> rep;
         Teuchos::Array<GO> entries;
         IntVec2D conn;
@@ -970,7 +972,7 @@ namespace FROSch {
     int HarmonicCoarseOperator<SC,LO,GO,NO>::buildCoarseGraph()
     {
         //bring graph to CoarseSolveComm_
-        FROSCH_TIMER_START_LEVELID(buildCoarseGraphTime,"CoarseOperator::buildCoarseGraph");
+        FROSCH_DETAILTIMER_START_LEVELID(buildCoarseGraphTime,"CoarseOperator::buildCoarseGraph");
 
         //create temporary graphs to perform communication (possibly with gathering steps)
         GraphPtr tmpGraph =  Xpetra::CrsGraphFactory<LO,GO,NO>::Build(this->MLGatheringMaps_[1],MaxNumNeigh_);;

@@ -55,7 +55,7 @@ namespace FROSch {
                                                         ParameterListPtr parameterList) :
     HarmonicCoarseOperator<SC,LO,GO,NO> (k,parameterList)
     {
-        FROSCH_TIMER_START_LEVELID(gDSWCoarseOperatorTime,"GDSWCoarseOperator::GDSWCoarseOperator");
+        FROSCH_DETAILTIMER_START_LEVELID(gDSWCoarseOperatorTime,"GDSWCoarseOperator::GDSWCoarseOperator");
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -273,7 +273,7 @@ namespace FROSch {
                                                           GOVecPtr dirichletBoundaryDofs,
                                                           ConstXMultiVectorPtr nodeList)
     {
-        FROSCH_TIMER_START_LEVELID(buildCoarseSpaceTime,"GDSWCoarseOperator::buildCoarseSpace");
+        FROSCH_DETAILTIMER_START_LEVELID(buildCoarseSpaceTime,"GDSWCoarseOperator::buildCoarseSpace");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
 
         // Das könnte man noch ändern
@@ -300,7 +300,7 @@ namespace FROSch {
                                                           GOVecPtr2D dirichletBoundaryDofsVec,
                                                           ConstXMultiVectorPtrVecPtr nodeListVec)
     {
-        FROSCH_TIMER_START_LEVELID(buildCoarseSpaceTime,"GDSWCoarseOperator::buildCoarseSpace");
+        FROSCH_DETAILTIMER_START_LEVELID(buildCoarseSpaceTime,"GDSWCoarseOperator::buildCoarseSpace");
         // Das könnte man noch ändern
         // TODO: DAS SOLLTE ALLES IN EINE FUNKTION IN HARMONICCOARSEOPERATOR
         for (UN i=0; i<repeatedNodesMapVec.size(); i++) {
@@ -325,7 +325,7 @@ namespace FROSch {
                                                                GOVecPtr dirichletBoundaryDofs,
                                                                ConstXMultiVectorPtr nodeList)
     {
-        FROSCH_TIMER_START_LEVELID(resetCoarseSpaceBlockTime,"GDSWCoarseOperator::resetCoarseSpaceBlock");
+        FROSCH_DETAILTIMER_START_LEVELID(resetCoarseSpaceBlockTime,"GDSWCoarseOperator::resetCoarseSpaceBlock");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
         FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
 
@@ -404,27 +404,27 @@ namespace FROSch {
 
             if (this->Verbose_) {
                 cout
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "-----------------------------------------------------------------------------------------"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| "
                 << left << setw(74) << "GDSWCoarseOperator " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "========================================================================================="
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(41) << "Block" << right
                 << " | " << setw(41) << blockId
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
                 << " | " << setw(41) << dimension
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
                 << " | " << setw(41) << dofsPerNode
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << endl;
             }
@@ -539,51 +539,51 @@ namespace FROSch {
 
                 if (this->Verbose_) {
                     cout
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << setw(89) << "-----------------------------------------------------------------------------------------"
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| "
                     << left << setw(74) << "> GDSW coarse space " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
                     << " |"
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << setw(89) << "========================================================================================="
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << setw(20) << "Vertices " << " | " << setw(19) << " Translations" << right
                     << " | " << setw(41) << boolalpha << useVertexTranslations << noboolalpha
                     << " |"
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << setw(20) << "ShortEdges " << " | " << setw(19) << " Translations" << right
                     << " | " << setw(41) << boolalpha << useShortEdgeTranslations << noboolalpha
                     << " |"
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << setw(20) << "ShortEdges " << " | " << setw(19) << " Rotations" << right
                     << " | " << setw(41) << boolalpha << useShortEdgeRotations << noboolalpha
                     << " |"
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << setw(20) << "StraightEdges " << " | " << setw(19) << " Translations" << right
                     << " | " << setw(41) << boolalpha << useStraightEdgeTranslations << noboolalpha
                     << " |"
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << setw(20) << "StraightEdges " << " | " << setw(19) << " Rotations" << right
                     << " | " << setw(41) << boolalpha << useStraightEdgeRotations << noboolalpha
                     << " |"
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << setw(20) << "Edges " << " | " << setw(19) << " Translations" << right
                     << " | " << setw(41) << boolalpha << useEdgeTranslations << noboolalpha
                     << " |"
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << setw(20) << "Edges " << " | " << setw(19) << " Rotations" << right
                     << " | " << setw(41) << boolalpha << useEdgeRotations << noboolalpha
                     << " |"
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << setw(20) << "Faces " << " | " << setw(19) << " Translations" << right
                     << " | " << setw(41) << boolalpha << useFaceTranslations << noboolalpha
                     << " |"
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << setw(20) << "Faces " << " | " << setw(19) << " Rotations" << right
                     << " | " << setw(41) << boolalpha << useFaceRotations << noboolalpha
                     << " |"
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << setw(89) << "-----------------------------------------------------------------------------------------"
                     << endl;
                 }

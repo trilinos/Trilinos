@@ -42,39 +42,10 @@
 #ifndef _FROSCH_TOOLS_DECL_HPP
 #define _FROSCH_TOOLS_DECL_HPP
 
-#ifndef FROSCH_INDENT
-#define FROSCH_INDENT 5
-#endif
-
-#ifndef FROSCH_ASSERT
-#define FROSCH_ASSERT(A,S) TEUCHOS_TEST_FOR_EXCEPTION(!(A),std::logic_error,S);
-#endif
-
-#ifndef FROSCH_TIMER_START
-#define FROSCH_TIMER_START(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S))));
-#endif
-
-#ifndef FROSCH_TIMER_START_LEVELID
-#define FROSCH_TIMER_START_LEVELID(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S) + " (Level " + std::to_string(this->LevelID_) + std::string(")"))));
-#endif
-
-#ifndef FROSCH_TIMER_STOP
-#define FROSCH_TIMER_STOP(A) A.reset();
-#endif
-
-#ifndef FROSCH_WARNING
-#define FROSCH_WARNING(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cerr << std::setw(FROSCH_INDENT) << " " << CLASS << " : WARNING: " << OUTPUT << std::endl;
-#endif
-
-#ifndef FROSCH_NOTIFICATION
-#define FROSCH_NOTIFICATION(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cout << std::setw(FROSCH_INDENT) << " " << CLASS << " : NOTIFICATION: " << OUTPUT << std::endl;
-#endif
-
-#ifndef FROSCH_TEST_OUTPUT
-#define FROSCH_TEST_OUTPUT(COMM,VERBOSE,OUTPUT) COMM->barrier(); COMM->barrier(); COMM->barrier(); if (VERBOSE) std::cout << std::setw(FROSCH_INDENT) << " " << OUTPUT << std::endl;
-#endif
-
 #include <ShyLU_DDFROSch_config.h>
+
+#include <FROSch_Output.h>
+#include <FROSch_Timers.h>
 
 #include <Tpetra_Distributor.hpp>
 

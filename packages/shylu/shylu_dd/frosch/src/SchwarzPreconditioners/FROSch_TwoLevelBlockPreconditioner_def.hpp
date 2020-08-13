@@ -56,7 +56,7 @@ namespace FROSch {
                                                                           ParameterListPtr parameterList) :
     OneLevelPreconditioner<SC,LO,GO,NO> (k,parameterList)
     {
-        FROSCH_TIMER_START_LEVELID(twoLevelBlockPreconditionerTime,"TwoLevelBlockPreconditioner::TwoLevelBlockPreconditioner");
+        FROSCH_DETAILTIMER_START_LEVELID(twoLevelBlockPreconditionerTime,"TwoLevelBlockPreconditioner::TwoLevelBlockPreconditioner");
         if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("IPOUHarmonicCoarseOperator")) {
             // Set the LevelID in the sublist
             parameterList->sublist("IPOUHarmonicCoarseOperator").set("Level ID",this->LevelID_);
@@ -123,7 +123,7 @@ namespace FROSch {
         // Build dofsMaps and repeatedNodesMap
         ConstXMapPtrVecPtr repeatedNodesMapVec;
         if (dofsMapsVec.is_null()) {
-            FROSCH_TIMER_START_LEVELID(buildDofMapsTime,"BuildDofMaps");
+            FROSCH_DETAILTIMER_START_LEVELID(buildDofMapsTime,"BuildDofMaps");
             if (0>BuildDofMapsVec(repeatedMapVec,dofsPerNodeVec,dofOrderingVec,repeatedNodesMapVec,dofsMapsVec)) ret -= 100; // Todo: Rückgabewerte
             } else {
             FROSCH_ASSERT(dofsMapsVec.size()==dofsPerNodeVec.size(),"dofsMapsVec.size()!=dofsPerNodeVec.size()");
@@ -140,7 +140,7 @@ namespace FROSch {
         //////////////////////////
         if (!nodeListVec.is_null()) {
             if (this->MpiComm_->getRank() == 0) std::cout<<"Node List is NOT null\n";
-            FROSCH_TIMER_START_LEVELID(communicateNodeListTime,"Communicate Node List");
+            FROSCH_DETAILTIMER_START_LEVELID(communicateNodeListTime,"Communicate Node List");
             for (UN i=0; i<nodeListVec.size(); i++) {
                 if (!nodeListVec[i]->getMap()->isSameAs(*repeatedNodesMapVec[i])) {
                     RCP<MultiVector<SC,LO,GO,NO> > tmpNodeList = MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedNodesMapVec[i],nodeListVec[i]->getNumVectors());
@@ -159,7 +159,7 @@ namespace FROSch {
         /////////////////////////////////////
         ConstXMapPtr repeatedMap = MergeMaps(repeatedMapVec);
         if (dirichletBoundaryDofsVec.is_null()) {
-            FROSCH_TIMER_START_LEVELID(determineDirichletRowsTime,"Determine Dirichlet Rows");
+            FROSCH_DETAILTIMER_START_LEVELID(determineDirichletRowsTime,"Determine Dirichlet Rows");
             dirichletBoundaryDofsVec.resize(repeatedMapVec.size());
             LOVecPtr counterSub(repeatedMapVec.size(),0);
             for (UN j=0; j<dirichletBoundaryDofsVec.size(); j++) {
@@ -280,7 +280,7 @@ namespace FROSch {
         // Build dofsMaps and repeatedNodesMap
         ConstXMapPtrVecPtr repeatedNodesMapVec;
         if (dofsMapsVec.is_null()) {
-            FROSCH_TIMER_START_LEVELID(buildDofMapsTime,"BuildDofMaps");
+            FROSCH_DETAILTIMER_START_LEVELID(buildDofMapsTime,"BuildDofMaps");
             if (0>BuildDofMapsVec(repeatedMapVec,dofsPerNodeVec,dofOrderingVec,repeatedNodesMapVec,dofsMapsVec)) ret -= 100; // Todo: Rückgabewerte
         } else {
             FROSCH_ASSERT(dofsMapsVec.size()==dofsPerNodeVec.size(),"dofsMapsVec.size()!=dofsPerNodeVec.size()");
@@ -297,7 +297,7 @@ namespace FROSch {
         // Communicate nodeList //
         //////////////////////////
         if (!nodeListVec.is_null()) {
-            FROSCH_TIMER_START_LEVELID(communicateNodeListTime,"Communicate Node List");
+            FROSCH_DETAILTIMER_START_LEVELID(communicateNodeListTime,"Communicate Node List");
             for (UN i=0; i<nodeListVec.size(); i++) {
                 ConstXMapPtr nodeListVecMap_i = nodeListVec[i]->getMap();
                 if (!nodeListVecMap_i->isSameAs(*repeatedNodesMapVec[i])) {
@@ -323,7 +323,7 @@ namespace FROSch {
             repeatedMap = MergeMaps( repeatedMapVec );
 
         if (dirichletBoundaryDofsVec.is_null()) {
-            FROSCH_TIMER_START_LEVELID(determineDirichletRowsTime,"Determine Dirichlet Rows");
+            FROSCH_DETAILTIMER_START_LEVELID(determineDirichletRowsTime,"Determine Dirichlet Rows");
             dirichletBoundaryDofsVec.resize(repeatedMapVec.size());
             LOVecPtr counterSub(repeatedMapVec.size(),0);
             for (UN j=0; j<dirichletBoundaryDofsVec.size(); j++) {
@@ -351,7 +351,7 @@ namespace FROSch {
             for (UN i=0; i<dirichletBoundaryDofsVec.size(); i++) {
                 dirichletBoundaryDofsVec[i].resize(counterSub[i]);
             }
-            
+
         }
 
         ////////////////////////////////////
@@ -433,7 +433,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int TwoLevelBlockPreconditioner<SC,LO,GO,NO>::resetMatrix(ConstXMatrixPtr &k)
     {
-        FROSCH_TIMER_START_LEVELID(resetMatrixTime,"TwoLevelBlockPreconditioner::resetMatrix");
+        FROSCH_DETAILTIMER_START_LEVELID(resetMatrixTime,"TwoLevelBlockPreconditioner::resetMatrix");
         this->K_ = k;
         this->OverlappingOperator_->resetMatrix(this->K_);
         CoarseOperator_->resetMatrix(this->K_);
@@ -445,7 +445,7 @@ namespace FROSch {
     int TwoLevelBlockPreconditioner<SC,LO,GO,NO>::preApplyCoarse(XMultiVectorPtr &x,
                                                                  XMultiVectorPtr &y)
     {
-        FROSCH_TIMER_START_LEVELID(preApplyCoarseTime,"TwoLevelBlockPreconditioner::preApplyCoarse");
+        FROSCH_DETAILTIMER_START_LEVELID(preApplyCoarseTime,"TwoLevelBlockPreconditioner::preApplyCoarse");
         if (this->UseMultiplicative_) {
             this->MultiplicativeOperator_->preApplyCoarse(*x,*y);
         }
