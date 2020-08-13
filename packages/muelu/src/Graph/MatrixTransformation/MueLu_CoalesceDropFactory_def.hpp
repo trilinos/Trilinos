@@ -81,6 +81,7 @@
 // Should be removed once we are confident that this works.
 //#define DJS_READ_ENV_VARIABLES
 
+
 namespace MueLu {
 
   namespace Details {
@@ -102,6 +103,9 @@ namespace MueLu {
                   real_type diag {Teuchos::ScalarTraits<real_type>::zero()};
       LO        col  {Teuchos::OrdinalTraits<LO>::invalid()};
       bool      drop {true};
+
+      // CMS: Auxillary information for debugging info
+      real_type aux_val {Teuchos::ScalarTraits<real_type>::nan()};
     };
   }
 
@@ -882,13 +886,14 @@ namespace MueLu {
             }
           }
 
+	  ArrayView<const SC>     vals;//CMS hackery
           for (LO row = 0; row < numRows; row++) {
             ArrayView<const LO> indices;
             indicesExtra.resize(0);
 	    bool isBoundary = false;
 
             if (blkSize == 1) {
-	      ArrayView<const SC>     vals;
+	      //	      ArrayView<const SC>     vals;//CMS uncomment
               A->getLocalRowView(row, indices, vals);
 	      isBoundary = pointBoundaryNodes[row];
             } else {
@@ -960,6 +965,7 @@ namespace MueLu {
 
                   if (row == col) {
                     drop_vec.emplace_back( zero, one, colID, false);
+		    drop_vec.back().aux_val = vals[colID];
                     continue;
                   }
 		  // We do not want the distance Laplacian aggregating boundary nodes
@@ -970,6 +976,11 @@ namespace MueLu {
                   real_type aij    = STS::magnitude(laplVal*laplVal);
 
                   drop_vec.emplace_back(aij, aiiajj, colID, false);
+
+
+		  // CMS hackery
+		  drop_vec.back().aux_val = vals[colID];
+
                 }
 
                 const size_t n = drop_vec.size();
@@ -1021,7 +1032,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_DEBUG
                         if (distanceLaplacianCutVerbose) {
                           std::cout << "DJS: KEEP, N, ROW:  " << i+1 << ", " << n << ", " << row << std::endl;
-                        }
+			}                        
 #endif
                       }
                     }
@@ -1043,13 +1054,16 @@ namespace MueLu {
                   if (row == col) {
                     columns[realnnz++] = col;
                     rownnz++;
+		    //		    printf("(%d,%d) KEEP %13s matrix = %6.4e\n",row,row,"DIAGONAL",drop_vec[idxID].aux_val);
                     continue;
                   }
 
                   if (!drop_vec[idxID].drop) {
                     columns[realnnz++] = col;
+		    //		    printf("(%d,%d) KEEP dlap = %6.4e matrix = %6.4e\n",row,col,drop_vec[idxID].val/drop_vec[idxID].diag,drop_vec[idxID].aux_val);
                     rownnz++;
                   } else {
+		    //		    printf("(%d,%d) DROP dlap = %6.4e matrix = %6.4e\n",row,col,drop_vec[idxID].val/drop_vec[idxID].diag,drop_vec[idxID].aux_val);
                     numDropped++;
                   }
                 }
@@ -1098,6 +1112,7 @@ namespace MueLu {
 		// into a Dirichlet unknown.  In that case don't.
 		if(!found && !pointBoundaryNodes[col] && rows_stop[col] < rows[col+1]) {
 		  LO new_idx = rows_stop[col];
+		  //		  printf("(%d,%d) SYMADD entry\n",col,row);
 		  columns[new_idx] = row;
 		  rows_stop[col]++;	
 		  numDropped--;
