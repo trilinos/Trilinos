@@ -1703,15 +1703,27 @@ void BulkData::comm_shared_procs(Entity entity, std::vector<int> & procs ) const
 void BulkData::shared_procs_intersection(const std::vector<EntityKey> & keys, std::vector<int> & procs ) const
 {
   procs.clear();
-  const int num = keys.size();
+  int num = keys.size();
+  std::vector<int> procs_tmp;
+  std::vector<int> result;
   for (int i = 0; i < num; ++i)
   {
-    if (i == 0) {
-      comm_shared_procs(keys[i], procs);
-    }
-    else {
-      PairIterEntityComm sharedComm = internal_entity_comm_map_shared(keys[i]);
-      impl::intersect_with(procs, sharedComm);
+    comm_shared_procs(keys[i], procs_tmp);
+
+    if (i == 0)
+      procs.swap(procs_tmp);
+    else
+    {
+      // subsequent loops keep the intersection
+      result.clear();
+      std::back_insert_iterator<std::vector<int> > result_itr(result);
+      std::set_intersection(procs.begin(),
+                            procs.end(),
+                            procs_tmp.begin(),
+                            procs_tmp.end(),
+                            result_itr,
+                            std::less<int>());
+      procs.swap(result);
     }
   }
 }
@@ -1720,15 +1732,27 @@ void BulkData::shared_procs_intersection(const EntityVector& entities,
                                          std::vector<int> & procs ) const
 {
   procs.clear();
-  const int num = entities.size();
+  int num = entities.size();
+  std::vector<int> procs_tmp;
+  std::vector<int> result;
   for (int i = 0; i < num; ++i)
   {
-    if (i == 0) {
-      comm_shared_procs(entities[i], procs);
-    }
-    else {
-      PairIterEntityComm sharedComm = internal_entity_comm_map_shared(entities[i]);
-      impl::intersect_with(procs, sharedComm);
+    comm_shared_procs(entities[i], procs_tmp);
+
+    if (i == 0)
+      procs.swap(procs_tmp);
+    else
+    {
+      // subsequent loops keep the intersection
+      result.clear();
+      std::back_insert_iterator<std::vector<int> > result_itr(result);
+      std::set_intersection(procs.begin(),
+                            procs.end(),
+                            procs_tmp.begin(),
+                            procs_tmp.end(),
+                            result_itr,
+                            std::less<int>());
+      procs.swap(result);
     }
   }
 }
