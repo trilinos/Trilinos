@@ -500,6 +500,7 @@ namespace BaskerNS
       {cout << i << "  " << tree.col_tabs[i+1]-tree.col_tabs[i] << endl;}
     #endif
 
+std::cout << " thread_array = malloc ( " << num_threads << " )" << std::endl;
     BASKER_ASSERT(num_threads > 0, "tree num_threads2");
     MALLOC_THREAD_1DARRAY(thread_array, num_threads);
 
@@ -1218,7 +1219,6 @@ namespace BaskerNS
     int old_precision = std::cout.precision();
     std::cout.setf(ios::fixed, ios::floatfield);
     std::cout.precision(8);
-//    double permute_time = 0.0; //no longer here...
     double sort_time = 0.0;
     double tmp_time = 0.0;
     Kokkos::Timer timer_permute;
@@ -1232,10 +1232,10 @@ namespace BaskerNS
       if(Options.verbose == BASKER_TRUE)
       { printf("btf tabs reorder\n"); }
 
-        #ifdef BASKER_TIMER_FINE 
-        double twod_time = 0.0;
-        Kokkos::Timer timer_twod;
-        #endif
+      #ifdef BASKER_TIMER_FINE 
+      double twod_time = 0.0;
+      Kokkos::Timer timer_twod;
+      #endif
 
       clean_2d(); // clear vals from ALM, AVM - views of views that store the local 2D block CCS reordered matrix info
 

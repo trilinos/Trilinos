@@ -153,7 +153,6 @@ namespace BaskerNS
     Int          lval  = 0;
     Int          uval  = 0;
 
-
     Int i,j,k;
     //Int top, top1, maxindex, t; //NDE - warning: top1 set but not used
     Int top, maxindex, t;
@@ -221,6 +220,20 @@ namespace BaskerNS
     }
 #endif
 
+    if(Options.verbose == BASKER_TRUE)
+    {
+      printf(" > kid: %ld factoring_blk current_chunk: %ld size\n",
+          (long)kid, (long)M.ncol);
+    }
+    /*printf( " t_nfactor_blk: wsize=%d\n",ws_size );
+    std::cout << " D = [" << std::endl;
+    for(Int k = 0; k < M.ncol; ++k) {
+      for( i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) {
+        printf( "%d %d %d %.16e\n", i, M.row_idx(i), k, M.val(i));
+      }
+    }
+    std::cout << "];" << std::endl << std::endl << std::flush;*/
+
     for(k = 0; k < M.ncol; ++k)
     {
 #ifdef BASKER_DEBUG_NFACTOR_BLK
@@ -249,7 +262,6 @@ namespace BaskerNS
       {
         BASKER_ASSERT(ws(i) == 0, "wserror");
       }
-
 #endif
 
       //for each nnz in column
@@ -263,10 +275,10 @@ namespace BaskerNS
         //Do we need this anymore ?? Don't think
         if(j >= ecol)
         {
-#ifdef BASKER_DEBUG_NFACTOR_BLK
+          #ifdef BASKER_DEBUG_NFACTOR_BLK
           printf("col_break, kid: %d idx: %d \n",
               kid, i);
-#endif
+          #endif
           col_idx_offset = i;
           break;
         }
@@ -390,7 +402,7 @@ namespace BaskerNS
         if(gperm(k+brow) == BASKER_MAX_IDX)
         {
           //  printf("using diag\n");
-          pivot     = X(k);
+          pivot    = X(k);
           maxindex = k;
         }
       }

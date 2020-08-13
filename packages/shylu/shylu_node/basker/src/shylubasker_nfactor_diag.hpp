@@ -171,7 +171,7 @@ namespace BaskerNS
 
       if(Options.verbose == BASKER_TRUE)
       {
-        printf("kid: %ld factoring current_chunk: %ld size: %ld start: %ld\n",
+        printf(" > kid: %ld factoring_diag current_chunk: %ld size: %ld start: %ld\n",
             (long)kid, (long)c, (long)c_size, (long)btf_tabs(c));
       }
 
@@ -223,12 +223,11 @@ namespace BaskerNS
     //Int j = M.col_ptr(k+1-bcol)-1; // was assuming the column is sorted in the ascending order of row indexes
     Entry pivot = zero;
     for (Int j = M.col_ptr(k-bcol); j < M.col_ptr(k-bcol+1); j++) {
-      if (M.row_idx(j) == k) pivot = M.val(j);
+      //printf( "%d: %d %d %e, %d\n",k-bcol, M.row_idx(j),k, M.val(j), j);
+      if (M.row_idx(j) == k-bcol) pivot = M.val(j);
     }
     //Int j = M.row_idx[i];
-
     //will have to make a c and c'
-
     //printf("kid: %d chunk: %d col: %d bcol: %d j: %d\n",
     //	   kid, c, k, bcol, j);
     //printf("Single blk slv, kid: %d val:%f idx:%d %d \n",
@@ -237,7 +236,11 @@ namespace BaskerNS
     if(pivot == zero || pivot != pivot)
     {
       if (Options.verbose == BASKER_TRUE) {
-        printf("Error: zero or NaN diag in single factor\n");
+        if(pivot == zero) {
+          printf("Error: zero diag in single factor\n");
+        } else {
+          printf("Error: NaN diag in single factor\n");
+        }
       }
       thread_array(kid).error_type = BASKER_ERROR_SINGULAR;
       thread_array(kid).error_blk  = c;
@@ -402,7 +405,7 @@ namespace BaskerNS
         j = M.row_idx(i);
         j = j - brow2;
 
-        //printf("(One) In put j: %d %d \n", M.row_idx(i), j);
+        //printf(" Input: %d %d %e (color[%d]=%d)\n", (int)M.row_idx(i), (int)j, M.val(i), (int)j, (int)color[j]);
 
         if(j < 0)
         {
@@ -448,7 +451,6 @@ namespace BaskerNS
       xnnz = ws_size - top;
 
       #ifdef BASKER_DEBUG_NFACTOR_DIAG
-      if(k < 40)
       {
         printf("xnnz: %d ws_size: %d top: %d \n", 
             xnnz, ws_size, top);
@@ -495,24 +497,25 @@ namespace BaskerNS
           thread_array(kid).error_info = k;
           return BASKER_ERROR;
         }
+        absv = abs(value);
 
       #ifdef BASKER_DEBUG_NFACTOR_DIAG
         {
-          printf("consider X(%d)=%e, c=%d, i=%d, k=%d->%d: j=%d t=%d: %g (off=%d, %d, %d)\n", j,X(j), c, i, k,k-L.scol, j, t, value, L.srow,L.scol,btf_tabs(c));
+          printf("consider X(%d)=%e, c=%d, i=%d, k=%d->%d: j=%d t=%d: val=%e,max=%e (off=%d, %d, %d)\n", j,X(j), c, i, k,k-L.scol, j, t, value,maxv, L.srow,L.scol,btf_tabs(c));
         }
       #endif
 
-        absv = abs(value);
         if(t == BASKER_MAX_IDX)
         {
           ++lcnt;
           if(absv > maxv) 
           {
+            //printf( " pivot=%e (k=%d, j=%d -> %d)\n",pivot,k,j,j+L.srow);
             maxv     = absv;
             pivot    = value;
             maxindex = j;
           }
-          if (gperm_array(j+L.srow) == k)
+          if (gperm_array(j+L.srow) == k-bcol)
           {
             //printf( " digv=%e (k=%d, perm(%d) = %d)\n",absv,k,j+L.srow,gperm_array(j+L.srow));
             digv = absv;
@@ -523,7 +526,7 @@ namespace BaskerNS
       //printf("b: %d lcnt: %d after \n", b, lcnt);
       #ifdef BASKER_DEBUG_NFACTOR_DIAG
       {
-        printf("pivot: %g maxindex: %d k: %d \n", pivot, maxindex, k);
+        printf(" >> pivot: %g maxindex: %d k: %d \n", pivot, maxindex, k);
       }
       #endif
       //printf( "c=%d k=%d (%d) maxindex=%d pivot=%e maxv=%e, diag=%e tol=%e (nopivot=%d)\n", c, k, k-btf_tabs(c), maxindex, pivot, maxv, digv, Options.pivot_tol,Options.no_pivot);
@@ -793,6 +796,8 @@ namespace BaskerNS
    Int &top
   )
   {
+    //printf("=======LOCAL REACH BTF SHORT CALLED (top = %d) =====\n",(int)top);
+
     INT_1DARRAY    ws  = thread_array(kid).iws;
     Int        ws_size = thread_array(kid).iws_size;
 
@@ -840,7 +845,7 @@ namespace BaskerNS
       Int t = gperm(j+brow);
 
     #ifdef BASKER_DEBUG_LOCAL_REACH
-      printf("stack_offset: %d head: %d \n", stack_offset , head);
+      printf("stack[%d]=%d, gmer[%d]=%d, head=%d \n", head,j ,j+brow,gperm(j+brow), head);
       BASKER_ASSERT(head > -1,"local head val\n");
 
       printf("----------DFS: %d %d -------------\n", j, t);

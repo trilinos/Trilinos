@@ -223,9 +223,11 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(btf_blk_work, nblks+1);
     init_value(btf_blk_work, nblks+1, (Int)0);
 
-    // TODO: skip those if blk_mwm is enabled, since blk_amd is applied at numeric
-    //================================================================
-    //Find AMD blk ordering, get nnz, and get work
+    //=====================================================================
+    //Find MWM + AMD blk ordering, also compute nnz and get workspace size
+    //NOTE: ordering is computed for each of **ALL** the diagonal blocks
+    //      (i.e., both A & C) since they are split to A & C after the 
+    //      ordering is computed
     #ifdef BASKER_TIMER
     timer_order.reset();
     #endif
@@ -259,7 +261,7 @@ namespace BaskerNS
     timer_order.reset();
     #endif
     MALLOC_INT_1DARRAY(vals_order_blk_amd_array, M.nnz);
-    if (Options.blk_matching != 1 && Options.blk_matching != 2)
+    if (Options.blk_matching == 0) // no blk_matching (TODO: should we add cardinality-matrching on each block?)
     {
       /*printf(" B = [\n" );
       for(Int j = 0; j < M.ncol; j++) {
@@ -269,8 +271,10 @@ namespace BaskerNS
       }
       printf("];\n");*/
 
+      #if 0 // no matching for now
       // > apply matching to rows
       permute_row(M, order_blk_mwm_array);
+      #endif
       #if 0 // no need to scale, since val is read for numeric facto
       //for(Int j = 0; j < M.ncol; j++) printf(" > %d %d %e %e\n",j,order_blk_mwm_array(j),scale_row_array(j),scale_col_array(j));
       for(Int j = 0; j < M.ncol; j++) {
@@ -722,9 +726,14 @@ namespace BaskerNS
     //	   num_threads, 
     //	   ((double)1/num_threads) +
     //	   ((double)BASKER_BTF_IMBALANCE));
-    Int break_size    = ceil((double)total_work_estimate*(
+    #if 0
+    //Int break_size = 0;
+    Int break_size = 5;
+    #else
+    Int break_size = ceil((double)total_work_estimate*(
           ((double)1/num_threads) + 
           ((double)BASKER_BTF_IMBALANCE)));
+    #endif
 
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Basker: Break size: %d \n", break_size);
@@ -861,10 +870,10 @@ namespace BaskerNS
     BTF_C.set_shape(scol, M.ncol-scol, scol, M.ncol-scol);
 
     #ifdef BASKER_DEBUG_ORDER_BTF
-    printf("Baske Set Shape BTF_B: %d %d %d %d \n",
+    printf("Basker Set Shape BTF_B: %d:%d, %d:%d \n",
         BTF_B.srow, BTF_B.nrow,
         BTF_B.scol, BTF_B.ncol);
-    printf("Basker Set Shape BTF_C: %d %d %d %d \n",
+    printf("Basker Set Shape BTF_C: %d:%d, %d:%d \n",
         BTF_C.srow, BTF_C.nrow,
         BTF_C.scol, BTF_C.nrow);
     #endif

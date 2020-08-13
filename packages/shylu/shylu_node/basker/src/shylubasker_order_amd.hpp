@@ -365,13 +365,14 @@ namespace BaskerNS
     //printf("Done with btf_blk_mwm_amd malloc \n");
     //printf("blks: %d \n" , btf_nblks);
 
+    Int b_end = b_start+b_num;
     //const int blk_size_threshold = 1; // was 3
     const int blk_size_threshold = 3; // was 3
     bool flag = Options.verbose;
     Entry one = (Entry)1.0;
-    MALLOC_ENTRY_1DARRAY (scale_row_array, A.nrow);
-    MALLOC_ENTRY_1DARRAY (scale_col_array, A.nrow);
-    for(Int b = b_start; b < b_start+b_num; b++)
+    //MALLOC_ENTRY_1DARRAY (scale_row_array, A.nrow);
+    //MALLOC_ENTRY_1DARRAY (scale_col_array, A.nrow);
+    for(Int b = b_start; b < b_end; b++)
     {
       Int blk_size = btf_tabs(b+1) - btf_tabs(b);
 
@@ -379,9 +380,11 @@ namespace BaskerNS
       {
         for(Int ii = 0; ii < blk_size; ++ii)
         {
-          //printf("set %d \n", btf_tabs(b)+ii-M.scol);
-          p_amd(ii+btf_tabs(b)) = btf_tabs(b)+ii-M.scol;
-          p_mwm(ii+btf_tabs(b)) = btf_tabs(b)+ii-M.scol;
+          //printf("set amd(%d) = mwm(%d) = %d (scol=%d)\n", ii+btf_tabs(b),ii+btf_tabs(b), btf_tabs(b)+ii,M.scol);
+          //p_amd(ii+btf_tabs(b)) = btf_tabs(b)+ii-M.scol;
+          //p_mwm(ii+btf_tabs(b)) = btf_tabs(b)+ii-M.scol;
+          p_amd(ii+btf_tabs(b)) = btf_tabs(b)+ii;
+          p_mwm(ii+btf_tabs(b)) = btf_tabs(b)+ii;
           scale_row_array(ii+btf_tabs(b)) = one;
           scale_col_array(ii+btf_tabs(b)) = one;
         }
@@ -433,84 +436,81 @@ namespace BaskerNS
       printf("\n");
       #endif
 
-      #if 1
-      {
-        /*{
-          std::cout << " m = [ " << std::endl;
-          for(Int k = 0; k < blk_size; k++)
-          {
-            for(Int i = temp_col(k); i < temp_col(k+1); i++)
-              printf("%d %d %e\n", temp_row(i), k, temp_val(i));
-          }
-          std::cout << " ]; " << std::endl;
-        }*/
-        if (Options.blk_matching == 1) {
-          if (flag) {
-            std::cout << " ** ShyLUBasker MWM ** " << std::endl;
-            flag = false;
-          }
-          Int num = 0;
-          mwm_order::mwm(blk_size, nnz,
-                         &(temp_col(0)), &(temp_row(0)), &(temp_val(0)),
-                         &(tempp(0)), num);
-          for(Int ii = 0; ii < blk_size; ii++) {
-            scale_row_array(btf_tabs(b)+ii) = one;
-            scale_col_array(btf_tabs(b)+ii) = one;
-          }
-        }
-#if defined(BASKER_MC64) ||  defined(BASKER_SUPERLUDIS_MC64)
-        else if (Options.blk_matching == 2) {
-          if (flag) {
-            std::cout << " ** MC64 MWM ** " << std::endl;
-            flag = false;
-          }
-          Int job = 5; //2 is the default for SuperLU_DIST
-          mc64(blk_size, nnz, &(temp_col(0)), &(temp_row(0)), &(temp_val(0)),
-               job, &(tempp(0)), &(scale_row_array(btf_tabs(b))), &(scale_col_array(btf_tabs(b))));
-          /*{
-            std::cout << "p_mwm=[" << std::endl;
-            for(Int ii = 0; ii < blk_size; ii++) {
-              std::cout << btf_tabs(b)+ii << " " << tempp(ii) << " " << scale_row_array(ii) << " " << scale_col_array(ii) << std::endl;
-            }
-            std::cout << "];" << std::endl;
-          }*/
-        }
-#endif
-        else {
-          // no mwm, for debugging
-          if (flag) {
-            std::cout << " ** NO BLK MWM ** " << std::endl;
-            flag = false;
-          }
-          for(Int ii = 0; ii < blk_size; ii++) {
-            scale_row_array(btf_tabs(b)+ii) = one;
-            scale_col_array(btf_tabs(b)+ii) = one;
-          }
-          for(Int ii = 0; ii < blk_size; ii++) tempp(ii) = ii;
-        }
-
-        // apply MWM to rows
-        permute_row(nnz, &(temp_row(0)), &(tempp(0)));
-        // sort for calling AMD
-        sort_matrix(nnz, blk_size, &(temp_col(0)), &(temp_row(0)), &(temp_val(0)));
-
-        //Add to the bigger perm vector
-        for(Int ii = 0; ii < blk_size; ii++)
+      /*{
+        std::cout << " m = [ " << std::endl;
+        for(Int k = 0; k < blk_size; k++)
         {
-          //p_mwm(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
-          p_mwm(ii+btf_tabs(b)) = tempp(ii)+btf_tabs(b);
+          for(Int i = temp_col(k); i < temp_col(k+1); i++)
+            printf("%d %d %e\n", temp_row(i), k, temp_val(i));
         }
+        std::cout << " ]; " << std::endl;
+      }*/
+      if (Options.blk_matching == 0) {
+        // no mwm, for debugging
+        if (flag) {
+          std::cout << " ** BLK_MWM_AMD::NO BLK MWM (blk=" << b_start << ":" << b_end-1 << ")** " << std::endl;
+          flag = false;
+        }
+        for(Int ii = 0; ii < blk_size; ii++) {
+          scale_row_array(btf_tabs(b)+ii) = one;
+          scale_col_array(btf_tabs(b)+ii) = one;
+        }
+        for(Int ii = 0; ii < blk_size; ii++) tempp(ii) = ii;
+      }
+#if defined(BASKER_MC64) ||  defined(BASKER_SUPERLUDIS_MC64)
+      else if (Options.blk_matching == 2) {
+        if (flag) {
+          std::cout << " ** BLK_MWM_AMD::MC64 MWM (blk=" << b_start << ":" << b_end-1 << ")** " << std::endl;
+          flag = false;
+        }
+        Int job = 5; //2 is the default for SuperLU_DIST
+        mc64(blk_size, nnz, &(temp_col(0)), &(temp_row(0)), &(temp_val(0)),
+             job, &(tempp(0)), &(scale_row_array(btf_tabs(b))), &(scale_col_array(btf_tabs(b))));
         /*{
-          std::cout << "m2=[" << std::endl;
-          for(Int k = 0; k < blk_size; k++)
-          {
-            for(Int i = temp_col(k); i < temp_col(k+1); i++)
-              printf("%d %d %e\n", temp_row(i), k, temp_val(i));
+          std::cout << "p_mwm=[" << std::endl;
+          for(Int ii = 0; ii < blk_size; ii++) {
+            std::cout << btf_tabs(b)+ii << " " << tempp(ii) << " " << scale_row_array(ii) << " " << scale_col_array(ii) << std::endl;
           }
           std::cout << "];" << std::endl;
         }*/
       }
-      #endif
+#endif
+      else { //if (Options.blk_matching == 1)
+        if (flag) {
+          std::cout << " ** BLK_MWM_AMD::ShyLUBasker MWM (blk=" << b_start << ":" << b_end-1 << ")** " << std::endl;
+          flag = false;
+        }
+        Int num = 0;
+        mwm_order::mwm(blk_size, nnz,
+                       &(temp_col(0)), &(temp_row(0)), &(temp_val(0)),
+                       &(tempp(0)), num);
+        for(Int ii = 0; ii < blk_size; ii++) {
+          scale_row_array(btf_tabs(b)+ii) = one;
+          scale_col_array(btf_tabs(b)+ii) = one;
+        }
+      }
+
+      // apply MWM to rows
+      permute_row(nnz, &(temp_row(0)), &(tempp(0)));
+      // sort for calling AMD
+      sort_matrix(nnz, blk_size, &(temp_col(0)), &(temp_row(0)), &(temp_val(0)));
+
+      //Add to the bigger perm vector
+      for(Int ii = 0; ii < blk_size; ii++)
+      {
+        //printf( " mwm(%d) = %d + %d\n",ii+btf_tabs(b),tempp(ii),btf_tabs(b) );
+        //p_mwm(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
+        p_mwm(ii+btf_tabs(b)) = tempp(ii)+btf_tabs(b);
+      }
+      /*{
+        std::cout << "m2=[" << std::endl;
+        for(Int k = 0; k < blk_size; k++)
+        {
+          for(Int i = temp_col(k); i < temp_col(k+1); i++)
+            printf("%d %d %e\n", temp_row(i), k, temp_val(i));
+        }
+        std::cout << "];" << std::endl;
+      }*/
 
       double l_nnz = 0;
       double lu_work = 0;
@@ -536,7 +536,11 @@ namespace BaskerNS
       //Add to the bigger perm vector
       for(Int ii = 0; ii < blk_size; ii++)
       {
+        //printf( " amd(%d) = %d + %d\n",tempp(ii)+btf_tabs(b),ii,btf_tabs(b) );
         p_amd(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
+      }
+      if (Options.verbose) {
+        printf( " blk(%d: size=%d, rows=%d:%d)\n",b, btf_tabs(b+1)-btf_tabs(b), btf_tabs(b),btf_tabs(b+1)-1 );
       }
       /*std::cout << " p_amd = [ " << std::endl;
       for(Int ii = 0; ii < blk_size; ii++)
@@ -561,7 +565,6 @@ namespace BaskerNS
     FREE_INT_1DARRAY(temp_col);
     FREE_INT_1DARRAY(temp_row);
     FREE_ENTRY_1DARRAY(temp_val);
-    
   }//end blk_amd()
 
   // default: compute blk_mwm & blk_amd of all the blocks
@@ -575,6 +578,8 @@ namespace BaskerNS
    INT_1DARRAY btf_work
   )
   {
+    // MWM + AMD is applied ** all ** the diagonal block (both A & C)
+    // the diagonal blocks are split into A & C later
     Int b_start = 0; 
     Int b_num = btf_nblks;
     btf_blk_mwm_amd(b_start, b_num, M, p_mwm, p_amd, btf_nnz, btf_work);

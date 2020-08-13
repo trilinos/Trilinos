@@ -47,8 +47,9 @@ namespace BaskerNS
      //printf("before allow workspace\n");
      //Allocate workspace
      #ifdef BASKER_KOKKOS
+     bool flag = true;
      typedef Kokkos::TeamPolicy<Exe_Space>      TeamPolicy;
-     kokkos_sfactor_init_workspace<Int,Entry,Exe_Space> iWS(this);
+     kokkos_sfactor_init_workspace<Int,Entry,Exe_Space> iWS(flag, this);
      Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
      Kokkos::fence();
      #else

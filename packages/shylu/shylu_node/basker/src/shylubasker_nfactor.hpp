@@ -101,8 +101,7 @@ namespace BaskerNS
     {
       if(Options.verbose == BASKER_TRUE)
       {
-        printf("Factoring Dom(%ld x %ld) num_threads: %ld \n",
-            (long)gm, (long)gn, (long)num_threads);
+        printf("Factoring Dom num_threads: %ld \n", (long)num_threads);
       }
 
       Int domain_restart = 0;

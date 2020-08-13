@@ -137,7 +137,7 @@ namespace BaskerNS
     int t_nfactor_blk_old(Int kid);
 
     BASKER_INLINE
-    void t_init_workspace(Int kid);
+    void t_init_workspace(bool flag, Int kid);
 
     BASKER_INLINE
     void t_init_2DA(Int kid, BASKER_BOOL _alloc = BASKER_FALSE);
@@ -258,6 +258,9 @@ namespace BaskerNS
 
     BASKER_INLINE
     int match_ordering(int option);
+
+    BASKER_INLINE
+    int apply_scotch_partition();
 
     BASKER_INLINE
     int scotch_partition(BASKER_MATRIX &M);
@@ -565,7 +568,7 @@ namespace BaskerNS
     );
 
     BASKER_INLINE
-    void btf_last_dense();
+    void btf_last_dense(bool flag);
 
     BASKER_INLINE
     int factor_inc_lvl(Int Option);
@@ -1412,6 +1415,10 @@ namespace BaskerNS
     INT_1DARRAY order_c_csym_array;
     INT_1DARRAY order_blk_mwm_array;
     INT_1DARRAY order_blk_mwm_inv;
+    //invert ordering
+    INT_1DARRAY order_csym_inv;
+    INT_1DARRAY order_nd_inv;
+
     // row/col scaling
     ENTRY_1DARRAY scale_row_array;
     ENTRY_1DARRAY scale_col_array;

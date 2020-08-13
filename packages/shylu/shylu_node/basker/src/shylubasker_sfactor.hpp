@@ -34,7 +34,6 @@ using namespace std;
 //Functor for Kokkos
 namespace BaskerNS
 {
-
   //Kokkos functor to init space for L and U
   template <class Int, class Entry, class Exe_Space>
   struct kokkos_sfactor_init_workspace
@@ -45,13 +44,15 @@ namespace BaskerNS
     typedef typename TeamPolicy::member_type TeamMember;
     #endif
 
+    bool flag;
     Basker<Int,Entry,Exe_Space> *basker;
     
     kokkos_sfactor_init_workspace()
     {}
 
-    kokkos_sfactor_init_workspace(Basker<Int,Entry,Exe_Space> *_b)
+    kokkos_sfactor_init_workspace(bool _flag, Basker<Int,Entry,Exe_Space> *_b)
     {
+      flag = _flag;
       basker = _b;
     }
 
@@ -68,7 +69,7 @@ namespace BaskerNS
       Int kid = basker->t_get_kid(thread);
       #endif
 
-      basker->t_init_workspace(kid);
+      basker->t_init_workspace(flag, kid);
 
     }//end operator()
   }; //end struct kokkos_sfactor_init_workspace
@@ -132,7 +133,11 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   printf("Default Symbolic Called \n");
   #endif     
 
-  if(btf_tabs_offset != 0)
+  // flag indicate if some symbolic & allocation are delayed
+  //  because MWM & ND are applied to the big A block (in numeric Factor)
+  bool allocate_nd_workspace = (Options.blk_matching == 0);
+  bool setup_flag = (allocate_nd_workspace || btf_tabs_offset == 0);
+  if(btf_tabs_offset != 0 && allocate_nd_workspace)
   {
     symmetric_sfactor();
   }
@@ -143,6 +148,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     printf("\n\n\n");
     printf("----------------------------------\n");
     printf("Total NNZ: %ld \n", (long)global_nnz);
+    printf(" > blk_matching = %d\n", (int)Options.blk_matching );
     printf("----------------------------------\n");
     printf("\n\n\n");
   }
@@ -152,12 +158,12 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   {
     if(btf_nblks > 1)
     {
-      btf_last_dense();
+      btf_last_dense(setup_flag);
     }	 
   }
 
   //Allocate Factorspace
-  if(btf_tabs_offset != 0)
+  if(btf_tabs_offset != 0 && allocate_nd_workspace)
   {
   #ifdef BASKER_KOKKOS
     kokkos_sfactor_init_factor<Int,Entry,Exe_Space>
@@ -166,7 +172,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     Kokkos::fence();
   #else
   #endif
-
   }
 
   //if(btf_tabs_offset != 0)
@@ -175,7 +180,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   #ifdef BASKER_KOKKOS
     typedef Kokkos::TeamPolicy<Exe_Space>      TeamPolicy;
     kokkos_sfactor_init_workspace<Int,Entry,Exe_Space>
-      iWS(this);
+      iWS(setup_flag, this);
     Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
     Kokkos::fence();
   #endif
@@ -268,7 +273,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     //for(Int p =0; p < 1; ++p)
     for(Int p=0; p < num_threads; ++p)
     {
-
       //if(p == 1)
 
       Int blk = S(0)(p);
@@ -2099,7 +2103,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  void Basker<Int,Entry,Exe_Space>::btf_last_dense()
+  void Basker<Int,Entry,Exe_Space>::btf_last_dense(bool flag)
   {
     
     //Here we scan the lower part and malloc 
@@ -2172,30 +2176,32 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     max_blk_size = BTF_C.nrow;
     
     // though offset=0, we may still have left-over BLK factorization
-    //if(btf_tabs_offset == 0)
-    {
-      BASKER_ASSERT(num_threads > 0, "Basker btf_last_dense assert: num_threads > 0 failed");
-      MALLOC_THREAD_1DARRAY(thread_array, num_threads);
-    }
+    if (flag) {
+      //if(btf_tabs_offset == 0)
+      {
+        BASKER_ASSERT(num_threads > 0, "Basker btf_last_dense assert: num_threads > 0 failed");
+        MALLOC_THREAD_1DARRAY(thread_array, num_threads);
+      }
 
-    for(Int i = 0 ; i < num_threads; i++)
-    {
-      thread_array(i).iws_size = max_blk_size;
-      thread_array(i).ews_size = max_blk_size;
+      for(Int i = 0 ; i < num_threads; i++)
+      {
+        thread_array(i).iws_size = max_blk_size;
+        thread_array(i).ews_size = max_blk_size;
 
-      BASKER_ASSERT((thread_array(i).iws_size*thread_array(i).iws_mult) > 0, "Basker btf_last_dense assert: sfactor threads iws > 0 failed");
-      MALLOC_INT_1DARRAY(thread_array(i).iws, thread_array(i).iws_size*thread_array(i).iws_mult);
-      BASKER_ASSERT((thread_array(i).ews_size*thread_array(i).ews_mult) > 0, "Basker btf_last_dense assert: sfactor threads ews > 0 failed");
-      MALLOC_ENTRY_1DARRAY(thread_array(i).ews, thread_array(i).ews_size*thread_array(i).ews_mult);
+        BASKER_ASSERT((thread_array(i).iws_size*thread_array(i).iws_mult) > 0, "Basker btf_last_dense assert: sfactor threads iws > 0 failed");
+        MALLOC_INT_1DARRAY(thread_array(i).iws, thread_array(i).iws_size*thread_array(i).iws_mult);
+        BASKER_ASSERT((thread_array(i).ews_size*thread_array(i).ews_mult) > 0, "Basker btf_last_dense assert: sfactor threads ews > 0 failed");
+        MALLOC_ENTRY_1DARRAY(thread_array(i).ews, thread_array(i).ews_size*thread_array(i).ews_mult);
 
-      #ifdef BASKER_DEBUG_SFACTOR
-      printf("Malloc Thread: %d iws: %d \n",
-          i, (thread_array(i).iws_size*
-            thread_array(i).iws_mult));
-      printf("Malloc Thread: %d ews: %d \n", 
-          i, (thread_array(i).ews_size*
-            thread_array(i).ews_mult));
-      #endif
+        #ifdef BASKER_DEBUG_SFACTOR
+        printf("Malloc Thread: %d iws: %d \n",
+            i, (thread_array(i).iws_size*
+              thread_array(i).iws_mult));
+        printf("Malloc Thread: %d ews: %d \n", 
+            i, (thread_array(i).ews_size*
+              thread_array(i).ews_mult));
+        #endif
+      }
     }
 
   }//end btf_last_dense()

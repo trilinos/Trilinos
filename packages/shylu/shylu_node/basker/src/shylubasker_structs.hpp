@@ -754,8 +754,8 @@ namespace BaskerNS
       matching      = BASKER_TRUE;
       matching_type = BASKER_MATCHING_BN;
       // matching before BTF in symbolic 
-      // > 0: ShyLUBasker::mwm, 1: trilinos_btf_maxtrans, or 2: MC64 if enabled
-      btf_matching  = 1;
+      // > 0 = none, 1 = ShyLUBasker::mwm, 2 = trilinos_btf_maxtrans, or 3 = MC64 if enabled
+      btf_matching = 2;
 
       //BTF Ordering Options
       btf             = BASKER_TRUE;
@@ -763,8 +763,8 @@ namespace BaskerNS
       btf_large       = BASKER_BTF_LARGE;
       use_sequential_diag_facto = BASKER_FALSE;
       // MWM matching before AMD 
-      //  <0: no matching, 1: ShyLUBasker::mwm, 2: MC63 if enabled
-      blk_matching = -1;
+      //  0: no matching, 1: ShyLUBasker::mwm, 2: MC63 if enabled
+      blk_matching = 0; // if 0, then ND & AMD are applied in symbolic
 
       //Pivot
       no_pivot   = BASKER_FALSE;
@@ -817,7 +817,7 @@ namespace BaskerNS
     BASKER_BOOL  use_sequential_diag_facto;
     // TODO: remove this (matching during symbolic)
     int btf_matching; // carbinality matching before BTF (Symbolic)
-    int blk_matching; // max weight matching on each block (Numeric)
+    int blk_matching; // max weight matching on each of diagonal blocks (Numeric)
 
     //AMD Ordering Options
     BASKER_BOOL  amd_dom;

@@ -208,39 +208,54 @@ namespace BaskerNS
    Entry *_y  // rhs
   )
   {
-//for (Int i = 0; i < gn; i++) printf( " %d %d %d\n",i,perm_inv_comp_array(i),perm_comp_array(i) );
-//printf( "\n" );
-    if (Options.blk_matching == 1 || Options.blk_matching == 2) {
-        for(Int i = 0; i < gn; i++)
-        {
+    //printf( "\n -- solve_interface --\n" );
+    //for (Int i = 0; i < gn; i++) printf( " input: x(%d) = %e\n",i,_x[i] );
+    //printf( "\n" );
+    if (Options.blk_matching != 0) {
+        // apply mwm+amd row scaling from numeric
+        for(Int i = 0; i < gn; i++) {
             Int row = order_blk_mwm_array(symbolic_row_iperm_array(i));
             y_view_ptr_scale(i) = scale_row_array(row) * _y[i];
+            //printf( " symbolic_row_iperm(%d) = %d\n",i,symbolic_row_iperm_array(i) );
+            //printf( " scale_row(%d) = %e\n",row,scale_row_array(row) );
         }
+        //printf( " > after scale:\n" );
+        //for (Int i = 0; i < gn; i++) printf( " > y(%d) = %.16e\n",i,y_view_ptr_scale(i) );
+
+        // apply mwm row-perm from nummeric
         permute_inv_and_init_for_solve(&(y_view_ptr_scale(0)), x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array, gn);
-//for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e, %e\n",i,_y[i],x_view_ptr_copy(i),scale_row_array(i) );
-//printf( "\n" );
+        //printf( " > after symbolic-perm:\n" );
+        //for (Int i = 0; i < gn; i++) printf( " > y(%d) = %.16e, x(%d) = %.16e\n",i,y_view_ptr_scale(i), i,x_view_ptr_copy(i) );
+
+        // apply row-perm from symbolic
         permute_with_workspace(x_view_ptr_copy, numeric_row_iperm_array, gn);
     } else {
         permute_inv_and_init_for_solve(_y, x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array, gn);
     }
-//for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e, %e\n",i,_y[i],x_view_ptr_copy(i),scale_row_array(i) );
-//printf( "\n" );
-    /*if (Options.blk_matching == 1 || Options.blk_matching == 2) {
-        permute_inv_and_init_for_solve(&(x_view_ptr_copy(0)), y_view_ptr_scale, y_view_ptr_copy, numeric_row_iperm_array, gn);
-        for (Int i = 0; i < gn; i++) {
-            x_view_ptr_copy(i) = y_view_ptr_scale(i);
-        }
-    }*/
+    //printf( " > after perm:\n" );
+    //for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i, x_view_ptr_copy(i),y_view_ptr_copy(i) );
+    //printf( "\n" );
 
     if (Options.no_pivot == BASKER_FALSE) {
+        // apply partial pivoting from numeric
+        //for (Int i = 0; i < gn; i++) printf( " gperm(%d) = %d\n",i,gperm(i) );
         permute_inv_with_workspace(x_view_ptr_copy, gperm, gn);
+        //printf( " > after partial-pivot:\n" );
+        //for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i, x_view_ptr_copy(i),y_view_ptr_copy(i) );
+        //printf( "\n" );
     }
 
+    // solve
+    //for (Int i = 0; i < gn; i++) printf( " %d %.16e\n",i,x_view_ptr_copy(i) );
+    //printf( "\n" );
     solve_interface(x_view_ptr_copy, y_view_ptr_copy); //x is now permuted rhs; y is 0 
+    //for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i,x_view_ptr_copy(i),y_view_ptr_copy(i) );
+    //printf( "\n" );
 
-    if (Options.blk_matching == 1 || Options.blk_matching == 2) {
+    if (Options.blk_matching != 0) {
+        // apply amd col-permutation from numeric
         permute_and_finalcopy_after_solve(&(y_view_ptr_scale(0)), x_view_ptr_copy, y_view_ptr_copy, numeric_col_iperm_array, gn);
-//for (Int i = 0; i < gn; i++) printf( " +%d:%d: %.16e %.16e -> %.16e\n",i,numeric_col_iperm_array(i),x_view_ptr_copy(i),y_view_ptr_copy(i), y_view_ptr_scale(i));
+        //for (Int i = 0; i < gn; i++) printf( " > %d:%d: %.16e %.16e -> %.16e\n",i,numeric_col_iperm_array(i),x_view_ptr_copy(i),y_view_ptr_copy(i), y_view_ptr_scale(i));
 
         const Int poffset = btf_tabs(btf_tabs_offset);
         for (Int i = 0; i < poffset; i++) {
@@ -251,11 +266,10 @@ namespace BaskerNS
         }
     }
     permute_and_finalcopy_after_solve(_x, x_view_ptr_copy, y_view_ptr_copy, perm_comp_array, gn);
-//for (Int i = 0; i < gn; i++) printf( " %d:%d; %e %e, %e %e\n",i,perm_comp_array(i),x_view_ptr_copy(i),y_view_ptr_copy(i), _x[i],scale_col_array(i));
+    //for (Int i = 0; i < gn; i++) printf( " %d:%d; %e %e, %e %e\n",i,perm_comp_array(i),x_view_ptr_copy(i),y_view_ptr_copy(i), _x[i],scale_col_array(i));
 
-    if (Options.blk_matching == 1 || Options.blk_matching == 2) {
-      for(Int i = 0; i < gn; i++)
-      {
+    if (Options.blk_matching != 0) {
+      for(Int i = 0; i < gn; i++) {
         Int col = symbolic_col_iperm_array(i);
         _x[i] = scale_col_array(col) * _x[i];
       }
