@@ -60,6 +60,9 @@
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Utilities.hpp"
 
+#define LOTS_OF_PRINTING 0
+
+
 namespace MueLu {
 
   template <class T>
@@ -134,6 +137,7 @@ namespace MueLu {
       
 
     RCP<GraphBase> G = Get< RCP<GraphBase> >(currentLevel, "Graph");
+    if(LOTS_OF_PRINTING)
     {
       FILE * f = fopen("graph.dat","w");
       size_t numGRows = G->GetNodeNumVertices();
@@ -175,15 +179,17 @@ namespace MueLu {
     }
 
 
-      Xpetra::IO<SC,LO,GO,NO>::Write("filteredA.dat", *filteredA);
 
-     { //original filtered A  and actual A
+      if(LOTS_OF_PRINTING)
+     { 
+       Xpetra::IO<SC,LO,GO,NO>::Write("filteredA.dat", *filteredA);
+
+       //original filtered A  and actual A
        Xpetra::IO<SC,LO,GO,NO>::Write("A.dat", *A);
        RCP<Matrix> origFilteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries());
        BuildNew(*A, *G, lumping, dirichlet_threshold,*origFilteredA);
        origFilteredA->fillComplete(A->getDomainMap(), A->getRangeMap(), fillCompleteParams);
-       Xpetra::IO<SC,LO,GO,NO>::Write("origFilteredA.dat", *origFilteredA);
-       
+       Xpetra::IO<SC,LO,GO,NO>::Write("origFilteredA.dat", *origFilteredA);       
      }
 
 
@@ -654,7 +660,6 @@ namespace MueLu {
 	vals[diagIndexInMatrix] += diagExtra[row];
 	SC A_rowsum=ZERO, A_absrowsum = ZERO, F_rowsum = ZERO;
 	
-	const bool LOTS_OF_PRINTING=1;//DEBUG
 
 	if( (dirichletThresh >= 0.0 && TST::real(vals[diagIndexInMatrix]) <= dirichletThresh) ||  TST::real(vals[diagIndexInMatrix]) == ZERO) {
 	  
@@ -680,6 +685,10 @@ namespace MueLu {
 		if(vals[index_start+l] != ZERO)
 		  printf("%d(%8.2e)[%d] ",(LO)indsA[l],vals[index_start+l],(LO)l);
 	    }
+	  }
+	  // Don't know what to do, so blitz the row and dump a one on the diagonal
+	  for(size_t l=rowptr[row]; l<rowptr[row+1]; l++) {
+	    vals[l] = ZERO;
 	  }
 	  vals[diagIndexInMatrix] = TST::one();
 	  numFixedDiags++;
