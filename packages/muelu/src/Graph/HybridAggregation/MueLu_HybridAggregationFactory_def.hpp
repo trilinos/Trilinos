@@ -345,7 +345,7 @@ namespace MueLu {
                                                                numRanks,
                                                                Array<GO>(3, -1),
                                                                lFineNodesPerDir,
-                                                               coarseRate));
+                                                               coarseRate, false));
 
       TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getNodeNumElements()
                                  != static_cast<size_t>(geoData->getNumLocalFineNodes()),

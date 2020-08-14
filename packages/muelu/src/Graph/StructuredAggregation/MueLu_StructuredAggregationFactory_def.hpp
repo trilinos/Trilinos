@@ -235,7 +235,8 @@ namespace MueLu {
                                                                numRanks,
                                                                gFineNodesPerDir,
                                                                lFineNodesPerDir,
-                                                               coarseRate));
+                                                               coarseRate,
+                                                               false));
     } else if(meshLayout == "Local Lexicographic") {
       Array<GO> meshData;
       if(currentLevel.GetLevelID() == 0) {
