@@ -137,7 +137,7 @@ namespace MueLu {
 
     //! Sets basic parameters used to compute indices on the mesh.
     //! This method requires you to have set this->coarseRate and this->startIndices.
-    void computeMeshParameters();
+    void computeMeshParameters(bool coarseSinglePoint = false);
 
     virtual void computeGlobalCoarseParameters() = 0;
 

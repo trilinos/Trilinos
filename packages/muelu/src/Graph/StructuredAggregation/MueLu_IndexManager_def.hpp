@@ -59,12 +59,13 @@
 namespace MueLu {
 
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  IndexManager<LocalOrdinal, GlobalOrdinal, Node>::IndexManager(const RCP<const Teuchos::Comm<int> > comm,
-                                                                const bool coupled,
-                                                                const int NumDimensions,
-                                                                const int interpolationOrder,
-                                                                const Array<GO> GFineNodesPerDir,
-                                                                const Array<LO> LFineNodesPerDir) :
+  IndexManager<LocalOrdinal, GlobalOrdinal, Node>::
+  IndexManager(const RCP<const Teuchos::Comm<int> > comm,
+               const bool coupled,
+               const int NumDimensions,
+               const int interpolationOrder,
+               const Array<GO> GFineNodesPerDir,
+               const Array<LO> LFineNodesPerDir) :
     comm_(comm), coupled_(coupled), numDimensions(NumDimensions),
     interpolationOrder_(interpolationOrder), gFineNodesPerDir(GFineNodesPerDir),
     lFineNodesPerDir(LFineNodesPerDir) {
@@ -83,7 +84,8 @@ namespace MueLu {
   } // Constructor
 
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  void IndexManager<LocalOrdinal, GlobalOrdinal, Node>::computeMeshParameters() {
+  void IndexManager<LocalOrdinal, GlobalOrdinal, Node>::
+  computeMeshParameters(bool singleCoarsePoint) {
 
     RCP<Teuchos::FancyOStream> out;
     if(const char* dbg = std::getenv("MUELU_INDEXMANAGER_DEBUG")) {
@@ -158,6 +160,7 @@ namespace MueLu {
       }
     }
 
+    *out << "singleCoarsePoint? " << singleCoarsePoint << std::endl;
     *out << "gFineNodesPerDir: " << gFineNodesPerDir << std::endl;
     *out << "lFineNodesPerDir: " << lFineNodesPerDir << std::endl;
     *out << "endRate: " << endRate << std::endl;
@@ -193,6 +196,12 @@ namespace MueLu {
           lCoarseNodesPerDir[dim] = (lFineNodesPerDir[dim] - endRate[dim] + offsets[dim] - 1)
             / coarseRate[dim] + 1;
           if(offsets[dim] == 0) {++lCoarseNodesPerDir[dim];}
+          // We might want to coarsening the direction
+          // into a single layer if there are not enough
+          // points left to form two aggregates
+          if(singleCoarsePoint && lFineNodesPerDir[dim] - 1 < coarseRate[dim]) {
+            lCoarseNodesPerDir[dim] =1;
+          }
         } else {
           lCoarseNodesPerDir[dim] = (lFineNodesPerDir[dim] + offsets[dim] - 1) / coarseRate[dim];
           if(offsets[dim] == 0) {++lCoarseNodesPerDir[dim];}
