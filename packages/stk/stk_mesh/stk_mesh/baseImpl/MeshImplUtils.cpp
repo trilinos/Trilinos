@@ -45,6 +45,7 @@
 #include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include <stk_mesh/baseImpl/EntityGhostData.hpp>
 
 #include <vector>
 
@@ -1264,32 +1265,37 @@ void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
   }
 }
 
-void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
+void insert_upward_relations(const BulkData& bulk_data,
+                             const EntityProcMapping& entitySharing,
+                             Entity rel_entity,
                              const EntityRank rank_of_orig_entity,
                              const int share_proc,
                              EntityProcMapping& send)
 {
-  EntityRank rel_entity_rank = bulk_data.entity_rank(rel_entity);
-  ThrowAssert(rel_entity_rank > rank_of_orig_entity);
-
   // If related entity is higher rank, I own it, and it is not
   // already shared by proc, ghost it to the sharing processor.
-  if ( bulk_data.bucket(rel_entity).owned() && ! bulk_data.in_shared(rel_entity, share_proc) ) {
+  const MeshIndex& idx = bulk_data.mesh_index(rel_entity);
+  const Bucket& bucket = *idx.bucket;
+  if ( bucket.owned() && !entitySharing.find(rel_entity, share_proc) ) {
 
     send.addEntityProc(rel_entity,share_proc);
 
     // There may be even higher-ranking entities that need to be ghosted, so we must recurse
+    EntityRank rel_entity_rank = bucket.entity_rank();
+    ThrowAssert(rel_entity_rank > rank_of_orig_entity);
+
+    const unsigned bucketOrd = idx.bucket_ordinal;
     const EntityRank end_rank = static_cast<EntityRank>(bulk_data.mesh_meta_data().entity_rank_count());
     for (EntityRank irank = static_cast<EntityRank>(rel_entity_rank + 1); irank < end_rank; ++irank)
     {
-      const int num_rels = bulk_data.num_connectivity(rel_entity, irank);
-      Entity const* rels     = bulk_data.begin(rel_entity, irank);
+      const int num_rels = bucket.num_connectivity(bucketOrd, irank);
+      Entity const* rels     = bucket.begin(bucketOrd, irank);
 
       for (int r = 0; r < num_rels; ++r)
       {
         Entity const rel_of_rel_entity = rels[r];
         if (bulk_data.is_valid(rel_of_rel_entity)) {
-          insert_upward_relations(bulk_data, rel_of_rel_entity, rel_entity_rank, share_proc, send);
+          insert_upward_relations(bulk_data, entitySharing, rel_of_rel_entity, rel_entity_rank, share_proc, send);
         }
       }
     }

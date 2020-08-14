@@ -37,3 +37,8 @@
     - Reorganization of the DDInterface
     - Do we need the dimension for the DDInterface?
     - InterfaceEntity -> Entity?
+
+24.07.2020
+    - Move Repeated Map build for the coarse level to the specific partitionOfUnity
+    - Seperate parameterList for CoarseSolver
+    - Seperate build map functions

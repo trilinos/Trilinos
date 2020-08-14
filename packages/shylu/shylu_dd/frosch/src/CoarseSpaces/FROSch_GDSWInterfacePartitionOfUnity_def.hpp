@@ -144,6 +144,7 @@ namespace FROSch {
     int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::sortInterface(ConstXMatrixPtr matrix,
                                                                   ConstXMultiVectorPtr nodeList)
     {
+
         FROSCH_TIMER_START_LEVELID(sortInterfaceTime,"GDSWInterfacePartitionOfUnity::sortInterface");
         if (this->ParameterList_->get("Test Unconnected Interface",true)) {
             if (matrix.is_null()) {
@@ -162,7 +163,6 @@ namespace FROSch {
         // Interface
         UN dofsPerNode = this->DDInterface_->getInterface()->getEntity(0)->getDofsPerNode();
         UN numInterfaceDofs = dofsPerNode*this->DDInterface_->getInterface()->getEntity(0)->getNumNodes();
-
         this->DDInterface_->buildEntityMaps(UseVertices_,
                                             UseShortEdges_,
                                             UseStraightEdges_,
@@ -170,6 +170,7 @@ namespace FROSch {
                                             UseFaces_,
                                             false,
                                             false);
+
 
         // Maps
         if (UseVertices_) {

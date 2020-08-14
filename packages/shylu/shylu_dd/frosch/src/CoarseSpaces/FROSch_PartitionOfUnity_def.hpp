@@ -66,7 +66,7 @@ namespace FROSch {
     Verbosity_ (verbosity),
     LevelID_ (levelID)
     {
-        
+
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -82,7 +82,7 @@ namespace FROSch {
             FROSCH_NOTIFICATION("FROSch::PartitionOfUnity",Verbosity_,"AssmbledPartitionOfUnityMap_ has already been assembled previously.");
         }
         LOVecPtr2D partMappings;
-        AssmbledPartitionOfUnityMap_ = AssembleMaps(PartitionOfUnityMaps_(),partMappings);
+        AssmbledPartitionOfUnityMap_ = AssembleMapsNonConst(PartitionOfUnityMaps_(),partMappings);
         return 0;
     }
 

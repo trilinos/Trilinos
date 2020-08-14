@@ -44,8 +44,9 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-template <typename ALGORITHM_PER_ENTITY>
-void for_each_selected_entity_run(const BulkData &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const ALGORITHM_PER_ENTITY &functor)
+inline
+void for_each_selected_entity_run(const BulkData &mesh, stk::topology::rank_t rank, const Selector &selector,
+                                  const std::function<void(const BulkData&,const MeshIndex&)>& functor)
 {
     const stk::mesh::BucketVector & buckets = mesh.get_buckets(rank, selector);
     const size_t numBuckets = buckets.size();
@@ -58,6 +59,25 @@ void for_each_selected_entity_run(const BulkData &mesh, stk::topology::rank_t ra
         for(size_t i=0; i<bucket->size(); i++)
         {
             functor(mesh, stk::mesh::MeshIndex({bucket,i}));
+        }
+    }
+}
+
+inline
+void for_each_selected_entity_run(const BulkData &mesh, stk::topology::rank_t rank, const Selector &selector,
+                                  const std::function<void(const BulkData&,const Entity&)>& functor)
+{
+    const stk::mesh::BucketVector & buckets = mesh.get_buckets(rank, selector);
+    const size_t numBuckets = buckets.size();
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+    for(size_t j=0; j<numBuckets; j++)
+    {
+        stk::mesh::Bucket *bucket = buckets[j];
+        for(size_t i=0; i<bucket->size(); i++)
+        {
+            functor(mesh, (*bucket)[i]);
         }
     }
 }

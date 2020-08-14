@@ -45,6 +45,7 @@
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 
+#include <Teuchos_ScalarTraits.hpp>
 #include <FROSch_CoarseSpace_def.hpp>
 
 #include "FROSch_Tools_def.hpp"
@@ -54,7 +55,7 @@ namespace FROSch {
 
     using namespace Teuchos;
     using namespace Xpetra;
-    
+
     template <class SC = double,
               class LO = int,
               class GO = DefaultGlobalOrdinal,

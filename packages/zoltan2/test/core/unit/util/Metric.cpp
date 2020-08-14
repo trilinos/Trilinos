@@ -69,7 +69,7 @@ using std::cout;
 
 template<class idInput_t>
 void doTest(RCP<const Comm<int> > comm, int numLocalObj,
-  int nWeights, int numLocalParts, bool givePartSizes);
+  int nWeights, int numLocalParts, bool givePartSizes, bool useDegreeAsWeight=false);
 
 typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> user_t;
 
@@ -82,7 +82,7 @@ typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t, user_t> graph_idInput_t;
 
 // creates this so we can run the test suite over BasicIdentifierAdapter
 // and XpetraCrsGraphAdapter
-template<class idInput_t> void runTestSuite(RCP<const Comm<int> > comm) {
+template<class idInput_t> void runTestSuite(RCP<const Comm<int> > comm, bool bCanTestDegreeAsWeights) {
   doTest<idInput_t>(comm, 10, 0, -1, false);
   doTest<idInput_t>(comm, 10, 0,  1, false);
   doTest<idInput_t>(comm, 10, 0,  1, true);
@@ -95,6 +95,10 @@ template<class idInput_t> void runTestSuite(RCP<const Comm<int> > comm) {
   doTest<idInput_t>(comm, 10, 1, -1, false);
   doTest<idInput_t>(comm, 10, 1, -1, true);
   doTest<idInput_t>(comm, 10, 2, -1, false);
+
+  if(bCanTestDegreeAsWeights) {
+    doTest<idInput_t>(comm, 10, 1, 1, true, true); // with degreeAsWeights
+  }
 }
 
 int main(int narg, char *arg[])
@@ -105,12 +109,12 @@ int main(int narg, char *arg[])
   int rank = comm->getRank();
 
   // do some tests with BasicIdentifierAdapter
-  runTestSuite<basic_idInput_t>(comm);
+  runTestSuite<basic_idInput_t>(comm, false);
 
   // now some tests with XpetraCrsGraphAdapter
   // Note that right now these are all going to produce the same graph
   // metrics but could be developed further
-  runTestSuite<graph_idInput_t>(comm);
+  runTestSuite<graph_idInput_t>(comm, true);
 
   comm->barrier();
   if (rank==0)
@@ -290,7 +294,8 @@ template<class idInput_t>
 idInput_t * create_adapter(RCP<const Comm<int> > comm,
   int numLocalObj, zgno_t *myGids,
   std::vector<const zscalar_t *> & weights,
-  std::vector<int> & strides) {
+  std::vector<int> & strides,
+  bool useDegreeAsWeight) {
     throw std::logic_error("create_adapter not implemented.");
 }
 
@@ -298,7 +303,8 @@ template<>
 graph_idInput_t * create_adapter<graph_idInput_t>(RCP<const Comm<int> > comm,
   int numLocalObj, zgno_t *myGids,
   std::vector<const zscalar_t *> & weights,
-  std::vector<int> & strides) {
+  std::vector<int> & strides,
+  bool useDegreeAsWeight) {
 
   typedef Tpetra::Map<zlno_t, zgno_t> map_t;
   typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t> matrix_t;
@@ -343,6 +349,13 @@ graph_idInput_t * create_adapter<graph_idInput_t>(RCP<const Comm<int> > comm,
     adapter->setWeights(weights[j], 1, j);
   }
 
+  // set degreeAsWeight if enabled
+  if(useDegreeAsWeight) {
+    for (size_t j = 0; j < nVwgts; j++) {
+      adapter->setWeightIsDegree(j);
+    }
+  }
+
   return adapter;
 }
 
@@ -350,14 +363,16 @@ template<>
 basic_idInput_t * create_adapter<basic_idInput_t>(RCP<const Comm<int> > comm,
   int numLocalObj, zgno_t *myGids,
   std::vector<const zscalar_t *> & weights,
-  std::vector<int> & strides) {
+  std::vector<int> & strides,
+  bool useDegreeAsWeight) {
+  // useDegreeAsWeight is ignored
   return new basic_idInput_t(numLocalObj, myGids, weights, strides);
 }
 
 // Assumes numLocalObj is the same on every process.
 template<class idInput_t>
 void doTest(RCP<const Comm<int> > comm, int numLocalObj,
-  int nWeights, int numLocalParts, bool givePartSizes)
+  int nWeights, int numLocalParts, bool givePartSizes, bool useDegreeAsWeight)
 {
   typedef Zoltan2::EvaluatePartition<idInput_t> quality_t;
 
@@ -395,7 +410,9 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
       << (givePartSizes ? ", with differing part sizes." :
         ", with uniform part sizes.")
       << ", Number of procs " << nprocs
-      << ", each with " << numLocalObj << " objects, part = rank." << endl;
+      << ", each with " << numLocalObj << " objects, part = rank."
+      << (useDegreeAsWeight ? ", use degree as weights" : "")
+      << endl;
   }
 
   // An environment.  This is usually created by the problem.
@@ -462,7 +479,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   idInput_t *ia = NULL;
 
   try {
-    ia = create_adapter<idInput_t>(comm, numLocalObj, myGids, weights, strides);
+    ia = create_adapter<idInput_t>(comm, numLocalObj, myGids, weights, strides, useDegreeAsWeight);
   }
   catch (std::exception &e){
     fail=1;

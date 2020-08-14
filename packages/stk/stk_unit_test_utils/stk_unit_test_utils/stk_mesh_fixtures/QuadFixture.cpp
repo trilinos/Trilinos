@@ -34,6 +34,7 @@
 
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for sort, unique
+#include <array>
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field

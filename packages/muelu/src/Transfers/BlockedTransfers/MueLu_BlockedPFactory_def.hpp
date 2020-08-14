@@ -62,9 +62,7 @@
 #include "MueLu_BlockedPFactory_decl.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_FactoryBase.hpp"
-#include "MueLu_SmootherFactory.hpp"
 #include "MueLu_FactoryManager.hpp"
-#include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_HierarchyUtils.hpp"
 
@@ -253,7 +251,7 @@ namespace MueLu {
     RCP<const Map >       fullDomainMap    = null;
     if (stridedDoFullMap != null) {
       TEUCHOS_TEST_FOR_EXCEPTION(stridedDoFullMap == Teuchos::null, Exceptions::BadCast,
-        "MueLu::BlockedPFactory::Build: full map in domain map extractor has no striding information! error.");
+        "MueLu::BlockedPFactory::Build: full map in domain map extractor has no striding information!");
 
       std::vector<size_t> stridedData2 = stridedDoFullMap->getStridingData();
       fullDomainMap = StridedMapFactory::Build(
@@ -289,7 +287,7 @@ namespace MueLu {
         } else {
           P->setMatrix(i, j, Teuchos::null);
         }
-    
+
     P->fillComplete();
 
     // Level Set

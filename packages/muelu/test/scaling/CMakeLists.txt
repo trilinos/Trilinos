@@ -437,6 +437,58 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
 ENDIF()
 
+IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Epetra)
+  TRIBITS_ADD_EXECUTABLE(
+    SpMVPerformance
+    SOURCES SpMVPerformance.cpp
+    COMM mpi
+    CATEGORIES PERFORMANCE
+    )
+
+  TRIBITS_ADD_TEST(
+    SpMVPerformance
+    NAME_POSTFIX "Tpetra"
+    COMM mpi
+    NUM_MPI_PROCS 1
+    ARGS "--linAlgebra=Tpetra --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --num-runs=1000"
+    PASS_REGULAR_EXPRESSION "Complete"
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    SpMVPerformance
+    NAME_POSTFIX "Tpetra"
+    COMM mpi
+    NUM_MPI_PROCS 4
+    ARGS "--linAlgebra=Tpetra --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --num-runs=1000"
+    PASS_REGULAR_EXPRESSION "Complete"
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    SpMVPerformance
+    NAME_POSTFIX "Epetra"
+    COMM mpi
+    NUM_MPI_PROCS 1
+    ARGS "--linAlgebra=Epetra --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --num-runs=1000"
+    PASS_REGULAR_EXPRESSION "Complete"
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    SpMVPerformance
+    NAME_POSTFIX "Epetra"
+    COMM mpi
+    NUM_MPI_PROCS 4
+    ARGS "--linAlgebra=Epetra --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --num-runs=1000"
+    PASS_REGULAR_EXPRESSION "Complete"
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+ENDIF()
 
 # Driver to evaluate low level Matrix Matrix multiply kernels potentially using different TPLs
 # This differs from the existing Matrix Matrix driver that forms parallel random matrices for testing
