@@ -234,7 +234,6 @@ namespace BaskerNS
       vals_perm_composition(i) = i;
     }
     permute_inv(vals_perm_composition, vals_crs_transpose, A.nnz);
-    //sort_matrix_store_valperms(A, vals_perm_composition); //(need)
 
     /*printf( " a=[\n" );
     for(Int j = 0; j < A.ncol; j++) {
@@ -245,7 +244,7 @@ namespace BaskerNS
     printf( "];\n" );*/
 
     //--------------------------------------------------
-    // 0: Basker 1: trilinos 2: MC64
+    // 0: Basker, 1: trilinos, 2: MC64
     if(Options.verbose == BASKER_TRUE)
     {
         std::cout << " ++ calling match_ordering( " << Options.btf_matching << " )" << std::endl;
@@ -256,10 +255,9 @@ namespace BaskerNS
         }
         return BASKER_ERROR;
     }
-    /*printf( " P=[\n" );
-    for (int i = 0; i < A.ncol; i++) printf( "%d %d\n", i, order_match_array(i));
+    /*printf( " matchP=[\n" );
+    for (int i = 0; i < A.ncol; i++) printf( "%d\n", order_match_array(i));
     printf( "];\n" );
-
     printf( " c=[\n" );
     for(Int j = 0; j < A.ncol; j++) {
       for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
@@ -267,6 +265,7 @@ namespace BaskerNS
       }
     }
     printf( "];\n" );*/
+
 
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
@@ -288,68 +287,64 @@ namespace BaskerNS
     //printf("outer num_threads:%d \n", num_threads);
     find_btf2(A);
 
+    /*printf( " btfP=[\n" );
+    for (int i = 0; i < A.ncol; i++) printf( "%d\n", order_btf_array(i));
+    printf( "];\n" );*/
+
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
     std::cout << " ++ Basker order : BTF time     : " << order_time << std::endl;
     timer_order.reset();
     #endif
 
+    //================================================================
+    //3. ND ordering of the big A block
     if (btf_tabs_offset != 0) // BTF_A exists and is not a btf_nblks > 1
     {
-      //new for sfactor_copy2 replacement
-      MALLOC_INT_1DARRAY(vals_order_ndbtfa_array, BTF_A.nnz); //track nd perms
-      MALLOC_INT_1DARRAY(vals_order_scotch_array, BTF_A.nnz);
-      for (Int i = 0; i < BTF_A.nnz; ++i) {
-        vals_order_ndbtfa_array(i) = i; //init
-        vals_order_scotch_array(i) = i; //init
-      }
-      if(btf_nblks > 1)
-      {
-        if ( BTF_B.nnz > 0 ) {
-          MALLOC_INT_1DARRAY(vals_order_ndbtfb_array, BTF_B.nnz); 
-          for (Int i = 0; i < BTF_B.nnz; ++i) {
-            vals_order_ndbtfb_array(i) = i;
-          }
-        }
-        if ( BTF_C.nnz > 0 ) {
-          MALLOC_INT_1DARRAY(vals_order_ndbtfc_array, BTF_C.nnz); 
-          for (Int i = 0; i < BTF_C.nnz; ++i) {
-            vals_order_ndbtfc_array(i) = i;
-          }
-        }
-      }
+      // allocation perm vectors
+      btfa_nnz = BTF_A.nnz;
+      btfb_nnz = BTF_B.nnz;
       MALLOC_INT_1DARRAY(part_tree.permtab, BTF_A.ncol+1);
+      MALLOC_INT_1DARRAY(order_csym_array,  BTF_A.ncol+1);
+      MALLOC_INT_1DARRAY(order_csym_inv,    BTF_A.ncol+1);
+      MALLOC_INT_1DARRAY(order_nd_inv,      BTF_A.ncol+1);
+      if ( BTF_A.nnz > 0 ) {
+        MALLOC_INT_1DARRAY(    vals_order_ndbtfa_array, BTF_A.nnz); //track nd perms
+        MALLOC_INT_1DARRAY(inv_vals_order_ndbtfa_array, BTF_A.nnz);
+
+        MALLOC_INT_1DARRAY(vals_order_scotch_array, BTF_A.nnz);
+        MALLOC_INT_1DARRAY(vals_order_csym_array,   BTF_A.nnz);
+      }
+      if ( BTF_B.nnz > 0 ) {
+        MALLOC_INT_1DARRAY(    vals_order_ndbtfb_array, BTF_B.nnz); 
+        MALLOC_INT_1DARRAY(inv_vals_order_ndbtfb_array, BTF_B.nnz);
+      }
+      if ( BTF_C.nnz > 0 ) {
+        MALLOC_INT_1DARRAY(    vals_order_ndbtfc_array, BTF_C.nnz); 
+        MALLOC_INT_1DARRAY(inv_vals_order_ndbtfc_array, BTF_C.nnz);
+      }
+
+      // init perm to identity
+      for (Int i = 0; i < BTF_A.nnz; ++i) {
+        vals_order_ndbtfa_array(i) = i;
+        inv_vals_order_ndbtfa_array(i) = i;
+
+        vals_order_scotch_array(i) = i;
+        vals_order_csym_array(i) = i;
+      }
+      for (Int i = 0; i < BTF_B.nnz; ++i) {
+        vals_order_ndbtfb_array(i) = i;
+        inv_vals_order_ndbtfb_array(i) = i;
+      }
+      for (Int i = 0; i < BTF_C.nnz; ++i) {
+        vals_order_ndbtfc_array(i) = i;
+        inv_vals_order_ndbtfc_array(i) = i;
+      }
       for (Int i = 0; i <= BTF_A.ncol; ++i) {
         part_tree.permtab(i) = i;
       }
-      MALLOC_INT_1DARRAY(order_csym_array, BTF_A.ncol+1);
       for (Int i = 0; i <= BTF_A.ncol; ++i) {
         order_csym_array(i) = i;
-      }
-      MALLOC_INT_1DARRAY(vals_order_csym_array, BTF_A.nnz);
-      for (Int i = 0; i < BTF_A.nnz; ++i) {
-        vals_order_csym_array(i) = i;
-      }
-      MALLOC_INT_1DARRAY(order_csym_inv, BTF_A.ncol+1);
-      MALLOC_INT_1DARRAY(order_nd_inv,   BTF_A.ncol+1);
-
-      if ( BTF_A.nnz > 0 ) {
-        MALLOC_INT_1DARRAY( inv_vals_order_ndbtfa_array, BTF_A.nnz );
-        for (Int i = 0; i < BTF_A.nnz; ++i) {
-          inv_vals_order_ndbtfa_array(i) = i;
-        }
-      }
-      if ( BTF_B.nnz > 0 ) { //this may not be the best way to test...
-        MALLOC_INT_1DARRAY( inv_vals_order_ndbtfb_array, BTF_B.nnz );
-        for (Int i = 0; i < BTF_B.nnz; ++i) {
-          inv_vals_order_ndbtfb_array(i) = i;
-        }
-      }
-      if ( BTF_C.nnz > 0 ) { //this may not be the best way to test...
-        MALLOC_INT_1DARRAY( inv_vals_order_ndbtfc_array, BTF_C.nnz );
-        for (Int i = 0; i < BTF_C.nnz; ++i) {
-          inv_vals_order_ndbtfc_array(i) = i;
-        }
       }
 
       // compute ND (if no MWM is requested)
@@ -364,6 +359,7 @@ namespace BaskerNS
     timer_order.reset();
     #endif
 
+    //================================================================
     if(btf_nblks > 1) //else only BTF_A exists, A is assigned directly to it...
     {
       if ( btf_tabs_offset == 0 && BTF_C.nnz > 0 ) {
@@ -662,16 +658,33 @@ namespace BaskerNS
     //currently finds ND and permute BTF_A
     //Would like to change so finds permuation, 
     //and move into 2D-Structure
-    //printMTX("A_BTF_FROM_A.mtx", BTF_A);
-    //IY: need to sort twice?
-    //sort_matrix(BTF_A); //old call
-    for (Int i = 0; i < BTF_A.nnz; ++i) {
-      vals_order_ndbtfa_array(i) = i;
-    }
+#if 0 // FIX: Do we need to sort?
     sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array);
-    //printMTX("BTF_A_TEST.mtx", BTF_A);
+#endif
+
+    /*printf(" in apply_scotch_partition\n" );
+    printf(" T = [\n" );
+    for(Int j = 0; j < BTF_A.ncol; j++) {
+      for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+        printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+      }
+    }
+    printf("];\n");*/
 
     scotch_partition(BTF_A); // tree is prepped; permutation then applied to BTF_A
+    /*printf(" After ND\n");
+    printf(" p = [\n" );
+    for(Int j = 0; j < BTF_A.ncol; j++) {
+      printf("%d\n",part_tree.permtab(j) );
+    }
+    printf("];\n");
+    printf(" ppT = [\n" );
+    for(Int j = 0; j < BTF_A.ncol; j++) {
+      for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+        printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+      }
+    }
+    printf("];\n");*/
 
     //need to do a row perm on BTF_B too
     if(btf_nblks > 1)
@@ -681,24 +694,19 @@ namespace BaskerNS
     //needed because  moving into 2D-Structure,
     //assumes sorted columns
     //sort_matrix(BTF_A);
+#if 0 // FIX: do we need to sort (eg for cAMD)?
     sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array); // BTF_A( perm(i) ) <- BTF_A( i )
-
     if(btf_nblks > 1)
     {
       //new for sfactor_copy2 replacement
       if ( BTF_B.nnz > 0 ) {
-        for (Int i = 0; i < BTF_B.nnz; ++i) {
-          vals_order_ndbtfb_array(i) = i;
-        }
         sort_matrix_store_valperms(BTF_B, vals_order_ndbtfb_array);
       }
       if ( BTF_C.nnz > 0 ) {
-        for (Int i = 0; i < BTF_C.nnz; ++i) {
-          vals_order_ndbtfc_array(i) = i;
-        }
         sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array);
       }
     }
+#endif
     //For debug
     //printMTX("A_BTF_PART_AFTER.mtx", BTF_A);
 
@@ -733,17 +741,41 @@ namespace BaskerNS
     //sort_matrix(BTF_A); // unnecessary?
 
     //new for sfactor_copy2 replacement
-    for (Int i = 0; i < BTF_A.nnz; ++i) {
-      vals_order_csym_array(i) = i;
-    }
     permute_col_store_valperms(BTF_A, order_csym_array, vals_order_csym_array); //NDE: Track movement of vals (lin_ind of row,col) here
-    permute_inv(vals_order_ndbtfa_array, vals_order_csym_array, BTF_A.nnz);     //must permute the array holding the perms
-    sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array);
+    if (Options.blk_matching == 0) {
+      permute_inv(vals_order_ndbtfa_array, vals_order_csym_array, BTF_A.nnz);     //must permute the array holding the perms
+    }
+//    sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array);
 
     permute_row(BTF_A, order_csym_array);
-    //sort_matrix(BTF_A);
+
+    /*printf(" After cAMD\n");
+    printf(" p = [\n" );
+    for(Int j = 0; j < BTF_A.ncol; j++) {
+      printf("%d\n",order_csym_array(j) );
+    }
+    printf("];\n");
+    printf(" ppT = [\n" );
+    for(Int j = 0; j < BTF_A.ncol; j++) {
+      for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+        printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+      }
+    }
+    printf("];\n");*/
+
+    // ----------------------------------------------
+    // sort matrix(BTF_A);
+    //for (Int j = 0; j < BTF_A.nnz; j++) printf( " - vals_ndbtfa(%d) = %d\n",j,vals_order_ndbtfa_array(j) );
     sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array); //new for replacement
     //printMTX("A_BTF_AMD1.mtx", BTF_A);
+    /*for (Int j = 0; j < BTF_A.nnz; j++) printf( " + vals_ndbtfa(%d) = %d\n",j,vals_order_ndbtfa_array(j) );
+    printf(" ppT = [\n" );
+    for(Int j = 0; j < BTF_A.ncol; j++) {
+      for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+        printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+      }
+    }
+    printf("];\n");*/
 
     if(btf_nblks > 1)
     {
@@ -755,31 +787,17 @@ namespace BaskerNS
       if ( BTF_C.nnz > 0 ) {
         sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array);
       }
-      //printMTX("B_BTF_AMD.mtx", BTF_B);
-      //printMTX("C_BTF_AMD.mtx", BTF_C);
     }
 
     //new for sfactor_copy2 replacement
     // Steps below necessary for later use in Factor(...) to follow permutation convention used up to this point
     if (BTF_A.nnz > 0) {
-      btfa_nnz = BTF_A.nnz;
-      for (Int i = 0; i < BTF_A.nnz; ++i) {
-        inv_vals_order_ndbtfa_array(i) = i;
-      }
       permute_inv(inv_vals_order_ndbtfa_array, vals_order_ndbtfa_array, BTF_A.nnz);
     }
     if (BTF_B.nnz > 0) { //this may not be the best way to test...
-      btfb_nnz = BTF_B.nnz;
-      for (Int i = 0; i < BTF_B.nnz; ++i) {
-        inv_vals_order_ndbtfb_array(i) = i;
-      }
       permute_inv(inv_vals_order_ndbtfb_array, vals_order_ndbtfb_array, BTF_B.nnz);
     }
     if (BTF_C.nnz > 0) { //this may not be the best way to test...
-      btfc_nnz = BTF_C.nnz;
-      for (Int i = 0; i < BTF_C.nnz; ++i) {
-        inv_vals_order_ndbtfc_array(i) = i;
-      }
       permute_inv(inv_vals_order_ndbtfc_array, vals_order_ndbtfc_array, BTF_C.nnz);
     }
     //printMTX("BTF_A.mtx", BTF_A);
@@ -1767,10 +1785,10 @@ namespace BaskerNS
       }
       for(Int i = 0; i < M.col_ptr[k+1]-start_row; i++)
       {
-          Int k = start_row+i;
-          order_vals_perms(k) = iwork[i];
-          M.val[k]     = dwork[i];
-          M.row_idx[k] = perm(i);
+          Int id = start_row+i;
+          order_vals_perms(id) = iwork[i];
+          M.val[id]     = dwork[i];
+          M.row_idx[id] = perm(i);
       }
       #endif
       //for(Int i = M.col_ptr[k]; i < M.col_ptr[k+1]; i++) {

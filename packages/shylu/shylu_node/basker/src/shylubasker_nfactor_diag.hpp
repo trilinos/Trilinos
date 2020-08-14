@@ -352,7 +352,6 @@ namespace BaskerNS
 
     /*printf( " c: %d wsize=%d\n",c,ws_size );
     std::cout << " K" << c << " = [" << std::endl;
-    //for(Int k = btf_tabs(c); k < min(btf_tabs(c+1), btf_tabs(c)+5); ++k) {
     for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k) {
       for( i = M.col_ptr(k-bcol); i < M.col_ptr(k-bcol+1); ++i) {
         if (M.row_idx(i) >= brow2) 

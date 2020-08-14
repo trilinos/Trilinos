@@ -364,10 +364,9 @@ namespace BaskerNS
 #endif
 
 #ifdef BASKER_DEBUG_NFACTOR_BLK
-        //if((k+M.srow) == 183)
         {
-          printf("k: %d consider: %d %d %g maxv %g %g  \n",
-              k, j+M.srow, t, value, maxv, pivot);
+          printf("k=%d consider: j=%d t=%d value=%g maxv=%g pivot=%g  \n",
+                 k, j+M.srow, t, value, maxv, pivot);
         }
 #endif
 
@@ -393,7 +392,6 @@ namespace BaskerNS
       //printf("b: %d lcnt: %d after \n", b, lcnt);
 
       //Need a BIAS towards the diagonl
-      //if(maxv < (Options.pivot_bias*maxp))
       if(maxv < (1.00001*maxp))
       {
         //printf("Close: %d %f %d %f \n",
@@ -401,7 +399,7 @@ namespace BaskerNS
         //     maxindex, maxv);
         if(gperm(k+brow) == BASKER_MAX_IDX)
         {
-          //  printf("using diag\n");
+          //printf("using diag: %g\n",X(k));
           pivot    = X(k);
           maxindex = k;
         }

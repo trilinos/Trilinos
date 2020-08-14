@@ -378,6 +378,9 @@ namespace BaskerNS
 
       if(blk_size < blk_size_threshold)
       {
+        if (flag) {
+          std::cout << " >> BLK_MWM_AMD::NO BLK MWM (blk=" << b << ", " << btf_tabs(b) << ":" << btf_tabs(b+1)-1 << ", too small) << " << std::endl;
+        }
         for(Int ii = 0; ii < blk_size; ++ii)
         {
           //printf("set amd(%d) = mwm(%d) = %d (scol=%d)\n", ii+btf_tabs(b),ii+btf_tabs(b), btf_tabs(b)+ii,M.scol);
@@ -448,8 +451,8 @@ namespace BaskerNS
       if (Options.blk_matching == 0) {
         // no mwm, for debugging
         if (flag) {
-          std::cout << " ** BLK_MWM_AMD::NO BLK MWM (blk=" << b_start << ":" << b_end-1 << ")** " << std::endl;
-          flag = false;
+          std::cout << " ** BLK_MWM_AMD::NO BLK MWM (blk=" << b << ", " << btf_tabs(b) << ":" << btf_tabs(b+1)-1 << ") ** " << std::endl;
+          //flag = false;
         }
         for(Int ii = 0; ii < blk_size; ii++) {
           scale_row_array(btf_tabs(b)+ii) = one;
@@ -460,8 +463,8 @@ namespace BaskerNS
 #if defined(BASKER_MC64) ||  defined(BASKER_SUPERLUDIS_MC64)
       else if (Options.blk_matching == 2) {
         if (flag) {
-          std::cout << " ** BLK_MWM_AMD::MC64 MWM (blk=" << b_start << ":" << b_end-1 << ")** " << std::endl;
-          flag = false;
+          std::cout << " ** BLK_MWM_AMD::MC64 MWM (blk=" << b << ", " << btf_tabs(b) << ":" << btf_tabs(b+1)-1 << ") ** " << std::endl;
+          //flag = false;
         }
         Int job = 5; //2 is the default for SuperLU_DIST
         mc64(blk_size, nnz, &(temp_col(0)), &(temp_row(0)), &(temp_val(0)),
@@ -477,8 +480,8 @@ namespace BaskerNS
 #endif
       else { //if (Options.blk_matching == 1)
         if (flag) {
-          std::cout << " ** BLK_MWM_AMD::ShyLUBasker MWM (blk=" << b_start << ":" << b_end-1 << ")** " << std::endl;
-          flag = false;
+          std::cout << " ** BLK_MWM_AMD::ShyLUBasker MWM (blk=" << b << ", " << btf_tabs(b) << ":" << btf_tabs(b+1)-1 << ") ** " << std::endl;
+          //flag = false;
         }
         Int num = 0;
         mwm_order::mwm(blk_size, nnz,

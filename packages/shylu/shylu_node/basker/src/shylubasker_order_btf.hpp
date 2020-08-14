@@ -134,7 +134,7 @@ namespace BaskerNS
 
     //================================================================
     //compute BTF
-    strong_component(M,nblks,order_btf_array,btf_tabs);
+    strong_component(M, nblks, order_btf_array, btf_tabs);
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
     std::cout << " >>> Basker order : strong comp time  : " << order_time << std::endl;
@@ -147,7 +147,6 @@ namespace BaskerNS
     {
       printf("Basker: BTF nblks returned: %ld \n", (long)nblks);
     }
-
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Basker: BTF nblks returned: %d \n", nblks);
     //BASKER_ASSERT(nblks>1, "NOT ENOUGH BTF BLOCKS");
@@ -156,35 +155,13 @@ namespace BaskerNS
     #endif
 
 
-    #ifdef BASKER_DEBUG_ORDER_BTF
-    printf("Basker: num_threads: %d \n", num_threads);
-    printf("\n\nBasker: BTF tabs: \n");
-    for(Int i=0; i < nblks+1; i++)
-    {
-      printf("%d, ", btf_tabs(i));
-    }
-    printf("\n");
-    #endif
-
     if (Options.verbose == BASKER_TRUE)
     {
-      //Print first 10 and last 3 
-      printf("Basker BTF tabs (first 10): \n");
-      if (nblks < 10)
+      printf("Basker: num_threads: %d \n", num_threads);
+      printf("Basker BTF tabs: \n");
+      for(Int i=0; i < nblks+1; i++)
       {
-        for(Int i=0; i < nblks+1; i++)
-        {
-          printf("%ld, ", (long)btf_tabs(i));
-        }
-      }
-      else
-      {
-        printf("%ld, %ld, %ld, ...., ",
-            (long)btf_tabs(0), (long)btf_tabs(1), (long)btf_tabs(2));
-        printf("%ld, %ld, %ld",
-            (long)btf_tabs(nblks-3), 
-            (long)btf_tabs(nblks-2),
-            (long)btf_tabs(nblks-1));
+        printf(" btf_tabs[%d] = %ld, ", (int)i, (long)btf_tabs(i));
       }
       printf("\n");
     }//if verbose
@@ -228,6 +205,10 @@ namespace BaskerNS
     //NOTE: ordering is computed for each of **ALL** the diagonal blocks
     //      (i.e., both A & C) since they are split to A & C after the 
     //      ordering is computed
+    if(Options.verbose == BASKER_TRUE)
+    {
+      printf("Basker: block MWM+AMD(blk_matching = %d) \n", (int)Options.blk_matching);
+    }
     #ifdef BASKER_TIMER
     timer_order.reset();
     #endif
@@ -271,30 +252,6 @@ namespace BaskerNS
       }
       printf("];\n");*/
 
-      #if 0 // no matching for now
-      // > apply matching to rows
-      permute_row(M, order_blk_mwm_array);
-      #endif
-      #if 0 // no need to scale, since val is read for numeric facto
-      //for(Int j = 0; j < M.ncol; j++) printf(" > %d %d %e %e\n",j,order_blk_mwm_array(j),scale_row_array(j),scale_col_array(j));
-      for(Int j = 0; j < M.ncol; j++) {
-        for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
-          //printf( " %d: (%d %d) %e",k, j,M.row_idx[k], M.val[k]);
-          M.val[k] *= (scale_col_array(j) * scale_row_array(M.row_idx[k]));
-          //printf( " -> %e (%e, %e)\n",M.val[k],scale_col_array(j), scale_row_array(M.row_idx[k]));
-        }
-      }
-      #endif
-
-      /*printf(" C = [\n" );
-      for(Int j = 0; j < M.ncol; j++) {
-        for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
-          //std::cout << M.row_idx[k] << " " << j << " " << M.val[k] << std::endl;
-          printf("%d %d %.16e\n", M.row_idx[k], j, M.val[k]);
-        }
-      }
-      printf("];\n");*/
-
       // > apply AMD to cols & rows
       permute_col_store_valperms(M, order_blk_amd_array, vals_order_blk_amd_array); //NDE: col-order M & Track movement
       permute_row(M, order_blk_amd_array);
@@ -322,24 +279,8 @@ namespace BaskerNS
       order_time = timer_order.seconds();
       std::cout << " >>> Basker order : invert perm time  : " << order_time << std::endl;
       #endif
-
-      // retry with original vals ordering
-      #ifdef BASKER_TIMER
-      timer_order.reset();
-      #endif
-      // Skip: sorting here.
-      //sort_matrix_store_valperms(M, vals_perm_composition);
-      #ifdef BASKER_TIMER
-      order_time = timer_order.seconds();
-      std::cout << " >>> Basker order : val-perm2 time    : " << order_time << std::endl;
-      timer_order.reset();
-      #endif
-
-      //changed col to row, error.
-      //print to see issue
-      //printMTX("A_TOTAL.mtx", M);
     } else {
-      // reset matrix permu and scale
+      // reset matrix order and scale since they will be computed during numerical factorization
       Entry one = (Entry)1.0;
       for (Int i = 0; i < (Int)M.nrow; i++) {
         order_blk_mwm_array(i) = i;
@@ -726,7 +667,7 @@ namespace BaskerNS
     //	   num_threads, 
     //	   ((double)1/num_threads) +
     //	   ((double)BASKER_BTF_IMBALANCE));
-    #if 0
+    #if 0 // forcing to have the big A bloock for debug
     //Int break_size = 0;
     Int break_size = 5;
     #else
