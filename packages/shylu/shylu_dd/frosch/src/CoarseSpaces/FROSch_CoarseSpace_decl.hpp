@@ -105,6 +105,7 @@ namespace FROSch {
 
         int assembleCoarseSpace();
 
+
         int buildGlobalBasisMatrix(ConstXMapPtr rowMap,
                                    ConstXMapPtr rangeMap,
                                    ConstXMapPtr repeatedMap,
@@ -148,7 +149,6 @@ namespace FROSch {
 
         ConstXMapPtr AssembledBasisMap_;
         ConstXMapPtr AssembledBasisMapUnique_;
-
         XMultiVectorPtr AssembledBasis_;
 
         UNVec LocalSubspacesSizes_ = UNVec(0);

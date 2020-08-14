@@ -61,6 +61,7 @@
 #endif
 #include "adolc/adouble.h"
 #include "adolc/interfaces.h"
+#include "adolc/taping.h"
 #endif
 
 using std::cout;

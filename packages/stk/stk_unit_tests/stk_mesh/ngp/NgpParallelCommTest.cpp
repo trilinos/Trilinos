@@ -1,3 +1,4 @@
+#include <array>
 #include "stk_ngp_test/ngp_test.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
 #include "Kokkos_Core.hpp"

@@ -127,7 +127,6 @@ namespace FROSch {
         ////////////
         FROSCH_ASSERT(dofOrdering == NodeWise || dofOrdering == DimensionWise || dofOrdering == Custom,"ERROR: Specify a valid DofOrdering.");
         int ret = 0;
-
         //////////
         // Maps //
         //////////
@@ -149,7 +148,6 @@ namespace FROSch {
                 repeatedNodesMap = dofsMaps[0];
             }
         }
-
         //////////////////////////
         // Communicate nodeList //
         //////////////////////////
@@ -163,7 +161,6 @@ namespace FROSch {
                 nodeList = tmpNodeList.getConst();
             }
         }
-
         /////////////////////////////////////
         // Determine dirichletBoundaryDofs //
         /////////////////////////////////////
@@ -175,7 +172,6 @@ namespace FROSch {
             GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_->getCrsGraph(),repeatedMap);
 #endif
         }
-
         ////////////////////////////////////
         // Initialize OverlappingOperator //
         ////////////////////////////////////

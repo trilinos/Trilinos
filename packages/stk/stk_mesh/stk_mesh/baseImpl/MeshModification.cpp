@@ -28,12 +28,9 @@ bool MeshModification::modification_begin(const std::string description)
         if (m_bulkData.parallel_size() > 1) {
             verify_parallel_consistency( m_bulkData.mesh_meta_data() , m_bulkData.parallel() );
         }
-
-        this->increment_sync_count();
     }
     else
     {
-        this->increment_sync_count();
         this->reset_undeleted_entity_states_to_unchanged();
     }
 
@@ -44,6 +41,7 @@ bool MeshModification::modification_begin(const std::string description)
       stkField->sync_to_host();
     }
 
+    this->increment_sync_count();
     return true;
 }
 

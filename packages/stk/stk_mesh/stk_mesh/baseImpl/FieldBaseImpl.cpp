@@ -378,6 +378,22 @@ FieldBaseImpl::modify_on_device() const
 }
 
 void
+FieldBaseImpl::modify_on_host(const Selector& s) const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->modify_on_host(s);
+  }
+}
+
+void
+FieldBaseImpl::modify_on_device(const Selector& s) const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->modify_on_device(s);
+  }
+}
+
+void
 FieldBaseImpl::sync_to_host() const
 {
   if (m_ngpField != nullptr) {

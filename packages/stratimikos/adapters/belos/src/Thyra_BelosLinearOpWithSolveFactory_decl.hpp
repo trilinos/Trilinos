@@ -62,7 +62,8 @@ namespace Thyra {
     SOLVER_TYPE_GCRODR,
     SOLVER_TYPE_RCG,
     SOLVER_TYPE_MINRES,
-    SOLVER_TYPE_TFQMR
+    SOLVER_TYPE_TFQMR,
+    SOLVER_TYPE_BICGSTAB
   };
 
   inline std::istream& operator>>(
@@ -121,6 +122,8 @@ public:
   static const std::string  MINRES_name;
   /** \brief . */
   static const std::string  TFQMR_name;
+  /** \brief . */
+  static const std::string  BiCGStab_name;
   /** \brief . */
   static const std::string  ConvergenceTestFrequency_name;
 

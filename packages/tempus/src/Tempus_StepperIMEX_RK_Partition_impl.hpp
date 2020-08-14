@@ -611,12 +611,11 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
     bool pass = true;
     Thyra::SolveStatus<Scalar> sStatus;
-    stageZ_ = workingState->getX();
-    Thyra::assign(stageZ_.ptr(), *(currentState->getX()));
+    Thyra::assign(workingState->getX().ptr(), *(currentState->getX()));
     RCP<Thyra::VectorBase<Scalar> > stageY =
-      wrapperModelPairIMEX->getExplicitOnlyVector(stageZ_);
+      wrapperModelPairIMEX->getExplicitOnlyVector(workingState->getX());
     RCP<Thyra::VectorBase<Scalar> > stageX =
-      wrapperModelPairIMEX->getIMEXVector(stageZ_);
+      wrapperModelPairIMEX->getIMEXVector(workingState->getX());
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
     this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
@@ -726,7 +725,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 #endif
       this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
         StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
-      evalExplicitModel(stageZ_, tHats, dt, i, stageF_[i]);
+      evalExplicitModel(workingState->getX(), tHats, dt, i, stageF_[i]);
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
       this->stepperObserver_->observeEndStage(solutionHistory, *this);
 #endif
@@ -795,7 +794,6 @@ void StepperIMEX_RK_Partition<Scalar>::describe(
   if (verbLevel == Teuchos::VERB_HIGH)
    implicitTableau_->describe(out, verbLevel);
   out << "  xTilde_            = " << xTilde_  << std::endl;
-  out << "  stageZ_            = " << stageZ_  << std::endl;
   out << "  stageF_.size()     = " << stageF_.size() << std::endl;
   int numStages = stageF_.size();
   for (int i=0; i<numStages; ++i)

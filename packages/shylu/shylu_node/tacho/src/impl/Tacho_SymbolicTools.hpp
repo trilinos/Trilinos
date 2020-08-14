@@ -19,6 +19,10 @@ namespace Tacho {
 
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
 
+      ///
+      /// supernode tools
+      ///
+
       // Tim Davis, Direct Methods for Sparse Linear Systems, Siam, p 42.
       static void
       computeEliminationTree(const ordinal_type m,
@@ -93,6 +97,47 @@ namespace Tacho {
                                     /* */ ordinal_type_array &stree_children,
                                     /* */ ordinal_type_array &stree_roots,
                                     const ordinal_type_array &work);
+
+      ///
+      /// evaporation tools
+      /// 
+      static void
+      scanWeights(const ordinal_type m,
+                  const ordinal_type_array &aw,
+                  const ordinal_type_array &perm,
+                  /* */ size_type_array &as,
+                  /* */ size_type_array &aq);
+
+      static void
+      evaporateGraph(const ordinal_type m,
+                     const size_type_array &ap,
+                     const ordinal_type_array &aj,
+                     const size_type_array &as,
+                     /* */ size_type_array &ap_eva,
+                     /* */ ordinal_type_array &aj_eva);
+      
+      static void
+      evaporatePermutationVectors(const ordinal_type m,
+                                  const ordinal_type_array &perm,
+                                  const ordinal_type m_eva,
+                                  const ordinal_type_array &aw,
+                                  const size_type_array &aq,
+                                  /* */ ordinal_type_array &perm_eva,
+                                  /* */ ordinal_type_array &peri_eva);
+
+      static void
+      evaporateSupernodes(const ordinal_type_array &supernodes,
+                          const size_type_array &sid_super_panel_ptr,
+                          const size_type_array &gid_super_panel_ptr,
+                          const ordinal_type_array &gid_super_panel_colidx,
+                          const ordinal_type_array &blk_super_panel_colidx,
+                          const ordinal_type_array &perm,
+                          const size_type_array &as,
+                          const ordinal_type_array &peri_eva,                      
+                          /* */ ordinal_type_array &supernodes_eva,
+                          /* */ size_type_array &gid_super_panel_ptr_eva,
+                          /* */ ordinal_type_array &gid_super_panel_colidx_eva,
+                          /* */ ordinal_type_array &blk_super_panel_colidx_eva);
 
     private:
       // matrix input

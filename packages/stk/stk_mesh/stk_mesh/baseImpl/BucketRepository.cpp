@@ -57,13 +57,11 @@ namespace impl {
 
 BucketRepository::BucketRepository(BulkData & mesh,
                                    unsigned entity_rank_count,
-                                   const ConnectivityMap& connectivity_map,
                                    unsigned bucket_capacity)
   : m_mesh(mesh),
     m_buckets(entity_rank_count),
     m_partitions(entity_rank_count),
     m_need_sync_from_partitions(entity_rank_count, false),
-    m_connectivity_map(connectivity_map),
     m_bucket_capacity(bucket_capacity),
     m_being_destroyed(false)
 {
@@ -122,11 +120,11 @@ void BucketRepository::set_needs_to_be_sorted(stk::mesh::Bucket &bucket, bool ne
     bucket.getPartition()->set_flag_needs_to_be_sorted(needsSorting);
 }
 
-void BucketRepository::internal_default_sort_bucket_entities()
+void BucketRepository::internal_default_sort_bucket_entities(bool mustSortFacesByNodeIds)
 {
     for(std::vector<Partition*>& partitionVector : m_partitions)
         for(Partition* partition : partitionVector)
-            partition->default_sort_if_needed();
+            partition->default_sort_if_needed(mustSortFacesByNodeIds);
 }
 
 void BucketRepository::internal_custom_sort_bucket_entities(const EntitySorterBase& sorter)
@@ -250,7 +248,6 @@ void BucketRepository::internal_modification_end()
 {
     sync_from_partitions();
 
-    // What needs to be done depends on the connectivity map.
     for(EntityRank from_rank = stk::topology::NODE_RANK; from_rank < stk::topology::NUM_RANKS; ++from_rank)
     {
         const BucketVector &buckets = this->buckets(from_rank);
@@ -387,7 +384,7 @@ Bucket *BucketRepository::allocate_bucket(EntityRank arg_entity_rank,
   BucketVector &bucket_vec = m_buckets[arg_entity_rank];
   const unsigned bucket_id = bucket_vec.size();
 
-  Bucket * new_bucket = new Bucket(m_mesh, arg_entity_rank, arg_key, arg_capacity, m_connectivity_map, bucket_id);
+  Bucket * new_bucket = new Bucket(m_mesh, arg_entity_rank, arg_key, arg_capacity, bucket_id);
   ThrowRequire(new_bucket != NULL);
 
   bucket_vec.push_back(new_bucket);
