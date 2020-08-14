@@ -459,6 +459,13 @@ namespace Tpetra {
     virtual ~FECrsGraph () = default;
 
     //@}
+    //! @name Implementation of Teuchos::ParameterListAcceptor
+    //@{
+    //! Default parameter list suitable for validation.
+    Teuchos::RCP<const Teuchos::ParameterList>
+    getValidParameters () const override;
+
+    //@}
     //! @name Collective methods for changing the graph's global state
     //@{
 
