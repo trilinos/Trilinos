@@ -124,8 +124,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
                   iluk2_graph.getU_Graph()->getGlobalNumEntries() +
                   iluk2_graph.getNumGlobalDiagonals();
 
-    bool nnz2_greater_than_nnz0 = nnz2 > nnz0;
-    TEST_EQUALITY( nnz2_greater_than_nnz0, true)
+    TEST_EQUALITY( nnz2 >= nnz0, true)
   }
 
   //Kokkos Kernels KSPILUK implementation
@@ -147,8 +146,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
     //number of nonzeros in the input graph:
 
     size_t nnz0 = iluk0_graph.getL_Graph()->getGlobalNumEntries() +
-                  iluk0_graph.getU_Graph()->getGlobalNumEntries() +
-                  iluk0_graph.getNumGlobalDiagonals();
+                  iluk0_graph.getU_Graph()->getGlobalNumEntries() -
+                  iluk0_graph.getL_Graph()->getGlobalNumRows();
 
     fill_levels = 2;
 
@@ -166,11 +165,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
     //number of nonzeros in the ILU(0) graph:
 
     size_t nnz2 = iluk2_graph.getL_Graph()->getGlobalNumEntries() +
-                  iluk2_graph.getU_Graph()->getGlobalNumEntries() +
-                  iluk2_graph.getNumGlobalDiagonals();
+                  iluk2_graph.getU_Graph()->getGlobalNumEntries() -
+                  iluk2_graph.getL_Graph()->getGlobalNumRows();
 
-    bool nnz2_greater_than_nnz0 = nnz2 > nnz0;
-    TEST_EQUALITY( nnz2_greater_than_nnz0, true)
+    TEST_EQUALITY( nnz2 >= nnz0, true)
   }
 }
 
