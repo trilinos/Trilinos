@@ -608,6 +608,7 @@ namespace phalanx_test {
 	  });
 	auto host_f = Kokkos::create_mirror_view(f);
 	Kokkos::deep_copy(host_f,f);
+	Kokkos::fence();
 	for (int i=0; i < num_cells; ++i) {
 	  TEST_FLOATING_EQUALITY(host_f(i).val(),2.0,tol);
 	  TEST_FLOATING_EQUALITY(host_f(i).fastAccessDx(0),3.0,tol);
@@ -619,6 +620,7 @@ namespace phalanx_test {
 	  });
 
 	Kokkos::deep_copy(host_f,f);
+	Kokkos::fence();
 	for (int i=0; i < num_cells; ++i) {
 	  TEST_FLOATING_EQUALITY(host_f[i].val(),3.0,tol);
 	  TEST_FLOATING_EQUALITY(host_f[i].fastAccessDx(0),4.0,tol);
