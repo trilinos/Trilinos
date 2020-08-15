@@ -365,6 +365,7 @@ int ConvergenceQuad(const bool verbose) {
           Basis_HGRAD_QUAD_C1_FEM<DeviceSpaceType,ValueType,ValueType> quadLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(quadLinearBasisValuesAtRefCoords, quad.getNodeCount(), numRefCoords);
           quadLinearBasis.getValues(quadLinearBasisValuesAtRefCoords, refPoints);
+          DeviceSpaceType().fence();
           for(ordinal_type i=0; i<numElems; ++i)
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
@@ -419,6 +420,7 @@ int ConvergenceQuad(const bool verbose) {
               quadLinearBasis.getValues(quadLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
               if(numGradPoints>0)
                 quadLinearBasis.getValues(quadLinearBasisValuesAtEvalGradPoints, Kokkos::subview(evaluationGradPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              DeviceSpaceType().fence();
               for(ordinal_type d=0; d<dim; ++d) {
                 for(std::size_t k=0; k<quad.getNodeCount(); ++k) {
                   for(ordinal_type j=0; j<numPoints; ++j)
@@ -569,6 +571,7 @@ int ConvergenceQuad(const bool verbose) {
           Basis_HGRAD_QUAD_C1_FEM<DeviceSpaceType,ValueType,ValueType> quadLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(quadLinearBasisValuesAtRefCoords, quad.getNodeCount(), numRefCoords);
           quadLinearBasis.getValues(quadLinearBasisValuesAtRefCoords, refPoints);
+          DeviceSpaceType().fence();
           for(ordinal_type i=0; i<numElems; ++i)
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
@@ -621,6 +624,7 @@ int ConvergenceQuad(const bool verbose) {
             for(ordinal_type i=0; i<numElems; ++i) {
               quadLinearBasis.getValues(quadLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
               quadLinearBasis.getValues(quadLinearBasisValuesAtEvalCurlPoints, Kokkos::subview(evaluationCurlPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              DeviceSpaceType().fence();
               for(ordinal_type d=0; d<dim; ++d) {
                 for(std::size_t k=0; k<quad.getNodeCount(); ++k) {
                   for(ordinal_type j=0; j<numPoints; ++j)
@@ -777,6 +781,7 @@ int ConvergenceQuad(const bool verbose) {
           Basis_HGRAD_QUAD_C1_FEM<DeviceSpaceType,ValueType,ValueType> quadLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(quadLinearBasisValuesAtRefCoords, quad.getNodeCount(), numRefCoords);
           quadLinearBasis.getValues(quadLinearBasisValuesAtRefCoords, refPoints);
+          DeviceSpaceType().fence();
           for(ordinal_type i=0; i<numElems; ++i)
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
@@ -829,6 +834,7 @@ int ConvergenceQuad(const bool verbose) {
             for(ordinal_type i=0; i<numElems; ++i) {
               quadLinearBasis.getValues(quadLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
               quadLinearBasis.getValues(quadLinearBasisValuesAtEvalDivPoints, Kokkos::subview(evaluationDivPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              DeviceSpaceType().fence();
               for(ordinal_type d=0; d<dim; ++d) {
                 for(std::size_t k=0; k<quad.getNodeCount(); ++k) {
                   for(ordinal_type j=0; j<numPoints; ++j)
@@ -989,6 +995,7 @@ int ConvergenceQuad(const bool verbose) {
           Basis_HGRAD_QUAD_C1_FEM<DeviceSpaceType,ValueType,ValueType> quadLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(quadLinearBasisValuesAtRefCoords, quad.getNodeCount(), numRefCoords);
           quadLinearBasis.getValues(quadLinearBasisValuesAtRefCoords, refPoints);
+          DeviceSpaceType().fence();
           for(ordinal_type i=0; i<numElems; ++i)
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
@@ -1031,6 +1038,7 @@ int ConvergenceQuad(const bool verbose) {
 
             for(ordinal_type i=0; i<numElems; ++i) {
               quadLinearBasis.getValues(quadLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              DeviceSpaceType().fence();
               for(ordinal_type d=0; d<dim; ++d) {
                 for(std::size_t k=0; k<quad.getNodeCount(); ++k) {
                   for(ordinal_type j=0; j<numPoints; ++j)

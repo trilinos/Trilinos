@@ -357,7 +357,7 @@ int InterpolationProjectionHex(const bool verbose) {
                   auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
                   auto outView =Kokkos::subview( hexLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
                   hexLinearBasis.getValues(outView, inView);
-
+                  DeviceSpaceType().fence();
                   for(ordinal_type j=0; j<basisCardinality; ++j)
                     for(std::size_t k=0; k<hex.getNodeCount(); ++k)
                       physDofCoords(i,j,d) += vertices[hexas[i][k]][d]*hexLinearBasisValuesAtDofCoords(i,k,j);
@@ -394,7 +394,7 @@ int InterpolationProjectionHex(const bool verbose) {
               fst::HGRADtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
                   basisValuesAtDofCoordsOriented);
 
-
+              DeviceSpaceType().fence();
               for(ordinal_type k=0; k<basisCardinality; ++k) {
                 for(ordinal_type j=0; j<basisCardinality; ++j){
                   ValueType dofValue = transformedBasisValuesAtDofCoordsOriented(i,k,j) * dofCoeffsPhys(i,j);
@@ -799,7 +799,7 @@ int InterpolationProjectionHex(const bool verbose) {
                   auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
                   auto outView =Kokkos::subview( hexLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
                   hexLinearBasis.getValues(outView, inView);
-
+                  DeviceSpaceType().fence();
                   for(ordinal_type j=0; j<basisCardinality; ++j)
                     for(std::size_t k=0; k<hex.getNodeCount(); ++k)
                       physDofCoords(i,j,d) += vertices[hexas[i][k]][d]*hexLinearBasisValuesAtDofCoords(i,k,j);
@@ -1235,7 +1235,7 @@ int InterpolationProjectionHex(const bool verbose) {
                 auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
                 auto outView =Kokkos::subview( hexLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
                 hexLinearBasis.getValues(outView, inView);
-
+                DeviceSpaceType().fence();
                 for(ordinal_type j=0; j<basisCardinality; ++j)
                   for(std::size_t k=0; k<hex.getNodeCount(); ++k)
                     physDofCoords(i,j,d) += vertices[hexas[i][k]][d]*hexLinearBasisValuesAtDofCoords(i,k,j);
@@ -1628,7 +1628,7 @@ int InterpolationProjectionHex(const bool verbose) {
               auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
               auto outView =Kokkos::subview( hexLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
               hexLinearBasis.getValues(outView, inView);
-
+              DeviceSpaceType().fence();
               for(ordinal_type j=0; j<basisCardinality; ++j)
                 for(std::size_t k=0; k<hex.getNodeCount(); ++k)
                   physDofCoords(i,j,d) += vertices[hexas[i][k]][d]*hexLinearBasisValuesAtDofCoords(i,k,j);

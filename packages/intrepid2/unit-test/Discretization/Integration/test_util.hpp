@@ -63,6 +63,7 @@ namespace Intrepid2 {
     computeRefVolume(const ordinal_type      numPoints,
                      const cubWeightViewType cubWeights) {
       typename cubWeightViewType::value_type r_val = 0.0;
+      Kokkos::fence();
       for (auto i=0;i<numPoints;++i)
         r_val += cubWeights(i);
 
@@ -83,6 +84,7 @@ namespace Intrepid2 {
       const ordinal_type polydeg[3] = { xDeg, yDeg, zDeg };
 
       const auto dim = p.extent(0);
+      Kokkos::fence();
       for (size_type i=0;i<dim;++i) 
         r_val *= std::pow(p(i),polydeg[i]);
       

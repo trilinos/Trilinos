@@ -305,7 +305,7 @@ int InterpolationProjectionTri(const bool verbose) {
                   auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
                   auto outView =Kokkos::subview( triLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
                   triLinearBasis.getValues(outView, inView);
-
+                  DeviceSpaceType().fence();
                   for(ordinal_type j=0; j<basisCardinality; ++j)
                     for(std::size_t k=0; k<tri.getNodeCount(); ++k)
                       physDofCoords(i,j,d) += vertices[tris[i][k]][d]*triLinearBasisValuesAtDofCoords(i,k,j);
@@ -342,7 +342,7 @@ int InterpolationProjectionTri(const bool verbose) {
               fst::HGRADtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
                   basisValuesAtDofCoordsOriented);
 
-
+              DeviceSpaceType().fence();
               for(ordinal_type k=0; k<basisCardinality; ++k) {
                 for(ordinal_type j=0; j<basisCardinality; ++j){
                   ValueType dofValue = transformedBasisValuesAtDofCoordsOriented(i,k,j) * dofCoeffsPhys(i,j);
@@ -683,7 +683,7 @@ int InterpolationProjectionTri(const bool verbose) {
                   auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
                   auto outView =Kokkos::subview( triLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
                   triLinearBasis.getValues(outView, inView);
-
+                  DeviceSpaceType().fence();
                   for(ordinal_type j=0; j<basisCardinality; ++j)
                     for(std::size_t k=0; k<tri.getNodeCount(); ++k)
                       physDofCoords(i,j,d) += vertices[tris[i][k]][d]*triLinearBasisValuesAtDofCoords(i,k,j);
@@ -1065,7 +1065,7 @@ int InterpolationProjectionTri(const bool verbose) {
                 auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
                 auto outView =Kokkos::subview( triLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
                 triLinearBasis.getValues(outView, inView);
-
+                DeviceSpaceType().fence();
                 for(ordinal_type j=0; j<basisCardinality; ++j)
                   for(std::size_t k=0; k<tri.getNodeCount(); ++k)
                     physDofCoords(i,j,d) += vertices[tris[i][k]][d]*triLinearBasisValuesAtDofCoords(i,k,j);
@@ -1434,7 +1434,7 @@ int InterpolationProjectionTri(const bool verbose) {
               auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
               auto outView =Kokkos::subview( triLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
               triLinearBasis.getValues(outView, inView);
-
+              DeviceSpaceType().fence();
               for(ordinal_type j=0; j<basisCardinality; ++j)
                 for(std::size_t k=0; k<tri.getNodeCount(); ++k)
                   physDofCoords(i,j,d) += vertices[tris[i][k]][d]*triLinearBasisValuesAtDofCoords(i,k,j);
