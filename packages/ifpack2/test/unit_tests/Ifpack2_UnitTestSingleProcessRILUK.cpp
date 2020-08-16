@@ -183,9 +183,7 @@ void Ifpack2RILUKSingleProcess_test0 (bool& success, Teuchos::FancyOStream& out,
     params.set("fact: iluk level-of-fill", fill_level);
     params.set("fact: iluk level-of-overlap", 0);
 
-    if (ilukimplType == IlukImplTypeDetails::Serial)
-      params.set("fact: type", "Serial");
-    else
+    if (ilukimplType == IlukImplTypeDetails::KSPILUK)
       params.set("fact: type", "KSPILUK");
 	
     TEST_NOTHROW(prec.setParameters(params));
@@ -228,9 +226,7 @@ void Ifpack2RILUKSingleProcess_test0 (bool& success, Teuchos::FancyOStream& out,
     params.set("fact: iluk level-of-fill", fill_level);
     params.set("fact: iluk level-of-overlap", 0);
 
-    if (ilukimplType == IlukImplTypeDetails::Serial)
-      params.set("fact: type", "Serial");
-    else
+    if (ilukimplType == IlukImplTypeDetails::KSPILUK)
       params.set("fact: type", "KSPILUK");
 
     params.set("trisolver: type", "KSPTRSV");
@@ -314,9 +310,7 @@ void Ifpack2RILUKSingleProcess_test1 (bool& success, Teuchos::FancyOStream& out,
     Teuchos::ParameterList params;
     params.set ("fact: iluk level-of-fill", 1);
     params.set ("fact: iluk level-of-overlap", 0);
-    if (ilukimplType == IlukImplTypeDetails::Serial)
-      params.set("fact: type", "Serial");
-    else
+    if (ilukimplType == IlukImplTypeDetails::KSPILUK)
       params.set("fact: type", "KSPILUK");
     TEST_NOTHROW(prec.setParameters(params));
     
@@ -424,9 +418,7 @@ void Ifpack2RILUKSingleProcess_test1 (bool& success, Teuchos::FancyOStream& out,
     Teuchos::ParameterList params;
     params.set ("fact: iluk level-of-fill", 1);
     params.set ("fact: iluk level-of-overlap", 0);
-    if (ilukimplType == IlukImplTypeDetails::Serial)
-      params.set("fact: type", "Serial");
-    else
+    if (ilukimplType == IlukImplTypeDetails::KSPILUK)
       params.set("fact: type", "KSPILUK");
     params.set("trisolver: type", "KSPTRSV");
     TEST_NOTHROW(prec.setParameters(params));
@@ -591,9 +583,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, 
                                                 // matrix resizing in IlukGraph;
                                                 // Usually, 1.01 is too small;
                                                 // default value should be used.
-      if (impltype == 0)
-        params.set("fact: type", "Serial");
-      else
+      if (impltype == 1)
         params.set("fact: type", "KSPILUK");
       prec.setParameters(params);
       prec.initialize();
@@ -733,9 +723,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
       Teuchos::ParameterList params;
       params.set("fact: iluk level-of-fill", lof);
       params.set("fact: iluk level-of-overlap", 0);
-      if (impltype == 0)
-        params.set("fact: type", "Serial");
-      else
+      if (impltype == 1)
         params.set("fact: type", "KSPILUK");
     
       prec.setParameters(params);
@@ -907,7 +895,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, TestGIDConsistency,
     GO lof = 1;
     params.set ("fact: iluk level-of-fill", lof);
     params.set ("fact: iluk level-of-overlap", 0);
-    params.set ("fact: type", "Serial");
       
     prec.setParameters (params);
     TEST_THROW( prec.initialize (), std::runtime_error);
