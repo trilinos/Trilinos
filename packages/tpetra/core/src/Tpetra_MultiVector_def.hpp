@@ -973,6 +973,7 @@ namespace Tpetra {
     using KokkosRefactor::Details::permute_array_multi_column_variable_stride;
     using Kokkos::Compat::create_const_view;
     using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using IST = impl_scalar_type;
     const char tfecfFuncName[] = "copyAndPermute: ";
     ProfilingRegion regionCAP ("Tpetra::MultiVector::copyAndPermute");
 
@@ -1036,6 +1037,7 @@ namespace Tpetra {
     // If numSameIDs + permuteFromLIDs.extent(0) == getNodeNumElements(),
     // do not need to zero out, as all entries will be overwritten by a 
     // same or permute entry of source.
+std::cout << this->getMap()->getComm()->getRank() << " KDDKDDKDD " << CM << " " << numSameIDs << " " << permuteFromLIDs.extent(0) << " " << this->getMap()->getNodeNumElements() << std::endl;
     if ((CM == Tpetra::ADD) && 
         (numSameIDs + permuteFromLIDs.extent(0) < 
                       this->getMap()->getNodeNumElements())) {
@@ -1084,7 +1086,16 @@ namespace Tpetra {
 
           auto tgt_j = Kokkos::subview (tgt_h, rows, tgtCol);
           auto src_j = Kokkos::subview (src_h, rows, srcCol);
-          Kokkos::deep_copy (tgt_j, src_j); // Copy src_j into tgt_j
+          if (CM == ACCUMULATE) { 
+            // Sum src_j into tgt_j
+            Kokkos::parallel_for(numSameIDs, 
+              KOKKOS_LAMBDA (const size_t k) { tgt_j(k) += src_j(k); }
+            );
+          }
+          else { 
+            // Copy src_j into tgt_j
+            Kokkos::deep_copy (tgt_j, src_j); 
+          }
         }
       }
       else { // copy on device
@@ -1098,7 +1109,16 @@ namespace Tpetra {
 
           auto tgt_j = Kokkos::subview (tgt_d, rows, tgtCol);
           auto src_j = Kokkos::subview (src_d, rows, srcCol);
-          Kokkos::deep_copy (tgt_j, src_j); // Copy src_j into tgt_j
+          if (CM == ACCUMULATE) { 
+            // Sum src_j into tgt_j
+            Kokkos::parallel_for(numSameIDs, 
+              KOKKOS_LAMBDA (const size_t k) { tgt_j(k) += src_j(k); }
+            );
+          }
+          else { 
+            // Copy src_j into tgt_j
+            Kokkos::deep_copy (tgt_j, src_j); 
+          }
         }
       }
     }
@@ -1227,15 +1247,36 @@ namespace Tpetra {
           create_const_view (tgtWhichVecs.view_host ());
         auto srcWhichVecs_h =
           create_const_view (srcWhichVecs.view_host ());
-        permute_array_multi_column_variable_stride (tgt_h, src_h,
-                                                    permuteToLIDs_h,
-                                                    permuteFromLIDs_h,
-                                                    tgtWhichVecs_h,
-                                                    srcWhichVecs_h, numCols);
+        if (CM == ACCUMULATE) {
+          using op_type = KokkosRefactor::Details::AddOp<IST>;
+          permute_array_multi_column_variable_stride (tgt_h, src_h,
+                                                      permuteToLIDs_h,
+                                                      permuteFromLIDs_h,
+                                                      tgtWhichVecs_h,
+                                                      srcWhichVecs_h, numCols,
+                                                      op_type());
+        }
+        else {
+          using op_type = KokkosRefactor::Details::InsertOp<IST>;
+          permute_array_multi_column_variable_stride (tgt_h, src_h,
+                                                      permuteToLIDs_h,
+                                                      permuteFromLIDs_h,
+                                                      tgtWhichVecs_h,
+                                                      srcWhichVecs_h, numCols,
+                                                      op_type());
+        }
       }
       else {
-        permute_array_multi_column (tgt_h, src_h, permuteToLIDs_h,
-                                    permuteFromLIDs_h, numCols);
+        if (CM == ACCUMULATE) {
+          using op_type = KokkosRefactor::Details::AddOp<IST>;
+          permute_array_multi_column (tgt_h, src_h, permuteToLIDs_h,
+                                      permuteFromLIDs_h, numCols, op_type());
+        }
+        else {
+          using op_type = KokkosRefactor::Details::InsertOp<IST>;
+          permute_array_multi_column (tgt_h, src_h, permuteToLIDs_h,
+                                      permuteFromLIDs_h, numCols, op_type());
+        }
       }
     }
     else { // permute on device
@@ -1263,15 +1304,36 @@ namespace Tpetra {
         // getDualViewCopyFromArrayView puts them in the right place.
         auto tgtWhichVecs_d = create_const_view (tgtWhichVecs.view_device ());
         auto srcWhichVecs_d = create_const_view (srcWhichVecs.view_device ());
-        permute_array_multi_column_variable_stride (tgt_d, src_d,
-                                                    permuteToLIDs_d,
-                                                    permuteFromLIDs_d,
-                                                    tgtWhichVecs_d,
-                                                    srcWhichVecs_d, numCols);
+        if (CM == ACCUMULATE) {
+          using op_type = KokkosRefactor::Details::AddOp<IST>;
+          permute_array_multi_column_variable_stride (tgt_d, src_d,
+                                                      permuteToLIDs_d,
+                                                      permuteFromLIDs_d,
+                                                      tgtWhichVecs_d,
+                                                      srcWhichVecs_d, numCols,
+                                                      op_type());
+        }
+        else {
+          using op_type = KokkosRefactor::Details::InsertOp<IST>;
+          permute_array_multi_column_variable_stride (tgt_d, src_d,
+                                                      permuteToLIDs_d,
+                                                      permuteFromLIDs_d,
+                                                      tgtWhichVecs_d,
+                                                      srcWhichVecs_d, numCols,
+                                                      op_type());
+        }
       }
       else {
-        permute_array_multi_column (tgt_d, src_d, permuteToLIDs_d,
-                                    permuteFromLIDs_d, numCols);
+        if (CM == ACCUMULATE) {
+          using op_type = KokkosRefactor::Details::AddOp<IST>;
+          permute_array_multi_column (tgt_d, src_d, permuteToLIDs_d,
+                                      permuteFromLIDs_d, numCols, op_type());
+        }
+        else {
+          using op_type = KokkosRefactor::Details::InsertOp<IST>;
+          permute_array_multi_column (tgt_d, src_d, permuteToLIDs_d,
+                                      permuteFromLIDs_d, numCols, op_type());
+        }
       }
     }
 
@@ -1731,7 +1793,7 @@ namespace Tpetra {
           }
         }
       }
-      else if (CM == ADD) {
+      else if (CM == ADD || CM == ACCUMULATE) {
         using op_type = KokkosRefactor::Details::AddOp<IST>;
         if (isConstantStride ()) {
           if (unpackOnHost) {

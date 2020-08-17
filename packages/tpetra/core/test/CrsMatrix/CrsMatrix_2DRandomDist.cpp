@@ -249,10 +249,29 @@ public:
         case 3:  tname = "SpMV: 3 random 2D"; break;
       }
   
+      scalar_t alpha = 2.;
+      scalar_t beta = 3.;
       auto timer = Teuchos::TimeMonitor::getNewTimer(tname);
       for (int n = 0; n < nMatvecs; n++) {
         Teuchos::TimeMonitor tt(*timer);
-        Amat->apply(xvec, yvec);
+        Amat->apply(xvec, yvec, Teuchos::NO_TRANS, alpha, beta);
+      }
+    }
+
+    // Now do the same with the transpose
+    {
+      switch (distribution) {
+        case 1:  tname = "SpMV Transpose: 1 row-wise"; break;
+        case 2:  tname = "SpMV Transpose: 2 column-wise"; break;
+        case 3:  tname = "SpMV Transpose: 3 random 2D"; break;
+      }
+  
+      scalar_t alpha = 2.;
+      scalar_t beta = 3.;
+      auto timer = Teuchos::TimeMonitor::getNewTimer(tname);
+      for (int n = 0; n < nMatvecs; n++) {
+        Teuchos::TimeMonitor tt(*timer);
+        Amat->apply(xvec, yvec, Teuchos::TRANS, alpha, beta);
       }
     }
   }
@@ -308,6 +327,7 @@ int main(int narg, char *arg[])
   xvec.randomize();
 
   // Row-wise 1D distribution
+  yvec.putScalar(1000.);
   gNz.distributeAndApply(1, nMatvecs, xvec, yvec);
   scalar_t row1DNorm1 = yvec.norm1();
   scalar_t row1DNorm2 = yvec.norm2();
@@ -319,6 +339,7 @@ int main(int narg, char *arg[])
               << std::endl;
 
   // Column-wise 1D distribution
+  yvec.putScalar(1000.);
   gNz.distributeAndApply(2, nMatvecs, xvec, yvec);
   scalar_t col1DNorm1 = yvec.norm1();
   scalar_t col1DNorm2 = yvec.norm2();
@@ -330,6 +351,7 @@ int main(int narg, char *arg[])
               << std::endl;
 
   // Random 2D distribution
+  yvec.putScalar(1000.);
   gNz.distributeAndApply(3, nMatvecs, xvec, yvec);
   scalar_t random2DNorm1 = yvec.norm1();
   scalar_t random2DNorm2 = yvec.norm2();

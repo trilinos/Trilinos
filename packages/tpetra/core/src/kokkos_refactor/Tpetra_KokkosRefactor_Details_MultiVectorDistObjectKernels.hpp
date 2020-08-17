@@ -1459,7 +1459,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
   }
 
   template <typename DstView, typename SrcView,
-            typename DstIdxView, typename SrcIdxView>
+            typename DstIdxView, typename SrcIdxView, typename Op>
   struct PermuteArrayMultiColumn {
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
@@ -1469,21 +1469,24 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     DstIdxView dst_idx;
     SrcIdxView src_idx;
     size_t numCols;
+    Op op;
 
     PermuteArrayMultiColumn (const DstView& dst_,
                              const SrcView& src_,
                              const DstIdxView& dst_idx_,
                              const SrcIdxView& src_idx_,
-                             const size_t numCols_) :
+                             const size_t numCols_,
+                             const Op& op_) :
       dst(dst_), src(src_), dst_idx(dst_idx_), src_idx(src_idx_),
-      numCols(numCols_) {}
+      numCols(numCols_), op(op_) {}
 
     KOKKOS_INLINE_FUNCTION void
     operator() (const size_type k) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
+      nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j) {
-        dst(toRow, j) = src(fromRow, j);
+        op(tag, dst(toRow, j), src(fromRow, j));
       }
     }
 
@@ -1492,33 +1495,37 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
 	     const SrcView& src,
 	     const DstIdxView& dst_idx,
 	     const SrcIdxView& src_idx,
-	     const size_t numCols)
+	     const size_t numCols,
+             const Op& op)
     {
-      using range_type = Kokkos::RangePolicy<execution_space, size_type>;      
+      using range_type = 
+            Kokkos::RangePolicy<execution_space, size_type>;
+            // permute does not need atomics for Op
       const size_type n = std::min (dst_idx.size (), src_idx.size ());
       Kokkos::parallel_for
 	("Tpetra::MultiVector permute multicol const stride",
 	 range_type (0, n),
-	 PermuteArrayMultiColumn (dst, src, dst_idx, src_idx, numCols));
+	 PermuteArrayMultiColumn (dst, src, dst_idx, src_idx, numCols, op));
     }
   };
 
   // To do:  Add enable_if<> restrictions on DstView::Rank == 1,
   // SrcView::Rank == 2
   template <typename DstView, typename SrcView,
-            typename DstIdxView, typename SrcIdxView>
+            typename DstIdxView, typename SrcIdxView, typename Op>
   void permute_array_multi_column(const DstView& dst,
                                   const SrcView& src,
                                   const DstIdxView& dst_idx,
                                   const SrcIdxView& src_idx,
-                                  size_t numCols) {
-    PermuteArrayMultiColumn<DstView,SrcView,DstIdxView,SrcIdxView>::permute(
-      dst, src, dst_idx, src_idx, numCols);
+                                  size_t numCols,
+                                  const Op& op) {
+    PermuteArrayMultiColumn<DstView,SrcView,DstIdxView,SrcIdxView,Op>::permute(
+      dst, src, dst_idx, src_idx, numCols, op);
   }
 
   template <typename DstView, typename SrcView,
             typename DstIdxView, typename SrcIdxView,
-            typename DstColView, typename SrcColView>
+            typename DstColView, typename SrcColView, typename Op>
   struct PermuteArrayMultiColumnVariableStride {
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
@@ -1530,6 +1537,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     DstColView dst_col;
     SrcColView src_col;
     size_t numCols;
+    Op op;
 
     PermuteArrayMultiColumnVariableStride(const DstView& dst_,
                                           const SrcView& src_,
@@ -1537,17 +1545,19 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                                           const SrcIdxView& src_idx_,
                                           const DstColView& dst_col_,
                                           const SrcColView& src_col_,
-                                          const size_t numCols_) :
+                                          const size_t numCols_,
+                                          const Op& op_) :
       dst(dst_), src(src_), dst_idx(dst_idx_), src_idx(src_idx_),
       dst_col(dst_col_), src_col(src_col_),
-      numCols(numCols_) {}
+      numCols(numCols_), op(op_) {}
 
     KOKKOS_INLINE_FUNCTION void
     operator() (const size_type k) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
+      const nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j) {
-        dst(toRow, dst_col(j)) = src(fromRow, src_col(j));
+        op(tag, dst(toRow, dst_col(j)), src(fromRow, src_col(j)));
       }
     }
 
@@ -1558,7 +1568,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
 	     const SrcIdxView& src_idx,
 	     const DstColView& dst_col,
 	     const SrcColView& src_col,
-	     const size_t numCols)
+	     const size_t numCols,
+             const Op& op)
     {
       using range_type = Kokkos::RangePolicy<execution_space, size_type>;      
       const size_type n = std::min (dst_idx.size (), src_idx.size ());
@@ -1566,7 +1577,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
 	("Tpetra::MultiVector permute multicol var stride",
 	 range_type (0, n),
 	 PermuteArrayMultiColumnVariableStride (dst, src, dst_idx, src_idx,
-						dst_col, src_col, numCols));
+						dst_col, src_col, numCols, op));
     }
   };
 
@@ -1574,17 +1585,18 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
   // SrcView::Rank == 2
   template <typename DstView, typename SrcView,
             typename DstIdxView, typename SrcIdxView,
-            typename DstColView, typename SrcColView>
+            typename DstColView, typename SrcColView, typename Op>
   void permute_array_multi_column_variable_stride(const DstView& dst,
                                                   const SrcView& src,
                                                   const DstIdxView& dst_idx,
                                                   const SrcIdxView& src_idx,
                                                   const DstColView& dst_col,
                                                   const SrcColView& src_col,
-                                                  size_t numCols) {
+                                                  size_t numCols, 
+                                                  const Op& op) {
     PermuteArrayMultiColumnVariableStride<DstView,SrcView,
-      DstIdxView,SrcIdxView,DstColView,SrcColView>::permute(
-      dst, src, dst_idx, src_idx, dst_col, src_col, numCols);
+      DstIdxView,SrcIdxView,DstColView,SrcColView,Op>::permute(
+      dst, src, dst_idx, src_idx, dst_col, src_col, numCols, op);
   }
 
 } // Details namespace
