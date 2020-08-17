@@ -40,9 +40,18 @@
 */
 
 // Creates vectors with different maps; tests results of export into them
-// Bug7758 indicates that incorrect results of export are produced when
-// the source map is NOT a superset of the target map #7758
-// Analogous tests for Epetra are in epetra/test/MultiVector/Bug7758.cpp
+// In #7759, we fixed Tpetra::ADD mode to work correctly when 
+// the source map is NOT a superset of the target map.
+// Tpetra::ADD puts the sum of the contributions into the target vector.
+// That is, tgt = sum(src contributions).
+// 
+// For issue #7745, we need a CombineMode that accumulates all contributions
+// with the existing entries in the vector, rather than simply place the 
+// sum of contributions in the vector.  This test uses new mode 
+// Tpetra::ACCUMULATE to give the results tgt = tgt + sum(src contributions)
+//
+// This test is very similar to the tests in Bug7758.cpp; it exercises the
+// same maps.
 
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
@@ -56,7 +65,7 @@ namespace {
 
 
 //////////////////////////////////////////////////////////////////////////////
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, DefaultToDefault, Scalar,LO,GO,Node)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, DefaultToDefault, Scalar,LO,GO,Node)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
@@ -81,7 +90,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, DefaultToDefault, Scalar,LO,GO,Node)
   std::cout << me << " DEFAULT MAP" << std::endl;
   defaultMap->describe(foo, Teuchos::VERB_EXTREME);
 
-  // Create vectors; see what the result is with CombineMode=ADD
+  // Create vectors; see what the result is with CombineMode=ACCUMULATE
 
   vector_t defaultVecTgt(defaultMap);
   defaultVecTgt.putScalar(tgtScalar);
@@ -100,7 +109,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, DefaultToDefault, Scalar,LO,GO,Node)
   // Check result; all vector entries should be srcScalar
   auto data = defaultVecTgt.getLocalViewHost();
   for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++)
-    if (data(i,0) != srcScalar) ierr++;
+    if (data(i,0) != tgtScalar + srcScalar) ierr++;
   if (ierr > 0) 
     std::cout << "TEST FAILED:  DEFAULT-TO-DEFAULT TEST HAD " << ierr 
               << " FAILURES ON RANK " << me << std::endl;
@@ -112,7 +121,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, DefaultToDefault, Scalar,LO,GO,Node)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, CyclicToDefault, Scalar,LO,GO,Node)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, CyclicToDefault, Scalar,LO,GO,Node)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
@@ -154,7 +163,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, CyclicToDefault, Scalar,LO,GO,Node)
   std::cout << me << " CYCLIC MAP" << std::endl;
   cyclicMap->describe(foo, Teuchos::VERB_EXTREME);
 
-  // Create vectors; see what the result is with CombineMode=ADD
+  // Create vectors; see what the result is with CombineMode=ACCUMULATE
 
   vector_t defaultVecTgt(defaultMap);
   defaultVecTgt.putScalar(tgtScalar);
@@ -174,7 +183,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, CyclicToDefault, Scalar,LO,GO,Node)
 
   auto data = defaultVecTgt.getLocalViewHost();
   for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++)
-    if (data(i,0) != srcScalar) ierr++;
+    if (data(i,0) != tgtScalar + srcScalar) ierr++;
   if (ierr > 0) 
     std::cout << "TEST FAILED:  CYCLIC-TO-DEFAULT TEST HAD " << ierr 
               << " FAILURES ON RANK " << me << std::endl;
@@ -186,7 +195,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, CyclicToDefault, Scalar,LO,GO,Node)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OverlapToDefault, Scalar,LO,GO,Node)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, OverlapToDefault, Scalar,LO,GO,Node)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
@@ -230,7 +239,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OverlapToDefault, Scalar,LO,GO,Node)
     std::cout << me << " OVERLAP MAP" << std::endl;
     overlapMap->describe(foo, Teuchos::VERB_EXTREME);
 
-    // Create vectors; see what the result is with CombineMode=ADD
+    // Create vectors; see what the result is with CombineMode=ACCUMULATE
 
     vector_t defaultVecTgt(defaultMap);
     defaultVecTgt.putScalar(tgtScalar);
@@ -248,10 +257,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OverlapToDefault, Scalar,LO,GO,Node)
 
     auto data = defaultVecTgt.getLocalViewHost();
     for (size_t i = 0; i < defaultVecTgt.getLocalLength()/2; i++)
-      if (data(i,0) != srcScalar+srcScalar) ierr++;  // overlapped
+      if (data(i,0) != tgtScalar + srcScalar+srcScalar) ierr++;  // overlapped
     for (size_t i = defaultVecTgt.getLocalLength()/2;
              i < defaultVecTgt.getLocalLength(); i++)
-      if (data(i,0) != srcScalar) ierr++;  // not overlapped
+      if (data(i,0) != tgtScalar + srcScalar) ierr++;  // not overlapped
     if (ierr > 0) 
       std::cout << "TEST FAILED:  OVERLAP-TO-DEFAULT TEST HAD " << ierr 
                 << " FAILURES ON RANK " << me << std::endl;
@@ -264,7 +273,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OverlapToDefault, Scalar,LO,GO,Node)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, SupersetToDefault, Scalar,LO,GO,Node)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, SupersetToDefault, Scalar,LO,GO,Node)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
@@ -308,7 +317,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, SupersetToDefault, Scalar,LO,GO,Node)
     std::cout << me << " SUPERSET MAP" << std::endl;
     supersetMap->describe(foo, Teuchos::VERB_EXTREME);
 
-    // Create vectors; see what the result is with CombineMode=ADD
+    // Create vectors; see what the result is with CombineMode=ACCUMULATE
 
     vector_t defaultVecTgt(defaultMap);
     defaultVecTgt.putScalar(tgtScalar);
@@ -326,10 +335,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, SupersetToDefault, Scalar,LO,GO,Node)
 
     auto data = defaultVecTgt.getLocalViewHost();
     for (size_t i = 0; i < defaultVecTgt.getLocalLength()/2; i++)
-      if (data(i,0) != srcScalar+srcScalar) ierr++;  // overlapped
+      if (data(i,0) != tgtScalar + srcScalar+srcScalar) ierr++;  // overlapped
     for (size_t i = defaultVecTgt.getLocalLength()/2;
              i < defaultVecTgt.getLocalLength(); i++)
-      if (data(i,0) != srcScalar) ierr++;  // not overlapped
+      if (data(i,0) != tgtScalar + srcScalar) ierr++;  // not overlapped
     if (ierr > 0) 
       std::cout << "TEST FAILED:  SUPERSET-TO-DEFAULT TEST HAD " << ierr 
                 << " FAILURES ON RANK " << me << std::endl;
@@ -342,7 +351,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, SupersetToDefault, Scalar,LO,GO,Node)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OddEvenToSerial, Scalar,LO,GO,Node)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, OddEvenToSerial, Scalar,LO,GO,Node)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
@@ -357,7 +366,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OddEvenToSerial, Scalar,LO,GO,Node)
   const size_t nGlobalEntries = 8 * np;
   const Scalar tgtScalar = 100. * (me+1);
   const Scalar srcScalar = 2.;
-  Teuchos::Array<GO> myEntries(nGlobalEntries); 
+  Teuchos::Array<GO> myEntries(nGlobalEntries);
 
   // Odd entries given to odd procs; even entries given to even procs
   int nMyEntries = 0;
@@ -369,7 +378,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OddEvenToSerial, Scalar,LO,GO,Node)
 
   Tpetra::global_size_t dummy =
           Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-  Teuchos::RCP<const map_t> oddEvenMap = 
+  Teuchos::RCP<const map_t> oddEvenMap =
            rcp(new map_t(dummy, myEntries(0,nMyEntries), 0, comm));
 
   std::cout << me << " ODDEVEN MAP" << std::endl;
@@ -379,7 +388,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OddEvenToSerial, Scalar,LO,GO,Node)
 
   dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
   Teuchos::RCP<const map_t> serialMap;
-  if (me == 0) 
+  if (me == 0)
     serialMap = rcp(new map_t(dummy, nGlobalEntries, 0, comm));
   else
     serialMap = rcp(new map_t(dummy, 0, 0, comm));
@@ -398,20 +407,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OddEvenToSerial, Scalar,LO,GO,Node)
   // Export oddEven-to-serial
 
   Tpetra::Export<LO,GO,Node> oddEvenToSerial(oddEvenMap, serialMap);
-  serialVecTgt.doExport(oddEvenVecSrc, oddEvenToSerial, Tpetra::ADD);
+   serialVecTgt.doExport(oddEvenVecSrc, oddEvenToSerial, Tpetra::ADD);
 
   std::cout << me << " ODDEVEN TO SERIAL " << std::endl;
   serialVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
   // Check result; all vector entries should be srcScalar
-
   auto data = serialVecTgt.getLocalViewHost();
   for (size_t i = 0; i < serialVecTgt.getLocalLength(); i++) {
     int nCopies = ((np+1) / 2) - ((i % 2 == 1) && (np % 2 == 1));
-    if (data(i,0) != srcScalar * Scalar(nCopies)) ierr++;
+    if (data(i,0) != tgtScalar + srcScalar * Scalar(nCopies)) ierr++;
   }
-  if (ierr > 0) 
-    std::cout << "TEST FAILED:  ODDEVEN-TO-SERIAL TEST HAD " << ierr 
+  if (ierr > 0)
+    std::cout << "TEST FAILED:  ODDEVEN-TO-SERIAL TEST HAD " << ierr
               << " FAILURES ON RANK " << me << std::endl;
 
   int gerr;
@@ -420,12 +428,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OddEvenToSerial, Scalar,LO,GO,Node)
   TEST_ASSERT(gerr == 0);
 }
 
+
+
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, DefaultToDefault, SCALAR, LO, GO, NODE) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, CyclicToDefault, SCALAR, LO, GO, NODE) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, OverlapToDefault, SCALAR, LO, GO, NODE) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, SupersetToDefault, SCALAR, LO, GO, NODE) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, OddEvenToSerial, SCALAR, LO, GO, NODE)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, DefaultToDefault, SCALAR, LO, GO, NODE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, CyclicToDefault, SCALAR, LO, GO, NODE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, OverlapToDefault, SCALAR, LO, GO, NODE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, SupersetToDefault, SCALAR, LO, GO, NODE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, OddEvenToSerial, SCALAR, LO, GO, NODE)
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
