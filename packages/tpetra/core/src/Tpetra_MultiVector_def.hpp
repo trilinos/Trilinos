@@ -962,7 +962,8 @@ namespace Tpetra {
   (const SrcDistObject& sourceObj,
    const size_t numSameIDs,
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs)
+   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+   const CombineMode CM)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::getDualViewCopyFromArrayView;
@@ -1030,6 +1031,24 @@ namespace Tpetra {
       std::cerr << os.str ();
     }
 
+    // For CombineMode = Tpetra::ADD, need to zero out the target vector
+    // entries that are not reset by local contributions.  #7758
+    // If numSameIDs + permuteFromLIDs.extent(0) == getNodeNumElements(),
+    // do not need to zero out, as all entries will be overwritten by a 
+    // same or permute entry of source.
+    if ((CM == Tpetra::ADD) && 
+        (numSameIDs + permuteFromLIDs.extent(0) < 
+                      this->getMap()->getNodeNumElements())) {
+      if (copyOnHost) {
+        auto tgt_h = this->getLocalViewHost ();
+        Kokkos::deep_copy(tgt_h, Scalar(0.));
+      }
+      else {  // copy on Device
+        auto tgt_d = this->getLocalViewDevice ();
+        Kokkos::deep_copy(tgt_d, Scalar(0.));
+      }
+    }
+    
     // TODO (mfh 15 Sep 2013) When we replace
     // KokkosClassic::MultiVector with a Kokkos::View, there are two
     // ways to copy the data:
