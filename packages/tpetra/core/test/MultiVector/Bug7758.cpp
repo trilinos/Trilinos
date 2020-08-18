@@ -60,7 +60,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, DefaultToDefault, Scalar,LO,GO,Node)
 {
   // This case demonstrates that owned entries shared between the source and
   // target map are copied from the source vector into the target (during
-  // copyAndPermute).  
+  // copyAndPermute).  Each entry of the resulting target vector has value
+  // srcScalar.
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
   int np = comm->getSize();
@@ -180,9 +181,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, CyclicToDefault, Scalar,LO,GO,Node)
 
   // Check result; all vector entries should be srcScalar
 
+  auto invalid = Teuchos::OrdinalTraits<LO>::invalid();
   auto data = defaultVecTgt.getLocalViewHost();
   for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++)
-    if (data(i,0) != srcScalar) ierr++;
+    if (cyclicMap->getLocalElement(defaultMap->getGlobalElement(i)) != invalid){
+      // element is in both cyclic (source) and default (target) map;
+      // initial target value was overwritten
+      if (data(i,0) != srcScalar) ierr++;
+    }
+    else {
+      // element is in only default (target) map;
+      // initial target value was not overwritten
+      if (data(i,0) != tgtScalar + srcScalar) ierr++;
+    }
   if (ierr > 0) 
     std::cout << "TEST FAILED:  CYCLIC-TO-DEFAULT TEST HAD " << ierr 
               << " FAILURES ON RANK " << me << std::endl;
@@ -260,15 +271,107 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OverlapToDefault, Scalar,LO,GO,Node)
     defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
     auto data = defaultVecTgt.getLocalViewHost();
-    for (size_t i = 0; i < defaultVecTgt.getLocalLength()/2; i++)
-      if (data(i,0) != srcScalar+srcScalar) ierr++;  // overlapped
+    for (size_t i = 0; i < defaultVecTgt.getLocalLength()/2; i++) {
+      // overlapped; initial target values were overwritten
+      if (data(i,0) != srcScalar + srcScalar) ierr++;  
+    }
     for (size_t i = defaultVecTgt.getLocalLength()/2;
-             i < defaultVecTgt.getLocalLength(); i++)
-      if (data(i,0) != srcScalar) ierr++;  // not overlapped
+             i < defaultVecTgt.getLocalLength(); i++) {
+      // not overlapped; initial target values were not overwritten
+      if (data(i,0) != tgtScalar + srcScalar) ierr++;  
+    }
     if (ierr > 0) 
       std::cout << "TEST FAILED:  OVERLAP-TO-DEFAULT TEST HAD " << ierr 
                 << " FAILURES ON RANK " << me << std::endl;
   }
+
+  int gerr;
+  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
+
+  TEST_ASSERT(gerr == 0);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OddEvenToSerial, Scalar,LO,GO,Node)
+{
+  // Test case showing behavior when target map is all on processor zero.
+  // In the source map, even numbered entries are on even numbered processors;
+  // odd numbered entreis are on odd numbered processors.
+  // In copyAndPermute, even numbered entries are copied from processor zero's
+  // source vector to the target vector, and odd numbered entries are unchanged.
+  // Then received values are added to the target vector.  The result is that
+  // odd entries include the initial target values in their sum, while the 
+  // even entries are not included.
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  int me = comm->getRank();
+  int np = comm->getSize();
+  int ierr = 0;
+
+  Teuchos::FancyOStream foo(Teuchos::rcp(&std::cout,false));
+
+  using vector_t = Tpetra::Vector<Scalar,LO,GO,Node>;
+  using map_t = Tpetra::Map<LO,GO,Node>;
+
+  const size_t nGlobalEntries = 8 * np;
+  const Scalar tgtScalar = 100. * (me+1);
+  const Scalar srcScalar = 2.;
+  Teuchos::Array<GO> myEntries(nGlobalEntries); 
+
+  // Odd entries given to odd procs; even entries given to even procs
+  int nMyEntries = 0;
+  for (size_t i = 0; i < nGlobalEntries; i++) {
+    if (int(i % 2) == (me % 2)) {
+      myEntries[nMyEntries++] = i;
+    }
+  }
+
+  Tpetra::global_size_t dummy =
+          Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+  Teuchos::RCP<const map_t> oddEvenMap = 
+           rcp(new map_t(dummy, myEntries(0,nMyEntries), 0, comm));
+
+  std::cout << me << " ODDEVEN MAP" << std::endl;
+  oddEvenMap->describe(foo, Teuchos::VERB_EXTREME);
+
+  // Map with all entries on one processor
+
+  dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+  Teuchos::RCP<const map_t> serialMap;
+  if (me == 0) 
+    serialMap = rcp(new map_t(dummy, nGlobalEntries, 0, comm));
+  else
+    serialMap = rcp(new map_t(dummy, 0, 0, comm));
+
+  std::cout << me << " SERIAL MAP" << std::endl;
+  serialMap->describe(foo, Teuchos::VERB_EXTREME);
+
+  // Create vectors; see what the result is with CombineMode=ADD
+
+  vector_t oddEvenVecSrc(oddEvenMap);
+  oddEvenVecSrc.putScalar(srcScalar);
+
+  vector_t serialVecTgt(serialMap);
+  serialVecTgt.putScalar(tgtScalar);
+
+  // Export oddEven-to-serial
+
+  Tpetra::Export<LO,GO,Node> oddEvenToSerial(oddEvenMap, serialMap);
+  serialVecTgt.doExport(oddEvenVecSrc, oddEvenToSerial, Tpetra::ADD);
+
+  std::cout << me << " ODDEVEN TO SERIAL " << std::endl;
+  serialVecTgt.describe(foo, Teuchos::VERB_EXTREME);
+
+  // Check result; all vector entries should be srcScalar
+
+  auto data = serialVecTgt.getLocalViewHost();
+  for (size_t i = 0; i < serialVecTgt.getLocalLength(); i++) {
+    Scalar nCopies = Scalar(((np+1) / 2) - ((i % 2 == 1) && (np % 2 == 1)));
+    if (data(i,0) != (i%2 ? tgtScalar : Scalar(0)) + srcScalar * nCopies)
+      ierr++;
+  }
+  if (ierr > 0) 
+    std::cout << "TEST FAILED:  ODDEVEN-TO-SERIAL TEST HAD " << ierr 
+              << " FAILURES ON RANK " << me << std::endl;
 
   int gerr;
   Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
@@ -424,7 +527,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, NoSamesToDefault, Scalar,LO,GO,Node)
 
     auto data = defaultVecTgt.getLocalViewHost();
     for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++)
-      if (data(i,0) != srcScalar) ierr++;  
+      if (data(i,0) != tgtScalar + srcScalar) ierr++;  
     if (ierr > 0) 
       std::cout << "TEST FAILED:  NOSAMES-TO-DEFAULT TEST HAD " << ierr 
                 << " FAILURES ON RANK " << me << std::endl;
@@ -441,6 +544,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, NoSamesToDefault, Scalar,LO,GO,Node)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, DefaultToDefault, SCALAR, LO, GO, NODE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, CyclicToDefault, SCALAR, LO, GO, NODE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, OverlapToDefault, SCALAR, LO, GO, NODE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, OddEvenToSerial, SCALAR, LO, GO, NODE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, SupersetToDefault, SCALAR, LO, GO, NODE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, NoSamesToDefault, SCALAR, LO, GO, NODE)
 
