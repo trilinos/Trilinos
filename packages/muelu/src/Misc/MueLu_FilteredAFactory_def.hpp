@@ -463,16 +463,12 @@ namespace MueLu {
     RCP<AmalgamationInfo>      amalgInfo      = Get< RCP<AmalgamationInfo> >     (currentLevel, "UnAmalgamationInfo");
     LO                          numAggs       = aggregates->GetNumAggregates();
     Teuchos::ArrayRCP<const LO> vertex2AggId  = aggregates->GetVertex2AggId()->getData(0);
-    
-    
-    // HAX
+        
+    // Check map nesting
     RCP<const Map> rowMap = A.getRowMap();
     RCP<const Map> colMap = A.getColMap();
     bool goodMap = MueLu::Utilities<SC,LO,GO,NO>::MapsAreNested(*rowMap, *colMap);
-    if(goodMap) printf("CMS: Maps are good\n");
-    else printf("CMS: Maps are NOT good\n");
-    // END HAX
-
+    TEUCHOS_TEST_FOR_EXCEPTION(!goodMap, Exceptions::RuntimeError,"FilteredAFactory: Maps are not nested");
   
     // Since we're going to symmetrize this
     Array<LO> diagIndex(numRows,INVALID);
@@ -483,31 +479,26 @@ namespace MueLu {
       Array<LO> ptr,nodes, unaggregated;
     } nodesInAgg;
     aggregates->ComputeNodesInAggregate(nodesInAgg.ptr, nodesInAgg.nodes, nodesInAgg.unaggregated);
-    Array<bool> filter(G.GetImportMap()->getNodeNumElements(), false);
+    LO graphNumCols = G.GetImportMap()->getNodeNumElements();
+    Array<bool> filter(graphNumCols, false);
 
-    // Loop over the unaggregated nodes. These guys don't get the secondary filter.
+    // Loop over the unaggregated nodes. Blitz those rows.  We don't want to smooth singletons.
     for(LO i=0; i<nodesInAgg.unaggregated.size(); i++) {
-      // Set up filtering array
-      ArrayView<const LO> indsG = G.getNeighborVertices(i);
-      for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
-	filter[indsG[j]]=true;
-      
       for (LO m = 0; m < (LO)blkSize; m++) {
 	LO row = amalgInfo->ComputeLocalDOF(nodesInAgg.unaggregated[i],m);
-	A.getLocalRowView(row, indsA, valsA);
 	size_t index_start = rowptr[row];
-
+	A.getLocalRowView(row, indsA, valsA);
 	for(LO k=0; k<(LO)indsA.size(); k++) {
-	  int node = amalgInfo->ComputeLocalNode(indsA[k]);
-	  vals[index_start+k] = (indsA[k] == row || filter[node]) ? valsA[k] : ZERO;
-	  if(row==indsA[k]) diagIndex[row] = k;
+	  if(row == indsA[k]) {
+	    vals[index_start+k] = ONE;
+	    diagIndex[row] = k;
+	  }
+	  else 
+	    vals[index_start+k] = ZERO;
 	}
-	  
-	// Reset filtering array
-	for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
-	  filter[indsG[j]]=false;
       }
-    }
+    }//end nodesInAgg.unaggregated.size();
+
 
     // Find the biggest aggregate size in *nodes*
     LO maxAggSize=0;
@@ -711,7 +702,7 @@ namespace MueLu {
     MueLu_sumAll(A.getRowMap()->getComm(), numFixedDiags, g_fixedDiags);
     GetOStream(Runtime0)<< "Filtering out "<<g_newDrops<<" edges, in addition to the "<<g_oldDrops<<" edges dropped earlier"<<std::endl;
     GetOStream(Runtime0)<< "Fixing "<< g_fixedDiags<<" zero diagonal values" <<std::endl;
-    printf("CMS: numSymDrops = %d\n",(int)numSymDrops);
+    //    printf("CMS: numSymDrops = %d\n",(int)numSymDrops);
   }
 
 
