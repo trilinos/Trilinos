@@ -1591,7 +1591,9 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p, in_c_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_p, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        auto outi_c_f_p_d_h = Kokkos::create_mirror_view(outi_c_f_p_d);
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (3): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1600,7 +1602,8 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1, in_c_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_1, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (4): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1631,7 +1634,8 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p_d, in_c_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_p_d, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (5): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1639,7 +1643,8 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1_d, in_c_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_1_d, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (6): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1668,14 +1673,16 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p_d_d, in_c_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_p_d_d, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (7): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
         art::matvecProductDataField(out_c_f_p_d, data_c_p_d_d, in_c_f_p_d, 't');
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_p_d_d, out_c_f_p_d, 't');
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (8): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -1683,14 +1690,16 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1_d_d, in_c_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_1_d_d, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (9): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
         art::matvecProductDataField(out_c_f_p_d, data_c_1_d_d, in_c_f_p_d, 't');
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_1_d_d, out_c_f_p_d, 't');
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (10): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -1726,7 +1735,8 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p_d_d, in_c_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainvtrn_c_p_d_d, out_c_f_p_d, 't');
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (11): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -1734,7 +1744,8 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1_d_d, in_c_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainvtrn_c_1_d_d, out_c_f_p_d, 't');
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (12): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -1795,7 +1806,9 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p, in_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_p, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        auto outi_c_f_p_d_h = Kokkos::create_mirror_view(outi_c_f_p_d);
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (13): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1804,7 +1817,8 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1, in_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_1, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (14): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1834,7 +1848,8 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p_d, in_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_p_d, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (15): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1843,7 +1858,8 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1_d, in_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_1_d, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (16): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1874,7 +1890,8 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p_d_d, in_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_p_d_d, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (17): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1882,7 +1899,8 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p_d_d, in_f_p_d, 't');
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_p_d_d, out_c_f_p_d, 't');
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (18): check matrix inverse property, w/ double tvalue_typese\n\n";
           errorFlag = -1000;
         }
@@ -1891,7 +1909,8 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1_d_d, in_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_1_d_d, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (19): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1899,7 +1918,8 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1_d_d, in_f_p_d, 't');
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_1_d_d, out_c_f_p_d, 't');
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (20): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -1936,7 +1956,8 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p_d_d, in_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainvtrn_c_p_d_d, out_c_f_p_d, 't');
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (21): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -1945,7 +1966,8 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1_d_d, in_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainvtrn_c_1_d_d, out_c_f_p_d, 't');
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (22): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2133,7 +2155,9 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p, in_c_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_p, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        auto outi_c_p_d_h = Kokkos::create_mirror_view(outi_c_p_d);
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (3): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2142,7 +2166,8 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1, in_c_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_1, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (4): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2167,7 +2192,8 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p_d, in_c_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_p_d, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (5): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2175,7 +2201,8 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1_d, in_c_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_1_d, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (6): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2202,14 +2229,16 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p_d_d, in_c_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_p_d_d, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (7): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
         art::matvecProductDataData(out_c_p_d, data_c_p_d_d, in_c_p_d, 't');
         art::matvecProductDataData(outi_c_p_d, datainv_c_p_d_d, out_c_p_d, 't');
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (8): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -2217,14 +2246,16 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1_d_d, in_c_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_1_d_d, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (9): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
         art::matvecProductDataData(out_c_p_d, data_c_1_d_d, in_c_p_d, 't');
         art::matvecProductDataData(outi_c_p_d, datainv_c_1_d_d, out_c_p_d, 't');
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (10): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -2255,7 +2286,8 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p_d_d, in_c_p_d);
         art::matvecProductDataData(outi_c_p_d, datainvtrn_c_p_d_d, out_c_p_d, 't');
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (11): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2263,7 +2295,8 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1_d_d, in_c_p_d);
         art::matvecProductDataData(outi_c_p_d, datainvtrn_c_1_d_d, out_c_p_d, 't');
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (12): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2325,7 +2358,9 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p, in_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_p, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        auto outi_c_p_d_h = Kokkos::create_mirror_view(outi_c_p_d);
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (13): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2334,7 +2369,8 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1, in_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_1, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (14): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2363,7 +2399,8 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p_d, in_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_p_d, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (15): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2372,7 +2409,8 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1_d, in_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_1_d, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (16): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2405,7 +2443,8 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p_d_d, in_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_p_d_d, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (17): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2413,7 +2452,8 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p_d_d, in_p_d, 't');
         art::matvecProductDataData(outi_c_p_d, datainv_c_p_d_d, out_c_p_d, 't');
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (18): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -2422,7 +2462,8 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1_d_d, in_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_1_d_d, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (19): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2430,7 +2471,8 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1_d_d, in_p_d, 't');
         art::matvecProductDataData(outi_c_p_d, datainv_c_1_d_d, out_c_p_d, 't');
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (20): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -2464,7 +2506,8 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p_d_d, in_p_d);
         art::matvecProductDataData(outi_c_p_d, datainvtrn_c_p_d_d, out_c_p_d, 't');
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (21): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2473,7 +2516,8 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1_d_d, in_p_d);
         art::matvecProductDataData(outi_c_p_d, datainvtrn_c_1_d_d, out_c_p_d, 't');
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (22): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2531,7 +2575,9 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p, in_c_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_p, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        auto outi_c_f_p_d_d_h = Kokkos::create_mirror_view(outi_c_f_p_d_d);
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (1): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2539,7 +2585,8 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1, in_c_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_1, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (2): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2568,7 +2615,8 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p_d, in_c_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_p_d, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (3): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2576,7 +2624,8 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1_d, in_c_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_1_d, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (4): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2607,14 +2656,16 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p_d_d, in_c_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_p_d_d, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (5): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p_d_d, in_c_f_p_d_d, 't');
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_p_d_d, out_c_f_p_d_d, 't');
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (6): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -2622,14 +2673,16 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1_d_d, in_c_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_1_d_d, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (7): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1_d_d, in_c_f_p_d_d,'t');
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_1_d_d, out_c_f_p_d_d, 't');
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (8): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -2663,7 +2716,8 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p_d_d, in_c_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainvtrn_c_p_d_d, out_c_f_p_d_d, 't');
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (9): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2671,7 +2725,8 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1_d_d, in_c_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainvtrn_c_1_d_d, out_c_f_p_d_d, 't');
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (10): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2732,7 +2787,9 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p, in_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_p, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        auto outi_c_f_p_d_d_h = Kokkos::create_mirror_view(outi_c_f_p_d_d);
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (11): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2741,7 +2798,8 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1, in_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_1, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (12): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2770,7 +2828,8 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p_d, in_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_p_d, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (13): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2779,7 +2838,8 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1_d, in_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_1_d, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (14): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2811,7 +2871,8 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p_d_d, in_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_p_d_d, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (15): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2819,7 +2880,8 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p_d_d, in_f_p_d_d, 't');
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_p_d_d, out_c_f_p_d_d, 't');
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (16): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -2828,7 +2890,8 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1_d_d, in_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_1_d_d, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (17): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2836,7 +2899,8 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1_d_d, in_f_p_d_d, 't');
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_1_d_d, out_c_f_p_d_d, 't');
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (18): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -2872,7 +2936,8 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p_d_d, in_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainvtrn_c_p_d_d, out_c_f_p_d_d, 't');
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (19): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2881,7 +2946,8 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1_d_d, in_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainvtrn_c_1_d_d, out_c_f_p_d_d, 't');
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (20): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2939,7 +3005,9 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_p, in_c_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_p, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        auto outi_c_p_d_d_h = Kokkos::create_mirror_view(outi_c_p_d_d);
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (1): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2947,7 +3015,8 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_1, in_c_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_1, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (2): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2973,7 +3042,8 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_p_d, in_c_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_p_d, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (3): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2981,7 +3051,8 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_1_d, in_c_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_1_d, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (4): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -3010,14 +3081,16 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_p_d_d, in_c_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_p_d_d, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (5): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
         art::matmatProductDataData(out_c_p_d_d, data_c_p_d_d, in_c_p_d_d, 't');
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_p_d_d, out_c_p_d_d, 't');
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (6): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -3025,14 +3098,16 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_1_d_d, in_c_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_1_d_d, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (7): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
         art::matmatProductDataData(out_c_p_d_d, data_c_1_d_d, in_c_p_d_d, 't');
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_1_d_d, out_c_p_d_d, 't');
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (8): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -3062,7 +3137,8 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_p_d_d, in_c_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainvtrn_c_p_d_d, out_c_p_d_d, 't');
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (9): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -3070,7 +3146,8 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_1_d_d, in_c_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainvtrn_c_1_d_d, out_c_p_d_d, 't');
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (10): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -3131,7 +3208,9 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_p, in_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_p, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        auto outi_c_p_d_d_h = Kokkos::create_mirror_view(outi_c_p_d_d);
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (11): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -3140,7 +3219,8 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_1, in_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_1, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (12): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -3170,7 +3250,8 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_p_d, in_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_p_d, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (13): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -3180,7 +3261,8 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_1_d, in_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_1_d, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (14): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -3214,7 +3296,8 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_p_d_d, in_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_p_d_d, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (15): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
@@ -3222,7 +3305,8 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_p_d_d, in_p_d_d, 't');
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_p_d_d, out_c_p_d_d, 't');
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (16): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -3231,7 +3315,8 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_1_d_d, in_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_1_d_d, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (17): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
@@ -3239,7 +3324,8 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_1_d_d, in_p_d_d, 't');
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_1_d_d, out_c_p_d_d, 't');
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (18): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -3273,7 +3359,8 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_p_d_d, in_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainvtrn_c_p_d_d, out_c_p_d_d, 't');
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (19): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -3282,7 +3369,8 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_1_d_d, in_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainvtrn_c_1_d_d, out_c_p_d_d, 't');
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (20): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
