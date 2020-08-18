@@ -280,7 +280,9 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(out_c_f_p, data_c_p, in_c_f_p);
       art::scalarMultiplyDataField(outi_c_f_p, datainv_c_p, out_c_f_p);
       rst::subtract(outi_c_f_p, in_c_f_p);
-      if (rst::Serial::vectorNorm(outi_c_f_p, NORM_ONE) > tol) {
+      auto outi_c_f_p_h = Kokkos::create_mirror_view(outi_c_f_p);
+      Kokkos::deep_copy(outi_c_f_p_h, outi_c_f_p);
+      if (rst::Serial::vectorNorm(outi_c_f_p_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (1): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -288,21 +290,26 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(out_c_f_p_d, data_c_p, in_c_f_p_d);
       art::scalarMultiplyDataField(outi_c_f_p_d, datainv_c_p, out_c_f_p_d);
       rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
-        *outStream << "\n\nINCORRECT scalarMultiplyDataField (2): check scalar inverse property" << rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) << "\n\n";
+      auto outi_c_f_p_d_h = Kokkos::create_mirror_view(outi_c_f_p_d);
+      Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
+        *outStream << "\n\nINCORRECT scalarMultiplyDataField (2): check scalar inverse property" << rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_p, in_c_f_p_d_d);
       art::scalarMultiplyDataField(outi_c_f_p_d_d, datainv_c_p, out_c_f_p_d_d);
       rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+      auto outi_c_f_p_d_d_h = Kokkos::create_mirror_view(outi_c_f_p_d_d);
+      Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (3): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_1, in_c_f_p_d_d);
       art::scalarMultiplyDataField(outi_c_f_p_d_d, datainv_c_1, out_c_f_p_d_d);
       rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+      Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (4): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -311,16 +318,19 @@ namespace Intrepid2 {
       deep_copy(in_c_f_p_d_d, 1.0); deep_copy(data_c_p,5.0); deep_copy(data_c_1, 5.0);
 
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_p, in_c_f_p_d_d);
-      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - data_c_p(0,0)*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2) > tol) {
+      auto out_c_f_p_d_d_h = Kokkos::create_mirror_view(out_c_f_p_d_d);
+      Kokkos::deep_copy(out_c_f_p_d_d_h, out_c_f_p_d_d);
+      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) - data_c_p(0,0)*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (5): check result: "
-                   << rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) << " != "
+                   << rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) << " != "
                    << data_c_p(0,0)*in_c_f_p_d_d(0,0,0,0,0)*c*f*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_1, in_c_f_p_d_d);
-      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - data_c_1(0,0)*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2) > tol) {
+      Kokkos::deep_copy(out_c_f_p_d_d_h, out_c_f_p_d_d);
+      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) - data_c_1(0,0)*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (6): check result: "
-                   << rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) << " != "
+                   << rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) << " != "
                    << data_c_1(0,0)*in_c_f_p_d_d(0,0)*c*f*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
@@ -385,7 +395,9 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(outi_c_f_p, datainv_c_p, out_c_f_p);
       art::scalarMultiplyDataField(in_c_f_p, data_c_p_one, in_f_p);
       rst::subtract(outi_c_f_p, in_c_f_p);
-      if (rst::Serial::vectorNorm(outi_c_f_p, NORM_ONE) > tol) {
+      auto outi_c_f_p_h = Kokkos::create_mirror_view(outi_c_f_p);
+      Kokkos::deep_copy(outi_c_f_p_h, outi_c_f_p);
+      if (rst::Serial::vectorNorm(outi_c_f_p_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (1): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -393,7 +405,9 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(outi_c_f_p_d, datainv_c_p, out_c_f_p_d);
       art::scalarMultiplyDataField(in_c_f_p_d, data_c_p_one, in_f_p_d);
       rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+      auto outi_c_f_p_d_h = Kokkos::create_mirror_view(outi_c_f_p_d);
+      Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (2): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -401,7 +415,9 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(outi_c_f_p_d_d, datainv_c_p, out_c_f_p_d_d);
       art::scalarMultiplyDataField(in_c_f_p_d_d, data_c_p_one, in_f_p_d_d);
       rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+      auto outi_c_f_p_d_d_h = Kokkos::create_mirror_view(outi_c_f_p_d_d);
+      Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (3): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -409,7 +425,8 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(outi_c_f_p_d_d, datainv_c_1, out_c_f_p_d_d);
       art::scalarMultiplyDataField(in_c_f_p_d_d, data_c_p_one, in_f_p_d_d);
       rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+      Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (4): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -418,16 +435,19 @@ namespace Intrepid2 {
       deep_copy(in_f_p_d_d, 1.0); deep_copy(data_c_p, 5.0); deep_copy(data_c_1, 5.0);
 
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_p, in_f_p_d_d);
-      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - data_c_p(0,0)*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2) > tol) {
+      auto out_c_f_p_d_d_h = Kokkos::create_mirror_view(out_c_f_p_d_d);
+      Kokkos::deep_copy(out_c_f_p_d_d_h, out_c_f_p_d_d);
+      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) - data_c_p(0,0)*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (5): check result: "
-                   << rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) << " != "
+                   << rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) << " != "
                    << data_c_p(0,0)*in_f_p_d_d(0,0,0,0)*c*f*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_1, in_f_p_d_d);
-      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - data_c_1(0,0)*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2) > tol) {
+      Kokkos::deep_copy(out_c_f_p_d_d_h, out_c_f_p_d_d);
+      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) - data_c_1(0,0)*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (6): check result: "
-                   << rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) << " != "
+                   << rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) << " != "
                    << data_c_1(0,0)*in_f_p_d_d(0,0,0,0)*c*f*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
@@ -477,28 +497,35 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(out_c_f_p, data_c_p, in_c_f_p, true);
       art::scalarMultiplyDataField(outi_c_f_p, datainv_c_p, out_c_f_p, true);
       rst::subtract(outi_c_f_p, in_c_f_p);
-      if (rst::Serial::vectorNorm(outi_c_f_p, NORM_ONE) > tol) {
+      auto outi_c_f_p_h = Kokkos::create_mirror_view(outi_c_f_p);
+      Kokkos::deep_copy(outi_c_f_p_h, outi_c_f_p);
+      if (rst::Serial::vectorNorm(outi_c_f_p_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (1): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d, data_c_p, in_c_f_p_d, true);
       art::scalarMultiplyDataField(outi_c_f_p_d, datainv_c_p, out_c_f_p_d, true);
       rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+      auto outi_c_f_p_d_h = Kokkos::create_mirror_view(outi_c_f_p_d);
+      Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (2): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_p, in_c_f_p_d_d, true);
       art::scalarMultiplyDataField(outi_c_f_p_d_d, datainv_c_p, out_c_f_p_d_d, true);
       rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+      auto outi_c_f_p_d_d_h = Kokkos::create_mirror_view(outi_c_f_p_d_d);
+      Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (3): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_1, in_c_f_p_d_d, true);
       art::scalarMultiplyDataField(outi_c_f_p_d_d, datainv_c_1, out_c_f_p_d_d, true);
       rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+      Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (4): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -507,16 +534,19 @@ namespace Intrepid2 {
       deep_copy(in_c_f_p_d_d, 1.0); deep_copy(data_c_p, 5.0); deep_copy(data_c_1, 5.0);
 
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_p, in_c_f_p_d_d, true);
-      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - (1.0/data_c_p(0,0))*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > tol) {
+      auto out_c_f_p_d_d_h = Kokkos::create_mirror_view(out_c_f_p_d_d);
+      Kokkos::deep_copy(out_c_f_p_d_d_h, out_c_f_p_d_d);
+      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) - (1.0/data_c_p(0,0))*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (5): check result: "
-                   << rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) << " != "
+                   << rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) << " != "
                    << (1.0/data_c_p(0,0))*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_1, in_c_f_p_d_d, true);
-      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - (1.0/data_c_1(0,0))*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > tol) {
+      Kokkos::deep_copy(out_c_f_p_d_d_h, out_c_f_p_d_d);
+      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) - (1.0/data_c_1(0,0))*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (6): check result: "
-                   << rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) << " != "
+                   << rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) << " != "
                    << (1.0/data_c_p(0,0))*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
@@ -582,7 +612,9 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(outi_c_f_p, datainv_c_p, out_c_f_p, true);
       art::scalarMultiplyDataField(in_c_f_p, data_c_p_one, in_f_p);
       rst::subtract(outi_c_f_p, in_c_f_p);
-      if (rst::Serial::vectorNorm(outi_c_f_p, NORM_ONE) > tol) {
+      auto outi_c_f_p_h = Kokkos::create_mirror_view(outi_c_f_p);
+      Kokkos::deep_copy(outi_c_f_p_h, outi_c_f_p);
+      if (rst::Serial::vectorNorm(outi_c_f_p_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (1): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -590,7 +622,9 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(outi_c_f_p_d, datainv_c_p, out_c_f_p_d, true);
       art::scalarMultiplyDataField(in_c_f_p_d, data_c_p_one, in_f_p_d);
       rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
+      auto outi_c_f_p_d_h = Kokkos::create_mirror_view(outi_c_f_p_d);
+      Kokkos::deep_copy(outi_c_f_p_d_h, outi_c_f_p_d);
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (2): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -598,7 +632,9 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(outi_c_f_p_d_d, datainv_c_p, out_c_f_p_d_d, true);
       art::scalarMultiplyDataField(in_c_f_p_d_d, data_c_p_one, in_f_p_d_d);
       rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+      auto outi_c_f_p_d_d_h = Kokkos::create_mirror_view(outi_c_f_p_d_d);
+      Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (3): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -606,7 +642,8 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(outi_c_f_p_d_d, datainv_c_1, out_c_f_p_d_d, true);
       art::scalarMultiplyDataField(in_c_f_p_d_d, data_c_p_one, in_f_p_d_d);
       rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
+      Kokkos::deep_copy(outi_c_f_p_d_d_h, outi_c_f_p_d_d);
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (4): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -615,16 +652,19 @@ namespace Intrepid2 {
       deep_copy(in_f_p_d_d, 1.0); deep_copy(data_c_p, 5.0); deep_copy(data_c_1, 5.0);
 
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_p, in_f_p_d_d, true);
-      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - (1.0/data_c_p(0,0))*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > tol) {
+      auto out_c_f_p_d_d_h = Kokkos::create_mirror_view(out_c_f_p_d_d);
+      Kokkos::deep_copy(out_c_f_p_d_d_h, out_c_f_p_d_d);
+      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) - (1.0/data_c_p(0,0))*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (5): check result: "
-                   << rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) << " != "
+                   << rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) << " != "
                    << (1.0/data_c_p(0,0))*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_1, in_f_p_d_d, true);
-      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - (1.0/data_c_1(0,0))*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > tol) {
+      Kokkos::deep_copy(out_c_f_p_d_d_h, out_c_f_p_d_d);
+      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) - (1.0/data_c_1(0,0))*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (6): check result: "
-                   << rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) << " != "
+                   << rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) << " != "
                    << (1.0/data_c_1(0,0))*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
@@ -672,28 +712,35 @@ namespace Intrepid2 {
       art::scalarMultiplyDataData(out_c_p, data_c_p, in_c_p);
       art::scalarMultiplyDataData(outi_c_p, datainv_c_p, out_c_p);
       rst::subtract(outi_c_p, in_c_p);
-      if (rst::Serial::vectorNorm(outi_c_p, NORM_ONE) > tol) {
+      auto outi_c_p_h = Kokkos::create_mirror_view(outi_c_p);
+      Kokkos::deep_copy(outi_c_p_h, outi_c_p);
+      if (rst::Serial::vectorNorm(outi_c_p_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (1): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d, data_c_p, in_c_p_d);
       art::scalarMultiplyDataData(outi_c_p_d, datainv_c_p, out_c_p_d);
       rst::subtract(outi_c_p_d, in_c_p_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+      auto outi_c_p_d_h = Kokkos::create_mirror_view(outi_c_p_d);
+      Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+      if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (2): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_p, in_c_p_d_d);
       art::scalarMultiplyDataData(outi_c_p_d_d, datainv_c_p, out_c_p_d_d);
       rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+      auto outi_c_p_d_d_h = Kokkos::create_mirror_view(outi_c_p_d_d);
+      Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+      if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (3): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_1, in_c_p_d_d);
       art::scalarMultiplyDataData(outi_c_p_d_d, datainv_c_1, out_c_p_d_d);
       rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+      Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+      if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (4): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -702,16 +749,19 @@ namespace Intrepid2 {
       deep_copy(in_c_p_d_d, 1.0); deep_copy(data_c_p, 5.0); deep_copy(data_c_1, 5.0);
 
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_p, in_c_p_d_d);
-      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - data_c_p(0,0)*in_c_p_d_d(0,0,0,0)*c*p*d1*d2) > tol) {
+      auto out_c_p_d_d_h = Kokkos::create_mirror_view(out_c_p_d_d);
+      Kokkos::deep_copy(out_c_p_d_d_h, out_c_p_d_d);
+      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) - data_c_p(0,0)*in_c_p_d_d(0,0,0,0)*c*p*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (5): check result: "
-                   << rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) << " != "
+                   << rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) << " != "
                    << data_c_p(0,0)*in_c_p_d_d(0,0,0,0)*c*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_1, in_c_p_d_d);
-      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - data_c_1(0,0)*in_c_p_d_d(0,0,0,0)*c*p*d1*d2) > tol) {
+      Kokkos::deep_copy(out_c_p_d_d_h, out_c_p_d_d);
+      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) - data_c_1(0,0)*in_c_p_d_d(0,0,0,0)*c*p*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (6): check result: "
-                   << rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) << " != "
+                   << rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) << " != "
                    << data_c_p(0,0)*in_c_p_d_d(0,0,0,0)*c*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
@@ -772,7 +822,9 @@ namespace Intrepid2 {
       art::scalarMultiplyDataData(outi_c_p, datainv_c_p, out_c_p);
       art::scalarMultiplyDataData(in_c_p, data_c_p_one, in_p);
       rst::subtract(outi_c_p, in_c_p);
-      if (rst::Serial::vectorNorm(outi_c_p, NORM_ONE) > tol) {
+      auto outi_c_p_h = Kokkos::create_mirror_view(outi_c_p);
+      Kokkos::deep_copy(outi_c_p_h, outi_c_p);
+      if (rst::Serial::vectorNorm(outi_c_p_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (1): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -780,7 +832,9 @@ namespace Intrepid2 {
       art::scalarMultiplyDataData(outi_c_p_d, datainv_c_p, out_c_p_d);
       art::scalarMultiplyDataData(in_c_p_d, data_c_p_one, in_p_d);
       rst::subtract(outi_c_p_d, in_c_p_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+      auto outi_c_p_d_h = Kokkos::create_mirror_view(outi_c_p_d);
+      Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+      if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (2): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -788,7 +842,9 @@ namespace Intrepid2 {
       art::scalarMultiplyDataData(outi_c_p_d_d, datainv_c_p, out_c_p_d_d);
       art::scalarMultiplyDataData(in_c_p_d_d, data_c_p_one, in_p_d_d);
       rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+      auto outi_c_p_d_d_h = Kokkos::create_mirror_view(outi_c_p_d_d);
+      Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+      if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (3): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -796,7 +852,8 @@ namespace Intrepid2 {
       art::scalarMultiplyDataData(outi_c_p_d_d, datainv_c_1, out_c_p_d_d);
       art::scalarMultiplyDataData(in_c_p_d_d, data_c_p_one, in_p_d_d);
       rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+      Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+      if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (4): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -805,16 +862,19 @@ namespace Intrepid2 {
       deep_copy(in_p_d_d, 1.0); deep_copy(data_c_p,5.0); deep_copy(data_c_1, 5.0);
 
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_p, in_p_d_d);
-      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - data_c_p(0,0)*in_p_d_d(0,0,0)*c*p*d1*d2) > tol) {
+      auto out_c_p_d_d_h = Kokkos::create_mirror_view(out_c_p_d_d);
+      Kokkos::deep_copy(out_c_p_d_d_h, out_c_p_d_d);
+      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) - data_c_p(0,0)*in_p_d_d(0,0,0)*c*p*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (5): check result: "
-                   << rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) << " != "
+                   << rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) << " != "
                    << data_c_p(0,0)*in_p_d_d(0,0,0)*c*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_1, in_p_d_d);
-      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - data_c_1(0,0)*in_p_d_d(0,0,0)*c*p*d1*d2) > tol) {
+      Kokkos::deep_copy(out_c_p_d_d_h, out_c_p_d_d);
+      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) - data_c_1(0,0)*in_p_d_d(0,0,0)*c*p*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (6): check result: "
-                   << rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) << " != "
+                   << rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) << " != "
                    << data_c_1(0,0)*in_p_d_d(0,0,0)*c*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
@@ -858,28 +918,35 @@ namespace Intrepid2 {
       art::scalarMultiplyDataData(out_c_p, data_c_p, in_c_p, true);
       art::scalarMultiplyDataData(outi_c_p, datainv_c_p, out_c_p, true);
       rst::subtract(outi_c_p, in_c_p);
-      if (rst::Serial::vectorNorm(outi_c_p, NORM_ONE) > tol) {
+      auto outi_c_p_h = Kokkos::create_mirror_view(outi_c_p);
+      Kokkos::deep_copy(outi_c_p_h, outi_c_p);
+      if (rst::Serial::vectorNorm(outi_c_p_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (1): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d, data_c_p, in_c_p_d, true);
       art::scalarMultiplyDataData(outi_c_p_d, datainv_c_p, out_c_p_d, true);
       rst::subtract(outi_c_p_d, in_c_p_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+      auto outi_c_p_d_h = Kokkos::create_mirror_view(outi_c_p_d);
+      Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+      if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (2): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_p, in_c_p_d_d, true);
       art::scalarMultiplyDataData(outi_c_p_d_d, datainv_c_p, out_c_p_d_d, true);
       rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+      auto outi_c_p_d_d_h = Kokkos::create_mirror_view(outi_c_p_d_d);
+      Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+      if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (3): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_1, in_c_p_d_d, true);
       art::scalarMultiplyDataData(outi_c_p_d_d, datainv_c_1, out_c_p_d_d, true);
       rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+      Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+      if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (4): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -888,16 +955,19 @@ namespace Intrepid2 {
       deep_copy(in_c_p_d_d, 1.0); deep_copy(data_c_p,5.0); deep_copy(data_c_1, 5.0);
 
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_p, in_c_p_d_d, true);
-      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - (1.0/data_c_p(0,0))*in_c_p_d_d(0,0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > tol) {
+      auto out_c_p_d_d_h = Kokkos::create_mirror_view(out_c_p_d_d);
+      Kokkos::deep_copy(out_c_p_d_d_h, out_c_p_d_d);
+      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) - (1.0/data_c_p(0,0))*in_c_p_d_d(0,0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (5): check result: "
-                   << rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) << " != "
+                   << rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) << " != "
                    << (1.0/data_c_p(0,0))*in_c_p_d_d(0,0,0,0)*c*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_1, in_c_p_d_d, true);
-      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - (1.0/data_c_1(0,0))*in_c_p_d_d(0,0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > tol) {
+      Kokkos::deep_copy(out_c_p_d_d_h, out_c_p_d_d);
+      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) - (1.0/data_c_1(0,0))*in_c_p_d_d(0,0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (6): check result: "
-                   << rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) << " != "
+                   << rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) << " != "
                    << (1.0/data_c_p(0,0))*in_c_p_d_d(0,0,0,0)*c*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
@@ -957,7 +1027,9 @@ namespace Intrepid2 {
         art::scalarMultiplyDataData(outi_c_p, datainv_c_p, out_c_p, true);
         art::scalarMultiplyDataData(in_c_p, data_c_p_one, in_p);
         rst::subtract(outi_c_p, in_c_p);
-        if (rst::Serial::vectorNorm(outi_c_p, NORM_ONE) > tol) {
+        auto outi_c_p_h = Kokkos::create_mirror_view(outi_c_p);
+        Kokkos::deep_copy(outi_c_p_h, outi_c_p);
+        if (rst::Serial::vectorNorm(outi_c_p_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT scalarMultiplyDataData (1): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -965,7 +1037,9 @@ namespace Intrepid2 {
         art::scalarMultiplyDataData(outi_c_p_d, datainv_c_p, out_c_p_d, true);
         art::scalarMultiplyDataData(in_c_p_d, data_c_p_one, in_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
+        auto outi_c_p_d_h = Kokkos::create_mirror_view(outi_c_p_d);
+        Kokkos::deep_copy(outi_c_p_d_h, outi_c_p_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT scalarMultiplyDataData (2): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -973,7 +1047,9 @@ namespace Intrepid2 {
         art::scalarMultiplyDataData(outi_c_p_d_d, datainv_c_p, out_c_p_d_d, true);
         art::scalarMultiplyDataData(in_c_p_d_d, data_c_p_one, in_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        auto outi_c_p_d_d_h = Kokkos::create_mirror_view(outi_c_p_d_d);
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT scalarMultiplyDataData (3): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -981,7 +1057,8 @@ namespace Intrepid2 {
         art::scalarMultiplyDataData(outi_c_p_d_d, datainv_c_1, out_c_p_d_d, true);
         art::scalarMultiplyDataData(in_c_p_d_d, data_c_p_one, in_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(outi_c_p_d_d_h, outi_c_p_d_d);
+        if (rst::Serial::vectorNorm(outi_c_p_d_d_h, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT scalarMultiplyDataData (4): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -990,16 +1067,19 @@ namespace Intrepid2 {
         deep_copy(in_p_d_d, 1.0); deep_copy(data_c_p,5.0); deep_copy(data_c_1, 5.0);
 
         art::scalarMultiplyDataData(out_c_p_d_d, data_c_p, in_p_d_d, true);
-        if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - (1.0/data_c_p(0,0))*in_p_d_d(0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > tol) {
+        auto out_c_p_d_d_h = Kokkos::create_mirror_view(out_c_p_d_d);
+        Kokkos::deep_copy(out_c_p_d_d_h, out_c_p_d_d);
+        if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) - (1.0/data_c_p(0,0))*in_p_d_d(0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT scalarMultiplyDataData (5): check result: "
-                     << rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) << " != "
+                     << rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) << " != "
                      << (1.0/data_c_p(0,0))*in_p_d_d(0,0,0)*c*p*d1*d2 << "\n\n";
           errorFlag = -1000;
         }
         art::scalarMultiplyDataData(out_c_p_d_d, data_c_1, in_p_d_d, true);
-        if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - (1.0/data_c_1(0,0))*in_p_d_d(0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > tol) {
+        Kokkos::deep_copy(out_c_p_d_d_h, out_c_p_d_d);
+        if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) - (1.0/data_c_1(0,0))*in_p_d_d(0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT scalarMultiplyDataData (6): check result: "
-                     << rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) << " != "
+                     << rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) << " != "
                      << (1.0/data_c_1(0,0))*in_p_d_d(0,0,0)*c*p*d1*d2 << "\n\n";
           errorFlag = -1000;
         }

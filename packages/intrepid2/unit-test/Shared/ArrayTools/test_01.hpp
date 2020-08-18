@@ -365,9 +365,11 @@ namespace Intrepid2 {
           art::contractFieldFieldScalar(out1_c_l_r, in_c_l_p, in_c_r_p);
           art::contractFieldFieldScalar(out2_c_l_r, in_c_l_p, in_c_r_p);
           rst::subtract(out1_c_l_r, out2_c_l_r);
-          if (rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) > tol) {
+          auto out1_c_l_r_h = Kokkos::create_mirror_view(out1_c_l_r);
+          Kokkos::deep_copy(out1_c_l_r_h, out1_c_l_r);
+          if (rst::Serial::vectorNorm(out1_c_l_r_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractFieldFieldScalar (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           // with sumInto:
@@ -381,9 +383,10 @@ namespace Intrepid2 {
           art::contractFieldFieldScalar(out1_c_l_r, in_c_l_p, in_c_r_p, true);
           art::contractFieldFieldScalar(out2_c_l_r, in_c_l_p, in_c_r_p, true);
           rst::subtract(out1_c_l_r, out2_c_l_r);
-          if (rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_r_h, out1_c_l_r);
+          if (rst::Serial::vectorNorm(out1_c_l_r_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractFieldFieldScalar (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope
@@ -415,9 +418,11 @@ namespace Intrepid2 {
           art::contractFieldFieldVector(out2_c_l_r, in_c_l_p_d, in_c_r_p_d);
 
           rst::subtract(out1_c_l_r, out2_c_l_r);
-          if (rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) > tol) {
+          auto out1_c_l_r_h = Kokkos::create_mirror_view(out1_c_l_r);
+          Kokkos::deep_copy(out1_c_l_r_h, out1_c_l_r);
+          if (rst::Serial::vectorNorm(out1_c_l_r_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractFieldFieldVector (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
 
@@ -433,9 +438,10 @@ namespace Intrepid2 {
           art::contractFieldFieldVector(out2_c_l_r, in_c_l_p_d, in_c_r_p_d, true);
 
           rst::subtract(out1_c_l_r, out2_c_l_r);
-          if (rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_r_h, out1_c_l_r);
+          if (rst::Serial::vectorNorm(out1_c_l_r_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractFieldFieldVector (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope
@@ -468,9 +474,11 @@ namespace Intrepid2 {
           art::contractFieldFieldTensor(out2_c_l_r, in_c_l_p_d_d, in_c_r_p_d_d);
 
           rst::subtract(out1_c_l_r, out2_c_l_r);
-          if (rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) > tol) {
+          auto out1_c_l_r_h = Kokkos::create_mirror_view(out1_c_l_r);
+          Kokkos::deep_copy(out1_c_l_r_h, out1_c_l_r);
+          if (rst::Serial::vectorNorm(out1_c_l_r_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractFieldFieldTensor (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
 
@@ -486,9 +494,10 @@ namespace Intrepid2 {
           art::contractFieldFieldTensor(out2_c_l_r, in_c_l_p_d_d, in_c_r_p_d_d, true);
 
           rst::subtract(out1_c_l_r, out2_c_l_r);
-          if (rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_r_h, out1_c_l_r);
+          if (rst::Serial::vectorNorm(out1_c_l_r_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractFieldFieldTensor (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope
@@ -519,18 +528,21 @@ namespace Intrepid2 {
           art::contractDataFieldScalar(out1_c_l, data_c_p, in_c_l_p);
           art::contractDataFieldScalar(out2_c_l, data_c_p, in_c_l_p);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l, NORM_ONE) > tol) {
+          auto out1_c_l_h = Kokkos::create_mirror_view(out1_c_l);
+          Kokkos::deep_copy(out1_c_l_h, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldScalar (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           // constant data
           art::contractDataFieldScalar(out1_c_l, data_c_1, in_c_l_p);
           art::contractDataFieldScalar(out2_c_l, data_c_1, in_c_l_p);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_h, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldScalar (2): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           // nonconstant data with sumInto
@@ -541,9 +553,10 @@ namespace Intrepid2 {
           art::contractDataFieldScalar(out1_c_l, data_c_p, in_c_l_p, true);
           art::contractDataFieldScalar(out2_c_l, data_c_p, in_c_l_p, true);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_h, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldScalar (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope
@@ -577,18 +590,21 @@ namespace Intrepid2 {
           art::contractDataFieldVector(out1_c_l, data_c_p_d, in_c_l_p_d);
           art::contractDataFieldVector(out2_c_l, data_c_p_d, in_c_l_p_d);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l, NORM_ONE) > tol) {
+          auto out1_c_l_h = Kokkos::create_mirror_view(out1_c_l);
+          Kokkos::deep_copy(out1_c_l_h, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldVector (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           // constant data
           art::contractDataFieldVector(out1_c_l, data_c_1_d, in_c_l_p_d);
           art::contractDataFieldVector(out2_c_l, data_c_1_d, in_c_l_p_d);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_h, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldVector (2): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           // nonconstant data with sumInto
@@ -603,9 +619,10 @@ namespace Intrepid2 {
           art::contractDataFieldVector(out1_c_l, data_c_p_d, in_c_l_p_d, true);
           art::contractDataFieldVector(out2_c_l, data_c_p_d, in_c_l_p_d, true);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l,NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_h, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_h,NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldVector (3): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope
@@ -642,9 +659,11 @@ namespace Intrepid2 {
           art::contractDataFieldTensor(out1_c_l, data_c_p_d_d, in_c_l_p_d_d);
           art::contractDataFieldTensor(out2_c_l, data_c_p_d_d, in_c_l_p_d_d);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l, NORM_ONE) > tol) {
+          auto out1_c_l_h = Kokkos::create_mirror_view(out1_c_l);
+          Kokkos::deep_copy(out1_c_l_h, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldTensor (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
 
@@ -652,9 +671,10 @@ namespace Intrepid2 {
           art::contractDataFieldTensor(out1_c_l, data_c_1_d_d, in_c_l_p_d_d);
           art::contractDataFieldTensor(out2_c_l, data_c_1_d_d, in_c_l_p_d_d);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_h, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldTensor (2): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
 
@@ -668,9 +688,10 @@ namespace Intrepid2 {
           art::contractDataFieldTensor(out1_c_l, data_c_p_d_d, in_c_l_p_d_d, true);
           art::contractDataFieldTensor(out2_c_l, data_c_p_d_d, in_c_l_p_d_d, true);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_h, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldTensor (3): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope
@@ -695,9 +716,11 @@ namespace Intrepid2 {
           art::contractDataDataScalar(out1_c, inl_c_p, inr_c_p);
           art::contractDataDataScalar(out2_c, inl_c_p, inr_c_p);
           rst::subtract(out1_c, out2_c);
-          if (rst::Serial::vectorNorm(out1_c, NORM_ONE) > tol) {
+          auto out1_c_h = Kokkos::create_mirror_view(out1_c);
+          Kokkos::deep_copy(out1_c_h, out1_c);
+          if (rst::Serial::vectorNorm(out1_c_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataDataScalar (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           // with sumInto:
@@ -709,9 +732,10 @@ namespace Intrepid2 {
           art::contractDataDataScalar(out1_c, inl_c_p, inr_c_p, true);
           art::contractDataDataScalar(out2_c, inl_c_p, inr_c_p, true);
           rst::subtract(out1_c, out2_c);
-          if (rst::Serial::vectorNorm(out1_c, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_h, out1_c);
+          if (rst::Serial::vectorNorm(out1_c_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataDataScalar (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope
@@ -738,9 +762,11 @@ namespace Intrepid2 {
           art::contractDataDataVector(out2_c, inl_c_p_d, inr_c_p_d);
 
           rst::subtract(out1_c, out2_c);
-          if (rst::Serial::vectorNorm(out1_c, NORM_ONE) > tol) {
+          auto out1_c_h = Kokkos::create_mirror_view(out1_c);
+          Kokkos::deep_copy(out1_c_h, out1_c);
+          if (rst::Serial::vectorNorm(out1_c_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataDataVector (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
 
@@ -754,9 +780,10 @@ namespace Intrepid2 {
           art::contractDataDataVector(out2_c, inl_c_p_d, inr_c_p_d, true);
 
           rst::subtract(out1_c, out2_c);
-          if (rst::Serial::vectorNorm(out1_c, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_h, out1_c);
+          if (rst::Serial::vectorNorm(out1_c_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataDataVector (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope
@@ -784,9 +811,11 @@ namespace Intrepid2 {
           art::contractDataDataTensor(out2_c, inl_c_p_d_d, inr_c_p_d_d);
 
           rst::subtract(out1_c, out2_c);
-          if (rst::Serial::vectorNorm(out1_c, NORM_ONE) > tol) {
+          auto out1_c_h = Kokkos::create_mirror_view(out1_c);
+          Kokkos::deep_copy(out1_c_h, out1_c);
+          if (rst::Serial::vectorNorm(out1_c_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataDataTensor (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
 
@@ -800,9 +829,10 @@ namespace Intrepid2 {
           art::contractDataDataTensor(out2_c, inl_c_p_d_d, inr_c_p_d_d, true);
 
           rst::subtract(out1_c, out2_c);
-          if (rst::Serial::vectorNorm(out1_c, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_h, out1_c);
+          if (rst::Serial::vectorNorm(out1_c_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataDataTensor (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_h, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope
