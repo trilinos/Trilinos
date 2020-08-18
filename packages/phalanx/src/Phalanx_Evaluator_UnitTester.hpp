@@ -105,6 +105,11 @@ public:
     field_manager_.template postEvaluate<EvalType>(post_eval_data);
   }
 
+  void setKokkosExtendedDataTypeDimensions(const std::vector<PHX::index_size_type>& dims)
+  {
+    field_manager_.template setKokkosExtendedDataTypeDimensions<EvalType>(dims);
+  }
+
   //! Check the field values to a specified tolerance for a rank 1 MDField
   template<typename FieldType>
   void checkFloatValues1(const FieldType& gold_field,
