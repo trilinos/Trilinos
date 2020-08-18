@@ -317,21 +317,29 @@ namespace Intrepid2 {
       // fill with constants
       deep_copy(in_c_f_p_d_d, 1.0); deep_copy(data_c_p,5.0); deep_copy(data_c_1, 5.0);
 
+      auto data_c_p_h = Kokkos::create_mirror_view(data_c_p);
+      Kokkos::deep_copy(data_c_p_h, data_c_p);
+      auto in_c_f_p_d_d_h = Kokkos::create_mirror_view(in_c_f_p_d_d);
+      Kokkos::deep_copy(in_c_f_p_d_d_h, in_c_f_p_d_d);
+      auto data_c_1_h = Kokkos::create_mirror_view(data_c_1);
+      Kokkos::deep_copy(data_c_1_h, data_c_1);
+
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_p, in_c_f_p_d_d);
       auto out_c_f_p_d_d_h = Kokkos::create_mirror_view(out_c_f_p_d_d);
       Kokkos::deep_copy(out_c_f_p_d_d_h, out_c_f_p_d_d);
       if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) - data_c_p(0,0)*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (5): check result: "
                    << rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) << " != "
-                   << data_c_p(0,0)*in_c_f_p_d_d(0,0,0,0,0)*c*f*p*d1*d2 << "\n\n";
+                   << data_c_p_h(0,0)*in_c_f_p_d_d_h(0,0,0,0,0)*c*f*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
+
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_1, in_c_f_p_d_d);
       Kokkos::deep_copy(out_c_f_p_d_d_h, out_c_f_p_d_d);
       if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) - data_c_1(0,0)*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (6): check result: "
                    << rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) << " != "
-                   << data_c_1(0,0)*in_c_f_p_d_d(0,0)*c*f*p*d1*d2 << "\n\n";
+                   << data_c_1_h(0,0)*in_c_f_p_d_d_h(0,0)*c*f*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       } // end scope
@@ -434,21 +442,29 @@ namespace Intrepid2 {
       // fill with constants
       deep_copy(in_f_p_d_d, 1.0); deep_copy(data_c_p, 5.0); deep_copy(data_c_1, 5.0);
 
+      auto data_c_p_h = Kokkos::create_mirror_view(data_c_p);
+      Kokkos::deep_copy(data_c_p_h, data_c_p);
+      auto in_f_p_d_d_h = Kokkos::create_mirror_view(in_f_p_d_d);
+      Kokkos::deep_copy(in_f_p_d_d_h, in_f_p_d_d);
+      auto data_c_1_h = Kokkos::create_mirror_view(data_c_1);
+      Kokkos::deep_copy(data_c_1_h, data_c_1);
+
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_p, in_f_p_d_d);
       auto out_c_f_p_d_d_h = Kokkos::create_mirror_view(out_c_f_p_d_d);
       Kokkos::deep_copy(out_c_f_p_d_d_h, out_c_f_p_d_d);
       if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) - data_c_p(0,0)*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (5): check result: "
                    << rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) << " != "
-                   << data_c_p(0,0)*in_f_p_d_d(0,0,0,0)*c*f*p*d1*d2 << "\n\n";
+                   << data_c_p_h(0,0)*in_f_p_d_d_h(0,0,0,0)*c*f*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
+
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_1, in_f_p_d_d);
       Kokkos::deep_copy(out_c_f_p_d_d_h, out_c_f_p_d_d);
       if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) - data_c_1(0,0)*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (6): check result: "
                    << rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) << " != "
-                   << data_c_1(0,0)*in_f_p_d_d(0,0,0,0)*c*f*p*d1*d2 << "\n\n";
+                   << data_c_1_h(0,0)*in_f_p_d_d_h(0,0,0,0)*c*f*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       } // end scope
@@ -533,13 +549,20 @@ namespace Intrepid2 {
       // fill with constants
       deep_copy(in_c_f_p_d_d, 1.0); deep_copy(data_c_p, 5.0); deep_copy(data_c_1, 5.0);
 
+      auto data_c_p_h = Kokkos::create_mirror_view(data_c_p);
+      Kokkos::deep_copy(data_c_p_h, data_c_p);
+      auto in_c_f_p_d_d_h = Kokkos::create_mirror_view(in_c_f_p_d_d);
+      Kokkos::deep_copy(in_c_f_p_d_d_h, in_c_f_p_d_d);
+      auto data_c_1_h = Kokkos::create_mirror_view(data_c_1);
+      Kokkos::deep_copy(data_c_1_h, data_c_1);
+
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_p, in_c_f_p_d_d, true);
       auto out_c_f_p_d_d_h = Kokkos::create_mirror_view(out_c_f_p_d_d);
       Kokkos::deep_copy(out_c_f_p_d_d_h, out_c_f_p_d_d);
       if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) - (1.0/data_c_p(0,0))*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (5): check result: "
                    << rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) << " != "
-                   << (1.0/data_c_p(0,0))*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2 << "\n\n";
+                   << (1.0/data_c_p_h(0,0))*in_c_f_p_d_d_h(0,0,0,0,0)*c*p*f*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_1, in_c_f_p_d_d, true);
@@ -547,7 +570,7 @@ namespace Intrepid2 {
       if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) - (1.0/data_c_1(0,0))*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (6): check result: "
                    << rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) << " != "
-                   << (1.0/data_c_p(0,0))*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2 << "\n\n";
+                   << (1.0/data_c_1_h(0,0))*in_c_f_p_d_d_h(0,0,0,0,0)*c*p*f*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       } // end scope
@@ -651,13 +674,20 @@ namespace Intrepid2 {
       // fill with constants
       deep_copy(in_f_p_d_d, 1.0); deep_copy(data_c_p, 5.0); deep_copy(data_c_1, 5.0);
 
+      auto data_c_p_h = Kokkos::create_mirror_view(data_c_p);
+      Kokkos::deep_copy(data_c_p_h, data_c_p);
+      auto in_f_p_d_d_h = Kokkos::create_mirror_view(in_f_p_d_d);
+      Kokkos::deep_copy(in_f_p_d_d_h, in_f_p_d_d);
+      auto data_c_1_h = Kokkos::create_mirror_view(data_c_1);
+      Kokkos::deep_copy(data_c_1_h, data_c_1);
+
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_p, in_f_p_d_d, true);
       auto out_c_f_p_d_d_h = Kokkos::create_mirror_view(out_c_f_p_d_d);
       Kokkos::deep_copy(out_c_f_p_d_d_h, out_c_f_p_d_d);
       if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) - (1.0/data_c_p(0,0))*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (5): check result: "
                    << rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) << " != "
-                   << (1.0/data_c_p(0,0))*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2 << "\n\n";
+                   << (1.0/data_c_p_h(0,0))*in_f_p_d_d_h(0,0,0,0)*c*p*f*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_1, in_f_p_d_d, true);
@@ -665,7 +695,7 @@ namespace Intrepid2 {
       if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) - (1.0/data_c_1(0,0))*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (6): check result: "
                    << rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) << " != "
-                   << (1.0/data_c_1(0,0))*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2 << "\n\n";
+                   << (1.0/data_c_1_h(0,0))*in_f_p_d_d_h(0,0,0,0)*c*p*f*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       } // end scope
@@ -748,13 +778,20 @@ namespace Intrepid2 {
       // fill with constants
       deep_copy(in_c_p_d_d, 1.0); deep_copy(data_c_p, 5.0); deep_copy(data_c_1, 5.0);
 
+      auto data_c_p_h = Kokkos::create_mirror_view(data_c_p);
+      Kokkos::deep_copy(data_c_p_h, data_c_p);
+      auto in_c_p_d_d_h = Kokkos::create_mirror_view(in_c_p_d_d);
+      Kokkos::deep_copy(in_c_p_d_d_h, in_c_p_d_d);
+      auto data_c_1_h = Kokkos::create_mirror_view(data_c_1);
+      Kokkos::deep_copy(data_c_1_h, data_c_1);
+
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_p, in_c_p_d_d);
       auto out_c_p_d_d_h = Kokkos::create_mirror_view(out_c_p_d_d);
       Kokkos::deep_copy(out_c_p_d_d_h, out_c_p_d_d);
       if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) - data_c_p(0,0)*in_c_p_d_d(0,0,0,0)*c*p*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (5): check result: "
                    << rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) << " != "
-                   << data_c_p(0,0)*in_c_p_d_d(0,0,0,0)*c*p*d1*d2 << "\n\n";
+                   << data_c_p_h(0,0)*in_c_p_d_d_h(0,0,0,0)*c*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_1, in_c_p_d_d);
@@ -762,7 +799,7 @@ namespace Intrepid2 {
       if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) - data_c_1(0,0)*in_c_p_d_d(0,0,0,0)*c*p*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (6): check result: "
                    << rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) << " != "
-                   << data_c_p(0,0)*in_c_p_d_d(0,0,0,0)*c*p*d1*d2 << "\n\n";
+                   << data_c_1_h(0,0)*in_c_p_d_d_h(0,0,0,0)*c*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       } // end scope
@@ -861,13 +898,20 @@ namespace Intrepid2 {
       // fill with constants
       deep_copy(in_p_d_d, 1.0); deep_copy(data_c_p,5.0); deep_copy(data_c_1, 5.0);
 
+      auto data_c_p_h = Kokkos::create_mirror_view(data_c_p);
+      Kokkos::deep_copy(data_c_p_h, data_c_p);
+      auto in_p_d_d_h = Kokkos::create_mirror_view(in_p_d_d);
+      Kokkos::deep_copy(in_p_d_d_h, in_p_d_d);
+      auto data_c_1_h = Kokkos::create_mirror_view(data_c_1);
+      Kokkos::deep_copy(data_c_1_h, data_c_1);
+
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_p, in_p_d_d);
       auto out_c_p_d_d_h = Kokkos::create_mirror_view(out_c_p_d_d);
       Kokkos::deep_copy(out_c_p_d_d_h, out_c_p_d_d);
       if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) - data_c_p(0,0)*in_p_d_d(0,0,0)*c*p*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (5): check result: "
                    << rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) << " != "
-                   << data_c_p(0,0)*in_p_d_d(0,0,0)*c*p*d1*d2 << "\n\n";
+                   << data_c_p_h(0,0)*in_p_d_d_h(0,0,0)*c*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_1, in_p_d_d);
@@ -875,7 +919,7 @@ namespace Intrepid2 {
       if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) - data_c_1(0,0)*in_p_d_d(0,0,0)*c*p*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (6): check result: "
                    << rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) << " != "
-                   << data_c_1(0,0)*in_p_d_d(0,0,0)*c*p*d1*d2 << "\n\n";
+                   << data_c_1_h(0,0)*in_p_d_d_h(0,0,0)*c*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       } // end scope
@@ -954,13 +998,20 @@ namespace Intrepid2 {
       // fill with constants
       deep_copy(in_c_p_d_d, 1.0); deep_copy(data_c_p,5.0); deep_copy(data_c_1, 5.0);
 
+      auto data_c_p_h = Kokkos::create_mirror_view(data_c_p);
+      Kokkos::deep_copy(data_c_p_h, data_c_p);
+      auto in_c_p_d_d_h = Kokkos::create_mirror_view(in_c_p_d_d);
+      Kokkos::deep_copy(in_c_p_d_d_h, in_c_p_d_d);
+      auto data_c_1_h = Kokkos::create_mirror_view(data_c_1);
+      Kokkos::deep_copy(data_c_1_h, data_c_1);
+
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_p, in_c_p_d_d, true);
       auto out_c_p_d_d_h = Kokkos::create_mirror_view(out_c_p_d_d);
       Kokkos::deep_copy(out_c_p_d_d_h, out_c_p_d_d);
       if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) - (1.0/data_c_p(0,0))*in_c_p_d_d(0,0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (5): check result: "
                    << rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) << " != "
-                   << (1.0/data_c_p(0,0))*in_c_p_d_d(0,0,0,0)*c*p*d1*d2 << "\n\n";
+                   << (1.0/data_c_p_h(0,0))*in_c_p_d_d_h(0,0,0,0)*c*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_1, in_c_p_d_d, true);
@@ -968,7 +1019,7 @@ namespace Intrepid2 {
       if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) - (1.0/data_c_1(0,0))*in_c_p_d_d(0,0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (6): check result: "
                    << rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) << " != "
-                   << (1.0/data_c_p(0,0))*in_c_p_d_d(0,0,0,0)*c*p*d1*d2 << "\n\n";
+                   << (1.0/data_c_1_h(0,0))*in_c_p_d_d_h(0,0,0,0)*c*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       } // end scope
@@ -1066,13 +1117,20 @@ namespace Intrepid2 {
         // fill with constants
         deep_copy(in_p_d_d, 1.0); deep_copy(data_c_p,5.0); deep_copy(data_c_1, 5.0);
 
+        auto data_c_p_h = Kokkos::create_mirror_view(data_c_p);
+        Kokkos::deep_copy(data_c_p_h, data_c_p);
+        auto in_p_d_d_h = Kokkos::create_mirror_view(in_p_d_d);
+        Kokkos::deep_copy(in_p_d_d_h, in_p_d_d);
+        auto data_c_1_h = Kokkos::create_mirror_view(data_c_1);
+        Kokkos::deep_copy(data_c_1_h, data_c_1);
+
         art::scalarMultiplyDataData(out_c_p_d_d, data_c_p, in_p_d_d, true);
         auto out_c_p_d_d_h = Kokkos::create_mirror_view(out_c_p_d_d);
         Kokkos::deep_copy(out_c_p_d_d_h, out_c_p_d_d);
         if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) - (1.0/data_c_p(0,0))*in_p_d_d(0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT scalarMultiplyDataData (5): check result: "
                      << rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) << " != "
-                     << (1.0/data_c_p(0,0))*in_p_d_d(0,0,0)*c*p*d1*d2 << "\n\n";
+                     << (1.0/data_c_p_h(0,0))*in_p_d_d_h(0,0,0)*c*p*d1*d2 << "\n\n";
           errorFlag = -1000;
         }
         art::scalarMultiplyDataData(out_c_p_d_d, data_c_1, in_p_d_d, true);
@@ -1080,7 +1138,7 @@ namespace Intrepid2 {
         if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) - (1.0/data_c_1(0,0))*in_p_d_d(0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT scalarMultiplyDataData (6): check result: "
                      << rst::Serial::vectorNorm(out_c_p_d_d_h, NORM_ONE) << " != "
-                     << (1.0/data_c_1(0,0))*in_p_d_d(0,0,0)*c*p*d1*d2 << "\n\n";
+                     << (1.0/data_c_1_h(0,0))*in_p_d_d_h(0,0,0)*c*p*d1*d2 << "\n\n";
           errorFlag = -1000;
         }
         } // end scope
