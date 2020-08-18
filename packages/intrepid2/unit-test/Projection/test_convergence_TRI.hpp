@@ -374,6 +374,7 @@ int ConvergenceTri(const bool verbose) {
           Basis_HGRAD_TRI_C1_FEM<DeviceSpaceType,ValueType,ValueType> triLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(triLinearBasisValuesAtRefCoords, tri.getNodeCount(), numRefCoords);
           triLinearBasis.getValues(triLinearBasisValuesAtRefCoords, refPoints);
+          DeviceSpaceType().fence();
           for(ordinal_type i=0; i<numElems; ++i)
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
@@ -428,6 +429,7 @@ int ConvergenceTri(const bool verbose) {
               triLinearBasis.getValues(triLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
               if(numGradPoints>0)
                 triLinearBasis.getValues(triLinearBasisValuesAtEvalGradPoints, Kokkos::subview(evaluationGradPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              DeviceSpaceType().fence();
               for(ordinal_type d=0; d<dim; ++d) {
                 for(std::size_t k=0; k<tri.getNodeCount(); ++k) {
                   for(ordinal_type j=0; j<numPoints; ++j)
@@ -577,6 +579,7 @@ int ConvergenceTri(const bool verbose) {
           Basis_HGRAD_TRI_C1_FEM<DeviceSpaceType,ValueType,ValueType> triLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(triLinearBasisValuesAtRefCoords, tri.getNodeCount(), numRefCoords);
           triLinearBasis.getValues(triLinearBasisValuesAtRefCoords, refPoints);
+          DeviceSpaceType().fence();
           for(ordinal_type i=0; i<numElems; ++i)
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
@@ -629,6 +632,7 @@ int ConvergenceTri(const bool verbose) {
             for(ordinal_type i=0; i<numElems; ++i) {
               triLinearBasis.getValues(triLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
               triLinearBasis.getValues(triLinearBasisValuesAtEvalCurlPoints, Kokkos::subview(evaluationCurlPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              DeviceSpaceType().fence();
               for(ordinal_type d=0; d<dim; ++d) {
                 for(std::size_t k=0; k<tri.getNodeCount(); ++k) {
                   for(ordinal_type j=0; j<numPoints; ++j)
@@ -785,6 +789,7 @@ int ConvergenceTri(const bool verbose) {
           Basis_HGRAD_TRI_C1_FEM<DeviceSpaceType,ValueType,ValueType> triLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(triLinearBasisValuesAtRefCoords, tri.getNodeCount(), numRefCoords);
           triLinearBasis.getValues(triLinearBasisValuesAtRefCoords, refPoints);
+          DeviceSpaceType().fence();
           for(ordinal_type i=0; i<numElems; ++i)
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
@@ -837,6 +842,7 @@ int ConvergenceTri(const bool verbose) {
             for(ordinal_type i=0; i<numElems; ++i) {
               triLinearBasis.getValues(triLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
               triLinearBasis.getValues(triLinearBasisValuesAtEvalDivPoints, Kokkos::subview(evaluationDivPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              DeviceSpaceType().fence();
               for(ordinal_type d=0; d<dim; ++d) {
                 for(std::size_t k=0; k<tri.getNodeCount(); ++k) {
                   for(ordinal_type j=0; j<numPoints; ++j)
@@ -998,6 +1004,7 @@ int ConvergenceTri(const bool verbose) {
           Basis_HGRAD_TRI_C1_FEM<DeviceSpaceType,ValueType,ValueType> triLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(triLinearBasisValuesAtRefCoords, tri.getNodeCount(), numRefCoords);
           triLinearBasis.getValues(triLinearBasisValuesAtRefCoords, refPoints);
+          DeviceSpaceType().fence();
           for(ordinal_type i=0; i<numElems; ++i)
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
@@ -1040,6 +1047,7 @@ int ConvergenceTri(const bool verbose) {
 
             for(ordinal_type i=0; i<numElems; ++i) {
               triLinearBasis.getValues(triLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              DeviceSpaceType().fence();
               for(ordinal_type d=0; d<dim; ++d) {
                 for(std::size_t k=0; k<tri.getNodeCount(); ++k) {
                   for(ordinal_type j=0; j<numPoints; ++j)
