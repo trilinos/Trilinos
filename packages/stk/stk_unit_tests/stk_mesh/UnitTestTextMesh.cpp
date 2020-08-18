@@ -9,6 +9,7 @@
 #include <stk_io/IossBridge.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
+#include <stk_unit_test_utils/GetMeshSpec.hpp>
 
 namespace {
 
@@ -1022,6 +1023,34 @@ TEST_F(TestTextMesh1d, oneDimensionNotSupported)
 
   std::string meshDesc = "0,1,LINE_2_1D,1,2";
   EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
+}
+
+void test_get_mesh_spec(unsigned blockCountToDist, const std::vector<unsigned>& numProcs,
+                        const std::vector<std::vector<unsigned>>& expectedDist)
+{
+  EXPECT_EQ(numProcs.size(), expectedDist.size());
+
+  for(unsigned i = 0; i < numProcs.size(); i++) {
+    unsigned procCount = numProcs[i];
+    std::vector<unsigned> procs;
+    stk::unit_test_util::get_block_proc_distribution(blockCountToDist, procCount, procs);
+
+    EXPECT_EQ(expectedDist[i].size(), procs.size());
+    for(unsigned j = 0; j < procs.size(); j++) {
+      EXPECT_EQ(expectedDist[i][j], procs[j]) << "i,j: (" << i << ", " << j << ")";
+    }
+  }
+}
+
+TEST(GetMeshSpecTest, TestGetMeshSpecWithMultiProc)
+{
+  unsigned blockCountToDist = 6;
+  std::vector<unsigned> numProcs = {1,2,4,6};
+  std::vector<std::vector<unsigned>> expectedDist = { {0,0,0,0,0,0},
+                                                      {0,0,0,1,1,1},
+                                                      {0,0,1,1,2,3},
+                                                      {0,1,2,3,4,5} };
+  test_get_mesh_spec(blockCountToDist, numProcs, expectedDist);
 }
 
 } // namespace

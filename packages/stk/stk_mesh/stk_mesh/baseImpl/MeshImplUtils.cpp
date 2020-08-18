@@ -1542,6 +1542,32 @@ void check_declare_element_side_inputs(const BulkData & mesh,
           << localSideId << ", No element topology found");
 }
 
+bool connect_edge_to_elements_impl(stk::mesh::BulkData& bulk, stk::mesh::Entity edge)
+{
+  const stk::mesh::Entity* nodes = bulk.begin_nodes(edge);
+  unsigned numNodes = bulk.num_nodes(edge);
+  stk::mesh::EntityVector elems;
+  stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk, stk::topology::ELEM_RANK, numNodes, nodes, elems);
+
+  stk::mesh::EntityVector edgeNodes(bulk.begin_nodes(edge), bulk.end_nodes(edge));
+  stk::topology edgeTopo = bulk.bucket(edge).topology();
+  for(stk::mesh::Entity elem : elems) {
+    stk::mesh::OrdinalAndPermutation ordinalAndPerm = stk::mesh::get_ordinal_and_permutation(bulk, elem,
+                                                                                            stk::topology::EDGE_RANK, edgeNodes);
+
+    if(ordinalAndPerm.first == stk::mesh::INVALID_CONNECTIVITY_ORDINAL) { return false; }
+    
+    stk::mesh::impl::connect_element_to_entity(bulk, elem, edge, ordinalAndPerm.first, stk::mesh::PartVector{}, edgeTopo);
+  }
+  return true;
+}
+
+void connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge)
+{
+  ThrowRequireMsg(connect_edge_to_elements_impl(bulk, edge),
+                  "Edge with id: " << bulk.identifier(edge) << " has no valid connectivity to elements");
+}
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

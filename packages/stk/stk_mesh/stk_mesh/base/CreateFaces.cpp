@@ -61,6 +61,7 @@
 
 #include "stk_util/util/NamedPair.hpp"  // for EntityCommInfo::operator=, etc
 #include <stk_mesh/base/CreateEdges.hpp>
+#include <stk_mesh/baseImpl/ConnectEdgesImpl.hpp>
 
 
 

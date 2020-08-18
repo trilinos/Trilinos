@@ -30,31 +30,34 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
 
-#ifndef stk_mesh_CreateEdges_hpp
-#define stk_mesh_CreateEdges_hpp
+#ifndef CONNECT_EDGES_IMPL_HPP
+#define CONNECT_EDGES_IMPL_HPP
 
-#include <stk_mesh/base/Types.hpp>      // for EntityVector, etc
+#include <stk_topology/topology.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>
+#include <stk_mesh/base/Selector.hpp>
+#include <stk_mesh/base/Types.hpp>
+#include <unordered_map>
+
+namespace stk { namespace mesh { class BulkData; }}
 
 namespace stk {
-  namespace mesh {
-    class BulkData;
-    class Selector;
-    class Part;
+namespace mesh {
+namespace impl {
+  typedef std::unordered_map<EntityVector, Entity, HashValueForEntityVector> edge_map_type;
 
-    /** Create all the edges in the mesh and attach them to
-     * existing elements and defined faces.
-     *
-     * This is a parallel collective function (it should be called on all
-     * processors at the same time
-     *
-     */
-    void create_edges(  BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges = nullptr );
+  void connect_faces_to_edges(BulkData & mesh,
+                              const Selector & element_selector,
+                              edge_map_type edge_map);
 
-    void create_edges( BulkData & mesh );
-  }
+  void connect_face_to_edges(BulkData& bulk, Entity face);
 }
+
+}
+}
+
 #endif
+
 
