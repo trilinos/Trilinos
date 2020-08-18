@@ -365,7 +365,8 @@ void StepperDIRK<Scalar>::takeStep(
       // compute: || ee / sc ||
       assign(this->sc.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
       Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *this->ee_, *this->abs_u, this->sc.ptr());
-      Scalar err = std::abs(Thyra::norm_inf(*this->sc));
+      const auto space_dim = this->ee_->space()->dim();
+      Scalar err = std::abs(Thyra::norm(*this->sc)) / space_dim ;
       workingState->setErrorRel(err);
 
       // test if step should be rejected
