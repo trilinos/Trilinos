@@ -206,7 +206,7 @@ private:
 };
 
 template<typename COMM, typename PACK_ALGORITHM>
-void pack_and_communicate(COMM & comm, const PACK_ALGORITHM & algorithm)
+bool pack_and_communicate(COMM & comm, const PACK_ALGORITHM & algorithm)
 {
     algorithm();
     const bool actuallySendingOrReceiving = comm.allocate_buffers();
@@ -214,6 +214,7 @@ void pack_and_communicate(COMM & comm, const PACK_ALGORITHM & algorithm)
         algorithm();
         comm.communicate();
     }
+    return actuallySendingOrReceiving;
 }
 
 template<typename COMM, typename UNPACK_ALGORITHM>
