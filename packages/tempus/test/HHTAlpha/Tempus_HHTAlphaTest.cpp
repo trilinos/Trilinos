@@ -482,7 +482,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
   double xSlope = 0.0;
   double xDotSlope = 0.0;
   RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
-  double order = stepper->getOrder();
+  //double order = stepper->getOrder();
   writeOrderError("Tempus_HHTAlpha_SinCos_FirstOrder-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
