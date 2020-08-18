@@ -341,12 +341,85 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, SupersetToDefault, Scalar,LO,GO,Node)
   TEST_ASSERT(gerr == 0);
 }
 
+//////////////////////////////////////////////////////////////////////////////
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, NoSamesToDefault, Scalar,LO,GO,Node)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  int me = comm->getRank();
+  int np = comm->getSize();
+  int ierr = 0;
+
+  if (np > 1) {  // Need more than one proc to avoid duplicate entries in maps
+    Teuchos::FancyOStream foo(Teuchos::rcp(&std::cout,false));
+
+    using vector_t = Tpetra::Vector<Scalar,LO,GO,Node>;
+    using map_t = Tpetra::Map<LO,GO,Node>;
+
+    const size_t nGlobalEntries = 8 * np;
+    const Scalar tgtScalar = 100. * (me+1);
+    const Scalar srcScalar = 2.;
+    Teuchos::Array<GO> myEntries(nGlobalEntries); 
+
+    // Default one-to-one linear block map in Trilinos
+
+    Teuchos::RCP<const map_t> defaultMap = 
+             rcp(new map_t(nGlobalEntries, 0, comm));
+
+    std::cout << me << " DEFAULT MAP" << std::endl;
+    defaultMap->describe(foo, Teuchos::VERB_EXTREME);
+
+    // Map with no sames or permutes
+    int nMyEntries = 0;
+    for (size_t i = 0; i < defaultMap->getNodeNumElements(); i++) {
+      myEntries[nMyEntries++] =
+        (defaultMap->getMaxGlobalIndex() + 1 + i) % nGlobalEntries;
+    }
+  
+    Tpetra::global_size_t dummy = 
+            Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+    Teuchos::RCP<const map_t> noSamesMap = 
+             rcp(new map_t(dummy, myEntries(0,nMyEntries), 0, comm));
+  
+    std::cout << me << " NOSAMES MAP" << std::endl;
+    noSamesMap->describe(foo, Teuchos::VERB_EXTREME);
+
+    // Create vectors; see what the result is with CombineMode=ADD
+
+    vector_t defaultVecTgt(defaultMap);
+    defaultVecTgt.putScalar(tgtScalar);
+
+    vector_t noSamesVecSrc(noSamesMap);
+    noSamesVecSrc.putScalar(srcScalar);
+
+    // Export Overlap-to-default
+
+    Tpetra::Export<LO,GO,Node> noSamesToDefault(noSamesMap, defaultMap);
+    defaultVecTgt.doExport(noSamesVecSrc, noSamesToDefault, Tpetra::ADD);
+
+    std::cout << me << " NOSAMES TO DEFAULT " << std::endl;
+    defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
+
+    auto data = defaultVecTgt.getLocalViewHost();
+    for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++)
+      if (data(i,0) != srcScalar) ierr++;  
+    if (ierr > 0) 
+      std::cout << "TEST FAILED:  NOSAMES-TO-DEFAULT TEST HAD " << ierr 
+                << " FAILURES ON RANK " << me << std::endl;
+  }
+
+  int gerr;
+  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
+
+  TEST_ASSERT(gerr == 0);
+}
+
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, DefaultToDefault, SCALAR, LO, GO, NODE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, CyclicToDefault, SCALAR, LO, GO, NODE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, OverlapToDefault, SCALAR, LO, GO, NODE) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, SupersetToDefault, SCALAR, LO, GO, NODE)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, SupersetToDefault, SCALAR, LO, GO, NODE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, NoSamesToDefault, SCALAR, LO, GO, NODE)
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
