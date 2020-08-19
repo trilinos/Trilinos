@@ -414,35 +414,6 @@ void comm_shared_procs(const EntityCommInfoVector& commInfoVec,
   }
 }
 
-bool proc_is_found(int proc, PairIterEntityComm sharedComm)
-{
-  const unsigned len = sharedComm.size();
-  unsigned i=0;
-  while(i<len) {
-    if (proc == sharedComm[i].proc) {
-      return true;
-    }      
-    ++i; 
-  }
-  return false;
-}
-
-void intersect_with(std::vector<int>& sharingProcsIntersection,
-                    const PairIterEntityComm& sharedComm)
-{
-  const unsigned len = sharingProcsIntersection.size();
-  unsigned keep = 0;
-  for(unsigned ip=0; ip<len; ++ip) {
-    if (proc_is_found(sharingProcsIntersection[ip], sharedComm)) {
-      if (ip != keep) {
-        sharingProcsIntersection[keep] = sharingProcsIntersection[ip];
-      }
-      ++keep;
-    }
-  }
-  sharingProcsIntersection.resize(keep);
-}
-
 void fill_sorted_procs(const PairIterEntityComm& ec, std::vector<int>& procs)
 {
   procs.clear();

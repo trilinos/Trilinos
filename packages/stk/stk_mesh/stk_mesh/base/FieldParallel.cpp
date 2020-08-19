@@ -219,7 +219,6 @@ void communicate_field_data(const BulkData& mesh ,
 {
   const int parallel_size = mesh.parallel_size();
   if ( fields.empty() || parallel_size == 1) {
-std::cerr<<"P"<<mesh.parallel_rank()<<" returning early!"<<std::endl;
     return;
   }
 

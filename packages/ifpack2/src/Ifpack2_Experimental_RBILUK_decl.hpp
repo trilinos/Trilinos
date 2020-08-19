@@ -168,6 +168,26 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
                             node_type> block_crs_matrix_type;
 
   template <class NewMatrixType> friend class RBILUK;
+
+  //@}
+  //! \name Implementation of KK ILU(k).
+  //@{
+  
+  typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
+  typedef typename local_matrix_type::StaticCrsGraphType::row_map_type lno_row_view_t;
+  typedef typename local_matrix_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
+  typedef typename local_matrix_type::values_type scalar_nonzero_view_t;
+  typedef typename local_matrix_type::StaticCrsGraphType::device_type::memory_space TemporaryMemorySpace;
+  typedef typename local_matrix_type::StaticCrsGraphType::device_type::memory_space PersistentMemorySpace;
+  typedef typename local_matrix_type::StaticCrsGraphType::device_type::execution_space HandleExecSpace;
+  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
+      <typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
+      HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;
+  //typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
+  //    <typename lno_row_view_t::non_const_value_type, typename lno_nonzero_view_t::non_const_value_type, typename scalar_nonzero_view_t::value_type,
+  //    HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;//test
+  Teuchos::RCP<kk_handle_type> KernelHandle_;
+
   //@}
 
   //! @name Constructors/Destructors.

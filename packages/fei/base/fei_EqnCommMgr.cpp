@@ -741,6 +741,11 @@ void EqnCommMgr::exchangeSoln()
 }
 
 //------------------------------------------------------------------------------
+// This works around an issue with the ARMHPC 20.1 compiler
+// Needs to be revisited with later versions
+#ifdef __ARM_HPC_COMPILER_VERSION__
+__attribute__((optnone))
+#endif
 int EqnCommMgr::mirrorProcEqns(ProcEqns& inProcEqns, ProcEqns& outProcEqns)
 {
   //Beginning assumption: we (the local processor) have a populated ProcEqns

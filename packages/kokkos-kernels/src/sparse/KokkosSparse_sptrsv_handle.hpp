@@ -98,6 +98,7 @@ public:
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> nnz_row_view_temp_t;
   typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> nnz_row_view_t;
   typedef typename nnz_row_view_t::HostMirror host_nnz_row_view_t;
+  typedef typename Kokkos::View<int *, HandlePersistentMemorySpace> int_row_view_t;
  // typedef typename row_lno_persistent_work_view_t::HostMirror row_lno_persistent_work_host_view_t; //Host view type
   typedef typename Kokkos::View<const size_type *, HandlePersistentMemorySpace, Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>> nnz_row_unmanaged_view_t; // for rank1 subviews
 
@@ -310,6 +311,7 @@ private:
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   SPTRSVcuSparseHandleType *cuSPARSEHandle;
+  int_row_view_t tmp_int_rowmap;
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
@@ -409,6 +411,7 @@ public:
     require_symbolic_chain_phase(false)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     , cuSPARSEHandle(nullptr)
+    , tmp_int_rowmap()
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
     , merge_supernodes (false)
@@ -832,6 +835,28 @@ public:
   SPTRSVcuSparseHandleType *get_cuSparseHandle(){
     return this->cuSPARSEHandle;
   }
+
+  void allocate_tmp_int_rowmap (size_type N) {
+         tmp_int_rowmap = int_row_view_t(Kokkos::ViewAllocateWithoutInitializing("tmp_int_rowmap"), N);
+  }
+  template <typename RowViewType>
+  int_row_view_t get_int_rowmap_view_copy (const RowViewType & rowmap) {
+    Kokkos::deep_copy(tmp_int_rowmap, rowmap);
+    return tmp_int_rowmap;
+  }
+  template <typename RowViewType>
+  int* get_int_rowmap_ptr_copy (const RowViewType & rowmap) {
+    Kokkos::deep_copy(tmp_int_rowmap, rowmap);
+    Kokkos::fence();
+    return tmp_int_rowmap.data();
+  }
+  int_row_view_t get_int_rowmap_view () {
+    return tmp_int_rowmap;
+  }
+  int* get_int_rowmap_ptr () {
+    return tmp_int_rowmap.data();
+  }
+
 #endif
 
 
