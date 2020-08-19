@@ -336,11 +336,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OddEvenToSerial, Scalar,LO,GO,Node)
   // Map with all entries on one processor
 
   dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-  Teuchos::RCP<const map_t> serialMap;
-  if (me == 0) 
-    serialMap = rcp(new map_t(dummy, nGlobalEntries, 0, comm));
-  else
-    serialMap = rcp(new map_t(dummy, 0, 0, comm));
+  size_t nSerialEntries = (me == 0 ? nGlobalEntries : 0);
+  Teuchos::RCP<const map_t> serialMap = 
+           rcp(new map_t(dummy, nSerialEntries, 0, comm));
 
   std::cout << me << " SERIAL MAP" << std::endl;
   serialMap->describe(foo, Teuchos::VERB_EXTREME);
