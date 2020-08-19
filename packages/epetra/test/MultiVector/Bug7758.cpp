@@ -240,7 +240,7 @@ int OverlapToDefaultEpetra(const Epetra_Comm &comm)
     defaultVecTgt.Print(std::cout);
 
     for (int i = 0; i < defaultVecTgt.MyLength()/2; i++)
-      if (defaultVecTgt[i] != 2 * srcScalar) ierr++;  // overlapped
+      if (defaultVecTgt[i] != srcScalar + srcScalar) ierr++;  // overlapped
     for (int i = defaultVecTgt.MyLength()/2;
              i < defaultVecTgt.MyLength(); i++)
       if (defaultVecTgt[i] != tgtScalar + srcScalar) ierr++;  // not overlapped
@@ -321,7 +321,7 @@ int OddEvenToSerialEpetra(const Epetra_Comm &comm)
 
   // Check result; all vector entries should be srcScalar
 
-  for (size_t i = 0; i < serialVecTgt.MyLength(); i++) {
+  for (int i = 0; i < serialVecTgt.MyLength(); i++) {
     double nCopies = double(((np+1) / 2) - ((i % 2 == 1) && (np % 2 == 1)));
     if (serialVecTgt[i] != (i%2 ? tgtScalar : 0.) + srcScalar * nCopies)
       ierr++;
@@ -439,7 +439,7 @@ int NoSamesToDefaultEpetra(const Epetra_Comm &comm)
 
     // Map with no sames or permutes
     int nMyEntries = 0;
-    for (size_t i = 0; i < defaultMap.NumMyElements(); i++) {
+    for (int i = 0; i < defaultMap.NumMyElements(); i++) {
       myEntries[nMyEntries++] =
         (defaultMap.MaxMyGID() + 1 + i) % nGlobalEntries;
     }
@@ -466,7 +466,7 @@ int NoSamesToDefaultEpetra(const Epetra_Comm &comm)
     std::cout << me << " NOSAMES TO DEFAULT " << std::endl;
     defaultVecTgt.Print(std::cout);
 
-    for (size_t i = 0; i < defaultVecTgt.MyLength(); i++)
+    for (int i = 0; i < defaultVecTgt.MyLength(); i++)
       if (defaultVecTgt[i] != tgtScalar + srcScalar) ierr++;  
     if (ierr > 0) 
       std::cout << "TEST FAILED:  NOSAMES-TO-DEFAULT TEST HAD " << ierr 
