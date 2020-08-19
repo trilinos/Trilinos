@@ -53,6 +53,22 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       NUM_MPI_PROCS 4
       )
 
+    TRIBITS_ADD_TEST(
+      Structured
+      NAME "Structured_Laplace3D_SCP_Tpetra"
+      ARGS "--linAlgebra=Tpetra --xml=structured_scp_1dof.xml --matrixType=Laplace3D --nx=10 --ny=10 --nz=10"
+      COMM serial mpi
+      NUM_MPI_PROCS 4
+      )
+
+    TRIBITS_ADD_TEST(
+      Structured
+      NAME "Structured_Laplace3D_SPARC_Tpetra"
+      ARGS "--linAlgebra=Tpetra --xml=structured_sparc_1dof.xml --matrixType=Laplace3D --nx=25 --ny=25 --nz=10"
+      COMM serial mpi
+      NUM_MPI_PROCS 4
+      )
+
     IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
       TRIBITS_ADD_TEST(
         Structured
@@ -117,7 +133,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Structured_cp
-    SOURCE_FILES structured_1dof.xml structured_1dof_shift.xml structured_2dof.xml structured_3dof.xml structured_interp_line.xml structured_interp_kokkos.xml structured_interp_sa_kokkos.xml structured_tentative_kokkos.xml
+    SOURCE_FILES structured_1dof.xml structured_1dof_shift.xml structured_2dof.xml structured_3dof.xml structured_interp_line.xml structured_interp_kokkos.xml structured_interp_sa_kokkos.xml structured_tentative_kokkos.xml structured_scp_1dof.xml structured_sparc_1dof.xml
     )
 
 
