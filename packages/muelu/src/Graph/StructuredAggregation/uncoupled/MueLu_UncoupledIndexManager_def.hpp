@@ -59,7 +59,8 @@ namespace MueLu {
                         const int MyRank, const int NumRanks,
                         const Array<GO> GFineNodesPerDir, const Array<LO> LFineNodesPerDir,
                         const Array<LO> CoarseRate, const bool singleCoarsePoint) :
-    IndexManager(comm, coupled, NumDimensions, interpolationOrder, Array<GO>(3, -1), LFineNodesPerDir),
+    IndexManager(comm, coupled, singleCoarsePoint, NumDimensions, interpolationOrder,
+                 Array<GO>(3, -1), LFineNodesPerDir),
     myRank(MyRank), numRanks(NumRanks)
   {
 
@@ -76,7 +77,7 @@ namespace MueLu {
       }
     }
 
-    this->computeMeshParameters(singleCoarsePoint);
+    this->computeMeshParameters();
     this->gNumCoarseNodes10 = Teuchos::OrdinalTraits<GO>::invalid();
     this->gNumCoarseNodes   = Teuchos::OrdinalTraits<GO>::invalid();
   } // Constructor

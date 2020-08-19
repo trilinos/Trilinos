@@ -98,7 +98,7 @@ namespace MueLu {
                           const Array<GO> GFineNodesPerDir,
                           const Array<LO> LFineNodesPerDir,
                           const Array<LO> CoarseRate,
-                          const bool coarseSinglePoint);
+                          const bool singleCoarsePoint);
 
     virtual ~UncoupledIndexManager() {}
 

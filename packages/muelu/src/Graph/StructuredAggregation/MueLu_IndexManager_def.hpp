@@ -62,13 +62,14 @@ namespace MueLu {
   IndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   IndexManager(const RCP<const Teuchos::Comm<int> > comm,
                const bool coupled,
+               const bool singleCoarsePoint,
                const int NumDimensions,
                const int interpolationOrder,
                const Array<GO> GFineNodesPerDir,
                const Array<LO> LFineNodesPerDir) :
-    comm_(comm), coupled_(coupled), numDimensions(NumDimensions),
-    interpolationOrder_(interpolationOrder), gFineNodesPerDir(GFineNodesPerDir),
-    lFineNodesPerDir(LFineNodesPerDir) {
+    comm_(comm), coupled_(coupled), singleCoarsePoint_(singleCoarsePoint),
+    numDimensions(NumDimensions), interpolationOrder_(interpolationOrder),
+    gFineNodesPerDir(GFineNodesPerDir), lFineNodesPerDir(LFineNodesPerDir) {
 
     coarseRate.resize(3);
     endRate.resize(3);
@@ -85,7 +86,7 @@ namespace MueLu {
 
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   void IndexManager<LocalOrdinal, GlobalOrdinal, Node>::
-  computeMeshParameters(bool singleCoarsePoint) {
+  computeMeshParameters() {
 
     RCP<Teuchos::FancyOStream> out;
     if(const char* dbg = std::getenv("MUELU_INDEXMANAGER_DEBUG")) {
@@ -160,7 +161,7 @@ namespace MueLu {
       }
     }
 
-    *out << "singleCoarsePoint? " << singleCoarsePoint << std::endl;
+    *out << "singleCoarsePoint? " << singleCoarsePoint_ << std::endl;
     *out << "gFineNodesPerDir: " << gFineNodesPerDir << std::endl;
     *out << "lFineNodesPerDir: " << lFineNodesPerDir << std::endl;
     *out << "endRate: " << endRate << std::endl;
@@ -199,7 +200,7 @@ namespace MueLu {
           // We might want to coarsening the direction
           // into a single layer if there are not enough
           // points left to form two aggregates
-          if(singleCoarsePoint && lFineNodesPerDir[dim] - 1 < coarseRate[dim]) {
+          if(singleCoarsePoint_ && lFineNodesPerDir[dim] - 1 < coarseRate[dim]) {
             lCoarseNodesPerDir[dim] =1;
           }
         } else {
