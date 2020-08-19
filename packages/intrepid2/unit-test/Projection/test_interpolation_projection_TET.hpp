@@ -332,7 +332,7 @@ int InterpolationProjectionTet(const bool verbose) {
                   auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
                   auto outView =Kokkos::subview( tetLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
                   tetLinearBasis.getValues(outView, inView);
-
+                  DeviceSpaceType().fence();
                   for(ordinal_type j=0; j<basisCardinality; ++j)
                     for(std::size_t k=0; k<tet.getNodeCount(); ++k)
                       physDofCoords(i,j,d) += vertices[tets[i][k]][d]*tetLinearBasisValuesAtDofCoords(i,k,j);
@@ -347,7 +347,6 @@ int InterpolationProjectionTet(const bool verbose) {
             }
 
             li::getBasisCoeffs(basisCoeffsLI, funAtDofCoords, dofCoeffsPhys);
-            Kokkos::fence();
           }
 
           //Testing Kronecker property of basis functions
@@ -370,7 +369,7 @@ int InterpolationProjectionTet(const bool verbose) {
               fst::HGRADtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
                   basisValuesAtDofCoordsOriented);
 
-
+              DeviceSpaceType().fence();
               for(ordinal_type k=0; k<basisCardinality; ++k) {
                 for(ordinal_type j=0; j<basisCardinality; ++j){
                   ValueType dofValue = transformedBasisValuesAtDofCoordsOriented(i,k,j) * dofCoeffsPhys(i,j);
@@ -760,7 +759,7 @@ int InterpolationProjectionTet(const bool verbose) {
                   auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
                   auto outView =Kokkos::subview( tetLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
                   tetLinearBasis.getValues(outView, inView);
-
+                  DeviceSpaceType().fence();
                   for(ordinal_type j=0; j<basisCardinality; ++j)
                     for(std::size_t k=0; k<tet.getNodeCount(); ++k)
                       physDofCoords(i,j,d) += vertices[tets[i][k]][d]*tetLinearBasisValuesAtDofCoords(i,k,j);
@@ -1174,7 +1173,7 @@ int InterpolationProjectionTet(const bool verbose) {
                 auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
                 auto outView =Kokkos::subview( tetLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
                 tetLinearBasis.getValues(outView, inView);
-
+                DeviceSpaceType().fence();
                 for(ordinal_type j=0; j<basisCardinality; ++j)
                   for(std::size_t k=0; k<tet.getNodeCount(); ++k)
                     physDofCoords(i,j,d) += vertices[tets[i][k]][d]*tetLinearBasisValuesAtDofCoords(i,k,j);
@@ -1569,7 +1568,7 @@ int InterpolationProjectionTet(const bool verbose) {
               auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
               auto outView =Kokkos::subview( tetLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
               tetLinearBasis.getValues(outView, inView);
-
+              DeviceSpaceType().fence();
               for(ordinal_type j=0; j<basisCardinality; ++j)
                 for(std::size_t k=0; k<tet.getNodeCount(); ++k)
                   physDofCoords(i,j,d) += vertices[tets[i][k]][d]*tetLinearBasisValuesAtDofCoords(i,k,j);
