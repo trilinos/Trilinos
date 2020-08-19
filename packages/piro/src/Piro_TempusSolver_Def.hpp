@@ -254,7 +254,7 @@ void Piro::TempusSolver<Scalar>::initialize(
 
       Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model_;
       model_ = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
-      sublist(tempusPL,"Stratimikos", true), origModel, true, tempusPL->get("Lump Mass Matrix", false),false));
+      sublist(tempusPL,"Stratimikos", true), origModel, false, tempusPL->get("Lump Mass Matrix", false),false));
     }
 
     //Explicit time-integrators for 2nd order ODEs
