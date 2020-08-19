@@ -124,9 +124,7 @@ static Teuchos::RCP<Ifpack2::RILUK<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalO
   GlobalOrdinal lof=1;
   params.set("fact: iluk level-of-fill", lof);
   params.set("fact: iluk level-of-overlap", 0);
-  if (ilukimplType == IlukImplTypeDetails::Serial)
-    params.set("fact: type", "Serial");
-  else
+  if (ilukimplType == IlukImplTypeDetails::KSPILUK)
     params.set("fact: type", "KSPILUK");
   prec->setParameters(params);
   return prec;
