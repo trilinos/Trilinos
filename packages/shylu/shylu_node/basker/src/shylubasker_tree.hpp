@@ -1299,7 +1299,8 @@ std::cout << " thread_array = malloc ( " << num_threads << " )" << std::endl;
     timer_gperm.reset();
     #endif
 
-    if(factor_flag == BASKER_TRUE)
+    // reset all the time (factor may have failed, and some variables may not be cleared)
+    //if(factor_flag == BASKER_TRUE)
     {
       typedef Kokkos::TeamPolicy<Exe_Space> TeamPolicy;
       kokkos_reset_factor<Int,Entry,Exe_Space> reset_factors(this); //t_reset_ND_factor, BTF; reset LL and LU for factorization factor_notoken step

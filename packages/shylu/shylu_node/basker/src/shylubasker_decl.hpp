@@ -1289,7 +1289,8 @@ namespace BaskerNS
     INT_1DARRAY gperm; //global perm due to pivoting
     INT_1DARRAY gpermi;
     INT_1DARRAY gperm_same;
-    INT_1DARRAY gperm_array;
+    INT_1DARRAY gperm_array;  // used to map new rows (after pivot) to original rows
+    INT_1DARRAY gpermi_array; // i.e., gperm_array(i) = k means that the current i-th row is the k-th row before pivot
 
 
     // NDE

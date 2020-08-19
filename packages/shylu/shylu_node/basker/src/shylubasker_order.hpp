@@ -360,12 +360,12 @@ namespace BaskerNS
     #endif
 
     //================================================================
+    btfc_nnz = BTF_C.nnz;
     if(btf_nblks > 1) //else only BTF_A exists, A is assigned directly to it...
     {
       if ( btf_tabs_offset == 0 && BTF_C.nnz > 0 ) {
         // NDE: May need to add permutation for this case...
         //new for sfactor_copy2 replacement
-        btfc_nnz = BTF_C.nnz;
         MALLOC_INT_1DARRAY(vals_order_ndbtfc_array, BTF_C.nnz); //track nd perms; BTF_A must be declared here, else it does not exist
         MALLOC_INT_1DARRAY(inv_vals_order_ndbtfc_array, BTF_C.nnz);
         for (Int i = 0; i < BTF_C.nnz; ++i) {

@@ -444,8 +444,24 @@ namespace BaskerNS
     //now do the forward backward solve
     //L\x ->y
     serial_forward_solve(x,y);
+    #ifdef BASKER_DEBUG_SOLVE_RHS
+    printf("Done, serial_forward \n");
+    printf("\n x \n");
+    printVec(x, gn);
+    printf("\n y \n");
+    printVec(y, gn);
+    printf("\n\n");
+    #endif
     //U\y->x
     serial_backward_solve(y,x);
+    #ifdef BASKER_DEBUG_SOLVE_RHS
+    printf("Done, serial_backward \n");
+    printf("\n x \n");
+    printVec(x, gn);
+    printf("\n y \n");
+    printVec(y, gn);
+    printf("\n\n");
+    #endif
 
     //copy lower part down
     #ifdef BASKER_DEBUG_SOLVE_RHS
@@ -473,7 +489,7 @@ namespace BaskerNS
     for(Int b = 0; b < tree.nblks; ++b)
     {
     #ifdef BASKER_DEBUG_SOLVE_RHS
-      printf("Lower Solve blk: %d \n",b);
+      printf("Lower Solve blk: %d size=%d\n",b,(int)LL_size(b));
     #endif
 
       BASKER_MATRIX &L = LL(b)(0);
@@ -492,7 +508,6 @@ namespace BaskerNS
         //x = LD*y;
         neg_spmv_perm(LD, y, x);
       }
-
       //printVec(y,gn);
     }
 
@@ -717,7 +732,7 @@ namespace BaskerNS
       {
         const Int j = (Options.no_pivot == BASKER_FALSE) ? 
                         gperm(M.row_idx(i)+brow) :
-                        (M.row_idx(i)+brow) ;
+                             (M.row_idx(i)+brow) ;
 
         #ifdef BASKER_DEBUG_SOLVE_RHS
         BASKER_ASSERT(j != BASKER_MAX_IDX,"Using nonperm\n");

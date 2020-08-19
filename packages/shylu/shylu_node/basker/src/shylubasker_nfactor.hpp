@@ -119,19 +119,19 @@ namespace BaskerNS
         MALLOC_INT_1DARRAY(thread_start, num_threads+1);
         init_value(thread_start, num_threads+1, 
             (Int) BASKER_MAX_IDX);
-        int nt = nfactor_domain_error(thread_start);
-        if((nt == BASKER_SUCCESS) ||
+        info = nfactor_domain_error(thread_start);
+        if((info == BASKER_SUCCESS) ||
             (domain_restart > BASKER_RESTART))
         {
           break;
         }
-        else if (nt == BASKER_ERROR)
+        else if (info == BASKER_ERROR)
         {
           if(Options.verbose == BASKER_TRUE)
           {
             printf("%s: nfactor_domain_error reports BASKER_ERROR - numeric factorization failed\n",__FILE__);
           }
-          return BASKER_ERROR;
+          break;
         }
         else
         {
@@ -211,9 +211,9 @@ namespace BaskerNS
           MALLOC_INT_1DARRAY(thread_start, num_threads+1);
           init_value(thread_start, num_threads+1,
               (Int) BASKER_MAX_IDX);
-          int nt = nfactor_sep_error(thread_start);
-          if((nt == BASKER_SUCCESS) ||
-             (nt == BASKER_ERROR)   ||
+          info = nfactor_sep_error(thread_start);
+          if((info == BASKER_SUCCESS) ||
+             (info == BASKER_ERROR)   ||
              (sep_restart > BASKER_RESTART))
           {
             FREE_INT_1DARRAY(thread_start);

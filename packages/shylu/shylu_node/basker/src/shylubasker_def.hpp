@@ -830,6 +830,16 @@ namespace BaskerNS
           }
           #endif
 
+          // revert AMD perm to rows of A
+          auto order_nd_amd = Kokkos::subview(order_blk_amd_inv,
+                                              std::make_pair(0, BTF_A.ncol));
+          permute_row(BTF_A, order_nd_amd);
+          permute_col(BTF_A, order_nd_amd);
+          if (btf_tabs_offset < btf_nblks) {
+            // revert AMD perm to rows and cols
+            permute_row(BTF_B, order_nd_amd);
+          }
+
           // revert MWM perm to rows of A
           auto order_nd_mwm = Kokkos::subview(order_blk_mwm_inv, 
                                               std::make_pair(0, BTF_A.ncol));
@@ -855,7 +865,7 @@ namespace BaskerNS
           for (Int i = 0; i < (Int)BTF_C.ncol; i++) {
             order_blk_amd_inv(i+nfirst) -= nfirst;
           }
-          auto order_blk_amd_c = Kokkos::subview(order_blk_amd_inv, 
+          auto order_blk_amd_c = Kokkos::subview(order_blk_amd_inv,
                                                  std::make_pair(nfirst, ncol));
           permute_row(BTF_C, order_blk_amd_c);
           permute_col(BTF_C, order_blk_amd_c);
@@ -872,14 +882,15 @@ namespace BaskerNS
                                                  std::make_pair(nfirst, ncol));
           permute_row(BTF_C, order_blk_mwm_c);
         }
-    }
+    } // end of if(Options.blk_matching != 0)
 #if 0
     for (Int k = 0; k < A.nnz; k++) {
       vals_crs_transpose(k) = k;
     }
     permute_inv(vals_crs_transpose, vals_perm_composition, A.nnz); 
 #endif
-//printf( " nblks=%d\n",btf_nblks );
+//printf( " A.nnz= %d vs (%d, %d) nblks=%d, btfa_nnz=%d, btfb_nnz=%d, btfc_nnz=%d\n",(int)nnz, (int)A.nnz,(int)A.val.extent(0),
+//        btf_nblks,btfa_nnz,btfb_nnz,btfc_nnz );
     if ( btf_nblks > 1 ) { //non-single block case
     #ifdef KOKKOS_ENABLE_OPENMP
     #pragma omp parallel for
@@ -899,7 +910,7 @@ namespace BaskerNS
             BTF_B.val( inv_vals_order_ndbtfb_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
           }
         }
-        //      if ( BTF_C.nnz != 0 ) // this causes compiler error, and nnz blocks values are different with this command with small blocks matrix (not nd) - why?
+        // if ( BTF_C.nnz != 0 ) // this causes compiler error, and nnz blocks values are different with this command with small blocks matrix (not nd) - why?
         if ( btfc_nnz != 0 ) {
           if ( vals_block_map_perm_pair(i).first == 2 ) { //in BTF_C
 //printf( " BTF_C.val(%d) = %e\n",inv_vals_order_ndbtfc_array( vals_block_map_perm_pair(i).second ), val[ vals_perm_composition(i) ] );
@@ -973,13 +984,13 @@ namespace BaskerNS
         }
       }
     }
-    printf("];\n");
+    printf("];\n");*/
 
-    printf(" C = [\n" );
+    /*printf(" C = [\n" );
     if (BTF_C.nrow > 0 && BTF_C.ncol > 0) {
       for(Int j = 0; j < BTF_C.ncol; j++) {
         for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
-          printf("%d %d %.16e\n", BTF_C.row_idx[k], j, BTF_C.val[k]);
+          printf("%d %d %e\n", BTF_C.row_idx[k], j, BTF_C.val[k]);
         }
       }
     }
@@ -1019,18 +1030,34 @@ namespace BaskerNS
           }
         }
         printf("];\n");*/
-        Int num = 0;
-        auto order_nd_mwm = Kokkos::subview(order_blk_mwm_array, 
+
+        // ----------------------------------------------------------------------------------------------
+        // compute MWM + AMD ordering
+        auto order_nd_mwm = Kokkos::subview(order_blk_mwm_array,
                                             std::make_pair(0, BTF_A.ncol));
+        auto order_nd_amd = Kokkos::subview(order_blk_amd_array,
+                                            std::make_pair(0, BTF_A.ncol));
+        #if 1
+        INT_1DARRAY blk_nnz;
+        INT_1DARRAY blk_work;
+        btf_blk_mwm_amd(0, btf_tabs_offset, BTF_A,
+                        order_nd_mwm, order_nd_amd,
+                        blk_nnz, blk_work);
+        #else
+        Int num = 0;
         mwm_order::mwm(BTF_A.ncol, BTF_A.nnz,
                        &(BTF_A.col_ptr(0)), &(BTF_A.row_idx(0)), &(BTF_A.val(0)),
                        &(order_nd_mwm(0)), num);
+        #endif
+
         #if 0
         for (Int i = 0; i < (Int)A.nrow; i++) {
           order_blk_mwm_array(i) = i;
+          order_blk_amd_array(i) = i;
         }
         #endif
 
+        // ---------------------------------------------------------------------------------------------
         // apply MWM on a big block A
         //for (int i=0; i<BTF_A.ncol; i++) printf( " - mxm_a(%d)=%d\n",i,order_nd_mwm(i));
         permute_row(BTF_A, order_nd_mwm);
@@ -1053,6 +1080,16 @@ namespace BaskerNS
           }
         }
         printf("];\n");*/
+
+        // ----------------------------------------------------------------------------------------------
+        // Apply AMD perm to rows and cols
+        // NOTE: no need to udpate vals_order_blk_amd_array (it will read in A without permutations, and compute perm here)
+        permute_row(BTF_A, order_nd_amd);
+        permute_col(BTF_A, order_nd_amd);
+        if (btf_tabs_offset < btf_nblks) {
+          // Apply AMD perm to rows and cols
+          permute_row(BTF_B, order_nd_amd);
+        }
 
         // ----------------------------------------------------------------------------------------------
         // compute & apply ND on a big block A
@@ -1102,9 +1139,9 @@ namespace BaskerNS
       if (btf_nblks > btf_tabs_offset) {
         Int b_first = btf_tabs_offset;
         Int nfirst = btf_tabs(b_first);
-        auto order_blk_mwm_c = Kokkos::subview(order_blk_mwm_array, 
+        auto order_blk_mwm_c = Kokkos::subview(order_blk_mwm_array,
                                                std::make_pair(nfirst, ncol));
-        auto order_blk_amd_c = Kokkos::subview(order_blk_amd_array, 
+        auto order_blk_amd_c = Kokkos::subview(order_blk_amd_array,
                                                std::make_pair(nfirst, ncol));
         if(Options.verbose == BASKER_TRUE) {
           std::cout << " calliing MWM on C" << std::endl;
@@ -1189,12 +1226,12 @@ namespace BaskerNS
           }
         }
       }
-      printf("];\n");
-      printf(" qC = [\n" );
+      printf("];\n");*/
+      /*printf(" qC = [\n" );
       if (BTF_C.nrow > 0 && BTF_C.ncol > 0) {
         for(Int j = 0; j < BTF_C.ncol; j++) {
           for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
-            printf("%d %d %.16e\n", BTF_C.row_idx[k], j, BTF_C.val[k]);
+            printf("%d %d %e\n", BTF_C.row_idx[k], j, BTF_C.val[k]);
           }
         }
       }
