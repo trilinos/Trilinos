@@ -68,7 +68,6 @@ namespace Tpetra {
   ///
   /// Here is the list of supported combine modes:
   ///   - ADD: Sum new values 
-  ///     \f$x_{target} = \sum(x_{source}\f$  
   ///   - INSERT: Insert new values that don't currently exist
   ///   - REPLACE: Replace existing values with new values
   ///   - ABSMAX: If \f$x_{old}\f$ is the old value and \f$x_{new}\f$
