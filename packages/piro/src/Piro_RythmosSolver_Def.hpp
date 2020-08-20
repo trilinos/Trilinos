@@ -368,10 +368,9 @@ void Piro::RythmosSolver<Scalar>::initialize(
       stepperType == "Explicit Taylor Polynomial") {
 
       Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
-      rythmosSolverPL->get("Lump Mass Matrix", false);  //JF line does not do anything
       model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
               sublist(rythmosSolverPL,"Stratimikos", true), origModel,
-              true,rythmosSolverPL->get("Lump Mass Matrix", false),false));
+              rythmosSolverPL->get("Constant Mass Matrix", false),rythmosSolverPL->get("Lump Mass Matrix", false),false));
      }
      // C.2) Create the Thyra-wrapped ModelEvaluator
 
@@ -996,7 +995,8 @@ Piro::RythmosSolver<Scalar>::getValidRythmosSolverParameters() const
   validPL->sublist("Stratimikos", false, "");
   validPL->sublist("NonLinear Solver", false, "");
   validPL->set<std::string>("Verbosity Level", "", "");
-  validPL->set<bool>("Lump Mass Matrix", false, "");
+  validPL->set<bool>("Lump Mass Matrix", false, "Boolean to tell code to lump mass matrix");
+  validPL->set<bool>("Constant Mass Matrix", false, "Boolean to tell code if mass matrix is constant in time");
   return validPL;
 }
 

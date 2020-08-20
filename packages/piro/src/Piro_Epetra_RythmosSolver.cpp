@@ -157,10 +157,10 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
 
     if (stepperType == "Explicit RK") {
       Teuchos::RCP<EpetraExt::ModelEvaluator> origModel = model;
-      rythmosPL->get("Lump Mass Matrix", false); //JF line does not do anything
       model = Teuchos::rcp(new Piro::Epetra::InvertMassMatrixDecorator(
             sublist(rythmosPL,"Stratimikos", true), origModel,
-            true,rythmosPL->get("Lump Mass Matrix", false),false));
+            rythmosPL->get("Constant Mass Matrix",false), 
+	    rythmosPL->get("Lump Mass Matrix",false), false));
     }
 
     // C.2) Create the Thyra-wrapped ModelEvaluator
@@ -258,7 +258,8 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
       rythmosSolverPL->get("Lump Mass Matrix", false); //JF line does not do anything
       model = Teuchos::rcp(new Piro::Epetra::InvertMassMatrixDecorator(
             sublist(rythmosSolverPL,"Stratimikos", true), origModel,
-            true,rythmosSolverPL->get("Lump Mass Matrix", false),false));
+            rythmosSolverPL->get("Constant Mass Matrix",false),
+	    rythmosSolverPL->get("Lump Mass Matrix",false), false));
     }
 
     // C.2) Create the Thyra-wrapped ModelEvaluator
@@ -557,6 +558,7 @@ Piro::Epetra::RythmosSolver::getValidRythmosParameters() const
   validPL->set<double>("Max State Error", 1.0, "");
   validPL->set<std::string>("Name", "", "");
   validPL->set<bool>("Lump Mass Matrix", false, "Boolean to tell code to lump mass matrix");
+  validPL->set<bool>("Constant Mass Matrix", false, "Boolean to tell code if mass matrix is constant in time");
   validPL->set<std::string>("Stepper Method", "", "");
   return validPL;
 }
@@ -571,5 +573,6 @@ Piro::Epetra::RythmosSolver::getValidRythmosSolverParameters() const
   validPL->sublist("NonLinear Solver", false, "");
   validPL->set<std::string>("Verbosity Level", "", "");
   validPL->set<bool>("Lump Mass Matrix", false, "Boolean to tell code to lump mass matrix");
+  validPL->set<bool>("Constant Mass Matrix", false, "Boolean to tell code if mass matrix is constant in time");
   return validPL;
 }
