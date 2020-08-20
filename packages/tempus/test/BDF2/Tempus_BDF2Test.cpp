@@ -455,10 +455,10 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
                     solutions,    xErrorNorm,    xSlope,
                     solutionsDot, xDotErrorNorm, xDotSlope);
 
-    TEST_FLOATING_EQUALITY( xSlope,               1.95089, 0.01 );
-    TEST_FLOATING_EQUALITY( xDotSlope,            1.95089, 0.01 );
-    TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.000197325, 1.0e-4 );
-    TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 0.000197325, 1.0e-4 );
+    TEST_FLOATING_EQUALITY( xSlope,               1.96126, 0.01 );
+    TEST_FLOATING_EQUALITY( xDotSlope,            1.96126, 0.01 );
+    TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.000192591, 1.0e-4 );
+    TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 0.000192591, 1.0e-4 );
   }
 
   Teuchos::TimeMonitor::summarize();
