@@ -136,7 +136,7 @@ def run():
                                                  arguments.workspaceDir,
                                                  'Trilinos')))
         write_header()
-        echoJenkinsVars(arguments.workspaceDir)
+        #echoJenkinsVars(arguments.workspaceDir)    # SCAFFOLDING - DISABLED FOR TESTIGN
         try:
             merge_branch(arguments.sourceRepo,
                          arguments.sourceBranch,

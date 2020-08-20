@@ -55,7 +55,7 @@ options=(
     --job_base_name=${JOB_BASE_NAME:?}
     --workspaceDir=${WORKSPACE:?}
     --github_pr_number=${PULLREQUESTNUM:?}
-    --job_number=${BUILD_ID:?}
+    --job_number=${BUILD_NUMBER:?}
     --req-mem-per-core=3.0
     --max-cores-allowed=29
     --num-concurrent-tests=4
@@ -63,7 +63,17 @@ options=(
     --dry-run
 )    
 
-${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${options[@]}
+echo "=========================================================="
+echo "=========================================================="
+echo "=========================================================="
+echo "=========================================================="
+echo "    TEST "
+echo "which python3: $(which python3)"
+echo "which pip3   : $(which pip3)"
+echo "cmd:"
+echo "python3 ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${options[@]}"
+
+python3 ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${options[@]}
 
 # Call the script to handle driving the testing
 #${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${TRILINOS_SOURCE_REPO:?} \
