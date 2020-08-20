@@ -279,6 +279,9 @@ void check_size_of_types();
 void check_declare_element_side_inputs(const BulkData & mesh,
                                        const Entity elem,
                                        const unsigned localSideId);
+
+void connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge);
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

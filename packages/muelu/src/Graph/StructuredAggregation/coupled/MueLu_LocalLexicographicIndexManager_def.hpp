@@ -58,7 +58,7 @@ namespace MueLu {
                                  const int MyRank, const int NumRanks,
                                  const Array<GO> GFineNodesPerDir, const Array<LO> LFineNodesPerDir,
                                  const Array<LO> CoarseRate, const Array<GO> MeshData) :
-  IndexManager(comm, coupled, NumDimensions, interpolationOrder, GFineNodesPerDir, LFineNodesPerDir),
+    IndexManager(comm, coupled, false, NumDimensions, interpolationOrder, GFineNodesPerDir, LFineNodesPerDir),
   myRank(MyRank), numRanks(NumRanks) {
 
     // Allocate data based on user input
