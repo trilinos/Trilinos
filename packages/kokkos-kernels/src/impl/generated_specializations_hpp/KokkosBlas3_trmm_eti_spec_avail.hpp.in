@@ -1,3 +1,5 @@
+#ifndef KOKKOSBLAS3_TRMM_ETI_SPEC_AVAIL_HPP_
+#define KOKKOSBLAS3_TRMM_ETI_SPEC_AVAIL_HPP_
 /*
 //@HEADER
 // ************************************************************************
@@ -42,43 +44,11 @@
 //@HEADER
 */
 
-#ifndef KOKKOSKERNELS_DEFAULT_TYPES_H
-#define KOKKOSKERNELS_DEFAULT_TYPES_H
+namespace KokkosBlas {
+namespace Impl {
 
-#include "Kokkos_Core.hpp"        //for LayoutLeft/LayoutRight
-#include <KokkosKernels_config.h> //for all the ETI #cmakedefine macros
+@BLAS3_TRMM_ETI_AVAIL_BLOCK@
 
-#if defined(KOKKOSKERNELS_INST_ORDINAL_INT)
-  typedef int default_lno_t;
-#elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
-  typedef int64_t default_lno_t;
-#else
-  #error "Expect INT and/or INT64_T to be enabled as ORDINAL (lno_t) types"
-#endif
-  //Prefer int as the default offset type, because cuSPARSE doesn't support size_t for rowptrs.
-#if defined(KOKKOSKERNELS_INST_OFFSET_INT)
-  typedef int default_size_type;
-#elif defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)
-  typedef size_t default_size_type;
-#else
-  #error "Expect SIZE_T and/or INT to be enabled as OFFSET (size_type) types"
-#endif
-
-#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
-  typedef Kokkos::LayoutLeft default_layout;
-#elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
-  typedef Kokkos::LayoutRight default_layout;
-#else
-  #error "Expect LAYOUTLEFT and/or LAYOUTRIGHT to be enabled as layout types"
-#endif
-
-#if defined(KOKKOSKERNELS_INST_DOUBLE)
-  typedef double default_scalar;
-#elif defined(KOKKOSKERNELS_INST_FLOAT)
-  typedef float default_scalar;
-#else
-  #error "Expect at least one real-valued scalar type (double or float) to be enabled"
-#endif
-
-#endif
-
+} // Impl
+} // KokkosBlas
+#endif // KOKKOSBLAS3_TRMM_ETI_SPEC_AVAIL_HPP_

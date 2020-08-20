@@ -19,7 +19,7 @@ typedef Kokkos::complex<float> kokkos_complex_float;
 
 //Create a random square matrix for testing mat-mat addition kernels
 template <typename crsMat_t, typename ordinal_type>
-crsMat_t randomMatrix(ordinal_type nrows, ordinal_type minNNZ, ordinal_type maxNNZ, bool sortRows)
+crsMat_t randomMatrix(ordinal_type nrows, ordinal_type ncols, ordinal_type minNNZ, ordinal_type maxNNZ, bool sortRows)
 {
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type size_type_view_t;
@@ -27,16 +27,20 @@ crsMat_t randomMatrix(ordinal_type nrows, ordinal_type minNNZ, ordinal_type maxN
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename size_type_view_t::non_const_value_type size_type;  //rowptr type
   typedef typename lno_view_t::non_const_value_type lno_t;            //colind type
+  typedef typename scalar_view_t::non_const_value_type scalar_t;
+  typedef Kokkos::ArithTraits<scalar_t> KAT;
   static_assert(std::is_same<ordinal_type, lno_t>::value, "ordinal_type should be same as lno_t from crsMat_t");
   //first, populate rowmap
   size_type_view_t rowmap("rowmap", nrows + 1);
   typename size_type_view_t::HostMirror h_rowmap = Kokkos::create_mirror_view(rowmap);
   size_type nnz = 0;
+  size_type maxRowEntries = 0;
   for(lno_t i = 0; i < nrows; i++)
   {
     size_type rowEntries = rand() % (maxNNZ - minNNZ + 1) + minNNZ;
     h_rowmap(i) = nnz;
     nnz += rowEntries;
+    maxRowEntries = std::max(rowEntries, maxRowEntries);
   }
   h_rowmap(nrows) = nnz;
   Kokkos::deep_copy(rowmap, h_rowmap);
@@ -46,20 +50,19 @@ crsMat_t randomMatrix(ordinal_type nrows, ordinal_type minNNZ, ordinal_type maxN
   typename scalar_view_t::HostMirror h_values = Kokkos::create_mirror_view(values);
   for(size_type i = 0; i < nnz; i++)
   {
-    h_values(i) = rand() / RAND_MAX;
+    h_values(i) = KAT::one() * (((typename KAT::mag_type) rand()) / RAND_MAX);
   }
   Kokkos::deep_copy(values, h_values);
   //populate entries (make sure no entry is repeated within a row)
   lno_view_t entries("entries", nnz);
   typename lno_view_t::HostMirror h_entries = Kokkos::create_mirror_view(entries);
-  std::vector<lno_t> indices(nrows);
-  auto re = std::default_random_engine(0);
+  std::vector<lno_t> indices(std::max((size_type) ncols, maxRowEntries));
+  auto re = std::mt19937(rand());
   for(lno_t i = 0; i < nrows; i++)
   {
-    for(lno_t j = 0; j < nrows; j++)
-    {
-      indices[j] = j;
-    }
+    //this formula guarantees no duplicates if maxNNZ <= ncols, and duplicates if minNNZ > ncols
+    for(size_t j = 0; j < indices.size(); j++)
+      indices[j] = j % ncols;
     std::shuffle(indices.begin(), indices.end(), re);
     size_type rowStart = h_rowmap(i);
     size_type rowCount = h_rowmap(i + 1) - rowStart;
@@ -73,14 +76,16 @@ crsMat_t randomMatrix(ordinal_type nrows, ordinal_type minNNZ, ordinal_type maxN
     }
   }
   Kokkos::deep_copy(entries, h_entries);
-  return crsMat_t("test matrix", nrows, nrows, nnz, values, rowmap, entries);
+  return crsMat_t("test matrix", nrows, ncols, nnz, values, rowmap, entries);
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, class Device>
-void test_spadd(lno_t numRows, size_type minNNZ, size_type maxNNZ, bool sortRows)
+void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ, size_type maxNNZ, bool sortRows)
 {
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type> crsMat_t;
 
+  typedef Kokkos::ArithTraits<scalar_t> KAT;
+  typedef typename KAT::mag_type magnitude_t;
   typedef typename crsMat_t::row_map_type::non_const_type row_map_type;
   typedef typename crsMat_t::index_type::non_const_type entries_type;
   typedef typename crsMat_t::values_type::non_const_type values_type;
@@ -88,13 +93,16 @@ void test_spadd(lno_t numRows, size_type minNNZ, size_type maxNNZ, bool sortRows
   typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t,
   typename Device::execution_space, typename Device::memory_space, typename Device::memory_space> KernelHandle;
 
+  //Make the test deterministic on a given machine+compiler
+  srand((numRows << 1) ^ numCols);
+
   KernelHandle handle;
   handle.create_spadd_handle(sortRows);
-  crsMat_t A = randomMatrix<crsMat_t, lno_t>(numRows, minNNZ, maxNNZ, sortRows);
-  crsMat_t B = randomMatrix<crsMat_t, lno_t>(numRows, minNNZ, maxNNZ, sortRows);
-  //Matrices from randomMatrix are always square
-  lno_t numCols = numRows;
-  row_map_type c_row_map("C row map", numRows + 1);
+  crsMat_t A = randomMatrix<crsMat_t, lno_t>(numRows, numCols, minNNZ, maxNNZ, sortRows);
+  crsMat_t B = randomMatrix<crsMat_t, lno_t>(numRows, numCols, minNNZ, maxNNZ, sortRows);
+  row_map_type c_row_map(Kokkos::ViewAllocateWithoutInitializing("C row map"), numRows + 1);
+  //Make sure that nothing relies on any specific entry of c_row_map being zero initialized
+  Kokkos::deep_copy(c_row_map, (size_type) 5);
   auto addHandle = handle.get_spadd_handle();
   KokkosSparse::Experimental::spadd_symbolic<
     KernelHandle,
@@ -105,8 +113,12 @@ void test_spadd(lno_t numRows, size_type minNNZ, size_type maxNNZ, bool sortRows
     row_map_type,
     entries_type>
   (&handle, A.graph.row_map, A.graph.entries, B.graph.row_map, B.graph.entries, c_row_map);
-  values_type c_values("C values", addHandle->get_max_result_nnz());
-  entries_type c_entries("C entries", addHandle->get_max_result_nnz());
+  size_type c_nnz = addHandle->get_c_nnz();
+  //Fill values, entries with incorrect incorret
+  values_type c_values(Kokkos::ViewAllocateWithoutInitializing("C values"), c_nnz);
+  Kokkos::deep_copy(c_values, ((typename KAT::mag_type) 5) * KAT::one());
+  entries_type c_entries("C entries", c_nnz);
+  Kokkos::deep_copy(c_entries, (lno_t) 5);
   KokkosSparse::Experimental::spadd_numeric<
     KernelHandle,
     typename row_map_type::const_type,
@@ -116,12 +128,12 @@ void test_spadd(lno_t numRows, size_type minNNZ, size_type maxNNZ, bool sortRows
     typename entries_type::const_type,
     scalar_t, typename values_type::const_type,
     row_map_type, entries_type, values_type>
-    (&handle, A.graph.row_map, A.graph.entries, A.values, 1,
-     B.graph.row_map, B.graph.entries, B.values, 1,
+    (&handle, A.graph.row_map, A.graph.entries, A.values, KAT::one(),
+     B.graph.row_map, B.graph.entries, B.values, KAT::one(),
      c_row_map, c_entries, c_values);
   //done with handle
   //create C using CRS arrays
-  crsMat_t C("C", numRows, numRows, addHandle->get_max_result_nnz(), c_values, c_row_map, c_entries);
+  crsMat_t C("C", numRows, numCols, c_nnz, c_values, c_row_map, c_entries);
   handle.destroy_spadd_handle();
   auto Avalues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.values);
   auto Arowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
@@ -132,7 +144,6 @@ void test_spadd(lno_t numRows, size_type minNNZ, size_type maxNNZ, bool sortRows
   auto Cvalues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), C.values);
   auto Crowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), C.graph.row_map);
   auto Centries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), C.graph.entries);
-  using KAT = Kokkos::ArithTraits<scalar_t>;
   auto zero = KAT::zero();
   auto eps = KAT::epsilon();
   //check that C is correct and sorted, row-by-row
@@ -159,10 +170,15 @@ void test_spadd(lno_t numRows, size_type minNNZ, size_type maxNNZ, bool sortRows
     //make sure C has the right number of entries
     auto actualNZ = Crowmap(row + 1) - Crowmap(row);
     ASSERT_EQ(actualNZ, nz) << "A+B row " << row << " has " << actualNZ << " entries but should have " << nz;
-    //make sure C's indices are sorted
+    //make sure C's indices are sorted and unique
     for(size_type i = Crowmap(row) + 1; i < Crowmap(row + 1); i++)
     {
-      ASSERT_LE(Centries(i - 1), Centries(i)) << "C row " << row << " is not sorted";
+      ASSERT_LT(Centries(i - 1), Centries(i)) << "C row " << row << " is not sorted";
+    }
+    //make sure C's indices are exactly the same as "nonzeros"
+    for(size_type i = Crowmap(row); i < Crowmap(row + 1); i++)
+    {
+      ASSERT_EQ(true, nonzeros[Centries(i)]);
     }
     //make sure C has the correct values
     for(size_type i = Crowmap(row); i < Crowmap(row + 1); i++)
@@ -170,17 +186,24 @@ void test_spadd(lno_t numRows, size_type minNNZ, size_type maxNNZ, bool sortRows
       scalar_t Cval = Cvalues(i);
       lno_t Ccol = Centries(i);
       //Check that result is correct to 1 ULP
-      ASSERT_LE(KAT::abs(correct[Ccol] - Cval), KAT::abs(correct[Ccol] * eps)) << "A+B row " << row << ", column " << Ccol << " has value " << Cval << " but should be " << correct[Ccol];
+      magnitude_t maxError = (correct[Ccol] == KAT::zero()) ? KAT::abs(eps) : KAT::abs(correct[Ccol] * eps);
+      ASSERT_LE(KAT::abs(correct[Ccol] - Cval), maxError) << "A+B row " << row << ", column " << Ccol << " has value " << Cval << " but should be " << correct[Ccol];
     }
   }
 }
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
-TEST_F( TestCategory,sparse ## _ ## spadd ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_spadd<SCALAR,ORDINAL,OFFSET,DEVICE> (10, 0, 3, true); \
-  test_spadd<SCALAR,ORDINAL,OFFSET,DEVICE> (10, 0, 3, false); \
-  test_spadd<SCALAR,ORDINAL,OFFSET,DEVICE> (100, 50, 100, true); \
-  test_spadd<SCALAR,ORDINAL,OFFSET,DEVICE> (100, 50, 100, false); \
+TEST_F( TestCategory,sparse ## _ ## spadd_sorted_input ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
+  test_spadd<SCALAR,ORDINAL,OFFSET,DEVICE> (10, 10, 0, 0, true); \
+  test_spadd<SCALAR,ORDINAL,OFFSET,DEVICE> (10, 10, 0, 2, true); \
+  test_spadd<SCALAR,ORDINAL,OFFSET,DEVICE> (100, 100, 50, 100, true); \
+  test_spadd<SCALAR,ORDINAL,OFFSET,DEVICE> (50, 50, 75, 100, true); \
+} \
+TEST_F( TestCategory,sparse ## _ ## spadd_unsorted_input ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
+  test_spadd<SCALAR,ORDINAL,OFFSET,DEVICE> (10, 10, 0, 0, false); \
+  test_spadd<SCALAR,ORDINAL,OFFSET,DEVICE> (10, 10, 0, 2, false); \
+  test_spadd<SCALAR,ORDINAL,OFFSET,DEVICE> (100, 100, 50, 100, false); \
+  test_spadd<SCALAR,ORDINAL,OFFSET,DEVICE> (50, 50, 75, 100, false); \
 }
 
 #if (defined (KOKKOSKERNELS_INST_DOUBLE) \

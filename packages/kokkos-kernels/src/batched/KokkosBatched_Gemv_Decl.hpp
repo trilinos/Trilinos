@@ -26,7 +26,10 @@ namespace KokkosBatched {
            const AViewType &A,
            const xViewType &x,
            const ScalarType beta,
-           const yViewType &y);
+           const yViewType &y) {
+      assert(false && "Error: encounter dummy impl");
+      return 0;
+    }
   };
     
   ///
@@ -48,7 +51,35 @@ namespace KokkosBatched {
            const AViewType &A,
            const xViewType &x,
            const ScalarType beta,
-           const yViewType &y);
+           const yViewType &y) {
+      assert(false && "Error: encounter dummy impl");
+      return 0;
+    }
+  };
+
+  ///
+  /// TeamVector Gemv 
+  ///
+
+  template<typename MemberType,
+           typename ArgTrans,
+           typename ArgAlgo>
+  struct TeamVectorGemv {
+    template<typename ScalarType,
+             typename AViewType,
+             typename xViewType,
+             typename yViewType>
+    KOKKOS_INLINE_FUNCTION
+    static int
+    invoke(const MemberType &member, 
+           const ScalarType alpha,
+           const AViewType &A,
+           const xViewType &x,
+           const ScalarType beta,
+           const yViewType &y) {
+      assert(false && "Error: encounter dummy impl");
+      return 0;
+    }
   };
 
   ///
@@ -75,6 +106,8 @@ namespace KokkosBatched {
         r_val = SerialGemv<ArgTrans,ArgAlgo>::invoke(alpha, A, x, beta, y);
       } else if (std::is_same<ArgMode,Mode::Team>::value) {
         r_val = TeamGemv<MemberType,ArgTrans,ArgAlgo>::invoke(member, alpha, A, x, beta, y);
+      } else if (std::is_same<ArgMode,Mode::TeamVector>::value) {
+        r_val = TeamVectorGemv<MemberType,ArgTrans,ArgAlgo>::invoke(member, alpha, A, x, beta, y);
       } 
       return r_val;
     }      
@@ -82,6 +115,9 @@ namespace KokkosBatched {
 
 }
 
+#include "KokkosBatched_Gemv_Serial_Impl.hpp"
+#include "KokkosBatched_Gemv_Team_Impl.hpp"
+#include "KokkosBatched_Gemv_TeamVector_Impl.hpp"
 
 #define KOKKOSBATCHED_SERIAL_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE,M,N,ALPHA,A,AS0,AS1,X,XS,BETA,Y,YS) \
   KokkosBatched::SerialGemvInternal<ALGOTYPE>                           \
