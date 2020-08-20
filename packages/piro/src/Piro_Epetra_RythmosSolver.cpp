@@ -156,13 +156,11 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
     // already constructed as "model". Decorate if needed.
 
     if (stepperType == "Explicit RK") {
-      if (rythmosPL->get("Invert Mass Matrix", false)) {
-        Teuchos::RCP<EpetraExt::ModelEvaluator> origModel = model;
-        rythmosPL->get("Lump Mass Matrix", false); //JF line does not do anything
-        model = Teuchos::rcp(new Piro::Epetra::InvertMassMatrixDecorator(
-              sublist(rythmosPL,"Stratimikos", true), origModel,
-              true,rythmosPL->get("Lump Mass Matrix", false),false));
-      }
+      Teuchos::RCP<EpetraExt::ModelEvaluator> origModel = model;
+      rythmosPL->get("Lump Mass Matrix", false); //JF line does not do anything
+      model = Teuchos::rcp(new Piro::Epetra::InvertMassMatrixDecorator(
+            sublist(rythmosPL,"Stratimikos", true), origModel,
+            true,rythmosPL->get("Lump Mass Matrix", false),false));
     }
 
     // C.2) Create the Thyra-wrapped ModelEvaluator
@@ -256,13 +254,11 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
 
     // TODO: Generelize to any explicit method, option to invert mass matrix
     if (stepperType == "Explicit RK") {
-      if (rythmosSolverPL->get("Invert Mass Matrix", false)) {
-        Teuchos::RCP<EpetraExt::ModelEvaluator> origModel = model;
-        rythmosSolverPL->get("Lump Mass Matrix", false); //JF line does not do anything
-        model = Teuchos::rcp(new Piro::Epetra::InvertMassMatrixDecorator(
-              sublist(rythmosSolverPL,"Stratimikos", true), origModel,
-              true,rythmosSolverPL->get("Lump Mass Matrix", false),false));
-      }
+      Teuchos::RCP<EpetraExt::ModelEvaluator> origModel = model;
+      rythmosSolverPL->get("Lump Mass Matrix", false); //JF line does not do anything
+      model = Teuchos::rcp(new Piro::Epetra::InvertMassMatrixDecorator(
+            sublist(rythmosSolverPL,"Stratimikos", true), origModel,
+            true,rythmosSolverPL->get("Lump Mass Matrix", false),false));
     }
 
     // C.2) Create the Thyra-wrapped ModelEvaluator
@@ -560,8 +556,7 @@ Piro::Epetra::RythmosSolver::getValidRythmosParameters() const
   validPL->set<double>("Beta", 1.0, "");
   validPL->set<double>("Max State Error", 1.0, "");
   validPL->set<std::string>("Name", "", "");
-  validPL->set<bool>("Invert Mass Matrix", false, "");
-  validPL->set<bool>("Lump Mass Matrix", false, "");
+  validPL->set<bool>("Lump Mass Matrix", false, "Boolean to tell code to lump mass matrix");
   validPL->set<std::string>("Stepper Method", "", "");
   return validPL;
 }
@@ -575,7 +570,6 @@ Piro::Epetra::RythmosSolver::getValidRythmosSolverParameters() const
   validPL->sublist("Stratimikos", false, "");
   validPL->sublist("NonLinear Solver", false, "");
   validPL->set<std::string>("Verbosity Level", "", "");
-  validPL->set<bool>("Invert Mass Matrix", false, "");
-  validPL->set<bool>("Lump Mass Matrix", false, "");
+  validPL->set<bool>("Lump Mass Matrix", false, "Boolean to tell code to lump mass matrix");
   return validPL;
 }

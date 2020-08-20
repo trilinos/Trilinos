@@ -399,8 +399,7 @@ Piro::TrapezoidRuleSolver<Scalar>::getValidTrapezoidRuleParameters() const
   validPL->set<double>("Final Time", 1.0, "");
   validPL->set<double>("Initial Time", 0.0, "");
   validPL->set<std::string>("Verbosity Level", "", "");
-  validPL->set<bool>("Invert Mass Matrix", false, "");
-  validPL->set<bool>("Lump Mass Matrix", false, "");
+  validPL->set<bool>("Lump Mass Matrix", false, "Boolean to tell code to lump mass matrix");
   validPL->sublist("Stratimikos", false, "");
   validPL->sublist("NOX", false, "");
   return validPL;
