@@ -330,10 +330,12 @@ RCP<Hierarchy_double> getDatapackHierarchy<double>(MuemexSystem* dp)
   return hier;
 }
 
+#ifdef HAVE_COMPLEX_SCALARS
 template<> RCP<Hierarchy_complex> getDatapackHierarchy<complex_t>(MuemexSystem* dp)
 {
   return ((TpetraSystem<complex_t>*) dp)->getHierarchy();
 }
+#endif
 
 template<typename Scalar, typename T>
 void setHierarchyData(MuemexSystem* problem, int levelID, T& data, string& dataName)
@@ -351,8 +353,12 @@ void setHierarchyData(MuemexSystem* problem, int levelID, T& data, string& dataN
   }
   else if(problem->type == TPETRA_COMPLEX)
   {
+#ifdef HAVE_COMPLEX_SCALARS
     RCP<Hierarchy<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier = ((TpetraSystem<complex_t>*) problem)->getHierarchy();
     level = hier->GetLevel(levelID);
+#else
+    throw std::runtime_error("setHierarchyData(): complex scalars not supported.");
+#endif
   }
   if(level.is_null())
     throw runtime_error("Error getting level when setting custom level data.");
@@ -381,9 +387,13 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, MuemexType dataType, in
     }
     else if(this->type == TPETRA_COMPLEX)
     {
+#ifdef HAVE_COMPLEX_SCALARS
       TpetraSystem<complex_t>* tsys = (TpetraSystem<complex_t>*) this;
       if(tsys->keepAll)
         fmb = tsys->systemManagers[levelID];
+#else
+      throw std::runtime_error("getHierarchyData(): complex scalars not supported.");
+#endif
     }
     const FactoryBase* factory = NoFactory::get(); //(ptr to constant)
     bool needFMB = true;
@@ -414,6 +424,7 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, MuemexType dataType, in
       }
       case TPETRA_COMPLEX:
       {
+#ifdef HAVE_COMPLEX_SCALARS
         RCP<OpenHierarchy<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier = rcp_static_cast<OpenHierarchy<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(getDatapackHierarchy<complex_t>(this));
         level = hier->GetLevel(levelID);
         if(needFMB)
@@ -430,6 +441,9 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, MuemexType dataType, in
           }
         }
         break;
+#else
+        throw std::runtime_error("Complex scalars not supported");
+#endif
       }
     }
     if(level.is_null())
@@ -446,7 +460,11 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, MuemexType dataType, in
       case XPETRA_MATRIX_DOUBLE:
         return saveDataToMatlab(level->Get<RCP<Xpetra_Matrix_double>>(dataName, factory));
       case XPETRA_MATRIX_COMPLEX:
+      {
+#ifdef HAVE_COMPLEX_SCALARS
         return saveDataToMatlab(level->Get<RCP<Xpetra_Matrix_complex>>(dataName, factory));
+#endif
+      }
       case XPETRA_MULTIVECTOR_DOUBLE:
         if(dataName == "Coordinates")
         {
@@ -553,14 +571,8 @@ int EpetraSystem::setup(const mxArray* matlabA, bool haveCoords, const mxArray* 
       /* Matrix Fill */
       A = loadDataFromMatlab<RCP<Epetra_CrsMatrix>>(matlabA);
       if(haveCoords)
-      {
-        RCP<Epetra_MultiVector> coords = loadDataFromMatlab<RCP<Epetra_MultiVector>>(matlabCoords);
-        prec = MueLu::CreateEpetraPreconditioner(A, *List, coords);
-      }
-      else
-      {
-        prec = MueLu::CreateEpetraPreconditioner(A, *List);
-      }
+        List->set("Coordinates", loadDataFromMatlab<RCP<Epetra_MultiVector>>(matlabCoords));
+      prec = MueLu::CreateEpetraPreconditioner(A, *List);
       //underlying the Epetra_Operator prec is a MueLu::EpetraOperator
       RCP<MueLu::EpetraOperator> meo = rcp_static_cast<MueLu::EpetraOperator, Epetra_Operator>(prec);
       operatorComplexity = meo->GetHierarchy()->GetOperatorComplexity();
@@ -691,14 +703,8 @@ void TpetraSystem<Scalar>::normalSetup(const mxArray* matlabA, bool haveCoords, 
   RCP<Tpetra::Operator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > opA(A);
   RCP<MueLu::TpetraOperator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mop;
   if(haveCoords)
-  {
-    RCP<Tpetra_MultiVector_double> coordArray = loadDataFromMatlab<RCP<Tpetra_MultiVector_double>>(matlabCoords);
-    mop = MueLu::CreateTpetraPreconditioner<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(opA, *List, coordArray);
-  }
-  else
-  {
-    mop = MueLu::CreateTpetraPreconditioner<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(opA, *List);
-  }
+    List->set("Coordinates", loadDataFromMatlab<RCP<Tpetra_MultiVector_double>>(matlabCoords));
+  mop = MueLu::CreateTpetraPreconditioner<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(opA, *List);
   prec = rcp_implicit_cast<Tpetra::Operator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(mop);
 
   // print data??
@@ -1103,6 +1109,7 @@ void parse_list_item(RCP<ParameterList> List, char *option_name, const mxArray *
       // Single or double, real or complex
       if(mxIsComplex(prhs))
       {
+#ifndef HAVE_COMPLEX_SCALARS
         opt_float = mxGetPr(prhs);
         double* opt_float_imag = mxGetPi(prhs);
         //assuming user wants std::complex<double> here...
@@ -1121,6 +1128,10 @@ void parse_list_item(RCP<ParameterList> List, char *option_name, const mxArray *
           else
             List->set(option_name, loadDataFromMatlab<RCP<Xpetra_MultiVector_complex>>(prhs));
         }
+#else
+        std::cerr << "Error: cannot load argument \"" << option_name << "\" because complex is not instantiated in this build.\n";
+        throw std::invalid_argument("Complex not supported");
+#endif
       }
       else
       {
@@ -1478,6 +1489,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
           }
           case TPETRA_COMPLEX:
           {
+#ifdef HAVE_COMPLEX_SCALARS
             RCP<TpetraSystem<complex_t>> tsys = rcp_static_cast<TpetraSystem<complex_t>, MuemexSystem>(dp);
             RCP<Tpetra_CrsMatrix_complex> matrix;
             if(reuse)
@@ -1486,6 +1498,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
               matrix = loadDataFromMatlab<RCP<Tpetra_CrsMatrix_complex>>(prhs[2]);
             plhs[0] = tsys->solve(List, matrix, rhs, iters);
             break;
+#else
+            std::cerr << "Cannot solve complex-valued system because complex is not enabled in this build.\n";
+            throw std::invalid_argument("Complex not supported");
+#endif
           }
         }
         if(nlhs > 1)
