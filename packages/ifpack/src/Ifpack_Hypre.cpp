@@ -71,6 +71,7 @@ typedef int (*int_star_star_func)(HYPRE_Solver, int**);
 typedef int (*double_star_func)(HYPRE_Solver, double*);
 typedef int (*int_int_double_double_func)(HYPRE_Solver, int, int, double, double);
 typedef int (*int_int_int_double_int_int_func)(HYPRE_Solver, int, int, int, double, int, int);
+typedef int (*char_star_func)(HYPRE_Solver, char*);
 
 //! This class is used to help with passing parameters in the SetParameter() function. Use this class to call Hypre's internal parameters.
 class FunctionParameter{
@@ -212,6 +213,19 @@ class FunctionParameter{
       int_param5_(param6),
       double_param1_(param4) {}
 
+    //! Char pointer constructor.
+    FunctionParameter(Hypre_Chooser chooser, char_star_func funct, char *param1):
+      chooser_(chooser),
+      option_(9),
+      char_star_func_(funct),
+      char_star_param_(param1) {}
+
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, char *param1):
+      chooser_(chooser),
+      option_(9),
+      char_star_func_(hypreMapCharStarFunc_.at(funct_name)),
+      char_star_param_(param1) {}
+
   //! Only method of this class. Calls the function pointer with the passed in HYPRE_Solver
   int CallFunction(HYPRE_Solver solver, HYPRE_Solver precond) {
     if(chooser_ == Solver){
@@ -219,7 +233,7 @@ class FunctionParameter{
         return int_func_(solver, int_param1_);
       } else if(option_ == 1){
         return double_func_(solver, double_param1_);
-    } else if(option_ == 2){
+      } else if(option_ == 2){
         return double_int_func_(solver, double_param1_, int_param1_);
       } else if (option_ == 3){
         return int_int_func_(solver, int_param1_, int_param2_);
@@ -231,8 +245,12 @@ class FunctionParameter{
         return int_int_double_double_func_(solver, int_param1_, int_param2_, double_param1_, double_param2_);
       } else if (option_ == 7) {
         return int_star_star_func_(solver, int_star_star_param_);
-      } else {
+      } else if (option_ == 8) {
         return int_int_int_double_int_int_func_(solver, int_param1_, int_param2_, int_param3_, double_param1_, int_param4_, int_param5_);
+      } else if (option_ == 9) {
+        return char_star_func_(solver, char_star_param_);
+      } else {
+        IFPACK_CHK_ERR(-2);
       }
     } else {
       if(option_ == 0){
@@ -243,7 +261,7 @@ class FunctionParameter{
         return double_int_func_(precond, double_param1_, int_param1_);
       } else if(option_ == 3) {
         return int_int_func_(precond, int_param1_, int_param2_);
-    } else if(option_ == 4) {
+      } else if(option_ == 4) {
         return int_star_func_(precond, int_star_param_);
       } else if(option_ == 5) {
         return double_star_func_(precond, double_star_param_);
@@ -251,8 +269,12 @@ class FunctionParameter{
         return int_int_double_double_func_(precond, int_param1_, int_param2_, double_param1_, double_param2_);
       } else if (option_ == 7) {
         return int_star_star_func_(precond, int_star_star_param_);
-      } else {
+      } else if (option_ == 8) {
         return int_int_int_double_int_int_func_(precond, int_param1_, int_param2_, int_param3_, double_param1_, int_param4_, int_param5_);
+      } else if (option_ == 9) {
+        return char_star_func_(solver, char_star_param_);
+      } else {
+        IFPACK_CHK_ERR(-2);
       }
     }
   }
@@ -285,6 +307,7 @@ class FunctionParameter{
     int_int_double_double_func int_int_double_double_func_;
     int_int_int_double_int_int_func int_int_int_double_int_int_func_;
     int_star_star_func int_star_star_func_;
+    char_star_func char_star_func_;
     int int_param1_;
     int int_param2_;
     int int_param3_;
@@ -295,6 +318,7 @@ class FunctionParameter{
     int *int_star_param_;
     int **int_star_star_param_;
     double *double_star_param_;
+    char *char_star_param_;
 
   static const std::map<std::string, int_func> hypreMapIntFunc_;
   static const std::map<std::string, double_func> hypreMapDoubleFunc_;
@@ -305,6 +329,7 @@ class FunctionParameter{
   static const std::map<std::string, int_int_double_double_func> hypreMapIntIntDoubleDoubleFunc_;
   static const std::map<std::string, int_int_int_double_int_int_func> hypreMapIntIntIntDoubleIntIntFunc_;
   static const std::map<std::string, int_star_star_func> hypreMapIntStarStarFunc_;
+  static const std::map<std::string, char_star_func> hypreMapCharStarFunc_;
 
 };
 
