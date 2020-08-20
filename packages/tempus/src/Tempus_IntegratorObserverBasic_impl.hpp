@@ -109,6 +109,9 @@ observeEndIntegrator(const Integrator<Scalar>& integrator){
        << "  Total runtime = " << runtime << " sec = "
        << runtime/60.0 << " min\n"
        << std::asctime(std::localtime(&end))
+       << "\nNumber of Accepted Steps = " << integrator.getSolutionHistory()->getCurrentState()->getIndex()
+       << "\nNumber of Failures = " << integrator.getSolutionHistory()->getCurrentState()->getMetaData()->getNRunningFailures()
+       << "\n"
        << exitStatus << "\n"
        << std::endl;
 }

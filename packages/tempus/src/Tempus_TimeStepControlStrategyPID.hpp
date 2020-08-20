@@ -110,7 +110,7 @@ public:
      if (workingState->getSolutionStatus() == Status::PASSED or
          workingState->getSolutionStatus() == Status::WORKING) {
         if(lastStepRejected_){
-           dt = std::min(dt, workingState->getTimestep());
+           dt = std::min(dt, workingState->getTimeStep());
         } else {
            facMax_ = tscsPL_->get<Scalar>("Maximum Safety Factor");
         }
