@@ -46,13 +46,32 @@ ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py ${TRILINOS_SOURCE_REPO:?} \
                                               ${TRILINOS_SOURCE_SHA:?} \
                                               ${WORKSPACE:?}
 
+
+options=(
+    --sourceRepo=${TRILINOS_SOURCE_REPO:?}
+    --sourceBranch=${TRILINOS_SOURCE_BRANCH:?}
+    --targetRepo=${TRILINOS_TARGET_REPO:?}
+    --targetBranch=${TRILINOS_TARGET_BRANCH:?}
+    --job_base_name=${JOB_BASE_NAME:?}
+    --workspaceDir=${WORKSPACE:?}
+    --github_pr_number=${PULLREQUESTNUM:?}
+    --job_number=${BUILD_ID:?}
+    --req-mem-per-core=3.0
+    --max-cores-allowed=29
+    --num-concurrent-tests=4
+    --mode=installation
+    --dry-run
+)    
+
+${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${options[@]}
+
 # Call the script to handle driving the testing
-${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${TRILINOS_SOURCE_REPO:?} \
-                                            ${TRILINOS_SOURCE_BRANCH:?} \
-                                            ${TRILINOS_TARGET_REPO:?} \
-                                            ${TRILINOS_TARGET_BRANCH:?} \
-                                            ${JOB_BASE_NAME:?} \
-                                            ${PULLREQUESTNUM:?} \
-                                            ${BUILD_NUMBER:?} \
-                                            ${WORKSPACE:?}
+#${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${TRILINOS_SOURCE_REPO:?} \
+#                                            ${TRILINOS_SOURCE_BRANCH:?} \
+#                                            ${TRILINOS_TARGET_REPO:?} \
+#                                            ${TRILINOS_TARGET_BRANCH:?} \
+#                                            ${JOB_BASE_NAME:?} \
+#                                            ${PULLREQUESTNUM:?} \
+#                                            ${BUILD_NUMBER:?} \
+#                                            ${WORKSPACE:?}
 
