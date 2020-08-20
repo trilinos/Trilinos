@@ -23,6 +23,7 @@ functionDoubleStar = re.compile(r'\s*HYPRE_Int\s+(HYPRE_[a-zA-Z]+Set[a-zA-Z]+)\s
 functionIntIntDoubleDouble = re.compile(r'\s*HYPRE_Int\s+(HYPRE_[a-zA-Z]+Set[a-zA-Z]+)\s*\(\s*HYPRE_Solver\s*solver\s*,\s*HYPRE_Int\s*[^\s*]+\s*,\s*HYPRE_Int\s*[^\s*]+\s*,\s*HYPRE_Real\s*[^\s*]+\s*,\s*HYPRE_Real\s*[^\s*]+\s*\)')
 functionIntIntIntDoubleIntInt = re.compile(r'\s*HYPRE_Int\s+(HYPRE_[a-zA-Z]+Set[a-zA-Z]+)\s*\(\s*HYPRE_Solver\s*solver\s*,\s*HYPRE_Int\s*[^\s*]+\s*,\s*HYPRE_Int\s*[^\s*]+\s*,\s*HYPRE_Int\s*[^\s*]+\s*,\s*HYPRE_Real\s*[^\s*]+\s*,\s*HYPRE_Int\s*[^\s*]+\s*,\s*HYPRE_Int\s*[^\s*]+\s*\)')
 functionIntStarStar = re.compile(r'\s*HYPRE_Int\s+(HYPRE_[a-zA-Z]+Set[a-zA-Z]+)\s*\(\s*HYPRE_Solver\s*solver\s*,\s*HYPRE_Int\s*\*\*[^\s*]+\s*\)')
+functionCharStar = re.compile(r'\s*HYPRE_Int\s+(HYPRE_[a-zA-Z]+Set[a-zA-Z]+)\s*\(\s*HYPRE_Solver\s*solver\s*,\s*char\s*\*[^\s*]+\s*\)')
 
 files = ["HYPRE_IJ_mv.h",
          "HYPRE_parcsr_ls.h",
@@ -94,3 +95,9 @@ with open(outputFile, 'w') as out:
     m = list(set(m))
     fs = ['  {{\"{func}\", &{func}}}'.format(func=func) if not func in skip else '//  {{\"{func}\", &{func}}}'.format(func=func) for func in m]
     out.write("const std::map<std::string, int_star_star_func> FunctionParameter::hypreMapIntStarStarFunc_ = {{\n{}}};".format(',\n'.join(fs)))
+
+    out.write('\n\n')
+    m = functionCharStar.findall(s)
+    m = list(set(m))
+    fs = ['  {{\"{func}\", &{func}}}'.format(func=func) if not func in skip else '//  {{\"{func}\", &{func}}}'.format(func=func) for func in m]
+    out.write("const std::map<std::string, char_star_func> FunctionParameter::hypreMapCharStarFunc_ = {{\n{}}};".format(',\n'.join(fs)))
