@@ -158,7 +158,8 @@ StkMeshIoBroker::StkMeshIoBroker()
   m_activeMeshIndex(0),
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
   m_autoLoadAttributes(true),
-  m_autoLoadDistributionFactorPerNodeSet(true)
+  m_autoLoadDistributionFactorPerNodeSet(true),
+  m_enableEdgeIO(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -168,7 +169,8 @@ StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm)
   m_activeMeshIndex(0),
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
   m_autoLoadAttributes(true),
-  m_autoLoadDistributionFactorPerNodeSet(true)
+  m_autoLoadDistributionFactorPerNodeSet(true),
+  m_enableEdgeIO(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -464,6 +466,7 @@ void StkMeshIoBroker::create_input_mesh()
     process_nodeblocks(*region,    meta_data());
     process_elementblocks(*region, meta_data());
     process_sidesets(*region,      meta_data());
+    process_edge_blocks(*region,   meta_data());
 
     if(m_autoLoadDistributionFactorPerNodeSet) {
         process_nodesets(*region,  meta_data());
@@ -556,6 +559,7 @@ void StkMeshIoBroker::write_output_mesh(size_t output_file_index)
 {
     validate_output_file_index(output_file_index);
     update_sidesets();
+    m_outputFiles[output_file_index]->set_enable_edge_io(m_enableEdgeIO);
     m_outputFiles[output_file_index]->write_output_mesh(*m_bulkData, attributeFieldOrderingByPartOrdinal);
 }
 
@@ -669,7 +673,7 @@ bool StkMeshIoBroker::populate_mesh_elements_and_nodes(bool delay_field_data_all
     return i_started_modification_cycle;
 }
 
-void StkMeshIoBroker::populate_mesh_sidesets(bool i_started_modification_cycle)
+void StkMeshIoBroker::populate_mesh_entitysets(bool i_started_modification_cycle)
 {
     validate_input_file_index(m_activeMeshIndex);
 
@@ -679,6 +683,7 @@ void StkMeshIoBroker::populate_mesh_sidesets(bool i_started_modification_cycle)
     stk::mesh::EntityIdProcMap elemIdMovedToProc;
 
     if(m_sidesetFaceCreationBehavior!=STK_IO_SIDE_CREATION_USING_GRAPH_TEST) {
+        process_edge_blocks(*region, bulk_data());
         process_sidesets(*region, bulk_data(), elemIdMovedToProc, m_sidesetFaceCreationBehavior);
         bool saveOption = bulk_data().use_entity_ids_for_resolving_sharing();
         bulk_data().set_use_entity_ids_for_resolving_sharing(true);
@@ -686,6 +691,7 @@ void StkMeshIoBroker::populate_mesh_sidesets(bool i_started_modification_cycle)
         bulk_data().set_use_entity_ids_for_resolving_sharing(saveOption);
     } else {
         bulk_data().initialize_face_adjacent_element_graph();
+        process_edge_blocks(*region, bulk_data());
         process_sidesets(*region, bulk_data(), elemIdMovedToProc, m_sidesetFaceCreationBehavior);
         stk_mesh_modification_end_after_node_sharing_resolution();
     }
@@ -700,7 +706,7 @@ void StkMeshIoBroker::populate_mesh_sidesets(bool i_started_modification_cycle)
 void StkMeshIoBroker::populate_mesh(bool delay_field_data_allocation)
 {
     bool i_started_modification_cycle = populate_mesh_elements_and_nodes(delay_field_data_allocation);
-    populate_mesh_sidesets(i_started_modification_cycle);
+    populate_mesh_entitysets(i_started_modification_cycle);
 }
 
 template<typename INT>

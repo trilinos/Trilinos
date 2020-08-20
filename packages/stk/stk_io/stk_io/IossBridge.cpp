@@ -65,6 +65,7 @@
 #include "Ioss_DatabaseIO.h"                         // for DatabaseIO
 #include "Ioss_ElementBlock.h"                       // for ElementBlock
 #include "Ioss_ElementTopology.h"                    // for ElementTopology
+#include "Ioss_EdgeBlock.h"
 #include "Ioss_EntityBlock.h"                        // for EntityBlock
 #include "Ioss_EntityType.h"
 #include "Ioss_Field.h"                              // for Field, etc
@@ -177,6 +178,10 @@ namespace {
         else
           return stk::mesh::InvalidEntityRank;
       }
+    
+    case Ioss::EDGEBLOCK:
+      return stk::topology::EDGE_RANK;
+
     default:
       return stk::mesh::InvalidEntityRank;
     }
@@ -1371,6 +1376,7 @@ namespace stk {
       // delete the pointer and remove the property.
       delete_selector_property(region.get_node_blocks());
       delete_selector_property(region.get_element_blocks());
+      delete_selector_property(region.get_edge_blocks());
       delete_selector_property(region.get_nodesets());
       delete_selector_property(region.get_commsets());
 
@@ -2012,6 +2018,70 @@ namespace stk {
           }
       }
 
+      void define_edge_block(stk::io::OutputParams &params,
+                             stk::mesh::Part &part)
+      {
+        mesh::MetaData & meta = mesh::MetaData::get(part);
+        const stk::mesh::BulkData &bulk = params.bulk_data();
+        Ioss::Region &io_region = params.io_region();
+
+        stk::topology topo = part.topology();
+        if (topo == stk::topology::INVALID_TOPOLOGY) {
+          std::ostringstream msg ;
+          msg << " INTERNAL_ERROR when defining output for region '"<<io_region.name()<<"': Part " << part.name()
+              << " returned INVALID from get_topology(). Please contact sierra-help@sandia.gov";
+          throw std::runtime_error( msg.str() );
+        }
+
+        stk::mesh::EntityRank rank = stk::topology::EDGE_RANK;
+
+        mesh::Selector selector = meta.locally_owned_part() & part;
+        if (params.get_subset_selector()) selector &= *params.get_subset_selector();
+        if (params.get_output_selector(rank)) selector &= *params.get_output_selector(rank);
+
+        std::string topologyName = map_stk_topology_to_ioss(topo);
+        const size_t num_edges = count_selected_entities( selector, bulk.buckets(rank));
+
+        // Defer the counting of attributes until after we define the
+        // element block so we can count them as we add them as fields to
+        // the element block
+        std::string name = getPartName(part);
+        Ioss::EdgeBlock *eb = io_region.get_edge_block(name);
+        if(eb == nullptr)
+        {
+            eb = new Ioss::EdgeBlock(io_region.get_database() ,
+                                     name,
+                                     topologyName,
+                                     num_edges);
+            io_region.add(eb);
+
+            bool use_generic_canonical_name = io_region.get_database()->get_use_generic_canonical_name();
+            if(use_generic_canonical_name) {
+              add_canonical_name_property(eb, part);
+            }
+
+            bool use_original_topology = has_original_topology_type(part);
+            if(use_original_topology) {
+                add_original_topology_property(eb, part);
+            }
+        }
+
+        if(has_original_part_id(part)) {
+            int64_t id = get_original_part_id(part);
+            eb->property_update("id", id);
+        } else if (params.get_use_part_id_for_output() && (part.id() != stk::mesh::Part::INVALID_ID)) {
+            eb->property_update("id", part.id());
+        }
+
+        delete_selector_property(eb);
+        mesh::Selector *select = new mesh::Selector(selector);
+        eb->property_add(Ioss::Property(s_internal_selector_name, select));
+        eb->property_add(Ioss::Property(base_stk_part_name, getPartName(part)));
+
+        // Add the attribute fields.
+        ioss_add_fields(part, part_primary_entity_rank(part), eb, Ioss::Field::ATTRIBUTE);
+      }
+
       void define_element_block(stk::io::OutputParams &params,
                                 stk::mesh::Part &part,
                                 const std::vector<std::vector<int>> &attributeOrdering,
@@ -2273,6 +2343,7 @@ namespace stk {
        }
 
        const bool order_blocks_by_creation_order = (input_region == nullptr) && !sort_stk_parts_by_name;
+       const int spatialDim = meta_data.spatial_dimension();
 
        for (mesh::PartVector::const_iterator i = parts->begin(); i != parts->end(); ++i) {
          mesh::Part * const part = *i;
@@ -2291,8 +2362,11 @@ namespace stk {
            else if ((rank == stk::topology::ELEMENT_RANK) && isValidForOutput) {
              define_element_block(params, *part, attributeOrdering, order_blocks_by_creation_order);
            }
-           else if ((rank == stk::topology::FACE_RANK) || (rank == stk::topology::EDGE_RANK)) {
+           else if ((rank == stk::topology::FACE_RANK) || (rank == stk::topology::EDGE_RANK && spatialDim == 2)) {
              define_side_set(params, *part);
+           }
+           else if ((rank == stk::topology::EDGE_RANK) && spatialDim == 3 && params.get_enable_edge_io()) {
+             define_edge_block(params, *part);
            }
          }
        }
@@ -2732,6 +2806,66 @@ namespace stk {
         }
       }
 
+      template <typename INT>
+      void output_edge_block(stk::io::OutputParams &params, Ioss::EdgeBlock *eb)
+      {
+        const stk::mesh::BulkData &bulk = params.bulk_data();
+        const stk::mesh::MetaData & meta_data = bulk.mesh_meta_data();
+        const std::string& name = eb->name();
+        mesh::Part* part = getPart( meta_data, name);
+        assert(part != nullptr);
+
+        stk::topology topo = part->topology();
+        if (topo == stk::topology::INVALID_TOPOLOGY) {
+          std::ostringstream msg ;
+          msg << " INTERNAL_ERROR: Part " << part->name() << " returned INVALID from get_topology()";
+          throw std::runtime_error( msg.str() );
+        }
+
+        std::vector<mesh::Entity> edges;
+        stk::mesh::EntityRank type = part_primary_entity_rank(*part);
+        size_t num_edges = get_entities(params, *part, type, edges, false);
+
+        size_t nodes_per_edge = eb->get_property("topology_node_count").get_int();
+
+        std::vector<INT> edge_ids; edge_ids.reserve(num_edges == 0 ? 1 : num_edges);
+        std::vector<INT> connectivity; connectivity.reserve( (num_edges*nodes_per_edge) == 0 ? 1 : (num_edges*nodes_per_edge));
+
+        for (size_t i = 0; i < num_edges; ++i) {
+
+          edge_ids.push_back(bulk.identifier(edges[i]));
+
+          stk::mesh::Entity const * edge_nodes = bulk.begin_nodes(edges[i]);
+
+          for (size_t j = 0; j < nodes_per_edge; ++j) {
+            connectivity.push_back(bulk.identifier(edge_nodes[j]));
+          }
+        }
+
+        const size_t num_ids_written = eb->put_field_data("ids", edge_ids);
+        const size_t num_con_written = eb->put_field_data("connectivity", connectivity);
+
+        if ( num_edges != num_ids_written || num_edges != num_con_written ) {
+          std::ostringstream msg ;
+          msg << " FAILED in Ioss::EdgeBlock::put_field_data:" << std::endl ;
+          msg << "  num_edges = " << num_edges << std::endl ;
+          msg << "  num_ids_written = " << num_ids_written << std::endl ;
+          msg << "  num_connectivity_written = " << num_con_written << std::endl ;
+          throw std::runtime_error( msg.str() );
+        }
+
+        stk::mesh::EntityRank edge_rank = stk::topology::EDGE_RANK;
+        const std::vector<mesh::FieldBase *> &fields = meta_data.get_fields();
+        for(const mesh::FieldBase* f : fields) {
+          const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
+          if (role != nullptr && *role == Ioss::Field::ATTRIBUTE) {
+            const mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, edge_rank, *part);
+            if (res.num_scalars_per_entity() > 0) {
+              stk::io::field_data_to_ioss(bulk, f, edges, eb, f->name(), Ioss::Field::ATTRIBUTE);
+            }
+          }
+        }
+      }
     }
 
     void write_output_db_node_block(stk::io::OutputParams &params)
@@ -2766,7 +2900,7 @@ namespace stk {
     }
 
     template <typename T>
-    void write_output_db_for_nodesets_sidesets_and_comm_map(stk::io::OutputParams &params)
+    void write_output_db_for_entitysets_and_comm_map(stk::io::OutputParams &params)
     {
         Ioss::Region &io_region = params.io_region();
 
@@ -2776,6 +2910,10 @@ namespace stk {
 
         for(Ioss::SideSet *ss : io_region.get_sidesets()) {
             output_side_set<T>(params, ss);
+        }
+
+        for(Ioss::EdgeBlock *eb: io_region.get_edge_blocks()) {
+            output_edge_block<T>(params, eb);
         }
 
         output_communication_maps<T>(params);
@@ -2790,9 +2928,9 @@ namespace stk {
       bool ints64bit = db_api_int_size(&io_region) == 8;
 
         if (ints64bit) {
-            write_output_db_for_nodesets_sidesets_and_comm_map<int64_t>(params);
+            write_output_db_for_entitysets_and_comm_map<int64_t>(params);
         } else {
-            write_output_db_for_nodesets_sidesets_and_comm_map<int>(params);
+            write_output_db_for_entitysets_and_comm_map<int>(params);
         }
     }
 
@@ -2917,6 +3055,19 @@ namespace stk {
           }
         }
       }
+
+      void define_input_edge_block_fields(Ioss::Region &region, stk::mesh::MetaData &meta)
+      {
+        const Ioss::EdgeBlockContainer& edge_blocks = region.get_edge_blocks();
+        for(size_t i=0; i < edge_blocks.size(); i++) {
+          if (stk::io::include_entity(edge_blocks[i])) {
+            stk::mesh::Part* const part = meta.get_part(edge_blocks[i]->name());
+            assert(part != nullptr);
+            stk::io::define_io_fields(edge_blocks[i], Ioss::Field::TRANSIENT,
+                                      *part, part_primary_entity_rank(*part));
+          }
+        }
+      }
     }
 
     // ========================================================================
@@ -2937,6 +3088,7 @@ namespace stk {
       define_input_elementblock_fields(region, meta);
       define_input_nodeset_fields(region, meta);
       define_input_sideset_fields(region, meta);
+      define_input_edge_block_fields(region, meta);
     }
 
     void insert_var_names_for_part(const Ioss::GroupingEntity* entity, stk::mesh::Part* part, FieldNameToPartVector& names)
