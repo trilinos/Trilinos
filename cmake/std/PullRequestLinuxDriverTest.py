@@ -23,13 +23,11 @@ and we get the correct behavior for PR testing.
 Expectations
 ------------
 
-### Environment Variables
-- WORKSPACE : Root level directory for the Jenkins job.
+### Required Environment Variables
 - MODULESHOME : Path to the location where modulefiles are.
 - CC : C Compiler
 - FC : Fortran Compiler
 - PULLREQUEST_CDASH_TRACK : Which CDash track should this result be published to?
-- JENKINS_JOB_WEIGHT : Number of cores to use to build Trilinos
 
 ### Other Expectations?
 
@@ -171,6 +169,11 @@ def parse_args():
 
     arguments = parser.parse_args()
 
+    # Type conversions
+    arguments.max_cores_allowed    = int(arguments.max_cores_allowed)
+    arguments.num_concurrent_tests = int(arguments.num_concurrent_tests)
+    arguments.req_mem_per_core     = float(arguments.req_mem_per_core)
+
     if arguments.workspaceDir is None:
         arguments.workspaceDir = default_workspace
         if arguments.package_enables is None:
@@ -213,6 +216,16 @@ def parse_args():
 def main(args):
 
     pr_config = None
+
+    if args.dry_run:
+        print("="*80)
+        print("=")
+        print("=   T R I L I N O S   P U L L R E Q U E S T   D R I V E R   S T A R T")
+        print("=")
+        print("=                D R Y   R U N   M O D E   E N A B L E D")
+        print("=")
+        print("="*80)
+        print("")
 
     if 'standard' == args.mode:
         pr_config = trilinosprhelpers.TrilinosPRConfigurationStandard(args)

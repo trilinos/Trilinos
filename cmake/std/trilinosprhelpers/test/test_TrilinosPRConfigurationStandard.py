@@ -183,7 +183,7 @@ class TrilinosPRConfigurationStandardTest(TestCase):
         # execute step
         ret = pr_config.execute_test()
         self.mock_chdir.assert_called_once()
-        self.mock_subprocess_check_call.assert_called_once()
+        self.mock_subprocess_check_call.assert_called()
         self.assertEqual(ret, 0)
 
 

@@ -79,7 +79,7 @@ class TrilinosPRConfigurationBase(object):
         Returns:
             self.args.max_cores_allowed
         """
-        return self.args.max_cores_allowed
+        return int(self.args.max_cores_allowed)
 
 
     @property
@@ -92,7 +92,7 @@ class TrilinosPRConfigurationBase(object):
         Returns:
             self.args.num_concurrent_tests
         """
-        return self.args.num_concurrent_tests
+        return int(self.args.num_concurrent_tests)
 
 
     @property
@@ -467,16 +467,43 @@ class TrilinosPRConfigurationBase(object):
             print("rval = {}".format(rval))
         else:
             tr_config.pretty_print()
+            print("\nNOTICE: ENVVARS not set due to dry-run flag.")
 
         if rval:
             msg = "ERROR: There was a problem configuring the environment."
             print(msg)
             raise Exception(msg)
 
+        envvars = [
+            "SEMS_",
+            "TRILINOS_",
+            "PULLREQUEST",
+            "JENKINS",
+            "KOKKOS",
+            "BUILD",
+            "JOB",
+            "FORCE_CLEAN",
+            "proxy",
+            "PROXY",
+            "PATH",
+            "OMP_",
+            "WORKSPACE"
+            ]
+        print("")
+        tr_config.pretty_print_envvars(envvar_filter=envvars)
+
         print("="*80)
         print("=  E N V I R O N M E N T   S E T   U P   C O M P L E T E")
         print("="*80)
         print("")
+
+        print("="*80)
+        print("=  Create packageEnables.cmake")
+        print("="*80)
+        self.create_package_enables_file(dryrun=self.args.dry_run)
+        print("")
+
+
         return 0
 
 

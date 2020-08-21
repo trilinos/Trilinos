@@ -71,9 +71,12 @@ class SetEnvironment(object):
                 with open(self._file) as ifp:
                     self._config.read_file(ifp)
             except IOError as err:
-                print("Error loading file: {}".format(self._file))
-                print("- CWD: {}".format(os.getcwd()))
-                raise err
+                msg = "="*80 + "\n" + \
+                      "ERROR: Unable to load configuration file\n" + \
+                      "- Requested file: {}\n".format(self._file) + \
+                      "- CWD: {}\n".format(os.getcwd()) + \
+                      "="*80 + "\n"
+                sys.exit(msg)
         return self._config
 
 
@@ -167,6 +170,50 @@ class SetEnvironment(object):
             raise Exception("FATAL ERROR in SetEnvironment.apply()")
 
         return status
+
+
+    def pretty_print_envvars(self, envvar_filter=None, filtered_keys_only=False):
+        """
+        Print out a filtered list of environment variables.
+
+        Arguments:
+            envvar_filter (list): a list of keys to print out the value.
+                            all envvar values are printed if omitted.
+                            Default: None
+            filtered_keys_only (bool)  : If true, we only display filtered keys.
+                            If false, we display the keys of all keys.
+                            Default: False
+
+        Returns:
+            int 0
+        """
+        if envvar_filter is not None:
+            assert isinstance(envvar_filter, list)
+
+        print("="*60)
+        print(" P R I N T   E N V I R O N M E N T   V A R S")
+        print("="*60)
+        print("-- ")
+        # print("envvar_filter = {}".format(envvar_filter))
+        for k,v in os.environ.items():
+            matched_key = False
+            if envvar_filter is not None:
+                for f in envvar_filter:
+                    if f in k:
+                        matched_key = True
+                        break
+            else:
+                filtered_keys_only = False
+
+            if filtered_keys_only == False or matched_key:
+                print("-- {}".format(k), end="")
+                if envvar_filter is None:
+                    print(" = {}".format(v), end="")
+                elif matched_key:
+                    print(" = {}".format(v), end="")
+                print("")
+        print("--")
+        return 0
 
 
     def pretty_print(self):
@@ -287,7 +334,7 @@ class SetEnvironment(object):
                 self._load_configuration_r(config, new_profile, actions, processed_secs)
 
             elif "module-purge" == op:
-                actions["module-op"].append(["purge"])
+                actions["module-op"].append(["purge", ''])
 
             elif "module-use" == op:
                 actions["module-op"].append(["use", v])

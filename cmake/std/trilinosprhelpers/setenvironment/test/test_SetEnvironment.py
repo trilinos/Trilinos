@@ -70,7 +70,7 @@ class SetEnvironmentTest(TestCase):
         print("")
         self.maxDiff = None
 
-        test_file = 'test_config.ini'
+        test_file = 'setenvironment_config.ini'
 
         cwd = os.getcwd()
         filepath = os.path.join(cwd,'trilinosprhelpers','setenvironment','test', test_file)
@@ -102,6 +102,7 @@ class SetEnvironmentTest(TestCase):
                 'sems-python': True
             },
             'module-op': [
+                ['purge', ''],
                 ['use', '/projects/sems/modulefiles/projects'],
                 ['load', 'sems-env'],
                 ['load', 'sems-gcc/7.3.0'],
@@ -127,6 +128,7 @@ class SetEnvironmentTest(TestCase):
                 'sems-python': True
             },
             'module-op': [
+                ['purge', ''],
                 ['use', '/projects/sems/modulefiles/projects'],
                 ['load', 'sems-env'],
                 ['load', 'sems-gcc/7.3.0'],
@@ -151,6 +153,7 @@ class SetEnvironmentTest(TestCase):
                 'sems-gcc': True
             },
             'module-op': [
+                ['purge', ''],
                 ['use', '/projects/sems/modulefiles/projects'],
                 ['load', 'sems-env'],
                 ['load', 'sems-gcc/7.3.0'],
@@ -174,6 +177,7 @@ class SetEnvironmentTest(TestCase):
                 'sems-gcc': True
             },
             'module-op': [
+                ['purge', ''],
                 ['use', '/projects/sems/modulefiles/projects'],
                 ['load', 'sems-env'],
                 ['load', 'sems-gcc/7.3.0'],
@@ -200,6 +204,7 @@ class SetEnvironmentTest(TestCase):
                 'sems-python': True
             },
             'module-op': [
+                ['purge', ''],
                 ['use', '/projects/sems/modulefiles/projects'],
                 ['load', 'sems-env'],
                 ['load', 'sems-gcc/7.3.0'],
@@ -226,6 +231,7 @@ class SetEnvironmentTest(TestCase):
                 'sems-python': True
             },
             'module-op': [
+                ['purge', ''],
                 ['use', '/projects/sems/modulefiles/projects'],
                 ['load', 'sems-env'],
                 ['load', 'sems-gcc/7.3.0'],
@@ -408,9 +414,9 @@ class SetEnvironmentTest(TestCase):
     def test_SetEnvironment_missing_file(self):
         #with self.assertRaisesRegexp(FileNotFoundError, 'No such file or directory:'):
         setEnv = SetEnvironment("no_file", "TEST_PROFILE_001")
-        with self.assertRaises(IOError):
-            c = setEnv.config
-            #setEnv._load_configuration()
+        with patch("sys.exit", return_value=1) as m_exit:
+            setEnv.config
+            m_exit.assert_called_once()
 
 
     def test_SetEnvironment_config(self):
@@ -426,6 +432,49 @@ class SetEnvironmentTest(TestCase):
             print(">>>> {}".format(opt))
         for k,v in setEnv.config.items("SAMPLE_MAP"):
             print(">>>> {} : {}".format(k,v))
+
+
+    def test_SetEnvironment_pretty_print_envvars(self):
+        """
+
+        """
+        print("")
+        envvars = [
+            "SETENVIRONMENT_TEST_"
+            ]
+
+        os.environ["SETENVIRONMENT_TEST_ENVVAR_001"]   = "foobar"
+        os.environ["SETENVIRONMENT_HIDDEN_ENVVAR_001"] = "baz"
+
+        setEnv = SetEnvironment(self._filename, "TEST_PROFILE_001")
+        with patch('sys.stdout', new=StringIO()) as m_stdout:
+            setEnv.pretty_print_envvars(envvar_filter=envvars)
+            self.assertIn("-- SETENVIRONMENT_TEST_ENVVAR_001 = foobar", m_stdout.getvalue())
+            self.assertIn("-- SETENVIRONMENT_HIDDEN_ENVVAR_001", m_stdout.getvalue())
+            self.assertNotIn("-- SETENVIRONMENT_HIDDEN_ENVVAR_001 = baz", m_stdout.getvalue())
+
+        # Filtered + keys_only should print out only the one key
+        with patch('sys.stdout', new=StringIO()) as m_stdout:
+            setEnv.pretty_print_envvars(envvar_filter=envvars, filtered_keys_only=True)
+            self.assertIn("-- SETENVIRONMENT_TEST_ENVVAR_001 = foobar", m_stdout.getvalue())
+            self.assertNotIn("-- SETENVIRONMENT_HIDDEN", m_stdout.getvalue())
+
+        # No options should print all envvars + values
+        with patch('sys.stdout', new=StringIO()) as m_stdout:
+            setEnv.pretty_print_envvars()
+            self.assertIn("-- SETENVIRONMENT_TEST", m_stdout.getvalue())
+            self.assertIn("-- SETENVIRONMENT_HIDDEN", m_stdout.getvalue())
+
+        # No filter but we say show filtered keys only should result in
+        # print all keys + values.
+        with patch('sys.stdout', new=StringIO()) as m_stdout:
+            setEnv.pretty_print_envvars(filtered_keys_only=True)
+            self.assertIn("-- SETENVIRONMENT_TEST", m_stdout.getvalue())
+            self.assertIn("-- SETENVIRONMENT_HIDDEN", m_stdout.getvalue())
+
+        # cleanup
+        del os.environ["SETENVIRONMENT_TEST_ENVVAR_001"]
+        del os.environ["SETENVIRONMENT_HIDDEN_ENVVAR_001"]
 
 
     def _setEnv_test(self, filename, profile, truth=None, module_fail=False):

@@ -17,6 +17,8 @@ else
     source /projects/sems/modulefiles/utils/sems-modules-init.sh
     module load sems-git/2.10.1
     #module load sems-python/2.7.9          # SCAFFOLDING (TESTING)
+    module load sems-python/3.5.2
+    pip3 install --user configparser        # SCAFFOLDING -- This stuff won't run on an update
 fi
 
 # Identify the path to this script
@@ -60,7 +62,8 @@ options=(
     --max-cores-allowed=29
     --num-concurrent-tests=4
     --mode=installation
-    --dry-run
+    --config="Trilinos/cmake/std/configs/trilinos_pr.ini"
+    #--dry-run
 )    
 
 echo "=========================================================="
