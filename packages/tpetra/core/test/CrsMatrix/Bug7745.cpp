@@ -70,19 +70,68 @@ public:
     nMyRow(4), 
     nGlobalRow(nMyRow * comm_->getSize()),
     yInit(100*(comm_->getRank()+1)),
-    squareMatrix(square_) 
+    squareMatrix(square_),
+    foo(Teuchos::rcp(&std::cout,false))
   { }
   
+  // Return number of rows in generated matrix
   size_t nGlobalRows() const { return nGlobalRow; }
+
+  // Return number of columns in generated matrix
   size_t nGlobalCols() const { 
    return (squareMatrix ? nGlobalRow : nGlobalRow + nEntriesPerRow - 1);
   }
   
-  Teuchos::RCP<matrix_t>
-  buildMatrix(
-    Teuchos::RCP<const map_t> &domainMap, Teuchos::RCP<const map_t> &rangeMap)
+  // Run tests with combinations of alpha, beta, transpose
+  int runTests(
+    const Teuchos::RCP<const map_t> &domainMap,
+    const Teuchos::RCP<const map_t> &rangeMap,
+    const char* testName)
   {
-    int np = comm->getSize();
+    int me = comm->getRank();
+    int ierr = 0;
+
+    // Build the matrix
+    Teuchos::RCP<const matrix_t> Amat = buildMatrix(domainMap, rangeMap);
+
+    // Test with alpha = 0, beta = 0
+    ierr += runAlphaBeta(Amat, scalar_t(0), scalar_t(0), testName);
+
+    // Test with alpha != 0, beta = 0
+    ierr += runAlphaBeta(Amat, scalar_t(2), scalar_t(0), testName);
+
+    // Test with alpha = 0, beta != 0
+    ierr += runAlphaBeta(Amat, scalar_t(0), scalar_t(3), testName);
+
+    // Test with alpha != 0, beta != 0
+    ierr += runAlphaBeta(Amat, scalar_t(2), scalar_t(3), testName);
+
+    // Test transpose with alpha = 0, beta = 0
+    ierr += runAlphaBetaTranspose(Amat, scalar_t(0), scalar_t(0), testName);
+
+    // Test transpose with alpha != 0, beta = 0
+    ierr += runAlphaBetaTranspose(Amat, scalar_t(2), scalar_t(0), testName);
+
+    // Test transpose with alpha = 0, beta != 0
+    ierr += runAlphaBetaTranspose(Amat, scalar_t(0), scalar_t(3), testName);
+
+    // Test transpose with alpha != 0, beta != 0
+    ierr += runAlphaBetaTranspose(Amat, scalar_t(2), scalar_t(3), testName);
+
+    return ierr;
+  }
+
+private:
+
+  // Build non-symmetric matrix with nEntriesPerRow nonzeros (value = 1.) 
+  // in each row, nMyRow rows per processor.  
+  // Matrix may be square or rectangular.
+  Teuchos::RCP<const matrix_t>
+  buildMatrix(
+    const Teuchos::RCP<const map_t> &domainMap, 
+    const Teuchos::RCP<const map_t> &rangeMap
+  )
+  {
     int me = comm->getRank();
 
     Teuchos::RCP<const map_t> rowMap = rcp(new map_t(nGlobalRow, 0, comm));
@@ -100,14 +149,16 @@ public:
     }
 
     Amat->fillComplete(domainMap, rangeMap);
+    std::cout << me << " MATRIX " << std::endl;
+    Amat->describe(foo, Teuchos::VERB_EXTREME);
 
     return Amat;
   }
 
+  // Initialize domain vector x_gid = gid
   Teuchos::RCP<vector_t> 
-  getDomainVector(Teuchos::RCP<const map_t> &domainMap) 
+  getDomainVector(const Teuchos::RCP<const map_t> &domainMap)  const
   {
-    // Initialize domain (input) vector x_gid = gid
     Teuchos::RCP<vector_t> vec = rcp(new vector_t(domainMap));
 
     auto data = vec->getLocalViewHost();
@@ -118,10 +169,10 @@ public:
     return vec;
   }
 
+  // Initialize range vector y_gid = yInit
   Teuchos::RCP<vector_t> 
-  getRangeVector(Teuchos::RCP<const map_t> &rangeMap) 
+  getRangeVector(const Teuchos::RCP<const map_t> &rangeMap)  const
   {
-    // Initialize range (output) vector y_gid = yInit
     Teuchos::RCP<vector_t> vec = rcp(new vector_t(rangeMap));
 
     vec->putScalar(yInit);
@@ -129,16 +180,17 @@ public:
     return vec;
   }
 
+  // Compare the result of matrix apply to analytical result
   int checkResult(
-    const Teuchos::RCP<vector_t> &yvec, scalar_t alpha, scalar_t beta)
+    const Teuchos::RCP<vector_t> &vec, scalar_t alpha, scalar_t beta) const
   {
     int ierr = 0;
 
-    yvec->sync_host();
-    auto data = yvec->getLocalViewHost();
+    vec->sync_host();
+    auto data = vec->getLocalViewHost();
 
-    for (size_t i = 0; i < yvec->getLocalLength(); i++) {
-      gno_t gid = yvec->getMap()->getGlobalElement(i);
+    for (size_t i = 0; i < vec->getLocalLength(); i++) {
+      gno_t gid = vec->getMap()->getGlobalElement(i);
 
       scalar_t expected(0);
       for (size_t j = 0; j < nEntriesPerRow; j++) 
@@ -152,8 +204,83 @@ public:
     return ierr;
   }
 
+  // Compare the result of transpose matrix apply to analytical result
+  int checkResultTranspose(
+    const Teuchos::RCP<vector_t> &vec, scalar_t alpha, scalar_t beta) const
+  {
+    int ierr = 0;
 
-private:
+    vec->sync_host();
+    auto data = vec->getLocalViewHost();
+
+    for (size_t i = 0; i < vec->getLocalLength(); i++) {
+      gno_t gid = vec->getMap()->getGlobalElement(i);
+
+      size_t mult;
+      if (squareMatrix) {
+        mult = nEntriesPerRow;
+      }
+      else {
+        if (gid < nEntriesPerRow) 
+          mult = gid+1;
+        else if (gid > nGlobalCols() - nEntriesPerRow) 
+          mult = nGlobalCols()-gid;
+        else 
+          mult = nEntriesPerRow;
+      }
+      scalar_t expected = scalar_t(mult) * yInit * alpha;
+      expected += scalar_t(gid) * beta;
+
+      if (data(i,0) != expected) ierr++;
+    }
+
+    return ierr;
+  }
+
+  // Apply and check result with a specific alpha, beta
+  int runAlphaBeta(
+    const Teuchos::RCP<const matrix_t> &Amat,
+    scalar_t alpha,
+    scalar_t beta,
+    const char *testName)
+  {
+    int me = comm->getRank();
+
+    Teuchos::RCP<vector_t> xvec = getDomainVector(Amat->getDomainMap());
+    Teuchos::RCP<vector_t> yvec = getRangeVector(Amat->getRangeMap());
+    
+    Amat->apply(*xvec, *yvec, Teuchos::NO_TRANS, alpha, beta);
+
+    std::cout << me << " " << testName 
+              << " YVEC alpha=" << alpha 
+              << " beta=" << beta << std::endl;
+    yvec->describe(foo, Teuchos::VERB_EXTREME);
+  
+    return checkResult(yvec, alpha, beta);
+  }
+
+  // Apply and check result with a specific alpha, beta, transpose
+  int runAlphaBetaTranspose(
+    const Teuchos::RCP<const matrix_t> &Amat,
+    scalar_t alpha,
+    scalar_t beta,
+    const char *testName)
+  {
+    int me = comm->getRank();
+
+    Teuchos::RCP<vector_t> xvec = getRangeVector(Amat->getRangeMap());
+    Teuchos::RCP<vector_t> yvec = getDomainVector(Amat->getDomainMap());
+
+    Amat->apply(*xvec, *yvec, Teuchos::TRANS, alpha, beta);
+
+    std::cout << me << " " << testName 
+              << " YVEC Transpose alpha=" << alpha
+              << " beta=" << beta << std::endl;
+    yvec->describe(foo, Teuchos::VERB_EXTREME);
+  
+    return checkResultTranspose(yvec, alpha, beta);
+  }
+
 
   const Teuchos::RCP<const Teuchos::Comm<int> > comm;
   const size_t nEntriesPerRow;
@@ -161,6 +288,7 @@ private:
   const size_t nGlobalRow;
   const scalar_t yInit;
   const bool squareMatrix;
+  Teuchos::FancyOStream foo;
 
 };
 
@@ -170,11 +298,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, RectangularDefaultToDefault,
 {
   // Use default Tpetra maps for range and domain maps
   const Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  int me = comm->getRank();
-  int np = comm->getSize();
-  int ierr = 0;
-
-  Teuchos::FancyOStream foo(Teuchos::rcp(&std::cout,false));
 
   using map_t = Tpetra::Map<LO,GO,Node>;
   using vector_t = Tpetra::Vector<Scalar,LO,GO,Node>;
@@ -190,72 +313,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, RectangularDefaultToDefault,
   Teuchos::RCP<const map_t> rangeMap = 
     rcp(new map_t(mb.nGlobalRows(), 0, comm));
 
-  // Build the input vector
-
-  Teuchos::RCP<vector_t> xvec = mb.getDomainVector(domainMap);
-
-  // Build the matrix
-
-  Teuchos::RCP<const matrix_t> Amat =
-    mb.buildMatrix(domainMap, rangeMap);
-  std::cout << me << " MATRIX " << std::endl;
-  Amat->describe(foo, Teuchos::VERB_EXTREME);
-
-  // Apply and check result:  alpha == 0, beta == 0
-  {
-    Teuchos::RCP<vector_t> yvec = mb.getRangeVector(rangeMap);
-
-    Scalar alpha(0);
-    Scalar beta(0);
-
-    Amat->apply(*xvec, *yvec, Teuchos::NO_TRANS, alpha, beta);
-    std::cout << me << " YVEC alpha=" << alpha << " beta=" << beta << std::endl;
-    yvec->describe(foo, Teuchos::VERB_EXTREME);
-  
-    ierr += mb.checkResult(yvec, alpha, beta);
-  }
-
-  // Apply and check result:  alpha != 0, beta == 0
-  {
-    Teuchos::RCP<vector_t> yvec = mb.getRangeVector(rangeMap);
-
-    Scalar alpha(2);
-    Scalar beta(0);
-
-    Amat->apply(*xvec, *yvec, Teuchos::NO_TRANS, alpha, beta);
-    std::cout << me << " YVEC alpha=" << alpha << " beta=" << beta << std::endl;
-    yvec->describe(foo, Teuchos::VERB_EXTREME);
-
-    ierr += mb.checkResult(yvec, alpha, beta);
-  }
-
-  // Apply and check result:  alpha == 0, beta != 0
-  {
-    Teuchos::RCP<vector_t> yvec = mb.getRangeVector(rangeMap);
-
-    Scalar alpha(0);
-    Scalar beta(3);
-
-    Amat->apply(*xvec, *yvec, Teuchos::NO_TRANS, alpha, beta);
-    std::cout << me << " YVEC alpha=" << alpha << " beta=" << beta << std::endl;
-    yvec->describe(foo, Teuchos::VERB_EXTREME);
-  
-    ierr += mb.checkResult(yvec, alpha, beta);
-  }
-
-  // Apply and check result:  alpha != 0, beta != 0
-  {
-    Teuchos::RCP<vector_t> yvec = mb.getRangeVector(rangeMap);
-
-    Scalar alpha(2);
-    Scalar beta(3);
-
-    Amat->apply(*xvec, *yvec, Teuchos::NO_TRANS, alpha, beta);
-    std::cout << me << " YVEC alpha=" << alpha << " beta=" << beta << std::endl;
-    yvec->describe(foo, Teuchos::VERB_EXTREME);
-  
-    ierr += mb.checkResult(yvec, alpha, beta);
-  }
+  int ierr = mb.runTests(domainMap, rangeMap, "RectangularDefaultToDefault");
 
   int gerr;
   Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
@@ -269,11 +327,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, SquareDefaultToDefault,
 {
   // Use default Tpetra maps for range and domain maps
   const Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  int me = comm->getRank();
-  int np = comm->getSize();
-  int ierr = 0;
-
-  Teuchos::FancyOStream foo(Teuchos::rcp(&std::cout,false));
 
   using map_t = Tpetra::Map<LO,GO,Node>;
   using vector_t = Tpetra::Vector<Scalar,LO,GO,Node>;
@@ -289,72 +342,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, SquareDefaultToDefault,
   Teuchos::RCP<const map_t> rangeMap = 
     rcp(new map_t(mb.nGlobalRows(), 0, comm));
 
-  // Build the input vector
-
-  Teuchos::RCP<vector_t> xvec = mb.getDomainVector(domainMap);
-
-  // Build the matrix
-
-  Teuchos::RCP<const matrix_t> Amat =
-    mb.buildMatrix(domainMap, rangeMap);
-  std::cout << me << " MATRIX " << std::endl;
-  Amat->describe(foo, Teuchos::VERB_EXTREME);
-
-  // Apply and check result:  alpha == 0, beta == 0
-  {
-    Teuchos::RCP<vector_t> yvec = mb.getRangeVector(rangeMap);
-
-    Scalar alpha(0);
-    Scalar beta(0);
-
-    Amat->apply(*xvec, *yvec, Teuchos::NO_TRANS, alpha, beta);
-    std::cout << me << " YVEC alpha=" << alpha << " beta=" << beta << std::endl;
-    yvec->describe(foo, Teuchos::VERB_EXTREME);
-  
-    ierr += mb.checkResult(yvec, alpha, beta);
-  }
-
-  // Apply and check result:  alpha != 0, beta == 0
-  {
-    Teuchos::RCP<vector_t> yvec = mb.getRangeVector(rangeMap);
-
-    Scalar alpha(2);
-    Scalar beta(0);
-
-    Amat->apply(*xvec, *yvec, Teuchos::NO_TRANS, alpha, beta);
-    std::cout << me << " YVEC alpha=" << alpha << " beta=" << beta << std::endl;
-    yvec->describe(foo, Teuchos::VERB_EXTREME);
-
-    ierr += mb.checkResult(yvec, alpha, beta);
-  }
-
-  // Apply and check result:  alpha == 0, beta != 0
-  {
-    Teuchos::RCP<vector_t> yvec = mb.getRangeVector(rangeMap);
-
-    Scalar alpha(0);
-    Scalar beta(3);
-
-    Amat->apply(*xvec, *yvec, Teuchos::NO_TRANS, alpha, beta);
-    std::cout << me << " YVEC alpha=" << alpha << " beta=" << beta << std::endl;
-    yvec->describe(foo, Teuchos::VERB_EXTREME);
-  
-    ierr += mb.checkResult(yvec, alpha, beta);
-  }
-
-  // Apply and check result:  alpha != 0, beta != 0
-  {
-    Teuchos::RCP<vector_t> yvec = mb.getRangeVector(rangeMap);
-
-    Scalar alpha(2);
-    Scalar beta(3);
-
-    Amat->apply(*xvec, *yvec, Teuchos::NO_TRANS, alpha, beta);
-    std::cout << me << " YVEC alpha=" << alpha << " beta=" << beta << std::endl;
-    yvec->describe(foo, Teuchos::VERB_EXTREME);
-  
-    ierr += mb.checkResult(yvec, alpha, beta);
-  }
+  int ierr = mb.runTests(domainMap, rangeMap, "SquareDefaultToDefault");
 
   int gerr;
   Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
