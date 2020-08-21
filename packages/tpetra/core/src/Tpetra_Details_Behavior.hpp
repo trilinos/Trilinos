@@ -184,6 +184,9 @@ public:
   /// For a discussion, see Trilinos GitHub issues #1571 and #1088.
   static bool assumeMpiIsCudaAware ();
 
+  /// \brief Whether the CUDA_LAUNCH_BLOCKING environment variable has been set.
+  static bool cudaLaunchBlocking ();
+
   /// \brief MPI process count above which
   ///   Tpetra::CrsMatrix::transferAndFillComplete will attempt to do
   ///   advanced neighbor discovery.
