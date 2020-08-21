@@ -367,19 +367,10 @@ void Piro::RythmosSolver<Scalar>::initialize(
       stepperType == "Forward Euler" ||
       stepperType == "Explicit Taylor Polynomial") {
 
-      bool invertMassMatrix = rythmosSolverPL->get("Invert Mass Matrix", false);
-      if (!invertMassMatrix) {
-        *out << "\n WARNING in Piro::RythmosSolver!  You are attempting to run \n"
-             << " Explicit Stepper (" << stepperType << ") with 'Invert Mass Matrix' set to 'false'. \n"
-             << "This option should be set to 'true' unless your mass matrix is the identiy.\n";
-      }
-      else {
-        Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
-        rythmosSolverPL->get("Lump Mass Matrix", false);  //JF line does not do anything
-        model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
+      Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
+      model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
               sublist(rythmosSolverPL,"Stratimikos", true), origModel,
-              true,rythmosSolverPL->get("Lump Mass Matrix", false),false));
-      }
+              rythmosSolverPL->get("Constant Mass Matrix", false),rythmosSolverPL->get("Lump Mass Matrix", false),false));
      }
      // C.2) Create the Thyra-wrapped ModelEvaluator
 
@@ -990,7 +981,6 @@ Piro::RythmosSolver<Scalar>::getValidRythmosParameters() const
   validPL->set<double>("Beta", 1.0, "");
   validPL->set<double>("Max State Error", 1.0, "");
   validPL->set<std::string>("Name", "", "");
-  validPL->set<bool>("Invert Mass Matrix", false, "");
 
   return validPL;
 }
@@ -1005,8 +995,8 @@ Piro::RythmosSolver<Scalar>::getValidRythmosSolverParameters() const
   validPL->sublist("Stratimikos", false, "");
   validPL->sublist("NonLinear Solver", false, "");
   validPL->set<std::string>("Verbosity Level", "", "");
-  validPL->set<bool>("Invert Mass Matrix", false, "");
-  validPL->set<bool>("Lump Mass Matrix", false, "");
+  validPL->set<bool>("Lump Mass Matrix", false, "Boolean to tell code to lump mass matrix");
+  validPL->set<bool>("Constant Mass Matrix", false, "Boolean to tell code if mass matrix is constant in time");
   return validPL;
 }
 
