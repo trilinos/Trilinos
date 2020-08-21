@@ -66,15 +66,15 @@ options=(
     #--dry-run
 )    
 
-echo "=========================================================="
-echo "=========================================================="
-echo "=========================================================="
-echo "=========================================================="
-echo "    TEST "
-echo "which python3: $(which python3)"
-echo "which pip3   : $(which pip3)"
-echo "cmd:"
-echo "python3 ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${options[@]}"
+#echo "=========================================================="
+#echo "=========================================================="
+#echo "=========================================================="
+#echo "=========================================================="
+#echo "    OLD SCRIPT "
+#echo "which python3: $(which python3)"
+#echo "which pip3   : $(which pip3)"
+#echo "cmd:"
+#echo "python3 ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${options[@]}"
 
 #python3 ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${options[@]}
 
