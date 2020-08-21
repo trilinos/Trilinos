@@ -965,7 +965,7 @@ namespace MueLu {
 
                   if (row == col) {
                     drop_vec.emplace_back( zero, one, colID, false);
-		    drop_vec.back().aux_val = vals[colID];
+		    if (vals.size() > 0) drop_vec.back().aux_val = vals[colID];
                     continue;
                   }
 		  // We do not want the distance Laplacian aggregating boundary nodes
@@ -979,7 +979,7 @@ namespace MueLu {
 
 
 		  // CMS hackery
-		  drop_vec.back().aux_val = vals[colID];
+		  if(vals.size() > 0) drop_vec.back().aux_val = vals[colID];
 
                 }
 
