@@ -85,7 +85,7 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
     RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
-    isKokkosKernelsSpiluk_(true)
+    isKokkosKernelsSpiluk_(false)
 {
   allocateSolvers();
 }
@@ -108,7 +108,7 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
     RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
-    isKokkosKernelsSpiluk_(true)
+    isKokkosKernelsSpiluk_(false)
 {
   allocateSolvers();
 }
@@ -347,7 +347,7 @@ setParameters (const Teuchos::ParameterList& params)
   }
 
   // Parsing implementation type
-  Details::IlukImplType::Enum ilukimplType = Details::IlukImplType::KSPILUK;
+  Details::IlukImplType::Enum ilukimplType = Details::IlukImplType::Serial;
   do {
     static const char typeName[] = "fact: type";
 
