@@ -667,16 +667,6 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
   // Short circuit for the case where the source and target vector is the same.
   if (To==From) NumSameEntries = 0;
 
-  // For CombineMode = Add, need to zero out the target vector
-  // entries that are not reset by local contributions.  #7758
-  // If NumSameIDs + NumPermuteIDs == NumMyElements,
-  // do not need to zero out, as all entries will be overwritten by a 
-  // same or permute entry of source.
-  if ((CombineMode == Add) && 
-      (NumSameIDs + NumPermuteIDs < Map().NumMyElements())) {
-    PutScalar(0.);
-  }
-
   // Do copy first
   if (NumSameIDs>0)
     if (To!=From) {
