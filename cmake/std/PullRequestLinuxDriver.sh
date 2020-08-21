@@ -78,5 +78,8 @@ echo "python3 ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${options[@]}"
 
 #python3 ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${options[@]}
 
-
+# Bootstrapping
+module unload sems-python
+module unload sems-git
+module unload python
 
