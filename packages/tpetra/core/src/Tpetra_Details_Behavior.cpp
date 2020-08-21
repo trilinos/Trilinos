@@ -289,6 +289,10 @@ namespace { // (anonymous)
 #endif // TPETRA_ASSUME_CUDA_AWARE_MPI
   }
 
+  constexpr bool cudaLaunchBlockingDefault () {
+    return false;
+  }
+
   constexpr bool hierarchicalUnpackDefault () {
     return true;
   }
@@ -342,6 +346,19 @@ bool Behavior::assumeMpiIsCudaAware ()
 {
   constexpr char envVarName[] = "TPETRA_ASSUME_CUDA_AWARE_MPI";
   constexpr bool defaultValue = assumeMpiIsCudaAwareDefault ();
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool (value_,
+                                                   initialized_,
+                                                   envVarName,
+                                                   defaultValue);
+}
+
+bool Behavior::cudaLaunchBlocking ()
+{
+  constexpr char envVarName[] = "CUDA_LAUNCH_BLOCKING";
+  constexpr bool defaultValue = cudaLaunchBlockingDefault ();
 
   static bool value_ = defaultValue;
   static bool initialized_ = false;
