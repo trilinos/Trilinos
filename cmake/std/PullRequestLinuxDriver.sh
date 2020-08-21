@@ -76,15 +76,7 @@ echo "which pip3   : $(which pip3)"
 echo "cmd:"
 echo "python3 ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${options[@]}"
 
-python3 ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${options[@]}
+#python3 ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${options[@]}
 
-# Call the script to handle driving the testing
-#${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${TRILINOS_SOURCE_REPO:?} \
-#                                            ${TRILINOS_SOURCE_BRANCH:?} \
-#                                            ${TRILINOS_TARGET_REPO:?} \
-#                                            ${TRILINOS_TARGET_BRANCH:?} \
-#                                            ${JOB_BASE_NAME:?} \
-#                                            ${PULLREQUESTNUM:?} \
-#                                            ${BUILD_NUMBER:?} \
-#                                            ${WORKSPACE:?}
+
 
