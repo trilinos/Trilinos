@@ -40,8 +40,8 @@
 */
 
 // Creates vectors with different maps; tests results of export into them.
-// Bug7758 indicates that incorrect results of export are produced when
-// the source map is NOT a superset of the target map.
+// Documents the behavior of Epetra Add in Epetra_MultiVector for some
+// common (and a few uncommon) use cases.
 // Same tests as tpetra/core/test/MultiVector/Bug7758.cpp.
 
 #include "Epetra_Map.h"
