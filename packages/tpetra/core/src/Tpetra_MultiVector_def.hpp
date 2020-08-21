@@ -1067,7 +1067,7 @@ namespace Tpetra {
 
           auto tgt_j = Kokkos::subview (tgt_h, rows, tgtCol);
           auto src_j = Kokkos::subview (src_h, rows, srcCol);
-          if (CM == ACCUMULATE) { 
+          if (CM == ADD_ASSIGN) { 
             // Sum src_j into tgt_j
             Kokkos::parallel_for(numSameIDs, 
               KOKKOS_LAMBDA (const size_t k) { tgt_j(k) += src_j(k); }
@@ -1090,7 +1090,7 @@ namespace Tpetra {
 
           auto tgt_j = Kokkos::subview (tgt_d, rows, tgtCol);
           auto src_j = Kokkos::subview (src_d, rows, srcCol);
-          if (CM == ACCUMULATE) { 
+          if (CM == ADD_ASSIGN) { 
             // Sum src_j into tgt_j
             Kokkos::parallel_for(numSameIDs, 
               KOKKOS_LAMBDA (const size_t k) { tgt_j(k) += src_j(k); }
@@ -1228,7 +1228,7 @@ namespace Tpetra {
           create_const_view (tgtWhichVecs.view_host ());
         auto srcWhichVecs_h =
           create_const_view (srcWhichVecs.view_host ());
-        if (CM == ACCUMULATE) {
+        if (CM == ADD_ASSIGN) {
           using op_type = KokkosRefactor::Details::AddOp<IST>;
           permute_array_multi_column_variable_stride (tgt_h, src_h,
                                                       permuteToLIDs_h,
@@ -1248,7 +1248,7 @@ namespace Tpetra {
         }
       }
       else {
-        if (CM == ACCUMULATE) {
+        if (CM == ADD_ASSIGN) {
           using op_type = KokkosRefactor::Details::AddOp<IST>;
           permute_array_multi_column (tgt_h, src_h, permuteToLIDs_h,
                                       permuteFromLIDs_h, numCols, op_type());
@@ -1285,7 +1285,7 @@ namespace Tpetra {
         // getDualViewCopyFromArrayView puts them in the right place.
         auto tgtWhichVecs_d = create_const_view (tgtWhichVecs.view_device ());
         auto srcWhichVecs_d = create_const_view (srcWhichVecs.view_device ());
-        if (CM == ACCUMULATE) {
+        if (CM == ADD_ASSIGN) {
           using op_type = KokkosRefactor::Details::AddOp<IST>;
           permute_array_multi_column_variable_stride (tgt_d, src_d,
                                                       permuteToLIDs_d,
@@ -1305,7 +1305,7 @@ namespace Tpetra {
         }
       }
       else {
-        if (CM == ACCUMULATE) {
+        if (CM == ADD_ASSIGN) {
           using op_type = KokkosRefactor::Details::AddOp<IST>;
           permute_array_multi_column (tgt_d, src_d, permuteToLIDs_d,
                                       permuteFromLIDs_d, numCols, op_type());
@@ -1774,7 +1774,7 @@ namespace Tpetra {
           }
         }
       }
-      else if (CM == ADD || CM == ACCUMULATE) {
+      else if (CM == ADD || CM == ADD_ASSIGN) {
         using op_type = KokkosRefactor::Details::AddOp<IST>;
         if (isConstantStride ()) {
           if (unpackOnHost) {

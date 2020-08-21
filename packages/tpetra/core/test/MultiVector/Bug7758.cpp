@@ -40,8 +40,8 @@
 */
 
 // Creates vectors with different maps; tests results of export into them
-// Bug7758 indicates that incorrect results of export are produced when
-// the source map is NOT a superset of the target map #7758
+// Documents behavior of Tpetra::ADD in Tpetra::MultiVector for many common
+// (and a few less common) use cases.
 // Analogous tests for Epetra are in epetra/test/MultiVector/Bug7758.cpp
 
 #include "Tpetra_Core.hpp"
@@ -515,7 +515,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, NoSamesToDefault, Scalar,LO,GO,Node)
     vector_t noSamesVecSrc(noSamesMap);
     noSamesVecSrc.putScalar(srcScalar);
 
-    // Export Overlap-to-default
+    // Export noSames-to-default
 
     Tpetra::Export<LO,GO,Node> noSamesToDefault(noSamesMap, defaultMap);
     defaultVecTgt.doExport(noSamesVecSrc, noSamesToDefault, Tpetra::ADD);

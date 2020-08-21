@@ -74,11 +74,11 @@ namespace Tpetra {
   ///     the incoming new value, replace \f$x_{old}\f$ with
   ///     \f$\max\{ x_{old}, x_{new} \}\f$.
   ///   - ZERO: Replace old values with zero
-  ///   - ACCUMULATE:  Accumulate new values into existing values
+  ///   - ADD_ASSIGN: Do addition assignment (+=) of values into existing values
   ///     \f$x_{target} = x_{target} + \sum(x_{source}\f$  
   ///     May not be supported in all classes
   ///
-  /// ADD, REPLACE and ACCUMULATE are intended for modifying values that already
+  /// ADD, REPLACE and ADD_ASSIGN are intended for modifying values that already
   /// exist.  Tpetra objects will generally work correctly if those
   /// values don't already exist.  (For example, ADD will behave like
   /// INSERT if the entry does not yet exist on the calling process.)
@@ -100,7 +100,7 @@ namespace Tpetra {
     REPLACE, //!< Replace existing values with new values
     ABSMAX,  //!< Replace old value with maximum of magnitudes of old and new values
     ZERO,    //!< Replace old values with zero
-    ACCUMULATE //!< Accumulate new values into existing values (may not be supported in all classes)
+    ADD_ASSIGN //!< Accumulate new values into existing values (may not be supported in all classes)
   };
 
   /// \brief Set CombineMode parameter in a Teuchos::ParameterList.
