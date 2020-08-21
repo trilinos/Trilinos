@@ -92,14 +92,13 @@ VelocityVerletSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
   t_init  = vvPL->get("Initial Time", 0.0);
   delta_t = t_final / numTimeSteps;
 
-  if (vvPL->get("Invert Mass Matrix", false)) {
-    Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
-    bool lump=vvPL->get("Lump Mass Matrix", false);
-    *out << "\nB) Using InvertMassMatrix Decorator\n";
-    model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
-             sublist(vvPL,"Stratimikos", true), origModel,
-             true, lump, true));
-  }
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
+  bool lump = vvPL->get("Lump Mass Matrix", false);
+  bool isConstMass = vvPL->get("Constant Mass Matrix", false); 
+  *out << "\nB) Using InvertMassMatrix Decorator\n";
+  model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
+           sublist(vvPL,"Stratimikos", true), origModel,
+           isConstMass, lump, true));
 }
 
 template <typename Scalar>
@@ -374,8 +373,8 @@ Piro::VelocityVerletSolver<Scalar>::getValidVelocityVerletParameters() const
   validPL->set<double>("Final Time", 1.0, "");
   validPL->set<double>("Initial Time", 0.0, "");
   validPL->set<std::string>("Verbosity Level", "", "");
-  validPL->set<bool>("Invert Mass Matrix", false, "");
-  validPL->set<bool>("Lump Mass Matrix", false, "");
+  validPL->set<bool>("Lump Mass Matrix", false, "Boolean to tell code to lump mass matrix");
+  validPL->set<bool>("Constant Mass Matrix", false, "Boolean to tell code if mass matrix is constant in time");
   validPL->sublist("Stratimikos", false, "");
   return validPL;
 }
