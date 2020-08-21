@@ -65,7 +65,7 @@ TEUCHOS_STATIC_SETUP()
   setenv("TPETRA_DEBUG", "OFF", 1);
   setenv("TPETRA_VERBOSE", "OFF", 1);
   setenv("TPETRA_ASSUME_CUDA_AWARE_MPI", "OFF", 1);
-  setenv("CUDA_LAUNCH_BLOCKING", "OFF", 1);
+  setenv("CUDA_LAUNCH_BLOCKING", "0", 1);
 }
 
 TEUCHOS_UNIT_TEST(Behavior, Off)
