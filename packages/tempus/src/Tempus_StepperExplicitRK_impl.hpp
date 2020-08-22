@@ -363,6 +363,17 @@ void StepperExplicitRK<Scalar>::takeStep(
       }
     }
 
+    if (this->getUseFSAL()) {
+      if (numStages == 1) {
+        const Scalar ts = time + dt;
+        auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
+        // Evaluate xDot = f(x,t).
+        this->evaluateExplicitODE(stageXDot_[0], workingState->getX(), ts, p);
+      }
+      if (workingState->getXDot() != Teuchos::null)
+        Thyra::assign((workingState->getXDot()).ptr(), *(stageXDot_.back()));
+    }
+
 
     // At this point, the stepper has passed.
     // But when using adaptive time stepping, the embedded method
