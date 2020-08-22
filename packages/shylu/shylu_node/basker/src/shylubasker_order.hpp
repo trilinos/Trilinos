@@ -653,6 +653,10 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::apply_scotch_partition()
   {
+    #ifdef BASKER_TIMER
+    Kokkos::Timer scotch_timer;
+    #endif
+
     //--------------------------------------------------------------
     //3. ND on BTF_A
     //currently finds ND and permute BTF_A
@@ -672,6 +676,11 @@ namespace BaskerNS
     printf("];\n");*/
 
     scotch_partition(BTF_A); // tree is prepped; permutation then applied to BTF_A
+    #ifdef BASKER_TIMER
+    double scotch_time = scotch_timer.seconds();
+    std::cout << " ++ Basker apply_scotch : scotch partition time     : " << scotch_time << std::endl;
+    scotch_timer.reset();
+    #endif
     /*printf(" After ND\n");
     printf(" p = [\n" );
     for(Int j = 0; j < BTF_A.ncol; j++) {
@@ -715,10 +724,14 @@ namespace BaskerNS
     //This reduces the ND ordering into that fits,
     //thread counts
     init_tree_thread();
+    #ifdef BASKER_TIMER
+    double tree_time = scotch_timer.seconds();
+    std::cout << " ++ Basker apply_scotch : init tree time            : " << tree_time << std::endl;
+    scotch_timer.reset();
+    #endif
 
     //--------------------------------------------------------------
     //5. Permute BTF_A
-    //Constrained symamd on A
     INT_1DARRAY cmember;
     MALLOC_INT_1DARRAY(cmember, BTF_A.ncol+1);
     init_value(cmember,BTF_A.ncol+1,(Int) 0);
@@ -730,6 +743,10 @@ namespace BaskerNS
       }
     }
     init_value(order_csym_array, BTF_A.ncol+1,(Int) 0);
+
+
+    //--------------------------------------------------------------
+    //5. Constrained symamd on A
     //printf("============CALLING CSYMAMD============\n");
     csymamd_order(BTF_A, order_csym_array, cmember);
     #if 0 // reset to I for debug
@@ -739,14 +756,18 @@ namespace BaskerNS
     #endif
     //permute_col(BTF_A, order_csym_array);
     //sort_matrix(BTF_A); // unnecessary?
+    #ifdef BASKER_TIMER
+    double csymamd_time = scotch_timer.seconds();
+    std::cout << " ++ Basker apply_scotch : constrained symm amd time : " << csymamd_time << std::endl;
+    scotch_timer.reset();
+    #endif
 
     //new for sfactor_copy2 replacement
     permute_col_store_valperms(BTF_A, order_csym_array, vals_order_csym_array); //NDE: Track movement of vals (lin_ind of row,col) here
     if (Options.blk_matching == 0) {
       permute_inv(vals_order_ndbtfa_array, vals_order_csym_array, BTF_A.nnz);     //must permute the array holding the perms
     }
-//    sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array);
-
+    //sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array);
     permute_row(BTF_A, order_csym_array);
 
     /*printf(" After cAMD\n");
@@ -767,6 +788,11 @@ namespace BaskerNS
     // sort matrix(BTF_A);
     //for (Int j = 0; j < BTF_A.nnz; j++) printf( " - vals_ndbtfa(%d) = %d\n",j,vals_order_ndbtfa_array(j) );
     sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array); //new for replacement
+    #ifdef BASKER_TIMER
+    double sortA_time = scotch_timer.seconds();
+    std::cout << " ++ Basker apply_scotch : sort(A) time              : " << sortA_time << std::endl;
+    scotch_timer.reset();
+    #endif
     //printMTX("A_BTF_AMD1.mtx", BTF_A);
     /*for (Int j = 0; j < BTF_A.nnz; j++) printf( " + vals_ndbtfa(%d) = %d\n",j,vals_order_ndbtfa_array(j) );
     printf(" ppT = [\n" );
@@ -783,9 +809,19 @@ namespace BaskerNS
       //new for sfactor_copy2 replacement
       if ( BTF_B.nnz > 0 ) {
         sort_matrix_store_valperms(BTF_B, vals_order_ndbtfb_array);
+        #ifdef BASKER_TIMER
+        double sortB_time = scotch_timer.seconds();
+        std::cout << " ++ Basker apply_scotch : sort(B) time              : " << sortB_time << std::endl;
+        scotch_timer.reset();
+        #endif
       }
       if ( BTF_C.nnz > 0 ) {
         sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array);
+        #ifdef BASKER_TIMER
+        double sortC_time = scotch_timer.seconds();
+        std::cout << " ++ Basker apply_scotch : sort(C) time              : " << sortC_time << std::endl;
+        scotch_timer.reset();
+        #endif
       }
     }
 
@@ -801,9 +837,14 @@ namespace BaskerNS
       permute_inv(inv_vals_order_ndbtfc_array, vals_order_ndbtfc_array, BTF_C.nnz);
     }
     //printMTX("BTF_A.mtx", BTF_A);
+    #ifdef BASKER_TIMER
+    double perm_time = scotch_timer.seconds();
+    std::cout << " ++ Basker apply_scotch : perm matrix time          : " << perm_time << std::endl;
+    scotch_timer.reset();
+    #endif
 
     //--------------------------------------------------------------
-    //6. Move to 2D Structure
+    //7. Move to 2D Structure
     //finds the shapes for both view and submatrices,
     //need to be changed over to just submatrices
     matrix_to_views_2D(BTF_A);
@@ -818,20 +859,20 @@ namespace BaskerNS
     #else
     //Comeback
     #endif
+    #ifdef BASKER_TIMER
+    double init_2d_time = scotch_timer.seconds();
+    std::cout << " ++ Basker apply_scotch : init 2D time              : " << init_2d_time << std::endl;
+    scotch_timer.reset();
+    #endif
 
     #if 1
     {
       // initialize threading  
-      #ifdef BASKER_TIMER
-      Kokkos::Timer timer_init;
-      double barrier_init_time = 0.0;
-      #endif
-
       basker_barrier.init(num_threads, 16, tree.nlvls );
 
       #ifdef BASKER_TIMER
-      barrier_init_time += timer_init.seconds();
-      std::cout << " ++ Basker order : sort(C) time : " << order_time << std::endl;
+      double barrier_init_time = scotch_timer.seconds();
+      std::cout << " ++ Basker apply_scotch : barrier iinit time        : " << barrier_init_time << std::endl;
       #endif
     }
     #endif
@@ -1797,7 +1838,7 @@ namespace BaskerNS
       #ifdef BASKER_TIMER
       double order_time = timer_order.seconds();
       if (order_time > 1) {
-        std::cout << "    > Basker sort time     : " << order_time << " (nnz = " << M.col_ptr[k+1]-M.col_ptr[k] << ")" <<std::endl;
+        std::cout << "    > Basker sort time col=" << k << " : " << order_time << " (nnz = " << M.col_ptr[k+1]-M.col_ptr[k] << ")" <<std::endl;
       }
       #endif
     }//end over all columns k

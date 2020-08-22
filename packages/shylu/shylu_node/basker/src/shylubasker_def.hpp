@@ -652,9 +652,6 @@ namespace BaskerNS
     //inv_vals_order_ndbtfa_array, inv_vals_order_ndbtfb_array, inv_vals_order_ndbtfc_array
     //vals_block_map_perm_pair, vals_perm_composition
 
-    #ifdef BASKER_TIMER
-    Kokkos::Timer copyperm_timer;
-    #endif
 
     // Summary:
     // When Symbolic is called, the compressed matrix pointer data is copied into Basker. 
@@ -732,6 +729,10 @@ namespace BaskerNS
           }*/
 
     if (Options.blk_matching != 0) {
+        #ifdef BASKER_TIMER
+        Kokkos::Timer resetperm_timer;
+        #endif
+
         //Int b_first = btf_tabs_offset;
         Int nfirst = btf_tabs(btf_tabs_offset);
         // to revert BLK_AMD ordering
@@ -882,38 +883,39 @@ namespace BaskerNS
                                                  std::make_pair(nfirst, ncol));
           permute_row(BTF_C, order_blk_mwm_c);
         }
+        #ifdef BASKER_TIMER
+        std::cout<< "Basker Factor: Time to revert all the numerical perm: " << resetperm_timer.seconds() << std::endl;
+        #endif
     } // end of if(Options.blk_matching != 0)
-#if 0
-    for (Int k = 0; k < A.nnz; k++) {
-      vals_crs_transpose(k) = k;
-    }
-    permute_inv(vals_crs_transpose, vals_perm_composition, A.nnz); 
-#endif
-//printf( " A.nnz= %d vs (%d, %d) nblks=%d, btfa_nnz=%d, btfb_nnz=%d, btfc_nnz=%d\n",(int)nnz, (int)A.nnz,(int)A.val.extent(0),
-//        btf_nblks,btfa_nnz,btfb_nnz,btfc_nnz );
+
+    #ifdef BASKER_TIMER
+    Kokkos::Timer copyperm_timer;
+    #endif
+    //printf( " A.nnz= %d vs (%d, %d) nblks=%d, btfa_nnz=%d, btfb_nnz=%d, btfc_nnz=%d\n",(int)nnz, (int)A.nnz,(int)A.val.extent(0),
+    //        btf_nblks,btfa_nnz,btfb_nnz,btfc_nnz );
     if ( btf_nblks > 1 ) { //non-single block case
     #ifdef KOKKOS_ENABLE_OPENMP
     #pragma omp parallel for
     #endif
       for( Int i = 0; i < nnz; ++i ) {
         A.val(i) = val[ vals_perm_composition(i) ];
-//printf( " A.val(%d) = %e (first = %d, btf_nnz=%d,%d,%d)\n",i,val[ vals_perm_composition(i) ], vals_block_map_perm_pair(i).first,btfa_nnz,btfb_nnz,btfc_nnz );
+        //printf( " A.val(%d) = %e (first = %d, btf_nnz=%d,%d,%d)\n",i,val[ vals_perm_composition(i) ], vals_block_map_perm_pair(i).first,btfa_nnz,btfb_nnz,btfc_nnz );
         if ( btfa_nnz != 0 ) { //is this unnecessary? yes, but shouldn't the first label account for this anyway?
           if ( vals_block_map_perm_pair(i).first == 0 ) { //in BTF_A
-//printf( " BTF_A.val(inv(%d) = %d) = val[perm(%d) = %d] = %e\n",i,vals_block_map_perm_pair(i).second, i,vals_perm_composition(i), val[ vals_perm_composition(i) ] );
+            //printf( " BTF_A.val(inv(%d) = %d) = val[perm(%d) = %d] = %e\n",i,vals_block_map_perm_pair(i).second, i,vals_perm_composition(i), val[ vals_perm_composition(i) ] );
             BTF_A.val( inv_vals_order_ndbtfa_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
           }
         }
         if ( btfb_nnz != 0 ) {
           if ( vals_block_map_perm_pair(i).first == 1 ) { //in BTF_B
-//printf( " BTF_B.val(%d) = %e\n",inv_vals_order_ndbtfb_array( vals_block_map_perm_pair(i).second ),val[ vals_perm_composition(i) ] );
+            //printf( " BTF_B.val(%d) = %e\n",inv_vals_order_ndbtfb_array( vals_block_map_perm_pair(i).second ),val[ vals_perm_composition(i) ] );
             BTF_B.val( inv_vals_order_ndbtfb_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
           }
         }
         // if ( BTF_C.nnz != 0 ) // this causes compiler error, and nnz blocks values are different with this command with small blocks matrix (not nd) - why?
         if ( btfc_nnz != 0 ) {
           if ( vals_block_map_perm_pair(i).first == 2 ) { //in BTF_C
-//printf( " BTF_C.val(%d) = %e\n",inv_vals_order_ndbtfc_array( vals_block_map_perm_pair(i).second ), val[ vals_perm_composition(i) ] );
+            //printf( " BTF_C.val(%d) = %e\n",inv_vals_order_ndbtfc_array( vals_block_map_perm_pair(i).second ), val[ vals_perm_composition(i) ] );
             BTF_C.val( inv_vals_order_ndbtfc_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
           }
         }
@@ -927,34 +929,18 @@ namespace BaskerNS
       for( Int i = 0; i < nnz; ++i ) {
         BTF_A.val( inv_vals_order_ndbtfa_array(i) ) = val[ vals_perm_composition(i) ];
       }
-//      BTF_A = A; //unnecessary - this equality was set during break_into_parts2, they point to the same data; for safety, should this simply be copied instead (i.e. deep copy the data)?
+      //BTF_A = A; //unnecessary - this equality was set during break_into_parts2, they point to the same data; for safety, should this simply be copied instead (i.e. deep copy the data)?
     } //end single block case
     else {
       std::cout << "Basker Factor error: Case for btf_nbkls = 0 is not implemented" << std::endl;
         //A.val(i) = val[ i ]; // may need to apply matching or nd order permutation...
       return BASKER_ERROR;
     }
-        /*{
-          FILE *fp;
-          if(Options.transpose) {
-            fp = fopen("At.dat","w");
-          } else {
-            fp = fopen("A.dat","w");
-          }
-          printf( " start numeric with\n A = [\n" );
-          for(Int j = 0; j < ncol; j++) {
-            for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
-              fprintf(fp, " %d %d %e\n", A.row_idx[k],j,A.val[k]);
-            }
-          }
-          fclose(fp);
-          printf("];\n");
-        }*/
-
     #ifdef BASKER_TIMER
     std::cout<< "Basker Factor: Time to permute and copy from input vals to new vals and blocks: " << copyperm_timer.seconds() << std::endl;
     #endif
     //end sfactor_copy2 replacement stuff
+
 
     /*printf(" K = [\n" );
     for(Int j = 0; j < A.ncol; j++) {
@@ -1018,10 +1004,14 @@ namespace BaskerNS
       }
 
       if (btf_tabs_offset != 0) {
+        #ifdef BASKER_TIMER
+        Kokkos::Timer nd_perm_timer;
+        #endif
+
         // ----------------------------------------------------------------------------------------------
         // compute MWM on a big block A
         if(Options.verbose == BASKER_TRUE) {
-          std::cout << " calling MWM on A(n=" << BTF_A.ncol << ", nnz=" << BTF_A.nnz << ")" << std::endl;
+          std::cout << " calling MWM on A(n=" << BTF_A.ncol << ", nnz=" << BTF_A.nnz << ", " << btf_tabs_offset << ")" << std::endl;
         }
         /*printf("  A = [\n" );
         for(Int j = 0; j < BTF_A.ncol; j++) {
@@ -1033,23 +1023,18 @@ namespace BaskerNS
 
         // ----------------------------------------------------------------------------------------------
         // compute MWM + AMD ordering
+        #ifdef BASKER_TIMER
+        Kokkos::Timer nd_mwm_amd_timer;
+        #endif
         auto order_nd_mwm = Kokkos::subview(order_blk_mwm_array,
                                             std::make_pair(0, BTF_A.ncol));
         auto order_nd_amd = Kokkos::subview(order_blk_amd_array,
                                             std::make_pair(0, BTF_A.ncol));
-        #if 1
         INT_1DARRAY blk_nnz;
         INT_1DARRAY blk_work;
         btf_blk_mwm_amd(0, btf_tabs_offset, BTF_A,
                         order_nd_mwm, order_nd_amd,
                         blk_nnz, blk_work);
-        #else
-        Int num = 0;
-        mwm_order::mwm(BTF_A.ncol, BTF_A.nnz,
-                       &(BTF_A.col_ptr(0)), &(BTF_A.row_idx(0)), &(BTF_A.val(0)),
-                       &(order_nd_mwm(0)), num);
-        #endif
-
         #if 0
         for (Int i = 0; i < (Int)A.nrow; i++) {
           order_blk_mwm_array(i) = i;
@@ -1090,9 +1075,16 @@ namespace BaskerNS
           // Apply AMD perm to rows and cols
           permute_row(BTF_B, order_nd_amd);
         }
+        #ifdef BASKER_TIMER
+        std::cout<< " > Basker Factor: Time to compute and apply MWM+AMD on a big block A: " << nd_mwm_amd_timer.seconds() << std::endl;
+        #endif
 
         // ----------------------------------------------------------------------------------------------
         // compute & apply ND on a big block A
+        #ifdef BASKER_TIMER
+        Kokkos::Timer nd_nd_timer;
+        #endif
+
         apply_scotch_partition();
         #if 0 // done inside apply_scotch_partition
         if (btf_tabs_offset < btf_nblks) {
@@ -1116,9 +1108,16 @@ namespace BaskerNS
           }
         }
         printf("];\n");*/
+        #ifdef BASKER_TIMER
+        std::cout<< " > Basker Factor: Time to compute and apply ND on a big block A: " << nd_nd_timer.seconds() << std::endl;
+        #endif
 
         // ----------------------------------------------------------------------------------------------
         // do symbolic & workspace allocation
+        #ifdef BASKER_TIMER
+        Kokkos::Timer nd_setup_timer;
+        #endif
+
         bool flag = true;
         symmetric_sfactor();
         btf_last_dense(flag);
@@ -1134,9 +1133,18 @@ namespace BaskerNS
           Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
           Kokkos::fence();
         #endif
-      }
+
+        #ifdef BASKER_TIMER
+        std::cout<< " > Basker Factor: Time for symbolic after ND on a big block A: " << nd_setup_timer.seconds() << std::endl;
+        std::cout<< "Basker Factor: Time to compute ND and setup: " << nd_perm_timer.seconds() << std::endl << std::endl;
+        #endif
+      } // end of ND & setups
 
       if (btf_nblks > btf_tabs_offset) {
+        #ifdef BASKER_TIMER
+        Kokkos::Timer mwm_amd_perm_timer;
+        #endif
+
         Int b_first = btf_tabs_offset;
         Int nfirst = btf_tabs(b_first);
         auto order_blk_mwm_c = Kokkos::subview(order_blk_mwm_array,
@@ -1201,6 +1209,10 @@ namespace BaskerNS
           order_blk_mwm_c(i) += nfirst;
           order_blk_amd_c(i) += nfirst;
         }
+
+        #ifdef BASKER_TIMER
+        std::cout<< "Basker Factor: Time to compute and apply MWM+AMD on diagonal blocks: " << mwm_amd_perm_timer.seconds() << std::endl;
+        #endif
       }
       //for (Int i = 0; i < (Int)ncol; i++) {
       //  printf( " - mwm(%d)=%d amd(%d)=%d\n",i,order_blk_mwm_array(i), i,order_blk_amd_array(i));
@@ -1321,6 +1333,7 @@ namespace BaskerNS
     #ifdef BASKER_TIMER
     sfactorcopy_time += timer_sfactorcopy.seconds();
     std::cout << "Basker Factor sfactor_copy2 time: " << sfactorcopy_time << std::endl;
+    std::cout << " >> error = " << err << std::endl;
     #endif
     if(err == BASKER_ERROR)
     { return BASKER_ERROR; }

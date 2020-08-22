@@ -94,7 +94,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker->Options.verbose       = BASKER_FALSE;
   ShyLUbasker->Options.prune         = BASKER_TRUE;
   ShyLUbasker->Options.btf_matching  = 2; // use cardinary matching from Trilinos
-  ShyLUbasker->Options.blk_matching  = 0; // no block-wise max-weight matrching
+  ShyLUbasker->Options.blk_matching  = 1; // no block-wise max-weight matrching
   ShyLUbasker->Options.amd_dom       = BASKER_TRUE; // use block-wise AMD
   ShyLUbasker->Options.transpose     = BASKER_FALSE;
   ShyLUbasker->Options.verbose_matrix_out = BASKER_FALSE;
@@ -114,7 +114,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbaskerTr->Options.verbose       = BASKER_FALSE;
   ShyLUbaskerTr->Options.prune         = BASKER_TRUE;
   ShyLUbaskerTr->Options.btf_matching  = 2; // use cardinary matching from Trilinos
-  ShyLUbaskerTr->Options.blk_matching  = 0; // no block-wise max-weight matrching
+  ShyLUbaskerTr->Options.blk_matching  = 1; // no block-wise max-weight matrching
   ShyLUbaskerTr->Options.amd_dom       = BASKER_TRUE; // use block-wise AMD
   ShyLUbaskerTr->Options.transpose     = BASKER_TRUE;
   ShyLUbaskerTr->Options.verbose_matrix_out = BASKER_FALSE;

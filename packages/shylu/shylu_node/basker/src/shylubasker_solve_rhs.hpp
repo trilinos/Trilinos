@@ -378,13 +378,13 @@ namespace BaskerNS
 
       //---Lower solve
       BASKER_MATRIX &LC = LBTF(b);
-      //L\x -> y 
+      //L(C)\x -> y 
       lower_tri_solve(LC,x,y);
 
       //printVec(y,gn);
 
       BASKER_MATRIX &UC = UBTF(b);
-      //U\x -> y
+      //U(C)\x -> y
       upper_tri_solve(UC,x,y);
 
       #ifdef BASKER_DEBUG_SOLVE_RHS

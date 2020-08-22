@@ -362,11 +362,13 @@ namespace BaskerNS
     
     // initialize perm vector
     // gperm_array(i) = k means that the current i-th row is the k-th row before pivot
+    #ifdef BASKER_CHECK_WITH_DIAG_AFTER_PIVOT
     for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k)
     {
       gperm_array(k) = k;
       gpermi_array(k) = k;
     }
+    #endif
 
     //for each column
     for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k)
@@ -501,7 +503,11 @@ namespace BaskerNS
             maxindex = j;
             //printf( " pivot=%e (k=%d, j=%d -> %d)\n",pivot,k,j,j+L.srow);
           }
+          #ifdef BASKER_CHECK_WITH_DIAG_AFTER_PIVOT
           if (gpermi_array(j+L.srow) == k)
+          #else
+          if (j+L.srow == k)
+          #endif
           {
             digv = absv;
             digindex = j;
@@ -549,7 +555,7 @@ namespace BaskerNS
           cout << endl;
           cout << "---------------------------"
             << endl;
-          cout << "Error: Matrix is singular, blk: "
+          cout << "Error: Diag Matrix is singular, blk: "
             << c 
             << " Column: "
             << k
@@ -574,6 +580,7 @@ namespace BaskerNS
       pivot_time += timer_nfactor.seconds();
       #endif
       // > maxindex is in the original row (before pivot)
+      #ifdef BASKER_CHECK_WITH_DIAG_AFTER_PIVOT
       int pivot_index = gpermi_array(maxindex+L.srow);
       if (k != pivot_index) {
         // update global perm vector for figuring out diagonal entry
@@ -592,6 +599,7 @@ namespace BaskerNS
         gpermi_array(row2) = pivot_row;
         //printf( " > swap(%d, %d)\n",row1,row2 );
       }
+      #endif
       //for(Int ii = btf_tabs(c); ii < btf_tabs(c+1); ++ii) {
       //  printf( "gperm_array(%d) = %d, gpermi_array(%d) = %d\n",ii,gperm_array(ii), ii,gpermi_array(ii));
       //}
@@ -826,7 +834,6 @@ namespace BaskerNS
 
     color[j]       = 2;
     pattern[--top] = j;
-
   }//end t_locak_reach_short_btf
 
   template <class Int, class Entry, class Exe_Space>
@@ -872,7 +879,7 @@ namespace BaskerNS
     #endif
 
       if(ws(j) == 0)
-      {	    
+      {
         //Color
         ws(j) = 1;
 
@@ -1175,7 +1182,7 @@ namespace BaskerNS
       Int j = U.row_idx(ui);
       BASKER_ASSERT(j<k, "Pruning, j not less than k");
 
-      if(L.pend(j)==BASKER_MAX_IDX)
+      if(L.pend(j) == BASKER_MAX_IDX)
       {
 
         for(Int li = L.col_ptr(j); li < L.col_ptr(j+1); ++li)

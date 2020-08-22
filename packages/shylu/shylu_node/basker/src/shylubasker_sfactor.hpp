@@ -342,8 +342,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         //L_assign_nnz(LL[blk][l+1], stree, 0);
         if(Options.verbose == BASKER_TRUE)
         {
-          printf( "   ++ leaf_assign_nnz(LL(%d)(%d))\n",U_col,U_row);
-          printf( "   ++ leaf_assign_nnz(LL(%d)(%d))\n",blk,l+1);
+          printf( "   ++ leaf_assign_nnz(LU(%d, %d))\n",U_col,U_row);
+          printf( "   ++ leaf_assign_nnz(LL(%d, %d))\n",blk,l+1);
         }
         U_assign_nnz(LU(U_col)(U_row), stree, 0);
         L_assign_nnz(LL(blk)(l+1),     stree, 0);
@@ -438,9 +438,14 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
 
           //Assign nnz
+          if(Options.verbose == BASKER_TRUE)
+          {
+            printf( "   ++ leaf_assign_nnz(LU(%d, %d))\n",U_col,U_row);
+            printf( "   ++ leaf_assign_nnz(LL(%d, %d))\n",inner_blk,l-lvl);
+          }
           //U_assign_nnz(LU[U_col][U_row], stree, 0);
-          U_assign_nnz(LU(U_col)(U_row), stree, 0);
           //L_assign_nnz(LL[inner_blk][l-lvl], stree, 0);
+          U_assign_nnz(LU(U_col)(U_row), stree, 0);
           L_assign_nnz(LL(inner_blk)(l-lvl), stree, 0);
           //printf("Here 1 \n");
         }
@@ -2045,7 +2050,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       printf("U_assing_nnz: %ld \n", t_nnz);
       #endif
 
-      if ((Int)(1.05*t_nnz) > t_nnz) {
+      if ((Int)(1.05*t_nnz) >= t_nnz) {
         M.nnz = (1.05)*t_nnz;
       }
       if (global_nnz + t_nnz > global_nnz) {
@@ -2087,7 +2092,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       printf("L_assign_nnz: %ld \n", t_nnz);
       #endif
 
-      if ((Int)(2.05*t_nnz) > t_nnz) {
+      if ((Int)(2.05*t_nnz) >= t_nnz) {
         M.nnz = (2.05)*t_nnz;
       } else {
         M.nnz = t_nnz;

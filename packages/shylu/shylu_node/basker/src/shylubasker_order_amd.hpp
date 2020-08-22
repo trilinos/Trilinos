@@ -328,6 +328,7 @@ namespace BaskerNS
   )
   {
     // printf("=============BTF_BLK_AMD_CALLED========\n");
+    Int b_end = b_start+b_num;
     if(Options.incomplete == BASKER_TRUE)
     {
       //We note that AMD on incomplete ILUK
@@ -340,7 +341,7 @@ namespace BaskerNS
 
       //We will makeup work to be 1, 
       //Since BTF is not supported in our iluk
-      for(Int b = 0; b < btf_nblks; b++)
+      for(Int b = b_start; b < b_end; b++)
       {
         btf_nnz(b) = 1;
         btf_work(b) = 1;
@@ -365,13 +366,15 @@ namespace BaskerNS
     //printf("Done with btf_blk_mwm_amd malloc \n");
     //printf("blks: %d \n" , btf_nblks);
 
-    Int b_end = b_start+b_num;
     //const int blk_size_threshold = 1; // was 3
     const int blk_size_threshold = 3; // was 3
     bool flag = Options.verbose;
     Entry one = (Entry)1.0;
     //MALLOC_ENTRY_1DARRAY (scale_row_array, A.nrow);
     //MALLOC_ENTRY_1DARRAY (scale_col_array, A.nrow);
+    if (flag) {
+      std::cout << std::endl << " block mwm + amd (" << b_start << " : " << b_end-1 << ")" << std::endl;
+    }
     for(Int b = b_start; b < b_end; b++)
     {
       Int blk_size = btf_tabs(b+1) - btf_tabs(b);

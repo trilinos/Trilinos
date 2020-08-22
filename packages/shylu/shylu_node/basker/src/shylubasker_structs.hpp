@@ -764,7 +764,7 @@ namespace BaskerNS
       use_sequential_diag_facto = BASKER_FALSE;
       // MWM matching before AMD 
       //  0: no matching, 1: ShyLUBasker::mwm, 2: MC63 if enabled
-      blk_matching = 0; // if 0, then ND & AMD are applied in symbolic
+      blk_matching = 1; // if 0, then ND & AMD are applied in symbolic
 
       //Pivot
       no_pivot   = BASKER_FALSE;
