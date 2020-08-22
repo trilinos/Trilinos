@@ -76,7 +76,8 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
                         std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >& colImportPerGrp,
                         std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regionGrpMats,
                         Teuchos::ArrayRCP<LocalOrdinal>&  regionMatVecLIDs,
-                        Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter) {
+                        Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
+                        Teuchos::Array<LocalOrdinal>& rNodesPerDim) {
 #include <MueLu_UseShortNames.hpp>
 
   std::string matrixType = galeriList.get<std::string>("matrixType");
@@ -115,7 +116,6 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
   LO numLocalRegionNodes = 0;
   Array<GO>  sendGIDs;
   Array<int> sendPIDs;
-  Array<LO>  rNodesPerDim(3);
   Array<LO>  compositeToRegionLIDs(nodeMap->getNodeNumElements()*numDofsPerNode);
   Array<GO>  quasiRegionGIDs;
   Array<GO>  quasiRegionCoordGIDs;
@@ -197,7 +197,8 @@ void createProblem(const int maxRegPerProc, const LocalOrdinal numDofsPerNode,
                    std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& revisedRowMapPerGrp,
                    std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >& rowImportPerGrp,
                    Teuchos::ArrayRCP<LocalOrdinal>& regionMatVecLIDs,
-                   RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter) {
+                   RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
+                   Teuchos::Array<LocalOrdinal>& rNodesPerDim) {
 #include <MueLu_UseShortNames.hpp>
   using TST                   = Teuchos::ScalarTraits<SC>;
   using magnitude_type        = typename TST::magnitudeType;
@@ -240,7 +241,7 @@ void createProblem(const int maxRegPerProc, const LocalOrdinal numDofsPerNode,
   createRegionMatrix(galeriList, numDofsPerNode, maxRegPerProc, nodeMap, dofMap, A,
                      rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp, revisedColMapPerGrp,
                      rowImportPerGrp, colImportPerGrp, regionGrpMats,
-                     regionMatVecLIDs, regionInterfaceImporter);
+                     regionMatVecLIDs, regionInterfaceImporter, rNodesPerDim);
 
   // Create regional nullspace an coordinates
   Teuchos::Array<RCP<MultiVector> > quasiRegionNullspace(maxRegPerProc);
@@ -286,11 +287,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionRFactory, RegionRFactLaplace3D, Scalar, 
 
   // Get MPI parameter
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  const int numRanks = comm->getSize();
+  const int myRank   = comm->getRank();
 
   const int numDimensions = 3;
   const int maxRegPerProc = 1;
   const LO numDofsPerNode = 1;
-  GO nx = 10, ny = 10, nz = 10;
+  GO nx = 7, ny = 7, nz = 4;
   Teuchos::Array<LO> lNodesPerDim({static_cast<LO>(nx), static_cast<LO>(ny), static_cast<LO>(nz)});
   Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace3D");
@@ -302,11 +305,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionRFactory, RegionRFactLaplace3D, Scalar, 
   std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc);
   Teuchos::ArrayRCP<LocalOrdinal> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
+  Teuchos::Array<LO> rNodesPerDim(3);
 
   createProblem(maxRegPerProc, numDofsPerNode, galeriParameters, comm,
                 A, regionGrpMats, regionNullspace, regionCoordinates,
                 revisedRowMapPerGrp, rowImportPerGrp,
-                regionMatVecLIDs, regionInterfaceImporter);
+                regionMatVecLIDs, regionInterfaceImporter, rNodesPerDim);
 
   RCP<Matrix> regionMat = regionGrpMats[0];
 
@@ -320,7 +324,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionRFactory, RegionRFactLaplace3D, Scalar, 
   fineLevel.Request("A");
   fineLevel.Set("A", regionMat);
   fineLevel.Set("numDimensions", numDimensions);
-  fineLevel.Set("lNodesPerDim",  lNodesPerDim);
+  fineLevel.Set("lNodesPerDim",  rNodesPerDim);
   fineLevel.Set("Nullspace", regionNullspace[0]);
   fineLevel.Set("Coordinates", regionCoordinates[0]);
 
@@ -345,24 +349,90 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionRFactory, RegionRFactLaplace3D, Scalar, 
   RCP<Matrix> R;
   coarseLevel.Get("R", R, myRFact.get());
   coarseLevel.Release("R", myRFact.get());
+  TEST_EQUALITY(R != Teuchos::null, true);
 
   RCP<Matrix> P;
   coarseLevel.Get("P", P, myRFact.get());
   coarseLevel.Release("P", myRFact.get());
+  TEST_EQUALITY(P != Teuchos::null, true);
 
   RCP<MultiVector> coarseNullspace;
   coarseLevel.Get("Nullspace", coarseNullspace, myRFact.get());
   coarseLevel.Release("Nullspace", myRFact.get());
+  TEST_EQUALITY(coarseNullspace != Teuchos::null, true);
 
   RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<SC>::coordinateType, LO, GO, NO> > coarseCoordinates;
   coarseLevel.Get("Coordinates", coarseCoordinates, myRFact.get());
   coarseLevel.Release("Coordinates", myRFact.get());
+  TEST_EQUALITY(coarseCoordinates != Teuchos::null, true);
 
-  R->describe(out, Teuchos::VERB_EXTREME);
-  P->describe(out, Teuchos::VERB_EXTREME);
-  // coarseNullspace->describe(out, Teuchos::VERB_EXTREME);
-  // regionNullspace[0]->describe(out, Teuchos::VERB_EXTREME);
-  // coarseCoordinates->describe(out, Teuchos::VERB_EXTREME);
+  // R->describe(out, Teuchos::VERB_EXTREME);
+
+  if(numRanks == 1) {
+    TEST_EQUALITY(R->getGlobalNumRows(),               18);
+    TEST_EQUALITY(R->getGlobalNumCols(),              196);
+    TEST_EQUALITY(R->getNodeNumRows(),                 18);
+    TEST_EQUALITY(R->getCrsGraph()->getNodeNumCols(), 196);
+    TEST_EQUALITY(R->getNodeNumEntries(),             726);
+
+    Array<LO> rowLength = {{27, 45, 27, 45, 75, 45, 27, 45, 27,
+                            27, 45, 27, 45, 75, 45, 27, 45, 27}};
+    ArrayView<const LO> rowEntries;
+    ArrayView<const SC> rowValues;
+    for(int rowIdx = 0; rowIdx < static_cast<int>(R->getNodeNumRows()); ++rowIdx) {
+      R->getLocalRowView(rowIdx, rowEntries, rowValues);
+      TEST_EQUALITY(static_cast<LO>(rowEntries.size()), rowLength[rowIdx]);
+    }
+
+  } else { // Running with 4 ranks
+    TEST_EQUALITY(R->getGlobalNumRows(),               32);
+    TEST_EQUALITY(R->getCrsGraph()->getNodeNumCols(),  64);
+    TEST_EQUALITY(R->getNodeNumEntries(),             216);
+
+    ArrayView<const LO> rowEntries;
+    ArrayView<const SC> rowValues;
+    if(myRank == 0) {
+      TEST_EQUALITY(R->getNodeNumRows(),                  8);
+      TEST_EQUALITY(R->getCrsGraph()->getNodeNumCols(),  64);
+      TEST_EQUALITY(R->getNodeNumEntries(),             216);
+
+      Array<LO> rowLength = {{27, 27, 27, 27, 27, 27, 27, 27}};
+      for(int rowIdx = 0; rowIdx < static_cast<int>(R->getNodeNumRows()); ++rowIdx) {
+        R->getLocalRowView(rowIdx, rowEntries, rowValues);
+        TEST_EQUALITY(static_cast<LO>(rowEntries.size()), rowLength[rowIdx]);
+      }
+    } else if(myRank == 1) {
+      TEST_EQUALITY(R->getNodeNumRows(),                  8);
+      TEST_EQUALITY(R->getCrsGraph()->getNodeNumCols(),  64);
+      TEST_EQUALITY(R->getNodeNumEntries(),             216);
+
+      Array<LO> rowLength = {{27, 27, 27, 27, 27, 27, 27, 27}};
+      for(int rowIdx = 0; rowIdx < static_cast<int>(R->getNodeNumRows()); ++rowIdx) {
+        R->getLocalRowView(rowIdx, rowEntries, rowValues);
+        TEST_EQUALITY(static_cast<LO>(rowEntries.size()), rowLength[rowIdx]);
+      }
+    } else if(myRank == 2) {
+      TEST_EQUALITY(R->getNodeNumRows(),                  8);
+      TEST_EQUALITY(R->getCrsGraph()->getNodeNumCols(),  64);
+      TEST_EQUALITY(R->getNodeNumEntries(),             216);
+
+      Array<LO> rowLength = {{27, 27, 27, 27, 27, 27, 27, 27}};
+      for(int rowIdx = 0; rowIdx < static_cast<int>(R->getNodeNumRows()); ++rowIdx) {
+        R->getLocalRowView(rowIdx, rowEntries, rowValues);
+        TEST_EQUALITY(static_cast<LO>(rowEntries.size()), rowLength[rowIdx]);
+      }
+    } else if(myRank == 3) {
+      TEST_EQUALITY(R->getNodeNumRows(),                  8);
+      TEST_EQUALITY(R->getCrsGraph()->getNodeNumCols(),  64);
+      TEST_EQUALITY(R->getNodeNumEntries(),             216);
+
+      Array<LO> rowLength = {{27, 27, 27, 27, 27, 27, 27, 27}};
+      for(int rowIdx = 0; rowIdx < static_cast<int>(R->getNodeNumRows()); ++rowIdx) {
+        R->getLocalRowView(rowIdx, rowEntries, rowValues);
+        TEST_EQUALITY(static_cast<LO>(rowEntries.size()), rowLength[rowIdx]);
+      }
+    }
+  }
 
 } // RegionRFactLaplace3D
 
