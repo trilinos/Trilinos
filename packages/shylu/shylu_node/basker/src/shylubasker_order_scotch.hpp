@@ -326,9 +326,9 @@ namespace BaskerNS
 
      }
      #ifdef BASKER_DEBUG_ORDER_SCOTCH
-    printf("SCOTCH: ASKED: %d  GOT : %d \n",
-	   num_levels, sg.cblk);
-    #endif
+     printf("SCOTCH: ASKED: %d  GOT : %d \n",
+             num_levels, sg.cblk);
+     #endif
 
     //Find the leaf nad non-leaf nodes
     //Int is_nonleaf[sg.cblk];

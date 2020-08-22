@@ -1285,8 +1285,7 @@ namespace BaskerNS
    }
 
    U.tpivot = pivot;
-   
-   printf("lower pivot: %e, k: %d, kid: %d \n", U.tpivot, k, kid);
+   //printf("lower pivot: %e, k: %d, kid: %d \n", U.tpivot, k, kid);
 
    //local only
    //opivot = pivot;

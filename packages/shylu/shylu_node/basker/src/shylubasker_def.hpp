@@ -743,7 +743,8 @@ namespace BaskerNS
         for (Int k = 0; k < (Int)ncol; k++) order_blk_mwm_inv(k) = k;
         permute_inv(order_blk_mwm_inv, order_blk_mwm_array, ncol);
 
-        /*printf("\n A = [\n" );
+        /*printf("\n before reverting\n" );
+        printf(" A = [\n" );
         for(Int j = 0; j < BTF_A.ncol; j++) {
           for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
            printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
@@ -758,7 +759,8 @@ namespace BaskerNS
           permute_with_workspace(BTF_A.row_idx, inv_vals_order_ndbtfa_array, BTF_A.nnz);
           permute_with_workspace(BTF_B.row_idx, inv_vals_order_ndbtfb_array, BTF_B.nnz);
           permute_with_workspace(BTF_C.row_idx, inv_vals_order_ndbtfc_array, BTF_C.nnz);
-          /*for(Int j = 0; j < BTF_A.nnz; j++) printf( " ndbtf(%d) = %d, %d\n",j,vals_order_ndbtfa_array(j),inv_vals_order_ndbtfa_array(j) );
+          /*printf( " BTF_A.nnz = %d\n",BTF_A.nnz );
+          for(Int j = 0; j < BTF_A.nnz; j++) printf( " ndbtf(%d) = %d, %d\n",j,vals_order_ndbtfa_array(j),inv_vals_order_ndbtfa_array(j) );
           printf(" _A = [\n" );
           for(Int j = 0; j < BTF_A.ncol; j++) {
             for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {

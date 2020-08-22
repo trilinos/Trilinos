@@ -495,6 +495,15 @@ namespace BaskerNS
           scale_col_array(btf_tabs(b)+ii) = one;
         }
       }
+      /*{
+        std::cout << "m1=[" << std::endl;
+        for(Int k = 0; k < blk_size; k++)
+        {
+          for(Int i = temp_col(k); i < temp_col(k+1); i++)
+            printf("%d %d %e\n", temp_row(i), k, temp_val(i));
+        }
+        std::cout << "];" << std::endl;
+      }*/
 
       // apply MWM to rows
       permute_row(nnz, &(temp_row(0)), &(tempp(0)));
@@ -509,6 +518,10 @@ namespace BaskerNS
         p_mwm(ii+btf_tabs(b)) = tempp(ii)+btf_tabs(b);
       }
       /*{
+        for(Int k = 0; k < blk_size; k++)
+        {
+          printf( " %d\n",tempp(k) );
+        }
         std::cout << "m2=[" << std::endl;
         for(Int k = 0; k < blk_size; k++)
         {

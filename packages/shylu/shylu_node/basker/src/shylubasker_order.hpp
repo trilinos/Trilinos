@@ -730,6 +730,7 @@ namespace BaskerNS
     scotch_timer.reset();
     #endif
 
+
     //--------------------------------------------------------------
     //5. Permute BTF_A
     INT_1DARRAY cmember;
@@ -775,8 +776,8 @@ namespace BaskerNS
     for(Int j = 0; j < BTF_A.ncol; j++) {
       printf("%d\n",order_csym_array(j) );
     }
-    printf("];\n");
-    printf(" ppT = [\n" );
+    printf("];\n");*/
+    /*printf(" ppT = [\n" );
     for(Int j = 0; j < BTF_A.ncol; j++) {
       for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
         printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
@@ -793,7 +794,6 @@ namespace BaskerNS
     std::cout << " ++ Basker apply_scotch : sort(A) time              : " << sortA_time << std::endl;
     scotch_timer.reset();
     #endif
-    //printMTX("A_BTF_AMD1.mtx", BTF_A);
     /*for (Int j = 0; j < BTF_A.nnz; j++) printf( " + vals_ndbtfa(%d) = %d\n",j,vals_order_ndbtfa_array(j) );
     printf(" ppT = [\n" );
     for(Int j = 0; j < BTF_A.ncol; j++) {
@@ -912,7 +912,9 @@ namespace BaskerNS
       vals_order_scotch_array(i) = i; //init
     }
     permute_col_store_valperms(M, part_tree.permtab, vals_order_scotch_array); //NDE: Track movement of vals (lin_ind of row,col) here
-    permute_inv(vals_order_ndbtfa_array, vals_order_scotch_array, M.nnz); //must permute the array holding the perms
+    if (Options.blk_matching == 0) {
+      permute_inv(vals_order_ndbtfa_array, vals_order_scotch_array, M.nnz); //must permute the array holding the perms
+    }
 
     //May need to sort row_idx
     return 0; 
