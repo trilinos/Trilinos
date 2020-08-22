@@ -159,21 +159,22 @@ namespace MueLu {
       else
         Tparams= rcp(new ParameterList);
 
+    // R->describe(*out, Teuchos::VERB_EXTREME);
+    *out << "Compute P=R^t" << std::endl;
     // By default, we don't need global constants for transpose
     Tparams->set("compute global constants: temporaries",Tparams->get("compute global constants: temporaries", false));
     Tparams->set("compute global constants", Tparams->get("compute global constants",false));
     std::string label = "MueLu::RegionR-transR" + Teuchos::toString(coarseLevel.GetLevelID());
-    // RCP<Matrix> P;
     RCP<Matrix> P = Utilities::Transpose(*R, true, label, Tparams);
-    // RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
-    // Xpetra::CrsMatrixUtils<SC,LO,GO,NO>::sortCrsEntries();
 
+    *out << "Compute coarse nullspace" << std::endl;
     RCP<MultiVector> fineNullspace   = Get<RCP<MultiVector> >(fineLevel, "Nullspace");
     RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(R->getRowMap(),
                                                                  fineNullspace->getNumVectors());
     R->apply(*fineNullspace, *coarseNullspace, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(),
              Teuchos::ScalarTraits<SC>::zero());
 
+    *out << "Set data on coarse level" << std::endl;
     Set(coarseLevel, "numDimensions", numDimensions);
     Set(coarseLevel, "lNodesPerDim",  lCoarseNodesPerDim);
     Set(coarseLevel, "Nullspace",     coarseNullspace);
