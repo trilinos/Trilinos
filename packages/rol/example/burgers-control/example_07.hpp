@@ -609,6 +609,12 @@ public:
     return *dual_vec_;
   }
 
+  Real apply(const ROL::Vector<Real> &x) const {
+    const L2VectorDual<Real> &ex = dynamic_cast<const L2VectorDual<Real>&>(x);
+    const std::vector<Real>& xval = *ex.getVector();
+    return std::inner_product(vec_->begin(), vec_->end(), xval.begin(), Real(0));
+  }
+
 };
 
 template<class Real>
@@ -696,6 +702,12 @@ public:
     return *dual_vec_;
   }
 
+  Real apply(const ROL::Vector<Real> &x) const {
+    const L2VectorPrimal<Real> &ex = dynamic_cast<const L2VectorPrimal<Real>&>(x);
+    const std::vector<Real>& xval = *ex.getVector();
+    return std::inner_product(vec_->begin(), vec_->end(), xval.begin(), Real(0));
+  }
+
 };
 
 template<class Real>
@@ -774,6 +786,12 @@ public:
 
     fem_->apply_H1(*(ROL::constPtrCast<std::vector<Real> >(dual_vec_->getVector())),*vec_);
     return *dual_vec_;
+  }
+
+  Real apply(const ROL::Vector<Real> &x) const {
+    const H1VectorDual<Real> &ex = dynamic_cast<const H1VectorDual<Real>&>(x);
+    const std::vector<Real>& xval = *ex.getVector();
+    return std::inner_product(vec_->begin(), vec_->end(), xval.begin(), Real(0));
   }
 
 };
@@ -861,6 +879,12 @@ public:
 
     fem_->apply_inverse_H1(*(ROL::constPtrCast<std::vector<Real> >(dual_vec_->getVector())),*vec_);
     return *dual_vec_;
+  }
+
+  Real apply(const ROL::Vector<Real> &x) const {
+    const H1VectorPrimal<Real> &ex = dynamic_cast<const H1VectorPrimal<Real>&>(x);
+    const std::vector<Real>& xval = *ex.getVector();
+    return std::inner_product(vec_->begin(), vec_->end(), xval.begin(), Real(0));
   }
 };
 

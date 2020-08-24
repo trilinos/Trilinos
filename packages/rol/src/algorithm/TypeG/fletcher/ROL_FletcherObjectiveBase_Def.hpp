@@ -65,17 +65,18 @@ FletcherObjectiveBase<Real>::FletcherObjectiveBase(const Ptr<Objective<Real>> &o
     multSolverError_(0), gradSolveError_(0),
     iterKrylov_(0), flagKrylov_(0) {
   gL_      = xdual.clone();
+  gLdual_  = xprim.clone();
   scaledc_ = cprim.clone();
   xprim_   = xprim.clone();
   xdual_   = xdual.clone();
   cprim_   = cprim.clone();
   cdual_   = cdual.clone();
 
-  v1_ = xdual.clone();
+  v1_ = xprim.clone();
   v2_ = cdual.clone();
   vv_ = makePtr<PartitionedVector<Real>>(std::vector<Ptr<Vector<Real>>>({v1_, v2_}));
 
-  w1_ = xdual.clone();
+  w1_ = xprim.clone();
   w2_ = cdual.clone();
   ww_ = makePtr<PartitionedVector<Real>>(std::vector<Ptr<Vector<Real>>>({w1_, w2_}));
 
@@ -115,7 +116,8 @@ template<typename Real>
 Ptr<const Vector<Real>> FletcherObjectiveBase<Real>::getLagrangianGradient(const Vector<Real>& x) {
   // TODO: Figure out reasonable tolerance
   Real tol = static_cast<Real>(1e-12);
-  computeMultipliers(*cdual_, *gL_, x, *xdual_, *cprim_, tol);
+  computeMultipliers(*cdual_, *gLdual_, x, *xdual_, *cprim_, tol);
+  gL_->set(gLdual_->dual());
   return gL_;
 }
 
@@ -130,7 +132,7 @@ template<typename Real>
 Ptr<const Vector<Real>> FletcherObjectiveBase<Real>::getMultiplierVec(const Vector<Real>& x) {
   // TODO: Figure out reasonable tolerance
   Real tol = static_cast<Real>(1e-12);
-  computeMultipliers(*cdual_, *gL_, x, *xdual_, *cprim_, tol);
+  computeMultipliers(*cdual_, *gLdual_, x, *xdual_, *cprim_, tol);
   return cdual_;
 }
 

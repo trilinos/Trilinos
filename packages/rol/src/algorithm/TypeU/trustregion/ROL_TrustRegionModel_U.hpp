@@ -173,7 +173,8 @@ public:
     applyHessian(*dual_,s,tol);
     dual_->scale(static_cast<Real>(0.5));
     dual_->plus(*g_);
-    return dual_->dot(s.dual());
+    //return dual_->dot(s.dual());
+    return dual_->apply(s);
   }
 
   virtual void gradient( Vector<Real> &g, const Vector<Real> &s, Real &tol ) override {

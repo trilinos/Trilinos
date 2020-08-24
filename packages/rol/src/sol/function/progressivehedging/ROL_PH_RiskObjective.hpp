@@ -189,7 +189,8 @@ public:
     Real reg1 = quad_->regret(val_-(*xstat)[0],1);
     Real reg2 = quad_->regret(val_-(*xstat)[0],2);
     getGradient(*xvec,tol);
-    Real gv   = vvec->dot(g_->dual());
+    //Real gv   = vvec->dot(g_->dual());
+    Real gv   = vvec->apply(*g_);
     obj_->hessVec(*hvec,*vvec,*xvec,tol);
     hvec->scale(reg1); hvec->axpy(reg2*(gv-(*vstat)[0]),*g_);
     (*hstat)[0] = reg2*((*vstat)[0]-gv);

@@ -411,6 +411,15 @@ private:
              ROL::dynamicPtrCast<ROL::PEBBL::MixedVector<Real>>(get(x,0))->getIntegerVariables())->getVector();
   }
 
+  ROL::Ptr<std::vector<Real>> getData(ROL::Vector<Real> &x, int comp) const {
+    if (comp == 0)
+      return ROL::dynamicPtrCast<ROL::StdVector<Real>>(
+             ROL::dynamicPtrCast<ROL::PEBBL::MixedVector<Real>>(get(x,0))->getIntegerVariables())->getVector();
+    else
+      return ROL::dynamicPtrCast<ROL::StdVector<Real>>(
+             ROL::dynamicPtrCast<ROL::PEBBL::MixedVector<Real>>(get(x,0))->getContinuousVariables())->getVector();
+  }
+
 
   ROL::Ptr<const std::vector<Real>> getConstData(const ROL::Vector<Real> &x) const {
     return ROL::dynamicPtrCast<const ROL::StdVector<Real>>(
@@ -471,20 +480,56 @@ public:
   void incumbentHeuristic() {
     Real tol = std::sqrt(ROL::ROL_EPSILON<Real>());
     const Real zero(0), one(1);
-    rndSolution_->set(*solution_);
-    ROL::Ptr<std::vector<Real>>       idata = getData(*rndSolution_);
-    ROL::Ptr<const std::vector<Real>> cdata = getConstData(*rndSolution_);
+    // Max Rounding
+    //rndSolution_->set(*solution_);
+    //ROL::Ptr<std::vector<Real>>       idata = getData(*rndSolution_);
+    //ROL::Ptr<const std::vector<Real>> cdata = getConstData(*rndSolution_);
+    //const int M = idata->size();
+    //const int N = cdata->size()/M;
+    //Real maxj(0);
+    //for (int i = 0; i < M; ++i) {
+    //  maxj = (*cdata)[i];
+    //  for (int j = 1; j < N; ++j) {
+    //    maxj = std::max(maxj,(*cdata)[i + j*M]);
+    //  }
+    //  (*idata)[i] = (maxj > tol ? one : zero);
+    //}
+    // Real cnorm = infeasibility(*rndSolution_);
+    // Randomized Rounding
+    ROL::Ptr<std::vector<Real>> idata = getData(*rndSolution_,0);
+    ROL::Ptr<std::vector<Real>> cdata = getData(*rndSolution_,1);
     const int M = idata->size();
     const int N = cdata->size()/M;
-    Real maxj(0);
-    for (int i = 0; i < M; ++i) {
-      maxj = (*cdata)[i];
-      for (int j = 1; j < N; ++j) {
-        maxj = std::max(maxj,(*cdata)[i + j*M]);
+    Real z(0), r(0), cnorm(0), sum(0);
+    int cnt(0);
+    while (true) {
+      rndSolution_->set(*solution_);
+      std::vector<int> ind;
+      for (int i = 0; i < M; ++i) {
+        r = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+        z = (*idata)[i];
+        if (r <= z) {
+          (*idata)[i] = zero;
+          for (int j = 0; j < N; ++j) (*cdata)[i + j*M] = zero;
+        }
+        else {
+          (*idata)[i] = one;
+          ind.push_back(i);
+        }
       }
-      (*idata)[i] = (maxj > tol ? one : zero);
+      for (int j = 0; j < N; ++j) {
+        sum = zero;
+        for (const auto i : ind) sum += (*cdata)[i + j*M];
+        for (const auto i : ind) (*cdata)[i + j*M] /= sum;
+      }
+      cnorm = infeasibility(*rndSolution_);
+      cnt++;
+      if (cnorm < ctol_) break;
+      if (verbosity_ > 1) {
+        *outStream_ << "  cnt = " << cnt << "  infeasibility = " << cnorm << std::endl;
+      }
     }
-    Real cnorm = infeasibility(*rndSolution_);
+
     problem0_->getObjective()->update(*rndSolution_,ROL::UPDATE_TEMP);
     Real val = problem0_->getObjective()->value(*rndSolution_,tol);
     branching_->foundSolution(new ROL::PEBBL::IntegerSolution<Real>(*rndSolution_,val));

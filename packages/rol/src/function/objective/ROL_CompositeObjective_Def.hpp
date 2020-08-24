@@ -164,7 +164,8 @@ void CompositeObjective<Real>::computeHessVec(const Vector<Real> &v, const Vecto
   computeGradient(x,tol);
   int size = obj_vec_.size();
   for (int i = 0; i < size; ++i) {
-    (*obj_gv_)[i] = vec_grad_[i]->dot(v.dual());
+    //(*obj_gv_)[i] = vec_grad_[i]->dot(v.dual());
+    (*obj_gv_)[i] = vec_grad_[i]->apply(v);
     obj_vec_[i]->hessVec(*(vec_hess_[i]),v,x,tol);
   }
   std_obj_->hessVec(*(obj_hess_vec_),*(obj_gv_vec_),*(obj_value_vec_),tol);

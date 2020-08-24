@@ -123,7 +123,8 @@ inline Real initialRadius(int &nfval,
   // Evaluate the objective function at the Cauchy point
   xcp->set(g.dual());
   xcp->scale(-alpha);
-  Real gs = xcp->dot(g.dual());
+  //Real gs = xcp->dot(g.dual());
+  Real gs = xcp->apply(g);
   xcp->plus(x);
   obj.update(*xcp,UPDATE_TEMP);
   Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(); 
@@ -231,7 +232,8 @@ inline Real interpolateRadius(const Vector<Real> &g,
                               std::ostream &outStream = std::cout,
                               const bool print = false) {
   const Real one(1);
-  Real gs = g.dot(s.dual());
+  //Real gs = g.dot(s.dual());
+  Real gs = g.apply(s);
   Real modelVal = fold - pRed;
   Real theta = (one-eta2)*gs/((one-eta2)*(fold+gs)+eta2*modelVal-ftrial);
   if ( print ) {

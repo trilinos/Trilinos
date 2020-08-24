@@ -68,6 +68,10 @@ public:
 
   virtual Ptr<IntegerProblem<Real>> build(void) = 0;
 
+#ifdef HAVE_MPI
+  virtual void setCommunicator(const Ptr<const MPI_Comm> &comm) {};
+#endif
+
 }; // class IntegerProblemFactory
 
 } // namespace PEBBL

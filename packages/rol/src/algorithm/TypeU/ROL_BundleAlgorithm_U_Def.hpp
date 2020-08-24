@@ -208,7 +208,8 @@ std::vector<std::string> BundleAlgorithm_U<Real>::run( Vector<Real>       &x,
         obj.gradient(*state_->gradientVec,*y,tol); // Compute objective (sub)gradient at y
         state_->ngrad++;
         // Compute new linearization error and distance measure
-        gd = state_->stepVec->dot(state_->gradientVec->dual());
+        //gd = state_->stepVec->dot(state_->gradientVec->dual());
+        gd = state_->stepVec->apply(*state_->gradientVec);
         linErrNew = state_->value - (valueNew - gd); // Linearization error
         // Determine whether to take a serious or null step
         Real eps  = static_cast<Real>(10)*ROL_EPSILON<Real>();

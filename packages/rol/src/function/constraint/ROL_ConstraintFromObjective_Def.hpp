@@ -81,7 +81,8 @@ void ConstraintFromObjective<Real>::applyJacobian( Vector<Real>& jv, const Vecto
     isDualInitialized_ = true;
   }
   obj_->gradient(*dualVector_,x,tol);
-  setValue(jv,v.dot(dualVector_->dual()));
+  //setValue(jv,v.dot(dualVector_->dual()));
+  setValue(jv,v.apply(*dualVector_));
 }
 
 template<typename Real> 

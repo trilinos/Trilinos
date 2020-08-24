@@ -116,7 +116,8 @@ public:
     y_->set(grad);
     y_->axpy(-one,gp);
 
-    Real sy = s.dot(y_->dual());
+    //Real sy = s.dot(y_->dual());
+    Real sy = s.apply(*y_);
     if (sy > ROL_EPSILON<Real>()*snorm*snorm) {
       if (state_->current < state_->storage-1) {
         state_->current++;                                // Increment Storage

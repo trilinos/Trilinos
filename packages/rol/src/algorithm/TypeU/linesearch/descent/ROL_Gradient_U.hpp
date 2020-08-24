@@ -66,7 +66,8 @@ public:
     s.set(g.dual());
     s.scale(static_cast<Real>(-1));
     snorm = s.norm();
-    sdotg = s.dot(g.dual());
+    //sdotg = s.dot(g.dual());
+    sdotg = s.apply(g);
     iter  = 0;
     flag  = 0;
   }

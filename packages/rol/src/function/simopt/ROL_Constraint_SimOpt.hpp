@@ -1062,11 +1062,13 @@ public:
     Ptr<Vector<Real>> Jv = dualw.clone();
     update(u,z);
     applyJacobian_1(*Jv,v,u,z,tol);
-    Real wJv = w.dot(Jv->dual());
+    //Real wJv = w.dot(Jv->dual());
+    Real wJv = w.apply(*Jv);
     Ptr<Vector<Real>> Jw = dualv.clone();
     update(u,z);
     applyAdjointJacobian_1(*Jw,w,u,z,tol);
-    Real vJw = v.dot(Jw->dual());
+    //Real vJw = v.dot(Jw->dual());
+    Real vJw = v.apply(*Jw);
     Real diff = std::abs(wJv-vJw);
     if ( printToStream ) {
       std::stringstream hist;
@@ -1129,11 +1131,13 @@ public:
     Ptr<Vector<Real>> Jv = dualw.clone();
     update(u,z);
     applyJacobian_2(*Jv,v,u,z,tol);
-    Real wJv = w.dot(Jv->dual());
+    //Real wJv = w.dot(Jv->dual());
+    Real wJv = w.apply(*Jv);
     Ptr<Vector<Real>> Jw = dualv.clone();
     update(u,z);
     applyAdjointJacobian_2(*Jw,w,u,z,tol);
-    Real vJw = v.dot(Jw->dual());
+    //Real vJw = v.dot(Jw->dual());
+    Real vJw = v.apply(*Jw);
     Real diff = std::abs(wJv-vJw);
     if ( printToStream ) {
       std::stringstream hist;

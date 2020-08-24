@@ -188,7 +188,10 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     gmod->set(*dwa1); // hessVec from Cauchy point computation
     gmod->plus(*state_->gradientVec);
     gfree->set(*gmod);
-    bnd.pruneActive(*gfree,x,zero);
+    //bnd.pruneActive(*gfree,x,zero);
+    pwa1->set(gfree->dual());
+    bnd.pruneActive(*pwa1,x,zero);
+    gfree->set(pwa1->dual());
     if (hasEcon_) {
       applyFreePrecond(*pwa1,*gfree,x,*model_,bnd,tol0,*dwa1,*pwa2);
       gfnorm = pwa1->norm();
@@ -234,7 +237,10 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
         state_->stepVec->plus(*s);
         gmod->plus(*dwa1); // gmod = H(x[i+1]-x[i]) + H(x[i]-x[0]) + g
         gfree->set(*gmod);
-        bnd.pruneActive(*gfree,x,zero);
+        //bnd.pruneActive(*gfree,x,zero);
+        pwa1->set(gfree->dual());
+        bnd.pruneActive(*pwa1,x,zero);
+        gfree->set(pwa1->dual());
         if (hasEcon_) {
           applyFreePrecond(*pwa1,*gfree,x,*model_,bnd,tol0,*dwa1,*pwa2);
           gfnormf = pwa1->norm();
@@ -355,7 +361,8 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
   else {
     model.hessVec(dwa,s,x,tol); nhess_++;
     gs = s.dot(g);
-    q  = half * s.dot(dwa.dual()) + gs;
+    //q  = half * s.dot(dwa.dual()) + gs;
+    q  = half * s.apply(dwa) + gs;
     interp = (q > mu0_*gs);
   }
   // Either increase or decrease alpha to find approximate Cauchy point
@@ -368,7 +375,8 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
       if (snorm <= del) {
         model.hessVec(dwa,s,x,tol); nhess_++;
         gs = s.dot(g);
-        q  = half * s.dot(dwa.dual()) + gs;
+        //q  = half * s.dot(dwa.dual()) + gs;
+        q  = half * s.apply(dwa) + gs;
         search = (q > mu0_*gs) && (cnt < redlim_);
       }
       cnt++;
@@ -385,7 +393,8 @@ Real LinMoreAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
       if (snorm <= del && cnt < explim_) {
         model.hessVec(dwa,s,x,tol); nhess_++;
         gs = s.dot(g);
-        q  = half * s.dot(dwa.dual()) + gs;
+        //q  = half * s.dot(dwa.dual()) + gs;
+        q  = half * s.apply(dwa) + gs;
         if (q <= mu0_*gs && std::abs(q-qs) > qtol_*std::abs(qs)) {
           dwa1.set(dwa);
           search = true;
@@ -436,7 +445,8 @@ Real LinMoreAlgorithm_B<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
     snorm = dgpstep(pwa,s,x,beta,outStream);
     model.hessVec(dwa,pwa,x,tol); nhess_++;
     gs = pwa.dot(g);
-    q  = half * pwa.dot(dwa.dual()) + gs;
+    //q  = half * pwa.dot(dwa.dual()) + gs;
+    q  = half * pwa.apply(dwa) + gs;
     if (q <= mu0_*gs || nsteps > pslim_) {
       search = false;
     }
@@ -503,7 +513,8 @@ Real LinMoreAlgorithm_B<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
   t.set(g); t.scale(-one);
   // Preconditioned residual
   applyFreePrecond(r,t,x,model,bnd,tol0,dwa,pwa);
-  rho = r.dot(t.dual());
+  //rho = r.dot(t.dual());
+  rho = r.apply(t);
   // Initialize direction
   p.set(r);
   pMp = (!hasEcon_ ? rho : p.dot(p)); // If no equality constraint, used preconditioned norm
@@ -512,7 +523,8 @@ Real LinMoreAlgorithm_B<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
     // Apply Hessian to direction dir
     applyFreeHessian(q,p,x,model,bnd,tol0,pwa);
     // Compute sigma such that ||s+sigma*dir|| = del
-    kappa = p.dot(q.dual());
+    //kappa = p.dot(q.dual());
+    kappa = p.apply(q);
     alpha = (kappa>zero) ? rho/kappa : zero;
     sigma = dtrqsol(sMs,pMp,sMp,del);
     // Check for negative curvature or if iterate exceeds trust region
@@ -527,7 +539,8 @@ Real LinMoreAlgorithm_B<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
     t.axpy(-alpha,q);
     applyFreePrecond(r,t,x,model,bnd,tol0,dwa,pwa);
     // Exit if residual tolerance is met
-    rtr   = r.dot(t.dual());
+    //rtr   = r.dot(t.dual());
+    rtr   = r.apply(t);
     tnorm = t.norm();
     if (rtr <= stol*stol || tnorm <= tol) {
       sMs   = sMs + two*alpha*sMp + alpha*alpha*pMp;
@@ -568,7 +581,13 @@ void LinMoreAlgorithm_B<Real>::applyFreeHessian(Vector<Real> &hv,
   pwa.set(v);
   bnd.pruneActive(pwa,x,zero);
   model.hessVec(hv,pwa,x,tol); nhess_++;
-  bnd.pruneActive(hv,x,zero);
+  pwa.set(hv.dual());
+  bnd.pruneActive(pwa,x,zero);
+  hv.set(pwa.dual());
+  //pwa.set(v);
+  //bnd.pruneActive(pwa,x,zero);
+  //model.hessVec(hv,pwa,x,tol); nhess_++;
+  //bnd.pruneActive(hv,x,zero);
 }
 
 template<typename Real>
@@ -582,10 +601,15 @@ void LinMoreAlgorithm_B<Real>::applyFreePrecond(Vector<Real> &hv,
                                                 Vector<Real> &pwa) const {
   if (!hasEcon_) {
     const Real zero(0);
-    dwa.set(v);
-    bnd.pruneActive(dwa,x,zero);
+    pwa.set(v.dual());
+    bnd.pruneActive(pwa,x,zero);
+    dwa.set(pwa.dual());
     model.precond(hv,dwa,x,tol);
     bnd.pruneActive(hv,x,zero);
+    //dwa.set(v);
+    //bnd.pruneActive(dwa,x,zero);
+    //model.precond(hv,dwa,x,tol);
+    //bnd.pruneActive(hv,x,zero);
   }
   else {
     // Perform null space projection

@@ -70,9 +70,25 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     /************************* CONSTRUCT PROBLEM FACTORY ******************************************/
     /**********************************************************************************************/
-    int M = 5, N = 10;
-    std::vector<RealT> c(M,1.0);
+    int M = parlist->sublist("Problem").get("Number of Facilities",5);
+    int N = parlist->sublist("Problem").get("Number of Customers",10);
+    std::vector<RealT> facX(M), facY(M), c(M);
+    for (int i = 0; i < M; ++i) {
+      facX[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+      facY[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+      c[i]    = static_cast<RealT>(100)*static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+    }
+    std::vector<RealT> cusX(N), cusY(N);
+    for (int j = 0; j < N; ++j) {
+      cusX[j] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+      cusY[j] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+    }
     std::vector<RealT> q(M*N,1.0);
+    for (int i = 0; i < M; ++i) {
+      for (int j = 0; j < N; ++j) {
+        q[i + j*M] = static_cast<RealT>(50)*std::sqrt(std::pow(facX[i]-cusX[j],2) + std::pow(facY[i]-cusY[j],2));
+      }
+    }
     ROL::Ptr<FacilityLocationFactory<RealT>> factory
       = ROL::makePtr<FacilityLocationFactory<RealT>>(c,q,*parlist);
     /**********************************************************************************************/

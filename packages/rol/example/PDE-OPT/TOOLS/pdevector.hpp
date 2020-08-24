@@ -243,6 +243,11 @@ class PDE_PrimalSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       applyRiesz(dual_vec_->getVector(),ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector());
       return *dual_vec_;
     }
+
+    Real apply(const ROL::Vector<Real> &x) const {
+      const PDE_DualSimVector<Real,LO,GO,Node> &ex = dynamic_cast<const PDE_DualSimVector<Real,LO,GO,Node>&>(x);
+      return ROL::TpetraMultiVector<Real,LO,GO,Node>::dot(ex);
+    }
 }; // class PDE_PrimalSimVector
 
 template <class Real, class LO, class GO, class Node>
@@ -418,6 +423,11 @@ class PDE_DualSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       // Scale *this with scale_vec_ and place in dual vector
       applyRiesz(primal_vec_->getVector(),ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector());
       return *primal_vec_;
+    }
+
+    Real apply(const ROL::Vector<Real> &x) const {
+      const PDE_PrimalSimVector<Real,LO,GO,Node> &ex = dynamic_cast<const PDE_PrimalSimVector<Real,LO,GO,Node>&>(x);
+      return ROL::TpetraMultiVector<Real,LO,GO,Node>::dot(ex);
     }
 }; // class PDE_DualSimVector
 
@@ -596,6 +606,11 @@ class PDE_PrimalOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       applyRiesz(dual_vec_->getVector(),ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector());
       return *dual_vec_;
     }
+
+    Real apply(const ROL::Vector<Real> &x) const {
+      const PDE_DualOptVector<Real,LO,GO,Node> &ex = dynamic_cast<const PDE_DualOptVector<Real,LO,GO,Node>&>(x);
+      return ROL::TpetraMultiVector<Real,LO,GO,Node>::dot(ex);
+    }
 }; // class PDE_PrimalOptVector
 
 template <class Real, class LO, class GO, class Node>
@@ -772,6 +787,11 @@ class PDE_DualOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       applyRiesz(primal_vec_->getVector(),ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector());
       return *primal_vec_;
     }
+
+    Real apply(const ROL::Vector<Real> &x) const {
+      const PDE_PrimalOptVector<Real,LO,GO,Node> &ex = dynamic_cast<const PDE_PrimalOptVector<Real,LO,GO,Node>&>(x);
+      return ROL::TpetraMultiVector<Real,LO,GO,Node>::dot(ex);
+    }
 }; // class PDE_DualOptVector
 
 template <class Real,
@@ -907,6 +927,14 @@ public:
       dual_vec2_->set(vec2_->dual());
     }
     return *dual_vec_;
+  }
+
+  Real apply(const ROL::Vector<Real> &x) const {
+    const PDE_OptVector<Real> &xs = dynamic_cast<const PDE_OptVector<Real>&>(x);
+    Real val(0);
+    if ( vec1_ != ROL::nullPtr ) val += vec1_->apply(*(xs.getField()));
+    if ( vec2_ != ROL::nullPtr ) val += vec2_->apply(*(xs.getParameter()));
+    return val;
   }
 
   ROL::Ptr<ROL::Vector<Real> > basis( const int i )  const {

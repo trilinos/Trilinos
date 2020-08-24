@@ -65,10 +65,12 @@ public:
     Real tol = std::sqrt(ROL_EPSILON<Real>());
     // Compute unconstrained step
     obj.invHessVec(s,g,x,tol);
-    sdotg = -s.dot(g.dual());
+    //sdotg = -s.dot(g.dual());
+    sdotg = -s.apply(g);
     if (sdotg >= static_cast<Real>(0)) {
       s.set(g.dual());
-      sdotg = -s.dot(g.dual());
+      //sdotg = -s.dot(g.dual());
+      sdotg = -s.apply(g);
     }
     s.scale(static_cast<Real>(-1));
     snorm = s.norm();

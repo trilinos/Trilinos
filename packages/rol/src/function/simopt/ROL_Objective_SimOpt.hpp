@@ -325,7 +325,8 @@ public:
     // Compute gradient at x.
     ROL::Ptr<Vector<Real> > gtmp = g.clone();
     this->gradient_1(*gtmp, u, z, tol);
-    Real dtg = d.dot(gtmp->dual());
+    //Real dtg = d.dot(gtmp->dual());
+    Real dtg = d.apply(*gtmp);
   
     // Temporary vectors.
     ROL::Ptr<Vector<Real> > unew = u.clone();
@@ -445,7 +446,8 @@ public:
     // Compute gradient at x.
     ROL::Ptr<Vector<Real> > gtmp = g.clone();
     this->gradient_2(*gtmp, u, z, tol);
-    Real dtg = d.dot(gtmp->dual());
+    //Real dtg = d.dot(gtmp->dual());
+    Real dtg = d.apply(*gtmp);
   
     // Temporary vectors.
     ROL::Ptr<Vector<Real> > znew = z.clone();

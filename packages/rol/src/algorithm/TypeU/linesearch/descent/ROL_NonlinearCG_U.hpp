@@ -97,10 +97,12 @@ public:
   void compute( Vector<Real> &s, Real &snorm, Real &sdotg, int &iter, int &flag,
           const Vector<Real> &x, const Vector<Real> &g, Objective<Real> &obj) override {
     nlcg_->run(s,g,x,obj);
-    sdotg = -s.dot(g.dual());
+    //sdotg = -s.dot(g.dual());
+    sdotg = -s.apply(g);
     if (sdotg >= static_cast<Real>(0)) {
       s.set(g.dual());
-      sdotg = -s.dot(g.dual());
+      //sdotg = -s.dot(g.dual());
+      sdotg = -s.apply(g);
     }
     s.scale(static_cast<Real>(-1));
     snorm = s.norm();

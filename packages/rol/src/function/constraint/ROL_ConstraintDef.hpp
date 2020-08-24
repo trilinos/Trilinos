@@ -125,7 +125,8 @@ void Constraint<Real>::applyAdjointJacobian(Vector<Real> &ajv,
     this->value(*cnew,*xnew,ctol);
     cnew->axpy(-one,*c0);
     cnew->scale(one/h);
-    ajv.axpy(cnew->dot(v.dual()),*eajv);
+    //ajv.axpy(cnew->dot(v.dual()),*eajv);
+    ajv.axpy(cnew->apply(v),*eajv);
   }
 }
 
@@ -535,7 +536,8 @@ std::vector<std::vector<Real> > Constraint<Real>::checkApplyAdjointJacobian(cons
       this->value(*cnew,*xnew,tol);
       cnew->axpy(-one,*c0);
       cnew->scale(one/eta);
-      ajv1->axpy(cnew->dot(v.dual()),*eajv);
+      //ajv1->axpy(cnew->dot(v.dual()),*eajv);
+      ajv1->axpy(cnew->apply(v),*eajv);
     }
 
     // Compute norms of Jacobian-vector products, finite-difference approximations, and error.
@@ -595,8 +597,10 @@ Real Constraint<Real>::checkAdjointConsistencyJacobian(const Vector<Real> &w,
   applyJacobian(*Jv,v,x,tol);
   applyAdjointJacobian(*Jw,w,x,tol);
 
-  Real vJw = v.dot(Jw->dual());
-  Real wJv = w.dot(Jv->dual());
+  //Real vJw = v.dot(Jw->dual());
+  Real vJw = v.apply(*Jw);
+  //Real wJv = w.dot(Jv->dual());
+  Real wJv = w.apply(*Jv);
 
   Real diff = std::abs(wJv-vJw);
 

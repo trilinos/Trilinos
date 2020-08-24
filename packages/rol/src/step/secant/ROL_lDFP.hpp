@@ -77,21 +77,26 @@ public:
       b[i] = Hv.clone();
       b[i]->set(*(state_->iterDiff[i]));
       b[i]->scale(1.0/sqrt(state_->product[i]));
-      bv = b[i]->dot(v.dual());
+      //bv = b[i]->dot(v.dual());
+      bv = b[i]->apply(v);
       Hv.axpy(bv,*b[i]);
 
       a[i] = Hv.clone();
       applyH0(*a[i],*(state_->gradDiff[i]));
 
       for (int j = 0; j < i; j++) {
-        bs = b[j]->dot((state_->gradDiff[i])->dual());
+        //bs = b[j]->dot((state_->gradDiff[i])->dual());
+        bs = b[j]->apply(*(state_->gradDiff[i]));
         a[i]->axpy(bs,*b[j]);
-        as = a[j]->dot((state_->gradDiff[i])->dual());
+        //as = a[j]->dot((state_->gradDiff[i])->dual());
+        as = a[j]->apply(*(state_->gradDiff[i]));
         a[i]->axpy(-as,*a[j]);
       }
-      as = a[i]->dot((state_->gradDiff[i])->dual());
+      //as = a[i]->dot((state_->gradDiff[i])->dual());
+      as = a[i]->apply(*(state_->gradDiff[i]));
       a[i]->scale(one/sqrt(as));
-      av = a[i]->dot(v.dual());
+      //av = a[i]->dot(v.dual());
+      av = a[i]->apply(v);
       Hv.axpy(-av,*a[i]);
     }
   }
@@ -124,12 +129,13 @@ public:
 
     // Apply initial inverse Hessian approximation to v
     Ptr<Vector<Real>> tmp = Bv.clone();
-    applyB0(*tmp,Bv);
+    applyB0(*tmp,Bv.dual());
     Bv.set(*tmp);
 
     Real beta(0);
     for (int i = 0; i <= state_->current; i++) {
-      beta  = state_->iterDiff[i]->dot(Bv.dual());
+      //beta  = state_->iterDiff[i]->dot(Bv.dual());
+      beta  = state_->iterDiff[i]->apply(Bv);
       beta /= state_->product[i];
       Bv.axpy((alpha[i]-beta),*(state_->gradDiff[i]));
     }

@@ -66,7 +66,8 @@ void ObjectiveFromConstraint<Real>::update( const Vector<Real> &x, bool flag, in
 template<typename Real>
 Real ObjectiveFromConstraint<Real>::value( const Vector<Real> &x, Real &tol ) {
   con_->value(*c_,x,tol);
-  return l_->dot(c_->dual());  
+  //return l_->dot(c_->dual());  
+  return l_->apply(*c_);  
 }
 
 template<typename Real>

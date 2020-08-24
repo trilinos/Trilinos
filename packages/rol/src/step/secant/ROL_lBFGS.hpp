@@ -80,7 +80,8 @@ public:
 
     Real beta(0);
     for (int i = 0; i <= state_->current; i++) {
-      beta  = Hv.dot((state_->gradDiff[i])->dual());
+      //beta  = Hv.dot((state_->gradDiff[i])->dual());
+      beta  = Hv.apply(*state_->gradDiff[i]);
       beta /= state_->product[i];
       Hv.axpy((alpha[i]-beta),*(state_->iterDiff[i]));
     }
@@ -100,21 +101,26 @@ public:
       b[i] = Bv.clone();
       b[i]->set(*(state_->gradDiff[i]));
       b[i]->scale(one/sqrt(state_->product[i]));
-      bv = v.dot(b[i]->dual());
+      //bv = v.dot(b[i]->dual());
+      bv = v.apply(*b[i]);
       Bv.axpy(bv,*b[i]);
 
       a[i] = Bv.clone();
       Secant<Real>::applyB0(*a[i],*(state_->iterDiff[i]));
 
       for (int j = 0; j < i; j++) {
-        bs = (state_->iterDiff[i])->dot(b[j]->dual());
+        //bs = (state_->iterDiff[i])->dot(b[j]->dual());
+        bs = (state_->iterDiff[i])->apply(*b[j]);
         a[i]->axpy(bs,*b[j]);
-        as = (state_->iterDiff[i])->dot(a[j]->dual());
+        //as = (state_->iterDiff[i])->dot(a[j]->dual());
+        as = (state_->iterDiff[i])->apply(*a[j]);
         a[i]->axpy(-as,*a[j]);
       }
-      as = (state_->iterDiff[i])->dot(a[i]->dual());
+      //as = (state_->iterDiff[i])->dot(a[i]->dual());
+      as = (state_->iterDiff[i])->apply(*a[i]);
       a[i]->scale(one/sqrt(as));
-      av = v.dot(a[i]->dual());
+      //av = v.dot(a[i]->dual());
+      av = v.apply(*a[i]);
       Bv.axpy(-av,*a[i]);
     }
   }

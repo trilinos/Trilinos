@@ -91,7 +91,8 @@ public:
       model.hessVec(*dual_,s,s,tol);
       Real gnorm  = s.norm();
       Real gnorm2 = gnorm*gnorm;
-      Real gBg    = dual_->dot(s.dual());
+      //Real gBg    = dual_->dot(s.dual());
+      Real gBg    = dual_->apply(s);
       Real alpha  = gnorm2/gBg;
       if ( alpha*gnorm >= del || gBg <= zero ) {
         alpha = del/gnorm;
@@ -116,7 +117,8 @@ public:
         Real beta   = zero;
         Real gnorm  = s.norm();
         Real gnorm2 = gnorm*gnorm;
-        Real gBg    = dual_->dot(s.dual());
+        //Real gBg    = dual_->dot(s.dual());
+        Real gBg    = dual_->apply(s);
         Real gamma  = gnorm2/gBg;
         if ( gamma*gnorm >= del || gBg <= zero ) {
           // Use Cauchy point

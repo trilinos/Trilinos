@@ -95,7 +95,12 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::PEBBL::IntegerProblem<RealT>>   problem;
     ROL::Ptr<ROL::NewOptimizationSolver<RealT>>   solver;
     ROL::Ptr<ROL::Vector<RealT>>                  z, u;
-    factory = ROL::makePtr<BinaryStefanBoltzmannFactory<RealT>>(*parlist,comm,outStream);
+    //factory = ROL::makePtr<BinaryStefanBoltzmannFactory<RealT>>(*parlist,comm,outStream);
+    factory = ROL::makePtr<BinaryStefanBoltzmannFactory<RealT>>(*parlist,outStream);
+#ifdef HAVE_MPI
+    ROL::Ptr<MPI_Comm> mpicomm = ROL::makePtr<MPI_Comm>(*ROL::staticPtrCast<const Teuchos::MpiComm<int>>(comm)->getRawMpiComm());
+    factory->setCommunicator(mpicomm);
+#endif
     bool checkDeriv = parlist->sublist("Problem").get("Check Derivatives",false); 
     if (checkDeriv) factory->check(*outStream);
 

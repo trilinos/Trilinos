@@ -106,7 +106,8 @@ void GradientAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   if (!useralpha_) {
     const Real half(0.5);
     // Minimize quadratic interpolate to compute new alpha
-    Real gs    = state_->stepVec->dot(state_->gradientVec->dual());
+    //Real gs    = state_->stepVec->dot(state_->gradientVec->dual());
+    Real gs    = state_->stepVec->apply(*state_->gradientVec);
     Real denom = (fnew - state_->value - gs);
     bool flag  = maxAlpha_ == alpha0_;
     alpha0_ = ((denom > ROL_EPSILON<Real>()) ? -half*gs/denom : alpha0bnd_);

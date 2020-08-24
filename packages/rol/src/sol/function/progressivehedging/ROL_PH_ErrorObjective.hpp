@@ -143,7 +143,8 @@ public:
     Real err1 = quad_->error(val_,1);
     Real err2 = quad_->error(val_,2);
     getGradient(x,tol);
-    Real gv   = v.dot(g_->dual());
+    //Real gv   = v.dot(g_->dual());
+    Real gv   = v.apply(*g_);
     obj_->hessVec(hv,v,x,tol);
     hv.scale(err1); hv.axpy(err2*gv,*g_);
   }

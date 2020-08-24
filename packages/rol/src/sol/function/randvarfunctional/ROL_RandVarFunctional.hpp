@@ -142,7 +142,8 @@ protected:
       isComputed = gradvec_storage_->get(gv,point_);
     }
     if (!isComputed || !storage_hessvec_) {
-      gv = g.dot(v.dual());
+      //gv = g.dot(v.dual());
+      gv = g.apply(v);
       if (storage_hessvec_) {
         gradvec_storage_->set(gv,point_);
       }

@@ -796,15 +796,19 @@ void CompositeStepAlgorithm_E<Real>::accept(Vector<Real> &s, Vector<Real> &n, Ve
       gfJl->set(gf);
       gfJl->plus(*Jl);
       // change part_pred -= gfJl->dot(n);
-      part_pred -= n.dot(gfJl->dual());
+      //part_pred -= n.dot(gfJl->dual());
+      part_pred -= n.apply(*gfJl);
       // change part_pred -= half*Hn->dot(n);
-      part_pred -= half*n.dot(Hn->dual());
+      //part_pred -= half*n.dot(Hn->dual());
+      part_pred -= half*n.apply(*Hn);
       // change part_pred -= half*Hto->dot(*t_orig);
-      part_pred -= half*t_orig->dot(Hto->dual());
+      //part_pred -= half*t_orig->dot(Hto->dual());
+      part_pred -= half*t_orig->apply(*Hto);
       ltemp->set(l_new);
       ltemp->axpy(-one, l);
       // change part_pred -= Jnc->dot(*ltemp);
-      part_pred -= Jnc->dot(ltemp->dual());
+      //part_pred -= Jnc->dot(ltemp->dual());
+      part_pred -= Jnc->apply(*ltemp);
 
       if ( part_pred < -half*penalty_*(c_normsquared-Jnc_normsquared) ) {
         penalty_ = ( -two * part_pred / (c_normsquared-Jnc_normsquared) ) + beta;
@@ -814,7 +818,8 @@ void CompositeStepAlgorithm_E<Real>::accept(Vector<Real> &s, Vector<Real> &n, Ve
 
       // Computation of rpred.
       // change rpred = - ltemp->dot(*rt) - penalty_ * rt->dot(*rt) - two * penalty_ * rt->dot(*Jnc);
-      rpred = - rt->dot(ltemp->dual()) - penalty_ * rt->dot(*rt) - two * penalty_ * rt->dot(*Jnc);
+      //rpred = - rt->dot(ltemp->dual()) - penalty_ * rt->dot(*rt) - two * penalty_ * rt->dot(*Jnc);
+      rpred = - rt->apply(*ltemp) - penalty_ * rt->dot(*rt) - two * penalty_ * rt->dot(*Jnc);
       // change Ptr<Vector<Real> > lrt   = lvec_->clone();
       //lrt->set(*rt);
       //rpred = - ltemp->dot(*rt) - penalty_ * std::pow(rt->norm(), 2) - two * penalty_ * lrt->dot(*Jnc);
@@ -896,7 +901,8 @@ void CompositeStepAlgorithm_E<Real>::accept(Vector<Real> &s, Vector<Real> &n, Ve
   }
   // change ared = fdiff  + (l.dot(c) - l_new.dot(c_new)) + penalty_*(c.dot(c) - c_new.dot(c_new));
   // change ared = fdiff  + (l.dot(c) - l_new.dot(c_new)) + penalty_*(std::pow(c.norm(),2) - std::pow(c_new.norm(),2));
-  ared = fdiff  + (c.dot(l.dual()) - c_new.dot(l_new.dual())) + penalty_*(c.dot(c) - c_new.dot(c_new));
+  //ared = fdiff  + (c.dot(l.dual()) - c_new.dot(l_new.dual())) + penalty_*(c.dot(c) - c_new.dot(c_new));
+  ared = fdiff  + (c.apply(l) - c_new.apply(l_new)) + penalty_*(c.dot(c) - c_new.dot(c_new));
 
   // Store actual and predicted reduction.
   ared_ = ared;

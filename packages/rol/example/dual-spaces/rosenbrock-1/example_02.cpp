@@ -49,6 +49,7 @@
 
 #include "ROL_Rosenbrock.hpp"
 #include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Bounds.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include <iostream>
@@ -159,6 +160,27 @@ Real apply( const ROL::Vector<Real> &x ) const {
   return val;
 }
 
+void applyUnary( const ROL::Elementwise::UnaryFunction<Real> &f ) {
+  for( auto& e : *std_vec_ ) e = f.apply(e);
+}
+
+void applyBinary( const ROL::Elementwise::BinaryFunction<Real> &f, const ROL::Vector<Real> &x ) {
+  ROL::Ptr<const vector> xvalptr = dynamic_cast<const OptStdVector&>(x).getVector(); 
+  uint dim  = std_vec_->size();
+  for (uint i=0; i<dim; i++) {
+    (*std_vec_)[i] = f.apply((*std_vec_)[i],(*xvalptr)[i]);
+  }
+}
+
+Real reduce( const ROL::Elementwise::ReductionOp<Real> &r ) const {
+  Real result = r.initialValue();
+  uint dim  = std_vec_->size();
+  for(uint i=0; i<dim; ++i) {
+    r.reduce((*std_vec_)[i],result);
+  }
+  return result;
+}
+
 }; // class OptStdVector
 
 
@@ -252,6 +274,27 @@ Real apply( const ROL::Vector<Real> &x ) const {
   return val;
 }
 
+void applyUnary( const ROL::Elementwise::UnaryFunction<Real> &f ) {
+  for( auto& e : *std_vec_ ) e = f.apply(e);
+}
+
+void applyBinary( const ROL::Elementwise::BinaryFunction<Real> &f, const ROL::Vector<Real> &x ) {
+  ROL::Ptr<const vector> xvalptr = dynamic_cast<const OptDualStdVector&>(x).getVector(); 
+  uint dim  = std_vec_->size();
+  for (uint i=0; i<dim; i++) {
+    (*std_vec_)[i] = f.apply((*std_vec_)[i],(*xvalptr)[i]);
+  }
+}
+
+Real reduce( const ROL::Elementwise::ReductionOp<Real> &r ) const {
+  Real result = r.initialValue();
+  uint dim  = std_vec_->size();
+  for(uint i=0; i<dim; ++i) {
+    r.reduce((*std_vec_)[i],result);
+  }
+  return result;
+}
+
 }; // class OptDualStdVector
 
 
@@ -289,15 +332,22 @@ int main(int argc, char *argv[]) {
     // Iteration Vector
     ROL::Ptr<std::vector<RealT>> x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     ROL::Ptr<std::vector<RealT>> g_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT>> l_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     // Set Initial Guess
     for (int i=0; i<dim/2; i++) {
       (*x_ptr)[2*i]   = -1.2;
       (*x_ptr)[2*i+1] =  1.0;
       (*g_ptr)[2*i]   = 0;
       (*g_ptr)[2*i+1] = 0;
+      (*l_ptr)[2*i]   = ROL::ROL_NINF<RealT>();
+      (*l_ptr)[2*i+1] = -1.5;
     }
     ROL::Ptr<OptStdVector<RealT>>     x = ROL::makePtr<OptStdVector<RealT>>(x_ptr);     // Iteration Vector
     ROL::Ptr<OptDualStdVector<RealT>> g = ROL::makePtr<OptDualStdVector<RealT>>(g_ptr); // zeroed gradient vector in dual space
+    ROL::Ptr<OptStdVector<RealT>>     l = ROL::makePtr<OptStdVector<RealT>>(l_ptr);     // Lower bound Vector
+
+    // Bound constraint
+    ROL::Ptr<ROL::Bounds<RealT>> bnd = ROL::makePtr<ROL::Bounds<RealT>>(*l);
 
     // Check vector.
     ROL::Ptr<std::vector<RealT> > aa_ptr = ROL::makePtr<std::vector<RealT>>(1, 1.0);
@@ -311,14 +361,16 @@ int main(int argc, char *argv[]) {
     // Build optimization problem.
     ROL::Ptr<ROL::NewOptimizationProblem<RealT>> problem
       = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,x,g);
+    problem->addBoundConstraint(bnd);
     problem->finalize(false,true,*outStream);
 
     // Define algorithm.
     ROL::ParameterList parlist;
     std::string stepname = "Trust Region";
     parlist.sublist("Step").set("Type",stepname);
-    //parlist.sublist("Step").sublist(stepname).sublist("Descent Method").set("Type","Quasi-Newton Method");
+    //parlist.sublist("Step").sublist(stepname).sublist("Descent Method").set("Type","Newton-Krylov");
     parlist.sublist("Step").sublist(stepname).set("Subproblem Solver", "Truncated CG");
+    parlist.sublist("Step").sublist(stepname).set("Subproblem Model", "Lin-More");
     parlist.sublist("General").set("Output Level",1);
     parlist.sublist("General").sublist("Krylov").set("Relative Tolerance",1e-2);
     parlist.sublist("General").sublist("Krylov").set("Iteration Limit",10);

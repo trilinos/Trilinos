@@ -152,7 +152,7 @@ std::vector<std::string> NewtonKrylovAlgorithm_B<Real>::run( Vector<Real>       
   std::vector<std::string> output;
   initialize(x,g,obj,bnd,outStream);
   Ptr<Vector<Real>> s = x.clone(), gp = x.clone(), gold = g.clone();
-  Ptr<Vector<Real>> pwa = x.clone(), dwa = g.clone();
+  Ptr<Vector<Real>> pwa = x.clone(), pwa1 = x.clone();
   Real ftrial(0), gs(0), tol(std::sqrt(ROL_EPSILON<Real>()));
 
   Ptr<LinearOperator<Real>> hessian, precond;
@@ -170,7 +170,7 @@ std::vector<std::string> NewtonKrylovAlgorithm_B<Real>::run( Vector<Real>       
                                   secant_,useSecantHessVec_,pwa);
     precond = makePtr<PrecondPNK>(makePtrFromRef(obj),makePtrFromRef(bnd),
                                   state_->iterateVec,state_->gradientVec,state_->gnorm,
-                                  secant_,useSecantPrecond_,dwa);
+                                  secant_,useSecantPrecond_,pwa1);
     flagKrylov_ = 0;
     krylov_->run(*s,*hessian,*state_->gradientVec,*precond,iterKrylov_,flagKrylov_);
     if (flagKrylov_ == 2 && iterKrylov_ <= 1) {

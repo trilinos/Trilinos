@@ -131,6 +131,14 @@ public:
     return *dual_vec_;
   }
 
+  Real apply( const Vector<Real> &x ) const {
+    const MixedVector<Real> &xs = dynamic_cast<const MixedVector<Real>&>(
+      dynamic_cast<const Vector<Real>&>(x));
+    Real prod(0);
+    if (cntvec_ != nullPtr) prod = cntvec_->apply(*(xs.getContinuousVariables()));
+    return prod + intvec_->apply(*(xs.getIntegerVariables()));
+  }
+
   ROL::Ptr<Vector<Real> > basis( const int i )  const {
     int n1(0);
     if (cntvec_ != nullPtr) n1 = (cntvec_)->dimension();

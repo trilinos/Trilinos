@@ -59,7 +59,8 @@ Real QuadraticObjective<Real>::value( const Vector<Real> &x, Real &tol ) {
   H_->apply(*tmp_,x,tol);
   tmp_->scale(static_cast<Real>(0.5));
   tmp_->plus(*g_);
-  return x.dot(tmp_->dual()) + c_;
+  //return x.dot(tmp_->dual()) + c_;
+  return x.apply(*tmp_) + c_;
 }
 
 template<typename Real>

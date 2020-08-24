@@ -54,7 +54,8 @@ template<typename Real>
 Real Objective<Real>::dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol) {
   if (dual_ == nullPtr) dual_ = x.dual().clone();
   gradient(*dual_,x,tol);
-  return d.dot(dual_->dual());
+  //return d.dot(dual_->dual());
+  return d.apply(*dual_);
   //Real dnorm = d.norm(), zero(0);
   //if ( dnorm == zero ) {
   //  return zero;
@@ -166,7 +167,8 @@ std::vector<std::vector<Real>> Objective<Real>::checkGradient( const Vector<Real
   // Compute gradient at x.
   Ptr<Vector<Real>> gtmp = g.clone();
   gradient(*gtmp, x, tol);
-  Real dtg = d.dot(gtmp->dual());
+  //Real dtg = d.dot(gtmp->dual());
+  Real dtg = d.apply(*gtmp);
 
   // Temporary vectors.
   Ptr<Vector<Real>> xnew = x.clone();
@@ -358,10 +360,12 @@ std::vector<Real> Objective<Real>::checkHessSym( const Vector<Real> &x,
   Ptr<Vector<Real>> h = hv.clone();
   update(x,UPDATE_TEMP);
   hessVec(*h, v, x, tol);
-  Real wHv = w.dot(h->dual());
+  //Real wHv = w.dot(h->dual());
+  Real wHv = w.apply(*h);
 
   hessVec(*h, w, x, tol);
-  Real vHw = v.dot(h->dual());
+  //Real vHw = v.dot(h->dual());
+  Real vHw = v.apply(*h);
 
   std::vector<Real> hsymCheck(3, 0);
 

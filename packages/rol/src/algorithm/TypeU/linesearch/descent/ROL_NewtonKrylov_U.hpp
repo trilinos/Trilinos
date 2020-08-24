@@ -194,7 +194,8 @@ public:
     }
     s.scale(static_cast<Real>(-1));
     snorm = s.norm();
-    sdotg = s.dot(g.dual());
+    //sdotg = s.dot(g.dual());
+    sdotg = s.apply(g);
   }
 
   void update(const Vector<Real> &x, const Vector<Real> &s,

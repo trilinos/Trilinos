@@ -60,9 +60,9 @@
 template<class Real>
 class BinaryStefanBoltzmannFactory : public ROL::PEBBL::IntegerProblemFactory<Real> {
 private:
-  mutable ROL::ParameterList         pl_;
-  ROL::Ptr<const Teuchos::Comm<int>> comm_;
-  ROL::Ptr<std::ostream>             os_;
+  mutable ROL::ParameterList   pl_;
+  ROL::Ptr<Teuchos::Comm<int>> comm_;
+  ROL::Ptr<std::ostream>       os_;
 
   ROL::Ptr<MeshManager<Real>>              mesh_;
   ROL::Ptr<BinaryStefanBoltzmannPDE<Real>> pde_;
@@ -80,68 +80,83 @@ private:
 
 public:
   BinaryStefanBoltzmannFactory(ROL::ParameterList                 &pl,
-                         const ROL::Ptr<const Teuchos::Comm<int>> &comm,
                          const ROL::Ptr<std::ostream>             &os)
-    : pl_(pl), comm_(comm), os_(os) {
-    // Create PDE Constraint
-    int probDim = pl_.sublist("Problem").get("Problem Dimension",2);
-    int nProcs  = comm_->getSize();
-    TEUCHOS_TEST_FOR_EXCEPTION(probDim<2||probDim>3, std::invalid_argument,
-      ">>> PDE-OPT/binary/stefan-boltzmann/example_01.cpp: Problem dim is not 2 or 3!");
-    //if (probDim == 2)      mesh_ = ROL::makePtr<MeshManager_Rectangle<Real>>(pl_);
-    //else if (probDim == 3)
-    mesh_ = ROL::makePtr<MeshReader<Real>>(pl_,nProcs);
-    pde_ = ROL::makePtr<BinaryStefanBoltzmannPDE<Real>>(pl_);
-    con_ = ROL::makePtr<PDE_Constraint<Real>>(pde_,mesh_,comm_,pl_,*os_);
-    con_->setSolveParameters(pl_);
-    assembler_ = ROL::dynamicPtrCast<PDE_Constraint<Real>>(con_)->getAssembler();
-    // Create template vectors
-    u_ = ROL::makePtr<PDE_PrimalSimVector<Real>>(assembler_->createStateVector(),pde_,assembler_,pl_);
-    p_ = ROL::makePtr<PDE_PrimalSimVector<Real>>(assembler_->createStateVector(),pde_,assembler_,pl_);
-    useParam_ = pl.sublist("Problem").get("Use Parametric Control", true);
-    bool init = pl_.sublist("Problem").get("Input Control",false);
-    std::string inCtrlName = pl_.sublist("Problem").get("Input Control Name","control.txt");
-    if (useParam_) {
-      int nx = pl.sublist("Problem").get("Number X Control Patches", 4);
-      int ny = pl.sublist("Problem").get("Number Y Control Patches", 4);
-      z_ = ROL::makePtr<ROL::StdVector<Real>>(nx*ny);
-      if (init) {
-        ROL::Ptr<std::vector<Real>> zdata = ROL::dynamicPtrCast<ROL::StdVector<Real>>(z_)->getVector();
-        std::ifstream file;
-        file.open(inCtrlName);
-        for (int i = 0; i < ny; ++i) {
-          for (int j = 0; j < nx; ++j) {
-            file >> (*zdata)[j+i*nx];
-          }
-        }
-        file.close();
-      }
-    }
-    else {
-      z_ = ROL::makePtr<PDE_PrimalOptVector<Real>>(assembler_->createControlVector(),pde_,assembler_,pl_);
-      if (init) {
-        ROL::Ptr<Tpetra::MultiVector<>> zdata = ROL::dynamicPtrCast<ROL::TpetraMultiVector<Real>>(z_)->getVector();
-        assembler_->inputTpetraVector(zdata, inCtrlName);
-      }
-    }
-    if (!init) z_->setScalar(static_cast<Real>(1));
-    u_->setScalar(static_cast<Real>(1));
-    // Create objective function
-    qoi_ = ROL::makePtr<QoI_StateCost<Real>>(pde_->getVolFE(),pl_);
-    obj_ = ROL::makePtr<PDE_Objective<Real>>(qoi_,assembler_);
-    // Create bound constraint
-    ROL::Ptr<ROL::Vector<Real>> zlop = z_->clone(), zhip = z_->clone();
-    zlop->setScalar(static_cast<Real>(0));
-    zhip->setScalar(static_cast<Real>(1));
-    bnd_ = ROL::makePtr<ROL::Bounds<Real>>(zlop,zhip);
-    // Create budget constraint
-    useBudget_ = pl.sublist("Problem").get("Use Budget Constraint",true);
-    if (useParam_ && useBudget_) {
-      budget_con_ = ROL::makePtr<BudgetConstraint<Real>>(pl);
-      budget_mul_ = budget_con_->createMultiplier();
-      budget_bnd_ = budget_con_->createBounds();
-    }
+    : pl_(pl), os_(os) {
+#ifndef HAVE_MPI
+    comm_ = ROL::makePtr<Teuchos::SerialComm<int>>();
+    initialize();
+#endif
   }
+
+#ifdef HAVE_MPI
+  void setCommunicator(const ROL::Ptr<const MPI_Comm> &comm) {
+    comm_ = ROL::makePtr<Teuchos::MpiComm<int>>(*comm);
+    initialize();
+  }
+#endif
+//  BinaryStefanBoltzmannFactory(ROL::ParameterList                 &pl,
+//                         const ROL::Ptr<const Teuchos::Comm<int>> &comm,
+//                         const ROL::Ptr<std::ostream>             &os)
+//    : pl_(pl), comm_(comm), os_(os) {
+//    // Create PDE Constraint
+//    int probDim = pl_.sublist("Problem").get("Problem Dimension",2);
+//    int nProcs  = comm_->getSize();
+//    TEUCHOS_TEST_FOR_EXCEPTION(probDim<2||probDim>3, std::invalid_argument,
+//      ">>> PDE-OPT/binary/stefan-boltzmann/example_01.cpp: Problem dim is not 2 or 3!");
+//    //if (probDim == 2)      mesh_ = ROL::makePtr<MeshManager_Rectangle<Real>>(pl_);
+//    //else if (probDim == 3)
+//    mesh_ = ROL::makePtr<MeshReader<Real>>(pl_,nProcs);
+//    pde_ = ROL::makePtr<BinaryStefanBoltzmannPDE<Real>>(pl_);
+//    con_ = ROL::makePtr<PDE_Constraint<Real>>(pde_,mesh_,comm_,pl_,*os_);
+//    con_->setSolveParameters(pl_);
+//    assembler_ = ROL::dynamicPtrCast<PDE_Constraint<Real>>(con_)->getAssembler();
+//    // Create template vectors
+//    u_ = ROL::makePtr<PDE_PrimalSimVector<Real>>(assembler_->createStateVector(),pde_,assembler_,pl_);
+//    p_ = ROL::makePtr<PDE_PrimalSimVector<Real>>(assembler_->createStateVector(),pde_,assembler_,pl_);
+//    useParam_ = pl.sublist("Problem").get("Use Parametric Control", true);
+//    bool init = pl_.sublist("Problem").get("Input Control",false);
+//    std::string inCtrlName = pl_.sublist("Problem").get("Input Control Name","control.txt");
+//    if (useParam_) {
+//      int nx = pl.sublist("Problem").get("Number X Control Patches", 4);
+//      int ny = pl.sublist("Problem").get("Number Y Control Patches", 4);
+//      z_ = ROL::makePtr<ROL::StdVector<Real>>(nx*ny);
+//      if (init) {
+//        ROL::Ptr<std::vector<Real>> zdata = ROL::dynamicPtrCast<ROL::StdVector<Real>>(z_)->getVector();
+//        std::ifstream file;
+//        file.open(inCtrlName);
+//        for (int i = 0; i < ny; ++i) {
+//          for (int j = 0; j < nx; ++j) {
+//            file >> (*zdata)[j+i*nx];
+//          }
+//        }
+//        file.close();
+//      }
+//    }
+//    else {
+//      z_ = ROL::makePtr<PDE_PrimalOptVector<Real>>(assembler_->createControlVector(),pde_,assembler_,pl_);
+//      if (init) {
+//        ROL::Ptr<Tpetra::MultiVector<>> zdata = ROL::dynamicPtrCast<ROL::TpetraMultiVector<Real>>(z_)->getVector();
+//        assembler_->inputTpetraVector(zdata, inCtrlName);
+//      }
+//    }
+//    if (!init) z_->setScalar(static_cast<Real>(1));
+//    u_->setScalar(static_cast<Real>(1));
+//    // Create objective function
+//    qoi_ = ROL::makePtr<QoI_StateCost<Real>>(pde_->getVolFE(),pl_);
+//    obj_ = ROL::makePtr<PDE_Objective<Real>>(qoi_,assembler_);
+//    // Create bound constraint
+//    ROL::Ptr<ROL::Vector<Real>> zlop = z_->clone(), zhip = z_->clone();
+//    zlop->setScalar(static_cast<Real>(0));
+//    zhip->setScalar(static_cast<Real>(1));
+//    bnd_ = ROL::makePtr<ROL::Bounds<Real>>(zlop,zhip);
+//    // Create budget constraint
+//    useBudget_ = pl.sublist("Problem").get("Use Budget Constraint",true);
+//    if (useParam_ && useBudget_) {
+//      budget_con_ = ROL::makePtr<BudgetConstraint<Real>>(pl);
+//      budget_mul_ = budget_con_->createMultiplier();
+//      budget_bnd_ = budget_con_->createBounds();
+//    }
+//  }
 
   ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>> build(void) {
     ROL::Ptr<ROL::Vector<Real>> z = z_->clone(); z->set(*z_);
@@ -229,6 +244,69 @@ public:
     obj_->checkHessVec_21(*u1,*z1,*u2,true,stream);
     obj_->checkHessVec_12(*u1,*z1,*z2,true,stream);
     obj_->checkHessVec_22(*u1,*z1,*z2,true,stream);
+  }
+
+private:
+
+  void initialize(void) {
+    // Create PDE Constraint
+    int probDim = pl_.sublist("Problem").get("Problem Dimension",2);
+    int nProcs  = comm_->getSize();
+    TEUCHOS_TEST_FOR_EXCEPTION(probDim<2||probDim>3, std::invalid_argument,
+      ">>> PDE-OPT/binary/stefan-boltzmann/example_01.cpp: Problem dim is not 2 or 3!");
+    //if (probDim == 2)      mesh_ = ROL::makePtr<MeshManager_Rectangle<Real>>(pl_);
+    //else if (probDim == 3)
+    mesh_ = ROL::makePtr<MeshReader<Real>>(pl_,nProcs);
+    pde_ = ROL::makePtr<BinaryStefanBoltzmannPDE<Real>>(pl_);
+    con_ = ROL::makePtr<PDE_Constraint<Real>>(pde_,mesh_,comm_,pl_,*os_);
+    con_->setSolveParameters(pl_);
+    assembler_ = ROL::dynamicPtrCast<PDE_Constraint<Real>>(con_)->getAssembler();
+    // Create template vectors
+    u_ = ROL::makePtr<PDE_PrimalSimVector<Real>>(assembler_->createStateVector(),pde_,assembler_,pl_);
+    p_ = ROL::makePtr<PDE_PrimalSimVector<Real>>(assembler_->createStateVector(),pde_,assembler_,pl_);
+    useParam_ = pl_.sublist("Problem").get("Use Parametric Control", true);
+    bool init = pl_.sublist("Problem").get("Input Control",false);
+    std::string inCtrlName = pl_.sublist("Problem").get("Input Control Name","control.txt");
+    if (useParam_) {
+      int nx = pl_.sublist("Problem").get("Number X Control Patches", 4);
+      int ny = pl_.sublist("Problem").get("Number Y Control Patches", 4);
+      z_ = ROL::makePtr<ROL::StdVector<Real>>(nx*ny);
+      if (init) {
+        ROL::Ptr<std::vector<Real>> zdata = ROL::dynamicPtrCast<ROL::StdVector<Real>>(z_)->getVector();
+        std::ifstream file;
+        file.open(inCtrlName);
+        for (int i = 0; i < ny; ++i) {
+          for (int j = 0; j < nx; ++j) {
+            file >> (*zdata)[j+i*nx];
+          }
+        }
+        file.close();
+      }
+    }
+    else {
+      z_ = ROL::makePtr<PDE_PrimalOptVector<Real>>(assembler_->createControlVector(),pde_,assembler_,pl_);
+      if (init) {
+        ROL::Ptr<Tpetra::MultiVector<>> zdata = ROL::dynamicPtrCast<ROL::TpetraMultiVector<Real>>(z_)->getVector();
+        assembler_->inputTpetraVector(zdata, inCtrlName);
+      }
+    }
+    if (!init) z_->setScalar(static_cast<Real>(1));
+    u_->setScalar(static_cast<Real>(1));
+    // Create objective function
+    qoi_ = ROL::makePtr<QoI_StateCost<Real>>(pde_->getVolFE(),pl_);
+    obj_ = ROL::makePtr<PDE_Objective<Real>>(qoi_,assembler_);
+    // Create bound constraint
+    ROL::Ptr<ROL::Vector<Real>> zlop = z_->clone(), zhip = z_->clone();
+    zlop->setScalar(static_cast<Real>(0));
+    zhip->setScalar(static_cast<Real>(1));
+    bnd_ = ROL::makePtr<ROL::Bounds<Real>>(zlop,zhip);
+    // Create budget constraint
+    useBudget_ = pl_.sublist("Problem").get("Use Budget Constraint",true);
+    if (useParam_ && useBudget_) {
+      budget_con_ = ROL::makePtr<BudgetConstraint<Real>>(pl_);
+      budget_mul_ = budget_con_->createMultiplier();
+      budget_bnd_ = budget_con_->createBounds();
+    }
   }
 };
 

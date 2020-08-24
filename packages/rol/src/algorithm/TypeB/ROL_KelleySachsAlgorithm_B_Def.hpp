@@ -146,7 +146,11 @@ std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>         
 
   // Compute initial free gradient
   gfree->set(*state_->gradientVec);
-  bnd.pruneActive(*gfree,*state_->gradientVec,x,xeps,eps);
+  //bnd.pruneActive(*gfree,*state_->gradientVec,x,xeps,eps);
+  //gfnorm = gfree->norm();
+  pwa1->set(gfree->dual());
+  bnd.pruneActive(*pwa1,state_->gradientVec->dual(),x,xeps,eps);
+  gfree->set(pwa1->dual());
   gfnorm = gfree->norm();
 
   // Initial tolerances
@@ -256,7 +260,11 @@ std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>         
         obj.gradient(*state_->gradientVec,x,ftol); state_->ngrad++;
         // Compute free gradient
         gfree->set(*state_->gradientVec);
-        bnd.pruneActive(*gfree,*state_->gradientVec,x,xeps,eps);
+        //bnd.pruneActive(*gfree,*state_->gradientVec,x,xeps,eps);
+        //gfnorm = gfree->norm();
+        pwa1->set(gfree->dual());
+        bnd.pruneActive(*pwa1,state_->gradientVec->dual(),x,xeps,eps);
+        gfree->set(pwa1->dual());
         gfnorm = gfree->norm();
         // Compute criticality measure
         pwa1->set(x);
@@ -353,7 +361,8 @@ Real KelleySachsAlgorithm_B<Real>::trpcg(Vector<Real> &w, int &iflag, int &iter,
   t.set(g); t.scale(-one);
   // Preconditioned residual
   applyFreePrecond(r,t,x,g0,eps,model,bnd,ftol,pwa,dwa);
-  rho    = r.dot(t.dual());
+  //rho    = r.dot(t.dual());
+  rho    = r.apply(t);
   rnorm0 = std::sqrt(rho);
   if ( rnorm0 == zero ) {
     return zero;
@@ -366,7 +375,8 @@ Real KelleySachsAlgorithm_B<Real>::trpcg(Vector<Real> &w, int &iflag, int &iter,
     // Apply Hessian to direction dir
     applyFreeHessian(q,p,x,g0,eps,model,bnd,ftol,pwa,dwa);
     // Compute sigma such that ||s+sigma*dir|| = del
-    kappa = p.dot(q.dual());
+    //kappa = p.dot(q.dual());
+    kappa = p.apply(q);
     alpha = (kappa>zero) ? rho/kappa : zero;
     sigma = trqsol(sMs,pMp,sMp,del);
     // Check for negative curvature or if iterate exceeds trust region
@@ -382,7 +392,8 @@ Real KelleySachsAlgorithm_B<Real>::trpcg(Vector<Real> &w, int &iflag, int &iter,
     t.axpy(-alpha,q);
     applyFreePrecond(r,t,x,g0,eps,model,bnd,ftol,pwa,dwa);
     // Exit if residual tolerance is met
-    rtr   = r.dot(t.dual());
+    //rtr   = r.dot(t.dual());
+    rtr   = r.apply(t);
     tnorm = t.norm();
     if (rtr <= tol*tol || tnorm <= tol) {
       sMs   = sMs + two*alpha*sMp + alpha*alpha*pMp;
@@ -427,14 +438,23 @@ void KelleySachsAlgorithm_B<Real>::applyFreeHessian(Vector<Real> &hv,
                                                     Vector<Real> &dwa) const {
   const Real xeps(ROL_EPSILON<Real>());
   pwa.set(v);
-  bnd.pruneActive(pwa,g,x,xeps,eps);
+  bnd.pruneActive(pwa,g.dual(),x,xeps,eps);
   model.hessVec(hv,pwa,x,tol); nhess_++;
-  bnd.pruneActive(hv,g,x,xeps,eps);
+  pwa.set(hv.dual());
+  bnd.pruneActive(pwa,g.dual(),x,xeps,eps);
+  hv.set(pwa.dual());
   pwa.set(v);
-  bnd.pruneInactive(pwa,g,x,xeps,eps);
-  dwa.set(pwa.dual());
-  bnd.pruneInactive(dwa,g,x,xeps,eps);
-  hv.plus(dwa);
+  bnd.pruneInactive(pwa,g.dual(),x,xeps,eps);
+  hv.plus(pwa.dual());
+  //pwa.set(v);
+  //bnd.pruneActive(pwa,g,x,xeps,eps);
+  //model.hessVec(hv,pwa,x,tol); nhess_++;
+  //bnd.pruneActive(hv,g,x,xeps,eps);
+  //pwa.set(v);
+  //bnd.pruneInactive(pwa,g,x,xeps,eps);
+  //dwa.set(pwa.dual());
+  //bnd.pruneInactive(dwa,g,x,xeps,eps);
+  //hv.plus(dwa);
 }
 
 template<typename Real>
@@ -449,15 +469,23 @@ void KelleySachsAlgorithm_B<Real>::applyFreePrecond(Vector<Real> &hv,
                                                     Vector<Real> &pwa,
                                                     Vector<Real> &dwa) const {
   const Real xeps(ROL_EPSILON<Real>());
-  dwa.set(v);
-  bnd.pruneActive(dwa,g,x,xeps,eps);
+  pwa.set(v.dual());
+  bnd.pruneActive(pwa,g.dual(),x,xeps,eps);
+  dwa.set(pwa.dual());
   model.precond(hv,dwa,x,tol);
-  bnd.pruneActive(hv,g,x,xeps,eps);
-  dwa.set(v);
-  bnd.pruneInactive(dwa,g,x,xeps,eps);
-  pwa.set(dwa.dual());
-  bnd.pruneInactive(pwa,g,x,xeps,eps);
+  bnd.pruneActive(hv,g.dual(),x,xeps,eps);
+  pwa.set(v.dual());
+  bnd.pruneInactive(pwa,g.dual(),x,xeps,eps);
   hv.plus(pwa);
+  //dwa.set(v);
+  //bnd.pruneActive(dwa,g,x,xeps,eps);
+  //model.precond(hv,dwa,x,tol);
+  //bnd.pruneActive(hv,g,x,xeps,eps);
+  //dwa.set(v);
+  //bnd.pruneInactive(dwa,g,x,xeps,eps);
+  //pwa.set(dwa.dual());
+  //bnd.pruneInactive(pwa,g,x,xeps,eps);
+  //hv.plus(pwa);
 }
 
 template<typename Real>

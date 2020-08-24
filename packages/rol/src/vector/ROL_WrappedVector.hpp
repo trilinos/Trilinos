@@ -105,6 +105,8 @@ public:
   virtual void set( const V& x ) override { vec_->set(x); }
 
   virtual void const V& dual() const override { return vec_->dual(); }
+
+  virtual Real apply( const V& x ) const override { return vec_->apply(x); }
   
   virtual void applyUnary( const Elementwise::UnaryFunction<Real>& f ) override {
     vec_->applyUnary(f);

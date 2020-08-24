@@ -80,6 +80,7 @@ protected:
 
   Ptr<Vector<Real>> scaledc_;  // penaltyParameter_ * c_
   Ptr<Vector<Real>> gL_;       // gradient of Lagrangian (g - A*y)
+  Ptr<Vector<Real>> gLdual_;   // dual gradient of Lagrangian (g - A*y)
   Ptr<Vector<Real>> xprim_, xdual_, cprim_, cdual_;
 
   Real cnorm_;                 // norm of constraint violation

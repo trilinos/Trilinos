@@ -110,7 +110,8 @@ public:
       applyB(*Bs_,s);
       Bs_->scale(-one);
       Bs_->plus(*y_);
-      dotF = s.dot(Bs_->dual());
+      //dotF = s.dot(Bs_->dual());
+      dotF = s.apply(*Bs_);
       tolF = tol*snorm*Bs_->norm();
     }
     if (state_->mode == SECANTMODE_INVERSE || state_->mode == SECANTMODE_BOTH) {
@@ -118,7 +119,8 @@ public:
       applyH(*Hy_,*y_);
       Hy_->scale(-one);
       Hy_->plus(s);
-      dotI = y_->dot(Hy_->dual());
+      //dotI = y_->dot(Hy_->dual());
+      dotI = y_->apply(*Hy_);
       tolI = tol*y_->norm()*Hy_->norm();
     }
     if (std::abs(dotF) > tolF && std::abs(dotI) > tolI) {
@@ -151,7 +153,8 @@ public:
         state_->gradDiff[state_->current]->set(*Bs_);       // y_k - B_k s_k
         state_->product.push_back(dotF);                    // (y_k - B_k s_k)' s_k  
       }
-      if (useDefaultScaling_) Bscaling_ = s.dot(y_->dual())/(snorm*snorm);
+      //if (useDefaultScaling_) Bscaling_ = s.dot(y_->dual())/(snorm*snorm);
+      if (useDefaultScaling_) Bscaling_ = s.apply(*y_)/(snorm*snorm);
     }
     /*
     const Real one(1);

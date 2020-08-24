@@ -86,7 +86,8 @@ public:
     ROL::Ptr<std::vector<Real> > jvp =
       (dynamic_cast<ROL::StdVector<Real>&>(jv)).getVector();
     obj_->gradient_1(*dualUVector_,u,z,tol);
-    (*jvp)[0] = v.dot(dualUVector_->dual());
+    //(*jvp)[0] = v.dot(dualUVector_->dual());
+    (*jvp)[0] = v.apply(*dualUVector_);
   }
 
   void applyJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
@@ -98,7 +99,8 @@ public:
     ROL::Ptr<std::vector<Real> > jvp =
       (dynamic_cast<ROL::StdVector<Real>&>(jv)).getVector();
     obj_->gradient_2(*dualZVector_,u,z,tol);
-    (*jvp)[0] = v.dot(dualZVector_->dual());
+    //(*jvp)[0] = v.dot(dualZVector_->dual());
+    (*jvp)[0] = v.apply(*dualZVector_);
   }
 
   void applyAdjointJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
@@ -191,7 +193,8 @@ public:
     ROL::Ptr<std::vector<Real> > jvp =
       (dynamic_cast<ROL::StdVector<Real>&>(jv)).getVector();
     obj_->gradient(*dualZVector_,z,tol);
-    (*jvp)[0] = v.dot(dualZVector_->dual());
+    //(*jvp)[0] = v.dot(dualZVector_->dual());
+    (*jvp)[0] = v.apply(*dualZVector_);
   }
 
   void applyAdjointJacobian(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,

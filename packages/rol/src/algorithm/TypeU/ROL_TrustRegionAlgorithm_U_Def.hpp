@@ -93,14 +93,11 @@ TrustRegionAlgorithm_U<Real>::TrustRegionAlgorithm_U( ParameterList &parlist,
   // Secant Information
   useSecantPrecond_ = glist.sublist("Secant").get("Use as Preconditioner", false);
   useSecantHessVec_ = glist.sublist("Secant").get("Use as Hessian",        false);
-  // Initialize trust region model
-  model_ = makePtr<TrustRegionModel_U<Real>>(list,secant);
-  ParameterList &qlist = list.sublist("General").sublist("Secant");
-  useSecantPrecond_ = qlist.get("Use as Preconditioner", false);
-  useSecantHessVec_ = qlist.get("Use as Hessian",        false);
   if (secant == nullPtr) {
-    esec_ = StringToESecant(qlist.get("Type","Limited-Memory BFGS"));
+    esec_ = StringToESecant(glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
   }
+  // Initialize trust region model
+  model_ = makePtr<TrustRegionModel_U<Real>>(parlist,secant);
   printHeader_ = verbosity_ > 2;
 }
 

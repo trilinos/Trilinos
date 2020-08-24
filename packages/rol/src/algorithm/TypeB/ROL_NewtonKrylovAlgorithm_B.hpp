@@ -105,12 +105,14 @@ private:
         secant_(secant), useSecant_(useSecant), v_(pwa) {}
     void apply(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
       v_->set(v);
-      bnd_->pruneActive(*v_,*g_,*x_,eps_);
+      bnd_->pruneActive(*v_,g_->dual(),*x_,eps_);
       if (!useSecant_) obj_->hessVec(Hv,*v_,*x_,tol);
       else             secant_->applyB(Hv,*v_);
-      bnd_->pruneActive(Hv,*g_,*x_,eps_);
+      v_->set(Hv.dual());
+      bnd_->pruneActive(*v_,g_->dual(),*x_,eps_);
+      Hv.set(v_->dual());
       v_->set(v);
-      bnd_->pruneInactive(*v_,*g_,*x_,eps_);
+      bnd_->pruneInactive(*v_,g_->dual(),*x_,eps_);
       Hv.plus(v_->dual());
     }
   };
@@ -133,21 +135,21 @@ private:
                Real                              eps,
                const Ptr<Secant<Real>>          &secant,
                bool                              useSecant,
-               const Ptr<Vector<Real>>          &dwa)
+               const Ptr<Vector<Real>>          &pwa)
       : obj_(obj), bnd_(bnd), x_(x), g_(g), eps_(eps),
-        secant_(secant), useSecant_(useSecant), v_(dwa) {}
+        secant_(secant), useSecant_(useSecant), v_(pwa) {}
     void apply(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
       Hv.set(v.dual()); 
     }
     void applyInverse(Vector<Real> &Hv, const Vector<Real> &v, Real &tol) const {
-      v_->set(v);
-      bnd_->pruneActive(*v_,*g_,*x_,eps_);
-      if ( useSecant_ ) secant_->applyH(Hv,*v_);
-      else              obj_->precond(Hv,*v_,*x_,tol);
-      bnd_->pruneActive(Hv,*g_,*x_,eps_);
-      v_->set(v);
-      bnd_->pruneInactive(*v_,*g_,*x_,eps_);
-      Hv.plus(v_->dual());
+      v_->set(v.dual());
+      bnd_->pruneActive(*v_,g_->dual(),*x_,eps_);
+      if ( useSecant_ ) secant_->applyH(Hv,v_->dual());
+      else              obj_->precond(Hv,v_->dual(),*x_,tol);
+      bnd_->pruneActive(Hv,g_->dual(),*x_,eps_);
+      v_->set(v.dual());
+      bnd_->pruneInactive(*v_,g_->dual(),*x_,eps_);
+      Hv.plus(*v_);
     }
   };
 

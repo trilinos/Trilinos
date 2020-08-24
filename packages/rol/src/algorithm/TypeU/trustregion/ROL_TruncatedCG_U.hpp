@@ -102,7 +102,8 @@ public:
     model.precond(*v_,*g_,s,tol);
     // Initialize basis vector
     p_->set(*v_); p_->scale(-one);
-    Real pnorm2 = v_->dot(g_->dual());
+    //Real pnorm2 = v_->dot(g_->dual());
+    Real pnorm2 = v_->apply(*g_);
     if ( pnorm2 <= zero ) {
       iflag = 4;
       iter  = 0;
@@ -118,7 +119,8 @@ public:
       // Apply Hessian to direction p
       model.hessVec(*Hp_,*p_,s,tol);
       // Check positivity of Hessian
-      kappa = p_->dot(Hp_->dual());
+      //kappa = p_->dot(Hp_->dual());
+      kappa = p_->apply(*Hp_);
       if (kappa <= zero) {
         sigma = (-sMp+sqrt(sMp*sMp+pnorm2*(del*del-snorm2)))/pnorm2;
         s.axpy(sigma,*p_);
@@ -153,7 +155,8 @@ public:
       // Preconditioned updated (projected) gradient vector
       model.precond(*v_,*g_,s,tol);
       tmp   = gv;
-      gv    = v_->dot(g_->dual());
+      //gv    = v_->dot(g_->dual());
+      gv    = v_->apply(*g_);
       beta  = gv/tmp;
       // Update basis vector
       p_->scale(beta);

@@ -56,6 +56,7 @@ private:
   Ptr<Vector<Real>> Tv_;       // Temporary for matvecs
   Ptr<Vector<Real>> w_;        // first component of augmented system solve solution
   Ptr<Vector<Real>> v_;        // second component of augmented system solve solution
+  Ptr<Vector<Real>> wdual_;    // first component of augmented system solve solution in dual space
   Ptr<Vector<Real>> wg_;       // first component of augmented system solve solution for gradient
   Ptr<Vector<Real>> vg_;       // second component of augmented system solve solution for gradient
   Ptr<Vector<Real>> xzeros_;   // zero vector
@@ -80,6 +81,7 @@ private:
   using FletcherObjectiveBase<Real>::c_;        // constraint value
   using FletcherObjectiveBase<Real>::scaledc_;  // sigma_ * c_
   using FletcherObjectiveBase<Real>::gL_;       // gradient of Lagrangian (g - A*y)
+  using FletcherObjectiveBase<Real>::gLdual_;   // dual gradient of Lagrangian (g - A*y)
   using FletcherObjectiveBase<Real>::cnorm_;    // norm of constraint violation
   using FletcherObjectiveBase<Real>::xprim_;
   using FletcherObjectiveBase<Real>::xdual_;
@@ -114,11 +116,11 @@ private:
       PartitionedVector<Real> &Hvp = dynamic_cast<PartitionedVector<Real>&>(Hv);
       const PartitionedVector<Real> &vp = dynamic_cast<const PartitionedVector<Real>&>(v);
 
-      con_->applyAdjointJacobian(*(Hvp.get(0)), *(vp.get(1)), *x_, tol);
-      Hvp.get(0)->plus(*(vp.get(0)));
+      con_->applyAdjointJacobian(*Hvp.get(0), *vp.get(1), *x_, tol);
+      Hvp.get(0)->plus(vp.get(0)->dual());
 
-      con_->applyJacobian(*(Hvp.get(1)), *(vp.get(0)), *x_, tol);
-      Hvp.get(1)->axpy(-delta_*delta_, *(vp.get(1)));
+      con_->applyJacobian(*Hvp.get(1), *vp.get(0), *x_, tol);
+      Hvp.get(1)->axpy(-delta_*delta_, vp.get(1)->dual());
     }
   };
 
@@ -139,7 +141,7 @@ private:
       PartitionedVector<Real> &Hvp = dynamic_cast<PartitionedVector<Real>&>(Hv);
       const PartitionedVector<Real> &vp = dynamic_cast<const PartitionedVector<Real>&>(v);
 
-      Hvp.set(0, *(vp.get(0)));
+      Hvp.set(0, vp.get(0)->dual());
       con_->applyPreconditioner(*(Hvp.get(1)),*(vp.get(1)),*x_,*g_, tol); 
     }
   };

@@ -222,14 +222,16 @@ void SemismoothNewtonProjection<Real>::project_ssn(Vector<Real> &x,
     }
     else { // Default Solodov and Svaiter line search
       rnorm = residual(*res_,*xnew_);
-      tmp   = dlam.dot(res_->dual());
+      //tmp   = dlam.dot(res_->dual());
+      tmp   = dlam.apply(*res_);
       dd    = dlam.dot(dlam);
       while ( tmp < decr_*(one-rho)*mu*dd && alpha > stol_ ) {
         alpha *= factor_;
         lnew_->set(lam); lnew_->axpy(-alpha, dlam);
         update_primal(*xnew_,x,*lnew_);
         rnorm = residual(*res_,*xnew_);
-        tmp   = dlam.dot(res_->dual());
+        //tmp   = dlam.dot(res_->dual());
+        tmp   = dlam.apply(*res_);
       }
     }
     // Update iterate

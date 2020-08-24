@@ -62,7 +62,8 @@ public:
     dualadjoint_->scale(static_cast<Real>(0.5));        // 0.5 Hu
     fem_->addObjectiveGradient(*dualadjoint_);          // 0.5 Hu + g
     // 0.5 uHu + gu + c0
-    return state_->dot(dualadjoint_->dual()) + fem_->getObjectiveConstant();
+    //return state_->dot(dualadjoint_->dual()) + fem_->getObjectiveConstant();
+    return state_->apply(*dualadjoint_) + fem_->getObjectiveConstant();
   }
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &z, Real &tol ) {

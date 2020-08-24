@@ -54,7 +54,8 @@ ScalarLinearConstraint<Real>::ScalarLinearConstraint(const Ptr<const Vector<Real
 template<typename Real>
 void ScalarLinearConstraint<Real>::value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
   SingletonVector<Real> &cc = dynamic_cast<SingletonVector<Real>&>(c);
-  cc.setValue(a_->dot(x.dual()) - b_);
+  //cc.setValue(a_->dot(x.dual()) - b_);
+  cc.setValue(a_->apply(x) - b_);
 }
 
 template<typename Real>
@@ -62,7 +63,8 @@ void ScalarLinearConstraint<Real>::applyJacobian(Vector<Real> &jv,
                                            const Vector<Real> &v,
                                            const Vector<Real> &x, Real &tol) {
   SingletonVector<Real> &jc = dynamic_cast<SingletonVector<Real>&>(jv);
-  jc.setValue(a_->dot(v.dual()));
+  //jc.setValue(a_->dot(v.dual()));
+  jc.setValue(a_->apply(v));
 }
 
 template<typename Real>
@@ -91,7 +93,8 @@ std::vector<Real> ScalarLinearConstraint<Real>::solveAugmentedSystem(Vector<Real
   SingletonVector<Real>&       v2c = dynamic_cast<SingletonVector<Real>&>(v2);
   const SingletonVector<Real>& b2c = dynamic_cast<const SingletonVector<Real>&>(b2);
 
-  v2c.setValue( (a_->dot(b1.dual()) - b2c.getValue() )/a_->dot(*a_) );
+  //v2c.setValue( (a_->dot(b1.dual()) - b2c.getValue() )/a_->dot(*a_) );
+  v2c.setValue( (a_->apply(b1) - b2c.getValue() )/a_->dot(*a_) );
   v1.set(b1.dual());
   v1.axpy(-v2c.getValue(),a_->dual());
 
