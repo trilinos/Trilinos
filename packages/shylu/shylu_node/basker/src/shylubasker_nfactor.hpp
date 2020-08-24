@@ -75,7 +75,7 @@ namespace BaskerNS
     BASKER_MATRIX ATEMP;
 
     //Kokkos::Impl::Timer tza;
-    int info = 0;
+    int info = BASKER_SUCCESS;
     if(Options.btf == BASKER_TRUE)
     {
       //JDB: We can change this for the new inteface
@@ -92,7 +92,6 @@ namespace BaskerNS
     #endif
 
     typedef Kokkos::TeamPolicy<Exe_Space>        TeamPolicy;
-
     if(btf_tabs_offset != 0)
     {
       //Spit into Domain and Sep
@@ -114,7 +113,7 @@ namespace BaskerNS
 
 
       //=====Check for error======
-      while(true)
+      while(info == BASKER_SUCCESS)
       {
         INT_1DARRAY thread_start;
         MALLOC_INT_1DARRAY(thread_start, num_threads+1);
@@ -167,7 +166,7 @@ namespace BaskerNS
 
       // -------------------------------------------------------- //
       // ---------------------------Sep-------------------------- //
-      for(Int l=1; l <= tree.nlvls; l++)
+      for(Int l=1; (info == BASKER_SUCCESS && l <= tree.nlvls); l++)
       {
         //#ifdef BASKER_OLD_BARRIER
         //Int lthreads = pow(2,l);
@@ -200,7 +199,7 @@ namespace BaskerNS
         Kokkos::fence();
 
         //======Check for error=====
-        while(true)
+        while(info == BASKER_SUCCESS)
         {
           INT_1DARRAY thread_start;
           MALLOC_INT_1DARRAY(thread_start, num_threads+1);
@@ -251,7 +250,7 @@ namespace BaskerNS
 
 
     //-------------------IF BTF-----------------------//
-    if(Options.btf == BASKER_TRUE)
+    if(info == BASKER_SUCCESS && Options.btf == BASKER_TRUE)
     {
       Int btf_restart = 0;
 
@@ -273,7 +272,7 @@ namespace BaskerNS
       Kokkos::fence();
 
       //=====Check for error======
-      while(true)
+      while(info == BASKER_SUCCESS)
       {
         INT_1DARRAY thread_start;
         MALLOC_INT_1DARRAY(thread_start, num_threads+1);

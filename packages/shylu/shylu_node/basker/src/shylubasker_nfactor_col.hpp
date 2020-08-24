@@ -566,9 +566,9 @@ namespace BaskerNS
       X(j) = B.val(i);
 
       #ifdef BASKER_DEBUG_NFACTOR_COL
-       if(kid>=0)
-         printf("kid: %d i: %d  val: %g  top: %d \n", 
-             kid,i, B.val(i), top);
+       if(kid == 0)
+         printf("kid = %d: X(%d) = B.val(%d) = %e\n", 
+             kid, (int)j, (int)i, B.val(i));
        #ifdef BASKER_2DL
        if(kid>=0)
          //printf("kid: %d Nx in Ak %d %g color = %d \n",
@@ -687,7 +687,7 @@ namespace BaskerNS
 
       #ifdef BASKER_DEBUG_NFACTOR_COL
        #ifdef BASKER_2DL
-       if(kid>=0)
+       if(kid == 0)
        {
          //printf("considering j: %d t:%d val: %e, kid: %d \n",
          //	  j, t, X[j-brow], kid);
@@ -695,7 +695,7 @@ namespace BaskerNS
              j, t, X[j], kid);
        }
        #else
-       if(kid>=0)
+       if(kid == 0)
         printf("considering j: %d t:%d val: %e, kid: %d \n",
             j, t, X[j], kid);
        #endif
@@ -720,7 +720,7 @@ namespace BaskerNS
         if(t != BASKER_MAX_IDX)
         {
           #ifdef BASKER_DEBUG_NFACTOR_COL
-          if(kid>=0)
+          if(kid == 0)
             printf("kid: %d adding x[%d] to U\n", kid, j); 
           #endif
 
@@ -746,7 +746,7 @@ namespace BaskerNS
         else
         {
           #ifdef BASKER_2DL
-          printf("----Error--- kid: %ld extra L[%ld]=%f \n",
+          printf("----Error--- kid = %ld: extra L[%ld]=%f \n",
                  (long)kid, (long)j, X[j-brow]);
           #endif
         }//lower

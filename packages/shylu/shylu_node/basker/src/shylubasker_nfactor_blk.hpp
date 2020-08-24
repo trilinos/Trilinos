@@ -433,10 +433,10 @@ namespace BaskerNS
           cout << "  thread-" << kid 
                << "Error: Dom Matrix is singular, blk" 
                << endl;
-          cout << " k: "        << k
-               << " MaxIndex: " << maxindex 
-               << " pivot "     << pivot << endl;
-          cout << "lcnt: "      << lcnt << endl;
+          cout << " k        = " << k        << endl
+               << " MaxIndex = " << maxindex << endl
+               << " Pivot    = " << pivot    << endl;
+          cout << " Lcount   = " << lcnt     << endl;
           cout << "---------------------------"<<endl;
         }
         thread_array(kid).error_type =

@@ -255,7 +255,7 @@ namespace BaskerNS
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << "ERROR THREAD: " << ti 
-            << " DOMBLK SINGULAR: blk=" << thread_array(ti).error_blk
+            << " SEPBLK SINGULAR: blk=" << thread_array(ti).error_blk
             << std::endl;
         }
         return BASKER_ERROR;
@@ -266,7 +266,7 @@ namespace BaskerNS
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << "ERROR THREADS: " << ti 
-            << " DOMBLK NOMALLOC: blk=" << thread_array(ti).error_blk
+            << " SEPBLK NOMALLOC: blk=" << thread_array(ti).error_blk
             << std::endl;
         }
         return BASKER_ERROR;
@@ -511,7 +511,6 @@ namespace BaskerNS
       if(thread_array(ti).error_type ==
           BASKER_ERROR_REMALLOC)
       {
-
         BASKER_ASSERT(thread_array(ti).error_blk > 0,
             "nfactor_diag_error error_blk");
 
