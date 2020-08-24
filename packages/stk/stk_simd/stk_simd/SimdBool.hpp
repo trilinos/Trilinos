@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//
+// 
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,31 +30,64 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
-#include "gtest/gtest.h"
+#ifndef STK_SIMD_DISIMD_DISIMDBOOL_HPP
+#define STK_SIMD_DISIMD_DISIMDBOOL_HPP
 
-#include "stk_unit_test_utils/PrintType.hpp"
+namespace stk {
+namespace simd {
 
-#ifndef USE_STK_SIMD_NONE
-#define USE_STK_SIMD_NONE
+class Bool {
+
+ public:
+  using ScalarType = bool;
+  using FloatingPointType = stk::simd::Double;
+    
+  STK_MATH_FORCE_INLINE Bool() {}
+    
+  STK_MATH_FORCE_INLINE Bool(ScalarType x)
+    : _data(x)
+    {
+    }
+    
+  STK_MATH_FORCE_INLINE Bool(const SIMD_NAMESPACE::simd_mask<double, SIMD_NAMESPACE::simd_abi::native>& x)
+    : _data(x)
+    {
+    }
+
+  STK_MATH_FORCE_INLINE Bool(const Bool& x)
+    : _data(x._data)
+    {
+    }
+    
+  STK_MATH_FORCE_INLINE Bool& operator= (const Bool& x) {
+    _data = x._data;
+    return *this;
+  }
+    
+#if defined(__AVX512F__) && !defined(__CUDACC__) && !defined(USE_STK_SIMD_NONE)
+  STK_MATH_FORCE_INLINE double operator[](int i) const {
+    __m512d tmp = _mm512_mask_blend_pd(_data.get(), _mm512_set1_pd(0.0), _mm512_set1_pd(1.0));
+    return (reinterpret_cast<const double*>(&tmp))[i];
+  }
+#elif defined(__CUDACC__) || defined(USE_STK_SIMD_NONE)
+  STK_MATH_FORCE_INLINE double operator[](int i) const {
+    return _data.get() ? 1.0 : 0.0;
+  }
+#else
+  STK_MATH_FORCE_INLINE double& operator[](int i) {return (reinterpret_cast<double*>(&_data))[i];}
+  STK_MATH_FORCE_INLINE const double& operator[](int i) const {return (reinterpret_cast<const double*>(&_data))[i];}
 #endif
 
-#include "stk_simd/Simd.hpp"
+  SIMD_NAMESPACE::simd_mask<double, SIMD_NAMESPACE::simd_abi::native> _data; // the "_" means you should try not to use this directly
+  // it is made public to avoid function call overhead 
+  // and/or so the compiler doesn't have to use up one of
+  // inlining depths (usually max inlining depth ~5)
 
-using FloatDataScalar = SIMD_NAMESPACE::simd<float, SIMD_NAMESPACE::simd_abi::scalar>;
-using DoubleDataScalar = SIMD_NAMESPACE::simd<double, SIMD_NAMESPACE::simd_abi::scalar>;
+};
+  
+} // namespace simd
+} // namespace stk
 
-TEST( SimdInfo, checkScalarTypes )
-{
-  stk::simd::Float f;
-  EXPECT_TRUE((std::is_same<decltype(f._data), FloatDataScalar>::value));
-
-  stk::simd::Double d;
-  EXPECT_TRUE((std::is_same<decltype(d._data), DoubleDataScalar>::value));
-}
-
-TEST( SimdInfo, checkScalarWidths )
-{
-  EXPECT_EQ(stk::simd::nfloats, 1);
-  EXPECT_EQ(stk::simd::ndoubles, 1);
-}
+#endif // STK_SIMD_DISIMD_DISIMDBOOL_HPP

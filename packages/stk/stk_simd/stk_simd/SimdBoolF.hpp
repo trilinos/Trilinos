@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//
+// 
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,32 +30,68 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
-#include <iostream>
-#ifdef __GNUG__
-#include <cstdlib>
-#include <cxxabi.h>
-#include <cstring>
-#endif
+#ifndef STK_SIMD_DISIMD_DISIMDBOOLF_HPP
+#define STK_SIMD_DISIMD_DISIMDBOOLF_HPP
 
 namespace stk {
-namespace unit_test_util {
+namespace simd {
 
-template <typename T>
-void print_type(T& t)
-{
-#ifdef __GNUG__
-  size_t nameLen = std::strlen(typeid(t).name());
-  char* buffer = static_cast<char*>(std::malloc(nameLen));
-  char* name = abi::__cxa_demangle(typeid(t).name(), buffer, &nameLen, nullptr);
-  std::cout << name << std::endl;
-  if (nullptr != name) {
-    buffer = name;
+class Boolf {
+
+ public:
+  using ScalarType = bool;
+  using FloatingPointType = stk::simd::Float;
+    
+  STK_MATH_FORCE_INLINE Boolf() {}
+    
+  STK_MATH_FORCE_INLINE Boolf(ScalarType x) 
+    : _data(x)
+    {
+    }
+    
+  STK_MATH_FORCE_INLINE Boolf(const SIMD_NAMESPACE::simd_mask<float, SIMD_NAMESPACE::simd_abi::native>& x)
+    : _data(x) 
+    {
+    }
+
+  STK_MATH_FORCE_INLINE Boolf(const Boolf& x) 
+    : _data(x._data) 
+    {
+    }
+    
+  STK_MATH_FORCE_INLINE Boolf& operator= (const Boolf& x) {
+    _data = x._data;
+    return *this;
   }
-  std::free(buffer);
-#else
-  std::cout << typeid(t).name() << std::endl;
-#endif
-}
 
-} }
+#if defined(__AVX512F__) && !defined(__CUDACC__) && !defined(USE_STK_SIMD_NONE)
+  STK_MATH_FORCE_INLINE float operator[](int i) const {
+    __m512 tmp = _mm512_mask_blend_ps(_data.get(), _mm512_set1_ps(0.0), _mm512_set1_ps(1.0));
+    return (reinterpret_cast<const float*>(&tmp))[i];
+  }
+#elif defined(__CUDACC__) || defined(USE_STK_SIMD_NONE)
+  STK_MATH_FORCE_INLINE float operator[](int i) const {
+    return _data.get() ? 1.0f : 0.0f;
+  }
+#else
+  STK_MATH_FORCE_INLINE float& operator[](int i) {return (reinterpret_cast<float*>(&_data))[i];}
+  STK_MATH_FORCE_INLINE const float& operator[](int i) const {return (reinterpret_cast<const float*>(&_data))[i];}
+#endif
+     
+  SIMD_NAMESPACE::simd_mask<float, SIMD_NAMESPACE::simd_abi::native> _data; // the "_" means you should try not to use this directly
+  // it is made public to avoid function call overhead 
+  // and/or so the compiler doesn't have to use up one of
+  // inlining depths (usually max inlining depth ~5)
+
+};
+
+const Boolf TRUE_VALf(true);
+const Boolf FALSE_VALf(false);
+
+} // namespace simd
+} // namespace stk
+
+#endif // STK_SIMD_DISIMD_DISIMDBOOLF_HPP
+
