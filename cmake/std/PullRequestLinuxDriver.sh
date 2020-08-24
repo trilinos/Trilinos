@@ -55,8 +55,8 @@ REPO_ROOT=`readlink -f ${SCRIPTPATH}/../..`
 echo -e "REPO_ROOT : ${REPO_ROOT}"
 
 # Get the md5 checksum of this script:
-sig_script_old=$(get_md5sum ${script_file:?})
-echo -e ">>> Old md5 checksum for '${script_file:?}' = ${sig_script_old}"
+sig_script_old=$(get_md5sum ${SCRIPTPATH:?})
+echo -e ">>> Old md5 checksum for '${SCRIPTPATH:?}' = ${sig_script_old}"
 
 # Get the md5 checksum of the Merge script
 sig_merge_old=$(get_md5sum ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py)
@@ -81,8 +81,8 @@ ${merge_cmd}
 
 
 # Get the md5 checksum of this script:
-sig_script_new=$(get_md5sum ${script_file:?})
-echo -e ">>> New md5 checksum for '${script_file:?}' = ${sig_script_new}"
+sig_script_new=$(get_md5sum ${SCRIPTPATH:?})
+echo -e ">>> New md5 checksum for '${SCRIPTPATH:?}' = ${sig_script_new}"
 
 # Get the md5 checksum of the Merge script
 sig_merge_new=$(get_md5sum ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py)
