@@ -91,7 +91,7 @@ echo -e ""
 echo -e "Execute Merge Command:"
 echo -e "${merge_cmd:?} 
 echo -e ""
-${merge_cmd:?}
+${merge_cmd:?} >& ${WORKSPACE:?}/merge_cmd_01.log
 
 
 # Get the md5 checksum of this script:
