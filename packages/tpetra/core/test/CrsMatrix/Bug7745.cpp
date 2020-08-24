@@ -47,8 +47,9 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "MatrixMarket_Tpetra.hpp"
+#include "Tpetra_Apply_Helpers.hpp"
 #include "Teuchos_Array.hpp"
+#include <vector>
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
@@ -92,7 +93,7 @@ public:
     int ierr = 0;
 
     // Build the matrix
-    Teuchos::RCP<const matrix_t> Amat = buildMatrix(domainMap, rangeMap);
+    Teuchos::RCP<matrix_t> Amat = buildMatrix(domainMap, rangeMap);
 
     // Test with alpha = 0, beta = 0
     ierr += runAlphaBeta(Amat, scalar_t(0), scalar_t(0), testName);
@@ -119,7 +120,7 @@ public:
     int ierr = 0;
 
     // Build the matrix
-    Teuchos::RCP<const matrix_t> Amat = buildMatrix(domainMap, rangeMap);
+    Teuchos::RCP<matrix_t> Amat = buildMatrix(domainMap, rangeMap);
 
     // Test transpose with alpha = 0, beta = 0
     ierr += runAlphaBetaTranspose(Amat, scalar_t(0), scalar_t(0), testName);
@@ -135,12 +136,38 @@ public:
 
     return ierr;
   }
+
+  int runTestsBatched(
+    const Teuchos::RCP<const map_t> &domainMap,
+    const Teuchos::RCP<const map_t> &rangeMap,
+    const char* testName)
+  {
+    int me = comm->getRank();
+    int ierr = 0;
+
+    // Build the matrix
+    Teuchos::RCP<matrix_t> Amat = buildMatrix(domainMap, rangeMap);
+
+    // Test with alpha = 0, beta = 0
+    ierr += runAlphaBetaBatched(Amat, scalar_t(0), scalar_t(0), testName);
+
+    // Test with alpha != 0, beta = 0
+    ierr += runAlphaBetaBatched(Amat, scalar_t(2), scalar_t(0), testName);
+
+    // Test with alpha = 0, beta != 0
+    ierr += runAlphaBetaBatched(Amat, scalar_t(0), scalar_t(3), testName);
+
+    // Test with alpha != 0, beta != 0
+    ierr += runAlphaBetaBatched(Amat, scalar_t(2), scalar_t(3), testName);
+
+    return ierr;
+  }
 private:
 
   // Build non-symmetric matrix with nEntriesPerRow nonzeros (value = 1.) 
   // in each row, nMyRow rows per processor.  
   // Matrix may be square or rectangular.
-  Teuchos::RCP<const matrix_t>
+  Teuchos::RCP<matrix_t>
   buildMatrix(
     const Teuchos::RCP<const map_t> &domainMap, 
     const Teuchos::RCP<const map_t> &rangeMap
@@ -255,9 +282,39 @@ private:
     return ierr;
   }
 
+  // Compare the result of matrix batchedApply to analytical result
+  int checkResultBatched(
+    std::vector<vector_t*> &vec, 
+    scalar_t alpha, 
+    scalar_t beta) const
+  {
+    int ierr = 0;
+
+    for (size_t v = 0; v < vec.size(); v++) {
+      vec[v]->sync_host();
+      auto data = vec[v]->getLocalViewHost();
+
+      for (size_t i = 0; i < vec[v]->getLocalLength(); i++) {
+        gno_t gid = vec[v]->getMap()->getGlobalElement(i);
+
+        scalar_t expected(0);
+        for (size_t j = 0; j < nEntriesPerRow; j++) 
+          expected += (squareMatrix ? (gid + j) % nGlobalRow : (gid + j));
+        expected *= alpha;
+        expected += beta * yInit;
+  
+        if (data(i,0) != expected) ierr++;
+      }
+    }
+
+    if (ierr > 0) 
+      std::cout << comm->getRank() << " HAD " << ierr << " ERRORS" << std::endl;
+    return ierr;
+  }
+
   // Apply and check result with a specific alpha, beta
   int runAlphaBeta(
-    const Teuchos::RCP<const matrix_t> &Amat,
+    const Teuchos::RCP<matrix_t> &Amat,
     scalar_t alpha,
     scalar_t beta,
     const char *testName)
@@ -279,7 +336,7 @@ private:
 
   // Apply and check result with a specific alpha, beta, transpose
   int runAlphaBetaTranspose(
-    const Teuchos::RCP<const matrix_t> &Amat,
+    const Teuchos::RCP<matrix_t> &Amat,
     scalar_t alpha,
     scalar_t beta,
     const char *testName)
@@ -299,6 +356,36 @@ private:
     return checkResultTranspose(yvec, alpha, beta);
   }
 
+  int runAlphaBetaBatched(
+    const Teuchos::RCP<matrix_t> &Amat,
+    scalar_t alpha,
+    scalar_t beta,
+    const char *testName)
+  {
+    int me = comm->getRank();
+    Teuchos::RCP<matrix_t> A1 = Amat;
+    Teuchos::RCP<matrix_t> A2 = rcp(new matrix_t(*A1));
+    std::vector<matrix_t *> matrices = {A1.get(),A2.get()};
+
+    Teuchos::RCP<vector_t> xvec = getInputVector(Amat->getDomainMap());
+
+    Teuchos::RCP<vector_t> y1 = getOutputVector(Amat->getRangeMap());
+    Teuchos::RCP<vector_t> y2 = getOutputVector(Amat->getRangeMap());
+    std::vector<vector_t *> yvec = {y1.get(),y2.get()};
+
+    Tpetra::batchedApply(matrices, *xvec, yvec, alpha, beta);
+
+    std::cout << me << " " << testName 
+              << " Y1 Batched alpha=" << alpha
+              << " beta=" << beta << std::endl;
+    y1->describe(foo, Teuchos::VERB_EXTREME);
+    std::cout << me << " " << testName 
+              << " Y2 Batched alpha=" << alpha
+              << " beta=" << beta << std::endl;
+    y2->describe(foo, Teuchos::VERB_EXTREME);
+
+    return checkResultBatched(yvec, alpha, beta);
+  }
 
   const Teuchos::RCP<const Teuchos::Comm<int> > comm;
   const size_t nEntriesPerRow;
@@ -646,6 +733,59 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, SquareCyclicTranspose,
 
   TEST_ASSERT(gerr == 0);
 }
+//////////////////////////////////////////////////////////////////////////////
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, SquareCyclicBatched,
+                                  Scalar, LO, GO, Node)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  int me = comm->getRank();
+  int np = comm->getSize();
+
+  using map_t = Tpetra::Map<LO,GO,Node>;
+  using vector_t = Tpetra::Vector<Scalar,LO,GO,Node>;
+  using matrix_t = Tpetra::CrsMatrix<Scalar,LO,GO,Node>;
+
+  MatrixBuilder<map_t, vector_t, matrix_t> mb(comm, true);
+  Teuchos::Array<GO> myEntries(mb.nGlobalCols());
+
+  // Build Trilinos-default range and domain maps
+  
+  // One-to-one cyclic map:  deal out entries like cards
+
+  int nMyEntries = 0;
+  for (size_t i = 0; i < mb.nGlobalCols(); i++) {
+    if (int(i % np) == me) {
+      myEntries[nMyEntries++] = i;
+    }
+  }
+
+  Tpetra::global_size_t dummy =
+          Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+  Teuchos::RCP<const map_t> domainMap = 
+           rcp(new map_t(dummy, myEntries(0,nMyEntries), 0, comm));
+
+  // A different one-to-one cyclic map for the rangeMap
+
+  nMyEntries = 0;
+  for (size_t i = 0; i < mb.nGlobalRows(); i++) {
+    if (int((i+1) % np) == me) {
+      myEntries[nMyEntries++] = i;
+    }
+  }
+
+  dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+  Teuchos::RCP<const map_t> rangeMap = 
+           rcp(new map_t(dummy, myEntries(0,nMyEntries), 0, comm));
+
+  // Run the test
+
+  int ierr = mb.runTestsBatched(domainMap, rangeMap, "SquareCyclicBatched");
+
+  int gerr;
+  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
+
+  TEST_ASSERT(gerr == 0);
+}
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, RectangularDefault, SCALAR, LO, GO, NODE) \
@@ -655,7 +795,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, SquareCyclicTranspose,
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, RectangularCyclic, SCALAR, LO, GO, NODE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, RectangularCyclicTranspose, SCALAR, LO, GO, NODE) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, SquareCyclic, SCALAR, LO, GO, NODE) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, SquareCyclicTranspose, SCALAR, LO, GO, NODE) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, SquareCyclicTranspose, SCALAR, LO, GO, NODE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, SquareCyclicBatched, SCALAR, LO, GO, NODE) 
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

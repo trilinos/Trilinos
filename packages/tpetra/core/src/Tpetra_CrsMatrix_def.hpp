@@ -5196,7 +5196,7 @@ namespace Tpetra {
           Y_in.scale (beta);
         }
         // Do the Export operation.
-        Y_in.doExport (*Y_rowMap, *exporter, ADD);
+        Y_in.doExport (*Y_rowMap, *exporter, ADD_ASSIGN);
       }
     }
     else { // Don't do an Export: row Map and range Map are the same.
@@ -5344,7 +5344,7 @@ namespace Tpetra {
       } else {
         Y_in.scale (beta);
       }
-      Y_in.doExport (*importMV_, *importer, ADD);
+      Y_in.doExport (*importMV_, *importer, ADD_ASSIGN);
     }
     // otherwise, multiply into Y
     else {
