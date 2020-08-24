@@ -114,11 +114,16 @@ namespace Zoltan2 {
                     std::move(colids_vec),
                     std::move(values_vec), M);
 
-            const auto res = Run<offset_t, scalar_t>(algs.at(params.alg).first, std::cout, mtx,
-                                                       params.order_type, params.p, params.q, params.z,
-                                                       params.triangular,
-                                                       params.serialize, params.sparsify, algs.at(params.alg).second,
-                                                       params.use_data, params.seed);
+            const auto res = sarma::Run<offset_t, scalar_t>(algs.at(config.alg).first, std::cout, mtx,
+                                                       config.order_type, config.p, config.q, config.z,
+                                                       config.triangular,
+                                                       config.serialize, config.sparsify, algs.at(config.alg).second,
+                                                       config.use_data, config.seed);
+
+            // Assign solutions to 1D part array
+            ArrayRCP<part_t> parts = arcp(res.first.data(), 0, res.first.size());
+
+            solution->setParts(parts);
 
             env->debug(DETAILED_STATUS, std::string("Exiting AlgSarma"));
         }
