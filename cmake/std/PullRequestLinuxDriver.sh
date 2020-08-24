@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # set -x  # echo commands
 
-function get_scriptname() {
+function get_scriptpath() {
     # Get the full path to the current script
     local script_name=`basename $0`
     local script_path=$(dirname $(readlink -f $0))
-    local script_file="${script_path}/${script_name:?}"
-    echo "${script_file}"
+    #local script_file="${script_path}/${script_name:?}"
+    echo "${script_path}"
     #SCRIPTPATH="$(cd "$(dirname "$0")" ; pwd -P)"
     #echo -e "SCRIPTPATH: ${SCRIPTPATH}"
 }
@@ -48,14 +48,16 @@ fi
 
 
 # Identify the path to this script
-SCRIPTPATH=$(get_scriptname)
+SCRIPTPATH=$(get_scriptpath)
+script_file="${SCRIPTPATH}/${script_name:?}"
+
 
 # Identify the path to the trilinos repository root
 REPO_ROOT=`readlink -f ${SCRIPTPATH}/../..`
 echo -e "REPO_ROOT : ${REPO_ROOT}"
 
 # Get the md5 checksum of this script:
-sig_script_old=$(get_md5sum ${SCRIPTPATH:?})
+sig_script_old=$(get_md5sum ${script_file:?})
 echo -e ">>> Old md5 checksum for '${SCRIPTPATH:?}' = ${sig_script_old}"
 
 # Get the md5 checksum of the Merge script
@@ -81,7 +83,7 @@ ${merge_cmd}
 
 
 # Get the md5 checksum of this script:
-sig_script_new=$(get_md5sum ${SCRIPTPATH:?})
+sig_script_new=$(get_md5sum ${script_file:?})
 echo -e ">>> New md5 checksum for '${SCRIPTPATH:?}' = ${sig_script_new}"
 
 # Get the md5 checksum of the Merge script
