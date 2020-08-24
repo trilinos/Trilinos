@@ -63,12 +63,15 @@ echo -e "REPO_ROOT : ${REPO_ROOT}"
 
 # Get the md5 checksum of this script:
 sig_script_old=$(get_md5sum ${script_file:?})
+echo -e ""
 echo -e ">>> Old md5 checksum for '${SCRIPTPATH:?}' = ${sig_script_old}"
+echo -e ""
 
 # Get the md5 checksum of the Merge script
 sig_merge_old=$(get_md5sum ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py)
+echo -e ""
 echo -e ">>> Old md5 checksum for '${SCRIPTPATH}/PullRequestLinuxDriverMerge.py' = ${sig_merge_old}"
-
+echo -e ""
 
 # Prepare the command for the MERGE operation
 merge_cmd_options=(
@@ -84,20 +87,30 @@ merge_cmd=${SCRIPTPATH}/PullRequestLinuxDriverMerge.py ${merge_cmd_options[@]}
 
 # Call the script to handle merging the incoming branch into
 # the current trilinos/develop branch for testing.
-${merge_cmd}
+echo -e ""
+echo -e "Execute Merge Command:"
+echo -e "${merge_cmd:?} 
+echo -e ""
+${merge_cmd:?}
 
 
 # Get the md5 checksum of this script:
 sig_script_new=$(get_md5sum ${script_file:?})
+echo -e ""
 echo -e ">>> New md5 checksum for '${SCRIPTPATH:?}' = ${sig_script_new}"
+echo -e ""
 
 # Get the md5 checksum of the Merge script
 sig_merge_new=$(get_md5sum ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py)
+echo -e ""
 echo -e ">>> New md5 checksum for '${SCRIPTPATH}/PullRequestLinuxDriverMerge.py' = ${sig_merge_new}"
+echo -e ""
 
 if [ "${sig_script_old:?}" != "${sig_script_new:?}" ] || [ "${sig_merge_old:?}" != "${sig_merge_new:?}"  ]
 then
+    echo -e ""
     echo "Driver or Merge script change detected. Re-launching PR Driver"
+    echo -e ""
     ${merge_cmd:?}
     exit $?
 fi
@@ -120,6 +133,10 @@ test_cmd_options=(
 test_cmd=${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}
 
 # Call the script to launch the tests
+echo -e ""
+echo -e "Execute Test Command:"
+echo -e "${test_cmd:?} 
+echo -e ""
 ${test_cmd}
 
 
