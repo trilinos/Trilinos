@@ -86,23 +86,23 @@ namespace BaskerNS
     }
     //printf("Switch time: %f \n", tza.seconds());
 
-    //Spit into Domain and Sep
-    //----------------------Domain-------------------------//
 #ifdef BASKER_KOKKOS
-    //====TIMER==
-#ifdef BASKER_TIME
+    #ifdef BASKER_TIME
     Kokkos::Impl::Timer       timer;
-#endif
-    //===TIMER===
+    #endif
 
     typedef Kokkos::TeamPolicy<Exe_Space>        TeamPolicy;
 
     if(btf_tabs_offset != 0)
     {
+      //Spit into Domain and Sep
+
+      // -------------------------------------------------------- //
+      // -----------------------Domain--------------------------- //
       if(Options.verbose == BASKER_TRUE)
       {
-        printf("Factoring Dom(%ld x %ld) num_threads: %ld \n",
-            (long)gm, (long)gn, (long)num_threads);
+        printf("Factoring Dom num_threads: %ld \n", (long)num_threads);
+        fflush(stdout);
       }
 
       Int domain_restart = 0;
@@ -120,19 +120,19 @@ namespace BaskerNS
         MALLOC_INT_1DARRAY(thread_start, num_threads+1);
         init_value(thread_start, num_threads+1, 
             (Int) BASKER_MAX_IDX);
-        int nt = nfactor_domain_error(thread_start);
-        if((nt == BASKER_SUCCESS) ||
+        info = nfactor_domain_error(thread_start);
+        if((info == BASKER_SUCCESS) ||
             (domain_restart > BASKER_RESTART))
         {
           break;
         }
-        else if (nt == BASKER_ERROR)
+        else if (info == BASKER_ERROR)
         {
           if(Options.verbose == BASKER_TRUE)
           {
             printf("%s: nfactor_domain_error reports BASKER_ERROR - numeric factorization failed\n",__FILE__);
           }
-          return BASKER_ERROR;
+          break;
         }
         else
         {
@@ -149,30 +149,24 @@ namespace BaskerNS
         }
       }//end while
 
-      //====TIMER===
-#ifdef BASKER_TIME
+      #ifdef BASKER_TIME
       printf("Time DOMAIN: %lf \n", timer.seconds());
       timer.reset();
-#endif
-      //====TIMER====
-
+      #endif
 
 #else// else basker_kokkos
-#pragma omp parallel
+      #pragma omp parallel
       {
 
       }//end omp parallel
 #endif //end basker_kokkos
 
-    }
-    //-------------------End--Domian--------------------------//
+      //printVec("domperm.csc", gpermi, A.nrow);
+      //-------------------End--Domian--------------------------//
 
-    //printVec("domperm.csc", gpermi, A.nrow);
 
-    //---------------------------Sep--------------------------//
-
-    if(btf_tabs_offset != 0)
-    {
+      // -------------------------------------------------------- //
+      // ---------------------------Sep-------------------------- //
       for(Int l=1; l <= tree.nlvls; l++)
       {
         //#ifdef BASKER_OLD_BARRIER
@@ -212,9 +206,9 @@ namespace BaskerNS
           MALLOC_INT_1DARRAY(thread_start, num_threads+1);
           init_value(thread_start, num_threads+1,
               (Int) BASKER_MAX_IDX);
-          int nt = nfactor_sep_error(thread_start);
-          if((nt == BASKER_SUCCESS) ||
-             (nt == BASKER_ERROR)   ||
+          info = nfactor_sep_error(thread_start);
+          if((info == BASKER_SUCCESS) ||
+             (info == BASKER_ERROR)   ||
              (sep_restart > BASKER_RESTART))
           {
             FREE_INT_1DARRAY(thread_start);
@@ -229,31 +223,28 @@ namespace BaskerNS
             }
             Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),  sep_nfactor);
             Kokkos::fence();
-
           }
         }//end while-true
-
-
-    #ifdef BASKER_TIME
+        #ifdef BASKER_TIME
         printf("Time INNERSEP: %ld %lf \n", 
             (long)l, timer_inner_sep.seconds());
-    #endif
+        #endif
   #else //ELSE BASKER_NO_LAMBDA
         //Note: to be added
   #endif //end BASKER_NO_LAMBDA
 
 #else
 
-#pragma omp parallel
+        #pragma omp parallel
         {
 
         }//end omp parallel
 #endif
       }//end over each level
 
-#ifdef BASKER_TIME
+      #ifdef BASKER_TIME
       printf("Time SEP: %lf \n", timer.seconds());
-#endif
+      #endif
     }
 
     //-------------------------End Sep----------------//
@@ -270,11 +261,9 @@ namespace BaskerNS
             (long)num_threads);
       }
 
-      //=====Timer
-#ifdef BASKER_TIME
+      #ifdef BASKER_TIME
       Kokkos::Impl::Timer  timer_btf;
-#endif
-      //====Timer
+      #endif
 
       //======Call diag factor====
       kokkos_nfactor_diag <Int, Entry, Exe_Space> 
@@ -312,12 +301,10 @@ namespace BaskerNS
         }
       }//end while
 
-      //====TIMER
-#ifdef BASKER_TIME
+      #ifdef BASKER_TIME
       printf("Time BTF: %lf \n", 
           timer_btf.seconds());
-#endif
-      //===TIMER
+      #endif
 
     }//end btf call
 

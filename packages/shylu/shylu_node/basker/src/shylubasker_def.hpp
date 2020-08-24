@@ -314,7 +314,13 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(perm_inv_comp_array , sym_gm); //y
     MALLOC_INT_1DARRAY(perm_comp_array, sym_gn); //x
 
-    MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, sym_gn); 
+    Int lwork = sym_gn;
+    if (btf_tabs_offset != 0) {
+      lwork = (BTF_A.nnz > lwork ? BTF_A.nnz : lwork);
+      lwork = (BTF_B.nnz > lwork ? BTF_B.nnz : lwork);
+      lwork = (BTF_C.nnz > lwork ? BTF_C.nnz : lwork);
+    }
+    MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, lwork); 
     MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, sym_gn);
     permute_composition_for_solve(sym_gn);
 
@@ -347,7 +353,7 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE)
     {
-      std::cout << "Basker Symbolic" << std::endl;
+      std::cout << " == Basker Symbolic ==" << std::endl;
       std::cout << "Matrix dims: " << nrow << " " << ncol << " " << nnz << std::endl;
     }
 
@@ -439,23 +445,11 @@ namespace BaskerNS
     }
     else
     {
-      //btf_order();
       #ifdef BASKER_TIMER
       double order_time = 0.0;
       double barrier_init_time = 0.0;
       Kokkos::Timer timer_order;
       #endif
-      /*
-         if(Options.incomplete == BASKER_TRUE)
-         {
-           order_incomplete();
-         }
-         else
-         {
-           btf_order2();
-         }
-      */
-
       //-------------------------------------------------
       //Find BTF ordering
       if(btf_order2() != BASKER_SUCCESS)
@@ -468,7 +462,7 @@ namespace BaskerNS
         printf("Basker Ordering Found \n");
       }
 
-      if((Options.btf == BASKER_TRUE) && (btf_tabs_offset != 0))
+      /*if((Options.btf == BASKER_TRUE) && (btf_tabs_offset != 0))
       {
         #ifdef BASKER_TIMER
         Kokkos::Timer timer_init;
@@ -479,7 +473,7 @@ namespace BaskerNS
         #ifdef BASKER_TIMER
         barrier_init_time += timer_init.seconds();
         #endif
-      }
+      }*/
       order_flag = BASKER_TRUE;
 
       if(Options.verbose == BASKER_TRUE)
@@ -507,6 +501,8 @@ namespace BaskerNS
       double sfactor_time = 0.0;
       Kokkos::Timer timer_sfactor;
       #endif
+      //-------------------------------------------------
+      //Do symbolic factorization
       if(Options.incomplete == BASKER_FALSE)
       {
         sfactor();
@@ -530,7 +526,7 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE)
     {
-      printf("Basker Symbolic Done \n");
+      printf(" == Basker Symbolic Done ==\n\n");
     }
 
     #ifdef BASKER_TIMER
@@ -554,7 +550,13 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(perm_inv_comp_array, sym_gm); //y
     MALLOC_INT_1DARRAY(perm_comp_array, sym_gn); //x
 
-    MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, sym_gn); 
+    Int lwork = sym_gn;
+    if (btf_tabs_offset != 0) {
+      lwork = (BTF_A.nnz > lwork ? BTF_A.nnz : lwork);
+      lwork = (BTF_B.nnz > lwork ? BTF_B.nnz : lwork);
+      lwork = (BTF_C.nnz > lwork ? BTF_C.nnz : lwork);
+    }
+    MALLOC_INT_1DARRAY(perm_comp_iworkspace_array, lwork);
     MALLOC_ENTRY_1DARRAY(perm_comp_fworkspace_array, sym_gn);
     permute_composition_for_solve(sym_gn);
 
@@ -611,6 +613,9 @@ namespace BaskerNS
    Entry *val
   ) 
   {
+    //Reset error codes
+    int err = 0; //init for return value from sfactor_copy2, factor_notoken etc.
+
     #ifdef BASKER_TIMER
     std::ios::fmtflags old_settings = cout.flags();
     int old_precision = std::cout.precision();
@@ -619,10 +624,18 @@ namespace BaskerNS
     double time = 0.0;
     Kokkos::Timer timer;
     #endif
+    if(Options.verbose == BASKER_TRUE)
+    {
+      printf(" == Basker Factor ==\n\n");
+    }
 
-    //Reset error codes
-    int err = 0; //init for return value from sfactor_copy2, factor_notoken etc.
-    reset_error();
+/*if (Options.blk_matching != 0 && btf_tabs_offset != 0) {
+  if (btf_nblks > 1 && btf_nblks > btf_tabs_offset) {
+    std::cout << " checking again .. " << std::endl;
+    thread_array[0].iws[0] = 0;
+    std::cout << "worked " << std::endl;
+  }
+}*/
 
     //sfactor_copy2 stuff
     // This part is stored in case a matrix_transpose will be needed (if input is passed in as CRS)
@@ -639,9 +652,6 @@ namespace BaskerNS
     //inv_vals_order_ndbtfa_array, inv_vals_order_ndbtfb_array, inv_vals_order_ndbtfc_array
     //vals_block_map_perm_pair, vals_perm_composition
 
-    #ifdef BASKER_TIMER
-    Kokkos::Timer copyperm_timer;
-    #endif
 
     // Summary:
     // When Symbolic is called, the compressed matrix pointer data is copied into Basker. 
@@ -718,122 +728,200 @@ namespace BaskerNS
             printf("];\n");
           }*/
 
-    if (Options.blk_matching == 1 || Options.blk_matching == 2) {
-        Int nfirst = btf_tabs(btf_tabs_offset);
+    if (Options.blk_matching != 0) {
+        #ifdef BASKER_TIMER
+        Kokkos::Timer resetperm_timer;
+        #endif
 
-        // revert BLK_AMD ordering
+        //Int b_first = btf_tabs_offset;
+        Int nfirst = btf_tabs(btf_tabs_offset);
+        // to revert BLK_AMD ordering
         for (Int k = 0; k < (Int)ncol; k++) order_blk_amd_inv(k) = k;
         permute_inv(order_blk_amd_inv, order_blk_amd_array, ncol); 
-        auto order_blk_amd_c = Kokkos::subview(order_blk_amd_inv, 
-                                               std::make_pair(nfirst, ncol));
-        permute_row(BTF_C, order_blk_amd_c);
-        permute_col(BTF_C, order_blk_amd_c);
 
-        // revert BLK_MWM ordering
+        // to revert BLK_MWM ordering
         for (Int k = 0; k < (Int)ncol; k++) order_blk_mwm_inv(k) = k;
         permute_inv(order_blk_mwm_inv, order_blk_mwm_array, ncol);
-        auto order_blk_mwm_c = Kokkos::subview(order_blk_mwm_inv, 
-                                               std::make_pair(nfirst, ncol));
-        permute_row(BTF_C, order_blk_mwm_c);
-    /*printf(" B0 = [\n" );
-    for(Int j = 0; j < BTF_C.ncol; j++) {
-      for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
-        printf("%d %d %.16e\n", BTF_C.row_idx[k], j, BTF_C.val[k]);
-      }
-    }
-    printf("];\n");*/
-    }
 
-#if 0
-    for (Int k = 0; k < A.nnz; k++) {
-      vals_crs_transpose(k) = k;
-    }
-    permute_inv(vals_crs_transpose, vals_perm_composition, A.nnz); 
-#endif
+        /*printf("\n before reverting\n" );
+        printf(" A = [\n" );
+        for(Int j = 0; j < BTF_A.ncol; j++) {
+          for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+           printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+          }
+        }
+        printf("];\n");*/
+        // --------------------------------------------
+        // reset the large A block
+        if (btf_tabs_offset != 0) {
+          #if 1
+          // revert the sort matrix for ND
+          permute_with_workspace(BTF_A.row_idx, inv_vals_order_ndbtfa_array, BTF_A.nnz);
+          permute_with_workspace(BTF_B.row_idx, inv_vals_order_ndbtfb_array, BTF_B.nnz);
+          permute_with_workspace(BTF_C.row_idx, inv_vals_order_ndbtfc_array, BTF_C.nnz);
+          /*printf( " BTF_A.nnz = %d\n",BTF_A.nnz );
+          for(Int j = 0; j < BTF_A.nnz; j++) printf( " ndbtf(%d) = %d, %d\n",j,vals_order_ndbtfa_array(j),inv_vals_order_ndbtfa_array(j) );
+          printf(" _A = [\n" );
+          for(Int j = 0; j < BTF_A.ncol; j++) {
+            for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+             printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+            }
+          }
+          printf("];\n");*/
+
+          // --------------------------------------------
+          // reinitialize ordering vector to track matrix sort
+          for (Int i = 0; i < BTF_A.nnz; ++i) {
+            vals_order_ndbtfa_array(i) = i;
+            inv_vals_order_ndbtfa_array(i) = i;
+          }
+          for (Int i = 0; i < BTF_B.nnz; ++i) {
+            vals_order_ndbtfb_array(i) = i;
+            inv_vals_order_ndbtfb_array(i) = i;
+          }
+          for (Int i = 0; i < BTF_C.nnz; ++i) {
+            vals_order_ndbtfc_array(i) = i;
+            inv_vals_order_ndbtfc_array(i) = i;
+          }
+          #endif
+          #if 1
+          // revert cams & nd ordering
+          // > revert camd
+          if (order_csym_array.extent(0) > 0) {
+            for (Int k = 0; k < (Int)BTF_A.ncol; k++) order_csym_inv(k) = k;
+            permute_inv(order_csym_inv, order_csym_array, BTF_A.ncol);
+            //for (Int k = 0; k < (Int)order_csym_array.extent(0); k++) printf( " > order_csym_array(%d)=%d %d\n",(int)k,(int)order_csym_array(k),(int)order_csym_inv(k) );
+
+            // Revert camd ordering to A
+            permute_row(BTF_A, order_csym_inv);
+            permute_col(BTF_A, order_csym_inv);
+            if (btf_tabs_offset < btf_nblks) {
+              // Revert ND perm to rows of B
+              permute_row(BTF_B, order_csym_inv);
+            }
+            /*printf("after reverting cAMD\n");
+            printf(" __A = [\n" );
+            for(Int j = 0; j < BTF_A.ncol; j++) {
+              for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+                printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+              }
+            }
+            printf("];\n");*/
+          }
+
+          // > revert nd
+          if (part_tree.permtab.extent(0) > 0) {
+            for (Int k = 0; k < (Int)BTF_A.ncol; k++) order_nd_inv(k) = k;
+            permute_inv(order_nd_inv, part_tree.permtab, BTF_A.ncol); 
+            //for (Int k = 0; k < (Int)BTF_A.ncol; k++) printf( " > nd(%d)=%d\n",k,part_tree.permtab(k) );
+
+            // Revert ND ordering to A
+            permute_row(BTF_A, order_nd_inv);
+            permute_col(BTF_A, order_nd_inv);
+            if (btf_tabs_offset < btf_nblks) {
+              // Revert ND perm to rows of B
+              permute_row(BTF_B, order_nd_inv);
+            }
+            /*printf("after reverting ND\n");
+            printf(" A = [\n" );
+            for(Int j = 0; j < BTF_A.ncol; j++) {
+              for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+                printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+              }
+            }
+            printf("];\n");*/
+          }
+          #endif
+
+          // revert AMD perm to rows of A
+          auto order_nd_amd = Kokkos::subview(order_blk_amd_inv,
+                                              std::make_pair(0, BTF_A.ncol));
+          permute_row(BTF_A, order_nd_amd);
+          permute_col(BTF_A, order_nd_amd);
+          if (btf_tabs_offset < btf_nblks) {
+            // revert AMD perm to rows and cols
+            permute_row(BTF_B, order_nd_amd);
+          }
+
+          // revert MWM perm to rows of A
+          auto order_nd_mwm = Kokkos::subview(order_blk_mwm_inv, 
+                                              std::make_pair(0, BTF_A.ncol));
+          permute_row(BTF_A, order_nd_mwm);
+          if (btf_tabs_offset < btf_nblks) {
+            // revert AMD perm to rows of B
+            permute_row(BTF_B, order_nd_mwm);
+          }
+          /*printf("after reverting MWM\n");
+          printf(" A = [\n" );
+          for(Int j = 0; j < BTF_A.ncol; j++) {
+            for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+              printf("%d %d %.16e, %d\n", BTF_A.row_idx[k], j, BTF_A.val[k], k);
+            }
+          }
+          printf("];\n");*/
+        }
+
+        // --------------------------------------------
+        // reset the small C blocks
+        if (btf_nblks > btf_tabs_offset) {
+          // revert BLK_AMD ordering
+          for (Int i = 0; i < (Int)BTF_C.ncol; i++) {
+            order_blk_amd_inv(i+nfirst) -= nfirst;
+          }
+          auto order_blk_amd_c = Kokkos::subview(order_blk_amd_inv,
+                                                 std::make_pair(nfirst, ncol));
+          permute_row(BTF_C, order_blk_amd_c);
+          permute_col(BTF_C, order_blk_amd_c);
+          if (btf_tabs_offset > 0) {
+            // Apply AMD perm to rows and cols
+            permute_col(BTF_B, order_blk_amd_c);
+          }
+
+          // revert BLK_MWM ordering
+          for (Int i = 0; i < (Int)BTF_C.ncol; i++) {
+            order_blk_mwm_inv(i+nfirst) -= nfirst;
+          }
+          auto order_blk_mwm_c = Kokkos::subview(order_blk_mwm_inv, 
+                                                 std::make_pair(nfirst, ncol));
+          permute_row(BTF_C, order_blk_mwm_c);
+        }
+        #ifdef BASKER_TIMER
+        std::cout<< "Basker Factor: Time to revert all the numerical perm: " << resetperm_timer.seconds() << std::endl;
+        #endif
+    } // end of if(Options.blk_matching != 0)
+
+    #ifdef BASKER_TIMER
+    Kokkos::Timer copyperm_timer;
+    #endif
+    //printf( " A.nnz= %d vs (%d, %d) nblks=%d, btfa_nnz=%d, btfb_nnz=%d, btfc_nnz=%d\n",(int)nnz, (int)A.nnz,(int)A.val.extent(0),
+    //        btf_nblks,btfa_nnz,btfb_nnz,btfc_nnz );
     if ( btf_nblks > 1 ) { //non-single block case
-#if 0 //defined(BASKER_SUPERLUDIS_MC64)
-      /*std::cout << " perm = [" << std::endl;
-      for( Int k = 0; k < ncol; ++k ) {
-        std::cout << " > " << k                  << " " << order_blk_mwm_array(k) << " "
-                  << symbolic_col_iperm_array(k) << " " << symbolic_row_iperm_array(k) << " "
-                  << symbolic_col_perm_array(k)  << " " << symbolic_row_perm_array(k) << " "
-                  << scale_row_array(k)          << " " << scale_col_array(k) << std::endl;
-      }
-      std::cout << "];" << std::endl;*/
-      // CSR
-      if(Options.verbose == BASKER_TRUE) {
-        std::cout << " >> Factor: apply MWM scaling to input matrix <<" << std::endl;
-      }
-      for( Int k = 0; k < nrow; ++k ) {
-        for( Int i = col_ptr[k]; i < col_ptr[k+1]; i++) {
-
-          Entry v = val[ i ];
-
-          bool csr_input = ((Options.transpose == BASKER_FALSE &&  crs_transpose_needed) ||
-                            (Options.transpose == BASKER_TRUE  && !crs_transpose_needed));
-          // input in CSR
-          Int row = (csr_input ? k : row_idx[i]);
-          Int col = (csr_input ? row_idx[i] : k);
-
-          col = symbolic_col_iperm_array(col);
-          row = symbolic_row_iperm_array(row);
-
-          row = order_blk_mwm_array(row);
-
-          v *= (scale_row_array(row) * scale_col_array(col));
-          //printf( " %d + (%d,%d) = %e -> (%d,%d) = %e (%e, %e)\n",i, k,row_idx[i],val[i], col, row, v, scale_row_array(row),scale_col_array(col));
-
-          Int id = vals_crs_transpose(i);
-          A.val(id) = val[i];
-          if ( btfa_nnz != 0 ) { //is this unnecessary? yes, but shouldn't the first label account for this anyway?
-            if ( vals_block_map_perm_pair(id).first == 0 ) { //in BTF_A
-              BTF_A.val( inv_vals_order_ndbtfa_array( vals_block_map_perm_pair(id).second ) ) = v;
-            }
-          }
-          if ( btfb_nnz != 0 ) {
-            if ( vals_block_map_perm_pair(id).first == 1 ) { //in BTF_B
-              BTF_B.val( inv_vals_order_ndbtfb_array( vals_block_map_perm_pair(id).second ) ) = v;
-            }
-          }
-          if ( btfc_nnz != 0 ) {
-            if ( vals_block_map_perm_pair(id).first == 2 ) { //in BTF_C
-              BTF_C.val( inv_vals_order_ndbtfc_array( vals_block_map_perm_pair(id).second ) ) = v;
-              //printf( " > C(%d) = %e\n",inv_vals_order_ndbtfc_array( vals_block_map_perm_pair(id).second ), v );
-            }
-          }
-        }
-      } // end of for
-      /*printf( " >>>>>>>\n" );
-      for (Int k = 0; k < BTF_C.nrow; k++) {
-        for (Int i = BTF_C.col_ptr[k]; i < BTF_C.col_ptr[k+1]; i++) {
-          printf( " %d %d %e\n",BTF_C.row_idx[i],k,BTF_C.val[i] );
-        }
-      }
-      printf( " <<<<<<<\n" );*/
-#else
     #ifdef KOKKOS_ENABLE_OPENMP
     #pragma omp parallel for
     #endif
       for( Int i = 0; i < nnz; ++i ) {
         A.val(i) = val[ vals_perm_composition(i) ];
+        //printf( " A.val(%d) = %e (first = %d, btf_nnz=%d,%d,%d)\n",i,val[ vals_perm_composition(i) ], vals_block_map_perm_pair(i).first,btfa_nnz,btfb_nnz,btfc_nnz );
         if ( btfa_nnz != 0 ) { //is this unnecessary? yes, but shouldn't the first label account for this anyway?
           if ( vals_block_map_perm_pair(i).first == 0 ) { //in BTF_A
+            //printf( " BTF_A.val(inv(%d) = %d) = val[perm(%d) = %d] = %e\n",i,vals_block_map_perm_pair(i).second, i,vals_perm_composition(i), val[ vals_perm_composition(i) ] );
             BTF_A.val( inv_vals_order_ndbtfa_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
           }
         }
         if ( btfb_nnz != 0 ) {
           if ( vals_block_map_perm_pair(i).first == 1 ) { //in BTF_B
+            //printf( " BTF_B.val(%d) = %e\n",inv_vals_order_ndbtfb_array( vals_block_map_perm_pair(i).second ),val[ vals_perm_composition(i) ] );
             BTF_B.val( inv_vals_order_ndbtfb_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
           }
         }
-        //      if ( BTF_C.nnz != 0 ) // this causes compiler error, and nnz blocks values are different with this command with small blocks matrix (not nd) - why?
+        // if ( BTF_C.nnz != 0 ) // this causes compiler error, and nnz blocks values are different with this command with small blocks matrix (not nd) - why?
         if ( btfc_nnz != 0 ) {
           if ( vals_block_map_perm_pair(i).first == 2 ) { //in BTF_C
+            //printf( " BTF_C.val(%d) = %e\n",inv_vals_order_ndbtfc_array( vals_block_map_perm_pair(i).second ), val[ vals_perm_composition(i) ] );
             BTF_C.val( inv_vals_order_ndbtfc_array( vals_block_map_perm_pair(i).second ) ) = val[ vals_perm_composition(i) ];
           }
         }
       } //end for
-#endif
     } //end if
     else if ( btf_nblks == 1 )
     {
@@ -841,38 +929,20 @@ namespace BaskerNS
     #pragma omp parallel for
     #endif
       for( Int i = 0; i < nnz; ++i ) {
-//        A.val(i) = val[ i ]; //this along with BTF_A = A (without permuting)  works with the SolverFactory test matrix... - maybe the btf ordering and nd ordering turned out to be inverses for that matrix...
-        BTF_A.val( inv_vals_order_ndbtfa_array(i) ) = val[ vals_perm_composition(i) ]; // BTF_A = A assigned during Symbolic (break_into_parts2) for this case; thus, identity map between A.val indices and BTF_A.val indices
-        // for btf_nblks = 1 case, btf_tabs_offset set to 1 and possible to still apply nested dissection on BTF_A (i.e. A itself)
+        BTF_A.val( inv_vals_order_ndbtfa_array(i) ) = val[ vals_perm_composition(i) ];
       }
-//      BTF_A = A; //unnecessary - this equality was set during break_into_parts2, they point to the same data; for safety, should this simply be copied instead (i.e. deep copy the data)?
+      //BTF_A = A; //unnecessary - this equality was set during break_into_parts2, they point to the same data; for safety, should this simply be copied instead (i.e. deep copy the data)?
     } //end single block case
     else {
       std::cout << "Basker Factor error: Case for btf_nbkls = 0 is not implemented" << std::endl;
         //A.val(i) = val[ i ]; // may need to apply matching or nd order permutation...
       return BASKER_ERROR;
     }
-        /*{
-          FILE *fp;
-          if(Options.transpose) {
-            fp = fopen("At.dat","w");
-          } else {
-            fp = fopen("A.dat","w");
-          }
-          printf( " start numeric with\n A = [\n" );
-          for(Int j = 0; j < ncol; j++) {
-            for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
-              fprintf(fp, " %d %d %e\n", A.row_idx[k],j,A.val[k]);
-            }
-          }
-          fclose(fp);
-          printf("];\n");
-        }*/
-
     #ifdef BASKER_TIMER
     std::cout<< "Basker Factor: Time to permute and copy from input vals to new vals and blocks: " << copyperm_timer.seconds() << std::endl;
     #endif
     //end sfactor_copy2 replacement stuff
+
 
     /*printf(" K = [\n" );
     for(Int j = 0; j < A.ncol; j++) {
@@ -882,115 +952,322 @@ namespace BaskerNS
     }
     printf("];\n");
 
+    printf( "A(%dx%d, nnz=%d)\n",BTF_A.nrow,BTF_A.ncol,BTF_A.nnz);
     printf(" A = [\n" );
-    for(Int j = 0; j < A.ncol; j++) {
-      for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
-        printf("%d %d %.16e\n", A.row_idx[k], j, A.val[k]);
+    if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
+      for(Int j = 0; j < BTF_A.ncol; j++) {
+        for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+          printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+        }
       }
     }
     printf("];\n");*/
 
-    /*printf(" B = [\n" );
-    for(Int j = 0; j < BTF_C.ncol; j++) {
-      for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
-        printf("%d %d %.16e\n", BTF_C.row_idx[k], j, BTF_C.val[k]);
+    /*printf( "B(%dx%d, nnz=%d)\n",BTF_B.nrow,BTF_B.ncol,BTF_B.nnz);
+    printf(" B = [\n" );
+    if (BTF_B.nrow > 0 && BTF_B.ncol > 0) {
+      for(Int j = 0; j < BTF_B.ncol; j++) {
+        for(Int k = BTF_B.col_ptr[j]; k < BTF_B.col_ptr[j+1]; k++) {
+          printf("%d %d %.16e\n", BTF_B.row_idx[k], j, BTF_B.val[k]);
+        }
+      }
+    }
+    printf("];\n");*/
+
+    /*printf(" C = [\n" );
+    if (BTF_C.nrow > 0 && BTF_C.ncol > 0) {
+      for(Int j = 0; j < BTF_C.ncol; j++) {
+        for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
+          printf("%d %d %e\n", BTF_C.row_idx[k], j, BTF_C.val[k]);
+        }
       }
     }
     printf("];\n");*/
 
 
+    // ==================================================================================================
     // compute blk_mwm & blk_amd
     if(Options.verbose == BASKER_TRUE) {
-      std::cout << " --- blk_matching = " << Options.blk_matching << " ---" << std::endl;
+      std::cout << " --- Factor::blk_matching = " << Options.blk_matching << " ---" << std::endl;
+      std::cout << "     btf_tabs_offset = " << btf_tabs_offset << " btf_nblks = " << btf_nblks << std::endl;
     }
-    if (Options.blk_matching == 1 || Options.blk_matching == 2) {
-
-      // reinitialize perm and scale (not needed, once all implemented)
-      Entry one = (Entry)1.0;
+    if (Options.blk_matching != 0) {
+      // reinitialize the whole perm and scale (for now)
+      Entry one (1.0);
       for (Int i = 0; i < (Int)A.nrow; i++) {
         order_blk_mwm_array(i) = i;
         order_blk_amd_array(i) = i;
         scale_row_array(i) = one;
         scale_col_array(i) = one;
+        //printf( " scale_row_array(%d)=%e, scale_col_array(%d)=%e\n",i,scale_row_array(i), i,scale_col_array(i) );
 
         numeric_row_iperm_array(i) = i;
         numeric_col_iperm_array(i) = i;
       }
 
+      if (btf_tabs_offset != 0) {
+        #ifdef BASKER_TIMER
+        Kokkos::Timer nd_perm_timer;
+        #endif
+
+        // ----------------------------------------------------------------------------------------------
+        // compute MWM on a big block A
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout << " calling MWM on A(n=" << BTF_A.ncol << ", nnz=" << BTF_A.nnz << ", " << btf_tabs_offset << ")" << std::endl;
+        }
+        /*printf("  A = [\n" );
+        for(Int j = 0; j < BTF_A.ncol; j++) {
+          for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+            printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+          }
+        }
+        printf("];\n");*/
+
+        // ----------------------------------------------------------------------------------------------
+        // compute MWM + AMD ordering
+        #ifdef BASKER_TIMER
+        Kokkos::Timer nd_mwm_amd_timer;
+        #endif
+        auto order_nd_mwm = Kokkos::subview(order_blk_mwm_array,
+                                            std::make_pair(0, BTF_A.ncol));
+        auto order_nd_amd = Kokkos::subview(order_blk_amd_array,
+                                            std::make_pair(0, BTF_A.ncol));
+        INT_1DARRAY blk_nnz;
+        INT_1DARRAY blk_work;
+        btf_blk_mwm_amd(0, btf_tabs_offset, BTF_A,
+                        order_nd_mwm, order_nd_amd,
+                        blk_nnz, blk_work);
+        #if 0
+        for (Int i = 0; i < (Int)A.nrow; i++) {
+          order_blk_mwm_array(i) = i;
+          order_blk_amd_array(i) = i;
+        }
+        #endif
+
+        // ---------------------------------------------------------------------------------------------
+        // apply MWM on a big block A
+        //for (int i=0; i<BTF_A.ncol; i++) printf( " - mxm_a(%d)=%d\n",i,order_nd_mwm(i));
+        permute_row(BTF_A, order_nd_mwm);
+        if (btf_tabs_offset < btf_nblks) {
+          // Apply AMD perm to rows of B
+          permute_row(BTF_B, order_nd_mwm);
+        }
+        /*printf("After applying MWM\n");
+        printf(" pA = [\n" );
+        for(Int j = 0; j < BTF_A.ncol; j++) {
+          for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+            printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+          }
+        }
+        printf("];\n");*/
+        /*printf(" pB = [\n" );
+        for(Int j = 0; j < BTF_B.ncol; j++) {
+          for(Int k = BTF_B.col_ptr[j]; k < BTF_B.col_ptr[j+1]; k++) {
+            printf("%d %d %.16e\n", BTF_B.row_idx[k], j, BTF_B.val[k]);
+          }
+        }
+        printf("];\n");*/
+
+        // ----------------------------------------------------------------------------------------------
+        // Apply AMD perm to rows and cols
+        // NOTE: no need to udpate vals_order_blk_amd_array (it will read in A without permutations, and compute perm here)
+        permute_row(BTF_A, order_nd_amd);
+        permute_col(BTF_A, order_nd_amd);
+        if (btf_tabs_offset < btf_nblks) {
+          // Apply AMD perm to rows and cols
+          permute_row(BTF_B, order_nd_amd);
+        }
+        #ifdef BASKER_TIMER
+        std::cout<< " > Basker Factor: Time to compute and apply MWM+AMD on a big block A: " << nd_mwm_amd_timer.seconds() << std::endl;
+        #endif
+
+        // ----------------------------------------------------------------------------------------------
+        // compute & apply ND on a big block A
+        #ifdef BASKER_TIMER
+        Kokkos::Timer nd_nd_timer;
+        #endif
+
+        apply_scotch_partition();
+        #if 0 // done inside apply_scotch_partition
+        if (btf_tabs_offset < btf_nblks) {
+          // Apply ND perm to rows of B
+          permute_row(BTF_B, part_tree.permtab);
+          permute_row(BTF_B, order_csym_array);
+        }
+        #endif
+        /*printf("After applying ND & cAMD (aka Scotch)\n");
+        printf(" ppA = [\n" );
+        for(Int j = 0; j < BTF_A.ncol; j++) {
+          for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+            printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+          }
+        }
+        printf("];\n");*/
+        /*printf(" ppB = [\n" );
+        for(Int j = 0; j < BTF_B.ncol; j++) {
+          for(Int k = BTF_B.col_ptr[j]; k < BTF_B.col_ptr[j+1]; k++) {
+            printf("%d %d %.16e\n", BTF_B.row_idx[k], j, BTF_B.val[k]);
+          }
+        }
+        printf("];\n");*/
+        #ifdef BASKER_TIMER
+        std::cout<< " > Basker Factor: Time to compute and apply ND on a big block A: " << nd_nd_timer.seconds() << std::endl;
+        #endif
+
+        // ----------------------------------------------------------------------------------------------
+        // do symbolic & workspace allocation
+        #ifdef BASKER_TIMER
+        Kokkos::Timer nd_setup_timer;
+        #endif
+
+        bool flag = true;
+        symmetric_sfactor();
+        btf_last_dense(flag);
+        #ifdef BASKER_KOKKOS
+          kokkos_sfactor_init_factor<Int,Entry,Exe_Space>
+            iF(this);
+          Kokkos::parallel_for(TeamPolicy(num_threads,1), iF);
+          Kokkos::fence();
+
+          typedef Kokkos::TeamPolicy<Exe_Space>      TeamPolicy;
+          kokkos_sfactor_init_workspace<Int,Entry,Exe_Space>
+              iWS(flag, this);
+          Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
+          Kokkos::fence();
+        #endif
+
+        #ifdef BASKER_TIMER
+        std::cout<< " > Basker Factor: Time for symbolic after ND on a big block A: " << nd_setup_timer.seconds() << std::endl;
+        std::cout<< "Basker Factor: Time to compute ND and setup: " << nd_perm_timer.seconds() << std::endl << std::endl;
+        #endif
+      } // end of ND & setups
+
       if (btf_nblks > btf_tabs_offset) {
+        #ifdef BASKER_TIMER
+        Kokkos::Timer mwm_amd_perm_timer;
+        #endif
+
+        Int b_first = btf_tabs_offset;
+        Int nfirst = btf_tabs(b_first);
+        auto order_blk_mwm_c = Kokkos::subview(order_blk_mwm_array,
+                                               std::make_pair(nfirst, ncol));
+        auto order_blk_amd_c = Kokkos::subview(order_blk_amd_array,
+                                               std::make_pair(nfirst, ncol));
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout << " calliing MWM on C" << std::endl;
+          std::cout << " btf_blk_mwm: btf_tabs(" << btf_tabs_offset << ")=" << nfirst << std::endl;
+        }
+
+        // ----------------------------------------------------------------------------------------------
         // recompute MWM and AMD on each block of C
         INT_1DARRAY blk_nnz;
         INT_1DARRAY blk_work;
-        btf_blk_mwm_amd(btf_tabs_offset, btf_nblks, BTF_C,
-                        order_blk_mwm_array, order_blk_amd_array,
+        for (Int i = b_first; i <= btf_nblks; i++) {
+          //printf( " > btf_tabs(%d) = %d -> %d\n",i,btf_tabs(i),btf_tabs(i)-nfirst );
+          btf_tabs(i) -= nfirst;
+        }
+        btf_blk_mwm_amd(b_first, btf_nblks-b_first, BTF_C,
+                        order_blk_mwm_c, order_blk_amd_c,
                         blk_nnz, blk_work);
         //for (Int i = 0; i < (Int)A.nrow; i++) {
         //  order_blk_mwm_array(i) = i;
         //  order_blk_amd_array(i) = i;
         //}
+        //for (Int i = 0; i < (Int)BTF_C.nrow; i++) printf( " x mwm_c(%d)=%d amd_c(%d)=%d\n",i,order_blk_mwm_c(i), i,order_blk_amd_c(i));
 
         // Apply MWM perm to rows
-        Int nfirst = btf_tabs(btf_tabs_offset);
-        auto order_blk_mwm_c = Kokkos::subview(order_blk_mwm_array, 
-                                               std::make_pair(nfirst, ncol));
         permute_row(BTF_C, order_blk_mwm_c);
 
-    /*printf(" C = [\n" );
-    for(Int j = 0; j < BTF_C.ncol; j++) {
-      for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
-        printf("%d %d %.16e\n", BTF_C.row_idx[k], j, BTF_C.val[k]);
-      }
-    }
-    printf("];\n");*/
+        /*printf(" pC = [\n" );
+        for(Int j = 0; j < BTF_C.ncol; j++) {
+          for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
+            printf("%d %d %.16e %d\n", BTF_C.row_idx[k], j, BTF_C.val[k],k);
+          }
+        }
+        printf("];\n");*/
 
         // Apply AMD perm to rows and cols
         // NOTE: no need to udpate vals_order_blk_amd_array (it will read in A without permutations, and compute perm here)
-        auto order_blk_amd_c = Kokkos::subview(order_blk_amd_array, 
-                                               std::make_pair(nfirst, ncol));
         permute_row(BTF_C, order_blk_amd_c);
         permute_col(BTF_C, order_blk_amd_c);
-
-    /*printf(" D = [\n" );
-    for(Int j = 0; j < BTF_C.ncol; j++) {
-      for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
-        printf("%d %d %.16e\n", BTF_C.row_idx[k], j, BTF_C.val[k]);
-      }
-    }
-    printf("];\n");*/
-
-        // compose row permute
-        permute_inv_with_workspace(numeric_row_iperm_array, order_blk_mwm_array, ncol);
-        permute_inv_with_workspace(numeric_row_iperm_array, order_blk_amd_array, ncol);
-        // compose col permute
-        //permute_inv_with_workspace(numeric_col_iperm_array, order_blk_amd_array, ncol);
-        permute_with_workspace(numeric_col_iperm_array, order_blk_amd_array, ncol);
-//for (int i = 0; i < BTF_C.ncol; i++) printf( " %d %d %d %d %d\n",i,order_blk_mwm_c(i),order_blk_amd_c(i),numeric_row_iperm_array(i),numeric_col_iperm_array(i) );
-      }
-
-      if (btf_tabs_offset != 0) {
-        std::cout << std::endl << " not implemented yet " << std::endl << std::endl;
-        #if 0
-        // Apply MWM perm to rows
-        permute_row(BTF_A, order_blk_mwm_array);
-
-        // Apply AMD perm to rows and cols
-        // NOTE: no need to udpate vals_order_blk_amd_array (it will read in A without permutations, and compute perm here)
-        permute_col(BTF_A, order_blk_amd_array);
-        permute_row(BTF_A, order_blk_amd_array);
-
-        if (btf_nblks > btf_tabs_offset) {
-          // Apply MWM perm to rows
-          permute_row(BTF_B, order_blk_mwm_array);
-
+        if (btf_tabs_offset > 0) {
           // Apply AMD perm to rows and cols
-          permute_col(BTF_B, order_blk_amd_array);
-          permute_row(BTF_B, order_blk_amd_array);
+          permute_col(BTF_B, order_blk_amd_c);
         }
+
+        /*printf(" ppC = [\n" );
+        for(Int j = 0; j < BTF_C.ncol; j++) {
+          for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
+            printf("%d %d %.16e %d\n", BTF_C.row_idx[k], j, BTF_C.val[k],k);
+          }
+        }
+        printf("];\n");*/
+
+        // shift back perm to global index
+        for (Int i = b_first; i <= btf_nblks; i++) {
+          btf_tabs(i) += nfirst;
+        }
+        for (Int i = 0; i < (Int)BTF_C.ncol; i++) {
+          order_blk_mwm_c(i) += nfirst;
+          order_blk_amd_c(i) += nfirst;
+        }
+
+        #ifdef BASKER_TIMER
+        std::cout<< "Basker Factor: Time to compute and apply MWM+AMD on diagonal blocks: " << mwm_amd_perm_timer.seconds() << std::endl;
         #endif
       }
+      //for (Int i = 0; i < (Int)ncol; i++) {
+      //  printf( " - mwm(%d)=%d amd(%d)=%d\n",i,order_blk_mwm_array(i), i,order_blk_amd_array(i));
+      //}
+      //for (Int i = 0; i < (Int)BTF_A.ncol; i++) {
+      //  printf( " + nd(%d)=%d camd(%d)=%d\n",i,part_tree.permtab(i), i,order_csym_array(i));
+      //}
+      /*printf("After everything:\n");
+      printf(" qA = [\n" );
+      if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
+        for(Int j = 0; j < BTF_A.ncol; j++) {
+          for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+            printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+          }
+        }
+      }
+      printf("];\n");
+      printf(" qB = [\n" );
+      if (BTF_B.nrow > 0 && BTF_B.ncol > 0) {
+        for(Int j = 0; j < BTF_B.ncol; j++) {
+          for(Int k = BTF_B.col_ptr[j]; k < BTF_B.col_ptr[j+1]; k++) {
+            printf("%d %d %.16e\n", BTF_B.row_idx[k], j, BTF_B.val[k]);
+          }
+        }
+      }
+      printf("];\n");*/
+      /*printf(" qC = [\n" );
+      if (BTF_C.nrow > 0 && BTF_C.ncol > 0) {
+        for(Int j = 0; j < BTF_C.ncol; j++) {
+          for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
+            printf("%d %d %e\n", BTF_C.row_idx[k], j, BTF_C.val[k]);
+          }
+        }
+      }
+      printf("];\n");*/
 
-      //permute_composition_for_solve(gm);
+
+      // compose row permute
+      permute_inv_with_workspace(numeric_row_iperm_array, order_blk_mwm_array, ncol);
+      permute_inv_with_workspace(numeric_row_iperm_array, order_blk_amd_array, ncol);
+      if (BTF_A.ncol > 0) {
+        permute_inv_with_workspace(numeric_row_iperm_array, part_tree.permtab, BTF_A.ncol);
+        permute_inv_with_workspace(numeric_row_iperm_array,  order_csym_array, BTF_A.ncol);
+      }
+      // compose col permute
+      if (BTF_A.ncol > 0) {
+        permute_with_workspace(numeric_col_iperm_array,  order_csym_array, BTF_A.ncol);
+        permute_with_workspace(numeric_col_iperm_array, part_tree.permtab, BTF_A.ncol);
+      }
+      permute_with_workspace(numeric_col_iperm_array, order_blk_amd_array, ncol);
+      //for (int i = 0; i < ncol; i++) printf( " %d: %d %d\n",i, numeric_row_iperm_array(i),numeric_col_iperm_array(i) );
     }
+    reset_error();
 
 
     #ifdef BASKER_DEBUG_DIAG
@@ -1058,6 +1335,7 @@ namespace BaskerNS
     #ifdef BASKER_TIMER
     sfactorcopy_time += timer_sfactorcopy.seconds();
     std::cout << "Basker Factor sfactor_copy2 time: " << sfactorcopy_time << std::endl;
+    std::cout << " >> error = " << err << std::endl;
     #endif
     if(err == BASKER_ERROR)
     { return BASKER_ERROR; }
@@ -1088,13 +1366,14 @@ namespace BaskerNS
     }
 
     if ( sym_gn != gn || sym_gm != gm ) {
-      printf( "ShyLUBasker Factor error: Matrix dims at Symbolic and Factor stages do not agree - Symbolic reordered structure will not apply.\n");
+      printf( "ShyLUBasker Factor error: Matrix dims at Symbolic and Factor stages do not agree (sym_gm=%d, gn=%d, gm=%d)",sym_gn,gn,gm);
+      printf( " - Symbolic reordered structure will not apply.\n");
       //exit(EXIT_FAILURE);
       return BASKER_ERROR; 
     }
 
     if(Options.verbose == BASKER_TRUE)
-    { printf("Basker Factor Done \n"); }
+    { printf(" == Basker Factor Done ==\n\n"); }
 
     //DEBUG_PRINT();
 

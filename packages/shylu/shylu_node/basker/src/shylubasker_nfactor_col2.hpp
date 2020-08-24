@@ -71,7 +71,6 @@ namespace BaskerNS
       Int team_leader = 0; //Note: come back and fix
       #endif
 
-
       #ifdef HAVE_VTUNE
       __itt_pause();
       #endif
@@ -104,7 +103,6 @@ namespace BaskerNS
    const TeamMember &thread
    )
   {
-
     const Int U_col =  S(lvl)(kid);
     Int U_row       =  0;
 	  
@@ -117,8 +115,6 @@ namespace BaskerNS
 	   lvl, kid);
     #endif
     
-
-
     //Do all domains (old sublevel 0)
     //If this works well we can move this for into the function
     for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
@@ -153,10 +149,6 @@ namespace BaskerNS
     t_basker_barrier(thread,kid,my_leader,
 		     b_size, 0, LU(U_col)(U_row).scol, 0);
     
-   
-
-    
-    
 
     //----------------Sep level upper tri-------------
     for(Int l = 1; l < (lvl); ++l)
@@ -189,7 +181,6 @@ namespace BaskerNS
 				   lvl, l, 
 				   k,
 				   BASKER_FALSE);
-		
 
 	      }//if correct kid to do this sublevels upperfactor
 	  }//over all columns
@@ -216,19 +207,14 @@ namespace BaskerNS
 		     b_size, 3, LU(U_col)(U_row).scol, 0);
 
 
-    
-
 
     //printf("\n\n======= LOWER, KID: %d ======= \n\n", kid);
-
-
-   
     //return;
     
     //if(lvl < 2)
       {
 	//for(Int k=0; k < 1; ++k)
-	for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
+      for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
       {
 
 	#ifdef BASKER_DEBUG_NFACTOR_COL2
@@ -244,8 +230,6 @@ namespace BaskerNS
 	Entry pivot = 0;
 	if((kid%(Int)(pow(2,lvl))) == 0)
 	  {
-
-	    
 	    #ifdef BASKER_DEBUG_NFACTOR_COL2
 	    printf("lower factor, kid: %d k: %d \n",
 		   kid, k);
@@ -287,8 +271,6 @@ namespace BaskerNS
       //	       1, 1, LU(U_col)(U_row).ncol+1, lvl-1);
 
       }
-    
-
     
   }//end t_nfactor_sep2
 

@@ -983,7 +983,7 @@ L160:
 
     if(num!=n)
     {
-      printf("Struct singluar\n");
+      //printf("Struct singluar\n");
       for(j = 0; j < n; j++)
       {
         jperm[j] = -1;

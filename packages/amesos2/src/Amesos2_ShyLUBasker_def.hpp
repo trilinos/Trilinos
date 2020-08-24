@@ -93,8 +93,8 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker->Options.realloc       = BASKER_TRUE;
   ShyLUbasker->Options.verbose       = BASKER_FALSE;
   ShyLUbasker->Options.prune         = BASKER_TRUE;
-  ShyLUbasker->Options.btf_matching  =  1; // use cardinary matching from Trilinos
-  ShyLUbasker->Options.blk_matching  = -1; // no block-wise max-weight matrching
+  ShyLUbasker->Options.btf_matching  = 2; // use cardinary matching from Trilinos
+  ShyLUbasker->Options.blk_matching  = 1; // no block-wise max-weight matrching
   ShyLUbasker->Options.amd_dom       = BASKER_TRUE; // use block-wise AMD
   ShyLUbasker->Options.transpose     = BASKER_FALSE;
   ShyLUbasker->Options.verbose_matrix_out = BASKER_FALSE;
@@ -113,8 +113,8 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbaskerTr->Options.realloc       = BASKER_TRUE;
   ShyLUbaskerTr->Options.verbose       = BASKER_FALSE;
   ShyLUbaskerTr->Options.prune         = BASKER_TRUE;
-  ShyLUbaskerTr->Options.btf_matching  =  1; // use cardinary matching from Trilinos
-  ShyLUbaskerTr->Options.blk_matching  = -1; // no block-wise max-weight matrching
+  ShyLUbaskerTr->Options.btf_matching  = 2; // use cardinary matching from Trilinos
+  ShyLUbaskerTr->Options.blk_matching  = 1; // no block-wise max-weight matrching
   ShyLUbaskerTr->Options.amd_dom       = BASKER_TRUE; // use block-wise AMD
   ShyLUbaskerTr->Options.transpose     = BASKER_TRUE;
   ShyLUbaskerTr->Options.verbose_matrix_out = BASKER_FALSE;
@@ -668,9 +668,9 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
       pl->set("prune", false,
 	      "Use prune on BTF blocks (Not Supported)");
       pl->set("btf_matching",  1, 
-             "Matching option for BTF: 0 Basker, 1: Trilinos, (2: MC64 if enabled), else none");
-      pl->set("blk_matching", -1, 
-             "Matching optioon for block MWM: 0 none, 1: Basker (2: MC64 if enabled), else none");
+             "Matching option for BTF: 0 = none, 1 = Basker, 2 = Trilinos (default), (3 = MC64 if enabled)");
+      pl->set("blk_matching", 0, 
+             "Matching optioon for block: 0 = none (default), 1 or anything else = Basker (2 = MC64 if enabled)");
       pl->set("transpose", false,
 	      "Solve the transpose A");
       pl->set("use_sequential_diag_facto", false,
