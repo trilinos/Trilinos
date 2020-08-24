@@ -555,7 +555,7 @@ evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
 
     if(compute_derivatives){
         fst::HGRADtransformGRAD(cell_grad_basis.get_view(),cell_jac_inv.get_view(),cell_grad_basis_ref.get_view());
-        typename PHX::Device().fence();\
+        typename PHX::Device().fence();
         for(int b=0;b<num_basis;++b)
           for(int p=0;p<num_points;++p)
             for(int d=0;d<num_dim;++d)
@@ -1216,7 +1216,6 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
   for (size_t i=0; i < drv_orts.size(); ++i)
     host_drv_orts(i) = orientations[i];
   Kokkos::deep_copy(drv_orts,host_drv_orts);
-  typename PHX::Device().fence(); // TODO Remove this fence once DynRankView has all been fixed - pending soon
 
   ///
   /// HGRAD elements
