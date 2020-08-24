@@ -280,7 +280,8 @@ namespace Intrepid2 {
         // apply field signs
         fst::applyLeftFieldSigns(mass_matrices, field_signs);
         fst::applyRightFieldSigns(mass_matrices, field_signs);
-        
+        DeviceSpaceType().fence();
+
         /*******************  STOP COMPUTATION ***********************/
         
         

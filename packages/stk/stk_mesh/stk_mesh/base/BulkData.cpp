@@ -52,6 +52,7 @@
 #include "stk_mesh/baseImpl/PartVectorUtils.hpp"
 #include "stk_mesh/baseImpl/MeshPrintUtils.hpp"
 #include "stk_mesh/baseImpl/MeshModification.hpp"
+#include "stk_mesh/baseImpl/ConnectEdgesImpl.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/diag/StringUtil.hpp"
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, etc
@@ -917,6 +918,9 @@ Entity BulkData::create_and_connect_side(const stk::mesh::EntityId globalSideId,
   }
   else {    
     impl::connect_element_to_entity(*this, elem, side, localSideId, parts, sideTop);
+  }
+  if(this->num_edges(elem) != 0) {
+    impl::connect_face_to_edges(*this, side);
   }
   return side;
 }
@@ -4890,6 +4894,8 @@ void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(stk
                                                                              stk::mesh::Selector selected,
                                                                              bool connectFacesToPreexistingGhosts)
 {
+    if(entity_rank == stk::topology::NODE_RANK) { return; }
+
     const stk::mesh::BucketVector& entity_buckets = mesh.buckets(entity_rank);
     bool isedge = (entity_rank == stk::topology::EDGE_RANK && mesh_meta_data().spatial_dimension() == 3);
 

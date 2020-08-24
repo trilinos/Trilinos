@@ -138,9 +138,7 @@ namespace MueLuTests {
 
     out << "version: " << MueLu::Version() << std::endl;
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-#if 0
     int rank = comm->getRank();
-#endif
     int numproc = comm->getSize();
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
 
@@ -180,11 +178,20 @@ namespace MueLuTests {
 
     // For this problem, the four corners will be detected as "Dirichlet" and ignored, this will
     // generate some number of singletons
-    int expected;
-    for(int i=0; i<(int)sizes.size(); i++) {
-      if(numproc == 1) expected = (i==0) ? 2 : 1;
-      else expected = (i==sizes.size()-1) ? 1 : 2;
-      TEST_EQUALITY(sizes[i], expected);
+    Teuchos::Array<int> expected;
+    if(numproc == 1) {
+      expected = Teuchos::Array<int>({2, 1, 1, 1});
+    } else if(rank == 0 || rank == numproc - 1) {
+      expected = Teuchos::Array<int>({2, 2, 2, 1});
+    } else {
+      expected = Teuchos::Array<int>({2, 2, 2, 1, 1, 1});
+    }
+
+    TEST_EQUALITY(sizes.size(), expected.size());
+
+
+    for(int i = 0; i < static_cast<int>(sizes.size()); i++) {
+      TEST_EQUALITY(sizes[i], expected[i]);
     }
 
 #if 0

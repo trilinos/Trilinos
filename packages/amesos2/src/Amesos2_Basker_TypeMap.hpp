@@ -76,14 +76,14 @@ template <class, class> class Basker;
 template <>
 struct TypeMap<Basker,float>
 {
-  static double dtype;
+  typedef double dtype;
   typedef double type;
 };
 
 template <>
 struct TypeMap<Basker,double>
 {
-  static double dtype;
+  typedef double dtype;
   typedef double type;
 };
 
@@ -93,28 +93,28 @@ struct TypeMap<Basker,double>
 template <>
 struct TypeMap<Basker,std::complex<float> >
 {
-  static std::complex<double> dtype;
+  typedef std::complex<double> dtype;
   typedef Kokkos::complex<double> type;
 };
 
 template <>
 struct TypeMap<Basker,std::complex<double> >
 {
-  static std::complex<double> dtype;
+  typedef std::complex<double> dtype;
   typedef Kokkos::complex<double> type;
 };
 
 template <>
 struct TypeMap<Basker,Kokkos::complex<float> >
 {
-  static std::complex<double> dtype;
+  typedef std::complex<double> dtype;
   typedef Kokkos::complex<double> type;
 };
 
 template <>
 struct TypeMap<Basker,Kokkos::complex<double> >
 {
-  static std::complex<double> dtype;
+  typedef std::complex<double> dtype;
   typedef Kokkos::complex<double> type;
 };
 

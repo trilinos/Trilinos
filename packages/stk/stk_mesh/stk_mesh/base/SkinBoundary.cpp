@@ -46,6 +46,7 @@
 #include <stk_mesh/base/FaceCreator.hpp>
 #include <stk_mesh/base/SkinMeshUtil.hpp>
 #include <stk_mesh/base/CreateEdges.hpp>
+#include <stk_mesh/baseImpl/ConnectEdgesImpl.hpp>
 
 namespace stk
 {

@@ -207,6 +207,11 @@ namespace stk {
           m_autoLoadDistributionFactorPerNodeSet = shouldAutoLoad;
       }
 
+      void enable_edge_io()
+      {
+          m_enableEdgeIO = true;
+      }
+
       // Create the Ioss::DatabaseIO associated with the specified filename
       // and type (exodus by default). The routine checks that the
       // file exists and is readable and will throw an exception if not.
@@ -326,7 +331,7 @@ namespace stk {
       // calls both of these methods.
       virtual void populate_mesh(bool delay_field_data_allocation = true);
       bool populate_mesh_elements_and_nodes(bool delay_field_data_allocation);
-      void populate_mesh_sidesets(bool i_started_modification_cycle);
+      void populate_mesh_entitysets(bool i_started_modification_cycle);
 
       // Read/generate the field-data for the mesh, including
       // coordinates, attributes and distribution factors.
@@ -738,6 +743,7 @@ namespace stk {
       SideSetFaceCreationBehavior m_sidesetFaceCreationBehavior;
       bool m_autoLoadAttributes;
       bool m_autoLoadDistributionFactorPerNodeSet;
+      bool m_enableEdgeIO;
     };
 
     inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_output_io_region(size_t output_file_index) const {
