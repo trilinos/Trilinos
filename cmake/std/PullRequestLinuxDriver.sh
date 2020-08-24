@@ -96,6 +96,7 @@ if [ $err != 0 ]; then
 else
     echo -e "PRDriver> Merge completed successfully."
 fi
+echo -e "PRDriver> "
 
 
 # Get the md5 checksum of this script:
