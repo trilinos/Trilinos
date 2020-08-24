@@ -10,7 +10,7 @@
 #include <string>
 
 namespace Zoltan2 {
-    template<typename Adapter, class Partitioner>
+    template<typename Adapter>
     class AlgSarma : public Algorithm<Adapter> {
         typedef typename Adapter::lno_t lno_t;       // local ids
         typedef typename Adapter::gno_t gno_t;       // global ids
