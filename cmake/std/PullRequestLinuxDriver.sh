@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 # set -x  # echo commands
 
+function get_scriptname() {
+    # Get the full path to the current script
+    local script_name=`basename $0`
+    local script_path=$(dirname $(readlink -f $0))
+    local script_file="${script_path}/${script_name:?}"
+    echo "${script_file}"
+}
+
 function get_scriptpath() {
     # Get the full path to the current script
     local script_name=`basename $0`
     local script_path=$(dirname $(readlink -f $0))
-    #local script_file="${script_path}/${script_name:?}"
     echo "${script_path}"
-    #SCRIPTPATH="$(cd "$(dirname "$0")" ; pwd -P)"
-    #echo -e "SCRIPTPATH: ${SCRIPTPATH}"
 }
 
 # Get the md5sum of a filename.
@@ -49,7 +54,7 @@ fi
 
 # Identify the path to this script
 SCRIPTPATH=$(get_scriptpath)
-script_file="${SCRIPTPATH}/${script_name:?}"
+script_file=$(get_scriptname)
 
 
 # Identify the path to the trilinos repository root
