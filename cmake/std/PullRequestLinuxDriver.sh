@@ -138,6 +138,6 @@ echo -e ""
 echo -e "Execute Test Command:"
 echo -e "${test_cmd:?} 
 echo -e ""
-${test_cmd} >& ${WORKSPACE:?}/test_cmd.log
+# ${test_cmd}
 
 
