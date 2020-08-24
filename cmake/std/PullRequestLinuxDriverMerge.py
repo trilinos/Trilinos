@@ -52,8 +52,8 @@ def echoJenkinsVars(workspace):
               pwd = {cwd}
             ''').format(workspace=workspace, cwd=os.getcwd()))
 
-    #for key in os.environ:
-    #    print(key +' = ' + os.environ[key])
+    for key in os.environ:
+        print(key +' = ' + os.environ[key])
 
     print('\n' + 80*"=")
 
