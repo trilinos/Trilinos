@@ -467,9 +467,8 @@ def setBuildEnviron(arguments):
     print ("Environment:\n")
     print("  pwd = {cwd}".format(cwd=os.getcwd()))
     print("")
-    for key in os.environ:
-        print(key + ' = ' + os.environ[key],
-              file=sys.stdout)
+    #for key in os.environ:
+    #    print(key + ' = ' + os.environ[key], file=sys.stdout)
 
     print("\n"+"="*90)
     print(module('list'))
