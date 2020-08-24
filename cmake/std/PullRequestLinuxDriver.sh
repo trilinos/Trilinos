@@ -91,7 +91,7 @@ echo -e ""
 echo -e "Execute Merge Command:"
 echo -e "${merge_cmd:?} 
 echo -e ""
-${merge_cmd:?} >& ${WORKSPACE:?}/merge_cmd_01.log
+${merge_cmd:?} >& ${WORKSPACE:?}/merge_cmd.log
 
 
 # Get the md5 checksum of this script:
@@ -111,6 +111,7 @@ then
     echo -e ""
     echo "Driver or Merge script change detected. Re-launching PR Driver"
     echo -e ""
+    mv ${WORKSPACE}/merge_cmd.log ${WORKSPACE}/merge_cmd.log.1
     ${merge_cmd:?}
     exit $?
 fi
@@ -137,6 +138,6 @@ echo -e ""
 echo -e "Execute Test Command:"
 echo -e "${test_cmd:?} 
 echo -e ""
-${test_cmd}
+${test_cmd} >& ${WORKSPACE:?}/test_cmd.log
 
 
