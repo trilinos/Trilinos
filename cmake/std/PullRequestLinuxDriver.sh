@@ -64,7 +64,7 @@ echo -e ">>> Old md5 checksum for '${SCRIPTPATH}/PullRequestLinuxDriverMerge.py'
 
 
 # Prepare the command for the MERGE operation
-merge_cmd_options=( 
+merge_cmd_options=(
     ${TRILINOS_SOURCE_REPO:?}
     ${TRILINOS_SOURCE_BRANCH:?}
     ${TRILINOS_TARGET_REPO:?}
