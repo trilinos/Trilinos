@@ -405,17 +405,6 @@ inline bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) {
   return (is_matching_rank(f, b) && 0 != f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity);
 }
 
-inline size_t get_total_ngp_field_allocation_bytes(const FieldBase & f) {
-  const Selector selector = stk::mesh::selectField(f);
-  const BucketVector & buckets = f.get_mesh().get_buckets(f.entity_rank(), selector);
-  const size_t numBuckets = buckets.size();
-  const size_t bucketCapacity = (buckets.empty()) ? 0 : buckets[0]->capacity();
-  const size_t numPerEntity = f.max_size(f.entity_rank());
-  const size_t bytesPerScalar = f.data_traits().size_of;
-
-  return numBuckets * bucketCapacity * numPerEntity * bytesPerScalar;
-}
-
 struct FieldBasePtrLess {
   bool operator()(const stk::mesh::FieldBase* lhs, const stk::mesh::FieldBase* rhs) const
   {

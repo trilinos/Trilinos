@@ -42,10 +42,6 @@
 #include <sys/types.h>                  // for int64_t
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <map>                          // for map, map<>::value_compare
-#include <string>                       // for string, char_traits
-#include <typeinfo>                     // for type_info
-#include <utility>                      // for pair
-#include <vector>                       // for vector, vector<>::size_type
 #include <stk_util/stk_config.h>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/EntityKey.hpp>  // for EntityKey
@@ -57,6 +53,10 @@
 #include <stk_topology/topology.hpp>    // for topology, topology::rank_t, etc
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/util/string_case_compare.hpp>  // for equal_case
+#include <string>                       // for string, char_traits
+#include <typeinfo>                     // for type_info
+#include <utility>                      // for pair
+#include <vector>                       // for vector, vector<>::size_type
 #include "Shards_CellTopology.hpp"      // for operator<, CellTopology
 #include "Shards_CellTopologyTraits.hpp"  // for getCellTopologyData
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits (ptr only), etc
