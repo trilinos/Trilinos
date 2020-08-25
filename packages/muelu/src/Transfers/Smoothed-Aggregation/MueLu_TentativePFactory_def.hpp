@@ -279,7 +279,7 @@ namespace MueLu {
     // Sanity checking
     const ParameterList& pL = GetParameterList();
     const bool &doQRStep = pL.get<bool>("tentative: calculate qr");
-    const bool &constantColSums = pL.get<bool>("tentative: constant column sums");    
+    const bool &constantColSums = pL.get<bool>("tentative: constant column sums");
 
     TEUCHOS_TEST_FOR_EXCEPTION(doQRStep && constantColSums,Exceptions::RuntimeError,
                                "MueLu::TentativePFactory::MakeTentative: cannot use 'constant column sums' and 'calculate qr' at the same time");
@@ -375,7 +375,7 @@ namespace MueLu {
               bIsZeroNSColumn = false;
 
           TEUCHOS_TEST_FOR_EXCEPTION(bIsZeroNSColumn == true, Exceptions::RuntimeError,
-                                     "MueLu::TentativePFactory::MakeTentative: fine level NS part has a zero column");
+                                     "MueLu::TentativePFactory::MakeTentative: fine level NS part has a zero column in NS column " << j);
         }
 
         // Calculate QR decomposition (standard)
@@ -527,7 +527,7 @@ namespace MueLu {
 
             const size_t rowStart = ia[localRow];
 
-            for (size_t k = 0, lnnz = 0; k < NSDim; k++) {
+            for (size_t k = 0, lnnz = 0; k < NSDim; ++k) {
               // Skip zeros (there may be plenty of them, i.e., NSDim > 1 or boundary conditions)
               SC qr_jk = fineNS[k][rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+j])];
               if(constantColSums) qr_jk = qr_jk / (double)aggSizes[agg];
