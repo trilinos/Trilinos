@@ -407,6 +407,21 @@ namespace { // (anonymous)
 
 namespace Tpetra {
 
+  namespace Details {
+    template <typename DstView, typename SrcView>
+    struct AddAssignFunctor {
+      // This functor would be better as a lambda, but CUDA cannot compile
+      // lambdas in protected functions.  It compiles fine with the functor.
+      AddAssignFunctor(DstView &tgt_, SrcView &src_) : tgt(tgt_), src(src_) {}
+
+      KOKKOS_INLINE_FUNCTION void
+      operator () (const size_t k) const { tgt(k) += src(k); }
+
+      DstView tgt;
+      SrcView src;
+    };
+  }
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -1069,9 +1084,9 @@ namespace Tpetra {
           auto src_j = Kokkos::subview (src_h, rows, srcCol);
           if (CM == ADD_ASSIGN) { 
             // Sum src_j into tgt_j
-            Kokkos::parallel_for(numSameIDs, 
-              KOKKOS_LAMBDA (const size_t k) { tgt_j(k) += src_j(k); }
-            );
+            Tpetra::Details::AddAssignFunctor<decltype(tgt_j), decltype(src_j)>
+                    aaf(tgt_j, src_j);
+            Kokkos::parallel_for(numSameIDs, aaf);
           }
           else { 
             // Copy src_j into tgt_j
@@ -1092,9 +1107,9 @@ namespace Tpetra {
           auto src_j = Kokkos::subview (src_d, rows, srcCol);
           if (CM == ADD_ASSIGN) { 
             // Sum src_j into tgt_j
-            Kokkos::parallel_for(numSameIDs, 
-              KOKKOS_LAMBDA (const size_t k) { tgt_j(k) += src_j(k); }
-            );
+            Tpetra::Details::AddAssignFunctor<decltype(tgt_j), decltype(src_j)>
+                    aaf(tgt_j, src_j);
+            Kokkos::parallel_for(numSameIDs, aaf);
           }
           else { 
             // Copy src_j into tgt_j
