@@ -34,7 +34,10 @@ namespace KokkosBatched {
            const int m,
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
-           /**/  ValueType *__restrict__ b, const int bs0);
+           /**/  ValueType *__restrict__ b, const int bs0) {
+      assert(false && "Error: encounter dummy impl");
+      return 0;
+    }
   };
 
   template<>
@@ -162,7 +165,10 @@ namespace KokkosBatched {
            const int m,
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
-           /**/  ValueType *__restrict__ b, const int bs0);
+           /**/  ValueType *__restrict__ b, const int bs0) {
+      assert(false && "Error: encounter dummy impl");
+      return 0;
+    }
   };
 
   template<>

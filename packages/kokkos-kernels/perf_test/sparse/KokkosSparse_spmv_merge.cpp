@@ -251,9 +251,9 @@ int main(int argc, char** argv) {
 	if(time<min_time) min_time = time;
       }
 
-      std::cout << "cuSPARSE Merge alg    ---  min: " << min_time / 1000
-		<< " max: " << max_time / 1000
-		<< " avg: " << avg_time / (loop*1000) << std::endl;
+      std::cout << "cuSPARSE Merge alg    ---  min: " << min_time
+		<< " max: " << max_time
+		<< " avg: " << avg_time / loop << std::endl;
 
       // Run the cusparse default algorithm and native kokkos-kernels algorithm
       // then output timings for comparison
@@ -271,9 +271,9 @@ int main(int argc, char** argv) {
 	  if(time<min_time) min_time = time;
 	}
       
-	std::cout << "cuSPARSE Default alg  ---  min: " << min_time / 1000
-		  << " max: " << max_time / 1000
-		  << " avg: " << avg_time / (loop*1000) << std::endl;
+	std::cout << "cuSPARSE Default alg  ---  min: " << min_time
+		  << " max: " << max_time
+		  << " avg: " << avg_time / loop << std::endl;
 
 	controls.setParameter("algorithm", "native");
 
@@ -289,9 +289,9 @@ int main(int argc, char** argv) {
 	  if(time<min_time) min_time = time;
 	}
       
-	std::cout << "Kokkos Native alg     ---  min: " << min_time / 1000
-		  << " max: " << max_time / 1000
-		  << " avg: " << avg_time / (loop*1000) << std::endl;
+	std::cout << "Kokkos Native alg     ---  min: " << min_time
+		  << " max: " << max_time
+		  << " avg: " << avg_time / loop << std::endl;
       }
     } else {
       std::cout << "The default execution space is not Cuda, nothing to do!" << std::endl;

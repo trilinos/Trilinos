@@ -718,6 +718,10 @@ public:
     this->sptrsvHandle->set_supernode_size_blocked(blocked);
   }
 
+  void set_sptrsv_unit_diagonal(bool flag) {
+    this->sptrsvHandle->set_unit_diagonal (flag);
+  }
+
   void set_sptrsv_merge_supernodes (bool flag) {
     this->sptrsvHandle->set_merge_supernodes (flag);
   }

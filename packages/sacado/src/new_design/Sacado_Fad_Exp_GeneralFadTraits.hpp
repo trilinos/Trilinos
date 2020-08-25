@@ -82,7 +82,7 @@ namespace Sacado {
   template <typename Storage>
   struct Value< Fad::Exp::GeneralFad<Storage> > {
     typedef typename ValueType< Fad::Exp::GeneralFad<Storage> >::type value_type;
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static const value_type& eval(const Fad::Exp::GeneralFad<Storage>& x) {
       return x.val(); }
   };
@@ -92,7 +92,7 @@ namespace Sacado {
   struct ScalarValue< Fad::Exp::GeneralFad<Storage> > {
     typedef typename ValueType< Fad::Exp::GeneralFad<Storage> >::type value_type;
     typedef typename ScalarType< Fad::Exp::GeneralFad<Storage> >::type scalar_type;
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static const scalar_type& eval(const Fad::Exp::GeneralFad<Storage>& x) {
       return ScalarValue<value_type>::eval(x.val()); }
   };
@@ -108,7 +108,7 @@ namespace Sacado {
   //! Specialization of %IsEqual to GeneralFad types
   template <typename Storage>
   struct IsEqual< Fad::Exp::GeneralFad<Storage> > {
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static bool eval(const Fad::Exp::GeneralFad<Storage>& x,
                      const Fad::Exp::GeneralFad<Storage>& y) {
       return x.isEqualTo(y);

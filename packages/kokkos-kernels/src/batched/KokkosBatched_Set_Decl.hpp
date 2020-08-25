@@ -36,7 +36,23 @@ namespace KokkosBatched {
            const AViewType &A);
   };
 
+  ///
+  /// TeamVector Set
+  ///
+
+  template<typename MemberType>
+  struct TeamVectorSet {
+    template<typename ScalarType,
+             typename AViewType>
+    KOKKOS_INLINE_FUNCTION
+    static int
+    invoke(const MemberType &member,
+           const ScalarType alpha,
+           const AViewType &A);
+  };
+
 }
 
+#include "KokkosBatched_Set_Impl.hpp"
 
 #endif

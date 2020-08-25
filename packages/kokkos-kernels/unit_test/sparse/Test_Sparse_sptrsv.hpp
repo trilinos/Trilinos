@@ -71,6 +71,8 @@ using namespace KokkosKernels::Experimental;
 
 #ifndef kokkos_complex_double
 #define kokkos_complex_double Kokkos::complex<double>
+#endif
+#ifndef kokkos_complex_float
 #define kokkos_complex_float Kokkos::complex<float>
 #endif
 
@@ -326,6 +328,7 @@ void run_test_sptrsv_mtx() {
 #endif
 
 
+namespace {
 template < class ViewType, typename ValueType, typename OrdinalType >
 struct ReductionCheck {
 
@@ -342,6 +345,7 @@ struct ReductionCheck {
   }
 
 };
+}
 
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
@@ -459,7 +463,7 @@ void run_test_sptrsv() {
       }
       EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
 
-      Kokkos::deep_copy(lhs, 0);
+      Kokkos::deep_copy(lhs, ZERO);
       kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHD_RP);
       sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
       Kokkos::fence();
@@ -474,7 +478,7 @@ void run_test_sptrsv() {
 
       //FIXME Issues with various integral type combos - algorithm currently unavailable and commented out until fixed
       /*
-      Kokkos::deep_copy(lhs, 0);
+      Kokkos::deep_copy(lhs, ZERO);
       kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHED_TP2);
       sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
       Kokkos::fence();
@@ -493,7 +497,7 @@ void run_test_sptrsv() {
     }
 
     {
-      Kokkos::deep_copy(lhs, 0);
+      Kokkos::deep_copy(lhs, ZERO);
       KernelHandle kh;
       bool is_lower_tri = false;
       kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN, nrows, is_lower_tri);
@@ -520,7 +524,7 @@ void run_test_sptrsv() {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     if (std::is_same<size_type,int>::value && std::is_same<lno_t,int>::value && std::is_same<typename device::execution_space, Kokkos::Cuda>::value)
     {
-      Kokkos::deep_copy(lhs, 0);
+      Kokkos::deep_copy(lhs, ZERO);
       KernelHandle kh;
       bool is_lower_tri = false;
       kh.create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows, is_lower_tri);
@@ -638,7 +642,7 @@ void run_test_sptrsv() {
       }
       EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
 
-      Kokkos::deep_copy(lhs, 0);
+      Kokkos::deep_copy(lhs, ZERO);
       kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHD_RP);
       sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
       Kokkos::fence();
@@ -653,7 +657,7 @@ void run_test_sptrsv() {
 
       //FIXME Issues with various integral type combos - algorithm currently unavailable and commented out until fixed
       /*
-      Kokkos::deep_copy(lhs, 0);
+      Kokkos::deep_copy(lhs, ZERO);
       kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHED_TP2);
       sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
       Kokkos::fence();
@@ -671,7 +675,7 @@ void run_test_sptrsv() {
     }
 
     {
-      Kokkos::deep_copy(lhs, 0);
+      Kokkos::deep_copy(lhs, ZERO);
       KernelHandle kh;
       bool is_lower_tri = true;
       kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN, nrows, is_lower_tri);
@@ -698,7 +702,7 @@ void run_test_sptrsv() {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     if (std::is_same<size_type,int>::value && std::is_same<lno_t,int>::value && std::is_same<typename device::execution_space, Kokkos::Cuda>::value)
     {
-      Kokkos::deep_copy(lhs, 0);
+      Kokkos::deep_copy(lhs, ZERO);
       KernelHandle kh;
       bool is_lower_tri = true;
       kh.create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows, is_lower_tri);
@@ -783,7 +787,7 @@ void run_test_sptrsv() {
       Kokkos::fence();
 
       // > solve 
-      Kokkos::deep_copy (X, 0);
+      Kokkos::deep_copy (X, ZERO);
       sptrsv_solve (&khL, &khU, X, B);
       Kokkos::fence();
 
@@ -866,7 +870,6 @@ TEST_F( TestCategory, sparse ## _ ## sptrsv ## _ ## SCALAR ## _ ## ORDINAL ## _ 
  EXECUTE_TEST(float, int64_t, size_t, TestExecSpace)
 #endif
 
-#if 0
 
 #if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
@@ -916,4 +919,3 @@ TEST_F( TestCategory, sparse ## _ ## sptrsv ## _ ## SCALAR ## _ ## ORDINAL ## _ 
  EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
 #endif
 
-#endif
