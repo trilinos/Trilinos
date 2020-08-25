@@ -43,12 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_BlockedCoarseMapFactory_def.hpp
- *
- *  Created on: Oct 16, 2012
- *      Author: tobias
- */
 
 #ifndef MUELU_BLOCKEDCOARSEMAPFACTORY_DEF_HPP_
 #define MUELU_BLOCKEDCOARSEMAPFACTORY_DEF_HPP_
@@ -67,23 +61,17 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedCoarseMapFactory()
-  {  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~BlockedCoarseMapFactory() {}
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> BlockedCoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("Aggregates", Teuchos::null, "Generating factory for aggregates.");
-    validParamList->set< RCP<const FactoryBase> >("Nullspace",  Teuchos::null, "Generating factory for null space.");
-    validParamList->set< RCP<const FactoryBase> >("CoarseMap",  Teuchos::null, "Generating factory of previous coarse map. (must be set by user!).");
+    validParamList->set<RCP<const FactoryBase>>("Aggregates", Teuchos::null, "Generating factory for aggregates.");
+    validParamList->set<RCP<const FactoryBase>>("Nullspace", Teuchos::null, "Generating factory for null space.");
+    validParamList->set<RCP<const FactoryBase>>("CoarseMap", Teuchos::null,
+        "Generating factory of previous coarse map to be used as input for the offset computation. (must be set by user!).");
 
     // do we need this?
-    validParamList->set< std::string  >("Striding info", "{}", "Striding information");
-    validParamList->set< LocalOrdinal >("Strided block id", -1, "Strided block id");
+    validParamList->set<std::string>("Striding info", "{}", "Striding information");
+    validParamList->set<LocalOrdinal>("Strided block id", -1, "Strided block id");
 
     return validParamList;
   }
@@ -95,8 +83,9 @@ namespace MueLu {
 
     // Get CoarseMap from previously defined block
     RCP<const FactoryBase> prevCoarseMapFact = this->GetFactory("CoarseMap");
-    TEUCHOS_TEST_FOR_EXCEPTION(prevCoarseMapFact==Teuchos::null, Exceptions::RuntimeError, "MueLu::BlockedCoarseMapFactory::getDomainMapOffset: user did not specify CoarseMap of previous block. Do not forget to set the CoarseMap factory.");
-    currentLevel.DeclareInput("CoarseMap", prevCoarseMapFact.get(), this); // --
+    TEUCHOS_TEST_FOR_EXCEPTION(prevCoarseMapFact==Teuchos::null, Exceptions::RuntimeError,
+        "MueLu::BlockedCoarseMapFactory::getDomainMapOffset: user did not specify CoarseMap of previous block. Do not forget to set the CoarseMap factory.");
+    currentLevel.DeclareInput("CoarseMap", prevCoarseMapFact.get(), this);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -104,41 +93,50 @@ namespace MueLu {
     FactoryMonitor m(*this, "BlockedCoarseMap factory", currentLevel);
 
     RCP<const FactoryBase> prevCoarseMapFact = this->GetFactory("CoarseMap");
-    RCP<const Map> subPDomainMap = currentLevel.Get<RCP<const Map> >("CoarseMap", prevCoarseMapFact.get() /*prevCoarseMapFact_.get()*/);
+    RCP<const Map> subPDomainMap = currentLevel.Get<RCP<const Map>>("CoarseMap", prevCoarseMapFact.get());
 
     GlobalOrdinal maxGlobalIndex = subPDomainMap->getMaxAllGlobalIndex();
 
-    RCP<Aggregates> aggregates = Factory::Get< RCP<Aggregates> >(currentLevel, "Aggregates");
+    RCP<Aggregates> aggregates = Factory::Get<RCP<Aggregates>>(currentLevel, "Aggregates");
     GlobalOrdinal numAggs = aggregates->GetNumAggregates();
 
-    // extract communicator
-    RCP<const Teuchos::Comm<int> > comm = aggregates->GetMap()->getComm();
+    // Extract communicator
+    RCP<const Teuchos::Comm<int>> comm = aggregates->GetMap()->getComm();
 
-    // determine nullspace dimension
-    RCP<MultiVector> nullspace  = Factory::Get< RCP<MultiVector> >(currentLevel, "Nullspace");
+    // Determine nullspace dimension
+    RCP<MultiVector> nullspace = Factory::Get<RCP<MultiVector>>(currentLevel, "Nullspace");
     const size_t NSDim = nullspace->getNumVectors();
 
-    LocalOrdinal stridedBlockId = CoarseMapFactory::getStridedBlockId();
+    const LocalOrdinal stridedBlockId = CoarseMapFactory::getStridedBlockId();
 
-    // check for consistency of striding information with NSDim and nCoarseDofs
-    if( stridedBlockId== -1 ) {
-      // this means we have no real strided map but only a block map with constant blockSize "NSDim"
-      TEUCHOS_TEST_FOR_EXCEPTION(CoarseMapFactory::stridingInfo_.size() > 1, Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): stridingInfo_.size() but must be one");
+    // Check for consistency of striding information with NSDim and nCoarseDofs
+    if (stridedBlockId == -1) {
+      // This means we have no real strided map but only a block map with constant blockSize "NSDim"
+      TEUCHOS_TEST_FOR_EXCEPTION(CoarseMapFactory::stridingInfo_.size() > 1, Exceptions::RuntimeError,
+          "MueLu::CoarseMapFactory::Build(): stridingInfo_.size() but must be one");
       CoarseMapFactory::stridingInfo_.clear();
       CoarseMapFactory::stridingInfo_.push_back(NSDim);
-      TEUCHOS_TEST_FOR_EXCEPTION(CoarseMapFactory::stridingInfo_.size() != 1, Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): stridingInfo_.size() but must be one");
+      TEUCHOS_TEST_FOR_EXCEPTION(CoarseMapFactory::stridingInfo_.size() != 1, Exceptions::RuntimeError,
+          "MueLu::CoarseMapFactory::Build(): stridingInfo_.size() but must be one");
     } else {
       // stridedBlockId_ > -1, set by user
-      TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockId > Teuchos::as<LO>(CoarseMapFactory::stridingInfo_.size() - 1) , Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): it is stridingInfo_.size() <= stridedBlockId_. error.");
-      size_t stridedBlockSize = CoarseMapFactory::stridingInfo_[stridedBlockId];
-      TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockSize != NSDim , Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): dimension of strided block != NSDim. error.");
+      TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockId > Teuchos::as<LO>(CoarseMapFactory::stridingInfo_.size() - 1),
+          Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): it is stridingInfo_.size() <= stridedBlockId_.");
+      const size_t stridedBlockSize = CoarseMapFactory::stridingInfo_[stridedBlockId];
+      TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockSize != NSDim , Exceptions::RuntimeError,
+          "MueLu::CoarseMapFactory::Build(): dimension of strided block != NSDim.");
     }
 
-    CoarseMapFactory::GetOStream(Statistics2) << "domainGIDOffset: " << maxGlobalIndex + 1 << " block size: " << CoarseMapFactory::getFixedBlockSize() << " stridedBlockId: " << stridedBlockId << std::endl;
+    // Compute the domain GID offset
+    const GlobalOrdinal domainGIDOffset = maxGlobalIndex + Teuchos::ScalarTraits<GlobalOrdinal>::one();
 
-    // number of coarse level dofs (fixed by number of aggregates and blocksize data)
-    GlobalOrdinal nCoarseDofs = numAggs * CoarseMapFactory::getFixedBlockSize();
-    GlobalOrdinal indexBase   = aggregates->GetMap()->getIndexBase();
+    CoarseMapFactory::GetOStream(Statistics2) << "domainGIDOffset: " << domainGIDOffset
+        << " block size: " << CoarseMapFactory::getFixedBlockSize()
+        << " stridedBlockId: " << stridedBlockId << std::endl;
+
+    // Number of coarse level dofs (fixed by number of aggregates and blocksize data)
+    const GlobalOrdinal nCoarseDofs = numAggs * CoarseMapFactory::getFixedBlockSize();
+    const GlobalOrdinal indexBase = aggregates->GetMap()->getIndexBase();
 
     RCP<const Map> coarseMap = StridedMapFactory::Build(aggregates->GetMap()->lib(),
         Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
@@ -147,7 +145,7 @@ namespace MueLu {
         CoarseMapFactory::stridingInfo_,
         comm,
         stridedBlockId,
-        maxGlobalIndex + 1);
+        domainGIDOffset);
 
     this->Set(currentLevel, "CoarseMap", coarseMap);
   } // Build
