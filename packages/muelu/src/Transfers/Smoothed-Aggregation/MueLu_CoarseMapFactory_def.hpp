@@ -72,9 +72,6 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~CoarseMapFactory() {}
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
@@ -126,7 +123,8 @@ namespace MueLu {
     RCP<const Teuchos::Comm<int> > comm    = aggregates->GetMap()->getComm();
 
     // read in offset information from parameter list and fill the internal member variable
-    GlobalOrdinal domainGidOffset = 0;
+    const GlobalOrdinal GO_ZREO = Teuchos::ScalarTraits<GlobalOrdinal>::zero();
+    GlobalOrdinal domainGidOffset = GO_ZREO;
     std::vector<GlobalOrdinal> domainGidOffsets;
     domainGidOffsets.clear();
     const ParameterList & pL = GetParameterList();
@@ -136,6 +134,8 @@ namespace MueLu {
         Teuchos::Array<GlobalOrdinal> arrayVal = Teuchos::fromStringToArray<GlobalOrdinal>(strDomainGIDs);
         domainGidOffsets = Teuchos::createVector(arrayVal);
         if(currentLevel.GetLevelID() < Teuchos::as<int>(domainGidOffsets.size()) ) {
+          TEUCHOS_TEST_FOR_EXCEPTION(!domainGidOffset==GO_ZREO, Exceptions::RuntimeError,
+              "While attempting to read this level's Domain GID offset from the list \"Domain GID offsets\", we detected that the domain GID offset has already been set via another mechanism. Use only one mechanism to specify the GID offset!");
           domainGidOffset = domainGidOffsets[currentLevel.GetLevelID()];
         }
       }
@@ -170,7 +170,7 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockSize != NSDim , Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): dimension of strided block != NSDim. error.");
     }
 
-    GetOStream(Statistics2) << "domainGIDOffset: " << domainGidOffset << " block size: " << getFixedBlockSize() << " stridedBlockId: " << stridedBlockId << std::endl;
+    GetOStream(Statistics2) << "domainGIDOffset: " << domainGidOffset << ", block size: " << getFixedBlockSize() << ", stridedBlockId: " << stridedBlockId << std::endl;
 
     // number of coarse level dofs (fixed by number of aggregates and blocksize data)
     GlobalOrdinal nCoarseDofs = numAggs * getFixedBlockSize();
