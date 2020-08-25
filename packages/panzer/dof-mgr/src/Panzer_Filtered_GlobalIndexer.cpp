@@ -95,6 +95,9 @@ initialize(const Teuchos::RCP<const GlobalIndexer> & ugi,
   ownedFiltered.putScalar(0.0);
   ghostedFiltered.putScalar(0.0);
 
+  ownedFiltered.sync_host();
+  ghostedFiltered.sync_host();
+
   for(panzer::GlobalOrdinal f : filtered) {
     bool isOwned = std::find(baseOwned.begin(),baseOwned.end(),f)!=baseOwned.end();
     bool isGhosted = std::find(baseGhosted.begin(),baseGhosted.end(),f)!=baseGhosted.end();
@@ -105,6 +108,9 @@ initialize(const Teuchos::RCP<const GlobalIndexer> & ugi,
       ghostedFiltered.replaceGlobalValue(f,1.0);
     // else no one cares...
   }
+
+  ownedFiltered.modify_host();
+  ghostedFiltered.modify_host();
 
   Export exporter(ghostedMap,ownedMap);
   ownedFiltered.doExport(ghostedFiltered, exporter, Tpetra::ADD);

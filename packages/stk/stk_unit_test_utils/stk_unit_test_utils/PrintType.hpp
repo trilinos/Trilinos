@@ -31,8 +31,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <iostream>
 #ifdef __GNUG__
+#include <cstdlib>
 #include <cxxabi.h>
+#include <cstring>
 #endif
 
 namespace stk {
@@ -42,7 +45,14 @@ template <typename T>
 void print_type(T& t)
 {
 #ifdef __GNUG__
-  std::cout << abi::__cxa_demangle(typeid(t).name(), NULL, NULL, NULL) << std::endl;
+  size_t nameLen = std::strlen(typeid(t).name());
+  char* buffer = static_cast<char*>(std::malloc(nameLen));
+  char* name = abi::__cxa_demangle(typeid(t).name(), buffer, &nameLen, nullptr);
+  std::cout << name << std::endl;
+  if (nullptr != name) {
+    buffer = name;
+  }
+  std::free(buffer);
 #else
   std::cout << typeid(t).name() << std::endl;
 #endif
