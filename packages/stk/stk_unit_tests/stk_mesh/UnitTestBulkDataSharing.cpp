@@ -49,6 +49,8 @@
 #include "stk_mesh/base/MetaData.hpp"                // for MetaData, etc
 #include "stk_mesh/base/Types.hpp"                   // for EntityVector, etc
 #include "stk_topology/topology.hpp"                 // for topology, etc
+#include "stk_io/FillMesh.hpp"
+
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
 // clang-format on
@@ -263,6 +265,57 @@ TEST(UnitTestingOfBulkData, node_sharing)
     EXPECT_EQ( 1u, sharingProcs.size() );
     EXPECT_EQ( 1, sharingProcs[0] );
   }
+}
+
+TEST(UnitTestingOfBulkData, sharedProcsIntersection)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) {
+    return;
+  }
+
+  unsigned spatialDim = 3;
+  stk::mesh::MetaData meta(spatialDim);
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  stk::io::fill_mesh("generated:1x1x4", bulk);
+
+  stk::mesh::Entity sharedNode9 = bulk.get_entity(stk::topology::NODE_RANK, 9);
+  stk::mesh::Entity sharedNode10 = bulk.get_entity(stk::topology::NODE_RANK, 10);
+  stk::mesh::EntityId unsharedNodeId = bulk.parallel_rank()==0 ? 1 : 13;
+  stk::mesh::Entity unsharedNode = bulk.get_entity(stk::topology::NODE_RANK, unsharedNodeId);
+
+  EXPECT_TRUE(bulk.bucket(sharedNode9).shared());
+  EXPECT_TRUE(bulk.bucket(sharedNode10).shared());
+  EXPECT_FALSE(bulk.bucket(unsharedNode).shared());
+  EXPECT_FALSE(bulk.bucket(unsharedNode).in_aura());
+
+  stk::mesh::EntityVector nodes;
+  std::vector<int> sharingProcs;
+
+  bulk.shared_procs_intersection(nodes, sharingProcs);
+  EXPECT_TRUE(sharingProcs.empty());
+
+  nodes = {sharedNode9};
+  bulk.shared_procs_intersection(nodes, sharingProcs);
+  EXPECT_EQ(1u, sharingProcs.size());
+  const int otherProc = 1 - bulk.parallel_rank();
+  EXPECT_EQ(otherProc, sharingProcs[0]);
+
+  nodes = {unsharedNode};
+  bulk.shared_procs_intersection(nodes, sharingProcs);
+  EXPECT_TRUE(sharingProcs.empty());
+
+  nodes = {unsharedNode, sharedNode9};
+  bulk.shared_procs_intersection(nodes, sharingProcs);
+  EXPECT_TRUE(sharingProcs.empty());
+
+  nodes = {sharedNode9, unsharedNode};
+  bulk.shared_procs_intersection(nodes, sharingProcs);
+  EXPECT_TRUE(sharingProcs.empty());
+
+  nodes = {sharedNode9, sharedNode10};
+  bulk.shared_procs_intersection(nodes, sharingProcs);
+  EXPECT_EQ(1u, sharingProcs.size());
+  EXPECT_EQ(otherProc, sharingProcs[0]);
 }
 
 TEST(UnitTestingOfBulkData, node_sharing_with_dangling_nodes)

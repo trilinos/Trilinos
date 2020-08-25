@@ -35,10 +35,6 @@
 
 #include "stk_unit_test_utils/PrintType.hpp"
 
-#ifndef STK_KOKKOS_SIMD
-#define STK_KOKKOS_SIMD
-#endif
-
 #ifndef USE_STK_SIMD_NONE
 #define USE_STK_SIMD_NONE
 #endif
