@@ -223,11 +223,19 @@ namespace BaskerNS
       return -1;
     }
 
+    // permtab[i] = dom id
     if(SCOTCH_graphOrder(&cgrafptr, &strdat, sg.permtab, sg.peritab, 
-          &sg.cblk, sg.rangtab, sg.treetab) != 0)
+                         &sg.cblk, sg.rangtab, sg.treetab) != 0)
     {
       printf("Scotch: cannot compute ordering \n");
       return -1;
+    }
+    if(Options.verbose == BASKER_TRUE) {
+      std::cout << " calling SCOTCH_graphOrder(" << M.nrow << " x " << M.ncol 
+                << ", num_levels = " << num_domains << ")" << std::endl;
+      for(Int i = 0; i < sg.cblk; i++) {
+        printf( " dom-%d : size = %d\n",i,sg.rangtab[i+1]-sg.rangtab[i] );
+      }
     }
 
     //Scan see how many -1

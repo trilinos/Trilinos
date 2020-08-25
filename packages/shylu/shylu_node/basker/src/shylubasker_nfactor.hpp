@@ -180,8 +180,8 @@ namespace BaskerNS
 
         if(Options.verbose == BASKER_TRUE)
         {
-          printf("Factoring Sep(%ld x %ld) num_threads: %ld %ld \n",
-              (long)gm, (long)gn, (long)lnteams, (long)lthreads);
+          printf("Factoring Sep(lnteams = %ld, lthreads = %ld)\n",
+                 (long)lnteams, (long)lthreads);
         }
 
 #ifdef BASKER_KOKKOS

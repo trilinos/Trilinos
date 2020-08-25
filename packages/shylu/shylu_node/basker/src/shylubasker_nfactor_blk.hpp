@@ -227,8 +227,8 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE)
     {
-      printf(" thread-%ld: >  factoring_blk current_chunk: %ld size\n",
-          (long)kid, (long)M.ncol); fflush(stdout);
+      printf(" thread-%ld: >  factoring_blk : b = %d, size = %ld\n",
+          (long)kid, (int)b, (long)M.ncol); fflush(stdout);
     }
     /*if (kid == 1) {
       printf( " t_nfactor_blk: wsize=%d\n",ws_size );
@@ -429,15 +429,20 @@ namespace BaskerNS
         if (Options.verbose == BASKER_TRUE)
         {
           cout << endl << endl;
-          cout << "---------------------------"<<endl;
+          cout << "---------------------------" << endl;
           cout << "  thread-" << kid 
-               << "Error: Dom Matrix is singular, blk" 
+               << " Error: Dom Matrix, k = " << k
+               << " ( " << M.nrow << " x " << M.ncol << " )"
+               << " is singular"
                << endl;
-          cout << " k        = " << k        << endl
+          cout << " Ptr      = " << M.col_ptr(k) 
+                          << " " << M.col_ptr(k+1)-1 << endl;
+          cout << " WS_size  = " << ws_size  << endl
+               << " i        = " << i        << endl
                << " MaxIndex = " << maxindex << endl
-               << " Pivot    = " << pivot    << endl;
-          cout << " Lcount   = " << lcnt     << endl;
-          cout << "---------------------------"<<endl;
+               << " Pivot    = " << pivot    << endl
+               << " Lcount   = " << lcnt     << endl;
+          cout << "---------------------------" << endl;
         }
         thread_array(kid).error_type =
           BASKER_ERROR_SINGULAR;

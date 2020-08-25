@@ -776,8 +776,8 @@ namespace BaskerNS
     for(Int j = 0; j < BTF_A.ncol; j++) {
       printf("%d\n",order_csym_array(j) );
     }
-    printf("];\n");*/
-    /*printf(" ppT = [\n" );
+    printf("];\n");
+    printf(" ppT = [\n" );
     for(Int j = 0; j < BTF_A.ncol; j++) {
       for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
         printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);

@@ -1006,14 +1006,14 @@ namespace BaskerNS
       }
 
       if (btf_tabs_offset != 0) {
-        #ifdef BASKER_TIMER
         Kokkos::Timer nd_perm_timer;
-        #endif
 
         // ----------------------------------------------------------------------------------------------
         // compute MWM on a big block A
         if(Options.verbose == BASKER_TRUE) {
-          std::cout << " calling MWM on A(n=" << BTF_A.ncol << ", nnz=" << BTF_A.nnz << ", " << btf_tabs_offset << ")" << std::endl;
+          std::cout << " calling MWM on A(n=" << BTF_A.ncol << ", nnz=" << BTF_A.nnz 
+                    << ", " << btf_tabs_offset << ", " << btf_tabs(0) << " : " << btf_tabs(btf_tabs_offset)-1
+                    << " )" << std::endl;
         }
         /*printf("  A = [\n" );
         for(Int j = 0; j < BTF_A.ncol; j++) {
@@ -1025,18 +1025,29 @@ namespace BaskerNS
 
         // ----------------------------------------------------------------------------------------------
         // compute MWM + AMD ordering
-        #ifdef BASKER_TIMER
         Kokkos::Timer nd_mwm_amd_timer;
-        #endif
         auto order_nd_mwm = Kokkos::subview(order_blk_mwm_array,
                                             std::make_pair(0, BTF_A.ncol));
         auto order_nd_amd = Kokkos::subview(order_blk_amd_array,
                                             std::make_pair(0, BTF_A.ncol));
+        #if 1
+        // run MWM + AMD on A as one block
+        int num_blks_A = 1;
+        int save_tab = btf_tabs(1);
+        btf_tabs(1) = btf_tabs(btf_tabs_offset);
+        #else
+        // run MWM + AMD on each smaller blocks inside A
+        int num_blks_A = btf_tabs_offset;
+        int save_tab = btf_tabs(1);
+        #endif
+
         INT_1DARRAY blk_nnz;
         INT_1DARRAY blk_work;
-        btf_blk_mwm_amd(0, btf_tabs_offset, BTF_A,
+        btf_blk_mwm_amd(0, num_blks_A, BTF_A,
                         order_nd_mwm, order_nd_amd,
                         blk_nnz, blk_work);
+        // reset tabs
+        btf_tabs(1) = save_tab;
         #if 0
         for (Int i = 0; i < (Int)A.nrow; i++) {
           order_blk_mwm_array(i) = i;
@@ -1077,16 +1088,13 @@ namespace BaskerNS
           // Apply AMD perm to rows and cols
           permute_row(BTF_B, order_nd_amd);
         }
-        #ifdef BASKER_TIMER
-        std::cout<< " > Basker Factor: Time to compute and apply MWM+AMD on a big block A: " << nd_mwm_amd_timer.seconds() << std::endl;
-        #endif
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout<< " > Basker Factor: Time to compute and apply MWM+AMD on a big block A: " << nd_mwm_amd_timer.seconds() << std::endl;
+        }
 
         // ----------------------------------------------------------------------------------------------
         // compute & apply ND on a big block A
-        #ifdef BASKER_TIMER
         Kokkos::Timer nd_nd_timer;
-        #endif
-
         apply_scotch_partition();
         #if 0 // done inside apply_scotch_partition
         if (btf_tabs_offset < btf_nblks) {
@@ -1110,15 +1118,13 @@ namespace BaskerNS
           }
         }
         printf("];\n");*/
-        #ifdef BASKER_TIMER
-        std::cout<< " > Basker Factor: Time to compute and apply ND on a big block A: " << nd_nd_timer.seconds() << std::endl;
-        #endif
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout<< " > Basker Factor: Time to compute and apply ND on a big block A: " << nd_nd_timer.seconds() << std::endl;
+        }
 
         // ----------------------------------------------------------------------------------------------
         // do symbolic & workspace allocation
-        #ifdef BASKER_TIMER
         Kokkos::Timer nd_setup_timer;
-        #endif
 
         bool flag = true;
         symmetric_sfactor();
@@ -1136,16 +1142,14 @@ namespace BaskerNS
           Kokkos::fence();
         #endif
 
-        #ifdef BASKER_TIMER
-        std::cout<< " > Basker Factor: Time for symbolic after ND on a big block A: " << nd_setup_timer.seconds() << std::endl;
-        std::cout<< "Basker Factor: Time to compute ND and setup: " << nd_perm_timer.seconds() << std::endl << std::endl;
-        #endif
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout<< " > Basker Factor: Time for symbolic after ND on a big block A: " << nd_setup_timer.seconds() << std::endl;
+          std::cout<< "Basker Factor: Time to compute ND and setup: " << nd_perm_timer.seconds() << std::endl << std::endl;
+        }
       } // end of ND & setups
 
       if (btf_nblks > btf_tabs_offset) {
-        #ifdef BASKER_TIMER
         Kokkos::Timer mwm_amd_perm_timer;
-        #endif
 
         Int b_first = btf_tabs_offset;
         Int nfirst = btf_tabs(b_first);
@@ -1212,9 +1216,9 @@ namespace BaskerNS
           order_blk_amd_c(i) += nfirst;
         }
 
-        #ifdef BASKER_TIMER
-        std::cout<< "Basker Factor: Time to compute and apply MWM+AMD on diagonal blocks: " << mwm_amd_perm_timer.seconds() << std::endl;
-        #endif
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout<< "Basker Factor: Time to compute and apply MWM+AMD on diagonal blocks: " << mwm_amd_perm_timer.seconds() << std::endl;
+        }
       }
       //for (Int i = 0; i < (Int)ncol; i++) {
       //  printf( " - mwm(%d)=%d amd(%d)=%d\n",i,order_blk_mwm_array(i), i,order_blk_amd_array(i));
@@ -1324,27 +1328,21 @@ namespace BaskerNS
     #endif
 
 
-    #ifdef BASKER_TIMER
+    // sfactor_copy2 is now only responsible for the copy from BTF_A to 2D blocks
     Kokkos::Timer timer_sfactorcopy;
     double sfactorcopy_time = 0.0;
-    #endif
-
-    // sfactor_copy2 is now only responsible for the copy from BTF_A to 2D blocks
     err = sfactor_copy2();
 
-    #ifdef BASKER_TIMER
-    sfactorcopy_time += timer_sfactorcopy.seconds();
-    std::cout << "Basker Factor sfactor_copy2 time: " << sfactorcopy_time << std::endl;
-    std::cout << " >> error = " << err << std::endl;
-    #endif
+    if(Options.verbose == BASKER_TRUE) {
+      sfactorcopy_time += timer_sfactorcopy.seconds();
+      std::cout << "Basker Factor sfactor_copy2 time: " << sfactorcopy_time << std::endl;
+      std::cout << " >> error = " << err << std::endl;
+    }
     if(err == BASKER_ERROR)
     { return BASKER_ERROR; }
 
-    #ifdef BASKER_TIMER
     Kokkos::Timer timer_factornotoken;
     double fnotoken_time = 0.0;
-    #endif
-
     if(Options.incomplete == BASKER_FALSE)    
     {
       err = factor_notoken(0);
@@ -1354,10 +1352,10 @@ namespace BaskerNS
       err = factor_inc_lvl(0);
     }
 
-    #ifdef BASKER_TIMER
-    fnotoken_time += timer_factornotoken.seconds();
-    std::cout << "Basker factor_notoken total time: " << fnotoken_time << std::endl;
-    #endif
+    if(Options.verbose == BASKER_TRUE) {
+      fnotoken_time += timer_factornotoken.seconds();
+      std::cout << "Basker factor_notoken total time: " << fnotoken_time << std::endl;
+    }
 
     if(err == BASKER_ERROR)
     { 
