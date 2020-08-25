@@ -338,6 +338,8 @@ int GraphCreationSettings::getGraphVertexWeight(stk::topology type) const
             return 3;
         case stk::topology::HEXAHEDRON_20:
             return 8;
+        case stk::topology::PYRAMID_5:
+            return 1;
         case stk::topology::TETRAHEDRON_4:
             return 1;
         case stk::topology::TETRAHEDRON_10:

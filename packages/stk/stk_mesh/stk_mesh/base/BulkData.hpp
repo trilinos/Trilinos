@@ -51,6 +51,7 @@
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/base/Ngp.hpp>
+#include "stk_mesh/base/NgpSpaces.hpp"
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <string>                       // for char_traits, string
@@ -1264,7 +1265,8 @@ private:
   void register_device_mesh() const;
   void unregister_device_mesh() const;
 
-  void create_ngp_mesh_manager() const;
+  uint8_t * get_ngp_field_sync_buffer() const;
+
   void record_entity_deletion(Entity entity);
   void break_boundary_relations_and_delete_buckets(const std::vector<impl::RelationEntityToNode> & relationsToDestroy, const stk::mesh::BucketVector & bucketsToDelete);
   void delete_buckets(const stk::mesh::BucketVector & buckets);
@@ -1457,6 +1459,7 @@ private:
   friend class ::stk::mesh::EntityLess;
   friend class ::stk::io::StkMeshIoBroker;
   friend class stk::mesh::DeviceMesh;
+  template <typename T> friend class stk::mesh::DeviceField;
 
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
@@ -1612,6 +1615,8 @@ private: // data
   stk::mesh::impl::SideSetImpl<unsigned> m_sideSetData;
   mutable stk::mesh::NgpMeshManager* m_ngpMeshManager;
   mutable bool m_isDeviceMeshRegistered;
+  mutable Kokkos::View<uint8_t*, MemSpace> m_ngpFieldSyncBuffer;
+  mutable size_t m_ngpFieldSyncBufferModCount;
 
 protected:
   stk::mesh::impl::SoloSideIdGenerator m_soloSideIdGenerator;
