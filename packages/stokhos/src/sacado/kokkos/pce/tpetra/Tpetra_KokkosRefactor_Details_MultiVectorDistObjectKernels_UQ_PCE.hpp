@@ -406,12 +406,12 @@ namespace Details {
 
   template <typename DS, typename ... DP,
             typename SS, typename ... SP,
-            typename DstIdxView, typename SrcIdxView>
+            typename DstIdxView, typename SrcIdxView, typename Op>
   struct PermuteArrayMultiColumn<
     Kokkos::View<Sacado::UQ::PCE<DS>**,DP...>,
     Kokkos::View<const Sacado::UQ::PCE<SS>**,SP...>,
     DstIdxView,
-    SrcIdxView>
+    SrcIdxView,Op>
   {
     typedef Kokkos::View<Sacado::UQ::PCE<DS>**,DP...> DstView;
     typedef Kokkos::View<const Sacado::UQ::PCE<SS>**,SP...> SrcView;
@@ -425,58 +425,62 @@ namespace Details {
     DstIdxView dst_idx;
     SrcIdxView src_idx;
     size_t numCols;
+    Op op;
 
     PermuteArrayMultiColumn(const DstView& dst_,
                             const SrcView& src_,
                             const DstIdxView& dst_idx_,
                             const SrcIdxView& src_idx_,
-                            size_t numCols_) :
+                            size_t numCols_, const Op& op_) :
       dst(dst_), src(src_), dst_idx(dst_idx_), src_idx(src_idx_),
-      numCols(numCols_) {}
+      numCols(numCols_), op(op_) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()( const size_type k ) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
+      nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j)
-        dst(toRow, j) = src(fromRow, j);
+        op(tag, dst(toRow, j),src(fromRow, j));
     }
 
     KOKKOS_INLINE_FUNCTION
     void operator()( const size_type k, const size_type tidx ) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
+      nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j)
         for (size_type i=tidx; i<Kokkos::dimension_scalar(dst); i+=BlockSize)
-          dst(toRow, j).fastAccessCoeff(i) =
-            src(fromRow, j).fastAccessCoeff(i);
+          op(tag, dst(toRow, j).fastAccessCoeff(i),
+            src(fromRow, j).fastAccessCoeff(i));
     }
 
     static void permute(const DstView& dst,
                         const SrcView& src,
                         const DstIdxView& dst_idx,
                         const SrcIdxView& src_idx,
-                        size_t numCols) {
+                        size_t numCols, 
+                        const Op& op) {
       const size_type n = std::min( dst_idx.size(), src_idx.size() );
       if ( Details::device_is_cuda<execution_space>::value )
         Kokkos::parallel_for(
           Kokkos::MPVectorWorkConfig<execution_space>( n, BlockSize ),
-          PermuteArrayMultiColumn(dst,src,dst_idx,src_idx,numCols) );
+          PermuteArrayMultiColumn(dst,src,dst_idx,src_idx,numCols,op) );
       else
         Kokkos::parallel_for(
-          n, PermuteArrayMultiColumn(dst,src,dst_idx,src_idx,numCols) );
+          n, PermuteArrayMultiColumn(dst,src,dst_idx,src_idx,numCols,op) );
     }
   };
 
   template <typename DS, typename ... DP,
             typename SS, typename ... SP,
             typename DstIdxView, typename SrcIdxView,
-            typename DstColView, typename SrcColView>
+            typename DstColView, typename SrcColView, typename Op>
   struct PermuteArrayMultiColumnVariableStride<
     Kokkos::View<Sacado::UQ::PCE<DS>**,DP...>,
     Kokkos::View<const Sacado::UQ::PCE<SS>**,SP...>,
     DstIdxView, SrcIdxView,
-    DstColView, SrcColView >
+    DstColView, SrcColView, Op >
   {
     typedef Kokkos::View<Sacado::UQ::PCE<DS>**,DP...> DstView;
     typedef Kokkos::View<const Sacado::UQ::PCE<SS>**,SP...> SrcView;
@@ -492,6 +496,7 @@ namespace Details {
     DstColView dst_col;
     SrcColView src_col;
     size_t numCols;
+    Op op;
 
     PermuteArrayMultiColumnVariableStride(const DstView& dst_,
                                           const SrcView& src_,
@@ -499,27 +504,30 @@ namespace Details {
                                           const SrcIdxView& src_idx_,
                                           const DstColView& dst_col_,
                                           const SrcColView& src_col_,
-                                          size_t numCols_) :
+                                          size_t numCols_,
+                                          const Op& op_) :
       dst(dst_), src(src_), dst_idx(dst_idx_), src_idx(src_idx_),
       dst_col(dst_col_), src_col(src_col_),
-      numCols(numCols_) {}
+      numCols(numCols_), op(op_) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()( const size_type k ) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
+      nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j)
-        dst(toRow, dst_col(j)) = src(fromRow, src_col(j));
+        op(tag, dst(toRow, dst_col(j)),src(fromRow, src_col(j)));
     }
 
     KOKKOS_INLINE_FUNCTION
     void operator()( const size_type k, const size_type tidx ) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
+      nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j)
         for (size_type i=tidx; i<Kokkos::dimension_scalar(dst); i+=BlockSize)
-          dst(toRow, dst_col(j)).fastAccessCoeff(i) =
-            src(fromRow, src_col(j)).fastAccessCoeff(i);
+          op(tag, dst(toRow, dst_col(j)).fastAccessCoeff(i),
+            src(fromRow, src_col(j)).fastAccessCoeff(i));
     }
 
     static void permute(const DstView& dst,
@@ -528,17 +536,18 @@ namespace Details {
                         const SrcIdxView& src_idx,
                         const DstColView& dst_col,
                         const SrcColView& src_col,
-                        size_t numCols) {
+                        size_t numCols, 
+                        const Op& op) {
       const size_type n = std::min( dst_idx.size(), src_idx.size() );
       if ( Details::device_is_cuda<execution_space>::value )
         Kokkos::parallel_for(
           Kokkos::MPVectorWorkConfig<execution_space>( n, BlockSize ),
           PermuteArrayMultiColumnVariableStride(
-            dst,src,dst_idx,src_idx,dst_col,src_col,numCols) );
+            dst,src,dst_idx,src_idx,dst_col,src_col,numCols,op) );
       else
         Kokkos::parallel_for(
           n, PermuteArrayMultiColumnVariableStride(
-            dst,src,dst_idx,src_idx,dst_col,src_col,numCols) );
+            dst,src,dst_idx,src_idx,dst_col,src_col,numCols,op) );
     }
   };
 
