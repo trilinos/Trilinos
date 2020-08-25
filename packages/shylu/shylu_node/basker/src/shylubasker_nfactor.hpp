@@ -113,13 +113,14 @@ namespace BaskerNS
 
 
       //=====Check for error======
-      while(info == BASKER_SUCCESS)
+      while(info != BASKER_ERROR)
       {
         INT_1DARRAY thread_start;
         MALLOC_INT_1DARRAY(thread_start, num_threads+1);
         init_value(thread_start, num_threads+1, 
             (Int) BASKER_MAX_IDX);
         info = nfactor_domain_error(thread_start);
+        //printf( " nfactor_domain: info = %d\n",(int)info );
         if((info == BASKER_SUCCESS) ||
             (domain_restart > BASKER_RESTART))
         {
@@ -159,71 +160,81 @@ namespace BaskerNS
 
       }//end omp parallel
 #endif //end basker_kokkos
-
       //printVec("domperm.csc", gpermi, A.nrow);
+      //printf( " End Dom: info = %d (%d, %d)\n",info,BASKER_SUCCESS,BASKER_ERROR );
       //-------------------End--Domian--------------------------//
 
 
       // -------------------------------------------------------- //
       // ---------------------------Sep-------------------------- //
-      for(Int l=1; (info == BASKER_SUCCESS && l <= tree.nlvls); l++)
-      {
-        //#ifdef BASKER_OLD_BARRIER
-        //Int lthreads = pow(2,l);
-        //Int lnteams = num_threads/lthreads;
-        //#else
-        Int lthreads = 1;
-        Int lnteams = num_threads/lthreads;
-        //#endif
-
-        Int sep_restart = 0;
-
-        if(Options.verbose == BASKER_TRUE)
+      if(info != BASKER_ERROR) {
+        for(Int l=1; l <= tree.nlvls; l++)
         {
-          printf("Factoring Sep(lnteams = %ld, lthreads = %ld)\n",
-                 (long)lnteams, (long)lthreads);
-        }
+          //#ifdef BASKER_OLD_BARRIER
+          //Int lthreads = pow(2,l);
+          //Int lnteams = num_threads/lthreads;
+          //#else
+          Int lthreads = 1;
+          Int lnteams = num_threads/lthreads;
+          //#endif
+
+          Int sep_restart = 0;
+
+          if(Options.verbose == BASKER_TRUE)
+          {
+            printf("Factoring Sep(lnteams = %ld, lthreads = %ld)\n",
+                   (long)lnteams, (long)lthreads);
+          }
 
 #ifdef BASKER_KOKKOS
-        Kokkos::Impl::Timer  timer_inner_sep;
+          Kokkos::Impl::Timer  timer_inner_sep;
   #ifdef BASKER_NO_LAMBDA
 
-        //kokkos_nfactor_sep <Int, Entry, Exe_Space> 
-        //sep_nfactor(this, l);
+          //kokkos_nfactor_sep <Int, Entry, Exe_Space> 
+          //sep_nfactor(this, l);
 
-        kokkos_nfactor_sep2 <Int, Entry, Exe_Space>
-          sep_nfactor(this,l);
+          kokkos_nfactor_sep2 <Int, Entry, Exe_Space>
+            sep_nfactor(this,l);
 
-        Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),
-            sep_nfactor);
-        Kokkos::fence();
+          Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),
+              sep_nfactor);
+          Kokkos::fence();
 
-        //======Check for error=====
-        while(info == BASKER_SUCCESS)
-        {
-          INT_1DARRAY thread_start;
-          MALLOC_INT_1DARRAY(thread_start, num_threads+1);
-          init_value(thread_start, num_threads+1,
-              (Int) BASKER_MAX_IDX);
-          info = nfactor_sep_error(thread_start);
-          if((info == BASKER_SUCCESS) ||
-             (info == BASKER_ERROR)   ||
-             (sep_restart > BASKER_RESTART))
+          //======Check for error=====
+          while(info != BASKER_ERROR)
           {
-            FREE_INT_1DARRAY(thread_start);
-            break;
-          }
-          else
-          {
-            sep_restart++;
-            if (Options.verbose == BASKER_TRUE)
+            INT_1DARRAY thread_start;
+            MALLOC_INT_1DARRAY(thread_start, num_threads+1);
+            init_value(thread_start, num_threads+1,
+                (Int) BASKER_MAX_IDX);
+            info = nfactor_sep_error(thread_start);
+            //printf( " nfactor_separator: info = %d\n",(int)info );
+            if((info == BASKER_SUCCESS) ||
+               (sep_restart > BASKER_RESTART))
             {
-              printf("restart \n");
+              FREE_INT_1DARRAY(thread_start);
+              break;
             }
-            Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),  sep_nfactor);
-            Kokkos::fence();
-          }
-        }//end while-true
+            else if (info == BASKER_ERROR)
+            {
+              if(Options.verbose == BASKER_TRUE)
+              {
+                printf("%s: nfactor_separator_error reports BASKER_ERROR - numeric factorization failed\n",__FILE__);
+              }
+              break;
+            }
+            else
+            {
+              sep_restart++;
+              if (Options.verbose == BASKER_TRUE)
+              {
+                printf("restart \n");
+              }
+              Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),  sep_nfactor);
+              Kokkos::fence();
+            }
+          }//end while-true
+        }//end over each level
         #ifdef BASKER_TIME
         printf("Time INNERSEP: %ld %lf \n", 
             (long)l, timer_inner_sep.seconds());
@@ -239,18 +250,17 @@ namespace BaskerNS
 
         }//end omp parallel
 #endif
-      }//end over each level
-
+        //-------------------------End Sep----------------//
+      }// info != BASKER_ERROR
+      //printf( " End Sep: info = %d (%d, %d)\n",info,BASKER_SUCCESS,BASKER_ERROR );
       #ifdef BASKER_TIME
       printf("Time SEP: %lf \n", timer.seconds());
       #endif
     }
 
-    //-------------------------End Sep----------------//
-
 
     //-------------------IF BTF-----------------------//
-    if(info == BASKER_SUCCESS && Options.btf == BASKER_TRUE)
+    if(info != BASKER_ERROR && Options.btf == BASKER_TRUE)
     {
       Int btf_restart = 0;
 
@@ -272,17 +282,25 @@ namespace BaskerNS
       Kokkos::fence();
 
       //=====Check for error======
-      while(info == BASKER_SUCCESS)
+      while(info != BASKER_ERROR)
       {
         INT_1DARRAY thread_start;
         MALLOC_INT_1DARRAY(thread_start, num_threads+1);
         init_value(thread_start, num_threads+1, (Int) BASKER_MAX_IDX);
         info = nfactor_diag_error(thread_start);
+        //printf( " nfactor_diag: info = %d\n",(int)info );
         //printf("RETURNED: %d (success=%d, error=%d)\n", info, BASKER_SUCCESS, BASKER_ERROR);
         if((info == BASKER_SUCCESS) || 
-           (info == BASKER_ERROR)   ||
            (btf_restart > BASKER_RESTART))
         {
+          break;
+        }
+        else if (info == BASKER_ERROR)
+        {
+          if(Options.verbose == BASKER_TRUE)
+          {
+            printf("%s: nfactor_diagonal_error reports BASKER_ERROR - numeric factorization failed\n",__FILE__);
+          }
           break;
         }
         else

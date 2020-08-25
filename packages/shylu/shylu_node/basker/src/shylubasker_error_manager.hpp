@@ -36,7 +36,6 @@ namespace BaskerNS
     Int nthread_remalloc = 0;
     for(Int ti = 0; ti < num_threads; ti++)
     {
-
       //Note: jdb we can make this into a switch
       if(thread_array(ti).error_type ==
           BASKER_ERROR_NOERROR)
@@ -217,9 +216,7 @@ namespace BaskerNS
         thread_array(ti).error_info = BASKER_MAX_IDX;
 
         nthread_remalloc++;
-
       }//if REMALLOC
-
     }//for all threads
 
     if(nthread_remalloc == 0)

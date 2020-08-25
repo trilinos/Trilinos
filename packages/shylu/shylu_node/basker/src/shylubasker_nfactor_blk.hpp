@@ -202,8 +202,6 @@ namespace BaskerNS
     printf("b: %d gperm: %d \n", b, gperm(L.srow));
     #endif
 
-    //return 0 ;
-
     //---TEMP--- DEBUG ---
     //ecol = 5;
 

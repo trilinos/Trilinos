@@ -372,12 +372,12 @@ namespace BaskerNS
     for(Int b = (btf_nblks-btf_tabs_offset)-1; b>= 0; b--)
     {
 
-    #ifdef BASKER_DEBUG_SOLVE_RHS
-      printf("\n\n btf b: %ld \n", (long)b);
-    #endif
-
       //---Lower solve
       BASKER_MATRIX &LC = LBTF(b);
+    #ifdef BASKER_DEBUG_SOLVE_RHS
+      printf("\n\n btf b: %ld (%d x %d)\n", (long)b, (int)LC.nrow, (int)LC.ncol);
+    #endif
+
       //L(C)\x -> y 
       lower_tri_solve(LC,x,y);
 
@@ -704,7 +704,6 @@ namespace BaskerNS
       //Test if zero pivot value
       #ifdef BASKER_DEBUG_SOLVE_RHS
       BASKER_ASSERT(M.val[M.col_ptr[k]]!=0.0, "LOWER PIVOT 0");
-
       //printf("Lower tri.  k: %d out: %f in: %f piv: %f \n",
       //   k+bcol, y[k+bcol], x[k+bcol], M.val[M.col_ptr[k]]);
       #endif
@@ -724,6 +723,8 @@ namespace BaskerNS
       const Int istart = M.col_ptr(k);
       const Int iend = M.col_ptr(k+1);
 
+      //printf( " %d %d %e\n",M.row_idx(M.col_ptr(k)),k,M.val(M.col_ptr(k)));
+      //printf( " -> %e %e (%d, %d,%d)\n",y(k+brow),x(k+bcol),k,brow,bcol );
       y(k+brow) = x(k+bcol) / M.val(M.col_ptr(k));
 
       const auto ykbcol = y(k+bcol);
