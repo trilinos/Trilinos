@@ -89,7 +89,6 @@ public:
     const Teuchos::RCP<const map_t> &rangeMap,
     const char* testName)
   {
-    int me = comm->getRank();
     int ierr = 0;
 
     // Build the matrix
@@ -116,7 +115,6 @@ public:
     const Teuchos::RCP<const map_t> &rangeMap,
     const char* testName)
   {
-    int me = comm->getRank();
     int ierr = 0;
 
     // Build the matrix
@@ -142,7 +140,6 @@ public:
     const Teuchos::RCP<const map_t> &rangeMap,
     const char* testName)
   {
-    int me = comm->getRank();
     int ierr = 0;
 
     // Build the matrix
@@ -173,8 +170,6 @@ private:
     const Teuchos::RCP<const map_t> &rangeMap
   )
   {
-    int me = comm->getRank();
-
     Teuchos::RCP<const map_t> rowMap = rcp(new map_t(nGlobalRow, 0, comm));
 
     Teuchos::RCP<matrix_t> Amat = rcp(new matrix_t(rowMap, nEntriesPerRow));

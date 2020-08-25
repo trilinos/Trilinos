@@ -180,7 +180,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, CyclicToDefault, Scalar,LO,GO,Node)
 
   // Check result
 
-  auto invalid = Teuchos::OrdinalTraits<LO>::invalid();
   auto data = defaultVecTgt.getLocalViewHost();
   for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++)
     if (data(i,0) != tgtScalar + srcScalar) ierr++;
