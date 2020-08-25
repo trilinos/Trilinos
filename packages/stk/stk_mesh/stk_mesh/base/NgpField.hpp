@@ -45,7 +45,6 @@
 #include "stk_mesh/base/NgpMesh.hpp"
 #include "stk_mesh/base/NgpProfilingBlock.hpp"
 #include "stk_mesh/base/FieldSyncDebugging.hpp"
-#include "stk_mesh/base/NgpUtils.hpp"
 
 namespace stk {
 namespace mesh {
@@ -316,9 +315,16 @@ template<typename T>
 class DeviceField : public NgpFieldBase
 {
 private:
-  typedef Kokkos::View<T***, Kokkos::LayoutRight, MemSpace> FieldDataDeviceViewType;
-  typedef Kokkos::View<T***, Kokkos::LayoutRight, MemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> FieldDataDeviceUnmanagedViewType;
-  typedef Kokkos::View<T***, Kokkos::LayoutRight, Kokkos::HostSpace> FieldDataHostViewType;
+#ifdef KOKKOS_ENABLE_CUDA
+  typedef Kokkos::DualView<T***, Kokkos::LayoutRight,
+                           Kokkos::CudaSpace> FieldDataDualViewType;
+#else
+  typedef Kokkos::DualView<T***, Kokkos::LayoutRight> FieldDataDualViewType;
+#endif
+
+  typedef typename FieldDataDualViewType::host_mirror_space HostSpace;
+  typedef typename FieldDataDualViewType::t_dev FieldDataType;
+  typedef typename FieldDataDualViewType::t_host FieldDataHostType;
 
 public:
   typedef T value_type;
@@ -331,8 +337,6 @@ public:
       hostBulk(nullptr),
       hostField(nullptr),
       bucketCapacity(0),
-      numBucketsForField(0),
-      maxNumScalarsPerEntity(0),
       synchronizedCount(0),
       userSpecifiedSelector(false),
       syncSelector(nullptr)
@@ -350,16 +354,11 @@ public:
       hostBulk(&bulk),
       hostField(&field),
       bucketCapacity(0),
-      numBucketsForField(0),
-      maxNumScalarsPerEntity(0),
       synchronizedCount(bulk.synchronized_count()),
       copyCounter("copy_counter"),
       userSpecifiedSelector(false),
       syncSelector(new Selector())
   {
-    needSyncToHost = Kokkos::View<bool, HostExecSpace>("needSyncToHost");
-    needSyncToDevice = Kokkos::View<bool, HostExecSpace>("needSyncToDevice");
-
     const int maxStates = static_cast<int>(stk::mesh::MaximumFieldStates);
     for (int s=0; s<maxStates; ++s) {
       stateFields[s] = nullptr;
@@ -387,28 +386,28 @@ public:
     stk::mesh::Selector selector = stk::mesh::selectField(*hostField);
     const stk::mesh::BucketVector& buckets = hostBulk->get_buckets(hostField->entity_rank(), selector);
     const stk::mesh::BucketVector& allBuckets = hostBulk->buckets(hostField->entity_rank());
-    numBucketsForField = buckets.size();
-    maxNumScalarsPerEntity = hostField->max_size(rank);
 
     if (!buckets.empty()) {
       bucketCapacity = buckets[0]->capacity();
     }
 
+    unsigned numPerEntity = hostField->max_size(rank);
+
     construct_field_exist_view(allBuckets, selector);
     construct_num_components_per_entity_view(allBuckets);
     construct_new_index_view(allBuckets);
-    if (numBucketsForField != deviceData.extent(0)) {
-      construct_view(buckets, "deviceData_"+hostField->name(), maxNumScalarsPerEntity);
+    if(buckets.size() != deviceData.extent(0)) {
+      construct_view(buckets, "deviceData_"+hostField->name(), numPerEntity);
     } else {
-      move_unmodified_buckets(buckets, maxNumScalarsPerEntity);
+      move_unmodified_buckets(buckets, numPerEntity);
     }
 
     if(needToSyncAllDataToDevice) {
-      clear_sync_state_flags();
-      set_modify_on_host();
+      fieldData.clear_sync_state();
+      fieldData.modify_host();
       copy_host_to_device();
     } else {
-      copy_new_and_modified_buckets_from_host(buckets, maxNumScalarsPerEntity);
+      copy_new_and_modified_buckets_from_host(buckets, numPerEntity);
     }
 
 #ifdef STK_DEBUG_FIELD_SYNC
@@ -434,55 +433,125 @@ public:
     reset_sync_selector();
   }
 
+  void fill_host_view(Bucket* bucket, UnmanagedHostInnerView<T>& unHostInnerView, unsigned numPerEntity)
+  {
+#ifdef STK_DEBUG_FIELD_SYNC
+      T* hostFieldPtr = static_cast<T*>(stk::mesh::ngp_debug_field_data(*hostField, *bucket));
+#else
+      T* hostFieldPtr = static_cast<T*>(stk::mesh::field_data(*hostField, *bucket));
+#endif
+    unsigned numEntities = bucket->size();
+
+    for(unsigned i = 0; i < numEntities; i++) {
+      for(unsigned j = 0; j < numPerEntity; j++) {
+        unHostInnerView(ORDER_INDICES(i,j)) = hostFieldPtr[i * numPerEntity + j];
+      }
+    }
+  }
+
+  template<typename DataView, typename UnmanagedView>
+  void copy_moved_bucket_data(DataView destView, DataView srcView, unsigned oldBucketId, unsigned newBucketId, unsigned numPerEntity)
+  {
+    unsigned oldSelectedOffset = hostSelectedBucketOffset(oldBucketId);
+    unsigned newSelectedOffset = newHostSelectedBucketOffset(newBucketId);
+
+    T* srcPtr = srcView.data() + oldSelectedOffset * bucketCapacity * numPerEntity;
+    T* destPtr = destView.data() + newSelectedOffset * bucketCapacity * numPerEntity;
+
+    UnmanagedView unInnerSrcView(srcPtr, ORDER_INDICES(bucketCapacity, numPerEntity));
+    UnmanagedView unInnerDestView(destPtr, ORDER_INDICES(bucketCapacity, numPerEntity));
+    Kokkos::deep_copy(unInnerDestView, unInnerSrcView);
+  }
+
+  void copy_bucket_from_device_to_host(Bucket* bucket, unsigned numPerEntity, unsigned numContiguousBuckets = 1)
+  {
+    unsigned selectedBucketOffset = newHostSelectedBucketOffset(bucket->bucket_id());
+
+    T* devicePtr = deviceData.data() + selectedBucketOffset * bucketCapacity * numPerEntity;
+    UnmanagedDevInnerView<T> unDevInnerView(devicePtr, ORDER_INDICES(bucketCapacity*numContiguousBuckets, numPerEntity));
+
+    UnmanagedHostInnerView<T> unHostInnerView(&hostData(selectedBucketOffset,0,0),
+                                              ORDER_INDICES(bucketCapacity*numContiguousBuckets, numPerEntity));
+
+    Kokkos::deep_copy(unHostInnerView, unDevInnerView);
+  }
+
+  void copy_bucket_from_host_to_device(Bucket* bucket, unsigned numPerEntity, unsigned numContiguousBuckets = 1)
+  {
+    unsigned selectedBucketOffset = newHostSelectedBucketOffset(bucket->bucket_id());
+
+    UnmanagedHostInnerView<T> unHostInnerView(&hostData(selectedBucketOffset,0,0),
+                                              ORDER_INDICES(bucketCapacity*numContiguousBuckets, numPerEntity));
+
+    fill_host_view(bucket, unHostInnerView, numPerEntity);
+    T* ptr = deviceData.data() + selectedBucketOffset * bucketCapacity * numPerEntity;
+    UnmanagedDevInnerView<T> unDevInnerView(ptr, ORDER_INDICES(bucketCapacity*numContiguousBuckets, numPerEntity));
+
+    Kokkos::deep_copy(unDevInnerView, unHostInnerView);
+  }
+
+  void copy_new_and_modified_buckets_from_host(const BucketVector& buckets, unsigned numPerEntity)
+  {
+    for(unsigned bucketIdx = 0; bucketIdx < buckets.size(); bucketIdx++) {
+      Bucket* bucket = buckets[bucketIdx];
+      unsigned oldBucketId = bucket->get_ngp_field_bucket_id(get_ordinal());
+
+      if(oldBucketId == INVALID_BUCKET_ID || bucket->get_ngp_field_bucket_is_modified(get_ordinal())) {
+        copy_bucket_from_host_to_device(bucket, numPerEntity);
+      }
+
+      bucket->set_ngp_field_bucket_id(get_ordinal(), bucket->bucket_id());
+    }
+  }
 
   size_t num_syncs_to_host() const override { return hostField->num_syncs_to_host(); }
   size_t num_syncs_to_device() const override { return hostField->num_syncs_to_device(); }
 
   void modify_on_host() override
   {
-    set_modify_on_host();
+    fieldData.modify_host();
     userSpecifiedSelector = false;
     *syncSelector = Selector(hostBulk->mesh_meta_data().universal_part());
   }
 
   void modify_on_host(const Selector& selector) override
   {
-    set_modify_on_host();
+    fieldData.modify_host();
     userSpecifiedSelector = true;
     *syncSelector |= selector;
   }
 
   void modify_on_device() override
   {
-    set_modify_on_device();
+    fieldData.modify_device();
     userSpecifiedSelector = false;
     *syncSelector = Selector(hostBulk->mesh_meta_data().universal_part());
   }
 
   void modify_on_device(const Selector& selector) override
   {
-    set_modify_on_device();
+    fieldData.modify_device();
     userSpecifiedSelector = true;
     *syncSelector |= selector;
   }
 
   void clear_sync_state() override
   {
-    clear_sync_state_flags();
+    fieldData.clear_sync_state();
     reset_sync_selector();
   }
 
   void clear_host_sync_state() override
   {
     if (need_sync_to_device()) {
-      clear_sync_state_flags();
+      fieldData.clear_sync_state();
     }
   }
 
   void clear_device_sync_state() override
   {
     if (need_sync_to_host()) {
-      clear_sync_state_flags();
+      fieldData.clear_sync_state();
     }
   }
 
@@ -553,7 +622,7 @@ public:
 #ifdef STK_DEBUG_FIELD_SYNC
 
   void construct_debug_views(unsigned numBuckets, unsigned numPerEntity) {
-    lastFieldValue = FieldDataDeviceViewType(hostField->name()+"_lastValue", numBuckets,
+    lastFieldValue = FieldDataType(hostField->name()+"_lastValue", numBuckets,
                                    ORDER_INDICES(bucketCapacity, numPerEntity));
     lastFieldModLocation = LastFieldModLocationType(hostField->name()+"_lastModLocation", numBuckets,
                                                     ORDER_INDICES(bucketCapacity, numPerEntity));
@@ -577,8 +646,8 @@ public:
     stk::mesh::NgpMesh & ngpMesh = hostBulk->get_updated_ngp_mesh();
     const stk::mesh::MetaData & meta = hostBulk->mesh_meta_data();
 
-    FieldDataDeviceViewType & localDeviceData = deviceData;
-    FieldDataDeviceViewType & localLastFieldValue = lastFieldValue;
+    FieldDataType & localDeviceData = deviceData;
+    FieldDataType & localLastFieldValue = lastFieldValue;
     LastFieldModLocationType & localLastFieldModLocation = lastFieldModLocation;
 
     stk::mesh::for_each_entity_run(ngpMesh, rank, meta.locally_owned_part(),
@@ -599,8 +668,8 @@ public:
   }
 
   void detect_any_device_field_modification() {
-    FieldDataDeviceViewType & localDeviceData = deviceData;
-    FieldDataDeviceViewType & localLastFieldValue = lastFieldValue;
+    FieldDataType & localDeviceData = deviceData;
+    FieldDataType & localLastFieldValue = lastFieldValue;
     ScalarUvmType<bool> & localAnyDeviceFieldModification = anyDeviceFieldModification;
     localAnyDeviceFieldModification() = false;
 
@@ -866,17 +935,18 @@ public:
   {
     swap_views(hostData,   sf.hostData);
     swap_views(deviceData, sf.deviceData);
+    swap_views(fieldData,  sf.fieldData);
   }
 
 protected:
   bool need_sync_to_host() const
   {
-    return needSyncToHost();
+    return fieldData.need_sync_host();
   }
 
   bool need_sync_to_device() const
   {
-    return needSyncToDevice();
+    return fieldData.need_sync_device();
   }
 
   unsigned get_contiguous_bucket_offset_end(const BucketVector& buckets, unsigned i)
@@ -911,28 +981,6 @@ private:
     *syncSelector = Selector();
   }
 
-  void set_modify_on_host()
-  {
-#ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
-    ThrowRequire(needSyncToHost() == false);
-#endif
-    needSyncToDevice() = true;
-  }
-
-  void set_modify_on_device()
-  {
-#ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
-    ThrowRequire(needSyncToDevice() == false);
-#endif
-    needSyncToHost() = true;
-  }
-
-  void clear_sync_state_flags()
-  {
-    needSyncToHost() = false;
-    needSyncToDevice() = false;
-  }
-
   void move_unmodified_buckets_in_range_from_back(const BucketVector& buckets, unsigned numPerEntity, unsigned& currBaseIndex)
   {
     int startIndex = currBaseIndex;
@@ -962,8 +1010,8 @@ private:
       oldBucketId = buckets[j]->get_ngp_field_bucket_id(get_ordinal());
       newBucketId = buckets[j]->bucket_id();
 
-      copy_moved_host_bucket_data<FieldDataHostViewType, UnmanagedHostInnerView<T>>(hostData, hostData, oldBucketId, newBucketId, numPerEntity);
-      copy_moved_device_bucket_data<FieldDataDeviceViewType, UnmanagedDevInnerView<T>>(deviceData, deviceData, oldBucketId, newBucketId, numPerEntity);
+      copy_moved_bucket_data<FieldDataHostType, UnmanagedHostInnerView<T>>(hostData, hostData, oldBucketId, newBucketId, numPerEntity);
+      copy_moved_bucket_data<FieldDataType, UnmanagedDevInnerView<T>>(deviceData, deviceData, oldBucketId, newBucketId, numPerEntity);
       buckets[j]->set_ngp_field_bucket_id(get_ordinal(), newBucketId);
     }
     currBaseIndex = endIndex;
@@ -983,8 +1031,8 @@ private:
 
         if(oldBucketOffset != newBucketOffset && !buckets[i]->get_ngp_field_bucket_is_modified(get_ordinal())) {
           if(oldBucketOffset > newBucketOffset) {
-            copy_moved_host_bucket_data<FieldDataHostViewType, UnmanagedHostInnerView<T>>(hostData, hostData, oldBucketId, newBucketId, numPerEntity);
-            copy_moved_device_bucket_data<FieldDataDeviceViewType, UnmanagedDevInnerView<T>>(deviceData, deviceData, oldBucketId, newBucketId, numPerEntity);
+            copy_moved_bucket_data<FieldDataHostType, UnmanagedHostInnerView<T>>(hostData, hostData, oldBucketId, newBucketId, numPerEntity);
+            copy_moved_bucket_data<FieldDataType, UnmanagedDevInnerView<T>>(deviceData, deviceData, oldBucketId, newBucketId, numPerEntity);
           } else {
             move_unmodified_buckets_in_range_from_back(buckets, numPerEntity, i);
           }
@@ -994,7 +1042,7 @@ private:
     }
   }
 
-  void copy_unmodified_buckets(const BucketVector& buckets, FieldDataDeviceViewType destDevView, FieldDataHostViewType destHostView, unsigned numPerEntity)
+  void copy_unmodified_buckets(const BucketVector& buckets, FieldDataType destDevView, FieldDataHostType destHostView, unsigned numPerEntity)
   {
     for(unsigned i = 0; i < buckets.size(); i++) {
       if(hostFieldExistsOnBucket(buckets[i]->bucket_id())) {
@@ -1003,115 +1051,11 @@ private:
 
         if(!buckets[i]->get_ngp_field_bucket_is_modified(get_ordinal())) {
           ThrowRequire(hostData.extent(0) != 0 && hostSelectedBucketOffset.extent(0) != 0);
-          copy_moved_host_bucket_data<FieldDataHostViewType, UnmanagedHostInnerView<T>>(destHostView, hostData, oldBucketId, newBucketId, numPerEntity);
-          copy_moved_device_bucket_data<FieldDataDeviceViewType, UnmanagedDevInnerView<T>>(destDevView, deviceData, oldBucketId, newBucketId, numPerEntity);
+          copy_moved_bucket_data<FieldDataHostType, UnmanagedHostInnerView<T>>(destHostView, hostData, oldBucketId, newBucketId, numPerEntity);
+          copy_moved_bucket_data<FieldDataType, UnmanagedDevInnerView<T>>(destDevView, deviceData, oldBucketId, newBucketId, numPerEntity);
           buckets[i]->set_ngp_field_bucket_id(get_ordinal(), newBucketId);
         }
       }
-    }
-  }
-
-  void fill_host_view(Bucket* bucket, UnmanagedHostInnerView<T>& unHostInnerView, unsigned numPerEntity)
-  {
-#ifdef STK_DEBUG_FIELD_SYNC
-      T* hostFieldPtr = static_cast<T*>(stk::mesh::ngp_debug_field_data(*hostField, *bucket));
-#else
-      T* hostFieldPtr = static_cast<T*>(stk::mesh::field_data(*hostField, *bucket));
-#endif
-    unsigned numEntities = bucket->size();
-
-    for(unsigned i = 0; i < numEntities; i++) {
-      for(unsigned j = 0; j < numPerEntity; j++) {
-        unHostInnerView(i,j) = hostFieldPtr[i * numPerEntity + j];
-      }
-    }
-  }
-
-  template<typename DataView, typename UnmanagedView>
-  void copy_moved_host_bucket_data(DataView destView, DataView srcView, unsigned oldBucketId, unsigned newBucketId, unsigned numPerEntity)
-  {
-    unsigned oldSelectedOffset = hostSelectedBucketOffset(oldBucketId);
-    unsigned newSelectedOffset = newHostSelectedBucketOffset(newBucketId);
-
-    T* srcPtr = srcView.data() + oldSelectedOffset * bucketCapacity * numPerEntity;
-    T* destPtr = destView.data() + newSelectedOffset * bucketCapacity * numPerEntity;
-
-    UnmanagedView unInnerSrcView(srcPtr, bucketCapacity, numPerEntity);
-    UnmanagedView unInnerDestView(destPtr, bucketCapacity, numPerEntity);
-    Kokkos::deep_copy(unInnerDestView, unInnerSrcView);
-  }
-
-  template<typename DataView, typename UnmanagedView>
-  void copy_moved_device_bucket_data(DataView destView, DataView srcView, unsigned oldBucketId, unsigned newBucketId, unsigned numPerEntity)
-  {
-    unsigned oldSelectedOffset = hostSelectedBucketOffset(oldBucketId);
-    unsigned newSelectedOffset = newHostSelectedBucketOffset(newBucketId);
-
-    T* srcPtr = srcView.data() + oldSelectedOffset * bucketCapacity * numPerEntity;
-    T* destPtr = destView.data() + newSelectedOffset * bucketCapacity * numPerEntity;
-
-    UnmanagedView unInnerSrcView(srcPtr, ORDER_INDICES(bucketCapacity, numPerEntity));
-    UnmanagedView unInnerDestView(destPtr, ORDER_INDICES(bucketCapacity, numPerEntity));
-    Kokkos::deep_copy(unInnerDestView, unInnerSrcView);
-  }
-
-  void copy_bucket_from_device_to_host(Bucket* bucket, unsigned numPerEntity, unsigned numContiguousBuckets = 1)
-  {
-    unsigned selectedBucketOffset = newHostSelectedBucketOffset(bucket->bucket_id());
-
-    T* devicePtr = deviceData.data() + selectedBucketOffset * bucketCapacity * numPerEntity;
-    UnmanagedDevInnerView<T> unDeviceInnerView(devicePtr, ORDER_INDICES(bucketCapacity*numContiguousBuckets, numPerEntity));
-
-    T* bufferPtr = deviceBuffer.data() + selectedBucketOffset * bucketCapacity * numPerEntity;
-    UnmanagedDevInnerView<T> unBufferInnerView(bufferPtr, bucketCapacity*numContiguousBuckets, numPerEntity);
-
-    transpose_contiguous_device_data_into_buffer(bucketCapacity*numContiguousBuckets, numPerEntity, unDeviceInnerView, unBufferInnerView);
-    Kokkos::fence();
-
-    UnmanagedHostInnerView<T> unHostInnerView(&hostData(selectedBucketOffset,0,0),
-                                              bucketCapacity*numContiguousBuckets, numPerEntity);
-    Kokkos::deep_copy(unHostInnerView, unBufferInnerView);
-  }
-
-  void copy_bucket_from_host_to_device(Bucket* bucket, unsigned numPerEntity, unsigned numContiguousBuckets = 1)
-  {
-    unsigned selectedBucketOffset = newHostSelectedBucketOffset(bucket->bucket_id());
-
-    UnmanagedHostInnerView<T> unHostInnerView(&hostData(selectedBucketOffset,0,0),
-                                              bucketCapacity*numContiguousBuckets, numPerEntity);
-
-    fill_host_view(bucket, unHostInnerView, numPerEntity);
-
-    T* bufferPtr = deviceBuffer.data() + selectedBucketOffset * bucketCapacity * numPerEntity;
-    UnmanagedDevInnerView<T> unBufferInnerView(bufferPtr, bucketCapacity*numContiguousBuckets, numPerEntity);
-    Kokkos::deep_copy(unBufferInnerView, unHostInnerView);
-
-    T* devicePtr = deviceData.data() + selectedBucketOffset * bucketCapacity * numPerEntity;
-    UnmanagedDevInnerView<T> unDeviceInnerView(devicePtr, ORDER_INDICES(bucketCapacity*numContiguousBuckets, numPerEntity));
-
-    transpose_buffer_into_contiguous_device_data(bucketCapacity*numContiguousBuckets, numPerEntity, unBufferInnerView, unDeviceInnerView);
-    Kokkos::fence();
-  }
-
-  void reset_device_buffer()
-  {
-    deviceBuffer = FieldDataDeviceUnmanagedViewType(reinterpret_cast<T*>(hostBulk->get_ngp_field_sync_buffer()),
-                                                    hostData.extent(0), hostData.extent(1), hostData.extent(2));
-  }
-
-  void copy_new_and_modified_buckets_from_host(const BucketVector& buckets, unsigned numPerEntity)
-  {
-    reset_device_buffer();
-
-    for(unsigned bucketIdx = 0; bucketIdx < buckets.size(); bucketIdx++) {
-      Bucket* bucket = buckets[bucketIdx];
-      unsigned oldBucketId = bucket->get_ngp_field_bucket_id(get_ordinal());
-
-      if(oldBucketId == INVALID_BUCKET_ID || bucket->get_ngp_field_bucket_is_modified(get_ordinal())) {
-        copy_bucket_from_host_to_device(bucket, numPerEntity);
-      }
-
-      bucket->set_ngp_field_bucket_id(get_ordinal(), bucket->bucket_id());
     }
   }
 
@@ -1119,19 +1063,19 @@ private:
   {
     unsigned numBuckets = buckets.size();
 #ifdef STK_DEBUG_FIELD_SYNC
-    FieldDataDeviceViewType tempDataDeviceView = FieldDataDeviceViewType(name, numBuckets,
-                                                                         ORDER_INDICES(bucketCapacity, numPerEntity));
+    FieldDataType tempDataView = FieldDataType(name, numBuckets,
+                                               ORDER_INDICES(bucketCapacity, numPerEntity));
 #else
-    FieldDataDeviceViewType tempDataDeviceView = FieldDataDeviceViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, name), numBuckets,
-                                                                         ORDER_INDICES(bucketCapacity, numPerEntity));
+    FieldDataType tempDataView = FieldDataType(Kokkos::view_alloc(Kokkos::WithoutInitializing, name), numBuckets,
+                                               ORDER_INDICES(bucketCapacity, numPerEntity));
 #endif
-    FieldDataHostViewType tempDataHostView = FieldDataHostViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, name), numBuckets,
-                                                                   bucketCapacity, numPerEntity);
+    FieldDataHostType tempDataViewMirror = Kokkos::create_mirror_view(HostSpace(), tempDataView, Kokkos::WithoutInitializing);
 
-    copy_unmodified_buckets(buckets, tempDataDeviceView, tempDataHostView, numPerEntity);
+    copy_unmodified_buckets(buckets, tempDataView, tempDataViewMirror, numPerEntity);
 
-    deviceData = tempDataDeviceView;
-    hostData = tempDataHostView;
+    deviceData = tempDataView;
+    hostData = tempDataViewMirror;
+    fieldData = FieldDataDualViewType(deviceData, hostData);
 
 #ifdef STK_DEBUG_FIELD_SYNC
     fieldName = FieldNameType(hostField->name()+"_name", hostField->name().size()+1);
@@ -1147,9 +1091,8 @@ private:
     Selector selector(*hostField);
     unsigned bucketIndex = 0;
 
-    newDeviceSelectedBucketOffset = UnsignedViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, hostField->name() + "_bucket_offset"),
-                                                     allBuckets.size());
-    newHostSelectedBucketOffset = Kokkos::create_mirror_view(Kokkos::HostSpace(), newDeviceSelectedBucketOffset, Kokkos::WithoutInitializing);
+    newDeviceSelectedBucketOffset = UnsignedViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, hostField->name() + "_bucket_offset"), allBuckets.size());
+    newHostSelectedBucketOffset = Kokkos::create_mirror_view(HostSpace(), newDeviceSelectedBucketOffset, Kokkos::WithoutInitializing);
 
     for(unsigned i = 0; i < allBuckets.size(); i++) {
       if(selector(*allBuckets[i])) {
@@ -1164,9 +1107,8 @@ private:
 
   void construct_field_exist_view(const BucketVector& allBuckets, const Selector& selector)
   {
-    deviceFieldExistsOnBucket = BoolViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, hostField->name() + "_exists_on_bucket"),
-                                             allBuckets.size());
-    hostFieldExistsOnBucket = Kokkos::create_mirror_view(Kokkos::HostSpace(), deviceFieldExistsOnBucket, Kokkos::WithoutInitializing);
+    deviceFieldExistsOnBucket = BoolViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, hostField->name() + "_exists_on_bucket"), allBuckets.size());
+    hostFieldExistsOnBucket = Kokkos::create_mirror_view(HostSpace(), deviceFieldExistsOnBucket, Kokkos::WithoutInitializing);
     Kokkos::deep_copy(hostFieldExistsOnBucket, false);
     for (size_t i = 0; i < allBuckets.size(); ++i) {
       if(selector(*allBuckets[i])) {
@@ -1205,27 +1147,22 @@ private:
     if(hostField) {
       Selector selector = selectField(*hostField) & *syncSelector;
       const BucketVector& buckets = hostBulk->get_buckets(rank, selector);
+      unsigned numPerEntity = hostField->max_size(rank);
 
       for(unsigned i = 0; i < buckets.size(); i++) {
-        copy_contiguous_buckets_from_device_to_host(buckets, maxNumScalarsPerEntity, i);
+        copy_contiguous_buckets_from_device_to_host(buckets, numPerEntity, i);
       }
     }
   }
 
   void sync_to_host_using_selector()
   {
-    reset_device_buffer();
-
-    if (!userSpecifiedSelector) {
-      transpose_all_device_data_into_buffer(*hostField, deviceData, deviceBuffer);
-      Kokkos::fence();
-
-      Kokkos::deep_copy(hostData, deviceBuffer);
-    }
-    else {
+    if(!userSpecifiedSelector) {
+      Kokkos::deep_copy(hostData, deviceData);
+    } else {
       copy_selected_buckets_to_host();
     }
-    clear_sync_state_flags();
+    fieldData.clear_sync_state();
   }
 
   void copy_device_to_host()
@@ -1262,27 +1199,22 @@ private:
     if(hostField) {
       Selector selector = selectField(*hostField) & *syncSelector;
       const BucketVector& buckets = hostBulk->get_buckets(rank, selector);
+      unsigned numPerEntity = hostField->max_size(rank);
 
       for(unsigned i = 0; i < buckets.size(); i++) {
-        copy_contiguous_buckets_from_host_to_device(buckets, maxNumScalarsPerEntity, i);
+        copy_contiguous_buckets_from_host_to_device(buckets, numPerEntity, i);
       }
     }
   }
 
   void sync_to_device_using_selector()
   {
-    reset_device_buffer();
-
-    if (!userSpecifiedSelector) {
-      Kokkos::deep_copy(deviceBuffer, hostData);
-
-      transpose_buffer_into_all_device_data(*hostField, deviceBuffer, deviceData);
-      Kokkos::fence();
-    }
-    else {
+    if(!userSpecifiedSelector) {
+      Kokkos::deep_copy(deviceData, hostData);
+    } else {
       copy_selected_buckets_to_device();
     }
-    clear_sync_state_flags();
+    fieldData.clear_sync_state();
   }
 
   void copy_host_to_device()
@@ -1319,6 +1251,12 @@ private:
     host = Kokkos::create_mirror_view(view);
   }
 
+  void create_device_field_data(const T& initialValue)
+  {
+    Kokkos::deep_copy(hostData, initialValue);
+    Kokkos::deep_copy(deviceData, hostData);
+  }
+
   template <typename Assigner>
   void copy_data(const stk::mesh::BucketVector& buckets, const Assigner &assigner, const Selector& selector)
   {
@@ -1341,17 +1279,15 @@ private:
       {
         for(unsigned j=0; j<numPerEntity; j++)
         {
-          assigner(hostData(selectedBucketOffset, iEntity, j), data[iEntity*numPerEntity + j]);
+          assigner(hostData(selectedBucketOffset, ORDER_INDICES(iEntity,j) ), data[iEntity*numPerEntity + j]);
         }
       }
     }
   }
 
-  FieldDataHostViewType hostData;
-  FieldDataDeviceViewType deviceData;
-  FieldDataDeviceUnmanagedViewType deviceBuffer;
-  Kokkos::View<bool, Kokkos::HostSpace> needSyncToHost;
-  Kokkos::View<bool, Kokkos::HostSpace> needSyncToDevice;
+  FieldDataHostType hostData;
+  FieldDataType deviceData;
+  FieldDataDualViewType fieldData;
 
   typename BoolViewType::HostMirror hostFieldExistsOnBucket;
   BoolViewType deviceFieldExistsOnBucket;
@@ -1369,8 +1305,6 @@ private:
   const stk::mesh::BulkData* hostBulk;
   const stk::mesh::FieldBase* hostField;
   unsigned bucketCapacity;
-  unsigned numBucketsForField;
-  unsigned maxNumScalarsPerEntity;
   size_t synchronizedCount;
 
   DeviceField<T>* stateFields[MaximumFieldStates];
@@ -1389,7 +1323,7 @@ private:
   ScalarUvmType<bool> anyDeviceFieldModification;
   ScalarUvmType<bool> anyPotentialDeviceFieldModification;
   LastFieldModLocationType lastFieldModLocation;
-  FieldDataDeviceViewType lastFieldValue;
+  FieldDataType lastFieldValue;
 #endif
 };
 
