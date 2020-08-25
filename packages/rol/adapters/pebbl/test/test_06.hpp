@@ -323,6 +323,7 @@ private:
   ROL::Ptr<ROL::BoundConstraint<Real>> bnd_, ibnd_;
   ROL::Ptr<ROL::Objective<Real>> obj_;
   ROL::Ptr<ROL::Constraint<Real>> econ_, icon_;
+  bool useLinearCon_;
 
 public:
   FacilityLocationFactory(const std::vector<Real> &c, const std::vector<Real> &q,
@@ -351,6 +352,8 @@ public:
     imul_ = ROL::makePtr<ROL::StdVector<Real>>(M*N,0.0);
     iup   = ROL::makePtr<ROL::StdVector<Real>>(M*N,0.0);
     ibnd_ = ROL::makePtr<ROL::Bounds<Real>>(*iup,false);
+
+    useLinearCon_ = pl.sublist("Problem").get("Maintain Linear Constraints",true);
   }
 
   ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>> build(void) {
@@ -360,8 +363,14 @@ public:
     ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>>
       problem = ROL::makePtr<ROL::PEBBL::IntegerProblem<Real>>(obj_,x);
     problem->addBoundConstraint(bnd_);
-    problem->addLinearConstraint("Equality",econ_,emul);
-    problem->addLinearConstraint("Inequality",icon_,imul,ibnd_);
+    if (useLinearCon_) {
+      problem->addLinearConstraint("Equality",econ_,emul);
+      problem->addLinearConstraint("Inequality",icon_,imul,ibnd_);
+    }
+    else {
+      problem->addConstraint("Equality",econ_,emul);
+      problem->addConstraint("Inequality",icon_,imul,ibnd_);
+    }
     return problem;
   }
 };
@@ -396,6 +405,7 @@ private:
   Real ctol_;
   ROL::Ptr<ROL::Vector<Real>> x_, c_;
   ROL::Ptr<ROL::Constraint<Real>> con_;
+  ROL::Ptr<ROL::PolyhedralProjection<Real>> proj_;
 
   using ROL::PEBBL::BranchSub<Real>::anyChild;
   using ROL::PEBBL::BranchSub<Real>::index_;
@@ -456,7 +466,7 @@ private:
     con_->value(*c_,x,tol);
     setSlack(x,*c_);
     x_->set(x);
-    problem0_->getPolyhedralProjection()->project(*x_);
+    proj_->project(*x_);
     x_->axpy(static_cast<Real>(-1),x);
     Real infeas = x_->norm();
     return infeas;
@@ -470,12 +480,26 @@ public:
     : ROL::PEBBL::BranchSub<Real>(branching, verbosity, outStream) {
     ctol_ = parlist->sublist("Status Test").get("Constraint Tolerance",1e-8);
     x_    = solution_->clone();
-    c_    = problem0_->getPolyhedralProjection()->getResidual()->clone();
-    con_  = problem0_->getPolyhedralProjection()->getLinearConstraint();
+    bool useLinearCon = parlist->sublist("Problem").get("Maintain Linear Constraints",true);
+    if (useLinearCon) {
+      proj_ = problem0_->getPolyhedralProjection();
+      c_    = proj_->getResidual()->clone();
+      con_  = proj_->getLinearConstraint();
+    }
+    else {
+      c_    = problem0_->getResidualVector()->clone();
+      con_  = problem0_->getConstraint();
+      proj_ = ROL::PolyhedralProjectionFactory<Real>(
+                       *problem0_->getPrimalOptimizationVector(),
+                       *problem0_->getDualOptimizationVector(),
+                       problem0_->getBoundConstraint(),
+                       con_,*problem0_->getMultiplierVector(),*c_,*parlist);
+    }
   }
 
   FacilityLocationBranchSub(const FacilityLocationBranchSub &rpbs)
-    : ROL::PEBBL::BranchSub<Real>(rpbs), ctol_(rpbs.ctol_), x_(rpbs.x_->clone()), c_(rpbs.c_->clone()), con_(rpbs.con_) {}
+    : ROL::PEBBL::BranchSub<Real>(rpbs), ctol_(rpbs.ctol_), x_(rpbs.x_->clone()),
+      c_(rpbs.c_->clone()), con_(rpbs.con_), proj_(rpbs.proj_) {}
 
   void incumbentHeuristic() {
     Real tol = std::sqrt(ROL::ROL_EPSILON<Real>());

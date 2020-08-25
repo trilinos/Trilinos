@@ -1,10 +1,11 @@
 <ParameterList name="Inputs">
   <ParameterList name="Problem">
-    <Parameter name="Number of Facilities"  type="int"    value="5"    />
-    <Parameter name="Number of Customers"   type="int"    value="10"   />
-    <Parameter name="Integrality Tolerance" type="double" value="1e-6" />
-    <Parameter name="Branching Method"      type="int"    value="0"    />
-    <Parameter name="BB Output Level"       type="int"    value="2"    />
+    <Parameter name="Number of Facilities"        type="int"    value="5"     />
+    <Parameter name="Number of Customers"         type="int"    value="10"    />
+    <Parameter name="Integrality Tolerance"       type="double" value="1e-6"  />
+    <Parameter name="Branching Method"            type="int"    value="0"     />
+    <Parameter name="BB Output Level"             type="int"    value="2"     />
+    <Parameter name="Maintain Linear Constraints" type="bool"   value="false" />
   </ParameterList>
 
   <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
@@ -46,7 +47,7 @@
 
   <!-- ===========  STEP SUBLIST  =========== -->
   <ParameterList name="Step">
-    <Parameter name="Type" type="string" value="Trust Region" />
+    <Parameter name="Type" type="string" value="Augmented Lagrangian" />
     <!-- ===========  LINE SEARCH  =========== -->
     <ParameterList name="Line Search">
       <Parameter name="Function Evaluation Limit"                 type="int"    value="20"     />
@@ -158,6 +159,13 @@
     <!-- ===========  AUGMENTED LAGRANGIAN  =========== -->
     <ParameterList name="Augmented Lagrangian">
       <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
+      <Parameter name="Level of Hessian Approximation"          type="int"    value="0"            />
+      <!-- ===========  PROBLEM SCALING =========== -->
+      <Parameter name="Use Default Problem Scaling"             type="bool"   value="false"        />
+      <Parameter name="Objective Scaling"                       type="double" value="1.e0"         />
+      <Parameter name="Constraint Scaling"                      type="double" value="1.e0"         />
+      <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
+      <Parameter name="Use Default Initial Penalty Parameter"   type="bool"   value="false"        />
       <Parameter name="Initial Penalty Parameter"               type="double" value="1.e1"         />
       <Parameter name="Penalty Parameter Growth Factor"         type="double" value="1.e1"         />
       <Parameter name="Minimum Penalty Parameter Reciprocal"    type="double" value="0.1"          />
@@ -213,8 +221,8 @@
 
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
-    <Parameter name="Gradient Tolerance"   type="double" value="1.e-6"  />
-    <Parameter name="Constraint Tolerance" type="double" value="1.e-6"  />
+    <Parameter name="Gradient Tolerance"   type="double" value="1.e-5"  />
+    <Parameter name="Constraint Tolerance" type="double" value="1.e-5"  />
     <Parameter name="Step Tolerance"       type="double" value="1.e-14" />
     <Parameter name="Iteration Limit"      type="int"    value="1000"   />
   </ParameterList>
