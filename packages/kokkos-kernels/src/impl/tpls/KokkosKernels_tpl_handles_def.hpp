@@ -69,4 +69,4 @@ CusparseSingleton & CusparseSingleton::singleton() {
 } // namespace KokkosKernels
 #endif
 
-#endif // KOKKOSKERNELS_TPL_HANDLES_DEF_HPP_ 
+#endif // KOKKOSKERNELS_TPL_HANDLES_DEF_HPP_

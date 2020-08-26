@@ -126,46 +126,46 @@ namespace Sacado {
       static const int num_args = 0;
 
       //! Constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ConstExpr(const ConstT& constant) : constant_(constant) {}
 
       //! Return size of the derivative array of the operation
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const { return 0; }
 
       //! Return whether value should be updated
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const { return true; }
 
       //! Cache values
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {}
 
       //! Return value of operation
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const { return constant_; }
 
       //! Return partials w.r.t. arguments
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void computePartials(const value_type& bar,
                            value_type partials[]) const {}
 
       //! Rturn tangent component \c i of arguments
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void getTangents(int i, value_type dots[]) const {}
 
       //! Return tangent component \c i of argument \c Arg
       template <int Arg>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type getTangent(int i) const { return 0.0; }
 
       //! Return whether argument is active
       template <int Arg>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isActive() const { return false; }
 
       //! Return whether expression is linear
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const { return true; }
 
     protected:

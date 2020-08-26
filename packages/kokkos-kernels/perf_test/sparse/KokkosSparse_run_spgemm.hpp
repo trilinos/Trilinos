@@ -241,7 +241,6 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params)
       sequential_kh.set_dynamic_scheduling(true);
     }
 
-
     spgemm_symbolic (
         &sequential_kh,
         m,
@@ -341,7 +340,6 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params)
       entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
       valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
     }
-
     spgemm_numeric(
         &kh,
         m,

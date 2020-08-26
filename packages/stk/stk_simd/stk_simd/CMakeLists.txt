@@ -43,7 +43,11 @@
 # B) Define the header and source files (and directories)
 #
 
-ADD_SUBDIRECTORY(kokkos_simd)
+ADD_SUBDIRECTORY(disimd)
+ADD_SUBDIRECTORY(avx)
+ADD_SUBDIRECTORY(avx512)
+ADD_SUBDIRECTORY(sse)
+ADD_SUBDIRECTORY(no_simd)
 
 #
 # src

@@ -88,23 +88,23 @@ namespace Sacado {
       };
 
       //! Default constructor (needed to satisfy interface)
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewStorage() :
         sz_(0), stride_(0), val_(0), dx_(0) {}
 
       //! Constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewStorage(T* v, const int arg_size = 0, const int arg_stride = 0) :
         sz_(arg_size), stride_(arg_stride), val_(v+sz_.value*stride_.value), dx_(v) {}
 
       //! Constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewStorage(T* arg_dx, T* arg_val, const int arg_size = 0,
                   const int arg_stride = 0) :
         sz_(arg_size), stride_(arg_stride), val_(arg_val), dx_(arg_dx) {}
 
       //! Copy constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewStorage(const ViewStorage& x) :
         sz_(x.sz_), stride_(x.stride_), val_(x.val_), dx_(x.dx_) {}
 
@@ -113,11 +113,11 @@ namespace Sacado {
       // always fall-back to copy
 
       //! Destructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ~ViewStorage() {}
 
       //! Assignment
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewStorage& operator=(const ViewStorage& x) {
         // Can't use std::addressof() on the GPU, so this is equivalent
         // according to cppreference.com
@@ -142,11 +142,11 @@ namespace Sacado {
       // always fall-back to copy
 
       //! Returns number of derivative components
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       constexpr int size() const { return sz_.value;}
 
       //! Returns array length
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       constexpr int length() const { return sz_.value; }
 
       //! Resize the derivative array to sz
@@ -155,7 +155,7 @@ namespace Sacado {
        * which signify assigning a constant.  Thus we zero out the derivative
        * components.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void resize(int sz) {
         if (sz == 0) ds_array<T>::strided_zero(dx_, stride_.value, sz_.value);
       }
@@ -166,51 +166,51 @@ namespace Sacado {
        * the derivative array to zero and then back to some size > 0.  Instead
        * we zero out components when it is resized to zero above.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void resizeAndZero(int sz) {}
 
       //! Expand derivative array to size sz
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void expand(int sz) {}
 
       //! Zero out derivative array
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void zero() {
         ds_array<T>::strided_zero(dx_, stride_.value, sz_.value);
       }
 
       //! Returns value
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const T& val() const { return *val_; }
 
       //! Returns value
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       T& val() { return *val_; }
 
       //! Returns derivative array
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const T* dx() const { return dx_;}
 
       //! Returns derivative component \c i with bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       T dx(int i) const {
         return unsigned(sz_.value) ? dx_[ stride_one ? i : i * stride_.value ] : T(0.);
       }
 
       //! Returns derivative component \c i without bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       T& fastAccessDx(int i) {
         return dx_[ stride_one ? i : i * stride_.value ];
       }
 
       //! Returns derivative component \c i without bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const T& fastAccessDx(int i) const {
         return dx_[ stride_one ? i : i * stride_.value ];
       }
 
       //! Overload of addressof operator
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewFadPtr<T,static_length,static_stride,U> operator&() const {
         return ViewFadPtr<T,static_length,static_stride,U>(
           this->dx_, this->val_, this->sz_.value, this->stride_.value);

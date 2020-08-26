@@ -47,7 +47,6 @@
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_ArithTraits.hpp>
-#include <cxxabi.h>
 
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_Controls.hpp"
@@ -348,7 +347,6 @@ struct SPMV_MV<AT, AO, AD, AM, AS,
     typedef SPMV<AT, AO, AD, AM, AS,
       typename XVector::value_type*, XL, XD, XM,
       typename YVector::value_type*, YL, YD, YM> impl_type;
-    //Create a default Controls object (the impl_type::spmv below is for rank-1, which requires it)
     KokkosKernels::Experimental::Controls defaultControls;
     for (typename AMatrix::non_const_size_type j = 0; j < x.extent(1); ++j) {
       auto x_j = Kokkos::subview (x, Kokkos::ALL (), j);

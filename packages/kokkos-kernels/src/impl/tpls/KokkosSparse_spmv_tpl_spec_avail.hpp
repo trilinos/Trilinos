@@ -185,7 +185,7 @@ struct spmv_tpl_spec_avail<const SCALAR, const ORDINAL, Kokkos::Device<Kokkos::C
 
 //CUDA_VERSION by itself cannot determine whether the generic cuSPARSE API is available:
 //cuSPARSE version 10.1.105 does not have the generic API, but it comes with the same CUDA_VERSION (10010) as 10.1.243 which does.
-#if defined(CUSPARSE_VERSION) && (CUSPARSE_VERSION >= 10300)
+#if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
 
 //Can enable int64/size_t.
 //TODO: if Nvidia ever supports int/size_t, add that too.
