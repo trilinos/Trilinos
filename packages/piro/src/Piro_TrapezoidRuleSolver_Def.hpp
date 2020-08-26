@@ -406,6 +406,13 @@ Piro::TrapezoidRuleSolver<Scalar>::getValidTrapezoidRuleParameters() const
   return validPL;
 }
 
+template <typename Scalar>
+Teuchos::RCP<Piro::NOXSolver<Scalar> >
+Piro::TrapezoidRuleSolver<Scalar>::getNOXSolver() const
+{
+  return noxSolver;
+}
+
 /****************************************************************************/
 
 template <typename Scalar>
