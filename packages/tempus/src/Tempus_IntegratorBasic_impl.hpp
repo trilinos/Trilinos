@@ -413,6 +413,12 @@ void IntegratorBasic<Scalar>::startIntegrator()
     integratorStatus_ = Status::FAILED;
     return;
   }
+  
+  //set the Abs/Rel tolerance
+  auto cs = solutionHistory_->getCurrentState();
+  cs->setTolRel(timeStepControl_->getMaxRelError());
+  cs->setTolAbs(timeStepControl_->getMaxAbsError());
+
   integratorTimer_->start();
   // get optimal initial time step
   const Scalar initDt =
