@@ -315,6 +315,9 @@ private:
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+  // specify if unit diagonal
+  bool unit_diag;
+
   // stored either in CSR or CSC
   bool col_major;
 
@@ -414,6 +417,7 @@ public:
     , tmp_int_rowmap()
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+    , unit_diag (false)
     , merge_supernodes (false)
     , invert_diagonal (true)
     , invert_offdiagonal (false)
@@ -484,6 +488,11 @@ public:
 
     // number of streams
     this->num_streams = 0;
+  }
+
+  // set lower/upper triangular
+  void set_lower_tri(bool lower_tri_) {
+    lower_tri = lower_tri_;
   }
 
   // set supernodal dag
@@ -657,6 +666,14 @@ public:
 
   graph_t get_graph () {
     return this->graph;
+  }
+
+  // set if unit diagonal
+  void set_unit_diagonal(bool unit_diag_) {
+    this->unit_diag = unit_diag_;
+  }
+  bool is_unit_diagonal() {
+    return this->unit_diag;
   }
 
   // set CSR or CSC format
@@ -837,7 +854,7 @@ public:
   }
 
   void allocate_tmp_int_rowmap (size_type N) {
-         tmp_int_rowmap = int_row_view_t(Kokkos::ViewAllocateWithoutInitializing("tmp_int_rowmap"), N);
+    tmp_int_rowmap = int_row_view_t(Kokkos::ViewAllocateWithoutInitializing("tmp_int_rowmap"), N);
   }
   template <typename RowViewType>
   int_row_view_t get_int_rowmap_view_copy (const RowViewType & rowmap) {
@@ -856,7 +873,6 @@ public:
   int* get_int_rowmap_ptr () {
     return tmp_int_rowmap.data();
   }
-
 #endif
 
 

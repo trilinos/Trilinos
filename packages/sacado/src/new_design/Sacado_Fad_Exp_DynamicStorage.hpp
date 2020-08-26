@@ -65,12 +65,12 @@ namespace Sacado {
       };
 
       //! Default constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       DynamicStorage() :
         val_(), sz_(0), len_(0), dx_(nullptr) {}
 
       //! Constructor with value
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       DynamicStorage(const T & x) :
         val_(x), sz_(0), len_(0), dx_(nullptr) {}
 
@@ -78,7 +78,7 @@ namespace Sacado {
       /*!
        * Initializes derivative array 0 of length \c sz
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       DynamicStorage(const int sz, const T & x,
                      const DerivInit zero_out = InitDerivArray) :
         val_(x), sz_(sz), len_(sz) {
@@ -94,21 +94,21 @@ namespace Sacado {
        * as row \c i of the identity matrix, i.e., sets derivative component
        * \c i to 1 and all other's to zero.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       DynamicStorage(const int sz, const int i, const value_type & x) :
         DynamicStorage(sz, x, InitDerivArray) {
         dx_[i]=1.;
       }
 
       //! Copy constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       DynamicStorage(const DynamicStorage& x) :
         val_(x.val_), sz_(x.sz_), len_(x.sz_) {
         dx_ = ds_array<U>::get_and_fill(x.dx_, sz_);
       }
 
       //! Move constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       DynamicStorage(DynamicStorage&& x) :
         val_(std::move(x.val_)), sz_(x.sz_), len_(x.len_), dx_(x.dx_) {
         x.sz_ = 0;
@@ -117,14 +117,14 @@ namespace Sacado {
       }
 
       //! Destructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ~DynamicStorage() {
         if (len_ != 0)
           ds_array<U>::destroy_and_release(dx_, len_);
       }
 
       //! Assignment
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       DynamicStorage& operator=(const DynamicStorage& x) {
         if (this != &x) {
           val_ = x.val_;
@@ -146,7 +146,7 @@ namespace Sacado {
       }
 
       //! Move assignment
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       DynamicStorage& operator=(DynamicStorage&& x) {
         if (this != &x) {
           if (len_ != 0)
@@ -160,18 +160,18 @@ namespace Sacado {
       }
 
       //! Returns number of derivative components
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const { return sz_;}
 
       //! Returns array length
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int length() const { return len_; }
 
       //! Resize the derivative array to sz
       /*!
        * Note:  This does not necessarily preserve derivative components.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void resize(int sz) {
         if (sz > len_) {
           if (len_ != 0)
@@ -187,7 +187,7 @@ namespace Sacado {
        * This method doest not preserve any existing derivative components but
        * sets any that are added to zero.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void resizeAndZero(int sz) {
         if (sz > len_) {
           if (len_ != 0)
@@ -205,7 +205,7 @@ namespace Sacado {
        * This method preserves any existing derivative components and
        * sets any that are added to zero.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void expand(int sz) {
         if (sz > len_) {
           U* dx_new = ds_array<U>::get_and_fill(sz);
@@ -221,49 +221,49 @@ namespace Sacado {
       }
 
       //! Zero out derivative array
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void zero() {
         ds_array<U>::zero(dx_, sz_);
       }
 
       //! Returns value
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const T& val() const { return val_; }
 
       //! Returns value
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       T& val() { return val_; }
 
       //! Returns derivative array
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const U* dx() const { return dx_;}
 
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
 
       //! Returns derivative component \c i with bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       U dx(int i) const { return sz_ ? dx_[i*blockDim.x] : U(0.); }
 
       //! Returns derivative component \c i without bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       U& fastAccessDx(int i) { return dx_[i*blockDim.x];}
 
       //! Returns derivative component \c i without bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const U& fastAccessDx(int i) const { return dx_[i*blockDim.x];}
 
 #else
 
       //! Returns derivative component \c i with bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       U dx(int i) const { return sz_ ? dx_[i] : U(0.); }
 
       //! Returns derivative component \c i without bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       U& fastAccessDx(int i) { return dx_[i];}
 
       //! Returns derivative component \c i without bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const U& fastAccessDx(int i) const { return dx_[i];}
 
 #endif

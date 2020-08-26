@@ -102,7 +102,7 @@ namespace Sacado {
       //@{
 
       //! Default constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr() : val_( T(0.)) { ss_array<T>::zero(dx_, Num); }
 
       //! Constructor with supplied value \c x
@@ -110,7 +110,7 @@ namespace Sacado {
        * Initializes value to \c x and derivative array is empty
        */
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
         val_(x) {
         ss_array<T>::zero(dx_, Num);
@@ -120,7 +120,7 @@ namespace Sacado {
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const int sz, const T & x, const DerivInit zero_out = InitDerivArray)  : val_(x) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (sz != Num)
@@ -137,7 +137,7 @@ namespace Sacado {
        * as row \c i of the identity matrix, i.e., sets derivative component
        * \c i to 1 and all other's to zero.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const int sz, const int i, const T & x) :
         val_(x) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
@@ -152,7 +152,7 @@ namespace Sacado {
       }
 
       //! Copy constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const Expr& x) : val_(x.val_) {
         //ss_array<T>::copy(x.dx_, dx_, Num);
         for (int i=0; i<Num; i++)
@@ -161,7 +161,7 @@ namespace Sacado {
 
       //! Copy constructor from any Expression object
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (x.size() != Num)
@@ -191,7 +191,7 @@ namespace Sacado {
       }
 
       //! Destructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ~Expr() {}
 
       //! Set %Fad object as the \c ith independent variable
@@ -201,7 +201,7 @@ namespace Sacado {
        * Implementation(const int sz, const int i, const T & x)
        * constructor.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void diff(const int ith, const int n) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (n != Num)
@@ -217,7 +217,7 @@ namespace Sacado {
        * Since the derivative array length is not dynamic, this method
        * throws an error if compiled with SACADO_DEBUG defined.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void resize(int sz) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (sz != Num)
@@ -230,28 +230,28 @@ namespace Sacado {
        * Since the derivative array length is not dynamic, this method
        * throws an error if compiled with SACADO_DEBUG defined.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void expand(int sz) { resize(sz); }
 
       //! Zero out the derivative array
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void zero() { ss_array<T>::zero(dx_, Num); }
 
       //! Set whether this Fad object should update values
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void setUpdateValue(bool update_val) { }
 
       //! Return whether this Fad object has an updated value
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const { return true; }
 
       //! Cache values
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {}
 
       //! Returns whether two Fad objects have the same values
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(bool) isEqualTo(const Expr<S>& x) const {
         typedef IsEqual<value_type> IE;
         if (x.size() != this->size()) return false;
@@ -269,11 +269,11 @@ namespace Sacado {
       //@{
 
       //! Returns value
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const T& val() const { return val_;}
 
       //! Returns value
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       T& val() { return val_;}
 
       //@}
@@ -284,68 +284,68 @@ namespace Sacado {
       //@{
 
       //! Returns number of derivative components
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const { return Num;}
 
       /*!
        * \brief Returns number of derivative components that can be stored
        * without reallocation
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int availableSize() const { return Num; }
 
       //! Returns true if derivative array is not empty
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const { return true; }
 
       //! Returns true if derivative array is empty
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isPassive() const { return false; }
 
       //! Set whether variable is constant
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void setIsConstant(bool is_const) {}
 
       //! Returns derivative array
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const T* dx() const { return &(dx_[0]);}
 
       //! Returns derivative component \c i with bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const T& dx(int i) const { return dx_[i]; }
 
       //! Returns derivative component \c i without bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       T& fastAccessDx(int i) { return dx_[i];}
 
       //! Returns derivative component \c i without bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const T& fastAccessDx(int i) const { return dx_[i];}
 
       //! Return partials w.r.t. arguments
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void computePartials(const T& bar, value_type partials[]) const {
         partials[0] = bar;
       }
 
       //! Return tangent component \c i of arguments
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void getTangents(int i, value_type dots[]) const {
         dots[0] = this->dx_[i];
       }
 
       //! Return whether argument is active
       template <int Arg>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isActive() const { return true; }
 
       //! Return tangent component \c i of argument \c Arg
       template <int Arg>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       T getTangent(int i) const { return this->dx_[i]; }
 
       //! Get dx array
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type* getDx(int j) const { return this->dx(); }
 
       //@}
@@ -357,7 +357,7 @@ namespace Sacado {
 
       //! Assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(Expr&) operator=(const S& v) {
         val_ = v;
         ss_array<T>::zero(dx_, Num);
@@ -365,7 +365,7 @@ namespace Sacado {
       }
 
       //! Assignment with Expr right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr& operator=(const Expr& x) {
         if (this != &x) {
           // Copy value
@@ -381,7 +381,7 @@ namespace Sacado {
 
       //! Assignment operator with any expression right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(Expr&) operator=(const Expr<S>& x) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (x.size() != Num)
@@ -420,7 +420,7 @@ namespace Sacado {
 
       //! Addition-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(Expr&) operator += (const S& v) {
         this->val() += v;
         return *this;
@@ -428,7 +428,7 @@ namespace Sacado {
 
       //! Subtraction-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(Expr&) operator -= (const S& v) {
         this->val() -= v;
         return *this;
@@ -436,7 +436,7 @@ namespace Sacado {
 
       //! Multiplication-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(Expr&) operator *= (const S& v) {
         this->val() *= v;
         for (int i=0; i<Num; ++i)
@@ -446,7 +446,7 @@ namespace Sacado {
 
       //! Division-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(Expr&) operator /= (const S& v) {
         this->val() /= v;
         for (int i=0; i<Num; ++i)
@@ -456,7 +456,7 @@ namespace Sacado {
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(Expr&) operator += (const Expr<S>& x) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (x.size() != Num)
@@ -488,7 +488,7 @@ namespace Sacado {
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(Expr&) operator -= (const Expr<S>& x) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (x.size() != Num)
@@ -520,7 +520,7 @@ namespace Sacado {
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(Expr&) operator *= (const Expr<S>& x) {
         x.cache();
 
@@ -555,7 +555,7 @@ namespace Sacado {
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(Expr&) operator /= (const Expr<S>& x) {
         x.cache();
 
@@ -615,12 +615,12 @@ namespace Sacado {
         mutable value_type t;
         value_type partials[N];
         int i;
-        KOKKOS_INLINE_FUNCTION
+        SACADO_INLINE_FUNCTION
         LocalAccumOp(const ExprT& x_) : x(x_) {
           x.computePartials(value_type(1.), partials);
         }
         template <typename ArgT>
-        KOKKOS_INLINE_FUNCTION
+        SACADO_INLINE_FUNCTION
         void operator () (ArgT arg) const {
           const int Arg = ArgT::value;
           if (x.template isActive<Arg>())

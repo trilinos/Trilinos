@@ -88,7 +88,7 @@ int main (int argc, char *argv[]) {
   }
   
   // MKL
-#if defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
+#if defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
   std::cout << " Perf Test::CompactMKL Begin\n";
   {
     const bool test_mkl = true;

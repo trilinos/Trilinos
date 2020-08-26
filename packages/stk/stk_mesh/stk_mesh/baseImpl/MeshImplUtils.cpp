@@ -1518,22 +1518,6 @@ void check_size_of_types()
 #endif
 }
 
-EntityId get_global_max_id_in_use(const BulkData& mesh,
-                                  EntityRank rank,
-                                  const std::list<Entity::entity_value_type>& deletedEntitiesCurModCycle)
-{
-  EntityId localMax = stk::mesh::get_max_id_on_local_proc(mesh, rank);
-
-  for (Entity::entity_value_type local_offset : deletedEntitiesCurModCycle) {    
-    stk::mesh::Entity entity(local_offset);
-    if ( mesh.is_valid(entity) && mesh.entity_rank(entity) == rank ) {
-      localMax = std::max(localMax, mesh.entity_key(entity).id());
-    }        
-  }
-
-  return stk::get_global_max(mesh.parallel(), localMax);
-}
-
 void check_declare_element_side_inputs(const BulkData & mesh,
                                        const Entity elem,
                                        const unsigned localSideId)

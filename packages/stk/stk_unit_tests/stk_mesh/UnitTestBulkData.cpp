@@ -5988,7 +5988,7 @@ TEST( BulkData, AddSharedNodesInTwoSteps)
         return;
     }
 
-    stk::mesh::EntityId nodeId = 1;
+    int nodeId = 1;
     const unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
     stk::mesh::BulkData mesh(meta, pm);

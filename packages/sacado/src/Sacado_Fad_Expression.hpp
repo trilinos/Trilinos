@@ -137,15 +137,15 @@ namespace Sacado {
       typedef ConstT base_expr_type;
 
       //! Constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ConstExpr(const ConstT& constant) : constant_(constant) {}
 
       //! Return value of operation
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const ConstT& val() const { return constant_; }
 
       //! Return value of operation
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const ConstT& val(int j) const { return constant_; }
 
     protected:

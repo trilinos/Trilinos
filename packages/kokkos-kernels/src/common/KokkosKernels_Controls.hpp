@@ -142,4 +142,4 @@ namespace Experimental{
 } // namespace Experimental
 } // namespace KokkosKernels
 
-#endif // _KOKKOSKERNEL_CONTROLS_HPP 
+#endif // _KOKKOSKERNEL_CONTROLS_HPP

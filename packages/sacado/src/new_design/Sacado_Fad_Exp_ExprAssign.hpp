@@ -68,7 +68,7 @@ namespace Sacado {
 
       //! Implementation of dst = x
       template <typename SrcType>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       static void assign_equal(DstType& dst, const SrcType& x)
       {
         const int xsz = x.size();
@@ -98,7 +98,7 @@ namespace Sacado {
 
       //! Implementation of dst += x
       template <typename SrcType>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       static void assign_plus_equal(DstType& dst, const SrcType& x)
       {
         const int xsz = x.size(), sz = dst.size();
@@ -133,7 +133,7 @@ namespace Sacado {
 
       //! Implementation of dst -= x
       template <typename SrcType>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       static void assign_minus_equal(DstType& dst, const SrcType& x)
       {
         const int xsz = x.size(), sz = dst.size();
@@ -168,7 +168,7 @@ namespace Sacado {
 
       //! Implementation of dst *= x
       template <typename SrcType>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       static void assign_times_equal(DstType& dst, const SrcType& x)
       {
         const int xsz = x.size(), sz = dst.size();
@@ -211,7 +211,7 @@ namespace Sacado {
 
       //! Implementation of dst /= x
       template <typename SrcType>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       static void assign_divide_equal(DstType& dst, const SrcType& x)
       {
         const int xsz = x.size(), sz = dst.size();
@@ -273,7 +273,7 @@ namespace Sacado {
 
       //! Implementation of dst = x
       template <typename SrcType>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       static void assign_equal(DstType& dst, const SrcType& x)
       {
         const int sz = dst.size();
@@ -284,7 +284,7 @@ namespace Sacado {
 
       //! Implementation of dst += x
       template <typename SrcType>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       static void assign_plus_equal(DstType& dst, const SrcType& x)
       {
         const int sz = dst.size();
@@ -295,7 +295,7 @@ namespace Sacado {
 
       //! Implementation of dst -= x
       template <typename SrcType>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       static void assign_minus_equal(DstType& dst, const SrcType& x)
       {
         const int sz = dst.size();
@@ -306,7 +306,7 @@ namespace Sacado {
 
       //! Implementation of dst *= x
       template <typename SrcType>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       static void assign_times_equal(DstType& dst, const SrcType& x)
       {
         const int sz = dst.size();
@@ -319,7 +319,7 @@ namespace Sacado {
 
       //! Implementation of dst /= x
       template <typename SrcType>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       static void assign_divide_equal(DstType& dst, const SrcType& x)
       {
         const int sz = dst.size();
