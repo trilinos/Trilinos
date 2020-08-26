@@ -559,7 +559,7 @@ struct MPVectorAllocation<ValueType, true> {
                              const size_t span,
                              const unsigned vector_size,
                              scalar_type* scalar_ptr) :
-      m_functor( space , scalar_ptr , span*vector_size ),
+      m_functor( space , scalar_ptr , span*vector_size , "Stokhos_MP_VectorContig_ConstructDestructFunctor1" ),
       m_initialize(initialize) {}
 
     inline void construct_shared_allocation() {
@@ -689,7 +689,7 @@ struct MPVectorAllocation<ValueType, false> {
                              const unsigned vector_size,
                              scalar_type* scalar_ptr,
                              value_type* value_ptr) :
-      m_scalar_functor( space , scalar_ptr , span*vector_size ),
+      m_scalar_functor( space , scalar_ptr , span*vector_size , "Stokhos_MP_VectorContig_ConstructDestructFunctor2" ),
       m_vector_functor( space , value_ptr , scalar_ptr , span , vector_size ),
       m_initialize(initialize) {}
 

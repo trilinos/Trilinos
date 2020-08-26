@@ -25,10 +25,7 @@ set (Teko_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D ON CACHE BOOL "Temporarily di
 
 # These tests times out in most cases - 
 set (KokkosKernels_blas_serial_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set (Tempus_HHTAlpha_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set (ROL_example_PDE-OPT_helmholtz_example_02_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set (Tempus_DIRK_ASA_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set (Tempus_ExplicitRK_ASA_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 

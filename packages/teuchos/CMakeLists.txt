@@ -360,11 +360,10 @@ IF(TPL_ENABLE_Valgrind)
 ENDIF()
 
 # Enabling Kokkos profiling hooks in Teuchos timers requires that the
-# Kokkos package be enabled, and that Kokkos_ENABLE_PROFILING is ON.
+# Kokkos package be enabled
 
 IF(DEFINED ${PROJECT_NAME}_ENABLE_Kokkos AND ${PROJECT_NAME}_ENABLE_Kokkos)
-  ASSERT_DEFINED(Kokkos_ENABLE_PROFILING)
-  SET(${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT ${Kokkos_ENABLE_PROFILING})
+  SET(${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT ON)
 ELSE()
   SET(${PACKAGE_NAME}_KOKKOS_PROFILING_DEFAULT OFF)
 ENDIF()

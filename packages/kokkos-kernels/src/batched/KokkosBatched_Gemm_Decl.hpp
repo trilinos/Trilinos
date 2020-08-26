@@ -53,6 +53,29 @@ namespace KokkosBatched {
            const CViewType &C);
   };
 
+  ///
+  /// TeamVector Gemm
+  ///
+
+  template<typename MemberType,
+           typename ArgTransA,
+           typename ArgTransB,
+           typename ArgAlgo>
+  struct TeamVectorGemm {
+    template<typename ScalarType,
+             typename AViewType,
+             typename BViewType,
+             typename CViewType>
+    KOKKOS_INLINE_FUNCTION
+    static int
+    invoke(const MemberType &member,
+           const ScalarType alpha,
+           const AViewType &A,
+           const BViewType &B,
+           const ScalarType beta,
+           const CViewType &C);
+  };
+
 
   ///
   /// Selective Interface
@@ -87,5 +110,8 @@ namespace KokkosBatched {
 
 }
 
+#include "KokkosBatched_Gemm_Serial_Impl.hpp"
+#include "KokkosBatched_Gemm_Team_Impl.hpp"
+#include "KokkosBatched_Gemm_TeamVector_Impl.hpp"
 
 #endif

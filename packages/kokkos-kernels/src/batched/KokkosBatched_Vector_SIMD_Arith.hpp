@@ -58,6 +58,7 @@ namespace KokkosBatched {
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator + (const Vector<SIMD<T>,l> &a,  const Vector<SIMD<T>,l> &b) {
     Vector<SIMD<T>,l> r_val;
+    if (std::is_fundamental<T>::value) {
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -67,8 +68,12 @@ namespace KokkosBatched {
 #ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
 #pragma omp simd
 #endif
-    for (int i=0;i<l;++i)
-      r_val[i] = a[i] + b[i];
+      for (int i=0;i<l;++i)
+        r_val[i] = a[i] + b[i];
+    } else {
+      for (int i=0;i<l;++i)
+        r_val[i] = a[i] + b[i];
+    }
     return r_val;
   }
     
@@ -274,6 +279,7 @@ namespace KokkosBatched {
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator - (const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
     Vector<SIMD<T>,l> r_val;
+    if (std::is_fundamental<T>::value) {
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -283,8 +289,12 @@ namespace KokkosBatched {
 #ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
 #pragma omp simd
 #endif
-    for (int i=0;i<l;++i)
-      r_val[i] = a[i] - b[i];
+      for (int i=0;i<l;++i)
+        r_val[i] = a[i] - b[i];
+    } else {
+      for (int i=0;i<l;++i)
+        r_val[i] = a[i] - b[i];
+    }
     return r_val;
   }
 
@@ -337,6 +347,7 @@ namespace KokkosBatched {
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator - (const Vector<SIMD<T>,l> &a) {
     Vector<SIMD<T>,l> r_val;
+    if (std::is_fundamental<T>::value) {
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -346,8 +357,12 @@ namespace KokkosBatched {
 #ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
 #pragma omp simd
 #endif
-    for (int i=0;i<l;++i)
-      r_val[i] = -a[i];
+      for (int i=0;i<l;++i)
+        r_val[i] = -a[i];
+    } else {
+      for (int i=0;i<l;++i)
+        r_val[i] = -a[i];
+    }
     return r_val;
   }
 
@@ -534,6 +549,7 @@ namespace KokkosBatched {
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator * (const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
     Vector<SIMD<T>,l> r_val;
+    if (std::is_fundamental<T>::value) {
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -543,8 +559,12 @@ namespace KokkosBatched {
 #ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
 #pragma omp simd
 #endif
-    for (int i=0;i<l;++i)
-      r_val[i] = a[i] * b[i];
+      for (int i=0;i<l;++i)
+        r_val[i] = a[i] * b[i];
+    } else {
+      for (int i=0;i<l;++i)
+        r_val[i] = a[i] * b[i];
+    }
     return r_val;
   }
 
@@ -819,6 +839,7 @@ namespace KokkosBatched {
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator / (const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
     Vector<SIMD<T>,l> r_val;
+    if (std::is_fundamental<T>::value) {
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
@@ -828,8 +849,12 @@ namespace KokkosBatched {
 #ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
 #pragma omp simd
 #endif
-    for (int i=0;i<l;++i)
-      r_val[i] = a[i] / b[i];
+      for (int i=0;i<l;++i)
+        r_val[i] = a[i] / b[i];
+    } else {
+      for (int i=0;i<l;++i)
+        r_val[i] = a[i] / b[i];
+    }
     return r_val;
   }
 

@@ -414,10 +414,10 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory, sparse ## _ ## block_gauss_seidel_rank1 ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-	test_block_gauss_seidel_rank1<SCALAR,ORDINAL,OFFSET,DEVICE>(2000, 2000 * 15, 200, 10); \
+	test_block_gauss_seidel_rank1<SCALAR,ORDINAL,OFFSET,DEVICE>(500, 500 * 10, 70, 3); \
 } \
 TEST_F( TestCategory, sparse ## _ ## block_gauss_seidel_rank2 ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-	test_block_gauss_seidel_rank2<SCALAR,ORDINAL,OFFSET,DEVICE>(2000, 2000 * 15, 200, 10); \
+	test_block_gauss_seidel_rank2<SCALAR,ORDINAL,OFFSET,DEVICE>(500, 500 * 10, 70, 3); \
 }
 
 

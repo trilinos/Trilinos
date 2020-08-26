@@ -131,24 +131,24 @@ KOKKOSBLAS3_TRMM_BLAS(Kokkos::complex<float>, std::complex<float>, LAYOUTA,  LAY
 
 // Explicitly define the TRMM class for all permutations listed below
 
-//KOKKOSBLAS3_DTRMM_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
+KOKKOSBLAS3_DTRMM_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
 KOKKOSBLAS3_DTRMM_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
-//KOKKOSBLAS3_DTRMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
+KOKKOSBLAS3_DTRMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
 KOKKOSBLAS3_DTRMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
-//KOKKOSBLAS3_STRMM_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
+KOKKOSBLAS3_STRMM_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
 KOKKOSBLAS3_STRMM_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
-//KOKKOSBLAS3_STRMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
+KOKKOSBLAS3_STRMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
 KOKKOSBLAS3_STRMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
-//KOKKOSBLAS3_ZTRMM_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
+KOKKOSBLAS3_ZTRMM_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
 KOKKOSBLAS3_ZTRMM_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
-//KOKKOSBLAS3_ZTRMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
+KOKKOSBLAS3_ZTRMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
 KOKKOSBLAS3_ZTRMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
-//KOKKOSBLAS3_CTRMM_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
+KOKKOSBLAS3_CTRMM_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
 KOKKOSBLAS3_CTRMM_BLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, false)
-//KOKKOSBLAS3_CTRMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
+KOKKOSBLAS3_CTRMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
 KOKKOSBLAS3_CTRMM_BLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, false)
 
 }
@@ -255,44 +255,44 @@ KOKKOSBLAS3_TRMM_CUBLAS(Kokkos::complex<float>, cuComplex, cublasCtrmm, LAYOUTA,
 
 // Explicitly define the TRMM class for all permutations listed below
 
-//KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
+KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
 KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
-//KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
+KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
 KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
 
-//KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
 KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
-//KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
 KOKKOSBLAS3_DTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 
-//KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
+KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
 KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
-//KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
+KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
 KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
 
-//KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
 KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
-//KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
 KOKKOSBLAS3_STRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 
-//KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
+KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
 KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
-//KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
+KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
 KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
 
-//KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
 KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
-//KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
 KOKKOSBLAS3_ZTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 
-//KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
+KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
 KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaSpace, false)
-//KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
+KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, true)
 KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaSpace, false)
 
-//KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, true)
 KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::CudaUVMSpace, false)
-//KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, true)
 KOKKOSBLAS3_CTRMM_CUBLAS( Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::CudaUVMSpace, false)
 
 } // namespace Impl
