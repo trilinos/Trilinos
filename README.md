@@ -1,4 +1,5 @@
-![Trilinos](http://trilinos.sandia.gov/common/logo_trilinos_moon.png)
+# Trilinos
+![Trilinos Logo](https://trilinos.github.io/images/trilinos.jpg)
 
 [Website](https://trilinos.github.io) |
 [Documentation](https://trilinos.github.io/documentation.html) |
