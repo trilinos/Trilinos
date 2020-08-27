@@ -195,7 +195,7 @@ namespace MueLu {
       ////////////////////////////////////////////////////
       // Remove this bit once we are confident that cut-based dropping works.
 #ifdef HAVE_MUELU_DEBUG
-   #   int distanceLaplacianCutVerbose = 0;
+      int distanceLaplacianCutVerbose = 0;
 #endif
 #ifdef DJS_READ_ENV_VARIABLES
       if (getenv("MUELU_DROP_TOLERANCE_MODE")) {
