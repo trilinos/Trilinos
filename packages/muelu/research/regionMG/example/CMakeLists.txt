@@ -22,7 +22,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     RegionExampleDriver
     NAME "Structured_Region_Example_Elasticity3D"
-    ARGS "--linAlgebra=Tpetra --xml=elasticity_3d.xml --matrixType=Elasticity3D --nx=28 --ny=28 --smootherIts=2"
+    ARGS "--linAlgebra=Tpetra --xml=elasticity_3d.xml --matrixType=Elasticity3D --nx=28 --ny=28 --nz=28 --smootherIts=2"
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
@@ -30,7 +30,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     RegionExampleDriver
     NAME "Structured_Region_Example_Poisson3D_27pt_stencil"
-    ARGS "--linAlgebra=Tpetra --xml=poisson_3d.xml --matrixType=Brick3D --nx=28 --ny=28 --smootherIts=2"
+    ARGS "--linAlgebra=Tpetra --xml=poisson_3d.xml --matrixType=Brick3D --nx=28 --ny=28 --nz=28--smootherIts=2"
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
