@@ -303,13 +303,15 @@ class DynamicView : public Kokkos::ViewTraits<DataType, P...> {
     if (*pc < NC) {
       while (*pc < NC) {
         m_chunks[*pc] = reinterpret_cast<value_pointer_type>(
-          kokkos_malloc<memory_space>(label(),sizeof(local_value_type)<<m_chunk_shift));
+            typename traits::memory_space().allocate(sizeof(local_value_type)
+                                                     << m_chunk_shift));
         ++*pc;
       }
     } else {
       while (NC + 1 <= *pc) {
         --*pc;
-        kokkos_free<memory_space>(m_chunks[*pc]);
+        typename traits::memory_space().deallocate(
+            m_chunks[*pc], sizeof(local_value_type) << m_chunk_shift);
         m_chunks[*pc] = nullptr;
       }
     }
@@ -360,7 +362,6 @@ class DynamicView : public Kokkos::ViewTraits<DataType, P...> {
     unsigned m_chunk_max;
     bool m_destroy;
     unsigned m_chunk_size;
-    typedef typename traits::memory_space memory_space;
 
     // Initialize or destroy array of chunk pointers.
     // Two entries beyond the max chunks are allocation counters.
