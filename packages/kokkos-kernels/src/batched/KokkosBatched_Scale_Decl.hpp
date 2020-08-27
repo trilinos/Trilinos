@@ -37,7 +37,23 @@ namespace KokkosBatched {
            const AViewType &A);
   };
 
+  ///
+  /// TeamVector Scale
+  ///
+
+  template<typename MemberType>
+  struct TeamVectorScale {
+    template<typename ScalarType,
+             typename AViewType>
+    KOKKOS_INLINE_FUNCTION
+    static int
+    invoke(const MemberType &member, 
+           const ScalarType alpha,
+           const AViewType &A);
+  };
+
 }
 
+#include "KokkosBatched_Scale_Impl.hpp"
 
 #endif

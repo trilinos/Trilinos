@@ -20,7 +20,7 @@ namespace KokkosBatched {
   int
   SerialCopy<Trans::NoTranspose>::
   invoke(const AViewType &A,
-         /* */ BViewType &B) {
+         const BViewType &B) {
     return SerialCopyInternal::
       invoke(A.extent(0), 
              A.extent(1), 
@@ -35,7 +35,7 @@ namespace KokkosBatched {
   int
   SerialCopy<Trans::Transpose>::
   invoke(const AViewType &A,
-         /* */ BViewType &B) {
+         const BViewType &B) {
     return SerialCopyInternal::
       invoke(A.extent(1), 
              A.extent(0), 
@@ -56,7 +56,7 @@ namespace KokkosBatched {
     static int
     invoke(const MemberType &member, 
            const AViewType &A,
-           /* */ BViewType &B) {
+           const BViewType &B) {
       return TeamCopyInternal::
         invoke(member,
                A.extent(0), 
@@ -74,8 +74,48 @@ namespace KokkosBatched {
     static int
     invoke(const MemberType &member, 
            const AViewType &A,
-           /* */ BViewType &B) {
+           const BViewType &B) {
       return TeamCopyInternal::
+        invoke(member,
+               A.extent(1), 
+               A.extent(0), 
+               A.data(), A.stride_1(), A.stride_0(),
+               B.data(), B.stride_0(), B.stride_1());
+    }
+  };
+
+  ///
+  /// TeamVector Impl
+  /// =========
+    
+  template<typename MemberType>
+  struct TeamVectorCopy<MemberType,Trans::NoTranspose> {
+    template<typename AViewType,
+             typename BViewType>
+    KOKKOS_INLINE_FUNCTION
+    static int
+    invoke(const MemberType &member, 
+           const AViewType &A,
+           const BViewType &B) {
+      return TeamVectorCopyInternal::
+        invoke(member,
+               A.extent(0), 
+               A.extent(1), 
+               A.data(), A.stride_0(), A.stride_1(),
+               B.data(), B.stride_0(), B.stride_1());
+    }
+  };
+    
+  template<typename MemberType>
+  struct TeamVectorCopy<MemberType,Trans::Transpose> {
+    template<typename AViewType,
+             typename BViewType>
+    KOKKOS_INLINE_FUNCTION
+    static int
+    invoke(const MemberType &member, 
+           const AViewType &A,
+           const BViewType &B) {
+      return TeamVectorCopyInternal::
         invoke(member,
                A.extent(1), 
                A.extent(0), 

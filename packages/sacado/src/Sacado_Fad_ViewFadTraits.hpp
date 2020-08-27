@@ -105,7 +105,7 @@ namespace Sacado {
   template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
   struct Value< Fad::ViewFad<ValueT,Size,Stride,Base> > {
     typedef typename ValueType< Fad::ViewFad<ValueT,Size,Stride,Base> >::type value_type;
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static const value_type& eval(const Fad::ViewFad<ValueT,Size,Stride,Base>& x) {
       return x.val(); }
   };
@@ -115,7 +115,7 @@ namespace Sacado {
   struct ScalarValue< Fad::ViewFad<ValueT,Size,Stride,Base> > {
     typedef typename ValueType< Fad::ViewFad<ValueT,Size,Stride,Base> >::type value_type;
     typedef typename ScalarType< Fad::ViewFad<ValueT,Size,Stride,Base> >::type scalar_type;
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static const scalar_type& eval(const Fad::ViewFad<ValueT,Size,Stride,Base>& x) {
       return ScalarValue<value_type>::eval(x.val()); }
   };
@@ -131,7 +131,7 @@ namespace Sacado {
   //! Specialization of %IsEqual to ViewFad types
   template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
   struct IsEqual< Fad::ViewFad<ValueT,Size,Stride,Base> > {
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static bool eval(const Fad::ViewFad<ValueT,Size,Stride,Base>& x,
                      const Fad::ViewFad<ValueT,Size,Stride,Base>& y) {
       return x.isEqualTo(y);

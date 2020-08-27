@@ -1,5 +1,25 @@
 # Change Log
 
+## [3.2.00](https://github.com/kokkos/kokkos-kernels/tree/3.2.00) (2020-08-19)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.1.01...3.2.00)
+
+**Implemented enhancements:**
+
+- Add CudaUVMSpace specializations for cuBLAS IAMAX and SCAL [\#758](https://github.com/kokkos/kokkos-kernels/issues/758)
+- Add wiki examples [\#735](https://github.com/kokkos/kokkos-kernels/issues/735)
+- Support complex\_float, complex\_double in cuSPARSE SPMV wrapper [\#726](https://github.com/kokkos/kokkos-kernels/issues/726)
+- Add performance tests for trmm and trtri [\#711](https://github.com/kokkos/kokkos-kernels/issues/711)
+- SpAdd requires output values to be zero-initialized, but this shouldnt be needed [\#694](https://github.com/kokkos/kokkos-kernels/issues/694)
+- SpAdd doesnt merge entries correctly [\#685](https://github.com/kokkos/kokkos-kernels/issues/685)
+- cusparse SpMV merge algorithm [\#670](https://github.com/kokkos/kokkos-kernels/issues/670)
+- TPL support for SpMV [\#614](https://github.com/kokkos/kokkos-kernels/issues/614)
+- Add two BLAS/LAPACK calls needed by: Sptrsv supernode \#552 [\#589](https://github.com/kokkos/kokkos-kernels/issues/589)
+- HashmapAccumulator has several unused members, misnamed parameters [\#508](https://github.com/kokkos/kokkos-kernels/issues/508)
+
+**Fixed bugs:**
+
+- Nightly test failure: spgemm unit tests failing on White \(Power8\) [\#780](https://github.com/kokkos/kokkos-kernels/issues/780)
+- supernodal does not build with UVM enabled [\#633](https://github.com/kokkos/kokkos-kernels/issues/633)
 
 ## [3.1.1](https://github.com/kokkos/kokkos-kernels/tree/3.1.1) (2020-05-04)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.1.00...3.1.1)

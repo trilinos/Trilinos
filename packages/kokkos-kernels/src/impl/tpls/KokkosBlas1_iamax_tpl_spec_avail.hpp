@@ -121,6 +121,25 @@ KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned long, Kokkos::complex<float>, 
 KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned int, Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::CudaSpace)
 #endif
 
+#if defined (KOKKOS_ENABLE_CUDA_UVM)
+#if defined (KOKKOSKERNELS_INST_DOUBLE)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned long, double,                 Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned int, double,                  Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_FLOAT)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned long, float,                  Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned int, float,                   Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned long, Kokkos::complex<double>,Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned int, Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned long, Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+KOKKOSBLAS1_IAMAX_TPL_SPEC_AVAIL_CUBLAS( unsigned int, Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
+#endif
+#endif
+
 #endif
 
 }

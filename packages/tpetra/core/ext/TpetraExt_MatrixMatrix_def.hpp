@@ -3175,8 +3175,8 @@ addSorted(
     row_ptrs_array, col_inds_array>
     (&handle, Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
   //KokkosKernels requires values to be zeroed
-  Cvals = values_array("C values", addHandle->get_max_result_nnz());
-  Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_max_result_nnz());
+  Cvals = values_array("C values", addHandle->get_c_nnz());
+  Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null;
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted numeric")));
@@ -3222,8 +3222,8 @@ addUnsorted(
     row_ptrs_array, col_inds_array>
       (&handle, Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
   //Cvals must be zeroed out
-  Cvals = values_array("C values", addHandle->get_max_result_nnz());
-  Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_max_result_nnz());
+  Cvals = values_array("C values", addHandle->get_c_nnz());
+  Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null;
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted kernel: sorted numeric")));
@@ -3304,8 +3304,8 @@ convertToGlobalAndAdd(
   KokkosSparse::Experimental::spadd_symbolic
     <KKH_GO, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, row_ptrs_array, global_col_inds_array>
     (&handle, Arowptrs, AcolindsConverted, Browptrs, BcolindsConverted, Crowptrs);
-  Cvals = values_array("C values", addHandle->get_max_result_nnz());
-  Ccolinds = global_col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_max_result_nnz());
+  Cvals = values_array("C values", addHandle->get_c_nnz());
+  Ccolinds = global_col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null;
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() diff col map kernel: unsorted numeric")));

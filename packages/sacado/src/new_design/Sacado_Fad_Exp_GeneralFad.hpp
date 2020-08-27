@@ -94,26 +94,26 @@ namespace Sacado {
       using ExtenderType::ExtenderType;
 
       //! Default constructor
-      KOKKOS_DEFAULTED_FUNCTION
+      SACADO_DEFAULTED_FUNCTION
       GeneralFad() = default;
 
       //! Copy constructor
-      KOKKOS_DEFAULTED_FUNCTION
+      SACADO_DEFAULTED_FUNCTION
       GeneralFad(const GeneralFad& x) = default;
 
       //! Move constructor
-      KOKKOS_DEFAULTED_FUNCTION
+      SACADO_DEFAULTED_FUNCTION
       GeneralFad(GeneralFad&& x) = default;
 
       //! Constructor with value (disabled for ViewFad)
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       GeneralFad(const S & x, SACADO_EXP_ENABLE_VALUE_CTOR_DECL) :
         ExtenderType(x) {}
 
       //! Copy constructor from any Expression object (disabled for ViewFad)
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       GeneralFad(const Expr<S>& x, SACADO_EXP_ENABLE_EXPR_CTOR_DECL) :
         ExtenderType(x.derived().size(), value_type(0.), NoInitDerivArray)
       {
@@ -121,7 +121,7 @@ namespace Sacado {
       }
 
       //! Destructor
-      KOKKOS_DEFAULTED_FUNCTION
+      SACADO_DEFAULTED_FUNCTION
       ~GeneralFad() = default;
 
       //! Set %GeneralFad object as the \c ith independent variable
@@ -131,7 +131,7 @@ namespace Sacado {
        * Implementation(const int sz, const int i, const T & x)
        * constructor.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void diff(const int ith, const int n) {
         if (this->size() != n)
           this->resize(n);
@@ -143,24 +143,24 @@ namespace Sacado {
       //! Set whether this Fad object should update values
       /*! Retained for backward compatibility.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void setUpdateValue(bool update_val) {}
 
       //! Return whether this Fad object has an updated value
       /*! Retained for backward compatibility.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const { return true; }
 
       //! Cache values
       /*! Retained for backward compatibility.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {}
 
       //! Returns whether two Fad objects have the same values
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_EXP_ENABLE_EXPR_FUNC(bool) isEqualTo(const Expr<S>& xx) const {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
@@ -185,15 +185,15 @@ namespace Sacado {
        * \brief Returns number of derivative components that can be stored
        * without reallocation
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int availableSize() const { return this->length(); }
 
       //! Returns true if derivative array is not empty
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const { return this->size()!=0; }
 
       //! Set whether variable is constant
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void setIsConstant(bool is_const) {
         if (is_const && this->size()!=0)
           this->resize(0);
@@ -208,7 +208,7 @@ namespace Sacado {
 
       //! Assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(GeneralFad&) operator=(const S& v) {
         this->val() = v;
         if (this->size()) this->resize(0);
@@ -216,18 +216,18 @@ namespace Sacado {
       }
 
       //! Assignment with GeneralFad right-hand-side
-      KOKKOS_DEFAULTED_FUNCTION
+      SACADO_DEFAULTED_FUNCTION
       GeneralFad&
       operator=(const GeneralFad& x) = default;
 
       //! Move assignment with GeneralFad right-hand-side
-      KOKKOS_DEFAULTED_FUNCTION
+      SACADO_DEFAULTED_FUNCTION
       GeneralFad&
       operator=(GeneralFad&& x) = default;
 
       //! Assignment operator with any expression right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_EXP_ENABLE_EXPR_FUNC(GeneralFad&) operator=(const Expr<S>& x) {
         ExprAssign<GeneralFad>::assign_equal(*this, x.derived());
         return *this;
@@ -242,7 +242,7 @@ namespace Sacado {
 
       //! Addition-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(GeneralFad&) operator += (const S& v) {
         this->val() += v;
         return *this;
@@ -250,7 +250,7 @@ namespace Sacado {
 
       //! Subtraction-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(GeneralFad&) operator -= (const S& v) {
         this->val() -= v;
         return *this;
@@ -258,7 +258,7 @@ namespace Sacado {
 
       //! Multiplication-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(GeneralFad&) operator *= (const S& v) {
         const int sz = this->size();
         this->val() *= v;
@@ -269,7 +269,7 @@ namespace Sacado {
 
       //! Division-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(GeneralFad&) operator /= (const S& v) {
         const int sz = this->size();
         this->val() /= v;
@@ -279,28 +279,28 @@ namespace Sacado {
       }
 
       //! Addition-assignment operator with GeneralFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       GeneralFad& operator += (const GeneralFad& x) {
         ExprAssign<GeneralFad>::assign_plus_equal(*this, x);
         return *this;
       }
 
       //! Subtraction-assignment operator with GeneralFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       GeneralFad& operator -= (const GeneralFad& x) {
         ExprAssign<GeneralFad>::assign_minus_equal(*this, x);
         return *this;
       }
 
       //! Multiplication-assignment operator with GeneralFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       GeneralFad& operator *= (const GeneralFad& x) {
         ExprAssign<GeneralFad>::assign_times_equal(*this, x);
         return *this;
       }
 
       //! Division-assignment operator with GeneralFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       GeneralFad& operator /= (const GeneralFad& x) {
         ExprAssign<GeneralFad>::assign_divide_equal(*this, x);
         return *this;
@@ -308,7 +308,7 @@ namespace Sacado {
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_EXP_ENABLE_EXPR_FUNC(GeneralFad&) operator += (const Expr<S>& x) {
         ExprAssign<GeneralFad>::assign_plus_equal(*this, x.derived());
         return *this;
@@ -316,7 +316,7 @@ namespace Sacado {
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_EXP_ENABLE_EXPR_FUNC(GeneralFad&) operator -= (const Expr<S>& x) {
         ExprAssign<GeneralFad>::assign_minus_equal(*this, x.derived());
         return *this;
@@ -324,7 +324,7 @@ namespace Sacado {
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_EXP_ENABLE_EXPR_FUNC(GeneralFad&) operator *= (const Expr<S>& x) {
         ExprAssign<GeneralFad>::assign_times_equal(*this, x.derived());
         return *this;
@@ -332,7 +332,7 @@ namespace Sacado {
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_EXP_ENABLE_EXPR_FUNC(GeneralFad&) operator /= (const Expr<S>& x) {
         ExprAssign<GeneralFad>::assign_divide_equal(*this, x.derived());
         return *this;

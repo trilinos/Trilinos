@@ -76,8 +76,10 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
                         std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >& colImportPerGrp,
                         std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regionGrpMats,
                         Teuchos::ArrayRCP<LocalOrdinal>&  regionMatVecLIDs,
+                        Teuchos::Array<GlobalOrdinal>& quasiRegionCoordGIDs,
                         Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
-                        Teuchos::Array<LocalOrdinal>& rNodesPerDim) {
+                        Teuchos::Array<LocalOrdinal>& rNodesPerDim,
+                        LocalOrdinal& numLocalRegionNodes) {
 #include <MueLu_UseShortNames.hpp>
 
   std::string matrixType = galeriList.get<std::string>("matrixType");
@@ -113,12 +115,10 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
   Array<int> boundaryConditions;
   int maxRegPerGID = 0;
   int numInterfaces = 0;
-  LO numLocalRegionNodes = 0;
   Array<GO>  sendGIDs;
   Array<int> sendPIDs;
   Array<LO>  compositeToRegionLIDs(nodeMap->getNodeNumElements()*numDofsPerNode);
   Array<GO>  quasiRegionGIDs;
-  Array<GO>  quasiRegionCoordGIDs;
   Array<GO>  interfaceCompositeGIDs, interfaceRegionGIDs;
   Array<LO>  interfaceRegionLIDs;
   createRegionData(numDimensions, false, numDofsPerNode,
@@ -232,24 +232,54 @@ void createProblem(const int maxRegPerProc, const LocalOrdinal numDofsPerNode,
 
   // Create auxiliary data for MG
   RCP<MultiVector> nullspace = Pr->BuildNullspace();
-  RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>(coordinatesType, nodeMap, galeriList);
+  RCP<RealValuedMultiVector> coordinates = 
+    Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>(coordinatesType, nodeMap, galeriList);
 
   // create the region maps, importer and operator from composite counter parts
   std::vector<RCP<Map> >    rowMapPerGrp(maxRegPerProc), colMapPerGrp(maxRegPerProc);
   std::vector<RCP<Map> >    revisedColMapPerGrp(maxRegPerProc);
   std::vector<RCP<Import> > colImportPerGrp(maxRegPerProc);
+  Array<GO>  quasiRegionCoordGIDs;
+  LO numLocalRegionNodes = 0;
   createRegionMatrix(galeriList, numDofsPerNode, maxRegPerProc, nodeMap, dofMap, A,
                      rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp, revisedColMapPerGrp,
                      rowImportPerGrp, colImportPerGrp, regionGrpMats,
-                     regionMatVecLIDs, regionInterfaceImporter, rNodesPerDim);
+                     regionMatVecLIDs, quasiRegionCoordGIDs, regionInterfaceImporter, 
+                     rNodesPerDim, numLocalRegionNodes);
 
-  // Create regional nullspace an coordinates
+  // Build objects needed to construct the region coordinates
+  std::vector<RCP<Map> > quasiRegCoordMap(maxRegPerProc);
+  std::vector<RCP<Map> > regCoordMap(maxRegPerProc);
+  std::vector<RCP<Import> > coordImporter(maxRegPerProc);
+
+  quasiRegCoordMap[0] = Xpetra::MapFactory<LO,GO,Node>::
+    Build(nodeMap->lib(),
+          Teuchos::OrdinalTraits<GO>::invalid(),
+          quasiRegionCoordGIDs(),
+          nodeMap->getIndexBase(),
+          nodeMap->getComm());
+  regCoordMap[0] = Xpetra::MapFactory<LO,GO,Node>::
+    Build(nodeMap->lib(),
+          Teuchos::OrdinalTraits<GO>::invalid(),
+          numLocalRegionNodes,
+          nodeMap->getIndexBase(),
+          nodeMap->getComm());
+
+  coordImporter[0] = ImportFactory::Build(nodeMap, quasiRegCoordMap[0]);
+
+  // create region coordinates vector
+  regionCoordinates[0] = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(quasiRegCoordMap[0],
+                                                                               coordinates->getNumVectors());
+  regionCoordinates[0]->doImport(*coordinates, *coordImporter[0], Xpetra::INSERT);
+  regionCoordinates[0]->replaceMap(regCoordMap[0]);
+
+  // Create regional nullspace and coordinates
   Teuchos::Array<RCP<MultiVector> > quasiRegionNullspace(maxRegPerProc);
   Teuchos::Array<RCP<RealValuedMultiVector> > quasiRegionCoordinates(maxRegPerProc);
   compositeToRegional(nullspace, quasiRegionNullspace, regionNullspace,
                       revisedRowMapPerGrp, rowImportPerGrp);
   compositeToRegional(coordinates, quasiRegionCoordinates, regionCoordinates,
-                      revisedRowMapPerGrp, rowImportPerGrp);
+                      regCoordMap, coordImporter);
 
 
 } // createProblem
