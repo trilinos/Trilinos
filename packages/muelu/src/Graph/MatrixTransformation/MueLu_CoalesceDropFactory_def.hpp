@@ -105,7 +105,7 @@ namespace MueLu {
       bool      drop {true};
 
       // CMS: Auxillary information for debugging info
-      real_type aux_val {Teuchos::ScalarTraits<real_type>::nan()};
+      //      real_type aux_val {Teuchos::ScalarTraits<real_type>::nan()};
     };
   }
 
@@ -195,7 +195,7 @@ namespace MueLu {
       ////////////////////////////////////////////////////
       // Remove this bit once we are confident that cut-based dropping works.
 #ifdef HAVE_MUELU_DEBUG
-      int distanceLaplacianCutVerbose = 0;
+   #   int distanceLaplacianCutVerbose = 0;
 #endif
 #ifdef DJS_READ_ENV_VARIABLES
       if (getenv("MUELU_DROP_TOLERANCE_MODE")) {
@@ -965,7 +965,6 @@ namespace MueLu {
 
                   if (row == col) {
                     drop_vec.emplace_back( zero, one, colID, false);
-		    if (vals.size() > 0) drop_vec.back().aux_val = vals[colID];
                     continue;
                   }
 		  // We do not want the distance Laplacian aggregating boundary nodes
@@ -976,11 +975,6 @@ namespace MueLu {
                   real_type aij    = STS::magnitude(laplVal*laplVal);
 
                   drop_vec.emplace_back(aij, aiiajj, colID, false);
-
-
-		  // CMS hackery
-		  if(vals.size() > 0) drop_vec.back().aux_val = vals[colID];
-
                 }
 
                 const size_t n = drop_vec.size();
