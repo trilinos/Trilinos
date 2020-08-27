@@ -2,7 +2,7 @@
 
   <!-- Configuration of the Xpetra operator (fine level) -->
   <ParameterList name="Matrix">
-    <Parameter name="PDE equations"                   type="int" value="1"/> <!-- Number of PDE equations at each grid node.-->
+    <Parameter name="PDE equations"                   type="int" value="1"/>
   </ParameterList>
 
   <!-- Factory collection -->
@@ -59,21 +59,12 @@
       <Parameter name="factory"                             type="string" value="TransPFactory"/>
     </ParameterList>
 
-    <!-- <ParameterList name="myAggExport"> -->
-    <!--   <Parameter name="factory"                             type="string" value="AggregationExportFactory"/> -->
-    <!--   <Parameter name="Aggregates"                          type="string" value="myAggregationFact"/> -->
-    <!--   <Parameter name="aggregation: output filename"        type="string" value="structured_aggs"/> -->
-    <!--   <Parameter name="aggregation: output file: agg style" type="string" value="Jacks"/> -->
-    <!--   <Parameter name="aggregation: output file: agg style" type="string" value="Convex Hulls"/> -->
-    <!-- </ParameterList> -->
-
     <ParameterList name="myRAPFact">
       <Parameter name="factory"                             type="string" value="RAPFactory"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
       <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
       <ParameterList name="TransferFactories">
         <Parameter name="CoordinateTransfer"                type="string" value="myCoordTransferFact"/>
-        <!-- <Parameter name="AggregationExportFactory"                type="string" value="myAggExport"/> -->
       </ParameterList>
     </ParameterList>
 
@@ -107,9 +98,9 @@
   <!-- Definition of the multigrid preconditioner -->
   <ParameterList name="Hierarchy">
 
-    <Parameter name="max levels"                            type="int"      value="3"/> <!-- Max number of levels -->
+    <Parameter name="max levels"                            type="int"      value="3"/>
     <Parameter name="cycle type"                            type="string"   value="W"/>
-    <Parameter name="coarse: max size"                      type="int"      value="20"/> <!-- Min number of rows on coarsest level -->
+    <Parameter name="coarse: max size"                      type="int"      value="20"/>
     <Parameter name="verbosity"                             type="string"   value="High"/>
 
     <ParameterList name="All">
@@ -121,7 +112,6 @@
       <Parameter name="P"                                   type="string"   value="myProlongatorFact"/>
       <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
       <Parameter name="A"                                   type="string"   value="myRAPFact"/>
-      <!-- <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/> -->
       <Parameter name="CoarseSolver"                        type="string"   value="myILU"/>
       <Parameter name="Coordinates"                         type="string"   value="myProlongatorFact"/>
       <Parameter name="lNodesPerDim"                        type="string"   value="myCoordTransferFact"/>
