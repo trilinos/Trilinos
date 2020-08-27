@@ -14,13 +14,19 @@ if   [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] \
    ; then
   export ATDM_CONFIG_COMPILER=GNU-7.2.0-OPENMPI-2.1.2
 
+elif   [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0-OPENMPI-4.0.1" ]] \
+   ; then
+  export ATDM_CONFIG_COMPILER=GNU-7.2.0-OPENMPI-4.0.1
+
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-7.2.0" ]] \
   || [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2" ]] \
   || [[ "$ATDM_CONFIG_COMPILER" == "CUDA" ]] \
    ; then
   export ATDM_CONFIG_COMPILER=CUDA-9.2-GNU-7.2.0-OPENMPI-2.1.2
 
-elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1" ]]; then
+elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1_GNU-7.2.0" ]] \
+  || [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1" ]] \
+   ; then
   export ATDM_CONFIG_COMPILER=CUDA-10.1-GNU-7.2.0-OPENMPI-4.0.1
 
 else
@@ -32,6 +38,7 @@ else
   echo "***"
   echo "***   gnu-7.2.0 (default and default gnu)"
   echo "***   cuda-9.2-gnu-7.2.0  (default cuda, cuda-9.2)"
+  echo "***   cuda-10.1-gnu-7.2.0  (cuda-10.1)"
   echo "***"
   return
 fi
@@ -122,14 +129,26 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0-OPENMPI-2.1.2" ]; then
     export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
     export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
 
+elif [ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0-OPENMPI-4.0.1" ]; then
+
+    module load devpack/20190814/openmpi/4.0.1/gcc/7.2.0/cuda/10.1.105
+    module swap openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0
+    export OMPI_CXX=`which g++`
+    export OMPI_CC=`which gcc`
+    export OMPI_FC=`which gfortran`
+    export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
+    export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
+
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
 
   if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2-GNU-7.2.0-OPENMPI-2.1.2" ]] ; then
     module load devpack/20180517/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88
     module swap openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0
+
   elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1-GNU-7.2.0-OPENMPI-4.0.1" ]] ; then
     module load devpack/20190814/openmpi/4.0.1/gcc/7.2.0/cuda/10.1.105
     module swap openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0
+
   else
     echo
     echo "***"
