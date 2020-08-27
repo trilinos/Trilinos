@@ -60,7 +60,8 @@
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Utilities.hpp"
 
-#define LOTS_OF_PRINTING 0
+// Variable to enable lots of debug output
+#define MUELU_FILTEREDAFACTORY_LOTS_OF_PRINTING 0
 
 
 namespace MueLu {
@@ -137,7 +138,7 @@ namespace MueLu {
       
 
     RCP<GraphBase> G = Get< RCP<GraphBase> >(currentLevel, "Graph");
-    if(LOTS_OF_PRINTING)
+    if(MUELU_FILTEREDAFACTORY_LOTS_OF_PRINTING)
     {
       FILE * f = fopen("graph.dat","w");
       size_t numGRows = G->GetNodeNumVertices();
@@ -180,7 +181,7 @@ namespace MueLu {
 
 
 
-      if(LOTS_OF_PRINTING)
+      if(MUELU_FILTEREDAFACTORY_LOTS_OF_PRINTING)
      { 
        Xpetra::IO<SC,LO,GO,NO>::Write("filteredA.dat", *filteredA);
 
@@ -654,7 +655,7 @@ namespace MueLu {
 
 	if( (dirichletThresh >= 0.0 && TST::real(vals[diagIndexInMatrix]) <= dirichletThresh) ||  TST::real(vals[diagIndexInMatrix]) == ZERO) {
 	  
-	  if(LOTS_OF_PRINTING>0) {
+	  if(MUELU_FILTEREDAFACTORY_LOTS_OF_PRINTING>0) {
 	    A.getLocalRowView(row, indsA, valsA);
 	    SC diagA = valsA[diagIndex[row]];	    
 	    printf("WARNING: row %d (diagIndex=%d) diag(Afiltered) = %8.2e diag(A)=%8.2e numInds = %d\n",row,diagIndex[row],vals[diagIndexInMatrix],diagA,(LO)indsA.size());
@@ -666,7 +667,7 @@ namespace MueLu {
 	    for(LO l = 0; l < (LO)indsA.size(); l++) 
 	      F_rowsum += vals[index_start+l];
 	    printf("       : A rowsum = %8.2e |A| rowsum = %8.2e rowsum = %8.2e\n",A_rowsum,A_absrowsum,F_rowsum);	    
-	    if(LOTS_OF_PRINTING > 1){
+	    if(MUELU_FILTEREDAFACTORY_LOTS_OF_PRINTING > 1){
 	      printf("        Avals =");
 	      for(LO l = 0; l < (LO)indsA.size(); l++)
 		printf("%d(%8.2e)[%d] ",(LO)indsA[l],valsA[l],(LO)l);
@@ -702,7 +703,6 @@ namespace MueLu {
     MueLu_sumAll(A.getRowMap()->getComm(), numFixedDiags, g_fixedDiags);
     GetOStream(Runtime0)<< "Filtering out "<<g_newDrops<<" edges, in addition to the "<<g_oldDrops<<" edges dropped earlier"<<std::endl;
     GetOStream(Runtime0)<< "Fixing "<< g_fixedDiags<<" zero diagonal values" <<std::endl;
-    //    printf("CMS: numSymDrops = %d\n",(int)numSymDrops);
   }
 
 
