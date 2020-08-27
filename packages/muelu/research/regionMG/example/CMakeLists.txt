@@ -14,6 +14,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(StructuredRegion_example_cp
     SOURCE_FILES
+      amg_1dof.xml
       elasticity_3d.xml
       poisson_3d.xml
       structured_unstructured_1dof.xml
@@ -31,6 +32,14 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     RegionExampleDriver
     NAME "Structured_Region_Example_Poisson3D_27pt_stencil"
     ARGS "--linAlgebra=Tpetra --xml=poisson_3d.xml --matrixType=Brick3D --nx=28 --ny=28 --nz=28--smootherIts=2"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
+  TRIBITS_ADD_TEST(
+    RegionExampleDriver
+    NAME "Structured_Region_Example_Poisson3D_27pt_stencil_AMG"
+    ARGS "--linAlgebra=Tpetra --xml=poisson_3d.xml --matrixType=Brick3D --nx=50 --ny=50 --nz=50 --smootherIts=2 --coarseSolverType=amg --coarseAmgXml=amg_1dof.xml"
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
