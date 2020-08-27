@@ -413,6 +413,13 @@ Piro::TrapezoidRuleSolver<Scalar>::getNOXSolver() const
   return noxSolver;
 }
 
+template <typename Scalar>
+Teuchos::RCP<Piro::TrapezoidDecorator<Scalar> >
+Piro::TrapezoidRuleSolver<Scalar>::getDecorator() const
+{
+  return model;
+}
+
 /****************************************************************************/
 
 template <typename Scalar>
