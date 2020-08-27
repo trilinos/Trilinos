@@ -216,7 +216,7 @@ struct InputTraits {
 #define Z2_ISSAME(s,type) (std::is_same< s, type >::value)
 
 #define Z2_STYPES(s) ( Z2_ISSAME(s,float) || \
-  Z2_ISSAME(s,double) || Z2_ISSAME(s,int) )
+  Z2_ISSAME(s,double) || Z2_ISSAME(s,int) || Z2_ISSAME(s,long long))
 
 #define Z2_LTYPES(l) ( Z2_ISSAME(l,int) ||  \
   Z2_ISSAME(l,long) || Z2_ISSAME(l,long long) || Z2_ISSAME(l,ssize_t) )
