@@ -57,7 +57,7 @@ template<class ExecSpace> \
 struct TRTRI< \
      Kokkos::View<int, LAYOUTA, Kokkos::HostSpace, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     Kokkos::View<const SCALAR_TYPE**, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+     Kokkos::View<SCALAR_TYPE**, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      true, ETI_SPEC_AVAIL> { \
   typedef SCALAR_TYPE SCALAR; \
@@ -100,7 +100,7 @@ template<class ExecSpace> \
 struct TRTRI< \
      Kokkos::View<int, LAYOUTA, Kokkos::HostSpace, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     Kokkos::View<const SCALAR_TYPE**, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
+     Kokkos::View<SCALAR_TYPE**, LAYOUTA, Kokkos::Device<ExecSpace, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      true, ETI_SPEC_AVAIL> { \
   typedef SCALAR_TYPE SCALAR; \
@@ -169,24 +169,24 @@ KOKKOSBLAS_TRTRI_BLAS_MAGMA(Kokkos::complex<float>, magmaFloatComplex_ptr, magma
 KOKKOSBLAS_TRTRI_BLAS_MAGMA(Kokkos::complex<float>, magmaFloatComplex_ptr, magma_ctrtri_gpu, LAYOUTA, Kokkos::CudaUVMSpace, ETI_SPEC_AVAIL) \
 
 // Handle layout permutations
-//KOKKOSBLAS_DTRTRI_BLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  Kokkos::HostSpace, true)
+KOKKOSBLAS_DTRTRI_BLAS(Kokkos::LayoutLeft, true)
 KOKKOSBLAS_DTRTRI_BLAS(Kokkos::LayoutLeft, false)
-//KOKKOSBLAS_DTRTRI_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::HostSpace, true)
+KOKKOSBLAS_DTRTRI_BLAS(Kokkos::LayoutRight, true)
 KOKKOSBLAS_DTRTRI_BLAS(Kokkos::LayoutRight, false)
 
-//KOKKOSBLAS_STRTRI_BLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  true)
+KOKKOSBLAS_STRTRI_BLAS(Kokkos::LayoutLeft,  true)
 KOKKOSBLAS_STRTRI_BLAS(Kokkos::LayoutLeft,  false)
-//KOKKOSBLAS_STRTRI_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
+KOKKOSBLAS_STRTRI_BLAS(Kokkos::LayoutRight, true)
 KOKKOSBLAS_STRTRI_BLAS(Kokkos::LayoutRight, false)
 
-//KOKKOSBLAS_ZTRTRI_BLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  true)
+KOKKOSBLAS_ZTRTRI_BLAS(Kokkos::LayoutLeft,  true)
 KOKKOSBLAS_ZTRTRI_BLAS(Kokkos::LayoutLeft,  false)
-//KOKKOSBLAS_ZTRTRI_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
+KOKKOSBLAS_ZTRTRI_BLAS(Kokkos::LayoutRight, true)
 KOKKOSBLAS_ZTRTRI_BLAS(Kokkos::LayoutRight, false)
 
-//KOKKOSBLAS_CTRTRI_BLAS(Kokkos::LayoutLeft,  Kokkos::LayoutLeft,  true)
+KOKKOSBLAS_CTRTRI_BLAS(Kokkos::LayoutLeft,  true)
 KOKKOSBLAS_CTRTRI_BLAS(Kokkos::LayoutLeft,  false)
-//KOKKOSBLAS_CTRTRI_BLAS(Kokkos::LayoutRight, Kokkos::LayoutRight, true)
+KOKKOSBLAS_CTRTRI_BLAS(Kokkos::LayoutRight, true)
 KOKKOSBLAS_CTRTRI_BLAS(Kokkos::LayoutRight, false)
 
 } // namespace Impl

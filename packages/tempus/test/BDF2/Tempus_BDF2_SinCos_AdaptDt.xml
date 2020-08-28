@@ -63,7 +63,7 @@
       <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
       <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
-      <Parameter name="Start Up Stepper Type" type="string" value="RK Forward Euler"/>
+      <Parameter name="Start Up Stepper Type" type="string" value="RK Explicit Midpoint"/>
       <ParameterList name="Default Solver">
         <ParameterList name="NOX">
           <ParameterList name="Direction">

@@ -79,7 +79,9 @@
 
 #include "mex.h"
 
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
 #define HAVE_COMPLEX_SCALARS
+#endif
 
 namespace MueLu
 {

@@ -4,8 +4,6 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
 
-//#include "KokkosBatched_Vector.hpp"
-
 #include "KokkosBatched_Eigendecomposition_Decl.hpp"
 #include "KokkosBatched_Eigendecomposition_Serial_Impl.hpp"
 
@@ -17,12 +15,13 @@ namespace Test {
 
   template<typename DeviceType,
            typename ViewRank3Type,
-           typename ViewRank2Type>
+           typename ViewRank2Type,
+	   typename WorkViewType>
   struct Functor_TestBatchedSerialEigendecomposition {
     ViewRank3Type _A; 
     ViewRank2Type _Er, _Ei;
     ViewRank3Type _UL, _UR;
-    ViewRank2Type _W;
+    WorkViewType  _W;
     
     KOKKOS_INLINE_FUNCTION
     Functor_TestBatchedSerialEigendecomposition(const ViewRank3Type A,
@@ -30,7 +29,7 @@ namespace Test {
                                                 const ViewRank2Type Ei,
                                                 const ViewRank3Type UL,
                                                 const ViewRank3Type UR,
-                                                const ViewRank2Type W)
+                                                const WorkViewType  W)
       : _A(A), _Er(Er), _Ei(Ei), _UL(UL), _UR(UR), _W(W)
     {}
 
@@ -42,7 +41,6 @@ namespace Test {
       auto UL = Kokkos::subview(_UL, k, Kokkos::ALL(), Kokkos::ALL());
       auto UR = Kokkos::subview(_UR, k, Kokkos::ALL(), Kokkos::ALL());
       auto W  = Kokkos::subview(_W,  k, Kokkos::ALL());
-
       SerialEigendecomposition::invoke(A, er, ei, UL, UR, W);        
     }
     
@@ -65,14 +63,15 @@ namespace Test {
   template<typename DeviceType,
            typename ValueType,
            typename LayoutType>
-  void impl_test_batched_eigendecomposition(const int N, const int m) {
+  void impl_test_batched_serial_eigendecomposition(const int N, const int m) {
     typedef ValueType value_type;
     typedef Kokkos::View<value_type***,LayoutType,DeviceType> ViewRank3Type;
     typedef Kokkos::View<value_type**,LayoutType,DeviceType> ViewRank2Type;
+    typedef Kokkos::View<value_type**,Kokkos::LayoutRight,DeviceType> WorkViewType;
 
     /// input
     ViewRank3Type A("A", N, m, m);
-    ViewRank2Type W("W", N, 2*m*m+m*5);    
+    WorkViewType  W("W", N, 2*m*m+m*5);    
 
     /// output
     ViewRank2Type Er("Er", N, m);
@@ -87,28 +86,26 @@ namespace Test {
 
     /// test body
     Functor_TestBatchedSerialEigendecomposition
-      <DeviceType,ViewRank3Type,ViewRank2Type>(A, Er, Ei, UL, UR, W).run();
+      <DeviceType,ViewRank3Type,ViewRank2Type,WorkViewType>(A, Er, Ei, UL, UR, W).run();
     Kokkos::fence();
   }
 }
 
 template<typename DeviceType, 
          typename ValueType>
-int test_batched_eigendecomposition() {
-#if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) 
-  {
-    Test::impl_test_batched_eigendecomposition<DeviceType,ValueType,Kokkos::LayoutLeft>(0, 10);
-    for (int i=0;i<10;++i) {                                                                   
-      Test::impl_test_batched_eigendecomposition<DeviceType,ValueType,Kokkos::LayoutLeft>(0, 1);                     
-    }
-  }
-#endif
+int test_batched_serial_eigendecomposition() {
+// #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) 
+//   {
+//     Test::impl_test_batched_serial_eigendecomposition<DeviceType,ValueType,Kokkos::LayoutLeft>(10, 10);
+//     for (int i=0;i<10;++i)
+//       Test::impl_test_batched_serial_eigendecomposition<DeviceType,ValueType,Kokkos::LayoutLeft>(10, 1);
+//   }
+// #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) 
   {
-    Test::impl_test_batched_eigendecomposition<DeviceType,ValueType,Kokkos::LayoutRight>(0, 10);
-    for (int i=0;i<10;++i) {                                                                   
-      Test::impl_test_batched_eigendecomposition<DeviceType,ValueType,Kokkos::LayoutRight>(0, 1);
-    }
+    Test::impl_test_batched_serial_eigendecomposition<DeviceType,ValueType,Kokkos::LayoutRight>(10, 10);
+    for (int i=0;i<10;++i)
+      Test::impl_test_batched_serial_eigendecomposition<DeviceType,ValueType,Kokkos::LayoutRight>(10, 1);
   }
 #endif
   

@@ -194,8 +194,8 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos_ASA)
   *my_out << "  Expected order: " << order << std::endl;
   *my_out << "  Observed order: " << slope << std::endl;
   *my_out << "  =========================" << std::endl;
-  TEST_FLOATING_EQUALITY( slope, order, 0.015 );
-  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0378652, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( slope,          1.95006, 0.015 );
+  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0137394, 1.0e-4 );
 
   if (comm->getRank() == 0) {
     std::ofstream ftmp("Tempus_BDF2_SinCos_AdjSens-Error.dat");

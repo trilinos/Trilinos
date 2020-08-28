@@ -610,7 +610,7 @@ public:
           auto b = Kokkos::subview(elemRhs, ic, Kokkos::ALL());
 
           //b'*Q0 -> b
-          KokkosBatched::SerialApplyQ_RightNoTransForwardInternal::invoke(
+          KokkosBatched::SerialApplyQ_RightForwardInternal::invoke(
               1, A0.extent(0), A0.extent(1),
               A0.data(),  A0.stride_0(), A0.stride_1(),
               tau0.data(), tau0.stride_0(),
@@ -651,7 +651,7 @@ public:
           auto b = Kokkos::subview(elemRhs, ic, Kokkos::ALL());
 
           //b'*Q -> b
-          KokkosBatched::SerialApplyQ_RightNoTransForwardInternal::invoke(
+          KokkosBatched::SerialApplyQ_RightForwardInternal::invoke(
               1, A.extent(0), A.extent(1),
               A.data(),  A.stride_0(), A.stride_1(),
               tau.data(), tau.stride_0(),

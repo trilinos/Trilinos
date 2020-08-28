@@ -47,15 +47,11 @@
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_run_spgemm_jacobi.hpp"
 
-using size_type = default_size_type;
-using lno_t =  default_lno_t;
-using scalar_t = default_scalar;
-
 void print_options(){
   std::cerr << "Options\n" << std::endl;
-  std::cerr << "\t[Required] BACKEND: '--threads[numThreads]' | '--openmp [numThreads]' | '--cuda [cudaDeviceIndex]'" << std::endl;
   std::cerr << "\t[Required] INPUT MATRIX: '--amtx [left_hand_side.mtx]' -- for C=AxA" << std::endl;
-  std::cerr << "\t[Optional] --bmtx [righ_hand_side.mtx]' for C= AxB" << std::endl;
+  std::cerr << "\t[Optional] BACKEND: '--threads [numThreads]' | '--openmp [numThreads]' | '--cuda [cudaDeviceIndex]' --> if none are specified, Serial is used (if enabled)" << std::endl;
+  std::cerr << "\t[Optional] --bmtx [righ_hand_side.mtx]' for C = AxB" << std::endl;
   std::cerr << "\t[Optional] OUTPUT MATRICES: '--cmtx [output_matrix.mtx]' --> to write output C=AxB"  << std::endl;
   std::cerr << "\t[Optional] --DENSEACCMAX: on CPUs default algorithm may choose to use dense accumulators. This parameter defaults to 250k, which is max k value to choose dense accumulators. This can be increased with more memory bandwidth." << std::endl;
   std::cerr << "\t[Optional] The memory space used for each matrix: '--memspaces [0|1|....15]' --> Bits representing the use of HBM for Work, C, B, and A respectively. For example 12 = 1100, will store work arrays and C on HBM. A and B will be stored DDR. To use this enable multilevel memory in Kokkos, check generate_makefile.sh" << std::endl;
@@ -250,6 +246,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
 }
 
 int main (int argc, char ** argv){
+  using size_type = default_size_type;
+  using lno_t =  default_lno_t;
+  using scalar_t = default_scalar;
 
   KokkosKernels::Experiment::Parameters params;
 
@@ -265,7 +264,7 @@ int main (int argc, char ** argv){
     std::cout << "B is not provided. Multiplying AxA." << std::endl;
   }
 
-  const int num_threads = params.use_openmp; // Assumption is that use_openmp variable is provided as number of threads
+  const int num_threads = std::max(params.use_openmp, params.use_threads);
   const int device_id = params.use_cuda - 1;
 
   Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
@@ -296,13 +295,22 @@ int main (int argc, char ** argv){
   }
 #endif
 
+#if defined( KOKKOS_ENABLE_THREADS )
+  //If only serial is enabled (or no other device was specified), run with serial
+  if (params.use_threads)
+  {
+    KokkosKernels::Experiment::run_spgemm_jacobi
+      <size_type, lno_t, scalar_t, Kokkos::Threads, Kokkos::HostSpace, Kokkos::HostSpace>(params);
+  }
+#endif
+
 #if defined( KOKKOS_ENABLE_SERIAL )
   //If only serial is enabled (or no other device was specified), run with serial
-  if (!params.use_openmp && !params.use_cuda)
-    {
-      KokkosKernels::Experiment::run_spgemm_jacobi
-	<size_type, lno_t, scalar_t, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace>(params);
-    }
+  if (!params.use_openmp && !params.use_cuda && !params.use_threads)
+  {
+    KokkosKernels::Experiment::run_spgemm_jacobi
+      <size_type, lno_t, scalar_t, Kokkos::Serial, Kokkos::HostSpace, Kokkos::HostSpace>(params);
+  }
 #endif
 
   Kokkos::finalize(); 

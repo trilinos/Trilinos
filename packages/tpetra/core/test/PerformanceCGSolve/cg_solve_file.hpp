@@ -386,7 +386,11 @@ int run (int argc, char *argv[])
   StackedTimer::OutputOptions options;
   options.print_warnings = false;
   timer->report(std::cout, comm, options);
-  auto xmlOut = timer->reportWatchrXML(std::string("Tpetra CGSolve ") + std::to_string(comm->getSize()) + " ranks", comm);
+
+  std::string testBaseName = "Tpetra CGSolve ";
+  if (Tpetra::Details::Behavior::cudaLaunchBlocking()) testBaseName += "CUDA_LAUNCH_BLOCKING ";
+
+  auto xmlOut = timer->reportWatchrXML(testBaseName + std::to_string(comm->getSize()) + " ranks", comm);
   if(myRank == 0)
   {
     if(xmlOut.length())

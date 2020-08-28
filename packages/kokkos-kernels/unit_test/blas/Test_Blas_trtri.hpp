@@ -258,10 +258,7 @@ int test_trtri(const char* mode) {
   EXPECT_EQ(ret, 0);
 
   // Rounding errors with randomly generated matrices begin here where M>100, so we pass in A=I
-  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(bad_diag_idx, &mode[0], &mode[1], 473, 473);
-  EXPECT_EQ(ret, 0);
-
-  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(bad_diag_idx, &mode[0], &mode[1], 1002, 1002);
+  ret = Test::impl_test_trtri<view_type_a_layout_left, Device>(bad_diag_idx, &mode[0], &mode[1], 273, 273);
   EXPECT_EQ(ret, 0);
 
  // Only non-unit matrices could be singular.
@@ -293,10 +290,7 @@ int test_trtri(const char* mode) {
   EXPECT_EQ(ret, 0);
 
   // Rounding errors with randomly generated matrices begin here where M>100, so we pass in A=I
-  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(bad_diag_idx, &mode[0], &mode[1], 473, 473);
-  EXPECT_EQ(ret, 0);
-
-  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(bad_diag_idx, &mode[0], &mode[1], 1002, 1002);
+  ret = Test::impl_test_trtri<view_type_a_layout_right, Device>(bad_diag_idx, &mode[0], &mode[1], 273, 273);
   EXPECT_EQ(ret, 0);
 
   // Only non-unit matrices could be singular.

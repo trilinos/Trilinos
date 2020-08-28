@@ -366,7 +366,6 @@ struct SacadoViewFill
       const size_t n0 = output.extent(0);
       Kokkos::RangePolicy<execution_space> policy( 0, n0 );
       Kokkos::parallel_for( policy, *this );
-      execution_space().fence();
     }
 };
 
@@ -1394,6 +1393,7 @@ public:
         record->m_destroy = functor_type( ( (ViewCtorProp<void,execution_space> const &) prop).value
                                         , (fad_value_type *) m_impl_handle
                                         , m_array_offset.span()
+                                        , record->get_label()
                                         );
 
         // Construct values

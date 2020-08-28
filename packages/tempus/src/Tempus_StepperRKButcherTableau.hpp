@@ -92,6 +92,9 @@ public:
     return Description.str();
   }
 
+  bool getUseFSALDefault() const { return true; }
+
+
 protected:
 
   void setupTableau()

@@ -73,7 +73,7 @@ namespace Sacado {
   template <typename ValueT, int Num>
   struct Value< CacheFad::SLFad<ValueT,Num> > {
     typedef typename ValueType< CacheFad::SLFad<ValueT,Num> >::type value_type;
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static const value_type& eval(const CacheFad::SLFad<ValueT,Num>& x) {
       return x.val(); }
   };
@@ -83,7 +83,7 @@ namespace Sacado {
   struct ScalarValue< CacheFad::SLFad<ValueT,Num> > {
     typedef typename ValueType< CacheFad::SLFad<ValueT,Num> >::type value_type;
     typedef typename ScalarType< CacheFad::SLFad<ValueT,Num> >::type scalar_type;
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static const scalar_type& eval(const CacheFad::SLFad<ValueT,Num>& x) {
       return ScalarValue<value_type>::eval(x.val()); }
   };
@@ -102,7 +102,7 @@ namespace Sacado {
   //! Specialization of %IsEqual to DFad types
   template <typename ValueT, int Num>
   struct IsEqual< CacheFad::SLFad<ValueT,Num> > {
-     KOKKOS_INLINE_FUNCTION
+     SACADO_INLINE_FUNCTION
     static bool eval(const CacheFad::SLFad<ValueT,Num>& x,
                      const CacheFad::SLFad<ValueT,Num>& y) {
       return x.isEqualTo(y);
