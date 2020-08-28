@@ -51,6 +51,9 @@ if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
         exit -1
     fi
 else
+    echo -e "PRDriver> "
+    echo -e "PRDriver> Bootstrap environment modules"
+    echo -e "PRDriver> "
     source /projects/sems/modulefiles/utils/sems-modules-init.sh
     module load sems-git/2.10.1
     #module load sems-python/2.7.9          # SCAFFOLDING (TESTING)
