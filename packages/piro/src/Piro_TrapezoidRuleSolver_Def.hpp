@@ -91,7 +91,7 @@ TrapezoidRuleSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
   numTimeSteps = trPL->get("Num Time Steps", 10);
   t_final = trPL->get("Final Time", 0.1);
   t_init  = trPL->get("Initial Time", 0.0);
-  delta_t = t_final / numTimeSteps;
+  delta_t = (t_final - t_init) / numTimeSteps;
 
   *out << "\nB) Using Trapezoid Decorator and NOX Solver\n";
 
