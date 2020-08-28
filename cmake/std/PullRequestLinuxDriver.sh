@@ -25,6 +25,44 @@ function get_md5sum() {
     echo "${sig:?}"
 }
 
+
+
+# Load the right version of Git / Python based on a regex 
+# match to the Jenkins job name.
+function bootstrap_modules() {
+    echo -e "PRDriver> ---------------------------------------"
+    echo -e "PRDriver> Bootstrap environment modules Start"
+    echo -e "PRDriver> ---------------------------------------"
+
+    cuda_regex=".*(_cuda_).*"
+    ride_regex=".*(ride).*"
+    if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
+        if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
+            echo -e "PRDriver> Job is CUDA"
+            module load git/2.10.1
+            module load python/2.7.12
+        else
+            echo -e "PRDriver> ERROR: Unable to find matching environment for CUDA job not on Ride."
+            exit -1
+        fi
+    else
+        source /projects/sems/modulefiles/utils/sems-modules-init.sh
+        module load sems-git/2.10.1
+        #module load sems-python/2.7.9          # SCAFFOLDING (TESTING)
+        module load sems-python/3.5.2
+        pip3 install --user configparser        # SCAFFOLDING -- This stuff won't run on an update
+    fi
+
+    module list
+
+    echo -e "PRDriver> ---------------------------------------"
+    echo -e "PRDriver> Bootstrap environment modules Complete"
+    echo -e "PRDriver> ---------------------------------------"
+}
+
+
+
+
 echo -e "PRDRiver> ================================================="
 echo -e "PRDriver> ="
 echo -e "PRDriver> = PullRequestLinuxDriver.sh"
@@ -37,29 +75,8 @@ export http_proxy=http://wwwproxy.sandia.gov:80
 export no_proxy='localhost,localnets,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
 
 
-# Load the right version of Git / Python based on a regex 
-# match to the Jenkins job name.
-cuda_regex=".*(_cuda_).*"
-ride_regex=".*(ride).*"
-if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
-    if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
-        echo -e "Job is CUDA"
-        module load git/2.10.1
-        module load python/2.7.12
-    else
-        echo -e "ERROR: Unable to find matching environment for CUDA job not on Ride."
-        exit -1
-    fi
-else
-    echo -e "PRDriver> "
-    echo -e "PRDriver> Bootstrap environment modules"
-    echo -e "PRDriver> "
-    source /projects/sems/modulefiles/utils/sems-modules-init.sh
-    module load sems-git/2.10.1
-    #module load sems-python/2.7.9          # SCAFFOLDING (TESTING)
-    module load sems-python/3.5.2
-    pip3 install --user configparser        # SCAFFOLDING -- This stuff won't run on an update
-fi
+# bootstrap the python and git modules for this system
+bootstrap_modules
 
 
 # Identify the path to this script
@@ -125,7 +142,7 @@ then
 fi
 
 echo -e "PRDriver> "
-echo -e "PRDriver> Driver and Merge scripts unchaged, proceeding to TEST phase"
+echo -e "PRDriver> Driver and Merge scripts unchanged, proceeding to TEST phase"
 echo -e "PRDriver> "
 
 # Prepare the command for the TEST operation
