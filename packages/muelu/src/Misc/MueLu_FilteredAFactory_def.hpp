@@ -270,7 +270,7 @@ namespace MueLu {
 #endif
 
 	SC ZERO = Teuchos::ScalarTraits<SC>::zero();
-	SC ONE = Teuchos::ScalarTraits<SC>::one();
+	//	SC ONE = Teuchos::ScalarTraits<SC>::one();
 	SC A_rowsum = ZERO, F_rowsum = ZERO;
 	for(LO l = 0; l < (LO)inds.size(); l++) 
 	  A_rowsum += valsA[l];
@@ -308,10 +308,10 @@ namespace MueLu {
 	    vals[diagIndex] += diagExtra;
 	    if(dirichletThresh >= 0.0 && TST::real(vals[diagIndex]) <= dirichletThresh) {
 
-	      printf("WARNING: row %d diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,vals[diagIndex],diagA);
+	      //	      printf("WARNING: row %d diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,vals[diagIndex],diagA);
 	      for(LO l = 0; l < (LO)nnz; l++) 
 		F_rowsum += vals[l];
-	      printf("       : A rowsum = %8.2e F rowsum = %8.2e\n",A_rowsum,F_rowsum);	    	    
+	      //	      printf("       : A rowsum = %8.2e F rowsum = %8.2e\n",A_rowsum,F_rowsum);	    	    
 	      vals[diagIndex] = TST::one();
 	    }
 	  }
@@ -438,7 +438,6 @@ namespace MueLu {
     SC ZERO = Teuchos::ScalarTraits<SC>::zero();
     SC ONE = Teuchos::ScalarTraits<SC>::one();
     LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
-    SC SC_INVALID = Teuchos::ScalarTraits<SC>::nan();
 
     size_t numNodes = G.GetNodeNumVertices();
     size_t blkSize  = A.GetFixedBlockSize();
@@ -658,7 +657,7 @@ namespace MueLu {
 	  if(MUELU_FILTEREDAFACTORY_LOTS_OF_PRINTING>0) {
 	    A.getLocalRowView(row, indsA, valsA);
 	    SC diagA = valsA[diagIndex[row]];	    
-	    printf("WARNING: row %d (diagIndex=%d) diag(Afiltered) = %8.2e diag(A)=%8.2e numInds = %d\n",row,diagIndex[row],vals[diagIndexInMatrix],diagA,(LO)indsA.size());
+	    //	    printf("WARNING: row %d (diagIndex=%d) diag(Afiltered) = %8.2e diag(A)=%8.2e numInds = %d\n",row,diagIndex[row],vals[diagIndexInMatrix],diagA,(LO)indsA.size());
 	    
 	    for(LO l = 0; l < (LO)indsA.size(); l++) {		  
 	      A_rowsum += valsA[l];
@@ -666,16 +665,16 @@ namespace MueLu {
 	    }
 	    for(LO l = 0; l < (LO)indsA.size(); l++) 
 	      F_rowsum += vals[index_start+l];
-	    printf("       : A rowsum = %8.2e |A| rowsum = %8.2e rowsum = %8.2e\n",A_rowsum,A_absrowsum,F_rowsum);	    
+	    //	    printf("       : A rowsum = %8.2e |A| rowsum = %8.2e rowsum = %8.2e\n",A_rowsum,A_absrowsum,F_rowsum);	    
 	    if(MUELU_FILTEREDAFACTORY_LOTS_OF_PRINTING > 1){
-	      printf("        Avals =");
-	      for(LO l = 0; l < (LO)indsA.size(); l++)
-		printf("%d(%8.2e)[%d] ",(LO)indsA[l],valsA[l],(LO)l);
-	      printf("\n");
-	      printf("        Fvals =");
-	      for(LO l = 0; l < (LO)indsA.size(); l++)
-		if(vals[index_start+l] != ZERO)
-		  printf("%d(%8.2e)[%d] ",(LO)indsA[l],vals[index_start+l],(LO)l);
+	      //	      printf("        Avals =");
+	      //	      for(LO l = 0; l < (LO)indsA.size(); l++)
+	      //		printf("%d(%8.2e)[%d] ",(LO)indsA[l],valsA[l],(LO)l);
+	      //	      printf("\n");
+	      //	      printf("        Fvals =");
+	      //	      for(LO l = 0; l < (LO)indsA.size(); l++)
+		//		if(vals[index_start+l] != ZERO)
+		//		  printf("%d(%8.2e)[%d] ",(LO)indsA[l],vals[index_start+l],(LO)l);
 	    }
 	  }
 	  // Don't know what to do, so blitz the row and dump a one on the diagonal
