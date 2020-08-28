@@ -302,9 +302,9 @@ namespace MueLu {
           // NOTE
           //  * Does it make sense to lump for elasticity?
           //  * Is it different for diffusion and elasticity?
-	  SC diagA = ZERO;
+	  //SC diagA = ZERO;
 	  if (diagIndex != -1) {
-	    diagA = vals[diagIndex];	
+	    //diagA = vals[diagIndex];	
 	    vals[diagIndex] += diagExtra;
 	    if(dirichletThresh >= 0.0 && TST::real(vals[diagIndex]) <= dirichletThresh) {
 
