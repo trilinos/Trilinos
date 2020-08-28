@@ -656,7 +656,7 @@ namespace MueLu {
 	  
 	  if(MUELU_FILTEREDAFACTORY_LOTS_OF_PRINTING>0) {
 	    A.getLocalRowView(row, indsA, valsA);
-	    SC diagA = valsA[diagIndex[row]];	    
+	    //	    SC diagA = valsA[diagIndex[row]];	    
 	    //	    printf("WARNING: row %d (diagIndex=%d) diag(Afiltered) = %8.2e diag(A)=%8.2e numInds = %d\n",row,diagIndex[row],vals[diagIndexInMatrix],diagA,(LO)indsA.size());
 	    
 	    for(LO l = 0; l < (LO)indsA.size(); l++) {		  
