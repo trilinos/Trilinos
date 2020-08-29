@@ -48,9 +48,9 @@ function bootstrap_modules() {
     else
         source /projects/sems/modulefiles/utils/sems-modules-init.sh
         module load sems-git/2.10.1
-        #module load sems-python/2.7.9          # SCAFFOLDING (TESTING)
-        module load sems-python/3.5.2
-        pip3 install --user configparser        # SCAFFOLDING -- This stuff won't run on an update
+        module load sems-python/2.7.9        
+        #module load sems-python/3.5.2
+        #pip3 install --user configparser   
     fi
 
     module list
@@ -102,7 +102,7 @@ merge_cmd_options=(
     ${TRILINOS_SOURCE_SHA:?}
     ${WORKSPACE:?}
     )
-merge_cmd="${SCRIPTPATH}/PullRequestLinuxDriverMerge.py ${merge_cmd_options[@]}"
+merge_cmd="python ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py ${merge_cmd_options[@]}"
 
 
 # Call the script to handle merging the incoming branch into
@@ -164,7 +164,7 @@ test_cmd_options=(
 )
 
 # Execute the TEST operation
-test_cmd="${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"
+test_cmd="python ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"
 
 
 # Call the script to launch the tests
