@@ -39,6 +39,8 @@ function bootstrap_modules() {
     if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
         if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
             echo -e "PRDriver> Job is CUDA"
+            module unload git
+            module unload python
             module load git/2.10.1
             module load python/2.7.12
         else
@@ -47,6 +49,8 @@ function bootstrap_modules() {
         fi
     else
         source /projects/sems/modulefiles/utils/sems-modules-init.sh
+        module unload sems-git
+        module unload sems-python
         module load sems-git/2.10.1
         #module load sems-python/2.7.9        
         module load sems-python/3.5.2
