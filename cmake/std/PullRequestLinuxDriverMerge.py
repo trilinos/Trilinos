@@ -91,9 +91,12 @@ def merge_branch(source_url, source_branch, target_branch, sourceSHA):
     sourceSHA     = sourceSHA.strip()
 
     remote_list = subprocess.check_output(['git', 'remote', '-v'])
+    remote_list = remote_list.decode('utf-8')
+
     if 'source_remote' in remote_list:
         print('git remote exists, removing it', file=sys.stdout)
         subprocess.check_call(['git', 'remote', 'rm', 'source_remote'])
+
     subprocess.check_call(['git', 'remote', 'add', 'source_remote', source_url])
 
     fetch_succeeded = False
@@ -104,6 +107,7 @@ def merge_branch(source_url, source_branch, target_branch, sourceSHA):
             break
         except subprocess.CalledProcessError:
             pass
+
     if not fetch_succeeded:
         raise SystemExit(12)
 
@@ -113,7 +117,7 @@ def merge_branch(source_url, source_branch, target_branch, sourceSHA):
     subprocess.check_call(['git', 'merge', '--no-edit', 'source_remote/' + source_branch]),
 
     actual_source_SHA = subprocess.check_output(['git', 'rev-parse', 'source_remote/' + source_branch])
-
+    actual_source_SHA = actual_source_SHA.decode('utf-8')
     actual_source_SHA = actual_source_SHA.strip()
 
     if actual_source_SHA != sourceSHA:
