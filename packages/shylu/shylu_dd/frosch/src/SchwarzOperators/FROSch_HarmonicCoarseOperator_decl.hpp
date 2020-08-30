@@ -71,6 +71,10 @@ namespace FROSch {
         using ConstXMultiVectorPtr    = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMultiVectorPtr;
         using XMultiVectorPtrVecPtr   = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
 
+        using XCrsGraph             = typename SchwarzOperator<SC,LO,GO,NO>::XCrsGraph;
+        using GraphPtr              = typename SchwarzOperator<SC,LO,GO,NO>::GraphPtr;
+        using ConstXCrsGraphPtr     = typename SchwarzOperator<SC,LO,GO,NO>::ConstXCrsGraphPtr;
+
         using ParameterListPtr        = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
 
         using TSerialDenseMatrixPtr   = typename SchwarzOperator<SC,LO,GO,NO>::TSerialDenseMatrixPtr;
@@ -81,7 +85,13 @@ namespace FROSch {
         using CoarseSpacePtrVecPtr    = typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtrVecPtr;
 
         using EntitySetPtr            = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr;
-        using EntitySetConstPtr       = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetConstPtr;
+        using EntitySetConstPtr       = const EntitySetPtr;
+        using EntitySetPtrVecPtr      = Teuchos::ArrayRCP<EntitySetPtr>;
+        using EntitySetPtrConstVecPtr =  const EntitySetPtrVecPtr;
+
+        using InterfaceEntityPtr        = Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> >;
+        using InterfaceEntityPtrVec     = Teuchos::Array<InterfaceEntityPtr>;
+        using InterfaceEntityPtrVecPtr  = Teuchos::ArrayRCP<InterfaceEntityPtr>;
 
         using SubdomainSolverPtr      = typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr;
 
@@ -104,16 +114,25 @@ namespace FROSch {
         using ConstSCVecPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecPtr;
         using ConstSCVecView          = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecView;
 
+        using IntVec                = Teuchos::Array<int>;
+        using IntVec2D              = Teuchos::Array<IntVec>;
+
     public:
 
         HarmonicCoarseOperator(ConstXMatrixPtr k,
                                ParameterListPtr parameterList);
 
         virtual int initialize() = 0;
+        XMapPtr assembleCoarseMap();
+
 
         XMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace);
-
     protected:
+
+        virtual int buildElementNodeList();
+        virtual int buildGlobalGraph(Teuchos::RCP<DDInterface<SC,LO,GO,NO> > theDDInterface_);
+        virtual int buildCoarseGraph();
+
 
         int intializeCoarseMap();
 
@@ -163,6 +182,9 @@ namespace FROSch {
         ConstXMapPtrVecPtr2D DofsMaps_ = DofsMaps_(0); // notwendig??
 
         UN NumberOfBlocks_ = 0;
+        ConstXMapPtr KRowMap_;
+        UN MaxNumNeigh_;
+
     };
 
 }

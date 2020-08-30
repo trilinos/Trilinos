@@ -18,9 +18,9 @@ namespace KokkosBatched {
   ///
 
 #if                                                     \
-  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
-  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
   template<>
   template<typename AViewType>
   KOKKOS_INLINE_FUNCTION

@@ -59,7 +59,7 @@
 #include <vector>
 #include "KokkosSparse_gauss_seidel.hpp"
 #include "KokkosSparse_partitioning_impl.hpp"
-#include "impl/KokkosSparse_sor_sequential_impl.hpp"
+#include "KokkosSparse_sor_sequential_impl.hpp"
 
 #ifndef kokkos_complex_double
 #define kokkos_complex_double Kokkos::complex<double>

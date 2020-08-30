@@ -53,9 +53,6 @@
 #include "MueLu_HierarchyUtils_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_SmootherBase_fwd.hpp"
-#include "MueLu_SmootherFactory_fwd.hpp"
-#include "MueLu_SmootherPrototype_fwd.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Hierarchy_fwd.hpp"
 #include "MueLu_HierarchyManager_fwd.hpp"
@@ -71,7 +68,11 @@ namespace MueLu {
 
     //@{
 
-    //!
+    /*!
+      @brief Constructor
+
+      Set a given factory manager on a specific level
+    */
     SetFactoryManager(const RCP<Level> & level, const RCP<const FactoryManagerBase> & factoryManager)
       : level_(level), prevFactoryManager_(level->GetFactoryManager())
     {
@@ -88,7 +89,7 @@ namespace MueLu {
     //@}
 
   private:
-     // needed to save & restore previous factoryManager
+    //! needed to save & restore previous factoryManager
     const RCP<Level> level_;
     const RCP<const FactoryManagerBase> prevFactoryManager_;
   };
@@ -125,8 +126,8 @@ namespace MueLu {
 
     This routine is used by the CreateXpetraPreconditioner() routine.
 
-    @param HM
-    @param H
+    @param HM Hierarhcy manager
+    @param H Hierarchy, where non-serializable data needs to be added
     @param nonSerialList Parameter list containing non-serializable data
     */
     static void AddNonSerializableDataToHierarchy(HierarchyManager& HM, Hierarchy& H, const ParameterList& nonSerialList);

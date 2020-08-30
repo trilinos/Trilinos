@@ -142,7 +142,11 @@ lib stk_unit_test_utils
     [ ifdevbuild
       [ glob $(stk_unit_test_utils-root)/stk_unit_test_utils/*.cpp ]
       /sierra/stk_io//stk_io
+      /sierra/stk_simd//stk_simd_headers
+      /sierra/stk_math//stk_math_headers
       /sierra/stk_ngp_test//stk_ngp_test
+      /sierra/stk_util//stk_util_parallel
+      /sierra/stk_util//stk_util_util
       /tpl/gtest//gtest
     ]
   : 

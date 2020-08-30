@@ -48,7 +48,7 @@
 #include "Kokkos_Core.hpp"
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-//#include<KokkosBlas3_trmm_impl.hpp>
+#include<KokkosBlas3_trmm_impl.hpp>
 #endif
 
 namespace KokkosBlas {
@@ -71,7 +71,7 @@ struct trmm_eti_spec_avail {
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<SCALAR**, LAYOUTB, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
-         > { enum : bool { value = false }; };
+         > { enum : bool { value = true }; };
 
 //
 // This Macros provides the ETI specialization of trmm, currently not available.
@@ -81,7 +81,7 @@ struct trmm_eti_spec_avail {
 
 // Include the actual specialization declarations
 #include<KokkosBlas3_trmm_tpl_spec_avail.hpp>
-//TODO: #include<generated_specializations_hpp/KokkosBlas3_trmm_eti_spec_avail.hpp>
+#include<generated_specializations_hpp/KokkosBlas3_trmm_eti_spec_avail.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -107,8 +107,7 @@ struct TRMM{
         const BVIT& B);
 };
 
-// TODO: Fall-back ETI implementation of KokkosBlas::trmm.
-#if 0 && (!defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 template<class AVIT,
          class BVIT>
 struct TRMM<AVIT, BVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
@@ -187,6 +186,6 @@ template struct TRMM< \
     KOKKOSBLAS3_TRMM_ETI_SPEC_INST_LAYOUTS(SCALAR, LAYOUT, LAYOUT, EXEC_SPACE, MEM_SPACE)
 
 #include<KokkosBlas3_trmm_tpl_spec_decl.hpp>
-//#include<generated_specializations_hpp/KokkosBlas3_trmm_eti_spec_decl.hpp>
+#include<generated_specializations_hpp/KokkosBlas3_trmm_eti_spec_decl.hpp>
 
 #endif // KOKKOSBLAS3_TRMM_SPEC_HPP_

@@ -1,11 +1,11 @@
-![Trilinos](http://trilinos.sandia.gov/common/logo_trilinos_moon.png)
+# Trilinos
+![Trilinos Logo](https://trilinos.github.io/images/trilinos.jpg)
 
-[Website](http://trilinos.org/) |
-[Documentation](http://trilinos.org/about/documentation/) |
-[Mailing List](https://trilinos.org/mailman/listinfo/trilinos-users) |
-[Packages](http://trilinos.org/packages/)
+[Website](https://trilinos.github.io) |
+[Documentation](https://trilinos.github.io/documentation.html) |
+[Mailing List](https://trilinos.github.io/mail_lists.html) |
+[Packages](http://trilinos.github.io/packages.html)
 
-[![Stories in Ready](https://badge.waffle.io/trilinos/Trilinos.png?label=ready&title=Ready)](https://waffle.io/trilinos/Trilinos)
 [![Coverity Scan
 Build](https://scan.coverity.com/projects/1680/badge.svg)](https://scan.coverity.com/projects/1680)
 
@@ -17,9 +17,9 @@ unique design feature of Trilinos is its focus on packages.
 
 ### Documentation
 
-- [Getting Started with Trilinos](https://trilinos.org/getting-started/) 
+- [Getting Started with Trilinos](https://trilinos.github.io/getting_started.html)
 
-- [General Documentation](https://trilinos.org/about/documentation/)
+- [General Documentation](https://trilinos.github.io/documentation.html)
 
 - [Quick configure, build and install hints for Trilinos](https://github.com/trilinos/Trilinos/blob/master/INSTALL.rst)
 
@@ -27,7 +27,7 @@ unique design feature of Trilinos is its focus on packages.
 
 - For help with a particular package, see the website and accompanying
   documentation for that package. Links to these can be found down the
-  right side of any page on the website and at [the package website](http://trilinos.org/packages/).
+  right side of any page on the website and at [the package website](https://trilinos.github.io/packages.html).
 
 ### License
 

@@ -146,7 +146,7 @@ std::vector<int> SkinMeshUtil::get_sides_exposed_on_other_procs(stk::mesh::impl:
     for(const stk::mesh::GraphEdge &graphEdge : eeGraph.get_edges_for_element(localId))
         mark_sides_exposed_on_other_procs(graphEdge, isConnectedToRemoteElementInBodyToSkin, isOnlyConnectedRemotely);
 
-    for(const stk::mesh::GraphEdge graphEdge : eeGraph.get_coincident_edges_for_element(localId))
+    for(const stk::mesh::GraphEdge& graphEdge : eeGraph.get_coincident_edges_for_element(localId))
         mark_local_connections(graphEdge, isOnlyConnectedRemotely);
 
     std::vector<int> exposedSides;
@@ -299,12 +299,11 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
 }
 
 void get_aura_element_sides_for_skinning(const stk::mesh::BulkData& bulk, stk::mesh::Entity element,
-                                 std::vector<int>& exposedSides)
+                                 std::vector<int>& exposedSides, std::vector<stk::mesh::Entity>& elems)
 {
     exposedSides.clear();
     stk::topology topo = bulk.bucket(element).topology();
     const stk::mesh::Entity* elemNodes = bulk.begin_nodes(element);
-    std::vector<stk::mesh::Entity> elems;
 
     const unsigned maxNodesPerSide = 128;
     stk::mesh::Entity sideNodes[maxNodesPerSide];
@@ -351,6 +350,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset(bool includeAu
 
     const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
     stk::mesh::EntityVector sideNodes;
+    stk::mesh::EntityVector elems;
 
     for (const stk::mesh::Bucket* bucketPtr : buckets) {
         const stk::mesh::Bucket & bucket = *bucketPtr;
@@ -383,7 +383,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset(bool includeAu
                         stk::mesh::EntityId otherId = eeGraph.convert_negative_local_id_to_global_id(graphEdge.elem2());
                         stk::mesh::Entity auraElement = bulkData.get_entity(stk::topology::ELEM_RANK, otherId);
                         if (bulkData.is_valid(auraElement) && bulkData.bucket(auraElement).in_aura()) {
-                            get_aura_element_sides_for_skinning(bulkData, auraElement, exposedSides);
+                            get_aura_element_sides_for_skinning(bulkData, auraElement, exposedSides, elems);
                             for (size_t k=0; k<exposedSides.size(); ++k)
                             {
                                  sideSet.push_back(SideSetEntry(auraElement, static_cast<ConnectivityOrdinal>(exposedSides[k])));
@@ -429,7 +429,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset(bool includeAu
             for (size_t i=0; i<bucket.size(); ++i)
             {
                 stk::mesh::Entity element = bucket[i];
-                get_aura_element_sides_for_skinning(bulkData, element, exposedSides);
+                get_aura_element_sides_for_skinning(bulkData, element, exposedSides, elems);
                 for (size_t k=0; k<exposedSides.size(); ++k)
                 {
                      sideSet.push_back(SideSetEntry(element, static_cast<ConnectivityOrdinal>(exposedSides[k])));
@@ -445,4 +445,3 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset(bool includeAu
 
 }
 }
-

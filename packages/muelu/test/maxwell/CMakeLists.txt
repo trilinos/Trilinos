@@ -40,7 +40,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
         )
     ENDIF()
 
-    IF (${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
+    IF (${PACKAGE_NAME}_INST_DOUBLE_INT_INT AND ${PACKAGE_NAME}_ENABLE_Stratimikos)
       TRIBITS_ADD_TEST(
         Maxwell3D
         NAME "Maxwell3D-Tpetra-Stratimikos"

@@ -36,7 +36,6 @@
 #define stk_mesh_CreateEdges_hpp
 
 #include <stk_mesh/base/Types.hpp>      // for EntityVector, etc
-#include <unordered_map>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 
 namespace stk {
@@ -55,13 +54,6 @@ namespace stk {
     void create_edges(  BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges = nullptr );
 
     void create_edges( BulkData & mesh );
-
-    namespace impl {
-      typedef std::unordered_map<EntityVector,Entity,stk::mesh::impl::HashValueForEntityVector> edge_map_type;
-      void connect_faces_to_edges(BulkData & mesh,
-                                  const Selector & element_selector,
-                                  edge_map_type edge_map);
-    }
   }
 }
 #endif

@@ -25,13 +25,27 @@
 namespace Tempus_Test {
 
 template<class Scalar>
+DahlquistTestModel<Scalar>::DahlquistTestModel()
+{ constructDahlquistTestModel(-1.0, false); }
+
+
+template<class Scalar>
 DahlquistTestModel<Scalar>::
-DahlquistTestModel(Scalar lambda)
-  : lambda_(lambda)
+DahlquistTestModel(Scalar lambda, bool includeXDot)
+{ constructDahlquistTestModel(lambda, includeXDot); }
+
+
+template<class Scalar>
+void
+DahlquistTestModel<Scalar>::
+constructDahlquistTestModel(Scalar lambda, bool includeXDot)
 {
+  lambda_        = lambda;
+  includeXDot_   = includeXDot;
   isInitialized_ = false;
+  xIC_           = Scalar(   1.0);
+  xDotIC_        = Scalar(lambda);
   int dim = 1;
-  Scalar xIC_ = Scalar(1.0);
 
   // Create x_space and f_space
   x_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(dim);
@@ -68,6 +82,16 @@ DahlquistTestModel(Scalar lambda)
     }
     nominalValues_.set_x(x_ic);
   }
+
+  if (includeXDot_) {
+    const RCP<Thyra::VectorBase<Scalar> > x_dot_ic = createMember(x_space_);
+    { // scope to delete DetachedVectorView
+      Thyra::DetachedVectorView<Scalar> x_dot_ic_view( *x_dot_ic );
+      x_dot_ic_view[0] = xDotIC_;
+    }
+    nominalValues_.set_x_dot(x_dot_ic);
+  }
+
   isInitialized_ = true;
 }
 
@@ -80,12 +104,25 @@ getExactSolution(double t) const
   Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = inArgs_;
   double exact_t = t;
   inArgs.set_t(exact_t);
+
+  // Set the exact solution, x.
   Teuchos::RCP<Thyra::VectorBase<Scalar> > exact_x = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_view(*exact_x);
     exact_x_view[0] = exp(lambda_*exact_t);
   }
   inArgs.set_x(exact_x);
+
+  // Set the exact solution time derivative, xDot.
+  if (includeXDot_) {
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > exact_x_dot = createMember(x_space_);
+    { // scope to delete DetachedVectorView
+      Thyra::DetachedVectorView<Scalar> exact_x_dot_view(*exact_x_dot);
+      exact_x_dot_view[0] = lambda_ * exp(lambda_*exact_t);
+    }
+    inArgs.set_x_dot(exact_x_dot);
+  }
+
   return inArgs;
 }
 

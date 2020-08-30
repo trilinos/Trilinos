@@ -196,8 +196,8 @@ void test_sincos_fsa(const bool use_combined_method,
   *my_out << "  Expected order: " << order << std::endl;
   *my_out << "  Observed order: " << slope << std::endl;
   *my_out << "  =========================" << std::endl;
-  TEST_FLOATING_EQUALITY( slope, order, 0.015 );
-  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0344598, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( slope,          1.94162, 0.015 );
+  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0143743, 1.0e-4 );
 
   if (comm->getRank() == 0) {
     std::ofstream ftmp("Tempus_BDF2_SinCos_Sens-Error.dat");

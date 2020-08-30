@@ -88,6 +88,7 @@ namespace MueLu {
 
     const RCP<const Teuchos::Comm<int> > comm_; ///< Communicator used by uncoupled aggregation
     const bool coupled_;                ///< Flag for coupled vs uncoupled aggregation mode, if true aggregation is coupled.
+    const bool singleCoarsePoint_;      ///< Flag telling us if can reduce dimensions to a single layer.
     const int numDimensions;            ///< Number of spacial dimensions in the problem
     const int interpolationOrder_;      ///< Interpolation order used by grid transfer operators using these aggregates.
 
@@ -129,7 +130,8 @@ namespace MueLu {
 
     IndexManager() = default;
 
-    IndexManager(const RCP<const Teuchos::Comm<int> > comm, const bool coupled, const int NumDimensions,
+    IndexManager(const RCP<const Teuchos::Comm<int> > comm, const bool coupled,
+                 const bool singleCoarsePoint, const int NumDimensions,
                  const int interpolationOrder, const Array<GO> GFineNodesPerDir,
                  const Array<LO> LFineNodesPerDir);
 
@@ -151,6 +153,8 @@ namespace MueLu {
                                     Array<GO>& coarseNodeFineGIDs) const = 0;
 
     bool isAggregationCoupled() const {return coupled_;}
+
+    bool isSingleCoarsePoint() const {return singleCoarsePoint_;}
 
     int getNumDimensions() const {return numDimensions;}
 

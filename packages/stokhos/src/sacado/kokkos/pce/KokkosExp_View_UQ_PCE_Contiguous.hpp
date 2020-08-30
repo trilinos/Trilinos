@@ -911,7 +911,7 @@ struct PCEAllocation {
                              const cijk_type& cijk,
                              scalar_type* scalar_ptr,
                              value_type* value_ptr) :
-      m_scalar_functor( space , scalar_ptr , span*pce_size ),
+      m_scalar_functor( space , scalar_ptr , span*pce_size , "Stokhos_UQ_PCE_Contig_ConstructDestructFunctor" ),
       m_pce_functor( space , value_ptr , scalar_ptr , span , pce_size , cijk ),
       m_initialize(initialize) {}
 

@@ -61,13 +61,6 @@ private:
 #endif
 }; //struct EntityLess
 
-class EntitySorterBase
-{
-public:
-    virtual ~EntitySorterBase() {}
-    virtual void sort(stk::mesh::BulkData &bulk, stk::mesh::EntityVector& entityVector) const = 0;
-};
-
 }
 }
 

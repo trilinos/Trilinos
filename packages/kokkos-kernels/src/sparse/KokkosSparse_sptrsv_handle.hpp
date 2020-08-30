@@ -98,6 +98,7 @@ public:
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> nnz_row_view_temp_t;
   typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> nnz_row_view_t;
   typedef typename nnz_row_view_t::HostMirror host_nnz_row_view_t;
+  typedef typename Kokkos::View<int *, HandlePersistentMemorySpace> int_row_view_t;
  // typedef typename row_lno_persistent_work_view_t::HostMirror row_lno_persistent_work_host_view_t; //Host view type
   typedef typename Kokkos::View<const size_type *, HandlePersistentMemorySpace, Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess>> nnz_row_unmanaged_view_t; // for rank1 subviews
 
@@ -310,9 +311,13 @@ private:
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   SPTRSVcuSparseHandleType *cuSPARSEHandle;
+  int_row_view_t tmp_int_rowmap;
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+  // specify if unit diagonal
+  bool unit_diag;
+
   // stored either in CSR or CSC
   bool col_major;
 
@@ -409,8 +414,10 @@ public:
     require_symbolic_chain_phase(false)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     , cuSPARSEHandle(nullptr)
+    , tmp_int_rowmap()
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
+    , unit_diag (false)
     , merge_supernodes (false)
     , invert_diagonal (true)
     , invert_offdiagonal (false)
@@ -481,6 +488,11 @@ public:
 
     // number of streams
     this->num_streams = 0;
+  }
+
+  // set lower/upper triangular
+  void set_lower_tri(bool lower_tri_) {
+    lower_tri = lower_tri_;
   }
 
   // set supernodal dag
@@ -654,6 +666,14 @@ public:
 
   graph_t get_graph () {
     return this->graph;
+  }
+
+  // set if unit diagonal
+  void set_unit_diagonal(bool unit_diag_) {
+    this->unit_diag = unit_diag_;
+  }
+  bool is_unit_diagonal() {
+    return this->unit_diag;
   }
 
   // set CSR or CSC format
@@ -831,6 +851,27 @@ public:
 
   SPTRSVcuSparseHandleType *get_cuSparseHandle(){
     return this->cuSPARSEHandle;
+  }
+
+  void allocate_tmp_int_rowmap (size_type N) {
+    tmp_int_rowmap = int_row_view_t(Kokkos::ViewAllocateWithoutInitializing("tmp_int_rowmap"), N);
+  }
+  template <typename RowViewType>
+  int_row_view_t get_int_rowmap_view_copy (const RowViewType & rowmap) {
+    Kokkos::deep_copy(tmp_int_rowmap, rowmap);
+    return tmp_int_rowmap;
+  }
+  template <typename RowViewType>
+  int* get_int_rowmap_ptr_copy (const RowViewType & rowmap) {
+    Kokkos::deep_copy(tmp_int_rowmap, rowmap);
+    Kokkos::fence();
+    return tmp_int_rowmap.data();
+  }
+  int_row_view_t get_int_rowmap_view () {
+    return tmp_int_rowmap;
+  }
+  int* get_int_rowmap_ptr () {
+    return tmp_int_rowmap.data();
   }
 #endif
 

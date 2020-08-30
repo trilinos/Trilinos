@@ -37,8 +37,13 @@ class DahlquistTestModel
 {
   public:
 
+  // Default Constructor
+  DahlquistTestModel();
+
   // Constructor
-  DahlquistTestModel(Scalar lambda = Scalar(-1.0));
+  DahlquistTestModel(Scalar lambda, bool includeXDot);
+
+  void constructDahlquistTestModel(Scalar lambda, bool includeXDot);
 
   /// Default destructor
   ~DahlquistTestModel() = default;
@@ -46,20 +51,21 @@ class DahlquistTestModel
   /// Exact solution
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getExactSolution(double t) const;
 
+  Scalar getLambda() const { return lambda_; }
+
   /** \name Public functions overridden from ModelEvaluator. */
   //@{
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
-  //Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
-  //Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
-  //Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
+    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
+    //Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
+    //Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
+    //Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
 
-  //Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
-  //Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
-  //Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
-
+    //Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
+    //Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
+    //Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
   //@}
 
 private:
@@ -75,6 +81,8 @@ private:
 
 private:
   Scalar lambda_;
+  bool   includeXDot_;
+
   mutable bool isInitialized_;
   mutable Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
   mutable Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
@@ -85,7 +93,8 @@ private:
   //Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > g_space_;
   //Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > DxDp_space_;
 
-  Scalar xIC_; ///< Initial condition for x.
+  Scalar xIC_;    ///< Initial condition for x.
+  Scalar xDotIC_; ///< Initial condition for xDot.
 };
 
 

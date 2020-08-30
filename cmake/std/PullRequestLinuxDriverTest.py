@@ -651,6 +651,7 @@ config_map = {
     'Trilinos_pullrequest_intel_17.0.1':     'PullRequestLinuxIntelTestingSettings.cmake',
     'Trilinos_pullrequest_gcc_4.9.3_SERIAL': 'PullRequestLinuxGCC4.9.3TestingSettingsSERIAL.cmake',
     'Trilinos_pullrequest_gcc_7.2.0':        'PullRequestLinuxGCC7.2.0TestingSettings.cmake',
+    'Trilinos_pullrequest_gcc_7.2.0_debug':  'PullRequestLinuxGCC7.2.0DebugTestingSettings.cmake',
     'Trilinos_pullrequest_gcc_8.3.0':        'PullRequestLinuxGCC8.3.0TestingSettings.cmake',
     'Trilinos_pullrequest_clang_7.0.1':      'PullRequestLinuxClang7.0.1TestingSettings.cmake',
     'Trilinos_pullrequest_clang_9.0.0':      'PullRequestLinuxClang9.0.0TestingSettings.cmake',

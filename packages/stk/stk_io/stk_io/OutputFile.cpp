@@ -158,6 +158,7 @@ void OutputFile::setup_output_params(OutputParams &params) const
     params.set_has_adaptivity(m_hasAdaptivity);
     params.set_additional_attribute_fields(m_additionalAttributeFields);
     params.set_is_restart(m_dbPurpose == stk::io::WRITE_RESTART);
+    params.set_enable_edge_io(m_enableEdgeIO);
 }
 
 void OutputFile::set_input_region(const Ioss::Region *input_region)
@@ -826,6 +827,11 @@ void OutputFile::has_adaptivity(bool hasAdaptivity)
 bool OutputFile::is_skin_mesh() const
 {
     return m_skinMeshSelector.get() != nullptr;
+}
+
+void OutputFile::set_enable_edge_io(bool enableEdgeIO)
+{
+    m_enableEdgeIO = enableEdgeIO;
 }
 
 } // namespace impl
