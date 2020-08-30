@@ -1,0 +1,6 @@
+
+TRIBITS_ADD_EXECUTABLE(
+  KokkosUVM
+  SOURCES KokkosUVM
+  COMM serial mpi
+)
