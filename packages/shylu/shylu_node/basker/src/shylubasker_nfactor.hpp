@@ -258,7 +258,6 @@ namespace BaskerNS
       #endif
     }
 
-
     //-------------------IF BTF-----------------------//
     if(info != BASKER_ERROR && Options.btf == BASKER_TRUE)
     {

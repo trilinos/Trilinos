@@ -728,6 +728,7 @@ namespace BaskerNS
             printf("];\n");
           }*/
 
+    using range_type = Kokkos::pair<int, int>;
     if (Options.blk_matching != 0) {
         #ifdef BASKER_TIMER
         Kokkos::Timer resetperm_timer;
@@ -835,7 +836,7 @@ namespace BaskerNS
 
           // revert AMD perm to rows of A
           auto order_nd_amd = Kokkos::subview(order_blk_amd_inv,
-                                              std::make_pair(0, BTF_A.ncol));
+                                              range_type(0, BTF_A.ncol));
           permute_row(BTF_A, order_nd_amd);
           permute_col(BTF_A, order_nd_amd);
           if (btf_tabs_offset < btf_nblks) {
@@ -845,7 +846,7 @@ namespace BaskerNS
 
           // revert MWM perm to rows of A
           auto order_nd_mwm = Kokkos::subview(order_blk_mwm_inv, 
-                                              std::make_pair(0, BTF_A.ncol));
+                                              range_type(0, BTF_A.ncol));
           permute_row(BTF_A, order_nd_mwm);
           if (btf_tabs_offset < btf_nblks) {
             // revert AMD perm to rows of B
@@ -869,7 +870,7 @@ namespace BaskerNS
             order_blk_amd_inv(i+nfirst) -= nfirst;
           }
           auto order_blk_amd_c = Kokkos::subview(order_blk_amd_inv,
-                                                 std::make_pair(nfirst, ncol));
+                                                 range_type(nfirst, ncol));
           permute_row(BTF_C, order_blk_amd_c);
           permute_col(BTF_C, order_blk_amd_c);
           if (btf_tabs_offset > 0) {
@@ -882,7 +883,7 @@ namespace BaskerNS
             order_blk_mwm_inv(i+nfirst) -= nfirst;
           }
           auto order_blk_mwm_c = Kokkos::subview(order_blk_mwm_inv, 
-                                                 std::make_pair(nfirst, ncol));
+                                                range_type (nfirst, ncol));
           permute_row(BTF_C, order_blk_mwm_c);
         }
         #ifdef BASKER_TIMER
@@ -1027,9 +1028,9 @@ namespace BaskerNS
         // compute MWM + AMD ordering
         Kokkos::Timer nd_mwm_amd_timer;
         auto order_nd_mwm = Kokkos::subview(order_blk_mwm_array,
-                                            std::make_pair(0, BTF_A.ncol));
+                                            range_type(0, BTF_A.ncol));
         auto order_nd_amd = Kokkos::subview(order_blk_amd_array,
-                                            std::make_pair(0, BTF_A.ncol));
+                                            range_type(0, BTF_A.ncol));
         #if 1
         // run MWM + AMD on A as one block
         int num_blks_A = 1;
@@ -1154,9 +1155,9 @@ namespace BaskerNS
         Int b_first = btf_tabs_offset;
         Int nfirst = btf_tabs(b_first);
         auto order_blk_mwm_c = Kokkos::subview(order_blk_mwm_array,
-                                               std::make_pair(nfirst, ncol));
+                                               range_type(nfirst, ncol));
         auto order_blk_amd_c = Kokkos::subview(order_blk_amd_array,
-                                               std::make_pair(nfirst, ncol));
+                                               range_type(nfirst, ncol));
         if(Options.verbose == BASKER_TRUE) {
           std::cout << " calliing MWM on C" << std::endl;
           std::cout << " btf_blk_mwm: btf_tabs(" << btf_tabs_offset << ")=" << nfirst << std::endl;
@@ -1364,7 +1365,7 @@ namespace BaskerNS
     }
 
     if ( sym_gn != gn || sym_gm != gm ) {
-      printf( "ShyLUBasker Factor error: Matrix dims at Symbolic and Factor stages do not agree (sym_gm=%d, gn=%d, gm=%d)",sym_gn,gn,gm);
+      printf( "ShyLUBasker Factor error: Matrix dims at Symbolic and Factor stages do not agree (sym_gm=%d, gn=%d, gm=%d)",(int)sym_gn,(int)gn,(int)gm);
       printf( " - Symbolic reordered structure will not apply.\n");
       //exit(EXIT_FAILURE);
       return BASKER_ERROR; 

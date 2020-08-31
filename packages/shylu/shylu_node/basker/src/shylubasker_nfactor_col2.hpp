@@ -327,9 +327,7 @@ namespace BaskerNS
    const BASKER_BOOL lower
    )
   {
-
     const Int my_leader = (sl==0)?(kid):find_leader(kid,sl-1);
-    
     if(kid != my_leader)
     {
       /*
@@ -342,26 +340,17 @@ namespace BaskerNS
       return;
     }
 
-    const Int L_col     = S(sl)(my_leader);
-    Int L_row           = l-sl+1; //Might have to think about th
-    const Int U_col     = S(lvl)(kid);
-
-    Int my_row_leader  = S(0)(find_leader(kid,lvl-1));
-    //Int my_new_row = 
-    // L_col - my_row_leader;
-    Int U_row     = L_col-my_row_leader;
-   
-
-    const Int X_col     = S(0)(my_leader);
-    Int X_row     = l+1; //this will change for us 
+    Int my_row_leader = S(0)(find_leader(kid,lvl-1));
+    const Int L_col = S(sl)(my_leader);
+    const Int U_col = S(lvl)(kid);
+    const Int X_col = S(0)(my_leader);
+    Int L_row = l-sl+1; //Might have to think about th
+    Int U_row = L_col-my_row_leader;
+    Int X_row = l+1; //this will change for us 
     //const Int X_col = S(l)(my_leader);
     //Int x_row = 
 
-    Int col_idx_offset  = 0;
-    
-    BASKER_MATRIX     &U   = LU(U_col)(U_row);
-    //const Int         bcol = U.scol;
-         
+    BASKER_MATRIX &U   = LU(U_col)(U_row);
     #ifdef BASKER_DEBUG_NFACTOR_COL2
     if(L_row >= LL_size(L_col))
     {
@@ -370,27 +359,18 @@ namespace BaskerNS
     }
     BASKER_ASSERT(L_row < LL_size(L_col), "upper-off, Lrow >= size");
     BASKER_ASSERT(X_row < LL_size(X_col), "upper-off, Xrow >=size"); 
-    #endif
     
-
-    #ifdef BASKER_DEBUG_NFACTOR_COL2
     //if(lower == BASKER_TRUE)
     {
-    printf("Upper_fact_offdiag, kid: %d leader: %d l: %d lvl: %d works_size: %d X: %d %d L: %d %d U: %d %d k: %d \n",
-           kid, my_leader, l, lvl, LL_size[X_col], X_col, X_row, L_col, L_row, U_col, U_row,  k+U.scol);
-    }
-    #endif
-
-    #ifdef BASKER_DEBUG_NFACTOR_COL2
-    //if(lower == BASKER_TRUE)
-    {
+      printf("Upper_fact_offdiag, kid: %d leader: %d l: %d lvl: %d works_size: %d X: %d %d L: %d %d U: %d %d k: %d \n",
+             kid, my_leader, l, lvl, LL_size[X_col], X_col, X_row, L_col, L_row, U_col, U_row,  k+U.scol);
       printf("OFF-DIAG, kid: %d, l: %d  X: %d %d L: %d %d \n",
              kid, l,X_col, X_row, L_col, L_row);
     }
     #endif
 
-      //const BASKER_BOOL A_option = BASKER_FALSE;
-   
+    Int col_idx_offset  = 0;
+    //const BASKER_BOOL A_option = BASKER_FALSE;
     t_dense_back_solve_offdiag(kid,
                                L_col, L_row,
                                X_col, X_row,
@@ -406,7 +386,7 @@ namespace BaskerNS
     {
       X_row++;
       L_row++;
-      for(; X_row < LL_size(X_col);++X_row, ++L_row)
+      for(; X_row < LL_size(X_col); ++X_row, ++L_row)
       {
         #ifdef BASKER_DEBUG_NFACTOR_COL2
         printf("LLL OFF-DIAG,kid:%d, l: %d X: %d %d L: %d %d U: %d %d \n",
@@ -475,7 +455,6 @@ namespace BaskerNS
     {
       Int endblk = (lower)?(LL_size(my_idx)):(l+2);
       //Int endblk = l+2;
-
       /*
       printf("l+2: %d endblk: %d \n",
              l+2, endblk);
@@ -829,25 +808,25 @@ namespace BaskerNS
                             //U.col_ptr[k-bcol],
                             U.col_ptr(k),
                             BASKER_TRUE);
-       */
+      */
 
-       //We might still have to do sparse here
-       t_dense_back_solve_offdiag(leader_id,
-                                  L_col, L_row,
-                                  X_col, X_row,
-                                  k, col_idx_offset,
-                                  U.val, U.row_idx,
-                                  U.col_ptr(k+1)-U.col_ptr(k),
-                                  U.col_ptr(k),
-                                  BASKER_TRUE);
+      //We might still have to do sparse here
+      t_dense_back_solve_offdiag(leader_id,
+                                 L_col, L_row,
+                                 X_col, X_row,
+                                 k, col_idx_offset,
+                                 U.val, U.row_idx,
+                                 U.col_ptr(k+1)-U.col_ptr(k),
+                                 U.col_ptr(k),
+                                 BASKER_TRUE);
 
-       //printf("MOVING OFF, kid: %d k: %d L: %d %d X %d %d \n",
-       //     kid, k, L_col, L_row, X_col, X_row);
-       t_dense_move_offdiag_L(leader_id, 
-                              L_col, L_row,
-                              X_col, X_row,
-                              k, pivot);
-     }//end for over all offdiag blks
+      //printf("MOVING OFF, kid: %d k: %d L: %d %d X %d %d \n",
+      //     kid, k, L_col, L_row, X_col, X_row);
+      t_dense_move_offdiag_L(leader_id, 
+                             L_col, L_row,
+                             X_col, X_row,
+                             k, pivot);
+    }//end for over all offdiag blks
   }//end t_lower_col_factor_offdiag2()
 }//end namespace BaskerNS
 

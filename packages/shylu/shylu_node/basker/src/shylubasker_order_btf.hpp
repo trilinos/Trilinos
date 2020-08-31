@@ -157,7 +157,7 @@ namespace BaskerNS
 
     if (Options.verbose == BASKER_TRUE)
     {
-      printf("Basker: num_threads: %d \n", num_threads);
+      printf("Basker: num_threads: %d \n", (int)num_threads);
       printf("Basker BTF tabs: \n");
       for(Int i=0; i < nblks+1; i++)
       {
@@ -667,7 +667,7 @@ namespace BaskerNS
     //	   num_threads, 
     //	   ((double)1/num_threads) +
     //	   ((double)BASKER_BTF_IMBALANCE));
-    #if 0 // forcing to have the big A bloock for debug
+    #if 1 // forcing to have the big A bloock for debug
     //Int break_size = 0;
     Int break_size = 5;
     #else

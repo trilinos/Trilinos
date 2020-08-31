@@ -598,8 +598,19 @@ namespace BaskerNS
           if(Options.verbose == BASKER_TRUE) {
             std::cout << " ++ calling TRILINOS_BTF_MAXTRANS (" << A.nrow << " x " << A.ncol << ") ++ " << std::endl;
           }
-          num_match = trilinos_btf_maxtrans (A.nrow, A.ncol, &(A.col_ptr(0)), &(A.row_idx(0)), maxwork,
-                                             &work, &(order_match_array(0)), &(WORK(0)));
+          if (std::is_same<Int, int>::value) {
+            int *col_ptr = reinterpret_cast <int*> (&(A.col_ptr(0)));
+            int *row_idx = reinterpret_cast <int*> (&(A.row_idx(0)));
+            int *order   = reinterpret_cast <int*> (&(order_match_array(0)));
+            int *iwork   = reinterpret_cast <int*> (&(WORK(0)));
+            num_match = trilinos_btf_maxtrans ((int)A.nrow, (int)A.ncol, col_ptr, row_idx, maxwork, &work, order, iwork);
+          } else {
+            long int *col_ptr = reinterpret_cast <long int*> (&(A.col_ptr(0)));
+            long int *row_idx = reinterpret_cast <long int*> (&(A.row_idx(0)));
+            long int *order   = reinterpret_cast <long int*> (&(order_match_array(0)));
+            long int *iwork   = reinterpret_cast <long int*> (&(WORK(0)));
+            num_match = trilinos_btf_l_maxtrans ((long int)A.nrow, (long int)A.ncol, col_ptr, row_idx, maxwork, &work, order, iwork);
+          }
           FREE_INT_1DARRAY(WORK);
         }
         // apply matching to the rows of A

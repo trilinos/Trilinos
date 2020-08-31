@@ -279,7 +279,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       Int blk = S(0)(p);
       if(Options.verbose == BASKER_TRUE)
       {
-        printf(" ============= DOMAIN BLK (p=%d) ============\n",p);
+        printf(" ============= DOMAIN BLK (p=%d) ============\n",(int)p);
       }
       //printf("Sfactor blk: %d S[%d][0] \n", blk, p);
 
@@ -296,8 +296,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       //leaf_assign_nnz(LU[blk][LU_size[blk]-1], stree, 0);
       if(Options.verbose == BASKER_TRUE)
       {
-        printf( " >> leaf_assign_nnz(LL(%d)(%d))\n",blk,0);
-        printf( " >> leaf_assign_nnz(LL(%d)(%d))\n",blk,LU_size(blk)-1);
+        printf( " >> leaf_assign_nnz(LL(%d)(%d))\n",(int)blk,0);
+        printf( " >> leaf_assign_nnz(LL(%d)(%d))\n",(int)blk,(int)LU_size(blk)-1);
       }
       leaf_assign_nnz(LL(blk)(0),              stree, 0);
       leaf_assign_nnz(LU(blk)(LU_size(blk)-1), stree, 0);
@@ -342,8 +342,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         //L_assign_nnz(LL[blk][l+1], stree, 0);
         if(Options.verbose == BASKER_TRUE)
         {
-          printf( "   ++ leaf_assign_nnz(LU(%d, %d))\n",U_col,U_row);
-          printf( "   ++ leaf_assign_nnz(LL(%d, %d))\n",blk,l+1);
+          printf( "   ++ leaf_assign_nnz(LU(%d, %d))\n",(int)U_col,(int)U_row);
+          printf( "   ++ leaf_assign_nnz(LL(%d, %d))\n",(int)blk,(int)l+1);
         }
         U_assign_nnz(LU(U_col)(U_row), stree, 0);
         L_assign_nnz(LL(blk)(l+1),     stree, 0);
@@ -440,8 +440,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           //Assign nnz
           if(Options.verbose == BASKER_TRUE)
           {
-            printf( "   ++ leaf_assign_nnz(LU(%d, %d))\n",U_col,U_row);
-            printf( "   ++ leaf_assign_nnz(LL(%d, %d))\n",inner_blk,l-lvl);
+            printf( "   ++ leaf_assign_nnz(LU(%d, %d))\n",(int)U_col,(int)U_row);
+            printf( "   ++ leaf_assign_nnz(LL(%d, %d))\n",(int)inner_blk,(int)(l-lvl));
           }
           //U_assign_nnz(LU[U_col][U_row], stree, 0);
           //L_assign_nnz(LL[inner_blk][l-lvl], stree, 0);
@@ -1232,7 +1232,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
    Int off_diag
   )
   {
-    if(MV.ncol <= 0)
+    if(MV.ncol <= 0 || MV.nrow <= 0)
     {
       return;
     }

@@ -448,7 +448,8 @@ namespace BaskerNS
    BASKER_BOOL sep_flg
   )
   {
-    
+    const Entry zero (0.0);
+
     //Get needed variables
     const Int L_col = S(l)(kid);
     const Int U_col = S(lvl)(kid);
@@ -489,9 +490,7 @@ namespace BaskerNS
       //Bp->print();
     }
     BASKER_MATRIX    &B = *Bp;
-
     //B.print();
-
     //printf("POINT TEST, kid: %d X: %d %d \n",
     //	   kid, X_col, X_row);
 
@@ -499,7 +498,6 @@ namespace BaskerNS
     INT_1DARRAY ws     = LL(X_col)(X_row).iws;
     const Int ws_size  = LL(X_col)(X_row).iws_size;
     ENTRY_1DARRAY X    = LL(X_col)(X_row).ews;
-
 
     const Int brow = U.srow;
     //const Int bcol = U.scol;
@@ -639,7 +637,8 @@ namespace BaskerNS
       {
         printf("kid: %ld col: %ld need to realloc, unnz: %ld ucnt: %ld uunnz: %ld U_col: %ld U_row: %ld \n", (long)kid, (long)k, (long)unnz, (long)ucnt, (long)uunnz, (long)U_col, (long)U_row);
       }
-      BASKER_ASSERT(0==1, "USIZE\n");
+      //Note: commented out.. Does this work?
+      //BASKER_ASSERT(0==1, "USIZE\n");
 
       Int newsize = (unnz+U.nrow) * 1.2  ;
 
@@ -703,9 +702,9 @@ namespace BaskerNS
 
       #ifdef BASKER_2DL
       //if(X[j-brow] !=0)
-      if(X(j) != (Entry)(0) )
+      if(X(j) != zero )
       #else
-      if(X[j] != (Entry)(0) )
+      if(X[j] != zero )
       //if(X[j] != 0)
       //kkos_nfactor_sep2
       #endif

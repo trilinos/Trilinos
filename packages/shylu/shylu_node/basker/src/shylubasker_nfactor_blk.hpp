@@ -14,6 +14,8 @@
 #include <impl/Kokkos_Timer.hpp>
 #endif 
 
+#include "Teuchos_ScalarTraits.hpp"
+
 //#define BASKER_DEBUG_NFACTOR_BLK
 
 namespace BaskerNS
@@ -1272,13 +1274,13 @@ namespace BaskerNS
         //What we want to think about is how to 
         //do this in a dense way
         //#pragma ivdep (may be slower)
-//printf( " gperm(%d+%d) = %d, scol=%d, %d:%d\n",(int)j,(int)brow,(int)t, (int)L.scol, (int)L.col_ptr(t-local_offset)+1,(int)pend );
+        //printf( " gperm(%d+%d) = %d, scol=%d, %d:%d\n",(int)j,(int)brow,(int)t, (int)L.scol, (int)L.col_ptr(t-local_offset)+1,(int)pend );
         for(Int p = L.col_ptr(t-local_offset)+1; p < pend; ++p)
         {
           const Int row_idx = L.row_idx(p);
           const Entry update_val = L.val(p)*xj;
 
-//printf( " %d: row_idx=%d\n",(int)p,(int)row_idx );
+          //printf( " %d: row_idx=%d\n",(int)p,(int)row_idx );
           X(row_idx) -= update_val;
 
         }//end for() over each nnz in the column
@@ -1479,15 +1481,14 @@ namespace BaskerNS
   (
    Int kid, 
    Int blkcol, Int blkrow,
-   Int X_col, Int X_row,
-   Int k , Int &view_offset,
-   ENTRY_1DARRAY  x, 
+   Int X_col,  Int X_row,
+   Int k,      Int &view_offset,
+   ENTRY_1DARRAY x, 
    INT_1DARRAY   x_idx,
    Int x_size, Int x_offset,
    BASKER_BOOL A_option)
   {
     //Note:  need to add support for offdiag permuation
-
     BASKER_MATRIX &L            = LL(blkcol)(blkrow);
     BASKER_MATRIX &B            = ALM(blkcol)(blkrow);
 
@@ -1495,7 +1496,7 @@ namespace BaskerNS
     ENTRY_1DARRAY X             = LL(X_col)(X_row).ews;
     //Int         ws_size         = LL(X_col)(X_row).iws_size;
     
-    Int    nnz            = LL(X_col)(X_row).p_size;
+    Int nnz = LL(X_col)(X_row).p_size;
     //const Int    brow           = L.srow;
     //const Int    bcol           = L.scol;
   
@@ -1509,7 +1510,7 @@ namespace BaskerNS
 	   kid,ws_size, nnz);
     printf("\n\n");
     #endif
-    // B.info();
+    //B.info();
     //B.print();
 
     //Int *color =   &(ws(0));
@@ -1518,30 +1519,27 @@ namespace BaskerNS
     //Preload with A
     if(A_option == BASKER_TRUE)
     {
-#ifdef BASKER_DEBUG_NFACTROR_BLK
+      #ifdef BASKER_DEBUG_NFACTROR_BLK
       printf("t_back_solve, A_OPTION TRUE \n");
-#endif
+      #endif
       //for(Int i = view_offset; i < B.m_offset; i++)
       //printf("t_b_s_off debug, kid: %d k: %d bcol: %d col_ptr: %d \n",
       //     kid, k, bcol, B.col_ptr[k-bcol]);
       for(Int i = B.col_ptr(k); i < B.col_ptr(k+1); ++i)
       {
-#ifdef BASKER_DEBUG_NFACTOR_BLK
+        const Int j = B.row_idx(i);
+
+        #ifdef BASKER_DEBUG_NFACTOR_BLK
         //Bgood(remove)
         //printf("t_back_solve_diag, kid: %d i: %d g: %d\n",
         //	   kid, i, B.good(i));
-#endif
-
-        const Int j = B.row_idx(i);
-
-#ifdef BASKER_DEBUG_NFACTOR_BLK
         printf("t_back_solve_d, add A, kid: %d psize:%d \n",
             kid, nnz);
         printf("t_back_solve_diag, kid: %d A(%d) %f \n",
             kid, B.row_idx(i), B.val(i));
         printf("t_back_solve_diag, kid: %d x: %f %f \n",
             kid, X(j), X(j)+B.val(i));
-#endif
+        #endif
 
         X(j) = X(j)+ B.val(i);
 
@@ -1556,11 +1554,11 @@ namespace BaskerNS
 
     //printf("x_offset: %d \n", x_offset);
 
-    for(Int i = 0 ; i < x_size; ++i)
+    for(Int i = 0; i < x_size; ++i)
     {
       //const Int k    =   x_idx[i+x_offset];
-      const Int k = x_idx[i+x_offset];
       //const Entry xj =   x[i+x_offset];
+      const Int k = x_idx[i+x_offset];
       const Entry xj = x(i+x_offset);
       //printf("kid: %d bcol: %d k: %d \n",
       //   kid, bcol, k);
@@ -1570,7 +1568,6 @@ namespace BaskerNS
       printf("t_back_solve_diag, kid: %d  k: %d %g  x_size: %d [%d %d] \n",
           kid, k, xj, x_size,  L.col_ptr[k], L.col_ptr[k+1]);
 #endif
-
       //for(Int j = L.col_ptr[k-bcol]; 
       //  j < L.col_ptr[k-bcol+1]; j++)
       //printf("ERROR, kid: %d k: %d \n", kid, k);
@@ -1581,43 +1578,37 @@ namespace BaskerNS
       for(Int j = L.col_ptr(k); j < L.col_ptr(k+1); j++)
       {
         const Int jj = L.row_idx(j);
+        X(jj) -= L.val(j)*xj;
+ 
 #ifdef BASKER_DEBUG_NFACTOR_BLK
         //printf("t_b_solve_d, kid: %d j: %d color: %d \n",
         //	   kid, jj, color[jj-brow]);
         printf("t_b_solve_d, kid: %d j: %d color: %d \n",
             kid, jj, color[jj]);
-#endif
-
-        //if(color[jj-brow] != 1)
-        //Do not need this in dense
-        /*
-           if(color[jj] != 1)
-           {
-        //color[jj-brow] = 1;
-        color[jj] = 1;
-        #ifdef BASKER_DEBUG_NFACTOR_BLK
-        printf("pattern index: %d kid: %d \n",
-        nnz, kid);
-        #endif
-        pattern[nnz++] = jj;
-        //	printf("t_b_solve_d, id: %d nnz: %d\n",
-        //     kid, nnz);
-        //	printf("-----------PATTERN UPDATE kid: %d L: %d %d pattern(%d) = %d brow: %d \n", 
-        //     kid, X_col, X_row, nnz-1, pattern[nnz-1], brow);
-
-        }
-        */
-
-#ifdef BASKER_DEBUG_NFACTOR_BLK
-
         // printf("t_back_solve_d,id:%d  row_idx: %d b4: %f mult: %f %f\n",
         //kid, jj,X[jj-brow], L.val[j], xj);
         printf("t_back_solve_d,id:%d  row_idx: %d b4: %f mult: %f %f\n",
             kid, jj,X[jj], L.val[j], xj);
 #endif 
 
-        X(jj) -= L.val(j)*xj;
-        //X[jj-brow] -= L.val[j]*xj;
+        //if(color[jj-brow] != 1)
+        //Do not need this in dense
+        /*
+        if(color[jj] != 1)
+        {
+          //color[jj-brow] = 1;
+          color[jj] = 1;
+          #ifdef BASKER_DEBUG_NFACTOR_BLK
+          printf("pattern index: %d kid: %d \n",
+          nnz, kid);
+          #endif
+          pattern[nnz++] = jj;
+          //	printf("t_b_solve_d, id: %d nnz: %d\n",
+          //     kid, nnz);
+          //	printf("-----------PATTERN UPDATE kid: %d L: %d %d pattern(%d) = %d brow: %d \n", 
+          //     kid, X_col, X_row, nnz-1, pattern[nnz-1], brow);
+        }
+        */
       }
 
       /*
@@ -1636,19 +1627,19 @@ namespace BaskerNS
     }//over all nonzero in left
 
     #ifdef BASKER_2DL
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
-    printf("---PATTERN End test: kid: %d nnz: %d pattern: %d \n",
-	   kid, nnz, pattern[nnz-1]); 
-    printf("SETTING dig PS: %d kid: %d L: %d %d\n",
-	   nnz, kid, X_col, X_row);
-    printf("kid %d Ending nnz: %d \n",kid, nnz);
-    #endif
     //LL[X_col][X_row].p_size = nnz;
     LL(X_col)(X_row).p_size = nnz;
     #endif
 
     //Debug
     #ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_2DL
+    printf("---PATTERN End test: kid: %d nnz: %d pattern: %d \n",
+	   kid, nnz, pattern[nnz-1]); 
+    printf("SETTING dig PS: %d kid: %d L: %d %d\n",
+	   nnz, kid, X_col, X_row);
+    printf("kid %d Ending nnz: %d \n",kid, nnz);
+    #endif
     printf("kid: %d all values: \n", kid);
     for(Int i = 0; i < L.nrow; ++i)
     {

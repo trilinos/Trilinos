@@ -35,7 +35,7 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::mwm(BASKER_MATRIX &M, INT_1DARRAY perm)
   {
-    int num = 0;
+    Int num = 0;
     mwm_order::mwm(M.nrow, M.nnz, 
 		   &(M.col_ptr[0]), &(M.row_idx[0]),
 		   &(M.val[0]), &(perm[0]), 

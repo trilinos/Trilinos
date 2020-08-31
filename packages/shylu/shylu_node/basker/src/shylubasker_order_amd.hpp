@@ -559,7 +559,7 @@ namespace BaskerNS
         p_amd(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
       }
       if (Options.verbose) {
-        printf( " blk(%d: size=%d, rows=%d:%d)\n",b, btf_tabs(b+1)-btf_tabs(b), btf_tabs(b),btf_tabs(b+1)-1 );
+        printf( " blk(%d: size=%d, rows=%d:%d)\n", (int)b, (int)(btf_tabs(b+1)-btf_tabs(b)), (int)btf_tabs(b),(int)btf_tabs(b+1)-1 );
       }
       /*std::cout << " p_amd = [ " << std::endl;
       for(Int ii = 0; ii < blk_size; ii++)

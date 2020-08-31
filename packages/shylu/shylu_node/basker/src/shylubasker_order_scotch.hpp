@@ -234,7 +234,7 @@ namespace BaskerNS
       std::cout << " calling SCOTCH_graphOrder(" << M.nrow << " x " << M.ncol 
                 << ", num_levels = " << num_domains << ")" << std::endl;
       for(Int i = 0; i < sg.cblk; i++) {
-        printf( " dom-%d : size = %d\n",i,sg.rangtab[i+1]-sg.rangtab[i] );
+        printf( " dom-%d : size = %d\n",(int)i,(int)(sg.rangtab[i+1]-sg.rangtab[i]) );
       }
     }
 
