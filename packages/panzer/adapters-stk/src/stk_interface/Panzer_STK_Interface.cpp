@@ -571,7 +571,9 @@ writeToExodus(const std::string& filename,
 void
 STK_Interface::
 setupExodusFile(const std::string& filename,
-                const bool append)
+                const bool append,
+                const bool append_after_restart_time,
+                const double restart_time)
 {
   using std::runtime_error;
   using stk::io::StkMeshIoBroker;
@@ -584,8 +586,15 @@ setupExodusFile(const std::string& filename,
   ParallelMachine comm = *mpiComm_->getRawMpiComm();
   meshData_ = rcp(new StkMeshIoBroker(comm));
   meshData_->set_bulk_data(bulkData_);
-  if (append)
-    meshIndex_ = meshData_->create_output_mesh(filename, stk::io::APPEND_RESULTS);
+  if (append) {
+    if (append_after_restart_time) {
+      Ioss::PropertyManager props;
+      meshIndex_ = meshData_->create_output_mesh(filename, stk::io::APPEND_RESULTS,
+                                                 props, restart_time);
+    }
+    else // Append results to the end of the file
+      meshIndex_ = meshData_->create_output_mesh(filename, stk::io::APPEND_RESULTS);
+  }
   else
     meshIndex_ = meshData_->create_output_mesh(filename, stk::io::WRITE_RESULTS);
   const FieldVector& fields = metaData_->get_fields();
