@@ -510,7 +510,7 @@ namespace Zoltan2 {
 
     // Set defaults for the parameters
     std::string which = "SR";
-    std::string ortho = "SVBQ";
+    std::string ortho = "SVQB";
     double tolerance = 1.0e-2;
     bool relConvTol = false;
     int maxIterations = 1000;
