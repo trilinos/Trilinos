@@ -328,10 +328,11 @@ public:
    *  \note This will only write a single timestep at time = 0.
    *
    *  \param[in] filename The name of the output Exodus file.
+   *  \param[in] append If set to true, the output will be appended to the output Exodus file. If set to false, output file will be overwritten. Default is false.
    */
   void
-  writeToExodus(
-    const std::string& filename);
+  writeToExodus(const std::string& filename,
+                const bool append = false);
 
   /**
    *  \brief Set up an output Exodus file for writing results.
@@ -343,13 +344,14 @@ public:
    *        call to `writeToExodus(double timestep)`.
    *
    *  \param[in] filename The name of the output Exodus file.
+   *  \param[in] append If set to true, the output will be appended to the output Exodus file. If set to false, output file will be overwritten. Default is false.
    *
    *  \throws `std::logic_error` If the `STK_Interface` does not yet have a MPI
    *                             communicator.
    */
   void
-  setupExodusFile(
-    const std::string& filename);
+  setupExodusFile(const std::string& filename,
+                  const bool append = false);
 
   /**
    *  \brief Write this mesh and associated fields at the given `timestep`.
