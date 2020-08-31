@@ -552,8 +552,8 @@ void DOFManager::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & ge
     // owned_ is made up of owned_ids.: This doesn't work for high order
     non_overlap_mv->sync_host();
     tagged_non_overlap_mv->sync_host();
-    auto nvals = non_overlap_mv->template getLocalViewHost();
-    auto tagged_vals = tagged_non_overlap_mv->template getLocalViewHost();
+    auto nvals = non_overlap_mv->getLocalViewHost();
+    auto tagged_vals = tagged_non_overlap_mv->getLocalViewHost();
     TEUCHOS_ASSERT(nvals.size()==tagged_vals.size());
     for (size_t i = 0; i < nvals.extent(1); ++i) {
       for (size_t j = 0; j < nvals.extent(0); ++j) {
