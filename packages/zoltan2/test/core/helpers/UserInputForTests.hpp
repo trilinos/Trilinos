@@ -1660,15 +1660,9 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     // Make sure base gid is zero.
 
     if (nedges){
-      int chbase = adj[0];
-      for (int i=1; i < nedges; i++)
-        if (adj[i] < chbase)
-          chbase = adj[i];
-
-      if (chbase > 0){
-        for (int i=0; i < nedges; i++)
-          adj[i] -= chbase;
-      }
+      int chbase = 1;  // chaco input files are one-based
+      for (int i=0; i < nedges; i++)
+        adj[i] -= chbase;
     }
 
     graphCounts[0] = nvtxs;
