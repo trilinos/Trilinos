@@ -226,7 +226,7 @@ struct InputTraits {
   Z2_ISSAME(g,unsigned int) || Z2_ISSAME(g,unsigned long) || \
   Z2_ISSAME(g,unsigned long long) || Z2_ISSAME(g,size_t) )
 
-#define Z2_SERROR "Invalid scalar type. It must be float, double, or int."
+#define Z2_SERROR "Invalid scalar type. It must be float, double, int, or long long."
 
 #define Z2_LERROR "Invalid local ordinal type. It must be int, long, " \
   "long long, or ssize_t."
