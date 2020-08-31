@@ -496,60 +496,50 @@ namespace BaskerNS
       //Note: Come back to this!!!!
       if(lnnz + lcnt > llnnz)
       {
-        //printf("\n\n");
-        // printf("----------------------\n");
-
         newsize = lnnz * 1.1 + 2 *M.nrow + 1;
 
         if (Options.verbose == BASKER_TRUE)
         {
-          printf("b: %ld Reallocing L oldsize: %ld current: %ld count: %ld newsize: %ld \n",
-              (long)b, (long)llnnz, (long)lnnz, (long)lcnt, (long)newsize);
+          printf("kid = %d, b = %ld: Reallocing L oldsize: %ld current: %ld count: %ld newsize: %ld \n",
+                 (int)kid, (long)b, (long)llnnz, (long)lnnz, (long)lcnt, (long)newsize);
         }
 
+        thread_array(kid).error_blk = b;
+        thread_array(kid).error_subblk = 0;
         if(Options.realloc == BASKER_FALSE)
         {
-          thread_array(kid).error_type =
-            BASKER_ERROR_NOMALLOC;
+          thread_array(kid).error_type = BASKER_ERROR_NOMALLOC;
           return BASKER_ERROR;
         }
         else
         {
-          thread_array(kid).error_type =
-            BASKER_ERROR_REMALLOC;
-          thread_array(kid).error_blk    = b;
-          thread_array(kid).error_subblk = 0;
-          thread_array(kid).error_info   = newsize;
+          thread_array(kid).error_type = BASKER_ERROR_REMALLOC;
+          thread_array(kid).error_info = newsize;
           return BASKER_ERROR;
         }
 
       }
       if(unnz+ucnt > uunnz)
       {
-        // printf("\n\n");
-        //printf("-------------------\n");
-
         newsize = uunnz*1.1 + 2*M.nrow+1;
 
         if (Options.verbose == BASKER_TRUE)
         {
-          printf("b: %ld Reallocing U oldsize: %ld newsize: %ld  k: %ld \n",
-              (long)b, (long)uunnz, (long)unnz+ucnt, (long)k);
+          printf("kid = %d, b = %ld: Reallocing U oldsize: %ld newsize: %ld  k: %ld \n",
+                 (int)kid, (long)b, (long)uunnz, (long)unnz+ucnt, (long)k);
         }
 
+        thread_array(kid).error_blk = b;
+        thread_array(kid).error_subblk = -1;
         if(Options.realloc == BASKER_FALSE)
         {
-          thread_array(kid).error_type =
-            BASKER_ERROR_NOMALLOC;
+          thread_array(kid).error_type = BASKER_ERROR_NOMALLOC;
           return BASKER_ERROR;
         }
         else
         {
-          thread_array(kid).error_type =
-            BASKER_ERROR_REMALLOC;
-          thread_array(kid).error_blk    = b;
-          thread_array(kid).error_subblk = -1;
-          thread_array(kid).error_info   = newsize;
+          thread_array(kid).error_type = BASKER_ERROR_REMALLOC;
+          thread_array(kid).error_info = newsize;
           return BASKER_ERROR;
         }
 
@@ -1414,29 +1404,26 @@ namespace BaskerNS
 
       Int newsize = llnnz*1.2 + L.ncol;
 
-      if(Options.realloc == BASKER_FALSE)
-      {
-        thread_array(kid).error_type =
-          BASKER_ERROR_NOMALLOC;
-        return BASKER_ERROR;
-      }
-      else
-      {
-        thread_array(kid).error_type =
-          BASKER_ERROR_REMALLOC;
-        thread_array(kid).error_blk    = blkcol;
-        thread_array(kid).error_subblk = blkrow;
-        thread_array(kid).error_info   = newsize;
-        return BASKER_ERROR;
-      }
-
       if (Options.verbose == BASKER_TRUE)
       {
         printf("-Warning, Need to remalloc L: %ld %ld kid: %ld current size: %ld used_size: %ld  addition: %ld \n",
             (long)blkcol, (long)blkrow, (long)kid, (long)llnnz, (long)lnnz, (long)p_size  );
       }
-      //BASKER_ASSERT(0==1, "REALLOC LOWER BLOCK\n");
 
+      thread_array(kid).error_blk    = blkcol;
+      thread_array(kid).error_subblk = blkrow;
+      if(Options.realloc == BASKER_FALSE)
+      {
+        thread_array(kid).error_type = BASKER_ERROR_NOMALLOC;
+        return BASKER_ERROR;
+      }
+      else
+      {
+        thread_array(kid).error_type = BASKER_ERROR_REMALLOC;
+        thread_array(kid).error_info = newsize;
+        return BASKER_ERROR;
+      }
+      //BASKER_ASSERT(0==1, "REALLOC LOWER BLOCK\n");
     }
 
     for(Int i = 0; i < p_size; i++)

@@ -625,17 +625,15 @@ namespace BaskerNS
               (long)btf_tabs(c), (long)btf_tabs(c+1), (long)(btf_tabs(c+1)-btf_tabs(c)));
         }
 
+        thread_array(kid).error_blk = c;
         if(Options.realloc == BASKER_FALSE)
         {
-          thread_array(kid).error_type = 
-            BASKER_ERROR_NOMALLOC;
+          thread_array(kid).error_type = BASKER_ERROR_NOMALLOC;
           return BASKER_ERROR;
         }
         else
         {
-          thread_array(kid).error_type = 
-            BASKER_ERROR_REMALLOC;
-          thread_array(kid).error_blk = c;
+          thread_array(kid).error_type = BASKER_ERROR_REMALLOC;
           thread_array(kid).error_info = newsize;
           return BASKER_ERROR;
         }
@@ -651,17 +649,15 @@ namespace BaskerNS
           printf("blk: %ld column: %ld \n", (long)c, (long)k);
         }
 
+        thread_array(kid).error_blk = c;
         if(Options.realloc == BASKER_FALSE)
         {
-          thread_array(kid).error_type = 
-            BASKER_ERROR_NOMALLOC;
+          thread_array(kid).error_type = BASKER_ERROR_NOMALLOC;
           return BASKER_ERROR;
         }
         else
         {
-          thread_array(kid).error_type = 
-            BASKER_ERROR_REMALLOC;
-          thread_array(kid).error_blk = c;
+          thread_array(kid).error_type = BASKER_ERROR_REMALLOC;
           thread_array(kid).error_info = newsize;
           return BASKER_ERROR;
         }

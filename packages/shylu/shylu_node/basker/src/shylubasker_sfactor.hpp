@@ -145,12 +145,12 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   //#ifdef BASKER_DEBUG_SFACTOR
   if(Options.verbose == BASKER_TRUE)
   {
-    printf("\n\n\n");
+    printf("\n\n");
     printf("----------------------------------\n");
     printf("Total NNZ: %ld \n", (long)global_nnz);
     printf(" > blk_matching = %d\n", (int)Options.blk_matching );
     printf("----------------------------------\n");
-    printf("\n\n\n");
+    printf("\n\n");
   }
   //#endif
 
@@ -272,6 +272,12 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
     //split_num = num_threads/2;
     //for(Int p =0; p < 1; ++p)
+    if(Options.verbose == BASKER_TRUE)
+    {
+      printf("\n");
+      printf("\n --------------- OVER DOMS ---------------\n");
+      printf("\n");
+    }
     for(Int p=0; p < num_threads; ++p)
     {
       //if(p == 1)
@@ -323,11 +329,11 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
             (long)U_col, (long)U_row, (long)l, (long)glvl);
         #endif
 
+        Int off_diag = 1;
         //U_blk_sfactor(AV[U_col][U_row], stree,
         //		  gScol[l], gSrow[glvl],0);
-
         U_blk_sfactor(AVM(U_col)(U_row), stree,
-            gScol[l], gSrow[glvl],0);
+            gScol[l], gSrow[glvl], off_diag);
 
         //Determine lower blk nnz
         //Not need to be run in symmetric case
@@ -351,14 +357,14 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       }//end off diag
     }//over all domains
 
-    if(Options.verbose == BASKER_TRUE)
-    {
-      printf("\n\n");
-      printf("\n --------------- OVER SEPS ---------------\n");
-      printf("\n\n");
-    }
 
     //do all the sep
+    if(Options.verbose == BASKER_TRUE)
+    {
+      printf("\n");
+      printf("\n --------------- OVER SEPS ---------------\n");
+      printf("\n");
+    }
     for(Int lvl=0; lvl < tree.nlvls; lvl++)
     {
       //Number of seps in the level
@@ -373,26 +379,19 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         #ifdef BASKER_DEBUG_SFACTOR
         printf("p: %d pp: %d ppp: %d \n",
             p, pp, ppp);
+
+        printf("\n\n");
+        printf("Sep sfactor, lvl: %ld p: %ld U_col: %ld U_row: %ld \n",
+            (long)lvl, (long)p, (long)U_col, (long)U_row);
+        printf("BLK: %ld %ld Col: %ld Row: %ld \n",
+            (long)U_col, (long)U_row, (long)lvl, (long)pp);
         #endif
 
         Int U_col = S(lvl+1)(ppp);
         Int U_row = 0;
 
-        #ifdef BASKER_DEBUG_SFACTOR
-        printf("\n\n");
-        printf("Sep sfactor, lvl: %ld p: %ld U_col: %ld U_row: %ld \n",
-            (long)lvl, (long)p, (long)U_col, (long)U_row);
-        #endif
-
-
-        #ifdef BASKER_DEBUG_SFACTOR
-        printf("BLK: %ld %ld Col: %ld Row: %ld \n",
-            (long)U_col, (long)U_row, (long)lvl, (long)pp);
-        #endif
-
         //S_blk_sfactor(AL[U_col][U_row], stree,
         //gScol[lvl], gSrow[pp]);
-
 
         S_blk_sfactor(ALM(U_col)(U_row), stree,
             gScol(lvl), gSrow(pp));
@@ -425,9 +424,9 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
               U_col, U_row, l, pp);
         #endif
 
+          Int off_diag = 1;
           U_blk_sfactor(AVM(U_col)(U_row), stree,
-              gScol(l), gSrow(pp),1);
-
+              gScol(l), gSrow(pp), off_diag);
 
           //In symmetric will not need
           //L_blk_factor(...)
@@ -1337,16 +1336,15 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     //Loop of all columns
     for(Int k = 0; k < MV.ncol; ++k)
     {
-
       //Add any offdiag reach that might have already been
       if(off_diag == 1)
       {
         //printf("---OFF DIAG U-nnz called ----\n");
 
         Int t = grow(k+bcol);
-        if((t!=BASKER_MAX_IDX)&&(t < MV.nrow))
+        if((t != BASKER_MAX_IDX) && (t < MV.nrow))
         {
-          while( (t!=BASKER_MAX_IDX) && (t <= MV.ncol)&&(color(t)==0) )
+          while((t != BASKER_MAX_IDX) && (t <= MV.ncol) && (color(t) == 0))
           {
             U_col_count(k)++;
             color(t) = 1;
@@ -1357,7 +1355,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       } 
 
       //Loop over rows
-      for(Int j = MV.col_ptr(k); j< MV.col_ptr(k+1); ++j)
+      for(Int j = MV.col_ptr(k); j < MV.col_ptr(k+1); ++j)
       {
         //Climb tree
         //Will want to modify this to ST.post[row_idx(j)];
@@ -1365,15 +1363,13 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         Int t = MV.row_idx(j);
 
         // Processing element t
-        while( (t!=BASKER_MAX_IDX)&&(t<=MV.nrow)&& (color(t)==0) )
+        while((t != BASKER_MAX_IDX) && (t <= MV.nrow) && (color(t) == 0))
         {
-
           U_col_count(k)++;
           color(t) = 1;
           pattern(top++) = t;
           t = ST.parent(t);
         }
-
       }// end for j
 
       //clear color
@@ -1407,7 +1403,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           {
             min_pos = wave_p(kk);
           }
-
         }
 
         //maybe own row
@@ -2005,8 +2000,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       printf("leaf nnz: %ld \n", (long)t_nnz);
       #endif
 
-      if ((Int)(1.05*t_nnz) > t_nnz) {
-        M.nnz = (1.05)*t_nnz;
+      //double nnz_shoulder = 1.05;
+      double fill_factor = BASKER_DOM_NNZ_OVER+Options.user_fill; // used to boost fill estimate
+      if ((Int)(fill_factor*t_nnz) > t_nnz) {
+        M.nnz = fill_factor*t_nnz;
       } else {
         M.nnz = t_nnz;
       }
@@ -2021,7 +2018,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
                (long)global_nnz,(long)t_nnz,(long)M.nnz,(long)M.nrow,(long)M.ncol);
       }
     }
-
   }//end assign_leaf_nnz
 
   
@@ -2050,8 +2046,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       printf("U_assing_nnz: %ld \n", t_nnz);
       #endif
 
-      if ((Int)(1.05*t_nnz) >= t_nnz) {
-        M.nnz = (1.05)*t_nnz;
+      //double fill_factor = 1.05;
+      double fill_factor = BASKER_DOM_NNZ_OVER+Options.user_fill; // used to boost fill estimate
+      if ((Int)(fill_factor*t_nnz) >= t_nnz) {
+        M.nnz = fill_factor*t_nnz;
       }
       if (global_nnz + t_nnz > global_nnz) {
         // let's just hope it is enough, if overflow
@@ -2063,7 +2061,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
                (long)global_nnz,(long)t_nnz,(long)M.nnz,(long)M.nrow,(long)M.ncol);
       }
     }
-
   }//end assign_upper_nnz
 
   
@@ -2092,8 +2089,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       printf("L_assign_nnz: %ld \n", t_nnz);
       #endif
 
-      if ((Int)(2.05*t_nnz) >= t_nnz) {
-        M.nnz = (2.05)*t_nnz;
+     // double fill_factor = 2.05;
+      double fill_factor = BASKER_DOM_NNZ_OVER+Options.user_fill; // used to boost fill estimate
+      if ((Int)(fill_factor*t_nnz) >= t_nnz) {
+        M.nnz = fill_factor*t_nnz;
       } else {
         M.nnz = t_nnz;
       }
@@ -2107,7 +2106,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
                (long)global_nnz,(long)t_nnz,(long)M.nnz,(long)M.nrow,(long)M.ncol);
       }
     }
-
   }//end assign_lower_nnz
 
 

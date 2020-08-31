@@ -251,9 +251,9 @@ namespace BaskerNS
   {
     label = _label;
     init_vectors(_m, _n, _nnz);
-    copy_vec(_col_ptr, _n+1,  col_ptr);
-    copy_vec(_row_idx, _nnz, row_idx);
-    copy_vec(_val,_nnz,     val);
+    copy_vec(_col_ptr,  _n+1,  col_ptr);
+    copy_vec(_row_idx,  _nnz,  row_idx);
+    copy_vec(_val,      _nnz,  val);
   }//end init_matrix(string with ptrs)
 
 

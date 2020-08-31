@@ -1159,7 +1159,7 @@ namespace BaskerNS
         auto order_blk_amd_c = Kokkos::subview(order_blk_amd_array,
                                                range_type(nfirst, ncol));
         if(Options.verbose == BASKER_TRUE) {
-          std::cout << " calliing MWM on C" << std::endl;
+          std::cout << " calling MWM on C" << std::endl;
           std::cout << " btf_blk_mwm: btf_tabs(" << btf_tabs_offset << ")=" << nfirst << std::endl;
         }
 
@@ -1218,7 +1218,8 @@ namespace BaskerNS
         }
 
         if(Options.verbose == BASKER_TRUE) {
-          std::cout<< "Basker Factor: Time to compute and apply MWM+AMD on diagonal blocks: " << mwm_amd_perm_timer.seconds() << std::endl;
+          std::cout << std::endl << std::endl;
+          std::cout << "Basker Factor: Time to compute and apply MWM+AMD on diagonal blocks: " << mwm_amd_perm_timer.seconds() << std::endl;
         }
       }
       //for (Int i = 0; i < (Int)ncol; i++) {

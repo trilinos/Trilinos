@@ -33,7 +33,6 @@
 #define BASKER_EPSILON       1e-6
 
 #define BASKER_PIVOT_TOL     0.001
-#define BASKER_PIVOT_BIAS    1.001
 
 //Error Codes
 enum BASKER_ERROR_CODE 
@@ -57,12 +56,14 @@ enum BASKER_MATCHING_CODE
 };
 
 //MACRO BTF METHOD
-#define BASKER_BTF_MAX_PERCENT  1.00
-#define BASKER_BTF_LARGE        500  //Made smaller for unit test
+#define BASKER_BTF_MAX_PERCENT   1.00
+#define BASKER_BTF_LARGE         500  //Made smaller for unit test
 #define BASKER_BTF_IMBALANCE     0.10
 #define BASKER_BTF_SMALL         100
 #define BASKER_BTF_NNZ_OVER      2.0 //Upped from 1.20
 #define BASKER_BTF_PRUNE_SIZE    100
+
+#define BASKER_DOM_NNZ_OVER      1.0 //Added to control estimate for DOM/SEP blocks
 
 enum BASKER_INCOMPLETE_CODE
 {

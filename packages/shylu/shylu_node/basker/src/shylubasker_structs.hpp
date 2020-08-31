@@ -769,7 +769,6 @@ namespace BaskerNS
       //Pivot
       no_pivot   = BASKER_FALSE;
       pivot_tol  = BASKER_PIVOT_TOL; 
-      pivot_bias = BASKER_PIVOT_BIAS;
 
       //Prune (if not pruned, check for numerical cancelatin)
       prune = BASKER_FALSE;
@@ -785,7 +784,6 @@ namespace BaskerNS
       inc_lvl    = BASKER_INC_LVL_VALUE;
       inc_tol    = BASKER_INC_TOL_VALUE;
       user_fill  = BASKER_FILL_USER;
- 
     }
 
     //Reuse Pattern (Save time if same pattern can be used)
@@ -825,7 +823,6 @@ namespace BaskerNS
     //Pivot Options
     BASKER_BOOL  no_pivot;
     BASKER_MAGNITUDE pivot_tol;
-    BASKER_MAGNITUDE pivot_bias;
 
     //Prune (if not pruned, check for numerical cancelatin)
     BASKER_BOOL prune;
