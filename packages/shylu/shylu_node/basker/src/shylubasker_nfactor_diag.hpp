@@ -455,8 +455,8 @@ namespace BaskerNS
       //Future add
       //t_locate_pivot(kid, top)	  
       //find pivot
-      maxv = zero;
-      digv = zero;
+      maxv = abs(zero);
+      digv = abs(zero);
       maxindex = BASKER_MAX_IDX;
       digindex = BASKER_MAX_IDX;
       #ifdef BASKER_TIMER

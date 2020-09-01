@@ -743,8 +743,8 @@ namespace BaskerNS
         else
         {
           #ifdef BASKER_2DL
-          printf("----Error--- kid = %ld: extra L[%ld]=%f \n",
-                 (long)kid, (long)j, X[j-brow]);
+          std::cout << "----Error--- kid = " << kid << ": extra L[" << j << "]="
+                    << X[j-brow] << std::endl;
           #endif
         }//lower
       }//end not 0

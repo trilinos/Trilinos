@@ -172,7 +172,9 @@ namespace BaskerNS
 
     Int newsize;
     Entry pivot, value;
-    Mag absv, maxv;
+    Mag absv (0.0);
+    Mag maxv (0.0);
+    Mag digv (0.0);
 
 
     Int llnnz = L.mnnz;
@@ -340,9 +342,9 @@ namespace BaskerNS
       //Future add
       //t_locate_pivot(kid, top)	  
       //find pivot
-      maxv = zero;
+      maxv = abs(zero);
+      digv = abs(zero);
       Int digj = BASKER_MAX_IDX;
-      Mag digv = zero;
       for(i = top; i < ws_size; i++)
       {
         j = pattern[i];
@@ -443,6 +445,13 @@ namespace BaskerNS
                << " Pivot    = " << pivot    << endl
                << " Lcount   = " << lcnt     << endl;
           cout << "---------------------------" << endl;
+          /*printf( " D = [\n" );
+          for(Int k = 0; k < M.ncol; ++k) {
+            for( i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) {
+              printf( "%d %d %d %e\n", i, M.row_idx(i), k, M.val(i));
+            }
+          }
+          printf( "];\n" );*/
         }
         thread_array(kid).error_type =
           BASKER_ERROR_SINGULAR;
