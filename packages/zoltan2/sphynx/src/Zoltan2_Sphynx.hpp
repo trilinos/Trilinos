@@ -86,6 +86,8 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraOperator.hpp"
 
+#include "Ifpack2_Factory.hpp"
+
 #include "Teuchos_TimeMonitor.hpp"
 
 #ifdef HAVE_ZOLTAN2SPHYNX_MUELU
@@ -175,6 +177,15 @@ namespace Zoltan2 {
 
     template<typename problem_t>
     void setPreconditioner(Teuchos::RCP<problem_t> &problem);
+
+    template<typename problem_t>
+    void setMueLuPreconditioner(Teuchos::RCP<problem_t> &problem);
+
+    template<typename problem_t>
+    void setJacobiPreconditioner(Teuchos::RCP<problem_t> &problem);
+
+    template<typename problem_t>
+    void setPolynomialPreconditioner(Teuchos::RCP<problem_t> &problem);
 
 
     void eigenvecsToCoords(Teuchos::RCP<mvector_t> &eigenVectors,
@@ -655,77 +666,105 @@ namespace Zoltan2 {
   
   }
 
+
+  
   ///////////////////////////////////////////////////////////////////////////
   // Determine which preconditioner to use and set it in the given problem.
-  // There are two options: polynomial preconditioner (from Belos) and Muelu.
-  // Since MueLu is an optional dependency, we use polynomial when MueLu is 
+  // There are two options: muelu, jacobi and polynomial.
+  // Since MueLu is an optional dependency, we use jacobi when MueLu is 
   // not enabled. When MueLu is enabled, using MueLu is the default setting
   // but the user can set otherwise.
   template <typename Adapter>
   template <typename problem_t>
   void Sphynx<Adapter>::setPreconditioner(Teuchos::RCP<problem_t> &problem)
   {
-    bool hasSet = false;
-    bool usePoly = false;
-  
-    //Get the user values for the parameters
-    const Teuchos::ParameterEntry *pe = params_->getEntryPtr("sphynx_preconditioner_poly");
-    if (pe)
-      usePoly = pe->getValue<bool>(&usePoly);
 
-  
+    // Default preconditioner is muelu if it is enabled, jacobi otherwise.
+    std::string precType = "jacobi";
 #ifdef HAVE_ZOLTAN2SPHYNX_MUELU
-
-    if(!usePoly) {
-
-      Teuchos::ParameterList paramList;
-      if(verbosity_ == 0)
-	paramList.set("verbosity", "none");
-      else if(verbosity_ == 1)
-	paramList.set("verbosity", "low");
-      else if(verbosity_ == 2)
-	paramList.set("verbosity", "medium");
-      else if(verbosity_ == 3)
-	paramList.set("verbosity", "high");
-      else if(verbosity_ >= 4)
-	paramList.set("verbosity", "extreme");
-
-      paramList.set("smoother: type", "CHEBYSHEV");
-      Teuchos::ParameterList smootherParamList;
-      smootherParamList.set("chebyshev: degree", 3);
-      smootherParamList.set("chebyshev: ratio eigenvalue", 7.0);
-      smootherParamList.set("chebyshev: eigenvalue max iterations", irregular_ ? 100 : 10);
-      paramList.set("smoother: params", smootherParamList);
-      paramList.set("use kokkos refactor", true); 
-      paramList.set("transpose: use implicit", true);
-
-      if(irregular_) {
-	
-	paramList.set("multigrid algorithm", "unsmoothed");
-
-	paramList.set("coarse: type", "CHEBYSHEV");
-	Teuchos::ParameterList coarseParamList;
-	coarseParamList.set("chebyshev: degree", 3);
-	coarseParamList.set("chebyshev: ratio eigenvalue", 7.0);
-	paramList.set("coarse: params", coarseParamList);
-
-	paramList.set("max levels", 5);
-	paramList.set("aggregation: drop tol", 0.40);
-      
-      }
-
-      using prec_t = MueLu::TpetraOperator<scalar_t, lno_t, gno_t, node_t>;
-      Teuchos::RCP<prec_t> prec = MueLu::CreateTpetraPreconditioner<
-	scalar_t, lno_t, gno_t, node_t>(laplacian_, paramList);
-  
-      problem->setPrec(prec);
-  
-      hasSet = true;
-    }
+    precType = "muelu";
 #endif
 
-    if(!hasSet) {
+    //Get the user preference for the preconditioner
+    const Teuchos::ParameterEntry *pe = params_->getEntryPtr("sphynx_preconditioner_type");
+    if (pe)
+      precType = pe->getValue<std::string>(&precType);
 
+    // Set the preconditioner
+    if(precType == "muelu") {
+      Sphynx<Adapter>::setMueLuPreconditioner(problem);
+    } 
+    else if(precType == "polynomial") {
+      Sphynx<Adapter>::setPolynomialPreconditioner(problem);
+    }
+    else if(precType == "jacobi") {
+      Sphynx<Adapter>::setJacobiPreconditioner(problem);
+    }
+    else
+      throw std::runtime_error("\nSphynx Error: " + precType + "is not recognized as a preconditioner.\n"
+			       + "              Possible values: muelu (if enabled), jacobi, and polynomial\n");
+  }
+
+  ///////////////////////////////////////////////////////////////////////////
+  template <typename Adapter>
+  template <typename problem_t>
+  void Sphynx<Adapter>::setMueLuPreconditioner(Teuchos::RCP<problem_t> &problem)
+  {
+
+#ifdef HAVE_ZOLTAN2SPHYNX_MUELU
+    Teuchos::ParameterList paramList;
+    if(verbosity_ == 0)
+      paramList.set("verbosity", "none");
+    else if(verbosity_ == 1)
+      paramList.set("verbosity", "low");
+    else if(verbosity_ == 2)
+      paramList.set("verbosity", "medium");
+    else if(verbosity_ == 3)
+      paramList.set("verbosity", "high");
+    else if(verbosity_ >= 4)
+      paramList.set("verbosity", "extreme");
+
+    paramList.set("smoother: type", "CHEBYSHEV");
+    Teuchos::ParameterList smootherParamList;
+    smootherParamList.set("chebyshev: degree", 3);
+    smootherParamList.set("chebyshev: ratio eigenvalue", 7.0);
+    smootherParamList.set("chebyshev: eigenvalue max iterations", irregular_ ? 100 : 10);
+    paramList.set("smoother: params", smootherParamList);
+    paramList.set("use kokkos refactor", true); 
+    paramList.set("transpose: use implicit", true);
+
+    if(irregular_) {
+	
+      paramList.set("multigrid algorithm", "unsmoothed");
+
+      paramList.set("coarse: type", "CHEBYSHEV");
+      Teuchos::ParameterList coarseParamList;
+      coarseParamList.set("chebyshev: degree", 3);
+      coarseParamList.set("chebyshev: ratio eigenvalue", 7.0);
+      paramList.set("coarse: params", coarseParamList);
+
+      paramList.set("max levels", 5);
+      paramList.set("aggregation: drop tol", 0.40);
+      
+    }
+
+    using prec_t = MueLu::TpetraOperator<scalar_t, lno_t, gno_t, node_t>;
+    Teuchos::RCP<prec_t> prec = MueLu::CreateTpetraPreconditioner<
+      scalar_t, lno_t, gno_t, node_t>(laplacian_, paramList);
+  
+    problem->setPrec(prec);
+
+#else
+      throw std::runtime_error("\nSphynx Error: MueLu requested but not compiled into Trilinos.\n");
+#endif
+
+  }
+
+  ///////////////////////////////////////////////////////////////////////////
+  template <typename Adapter>
+  template <typename problem_t>
+  void Sphynx<Adapter>::setPolynomialPreconditioner(Teuchos::RCP<problem_t> &problem)
+  {
       int verbosity2 = Belos::Errors;
       if(verbosity_ == 1)
 	verbosity2 += Belos::Warnings;
@@ -757,7 +796,30 @@ namespace Zoltan2 {
 						 Teuchos::rcpFromRef(paramList), 
 						 "GmresPoly", true));
       problem->setPrec(polySolver);
-    }
+  }
+
+  ///////////////////////////////////////////////////////////////////////////
+  template <typename Adapter>
+  template <typename problem_t>
+  void Sphynx<Adapter>::setJacobiPreconditioner(Teuchos::RCP<problem_t> &problem)
+  {
+
+    Teuchos::RCP<Ifpack2::Preconditioner<scalar_t, lno_t, gno_t, node_t>> prec;
+    std::string precType = "RELAXATION";
+
+    prec = Ifpack2::Factory::create<matrix_t> (precType, laplacian_);
+
+    Teuchos::ParameterList precParams;
+    precParams.set("relaxation: type", "Jacobi");
+    precParams.set("relaxation: fix tiny diagonal entries", true);
+    precParams.set("relaxation: min diagonal value", 1.0e-8);
+
+    prec->setParameters(precParams);
+    prec->initialize();
+    prec->compute();
+
+    problem->setPrec(prec);
+
   }
 
   ///////////////////////////////////////////////////////////////////////////
