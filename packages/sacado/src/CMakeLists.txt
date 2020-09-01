@@ -28,6 +28,7 @@ SET(HEADERS ${HEADERS}
   new_design/Sacado_Fad_Exp_Extender.hpp
   new_design/Sacado_Fad_Exp_GeneralFad.hpp
   new_design/Sacado_Fad_Exp_GeneralFadTraits.hpp
+  new_design/Sacado_Fad_Exp_GeneralFadTestingHelpers.hpp
   new_design/Sacado_Fad_Exp_Ops_Fwd.hpp
   new_design/Sacado_Fad_Exp_Ops.hpp
   new_design/Sacado_Fad_Exp_DynamicStorage.hpp
