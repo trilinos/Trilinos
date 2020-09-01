@@ -51,6 +51,8 @@
 
 #include "Shards_BasicTopologies.hpp"
 
+#include <limits> // for epsilon for tolerance in FP comparisons
+
 #ifdef PANZER_HAVE_IOSS
 
 // for checking test correctness
@@ -104,9 +106,12 @@ TEUCHOS_UNIT_TEST(tExodusRestartAndAppend, Restart)
   out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
 
   stk::ParallelMachine pm(MPI_COMM_WORLD);
-  const std::string restart_file = "exodus_restart.exo";
+  const std::string restart_file = "exodus_restart_and_append.exo";
+  const auto tolerance = std::numeric_limits<double>::epsilon() * 100.0;
 
+  // *****************************
   // Read in mesh and write out some fields for three time steps
+  // *****************************
   {
     STK_ExodusReaderFactory f("meshes/basic.gen");
     auto mesh = f.buildUncommitedMesh(MPI_COMM_WORLD);
@@ -129,7 +134,10 @@ TEUCHOS_UNIT_TEST(tExodusRestartAndAppend, Restart)
     mesh->writeToExodus(2.0);
   }
 
-  // Restart from mesh and append more time steps using original construction path
+  // *****************************
+  // Restart from mesh and append more time steps using original
+  // construction path. This appends to the end of the file.
+  // *****************************
   {
     STK_ExodusReaderFactory f(restart_file);
     auto mesh = f.buildUncommitedMesh(MPI_COMM_WORLD);
@@ -150,7 +158,10 @@ TEUCHOS_UNIT_TEST(tExodusRestartAndAppend, Restart)
     mesh->writeToExodus(5.0);
   }
 
-  // Read the final mesh from scratch and make sure the time steps were appended instead of overwritten
+  // *****************************
+  // Read the final mesh using ioss directly and make sure the time
+  // steps were appended instead of overwritten
+  // *****************************
   {
     Ioss::DatabaseIO *resultsDb = Ioss::IOFactory::create("exodus", restart_file, Ioss::READ_MODEL, MPI_COMM_WORLD);
     Ioss::Region results(resultsDb);
@@ -161,13 +172,13 @@ TEUCHOS_UNIT_TEST(tExodusRestartAndAppend, Restart)
     // First time step value (ioss steps are 1 based)
     int step = 1;
     double db_time = results.begin_state(step);
-    TEST_EQUALITY(db_time,0.0);
+    TEST_FLOATING_EQUALITY(db_time,0.0,tolerance);
     results.end_state(step);
 
     // Last time step value
     step = 6;
     db_time = results.begin_state(step);
-    TEST_EQUALITY(db_time,5.0);
+    TEST_FLOATING_EQUALITY(db_time,5.0,tolerance);
     results.end_state(step);
 
     // Nodal field exists
@@ -180,6 +191,76 @@ TEUCHOS_UNIT_TEST(tExodusRestartAndAppend, Restart)
     TEST_EQUALITY(eb->field_count(Ioss::Field::TRANSIENT), 3);
     TEST_ASSERT(eb->field_exists(cell_field_name));
   }
+
+  // *****************************
+  // Now test the "append after time value". This allows a user to
+  // back up and restart earlier in the run. Instead of appending to
+  // the end, this overwrites any time steps after the specified time
+  // and appends after that.
+  // *****************************
+  {
+    STK_ExodusReaderFactory f(restart_file);
+    auto mesh = f.buildUncommitedMesh(MPI_COMM_WORLD);
+    mesh->addSolutionField(node_field_name,block_name_1);
+    mesh->addSolutionField(node_field_name,block_name_2);
+    mesh->addCellField(cell_field_name,block_name_1);
+    mesh->addCellField(cell_field_name,block_name_2);
+    mesh->initialize(pm,true,false);
+    f.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
+
+    bool appendToFile = true;
+    bool appendAfterRestartTime = true;
+    double restartTime = 3.0;
+    mesh->setupExodusFile(restart_file,appendToFile,appendAfterRestartTime,restartTime);
+    setValues(mesh,3.3);
+    mesh->writeToExodus(3.3);
+    setValues(mesh,3.4);
+    mesh->writeToExodus(3.4);
+    setValues(mesh,3.5);
+    mesh->writeToExodus(3.5);
+    setValues(mesh,3.6);
+    mesh->writeToExodus(3.6);
+  }
+
+  // *****************************
+  // Verify the "append after time" worked
+  // *****************************
+  {
+    Ioss::DatabaseIO *resultsDb = Ioss::IOFactory::create("exodus", restart_file, Ioss::READ_MODEL, MPI_COMM_WORLD);
+    Ioss::Region results(resultsDb);
+
+    // Number of time steps
+    TEST_EQUALITY(results.get_property("state_count").get_int(),8);
+
+    // First time step value (ioss steps are 1 based)
+    int step = 1;
+    double db_time = results.begin_state(step);
+    TEST_FLOATING_EQUALITY(db_time,0.0,tolerance);
+    results.end_state(step);
+
+    // Middle time step value
+    step = 5;
+    db_time = results.begin_state(step);
+    TEST_FLOATING_EQUALITY(db_time,3.3,tolerance);
+    results.end_state(step);
+
+    // Last time step value
+    step = 8;
+    db_time = results.begin_state(step);
+    TEST_FLOATING_EQUALITY(db_time,3.6,tolerance);
+    results.end_state(step);
+
+    // Nodal field exists
+    Ioss::NodeBlock *nb = results.get_node_blocks()[0];
+    TEST_EQUALITY(nb->field_count(Ioss::Field::TRANSIENT), 1);
+    TEST_ASSERT(nb->field_exists(node_field_name));
+
+    // Cell field exists
+    Ioss::ElementBlock *eb = results.get_element_blocks()[0];
+    TEST_EQUALITY(eb->field_count(Ioss::Field::TRANSIENT), 3);
+    TEST_ASSERT(eb->field_exists(cell_field_name));
+  }
+
 }
 
 } // namespace panzer_stk
