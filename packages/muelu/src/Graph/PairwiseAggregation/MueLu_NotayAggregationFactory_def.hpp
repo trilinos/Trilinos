@@ -446,7 +446,7 @@ namespace MueLu {
         // Skip aggregated neighbors, off-rank neighbors, hard zeros and self
         LO col = indices[colidx];
         SC val = vals[colidx];
-        if(current_idx == col || aggStat[col] != READY || col > numRows || val == SC_ZERO)
+        if(current_idx == col || col > numRows || aggStat[col] != READY  || val == SC_ZERO)
           continue;
 
 	MT aij = STS::real(val);
@@ -606,7 +606,7 @@ namespace MueLu {
       const magnitude_type si      = Teuchos::ScalarTraits<value_type>::real(rowSum_h(currentIdx));
       for(auto entryIdx = row_map_h(currentIdx); entryIdx < row_map_h(currentIdx + 1); ++entryIdx) {
         const LO colIdx = static_cast<LO>(entries_h(entryIdx));
-        if(currentIdx == colIdx || localAggStat[colIdx] != READY || values_h(entryIdx) == KAT_zero || colIdx > numRows) {
+        if(currentIdx == colIdx || colIdx > numRows || localAggStat[colIdx] != READY || values_h(entryIdx) == KAT_zero) {
           continue;
         }
 
