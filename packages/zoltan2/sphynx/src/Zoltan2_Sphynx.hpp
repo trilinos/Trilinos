@@ -670,7 +670,7 @@ namespace Zoltan2 {
   
   ///////////////////////////////////////////////////////////////////////////
   // Determine which preconditioner to use and set it in the given problem.
-  // There are two options: muelu, jacobi and polynomial.
+  // There are three options: muelu, jacobi and polynomial.
   // Since MueLu is an optional dependency, we use jacobi when MueLu is 
   // not enabled. When MueLu is enabled, using MueLu is the default setting
   // but the user can set otherwise.
