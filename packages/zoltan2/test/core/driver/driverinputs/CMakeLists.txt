@@ -50,6 +50,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver
         xtrapulpVwgtTest2.xml 
         xtrapulpVwgtTest2NoDistrib.xml
         test578.xml
+        test7944.xml
         zoltanGraphAdapter.xml
         zoltanGraphAdapterVwgt.xml
         zoltanGraphAdapterEwgt.xml
