@@ -141,6 +141,7 @@ int main(int argc, char *argv[])
   // so it can be scalar + local + global or it can be just local + global.
 
   // validate Zoltan2::BasicUserTypes
+  BEGIN_CHECK    Zoltan2::BasicUserTypes<long, int, long long>                    END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<double, signed int, long long>           END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<double, int, long long>                  END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, signed long, unsigned int>        END_CHECK

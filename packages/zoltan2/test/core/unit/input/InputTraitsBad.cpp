@@ -116,7 +116,6 @@ int main(int argc, char *argv[])
   typedef unsigned long user_unsigned_long_t;
   typedef unsigned long long user_unsigned_long_long_t;
   typedef size_t user_size_t;
-  typedef ssize_t user_ssize_t;
   typedef SomeBadType<int,int, int> user_some_bad_t;
 
   // scalar ordinal (first slot) must be float, double, or int
@@ -130,7 +129,6 @@ int main(int argc, char *argv[])
   BEGIN_CHECK    Zoltan2::BasicUserTypes<SomeBadType<user_int_t,user_long_t, user_int_t>, user_int_t, user_long_t>          END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_uint32_t, user_int_t, user_long_t>                                            END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_some_bad_t, user_int_t, user_long_t>                                          END_CHECK
-  BEGIN_CHECK    Zoltan2::BasicUserTypes<user_ssize_t, user_int_t, user_long_t>                                             END_CHECK
 
   // local ordinal (second slot) must always be signed
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_unsigned_int_t, user_long_t>                                    END_CHECK
@@ -155,7 +153,6 @@ int main(int argc, char *argv[])
 
   // some more checks that should all fail - this doesn't check all
   // combinations but just tries a bunch of things on different class types
-  BEGIN_CHECK    Zoltan2::BasicUserTypes<long, int, long long>                          END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<unsigned int, unsigned int, unsigned long>     END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<unsigned long, unsigned long, long>            END_CHECK
   BEGIN_CHECK    Xpetra::CrsMatrix<double, float, long long>                            END_CHECK
