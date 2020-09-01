@@ -701,7 +701,7 @@ namespace Zoltan2 {
       Sphynx<Adapter>::setJacobiPreconditioner(problem);
     }
     else
-      throw std::runtime_error("\nSphynx Error: " + precType + "is not recognized as a preconditioner.\n"
+      throw std::runtime_error("\nSphynx Error: " + precType + " is not recognized as a preconditioner.\n"
 			       + "              Possible values: muelu (if enabled), jacobi, and polynomial\n");
   }
 
