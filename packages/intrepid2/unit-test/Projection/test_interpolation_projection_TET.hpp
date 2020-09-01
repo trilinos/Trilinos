@@ -84,6 +84,9 @@
 
 #define Intrepid2_Experimental
 
+//this allows to reduce cost of the tests.
+//undefine when debugging/developing
+#define RANDOMLY_PICK_ELEM_PERMUTATION
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -347,6 +350,7 @@ int InterpolationProjectionTet(const bool verbose) {
             }
 
             li::getBasisCoeffs(basisCoeffsLI, funAtDofCoords, dofCoeffsPhys);
+            Kokkos::fence();
           }
 
           //Testing Kronecker property of basis functions

@@ -399,9 +399,9 @@ int ConvergenceTet(const bool verbose) {
     cell_cub->getCubature(refPoints, weights);
 
     using basisType = Basis<DeviceSpaceType,ValueType,ValueType>;
-    using CG_NBasis = NodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
+    //using CG_NBasis = NodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
     using CG_HBasis = HierarchicalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
-    //using CG_DNBasis = DerivedNodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
+    using CG_DNBasis = DerivedNodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
 
 
     *outStream
@@ -421,7 +421,8 @@ int ConvergenceTet(const bool verbose) {
       ots::getOrientation(elemOrts, elemNodes, tet);
 
       std::vector<basisType*> basis_set;
-      basis_set.push_back(new typename  CG_NBasis::HGRAD_TET(order));
+      //basis_set.push_back(new typename  CG_NBasis::HGRAD_TET(order));
+      basis_set.push_back(new typename  CG_DNBasis::HGRAD_TET(order));
       basis_set.push_back(new typename  CG_HBasis::HGRAD_TET(order));
 
       for (auto basisPtr:basis_set) {
@@ -626,7 +627,8 @@ int ConvergenceTet(const bool verbose) {
       ots::getOrientation(elemOrts, elemNodes, tet);
 
       std::vector<basisType*> basis_set;
-      basis_set.push_back(new typename  CG_NBasis::HCURL_TET(order));
+      //basis_set.push_back(new typename  CG_NBasis::HCURL_TET(order));
+      basis_set.push_back(new typename  CG_DNBasis::HCURL_TET(order));
       //basis_set.push_back(new typename  CG_HBasis::HCURL_TET(order));
 
       for (auto basisPtr:basis_set) {
@@ -844,7 +846,8 @@ int ConvergenceTet(const bool verbose) {
       ots::getOrientation(elemOrts, elemNodes, tet);
 
       std::vector<basisType*> basis_set;
-      basis_set.push_back(new typename  CG_NBasis::HDIV_TET(order));
+      //basis_set.push_back(new typename  CG_NBasis::HDIV_TET(order));
+      basis_set.push_back(new typename  CG_DNBasis::HDIV_TET(order));
       //basis_set.push_back(new typename  CG_HBasis::HDIV_TET(order));
 
       for (auto basisPtr:basis_set) {
@@ -1058,7 +1061,8 @@ int ConvergenceTet(const bool verbose) {
       ots::getOrientation(elemOrts, elemNodes, tet);
 
       std::vector<basisType*> basis_set;
-      basis_set.push_back(new typename  CG_NBasis::HVOL_TET(order-1));
+      //basis_set.push_back(new typename  CG_NBasis::HVOL_TET(order-1));
+      basis_set.push_back(new typename  CG_DNBasis::HVOL_TET(order-1));
       //basis_set.push_back(new typename  CG_HBasis::HVOL_TET(order-1));
 
       for (auto basisPtr:basis_set) {
