@@ -490,16 +490,22 @@ void CudaInternal::initialize(int cuda_device_id, cudaStream_t stream) {
 
 #ifdef KOKKOS_ENABLE_CUDA_UVM
   if (Kokkos::show_warnings() && !cuda_launch_blocking()) {
-    std::cerr << "Kokkos::Cuda::initialize WARNING: Cuda is allocating into "
+    // Packages are being updated so they work with CUDA_LAUNCH_BLOCKING=0
+    // Tpetra checks for std:cerr output in tpetra/core/test/Core initialization tests.
+    // Changed this to simple cout so we can pass Tpetra with launch blocking off.
+    // When Trilinos is all working we may want to change this so it warns that user
+    // code needs fencing when blocking is on, but also warns that Trilinos can have it off
+    // when blocking is on.
+    std::cout << "Kokkos::Cuda::initialize WARNING: Cuda is allocating into "
                  "UVMSpace by default"
               << std::endl;
-    std::cerr << "                                  without setting "
+    std::cout << "                                  without setting "
                  "CUDA_LAUNCH_BLOCKING=1."
               << std::endl;
-    std::cerr << "                                  The code must call "
+    std::cout << "                                  The code must call "
                  "Cuda().fence() after each kernel"
               << std::endl;
-    std::cerr << "                                  or will likely crash when "
+    std::cout << "                                  or will likely crash when "
                  "accessing data on the host."
               << std::endl;
   }
