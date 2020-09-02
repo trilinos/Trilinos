@@ -5133,7 +5133,7 @@ namespace Tpetra {
     row_ptrs_type row_ptrs_beg(
       view_alloc("row_ptrs_beg", WithoutInitializing),
       k_rowPtrs_.extent(0));
-    Kokkos::deep_copy(row_ptrs_beg, k_rowPtrs_);
+    Kokkos::deep_copy(execution_space(), row_ptrs_beg, k_rowPtrs_);
 
     const size_t N = row_ptrs_beg.extent(0) == 0 ? size_t(0) :
       size_t(row_ptrs_beg.extent(0) - 1);

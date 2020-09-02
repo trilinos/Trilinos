@@ -6522,7 +6522,7 @@ namespace Tpetra {
     row_ptrs_type row_ptr_beg(
       view_alloc("row_ptr_beg", WithoutInitializing),
       myGraph_->k_rowPtrs_.extent(0));
-    Kokkos::deep_copy(row_ptr_beg, myGraph_->k_rowPtrs_);
+    Kokkos::deep_copy(execution_space(), row_ptr_beg, myGraph_->k_rowPtrs_);
 
     const size_t N = row_ptr_beg.extent(0) == 0 ? size_t(0) :
       size_t(row_ptr_beg.extent(0) - 1);
