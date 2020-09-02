@@ -387,7 +387,8 @@ namespace { // (anonymous)
                      "CopyOffsetsImpl (implementation of copyOffsets): In order"
                      " to call this specialization, src and dst must have the "
                      "the same array_layout.");
-      Kokkos::deep_copy (dst, src);
+      using execution_space = typename OutputViewType::execution_space;
+      Kokkos::deep_copy (execution_space(), dst, src);
     }
   };
 
@@ -495,16 +496,16 @@ namespace { // (anonymous)
           Kokkos::LayoutLeft, typename OutputViewType::device_type>;
       using Kokkos::view_alloc;
       using Kokkos::WithoutInitializing;
+      using execution_space = typename OutputViewType::execution_space;
       output_space_copy_type
         outputSpaceCopy (view_alloc ("outputSpace", WithoutInitializing),
                          src.extent (0));
-      Kokkos::deep_copy (outputSpaceCopy, src);
+      Kokkos::deep_copy (execution_space(), outputSpaceCopy, src);
 
       // The output View's execution space can access
       // outputSpaceCopy's data, so we can run the functor now.
       using functor_type =
         CopyOffsetsFunctor<OutputViewType, output_space_copy_type>;
-      using execution_space = typename OutputViewType::execution_space;
       using size_type = typename OutputViewType::size_type;
       using range_type = Kokkos::RangePolicy<execution_space, size_type>;
 

@@ -176,6 +176,7 @@ allReduceView (const OutputViewType& output,
   // contiguous buffer.  We use a host buffer for that, since device
   // buffers are slow to allocate.
 
+  using execution_space = typename OutputViewType::execution_space;
   const bool viewsAlias = output.data () == input.data ();
   if (comm.getSize () == 1) {
     if (! viewsAlias) {
@@ -220,7 +221,7 @@ allReduceView (const OutputViewType& output,
     // ValueType instances.
     allReduceRawContiguous (output_tmp.data (), input_tmp.data (),
                             output_tmp.span (), comm);
-    Kokkos::deep_copy (output, output_tmp);
+    Kokkos::deep_copy (execution_space(), output, output_tmp);
   }
   else {
     allReduceRawContiguous (output.data (), input.data (),

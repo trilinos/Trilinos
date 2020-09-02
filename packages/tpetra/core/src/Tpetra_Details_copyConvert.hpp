@@ -283,7 +283,8 @@ namespace { // (anonymous)
         Kokkos::deep_copy (dst, src_copy);
       }
       else { // no aliasing
-        Kokkos::deep_copy (dst, src);
+        using execution_space = typename OutputViewType::execution_space;
+        Kokkos::deep_copy (execution_space(), dst, src);
       }
     }
   };
