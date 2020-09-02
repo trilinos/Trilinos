@@ -420,6 +420,13 @@ Piro::TrapezoidRuleSolver<Scalar>::getDecorator() const
   return model;
 }
 
+template <typename Scalar>
+Teuchos::RCP<Thyra::AdaptiveSolutionManager>
+Piro::TrapezoidRuleSolver<Scalar>::getSolutionManager() const
+{
+  return solMgr;
+}
+
 /****************************************************************************/
 
 template <typename Scalar>
