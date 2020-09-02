@@ -18,6 +18,8 @@ void testMain (bool& success, int argc, char* argv[])
       "even before Kokkos::initialize was called." << endl;
     return;
   }
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv); // before Kokkos::initialize
   Kokkos::initialize (argc, argv);
   if (! Kokkos::is_initialized ()) {
     success = false;
