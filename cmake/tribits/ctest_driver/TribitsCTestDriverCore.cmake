@@ -1013,15 +1013,15 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #     Determines the model for build.  This value is passed in as the first
 #     argument to the built-in CTest function ``CTEST_START()``.  Valid values
-#     include ``Nightly``, ``Continuous``, and ``Experimental``.  As far a
+#     include ``Nightly``, ``Continuous``, and ``Experimental``.  As far as
 #     CTest is concerned, the only real impact this CTest "Model" has is on
-#     setting the time stamp in the build stamp (which is stored in the file
-#     ``Testing/TAG``).  For the model ``Nightly``, the time stamp in the
+#     setting the time stamp in the build stamp field (which is stored in the
+#     file ``Testing/TAG``).  For the model ``Nightly``, the time stamp in the
 #     build stamp is taken from the variable ``CTEST_NIGHTLY_START_TIME`` read
 #     in from the file `<projectDir>/CTestConfig.cmake`_ file.  Otherwise, the
 #     time stamp used is the current build start time.  (The reason this is
 #     significant is that builds on CDash that have the same site, buildname,
-#     and buildstamp are considered the same build and will combine results.)
+#     and build stamp are considered the same build and will combine results.)
 #     This also defines the default value for `${PROJECT_NAME}_TRACK`_ (see
 #     below) as well as defines the default value for
 #     ``${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE``.  The default value
@@ -1039,11 +1039,10 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     However, if ``CTEST_TEST_TYPE==Experimental`` (or ``EXPERIMENTAL``),
 #     then ``${PROJECT_NAME}_TRACK`` is forced to ``Experimental``, even if it
 #     was set to a different value.  The default value can also be set in the
-#     ctest -S driver script itself by setting by setting
-#     ``SET(${PROJECT_NAME}_TRACK <cdash-group>)``.  And, of course, if the
-#     environment variable ``export <Project>_TRACK=<cdash-group>`` is set,
-#     then that value will be used for the CDash Track/Group to submit results
-#     to.
+#     ctest -S driver script itself by setting ``SET(${PROJECT_NAME}_TRACK
+#     <cdash-group>)``.  And, of course, if the environment variable ``export
+#     <Project>_TRACK=<cdash-group>`` is set, then that value will be used for
+#     the CDash Track/Group to submit results to.
 #
 #   .. _CTEST_SITE:
 #
