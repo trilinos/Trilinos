@@ -370,8 +370,8 @@ int ConvergenceHex(const bool verbose) {
 
     using basisType = Basis<DeviceSpaceType,ValueType,ValueType>;
     using CG_NBasis = NodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
+    using CG_DNBasis = DerivedNodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
     using CG_HBasis = HierarchicalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
-    //using CG_DNBasis = DerivedNodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
 
 
     *outStream
@@ -392,6 +392,7 @@ int ConvergenceHex(const bool verbose) {
 
       std::vector<basisType*> basis_set;
       basis_set.push_back(new typename  CG_NBasis::HGRAD_HEX(order));
+      basis_set.push_back(new typename  CG_DNBasis::HGRAD_HEX(order));
       basis_set.push_back(new typename  CG_HBasis::HGRAD_HEX(order));
 
       for (auto basisPtr:basis_set) {
@@ -598,6 +599,7 @@ int ConvergenceHex(const bool verbose) {
 
       std::vector<basisType*> basis_set;
       basis_set.push_back(new typename  CG_NBasis::HCURL_HEX(order));
+      basis_set.push_back(new typename  CG_DNBasis::HCURL_HEX(order));
       basis_set.push_back(new typename  CG_HBasis::HCURL_HEX(order));
 
       for (auto basisPtr:basis_set) {
@@ -818,6 +820,7 @@ int ConvergenceHex(const bool verbose) {
 
       std::vector<basisType*> basis_set;
       basis_set.push_back(new typename  CG_NBasis::HDIV_HEX(order));
+      basis_set.push_back(new typename  CG_DNBasis::HDIV_HEX(order));
       basis_set.push_back(new typename  CG_HBasis::HDIV_HEX(order));
 
       for (auto basisPtr:basis_set) {
@@ -1035,6 +1038,7 @@ int ConvergenceHex(const bool verbose) {
 
       std::vector<basisType*> basis_set;
       basis_set.push_back(new typename  CG_NBasis::HVOL_HEX(order-1));
+      basis_set.push_back(new typename  CG_DNBasis::HVOL_HEX(order-1));
       basis_set.push_back(new typename  CG_HBasis::HVOL_HEX(order-1));
 
       for (auto basisPtr:basis_set) {

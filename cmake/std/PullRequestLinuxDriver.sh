@@ -120,7 +120,7 @@ then
 fi
 
 echo -e "PRDriver> "
-echo -e "PRDriver> Driver and Merge scripts unchaged, proceeding to TEST phase"
+echo -e "PRDriver> Driver and Merge scripts unchanged, proceeding to TEST phase"
 echo -e "PRDriver> "
 
 # Prepare the command for the TEST operation

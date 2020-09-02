@@ -527,32 +527,69 @@ namespace Intrepid2
       using DeviceType   = typename BasisSuper::ScalarViewType::device_type;
       using ViewType     = Kokkos::DynRankView<ValueType, ResultLayout, DeviceType >;
       
-      ViewType dofCoords1("dofCoords1",basis1_.getCardinality(),spaceDim1);
-      ViewType dofCoords2("dofCoords2",basis2_.getCardinality(),spaceDim2);
+      const ordinal_type basisCardinality1 = basis1_.getCardinality();
+      const ordinal_type basisCardinality2 = basis2_.getCardinality();
+
+      ViewType dofCoords1("dofCoords1",basisCardinality1,spaceDim1);
+      ViewType dofCoords2("dofCoords2",basisCardinality2,spaceDim2);
       
       basis1_.getDofCoords(dofCoords1);
       basis2_.getDofCoords(dofCoords2);
       
-      const ordinal_type basisCardinality1 = basis1_.getCardinality();
-      const ordinal_type basisCardinality2 = basis2_.getCardinality();
-      
-      Kokkos::parallel_for(basisCardinality2, KOKKOS_LAMBDA (const int fieldOrdinal2)
-                           {
-                             for (int fieldOrdinal1=0; fieldOrdinal1<basisCardinality1; fieldOrdinal1++)
-                             {
-                               const ordinal_type fieldOrdinal = fieldOrdinal1 + fieldOrdinal2 * basisCardinality1;
-                               for (int d1=0; d1<spaceDim1; d1++)
-                               {
-                                 dofCoords(fieldOrdinal,d1) = dofCoords1(fieldOrdinal1,d1);
-                               }
-                               for (int d2=0; d2<spaceDim2; d2++)
-                               {
-                                 dofCoords(fieldOrdinal,spaceDim1+d2) = dofCoords2(fieldOrdinal2,d2);
-                               }
-                             }
-                           });
+      Kokkos::RangePolicy<ExecutionSpace> policy(0, basisCardinality2);
+      Kokkos::parallel_for(policy, KOKKOS_LAMBDA (const int fieldOrdinal2)
+       {
+         for (int fieldOrdinal1=0; fieldOrdinal1<basisCardinality1; fieldOrdinal1++)
+         {
+           const ordinal_type fieldOrdinal = fieldOrdinal1 + fieldOrdinal2 * basisCardinality1;
+           for (int d1=0; d1<spaceDim1; d1++)
+           {
+             dofCoords(fieldOrdinal,d1) = dofCoords1(fieldOrdinal1,d1);
+           }
+           for (int d2=0; d2<spaceDim2; d2++)
+           {
+             dofCoords(fieldOrdinal,spaceDim1+d2) = dofCoords2(fieldOrdinal2,d2);
+           }
+         }
+       });
     }
     
+
+    /** \brief  Fills in coefficients of degrees of freedom on the reference cell
+        \param [out] dofCoeffs - the container into which to place the degrees of freedom.
+
+     dofCoeffs is a rank 1 with dimension equal to the cardinality of the basis.
+
+     Note that getDofCoeffs() is not supported by all bases; in particular, hierarchical bases do not generally support this.
+     */
+    virtual void getDofCoeffs( typename BasisSuper::ScalarViewType dofCoeffs ) const override
+    {
+      using ValueType    = typename BasisSuper::ScalarViewType::value_type;
+      using ResultLayout = typename DeduceLayout< typename BasisSuper::ScalarViewType >::result_layout;
+      using DeviceType   = typename BasisSuper::ScalarViewType::device_type;
+      using ViewType     = Kokkos::DynRankView<ValueType, ResultLayout, DeviceType >;
+
+      ViewType dofCoeffs1("dofCoeffs1",basis1_.getCardinality());
+      ViewType dofCoeffs2("dofCoeffs2",basis2_.getCardinality());
+
+      basis1_.getDofCoeffs(dofCoeffs1);
+      basis2_.getDofCoeffs(dofCoeffs2);
+
+      const ordinal_type basisCardinality1 = basis1_.getCardinality();
+      const ordinal_type basisCardinality2 = basis2_.getCardinality();
+
+      Kokkos::RangePolicy<ExecutionSpace> policy(0, basisCardinality2);
+      Kokkos::parallel_for(policy, KOKKOS_LAMBDA (const int fieldOrdinal2)
+       {
+         for (int fieldOrdinal1=0; fieldOrdinal1<basisCardinality1; fieldOrdinal1++)
+         {
+           const ordinal_type fieldOrdinal = fieldOrdinal1 + fieldOrdinal2 * basisCardinality1;
+           dofCoeffs(fieldOrdinal) = dofCoeffs1(fieldOrdinal1);
+           dofCoeffs(fieldOrdinal) = dofCoeffs2(fieldOrdinal2);
+         }
+       });
+    }
+
     /** \brief  Returns basis name
      
      \return the name of the basis
