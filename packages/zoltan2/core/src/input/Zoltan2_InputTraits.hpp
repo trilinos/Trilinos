@@ -216,7 +216,8 @@ struct InputTraits {
 #define Z2_ISSAME(s,type) (std::is_same< s, type >::value)
 
 #define Z2_STYPES(s) ( Z2_ISSAME(s,float) || \
-  Z2_ISSAME(s,double) || Z2_ISSAME(s,int) )
+  Z2_ISSAME(s,double) || Z2_ISSAME(s,int) || Z2_ISSAME(s,long) || \
+  Z2_ISSAME(s,long long) || Z2_ISSAME(s, int64_t) || Z2_ISSAME(s, int32_t))
 
 #define Z2_LTYPES(l) ( Z2_ISSAME(l,int) ||  \
   Z2_ISSAME(l,long) || Z2_ISSAME(l,long long) || Z2_ISSAME(l,ssize_t) )
@@ -226,7 +227,7 @@ struct InputTraits {
   Z2_ISSAME(g,unsigned int) || Z2_ISSAME(g,unsigned long) || \
   Z2_ISSAME(g,unsigned long long) || Z2_ISSAME(g,size_t) )
 
-#define Z2_SERROR "Invalid scalar type. It must be float, double, or int."
+#define Z2_SERROR "Invalid scalar type. It must be float, double, int, long, long long, int32_t, or int64_t."
 
 #define Z2_LERROR "Invalid local ordinal type. It must be int, long, " \
   "long long, or ssize_t."
