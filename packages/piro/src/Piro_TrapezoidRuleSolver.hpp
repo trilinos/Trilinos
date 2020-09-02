@@ -148,6 +148,8 @@ class TrapezoidRuleSolver
   Teuchos::RCP<Piro::NOXSolver<Scalar> > getNOXSolver() const;
   /** \brief . */
   Teuchos::RCP<Piro::TrapezoidDecorator<Scalar> > getDecorator() const;
+  /** \brief . */
+  Teuchos::RCP<Thyra::AdaptiveSolutionManager> getSolutionManager() const;
   //@}
 
 private:
