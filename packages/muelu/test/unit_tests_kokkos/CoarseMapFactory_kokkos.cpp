@@ -55,6 +55,17 @@
 
 namespace MueLuTests {
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoarseMap_kokkos, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<CoarseMapFactory_kokkos> coarseMapFactory = rcp(new CoarseMapFactory_kokkos());
+    TEST_EQUALITY(coarseMapFactory != Teuchos::null, true);
+  } // Constructor
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoarseMap_kokkos, StandardCase, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
@@ -92,6 +103,7 @@ namespace MueLuTests {
   }
 
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoarseMap_kokkos, Constructor, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoarseMap_kokkos, StandardCase, SC, LO, GO, NO)
 
 #include <MueLu_ETI_4arg.hpp>
