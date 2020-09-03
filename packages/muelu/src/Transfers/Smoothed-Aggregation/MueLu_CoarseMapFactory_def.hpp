@@ -43,12 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_CoarseMapFactory_def.hpp
- *
- *  Created on: Oct 12, 2012
- *      Author: wiesner
- */
 
 #ifndef MUELU_COARSEMAPFACTORY_DEF_HPP_
 #define MUELU_COARSEMAPFACTORY_DEF_HPP_
@@ -134,7 +128,7 @@ namespace MueLu {
         Teuchos::Array<GlobalOrdinal> arrayVal = Teuchos::fromStringToArray<GlobalOrdinal>(strDomainGIDs);
         domainGidOffsets = Teuchos::createVector(arrayVal);
         if(currentLevel.GetLevelID() < Teuchos::as<int>(domainGidOffsets.size()) ) {
-          TEUCHOS_TEST_FOR_EXCEPTION(!domainGidOffset==GO_ZREO, Exceptions::RuntimeError,
+          TEUCHOS_TEST_FOR_EXCEPTION(domainGidOffset!=GO_ZREO, Exceptions::RuntimeError,
               "While attempting to read this level's Domain GID offset from the list \"Domain GID offsets\", we detected that the domain GID offset has already been set via another mechanism. Use only one mechanism to specify the GID offset!");
           domainGidOffset = domainGidOffsets[currentLevel.GetLevelID()];
         }
