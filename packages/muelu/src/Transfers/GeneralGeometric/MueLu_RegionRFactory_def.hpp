@@ -307,17 +307,19 @@ namespace MueLu {
     {
       // Corner 1
       LO rowIdx = 0, columnOffset = 0, entryOffset = 0;
-      for(LO l = 0; l < blkSize; ++l) {
-        row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*blkSize + l;
-        for(LO k = 0; k < 3; ++k) {
-          for(LO j = 0; j < 3; ++j) {
-            for(LO i = 0; i < 3; ++i) {
+      for(LO k = 0; k < 3; ++k) {
+        for(LO j = 0; j < 3; ++j) {
+          for(LO i = 0; i < 3; ++i) {
+            for(LO l = 0; l < blkSize; ++l) {
               entries_h(entryOffset + (k*9 + j*3 + i)*blkSize + l) = columnOffset
                 + (k*lFineNodesPerDim[1]*lFineNodesPerDim[0] + j*lFineNodesPerDim[0] + i)*blkSize + l;
               values_h(entryOffset + (k*9 + j*3 + i)*blkSize + l)  = coeffs[k + 2]*coeffs[j + 2]*coeffs[i + 2];
 	    }
           }
         }
+      }
+      for(LO l = 0; l < blkSize; ++l) {
+        row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*blkSize + l;
         for(int dim = 0; dim <numDimensions; ++dim) {
           coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
         }
@@ -327,17 +329,19 @@ namespace MueLu {
       rowIdx += (lCoarseNodesPerDim[2] - 1)*lCoarseNodesPerDim[1]*lCoarseNodesPerDim[0]*blkSize;
       columnOffset += (lFineNodesPerDim[2] - 1)*lFineNodesPerDim[1]*lFineNodesPerDim[0]*blkSize;
       entryOffset += facePlaneOffset + (lCoarseNodesPerDim[2] - 2)*interiorPlaneOffset*blkSize;
-      for(LO l = 0; l < blkSize; ++l) {
-        row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*blkSize + l;
-        for(LO k = 0; k < 3; ++k) {
-          for(LO j = 0; j < 3; ++j) {
-            for(LO i = 0; i < 3; ++i) {
+      for(LO k = 0; k < 3; ++k) {
+        for(LO j = 0; j < 3; ++j) {
+          for(LO i = 0; i < 3; ++i) {
+            for(LO l = 0; l < blkSize; ++l) {
               entries_h(entryOffset + (k*9 + j*3 + i)*blkSize + l) = columnOffset
                 + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0] + j*lFineNodesPerDim[0] + i)*blkSize + l;
               values_h(entryOffset + (k*9 + j*3 + i)*blkSize + l)  = coeffs[k]*coeffs[j + 2]*coeffs[i + 2];
 	    }
           }
         }
+      }
+      for(LO l = 0; l < blkSize; ++l) {
+        row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*blkSize + l;
         for(int dim = 0; dim <numDimensions; ++dim) {
           coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	}
@@ -347,11 +351,10 @@ namespace MueLu {
       rowIdx = (lCoarseNodesPerDim[0] - 1)*blkSize;
       columnOffset = (lFineNodesPerDim[0] - 1)*blkSize;
       entryOffset = (cornerStencilLength + (lCoarseNodesPerDim[0] - 2)*edgeStencilLength)*blkSize;
-      for(LO l = 0; l < blkSize; ++l) {
-        row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*blkSize + l;
-        for(LO k = 0; k < 3; ++k) {
-          for(LO j = 0; j < 3; ++j) {
-            for(LO i = 0; i < 3; ++i) {
+      for(LO k = 0; k < 3; ++k) {
+        for(LO j = 0; j < 3; ++j) {
+          for(LO i = 0; i < 3; ++i) {
+            for(LO l = 0; l < blkSize; ++l) {
               entries_h(entryOffset + (k*9 + j*3 + i)*blkSize + l) = columnOffset
                 + (k*lFineNodesPerDim[1]*lFineNodesPerDim[0]
                   + j*lFineNodesPerDim[0] + (i - 2))*blkSize + l;
@@ -359,6 +362,9 @@ namespace MueLu {
             }
           }
         }
+      }
+      for(LO l = 0; l < blkSize; ++l) {
+        row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*blkSize + l;
         for(int dim = 0; dim <numDimensions; ++dim) {
           coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
         }
@@ -368,17 +374,19 @@ namespace MueLu {
       rowIdx += (lCoarseNodesPerDim[2] - 1)*lCoarseNodesPerDim[1]*lCoarseNodesPerDim[0]*blkSize;
       columnOffset += (lFineNodesPerDim[2] - 1)*lFineNodesPerDim[1]*lFineNodesPerDim[0]*blkSize;
       entryOffset += (facePlaneOffset + (lCoarseNodesPerDim[2] - 2)*interiorPlaneOffset)*blkSize;
-      for(LO l = 0; l < blkSize; ++l) {
-        row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*blkSize + l;
-        for(LO k = 0; k < 3; ++k) {
-          for(LO j = 0; j < 3; ++j) {
-            for(LO i = 0; i < 3; ++i) {
+      for(LO k = 0; k < 3; ++k) {
+        for(LO j = 0; j < 3; ++j) {
+          for(LO i = 0; i < 3; ++i) {
+            for(LO l = 0; l < blkSize; ++l) {
               entries_h(entryOffset + (k*9 + j*3 + i)*blkSize + l) = columnOffset
                 + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0] + j*lFineNodesPerDim[0] + i - 2)*blkSize + l;
               values_h(entryOffset + (k*9 + j*3 + i)*blkSize + l)  = coeffs[k]*coeffs[j + 2]*coeffs[i];
             }
           }
         }
+      }
+      for(LO l = 0; l < blkSize; ++l) {
+        row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*blkSize + l;
         for(int dim = 0; dim <numDimensions; ++dim) {
           coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	}
@@ -388,11 +396,10 @@ namespace MueLu {
       rowIdx = (lCoarseNodesPerDim[1] - 1)*lCoarseNodesPerDim[0]*blkSize;
       columnOffset = (lFineNodesPerDim[1] - 1)*lFineNodesPerDim[0]*blkSize;
       entryOffset = (edgeLineOffset + (lCoarseNodesPerDim[1] - 2)*faceLineOffset)*blkSize;
-      for(LO l = 0; l < blkSize; ++l) {
-        row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*blkSize + l;
-        for(LO k = 0; k < 3; ++k) {
-          for(LO j = 0; j < 3; ++j) {
-            for(LO i = 0; i < 3; ++i) {
+      for(LO k = 0; k < 3; ++k) {
+        for(LO j = 0; j < 3; ++j) {
+          for(LO i = 0; i < 3; ++i) {
+            for(LO l = 0; l < blkSize; ++l) {
               entries_h(entryOffset + (k*9 + j*3 + i)*blkSize + l) = columnOffset
                 + (k*lFineNodesPerDim[1]*lFineNodesPerDim[0]
 	          + (j - 2)*lFineNodesPerDim[0] + i)*blkSize + l;
@@ -400,6 +407,9 @@ namespace MueLu {
             }
           }
         }
+      }
+      for(LO l = 0; l < blkSize; ++l) {
+        row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*blkSize + l;
         for(int dim = 0; dim <numDimensions; ++dim) {
           coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	}
@@ -409,17 +419,19 @@ namespace MueLu {
       rowIdx += (lCoarseNodesPerDim[2] - 1)*lCoarseNodesPerDim[1]*lCoarseNodesPerDim[0]*blkSize;
       columnOffset += (lFineNodesPerDim[2] - 1)*lFineNodesPerDim[1]*lFineNodesPerDim[0]*blkSize;
       entryOffset += (facePlaneOffset + (lCoarseNodesPerDim[2] - 2)*interiorPlaneOffset)*blkSize;
-      for(LO l = 0; l < blkSize; ++l) {
-      row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*blkSize + l;
-        for(LO k = 0; k < 3; ++k) {
-          for(LO j = 0; j < 3; ++j) {
-            for(LO i = 0; i < 3; ++i) {
+      for(LO k = 0; k < 3; ++k) {
+        for(LO j = 0; j < 3; ++j) {
+          for(LO i = 0; i < 3; ++i) {
+            for(LO l = 0; l < blkSize; ++l) {
               entries_h(entryOffset + (k*9 + j*3 + i)*blkSize + l) = columnOffset
                 + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0] + (j - 2)*lFineNodesPerDim[0] + i)*blkSize + l;
               values_h(entryOffset + (k*9 + j*3 + i)*blkSize + l)  = coeffs[k]*coeffs[j]*coeffs[i + 2];
             }
           }
         }
+      }
+      for(LO l = 0; l < blkSize; ++l) {
+      row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*blkSize + l;
         for(int dim = 0; dim <numDimensions; ++dim) {
           coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	}
@@ -430,11 +442,10 @@ namespace MueLu {
       columnOffset = (lFineNodesPerDim[1]*lFineNodesPerDim[0] - 1)*blkSize;
       entryOffset = (edgeLineOffset + (lCoarseNodesPerDim[1] - 2)*faceLineOffset +
         cornerStencilLength + (lCoarseNodesPerDim[0] - 2)*edgeStencilLength)*blkSize;
-      for(LO l = 0; l < blkSize; ++l) {
-        row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*blkSize + l;
-        for(LO k = 0; k < 3; ++k) {
-          for(LO j = 0; j < 3; ++j) {
-            for(LO i = 0; i < 3; ++i) {
+      for(LO k = 0; k < 3; ++k) {
+        for(LO j = 0; j < 3; ++j) {
+          for(LO i = 0; i < 3; ++i) {
+            for(LO l = 0; l < blkSize; ++l) {
               entries_h(entryOffset + (k*9 + j*3 + i)*blkSize + l) = columnOffset
                 + (k*lFineNodesPerDim[1]*lFineNodesPerDim[0]
 	          + (j - 2)*lFineNodesPerDim[0] + (i - 2))*blkSize + l;
@@ -442,6 +453,9 @@ namespace MueLu {
             }
           }
         }
+      }
+      for(LO l = 0; l < blkSize; ++l) {
+        row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*blkSize + l;
         for(int dim = 0; dim <numDimensions; ++dim) {
           coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	}
@@ -451,17 +465,19 @@ namespace MueLu {
       rowIdx += (lCoarseNodesPerDim[2] - 1)*lCoarseNodesPerDim[1]*lCoarseNodesPerDim[0]*blkSize;
       columnOffset += (lFineNodesPerDim[2] - 1)*lFineNodesPerDim[1]*lFineNodesPerDim[0]*blkSize;
       entryOffset += (facePlaneOffset + (lCoarseNodesPerDim[2] - 2)*interiorPlaneOffset)*blkSize;
-      for(LO l = 0; l < blkSize; ++l) {
-        row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*blkSize + l;
-        for(LO k = 0; k < 3; ++k) {
-          for(LO j = 0; j < 3; ++j) {
-            for(LO i = 0; i < 3; ++i) {
+      for(LO k = 0; k < 3; ++k) {
+        for(LO j = 0; j < 3; ++j) {
+          for(LO i = 0; i < 3; ++i) {
+            for(LO l = 0; l < blkSize; ++l) {
               entries_h(entryOffset + (k*9 + j*3 + i)*blkSize + l) = columnOffset
                 + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0] + (j - 2)*lFineNodesPerDim[0] + (i - 2))*blkSize + l;
               values_h(entryOffset + (k*9 + j*3 + i)*blkSize + l)  = coeffs[k]*coeffs[j]*coeffs[i];
             }
           }
         }
+      }
+      for(LO l = 0; l < blkSize; ++l) {
+        row_map_h(rowIdx + 1 + l) = entryOffset + cornerStencilLength*blkSize + l;
         for(int dim = 0; dim <numDimensions; ++dim) {
           coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	}
@@ -478,17 +494,19 @@ namespace MueLu {
         rowIdx = (edgeIdx + 1)*blkSize;
         columnOffset = (edgeIdx + 1)*3*blkSize;
         entryOffset  = (cornerStencilLength + edgeIdx*edgeStencilLength)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
-          for(LO k = 0; k < 3; ++k) {
-            for(LO j = 0; j < 3; ++j) {
-              for(LO i = 0; i < 5; ++i) {
+        for(LO k = 0; k < 3; ++k) {
+          for(LO j = 0; j < 3; ++j) {
+            for(LO i = 0; i < 5; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*15 + j*5 + i)*blkSize + l) = columnOffset
                   + (k*lFineNodesPerDim[1]*lFineNodesPerDim[0] + j*lFineNodesPerDim[0] + i - 2)*blkSize + l;
                 values_h(entryOffset + (k*15 + j*5 + i)*blkSize + l)  = coeffs[k + 2]*coeffs[j + 2]*coeffs[i];
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -499,17 +517,19 @@ namespace MueLu {
         columnOffset = ((lFineNodesPerDim[1] - 1)*lFineNodesPerDim[0] + (edgeIdx + 1)*3)*blkSize;
         entryOffset  = (edgeLineOffset + (lCoarseNodesPerDim[1] - 2)*faceLineOffset
 	  + cornerStencilLength + edgeIdx*edgeStencilLength)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
-          for(LO k = 0; k < 3; ++k) {
-            for(LO j = 0; j < 3; ++j) {
-              for(LO i = 0; i < 5; ++i) {
+        for(LO k = 0; k < 3; ++k) {
+          for(LO j = 0; j < 3; ++j) {
+            for(LO i = 0; i < 5; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*15 + j*5 + i)*blkSize + l) = columnOffset
                   + (k*lFineNodesPerDim[1]*lFineNodesPerDim[0] + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
                 values_h(entryOffset + (k*15 + j*5 + i)*blkSize + l)  = coeffs[k + 2]*coeffs[j]*coeffs[i];
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -522,17 +542,19 @@ namespace MueLu {
           + (edgeIdx + 1)*3)*blkSize;
         entryOffset  = (facePlaneOffset + (lCoarseNodesPerDim[2] - 2)*interiorPlaneOffset
 	  + cornerStencilLength + edgeIdx*edgeStencilLength)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
-          for(LO k = 0; k < 3; ++k) {
-            for(LO j = 0; j < 3; ++j) {
-              for(LO i = 0; i < 5; ++i) {
+        for(LO k = 0; k < 3; ++k) {
+          for(LO j = 0; j < 3; ++j) {
+            for(LO i = 0; i < 5; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*15 + j*5 + i)*blkSize + l) = columnOffset
                   + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0] + j*lFineNodesPerDim[0] + i - 2)*blkSize + l;
                 values_h(entryOffset + (k*15 + j*5 + i)*blkSize + l)  = coeffs[k]*coeffs[j + 2]*coeffs[i];
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -546,11 +568,10 @@ namespace MueLu {
         entryOffset  =  (facePlaneOffset + (lCoarseNodesPerDim[2] - 2)*interiorPlaneOffset
           + edgeLineOffset + (lCoarseNodesPerDim[1] - 2)*faceLineOffset
 	  + cornerStencilLength + edgeIdx*edgeStencilLength)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
-          for(LO k = 0; k < 3; ++k) {
-            for(LO j = 0; j < 3; ++j) {
-              for(LO i = 0; i < 5; ++i) {
+        for(LO k = 0; k < 3; ++k) {
+          for(LO j = 0; j < 3; ++j) {
+            for(LO i = 0; i < 5; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*15 + j*5 + i)*blkSize + l) = columnOffset
                   + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
 		     + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
@@ -558,6 +579,9 @@ namespace MueLu {
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -575,17 +599,19 @@ namespace MueLu {
         rowIdx = (edgeIdx + 1)*lCoarseNodesPerDim[0]*blkSize;
         columnOffset = (edgeIdx + 1)*3*lFineNodesPerDim[0]*blkSize;
         entryOffset  = (edgeLineOffset + edgeIdx*faceLineOffset)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
-          for(LO k = 0; k < 3; ++k) {
-            for(LO j = 0; j < 5; ++j) {
-              for(LO i = 0; i < 3; ++i) {
+        for(LO k = 0; k < 3; ++k) {
+          for(LO j = 0; j < 5; ++j) {
+            for(LO i = 0; i < 3; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*15 + j*3 + i)*blkSize + l) = columnOffset
                   + (k*lFineNodesPerDim[1]*lFineNodesPerDim[0] + (j - 2)*lFineNodesPerDim[0] + i)*blkSize + l;
                 values_h(entryOffset + (k*15 + j*3 + i)*blkSize + l)  = coeffs[k + 2]*coeffs[j]*coeffs[i + 2];
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -596,17 +622,19 @@ namespace MueLu {
         columnOffset = ((edgeIdx + 1)*3*lFineNodesPerDim[0] + lFineNodesPerDim[0] - 1)*blkSize;
         entryOffset  = (edgeLineOffset + edgeIdx*faceLineOffset
 	  + edgeStencilLength + (lCoarseNodesPerDim[0] - 2)*faceStencilLength)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
-          for(LO k = 0; k < 3; ++k) {
-            for(LO j = 0; j < 5; ++j) {
-              for(LO i = 0; i < 3; ++i) {
+        for(LO k = 0; k < 3; ++k) {
+          for(LO j = 0; j < 5; ++j) {
+            for(LO i = 0; i < 3; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*15 + j*3 + i)*blkSize + l) = columnOffset
                   + (k*lFineNodesPerDim[1]*lFineNodesPerDim[0] + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
                 values_h(entryOffset + (k*15 + j*3 + i)*blkSize + l)  = coeffs[k + 2]*coeffs[j]*coeffs[i];
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -619,17 +647,19 @@ namespace MueLu {
           + (edgeIdx + 1)*3*lFineNodesPerDim[0])*blkSize;
         entryOffset  = (facePlaneOffset + (lCoarseNodesPerDim[2] - 2)*interiorPlaneOffset
           + edgeLineOffset + edgeIdx*faceLineOffset)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
-          for(LO k = 0; k < 3; ++k) {
-            for(LO j = 0; j < 5; ++j) {
-              for(LO i = 0; i < 3; ++i) {
+        for(LO k = 0; k < 3; ++k) {
+          for(LO j = 0; j < 5; ++j) {
+            for(LO i = 0; i < 3; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*15 + j*3 + i)*blkSize) = columnOffset
                   + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0] + (j - 2)*lFineNodesPerDim[0] + i)*blkSize + l;
                 values_h(entryOffset + (k*15 + j*3 + i)*blkSize + l)  = coeffs[k]*coeffs[j]*coeffs[i + 2];
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -643,11 +673,10 @@ namespace MueLu {
         entryOffset  = (facePlaneOffset + (lCoarseNodesPerDim[2] - 2)*interiorPlaneOffset
           + edgeLineOffset + edgeIdx*faceLineOffset
           + edgeStencilLength + (lCoarseNodesPerDim[0] - 2)*faceStencilLength)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
-          for(LO k = 0; k < 3; ++k) {
-            for(LO j = 0; j < 5; ++j) {
-              for(LO i = 0; i < 3; ++i) {
+        for(LO k = 0; k < 3; ++k) {
+          for(LO j = 0; j < 5; ++j) {
+            for(LO i = 0; i < 3; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*15 + j*3 + i)*blkSize + l) = columnOffset
                   + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
                   + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
@@ -655,6 +684,9 @@ namespace MueLu {
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -672,17 +704,19 @@ namespace MueLu {
         rowIdx = (edgeIdx + 1)*lCoarseNodesPerDim[1]*lCoarseNodesPerDim[0]*blkSize;
         columnOffset = (edgeIdx + 1)*3*lFineNodesPerDim[1]*lFineNodesPerDim[0]*blkSize;
         entryOffset  = (facePlaneOffset + edgeIdx*interiorPlaneOffset)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
-          for(LO k = 0; k < 5; ++k) {
-            for(LO j = 0; j < 3; ++j) {
-              for(LO i = 0; i < 3; ++i) {
+        for(LO k = 0; k < 5; ++k) {
+          for(LO j = 0; j < 3; ++j) {
+            for(LO i = 0; i < 3; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*9 + j*3 + i)*blkSize + l) = columnOffset
                   + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0] + j*lFineNodesPerDim[0] + i)*blkSize + l;
                 values_h(entryOffset + (k*9 + j*3 + i)*blkSize + l)  = coeffs[k]*coeffs[j + 2]*coeffs[i + 2];
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -695,17 +729,19 @@ namespace MueLu {
 	  + lFineNodesPerDim[0] - 1)*blkSize;
         entryOffset  = (facePlaneOffset + faceLineOffset - edgeStencilLength
  	  + edgeIdx*interiorPlaneOffset)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
-          for(LO k = 0; k < 5; ++k) {
-            for(LO j = 0; j < 3; ++j) {
-              for(LO i = 0; i < 3; ++i) {
+        for(LO k = 0; k < 5; ++k) {
+          for(LO j = 0; j < 3; ++j) {
+            for(LO i = 0; i < 3; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*9 + j*3 + i)*blkSize + l) = columnOffset
                   + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0] + j*lFineNodesPerDim[0] + i - 2)*blkSize + l;
                 values_h(entryOffset + (k*9 + j*3 + i)*blkSize + l)  = coeffs[k]*coeffs[j + 2]*coeffs[i];
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -718,17 +754,19 @@ namespace MueLu {
  	  + (lFineNodesPerDim[1] - 1)*lFineNodesPerDim[0])*blkSize;
         entryOffset  = (facePlaneOffset + edgeIdx*interiorPlaneOffset + faceLineOffset
 	  + (lCoarseNodesPerDim[1] - 2)*interiorLineOffset)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
-          for(LO k = 0; k < 5; ++k) {
-            for(LO j = 0; j < 3; ++j) {
-              for(LO i = 0; i < 3; ++i) {
+        for(LO k = 0; k < 5; ++k) {
+          for(LO j = 0; j < 3; ++j) {
+            for(LO i = 0; i < 3; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*9 + j*3 + i)*blkSize + l) = columnOffset
                   + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0] + (j - 2)*lFineNodesPerDim[0] + i)*blkSize + l;
                 values_h(entryOffset + (k*9 + j*3 + i)*blkSize + l)  = coeffs[k]*coeffs[j]*coeffs[i + 2];
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -739,11 +777,10 @@ namespace MueLu {
         columnOffset = ((edgeIdx + 1)*3*lFineNodesPerDim[1]*lFineNodesPerDim[0]
           + lFineNodesPerDim[1]*lFineNodesPerDim[0] - 1)*blkSize;
         entryOffset  = (facePlaneOffset + (edgeIdx + 1)*interiorPlaneOffset - edgeStencilLength)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
-          for(LO k = 0; k < 5; ++k) {
-            for(LO j = 0; j < 3; ++j) {
-              for(LO i = 0; i < 3; ++i) {
+        for(LO k = 0; k < 5; ++k) {
+          for(LO j = 0; j < 3; ++j) {
+            for(LO i = 0; i < 3; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*9 + j*3 + i)*blkSize + l) = columnOffset
                   + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
 		     + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
@@ -751,6 +788,9 @@ namespace MueLu {
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + edgeStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -770,17 +810,19 @@ namespace MueLu {
         columnOffset = 3*((gridIdx[1] + 1)*lFineNodesPerDim[0] + gridIdx[0] + 1)*blkSize;
         entryOffset  = (edgeLineOffset + edgeStencilLength
 	  + gridIdx[1]*faceLineOffset + gridIdx[0]*faceStencilLength)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*blkSize + l;
-          for(LO k = 0; k < 3; ++k) {
-            for(LO j = 0; j < 5; ++j) {
-              for(LO i = 0; i < 5; ++i) {
+        for(LO k = 0; k < 3; ++k) {
+          for(LO j = 0; j < 5; ++j) {
+            for(LO i = 0; i < 5; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*25 + j*5 + i)*blkSize + l) = columnOffset
                   + (k*lFineNodesPerDim[1]*lFineNodesPerDim[0] + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
                 values_h(entryOffset + (k*25 + j*5 + i)*blkSize + l)  = coeffs[k + 2]*coeffs[j]*coeffs[i];
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -790,11 +832,10 @@ namespace MueLu {
         rowIdx += (lCoarseNodesPerDim[2] - 1)*lCoarseNodesPerDim[1]*lCoarseNodesPerDim[0]*blkSize;
         columnOffset += (lFineNodesPerDim[2] - 1)*lFineNodesPerDim[1]*lFineNodesPerDim[0]*blkSize;
         entryOffset  += (facePlaneOffset + (lCoarseNodesPerDim[2] - 2)*interiorPlaneOffset)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*blkSize + l;
-          for(LO k = 0; k < 3; ++k) {
-            for(LO j = 0; j < 5; ++j) {
-              for(LO i = 0; i < 5; ++i) {
+        for(LO k = 0; k < 3; ++k) {
+          for(LO j = 0; j < 5; ++j) {
+            for(LO i = 0; i < 5; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*25 + j*5 + i)*blkSize + l) = columnOffset
                   + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
 	          + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
@@ -802,6 +843,9 @@ namespace MueLu {
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -831,17 +875,19 @@ namespace MueLu {
           + gridIdx[0] + 1)*3*blkSize;
         entryOffset  = (facePlaneOffset + gridIdx[2]*interiorPlaneOffset + edgeStencilLength
 	  + gridIdx[0]*faceStencilLength)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*blkSize + l;
-          for(LO k = 0; k < 5; ++k) {
-            for(LO j = 0; j < 3; ++j) {
-              for(LO i = 0; i < 5; ++i) {
+        for(LO k = 0; k < 5; ++k) {
+          for(LO j = 0; j < 3; ++j) {
+            for(LO i = 0; i < 5; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*15 + j*5 + i)*blkSize + l) = columnOffset
                   + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0] + j*lFineNodesPerDim[0] + i - 2)*blkSize + l;
                 values_h(entryOffset + (k*15 + j*5 + i)*blkSize + l)  = coeffs[k]*coeffs[j + 2]*coeffs[i];
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -851,11 +897,10 @@ namespace MueLu {
         rowIdx += (lCoarseNodesPerDim[1] - 1)*lCoarseNodesPerDim[0]*blkSize;
         columnOffset += (lFineNodesPerDim[1] - 1)*lFineNodesPerDim[0]*blkSize;
         entryOffset  += (faceLineOffset + (lCoarseNodesPerDim[1] - 2)*interiorLineOffset)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*blkSize + l;
-          for(LO k = 0; k < 5; ++k) {
-            for(LO j = 0; j < 3; ++j) {
-              for(LO i = 0; i < 5; ++i) {
+        for(LO k = 0; k < 5; ++k) {
+          for(LO j = 0; j < 3; ++j) {
+            for(LO i = 0; i < 5; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*15 + j*5 + i)*blkSize + l) = columnOffset
                   + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
                   + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
@@ -863,6 +908,9 @@ namespace MueLu {
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -893,17 +941,19 @@ namespace MueLu {
           + (gridIdx[1] + 1)*lFineNodesPerDim[0])*3*blkSize;
         entryOffset  = (facePlaneOffset + gridIdx[2]*interiorPlaneOffset + faceLineOffset
 	  + gridIdx[1]*interiorLineOffset)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*blkSize + l;
-          for(LO k = 0; k < 5; ++k) {
-            for(LO j = 0; j < 5; ++j) {
-              for(LO i = 0; i < 3; ++i) {
+        for(LO k = 0; k < 5; ++k) {
+          for(LO j = 0; j < 5; ++j) {
+            for(LO i = 0; i < 3; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*15 + j*3 + i)*blkSize + l) = columnOffset
                   + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0] + (j - 2)*lFineNodesPerDim[0] + i)*blkSize + l;
                 values_h(entryOffset + (k*15 + j*3 + i)*blkSize + l)  = coeffs[k]*coeffs[j]*coeffs[i + 2];
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -913,11 +963,10 @@ namespace MueLu {
         rowIdx += (lCoarseNodesPerDim[0] - 1)*blkSize;
         columnOffset += (lFineNodesPerDim[0] - 1)*blkSize;
         entryOffset  += (faceStencilLength + (lCoarseNodesPerDim[0] - 2)*interiorStencilLength)*blkSize;
-        for(LO l = 0; l < blkSize; ++l) {
-          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*blkSize + l;
-          for(LO k = 0; k < 5; ++k) {
-            for(LO j = 0; j < 5; ++j) {
-              for(LO i = 0; i < 3; ++i) {
+        for(LO k = 0; k < 5; ++k) {
+          for(LO j = 0; j < 5; ++j) {
+            for(LO i = 0; i < 3; ++i) {
+              for(LO l = 0; l < blkSize; ++l) {
                 entries_h(entryOffset + (k*15 + j*3 + i)*blkSize + l) = columnOffset
                   + ((k - 2)*lFineNodesPerDim[1]*lFineNodesPerDim[0]
   	          + (j - 2)*lFineNodesPerDim[0] + i - 2)*blkSize + l;
@@ -925,6 +974,9 @@ namespace MueLu {
               }
             }
           }
+	}
+        for(LO l = 0; l < blkSize; ++l) {
+          row_map_h(rowIdx + 1 + l) = entryOffset + faceStencilLength*blkSize + l;
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
@@ -982,14 +1034,17 @@ namespace MueLu {
           + gridIdx[0]*interiorStencilLength)*blkSize;
         for(LO l = 0; l < blkSize; ++l) {
           row_map_h(rowIdx + 1 + l) = entryOffset + interiorStencilLength*blkSize + l;
-
+	}
           // Fill the column indices
           // and values in the approproate
           // views.
-          for(LO entryIdx = 0; entryIdx < interiorStencilLength; ++entryIdx) {
+        for(LO entryIdx = 0; entryIdx < interiorStencilLength; ++entryIdx) {
+          for(LO l = 0; l < blkSize; ++l) {
             entries_h(entryOffset + entryIdx*blkSize + l) = columnOffset + columnOffsets[entryIdx]*blkSize + l;
             values_h(entryOffset + entryIdx*blkSize + l) = interiorValues[entryIdx];
-          }
+	  }
+        }
+        for(LO l = 0; l < blkSize; ++l) {
           for(int dim = 0; dim <numDimensions; ++dim) {
             coarseCoordData[dim][rowIdx + l] = fineCoordData[dim][columnOffset + l];
 	  }
