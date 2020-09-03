@@ -148,7 +148,8 @@ template<class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node>>
 MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
 Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
-      LocalOrdinal                                                      numDofPerNode)
+      const LocalOrdinal numDofPerNode,
+      const GlobalOrdinal gidOffset)
 {
     XPETRA_MONITOR("MapFactory::Build");
 
@@ -164,14 +165,14 @@ Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
     }
 
 #ifdef HAVE_XPETRA_TPETRA
-    LocalOrdinal                            N           = map->getNodeNumElements();
+    LocalOrdinal numLocalElements = map->getNodeNumElements();
     Teuchos::ArrayView<const GlobalOrdinal> oldElements = map->getNodeElementList();
-    Teuchos::Array<GlobalOrdinal>           newElements(map->getNodeNumElements() * numDofPerNode);
-    for(LocalOrdinal i = 0; i < N; i++)
+    Teuchos::Array<GlobalOrdinal> newElements(map->getNodeNumElements() * numDofPerNode);
+    for(LocalOrdinal i = 0; i < numLocalElements; i++)
     {
         for(LocalOrdinal j = 0; j < numDofPerNode; j++)
         {
-            newElements[ i * numDofPerNode + j ] = oldElements[ i ] * numDofPerNode + j;
+            newElements[ i * numDofPerNode + j ] = oldElements[ i ] * numDofPerNode + j + gidOffset;
         }
     }
     if(map->lib() == UseTpetra)
@@ -222,8 +223,8 @@ createLocalMap(UnderlyingLib                                 lib,
 #ifdef HAVE_XPETRA_TPETRA
     if(lib == UseTpetra)
     {
-        // Pre-ETI code called Tpetra::createLocalMap() but this can result in compile erros 
-        // when Trilinos is built with multiple node-types, specifically the GCC 4.8.4 PR 
+        // Pre-ETI code called Tpetra::createLocalMap() but this can result in compile erros
+        // when Trilinos is built with multiple node-types, specifically the GCC 4.8.4 PR
         // build generates an error because it would try to match Tpetra::Map objects where
         // Node is Serial in one and OpenMP in the other. See Issue #5672 / PR #5723 for more
         // information.
