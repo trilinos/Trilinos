@@ -602,6 +602,7 @@ void StkMeshIoBroker::begin_output_step(size_t output_file_index, double time)
 {
     validate_output_file_index(output_file_index);
     update_sidesets();
+    m_outputFiles[output_file_index]->set_enable_edge_io(m_enableEdgeIO);
     m_outputFiles[output_file_index]->begin_output_step(time, *m_bulkData, attributeFieldOrderingByPartOrdinal);
 }
 

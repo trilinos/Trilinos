@@ -38,7 +38,9 @@
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_write_string
 #include <stk_util/parallel/ParallelVectorConcat.hpp>
 #include <stk_util/parallel/mpi_filebuf.hpp>
+#if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
 #include <aprepro.h>  // for Aprepro
+#endif
 #include <gtest/gtest.h>
 #include <string>                       // for string
  

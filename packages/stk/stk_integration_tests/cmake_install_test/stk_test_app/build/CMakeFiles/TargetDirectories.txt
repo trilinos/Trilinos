@@ -1,0 +1,6 @@
+/scratch/tookusa/code/stk/stk_integration_tests/cmake_install_test/stk_test_app/build/CMakeFiles/rebuild_cache.dir
+/scratch/tookusa/code/stk/stk_integration_tests/cmake_install_test/stk_test_app/build/CMakeFiles/edit_cache.dir
+/scratch/tookusa/code/stk/stk_integration_tests/cmake_install_test/stk_test_app/build/CMakeFiles/test_stk_lib.dir
+/scratch/tookusa/code/stk/stk_integration_tests/cmake_install_test/stk_test_app/build/CMakeFiles/test_stk_app.dir
+/scratch/tookusa/code/stk/stk_integration_tests/cmake_install_test/stk_test_app/build/src/CMakeFiles/rebuild_cache.dir
+/scratch/tookusa/code/stk/stk_integration_tests/cmake_install_test/stk_test_app/build/src/CMakeFiles/edit_cache.dir

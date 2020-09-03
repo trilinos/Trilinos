@@ -32,10 +32,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "gtest/gtest.h"
-#include "stk_unit_test_utils/MeshFixture.hpp"
 #include "stk_balance/balanceUtils.hpp"
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 
-class BalanceSettingsTester : public stk::unit_test_util::MeshFixture
+class BalanceSettingsTester : public ::testing::Test
 {
 public:
   stk::balance::BalanceSettings& get_balance_settings()
@@ -69,6 +70,12 @@ TEST_F(BalanceSettingsTester, outputFilename)
   EXPECT_EQ(settings.get_output_filename(), "output.g");
   settings.set_output_filename("output/cube.g");
   EXPECT_EQ(settings.get_output_filename(), "output/cube.g");
+}
+
+TEST_F(BalanceSettingsTester, getGraphVertexWeight_supports_PYRAMID_5)
+{
+  stk::balance::BalanceSettings& settings = get_balance_settings();
+  EXPECT_EQ(1, settings.getGraphVertexWeight(stk::topology::PYRAMID_5));
 }
 
 TEST(BalanceSettings, defaultContactSearchStatus)

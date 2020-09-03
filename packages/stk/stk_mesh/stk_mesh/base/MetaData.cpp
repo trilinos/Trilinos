@@ -416,7 +416,7 @@ void MetaData::declare_part_subset( Part & superset , Part & subset, bool verify
 
 void MetaData::internal_declare_part_subset( Part & superset , Part & subset, bool verifyFieldRestrictions )
 {
-  require_not_committed();
+//  require_not_committed();
   require_same_mesh_meta_data( MetaData::get(superset) );
   require_same_mesh_meta_data( MetaData::get(subset) );
 
