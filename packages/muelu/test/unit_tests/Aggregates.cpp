@@ -93,37 +93,6 @@ class AggregateGenerator {
 
 public:
 
-  static void gimmeUncoupledAggregates( Level & level, 
-					RCP<CoalesceDropFactory> & dropFact, RCP<AmalgamationFactory> & amalgFact,RCP<UncoupledAggregationFactory> &aggFact,
-					bool bPhase1 = true, bool bPhase2a = true, bool bPhase2b = true, bool bPhase3 = true, double dropTol=0.0) {
-    amalgFact = rcp(new AmalgamationFactory());
-    Teuchos::ParameterList dropParams;  
-    dropFact = rcp(new CoalesceDropFactory());
-    dropParams.set("aggregation: drop tol",dropTol);
-    dropFact->SetParameterList(dropParams);
-    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
-    
-    // Setup aggregation factory (use default factory for graph)
-    aggFact = rcp(new UncoupledAggregationFactory());
-    aggFact->SetFactory("Graph", dropFact);
-    aggFact->SetParameter("aggregation: max agg size",Teuchos::ParameterEntry(3));
-    aggFact->SetParameter("aggregation: min agg size",Teuchos::ParameterEntry(3));
-    aggFact->SetParameter("aggregation: max selected neighbors",Teuchos::ParameterEntry(0));
-    aggFact->SetParameter("aggregation: ordering",Teuchos::ParameterEntry(std::string("natural")));
-    aggFact->SetParameter("aggregation: enable phase 1",  Teuchos::ParameterEntry(bPhase1));
-    aggFact->SetParameter("aggregation: enable phase 2a", Teuchos::ParameterEntry(bPhase2a));
-    aggFact->SetParameter("aggregation: enable phase 2b", Teuchos::ParameterEntry(bPhase2b));
-    aggFact->SetParameter("aggregation: enable phase 3",  Teuchos::ParameterEntry(bPhase3));
-    aggFact->SetParameter("aggregation: use interface aggregation",Teuchos::ParameterEntry(false));
-    
-    level.Request("Aggregates", aggFact.get());
-    level.Request("UnAmalgamationInfo", amalgFact.get());
-    
-    level.Request(*aggFact);
-    aggFact->Build(level);
-  }
-
-
     // Little utility to generate uncoupled aggregates.
     static RCP<Aggregates>
     gimmeUncoupledAggregates(const RCP<Matrix> & A, RCP<AmalgamationInfo> & amalgInfo, bool bPhase1 = true, bool bPhase2a = true, bool bPhase2b = true, bool bPhase3 = true)
@@ -133,10 +102,28 @@ public:
       TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
       level.Set("A", A);
 
-      RCP<CoalesceDropFactory> dropFact;
-      RCP<AmalgamationFactory> amalgFact; 
-      RCP<UncoupledAggregationFactory> aggFact;
-      gimmeUncoupledAggregates(level,dropFact,amalgFact,aggFact,bPhase1,bPhase2a,bPhase2b,bPhase3);
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+      RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
+      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+      // Setup aggregation factory (use default factory for graph)             
+      RCP<UncoupledAggregationFactory> aggFact  = rcp(new UncoupledAggregationFactory());
+      aggFact->SetFactory("Graph", dropFact);
+      aggFact->SetParameter("aggregation: max agg size",Teuchos::ParameterEntry(3));
+      aggFact->SetParameter("aggregation: min agg size",Teuchos::ParameterEntry(3));
+      aggFact->SetParameter("aggregation: max selected neighbors",Teuchos::ParameterEntry(0));
+      aggFact->SetParameter("aggregation: ordering",Teuchos::ParameterEntry(std::string("natural")));
+      aggFact->SetParameter("aggregation: enable phase 1",  Teuchos::ParameterEntry(bPhase1));
+      aggFact->SetParameter("aggregation: enable phase 2a", Teuchos::ParameterEntry(bPhase2a));
+      aggFact->SetParameter("aggregation: enable phase 2b", Teuchos::ParameterEntry(bPhase2b));
+      aggFact->SetParameter("aggregation: enable phase 3",  Teuchos::ParameterEntry(bPhase3));
+      aggFact->SetParameter("aggregation: use interface aggregation",Teuchos::ParameterEntry(false));
+
+      level.Request("Aggregates", aggFact.get());
+      level.Request("UnAmalgamationInfo", amalgFact.get());
+
+      level.Request(*aggFact);
+      aggFact->Build(level);
       RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates",aggFact.get()); // fix me
       amalgInfo = level.Get<RCP<AmalgamationInfo> >("UnAmalgamationInfo",amalgFact.get()); // fix me
       level.Release("UnAmalgamationInfo", amalgFact.get());
@@ -950,8 +937,8 @@ public:
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,UncoupledInterface,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,JustStructuredAggregationGlobal,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,JustStructuredAggregationLocal,Scalar,LO,GO,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,HybridAggregation,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(FilteredA ,RootStencil,Scalar,LO,GO,Node)
+  //  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,HybridAggregation,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
