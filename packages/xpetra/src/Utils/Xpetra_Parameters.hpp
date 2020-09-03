@@ -80,10 +80,12 @@ namespace Xpetra {
       const char*           optionNames [maxOptions];  // Array that gives the name used in the commandline for each option.
 
       std::stringstream documentation; // documentation for the option
-      documentation << "linear algebra library (Epetra, Tpetra)";
+      //documentation << "linear algebra library (Epetra, Tpetra)";
+      documentation << "linear algebra library (";
 
       // Default is Tpetra if available. If not, default is Epetra
 #if defined(HAVE_XPETRA_EPETRA)
+      documentation << "Epetra";
       lib_ = Xpetra::UseEpetra; // set default (if Tpetra support is missing)
       optionValues[nOptions] = Xpetra::UseEpetra;
       //optionValues[nOptions] = "epetra"; //TODO: do not break compatibility right now
@@ -91,12 +93,17 @@ namespace Xpetra {
       nOptions++;
 #endif
 #if defined(HAVE_XPETRA_TPETRA)
+#  if defined(HAVE_XPETRA_EPETRA)
+      documentation << ", ";
+#  endif
+      documentation << "Tpetra";
       lib_ = Xpetra::UseTpetra; // set default
       optionValues[nOptions] = Xpetra::UseTpetra;
       //optionsValues[nOptions] = "tpetra"; //TODO: do not break compatibility right now
       optionNames[nOptions] = "Tpetra";
       nOptions++;
 #endif
+      documentation << ")";
 
       clp.setOption<Xpetra::UnderlyingLib>("linAlgebra", &lib_, nOptions, optionValues, optionNames, documentation.str().c_str());
 

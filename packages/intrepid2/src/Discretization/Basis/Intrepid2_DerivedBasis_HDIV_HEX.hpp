@@ -148,6 +148,24 @@ namespace Intrepid2
         INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
       }
     }
+
+    /** \brief  Fills in coefficients of degrees of freedom for Lagrangian basis on the reference cell
+        \param [out] dofCoeffs - the container into which to place the degrees of freedom.
+
+     dofCoeffs have shape (F,D), field dimension matches the cardinality of the basis, and D is the
+     basis dimension.
+
+     Degrees of freedom coefficients are such that
+     \phi_i(dofCoords_(j)) \cdot dofCoeffs_(j)  = \delta_ij,
+     where \phi_i are the basis and \delta_ij the Kronecker delta.
+     Note that getDofCoeffs() is supported only for Lagrangian bases.
+     */
+    virtual void getDofCoeffs( ScalarViewType dofCoeffs ) const {
+      auto dofCoeffs1 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),0);
+      auto dofCoeffs23 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),std::make_pair(1,3));
+      this->TensorBasis3::getDofCoeffs(dofCoeffs1);
+      Kokkos::deep_copy(dofCoeffs23,0.0);
+    }
   };
 
   template<class HGRAD_LINE, class HVOL_LINE>
@@ -238,6 +256,26 @@ namespace Intrepid2
         INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
       }
     }
+
+    /** \brief  Fills in coefficients of degrees of freedom for Lagrangian basis on the reference cell
+        \param [out] dofCoeffs - the container into which to place the degrees of freedom.
+
+     dofCoeffs have shape (F,D), field dimension matches the cardinality of the basis, and D is the
+     basis dimension.
+
+     Degrees of freedom coefficients are such that
+     \phi_i(dofCoords_(j)) \cdot dofCoeffs_(j)  = \delta_ij,
+     where \phi_i are the basis and \delta_ij the Kronecker delta.
+     Note that getDofCoeffs() is supported only for Lagrangian bases.
+     */
+    virtual void getDofCoeffs( ScalarViewType dofCoeffs ) const {
+      auto dofCoeffs1 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),0);
+      auto dofCoeffs2 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),1);
+      auto dofCoeffs3 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),2);
+      Kokkos::deep_copy(dofCoeffs1,0.0);
+      this->TensorBasis3::getDofCoeffs(dofCoeffs2);
+      Kokkos::deep_copy(dofCoeffs3,0.0);
+    }
   };
   
   template<class HGRAD_LINE, class HVOL_LINE>
@@ -322,6 +360,25 @@ namespace Intrepid2
         INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
       }
     }
+
+    /** \brief  Fills in coefficients of degrees of freedom for Lagrangian basis on the reference cell
+        \param [out] dofCoeffs - the container into which to place the degrees of freedom.
+
+     dofCoeffs have shape (F,D), field dimension matches the cardinality of the basis, and D is the
+     basis dimension.
+
+     Degrees of freedom coefficients are such that
+     \phi_i(dofCoords_(j)) \cdot dofCoeffs_(j)  = \delta_ij,
+     where \phi_i are the basis and \delta_ij the Kronecker delta.
+     Note that getDofCoeffs() is supported only for Lagrangian bases.
+     */
+    virtual void getDofCoeffs( ScalarViewType dofCoeffs ) const {
+      auto dofCoeffs12 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),std::make_pair(0,2));
+      auto dofCoeffs3 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),2);
+      Kokkos::deep_copy(dofCoeffs12,0.0);
+      this->TensorBasis3::getDofCoeffs(dofCoeffs3);
+    }
+
   };
   
   // ESEAS numbers its H(div) families differently, with the nonzero going in z, x, y for I,II,III.

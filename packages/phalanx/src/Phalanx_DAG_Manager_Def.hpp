@@ -489,6 +489,8 @@ evaluateFields(typename Traits::EvalData d)
     using clock = std::chrono::steady_clock;
     std::chrono::time_point<clock> start = clock::now();
 
+    typename PHX::Device().fence(); // temporary fence until UVM in evaluateFields fixed
+
     nodes_[topoSortEvalIndex[n]].getNonConst()->evaluateFields(d);
 
     nodes_[topoSortEvalIndex[n]].sumIntoExecutionTime(clock::now()-start);

@@ -55,11 +55,12 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   UncoupledIndexManager(const RCP<const Teuchos::Comm<int> > comm, const bool coupled,
-                                 const int NumDimensions, const int interpolationOrder,
-                                 const int MyRank, const int NumRanks,
-                                 const Array<GO> GFineNodesPerDir, const Array<LO> LFineNodesPerDir,
-                                 const Array<LO> CoarseRate) :
-    IndexManager(comm, coupled, NumDimensions, interpolationOrder, Array<GO>(3, -1), LFineNodesPerDir),
+                        const int NumDimensions, const int interpolationOrder,
+                        const int MyRank, const int NumRanks,
+                        const Array<GO> GFineNodesPerDir, const Array<LO> LFineNodesPerDir,
+                        const Array<LO> CoarseRate, const bool singleCoarsePoint) :
+    IndexManager(comm, coupled, singleCoarsePoint, NumDimensions, interpolationOrder,
+                 Array<GO>(3, -1), LFineNodesPerDir),
     myRank(MyRank), numRanks(NumRanks)
   {
 
@@ -129,7 +130,11 @@ namespace MueLu {
                                     coarseIndices[2]);
       for(int dim = 0; dim < 3; ++dim) {
         if(coarseIndices[dim] == this->lCoarseNodesPerDir[dim] - 1) {
-          fineIndices[dim] = this->lFineNodesPerDir[dim] - 1;
+          if(this->lCoarseNodesPerDir[dim] == 1) {
+            fineIndices[dim] = 0;
+          } else {
+            fineIndices[dim] = this->lFineNodesPerDir[dim] - 1;
+          }
         } else {
           fineIndices[dim] = coarseIndices[dim]*this->coarseRate[dim];
         }

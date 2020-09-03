@@ -112,7 +112,7 @@ int main(int narg, char** arg)
   // Sphynx-related parameters
   bool isNormalized = false;
   bool isGeneralized = false;
-  bool usePoly = false;
+  std::string precType = "jacobi";
   std::string initialGuess = "random";
   bool useFullOrtho = true;
 
@@ -145,12 +145,12 @@ int main(int narg, char** arg)
 		 "indicate whether or not to use a normalized Laplacian.");
   cmdp.setOption("generalized", "non-generalized", &isGeneralized,
 		 "indicate whether or not to use a generalized Laplacian.");
-  cmdp.setOption("polynomial", "muelu", &usePoly,
-		 "indicate whether or not to use polynomial as preconditioner.");
+  cmdp.setOption("precond", &precType,
+		 "indicate which preconditioner to use [muelu|jacobi|polynomial].");
   cmdp.setOption("initialGuess", &initialGuess,
-                 "Initial guess for LOBPCG");
+                 "initial guess for LOBPCG");
   cmdp.setOption("useFullOrtho", "partialOrtho", &useFullOrtho,
-                 "Use full orthogonalization.");
+                 "use full orthogonalization.");
 
   //////////////////////////////////
   // Even with cmdp option "true", I get errors for having these
@@ -220,7 +220,7 @@ int main(int narg, char** arg)
   Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
   params->set("num_global_parts", commsize);
   params->set("sphynx_skip_preprocessing", true);   // Preprocessing has not been implemented yet.
-  params->set("sphynx_preconditioner_poly", usePoly);
+  params->set("sphynx_preconditioner_type", precType);
   params->set("sphynx_verbosity", verbose ? 1 : 0);
   params->set("sphynx_initial_guess", initialGuess);
   params->set("sphynx_use_full_ortho", useFullOrtho);

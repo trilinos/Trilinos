@@ -340,7 +340,7 @@ int ConvergenceTri(const bool verbose) {
     using basisType = Basis<DeviceSpaceType,ValueType,ValueType>;
     using CG_NBasis = NodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
     using CG_HBasis = HierarchicalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
-    //using CG_DNBasis = DerivedNodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
+    using CG_DNBasis = DerivedNodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
 
 
     *outStream
@@ -361,6 +361,7 @@ int ConvergenceTri(const bool verbose) {
 
       std::vector<basisType*> basis_set;
       basis_set.push_back(new typename  CG_NBasis::HGRAD_TRI(order));
+      basis_set.push_back(new typename  CG_DNBasis::HGRAD_TRI(order));
       basis_set.push_back(new typename  CG_HBasis::HGRAD_TRI(order));
 
       for (auto basisPtr:basis_set) {
@@ -566,6 +567,7 @@ int ConvergenceTri(const bool verbose) {
 
       std::vector<basisType*> basis_set;
       basis_set.push_back(new typename  CG_NBasis::HCURL_TRI(order));
+      basis_set.push_back(new typename  CG_DNBasis::HCURL_TRI(order));
       //basis_set.push_back(new typename  CG_HBasis::HCURL_TRI(order));
 
       for (auto basisPtr:basis_set) {
@@ -775,6 +777,7 @@ int ConvergenceTri(const bool verbose) {
 
       std::vector<basisType*> basis_set;
       basis_set.push_back(new typename  CG_NBasis::HDIV_TRI(order));
+      basis_set.push_back(new typename  CG_DNBasis::HDIV_TRI(order));
       //basis_set.push_back(new typename  CG_HBasis::HDIV_TRI(order));
 
       for (auto basisPtr:basis_set) {
@@ -991,6 +994,7 @@ int ConvergenceTri(const bool verbose) {
 
       std::vector<basisType*> basis_set;
       basis_set.push_back(new typename  CG_NBasis::HVOL_TRI(order-1));
+      basis_set.push_back(new typename  CG_DNBasis::HVOL_TRI(order-1));
       //basis_set.push_back(new typename  CG_HBasis::HVOL_TRI(order-1));
 
       for (auto basisPtr:basis_set) {

@@ -40,7 +40,6 @@ SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
 
 existing_gitdist=`which gitdist 2> /dev/null`
 if [[ "${existing_gitdist}" == "" ]] ; then
-  echo "Setting alias gitdist=${SCRIPT_DIR}/gitdist"
   alias gitdist=${SCRIPT_DIR}/gitdist
 fi
 

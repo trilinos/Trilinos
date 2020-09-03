@@ -5,8 +5,10 @@
 
 #if  defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
 #if !defined(KOKKOS_ENABLE_CUDA) || (8000 <= CUDA_VERSION)
+#if  defined(KOKKOS_ENABLE_CUDA_LAMBDA)
 #define KOKKOSBATCHED_TEST_BLOCKTRIDIAGDIRECT 
 #endif 
+#endif
 #endif
 
 
@@ -263,11 +265,14 @@ int main(int argc, char* argv[]) {
     }
 
     /// randomize input
-    Kokkos::Random_XorShift64_Pool<exec_space> random(13245);
-    Kokkos::fill_random(As, random, value_type(1.0));
-    Kokkos::fill_random(bs, random, value_type(1.0));
-
-    Kokkos::deep_copy(Acopy, As);
+    {
+      const value_type one(1);
+      Kokkos::Random_XorShift64_Pool<exec_space> random(13245);
+      Kokkos::fill_random(As, random, one);
+      Kokkos::fill_random(bs, random, one);
+      
+      Kokkos::deep_copy(Acopy, As);
+    }
 
     ///
     /// factorize the matrix

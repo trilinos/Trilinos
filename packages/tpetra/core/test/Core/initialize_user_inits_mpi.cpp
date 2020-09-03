@@ -179,6 +179,8 @@ void testMain (bool& success, int argc, char* argv[])
   }
 
   (void) MPI_Finalize ();
+
+  Kokkos::finalize();
 }
 
 class CaptureOstream {

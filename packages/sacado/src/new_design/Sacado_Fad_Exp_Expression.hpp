@@ -67,7 +67,7 @@ namespace Sacado {
        * This assumes a CRTP pattern where T is infact derived from
        * Expr<T>.  This will only compile if this infact the case.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const derived_type& derived() const {
         return static_cast<const derived_type&>(*this);
       }
@@ -77,7 +77,7 @@ namespace Sacado {
        * This assumes a CRTP pattern where T is infact derived from
        * Expr<T>.  This will only compile if this infact the case.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const volatile derived_type& derived() const volatile {
         return static_cast<const volatile derived_type&>(*this);
       }

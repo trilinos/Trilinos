@@ -582,6 +582,7 @@ TEST(skinning_large_cube_perf_test, skinning_large_cube)
 {
   unsigned numRuns = 50;
   std::vector<size_t> dims = {50, 50, 50};
+
   double edgeTime = run_skinning_large_cube_test(true, numRuns, dims);
   double noEdgeTime = run_skinning_large_cube_test(false, numRuns, dims);
 

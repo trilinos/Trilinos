@@ -85,8 +85,15 @@ namespace Test {
       interiorStencilLength(3), cornerStencilLength(2),
       rowmap(rowmap_), columns(columns_), values(values_) {
 
-      numInterior = numNodes - leftBC - rightBC;
-      numEntries  = numInterior*interiorStencilLength + (leftBC + rightBC)*cornerStencilLength;
+      if(numNodes == 1) {
+        std::ostringstream os;
+        os << "You need at least two points per direction to obtain a valid discretization !"
+           << std::endl;
+        throw std::runtime_error(os.str());
+      }
+
+      numInterior = numNodes - 2;
+      numEntries  = numInterior*interiorStencilLength + 2*cornerStencilLength;
 
     }
 
@@ -98,16 +105,14 @@ namespace Test {
       }
 
       // Fill exterior points a.k.a. boundary points
-      if(0 < leftBC + rightBC) {
-	Kokkos::RangePolicy<execution_space, exteriorTag> exteriorPolicy(0, 1);
-	Kokkos::parallel_for("Fill 1D matrix: exterior points", exteriorPolicy, *this);
-      }
+      Kokkos::RangePolicy<execution_space, exteriorTag> exteriorPolicy(0, 1);
+      Kokkos::parallel_for("Fill 1D matrix: exterior points", exteriorPolicy, *this);
     }
 
     KOKKOS_INLINE_FUNCTION
     void operator() (const interiorTag&, const size_type idx) const {
-      const ordinal_type rowIdx = idx + leftBC;
-      const size_type rowOffset = (rowIdx + 1 - leftBC)*interiorStencilLength + leftBC*cornerStencilLength;
+      const ordinal_type rowIdx = idx + 1; // Offset by one since first node has BC
+      const size_type rowOffset = rowIdx*interiorStencilLength + cornerStencilLength;
 
       rowmap(rowIdx + 1) = rowOffset;
 
@@ -125,23 +130,27 @@ namespace Test {
     KOKKOS_INLINE_FUNCTION
     void operator() (const exteriorTag&, const size_type idx) const {
       // LeftBC
+      rowmap(1) = 2;
+
+      columns(0) = 0;
+      columns(1) = 1;
       if(leftBC == 1) {
-	rowmap(1) = 2;
-
-	columns(0) = 0;
-	columns(1) = 1;
-
+	values(0) = 1.0;
+	values(1) = 0.0;
+      } else {
 	values(0) =  1.0;
 	values(1) = -1.0;
       }
 
       // RightBC
+      rowmap(numNodes) = numEntries;
+
+      columns(numEntries - 2) = numNodes - 2;
+      columns(numEntries - 1) = numNodes - 1;
       if(rightBC == 1) {
-	rowmap(numNodes) = numEntries;
-
-	columns(numEntries - 2) = numNodes - 2;
-	columns(numEntries - 1) = numNodes - 1;
-
+	values(numEntries - 2) = 0.0;
+	values(numEntries - 1) = 1.0;
+      } else {
 	values(numEntries - 2) = -1.0;
 	values(numEntries - 1) =  1.0;
       }
@@ -188,12 +197,12 @@ namespace Test {
   struct fill_2D_matrix_functor {
 
     // Define types used by the CrsMatrix
-    typedef typename CrsMatrix_t::execution_space execution_space;
-    typedef typename CrsMatrix_t::row_map_type::non_const_type row_map_view_t;
-    typedef typename CrsMatrix_t::index_type::non_const_type   cols_view_t;
-    typedef typename CrsMatrix_t::values_type::non_const_type  scalar_view_t;
-    typedef typename CrsMatrix_t::non_const_size_type size_type;
-    typedef typename CrsMatrix_t::non_const_ordinal_type ordinal_type;
+    using execution_space = typename CrsMatrix_t::execution_space;
+    using row_map_view_t  = typename CrsMatrix_t::row_map_type::non_const_type;
+    using cols_view_t     = typename CrsMatrix_t::index_type::non_const_type;
+    using scalar_view_t   = typename CrsMatrix_t::values_type::non_const_type;
+    using size_type       = typename CrsMatrix_t::non_const_size_type;
+    using ordinal_type    = typename CrsMatrix_t::non_const_ordinal_type;
 
     // Finite difference dispatch tags
     struct interiorFDTag{};
@@ -240,6 +249,13 @@ namespace Test {
       leftBC(leftBC_), rightBC(rightBC_), bottomBC(bottomBC_), topBC(topBC_),
       rowmap(rowmap_), columns(columns_), values(values_) {
 
+      if(nx == 1 || ny == 1) {
+        std::ostringstream os;
+        os << "You need at least two points per direction to obtain a valid discretization!"
+           << std::endl;
+        throw std::runtime_error(os.str());
+      }
+
       if(stencil_type == FD) {
 	interiorStencilLength = 5;
 	edgeStencilLength     = 4;
@@ -250,19 +266,19 @@ namespace Test {
 	cornerStencilLength   = 4;
       }
 
-      numInterior = (nx - leftBC - rightBC)*(ny - bottomBC - topBC);
-      numXEdge    = nx - leftBC - rightBC;
-      numYEdge    = ny - bottomBC - topBC;
-      numCorner   = (bottomBC + topBC)*(leftBC + rightBC);
+      numInterior = (nx - 2)*(ny - 2);
+      numXEdge    = nx - 2;
+      numYEdge    = ny - 2;
+      numCorner   = 4;
 
-      numEntriesPerGridRow = (nx - leftBC - rightBC)*interiorStencilLength
-	+ (leftBC + rightBC)*edgeStencilLength;
+      numEntriesPerGridRow = (nx - 2)*interiorStencilLength
+	+ 2*edgeStencilLength;
 
-      numEntriesBottomRow = (nx - leftBC - rightBC)*edgeStencilLength
-	+ (leftBC + rightBC)*cornerStencilLength;
+      numEntriesBottomRow = (nx - 2)*edgeStencilLength
+	+ 2*cornerStencilLength;
 
       numEntries = numInterior*interiorStencilLength
-	+ ((bottomBC + topBC)*numXEdge + (leftBC + rightBC)*numYEdge)*edgeStencilLength
+	+ (2*numXEdge + 2*numYEdge)*edgeStencilLength
 	+ numCorner*cornerStencilLength;
     }
 
@@ -317,13 +333,13 @@ namespace Test {
       ordinal_type i, j;
 
       // Compute row index
-      j = idx / (nx - leftBC - rightBC);
-      i = idx % (nx - leftBC - rightBC);
-      const ordinal_type rowIdx = (j + bottomBC)*nx + i + leftBC;
+      j = idx / (nx - 2);
+      i = idx % (nx - 2);
+      const ordinal_type rowIdx = (j + 1)*nx + i + 1;
 
       // Compute rowOffset
-      const size_type rowOffset = j*numEntriesPerGridRow + bottomBC*numEntriesBottomRow
-        + (i + 1)*interiorStencilLength + leftBC*edgeStencilLength;
+      const size_type rowOffset = j*numEntriesPerGridRow + numEntriesBottomRow
+        + (i + 1)*interiorStencilLength + edgeStencilLength;
 
       rowmap(rowIdx + 1) = rowOffset;
 
@@ -345,21 +361,26 @@ namespace Test {
     KOKKOS_INLINE_FUNCTION
     void operator() (const xEdgeFDTag&, const size_type idx) const {
 
+      /***************/
+      /* Bottom edge */
+      /***************/
+      ordinal_type rowIdx = idx + 1;
+      size_type rowOffset = (idx + 1)*edgeStencilLength + cornerStencilLength;
+
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 4) = rowIdx - 1;
+      columns(rowOffset - 3) = rowIdx;
+      columns(rowOffset - 2) = rowIdx + 1;
+      columns(rowOffset - 1) = rowIdx + nx;
       if(bottomBC == 1) {
-        /***************/
-        /* Bottom edge */
-        /***************/
-        const ordinal_type rowIdx = idx + leftBC;
-        const size_type rowOffset = (idx + 1)*edgeStencilLength + leftBC*cornerStencilLength;
-
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 4) = rowIdx - 1;
-	columns(rowOffset - 3) = rowIdx;
-	columns(rowOffset - 2) = rowIdx + 1;
-	columns(rowOffset - 1) = rowIdx + nx;
-
+	// Fill values
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 1.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 4) = -1.0;
 	values(rowOffset - 3) =  3.0;
@@ -367,22 +388,27 @@ namespace Test {
 	values(rowOffset - 1) = -1.0;
       }
 
+      /************/
+      /* Top edge */
+      /************/
+      rowIdx = (ny - 1)*nx + idx + 1;
+      rowOffset = (ny - 2)*numEntriesPerGridRow + numEntriesBottomRow
+        + (idx + 1)*edgeStencilLength + cornerStencilLength;
+
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 4) = rowIdx - nx;
+      columns(rowOffset - 3) = rowIdx - 1;
+      columns(rowOffset - 2) = rowIdx;
+      columns(rowOffset - 1) = rowIdx + 1;
       if(topBC == 1) {
-        /************/
-        /* Top edge */
-        /************/
-        const ordinal_type rowIdx = (ny - 1)*nx + idx + leftBC;
-        const size_type rowOffset = (ny - 1 - bottomBC)*numEntriesPerGridRow + bottomBC*numEntriesBottomRow
-          + (idx + 1)*edgeStencilLength + leftBC*cornerStencilLength;
-
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 4) = rowIdx - nx;
-	columns(rowOffset - 3) = rowIdx - 1;
-	columns(rowOffset - 2) = rowIdx;
-	columns(rowOffset - 1) = rowIdx + 1;
-
+	// Fill values
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 0.0;
+	values(rowOffset - 2) = 1.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 4) = -1.0;
 	values(rowOffset - 3) = -1.0;
@@ -394,22 +420,27 @@ namespace Test {
     KOKKOS_INLINE_FUNCTION
     void operator() (const yEdgeFDTag&, const size_type idx) const {
 
+      /*************/
+      /* Left edge */
+      /*************/
+      ordinal_type rowIdx = (idx + 1)*nx;
+      size_type rowOffset = idx*numEntriesPerGridRow + numEntriesBottomRow
+        + edgeStencilLength;
+
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 4) = rowIdx - nx;
+      columns(rowOffset - 3) = rowIdx;
+      columns(rowOffset - 2) = rowIdx + 1;
+      columns(rowOffset - 1) = rowIdx + nx;
       if(leftBC == 1) {
-        /*************/
-        /* Left edge */
-        /*************/
-        const ordinal_type rowIdx = (idx + bottomBC)*nx;
-        const size_type rowOffset = idx*numEntriesPerGridRow + bottomBC*numEntriesBottomRow
-          + edgeStencilLength;
-
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 4) = rowIdx - nx;
-	columns(rowOffset - 3) = rowIdx;
-	columns(rowOffset - 2) = rowIdx + 1;
-	columns(rowOffset - 1) = rowIdx + nx;
-
+	// Fill values
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 1.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 4) = -1.0;
 	values(rowOffset - 3) =  3.0;
@@ -417,20 +448,25 @@ namespace Test {
 	values(rowOffset - 1) = -1.0;
       }
 
+      /**************/
+      /* Right edge */
+      /**************/
+      rowIdx = (idx + 2)*nx - 1;
+      rowOffset = (idx + 1)*numEntriesPerGridRow + numEntriesBottomRow;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 4) = rowIdx - nx;
+      columns(rowOffset - 3) = rowIdx - 1;
+      columns(rowOffset - 2) = rowIdx;
+      columns(rowOffset - 1) = rowIdx + nx;
       if(rightBC == 1) {
-        /**************/
-        /* Right edge */
-        /**************/
-        const ordinal_type rowIdx = (idx + bottomBC + 1)*nx - 1;
-        const size_type rowOffset = (idx + 1)*numEntriesPerGridRow + bottomBC*numEntriesBottomRow;
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 4) = rowIdx - nx;
-	columns(rowOffset - 3) = rowIdx - 1;
-	columns(rowOffset - 2) = rowIdx;
-	columns(rowOffset - 1) = rowIdx + nx;
-
+	// Fill values
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 0.0;
+	values(rowOffset - 2) = 1.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 4) = -1.0;
 	values(rowOffset - 3) = -1.0;
@@ -442,61 +478,73 @@ namespace Test {
     KOKKOS_INLINE_FUNCTION
     void operator() (const cornerFDTag&, const size_type idx) const {
       // Bottom-left corner
-      if(bottomBC*leftBC == 1) {
-	const ordinal_type rowIdx = 0;
-	const size_type rowOffset = cornerStencilLength;
-	rowmap(rowIdx + 1)     = rowOffset;
+      ordinal_type rowIdx = 0;
+      size_type rowOffset = cornerStencilLength;
+      rowmap(rowIdx + 1)     = rowOffset;
 
-        columns(rowOffset - 3) = rowIdx;
-        columns(rowOffset - 2) = rowIdx + 1;
-        columns(rowOffset - 1) = rowIdx + nx;
-
+      columns(rowOffset - 3) = rowIdx;
+      columns(rowOffset - 2) = rowIdx + 1;
+      columns(rowOffset - 1) = rowIdx + nx;
+      if(bottomBC == 1 || leftBC == 1) {
+        values(rowOffset - 3)  = 1.0;
+        values(rowOffset - 2)  = 0.0;
+        values(rowOffset - 1)  = 0.0;
+      } else {
         values(rowOffset - 3)  =  2.0;
         values(rowOffset - 2)  = -1.0;
         values(rowOffset - 1)  = -1.0;
       }
 
       // Bottom-right corner
-      if(bottomBC*rightBC == 1) {
-	const ordinal_type rowIdx = nx - 1;
-	const size_type rowOffset = (1 - bottomBC)*numEntriesPerGridRow + bottomBC*numEntriesBottomRow;
-	rowmap(rowIdx + 1)     = rowOffset;
+      rowIdx = nx - 1;
+      rowOffset = numEntriesBottomRow;
+      rowmap(rowIdx + 1) = rowOffset;
 
-        columns(rowOffset - 3) = rowIdx - 1;
-        columns(rowOffset - 2) = rowIdx;
-        columns(rowOffset - 1) = rowIdx + nx;
-
+      columns(rowOffset - 3) = rowIdx - 1;
+      columns(rowOffset - 2) = rowIdx;
+      columns(rowOffset - 1) = rowIdx + nx;
+      if(bottomBC == 1 || rightBC == 1) {
+        values(rowOffset - 3)  = 0.0;
+        values(rowOffset - 2)  = 0.0;
+        values(rowOffset - 1)  = 0.0;
+      } else {
         values(rowOffset - 3)  = -1.0;
         values(rowOffset - 2)  =  2.0;
         values(rowOffset - 1)  = -1.0;
       }
 
       // Top-left corner
-      if(topBC*leftBC == 1) {
-	const ordinal_type rowIdx = (ny - 1)*nx;
-	const size_type rowOffset = (ny - 1 - bottomBC)*numEntriesPerGridRow + bottomBC*numEntriesBottomRow
+      rowIdx = (ny - 1)*nx;
+      rowOffset = (ny - 2)*numEntriesPerGridRow + numEntriesBottomRow
 	  + cornerStencilLength;
-	rowmap(rowIdx + 1)     = rowOffset;
+      rowmap(rowIdx + 1) = rowOffset;
 
-        columns(rowOffset - 3) = rowIdx - nx;
-        columns(rowOffset - 2) = rowIdx;
-        columns(rowOffset - 1) = rowIdx + 1;
-
+      columns(rowOffset - 3) = rowIdx - nx;
+      columns(rowOffset - 2) = rowIdx;
+      columns(rowOffset - 1) = rowIdx + 1;
+      if(topBC == 1 || leftBC == 1) {
+        values(rowOffset - 3)  = 0.0;
+        values(rowOffset - 2)  = 1.0;
+        values(rowOffset - 1)  = 0.0;
+      } else {
         values(rowOffset - 3)  = -1.0;
         values(rowOffset - 2)  =  2.0;
         values(rowOffset - 1)  = -1.0;
       }
 
       // Top-right corner
-      if(topBC*rightBC == 1) {
-	const ordinal_type rowIdx = ny*nx - 1;
-	const size_type rowOffset = numEntries;
-	rowmap(rowIdx + 1)     = rowOffset;
+      rowIdx = ny*nx - 1;
+      rowOffset = numEntries;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	columns(rowOffset - 3) = rowIdx - nx;
-	columns(rowOffset - 2) = rowIdx - 1;
-	columns(rowOffset - 1) = rowIdx;
-
+      columns(rowOffset - 3) = rowIdx - nx;
+      columns(rowOffset - 2) = rowIdx - 1;
+      columns(rowOffset - 1) = rowIdx;
+      if(topBC == 1 || rightBC == 1) {
+	values(rowOffset - 3)  = 0.0;
+	values(rowOffset - 2)  = 0.0;
+	values(rowOffset - 1)  = 1.0;
+      } else {
 	values(rowOffset - 3)  = -1.0;
 	values(rowOffset - 2)  = -1.0;
 	values(rowOffset - 1)  =  2.0;
@@ -508,13 +556,13 @@ namespace Test {
       ordinal_type i, j;
 
       // Compute row index
-      j = idx / (nx - leftBC - rightBC);
-      i = idx % (nx - leftBC - rightBC);
-      const ordinal_type rowIdx = (j + bottomBC)*nx + i + leftBC;
+      j = idx / (nx - 2);
+      i = idx % (nx - 2);
+      const ordinal_type rowIdx = (j + 1)*nx + i + 1;
 
       // Compute rowOffset
-      const size_type rowOffset = j*numEntriesPerGridRow + bottomBC*numEntriesBottomRow
-        + (i + 1)*interiorStencilLength + leftBC*edgeStencilLength;
+      const size_type rowOffset = j*numEntriesPerGridRow + numEntriesBottomRow
+        + (i + 1)*interiorStencilLength + edgeStencilLength;
       rowmap(rowIdx + 1) = rowOffset;
 
       // Fill column indices
@@ -543,22 +591,29 @@ namespace Test {
     KOKKOS_INLINE_FUNCTION
     void operator() (const xEdgeFETag&, const size_type idx) const {
 
+      /***************/
+      /* Bottom edge */
+      /***************/
+      ordinal_type rowIdx = idx + 1;
+      size_type rowOffset = (idx + 1)*edgeStencilLength + cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 6) = rowIdx - 1;
+      columns(rowOffset - 5) = rowIdx;
+      columns(rowOffset - 4) = rowIdx + 1;
+      columns(rowOffset - 3) = rowIdx + nx - 1;
+      columns(rowOffset - 2) = rowIdx + nx;
+      columns(rowOffset - 1) = rowIdx + nx + 1;
       if(bottomBC == 1) {
-        /***************/
-        /* Bottom edge */
-        /***************/
-        const ordinal_type rowIdx = idx + leftBC;
-        const size_type rowOffset = (idx + 1)*edgeStencilLength + leftBC*cornerStencilLength;
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 6) = rowIdx - 1;
-	columns(rowOffset - 5) = rowIdx;
-	columns(rowOffset - 4) = rowIdx + 1;
-	columns(rowOffset - 3) = rowIdx + nx - 1;
-	columns(rowOffset - 2) = rowIdx + nx;
-	columns(rowOffset - 1) = rowIdx + nx + 1;
-
+	// Fill values
+	values(rowOffset - 6) = 0.0;
+	values(rowOffset - 5) = 1.0;
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 0.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 6) = -1.0;
 	values(rowOffset - 5) =  8.0;
@@ -568,23 +623,30 @@ namespace Test {
 	values(rowOffset - 1) = -2.0;
       }
 
+      /************/
+      /* Top edge */
+      /************/
+      rowIdx = (ny - 1)*nx + idx + 1;
+      rowOffset = (ny - 2)*numEntriesPerGridRow + numEntriesBottomRow
+        + (idx + 1)*edgeStencilLength + cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 6) = rowIdx - nx - 1;
+      columns(rowOffset - 5) = rowIdx - nx;
+      columns(rowOffset - 4) = rowIdx - nx + 1;
+      columns(rowOffset - 3) = rowIdx - 1;
+      columns(rowOffset - 2) = rowIdx;
+      columns(rowOffset - 1) = rowIdx + 1;
       if(topBC == 1) {
-        /************/
-        /* Top edge */
-        /************/
-        const ordinal_type rowIdx = (ny - 1)*nx + idx + leftBC;
-        const size_type rowOffset = (ny - 1 - bottomBC)*numEntriesPerGridRow + bottomBC*numEntriesBottomRow
-          + (idx + 1)*edgeStencilLength + leftBC*cornerStencilLength;
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 6) = rowIdx - nx - 1;
-	columns(rowOffset - 5) = rowIdx - nx;
-	columns(rowOffset - 4) = rowIdx - nx + 1;
-	columns(rowOffset - 3) = rowIdx - 1;
-	columns(rowOffset - 2) = rowIdx;
-	columns(rowOffset - 1) = rowIdx + 1;
-
+	// Fill values
+	values(rowOffset - 6) = 0.0;
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 0.0;
+	values(rowOffset - 2) = 1.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 6) = -2.0;
 	values(rowOffset - 5) = -2.0;
@@ -598,23 +660,30 @@ namespace Test {
     KOKKOS_INLINE_FUNCTION
     void operator() (const yEdgeFETag&, const size_type idx) const {
 
+      /*************/
+      /* Left edge */
+      /*************/
+      ordinal_type rowIdx = (idx + 1)*nx;
+      size_type rowOffset = idx*numEntriesPerGridRow + numEntriesBottomRow
+        + edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 6) = rowIdx - nx;
+      columns(rowOffset - 5) = rowIdx - nx + 1;
+      columns(rowOffset - 4) = rowIdx;
+      columns(rowOffset - 3) = rowIdx + 1;
+      columns(rowOffset - 2) = rowIdx + nx;
+      columns(rowOffset - 1) = rowIdx + nx + 1;
       if(leftBC == 1) {
-        /*************/
-        /* Left edge */
-        /*************/
-        const ordinal_type rowIdx = (idx + bottomBC)*nx;
-        const size_type rowOffset = idx*numEntriesPerGridRow + bottomBC*numEntriesBottomRow
-          + edgeStencilLength;
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 6) = rowIdx - nx;
-	columns(rowOffset - 5) = rowIdx - nx + 1;
-	columns(rowOffset - 4) = rowIdx;
-	columns(rowOffset - 3) = rowIdx + 1;
-	columns(rowOffset - 2) = rowIdx + nx;
-	columns(rowOffset - 1) = rowIdx + nx + 1;
-
+	// Fill values
+	values(rowOffset - 6) = 0.0;
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 1.0;
+	values(rowOffset - 3) = 0.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 6) = -1.0;
 	values(rowOffset - 5) = -2.0;
@@ -624,22 +693,29 @@ namespace Test {
 	values(rowOffset - 1) = -2.0;
       }
 
+      /**************/
+      /* Right edge */
+      /**************/
+      rowIdx = (idx + 2)*nx - 1;
+      rowOffset = (idx + 1)*numEntriesPerGridRow + numEntriesBottomRow;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 6) = rowIdx - nx - 1;
+      columns(rowOffset - 5) = rowIdx - nx;
+      columns(rowOffset - 4) = rowIdx - 1;
+      columns(rowOffset - 3) = rowIdx;
+      columns(rowOffset - 2) = rowIdx + nx - 1;
+      columns(rowOffset - 1) = rowIdx + nx;
       if(rightBC == 1) {
-        /**************/
-        /* Right edge */
-        /**************/
-        const ordinal_type rowIdx = (idx + bottomBC + 1)*nx - 1;
-        const size_type rowOffset = (idx + 1)*numEntriesPerGridRow + bottomBC*numEntriesBottomRow;
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 6) = rowIdx - nx - 1;
-	columns(rowOffset - 5) = rowIdx - nx;
-	columns(rowOffset - 4) = rowIdx - 1;
-	columns(rowOffset - 3) = rowIdx;
-	columns(rowOffset - 2) = rowIdx + nx - 1;
-	columns(rowOffset - 1) = rowIdx + nx;
-
+	// Fill values
+	values(rowOffset - 6) = 0.0;
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 1.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 6) = -2.0;
 	values(rowOffset - 5) = -1.0;
@@ -653,16 +729,20 @@ namespace Test {
     KOKKOS_INLINE_FUNCTION
     void operator() (const cornerFETag&, const size_type idx) const {
       // Bottom-left corner
-      if(bottomBC*leftBC == 1) {
-	const ordinal_type rowIdx = 0;
-	const size_type rowOffset = cornerStencilLength;
-	rowmap(rowIdx + 1)     = rowOffset;
+      ordinal_type rowIdx = 0;
+      size_type rowOffset = cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-        columns(rowOffset - 4) = rowIdx;
-        columns(rowOffset - 3) = rowIdx + 1;
-        columns(rowOffset - 2) = rowIdx + nx;
-        columns(rowOffset - 1) = rowIdx + nx + 1;
-
+      columns(rowOffset - 4) = rowIdx;
+      columns(rowOffset - 3) = rowIdx + 1;
+      columns(rowOffset - 2) = rowIdx + nx;
+      columns(rowOffset - 1) = rowIdx + nx + 1;
+      if(bottomBC == 1 || leftBC == 1) {
+        values(rowOffset - 4)  = 1.0;
+        values(rowOffset - 3)  = 0.0;
+        values(rowOffset - 2)  = 0.0;
+        values(rowOffset - 1)  = 0.0;
+      } else {
         values(rowOffset - 4)  =  4.0;
         values(rowOffset - 3)  = -1.0;
         values(rowOffset - 2)  = -1.0;
@@ -670,16 +750,20 @@ namespace Test {
       }
 
       // Bottom-right corner
-      if(bottomBC*rightBC == 1) {
-	const ordinal_type rowIdx = nx - 1;
-	const size_type rowOffset = (1 - bottomBC)*numEntriesPerGridRow + bottomBC*numEntriesBottomRow;
-	rowmap(rowIdx + 1)     = rowOffset;
+      rowIdx = nx - 1;
+      rowOffset = numEntriesBottomRow;
+      rowmap(rowIdx + 1)     = rowOffset;
 
-        columns(rowOffset - 4) = rowIdx - 1;
-        columns(rowOffset - 3) = rowIdx;
-        columns(rowOffset - 2) = rowIdx + nx - 1;
-        columns(rowOffset - 1) = rowIdx + nx;
-
+      columns(rowOffset - 4) = rowIdx - 1;
+      columns(rowOffset - 3) = rowIdx;
+      columns(rowOffset - 2) = rowIdx + nx - 1;
+      columns(rowOffset - 1) = rowIdx + nx;
+      if(bottomBC == 1 || rightBC == 1) {
+        values(rowOffset - 4)  = 0.0;
+        values(rowOffset - 3)  = 1.0;
+        values(rowOffset - 2)  = 0.0;
+        values(rowOffset - 1)  = 0.0;
+      } else {
         values(rowOffset - 4)  = -1.0;
         values(rowOffset - 3)  =  4.0;
         values(rowOffset - 2)  = -2.0;
@@ -687,17 +771,21 @@ namespace Test {
       }
 
       // Top-left corner
-      if(topBC*leftBC == 1) {
-	const ordinal_type rowIdx = (ny - 1)*nx;
-	const size_type rowOffset = (ny - 1 - bottomBC)*numEntriesPerGridRow + bottomBC*numEntriesBottomRow
-	  + cornerStencilLength;
-	rowmap(rowIdx + 1)     = rowOffset;
+      rowIdx = (ny - 1)*nx;
+      rowOffset = (ny - 2)*numEntriesPerGridRow + numEntriesBottomRow
+        + cornerStencilLength;
+      rowmap(rowIdx + 1)     = rowOffset;
 
-        columns(rowOffset - 4) = rowIdx - nx;
-        columns(rowOffset - 3) = rowIdx - nx + 1;
-        columns(rowOffset - 2) = rowIdx;
-        columns(rowOffset - 1) = rowIdx + 1;
-
+      columns(rowOffset - 4) = rowIdx - nx;
+      columns(rowOffset - 3) = rowIdx - nx + 1;
+      columns(rowOffset - 2) = rowIdx;
+      columns(rowOffset - 1) = rowIdx + 1;
+      if(topBC == 1 || leftBC == 1) {
+        values(rowOffset - 4)  = 0.0;
+        values(rowOffset - 3)  = 0.0;
+        values(rowOffset - 2)  = 1.0;
+        values(rowOffset - 1)  = 0.0;
+      } else {
         values(rowOffset - 4)  = -1.0;
         values(rowOffset - 3)  = -2.0;
         values(rowOffset - 2)  =  4.0;
@@ -705,16 +793,20 @@ namespace Test {
       }
 
       // Top-right corner
-      if(topBC*rightBC == 1) {
-	const ordinal_type rowIdx = ny*nx - 1;
-	const size_type rowOffset = numEntries;
-	rowmap(rowIdx + 1)     = rowOffset;
+      rowIdx = ny*nx - 1;
+      rowOffset = numEntries;
+      rowmap(rowIdx + 1)     = rowOffset;
 
-        columns(rowOffset - 4) = rowIdx - nx - 1;
-        columns(rowOffset - 3) = rowIdx - nx;
-        columns(rowOffset - 2) = rowIdx - 1;
-        columns(rowOffset - 1) = rowIdx;
-
+      columns(rowOffset - 4) = rowIdx - nx - 1;
+      columns(rowOffset - 3) = rowIdx - nx;
+      columns(rowOffset - 2) = rowIdx - 1;
+      columns(rowOffset - 1) = rowIdx;
+      if(topBC == 1 || rightBC == 1) {
+        values(rowOffset - 4)  = 0.0;
+        values(rowOffset - 3)  = 0.0;
+        values(rowOffset - 2)  = 0.0;
+        values(rowOffset - 1)  = 1.0;
+      } else {
         values(rowOffset - 4)  = -2.0;
         values(rowOffset - 3)  = -1.0;
         values(rowOffset - 2)  = -1.0;
@@ -754,10 +846,9 @@ namespace Test {
     const ordinal_type rightBC     = structure(0,2);
     const ordinal_type bottomBC    = structure(1,1);
     const ordinal_type topBC       = structure(1,2);
-    const ordinal_type numInterior = (nx - leftBC - rightBC)*(ny - bottomBC - topBC);
-    const ordinal_type numEdge     = (bottomBC + topBC)*(nx - leftBC - rightBC)
-      + (leftBC + rightBC)*(ny - bottomBC - topBC);
-    const ordinal_type numCorner   = (bottomBC + topBC)*(leftBC + rightBC);
+    const ordinal_type numInterior = (nx - 2)*(ny - 2);
+    const ordinal_type numEdge     = 2*(nx - 2) + 2*(ny - 2);
+    const ordinal_type numCorner   = 4;
     ordinal_type interiorStencilLength = 0, edgeStencilLength = 0, cornerStencilLength = 0;
 
     if(stencil_type == FD) {
@@ -891,32 +982,32 @@ namespace Test {
 	cornerStencilLength = 8;
       }
 
-      numInterior = (nx - leftBC - rightBC)*(ny - frontBC - backBC)*(nz - bottomBC - topBC);
-      numXFace = (ny - frontBC - backBC)*(nz - bottomBC - topBC);
-      numYFace = (nx - leftBC - rightBC)*(nz - bottomBC - topBC);
-      numZFace = (nx - leftBC - rightBC)*(ny - frontBC - backBC);
-      numXEdge = nx - leftBC - rightBC;
-      numYEdge = ny - frontBC - backBC;
-      numZEdge = nz - bottomBC - topBC;
+      numInterior = (nx - 2)*(ny - 2)*(nz - 2);
+      numXFace = (ny - 2)*(nz - 2);
+      numYFace = (nx - 2)*(nz - 2);
+      numZFace = (nx - 2)*(ny - 2);
+      numXEdge = nx - 2;
+      numYEdge = ny - 2;
+      numZEdge = nz - 2;
 
       numEntries = numInterior*interiorStencilLength
         + 2*(numXFace + numYFace + numZFace)*faceStencilLength
         + 4*(numXEdge + numYEdge + numZEdge)*edgeStencilLength
-        + (bottomBC + topBC)*(frontBC + backBC)*(leftBC + rightBC)*cornerStencilLength;
-      numEntriesPerGridPlane = (nx - leftBC - rightBC)*(ny - frontBC - backBC)*interiorStencilLength
-	+ (backBC + frontBC)*(nx - leftBC - rightBC)*faceStencilLength
-	+ (leftBC + rightBC)*(ny - frontBC - backBC)*faceStencilLength
-	+ (leftBC*frontBC + leftBC*backBC + rightBC*frontBC + rightBC*backBC)*edgeStencilLength;;
-      numEntriesBottomPlane = (nx - leftBC - rightBC)*(ny - frontBC - backBC)*faceStencilLength
-	+ (backBC + frontBC)*(nx - leftBC - rightBC)*edgeStencilLength
-	+ (leftBC + rightBC)*(ny - frontBC - backBC)*edgeStencilLength
-	+ (leftBC*frontBC + leftBC*backBC + rightBC*frontBC + rightBC*backBC)*cornerStencilLength;;
-      numEntriesPerGridRow = (nx - leftBC - rightBC)*interiorStencilLength
-	+ (leftBC + rightBC)*faceStencilLength;
-      numEntriesFrontRow = (nx - leftBC - rightBC)*faceStencilLength
-	+ (leftBC + rightBC)*edgeStencilLength;
-      numEntriesBottomFrontRow = (nx - leftBC - rightBC)*edgeStencilLength
-	+ (leftBC + rightBC)*cornerStencilLength;
+        + 8*cornerStencilLength;
+      numEntriesPerGridPlane = numZFace*interiorStencilLength
+	+ 2*numXEdge*faceStencilLength
+	+ 2*numYEdge*faceStencilLength
+	+ 4*edgeStencilLength;;
+      numEntriesBottomPlane = numZFace*faceStencilLength
+	+ 2*numXEdge*edgeStencilLength
+	+ 2*numYEdge*edgeStencilLength
+	+ 4*cornerStencilLength;;
+      numEntriesPerGridRow = numXEdge*interiorStencilLength
+	+ 2*faceStencilLength;
+      numEntriesFrontRow = numXEdge*faceStencilLength
+	+ 2*edgeStencilLength;
+      numEntriesBottomFrontRow = numXEdge*edgeStencilLength
+	+ 2*cornerStencilLength;
     }
 
     void compute() {
@@ -1009,16 +1100,16 @@ namespace Test {
     KOKKOS_INLINE_FUNCTION
     void operator() (const interiorFDTag&, const size_type idx) const {
       // Compute row index
-      const ordinal_type k   = idx / ((ny - frontBC - backBC)*(nx - leftBC - rightBC));
-      const ordinal_type rem = idx % ((ny - frontBC - backBC)*(nx - leftBC - rightBC));
-      const ordinal_type j   = rem / (nx - leftBC - rightBC);
-      const ordinal_type i   = rem % (nx - leftBC - rightBC);
-      const ordinal_type rowIdx = (k + bottomBC)*ny*nx + (j + frontBC)*nx + i + leftBC;
+      const ordinal_type k   = idx / ((ny - 2)*(nx - 2));
+      const ordinal_type rem = idx % ((ny - 2)*(nx - 2));
+      const ordinal_type j   = rem / (nx - 2);
+      const ordinal_type i   = rem % (nx - 2);
+      const ordinal_type rowIdx = (k + 1)*ny*nx + (j + 1)*nx + i + 1;
 
       // Compute rowOffset
-      const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-        + j*numEntriesPerGridRow + frontBC*numEntriesFrontRow
-        + (i + 1)*interiorStencilLength + leftBC*faceStencilLength;
+      const size_type rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + j*numEntriesPerGridRow + numEntriesFrontRow
+        + (i + 1)*interiorStencilLength + faceStencilLength;
       rowmap(rowIdx + 1) = rowOffset;
 
       // Fill column indices
@@ -1045,26 +1136,33 @@ namespace Test {
       /*******************/
       /*   x == 0 face   */
       /*******************/
+      // Compute row index
+      ordinal_type k = idx / (ny - 2);
+      ordinal_type j = idx % (ny - 2);
+      ordinal_type i = 0;
+      ordinal_type rowIdx = (k + 1)*ny*nx + (j + 1)*nx + i;
+
+      // Compute rowOffset
+      size_type rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + j*numEntriesPerGridRow + numEntriesFrontRow + faceStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 6) = rowIdx - ny*nx;
+      columns(rowOffset - 5) = rowIdx - nx;
+      columns(rowOffset - 4) = rowIdx;
+      columns(rowOffset - 3) = rowIdx + 1;
+      columns(rowOffset - 2) = rowIdx + nx;
+      columns(rowOffset - 1) = rowIdx + ny*nx;
       if(leftBC == 1) {
-        // Compute row index
-        const ordinal_type k = idx / (ny - frontBC - backBC);
-        const ordinal_type j = idx % (ny - frontBC - backBC);
-        const ordinal_type i = 0;
-        const ordinal_type rowIdx = (k + bottomBC)*ny*nx + (j + frontBC)*nx + i;
-
-        // Compute rowOffset
-        const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-          + j*numEntriesPerGridRow + frontBC*numEntriesFrontRow + faceStencilLength;
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 6) = rowIdx - ny*nx;
-	columns(rowOffset - 5) = rowIdx - nx;
-	columns(rowOffset - 4) = rowIdx;
-	columns(rowOffset - 3) = rowIdx + 1;
-	columns(rowOffset - 2) = rowIdx + nx;
-	columns(rowOffset - 1) = rowIdx + ny*nx;
-
+	// Fill values
+	values(rowOffset - 6) = 0.0;
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 1.0;
+	values(rowOffset - 3) = 0.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 6) = -1.0;
 	values(rowOffset - 5) = -1.0;
@@ -1077,26 +1175,33 @@ namespace Test {
       /********************/
       /*   x == nx face   */
       /********************/
+      // Compute row index
+      k = idx / (ny - 2);
+      j = idx % (ny - 2);
+      i = nx - 1;
+      rowIdx = (k + 1)*ny*nx + (j + 1)*nx + i;
+
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + (j + 1)*numEntriesPerGridRow + numEntriesFrontRow;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 6) = rowIdx - ny*nx;
+      columns(rowOffset - 5) = rowIdx - nx;
+      columns(rowOffset - 4) = rowIdx - 1;
+      columns(rowOffset - 3) = rowIdx;
+      columns(rowOffset - 2) = rowIdx + nx;
+      columns(rowOffset - 1) = rowIdx + ny*nx;
       if(rightBC == 1) {
-        // Compute row index
-        const ordinal_type k = idx / (ny - frontBC - backBC);
-        const ordinal_type j = idx % (ny - frontBC - backBC);
-        const ordinal_type i = nx - 1;
-        const ordinal_type rowIdx = (k + bottomBC)*ny*nx + (j + frontBC)*nx + i;
-
-        // Compute rowOffset
-        const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-          + (j + 1)*numEntriesPerGridRow + frontBC*numEntriesFrontRow;
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 6) = rowIdx - ny*nx;
-	columns(rowOffset - 5) = rowIdx - nx;
-	columns(rowOffset - 4) = rowIdx - 1;
-	columns(rowOffset - 3) = rowIdx;
-	columns(rowOffset - 2) = rowIdx + nx;
-	columns(rowOffset - 1) = rowIdx + ny*nx;
-
+	// Fill values
+	values(rowOffset - 6) = 0.0;
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 1.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 6) = -1.0;
 	values(rowOffset - 5) = -1.0;
@@ -1112,25 +1217,32 @@ namespace Test {
       /*******************/
       /*   y == 0 face   */
       /*******************/
+      // Compute row index
+      ordinal_type k = idx / (nx - 2);
+      ordinal_type i = idx % (nx - 2);
+      ordinal_type rowIdx = (k + 1)*ny*nx + i + 1;
+
+      // Compute rowOffset
+      size_type rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + (i + 1)*faceStencilLength + edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 6) = rowIdx - ny*nx;
+      columns(rowOffset - 5) = rowIdx - 1;
+      columns(rowOffset - 4) = rowIdx;
+      columns(rowOffset - 3) = rowIdx + 1;
+      columns(rowOffset - 2) = rowIdx + nx;
+      columns(rowOffset - 1) = rowIdx + ny*nx;
       if(frontBC == 1) {
-        // Compute row index
-        const ordinal_type k = idx / (nx - leftBC - rightBC);
-        const ordinal_type i = idx % (nx - leftBC - rightBC);
-        const ordinal_type rowIdx = (k + bottomBC)*ny*nx + i + leftBC;
-
-        // Compute rowOffset
-        const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-          + (i + 1)*faceStencilLength + leftBC*edgeStencilLength;
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 6) = rowIdx - ny*nx;
-	columns(rowOffset - 5) = rowIdx - 1;
-	columns(rowOffset - 4) = rowIdx;
-	columns(rowOffset - 3) = rowIdx + 1;
-	columns(rowOffset - 2) = rowIdx + nx;
-	columns(rowOffset - 1) = rowIdx + ny*nx;
-
+	// Fill values
+	values(rowOffset - 6) = 0.0;
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 1.0;
+	values(rowOffset - 3) = 0.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 6) = -1.0;
 	values(rowOffset - 5) = -1.0;
@@ -1143,27 +1255,34 @@ namespace Test {
       /********************/
       /*   y == ny face   */
       /********************/
+      // Compute row index
+      k = idx / (nx - 2);
+      ordinal_type j = ny - 2;
+      i = idx % (nx - 2);
+      rowIdx = (k + 1)*ny*nx + (j + 1)*nx + i + 1;
+
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + j*numEntriesPerGridRow + numEntriesFrontRow
+        + (i + 1)*faceStencilLength + edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 6) = rowIdx - ny*nx;
+      columns(rowOffset - 5) = rowIdx - nx;
+      columns(rowOffset - 4) = rowIdx - 1;
+      columns(rowOffset - 3) = rowIdx;
+      columns(rowOffset - 2) = rowIdx + 1;
+      columns(rowOffset - 1) = rowIdx + ny*nx;
       if(backBC == 1) {
-        // Compute row index
-        const ordinal_type k = idx / (nx - leftBC - rightBC);
-        const ordinal_type j = ny - 1 - frontBC;
-        const ordinal_type i = idx % (nx - leftBC - rightBC);
-        const ordinal_type rowIdx = (k + bottomBC)*ny*nx + (j + frontBC)*nx + i + leftBC;
-
-        // Compute rowOffset
-        const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-          + j*numEntriesPerGridRow + frontBC*numEntriesFrontRow
-          + (i + 1)*faceStencilLength + leftBC*edgeStencilLength;
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 6) = rowIdx - ny*nx;
-	columns(rowOffset - 5) = rowIdx - nx;
-	columns(rowOffset - 4) = rowIdx - 1;
-	columns(rowOffset - 3) = rowIdx;
-	columns(rowOffset - 2) = rowIdx + 1;
-	columns(rowOffset - 1) = rowIdx + ny*nx;
-
+	// Fill values
+	values(rowOffset - 6) = 0.0;
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 1.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 6) = -1.0;
 	values(rowOffset - 5) = -1.0;
@@ -1179,25 +1298,32 @@ namespace Test {
       /*******************/
       /*   z == 0 face   */
       /*******************/
+      // Compute row index
+      ordinal_type j = idx / (nx - 2);
+      ordinal_type i = idx % (nx - 2);
+      ordinal_type rowIdx = (j + 1)*nx + i + 1;
+
+      // Compute rowOffset
+      size_type rowOffset = j*numEntriesFrontRow + numEntriesBottomFrontRow
+        + (i + 1)*faceStencilLength + edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 6) = rowIdx - nx;
+      columns(rowOffset - 5) = rowIdx - 1;
+      columns(rowOffset - 4) = rowIdx;
+      columns(rowOffset - 3) = rowIdx + 1;
+      columns(rowOffset - 2) = rowIdx + nx;
+      columns(rowOffset - 1) = rowIdx + ny*nx;
       if(bottomBC == 1) {
-        // Compute row index
-        const ordinal_type j = idx / (nx - leftBC - rightBC);
-        const ordinal_type i = idx % (nx - leftBC - rightBC);
-        const ordinal_type rowIdx = (j + frontBC)*nx + i + leftBC;
-
-        // Compute rowOffset
-        const size_type rowOffset = j*numEntriesFrontRow + frontBC*numEntriesBottomFrontRow
-          + (i + 1)*faceStencilLength + leftBC*edgeStencilLength;
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 6) = rowIdx - nx;
-	columns(rowOffset - 5) = rowIdx - 1;
-	columns(rowOffset - 4) = rowIdx;
-	columns(rowOffset - 3) = rowIdx + 1;
-	columns(rowOffset - 2) = rowIdx + nx;
-	columns(rowOffset - 1) = rowIdx + ny*nx;
-
+	// Fill values
+	values(rowOffset - 6) = 0.0;
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 1.0;
+	values(rowOffset - 3) = 0.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 6) = -1.0;
 	values(rowOffset - 5) = -1.0;
@@ -1210,27 +1336,34 @@ namespace Test {
       /********************/
       /*   z == nz face   */
       /********************/
+      // Compute row index
+      ordinal_type k = nz - 2;
+      j = idx / (nx - 2);
+      i = idx % (nx - 2);
+      rowIdx = (k + 1)*ny*nx + (j + 1)*nx + i + 1;
+
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + j*numEntriesFrontRow + numEntriesBottomFrontRow
+        + (i + 1)*faceStencilLength + edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 6) = rowIdx - ny*nx;
+      columns(rowOffset - 5) = rowIdx - nx;
+      columns(rowOffset - 4) = rowIdx - 1;
+      columns(rowOffset - 3) = rowIdx;
+      columns(rowOffset - 2) = rowIdx + 1;
+      columns(rowOffset - 1) = rowIdx + nx;
       if(topBC == 1) {
-        // Compute row index
-        const ordinal_type k = nz - bottomBC - 1;
-        const ordinal_type j = idx / (nx - leftBC - rightBC);
-        const ordinal_type i = idx % (nx - leftBC - rightBC);
-        const ordinal_type rowIdx = (k + bottomBC)*ny*nx + (j + frontBC)*nx + i + leftBC;
-
-        // Compute rowOffset
-        const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-          + j*numEntriesFrontRow + frontBC*numEntriesBottomFrontRow
-          + (i + 1)*faceStencilLength + leftBC*edgeStencilLength;
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 6) = rowIdx - ny*nx;
-	columns(rowOffset - 5) = rowIdx - nx;
-	columns(rowOffset - 4) = rowIdx - 1;
-	columns(rowOffset - 3) = rowIdx;
-	columns(rowOffset - 2) = rowIdx + 1;
-	columns(rowOffset - 1) = rowIdx + nx;
-
+	// Fill values
+	values(rowOffset - 6) = 0.0;
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 1.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 6) = -1.0;
 	values(rowOffset - 5) = -1.0;
@@ -1243,22 +1376,28 @@ namespace Test {
 
     KOKKOS_INLINE_FUNCTION
     void operator() (const xEdgeFDTag&, const size_type idx) const {
-      if(bottomBC == 1 && frontBC == 1) {
-	// Compute row index
-	const ordinal_type i = idx;
-	const ordinal_type rowIdx = i + leftBC;
+      // Compute row index
+      ordinal_type i = idx;
+      ordinal_type rowIdx = i + 1;
 
-	// Compute rowOffset
-	const size_type rowOffset = (i + 1)*edgeStencilLength + leftBC*cornerStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      size_type rowOffset = (i + 1)*edgeStencilLength + cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 5) = rowIdx - 1;
-	columns(rowOffset - 4) = rowIdx;
-	columns(rowOffset - 3) = rowIdx + 1;
-	columns(rowOffset - 2) = rowIdx + nx;
-	columns(rowOffset - 1) = rowIdx + ny*nx;
-
+      // Fill column indices
+      columns(rowOffset - 5) = rowIdx - 1;
+      columns(rowOffset - 4) = rowIdx;
+      columns(rowOffset - 3) = rowIdx + 1;
+      columns(rowOffset - 2) = rowIdx + nx;
+      columns(rowOffset - 1) = rowIdx + ny*nx;
+      if(bottomBC == 1 || frontBC == 1) {
+	// Fill values
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 1.0;
+	values(rowOffset - 3) = 0.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 5) = -1.0;
 	values(rowOffset - 4) =  4.0;
@@ -1267,24 +1406,30 @@ namespace Test {
 	values(rowOffset - 1) = -1.0;
       }
 
-      if(bottomBC == 1 && backBC == 1) {
-	// Compute row index
-	const ordinal_type j = ny - frontBC - 1;
-	const ordinal_type i = idx;
-	const ordinal_type rowIdx = (j + frontBC)*nx + i + leftBC;
+      // Compute row index
+      ordinal_type j = ny - 2;
+      i = idx;
+      rowIdx = (j + 1)*nx + i + 1;
 
-	// Compute rowOffset
-	const size_type rowOffset = j*numEntriesFrontRow + frontBC*numEntriesBottomFrontRow
-	  + (i + 1)*edgeStencilLength + leftBC*cornerStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      rowOffset = j*numEntriesFrontRow + numEntriesBottomFrontRow
+        + (i + 1)*edgeStencilLength + cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 5) = rowIdx - 1;
-	columns(rowOffset - 4) = rowIdx;
-	columns(rowOffset - 3) = rowIdx + 1;
-	columns(rowOffset - 2) = rowIdx + nx;
-	columns(rowOffset - 1) = rowIdx + ny*nx;
-
+      // Fill column indices
+      columns(rowOffset - 5) = rowIdx - 1;
+      columns(rowOffset - 4) = rowIdx;
+      columns(rowOffset - 3) = rowIdx + 1;
+      columns(rowOffset - 2) = rowIdx + nx;
+      columns(rowOffset - 1) = rowIdx + ny*nx;
+      if(bottomBC == 1 || backBC == 1) {
+	// Fill values
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 1.0;
+	values(rowOffset - 3) = 0.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 5) = -1.0;
 	values(rowOffset - 4) =  4.0;
@@ -1293,24 +1438,30 @@ namespace Test {
 	values(rowOffset - 1) = -1.0;
       }
 
-      if(topBC == 1 && frontBC == 1) {
-	// Compute row index
-	const ordinal_type k = nz - bottomBC - 1;
-	const ordinal_type i = idx;
-	const ordinal_type rowIdx = (k + bottomBC)*ny*nx + i + leftBC;
+      // Compute row index
+      ordinal_type k = nz - 2;
+      i = idx;
+      rowIdx = (k + 1)*ny*nx + i + 1;
 
-	// Compute rowOffset
-	const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-	  + (i + 1)*edgeStencilLength + leftBC*cornerStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + (i + 1)*edgeStencilLength + cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 5) = rowIdx - ny*nx;
-	columns(rowOffset - 4) = rowIdx - 1;
-	columns(rowOffset - 3) = rowIdx;
-	columns(rowOffset - 2) = rowIdx + 1;
-	columns(rowOffset - 1) = rowIdx + nx;
-
+      // Fill column indices
+      columns(rowOffset - 5) = rowIdx - ny*nx;
+      columns(rowOffset - 4) = rowIdx - 1;
+      columns(rowOffset - 3) = rowIdx;
+      columns(rowOffset - 2) = rowIdx + 1;
+      columns(rowOffset - 1) = rowIdx + nx;
+      if(topBC == 1 || frontBC == 1) {
+	// Fill values
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 1.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 5) = -1.0;
 	values(rowOffset - 4) = -1.0;
@@ -1319,26 +1470,32 @@ namespace Test {
 	values(rowOffset - 1) = -1.0;
       }
 
-      if(topBC == 1 && backBC == 1) {
-	// Compute row index
-	const ordinal_type k = nz - bottomBC - 1;
-	const ordinal_type j = ny - frontBC - 1;
-	const ordinal_type i = idx;
-	const ordinal_type rowIdx = (k + bottomBC)*ny*nx + (j + frontBC)*nx + i + leftBC;
+      // Compute row index
+      k = nz - 2;
+      j = ny - 2;
+      i = idx;
+      rowIdx = (k + 1)*ny*nx + (j + 1)*nx + i + 1;
 
-	// Compute rowOffset
-	const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-	  + j*numEntriesFrontRow + frontBC*numEntriesBottomFrontRow
-	  + (i + 1)*edgeStencilLength + leftBC*cornerStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + j*numEntriesFrontRow + numEntriesBottomFrontRow
+        + (i + 1)*edgeStencilLength + cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 5) = rowIdx - ny*nx;
-	columns(rowOffset - 4) = rowIdx - nx;
-	columns(rowOffset - 3) = rowIdx - 1;
-	columns(rowOffset - 2) = rowIdx;
-	columns(rowOffset - 1) = rowIdx + 1;
-
+      // Fill column indices
+      columns(rowOffset - 5) = rowIdx - ny*nx;
+      columns(rowOffset - 4) = rowIdx - nx;
+      columns(rowOffset - 3) = rowIdx - 1;
+      columns(rowOffset - 2) = rowIdx;
+      columns(rowOffset - 1) = rowIdx + 1;
+      if(topBC == 1 || backBC == 1) {
+	// Fill values
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 0.0;
+	values(rowOffset - 2) = 1.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 5) = -1.0;
 	values(rowOffset - 4) = -1.0;
@@ -1350,23 +1507,29 @@ namespace Test {
 
     KOKKOS_INLINE_FUNCTION
     void operator() (const yEdgeFDTag&, const size_type idx) const {
-      if(bottomBC == 1 && leftBC == 1) {
-	// Compute row index
-	const ordinal_type j = idx;
-	const ordinal_type rowIdx = (j + frontBC)*nx;
+      // Compute row index
+      ordinal_type j = idx;
+      ordinal_type rowIdx = (j + 1)*nx;
 
-	// Compute rowOffset
-	const size_type rowOffset = j*numEntriesFrontRow + frontBC*numEntriesBottomFrontRow + edgeStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      size_type rowOffset = j*numEntriesFrontRow + numEntriesBottomFrontRow + edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
 
-	// Fill column indices
-	columns(rowOffset - 5) = rowIdx - nx;
-	columns(rowOffset - 4) = rowIdx;
-	columns(rowOffset - 3) = rowIdx + 1;
-	columns(rowOffset - 2) = rowIdx + nx;
-	columns(rowOffset - 1) = rowIdx + ny*nx;
-
+      // Fill column indices
+      columns(rowOffset - 5) = rowIdx - nx;
+      columns(rowOffset - 4) = rowIdx;
+      columns(rowOffset - 3) = rowIdx + 1;
+      columns(rowOffset - 2) = rowIdx + nx;
+      columns(rowOffset - 1) = rowIdx + ny*nx;
+      if(bottomBC == 1 || leftBC == 1) {
+	// Fill values
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 1.0;
+	values(rowOffset - 3) = 0.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 5) = -1.0;
 	values(rowOffset - 4) =  4.0;
@@ -1375,23 +1538,29 @@ namespace Test {
 	values(rowOffset - 1) = -1.0;
       }
 
-      if(bottomBC == 1 && rightBC == 1) {
-	// Compute row index
-	const ordinal_type j = idx;
-	const ordinal_type i = nx - 1;
-	const ordinal_type rowIdx = (j + frontBC)*nx + i;
+      // Compute row index
+      j = idx;
+      ordinal_type i = nx - 1;
+      rowIdx = (j + 1)*nx + i;
 
-	// Compute rowOffset
-	const size_type rowOffset = (j + 1)*numEntriesFrontRow + frontBC*numEntriesBottomFrontRow;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      rowOffset = (j + 1)*numEntriesFrontRow + numEntriesBottomFrontRow;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 5) = rowIdx - nx;
-	columns(rowOffset - 4) = rowIdx - 1;
-	columns(rowOffset - 3) = rowIdx;
-	columns(rowOffset - 2) = rowIdx + nx;
-	columns(rowOffset - 1) = rowIdx + ny*nx;
-
+      // Fill column indices
+      columns(rowOffset - 5) = rowIdx - nx;
+      columns(rowOffset - 4) = rowIdx - 1;
+      columns(rowOffset - 3) = rowIdx;
+      columns(rowOffset - 2) = rowIdx + nx;
+      columns(rowOffset - 1) = rowIdx + ny*nx;
+      if(bottomBC == 1 || rightBC == 1) {
+	// Fill values
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 1.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 5) = -1.0;
 	values(rowOffset - 4) = -1.0;
@@ -1400,25 +1569,31 @@ namespace Test {
 	values(rowOffset - 1) = -1.0;
       }
 
-      if(topBC == 1 && leftBC == 1) {
-	// Compute row index
-	const ordinal_type k = nz - bottomBC - 1;
-	const ordinal_type j = idx;
-	const ordinal_type rowIdx = (k + bottomBC)*ny*nx + (j + frontBC)*nx;
+      // Compute row index
+      ordinal_type k = nz - 2;
+      j = idx;
+      rowIdx = (k + 1)*ny*nx + (j + 1)*nx;
 
-	// Compute rowOffset
-	const ordinal_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-	  + j*numEntriesFrontRow + frontBC*numEntriesBottomFrontRow
-	  + edgeStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + j*numEntriesFrontRow + numEntriesBottomFrontRow
+        + edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 5) = rowIdx - ny*nx;
-	columns(rowOffset - 4) = rowIdx - 1;
-	columns(rowOffset - 3) = rowIdx;
-	columns(rowOffset - 2) = rowIdx + 1;
-	columns(rowOffset - 1) = rowIdx + nx;
-
+      // Fill column indices
+      columns(rowOffset - 5) = rowIdx - ny*nx;
+      columns(rowOffset - 4) = rowIdx - 1;
+      columns(rowOffset - 3) = rowIdx;
+      columns(rowOffset - 2) = rowIdx + 1;
+      columns(rowOffset - 1) = rowIdx + nx;
+      if(topBC == 1 || leftBC == 1) {
+	// Fill values
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 1.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 5) = -1.0;
 	values(rowOffset - 4) = -1.0;
@@ -1427,25 +1602,31 @@ namespace Test {
 	values(rowOffset - 1) = -1.0;
       }
 
-      if(topBC == 1 && rightBC == 1) {
-	// Compute row index
-	const ordinal_type k = nz - bottomBC - 1;
-	const ordinal_type j = idx;
-	const ordinal_type i = nx - 1;
-	const ordinal_type rowIdx = (k + bottomBC)*ny*nx + (j + frontBC)*nx + i;
+      // Compute row index
+      k = nz - 2;
+      j = idx;
+      i = nx - 1;
+      rowIdx = (k + 1)*ny*nx + (j + 1)*nx + i;
 
-	// Compute rowOffset
-	const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-	  + (j + 1)*numEntriesFrontRow + frontBC*numEntriesBottomFrontRow;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + (j + 1)*numEntriesFrontRow + numEntriesBottomFrontRow;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 5) = rowIdx - ny*nx;
-	columns(rowOffset - 4) = rowIdx - nx;
-	columns(rowOffset - 3) = rowIdx - 1;
-	columns(rowOffset - 2) = rowIdx;
-	columns(rowOffset - 1) = rowIdx + nx;
-
+      // Fill column indices
+      columns(rowOffset - 5) = rowIdx - ny*nx;
+      columns(rowOffset - 4) = rowIdx - nx;
+      columns(rowOffset - 3) = rowIdx - 1;
+      columns(rowOffset - 2) = rowIdx;
+      columns(rowOffset - 1) = rowIdx + nx;
+      if(topBC == 1 || rightBC == 1) {
+	// Fill values
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 0.0;
+	values(rowOffset - 2) = 1.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 5) = -1.0;
 	values(rowOffset - 4) = -1.0;
@@ -1457,23 +1638,29 @@ namespace Test {
 
     KOKKOS_INLINE_FUNCTION
     void operator() (const zEdgeFDTag&, const size_type idx) const {
-      if(frontBC == 1 && leftBC == 1) {
-	// Compute row index
-	const ordinal_type k = idx;
-	const ordinal_type rowIdx = (k + bottomBC)*ny*nx;
+      // Compute row index
+      ordinal_type k = idx;
+      ordinal_type rowIdx = (k + 1)*ny*nx;
 
-	// Compute rowOffset
-	const size_type rowOffset = k*numEntriesPerGridPlane
-	  + bottomBC*numEntriesBottomPlane + edgeStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      size_type rowOffset = k*numEntriesPerGridPlane
+        + numEntriesBottomPlane + edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 5) = rowIdx - ny*nx;
-	columns(rowOffset - 4) = rowIdx;
-	columns(rowOffset - 3) = rowIdx + 1;
-	columns(rowOffset - 2) = rowIdx + nx;
-	columns(rowOffset - 1) = rowIdx + ny*nx;
-
+      // Fill column indices
+      columns(rowOffset - 5) = rowIdx - ny*nx;
+      columns(rowOffset - 4) = rowIdx;
+      columns(rowOffset - 3) = rowIdx + 1;
+      columns(rowOffset - 2) = rowIdx + nx;
+      columns(rowOffset - 1) = rowIdx + ny*nx;
+      if(frontBC == 1 || leftBC == 1) {
+	// Fill values
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 1.0;
+	values(rowOffset - 3) = 0.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 5) = -1.0;
 	values(rowOffset - 4) =  4.0;
@@ -1482,24 +1669,30 @@ namespace Test {
 	values(rowOffset - 1) = -1.0;
       }
 
-      if(frontBC == 1 && rightBC == 1) {
-	// Compute row index
-	const ordinal_type k = idx;
-	const ordinal_type i = nx - leftBC - rightBC;
-	const ordinal_type rowIdx = (k + bottomBC)*ny*nx + i + leftBC;
+      // Compute row index
+      k = idx;
+      ordinal_type i = nx - 2;
+      rowIdx = (k + 1)*ny*nx + i + 1;
 
-	// Compute rowOffset
-	const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-	  + i*faceStencilLength + (leftBC + rightBC)*edgeStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + i*faceStencilLength + 2*edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 5) = rowIdx - ny*nx;
-	columns(rowOffset - 4) = rowIdx - 1;
-	columns(rowOffset - 3) = rowIdx;
-	columns(rowOffset - 2) = rowIdx + nx;
-	columns(rowOffset - 1) = rowIdx + ny*nx;
-
+      // Fill column indices
+      columns(rowOffset - 5) = rowIdx - ny*nx;
+      columns(rowOffset - 4) = rowIdx - 1;
+      columns(rowOffset - 3) = rowIdx;
+      columns(rowOffset - 2) = rowIdx + nx;
+      columns(rowOffset - 1) = rowIdx + ny*nx;
+      if(frontBC == 1 || rightBC == 1) {
+	// Fill values
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 1.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 5) = -1.0;
 	values(rowOffset - 4) = -1.0;
@@ -1508,28 +1701,34 @@ namespace Test {
 	values(rowOffset - 1) = -1.0;
       }
 
-      if(backBC == 1 && leftBC == 1) {
-	// Compute row index
-	const ordinal_type k = idx;
-	const ordinal_type j = ny - frontBC - backBC;
-	const ordinal_type rowIdx = (k + bottomBC)*ny*nx
-	  + (j + frontBC)*nx;
+      // Compute row index
+      k = idx;
+      ordinal_type j = ny - 2;
+      rowIdx = (k + 1)*ny*nx
+        + (j + 1)*nx;
 
-	// Compute rowOffset
-	const size_type rowOffset = k*numEntriesPerGridPlane
-	  + bottomBC*numEntriesBottomPlane
-	  + j*numEntriesPerGridRow + frontBC*numEntriesFrontRow
-	  + edgeStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane
+        + numEntriesBottomPlane
+        + j*numEntriesPerGridRow + numEntriesFrontRow
+        + edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
 
-	// Fill column indices
-	columns(rowOffset - 5) = rowIdx - ny*nx;
-	columns(rowOffset - 4) = rowIdx - nx;
-	columns(rowOffset - 3) = rowIdx;
-	columns(rowOffset - 2) = rowIdx + 1;
-	columns(rowOffset - 1) = rowIdx + ny*nx;
-
+      // Fill column indices
+      columns(rowOffset - 5) = rowIdx - ny*nx;
+      columns(rowOffset - 4) = rowIdx - nx;
+      columns(rowOffset - 3) = rowIdx;
+      columns(rowOffset - 2) = rowIdx + 1;
+      columns(rowOffset - 1) = rowIdx + ny*nx;
+      if(backBC == 1 || leftBC == 1) {
+	// Fill values
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 1.0;
+	values(rowOffset - 2) = 0.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 5) = -1.0;
 	values(rowOffset - 4) = -1.0;
@@ -1538,28 +1737,34 @@ namespace Test {
 	values(rowOffset - 1) = -1.0;
       }
 
-      if(backBC == 1 && rightBC == 1) {
-	// Compute row index
-	const ordinal_type k = idx;
-	const ordinal_type j = ny - frontBC - backBC;
-	const ordinal_type i = nx - leftBC - rightBC;
-	const ordinal_type rowIdx = (k + bottomBC)*ny*nx
-	  + (j + frontBC)*nx + i + leftBC;
+      // Compute row index
+      k = idx;
+      j = ny - 2;
+      i = nx - 2;
+      rowIdx = (k + 1)*ny*nx
+        + (j + 1)*nx + i + 1;
 
-	// Compute rowOffset
-	const size_type rowOffset = k*numEntriesPerGridPlane
-	  + bottomBC*numEntriesBottomPlane
-	  + j*numEntriesPerGridRow + frontBC*numEntriesFrontRow
-	  + i*faceStencilLength + (leftBC + rightBC)*edgeStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane
+        + numEntriesBottomPlane
+        + j*numEntriesPerGridRow + numEntriesFrontRow
+        + i*faceStencilLength + 2*edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 5) = rowIdx - ny*nx;
-	columns(rowOffset - 4) = rowIdx - nx;
-	columns(rowOffset - 3) = rowIdx - 1;
-	columns(rowOffset - 2) = rowIdx;
-	columns(rowOffset - 1) = rowIdx + ny*nx;
-
+      // Fill column indices
+      columns(rowOffset - 5) = rowIdx - ny*nx;
+      columns(rowOffset - 4) = rowIdx - nx;
+      columns(rowOffset - 3) = rowIdx - 1;
+      columns(rowOffset - 2) = rowIdx;
+      columns(rowOffset - 1) = rowIdx + ny*nx;
+      if(backBC == 1 || rightBC == 1) {
+	// Fill values
+	values(rowOffset - 5) = 0.0;
+	values(rowOffset - 4) = 0.0;
+	values(rowOffset - 3) = 0.0;
+	values(rowOffset - 2) = 1.0;
+	values(rowOffset - 1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 5) = -1.0;
 	values(rowOffset - 4) = -1.0;
@@ -1572,182 +1777,209 @@ namespace Test {
     KOKKOS_INLINE_FUNCTION
     void operator() (const cornerFDTag&, const size_type idx) const {
       // Bottom corners
-      if(bottomBC == 1) {
-	if(frontBC == 1) {
-	  if(leftBC == 1) {
-	    const ordinal_type rowIdx = 0;
-	    const size_type rowOffset = cornerStencilLength;
-	    rowmap(rowIdx + 1) = rowOffset;
+      ordinal_type rowIdx = 0;
+      size_type rowOffset = cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	    // Fill column indices
-	    columns(rowOffset - 4) = rowIdx;
-	    columns(rowOffset - 3) = rowIdx + 1;
-	    columns(rowOffset - 2) = rowIdx + nx;
-	    columns(rowOffset - 1) = rowIdx + ny*nx;
-
-	    // Fill values
-	    values(rowOffset - 4) =  3.0;
-	    values(rowOffset - 3) = -1.0;
-	    values(rowOffset - 2) = -1.0;
-	    values(rowOffset - 1) = -1.0;
-	  }
-
-	  if(rightBC == 1) {
-	    const ordinal_type rowIdx = nx - 1;
-	    const size_type rowOffset = numEntriesBottomFrontRow;
-	    rowmap(rowIdx + 1) = rowOffset;
-
-	    // Fill column indices
-	    columns(rowOffset - 4) = rowIdx - 1;
-	    columns(rowOffset - 3) = rowIdx;
-	    columns(rowOffset - 2) = rowIdx + nx;
-	    columns(rowOffset - 1) = rowIdx + ny*nx;
-
-	    // Fill values
-	    values(rowOffset - 4) = -1.0;
-	    values(rowOffset - 3) =  3.0;
-	    values(rowOffset - 2) = -1.0;
-	    values(rowOffset - 1) = -1.0;
-	  }
-	}
-
-	if(backBC == 1) {
-	  if(leftBC == 1) {
-	    const ordinal_type rowIdx = (ny - 1)*nx;
-	    const size_type rowOffset = (ny - frontBC - 1)*numEntriesFrontRow
-	      + frontBC*numEntriesBottomFrontRow + cornerStencilLength;
-	    rowmap(rowIdx + 1) = rowOffset;
-
-	    // Fill column indices
-	    columns(rowOffset - 4) = rowIdx - nx;
-	    columns(rowOffset - 3) = rowIdx;
-	    columns(rowOffset - 2) = rowIdx + 1;
-	    columns(rowOffset - 1) = rowIdx + ny*nx;
-
-	    // Fill values
-	    values(rowOffset - 4) = -1.0;
-	    values(rowOffset - 3) =  3.0;
-	    values(rowOffset - 2) = -1.0;
-	    values(rowOffset - 1) = -1.0;
-	  }
-
-	  if(rightBC == 1) {
-	    const ordinal_type rowIdx = ny*nx - 1;
-	    const size_type rowOffset = numEntriesBottomPlane;
-	    rowmap(rowIdx + 1) = rowOffset;
-
-	    // Fill column indices
-	    columns(rowOffset - 4) = rowIdx - nx;
-	    columns(rowOffset - 3) = rowIdx - 1;
-	    columns(rowOffset - 2) = rowIdx;
-	    columns(rowOffset - 1) = rowIdx + ny*nx;
-
-	    // Fill values
-	    values(rowOffset - 4) = -1.0;
-	    values(rowOffset - 3) = -1.0;
-	    values(rowOffset - 2) =  3.0;
-	    values(rowOffset - 1) = -1.0;
-	  }
-	}
+      // Fill column indices
+      columns(rowOffset - 4) = rowIdx;
+      columns(rowOffset - 3) = rowIdx + 1;
+      columns(rowOffset - 2) = rowIdx + nx;
+      columns(rowOffset - 1) = rowIdx + ny*nx;
+      if(bottomBC == 1 || frontBC == 1 || leftBC == 1) {
+        // Fill values
+        values(rowOffset - 4) = 1.0;
+        values(rowOffset - 3) = 0.0;
+        values(rowOffset - 2) = 0.0;
+        values(rowOffset - 1) = 0.0;
+      } else {
+        // Fill values
+        values(rowOffset - 4) =  3.0;
+        values(rowOffset - 3) = -1.0;
+        values(rowOffset - 2) = -1.0;
+        values(rowOffset - 1) = -1.0;
       }
 
-      // Top corners
-      if(topBC == 1) {
-	if(frontBC == 1) {
-	  if(leftBC == 1) {
-	    const ordinal_type rowIdx = (nz - 1)*ny*nx;
-	    const size_type rowOffset = (nz - bottomBC - 1)*numEntriesPerGridPlane
-	      + bottomBC*numEntriesBottomPlane + cornerStencilLength;
-	    rowmap(rowIdx + 1) = rowOffset;
+      rowIdx = nx - 1;
+      rowOffset = numEntriesBottomFrontRow;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	    // Fill column indices
-	    columns(rowOffset - 4) = rowIdx - ny*nx;
-	    columns(rowOffset - 3) = rowIdx;
-	    columns(rowOffset - 2) = rowIdx + 1;
-	    columns(rowOffset - 1) = rowIdx + nx;
+      // Fill column indices
+      columns(rowOffset - 4) = rowIdx - 1;
+      columns(rowOffset - 3) = rowIdx;
+      columns(rowOffset - 2) = rowIdx + nx;
+      columns(rowOffset - 1) = rowIdx + ny*nx;
+      if(bottomBC == 1 || frontBC == 1 || rightBC == 1) {
+        // Fill values
+        values(rowOffset - 4) = 0.0;
+        values(rowOffset - 3) = 1.0;
+        values(rowOffset - 2) = 0.0;
+        values(rowOffset - 1) = 0.0;
+      } else {
+        // Fill values
+        values(rowOffset - 4) = -1.0;
+        values(rowOffset - 3) =  3.0;
+        values(rowOffset - 2) = -1.0;
+        values(rowOffset - 1) = -1.0;
+      }
 
-	    // Fill values
-	    values(rowOffset - 4) = -1.0;
-	    values(rowOffset - 3) =  3.0;
-	    values(rowOffset - 2) = -1.0;
-	    values(rowOffset - 1) = -1.0;
-	  }
+      rowIdx = (ny - 1)*nx;
+      rowOffset = (ny - 2)*numEntriesFrontRow
+        + numEntriesBottomFrontRow + cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	  if(rightBC == 1) {
-	    const ordinal_type rowIdx = (nz - 1)*ny*nx + nx - 1;
-	    const size_type rowOffset = (nz - bottomBC - 1)*numEntriesPerGridPlane
-	      + bottomBC*numEntriesBottomPlane + numEntriesBottomFrontRow;
-	    rowmap(rowIdx + 1) = rowOffset;
+      // Fill column indices
+      columns(rowOffset - 4) = rowIdx - nx;
+      columns(rowOffset - 3) = rowIdx;
+      columns(rowOffset - 2) = rowIdx + 1;
+      columns(rowOffset - 1) = rowIdx + ny*nx;
+      if(bottomBC == 1 || backBC == 1 || leftBC == 1) {
+        // Fill values
+        values(rowOffset - 4) = 0.0;
+        values(rowOffset - 3) = 1.0;
+        values(rowOffset - 2) = 0.0;
+        values(rowOffset - 1) = 0.0;
+      } else {
+        // Fill values
+        values(rowOffset - 4) = -1.0;
+        values(rowOffset - 3) =  3.0;
+        values(rowOffset - 2) = -1.0;
+        values(rowOffset - 1) = -1.0;
+      }
 
-	    // Fill column indices
-	    columns(rowOffset - 4) = rowIdx - ny*nx;
-	    columns(rowOffset - 3) = rowIdx - 1;
-	    columns(rowOffset - 2) = rowIdx;
-	    columns(rowOffset - 1) = rowIdx + nx;
+      rowIdx = ny*nx - 1;
+      rowOffset = numEntriesBottomPlane;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	    // Fill values
-	    values(rowOffset - 4) = -1.0;
-	    values(rowOffset - 3) = -1.0;
-	    values(rowOffset - 2) =  3.0;
-	    values(rowOffset - 1) = -1.0;
-	  }
-	}
+      // Fill column indices
+      columns(rowOffset - 4) = rowIdx - nx;
+      columns(rowOffset - 3) = rowIdx - 1;
+      columns(rowOffset - 2) = rowIdx;
+      columns(rowOffset - 1) = rowIdx + ny*nx;
+      if(bottomBC == 1 || backBC == 1 || rightBC == 1) {
+        // Fill values
+        values(rowOffset - 4) = 0.0;
+        values(rowOffset - 3) = 0.0;
+        values(rowOffset - 2) = 1.0;
+        values(rowOffset - 1) = 0.0;
+      } else {
+        // Fill values
+        values(rowOffset - 4) = -1.0;
+        values(rowOffset - 3) = -1.0;
+        values(rowOffset - 2) =  3.0;
+        values(rowOffset - 1) = -1.0;
+      }
 
-	if(backBC == 1) {
-	  if(leftBC == 1) {
-	    const ordinal_type rowIdx = nz*ny*nx - nx;
-	    const ordinal_type rowOffset = (nz - bottomBC - 1)*numEntriesPerGridPlane
-	      + bottomBC*numEntriesBottomPlane + (ny - frontBC - 1)*numEntriesFrontRow
-	      + frontBC*numEntriesBottomFrontRow + cornerStencilLength;
-	    rowmap(rowIdx + 1) = rowOffset;
+      rowIdx = (nz - 1)*ny*nx;
+      rowOffset = (nz - 2)*numEntriesPerGridPlane
+        + numEntriesBottomPlane + cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	    // Fill column indices
-	    columns(rowOffset - 4) = rowIdx - ny*nx;
-	    columns(rowOffset - 3) = rowIdx - nx;
-	    columns(rowOffset - 2) = rowIdx;
-	    columns(rowOffset - 1) = rowIdx + 1;
+      // Fill column indices
+      columns(rowOffset - 4) = rowIdx - ny*nx;
+      columns(rowOffset - 3) = rowIdx;
+      columns(rowOffset - 2) = rowIdx + 1;
+      columns(rowOffset - 1) = rowIdx + nx;
+      if(topBC == 1 || frontBC == 1 || leftBC == 1) {
+        // Fill values
+        values(rowOffset - 4) = 0.0;
+        values(rowOffset - 3) = 1.0;
+        values(rowOffset - 2) = 0.0;
+        values(rowOffset - 1) = 0.0;
+      } else {
+        // Fill values
+        values(rowOffset - 4) = -1.0;
+        values(rowOffset - 3) =  3.0;
+        values(rowOffset - 2) = -1.0;
+        values(rowOffset - 1) = -1.0;
+      }
 
-	    // Fill values
-	    values(rowOffset - 4) = -1.0;
-	    values(rowOffset - 3) = -1.0;
-	    values(rowOffset - 2) =  3.0;
-	    values(rowOffset - 1) = -1.0;
-	  }
+      rowIdx = (nz - 1)*ny*nx + nx - 1;
+      rowOffset = (nz - 2)*numEntriesPerGridPlane
+        + numEntriesBottomPlane + numEntriesBottomFrontRow;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	  if(rightBC == 1) {
-	    const ordinal_type rowIdx = nz*ny*nx - 1;
-	    const size_type rowOffset = numEntries;
-	    rowmap(rowIdx + 1) = rowOffset;
+      // Fill column indices
+      columns(rowOffset - 4) = rowIdx - ny*nx;
+      columns(rowOffset - 3) = rowIdx - 1;
+      columns(rowOffset - 2) = rowIdx;
+      columns(rowOffset - 1) = rowIdx + nx;
+      if(topBC == 1 || frontBC == 1 || rightBC == 1) {
+        // Fill values
+        values(rowOffset - 4) = 0.0;
+        values(rowOffset - 3) = 0.0;
+        values(rowOffset - 2) = 1.0;
+        values(rowOffset - 1) = 0.0;
+      } else {
+        // Fill values
+        values(rowOffset - 4) = -1.0;
+        values(rowOffset - 3) = -1.0;
+        values(rowOffset - 2) =  3.0;
+        values(rowOffset - 1) = -1.0;
+      }
 
-	    // Fill column indices
-	    columns(rowOffset - 4) = rowIdx - ny*nx;
-	    columns(rowOffset - 3) = rowIdx - nx;
-	    columns(rowOffset - 2) = rowIdx - 1;
-	    columns(rowOffset - 1) = rowIdx;
+      rowIdx = nz*ny*nx - nx;
+      rowOffset = (nz - 2)*numEntriesPerGridPlane
+        + numEntriesBottomPlane + (ny - 2)*numEntriesFrontRow
+        + numEntriesBottomFrontRow + cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	    // Fill values
-	    values(rowOffset - 4) = -1.0;
-	    values(rowOffset - 3) = -1.0;
-	    values(rowOffset - 2) = -1.0;
-	    values(rowOffset - 1) =  3.0;
-	  }
-	}
+      // Fill column indices
+      columns(rowOffset - 4) = rowIdx - ny*nx;
+      columns(rowOffset - 3) = rowIdx - nx;
+      columns(rowOffset - 2) = rowIdx;
+      columns(rowOffset - 1) = rowIdx + 1;
+      if(topBC == 1 || backBC == 1 || leftBC == 1) {
+        // Fill values
+        values(rowOffset - 4) = 0.0;
+        values(rowOffset - 3) = 0.0;
+        values(rowOffset - 2) = 1.0;
+        values(rowOffset - 1) = 0.0;
+      } else {
+        // Fill values
+        values(rowOffset - 4) = -1.0;
+        values(rowOffset - 3) = -1.0;
+        values(rowOffset - 2) =  3.0;
+        values(rowOffset - 1) = -1.0;
+      }
+
+      rowIdx = nz*ny*nx - 1;
+      rowOffset = numEntries;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 4) = rowIdx - ny*nx;
+      columns(rowOffset - 3) = rowIdx - nx;
+      columns(rowOffset - 2) = rowIdx - 1;
+      columns(rowOffset - 1) = rowIdx;
+      if(topBC == 1 || backBC == 1 || rightBC == 1) {
+        // Fill values
+        values(rowOffset - 4) = 0.0;
+        values(rowOffset - 3) = 0.0;
+        values(rowOffset - 2) = 0.0;
+        values(rowOffset - 1) = 1.0;
+      } else {
+        // Fill values
+        values(rowOffset - 4) = -1.0;
+        values(rowOffset - 3) = -1.0;
+        values(rowOffset - 2) = -1.0;
+        values(rowOffset - 1) =  3.0;
       }
     }
 
     KOKKOS_INLINE_FUNCTION
     void operator() (const interiorFETag&, const size_type idx) const {
       // Compute row index
-      const ordinal_type k   = idx / ((ny - frontBC - backBC)*(nx - leftBC - rightBC));
-      const ordinal_type rem = idx % ((ny - frontBC - backBC)*(nx - leftBC - rightBC));
-      const ordinal_type j   = rem / (nx - leftBC - rightBC);
-      const ordinal_type i   = rem % (nx - leftBC - rightBC);
-      const ordinal_type rowIdx = (k + bottomBC)*ny*nx + (j + frontBC)*nx + i + leftBC;
+      const ordinal_type k   = idx / ((ny - 2)*(nx - 2));
+      const ordinal_type rem = idx % ((ny - 2)*(nx - 2));
+      const ordinal_type j   = rem / (nx - 2);
+      const ordinal_type i   = rem % (nx - 2);
+      const ordinal_type rowIdx = (k + 1)*ny*nx + (j + 1)*nx + i + 1;
 
       // Compute rowOffset
-      const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-        + j*numEntriesPerGridRow + frontBC*numEntriesFrontRow
-        + (i + 1)*interiorStencilLength + leftBC*faceStencilLength;
+      const size_type rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + j*numEntriesPerGridRow + numEntriesFrontRow
+        + (i + 1)*interiorStencilLength + faceStencilLength;
       rowmap(rowIdx + 1) = rowOffset;
 
       // Fill column indices
@@ -1814,38 +2046,57 @@ namespace Test {
       /*******************/
       /*   x == 0 face   */
       /*******************/
+      // Compute row index
+      ordinal_type k = idx / (ny - 2);
+      ordinal_type j = idx % (ny - 2);
+      ordinal_type i = 0;
+      ordinal_type rowIdx = (k + 1)*ny*nx + (j + 1)*nx + i;
+
+      // Compute rowOffset
+      size_type rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + j*numEntriesPerGridRow + numEntriesFrontRow + faceStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 18) = rowIdx - ny*nx - nx;
+      columns(rowOffset - 17) = rowIdx - ny*nx - nx + 1;
+      columns(rowOffset - 16) = rowIdx - ny*nx;
+      columns(rowOffset - 15) = rowIdx - ny*nx + 1;
+      columns(rowOffset - 14) = rowIdx - ny*nx + nx;
+      columns(rowOffset - 13) = rowIdx - ny*nx + nx + 1;
+      columns(rowOffset - 12) = rowIdx - nx;
+      columns(rowOffset - 11) = rowIdx - nx + 1;
+      columns(rowOffset - 10) = rowIdx;
+      columns(rowOffset -  9) = rowIdx + 1;
+      columns(rowOffset -  8) = rowIdx + nx;
+      columns(rowOffset -  7) = rowIdx + nx + 1;
+      columns(rowOffset -  6) = rowIdx + nx*ny - nx;
+      columns(rowOffset -  5) = rowIdx + nx*ny - nx + 1;
+      columns(rowOffset -  4) = rowIdx + nx*ny;
+      columns(rowOffset -  3) = rowIdx + nx*ny + 1;
+      columns(rowOffset -  2) = rowIdx + nx*ny + nx;
+      columns(rowOffset -  1) = rowIdx + nx*ny + nx + 1;
       if(leftBC == 1) {
-        // Compute row index
-        const ordinal_type k = idx / (ny - frontBC - backBC);
-        const ordinal_type j = idx % (ny - frontBC - backBC);
-        const ordinal_type i = 0;
-        const ordinal_type rowIdx = (k + bottomBC)*ny*nx + (j + frontBC)*nx + i;
-
-        // Compute rowOffset
-        const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-          + j*numEntriesPerGridRow + frontBC*numEntriesFrontRow + faceStencilLength;
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 18) = rowIdx - ny*nx - nx;
-	columns(rowOffset - 17) = rowIdx - ny*nx - nx + 1;
-	columns(rowOffset - 16) = rowIdx - ny*nx;
-	columns(rowOffset - 15) = rowIdx - ny*nx + 1;
-	columns(rowOffset - 14) = rowIdx - ny*nx + nx;
-	columns(rowOffset - 13) = rowIdx - ny*nx + nx + 1;
-	columns(rowOffset - 12) = rowIdx - nx;
-	columns(rowOffset - 11) = rowIdx - nx + 1;
-	columns(rowOffset - 10) = rowIdx;
-	columns(rowOffset -  9) = rowIdx + 1;
-	columns(rowOffset -  8) = rowIdx + nx;
-	columns(rowOffset -  7) = rowIdx + nx + 1;
-	columns(rowOffset -  6) = rowIdx + nx*ny - nx;
-	columns(rowOffset -  5) = rowIdx + nx*ny - nx + 1;
-	columns(rowOffset -  4) = rowIdx + nx*ny;
-	columns(rowOffset -  3) = rowIdx + nx*ny + 1;
-	columns(rowOffset -  2) = rowIdx + nx*ny + nx;
-	columns(rowOffset -  1) = rowIdx + nx*ny + nx + 1;
-
+	// Fill values
+	values(rowOffset - 18) = 0.0;
+	values(rowOffset - 17) = 0.0;
+	values(rowOffset - 16) = 0.0;
+	values(rowOffset - 15) = 0.0;
+	values(rowOffset - 14) = 0.0;
+	values(rowOffset - 13) = 0.0;
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 0.0;
+	values(rowOffset - 10) = 1.0;
+	values(rowOffset -  9) = 0.0;
+	values(rowOffset -  8) = 0.0;
+	values(rowOffset -  7) = 0.0;
+	values(rowOffset -  6) = 0.0;
+	values(rowOffset -  5) = 0.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 0.0;
+	values(rowOffset -  2) = 0.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 18) = -1.0;
 	values(rowOffset - 17) = -1.0;
@@ -1870,38 +2121,57 @@ namespace Test {
       /********************/
       /*   x == nx face   */
       /********************/
+      // Compute row index
+      k = idx / (ny - 2);
+      j = idx % (ny - 2);
+      i   = nx - 1;
+      rowIdx = (k + 1)*ny*nx + (j + 1)*nx + i;
+
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + (j + 1)*numEntriesPerGridRow + numEntriesFrontRow;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 18) = rowIdx - ny*nx - nx - 1;
+      columns(rowOffset - 17) = rowIdx - ny*nx - nx;
+      columns(rowOffset - 16) = rowIdx - ny*nx - 1;
+      columns(rowOffset - 15) = rowIdx - ny*nx;
+      columns(rowOffset - 14) = rowIdx - ny*nx + nx - 1;
+      columns(rowOffset - 13) = rowIdx - ny*nx + nx;
+      columns(rowOffset - 12) = rowIdx - nx - 1;
+      columns(rowOffset - 11) = rowIdx - nx;
+      columns(rowOffset - 10) = rowIdx - 1;
+      columns(rowOffset -  9) = rowIdx;
+      columns(rowOffset -  8) = rowIdx + nx - 1;
+      columns(rowOffset -  7) = rowIdx + nx;
+      columns(rowOffset -  6) = rowIdx + nx*ny - nx - 1;
+      columns(rowOffset -  5) = rowIdx + nx*ny - nx;
+      columns(rowOffset -  4) = rowIdx + nx*ny - 1;
+      columns(rowOffset -  3) = rowIdx + nx*ny;
+      columns(rowOffset -  2) = rowIdx + nx*ny + nx - 1;
+      columns(rowOffset -  1) = rowIdx + nx*ny + nx;
       if(rightBC == 1) {
-        // Compute row index
-        const ordinal_type k = idx / (ny - frontBC - backBC);
-        const ordinal_type j = idx % (ny - frontBC - backBC);
-        const ordinal_type i   = nx - 1;
-        const ordinal_type rowIdx = (k + bottomBC)*ny*nx + (j + frontBC)*nx + i;
-
-        // Compute rowOffset
-        const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-          + (j + 1)*numEntriesPerGridRow + frontBC*numEntriesFrontRow;
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 18) = rowIdx - ny*nx - nx - 1;
-	columns(rowOffset - 17) = rowIdx - ny*nx - nx;
-	columns(rowOffset - 16) = rowIdx - ny*nx - 1;
-	columns(rowOffset - 15) = rowIdx - ny*nx;
-	columns(rowOffset - 14) = rowIdx - ny*nx + nx - 1;
-	columns(rowOffset - 13) = rowIdx - ny*nx + nx;
-	columns(rowOffset - 12) = rowIdx - nx - 1;
-	columns(rowOffset - 11) = rowIdx - nx;
-	columns(rowOffset - 10) = rowIdx - 1;
-	columns(rowOffset -  9) = rowIdx;
-	columns(rowOffset -  8) = rowIdx + nx - 1;
-	columns(rowOffset -  7) = rowIdx + nx;
-	columns(rowOffset -  6) = rowIdx + nx*ny - nx - 1;
-	columns(rowOffset -  5) = rowIdx + nx*ny - nx;
-	columns(rowOffset -  4) = rowIdx + nx*ny - 1;
-	columns(rowOffset -  3) = rowIdx + nx*ny;
-	columns(rowOffset -  2) = rowIdx + nx*ny + nx - 1;
-	columns(rowOffset -  1) = rowIdx + nx*ny + nx;
-
+	// Fill values
+	values(rowOffset - 18) = 0.0;
+	values(rowOffset - 17) = 0.0;
+	values(rowOffset - 16) = 0.0;
+	values(rowOffset - 15) = 0.0;
+	values(rowOffset - 14) = 0.0;
+	values(rowOffset - 13) = 0.0;
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 0.0;
+	values(rowOffset - 10) = 0.0;
+	values(rowOffset -  9) = 1.0;
+	values(rowOffset -  8) = 0.0;
+	values(rowOffset -  7) = 0.0;
+	values(rowOffset -  6) = 0.0;
+	values(rowOffset -  5) = 0.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 0.0;
+	values(rowOffset -  2) = 0.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 18) = -1.0;
 	values(rowOffset - 17) = -1.0;
@@ -1929,37 +2199,56 @@ namespace Test {
       /*******************/
       /*   y == 0 face   */
       /*******************/
+      // Compute row index
+      ordinal_type k = idx / (nx - 2);
+      ordinal_type i = idx % (nx - 2);
+      ordinal_type rowIdx = (k + 1)*ny*nx + i + 1;
+
+      // Compute rowOffset
+      size_type rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + (i + 1)*faceStencilLength + edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 18) = rowIdx - ny*nx - 1;
+      columns(rowOffset - 17) = rowIdx - ny*nx;
+      columns(rowOffset - 16) = rowIdx - ny*nx + 1;
+      columns(rowOffset - 15) = rowIdx - ny*nx + nx - 1;
+      columns(rowOffset - 14) = rowIdx - ny*nx + nx;
+      columns(rowOffset - 13) = rowIdx - ny*nx + nx + 1;
+      columns(rowOffset - 12) = rowIdx - 1;
+      columns(rowOffset - 11) = rowIdx;
+      columns(rowOffset - 10) = rowIdx + 1;
+      columns(rowOffset -  9) = rowIdx + nx - 1;
+      columns(rowOffset -  8) = rowIdx + nx;
+      columns(rowOffset -  7) = rowIdx + nx + 1;
+      columns(rowOffset -  6) = rowIdx + nx*ny - 1;
+      columns(rowOffset -  5) = rowIdx + nx*ny;
+      columns(rowOffset -  4) = rowIdx + nx*ny + 1;
+      columns(rowOffset -  3) = rowIdx + nx*ny + nx - 1;
+      columns(rowOffset -  2) = rowIdx + nx*ny + nx;
+      columns(rowOffset -  1) = rowIdx + nx*ny + nx + 1;
       if(frontBC == 1) {
-        // Compute row index
-        const ordinal_type k = idx / (nx - leftBC - rightBC);
-        const ordinal_type i = idx % (nx - leftBC - rightBC);
-        const ordinal_type rowIdx = (k + bottomBC)*ny*nx + i + leftBC;
-
-        // Compute rowOffset
-        const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-          + (i + 1)*faceStencilLength + leftBC*edgeStencilLength;
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 18) = rowIdx - ny*nx - 1;
-	columns(rowOffset - 17) = rowIdx - ny*nx;
-	columns(rowOffset - 16) = rowIdx - ny*nx + 1;
-	columns(rowOffset - 15) = rowIdx - ny*nx + nx - 1;
-	columns(rowOffset - 14) = rowIdx - ny*nx + nx;
-	columns(rowOffset - 13) = rowIdx - ny*nx + nx + 1;
-	columns(rowOffset - 12) = rowIdx - 1;
-	columns(rowOffset - 11) = rowIdx;
-	columns(rowOffset - 10) = rowIdx + 1;
-	columns(rowOffset -  9) = rowIdx + nx - 1;
-	columns(rowOffset -  8) = rowIdx + nx;
-	columns(rowOffset -  7) = rowIdx + nx + 1;
-	columns(rowOffset -  6) = rowIdx + nx*ny - 1;
-	columns(rowOffset -  5) = rowIdx + nx*ny;
-	columns(rowOffset -  4) = rowIdx + nx*ny + 1;
-	columns(rowOffset -  3) = rowIdx + nx*ny + nx - 1;
-	columns(rowOffset -  2) = rowIdx + nx*ny + nx;
-	columns(rowOffset -  1) = rowIdx + nx*ny + nx + 1;
-
+	// Fill values
+	values(rowOffset - 18) = 0.0;
+	values(rowOffset - 17) = 0.0;
+	values(rowOffset - 16) = 0.0;
+	values(rowOffset - 15) = 0.0;
+	values(rowOffset - 14) = 0.0;
+	values(rowOffset - 13) = 0.0;
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 1.0;
+	values(rowOffset - 10) = 0.0;
+	values(rowOffset -  9) = 0.0;
+	values(rowOffset -  8) = 0.0;
+	values(rowOffset -  7) = 0.0;
+	values(rowOffset -  6) = 0.0;
+	values(rowOffset -  5) = 0.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 0.0;
+	values(rowOffset -  2) = 0.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 18) = -1.0;
 	values(rowOffset - 17) =  0.0;
@@ -1984,39 +2273,58 @@ namespace Test {
       /********************/
       /*   y == ny face   */
       /********************/
+      // Compute row index
+      k = idx / (nx - 2);
+      ordinal_type j = ny - 2;
+      i = idx % (nx - 2);
+      rowIdx = (k + 1)*ny*nx + (j + 1)*nx + i + 1;
+
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + j*numEntriesPerGridRow + numEntriesFrontRow
+        + (i + 1)*faceStencilLength + edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 18) = rowIdx - ny*nx - nx - 1;
+      columns(rowOffset - 17) = rowIdx - ny*nx - nx;
+      columns(rowOffset - 16) = rowIdx - ny*nx - 1;
+      columns(rowOffset - 15) = rowIdx - ny*nx - 1;
+      columns(rowOffset - 14) = rowIdx - ny*nx;
+      columns(rowOffset - 13) = rowIdx - ny*nx + 1;
+      columns(rowOffset - 12) = rowIdx - nx - 1;
+      columns(rowOffset - 11) = rowIdx - nx;
+      columns(rowOffset - 10) = rowIdx - nx + 1;
+      columns(rowOffset -  9) = rowIdx - 1;
+      columns(rowOffset -  8) = rowIdx;
+      columns(rowOffset -  7) = rowIdx + 1;
+      columns(rowOffset -  6) = rowIdx + nx*ny - nx - 1;
+      columns(rowOffset -  5) = rowIdx + nx*ny - nx;
+      columns(rowOffset -  4) = rowIdx + nx*ny - nx + 1;
+      columns(rowOffset -  3) = rowIdx + nx*ny - 1;
+      columns(rowOffset -  2) = rowIdx + nx*ny;
+      columns(rowOffset -  1) = rowIdx + nx*ny + 1;
       if(backBC == 1) {
-        // Compute row index
-        const ordinal_type k = idx / (nx - leftBC - rightBC);
-        const ordinal_type j = ny - 1 - frontBC;
-        const ordinal_type i = idx % (nx - leftBC - rightBC);
-        const ordinal_type rowIdx = (k + bottomBC)*ny*nx + (j + frontBC)*nx + i + leftBC;
-
-        // Compute rowOffset
-        const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-          + j*numEntriesPerGridRow + frontBC*numEntriesFrontRow
-          + (i + 1)*faceStencilLength + leftBC*edgeStencilLength;
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 18) = rowIdx - ny*nx - nx - 1;
-	columns(rowOffset - 17) = rowIdx - ny*nx - nx;
-	columns(rowOffset - 16) = rowIdx - ny*nx - 1;
-	columns(rowOffset - 15) = rowIdx - ny*nx - 1;
-	columns(rowOffset - 14) = rowIdx - ny*nx;
-	columns(rowOffset - 13) = rowIdx - ny*nx + 1;
-	columns(rowOffset - 12) = rowIdx - nx - 1;
-	columns(rowOffset - 11) = rowIdx - nx;
-	columns(rowOffset - 10) = rowIdx - nx + 1;
-	columns(rowOffset -  9) = rowIdx - 1;
-	columns(rowOffset -  8) = rowIdx;
-	columns(rowOffset -  7) = rowIdx + 1;
-	columns(rowOffset -  6) = rowIdx + nx*ny - nx - 1;
-	columns(rowOffset -  5) = rowIdx + nx*ny - nx;
-	columns(rowOffset -  4) = rowIdx + nx*ny - nx + 1;
-	columns(rowOffset -  3) = rowIdx + nx*ny - 1;
-	columns(rowOffset -  2) = rowIdx + nx*ny;
-	columns(rowOffset -  1) = rowIdx + nx*ny + 1;
-
+	// Fill values
+	values(rowOffset - 18) = 0.0;
+	values(rowOffset - 17) = 0.0;
+	values(rowOffset - 16) = 0.0;
+	values(rowOffset - 15) = 0.0;
+	values(rowOffset - 14) = 0.0;
+	values(rowOffset - 13) = 0.0;
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 0.0;
+	values(rowOffset - 10) = 0.0;
+	values(rowOffset -  9) = 0.0;
+	values(rowOffset -  8) = 1.0;
+	values(rowOffset -  7) = 0.0;
+	values(rowOffset -  6) = 0.0;
+	values(rowOffset -  5) = 0.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 0.0;
+	values(rowOffset -  2) = 0.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 18) = -1.0;
 	values(rowOffset - 17) = -2.0;
@@ -2044,37 +2352,56 @@ namespace Test {
       /*******************/
       /*   z == 0 face   */
       /*******************/
+      // Compute row index
+      ordinal_type j = idx / (nx - 2);
+      ordinal_type i = idx % (nx - 2);
+      ordinal_type rowIdx = (j + 1)*nx + i + 1;
+
+      // Compute rowOffset
+      size_type rowOffset = j*numEntriesFrontRow + numEntriesBottomFrontRow
+        + (i + 1)*faceStencilLength + edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 18) = rowIdx - nx - 1;
+      columns(rowOffset - 17) = rowIdx - nx;
+      columns(rowOffset - 16) = rowIdx - nx + 1;
+      columns(rowOffset - 15) = rowIdx - 1;
+      columns(rowOffset - 14) = rowIdx;
+      columns(rowOffset - 13) = rowIdx + 1;
+      columns(rowOffset - 12) = rowIdx + nx - 1;
+      columns(rowOffset - 11) = rowIdx + nx;
+      columns(rowOffset - 10) = rowIdx + nx + 1;
+      columns(rowOffset -  9) = rowIdx + nx*ny - nx - 1;
+      columns(rowOffset -  8) = rowIdx + nx*ny - nx;
+      columns(rowOffset -  7) = rowIdx + nx*ny - nx + 1;
+      columns(rowOffset -  6) = rowIdx + nx*ny - 1;
+      columns(rowOffset -  5) = rowIdx + nx*ny;
+      columns(rowOffset -  4) = rowIdx + nx*ny + 1;
+      columns(rowOffset -  3) = rowIdx + nx*ny + nx - 1;
+      columns(rowOffset -  2) = rowIdx + nx*ny + nx;
+      columns(rowOffset -  1) = rowIdx + nx*ny + nx + 1;
       if(bottomBC == 1) {
-        // Compute row index
-        const ordinal_type j = idx / (nx - leftBC - rightBC);
-        const ordinal_type i = idx % (nx - leftBC - rightBC);
-        const ordinal_type rowIdx = (j + frontBC)*nx + i + leftBC;
-
-        // Compute rowOffset
-        const size_type rowOffset = j*numEntriesFrontRow + frontBC*numEntriesBottomFrontRow
-          + (i + 1)*faceStencilLength + leftBC*edgeStencilLength;
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 18) = rowIdx - nx - 1;
-	columns(rowOffset - 17) = rowIdx - nx;
-	columns(rowOffset - 16) = rowIdx - nx + 1;
-	columns(rowOffset - 15) = rowIdx - 1;
-	columns(rowOffset - 14) = rowIdx;
-	columns(rowOffset - 13) = rowIdx + 1;
-	columns(rowOffset - 12) = rowIdx + nx - 1;
-	columns(rowOffset - 11) = rowIdx + nx;
-	columns(rowOffset - 10) = rowIdx + nx + 1;
-	columns(rowOffset -  9) = rowIdx + nx*ny - nx - 1;
-	columns(rowOffset -  8) = rowIdx + nx*ny - nx;
-	columns(rowOffset -  7) = rowIdx + nx*ny - nx + 1;
-	columns(rowOffset -  6) = rowIdx + nx*ny - 1;
-	columns(rowOffset -  5) = rowIdx + nx*ny;
-	columns(rowOffset -  4) = rowIdx + nx*ny + 1;
-	columns(rowOffset -  3) = rowIdx + nx*ny + nx - 1;
-	columns(rowOffset -  2) = rowIdx + nx*ny + nx;
-	columns(rowOffset -  1) = rowIdx + nx*ny + nx + 1;
-
+	// Fill values
+	values(rowOffset - 18) = 0.0;
+	values(rowOffset - 17) = 0.0;
+	values(rowOffset - 16) = 0.0;
+	values(rowOffset - 15) = 0.0;
+	values(rowOffset - 14) = 1.0;
+	values(rowOffset - 13) = 0.0;
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 0.0;
+	values(rowOffset - 10) = 0.0;
+	values(rowOffset -  9) = 0.0;
+	values(rowOffset -  8) = 0.0;
+	values(rowOffset -  7) = 0.0;
+	values(rowOffset -  6) = 0.0;
+	values(rowOffset -  5) = 0.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 0.0;
+	values(rowOffset -  2) = 0.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 18) = -1.0;
 	values(rowOffset - 17) =  0.0;
@@ -2099,39 +2426,58 @@ namespace Test {
       /********************/
       /*   z == nz face   */
       /********************/
+      // Compute row index
+      ordinal_type k = nz - 2;
+      j = idx / (nx - 2);
+      i = idx % (nx - 2);
+      rowIdx = (k + 1)*ny*nx + (j + 1)*nx + i + 1;
+
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + j*numEntriesFrontRow + numEntriesBottomFrontRow
+        + (i + 1)*faceStencilLength + edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
+
+      // Fill column indices
+      columns(rowOffset - 18) = rowIdx - nx*ny - nx - 1;
+      columns(rowOffset - 17) = rowIdx - nx*ny - nx;
+      columns(rowOffset - 16) = rowIdx - nx*ny - nx + 1;
+      columns(rowOffset - 15) = rowIdx - nx*ny - 1;
+      columns(rowOffset - 14) = rowIdx - nx*ny;
+      columns(rowOffset - 13) = rowIdx - nx*ny + 1;
+      columns(rowOffset - 12) = rowIdx - nx*ny + nx - 1;
+      columns(rowOffset - 11) = rowIdx - nx*ny + nx;
+      columns(rowOffset - 10) = rowIdx - nx*ny + nx + 1;
+      columns(rowOffset -  9) = rowIdx - nx - 1;
+      columns(rowOffset -  8) = rowIdx - nx;
+      columns(rowOffset -  7) = rowIdx - nx + 1;
+      columns(rowOffset -  6) = rowIdx - 1;
+      columns(rowOffset -  5) = rowIdx;
+      columns(rowOffset -  4) = rowIdx + 1;
+      columns(rowOffset -  3) = rowIdx + nx - 1;
+      columns(rowOffset -  2) = rowIdx + nx;
+      columns(rowOffset -  1) = rowIdx + nx + 1;
       if(topBC == 1) {
-        // Compute row index
-        const ordinal_type k = nz - bottomBC - 1;
-        const ordinal_type j = idx / (nx - leftBC - rightBC);
-        const ordinal_type i = idx % (nx - leftBC - rightBC);
-        const ordinal_type rowIdx = (k + bottomBC)*ny*nx + (j + frontBC)*nx + i + leftBC;
-
-        // Compute rowOffset
-        const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-          + j*numEntriesFrontRow + frontBC*numEntriesBottomFrontRow
-          + (i + 1)*faceStencilLength + leftBC*edgeStencilLength;
-        rowmap(rowIdx + 1) = rowOffset;
-
-	// Fill column indices
-	columns(rowOffset - 18) = rowIdx - nx*ny - nx - 1;
-	columns(rowOffset - 17) = rowIdx - nx*ny - nx;
-	columns(rowOffset - 16) = rowIdx - nx*ny - nx + 1;
-	columns(rowOffset - 15) = rowIdx - nx*ny - 1;
-	columns(rowOffset - 14) = rowIdx - nx*ny;
-	columns(rowOffset - 13) = rowIdx - nx*ny + 1;
-	columns(rowOffset - 12) = rowIdx - nx*ny + nx - 1;
-	columns(rowOffset - 11) = rowIdx - nx*ny + nx;
-	columns(rowOffset - 10) = rowIdx - nx*ny + nx + 1;
-	columns(rowOffset -  9) = rowIdx - nx - 1;
-	columns(rowOffset -  8) = rowIdx - nx;
-	columns(rowOffset -  7) = rowIdx - nx + 1;
-	columns(rowOffset -  6) = rowIdx - 1;
-	columns(rowOffset -  5) = rowIdx;
-	columns(rowOffset -  4) = rowIdx + 1;
-	columns(rowOffset -  3) = rowIdx + nx - 1;
-	columns(rowOffset -  2) = rowIdx + nx;
-	columns(rowOffset -  1) = rowIdx + nx + 1;
-
+	// Fill values
+	values(rowOffset - 18) = 0.0;
+	values(rowOffset - 17) = 0.0;
+	values(rowOffset - 16) = 0.0;
+	values(rowOffset - 15) = 0.0;
+	values(rowOffset - 14) = 0.0;
+	values(rowOffset - 13) = 0.0;
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 0.0;
+	values(rowOffset - 10) = 0.0;
+	values(rowOffset -  9) = 0.0;
+	values(rowOffset -  8) = 0.0;
+	values(rowOffset -  7) = 0.0;
+	values(rowOffset -  6) = 0.0;
+	values(rowOffset -  5) = 1.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 0.0;
+	values(rowOffset -  2) = 0.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 18) = -1.0;
 	values(rowOffset - 17) = -2.0;
@@ -2157,29 +2503,42 @@ namespace Test {
     KOKKOS_INLINE_FUNCTION
     void operator() (const xEdgeFETag&, const size_type idx) const {
 
-      if(bottomBC == 1 && frontBC == 1) {
-	// Compute row index
-	const ordinal_type i = idx;
-	const ordinal_type rowIdx = i + leftBC;
+      // Compute row index
+      ordinal_type i = idx;
+      ordinal_type rowIdx = i + 1;
 
-	// Compute rowOffset
-	const size_type rowOffset = (i + 1)*edgeStencilLength + leftBC*cornerStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      size_type rowOffset = (i + 1)*edgeStencilLength + cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 12) = rowIdx - 1;
-	columns(rowOffset - 11) = rowIdx;
-	columns(rowOffset - 10) = rowIdx + 1;
-	columns(rowOffset -  9) = rowIdx + nx - 1;
-	columns(rowOffset -  8) = rowIdx + nx;
-	columns(rowOffset -  7) = rowIdx + nx + 1;
-	columns(rowOffset -  6) = rowIdx + nx*ny - 1;
-	columns(rowOffset -  5) = rowIdx + nx*ny;
-	columns(rowOffset -  4) = rowIdx + nx*ny + 1;
-	columns(rowOffset -  3) = rowIdx + nx*ny + nx - 1;
-	columns(rowOffset -  2) = rowIdx + nx*ny + nx;
-	columns(rowOffset -  1) = rowIdx + nx*ny + nx + 1;
-
+      // Fill column indices
+      columns(rowOffset - 12) = rowIdx - 1;
+      columns(rowOffset - 11) = rowIdx;
+      columns(rowOffset - 10) = rowIdx + 1;
+      columns(rowOffset -  9) = rowIdx + nx - 1;
+      columns(rowOffset -  8) = rowIdx + nx;
+      columns(rowOffset -  7) = rowIdx + nx + 1;
+      columns(rowOffset -  6) = rowIdx + nx*ny - 1;
+      columns(rowOffset -  5) = rowIdx + nx*ny;
+      columns(rowOffset -  4) = rowIdx + nx*ny + 1;
+      columns(rowOffset -  3) = rowIdx + nx*ny + nx - 1;
+      columns(rowOffset -  2) = rowIdx + nx*ny + nx;
+      columns(rowOffset -  1) = rowIdx + nx*ny + nx + 1;
+      if(bottomBC == 1 || frontBC == 1) {
+	// Fill values
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 1.0;
+	values(rowOffset - 10) = 0.0;
+	values(rowOffset -  9) = 0.0;
+	values(rowOffset -  8) = 0.0;
+	values(rowOffset -  7) = 0.0;
+	values(rowOffset -  6) = 0.0;
+	values(rowOffset -  5) = 0.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 0.0;
+	values(rowOffset -  2) = 0.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 12) =  0.0;
 	values(rowOffset - 11) =  8.0;
@@ -2195,31 +2554,44 @@ namespace Test {
 	values(rowOffset -  1) = -1.0;
       }
 
-      if(bottomBC == 1 && backBC == 1) {
-	// Compute row index
-	const ordinal_type j = ny - frontBC - 1;
-	const ordinal_type i = idx;
-	const ordinal_type rowIdx = (j + frontBC)*nx + i + leftBC;
+      // Compute row index
+      ordinal_type j = ny - 2;
+      i = idx;
+      rowIdx = (j + 1)*nx + i + 1;
 
-	// Compute rowOffset
-	const size_type rowOffset = j*numEntriesFrontRow + frontBC*numEntriesBottomFrontRow
-	  + (i + 1)*edgeStencilLength + leftBC*cornerStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      rowOffset = j*numEntriesFrontRow + numEntriesBottomFrontRow
+        + (i + 1)*edgeStencilLength + cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 12) = rowIdx - nx - 1;
-	columns(rowOffset - 11) = rowIdx - nx;
-	columns(rowOffset - 10) = rowIdx - nx + 1;
-	columns(rowOffset -  9) = rowIdx - 1;
-	columns(rowOffset -  8) = rowIdx;
-	columns(rowOffset -  7) = rowIdx + 1;
-	columns(rowOffset -  6) = rowIdx + nx*ny - nx - 1;
-	columns(rowOffset -  5) = rowIdx + nx*ny - nx;
-	columns(rowOffset -  4) = rowIdx + nx*ny - nx + 1;
-	columns(rowOffset -  3) = rowIdx + nx*ny - 1;
-	columns(rowOffset -  2) = rowIdx + nx*ny;
-	columns(rowOffset -  1) = rowIdx + nx*ny + 1;
-
+      // Fill column indices
+      columns(rowOffset - 12) = rowIdx - nx - 1;
+      columns(rowOffset - 11) = rowIdx - nx;
+      columns(rowOffset - 10) = rowIdx - nx + 1;
+      columns(rowOffset -  9) = rowIdx - 1;
+      columns(rowOffset -  8) = rowIdx;
+      columns(rowOffset -  7) = rowIdx + 1;
+      columns(rowOffset -  6) = rowIdx + nx*ny - nx - 1;
+      columns(rowOffset -  5) = rowIdx + nx*ny - nx;
+      columns(rowOffset -  4) = rowIdx + nx*ny - nx + 1;
+      columns(rowOffset -  3) = rowIdx + nx*ny - 1;
+      columns(rowOffset -  2) = rowIdx + nx*ny;
+      columns(rowOffset -  1) = rowIdx + nx*ny + 1;
+      if(bottomBC == 1 || backBC == 1) {
+	// Fill values
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 0.0;
+	values(rowOffset - 10) = 0.0;
+	values(rowOffset -  9) = 0.0;
+	values(rowOffset -  8) = 1.0;
+	values(rowOffset -  7) = 0.0;
+	values(rowOffset -  6) = 0.0;
+	values(rowOffset -  5) = 0.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 0.0;
+	values(rowOffset -  2) = 0.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 12) = -1.0;
 	values(rowOffset - 11) =  0.0;
@@ -2235,31 +2607,44 @@ namespace Test {
 	values(rowOffset -  1) = -1.0;
       }
 
-      if(topBC == 1 && frontBC == 1) {
-	// Compute row index
-	const ordinal_type k = nz - bottomBC - 1;
-	const ordinal_type i = idx;
-	const ordinal_type rowIdx = (k + bottomBC)*ny*nx + i + leftBC;
+      // Compute row index
+      ordinal_type k = nz - 2;
+      i = idx;
+      rowIdx = (k + 1)*ny*nx + i + 1;
 
-	// Compute rowOffset
-	const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-	  + (i + 1)*edgeStencilLength + leftBC*cornerStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + (i + 1)*edgeStencilLength + cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 12) = rowIdx - nx*ny - 1;
-	columns(rowOffset - 11) = rowIdx - nx*ny;
-	columns(rowOffset - 10) = rowIdx - nx*ny + 1;
-	columns(rowOffset -  9) = rowIdx - nx*ny + nx - 1;
-	columns(rowOffset -  8) = rowIdx - nx*ny + nx;
-	columns(rowOffset -  7) = rowIdx - nx*ny + nx + 1;
-	columns(rowOffset -  6) = rowIdx - 1;
-	columns(rowOffset -  5) = rowIdx;
-	columns(rowOffset -  4) = rowIdx + 1;
-	columns(rowOffset -  3) = rowIdx + nx - 1;
-	columns(rowOffset -  2) = rowIdx + nx;
-	columns(rowOffset -  1) = rowIdx + nx + 1;
-
+      // Fill column indices
+      columns(rowOffset - 12) = rowIdx - nx*ny - 1;
+      columns(rowOffset - 11) = rowIdx - nx*ny;
+      columns(rowOffset - 10) = rowIdx - nx*ny + 1;
+      columns(rowOffset -  9) = rowIdx - nx*ny + nx - 1;
+      columns(rowOffset -  8) = rowIdx - nx*ny + nx;
+      columns(rowOffset -  7) = rowIdx - nx*ny + nx + 1;
+      columns(rowOffset -  6) = rowIdx - 1;
+      columns(rowOffset -  5) = rowIdx;
+      columns(rowOffset -  4) = rowIdx + 1;
+      columns(rowOffset -  3) = rowIdx + nx - 1;
+      columns(rowOffset -  2) = rowIdx + nx;
+      columns(rowOffset -  1) = rowIdx + nx + 1;
+      if(topBC == 1 || frontBC == 1) {
+	// Fill values
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 0.0;
+	values(rowOffset - 10) = 0.0;
+	values(rowOffset -  9) = 0.0;
+	values(rowOffset -  8) = 0.0;
+	values(rowOffset -  7) = 0.0;
+	values(rowOffset -  6) = 0.0;
+	values(rowOffset -  5) = 1.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 0.0;
+	values(rowOffset -  2) = 0.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 12) = -1.0;
 	values(rowOffset - 11) =  0.0;
@@ -2275,33 +2660,46 @@ namespace Test {
 	values(rowOffset -  1) = -1.0;
       }
 
-      if(topBC == 1 && backBC == 1) {
-	// Compute row index
-	const ordinal_type k = nz - bottomBC - 1;
-	const ordinal_type j = ny - frontBC - 1;
-	const ordinal_type i = idx;
-	const ordinal_type rowIdx = (k + bottomBC)*ny*nx + (j + frontBC)*nx + i + leftBC;
+      // Compute row index
+      k = nz - 2;
+      j = ny - 2;
+      i = idx;
+      rowIdx = (k + 1)*ny*nx + (j + 1)*nx + i + 1;
 
-	// Compute rowOffset
-	const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-	  + j*numEntriesFrontRow + frontBC*numEntriesBottomFrontRow
-	  + (i + 1)*edgeStencilLength + leftBC*cornerStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + j*numEntriesFrontRow + numEntriesBottomFrontRow
+        + (i + 1)*edgeStencilLength + cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 12) = rowIdx - nx*ny - nx - 1;
-	columns(rowOffset - 11) = rowIdx - nx*ny - nx;
-	columns(rowOffset - 10) = rowIdx - nx*ny - nx + 1;
-	columns(rowOffset -  9) = rowIdx - nx*ny - 1;
-	columns(rowOffset -  8) = rowIdx - nx*ny;
-	columns(rowOffset -  7) = rowIdx - nx*ny + 1;
-	columns(rowOffset -  6) = rowIdx - nx - 1;
-	columns(rowOffset -  5) = rowIdx - nx;
-	columns(rowOffset -  4) = rowIdx - nx + 1;
-	columns(rowOffset -  3) = rowIdx - 1;
-	columns(rowOffset -  2) = rowIdx;
-	columns(rowOffset -  1) = rowIdx + 1;
-
+      // Fill column indices
+      columns(rowOffset - 12) = rowIdx - nx*ny - nx - 1;
+      columns(rowOffset - 11) = rowIdx - nx*ny - nx;
+      columns(rowOffset - 10) = rowIdx - nx*ny - nx + 1;
+      columns(rowOffset -  9) = rowIdx - nx*ny - 1;
+      columns(rowOffset -  8) = rowIdx - nx*ny;
+      columns(rowOffset -  7) = rowIdx - nx*ny + 1;
+      columns(rowOffset -  6) = rowIdx - nx - 1;
+      columns(rowOffset -  5) = rowIdx - nx;
+      columns(rowOffset -  4) = rowIdx - nx + 1;
+      columns(rowOffset -  3) = rowIdx - 1;
+      columns(rowOffset -  2) = rowIdx;
+      columns(rowOffset -  1) = rowIdx + 1;
+      if(topBC == 1 || backBC == 1) {
+	// Fill values
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 0.0;
+	values(rowOffset - 10) = 0.0;
+	values(rowOffset -  9) = 0.0;
+	values(rowOffset -  8) = 0.0;
+	values(rowOffset -  7) = 0.0;
+	values(rowOffset -  6) = 0.0;
+	values(rowOffset -  5) = 0.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 0.0;
+	values(rowOffset -  2) = 1.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 12) = -1.0;
 	values(rowOffset - 11) = -2.0;
@@ -2320,29 +2718,42 @@ namespace Test {
 
     KOKKOS_INLINE_FUNCTION
     void operator() (const yEdgeFETag&, const size_type idx) const {
-      if(bottomBC == 1 && leftBC == 1) {
-	// Compute row index
-	const ordinal_type j = idx;
-	const ordinal_type rowIdx = (j + frontBC)*nx;
+      // Compute row index
+      ordinal_type j = idx;
+      ordinal_type rowIdx = (j + 1)*nx;
 
-	// Compute rowOffset
-	const size_type rowOffset = j*numEntriesFrontRow + frontBC*numEntriesBottomFrontRow + edgeStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      size_type rowOffset = j*numEntriesFrontRow + numEntriesBottomFrontRow + edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 12) = rowIdx - nx;
-	columns(rowOffset - 11) = rowIdx - nx + 1;
-	columns(rowOffset - 10) = rowIdx;
-	columns(rowOffset -  9) = rowIdx + 1;
-	columns(rowOffset -  8) = rowIdx + nx;
-	columns(rowOffset -  7) = rowIdx + nx + 1;
-	columns(rowOffset -  6) = rowIdx + nx*ny - nx;
-	columns(rowOffset -  5) = rowIdx + nx*ny - nx + 1;
-	columns(rowOffset -  4) = rowIdx + nx*ny;
-	columns(rowOffset -  3) = rowIdx + nx*ny + 1;
-	columns(rowOffset -  2) = rowIdx + nx*ny + nx;
-	columns(rowOffset -  1) = rowIdx + nx*ny + nx + 1;
-
+      // Fill column indices
+      columns(rowOffset - 12) = rowIdx - nx;
+      columns(rowOffset - 11) = rowIdx - nx + 1;
+      columns(rowOffset - 10) = rowIdx;
+      columns(rowOffset -  9) = rowIdx + 1;
+      columns(rowOffset -  8) = rowIdx + nx;
+      columns(rowOffset -  7) = rowIdx + nx + 1;
+      columns(rowOffset -  6) = rowIdx + nx*ny - nx;
+      columns(rowOffset -  5) = rowIdx + nx*ny - nx + 1;
+      columns(rowOffset -  4) = rowIdx + nx*ny;
+      columns(rowOffset -  3) = rowIdx + nx*ny + 1;
+      columns(rowOffset -  2) = rowIdx + nx*ny + nx;
+      columns(rowOffset -  1) = rowIdx + nx*ny + nx + 1;
+      if(bottomBC == 1 || leftBC == 1) {
+	// Fill values
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 0.0;
+	values(rowOffset - 10) = 1.0;
+	values(rowOffset -  9) = 0.0;
+	values(rowOffset -  8) = 0.0;
+	values(rowOffset -  7) = 0.0;
+	values(rowOffset -  6) = 0.0;
+	values(rowOffset -  5) = 0.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 0.0;
+	values(rowOffset -  2) = 0.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 12) =  0.0;
 	values(rowOffset - 11) = -1.0;
@@ -2358,30 +2769,43 @@ namespace Test {
 	values(rowOffset -  1) = -1.0;
       }
 
-      if(bottomBC == 1 && rightBC == 1) {
-	// Compute row index
-	const ordinal_type j = idx;
-	const ordinal_type i = nx - 1;
-	const ordinal_type rowIdx = (j + frontBC)*nx + i;
+      // Compute row index
+      j = idx;
+      ordinal_type i = nx - 1;
+      rowIdx = (j + 1)*nx + i;
 
-	// Compute rowOffset
-	const size_type rowOffset = (j + 1)*numEntriesFrontRow + frontBC*numEntriesBottomFrontRow;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      rowOffset = (j + 1)*numEntriesFrontRow + numEntriesBottomFrontRow;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 12) = rowIdx - nx - 1;
-	columns(rowOffset - 11) = rowIdx - nx;
-	columns(rowOffset - 10) = rowIdx - 1;
-	columns(rowOffset -  9) = rowIdx;
-	columns(rowOffset -  8) = rowIdx + nx - 1;
-	columns(rowOffset -  7) = rowIdx + nx;
-	columns(rowOffset -  6) = rowIdx + nx*ny - nx - 1;
-	columns(rowOffset -  5) = rowIdx + nx*ny - nx;
-	columns(rowOffset -  4) = rowIdx + nx*ny - 1;
-	columns(rowOffset -  3) = rowIdx + nx*ny;
-	columns(rowOffset -  2) = rowIdx + nx*ny + nx - 1;
-	columns(rowOffset -  1) = rowIdx + nx*ny + nx;
-
+      // Fill column indices
+      columns(rowOffset - 12) = rowIdx - nx - 1;
+      columns(rowOffset - 11) = rowIdx - nx;
+      columns(rowOffset - 10) = rowIdx - 1;
+      columns(rowOffset -  9) = rowIdx;
+      columns(rowOffset -  8) = rowIdx + nx - 1;
+      columns(rowOffset -  7) = rowIdx + nx;
+      columns(rowOffset -  6) = rowIdx + nx*ny - nx - 1;
+      columns(rowOffset -  5) = rowIdx + nx*ny - nx;
+      columns(rowOffset -  4) = rowIdx + nx*ny - 1;
+      columns(rowOffset -  3) = rowIdx + nx*ny;
+      columns(rowOffset -  2) = rowIdx + nx*ny + nx - 1;
+      columns(rowOffset -  1) = rowIdx + nx*ny + nx;
+      if(bottomBC == 1 || rightBC == 1) {
+	// Fill values
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 0.0;
+	values(rowOffset - 10) = 0.0;
+	values(rowOffset -  9) = 0.0;
+	values(rowOffset -  8) = 0.0;
+	values(rowOffset -  7) = 0.0;
+	values(rowOffset -  6) = 0.0;
+	values(rowOffset -  5) = 0.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 1.0;
+	values(rowOffset -  2) = 0.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 12) = -1.0;
 	values(rowOffset - 11) = -1.0;
@@ -2397,32 +2821,45 @@ namespace Test {
 	values(rowOffset -  1) =  0.0;
       }
 
-      if(topBC == 1 && leftBC == 1) {
-	// Compute row index
-	const ordinal_type k = nz - bottomBC - 1;
-	const ordinal_type j = idx;
-	const ordinal_type rowIdx = (k + bottomBC)*ny*nx + (j + frontBC)*nx;
+      // Compute row index
+      ordinal_type k = nz - 2;
+      j = idx;
+      rowIdx = (k + 1)*ny*nx + (j + 1)*nx;
 
-	// Compute rowOffset
-	const ordinal_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-	  + j*numEntriesFrontRow + frontBC*numEntriesBottomFrontRow
-	  + edgeStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + j*numEntriesFrontRow + numEntriesBottomFrontRow
+        + edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 12) = rowIdx - nx*ny - 1;
-	columns(rowOffset - 11) = rowIdx - nx*ny;
-	columns(rowOffset - 10) = rowIdx - nx*ny + 1;
-	columns(rowOffset -  9) = rowIdx - nx*ny + nx - 1;
-	columns(rowOffset -  8) = rowIdx - nx*ny + nx;
-	columns(rowOffset -  7) = rowIdx - nx*ny + nx + 1;
-	columns(rowOffset -  6) = rowIdx - 1;
-	columns(rowOffset -  5) = rowIdx;
-	columns(rowOffset -  4) = rowIdx + 1;
-	columns(rowOffset -  3) = rowIdx + nx - 1;
-	columns(rowOffset -  2) = rowIdx + nx;
-	columns(rowOffset -  1) = rowIdx + nx + 1;
-
+      // Fill column indices
+      columns(rowOffset - 12) = rowIdx - nx*ny - 1;
+      columns(rowOffset - 11) = rowIdx - nx*ny;
+      columns(rowOffset - 10) = rowIdx - nx*ny + 1;
+      columns(rowOffset -  9) = rowIdx - nx*ny + nx - 1;
+      columns(rowOffset -  8) = rowIdx - nx*ny + nx;
+      columns(rowOffset -  7) = rowIdx - nx*ny + nx + 1;
+      columns(rowOffset -  6) = rowIdx - 1;
+      columns(rowOffset -  5) = rowIdx;
+      columns(rowOffset -  4) = rowIdx + 1;
+      columns(rowOffset -  3) = rowIdx + nx - 1;
+      columns(rowOffset -  2) = rowIdx + nx;
+      columns(rowOffset -  1) = rowIdx + nx + 1;
+      if(topBC == 1 || leftBC == 1) {
+	// Fill values
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 0.0;
+	values(rowOffset - 10) = 0.0;
+	values(rowOffset -  9) = 0.0;
+	values(rowOffset -  8) = 0.0;
+	values(rowOffset -  7) = 0.0;
+	values(rowOffset -  6) = 0.0;
+	values(rowOffset -  5) = 1.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 0.0;
+	values(rowOffset -  2) = 0.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 12) = -1.0;
 	values(rowOffset - 11) =  0.0;
@@ -2438,32 +2875,45 @@ namespace Test {
 	values(rowOffset -  1) = -1.0;
       }
 
-      if(topBC == 1 && rightBC == 1) {
-	// Compute row index
-	const ordinal_type k = nz - bottomBC - 1;
-	const ordinal_type j = idx;
-	const ordinal_type i = nx - 1;
-	const ordinal_type rowIdx = (k + bottomBC)*ny*nx + (j + frontBC)*nx + i;
+      // Compute row index
+      k = nz - 2;
+      j = idx;
+      i = nx - 1;
+      rowIdx = (k + 1)*ny*nx + (j + 1)*nx + i;
 
-	// Compute rowOffset
-	const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-	  + (j + 1)*numEntriesFrontRow + frontBC*numEntriesBottomFrontRow;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + (j + 1)*numEntriesFrontRow + numEntriesBottomFrontRow;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 12) = rowIdx - nx*ny - nx - 1;
-	columns(rowOffset - 11) = rowIdx - nx*ny - nx;
-	columns(rowOffset - 10) = rowIdx - nx*ny - 1;
-	columns(rowOffset -  9) = rowIdx - nx*ny;
-	columns(rowOffset -  8) = rowIdx - nx*ny + nx - 1;
-	columns(rowOffset -  7) = rowIdx - nx*ny + nx;
-	columns(rowOffset -  6) = rowIdx - nx - 1;
-	columns(rowOffset -  5) = rowIdx - nx;
-	columns(rowOffset -  4) = rowIdx - 1;
-	columns(rowOffset -  3) = rowIdx;
-	columns(rowOffset -  2) = rowIdx + nx - 1;
-	columns(rowOffset -  1) = rowIdx + nx;
-
+      // Fill column indices
+      columns(rowOffset - 12) = rowIdx - nx*ny - nx - 1;
+      columns(rowOffset - 11) = rowIdx - nx*ny - nx;
+      columns(rowOffset - 10) = rowIdx - nx*ny - 1;
+      columns(rowOffset -  9) = rowIdx - nx*ny;
+      columns(rowOffset -  8) = rowIdx - nx*ny + nx - 1;
+      columns(rowOffset -  7) = rowIdx - nx*ny + nx;
+      columns(rowOffset -  6) = rowIdx - nx - 1;
+      columns(rowOffset -  5) = rowIdx - nx;
+      columns(rowOffset -  4) = rowIdx - 1;
+      columns(rowOffset -  3) = rowIdx;
+      columns(rowOffset -  2) = rowIdx + nx - 1;
+      columns(rowOffset -  1) = rowIdx + nx;
+      if(topBC == 1 || rightBC == 1) {
+	// Fill values
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 0.0;
+	values(rowOffset - 10) = 0.0;
+	values(rowOffset -  9) = 0.0;
+	values(rowOffset -  8) = 0.0;
+	values(rowOffset -  7) = 0.0;
+	values(rowOffset -  6) = 0.0;
+	values(rowOffset -  5) = 0.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 1.0;
+	values(rowOffset -  2) = 0.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 12) = -1.0;
 	values(rowOffset - 11) = -1.0;
@@ -2482,44 +2932,43 @@ namespace Test {
 
     KOKKOS_INLINE_FUNCTION
     void operator() (const zEdgeFETag&, const size_type idx) const {
-      if(frontBC == 1 && leftBC == 1) {
-	// Compute row index
-	const ordinal_type k = idx;
-	const ordinal_type rowIdx = (k + bottomBC)*ny*nx;
+      // Compute row index
+      ordinal_type k = idx;
+      ordinal_type rowIdx = (k + 1)*ny*nx;
 
-	// Compute rowOffset
-	const size_type rowOffset = k*numEntriesPerGridPlane
-	  + bottomBC*numEntriesBottomPlane + edgeStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      size_type rowOffset = k*numEntriesPerGridPlane
+        + numEntriesBottomPlane + edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 5) = rowIdx - ny*nx;
-	columns(rowOffset - 4) = rowIdx;
-	columns(rowOffset - 3) = rowIdx + 1;
-	columns(rowOffset - 2) = rowIdx + nx;
-	columns(rowOffset - 1) = rowIdx + ny*nx;
-
+      // Fill column indices
+      columns(rowOffset - 12) = rowIdx - nx*ny;
+      columns(rowOffset - 11) = rowIdx - nx*ny + 1;
+      columns(rowOffset - 10) = rowIdx - nx*ny + nx;
+      columns(rowOffset -  9) = rowIdx - nx*ny + nx + 1;
+      columns(rowOffset -  8) = rowIdx;
+      columns(rowOffset -  7) = rowIdx + 1;
+      columns(rowOffset -  6) = rowIdx + nx;
+      columns(rowOffset -  5) = rowIdx + nx + 1;
+      columns(rowOffset -  4) = rowIdx + ny*nx;
+      columns(rowOffset -  3) = rowIdx + ny*nx + 1;
+      columns(rowOffset -  2) = rowIdx + ny*nx + nx;
+      columns(rowOffset -  1) = rowIdx + ny*nx + nx + 1;
+      if(frontBC == 1 || leftBC == 1) {
 	// Fill values
-	values(rowOffset - 5) = -1.0;
-	values(rowOffset - 4) =  4.0;
-	values(rowOffset - 3) = -1.0;
-	values(rowOffset - 2) = -1.0;
-	values(rowOffset - 1) = -1.0;
-
-	// Fill column indices
-	columns(rowOffset - 12) = rowIdx - nx*ny;
-	columns(rowOffset - 11) = rowIdx - nx*ny + 1;
-	columns(rowOffset - 10) = rowIdx - nx*ny + nx;
-	columns(rowOffset -  9) = rowIdx - nx*ny + nx + 1;
-	columns(rowOffset -  8) = rowIdx;
-	columns(rowOffset -  7) = rowIdx + 1;
-	columns(rowOffset -  6) = rowIdx + nx;
-	columns(rowOffset -  5) = rowIdx + nx + 1;
-	columns(rowOffset -  4) = rowIdx + ny*nx;
-	columns(rowOffset -  3) = rowIdx + ny*nx + 1;
-	columns(rowOffset -  2) = rowIdx + ny*nx + nx;
-	columns(rowOffset -  1) = rowIdx + ny*nx + nx + 1;
-
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 0.0;
+	values(rowOffset - 10) = 0.0;
+	values(rowOffset -  9) = 0.0;
+	values(rowOffset -  8) = 1.0;
+	values(rowOffset -  7) = 0.0;
+	values(rowOffset -  6) = 0.0;
+	values(rowOffset -  5) = 0.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 0.0;
+	values(rowOffset -  2) = 0.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 12) =  0.0;
 	values(rowOffset - 11) = -1.0;
@@ -2535,45 +2984,44 @@ namespace Test {
 	values(rowOffset -  1) = -1.0;
       }
 
-      if(frontBC == 1 && rightBC == 1) {
-	// Compute row index
-	const ordinal_type k = idx;
-	const ordinal_type i = nx - leftBC - rightBC;
-	const ordinal_type rowIdx = (k + bottomBC)*ny*nx + i + leftBC;
+      // Compute row index
+      k = idx;
+      ordinal_type i = nx - 2;
+      rowIdx = (k + 1)*ny*nx + i + 1;
 
-	// Compute rowOffset
-	const size_type rowOffset = k*numEntriesPerGridPlane + bottomBC*numEntriesBottomPlane
-	  + i*faceStencilLength + (leftBC + rightBC)*edgeStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane + numEntriesBottomPlane
+        + i*faceStencilLength + 2*edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 5) = rowIdx - ny*nx;
-	columns(rowOffset - 4) = rowIdx - 1;
-	columns(rowOffset - 3) = rowIdx;
-	columns(rowOffset - 2) = rowIdx + nx;
-	columns(rowOffset - 1) = rowIdx + ny*nx;
-
+      // Fill column indices
+      columns(rowOffset - 12) = rowIdx - nx*ny - 1;
+      columns(rowOffset - 11) = rowIdx - nx*ny;
+      columns(rowOffset - 10) = rowIdx - nx*ny + nx - 1;
+      columns(rowOffset -  9) = rowIdx - nx*ny + nx;
+      columns(rowOffset -  8) = rowIdx - 1;
+      columns(rowOffset -  7) = rowIdx;
+      columns(rowOffset -  6) = rowIdx + nx - 1;
+      columns(rowOffset -  5) = rowIdx + nx;
+      columns(rowOffset -  4) = rowIdx + ny*nx - 1;
+      columns(rowOffset -  3) = rowIdx + ny*nx;
+      columns(rowOffset -  2) = rowIdx + ny*nx + nx - 1;
+      columns(rowOffset -  1) = rowIdx + ny*nx + nx;
+      if(frontBC == 1 || rightBC == 1) {
 	// Fill values
-	values(rowOffset - 5) = -1.0;
-	values(rowOffset - 4) = -1.0;
-	values(rowOffset - 3) =  4.0;
-	values(rowOffset - 2) = -1.0;
-	values(rowOffset - 1) = -1.0;
-
-	// Fill column indices
-	columns(rowOffset - 12) = rowIdx - nx*ny - 1;
-	columns(rowOffset - 11) = rowIdx - nx*ny;
-	columns(rowOffset - 10) = rowIdx - nx*ny + nx - 1;
-	columns(rowOffset -  9) = rowIdx - nx*ny + nx;
-	columns(rowOffset -  8) = rowIdx - 1;
-	columns(rowOffset -  7) = rowIdx;
-	columns(rowOffset -  6) = rowIdx + nx - 1;
-	columns(rowOffset -  5) = rowIdx + nx;
-	columns(rowOffset -  4) = rowIdx + ny*nx - 1;
-	columns(rowOffset -  3) = rowIdx + ny*nx;
-	columns(rowOffset -  2) = rowIdx + ny*nx + nx - 1;
-	columns(rowOffset -  1) = rowIdx + ny*nx + nx;
-
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 0.0;
+	values(rowOffset - 10) = 0.0;
+	values(rowOffset -  9) = 0.0;
+	values(rowOffset -  8) = 0.0;
+	values(rowOffset -  7) = 1.0;
+	values(rowOffset -  6) = 0.0;
+	values(rowOffset -  5) = 0.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 0.0;
+	values(rowOffset -  2) = 0.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 12) = -1.0;
 	values(rowOffset - 11) =  0.0;
@@ -2589,34 +3037,18 @@ namespace Test {
 	values(rowOffset -  1) = -1.0;
       }
 
-      if(backBC == 1 && leftBC == 1) {
 	// Compute row index
-	const ordinal_type k = idx;
-	const ordinal_type j = ny - frontBC - backBC;
-	const ordinal_type rowIdx = (k + bottomBC)*ny*nx
-	  + (j + frontBC)*nx;
+	k = idx;
+	ordinal_type j = ny - 2;
+	rowIdx = (k + 1)*ny*nx
+	  + (j + 1)*nx;
 
 	// Compute rowOffset
-	const size_type rowOffset = k*numEntriesPerGridPlane
-	  + bottomBC*numEntriesBottomPlane
-	  + j*numEntriesPerGridRow + frontBC*numEntriesFrontRow
+	rowOffset = k*numEntriesPerGridPlane
+	  + numEntriesBottomPlane
+	  + j*numEntriesPerGridRow + numEntriesFrontRow
 	  + edgeStencilLength;
 	rowmap(rowIdx + 1) = rowOffset;
-
-
-	// Fill column indices
-	columns(rowOffset - 5) = rowIdx - ny*nx;
-	columns(rowOffset - 4) = rowIdx - nx;
-	columns(rowOffset - 3) = rowIdx;
-	columns(rowOffset - 2) = rowIdx + 1;
-	columns(rowOffset - 1) = rowIdx + ny*nx;
-
-	// Fill values
-	values(rowOffset - 5) = -1.0;
-	values(rowOffset - 4) = -1.0;
-	values(rowOffset - 3) =  4.0;
-	values(rowOffset - 2) = -1.0;
-	values(rowOffset - 1) = -1.0;
 
 	// Fill column indices
 	columns(rowOffset - 12) = rowIdx - nx*ny - nx;
@@ -2631,7 +3063,21 @@ namespace Test {
 	columns(rowOffset -  3) = rowIdx + ny*nx - nx + 1;
 	columns(rowOffset -  2) = rowIdx + ny*nx;
 	columns(rowOffset -  1) = rowIdx + ny*nx + 1;
-
+      if(backBC == 1 || leftBC == 1) {
+	// Fill values
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 0.0;
+	values(rowOffset - 10) = 0.0;
+	values(rowOffset -  9) = 0.0;
+	values(rowOffset -  8) = 0.0;
+	values(rowOffset -  7) = 0.0;
+	values(rowOffset -  6) = 1.0;
+	values(rowOffset -  5) = 0.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 0.0;
+	values(rowOffset -  2) = 0.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 12) = -1.0;
 	values(rowOffset - 11) = -1.0;
@@ -2647,49 +3093,47 @@ namespace Test {
 	values(rowOffset -  1) = -1.0;
       }
 
-      if(backBC == 1 && rightBC == 1) {
-	// Compute row index
-	const ordinal_type k = idx;
-	const ordinal_type j = ny - frontBC - backBC;
-	const ordinal_type i = nx - leftBC - rightBC;
-	const ordinal_type rowIdx = (k + bottomBC)*ny*nx
-	  + (j + frontBC)*nx + i + leftBC;
+      // Compute row index
+      k = idx;
+      j = ny - 2;
+      i = nx - 2;
+      rowIdx = (k + 1)*ny*nx + (j + 1)*nx + i + 1;
 
-	// Compute rowOffset
-	const size_type rowOffset = k*numEntriesPerGridPlane
-	  + bottomBC*numEntriesBottomPlane
-	  + j*numEntriesPerGridRow + frontBC*numEntriesFrontRow
-	  + i*faceStencilLength + (leftBC + rightBC)*edgeStencilLength;
-	rowmap(rowIdx + 1) = rowOffset;
+      // Compute rowOffset
+      rowOffset = k*numEntriesPerGridPlane
+        + numEntriesBottomPlane
+        + j*numEntriesPerGridRow + numEntriesFrontRow
+        + i*faceStencilLength + 2*edgeStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	// Fill column indices
-	columns(rowOffset - 5) = rowIdx - ny*nx;
-	columns(rowOffset - 4) = rowIdx - nx;
-	columns(rowOffset - 3) = rowIdx - 1;
-	columns(rowOffset - 2) = rowIdx;
-	columns(rowOffset - 1) = rowIdx + ny*nx;
-
+      // Fill column indices
+      columns(rowOffset - 12) = rowIdx - nx*ny - nx - 1;
+      columns(rowOffset - 11) = rowIdx - nx*ny - nx;
+      columns(rowOffset - 10) = rowIdx - nx*ny - 1;
+      columns(rowOffset -  9) = rowIdx - nx*ny;
+      columns(rowOffset -  8) = rowIdx - nx - 1;
+      columns(rowOffset -  7) = rowIdx - nx;
+      columns(rowOffset -  6) = rowIdx - 1;
+      columns(rowOffset -  5) = rowIdx;
+      columns(rowOffset -  4) = rowIdx + ny*nx - nx - 1;
+      columns(rowOffset -  3) = rowIdx + ny*nx - nx;
+      columns(rowOffset -  2) = rowIdx + ny*nx - 1;
+      columns(rowOffset -  1) = rowIdx + ny*nx;
+      if(backBC == 1 || rightBC == 1) {
 	// Fill values
-	values(rowOffset - 5) = -1.0;
-	values(rowOffset - 4) = -1.0;
-	values(rowOffset - 3) = -1.0;
-	values(rowOffset - 2) =  4.0;
-	values(rowOffset - 1) = -1.0;
-
-	// Fill column indices
-	columns(rowOffset - 12) = rowIdx - nx*ny - nx - 1;
-	columns(rowOffset - 11) = rowIdx - nx*ny - nx;
-	columns(rowOffset - 10) = rowIdx - nx*ny - 1;
-	columns(rowOffset -  9) = rowIdx - nx*ny;
-	columns(rowOffset -  8) = rowIdx - nx - 1;
-	columns(rowOffset -  7) = rowIdx - nx;
-	columns(rowOffset -  6) = rowIdx - 1;
-	columns(rowOffset -  5) = rowIdx;
-	columns(rowOffset -  4) = rowIdx + ny*nx - nx - 1;
-	columns(rowOffset -  3) = rowIdx + ny*nx - nx;
-	columns(rowOffset -  2) = rowIdx + ny*nx - 1;
-	columns(rowOffset -  1) = rowIdx + ny*nx;
-
+	values(rowOffset - 12) = 0.0;
+	values(rowOffset - 11) = 0.0;
+	values(rowOffset - 10) = 0.0;
+	values(rowOffset -  9) = 0.0;
+	values(rowOffset -  8) = 0.0;
+	values(rowOffset -  7) = 0.0;
+	values(rowOffset -  6) = 0.0;
+	values(rowOffset -  5) = 1.0;
+	values(rowOffset -  4) = 0.0;
+	values(rowOffset -  3) = 0.0;
+	values(rowOffset -  2) = 0.0;
+	values(rowOffset -  1) = 0.0;
+      } else {
 	// Fill values
 	values(rowOffset - 12) = -1.0;
 	values(rowOffset - 11) = -1.0;
@@ -2709,230 +3153,290 @@ namespace Test {
     KOKKOS_INLINE_FUNCTION
     void operator() (const cornerFETag&, const size_type idx) const {
       // Bottom corners
-      if(bottomBC == 1) {
-	if(frontBC == 1) {
-	  if(leftBC == 1) {
-	    const ordinal_type rowIdx = 0;
-	    const size_type rowOffset = cornerStencilLength;
-	    rowmap(rowIdx + 1) = rowOffset;
+      ordinal_type rowIdx = 0;
+      size_type rowOffset = cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	    // Fill column indices
-	    columns(rowOffset -  8) = rowIdx;
-	    columns(rowOffset -  7) = rowIdx + 1;
-	    columns(rowOffset -  6) = rowIdx + nx;
-	    columns(rowOffset -  5) = rowIdx + nx + 1;
-	    columns(rowOffset -  4) = rowIdx + ny*nx;
-	    columns(rowOffset -  3) = rowIdx + ny*nx + 1;
-	    columns(rowOffset -  2) = rowIdx + ny*nx + nx;
-	    columns(rowOffset -  1) = rowIdx + ny*nx + nx + 1;
+      // Fill column indices
+      columns(rowOffset -  8) = rowIdx;
+      columns(rowOffset -  7) = rowIdx + 1;
+      columns(rowOffset -  6) = rowIdx + nx;
+      columns(rowOffset -  5) = rowIdx + nx + 1;
+      columns(rowOffset -  4) = rowIdx + ny*nx;
+      columns(rowOffset -  3) = rowIdx + ny*nx + 1;
+      columns(rowOffset -  2) = rowIdx + ny*nx + nx;
+      columns(rowOffset -  1) = rowIdx + ny*nx + nx + 1;
+      if(bottomBC == 1 || frontBC == 1 || leftBC == 1) {
+        // Fill values
+        values(rowOffset -  8) = 1.0;
+        values(rowOffset -  7) = 0.0;
+        values(rowOffset -  6) = 0.0;
+        values(rowOffset -  5) = 0.0;
+        values(rowOffset -  4) = 0.0;
+        values(rowOffset -  3) = 0.0;
+        values(rowOffset -  2) = 0.0;
+        values(rowOffset -  1) = 0.0;
+      } else {
+        // Fill values
+        values(rowOffset -  8) =  4.0;
+        values(rowOffset -  7) =  0.0;
+        values(rowOffset -  6) =  0.0;
+        values(rowOffset -  5) = -1.0;
+        values(rowOffset -  4) =  0.0;
+        values(rowOffset -  3) = -1.0;
+        values(rowOffset -  2) = -1.0;
+        values(rowOffset -  1) = -1.0;
+      }
 
-	    // Fill values
-	    values(rowOffset -  8) =  4.0;
-	    values(rowOffset -  7) =  0.0;
-	    values(rowOffset -  6) =  0.0;
-	    values(rowOffset -  5) = -1.0;
-	    values(rowOffset -  4) =  0.0;
-	    values(rowOffset -  3) = -1.0;
-	    values(rowOffset -  2) = -1.0;
-	    values(rowOffset -  1) = -1.0;
-	  }
+      rowIdx = nx - 1;
+      rowOffset = numEntriesBottomFrontRow;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	  if(rightBC == 1) {
-	    const ordinal_type rowIdx = nx - 1;
-	    const size_type rowOffset = numEntriesBottomFrontRow;
-	    rowmap(rowIdx + 1) = rowOffset;
+      // Fill column indices
+      columns(rowOffset -  8) = rowIdx - 1;
+      columns(rowOffset -  7) = rowIdx;
+      columns(rowOffset -  6) = rowIdx + nx - 1;
+      columns(rowOffset -  5) = rowIdx + nx;
+      columns(rowOffset -  4) = rowIdx + ny*nx - 1;
+      columns(rowOffset -  3) = rowIdx + ny*nx;
+      columns(rowOffset -  2) = rowIdx + ny*nx + nx - 1;
+      columns(rowOffset -  1) = rowIdx + ny*nx + nx;
+      if(bottomBC == 1 || frontBC == 1 || rightBC == 1) {
+        // Fill values
+        values(rowOffset -  8) = 0.0;
+        values(rowOffset -  7) = 1.0;
+        values(rowOffset -  6) = 0.0;
+        values(rowOffset -  5) = 0.0;
+        values(rowOffset -  4) = 0.0;
+        values(rowOffset -  3) = 0.0;
+        values(rowOffset -  2) = 0.0;
+        values(rowOffset -  1) = 0.0;
+      } else {
+        // Fill values
+        values(rowOffset -  8) =  0.0;
+        values(rowOffset -  7) =  4.0;
+        values(rowOffset -  6) = -1.0;
+        values(rowOffset -  5) =  0.0;
+        values(rowOffset -  4) = -1.0;
+        values(rowOffset -  3) =  0.0;
+        values(rowOffset -  2) = -1.0;
+        values(rowOffset -  1) = -1.0;
+      }
 
-	    // Fill column indices
-	    columns(rowOffset -  8) = rowIdx - 1;
-	    columns(rowOffset -  7) = rowIdx;
-	    columns(rowOffset -  6) = rowIdx + nx - 1;
-	    columns(rowOffset -  5) = rowIdx + nx;
-	    columns(rowOffset -  4) = rowIdx + ny*nx - 1;
-	    columns(rowOffset -  3) = rowIdx + ny*nx;
-	    columns(rowOffset -  2) = rowIdx + ny*nx + nx - 1;
-	    columns(rowOffset -  1) = rowIdx + ny*nx + nx;
+      rowIdx = (ny - 1)*nx;
+      rowOffset = (ny - 2)*numEntriesFrontRow
+        + numEntriesBottomFrontRow + cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	    // Fill values
-	    values(rowOffset -  8) =  0.0;
-	    values(rowOffset -  7) =  4.0;
-	    values(rowOffset -  6) = -1.0;
-	    values(rowOffset -  5) =  0.0;
-	    values(rowOffset -  4) = -1.0;
-	    values(rowOffset -  3) =  0.0;
-	    values(rowOffset -  2) = -1.0;
-	    values(rowOffset -  1) = -1.0;
-	  }
-	}
+      // Fill column indices
+      columns(rowOffset -  8) = rowIdx - nx;
+      columns(rowOffset -  7) = rowIdx - nx + 1;
+      columns(rowOffset -  6) = rowIdx;
+      columns(rowOffset -  5) = rowIdx + 1;
+      columns(rowOffset -  4) = rowIdx + ny*nx - nx;
+      columns(rowOffset -  3) = rowIdx + ny*nx - nx + 1;
+      columns(rowOffset -  2) = rowIdx + ny*nx;
+      columns(rowOffset -  1) = rowIdx + ny*nx + 1;
+      if(bottomBC == 1 || backBC == 1 || leftBC == 1) {
+        // Fill values
+        values(rowOffset -  8) = 0.0;
+        values(rowOffset -  7) = 0.0;
+        values(rowOffset -  6) = 1.0;
+        values(rowOffset -  5) = 0.0;
+        values(rowOffset -  4) = 0.0;
+        values(rowOffset -  3) = 0.0;
+        values(rowOffset -  2) = 0.0;
+        values(rowOffset -  1) = 0.0;
+      } else {
+        // Fill values
+        values(rowOffset -  8) =  0.0;
+        values(rowOffset -  7) = -1.0;
+        values(rowOffset -  6) =  4.0;
+        values(rowOffset -  5) =  0.0;
+        values(rowOffset -  4) = -1.0;
+        values(rowOffset -  3) = -1.0;
+        values(rowOffset -  2) =  0.0;
+        values(rowOffset -  1) = -1.0;
+      }
 
-	if(backBC == 1) {
-	  if(leftBC == 1) {
-	    const ordinal_type rowIdx = (ny - 1)*nx;
-	    const size_type rowOffset = (ny - frontBC - 1)*numEntriesFrontRow
-	      + frontBC*numEntriesBottomFrontRow + cornerStencilLength;
-	    rowmap(rowIdx + 1) = rowOffset;
+      rowIdx = ny*nx - 1;
+      rowOffset = numEntriesBottomPlane;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	    // Fill column indices
-	    columns(rowOffset -  8) = rowIdx - nx;
-	    columns(rowOffset -  7) = rowIdx - nx + 1;
-	    columns(rowOffset -  6) = rowIdx;
-	    columns(rowOffset -  5) = rowIdx + 1;
-	    columns(rowOffset -  4) = rowIdx + ny*nx - nx;
-	    columns(rowOffset -  3) = rowIdx + ny*nx - nx + 1;
-	    columns(rowOffset -  2) = rowIdx + ny*nx;
-	    columns(rowOffset -  1) = rowIdx + ny*nx + 1;
-
-	    // Fill values
-	    values(rowOffset -  8) =  0.0;
-	    values(rowOffset -  7) = -1.0;
-	    values(rowOffset -  6) =  4.0;
-	    values(rowOffset -  5) =  0.0;
-	    values(rowOffset -  4) = -1.0;
-	    values(rowOffset -  3) = -1.0;
-	    values(rowOffset -  2) =  0.0;
-	    values(rowOffset -  1) = -1.0;
-	  }
-
-	  if(rightBC == 1) {
-	    const ordinal_type rowIdx = ny*nx - 1;
-	    const size_type rowOffset = numEntriesBottomPlane;
-	    rowmap(rowIdx + 1) = rowOffset;
-
-	    // Fill column indices
-	    columns(rowOffset -  8) = rowIdx - nx - 1;
-	    columns(rowOffset -  7) = rowIdx - nx;
-	    columns(rowOffset -  6) = rowIdx - 1;
-	    columns(rowOffset -  5) = rowIdx;
-	    columns(rowOffset -  4) = rowIdx + ny*nx - nx - 1;
-	    columns(rowOffset -  3) = rowIdx + ny*nx - nx;
-	    columns(rowOffset -  2) = rowIdx + ny*nx - 1;
-	    columns(rowOffset -  1) = rowIdx + ny*nx;
-
-	    // Fill values
-	    values(rowOffset -  8) = -1.0;
-	    values(rowOffset -  7) =  0.0;
-	    values(rowOffset -  6) =  0.0;
-	    values(rowOffset -  5) =  4.0;
-	    values(rowOffset -  4) = -1.0;
-	    values(rowOffset -  3) = -1.0;
-	    values(rowOffset -  2) = -1.0;
-	    values(rowOffset -  1) =  0.0;
-	  }
-	}
+      // Fill column indices
+      columns(rowOffset -  8) = rowIdx - nx - 1;
+      columns(rowOffset -  7) = rowIdx - nx;
+      columns(rowOffset -  6) = rowIdx - 1;
+      columns(rowOffset -  5) = rowIdx;
+      columns(rowOffset -  4) = rowIdx + ny*nx - nx - 1;
+      columns(rowOffset -  3) = rowIdx + ny*nx - nx;
+      columns(rowOffset -  2) = rowIdx + ny*nx - 1;
+      columns(rowOffset -  1) = rowIdx + ny*nx;
+      if(bottomBC == 1 || backBC == 1 || rightBC == 1) {
+        // Fill values
+        values(rowOffset -  8) = 0.0;
+        values(rowOffset -  7) = 0.0;
+        values(rowOffset -  6) = 0.0;
+        values(rowOffset -  5) = 1.0;
+        values(rowOffset -  4) = 0.0;
+        values(rowOffset -  3) = 0.0;
+        values(rowOffset -  2) = 0.0;
+        values(rowOffset -  1) = 0.0;
+      } else {
+        // Fill values
+        values(rowOffset -  8) = -1.0;
+        values(rowOffset -  7) =  0.0;
+        values(rowOffset -  6) =  0.0;
+        values(rowOffset -  5) =  4.0;
+        values(rowOffset -  4) = -1.0;
+        values(rowOffset -  3) = -1.0;
+        values(rowOffset -  2) = -1.0;
+        values(rowOffset -  1) =  0.0;
       }
 
       // Top corners
-      if(topBC == 1) {
-	if(frontBC == 1) {
-	  if(leftBC == 1) {
-	    const ordinal_type rowIdx = (nz - 1)*ny*nx;
-	    const size_type rowOffset = (nz - bottomBC - 1)*numEntriesPerGridPlane
-	      + bottomBC*numEntriesBottomPlane + cornerStencilLength;
-	    rowmap(rowIdx + 1) = rowOffset;
+      rowIdx = (nz - 1)*ny*nx;
+      rowOffset = (nz - 2)*numEntriesPerGridPlane
+        + numEntriesBottomPlane + cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	    // Fill column indices
-	    columns(rowOffset -  8) = rowIdx - ny*nx;
-	    columns(rowOffset -  7) = rowIdx - ny*nx + 1;
-	    columns(rowOffset -  6) = rowIdx - ny*nx + nx;
-	    columns(rowOffset -  5) = rowIdx - ny*nx + nx + 1;
-	    columns(rowOffset -  4) = rowIdx;
-	    columns(rowOffset -  3) = rowIdx + 1;
-	    columns(rowOffset -  2) = rowIdx + nx;
-	    columns(rowOffset -  1) = rowIdx + nx + 1;
+      // Fill column indices
+      columns(rowOffset -  8) = rowIdx - ny*nx;
+      columns(rowOffset -  7) = rowIdx - ny*nx + 1;
+      columns(rowOffset -  6) = rowIdx - ny*nx + nx;
+      columns(rowOffset -  5) = rowIdx - ny*nx + nx + 1;
+      columns(rowOffset -  4) = rowIdx;
+      columns(rowOffset -  3) = rowIdx + 1;
+      columns(rowOffset -  2) = rowIdx + nx;
+      columns(rowOffset -  1) = rowIdx + nx + 1;
+      if(topBC == 1 || frontBC == 1 || leftBC == 1) {
+        // Fill values
+        values(rowOffset -  8) = 0.0;
+        values(rowOffset -  7) = 0.0;
+        values(rowOffset -  6) = 0.0;
+        values(rowOffset -  5) = 0.0;
+        values(rowOffset -  4) = 1.0;
+        values(rowOffset -  3) = 0.0;
+        values(rowOffset -  2) = 0.0;
+        values(rowOffset -  1) = 0.0;
+      } else {
+        // Fill values
+        values(rowOffset -  8) =  0.0;
+        values(rowOffset -  7) = -1.0;
+        values(rowOffset -  6) = -1.0;
+        values(rowOffset -  5) = -1.0;
+        values(rowOffset -  4) =  4.0;
+        values(rowOffset -  3) =  0.0;
+        values(rowOffset -  2) =  0.0;
+        values(rowOffset -  1) = -1.0;
+      }
 
-	    // Fill values
-	    values(rowOffset -  8) =  0.0;
-	    values(rowOffset -  7) = -1.0;
-	    values(rowOffset -  6) = -1.0;
-	    values(rowOffset -  5) = -1.0;
-	    values(rowOffset -  4) =  4.0;
-	    values(rowOffset -  3) =  0.0;
-	    values(rowOffset -  2) =  0.0;
-	    values(rowOffset -  1) = -1.0;
-	  }
+      rowIdx = (nz - 1)*ny*nx + nx - 1;
+      rowOffset = (nz - 2)*numEntriesPerGridPlane
+        + numEntriesBottomPlane + numEntriesBottomFrontRow;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	  if(rightBC == 1) {
-	    const ordinal_type rowIdx = (nz - 1)*ny*nx + nx - 1;
-	    const size_type rowOffset = (nz - bottomBC - 1)*numEntriesPerGridPlane
-	      + bottomBC*numEntriesBottomPlane + numEntriesBottomFrontRow;
-	    rowmap(rowIdx + 1) = rowOffset;
+      // Fill column indices
+      columns(rowOffset -  8) = rowIdx - ny*nx - 1;
+      columns(rowOffset -  7) = rowIdx - ny*nx;
+      columns(rowOffset -  6) = rowIdx - ny*nx + nx - 1;
+      columns(rowOffset -  5) = rowIdx - ny*nx + nx;
+      columns(rowOffset -  4) = rowIdx - 1;
+      columns(rowOffset -  3) = rowIdx;
+      columns(rowOffset -  2) = rowIdx + nx - 1;
+      columns(rowOffset -  1) = rowIdx + nx;
+      if(topBC == 1 || frontBC == 1 || rightBC == 1) {
+        // Fill values
+        values(rowOffset -  8) = 0.0;
+        values(rowOffset -  7) = 0.0;
+        values(rowOffset -  6) = 0.0;
+        values(rowOffset -  5) = 0.0;
+        values(rowOffset -  4) = 0.0;
+        values(rowOffset -  3) = 1.0;
+        values(rowOffset -  2) = 0.0;
+        values(rowOffset -  1) = 0.0;
+      } else {
+        // Fill values
+        values(rowOffset -  8) = -1.0;
+        values(rowOffset -  7) =  0.0;
+        values(rowOffset -  6) = -1.0;
+        values(rowOffset -  5) = -1.0;
+        values(rowOffset -  4) =  0.0;
+        values(rowOffset -  3) =  4.0;
+        values(rowOffset -  2) = -1.0;
+        values(rowOffset -  1) =  0.0;
+      }
 
-	    // Fill column indices
-	    columns(rowOffset -  8) = rowIdx - ny*nx - 1;
-	    columns(rowOffset -  7) = rowIdx - ny*nx;
-	    columns(rowOffset -  6) = rowIdx - ny*nx + nx - 1;
-	    columns(rowOffset -  5) = rowIdx - ny*nx + nx;
-	    columns(rowOffset -  4) = rowIdx - 1;
-	    columns(rowOffset -  3) = rowIdx;
-	    columns(rowOffset -  2) = rowIdx + nx - 1;
-	    columns(rowOffset -  1) = rowIdx + nx;
+      rowIdx = nz*ny*nx - nx;
+      rowOffset = (nz - 2)*numEntriesPerGridPlane
+        + numEntriesBottomPlane + (ny - 2)*numEntriesFrontRow
+        + numEntriesBottomFrontRow + cornerStencilLength;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	    // Fill values
-	    values(rowOffset -  8) = -1.0;
-	    values(rowOffset -  7) =  0.0;
-	    values(rowOffset -  6) = -1.0;
-	    values(rowOffset -  5) = -1.0;
-	    values(rowOffset -  4) =  0.0;
-	    values(rowOffset -  3) =  4.0;
-	    values(rowOffset -  2) = -1.0;
-	    values(rowOffset -  1) =  0.0;
-	  }
-	}
+      // Fill column indices
+      columns(rowOffset -  8) = rowIdx - ny*nx - nx;
+      columns(rowOffset -  7) = rowIdx - ny*nx - nx + 1;
+      columns(rowOffset -  6) = rowIdx - ny*nx;
+      columns(rowOffset -  5) = rowIdx - ny*nx + 1;
+      columns(rowOffset -  4) = rowIdx - nx;
+      columns(rowOffset -  3) = rowIdx - nx + 1;
+      columns(rowOffset -  2) = rowIdx;
+      columns(rowOffset -  1) = rowIdx + 1;
+      if(topBC == 1 || backBC == 1 || leftBC == 1) {
+        // Fill values
+        values(rowOffset -  8) = 0.0;
+        values(rowOffset -  7) = 0.0;
+        values(rowOffset -  6) = 0.0;
+        values(rowOffset -  5) = 0.0;
+        values(rowOffset -  4) = 0.0;
+        values(rowOffset -  3) = 0.0;
+        values(rowOffset -  2) = 1.0;
+        values(rowOffset -  1) = 0.0;
+      } else {
+        // Fill values
+        values(rowOffset -  8) = -1.0;
+        values(rowOffset -  7) = -1.0;
+        values(rowOffset -  6) =  0.0;
+        values(rowOffset -  5) = -1.0;
+        values(rowOffset -  4) =  0.0;
+        values(rowOffset -  3) = -1.0;
+        values(rowOffset -  2) =  4.0;
+        values(rowOffset -  1) =  0.0;
+      }
 
-	if(backBC == 1) {
-	  if(leftBC == 1) {
-	    const ordinal_type rowIdx = nz*ny*nx - nx;
-	    const ordinal_type rowOffset = (nz - bottomBC - 1)*numEntriesPerGridPlane
-	      + bottomBC*numEntriesBottomPlane + (ny - frontBC - 1)*numEntriesFrontRow
-	      + frontBC*numEntriesBottomFrontRow + cornerStencilLength;
-	    rowmap(rowIdx + 1) = rowOffset;
+      rowIdx = nz*ny*nx - 1;
+      rowOffset = numEntries;
+      rowmap(rowIdx + 1) = rowOffset;
 
-	    // Fill column indices
-	    columns(rowOffset -  8) = rowIdx - ny*nx - nx;
-	    columns(rowOffset -  7) = rowIdx - ny*nx - nx + 1;
-	    columns(rowOffset -  6) = rowIdx - ny*nx;
-	    columns(rowOffset -  5) = rowIdx - ny*nx + 1;
-	    columns(rowOffset -  4) = rowIdx - nx;
-	    columns(rowOffset -  3) = rowIdx - nx + 1;
-	    columns(rowOffset -  2) = rowIdx;
-	    columns(rowOffset -  1) = rowIdx + 1;
-
-	    // Fill values
-	    values(rowOffset -  8) = -1.0;
-	    values(rowOffset -  7) = -1.0;
-	    values(rowOffset -  6) =  0.0;
-	    values(rowOffset -  5) = -1.0;
-	    values(rowOffset -  4) =  0.0;
-	    values(rowOffset -  3) = -1.0;
-	    values(rowOffset -  2) =  4.0;
-	    values(rowOffset -  1) =  0.0;
-	  }
-
-	  if(rightBC == 1) {
-	    const ordinal_type rowIdx = nz*ny*nx - 1;
-	    const size_type rowOffset = numEntries;
-	    rowmap(rowIdx + 1) = rowOffset;
-
-	    // Fill column indices
-	    columns(rowOffset -  8) = rowIdx - ny*nx - nx - 1;
-	    columns(rowOffset -  7) = rowIdx - ny*nx - nx;
-	    columns(rowOffset -  6) = rowIdx - ny*nx - 1;
-	    columns(rowOffset -  5) = rowIdx - ny*nx;
-	    columns(rowOffset -  4) = rowIdx - nx - 1;
-	    columns(rowOffset -  3) = rowIdx - nx;
-	    columns(rowOffset -  2) = rowIdx - 1;
-	    columns(rowOffset -  1) = rowIdx;
-
-	    // Fill values
-	    values(rowOffset -  8) = -1.0;
-	    values(rowOffset -  7) = -1.0;
-	    values(rowOffset -  6) = -1.0;
-	    values(rowOffset -  5) =  0.0;
-	    values(rowOffset -  4) = -1.0;
-	    values(rowOffset -  3) =  0.0;
-	    values(rowOffset -  2) =  0.0;
-	    values(rowOffset -  1) =  4.0;
-	  }
-	}
+      // Fill column indices
+      columns(rowOffset -  8) = rowIdx - ny*nx - nx - 1;
+      columns(rowOffset -  7) = rowIdx - ny*nx - nx;
+      columns(rowOffset -  6) = rowIdx - ny*nx - 1;
+      columns(rowOffset -  5) = rowIdx - ny*nx;
+      columns(rowOffset -  4) = rowIdx - nx - 1;
+      columns(rowOffset -  3) = rowIdx - nx;
+      columns(rowOffset -  2) = rowIdx - 1;
+      columns(rowOffset -  1) = rowIdx;
+      if(topBC == 1 || backBC == 1 || rightBC == 1) {
+        // Fill values
+        values(rowOffset -  8) = 0.0;
+        values(rowOffset -  7) = 0.0;
+        values(rowOffset -  6) = 0.0;
+        values(rowOffset -  5) = 0.0;
+        values(rowOffset -  4) = 0.0;
+        values(rowOffset -  3) = 0.0;
+        values(rowOffset -  2) = 0.0;
+        values(rowOffset -  1) = 1.0;
+      } else {
+        // Fill values
+        values(rowOffset -  8) = -1.0;
+        values(rowOffset -  7) = -1.0;
+        values(rowOffset -  6) = -1.0;
+        values(rowOffset -  5) =  0.0;
+        values(rowOffset -  4) = -1.0;
+        values(rowOffset -  3) =  0.0;
+        values(rowOffset -  2) =  0.0;
+        values(rowOffset -  1) =  4.0;
       }
     }
   };

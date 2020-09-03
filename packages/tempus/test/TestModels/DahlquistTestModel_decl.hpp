@@ -37,8 +37,13 @@ class DahlquistTestModel
 {
   public:
 
+  // Default Constructor
+  DahlquistTestModel();
+
   // Constructor
-  DahlquistTestModel(Scalar lambda = Scalar(-1.0));
+  DahlquistTestModel(Scalar lambda, bool includeXDot);
+
+  void constructDahlquistTestModel(Scalar lambda, bool includeXDot);
 
   /// Default destructor
   ~DahlquistTestModel() = default;
@@ -76,6 +81,8 @@ private:
 
 private:
   Scalar lambda_;
+  bool   includeXDot_;
+
   mutable bool isInitialized_;
   mutable Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
   mutable Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
@@ -86,7 +93,8 @@ private:
   //Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > g_space_;
   //Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > DxDp_space_;
 
-  Scalar xIC_; ///< Initial condition for x.
+  Scalar xIC_;    ///< Initial condition for x.
+  Scalar xDotIC_; ///< Initial condition for xDot.
 };
 
 

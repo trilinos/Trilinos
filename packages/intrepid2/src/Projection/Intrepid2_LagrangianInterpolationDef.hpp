@@ -288,9 +288,10 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
   const std::string name(basis->getName());
   const ordinal_type degree(basis->getDegree());
 
-  bool isBasisHCURL = name.find("HCURL") != std::string::npos;
-  bool isBasisHDIV = name.find("HDIV") != std::string::npos;
-  bool isBasisTriOrTet = (name.find("TRI") != std::string::npos) || (name.find("TET") != std::string::npos);
+  bool isBasisHCURL = (basis->getFunctionSpace()==FUNCTION_SPACE_HCURL);
+  bool isBasisHDIV = (basis->getFunctionSpace()==FUNCTION_SPACE_HDIV);
+  bool isBasisTriOrTet = (basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Triangle<3> >()->key) ||
+      (basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Tetrahedron<4> >()->key);
   bool isBasisHEXI1 = (name.find("HEX_I1") != std::string::npos);
   bool isBasisTETI1 = (name.find("TET_I1") != std::string::npos);
   bool isBasisI1 = (name.find("I1") != std::string::npos);
@@ -301,6 +302,80 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
   Teuchos::RCP<Basis<SpT,scalarType,scalarType> > faceBases[6];
   Teuchos::RCP<Basis<SpT,scalarType,scalarType> > edgeBasis;
 
+  bool unsupportedCase = false;
+  switch(basis->getFunctionSpace()) {
+  case FUNCTION_SPACE_HGRAD:
+    if(basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Quadrilateral<4> >()->key) {
+      edgeBasis = Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree, pointType) );
+    }
+    else if(basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Hexahedron<8> >()->key){
+      faceBases[0] = Teuchos::rcp(new Basis_HGRAD_QUAD_Cn_FEM<SpT,scalarType,scalarType>(degree, pointType) );
+      for(ordinal_type i=1; i<6; ++i) faceBases[i]=faceBases[0];
+      edgeBasis = Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree, pointType) );
+    }
+    else if(basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Triangle<3> >()->key){
+      edgeBasis = Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree, pointType) );
+    }
+    else if(basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Tetrahedron<4> >()->key) {
+      faceBases[0] = Teuchos::rcp(new Basis_HGRAD_TRI_Cn_FEM<SpT,scalarType,scalarType>(degree, pointType) );
+      for(ordinal_type i=1; i<4; ++i) faceBases[i]=faceBases[0];
+      edgeBasis = Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree, pointType) );
+    }
+    else
+      unsupportedCase = true;
+    break;
+  case FUNCTION_SPACE_HCURL:
+    if(basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Quadrilateral<4> >()->key) {
+      edgeBasis = Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree-1, POINTTYPE_GAUSS) );
+    }
+    else if(basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Hexahedron<8> >()->key) {
+      faceBases[0] = Teuchos::rcp(new Basis_HCURL_QUAD_In_FEM<SpT,scalarType,scalarType>(degree, pointType) );
+      for(ordinal_type i=1; i<6; ++i) faceBases[i]=faceBases[0];
+      edgeBasis = Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree-1, POINTTYPE_GAUSS) );
+    }
+    else if(basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Triangle<3> >()->key) {
+      edgeBasis = Teuchos::rcp(new Basis_HVOL_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree-1, pointType) );
+    }
+    else if(basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Tetrahedron<4> >()->key) {
+      faceBases[0] = Teuchos::rcp(new Basis_HCURL_TRI_In_FEM<SpT,scalarType,scalarType>(degree, pointType) );
+      for(ordinal_type i=1; i<4; ++i) faceBases[i]=faceBases[0];
+      edgeBasis = Teuchos::rcp(new Basis_HVOL_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree-1, pointType) );
+    }
+    else
+      unsupportedCase = true;
+    break;
+  case FUNCTION_SPACE_HDIV:
+    isBasisHDIV = true;
+    if(basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Quadrilateral<4> >()->key) {
+      edgeBasis = Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree-1, POINTTYPE_GAUSS) );
+    }
+    else if(basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Hexahedron<8> >()->key) {
+      faceBases[0] = Teuchos::rcp(new Basis_HGRAD_QUAD_Cn_FEM<SpT,scalarType,scalarType>(degree-1, POINTTYPE_GAUSS) );
+      for(ordinal_type i=1; i<6; ++i) faceBases[i]=faceBases[0];
+    }
+    else if(basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Triangle<3> >()->key) {
+      edgeBasis = Teuchos::rcp(new Basis_HVOL_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree-1, pointType) );
+    }
+    else if(basis->getBaseCellTopology().getKey() == shards::getCellTopologyData<shards::Tetrahedron<4> >()->key) {
+      faceBases[0] = Teuchos::rcp(new Basis_HVOL_TRI_Cn_FEM<SpT,scalarType,scalarType>(degree-1, pointType) );
+      for(ordinal_type i=1; i<4; ++i) faceBases[i]=faceBases[0];
+    }
+    else
+      unsupportedCase = true;
+    break;
+  case FUNCTION_SPACE_HVOL:
+    //nothing to do
+    break;
+  default:
+    unsupportedCase = true;
+  }
+
+  INTREPID2_TEST_FOR_ABORT(unsupportedCase,
+            ">>> ERROR (Intrepid2::Experimental::LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs): " \
+            "method not implemented for this basis function");
+
+
+/*
 
   if ((name == "Intrepid2_HGRAD_QUAD_Cn_FEM") || (name == "Intrepid2_HGRAD_QUAD_C1_FEM")) {
     edgeBasis = Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree, pointType) );
@@ -344,6 +419,7 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
         ">>> ERROR (Intrepid2::Experimental::LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs): " \
         "method not implemented for this basis function");
   }
+  */
 
   auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(), basis->getAllDofOrdinal());
 

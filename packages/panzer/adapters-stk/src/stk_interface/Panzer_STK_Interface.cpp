@@ -556,10 +556,10 @@ stk::mesh::Entity STK_Interface::findConnectivityById(stk::mesh::Entity src, stk
 ///////////////////////////////////////////////////////////////////////////////
 void
 STK_Interface::
-writeToExodus(
-  const std::string& filename)
+writeToExodus(const std::string& filename,
+              const bool append)
 {
-  setupExodusFile(filename);
+  setupExodusFile(filename,append);
   writeToExodus(0.0);
 } // end of writeToExodus()
 
@@ -570,8 +570,10 @@ writeToExodus(
 ///////////////////////////////////////////////////////////////////////////////
 void
 STK_Interface::
-setupExodusFile(
-  const std::string& filename)
+setupExodusFile(const std::string& filename,
+                const bool append,
+                const bool append_after_restart_time,
+                const double restart_time)
 {
   using std::runtime_error;
   using stk::io::StkMeshIoBroker;
@@ -584,7 +586,17 @@ setupExodusFile(
   ParallelMachine comm = *mpiComm_->getRawMpiComm();
   meshData_ = rcp(new StkMeshIoBroker(comm));
   meshData_->set_bulk_data(bulkData_);
-  meshIndex_ = meshData_->create_output_mesh(filename, stk::io::WRITE_RESULTS);
+  if (append) {
+    if (append_after_restart_time) {
+      Ioss::PropertyManager props;
+      meshIndex_ = meshData_->create_output_mesh(filename, stk::io::APPEND_RESULTS,
+                                                 props, restart_time);
+    }
+    else // Append results to the end of the file
+      meshIndex_ = meshData_->create_output_mesh(filename, stk::io::APPEND_RESULTS);
+  }
+  else
+    meshIndex_ = meshData_->create_output_mesh(filename, stk::io::WRITE_RESULTS);
   const FieldVector& fields = metaData_->get_fields();
   for (size_t i(0); i < fields.size(); ++i) {
     // Do NOT add MESH type stk fields to exodus io, but do add everything

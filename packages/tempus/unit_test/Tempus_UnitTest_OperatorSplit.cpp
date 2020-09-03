@@ -137,7 +137,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, StepperFactory_Construction)
 
   // Test using ParameterList.
   // Passing in model.
-  auto stepper = sf->createMultiSteppers(stepperPL, models);
+  auto stepper = sf->createStepper(stepperPL, models);
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
 }

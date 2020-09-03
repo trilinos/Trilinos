@@ -238,8 +238,8 @@ struct KokkosSPGEMM
     const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
 
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
-    hm2(pow2_hash_size, max_row_size,NULL, NULL, NULL, NULL);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+    hm2(max_row_size, pow2_hash_func, NULL, NULL, NULL, NULL);
 
     volatile nnz_lno_t * tmp = NULL;
     size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
@@ -278,10 +278,10 @@ struct KokkosSPGEMM
           //std::cout << " pow2_hash_func:" << pow2_hash_func << " prev_nset_ind:" << prev_nset_ind << std::endl;
           //insert prev_nset_ind to hashmap
           hm2.sequential_insert_into_hash_TrackHashes(
-              prev_nset_ind & pow2_hash_func, prev_nset_ind,
-              &used_size, hm2.max_value_size,
-              &globally_used_hash_count,
-              globally_used_hash_indices
+            prev_nset_ind,
+            &used_size,
+            &globally_used_hash_count,
+            globally_used_hash_indices
           );
           //++used_size;
           prev_nset_ind = n_set_index;
@@ -289,10 +289,10 @@ struct KokkosSPGEMM
       }
       //insert prev_nset_ind to hashmap
       hm2.sequential_insert_into_hash_TrackHashes(
-          prev_nset_ind & pow2_hash_func, prev_nset_ind,
-          &used_size, hm2.max_value_size,
-          &globally_used_hash_count,
-          globally_used_hash_indices
+        prev_nset_ind,
+        &used_size,
+        &globally_used_hash_count,
+        globally_used_hash_indices
       );
       //++used_size;
     }
@@ -311,8 +311,8 @@ struct KokkosSPGEMM
 
     const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
-    hm2(pow2_hash_size, max_row_size,NULL, NULL, NULL, NULL);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+    hm2(max_row_size, pow2_hash_func, NULL, NULL, NULL, NULL);
 
     volatile nnz_lno_t * tmp = NULL;
     size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
@@ -363,10 +363,10 @@ struct KokkosSPGEMM
         prev_nset = prev_nset | n_set;
       } else {
         hm2.sequential_insert_into_hash_mergeOr_TrackHashes(
-            prev_nset_ind & pow2_hash_func, prev_nset_ind, prev_nset,
-            &used_size, hm2.max_value_size,
-            &globally_used_hash_count,
-            globally_used_hash_indices
+          prev_nset_ind, prev_nset,
+          &used_size,
+          &globally_used_hash_count,
+          globally_used_hash_indices
         );
 
         //pset_index_entries[used_size + outrowBegin] = prev_nset_ind ;
@@ -377,10 +377,10 @@ struct KokkosSPGEMM
       }
     }
     hm2.sequential_insert_into_hash_mergeOr_TrackHashes(
-        prev_nset_ind & pow2_hash_func, prev_nset_ind, prev_nset,
-        &used_size, hm2.max_value_size,
-        &globally_used_hash_count,
-        globally_used_hash_indices
+      prev_nset_ind, prev_nset,
+      &used_size,
+      &globally_used_hash_count,
+      globally_used_hash_indices
     );
     for (nnz_lno_t i = 0; i < globally_used_hash_count ; ++i){
       hm2.hash_begins[globally_used_hash_indices[i]] = -1;
@@ -546,8 +546,8 @@ struct KokkosSPGEMM
     //the number of elements in a row, so the nnz_lno_t can be used instead of size_type here.
 
     //first level hashmap
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
-      hm(shmem_hash_size, shmem_hash_size, begins, nexts, keys, vals);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+      hm(shmem_hash_size, shared_memory_hash_func, begins, nexts, keys, vals);
 
     size_type rowBegin = row_map(row_ind);
     size_type rowBeginP = rowBegin;
@@ -557,11 +557,11 @@ struct KokkosSPGEMM
 #ifdef KOKKOSKERNELSMOREMEM
     //same as second level hash map.
     //second level hashmap.
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::modulo>
       hm2(left_work, left_work, pset_index_begins + rowBegin, pset_index_nexts+ rowBegin, pset_index_entries+ rowBegin, pset_entries+ rowBegin);
 #else
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
-      hm2(left_work, left_work, /*pset_index_begins + rowBegin*/ NULL,
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+      hm2(left_work, pow2_hash_func, /*pset_index_begins + rowBegin*/ NULL,
           NULL, //pset_index_nexts+ rowBegin,
           pset_index_entries+ rowBegin,
           pset_entries+ rowBegin);
@@ -655,21 +655,21 @@ struct KokkosSPGEMM
           [&] (const int i, int &overall_num_unsuccess_) {
           n_set_index = result_keys[i];
           n_set = result_vals[i];
-          nnz_lno_t hash = n_set_index & shared_memory_hash_func;//% shmem_hash_size;
-          if (n_set_index == -1) hash = -1;
-          num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(
-                              teamMember, vector_size, hash,n_set_index,
-			      n_set, used_hash_sizes, shmem_hash_size);
-          overall_num_unsuccess_ += num_unsuccess;
+          if (n_set_index != -1) {
+            num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(
+                              n_set_index,
+                              n_set, used_hash_sizes);
+            overall_num_unsuccess_ += num_unsuccess;
+          }
       }, overall_num_unsuccess);
 
 #ifdef KOKKOSKERNELSMOREMEM
       //if one of the inserts was successfull, which means we run out shared memory
       if (overall_num_unsuccess){
-        nnz_lno_t hash_ = -1;
-        if (num_unsuccess) hash_ = n_set_index % hm2.hash_key_size;
-        hm2.vector_atomic_insert_into_hash_mergeOr(
-            teamMember, vector_size, hash_,n_set_index,n_set, used_hash_sizes + 1, hm2.max_value_size);
+        if (num_unsuccess) {
+          hm2.vector_atomic_insert_into_hash_mergeOr(
+            n_set_index,n_set, used_hash_sizes + 1);
+        }
       }
 #else
       //if one of the inserts was successfull, which means we run out shared memory
@@ -687,10 +687,7 @@ struct KokkosSPGEMM
 		      hm2.hash_nexts = (nnz_lno_t *) (globally_used_hash_indices + pow2_hash_size * 2);
 		      l2_allocated = true;
 	      }
-	      //then for those who failed we insert it again to L2-accumulator.
-	      nnz_lno_t hash = -1;
-	      if (num_unsuccess) hash = n_set_index & (pow2_hash_func);
-
+	      
 	      //this parallel_for is not really needed.
 	      //we just need a sync threads at the end of the insertion.
 	      //Basically, we do not want
@@ -702,9 +699,12 @@ struct KokkosSPGEMM
                  Kokkos::ThreadVectorRange(teamMember, vector_size),
 	          [&] (nnz_lno_t i) {
 #endif
+        //then for those who failed we insert it again to L2-accumulator.
+	      if (num_unsuccess) {
 		      hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
-			      teamMember, vector_size, hash,n_set_index,n_set, used_hash_sizes + 1, hm2.max_value_size
-			      ,globally_used_hash_count, globally_used_hash_indices);
+			      n_set_index,n_set, used_hash_sizes + 1,
+			      globally_used_hash_count, globally_used_hash_indices);
+        }
 #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72)
 		});
 #endif
@@ -939,6 +939,7 @@ bool KokkosSPGEMM
       }
 
       Kokkos::Impl::Timer timer_count;
+      // HashmapAccumulator is populated here
       if(use_unordered_compress)
         Kokkos::parallel_for( "KokkosSparse::TwoStepZipMatrix::use_unordered_compress", team_count2_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
       else

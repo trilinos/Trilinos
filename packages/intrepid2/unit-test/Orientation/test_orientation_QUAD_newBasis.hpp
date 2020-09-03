@@ -468,6 +468,7 @@ int OrientationQuadNewBasis(const bool verbose) {
         }
 
         using CG_NBasis = NodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
+        using CG_DNBasis = DerivedNodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
         using CG_HBasis = HierarchicalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
         std::vector<basisType*> basis_set;
 
@@ -506,6 +507,7 @@ int OrientationQuadNewBasis(const bool verbose) {
           }
 
           basis_set.push_back(new typename  CG_NBasis::HGRAD_QUAD(order));
+          basis_set.push_back(new typename  CG_DNBasis::HGRAD_QUAD(order));
           basis_set.push_back(new typename  CG_HBasis::HGRAD_QUAD(order));
 
           for (auto basisPtr:basis_set) {
@@ -564,6 +566,7 @@ int OrientationQuadNewBasis(const bool verbose) {
 
           basis_set.clear();
           basis_set.push_back(new typename  CG_NBasis::HCURL_QUAD(order));
+          basis_set.push_back(new typename  CG_DNBasis::HCURL_QUAD(order));
           basis_set.push_back(new typename  CG_HBasis::HCURL_QUAD(order));
 
           for (auto basisPtr:basis_set) {
@@ -629,6 +632,7 @@ int OrientationQuadNewBasis(const bool verbose) {
           }
           basis_set.clear();
           basis_set.push_back(new typename  CG_NBasis::HDIV_QUAD(order));
+          basis_set.push_back(new typename  CG_DNBasis::HDIV_QUAD(order));
           basis_set.push_back(new typename  CG_HBasis::HDIV_QUAD(order));
 
           for (auto basisPtr:basis_set) {

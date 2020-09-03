@@ -43,14 +43,14 @@ namespace Sacado {
   struct ss_array {
 
     //! Copy array from \c src to \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void copy(const T* src, T*  dest, int sz) {
       for (int i=0; i<sz; ++i)
         *(dest++) = *(src++);
     }
 
     //! Zero out array \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void zero(T* dest, int sz) {
       for (int i=0; i<sz; ++i)
         *(dest++) = T(0.);
@@ -65,7 +65,7 @@ namespace Sacado {
   struct ss_array<T,true> {
 
     //! Copy array from \c src to \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void copy(const T* src, T* dest, int sz) {
       if (sz > 0)
 #ifdef __CUDACC__
@@ -77,7 +77,7 @@ namespace Sacado {
     }
 
     //! Zero out array \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void zero(T* dest, int sz) {
       if (sz > 0)
 #ifdef __CUDACC__

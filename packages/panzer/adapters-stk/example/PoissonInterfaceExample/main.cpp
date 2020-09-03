@@ -384,12 +384,11 @@ int main (int argc, char* argv[])
   using panzer::StrPureBasisPair;
   using panzer::StrPureBasisComp;
 
-  Kokkos::initialize(argc,argv);
-
   int status = 0;
   try {
 
     Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+    Kokkos::initialize(argc,argv);
     RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
     out.setOutputToRootOnly(0);

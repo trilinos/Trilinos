@@ -328,10 +328,11 @@ public:
    *  \note This will only write a single timestep at time = 0.
    *
    *  \param[in] filename The name of the output Exodus file.
+   *  \param[in] append If set to true, the output will be appended to the output Exodus file. If set to false, output file will be overwritten. Default is false.
    */
   void
-  writeToExodus(
-    const std::string& filename);
+  writeToExodus(const std::string& filename,
+                const bool append = false);
 
   /**
    *  \brief Set up an output Exodus file for writing results.
@@ -343,13 +344,18 @@ public:
    *        call to `writeToExodus(double timestep)`.
    *
    *  \param[in] filename The name of the output Exodus file.
+   *  \param[in] append If set to true, the output will be appended to the output Exodus file. If set to false, output file will be overwritten. Default is false.
+   *  \param[in] append_after_restart_time If set to true, instead of appending to the end of the Exodus file, this option will append new writes after a specified time and overwrite subsequent time steps that were in the file. Allows users to restart anywhere in the exodus file and write consistently. If set to false, the next write will append to the end of the file. Default is false.
+   *  \param[in] restart_time If append_after_restart_time is true, this is the time value to append after. Otherwise this value is ignored.
    *
    *  \throws `std::logic_error` If the `STK_Interface` does not yet have a MPI
    *                             communicator.
    */
   void
-  setupExodusFile(
-    const std::string& filename);
+  setupExodusFile(const std::string& filename,
+                  const bool append = false,
+                  const bool append_after_restart_time = false,
+                  const double restart_time = 0.0);
 
   /**
    *  \brief Write this mesh and associated fields at the given `timestep`.

@@ -68,7 +68,7 @@ namespace Amesos2 {
   // Enable MP::Vector as a valid Scalar type for Basker
   template <class ST>
   struct TypeMap< Basker,Sacado::MP::Vector<ST> > {
-    static Sacado::MP::Vector<ST> dtype;
+    typedef Sacado::MP::Vector<ST> dtype;
     typedef Sacado::MP::Vector<ST> type;
     typedef typename Kokkos::Details::ArithTraits< Sacado::MP::Vector<ST> >::mag_type magnitude_type;
   };
