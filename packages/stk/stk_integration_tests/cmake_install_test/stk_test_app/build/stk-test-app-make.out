@@ -1,9 +1,0 @@
-Scanning dependencies of target test_stk_lib
-[ 20%] Building CXX object CMakeFiles/test_stk_lib.dir/src/test_stk_simd.cpp.o
-[ 40%] Building CXX object CMakeFiles/test_stk_lib.dir/src/test_stk_io.cpp.o
-[ 60%] Linking CXX static library libtest_stk_lib.a
-[ 60%] Built target test_stk_lib
-Scanning dependencies of target test_stk_app
-[ 80%] Building CXX object CMakeFiles/test_stk_app.dir/test_stk_app.cpp.o
-[100%] Linking CXX executable test_stk_app
-[100%] Built target test_stk_app

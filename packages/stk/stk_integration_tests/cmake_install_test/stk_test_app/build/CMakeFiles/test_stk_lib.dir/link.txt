@@ -1,2 +1,0 @@
-/usr/bin/ar qc libtest_stk_lib.a  CMakeFiles/test_stk_lib.dir/src/test_stk_simd.cpp.o CMakeFiles/test_stk_lib.dir/src/test_stk_io.cpp.o
-/usr/bin/ranlib libtest_stk_lib.a
