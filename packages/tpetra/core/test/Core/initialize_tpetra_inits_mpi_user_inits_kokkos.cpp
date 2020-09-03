@@ -89,6 +89,10 @@ void testMain (bool& success, int argc, char* argv[])
       "before Kokkos::initialize was called." << endl;
     return;
   }
+
+  { // GlobalMPISession is in local scope so we can check MPI_Finalize
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv); // before Kokkos::initialize
   Kokkos::initialize (argc, argv);
   if (! Kokkos::is_initialized ()) {
     success = false;
@@ -170,12 +174,16 @@ void testMain (bool& success, int argc, char* argv[])
   if (myRank == 0) {
     cout << "Called Tpetra::finalize" << endl;
   }
-  // Since Tpetra is responsible for calling MPI_Finalize,
-  // Tpetra::finalize MUST have called MPI_Finalize.
-  if (! isMpiFinalized ()) {
+
+  // Tpetra::finalize is not responsible for calling
+  // MPI_Finalize because GlobalMPISession was called first.
+  if (isMpiFinalized ()) {
     success = false;
-    cout << "Tpetra::finalize() did not call MPI_Finalize." << endl;
+    cout << "Tpetra::finalize called MPI_Finalize "
+         << "but should not have since GlobalMPISession controlled it."
+         << endl;
   }
+
   // Kokkos is like Tpetra; Kokkos::is_initialized() means "was
   // initialized and was not finalized."  That differs from MPI, where
   // MPI_Initialized only refers to MPI_Init and MPI_Finalized only
@@ -201,6 +209,16 @@ void testMain (bool& success, int argc, char* argv[])
     success = false;
     cout << "Kokkos::is_initialized() is false "
       "even after calling Kokkos::finalize." << endl;
+  }
+
+  } // end of GlobalMPISession scope
+
+  // Since GlobalMPISession's destructor was responsible for calling
+  // MPI_Finalize, the destructor MUST have called MPI_Finalize.
+  if (! isMpiFinalized ()) {
+    success = false;
+    cout << "GlobalMPISession::~GlobalMPISession did not call MPI_Finalize."
+         << endl;
   }
 }
 

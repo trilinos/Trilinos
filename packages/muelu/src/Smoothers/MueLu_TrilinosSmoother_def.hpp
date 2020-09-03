@@ -195,7 +195,7 @@ namespace MueLu {
       s_ = (useTpetra ? sTpetra_ : sEpetra_);
       if (s_.is_null()) {
         if (useTpetra) {
-#if not defined(HAVE_MUELU_IFPACK22)
+#if not defined(HAVE_MUELU_IFPACK2)
           TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
                                      "Error: running in Tpetra mode, but MueLu with Ifpack2 was disabled during the configure stage.\n"
                                      "Please make sure that:\n"
