@@ -1518,6 +1518,22 @@ void check_size_of_types()
 #endif
 }
 
+EntityId get_global_max_id_in_use(const BulkData& mesh,
+                                  EntityRank rank,
+                                  const std::list<Entity::entity_value_type>& deletedEntitiesCurModCycle)
+{
+  EntityId localMax = stk::mesh::get_max_id_on_local_proc(mesh, rank);
+
+  for (Entity::entity_value_type local_offset : deletedEntitiesCurModCycle) {    
+    stk::mesh::Entity entity(local_offset);
+    if ( mesh.is_valid(entity) && mesh.entity_rank(entity) == rank ) {
+      localMax = std::max(localMax, mesh.entity_key(entity).id());
+    }        
+  }
+
+  return stk::get_global_max(mesh.parallel(), localMax);
+}
+
 void check_declare_element_side_inputs(const BulkData & mesh,
                                        const Entity elem,
                                        const unsigned localSideId)
@@ -1540,6 +1556,32 @@ void check_declare_element_side_inputs(const BulkData & mesh,
   ThrowErrorMsgIf( side_top == stk::topology::INVALID_TOPOLOGY,
           "For elem " << mesh.identifier(elem) << ", localSideId "
           << localSideId << ", No element topology found");
+}
+
+bool connect_edge_to_elements_impl(stk::mesh::BulkData& bulk, stk::mesh::Entity edge)
+{
+  const stk::mesh::Entity* nodes = bulk.begin_nodes(edge);
+  unsigned numNodes = bulk.num_nodes(edge);
+  stk::mesh::EntityVector elems;
+  stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk, stk::topology::ELEM_RANK, numNodes, nodes, elems);
+
+  stk::mesh::EntityVector edgeNodes(bulk.begin_nodes(edge), bulk.end_nodes(edge));
+  stk::topology edgeTopo = bulk.bucket(edge).topology();
+  for(stk::mesh::Entity elem : elems) {
+    stk::mesh::OrdinalAndPermutation ordinalAndPerm = stk::mesh::get_ordinal_and_permutation(bulk, elem,
+                                                                                            stk::topology::EDGE_RANK, edgeNodes);
+
+    if(ordinalAndPerm.first == stk::mesh::INVALID_CONNECTIVITY_ORDINAL) { return false; }
+    
+    stk::mesh::impl::connect_element_to_entity(bulk, elem, edge, ordinalAndPerm.first, stk::mesh::PartVector{}, edgeTopo);
+  }
+  return true;
+}
+
+void connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge)
+{
+  ThrowRequireMsg(connect_edge_to_elements_impl(bulk, edge),
+                  "Edge with id: " << bulk.identifier(edge) << " has no valid connectivity to elements");
 }
 
 } // namespace impl

@@ -34,10 +34,6 @@
 #ifndef SIMD_DEVICE_WIDTHS_HPP
 #define SIMD_DEVICE_WIDTHS_HPP
 
-#ifndef STK_KOKKOS_SIMD
-#define STK_KOKKOS_SIMD
-#endif
-
 #include "stk_simd/Simd.hpp"
 
 namespace stk {

@@ -844,8 +844,6 @@ void Bucket::overwrite_entity(size_type to_ordinal, Entity entity, const FieldVe
   ThrowAssert(mesh().bucket_ptr(entity) != nullptr);
   ThrowAssert(mesh().entity_rank(entity) == m_entity_rank);
 
-  mark_for_modification();
-
   const MeshIndex from_index = m_mesh.mesh_index(entity);
   reset_entity_location(entity, to_ordinal, fields);
 
