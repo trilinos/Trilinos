@@ -264,7 +264,6 @@ public:
   FixedHashTable (const FixedHashTable<KeyType, ValueType, InDeviceType>& src,
                   typename std::enable_if<! std::is_same<DeviceType, InDeviceType>::value, int>::type* = NULL)
   {
-    using execution_space = typename device_type::execution_space;
     using Kokkos::ViewAllocateWithoutInitializing;
     typedef typename ptr_type::non_const_type nonconst_ptr_type;
     typedef typename val_type::non_const_type nonconst_val_type;
