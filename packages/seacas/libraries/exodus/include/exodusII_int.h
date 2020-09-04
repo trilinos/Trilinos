@@ -792,12 +792,12 @@ void ex__rm_stat_ptr(int exoid, struct ex__obj_stats **obj_ptr);
 void ex__set_compact_storage(int exoid, int varid);
 void ex__compress_variable(int exoid, int varid, int type);
 int  ex__id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num);
-void ex__check_valid_file_id(int         exoid,
-                             const char *func); /** Abort if exoid does not refer to valid file */
-int  ex__check_multiple_open(const char *path, int mode, const char *func);
-int  ex__check_file_type(const char *path, int *type);
-int  ex__get_dimension(int exoid, const char *DIMENSION, const char *label, size_t *count,
-                       int *dimid, const char *routine);
+int  ex__check_valid_file_id(
+     int exoid, const char *func); /** Return fatal error if exoid does not refer to valid file */
+int ex__check_multiple_open(const char *path, int mode, const char *func);
+int ex__check_file_type(const char *path, int *type);
+int ex__get_dimension(int exoid, const char *DIMENSION, const char *label, size_t *count,
+                      int *dimid, const char *routine);
 
 int ex__get_nodal_var(int exoid, int time_step, int nodal_var_index, int64_t num_nodes,
                       void *nodal_var_vals);

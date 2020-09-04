@@ -24,7 +24,7 @@
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "5.17 (2020/07/27)";
+  const char *       version_string = "5.18 (2020/08/24)";
 
   void output_copyright();
 

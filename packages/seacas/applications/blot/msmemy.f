@@ -34,7 +34,7 @@ C   --      (rotated for 3D, DZF for 3D only)
 C   --   HIDENP(i) - true iff node i is hidden (3D only)
 C   --   HIDEF(i) - true iff face i is hidden (3D only)
 C   --   IXFAC - the indices of the ordered faces (3D only)
-C   --   IX2NP - the node number for each mesh index (MASTER process only)
+C   --   IX2NP - the node number for each mesh index
 C   --   SCRNPS - scratch array for node sets
 C   --   SCRESS - scratch array for side sets
 C   --

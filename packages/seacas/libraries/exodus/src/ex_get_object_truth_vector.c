@@ -39,7 +39,9 @@ int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type, ex_entity_id 
   const char *var_name = NULL;
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   switch (obj_type) {
   case EX_EDGE_BLOCK:
