@@ -1019,6 +1019,10 @@ MACRO(TRIBITS_CTEST_PACKAGE_BY_PACKAGE)
 
     ENDIF()
 
+    # Print out values read from project CTestCustom.cmake file!
+    PRINT_VAR(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE)
+    PRINT_VAR(CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE)
+
     #
     # C) Build the library and then ALL
     #
@@ -1368,10 +1372,6 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
     ELSE()
       MESSAGE("Configure PASSED!")
       SET(AAO_CONFIGURE_PASSED TRUE)
-      # Load target properties and test keywords
-      CTEST_READ_CUSTOM_FILES(BUILD "${CTEST_BINARY_DIRECTORY}")
-      # Overridde from this file!
-      INCLUDE("${TRIBITS_PROJECT_ROOT}/CTestConfig.cmake")
     ENDIF()
 
     IF (AAO_CONFIGURE_PASSED)
@@ -1397,6 +1397,19 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
     ENDIF()
 
   ENDIF()
+
+  # Read in configured CTestCustom.cmake
+  CTEST_READ_CUSTOM_FILES(BUILD "${CTEST_BINARY_DIRECTORY}")
+  # NOTE: Above, it is safe to call CTEST_READ_CUSTOM_FILES() even if the
+  # configure failed and the file CTestCustom.cmake does exist.  In this case,
+  # CTest will just do nothing.
+
+  # Overridde any values by loading <projectDir>/CTestConfig.cmake
+  INCLUDE("${TRIBITS_PROJECT_ROOT}/CTestConfig.cmake")
+
+  # Print out values read from project CTestCustom.cmake file
+  PRINT_VAR(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE)
+  PRINT_VAR(CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE)
 
   #
   # C) Do the build

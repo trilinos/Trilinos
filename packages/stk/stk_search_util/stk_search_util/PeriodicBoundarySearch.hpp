@@ -495,7 +495,6 @@ private:
     {
       case TRANSLATION:
         translate_coordinates(side_1_vector,
-                              side_2_vector,
                               transform.m_translation);
         break;
       case ROTATIONAL:
@@ -608,10 +607,8 @@ private:
 
   void translate_coordinates(
       SphereIdVector & side_1_vector,
-      SphereIdVector & side_2_vector,
       const std::vector<double> &translate) const
   {
-    // translate domain to range, i.e. master to slave
     for (auto && side_1 : side_1_vector)
     {
       for (int j = 0; j < 3; ++j)
