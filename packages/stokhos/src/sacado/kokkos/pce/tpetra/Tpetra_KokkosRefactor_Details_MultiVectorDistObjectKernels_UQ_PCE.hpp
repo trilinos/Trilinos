@@ -439,20 +439,18 @@ namespace Details {
     void operator()( const size_type k ) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
-      nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j)
-        op(tag, dst(toRow, j),src(fromRow, j));
+        op(dst(toRow, j),src(fromRow, j));
     }
 
     KOKKOS_INLINE_FUNCTION
     void operator()( const size_type k, const size_type tidx ) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
-      nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j)
         for (size_type i=tidx; i<Kokkos::dimension_scalar(dst); i+=BlockSize)
-          op(tag, dst(toRow, j).fastAccessCoeff(i),
-            src(fromRow, j).fastAccessCoeff(i));
+          op(dst(toRow, j).fastAccessCoeff(i),
+             src(fromRow, j).fastAccessCoeff(i));
     }
 
     static void permute(const DstView& dst,
@@ -514,20 +512,18 @@ namespace Details {
     void operator()( const size_type k ) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
-      nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j)
-        op(tag, dst(toRow, dst_col(j)),src(fromRow, src_col(j)));
+        op(dst(toRow, dst_col(j)),src(fromRow, src_col(j)));
     }
 
     KOKKOS_INLINE_FUNCTION
     void operator()( const size_type k, const size_type tidx ) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
-      nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j)
         for (size_type i=tidx; i<Kokkos::dimension_scalar(dst); i+=BlockSize)
-          op(tag, dst(toRow, dst_col(j)).fastAccessCoeff(i),
-            src(fromRow, src_col(j)).fastAccessCoeff(i));
+          op(dst(toRow, dst_col(j)).fastAccessCoeff(i),
+             src(fromRow, src_col(j)).fastAccessCoeff(i));
     }
 
     static void permute(const DstView& dst,
