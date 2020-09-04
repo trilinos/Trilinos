@@ -80,7 +80,9 @@ int ex_put_info(int exoid, int num_info, char *info[])
   int rootid = exoid & EX_FILE_ID_MASK;
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   /* only do this if there are records */
   if (num_info > 0) {

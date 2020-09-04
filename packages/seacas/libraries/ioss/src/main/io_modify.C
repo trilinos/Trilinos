@@ -74,7 +74,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "0.92 (2020-05-20)";
+  std::string version = "0.93 (2020-07-30)";
 
   std::vector<Ioss::GroupingEntity *> attributes_modified;
 
@@ -285,7 +285,7 @@ int main(int argc, char *argv[])
     if (from_term) {
       fmt::print(fg(fmt::terminal_color::magenta), "\n");
       const char *cinput = getline_int("COMMAND> ");
-      if (cinput[0] == '\0') {
+      if (cinput && cinput[0] == '\0') {
         break;
       }
       if (cinput) {
@@ -682,20 +682,22 @@ namespace {
       recStack[v] = true;
 
       // Recur for all the m_vertices adjacent to this vertex
-      for (auto i = m_adj[v].begin(); i != m_adj[v].end(); ++i) {
-        if (!visited[*i] && is_cyclic_internal(*i, visited, recStack)) {
-          if (*i != 0 && v != 0) {
-            fmt::print(fg(fmt::color::yellow), "\t*** Cycle contains {} -> {}\n", m_vertex[v],
-                       m_vertex[*i]);
+      if (v < (int)m_adj.size()) {
+        for (auto i = m_adj[v].begin(); i != m_adj[v].end(); ++i) {
+          if (!visited[*i] && is_cyclic_internal(*i, visited, recStack)) {
+            if (*i != 0 && v != 0) {
+              fmt::print(fg(fmt::color::yellow), "\t*** Cycle contains {} -> {}\n", m_vertex[v],
+                         m_vertex[*i]);
+            }
+            return true;
           }
-          return true;
-        }
-        else if (recStack[*i]) {
-          if (*i != 0 && v != 0) {
-            fmt::print(fg(fmt::color::yellow), "\t*** Cycle contains {} -> {}\n", m_vertex[v],
-                       m_vertex[*i]);
+          else if (recStack[*i]) {
+            if (*i != 0 && v != 0) {
+              fmt::print(fg(fmt::color::yellow), "\t*** Cycle contains {} -> {}\n", m_vertex[v],
+                         m_vertex[*i]);
+            }
+            return true;
           }
-          return true;
         }
       }
     }
@@ -961,7 +963,12 @@ namespace {
       assem = region.get_assembly(tokens[1]);
       if (assem == nullptr) {
         // New assembly...
-        assem      = new Ioss::Assembly(region.get_database(), tokens[1]);
+        assem = new Ioss::Assembly(region.get_database(), tokens[1]);
+        if (assem == nullptr) {
+          fmt::print(stderr, fg(fmt::color::red),
+                     "ERROR: Unable to create or access assembly '{}'.\n", tokens[1]);
+          return false;
+        }
         auto my_id = get_next_assembly_id(region);
         assem->property_add(Ioss::Property("id", my_id));
         assem->property_add(Ioss::Property("created", 1));

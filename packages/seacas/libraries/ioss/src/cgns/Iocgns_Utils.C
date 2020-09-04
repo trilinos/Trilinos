@@ -1448,7 +1448,7 @@ void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, int base_ptr, Ios
   const auto &nblocks                 = region->get_node_blocks();
   const auto &nblock                  = nblocks[0];
   bool        global_has_nodal_fields = nblock->field_count(Ioss::Field::TRANSIENT) > 0;
-  bool        is_file_per_state = (base_ptr >= 0);
+  bool        is_file_per_state       = (base_ptr >= 0);
 
   // IF the `base_ptr` is positive, then we are in file-per-state option.
   // `file_ptr` points to the linked-to file where the state data is being
@@ -2553,6 +2553,11 @@ void Iocgns::Utils::assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData
   // On first entry, work_vector will be all zeros.  To avoid any
   // searching, assign the first `nproc` zones to the `nproc` entries
   // in `work_vector`.  Avoids searching...
+  if (zones.size() < work_vector.size()) {
+    std::ostringstream errmsg;
+    fmt::print(errmsg, "IOCGNS error: Could not decompose mesh across {} processors based on constraints.", work_vector.size());
+    IOSS_ERROR(errmsg);
+  }
   assert(zones.size() >= work_vector.size());
   size_t i = 0;
   for (; i < work_vector.size(); i++) {
@@ -2606,7 +2611,7 @@ void Iocgns::Utils::assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData
 size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones, double avg_work,
                                 double load_balance, int proc_rank, int proc_count, bool verbose)
 {
-  auto   original_zones(zones); // In case we need to call this again...
+  auto original_zones(zones); // In case we need to call this again...
 
   auto   new_zones(zones);
   size_t new_zone_id = zones.size() + 1;
@@ -2802,7 +2807,8 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
     }
   }
   std::swap(new_zones, zones);
-  size_t active = std::count_if(zones.begin(), zones.end(), [](const Iocgns::StructuredZoneData *z) { return z->is_active(); });
+  size_t active = std::count_if(zones.begin(), zones.end(),
+                                [](const Iocgns::StructuredZoneData *z) { return z->is_active(); });
 
   if (active < (size_t)proc_count && load_balance > 1.05) {
     // Tighten up the load_balance factor to get some decomposition going...
@@ -2813,17 +2819,17 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
     // Also reset the parent zone to not have any children...
     for (auto &zone : zones) {
       if (!zone->is_active()) {
-	zone->m_child1 = nullptr;
-	zone->m_child2 = nullptr;
+        zone->m_child1 = nullptr;
+        zone->m_child2 = nullptr;
       }
       if (zone->m_adam != zone) {
-	// Created via a split; delete...
-	delete zone;
+        // Created via a split; delete...
+        delete zone;
       }
     }
 
     // Revert `zones` back to original version (with no zones split)
-    zones = original_zones;
+    zones       = original_zones;
     new_zone_id = pre_split(zones, avg_work, new_load_balance, proc_rank, proc_count, verbose);
   }
   return new_zone_id;

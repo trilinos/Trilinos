@@ -72,7 +72,9 @@ int ex_get_reduction_vars(int exoid, int time_step, ex_entity_type var_type, ex_
   char   errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   if (var_type == EX_GLOBAL) {
     /* FIXME: Special case: all vars stored in 2-D single array. */

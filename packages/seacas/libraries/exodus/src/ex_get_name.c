@@ -38,7 +38,9 @@ int ex_get_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, char
   char *vobj = NULL;
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   switch (obj_type) {
   case EX_ASSEMBLY:

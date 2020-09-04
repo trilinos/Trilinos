@@ -56,7 +56,9 @@ int ex_close(int exoid)
 
   EX_FUNC_ENTER();
 
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   /*
    * NOTE: If using netcdf-4, exoid must refer to the root group.

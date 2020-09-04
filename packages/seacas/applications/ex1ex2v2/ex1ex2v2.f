@@ -41,7 +41,7 @@ C      --A - the dynamic memory base array
       LOGICAL EXODUS
       LOGICAL WHOTIM
 
-      data (qainfo(i), i=1,3) / 'ex1ex2v2', '20110616', 'v 2.11  ' /
+      data (qainfo(i), i=1,3) / 'ex1ex2v2', '20200903', 'v 2.12  ' /
       data iin,iout/5,6/
       data nsteps /0/
       data cpuws,wsout /0,0/
@@ -51,9 +51,6 @@ C      --A - the dynamic memory base array
       CALL BANNER (0, QAINFO,
      &   'EXODUS I TO EXODUS II FILE TRANSLATOR',
      &   ' ', ' ')
-      call exinq (netid, EXLBVR, idummy, exlibversion, name, nerr)
-      write(*,'(A,F6.3)')' ExodusII Library version ',
-     1          exlibversion
 
 C   --Open the input and output files
 
