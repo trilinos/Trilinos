@@ -527,22 +527,22 @@ inline void create_hierarchy_loop(ObjectBoundingBoxHierarchy_T<RangeBoxType> *hi
         //  Determine the longest centroid bounding box direction.  This is the direction in which bounding boxes will be
         //  sorted and split.  Reorder the box sorting arrays based on the split direction
         //
-        int *master_index;
+        int *primary_index;
         if(moment_x > moment_y && moment_x > moment_z) {
-          master_index = index_array0_t;
+          primary_index = index_array0_t;
         } else {
           if(moment_y > moment_z) {
-            master_index = index_array1_t;
+            primary_index = index_array1_t;
           } else {
-            master_index = index_array2_t;
+            primary_index = index_array2_t;
           }
         }
         //
         //  Sort boxes into array scratch_boxes
-        //  Create the new master index array
+        //  Create the new primary index array
         //
         for(int ibox = 0; ibox < num_boxes; ++ibox) {
-          scratch_boxes[ibox] = boxes[master_index[ibox]];
+          scratch_boxes[ibox] = boxes[primary_index[ibox]];
         }
         //
         //  Update the current tree pointer for right child offset
@@ -603,85 +603,73 @@ inline void create_hierarchy_loop(ObjectBoundingBoxHierarchy_T<RangeBoxType> *hi
         //  Determine the longest centroid bounding box direction.  This is the direction in which bounding boxes will be
         //  sorted and split.  Reorder the box sorting arrays based on the split direction
         //
-        int *master_index, *sub_index1, *sub_index2;
-        int *master_sindex, *sub_sindex1, *sub_sindex2;
+        int *primary_index, *sub_index1, *sub_index2;
+        int *primary_sindex, *sub_sindex1, *sub_sindex2;
      
         if(moment_x > moment_y && moment_x > moment_z) {
-          master_index = index_array0_t;
+          primary_index = index_array0_t;
           sub_index1   = index_array1_t;
           sub_index2   = index_array2_t;
-          master_sindex = scratch_index0_array;
+          primary_sindex = scratch_index0_array;
           sub_sindex1   = scratch_index1_array;
           sub_sindex2   = scratch_index2_array;
         } else {
           if(moment_y > moment_z) {
-            master_index = index_array1_t;
+            primary_index = index_array1_t;
             sub_index1   = index_array0_t;
             sub_index2   = index_array2_t;
-            master_sindex = scratch_index1_array;
+            primary_sindex = scratch_index1_array;
             sub_sindex1   = scratch_index0_array;
             sub_sindex2   = scratch_index2_array;
           } else {
-            master_index = index_array2_t;
+            primary_index = index_array2_t;
             sub_index1   = index_array0_t;
             sub_index2   = index_array1_t;
-            master_sindex = scratch_index2_array;
+            primary_sindex = scratch_index2_array;
             sub_sindex1   = scratch_index0_array;
             sub_sindex2   = scratch_index1_array;
           }
         }
         //
         //  Sort boxes into array scratch_boxes
-        //  Create the new master index array
+        //  Create the new primary index array
         //
         for(int ibox = 0; ibox < num_boxes; ++ibox) {
-          scratch_boxes[ibox] = boxes[master_index[ibox]];
-          master_sindex[master_index[ibox]] = ibox;
+          scratch_boxes[ibox] = boxes[primary_index[ibox]];
+          primary_sindex[primary_index[ibox]] = ibox;
         }
         //
-        //  Reorder secondary arrays to be consistent with the master array splitting
+        //  Reorder secondary arrays to be consistent with the primary array splitting
         //
         int left_pos1 = 0;
         int right_pos1 = left_child_size;
         int left_pos2 = 0;
         int right_pos2 = left_child_size;
         for(int ibox = 0; ibox < num_boxes; ++ibox) {
-          const int master1 = master_sindex[sub_index1[ibox]];
-          const int master2 = master_sindex[sub_index2[ibox]];
+          const int primary1 = primary_sindex[sub_index1[ibox]];
+          const int primary2 = primary_sindex[sub_index2[ibox]];
 
-          if(master1 < left_child_size) {
-            sub_sindex1[left_pos1++] = master1;
+          if(primary1 < left_child_size) {
+            sub_sindex1[left_pos1++] = primary1;
           } else {
-            sub_sindex1[right_pos1++] = master1 - left_child_size;
+            sub_sindex1[right_pos1++] = primary1 - left_child_size;
           }
 
-          if(master2 < left_child_size) {
-            sub_sindex2[left_pos2++] = master2;
+          if(primary2 < left_child_size) {
+            sub_sindex2[left_pos2++] = primary2;
           } else {
-            sub_sindex2[right_pos2++] = master2 - left_child_size;
+            sub_sindex2[right_pos2++] = primary2 - left_child_size;
           }
         }
-        //for(int ibox = 0; ibox < right_child_size; ++ibox) {
-        //  sub_index1[left_child_size + ibox] = master_index[ibox];
-        //  sub_index2[left_child_size + ibox] = master_temp[ibox];
-        //}
         //
-        //  Update the master index to be correct with the new box ordering
+        //  Update the primary index to be correct with the new box ordering
         //
         for(int ibox = 0; ibox < left_child_size; ++ibox) {
-          master_sindex[ibox] = ibox;
+          primary_sindex[ibox] = ibox;
         }
         for(int ibox = left_child_size; ibox < num_boxes; ++ibox) {
-          master_sindex[ibox] = ibox - left_child_size;
+          primary_sindex[ibox] = ibox - left_child_size;
         }
-
-        
-        //for(int ibox = 0; ibox < num_boxes; ++ibox) {
-        //  master_index[ibox] = master_sindex[ibox];
-        //  sub_index1[ibox] = sub_sindex1[ibox];
-        //  sub_index2[ibox] = sub_sindex2[ibox];
-        //}
-        
 
         //
         //  Update the current tree pointer for right child offset
@@ -993,50 +981,50 @@ void create_hierarchy_partial(ObjectBoundingBoxHierarchy_T<RangeBoxType> *const 
   //  Determine the longest centroid bounding box direction.  This is the direction in which bounding boxes will be
   //  sorted and split.  Reorder the box sorting arrays based on the split direction
   //
-  int *master_index, *sub_index1, *sub_index2;
-  int *master_sindex;
+  int *primary_index, *sub_index1, *sub_index2;
+  int *primary_sindex;
   int *sub_sindex1, *sub_sindex2;
   if(moment_x > moment_y && moment_x > moment_z) {
-    master_index  = index_array0_t_start_ptr;
+    primary_index  = index_array0_t_start_ptr;
     sub_index1    = index_array1_t_start_ptr;
     sub_index2    = index_array2_t_start_ptr;
-    master_sindex = sindex_array0_t_start_ptr;
+    primary_sindex = sindex_array0_t_start_ptr;
     sub_sindex1   = sindex_array1_t_start_ptr;
     sub_sindex2   = sindex_array2_t_start_ptr;
   } else {
     if(moment_y > moment_z) {
-      master_index  = index_array1_t_start_ptr;
+      primary_index  = index_array1_t_start_ptr;
       sub_index1    = index_array0_t_start_ptr;
       sub_index2    = index_array2_t_start_ptr;
-      master_sindex = sindex_array1_t_start_ptr;
+      primary_sindex = sindex_array1_t_start_ptr;
       sub_sindex1   = sindex_array0_t_start_ptr;
       sub_sindex2   = sindex_array2_t_start_ptr;
     } else {
-      master_index  = index_array2_t_start_ptr;
+      primary_index  = index_array2_t_start_ptr;
       sub_index1    = index_array0_t_start_ptr;
       sub_index2    = index_array1_t_start_ptr;
-      master_sindex = sindex_array2_t_start_ptr;
+      primary_sindex = sindex_array2_t_start_ptr;
       sub_sindex1   = sindex_array0_t_start_ptr;
       sub_sindex2   = sindex_array1_t_start_ptr;
     }
   }
   //
-  //  Resort the boxes based off of the master array.  First use the new master_sindex array to story a mapping between old box 
+  //  Resort the boxes based off of the primary array.  First use the new primary_sindex array to story a mapping between old box 
   //  positions and new box positions.
   //
-#pragma omp parallel for schedule(static) default(none) shared(master_index, master_sindex) firstprivate(scratch_boxes_start_ptr, boxes_start_ptr, num_boxes)
+#pragma omp parallel for schedule(static) default(none) shared(primary_index, primary_sindex) firstprivate(scratch_boxes_start_ptr, boxes_start_ptr, num_boxes)
   for(int ibox = 0; ibox < num_boxes; ++ibox) {
     //  NKC, try memcopy
-    const int index = master_index[ibox];
+    const int index = primary_index[ibox];
     scratch_boxes_start_ptr[ibox] = boxes_start_ptr[index];
-    master_sindex[index] = ibox;
+    primary_sindex[index] = ibox;
   }
   //
-  //  Reorder secondary arrays to be consistent with the master array order
+  //  Reorder secondary arrays to be consistent with the primary array order
   //  Use at most just four threads here, one starting from the left and one from the right,
   //  can't think of any better way to exploit threading for this particular case
   //
-#pragma omp parallel sections default(none) shared(master_sindex, sub_index1, sub_sindex1, sub_index2, sub_sindex2) firstprivate(left_child_size, num_boxes)
+#pragma omp parallel sections default(none) shared(primary_sindex, sub_index1, sub_sindex1, sub_index2, sub_sindex2) firstprivate(left_child_size, num_boxes)
   {
   #pragma omp section
     {
@@ -1044,11 +1032,11 @@ void create_hierarchy_partial(ObjectBoundingBoxHierarchy_T<RangeBoxType> *const 
       int left_pos1 = 0;
       int right_pos1 = left_child_size;
       for(int ibox = 0; ibox < left_child_size; ++ibox) {
-        const int master1 = master_sindex[sub_index1[ibox]];
-        if(master1 < left_child_size) {
-          sub_sindex1[left_pos1++] = master1;
+        const int primary1 = primary_sindex[sub_index1[ibox]];
+        if(primary1 < left_child_size) {
+          sub_sindex1[left_pos1++] = primary1;
         } else {
-          sub_sindex1[right_pos1++] = master1 - left_child_size;
+          sub_sindex1[right_pos1++] = primary1 - left_child_size;
         }
       }      
     }
@@ -1058,11 +1046,11 @@ void create_hierarchy_partial(ObjectBoundingBoxHierarchy_T<RangeBoxType> *const 
       int left_pos2 = 0;
       int right_pos2 = left_child_size;
       for(int ibox = 0; ibox < left_child_size; ++ibox) {
-        const int master2 = master_sindex[sub_index2[ibox]];
-        if(master2 < left_child_size) {
-          sub_sindex2[left_pos2++] = master2;
+        const int primary2 = primary_sindex[sub_index2[ibox]];
+        if(primary2 < left_child_size) {
+          sub_sindex2[left_pos2++] = primary2;
         } else {
-          sub_sindex2[right_pos2++] = master2 - left_child_size;
+          sub_sindex2[right_pos2++] = primary2 - left_child_size;
         }
       }      
     }
@@ -1073,11 +1061,11 @@ void create_hierarchy_partial(ObjectBoundingBoxHierarchy_T<RangeBoxType> *const 
       int left_pos1 = left_child_size-1;
       int right_pos1 = num_boxes-1;
       for(int ibox = num_boxes-1; ibox >= left_child_size; --ibox) {
-        const int master1 = master_sindex[sub_index1[ibox]];
-        if(master1 < left_child_size) {
-          sub_sindex1[left_pos1--] = master1;
+        const int primary1 = primary_sindex[sub_index1[ibox]];
+        if(primary1 < left_child_size) {
+          sub_sindex1[left_pos1--] = primary1;
         } else {
-          sub_sindex1[right_pos1--] = master1 - left_child_size;
+          sub_sindex1[right_pos1--] = primary1 - left_child_size;
         }
       }      
     }
@@ -1088,25 +1076,25 @@ void create_hierarchy_partial(ObjectBoundingBoxHierarchy_T<RangeBoxType> *const 
       int left_pos2 = left_child_size-1;
       int right_pos2 = num_boxes-1;
       for(int ibox = num_boxes-1; ibox >= left_child_size; --ibox) {
-        const int master2 = master_sindex[sub_index2[ibox]];
-        if(master2 < left_child_size) {
-          sub_sindex2[left_pos2--] = master2;
+        const int primary2 = primary_sindex[sub_index2[ibox]];
+        if(primary2 < left_child_size) {
+          sub_sindex2[left_pos2--] = primary2;
         } else {
-          sub_sindex2[right_pos2--] = master2 - left_child_size;
+          sub_sindex2[right_pos2--] = primary2 - left_child_size;
         }
       }      
     }
   }
   //
-  //  Update the master index to be correct with the new box ordering
+  //  Update the primary index to be correct with the new box ordering
   //
-#pragma omp parallel for schedule(static) default(none) shared(master_sindex) firstprivate(left_child_size)
+#pragma omp parallel for schedule(static) default(none) shared(primary_sindex) firstprivate(left_child_size)
   for(int ibox = 0; ibox < left_child_size; ++ibox) {
-    master_sindex[ibox] = ibox;
+    primary_sindex[ibox] = ibox;
   }
-#pragma omp parallel for schedule(static) default(none) shared(master_sindex) firstprivate(left_child_size, num_boxes)
+#pragma omp parallel for schedule(static) default(none) shared(primary_sindex) firstprivate(left_child_size, num_boxes)
   for(int ibox = left_child_size; ibox < num_boxes; ++ibox) {
-    master_sindex[ibox] = ibox - left_child_size;
+    primary_sindex[ibox] = ibox - left_child_size;
   }
   //
   //  Update the current tree pointer for right child offset
@@ -1220,53 +1208,53 @@ inline void create_hierarchy_fork_threaded(ObjectBoundingBoxHierarchy_T<RangeBox
 
   split_boxes_threaded(num_boxes, boxes_start_ptr, moment_x, moment_y, moment_z, numThreadsToUse);
   //
-  //  Boxes will be split in half in the 'master' direction.  Sub1 and sub2 are the other two directions.
+  //  Boxes will be split in half in the 'primary' direction.  Sub1 and sub2 are the other two directions.
   //
-  int *master_index, *sub_index1, *sub_index2;
-  int *master_sindex;
+  int *primary_index, *sub_index1, *sub_index2;
+  int *primary_sindex;
   int *sub_sindex1, *sub_sindex2;
   if(moment_x > moment_y && moment_x > moment_z) {
-    master_index  = index_array0_t_start_ptr;
+    primary_index  = index_array0_t_start_ptr;
     sub_index1    = index_array1_t_start_ptr;
     sub_index2    = index_array2_t_start_ptr;
-    master_sindex = sindex_array0_t_start_ptr;
+    primary_sindex = sindex_array0_t_start_ptr;
     sub_sindex1   = sindex_array1_t_start_ptr;
     sub_sindex2   = sindex_array2_t_start_ptr;
   } else {
     if(moment_y > moment_z) {
-      master_index  = index_array1_t_start_ptr;
+      primary_index  = index_array1_t_start_ptr;
       sub_index1    = index_array0_t_start_ptr;
       sub_index2    = index_array2_t_start_ptr;
-      master_sindex = sindex_array1_t_start_ptr;
+      primary_sindex = sindex_array1_t_start_ptr;
       sub_sindex1   = sindex_array0_t_start_ptr;
       sub_sindex2   = sindex_array2_t_start_ptr;
     } else {
-      master_index  = index_array2_t_start_ptr;
+      primary_index  = index_array2_t_start_ptr;
       sub_index1    = index_array0_t_start_ptr;
       sub_index2    = index_array1_t_start_ptr;
-      master_sindex = sindex_array2_t_start_ptr;
+      primary_sindex = sindex_array2_t_start_ptr;
       sub_sindex1   = sindex_array0_t_start_ptr;
       sub_sindex2   = sindex_array1_t_start_ptr;
     }
   }
   //
-  //  Resort the boxes based off of the master array.  First use the new master_sindex array to story a mapping between old box 
+  //  Resort the boxes based off of the primary array.  First use the new primary_sindex array to story a mapping between old box 
   //  positions and new box positions.  Partion the 'sub' lists to the left and right sub trees.  Note the sub lists still
   //  need to remain in sorted order and are partioned with the below code.
   //
 
-#pragma omp parallel for schedule(static) num_threads(numThreadsToUse) default(none) shared(master_index, master_sindex) firstprivate(num_boxes, scratch_boxes_start_ptr, boxes_start_ptr)
+#pragma omp parallel for schedule(static) num_threads(numThreadsToUse) default(none) shared(primary_index, primary_sindex) firstprivate(num_boxes, scratch_boxes_start_ptr, boxes_start_ptr)
   for(int ibox = 0; ibox < num_boxes; ++ibox) {
-    const int index = master_index[ibox];
+    const int index = primary_index[ibox];
     scratch_boxes_start_ptr[ibox] = boxes_start_ptr[index];
-    master_sindex[index] = ibox;
+    primary_sindex[index] = ibox;
   }
   //
-  //  Reorder secondary arrays to be consistent with the master array order
+  //  Reorder secondary arrays to be consistent with the primary array order
   //  Use at most just four threads here, one starting fro the left and one from the right of each of the lists
   //  can't think of any better way to exploit threading any more for this particular operation
   //
-#pragma omp parallel sections num_threads(numThreadsToUse) default(none) shared(master_sindex, sub_index1, sub_sindex1, sub_index2, sub_sindex2) firstprivate(left_child_size, num_boxes)
+#pragma omp parallel sections num_threads(numThreadsToUse) default(none) shared(primary_sindex, sub_index1, sub_sindex1, sub_index2, sub_sindex2) firstprivate(left_child_size, num_boxes)
   {
   #pragma omp section
     {
@@ -1274,11 +1262,11 @@ inline void create_hierarchy_fork_threaded(ObjectBoundingBoxHierarchy_T<RangeBox
       int left_pos1 = 0;
       int right_pos1 = left_child_size;
       for(int ibox = 0; ibox < left_child_size; ++ibox) {
-        const int master1 = master_sindex[sub_index1[ibox]];
-        if(master1 < left_child_size) {
-          sub_sindex1[left_pos1++] = master1;
+        const int primary1 = primary_sindex[sub_index1[ibox]];
+        if(primary1 < left_child_size) {
+          sub_sindex1[left_pos1++] = primary1;
         } else {
-          sub_sindex1[right_pos1++] = master1 - left_child_size;
+          sub_sindex1[right_pos1++] = primary1 - left_child_size;
         }
       }      
     }
@@ -1288,11 +1276,11 @@ inline void create_hierarchy_fork_threaded(ObjectBoundingBoxHierarchy_T<RangeBox
       int left_pos2 = 0;
       int right_pos2 = left_child_size;
       for(int ibox = 0; ibox < left_child_size; ++ibox) {
-        const int master2 = master_sindex[sub_index2[ibox]];
-        if(master2 < left_child_size) {
-          sub_sindex2[left_pos2++] = master2;
+        const int primary2 = primary_sindex[sub_index2[ibox]];
+        if(primary2 < left_child_size) {
+          sub_sindex2[left_pos2++] = primary2;
         } else {
-          sub_sindex2[right_pos2++] = master2 - left_child_size;
+          sub_sindex2[right_pos2++] = primary2 - left_child_size;
         }
       }      
     }
@@ -1303,11 +1291,11 @@ inline void create_hierarchy_fork_threaded(ObjectBoundingBoxHierarchy_T<RangeBox
       int left_pos1 = left_child_size-1;
       int right_pos1 = num_boxes-1;
       for(int ibox = num_boxes-1; ibox >= left_child_size; --ibox) {
-        const int master1 = master_sindex[sub_index1[ibox]];
-        if(master1 < left_child_size) {
-          sub_sindex1[left_pos1--] = master1;
+        const int primary1 = primary_sindex[sub_index1[ibox]];
+        if(primary1 < left_child_size) {
+          sub_sindex1[left_pos1--] = primary1;
         } else {
-          sub_sindex1[right_pos1--] = master1 - left_child_size;
+          sub_sindex1[right_pos1--] = primary1 - left_child_size;
         }
       }      
     }
@@ -1318,25 +1306,25 @@ inline void create_hierarchy_fork_threaded(ObjectBoundingBoxHierarchy_T<RangeBox
       int left_pos2 = left_child_size-1;
       int right_pos2 = num_boxes-1;
       for(int ibox = num_boxes-1; ibox >= left_child_size; --ibox) {
-        const int master2 = master_sindex[sub_index2[ibox]];
-        if(master2 < left_child_size) {
-          sub_sindex2[left_pos2--] = master2;
+        const int primary2 = primary_sindex[sub_index2[ibox]];
+        if(primary2 < left_child_size) {
+          sub_sindex2[left_pos2--] = primary2;
         } else {
-          sub_sindex2[right_pos2--] = master2 - left_child_size;
+          sub_sindex2[right_pos2--] = primary2 - left_child_size;
         }
       }      
     }
   }
   //
-  //  Update the master index to be correct with the new box ordering
+  //  Update the primary index to be correct with the new box ordering
   //
-#pragma omp parallel for schedule(static) num_threads(numThreadsToUse) default(none) shared(master_sindex) firstprivate(left_child_size)
+#pragma omp parallel for schedule(static) num_threads(numThreadsToUse) default(none) shared(primary_sindex) firstprivate(left_child_size)
   for(int ibox = 0; ibox < left_child_size; ++ibox) {
-    master_sindex[ibox] = ibox;
+    primary_sindex[ibox] = ibox;
   }
-#pragma omp parallel for schedule(static) num_threads(numThreadsToUse) default(none) shared(master_sindex) firstprivate(left_child_size, num_boxes)
+#pragma omp parallel for schedule(static) num_threads(numThreadsToUse) default(none) shared(primary_sindex) firstprivate(left_child_size, num_boxes)
   for(int ibox = left_child_size; ibox < num_boxes; ++ibox) {
-    master_sindex[ibox] = ibox - left_child_size;
+    primary_sindex[ibox] = ibox - left_child_size;
   }
   //
   //  Update the current tree pointer for right child offset
@@ -1345,7 +1333,7 @@ inline void create_hierarchy_fork_threaded(ObjectBoundingBoxHierarchy_T<RangeBox
   hierarchy_start_ptr->right_child_offset = right_child_offset1;
 
   //
-  //  Recusively call on the left and right box sets.  Fork the current thread into two new master threads.
+  //  Recusively call on the left and right box sets.  Fork the current thread into two new primary threads.
   //  Each fork will then create new thread teams in the subsequent call.
   //
   int rightNumThreads = numThreadsToUse/2;

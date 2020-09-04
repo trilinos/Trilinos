@@ -50,8 +50,6 @@
 #include <stk_transfer/GeometricTransferImpl.hpp>
 #include <stk_transfer/TransferBase.hpp>
 
-#include<impl/Kokkos_Timer.hpp>
-
 
 namespace stk {
 namespace transfer {
