@@ -43,11 +43,9 @@ project votd
     $(sierra-warnings)
     <define>STK_BUILT_IN_SIERRA
     <include>$(stk_simd-root)
-    <define>STK_KOKKOS_SIMD
     <define>STK_VOLATILE_SIMD
   : usage-requirements
     <include>$(stk_simd-root)
-    <define>STK_KOKKOS_SIMD
     <define>STK_VOLATILE_SIMD
   : build-dir $(stk_simd-builddir)
   ;
@@ -117,7 +115,7 @@ install install-user-jamfile
 
 explicit install-user-include ;
 install install-user-include
-  : [ path.glob-tree $(stk_simd-root) : *.hpp no_simd/*hpp sse/*hpp avx/*hpp avx_512/*hpp  ]
+  : [ path.glob-tree $(stk_simd-root) : *.hpp ]
   : <location>$(install-root)/stk/stk_simd
     <install-source-root>$(stk_simd-root)
   ;
