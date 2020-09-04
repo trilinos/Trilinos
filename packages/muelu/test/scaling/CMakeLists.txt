@@ -437,7 +437,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Epetra)
+IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Epetra AND Tpetra_INST_SERIAL)
   TRIBITS_ADD_EXECUTABLE(
     SpMVPerformance
     SOURCES SpMVPerformance.cpp
@@ -450,7 +450,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Epetra)
     NAME_POSTFIX "Tpetra"
     COMM mpi
     NUM_MPI_PROCS 1
-    ARGS "--linAlgebra=Tpetra --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --num-runs=1000"
+    ARGS "--node=serial --linAlgebra=Tpetra --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --num-runs=1000"
     PASS_REGULAR_EXPRESSION "Complete"
     RUN_SERIAL
     CATEGORIES PERFORMANCE
@@ -461,7 +461,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Epetra)
     NAME_POSTFIX "Tpetra"
     COMM mpi
     NUM_MPI_PROCS 4
-    ARGS "--linAlgebra=Tpetra --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --num-runs=1000"
+    ARGS "--node=serial --linAlgebra=Tpetra --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --num-runs=1000"
     PASS_REGULAR_EXPRESSION "Complete"
     RUN_SERIAL
     CATEGORIES PERFORMANCE
