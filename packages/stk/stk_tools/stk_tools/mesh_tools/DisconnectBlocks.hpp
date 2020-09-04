@@ -41,12 +41,24 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace stk {
 namespace tools {
 
-    void disconnect_all_blocks(stk::mesh::BulkData& bulk, bool preserveOrphans = false);
-    void disconnect_all_blocks(stk::mesh::BulkData & bulk, impl::LinkInfo& info, bool preserveOrphans = false);
-    void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockPairVector& blockPairsToDisconnect, int debugLevel = 0);
-    void disconnect_user_blocks_partial(stk::mesh::BulkData& bulk, const BlockPairVector& blockPairsToDisconnect, int debugLevel = 0);
-    void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockNamePairVector& blockNamePairsToDisconnect, int debugLevel = 0);
+enum DisconnectOption {
+  DISCONNECT_GLOBAL,
+  DISCONNECT_LOCAL
+};
+
+enum SnipOption {
+  SNIP_GLOBAL,
+  SNIP_LOCAL
+};
+
+void disconnect_all_blocks(stk::mesh::BulkData& bulk, bool preserveOrphans = false);
+void disconnect_all_blocks(stk::mesh::BulkData & bulk, impl::LinkInfo& info, bool preserveOrphans = false);
+void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockPairVector& blockPairsToDisconnect,
+                            DisconnectOption disconnectOption = DISCONNECT_GLOBAL, SnipOption snipOption = SNIP_GLOBAL);
+void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockNamePairVector& blockNamePairsToDisconnect,
+                            DisconnectOption disconnectOption = DISCONNECT_GLOBAL, SnipOption snipOption = SNIP_GLOBAL);
 }
+
 }
 
 #endif

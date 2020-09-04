@@ -33,7 +33,9 @@
 //
 
 #include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/MPI.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 namespace stk {
 
@@ -50,116 +52,130 @@ namespace stk {
     inout[1] = std::max(inout[1], in[1]);
   }
 
+void compute_global_sum_and_max(ParallelMachine comm,
+                                uint64_t numLocalIds,
+                                uint64_t& globalSumNumIds,
+                                uint64_t& globalMaxNumIds)
+{
+  uint64_t numLocalReduce[2] = {numLocalIds, numLocalIds};
 
-  std::vector<uint64_t> generate_parallel_unique_ids(const uint64_t maxAllowedId,
-                                                     const std::vector<uint64_t>& existingIds,
-                                                     uint64_t numNewIdsLocal,
-                                                     ParallelMachine comm) {
+  MPI_Op myOp;
+  MPI_Op_create((MPI_User_function *)MpiSumMax, true, &myOp);
 
+  uint64_t numGlobalReduce[2] = {0u, 0u};
+  ThrowRequireMsg(MPI_SUCCESS == MPI_Allreduce(numLocalReduce, numGlobalReduce, 2, sierra::MPI::Datatype<uint64_t>::type(), myOp, comm), "MPI_Allreduce failed");
+  MPI_Op_free(&myOp);
+
+  globalSumNumIds = numGlobalReduce[0];
+  globalMaxNumIds = numGlobalReduce[1];
+}
+
+void generate_parallel_ids_in_gap(ParallelMachine comm,
+                                  const std::vector<uint64_t>& existingIds,
+                                  uint64_t maxAllowedId,
+                                  uint64_t numNewIdsLocal,
+                                  uint64_t globalNumIdsRequested,
+                                  std::vector<uint64_t>& newIds)
+{
+  //
+  // Run fallback sparse fill algorithm
+  //
+
+  newIds.clear();
+  newIds.reserve(numNewIdsLocal);
+  uint64_t myFirstNewId;
+  ThrowRequireMsg(MPI_SUCCESS == MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_SUM, comm), "MPI_Scan failed");
+  myFirstNewId -= numNewIdsLocal;
+
+  ThrowRequireMsg(0 == parallel_index_gap_finder_global(comm, 0, maxAllowedId,
+                                                    existingIds, numNewIdsLocal,
+                                                    globalNumIdsRequested,
+                                                    myFirstNewId, newIds),
+                  "Id allocation failure beneath generate_parallel_ids_in_gap.");
+}
+
+void generate_parallel_ids_above_existing_max(ParallelMachine comm,
+                                              uint64_t numNewIdsLocal,
+                                              uint64_t globalNumIdsRequested,
+                                              uint64_t maxIdsRequested,
+                                              uint64_t availableIds,
+                                              uint64_t globalMaxId,
+                                              std::vector<uint64_t>& newIds)
+{
+  newIds.clear();
+  newIds.reserve(numNewIdsLocal);
+  int mpi_size = stk::parallel_machine_size(comm);
+  uint64_t wastfullFillSize = maxIdsRequested*mpi_size;
+  if(availableIds >= wastfullFillSize && wastfullFillSize/4 < globalNumIdsRequested) {
+    //
+    //  Check if can use the super-cheap algorithm, if space wastage less than 400%, define an equal number of ids per processor
+    //  and avoid the scan
+    //
     int mpi_rank = stk::parallel_machine_rank(comm);
 
-    std::vector<uint64_t> newIds;
-    newIds.reserve(numNewIdsLocal);
-    //
-    //  Extract global max existing id.  For basic use case just start generating ids starting
-    //  at the previous max_id + 1.
-    //
-    uint64_t localMaxId = 0;
-    uint64_t globalMaxId;
-    for(uint64_t i=0; i<existingIds.size(); ++i) {
-      if(existingIds[i] > localMaxId) {
-        localMaxId = existingIds[i];
-      }
+    uint64_t myFirstNewId = globalMaxId + mpi_rank*maxIdsRequested + 1;
+    for(uint64_t i=0; i<numNewIdsLocal; ++i) {
+      newIds.push_back(myFirstNewId+i);
     }
-
-    int mpiResult = MPI_SUCCESS ;
-    mpiResult = MPI_Allreduce(&localMaxId, &globalMaxId, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_MAX, comm);
-    if(mpiResult != MPI_SUCCESS) {
-      throw std::runtime_error("MPI_Allreduce failed");
+  } else {
+    //
+    //  Otherwise still use a very cheap algorithm, densely pack the resulting ids
+    //
+    uint64_t myFirstNewId;
+    ThrowRequireMsg(MPI_SUCCESS == MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_SUM, comm), "MPI_Scan failed");
+    myFirstNewId -= numNewIdsLocal;
+    //
+    //  Run basic cheap algorithm.  Start counting new ids at end.
+    //  Create new ids starting at 'globalMaxId+1' and ending at 'globalMaxId+globalNumIdsRequested'
+    //  Compute the starting offset for ids in each processor.
+    //
+    myFirstNewId = (myFirstNewId) + globalMaxId + 1;
+    for(uint64_t i=0; i<numNewIdsLocal; ++i) {
+      newIds.push_back(myFirstNewId+i);
     }
-    //
-    //  Compute the total number of ids requested
-    //
-    uint64_t numLocalReduce[2];
-    numLocalReduce[0] = numNewIdsLocal;
-    numLocalReduce[1] = numNewIdsLocal;
+  }
+}
 
-    MPI_Op myOp;
-    MPI_Op_create((MPI_User_function *)MpiSumMax, true, &myOp);
+std::vector<uint64_t> generate_parallel_unique_ids(const uint64_t maxAllowedId,
+                                                   const std::vector<uint64_t>& existingIds,
+                                                   uint64_t numNewIdsLocal,
+                                                   ParallelMachine comm)
+{
+  std::vector<uint64_t> newIds;
+  //
+  //  Extract global max existing id.  For basic use case just start generating ids starting
+  //  at the previous max_id + 1.
+  //
+  uint64_t localMaxId = existingIds.empty() ? 0 : *std::max_element(existingIds.begin(), existingIds.end());
 
-    uint64_t numGlobalReduce[2] = {0u, 0u};
-    mpiResult = MPI_Allreduce(numLocalReduce, numGlobalReduce, 2, sierra::MPI::Datatype<uint64_t>::type(), myOp, comm);
-    MPI_Op_free(&myOp);
+  uint64_t globalMaxId = 0;
+  stk::all_reduce_max(comm, &localMaxId, &globalMaxId, 1);
 
-    uint64_t globalNumIdsRequested = numGlobalReduce[0];
-    uint64_t maxIdsRequested       = numGlobalReduce[1];
+  uint64_t globalNumIdsRequested = 0;
+  uint64_t maxIdsRequested       = 0;
+  compute_global_sum_and_max(comm, numNewIdsLocal, globalNumIdsRequested, maxIdsRequested);
 
-    if(mpiResult != MPI_SUCCESS) {
-      throw std::runtime_error("MPI_Allreduce failed");
-    }
-    if(globalNumIdsRequested == 0) {
-      return newIds;
-    }
-
-
-
-
-    //
-    //  Check if sufficent extra ids exist to run this algorithm
-    //
-    //  Note, below computations organized to avoid potential overflow
-    //
-    uint64_t availableIds = maxAllowedId - globalMaxId;
-    if(availableIds < globalNumIdsRequested) {
-      //
-      // Run fallback sparse fill algorithm
-      //
-
-      uint64_t myFirstNewId;
-      mpiResult = MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_SUM, comm);
-      myFirstNewId -= numNewIdsLocal;
-
-      int returnCode = parallel_index_gap_finder_global(comm, 0, maxAllowedId,
-                                                        existingIds, numNewIdsLocal, globalNumIdsRequested,
-                                                        myFirstNewId, newIds);
-      if(returnCode != 0) {
-        std::ostringstream msg;
-        msg << "In generate_parallel_unique_ids, failure in id allocation \n";
-        throw std::runtime_error(msg.str());
-      }
-      return newIds;
-    } else {
-      int mpi_size = stk::parallel_machine_size(comm);
-      uint64_t wastfullFillSize = maxIdsRequested*mpi_size;
-      if(availableIds >= wastfullFillSize && wastfullFillSize/4 < globalNumIdsRequested) {
-        //
-        //  Check if can use the super-cheap algorithm, if space wastage less than 400%, define an equal number of ids per processor
-        //  and avoid the scan
-        //
-        uint64_t myFirstNewId = globalMaxId + mpi_rank*maxIdsRequested + 1;
-        for(uint64_t i=0; i<numNewIdsLocal; ++i) {
-          newIds.push_back(myFirstNewId+i);
-        }
-      } else {
-        //
-        //  Otherwise still use a very cheap algorithm, densely pack the reultant ids
-        //
-        uint64_t myFirstNewId;
-        mpiResult = MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_SUM, comm);
-        myFirstNewId -= numNewIdsLocal;
-        //
-        //  Run basic cheap algorithm.  Start counting new ids at end.
-        //  Create new ids starting at 'globalMaxId+1' and ending at 'globalMaxId+globalNumIdsRequested'
-        //  Compute the starting offset for ids in each processor.
-        //
-        myFirstNewId = (myFirstNewId) + globalMaxId + 1;
-        for(uint64_t i=0; i<numNewIdsLocal; ++i) {
-          newIds.push_back(myFirstNewId+i);
-        }
-      }
-    }
+  if(globalNumIdsRequested == 0) {
     return newIds;
   }
+
+  //
+  //  Check if sufficent extra ids exist to run this algorithm
+  //
+  //  Note, below computations organized to avoid potential overflow
+  //
+  uint64_t availableIds = maxAllowedId - globalMaxId;
+  if(availableIds < globalNumIdsRequested) {
+    generate_parallel_ids_in_gap(comm, existingIds, maxAllowedId, numNewIdsLocal,
+                                 globalNumIdsRequested, newIds);
+  }
+  else {
+    generate_parallel_ids_above_existing_max(comm, numNewIdsLocal,
+                                      globalNumIdsRequested, maxIdsRequested,
+                                      availableIds, globalMaxId, newIds);
+  }
+  return newIds;
+}
 
 }
 

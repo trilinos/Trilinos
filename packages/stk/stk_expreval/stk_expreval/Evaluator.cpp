@@ -76,7 +76,8 @@ struct expression_evaluation_exception : public virtual std::exception
 struct expression_undefined_exception : public virtual std::exception
 {
   virtual const char* what() const throw() {
-    std::string rtnMsg = "Found undefined function with name: " + m_msg + " and " + std::to_string(m_numArgs)  + " argument(s)";
+    static std::string rtnMsg;
+    rtnMsg = "Found undefined function with name: " + m_msg + " and " + std::to_string(m_numArgs)  + " argument(s)";
     return rtnMsg.c_str();
   }
 

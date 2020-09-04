@@ -1761,6 +1761,108 @@ TEST_F(NgpFieldFixture, ClearDeviceSyncState_doesntClearHostMod)
   EXPECT_TRUE(testNgpField.test_need_sync_to_device());
 }
 
+class NgpFieldSwapFixture : public NgpFieldFixture {
+public:
+  void setup_fields_for_swap() {
+    stk::mesh::Field<int>& stkIntField1 = create_field<int>(stk::topology::ELEM_RANK, "intField1");
+    stk::mesh::Field<int>& stkIntField2 = create_field<int>(stk::topology::ELEM_RANK, "intField2");
+    setup_mesh("generated:1x1x1", stk::mesh::BulkData::NO_AUTO_AURA);
+
+    stk::mesh::NgpField<int>& ngpField1 = stk::mesh::get_updated_ngp_field<int>(stkIntField1);
+    stk::mesh::NgpField<int>& ngpField2 = stk::mesh::get_updated_ngp_field<int>(stkIntField2);
+    testNgpField1 = static_cast<NgpFieldTester<int>&>(ngpField1);
+    testNgpField2 = static_cast<NgpFieldTester<int>&>(ngpField2);
+  }
+
+protected:
+  NgpFieldTester<int> testNgpField1;
+  NgpFieldTester<int> testNgpField2;
+
+};
+
+TEST_F(NgpFieldSwapFixture, SwapSyncState_ModFlagsUnset)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  setup_fields_for_swap();
+
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_device());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_device());
+
+  testNgpField1.swap(testNgpField2);
+
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_device());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_device());
+}
+
+TEST_F(NgpFieldSwapFixture, SwapSyncState_ModFlagsSetModDevice)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  setup_fields_for_swap();
+
+  testNgpField1.modify_on_device();
+
+  EXPECT_TRUE(testNgpField1.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_device());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_device());
+
+  testNgpField1.swap(testNgpField2);
+
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_host());
+  EXPECT_TRUE(testNgpField2.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_device());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_device());
+}
+
+TEST_F(NgpFieldSwapFixture, SwapSyncState_ModFlagsSetModHost)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  setup_fields_for_swap();
+
+  testNgpField2.modify_on_host();
+
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_device());
+  EXPECT_TRUE(testNgpField2.test_need_sync_to_device());
+
+  testNgpField1.swap(testNgpField2);
+
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_host());
+  EXPECT_TRUE(testNgpField1.test_need_sync_to_device());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_device());
+}
+
+TEST_F(NgpFieldSwapFixture, SwapSyncState_ModFlagsSetModHostDevice)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  setup_fields_for_swap();
+
+  testNgpField1.modify_on_host();
+  testNgpField2.modify_on_device();
+
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_host());
+  EXPECT_TRUE(testNgpField2.test_need_sync_to_host());
+  EXPECT_TRUE(testNgpField1.test_need_sync_to_device());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_device());
+
+  testNgpField1.swap(testNgpField2);
+
+  EXPECT_TRUE(testNgpField1.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_device());
+  EXPECT_TRUE(testNgpField2.test_need_sync_to_device());
+}
+
 TEST_F(OptimizedNgpFieldFixture, ChangeBucketContentsByUserWithSingleComponent)
 {
   if (get_parallel_size() != 1) return;

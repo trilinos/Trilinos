@@ -36,7 +36,7 @@
 
 #include <gtest/gtest.h>
 #include <stk_simd/Simd.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #include <algorithm>
 #include <functional>
 
@@ -97,7 +97,7 @@ class TestSimdMathFunction : public ::testing::Test
     DoubleVector solution(size());
     const int sz = size();
 #ifdef TIME_SIMD_OPERATIONS
-    Kokkos::Impl::Timer scalarTimer;
+    Kokkos::Timer scalarTimer;
 #endif
 #if defined(__INTEL_COMPILER)
 #pragma novector
@@ -115,7 +115,7 @@ class TestSimdMathFunction : public ::testing::Test
     SimdDoubleVector solution(simd_size());
     const int sz = simd_size();
 #ifdef TIME_SIMD_OPERATIONS
-    Kokkos::Impl::Timer simdTimer;
+    Kokkos::Timer simdTimer;
 #endif
     for (int i=0; i < sz; ++i)
       solution[i] = argFunc(i);

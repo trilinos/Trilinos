@@ -276,6 +276,10 @@ void fill_part_list_differences(const BulkData &mesh,
 
 void check_size_of_types();
 
+EntityId get_global_max_id_in_use(const BulkData& mesh,
+                                  EntityRank rank,
+                                  const std::list<Entity::entity_value_type>& deletedEntitiesCurModCycle);
+
 void check_declare_element_side_inputs(const BulkData & mesh,
                                        const Entity elem,
                                        const unsigned localSideId);
