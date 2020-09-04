@@ -44,6 +44,7 @@
 #include <iostream>
 
 #include "Kokkos_Core.hpp"
+#include "Teuchos_StackedTimer.hpp"
 
 
 class UVMTester {
@@ -68,6 +69,7 @@ public:
   }
 
   void fillOnHost() {
+    Teuchos::TimeMonitor timer(*Teuchos::TimeMonitor::getNewTimer("fill on host"));
     Kokkos::parallel_for(
         "fill on host",
         Kokkos::RangePolicy<Kokkos::Serial>(0,n),
@@ -77,6 +79,7 @@ public:
   }
 
   void modifyOnDevice() {
+    Teuchos::TimeMonitor timer(*Teuchos::TimeMonitor::getNewTimer("modify on device"));
     Kokkos::parallel_for(
         "modify on device",
         Kokkos::RangePolicy<Kokkos::Cuda>(0,n),
@@ -87,6 +90,7 @@ public:
   }
 
   void modifyOnHost() {
+    Teuchos::TimeMonitor timer(*Teuchos::TimeMonitor::getNewTimer("modify on host"));
     Kokkos::parallel_for(
         "modify on host",
         Kokkos::RangePolicy<Kokkos::Serial>(0,n),
@@ -97,6 +101,7 @@ public:
 
 private:
   bool isConsistent() {
+    Teuchos::TimeMonitor timer(*Teuchos::TimeMonitor::getNewTimer("consistency check"));
     bool correct = true;
     for (int i=0; i<n && correct; i++) {
       correct &= (view(i) == factorCombined*i);
@@ -115,12 +120,30 @@ private:
   Kokkos::View<int*, Kokkos::CudaUVMSpace> view;
 };
 
+void reportTimings(Teuchos::RCP<Teuchos::StackedTimer> timer) {
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+  Teuchos::StackedTimer::OutputOptions options;
+  options.output_fraction = true;
+  options.output_histogram = true;
+  options.output_minmax = true;
+
+  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  out->setOutputToRootOnly(0);
+
+  timer->report(*out, comm, options);
+}
 
 int main(int argc, char *argv[]) {
   Kokkos::ScopeGuard kokkos(argc, argv);
 
+  Teuchos::RCP<Teuchos::StackedTimer> stacked_timer = Teuchos::rcp(new Teuchos::StackedTimer("UVM Test"));
+  Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+
   UVMTester tester;
   tester.run();
+
+  reportTimings(stacked_timer);
 
   return 0;
 }
