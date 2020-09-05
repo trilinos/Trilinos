@@ -151,6 +151,9 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, add_edge_field)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),2*4*(5+1)+2*5*(4+1)+4*5*(2+1));
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),2*(4+1)*(5+1)+4*(2+1)*(5+1)+5*(2+1)*(4+1));
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(4+1)*(2+1)*(5+1));
+
+   mesh->getAllEdges(panzer_stk::STK_Interface::edgeBlockString, edges);
+   TEST_EQUALITY(edges.size(),2*(4+1)*(5+1)+4*(2+1)*(5+1)+5*(2+1)*(4+1));
 }
 
 }
