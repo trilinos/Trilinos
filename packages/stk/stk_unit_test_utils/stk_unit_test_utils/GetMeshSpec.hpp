@@ -44,7 +44,7 @@ namespace unit_test_util
 {
 
 inline
-std::string get_mesh_spec(int dim)
+std::string get_mesh_spec(unsigned dim)
 {
   std::string dimString = std::to_string(dim);
   std::string meshSpec("generated:");
@@ -55,7 +55,7 @@ std::string get_mesh_spec(int dim)
 inline
 std::string get_mesh_spec(const std::string &optionName)
 {
-  return get_mesh_spec(stk::unit_test_util::get_command_line_option<int>(optionName, 20));
+  return get_mesh_spec(stk::unit_test_util::get_command_line_option<unsigned>(optionName, 20));
 }
 
 inline std::vector<double> get_many_block_coordinates(unsigned numBlocks)

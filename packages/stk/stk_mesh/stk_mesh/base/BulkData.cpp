@@ -451,6 +451,7 @@ BulkData::BulkData(MetaData & mesh_meta_data,
     m_sideSetData(*this),
     m_ngpMeshManager(nullptr),
     m_isDeviceMeshRegistered(false),
+    m_ngpFieldSyncBufferModCount(0),
     m_soloSideIdGenerator(stk::parallel_machine_size(parallel), stk::parallel_machine_rank(parallel), std::numeric_limits<stk::mesh::EntityId>::max()),
     m_supportsLargeIds(false)
 {
@@ -559,6 +560,24 @@ BulkData::unregister_device_mesh() const
       bucket->set_ngp_bucket_id(INVALID_BUCKET_ID);
     }
   }
+}
+
+uint8_t *
+BulkData::get_ngp_field_sync_buffer() const
+{
+  if (m_ngpFieldSyncBufferModCount != synchronized_count()) {
+    const size_t maxNgpFieldAllocationBytes = get_max_ngp_field_allocation_bytes(mesh_meta_data());
+
+    if (maxNgpFieldAllocationBytes > m_ngpFieldSyncBuffer.extent(0)) {
+      constexpr double BUFFER_OVERSIZE_FACTOR = 1.1;
+      m_ngpFieldSyncBuffer = Kokkos::View<uint8_t*, MemSpace>(Kokkos::view_alloc(Kokkos::WithoutInitializing, "FieldSyncBuffer"),
+                                                              static_cast<unsigned>(maxNgpFieldAllocationBytes * BUFFER_OVERSIZE_FACTOR));
+    }
+
+    m_ngpFieldSyncBufferModCount = synchronized_count();
+  }
+
+  return m_ngpFieldSyncBuffer.data();
 }
 
 void BulkData::update_deleted_entities_container()
@@ -1316,31 +1335,28 @@ size_t get_max_num_ids_needed_across_all_procs(const stk::mesh::BulkData& bulkDa
 
 std::vector<uint64_t> BulkData::internal_get_ids_in_use(stk::topology::rank_t rank, const std::vector<stk::mesh::EntityId>& reserved_ids) const
 {
-    std::vector<uint64_t> ids_in_use;
-    ids_in_use.reserve(m_entity_keys.size() + m_deleted_entities_current_modification_cycle.size());
+  std::vector<uint64_t> ids_in_use;
+  ids_in_use.reserve(m_entity_keys.size() + m_deleted_entities_current_modification_cycle.size());
 
-    for (size_t i=0; i<m_entity_keys.size(); ++i)
-    {
-        if ( stk::mesh::EntityKey::is_valid_id(m_entity_keys[i].id()) && m_entity_keys[i].rank() == rank )
-        {
-            ids_in_use.push_back(m_entity_keys[i].id());
-        }
+  const BucketVector& bkts = this->buckets(rank);
+  for (const Bucket* bptr : bkts) {
+    for (Entity entity : *bptr) {
+      ids_in_use.push_back(identifier(entity));
     }
+  }
 
-    for (Entity::entity_value_type local_offset : m_deleted_entities_current_modification_cycle)
-    {
-        stk::mesh::Entity entity;
-        entity.set_local_offset(local_offset);
-        if ( is_valid(entity) && entity_rank(entity) == rank )
-        {
-            ids_in_use.push_back(entity_key(entity).id());
-        }
+  for (Entity::entity_value_type local_offset : m_deleted_entities_current_modification_cycle) {
+    stk::mesh::Entity entity;
+    entity.set_local_offset(local_offset);
+    if ((entity_rank(entity) == rank) && (is_valid(entity) || state(entity)==Deleted)) {
+      ids_in_use.push_back(identifier(entity));
     }
+  }
 
-    ids_in_use.insert(ids_in_use.end(), reserved_ids.begin(), reserved_ids.end());
+  ids_in_use.insert(ids_in_use.end(), reserved_ids.begin(), reserved_ids.end());
 
-    stk::util::sort_and_unique(ids_in_use);
-    return ids_in_use;
+  stk::util::sort_and_unique(ids_in_use);
+  return ids_in_use;
 }
 
 uint64_t  BulkData::get_max_allowed_id() const {
@@ -1368,21 +1384,34 @@ void BulkData::generate_new_ids_given_reserved_ids(stk::topology::rank_t rank, s
 
 void BulkData::generate_new_ids(stk::topology::rank_t rank, size_t numIdsNeeded, std::vector<stk::mesh::EntityId>& requestedIds)
 {
-    size_t maxNumNeeded = get_max_num_ids_needed_across_all_procs(*this, numIdsNeeded);
-    if ( maxNumNeeded == 0 ) return;
+  if (rank == mesh_meta_data().side_rank()) {
+    requestedIds.resize(numIdsNeeded);
+    for(size_t i = 0; i < numIdsNeeded; i++) {
+      requestedIds[i] = m_soloSideIdGenerator.get_solo_side_id();
+    }
+    return;
+  }
 
-    if(rank == mesh_meta_data().side_rank())
-    {
-        requestedIds.resize(numIdsNeeded);
-        for(size_t i = 0; i < numIdsNeeded; i++)
-            requestedIds[i] = m_soloSideIdGenerator.get_solo_side_id();
-    }
-    else
-    {
-        std::vector<uint64_t> ids_in_use = internal_get_ids_in_use(rank);
-        uint64_t maxAllowedId = get_max_allowed_id();
-        requestedIds = generate_parallel_unique_ids(maxAllowedId, ids_in_use, numIdsNeeded, parallel());
-    }
+  uint64_t globalNumIdsRequested = 0;
+  uint64_t maxIdsRequested = 0;
+  stk::compute_global_sum_and_max(parallel(), numIdsNeeded,
+                                       globalNumIdsRequested, maxIdsRequested);
+  if ( globalNumIdsRequested == 0 ) return;
+
+  EntityId globalMaxId = impl::get_global_max_id_in_use(*this, rank,
+                                   m_deleted_entities_current_modification_cycle);
+
+  uint64_t maxAllowedId = get_max_allowed_id();
+  uint64_t availableIds = maxAllowedId - globalMaxId;
+  if (globalNumIdsRequested < availableIds) {
+    stk::generate_parallel_ids_above_existing_max(parallel(), numIdsNeeded,
+                             globalNumIdsRequested, maxIdsRequested, availableIds,
+                             globalMaxId, requestedIds);
+    return;
+  }
+
+  std::vector<uint64_t> ids_in_use = internal_get_ids_in_use(rank);
+  requestedIds = generate_parallel_unique_ids(maxAllowedId, ids_in_use, numIdsNeeded, parallel());
 }
 
 void BulkData::generate_new_entities(const std::vector<size_t>& requests,
@@ -4723,8 +4752,7 @@ void BulkData::check_mesh_consistency()
 #ifndef NDEBUG
     ThrowErrorMsgIf(!stk::mesh::impl::check_permutations_on_all(*this), "Permutation checks failed.");
     std::ostringstream msg ;
-    bool is_consistent = true;
-    is_consistent = comm_mesh_verify_parallel_consistency( msg );
+    bool is_consistent = comm_mesh_verify_parallel_consistency( msg );
     std::string error_msg = msg.str();
     ThrowErrorMsgIf( !is_consistent, error_msg );
 #endif
@@ -5105,6 +5133,7 @@ void BulkData::internal_resolve_shared_membership(const stk::mesh::EntityVector 
 {
     ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
 
+    EntityProcVec auraEntitiesToResend;
     {
       stk::CommSparse comm(parallel());
       const bool anythingToUnpack = impl::pack_and_send_modified_shared_entity_states(
@@ -5119,7 +5148,16 @@ void BulkData::internal_resolve_shared_membership(const stk::mesh::EntityVector 
             buf.unpack<EntityKey>(key);
             buf.unpack<EntityState>(remoteState);
             Entity entity = get_entity(key);
-            EntityState localState = state(entity);
+            const EntityState localState = state(entity);
+
+            if (!in_shared(entity,p)) {
+              if (localState == Unchanged) {
+                stk::util::insert_keep_sorted_and_unique(EntityProc(entity,p),
+                                        auraEntitiesToResend, EntityLess(*this));
+              }
+              continue;
+            }
+
             if (localState == Unchanged && remoteState != Unchanged) {
               set_state(entity, Modified);
             }
@@ -5172,6 +5210,8 @@ void BulkData::internal_resolve_shared_membership(const stk::mesh::EntityVector 
 
     std::vector<EntityProc> send_list;
     fill_entity_procs_for_owned_modified_or_created(send_list);
+    stk::util::insert_keep_sorted_and_unique(auraEntitiesToResend,
+             send_list, EntityLess(*this));
     internal_send_part_memberships_from_owner(send_list);
 }
 
@@ -6143,7 +6183,8 @@ void BulkData::unpack_not_owned_verify_report_errors(Entity entity,
         std::set<std::string>::iterator iter = thisProcExtraParts.begin();
         for (;iter!=thisProcExtraParts.end();++iter)
         {
-            error_log << "\t\t" << *iter << std::endl;
+            const Part* part = mesh_meta_data().get_part(*iter);
+            error_log << "\t\t" << *iter << ", rank: "<<part->primary_entity_rank()<<std::endl;
         }
     }
 

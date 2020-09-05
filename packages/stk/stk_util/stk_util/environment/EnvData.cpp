@@ -76,10 +76,10 @@ namespace stk {
       m_inputFile(""),
       m_outPath("")
   {
-    m_execMap[sierra::Env::EXEC_TYPE_LAG].m_master      = -1;
+    m_execMap[sierra::Env::EXEC_TYPE_LAG].m_rootProcessor      = -1;
     m_execMap[sierra::Env::EXEC_TYPE_LAG].m_groupComm   = MPI_COMM_NULL;
     m_execMap[sierra::Env::EXEC_TYPE_LAG].m_interComm   = MPI_COMM_NULL;
-    m_execMap[sierra::Env::EXEC_TYPE_FLUID].m_master    = -1;
+    m_execMap[sierra::Env::EXEC_TYPE_FLUID].m_rootProcessor    = -1;
     m_execMap[sierra::Env::EXEC_TYPE_FLUID].m_groupComm = MPI_COMM_NULL;
     m_execMap[sierra::Env::EXEC_TYPE_FLUID].m_interComm = MPI_COMM_NULL;
     stk::register_log_ostream(std::cout, "cout");

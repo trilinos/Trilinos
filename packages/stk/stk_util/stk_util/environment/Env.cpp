@@ -261,7 +261,7 @@ parallel_world_comm()
 
 int peer_group() 
 {
-  return stk::EnvData::instance().m_execMap[EXEC_TYPE_PEER].m_master;
+  return stk::EnvData::instance().m_execMap[EXEC_TYPE_PEER].m_rootProcessor;
 }
 
 bool
