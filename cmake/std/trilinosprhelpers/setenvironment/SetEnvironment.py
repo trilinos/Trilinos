@@ -32,6 +32,7 @@ from __future__ import print_function
 
 import configparser
 import os
+import pprint
 import re
 import sys
 
@@ -157,10 +158,15 @@ class SetEnvironment(object):
         print("")
         print("Environment Vars")
         print("----------------")
-        for k,v in self.actions["setenv"].items():
+        #print(">> setenv actions:")
+        #pprint.pprint(self.actions["setenv"])
+        for envvar in self.actions["setenv"]:
+            k = envvar['key']
+            v = envvar['value']
+            print("[envvar] export {}={}".format(k,v))
             v = self._expand_envvars_in_string(v)
             os.environ[k] = v
-            print("[envvar] export {}={}".format(k,v))
+            print("[envvar] export {}={} (actual)".format(k,v))
         for k in self.actions["unsetenv"]:
             del os.environ[k]
             print("[envvar] unset {}".format(k))
@@ -239,9 +245,11 @@ class SetEnvironment(object):
         print("")
         print("Environment Vars")
         print("----------------")
-        for k,v in self.actions["setenv"].items():
+        for envvar in self.actions["setenv"]:
             # Note: we can't print the expansion here because the source
             #       envvar might not exist yet.
+            k = envvar['key']
+            v = envvar['value']
             print("[envvar] export {}={}".format(k,v))
         for k in self.actions["unsetenv"]:
             print("[envvar] unset {}".format(k))
@@ -290,7 +298,7 @@ class SetEnvironment(object):
         Returns:
             A dict containing the contents of self.actions.
         """
-        self.actions = { "setenv": {},         # Envvars that we'll set
+        self.actions = { "setenv": [],         # Envvars that we'll set
                          "unsetenv": [],       # Envvars to explicitly unset (after setting)
                          "module-op": [],      # module operations (use, load, unload, etc.)
                          #"cmake-script": [],   # CMake configuration scripts
@@ -301,6 +309,8 @@ class SetEnvironment(object):
         config = self.config
 
         self.actions = self._load_configuration_r(config, self.profile, actions=self.actions)
+        #print(">>> ACTIONS: ")
+        #pprint.pprint(self.actions)
         return self.actions
 
 
@@ -366,7 +376,8 @@ class SetEnvironment(object):
                 actions["module-op"].append(["swap", k, v])
 
             elif "setenv" == op:
-                actions["setenv"][k.upper()]=v
+                actions["setenv"].append( {'key': k.upper(), 'value': v} )
+                #actions["setenv"][k.upper()]=v
 
             elif "unsetenv" == op:
                 actions["unsetenv"].append(k.upper())

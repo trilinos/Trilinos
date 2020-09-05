@@ -149,6 +149,14 @@ echo -e "PRDriver> "
 echo -e "PRDriver> Driver and Merge scripts unchanged, proceeding to TEST phase"
 echo -e "PRDriver> "
 
+# determine what MODE we are using
+mode="standard"
+if [[ "${JOB_BASE_NAME}" == "Trilinos_pullrequest_gcc_8.3.0_installation_testing" ]]; then
+    mode="installation"
+fi
+
+
+
 # Prepare the command for the TEST operation
 test_cmd_options=(
     --sourceRepo=${TRILINOS_SOURCE_REPO:?}
@@ -162,7 +170,8 @@ test_cmd_options=(
     --req-mem-per-core=3.0
     --max-cores-allowed=29
     --num-concurrent-tests=4
-    --mode=installation
+    --mode=${mode}
+    #--mode=installation
     --config="Trilinos/cmake/std/configs/trilinos_pr.ini"
     #--dry-run
 )

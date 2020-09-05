@@ -66,6 +66,7 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
 
         print("")
         print("cmd = {}".format(" \\\n   ".join(cmd)))
+        print("")
 
         if not self.args.dry_run:
             subprocess.check_call(cmd)

@@ -129,8 +129,14 @@ class Test_parsing(unittest.TestCase):
 
 
     def test_parseInsufficientArgs_fails(self):
+        self.maxDiff = 1000
         test_namespace = Namespace()
         setattr(test_namespace, 'sourceRepo', '/dev/null/source/Trilinos.git')
+
+#        expected_output = '''usage: programName [-h] sourceRepo sourceBranch targetRepo targetBranch sourceSHA workspaceDir
+#programName: error: the following arguments are required: sourceRepo, sourceBranch, targetRepo, targetBranch, sourceSHA, workspaceDir
+#'''
+
         expected_output = '''usage: programName [-h]
                    sourceRepo sourceBranch targetRepo targetBranch sourceSHA
                    workspaceDir
@@ -150,7 +156,8 @@ sourceBranch, targetRepo, targetBranch, sourceSHA, workspaceDir
             else:
                 with self.assertRaisesRegex(SystemExit, '2'):
                     PullRequestLinuxDriverMerge.parseArgs()
-        self.assertEqual(expected_output, m_stderr.getvalue())
+
+        self.assertEqual(m_stderr.getvalue(), expected_output)
 
 
 

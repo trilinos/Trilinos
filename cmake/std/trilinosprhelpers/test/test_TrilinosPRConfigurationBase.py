@@ -709,4 +709,6 @@ class TrilinosPRConfigurationTest(TestCase):
         with self.assertRaises(NotImplementedError):
             pr_config.execute_test()
 
-mock_modulehelper_module_fail
+
+
+

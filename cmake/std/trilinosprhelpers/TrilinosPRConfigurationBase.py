@@ -463,6 +463,7 @@ class TrilinosPRConfigurationBase(object):
 
         rval = 0
         if not self.args.dry_run:
+            #tr_config.pretty_print()  # SCAFFOLDING (WCMCLEN - Debugging)
             rval = tr_config.apply(throw_on_error=True)
             print("rval = {}".format(rval))
         else:

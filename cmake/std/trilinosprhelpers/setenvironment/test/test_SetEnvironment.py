@@ -110,13 +110,12 @@ class SetEnvironmentTest(TestCase):
                 ['load', 'sems-cmake/3.10.3'],
                 ['load', 'sems-python/3.5.2']
             ],
-            'setenv': {
-                'OMP_NUM_THREADS': '2',
-                'CC': 'gcc',
-                'CXX': 'g++',
-                'FC': 'gfortran',
-                'TEST_ENVVAR_001': 'TEST_ENVVAR_001_VALUE'
-            },
+            'setenv': [   {'key': 'OMP_NUM_THREADS', 'value': '2'},
+                          {'key': 'CC', 'value': 'gcc'},
+                          {'key': 'CXX', 'value': 'g++'},
+                          {'key': 'FC', 'value': 'gfortran'},
+                          {'key': 'TEST_ENVVAR_001', 'value': 'TEST_ENVVAR_001_VALUE'}
+            ],
             'unsetenv': []
         }
 
@@ -136,13 +135,14 @@ class SetEnvironmentTest(TestCase):
                 ['load', 'sems-cmake/3.10.3'],
                 ['load', 'sems-python/3.5.2']
             ],
-            'setenv': {
-                'CC': 'g++',
-                'CXX': 'g++',
-                'FC': 'gfortran',
-                'OMP_NUM_THREADS': '2',
-                'TEST_ENVVAR_001': 'TEST_ENVVAR_001_VALUE'
-            },
+            'setenv': [
+                {'key': 'OMP_NUM_THREADS', 'value': '2'},
+                {'key': 'CC', 'value': 'gcc'},
+                {'key': 'CXX', 'value': 'g++'},
+                {'key': 'FC', 'value': 'gfortran'},
+                {'key': 'TEST_ENVVAR_001', 'value': 'TEST_ENVVAR_001_VALUE'},
+                {'key': 'CC', 'value': 'g++'}
+            ],
             'unsetenv': ['CXX']
         }
 
@@ -160,13 +160,13 @@ class SetEnvironmentTest(TestCase):
                 ['load', 'sems-boost/1.63.0/base'],
                 ['load', 'sems-cmake/3.10.3']
             ],
-            'setenv': {
-                'CC': 'gcc',
-                'CXX': 'g++',
-                'FC': 'gfortran',
-                'OMP_NUM_THREADS': '2',
-                'TEST_ENVVAR_001': 'TEST_ENVVAR_001_VALUE'
-            },
+            'setenv': [
+                {'key': 'OMP_NUM_THREADS', 'value': '2'},
+                {'key': 'CC', 'value': 'gcc'},
+                {'key': 'CXX', 'value': 'g++'},
+                {'key': 'FC', 'value': 'gfortran'},
+                {'key': 'TEST_ENVVAR_001', 'value': 'TEST_ENVVAR_001_VALUE'}
+            ],
             'unsetenv': []
         }
 
@@ -186,13 +186,13 @@ class SetEnvironmentTest(TestCase):
                 ['load', 'sems-python/3.5.2'],
                 ['unload', 'sems-python']
             ],
-            'setenv': {
-                'CC': 'gcc',
-                'CXX': 'g++',
-                'FC': 'gfortran',
-                'OMP_NUM_THREADS': '2',
-                'TEST_ENVVAR_001': 'TEST_ENVVAR_001_VALUE'
-            },
+            'setenv': [
+                {'key': 'OMP_NUM_THREADS', 'value': '2'},
+                {'key': 'CC', 'value': 'gcc'},
+                {'key': 'CXX', 'value': 'g++'},
+                {'key': 'FC', 'value': 'gfortran'},
+                {'key': 'TEST_ENVVAR_001', 'value': 'TEST_ENVVAR_001_VALUE'}
+            ],
             'unsetenv': []
         }
 
@@ -212,14 +212,14 @@ class SetEnvironmentTest(TestCase):
                 ['load', 'sems-cmake/3.10.3'],
                 ['load', 'sems-python/3.5.2']
             ],
-            'setenv': {
-                'CC': 'gcc',
-                'CXX': 'g++',
-                'FC': 'gfortran',
-                'OMP_NUM_THREADS': '2',
-                'TEST_ENVVAR_001': 'TEST_ENVVAR_001_VALUE',
-                'TEST_ENVVAR_002': 'TEST_ENVVAR_002_VALUE + ${TEST_ENVVAR_001}'
-            },
+            'setenv': [
+                {'key': 'OMP_NUM_THREADS', 'value': '2'},
+                {'key': 'CC', 'value': 'gcc'},
+                {'key': 'CXX', 'value': 'g++'},
+                {'key': 'FC', 'value': 'gfortran'},
+                {'key': 'TEST_ENVVAR_001', 'value': 'TEST_ENVVAR_001_VALUE'},
+                {'key': 'TEST_ENVVAR_002', 'value': 'TEST_ENVVAR_002_VALUE/${TEST_ENVVAR_001}'}
+            ],
             'unsetenv': []
         }
 
@@ -240,13 +240,13 @@ class SetEnvironmentTest(TestCase):
                 ['load', 'sems-python/3.5.2'],
                 ['swap', 'sems-python/3.5.2', 'sems-python/3.8.0']
             ],
-            'setenv': {
-                'CC': 'gcc',
-                'CXX': 'g++',
-                'FC': 'gfortran',
-                'OMP_NUM_THREADS': '2',
-                'TEST_ENVVAR_001': 'TEST_ENVVAR_001_VALUE'
-            },
+            'setenv': [
+                {'key': 'OMP_NUM_THREADS', 'value': '2'},
+                {'key': 'CC', 'value': 'gcc'},
+                {'key': 'CXX', 'value': 'g++'},
+                {'key': 'FC', 'value': 'gfortran'},
+                {'key': 'TEST_ENVVAR_001', 'value': 'TEST_ENVVAR_001_VALUE'}
+            ],
             'unsetenv': []
         }
 
@@ -335,8 +335,11 @@ class SetEnvironmentTest(TestCase):
         self._setEnv_test(filename, profile, truth=truth, module_fail=module_fail)
 
         # Verify that TEST_ENVVAR_002 was expanded properly
-        expected_test_envvar_002 = "TEST_ENVVAR_002_VALUE + TEST_ENVVAR_001_VALUE"
+        expected_test_envvar_002 = "TEST_ENVVAR_002_VALUE/TEST_ENVVAR_001_VALUE"
         actual_test_envvar_002   = os.environ['TEST_ENVVAR_002']
+        print(">>>")
+        print(">>> {}".format(actual_test_envvar_002))
+        print(">>>")
         self.assertEqual(expected_test_envvar_002, actual_test_envvar_002)
 
 
@@ -498,7 +501,6 @@ class SetEnvironmentTest(TestCase):
         setEnv.pretty_print()
 
         print("\nsetEnv.actions():")
-        #print(setEnv.actions)
         pprint(setEnv.actions, indent=4, width=90)
 
         # Validation Checks
