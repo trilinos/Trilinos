@@ -655,9 +655,12 @@ class TrilinosPRConfigurationTest(TestCase):
 
         with patch('trilinosprhelpers.setenvironment.ModuleHelper.module',
                    side_effect=mock_modulehelper_module_ok):
-            with patch('subprocess.check_call', side_effect=mock_subprocess_check_call) as m_call:
-                ret = pr_config.prepare_test()
-                self.assertEqual(ret, 0)
+            with patch('subprocess.check_call',
+                       side_effect=mock_subprocess_check_call) as m_call:
+                with patch('subprocess.check_output',
+                           side_effect=mock_subprocess_check_output) as m_output:
+                    ret = pr_config.prepare_test()
+                    self.assertEqual(ret, 0)
 
 
     def test_TrilinosPRConfigurationBase_prepare_test_FAIL(self):
