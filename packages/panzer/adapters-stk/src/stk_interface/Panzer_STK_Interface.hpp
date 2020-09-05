@@ -180,7 +180,7 @@ public:
      * \param[in] setupIO If set to true and IOSS is enabled, the output mesh will be initialized.
      * \param[in] buildRefinementSupport If true, build percept uniform refinement objects.
      */
-  void initialize(stk::ParallelMachine parallelMach,bool setupIO=true,
+   void initialize(stk::ParallelMachine parallelMach,bool setupIO=true,
                   const bool buildRefinementSupport = false);
 
    /** Build a bulk data object but don't do anything with it.
@@ -221,6 +221,10 @@ public:
    /** Addes an entity to a specified node set.
      */
    void addEntityToNodeset(stk::mesh::Entity entity,stk::mesh::Part * nodeset);
+
+   /** Addes an entity to a specified edge block.
+     */
+   void addEntityToEdgeBlock(stk::mesh::Entity entity,stk::mesh::Part * edgeblock);
 
    // Methods to interrogate the mesh topology and structure
    //////////////////////////////////////////
@@ -760,7 +764,7 @@ public:
      * \param[in] fieldName Name of field to be filled
      * \param[in] blockId Name of block this set of elements belongs to
      * \param[in] localElementIds Local element IDs for this set of solution values
-     * \param[in] solutionValues A one dimensional array object sized by (Edeges)
+     * \param[in] solutionValues A one dimensional array object sized by (Edges)
      *
      * \note The block ID is not strictly needed in this context. However forcing the
      *       user to provide it does permit an additional level of safety. The implicit

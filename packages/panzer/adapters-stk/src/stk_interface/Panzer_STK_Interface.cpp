@@ -488,6 +488,14 @@ void STK_Interface::addEntityToNodeset(stk::mesh::Entity entity,stk::mesh::Part 
    bulkData_->change_entity_parts(entity,nodesetV);
 }
 
+void STK_Interface::addEntityToEdgeBlock(stk::mesh::Entity entity,stk::mesh::Part * edgeblock)
+{
+   std::vector<stk::mesh::Part*> edgeblockV;
+   edgeblockV.push_back(edgeblock);
+
+   bulkData_->change_entity_parts(entity,edgeblockV);
+}
+
 void STK_Interface::addElement(const Teuchos::RCP<ElementDescriptor> & ed,stk::mesh::Part * block)
 {
    std::vector<stk::mesh::Part*> blockVec;
@@ -648,12 +656,6 @@ setupExodusFile(const std::string& filename,
       meshData_->add_field(meshIndex_, *fields[i]);
     }
   }
-
-  // The current implementation of edge blocks in STK-IO requires a 
-  // call to write_output_mesh() in order to set the enable_edge_io 
-  // flag on the OutputFile.  Do it here until this requirement is 
-  // lifted.
-  meshData_->write_output_mesh(meshIndex_);
 #else
   TEUCHOS_ASSERT(false)
 #endif
@@ -1031,11 +1033,6 @@ stk::mesh::EntityId STK_Interface::getMaxEntityId(unsigned entityRank) const
 
 void STK_Interface::buildSubcells()
 {
-   // only populate the default edge block when dimension_>2
-   if (dimension_ > 2) {
-     stk::mesh::Part *ebpart = getEdgeBlock(edgeBlockString);
-     stk::mesh::create_edges(*bulkData_, metaData_->universal_part(), ebpart);
-   }
    stk::mesh::PartVector emptyPartVector;
    stk::mesh::create_adjacent_entities(*bulkData_,emptyPartVector);
 
@@ -1431,10 +1428,6 @@ void STK_Interface::initializeFromMetaData()
    if (dimension_ > 2) {
      facesPart_        = &metaData_->declare_part(facesString,getFaceRank());
      facesPartVec_.push_back(facesPart_);
-   }
-   // only create the default edge block when dimension_>2
-   if (dimension_ > 2) {
-     addEdgeBlock(edgeBlockString);
    }
 }
 
