@@ -33,8 +33,6 @@ elif atdm_match_any_buildname_keyword \
 elif atdm_match_any_buildname_keyword \
     intel-19.0.3-mpich2-3.2 \
     intel-19.0.3_mpich2-3.2 \
-    intel-19.0.3 \
-    intel-18 \
   ; then
   export ATDM_CONFIG_COMPILER=INTEL-19.0.3_MPICH2-3.2
 
