@@ -151,9 +151,9 @@ Scalar defaultSmallNumber()
  *
  * \ingroup teuchos_testing_grp
  */
-template <class Scalar>
-typename ScalarTraits<Scalar>::magnitudeType
-relErr( const Scalar &s1, const Scalar &s2 );
+template <class Scalar1, class Scalar2>
+typename Teuchos::ScalarTraits< typename std::common_type<Scalar1,Scalar2>::type >::magnitudeType
+relErr( const Scalar1 &s1, const Scalar2 &s2 );
 
 
 /** \brief Compute, check and optionally print the relative error in two scalars.
@@ -626,10 +626,11 @@ Teuchos::passfail(const bool result)
 }
 
 
-template <class Scalar>
-typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-Teuchos::relErr( const Scalar &s1, const Scalar &s2 )
+template <class Scalar1, class Scalar2>
+typename Teuchos::ScalarTraits< typename std::common_type<Scalar1,Scalar2>::type >::magnitudeType
+Teuchos::relErr( const Scalar1 &s1, const Scalar2 &s2 )
 {
+  typedef typename std::common_type<Scalar1,Scalar2>::type Scalar;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   return
     ST::magnitude( s1 - s2 )
