@@ -28,48 +28,44 @@
 //
 // @HEADER
 
-#ifndef SACADO_FAD_EXP_GENERALFADTESTINGHELPERS_HPP
+#ifndef SACADO_FAD_GENERALFADTESTINGHELPERS_HPP
 
 #ifndef TEUCHOS_TESTING_HELPERS_HPP
 #include "Teuchos_TestingHelpers.hpp"
 #endif
 
-#define SACADO_FAD_EXP_GENERALFADTESTINGHELPERS_HPP
+#define SACADO_FAD_GENERALFADTESTINGHELPERS_HPP
 
 namespace Sacado {
-  namespace Fad {
-  namespace Exp {
-    template <typename Storage>
-    typename GeneralFad<Storage>::scalar_type relErr( const GeneralFad<Storage> &s1, const GeneralFad<Storage> &s2 );
-  }
-  }
-}
+ namespace Fad {
+   // relErrFadImpl version for non-Fad types
+   template <typename T1, typename T2>
+   typename std::enable_if<
+     !IsExpr<T1>::value && !IsExpr<T2>::value,
+     typename Teuchos::ScalarTraits< typename std::common_type<T1,T2>::type >::magnitudeType
+   >::type
+   relErrFadImpl(const T1& v1, const T2& v2) { return Teuchos::relErr(v1,v2); }
 
-namespace Teuchos {
-  using Sacado::Fad::Exp::relErr;
-}
-
-namespace Sacado {
-  namespace Fad {
-  namespace Exp {
-
-    template <typename Scalar1, typename Scalar2>
-    typename Scalar1::scalar_type
-    relErrFadImpl( const Scalar1 &s1, const Scalar2 &s2 )
+   // relErrFadImpl version for Fad types
+   template <typename T1, typename T2>
+   typename std::enable_if<
+     IsExpr<T1>::value || IsExpr<T2>::value,
+     typename Teuchos::ScalarTraits<
+       typename std::common_type< typename ScalarType<T1>::type, typename ScalarType<T2>::type >::type
+     >::magnitudeType
+   >::type
+   relErrFadImpl(const T1& v1, const T2& v2)
     {
-      typename Scalar1::scalar_type maxRelErr = Teuchos::relErr(s1.val(), s2.val());
-      for (int i=0; i<s1.size(); ++i) {
-        typename Scalar1::scalar_type tmpRelErr = Teuchos::relErr(s1.dx(i), s2.dx(i));
+      typedef typename Teuchos::ScalarTraits<typename std::common_type< typename ScalarType<T1>::type, typename ScalarType<T2>::type >::type>::magnitudeType magnitudeType;
+      magnitudeType maxRelErr = relErrFadImpl(v1.val(), v2.val());
+      for (int i=0; i<v1.size(); ++i) {
+        magnitudeType tmpRelErr = relErrFadImpl(v1.dx(i), v2.dx(i));
         if (tmpRelErr >= maxRelErr)
           maxRelErr = tmpRelErr;
       }
       return maxRelErr;
     }
-
-    template <typename Storage>
-    typename GeneralFad<Storage>::scalar_type relErr( const GeneralFad<Storage> &s1, const GeneralFad<Storage> &s2 ) { return relErrFadImpl(s1.derived(),s2.derived()); }
-  }
-  }
+ }
 }
 
 namespace Teuchos {
@@ -80,7 +76,8 @@ namespace Teuchos {
   {
     typedef typename Sacado::ScalarType<T1>::type scalarType1;
     typedef typename Sacado::ScalarType<T2>::type scalarType2;
-    typedef typename std::common_type<scalarType1,scalarType2>::type magnitudeType;
+    typedef typename std::common_type<scalarType1,scalarType2>::type scalarType;
+    typedef typename Teuchos::ScalarTraits<scalarType>::magnitudeType magnitudeType;
     static bool eval(
       const std::string &v1_name,
       const T1 &v1,
@@ -95,7 +92,7 @@ namespace Teuchos {
     {
       using std::endl;
       typedef Teuchos::ScalarTraits<magnitudeType> SMT;
-      const auto rel_err = Teuchos::relErr( v1.derived(), v2.derived() );
+      const magnitudeType rel_err = Sacado::Fad::relErrFadImpl( v1.derived(), v2.derived() );
       const bool success = ( !SMT::isnaninf(rel_err) && !SMT::isnaninf(maxRelErr_error)
         && rel_err <= maxRelErr_error );
       if (!is_null(out)) {
