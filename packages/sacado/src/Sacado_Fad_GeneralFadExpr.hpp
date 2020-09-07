@@ -31,6 +31,7 @@
 #define SACADO_FAD_GENERALFADEXPR_HPP
 
 #include "Sacado_Fad_GeneralFad.hpp"
+#include "Sacado_Fad_GeneralFadTestingHelpers.hpp"
 
 namespace Sacado {
 
