@@ -49,12 +49,17 @@
 #include <MueLu_TestHelpers.hpp>
 #include <MueLu_Version.hpp>
 
+#include <Xpetra_Map.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 
+#include <MueLu_Aggregates.hpp>
 #include <MueLu_AmalgamationFactory.hpp>
+#include <MueLu_BlockedCoarseMapFactory.hpp>
 #include <MueLu_CoalesceDropFactory.hpp>
 #include <MueLu_CoarseMapFactory.hpp>
-#include <MueLu_BlockedCoarseMapFactory.hpp>
+#include <MueLu_FactoryManager.hpp>
 #include <MueLu_UncoupledAggregationFactory.hpp>
 
 namespace MueLuTests {
@@ -67,7 +72,7 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<BlockedCoarseMapFactory> mapFact = rcp(new BlockedCoarseMapFactory());
-    TEST_EQUALITY(mapFact != Teuchos::null, true);
+    TEST_EQUALITY(mapFact!=Teuchos::null, true);
   } //Constructor
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedCoarseMapFactory, GIDOffsetFromCoarseMapFactory, Scalar, LocalOrdinal, GlobalOrdinal, Node)
