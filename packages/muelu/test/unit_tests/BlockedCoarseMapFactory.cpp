@@ -131,7 +131,7 @@ namespace MueLuTests {
     const LO numAggs = aggregates->GetNumAggregates();
     GO numGlobalAggs = 0;
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    MueLu_sumAll(comm, numAggs, numGlobalAggs);
+    reduceAll(*comm, Teuchos::REDUCE_SUM, Teuchos::as<GO>(numAggs), Teuchos::outArg(numGlobalAggs));
     out << "Found " << numGlobalAggs << " aggregates" << std::endl;
 
     TEST_EQUALITY(map1->getMinAllGlobalIndex(), Teuchos::ScalarTraits<GlobalOrdinal>::zero());
