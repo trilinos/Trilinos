@@ -126,20 +126,22 @@ namespace MueLuTests {
     RCP<const Map> map1 = fineLevel.Get<RCP<const Map>>("CoarseMap", coarseMapFact.get());
     RCP<const Map> map2 = fineLevel.Get<RCP<const Map>>("CoarseMap", blockedCoarseMapFact.get());
 
-    // Access aggregates
+    // access aggregates
     RCP<Aggregates> aggregates = fineLevel.Get<RCP<Aggregates>>("Aggregates", uncoupledAggFact.get());
-    LO numAggs = aggregates->GetNumAggregates();
-    // GO numGlobalAggs = 0;
-    // RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    // MueLu_sumAll(comm, Teuchos::as<GO>(numAggs), numGlobalAggs);
-    // out << "Found " << numGlobalAggs << " aggregates" << std::endl;
+    GO numAggs = aggregates->GetNumAggregates();
+    GO numGlobalAggs = 0;
+    RCP<const Teuchos::Comm<int>> comm = TestHelpers::Parameters::getDefaultComm();
+    MueLu_sumAll(comm, numAggs, numGlobalAggs);
+    out << "Found " << numGlobalAggs << " aggregates" << std::endl;
 
-    TEST_EQUALITY(map1->getMinAllGlobalIndex(), Teuchos::ScalarTraits<GlobalOrdinal>::zero());
-    // TEST_EQUALITY(map1->getMaxAllGlobalIndex(), numGlobalAggs * static_cast<GO>(NSdim) - Teuchos::ScalarTraits<GlobalOrdinal>::one());
-    // TEST_EQUALITY(map2->getMinAllGlobalIndex(), numGlobalAggs * static_cast<GO>(NSdim));
-    // TEST_EQUALITY(map2->getMaxAllGlobalIndex(), 2 * numGlobalAggs * static_cast<GO>(NSdim) - Teuchos::ScalarTraits<GlobalOrdinal>::one());
-    TEST_EQUALITY(map1->getNodeNumElements(), static_cast<size_t>(numAggs) * NSdim);
-    TEST_EQUALITY(map2->getNodeNumElements(), static_cast<size_t>(numAggs) * NSdim);
+    using Teuchos::as;
+
+    TEST_EQUALITY(map1->getMinAllGlobalIndex(), 0);
+    TEST_EQUALITY(map1->getMaxAllGlobalIndex(), numGlobalAggs * as<GO>(NSdim) - 1);
+    TEST_EQUALITY(map2->getMinAllGlobalIndex(), numGlobalAggs * as<GO>(NSdim));
+    TEST_EQUALITY(map2->getMaxAllGlobalIndex(), 2 * numGlobalAggs * as<GO>(NSdim) - 1);
+    TEST_EQUALITY(as<GO>(map1->getNodeNumElements()), numAggs * as<GO>(NSdim));
+    TEST_EQUALITY(as<GO>(map2->getNodeNumElements()), numAggs * as<GO>(NSdim));
   } // GIDOffsetFromCoarseMapFactory
 
 #define MUELU_ETI_GROUP(Scalar,LocalOrdinal,GlobalOrdinal,Node) \
