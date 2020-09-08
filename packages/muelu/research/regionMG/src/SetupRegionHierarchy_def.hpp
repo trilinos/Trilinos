@@ -465,6 +465,7 @@ MakeCompositeDirectSolver(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
  */
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RebalanceCoarseCompositeOperator(const int maxRegPerProc,
+              const int rebalanceNumPartitions,
               RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& coarseCompOp,
               RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> >& compCoarseCoordinates,
               RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& rebalancedCompOp,
@@ -482,7 +483,7 @@ void RebalanceCoarseCompositeOperator(const int maxRegPerProc,
 
   RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > decomposition = Xpetra::VectorFactory<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(map, true);
 
-  const int numPartitions = 2;
+  const int numPartitions = rebalanceNumPartitions;
 
   // We build a fake level
   Level level;
@@ -972,7 +973,9 @@ void createRegionHierarchy(const int maxRegPerProc,
         RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > rebalancedCoordinates;
         RCP<const Import> rebalanceImporter;
 
+        const int rebalanceNumPartitions = coarseSolverData->get<int>("coarse rebalance num partitions");
         RebalanceCoarseCompositeOperator(maxRegPerProc,
+                                    rebalanceNumPartitions,
                                     coarseCompOp,
                                     compCoarseCoordinates,
                                     rebalancedCompOp,
