@@ -111,8 +111,8 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.3_INTELMPI-2018.4" ]; then
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
 
-elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
-  module load sparc-dev/intel-18.0.2_mpich2-3.2
+elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.3_MPICH2-3.2" ]; then
+  module load sparc-dev/intel-19.0.3_mpich2-3.2
   export OMP_NUM_THREADS=3 # Because Si H. requested this
   export OMP_PROC_BIND=false
   unset OMP_PLACES
@@ -125,19 +125,7 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
   if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
     export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_INTEL_CXX_WARNINGS}"
   fi
-  # Replace Intel MKL 18.0.2 wiht 18.0.5 which fixes some LAPACK bugs (see #3499, #3914)
-  export ATDM_CONFIG_MKL_ROOT=/sierra/sntools/SDK/compilers/intel/composer_xe_2018.5.274/compilers_and_libraries/linux/
-  LD_LIBRARY_PATH_TMP=
-  for a_path in `echo ${LD_LIBRARY_PATH} | sed 's/:/ /g'` ; do
-    #echo "a_path='${a_path}'"
-    if [[ "${a_path}" == "/sierra/sntools/SDK/compilers/intel/composer_xe_2018.2.199/compilers_and_libraries/linux/mkl/lib/intel64" ]] ; then
-      LD_LIBRARY_PATH_TMP=${LD_LIBRARY_PATH_TMP}:/sierra/sntools/SDK/compilers/intel/composer_xe_2018.5.274/compilers_and_libraries/linux/mkl/lib/intel64
-    else
-      LD_LIBRARY_PATH_TMP=${LD_LIBRARY_PATH_TMP}:${a_path}
-    fi
-  done
-  export LD_LIBRARY_PATH=${LD_LIBRARY_PATH_TMP}
-  #
+  export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
   export ATDM_CONFIG_MPI_EXEC=mpirun
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
   export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;none"
