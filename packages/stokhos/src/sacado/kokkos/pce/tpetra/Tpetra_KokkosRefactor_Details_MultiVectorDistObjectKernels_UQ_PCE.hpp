@@ -439,17 +439,19 @@ namespace Details {
     void operator()( const size_type k ) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
+      nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j)
-        op(dst(toRow, j),src(fromRow, j));
+        op(tag, dst(toRow, j),src(fromRow, j));
     }
 
     KOKKOS_INLINE_FUNCTION
     void operator()( const size_type k, const size_type tidx ) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
+      nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j)
         for (size_type i=tidx; i<Kokkos::dimension_scalar(dst); i+=BlockSize)
-          op(dst(toRow, j).fastAccessCoeff(i),
+          op(tag, dst(toRow, j).fastAccessCoeff(i),
              src(fromRow, j).fastAccessCoeff(i));
     }
 
@@ -512,17 +514,19 @@ namespace Details {
     void operator()( const size_type k ) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
+      nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j)
-        op(dst(toRow, dst_col(j)),src(fromRow, src_col(j)));
+        op(tag, dst(toRow, dst_col(j)),src(fromRow, src_col(j)));
     }
 
     KOKKOS_INLINE_FUNCTION
     void operator()( const size_type k, const size_type tidx ) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
+      nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j)
         for (size_type i=tidx; i<Kokkos::dimension_scalar(dst); i+=BlockSize)
-          op(dst(toRow, dst_col(j)).fastAccessCoeff(i),
+          op(tag, dst(toRow, dst_col(j)).fastAccessCoeff(i),
              src(fromRow, src_col(j)).fastAccessCoeff(i));
     }
 
@@ -532,7 +536,7 @@ namespace Details {
                         const SrcIdxView& src_idx,
                         const DstColView& dst_col,
                         const SrcColView& src_col,
-                        size_t numCols, 
+                        size_t numCols,
                         const Op& op) {
       const size_type n = std::min( dst_idx.size(), src_idx.size() );
       if ( Details::device_is_cuda<execution_space>::value )
