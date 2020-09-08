@@ -210,7 +210,7 @@ TEUCHOS_UNIT_TEST(Trapezoidal, AppAction_Modifier)
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
   TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-14);
   TEST_COMPARE(modifier->testType, ==, "Trapezoidal - Modifier");
-};
+}
 
 // ************************************************************                                                        
 // ************************************************************                                                      
