@@ -61,6 +61,24 @@ def mock_subprocess_check_call(*args, **kwargs):
     return 0
 
 
+def mock_subprocess_check_output(*args, **kwargs):
+    """
+    Mock out a subprocess.check_output()
+    """
+    params = copy.deepcopy(args[0])
+    for k,v in kwargs.items():
+        params.append("{}={}".format(k,v))
+    output = "--- subprocess.check_output({})".format(", ".join(params))
+
+    print("MOCK> mock_packageEnables_check_output()")
+    for k in args[0]:                                                         # pragma: no cover
+        print("    - '{}'".format(k))                                         # pragma: no cover
+    for k,v in kwargs.items():                                                # pragma: no cover
+        print("    - {}={}".format(k,v))                                      # pragma: no cover
+    print("")
+    return str.encode(output)
+
+
 def mock_module_apply(*args, **kwargs):
     """
     simple function call mock that returns 0
@@ -100,6 +118,10 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
                                                  side_effect=mock_subprocess_check_call)
         self.mock_subprocess_check_call = self.patch_subprocess_check_call.start()
 
+        self.patch_subprocess_check_output = patch('subprocess.check_output',
+                                                 side_effect=mock_subprocess_check_output)
+        self.mock_subprocess_check_output = self.patch_subprocess_check_output.start()
+
         self.patch_modulehelper_module = patch('trilinosprhelpers.setenvironment.ModuleHelper.module',
                                                side_effect=mock_module_apply)
         self.mock_modulehelper_module  = self.patch_modulehelper_module.start()
@@ -112,6 +134,7 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
         self.patch_cpu_count.stop()
         self.patch_os_chdir.stop()
         self.patch_subprocess_check_call.stop()
+        self.patch_subprocess_check_output.stop()
         self.patch_modulehelper_module.stop()
 
 
@@ -129,7 +152,8 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
             github_pr_number='0000',
             configfile=self._config_file,
             workspaceDir=".",
-            package_enables="packageEnables.cmake",
+            package_enables="../packageEnables.cmake",
+            subprojects_file="../package_subproject_list.cmake",
             mode="standard",
             req_mem_per_core=3.0,
             max_cores_allowed=12,

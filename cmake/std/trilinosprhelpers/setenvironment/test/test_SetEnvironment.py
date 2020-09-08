@@ -70,29 +70,7 @@ class SetEnvironmentTest(TestCase):
         print("")
         self.maxDiff = None
 
-        test_file = 'setenvironment_config.ini'
-
-        cwd = os.getcwd()
-        filepath = os.path.join(cwd,'trilinosprhelpers','setenvironment','test', test_file)
-
-        # Depending on how I run pytest, sometimes it wants the test dir prepended
-        # and sometimes it doesn't. We'll always miss a line or two here in coverage
-        # since one or the other will be missing.
-        if os.path.exists(test_file):                                                        # pragma: no cover
-            self._filename = test_file                                                       # pragma: no cover
-        else:                                                                                # pragma: no cover
-            if os.path.exists(filepath):                                                     # pragma: no cover
-                self._filename = filepath                                                    # pragma: no cover
-            else:                                                                            # pragma: no cover
-                filepath = os.path.join(cwd,'setenvironment','test', test_file)              # pragma: no cover
-                if os.path.exists(filepath):                                                 # pragma: no cover
-                    self._filename = filepath                                                # pragma: no cover
-                else:                                                                        # pragma: no cover
-                    filepath = os.path.join(cwd,'test', test_file)                           # pragma: no cover
-                    if os.path.exists(filepath):                                             # pragma: no cover
-                        self._filename = filepath                                            # pragma: no cover
-                    else:                                                                    # pragma: no cover
-                        raise FileNotFoundError("Test configuration file was not found!")    # pragma: no cover
+        self._filename = self.find_config_ini(filename="setenvironment_config.ini")
 
         self._test_profile_001_truth = {
             'module-list': {
@@ -251,6 +229,18 @@ class SetEnvironmentTest(TestCase):
         }
 
         self._test_profile_007_truth = {}
+
+
+    def find_config_ini(self, filename="config.ini"):
+        rootpath = "."
+        output = None
+        for dirpath,dirnames,filename_list in os.walk(rootpath):
+            if filename in filename_list:
+                output = os.path.join(dirpath, filename)
+                break
+        if output is None:
+            raise FileNotFoundError("Unable to find {} in {}".format(filename, os.getcwd()))
+        return output
 
 
     def test_SetEnvironment_Profile001_P(self):

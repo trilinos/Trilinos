@@ -212,7 +212,8 @@ class TrilinosPRConfigurationTest(TestCase):
             github_pr_number='0000',
             configfile=self._config_file,
             workspaceDir=".",
-            package_enables="packageEnables.cmake",
+            package_enables="../packageEnables.cmake",
+            subprojects_file="../package_subproject_list.cmake",
             mode="standard",
             req_mem_per_core=3.0,
             max_cores_allowed=12,
@@ -607,7 +608,7 @@ class TrilinosPRConfigurationTest(TestCase):
         subprojects_file = pr_config.subprojects_file
         print(">>> subprojects_file = {}".format(subprojects_file))
 
-        self.assertEqual(subprojects_file, "./package_subproject_list.cmake")
+        self.assertEqual(subprojects_file, "../package_subproject_list.cmake")
 
 
     def test_TrilinosPRConfigurationBaseProperty_package_enables_file(self):
@@ -620,7 +621,7 @@ class TrilinosPRConfigurationTest(TestCase):
 
         package_enables_file = pr_config.arg_package_enables_file
         print(">>> package_enables_file = {}".format(package_enables_file))
-        self.assertEqual(package_enables_file, "packageEnables.cmake")
+        self.assertEqual(package_enables_file, "../packageEnables.cmake")
 
 
     def test_TrilinosPRConfigurationBaseProperty_working_directory_ctest(self):
@@ -709,6 +710,4 @@ class TrilinosPRConfigurationTest(TestCase):
         with self.assertRaises(NotImplementedError):
             pr_config.execute_test()
 
-
-
-
+mock_modulehelper_module_fail

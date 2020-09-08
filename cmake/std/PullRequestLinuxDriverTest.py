@@ -62,7 +62,9 @@ def parse_args():
     if "WORKSPACE" in os.environ.keys():
         default_workspace = os.environ["WORKSPACE"]
 
-    default_package_enables = os.path.join(default_workspace, "packageEnables.cmake")
+    default_package_enables = os.path.join("..", "packageEnables.cmake")
+    default_subprojects_file = os.path.join("..", "package_subproject_list.cmake")
+    #default_package_enables = os.path.join(default_workspace, "packageEnables.cmake")
 
 
     required.add_argument('--sourceRepo',
@@ -117,7 +119,7 @@ def parse_args():
     optional.add_argument('--workspaceDir',
                           dest="workspaceDir",
                           action='store',
-                          default=None,
+                          default=default_workspace,
                           help="The local workspace directory that Jenkins set up." +
                                " Default={}".format(default_workspace),
                           required=False)
@@ -125,9 +127,16 @@ def parse_args():
     optional.add_argument('--packageEnables',
                           dest="package_enables",
                           action="store",
-                          default=None,
+                          default=default_package_enables,
                           help="Custom packageEnables.cmake override." +
-                               "Default={}".format(default_package_enables))
+                               " Default={}".format(default_package_enables))
+
+    optional.add_argument('--subprojects_file',
+                          dest="subprojects_file",
+                          action="store",
+                          default=default_subprojects_file,
+                          help="Custom subprojects file." +
+                               " Default={}".format(default_subprojects_file))
 
     optional.add_argument('--mode',
                           dest='mode',
@@ -174,13 +183,13 @@ def parse_args():
     arguments.num_concurrent_tests = int(arguments.num_concurrent_tests)
     arguments.req_mem_per_core     = float(arguments.req_mem_per_core)
 
-    if arguments.workspaceDir is None:
-        arguments.workspaceDir = default_workspace
-        if arguments.package_enables is None:
-            arguments.package_enables = default_package_enables
-    else:
-        if arguments.package_enables is None:
-            arguments.package_enables = os.path.join(arguments.workspaceDir, "packageEnables.cmake")
+    #if arguments.workspaceDir is None:
+        #arguments.workspaceDir = default_workspace
+        #if arguments.package_enables is None:
+            #arguments.package_enables = default_package_enables
+    #else:
+        #if arguments.package_enables is None:
+            #arguments.package_enables = os.path.join(arguments.workspaceDir, "packageEnables.cmake")
 
 
     # Print the arguments to the console
@@ -217,15 +226,16 @@ def main(args):
 
     pr_config = None
 
+    # Banner
+    print("="*80)
+    print("=")
+    print("=   T R I L I N O S   P U L L R E Q U E S T   D R I V E R   S T A R T")
+    print("=")
     if args.dry_run:
-        print("="*80)
-        print("=")
-        print("=   T R I L I N O S   P U L L R E Q U E S T   D R I V E R   S T A R T")
-        print("=")
         print("=                D R Y   R U N   M O D E   E N A B L E D")
         print("=")
-        print("="*80)
-        print("")
+    print("="*80)
+    print("")
 
     if 'standard' == args.mode:
         pr_config = trilinosprhelpers.TrilinosPRConfigurationStandard(args)

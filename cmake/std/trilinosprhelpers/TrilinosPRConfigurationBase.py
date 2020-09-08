@@ -8,6 +8,8 @@ import subprocess
 import sys
 from textwrap import dedent
 
+sys.dont_write_bytecode = True
+
 
 from . import setenvironment
 from . import sysinfo
@@ -100,7 +102,7 @@ class TrilinosPRConfigurationBase(object):
         """
         This property generates the subprojects_list file to pass into CTest.
         """
-        return os.path.join(self.arg_workspace_dir, "package_subproject_list.cmake")
+        return self.args.subprojects_file
 
 
     @property
@@ -463,9 +465,8 @@ class TrilinosPRConfigurationBase(object):
 
         rval = 0
         if not self.args.dry_run:
-            #tr_config.pretty_print()  # SCAFFOLDING (WCMCLEN - Debugging)
             rval = tr_config.apply(throw_on_error=True)
-            print("rval = {}".format(rval))
+            print("apply() rval: {}".format(rval))
         else:
             tr_config.pretty_print()
             print("\nNOTICE: ENVVARS not set due to dry-run flag.")

@@ -61,6 +61,24 @@ def mock_subprocess_check_call(*args, **kwargs):
     return 0
 
 
+def mock_subprocess_check_output(*args, **kwargs):
+    """
+    Mock out a subprocess.check_output()
+    """
+    params = copy.deepcopy(args[0])
+    for k,v in kwargs.items():
+        params.append("{}={}".format(k,v))
+    output = "--- subprocess.check_output({})".format(", ".join(params))
+
+    print("MOCK> mock_packageEnables_check_output()")
+    for k in args[0]:                                                         # pragma: no cover
+        print("    - '{}'".format(k))                                         # pragma: no cover
+    for k,v in kwargs.items():                                                # pragma: no cover
+        print("    - {}={}".format(k,v))                                      # pragma: no cover
+    print("")
+    return str.encode(output)
+
+
 def mock_module_apply(*args, **kwargs):
     """
     Mock handler for ModuleHelper.module() calls.
@@ -68,6 +86,7 @@ def mock_module_apply(*args, **kwargs):
     cmd = ", ".join(["'{}'".format(x) for x in args])                          # pragma: no cover
     print("MOCK> module({})".format(cmd))                                      # pragma: no cover
     return 0
+
 
 
 #==============================================================================
@@ -99,6 +118,10 @@ class TrilinosPRConfigurationStandardTest(TestCase):
         self.patch_subprocess_check_call = patch('subprocess.check_call', side_effect=mock_subprocess_check_call)
         self.mock_subprocess_check_call = self.patch_subprocess_check_call.start()
 
+        self.patch_subprocess_check_output = patch('subprocess.check_output',
+                                                   side_effect=mock_subprocess_check_output)
+        self.mock_subprocess_check_output = self.patch_subprocess_check_output.start()
+
         self.patch_modulehelper_module = patch('trilinosprhelpers.setenvironment.ModuleHelper.module',
                                                side_effect=mock_module_apply)
         self.mock_modulehelper_module  = self.patch_modulehelper_module.start()
@@ -111,6 +134,7 @@ class TrilinosPRConfigurationStandardTest(TestCase):
         self.patch_cpu_count.stop()
         self.patch_os_chdir.stop()
         self.patch_subprocess_check_call.stop()
+        self.patch_subprocess_check_output.stop()
         self.patch_modulehelper_module.stop()
 
 
@@ -128,7 +152,8 @@ class TrilinosPRConfigurationStandardTest(TestCase):
             github_pr_number='0000',
             configfile=self._config_file,
             workspaceDir=".",
-            package_enables="packageEnables.cmake",
+            package_enables="../packageEnables.cmake",
+            subprojects_file="../package_subproject_list.cmake",
             mode="standard",
             req_mem_per_core=3.0,
             max_cores_allowed=12,
@@ -136,25 +161,6 @@ class TrilinosPRConfigurationStandardTest(TestCase):
             dry_run = False
         )
         return output
-
-
-    def dummy_args_python2(self):
-        """
-        Extend dummy args to change the job_base_name to use the
-        Python 2.x test set.
-        """
-        args = copy.deepcopy(self.dummy_args())                         # pragma: no cover
-        args.job_base_name = "Trilinos_pullrequest_python_2"            # pragma: no cover
-        return args                                                     # pragma: no cover
-
-
-    def dummy_args_dry_run(self):
-        """
-        Extend dummy args to enable dry-run mode.
-        """
-        args = copy.deepcopy(self.dummy_args())                         # pragma: no cover
-        args.dry_run = True                                             # pragma: no cover
-        return args                                                     # pragma: no cover
 
 
     def find_config_ini(self, filename="config.ini"):
@@ -190,8 +196,10 @@ class TrilinosPRConfigurationStandardTest(TestCase):
     def test_TrilinosPRConfigurationStandardDryRun(self):
         """
         Test the Standard Configuration
+        - Change args to enable dry_run mode.
         """
-        args = self.dummy_args_dry_run()
+        args = self.dummy_args()
+        args.dry_run = True
         pr_config = trilinosprhelpers.TrilinosPRConfigurationStandard(args)
 
         # prepare step
@@ -203,3 +211,24 @@ class TrilinosPRConfigurationStandardTest(TestCase):
         ret = pr_config.execute_test()
         self.assertEqual(ret, 0)
 
+
+    def test_TrilinosPRConfigurationStandardPython3(self):
+        """
+        Test the Standard Configuration
+        - Change args to enable:
+            - job_base_name = "Trilinos_pullrequest_python_3"
+            - dry_run = True
+        - Change args to enable dry_run mode.
+        """
+        args = self.dummy_args()
+        args.job_base_name = "Trilinos_pullrequest_python_3"
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationStandard(args)
+
+        # prepare step
+        ret = pr_config.prepare_test()
+        self.assertEqual(ret, 0)
+        self.mock_cpu_count.assert_called()
+
+        # execute step
+        #ret = pr_config.execute_test()
+        #self.assertEqual(ret, 0)
