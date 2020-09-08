@@ -90,7 +90,7 @@ namespace MueLuTests {
     fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
     fineLevel.Set("A", A);
 
-    const LO NSdim = 2;
+    const size_t NSdim = 2;
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(), NSdim);
     nullSpace->randomize();
     fineLevel.Set("Nullspace", nullSpace);
@@ -131,15 +131,15 @@ namespace MueLuTests {
     const LO numAggs = aggregates->GetNumAggregates();
     GO numGlobalAggs = 0;
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    reduceAll(*comm, Teuchos::REDUCE_SUM, Teuchos::as<GO>(numAggs), Teuchos::outArg(numGlobalAggs));
+    MueLu_sumAll(comm, numAggs, numGlobalAggs);
     out << "Found " << numGlobalAggs << " aggregates" << std::endl;
 
     TEST_EQUALITY(map1->getMinAllGlobalIndex(), Teuchos::ScalarTraits<GlobalOrdinal>::zero());
-    TEST_EQUALITY(map1->getMaxAllGlobalIndex(), numGlobalAggs * Teuchos::as<GO>(NSdim) - Teuchos::ScalarTraits<GlobalOrdinal>::one());
-    TEST_EQUALITY(map2->getMinAllGlobalIndex(), numGlobalAggs * Teuchos::as<GO>(NSdim));
-    TEST_EQUALITY(map2->getMaxAllGlobalIndex(), 2 * numGlobalAggs * Teuchos::as<GO>(NSdim) - Teuchos::ScalarTraits<GlobalOrdinal>::one());
-    TEST_EQUALITY(Teuchos::as<GO>(map1->getNodeNumElements()), numAggs * Teuchos::as<GO>(NSdim));
-    TEST_EQUALITY(Teuchos::as<GO>(map2->getNodeNumElements()), numAggs * Teuchos::as<GO>(NSdim));
+    TEST_EQUALITY(map1->getMaxAllGlobalIndex(), numGlobalAggs * static_cast<GO>(NSdim) - Teuchos::ScalarTraits<GlobalOrdinal>::one());
+    TEST_EQUALITY(map2->getMinAllGlobalIndex(), numGlobalAggs * static_cast<GO>(NSdim));
+    TEST_EQUALITY(map2->getMaxAllGlobalIndex(), 2 * numGlobalAggs * static_cast<GO>(NSdim) - Teuchos::ScalarTraits<GlobalOrdinal>::one());
+    TEST_EQUALITY(map1->getNodeNumElements(), static_cast<size_t>(numAggs) * NSdim);
+    TEST_EQUALITY(map2->getNodeNumElements(), static_cast<size_t>(numAggs) * NSdim);
   } // GIDOffsetFromCoarseMapFactory
 
 #define MUELU_ETI_GROUP(Scalar,LocalOrdinal,GlobalOrdinal,Node) \
