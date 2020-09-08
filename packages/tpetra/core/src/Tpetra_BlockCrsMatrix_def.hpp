@@ -981,7 +981,7 @@ public:
       // device.  Also, prefer modifying on device if neither side is
       // marked as modified.
       this->modify_device ();
-      // DEEP_COPY REVIEW - VALUE-TO_DEVICE
+      // DEEP_COPY REVIEW - VALUE-TO-DEVICE
       Kokkos::deep_copy (this->getValuesDevice (), alpha);
     }
   }
