@@ -128,7 +128,7 @@ namespace MueLuTests {
 
     // Access aggregates
     RCP<Aggregates> aggregates = fineLevel.Get<RCP<Aggregates>>("Aggregates", uncoupledAggFact.get());
-    const LO numAggs = aggregates->GetNumAggregates();
+    LO numAggs = aggregates->GetNumAggregates();
     GO numGlobalAggs = 0;
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     MueLu_sumAll(comm, numAggs, numGlobalAggs);
