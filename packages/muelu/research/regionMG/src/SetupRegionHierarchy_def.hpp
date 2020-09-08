@@ -63,8 +63,8 @@
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_Utilities.hpp>
 
-#include <MueLu_RebalanceAcFactory_decl.hpp>
-#include <MueLu_RepartitionHeuristicFactory.hpp>
+//#include <MueLu_RebalanceAcFactory_decl.hpp>
+//#include <MueLu_RepartitionHeuristicFactory.hpp>
 #include <MueLu_RepartitionFactory.hpp>
 #include <MueLu_ZoltanInterface.hpp>
 
@@ -475,7 +475,7 @@ void RebalanceCoarseCompositeOperator(const int maxRegPerProc,
   using CoordType = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
 
   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-//  fos->setOutputToRootOnly(0);
+  fos->setOutputToRootOnly(0);
   *fos << "Rebalancing coarse composite operator." << std::endl;
 
   RCP<const Map> map = coarseCompOp->getMap();
@@ -484,7 +484,7 @@ void RebalanceCoarseCompositeOperator(const int maxRegPerProc,
 
   const int numPartitions = 2;
 
-  // We build a level
+  // We build a fake level
   Level level;
   level.SetLevelID(1);
 
@@ -492,23 +492,15 @@ void RebalanceCoarseCompositeOperator(const int maxRegPerProc,
   level.SetFactoryManager(factoryHandler);
 
   RCP<ZoltanInterface> zoltan = rcp(new ZoltanInterface());
-  RCP<RepartitionHeuristicFactory> RepartitionHeuristicFact = Teuchos::rcp(new RepartitionHeuristicFactory());
 
   level.Set<RCP<Matrix> >     ("A",                    coarseCompOp);
   level.Set<RCP<MultiVector> >("Coordinates",          compCoarseCoordinates);
   level.Set<int>              ("number of partitions", numPartitions);
 
-//  // What does this do? It doesn't seem like we need it
-//  level.Request("Partition", zoltan.get());
-//  level.Set<RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > >("Partition", decomposition, zoltan.get());
-
   RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
   Teuchos::ParameterList paramList;
   paramList.set("repartition: remap parts",       false);
   repart->SetParameterList(paramList);
-//paramList.set("repartition: start level",       0);
-//paramList.set("repartition: min rows per proc",       800);
-//repart->SetFactory("number of partitions", RepartitionHeuristicFact);
   repart->SetFactory("Partition", zoltan);
 
 
@@ -516,21 +508,19 @@ void RebalanceCoarseCompositeOperator(const int maxRegPerProc,
   level.Request("Importer", repart.get());
   repart->Build(level);
 
-  RCP<const Import> importer;
-  level.Get("Importer", importer, repart.get());
+  // Build importer for rebalancing
+  level.Get("Importer", rebalanceImporter, repart.get());
 
   ParameterList XpetraList;
   XpetraList.set("Restrict Communicator",false);
   XpetraList.set("Timer Label","MueLu::RebalanceAc-for-coarseAMG");
 
-  RCP<Matrix> permutedA = MatrixFactory::Build(coarseCompOp, *importer, *importer, importer->getTargetMap(), importer->getTargetMap(), rcp(&XpetraList,false));
+  // Build rebalanced coarse composite operator
+  rebalancedCompOp = MatrixFactory::Build(coarseCompOp, *rebalanceImporter, *rebalanceImporter, rebalanceImporter->getTargetMap(), rebalanceImporter->getTargetMap(), rcp(&XpetraList,false));
 
-  RCP<Xpetra::MultiVector<CoordType,LocalOrdinal,GlobalOrdinal,Node> > permutedCoord = Xpetra::MultiVectorFactory<CoordType,LocalOrdinal,GlobalOrdinal,Node>::Build(importer->getTargetMap(), compCoarseCoordinates->getNumVectors());
-  permutedCoord->doImport(*compCoarseCoordinates, *importer, Xpetra::INSERT);
-
-  rebalancedCompOp = permutedA;
-  rebalancedCoordinates = permutedCoord;
-  rebalanceImporter = importer;
+  // Build rebalanced coarse coordinates
+  rebalancedCoordinates = Xpetra::MultiVectorFactory<CoordType,LocalOrdinal,GlobalOrdinal,Node>::Build(rebalanceImporter->getTargetMap(), compCoarseCoordinates->getNumVectors());
+  rebalancedCoordinates->doImport(*compCoarseCoordinates, *rebalanceImporter, Xpetra::INSERT);
 
   return;
 } // RebalanceCoarseCompositeOperator
