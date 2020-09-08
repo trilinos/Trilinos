@@ -97,7 +97,7 @@ template <class Scalar = DefaultScalar,
           class LocalOrdinal = DefaultLocalOrdinal,
           class GlobalOrdinal = DefaultGlobalOrdinal,
           class Node = DefaultNode>
-class BlockedCoarseMapFactory : public MueLu::CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> { //SingleLevelFactoryBase {
+class BlockedCoarseMapFactory : public MueLu::CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_BLOCKEDCOARSEMAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -132,7 +132,7 @@ public:
   //@{
 
   //! Build an object with this factory.
-  void Build(Level &currentLevel) const;
+  void Build(Level &currentLevel) const override;
 
   //@}
 
