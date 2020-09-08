@@ -11,6 +11,7 @@
 
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorSecondOrder.hpp"
+#include "Tempus_StepperNewmarkImplicitAFormAppAction.hpp"
 
 namespace Tempus {
 
@@ -82,6 +83,7 @@ public:
   */
   StepperNewmarkImplicitAForm();
 
+ #ifndef TEMPUS_HIDE_DEPRECATED_CODE 
   /// Constructor
   StepperNewmarkImplicitAForm(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -94,6 +96,20 @@ public:
     std::string schemeName,
     Scalar beta,
     Scalar gamma);
+#endif
+
+  /// Constructor
+  StepperNewmarkImplicitAForm(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool zeroInitialGuess,
+    std::string schemeName,
+    Scalar beta,
+    Scalar gamma,
+    const Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> >& stepperAppAction);
 
   /// \name Basic stepper methods
   //@{
@@ -103,8 +119,13 @@ public:
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return Teuchos::null; }
+#endif
+
+     virtual Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > getAppAction() const
+     { return stepperNewmarkImpAppAction_; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -172,6 +193,9 @@ public:
                              const Thyra::VectorBase<Scalar>& a,
                              const Scalar dt) const;
 
+  virtual void setAppAction(
+      Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > appAction); 
+
   void setSchemeName(std::string schemeName);
   void setBeta(Scalar beta);
   void setGamma(Scalar gamma);
@@ -186,6 +210,7 @@ private:
   Scalar gamma_;
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
+  Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > stepperNewmarkImpAppAction_;
 
 };
 } // namespace Tempus
