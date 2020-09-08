@@ -486,6 +486,7 @@ namespace MueLu {
     for(LO i=0; i<nodesInAgg.unaggregated.size(); i++) {
       for (LO m = 0; m < (LO)blkSize; m++) {
 	LO row = amalgInfo->ComputeLocalDOF(nodesInAgg.unaggregated[i],m);
+	if (row >= (LO)numRows) continue;
 	size_t index_start = rowptr[row];
 	A.getLocalRowView(row, indsA, valsA);
 	for(LO k=0; k<(LO)indsA.size(); k++) {
@@ -546,6 +547,7 @@ namespace MueLu {
       badAggNeighbors.resize(0);
       for(LO j = 0; j < (LO)blkSize; j++) {
 	LO row = amalgInfo->ComputeLocalDOF(root_node,j);
+	if (row >= (LO)numRows) continue;
 	A.getLocalRowView(row, indsA, valsA);
 	for(LO k=0; k<(LO)indsA.size(); k++) {
 	  if(indsA[k] < (LO)numRows) {
@@ -566,6 +568,7 @@ namespace MueLu {
 	  LO bad_node = nodesInAgg.nodes[k];
 	  for(LO j = 0; j < (LO)blkSize; j++) {
 	    LO bad_row = amalgInfo->ComputeLocalDOF(bad_node,j);
+	    if (bad_row >= (LO)numRows) continue;
 	    size_t index_start = rowptr[bad_row];	
 	    A.getLocalRowView(bad_row, indsA, valsA);
 	    for(LO l = 0; l < (LO)indsA.size(); l++) {
@@ -593,6 +596,7 @@ namespace MueLu {
 	
 	for (LO m = 0; m < (LO)blkSize; m++) {
 	  LO row = amalgInfo->ComputeLocalDOF(row_node,m);
+	  if (row >= (LO)numRows) continue;	
 	  size_t index_start = rowptr[row];	
 	  A.getLocalRowView(row, indsA, valsA);
 	  
