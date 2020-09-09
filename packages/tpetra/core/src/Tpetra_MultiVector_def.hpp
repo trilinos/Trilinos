@@ -351,7 +351,7 @@ namespace { // (anonymous)
       return false; // most up-to-date on device
     }
     else { // most up-to-date on host
-      constexpr size_t localLengthThreshold = 10000;
+      size_t localLengthThreshold = Tpetra::Details::Behavior::multivectorKernelLocationThreshold();
       return X.getLocalLength () <= localLengthThreshold;
     }
   }
