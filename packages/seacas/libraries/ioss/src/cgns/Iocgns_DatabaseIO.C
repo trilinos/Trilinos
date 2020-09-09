@@ -93,11 +93,11 @@ namespace {
     Ioss::IJK_t             transform;
 
     cg_1to1_read(cgns_file_ptr, base, zone, zgc_idx, connectname, donorname, range.data(),
-		 donor_range.data(), transform.data());
+                 donor_range.data(), transform.data());
 
     std::string name{connectname};
-    bool has_decomp_name = ((name.find_first_not_of("0123456789_-") == std::string::npos) &&
-	    (name.find("--", 1 != std::string::npos)));
+    bool        has_decomp_name = ((name.find_first_not_of("0123456789_-") == std::string::npos) &&
+                            (name.find("--", 1 != std::string::npos)));
 
     return has_decomp_name;
   }
@@ -113,7 +113,7 @@ namespace {
     // * is all [0-9_-] characters
     // * has "--" in the middle (approx) of the name
     return ((name.find_first_not_of("0123456789_-") == std::string::npos) &&
-	    (name.find("--", 1 != std::string::npos)));
+            (name.find("--", 1 != std::string::npos)));
   }
 
   void zgc_check_descriptor(int cgns_file_ptr, int base, int zone, int zgc_idx,
@@ -293,12 +293,10 @@ namespace {
           do {
             global[ijk] += blocks[br].range[ijk];
 #if IOSS_DEBUG_OUTPUT
-	    const auto b = blocks[br];
-	    fmt::print(Ioss::DEBUG(), "Min {}: {} {} ({} {} {})  [{}]\n",
-		       (ijk == 0 ? 'i' : ijk == 1 ? 'j' : 'k'),
-		       b.name, b.face_adj[ijk],
-		       b.range[0], b.range[1], b.range[2],
-		       b.face_adj.to_string('.','+'));
+            const auto b = blocks[br];
+            fmt::print(Ioss::DEBUG(), "Min {}: {} {} ({} {} {})  [{}]\n",
+                       (ijk == 0 ? 'i' : ijk == 1 ? 'j' : 'k'), b.name, b.face_adj[ijk], b.range[0],
+                       b.range[1], b.range[2], b.face_adj.to_string('.', '+'));
 #endif
             br = adjacent_block(blocks[br], ijk + 3, proc_block_map);
             if (++iter > end - begin) {
@@ -358,7 +356,7 @@ namespace {
     // We can unambiguously determine whether a ZGC is from decomp or is
     // normal inter-zone ZGC. If the descriptor does not exist, then have
     // to rely on hueristics...
-    bool has_decomp_flag = false;
+    bool has_decomp_flag  = false;
     bool has_decomp_names = false;
     for (int i = 0; i < nconn; i++) {
       if (has_decomp_descriptor(cgns_file_ptr, base, zone, i + 1)) {
@@ -393,10 +391,10 @@ namespace {
       }
       else {
 #if IOSS_DEBUG_OUTPUT
-	fmt::print("Name: {}, decomp? = {}\n", connectname, name_is_decomp(connectname));
+        fmt::print("Name: {}, decomp? = {}\n", connectname, name_is_decomp(connectname));
 #endif
         is_from_decomp = donor_name == zone_name && donor_proc >= 0 && donor_proc != myProcessor &&
-	  (!has_decomp_names || name_is_decomp(connectname));
+                         (!has_decomp_names || name_is_decomp(connectname));
       }
 
       if (is_from_decomp) {
@@ -553,8 +551,8 @@ namespace Iocgns {
     }
     try {
       if (m_cgnsBasePtr > 0) {
-	CGCHECKM(cg_close(m_cgnsBasePtr));
-	m_cgnsBasePtr = -1;
+        CGCHECKM(cg_close(m_cgnsBasePtr));
+        m_cgnsBasePtr = -1;
       }
       closeDatabase__();
     }
@@ -907,7 +905,7 @@ namespace Iocgns {
         fmt::print(Ioss::DEBUG(), "{} {} {} ({} {} {}) ({} {} {}) ({} {} {}) [{}]\n", b.name,
                    b.proc, b.local_zone, b.range[0], b.range[1], b.range[2], b.glob_range[0],
                    b.glob_range[1], b.glob_range[2], b.offset[0], b.offset[1], b.offset[2],
-                   b.face_adj.to_string('.','+'));
+                   b.face_adj.to_string('.', '+'));
       }
 #endif
 

@@ -2294,6 +2294,8 @@ C========================================================================
 
 C========================================================================
       ELSE IF (VERB .EQ. 'QUIT') THEN
+         call prterr('WARNING', 
+     &   'Aborting current execution; no output file will be written')
         CALL SCNEOF
         RETURN 1
 

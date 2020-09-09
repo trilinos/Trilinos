@@ -37,7 +37,9 @@ int ex_get_processor_elem_maps(int exoid, void_int *elem_mapi, void_int *elem_ma
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   /* Get the file type */
   if (ex__get_file_type(exoid, ftype) != EX_NOERR) {

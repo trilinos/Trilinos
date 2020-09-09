@@ -87,7 +87,9 @@ int ex__get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number, 
   char   errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
   /* Check that times are in range */
   {
     int num_time_steps = ex_inquire_int(exoid, EX_INQ_TIME);

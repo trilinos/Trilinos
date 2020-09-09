@@ -8,8 +8,8 @@ C    See packages/seacas/LICENSE for details
       QAINFO(2) = '        '
       QAINFO(3) = '        '
 
-      QAINFO(2)(:8) = '20200113'
-      QAINFO(3)(:8) = '    3.06'
+      QAINFO(2)(:8) = '20200827'
+      QAINFO(3)(:8) = '    3.07'
 
 c..Dynamic dimensioning of block names+other changes
 c..compress output of distribution factors
@@ -73,3 +73,4 @@ c..Fix invcon output with mapped element ids
 c..Change name to `explore`
 c..Fix minmax to work more than once
 c..Work with experimental exodus (transient data only)
+c..Add select nodes sset {id}...

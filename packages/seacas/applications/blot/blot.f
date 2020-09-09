@@ -63,7 +63,6 @@ C   --Current author and code sponsor: John Glick
 C   --
 C   --Revision History:
 C   --   05/88  Added PATHLINE (Amy Gilkey)
-C   --   03/88  Added Master/Slave logic (Amy Gilkey)
 C   --   10/87  Added EXPLORE (Amy Gilkey)
 C   --   10/87  Converted from SEACO to EXODUS database (Amy Gilkey)
 C   --   07/87  Combined DETOUR, TPLOT, and SPLOT (Amy Gilkey)

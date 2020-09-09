@@ -189,7 +189,9 @@ int ex_put_reduction_vars(int exoid, int time_step, ex_entity_type var_type, ex_
 
   EX_FUNC_ENTER();
 
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   switch (var_type) {
     /* NOTE: Global variables are always reduction variables, so use the ex_put_var function. */

@@ -56,7 +56,9 @@ int ex_get_side_set_node_list_len(int exoid, ex_entity_id side_set_id,
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     *(int64_t *)side_set_node_list_len = 0; /* default value */
