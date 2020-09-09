@@ -272,6 +272,10 @@ public:
      */
    void getNeighborElements(const std::string & blockID,std::vector<stk::mesh::Entity> & elements) const;
 
+   /** Get a vector of edges owned by this processor
+     */
+   void getMyEdges(std::vector<stk::mesh::Entity> & edges) const;
+   
    /** Get Entities corresponding to the edge block requested.
      * The Entites in the vector should be a dimension
      * lower than <code>getDimension()</code>.
@@ -659,6 +663,24 @@ public:
    inline stk::mesh::EntityId elementGlobalId(stk::mesh::Entity elmt) const
    { return bulkData_->identifier(elmt); }
 
+   /** Get an edge's local index
+     */
+   std::size_t edgeLocalId(stk::mesh::Entity elmt) const;
+
+   /** Get an edge's local index
+     */
+   std::size_t edgeLocalId(stk::mesh::EntityId gid) const;
+
+   /** Get an edges global index
+     */
+   inline stk::mesh::EntityId edgeGlobalId(std::size_t lid) const
+   { return bulkData_->identifier((*orderedEdgeVector_)[lid]); }
+
+   /** Get an edge's global index
+     */
+   inline stk::mesh::EntityId edgeGlobalId(stk::mesh::Entity edge) const
+   { return bulkData_->identifier(edge); }
+
   /** Get an Entity's parallel owner (process rank)
    */
   inline unsigned entityOwnerRank(stk::mesh::Entity entity) const
@@ -758,6 +780,11 @@ public:
    void setCellFieldData(const std::string & fieldName,const std::string & blockId,
                          const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue=1.0);
 
+   /** Get Vector of edge entities ordered by their LID, returns an RCP so that
+     * it is easily stored by the caller.
+     */
+   Teuchos::RCP<const std::vector<stk::mesh::Entity> > getEdgesOrderedByLID() const;
+   
    /** Writes a particular field to an edge array. Notice this is setup to work with
      * the worksets associated with Panzer.
      *
@@ -885,6 +912,8 @@ public:
      */
    void buildLocalElementIDs();
 
+   void buildLocalEdgeIDs();
+   
    /** Return a vector containing all the periodic boundary conditions.
      */
    const std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > &
@@ -1178,10 +1207,14 @@ protected:
    // uses lazy evaluation
    mutable Teuchos::RCP<std::vector<stk::mesh::Entity> > orderedElementVector_;
 
+   // uses lazy evaluation
+   mutable Teuchos::RCP<std::vector<stk::mesh::Entity> > orderedEdgeVector_;
+
    // for element block weights
    std::map<std::string,double> blockWeights_;
 
    std::unordered_map<stk::mesh::EntityId,std::size_t> localIDHash_;
+   std::unordered_map<stk::mesh::EntityId,std::size_t> localEdgeIDHash_;
 
    // Store mesh displacement fields by element block. This map
    // goes like this meshCoordFields_[eBlock][axis_index] => coordinate FieldName
@@ -1318,19 +1351,19 @@ void STK_Interface::setCellFieldData(const std::string & fieldName,const std::st
 
 template <typename ArrayT>
 void STK_Interface::setEdgeFieldData(const std::string & fieldName,const std::string & blockId,
-                                     const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue)
+                                     const std::vector<std::size_t> & localEdgeIds,const ArrayT & solutionValues,double scaleValue)
 {
-   const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
+   const std::vector<stk::mesh::Entity> & edges = *(this->getEdgesOrderedByLID());
 
    SolutionFieldType * field = this->getEdgeField(fieldName,blockId);
 
-   for(std::size_t edge=0;edge<localElementIds.size();edge++) {
-      std::size_t localId = localElementIds[edge];
-      stk::mesh::Entity element = elements[localId];
+   for(std::size_t idx=0;idx<localEdgeIds.size();idx++) {
+      std::size_t localId = localEdgeIds[idx];
+      stk::mesh::Entity edge = edges[localId];
 
-      double * solnData = stk::mesh::field_data(*field,element);
+      double * solnData = stk::mesh::field_data(*field,edge);
       TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
-      solnData[0] = scaleValue*solutionValues.access(edge,0);
+      solnData[0] = scaleValue*solutionValues.access(idx,0);
    }
 }
 
