@@ -8,10 +8,6 @@
 #include <fmt/ostream.h>
 
 namespace {
-  template <typename INT> void swap_(INT v[], size_t i, size_t j);
-
-  template <typename T, typename INT> INT median3(const T v[], INT iv[], size_t left, size_t right);
-
   template <typename T, typename INT> void iqsort(const T v[], INT iv[], size_t left, size_t right);
 
   template <typename T, typename INT> void iisort(const T v[], INT iv[], size_t N);
@@ -52,17 +48,20 @@ namespace {
   /* swap - interchange v[i] and v[j] */
   template <typename INT> void swap_(INT v[], size_t i, size_t j)
   {
+#if 0
     INT temp;
 
     temp = v[i];
     v[i] = v[j];
     v[j] = temp;
+#else
+    std::swap(v[i], v[j]);
+#endif
   }
 
-  template <typename T, typename INT> INT median3(const T v[], INT iv[], size_t left, size_t right)
+  template <typename T, typename INT>
+  void order3(T v[], INT iv[], size_t left, size_t center, size_t right)
   {
-    size_t center = (left + right) / 2;
-
     if (v[iv[left]] > v[iv[center]]) {
       swap_(iv, left, center);
     }
@@ -72,6 +71,28 @@ namespace {
     if (v[iv[center]] > v[iv[right]]) {
       swap_(iv, center, right);
     }
+  }
+
+  template <typename T, typename INT>
+  size_t median3(const T v[], INT iv[], size_t left, size_t right)
+  {
+    size_t center = (left + right) / 2;
+    size_t pl     = left;
+    size_t pm     = center;
+    size_t pr     = right;
+
+    if (right - left > 40) {
+      size_t s = (right - left) / 8;
+      order3(v, iv, left, left + s, left + 2 * s);
+      order3(v, iv, center - s, center, center + s);
+      order3(v, iv, right - 2 * s, right - s, right);
+
+      // Now set up to get median of the 3 medians...
+      pl = left + s;
+      pm = center;
+      pr = right - s;
+    }
+    order3(v, iv, pl, pm, pr);
 
     swap_(iv, center, right - 1);
     return iv[right - 1];
@@ -110,6 +131,9 @@ namespace {
     size_t j;
     size_t ndx = 0;
 
+    if (N <= 1) {
+      return;
+    }
     T low = v[iv[0]];
     for (size_t i = 1; i < N; i++) {
       if (v[iv[i]] < low) {

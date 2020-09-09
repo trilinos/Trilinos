@@ -24,7 +24,7 @@ C   --Only elements of selected element blocks are drawn.
 C   --
 C   --Parameters:
 C   --   LENE - IN - the cumulative element counts by element block
-C   --   LINK - IN - the master connectivity array
+C   --   LINK - IN - the connectivity array
 C   --   NUMLNK - IN - the number of nodes per element by block
 C   --   NUMATR - IN - the number of attributes per element by block
 C   --   XN, YN, ZN - IN - the nodal coordinates

@@ -456,6 +456,50 @@ void deep_copy( const View<DT,DP...> & dst ,
   Kokkos::deep_copy( dst_array , src_array );
 }
 
+/* Specialize for deep copy of FAD */
+template< class ExecSpace, class DT , class ... DP , class ST , class ... SP >
+inline
+void deep_copy( const ExecSpace &,
+                const View<DT,DP...> & dst ,
+                const View<ST,SP...> & src
+  , typename std::enable_if<(
+  ( std::is_same< typename ViewTraits<DT,DP...>::specialize
+                , Kokkos::Impl::ViewSpecializeSacadoFad >::value
+    ||
+    std::is_same< typename ViewTraits<DT,DP...>::specialize
+                , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+  &&
+  ( std::is_same< typename ViewTraits<ST,SP...>::specialize
+                , Kokkos::Impl::ViewSpecializeSacadoFad >::value
+    ||
+    std::is_same< typename ViewTraits<ST,SP...>::specialize
+                , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+  )>::type * = 0 )
+{
+  static_assert(
+    std::is_same< typename ViewTraits<DT,DP...>::value_type ,
+                  typename ViewTraits<DT,DP...>::non_const_value_type >::value
+    , "Deep copy destination must be non-const" );
+
+  static_assert(
+    ( unsigned(ViewTraits<DT,DP...>::rank) ==
+      unsigned(ViewTraits<ST,SP...>::rank) )
+    , "Deep copy destination and source must have same rank" );
+
+#if 0
+  // Current impl
+  typedef typename View<DT,DP...>::array_type dst_array_type;
+  typedef typename View<ST,SP...>::array_type src_array_type;
+  typename NaturalArrayType< dst_array_type >::type dst_array( dst );
+  typename NaturalArrayType< src_array_type >::type src_array( src );
+#else
+  // Copy-assign Views of FadType to Kokkos Views to use Kokkos' deep_copy routine
+  typename PODViewDeepCopyType< View<DT,DP...> >::type dst_array( dst );
+  typename PODViewDeepCopyType< View<ST,SP...> >::type src_array( src );
+#endif
+  Kokkos::deep_copy( ExecSpace(), dst_array , src_array );
+}
+
 template< class T , class ... P >
 inline
 typename Kokkos::View<T,P...>::HostMirror
