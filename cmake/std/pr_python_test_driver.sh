@@ -1,15 +1,13 @@
 #!/usr/bin/env bash
 
-# ARGS
-python_exe=${1:?}
-pip_exe=${2:?}
-
-
 echo "================================================================================"
 echo "="
 echo "= P Y T H O N   P A C K A G E   S E T U P"
 echo "="
 echo "================================================================================"
+python_exe=${1:?}
+pip_exe=${2:?}
+
 echo -e ">>> Python: ${python_exe:?}"
 echo -e ">>> Pip   : ${pip_exe:?}"
 echo -e ""

@@ -66,7 +66,7 @@ TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriverTest_UnitTests
     OVERALL_WORKING_DIRECTORY TEST_NAME
     OVERALL_NUM_MPI_PROCS 1
     EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
-    TEST_0 CMND pr_python_test_driver.sh 
+    TEST_0 CMND pr_python_test_driver.sh
         ARGS ${PYTHON_EXECUTABLE} ${PYTHON_PIP_EXECUTABLE}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/std
         SKIP_CLEAN_WORKING_DIRECTORY
