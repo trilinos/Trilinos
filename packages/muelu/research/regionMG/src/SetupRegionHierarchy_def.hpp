@@ -1277,7 +1277,7 @@ void vCycle(const int l, ///< ID of current level
 
         // Run a single V-cycle
         if(coarseSolverRebalance==false){
-          amgHierarchy->Iterate(*compRhs, *compX, true, 1);
+          amgHierarchy->Iterate(*compRhs, *compX, 1, true);
 
         } else {
           RCP<const Import> rebalanceImporter = coarseSolverData->get<RCP<const Import> >("rebalanceImporter");
@@ -1287,7 +1287,7 @@ void vCycle(const int l, ///< ID of current level
           rebalancedRhs->doImport(*compRhs, *rebalanceImporter, Xpetra::INSERT);
           rebalancedX->doImport(*compX, *rebalanceImporter, Xpetra::INSERT);
 
-          amgHierarchy->Iterate(*rebalancedRhs, *rebalancedX, true, 1);
+          amgHierarchy->Iterate(*rebalancedRhs, *rebalancedX, 1, true);
 
           compRhs->doExport(*rebalancedRhs, *rebalanceImporter, Xpetra::INSERT);
           compX->doExport(*rebalancedX, *rebalanceImporter, Xpetra::INSERT);
