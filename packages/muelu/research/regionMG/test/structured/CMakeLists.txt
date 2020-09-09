@@ -23,6 +23,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       structured_1dof-complex.xml
       structured_linear_1dof.xml
       structured_linear_R_1dof.xml
+      structured_linear_R_3dof.xml
       structured_linear_3dof.xml
       structured_unstructured_1dof.xml
       compare_residual_history.py
@@ -211,7 +212,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Linear_R_Elasticity3D_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_linear_R_1dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Elasticity3D_linear_R_1.log"
+    ARGS "--linAlgebra=Tpetra --xml=structured_linear_R_3dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Elasticity3D_linear_R_1.log"
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
@@ -219,7 +220,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Linear_R_Elasticity3D_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_linear_R_1dof.xml --matrixType=Elasticity3D --nx=19 --ny=19 --nz=10 --smootherIts=2 --convergence-log=Elasticity3D_linear_R_4.log"
+    ARGS "--linAlgebra=Tpetra --xml=structured_linear_R_3dof.xml --matrixType=Elasticity3D --nx=19 --ny=19 --nz=19 --smootherIts=2 --convergence-log=Elasticity3D_linear_R_4.log"
     COMM serial mpi
     NUM_MPI_PROCS 4
     )
