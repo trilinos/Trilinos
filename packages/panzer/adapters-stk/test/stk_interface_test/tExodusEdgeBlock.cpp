@@ -74,16 +74,16 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, edge_count)
    int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
    out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
 
-   int xelems=2;
-   int yelems=4;
-   int zelems=5;
+   std::size_t xelems=2;
+   std::size_t yelems=4;
+   std::size_t zelems=5;
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
    pl->set("X Blocks",1);
    pl->set("Y Blocks",1);
    pl->set("Z Blocks",1);
-   pl->set("X Elements",xelems);
-   pl->set("Y Elements",yelems);
-   pl->set("Z Elements",zelems);
+   pl->set("X Elements",(int)xelems);
+   pl->set("Y Elements",(int)yelems);
+   pl->set("Z Elements",(int)zelems);
    
    CubeHexMeshFactory factory; 
    factory.setParameterList(pl);
@@ -122,9 +122,9 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, edge_count)
    else if(numprocs==2 && rank==0) {
      // rank0 owns all edges in it's half of the mesh including the 
      // edges on the face shared with rank1
-     int my_xelems=xelems-1;
-     int my_yelems=yelems;
-     int my_zelems=zelems;
+     std::size_t my_xelems=xelems-1;
+     std::size_t my_yelems=yelems;
+     std::size_t my_zelems=zelems;
      mesh->getMyEdges(panzer_stk::STK_Interface::edgeBlockString, my_edges);
      TEST_EQUALITY(my_edges.size(),my_xelems*(my_yelems+1)*(my_zelems+1)
                                   +my_yelems*(my_xelems+1)*(my_zelems+1)
@@ -132,9 +132,9 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, edge_count)
    }
    else if(numprocs==2 && rank==1) {
      // rank1 doesn't own the edges on the face shared with rank0
-     int my_xelems=xelems-1;
-     int my_yelems=yelems;
-     int my_zelems=zelems;
+     std::size_t my_xelems=xelems-1;
+     std::size_t my_yelems=yelems;
+     std::size_t my_zelems=zelems;
      mesh->getMyEdges(panzer_stk::STK_Interface::edgeBlockString, my_edges);
      TEST_EQUALITY(my_edges.size(),my_xelems*(my_yelems+1)*(my_zelems+1)
                                   +my_yelems*(my_xelems+1)*(my_zelems+1)
@@ -230,9 +230,6 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, set_edge_field_data)
    mesh->addEdgeField("edge_field_3", "eblock-0_0_0");
    mesh->addEdgeField("edge_field_4", "eblock-0_0_0");
    
-   stk::mesh::Field<double> * edge_field_3 = mesh->getEdgeField("edge_field_3", "eblock-0_0_0");
-   stk::mesh::Field<double> * edge_field_4 = mesh->getEdgeField("edge_field_4", "eblock-0_0_0");
-
    std::vector<stk::mesh::Entity> edges;
    mesh->getMyEdges(panzer_stk::STK_Interface::edgeBlockString, edges);
 
@@ -245,7 +242,7 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, set_edge_field_data)
    }
    sort(edgeIds.begin(),edgeIds.end());
 
-   for(int i=0;i<edgeIds.size();i++) {
+   for(std::size_t i=0;i<edgeIds.size();i++) {
      edgeValues(i) = 3*mesh->edgeGlobalId(edgeIds[i]);
    }
    mesh->setEdgeFieldData("edge_field_3",
@@ -253,7 +250,7 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, set_edge_field_data)
                           edgeIds,
                           edgeValues);
 
-   for(int i=0;i<edgeIds.size();i++) {
+   for(std::size_t i=0;i<edgeIds.size();i++) {
      edgeValues(i) = 4*mesh->edgeGlobalId(edgeIds[i]);
    }
    mesh->setEdgeFieldData("edge_field_4",
