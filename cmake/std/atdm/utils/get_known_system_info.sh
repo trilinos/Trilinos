@@ -66,7 +66,6 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   ride
   ats1
   mutrino   # Deprecated, to be repalced by 'ats1'
-  weaver
   ats2
   van1-tx2
   cts1empire
@@ -112,9 +111,6 @@ elif [[ $realHostname == "white"* ]] ; then
 elif [[ $realHostname == "ride"* ]] ; then
   hostnameMatch=ride
   hostnameMatchSystemName=ride
-elif [[ $realHostname == "weaver"* ]] ; then
-  hostnameMatch=weaver
-  hostnameMatchSystemName=weaver
 elif [[ $realHostname == "vortex"* ]] ; then
   hostnameMatch=vortex
   hostnameMatchSystemName=ats2
