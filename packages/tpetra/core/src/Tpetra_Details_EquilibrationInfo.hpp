@@ -138,7 +138,6 @@ struct EquilibrationInfo {
   void
   assign (const EquilibrationInfo<ScalarType, SrcDeviceType>& src)
   {
-  std::terminate();
     // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
     Kokkos::deep_copy (rowNorms, src.rowNorms);
     // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
