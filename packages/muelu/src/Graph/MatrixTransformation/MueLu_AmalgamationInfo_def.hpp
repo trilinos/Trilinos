@@ -262,6 +262,18 @@ namespace MueLu {
     return gDofIndex;
   }
 
+ template <class LocalOrdinal, class GlobalOrdinal, class Node>
+ LocalOrdinal AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::ComputeLocalDOF(LocalOrdinal const &lNodeID, LocalOrdinal const &k) const  {
+   LocalOrdinal lDofIndex = lNodeID*fullblocksize_ + k;
+   return lDofIndex;
+  }
+
+  
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  LocalOrdinal AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::ComputeLocalNode(LocalOrdinal const &ldofID) const {
+    return (ldofID - ldofID%fullblocksize_) / fullblocksize_;
+  }
+
 } //namespace
 
 

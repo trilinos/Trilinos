@@ -152,6 +152,17 @@ namespace MueLu {
      */
     GO ComputeGlobalDOF(GO const &gNodeID, LO const &k=0) const;
 
+    /*! @brief ComputeLocalDOF
+     * return locbal dof id associated with local node id lNodeID and dof index k
+     *
+     * @param (LO): local node id
+     * @param (LO): local dof index within node
+     * @return (LO): local dof id
+     */
+    LO ComputeLocalDOF(LocalOrdinal const &lNodeID, LocalOrdinal const &k) const;
+
+    LO ComputeLocalNode(LocalOrdinal const &ldofID) const;
+
     /*! Access routines */
 
     /// returns offset of global dof ids
