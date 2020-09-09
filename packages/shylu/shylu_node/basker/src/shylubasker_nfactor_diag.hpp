@@ -564,8 +564,7 @@ namespace BaskerNS
             << " pivot " 
             << pivot << endl;
         }
-        thread_array(kid).error_type = 
-          BASKER_ERROR_SINGULAR;
+        thread_array(kid).error_type = BASKER_ERROR_SINGULAR;
         thread_array(kid).error_blk  = c;
         thread_array(kid).error_info = k;
         return BASKER_ERROR;

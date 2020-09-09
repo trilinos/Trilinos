@@ -68,12 +68,9 @@ namespace BaskerNS
         return BASKER_ERROR;
       }//end if NOMALLOC
 
-      if(thread_array(ti).error_type ==
-          BASKER_ERROR_REMALLOC)
+      if(thread_array(ti).error_type == BASKER_ERROR_REMALLOC)
       {
-
-        BASKER_ASSERT(thread_array(ti).error_blk >= 0,
-            "nfactor_dom_error error_blk");
+        BASKER_ASSERT(thread_array(ti).error_blk >= 0, "nfactor_dom_error error_blk");
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << " > THREAD: " << ti 
@@ -88,7 +85,7 @@ namespace BaskerNS
         Int resize_U = BASKER_MAX_IDX;
         if(thread_array(ti).error_subblk != BASKER_MAX_IDX)
         {
-          BASKER_ASSERT(thread_array(ti).error_info >0, "L) newsize not big enough");
+          BASKER_ASSERT(thread_array(ti).error_info > 0, "L) newsize not big enough");
           resize_L = thread_array(ti).error_info;
           if(Options.verbose == BASKER_TRUE)
           {
@@ -283,13 +280,9 @@ namespace BaskerNS
       }
 
 
-      if(thread_array(ti).error_type ==
-          BASKER_ERROR_REMALLOC)
+      if(thread_array(ti).error_type == BASKER_ERROR_REMALLOC)
       {
-
-        BASKER_ASSERT(thread_array(ti).error_blk > 0,
-            "nfactor_SEP_error error_blk");
-
+        BASKER_ASSERT(thread_array(ti).error_blk >= 0, "nfactor_SEP_error error_blk");
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << " > THREADS: " << ti
@@ -477,8 +470,7 @@ namespace BaskerNS
     for(Int ti = 0; ti < num_threads; ti++)
     {
       //Note: jdb we can make this into a switch
-      if(thread_array(ti).error_type ==
-          BASKER_ERROR_NOERROR)
+      if(thread_array(ti).error_type == BASKER_ERROR_NOERROR)
       {
         threads_start(ti) = BASKER_MAX_IDX;
         continue;
@@ -505,12 +497,9 @@ namespace BaskerNS
         return BASKER_ERROR;
       }//end if NOMALLOC
 
-      if(thread_array(ti).error_type ==
-          BASKER_ERROR_REMALLOC)
+      if(thread_array(ti).error_type == BASKER_ERROR_REMALLOC)
       {
-        BASKER_ASSERT(thread_array(ti).error_blk > 0,
-            "nfactor_diag_error error_blk");
-
+        BASKER_ASSERT(thread_array(ti).error_blk >= 0, "nfactor_diag_error error_blk");
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << " > THREADS: " << ti
