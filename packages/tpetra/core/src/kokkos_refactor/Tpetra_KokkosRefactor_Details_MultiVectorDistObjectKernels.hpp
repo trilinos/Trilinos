@@ -116,7 +116,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
   // Functors for implementing packAndPrepare and unpackAndCombine
   // through parallel_for
 
-  template <typename DstView, typename SrcView, typename IdxView>
+  template <typename DstView, typename SrcView, typename IdxView,
+            typename Enabled = void>
   struct PackArraySingleColumn {
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
@@ -154,7 +155,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
   template <typename DstView,
             typename SrcView,
             typename IdxView,
-            typename SizeType = typename DstView::execution_space::size_type>
+            typename SizeType = typename DstView::execution_space::size_type,
+            typename Enabled = void>
   class PackArraySingleColumnWithBoundsCheck {
   private:
     static_assert (Kokkos::Impl::is_view<DstView>::value,
@@ -301,7 +303,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
   }
 
-  template <typename DstView, typename SrcView, typename IdxView>
+  template <typename DstView, typename SrcView, typename IdxView,
+            typename Enabled = void>
   struct PackArrayMultiColumn {
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
@@ -341,7 +344,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
   template <typename DstView,
             typename SrcView,
             typename IdxView,
-            typename SizeType = typename DstView::execution_space::size_type>
+            typename SizeType = typename DstView::execution_space::size_type,
+            typename Enabled = void>
   class PackArrayMultiColumnWithBoundsCheck {
   public:
     using size_type = SizeType;
@@ -479,7 +483,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
   }
 
   template <typename DstView, typename SrcView, typename IdxView,
-            typename ColView>
+            typename ColView, typename Enabled = void>
   struct PackArrayMultiColumnVariableStride {
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
@@ -523,7 +527,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
             typename SrcView,
             typename IdxView,
             typename ColView,
-            typename SizeType = typename DstView::execution_space::size_type>
+            typename SizeType = typename DstView::execution_space::size_type,
+            typename Enabled = void>
   class PackArrayMultiColumnVariableStrideWithBoundsCheck {
   public:
     using size_type = SizeType;
@@ -734,30 +739,32 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
   struct atomic_tag {};
   struct nonatomic_tag {};
 
-  template<class SC>
   struct AddOp {
+    template<class SC>
     KOKKOS_INLINE_FUNCTION
     void operator() (atomic_tag, SC& dest, const SC& src) const {
       Kokkos::atomic_add (&dest, src);
     }
 
+    template<class SC>
     KOKKOS_INLINE_FUNCTION
     void operator() (nonatomic_tag, SC& dest, const SC& src) const {
       dest += src;
     }
   };
 
-  template<class SC>
   struct InsertOp {
     // There's no point to using Kokkos::atomic_assign for the REPLACE
     // or INSERT CombineModes, since this is not a well-defined
     // reduction for MultiVector anyway.  See GitHub Issue #4417
     // (which this fixes).
+    template<class SC>
     KOKKOS_INLINE_FUNCTION
     void operator() (atomic_tag, SC& dest, const SC& src) const {
       dest = src;
     }
 
+    template<class SC>
     KOKKOS_INLINE_FUNCTION
     void operator() (nonatomic_tag, SC& dest, const SC& src) const {
       dest = src;
@@ -775,13 +782,14 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
   };
 
-  template <typename SC>
   struct AbsMaxOp {
+    template <typename SC>
     KOKKOS_INLINE_FUNCTION
     void operator() (atomic_tag, SC& dest, const SC& src) const {
       Kokkos::Impl::atomic_fetch_oper (AbsMaxOper<SC, SC> (), &dest, src);
     }
 
+    template <typename SC>
     KOKKOS_INLINE_FUNCTION
     void operator() (nonatomic_tag, SC& dest, const SC& src) const {
       dest = AbsMaxOper<SC, SC> ().apply (dest, src);
@@ -792,7 +800,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
             typename DstView,
             typename SrcView,
             typename IdxView,
-            typename Op>
+            typename Op,
+            typename Enabled = void>
   class UnpackArrayMultiColumn {
   private:
     static_assert (Kokkos::Impl::is_view<DstView>::value,
@@ -882,7 +891,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
             typename SrcView,
             typename IdxView,
             typename Op,
-            typename SizeType = typename ExecutionSpace::execution_space::size_type>
+            typename SizeType = typename ExecutionSpace::execution_space::size_type,
+            typename Enabled = void>
   class UnpackArrayMultiColumnWithBoundsCheck {
   private:
     static_assert (Kokkos::Impl::is_view<DstView>::value,
@@ -1086,7 +1096,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
             typename SrcView,
             typename IdxView,
             typename ColView,
-            typename Op>
+            typename Op,
+            typename Enabled = void>
   class UnpackArrayMultiColumnVariableStride {
   private:
     static_assert (Kokkos::Impl::is_view<DstView>::value,
@@ -1187,7 +1198,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
             typename IdxView,
             typename ColView,
             typename Op,
-            typename SizeType = typename ExecutionSpace::execution_space::size_type>
+            typename SizeType = typename ExecutionSpace::execution_space::size_type,
+            typename Enabled = void>
   class UnpackArrayMultiColumnVariableStrideWithBoundsCheck {
   private:
     static_assert (Kokkos::Impl::is_view<DstView>::value,
@@ -1459,7 +1471,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
   }
 
   template <typename DstView, typename SrcView,
-            typename DstIdxView, typename SrcIdxView, typename Op>
+            typename DstIdxView, typename SrcIdxView, typename Op,
+            typename Enabled = void>
   struct PermuteArrayMultiColumn {
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
@@ -1525,7 +1538,8 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
 
   template <typename DstView, typename SrcView,
             typename DstIdxView, typename SrcIdxView,
-            typename DstColView, typename SrcColView, typename Op>
+            typename DstColView, typename SrcColView, typename Op,
+            typename Enabled = void>
   struct PermuteArrayMultiColumnVariableStride {
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;

@@ -1244,7 +1244,7 @@ namespace Tpetra {
         auto srcWhichVecs_h =
           create_const_view (srcWhichVecs.view_host ());
         if (CM == ADD_ASSIGN) {
-          using op_type = KokkosRefactor::Details::AddOp<IST>;
+          using op_type = KokkosRefactor::Details::AddOp;
           permute_array_multi_column_variable_stride (tgt_h, src_h,
                                                       permuteToLIDs_h,
                                                       permuteFromLIDs_h,
@@ -1253,7 +1253,7 @@ namespace Tpetra {
                                                       op_type());
         }
         else {
-          using op_type = KokkosRefactor::Details::InsertOp<IST>;
+          using op_type = KokkosRefactor::Details::InsertOp;
           permute_array_multi_column_variable_stride (tgt_h, src_h,
                                                       permuteToLIDs_h,
                                                       permuteFromLIDs_h,
@@ -1264,12 +1264,12 @@ namespace Tpetra {
       }
       else {
         if (CM == ADD_ASSIGN) {
-          using op_type = KokkosRefactor::Details::AddOp<IST>;
+          using op_type = KokkosRefactor::Details::AddOp;
           permute_array_multi_column (tgt_h, src_h, permuteToLIDs_h,
                                       permuteFromLIDs_h, numCols, op_type());
         }
         else {
-          using op_type = KokkosRefactor::Details::InsertOp<IST>;
+          using op_type = KokkosRefactor::Details::InsertOp;
           permute_array_multi_column (tgt_h, src_h, permuteToLIDs_h,
                                       permuteFromLIDs_h, numCols, op_type());
         }
@@ -1301,7 +1301,7 @@ namespace Tpetra {
         auto tgtWhichVecs_d = create_const_view (tgtWhichVecs.view_device ());
         auto srcWhichVecs_d = create_const_view (srcWhichVecs.view_device ());
         if (CM == ADD_ASSIGN) {
-          using op_type = KokkosRefactor::Details::AddOp<IST>;
+          using op_type = KokkosRefactor::Details::AddOp;
           permute_array_multi_column_variable_stride (tgt_d, src_d,
                                                       permuteToLIDs_d,
                                                       permuteFromLIDs_d,
@@ -1310,7 +1310,7 @@ namespace Tpetra {
                                                       op_type());
         }
         else {
-          using op_type = KokkosRefactor::Details::InsertOp<IST>;
+          using op_type = KokkosRefactor::Details::InsertOp;
           permute_array_multi_column_variable_stride (tgt_d, src_d,
                                                       permuteToLIDs_d,
                                                       permuteFromLIDs_d,
@@ -1321,12 +1321,12 @@ namespace Tpetra {
       }
       else {
         if (CM == ADD_ASSIGN) {
-          using op_type = KokkosRefactor::Details::AddOp<IST>;
+          using op_type = KokkosRefactor::Details::AddOp;
           permute_array_multi_column (tgt_d, src_d, permuteToLIDs_d,
                                       permuteFromLIDs_d, numCols, op_type());
         }
         else {
-          using op_type = KokkosRefactor::Details::InsertOp<IST>;
+          using op_type = KokkosRefactor::Details::InsertOp;
           permute_array_multi_column (tgt_d, src_d, permuteToLIDs_d,
                                       permuteFromLIDs_d, numCols, op_type());
         }
@@ -1748,7 +1748,7 @@ namespace Tpetra {
       // custom combine modes, start editing here.
 
       if (CM == INSERT || CM == REPLACE) {
-        using op_type = KokkosRefactor::Details::InsertOp<IST>;
+        using op_type = KokkosRefactor::Details::InsertOp;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
@@ -1790,7 +1790,7 @@ namespace Tpetra {
         }
       }
       else if (CM == ADD || CM == ADD_ASSIGN) {
-        using op_type = KokkosRefactor::Details::AddOp<IST>;
+        using op_type = KokkosRefactor::Details::AddOp;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
@@ -1831,7 +1831,7 @@ namespace Tpetra {
         }
       }
       else if (CM == ABSMAX) {
-        using op_type = KokkosRefactor::Details::AbsMaxOp<IST>;
+        using op_type = KokkosRefactor::Details::AbsMaxOp;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
