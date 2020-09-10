@@ -65,6 +65,7 @@
 #ifdef PANZER_HAVE_IOSS
 #include <Ionit_Initializer.h>
 #include <stk_io/IossBridge.hpp>
+#include <stk_io/WriteMesh.hpp>
 #endif
 
 #ifdef PANZER_HAVE_PERCEPT
@@ -99,6 +100,7 @@ const std::string STK_Interface::coordsString = "coordinates";
 const std::string STK_Interface::nodesString = "nodes";
 const std::string STK_Interface::edgesString = "edges";
 const std::string STK_Interface::facesString = "faces";
+const std::string STK_Interface::edgeBlockString = "edge_block";
 
 STK_Interface::STK_Interface()
    : dimension_(0), initialized_(false), currentLocalId_(0), initialStateTime_(0.0), currentStateTime_(0.0), useFieldCoordinates_(false)
@@ -190,6 +192,28 @@ void STK_Interface::addCellField(const std::string & fieldName,const std::string
    }
 }
 
+void STK_Interface::addEdgeField(const std::string & fieldName,const std::string & blockId)
+{
+   TEUCHOS_TEST_FOR_EXCEPTION(!validBlockId(blockId),ElementBlockException,
+                      "Unknown element block \"" << blockId << "\"");
+   std::pair<std::string,std::string> key = std::make_pair(fieldName,blockId);
+
+   // add & declare field if not already added...currently assuming linears
+   if(fieldNameToEdgeField_.find(key)==fieldNameToEdgeField_.end()) {
+      SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(stk::topology::EDGE_RANK, fieldName);
+      if(field==0) {
+         field = &metaData_->declare_field<SolutionFieldType>(stk::topology::EDGE_RANK, fieldName);
+      }
+
+      if ( initialized_ )  {
+        metaData_->enable_late_fields();
+        stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr;
+        stk::mesh::put_field_on_mesh(*field, metaData_->universal_part(),init_sol );
+      }
+      fieldNameToEdgeField_[key] = field;
+   }
+}
+
 void STK_Interface::addMeshCoordFields(const std::string & blockId,
                                        const std::vector<std::string> & coordNames,
                                        const std::string & dispPrefix)
@@ -258,6 +282,7 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO,
 
    initializeFieldsInSTK(fieldNameToSolution_, setupIO);
    initializeFieldsInSTK(fieldNameToCellField_, setupIO);
+   initializeFieldsInSTK(fieldNameToEdgeField_, setupIO);
 
 #ifdef PANZER_HAVE_IOSS
    if(setupIO) {
@@ -270,6 +295,15 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO,
          for(itr=elementBlocks_.begin();itr!=elementBlocks_.end();++itr)
             if(!stk::io::is_part_io_part(*itr->second))
                stk::io::put_io_part_attribute(*itr->second); // this can only be called once per part
+      }
+
+      // add edge blocks
+      {
+         std::map<std::string, stk::mesh::Part*>::iterator itr;
+         for(itr=edgeBlocks_.begin();itr!=edgeBlocks_.end();++itr)
+            if(!stk::io::is_part_io_part(*itr->second)) {
+               stk::io::put_io_part_attribute(*itr->second); // this can only be called once per part
+            }
       }
 
       // add side sets
@@ -454,6 +488,14 @@ void STK_Interface::addEntityToNodeset(stk::mesh::Entity entity,stk::mesh::Part 
    bulkData_->change_entity_parts(entity,nodesetV);
 }
 
+void STK_Interface::addEntityToEdgeBlock(stk::mesh::Entity entity,stk::mesh::Part * edgeblock)
+{
+   std::vector<stk::mesh::Part*> edgeblockV;
+   edgeblockV.push_back(edgeblock);
+
+   bulkData_->change_entity_parts(entity,edgeblockV);
+}
+
 void STK_Interface::addElement(const Teuchos::RCP<ElementDescriptor> & ed,stk::mesh::Part * block)
 {
    std::vector<stk::mesh::Part*> blockVec;
@@ -583,9 +625,11 @@ setupExodusFile(const std::string& filename,
   PANZER_FUNC_TIME_MONITOR("STK_Interface::setupExodusFile(filename)");
 #ifdef PANZER_HAVE_IOSS
   TEUCHOS_ASSERT(not mpiComm_.is_null())
+
   ParallelMachine comm = *mpiComm_->getRawMpiComm();
   meshData_ = rcp(new StkMeshIoBroker(comm));
   meshData_->set_bulk_data(bulkData_);
+  meshData_->enable_edge_io();
   if (append) {
     if (append_after_restart_time) {
       Ioss::PropertyManager props;
@@ -1081,6 +1125,75 @@ void STK_Interface::getNeighborElements(const std::string & blockID,std::vector<
    stk::mesh::get_selected_entities(neighborBlock,bulkData_->buckets(elementRank),elements);
 }
 
+void STK_Interface::getMyEdges(std::vector<stk::mesh::Entity> & edges) const
+{
+   // setup local ownership
+   stk::mesh::Selector ownedPart = metaData_->locally_owned_part();
+
+   // grab elements
+   stk::mesh::EntityRank edgeRank = getEdgeRank();
+   stk::mesh::get_selected_entities(ownedPart,bulkData_->buckets(edgeRank),edges);
+}
+
+void STK_Interface::getMyEdges(const std::string & edgeBlockName,std::vector<stk::mesh::Entity> & edges) const
+{
+   stk::mesh::Part * edgeBlockPart = getEdgeBlock(edgeBlockName);
+   TEUCHOS_TEST_FOR_EXCEPTION(edgeBlockPart==0,std::logic_error,
+                      "Unknown edge block \"" << edgeBlockName << "\"");
+
+   stk::mesh::Selector edge_block = *edgeBlockPart;
+   stk::mesh::Selector owned_block = metaData_->locally_owned_part() & edge_block;
+
+   // grab elements
+   stk::mesh::get_selected_entities(owned_block,bulkData_->buckets(getEdgeRank()),edges);
+}
+
+void STK_Interface::getMyEdges(const std::string & edgeBlockName,const std::string & blockName,std::vector<stk::mesh::Entity> & edges) const
+{
+   stk::mesh::Part * edgeBlockPart = getEdgeBlock(edgeBlockName);
+   stk::mesh::Part * elmtPart = getElementBlockPart(blockName);
+   TEUCHOS_TEST_FOR_EXCEPTION(edgeBlockPart==0,EdgeBlockException,
+                      "Unknown edge block \"" << edgeBlockName << "\"");
+   TEUCHOS_TEST_FOR_EXCEPTION(elmtPart==0,ElementBlockException,
+                      "Unknown element block \"" << blockName << "\"");
+
+   stk::mesh::Selector edge_block = *edgeBlockPart;
+   stk::mesh::Selector element_block = *elmtPart;
+   stk::mesh::Selector owned_block = metaData_->locally_owned_part() & element_block & edge_block;
+
+   // grab elements
+   stk::mesh::get_selected_entities(owned_block,bulkData_->buckets(getEdgeRank()),edges);
+}
+
+void STK_Interface::getAllEdges(const std::string & edgeBlockName,std::vector<stk::mesh::Entity> & edges) const
+{
+   stk::mesh::Part * edgeBlockPart = getEdgeBlock(edgeBlockName);
+   TEUCHOS_TEST_FOR_EXCEPTION(edgeBlockPart==0,std::logic_error,
+                      "Unknown edge block \"" << edgeBlockName << "\"");
+
+   stk::mesh::Selector edge_block = *edgeBlockPart;
+
+   // grab elements
+   stk::mesh::get_selected_entities(edge_block,bulkData_->buckets(getEdgeRank()),edges);
+}
+
+void STK_Interface::getAllEdges(const std::string & edgeBlockName,const std::string & blockName,std::vector<stk::mesh::Entity> & edges) const
+{
+   stk::mesh::Part * edgeBlockPart = getEdgeBlock(edgeBlockName);
+   stk::mesh::Part * elmtPart = getElementBlockPart(blockName);
+   TEUCHOS_TEST_FOR_EXCEPTION(edgeBlockPart==0,EdgeBlockException,
+                      "Unknown edge block \"" << edgeBlockName << "\"");
+   TEUCHOS_TEST_FOR_EXCEPTION(elmtPart==0,ElementBlockException,
+                      "Unknown element block \"" << blockName << "\"");
+
+   stk::mesh::Selector edge_block = *edgeBlockPart;
+   stk::mesh::Selector element_block = *elmtPart;
+   stk::mesh::Selector element_edge_block = element_block & edge_block;
+
+   // grab elements
+   stk::mesh::get_selected_entities(element_edge_block,bulkData_->buckets(getEdgeRank()),edges);
+}
+
 void STK_Interface::getMySides(const std::string & sideName,std::vector<stk::mesh::Entity> & sides) const
 {
    stk::mesh::Part * sidePart = getSideset(sideName);
@@ -1209,6 +1322,18 @@ std::size_t STK_Interface::elementLocalId(stk::mesh::EntityId gid) const
    return itr->second;
 }
 
+std::size_t STK_Interface::edgeLocalId(stk::mesh::Entity edge) const
+{
+   return edgeLocalId(bulkData_->identifier(edge));
+}
+
+std::size_t STK_Interface::edgeLocalId(stk::mesh::EntityId gid) const
+{
+   std::unordered_map<stk::mesh::EntityId,std::size_t>::const_iterator itr = localEdgeIDHash_.find(gid);
+   TEUCHOS_ASSERT(itr!=localEdgeIDHash_.end());
+   return itr->second;
+}
+
 
 std::string STK_Interface::containingBlockId(stk::mesh::Entity elmt) const
 {
@@ -1246,6 +1371,20 @@ stk::mesh::Field<double> * STK_Interface::getCellField(const std::string & field
    return iter->second;
 }
 
+stk::mesh::Field<double> * STK_Interface::getEdgeField(const std::string & fieldName,
+                                                       const std::string & blockId) const
+{
+   // look up field in map
+   std::map<std::pair<std::string,std::string>, SolutionFieldType*>::const_iterator
+         iter = fieldNameToEdgeField_.find(std::make_pair(fieldName,blockId));
+
+   // check to make sure field was actually found
+   TEUCHOS_TEST_FOR_EXCEPTION(iter==fieldNameToEdgeField_.end(),std::runtime_error,
+                      "Edge field named \"" << fieldName << "\" in block ID \"" << blockId << "\" was not found");
+
+   return iter->second;
+}
+
 Teuchos::RCP<const std::vector<stk::mesh::Entity> > STK_Interface::getElementsOrderedByLID() const
 {
    using Teuchos::RCP;
@@ -1275,6 +1414,32 @@ void STK_Interface::addElementBlock(const std::string & name,const CellTopologyD
    // add element block part and cell topology
    elementBlocks_.insert(std::make_pair(name,block));
    elementBlockCT_.insert(std::make_pair(name,ct));
+}
+
+Teuchos::RCP<const std::vector<stk::mesh::Entity> > STK_Interface::getEdgesOrderedByLID() const
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+
+   if(orderedEdgeVector_==Teuchos::null) {
+      // safe because essentially this is a call to modify a mutable object
+      const_cast<STK_Interface*>(this)->buildLocalEdgeIDs();
+   }
+
+   return orderedEdgeVector_.getConst();
+}
+
+void STK_Interface::addEdgeBlock(const std::string & name)
+{
+   TEUCHOS_ASSERT(not initialized_);
+
+   stk::mesh::Part * block = metaData_->get_part(name);
+   if(block==0) {
+     block = &metaData_->declare_part_with_topology(name, stk::topology::LINE_2);
+   }
+
+   // add edge block part
+   edgeBlocks_.insert(std::make_pair(name,block));
 }
 
 void STK_Interface::initializeFromMetaData()
@@ -1363,6 +1528,26 @@ void STK_Interface::applyElementLoadBalanceWeights()
       loadBal[0] = blockWeight;
     }
   }
+}
+
+void STK_Interface::buildLocalEdgeIDs()
+{
+   currentLocalId_ = 0;
+
+   orderedEdgeVector_ = Teuchos::null; // forces rebuild of ordered lists
+
+   // might be better (faster) to do this by buckets
+   std::vector<stk::mesh::Entity> edges;
+   getMyEdges(edges);
+
+   for(std::size_t index=0;index<edges.size();++index) {
+      stk::mesh::Entity edge = edges[index];
+      localEdgeIDHash_[bulkData_->identifier(edge)] = currentLocalId_;
+      currentLocalId_++;
+   }
+
+   // copy edges into the ordered edge vector
+   orderedEdgeVector_ = Teuchos::rcp(new std::vector<stk::mesh::Entity>(edges));
 }
 
 bool

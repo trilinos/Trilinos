@@ -69,7 +69,7 @@ public:
      */
 
      Scalar beta = 1.0;
-     const std::string strategy_name = this->tscsPL_->get<std::string>("Name");
+     const std::string strategy_name = this->tscsPL_->template get<std::string>("Name");
      Scalar k1 = Teuchos::as<Scalar>(-k1_ / order);
      Scalar k2 = Teuchos::as<Scalar>(k2_ / order);
      Scalar k3 = Teuchos::as<Scalar>(-k3_ / order);
