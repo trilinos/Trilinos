@@ -25,6 +25,7 @@ build locally as described below.
 * <a href="#disabling-failing-tests">Disabling failing tests</a>
 * <a href="#specific-systems-supported">Specific systems supported</a>
 * <a href="#custom-systems-and-configurations">Custom systems and configurations</a>
+* <a href="#custom-contributed-configurations">Custom contributed configurations</a>
 
 
 ## Quick-start
@@ -1752,3 +1753,39 @@ scripts in the officially defined configurations under:
 * [cmake/std/atdm/<system_name>/](.)
 
 where `<system_name>` is `ride`, `tlcc2`, etc.
+
+
+## Custom contributed configurations
+
+In addition to officially supported configurations stored under the directory:
+
+```
+$TRILINOS_DIR/cmake/std/atdm/
+```
+
+there are also a set of contributed custom configurations stored under the
+directory:
+
+```
+$TRILINOS_DIR/cmake/std/atdm/contributed/
+```
+
+This makes these configurations available to many developers but these
+configurations may not have the same degree of stability or maintenance
+compared to the officially supported configurations documented in the section
+<a href="#specific-instructions-for-each-system">Specific instructions for
+each system</a>.
+
+These contributed configurations are used just like any other custom
+configuration as described in <a
+href="#custom-systems-and-configurations">Custom systems and
+configurations</a>..  For example, to load the contributed custom 'weaver'
+configuration to do a CUDA optimized build, do:
+
+```
+$ export ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR=$TRILINOS_DIR/cmake/std/atdm/contributed/weaver
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh weaver-cuda-opt
+```
+
+Then run the CMake configure as usual as described in <a
+href="#quick-start">Quick-start</a>.
