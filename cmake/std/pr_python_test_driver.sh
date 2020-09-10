@@ -19,10 +19,6 @@ echo -e ">>> Python: ${python_exe:?}"
 echo -e ">>> Pip   : ${pip_exe:?}"
 echo -e ""
 
-#python_exe="/projects/sierra/linux_rh7/install/Python/2.7.5/bin/python"
-#pip_exe="${HOME:?}/.local/bin/pip2"
-# pip_exe="${HOME:?}/pip"
-
 # fetch get-pip.py
 echo -e ">>> curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
 curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
@@ -37,9 +33,6 @@ echo -e ""
 echo -e ">>> ${python_exe:?} ./get-pip.py ${get_pip_args[@]}"
 ${python_exe:?} ./get-pip.py ${get_pip_args[@]}
 
-
-# prepend $HOME/.local to PATH
-#export PATH="${pip_exe}:${PATH}"
 
 pip_args=(
     --use-feature=2020-resolver

@@ -19,8 +19,8 @@ set (TFW_Python_Testing ON CACHE BOOL "Set by default for PR testing")
 set(PYTHON_PIP_EXECUTABLE "pip3" CACHE STRING "Set by default for PR testing")
 
 set(PYTHON_EXECUTABLE_SEARCH_PATHS
-    /projects/sierra/linux_rh7/install/Python/2.7.15
-    /projects/sierra/linux_rh7/install/Python/2.7.5
+    /projects/sierra/linux_rh7/install/Python/3.6.3
+    /projects/sierra/linux_rh7/install/Python/3.6.10
 )
 find_program(PYTHON_EXECUTABLE
     NAMES python2 python
