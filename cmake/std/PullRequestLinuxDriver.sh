@@ -25,6 +25,48 @@ function get_md5sum() {
     echo "${sig:?}"
 }
 
+#
+# Get pip
+# - @param1 python_exe - the python executable to install PIP for
+function get_pip() {
+    local python_exe=${1:?}
+
+    echo -e ">>> Python: ${python_exe:?}"
+
+    # fetch get-pip.py
+    echo -e ">>> curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
+    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+
+    get_pip_args=(
+        --user
+        --proxy="http://wwwproxy.sandia.gov:80"
+        --no-setuptools
+        --no-wheel
+    )
+    echo -e ""
+    echo -e ">>> ${python_exe:?} ./get-pip.py ${get_pip_args[@]}"
+    ${python_exe:?} ./get-pip.py ${get_pip_args[@]}
+}
+
+#
+# Install Python pacakges using pip
+#
+# - @param1 pip_exe - the pip binary to use, i.e., pip3.
+#
+function get_python_packages() {
+    local pip_exe=${1:?}
+
+    echo -e ">>> Pip   : ${pip_exe:?}"
+
+    pip_args=(
+        --use-feature=2020-resolver
+        configparser
+    )
+    echo -e ">>> ${pip_exe:?} install --user ${pip_args[@]}"
+    ${pip_exe:?} install --user ${pip_args[@]}
+}
+
+
 
 
 # Load the right version of Git / Python based on a regex 
@@ -42,7 +84,11 @@ function bootstrap_modules() {
             module unload git
             module unload python
             module load git/2.10.1
-            module load python/2.7.12
+            #module load python/2.7.12
+            module load python/3.7.3
+            #get_pip python3
+            get_python_packages pip3
+            export PYTHON_EXE=python3
         else
             echo -e "PRDriver> ERROR: Unable to find matching environment for CUDA job not on Ride."
             exit -1
@@ -52,9 +98,12 @@ function bootstrap_modules() {
         module unload sems-git
         module unload sems-python
         module load sems-git/2.10.1
-        #module load sems-python/2.7.9        
-        module load sems-python/3.5.2
-        pip3 install --user configparser   
+        module load sems-python/2.7.9
+        # module load sems-python/3.5.2      # Currently not on cloud nodes 
+        #pip3 install --user configparser
+        get_pip python2
+        get_python_packages ${HOME}/.local/bin/pip2
+        export PYTHON_EXE=python2
     fi
 
     module list
@@ -106,7 +155,7 @@ merge_cmd_options=(
     ${TRILINOS_SOURCE_SHA:?}
     ${WORKSPACE:?}
     )
-merge_cmd="python3 ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py ${merge_cmd_options[@]}"
+merge_cmd="python ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py ${merge_cmd_options[@]}"
 
 
 # Call the script to handle merging the incoming branch into
@@ -177,12 +226,13 @@ test_cmd_options=(
 )
 
 # Execute the TEST operation
-test_cmd="python3 ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"
+test_cmd="${PYTHON_EXE} ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"
 
 
 # Call the script to launch the tests
 echo -e "PRDriver> "
-echo -e "PRDriver> Execute Test Command: ${test_cmd:?}"
+echo -e "PRDriver> Execute Test Command:"
+echo -e "PRDriver> ${test_cmd:?}"
 echo -e "PRDriver> "
 ${test_cmd}
 exit $?

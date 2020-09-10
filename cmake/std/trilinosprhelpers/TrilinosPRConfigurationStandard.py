@@ -69,6 +69,8 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
         print("")
 
         if not self.args.dry_run:
+
+            # Note: check_call will throw an exception if there's a problem.
             subprocess.check_call(cmd)
 
         return 0

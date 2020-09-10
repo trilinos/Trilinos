@@ -36,7 +36,6 @@ options=(
 echo "=========================================================="
 echo "    LAUNCH PullRequestLinuxDriverTest.py "
 echo "which python3: $(which python3)"
-echo "which pip3   : $(which pip3)"
 echo "cmd:"
 echo "python3 ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${options[@]}"
 
