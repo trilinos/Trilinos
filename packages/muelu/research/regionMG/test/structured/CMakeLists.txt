@@ -194,6 +194,22 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
+    NAME "Structured_Region_Linear_R_Elasticity3D_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_linear_R_1dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Elasticity3D_linear_R_1.log"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_TEST(
+    StructuredRegionDriver
+    NAME "Structured_Region_Linear_R_Elasticity3D_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_linear_R_1dof.xml --matrixType=Elasticity3D --nx=19 --ny=19 --nz=10 --smootherIts=2 --convergence-log=Elasticity3D_linear_R_4.log"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
+  TRIBITS_ADD_TEST(
+    StructuredRegionDriver
     NAME "Structured_Unstructured_Laplace3D_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_unstructured_1dof.xml --matrixType=Laplace3D --nx=9 --ny=9 --nz=5 --smootherIts=2 --unstructured={3}"
     COMM serial mpi

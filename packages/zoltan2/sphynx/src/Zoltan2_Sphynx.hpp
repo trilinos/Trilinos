@@ -154,8 +154,11 @@ namespace Zoltan2 {
 	  throw std::runtime_error("\nSphynx Error: Preprocessing has not been implemented yet.\n");
 	} 
 	
-	// Check if the graph is regular and set the problem type accordingly
+	// Check if the graph is regular
 	determineRegularity();
+
+	// Set Sphynx defaults: preconditioner, problem type, tolerance, initial vectors.
+	setDefaults();
 
 	// Compute the Laplacian matrix
 	computeLaplacian();
@@ -244,35 +247,6 @@ namespace Zoltan2 {
 	irregular_ = true;
       }
 
-      // Get the user preference on which laplacian to use
-      // The default is the combinatorial Laplacian
-      const Teuchos::ParameterEntry *pe = params_->getEntryPtr("sphynx_problem_type");
-      std::string probType = "";
-      bool userSetProbType = false;
-      if (pe)
-	probType = pe->getValue<std::string>(&probType);
-
-      if(probType == "combinatorial"){
-	problemType_ = COMBINATORIAL;
-	userSetProbType = true;
-      }
-      else if(probType == "generalized"){
-	problemType_ = GENERALIZED;
-	userSetProbType = true;
-      }
-      else if(probType == "normalized"){
-	problemType_ = NORMALIZED;
-	userSetProbType = true;
-      }
-
-      
-      if(!userSetProbType){
-	if(irregular_)
-	  problemType_ = GENERALIZED;
-	else
-	  problemType_ = COMBINATORIAL;
-      }
-
       // Let the user know about what we determined if verbose  
       if(verbosity_ > 0) {
 	if(comm_->getRank() == 0) {
@@ -283,7 +257,96 @@ namespace Zoltan2 {
 	}
       }
     }
-    
+
+    ///////////////////////////////////////////////////////////////////////////
+    // If preconditioner type is not specified: 
+    //    use muelu if it is enabled, and jacobi otherwise.
+    // If eigenvalue problem type is not specified: 
+    //    use combinatorial for regular and 
+    //        normalized for irregular with polynomial preconditioner,
+    //        generalized for irregular with other preconditioners.
+    // If convergence tolerance is not specified: 
+    //    use 1e-3 for regular with jacobi and polynomial, and 1e-2 otherwise.
+    // If how to decide the initial vectors is not specified:
+    //    use random for regular and constant for irregular
+    void setDefaults()
+    {
+
+      // Set the default preconditioner to muelu if it is enabled, jacobi otherwise.
+      precType_ = "jacobi";
+#ifdef HAVE_ZOLTAN2SPHYNX_MUELU
+      precType_ = "muelu";
+#endif
+
+      // Override the preconditioner type with the user's preference
+      const Teuchos::ParameterEntry *pe = params_->getEntryPtr("sphynx_preconditioner_type");
+      if (pe) {
+	precType_ = pe->getValue<std::string>(&precType_);
+	if(precType_ != "muelu" && precType_ != "jacobi" && precType_ != "polynomial")
+	  throw std::runtime_error("\nSphynx Error: " + precType_ + " is not recognized as a preconditioner.\n"
+				   + "              Possible values: muelu (if enabled), jacobi, and polynomial\n");
+      }
+      
+      // Set the default problem type
+      problemType_ = COMBINATORIAL;
+      if(irregular_) {
+	if(precType_ == "polynomial")
+	  problemType_ = NORMALIZED;
+	else
+	  problemType_ = GENERALIZED;
+      }
+
+      // Override the problem type with the user's preference
+      pe = params_->getEntryPtr("sphynx_problem_type");
+      if (pe) {
+	std::string probType = "";
+	probType = pe->getValue<std::string>(&probType);
+
+	if(probType == "combinatorial")
+	  problemType_ = COMBINATORIAL;
+	else if(probType == "generalized")
+	  problemType_ = GENERALIZED;
+	else if(probType == "normalized")
+	  problemType_ = NORMALIZED;
+	else
+	  throw std::runtime_error("\nSphynx Error: " + probType + " is not recognized as a problem type.\n"
+				 + "              Possible values: combinatorial, generalized, and normalized.\n");
+      }
+
+      
+      // Set the default for tolerance
+      tolerance_ = 1.0e-2;
+      if(!irregular_ && (precType_ == "jacobi" || precType_ == "polynomial"))
+	tolerance_ = 1.0e-3;
+
+
+      // Override the tolerance with the user's preference
+      pe = params_->getEntryPtr("sphynx_tolerance");
+      if (pe)
+	tolerance_ = pe->getValue<scalar_t>(&tolerance_);
+
+
+      // Set the default for initial vectors
+      randomInit_ = true;
+      if(irregular_)
+	randomInit_ = false;
+      
+      // Override the initialization method with the user's preference
+      pe = params_->getEntryPtr("sphynx_initial_guess");
+      if (pe) {
+	std::string initialGuess = "";
+	initialGuess = pe->getValue<std::string>(&initialGuess);
+
+	if(initialGuess == "random")
+	  randomInit_ = true;
+	else if(initialGuess == "constants")
+	  randomInit_ = false;
+	else
+	  throw std::runtime_error("\nSphynx Error: " + initialGuess + " is not recognized as an option for initial guess.\n"
+				 + "              Possible values: random and constants.\n");
+      }
+       
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     // Compute the Laplacian matrix depending on the eigenvalue problem type.
@@ -449,8 +512,12 @@ namespace Zoltan2 {
     Teuchos::RCP<matrix_t> laplacian_;
     Teuchos::RCP<const matrix_t> degMatrix_;
     Teuchos::RCP<mvector_t> eigenVectors_;
-    problemType problemType_;  // obtained from user params or decided internally
+
     bool irregular_;           // decided internally
+    std::string  precType_;    // obtained from user params or decided internally
+    problemType problemType_;  // obtained from user params or decided internally
+    double tolerance_;         // obtained from user params or decided internally
+    bool randomInit_;          // obtained from user params or decided internally
     int verbosity_;            // obtained from user params
     bool skipPrep_;            // obtained from user params
   };
@@ -522,7 +589,6 @@ namespace Zoltan2 {
     // Set defaults for the parameters
     std::string which = "SR";
     std::string ortho = "SVQB";
-    double tolerance = 1.0e-2;
     bool relConvTol = false;
     int maxIterations = 1000;
     bool isHermitian = true;
@@ -537,10 +603,6 @@ namespace Zoltan2 {
   
     // Get the user values for the parameters
     const Teuchos::ParameterEntry *pe;
-
-    pe = params_->getEntryPtr("sphynx_tolerance");
-    if (pe)
-      tolerance = pe->getValue<scalar_t>(&tolerance);
 
     pe = params_->getEntryPtr("sphynx_maxiterations");
     if (pe)
@@ -567,7 +629,7 @@ namespace Zoltan2 {
     Teuchos::ParameterList anasaziParams;
     anasaziParams.set("Verbosity", anasaziVerbosity);
     anasaziParams.set("Which", which);
-    anasaziParams.set("Convergence Tolerance", tolerance);
+    anasaziParams.set("Convergence Tolerance", tolerance_);
     anasaziParams.set("Maximum Iterations", maxIterations);
     anasaziParams.set("Block Size", numEigenVectors);
     anasaziParams.set("Relative Convergence Tolerance", relConvTol);
@@ -578,13 +640,16 @@ namespace Zoltan2 {
 
     // Create and set initial vectors
     RCP<mvector_t> ivec( new mvector_t(laplacian_->getRangeMap(), numEigenVectors));
-    std::string initialGuess = params_->get("sphynx_initial_guess", "random");
-    if (initialGuess == "random") {
+
+    if (randomInit_) {
+
       // 0-th vector constant 1, rest random
       Anasazi::MultiVecTraits<scalar_t, mvector_t>::MvRandom(*ivec);
       ivec->getVectorNonConst(0)->putScalar(1.);
+
     }
-    else if (initialGuess == "constants") {
+    else { // This implies we will use constant initial vectors.
+ 
       // 0-th vector constant 1, other vectors constant per block
       // Create numEigenVectors blocks, but only use numEigenVectors-1 of them.
       // This assures orthogonality.
@@ -604,8 +669,6 @@ namespace Zoltan2 {
         }
       }
     }
-    else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unknown value for \"sphynx_initial_guess\": " << initialGuess);
 
     // Create the eigenproblem to be solved
     using problem_t = Anasazi::BasicEigenproblem<scalar_t, mvector_t, op_t>;
@@ -669,40 +732,22 @@ namespace Zoltan2 {
 
   
   ///////////////////////////////////////////////////////////////////////////
-  // Determine which preconditioner to use and set it in the given problem.
-  // There are three options: muelu, jacobi and polynomial.
-  // Since MueLu is an optional dependency, we use jacobi when MueLu is 
-  // not enabled. When MueLu is enabled, using MueLu is the default setting
-  // but the user can set otherwise.
   template <typename Adapter>
   template <typename problem_t>
   void Sphynx<Adapter>::setPreconditioner(Teuchos::RCP<problem_t> &problem)
   {
 
-    // Default preconditioner is muelu if it is enabled, jacobi otherwise.
-    std::string precType = "jacobi";
-#ifdef HAVE_ZOLTAN2SPHYNX_MUELU
-    precType = "muelu";
-#endif
-
-    //Get the user preference for the preconditioner
-    const Teuchos::ParameterEntry *pe = params_->getEntryPtr("sphynx_preconditioner_type");
-    if (pe)
-      precType = pe->getValue<std::string>(&precType);
-
     // Set the preconditioner
-    if(precType == "muelu") {
+    if(precType_ == "muelu") {
       Sphynx<Adapter>::setMueLuPreconditioner(problem);
     } 
-    else if(precType == "polynomial") {
+    else if(precType_ == "polynomial") {
       Sphynx<Adapter>::setPolynomialPreconditioner(problem);
     }
-    else if(precType == "jacobi") {
+    else if(precType_ == "jacobi") {
       Sphynx<Adapter>::setJacobiPreconditioner(problem);
     }
-    else
-      throw std::runtime_error("\nSphynx Error: " + precType + " is not recognized as a preconditioner.\n"
-			       + "              Possible values: muelu (if enabled), jacobi, and polynomial\n");
+    // else: do we want a case where no preconditioning is applied? 
   }
 
   ///////////////////////////////////////////////////////////////////////////

@@ -161,7 +161,7 @@ namespace MueLu {
     */
     RCP<LOMultiVector> & GetVertex2AggIdNonConst()     { return vertex2AggId_;       }
 
-    /*! @brief Returns nonconsant vector that maps local node IDs to owning processor IDs.
+    /*! @brief Returns nonconstant vector that maps local node IDs to owning processor IDs.
 
         For local node ID i, the corresponding vector entry v[i] is the owning processor ID.
     */
@@ -185,7 +185,8 @@ namespace MueLu {
 
     Used by aggregation methods only.
     */
-    void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value;         }
+    void SetIsRoot(LO i, bool value=true) { isRoot_[i] = value; }
+
 
     const RCP<const Map> GetMap() const; ///< returns (overlapping) map of aggregate/node distribution
 
@@ -199,6 +200,12 @@ namespace MueLu {
       @param[in] forceRecompute if true, force recomputation of the aggregate sizes.
      */
     Teuchos::ArrayRCP<LO> ComputeAggregateSizes(bool forceRecompute = false) const;
+
+    /*! @brief Generates a compressed list of nodes in each aggregate, where
+      the entries in aggNodes[aggPtr[i]] up to aggNodes[aggPtr[i+1]-1] contain the nodes in aggregate i.
+      unaggregated contains the list of nodes which are, for whatever reason, not aggregated (e.g. Dirichlet)
+     */
+    void ComputeNodesInAggregate(Array<LO> & aggPtr, Array<LO> & aggNodes,Array<LO> & unaggregated) const;
 
     //! @name Overridden from Teuchos::Describable
     //@{

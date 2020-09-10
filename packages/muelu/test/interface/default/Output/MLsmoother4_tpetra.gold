@@ -36,6 +36,7 @@ BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
+  singletons :0 (phase)
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
@@ -124,6 +125,7 @@ BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
+  singletons :0 (phase)
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
@@ -215,6 +217,7 @@ BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
+  singletons :0 (phase)
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
@@ -306,6 +309,7 @@ BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
+  singletons :0 (phase)
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
