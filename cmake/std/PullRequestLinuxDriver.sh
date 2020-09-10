@@ -52,7 +52,7 @@ function bootstrap_modules() {
         module unload sems-git
         module unload sems-python
         module load sems-git/2.10.1
-        #module load sems-python/2.7.9        
+        #module load sems-python/2.7.9
         module load sems-python/3.5.2
         pip3 install --user configparser   
     fi
