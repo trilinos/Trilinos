@@ -1084,9 +1084,12 @@ namespace Tpetra {
           auto src_j = Kokkos::subview (src_h, rows, srcCol);
           if (CM == ADD_ASSIGN) { 
             // Sum src_j into tgt_j
+            using range_t = 
+                  Kokkos::RangePolicy<typename Node::execution_space, size_t>;
+            range_t rp(0,numSameIDs);
             Tpetra::Details::AddAssignFunctor<decltype(tgt_j), decltype(src_j)>
                     aaf(tgt_j, src_j);
-            Kokkos::parallel_for(numSameIDs, aaf);
+            Kokkos::parallel_for(rp, aaf);
           }
           else { 
             // Copy src_j into tgt_j
@@ -1107,9 +1110,12 @@ namespace Tpetra {
           auto src_j = Kokkos::subview (src_d, rows, srcCol);
           if (CM == ADD_ASSIGN) { 
             // Sum src_j into tgt_j
+            using range_t = 
+                  Kokkos::RangePolicy<typename Node::execution_space, size_t>;
+            range_t rp(0,numSameIDs);
             Tpetra::Details::AddAssignFunctor<decltype(tgt_j), decltype(src_j)>
                     aaf(tgt_j, src_j);
-            Kokkos::parallel_for(numSameIDs, aaf);
+            Kokkos::parallel_for(rp, aaf);
           }
           else { 
             // Copy src_j into tgt_j
@@ -1118,6 +1124,7 @@ namespace Tpetra {
         }
       }
     }
+
 
     // For the remaining GIDs, execute the permutations.  This may
     // involve noncontiguous access of both source and destination
