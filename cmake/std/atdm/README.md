@@ -1709,7 +1709,7 @@ $ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh <build-name> \
 
 The name of the new custom system name is taken from the last directory name
 `<custom-system-name>` and the files in that directory are read and treated
-like any of the offically defined system configurations.  Also, if the name of
+like any of the officially defined system configurations.  Also, if the name of
 an officially supported system is present in `<build-name>`, it will be
 ignored.
 
@@ -1743,11 +1743,11 @@ A simple example can be seen in:
 
 * [cmake/std/atdm/examples/my-sems-rhel6-config/environment.sh](examples/my-sems-rhel6-config/environment.sh)
 
-which works on any SEMS RHEL6 machine similarly to the offically defined <a
+which works on any SEMS RHEL6 machine similarly to the officially defined <a
 href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>.
 
 To see how things can be specified look at examples of other `environment.sh`
-scripts in the offically defined configurations under:
+scripts in the officially defined configurations under:
 
 * [cmake/std/atdm/<system_name>/](.)
 
