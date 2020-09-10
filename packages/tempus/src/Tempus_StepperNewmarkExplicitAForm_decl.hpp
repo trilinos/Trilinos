@@ -11,6 +11,7 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperExplicit.hpp"
+#include "Tempus_StepperNewmarkExplicitAFormAppAction.hpp"
 
 namespace Tempus {
 
@@ -67,6 +68,17 @@ public:
   */
   StepperNewmarkExplicitAForm();
 
+
+  /// Constructor
+  StepperNewmarkExplicitAForm(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    Scalar gamma,
+    const Teuchos::RCP<StepperNewmarkExplicitAFormAppAction<Scalar> >& stepperAppAction);
+
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// Constructor
   StepperNewmarkExplicitAForm(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -76,6 +88,7 @@ public:
     bool ICConsistencyCheck,
     Scalar gamma);
 
+
   /// \name Basic stepper methods
   //@{
     virtual void setObserver(
@@ -83,6 +96,10 @@ public:
 
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return Teuchos::null; }
+#endif
+
+     virtual Teuchos::RCP<StepperNewmarkExplicitAFormAppAction<Scalar> > getAppAction() const
+     { return stepperNewmarkExpAppAction_; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -155,10 +172,14 @@ public:
   bool getUseFSALDefault() const { return true; }
   std::string getICConsistencyDefault() const { return "Consistent"; }
 
+  virtual void setAppAction(
+      Teuchos::RCP<StepperNewmarkExplicitAFormAppAction<Scalar> > appAction); 
+
 protected:
 
   Scalar gammaDefault_;
   Scalar gamma_;
+  Teuchos::RCP<StepperNewmarkExplicitAFormAppAction<Scalar> > stepperNewmarkExpAppAction_;
 
 };
 } // namespace Tempus
