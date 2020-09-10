@@ -43,6 +43,8 @@ public:
 
   enum DistributionType DistType() { return LowerTriangularBlock; }
 
+  Teuchos::Array<gno_t> getChunkCuts() { return chunkCuts; }
+
   // Return whether this rank owns vector entry i.
   // TODO:  for now, use same vector dist as 1DLinear;
   // TODO:  think about best distribution of Vectors
@@ -64,7 +66,7 @@ public:
   // How to redistribute according to chunk-based row distribution
   void Redistribute(LocalNZmap_t &localNZ)
   {
-std::cout << comm->getRank() << " KDDKDD begin Redistribute " << std::endl;
+    // std::cout << comm->getRank() << " KDDKDD begin Redistribute " << std::endl;
     // Compute nnzPerRow; distribution is currently 1D and lower triangular
     // Exploit fact that map has entries sorted by I, then J
     // Simultaneously, store everything in buffers for communication
@@ -131,9 +133,9 @@ std::cout << comm->getRank() << " KDDKDD begin Redistribute " << std::endl;
 
     Teuchos::broadcast<int,gno_t>(*comm, 0, chunkCuts(0,nChunks+1));
 
-    std::cout << comm->getRank() << " KDDKDD chunkCuts: ";
-    for (int kdd = 0; kdd <= nChunks; kdd++) std::cout << chunkCuts[kdd] << " ";
-    std::cout << std::endl;
+    // std::cout << comm->getRank() << " KDDKDD chunkCuts: ";
+    // for (int kdd = 0; kdd <= nChunks; kdd++) std::cout << chunkCuts[kdd] << " ";
+    // std::cout << std::endl;
 
     // Determine new owner of each nonzero; buffer for sending
     Teuchos::Array<gno_t> iOut(localNZ.size());
@@ -141,17 +143,17 @@ std::cout << comm->getRank() << " KDDKDD begin Redistribute " << std::endl;
     Teuchos::Array<scalar_t> vOut(localNZ.size());
     Teuchos::Array<int> pOut(localNZ.size());
 
-std::cout << comm->getRank() << " KDDKDD buffers done " << localNZ.size() << std::endl;
+    // std::cout << comm->getRank() << " KDDKDD buffers done " << localNZ.size() << std::endl;
     size_t cnt = 0;
     for (auto it = localNZ.begin(); it != localNZ.end(); it++, cnt++) {
       iOut[cnt] = it->first.first;
       jOut[cnt] = it->first.second;
       vOut[cnt] = it->second;
-std::cout << comm->getRank() << "    KDDKDD IJ " << iOut[cnt] << " " << jOut[cnt] << std::endl;
+      // std::cout << comm->getRank() << "    KDDKDD IJ " << iOut[cnt] << " " << jOut[cnt] << std::endl;
       pOut[cnt] = procFromChunks(iOut[cnt], jOut[cnt]);
     }
 
-std::cout << comm->getRank() << " KDDKDD buffers filled " << localNZ.size() << std::endl;
+    // std::cout << comm->getRank() << " KDDKDD buffers filled " << localNZ.size() << std::endl;
     // Free memory associated with localNZ
     LocalNZmap_t().swap(localNZ);
 
@@ -198,7 +200,7 @@ private:
     int m = findIdxInChunks(I);
     int n = findIdxInChunks(J);
     int p = m*(m+1)/2 + n; 
-std::cout << "    KDDKDD procFromChunks (" << I << "," << J << "): " << p << std::endl;
+    // std::cout << "    KDDKDD procFromChunks (" << I << "," << J << "): " << p << std::endl;
     return p;
   }
 };
