@@ -173,26 +173,26 @@ getDxDp() const
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 IntegratorForwardSensitivity<Scalar>::
-getXdot() const
+getXDot() const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
 
-  RCP<const DMVPV> Xdot = rcp_dynamic_cast<const DMVPV>(integrator_->getXdot());
+  RCP<const DMVPV> Xdot = rcp_dynamic_cast<const DMVPV>(integrator_->getXDot());
   return Xdot->getMultiVector()->col(0);
 }
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
 IntegratorForwardSensitivity<Scalar>::
-getDxdotDp() const
+getDXDotDp() const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
 
-  RCP<const DMVPV> Xdot = rcp_dynamic_cast<const DMVPV>(integrator_->getXdot());
+  RCP<const DMVPV> Xdot = rcp_dynamic_cast<const DMVPV>(integrator_->getXDot());
   const int num_param = Xdot->getMultiVector()->domain()->dim()-1;
   const Teuchos::Range1D rng(1,num_param);
   return Xdot->getMultiVector()->subView(rng);
@@ -201,28 +201,28 @@ getDxdotDp() const
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 IntegratorForwardSensitivity<Scalar>::
-getXdotdot() const
+getXDotDot() const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
 
   RCP<const DMVPV> Xdotdot =
-    rcp_dynamic_cast<const DMVPV>(integrator_->getXdotdot());
+    rcp_dynamic_cast<const DMVPV>(integrator_->getXDotDot());
   return Xdotdot->getMultiVector()->col(0);
 }
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
 IntegratorForwardSensitivity<Scalar>::
-getDxdotdotDp() const
+getDXDotDotDp() const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
 
   RCP<const DMVPV> Xdotdot =
-    rcp_dynamic_cast<const DMVPV>(integrator_->getXdotdot());
+    rcp_dynamic_cast<const DMVPV>(integrator_->getXDotDot());
   const int num_param = Xdotdot->getMultiVector()->domain()->dim()-1;
   const Teuchos::Range1D rng(1,num_param);
   return Xdotdot->getMultiVector()->subView(rng);

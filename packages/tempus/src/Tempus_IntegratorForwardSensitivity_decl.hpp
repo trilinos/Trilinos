@@ -193,11 +193,11 @@ public:
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getX() const;
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDxDp() const;
   /// Get current the time derivative of the solution, xdot
-  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXdot() const;
-  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDxdotDp() const;
+  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDot() const;
+  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDXDotDp() const;
   /// Get current the second time derivative of the solution, xdotdot
-  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXdotdot() const;
-  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDxdotdotDp() const;
+  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDotDot() const;
+  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDXDotDotDp() const;
 
   /// Get current state
   virtual Teuchos::RCP<SolutionState<Scalar> > getCurrentState()
