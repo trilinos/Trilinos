@@ -104,9 +104,19 @@ namespace Sacado {
         sz_(arg_size), stride_(arg_stride), val_(arg_val), dx_(arg_dx) {}
 
       //! Copy constructor
+      /*!
+        Allow, e.g., ViewStorage<double,...>(ViewStorage<double,...>),
+        ViewStorage<const double,...>(ViewStorage<double,...>), and
+        ViewStorage<const double,...>(ViewStorage<const double,...>) but not
+        ViewStorage<double,...>(ViewStorage<const double,...>).
+      */
+      template <typename TT>
       SACADO_INLINE_FUNCTION
-      ViewStorage(const ViewStorage& x) :
-        sz_(x.sz_), stride_(x.stride_), val_(x.val_), dx_(x.dx_) {}
+      ViewStorage(
+        const ViewStorage<TT,static_length,static_stride,U>& x,
+        typename std::enable_if< std::is_same<TT,T>::value ||
+                                 std::is_same<const TT,T>::value >::type* = 0)
+        : sz_(x.sz_), stride_(x.stride_), val_(x.val_), dx_(x.dx_) {}
 
       // Move does not make sense for this storage since it is always tied to
       // some preallocated data.  Don't define move constructor so compiler will
@@ -217,6 +227,9 @@ namespace Sacado {
       }
 
     protected:
+
+      template <typename, unsigned, unsigned, typename>
+      friend class ViewStorage;
 
       //! Derivative array size
       const mpl::integral_nonzero_constant< int, static_length > sz_;
