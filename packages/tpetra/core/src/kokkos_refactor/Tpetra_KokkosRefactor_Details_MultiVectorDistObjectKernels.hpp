@@ -46,6 +46,13 @@
 // (it would only matter if LocalOrdinal were bigger than size_t on a
 // particular platform, which is unlikely).
 
+// KDD Aug 2020:  In the permute/pack/unpack functors, 
+// the Enabled template parameter is specialized in 
+// downstream packages like Stokhos using SFINAE to provide partial 
+// specializations based on the scalar type of the SrcView and DstView 
+// template parameters. See #7898.
+// Do not remove it before checking with Stokhos and other specializing users.
+
 #ifndef TPETRA_KOKKOS_REFACTOR_DETAILS_MULTI_VECTOR_DIST_OBJECT_KERNELS_HPP
 #define TPETRA_KOKKOS_REFACTOR_DETAILS_MULTI_VECTOR_DIST_OBJECT_KERNELS_HPP
 
