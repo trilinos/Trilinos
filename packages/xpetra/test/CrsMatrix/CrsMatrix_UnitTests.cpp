@@ -295,7 +295,10 @@ namespace {
 
     A->leftScale(*s);
 
+#ifdef HAVE_XPETRA_TPETRA
     Kokkos::fence();
+#endif
+
     for (size_t i = 0; i < static_cast<size_t> (NumMyElements); i++) {
       if (MyGlobalElements[i] == 0) {
         Teuchos::ArrayView< const LO > indices;
@@ -388,7 +391,10 @@ namespace {
 
     A->rightScale(*s);
 
+#ifdef HAVE_XPETRA_TPETRA
     Kokkos::fence();
+#endif
+
     for (size_t i = 0; i < static_cast<size_t> (NumMyElements); i++) {
       if (MyGlobalElements[i] == 0) {
         Teuchos::ArrayView< const LO > indices;
