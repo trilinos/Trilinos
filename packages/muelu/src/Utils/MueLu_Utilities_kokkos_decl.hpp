@@ -381,11 +381,11 @@ namespace MueLu {
     static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<SC>::eps()*100) {
       return UtilitiesBase::GetMatrixDiagonalInverse(A, tol);
     }
-    static ArrayRCP<SC> GetLumpedMatrixDiagonal(const Matrix& A) {
-      return UtilitiesBase::GetLumpedMatrixDiagonal(A);
+    static ArrayRCP<SC> GetLumpedMatrixDiagonal(const Matrix& A, const bool doReciprocal=false) {
+      return UtilitiesBase::GetLumpedMatrixDiagonal(A, doReciprocal);
     }
-    static RCP<Vector> GetLumpedMatrixDiagonal(RCP<const Matrix > A) {
-      return UtilitiesBase::GetLumpedMatrixDiagonal(A);
+    static RCP<Vector> GetLumpedMatrixDiagonal(RCP<const Matrix > A, const bool doReciprocal=false) {
+      return UtilitiesBase::GetLumpedMatrixDiagonal(A, doReciprocal);
     }
     static RCP<Vector> GetMatrixOverlappedDiagonal(const Matrix& A) {
       return UtilitiesBase::GetMatrixOverlappedDiagonal(A);

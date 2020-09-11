@@ -186,9 +186,11 @@ namespace MueLu {
 
     NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static Teuchos::ArrayRCP<Scalar> GetLumpedMatrixDiagonal(const Matrix& A) {
+    static Teuchos::ArrayRCP<Scalar> GetLumpedMatrixDiagonal(const Matrix& A, const bool doReciprocal = false) {
 
       size_t numRows = A.getRowMap()->getNodeNumElements();
+      const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
       Teuchos::ArrayRCP<Scalar> diag(numRows);
       Teuchos::ArrayView<const LocalOrdinal> cols;
       Teuchos::ArrayView<const Scalar> vals;
@@ -199,6 +201,10 @@ namespace MueLu {
           diag[i] += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
         }
       }
+      if (doReciprocal) {
+        for (size_t i = 0; i < numRows; ++i)
+          (diag[i] != zero) ?  diag[i] = one / diag[i] : diag[i] = one;
+      }
       return diag;
     }
 
@@ -208,9 +214,11 @@ namespace MueLu {
 
     NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static Teuchos::RCP<Vector> GetLumpedMatrixDiagonal(Teuchos::RCP<const Matrix> rcpA) {
+    static Teuchos::RCP<Vector> GetLumpedMatrixDiagonal(Teuchos::RCP<const Matrix> rcpA, const bool doReciprocal = false) {
 
       RCP<Vector> diag = Teuchos::null;
+      const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
 
       RCP<const Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bA =
           Teuchos::rcp_dynamic_cast<const Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(rcpA);
@@ -227,8 +235,14 @@ namespace MueLu {
             diagVals[i] += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
           }
         }
-
+        if (doReciprocal) {
+          for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
+            (diagVals[i] != zero) ? diagVals[i] = one / diagVals[i] : diagVals[i] = one;
+          }
+        }
       } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(doReciprocal, Xpetra::Exceptions::RuntimeError,
+          "UtilitiesBase::GetLumpedMatrixDiagonal(): extracting reciprocal of diagonal of a blocked matrix is not supported");
         //TEUCHOS_TEST_FOR_EXCEPTION(bA->Rows() != bA->Cols(), Xpetra::Exceptions::RuntimeError,
         //  "UtilitiesBase::GetLumpedMatrixDiagonal(): you cannot extract the diagonal of a "<< bA->Rows() << "x"<< bA->Cols() << " blocked matrix." );
 
