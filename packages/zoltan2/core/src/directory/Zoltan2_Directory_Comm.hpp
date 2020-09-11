@@ -113,13 +113,7 @@ class Zoltan2_Directory_Plan {	/* data for mapping between decompositions */
     int       maxed_recvs;     /* use MPI_Alltoallv if too many receives */
     Teuchos::RCP<const Teuchos::Comm<int> > comm; /* communicator */
 
-    // making this ArrayRCP is causing issues with name() demangling for gcc
-    // sems build, but not clang... will need to work on this further
-    // back to std::vector for the moment
-    // there is probably an option in the sems building turning on
-    // something that creates this conflict
-    std::vector<MPI_Request> request;      /* MPI requests for posted recvs */
-    std::vector<MPI_Status> status;		     /* MPI status for those recvs */
+    Teuchos::ArrayRCP<Teuchos::RCP<Teuchos::CommRequest<int> > > request;      /* MPI requests for posted recvs */
 
     Zoltan2_Directory_Plan* plan_reverse;    /* to support POST & WAIT */
 
@@ -196,14 +190,6 @@ class Zoltan2_Directory_Comm {
     void free_reverse_plan(Zoltan2_Directory_Plan *plan);
 
     int create_reverse_plan(int tag, const Teuchos::ArrayRCP<int> &sizes);
-
-    MPI_Comm getRawComm() {
-    #ifdef HAVE_MPI
-      return Teuchos::getRawMpiComm(*comm_);
-    #else
-      return MPI_COMM_WORLD;
-    #endif
-    }
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
     Zoltan2_Directory_Plan * plan_forward; // for efficient MPI communication

@@ -48,6 +48,7 @@
 #define ZOLTAN2_DIRECTORY_H_
 
 #include <Teuchos_DefaultComm.hpp> // currently using Teuchos comm throughout
+#include <Teuchos_CommHelpers.hpp>
 
 #ifndef HAVE_MPI
 // support mpi serial - directory currently has a mix of Teuchos mpi commands
@@ -214,7 +215,8 @@ class Zoltan2_Directory {
       typedef long long mpi_t;
       mpi_t nDDEntries = static_cast<mpi_t>(node_map.size());
       mpi_t firstIdx;
-      MPI_Scan(&nDDEntries, &firstIdx, 1, MPI_LONG_LONG, MPI_SUM, getRawComm());
+      Teuchos::scan(*comm, Teuchos::REDUCE_SUM,
+        1, &nDDEntries, &firstIdx);
       firstIdx -= nDDEntries;  // do not include this rank's entries in prefix sum
       size_t cnt = 0;
       for(size_t n = 0; n < node_map.capacity(); ++n) {
@@ -296,14 +298,6 @@ class Zoltan2_Directory {
       Zoltan2_DD_Find_Msg<gid_t,lid_t>* msg) const                    { return 0; };
 
   private:
-    MPI_Comm getRawComm() {
-    #ifdef HAVE_MPI
-      return Teuchos::getRawMpiComm(*comm);
-    #else
-      return MPI_COMM_WORLD;
-    #endif
-    }
-
     void rehash_node_map(size_t new_hash_size) {
       node_map.rehash(new_hash_size);
     }
