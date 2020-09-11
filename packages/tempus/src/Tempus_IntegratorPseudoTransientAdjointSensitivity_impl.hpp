@@ -85,9 +85,9 @@ advanceTime(const Scalar timeFinal)
   inargs.set_t(sens_integrator_->getTime());
   inargs.set_x(sens_integrator_->getX());
   if (inargs.supports(MEB::IN_ARG_x_dot))
-    inargs.set_x_dot(sens_integrator_->getXdot());
+    inargs.set_x_dot(sens_integrator_->getXDot());
   if (inargs.supports(MEB::IN_ARG_x_dot_dot))
-    inargs.set_x_dot_dot(sens_integrator_->getXdotdot());
+    inargs.set_x_dot_dot(sens_integrator_->getXDotDot());
   RCP<VectorBase<Scalar> > G = dgdp_;
   if (G == Teuchos::null) {
     G = Thyra::createMember(sens_model_->get_g_space(0));
@@ -238,17 +238,17 @@ getX() const
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
-getXdot() const
+getXDot() const
 {
-  return state_integrator_->getXdot();
+  return state_integrator_->getXDot();
 }
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
-getXdotdot() const
+getXDotDot() const
 {
-  return state_integrator_->getXdotdot();
+  return state_integrator_->getXDotDot();
 }
 
 template<class Scalar>

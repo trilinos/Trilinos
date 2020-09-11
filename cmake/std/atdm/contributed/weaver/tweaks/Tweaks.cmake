@@ -7,14 +7,14 @@ ATDM_SET_CACHE(Trilinos_CUDA_NUM_GPUS 2 CACHE STRING)
 ATDM_SET_CACHE(Trilinos_CUDA_SLOTS_PER_GPU 2 CACHE STRING)
 
 #
-# Disables across multiple builds on 'waterman'
+# Disables across multiple builds on 'weaver'
 #
 
 # Disable known failures for SPARC Trilinos configuration (#3632)
 ATDM_SET_ENABLE(PanzerAdaptersIOSS_tIOSSConnManager2_MPI_2_DISABLE ON)
 ATDM_SET_ENABLE(PanzerAdaptersIOSS_tIOSSConnManager3_MPI_3_DISABLE ON)
 
-# Disable randomly timing out test in all 'waterman' builds (#6463)
+# Disable randomly timing out test in all 'weaver' builds (#6463)
 ATDM_SET_ENABLE(Teko_testdriver_tpetra_MPI_4_DISABLE ON)
 
 IF (ATDM_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
