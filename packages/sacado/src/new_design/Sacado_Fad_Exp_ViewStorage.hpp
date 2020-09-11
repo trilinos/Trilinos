@@ -36,6 +36,7 @@
 
 #include "Sacado_DynamicArrayTraits.hpp"
 #include "Sacado_mpl_integral_nonzero_constant.hpp"
+#include "Sacado_mpl_apply.hpp"
 
 namespace Sacado {
 
@@ -78,7 +79,10 @@ namespace Sacado {
       //! Turn ViewStorage into a meta-function class usable with mpl::apply
       template <typename TT>
       struct apply {
-        typedef ViewStorage<TT,static_length,static_stride,U> type;
+        typedef typename std::remove_cv<TT>::type non_const_TT;
+        typedef typename BaseExprType<non_const_TT>::type base_expr_TT;
+        typedef typename mpl::apply<U,base_expr_TT>::type UU;
+        typedef ViewStorage<TT,static_length,static_stride,UU> type;
       };
 
       //! Replace static derivative length
