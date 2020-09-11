@@ -3524,7 +3524,7 @@ namespace Tpetra {
         Kokkos::deep_copy (A_view, srcView_host);
       }
       else {
-        Kokkos::deep_copy (execution_space(), A_view, srcView_dev);
+        Kokkos::deep_copy (A_view, srcView_dev); // devic-to-host
       }
     }
     else {

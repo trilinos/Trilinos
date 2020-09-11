@@ -306,7 +306,7 @@ replaceLocalValuesImpl (const LO localRowIndex,
   typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                                                 getBlockSize ());
   using execution_space = typename device_type::execution_space;
-  Kokkos::deep_copy (execution_space(), X_dst, X_src);
+  Kokkos::deep_copy (X_dst, X_src); // host-to-device
 }
 
 
