@@ -31,7 +31,6 @@
 #define SACADO_FAD_EXP_GENERALFAD_HPP
 
 #include "Sacado_Fad_Exp_GeneralFadTraits.hpp"
-#include "Sacado_Fad_GeneralFadTestingHelpers.hpp"
 #include "Sacado_Fad_Exp_Expression.hpp"
 #include "Sacado_Fad_Exp_Extender.hpp"
 #include "Sacado_Fad_Exp_ExprAssign.hpp"
