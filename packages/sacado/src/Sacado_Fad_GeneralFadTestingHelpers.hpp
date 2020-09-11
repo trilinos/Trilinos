@@ -30,9 +30,8 @@
 
 #ifndef SACADO_FAD_GENERALFADTESTINGHELPERS_HPP
 
-#ifndef TEUCHOS_TESTING_HELPERS_HPP
-#include "Teuchos_TestingHelpers.hpp"
-#endif
+#include "Sacado_ConfigDefs.h"
+#ifdef HAVE_SACADO_TEUCHOSCORE
 
 #define SACADO_FAD_GENERALFADTESTINGHELPERS_HPP
 
@@ -80,9 +79,9 @@ namespace Teuchos {
     typedef typename Teuchos::ScalarTraits<scalarType>::magnitudeType magnitudeType;
     static bool eval(
       const std::string &v1_name,
-      const T1 &v1,
+      const T1 &vv1,
       const std::string &v2_name,
-      const T2 &v2,
+      const T2 &vv2,
       const std::string &maxRelErr_error_name,
       const magnitudeType &maxRelErr_error,
       const std::string &maxRelErr_warning_name,
@@ -92,7 +91,9 @@ namespace Teuchos {
     {
       using std::endl;
       typedef Teuchos::ScalarTraits<magnitudeType> SMT;
-      const magnitudeType rel_err = Sacado::Fad::relErrFadImpl( v1.derived(), v2.derived() );
+      typename Sacado::BaseExprType<T1>::type v1(vv1);
+      typename Sacado::BaseExprType<T2>::type v2(vv2);
+      const magnitudeType rel_err = Sacado::Fad::relErrFadImpl( v1, v2);
       const bool success = ( !SMT::isnaninf(rel_err) && !SMT::isnaninf(maxRelErr_error)
         && rel_err <= maxRelErr_error );
       if (!is_null(out)) {
@@ -123,5 +124,7 @@ namespace Teuchos {
       #v1, v1, #v2, v2, "tol", tol, "tol", tol, Teuchos::outArg(out) ); \
     if (l_result) (success) = false; \
   }
+
+#endif
 
 #endif
