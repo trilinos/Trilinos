@@ -283,8 +283,20 @@ function test_custom_system_reg_with_default_known_system() {
     ${ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR}
 }
 
-# ToDo: Add add test for ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR with no
-# default known system!
+function test_custom_system_reg_no_default_known_system() {
+  thishost=$(hostname)
+  init_system_info_test_env ${thishost}
+  ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR=${ATDM_UNIT_TESTS_DIR}/dummy_custom_system
+  # Check the STDOUT
+  output=$(source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info.sh)
+  assertEquals \
+    "Selecting custom system configuration 'dummy_custom_system'" \
+    "${output}"
+  # Check the vars set
+  source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info.sh
+  assert_custom_system_info_output ${thishost} ${thishost} dummy_custom_system \
+    ${ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR}
+}
 
 
 #
