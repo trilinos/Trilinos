@@ -226,8 +226,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   fm->getFieldData<EvalType>(s);
   fm->getFieldData<EvalType>(t);
 
-  typename Teuchos::ScalarTraits<ScalarT>::magnitudeType tol =
-    100.0 * Teuchos::ScalarTraits<ScalarT>::eps();
+  typename Teuchos::ScalarTraits<typename Sacado::ScalarType<ScalarT>::type>::magnitudeType tol =
+    100.0 * Teuchos::ScalarTraits<typename Sacado::ScalarType<ScalarT>::type>::eps();
 
   auto s_h = Kokkos::create_mirror_view(s.get_view());
   Kokkos::deep_copy(s_h, s.get_view());

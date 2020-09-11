@@ -105,10 +105,15 @@ public:
     field_manager_.template postEvaluate<EvalType>(post_eval_data);
   }
 
+  void setKokkosExtendedDataTypeDimensions(const std::vector<PHX::index_size_type>& dims)
+  {
+    field_manager_.template setKokkosExtendedDataTypeDimensions<EvalType>(dims);
+  }
+
   //! Check the field values to a specified tolerance for a rank 1 MDField
-  template<typename FieldType>
+  template<typename FieldType, typename MagnitudeType>
   void checkFloatValues1(const FieldType& gold_field,
-                        const typename FieldType::value_type& tolerance,
+                        const MagnitudeType& tolerance,
                         bool& success,
                         std::ostream& out)
   {
@@ -125,9 +130,9 @@ public:
   }
 
   //! Check the field values to a specified tolerance for a rank 2 MDField
-  template<typename FieldType>
+  template<typename FieldType, typename MagnitudeType>
   void checkFloatValues2(const FieldType& gold_field,
-                        const typename FieldType::value_type& tolerance,
+                        const MagnitudeType& tolerance,
                         bool& success,
                         std::ostream& out)
   {
@@ -145,9 +150,9 @@ public:
   }
 
   //! Check the field values to a specified tolerance for a rank 3 MDField
-  template<typename FieldType>
+  template<typename FieldType, typename MagnitudeType>
   void checkFloatValues3(const FieldType& gold_field,
-                        const typename FieldType::value_type& tolerance,
+                        const MagnitudeType& tolerance,
                         bool& success,
                         std::ostream& out)
   {
@@ -166,9 +171,9 @@ public:
   }
 
   //! Check the field values to a specified tolerance for a rank 4 MDField
-  template<typename FieldType>
+  template<typename FieldType, typename MagnitudeType>
   void checkFloatValues4(const FieldType& gold_field,
-                        const typename FieldType::value_type& tolerance,
+                        const MagnitudeType& tolerance,
                         bool& success,
                         std::ostream& out)
   {
@@ -188,9 +193,9 @@ public:
   }
 
   //! Check the field values to a specified tolerance for a rank 5 MDField
-  template<typename FieldType>
+  template<typename FieldType, typename MagnitudeType>
   void checkFloatValues5(const FieldType& gold_field,
-                        const typename FieldType::value_type& tolerance,
+                        const MagnitudeType& tolerance,
                         bool& success,
                         std::ostream& out)
   {
@@ -211,9 +216,9 @@ public:
   }
 
   //! Check the field values to a specified tolerance for a rank 6 MDField
-  template<typename FieldType>
+  template<typename FieldType, typename MagnitudeType>
   void checkFloatValues6(const FieldType& gold_field,
-                        const typename FieldType::value_type& tolerance,
+                        const MagnitudeType& tolerance,
                         bool& success,
                         std::ostream& out)
   {
