@@ -250,7 +250,7 @@ function test_cts1_sems_sems_rhel7_select_sems_rhel7() {
 #
 
 function test_custom_system_arg_with_default_known_system() {
-  thishost=$(hostname)
+  thishost=dummy-machine
   init_system_info_test_env ${thishost}
   SEMS_PLATFORM=rhel7-x86_64  # Makes sure there is a known default system
   ATDM_CONFIG_CUSTOM_CONFIG_DIR_ARG=${ATDM_UNIT_TESTS_DIR}/dummy_custom_system
@@ -267,7 +267,7 @@ function test_custom_system_arg_with_default_known_system() {
 }
 
 function test_custom_system_reg_with_default_known_system() {
-  thishost=$(hostname)
+  thishost=dummy-machine
   init_system_info_test_env ${thishost}
   SEMS_PLATFORM=rhel7-x86_64  # Makes sure there is a known default system
   ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR=${ATDM_UNIT_TESTS_DIR}/dummy_custom_system
@@ -284,7 +284,7 @@ function test_custom_system_reg_with_default_known_system() {
 }
 
 function test_custom_system_reg_no_default_known_system() {
-  thishost=$(hostname)
+  thishost=dummy-machine
   init_system_info_test_env ${thishost}
   ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR=${ATDM_UNIT_TESTS_DIR}/dummy_custom_system
   # Check the STDOUT
