@@ -129,18 +129,18 @@ namespace MueLuTests {
     // access aggregates
     RCP<Aggregates> aggregates = fineLevel.Get<RCP<Aggregates>>("Aggregates", uncoupledAggFact.get());
     GO numAggs = aggregates->GetNumAggregates();
-    GO numGlobalAggs = 0;
-    RCP<const Teuchos::Comm<int>> comm = TestHelpers::Parameters::getDefaultComm();
-    Teuchos::reduceAll<GO,GO>(*comm, Teuchos::REDUCE_SUM, numAggs, Teuchos::outArg(numGlobalAggs));
-    // MueLu_sumAll(comm, numAggs, numGlobalAggs);
-    out << "Found " << numGlobalAggs << " aggregates" << std::endl;
+    // GO numGlobalAggs = 0;
+    // RCP<const Teuchos::Comm<int>> comm = TestHelpers::Parameters::getDefaultComm();
+    // Teuchos::reduceAll<GO,GO>(*comm, Teuchos::REDUCE_SUM, numAggs, Teuchos::outArg(numGlobalAggs));
+    // // MueLu_sumAll(comm, numAggs, numGlobalAggs);
+    // out << "Found " << numGlobalAggs << " aggregates" << std::endl;
 
     using Teuchos::as;
 
     TEST_EQUALITY(map1->getMinAllGlobalIndex(), 0);
-    TEST_EQUALITY(map1->getMaxAllGlobalIndex(), numGlobalAggs * as<GO>(NSdim) - 1);
-    TEST_EQUALITY(map2->getMinAllGlobalIndex(), numGlobalAggs * as<GO>(NSdim));
-    TEST_EQUALITY(map2->getMaxAllGlobalIndex(), 2 * numGlobalAggs * as<GO>(NSdim) - 1);
+    // TEST_EQUALITY(map1->getMaxAllGlobalIndex(), numGlobalAggs * as<GO>(NSdim) - 1);
+    // TEST_EQUALITY(map2->getMinAllGlobalIndex(), numGlobalAggs * as<GO>(NSdim));
+    // TEST_EQUALITY(map2->getMaxAllGlobalIndex(), 2 * numGlobalAggs * as<GO>(NSdim) - 1);
     TEST_EQUALITY(as<GO>(map1->getNodeNumElements()), numAggs * as<GO>(NSdim));
     TEST_EQUALITY(as<GO>(map2->getNodeNumElements()), numAggs * as<GO>(NSdim));
   } // GIDOffsetFromCoarseMapFactory
