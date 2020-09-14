@@ -68,10 +68,11 @@ namespace Details {
 #define BELOS_DEFINE_REGISTER_SOLVER_MANAGER(manager,name)                           \
   Impl::registerSolverSubclassForTypes<manager<fST,fMV,fOP>, fST, fMV, fOP> (name);        \
   Impl::registerSolverSubclassForTypes<manager<dST,dMV,dOP>, dST, dMV, dOP> (name);        \
-  Impl::registerSolverSubclassForTypes<manager<cST,cMV,cOP>, cST, cMV, cOP> (name);
+  Impl::registerSolverSubclassForTypes<manager<cST,cMV,cOP>, cST, cMV, cOP> (name);  \
+  Impl::registerSolverSubclassForTypes<manager<cfST,cfMV,cfOP>, cfST, cfMV, cfOP> (name);
 #else // HAVE_TEUCHOS_COMPLEX
 #define BELOS_DEFINE_REGISTER_SOLVER_MANAGER(manager,name)            \
-  Impl::registerSolverSubclassForTypes<manager<fST,fMV,fOP>, fST, fMV, fOP> (name);
+  Impl::registerSolverSubclassForTypes<manager<fST,fMV,fOP>, fST, fMV, fOP> (name);  \
   Impl::registerSolverSubclassForTypes<manager<dST,dMV,dOP>, dST, dMV, dOP> (name);
 #endif // HAVE_TEUCHOS_COMPLEX
 
@@ -88,6 +89,10 @@ void registerSolverFactory () {
   typedef std::complex<double> cST;
   typedef MultiVec<cST> cMV;
   typedef Operator<cST> cOP;
+
+  typedef std::complex<float> cfST;
+  typedef MultiVec<cfST> cfMV;
+  typedef Operator<cfST> cfOP;
 #endif // HAVE_TEUCHOS_COMPLEX
 
   BELOS_DEFINE_REGISTER_SOLVER_MANAGER(BiCGStabSolMgr, "BICGSTAB")
