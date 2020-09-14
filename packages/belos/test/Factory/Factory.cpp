@@ -345,7 +345,6 @@ TEUCHOS_UNIT_TEST( Factory, Bug6383 )
 #endif // 0
 }
 
-//#ifdef Trilinos_ENABLE_FLOAT
 // Repeat the above test for the float scalar type. 
 TEUCHOS_UNIT_TEST( Factory, Bug6383_Float )
 {
@@ -461,5 +460,3 @@ TEUCHOS_UNIT_TEST( Factory, Bug6383_Float )
   }
 #endif // 0
 }
-//#endif //Trilinos_ENABLE_FLOAT
-
