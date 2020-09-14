@@ -539,10 +539,10 @@ namespace Ifpack2 {
 
 #if defined(KOKKOS_ENABLE_CUDA)
       using cuda_stream_1d_std_vector = std::vector<cudaStream_t>;
-      SendRecvPair<cuda_stream_1d_std_vector> stream;
+      cuda_stream_1d_std_vector stream;
 
       using exec_instance_1d_std_vector = std::vector<execution_space>;
-      SendRecvPair<exec_instance_1d_std_vector> exec_instances;      
+      exec_instance_1d_std_vector exec_instances;      
 #endif
 
       // for cuda
@@ -652,27 +652,16 @@ namespace Ifpack2 {
 
       void createExecutionSpaceInstances() {
 #if defined(KOKKOS_ENABLE_CUDA)
+        const local_ordinal_type num_streams = 8;
         {
-          const local_ordinal_type num_streams = 8;
-          stream.send.clear();
-          stream.send.resize(num_streams);
-          exec_instances.send.clear();
-          exec_instances.send.resize(num_streams);
+          stream.clear();
+          stream.resize(num_streams);
+          exec_instances.clear();
+          exec_instances.resize(num_streams);
           for (local_ordinal_type i=0;i<num_streams;++i) {
-            CUDA_SAFE_CALL(cudaStreamCreateWithFlags(&stream.send[i], cudaStreamNonBlocking));
-            ExecutionSpaceFactory<execution_space>::createInstance(stream.send[i], exec_instances.send[i]);
+            CUDA_SAFE_CALL(cudaStreamCreateWithFlags(&stream[i], cudaStreamNonBlocking));
+            ExecutionSpaceFactory<execution_space>::createInstance(stream[i], exec_instances[i]);
           }
-        }
-        {
-          const local_ordinal_type num_streams = 8;
-          stream.recv.clear();
-          stream.recv.resize(num_streams);
-          exec_instances.recv.clear();
-          exec_instances.recv.resize(num_streams);
-          for (local_ordinal_type i=0;i<num_streams;++i) {
-            CUDA_SAFE_CALL(cudaStreamCreateWithFlags(&stream.recv[i], cudaStreamNonBlocking));
-            ExecutionSpaceFactory<execution_space>::createInstance(stream.recv[i], exec_instances.recv[i]);
-          }        
         }
 #endif
       }
@@ -680,19 +669,12 @@ namespace Ifpack2 {
       void destroyExecutionSpaceInstances() {
 #if defined(KOKKOS_ENABLE_CUDA)
         {
-          const local_ordinal_type num_streams = stream.send.size();
+          const local_ordinal_type num_streams = stream.size();
           for (local_ordinal_type i=0;i<num_streams;++i)
-            CUDA_SAFE_CALL(cudaStreamDestroy(stream.send[i]));
+            CUDA_SAFE_CALL(cudaStreamDestroy(stream[i]));
         }
-        {
-          const local_ordinal_type num_streams = stream.recv.size();
-          for (local_ordinal_type i=0;i<num_streams;++i)
-            CUDA_SAFE_CALL(cudaStreamDestroy(stream.recv[i]));
-        }
-        stream.send.clear();
-        stream.recv.clear();
-        exec_instances.send.clear();
-        exec_instances.recv.clear();
+        stream.clear();
+        exec_instances.clear();
 #endif
       }
 
@@ -817,18 +799,25 @@ namespace Ifpack2 {
                 &reqs.recv[i]);
         }
 
+        /// this is necessary to pass unit test. somewhere overlapped using the default execution space
+        execution_space().fence();
+
         // 1. async memcpy
         for (local_ordinal_type i=0;i<static_cast<local_ordinal_type>(pids.send.extent(0));++i) {
-          const auto exec_instance = exec_instances.send[i%8];
           // 1.0. enqueue pack buffer
+          if (i<8)  exec_instances[i%8].fence();
           copy<ToBuffer>(lids.send, buffer.send,
                          offset_host.send(i), offset_host.send(i+1),
                          mv, blocksize,
-                         exec_instance);
+                         //execution_space());
+                         exec_instances[i%8]);
+
         }
-        Kokkos::fence();
+        /// somehow one unit test fails when we use exec_instance[i%8]
+        //execution_space().fence();
         for (local_ordinal_type i=0;i<static_cast<local_ordinal_type>(pids.send.extent(0));++i) {
           // 1.1. sync the stream and isend
+          if (i<8)  exec_instances[i%8].fence();
           isend(comm,
                 reinterpret_cast<const char*>(buffer.send.data() + offset_host.send[i]*mv_blocksize),
                 (offset_host.send[i+1] - offset_host.send[i])*mv_blocksize*sizeof(impl_scalar_type),
@@ -857,11 +846,10 @@ namespace Ifpack2 {
           waitany(pids.recv.extent(0), reqs.recv.data(), &idx);
 
           // 0.1. unpack data after data is moved into a device
-          const auto exec_instance = exec_instances.recv[idx%8];
           copy<ToMultiVector>(lids.recv, buffer.recv,
                               offset_host.recv(idx), offset_host.recv(idx+1),
                               remote_multivector, blocksize,
-                              exec_instance);
+                              exec_instances[idx%8]);
         }
 
         // 1. fire up all cuda events
