@@ -79,7 +79,7 @@ set (TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH "Set by default for CUDA PR testi
 set (Sacado_NEW_FAD_DESIGN_IS_DEFAULT OFF CACHE BOOL "Temporary fix for issue #7532" )
 
 # Disable some packages that can't be tested with this PR build
-set (Trilinos_ENABLE_ShyLU_NodeTacho OFF CACHE BOOL
+set (Trilinos_ENABLE_Tacho OFF CACHE BOOL
   "Can't test Tacho with CUDA without RDC" FORCE)
 
 # Temporary options to clean up build

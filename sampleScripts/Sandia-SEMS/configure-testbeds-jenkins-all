@@ -35,17 +35,17 @@ fi
 
 if [ ${CUDA} == "ON" ]
 then
-  ENABLE_SHYLU="OFF"
+  ENABLE_TACHO="OFF"
 else
   if [ ${OPENMP} == "ON" ]
   then
-    ENABLE_SHYLU="ON"
+    ENABLE_TACHO="ON"
   else
     if [ ${PTHREAD} == "ON" ]
     then
-      ENABLE_SHYLU="OFF"
+      ENABLE_TACHO="OFF"
     else
-      ENABLE_SHYLU="ON"
+      ENABLE_TACHO="ON"
     fi
   fi
 fi
@@ -139,9 +139,9 @@ cmake \
 -D Trilinos_ENABLE_Amesos2=ON \
   -D Amesos2_ENABLE_TESTS:BOOL=${TESTS} \
   -D Amesos2_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
--D Trilinos_ENABLE_ShyLU_NodeTacho=${ENABLE_SHYLU} \
-  -D ShyLU_NodeTacho_ENABLE_TESTS:BOOL=${TESTS} \
-  -D ShyLU_NodeTacho_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+-D Trilinos_ENABLE_Tacho=${ENABLE_TACHO} \
+  -D Tacho_ENABLE_TESTS:BOOL=${TESTS} \
+  -D Tacho_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
 -D Trilinos_ENABLE_Anasazi=ON \
   -D Anasazi_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_AztecOO=ON \

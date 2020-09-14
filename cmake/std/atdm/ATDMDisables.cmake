@@ -41,7 +41,7 @@ SET(ATDM_SE_PACKAGE_DISABLES
   STKDoc_tests
   STKExp
   Moertel
-  ShyLU_NodeTacho
+  Tacho
   ShyLU_DD
   ShyLU
   Stokhos
@@ -58,6 +58,7 @@ IF (NOT ATDM_ENABLE_SPARC_SETTINGS)
     ${ATDM_SE_PACKAGE_DISABLES}
     ShyLU_Node
     ROL
+    Tacho
     )
   # NOTE: For now, we will disable these packages not being used by EMPIRE for
   # now so that we don't introduce any new failing tests in the existing ATDM
@@ -92,6 +93,7 @@ IF (ATDM_COMPLEX)
     ROL
     Piro
     Panzer
+    Tacho
     )
   # Note, above:
   # * We are allowing the enable of Zoltan2 for now even though GEMMA is not
@@ -190,6 +192,7 @@ ELSE()
     STKSearch
     STKTransfer
     ROL
+    Tacho
     )
 ENDIF()
 

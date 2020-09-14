@@ -62,6 +62,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TrilinosATDMConfigTests cmake/std/atdm                  PT
   Gtest                 commonTools/gtest                 PT
   Kokkos                packages/kokkos                   PT
+  Tacho                 packages/tacho                    PT
   Teuchos               packages/teuchos                  PT
   KokkosKernels         packages/kokkos-kernels           PT
   RTOp                  packages/rtop                     PT
@@ -194,3 +195,5 @@ TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Zoltan Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Teko Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Panzer Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Compadre Windows)
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Tacho Windows)
+
