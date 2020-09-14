@@ -63,8 +63,6 @@
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_Utilities.hpp>
 
-//#include <MueLu_RebalanceAcFactory_decl.hpp>
-//#include <MueLu_RepartitionHeuristicFactory.hpp>
 #include <MueLu_RepartitionFactory.hpp>
 #include <MueLu_Zoltan2Interface.hpp>
 
@@ -1281,6 +1279,7 @@ void vCycle(const int l, ///< ID of current level
         } else {
           RCP<const Import> rebalanceImporter = coarseSolverData->get<RCP<const Import> >("rebalanceImporter");
 
+          // TODO: These vectors could be cached to improve performance
           RCP<Vector> rebalancedRhs = VectorFactory::Build(rebalanceImporter->getTargetMap());
           RCP<Vector> rebalancedX = VectorFactory::Build(rebalanceImporter->getTargetMap(), true);
           rebalancedRhs->doImport(*compRhs, *rebalanceImporter, Xpetra::INSERT);
