@@ -63,6 +63,9 @@
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_Utilities.hpp>
 
+#include <MueLu_RepartitionFactory.hpp>
+#include <MueLu_Zoltan2Interface.hpp>
+
 #include "SetupRegionVector_def.hpp"
 #include "SetupRegionMatrix_def.hpp"
 #include "SetupRegionSmoothers_def.hpp"
@@ -454,6 +457,71 @@ MakeCompositeDirectSolver(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
 
   return coarseSolver;
 } // MakeCorseCompositeDirectSolver
+
+/* Rebalance coarse operator
+ *
+ */
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void RebalanceCoarseCompositeOperator(const int maxRegPerProc,
+              const int rebalanceNumPartitions,
+              RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& coarseCompOp,
+              RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> >& compCoarseCoordinates,
+              RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& rebalancedCompOp,
+              RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> >& rebalancedCoordinates,
+              RCP<const Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rebalanceImporter)
+{
+#include "MueLu_UseShortNames.hpp"
+  using CoordType = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
+
+  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  fos->setOutputToRootOnly(0);
+  *fos << "Rebalancing coarse composite operator." << std::endl;
+
+  //RCP<const Map> map = coarseCompOp->getMap();
+
+  const int numPartitions = rebalanceNumPartitions;
+
+  // We build a fake level
+  Level level;
+  level.SetLevelID(1);
+
+  RCP<FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+  level.SetFactoryManager(factoryHandler);
+
+  RCP<Zoltan2Interface> zoltan = rcp(new Zoltan2Interface());
+
+  level.Set<RCP<Matrix> >     ("A",                    coarseCompOp);
+  level.Set<RCP<MultiVector> >("Coordinates",          compCoarseCoordinates);
+  level.Set<int>              ("number of partitions", numPartitions);
+
+  RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
+  Teuchos::ParameterList paramList;
+  paramList.set("repartition: remap parts",       false);
+  repart->SetParameterList(paramList);
+  repart->SetFactory("Partition", zoltan);
+
+
+  // Build
+  level.Request("Importer", repart.get());
+  repart->Build(level);
+
+  // Build importer for rebalancing
+  level.Get("Importer", rebalanceImporter, repart.get());
+
+  ParameterList XpetraList;
+  XpetraList.set("Restrict Communicator", true);
+  XpetraList.set("Timer Label","MueLu::RebalanceAc-for-coarseAMG");
+
+  // Build rebalanced coarse composite operator
+  rebalancedCompOp = MatrixFactory::Build(coarseCompOp, *rebalanceImporter, *rebalanceImporter, rebalanceImporter->getTargetMap(), rebalanceImporter->getTargetMap(), rcp(&XpetraList,false));
+
+  // Build rebalanced coarse coordinates
+  rebalancedCoordinates = Xpetra::MultiVectorFactory<CoordType,LocalOrdinal,GlobalOrdinal,Node>::Build(rebalanceImporter->getTargetMap(), compCoarseCoordinates->getNumVectors());
+  rebalancedCoordinates->doImport(*compCoarseCoordinates, *rebalanceImporter, Xpetra::INSERT);
+  rebalancedCoordinates->replaceMap(rebalancedCoordinates->getMap()->removeEmptyProcesses());
+
+  return;
+} // RebalanceCoarseCompositeOperator
 
 /* Create an AMG hierarchy for a composite operator
  *
@@ -857,6 +925,7 @@ void createRegionHierarchy(const int maxRegPerProc,
   tmLocal = Teuchos::null;
   tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy: CreateCoarseSolver")));
   const std::string coarseSolverType = coarseSolverData->get<std::string>("coarse solver type");
+  const bool coarseSolverRebalance = coarseSolverData->get<bool>("coarse solver rebalance");
   if (coarseSolverType == "smoother") {
     // Set the smoother on the coarsest level.
     const std::string smootherXMLFileName = coarseSolverData->get<std::string>("smoother xml file");
@@ -895,8 +964,30 @@ void createRegionHierarchy(const int maxRegPerProc,
       if(keepCoarseCoords == false) {
         std::cout << "WARNING: you requested a coarse AMG solver but you did not request coarse coordinates to be kept, repartitioning is not possible!" << std::endl;
       }
+
+      RCP<Hierarchy> coarseAMGHierarchy;
       std::string amgXmlFileName = coarseSolverData->get<std::string>("amg xml file");
-      RCP<Hierarchy> coarseAMGHierarchy = MakeCompositeAMGHierarchy(coarseCompOp, amgXmlFileName, compCoarseCoordinates);
+      if(keepCoarseCoords == true && coarseSolverRebalance == true ){
+        RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rebalancedCompOp;
+        RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > rebalancedCoordinates;
+        RCP<const Import> rebalanceImporter;
+
+        const int rebalanceNumPartitions = coarseSolverData->get<int>("coarse rebalance num partitions");
+        RebalanceCoarseCompositeOperator(maxRegPerProc,
+                                    rebalanceNumPartitions,
+                                    coarseCompOp,
+                                    compCoarseCoordinates,
+                                    rebalancedCompOp,
+                                    rebalancedCoordinates,
+                                    rebalanceImporter);
+        coarseSolverData->set<RCP<const Import> >("rebalanceImporter", rebalanceImporter);
+
+        if( !rebalancedCompOp.is_null() )
+          coarseAMGHierarchy = MakeCompositeAMGHierarchy(rebalancedCompOp, amgXmlFileName, rebalancedCoordinates);
+
+      } else {
+        coarseAMGHierarchy = MakeCompositeAMGHierarchy(coarseCompOp, amgXmlFileName, compCoarseCoordinates);
+      }
       coarseSolverData->set<RCP<Hierarchy> >("amg hierarchy object", coarseAMGHierarchy);
     }
   } else  {
@@ -1176,13 +1267,33 @@ void vCycle(const int l, ///< ID of current level
       }
       else if (coarseSolverType == "amg") // use AMG as coarse level solver
       {
+        const bool coarseSolverRebalance = coarseSolverData->get<bool>("coarse solver rebalance");
 
         // Extract the hierarchy from the coarseSolverData
         RCP<Hierarchy> amgHierarchy = coarseSolverData->get<RCP<Hierarchy>>("amg hierarchy object");
 
         // Run a single V-cycle
+        if(coarseSolverRebalance==false){
+          amgHierarchy->Iterate(*compRhs, *compX, 1, true);
 
-        amgHierarchy->Iterate(*compRhs, *compX, true, 1);
+        } else {
+          RCP<const Import> rebalanceImporter = coarseSolverData->get<RCP<const Import> >("rebalanceImporter");
+
+          // TODO: These vectors could be cached to improve performance
+          RCP<Vector> rebalancedRhs = VectorFactory::Build(rebalanceImporter->getTargetMap());
+          RCP<Vector> rebalancedX = VectorFactory::Build(rebalanceImporter->getTargetMap(), true);
+          rebalancedRhs->doImport(*compRhs, *rebalanceImporter, Xpetra::INSERT);
+
+          rebalancedRhs->replaceMap(rebalancedRhs->getMap()->removeEmptyProcesses());
+          rebalancedX->replaceMap(rebalancedX->getMap()->removeEmptyProcesses());
+
+          if(!amgHierarchy.is_null()){
+            amgHierarchy->Iterate(*rebalancedRhs, *rebalancedX, 1, true);
+          }
+
+          rebalancedX->replaceMap(rebalanceImporter->getTargetMap());
+          compX->doExport(*rebalancedX, *rebalanceImporter, Xpetra::INSERT);
+        }
       }
       else
       {
