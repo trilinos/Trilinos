@@ -153,6 +153,8 @@ void StepperNewmarkExplicitAForm<Scalar>::setInitialConditions(
   // Check if we need Stepper storage for xDotDot
   if (initialState->getXDotDot() == Teuchos::null)
     initialState->setXDotDot(initialState->getX()->clone_v());
+  else
+    this->setStepperXDotDot(initialState->getXDotDot());
 
   // Perform IC Consistency
   std::string icConsistency = this->getICConsistency();

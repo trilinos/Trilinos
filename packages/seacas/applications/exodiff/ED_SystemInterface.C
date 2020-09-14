@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include "ED_SystemInterface.h"
@@ -284,6 +284,9 @@ void SystemInterface::enroll_options()
 
   options_.enroll("Floor", GetLongOption::MandatoryValue,
                   "Overrides the default floor tolerance of 0.0.", "0.0");
+
+  options_.enroll("coordinate_tolerance", GetLongOption::MandatoryValue,
+                  "Overrides the default coordinate comparison tolerance of 1.0E-6.", "1.0E-6");
 
   options_.enroll("TimeStepOffset", GetLongOption::MandatoryValue,
                   "Timestep 'x+offset' in first file matches timestep 'x' in second file.",
@@ -610,6 +613,13 @@ bool SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("tolerance");
     if (temp != nullptr) {
       default_tol.value = To_Double(temp);
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("coordinate_tolerance");
+    if (temp != nullptr) {
+      coord_tol.value = To_Double(temp);
     }
   }
 
@@ -1703,11 +1713,11 @@ namespace {
         "\t \n"
         "\t By default:\n"
         "\t * All results variables and attributes are compared using a relative difference\n"
-        "\t   of 10^{-6} (about 6 significant digits) and a floor of 0.0.\n"
-        "\t * Nodal locations are compared using {absolute difference} with\n"
-        "\t   a tolerance of 10^{-6} and a floor of 0.0.\n"
-        "\t * Time step values are compared using relative difference tolerance of 10^{-6}\n"
-        "\t   and a floor of 10^{-15}.\n"
+        "\t   of 10^{{-6}} (about 6 significant digits) and a floor of 0.0.\n"
+        "\t * Nodal locations are compared using {{absolute difference}} with\n"
+        "\t   a tolerance of 10^{{-6}} and a floor of 0.0.\n"
+        "\t * Time step values are compared using relative difference tolerance of 10^{{-6}}\n"
+        "\t   and a floor of 10^{{-15}}.\n"
         "\n\n");
   }
 

@@ -1,28 +1,22 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: inqtru.f,v 1.1 1990/11/30 11:10:04 gdsjaar Exp $
-C $Log: inqtru.f,v $
-C Revision 1.1  1990/11/30 11:10:04  gdsjaar
-C Initial revision
-C
-C
       SUBROUTINE INQTRU (PROMPT, IANS)
 C***********************************************************************
-C
+
 C  SUBROUTINE INQTRU = INPUTS A YES OR NO ANSWER
-C
+
 C***********************************************************************
-C
+
       CHARACTER* (*) PROMPT
       CHARACTER*1 RESULT, ANS
       LOGICAL IANS
       DIMENSION ANS (4)
       DATA ANS / 'Y', 'y', 'N', 'n' /
-C
+
   100 CONTINUE
       WRITE (*, 10000)PROMPT
       READ (*, 10010, END = 110, ERR = 120)RESULT
@@ -43,7 +37,7 @@ C
   120 CONTINUE
       WRITE (*, 10040)
       GOTO 100
-C
+
 10000 FORMAT (' ', A, '? ')
 10010 FORMAT (A1)
 10020 FORMAT (' RESPONSE MUST BE EITHER YES OR NO  -  TRY AGAIN')

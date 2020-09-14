@@ -3,7 +3,7 @@ $
 Test number representations
 {1}	{10e-1}	{10.e-1}	{.1e+1}	{.1e1}
 {1}	{10E-1}	{10.E-1}	{.1E+1}	{.1E1}
-	
+
 Test assign statements:
 {_a = 5}	{b=_a}	$ Should print 5 5
 {_a +=b}	{_a} 	$ Should print 10 10
@@ -181,7 +181,7 @@ $ Test int and [] (shortcut for int)
 $ Test looping - print sin, cos from 0 to 90 by 5
 {_angle = -5}
 {Loop(19)}
-{_angle += 5}	{_sa=sind(_angle)}	{_ca=cosd(_angle)} {hypot(_sa, _ca)} 
+{_angle += 5}	{_sa=sind(_angle)}	{_ca=cosd(_angle)} {hypot(_sa, _ca)}
 {EndLoop}
 
 $$$$ Test formatting and string concatenation
@@ -201,12 +201,12 @@ $$$$ Test string rescanning and executing
 Original String:
 {Test}
 Rescanned String:
-{rescan(Test)} 
+{rescan(Test)}
 Original String:
 {Test2}
 Print Value of variable T = {T}
 Rescanned String:
-{rescan(Test2)} 
+{rescan(Test2)}
 Print Value of variable T = {T}
 
 Original String: {t1 = "atan2(0,-1)"}

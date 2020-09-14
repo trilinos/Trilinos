@@ -1,14 +1,13 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
 C ... NPTSPX is maximum number of segments allowed for sphere approx.
       PARAMETER (NPTSPX=64)
       COMMON /SPHELE/ SPHPLT, DEFRAD,
      *        CS(0:NPTSPX),SN(0:NPTSPX),XS(0:NPTSPX),YS(0:NPTSPX)
-
 
       INTEGER SPHPLT
 C                     > 0 if elements are to be plotted as spheres.

@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -38,7 +38,9 @@ int ex_get_partial_coord_component(int exoid, int64_t start_node_num, int64_t nu
   const char *which = "XYZ";
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   /* inquire id's of previously defined dimensions  */
 

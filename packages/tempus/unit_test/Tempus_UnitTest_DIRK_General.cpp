@@ -106,13 +106,13 @@ TEUCHOS_UNIT_TEST(DIRK_General, Default_Construction)
   stepper = rcp(new Tempus::StepperDIRK_General<double>(
     model, obs, solver, useFSAL,
     ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess,
-    A, b, c, order, order, order, bstar));
+    A, b, c, order, order, order,bstar));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 #endif
   stepper = rcp(new Tempus::StepperDIRK_General<double>(
     model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
     useEmbedded, zeroInitialGuess, modifier,
-    A, b, c, order, order, order, bstar));
+    A, b, c, order, order, order,bstar));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Test stepper properties.

@@ -21,7 +21,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(MeshTying_cp
-    SOURCE_FILES myXML.xml
+    SOURCE_FILES simple_1dof.xml
     )
 
 ENDIF()

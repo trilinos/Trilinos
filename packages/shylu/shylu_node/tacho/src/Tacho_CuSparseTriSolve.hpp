@@ -222,9 +222,9 @@ namespace Tacho {
         printf("             time for analysis:                               %10.6f s\n", t_analyze);
         printf("             total time spent:                                %10.6f s\n", (t_copy+t_analyze));
         printf("  Workspace\n");
-        printf("             upper solve workspace in MB:                  %10.2f MB\n", double(bufSizeInBytes.second)/1.e6);
-        printf("             lower solve workspace in MB:                  %10.2f MB\n", double(bufSizeInBytes.first)/1.e6);
-        printf("             max workspace in MB:                          %10.2f MB\n", double(maxBufSizeInBytes)/1.e6);
+        printf("             upper solve workspace in MB:                  %10.3f MB\n", double(bufSizeInBytes.second)/1.e6);
+        printf("             lower solve workspace in MB:                  %10.3f MB\n", double(bufSizeInBytes.first)/1.e6);
+        printf("             max workspace in MB:                          %10.3f MB\n", double(maxBufSizeInBytes)/1.e6);
         printf("\n");
       }
 

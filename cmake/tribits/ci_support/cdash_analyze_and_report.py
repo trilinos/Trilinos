@@ -327,101 +327,38 @@ def echoCmndLine(inOptions):
   echoCmndLineOptions(inOptions)
 
 
-# Class object to store and manipulate vars the top-level main() vars that are
-# operated on by various functions.
+# Strategy class that can get test history for a list of tests and set them in
+# the test dicts taking input from the cdash_analyze_and_report.py commandline
+# arguments.
 #
-# NOTE: This is put into a class object so that these vars can be updated in
-# place when passed to a function.
-#
-class OverallVars(object):
-  def __init__(self):
-    # Gives the final result (assume passing by defualt)
-    self.globalPass = True
-    # This is the top of the body
-    self.htmlEmailBodyTop = ""
-    # This is the bottom of the email body
-    self.htmlEmailBodyBottom = ""
-    # This var will store the list of data numbers for the summary line
-    self.summaryLineDataNumbersList = []
+class AddTestHistoryStrategy(object):
 
 
-# Class to help get test history and then analyze and report for each test
-# set.
-#
-# NOTE: The reason this is a class is that the data inOptions and overallVars
-# never changes once this object is constructed in main().  This avoids having
-# to pass these options in every function call for each test set.
-#
-class TestSetGetDataAnayzeReporter(object):
-
-
-  def __init__(self, inOptions, testsSortOrder, testHistoryCacheDir, overallVars):
+  def __init__(self, inOptions, testHistoryCacheDir):
     self.inOptions = inOptions
-    self.testsSortOrder = testsSortOrder
     self.testHistoryCacheDir = testHistoryCacheDir
-    self.overallVars = overallVars
 
 
-  def testSetGetDataAnalyzeReport( self,
-      testSetType,
-      testSetDescr, testSetAcro, testSetTotalSize, testSetLOD,
-      testSetNonzeroSizeTriggerGlobalFail=True,
-      colorTestSet=None,     # Change to one of the supported colors
-      sortTests=True,
-      limitTableRows=None,   # Change to 'int' > 0 to limit to this this
-      getTestHistory=False,
-    ):
-  
-    print("")
-  
-    testSetSummaryStr =  CDQAR.getCDashDataSummaryHtmlTableTitleStr(testSetDescr,
-      testSetAcro, testSetTotalSize)
-  
-    print(testSetSummaryStr)
-  
-    if testSetTotalSize > 0:
-  
-      self.overallVars.globalPass = False
-  
-      self.overallVars.summaryLineDataNumbersList.append(
-        testSetAcro+"="+str(testSetTotalSize))
-  
-      self.overallVars.htmlEmailBodyTop += \
-        CDQAR.colorHtmlText(testSetSummaryStr, colorTestSet)+"<br>\n"
-  
-      if sortTests or limitTableRows:
-        testSetSortedLimitedLOD = CDQAR.sortAndLimitListOfDicts(
-          testSetLOD, self.testsSortOrder,
-          limitTableRows )
-      else:
-        testSetSortedLimitedLOD = testSetLOD
+  def getTestHistory(self, testLOD):
 
-      sio = self.inOptions
-  
-      if getTestHistory:
+    sio = self.inOptions
 
-        CDQAR.foreachTransform(
-          testSetSortedLimitedLOD,
-          CDQAR.AddTestHistoryToTestDictFunctor(
-            cdashUrl=sio.cdashSiteUrl,
-            projectName=sio.cdashProjectName,
-            date=sio.date,
-            testingDayStartTimeUtc=sio.cdashProjectTestingDayStartTime,
-            daysOfHistory=sio.testHistoryDays,
-            testCacheDir=self.testHistoryCacheDir,
-            useCachedCDashData=sio.useCachedCDashData,
-            alwaysUseCacheFileIfExists=True,
-            verbose=True,
-            printDetails=sio.printDetails,
-            requireMatchTestTopTestHistory=sio.requireTestHistoryMatchNonpassingTests,
-            )
-          )
-  
-      self.overallVars.htmlEmailBodyBottom += CDQAR.createCDashTestHtmlTableStr(
-        testSetType,
-        testSetDescr, testSetAcro, testSetTotalSize, testSetSortedLimitedLOD,
-        sio.testHistoryDays, limitRowsToDisplay=limitTableRows,
-        testSetColor=colorTestSet )
+    CDQAR.foreachTransform(
+      testLOD,
+      CDQAR.AddTestHistoryToTestDictFunctor(
+        cdashUrl=sio.cdashSiteUrl,
+        projectName=sio.cdashProjectName,
+        date=sio.date,
+        testingDayStartTimeUtc=sio.cdashProjectTestingDayStartTime,
+        daysOfHistory=sio.testHistoryDays,
+        testCacheDir=self.testHistoryCacheDir,
+        useCachedCDashData=sio.useCachedCDashData,
+        alwaysUseCacheFileIfExists=True,
+        verbose=True,
+        printDetails=sio.printDetails,
+        requireMatchTestTopTestHistory=sio.requireTestHistoryMatchNonpassingTests,
+        )
+      )
 
 
 #
@@ -464,9 +401,9 @@ if __name__ == '__main__':
 
   # Aggregation of vars that get updated in this main() body and by functions
   # called.
-  overallVars = OverallVars()
+  cdashReportData = CDQAR.CDashReportData()
 
-  overallVars.htmlEmailBodyTop += \
+  cdashReportData.htmlEmailBodyTop += \
    "<h2>Build and Test results for "+inOptions.buildSetName \
       +" on "+inOptions.date+"</h2>\n\n"
 
@@ -478,7 +415,7 @@ if __name__ == '__main__':
   try:
 
     # Beginning of top full bulid and tests CDash links paragraph 
-    overallVars.htmlEmailBodyTop += "<p>\n"
+    cdashReportData.htmlEmailBodyTop += "<p>\n"
 
     #
     # D.1) Read data from input files, set up cache directories
@@ -570,7 +507,7 @@ if __name__ == '__main__':
     print("\nNum builds = "+str(len(buildsLOD)))
   
     # HTML line "Builds on CDash" 
-    overallVars.htmlEmailBodyTop += \
+    cdashReportData.htmlEmailBodyTop += \
      "<a href=\""+cdashIndexBuildsBrowserUrl+"\">"+\
      "Builds on CDash</a> (num/expected="+\
      str(len(buildsLOD))+"/"+str(len(expectedBuildsLOD))+")<br>\n"
@@ -610,13 +547,13 @@ if __name__ == '__main__':
       str(len(nonpassingTestsLOD)))
   
     # HTML line "Nonpassing Tests on CDash"
-    overallVars.htmlEmailBodyTop += \
+    cdashReportData.htmlEmailBodyTop += \
      "<a href=\""+cdashNonpassingTestsBrowserUrl+"\">"+\
      "Non-passing Tests on CDash</a> (num="+str(len(nonpassingTestsLOD))+")<br>\n"
   
     # End of full build and test link paragraph and start the next paragraph
     # for the summary of failures and other tables
-    overallVars.htmlEmailBodyTop += \
+    cdashReportData.htmlEmailBodyTop += \
       "</p>\n\n"+\
       "<p>\n"
 
@@ -707,11 +644,11 @@ if __name__ == '__main__':
 
     if bmNum > 0:
 
-      overallVars.globalPass = False
+      cdashReportData.globalPass = False
 
-      overallVars.summaryLineDataNumbersList.append(bmAcro+"="+str(bmNum))
+      cdashReportData.summaryLineDataNumbersList.append(bmAcro+"="+str(bmNum))
 
-      overallVars.htmlEmailBodyTop += \
+      cdashReportData.htmlEmailBodyTop += \
         CDQAR.colorHtmlText(bmSummaryStr,CDQAR.cdashColorFailed())+"<br>\n"
 
       bmColDataList = [
@@ -721,7 +658,7 @@ if __name__ == '__main__':
         tcd("Missing Status", 'status'),
         ]
 
-      overallVars.htmlEmailBodyBottom += CDQAR.createCDashDataSummaryHtmlTableStr(
+      cdashReportData.htmlEmailBodyBottom += CDQAR.createCDashDataSummaryHtmlTableStr(
          bmDescr,  bmAcro, bmColDataList, missingExpectedBuildsLOD,
         groupSiteBuildNameSortOrder, None )
       # NOTE: Above we don't want to limit any missing builds in this table
@@ -748,11 +685,11 @@ if __name__ == '__main__':
 
     if cNum > 0:
 
-      overallVars.globalPass = False
+      cdashReportData.globalPass = False
 
-      overallVars.summaryLineDataNumbersList.append(cAcro+"="+str(cNum))
+      cdashReportData.summaryLineDataNumbersList.append(cAcro+"="+str(cNum))
 
-      overallVars.htmlEmailBodyTop += \
+      cdashReportData.htmlEmailBodyTop += \
         CDQAR.colorHtmlText(cSummaryStr,CDQAR.cdashColorFailed())+"<br>\n"
 
       cColDataList = [
@@ -761,7 +698,7 @@ if __name__ == '__main__':
         tcd("Build Name", 'buildname'),
         ]
 
-      overallVars.htmlEmailBodyBottom += CDQAR.createCDashDataSummaryHtmlTableStr(
+      cdashReportData.htmlEmailBodyBottom += CDQAR.createCDashDataSummaryHtmlTableStr(
         cDescr,  cAcro, cColDataList, buildsWithConfigureFailuresLOD,
         groupSiteBuildNameSortOrder, inOptions.limitTableRows )
 
@@ -789,11 +726,11 @@ if __name__ == '__main__':
 
     if bNum > 0:
 
-      overallVars.globalPass = False
+      cdashReportData.globalPass = False
 
-      overallVars.summaryLineDataNumbersList.append(bAcro+"="+str(bNum))
+      cdashReportData.summaryLineDataNumbersList.append(bAcro+"="+str(bNum))
 
-      overallVars.htmlEmailBodyTop += \
+      cdashReportData.htmlEmailBodyTop += \
         CDQAR.colorHtmlText(bSummaryStr,CDQAR.cdashColorFailed())+"<br>\n"
 
       cColDataList = [
@@ -802,7 +739,7 @@ if __name__ == '__main__':
         tcd("Build Name", 'buildname'),
         ]
 
-      overallVars.htmlEmailBodyBottom += CDQAR.createCDashDataSummaryHtmlTableStr(
+      cdashReportData.htmlEmailBodyBottom += CDQAR.createCDashDataSummaryHtmlTableStr(
         bDescr,  bAcro, cColDataList, buildsWithBuildFailuresLOD,
         groupSiteBuildNameSortOrder, inOptions.limitTableRows )
 
@@ -819,12 +756,10 @@ if __name__ == '__main__':
     # different tests sets to report
     #
 
-    # Sort order for tests to display in tables
-    testsSortOrder = ['testname', 'buildName', 'site']
-
     # Object to make it easy to process the different test sets
-    testSetGetDataAnayzeReporter = TestSetGetDataAnayzeReporter(inOptions,
-      testsSortOrder, testHistoryCacheDir, overallVars)
+    addTestHistoryStrategy = AddTestHistoryStrategy(inOptions, testHistoryCacheDir)
+    testsetReporter = CDQAR.SingleTestsetReporter(cdashReportData,
+      addTestHistoryStrategy=addTestHistoryStrategy)
 
     # Special functor to look up missing expected build given a test dict
     testsToMissingExpectedBuildsSLOD = \
@@ -898,68 +833,44 @@ if __name__ == '__main__':
     # person doing the triaging are sorted to the top.
     #
 
-    # twoif
-    testSetGetDataAnayzeReporter.testSetGetDataAnalyzeReport( 'nopass',
-      "Tests without issue trackers Failed",
-      "twoif",
-      len(twoifLOD),
-      twoifLOD,
-      colorTestSet=CDQAR.cdashColorFailed(),
+    testsetReporter.reportSingleTestset(
+      CDQAR.getStandardTestsetTypeInfo('twoif'),
+      len(twoifLOD), twoifLOD,
       limitTableRows=inOptions.limitTableRows,
       getTestHistory=True,
       )
 
-    # twoinr
-    testSetGetDataAnayzeReporter.testSetGetDataAnalyzeReport( 'nopass',
-      "Tests without issue trackers Not Run",
-      "twoinr",
-      len(twoinrLOD),
-      twoinrLOD,
-      colorTestSet=CDQAR.cdashColorNotRun(),
+    testsetReporter.reportSingleTestset(
+      CDQAR.getStandardTestsetTypeInfo('twoinr'),
+      len(twoinrLOD), twoinrLOD,
       limitTableRows=inOptions.limitTableRows,
       getTestHistory=True,
       )
 
-    # twip
-    testSetGetDataAnayzeReporter.testSetGetDataAnalyzeReport( 'pass',
-      "Tests with issue trackers Passed",
-      "twip",
-      len(twipLOD),
-      twipLOD,
-      colorTestSet=CDQAR.cdashColorPassed(),
+    testsetReporter.reportSingleTestset(
+      CDQAR.getStandardTestsetTypeInfo('twip'),
+      len(twipLOD), twipLOD,
       limitTableRows=None,
       getTestHistory=False,  # Already got it above!
       )
 
-    # twim
-    testSetGetDataAnayzeReporter.testSetGetDataAnalyzeReport( 'missing',
-      "Tests with issue trackers Missing",
-      "twim",
-      len(twimLOD),
-      twimLOD,
-      colorTestSet=None,
+    testsetReporter.reportSingleTestset(
+      CDQAR.getStandardTestsetTypeInfo('twim', ""),
+      len(twimLOD), twimLOD,
       limitTableRows=None,
       getTestHistory=False,  # Already got it above!
       )
 
-    # twif
-    testSetGetDataAnayzeReporter.testSetGetDataAnalyzeReport( 'nopass',
-      "Tests with issue trackers Failed",
-      "twif",
-      len(twifLOD),
-      twifLOD,
-      colorTestSet=None,
+    testsetReporter.reportSingleTestset(
+      CDQAR.getStandardTestsetTypeInfo('twif', ""),
+      len(twifLOD), twifLOD,
       limitTableRows=None,
       getTestHistory=True,
       )
 
-    # twinr
-    testSetGetDataAnayzeReporter.testSetGetDataAnalyzeReport( 'nopass',
-      "Tests with issue trackers Not Run",
-      "twinr",
-      len(twinrLOD),
-      twinrLOD,
-      colorTestSet=None,
+    testsetReporter.reportSingleTestset(
+      CDQAR.getStandardTestsetTypeInfo('twinr', ""),
+      len(twinrLOD), twinrLOD,
       limitTableRows=None,
       getTestHistory=True,
       )
@@ -981,7 +892,9 @@ if __name__ == '__main__':
       testDataFileName = inOptions.writeTestDataToFile
       print("\nWriting out gathered test data to file "+testDataFileName+" ...")
       testDataLOD = twipLOD + twimLOD + twifLOD + twinrLOD
-      # ToDo: Add the first inOptions.limitTableRows elements of twiofLOD and twoinrLOD ...
+      CDQAR.foreachTransform(testDataLOD,
+        CDQAR.AddCDashTestingDayFunctor(inOptions.date))
+      # ToDo: Add the first inOptions.limitTableRows elements of twiofLOD and twoinrLOD?
       CDQAR.pprintPythonDataToFile(testDataLOD, testDataFileName)
 
   except Exception:
@@ -990,91 +903,49 @@ if __name__ == '__main__':
     sys.stdout.flush()
     traceback.print_exc()
     # Report the error
-    overallVars.htmlEmailBodyBottom += "\n<pre><code>\n"+\
+    cdashReportData.htmlEmailBodyBottom += "\n<pre><code>\n"+\
       traceback.format_exc()+"\n</code></pre>\n"
     print("\nError, could not compute the analysis due to"+\
       " above error so return failed!")
-    overallVars.globalPass = False
-    overallVars.summaryLineDataNumbersList.append("SCRIPT CRASHED")
+    cdashReportData.globalPass = False
+    cdashReportData.summaryLineDataNumbersList.append("SCRIPT CRASHED")
 
   #
   # E) Put together final email summary line
   #
 
-  if overallVars.globalPass:
-    summaryLine = "PASSED"
-  else:
-    summaryLine = "FAILED"
-
-  if overallVars.summaryLineDataNumbersList:
-    summaryLine += " (" + ", ".join(overallVars.summaryLineDataNumbersList) + ")"
-
-  summaryLine += ": "+inOptions.buildSetName+" on "+inOptions.date
+  summaryLine = CDQAR.getOverallCDashReportSummaryLine(cdashReportData,
+    inOptions.buildSetName, inOptions.date)
 
   #
   # F) Finish off HTML body guts and define overall HTML body style
   #
 
   # Finish off the top paragraph of the summary lines
-  overallVars.htmlEmailBodyTop += \
-    "</p>"
-    
-  # Construct HTML body guts without header or begin/end body.
-  htmlEmaiBodyGuts = \
-    overallVars.htmlEmailBodyTop+\
-    "\n\n"+\
-    overallVars.htmlEmailBodyBottom
-
-  htmlHeaderAndBeginBody = \
-    "<html>\n"+\
-    "<head>\n"+\
-    "<style>\n"+\
-    "h1 {\n"+\
-    "  font-size: 40px;\n"+\
-    "}\n"+\
-    "h2 {\n"+\
-    "  font-size: 30px;\n"+\
-    "}\n"+\
-    "h3 {\n"+\
-    "  font-size: 24px;\n"+\
-    "}\n"+\
-    "p {\n"+\
-    "  font-size: 18px;\n"+\
-    "}\n"+\
-    "</style>\n"+\
-    "</head>\n"+\
-    "\n"+\
-    "<body>\n"+\
-    "\n"
-
-  htmlEndBody = \
-    "</body>\n"+\
-    "</html>\n"
+  cdashReportData.htmlEmailBodyTop += \
+    "</p>\n"
 
   #
   # G) Write HTML body file and/or send HTML email(s)
   #
 
+  defaultPageStyle = CDQAR.getDefaultHtmlPageStyleStr()
+
   if inOptions.writeEmailToFile:
     print("\nWriting HTML file '"+inOptions.writeEmailToFile+"' ...")
-    htmlEmaiBodyFileStr = \
-      htmlHeaderAndBeginBody+\
-      "<h2>"+summaryLine+"</h2>\n\n"+\
-      htmlEmaiBodyGuts+"\n"+\
-      htmlEndBody
+    fullCDashHtmlReportPageStr = CDQAR.getFullCDashHtmlReportPageStr(cdashReportData,
+      pageTitle=summaryLine, pageStyle=defaultPageStyle)
     with open(inOptions.writeEmailToFile, 'w') as outFile:
-      outFile.write(htmlEmaiBodyFileStr)
+      outFile.write(fullCDashHtmlReportPageStr)
 
   if inOptions.sendEmailTo:
-    htmlEmaiBody = \
-      htmlHeaderAndBeginBody+\
-      htmlEmaiBodyGuts+"\n"+\
-      htmlEndBody
+    htmlEmailBodyStr = CDQAR.getFullCDashHtmlReportPageStr(cdashReportData,
+      pageStyle=defaultPageStyle)
     for emailAddress in inOptions.sendEmailTo.split(','):
       emailAddress = emailAddress.strip()
       print("\nSending email to '"+emailAddress+"' ...")
       msg=CDQAR.createHtmlMimeEmail(
-        inOptions.emailFromAddress, emailAddress, summaryLine, "", htmlEmaiBody)
+        inOptions.emailFromAddress, emailAddress, summaryLine, "", htmlEmailBodyStr)
       CDQAR.sendMineEmail(msg)
 
   #
@@ -1083,7 +954,7 @@ if __name__ == '__main__':
 
   print("\n"+summaryLine+"\n")
 
-  if overallVars.globalPass:
+  if cdashReportData.globalPass:
     sys.exit(0)
   else:
     sys.exit(1)

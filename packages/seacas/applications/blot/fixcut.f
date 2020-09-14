@@ -1,29 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Log: fixcut.f,v $
-C Revision 1.3  2009/03/25 12:36:44  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.2  2009/01/22 21:34:21  gdsjaar
-C There were several inline dbnums common blocks. Replaced with the
-C include so they all have the same size with the added variable types.
-C
-C Added minor support for nodeset and sideset variables.
-C
-C It can print the count and the names, but that is all
-C at this time.
-C
-C Revision 1.1  1994/04/07 20:00:59  gdsjaar
-C Initial checkin of ACCESS/graphics/blotII2
-C
-c Revision 1.2  1990/12/14  08:50:40  gdsjaar
-c Added RCS Id and Log to all files
-c
 C=======================================================================
       SUBROUTINE FIXCUT (CUTPT, CUTNRM, X, Y, Z,
      &   LENF, NLNKF, LINKF, IF2EL, IF2EL2, IE2ELB,
@@ -86,13 +66,11 @@ C         ZC(INP) = X(INP)*CUTMAT(1,3) + Y(INP)*CUTMAT(2,3)
 C     &      + Z(INP)*CUTMAT(3,3)
 C  100 CONTINUE
 
-C
 C CLASSIFY EACH POINT AS BEING ISIN, ISOUT, OR ISON
-C
+
       DO 100 I = 1, NUMNP
          CALL CLASPT( X(I), Y(I), Z(I), CUTPT, CUTNRM, CLASS(I))
 100   CONTINUE
-
 
 C   --Initialize the element flags
 
@@ -132,8 +110,6 @@ C         --Find out if the surface is in, out, on or cut
             ELSE
                IFACUT(IFAC) = ISON
             END IF
-
-
 
 C            ZMIN = ZC(LINKF(IXL0+1))
 C            ZMAX = ZC(LINKF(IXL0+1))

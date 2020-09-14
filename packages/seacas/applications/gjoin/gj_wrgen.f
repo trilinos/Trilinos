@@ -1,10 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: wrgen.f,v 1.12 2006/03/20 18:38:37 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE WRGEN (A,IA, FILNAM, TITLE, NDIM, NUMNP, NUMEL, NELBLK,
      &   NUMNPS, LNPSNL, NUMESS, LESSEL, LESSDL,
@@ -159,7 +158,7 @@ C   --Write the coordinates
       endif
 
 C   --Write out the nodal point sets
-C
+
       if (numnps .gt. 0) then
          call expcns (idexo, ia(kidns), ia(knnns), ia(kansdf),
      &                ia(kixnns), ia(kixnns), ia(kltnns),
@@ -191,7 +190,6 @@ C        Write concatenated element block parameters
         call exerr('gjoin2', 'Error from expclb', exlmsg)
         goto 150
       endif
-
 
       ioff = katrib
       iptr = klink

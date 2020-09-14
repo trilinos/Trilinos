@@ -1,4 +1,3 @@
-/* Based on: "$Id: getline.c,v 3.11 1993/12/02 15:54:31 thewalt Exp thewalt $"; */
 
 /*
  * Copyright (C) 1991, 1992, 1993 by Chris Thewalt (thewalt@ce.berkeley.edu)

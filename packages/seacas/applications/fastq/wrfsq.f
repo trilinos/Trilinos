@@ -1,41 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: wrfsq.f,v 1.3 1999/06/21 22:43:41 gdsjaar Exp $
-C $Log: wrfsq.f,v $
-C Revision 1.3  1999/06/21 22:43:41  gdsjaar
-C Fixed more uninitialized variables; one was causing core dump on g77
-C compiled executable.
-C
-C VERSN was not consistently defined -- now 10 characters everywhere
-C
-C Updated so full version string output
-C
-C Added capability to debug memory using unit specified in EXT99
-C variable. Similar to STRTUP in SUPLIB
-C
-C Cleaned up some other code
-C
-C Upped version
-C
-C Revision 1.2  1993/11/11 23:28:07  gdsjaar
-C Fixed problem with writing out point bc cards following keying option
-C
-c Revision 1.1.1.1  1990/11/30  11:17:48  gdsjaar
-c FASTQ Version 2.0X
-c
-c Revision 1.1  90/11/30  11:17:46  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]WRFSQ.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE WRFSQ (IUNIT, MP, ML, MS, MR, MSNAP, MSC, MCOM, ICOM,
      &   JCOM, CIN, RIN, IIN, KIN, N, IPOINT, COOR, IPBOUN, ILINE,
      &   LTYPE, NINT, FACTOR, LCON, ILBOUN, ISBOUN, ISIDE, NLPS,
@@ -47,16 +15,16 @@ C
      &   IHLIST, IRGFLG, ISCHM, SCHEME, NUMBER, DEFSCH, DEFSIZ, TITLE,
      &   OPTIM, THREE, EIGHT, NINE, SNAP, SNAPDX, NSNAP, REGWRT, BARWRT)
 C***********************************************************************
-C
+
 C  SUBROUTINE WRFSQ  =  WRITES FASTQ CARD FILE
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINE CALLED BY:
 C     FASTQ  =  A PROGRAM TO QUICKLY PREPARE FASTQ INPUT
-C
+
 C***********************************************************************
-C
+
       DIMENSION IPOINT(MP), COOR(2, MP), IPBOUN(MP)
       DIMENSION ILINE(ML), LTYPE(ML), NINT(ML), FACTOR(ML), LCON(3, ML)
       DIMENSION ILBOUN(ML), ISBOUN(ML)
@@ -76,27 +44,27 @@ C
       DIMENSION NUMBER(MSC), SNAPDX(2, MSNAP), NSNAP(2)
       DIMENSION KIN(MCOM), IIN(MCOM), RIN(MCOM)
       DIMENSION N(29), ID (13)
-C
+
       CHARACTER*72 SCHEME, DEFSCH, TITLE, DUMMY, CIN(MCOM)
       CHARACTER NUMBER*80, TYPE(7)*5
-C
+
       LOGICAL IANS, OPTIM, THREE, EIGHT, NINE, ADDLNK, SNAP
       LOGICAL REGWRT, BARWRT, FLAG, GOWRIT, STAR
-C
+
       DATA TYPE/'  STR', ' CORN', ' CIRC', ' CIRM', ' PARA', ' CIRR',
      &   ' ELIP'/
-C
+
       ADDLNK = .FALSE.
       GOWRIT = .FALSE.
       XADD = 0.
       YADD = 0.
-C
+
 C  WRITE OUT ONLY THE REGIONS OF INTEREST IF THE REGWRT FLAG HAS BEEN SET
-C
+
       IF (REGWRT) THEN
-C
+
 C  SEE IF A SHIFT OF THE REGION IS NEEDED
-C
+
          CALL INTRUP ('SHIFT REGION', IANS, MCOM, ICOM, JCOM, CIN, IIN,
      &      RIN, KIN)
          IF (IANS) THEN
@@ -135,18 +103,18 @@ C
          IF (IFOUND .GT. 0) THEN
             IF (I1 .GT. 0) THEN
                CALL CHECK (I1, I2, N (22))
-C
+
 C  FLAG ALL DATA ASSOCIATED WITH THE REGIONS
-C
+
                DO 150 I = I1, I2
                   CALL LTSORT (MR, LINKR, I, II, ADDLNK)
                   IF (II.GT.0) THEN
                      GOWRIT = .TRUE.
                      IREGN (II) = -IABS (IREGN (II))
                      DO 140 J = IFSIDE (II), IFSIDE (II)+NSPR (II)-1
-C
+
 C  FLAG SIDE DATA
-C
+
                         CALL LTSORT (MS, LINKS, ISLIST (J), JJ, ADDLNK)
                         IF ((ISLIST (J) .GT. 0) .AND. (JJ .GT. 0)) THEN
                            ISIDE (JJ) = -IABS (ISIDE (JJ))
@@ -168,9 +136,9 @@ C
   110                            CONTINUE
                               ENDIF
   120                      CONTINUE
-C
+
 C  FLAG LINE DATA
-C
+
                         ELSE
                            JJ = IABS (ISLIST (J))
                            CALL LTSORT (ML, LINKL, JJ, KK, ADDLNK)
@@ -194,9 +162,9 @@ C
                GOTO 100
             ENDIF
          ENDIF
-C
+
 C  WRITE OUT THE BARSET DATA
-C
+
       ELSEIF (BARWRT) THEN
          FLAG = .FALSE.
          CALL FLAGD (MP, N (18), LINKP, IPOINT, FLAG)
@@ -217,9 +185,9 @@ C
          IF (IFOUND .GT. 0) THEN
             IF (I1 .GT. 0) THEN
                CALL CHECK (I1, I2, N (21))
-C
+
 C  FLAG ALL LINES ASSOCIATED WITH THE BARSETS
-C
+
                DO 190 I = I1, I2
                   CALL LTSORT (MS, LINKB, I, II, ADDLNK)
                   IF (II .GT. 0) THEN
@@ -246,9 +214,9 @@ C
                GOTO 160
             ENDIF
          ENDIF
-C
+
 C  OTHERWISE FLAG ALL THE DATA TO BE WRITTEN
-C
+
       ELSE
          FLAG = .TRUE.
          CALL FLAGD (MP, N (18), LINKP, IPOINT, FLAG)
@@ -258,19 +226,19 @@ C
          CALL FLAGD (MR, N (22), LINKR, IREGN, FLAG)
          GOWRIT = .TRUE.
       ENDIF
-C
+
       IF (.NOT. GOWRIT) THEN
          CALL MESAGE ('** NO DATA HAS BEEN WRITTEN **')
          GOTO 510
       ENDIF
-C
+
 C  WRITE OUT THE TITLE
-C
+
       CALL STRLNG (TITLE, LEN)
       WRITE (IUNIT, 10010) TITLE(1:LEN)
 
 C  WRITE OUT THE POINTS IN ORDER
-C
+
       DO 200 I = 1, N(18)
          CALL LTSORT (MP, LINKP, I, J, ADDLNK)
          IF ((J .GT. 0) .AND. (IPOINT (J) .LT. 0)) THEN
@@ -278,9 +246,9 @@ C
      &         COOR(1, J) + XADD, COOR(2, J) + YADD
          END IF
   200 CONTINUE
-C
+
 C  WRITE OUT THE LINES IN ORDER
-C
+
       DO 210 I = 1, N(19)
          CALL LTSORT (ML, LINKL, I, J, ADDLNK)
          IF ((J .GT. 0) .AND. (ILINE (J) .LT. 0)) THEN
@@ -288,9 +256,9 @@ C
      &         LCON(1, J), LCON(2, J), LCON(3, J), NINT(J), FACTOR(J)
          END IF
   210 CONTINUE
-C
+
 C  WRITE OUT THE SIDES IN ORDER
-C
+
       DO 230 I = 1, N(20)
          CALL LTSORT (MS, LINKS, I, J, ADDLNK)
          IF ((J .GT. 0) .AND. (ISIDE (J) .LT. 0)) THEN
@@ -321,9 +289,9 @@ C
             END IF
          END IF
   230 CONTINUE
-C
+
 C  WRITE OUT THE BAR SETS IN ORDER
-C
+
       DO 250 I = 1, N(21)
          CALL LTSORT (MS, LINKB, I, J, ADDLNK)
          IF ((J .GT. 0) .AND. (IBARST (J) .LT. 0)) THEN
@@ -354,9 +322,9 @@ C
             END IF
          END IF
   250 CONTINUE
-C
+
 C  WRITE OUT THE REGIONS IN ORDER
-C
+
       DO 270 I = 1, N(22)
          CALL LTSORT (MR, LINKR, I, J, ADDLNK)
          IF ((J .GT. 0) .AND. (IRGFLG(J) .LE. -1) .AND.
@@ -386,18 +354,18 @@ C
                   WRITE (IUNIT, 10070) (ISLIST(K), K = N1, N2)
                END IF
             END IF
-C
+
 C  WRITE OUT THE REGION INTERVAL SIZE DATA
-C
+
             IF (RSIZE(J) .GT. 0.)
      &         WRITE (IUNIT, 10080) 'SIZE  ', RSIZE(J),
      &         IABS (IREGN(J))
          END IF
   270 CONTINUE
       IF (DEFSIZ .GT. 0.) WRITE (IUNIT, 10080) 'SIZE  ', DEFSIZ
-C
+
 C  WRITE OUT THE HOLES IN ORDER
-C
+
       DO 290 I = 1, N(22)
          CALL LTSORT (MR, LINKR, I, J, ADDLNK)
          IF ((NHPR(J) .GT. 0) .AND. (IREGN (J) .LT. 0)) THEN
@@ -428,9 +396,9 @@ C
             END IF
          END IF
   290 CONTINUE
-C
+
 C  WRITE OUT THE GROUPS IN ORDER
-C
+
       DO 310 I = 1, N(22)
          CALL LTSORT (MR, LINKR, I, J, ADDLNK)
          IF ((J .GT. 0) .AND. (IRGFLG(J) .GE. 1)) THEN
@@ -461,9 +429,9 @@ C
             END IF
          END IF
   310 CONTINUE
-C
+
 C  WRITE OUT THE SCHEMES IN ORDER
-C
+
       DO 320 I = 1, N(24)
          CALL LTSORT (MR, LINKSC, I, J, ADDLNK)
          IF (J .GT. 0) THEN
@@ -478,9 +446,9 @@ C
       CALL STRLNG (DEFSCH, LEN)
       IZERO = 0
       WRITE (IUNIT, 10110) IZERO, DEFSCH(1:LEN)
-C
+
 C  WRITE OUT THE BODY LIST
-C
+
       N2 = 0
       KMAX = 11
   330 CONTINUE
@@ -523,9 +491,9 @@ C
             WRITE (IUNIT, 10000)
          END IF
       END IF
-C
+
 C  WRITE OUT THE POINT BOUNDARY FLAGS IN ORDER
-C
+
       DO 390 I = 1, N(25)
          CALL LTSORT (MP, LINKPB, I, J, ADDLNK)
          IF (J .GT. 0) THEN
@@ -538,7 +506,7 @@ C
             ELSE
                KMAX = 11
             END IF
-C
+
             KOUNT = 0
             DO 370 K = N1, IFPB(J) + NPPF(J) - 1
                CALL LTSORT (MP, LINKP, LISTPB (1, K), JJ, ADDLNK)
@@ -550,7 +518,7 @@ C
                IF (KOUNT .EQ. KMAX) GOTO 380
   370       CONTINUE
   380       CONTINUE
-C
+
             IF (N2 .LT. IFPB(J) + NPPF(J) - 1) THEN
                STAR = .TRUE.
                IF (N1 .EQ. IFPB(J)) THEN
@@ -576,9 +544,9 @@ C
             END IF
          END IF
   390 CONTINUE
-C
+
 C  WRITE OUT THE LINE BOUNDARY FLAGS IN ORDER
-C
+
       DO 430 I = 1, N(26)
          CALL LTSORT (ML, LINKLB, I, J, ADDLNK)
          IF (J .GT. 0) THEN
@@ -591,7 +559,7 @@ C
             ELSE
                KMAX = 11
             END IF
-C
+
             KOUNT = 0
             DO 410 K = N1, IFLB(J) + NLPF(J) - 1
                CALL LTSORT (ML, LINKL, LISTLB (1, K), JJ, ADDLNK)
@@ -603,7 +571,7 @@ C
                IF (KOUNT .EQ. KMAX) GOTO 420
   410       CONTINUE
   420       CONTINUE
-C
+
             IF (N2 .LT. IFLB(J) + NLPF(J) - 1) THEN
                STAR = .TRUE.
                IF (N1 .EQ. IFLB(J)) THEN
@@ -634,9 +602,9 @@ C
             END IF
          END IF
   430 CONTINUE
-C
+
 C  WRITE OUT THE SIDE BOUNDARY FLAGS IN ORDER
-C
+
       DO 470 I = 1, N(27)
          CALL LTSORT (ML, LINKSB, I, J, ADDLNK)
          IF (J .GT. 0) THEN
@@ -649,7 +617,7 @@ C
             ELSE
                KMAX = 11
             END IF
-C
+
             KOUNT = 0
             DO 450 K = N1, IFSB(J) + NSPF(J) - 1
                CALL LTSORT (ML, LINKL, LISTSB (1, K), JJ, ADDLNK)
@@ -661,7 +629,7 @@ C
                IF (KOUNT .EQ. KMAX) GOTO 460
   450       CONTINUE
   460       CONTINUE
-C
+
             IF (N2 .LT. IFSB(J) + NSPF(J) - 1) THEN
                STAR = .TRUE.
                IF (N1 .EQ. IFSB(J)) THEN
@@ -692,9 +660,9 @@ C
             END IF
          END IF
   470 CONTINUE
-C
+
 C  WRITE OUT THE RENUMBERING CARDS
-C
+
       IF (OPTIM) THEN
          IF (N(28) .GT. 0) THEN
             DO 480 I = 1, N(28)
@@ -706,9 +674,9 @@ C
             WRITE (IUNIT, 10130)
          END IF
       END IF
-C
+
 C  WRITE OUT THREE NODE, EIGHT NODE, OR NINE NODE FLAG
-C
+
       IF (THREE) THEN
          WRITE (IUNIT, 10140)
       ENDIF
@@ -717,18 +685,18 @@ C
       ELSE IF (NINE) THEN
          WRITE (IUNIT, 10160)
       END IF
-C
+
 C  WRITE DIGITIZER SNAP-TO-GRID FLAG
-C
+
       IF ((NSNAP(1) .GT. 0) .OR. (NSNAP(2) .GT. 0)) THEN
          IF (SNAP) THEN
             WRITE (IUNIT, 10180)
          ELSE
             WRITE (IUNIT, 10190)
          END IF
-C
+
 C  WRITE X-GRID LINES
-C
+
          IF (NSNAP(1) .GT. 0) THEN
             N2 = 0
   490       CONTINUE
@@ -751,9 +719,9 @@ C
                   WRITE (IUNIT, 10230) (SNAPDX(1, K), K = N1, N2)
                END IF
             END IF
-C
+
 C  WRITE Y-GRID LINES
-C
+
             IF (NSNAP(2) .GT. 0) THEN
                N2 = 0
   500          CONTINUE
@@ -779,11 +747,11 @@ C
             END IF
          END IF
       END IF
-C
+
 C  WRITE EXIT
-C
+
       WRITE (IUNIT, 10170)
-C
+
       CALL MESAGE ('FASTQ DATA FILE SUCCESSFULLY WRITTEN')
   510 CONTINUE
       FLAG=.FALSE.
@@ -793,7 +761,7 @@ C
       CALL FLAGD (MS, N(21), LINKB, IBARST, FLAG)
       CALL FLAGD (MR, N(22), LINKR, IREGN, FLAG)
       RETURN
-C
+
 10000 FORMAT ('      ')
 10010 FORMAT (' TITLE ', /, ' ', A)
 10020 FORMAT (' POINT ', I5, 2(5X, 1PE14.7))
@@ -818,5 +786,5 @@ C
 10210 FORMAT (7X, 5(1X, 1PE13.6), ' *')
 10220 FORMAT (A7, 5(1X, 1PE13.6))
 10230 FORMAT (7X, 5(1X, 1PE13.6))
-C
+
       END

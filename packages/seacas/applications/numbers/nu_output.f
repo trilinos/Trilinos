@@ -1,12 +1,12 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
       SUBROUTINE OUTPUT (MASS, DENS, VOLM, CG, ZI, MAT, NDIM, NBLK,
      *   VOL, VOLMN, IELM, NQUAD, LABMAT, AXI, TIME)
-C
+
       include 'nu_io.blk'
       CHARACTER*16 LABMAT(*)
       CHARACTER*16 ENGNOT, ENG1
@@ -16,7 +16,7 @@ C
       CHARACTER*6 LABEL(3)
       DATA LABEL/'      ',' Area ','Volume'/
       DATA FIRST /.TRUE./
-C
+
       DO 160 IO=IOMIN,IOMAX
          ENG1 = ENGNOT(TIME,2)
          IF (FIRST) THEN
@@ -40,7 +40,7 @@ C
             TMASS = TMASS + MASS(I)
    40       FORMAT (I10,3(5X,1PE15.8),5X,A16)
    50    CONTINUE
-C
+
          WRITE (IO, 60) VOL, TMASS
    60    FORMAT (25X,2(5X,'----------')/,18X,'Total: ',2(5X,1PE15.8)/)
          IF (NDIM .EQ. 2) THEN

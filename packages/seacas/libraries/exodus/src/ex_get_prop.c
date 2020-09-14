@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -47,7 +47,6 @@ MAX_STR_LENGTH ) for
 |  #EX_EDGE_MAP   |  Edge Map entity type     |
 |  #EX_FACE_MAP   |  Face Map entity type     |
 
-
 For an example of code to read an object property, refer to the
 description for ex_get_prop_names().
 
@@ -66,7 +65,9 @@ int ex_get_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, const c
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   /* open appropriate variable, depending on obj_type and prop_name */
   num_props = ex_get_num_props(exoid, obj_type);

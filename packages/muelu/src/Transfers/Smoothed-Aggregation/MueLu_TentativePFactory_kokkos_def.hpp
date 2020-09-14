@@ -554,10 +554,10 @@ namespace MueLu {
     Set(coarseLevel, "Nullspace", coarseNullspace);
     Set(coarseLevel, "P",         Ptentative);
 
-    if (IsPrint(Statistics1)) {
+    if (IsPrint(Statistics2)) {
       RCP<ParameterList> params = rcp(new ParameterList());
       params->set("printLoadBalancingInfo", true);
-      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ptentative, "Ptent", params);
+      GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Ptentative, "Ptent", params);
     }
   }
 

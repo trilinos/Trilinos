@@ -190,9 +190,9 @@ namespace { // (anonymous)
         out << "TPETRA_VERBOSE_PRINT_COUNT_THRESHOLD is already set in environment" << endl;
         Teuchos::OSTab tab3 (out);
 
-        int threshold = std::stoi(std::string(varVal));
+        size_t threshold = std::stoi(std::string(varVal));
         size_t threshold2 = Behavior::verbosePrintCountThreshold ();
-        TEST_EQUALITY( static_cast<size_t>(threshold), threshold2 );
+        TEST_EQUALITY(threshold, threshold2);
       }
     }
 

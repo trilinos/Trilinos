@@ -93,7 +93,10 @@ private:
       case StepperForwardEulerAppAction<Scalar>::END_STEP:
       {
         modType = XDOT_END_STEP;
-        x = stepper->getStepperXDot(workingState);
+        if (workingState->getXDot() != Teuchos::null)
+          x = workingState->getXDot();
+        else
+          x = stepper->getStepperXDot();
         break;
       }
       default:

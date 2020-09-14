@@ -81,6 +81,7 @@
 // Should be removed once we are confident that this works.
 //#define DJS_READ_ENV_VARIABLES
 
+
 namespace MueLu {
 
   namespace Details {
@@ -102,6 +103,9 @@ namespace MueLu {
                   real_type diag {Teuchos::ScalarTraits<real_type>::zero()};
       LO        col  {Teuchos::OrdinalTraits<LO>::invalid()};
       bool      drop {true};
+
+      // CMS: Auxillary information for debugging info
+      //      real_type aux_val {Teuchos::ScalarTraits<real_type>::nan()};
     };
   }
 
@@ -211,7 +215,7 @@ namespace MueLu {
 #endif
       ////////////////////////////////////////////////////
 
-      enum decisionAlgoType {defaultAlgo, unscaled_cut, scaled_cut};
+      enum decisionAlgoType {defaultAlgo, unscaled_cut, scaled_cut, scaled_cut_symmetric};
 
       decisionAlgoType distanceLaplacianAlgo = defaultAlgo;
       decisionAlgoType classicalAlgo = defaultAlgo;
@@ -222,6 +226,8 @@ namespace MueLu {
           distanceLaplacianAlgo = unscaled_cut;
         else if (distanceLaplacianAlgoStr == "scaled cut")
           distanceLaplacianAlgo = scaled_cut;
+        else if (distanceLaplacianAlgoStr == "scaled cut symmetric")
+          distanceLaplacianAlgo = scaled_cut_symmetric;
         else
           TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: distance laplacian algo\" must be one of (default|unscaled cut|scaled cut), not \"" << distanceLaplacianAlgoStr << "\"");
         GetOStream(Runtime0) << "algorithm = \"" << algo << "\" distance laplacian algorithm = \"" << distanceLaplacianAlgoStr << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
@@ -853,10 +859,20 @@ namespace MueLu {
           ArrayRCP<LO> rows    = ArrayRCP<LO>(numRows+1);
           ArrayRCP<LO> columns = ArrayRCP<LO>(A->getNodeNumEntries());
 
+	  // DEBUGGING
+	  for(LO i=0; i<(LO)columns.size(); i++) columns[i]=-666;
+
+	  // Extra array for if we're allowing symmetrization with cutting
+	  ArrayRCP<LO> rows_stop;
+	  bool use_stop_array = threshold != STS::zero() && distanceLaplacianAlgo == scaled_cut_symmetric;
+	  if(use_stop_array) 
+	    rows_stop.resize(numRows);
+	 
           const ArrayRCP<bool> amalgBoundaryNodes(numRows, false);
 
           LO realnnz = 0;
           rows[0] = 0;
+
           Array<LO> indicesExtra;
           {
           SubFactoryMonitor m1(*this, "Laplacian dropping", currentLevel);
@@ -870,13 +886,14 @@ namespace MueLu {
             }
           }
 
+	  ArrayView<const SC>     vals;//CMS hackery
           for (LO row = 0; row < numRows; row++) {
             ArrayView<const LO> indices;
             indicesExtra.resize(0);
 	    bool isBoundary = false;
 
             if (blkSize == 1) {
-	      ArrayView<const SC>     vals;
+	      //	      ArrayView<const SC>     vals;//CMS uncomment
               A->getLocalRowView(row, indices, vals);
 	      isBoundary = pointBoundaryNodes[row];
             } else {
@@ -898,6 +915,11 @@ namespace MueLu {
             numTotal += indices.size();
 
             LO nnz = indices.size(), rownnz = 0;
+
+	    if(use_stop_array) {
+	      rows[row+1] = rows[row]+nnz;
+	      realnnz = rows[row];
+	    }
 
             if (threshold != STS::zero()) {
               // default
@@ -984,7 +1006,7 @@ namespace MueLu {
                     drop_vec[i].drop = drop;
                   }
                 }
-                else if (distanceLaplacianAlgo == scaled_cut) {
+                else if (distanceLaplacianAlgo == scaled_cut || distanceLaplacianAlgo == scaled_cut_symmetric) {
 
                   std::sort( drop_vec.begin(), drop_vec.end()
                            , [](DropTol const& a, DropTol const& b) {
@@ -1004,7 +1026,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_DEBUG
                         if (distanceLaplacianCutVerbose) {
                           std::cout << "DJS: KEEP, N, ROW:  " << i+1 << ", " << n << ", " << row << std::endl;
-                        }
+			}                        
 #endif
                       }
                     }
@@ -1026,13 +1048,16 @@ namespace MueLu {
                   if (row == col) {
                     columns[realnnz++] = col;
                     rownnz++;
+		    //		    printf("(%d,%d) KEEP %13s matrix = %6.4e\n",row,row,"DIAGONAL",drop_vec[idxID].aux_val);
                     continue;
                   }
 
                   if (!drop_vec[idxID].drop) {
                     columns[realnnz++] = col;
+		    //		    printf("(%d,%d) KEEP dlap = %6.4e matrix = %6.4e\n",row,col,drop_vec[idxID].val/drop_vec[idxID].diag,drop_vec[idxID].aux_val);
                     rownnz++;
                   } else {
+		    //		    printf("(%d,%d) DROP dlap = %6.4e matrix = %6.4e\n",row,col,drop_vec[idxID].val/drop_vec[idxID].diag,drop_vec[idxID].aux_val);
                     numDropped++;
                   }
                 }
@@ -1055,11 +1080,57 @@ namespace MueLu {
               // and boundary nodes in the aggregation algorithms
               amalgBoundaryNodes[row] = true;
             }
-            rows[row+1] = realnnz;
+
+	    if(use_stop_array) 
+	      rows_stop[row] = rownnz + rows[row];
+	    else
+	      rows[row+1] = realnnz;
           } //for (LO row = 0; row < numRows; row++)
 
           } //subtimer
-          columns.resize(realnnz);
+
+	  if (use_stop_array) {
+	    // Do symmetrization of the cut matrix
+	    // NOTE: We assume nested row/column maps here
+	    for (LO row = 0; row < numRows; row++) {
+	      for (LO colidx = rows[row]; colidx < rows_stop[row]; colidx++) {
+		LO col = columns[colidx];
+		if(col >= numRows) continue;
+		
+		bool found = false;
+		for(LO t_col = rows[col] ; !found && t_col  < rows_stop[col]; t_col++) {
+		  if (columns[t_col] == row) 
+		    found = true;
+		}
+		// We didn't find the transpose buddy, so let's symmetrize, unless we'd be symmetrizing
+		// into a Dirichlet unknown.  In that case don't.
+		if(!found && !pointBoundaryNodes[col] && rows_stop[col] < rows[col+1]) {
+		  LO new_idx = rows_stop[col];
+		  //		  printf("(%d,%d) SYMADD entry\n",col,row);
+		  columns[new_idx] = row;
+		  rows_stop[col]++;	
+		  numDropped--;
+		}
+	      }
+	    }	      
+
+	    // Condense everything down
+	    LO current_start=0;
+	    for (LO row = 0; row < numRows; row++) {
+	      LO old_start = current_start;
+	      for (LO col = rows[row]; col < rows_stop[row]; col++) {
+		if(current_start != col) {
+		  columns[current_start] = columns[col];
+		}
+		current_start++;
+	      }
+	      rows[row] = old_start;	      	      	      	      
+	    }
+	    rows[numRows] = realnnz = current_start;
+
+	  }
+
+	  columns.resize(realnnz);
 
           RCP<GraphBase> graph;
           {

@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -31,7 +31,6 @@ include:
   -  ex_put_variable_param() not called previously specifying the number of
 nodal variables.
 
-
 \param[in] exoid              exodus file ID returned from a previous call to
 ex_create() or
                               ex_open().
@@ -50,7 +49,6 @@ variable has an index of 1.
 \param[in]  nodal_var_vals    Array of num_nodes values of the
 nodal_var_index-th nodal
                               variable for the time_step-th time step.
-
 
 As an example, the following code segment writes all the nodal
 variables for a single time step:

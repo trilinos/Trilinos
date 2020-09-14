@@ -1,16 +1,11 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: cvty.blk,v 1.1 1991/02/21 15:42:52 gdsjaar Exp $
-C $Log: cvty.blk,v $
-C Revision 1.1  1991/02/21 15:42:52  gdsjaar
-C Initial revision
-C
       COMMON /CVTY/ IBC1, IBC2, IBC3, IBC4, IBC5, IBC6, IBC7, IBC8
-C
+
 C CAVITY POINTERS:
 C    IBC1 = IDESS  (NUMESS) ELEMENT SIDE SET IDS
 C    IBC2 = NEESS  (NUMESS) ELEMENT SIDE SET ELEMENT COUNTS
@@ -20,4 +15,3 @@ C    IBC5 = IPNESS (NUMESS) ELEMENT SIDE SET NODE    POINTERS
 C    IBC6 = LTEESS (LESSEL) ELEMENT SIDE SET ELEMENT LIST
 C    IBC7 = LTNESS (LESSNL) ELEMENT SIDE SET NODE    LIST
 C    IBC8 = FACESS (LESSNL) ELEMENT SIDE SET DISTRIBUTION FACTORS
-C

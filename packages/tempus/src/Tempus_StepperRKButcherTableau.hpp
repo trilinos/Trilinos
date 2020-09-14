@@ -92,6 +92,9 @@ public:
     return Description.str();
   }
 
+  bool getUseFSALDefault() const { return true; }
+
+
 protected:
 
   void setupTableau()
@@ -107,6 +110,8 @@ protected:
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,order,order));
+    this->tableau_->setTVD(true);
+    this->tableau_->setTVDCoeff(1.0);
   }
 };
 
@@ -801,7 +806,7 @@ public:
     this->setStepperType("RK Explicit 5 Stage 3rd order by Kinnmark and Gray");
     this->setupTableau();
     this->setup(appModel, useFSAL, ICConsistency,
-                ICConsistencyCheck, useEmbedded, stepperRKAppAction);
+                ICConsistencyCheck, useEmbedded,stepperRKAppAction);
   }
 
   std::string getDescription() const
@@ -1103,6 +1108,8 @@ protected:
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,order,order,bstar));
+    this->tableau_->setTVD(true);
+    this->tableau_->setTVDCoeff(1.0);
   }
 };
 
@@ -1439,6 +1446,8 @@ protected:
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,order,order));
+    this->tableau_->setTVD(true);
+    this->tableau_->setTVDCoeff(0.5);
   }
 };
 
@@ -1552,6 +1561,8 @@ protected:
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,order,order,bstar));
+    this->tableau_->setTVD(true);
+    this->tableau_->setTVDCoeff(1.0);
   }
 };
 
@@ -1633,6 +1644,7 @@ protected:
     using Teuchos::as;
     const int NumStages = 5;
     const int order     = 4;
+    const Scalar sspcoef = 1.5082;
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
@@ -1683,6 +1695,8 @@ protected:
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,order,order,bstar));
+    this->tableau_->setTVD(true);
+    this->tableau_->setTVDCoeff(sspcoef);
   }
 };
 
@@ -1767,7 +1781,7 @@ public:
     const int orderMin,
     const int orderMax,
     const Teuchos::SerialDenseVector<int,Scalar>& bstar,
-    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
+    const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction=Teuchos::null)
   {
     this->setStepperType("General ERK");
     this->setTableau(A,b,c,order,orderMin,orderMax,bstar);
@@ -1948,6 +1962,7 @@ protected:
   void setupTableau()
   {
     typedef Teuchos::ScalarTraits<Scalar> ST;
+    const Scalar sspcoef = std::numeric_limits<Scalar>::max();
     int NumStages = 1;
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
@@ -1966,6 +1981,8 @@ protected:
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,order,order));
+    this->tableau_->setTVD(true);
+    this->tableau_->setTVDCoeff(sspcoef);
   }
 };
 
@@ -2252,6 +2269,7 @@ protected:
     using Teuchos::as;
     const int NumStages = 3;
     const int order = 2;
+    const Scalar sspcoef = 1.0529;
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
@@ -2276,6 +2294,8 @@ protected:
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,order,order));
+    this->tableau_->setTVD(true);
+    this->tableau_->setTVDCoeff(sspcoef);
   }
 
 };
@@ -2620,6 +2640,8 @@ protected:
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,order,order));
+    this->tableau_->setTVD(true);
+    this->tableau_->setTVDCoeff(1.5);
   }
 };
 
@@ -2780,6 +2802,8 @@ protected:
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,1,2));
+    this->tableau_->setTVD(true);
+    this->tableau_->setTVDCoeff(2.0);
   }
 
   private:
@@ -2954,6 +2978,8 @@ protected:
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,1,2));
+    this->tableau_->setTVD(true);
+    this->tableau_->setTVDCoeff(2.0);
   }
 
   private:
@@ -3085,6 +3111,8 @@ protected:
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,order,order));
+    this->tableau_->setTVD(true);
+    this->tableau_->setTVDCoeff(2.0);
   }
 };
 
@@ -3221,6 +3249,8 @@ protected:
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,order,order));
+    this->tableau_->setTVD(true);
+    this->tableau_->setTVDCoeff(2.0);
   }
 };
 
@@ -3345,6 +3375,8 @@ protected:
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,order,order));
+    this->tableau_->setTVD(true);
+    this->tableau_->setTVDCoeff(4.0);
   }
 };
 
@@ -3473,6 +3505,8 @@ protected:
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,order,order));
+    this->tableau_->setTVD(true);
+    this->tableau_->setTVDCoeff(6.0);
   }
 };
 
@@ -3523,6 +3557,7 @@ class StepperSDIRK_SSPDIRK23 :
     this->setupTableau();
     this->setup(appModel, obs, solver, useFSAL, ICConsistency,
                 ICConsistencyCheck, useEmbedded, zeroInitialGuess);
+
   }
 #endif
   StepperSDIRK_SSPDIRK23(
@@ -3575,6 +3610,7 @@ protected:
     using Teuchos::as;
     const int NumStages = 2;
     const int order     = 3;
+    const Scalar sspcoef = 2.7321;
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
@@ -3598,6 +3634,8 @@ protected:
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,order,order));
+    this->tableau_->setTVD(true);
+    this->tableau_->setTVDCoeff(sspcoef);
   }
 };
 
@@ -3703,6 +3741,7 @@ protected:
     using Teuchos::as;
     const int NumStages = 3;
     const int order     = 3;
+    const Scalar sspcoef= 4.8284;
     Teuchos::SerialDenseMatrix<int,Scalar> A(NumStages,NumStages);
     Teuchos::SerialDenseVector<int,Scalar> b(NumStages);
     Teuchos::SerialDenseVector<int,Scalar> c(NumStages);
@@ -3727,6 +3766,8 @@ protected:
 
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,order,order));
+    this->tableau_->setTVD(true);
+    this->tableau_->setTVDCoeff(sspcoef);
   }
 };
 
@@ -3982,6 +4023,9 @@ protected:
     auto emptyBStar = Teuchos::SerialDenseVector<int,Scalar>();
     this->tableau_ = Teuchos::rcp(new RKButcherTableau<Scalar>(
       this->getStepperType(),A,b,c,order,order,order,emptyBStar,false));
+    this->tableau_->setTVD(true);
+    this->tableau_->setTVDCoeff(2.0);
+    //TODO: fix this
   }
 
 };

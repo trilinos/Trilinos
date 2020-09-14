@@ -188,7 +188,7 @@ namespace Sacado {
   namespace Impl {
 
     template <typename T>
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* ds_alloc(const int sz) {
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_ENABLE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
       T* m;
@@ -226,7 +226,7 @@ namespace Sacado {
     }
 
     template <typename T>
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void ds_free(T* m, int sz) {
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_ENABLE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
       if (sz > 0)
@@ -259,7 +259,7 @@ namespace Sacado {
   struct ds_array {
 
     //! Get memory for new array of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* get(int sz) {
       if (sz > 0) {
         T* m = Impl::ds_alloc<T>(sz);
@@ -272,7 +272,7 @@ namespace Sacado {
     }
 
     //! Get memory for new array of length \c sz and fill with zeros
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* get_and_fill(int sz) {
       if (sz > 0) {
         T* m = Impl::ds_alloc<T>(sz);
@@ -288,7 +288,7 @@ namespace Sacado {
      * \brief Get memory for new array of length \c sz and fill with
      * entries from \c src
      */
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* get_and_fill(const T* src, int sz) {
       if (sz > 0) {
         T* m = Impl::ds_alloc<T>(sz);
@@ -304,7 +304,7 @@ namespace Sacado {
      * \brief Get memory for new array of length \c sz and fill with
      * entries from \c src
      */
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* strided_get_and_fill(const T* src, int stride, int sz) {
       if (sz > 0) {
         T* m = Impl::ds_alloc<T>(sz);
@@ -319,14 +319,14 @@ namespace Sacado {
     }
 
     //! Copy array from \c src to \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void copy(const T* src, T*  dest, int sz) {
       for (int i=0; i<sz; ++i)
         *(dest++) = *(src++);
     }
 
     //! Copy array from \c src to \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void strided_copy(const T* src, int src_stride,
                                     T* dest, int dest_stride, int sz) {
       for (int i=0; i<sz; ++i) {
@@ -337,14 +337,14 @@ namespace Sacado {
     }
 
     //! Zero out array \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void zero(T* dest, int sz) {
       for (int i=0; i<sz; ++i)
         *(dest++) = T(0.);
     }
 
     //! Zero out array \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void strided_zero(T* dest, int stride, int sz) {
       for (int i=0; i<sz; ++i) {
         *(dest) = T(0.);
@@ -353,7 +353,7 @@ namespace Sacado {
     }
 
     //! Destroy array elements and release memory
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void destroy_and_release(T* m, int sz) {
       T* e = m+sz;
       for (T* b = m; b!=e; b++)
@@ -367,7 +367,7 @@ namespace Sacado {
   namespace Impl {
 
     template <typename T>
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* ds_strided_alloc(const int sz) {
       T* m = 0;
       // Only do strided memory allocations when we are doing hierarchical
@@ -406,7 +406,7 @@ namespace Sacado {
     }
 
     template <typename T>
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void ds_strided_free(T* m, int sz) {
       if (blockDim.x == 32) {
         // const int lane = warpLane();
@@ -436,7 +436,7 @@ namespace Sacado {
   struct ds_array<T,true> {
 
     //! Get memory for new array of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* get(int sz) {
       if (sz > 0) {
         T* m = Impl::ds_strided_alloc<T>(sz);
@@ -446,7 +446,7 @@ namespace Sacado {
     }
 
     //! Get memory for new array of length \c sz and fill with zeros
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* get_and_fill(int sz) {
       if (sz > 0) {
         T* m = Impl::ds_strided_alloc<T>(sz);
@@ -461,7 +461,7 @@ namespace Sacado {
      * \brief Get memory for new array of length \c sz and fill with
      * entries from \c src
      */
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* get_and_fill(const T* src, int sz) {
       if (sz > 0) {
         T* m = Impl::ds_strided_alloc<T>(sz);
@@ -476,7 +476,7 @@ namespace Sacado {
      * \brief Get memory for new array of length \c sz and fill with
      * entries from \c src
      */
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* strided_get_and_fill(const T* src, int stride, int sz) {
       if (sz > 0) {
         T* m = Impl::ds_strided_alloc<T>(sz);
@@ -488,7 +488,7 @@ namespace Sacado {
     }
 
     //! Copy array from \c src to \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void copy(const T* src, T* dest, int sz) {
       if (sz > 0)
         for (int i=threadIdx.x; i<sz; i+=blockDim.x)
@@ -496,7 +496,7 @@ namespace Sacado {
     }
 
     //! Copy array from \c src to \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void strided_copy(const T* src, int src_stride,
                              T* dest, int dest_stride, int sz) {
       for (int i=threadIdx.x; i<sz; i+=blockDim.x) {
@@ -505,7 +505,7 @@ namespace Sacado {
     }
 
     //! Zero out array \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void zero(T* dest, int sz) {
       if (sz > 0)
         for (int i=threadIdx.x; i<sz; i+=blockDim.x)
@@ -513,7 +513,7 @@ namespace Sacado {
     }
 
     //! Zero out array \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void strided_zero(T* dest, int stride, int sz) {
       for (int i=threadIdx.x; i<sz; i+=blockDim.x) {
         dest[i*stride] = T(0.);
@@ -521,7 +521,7 @@ namespace Sacado {
     }
 
     //! Destroy array elements and release memory
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void destroy_and_release(T* m, int sz) {
       Impl::ds_strided_free(m, sz);
     }
@@ -532,7 +532,7 @@ namespace Sacado {
   namespace Impl {
 
     template <typename T>
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* ds_strided_alloc(const int sz) {
       T* m = 0;
       // Only do strided memory allocations when we are doing hierarchical
@@ -574,7 +574,7 @@ namespace Sacado {
     }
 
     template <typename T>
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void ds_strided_free(T* m, int sz) {
       if (blockDim.x == 32) {
         // const int total_sz = warpReduce(sz);
@@ -604,7 +604,7 @@ namespace Sacado {
   struct ds_array<T,true> {
 
     //! Get memory for new array of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* get(int sz) {
       if (sz > 0) {
         T* m = Impl::ds_strided_alloc<T>(sz);
@@ -614,7 +614,7 @@ namespace Sacado {
     }
 
     //! Get memory for new array of length \c sz and fill with zeros
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* get_and_fill(int sz) {
       if (sz > 0) {
         T* m = Impl::ds_strided_alloc<T>(sz);
@@ -629,7 +629,7 @@ namespace Sacado {
      * \brief Get memory for new array of length \c sz and fill with
      * entries from \c src
      */
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* get_and_fill(const T* src, int sz) {
       if (sz > 0) {
         T* m = Impl::ds_strided_alloc<T>(sz);
@@ -644,7 +644,7 @@ namespace Sacado {
      * \brief Get memory for new array of length \c sz and fill with
      * entries from \c src
      */
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* strided_get_and_fill(const T* src, int stride, int sz) {
       if (sz > 0) {
         T* m = Impl::ds_strided_alloc<T>(sz);
@@ -656,7 +656,7 @@ namespace Sacado {
     }
 
     //! Copy array from \c src to \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void copy(const T* src, T* dest, int sz) {
       if (sz > 0)
         for (int i=0; i<sz; ++i)
@@ -664,7 +664,7 @@ namespace Sacado {
     }
 
     //! Copy array from \c src to \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void strided_copy(const T* src, int src_stride,
                                     T* dest, int dest_stride, int sz) {
       for (int i=0; i<sz; ++i) {
@@ -675,7 +675,7 @@ namespace Sacado {
     }
 
     //! Zero out array \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void zero(T* dest, int sz) {
       if (sz > 0)
         for (int i=0; i<sz; ++i)
@@ -683,7 +683,7 @@ namespace Sacado {
     }
 
     //! Zero out array \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void strided_zero(T* dest, int stride, int sz) {
       for (int i=0; i<sz; ++i) {
         *(dest) = T(0.);
@@ -692,7 +692,7 @@ namespace Sacado {
     }
 
     //! Destroy array elements and release memory
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void destroy_and_release(T* m, int sz) {
       Impl::ds_strided_free(m, sz);
     }
@@ -708,7 +708,7 @@ namespace Sacado {
   struct ds_array<T,true> {
 
     //! Get memory for new array of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* get(int sz) {
       if (sz > 0) {
         T* m = Impl::ds_alloc<T>(sz);
@@ -718,7 +718,7 @@ namespace Sacado {
     }
 
     //! Get memory for new array of length \c sz and fill with zeros
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* get_and_fill(int sz) {
       if (sz > 0) {
         T* m = Impl::ds_alloc<T>(sz);
@@ -737,7 +737,7 @@ namespace Sacado {
      * \brief Get memory for new array of length \c sz and fill with
      * entries from \c src
      */
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* get_and_fill(const T* src, int sz) {
       if (sz > 0) {
         T* m = Impl::ds_alloc<T>(sz);
@@ -752,7 +752,7 @@ namespace Sacado {
      * \brief Get memory for new array of length \c sz and fill with
      * entries from \c src
      */
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static T* strided_get_and_fill(const T* src, int stride, int sz) {
       if (sz > 0) {
         T* m = Impl::ds_alloc<T>(sz);
@@ -764,7 +764,7 @@ namespace Sacado {
     }
 
     //! Copy array from \c src to \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void copy(const T* src, T* dest, int sz) {
       if (sz > 0 && dest != NULL && src != NULL)
 #ifdef __CUDACC__
@@ -776,7 +776,7 @@ namespace Sacado {
     }
 
     //! Copy array from \c src to \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void strided_copy(const T* src, int src_stride,
                                     T* dest, int dest_stride, int sz) {
       for (int i=0; i<sz; ++i) {
@@ -787,7 +787,7 @@ namespace Sacado {
     }
 
     //! Zero out array \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void zero(T* dest, int sz) {
       if (sz > 0 && dest != NULL)
 #ifdef __CUDACC__
@@ -799,7 +799,7 @@ namespace Sacado {
     }
 
     //! Zero out array \c dest of length \c sz
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void strided_zero(T* dest, int stride, int sz) {
       for (int i=0; i<sz; ++i) {
         *(dest) = T(0.);
@@ -808,7 +808,7 @@ namespace Sacado {
     }
 
     //! Destroy array elements and release memory
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void destroy_and_release(T* m, int sz) {
       Impl::ds_free(m, sz);
     }

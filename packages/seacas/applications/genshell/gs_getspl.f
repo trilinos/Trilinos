@@ -1,33 +1,12 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C     -*- Mode: fortran -*-
       SUBROUTINE GETSPL(A)
       DIMENSION A(*)
-
-C $Id: getspl.f,v 1.6 1997/11/26 16:28:38 gdsjaar Exp $
-C $Log: getspl.f,v $
-C Revision 1.6  1997/11/26 16:28:38  gdsjaar
-C Added NOSCALE option to the spline sweeping. If specified, then the
-C input 2D mesh is not stretched to match the spline extent. The output
-C X,Y coordinates are the same as the input X,Y coordinates.
-C
-C Revision 1.5  1994/08/25 13:45:24  gdsjaar
-C Fixed spline input to skip back or bottom. Added number of points
-C output for easier debugging.
-C
-c Revision 1.4  1993/05/27  22:15:32  gdsjaar
-c Added xsweep and ysweep options to spline transformation
-c
-c Revision 1.3  1991/03/28  15:39:11  gdsjaar
-c Modified spline from GEN3D to work with GENSHELL
-c
-c Revision 1.2  1990/11/09  15:44:08  gdsjaar
-c Added help option
-c
 
       INCLUDE 'gs_splxyz.blk'
 

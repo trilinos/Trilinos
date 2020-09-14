@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       SUBROUTINE SHPTIM (NPTIMS, IPTIMS, TIMES)
@@ -16,12 +16,11 @@ C   --Parameters:
 C   --   NPTIMS - IN - the number of selected times
 C   --   IPTIMS - IN - the selected time steps
 C   --   TIMES  - IN - the database times
-C
+
 C   --Routines Called:
 C   --   LENSTR - (STRLIB) Find string length
 C   --   NUMSTR - (STRLIB) Convert numbers to engineering notation
 C   --   SQZSTR - (STRLIB) Delete extra blanks from string
-
 
       INTEGER NPTIMS
       INTEGER IPTIMS(*)

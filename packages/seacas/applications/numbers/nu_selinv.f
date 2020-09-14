@@ -1,32 +1,20 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: selinv.f,v 1.2 1999/02/16 21:38:01 gdsjaar Exp $
-C $Log: selinv.f,v $
-C Revision 1.2  1999/02/16 21:38:01  gdsjaar
-C Converted to read exodusII database format.  Somewhat tested, not
-C ready for production yet.
-C
-C Revision 1.1.1.1  1991/02/21 15:45:29  gdsjaar
-C NUMBERS: Greg Sjaardema, initial Unix release
-C
-c Revision 1.1  1991/02/21  15:45:28  gdsjaar
-c Initial revision
-c
       SUBROUTINE SELINV (TIMES, ITMSEL, NINTV)
       DIMENSION TIMES(*)
       LOGICAL ITMSEL(*)
       CHARACTER*16 ENGNOT, STRA, STRB
       CHARACTER*80 STRTMP
-C
+
       include 'nu_ptim.blk'
-C
+
       NLAST  = 0
       NUMSEL = 0
-C
+
 C      IFIRST = LOCRL (STMIN, NSTEP, ITMSEL, TIMES)
 C      ILAST  = LOCRL (STMAX, NSTEP, ITMSEL, TIMES)
       IFIRST = LOCREA (STMIN, NSTEP, TIMES)

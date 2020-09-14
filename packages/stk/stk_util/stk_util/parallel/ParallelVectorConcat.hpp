@@ -38,11 +38,11 @@
 
 #include "stk_util/parallel/Parallel.hpp" 
 #include <vector> 
-#include "mpi.h"  
 #include "stk_util/diag/String.hpp"
 
 namespace stk {
 
+#if defined( STK_HAS_MPI )
   //------------------------------------------------------------------------
   //
   //  Take a list vector of T's on each processor.  Sum it into a single list that will be placed on all processors.
@@ -190,6 +190,13 @@ namespace stk {
     }
     return MPI_SUCCESS;
   }
+
+#else
+  template <typename T> inline int parallel_vector_concat(ParallelMachine comm, const std::vector<T>& localVec, std::vector<T>& globalVec ) {
+    globalVec = localVec;
+    return 0;
+}
+#endif
 
 }
 

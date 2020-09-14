@@ -188,7 +188,7 @@ namespace Tacho {
     void
     track_alloc(const double in) {
       stat.m_used += in;
-      stat.m_peak  = max(stat.m_peak, stat.m_used);
+      stat.m_peak  = std::max(stat.m_peak, stat.m_used);
     }
 
     inline
@@ -232,49 +232,52 @@ namespace Tacho {
         flop += DenseFlopCount<value_type>::Trsm(true,  m, n);
         flop += DenseFlopCount<value_type>::Syrk(m, n);
       }
+      const double kilo(1024);
       printf("  Time\n");
       printf("             time for copying A into U:                       %10.6f s\n", stat.t_copy);
       printf("             time for numeric factorization:                  %10.6f s\n", stat.t_factor);
       printf("             total time spent:                                %10.6f s\n", (stat.t_copy+stat.t_factor));
       printf("\n");
       printf("  Memory\n");
-      printf("             memory used in factorization:                    %10.2f MB\n", stat.m_used/1024/1024);
-      printf("             peak memory used in factorization:               %10.2f MB\n", stat.m_peak/1024/1024);
+      printf("             memory used in factorization:                    %10.3f MB\n", stat.m_used/kilo/kilo);
+      printf("             peak memory used in factorization:               %10.3f MB\n", stat.m_peak/kilo/kilo);
       printf("\n");
       printf("  Buffer Pool\n");
       printf("             number of superblocks:                           %10d\n", int(stat.b_num_superblocks));
       printf("             min and max blocksize:                           %e, %e Bytes\n", double(stat.b_min_block_size), double(stat.b_max_block_size));
-      printf("             pool capacity:                                   %10.2f MB\n", double(stat.b_capacity)/1024/1024);
+      printf("             pool capacity:                                   %10.3f MB\n", double(stat.b_capacity)/kilo/kilo);
       printf("\n");
       printf("  Sched Memory Pool\n");
       printf("             number of superblocks:                           %10d\n", int(stat.s_num_superblocks));
       printf("             min and max blocksize:                           %e, %e Bytes\n", double(stat.s_min_block_size), double(stat.s_max_block_size));
-      printf("             pool capacity:                                   %10.2f MB\n", double(stat.s_capacity)/1024/1024);
+      printf("             pool capacity:                                   %10.3f MB\n", double(stat.s_capacity)/kilo/kilo);
       printf("\n");
       printf("  FLOPs\n");
-      printf("             gflop   for numeric factorization:               %10.2f GFLOP\n", flop/1024/1024/1024);
-      printf("             gflop/s for numeric factorization:               %10.2f GFLOP/s\n", flop/stat.t_factor/1024/1024/1024);
+      printf("             gflop   for numeric factorization:               %10.3f GFLOP\n", flop/kilo/kilo/kilo);
+      printf("             gflop/s for numeric factorization:               %10.3f GFLOP/s\n", flop/stat.t_factor/kilo/kilo/kilo);
       printf("\n");
     }
       
     inline
     void
     print_stat_solve() {
+      const double kilo(1024);
       printf("  Time\n");
       printf("             time for extra work e.g.,copy rhs:               %10.6f s\n", stat.t_extra);
       printf("             time for numeric solve:                          %10.6f s\n", stat.t_solve);
       printf("             total time spent:                                %10.6f s\n", (stat.t_solve+stat.t_extra));
       printf("  Memory\n");
-      printf("             memory used in solve:                            %10.2f MB\n", stat.m_used/1024/1024);
+      printf("             memory used in solve:                            %10.3f MB\n", stat.m_used/kilo/kilo);
       printf("\n");
     }
 
     inline
     void
     print_stat_memory() {
+      const double kilo(1024);
       printf("  Memory\n");
-      printf("             memory used now:                                 %10.2f MB\n", stat.m_used/1024/1024);
-      printf("             peak memory used:                                %10.2f MB\n", stat.m_peak/1024/1024);
+      printf("             memory used now:                                 %10.3f MB\n", stat.m_used/kilo/kilo);
+      printf("             peak memory used:                                %10.3f MB\n", stat.m_peak/kilo/kilo);
       printf("\n");
     }
       

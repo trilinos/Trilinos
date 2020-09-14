@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 /*****************************************************************************
@@ -61,7 +61,6 @@ variables
                used and returned in this variable. WARNING: all exodus functions
                requiring reals must be passed reals declared with this passed
                in or returned compute word size (4 or 8).
-
 
 \param[in,out] io_ws The word size in bytes (0, 4 or 8) of the floating
                     point data as they are stored in the exodus file. If the
@@ -169,7 +168,10 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
       int type = 0;
       ex__check_file_type(path, &type);
 
-      if (type == 5) {
+      if (type == 0) {
+        /* Error message printed at lower level */
+      }
+      else if (type == 5) {
 #if NC_HAS_HDF5
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "EXODUS: ERROR: Attempting to open the netcdf-4 "
@@ -194,7 +196,6 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
                  "other issue.\n",
                  path);
         ex_err(__func__, errmsg, status);
-
 #endif
       }
       else if (type == 4) {
@@ -227,7 +228,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
       }
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to open %s of type %d for reading. Either "
-               "the file does not exist, or there is a permission or file "
+               "the file does not exist,\n\tor there is a permission or file "
                "format issue.",
                path, type);
       ex_err(__func__, errmsg, status);
@@ -248,7 +249,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
       /* NOTE: netCDF returns an id of -1 on an error - but no error code! */
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to open %s for read/write. Either the file "
-               "does not exist, or there is a permission or file format "
+               "does not exist,\n\tor there is a permission or file format "
                "issue.",
                path);
       ex_err(__func__, errmsg, status);

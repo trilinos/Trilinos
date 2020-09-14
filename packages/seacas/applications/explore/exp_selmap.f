@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       SUBROUTINE SELMAP (NOUT, TYPE, IDGLO, NUMEL, MAPEL)
@@ -46,5 +46,4 @@ C ... TYPE = Node or Element
 10000  FORMAT (' No local ',A,' has global id equal to ',I12)
 10030  format (1x, 3x, 'Global ',A,I12,' is local ',A,I12)
       END
-
 

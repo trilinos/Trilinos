@@ -24,9 +24,17 @@ void write_mesh(const std::string &filename,
 {
     stk::io::StkMeshIoBroker stkIo;
     stkIo.set_bulk_data(bulkData);
-    size_t outputFileIndex = stkIo.create_output_mesh(filename, databasePurpose);
-    stkIo.write_output_mesh(outputFileIndex);
+    write_mesh(filename, stkIo, databasePurpose);
 }
+
+void write_mesh(const std::string &filename,
+                stk::io::StkMeshIoBroker& ioBroker,
+                stk::io::DatabasePurpose databasePurpose)
+{
+    size_t outputFileIndex = ioBroker.create_output_mesh(filename, databasePurpose);
+    ioBroker.write_output_mesh(outputFileIndex);
+}
+    
 
 void write_mesh_with_canonical_name(const std::string &filename,
                                     stk::mesh::BulkData &bulkData,

@@ -181,7 +181,10 @@ namespace Intrepid2 {
 
       // Average L2 error for a multiple sets of physical points: error is rank-2 (C,P) array 
       rst::vectorNorm(errorCellwise, errorPointwise, NORM_ONE);
-      const auto errorTotal = rst::Serial::vectorNorm(errorCellwise, NORM_ONE);
+
+      auto errorCellwise_h = Kokkos::create_mirror_view(errorCellwise);
+      Kokkos::deep_copy(errorCellwise_h, errorCellwise);
+      const auto errorTotal = rst::Serial::vectorNorm(errorCellwise_h, NORM_ONE);
     
       // Stopping criterion:
       if (errorTotal < tol) 

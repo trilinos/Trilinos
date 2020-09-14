@@ -3,6 +3,7 @@
 #include <type_traits>
 #include <cmath>
 #include <string>
+#include <array>
 #include "UnitTestStkVectorUtils.hpp"
 
 namespace 

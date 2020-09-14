@@ -1,7 +1,7 @@
 ## Copyright(C) 1999-2020 National Technology & Engineering Solutions
 ## of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 ## NTESS, the U.S. Government retains certain rights in this software.
-## 
+##
 ## See packages/seacas/LICENSE for details
 ## General Properties
 
@@ -28,6 +28,7 @@ RETAIN\_FREE\_NODES | \[on]/off | In auto-decomp, will nodes not connected to an
 RETAIN\_EMPTY\_BLOCKS | on/\[off] | Empty blocks will / won't be retained in model. If retained, will have topology type "unknown".
 LOAD\_BALANCE\_THRESHOLD | {real} \[1.4] | CGNS-Structured only -- Load imbalance permitted Load on Proc / Avg Load
 LINE\_DECOMPOSITION | string | a list of comma-separated BC names. Zone with this bc will not be decomposed perpendicular to this surface. If name is `__ordinal_{ijk}` then use {ijk} as ordinal not to decompose.
+PARMETIS_COMMON_NODE_COUNT | {int}\[varies] | The degree of connectivity among the vertices in the dual graph for the ParMetis KWAY decomposition schemes. A value of 2 will permit edge connectivity in the decomposition; 3 or 4 will give face connectivity. Default is face connectivity.
 
 ### Valid values for Decomposition Method
 

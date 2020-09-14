@@ -43,11 +43,9 @@ project votd
     $(sierra-warnings)
     <define>STK_BUILT_IN_SIERRA
     <include>$(stk_simd-root)
-    <define>STK_KOKKOS_SIMD
     <define>STK_VOLATILE_SIMD
   : usage-requirements
     <include>$(stk_simd-root)
-    <define>STK_KOKKOS_SIMD
     <define>STK_VOLATILE_SIMD
   : build-dir $(stk_simd-builddir)
   ;
@@ -64,6 +62,7 @@ local installed-end-user-files =
 # be installed for end-users. (This is only intended to be used for testing.)
 local installed-developer-files = 
   stk_simd_unit 
+  stk_simd_old_unit 
   stk_disimd_unit
   stk_simd_docs_tests
   ;
@@ -116,7 +115,7 @@ install install-user-jamfile
 
 explicit install-user-include ;
 install install-user-include
-  : [ path.glob-tree $(stk_simd-root) : *.hpp no_simd/*hpp sse/*hpp avx/*hpp avx_512/*hpp  ]
+  : [ path.glob-tree $(stk_simd-root) : *.hpp ]
   : <location>$(install-root)/stk/stk_simd
     <install-source-root>$(stk_simd-root)
   ;
@@ -140,6 +139,15 @@ alias stk_simd_headers
 exe stk_simd_unit
   :
     [ glob $(stk_simd-root)/../stk_unit_tests/stk_simd/*.cpp ]
+    /sierra/stk_unit_test_utils//stk_unit_main
+    /sierra/stk_math//stk_math_headers
+    /tpl/gtest//gtest
+  : <tag>@sierra-exec-tag
+  ;
+
+exe stk_simd_old_unit
+  :
+    [ glob $(stk_simd-root)/../stk_unit_tests/stk_simd_old/*.cpp ]
     /sierra/stk_math//stk_math_headers
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /tpl/trilinos//kokkoscore

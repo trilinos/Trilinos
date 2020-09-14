@@ -26,7 +26,7 @@ routines are not implemented on a system.  In this case, the memory manager
 will operate, allocating space from a user-supplied work array.  This mode
 is described as dynamic allocation of static memory. Thus, modification of a
 user's application program is minimal on systems where dynamic memory is not
-implemented. 
+implemented.
 
 All user entry points to memory manager routines begin with either ``MD''
 or ``MC.'' In most cases, the ``MD'' routines are used for numeric data,
@@ -105,7 +105,7 @@ initialization is to determine the location of the numeric and character
 base arrays in memory. MDINIT must be called first, and MCINIT second. In
 the case where character dynamic memory is not used, MCINIT need not be
 called. When calling MxINIT, the user must pass (explicitly or
-implicitly) subscript 1 of the base array. 
+implicitly) subscript 1 of the base array.
 \begin{verbatim}
 CALL MDINIT (NUMBAS(1))
 CALL MCINIT (CHRBAS(1))
@@ -126,7 +126,7 @@ character memory.
 MxRSRV declares new dynamic arrays.  The user specifies the space
 required, and an index to the new space is returned.  Note that, by
 default, the contents of the new storage are not initialized to any specific
-value. MxFILL may be used for data initialization. 
+value. MxFILL may be used for data initialization.
 \begin{verbatim}
 CALL MDRSRV (NAME, NEWIDX, NEWLEN)
 CALL MCRSRV (NAME, NEWIDX, NEWLEN)
@@ -190,7 +190,7 @@ for MDGET or character storage units for MCGET.
 \end{argy}
 
 \subsection{Release Unallocated Memory (MDGIVE/MCGIVE)}
-MxGIVE 
+MxGIVE
 causes the memory manager to return unused storage to the operating
 system, if possible. MDGIVE and MCGIVE are synonyms.
 \begin{verbatim}
@@ -209,7 +209,7 @@ CALL MCSTAT (MNERRS, MNUSED)
 
 \begin{argy}{MNERRS}{INTEGER}{Write Only}
 This is the total number of errors detected by the memory manager during the
-current execution. 
+current execution.
 \end{argy}
 
 \begin{argy}{MNUSED}{INTEGER}{Write Only}
@@ -217,7 +217,7 @@ This is the total number of storage units that are currently allocated to
 dynamic arrays. MDSTAT returns the numeric storage in numeric storage units,
 and MCSTAT returns the character storage in character storage units. If any
 storage has been requested in the deferred mode and not yet allocated by the
-memory manager (Section~\ref{sec:wait}), this storage is counted as though 
+memory manager (Section~\ref{sec:wait}), this storage is counted as though
 it were actually allocated.
 \end{argy}
 
@@ -227,7 +227,7 @@ manager.  The return status of the last memory manager routine called is
 also printed. MxEROR should be called any time an error is
 detected by a call to MxSTAT.
 Table~\ref{tab:ecode} lists the error codes.
-MDEROR and MCEROR are synonyms. 
+MDEROR and MCEROR are synonyms.
 \begin{table}[htbp]
 \centering
 \caption{Memory Manager Error Codes} \label{tab:ecode}
@@ -260,14 +260,14 @@ of a user error, but are used to signal an internal error, or that an
 internal array is full. For example, the table which records the names of
 the arrays allocated with MxRSRV may not be large enough for the
 application. In this case, the memory manager subroutines must be modified
-to accommodate the user. A local support person should perform this task. 
+to accommodate the user. A local support person should perform this task.
 \begin{verbatim}
 CALL MDEROR (IUNIT)
 CALL MCEROR (IUNIT)
 \end{verbatim}
 
 \begin{argy}{IUNIT}{INTEGER}{Read Only}
-This is the FORTRAN unit number of the output device. 
+This is the FORTRAN unit number of the output device.
 \end{argy}
 
 
@@ -290,7 +290,7 @@ stored without interpretation. This pattern is then used to initialize new
 storage. Since the internal machine representation of REAL data is different
 than INTEGER data (or LOGICAL data), the user may experience unexpected
 results when dynamic memory is used as a numeric type which is different
-from the type of the initialization datum. 
+from the type of the initialization datum.
 \end{argy}
 
 \begin{argy}{CHRDAT}{CHARACTER\last(\last)}{Read Only}
@@ -361,8 +361,8 @@ significant.
 \subsection{Adjust Dynamic Array Length (MDLONG/MCLONG)}
 MxLONG changes the length of a dynamic array.  The memory manager
 will relocate the array and move its data if storage cannot be extended at
-the array's current location.  The user should assume that MxLONG 
-invalidates the previous index to this array if the array is extended. 
+the array's current location.  The user should assume that MxLONG
+invalidates the previous index to this array if the array is extended.
 MDLONG is used for numeric arrays and MCLONG is used for character arrays.
 \begin{verbatim}
 CALL MDLONG (NAME, NEWIDX, NEWLEN)
@@ -384,7 +384,7 @@ MDLONG and in character storage units for MCLONG.
 \end{argy}
 
 \subsection{Locate Dynamic Array (MDFIND/MCFIND)}
-MxFIND 
+MxFIND
 returns the index and length of storage allocated to a dynamic
 array.  This routine would be used if the index from an earlier call to
 MxRSRV was not available in a particular program segment. MDFIND
@@ -413,10 +413,10 @@ units for MDFIND and MCFIND, respectively.
 \subsection{Compress Storage (MDCOMP/MCCOMP)}
 MxCOMP causes fragmented memory to be consolidated.  Note that
 this may cause array storage locations to change.  It is important to
-realize that all indexes must be recalculated by calling MxFIND 
+realize that all indexes must be recalculated by calling MxFIND
 after a compress operation.  A call to MxCOMP prior to
 MxGIVE will result in the return of the maximum memory to the system.
-MDCOMP and MCCOMP are synonyms. 
+MDCOMP and MCCOMP are synonyms.
 \begin{verbatim}
 CALL MDCOMP ()
 CALL MCCOMP ()
@@ -468,7 +468,7 @@ CALL MCLAST (IFLAG)
 
 \begin{argy}{IFLAG}{INTEGER}{Write Only}
 IFLAG is the number of the last error caused by a previous call to the
-memory manager. 
+memory manager.
 \end{argy}
 
 \subsection{Enable Deferred Memory Mode (MDWAIT/MCWAIT)} \label{sec:wait}
@@ -478,7 +478,7 @@ satisfied only if a system call is not required. If a system call is
 required, the request for memory is deferred and will be satisfied when the
 deferred mode is canceled by calling MxEXEC or a call to
 MxLONG requires a system call for memory for an existing array.
-MDWAIT and MCWAIT are synonyms. 
+MDWAIT and MCWAIT are synonyms.
 
 Because the deferred mode may not actually provide array space at the time a
 call to MxRSRV is made, the base array pointer re\-turn\-ed by
@@ -487,7 +487,7 @@ index is intentionally returned so that the requested array space cannot
 be erroneously used. When the deferred memory requests are eventually
 satisfied (by calling MxEXEC), the indexes are automatically,
 asynchronously updated by the memory manager. Thus, upon return from
-MxEXEC the indexes used in MxRSRV will have a valid value. 
+MxEXEC the indexes used in MxRSRV will have a valid value.
 
 The deferred mode is provided as a means of reducing the sometimes
 time-consuming calls to the operating system for new memory. A similar
@@ -495,7 +495,7 @@ efficiency could be realized by judicious use of MxGET, but the
 deferred mode relieves the user of the burden of adding all memory requests
 before calling MxRSRV. The deferred mode is a sophisticated
 capability and should not be enabled if the user does not understand its
-implications. 
+implications.
 
 The deferred mode must be used as follows:
 \begin{enumerate}
@@ -504,7 +504,7 @@ The deferred mode must be used as follows:
 in the deferred mode.
 \item Indexes returned by MxRSRV, MxFIND, and MxLONG
 may not be assigned to other variables while the deferred mode is
-in effect. 
+in effect.
 \item Dynamic memory may not be accessed while the deferred mode is in
 effect.
 \item The deferred mode is canceled by calling MxEXEC.
@@ -550,11 +550,11 @@ that MDMEMS and MCMEMS may be reporting the same space for NSUV, but in
 different units.
 \end{argy}
 
-\begin{argy}{NSULV}{INTEGER}{Write Only} 
+\begin{argy}{NSULV}{INTEGER}{Write Only}
 NSULV is the size of the largest void space in numeric or character storage
 units. Note that MDMEMS and MCMEMS may be reporting the same space for
-NSULV, but in different units. 
-\end{argy} 
+NSULV, but in different units.
+\end{argy}
 
 \section{Development Aids}\label{sec:mdev}
 The routines in this section are designed to aid the programmer during
@@ -564,7 +564,7 @@ a mature program, except as a response to a memory manager error.
 \subsection{List Storage Tables (MDLIST/MCLIST)}
 MxLIST prints the contents of the memory manager's internal
 tables. Section~\ref{sec:table} describes these tables. MDLIST and MCLIST
-are synonyms. 
+are synonyms.
 \begin{verbatim}
 CALL MDLIST (IUNIT)
 CALL MCLIST (IUNIT)

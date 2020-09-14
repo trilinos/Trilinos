@@ -208,6 +208,8 @@ public:
 
   void modify_on_host() const { m_impl.modify_on_host(); }
   void modify_on_device() const { m_impl.modify_on_device(); }
+  void modify_on_host(const Selector& s) const { m_impl.modify_on_host(s); }
+  void modify_on_device(const Selector& s) const { m_impl.modify_on_device(s); }
   void sync_to_host() const { m_impl.sync_to_host(); }
   void sync_to_device() const { m_impl.sync_to_device(); }
   void clear_sync_state() const { m_impl.clear_sync_state(); }
@@ -270,6 +272,7 @@ private:
   friend class ::stk::mesh::UnitTestFieldImpl ;
 
   template <typename T> friend NgpField<T> & get_updated_ngp_field(const FieldBase & stkField);
+  template <typename T> friend class HostField;
   template <typename T> friend class DeviceField;
 
   FieldMetaDataVector m_field_meta_data;
@@ -400,6 +403,17 @@ inline bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) {
   //return true if field and bucket have the same rank and the field is associated with the bucket
   ThrowAssert(f.get_meta_data_for_field().size() > b.bucket_id());
   return (is_matching_rank(f, b) && 0 != f.get_meta_data_for_field()[b.bucket_id()].m_bytes_per_entity);
+}
+
+inline size_t get_total_ngp_field_allocation_bytes(const FieldBase & f) {
+  const Selector selector = stk::mesh::selectField(f);
+  const BucketVector & buckets = f.get_mesh().get_buckets(f.entity_rank(), selector);
+  const size_t numBuckets = buckets.size();
+  const size_t bucketCapacity = (buckets.empty()) ? 0 : buckets[0]->capacity();
+  const size_t numPerEntity = f.max_size(f.entity_rank());
+  const size_t bytesPerScalar = f.data_traits().size_of;
+
+  return numBuckets * bucketCapacity * numPerEntity * bytesPerScalar;
 }
 
 struct FieldBasePtrLess {

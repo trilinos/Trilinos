@@ -1,51 +1,31 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: longel.f,v 1.2 1998/07/14 18:19:21 gdsjaar Exp $
-C $Log: longel.f,v $
-C Revision 1.2  1998/07/14 18:19:21  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.1.1.1  1990/11/30 11:11:26  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:11:24  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.PAVING]LONGEL.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE LONGEL (MXND, MLN, LNODES, XN, YN, NUID, LXK, KXL, NXL,
      &   LXN, NNN, NAVAIL, IAVAIL, NODE, KELEM, ANG, TOLER,
      &   N1, N2, KREG, XMIN, XMAX, YMIN, YMAX, KKK, LLL, DONE, GRAPH,
      &   VIDEO, NOROOM, ERR, KKKADD)
 C***********************************************************************
-C
+
 C  SUBROUTINE LONGEL = AN ELONGATED ELEMENT OVER 150 DEGREES GETS A
 C                      3 ELEMENT REPLACEMENT FOR THE TWO ELEMENTS THERE
-C
+
 C***********************************************************************
-C
+
       DIMENSION LXK(4, MXND), NXL(2, 3*MXND), KXL(2, 3*MXND)
       DIMENSION LXN(4, MXND), XN(MXND), YN(MXND), NUID(MXND)
       DIMENSION LNODES (MLN, MXND)
       DIMENSION NODES(4)
-C
+
       LOGICAL NOROOM, ERR, DONE, GRAPH, CCW, VIDEO
-C
+
       CCW = .TRUE.
-C
+
 C  SEE IF THE ANGLE IS WITHIN BOUNDS
-C
+
       IF (ANG .GT. TOLER) THEN
          CALL GNXKA (MXND, XN, YN, KELEM, NODES, AREA, LXK, NXL, CCW)
          NODE2 = NODES(1) + NODES(2) + NODES(3) + NODES(4) - NODE
@@ -60,13 +40,13 @@ C
      &      ((YN (NODE) - YN (N2)) ** 2) )
          DMIN = ((DN1 + DN2) * .5) * 1.7
          DMAX = (DN1 + DN2) * .5
-C
+
 C  SEE IF IT IS A LONG LEGGED BEAST
-C
+
          IF ((D12 .GT. DMIN) .OR. (D22 .GT. DMIN)) THEN
-C
+
 C  FIND L1, L2, L3, AND L4
-C
+
             DO 100 I = 1, 4
                LTEST = LXK (I, KELEM)
                IF ( ((NXL (1, LTEST) .EQ. NODE) .AND.
@@ -81,7 +61,7 @@ C
             ERR = .TRUE.
             GOTO 250
   110       CONTINUE
-C
+
             DO 120 I = 1, 4
                LTEST = LXK (I, KELEM)
                IF ( ((NXL (1, LTEST) .EQ. NODE) .AND.
@@ -96,7 +76,7 @@ C
             ERR = .TRUE.
             GOTO 250
   130       CONTINUE
-C
+
             DO 140 I = 1, 4
                LTEST = LXK (I, KELEM)
                IF ( ((NXL (1, LTEST) .EQ. NODE2) .AND.
@@ -115,7 +95,7 @@ C
             ERR = .TRUE.
             GOTO 250
   150       CONTINUE
-C
+
             DO 160 I = 1, 4
                LTEST = LXK (I, KELEM)
                IF ( ((NXL (1, LTEST) .EQ. NODE2) .AND.
@@ -134,18 +114,18 @@ C
             ERR = .TRUE.
             GOTO 250
   170       CONTINUE
-C
+
 C  NOW FIND KELEM2
-C
+
             KELEM2 = KXL (1, L4) + KXL (2, L4) - KELEM
             IF (KELEM2 .EQ. 0) GOTO 250
-C
+
 C  NOW FIND NODE3 - THE NODE THAT WILL BE PART OF THE NEWLY
 C  FORMED ELEMENT
-C
+
             CALL GNXKA (MXND, XN, YN, KELEM2, NODES, AREA,
      &         LXK, NXL, CCW)
-C
+
             IF (D12 .GT. D22) THEN
                DO 180 I = 1, 4
                   IF (NODES (I) .EQ. N1) THEN
@@ -161,7 +141,7 @@ C
                ERR = .TRUE.
                GOTO 250
   190          CONTINUE
-C
+
             ELSE
                DO 200 I = 1, 4
                   IF (NODES (I) .EQ. N2) THEN
@@ -178,9 +158,9 @@ C
                GOTO 250
   210          CONTINUE
             ENDIF
-C
+
 C  NOW FIND L5
-C
+
             DO 220 I = 1, 4
                LTEST = LXK (I, KELEM2)
                IF (D12 .GT. D22) THEN
@@ -205,10 +185,10 @@ C
             ERR = .TRUE.
             GOTO 250
   230       CONTINUE
-C
+
 C  NOW CHECK TO SEE IF IT MAKES SENSE TO ADD THE EXTRA ELEMENT TO
 C  IMPROVE AN ELONGATED ONE
-C
+
             DL3 = SQRT ( ((XN (NXL (1, L3)) - XN (NXL (2, L3))) ** 2) +
      &         ((YN (NXL (1, L3)) - YN (NXL (2, L3))) ** 2) )
             DL4 = SQRT ( ((XN (NXL (1, L4)) - XN (NXL (2, L4))) ** 2) +
@@ -216,9 +196,9 @@ C
             DL5 = SQRT ( ((XN (NXL (1, L5)) - XN (NXL (2, L5))) ** 2) +
      &         ((YN (NXL (1, L5)) - YN (NXL (2, L5))) ** 2) )
             IF ((DL3 .GT. DMAX) .OR. (DL5 .GT. DL4)) GOTO 250
-C
+
 C  ADD THE EXTRA ELEMENT
-C
+
             IF (GRAPH) THEN
                CALL LCOLOR ('PINK ')
                DO 240 IL = 1, 4
@@ -250,8 +230,8 @@ C
             KKKADD = KKK
          ENDIF
       ENDIF
-C
+
   250 CONTINUE
       RETURN
-C
+
       END

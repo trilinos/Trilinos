@@ -37,4 +37,4 @@ tatic_cast<unsigned>(end-str)));
         const std::string& name = *it;
         const Value& childValue = value[name];
         writeCommentBeforeValue(childValue);
-    
+

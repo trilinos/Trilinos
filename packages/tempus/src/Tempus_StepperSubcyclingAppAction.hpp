@@ -20,8 +20,8 @@ template<class Scalar> class StepperSubcycling;
 
 /** \brief Application Action for StepperSubcycling.
  *
- *  This class provides a means to apply various actions with the Subcycling time step.
- *  The data available to this class is solution variables (through
+ *  This class provides a means to apply various actions with the Subcycling
+ *  time step.  The data available to this class is solution variables (through
  *  SolutionHistory), and stepper data (through the Stepper).  It allows
  *  the application to just observe this data (i.e., use but not change the
  *  data) to change any of it (USER BEWARE!).

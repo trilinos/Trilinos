@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 #ifndef Sierra_SystemInterface_h
@@ -27,8 +27,6 @@ namespace Excn {
     bool parse_options(int argc, char **argv);
 
     int debug() const { return debugLevel_; }
-    int raid_offset() const { return raidOffset_; }
-    int raid_count() const { return raidCount_; }
     int processor_count() const { return processorCount_; }
     int start_part() const { return startPart_; }
     int part_count() const;
@@ -118,8 +116,6 @@ namespace Excn {
     mutable std::string outputFilename_{};
 
     int          myRank_{0};
-    int          raidOffset_{};
-    int          raidCount_{};
     int          processorCount_{1};
     int          startPart_{};
     int          partCount_{-1};

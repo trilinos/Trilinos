@@ -1,36 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Log: setfor.f,v $
-C Revision 1.4  2009/03/25 12:36:47  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.3  1998/06/12 15:53:38  gdsjaar
-C 1. Problem with TIMES array. Blot accesses a dummy timestep even if
-C there were no timesteps on the database. Array wasn't allocated, so
-C writing off into never-never land.
-C
-C 2. Inconsistency among some common blocks. Some places weren't using
-C the include but had the definition hardwired in. Removed those.
-C
-C 3. Added 'EXTERNAL BLKDAT' to all routines that used data values set
-C in BLKDAT
-C
-C 4. Cleanup of some A vs. IA argument passing.
-C
-C Revision 1.2  1994/04/26 16:37:58  gdsjaar
-C Fixed problem with setting background and foreground colors
-C
-c Revision 1.1  1994/04/07  20:11:33  gdsjaar
-c Initial checkin of ACCESS/graphics/blotII2
-c
-c Revision 1.2  1990/12/14  08:57:10  gdsjaar
-c Added RCS Id and Log to all files
-c
 C============================================================================
       SUBROUTINE SETFOR (IFUNC, INLINE, IFLD, INTYP, CFIELD, *)
 C============================================================================

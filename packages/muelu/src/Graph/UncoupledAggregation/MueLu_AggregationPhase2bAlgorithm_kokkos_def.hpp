@@ -244,7 +244,7 @@ namespace MueLu {
                   connectWeight(neigh));
             }
           });
-        execution_space().fence();
+
         Kokkos::parallel_reduce("Aggregation Phase 2b: aggregates expansion",
           Kokkos::RangePolicy<execution_space>(0, numRows),
           KOKKOS_LAMBDA (const LO i, LO& tmpNumAggregated)
@@ -285,7 +285,7 @@ namespace MueLu {
               tmpNumAggregated++;
             }
           }, numAggregated); //parallel_reduce
-        execution_space().fence();
+
         Kokkos::parallel_for("Aggregation Phase 2b: updating agg penalties",
           Kokkos::RangePolicy<execution_space>(0, numLocalAggregates),
           KOKKOS_LAMBDA (const LO agg)

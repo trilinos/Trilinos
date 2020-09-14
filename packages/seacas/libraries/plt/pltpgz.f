@@ -1,18 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: pltpgz.f,v 1.2 1997/11/18 20:03:15 gdsjaar Exp $
-C $Log: pltpgz.f,v $
-C Revision 1.2  1997/11/18 20:03:15  gdsjaar
-C Fixed problem accessing array outside of valid bounds.
-C Fixes coredump problem on DEC
-C
-C Revision 1.1  1993/07/16 16:49:06  gdsjaar
-C Changed plt to library rather than single source file.
-C
 C=======================================================================
       FUNCTION PLTPGZ(N,X,Y,Z,XQ,YQ)
       DIMENSION X(3),Y(3),Z(3),D(2)

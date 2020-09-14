@@ -1,23 +1,23 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
 *DECK,RDA2
       SUBROUTINE RDA2 (IDBLKA,ICONA,NDLSTA,STATUS,MAXLN)
-C
+
 C     ******************************************************************
-C
+
 C     SUBROUTINE TO READ MESH A, WRITE MESH C DATA AS APPROPRIATE
-C
+
 C     Calls subroutine ERROR
-C
+
 C     Called by MAPVAR
-C
+
 C     ******************************************************************
-C
+
 C  IDBLKA  INT  Element block I.D. donor mesh
 C  ICONA   INT  Connectivity for elt block (1:nelnda,1:numeba)
 C  NDLSTA  INT  The array that identifies the local element block node
@@ -28,35 +28,34 @@ C  NELNDA  INT  Number of nodes per element
 C  NUMNDA  INT  Number of nodes in element block
 C  NUMEBA  INT  Number of elements in element block
 C  MAXLN   INT  Maximum number of elements per node for INVCON
-C
+
 C     ******************************************************************
-C
+
       CHARACTER*(32) TYP
-C
+
       include 'aexds1.blk'
       include 'aexds2.blk'
       include 'amesh.blk'
       include 'ebbyeb.blk'
       include 'ex2tp.blk'
       include 'steps.blk'
-C
+
       DIMENSION ICONA(NELNDA,*),NDLSTA(*),STATUS(*)
-C
+
 C     ******************************************************************
-C
+
 C element type per element block
-C
-C
+
 C fix this routine when i have time
 C create array 1-nnodes
 C loop over all elements - add 1 to value in array whenever
 C                          node appears in connectivity
 C maxln = max value of array
-C
+
         CALL EXGELB (NTP2EX,IDBLKA,TYP,NUMEBA,NELNDA,
      &               NATRIB,IERR)
         CALL EXUPCS(TYP)
-c
+
         IF (TYP(1:3) .EQ. 'QUA')THEN
           IF (NELNDA .EQ. 4)THEN
             ITYPE = 3
@@ -78,22 +77,21 @@ c
           CALL ERROR ('RDA2','UNSUPPORTED ELEMENT TYPE',' ',0,' ',0,
      1    'TYPE',typ,1)
         END IF
-C
-C
+
       CALL EXGELC(NTP2EX,IDBLKA,ICONA(1,1),IERR)
-C
+
       DO 5 I = 1, NODESA
         NDLSTA(I) = 0
  5    CONTINUE
-C
+
       DO 10 IEL = 1, NUMEBA
         DO 20 INODE = 1, NELNDA
           NDLSTA(ICONA(INODE,IEL)) = NDLSTA(ICONA(INODE,IEL)) + 1
  20     CONTINUE
  10   CONTINUE
-C
+
       NUMNDA = 0
-C
+
       MAXLN = 0
       DO 30 I = 1, NODESA
         IF (NDLSTA(I) .GT. 0) THEN
@@ -105,10 +103,9 @@ C
         END IF
  30   CONTINUE
 
-C
 C get STATUS array for use in SEARCH so that dead elements can be
 C eliminated from the search
-C
+
       DO 99 I = 1, NUMEBA
          STATUS(I) = 0.
    99 CONTINUE
@@ -116,6 +113,6 @@ C
          IF (NAMVAR(nvargp+ISTATUS) .NE. 'STATUS')GO TO 100
          CALL EXGEV(NTP2EX,ISTEP,ISTATUS,IDBLKA,NUMEBA,STATUS,IERR)
   100 CONTINUE
-c
+
       RETURN
       END

@@ -1,31 +1,20 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: getr12.f,v 1.1 1990/11/30 11:08:37 gdsjaar Exp $
-C $Log: getr12.f,v $
-C Revision 1.1  1990/11/30 11:08:37  gdsjaar
-C Initial revision
-C
-C
-CC* FILE: [.MAIN]GETR12.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE GETR12 (MCOM, ICOM, JCOM, CIN, RIN, KIN, R1, R2,
      &   IFOUND)
 C***********************************************************************
-C
+
 C  SUBROUTINE GETR12 = GETS TWO REAL NUMBERS
-C
+
 C***********************************************************************
-C
+
       DIMENSION RIN(MCOM), KIN(MCOM)
       CHARACTER*72 CIN(MCOM)
-C
+
       IF ( (ICOM .GT. JCOM) .OR. (CIN(ICOM) (1:1) .EQ. ' ') ) THEN
          IFOUND = 0
          ICOM = ICOM+1
@@ -44,5 +33,5 @@ C
          ENDIF
       ENDIF
       RETURN
-C
+
       END

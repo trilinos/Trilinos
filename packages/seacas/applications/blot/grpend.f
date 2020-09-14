@@ -1,27 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Log: grpend.f,v $
-C Revision 1.3  2009/03/25 12:36:44  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.2  1997/09/10 13:48:41  gdsjaar
-C Modified the prompting after completion of the plot. (The 'Enter "Q"
-C to Quit, "T" for Text, ....). The 'Q' prompt now only occurs if there
-C are multiple plots in the plot set. The 'T' prompt only occurs if
-C there is a hardcopy device or if there are multiple plots in the plot
-C set.
-C
-C Revision 1.1  1994/04/07 20:02:41  gdsjaar
-C Initial checkin of ACCESS/graphics/blotII2
-C
-CRevision 1.2  1990/12/14  08:51:50  gdsjaar
-CAdded RCS Id and Log to all files
-C
 C=======================================================================
       SUBROUTINE GRPEND (MAYQUI, MAYTXT, NDONE, NTOTAL, GOBCK, *, *)
 C=======================================================================

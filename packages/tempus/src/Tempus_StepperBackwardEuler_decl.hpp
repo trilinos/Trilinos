@@ -43,7 +43,7 @@ namespace Tempus {
  *  \end{algorithmic}
  *  \f}
  *
- *  The First-Step-As-Last (FSAL) principle is not needed with Backward Euler.
+ *  The First-Same-As-Last (FSAL) principle is not needed with Backward Euler.
  *  The default is to set useFSAL=false, however useFSAL=true will also work
  *  but have no affect (i.e., no-op).
  *

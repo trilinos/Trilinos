@@ -1,58 +1,33 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: zoomlt.f,v 1.3 2007/07/24 13:10:18 gdsjaar Exp $
-C $Log: zoomlt.f,v $
-C Revision 1.3  2007/07/24 13:10:18  gdsjaar
-C Fix problem with boundary condition memory overwrite.
-C
-C Remove old ls5 and r25 terminal tests
-C
-C Revision 1.2  1998/07/14 18:20:20  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.1.1.1  1990/11/30 11:18:05  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:18:04  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]ZOOMLT.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE ZOOMLT (MCOM, ICOM, JCOM, CIN, RIN, IIN, KIN, IDUMP,
      &   DRAWN, ALPHA, DEV1, X1, X2, Y1, Y2, XX1, XX2, YY1, YY2, XMIN1,
      &   XMAX1, YMIN1, YMAX1, XMIN, XMAX, YMIN, YMAX)
 C***********************************************************************
-C
+
 C  ZOOMPL = SUBROUTINE TO INPUT NEW ZOOM LIMITS
-C
+
 C***********************************************************************
-C
+
       DIMENSION KIN(MCOM), IIN(MCOM), RIN(MCOM)
-C
+
       CHARACTER*72 CIN(MCOM)
       CHARACTER*3 DEV1, ANS
-C
+
       LOGICAL DRAWN, ALPHA
-C
+
       IF ((ICOM .LE. JCOM) .AND. (DRAWN) .AND.
      &   ((CIN(ICOM)(1:1) .EQ. 'C') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'c')) .AND.
      &   (.NOT.ALPHA)) THEN
          CIN(ICOM) = 'PLOT'
-C
+
 C  USE CURSOR INPUT FROM THE SCREEN
-C
+
          CALL MESAGE (' ')
          CALL MESAGE (' ')
          CALL MESAGE ('LOCATE ONE CORNER WITH CURSOR')
@@ -85,9 +60,9 @@ C         Y2 = MAX( Y1+.05, .425)
          XMAX = ABS ( (X2 * (XX2 - XX1))) + XX1
          YMIN = ABS ( ((Y1 / .75) * (YY2 - YY1)) ) + YY1
          YMAX = ABS ( ((Y2 / .75) * (YY2 - YY1)) ) + YY1
-C
+
 C  USE USER INPUT FROM THE KEYPAD
-C
+
       ELSE
          IF ((CIN(ICOM)(1:1) .EQ. 'C') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'c')) THEN
@@ -97,9 +72,9 @@ C
             CALL MESAGE ('CURRENT PLOT LIMITS UNCHANGED')
             CALL MESAGE ('* IN OTHER WORDS ... PLOT FIRST (P) '//
      &         'AND THEN ZOOM (Z,C) *')
-C
+
 C  SEE IF ANY OF THE VALUES ARE REDEFINED
-C
+
          ELSE IF ( (ICOM .LE. JCOM)  .AND.
      &      ( (KIN(ICOM) .GT. 0)    .OR.  (KIN(ICOM+1) .GT. 0)  .OR.
      &      (KIN(ICOM+2) .GT. 0)  .OR.  (KIN(ICOM+3) .GT. 0) ) ) THEN
@@ -126,7 +101,7 @@ C
             CALL MESAGE ('ZOOM LIMITS RESET TO PLOT EXTREMES')
          END IF
       END IF
-C
+
       RETURN
-C
+
       END

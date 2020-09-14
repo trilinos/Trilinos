@@ -119,7 +119,7 @@ void run_experiment(Parameters params)
   exec_space().fence();
   double symbolic_time = timer1.seconds();
 
-  size_type c_nnz = addHandle->get_max_result_nnz();
+  size_type c_nnz = addHandle->get_c_nnz();
   std::cout << "Result matrix will have " << c_nnz << " entries.\n";
 
   entriesC = lno_nnz_view_t("entriesC (empty)", c_nnz);

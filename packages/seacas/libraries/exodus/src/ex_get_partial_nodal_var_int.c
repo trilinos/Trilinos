@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 /*****************************************************************************
@@ -24,7 +24,6 @@
  *
  * revision history -
  *
- *  $Id: ne_gnnv.c,v 1.16 2008/01/25 15:47:35 gdsjaar Exp $
  *
  *****************************************************************************/
 
@@ -47,7 +46,9 @@ int ex__get_partial_nodal_var(int exoid, int time_step, int nodal_var_index, int
   char   errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   if (ex_large_model(exoid) == 0) {
     /* read values of the nodal variable */

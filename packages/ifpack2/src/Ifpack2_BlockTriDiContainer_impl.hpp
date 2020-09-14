@@ -928,7 +928,6 @@ namespace KB = KokkosBatched::Experimental;
           }
 #endif
         }
-        Kokkos::fence();
       }
 
       void asyncSendRecv(const impl_scalar_type_2d_view_tpetra &mv) {
@@ -953,6 +952,7 @@ namespace KB = KokkosBatched::Experimental;
         for (local_ordinal_type i=0,iend=pids.send.extent(0);i<iend;++i) {
           copy<ToBuffer>(lids.send, buffer.send, offset_host.send(i), offset_host.send(i+1),
                          mv, blocksize);
+          Kokkos::fence();
           isend(comm,
                 reinterpret_cast<const char*>(buffer.send.data() + offset_host.send[i]*mv_blocksize),
                 (offset_host.send[i+1] - offset_host.send[i])*mv_blocksize*sizeof(impl_scalar_type),
@@ -1863,8 +1863,7 @@ namespace KB = KokkosBatched::Experimental;
       const ConstUnmanaged<local_ordinal_type_1d_view> partptr, lclrow, packptr;
       const local_ordinal_type max_partsz;
       // block crs matrix (it could be Kokkos::UVMSpace::size_type, which is int)
-      using a_rowptr_value_type = typename Kokkos::ViewTraits<local_ordinal_type*,typename impl_type::node_device_type>::size_type;
-      using size_type_1d_view_tpetra = Kokkos::View<a_rowptr_value_type*,typename impl_type::node_device_type>;
+      using size_type_1d_view_tpetra = Kokkos::View<size_t*,typename impl_type::node_device_type>;
       const ConstUnmanaged<size_type_1d_view_tpetra> A_rowptr;
       const ConstUnmanaged<impl_scalar_type_1d_view_tpetra> A_values;
       // block tridiags
@@ -2025,6 +2024,7 @@ namespace KB = KokkosBatched::Experimental;
         KB::LU<member_type,
                default_mode_type,KB::Algo::LU::Unblocked>
           ::invoke(member, A , tiny);
+
         if (nrows > 1) {
           auto B = A;
           auto C = A;
@@ -2041,6 +2041,8 @@ namespace KB = KokkosBatched::Experimental;
                      default_mode_type,default_algo_type>
               ::invoke(member, one, A, C);
             A.assign_data( &AA(i+3,0,0,v) );
+
+            member.team_barrier();
             KB::Gemm<member_type,
                      KB::Trans::NoTranspose,KB::Trans::NoTranspose,
                      default_mode_type,default_algo_type>
@@ -2090,10 +2092,14 @@ namespace KB = KokkosBatched::Experimental;
           factorize(member, i0, nrows, 0, internal_vector_values, WW);
         } else {
           Kokkos::parallel_for
-            (Kokkos::ThreadVectorRange(member, vector_loop_size), [&](const local_ordinal_type &v) {
+            (Kokkos::ThreadVectorRange(member, vector_loop_size),
+	     [&](const local_ordinal_type &v) {
               const local_ordinal_type vbeg = v*internal_vector_length;
               if (vbeg < npacks)
                 extract(member, partidx+vbeg, npacks, vbeg);
+              // this is not safe if vector loop size is different from vector size of 
+              // the team policy. we always make sure this when constructing the team policy
+              member.team_barrier();
               factorize(member, i0, nrows, v, internal_vector_values, WW);
             });
         }
@@ -2562,6 +2568,7 @@ namespace KB = KokkosBatched::Experimental;
              X, xs0);
 
           for (local_ordinal_type tr=1;tr<nrows;++tr) {
+            member.team_barrier();
             KOKKOSBATCHED_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE
               (default_mode_type,default_algo_type,
                member,
@@ -2571,7 +2578,6 @@ namespace KB = KokkosBatched::Experimental;
                X, xs0,
                one,
                X+1*xstep, xs0);
-
             KOKKOSBATCHED_TRSV_LOWER_NO_TRANSPOSE_INTERNAL_INVOKE
               (default_mode_type,default_algo_type,
                member,
@@ -2597,6 +2603,7 @@ namespace KB = KokkosBatched::Experimental;
 
           for (local_ordinal_type tr=nrows;tr>1;--tr) {
             A -= 3*astep;
+            member.team_barrier();
             KOKKOSBATCHED_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE
               (default_mode_type,default_algo_type,
                member,
@@ -2606,7 +2613,6 @@ namespace KB = KokkosBatched::Experimental;
                X, xs0,
                one,
                X-1*xstep, xs0);
-
             KOKKOSBATCHED_TRSV_UPPER_NO_TRANSPOSE_INTERNAL_INVOKE
               (default_mode_type,default_algo_type,
                member,
@@ -2615,7 +2621,6 @@ namespace KB = KokkosBatched::Experimental;
                one,
                A, as0, as1,
                X-1*xstep,xs0);
-
             X -= 1*xstep;
           }
           // for multiple rhs
@@ -2626,6 +2631,7 @@ namespace KB = KokkosBatched::Experimental;
           KOKKOSBATCHED_COPY_VECTOR_NO_TRANSPOSE_INTERNAL_INVOKE
             (default_mode_type,
              member, blocksize, X, xs0, W, ws0);
+          member.team_barrier();
           KOKKOSBATCHED_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE
             (default_mode_type,default_algo_type,
              member,
@@ -2674,6 +2680,7 @@ namespace KB = KokkosBatched::Experimental;
           for (local_ordinal_type tr=1;tr<nrows;++tr,i+=3) {
             A.assign_data( &D_internal_vector_values(i+2,0,0,v) );
             X2.assign_data( &X_internal_vector_values(++r,0,0,v) );
+            member.team_barrier();
             KB::Gemm<member_type,
                      KB::Trans::NoTranspose,KB::Trans::NoTranspose,
                      default_mode_type,default_algo_type>
@@ -2695,10 +2702,12 @@ namespace KB = KokkosBatched::Experimental;
             i -= 3;
             A.assign_data( &D_internal_vector_values(i+1,0,0,v) );
             X2.assign_data( &X_internal_vector_values(--r,0,0,v) );
+            member.team_barrier();
             KB::Gemm<member_type,
                      KB::Trans::NoTranspose,KB::Trans::NoTranspose,
                      default_mode_type,default_algo_type>
               ::invoke(member, -one, A, X1, one, X2);
+
             A.assign_data( &D_internal_vector_values(i,0,0,v) );
             KB::Trsm<member_type,
                      KB::Side::Left,KB::Uplo::Upper,KB::Trans::NoTranspose,KB::Diag::NonUnit,
@@ -2711,6 +2720,7 @@ namespace KB = KokkosBatched::Experimental;
           auto W = Kokkos::subview(WW, Kokkos::ALL(), Kokkos::ALL(), v);
           KB::Copy<member_type,KB::Trans::NoTranspose,default_mode_type>
             ::invoke(member, X1, W);
+          member.team_barrier();
           KB::Gemm<member_type,
                    KB::Trans::NoTranspose,KB::Trans::NoTranspose,
                    default_mode_type,default_algo_type>
@@ -2901,8 +2911,7 @@ namespace KB = KokkosBatched::Experimental;
 
       // block crs graph information
       // for cuda (kokkos crs graph uses a different size_type from size_t)
-      using a_rowptr_value_type = typename Kokkos::ViewTraits<local_ordinal_type*,node_device_type>::size_type;
-      const ConstUnmanaged<Kokkos::View<a_rowptr_value_type*,node_device_type> > A_rowptr;
+      const ConstUnmanaged<Kokkos::View<size_t*,node_device_type> > A_rowptr;
       const ConstUnmanaged<Kokkos::View<local_ordinal_type*,node_device_type> > A_colind;
 
       // blocksize
@@ -3615,10 +3624,10 @@ namespace KB = KokkosBatched::Experimental;
         IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::NormManager::Ireduce");
 
         work_[1] = work_[0];
+#ifdef HAVE_IFPACK2_MPI
         auto send_data = &work_[1];
         auto recv_data = &work_[0];
         if (collective_) {
-#ifdef HAVE_IFPACK2_MPI
 # if defined(IFPACK2_BLOCKTRIDICONTAINER_USE_MPI_3)
           MPI_Iallreduce(send_data, recv_data, 1,
                          Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(),
@@ -3628,8 +3637,8 @@ namespace KB = KokkosBatched::Experimental;
                          Teuchos::Details::MpiTypeTraits<magnitude_type>::getType(),
                          MPI_SUM, comm_);
 # endif
-#endif
         }
+#endif
       }
 
       // Check if the norm-based termination criterion is met. tol2 is the

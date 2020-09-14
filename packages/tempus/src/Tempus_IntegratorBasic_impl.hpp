@@ -103,7 +103,7 @@ void IntegratorBasic<Scalar>::setStepper(
     std::string stepperName = integratorPL_->get<std::string>("Stepper Name");
 
     RCP<ParameterList> stepperPL = Teuchos::sublist(tempusPL_,stepperName,true);
-    stepper_ = sf->createMultiSteppers(stepperPL, models);
+    stepper_ = sf->createStepper(stepperPL, models);
   } else {
     stepper_->createSubSteppers(models);
   }
@@ -413,6 +413,12 @@ void IntegratorBasic<Scalar>::startIntegrator()
     integratorStatus_ = Status::FAILED;
     return;
   }
+
+  //set the Abs/Rel tolerance
+  auto cs = solutionHistory_->getCurrentState();
+  cs->setTolRel(timeStepControl_->getMaxRelError());
+  cs->setTolAbs(timeStepControl_->getMaxAbsError());
+
   integratorTimer_->start();
   // get optimal initial time step
   const Scalar initDt =

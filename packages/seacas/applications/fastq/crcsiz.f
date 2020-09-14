@@ -1,66 +1,37 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: crcsiz.f,v 1.3 1998/07/14 18:18:36 gdsjaar Exp $
-C $Log: crcsiz.f,v $
-C Revision 1.3  1998/07/14 18:18:36  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.2  1991/03/22 19:56:45  gdsjaar
-C Added MOVED to logical declaration
-C
-c Revision 1.1.1.1  1990/11/30  11:05:30  gdsjaar
-c FASTQ Version 2.0X
-c
-c Revision 1.1  90/11/30  11:05:28  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.QMESH]CRCSIZ.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO CRCSIZ TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
       SUBROUTINE CRCSIZ (MAXNP, X, Y, NINT, N, XEND, YEND, XCEN, YCEN,
      &   THETA1, THETA2, TANG, AA, BB, ERR, TEST, XNOLD, YNOLD, NXKOLD,
      &   LINKEG, LISTEG, BMESUR, MLINK, NPNOLD, NPEOLD, NNXK, REMESH,
      &   REXMIN, REXMAX, REYMIN, REYMAX, IDIVIS, SIZMIN, EMAX, EMIN,
      &   GRAPH)
 C***********************************************************************
-C
+
 C  SUBROUTINE CRCSIZ = GETS INTERVALS ON AN ARC LINE BASED ON ERROR
 C                      SIZE
-C
+
 C***********************************************************************
-C
+
       DIMENSION X (MAXNP), Y (MAXNP)
-C
+
       DIMENSION XNOLD(NPNOLD), YNOLD(NPNOLD), NXKOLD(NNXK, NPEOLD)
       DIMENSION LINKEG(2, MLINK), LISTEG(4 * NPEOLD), BMESUR(NPNOLD)
-C
+
       LOGICAL GRAPH, REMESH, TEST, ERR, SGRAPH, MOVED
-C
+
       IF (GRAPH) THEN
          SGRAPH = .TRUE.
       ELSE
          SGRAPH = .FALSE.
       ENDIF
-C
+
       ITERAT = 100
       EPS = .01
-C
+
       DELANG = 0.
       ANGNOW = 0.
       INTNOW = 0
@@ -76,12 +47,11 @@ C
      &   (THETA1 + ANGNOW + (DELANG * 1.3) .LT. TANG))
      &   ) THEN
 
-C
 C  THE END OF THE LINE (OR CLOSE ENOUGH) HAS BEEN REACHED
-C
+
 C  IF WE ARE TESTING OR THE INTERVALS MATCH, THEN SIMPLY FINISH THE
 C  LINE.
-C
+
          IF ((TEST) .OR. (INTNOW .EQ. NINT)) THEN
             NINT = INTNOW
             N = NINT + 1
@@ -95,9 +65,9 @@ C
                CALL PLTFLU
             ENDIF
          ELSE
-C
+
 C  OTHERWISE, MAKE SURE THE INTERVALS ARE ALRIGHT AND ADD THE EXTRA ONE
-C
+
             EPS = .001
             IF (INTNOW + 1 .NE. NINT) THEN
                CALL MESAGE ('** PROBLEMS WITH INTNOW '//
@@ -126,20 +96,9 @@ C
             ENDIF
          ENDIF
       ELSE
-C
+
 C  NOT TO THE END YET
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO GETSIZ TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 8/2/90
-CC* MODIFICATION: ADDED A SIZE ADJUSTMENT BASED ON THE REQUIRED VALUE
-CC*               AT THE END OF THE SEGMENT AND AT THE AVERAGE OF THE
-CC*               SEGMENTS - THE 2ND AND 3RD CALL TO GETSIZ.
+
          CALL GETSIZ (XNOLD, YNOLD, NXKOLD, LINKEG, LISTEG,
      &      BMESUR, MLINK, NPNOLD, NPEOLD, NNXK, REMESH,
      &      REXMIN, REXMAX, REYMIN, REYMAX, IDIVIS, SIZMIN, EMAX,
@@ -180,9 +139,9 @@ CC*               SEGMENTS - THE 2ND AND 3RD CALL TO GETSIZ.
          ENDIF
          GOTO 100
       ENDIF
-C
+
 C  ERASE THE LINES FOR SMOOTHING IF NEEDED
-C
+
       IF ((.NOT. SGRAPH) .AND. (GRAPH)) THEN
          DO 110 J = 2, NINT
             CALL LCOLOR ('BLACK')
@@ -193,9 +152,9 @@ C
             CALL PLTFLU
   110    CONTINUE
       ENDIF
-C
+
 C  NOW SMOOTH THE NODES ALONG THE LINE
-C
+
       DO 130 I = 1, ITERAT
          MOVED = .FALSE.
          ANGNOW = 0.
@@ -265,9 +224,9 @@ C
             CALL PLTFLU
   150    CONTINUE
       ENDIF
-C
+
   160 CONTINUE
-C
+
       RETURN
-C
+
       END

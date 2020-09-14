@@ -1,4 +1,5 @@
 <ParameterList>
+  <Parameter name="Constant Mass Matrix" type="bool" value="true"/>
   <Parameter name="Solver Type" type="string" value="Velocity Verlet"/>
   <ParameterList name="Velocity Verlet">
     <Parameter name="Num Time Steps" type="int" value="173"/>

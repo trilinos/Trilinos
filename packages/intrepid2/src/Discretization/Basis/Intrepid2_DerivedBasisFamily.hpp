@@ -107,9 +107,15 @@ namespace Intrepid2
     
     // triangle bases
     using HGRAD_TRI = typename TriangleBasisFamily::HGRAD;
+    using HCURL_TRI = typename TriangleBasisFamily::HCURL;
+    using HDIV_TRI = typename TriangleBasisFamily::HDIV;
+    using HVOL_TRI = typename TriangleBasisFamily::HVOL;
     
     // tetrahedron bases
     using HGRAD_TET = typename TetrahedronBasisFamily::HGRAD;
+    using HCURL_TET = typename TetrahedronBasisFamily::HCURL;
+    using HDIV_TET = typename TetrahedronBasisFamily::HDIV;
+    using HVOL_TET = typename TetrahedronBasisFamily::HVOL;
   };
   
   /** \brief  Factory method for line bases in the given family.
@@ -218,9 +224,10 @@ namespace Intrepid2
     using Teuchos::rcp;
     switch (fs)
     {
-//      case FUNCTION_SPACE_HVOL:  return rcp(new typename BasisFamily::HVOL_TET (polyOrder));
-//      case FUNCTION_SPACE_HCURL: return rcp(new typename BasisFamily::HCURL_TET(polyOrder));
-//      case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_TET (polyOrder));
+      //Note: only HGRAD is available for Hierarchical basis at the moment
+      case FUNCTION_SPACE_HVOL:  return rcp(new typename BasisFamily::HVOL_TET (polyOrder));
+      case FUNCTION_SPACE_HCURL: return rcp(new typename BasisFamily::HCURL_TET(polyOrder));
+      case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_TET (polyOrder));
       case FUNCTION_SPACE_HGRAD: return rcp(new typename BasisFamily::HGRAD_TET(polyOrder));
       default:
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");
@@ -237,9 +244,10 @@ namespace Intrepid2
     using Teuchos::rcp;
     switch (fs)
     {
-//      case FUNCTION_SPACE_HVOL:  return rcp(new typename BasisFamily::HVOL_TRI (polyOrder));
-//      case FUNCTION_SPACE_HCURL: return rcp(new typename BasisFamily::HCURL_TRI(polyOrder));
-//      case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_TRI (polyOrder));
+      //Note: only HGRAD is available for Hierarchical basis at the moment
+      case FUNCTION_SPACE_HVOL:  return rcp(new typename BasisFamily::HVOL_TRI (polyOrder));
+      case FUNCTION_SPACE_HCURL: return rcp(new typename BasisFamily::HCURL_TRI(polyOrder));
+      case FUNCTION_SPACE_HDIV:  return rcp(new typename BasisFamily::HDIV_TRI (polyOrder));
       case FUNCTION_SPACE_HGRAD: return rcp(new typename BasisFamily::HGRAD_TRI(polyOrder));
       default:
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");

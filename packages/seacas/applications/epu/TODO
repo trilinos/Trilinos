@@ -1,4 +1,4 @@
-There is a problem with duplicate elements that needs to be handled. 
+There is a problem with duplicate elements that needs to be handled.
 
 They can arise if someone uses conjoin to join all files on each
 specific processor and then uses epu to join the resulting files into
@@ -18,7 +18,7 @@ Need something like "-remove_duplicate_elements"
 
 This means to eliminate duplicate elements and use the element where
 <variable> has value <value> as the "canonical" element at that time
-step. 
+step.
 
 Probably throw an error if more than 1 of the duplicate elements has
 the value <value>...

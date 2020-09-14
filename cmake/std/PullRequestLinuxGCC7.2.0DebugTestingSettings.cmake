@@ -23,6 +23,10 @@ set (Trilinos_ENABLE_COMPLEX_DOUBLE ON CACHE BOOL "Set by default for PR testing
 # Disable just one Teko sub-unit test that fails with openmpi 1.10 (#2712)
 set (Teko_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D ON CACHE BOOL "Temporarily disabled in PR testing")
 
+# These tests times out in most cases - 
+set (KokkosKernels_blas_serial_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set (ROL_example_PDE-OPT_helmholtz_example_02_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 
 # Adding warnings as errors flags to this PR build

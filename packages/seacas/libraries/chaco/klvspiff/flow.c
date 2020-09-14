@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -13,7 +13,6 @@
 /* STATUS:
   film.graph random+KL.  before size = 24, should stay 24.
   However, I'm not finding this much flow.
-
 
 Start w/ a simple greedy weighted matching.
 For each node on left side w/ some remaining unmatched weight:
@@ -36,7 +35,6 @@ This is similar to matching except:
   I need to modify the flow associated w/ an edge and see it
     immediately from either vertex.  Use a single representation
     of flow on an edge, and have each edge representation point to it.
-
 
 */
 

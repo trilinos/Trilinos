@@ -1,19 +1,13 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE USIDS (IFLD, INTYP, CFIELD, IFIELD,
      &   LOLD1, IDOLD1, LOLD2, IDOLD2, LENNEW, IDNEW, *)
 C=======================================================================
-
-C   $Id: usids.f,v 1.1 1990/08/20 12:23:20 gdsjaar Exp $
-C   $Log: usids.f,v $
-C   Revision 1.1  1990/08/20 12:23:20  gdsjaar
-C   Initial revision
-C
 
 C   --*** USIDS *** (GEN3D) Read list of IDs
 C   --   Written by Amy Gilkey - revised 05/21/86

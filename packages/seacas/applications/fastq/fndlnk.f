@@ -1,31 +1,20 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: fndlnk.f,v 1.1 1990/11/30 11:07:43 gdsjaar Exp $
-C $Log: fndlnk.f,v $
-C Revision 1.1  1990/11/30 11:07:43  gdsjaar
-C Initial revision
-C
-C
-CC* FILE: [.QMESH]FNDLNK.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE FNDLNK (MXND, LXK, NXL, K, N1, N2, L, ERR)
 C***********************************************************************
-C
+
 C  SUBROUTINE FNDLNK = FIND THE LINE IN ELEMENT K WITH NODES N1 AND N2
-C
+
 C***********************************************************************
-C
+
       DIMENSION LXK (4, MXND), NXL (2, 3 * MXND)
-C
+
       LOGICAL ERR
-C
+
       ERR = .FALSE.
       DO 100 I = 1, 4
          LL = LXK (I, K)

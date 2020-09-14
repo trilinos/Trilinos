@@ -91,6 +91,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_VIEW_SPEC
   "Enable Sacado specializations for Kokkos::View<...>"
   ON )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_GTest
+  HAVE_SACADO_GTEST
+  "Enable internal GTest library for unit testing"
+  ON )
+
 SET(Sacado_ENABLE_ADOLC_default OFF)
 IF(TPL_ENABLE_ADOLC)
   SET(Sacado_ENABLE_ADOLC_default ON)

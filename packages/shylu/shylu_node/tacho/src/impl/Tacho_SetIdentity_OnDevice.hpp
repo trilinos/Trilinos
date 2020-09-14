@@ -11,11 +11,13 @@ namespace Tacho {
   template<>
   struct SetIdentity<Algo::OnDevice> {
     template<typename MemberType,
-             typename ViewTypeA>
+             typename ViewTypeA,
+             typename ScalarType>
     inline
     static int
     invoke(MemberType &member,
-           const ViewTypeA &A) {
+           const ViewTypeA &A,
+           const ScalarType &alpha) {
       
       typedef typename ViewTypeA::non_const_value_type value_type;
       
@@ -26,7 +28,7 @@ namespace Tacho {
         n = A.extent(1);
       
       if (m > 0 && n > 0) {
-        const value_type one(1), zero(0);
+        const value_type diag(alpha), zero(0);
         using exec_space = MemberType;
         using team_policy_type = Kokkos::TeamPolicy<exec_space>;
 
@@ -37,8 +39,8 @@ namespace Tacho {
             const ordinal_type j = member.league_rank();
             Kokkos::parallel_for
               (Kokkos::TeamVectorRange(member, m),
-               [&](const ordinal_type &i) {
-                A(i,j) = i==j ? one : zero;
+              [&, diag, zero, A, j](const ordinal_type &i) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
+                A(i,j) = i==j ? diag : zero;
               });
           });
       }

@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <SL_SystemInterface.h>
@@ -1214,7 +1214,7 @@ namespace {
 
           ex_get_partial_conn(exoid, EX_ELEM_BLOCK, block_id, beg, count, glob_conn.data(), nullptr,
                               nullptr);
-          progress("\tpartial_conn: " + std::to_string(beg) + " " + std::to_string(count));
+          progress(fmt::format("\tpartial_conn-- start: {:L}\tcount: {:L}", beg, count));
 
           size_t el = 0;
           for (size_t j = 0; j < count; j++) {
@@ -1339,7 +1339,7 @@ namespace {
 
           ex_get_partial_conn(exoid, EX_ELEM_BLOCK, block_id, beg, count, glob_conn.data(), nullptr,
                               nullptr);
-          progress("\tpartial_conn: " + std::to_string(beg) + " " + std::to_string(count));
+          progress(fmt::format("\tpartial_conn-- start: {:L}\tcount: {:L}", beg, count));
 
           size_t el = 0;
           for (size_t j = 0; j < count; j++) {
@@ -1409,7 +1409,7 @@ namespace {
     }
     // Output histogram..
     fmt::print(stderr, "Processor count per node histogram:\n");
-    for (size_t i = 0; i < proc_histo.size(); i++) {
+    for (size_t i = 1; i < proc_histo.size(); i++) {
       if (proc_histo[i] > 0) {
         fmt::print(stderr, "\tNodes on {:2n} processors = {:12n}\t({:2})%\n", i, proc_histo[i],
                    (proc_histo[i] * 100 + node_count / 2) / node_count);

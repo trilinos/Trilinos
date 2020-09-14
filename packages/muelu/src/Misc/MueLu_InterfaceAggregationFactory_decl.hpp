@@ -46,10 +46,8 @@
 #ifndef MUELU_INTERFACEAGGREGATIONFACTORY_DECL_HPP_
 #define MUELU_INTERFACEAGGREGATIONFACTORY_DECL_HPP_
 
-#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 
-#include "MueLu_Exceptions.hpp"
 namespace MueLu
 {
 
@@ -66,7 +64,8 @@ namespace MueLu
 
     It is assumed that each primal slave-side interface node (carrying primal unknowns) is replicated
     with a dual node carrying the dual unknowns.
-    Furthermore, the number of degrees of freedom per dual node is required to constant for all dual nodes.
+    While the number of degrees of freedom (DOFs) per dual node is required to be constant for all dual nodes,
+    the number of dual DOFs per node can differ from the number of primal DOFs per node.
 
     ## Idea ##
 

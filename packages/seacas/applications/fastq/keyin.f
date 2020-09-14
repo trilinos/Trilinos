@@ -1,29 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: keyin.f,v 1.2 1998/07/14 18:19:15 gdsjaar Exp $
-C $Log: keyin.f,v $
-C Revision 1.2  1998/07/14 18:19:15  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.1.1.1  1990/11/30 11:10:48  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:10:46  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]KEYIN.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE KEYIN (MP, ML, MS, MR, MSC, MA, MCOM, ICOM, JCOM, CIN,
      &   RIN, IIN, KIN, IDUMP, N, IPOINT, COOR, IPBOUN, ILINE, LTYPE,
      &   NINT, FACTOR, LCON, ILBOUN, ISBOUN, ISIDE, NLPS, IFLINE,
@@ -36,18 +16,18 @@ C
      &   IRGFLG, ISCHM, SCHEME, NUMBER, DEFSCH, DEFSIZ, TITLE, OPTIM,
      &   THREE, EIGHT, NINE, NOROOM, VAXVMS, WROTE, TIME1, VERSN, BATCH)
 C***********************************************************************
-C
+
 C  SUBROUTINE KEYIN = INPUTS MESH DEFINITIONS FROM THE KEYBOARD
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINE CALLED BY:
 C     FASTQ = A PROGRAM TO QUICKLY GENERATE QUADRILATERAL MESHES
-C
+
 C***********************************************************************
-C
+
       PARAMETER (NIN = 80)
-C
+
       DIMENSION IPOINT(MP), COOR(2, MP), IPBOUN(MP)
       DIMENSION ILINE(ML), LTYPE(ML), NINT(ML), FACTOR(ML), LCON(3, ML)
       DIMENSION ILBOUN(ML), ISBOUN(ML)
@@ -70,23 +50,23 @@ C
       DIMENSION NUMBER(MSC)
       DIMENSION N(29), NOLD(29), III(1)
       DIMENSION KIN(MCOM), IIN(MCOM), RIN(MCOM), JIN(NIN)
-C
+
       CHARACTER*72 SCHEME, DEFSCH, CIN(MCOM), VERSN*9
       CHARACTER*72 TITLE, HOLD, NUMBER*80
-C
+
       LOGICAL IANS, OPTIM, NOROOM, ADDOLD, MERGE, NEWNUM, DOLINK, ADDLNK
       LOGICAL THREE, EIGHT, NINE, VAXVMS, WROTE, SIDEOK, BATCH
-C
+
       IZ = 0
       MERGE = .FALSE.
       DOLINK = .TRUE.
       NOROOM = .FALSE.
       ADDLNK = .FALSE.
-C
+
       DO 100 I = 1, 29
          NOLD(I) = N(I)
   100 CONTINUE
-C
+
   110 CONTINUE
       IF (ICOM .GT. JCOM) THEN
          CALL MESAGE (' ')
@@ -94,9 +74,9 @@ C
      &      JCOM, KIN, CIN, IIN, RIN)
          ICOM = 1
       END IF
-C
+
 C  INPUT A POINT INTO THE DATABASE
-C
+
       IF ((CIN(ICOM)(1:1) .EQ. 'P') .OR. (CIN(ICOM)(1:1) .EQ. 'p')) THEN
          ICOM = ICOM + 1
          CALL MESAGE ('ENTER POINT DATA IN THE FOLLOWING FORMAT:')
@@ -117,18 +97,18 @@ C
             CALL INPOIN(MP, N(1), N(18), JJ, RIN(2), RIN(3), NHOLDP,
      &         IHOLDP, IPOINT, COOR, IPBOUN, LINKP, MERGE, NOROOM)
             IF (NOROOM) GO TO 400
-C
+
 C  REPLACE THE FLAGS OF A REDEFINED POINT
-C
+
             IF (IPNTR .GT. 0) THEN
                CALL LTSORT(MP, LINKP, JJ, JPNTR, ADDLNK)
                IPBOUN(JPNTR) = IPBOUN(IPNTR)
             END IF
             GO TO 120
          END IF
-C
+
 C  ENTER A LINE INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'L') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'l')) THEN
          ICOM = ICOM + 1
@@ -256,9 +236,9 @@ C
      &            NOROOM)
             END IF
             IF (NOROOM) GO TO 400
-C
+
 C  LINK UP THE OLD FLAGS TO THE NEW LINE
-C
+
             IF (IPNTR .GT. 0) THEN
                ADDLNK = .FALSE.
                CALL LTSORT(ML, LINKL, JJ, JPNTR, ADDLNK)
@@ -267,9 +247,9 @@ C
             END IF
             GO TO 130
          END IF
-C
+
 C  ENTER A REGION INTERVAL SIZE INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:3) .EQ. 'SIZ') .OR.
      &   (CIN(ICOM)(1:3) .EQ. 'siz')) THEN
          ICOM = ICOM + 1
@@ -298,9 +278,9 @@ C
             END IF
             GO TO 140
          END IF
-C
+
 C  ENTER A SIDE INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'SI') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'si')) THEN
          ICOM = ICOM + 1
@@ -326,9 +306,9 @@ C
             IF (NOROOM) GO TO 400
             GO TO 160
          END IF
-C
+
 C  ENTER A HOLE INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'HO') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ho')) THEN
          ICOM = ICOM + 1
@@ -356,9 +336,9 @@ C
             IF (NOROOM) GO TO 400
             GO TO 170
          END IF
-C
+
 C  ENTER A BARSET INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'BA') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ba')) THEN
          ICOM = ICOM + 1
@@ -386,9 +366,9 @@ C
             IF (NOROOM) GO TO 400
             GO TO 180
          END IF
-C
+
 C  INPUT A BODY DEFINITION INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:3) .EQ. 'BOD') .OR.
      &   (CIN(ICOM)(1:3) .EQ. 'bod')) THEN
          ICOM = ICOM + 1
@@ -427,16 +407,16 @@ C
      &         'AGAIN')
             GO TO 190
          END IF
-C
+
 C  SPAWN A PROCESS
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'SP') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'sp')) THEN
          ICOM = ICOM + 1
          CALL SPAWN(VAXVMS)
-C
+
 C  INPUT A SCHEME INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'S') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 's')) THEN
          ICOM = ICOM + 1
@@ -474,9 +454,9 @@ C
             END IF
             GO TO 220
          END IF
-C
+
 C  INPUT A BOUNDARY INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'B') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'b')) THEN
          ICOM = ICOM + 1
@@ -493,9 +473,9 @@ C
      &         'TO ENTER: ', MCOM, IOSTAT, JCOM, KIN, CIN, IIN, RIN)
             ICOM = 1
          END IF
-C
+
 C  INPUT A POINT BOUNDARY INTO THE DATABASE
-C
+
          IF ((CIN(ICOM)(1:1) .EQ. 'P') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'p')) THEN
             ICOM = ICOM + 1
@@ -516,9 +496,9 @@ C
                IF (NOROOM) GO TO 400
                GO TO 230
             END IF
-C
+
 C  INPUT A NODE BOUNDARY INTO THE DATABASE
-C
+
          ELSE IF ((CIN(ICOM)(1:1) .EQ. 'N') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'n')) THEN
             ICOM = ICOM + 1
@@ -540,9 +520,9 @@ C
                IF (NOROOM) GO TO 400
                GO TO 240
             END IF
-C
+
 C  INPUT AN ELEMENT BOUNDARY INTO THE DATABASE
-C
+
          ELSE IF ((CIN(ICOM)(1:1) .EQ. 'E') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'e')) THEN
             ICOM = ICOM + 1
@@ -565,9 +545,9 @@ C
                GO TO 250
             END IF
          END IF
-C
+
 C  INPUT A BOUNDARY FLAG WEIGHTING INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'W') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'w')) THEN
          ICOM = ICOM + 1
@@ -585,9 +565,9 @@ C
      &         'TO WEIGHT: ', MCOM, IOSTAT, JCOM, KIN, CIN, IIN, RIN)
             ICOM = 1
          END IF
-C
+
 C  INPUT A POINT BOUNDARY FLAG WEIGHT INTO THE DATABASE
-C
+
          IF ((CIN(ICOM)(1:1) .EQ. 'P') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'p')) THEN
             ICOM = ICOM + 1
@@ -611,9 +591,9 @@ C
                END IF
                GO TO 260
             END IF
-C
+
 C  INPUT A NODE BOUNDARY WEIGHT INTO THE DATABASE
-C
+
          ELSE IF ((CIN(ICOM)(1:1) .EQ. 'N') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'n')) THEN
             ICOM = ICOM + 1
@@ -638,9 +618,9 @@ C
                END IF
                GO TO 270
             END IF
-C
+
 C  INPUT AN ELEMENT BOUNDARY WEIGHT INTO THE DATABASE
-C
+
          ELSE IF ((CIN(ICOM)(1:1) .EQ. 'E') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'e')) THEN
             ICOM = ICOM + 1
@@ -666,9 +646,9 @@ C
                GO TO 280
             END IF
          END IF
-C
+
 C  TOGGLE THE BANDWIDTH OPTIMIZATION FLAG
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'O') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'o')) THEN
          ICOM = ICOM + 1
@@ -679,9 +659,9 @@ C
             OPTIM = .TRUE.
             CALL MESAGE ('BANDWIDTH OPTIMIZER ENABLED')
          END IF
-C
+
 C  FLAG THE BANDWIDTH OPTIMIZATION ROUTINES ON, AND READ A RENUM CARD
-C
+
       ELSE IF ((CIN(ICOM)(1:3) .EQ. 'REN') .OR.
      &   (CIN(ICOM)(1:3) .EQ. 'ren')) THEN
          ICOM = ICOM + 1
@@ -698,9 +678,9 @@ C
      &         RIN)
             ICOM = 1
          END IF
-C
+
 C  ENTER A POINT-LINE-POINT RENUM CARD
-C
+
          IF ((CIN(ICOM)(1:1) .EQ. 'P') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'p')) THEN
             ICOM = ICOM + 1
@@ -719,9 +699,9 @@ C
                IF (NOROOM) GO TO 400
                GO TO 290
             END IF
-C
+
 C  ENTER A X, Y LOCATION RENUM CARD
-C
+
          ELSE IF ((CIN(ICOM)(1:1) .EQ. 'X') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'x')) THEN
             ICOM = ICOM + 1
@@ -739,9 +719,9 @@ C
                IF (NOROOM) GO TO 400
                GO TO 300
             END IF
-C
+
 C  ENTER A NODE UNIQUE ID RENUM CARD
-C
+
          ELSE IF ((CIN(ICOM)(1:1) .EQ. 'N') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'n')) THEN
             ICOM = ICOM + 1
@@ -762,9 +742,9 @@ C
                GO TO 310
             END IF
          END IF
-C
+
 C  ENTER A REGION INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'R') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'r')) THEN
          ICOM = ICOM + 1
@@ -811,9 +791,9 @@ C
             RSIZE(JJPNTR) = 0.
             GO TO 320
          END IF
-C
+
 C  ENTER A GROUP OF REGIONS INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'G') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'g')) THEN
          ICOM = ICOM + 1
@@ -841,18 +821,18 @@ C
             IF (NOROOM) GO TO 400
             GO TO 340
          END IF
-C
+
 C  ENTER A TITLE
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'T') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 't')) THEN
          ICOM = ICOM + 1
          IF (ICOM .GT. JCOM) THEN
             CALL GETINP(IUNIT, IDUMP, 'TITLE: ', TITLE, IOSTAT)
          END IF
-C
+
 C  ENTER LINE INTERVALS
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'I') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'i')) THEN
          ICOM = ICOM + 1
@@ -875,9 +855,9 @@ C
      &         IFLINE, ILLIST, LINKL, LINKS, ADDLNK)
             GO TO 350
          END IF
-C
+
 C  ENTER LINE FACTORS
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'F') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'f')) THEN
          ICOM = ICOM + 1
@@ -900,9 +880,9 @@ C
      &         NLPS, IFLINE, ILLIST, LINKL, LINKS, ADDLNK)
             GO TO 360
          END IF
-C
+
 C  ENTER MATERIAL NUMBERS
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'M') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'm')) THEN
          ICOM = ICOM + 1
@@ -923,9 +903,9 @@ C
             END IF
             GO TO 370
          END IF
-C
+
 C  FLAG THE THREE-NODE ELEMENT OPTION
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'TH') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'th')) THEN
          ICOM = ICOM + 1
@@ -936,9 +916,9 @@ C
             THREE = .TRUE.
             CALL MESAGE ('THREE NODE ELEMENT GENERATION - ON')
          END IF
-C
+
 C  FLAG THE EIGHT-NODE ELEMENT OPTION
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'EI') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'ei')) THEN
          ICOM = ICOM + 1
@@ -950,9 +930,9 @@ C
             NINE = .FALSE.
             CALL MESAGE ('EIGHT NODE ELEMENT GENERATION - ON')
          END IF
-C
+
 C  FLAG THE NINE-NODE ELEMENT OPTION
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'N') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'n')) THEN
          ICOM = ICOM + 1
@@ -964,9 +944,9 @@ C
             EIGHT = .FALSE.
             CALL MESAGE ('NINE NODE ELEMENT GENERATION - ON')
          END IF
-C
+
 C  EXIT OPTION - EXITS FASTQ
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'EX') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ex')) THEN
          ICOM = ICOM + 1
@@ -979,14 +959,14 @@ C
      &         TIME1, BATCH, VERSN)
          ENDIF
          GO TO 110
-C
+
 C  LINK ALL NEW DATA AS NEEDED, AND RETURN FROM THE KEYIN OPTION
-C
+
       ELSE IF (CIN(ICOM)(1:1) .EQ. ' ') THEN
          ICOM = ICOM + 1
-C
+
 C  LINK UP THE POINTS AND LINES TO THEIR ASSOCIATED FLAGS
-C
+
          SIDEOK = .FALSE.
          CALL LINKBC(MP, MS, NOLD(11) + 1, N(11), N(1), N(25), N(11),
      &      N(12), N(20), IPBF, IFPB, NPPF, LISTPB, NLPS, IFLINE,
@@ -1004,10 +984,10 @@ C
      &      ILLIST, ISBOUN, LINKSB, IWTSBF, LINKL, LINKS, SIDEOK,
      &      NOROOM)
          IF (NOROOM) GO TO 400
-C
+
 C  IF NO BODY CARDS HAVE BEEN READ, ASSUME THE BODY IS ALL THE
 C  REGIONS AND ALL THE BAR SETS
-C
+
          IF (N(9) .EQ. NOLD(9)) THEN
             ADDOLD = .TRUE.
             IFOUND = 1
@@ -1030,15 +1010,15 @@ C
   390       CONTINUE
          END IF
          RETURN
-C
+
       ELSE
          ICOM = ICOM + 1
          CALL HELP_FQ(9)
       END IF
       GO TO 110
-C
+
 C  MORE ROOM IN DIMENSIONS NEEDED
-C
+
   400 CONTINUE
       CALL MESAGE (' ')
       CALL MESAGE ('DIMENSIONS MUST BE INCREASED - PLEASE WAIT')
@@ -1047,7 +1027,7 @@ C
   410 CONTINUE
       NOROOM = .TRUE.
       RETURN
-C
+
 10000 FORMAT(' A POINT NO. OF:', I7, ' IS NOT ALLOWED', /,
      &   ' THIS POINT WILL NOT BE INPUT INTO DATABASE')
 10010 FORMAT(' A LINE NO. OF:', I7, ' IS NOT ALLOWED', /,
@@ -1086,5 +1066,5 @@ C
      &   /, ' THIS SCHEME WILL NOT BE INPUT INTO DATABASE')
 10170 FORMAT(' REGION NO:', I5, ' IS NOT IN THE DATABASE', /,
      &   ' THUS NO MATERIAL NUMBER CAN BE ENTERED')
-C
+
       END

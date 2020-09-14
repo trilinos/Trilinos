@@ -50,6 +50,8 @@
 #include "Panzer_IntegrationValues2.hpp"
 #include "Panzer_ArrayTraits.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
+#include "Panzer_SubcellConnectivity.hpp"
+#include "Panzer_LocalMeshInfo.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -246,123 +248,6 @@ namespace panzer {
 
   }
 
-  TEUCHOS_UNIT_TEST(integration_values, coord_ordering_1d)  
-  {
-    typedef IntegrationValues2<double> IV;
-    MDFieldArrayFactory af("",true);
-
-    int num_faces = 2;
-    int num_points_per_face = 4;
-    std::vector<int> order(num_points_per_face,-1);
-  
-    IV::Array_CellIPDim coords = af.template buildStaticArray<double,Cell,IP,Dim>("coord",2,num_faces*num_points_per_face,1); 
-    coords(0,0,0) = -1.0; coords(0,1,0) =  0.0; coords(0,2,0) =  1.0; coords(0,3,0) = 2.0;
-    coords(0,4,0) =  1.0; coords(0,5,0) =  2.0; coords(0,6,0) = -1.0; coords(0,7,0) = 0.0;
-    coords(1,0,0) = -1.0; coords(1,1,0) =  0.0; coords(1,2,0) =  1.0; coords(1,3,0) = 2.0;
-    coords(1,4,0) =  1.0; coords(1,5,0) =  2.0; coords(1,6,0) = -1.0; coords(1,7,0) = 0.0;
-
-    int cell = 0, offset = 0;
-
-    cell = 0; offset = 0;
-    IV::uniqueCoordOrdering(coords,cell,offset,order);
-    TEST_ASSERT(order==std::vector<int>({0,1,2,3}));
-
-    cell = 0; offset = 4;
-    IV::uniqueCoordOrdering(coords,cell,offset,order);
-    TEST_ASSERT(order==std::vector<int>({2,3,0,1}));
-
-    cell = 1; offset = 0;
-    IV::uniqueCoordOrdering(coords,cell,offset,order);
-    TEST_ASSERT(order==std::vector<int>({0,1,2,3}));
-
-    cell = 1; offset = 4;
-    IV::uniqueCoordOrdering(coords,cell,offset,order);
-    TEST_ASSERT(order==std::vector<int>({2,3,0,1}));
-  }
-
-  TEUCHOS_UNIT_TEST(integration_values, coord_ordering_2d)  
-  {
-    typedef IntegrationValues2<double> IV;
-    MDFieldArrayFactory af("",true);
-
-    {
-      int num_faces = 2;
-      int num_points_per_face = 4;
-      std::vector<int> order(num_points_per_face,-1);
-  
-      IV::Array_CellIPDim coords = af.template buildStaticArray<double,Cell,IP,Dim>("coord",2,num_faces*num_points_per_face,2); 
-
-      // cell 0
-      coords(0,0,0) = -1.0; coords(0,1,0) =  0.0; coords(0,2,0) =  1.0; coords(0,3,0) = 2.0;
-      coords(0,0,1) =  0.0; coords(0,1,1) =  0.0; coords(0,2,1) =  0.0; coords(0,3,1) = 0.0;
-
-      coords(0,4,0) =  1.0; coords(0,5,0) =  2.0; coords(0,6,0) = -1.0; coords(0,7,0) = 0.0;
-      coords(0,4,1) =  0.0; coords(0,5,1) =  0.0; coords(0,6,1) =  0.0; coords(0,7,1) = 0.0;
-
-      // cell 1
-      coords(1,0,0) =  2.0; coords(1,1,0) =  2.0; coords(1,2,0) =  2.0; coords(1,3,0) = 2.0;
-      coords(1,0,0) = -1.1; coords(1,1,1) =  0.0; coords(1,2,1) =  1.0; coords(1,3,1) = 2.0;
-
-      coords(1,4,0) =  2.0; coords(1,5,0) =  2.0; coords(1,6,0) =  2.0; coords(1,7,0) = 2.0;
-      coords(1,4,1) =  1.0; coords(1,5,1) =  2.0; coords(1,6,1) = -1.0; coords(1,7,1) = 0.0;
-
-      int cell = 0, offset = 0;
-
-      cell = 0; offset = 0;
-      IV::uniqueCoordOrdering(coords,cell,offset,order);
-      TEST_ASSERT(order==std::vector<int>({0,1,2,3}));
-
-      cell = 0; offset = 4;
-      IV::uniqueCoordOrdering(coords,cell,offset,order);
-      TEST_ASSERT(order==std::vector<int>({2,3,0,1}));
-
-      cell = 1; offset = 0;
-      IV::uniqueCoordOrdering(coords,cell,offset,order);
-      TEST_ASSERT(order==std::vector<int>({0,1,2,3}));
-
-      cell = 1; offset = 4;
-      IV::uniqueCoordOrdering(coords,cell,offset,order);
-      TEST_ASSERT(order==std::vector<int>({2,3,0,1}));
-    }
-
-    // this was the original failing case
-    {
-      std::vector<int> order(2,-1);
-  
-      IV::Array_CellIPDim coords = af.template buildStaticArray<double,Cell,IP,Dim>("coord",4,2,2); 
-
-      coords(0,0,0) = 0.0; coords(0,0,1) = 4.4088517374119224e-01;
-      coords(0,1,0) = 0.0; coords(0,1,1) = 1.1813482625880771e-01; 
-
-      coords(1,0,0) = 2.5; coords(1,0,1) = 4.4088517374119224e-01;
-      coords(1,1,0) = 2.5; coords(1,1,1) = 1.1813482625880771e-01; 
-
-      coords(2,0,0) = 0.0; coords(2,0,1) = 1.1813482625880771e-01; 
-      coords(2,1,0) = 0.0; coords(2,1,1) = 4.4088517374119224e-01;
-
-      coords(3,0,0) = 2.5; coords(3,0,1) = 1.1813482625880771e-01; 
-      coords(3,1,0) = 2.5; coords(3,1,1) = 4.4088517374119224e-01;
-
-      int cell = 0, offset = 0;
-
-      cell = 0; 
-      IV::uniqueCoordOrdering(coords,cell,offset,order);
-      TEST_ASSERT(order==std::vector<int>({1,0}));
-
-      cell = 1; 
-      IV::uniqueCoordOrdering(coords,cell,offset,order);
-      TEST_ASSERT(order==std::vector<int>({1,0}));
-
-      cell = 2;
-      IV::uniqueCoordOrdering(coords,cell,offset,order);
-      TEST_ASSERT(order==std::vector<int>({0,1}));
-
-      cell = 3;
-      IV::uniqueCoordOrdering(coords,cell,offset,order);
-      TEST_ASSERT(order==std::vector<int>({0,1}));
-    }
-  }
-
   TEUCHOS_UNIT_TEST(integration_values, quadpt_swap)
   {    
     Teuchos::RCP<shards::CellTopology> topo = 
@@ -473,6 +358,201 @@ namespace panzer {
       TEST_EQUALITY(    jac_inv(ref_cell,org_pt,0,1),     jac_inv(tst_cell,new_pt,0,1));
       TEST_EQUALITY(    jac_inv(ref_cell,org_pt,1,0),     jac_inv(tst_cell,new_pt,1,0));
       TEST_EQUALITY(    jac_inv(ref_cell,org_pt,1,1),     jac_inv(tst_cell,new_pt,1,1));
+    }
+  }
+
+  TEUCHOS_UNIT_TEST(integration_values, surface_quadrature){
+
+    /*
+
+      We are going to apply a periodic boundary condition set at an angle to make sure we can align points across the boundary.
+      The mesh takes the form:
+
+      0-----1-----2
+       \    |    /
+        \   |   /
+         3--4--5
+ 
+      Cell 0: 0,3,4,1
+      Cell 1: 1,4,5,2
+
+      Face connectivity will be:
+      face ID, Cell 0, Cell 1, (Node 0, Node 1)
+      0:  0,  1 (0,3) = (5,2)
+      1:  0, -1 (3,4)
+      2:  0,  1 (4,1) = (1,4)
+      3:  0, -1 (1,0)
+      4:  1, -1 (4,5)
+      5:  1, -1 (2,1)
+       
+     */
+
+    // First we build the mesh
+    panzer::LocalMeshPartition mesh;
+    {
+      mesh.num_owned_cells = 2;
+      mesh.num_ghstd_cells = 0;
+      mesh.num_virtual_cells = 0;
+      mesh.cell_topology = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+      mesh.local_cells = Kokkos::View<panzer::LocalOrdinal*>("local_cells",2);
+      mesh.local_cells(0) = 0;
+      mesh.local_cells(1) = 1;
+      mesh.cell_vertices = Kokkos::View<double***,PHX::Device>("cell_vertices",2,4,2);
+
+      Kokkos::View<double**> coordinates("coordinates",6,2);
+      coordinates(0,0) = 1.; coordinates(0,1) = 3.;
+      coordinates(1,0) = 3.; coordinates(1,1) = 3.;
+      coordinates(2,0) = 5.; coordinates(2,1) = 3.;
+      coordinates(3,0) = 2.; coordinates(3,1) = 1.;
+      coordinates(4,0) = 3.; coordinates(4,1) = 1.;
+      coordinates(5,0) = 4.; coordinates(5,1) = 1.;
+      
+#define SET_NC(cell,node,vertex) mesh.cell_vertices(cell,node,0) = coordinates(vertex,0); mesh.cell_vertices(cell,node,1) = coordinates(vertex,1);
+      SET_NC(0,0, 0);
+      SET_NC(0,1, 3);
+      SET_NC(0,2, 4);
+      SET_NC(0,3, 1);
+      SET_NC(1,0, 1);
+      SET_NC(1,1, 4);
+      SET_NC(1,2, 5);
+      SET_NC(1,3, 2);
+#undef SET_NC
+
+      mesh.face_to_cells = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_cells",6);
+      mesh.face_to_cells(0,0) = 0; mesh.face_to_cells(0,1) =  1;
+      mesh.face_to_cells(1,0) = 0; mesh.face_to_cells(1,1) = -1;
+      mesh.face_to_cells(2,0) = 0; mesh.face_to_cells(2,1) =  1;
+      mesh.face_to_cells(3,0) = 0; mesh.face_to_cells(3,1) = -1;
+      mesh.face_to_cells(4,0) = 1; mesh.face_to_cells(4,1) = -1;
+      mesh.face_to_cells(5,0) = 1; mesh.face_to_cells(5,1) = -1;
+
+      mesh.face_to_lidx = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_lidx",6);
+      mesh.face_to_lidx(0,0) = 0; mesh.face_to_lidx(0,1) =  2;
+      mesh.face_to_lidx(1,0) = 1; mesh.face_to_lidx(1,1) = -1;
+      mesh.face_to_lidx(2,0) = 2; mesh.face_to_lidx(2,1) =  0;
+      mesh.face_to_lidx(3,0) = 3; mesh.face_to_lidx(3,1) = -1;
+      mesh.face_to_lidx(4,0) = 1; mesh.face_to_lidx(4,1) = -1;
+      mesh.face_to_lidx(5,0) = 3; mesh.face_to_lidx(5,1) = -1;
+
+      mesh.cell_to_faces = Kokkos::View<panzer::LocalOrdinal**>("cell_to_faces",2,4);
+      mesh.cell_to_faces(0,0) = 0; mesh.cell_to_faces(0,1) = 1; mesh.cell_to_faces(0,2) = 2; mesh.cell_to_faces(0,3) = 3;
+      mesh.cell_to_faces(1,0) = 2; mesh.cell_to_faces(1,1) = 4; mesh.cell_to_faces(1,2) = 0; mesh.cell_to_faces(1,3) = 5;
+      
+    }
+   
+    const auto id = panzer::IntegrationDescriptor(2, panzer::IntegrationDescriptor::SURFACE);
+    auto int_rule = Teuchos::rcp(new IntegrationRule(id, mesh.cell_topology, 2, 6));
+    panzer::IntegrationValues2<double> int_values("prefix_",true);
+    int_values.setupArrays(int_rule);
+
+    // Fill node coordinates
+    panzer::MDFieldArrayFactory af("prefix_",true);
+    auto node_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("node_coordinates",2,4,2);
+
+    for(int i=0; i<mesh.cell_vertices.extent_int(0); ++i)
+      for(int j=0; j<mesh.cell_vertices.extent_int(1); ++j)
+        for(int k=0; k<mesh.cell_vertices.extent_int(2); ++k)
+          node_coordinates(i,j,k) = mesh.cell_vertices(i,j,k);
+
+    // Make sure the integration values fail to construct without the subcell connectivity
+    TEST_THROW(int_values.evaluateValues(node_coordinates), std::logic_error);
+
+    // Build the subcell connectivity
+    auto connectivity = Teuchos::rcp(new panzer::FaceConnectivity);
+    connectivity->setup(mesh);
+
+    // Now we try again
+    int_values.evaluateValues(node_coordinates,-1,connectivity);
+    
+    // This test will focus on normals and points
+    const auto normals = int_values.surface_normals;
+    const auto points = int_values.ip_coordinates;
+    const int num_points_per_cell = points.extent_int(1);
+    const int num_points_per_face = num_points_per_cell / 4;
+
+    for(int cell=0; cell<2; ++cell){
+      out << "CELL " << cell << ":\n";
+      for(int face=0; face<4; ++face){
+        out << "\tFACE " << face << ":\n";
+        for(int face_point=0; face_point<num_points_per_face; ++face_point){
+          const int point = face*num_points_per_face + face_point;
+          out << "\t\tPOINT  "<<face_point<<": ("<<points(cell,point,0)<<", "<<points(cell,point,1)<<")\n";
+          out << "\t\tNORMAL "<<face_point<<": ("<<normals(cell,point,0)<<", "<<normals(cell,point,1)<<")\n";
+        }
+      }
+    }
+
+    // We need to make sure that face 0 and 2 have aligned quadrature points
+
+    const double tolerance = 1.e-14;
+    
+    // Face 0
+    {
+      const int cell_0 = connectivity->cellForSubcell(0,0);
+      const int cell_1 = connectivity->cellForSubcell(0,1);
+
+      const int lidx_0 = connectivity->localSubcellForSubcell(0,0);
+      const int lidx_1 = connectivity->localSubcellForSubcell(0,1);
+
+      TEST_EQUALITY(cell_0,0);
+      TEST_EQUALITY(cell_1,1);
+
+      TEST_EQUALITY(lidx_0,0);
+      TEST_EQUALITY(lidx_1,2);
+
+      const double sqrt5 = std::sqrt(5.);
+      const double normal_0[2] = {-2./sqrt5,-1./sqrt5};
+      const double normal_1[2] = { 2./sqrt5,-1./sqrt5};
+
+      // Note that y will be equal, but x will be different
+      
+      for(int face_point=0; face_point<num_points_per_face; ++face_point){
+        const int point_0 = lidx_0*num_points_per_face+face_point;
+        const int point_1 = lidx_1*num_points_per_face+face_point;
+
+        TEST_ASSERT(std::fabs(points(cell_0,point_0,0) - points(cell_1,point_1,0)) > 0.5);
+        TEST_FLOATING_EQUALITY(points(cell_0,point_0,1), points(cell_1,point_1,1), tolerance);
+
+	TEST_FLOATING_EQUALITY(normals(cell_0,point_0,0), normal_0[0], tolerance);
+        TEST_FLOATING_EQUALITY(normals(cell_0,point_0,1), normal_0[1], tolerance);
+
+	TEST_FLOATING_EQUALITY(normals(cell_1,point_1,0), normal_1[0], tolerance);
+        TEST_FLOATING_EQUALITY(normals(cell_1,point_1,1), normal_1[1], tolerance);
+
+      }
+    }
+    
+    // Face 2
+    {
+      const int cell_0 = connectivity->cellForSubcell(2,0);
+      const int cell_1 = connectivity->cellForSubcell(2,1);
+
+      const int lidx_0 = connectivity->localSubcellForSubcell(2,0);
+      const int lidx_1 = connectivity->localSubcellForSubcell(2,1);
+
+      TEST_EQUALITY(cell_0,0);
+      TEST_EQUALITY(cell_1,1);
+
+      TEST_EQUALITY(lidx_0,2);
+      TEST_EQUALITY(lidx_1,0);
+
+      const double normal_0[2] = { 1.,0.};
+      const double normal_1[2] = {-1.,0.};
+      
+      for(int face_point=0; face_point<num_points_per_face; ++face_point){
+        const int point_0 = lidx_0*num_points_per_face+face_point;
+        const int point_1 = lidx_1*num_points_per_face+face_point;
+
+        TEST_FLOATING_EQUALITY(points(cell_0,point_0,0), points(cell_1,point_1,0), tolerance);
+        TEST_FLOATING_EQUALITY(points(cell_0,point_0,1), points(cell_1,point_1,1), tolerance);
+
+        TEST_FLOATING_EQUALITY(normals(cell_0,point_0,0), normal_0[0], tolerance);
+        TEST_FLOATING_EQUALITY(normals(cell_0,point_0,1), normal_0[1], tolerance);
+        
+        TEST_FLOATING_EQUALITY(normals(cell_1,point_1,0), normal_1[0], tolerance);
+        TEST_FLOATING_EQUALITY(normals(cell_1,point_1,1), normal_1[1], tolerance);
+
+      }
     }
   }
 }

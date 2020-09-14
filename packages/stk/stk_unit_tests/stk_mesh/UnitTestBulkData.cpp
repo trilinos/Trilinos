@@ -69,6 +69,7 @@
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_mesh/baseImpl/MeshCommImplUtils.hpp"
+#include "stk_mesh/baseImpl/EntityGhostData.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_unit_test_utils/stk_mesh_fixtures/BoxFixture.hpp"  // for BoxFixture
 #include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture, etc
@@ -2371,7 +2372,7 @@ TEST(BulkData, testCommList)
 std::string printGhostData(stk::mesh::BulkData & bulkData, stk::mesh::Entity entity)
 {
     std::ostringstream oss;
-    std::vector<stk::mesh::EntityGhostData> egd;
+    std::vector<stk::mesh::impl::EntityGhostData> egd;
     stk::mesh::impl::get_ghost_data(bulkData, entity, egd);
     for(size_t z = 0; z < egd.size(); ++z)
     {
@@ -2400,9 +2401,9 @@ std::string printGhostDataByRank(stk::mesh::BulkData & bulkData, stk::topology::
 TEST(BulkData, EntityGhostData)
 {
     std::string gold_result = "(Entity_lid=0, direction=SEND, processor=128, ghosting level=LOCALLY_OWNED)";
-    stk::mesh::EntityGhostData data;
-    data.direction = stk::mesh::EntityGhostData::SEND;
-    data.ghostingLevel = stk::mesh::EntityGhostData::LOCALLY_OWNED;
+    stk::mesh::impl::EntityGhostData data;
+    data.direction = stk::mesh::impl::EntityGhostData::SEND;
+    data.ghostingLevel = stk::mesh::impl::EntityGhostData::LOCALLY_OWNED;
     data.processor = 128;
     std::ostringstream oss;
     oss << data;
@@ -5987,7 +5988,7 @@ TEST( BulkData, AddSharedNodesInTwoSteps)
         return;
     }
 
-    int nodeId = 1;
+    stk::mesh::EntityId nodeId = 1;
     const unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
     stk::mesh::BulkData mesh(meta, pm);

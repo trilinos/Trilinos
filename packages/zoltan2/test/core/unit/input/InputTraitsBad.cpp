@@ -67,14 +67,13 @@ int main(int argc, char *argv[])
   // would fail - the #define above inverts the status of the static_asserts
   // that means these should all compile but only in this test and nowhere else
 
-  // scalar ordinal (first slot) must be float, double, or int
+  // scalar ordinal (first slot) must be float, double, int, or long long
   // this validates we would fail for any
   BEGIN_CHECK    Zoltan2::BasicUserTypes<unsigned int, int, long>                       END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<unsigned long, int, long>                      END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<uint32_t, int, long>                           END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<unsigned long long, int, long>                 END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<uint64_t, int, long>                           END_CHECK
-  BEGIN_CHECK    Zoltan2::BasicUserTypes<int64_t, int, long>                            END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<size_t, int, long>                             END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<std::complex<int>, int, long>                  END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<std::complex<double>, int, long>               END_CHECK
@@ -112,14 +111,11 @@ int main(int argc, char *argv[])
   typedef float user_float_t;
   typedef double user_double_t;
   typedef uint32_t user_uint32_t;
-  typedef int64_t user_int64_t;
   typedef uint64_t user_uint64_t;
   typedef signed long user_long_t;
-  typedef signed long long user_long_long_t;
   typedef unsigned long user_unsigned_long_t;
   typedef unsigned long long user_unsigned_long_long_t;
   typedef size_t user_size_t;
-  typedef ssize_t user_ssize_t;
   typedef SomeBadType<int,int, int> user_some_bad_t;
 
   // scalar ordinal (first slot) must be float, double, or int
@@ -132,11 +128,7 @@ int main(int argc, char *argv[])
   BEGIN_CHECK    Zoltan2::BasicUserTypes<std::complex<user_int_t>, user_int_t, user_long_t>                                 END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<SomeBadType<user_int_t,user_long_t, user_int_t>, user_int_t, user_long_t>          END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_uint32_t, user_int_t, user_long_t>                                            END_CHECK
-  BEGIN_CHECK    Zoltan2::BasicUserTypes<int64_t, user_int_t, user_long_t>                                                  END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_some_bad_t, user_int_t, user_long_t>                                          END_CHECK
-  BEGIN_CHECK    Zoltan2::BasicUserTypes<user_ssize_t, user_int_t, user_long_t>                                             END_CHECK
-  BEGIN_CHECK    Zoltan2::BasicUserTypes<user_long_long_t, user_int_t, user_long_t>                                         END_CHECK
-  BEGIN_CHECK    Zoltan2::BasicUserTypes<user_int64_t, user_int_t, user_long_t>                                             END_CHECK
 
   // local ordinal (second slot) must always be signed
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_unsigned_int_t, user_long_t>                                    END_CHECK
@@ -161,16 +153,12 @@ int main(int argc, char *argv[])
 
   // some more checks that should all fail - this doesn't check all
   // combinations but just tries a bunch of things on different class types
-  BEGIN_CHECK    Zoltan2::BasicUserTypes<long, int, long long>                          END_CHECK
-  BEGIN_CHECK    Zoltan2::BasicUserTypes<long long, long, unsigned int>                 END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<unsigned int, unsigned int, unsigned long>     END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<unsigned long, unsigned long, long>            END_CHECK
-  BEGIN_CHECK    Zoltan2::BasicUserTypes<long long, long long, unsigned int>            END_CHECK
   BEGIN_CHECK    Xpetra::CrsMatrix<double, float, long long>                            END_CHECK
   BEGIN_CHECK    Xpetra::CrsMatrix<float, long, float>                                  END_CHECK
   BEGIN_CHECK    Xpetra::CrsMatrix<float, double, unsigned long>                        END_CHECK
   BEGIN_CHECK    Xpetra::CrsMatrix<float, unsigned long, double>                        END_CHECK
-  BEGIN_CHECK    Xpetra::CrsMatrix<long long, long long, unsigned int>                  END_CHECK
   BEGIN_CHECK    Tpetra::CrsMatrix<SomeBadType<int, int, int>, int, long long>          END_CHECK
   BEGIN_CHECK    Xpetra::CrsGraph<int, SomeBadType<int, double, float>>                 END_CHECK
   BEGIN_CHECK    Xpetra::CrsGraph<SomeBadType<int, long long, int>, unsigned int>       END_CHECK

@@ -237,11 +237,11 @@ public:
     virtual std::string getDecompMethod() const override;
 
     virtual void setDecompMethod(const std::string& input_method) override;
-    virtual void setToleranceForFaceSearch(double tol);
+    virtual void setToleranceForFaceSearch(double tol) override;
     virtual void setToleranceForParticleSearch(double tol);
-    virtual void setEdgeWeightForSearch(double w);
-    virtual void setVertexWeightMultiplierForVertexInSearch(double w);
-    virtual void setShouldFixSpiders(bool fixSpiders);
+    virtual void setEdgeWeightForSearch(double w) override;
+    virtual void setVertexWeightMultiplierForVertexInSearch(double w) override;
+    virtual void setShouldFixSpiders(bool fixSpiders) override;
 
     virtual bool shouldFixMechanisms() const override;
     virtual bool shouldFixSpiders() const override;

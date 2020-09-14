@@ -239,10 +239,10 @@ void StepperExplicitRK<Scalar>::initialize()
   }
 
   if ( this->tableau_->isEmbedded() and this->getUseEmbedded() ){
-     ee_ = Thyra::createMember(this->appModel_->get_f_space());
-     abs_u0 = Thyra::createMember(this->appModel_->get_f_space());
-     abs_u = Thyra::createMember(this->appModel_->get_f_space());
-     sc = Thyra::createMember(this->appModel_->get_f_space());
+     this->ee_ = Thyra::createMember(this->appModel_->get_f_space());
+     this->abs_u0 = Thyra::createMember(this->appModel_->get_f_space());
+     this->abs_u = Thyra::createMember(this->appModel_->get_f_space());
+     this->sc = Thyra::createMember(this->appModel_->get_f_space());
   }
 
   Stepper<Scalar>::initialize();
@@ -253,15 +253,16 @@ template<class Scalar>
 void StepperExplicitRK<Scalar>::setInitialConditions(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
-  using Teuchos::RCP;
-
-  RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
-
-  // Check if we need Stepper storage for xDot
-  if (initialState->getXDot() == Teuchos::null)
+  if (this->getUseFSAL())
     this->setStepperXDot(stageXDot_.back());
+  else
+    this->setStepperXDot(stageXDot_[0]);
 
   StepperExplicit<Scalar>::setInitialConditions(solutionHistory);
+
+  auto xDot = solutionHistory->getCurrentState()->getXDot();
+  if (xDot != Teuchos::null && this->getUseFSAL())
+    Thyra::assign(this->getStepperXDot().ptr(), *(xDot));
 }
 
 
@@ -283,13 +284,6 @@ void StepperExplicitRK<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
-#endif
-    RCP<StepperExplicitRK<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
-    this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
-      StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
-
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
@@ -300,59 +294,56 @@ void StepperExplicitRK<Scalar>::takeStep(
     Teuchos::SerialDenseVector<int,Scalar> b = this->tableau_->b();
     Teuchos::SerialDenseVector<int,Scalar> c = this->tableau_->c();
 
-    this->stageX_ = workingState->getX();
-    Thyra::assign(this->stageX_.ptr(), *(currentState->getX()));
+    Thyra::assign(workingState->getX().ptr(), *(currentState->getX()));
+
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+#endif
+    RCP<StepperExplicitRK<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
+    this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+      StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
 
     // Compute stage solutions
     for (int i=0; i < numStages; ++i) {
       this->setStageNumber(i);
+      Thyra::assign(workingState->getX().ptr(), *(currentState->getX()));
+      for (int j=0; j < i; ++j) {
+        if (A(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
+          Thyra::Vp_StV(workingState->getX().ptr(), dt*A(i,j), *stageXDot_[j]);
+        }
+      }
+      this->setStepperXDot(stageXDot_[i]);
+
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
       this->stepperObserver_->observeBeginStage(solutionHistory, *this);
-
-      // ???: is it a good idea to leave this (no-op) here?
       this->stepperObserver_
           ->observeBeforeImplicitExplicitly(solutionHistory, *this);
-
-      // ???: is it a good idea to leave this (no-op) here?
       this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
+      this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
+      this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
 #endif
       this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
         StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STAGE);
       this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
         StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
+      this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+        StepperRKAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
+      this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
+        StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
 
       if ( i == 0 && this->getUseFSAL() &&
            workingState->getNConsecutiveFailures() == 0 ) {
-
         RCP<Thyra::VectorBase<Scalar> > tmp = stageXDot_[0];
         stageXDot_[0] = stageXDot_.back();
         stageXDot_.back() = tmp;
+        this->setStepperXDot(stageXDot_[0]);
 
       } else {
-
-        Thyra::assign(this->stageX_.ptr(), *(currentState->getX()));
-        for (int j=0; j < i; ++j) {
-          if (A(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
-            Thyra::Vp_StV(this->stageX_.ptr(), dt*A(i,j), *stageXDot_[j]);
-          }
-        }
         const Scalar ts = time + c(i)*dt;
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-        // ???: is it a good idea to leave this (no-op) here?
-        this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
-
-        this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
-#endif
-        this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
-          StepperRKAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
-        this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
-          StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
-
         auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
 
         // Evaluate xDot = f(x,t).
-        this->evaluateExplicitODE(stageXDot_[i], this->stageX_, ts, p);
+        this->evaluateExplicitODE(stageXDot_[i], workingState->getX(), ts, p);
       }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -361,6 +352,8 @@ void StepperExplicitRK<Scalar>::takeStep(
       this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
         StepperRKAppAction<Scalar>::ACTION_LOCATION::END_STAGE);
     }
+    // reset the stage number
+    this->setStageNumber(-1);
 
     // Sum for solution: x_n = x_n-1 + Sum{ b(i) * dt*f(i) }
     Thyra::assign((workingState->getX()).ptr(), *(currentState->getX()));
@@ -368,6 +361,17 @@ void StepperExplicitRK<Scalar>::takeStep(
       if (b(i) != Teuchos::ScalarTraits<Scalar>::zero()) {
         Thyra::Vp_StV((workingState->getX()).ptr(), dt*b(i), *(stageXDot_[i]));
       }
+    }
+
+    if (this->getUseFSAL()) {
+      if (numStages == 1) {
+        const Scalar ts = time + dt;
+        auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
+        // Evaluate xDot = f(x,t).
+        this->evaluateExplicitODE(stageXDot_[0], workingState->getX(), ts, p);
+      }
+      if (workingState->getXDot() != Teuchos::null)
+        Thyra::assign((workingState->getXDot()).ptr(), *(stageXDot_.back()));
     }
 
 
@@ -388,23 +392,25 @@ void StepperExplicitRK<Scalar>::takeStep(
 
       //compute local truncation error estimate: | u^{n+1} - \hat{u}^{n+1} |
       // Sum for solution: ee_n = Sum{ (b(i) - bstar(i)) * dt*f(i) }
-      assign(ee_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+      assign(this->ee_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
       for (int i=0; i < numStages; ++i) {
          if (errWght(i) != Teuchos::ScalarTraits<Scalar>::zero()) {
-            Thyra::Vp_StV(ee_.ptr(), dt*errWght(i), *(stageXDot_[i]));
+            Thyra::Vp_StV(this->ee_.ptr(), dt*errWght(i), *(stageXDot_[i]));
          }
       }
 
       // compute: Atol + max(|u^n|, |u^{n+1}| ) * Rtol
-      Thyra::abs( *(currentState->getX()), abs_u0.ptr());
-      Thyra::abs( *(workingState->getX()), abs_u.ptr());
-      Thyra::pair_wise_max_update(tolRel, *abs_u0, abs_u.ptr());
-      Thyra::add_scalar(tolAbs, abs_u.ptr());
+      Thyra::abs( *(currentState->getX()), this->abs_u0.ptr());
+      Thyra::abs( *(workingState->getX()), this->abs_u.ptr());
+      Thyra::pair_wise_max_update(tolRel, *this->abs_u0, this->abs_u.ptr());
+      Thyra::add_scalar(tolAbs, this->abs_u.ptr());
 
       //compute: || ee / sc ||
-      assign(sc.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-      Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *ee_, *abs_u, sc.ptr());
-      Scalar err = std::abs(Thyra::norm_inf(*sc));
+      assign(this->sc.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+      Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *this->ee_, *this->abs_u,this->sc.ptr());
+
+      const auto space_dim = this->ee_->space()->dim();
+      Scalar err = std::abs(Thyra::norm(*this->sc)) / space_dim ;
       workingState->setErrorRel(err);
 
       // test if step should be rejected
@@ -420,8 +426,6 @@ void StepperExplicitRK<Scalar>::takeStep(
     this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
       StepperRKAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
-  // reset the stage number
-  this->setStageNumber(-1);
   return;
 }
 
@@ -458,17 +462,16 @@ void StepperExplicitRK<Scalar>::describe(
   out << "  stepperObserver_   = " << stepperObserver_ << std::endl;
 #endif
   out << "  stepperRKAppAction_= " << this->stepperRKAppAction_ << std::endl;
-  out << "  stageX_            = " << this->stageX_ << std::endl;
   out << "  stageXDot_.size()  = " << stageXDot_.size() << std::endl;
   const int numStages = stageXDot_.size();
   for (int i=0; i<numStages; ++i)
     out << "    stageXDot_["<<i<<"] = " << stageXDot_[i] << std::endl;
   out << "  useEmbedded_       = "
-      << Teuchos::toString(useEmbedded_) << std::endl;
-  out << "  ee_                = " << ee_ << std::endl;
-  out << "  abs_u0             = " << abs_u0 << std::endl;
-  out << "  abs_u              = " << abs_u << std::endl;
-  out << "  sc                 = " << sc << std::endl;
+      << Teuchos::toString(this->useEmbedded_) << std::endl;
+  out << "  ee_                = " << this->ee_ << std::endl;
+  out << "  abs_u0             = " << this->abs_u0 << std::endl;
+  out << "  abs_u              = " << this->abs_u << std::endl;
+  out << "  sc                 = " << this->sc << std::endl;
   out << "-------------------------" << std::endl;
 }
 

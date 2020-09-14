@@ -1,23 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Log: xyshow.f,v $
-C Revision 1.2  2009/03/25 12:36:49  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.1  1994/04/07 20:18:15  gdsjaar
-C Initial checkin of ACCESS/graphics/blotII2
-C
-c Revision 1.3  1994/01/14  19:47:47  gdsjaar
-c Added capability to write both grafaid and xmgr neutral files.
-c
-c Revision 1.2  1990/12/14  08:59:39  gdsjaar
-c Added RCS Id and Log to all files
-c
 C=======================================================================
       SUBROUTINE XYSHOW (SHOTYP)
 C=======================================================================

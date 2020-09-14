@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -22,7 +22,9 @@ int ex_create_group(int parent_id, const char *group_name)
   int status;
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(parent_id, __func__);
+  if (ex__check_valid_file_id(parent_id, __func__) != EX_NOERR) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   if ((status = nc_redef(parent_id)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", parent_id);

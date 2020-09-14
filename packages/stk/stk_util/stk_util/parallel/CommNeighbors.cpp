@@ -326,6 +326,13 @@ void CommNeighbors::reset_buffers() {
   }
 }
 
+void CommNeighbors::swap_send_recv()
+{
+  m_send.swap(m_recv);
+  m_send_data.swap(m_recv_data);
+  m_send_procs.swap(m_recv_procs);
+}
+
 #endif
 
 }

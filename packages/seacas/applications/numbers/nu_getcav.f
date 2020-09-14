@@ -1,14 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: getcav.f,v 1.1 1991/02/21 15:43:18 gdsjaar Exp $
-C $Log: getcav.f,v $
-C Revision 1.1  1991/02/21 15:43:18  gdsjaar
-C Initial revision
-C
       SUBROUTINE GETCAV (ERROR, IDESS, NUMESS)
       DIMENSION IDESS(*)
       include 'nu_cav.blk'
@@ -24,7 +19,7 @@ C
          CALL FREFLD (0, 0, PRMPT(:LENSTR(PRMPT)+1), MAXF, IOS,
      *      NUMCAV, KV, CV, ICAV, RV)
       END IF
-C
+
       ERROR = .FALSE.
       DO 10 NCAV = 1, NUMCAV
          IFND(NCAV) = LOCINT (ICAV(NCAV), NUMESS, IDESS)
@@ -36,6 +31,6 @@ C
          END IF
    10 CONTINUE
    20 FORMAT (' Cavity Flag ',I5,' not found. ')
-C
+
       RETURN
       END

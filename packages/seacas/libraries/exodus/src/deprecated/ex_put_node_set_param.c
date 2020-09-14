@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -35,7 +35,6 @@ ex_create() or ex_open().
 \param[in] num_dist_in_set    The number of distribution factors in the node
 set. This should be
                               either 0 (zero) for no factors, or should equal num_nodes_in_set.
-
 
 The following code segment will write out a node set to an open exodus
 file :

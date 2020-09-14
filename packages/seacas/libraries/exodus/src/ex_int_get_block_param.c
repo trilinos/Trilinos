@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -32,7 +32,9 @@ int ex__get_block_param(int exoid, ex_entity_id id, int ndim,
   block.id   = id;
   block.type = EX_ELEM_BLOCK;
 
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   /* read in an element block parameter */
   if ((ex_get_block_param(exoid, &block)) != EX_NOERR) {

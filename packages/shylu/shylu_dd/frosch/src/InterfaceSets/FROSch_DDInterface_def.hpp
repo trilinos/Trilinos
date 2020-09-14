@@ -170,7 +170,6 @@ namespace FROSch {
         }
         XMapPtr map = MapFactory<LO,GO,NO>::Build(matrix->getRowMap()->lib(),-1,indicesGammaDofs(),0,MpiComm_);
         matrix = FROSch::ExtractLocalSubdomainMatrix(matrix.getConst(),map.getConst(),ScalarTraits<SC>::one());
-
         // Operate on hierarchy
         for (UN i=0; i<EntitySetVector_.size(); i++) {
             EntitySetVector_[i]->divideUnconnectedEntities(matrix,MpiComm_->getRank());
@@ -190,7 +189,6 @@ namespace FROSch {
         */
 
         removeEmptyEntities();
-
         // We need to set the unique ID; otherwise, we cannot sort entities
         for (UN i=0; i<EntitySetVector_.size(); i++) {
             EntitySetVector_[i]->setUniqueIDToFirstGlobalNodeID();
@@ -231,6 +229,8 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_LEVELID(sortVerticesEdgesFacesTime,"DDInterface::sortVerticesEdgesFaces");
         //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Sorting interface components" << endl;
+
+
 
         // Clear EntitySets if non-empty
         if (Vertices_->getNumEntities()>0) Vertices_.reset(new EntitySet<SC,LO,GO,NO>(VertexType));
@@ -318,6 +318,7 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(buildEntityMapsTime,"DDInterface::buildEntityMaps");
         //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Building global interface component maps" << endl;
 
+      
         if (buildVerticesMap) Vertices_->buildEntityMap(NodesMap_);
         if (buildShortEdgesMap) ShortEdges_->buildEntityMap(NodesMap_);
         if (buildStraightEdgesMap) StraightEdges_->buildEntityMap(NodesMap_);
@@ -474,7 +475,7 @@ namespace FROSch {
                     globalVec[i] = -1;
                 }
             }
-
+            NumEntity_ = globalVec;
             if (Verbose_) {
                 cout
                 << "\n" << setw(FROSCH_INDENT) << " "
@@ -558,6 +559,11 @@ namespace FROSch {
         }
 
         return 0;
+    }
+
+    template <class SC,class LO,class GO,class NO>
+    typename DDInterface<SC,LO,GO,NO>::GOVec DDInterface<SC,LO,GO,NO>::getNumEnt() const{
+      return NumEntity_;
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -838,6 +844,9 @@ namespace FROSch {
         FROSCH_TIMER_START_LEVELID(identifyLocalComponentsTime,"DDInterface::identifyLocalComponents");
         //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface : Classifying interface components based on equivalence classes" << endl;
 
+
+
+
         // Hier herausfinden, ob Ecke, Kante oder Fläche
         UNVecPtr componentsMultiplicity(componentsSubdomainsUnique.size());
         IntVecVecPtr components(componentsSubdomainsUnique.size());
@@ -851,7 +860,6 @@ namespace FROSch {
         for (UN i=0; i<maxMultiplicity+1; i++) {
             EntitySetVector_[i].reset(new EntitySet<SC,LO,GO,NO>(DefaultType));
         }
-
         typename IntVecVec::iterator classIterator;
         LOVecPtr localComponentIndices(NumMyNodes_);
         for (int i=0; i<NumMyNodes_; i++) {

@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -61,7 +61,9 @@ int ex_get_partial_var(int exoid, int time_step, ex_entity_type var_type, int va
     EX_FUNC_LEAVE(status);
   }
 
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   /* Determine index of obj_id in VAR_ID_EL_BLK array */
   obj_id_ndx = ex__id_lkup(exoid, var_type, obj_id);

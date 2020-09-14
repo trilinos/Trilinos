@@ -100,12 +100,12 @@
 #endif
 
 #ifdef HAVE_SHYLU_DDFROSCH_THYRA
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
 #include "Teuchos_AbstractFactoryStd.hpp"
 #include "Thyra_Ifpack2PreconditionerFactory.hpp"
 #endif
 #endif
-
 
 namespace FROSch {
 
@@ -118,6 +118,18 @@ namespace FROSch {
     class GO ,
     class NO >
     class OneLevelPreconditioner;
+
+    template<class SC,
+    class LO,
+    class GO,
+    class NO>
+    class TwoLevelPreconditioner;
+
+    template<class SC,
+    class LO,
+    class GO,
+    class NO>
+    class TwoLevelBlockPreconditioner;
 
     template <class SC = double,
               class LO = int,
@@ -150,8 +162,10 @@ namespace FROSch {
         using ConstTRowMatrixPtr          = RCP<const TRowMatrix>;
 
         using XMultiVector                = MultiVector<SC,LO,GO,NO>;
+        using ConstXMultiVector           = const MultiVector<SC,LO,GO,NO>;
         using XMultiVectorPtr             = RCP<XMultiVector>;
         using ConstXMultiVectorPtr        = RCP<const XMultiVector>;
+        using ConstXMultiVectorPtrVecPtr  = ArrayRCP<ConstXMultiVectorPtr>;
 
         using TMultiVector                = Tpetra::MultiVector<SC,LO,GO,NO>;
         using TMultiVectorPtr             = RCP<TMultiVector>;
@@ -184,8 +198,10 @@ namespace FROSch {
         using MueLuHierarchyPtr           = RCP<MueLu::Hierarchy<SC,LO,GO,NO> >;
 #endif
 
-        using GOVecPtr                    = ArrayRCP<GO>;
-
+      using GOVecPtr                    = ArrayRCP<GO>;
+      using UN                          = unsigned;
+      using UNVec                       = Teuchos::Array<UN>;
+      using UNVecPtr                    = Teuchos::ArrayRCP<UN>;
     public:
 
         /*!
@@ -330,6 +346,9 @@ namespace FROSch {
         mutable RCP<Thyra::MultiVectorBase<SC> > ThyraYTmp_;
         RCP<Thyra::LinearOpWithSolveBase<SC> > LOWS_;
 #endif
+
+       Teuchos::RCP<TwoLevelBlockPreconditioner<SC,LO,GO,NO> > TLBP;
+       Teuchos::RCP<TwoLevelPreconditioner<SC,LO,GO,NO> > TLP;
 
         bool IsInitialized_ = false;
 

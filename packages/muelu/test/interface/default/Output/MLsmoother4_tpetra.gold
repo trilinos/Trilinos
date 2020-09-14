@@ -11,6 +11,7 @@ smoother ->
  chebyshev: boost factor = 1.1   [unused]
  chebyshev: min diagonal value = 2.22045e-16   [default]
  chebyshev: eigenvalue max iterations = 10   [default]
+ chebyshev: eigenvalue normalization frequency = 1   [default]
  chebyshev: zero starting solution = 1   [default]
  chebyshev: assume matrix does not change = 0   [default]
 
@@ -35,6 +36,7 @@ BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
+  singletons :0 (phase)
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
@@ -98,6 +100,7 @@ smoother ->
  chebyshev: boost factor = 1.1   [unused]
  chebyshev: min diagonal value = 2.22045e-16   [default]
  chebyshev: eigenvalue max iterations = 10   [default]
+ chebyshev: eigenvalue normalization frequency = 1   [default]
  chebyshev: zero starting solution = 1   [default]
  chebyshev: assume matrix does not change = 0   [default]
 
@@ -122,6 +125,7 @@ BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
+  singletons :0 (phase)
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
@@ -188,6 +192,7 @@ smoother ->
  chebyshev: boost factor = 1.1   [unused]
  chebyshev: min diagonal value = 2.22045e-16   [default]
  chebyshev: eigenvalue max iterations = 10   [default]
+ chebyshev: eigenvalue normalization frequency = 1   [default]
  chebyshev: zero starting solution = 1   [default]
  chebyshev: assume matrix does not change = 0   [default]
 
@@ -212,6 +217,7 @@ BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
+  singletons :0 (phase)
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
@@ -278,6 +284,7 @@ smoother ->
  chebyshev: boost factor = 1.1   [unused]
  chebyshev: min diagonal value = 2.22045e-16   [default]
  chebyshev: eigenvalue max iterations = 10   [default]
+ chebyshev: eigenvalue normalization frequency = 1   [default]
  chebyshev: zero starting solution = 1   [default]
  chebyshev: assume matrix does not change = 0   [default]
 
@@ -302,6 +309,7 @@ BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
+  singletons :0 (phase)
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]

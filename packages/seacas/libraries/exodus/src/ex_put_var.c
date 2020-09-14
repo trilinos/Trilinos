@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -186,7 +186,6 @@ include:
   -  ex_put_variable_param() not called previously specifying the number of
 variables.
 
-
 \param[in] exoid
 exodus file ID returned from a previous call to
 ex_create() or ex_open().
@@ -242,7 +241,9 @@ int ex_put_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
 
   EX_FUNC_ENTER();
 
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   switch (var_type) {
   case EX_GLOBAL:
