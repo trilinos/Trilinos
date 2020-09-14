@@ -221,7 +221,7 @@ test_cmd_options=(
     --num-concurrent-tests=4
     --mode=${mode}
     #--mode=installation
-    --config="Trilinos/cmake/std/configs/trilinos_pr.ini"
+    --config="Trilinos/cmake/std/pr_config/pullrequest.ini"
     #--dry-run
 )
 

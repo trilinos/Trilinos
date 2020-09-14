@@ -112,7 +112,7 @@ def parse_args():
     optional.add_argument('--config',
                           dest='configfile',
                           action='store',
-                          default=os.path.join(cwd, "configs/trilinos_pr.ini"),
+                          default=os.path.join(cwd, "pr_config/pullrequest.ini"),
                           help="Configuration file. Default=%(default)s",
                           required=False)
 
