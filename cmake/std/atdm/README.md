@@ -1717,7 +1717,7 @@ ignored.
 A second approach is to register a custom system configuration as:
 
 ```
-export ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR=<some-base-dir>/<custom-system-name>
+$ export ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR=<some-base-dir>/<custom-system-name>
 ```
 
 and then that configuration can be selected by adding the keyword
@@ -1733,6 +1733,15 @@ argument, then the custom configuration will be used even if one of the
 officially defined configurations would otherwise match.  But if
 `<custom-system-name>` is not included in the build name, then the registered
 custom system configuration will not be selected.
+
+As a special case, for computers that don't have a default known matching
+system, then one can leave `<custom-system-name>` out of the build name and
+just include the other keywords with:
+
+```
+$ export ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR=<some-base-dir>/<custom-system-name>
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh <other-keywords>
+```
 
 When a custom configuration is selected, when Trilinos is installed, the
 directory `<some-base-dir>/<custom-system-name>` is copied to the install tree
@@ -1785,6 +1794,14 @@ configuration to do a CUDA optimized build, do:
 ```
 $ export ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR=$TRILINOS_DIR/cmake/std/atdm/contributed/weaver
 $ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh weaver-cuda-opt
+```
+
+On systems that don't have a known default configuration (like 'weaver'), one
+can leave the custom system name out of the build name such as:
+
+```
+$ export ATDM_CONFIG_REGISTER_CUSTOM_CONFIG_DIR=$TRILINOS_DIR/cmake/std/atdm/contributed/weaver
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cuda-opt
 ```
 
 Then run the CMake configure as usual as described in <a
