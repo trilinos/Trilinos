@@ -219,8 +219,8 @@ fi
 # D) Select a known system given the above info
 #
 
-ATDM_HOSTNAME=
 ATDM_SYSTEM_NAME=
+ATDM_HOSTNAME=
 
 # D.1) First, go with the system name in the build name if one was recognised
 if [[ "${ATDM_SYSTEM_NAME}" == "" ]] && [[ "${knownSystemNameInBuildName}" != "" ]] ; then
@@ -231,7 +231,7 @@ fi
 
 # D.2) Last, go with the first matching system name on this machine
 if [[ "${ATDM_SYSTEM_NAME}" == "" ]] && [[ "${systemNameTypeMatchedList}" != "" ]] ; then
-  ATDM_SYSTEM_NAME=${systemNameTypeMatchedList[0]}  # First matching system type is preferred!
+  ATDM_SYSTEM_NAME=${systemNameTypeMatchedList[0]} # First matching system is preferred!
   ATDM_HOSTNAME=${systemNameTypeMatchedListHostNames[${ATDM_SYSTEM_NAME}]}
 fi
 
@@ -239,7 +239,7 @@ fi
 #echo "ATDM_SYSTEM_NAME = '${ATDM_SYSTEM_NAME}'"
 
 #
-# E) We have selected a known system set the env vars for that!
+# E) If we have selected a known system then set env vars for that system
 #
 
 if [[ $ATDM_SYSTEM_NAME != "" ]] ; then
