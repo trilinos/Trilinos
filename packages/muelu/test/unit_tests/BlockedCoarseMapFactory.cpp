@@ -137,7 +137,7 @@ namespace MueLuTests {
 
     using Teuchos::as;
 
-    TEST_EQUALITY(map1->getMinAllGlobalIndex(), 0);
+    TEST_EQUALITY(map1->getMinAllGlobalIndex(), Teuchos::ScalarTraits<GO>::zero());
     // TEST_EQUALITY(map1->getMaxAllGlobalIndex(), numGlobalAggs * as<GO>(NSdim) - 1);
     // TEST_EQUALITY(map2->getMinAllGlobalIndex(), numGlobalAggs * as<GO>(NSdim));
     // TEST_EQUALITY(map2->getMaxAllGlobalIndex(), 2 * numGlobalAggs * as<GO>(NSdim) - 1);
