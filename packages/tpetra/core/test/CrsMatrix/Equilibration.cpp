@@ -1395,7 +1395,8 @@ makeMatrixTestWithExplicitZeroDiag (Teuchos::FancyOStream& out,
     Kokkos::deep_copy (ptr_h, A_lcl.graph.row_map);
     auto ind_h = Kokkos::create_mirror_view (A_lcl.graph.entries);
     Kokkos::deep_copy (ind_h, A_lcl.graph.entries);
-    // Work-around gcc/7.2.0 bug
+    // Work-around gcc/7.2.0 bug, see PR
+    // https://github.com/trilinos/Trilinos/pull/8031
     const int myRank_ = myRank;
 
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
@@ -1882,7 +1883,8 @@ makeMatrixTestWithExplicitInfAndNan (Teuchos::FancyOStream& out,
     Kokkos::deep_copy (ptr_h, A_lcl.graph.row_map);
     auto ind_h = Kokkos::create_mirror_view (A_lcl.graph.entries);
     Kokkos::deep_copy (ind_h, A_lcl.graph.entries);
-    // Work-around gcc/7.2.0 bug
+    // Work-around gcc/7.2.0 bug, see PR
+    // https://github.com/trilinos/Trilinos/pull/8031
     const int myRank_ = myRank;
 
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
