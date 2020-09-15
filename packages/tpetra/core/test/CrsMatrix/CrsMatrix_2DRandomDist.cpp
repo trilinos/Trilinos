@@ -249,10 +249,93 @@ public:
         case 3:  tname = "SpMV: 3 random 2D"; break;
       }
   
+      scalar_t alpha = 2.;
+      scalar_t beta = 3.;
       auto timer = Teuchos::TimeMonitor::getNewTimer(tname);
       for (int n = 0; n < nMatvecs; n++) {
         Teuchos::TimeMonitor tt(*timer);
-        Amat->apply(xvec, yvec);
+        Amat->apply(xvec, yvec, Teuchos::NO_TRANS, alpha, beta);
+      }
+    }
+  }
+
+  // Distribute nonzeros to processors, create CrsMatrix, then apply its 
+  // transpose to input vector x, giving y
+  // Time the SpMV application
+  void distributeAndApplyTranspose(
+    const int distribution,  // flag indicating how to distribute the nonzeros
+                             //   == 1 --> row-wise (Trilinos default)
+                             //   == 2 --> column-wise
+                             //   == 3 --> randomly assign nonzeros to procs
+    const int nMatvecs,      // Number of SpMV to do (for timing test)
+    vector_t &xvec,          // output:  domain vector
+    const vector_t &yvec     // input: range vector
+  ) const
+  {
+    // Select this processor's nonzeros based on distribution
+    Teuchos::Array<size_t> offsets;
+    Teuchos::Array<size_t> nPerRow;
+    Teuchos::Array<gno_t> rowIdx;
+    Teuchos::Array<gno_t> colIdx;
+    Teuchos::Array<scalar_t> val;
+
+    getMyNonzeros(distribution, rowIdx, nPerRow, offsets, colIdx, val);
+  
+    // Build the CrsMatrix with the assigned nonzeros
+    using matrix_t = Tpetra::CrsMatrix<scalar_t>;
+  
+    size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+    Teuchos::RCP<const map_t> rowMap =
+             Teuchos::rcp(new map_t(dummy, rowIdx(), 0, comm));
+
+    Teuchos::RCP<matrix_t> Amat = Teuchos::rcp(new matrix_t(rowMap, nPerRow()));
+  
+    size_t nRowIdx = size_t(rowIdx.size());
+    for (size_t r = 0; r < nRowIdx; r++) {
+      size_t tmp = offsets[r+1] - offsets[r];
+      Amat->insertGlobalValues(rowIdx[r], 
+                               colIdx(offsets[r],tmp), val(offsets[r],tmp));
+    }
+  
+    std::string tname;
+    {
+      switch (distribution) {
+        case 1:  tname = "fillComplete: 1 row-wise"; break;
+        case 2:  tname = "fillComplete: 2 column-wise"; break;
+        case 3:  tname = "fillComplete: 3 random 2D"; break;
+      }
+      auto timer = Teuchos::TimeMonitor::getNewTimer(tname);
+
+      Teuchos::TimeMonitor tt(*timer);
+      Amat->fillComplete(xvec.getMap(), yvec.getMap());
+    }
+
+    std::cout << comm->getRank() 
+              << ": nRows " << Amat->getNodeNumRows()
+              << "; nCols " << Amat->getNodeNumCols()
+              << "; nnz " << Amat->getNodeNumEntries()
+              << "; import " 
+              << (Amat->getGraph()->getImporter() == Teuchos::null ? 0 :
+                  Amat->getGraph()->getImporter()->getNumExportIDs())
+              << "; export " 
+              << (Amat->getGraph()->getExporter() == Teuchos::null ? 0 : 
+                  Amat->getGraph()->getExporter()->getNumExportIDs())
+              << std::endl;
+  
+    // Perform transpose SpMV; do several iterations to get some timing info
+    {
+      switch (distribution) {
+        case 1:  tname = "SpMV Transpose: 1 row-wise"; break;
+        case 2:  tname = "SpMV Transpose: 2 column-wise"; break;
+        case 3:  tname = "SpMV Transpose: 3 random 2D"; break;
+      }
+  
+      scalar_t alpha = 2.;
+      scalar_t beta = 3.;
+      auto timer = Teuchos::TimeMonitor::getNewTimer(tname);
+      for (int n = 0; n < nMatvecs; n++) {
+        Teuchos::TimeMonitor tt(*timer);
+        Amat->apply(yvec, xvec, Teuchos::TRANS, alpha, beta);
       }
     }
   }
@@ -308,6 +391,7 @@ int main(int narg, char *arg[])
   xvec.randomize();
 
   // Row-wise 1D distribution
+  yvec.putScalar(1000.);
   gNz.distributeAndApply(1, nMatvecs, xvec, yvec);
   scalar_t row1DNorm1 = yvec.norm1();
   scalar_t row1DNorm2 = yvec.norm2();
@@ -319,6 +403,7 @@ int main(int narg, char *arg[])
               << std::endl;
 
   // Column-wise 1D distribution
+  yvec.putScalar(1000.);
   gNz.distributeAndApply(2, nMatvecs, xvec, yvec);
   scalar_t col1DNorm1 = yvec.norm1();
   scalar_t col1DNorm2 = yvec.norm2();
@@ -330,6 +415,7 @@ int main(int narg, char *arg[])
               << std::endl;
 
   // Random 2D distribution
+  yvec.putScalar(1000.);
   gNz.distributeAndApply(3, nMatvecs, xvec, yvec);
   scalar_t random2DNorm1 = yvec.norm1();
   scalar_t random2DNorm2 = yvec.norm2();
@@ -356,6 +442,62 @@ int main(int narg, char *arg[])
     ierr++;
     if (me == 0) 
       std::cout << "FAIL:  random 2D norm " << random2DNorm2
+                << " = " << row1DNorm2 << " row-wise 1D norm" 
+                << " = " << std::abs(random2DNorm2 - row1DNorm2) << std::endl;
+  }
+
+  // Now do same with transpose
+  yvec.randomize();
+
+  // Row-wise 1D distribution
+  xvec.putScalar(1000.);
+  gNz.distributeAndApplyTranspose(1, nMatvecs, xvec, yvec);
+  row1DNorm1 = yvec.norm1();
+  row1DNorm2 = xvec.norm2();
+  row1DNormInf = xvec.normInf();
+  if (me == 0) 
+    std::cout << "Row-wise 1D distribution Transpose:  norm1 " << row1DNorm1
+              << "; norm2 " << row1DNorm2
+              << "; norminf " << row1DNormInf
+              << std::endl;
+
+  // Column-wise 1D distribution
+  xvec.putScalar(1000.);
+  gNz.distributeAndApplyTranspose(2, nMatvecs, xvec, yvec);
+  col1DNorm1 = xvec.norm1();
+  col1DNorm2 = xvec.norm2();
+  col1DNormInf = xvec.normInf();
+  if (me == 0) 
+    std::cout << "Col-wise 1D distribution Transpose:  norm1 " << col1DNorm1
+              << "; norm2 " << col1DNorm2
+              << "; norminf " << col1DNormInf
+              << std::endl;
+
+  // Random 2D distribution
+  xvec.putScalar(1000.);
+  gNz.distributeAndApplyTranspose(3, nMatvecs, xvec, yvec);
+  random2DNorm1 = xvec.norm1();
+  random2DNorm2 = xvec.norm2();
+  random2DNormInf = xvec.normInf();
+  if (me == 0) 
+    std::cout << "Random 2D distribution Transpose:   norm1 " << random2DNorm1
+              << "; norm2 " << random2DNorm2
+              << "; norminf " << random2DNormInf
+              << std::endl;
+
+  // Check results
+  if (std::abs(col1DNorm2 - row1DNorm2) > epsilon) {
+    ierr++;
+    if (me == 0) 
+      std::cout << "FAIL:  Transpose column-wise 1D norm " << col1DNorm2
+                << " - " << row1DNorm2 << " row-wise 1D norm" 
+                << " = " << std::abs(col1DNorm2 - row1DNorm2) << std::endl;
+  }
+
+  if (std::abs(random2DNorm2 - row1DNorm2) > epsilon) {
+    ierr++;
+    if (me == 0) 
+      std::cout << "FAIL:  Transpose random 2D norm " << random2DNorm2
                 << " = " << row1DNorm2 << " row-wise 1D norm" 
                 << " = " << std::abs(random2DNorm2 - row1DNorm2) << std::endl;
   }

@@ -40,8 +40,8 @@
 */
 
 // Creates vectors with different maps; tests results of export into them.
-// Bug7758 indicates that incorrect results of export are produced when
-// the source map is NOT a superset of the target map.
+// Documents the behavior of Epetra Add in Epetra_MultiVector for some
+// common (and a few uncommon) use cases.
 // Same tests as tpetra/core/test/MultiVector/Bug7758.cpp.
 
 #include "Epetra_Map.h"
@@ -159,8 +159,7 @@ int CyclicToDefaultEpetra(const Epetra_Comm &comm)
   std::cout << me << " CYCLIC TO DEFAULT " << std::endl;
   defaultVecTgt.Print(std::cout);
 
-  // Check result; all vector entries should be srcScalar
-
+  // Check result
   for (int i = 0; i < defaultVecTgt.MyLength(); i++) {
     if (cyclicMap.LID(defaultMap.GID(i)) != -1) {
       // element is in both cyclic (source) and default (target) map;
@@ -408,7 +407,6 @@ int SupersetToDefaultEpetra(const Epetra_Comm &comm)
   return gerr;
 }
 
-
 //////////////////////////////////////////////////////////////////////////////
 int NoSamesToDefaultEpetra(const Epetra_Comm &comm)
 {
@@ -478,7 +476,6 @@ int NoSamesToDefaultEpetra(const Epetra_Comm &comm)
 
   return gerr;
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) 
