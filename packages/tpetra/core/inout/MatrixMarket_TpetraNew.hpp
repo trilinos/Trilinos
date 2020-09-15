@@ -139,6 +139,7 @@ buildDistribution(
 
 public:
 
+// This is the default interface.
 static Teuchos::RCP<sparse_matrix_type>
 readSparseFile(
   const std::string &filename,    // MatrixMarket file to read
@@ -146,7 +147,21 @@ readSparseFile(
   const Teuchos::ParameterList &params
 )
 {
-  using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
+  Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > dist;
+  return readSparseFile(filename, comm, params, dist);
+}
+
+// This version has the Distribution object as an output parameter.
+// S. Acer needs the distribution object to get the chunk cuts from
+// LowerTriangularBlock distribution.  
+static Teuchos::RCP<sparse_matrix_type>
+readSparseFile(
+  const std::string &filename,    // MatrixMarket file to read
+  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,  
+  const Teuchos::ParameterList &params,
+  Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > &dist 
+)
+{
 
   int me = comm->getRank();
   int np = comm->getSize();
@@ -281,11 +296,9 @@ readSparseFile(
               << std::endl;
   
   // Create distribution based on nRow, nCol, npRow, npCol
-
-  Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > dist = 
-      buildDistribution<global_ordinal_type,scalar_type>(distribution,
-                                                         nRow, nCol, params,
-                                                         comm);
+  dist = buildDistribution<global_ordinal_type,scalar_type>(distribution,
+							    nRow, nCol, params,
+							    comm);
 
   // Don't want to use MatrixMarket's coordinate reader, because don't want
   // entire matrix on one processor.
@@ -464,6 +477,11 @@ readSparseFile(
   offsets[0] = 0;
   for (size_t row = 0; row < rowIdx.size(); row++)
     offsets[row+1] = offsets[row] + nnzPerRow[row];
+
+  // std::cout << me << " ROWS IN ME ";
+  // for (size_t row = 0; row < rowIdx.size(); row++)
+  //   std::cout << rowIdx[row] << " ";
+  // std::cout << std::endl;
 
   // Create a new RowMap with only rows having non-zero entries.
   size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
