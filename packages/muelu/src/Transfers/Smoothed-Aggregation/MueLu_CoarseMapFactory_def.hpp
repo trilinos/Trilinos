@@ -117,8 +117,8 @@ namespace MueLu {
     RCP<const Teuchos::Comm<int> > comm    = aggregates->GetMap()->getComm();
 
     // read in offset information from parameter list and fill the internal member variable
-    const GlobalOrdinal GO_ZREO = Teuchos::ScalarTraits<GlobalOrdinal>::zero();
-    GlobalOrdinal domainGidOffset = GO_ZREO;
+    const GlobalOrdinal GO_ZERO = Teuchos::ScalarTraits<GlobalOrdinal>::zero();
+    GlobalOrdinal domainGidOffset = GO_ZERO;
     std::vector<GlobalOrdinal> domainGidOffsets;
     domainGidOffsets.clear();
     const ParameterList & pL = GetParameterList();
@@ -128,7 +128,7 @@ namespace MueLu {
         Teuchos::Array<GlobalOrdinal> arrayVal = Teuchos::fromStringToArray<GlobalOrdinal>(strDomainGIDs);
         domainGidOffsets = Teuchos::createVector(arrayVal);
         if(currentLevel.GetLevelID() < Teuchos::as<int>(domainGidOffsets.size()) ) {
-          TEUCHOS_TEST_FOR_EXCEPTION(domainGidOffset!=GO_ZREO, Exceptions::RuntimeError,
+          TEUCHOS_TEST_FOR_EXCEPTION(domainGidOffset!=GO_ZERO, Exceptions::RuntimeError,
               "While attempting to read this level's Domain GID offset from the list \"Domain GID offsets\", we detected that the domain GID offset has already been set via another mechanism. Use only one mechanism to specify the GID offset!");
           domainGidOffset = domainGidOffsets[currentLevel.GetLevelID()];
         }
