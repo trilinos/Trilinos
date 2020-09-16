@@ -40,9 +40,8 @@
 */
 
 // Creates vectors with different maps; tests results of export into them
-// Documents behavior of Tpetra::ADD in Tpetra::MultiVector for many common
+// Tests behavior of Tpetra::ADD_ASSIGN in Tpetra::MultiVector for many common
 // (and a few less common) use cases.
-// Analogous tests for Epetra are in epetra/test/MultiVector/Bug7758.cpp
 
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
@@ -56,7 +55,7 @@ namespace {
 
 
 //////////////////////////////////////////////////////////////////////////////
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, DefaultToDefault, Scalar,LO,GO,Node)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, DefaultToDefault, Scalar,LO,GO,Node)
 {
   // This case demonstrates that owned entries shared between the source and
   // target map are copied from the source vector into the target (during
@@ -96,15 +95,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, DefaultToDefault, Scalar,LO,GO,Node)
   // Export Default-to-default:  should be a copy of src to tgt
 
   Tpetra::Export<LO,GO,Node> defaultToDefault(defaultMap, defaultMap);
-  defaultVecTgt.doExport(defaultVecSrc, defaultToDefault, Tpetra::ADD);
+  defaultVecTgt.doExport(defaultVecSrc, defaultToDefault, Tpetra::ADD_ASSIGN);
 
   std::cout << me << " DEFAULT TO DEFAULT " << std::endl;
   defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
-  // Check result; all vector entries should be srcScalar
+  // Check result; all vector entries should be tgtScalar + srcScalar
   auto data = defaultVecTgt.getLocalViewHost();
   for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++)
-    if (data(i,0) != srcScalar) ierr++;
+    if (data(i,0) != tgtScalar + srcScalar) ierr++;
   if (ierr > 0) 
     std::cout << "TEST FAILED:  DEFAULT-TO-DEFAULT TEST HAD " << ierr 
               << " FAILURES ON RANK " << me << std::endl;
@@ -116,7 +115,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, DefaultToDefault, Scalar,LO,GO,Node)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, CyclicToDefault, Scalar,LO,GO,Node)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, CyclicToDefault, Scalar,LO,GO,Node)
 {
   // This case demonstrates that owned entries shared between the source and
   // target map are copied from the source vector into the target (during
@@ -174,26 +173,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, CyclicToDefault, Scalar,LO,GO,Node)
   // Export Cyclic-to-default
 
   Tpetra::Export<LO,GO,Node> cyclicToDefault(cyclicMap, defaultMap);
-  defaultVecTgt.doExport(cyclicVecSrc, cyclicToDefault, Tpetra::ADD);
+  defaultVecTgt.doExport(cyclicVecSrc, cyclicToDefault, Tpetra::ADD_ASSIGN);
 
   std::cout << me << " CYCLIC TO DEFAULT " << std::endl;
   defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
   // Check result
 
-  auto invalid = Teuchos::OrdinalTraits<LO>::invalid();
   auto data = defaultVecTgt.getLocalViewHost();
   for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++)
-    if (cyclicMap->getLocalElement(defaultMap->getGlobalElement(i)) != invalid){
-      // element is in both cyclic (source) and default (target) map;
-      // initial target value was overwritten
-      if (data(i,0) != srcScalar) ierr++;
-    }
-    else {
-      // element is in only default (target) map;
-      // initial target value was not overwritten
-      if (data(i,0) != tgtScalar + srcScalar) ierr++;
-    }
+    if (data(i,0) != tgtScalar + srcScalar) ierr++;
   if (ierr > 0) 
     std::cout << "TEST FAILED:  CYCLIC-TO-DEFAULT TEST HAD " << ierr 
               << " FAILURES ON RANK " << me << std::endl;
@@ -205,7 +194,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, CyclicToDefault, Scalar,LO,GO,Node)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OverlapToDefault, Scalar,LO,GO,Node)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, OverlapToDefault, Scalar,LO,GO,Node)
 {
   // This case demonstrates that owned entries shared between the source and
   // target map are copied from the source vector into the target (during
@@ -265,7 +254,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OverlapToDefault, Scalar,LO,GO,Node)
     // Export Overlap-to-default
 
     Tpetra::Export<LO,GO,Node> overlapToDefault(overlapMap, defaultMap);
-    defaultVecTgt.doExport(overlapVecSrc, overlapToDefault, Tpetra::ADD);
+    defaultVecTgt.doExport(overlapVecSrc, overlapToDefault, Tpetra::ADD_ASSIGN);
 
     std::cout << me << " OVERLAP TO DEFAULT " << std::endl;
     defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
@@ -273,7 +262,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OverlapToDefault, Scalar,LO,GO,Node)
     auto data = defaultVecTgt.getLocalViewHost();
     for (size_t i = 0; i < defaultVecTgt.getLocalLength()/2; i++) {
       // overlapped; initial target values were overwritten
-      if (data(i,0) != srcScalar + srcScalar) ierr++;  
+      if (data(i,0) != tgtScalar + srcScalar + srcScalar) ierr++;  
     }
     for (size_t i = defaultVecTgt.getLocalLength()/2;
              i < defaultVecTgt.getLocalLength(); i++) {
@@ -292,7 +281,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OverlapToDefault, Scalar,LO,GO,Node)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OddEvenToSerial, Scalar,LO,GO,Node)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, OddEvenToSerial, Scalar,LO,GO,Node)
 {
   // Test case showing behavior when target map is all on processor zero.
   // In the source map, even numbered entries are on even numbered processors;
@@ -354,7 +343,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OddEvenToSerial, Scalar,LO,GO,Node)
   // Export oddEven-to-serial
 
   Tpetra::Export<LO,GO,Node> oddEvenToSerial(oddEvenMap, serialMap);
-  serialVecTgt.doExport(oddEvenVecSrc, oddEvenToSerial, Tpetra::ADD);
+  serialVecTgt.doExport(oddEvenVecSrc, oddEvenToSerial, Tpetra::ADD_ASSIGN);
 
   std::cout << me << " ODDEVEN TO SERIAL " << std::endl;
   serialVecTgt.describe(foo, Teuchos::VERB_EXTREME);
@@ -364,7 +353,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OddEvenToSerial, Scalar,LO,GO,Node)
   auto data = serialVecTgt.getLocalViewHost();
   for (size_t i = 0; i < serialVecTgt.getLocalLength(); i++) {
     Scalar nCopies = Scalar(((np+1) / 2) - ((i % 2 == 1) && (np % 2 == 1)));
-    if (data(i,0) != (i%2 ? tgtScalar : Scalar(0)) + srcScalar * nCopies)
+    if (data(i,0) != tgtScalar + srcScalar * nCopies)
       ierr++;
   }
   if (ierr > 0) 
@@ -378,7 +367,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OddEvenToSerial, Scalar,LO,GO,Node)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, SupersetToDefault, Scalar,LO,GO,Node)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, SupersetToDefault, Scalar,LO,GO,Node)
 {
   // This use case is similar to matrix assembly case in which user 
   // has a map of owned entries and a map of owned+shared entries, with the
@@ -439,17 +428,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, SupersetToDefault, Scalar,LO,GO,Node)
     // Export Superset-to-default
 
     Tpetra::Export<LO,GO,Node> supersetToDefault(supersetMap, defaultMap);
-    defaultVecTgt.doExport(supersetVecSrc, supersetToDefault, Tpetra::ADD);
+    defaultVecTgt.doExport(supersetVecSrc, supersetToDefault,
+                           Tpetra::ADD_ASSIGN);
 
     std::cout << me << " SUPERSET TO DEFAULT " << std::endl;
     defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
     auto data = defaultVecTgt.getLocalViewHost();
     for (size_t i = 0; i < defaultVecTgt.getLocalLength()/2; i++)
-      if (data(i,0) != srcScalar+srcScalar) ierr++;  // overlapped
+      if (data(i,0) != tgtScalar + srcScalar + srcScalar) ierr++;  // overlapped
     for (size_t i = defaultVecTgt.getLocalLength()/2;
              i < defaultVecTgt.getLocalLength(); i++)
-      if (data(i,0) != srcScalar) ierr++;  // not overlapped
+      if (data(i,0) != tgtScalar + srcScalar) ierr++;  // not overlapped
     if (ierr > 0) 
       std::cout << "TEST FAILED:  SUPERSET-TO-DEFAULT TEST HAD " << ierr 
                 << " FAILURES ON RANK " << me << std::endl;
@@ -462,7 +452,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, SupersetToDefault, Scalar,LO,GO,Node)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, NoSamesToDefault, Scalar,LO,GO,Node)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, NoSamesToDefault, Scalar,LO,GO,Node)
 {
   // This use case is similar to matrix assembly case in which user 
   // has a map of owned entries and a map of shared entries, with no
@@ -518,7 +508,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, NoSamesToDefault, Scalar,LO,GO,Node)
     // Export noSames-to-default
 
     Tpetra::Export<LO,GO,Node> noSamesToDefault(noSamesMap, defaultMap);
-    defaultVecTgt.doExport(noSamesVecSrc, noSamesToDefault, Tpetra::ADD);
+    defaultVecTgt.doExport(noSamesVecSrc, noSamesToDefault, Tpetra::ADD_ASSIGN);
 
     std::cout << me << " NOSAMES TO DEFAULT " << std::endl;
     defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
@@ -538,12 +528,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, NoSamesToDefault, Scalar,LO,GO,Node)
 }
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, DefaultToDefault, SCALAR, LO, GO, NODE) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, CyclicToDefault, SCALAR, LO, GO, NODE) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, OverlapToDefault, SCALAR, LO, GO, NODE) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, OddEvenToSerial, SCALAR, LO, GO, NODE) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, SupersetToDefault, SCALAR, LO, GO, NODE) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, NoSamesToDefault, SCALAR, LO, GO, NODE)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, DefaultToDefault, SCALAR, LO, GO, NODE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, CyclicToDefault, SCALAR, LO, GO, NODE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, OverlapToDefault, SCALAR, LO, GO, NODE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, OddEvenToSerial, SCALAR, LO, GO, NODE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, SupersetToDefault, SCALAR, LO, GO, NODE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7745, NoSamesToDefault, SCALAR, LO, GO, NODE)
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

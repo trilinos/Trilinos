@@ -164,7 +164,7 @@ namespace Tpetra {
         // Temporary MV for doExport (if needed),
         RCP<MV> Y_rowMap = Matrices[i]->getRowMapMultiVector(*Y[i]);
         if (!exporter.is_null()) {
-          Matrices[i]->localApply(*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
+          Matrices[i]->localApply(*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, ZERO);
           {
             Tpetra::Details::ProfilingRegion regionExport ("Tpetra::batchedApply: Export");             
             if (Y_is_overwritten) {
@@ -173,7 +173,7 @@ namespace Tpetra {
             else {
               Y[i]->scale (beta);
             }
-            Y[i]->doExport(*Y_rowMap, *exporter, ADD);
+            Y[i]->doExport(*Y_rowMap, *exporter, ADD_ASSIGN);
           }
         }
         else { // Don't do an Export: row Map and range Map are the same.

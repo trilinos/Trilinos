@@ -54,12 +54,12 @@ namespace Kokkos {
 /*!
  * \brief Team-based parallel work configuration for Sacado::MP::Vector
  */
-template< class ExecSpace >
+  template< class ExecSpace, class Tag = void >
 struct MPVectorWorkConfig {
 
   typedef MPVectorWorkConfig execution_policy ;
   typedef ExecSpace          execution_space ;
-  typedef void               work_tag ;
+  typedef Tag                work_tag ;
 
   size_t range;
   size_t team;
@@ -84,13 +84,13 @@ namespace Impl {
 //   -- determining the vector size of the architecture
 //   -- laying out the threads differently to use hyperthreads across the
 //      the sacado dimension
-template< class FunctorType >
-class ParallelFor< FunctorType , MPVectorWorkConfig< Threads > > :
-  public ParallelFor< FunctorType , Kokkos::RangePolicy< Threads > > {
-  typedef Kokkos::RangePolicy< Threads > Policy ;
+template< class FunctorType, class Tag >
+class ParallelFor< FunctorType , MPVectorWorkConfig< Threads, Tag > > :
+  public ParallelFor< FunctorType , Kokkos::RangePolicy< Tag, Threads > > {
+  typedef Kokkos::RangePolicy< Tag, Threads > Policy ;
 public:
   ParallelFor( const FunctorType        & functor ,
-               const MPVectorWorkConfig< Threads > & work_config ) :
+               const MPVectorWorkConfig< Threads, Tag > & work_config ) :
     ParallelFor< FunctorType , Policy >( functor ,
                                          Policy( 0, work_config.range ) ) {}
 };
@@ -105,13 +105,13 @@ public:
 //   -- determining the vector size of the architecture
 //   -- laying out the threads differently to use hyperthreads across the
 //      the sacado dimension
-template< class FunctorType >
-class ParallelFor< FunctorType , MPVectorWorkConfig< OpenMP > > :
-  public ParallelFor< FunctorType , Kokkos::RangePolicy< OpenMP > > {
-  typedef Kokkos::RangePolicy< OpenMP > Policy ;
+template< class FunctorType, class Tag >
+class ParallelFor< FunctorType , MPVectorWorkConfig< OpenMP, Tag > > :
+    public ParallelFor< FunctorType , Kokkos::RangePolicy< Tag, OpenMP > > {
+  typedef Kokkos::RangePolicy< Tag, OpenMP > Policy ;
 public:
   ParallelFor( const FunctorType        & functor ,
-               const MPVectorWorkConfig< OpenMP > & work_config ) :
+               const MPVectorWorkConfig< OpenMP, Tag > & work_config ) :
     ParallelFor< FunctorType , Policy >( functor ,
                                          Policy( 0, work_config.range ) ) {}
 };
@@ -126,13 +126,13 @@ public:
 //   -- determining the vector size of the architecture
 //   -- laying out the threads differently to use hyperthreads across the
 //      the sacado dimension
-template< class FunctorType >
-class ParallelFor< FunctorType , MPVectorWorkConfig< Serial > > :
-  public ParallelFor< FunctorType , Kokkos::RangePolicy< Serial > > {
-  typedef Kokkos::RangePolicy< Serial > Policy ;
+template< class FunctorType, class Tag >
+class ParallelFor< FunctorType , MPVectorWorkConfig< Serial, Tag > > :
+  public ParallelFor< FunctorType , Kokkos::RangePolicy< Tag, Serial > > {
+  typedef Kokkos::RangePolicy< Tag, Serial > Policy ;
 public:
   ParallelFor( const FunctorType        & functor ,
-               const MPVectorWorkConfig< Serial > & work_config ) :
+               const MPVectorWorkConfig< Serial, Tag > & work_config ) :
     ParallelFor< FunctorType , Policy >( functor ,
                                          Policy( 0, work_config.range ) ) {}
 };
@@ -142,15 +142,29 @@ public:
 
 // Specialization of ParallelFor<> for MPVectorWorkConfig on Cuda
 // Here we use threadIdx.x for each entry in the specified team-size
-template< class FunctorType >
-class ParallelFor< FunctorType , MPVectorWorkConfig< Cuda > > {
+template< class FunctorType, class Tag >
+class ParallelFor< FunctorType , MPVectorWorkConfig< Cuda, Tag > > {
 public:
 
-  typedef Kokkos::RangePolicy< Cuda > Policy;
+  typedef Kokkos::RangePolicy< Tag, Cuda > Policy;
 
   const FunctorType m_functor ;
-  const MPVectorWorkConfig< Cuda > m_config;
+  const MPVectorWorkConfig< Cuda, Tag > m_config;
   const Cuda::size_type m_work ;
+
+  template <class TagType>
+  inline __device__
+  typename std::enable_if<std::is_same<TagType, void>::value>::type
+  exec_range(const Cuda::size_type i, Cuda::size_type j) const {
+    m_functor(i, j);
+  }
+
+  template <class TagType>
+  inline __device__
+  typename std::enable_if<!std::is_same<TagType, void>::value>::type
+  exec_range(const Cuda::size_type i, Cuda::size_type j) const {
+    m_functor(TagType(), i, j);
+  }
 
   inline
   __device__
@@ -161,12 +175,12 @@ public:
     for ( Cuda::size_type iwork = threadIdx.y + blockDim.y * blockIdx.x ;
           iwork < m_work ;
           iwork += work_stride ) {
-      m_functor( iwork , threadIdx.x );
+      this->template exec_range<Tag>(iwork, threadIdx.x);
     }
   }
 
   ParallelFor( const FunctorType        & functor ,
-               const MPVectorWorkConfig< Cuda > & work_config )
+               const MPVectorWorkConfig< Cuda, Tag > & work_config )
     : m_functor( functor ) ,
       m_config( work_config ) ,
       m_work( work_config.range )

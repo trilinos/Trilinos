@@ -5196,7 +5196,7 @@ namespace Tpetra {
           Y_in.scale (beta);
         }
         // Do the Export operation.
-        Y_in.doExport (*Y_rowMap, *exporter, ADD);
+        Y_in.doExport (*Y_rowMap, *exporter, ADD_ASSIGN);
       }
     }
     else { // Don't do an Export: row Map and range Map are the same.
@@ -5338,12 +5338,13 @@ namespace Tpetra {
       importMV_->putScalar (ZERO);
       // Do the local computation.
       this->localApply (*X, *importMV_, mode, alpha, ZERO);
+
       if (Y_is_overwritten) {
         Y_in.putScalar (ZERO);
       } else {
         Y_in.scale (beta);
       }
-      Y_in.doExport (*importMV_, *importer, ADD);
+      Y_in.doExport (*importMV_, *importer, ADD_ASSIGN);
     }
     // otherwise, multiply into Y
     else {
@@ -6915,7 +6916,8 @@ namespace Tpetra {
     const SrcDistObject& srcObj,
     const size_t numSameIDs,
     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs)
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+    const CombineMode /*CM*/)
   {
     using Details::Behavior;
     using Details::dualViewStatusToString;
