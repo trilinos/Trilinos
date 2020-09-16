@@ -90,9 +90,10 @@ namespace MueLuTests {
     fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
     fineLevel.Set("A", A);
 
-    const size_t NSdim = 2;
+    const size_t NSdim = 1;
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(), NSdim);
-    nullSpace->randomize();
+    // nullSpace->randomize();
+    nullSpace->putScalar(1.0);
     fineLevel.Set("Nullspace", nullSpace);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
@@ -125,6 +126,9 @@ namespace MueLuTests {
     // Extract the results from the level
     RCP<const Map> map1 = fineLevel.Get<RCP<const Map>>("CoarseMap", coarseMapFact.get());
     RCP<const Map> map2 = fineLevel.Get<RCP<const Map>>("CoarseMap", blockedCoarseMapFact.get());
+
+map1->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+map2->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
 
     // access aggregates
     RCP<Aggregates> aggregates = fineLevel.Get<RCP<Aggregates>>("Aggregates", uncoupledAggFact.get());
