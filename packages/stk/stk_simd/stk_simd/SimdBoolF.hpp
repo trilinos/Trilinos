@@ -41,12 +41,9 @@ namespace simd {
 class Boolf {
 
  public:
-  using ScalarType = bool;
-  using FloatingPointType = stk::simd::Float;
-    
   STK_MATH_FORCE_INLINE Boolf() {}
     
-  STK_MATH_FORCE_INLINE Boolf(ScalarType x) 
+  STK_MATH_FORCE_INLINE Boolf(bool x) 
     : _data(x)
     {
     }
