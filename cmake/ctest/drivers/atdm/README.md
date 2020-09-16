@@ -522,7 +522,7 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   )
 ```
 
-Them, if the system selection is done by matching to the `hostname`, add a new
+Then, if the system selection is done by matching to the `hostname`, add a new
 `elif` statement for that set of machines.  Note that more than one `hostname`
 machine may map to the same `<new_system_name>` (e.g. both `white` and `ride`
 machines map to the system env `ride`).
