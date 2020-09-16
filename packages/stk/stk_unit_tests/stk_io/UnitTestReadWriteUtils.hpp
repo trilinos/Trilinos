@@ -31,8 +31,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef UNIT_TEST_READ_WRITE_EDGES_HPP
-#define UNIT_TEST_READ_WRITE_EDGES_HPP
+#ifndef UNIT_TEST_READ_WRITE_UTILS_HPP
+#define UNIT_TEST_READ_WRITE_UTILS_HPP
 
 #include <stk_topology/topology.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -52,50 +52,51 @@
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_util/parallel/Parallel.hpp>
-#include "UnitTestReadWriteUtils.hpp"
 
-class StkEdgeIoTest : public stk::unit_test_util::MeshFixture
+namespace io_test_utils {
+
+struct ExpectedValues
 {
-public:
-  StkEdgeIoTest() : stk::unit_test_util::MeshFixture()
-  {
-  }
+  ExpectedValues()
+    : numConnectedEdges(0), globalEdgeCount(0), globalElemCount(0) {}
 
-  void setup_edge_mesh(unsigned numBlocks);
+  ExpectedValues(std::vector<unsigned> numLocalEdgesPerProc_, unsigned numFaces_,
+                 unsigned numConnectedEdges_, unsigned globalEdgeCount_, unsigned globalElemCount_)
+                 : numLocalEdgesPerProc(numLocalEdgesPerProc_), numConnectedEdges(numConnectedEdges_),
+                   globalEdgeCount(globalEdgeCount_), globalElemCount(globalElemCount_) {}
 
-  void setup_mesh_with_edges(unsigned numBlocks);
-
-  void setup_mesh_with_edges_and_faces(unsigned numBlocks);
-
-  void test_connectivity_to_element(const stk::mesh::BulkData& bulk, stk::mesh::EntityRank entityRank);
-
-  void test_entity_count(const stk::mesh::BulkData& bulk, stk::mesh::EntityRank entityRank,
-                         unsigned expectedNumLocalEntities, unsigned expectedNumEntities);
-
-  void test_edges(const stk::mesh::BulkData& bulk);
-
-  void test_faces(const stk::mesh::BulkData& bulk);
-
-  virtual void output_mesh();
-
-  void test_output_mesh();
-
-  void test_output_mesh(stk::mesh::BulkData& bulk);
-
-  virtual void load_output_mesh(stk::mesh::BulkData& bulk);
-
-  void set_expected_values(io_test_utils::ExpectedValues& expectedValues_);
-
-  virtual ~StkEdgeIoTest()
-  {
-    unlink(fileName.c_str());
-  }
-
-protected:
-  std::string fileName = "output.exo";
-  std::string edgePartName = "edgeBlock";
-  std::string facePartName = "faceBlock";
-  io_test_utils::ExpectedValues expectedValues;
+  std::vector<unsigned> numEdgesPerProc;
+  std::vector<unsigned> numLocalEdgesPerProc;
+  std::vector<unsigned> numFacesPerProc;
+  std::vector<unsigned> numLocalFacesPerProc;
+  unsigned numConnectedEdges;
+  unsigned globalEdgeCount;
+  unsigned globalElemCount;
 };
+
+inline bool is_entity1_connected_to_entity2(const stk::mesh::BulkData& bulk, const stk::mesh::Entity entity1, const stk::mesh::Entity entity2)
+{
+  stk::mesh::EntityRank entityRank = bulk.entity_rank(entity2);
+
+  unsigned numConnection = bulk.num_connectivity(entity1, entityRank);
+
+  const stk::mesh::Entity* connectedEntities = bulk.begin(entity1, entityRank);
+  for(unsigned i = 0; i < numConnection; i++) {
+    if(connectedEntities[i] == entity2) {
+      return true;
+    }
+  }
+  return false;
+}
+
+inline bool is_fully_connected(const stk::mesh::BulkData& bulk, const stk::mesh::Entity entity1, const stk::mesh::Entity entity2)
+{
+  bool entity1IsConnectedToEntity2 = is_entity1_connected_to_entity2(bulk, entity1, entity2);
+  bool entity2IsConnectedToEntity1 = is_entity1_connected_to_entity2(bulk, entity2, entity1);
+
+  return entity1IsConnectedToEntity2 && entity2IsConnectedToEntity1;
+}
+
+}//io_test_utils
 
 #endif
