@@ -6,6 +6,8 @@
 
 # Usage: cmake -C PullRequestLinuxCUDA9.2TestingSettings.cmake
 
+set (CMAKE_CXX_STANDARD "14" CACHE STRING "Set C++ standard to C++14")
+
 # Misc options typically added by CI testing mode in TriBITS
 
 # Use the below option only when submitting to the dashboard
@@ -120,5 +122,7 @@ set (ROL_example_PDE-OPT_poisson-boltzmann_example_01_MPI_4_DISABLE ON CACHE BOO
 set (KokkosCore_UnitTest_Cuda_MPI_1_EXTRA_ARGS
   "--gtest_filter=-cuda.debug_pin_um_to_host:cuda.debug_serial_execution"
   CACHE STRING "Temporary disable for CUDA PR testing")
+
+set(CMAKE_CXX_FLAGS "-std=c++14" CACHE STRING "Set standard to C++14")
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
