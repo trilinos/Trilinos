@@ -115,9 +115,10 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DTPL_LAPACK_LIBRARIES=/usr/lib64/liblapack.so.3.2.1"
 
       ### PACKAGE CONFIGURATION ###
-          "-DKokkos_ENABLE_Cuda:BOOL=ON"
-          "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
-          "-DKokkos_ENABLE_Cuda_Lambda:BOOL=ON"
+          "-DKokkos_ENABLE_CUDA:BOOL=ON"
+          "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON"
+          "-DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON"
+          "-DKokkos_ARCH_KEPLER35:BOOL=ON"
           "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
           "-DTrilinos_ENABLE_ShyLU_Node:BOOL=OFF"
 
