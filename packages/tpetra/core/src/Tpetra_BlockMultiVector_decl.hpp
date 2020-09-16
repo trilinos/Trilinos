@@ -625,7 +625,8 @@ protected:
    const Kokkos::DualView<const local_ordinal_type*,
      buffer_device_type>& permuteToLIDs,
    const Kokkos::DualView<const local_ordinal_type*,
-     buffer_device_type>& permuteFromLIDs);
+     buffer_device_type>& permuteFromLIDs,
+   const CombineMode CM);
 
   virtual void
   packAndPrepare
