@@ -67,6 +67,9 @@ typedef Tpetra::global_size_t GST;
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, UniformContig, LO, GO, NT )
 {
   typedef Tpetra::Map<LO, GO, NT> map_type;
+  typedef typename NT::execution_space execution_space;
+  typedef Kokkos::RangePolicy<execution_space, int> range_type;
+
   int lclSuccess = 1;
   int gblSuccess = 1;
 
@@ -104,10 +107,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, UniformContig, LO, GO, NT )
         const GO expectedGid = gblMap.getGlobalElement (lid);
         // Make sure that the (global) Map behaves as expected.
         TEST_INEQUALITY( expectedGid, Tpetra::Details::OrdinalTraits<GO>::invalid () );
+
+        // gblMap.getLocalElement is host
         TEST_EQUALITY( gblMap.getLocalElement (expectedGid), lid );
-        // Test the local Map.
-        TEST_EQUALITY( lclMap.getGlobalElement (lid), expectedGid );
-        TEST_EQUALITY( lclMap.getLocalElement (expectedGid), lid );
+
+        // lclMap.getGlobalElement is device only
+        GO globalElement;
+        Kokkos::parallel_reduce("read GO element", range_type (0, 1),
+          KOKKOS_LAMBDA(int dummy, GO& ge) {
+            ge = lclMap.getGlobalElement(lid);
+          }, globalElement);
+        TEST_EQUALITY( globalElement, expectedGid );
+
+        // lclMap.getLocalElement is device only
+        LO localElement;
+        Kokkos::parallel_reduce("read LO element", range_type (0, 1),
+          KOKKOS_LAMBDA(int dummy, LO& le) {
+            le = lclMap.getLocalElement(expectedGid);
+          }, localElement);
+        TEST_EQUALITY( localElement, lid );
       }
     }
   } catch (...) {
@@ -136,6 +154,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, UniformContig, LO, GO, NT )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, NonuniformContig, LO, GO, NT )
 {
   typedef Tpetra::Map<LO, GO, NT> map_type;
+  typedef typename NT::execution_space execution_space;
+  typedef Kokkos::RangePolicy<execution_space, int> range_type;
+
   int lclSuccess = 1;
   int gblSuccess = 1;
 
@@ -173,8 +194,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, NonuniformContig, LO, GO, NT )
     if (numLclElts > 0) {
       for (LO lid = 0; lid < numLclElts; ++lid) {
         const GO expectedGid = gblMap.getGlobalElement (lid);
-        TEST_EQUALITY( lclMap.getGlobalElement (lid), expectedGid );
-        TEST_EQUALITY( lclMap.getLocalElement (expectedGid), lid );
+
+        // lclMap.getGlobalElement is device only
+        GO globalElement;
+        Kokkos::parallel_reduce("read GO element", range_type (0, 1),
+          KOKKOS_LAMBDA(int dummy, GO& ge) {
+            ge = lclMap.getGlobalElement(lid);
+          }, globalElement);
+        TEST_EQUALITY( globalElement, expectedGid );
+
+        // lclMap.getLocalElement is device only
+        LO localElement;
+        Kokkos::parallel_reduce("read LO element", range_type (0, 1),
+          KOKKOS_LAMBDA(int dummy, LO& le) {
+            le = lclMap.getLocalElement(expectedGid);
+          }, localElement);
+        TEST_EQUALITY( localElement, lid );
       }
     }
   } catch (...) {
@@ -203,6 +238,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, NonuniformContig, LO, GO, NT )
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, Noncontig, LO, GO, NT )
 {
   typedef Tpetra::Map<LO, GO, NT> map_type;
+  typedef typename NT::execution_space execution_space;
+  typedef Kokkos::RangePolicy<execution_space, int> range_type;
+
   int lclSuccess = 1;
   int gblSuccess = 1;
 
@@ -246,8 +284,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, Noncontig, LO, GO, NT )
     if (numLclElts > 0) {
       for (LO lid = 0; lid < numLclElts; ++lid) {
         const GO expectedGid = gblMap.getGlobalElement (lid);
-        TEST_EQUALITY( lclMap.getGlobalElement (lid), expectedGid );
-        TEST_EQUALITY( lclMap.getLocalElement (expectedGid), lid );
+
+        // lclMap.getGlobalElement is device only
+        GO globalElement;
+        Kokkos::parallel_reduce("read GO element", range_type (0, 1),
+          KOKKOS_LAMBDA(int dummy, GO& ge) {
+            ge = lclMap.getGlobalElement(lid);
+          }, globalElement);
+        TEST_EQUALITY( globalElement, expectedGid );
+
+        // lclMap.getLocalElement is device only
+        LO localElement;
+        Kokkos::parallel_reduce("read LO element", range_type (0, 1),
+          KOKKOS_LAMBDA(int dummy, LO& le) {
+            le = lclMap.getLocalElement(expectedGid);
+          }, localElement);
+        TEST_EQUALITY( localElement, lid );
       }
     }
   } catch (...) {

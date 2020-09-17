@@ -38,7 +38,9 @@ int ex_put_ss_param_global(int exoid, void_int *global_ids, void_int *side_cnts,
   /*-----------------------------Execution begins-----------------------------*/
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   /* Get the variable ID for the vector of global side set IDs */
   if ((status = nc_inq_varid(exoid, VAR_SS_IDS_GLOBAL, &varid)) != NC_NOERR) {

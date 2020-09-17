@@ -381,22 +381,19 @@ TEST(CoarseSearch, PeriodicBC)
 
   fixture.generate_mesh();
 
-  // side 0 (master) is periodic with side 3 (slave)
-
-  // add nodes to side 0 and 3
-  stk::mesh::PartVector side_0_parts(1,&side_0);
-  stk::mesh::PartVector side_3_parts(1,&side_3);
+  stk::mesh::PartVector independent_parts(1,&side_0);
+  stk::mesh::PartVector dependent_parts(1,&side_3);
 
   bulk_data.modification_begin();
   for (unsigned i=0; i<y+1u; ++i) {
   for (unsigned j=0; j<z+1u; ++j) {
     stk::mesh::Entity node_0 = fixture.node(0,i,j);
     if (bulk_data.is_valid(node_0)  && bulk_data.bucket(node_0).owned()) {
-      bulk_data.change_entity_parts( fixture.node(0,i,j), side_0_parts);
+      bulk_data.change_entity_parts( fixture.node(0,i,j), independent_parts);
     }
     stk::mesh::Entity node_3 = fixture.node(3,i,j);
     if (bulk_data.is_valid(node_3)  && bulk_data.bucket(node_3).owned()) {
-      bulk_data.change_entity_parts( fixture.node(3,i,j), side_3_parts);
+      bulk_data.change_entity_parts( fixture.node(3,i,j), dependent_parts);
     }
   }}
   bulk_data.modification_end();
@@ -755,22 +752,19 @@ TEST(CoarseSearch, RotationalPeriodicBC)
   stk::mesh::fixtures::CylindricalCoordinateMapping coordMap(1.0, rotationAngle, 4);
   fixture.generate_mesh(coordMap);
 
-  // side 0 (master) is periodic with side 3 (slave)
-
-  // add nodes to side 0 and 3
-  stk::mesh::PartVector side_0_parts(1,&side_0);
-  stk::mesh::PartVector side_3_parts(1,&side_3);
+  stk::mesh::PartVector independent_parts(1,&side_0);
+  stk::mesh::PartVector dependent_parts(1,&side_3);
 
   bulk_data.modification_begin();
   for (unsigned i=0; i<y+1u; ++i) {
   for (unsigned j=0; j<z+1u; ++j) {
     stk::mesh::Entity node_0 = fixture.node(0,i,j);
     if (bulk_data.is_valid(node_0)  && bulk_data.bucket(node_0).owned()) {
-      bulk_data.change_entity_parts( fixture.node(0,i,j), side_0_parts);
+      bulk_data.change_entity_parts( fixture.node(0,i,j), independent_parts);
     }
     stk::mesh::Entity node_3 = fixture.node(3,i,j);
     if (bulk_data.is_valid(node_3)  && bulk_data.bucket(node_3).owned()) {
-      bulk_data.change_entity_parts( fixture.node(3,i,j), side_3_parts);
+      bulk_data.change_entity_parts( fixture.node(3,i,j), dependent_parts);
     }
   }}
   bulk_data.modification_end();
@@ -811,10 +805,6 @@ TEST(CoarseSearch, RotationalPeriodicBC)
 
   check_rotation_matrix(pbc_search, rotationAngle);
 }
-// Manoj; took this out again after removal of glm libraries from Periodic BC Search
-//#if defined (__INTEL_COMPILER) && (__INTEL_COMPILER == 1400) && (__INTEL_COMPILER_UPDATE == 3)
-//#pragma GCC optimization_level 0
-//#endif
 
 TEST(CoarseSearch, OffsetRotationalPeriodicBC)
 {
@@ -840,22 +830,19 @@ TEST(CoarseSearch, OffsetRotationalPeriodicBC)
   CylindricalCoordinateMappingWithOffset coordMap(1.0, rotationAngle, 4, 1.0, 0.0, 0.0);
   fixture.generate_mesh(coordMap);
 
-  // side 0 (master) is periodic with side 3 (slave)
-
-  // add nodes to side 0 and 3
-  stk::mesh::PartVector side_0_parts(1,&side_0);
-  stk::mesh::PartVector side_3_parts(1,&side_3);
+  stk::mesh::PartVector independent_parts(1,&side_0);
+  stk::mesh::PartVector dependent_parts(1,&side_3);
 
   bulk_data.modification_begin();
   for (unsigned i=0; i<y+1u; ++i) {
   for (unsigned j=0; j<z+1u; ++j) {
     stk::mesh::Entity node_0 = fixture.node(0,i,j);
     if (bulk_data.is_valid(node_0)  && bulk_data.bucket(node_0).owned()) {
-      bulk_data.change_entity_parts( fixture.node(0,i,j), side_0_parts);
+      bulk_data.change_entity_parts( fixture.node(0,i,j), independent_parts);
     }
     stk::mesh::Entity node_3 = fixture.node(3,i,j);
     if (bulk_data.is_valid(node_3)  && bulk_data.bucket(node_3).owned()) {
-      bulk_data.change_entity_parts( fixture.node(3,i,j), side_3_parts);
+      bulk_data.change_entity_parts( fixture.node(3,i,j), dependent_parts);
     }
   }}
   bulk_data.modification_end();

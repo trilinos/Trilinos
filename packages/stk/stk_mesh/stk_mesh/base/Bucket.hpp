@@ -55,18 +55,9 @@ namespace stk { namespace mesh { class DeviceMesh; } }
 namespace stk { namespace mesh { namespace impl { class BucketRepository; } } }
 namespace stk { namespace mesh { namespace impl { class Partition; } } }
 namespace stk { namespace mesh { namespace impl { struct OverwriteEntityFunctor; } } }
-namespace stk { namespace mesh { namespace utest { struct ReversePartition; } } }
-namespace stk { namespace mesh { namespace utest { struct SyncToPartitions; } } }
-namespace stk { namespace mesh { struct ConnectivityMap; } }
 
 namespace stk {
 namespace mesh {
-
-namespace impl {
-class Partition;
-class BucketRepository;
-struct OverwriteEntityFunctor;
-} // namespace impl
 
 /** \addtogroup stk_mesh_module
  *  \{
@@ -416,9 +407,7 @@ private:
           EntityRank arg_entity_rank,
           const std::vector<unsigned> & arg_key,
           size_t arg_capacity,
-          const ConnectivityMap& connectivity_map,
-          unsigned bucket_id
-        );
+          unsigned bucket_id);
 
   const std::vector<unsigned> & key_vector() const { return m_key; }
 
@@ -465,9 +454,7 @@ private:
   friend struct impl::OverwriteEntityFunctor;
   friend class BulkData;                // Replacement friend.
   friend struct Entity;
-  friend struct utest::ReversePartition;
-  friend struct utest::SyncToPartitions;
-  friend class stk::mesh::DeviceMesh;
+  friend class DeviceMesh;
 
   BulkData             & m_mesh ;        // Where this bucket resides
   const EntityRank       m_entity_rank ; // Type of entities for this bucket

@@ -399,9 +399,9 @@ int ConvergenceTet(const bool verbose) {
     cell_cub->getCubature(refPoints, weights);
 
     using basisType = Basis<DeviceSpaceType,ValueType,ValueType>;
-    using CG_NBasis = NodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
+    //using CG_NBasis = NodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
     using CG_HBasis = HierarchicalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
-    //using CG_DNBasis = DerivedNodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
+    using CG_DNBasis = DerivedNodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
 
 
     *outStream
@@ -421,7 +421,8 @@ int ConvergenceTet(const bool verbose) {
       ots::getOrientation(elemOrts, elemNodes, tet);
 
       std::vector<basisType*> basis_set;
-      basis_set.push_back(new typename  CG_NBasis::HGRAD_TET(order));
+      //basis_set.push_back(new typename  CG_NBasis::HGRAD_TET(order));
+      basis_set.push_back(new typename  CG_DNBasis::HGRAD_TET(order));
       basis_set.push_back(new typename  CG_HBasis::HGRAD_TET(order));
 
       for (auto basisPtr:basis_set) {
@@ -435,6 +436,7 @@ int ConvergenceTet(const bool verbose) {
           Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(tetLinearBasisValuesAtRefCoords, tet.getNodeCount(), numRefCoords);
           tetLinearBasis.getValues(tetLinearBasisValuesAtRefCoords, refPoints);
+          DeviceSpaceType().fence();
           for(ordinal_type i=0; i<numElems; ++i)
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
@@ -489,6 +491,7 @@ int ConvergenceTet(const bool verbose) {
               hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
               if(numGradPoints>0)
                 hexLinearBasis.getValues(hexLinearBasisValuesAtEvalGradPoints, Kokkos::subview(evaluationGradPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              DeviceSpaceType().fence();
               for(ordinal_type d=0; d<dim; ++d) {
                 for(std::size_t k=0; k<tet.getNodeCount(); ++k) {
                   for(ordinal_type j=0; j<numPoints; ++j)
@@ -624,7 +627,8 @@ int ConvergenceTet(const bool verbose) {
       ots::getOrientation(elemOrts, elemNodes, tet);
 
       std::vector<basisType*> basis_set;
-      basis_set.push_back(new typename  CG_NBasis::HCURL_TET(order));
+      //basis_set.push_back(new typename  CG_NBasis::HCURL_TET(order));
+      basis_set.push_back(new typename  CG_DNBasis::HCURL_TET(order));
       //basis_set.push_back(new typename  CG_HBasis::HCURL_TET(order));
 
       for (auto basisPtr:basis_set) {
@@ -638,6 +642,7 @@ int ConvergenceTet(const bool verbose) {
           Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(tetLinearBasisValuesAtRefCoords, tet.getNodeCount(), numRefCoords);
           tetLinearBasis.getValues(tetLinearBasisValuesAtRefCoords, refPoints);
+          DeviceSpaceType().fence();
           for(ordinal_type i=0; i<numElems; ++i)
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
@@ -691,6 +696,7 @@ int ConvergenceTet(const bool verbose) {
             for(ordinal_type i=0; i<numElems; ++i) {
               hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
               hexLinearBasis.getValues(hexLinearBasisValuesAtEvalCurlPoints, Kokkos::subview(evaluationCurlPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              DeviceSpaceType().fence();
               for(ordinal_type d=0; d<dim; ++d) {
                 for(std::size_t k=0; k<tet.getNodeCount(); ++k) {
                   for(ordinal_type j=0; j<numPoints; ++j)
@@ -840,7 +846,8 @@ int ConvergenceTet(const bool verbose) {
       ots::getOrientation(elemOrts, elemNodes, tet);
 
       std::vector<basisType*> basis_set;
-      basis_set.push_back(new typename  CG_NBasis::HDIV_TET(order));
+      //basis_set.push_back(new typename  CG_NBasis::HDIV_TET(order));
+      basis_set.push_back(new typename  CG_DNBasis::HDIV_TET(order));
       //basis_set.push_back(new typename  CG_HBasis::HDIV_TET(order));
 
       for (auto basisPtr:basis_set) {
@@ -854,6 +861,7 @@ int ConvergenceTet(const bool verbose) {
           Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(tetLinearBasisValuesAtRefCoords, tet.getNodeCount(), numRefCoords);
           tetLinearBasis.getValues(tetLinearBasisValuesAtRefCoords, refPoints);
+          DeviceSpaceType().fence();
           for(ordinal_type i=0; i<numElems; ++i)
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
@@ -906,6 +914,7 @@ int ConvergenceTet(const bool verbose) {
             for(ordinal_type i=0; i<numElems; ++i) {
               hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
               hexLinearBasis.getValues(hexLinearBasisValuesAtEvalDivPoints, Kokkos::subview(evaluationDivPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              DeviceSpaceType().fence();
               for(ordinal_type d=0; d<dim; ++d) {
                 for(std::size_t k=0; k<tet.getNodeCount(); ++k) {
                   for(ordinal_type j=0; j<numPoints; ++j)
@@ -1052,7 +1061,8 @@ int ConvergenceTet(const bool verbose) {
       ots::getOrientation(elemOrts, elemNodes, tet);
 
       std::vector<basisType*> basis_set;
-      basis_set.push_back(new typename  CG_NBasis::HVOL_TET(order-1));
+      //basis_set.push_back(new typename  CG_NBasis::HVOL_TET(order-1));
+      basis_set.push_back(new typename  CG_DNBasis::HVOL_TET(order-1));
       //basis_set.push_back(new typename  CG_HBasis::HVOL_TET(order-1));
 
       for (auto basisPtr:basis_set) {
@@ -1066,6 +1076,7 @@ int ConvergenceTet(const bool verbose) {
           Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(tetLinearBasisValuesAtRefCoords, tet.getNodeCount(), numRefCoords);
           tetLinearBasis.getValues(tetLinearBasisValuesAtRefCoords, refPoints);
+          DeviceSpaceType().fence();
           for(ordinal_type i=0; i<numElems; ++i)
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
@@ -1108,6 +1119,7 @@ int ConvergenceTet(const bool verbose) {
 
             for(ordinal_type i=0; i<numElems; ++i) {
               hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              DeviceSpaceType().fence();
               for(ordinal_type d=0; d<dim; ++d) {
                 for(std::size_t k=0; k<tet.getNodeCount(); ++k) {
                   for(ordinal_type j=0; j<numPoints; ++j)

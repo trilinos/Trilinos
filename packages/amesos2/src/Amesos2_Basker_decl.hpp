@@ -96,10 +96,7 @@ public:
 
   typedef typename type_map::type                               basker_type;
 
-  // TODO: Would like to change dtype to be a regular type, not static.
-  // Seems nothing was using dtype before anyways but Stokhos would break so
-  // will address that as a separate PR.
-  typedef decltype(type_map::dtype)                            basker_dtype;
+  typedef typename type_map::dtype                             basker_dtype;
 
   typedef FunctionMap<Amesos2::Basker,basker_type>             function_map;
 

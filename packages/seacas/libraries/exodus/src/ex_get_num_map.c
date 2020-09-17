@@ -38,7 +38,9 @@ int ex_get_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, void
   const char *dim_num_maps;
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   switch (map_type) {
   case EX_NODE_MAP:

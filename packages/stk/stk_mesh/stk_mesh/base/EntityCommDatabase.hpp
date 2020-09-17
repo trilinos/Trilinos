@@ -106,6 +106,7 @@ public:
 private:
   bool cached_find(const EntityKey& key) const;
   const EntityComm* insert(const EntityKey& key);
+  void internal_update_shared_ghosted(bool removedSharingProc);
 
   map_type m_comm_map;
   mutable map_type::iterator m_last_lookup;

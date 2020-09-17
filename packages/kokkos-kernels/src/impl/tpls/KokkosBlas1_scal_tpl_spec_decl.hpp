@@ -376,6 +376,20 @@ KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, f
 KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
 KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
 
+#if defined (KOKKOS_ENABLE_CUDA_UVM)
+KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_DSCAL_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_SSCAL_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_ZSCAL_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_CSCAL_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+#endif
+
 }
 }
 

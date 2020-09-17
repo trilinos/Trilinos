@@ -65,4 +65,4 @@ struct CusparseSingleton {
 } // namespace KokkosKernels
 #endif
 
-#endif // KOKKOSKERNELS_TPL_HANDLES_DECL_HPP_ 
+#endif // KOKKOSKERNELS_TPL_HANDLES_DECL_HPP_

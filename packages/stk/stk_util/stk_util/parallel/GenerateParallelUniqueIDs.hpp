@@ -49,8 +49,18 @@
 
 namespace stk {
 
+void compute_global_sum_and_max(ParallelMachine comm,
+                                uint64_t numLocalIds,
+                                uint64_t& globalSumNumIds,
+                                uint64_t& globalMaxNumIds);
 
-
+void generate_parallel_ids_above_existing_max(ParallelMachine comm,
+                                              uint64_t numNewIdsLocal,
+                                              uint64_t globalNumIdsRequested,
+                                              uint64_t maxIdsRequested,
+                                              uint64_t availableIds,
+                                              uint64_t globalMaxId,
+                                              std::vector<uint64_t>& newIds);
 
   //--------------------------------------------------------------------------------------------
   //

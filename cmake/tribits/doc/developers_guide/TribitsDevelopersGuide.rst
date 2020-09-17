@@ -6304,6 +6304,41 @@ The following steps describe how to submit results to a CDash site using the
   .. the other cloned and updated by the CTest driver script.
 
 
+How to submit testing results to a custom CDash Group
+-----------------------------------------------------
+
+Following up on `How to submit testing results to a CDash site`_, to submit
+build and test results to a custom "Group" on CDash (instead of just
+"Nightly", "Continuous" or "Experimental"), one just has to create the new
+group on CDash using the CDash GUI interface and then tell the ctest -S local
+driver to submit results to that CDash group.  The steps for doing this are
+given below.
+
+1. Create the new CDash group ``<special_group>`` for CDash project
+   ``<ProjectName>`` on the targeted CDash site.
+
+   If the CDash group ``<special_group>`` is not already created, then one can
+   create it by first logging into CDash with an account that can modify the
+   CDash project ``<ProjectName>``.  Once logged in, go to the project edit
+   page and select "Settings" and "Groups".  From there, create the new group
+   ``<special_group>``.  Set the "Build Type" to either "Daily" or "Latest".
+
+2. Set ``${PROJECT_NAME}_TRACK=<special_group>`` with the CTest -S driver
+   script.
+
+   One can either do that by setting ``SET(${PROJECT_NAME}_TRACK
+   <special_group>)`` in the CTest -S ``*.cmake`` driver script itself or can
+   set it in the environment when running the ctest -S driver script.  For
+   example::
+ 
+     $ env <Project>_TRACK=<special_group> ... \
+       ctest -V -S <ctest_driver>.cmake
+ 
+   If the "build type" for the CDash group ``<special_group>`` was set to
+   "Daily", then set `CTEST_TEST_TYPE`_ to ``Nightly``.  Otherwise,
+   ``CTEST_TEST_TYPE`` can be set to ``Continuous`` or ``Experimental``.
+
+
 Additional Topics
 =================
 
@@ -6576,6 +6611,28 @@ sneak them in, they could add various ``install()`` commands to files like
 install commands from the former two files are run before install commands for
 the enabled packages while install commands from the latter two files are run
 after.)
+
+One can also change what compilers are written into the generated
+``<Project>Config.cmake`` and ``<Package>Config.cmake`` files for the build
+and the install trees.  By default, the compilers pointed to in these
+``Config.cmake`` files will be ``CMAKE_<LANG>_COMPILER`` where ``<LANG>`` =
+``CXX``, ``C``, and ``Fortran``, but one can change this by setting any of the
+following::
+
+  SET(CMAKE_CXX_COMPILER_FOR_CONFIG_FILE_BUILD_DIR <path>)
+  SET(CMAKE_C_COMPILER_FOR_CONFIG_FILE_BUILD_DIR <path>)
+  SET(CMAKE_Fortran_COMPILER_FOR_CONFIG_FILE_BUILD_DIR <path>)
+  SET(CMAKE_CXX_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR <path>)
+  SET(CMAKE_C_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR <path>)
+  SET(CMAKE_Fortran_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR <path>)
+
+before the ``Config.cmake`` files are generated.  These can also be set in the
+CMake cache using, for example,
+``-DCMAKE_CXX_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR:FILEPATH=<path>``.
+
+This is used, for example, when compiler wrappers are used for the build tree
+and are set to ``CMAKE_<LANG>_COMPILER`` but when one wants to point to the
+original underlying compilers for the installed ``Config.cmake`` files.
 
 
 RPATH Handling

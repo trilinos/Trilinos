@@ -108,13 +108,13 @@ void gdbIn()
 int main(int argc,char * argv[])
 {
    bool status = false;
-   Kokkos::initialize(argc,argv);
 
    { 
      // need to protect kokkos and MPI
      // calls MPI_Init and MPI_Finalize
      Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  
+     Kokkos::initialize(argc,argv);
+
      // build MPI/Serial communicators
      #ifdef HAVE_MPI
         Epetra_MpiComm Comm_epetra(MPI_COMM_WORLD);

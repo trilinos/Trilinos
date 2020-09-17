@@ -102,12 +102,8 @@ tpetraToEpetraMap (const Tpetra::Map<LO, GO, NT>& map_t,
     }
   }
   else {
-    auto myGblInds_d = map_t.getMyGlobalIndices ();
-    typename decltype(myGblInds_d)::HostMirror::non_const_type
-      myGblInds_h ("myGblInds_h", myGblInds_d.extent (0));
-    Kokkos::deep_copy (myGblInds_h, myGblInds_d);
-    Kokkos::fence ();
-    return Epetra_Map (gblNumInds, lclNumInds, myGblInds_h.data (), indexBase, comm_e);
+    auto myGblInds = map_t.getMyGlobalIndices (); // returns host data
+    return Epetra_Map (gblNumInds, lclNumInds, myGblInds.data (), indexBase, comm_e);
   }
 }
 

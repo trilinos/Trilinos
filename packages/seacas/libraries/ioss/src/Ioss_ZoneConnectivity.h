@@ -74,6 +74,7 @@ namespace Ioss {
     // transform must have valid entries.
     bool is_valid() const;
     bool has_faces() const;
+    bool retain_original() const; // True if need to retain in parallel decomp
 
     std::array<INT, 9> transform_matrix() const;
     Ioss::IJK_t        transform(const Ioss::IJK_t &index_1) const;

@@ -157,7 +157,6 @@ template <class Scalar = DefaultScalar,
                          RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace, const int levelID) const;
     void BuildPcoupled  (RCP<Matrix> A, RCP<Aggregates> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                          RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const;
-    bool isGoodMap(const Map& rowMap, const Map& colMap) const;
 
     mutable bool bTransferCoordinates_ = false;
 

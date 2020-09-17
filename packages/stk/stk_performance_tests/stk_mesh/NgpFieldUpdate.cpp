@@ -45,8 +45,82 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_unit_test_utils/getOption.h>
+#include <stk_unit_test_utils/GetMeshSpec.hpp>
 #include <stk_performance_tests/stk_mesh/timer.hpp>
 #include <stk_performance_tests/stk_mesh/multi_block.hpp>
+
+class NgpFieldSyncTest : public stk::unit_test_util::MeshFixture
+{
+public:
+  NgpFieldSyncTest() : stk::unit_test_util::MeshFixture()
+  {}
+
+  void setup_mesh_with_many_blocks_many_elements(unsigned numBlocks, unsigned numElemPerDim,
+                                                 stk::mesh::BulkData::AutomaticAuraOption auraOption)
+  {
+    std::string meshDesc = "generated:" + std::to_string(numElemPerDim) + "x"
+                                        + std::to_string(numElemPerDim) + "x"
+                                        + std::to_string(numElemPerDim);
+    stk::performance_tests::setup_multiple_blocks(get_meta(), numBlocks);
+    setup_mesh(meshDesc, auraOption);
+    stk::performance_tests::move_elements_to_other_blocks(get_bulk(), numElemPerDim, numBlocks);
+  }
+
+  void setup_fields(unsigned numComponent, unsigned tensorFieldSizePerElem, unsigned vectorFieldSizePerElem)
+  {
+    const std::vector<int> init(numComponent, 1);
+    auto tensorField = &get_meta().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::ELEMENT_RANK, "TensorField");
+    auto vectorField = &get_meta().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::ELEMENT_RANK, "VectorField");
+    auto stkIntField = &get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::ELEMENT_RANK, "intField", 1);
+
+    stk::mesh::put_field_on_mesh(*tensorField, get_meta().universal_part(), tensorFieldSizePerElem, static_cast<double*>(nullptr));
+    stk::mesh::put_field_on_mesh(*vectorField, get_meta().universal_part(), vectorFieldSizePerElem, static_cast<double*>(nullptr));
+    stk::mesh::put_field_on_mesh(*stkIntField, get_meta().universal_part(), numComponent, init.data());
+  }
+
+  stk::mesh::Part* get_part_with_block_number(unsigned blockNumber)
+  {
+    std::string blockName = "block_" + std::to_string(blockNumber+1);
+    stk::mesh::Part* part = get_meta().get_part(blockName);
+    ThrowRequire(part != nullptr);
+    return part; 
+  }
+
+  stk::mesh::Selector get_non_contiguous_partial_selector(unsigned numBlocks, unsigned numBlocksToSync)
+  {
+    stk::mesh::PartVector parts;
+    unsigned partCount = 0;
+
+    for(unsigned i = 0; i < numBlocks; i++) {
+      if(i % 2 == 0) {
+        if(partCount == numBlocksToSync) { break; }
+        parts.push_back(get_part_with_block_number(i));
+        partCount++;
+      }
+    }
+
+    for(unsigned i = 0; i < numBlocks; i++) {
+      if(i % 2 == 1) {
+        if(partCount == numBlocksToSync) { break; }
+        parts.push_back(get_part_with_block_number(i));
+        partCount++;
+      }
+    }
+
+    return stk::mesh::selectUnion(parts);
+  }
+
+  stk::mesh::Selector get_contiguous_partial_selector(unsigned numBlocksToSync)
+  {
+    stk::mesh::PartVector parts;
+
+    for(unsigned i = 0; i < numBlocksToSync; i++) {
+      parts.push_back(get_part_with_block_number(i));
+    }
+
+    return stk::mesh::selectUnion(parts);
+  }
+};
 
 class NgpFieldUpdateFixture : public stk::unit_test_util::MeshFixture
 {
@@ -286,5 +360,60 @@ TEST_F( NgpMeshGhostingEntityWithFields, Timing )
     update_fields();
     timer.update_timing();
   }
+  timer.print_timing(NUM_RUNS);
+}
+
+TEST_F(NgpFieldSyncTest, PartialSyncTiming)
+{
+  if(get_parallel_size() != 1) return;
+
+  unsigned NUM_RUNS = stk::unit_test_util::get_command_line_option("-r", 1000);
+  unsigned numComponents = stk::unit_test_util::get_command_line_option("-c", 1);
+  unsigned numBlocks = stk::unit_test_util::get_command_line_option("-b", 100);
+  unsigned numBlocksToSync = stk::unit_test_util::get_command_line_option("-s", 10);
+  unsigned numElemPerDim = stk::unit_test_util::get_command_line_option("-e", 500);
+  unsigned tensorFieldSizePerElem = stk::unit_test_util::get_command_line_option("--tensorField", 72);
+  unsigned vectorFieldSizePerElem = stk::unit_test_util::get_command_line_option("-vectorField", 8);
+  bool justSyncAll = stk::unit_test_util::get_command_line_option("-a", false);
+  bool contiguousBlocks = stk::unit_test_util::get_command_line_option("-t", true);
+  numBlocksToSync = std::min(numBlocks, numBlocksToSync);
+  stk::performance_tests::Timer timer(MPI_COMM_WORLD);
+  
+  setup_fields(numComponents, tensorFieldSizePerElem, vectorFieldSizePerElem);
+  setup_mesh_with_many_blocks_many_elements(numBlocks, numElemPerDim, stk::mesh::BulkData::NO_AUTO_AURA);
+
+  stk::mesh::FieldBase* fieldBase = get_meta().get_field(stk::topology::ELEMENT_RANK, "intField");
+  stk::mesh::FieldBase* tensorFieldBase = get_meta().get_field(stk::topology::ELEMENT_RANK, "TensorField");
+  stk::mesh::FieldBase* vectorFieldBase = get_meta().get_field(stk::topology::ELEMENT_RANK, "VectorField");
+  stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(*fieldBase);
+  stk::mesh::NgpField<double>& ngpTensorField = stk::mesh::get_updated_ngp_field<double>(*tensorFieldBase);
+  stk::mesh::NgpField<double>& ngpVectorField = stk::mesh::get_updated_ngp_field<double>(*vectorFieldBase);
+  stk::mesh::Selector selector;
+  
+  if(contiguousBlocks) {
+    selector = get_contiguous_partial_selector(numBlocksToSync);
+  } else {
+    selector = get_non_contiguous_partial_selector(numBlocks, numBlocksToSync);
+  }
+
+  for(unsigned i = 0; i < NUM_RUNS; i++) {
+    timer.start_timing();
+    if(justSyncAll) {
+      ngpIntField.modify_on_host();
+      ngpTensorField.modify_on_host();
+      ngpVectorField.modify_on_host();
+    } else {
+      ngpIntField.modify_on_host(selector);
+      ngpTensorField.modify_on_host(selector);
+      ngpVectorField.modify_on_host(selector);
+    }
+    ngpIntField.sync_to_device();
+    ngpTensorField.sync_to_device();
+    ngpVectorField.sync_to_device();
+    timer.update_timing();
+  }
+
+  std::cout << "Blocks: " << numBlocks << " Blocks to sync: "
+            << numBlocksToSync << " (" << (numBlocksToSync * 100.0 / numBlocks) << " %)" << std::endl;
   timer.print_timing(NUM_RUNS);
 }

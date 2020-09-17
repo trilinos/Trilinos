@@ -18,10 +18,6 @@ IF(Trilinos_ENABLE_STKNGP_TEST)
     TRIBITS_ADD_TEST_DIRECTORIES(stk_balance)
     ENDIF()
     
-    IF(Trilinos_ENABLE_STKNGP)
-    TRIBITS_ADD_TEST_DIRECTORIES(stk_ngp)
-    ENDIF()
-    
     TRIBITS_ADD_TEST_DIRECTORIES(stk_ngp_test)
     
     IF(Trilinos_ENABLE_STKTopology)

@@ -142,7 +142,7 @@ namespace Xpetra {
     Teuchos::RCP<Map<int, int, EpetraNode> >
     MapFactory<int, int, EpetraNode>::
     Build(const Teuchos::RCP<const Map<int, int, EpetraNode> >& map,
-          int                                                   numDofPerNode)
+          const int numDofPerNode, const int gidOffset)
     {
       XPETRA_MONITOR("MapFactory::Build");
 
@@ -161,7 +161,7 @@ namespace Xpetra {
       {
         for (LocalOrdinal j = 0; j < numDofPerNode; j++)
         {
-          newElements[i*numDofPerNode + j] = oldElements[i]*numDofPerNode + j;
+          newElements[i*numDofPerNode + j] = oldElements[i]*numDofPerNode + j + gidOffset;
         }
       }
 

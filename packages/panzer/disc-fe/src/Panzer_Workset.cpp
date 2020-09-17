@@ -142,9 +142,10 @@ void WorksetDetails::setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_to
     // Create and store integration values
     Teuchos::RCP<panzer::IntegrationValues2<double> > iv = Teuchos::rcp(new panzer::IntegrationValues2<double>("",true));
     iv->setupArrays(ir);
-    iv->evaluateValues(cell_vertex_coordinates,num_cells);
+    iv->evaluateValues(cell_vertex_coordinates,num_cells,_face_connectivity);
     if (iv->int_rule->getType() == panzer::IntegrationDescriptor::SURFACE)
     {
+
       // IntegrationValues2 doesn't know anything about virtual cells, so it sets up incorrect normals for those.
       // What we want is for the adjoining face of the virtual cell to have normals that are the negated real cell's normals.
       // we correct the normals here:

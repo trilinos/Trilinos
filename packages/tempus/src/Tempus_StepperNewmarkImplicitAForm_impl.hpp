@@ -11,6 +11,7 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperFactory.hpp"
+#include "Tempus_StepperNewmarkImplicitAFormModifierDefault.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "NOX_Thyra.H"
 
@@ -164,6 +165,22 @@ void StepperNewmarkImplicitAForm<Scalar>::setSchemeName(
   this->isInitialized_ = false;
 }
 
+template<class Scalar>                                                          
+void StepperNewmarkImplicitAForm<Scalar>::setAppAction(                                                                                                                                                                                                                                                                                                                           
+    Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > appAction)               
+{                                                                               
+
+  if (appAction == Teuchos::null) {                                             
+    // Create default appAction                                                 
+    stepperNewmarkImpAppAction_ =                                                       
+	Teuchos::rcp(new StepperNewmarkImplicitAFormModifierDefault<Scalar>());          
+  } else {                                                                      
+    stepperNewmarkImpAppAction_ = appAction;                                            
+  }                                                                             
+
+  this->isInitialized_ = false;                                                 
+} 
+
 
 template<class Scalar>
 StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm() :
@@ -180,11 +197,15 @@ StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm() :
   this->setZeroInitialGuess(   false);
   this->setSchemeName(         "Average Acceleration");
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   this->setObserver();
+#endif
+  this->setAppAction(Teuchos::null);
   this->setDefaultSolver();
 }
 
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
 template<class Scalar>
 StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -207,8 +228,41 @@ StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm(
   this->setSchemeName(         schemeName);
   this->setBeta(               beta);
   this->setGamma(              gamma);
-
   this->setObserver(obs);
+  this->setAppAction(Teuchos::null);
+  this->setSolver(solver);
+
+  if (appModel != Teuchos::null) {
+
+    this->setModel(appModel);
+    this->initialize();
+  }
+}
+#endif
+
+template<class Scalar>
+StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool zeroInitialGuess,
+    std::string schemeName,
+    Scalar beta,
+    Scalar gamma,
+    const Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> >& stepperAppAction)
+  : out_(Teuchos::VerboseObjectBase::getDefaultOStream())
+{
+  this->setStepperType(        "Newmark Implicit a-Form");
+  this->setUseFSAL(            useFSAL);
+  this->setICConsistency(      ICConsistency);
+  this->setICConsistencyCheck( ICConsistencyCheck);
+  this->setZeroInitialGuess(   zeroInitialGuess);
+  this->setSchemeName(         schemeName);
+  this->setBeta(               beta);
+  this->setGamma(              gamma);
+  this->setAppAction(stepperAppAction);
   this->setSolver(solver);
 
   if (appModel != Teuchos::null) {
@@ -427,6 +481,10 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
+    auto thisStepper = Teuchos::rcpFromRef(*this);
+    stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
+        StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
+
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
@@ -466,8 +524,14 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
     // Inject d_new, v_new, a and other relevant data into wrapperModel
     wrapperModel->initializeNewmark(v_new,d_new,dt,t,beta_,gamma_);
 
+    stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
+        StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
+
     // Solve nonlinear system with a_new as initial guess
     const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_new);
+
+    stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
+        StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
 
     // Correct velocity, displacement.
     correctVelocity(*v_new, *v_new, *a_new, dt);
@@ -476,6 +540,9 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
+
+    stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
+        StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
   return;
 }
@@ -544,6 +611,11 @@ bool StepperNewmarkImplicitAForm<Scalar>::isValidSetup(Teuchos::FancyOStream & o
   if (this->solver_ == Teuchos::null) {
     isValidSetup = false;
     out << "The solver is not set!\n";
+  }
+
+  if (this->stepperNewmarkImpAppAction_ == Teuchos::null){
+    isValidSetup = false;
+    out << "The Newmark Implicit A-Form AppAction is not set!\n";
   }
 
   return isValidSetup;

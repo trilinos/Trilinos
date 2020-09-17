@@ -54,6 +54,30 @@ TRIBITS_ADD_TEST(
   )
 
 
+TRIBITS_ADD_TEST(
+  Sphynx
+  NAME Sphynx_ConstantsInitialGuess
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple --initialGuess=constants"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+
+TRIBITS_ADD_TEST(
+  Sphynx
+  NAME Sphynx_PartialOrtho
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple --partialOrtho"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+
 IF(Trilinos_ENABLE_Galeri)
   TRIBITS_ADD_TEST(
     Sphynx
@@ -85,7 +109,20 @@ IF(Trilinos_ENABLE_MueLu)
     NUM_MPI_PROCS 4
     COMM serial mpi
     ARGS
-     "--inputFile=simple --poly"
+     "--inputFile=simple --precond=polynomial"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ENDIF()
+
+IF(Trilinos_ENABLE_MueLu)
+  TRIBITS_ADD_TEST(
+    Sphynx
+    NAME Sphynx_JacobiPrec
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+     "--inputFile=simple --precond=jacobi"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
   )

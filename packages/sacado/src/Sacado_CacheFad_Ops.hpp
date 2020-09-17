@@ -75,41 +75,41 @@ namespace Sacado {
       typedef typename ExprT::scalar_type scalar_type;
       typedef typename ExprT::base_expr_type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       explicit Expr(const ExprT& expr_) : expr(expr_)  {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const { return expr.size(); }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const { return expr.updateValue(); }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr.cache();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return expr.val();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return expr.isLinear();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return expr.dx(i);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return expr.fastAccessDx(i);
       }
@@ -120,7 +120,7 @@ namespace Sacado {
     };
 
     template <typename T>
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     Expr< UnaryPlusOp< Expr<T> > >
     operator+ (const Expr<T>& expr)
     {
@@ -143,41 +143,41 @@ namespace Sacado {
       typedef typename ExprT::scalar_type scalar_type;
       typedef typename ExprT::base_expr_type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       explicit Expr(const ExprT& expr_) : expr(expr_)  {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const { return expr.size(); }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const { return expr.updateValue(); }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr.cache();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return -expr.val();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return expr.isLinear();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return -expr.dx(i);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return -expr.fastAccessDx(i);
       }
@@ -188,7 +188,7 @@ namespace Sacado {
     };
 
     template <typename T>
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     Expr< UnaryMinusOp< Expr<T> > >
     operator- (const Expr<T>& expr)
     {
@@ -212,43 +212,43 @@ namespace Sacado {
       typedef typename ExprT::scalar_type scalar_type;
       typedef typename ExprT::base_expr_type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       explicit Expr(const ExprT& expr_) : expr(expr_)  {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const { return expr.size(); }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const { return expr.updateValue(); }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr.cache();
         v = expr.val();
         v_pos = (v >= 0);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return std::abs(v);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return false;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return v_pos ? expr.dx(i) : value_type(-expr.dx(i));
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return v_pos ? expr.fastAccessDx(i) : value_type(-expr.fastAccessDx(i));
       }
@@ -261,7 +261,7 @@ namespace Sacado {
     };
 
     template <typename T>
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     Expr< AbsOp< Expr<T> > >
     abs (const Expr<T>& expr)
     {
@@ -285,43 +285,43 @@ namespace Sacado {
       typedef typename ExprT::scalar_type scalar_type;
       typedef typename ExprT::base_expr_type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       explicit Expr(const ExprT& expr_) : expr(expr_)  {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const { return expr.size(); }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const { return expr.updateValue(); }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr.cache();
         v = expr.val();
         v_pos = (v >= 0);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return std::fabs(v);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return false;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return v_pos ? expr.dx(i) : value_type(-expr.dx(i));
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return v_pos ? expr.fastAccessDx(i) : value_type(-expr.fastAccessDx(i));
       }
@@ -334,7 +334,7 @@ namespace Sacado {
     };
 
     template <typename T>
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     Expr< FAbsOp< Expr<T> > >
     fabs (const Expr<T>& expr)
     {
@@ -361,39 +361,39 @@ namespace Sacado {                                                      \
       typedef typename ExprT::scalar_type scalar_type;                  \
       typedef typename ExprT::base_expr_type base_expr_type;            \
                                                                         \
-      KOKKOS_INLINE_FUNCTION                                            \
+      SACADO_INLINE_FUNCTION                                            \
       explicit Expr(const ExprT& expr_) : expr(expr_)  {}               \
                                                                         \
-      KOKKOS_INLINE_FUNCTION                                            \
+      SACADO_INLINE_FUNCTION                                            \
       int size() const { return expr.size(); }                          \
                                                                         \
-      KOKKOS_INLINE_FUNCTION                                            \
+      SACADO_INLINE_FUNCTION                                            \
       bool hasFastAccess() const { return expr.hasFastAccess(); }       \
                                                                         \
-      KOKKOS_INLINE_FUNCTION                                            \
+      SACADO_INLINE_FUNCTION                                            \
       bool isPassive() const { return expr.isPassive();}                \
                                                                         \
-      KOKKOS_INLINE_FUNCTION                                            \
+      SACADO_INLINE_FUNCTION                                            \
       bool updateValue() const { return expr.updateValue(); }           \
                                                                         \
-      KOKKOS_INLINE_FUNCTION                                            \
+      SACADO_INLINE_FUNCTION                                            \
       void cache() const {                                              \
         expr.cache();                                                   \
         v = expr.val();                                                 \
         PARTIAL;                                                        \
       }                                                                 \
                                                                         \
-      KOKKOS_INLINE_FUNCTION                                            \
+      SACADO_INLINE_FUNCTION                                            \
       value_type val() const {                                          \
         return VALUE;                                                   \
       }                                                                 \
                                                                         \
-      KOKKOS_INLINE_FUNCTION                                            \
+      SACADO_INLINE_FUNCTION                                            \
       value_type dx(int i) const {                                      \
         return expr.dx(i)*a;                                            \
       }                                                                 \
                                                                         \
-      KOKKOS_INLINE_FUNCTION                                            \
+      SACADO_INLINE_FUNCTION                                            \
       value_type fastAccessDx(int i) const {                            \
         return expr.fastAccessDx(i)*a;                                  \
       }                                                                 \
@@ -406,7 +406,7 @@ namespace Sacado {                                                      \
     };                                                                  \
                                                                         \
     template <typename T>                                               \
-    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_INLINE_FUNCTION                                              \
     Expr< OP< Expr<T> > >                                               \
     OPNAME (const Expr<T>& expr)                                        \
     {                                                                   \
@@ -527,48 +527,48 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         int sz1 = expr1.size(), sz2 = expr2.size();
         return sz1 > sz2 ? sz1 : sz2;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr1.updateValue() && expr2.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr1.cache();
         expr2.cache();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return expr1.val()+expr2.val();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return expr1.isLinear() && expr2.isLinear();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr1.hasFastAccess() && expr2.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return expr1.dx(i) + expr2.dx(i);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return expr1.fastAccessDx(i) + expr2.fastAccessDx(i);
       }
@@ -601,46 +601,46 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         return expr1.size();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr1.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr1.cache();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return expr1.val() + expr2.val();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return expr1.isLinear();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr1.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return expr1.dx(i);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return expr1.fastAccessDx(i);
       }
@@ -673,46 +673,46 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         return expr2.size();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr2.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr2.cache();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return expr1.val() + expr2.val();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return expr2.isLinear();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr2.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return expr2.dx(i);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return expr2.fastAccessDx(i);
       }
@@ -751,48 +751,48 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         int sz1 = expr1.size(), sz2 = expr2.size();
         return sz1 > sz2 ? sz1 : sz2;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr1.updateValue() && expr2.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr1.cache();
         expr2.cache();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return expr1.val()-expr2.val();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return expr1.isLinear() && expr2.isLinear();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr1.hasFastAccess() && expr2.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return expr1.dx(i) - expr2.dx(i);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return expr1.fastAccessDx(i) - expr2.fastAccessDx(i);
       }
@@ -825,46 +825,46 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         return expr1.size();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr1.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr1.cache();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return expr1.val() - expr2.val();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return expr1.isLinear();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr1.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return expr1.dx(i);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return expr1.fastAccessDx(i);
       }
@@ -897,46 +897,46 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         return expr2.size();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr2.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr2.cache();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return expr1.val() - expr2.val();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return expr2.isLinear();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr2.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return -expr2.dx(i);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return -expr2.fastAccessDx(i);
       }
@@ -975,22 +975,22 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         int sz1 = expr1.size(), sz2 = expr2.size();
         return sz1 > sz2 ? sz1 : sz2;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr1.updateValue() && expr2.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr1.cache();
         expr2.cache();
@@ -998,22 +998,22 @@ namespace Sacado {
         v2 = expr2.val();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return v1*v2;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return false;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr1.hasFastAccess() && expr2.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         if (expr1.size() > 0 && expr2.size() > 0)
           return v1*expr2.dx(i) + expr1.dx(i)*v2;
@@ -1023,7 +1023,7 @@ namespace Sacado {
           return v1*expr2.dx(i);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return v1*expr2.fastAccessDx(i) + expr1.fastAccessDx(i)*v2;
       }
@@ -1058,46 +1058,46 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         return expr1.size();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr1.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr1.cache();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return expr1.val()*expr2.val();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return expr1.isLinear();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr1.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return expr1.dx(i)*expr2.val();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return expr1.fastAccessDx(i)*expr2.val();
       }
@@ -1130,46 +1130,46 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         return expr2.size();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr2.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr2.cache();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return expr1.val()*expr2.val();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return expr2.isLinear();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr2.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return expr1.val()*expr2.dx(i);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return expr1.val()*expr2.fastAccessDx(i);
       }
@@ -1208,22 +1208,22 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         int sz1 = expr1.size(), sz2 = expr2.size();
         return sz1 > sz2 ? sz1 : sz2;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr1.updateValue() && expr2.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr1.cache();
         expr2.cache();
@@ -1234,22 +1234,22 @@ namespace Sacado {
         b = -v/v2;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return v;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return false;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr1.hasFastAccess() && expr2.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         if (expr1.size() > 0 && expr2.size() > 0)
           return expr1.dx(i)*a + expr2.dx(i)*b;
@@ -1259,7 +1259,7 @@ namespace Sacado {
           return expr1.val()*b;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return  expr1.fastAccessDx(i)*a + expr2.fastAccessDx(i)*b;
       }
@@ -1295,21 +1295,21 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         return expr1.size();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr1.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr1.cache();
         const value_type_1 v1 = expr1.val();
@@ -1317,27 +1317,27 @@ namespace Sacado {
         v = v1*a;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return v;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return expr1.isLinear();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr1.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return expr1.dx(i)*a;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return expr1.fastAccessDx(i)*a;
       }
@@ -1372,21 +1372,21 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         return expr2.size();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr2.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr2.cache();
         const value_type_2 v2 = expr2.val();
@@ -1394,27 +1394,27 @@ namespace Sacado {
         b = -v/v2;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return v;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return false;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr2.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return expr2.dx(i)*b;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return expr2.fastAccessDx(i)*b;
       }
@@ -1455,22 +1455,22 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         int sz1 = expr1.size(), sz2 = expr2.size();
         return sz1 > sz2 ? sz1 : sz2;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr1.updateValue() && expr2.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr1.cache();
         expr2.cache();
@@ -1482,22 +1482,22 @@ namespace Sacado {
         v = std::atan2(v1,v2);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return v;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return false;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr1.hasFastAccess() && expr2.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         if (expr1.size() > 0 && expr2.size() > 0)
           return expr1.dx(i)*a + expr2.dx(i)*b;
@@ -1507,7 +1507,7 @@ namespace Sacado {
           return expr1.val()*b;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return expr1.fastAccessDx(i)*a + expr2.fastAccessDx(i)*b;
       }
@@ -1543,21 +1543,21 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         return expr1.size();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr1.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr1.cache();
         const value_type_1 v1 = expr1.val();
@@ -1566,27 +1566,27 @@ namespace Sacado {
         v = std::atan2(v1,v2);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return v;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return false;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr1.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return expr1.dx(i)*a;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return expr1.fastAccessDx(i)*a;
       }
@@ -1621,21 +1621,21 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         return expr2.size();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr2.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr2.cache();
         const value_type_1 v1 = expr1.val();
@@ -1644,27 +1644,27 @@ namespace Sacado {
         v = std::atan2(v1,v2);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return v;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return false;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr2.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return expr2.dx(i)*b;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return expr2.fastAccessDx(i)*b;
       }
@@ -1705,22 +1705,22 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         int sz1 = expr1.size(), sz2 = expr2.size();
         return sz1 > sz2 ? sz1 : sz2;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr1.updateValue() && expr2.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr1.cache();
         expr2.cache();
@@ -1741,22 +1741,22 @@ namespace Sacado {
         }
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return v;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return false;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr1.hasFastAccess() && expr2.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         if (expr1.size() > 0 && expr2.size() > 0)
           return expr1.dx(i)*a + expr2.dx(i)*b;
@@ -1766,7 +1766,7 @@ namespace Sacado {
           return expr1.val()*b;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return expr1.fastAccessDx(i)*a + expr2.fastAccessDx(i)*b;
       }
@@ -1802,21 +1802,21 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         return expr1.size();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr1.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr1.cache();
         const value_type_1 v1 = expr1.val();
@@ -1833,27 +1833,27 @@ namespace Sacado {
         }
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return v;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return false;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr1.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return expr1.dx(i)*a;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return expr1.fastAccessDx(i)*a;
       }
@@ -1888,21 +1888,21 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         return expr2.size();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr2.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr2.cache();
         const value_type_1 v1 = expr1.val();
@@ -1916,27 +1916,27 @@ namespace Sacado {
         }
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return v;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return false;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr2.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return expr2.dx(i)*b;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return expr2.fastAccessDx(i)*b;
       }
@@ -1977,22 +1977,22 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         int sz1 = expr1.size(), sz2 = expr2.size();
         return sz1 > sz2 ? sz1 : sz2;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr1.updateValue() && expr2.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr1.cache();
         expr2.cache();
@@ -2002,27 +2002,27 @@ namespace Sacado {
         v = max_v1 ? v1 : v2;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return v;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return false;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr1.hasFastAccess() && expr2.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return max_v1 ? expr1.dx(i) : expr2.dx(i);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return max_v1 ? expr1.fastAccessDx(i) : expr2.fastAccessDx(i);
       }
@@ -2057,21 +2057,21 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         return expr1.size();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr1.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr1.cache();
         const value_type_1 v1 = expr1.val();
@@ -2080,27 +2080,27 @@ namespace Sacado {
         v = max_v1 ? v1 : v2;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return v;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return false;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr1.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return max_v1 ? expr1.dx(i) : value_type(0);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return max_v1 ? expr1.fastAccessDx(i) : value_type(0);
       }
@@ -2135,21 +2135,21 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         return expr2.size();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr2.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr2.cache();
         const value_type_1 v1 = expr1.val();
@@ -2158,27 +2158,27 @@ namespace Sacado {
         v = max_v1 ? v1 : v2;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return v;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return false;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr2.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return max_v1 ? value_type(0) : expr2.dx(i);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return max_v1 ? value_type(0) : expr2.fastAccessDx(i);
       }
@@ -2219,22 +2219,22 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         int sz1 = expr1.size(), sz2 = expr2.size();
         return sz1 > sz2 ? sz1 : sz2;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr1.updateValue() && expr2.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr1.cache();
         expr2.cache();
@@ -2244,27 +2244,27 @@ namespace Sacado {
         v = min_v1 ? v1 : v2;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return v;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return false;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr1.hasFastAccess() && expr2.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return min_v1 ? expr1.dx(i) : expr2.dx(i);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return min_v1 ? expr1.fastAccessDx(i) : expr2.fastAccessDx(i);
       }
@@ -2299,21 +2299,21 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         return expr1.size();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr1.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr1.cache();
         const value_type_1 v1 = expr1.val();
@@ -2322,27 +2322,27 @@ namespace Sacado {
         v = min_v1 ? v1 : v2;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return v;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return false;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr1.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return min_v1 ? expr1.dx(i) : value_type(0);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return min_v1 ? expr1.fastAccessDx(i) : value_type(0);
       }
@@ -2377,21 +2377,21 @@ namespace Sacado {
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const {
         return expr2.size();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool updateValue() const {
         return expr2.updateValue();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {
         expr2.cache();
         const value_type_1 v1 = expr1.val();
@@ -2400,27 +2400,27 @@ namespace Sacado {
         v = min_v1 ? v1 : v2;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const {
         return v;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool isLinear() const {
         return false;
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const {
         return expr2.hasFastAccess();
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type dx(int i) const {
         return min_v1 ? value_type(0) : expr2.dx(i);
       }
 
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
         return min_v1 ? value_type(0) : expr2.fastAccessDx(i);
       }
@@ -2443,7 +2443,7 @@ namespace Sacado {                                                      \
   namespace CacheFad {                                                  \
                                                                         \
     template <typename T1, typename T2>                                 \
-    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_INLINE_FUNCTION                                              \
     SACADO_FAD_OP_ENABLE_EXPR_EXPR(OP)                                  \
     OPNAME (const T1& expr1, const T2& expr2)                           \
     {                                                                   \
@@ -2453,7 +2453,7 @@ namespace Sacado {                                                      \
     }                                                                   \
                                                                         \
     template <typename T>                                               \
-    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_INLINE_FUNCTION                                              \
     Expr< OP< Expr<T>, Expr<T> > >                                      \
     OPNAME (const Expr<T>& expr1, const Expr<T>& expr2)                 \
     {                                                                   \
@@ -2463,7 +2463,7 @@ namespace Sacado {                                                      \
     }                                                                   \
                                                                         \
     template <typename T>                                               \
-    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_INLINE_FUNCTION                                              \
     Expr< OP< ConstExpr<typename Expr<T>::value_type>,                  \
               Expr<T> > >                                               \
     OPNAME (const typename Expr<T>::value_type& c,                      \
@@ -2476,7 +2476,7 @@ namespace Sacado {                                                      \
     }                                                                   \
                                                                         \
     template <typename T>                                               \
-    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_INLINE_FUNCTION                                              \
     Expr< OP< Expr<T>,                                                  \
               ConstExpr<typename Expr<T>::value_type> > >               \
     OPNAME (const Expr<T>& expr,                                        \
@@ -2489,7 +2489,7 @@ namespace Sacado {                                                      \
     }                                                                   \
                                                                         \
     template <typename T>                                               \
-    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_INLINE_FUNCTION                                              \
     SACADO_FAD_OP_ENABLE_SCALAR_EXPR(OP)                                \
     OPNAME (const typename Expr<T>::scalar_type& c,                     \
             const Expr<T>& expr)                                        \
@@ -2501,7 +2501,7 @@ namespace Sacado {                                                      \
     }                                                                   \
                                                                         \
     template <typename T>                                               \
-    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_INLINE_FUNCTION                                              \
     SACADO_FAD_OP_ENABLE_EXPR_SCALAR(OP)                                \
     OPNAME (const Expr<T>& expr,                                        \
             const typename Expr<T>::scalar_type& c)                     \
@@ -2532,7 +2532,7 @@ FAD_BINARYOP_MACRO(min, MinOp)
 namespace Sacado {                                                      \
   namespace CacheFad {                                                  \
     template <typename ExprT1, typename ExprT2>                         \
-    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_INLINE_FUNCTION                                              \
     bool                                                                \
     operator OP (const Expr<ExprT1>& expr1,                             \
                  const Expr<ExprT2>& expr2)                             \
@@ -2543,7 +2543,7 @@ namespace Sacado {                                                      \
     }                                                                   \
                                                                         \
     template <typename ExprT2>                                          \
-    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_INLINE_FUNCTION                                              \
     bool                                                                \
     operator OP (const typename Expr<ExprT2>::value_type& a,            \
                  const Expr<ExprT2>& expr2)                             \
@@ -2553,7 +2553,7 @@ namespace Sacado {                                                      \
     }                                                                   \
                                                                         \
     template <typename ExprT1>                                          \
-    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_INLINE_FUNCTION                                              \
     bool                                                                \
     operator OP (const Expr<ExprT1>& expr1,                             \
                  const typename Expr<ExprT1>::value_type& b)            \
@@ -2582,7 +2582,7 @@ namespace Sacado {
   namespace CacheFad {
 
     template <typename ExprT>
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     bool operator ! (const Expr<ExprT>& expr)
     {
       expr.cache();
@@ -2599,7 +2599,7 @@ namespace Sacado {
   namespace CacheFad {
 
     template <typename ExprT>
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     bool toBool(const Expr<ExprT>& x) {
       x.cache();
       bool is_zero = (x.val() == 0.0);
@@ -2616,7 +2616,7 @@ namespace Sacado {
 namespace Sacado {                                                      \
   namespace CacheFad {                                                  \
     template <typename ExprT1, typename ExprT2>                         \
-    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_INLINE_FUNCTION                                              \
     bool                                                                \
     operator OP (const Expr<ExprT1>& expr1,                             \
                  const Expr<ExprT2>& expr2)                             \
@@ -2625,7 +2625,7 @@ namespace Sacado {                                                      \
     }                                                                   \
                                                                         \
     template <typename ExprT2>                                          \
-    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_INLINE_FUNCTION                                              \
     bool                                                                \
     operator OP (const typename Expr<ExprT2>::value_type& a,            \
                  const Expr<ExprT2>& expr2)                             \
@@ -2634,7 +2634,7 @@ namespace Sacado {                                                      \
     }                                                                   \
                                                                         \
     template <typename ExprT1>                                          \
-    KOKKOS_INLINE_FUNCTION                                              \
+    SACADO_INLINE_FUNCTION                                              \
     bool                                                                \
     operator OP (const Expr<ExprT1>& expr1,                             \
                  const typename Expr<ExprT1>::value_type& b)            \

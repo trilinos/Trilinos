@@ -121,16 +121,16 @@ namespace {
 
       if (old_ge != nullptr &&
           !(old_ge->type() == Ioss::SIDEBLOCK || old_ge->type() == Ioss::SIDESET)) {
-        std::string        filename = region->get_database()->get_filename();
-        std::ostringstream errmsg;
-        int64_t            id1 = 0;
-        int64_t            id2 = 0;
+        std::string filename = region->get_database()->get_filename();
+        int64_t     id1      = 0;
+        int64_t     id2      = 0;
         if (entity->property_exists(id_str())) {
           id1 = entity->get_property(id_str()).get_int();
         }
         if (old_ge->property_exists(id_str())) {
           id2 = old_ge->get_property(id_str()).get_int();
         }
+        std::ostringstream errmsg;
         fmt::print(errmsg,
                    "ERROR: There are multiple blocks or sets with the same name defined in the "
                    "database file '{}'.\n"

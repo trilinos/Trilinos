@@ -40,7 +40,6 @@
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, get_cell_topology, etc
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
-#include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
 #include <stk_mesh/base/FieldTraits.hpp>
 #include "stk_mesh/base/Part.hpp"       // for Part
@@ -187,14 +186,17 @@ void setup_connectivity(stk::topology bucket_topology,
                         EntityRank from_rank,
                         EntityRank to_rank,
                         ConnectivityType& conn_type,
-                        FixedConnectivity& fixed_conn,
-                        const ConnectivityMap& conn_map)
+                        FixedConnectivity& fixed_conn)
 {
-  if (bucket_topology != stk::topology::END_TOPOLOGY && bucket_topology.num_sub_topology(to_rank) > 0 && conn_map(from_rank, to_rank) == FIXED_CONNECTIVITY) {
+  if (bucket_topology != stk::topology::END_TOPOLOGY &&
+      bucket_topology.num_sub_topology(to_rank) > 0 &&
+      to_rank == stk::topology::NODE_RANK) {
     fixed_conn.set_num_connectivity(bucket_topology.num_sub_topology(to_rank));
     conn_type = FIXED_CONNECTIVITY;
   }
-  else if (from_rank > stk::topology::ELEMENT_RANK || to_rank > stk::topology::ELEMENT_RANK || conn_map(from_rank, to_rank) != INVALID_CONNECTIVITY_TYPE) {
+  else if (from_rank > stk::topology::ELEMENT_RANK ||
+           to_rank > stk::topology::ELEMENT_RANK ||
+           from_rank != to_rank) {
     conn_type = DYNAMIC_CONNECTIVITY;
   }
 }
@@ -259,7 +261,6 @@ Bucket::Bucket(BulkData & arg_mesh,
                EntityRank arg_entity_rank,
                const std::vector<unsigned> & arg_key,
                size_t arg_capacity,
-               const ConnectivityMap& connectivity_map,
                unsigned bucket_id)
   : m_mesh(arg_mesh),
     m_entity_rank(arg_entity_rank),
@@ -293,10 +294,10 @@ Bucket::Bucket(BulkData & arg_mesh,
 
   m_topology = get_topology(m_mesh.mesh_meta_data(), arg_entity_rank, superset_part_ordinals());
 
-  setup_connectivity(m_topology, arg_entity_rank, stk::topology::NODE_RANK, m_node_kind, m_fixed_node_connectivity, connectivity_map);
-  setup_connectivity(m_topology, arg_entity_rank, stk::topology::EDGE_RANK, m_edge_kind, m_fixed_edge_connectivity, connectivity_map);
-  setup_connectivity(m_topology, arg_entity_rank, stk::topology::FACE_RANK, m_face_kind, m_fixed_face_connectivity, connectivity_map);
-  setup_connectivity(m_topology, arg_entity_rank, stk::topology::ELEMENT_RANK, m_element_kind, m_fixed_element_connectivity, connectivity_map);
+  setup_connectivity(m_topology, arg_entity_rank, stk::topology::NODE_RANK, m_node_kind, m_fixed_node_connectivity);
+  setup_connectivity(m_topology, arg_entity_rank, stk::topology::EDGE_RANK, m_edge_kind, m_fixed_edge_connectivity);
+  setup_connectivity(m_topology, arg_entity_rank, stk::topology::FACE_RANK, m_face_kind, m_fixed_face_connectivity);
+  setup_connectivity(m_topology, arg_entity_rank, stk::topology::ELEMENT_RANK, m_element_kind, m_fixed_element_connectivity);
 
   m_parts.reserve(m_key.size());
   supersets(m_parts);
@@ -842,8 +843,6 @@ void Bucket::overwrite_entity(size_type to_ordinal, Entity entity, const FieldVe
   ThrowAssert(mesh().is_valid(entity));
   ThrowAssert(mesh().bucket_ptr(entity) != nullptr);
   ThrowAssert(mesh().entity_rank(entity) == m_entity_rank);
-
-  mark_for_modification();
 
   const MeshIndex from_index = m_mesh.mesh_index(entity);
   reset_entity_location(entity, to_ordinal, fields);

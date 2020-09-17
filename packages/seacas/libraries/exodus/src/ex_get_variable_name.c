@@ -40,7 +40,9 @@ int ex_get_variable_name(int exoid, ex_entity_type obj_type, int var_num, char *
   const char *vname = NULL;
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   /* inquire previously defined variables  */
 

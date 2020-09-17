@@ -264,7 +264,7 @@ namespace Tacho {
           // copy to t
           Kokkos::parallel_for
             (Kokkos::TeamVectorRange(member, m*_nrhs),
-             [&](const ordinal_type &k) {
+             [&,m](const ordinal_type &k) { /// compiler bug with c++14 lambda capturing and workaround
               const ordinal_type i = k%m, j = k/m;
               tT(i,j) = b(i,j);
             });
@@ -281,7 +281,7 @@ namespace Tacho {
 
               Kokkos::parallel_for
                 (Kokkos::TeamVectorRange(member, tcnt),
-                 [&](const ordinal_type &ii) {
+                 [&,ip,m,tbeg,tcnt](const ordinal_type &ii) { /// compiler bug with c++14 lambda capturing and workaround
                   const ordinal_type it = tbeg+ii;
                   const ordinal_type is = ip+ii;
                   //for (ordinal_type it=tbeg;it<tend;++it,++is) {

@@ -43,13 +43,11 @@
 #include "stk_tools/mesh_tools/DisconnectGroup.hpp"
 #include "stk_tools/mesh_tools/DisconnectTypes.hpp"
 #include "stk_tools/mesh_tools/DisconnectUtils.hpp"
-#include "stk_util/parallel/ParallelComm.hpp"
 #include "stk_tools/mesh_tools/ConvexGroup.hpp"
+#include "stk_util/parallel/ParallelComm.hpp"
 #include <map>
 #include <utility>
 #include <vector>
-
-// #define PRINT_DEBUG
 
 namespace stk { namespace mesh { class BulkData; } }
 
@@ -142,13 +140,19 @@ struct LinkInfo
 {
   PreservedSharingInfo sharedInfo;
   NodeMapType clonedNodeMap;
-  NodeMapType preservedNodeMap;
+  NodeMapType originalNodeMap;
   bool preserveOrphans = false;
   int debugLevel = 0;
   std::string debugString = "";
   std::ostringstream os;
   NullStream ns;
   ReconnectMap reconnectMap;
+
+  double startTime;
+  double setupTime;
+  double disconnectTime;
+  double reconnectTime;
+  double snipTime;
 
   void flush(std::ostream& stream) {
     stream << os.str();

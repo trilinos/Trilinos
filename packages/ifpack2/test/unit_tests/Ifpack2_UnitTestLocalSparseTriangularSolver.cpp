@@ -194,7 +194,7 @@ referenceApply (MultiVectorType& Y,
 }
 
 struct TrisolverDetails {
-  enum Enum { Internal, HTS };
+  enum Enum { Internal, HTS, KSPTRSV };
 };
 
 static bool isGblSuccess (const bool success, Teuchos::FancyOStream& out)
@@ -418,6 +418,18 @@ void testCompareToLocalSolve (bool& success, Teuchos::FancyOStream& out,
 #endif
         }
       }
+      else if (trisolverType == TrisolverDetails::KSPTRSV) {
+        out << "Set solver parameters" << endl;
+        // This line can throw. It should throw if HTS is not built in.
+        Teuchos::ParameterList pl ("LocalSparseTriangularSolver parameters");
+        pl.set ("trisolver: type", "KSPTRSV");
+        try {
+          solver->setParameters (pl);
+        } catch (...) {
+          isGblSuccess (false, out);
+          return;
+        }
+      }
 
       out << "Set up the solver" << endl;
       TEST_NOTHROW( solver->initialize () );
@@ -548,6 +560,11 @@ void testCompareToLocalSolve (bool& success, Teuchos::FancyOStream& out,
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareInternalToLocalSolve, Scalar, LocalOrdinal, GlobalOrdinal)
 {
   testCompareToLocalSolve<Scalar, LocalOrdinal, GlobalOrdinal> (success, out, TrisolverDetails::Internal);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareKSPTRSVToLocalSolve, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  testCompareToLocalSolve<Scalar, LocalOrdinal, GlobalOrdinal> (success, out, TrisolverDetails::KSPTRSV);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareHTSToLocalSolve, Scalar, LocalOrdinal, GlobalOrdinal)
@@ -1261,7 +1278,9 @@ TEUCHOS_UNIT_TEST(LocalSparseTriangularSolver, ArrowMatrix)
 
 #define UNIT_TEST_GROUP_SC_LO_GO(SC, LO, GO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(LocalSparseTriangularSolver, CompareInternalToLocalSolve, SC, LO, GO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(LocalSparseTriangularSolver, CompareKSPTRSVToLocalSolve, SC, LO, GO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(LocalSparseTriangularSolver, CompareHTSToLocalSolve, SC, LO, GO)
+
 
 #include "Ifpack2_ETIHelperMacros.h"
 

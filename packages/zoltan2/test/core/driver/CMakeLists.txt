@@ -58,6 +58,19 @@ TRIBITS_ADD_TEST(
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
+IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
+  TRIBITS_ADD_TEST(
+    test_driver
+    NAME test7944
+    COMM serial mpi
+    ARGS
+    "./driverinputs/test7944.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ENDIF()
+
+
 IF (${PACKAGE_NAME}_ENABLE_PuLP)
   TRIBITS_ADD_TEST(
     test_driver
@@ -334,6 +347,13 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_zoltan_nograph_for_driver_tests_
     nograph.coords
     nograph.graph
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../zoltan/test/ch_nograph
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_zoltan_7944_for_driver_tests_
+  SOURCE_FILES
+    7944.graph
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../zoltan/test/ch_7944
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
 

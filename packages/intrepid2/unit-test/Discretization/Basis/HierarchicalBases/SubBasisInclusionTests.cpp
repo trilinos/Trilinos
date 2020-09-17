@@ -207,7 +207,7 @@ namespace
       
       auto subBasisOutputValues = getOutputView<OutputScalar>(fs, op, subBasis->getCardinality(), numPoints, spaceDim);
       subBasis->getValues(subBasisOutputValues, inputPoints, op);
-      
+      Kokkos::fence();
       bool vectorValued = (outputValues.rank() == 3); // F,P,D -- if scalar-valued, F,P
       
       for (int pointOrdinal=0; pointOrdinal<numPoints; pointOrdinal++)

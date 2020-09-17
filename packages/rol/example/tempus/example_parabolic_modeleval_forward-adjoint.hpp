@@ -539,7 +539,7 @@ protected:
                  const Teuchos::Ptr<Thyra::MultiVectorBase<Real> >& Y,
                  const Real a,
                  const Real b) const {
-    assert(opSupportedImpl(M_trans));
+    // assert(opSupportedImpl(M_trans));
     ROL::Ptr<const Thyra::VectorBase<Real>> x = X.col(0);
     ROL::Ptr<Thyra::VectorBase<Real>> y = Y->col(0);
     ROL::Ptr<Thyra::VectorBase<Real>> Mx = y->clone_v();

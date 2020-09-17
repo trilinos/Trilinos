@@ -191,7 +191,6 @@ struct SPGEMM_SYMBOLIC < KernelHandle,
       break;
     case SPGEMM_CUSP:
     case SPGEMM_VIENNA:
-
       break;
 
     case SPGEMM_MKL2PHASE:

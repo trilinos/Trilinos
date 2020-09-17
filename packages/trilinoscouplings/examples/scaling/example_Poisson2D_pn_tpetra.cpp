@@ -1443,6 +1443,26 @@ int main(int argc, char *argv[]) {
     amgList = inputSolverList.sublist("MueLu");
   else
     amgList = inputSolverList;
+
+
+#ifdef HAVE_TRILINOSCOUPLINGS_AVATAR
+  // If we have Avatar, then let's use it
+  if (inputSolverList.isSublist("Avatar-MueLu")) {
+    // NOTE: User will need to make sure these are named consistently with the tree files specified
+    ParameterList problemFeatures = problemStatistics;
+    ParameterList avatarParams    = inputSolverList.sublist("Avatar-MueLu");
+    std::cout<<"*** Avatar Parameters ***\n"<<avatarParams<<std::endl;
+    Teuchos::RCP<const Teuchos::Comm<int> > mycomm = StiffMatrix.getRowMap()->getComm();
+
+    MueLu::AvatarInterface avatar(mycomm,avatarParams);
+    std::cout<<"*** Avatar Setup ***"<<std::endl;
+    avatar.Setup();
+    avatar.SetMueLuParameters(problemFeatures,amgList, true);
+    std::cout<<"*** Updated MueLu Parameters ***\n"<<amgList<<std::endl;
+    avatar.Cleanup();
+  }
+#endif
+
   std::string lev0List = "level 0";
   if (amgList.isSublist(lev0List)) {
     std::cout << "found \"" << lev0List << "\" sublist" << std::endl;

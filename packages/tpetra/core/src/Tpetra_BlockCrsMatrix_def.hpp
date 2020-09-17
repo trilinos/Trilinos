@@ -1111,6 +1111,8 @@ public:
     const Scalar one_minus_omega = Teuchos::ScalarTraits<Scalar>::one()-omega;
     const Scalar     minus_omega = -omega;
 
+    Kokkos::fence();
+
     if (numVecs == 1) {
       for (LO lclRow = rowBegin; lclRow != rowEnd; lclRow += rowStride) {
         const LO actlRow = lclRow - 1;
@@ -2066,7 +2068,8 @@ public:
    const Kokkos::DualView<const local_ordinal_type*,
      buffer_device_type>& permuteToLIDs,
    const Kokkos::DualView<const local_ordinal_type*,
-     buffer_device_type>& permuteFromLIDs)
+     buffer_device_type>& permuteFromLIDs,
+   const CombineMode /*CM*/)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::dualViewStatusToString;
