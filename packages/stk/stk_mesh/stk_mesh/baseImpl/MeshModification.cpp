@@ -101,6 +101,9 @@ bool MeshModification::internal_modification_end(modification_optimization opt)
         {
             m_bulkData.internal_regenerate_aura();
         }
+        else if (m_bulkData.m_turningOffAutoAura) {
+            m_bulkData.internal_remove_aura();
+        }
 
         m_bulkData.internal_resolve_send_ghost_membership();
 
@@ -171,6 +174,9 @@ bool MeshModification::internal_modification_end_after_node_sharing_resolution(m
         if(m_bulkData.is_automatic_aura_on())
         {
             m_bulkData.internal_regenerate_aura();
+        }
+        else if (m_bulkData.m_turningOffAutoAura) {
+            m_bulkData.internal_remove_aura();
         }
 
         m_bulkData.internal_resolve_send_ghost_membership();

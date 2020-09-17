@@ -38,12 +38,12 @@
 
 #include "stk_simd/Simd.hpp"
 
-template<typename InputType, typename ResultType, int SIZE>
+template<typename InputType, typename ResultType>
 class SimdFloatingPointFixture : public ::testing::Test
 {
 public:
-  using InputScalar = typename InputType::ScalarType;
-  using ResultScalar = typename ResultType::ScalarType;
+  using InputScalar = typename stk::Traits<InputType>::base_type;
+  using ResultScalar = typename stk::Traits<ResultType>::base_type;
 
   bool is_scalar()
   {
@@ -126,6 +126,8 @@ private:
     m_valueA = stk::simd::load(m_valuesA);
     m_valueB = stk::simd::load(m_valuesB);
   }
+
+  static constexpr int SIZE = stk::Traits<InputType>::length;
 
   InputScalar m_valuesA[SIZE];
   InputScalar m_valuesB[SIZE];

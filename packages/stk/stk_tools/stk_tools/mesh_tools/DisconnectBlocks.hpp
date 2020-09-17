@@ -47,16 +47,31 @@ enum DisconnectOption {
 };
 
 enum SnipOption {
-  SNIP_GLOBAL,
-  SNIP_LOCAL
+  PRESERVE_INITIAL_HINGES,
+  SNIP_ALL_HINGES
+};
+
+struct DisconnectBlocksOption {
+  DisconnectBlocksOption()
+   : disconnectOption(DISCONNECT_GLOBAL)
+   , snipOption(PRESERVE_INITIAL_HINGES)
+  {}
+
+  DisconnectBlocksOption(DisconnectOption disconnectOption_, SnipOption snipOption_)
+   : disconnectOption(disconnectOption_)
+   , snipOption(snipOption_)
+  {}
+
+  DisconnectOption disconnectOption;
+  SnipOption snipOption;
 };
 
 void disconnect_all_blocks(stk::mesh::BulkData& bulk, bool preserveOrphans = false);
 void disconnect_all_blocks(stk::mesh::BulkData & bulk, impl::LinkInfo& info, bool preserveOrphans = false);
 void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockPairVector& blockPairsToDisconnect,
-                            DisconnectOption disconnectOption = DISCONNECT_GLOBAL, SnipOption snipOption = SNIP_GLOBAL);
+                            DisconnectBlocksOption options = DisconnectBlocksOption());
 void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockNamePairVector& blockNamePairsToDisconnect,
-                            DisconnectOption disconnectOption = DISCONNECT_GLOBAL, SnipOption snipOption = SNIP_GLOBAL);
+                            DisconnectBlocksOption options = DisconnectBlocksOption());
 }
 
 }
