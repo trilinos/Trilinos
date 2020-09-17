@@ -14,8 +14,8 @@ public:
   KOKKOS_DEFAULTED_FUNCTION NgpFieldBase() = default;
   KOKKOS_DEFAULTED_FUNCTION NgpFieldBase(const NgpFieldBase&) = default;
   KOKKOS_DEFAULTED_FUNCTION NgpFieldBase(NgpFieldBase&&) = default;
-  constexpr KOKKOS_FUNCTION NgpFieldBase& operator=(const NgpFieldBase&) { return *this; }
-  constexpr KOKKOS_FUNCTION NgpFieldBase& operator=(NgpFieldBase&&) { return *this; }
+  KOKKOS_FUNCTION NgpFieldBase& operator=(const NgpFieldBase&) { return *this; }
+  KOKKOS_FUNCTION NgpFieldBase& operator=(NgpFieldBase&&) { return *this; }
   KOKKOS_FUNCTION virtual ~NgpFieldBase() {}
   virtual void update_field(bool needToSyncAllDataToDevice = false) = 0;
   virtual void rotate_multistate_data() = 0;
