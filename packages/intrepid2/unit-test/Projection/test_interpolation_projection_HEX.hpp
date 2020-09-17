@@ -358,8 +358,8 @@ int InterpolationProjectionHex(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          basis_set.push_back(new typename  CG_NBasis::HGRAD_HEX(degree));
-          basis_set.push_back(new typename  CG_DNBasis::HGRAD_HEX(degree));
+          basis_set.push_back(new typename  CG_NBasis::HGRAD_HEX(degree,POINTTYPE_EQUISPACED));
+          basis_set.push_back(new typename  CG_DNBasis::HGRAD_HEX(degree,POINTTYPE_WARPBLEND));
 
           for (auto basisPtr:basis_set) {
 
@@ -810,8 +810,8 @@ int InterpolationProjectionHex(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HCURL_HEX_I1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          basis_set.push_back(new typename  CG_NBasis::HCURL_HEX(degree));
-          basis_set.push_back(new typename  CG_DNBasis::HCURL_HEX(degree));
+          basis_set.push_back(new typename  CG_NBasis::HCURL_HEX(degree,POINTTYPE_WARPBLEND));
+          basis_set.push_back(new typename  CG_DNBasis::HCURL_HEX(degree,POINTTYPE_EQUISPACED));
 
           for (auto basisPtr:basis_set) {
 
@@ -1259,8 +1259,8 @@ int InterpolationProjectionHex(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HDIV_HEX_I1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          basis_set.push_back(new typename  CG_NBasis::HDIV_HEX(degree));
-          basis_set.push_back(new typename  CG_DNBasis::HDIV_HEX(degree));
+          basis_set.push_back(new typename  CG_NBasis::HDIV_HEX(degree,POINTTYPE_EQUISPACED));
+          basis_set.push_back(new typename  CG_DNBasis::HDIV_HEX(degree,POINTTYPE_WARPBLEND));
 
           for (auto basisPtr:basis_set) {
 
@@ -1660,8 +1660,8 @@ int InterpolationProjectionHex(const bool verbose) {
       basis_set.clear();
       if(degree==1)
         basis_set.push_back(new Basis_HVOL_C0_FEM<DeviceSpaceType,ValueType,ValueType>(hex));
-      basis_set.push_back(new typename  CG_NBasis::HVOL_HEX(degree));
-      basis_set.push_back(new typename  CG_DNBasis::HVOL_HEX(degree));
+      basis_set.push_back(new typename  CG_NBasis::HVOL_HEX(degree,POINTTYPE_EQUISPACED));
+      basis_set.push_back(new typename  CG_DNBasis::HVOL_HEX(degree,POINTTYPE_WARPBLEND));
 
       for (auto basisPtr:basis_set) {
 

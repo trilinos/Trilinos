@@ -196,6 +196,7 @@ namespace Intrepid2 {
     this->basisType_         = BASIS_FEM_FIAT;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
     this->functionSpace_     = FUNCTION_SPACE_HCURL;
+    pointType_ = pointType;
 
     const ordinal_type card = this->basisCardinality_;
 

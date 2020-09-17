@@ -283,8 +283,8 @@ int InterpolationProjectionTri(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HGRAD_TRI_C1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          basis_set.push_back(new typename  CG_NBasis::HGRAD_TRI(degree));
-          basis_set.push_back(new typename  CG_DNBasis::HGRAD_TRI(degree));
+          basis_set.push_back(new typename  CG_NBasis::HGRAD_TRI(degree,POINTTYPE_EQUISPACED));
+          basis_set.push_back(new typename  CG_DNBasis::HGRAD_TRI(degree,POINTTYPE_WARPBLEND));
 
           for (auto basisPtr:basis_set) {
 
@@ -668,8 +668,8 @@ int InterpolationProjectionTri(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HCURL_TRI_I1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          basis_set.push_back(new typename  CG_NBasis::HCURL_TRI(degree));
-          basis_set.push_back(new typename  CG_DNBasis::HCURL_TRI(degree));
+          basis_set.push_back(new typename  CG_NBasis::HCURL_TRI(degree,POINTTYPE_WARPBLEND));
+          basis_set.push_back(new typename  CG_DNBasis::HCURL_TRI(degree,POINTTYPE_EQUISPACED));
 
           for (auto basisPtr:basis_set) {
 
@@ -1057,8 +1057,8 @@ int InterpolationProjectionTri(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HDIV_TRI_I1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          basis_set.push_back(new typename  CG_NBasis::HDIV_TRI(degree));
-          basis_set.push_back(new typename  CG_DNBasis::HDIV_TRI(degree));
+          basis_set.push_back(new typename  CG_NBasis::HDIV_TRI(degree,POINTTYPE_EQUISPACED));
+          basis_set.push_back(new typename  CG_DNBasis::HDIV_TRI(degree,POINTTYPE_WARPBLEND));
 
           for (auto basisPtr:basis_set) {
 
@@ -1433,8 +1433,8 @@ int InterpolationProjectionTri(const bool verbose) {
       basis_set.clear();
       if(degree==1)
         basis_set.push_back(new Basis_HVOL_C0_FEM<DeviceSpaceType,ValueType,ValueType>(tri));
-      basis_set.push_back(new typename  CG_NBasis::HVOL_TRI(degree));
-      basis_set.push_back(new typename  CG_DNBasis::HVOL_TRI(degree));
+      basis_set.push_back(new typename  CG_NBasis::HVOL_TRI(degree,POINTTYPE_WARPBLEND));
+      basis_set.push_back(new typename  CG_DNBasis::HVOL_TRI(degree,POINTTYPE_EQUISPACED));
 
       for (auto basisPtr:basis_set) {
 

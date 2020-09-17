@@ -209,8 +209,10 @@ namespace Intrepid2 {
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoords("HVOL::Line::Cn::dofCoords", card, 1);
 
+    //Default is Equispaced
+    auto pointT = (pointType == POINTTYPE_DEFAULT) ? POINTTYPE_EQUISPACED : pointType;
 
-    switch (pointType) {
+    switch (pointT) {
     case POINTTYPE_EQUISPACED:
     case POINTTYPE_WARPBLEND: {
       // lattice ordering 
@@ -219,7 +221,7 @@ namespace Intrepid2 {
         PointTools::getLattice( dofCoords,
                                 this->basisCellTopology_, 
                                 order+1+offset, offset,
-                                pointType );
+                                pointT );
         
       }
       // topological order
@@ -244,7 +246,7 @@ namespace Intrepid2 {
       break;
     }
     default: {
-      INTREPID2_TEST_FOR_EXCEPTION( !isValidPointType(pointType),
+      INTREPID2_TEST_FOR_EXCEPTION( !isValidPointType(pointT),
                                     std::invalid_argument , 
                                     ">>> ERROR: (Intrepid2::Basis_HVOL_LINE_Cn_FEM) invalid pointType." );
     }

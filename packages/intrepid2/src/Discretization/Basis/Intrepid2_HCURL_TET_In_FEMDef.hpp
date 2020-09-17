@@ -201,7 +201,7 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
   this->basisType_         = BASIS_FEM_FIAT;
   this->basisCoordinates_  = COORDINATES_CARTESIAN;
   this->functionSpace_     = FUNCTION_SPACE_HCURL;
-
+  pointType_ = pointType;
   const ordinal_type card = this->basisCardinality_;
 
   const ordinal_type  cardPn = Intrepid2::getPnCardinality<spaceDim>(order); // dim of (P_{n}) -- smaller space

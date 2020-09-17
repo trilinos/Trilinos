@@ -62,6 +62,7 @@ namespace Intrepid2
   protected:
     std::string name_;
     ordinal_type order_x_, order_y_;
+    EPointType pointType_;
   public:
     using ExecutionSpace  = typename HGRAD_LINE::ExecutionSpace;
     using OutputValueType = typename HGRAD_LINE::OutputValueType;
@@ -77,11 +78,12 @@ namespace Intrepid2
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
+        \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HGRAD_QUAD(int polyOrder_x, int polyOrder_y)
+    Basis_Derived_HGRAD_QUAD(int polyOrder_x, int polyOrder_y, const EPointType pointType=POINTTYPE_DEFAULT)
     :
-    TensorBasis(LineBasis(polyOrder_x),
-                LineBasis(polyOrder_y))
+    TensorBasis(LineBasis(polyOrder_x, pointType),
+                LineBasis(polyOrder_y, pointType))
     {
       this->functionSpace_ = FUNCTION_SPACE_HGRAD;
 
@@ -91,12 +93,15 @@ namespace Intrepid2
 
       order_x_= polyOrder_x;
       order_y_ = polyOrder_x;
+      pointType_ = pointType;
     }
 
     /** \brief  Constructor.
         \param [in] polyOrder - the polynomial order to use in both dimensions.
+        \param [in] pointType - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HGRAD_QUAD(int polyOrder) : Basis_Derived_HGRAD_QUAD(polyOrder,polyOrder) {}
+    Basis_Derived_HGRAD_QUAD(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT) : Basis_Derived_HGRAD_QUAD(polyOrder,polyOrder,pointType) {}
+
 
     /** \brief True if orientation is required
     */
@@ -186,10 +191,10 @@ namespace Intrepid2
         switch(subCellOrd) {
         case 0:
         case 2:
-          return Teuchos::rcp( new LineBasis(order_x_) );
+          return Teuchos::rcp( new LineBasis(order_x_, pointType_) );
         case 1:
         case 3:
-          return Teuchos::rcp( new LineBasis(order_y_) );
+          return Teuchos::rcp( new LineBasis(order_y_, pointType_) );
         }
       }
 

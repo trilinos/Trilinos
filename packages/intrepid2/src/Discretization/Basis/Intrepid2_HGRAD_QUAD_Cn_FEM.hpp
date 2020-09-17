@@ -178,6 +178,9 @@ namespace Intrepid2 {
     /** \brief inverse of Generalized Vandermonde matrix (isotropic order) */
     Kokkos::DynRankView<typename ScalarViewType::value_type,ExecSpaceType> vinv_;
 
+    /** \brief type of lattice used for creating the DoF coordinates  */
+    EPointType pointType_;
+
   public:
     /** \brief  Constructor.
      */
@@ -272,7 +275,7 @@ namespace Intrepid2 {
       if(subCellDim == 1) {
         return Teuchos::rcp(new
             Basis_HGRAD_LINE_Cn_FEM<ExecSpaceType,outputValueType,pointValueType>
-            (this->basisDegree_));
+            (this->basisDegree_,pointType_));
       }
       INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
     }

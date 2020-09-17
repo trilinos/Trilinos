@@ -284,8 +284,8 @@ int InterpolationProjectionQuad(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HGRAD_QUAD_C1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          basis_set.push_back(new typename  CG_NBasis::HGRAD_QUAD(degree));
-          basis_set.push_back(new typename  CG_DNBasis::HGRAD_QUAD(degree));
+          basis_set.push_back(new typename  CG_NBasis::HGRAD_QUAD(degree,POINTTYPE_WARPBLEND));
+          basis_set.push_back(new typename  CG_DNBasis::HGRAD_QUAD(degree,POINTTYPE_EQUISPACED));
 
           for (auto basisPtr:basis_set) {
 
@@ -669,8 +669,8 @@ int InterpolationProjectionQuad(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HCURL_QUAD_I1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          basis_set.push_back(new typename  CG_NBasis::HCURL_QUAD(degree));
-          basis_set.push_back(new typename  CG_DNBasis::HCURL_QUAD(degree));
+          basis_set.push_back(new typename  CG_NBasis::HCURL_QUAD(degree,POINTTYPE_EQUISPACED));
+          basis_set.push_back(new typename  CG_DNBasis::HCURL_QUAD(degree,POINTTYPE_WARPBLEND));
 
           for (auto basisPtr:basis_set) {
 
@@ -1059,8 +1059,8 @@ int InterpolationProjectionQuad(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HDIV_QUAD_I1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          basis_set.push_back(new typename  CG_NBasis::HDIV_QUAD(degree));
-          basis_set.push_back(new typename  CG_DNBasis::HDIV_QUAD(degree));
+          basis_set.push_back(new typename  CG_NBasis::HDIV_QUAD(degree,POINTTYPE_WARPBLEND));
+          basis_set.push_back(new typename  CG_DNBasis::HDIV_QUAD(degree,POINTTYPE_EQUISPACED));
 
           for (auto basisPtr:basis_set) {
 
@@ -1436,8 +1436,8 @@ int InterpolationProjectionQuad(const bool verbose) {
       basis_set.clear();
       if(degree==1)
         basis_set.push_back(new Basis_HVOL_C0_FEM<DeviceSpaceType,ValueType,ValueType>(quad));
-      basis_set.push_back(new typename  CG_NBasis::HVOL_QUAD(degree));
-      basis_set.push_back(new typename  CG_DNBasis::HVOL_QUAD(degree));
+      basis_set.push_back(new typename  CG_NBasis::HVOL_QUAD(degree,POINTTYPE_EQUISPACED));
+      basis_set.push_back(new typename  CG_DNBasis::HVOL_QUAD(degree,POINTTYPE_WARPBLEND));
 
       for (auto basisPtr:basis_set) {
 

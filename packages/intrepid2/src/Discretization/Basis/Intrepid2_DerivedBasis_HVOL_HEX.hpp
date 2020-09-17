@@ -92,11 +92,12 @@ namespace Intrepid2
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
         \param [in] polyOrder_z - the polynomial order in the z dimension.
+        \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HVOL_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z)
+    Basis_Derived_HVOL_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType=POINTTYPE_DEFAULT)
     :
-    TensorBasis(QuadBasis(polyOrder_x,polyOrder_y),
-                LineBasis(polyOrder_z))
+    TensorBasis(QuadBasis(polyOrder_x,polyOrder_y,pointType),
+                LineBasis(polyOrder_z,pointType))
     {
       this->functionSpace_ = FUNCTION_SPACE_HVOL;
 
@@ -107,8 +108,9 @@ namespace Intrepid2
     
     /** \brief  Constructor.
         \param [in] polyOrder - the polynomial order to use in all dimensions.
+        \param [in] pointType - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HVOL_HEX(int polyOrder) : Basis_Derived_HVOL_HEX(polyOrder, polyOrder, polyOrder) {}
+    Basis_Derived_HVOL_HEX(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT) : Basis_Derived_HVOL_HEX(polyOrder, polyOrder, polyOrder,pointType) {}
     
     /** \brief  Returns basis name
 

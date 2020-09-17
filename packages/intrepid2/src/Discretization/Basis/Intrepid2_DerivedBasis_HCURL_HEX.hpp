@@ -84,12 +84,13 @@ namespace Intrepid2
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
         \param [in] polyOrder_z - the polynomial order in the z dimension.
+        \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HCURL_Family1_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z)
+    Basis_Derived_HCURL_Family1_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType)
     :
-    TensorBasis3(LineVolBasis (polyOrder_x-1),
-                 LineGradBasis(polyOrder_y  ),
-                 LineGradBasis(polyOrder_z  ))
+    TensorBasis3(LineVolBasis (polyOrder_x-1,pointType),
+                 LineGradBasis(polyOrder_y,pointType),
+                 LineGradBasis(polyOrder_z,pointType))
     {
       this->functionSpace_ = FUNCTION_SPACE_HCURL;
     }
@@ -202,12 +203,13 @@ namespace Intrepid2
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
         \param [in] polyOrder_z - the polynomial order in the z dimension.
+        \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HCURL_Family2_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z)
+    Basis_Derived_HCURL_Family2_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType)
     :
-    TensorBasis3(LineGradBasis(polyOrder_x),
-                 LineVolBasis (polyOrder_y-1),
-                 LineGradBasis(polyOrder_z))
+    TensorBasis3(LineGradBasis(polyOrder_x,pointType),
+                 LineVolBasis (polyOrder_y-1,pointType),
+                 LineGradBasis(polyOrder_z,pointType))
     {
       this->functionSpace_ = FUNCTION_SPACE_HCURL;
     }
@@ -327,12 +329,13 @@ namespace Intrepid2
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
         \param [in] polyOrder_z - the polynomial order in the z dimension.
+        \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HCURL_Family3_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z)
+    Basis_Derived_HCURL_Family3_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType)
     :
-    TensorBasis3(LineGradBasis(polyOrder_x  ),
-                 LineGradBasis(polyOrder_y  ),
-                 LineVolBasis (polyOrder_z-1))
+    TensorBasis3(LineGradBasis(polyOrder_x,pointType),
+                 LineGradBasis(polyOrder_y,pointType),
+                 LineVolBasis (polyOrder_z-1,pointType))
     {}
     
     using TensorBasis3::getValues;
@@ -436,11 +439,12 @@ namespace Intrepid2
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
         \param [in] polyOrder_z - the polynomial order in the z dimension.
+        \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HCURL_Family1_Family2_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z)
+    Basis_Derived_HCURL_Family1_Family2_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType)
     :
-    DirectSumBasis(Family1(polyOrder_x, polyOrder_y, polyOrder_z),
-                   Family2(polyOrder_x, polyOrder_y, polyOrder_z)) {}
+    DirectSumBasis(Family1(polyOrder_x, polyOrder_y, polyOrder_z, pointType),
+                   Family2(polyOrder_x, polyOrder_y, polyOrder_z, pointType)) {}
   };
   
   template<class HGRAD_LINE, class HVOL_LINE>
@@ -456,6 +460,7 @@ namespace Intrepid2
     ordinal_type order_x_;
     ordinal_type order_y_;
     ordinal_type order_z_;
+    EPointType pointType_;
 
   public:
 
@@ -467,11 +472,12 @@ namespace Intrepid2
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
         \param [in] polyOrder_z - the polynomial order in the z dimension.
+        \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HCURL_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z)
+    Basis_Derived_HCURL_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType=POINTTYPE_DEFAULT)
     :
-    DirectSumBasis(Family12(polyOrder_x, polyOrder_y, polyOrder_z),
-                   Family3 (polyOrder_x, polyOrder_y, polyOrder_z)) {
+    DirectSumBasis(Family12(polyOrder_x, polyOrder_y, polyOrder_z, pointType),
+                   Family3 (polyOrder_x, polyOrder_y, polyOrder_z, pointType)) {
       this->functionSpace_ = FUNCTION_SPACE_HCURL;
 
       std::ostringstream basisName;
@@ -481,12 +487,13 @@ namespace Intrepid2
       order_x_ = polyOrder_x;
       order_y_ = polyOrder_y;
       order_z_ = polyOrder_z;
+      pointType_ = pointType;
     }
     
     /** \brief  Constructor.
         \param [in] polyOrder - the polynomial order to use in all dimensions.
      */
-    Basis_Derived_HCURL_HEX(int polyOrder) : Basis_Derived_HCURL_HEX(polyOrder, polyOrder, polyOrder) {}
+    Basis_Derived_HCURL_HEX(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT) : Basis_Derived_HCURL_HEX(polyOrder, polyOrder, polyOrder, pointType) {}
 
     /** \brief True if orientation is required
     */
@@ -526,32 +533,32 @@ namespace Intrepid2
         case 2:
         case 4:
         case 6:
-          return Teuchos::rcp( new LineBasis(order_x_-1) );
+          return Teuchos::rcp( new LineBasis(order_x_-1, pointType_) );
         case 1:
         case 3:
         case 5:
         case 7:
-          return Teuchos::rcp( new LineBasis(order_y_-1) );
+          return Teuchos::rcp( new LineBasis(order_y_-1, pointType_) );
         case 8:
         case 9:
         case 10:
         case 11:
-          return Teuchos::rcp( new LineBasis(order_z_-1) );
+          return Teuchos::rcp( new LineBasis(order_z_-1, pointType_) );
         }
       } else if(subCellDim == 2) {
         switch(subCellOrd) {
         case 0:
-          return Teuchos::rcp( new QuadBasis(order_x_, order_z_) );
+          return Teuchos::rcp( new QuadBasis(order_x_, order_z_, pointType_) );
         case 1:
-          return Teuchos::rcp( new QuadBasis(order_y_,order_z_) );
+          return Teuchos::rcp( new QuadBasis(order_y_,order_z_, pointType_) );
         case 2:
-          return Teuchos::rcp( new QuadBasis(order_x_, order_z_) );
+          return Teuchos::rcp( new QuadBasis(order_x_, order_z_, pointType_) );
         case 3:
-          return Teuchos::rcp( new QuadBasis(order_z_, order_y_) );
+          return Teuchos::rcp( new QuadBasis(order_z_, order_y_, pointType_) );
         case 4:
-          return Teuchos::rcp( new QuadBasis(order_y_, order_x_) );
+          return Teuchos::rcp( new QuadBasis(order_y_, order_x_, pointType_) );
         case 5:
-          return Teuchos::rcp( new QuadBasis(order_x_, order_y_) );
+          return Teuchos::rcp( new QuadBasis(order_x_, order_y_, pointType_) );
         }
       }
 

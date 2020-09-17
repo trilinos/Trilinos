@@ -86,16 +86,18 @@ namespace Intrepid2
     ordinal_type order_x_;
     ordinal_type order_y_;
     ordinal_type order_z_;
+    EPointType pointType_;
 
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
         \param [in] polyOrder_z - the polynomial order in the z dimension.
+        \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HGRAD_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z)
+    Basis_Derived_HGRAD_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType=POINTTYPE_DEFAULT)
     :
-    TensorBasis(QuadBasis(polyOrder_x,polyOrder_y),
-                LineBasis(polyOrder_z))
+    TensorBasis(QuadBasis(polyOrder_x,polyOrder_y, pointType),
+                LineBasis(polyOrder_z, pointType))
     {
       this->functionSpace_ = FUNCTION_SPACE_HGRAD;
 
@@ -106,12 +108,17 @@ namespace Intrepid2
       order_x_ = polyOrder_x;
       order_y_ = polyOrder_y;
       order_z_ = polyOrder_z;
+      pointType_ = pointType;
     }
+
     
     /** \brief  Constructor.
         \param [in] polyOrder - the polynomial order to use in all dimensions.
+        \param [in] pointType - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HGRAD_HEX(int polyOrder) : Basis_Derived_HGRAD_HEX(polyOrder, polyOrder, polyOrder) {}
+    Basis_Derived_HGRAD_HEX(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT) :
+      Basis_Derived_HGRAD_HEX(polyOrder, polyOrder, polyOrder, pointType) {}
+
 
     /** \brief True if orientation is required
     */
@@ -203,32 +210,32 @@ namespace Intrepid2
         case 2:
         case 4:
         case 6:
-          return Teuchos::rcp( new LineBasis(order_x_) );
+          return Teuchos::rcp( new LineBasis(order_x_, pointType_) );
         case 1:
         case 3:
         case 5:
         case 7:
-          return Teuchos::rcp( new LineBasis(order_y_) );
+          return Teuchos::rcp( new LineBasis(order_y_, pointType_) );
         case 8:
         case 9:
         case 10:
         case 11:
-          return Teuchos::rcp( new LineBasis(order_z_) );
+          return Teuchos::rcp( new LineBasis(order_z_, pointType_) );
         }
       } else if(subCellDim == 2) {
         switch(subCellOrd) {
         case 0:
-          return Teuchos::rcp( new QuadBasis(order_x_, order_z_) );
+          return Teuchos::rcp( new QuadBasis(order_x_, order_z_, pointType_) );
         case 1:
-          return Teuchos::rcp( new QuadBasis(order_y_,order_z_) );
+          return Teuchos::rcp( new QuadBasis(order_y_,order_z_, pointType_) );
         case 2:
-          return Teuchos::rcp( new QuadBasis(order_x_, order_z_) );
+          return Teuchos::rcp( new QuadBasis(order_x_, order_z_, pointType_) );
         case 3:
-          return Teuchos::rcp( new QuadBasis(order_z_, order_y_) );
+          return Teuchos::rcp( new QuadBasis(order_z_, order_y_, pointType_) );
         case 4:
-          return Teuchos::rcp( new QuadBasis(order_y_, order_x_) );
+          return Teuchos::rcp( new QuadBasis(order_y_, order_x_, pointType_) );
         case 5:
-          return Teuchos::rcp( new QuadBasis(order_x_, order_y_) );
+          return Teuchos::rcp( new QuadBasis(order_x_, order_y_, pointType_) );
         }
       }
 

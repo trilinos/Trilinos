@@ -281,6 +281,7 @@ namespace Intrepid2 {
     this->basisType_         = BASIS_FEM_FIAT;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
     this->functionSpace_     = FUNCTION_SPACE_HGRAD;
+    pointType_ = pointType;
 
     // initialize tags
     {

@@ -299,7 +299,7 @@ class Basis_HCURL_TRI_In_FEM
     if(subCellDim == 1) {
       return Teuchos::rcp(new
           Basis_HVOL_LINE_Cn_FEM<ExecSpaceType,outputValueType,pointValueType>
-          ( this->basisDegree_ - 1) );
+          ( this->basisDegree_ - 1, pointType_) );
     }
     INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
   }
@@ -309,6 +309,9 @@ class Basis_HCURL_TRI_In_FEM
   /** \brief expansion coefficients of the nodal basis in terms of the
         orthgonal one */
   Kokkos::DynRankView<scalarType,ExecSpaceType> coeffs_;
+
+  /** \brief type of lattice used for creating the DoF coordinates  */
+  EPointType pointType_;
 
 };
 

@@ -333,7 +333,7 @@ int InterpolationProjectionTet(const bool verbose) {
           if(degree==1)
             basis_set.push_back(new Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType>());
           //basis_set.push_back(new typename  CG_NBasis::HGRAD_TET(degree));
-          basis_set.push_back(new typename  CG_DNBasis::HGRAD_TET(degree));
+          basis_set.push_back(new typename  CG_DNBasis::HGRAD_TET(degree,POINTTYPE_WARPBLEND));
 
           for (auto basisPtr:basis_set) {
 
@@ -772,7 +772,7 @@ int InterpolationProjectionTet(const bool verbose) {
           if(degree==1)
             basis_set.push_back(new Basis_HCURL_TET_I1_FEM<DeviceSpaceType,ValueType,ValueType>());
           //basis_set.push_back(new typename  CG_NBasis::HCURL_TET(degree));
-          basis_set.push_back(new typename  CG_DNBasis::HCURL_TET(degree));
+          basis_set.push_back(new typename  CG_DNBasis::HCURL_TET(degree,POINTTYPE_EQUISPACED));
 
           for (auto basisPtr:basis_set) {
 
@@ -1198,7 +1198,7 @@ int InterpolationProjectionTet(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HDIV_TET_I1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          //basis_set.push_back(new typename  CG_NBasis::HDIV_TET(degree));
+          //basis_set.push_back(new typename  CG_NBasis::HDIV_TET(degree,POINTTYPE_WARPBLEND));
           basis_set.push_back(new typename  CG_DNBasis::HDIV_TET(degree));
 
           for (auto basisPtr:basis_set) {
@@ -1602,7 +1602,7 @@ int InterpolationProjectionTet(const bool verbose) {
       if(degree==1)
         basis_set.push_back(new Basis_HVOL_C0_FEM<DeviceSpaceType,ValueType,ValueType>(tet));
       //basis_set.push_back(new typename  CG_NBasis::HVOL_TET(degree));
-      basis_set.push_back(new typename  CG_DNBasis::HVOL_TET(degree));
+      basis_set.push_back(new typename  CG_DNBasis::HVOL_TET(degree,POINTTYPE_WARPBLEND));
 
       for (auto basisPtr:basis_set) {
 

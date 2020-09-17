@@ -84,11 +84,12 @@ namespace Intrepid2
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
+        \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HCURL_Family1_QUAD(int polyOrder_x, int polyOrder_y)
+    Basis_Derived_HCURL_Family1_QUAD(int polyOrder_x, int polyOrder_y, const EPointType pointType)
     :
-    TensorBasis(LineHVolBasis(polyOrder_x-1),
-                LineGradBasis(polyOrder_y))
+    TensorBasis(LineHVolBasis(polyOrder_x-1,pointType),
+                LineGradBasis(polyOrder_y,pointType))
     {
       this->functionSpace_ = FUNCTION_SPACE_HCURL;
     }
@@ -181,11 +182,12 @@ namespace Intrepid2
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
+        \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HCURL_Family2_QUAD(int polyOrder_x, int polyOrder_y)
+    Basis_Derived_HCURL_Family2_QUAD(int polyOrder_x, int polyOrder_y, const EPointType pointType)
     :
-    TensorBasis(LineGradBasis(polyOrder_x),
-                LineHVolBasis(polyOrder_y-1))
+    TensorBasis(LineGradBasis(polyOrder_x,pointType),
+                LineHVolBasis(polyOrder_y-1,pointType))
     {
       this->functionSpace_ = FUNCTION_SPACE_HCURL;
     }
@@ -273,16 +275,18 @@ namespace Intrepid2
     std::string name_;
     ordinal_type order_x_;
     ordinal_type order_y_;
+    EPointType pointType_;
 
   public:
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
+        \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HCURL_QUAD(int polyOrder_x, int polyOrder_y)
+    Basis_Derived_HCURL_QUAD(int polyOrder_x, int polyOrder_y, const EPointType pointType=POINTTYPE_DEFAULT)
     :
-    DirectSumBasis(Family1(polyOrder_x, polyOrder_y),
-                   Family2(polyOrder_x, polyOrder_y)) {
+    DirectSumBasis(Family1(polyOrder_x, polyOrder_y, pointType),
+                   Family2(polyOrder_x, polyOrder_y, pointType)) {
       this->functionSpace_ = FUNCTION_SPACE_HCURL;
 
       std::ostringstream basisName;
@@ -291,12 +295,14 @@ namespace Intrepid2
 
       order_x_ = polyOrder_x;
       order_y_ = polyOrder_y;
+      pointType_ = pointType;
     }
     
     /** \brief  Constructor.
         \param [in] polyOrder - the polynomial order to use in all dimensions.
+        \param [in] pointType - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HCURL_QUAD(int polyOrder) : Basis_Derived_HCURL_QUAD(polyOrder, polyOrder) {}
+    Basis_Derived_HCURL_QUAD(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT) : Basis_Derived_HCURL_QUAD(polyOrder, polyOrder, pointType) {}
 
     /** \brief True if orientation is required
     */
@@ -330,10 +336,10 @@ namespace Intrepid2
         switch(subCellOrd) {
         case 0:
         case 2:
-          return Teuchos::rcp( new HVOL_LINE(order_x_-1) );
+          return Teuchos::rcp( new HVOL_LINE(order_x_-1, pointType_) );
         case 1:
         case 3:
-          return Teuchos::rcp( new HVOL_LINE(order_y_-1) );
+          return Teuchos::rcp( new HVOL_LINE(order_y_-1, pointType_) );
         }
       }
 

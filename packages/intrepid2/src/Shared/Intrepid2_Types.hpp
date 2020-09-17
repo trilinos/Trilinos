@@ -419,7 +419,8 @@ namespace Intrepid2 {
   enum EPointType {
     POINTTYPE_EQUISPACED = 0,             // value = 0
     POINTTYPE_WARPBLEND,
-    POINTTYPE_GAUSS
+    POINTTYPE_GAUSS,
+    POINTTYPE_DEFAULT,
   };
 
   KOKKOS_INLINE_FUNCTION
@@ -428,6 +429,7 @@ namespace Intrepid2 {
     case POINTTYPE_EQUISPACED:     return "Equispaced Points";
     case POINTTYPE_WARPBLEND:      return "WarpBlend Points";
     case POINTTYPE_GAUSS:          return "Gauss Points";
+    case POINTTYPE_DEFAULT:        return "Default Points";
     }
     return "INVALID EPointType";
   }
