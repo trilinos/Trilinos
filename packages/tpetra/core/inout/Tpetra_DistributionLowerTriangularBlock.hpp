@@ -46,6 +46,8 @@ public:
 
   enum DistributionType DistType() { return LowerTriangularBlock; }
 
+  Teuchos::Array<gno_t> getChunkCuts() { return chunkCuts; }
+
   // Return whether this rank owns vector entry i.
   // TODO:  for now, use same vector dist as 1DLinear;
   // TODO:  think about best distribution of Vectors
@@ -67,8 +69,7 @@ public:
   // How to redistribute according to chunk-based row distribution
   void Redistribute(LocalNZmap_t &localNZ)
   {
-    std::cout << comm->getRank() << " KDDKDD begin Redistribute " << std::endl;
-
+    // std::cout << comm->getRank() << " KDDKDD begin Redistribute " << std::endl;
     // Compute nnzPerRow; distribution is currently 1D and lower triangular
     // Exploit fact that map has entries sorted by I, then J
     // Simultaneously, store everything in buffers for communication
@@ -240,7 +241,7 @@ private:
     int m = findIdxInChunks(I);
     int n = findIdxInChunks(J);
     int p = m*(m+1)/2 + n; 
-std::cout << "    KDDKDD procFromChunks (" << I << "," << J << "): " << p << std::endl;
+    // std::cout << "    KDDKDD procFromChunks (" << I << "," << J << "): " << p << std::endl;
     return p;
   }
 };
