@@ -23,7 +23,7 @@ public:
                   const Teuchos::ParameterList &params) :
                   Distribution<gno_t,scalar_t>(nrows_, comm_, params),
                   initialDist(nrows_, comm_, params),
-                  redistributed(false), nChunks(0)
+                  sortByDegree(false), redistributed(false), nChunks(0)
   {
     int npnp = 2 * np;
     nChunks = int(std::sqrt(float(npnp)));
@@ -34,6 +34,9 @@ public:
                                " must satisfy np = q(q+1)/2 for some q" <<
                                " for LowerTriangularBlock distribution");
     nChunksPerRow = double(nChunks) / double(nrows);
+
+    const Teuchos::ParameterEntry *pe = params.getEntryPtr("sortByDegree");
+    if (pe != NULL) sortByDegree = pe->getValue<bool>(&sortByDegree);
 
     if (me == 0) std::cout << "\n LowerTriangularBlock Distribution: "
                            << "\n     np      = " << np 
@@ -64,7 +67,8 @@ public:
   // How to redistribute according to chunk-based row distribution
   void Redistribute(LocalNZmap_t &localNZ)
   {
-std::cout << comm->getRank() << " KDDKDD begin Redistribute " << std::endl;
+    std::cout << comm->getRank() << " KDDKDD begin Redistribute " << std::endl;
+
     // Compute nnzPerRow; distribution is currently 1D and lower triangular
     // Exploit fact that map has entries sorted by I, then J
     // Simultaneously, store everything in buffers for communication
@@ -79,7 +83,6 @@ std::cout << comm->getRank() << " KDDKDD begin Redistribute " << std::endl;
     }
 
     // TODO For now, determine the chunks serially; can parallelize later
-    {
 
     Teuchos::Array<int> rcvcnt(np);
     Teuchos::Array<int> disp(np);
@@ -102,13 +105,32 @@ std::cout << comm->getRank() << " KDDKDD begin Redistribute " << std::endl;
                                  rcvcnt.getRawPtr(), disp.getRawPtr(), 
                                  0, *comm);
 
+    Teuchos::Array<int>().swap(rcvcnt);
+    Teuchos::Array<int>().swap(disp);
+
     size_t nnz = localNZ.size(), gNnz;
     Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &nnz, &gNnz);
 
-    
-    // Determine chunk cuts
     chunkCuts.resize(nChunks+1, 0);
+
+    Teuchos::Array<size_t> permuteIndex;
+    if (sortByDegree) permuteIndex.resize(nrows); // TODO:  Ick!  Need parallel
+
     if (me == 0) { // TODO:  when have allgatherv, can do on all procs
+                   // TODO:  or better, implement parallel version
+
+      if (sortByDegree) {
+        // Sort globalNnzPerRow in decreasing order, generating permuteIndex
+        for (size_t i = 0 ; i != nrows; i++) permuteIndex[i] = i;
+
+        std::sort(permuteIndex.begin(), permuteIndex.end(),
+                  [&](const size_t& a, const size_t& b) {
+                      return (globalNnzPerRow[a] > globalNnzPerRow[b]);
+                  }
+        );
+      }
+
+      // Determine chunk cuts
       size_t target = gNnz / np;  // target nnz per processor
       size_t targetRunningTotal = 0;
       size_t currentRunningTotal = 0;
@@ -116,8 +138,11 @@ std::cout << comm->getRank() << " KDDKDD begin Redistribute " << std::endl;
       for (int chunkCnt = 0; chunkCnt < nChunks; chunkCnt++) {
         targetRunningTotal += (target * (chunkCnt+1));
         while (I < nrows) {
-          if (currentRunningTotal + globalNnzPerRow[I] < targetRunningTotal) {
-            currentRunningTotal += globalNnzPerRow[I++];
+          size_t nextNnz = (sortByDegree ? globalNnzPerRow[permuteIndex[I]]
+                                         : globalNnzPerRow[I]);
+          if (currentRunningTotal + nextNnz < targetRunningTotal) {
+            currentRunningTotal += nextNnz;
+            I++;
           }
           else
             break;
@@ -127,9 +152,14 @@ std::cout << comm->getRank() << " KDDKDD begin Redistribute " << std::endl;
       chunkCuts[nChunks] = nrows;
     }
 
-    }
+    // Free memory associated with globalNnzPerRow
+    Teuchos::Array<size_t>().swap(globalNnzPerRow);
 
     Teuchos::broadcast<int,gno_t>(*comm, 0, chunkCuts(0,nChunks+1));
+
+    if (sortByDegree)
+      Teuchos::broadcast<int,size_t>(*comm, 0, permuteIndex(0,nrows)); 
+                                     // Ick!  Use a directory  TODO
 
     std::cout << comm->getRank() << " KDDKDD chunkCuts: ";
     for (int kdd = 0; kdd <= nChunks; kdd++) std::cout << chunkCuts[kdd] << " ";
@@ -141,19 +171,27 @@ std::cout << comm->getRank() << " KDDKDD begin Redistribute " << std::endl;
     Teuchos::Array<scalar_t> vOut(localNZ.size());
     Teuchos::Array<int> pOut(localNZ.size());
 
-std::cout << comm->getRank() << " KDDKDD buffers done " << localNZ.size() << std::endl;
     size_t cnt = 0;
     for (auto it = localNZ.begin(); it != localNZ.end(); it++, cnt++) {
-      iOut[cnt] = it->first.first;
-      jOut[cnt] = it->first.second;
+      iOut[cnt] = (sortByDegree ? permuteIndex[it->first.first] 
+                                : it->first.first);
+      jOut[cnt] = (sortByDegree ? permuteIndex[it->first.second]
+                                : it->first.second);
       vOut[cnt] = it->second;
-std::cout << comm->getRank() << "    KDDKDD IJ " << iOut[cnt] << " " << jOut[cnt] << std::endl;
       pOut[cnt] = procFromChunks(iOut[cnt], jOut[cnt]);
+
+      std::cout << comm->getRank() 
+                << "    KDDKDD IJ (" 
+                << it->first.first << "," << it->first.second
+                << ") permuted to ("
+                << iOut[cnt] << "," << jOut[cnt] 
+                << ") being sent to " << pOut[cnt]
+                << std::endl;
     }
 
-std::cout << comm->getRank() << " KDDKDD buffers filled " << localNZ.size() << std::endl;
-    // Free memory associated with localNZ
+    // Free memory associated with localNZ and permuteIndex
     LocalNZmap_t().swap(localNZ);
+    if (sortByDegree) Teuchos::Array<size_t>().swap(permuteIndex);
 
     // Use a Distributor to send nonzeros to new processors.
     Tpetra::Distributor plan(comm);
@@ -179,6 +217,10 @@ std::cout << comm->getRank() << " KDDKDD buffers filled " << localNZ.size() << s
 private:
   // Initially distribute nonzeros with a 1D linear distribution
   Distribution1DLinear<gno_t,scalar_t> initialDist;  
+
+  // Flag indicating whether matrix should be reordered and renumbered 
+  // in decreasing sort order of number of nonzeros per row
+  bool sortByDegree;
 
   // Flag whether redistribution has occurred yet
   bool redistributed;  
