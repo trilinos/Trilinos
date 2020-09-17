@@ -101,7 +101,7 @@ struct DeviceBucket {
   stk::topology topology() const { return bucketTopology; }
 
   STK_FUNCTION
-  unsigned get_num_nodes_per_entity() const { return bucketTopology.num_nodes(); }
+  unsigned get_num_nodes_per_entity() const { return nodeConnectivity.extent(1); }
 
   STK_INLINE_FUNCTION
   ConnectedEntities get_connected_entities(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const;
