@@ -91,9 +91,6 @@
 #define IFPACK2_BLOCKTRIDICONTAINER_USE_MPI_3
 #endif
 
-// this requires kokkos develop branch (do not use this yet)
-//#define IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_STREAM
-
 // ::: Experiments :::
 // define either pinned memory or cudamemory for mpi
 // if both macros are disabled, it will use tpetra memory space which is uvm space for cuda
@@ -110,16 +107,14 @@
 #define IFPACK2_BLOCKTRIDICONTAINER_USE_SMALL_SCALAR_FOR_BLOCKTRIDIAG
 #endif
 
+// if defined, it uses multiple execution spaces
+#define IFPACK2_BLOCKTRIDICONTAINER_USE_EXEC_SPACE_INSTANCES
+
 namespace Ifpack2 {
 
   namespace BlockTriDiContainerDetails {
 
-    /// for the next promotion
-#if defined(__KOKKOSBATCHED_PROMOTION__)
-namespace KB = KokkosBatched;
-#else
-namespace KB = KokkosBatched::Experimental;
-#endif
+    namespace KB = KokkosBatched;
 
     ///
     /// view decorators for unmanaged and const memory
@@ -180,6 +175,33 @@ namespace KB = KokkosBatched::Experimental;
     template<typename T> struct is_cuda        { enum : bool { value = false }; };
 #if defined(KOKKOS_ENABLE_CUDA)
     template<> struct is_cuda<Kokkos::Cuda>    { enum : bool { value = true  }; };
+#endif
+
+    ///
+    /// execution space instance
+    ///
+    template<typename T>
+    struct ExecutionSpaceFactory {
+      static void createInstance(T &exec_instance) {
+        exec_instance = T();
+      }
+#if defined(KOKKOS_ENABLE_CUDA)
+      static void createInstance(const cudaStream_t &s, T &exec_instance) {
+        exec_instance = T();
+      }
+#endif
+    };
+
+#if defined(KOKKOS_ENABLE_CUDA)
+    template<>
+    struct ExecutionSpaceFactory<Kokkos::Cuda> {
+      static void createInstance(Kokkos::Cuda &exec_instance) {
+        exec_instance = Kokkos::Cuda();
+      }
+      static void createInstance(const cudaStream_t &s, Kokkos::Cuda &exec_instance) {
+        exec_instance = Kokkos::Cuda(s);
+      }      
+    };
 #endif
 
     ///
@@ -442,36 +464,6 @@ namespace KB = KokkosBatched::Experimental;
 #endif
       }
 
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_STREAM)
-      struct CallbackDataArgsForSendRecv {
-        MPI_Comm comm;
-        char *buf;
-        int count;
-        int pid;
-        int tag;
-        MPI_Request *ireq;
-
-        int r_val;
-      };
-
-      static void CUDART_CB callback_isend(cudaStream_t this_stream, cudaError_t status, void *data) {
-        CallbackDataArgsForSendRecv *in = reinterpret_cast<CallbackDataArgsForSendRecv*>(data);
-        in->r_val = isend(in->comm, in->buf, in->count, in->pid, in->tag, in->ireq);
-      }
-
-      static void CUDART_CB callback_irecv(cudaStream_t this_stream, cudaError_t status, void *data) {
-        CallbackDataArgsForSendRecv *in = reinterpret_cast<CallbackDataArgsForSendRecv*>(data);
-        in->r_val = irecv(in->comm, in->buf, in->count, in->pid, in->tag, in->ireq);
-      }
-
-      static void CUDART_CB callback_wait(cudaStream_t this_stream, cudaError_t status, void *data) {
-#ifdef HAVE_IFPACK2_MPI
-        MPI_Request *req = reinterpret_cast<MPI_Request*>(data);
-        MPI_Wait(req, MPI_STATUS_IGNORE);
-#endif // HAVE_IFPACK2_MPI
-      }
-#endif // defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_STREAM)
-
       static int waitany(int count, MPI_Request* reqs, int* index) {
 #ifdef HAVE_IFPACK2_MPI
         return MPI_Waitany(count, reqs, index, MPI_STATUS_IGNORE);
@@ -545,12 +537,12 @@ namespace KB = KokkosBatched::Experimental;
 
       local_ordinal_type_1d_view dm2cm; // permutation
 
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_STREAM)
+#if defined(KOKKOS_ENABLE_CUDA)
       using cuda_stream_1d_std_vector = std::vector<cudaStream_t>;
-      SendRecvPair<cuda_stream_1d_std_vector> stream;
+      cuda_stream_1d_std_vector stream;
 
-      using callback_data_send_recv_1d_std_vector = std::vector<CallbackDataArgsForSendRecv>;
-      SendRecvPair<callback_data_send_recv_1d_std_vector> callback_data;
+      using exec_instance_1d_std_vector = std::vector<execution_space>;
+      exec_instance_1d_std_vector exec_instances;      
 #endif
 
       // for cuda
@@ -573,6 +565,19 @@ namespace KB = KokkosBatched::Experimental;
           });
       }
 
+      void setOffsetValuesHost(const Teuchos::ArrayView<const size_t> &lens,
+                               const size_type_1d_view_host &offs) {
+        // wrap lens to kokkos view and deep copy to device
+        Kokkos::View<size_t*,Kokkos::HostSpace> lens_host(const_cast<size_t*>(lens.getRawPtr()), lens.size());
+        const auto lens_device = Kokkos::create_mirror_view_and_copy(memory_space(), lens_host);
+
+        // exclusive scan
+        offs(0) = 0;
+        for (local_ordinal_type i=1,iend=offs.extent(0);i<iend;++i) {
+          offs(i) = offs(i-1) + lens[i-1];
+        }
+      }
+
     private:
       void createMpiRequests(const tpetra_import_type &import) {
         Tpetra::Distributor &distributor = import.getDistributor();
@@ -591,6 +596,7 @@ namespace KB = KokkosBatched::Experimental;
         reqs.send.resize(pids.send.extent(0)); memset(reqs.send.data(), 0, reqs.send.size()*sizeof(MPI_Request));
 
         // construct offsets
+#if 0
         const auto lengths_to = distributor.getLengthsTo();
         offset.send = size_type_1d_view(do_not_initialize_tag("offset send"), lengths_to.size() + 1);
 
@@ -602,6 +608,19 @@ namespace KB = KokkosBatched::Experimental;
 
         setOffsetValues(lengths_from, offset.recv);
         offset_host.recv = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), offset.recv);
+#else
+        const auto lengths_to = distributor.getLengthsTo();
+        offset_host.send = size_type_1d_view_host(do_not_initialize_tag("offset send"), lengths_to.size() + 1);
+
+        const auto lengths_from = distributor.getLengthsFrom();
+        offset_host.recv = size_type_1d_view_host(do_not_initialize_tag("offset recv"), lengths_from.size() + 1);
+
+        setOffsetValuesHost(lengths_to, offset_host.send);
+        //offset.send = Kokkos::create_mirror_view_and_copy(memory_space(), offset_host.send);
+
+        setOffsetValuesHost(lengths_from, offset_host.recv);
+        //offset.recv = Kokkos::create_mirror_view_and_copy(memory_space(), offset_host.recv);
+#endif
       }
 
       void createSendRecvIDs(const tpetra_import_type &import) {
@@ -631,6 +650,34 @@ namespace KB = KokkosBatched::Experimental;
         Kokkos::deep_copy(lids.send, lids_send_host);
       }
 
+      void createExecutionSpaceInstances() {
+#if defined(KOKKOS_ENABLE_CUDA)
+        const local_ordinal_type num_streams = 8;
+        {
+          stream.clear();
+          stream.resize(num_streams);
+          exec_instances.clear();
+          exec_instances.resize(num_streams);
+          for (local_ordinal_type i=0;i<num_streams;++i) {
+            CUDA_SAFE_CALL(cudaStreamCreateWithFlags(&stream[i], cudaStreamNonBlocking));
+            ExecutionSpaceFactory<execution_space>::createInstance(stream[i], exec_instances[i]);
+          }
+        }
+#endif
+      }
+
+      void destroyExecutionSpaceInstances() {
+#if defined(KOKKOS_ENABLE_CUDA)
+        {
+          const local_ordinal_type num_streams = stream.size();
+          for (local_ordinal_type i=0;i<num_streams;++i)
+            CUDA_SAFE_CALL(cudaStreamDestroy(stream[i]));
+        }
+        stream.clear();
+        exec_instances.clear();
+#endif
+      }
+
     public:
       // for cuda, all tag types are public
       struct ToBuffer {};
@@ -650,38 +697,11 @@ namespace KB = KokkosBatched::Experimental;
 
         createMpiRequests(import);
         createSendRecvIDs(import);
-
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_STREAM)
-        {
-          const local_ordinal_type num_streams = pids.send.extent(0);
-          stream.send.resize(num_streams);
-          callback_data.send.resize(num_streams);
-          for (local_ordinal_type i=0;i<num_streams;++i)
-            CUDA_SAFE_CALL(cudaStreamCreate(&stream.send[i])); // nonblocking flag is not really necessary here
-        }
-        {
-          const local_ordinal_type num_streams = pids.recv.extent(0);
-          stream.recv.resize(num_streams);
-          callback_data.recv.resize(num_streams);
-          for (local_ordinal_type i=0;i<num_streams;++i)
-            CUDA_SAFE_CALL(cudaStreamCreate(&stream.recv[i])); // nonblocking flag is not really necessary here
-        }
-#endif
+        createExecutionSpaceInstances();
       }
 
       ~AsyncableImport() {
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_STREAM)
-        {
-          const local_ordinal_type num_streams = stream.send.size();
-          for (local_ordinal_type i=0;i<num_streams;++i)
-            CUDA_SAFE_CALL(cudaStreamDestroy(stream.send[i]));
-        }
-        {
-          const local_ordinal_type num_streams = stream.recv.size();
-          for (local_ordinal_type i=0;i<num_streams;++i)
-            CUDA_SAFE_CALL(cudaStreamDestroy(stream.recv[i]));
-        }
-#endif
+        destroyExecutionSpaceInstances();
       }
 
       void createDataBuffer(const local_ordinal_type &num_vectors) {
@@ -714,16 +734,16 @@ namespace KB = KokkosBatched::Experimental;
       // - cuda only with kokkos develop branch
       // ======================================================================
 
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_STREAM)
+#if defined(KOKKOS_ENABLE_CUDA) 
       template<typename PackTag>
       static
-      void copyViaCudaStream(const local_ordinal_type_1d_view &lids_,
-                             const impl_scalar_type_1d_view &buffer_,
-                             const local_ordinal_type ibeg_,
-                             const local_ordinal_type iend_,
-                             const impl_scalar_type_2d_view_tpetra &multivector_,
-                             const local_ordinal_type blocksize_,
-                             const cudaStream_t &stream_) {
+      void copy(const local_ordinal_type_1d_view &lids_,
+                const impl_scalar_type_1d_view &buffer_,
+                const local_ordinal_type ibeg_,
+                const local_ordinal_type iend_,
+                const impl_scalar_type_2d_view_tpetra &multivector_,
+                const local_ordinal_type blocksize_,
+                const execution_space &exec_instance_) {
         const local_ordinal_type num_vectors = multivector_.extent(1);
         const local_ordinal_type mv_blocksize = blocksize_*num_vectors;
         const local_ordinal_type idiff = iend_ - ibeg_;
@@ -736,9 +756,8 @@ namespace KB = KokkosBatched::Experimental;
         else if (blocksize_ <= 16) vector_size = 16;
         else                       vector_size = 32;
 
-        const auto exec_instance = Kokkos::Cuda(stream_);
         const auto work_item_property = Kokkos::Experimental::WorkItemProperty::HintLightWeight;
-        const team_policy_type policy(exec_instance, idiff, 1, vector_size);
+        const team_policy_type policy(exec_instance_, idiff, 1, vector_size);
         Kokkos::parallel_for
           (//"AsyncableImport::TeamPolicy::copyViaCudaStream",
            Kokkos::Experimental::require(policy, work_item_property),
@@ -762,7 +781,7 @@ namespace KB = KokkosBatched::Experimental;
           });
       }
 
-      void asyncSendRecvViaCudaStream(const impl_scalar_type_2d_view_tpetra &mv) {
+      void asyncSendRecvVar1(const impl_scalar_type_2d_view_tpetra &mv) {
         IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::AsyncableImport::AsyncSendRecv");
 
 #ifdef HAVE_IFPACK2_MPI
@@ -780,37 +799,25 @@ namespace KB = KokkosBatched::Experimental;
                 &reqs.recv[i]);
         }
 
+        /// this is necessary to pass unit test. somewhere overlapped using the default execution space
+        execution_space().fence();
+
         // 1. async memcpy
-#if defined (KOKKOS_ENABLE_OPENMP)
-#pragma omp parallel for
-#endif
         for (local_ordinal_type i=0;i<static_cast<local_ordinal_type>(pids.send.extent(0));++i) {
-          auto &stream_at_i = stream.send[i];
           // 1.0. enqueue pack buffer
-          copyViaCudaStream<ToBuffer>(lids.send, buffer.send,
-                                      offset_host.send(i), offset_host.send(i+1),
-                                      mv, blocksize,
-                                      stream_at_i);
+          if (i<8)  exec_instances[i%8].fence();
+          copy<ToBuffer>(lids.send, buffer.send,
+                         offset_host.send(i), offset_host.send(i+1),
+                         mv, blocksize,
+                         //execution_space());
+                         exec_instances[i%8]);
 
-          // // 1.1. enqueue call back posting isend , call back does not really work; what did I do wrong.
-          // auto &data_at_i = callback_data.send[i];
-          // data_at_i.comm = comm;
-          // data_at_i.buf = (char*)(buffer.send.data() + offset_host.send[i]*mv_blocksize);
-          // data_at_i.count = (offset_host.send[i+1] - offset_host.send[i])*mv_blocksize*sizeof(impl_scalar_type);
-          // data_at_i.pid = pids.send[i];
-          // data_at_i.tag = 42;
-          // data_at_i.ireq = &reqs.send[i];
-          // data_at_i.r_val = 0;
-          // CUDA_SAFE_CALL(cudaStreamAddCallback(stream_at_i, callback_isend, (void*)&data_at_i, 0));
         }
-
-        Kokkos::fence();
-#if defined (KOKKOS_ENABLE_OPENMP)
-#pragma omp parallel for
-#endif
+        /// somehow one unit test fails when we use exec_instance[i%8]
+        //execution_space().fence();
         for (local_ordinal_type i=0;i<static_cast<local_ordinal_type>(pids.send.extent(0));++i) {
           // 1.1. sync the stream and isend
-          //CUDA_SAFE_CALL(cudaStreamSynchronize(stream_at_i));
+          if (i<8)  exec_instances[i%8].fence();
           isend(comm,
                 reinterpret_cast<const char*>(buffer.send.data() + offset_host.send[i]*mv_blocksize),
                 (offset_host.send[i+1] - offset_host.send[i])*mv_blocksize*sizeof(impl_scalar_type),
@@ -828,28 +835,21 @@ namespace KB = KokkosBatched::Experimental;
 #endif // HAVE_IFPACK2_MPI
       }
 
-      void syncRecvViaCudaStream() {
+      void syncRecvVar1() {
         IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::AsyncableImport::SyncRecv");
 #ifdef HAVE_IFPACK2_MPI
         // 0. wait for receive async.
-#if defined (KOKKOS_ENABLE_OPENMP)
-#pragma omp parallel for
-#endif
         for (local_ordinal_type i=0;i<static_cast<local_ordinal_type>(pids.recv.extent(0));++i) {
           local_ordinal_type idx = i;
-          auto &stream_at_idx = stream.recv[idx];
 
           // 0.0. wait any
           waitany(pids.recv.extent(0), reqs.recv.data(), &idx);
 
-          // 0.0. add call back for waiting version (not working, what did i do wrong?)
-          //CUDA_SAFE_CALL(cudaStreamAddCallback(stream_at_idx, callback_wait, (void*)&reqs.recv[idx], 0));
-
           // 0.1. unpack data after data is moved into a device
-          copyViaCudaStream<ToMultiVector>(lids.recv, buffer.recv,
-                                           offset_host.recv(idx), offset_host.recv(idx+1),
-                                           remote_multivector, blocksize,
-                                           stream_at_idx);
+          copy<ToMultiVector>(lids.recv, buffer.recv,
+                              offset_host.recv(idx), offset_host.recv(idx+1),
+                              remote_multivector, blocksize,
+                              exec_instances[idx%8]);
         }
 
         // 1. fire up all cuda events
@@ -859,7 +859,7 @@ namespace KB = KokkosBatched::Experimental;
         waitall(reqs.send.size(), reqs.send.data());
 #endif // HAVE_IFPACK2_MPI
       }
-#endif //defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_STREAM)
+#endif //defined(KOKKOS_ENABLE_CUDA)
 
       // ======================================================================
       // Generic version without using cuda stream
@@ -930,7 +930,11 @@ namespace KB = KokkosBatched::Experimental;
         }
       }
 
-      void asyncSendRecv(const impl_scalar_type_2d_view_tpetra &mv) {
+
+      ///
+      /// standard comm
+      ///
+      void asyncSendRecvVar0(const impl_scalar_type_2d_view_tpetra &mv) {
         IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::AsyncableImport::AsyncSendRecv");
 
 #ifdef HAVE_IFPACK2_MPI
@@ -971,7 +975,7 @@ namespace KB = KokkosBatched::Experimental;
 #endif
       }
 
-      void syncRecv() {
+      void syncRecvVar0() {
         IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::AsyncableImport::SyncRecv");
 #ifdef HAVE_IFPACK2_MPI
         // receive async.
@@ -986,15 +990,36 @@ namespace KB = KokkosBatched::Experimental;
 #endif
       }
 
+      ///
+      /// front interface
+      ///
+      void asyncSendRecv(const impl_scalar_type_2d_view_tpetra &mv) {
+#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(IFPACK2_BLOCKTRIDICONTAINER_USE_EXEC_SPACE_INSTANCES)
+        asyncSendRecvVar1(mv);
+#else
+        asyncSendRecvVar0(mv);
+#endif
+#else
+        asyncSendRecvVar0(mv);
+#endif
+      }
+      void syncRecv() {
+#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(IFPACK2_BLOCKTRIDICONTAINER_USE_EXEC_SPACE_INSTANCES)
+        syncRecvVar1();
+#else
+        syncRecvVar0();
+#endif
+#else
+        syncRecvVar0();
+#endif
+      }
+
       void syncExchange(const impl_scalar_type_2d_view_tpetra &mv) {
         IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::AsyncableImport::SyncExchange");
-#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_STREAM)
-        asyncSendRecvViaCudaStream(mv);
-        syncRecvViaCudaStream();
-#else
         asyncSendRecv(mv);
         syncRecv();
-#endif
       }
 
       impl_scalar_type_2d_view_tpetra getRemoteMultiVectorLocalView() const { return remote_multivector; }
