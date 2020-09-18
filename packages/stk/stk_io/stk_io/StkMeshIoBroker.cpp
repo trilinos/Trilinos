@@ -466,6 +466,7 @@ void StkMeshIoBroker::create_input_mesh()
     process_nodeblocks(*region,    meta_data());
     process_elementblocks(*region, meta_data());
     process_sidesets(*region,      meta_data());
+    process_face_blocks(*region,   meta_data());
     process_edge_blocks(*region,   meta_data());
 
     if(m_autoLoadDistributionFactorPerNodeSet) {
@@ -685,6 +686,7 @@ void StkMeshIoBroker::populate_mesh_entitysets(bool i_started_modification_cycle
 
     if(m_sidesetFaceCreationBehavior!=STK_IO_SIDE_CREATION_USING_GRAPH_TEST) {
         process_edge_blocks(*region, bulk_data());
+        process_face_blocks(*region, bulk_data());
         process_sidesets(*region, bulk_data(), elemIdMovedToProc, m_sidesetFaceCreationBehavior);
         bool saveOption = bulk_data().use_entity_ids_for_resolving_sharing();
         bulk_data().set_use_entity_ids_for_resolving_sharing(true);
@@ -693,6 +695,7 @@ void StkMeshIoBroker::populate_mesh_entitysets(bool i_started_modification_cycle
     } else {
         bulk_data().initialize_face_adjacent_element_graph();
         process_edge_blocks(*region, bulk_data());
+        process_face_blocks(*region, bulk_data());
         process_sidesets(*region, bulk_data(), elemIdMovedToProc, m_sidesetFaceCreationBehavior);
         stk_mesh_modification_end_after_node_sharing_resolution();
     }

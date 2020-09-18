@@ -942,8 +942,6 @@ void disconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPa
 
   clean_up_aura(bulk, info);
 
-  info.flush();
-
   bulk.modification_end();
 
   if (bulk.has_face_adjacent_element_graph()) {
@@ -969,6 +967,29 @@ stk::mesh::EntityVector extract_nodes(const stk::mesh::BulkData& bulk, LinkInfo&
   return nodes;
 }
 
+stk::mesh::PartVector get_block_parts(const BlockPairVector& blocksToDisconnect)
+{
+  stk::mesh::PartVector blockParts;
+
+  for(const BlockPair& blockPair : blocksToDisconnect) {
+    stk::util::insert_keep_sorted_and_unique(blockPair.first, blockParts);
+    stk::util::insert_keep_sorted_and_unique(blockPair.second, blockParts);
+  }
+
+  return blockParts;
+}
+
+stk::mesh::EntityVector get_affected_nodes(const stk::mesh::BulkData& bulk, const BlockPairVector& blocksToDisconnect)
+{
+  stk::mesh::EntityVector nodes;
+  stk::mesh::PartVector blockParts = get_block_parts(blocksToDisconnect);
+  stk::mesh::Selector partSelector = stk::mesh::selectUnion(blockParts);
+
+  bulk.get_entities(stk::topology::NODE_RANK, partSelector, nodes);
+
+  return nodes;
+}
+
 void reconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPair>& blockPairsToReconnect,
                            LinkInfo& info)
 {
@@ -976,24 +997,15 @@ void reconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPai
 
   sanitize_node_map(info.originalNodeMap, info);
 
-  info.flush();
-
   determine_local_reconnect_node_id(bulk, blockPairsToReconnect, info);
-
-  info.flush();
 
   update_reconnect_node_sharing(bulk, blockPairsToReconnect, info);
 
-  info.flush();
-
   communicate_reconnect_node_information(bulk, info);
-
-  info.flush();
 
   for(const BlockPair & blockPair : blockPairsToReconnect) {
     reconnect_block_pair(bulk, blockPair, info);
   }
-  info.flush();
 
   clean_up_aura(bulk, info);
 

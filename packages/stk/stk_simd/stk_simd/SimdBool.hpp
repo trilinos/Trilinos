@@ -41,12 +41,9 @@ namespace simd {
 class Bool {
 
  public:
-  using ScalarType = bool;
-  using FloatingPointType = stk::simd::Double;
-    
   STK_MATH_FORCE_INLINE Bool() {}
     
-  STK_MATH_FORCE_INLINE Bool(ScalarType x)
+  STK_MATH_FORCE_INLINE Bool(bool x)
     : _data(x)
     {
     }

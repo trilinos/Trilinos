@@ -1754,13 +1754,14 @@ void test_connection_pairs(stk::mesh::BulkData& bulk, stk::mesh::PartVector& all
 
 void test_user_block_disconnect(stk::mesh::BulkData& bulk,
                                BlockConnectionVector& blockPairConnectionsToDisconnect,
-                               unsigned expectedFinalCommonNodeCount)
+                               unsigned expectedFinalCommonNodeCount,
+                               stk::tools::DisconnectBlocksOption disconnectOptions = stk::tools::DisconnectBlocksOption())
 {
   stk::mesh::PartVector allBlocksInMesh;
   stk::tools::impl::get_all_blocks_in_mesh(bulk, allBlocksInMesh);
   stk::tools::BlockPairVector blockPairsToDisconnect = convert_connection_vector_to_pair_vector(bulk, blockPairConnectionsToDisconnect);
 
-  stk::tools::disconnect_user_blocks(bulk, blockPairsToDisconnect);
+  stk::tools::disconnect_user_blocks(bulk, blockPairsToDisconnect, disconnectOptions);
 
   test_connection_pairs(bulk, allBlocksInMesh, blockPairConnectionsToDisconnect, expectedFinalCommonNodeCount);
 }
@@ -2023,7 +2024,7 @@ TEST(TestDisconnectInputFile, input_mesh)
   double meshReadTime = stk::wall_time();
 
   std::cout << "Starting disconnect block sequence" << std::endl;
-  stk::tools::disconnect_user_blocks(bulk, disconnectBlockVec, stk::tools::DISCONNECT_LOCAL, stk::tools::SNIP_LOCAL);
+  stk::tools::disconnect_user_blocks(bulk, disconnectBlockVec);
 
   double disconnectTime = stk::wall_time();
 
@@ -2058,6 +2059,26 @@ TEST_F(TestDisconnectUserBlocks, disconnect_named_user_blocks_8block_8hex_opposi
     BlockConnectionVector blockPairsToDisconnectPairs{BlockConnection("block_1","block_2",0), BlockConnection("block_2","block_4",0), BlockConnection("block_2","block_6",0),
                                                       BlockConnection("block_3","block_7",0), BlockConnection("block_7","block_8",0), BlockConnection("block_5","block_7",0)};
     test_named_user_block_disconnect(get_bulk(), blockPairsToDisconnectPairs, 13u);
+  }
+}
+
+TEST_F(TestDisconnectUserBlocks, disconnect_user_blocks_preserve_snip_option_4block_4hex)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
+    stk::mesh::PartVector blocks = setup_mesh_4block_4hex(get_bulk());
+
+    BlockConnectionVector blockPairsToDisconnectPairs{BlockConnection("block_2","block_1",0), BlockConnection("block_2","block_4",0), BlockConnection("block_2","block_3",0)};
+    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectPairs, 6u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_GLOBAL, stk::tools::PRESERVE_INITIAL_HINGES));
+  }
+}
+
+TEST_F(TestDisconnectUserBlocks, disconnect_user_blocks_snip_all_hinges_snip_option_4block_4hex)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
+    stk::mesh::PartVector blocks = setup_mesh_4block_4hex(get_bulk());
+
+    BlockConnectionVector blockPairsToDisconnectPairs{BlockConnection("block_2","block_1",0), BlockConnection("block_2","block_4",0)};
+    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectPairs, 6u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_GLOBAL, stk::tools::SNIP_ALL_HINGES));
   }
 }
 

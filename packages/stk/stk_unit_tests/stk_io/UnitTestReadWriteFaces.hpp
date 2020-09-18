@@ -31,15 +31,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef UNIT_TEST_READ_WRITE_EDGES_HPP
-#define UNIT_TEST_READ_WRITE_EDGES_HPP
+#ifndef UNIT_TEST_READ_WRITE_FACES_HPP
+#define UNIT_TEST_READ_WRITE_FACES_HPP
 
 #include <stk_topology/topology.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
-#include <stk_mesh/baseImpl/ConnectEdgesImpl.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -54,16 +53,16 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include "UnitTestReadWriteUtils.hpp"
 
-class StkEdgeIoTest : public stk::unit_test_util::MeshFixture
+class StkFaceIoTest : public stk::unit_test_util::MeshFixture
 {
 public:
-  StkEdgeIoTest() : stk::unit_test_util::MeshFixture()
+  StkFaceIoTest() : stk::unit_test_util::MeshFixture(), stkIoInput(), stkIoOutput()
   {
   }
 
-  void setup_edge_mesh(unsigned numBlocks);
+  void setup_face_mesh(unsigned numBlocks);
 
-  void setup_mesh_with_edges(unsigned numBlocks);
+  void setup_mesh_with_faces(unsigned numBlocks);
 
   void setup_mesh_with_edges_and_faces(unsigned numBlocks);
 
@@ -86,16 +85,21 @@ public:
 
   void set_expected_values(io_test_utils::ExpectedValues& expectedValues_);
 
-  virtual ~StkEdgeIoTest()
+  virtual ~StkFaceIoTest()
   {
-    unlink(fileName.c_str());
+    //unlink(fileName.c_str());
   }
+
+  void set_file_name(const std::string& newName)
+  { fileName = newName; }
 
 protected:
   std::string fileName = "output.exo";
   std::string edgePartName = "edgeBlock";
   std::string facePartName = "faceBlock";
   io_test_utils::ExpectedValues expectedValues;
+  stk::io::StkMeshIoBroker stkIoInput;
+  stk::io::StkMeshIoBroker stkIoOutput;
 };
 
 #endif
