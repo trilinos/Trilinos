@@ -45,7 +45,7 @@ public:
       case StepperLeapfrogModifierXBase<Scalar>::X_BEFORE_X_UPDATE:
       case StepperLeapfrogModifierXBase<Scalar>::X_BEFORE_EXPLICIT_EVAL:
       case StepperLeapfrogModifierXBase<Scalar>::X_BEFORE_XDOT_UPDATE:
-      case StepperLeapfrogModifierXBase<Scalar>::XDOT_END_STEP:
+      case StepperLeapfrogModifierXBase<Scalar>::X_END_STEP:
       {
         // No-op.
         break;
