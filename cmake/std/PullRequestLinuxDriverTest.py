@@ -313,7 +313,7 @@ def parse_args():
                 "Trilinos_pullrequest_intel_17.0.1":
                      ["sems-env",
                      "sems-git/2.10.1",
-                     "sems-gcc/4.9.3",
+                     "sems-gcc/5.3.0",
                      "sems-intel/17.0.1",
                      "sems-mpich/3.2",
                      "sems-python/2.7.9",
