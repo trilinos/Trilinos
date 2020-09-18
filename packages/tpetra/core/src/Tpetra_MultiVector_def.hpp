@@ -3615,11 +3615,11 @@ namespace Tpetra {
 
     if (this->isConstantStride ()) {
       if (useHostVersion) {
-        // DEEP_COPY REVIEW - HOST-TO-DEVICE
+        // DEEP_COPY REVIEW - HOST-TO-HOST
         Kokkos::deep_copy (A_view, srcView_host);
       }
       else {
-        // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
+        // DEEP_COPY REVIEW - DEVICE-TO-HOST
         Kokkos::deep_copy (A_view, srcView_dev);
       }
     }
