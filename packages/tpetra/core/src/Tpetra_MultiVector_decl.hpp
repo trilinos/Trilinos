@@ -1735,7 +1735,7 @@ namespace Tpetra {
       using host_norms_view_type = Kokkos::View<mag_type*, Kokkos::HostSpace>;
       host_norms_view_type h_norms ("Tpetra::MV::h_norms", norms.extent (0));
       this->norm1 (h_norms);
-      // DEEP_COPY REVIEW - DEVICE-TO-HOST
+      // DEEP_COPY REVIEW - HOST-TO-DEVICE
       Kokkos::deep_copy (norms, h_norms);
     }
 
@@ -1914,7 +1914,7 @@ namespace Tpetra {
       using host_norms_view_type = Kokkos::View<mag_type*, Kokkos::HostSpace>;
       host_norms_view_type h_norms ("Tpetra::MV::h_norms", norms.extent (0));
       this->normInf (h_norms);
-      // DEEP_COPY REVIEW - DEVICE-TO-HOST
+      // DEEP_COPY REVIEW - HOST-TO-DEVICE
       Kokkos::deep_copy (norms, h_norms);
     }
 
