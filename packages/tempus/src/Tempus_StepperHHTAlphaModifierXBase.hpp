@@ -41,7 +41,7 @@ namespace Tempus {
  *    \State Solve for $x_{n+1}$ using the HHT one-step update.       
  *    \State \quad {\it modifierX.modify(x, time, dt, X\_AFTER\_SOLVE)}                                                           
  *    \State Update $\dot x_{n+1}$.   
- *    \State \quad {\it modifierX.modify(x, time, dt, XDOT\_END\_STEP)}
+ *    \State \quad {\it modifierX.modify(x, time, dt, X\_END\_STEP)}
  *  \end{algorithmic}
  *  \f}
  */
@@ -98,11 +98,11 @@ private:
       }
       case StepperHHTAlphaAppAction<Scalar>::END_STEP:
       {
-        modType = XDOT_END_STEP;
-        if (workingState->getXDot() != Teuchos::null)
-          x = workingState->getXDot();
+        modType = X_END_STEP;
+        if (workingState->getX() != Teuchos::null)
+          x = workingState->getX();
         else
-          x = stepper->getStepperXDot();
+          x = stepper->getStepperX();
         break;
       }
       default:
@@ -120,7 +120,7 @@ public:
     X_BEGIN_STEP,     ///< Modify \f$x\f$ at the beginning of the step.
     X_BEFORE_SOLVE,   ///< Modify \f$x\f$ before the implicit solve.
     X_AFTER_SOLVE,    ///< Modify \f$x\f$ after the implicit solve.
-    XDOT_END_STEP     ///< Modify \f$\dot{x}\f$ at the end of the step.
+    X_END_STEP        ///< Modify \f$x\f$ at the end of the step.
   };
 
   /// Modify solution based on the MODIFIER_TYPE.
