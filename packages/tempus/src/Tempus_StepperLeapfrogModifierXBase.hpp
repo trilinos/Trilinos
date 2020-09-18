@@ -41,7 +41,7 @@ namespace Tempus {
  *    \State Compute $x_{n+1} = x_n + \Delta t \dot{x}_{n+1/2}$                                                  
  *    \State \quad {\it appAction.execute(solutionHistory, stepper, X\_BEFORE\_EXPLICIT\_EVAL)}                
  *    \State Evaluate $\ddot{x}_{n+1} = f(x_{n+1},t_{n+1})$                                                      
- *    \State \quad {\it appAction.execute(solutionHistory, stepper, XDOT\_BEFORE\_XDOT\_UPDATE)}          
+ *    \State \quad {\it appAction.execute(solutionHistory, stepper, X\_BEFORE\_XDOT\_UPDATE)}          
  *    \State Compute half-step sync $\dot{x}_{n+1} = \dot{x}_{n+1/2} + 0.5 \Delta t \ddot{x}_{n+1}$ or full step 
 $\dot{x}_{n+3/2} = \dot{x}_{n+1/2} + \Delta t \ddot{x}_{n+1}$     
  *  \end{algorithmic}
@@ -113,8 +113,8 @@ private:
       }
       case StepperLeapfrogAppAction<Scalar>::END_STEP:
       {
-        modType = XDOT_END_STEP;
-        x = stepper->getStepperXDot();
+        modType = X_END_STEP;
+        x = stepper->getStepperX();
         break;
       }
       default:
@@ -134,7 +134,7 @@ public:
     X_BEFORE_X_UPDATE,     ///< Modify \f$x\f$ before updating x   
     X_BEFORE_EXPLICIT_EVAL,   ///< Modify \f$x\f$ before the explicit ME evaluation
     X_BEFORE_XDOT_UPDATE, //Modify \f$x\f$ Before updating xDot 
-    XDOT_END_STEP     ///< Modify \f$\dot{x}\f$ at the end of the step.
+    X_END_STEP     ///< Modify \f$\dot{x}\f$ at the end of the step.
   };
 
   /// Modify solution based on the MODIFIER_TYPE.
