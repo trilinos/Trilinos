@@ -382,7 +382,7 @@ namespace Tpetra {
     in_view_type numAllocPerRowIn (numEntPerRow.getRawPtr (), lclNumRows);
     nc_view_type numAllocPerRowOut ("Tpetra::CrsGraph::numAllocPerRow",
                                     lclNumRows);
-    // DEEP_COPY REVIEW - HOST-TO-DEVICE
+    // DEEP_COPY REVIEW - HOST-TO-HOST
     Kokkos::deep_copy (numAllocPerRowOut, numAllocPerRowIn);
     k_numAllocPerRow_ = numAllocPerRowOut;
 
@@ -519,7 +519,7 @@ namespace Tpetra {
     in_view_type numAllocPerRowIn (numEntPerRow.getRawPtr (), lclNumRows);
     nc_view_type numAllocPerRowOut ("Tpetra::CrsGraph::numAllocPerRow",
                                     lclNumRows);
-    // DEEP_COPY REVIEW - HOST-TO-DEVICE
+    // DEEP_COPY REVIEW - HOST-TO-HOST
     Kokkos::deep_copy (numAllocPerRowOut, numAllocPerRowIn);
     k_numAllocPerRow_ = numAllocPerRowOut;
 
@@ -1251,7 +1251,7 @@ namespace Tpetra {
         std::cerr << os.str();
       }
       row_ent_type numRowEnt (ViewAllocateWithoutInitializing (label), numRows);
-      // DEEP_COPY REVIEW - VALUE-TO-DEVICE
+      // DEEP_COPY REVIEW - VALUE-TO-HOST
       Kokkos::deep_copy (numRowEnt, static_cast<size_t> (0)); // fill w/ 0s
       this->k_numRowEntries_ = numRowEnt; // "commit" our allocation
     }
