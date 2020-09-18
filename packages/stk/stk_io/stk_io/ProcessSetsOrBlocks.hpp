@@ -340,6 +340,8 @@ void process_hidden_nodesets(Ioss::Region &io, stk::mesh::BulkData & bulk)
 
 void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk, const stk::mesh::EntityIdProcMap &elemIdMovedToProc, stk::io::StkMeshIoBroker::SideSetFaceCreationBehavior behavior);
 void process_sidesets(Ioss::Region &region, stk::mesh::MetaData &meta);
+void process_face_blocks(Ioss::Region &region, stk::mesh::BulkData &bulk);
+void process_face_blocks(Ioss::Region &region, stk::mesh::MetaData &meta);
 void process_edge_blocks(Ioss::Region &region, stk::mesh::BulkData &bulk);
 void process_edge_blocks(Ioss::Region &region, stk::mesh::MetaData &meta);
 

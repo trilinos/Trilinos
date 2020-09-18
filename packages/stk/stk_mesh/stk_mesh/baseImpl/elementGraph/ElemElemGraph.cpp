@@ -61,7 +61,7 @@ void SharedSidesCommunication::pack_shared_side_nodes_of_elements(stk::CommSpars
     }
 }
 
-SideNodeToReceivedElementDataMap SharedSidesCommunication::unpack_side_data(stk::CommSparse comm) const
+SideNodeToReceivedElementDataMap SharedSidesCommunication::unpack_side_data(stk::CommSparse &comm) const
 {
     SideNodeToReceivedElementDataMap element_side_data_received;
     std::vector<stk::mesh::EntityKey> node_keys;

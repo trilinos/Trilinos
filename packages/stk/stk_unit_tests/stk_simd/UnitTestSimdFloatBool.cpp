@@ -35,7 +35,7 @@
 #include <cmath>
 #include "SimdBoolFixture.hpp"
 
-using SimdFloatBoolOperator = SimdBoolFixture<stk::simd::Boolf, stk::simd::nfloats>;
+using SimdFloatBoolOperator = SimdBoolFixture<stk::simd::Boolf>;
 
 TEST_F(SimdFloatBoolOperator, selectByLane_allTrue)
 {

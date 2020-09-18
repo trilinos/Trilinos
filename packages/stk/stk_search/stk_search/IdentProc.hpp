@@ -65,7 +65,7 @@ public:
 
   KOKKOS_FORCEINLINE_FUNCTION void set_id(ident_type const& x_id) { m_value.second = x_id; }
   KOKKOS_FORCEINLINE_FUNCTION void set_proc(proc_type const& x_proc) { m_value.first = x_proc; }
-
+  KOKKOS_FORCEINLINE_FUNCTION self_type& operator=(self_type const& rhs) { m_value = rhs.m_value; return *this;}
   KOKKOS_FORCEINLINE_FUNCTION bool operator==(self_type const& rhs) const { return m_value == rhs.m_value; }
   KOKKOS_FORCEINLINE_FUNCTION bool operator!=(self_type const& rhs) const { return m_value != rhs.m_value; }
   KOKKOS_FORCEINLINE_FUNCTION bool operator< (self_type const& rhs) const { return m_value < rhs.m_value; }

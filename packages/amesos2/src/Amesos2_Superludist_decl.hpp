@@ -308,9 +308,9 @@ private:
   /// Stores the values of the nonzero entries for SuperLU_DIST
   Teuchos::Array<slu_type> nzvals_;
   /// Stores the row indices of the nonzero entries
-  Teuchos::Array<int> colind_;
+  Teuchos::Array<SLUD::int_t> colind_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
-  Teuchos::Array<int> rowptr_;
+  Teuchos::Array<SLUD::int_t> rowptr_;
   /// 1D store for B values
   mutable Teuchos::Array<slu_type> bvals_;
   /// 1D store for X values
