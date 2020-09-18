@@ -253,7 +253,7 @@ gblNormImpl (const RV& normsOut,
     // MPI doesn't allow aliasing of arguments, so we have to make
     // a copy of the local sum.
     RV lclNorms ("MV::normImpl lcl", numVecs);
-    // DEEP_COPY REVIEW - HOST-TO-DEVICE
+    // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
     Kokkos::deep_copy (lclNorms, normsOut);
     const mag_type* const lclSum = lclNorms.data ();
     mag_type* const gblSum = normsOut.data ();
