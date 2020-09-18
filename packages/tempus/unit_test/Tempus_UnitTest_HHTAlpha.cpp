@@ -339,8 +339,8 @@ public:
   /// Constructor                                                                                               
   StepperHHTAlphaModifierXTest()
     : testX_BEGIN_STEP(false), testX_BEFORE_SOLVE(false),
-      testX_AFTER_SOLVE(false), testXDOT_END_STEP(false),
-      testX(-0.99), testXDot(-0.99),
+      testX_AFTER_SOLVE(false), testX_END_STEP(false),
+      testXbegin(-0.99), testXend(-0.99),
       testDt(-1.5), testTime(-1.5)
   {}
 
@@ -357,7 +357,7 @@ public:
     case StepperHHTAlphaModifierXBase<double>::X_BEGIN_STEP:
     {
       testX_BEGIN_STEP = true;
-      testX = get_ele(*(x), 0);
+      testXbegin = get_ele(*(x), 0);
       break;
     }
     case StepperHHTAlphaModifierXBase<double>::X_BEFORE_SOLVE:
@@ -372,10 +372,10 @@ public:
       testTime = time;
       break;
     }
-    case StepperHHTAlphaModifierXBase<double>::XDOT_END_STEP:
+    case StepperHHTAlphaModifierXBase<double>::X_END_STEP:
     {
-      testXDOT_END_STEP = true;
-      testXDot = get_ele(*(x), 0);
+      testX_END_STEP = true;
+      testXend = get_ele(*(x), 0);
       break;
     }
     default:
@@ -387,9 +387,9 @@ public:
   bool testX_BEGIN_STEP;
   bool testX_BEFORE_SOLVE;
   bool testX_AFTER_SOLVE;
-  bool testXDOT_END_STEP;
-  double testX;
-  double testXDot;
+  bool testX_END_STEP;
+  double testXbegin;
+  double testXend;
   double testDt;
   double testTime;
 };  
@@ -419,15 +419,13 @@ TEUCHOS_UNIT_TEST(HHTAlpha, AppAction_ModifierX)
   TEST_COMPARE(modifierX->testX_BEGIN_STEP, ==, true);
   TEST_COMPARE(modifierX->testX_BEFORE_SOLVE, ==, true);
   TEST_COMPARE(modifierX->testX_AFTER_SOLVE, ==, true);
-  TEST_COMPARE(modifierX->testXDOT_END_STEP, ==, true);
+  TEST_COMPARE(modifierX->testX_END_STEP, ==, true);
 
   // Testing that values can be set through the Modifier.                                                       
-  auto x = solutionHistory->getCurrentState()->getX();
-  TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-14);
-  // Temporary memory for xDot is not guarranteed to exist outside the Stepper.                                 
-  auto xDot = solutionHistory->getWorkingState()->getXDot();
-  if (xDot == Teuchos::null) xDot = stepper->getStepperXDot();
-  TEST_FLOATING_EQUALITY(modifierX->testXDot, get_ele(*(xDot), 0),1.0e-14);
+  auto xbegin = solutionHistory->getCurrentState()->getX();
+  TEST_FLOATING_EQUALITY(modifierX->testXbegin, get_ele(*(xbegin), 0), 1.0e-14);
+  auto xend = solutionHistory->getWorkingState()->getX();
+  TEST_FLOATING_EQUALITY(modifierX->testXend, get_ele(*(xend), 0),1.0e-14);
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
   TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, 1.0e-14);
   auto time = solutionHistory->getWorkingState()->getTime();
