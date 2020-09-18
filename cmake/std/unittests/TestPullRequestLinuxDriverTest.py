@@ -676,7 +676,7 @@ class Test_setEnviron(unittest.TestCase):
         expected_list = [mock.call('use', '/projects/sems/modulefiles/projects'),
                          mock.call('load', 'sems-env'),
                          mock.call('load', 'sems-git/2.10.1'),
-                         mock.call('load', 'sems-gcc/4.9.3'),
+                         mock.call('load', 'sems-gcc/5.3.0'),
                          mock.call('load', 'sems-intel/17.0.1'),
                          mock.call('load', 'sems-mpich/3.2'),
                          mock.call('load', 'sems-python/2.7.9'),
