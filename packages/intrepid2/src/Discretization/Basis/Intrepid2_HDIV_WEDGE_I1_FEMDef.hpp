@@ -69,35 +69,35 @@ namespace Intrepid2 {
         const auto z = input(2);
 
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        output.access(0, 0) = x/2.0;
-        output.access(0, 1) = (y - 1.0)/2.0;
+        output.access(0, 0) = x*2.0;
+        output.access(0, 1) = (y - 1.0)*2.0;
         output.access(0, 2) = 0.0;
 
-        output.access(1, 0) = x/2.0;
-        output.access(1, 1) = y/2.0;
+        output.access(1, 0) = x*2.0;
+        output.access(1, 1) = y*2.0;
         output.access(1, 2) = 0.0;
 
-        output.access(2, 0) = (x - 1.0)/2.0;
-        output.access(2, 1) = y/2.0;
+        output.access(2, 0) = (x - 1.0)*2.0;
+        output.access(2, 1) = y*2.0;
         output.access(2, 2) = 0.0;
 
         output.access(3, 0) = 0.0;
         output.access(3, 1) = 0.0;
-        output.access(3, 2) = z - 1.0;
+        output.access(3, 2) = (z - 1.0)/2.0;
 
         output.access(4, 0) = 0.0;
         output.access(4, 1) = 0.0;
-        output.access(4, 2) = 1.0 + z;
+        output.access(4, 2) = (1.0 + z)/2.0;
         break;
       }
       case OPERATOR_DIV: {
 
         // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
-        output.access(0) = 1.0;
-        output.access(1) = 1.0;
-        output.access(2) = 1.0;
-        output.access(3) = 1.0;
-        output.access(4) = 1.0;
+        output.access(0) = 4.0;
+        output.access(1) = 4.0;
+        output.access(2) = 4.0;
+        output.access(3) = 0.5;
+        output.access(4) = 0.5;
         break;
       }
       default: {
@@ -201,6 +201,19 @@ namespace Intrepid2 {
 
     this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
+
+    // dofCoords on host and create its mirror view to device
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+      dofCoeffs("dofCoeffsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+
+    // dofCoeffs are normals to edges
+    dofCoeffs(0,0) =  0.0;   dofCoeffs(0,1) = -0.5;   dofCoeffs(0,2) =  0.0;
+    dofCoeffs(1,0) =  0.5;   dofCoeffs(1,1) =  0.5;   dofCoeffs(1,2) =  0.0;
+    dofCoeffs(2,0) = -0.5;   dofCoeffs(2,1) =  0.0;   dofCoeffs(2,2) =  0.0;
+    dofCoeffs(3,0) =  0.0;   dofCoeffs(3,1) =  0.0;   dofCoeffs(3,2) = -1.0;
+    dofCoeffs(4,0) =  0.0;   dofCoeffs(4,1) =  0.0;   dofCoeffs(4,2) =  1.0;
+
+    this->dofCoeffs_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoeffs);
   }
 
 }// namespace Intrepid2

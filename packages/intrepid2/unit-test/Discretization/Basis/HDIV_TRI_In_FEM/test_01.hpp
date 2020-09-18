@@ -211,9 +211,13 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
 
     //Normals at each edge
     DynRankViewHostScalarValueType ConstructWithLabelScalar(normals, cardinality, dim); // normals at each point basis point
-    normals(0,0)  =  0.0; normals(0,1)  = -1.0;
-    normals(1,0)  =  1.0; normals(1,1)  =  1.0;
-    normals(2,0)  = -1.0; normals(2,1)  =  0.0;
+    shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
+    for (int sideId = 0; sideId < 3; ++sideId) {
+      auto normal = Kokkos::subview(normals, sideId, Kokkos::ALL());
+    CellTools<Kokkos::HostSpace::execution_space>::getReferenceSideNormal( normal ,
+        sideId ,
+        tri_3 );
+    }
 
     const auto allTags = triBasis.getAllDofTags();
 
@@ -250,6 +254,12 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     errorFlag = -1000;
   };
+
+  // Intrepid2 basis have been redefined and they are no longer
+  // equivalent to FIAT basis. However they are proportional to the FIAT basis
+  // with a scaling that depends on the geometric entity (points, edge, face, cell)
+  // associated to the basis
+  scalar_type scaling_factor[4] = {0,2,1,0};
 
   try {
 
@@ -332,11 +342,13 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
           0.000000000000000e+00, 0.000000000000000e+00
       };
 
+      const auto allTags = triBasis.getAllDofTags();
       ordinal_type cur=0;
       for (ordinal_type i=0;i<cardinality;i++) {
+        auto scaling = scaling_factor[allTags(i,0)];
         for (ordinal_type j=0;j<np_lattice;j++) {
           for (ordinal_type k=0;k<dim; k++) {
-            if (std::abs( h_basisAtLattice(i,j,k) - fiat_vals[cur] ) > tol ) {
+            if (std::abs( h_basisAtLattice(i,j,k) - scaling*fiat_vals[cur] ) > tol ) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -344,8 +356,8 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
               *outStream << " At multi-index { ";
               *outStream << i << " " << j << " " << k;
               *outStream << "}  computed value: " <<  h_basisAtLattice(i,j,k)
-                                  << " but correct value: " << fiat_vals[cur] << "\n";
-              *outStream << "Difference: " << std::fabs(  h_basisAtLattice(i,j,k) - fiat_vals[cur] ) << "\n";
+                                  << " but correct value: " << scaling*fiat_vals[cur] << "\n";
+              *outStream << "Difference: " << std::fabs(  h_basisAtLattice(i,j,k) - scaling*fiat_vals[cur] ) << "\n";
             }
             cur++;
           }
@@ -442,11 +454,12 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
           -9.000000000000000e+00
       };
 
-
+      const auto allTags = triBasis.getAllDofTags();
       ordinal_type cur=0;
       for (ordinal_type i=0;i<cardinality;i++) {
+        auto scaling = scaling_factor[allTags(i,0)];
         for (ordinal_type j=0;j<np_lattice;j++) {
-          if (std::abs( h_basisDivAtLattice(i,j) - fiat_divs[cur] ) > tol ) {
+          if (std::abs( h_basisDivAtLattice(i,j) - scaling*fiat_divs[cur] ) > tol ) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -454,8 +467,8 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
             *outStream << " At multi-index { ";
             *outStream << i << " " << j;
             *outStream << "}  computed value: " <<  h_basisDivAtLattice(i,j)
-                                  << " but correct value: " << fiat_divs[cur] << "\n";
-            *outStream << "Difference: " << std::fabs(  h_basisDivAtLattice(i,j) - fiat_divs[cur] ) << "\n";
+                                  << " but correct value: " << scaling*fiat_divs[cur] << "\n";
+            *outStream << "Difference: " << std::fabs(  h_basisDivAtLattice(i,j) - scaling*fiat_divs[cur] ) << "\n";
           }
           cur++;
         }
