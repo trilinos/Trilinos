@@ -107,7 +107,7 @@ public:
 private:
     void communicate_element_sides();
     void pack_shared_side_nodes_of_elements(stk::CommSparse &comm) const;
-    SideNodeToReceivedElementDataMap unpack_side_data(stk::CommSparse comm) const;
+    SideNodeToReceivedElementDataMap unpack_side_data(stk::CommSparse &comm) const;
 private:
     stk::mesh::BulkData& m_bulkData;
     const impl::ElemSideToProcAndFaceId & m_elementSidesToSend;

@@ -332,6 +332,39 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
 }
 
 template<typename INT>
+void process_faces(stk::mesh::BulkData& bulk, std::vector<INT>& face_ids, std::vector<INT>& connectivity,
+                  int nodes_per_face, size_t offset, stk::mesh::PartVector& faceParts)
+{
+    stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+    stk::mesh::EntityVector faces;
+    bulk.declare_entities(stk::topology::FACE_RANK, face_ids, faceParts, faces);
+    stk::mesh::Part& nodePart = meta.get_topology_root_part(stk::topology::NODE);
+    stk::mesh::PartVector nodeParts = {&nodePart};
+    stk::mesh::Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
+    stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
+
+    size_t face_count = face_ids.size();
+
+    for(size_t i=0; i<face_count; ++i) {
+        INT *conn = &connectivity[i*nodes_per_face];
+        stk::mesh::Entity face = faces[i];
+
+        bulk.set_local_id(face, offset + i);
+
+        for(int j = 0; j < nodes_per_face; ++j)
+        {
+            stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, conn[j]);
+            if (!bulk.is_valid(node)) {
+                node = bulk.declare_node(conn[j], nodeParts);
+            }
+            bulk.declare_relation(face, node, j, perm, scratch1, scratch2, scratch3);
+        }
+        stk::mesh::impl::connect_face_to_elements(bulk, face);
+        stk::mesh::impl::connect_face_to_edges(bulk, face);
+    }
+}
+
+template<typename INT>
 void process_edges(stk::mesh::BulkData& bulk, std::vector<INT>& edge_ids, std::vector<INT>& connectivity,
                   int nodes_per_edge, size_t offset, stk::mesh::PartVector& edgeParts)
 {
@@ -433,6 +466,33 @@ void create_shared_edges(stk::mesh::BulkData& bulk, stk::mesh::Part* part)
 }
 
 template <typename INT>
+void process_face_entity(const Ioss::FaceBlock* fb, stk::mesh::BulkData & bulk)
+{
+    assert(fb->type() == Ioss::FACEBLOCK);
+
+    const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
+
+    Ioss::Region *region = fb->get_database()->get_region();
+
+    stk::mesh::Part *part = get_part_for_grouping_entity(*region, meta, fb);
+    ThrowRequireMsg(part != nullptr, " INTERNAL_ERROR: Part for edge block: " << fb->name() << " does not exist");
+    stk::mesh::PartVector faceParts = {part};
+
+    stk::topology topo = part->topology();
+    ThrowRequireMsg( topo != stk::topology::INVALID_TOPOLOGY, " INTERNAL_ERROR: Part " << part->name() << " has invalid topology");
+
+    std::vector<INT> face_ids;
+    std::vector<INT> connectivity ;
+
+    fb->get_field_data("ids", face_ids);
+    fb->get_field_data("connectivity", connectivity);
+
+    int nodes_per_face = topo.num_nodes();
+    size_t offset = fb->get_offset();
+    process_faces<INT>(bulk, face_ids, connectivity, nodes_per_face, offset, faceParts);
+}
+
+template <typename INT>
 void process_edge_entity(const Ioss::EdgeBlock* eb, stk::mesh::BulkData & bulk)
 {
     assert(eb->type() == Ioss::EDGEBLOCK);
@@ -461,6 +521,16 @@ void process_edge_entity(const Ioss::EdgeBlock* eb, stk::mesh::BulkData & bulk)
     create_shared_edges(bulk, part);
 }
 
+
+void process_face_entity(const Ioss::FaceBlock* fb, stk::mesh::BulkData & bulk)
+{
+  if (stk::io::db_api_int_size(fb) == 4) {
+    process_face_entity<int>(fb, bulk);
+  }
+  else {
+    process_face_entity<int64_t>(fb, bulk);
+  }
+}
 
 void process_edge_entity(const Ioss::EdgeBlock* eb, stk::mesh::BulkData & bulk)
 {
@@ -522,6 +592,17 @@ void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk, const stk
     move_sideset_to_follow_element(bulk, elemIdMovedToProc, sidesToMove);
 }
 
+void process_face_blocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
+{
+    const Ioss::FaceBlockContainer& face_blocks = region.get_face_blocks();
+
+    for(const Ioss::FaceBlock* faceBlock : face_blocks) {
+        if(stk::io::include_entity(faceBlock)) {
+            process_face_entity(faceBlock, bulk);
+        }
+    }
+}
+
 void process_edge_blocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 {
     const Ioss::EdgeBlockContainer& edge_blocks = region.get_edge_blocks();
@@ -531,6 +612,12 @@ void process_edge_blocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
             process_edge_entity(edgeBlock, bulk);
         }
     }
+}
+
+void process_face_blocks(Ioss::Region &region, stk::mesh::MetaData &meta)
+{
+  const Ioss::FaceBlockContainer& face_blocks = region.get_face_blocks();
+  stk::io::default_part_processing(face_blocks, meta);
 }
 
 void process_edge_blocks(Ioss::Region &region, stk::mesh::MetaData &meta)

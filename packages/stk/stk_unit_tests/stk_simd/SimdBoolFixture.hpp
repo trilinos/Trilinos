@@ -38,11 +38,12 @@
 
 #include "stk_simd/Simd.hpp"
 
-template<typename SimdType, int SIZE>
+template<typename SimdType>
 class SimdBoolFixture : public ::testing::Test
 {
 public:
-  using FloatingPointType = typename SimdType::FloatingPointType;
+  using FloatingPointType = typename stk::Traits<SimdType>::real_type;
+  using FloatingPointScalar = typename stk::Traits<FloatingPointType>::base_type;
 
   bool is_scalar()
   {
@@ -136,12 +137,14 @@ private:
 
   FloatingPointType zeros_ones()
   {
-    typename FloatingPointType::ScalarType data[SIZE];
+    FloatingPointScalar data[SIZE];
     for (int i=0; i<SIZE; i++) {
       data[i] = i%2;
     }
     return stk::simd::load(data);
   }
+
+  static constexpr int SIZE = stk::Traits<FloatingPointType>::length;
 
   bool m_valuesA[SIZE];
   bool m_valuesB[SIZE];

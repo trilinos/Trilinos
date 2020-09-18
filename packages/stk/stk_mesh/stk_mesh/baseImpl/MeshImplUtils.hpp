@@ -250,9 +250,13 @@ void convert_part_ordinals_to_parts(const stk::mesh::MetaData& meta,
                                     const OrdinalVector& input_ordinals,
                                     stk::mesh::PartVector& output_parts);
 
+bool are_any_parts_ranked(const stk::mesh::MetaData& meta,
+                          const OrdinalVector& partOrdinals);
+
 void filter_out(OrdinalVector& vec,
                 const OrdinalVector& parts,
-                OrdinalVector& removed);
+                OrdinalVector& removed,
+                bool trackRemoved = true);
 
 void merge_in(OrdinalVector& vec, const OrdinalVector& parts);
 
@@ -285,6 +289,7 @@ void check_declare_element_side_inputs(const BulkData & mesh,
                                        const unsigned localSideId);
 
 void connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge);
+void connect_face_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity face);
 
 } // namespace impl
 } // namespace mesh
