@@ -28,7 +28,13 @@ ENDFUNCTION()
 
 FUNCTION(SET_DIR_OWNER_AND_PERMS  dirPath  recurseFlag)
 
-  EXECUTE_PROCESS(COMMAND stat -c %U "${dirPath}"
+  IF (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    SET(STAT_ARG "-f")  # MacOSX stat
+  ELSE()
+    SET(STAT_ARG "-c")  # BinUtils stat
+  ENDIF()
+
+  EXECUTE_PROCESS(COMMAND stat ${STAT_ARG} %U "${dirPath}"
     OUTPUT_STRIP_TRAILING_WHITESPACE
     OUTPUT_VARIABLE  dirOwner)
 
