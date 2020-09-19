@@ -157,7 +157,7 @@ struct ComputeBasisCoeffsOnEdges_L2 {
 };
 
 template<typename ViewType1, typename ViewType2, typename ViewType3,
-typename ViewType4, typename ViewType5, typename ViewType6, typename ViewType7>
+typename ViewType4, typename ViewType5, typename ViewType6, typename ViewType7, typename ViewType8>
 struct ComputeBasisCoeffsOnFaces_L2 {
   const ViewType1 basisCoeffs_;
   const ViewType2 negPartialProj_;
@@ -173,10 +173,8 @@ struct ComputeBasisCoeffsOnFaces_L2 {
   const ViewType6 orts_;
   const ViewType7 targetAtTargetEPoints_;
   const ViewType2 targetDofAtTargetEPoints_;
-  const ViewType2 ortJacobian_;
   const ViewType2 faceCoeff_;
-  const ViewType2 refFacesTangents_;
-  const ViewType2 refFacesNormal_;
+  const ViewType8 faceParametrization_;
   ordinal_type fieldDim_;
   ordinal_type faceCardinality_;
   ordinal_type offsetBasis_;
@@ -193,16 +191,16 @@ struct ComputeBasisCoeffsOnFaces_L2 {
   ComputeBasisCoeffsOnFaces_L2(const ViewType1 basisCoeffs, ViewType2 negPartialProj,  const ViewType2 faceBasisDofAtBasisEPoints,
       const ViewType2 basisAtBasisEPoints, const ViewType3 basisEWeights,  const ViewType2 wBasisDofAtBasisEPoints,   const ViewType3 targetEWeights,
       const ViewType2 basisAtTargetEPoints, const ViewType2 wBasisDofAtTargetEPoints, const ViewType4 computedDofs, const ViewType5 tagToOrdinal,
-      const ViewType6 orts, const ViewType7 targetAtTargetEPoints, const ViewType2 targetDofAtTargetEPoints, const ViewType2 ortJacobian, const ViewType2 faceCoeff,
-      const ViewType2 refFacesTangents, const ViewType2 refFacesNormal, ordinal_type fieldDim, ordinal_type faceCardinality, ordinal_type offsetBasis,
+      const ViewType6 orts, const ViewType7 targetAtTargetEPoints, const ViewType2 targetDofAtTargetEPoints, const ViewType2 faceCoeff,
+      const ViewType2 faceParametrization, ordinal_type fieldDim, ordinal_type faceCardinality, ordinal_type offsetBasis,
       ordinal_type offsetTarget, ordinal_type numVertexEdgeDofs, ordinal_type numFaces, ordinal_type faceDim, ordinal_type faceDofDim,
       ordinal_type dim, ordinal_type iface, unsigned topoKey, bool isHCurlBasis, bool isHDivBasis) :
         basisCoeffs_(basisCoeffs), negPartialProj_(negPartialProj), faceBasisDofAtBasisEPoints_(faceBasisDofAtBasisEPoints),
         basisAtBasisEPoints_(basisAtBasisEPoints), basisEWeights_(basisEWeights), wBasisDofAtBasisEPoints_(wBasisDofAtBasisEPoints), targetEWeights_(targetEWeights),
         basisAtTargetEPoints_(basisAtTargetEPoints), wBasisDofAtTargetEPoints_(wBasisDofAtTargetEPoints),
         computedDofs_(computedDofs), tagToOrdinal_(tagToOrdinal), orts_(orts), targetAtTargetEPoints_(targetAtTargetEPoints),
-        targetDofAtTargetEPoints_(targetDofAtTargetEPoints), ortJacobian_(ortJacobian), faceCoeff_(faceCoeff),
-        refFacesTangents_(refFacesTangents), refFacesNormal_(refFacesNormal),
+        targetDofAtTargetEPoints_(targetDofAtTargetEPoints), faceCoeff_(faceCoeff),
+        faceParametrization_(faceParametrization),
         fieldDim_(fieldDim), faceCardinality_(faceCardinality), offsetBasis_(offsetBasis),
         offsetTarget_(offsetTarget), numVertexEdgeDofs_(numVertexEdgeDofs), numFaces_(numFaces),
         faceDim_(faceDim), faceDofDim_(faceDofDim), dim_(dim), iface_(iface), topoKey_(topoKey),
@@ -218,18 +216,20 @@ struct ComputeBasisCoeffsOnFaces_L2 {
     ordinal_type ort = fOrt[iface_];
     //Note: we are not considering the jacobian of the orientation map since it is simply a scalar term for the integrals and it does not affect the projection
 
-    auto ortJacobian = Kokkos::subview(ortJacobian_, ic, Kokkos::ALL(), Kokkos::ALL());
+    typename ViewType3::value_type data[3*3];
+    auto tangentsAndNormal = ViewType3(data, dim_, dim_);
+
+    if(isHCurlBasis_ || isHDivBasis_)
+    Impl::OrientationTools::getRefSideTangentsAndNormal(tangentsAndNormal, faceParametrization_,topoKey_, iface_, ort);
+
     if(isHCurlBasis_) {
-      Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, topoKey_, ort);
       for(ordinal_type d=0; d <dim_; ++d)
         for(ordinal_type itan=0; itan <faceDim_; ++itan) {
-          faceCoeff_(ic,d,itan) = 0;
-          for(ordinal_type jtan=0; jtan <faceDim_; ++jtan)
-            faceCoeff_(ic,d,itan) += refFacesTangents_(iface_,d, jtan)*ortJacobian(jtan,itan);
+          faceCoeff_(ic,d,itan) = tangentsAndNormal(itan,d);
         }
     } else if (isHDivBasis_) {
       for(ordinal_type d=0; d <dim_; ++d)
-        faceCoeff_(ic,d,0) = refFacesNormal_(iface_,d);
+        faceCoeff_(ic,d,0) = tangentsAndNormal(dim_-1,d);
     } else
       faceCoeff_(ic,0,0) = 1;
     for(ordinal_type j=0; j <faceCardinality_; ++j) {
@@ -595,34 +595,18 @@ ProjectionTools<SpT>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,
     edgeSystem.solve(basisCoeffs, edgeMassMat_, edgeRhsMat_, t_, w_, edgeDof, edgeCardinality);
   }
 
-  ScalarViewType ortJacobian_("ortJacobian", numCells, faceDim, faceDim);
+  CellTools<SpT>::setSubcellParametrization();
+  typename CellTools<SpT>::subcellParamViewType  subcellParamFace;
+  if(numFaces>0)
+    CellTools<SpT>::getSubcellParametrization(subcellParamFace,  faceDim, cellBasis->getBaseCellTopology());
 
   ScalarViewType faceCoeff("faceCoeff", numCells, fieldDim, faceDofDim);
   for(ordinal_type iface=0; iface<numFaces; ++iface) {
-
-
     const auto topoKey = refTopologyKey(faceDim,iface);
-
-
     ordinal_type faceCardinality = cellBasis->getDofCount(faceDim,iface);
 
     ordinal_type numTargetEPoints = range_size(targetEPointsRange(faceDim, iface));
     ordinal_type numBasisEPoints = range_size(basisEPointsRange(faceDim, iface));
-
-    if(isHCurlBasis) {
-      auto refFaceTanU = Kokkos::subview(refFacesTangents, iface, Kokkos::ALL, 0);
-      auto refFaceTanV = Kokkos::subview(refFacesTangents, iface, Kokkos::ALL,1);
-      auto refFaceTanUHost = Kokkos::create_mirror_view(refFaceTanU);
-      auto refFaceTanVHost = Kokkos::create_mirror_view(refFaceTanV);
-      CellTools<SpT>::getReferenceFaceTangents(refFaceTanUHost, refFaceTanVHost, iface, cellTopo);
-      Kokkos::deep_copy(refFaceTanU, refFaceTanUHost);
-      Kokkos::deep_copy(refFaceTanV, refFaceTanVHost);
-    } else if(isHDivBasis) {
-      auto faceNormal = Kokkos::subview(refFacesNormal,iface,Kokkos::ALL());
-      auto faceNormalHost = Kokkos::create_mirror_view(faceNormal);
-      CellTools<SpT>::getReferenceFaceNormal(faceNormalHost, iface, cellTopo);
-      Kokkos::deep_copy(faceNormal, faceNormalHost);
-    }
 
     ScalarViewType faceBasisDofAtBasisEPoints("normaBasisAtBasisEPoints",numCells,faceCardinality, numBasisEPoints,faceDofDim);
     ScalarViewType wBasisDofAtBasisEPoints("weightedNormalBasisAtBasisEPoints",numCells,faceCardinality, numBasisEPoints,faceDofDim);
@@ -640,13 +624,13 @@ ProjectionTools<SpT>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,
 
 
     typedef ComputeBasisCoeffsOnFaces_L2<decltype(basisCoeffs), ScalarViewType,  decltype(basisEWeights),
-        decltype(computedDofs), decltype(tagToOrdinal), decltype(orts), decltype(targetAtTargetEPoints)> functorTypeFace;
+        decltype(computedDofs), decltype(tagToOrdinal), decltype(orts), decltype(targetAtTargetEPoints), decltype(subcellParamFace)> functorTypeFace;
 
     Kokkos::parallel_for(policy, functorTypeFace(basisCoeffs, negPartialProj,faceBasisDofAtBasisEPoints,
         basisAtBasisEPoints, basisEWeights, wBasisDofAtBasisEPoints, targetEWeights,
         basisAtTargetEPoints, wBasisDofAtTargetEPoints, computedDofs, tagToOrdinal,
-        orts, targetAtTargetEPoints,targetDofAtTargetEPoints, ortJacobian_, faceCoeff,
-        refFacesTangents, refFacesNormal, fieldDim, faceCardinality, offsetBasis,
+        orts, targetAtTargetEPoints,targetDofAtTargetEPoints, faceCoeff,
+        subcellParamFace, fieldDim, faceCardinality, offsetBasis,
         offsetTarget, numVertexDofs+numEdgeDofs, numFaces, faceDim,faceDofDim,
         dim, iface, topoKey, isHCurlBasis, isHDivBasis));
 

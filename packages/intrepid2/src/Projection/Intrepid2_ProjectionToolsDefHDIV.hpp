@@ -252,9 +252,6 @@ ProjectionTools<SpT>::getHDivEvaluationPoints(typename BasisType::ScalarViewType
     const BasisType* cellBasis,
     ProjectionStruct<SpT, typename BasisType::scalarType> * projStruct,
     const EvalPointsType evalPointType){
-  typedef typename BasisType::scalarType scalarType;
-  typedef Kokkos::DynRankView<scalarType,SpT> ScalarViewType;
-  typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
   auto refTopologyKey =  Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTopologyKey());
   //const auto cellTopoKey = cellBasis->getBaseCellTopology().getKey();
   ordinal_type dim = cellBasis->getBaseCellTopology().getDimension();
@@ -272,7 +269,6 @@ ProjectionTools<SpT>::getHDivEvaluationPoints(typename BasisType::ScalarViewType
   auto evalPointsRange  = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getPointsRange(evalPointType));
 
   for(ordinal_type is=0; is<numSides; ++is)  {
-    ScalarViewType sideWorkview("sideWorkview", numCells, projStruct->getMaxNumEvalPoints(evalPointType), sideDim);
 
     const auto topoKey = refTopologyKey(sideDim,is);
     auto sideBasisEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getEvalPoints(sideDim,is,evalPointType));
@@ -282,8 +278,6 @@ ProjectionTools<SpT>::getHDivEvaluationPoints(typename BasisType::ScalarViewType
        Kokkos::RangePolicy<SpT, int> (0, numCells),
        KOKKOS_LAMBDA (const size_t ic) {
       auto sidePointsRange = evalPointsRange(sideDim, is);
-      auto sideRefPointsRange = range_type(0, range_size(sidePointsRange));
-      auto orientedBasisEPoints = Kokkos::subview(sideWorkview, ic, sideRefPointsRange, range_type(0,sideDim));
 
       ordinal_type sOrt[6];
       if(dim == 3)
@@ -292,8 +286,8 @@ ProjectionTools<SpT>::getHDivEvaluationPoints(typename BasisType::ScalarViewType
         orts(ic).getEdgeOrientation(sOrt, numSides);
       ordinal_type ort = sOrt[is];
 
-      Impl::OrientationTools::mapToModifiedReference(orientedBasisEPoints,sideBasisEPoints,topoKey,ort);
-      CellTools<SpT>::mapToReferenceSubcell(Kokkos::subview(targetEPoints,ic,sidePointsRange,Kokkos::ALL()), orientedBasisEPoints, subcellParamSide, sideDim, is, dim);
+      Impl::OrientationTools::mapSubcellCoordsToRefCell(Kokkos::subview(targetEPoints,ic,sidePointsRange,Kokkos::ALL()),
+          sideBasisEPoints, subcellParamSide, topoKey, is, ort);
     });
   }
 
