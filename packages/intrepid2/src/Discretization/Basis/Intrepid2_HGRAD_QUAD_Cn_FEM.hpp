@@ -259,6 +259,24 @@ namespace Intrepid2 {
       return 3*getPnCardinality<1>(this->basisDegree_); 
     }
     
+    /** \brief returns the basis associated to a subCell.
+
+        The bases of the subCell are the restriction to the subCell
+        of the bases of the parent cell.
+        \param [in] subCellDim - dimension of subCell
+        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+     */
+    BasisPtr<ExecSpaceType,outputValueType,pointValueType>
+      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
+      if(subCellDim == 1) {
+        return Teuchos::rcp(new
+            Basis_HGRAD_LINE_Cn_FEM<ExecSpaceType,outputValueType,pointValueType>
+            (this->basisDegree_));
+      }
+      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
+    }
+
   };
 
 }// namespace Intrepid2

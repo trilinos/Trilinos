@@ -59,6 +59,9 @@ namespace Intrepid2
   class Basis_Derived_HGRAD_QUAD
   : public Basis_TensorBasis<HGRAD_LINE, HGRAD_LINE>
   {
+  protected:
+    std::string name_;
+    ordinal_type order_x_, order_y_;
   public:
     using ExecutionSpace  = typename HGRAD_LINE::ExecutionSpace;
     using OutputValueType = typename HGRAD_LINE::OutputValueType;
@@ -81,6 +84,13 @@ namespace Intrepid2
                 LineBasis(polyOrder_y))
     {
       this->functionSpace_ = FUNCTION_SPACE_HGRAD;
+
+      std::ostringstream basisName;
+      basisName << "HGRAD_QUAD (" << this->TensorBasis::getName() << ")";
+      name_ = basisName.str();
+
+      order_x_= polyOrder_x;
+      order_y_ = polyOrder_x;
     }
 
     /** \brief  Constructor.
@@ -149,6 +159,41 @@ namespace Intrepid2
       {
         INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
       }
+    }
+
+    /** \brief  Returns basis name
+
+     \return the name of the basis
+     */
+    virtual
+    const char*
+    getName() const override {
+      return name_.c_str();
+    }
+
+    /** \brief returns the basis associated to a subCell.
+
+        The bases of the subCell are the restriction to the subCell
+        of the bases of the parent cell.
+        TODO: test this method when different orders are used in different directions
+        \param [in] subCellDim - dimension of subCell
+        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+     */
+    BasisPtr<ExecutionSpace, OutputValueType, PointValueType>
+      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
+      if(subCellDim == 1) {
+        switch(subCellOrd) {
+        case 0:
+        case 2:
+          return Teuchos::rcp( new LineBasis(order_x_) );
+        case 1:
+        case 3:
+          return Teuchos::rcp( new LineBasis(order_y_) );
+        }
+      }
+
+      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
     }
   };
 } // end namespace Intrepid2

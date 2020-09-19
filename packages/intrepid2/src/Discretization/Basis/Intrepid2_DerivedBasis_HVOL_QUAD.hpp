@@ -66,6 +66,8 @@ namespace Intrepid2
   :
   public Basis_TensorBasis<HVOL_LINE, HVOL_LINE>
   {
+  protected:
+    std::string name_;
     using LineBasis = HVOL_LINE;
     using TensorBasis = Basis_TensorBasis<LineBasis,LineBasis>;
 
@@ -89,6 +91,10 @@ namespace Intrepid2
                 LineBasis(polyOrder_y))
     {
       this->functionSpace_ = FUNCTION_SPACE_HVOL;
+
+      std::ostringstream basisName;
+      basisName << "HVOL_QUAD (" << this->TensorBasis::getName() << ")";
+      name_ = basisName.str();
     }
     
     /** \brief  Constructor.
@@ -98,12 +104,12 @@ namespace Intrepid2
     
     /** \brief  Returns basis name
 
-        \return the name of the basis
-    */
+     \return the name of the basis
+     */
     virtual
     const char*
-    getName() const {
-      return "Intrepid2_DerivedBasis_HVOL_QUAD";
+    getName() const override {
+      return name_.c_str();
     }
 
     /** \brief True if orientation is required

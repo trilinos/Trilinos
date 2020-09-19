@@ -451,7 +451,18 @@ namespace Intrepid2
     using Family12 = Basis_Derived_HCURL_Family1_Family2_HEX<HGRAD_LINE, HVOL_LINE>;
     using Family3  = Basis_Derived_HCURL_Family3_HEX        <HGRAD_LINE, HVOL_LINE>;
     using DirectSumBasis = Basis_DirectSumBasis<Family12,Family3>;
+
+    std::string name_;
+    ordinal_type order_x_;
+    ordinal_type order_y_;
+    ordinal_type order_z_;
+
   public:
+
+    using ExecutionSpace  = typename HGRAD_LINE::ExecutionSpace;
+    using OutputValueType = typename HGRAD_LINE::OutputValueType;
+    using PointValueType  = typename HGRAD_LINE::PointValueType;
+
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
@@ -462,6 +473,14 @@ namespace Intrepid2
     DirectSumBasis(Family12(polyOrder_x, polyOrder_y, polyOrder_z),
                    Family3 (polyOrder_x, polyOrder_y, polyOrder_z)) {
       this->functionSpace_ = FUNCTION_SPACE_HCURL;
+
+      std::ostringstream basisName;
+      basisName << "HCURL_HEX (" << this->DirectSumBasis::getName() << ")";
+      name_ = basisName.str();
+
+      order_x_ = polyOrder_x;
+      order_y_ = polyOrder_y;
+      order_z_ = polyOrder_z;
     }
     
     /** \brief  Constructor.
@@ -474,6 +493,71 @@ namespace Intrepid2
     virtual bool requireOrientation() const {
       return (this->getDofCount(1,0) > 0); //if it has edge DOFs, than it needs orientations
     }
+
+    /** \brief  Returns basis name
+
+     \return the name of the basis
+     */
+    virtual
+    const char*
+    getName() const override {
+      return name_.c_str();
+    }
+
+    /** \brief returns the basis associated to a subCell.
+
+        The bases of the subCell are the restriction to the subCell of the bases of the parent cell,
+        projected to the subCell plane/line.
+
+        TODO: test this method when different orders are used in different directions
+        \param [in] subCellDim - dimension of subCell
+        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+     */
+    BasisPtr<ExecutionSpace, OutputValueType, PointValueType>
+      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
+
+      using LineBasis = HVOL_LINE;
+      using QuadBasis = Basis_Derived_HCURL_QUAD<HGRAD_LINE,HVOL_LINE>;
+
+      if(subCellDim == 1) {
+        switch(subCellOrd) {
+        case 0:
+        case 2:
+        case 4:
+        case 6:
+          return Teuchos::rcp( new LineBasis(order_x_-1) );
+        case 1:
+        case 3:
+        case 5:
+        case 7:
+          return Teuchos::rcp( new LineBasis(order_y_-1) );
+        case 8:
+        case 9:
+        case 10:
+        case 11:
+          return Teuchos::rcp( new LineBasis(order_z_-1) );
+        }
+      } else if(subCellDim == 2) {
+        switch(subCellOrd) {
+        case 0:
+          return Teuchos::rcp( new QuadBasis(order_x_, order_z_) );
+        case 1:
+          return Teuchos::rcp( new QuadBasis(order_y_,order_z_) );
+        case 2:
+          return Teuchos::rcp( new QuadBasis(order_x_, order_z_) );
+        case 3:
+          return Teuchos::rcp( new QuadBasis(order_z_, order_y_) );
+        case 4:
+          return Teuchos::rcp( new QuadBasis(order_y_, order_x_) );
+        case 5:
+          return Teuchos::rcp( new QuadBasis(order_x_, order_y_) );
+        }
+      }
+
+      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
+    }
+
   };
 } // end namespace Intrepid2
 

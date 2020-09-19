@@ -51,6 +51,7 @@
 
 #include "Intrepid2_Basis.hpp"
 #include "Intrepid2_HGRAD_TET_Cn_FEM_ORTH.hpp"
+#include "Intrepid2_HCURL_TRI_In_FEM.hpp"
 
 #include "Intrepid2_PointTools.hpp"
 #include "Teuchos_LAPACK.hpp"
@@ -292,6 +293,29 @@ class Basis_HCURL_TET_In_FEM
   bool
   requireOrientation() const {
     return true;
+  }
+
+  /** \brief returns the basis associated to a subCell.
+
+      The bases of the subCell are the restriction to the subCell of the bases of the parent cell,
+      projected to the subCell plane.
+
+      \param [in] subCellDim - dimension of subCell
+      \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+      \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+   */
+  BasisPtr<ExecSpaceType,outputValueType,pointValueType>
+    getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
+    if(subCellDim == 1) {
+      return Teuchos::rcp(new
+          Basis_HVOL_LINE_Cn_FEM<ExecSpaceType,outputValueType,pointValueType>
+          (this->basisDegree_-1));
+    } else if(subCellDim == 2) {
+      return Teuchos::rcp(new
+          Basis_HCURL_TRI_In_FEM<ExecSpaceType,outputValueType,pointValueType>
+          (this->basisDegree_));
+    }
+    INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
   }
 
     private:
