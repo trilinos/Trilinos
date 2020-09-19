@@ -47,7 +47,6 @@
 
 #include "Tpetra_Directory.hpp" // must include for implicit instantiation to work
 #include "Tpetra_Details_Behavior.hpp"
-#include "Tpetra_Details_checkPointer.hpp"
 #include "Tpetra_Details_FixedHashTable.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_printOnce.hpp"
@@ -78,7 +77,6 @@ namespace { // (anonymous)
 
     const bool debug = Behavior::debug("Map");
     if (debug) {
-      using Tpetra::Details::pointerAccessibleFromExecutionSpace;
       using Teuchos::outArg;
       using Teuchos::REDUCE_MIN;
       using Teuchos::reduceAll;
@@ -94,22 +92,6 @@ namespace { // (anonymous)
         if (verbose) {
           lclErrStrm << "Proc " << myRank << ": indexList is null, "
             "but indexListSize=" << indexListSize << " != 0." << endl;
-        }
-      }
-      else {
-        if (indexListSize != 0 && indexList != nullptr &&
-            ! pointerAccessibleFromExecutionSpace (indexList, execSpace)) {
-          lclSuccess = 0;
-          if (verbose) {
-            using ::Tpetra::Details::memorySpaceName;
-            const std::string memSpaceName = memorySpaceName (indexList);
-            const std::string execSpaceName =
-              Teuchos::TypeNameTraits<ExecutionSpace>::name ();
-            lclErrStrm << "Proc " << myRank << ": Input array is not "
-              "accessible from the required execution space " <<
-              execSpaceName << ".  As far as I can tell, array lives "
-              "in memory space " << memSpaceName << "." << endl;
-          }
         }
       }
       int gblSuccess = 0; // output argument
