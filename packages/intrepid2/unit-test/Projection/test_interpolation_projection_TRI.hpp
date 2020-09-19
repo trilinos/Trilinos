@@ -289,7 +289,7 @@ int InterpolationProjectionTri(const bool verbose) {
           for (auto basisPtr:basis_set) {
 
             auto name = basisPtr->getName();
-            *outStream << " " << name << std::endl;
+            *outStream << " " << name <<  ": " << degree << std::endl;
             ordinal_type basisCardinality = basisPtr->getCardinality();
 
             //compute DofCoords Oriented
@@ -301,7 +301,7 @@ int InterpolationProjectionTri(const bool verbose) {
 
             //compute Lagrangian Interpolation of fun
             {
-              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffsPhys, basisPtr, POINTTYPE_EQUISPACED, elemOrts);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffsPhys, basisPtr, elemOrts);
 
               //Compute physical Dof Coordinates
               {
@@ -674,7 +674,7 @@ int InterpolationProjectionTri(const bool verbose) {
           for (auto basisPtr:basis_set) {
 
             auto name = basisPtr->getName();
-            *outStream << " " << name << std::endl;
+            *outStream << " " << name <<  ": " << degree << std::endl;
 
             ordinal_type basisCardinality = basisPtr->getCardinality();
 
@@ -687,7 +687,7 @@ int InterpolationProjectionTri(const bool verbose) {
 
             //compute Lagrangian Interpolation of fun
             {
-              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffs, basisPtr,POINTTYPE_EQUISPACED, elemOrts);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffs, basisPtr, elemOrts);
 
               //Compute physical Dof Coordinates
               {
@@ -1063,7 +1063,7 @@ int InterpolationProjectionTri(const bool verbose) {
           for (auto basisPtr:basis_set) {
 
             auto name = basisPtr->getName();
-            *outStream << " " << name << std::endl;
+            *outStream << " " << name <<  ": " << degree << std::endl;
             ordinal_type basisCardinality = basisPtr->getCardinality();
 
             //compute DofCoords Oriented
@@ -1076,7 +1076,7 @@ int InterpolationProjectionTri(const bool verbose) {
 
             //compute Lagrangian Interpolation of fun
             {
-              li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffs, basisPtr, POINTTYPE_EQUISPACED, elemOrts);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffs, basisPtr, elemOrts);
 
               //Compute physical Dof Coordinates
               Basis_HGRAD_TRI_C1_FEM<DeviceSpaceType,ValueType,ValueType> triLinearBasis; //used for computing physical coordinates
@@ -1452,7 +1452,7 @@ int InterpolationProjectionTri(const bool verbose) {
 
         //compute Lagrangian Interpolation of fun
         {
-          li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr, POINTTYPE_EQUISPACED, elemOrts);
+          li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr, elemOrts);
 
           //Compute physical Dof Coordinates
           {

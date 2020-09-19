@@ -290,7 +290,7 @@ int InterpolationProjectionQuad(const bool verbose) {
           for (auto basisPtr:basis_set) {
 
             auto name = basisPtr->getName();
-            *outStream << " " << name << std::endl;
+            *outStream << " " << name <<  ": " << degree << std::endl;
             ordinal_type basisCardinality = basisPtr->getCardinality();
 
             //compute DofCoords Oriented
@@ -302,7 +302,7 @@ int InterpolationProjectionQuad(const bool verbose) {
 
             //compute Lagrangian Interpolation of fun
             {
-              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffsPhys, basisPtr, POINTTYPE_EQUISPACED, elemOrts);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffsPhys, basisPtr, elemOrts);
 
               //Compute physical Dof Coordinates
               {
@@ -675,7 +675,7 @@ int InterpolationProjectionQuad(const bool verbose) {
           for (auto basisPtr:basis_set) {
 
             auto name = basisPtr->getName();
-            *outStream << " " << name << std::endl;
+            *outStream << " " << name <<  ": " << degree << std::endl;
 
             ordinal_type basisCardinality = basisPtr->getCardinality();
 
@@ -688,7 +688,7 @@ int InterpolationProjectionQuad(const bool verbose) {
 
             //compute Lagrangian Interpolation of fun
             {
-              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffs, basisPtr, POINTTYPE_WARPBLEND, elemOrts);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffs, basisPtr, elemOrts);
 
               //Compute physical Dof Coordinates
 
@@ -1065,7 +1065,7 @@ int InterpolationProjectionQuad(const bool verbose) {
           for (auto basisPtr:basis_set) {
 
             auto name = basisPtr->getName();
-            *outStream << " " << name << std::endl;
+            *outStream << " " << name <<  ": " << degree << std::endl;
             ordinal_type basisCardinality = basisPtr->getCardinality();
 
             //compute DofCoords Oriented
@@ -1079,7 +1079,7 @@ int InterpolationProjectionQuad(const bool verbose) {
             //compute Lagrangian Interpolation of fun
             {
 
-              li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffs, basisPtr, POINTTYPE_EQUISPACED, elemOrts);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffs, basisPtr, elemOrts);
 
               //Compute physical Dof Coordinates
               Basis_HGRAD_QUAD_C1_FEM<DeviceSpaceType,ValueType,ValueType> quadLinearBasis; //used for computing physical coordinates
@@ -1442,7 +1442,7 @@ int InterpolationProjectionQuad(const bool verbose) {
       for (auto basisPtr:basis_set) {
 
         auto name = basisPtr->getName();
-        *outStream << " " << name << std::endl;
+        *outStream << " " << name <<  ": " << degree << std::endl;
 
         ordinal_type basisCardinality = basisPtr->getCardinality();
 
@@ -1453,7 +1453,7 @@ int InterpolationProjectionQuad(const bool verbose) {
         DynRankView ConstructWithLabel(funAtDofCoords, numCells, basisCardinality);
         DynRankView ConstructWithLabel(basisCoeffsLI, numCells, basisCardinality);
         {
-          li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr, POINTTYPE_WARPBLEND, elemOrts);
+          li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr, elemOrts);
 
           //Compute physical Dof Coordinates
           {

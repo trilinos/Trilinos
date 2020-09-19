@@ -364,7 +364,7 @@ int InterpolationProjectionHex(const bool verbose) {
           for (auto basisPtr:basis_set) {
 
             auto name = basisPtr->getName();
-            *outStream << " " << name << std::endl;
+            *outStream << " " << name <<  ": " << degree << std::endl;
             ordinal_type basisCardinality = basisPtr->getCardinality();
 
             //compute DofCoords Oriented
@@ -376,7 +376,7 @@ int InterpolationProjectionHex(const bool verbose) {
 
             //compute Lagrangian Interpolation of fun
             {
-              li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr, POINTTYPE_EQUISPACED, elemOrts);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr, elemOrts);
 
               //Compute physical Dof Coordinates
               {
@@ -816,7 +816,7 @@ int InterpolationProjectionHex(const bool verbose) {
           for (auto basisPtr:basis_set) {
 
             auto name = basisPtr->getName();
-            *outStream << " " << name << std::endl;
+            *outStream << " " << name <<  ": " << degree << std::endl;
 
             ordinal_type basisCardinality = basisPtr->getCardinality();
 
@@ -829,7 +829,7 @@ int InterpolationProjectionHex(const bool verbose) {
 
             //compute Lagrangian Interpolation of fun
             {
-              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffs, basisPtr,POINTTYPE_EQUISPACED, elemOrts);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffs, basisPtr, elemOrts);
 
               //Compute physical Dof Coordinates
 
@@ -982,6 +982,7 @@ int InterpolationProjectionHex(const bool verbose) {
                   error = std::max(std::abs( funAtDofCoords(i,j,d) - funAtDofCoordsOriented(i,j,d)), error);
                 }
 
+              std::cout << "Error: " << error <<std::endl;
               if(error>100*tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -1264,7 +1265,7 @@ int InterpolationProjectionHex(const bool verbose) {
           for (auto basisPtr:basis_set) {
 
             auto name = basisPtr->getName();
-            *outStream << " " << name << std::endl;
+            *outStream << " " << name <<  ": " << degree << std::endl;
             ordinal_type basisCardinality = basisPtr->getCardinality();
 
             //compute DofCoords Oriented
@@ -1278,7 +1279,7 @@ int InterpolationProjectionHex(const bool verbose) {
             //compute Lagrangian Interpolation of fun
             {
 
-              li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffs, basisPtr, POINTTYPE_EQUISPACED, elemOrts);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffs, basisPtr, elemOrts);
 
               //Compute physical Dof Coordinates
               Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
@@ -1665,7 +1666,7 @@ int InterpolationProjectionHex(const bool verbose) {
       for (auto basisPtr:basis_set) {
 
         auto name = basisPtr->getName();
-        *outStream << " " << name << std::endl;
+        *outStream << " " << name <<  ": " << degree << std::endl;
 
         ordinal_type basisCardinality = basisPtr->getCardinality();
 
@@ -1678,7 +1679,7 @@ int InterpolationProjectionHex(const bool verbose) {
 
         //compute Lagrangian Interpolation of fun
         {
-          li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr, POINTTYPE_EQUISPACED, elemOrts);
+          li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr, elemOrts);
 
           //Compute physical Dof Coordinates
           {

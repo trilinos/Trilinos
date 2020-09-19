@@ -175,6 +175,7 @@ namespace Intrepid2 {
 
             s1 << " :: edge(0000) = " ;
             s2 << " :: edge(" << orts[0] << orts[1] << orts[2] << orts[3] << ") = ";
+            auto refEdgeLength = 2;
             for (auto edgeId=0;edgeId<numEdges;++edgeId) {
               const auto ndof = cellBasis.getDofTag(cellBasis.getDofOrdinal(1, edgeId, 0))(3);
               for (auto i=0;i<ndof;++i) {
@@ -183,7 +184,7 @@ namespace Intrepid2 {
                 s1 << std::setw(4) << refValuesHost(cell, outOrd);              
                 s2 << std::setw(4) << outValuesHost(cell, outOrd);              
 
-                flag += (std::abs(ortVal[orts[edgeId]]*outValuesHost(cell, outOrd) - refValuesHost(cell, refOrd)) > tol);
+                flag += (std::abs(ortVal[orts[edgeId]]*outValuesHost(cell, outOrd) - refEdgeLength*refValuesHost(cell, refOrd)) > tol);
               }
 
               s1 << " // ";
