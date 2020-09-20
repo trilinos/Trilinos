@@ -694,10 +694,237 @@ ProjectionTools<SpT>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,
 
     ScalarViewType t_("t",numCells, numElemDofs);
     WorkArrayViewType w_("w",numCells,numElemDofs);
-    ElemSystem cellSystem("cellSystem", true);
+    ElemSystem cellSystem("cellSystem", false);
     cellSystem.solve(basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numElemDofs);
   }
 }
+
+template<typename ViewType1, typename ViewType2>
+struct MultiplyBasisByWeights {
+  const ViewType1 basisAtBasisEPoints_;
+  const ViewType2 basisEWeights_;
+  const ViewType1 wBasisAtBasisEPoints_;
+  const ViewType2 targetEWeights_;
+  const ViewType1 basisAtTargetEPoints_;
+  const ViewType1 wBasisDofAtTargetEPoints_;
+  ordinal_type fieldDim_;
+  ordinal_type numElemDofs_;
+
+  MultiplyBasisByWeights(const ViewType1 basisAtBasisEPoints, const ViewType2 basisEWeights,  const ViewType1 wBasisAtBasisEPoints,   const ViewType2 targetEWeights,
+      const ViewType1 basisAtTargetEPoints, const ViewType1 wBasisDofAtTargetEPoints,
+      ordinal_type fieldDim, ordinal_type numElemDofs) :
+        basisAtBasisEPoints_(basisAtBasisEPoints), basisEWeights_(basisEWeights), wBasisAtBasisEPoints_(wBasisAtBasisEPoints), targetEWeights_(targetEWeights),
+        basisAtTargetEPoints_(basisAtTargetEPoints), wBasisDofAtTargetEPoints_(wBasisDofAtTargetEPoints),
+        fieldDim_(fieldDim), numElemDofs_(numElemDofs) {}
+
+  void
+  KOKKOS_INLINE_FUNCTION
+  operator()(const ordinal_type ic) const {
+
+    for(ordinal_type j=0; j <numElemDofs_; ++j) {
+      for(ordinal_type d=0; d <fieldDim_; ++d) {
+        for(ordinal_type iq=0; iq <ordinal_type(basisEWeights_.extent(0)); ++iq) {
+          wBasisAtBasisEPoints_(ic,j,iq,d) = basisAtBasisEPoints_(ic,j,iq,d) * basisEWeights_(iq);
+        }
+        for(ordinal_type iq=0; iq <ordinal_type(targetEWeights_.extent(0)); ++iq) {
+          wBasisDofAtTargetEPoints_(ic,j,iq,d) = basisAtTargetEPoints_(ic,j,iq,d)* targetEWeights_(iq);
+        }
+      }
+    }
+  }
+};
+
+template<typename SpT>
+template<typename BasisType>
+void
+ProjectionTools<SpT>::getL2DGEvaluationPoints(typename BasisType::ScalarViewType ePoints,
+    const BasisType* cellBasis,
+    ProjectionStruct<SpT, typename BasisType::scalarType> * projStruct,
+    const EvalPointsType ePointType) {
+
+  ordinal_type dim = cellBasis->getBaseCellTopology().getDimension();
+  auto cellEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getEvalPoints(dim,0,ePointType));
+  RealSpaceTools<SpT>::clone(ePoints, cellEPoints);
+}
+
+template<typename SpT>
+template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
+typename funValsValueType, class ...funValsProperties,
+typename BasisType,
+typename ortValueType,class ...ortProperties>
+void
+ProjectionTools<SpT>::getL2DGBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
+    const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtTargetEPoints,
+    const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
+    const BasisType* cellBasis,
+    ProjectionStruct<SpT, typename BasisType::scalarType> * projStruct){
+
+  typedef typename BasisType::scalarType scalarType;
+  typedef Kokkos::DynRankView<scalarType,SpT> ScalarViewType;
+  const auto cellTopo = cellBasis->getBaseCellTopology();
+
+  ordinal_type dim = cellTopo.getDimension();
+
+  auto basisEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),
+      projStruct->getEvalPoints(dim,0,EvalPointsType::BASIS));
+  auto targetEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),
+      projStruct->getEvalPoints(dim,0,EvalPointsType::TARGET));
+
+
+  ordinal_type numTotalTargetEPoints(targetAtTargetEPoints.extent(1));
+  ordinal_type basisCardinality = cellBasis->getCardinality();
+  ordinal_type numCells = targetAtTargetEPoints.extent(0);
+  const ordinal_type fieldDim = (targetAtTargetEPoints.rank()==2) ? 1 : targetAtTargetEPoints.extent(2);
+
+  ordinal_type numTotalBasisEPoints = projStruct->getNumBasisEvalPoints();
+  ScalarViewType basisAtBasisEPoints("basisAtBasisEPoints",numCells,basisCardinality, numTotalBasisEPoints, fieldDim);
+  ScalarViewType basisAtTargetEPoints("basisAtTargetEPoints",numCells,basisCardinality, numTotalTargetEPoints, fieldDim);
+  {
+    if(fieldDim == 1) {
+      ScalarViewType nonOrientedBasisAtBasisEPoints("nonOrientedBasisAtBasisEPoints",numCells,basisCardinality, numTotalBasisEPoints);
+      ScalarViewType nonOrientedBasisAtTargetEPoints("nonOrientedBasisAtTargetEPoints",numCells,basisCardinality, numTotalTargetEPoints);
+      cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtTargetEPoints,0,Kokkos::ALL(),Kokkos::ALL()), targetEPoints);
+      cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtBasisEPoints,0,Kokkos::ALL(),Kokkos::ALL()), basisEPoints);
+
+      RealSpaceTools<SpT>::clone(nonOrientedBasisAtTargetEPoints, Kokkos::subview(nonOrientedBasisAtTargetEPoints,0,Kokkos::ALL(),Kokkos::ALL()));
+      RealSpaceTools<SpT>::clone(nonOrientedBasisAtBasisEPoints, Kokkos::subview(nonOrientedBasisAtBasisEPoints,0,Kokkos::ALL(),Kokkos::ALL()));
+      OrientationTools<SpT>::modifyBasisByOrientation(Kokkos::subview(basisAtBasisEPoints, Kokkos::ALL(), Kokkos::ALL(),
+          Kokkos::ALL(),0), nonOrientedBasisAtBasisEPoints, orts, cellBasis);
+      OrientationTools<SpT>::modifyBasisByOrientation(Kokkos::subview(basisAtTargetEPoints, Kokkos::ALL(),
+          Kokkos::ALL(), Kokkos::ALL(),0), nonOrientedBasisAtTargetEPoints, orts, cellBasis);
+    }
+    else {
+      ScalarViewType nonOrientedBasisAtBasisEPoints("nonOrientedBasisAtBasisEPoints",numCells,basisCardinality, numTotalBasisEPoints,fieldDim);
+      ScalarViewType nonOrientedBasisAtTargetEPoints("nonOrientedBasisAtTargetEPoints",numCells,basisCardinality, numTotalTargetEPoints,fieldDim);
+      cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtTargetEPoints,0,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), targetEPoints);
+      cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtBasisEPoints,0,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), basisEPoints);
+
+      RealSpaceTools<SpT>::clone(nonOrientedBasisAtTargetEPoints, Kokkos::subview(nonOrientedBasisAtTargetEPoints,0,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()));
+      RealSpaceTools<SpT>::clone(nonOrientedBasisAtBasisEPoints, Kokkos::subview(nonOrientedBasisAtBasisEPoints,0,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()));
+      OrientationTools<SpT>::modifyBasisByOrientation(basisAtBasisEPoints, nonOrientedBasisAtBasisEPoints, orts, cellBasis);
+      OrientationTools<SpT>::modifyBasisByOrientation(basisAtTargetEPoints, nonOrientedBasisAtTargetEPoints, orts, cellBasis);
+    }
+  }
+
+  const Kokkos::RangePolicy<SpT> policy(0, numCells);
+  ordinal_type numElemDofs = cellBasis->getCardinality();
+
+  auto targetEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTargetEvalWeights(dim,0));
+  auto basisEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getBasisEvalWeights(dim,0));
+
+  ScalarViewType wBasisAtBasisEPoints("weightedBasisAtBasisEPoints",numCells,numElemDofs, numTotalBasisEPoints,fieldDim);
+  ScalarViewType wBasisDofAtTargetEPoints("weightedBasisAtTargetEPoints",numCells,numElemDofs, numTotalTargetEPoints,fieldDim);
+
+  typedef MultiplyBasisByWeights<decltype(basisAtBasisEPoints), decltype(basisEWeights)> functorType;
+  Kokkos::parallel_for( "Multiply basis by weights", policy, functorType(basisAtBasisEPoints, basisEWeights,
+      wBasisAtBasisEPoints, targetEWeights,  basisAtTargetEPoints, wBasisDofAtTargetEPoints, fieldDim, numElemDofs));// )){
+
+  typedef Kokkos::DynRankView<scalarType, Kokkos::LayoutRight, SpT> WorkArrayViewType;
+  ScalarViewType cellMassMat_("cellMassMat_", numCells, numElemDofs, numElemDofs),
+      cellRhsMat_("rhsMat_", numCells, numElemDofs);
+
+  FunctionSpaceTools<SpT >::integrate(cellMassMat_, basisAtBasisEPoints, wBasisAtBasisEPoints);
+  if(fieldDim==1)
+    FunctionSpaceTools<SpT >::integrate(cellRhsMat_, targetAtTargetEPoints,
+        Kokkos::subview(wBasisDofAtTargetEPoints,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),0));
+  else
+    FunctionSpaceTools<SpT >::integrate(cellRhsMat_, targetAtTargetEPoints, wBasisDofAtTargetEPoints);
+
+  Kokkos::DynRankView<ordinal_type,Kokkos::HostSpace> hCellDofs("cellDoFs", numElemDofs);
+  for(ordinal_type i=0; i<numElemDofs; ++i) hCellDofs(i) = i;
+  auto cellDofs = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),hCellDofs);
+
+  ScalarViewType t_("t",numCells, numElemDofs);
+  WorkArrayViewType w_("w",numCells,numElemDofs);
+  ElemSystem cellSystem("cellSystem", false);
+  cellSystem.solve(basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numElemDofs);
+}
+
+template<typename SpT>
+template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
+typename funValsValueType, class ...funValsProperties,
+typename BasisType>
+void
+ProjectionTools<SpT>::getL2DGBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
+    const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtTargetEPoints,
+    const BasisType* cellBasis,
+    ProjectionStruct<SpT, typename BasisType::scalarType> * projStruct){
+
+  typedef typename BasisType::scalarType scalarType;
+  typedef Kokkos::DynRankView<scalarType,SpT> ScalarViewType;
+  const auto cellTopo = cellBasis->getBaseCellTopology();
+
+  ordinal_type dim = cellTopo.getDimension();
+
+  auto basisEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),
+      projStruct->getEvalPoints(dim,0,EvalPointsType::BASIS));
+  auto targetEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),
+      projStruct->getEvalPoints(dim,0,EvalPointsType::TARGET));
+
+  ordinal_type numTotalTargetEPoints(targetAtTargetEPoints.extent(1));
+  ordinal_type basisCardinality = cellBasis->getCardinality();
+  ordinal_type numCells = targetAtTargetEPoints.extent(0);
+  const ordinal_type fieldDim = (targetAtTargetEPoints.rank()==2) ? 1 : targetAtTargetEPoints.extent(2);
+
+  ordinal_type numTotalBasisEPoints = projStruct->getNumBasisEvalPoints();
+  ScalarViewType basisAtBasisEPoints("basisAtBasisEPoints",1,basisCardinality, numTotalBasisEPoints, fieldDim);
+  ScalarViewType basisAtTargetEPoints("basisAtTargetEPoints",numCells,basisCardinality, numTotalTargetEPoints, fieldDim);
+  {
+    if(fieldDim == 1) {
+      cellBasis->getValues(Kokkos::subview(basisAtTargetEPoints,0,Kokkos::ALL(),Kokkos::ALL(),0), targetEPoints);
+      cellBasis->getValues(Kokkos::subview(basisAtBasisEPoints,0,Kokkos::ALL(),Kokkos::ALL(),0), basisEPoints);
+
+      RealSpaceTools<SpT>::clone(basisAtTargetEPoints, Kokkos::subview(basisAtTargetEPoints,0,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()));
+    }
+    else {
+      cellBasis->getValues(Kokkos::subview(basisAtTargetEPoints,0,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), targetEPoints);
+      cellBasis->getValues(Kokkos::subview(basisAtBasisEPoints,0,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), basisEPoints);
+
+      RealSpaceTools<SpT>::clone(basisAtTargetEPoints, Kokkos::subview(basisAtTargetEPoints,0,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()));
+    }
+  }
+
+  const Kokkos::RangePolicy<SpT> policy(0, numCells);
+  ordinal_type numElemDofs = cellBasis->getCardinality();
+
+  auto targetEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTargetEvalWeights(dim,0));
+  auto basisEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getBasisEvalWeights(dim,0));
+
+  ScalarViewType wBasisAtBasisEPoints("weightedBasisAtBasisEPoints",1,numElemDofs, numTotalBasisEPoints,fieldDim);
+  ScalarViewType wBasisDofAtTargetEPoints("weightedBasisAtTargetEPoints",numCells,numElemDofs, numTotalTargetEPoints,fieldDim);
+
+  for(ordinal_type j=0; j <numElemDofs; ++j) {
+    for(ordinal_type d=0; d <fieldDim; ++d) {
+      for(ordinal_type iq=0; iq < numTotalBasisEPoints; ++iq)
+        wBasisAtBasisEPoints(0,j,iq,d) = basisAtBasisEPoints(0,j,iq,d) * basisEWeights(iq);
+      for(ordinal_type iq=0; iq <numTotalTargetEPoints; ++iq) {
+        wBasisDofAtTargetEPoints(0,j,iq,d) = basisAtTargetEPoints(0,j,iq,d)* targetEWeights(iq);
+      }
+    }
+  }
+  RealSpaceTools<SpT>::clone(wBasisDofAtTargetEPoints, Kokkos::subview(wBasisDofAtTargetEPoints,0,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()));
+
+  typedef Kokkos::DynRankView<scalarType, Kokkos::LayoutRight, SpT> WorkArrayViewType;
+  ScalarViewType cellMassMat_("cellMassMat_", 1, numElemDofs, numElemDofs),
+      cellRhsMat_("rhsMat_", numCells, numElemDofs);
+
+  FunctionSpaceTools<SpT >::integrate(cellMassMat_, basisAtBasisEPoints, wBasisAtBasisEPoints);
+  if(fieldDim==1)
+    FunctionSpaceTools<SpT >::integrate(cellRhsMat_, targetAtTargetEPoints,
+        Kokkos::subview(wBasisDofAtTargetEPoints,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),0));
+  else
+    FunctionSpaceTools<SpT >::integrate(cellRhsMat_, targetAtTargetEPoints, wBasisDofAtTargetEPoints);
+
+  Kokkos::DynRankView<ordinal_type,Kokkos::HostSpace> hCellDofs("cellDoFs", numElemDofs);
+  for(ordinal_type i=0; i<numElemDofs; ++i) hCellDofs(i) = i;
+  auto cellDofs = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),hCellDofs);
+
+  ScalarViewType t_("t",1, numElemDofs);
+  WorkArrayViewType w_("w",numCells,numElemDofs);
+  ElemSystem cellSystem("cellSystem", true);
+  cellSystem.solve(basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numElemDofs);
+}
+
 }
 }
 
