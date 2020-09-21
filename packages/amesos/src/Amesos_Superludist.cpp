@@ -451,7 +451,6 @@ int Amesos_Superludist::Factor()
     FactorizationDone_ = true;   // i.e. clean up Superlu data structures in the destructor
 
     ScalePermstructInit(NumGlobalRows_, NumGlobalRows_, &PrivateSuperluData_->ScalePermstruct_);
-
 #ifdef HAVE_SUPERLUDIST_LUSTRUCTINIT_2ARG
     LUstructInit(NumGlobalRows_, &PrivateSuperluData_->LUstruct_);
 #else
