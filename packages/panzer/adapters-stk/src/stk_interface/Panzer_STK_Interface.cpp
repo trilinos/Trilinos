@@ -1322,6 +1322,21 @@ std::size_t STK_Interface::elementLocalId(stk::mesh::EntityId gid) const
    return itr->second;
 }
 
+bool STK_Interface::isEdgeLocal(stk::mesh::Entity edge) const
+{
+   return isEdgeLocal(bulkData_->identifier(edge));
+}
+
+bool STK_Interface::isEdgeLocal(stk::mesh::EntityId gid) const
+{
+   std::unordered_map<stk::mesh::EntityId,std::size_t>::const_iterator itr = localEdgeIDHash_.find(gid);
+   if (itr==localEdgeIDHash_.end()) {
+     return false;
+   }
+   return true;
+}
+
+
 std::size_t STK_Interface::edgeLocalId(stk::mesh::Entity edge) const
 {
    return edgeLocalId(bulkData_->identifier(edge));
