@@ -301,8 +301,8 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO,
       {
          std::map<std::string, stk::mesh::Part*>::iterator itr;
          for(itr=edgeBlocks_.begin();itr!=edgeBlocks_.end();++itr)
-            if(!stk::io::is_part_io_part(*itr->second)) {
-               stk::io::put_io_part_attribute(*itr->second); // this can only be called once per part
+            if(!stk::io::is_part_edge_block_io_part(*itr->second)) {
+               stk::io::put_edge_block_io_part_attribute(*itr->second); // this can only be called once per part
             }
       }
 
@@ -324,12 +324,12 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO,
 
       // add nodes
       if(!stk::io::is_part_io_part(*nodesPart_))
-	stk::io::put_io_part_attribute(*nodesPart_);
+         stk::io::put_io_part_attribute(*nodesPart_);
 
       stk::io::set_field_role(*coordinatesField_, Ioss::Field::MESH);
       stk::io::set_field_role(*edgesField_, Ioss::Field::MESH);
       if (dimension_ > 2)
-        stk::io::set_field_role(*facesField_, Ioss::Field::MESH);
+         stk::io::set_field_role(*facesField_, Ioss::Field::MESH);
       stk::io::set_field_role(*processorIdField_, Ioss::Field::TRANSIENT);
       // stk::io::set_field_role(*loadBalField_, Ioss::Field::TRANSIENT);
    }
