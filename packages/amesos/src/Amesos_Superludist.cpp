@@ -40,17 +40,6 @@
 //  SuperLU defines Reduce to be a macro in util.h, this conflicts with Reduce() in Epetra_MultiVector.h
 #undef Reduce
 
-#if SUPERLU_DIST_MAJOR_VERSION > 6 || (SUPERLU_DIST_MAJOR_VERSION == 6 && SUPERLU_DIST_MINOR_VERSION > 2)
-#define ScalePermstruct_t dScalePermstruct_t
-#define LUstruct_t dLUstruct_t
-#define SOLVEstruct_t dSOLVEstruct_t
-#define ScalePermstructInit dScalePermstructInit
-#define ScalePermstructFree dScalePermstructFree
-#define Destroy_LU dDestroy_LU
-#define LUstructFree dLUstructFree 
-#define LUstructInit dLUstructInit
-#endif
-
 class Amesos_Superlu_Pimpl {
 public:
   //   Teuchos::RCP<trilinos_klu_symbolic> Symbolic_ ;
