@@ -38,9 +38,14 @@
 #include <Intrepid_RealSpaceTools.hpp>
 #include <Intrepid_Utils.hpp>
 
-// Tpetra
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_CrsGraph.hpp>
+// Xpetra
+#include <Xpetra_MultiVector.hpp>
+#include <Xpetra_CrsGraph.hpp>
+
+#ifdef HAVE_TRILINOSCOUPLINGS_TPETRA
+#include <Xpetra_TpetraMultiVector.hpp>
+#include <Xpetra_TpetraCrsGraph.hpp>
+#endif
 
 // Teuchos
 #include <Teuchos_Comm.hpp>
@@ -51,6 +56,10 @@ class MachineLearningStatistics_Hex3D {
   using ST = Scalar;
   using LO = LocalOrdinal;
   using GO = GlobalOrdinal;
+  using crsgraph_type    = Xpetra::CrsGraph<LO, GO, Node>;
+  using multivector_type = Xpetra::MultiVector<ST, LO, GO, Node>;
+  using vector_type      = Xpetra::Vector<ST, LO, GO, Node>;
+  
   public:
 
   MachineLearningStatistics_Hex3D(long long numElemsGlobal_):numElemsGlobal(numElemsGlobal_) {
@@ -75,7 +84,7 @@ class MachineLearningStatistics_Hex3D {
     return sqrt(dist);
   }
 
-  double myDistance2(const Tpetra::MultiVector<ST, LO, GO, Node> &v, int i0, int i1) {
+  double myDistance2(const Xpetra::MultiVector<ST, LO, GO, Node> &v, int i0, int i1) {
     const size_t numVectors = v.getNumVectors();
     double distance = 0.0;
     for (size_t j=0; j<numVectors; j++) {
@@ -296,20 +305,23 @@ class MachineLearningStatistics_Hex3D {
   /**********************************************************************************/
   /***************************** STATISTICS (Part IIb) ******************************/
   /**********************************************************************************/
-  void Phase2b(Teuchos::RCP<const Tpetra::CrsGraph<LO, GO, Node> > gl_StiffGraph, Teuchos::RCP<Tpetra::MultiVector<ST, LO, GO,Node> > coords) {
-    using multivector_type = Tpetra::MultiVector<ST, LO, GO, Node>;
-    Teuchos::RCP<Tpetra::MultiVector<ST, LO, GO, Node>> coordsOwnedPlusShared;
+
+  void Phase2b(Teuchos::RCP<const Xpetra::CrsGraph<LO, GO, Node> > gl_StiffGraph, Teuchos::RCP<Xpetra::MultiVector<ST, LO, GO,Node> > coords) {
+    using multivector_factory = Xpetra::MultiVectorFactory<ST,LO,GO,Node>;
+    using vector_factory      = Xpetra::VectorFactory<ST,LO,GO,Node>;
+
+    Teuchos::RCP<multivector_type> coordsOwnedPlusShared;
     comm = gl_StiffGraph->getRowMap()->getComm();
 
     if (!(gl_StiffGraph->getImporter().is_null())) {
-      coordsOwnedPlusShared = Teuchos::rcp(new multivector_type(gl_StiffGraph->getColMap(), 3, true));
-      coordsOwnedPlusShared->doImport(*coords, *gl_StiffGraph->getImporter(), Tpetra::CombineMode::ADD, false);
+      coordsOwnedPlusShared = multivector_factory::Build(gl_StiffGraph->getColMap(), 3, true);
+      coordsOwnedPlusShared->doImport(*coords, *gl_StiffGraph->getImporter(), Xpetra::CombineMode::ADD);
     }
     else {
       coordsOwnedPlusShared = coords;
     }
-    Teuchos::RCP<const Tpetra::Map<LO, GO, Node>> rowMap = gl_StiffGraph->getRowMap();
-    Tpetra::Vector<ST, LO, GO, Node> laplDiagOwned(rowMap, true);
+    Teuchos::RCP<const Xpetra::Map<LO, GO, Node> > rowMap = gl_StiffGraph->getRowMap();
+    Teuchos::RCP<vector_type > laplDiagOwned = vector_factory::Build(rowMap, true);
     Teuchos::ArrayView<const LO> indices;
     size_t numOwnedRows = rowMap->getNodeNumElements();
     for (size_t row=0; row<numOwnedRows; row++) {
@@ -318,17 +330,18 @@ class MachineLearningStatistics_Hex3D {
       for (size_t j=0; j<numIndices; j++) {
 	size_t col = indices[j];
 	if (row == col) continue;
-	laplDiagOwned.sumIntoLocalValue(row, 1/myDistance2(*coordsOwnedPlusShared, row, col));
+	laplDiagOwned->sumIntoLocalValue(row, 1/myDistance2(*coordsOwnedPlusShared, row, col));
       }
     }
-    Teuchos::RCP<Tpetra::Vector<ST, LO, GO, Node>> laplDiagOwnedPlusShared;
+    Teuchos::RCP<vector_type> laplDiagOwnedPlusShared;
     if (!gl_StiffGraph->getImporter().is_null()) {
-      laplDiagOwnedPlusShared = rcp(new Tpetra::Vector<ST, LO, GO, Node>(gl_StiffGraph->getColMap(), true));
-      laplDiagOwnedPlusShared->doImport(laplDiagOwned, *gl_StiffGraph->getImporter(), Tpetra::CombineMode::ADD, false);
+      laplDiagOwnedPlusShared = vector_factory::Build(gl_StiffGraph->getColMap(), true);
+      laplDiagOwnedPlusShared->doImport(*laplDiagOwned, *gl_StiffGraph->getImporter(), Xpetra::CombineMode::ADD);
     }
     else {
-      laplDiagOwnedPlusShared = rcp(&laplDiagOwned, false);
+      laplDiagOwnedPlusShared = laplDiagOwned;
     }
+
     for (size_t row=0; row<numOwnedRows; row++) {
       gl_StiffGraph->getLocalRowView(row, indices);
       size_t numIndices = indices.size();
@@ -336,7 +349,7 @@ class MachineLearningStatistics_Hex3D {
 	size_t col = indices[j];
 	if (row==col) continue;
 	double laplVal = 1.0 / myDistance2(*coordsOwnedPlusShared, row, col);
-	double aiiajj = std::abs(laplDiagOwnedPlusShared->getData()[row]*laplDiagOwnedPlusShared->getData()[col]);
+	double aiiajj = std::abs(laplDiagOwnedPlusShared->getData(0)[row]*laplDiagOwnedPlusShared->getData(0)[col]);
 	double aij = laplVal * laplVal;
 	double ratio = sqrt(aij / aiiajj);
 	local_stat_max[7] = std::max(local_stat_max[7], ratio);
@@ -346,6 +359,15 @@ class MachineLearningStatistics_Hex3D {
     }
     globalNumMatrixEntries = gl_StiffGraph->getGlobalNumEntries();
   }
+
+#ifdef HAVE_TRILINOSCOUPLINGS_TPETRA
+  void Phase2b(Teuchos::RCP<const Tpetra::CrsGraph<LO, GO, Node> > gl_StiffGraph, Teuchos::RCP<Tpetra::MultiVector<ST, LO, GO,Node> > coords) {
+    Teuchos::RCP<multivector_type> coords_X = Teuchos::rcp(new Xpetra::TpetraMultiVector<ST,LO,GO,Node>(coords));
+    Teuchos::RCP<const crsgraph_type> graph_X = Teuchos::rcp(new Xpetra::TpetraCrsGraph<LO,GO,Node>(Teuchos::rcp_const_cast<Tpetra::CrsGraph<LO,GO,Node> >(gl_StiffGraph)));
+    Phase2b(graph_X, coords_X);
+  }
+#endif
+
 
   /**********************************************************************************/
   /***************************** STATISTICS (Part III) ******************************/
