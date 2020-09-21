@@ -15,6 +15,12 @@
 
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_UnitTest_Utils.hpp"
+#include "Tempus_StepperHHTAlphaModifierBase.hpp"
+#include "Tempus_StepperHHTAlphaModifierXBase.hpp"
+#include "Tempus_StepperHHTAlphaObserverBase.hpp"
+#include "Tempus_StepperHHTAlphaModifierDefault.hpp"
+#include "Tempus_StepperHHTAlphaModifierXDefault.hpp"
+#include "Tempus_StepperHHTAlphaObserverDefault.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestModels/VanDerPolModel.hpp"
