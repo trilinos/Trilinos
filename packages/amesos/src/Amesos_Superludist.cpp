@@ -452,14 +452,10 @@ int Amesos_Superludist::Factor()
 
     ScalePermstructInit(NumGlobalRows_, NumGlobalRows_, &PrivateSuperluData_->ScalePermstruct_);
 
-#if SUPERLU_DIST_MAJOR_VERSION > 6 || (SUPERLU_DIST_MAJOR_VERSION == 6 && SUPERLU_DIST_MINOR_VERSION > 2)
-    LUstructInit(NumGlobalRows_, &PrivateSuperluData_->LUstruct_);
-#else
 #ifdef HAVE_SUPERLUDIST_LUSTRUCTINIT_2ARG
     LUstructInit(NumGlobalRows_, &PrivateSuperluData_->LUstruct_);
 #else
     LUstructInit(NumGlobalRows_, NumGlobalRows_, &PrivateSuperluData_->LUstruct_);
-#endif
 #endif
 
     // stick options from ParameterList to options_ structure
