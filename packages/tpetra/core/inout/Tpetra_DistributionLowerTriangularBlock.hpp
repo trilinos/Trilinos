@@ -1,7 +1,59 @@
+// @HEADER
+// ***********************************************************************
+//
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ************************************************************************
+// @HEADER
+
 #ifndef __TPETRA_DISTRIBUTORLOWERTRIANGULARBLOCK_HPP
 #define __TPETRA_DISTRIBUTORLOWERTRIANGULARBLOCK_HPP
 
+// Needed by DistributionLowerTriangularBlock
 #include "Tpetra_Distributor.hpp"
+
+// Needed by LowerTriangularBlock operator
+#include "Tpetra_Core.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_Operator.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+
+namespace Tpetra 
+{
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename gno_t, typename scalar_t>
@@ -57,9 +109,10 @@ public:
   // Vector map and row map are the same in 1D distribution.
   // But keep only the lower Triangular entries
   bool Mine(gno_t i, gno_t j) {
-    if (j > i) return false;  // Don't keep any upper triangular entries
-    if (redistributed)
-      return (procFromChunks(i,j) == me);
+    if (redistributed) {
+      if (j > i) return false;  // Don't keep any upper triangular entries
+      else return (procFromChunks(i,j) == me);
+    }
     else
       return initialDist.Mine(i,j);
   }
@@ -69,21 +122,13 @@ public:
   // How to redistribute according to chunk-based row distribution
   void Redistribute(LocalNZmap_t &localNZ)
   {
-    // std::cout << comm->getRank() << " KDDKDD begin Redistribute " << std::endl;
-    // Compute nnzPerRow; distribution is currently 1D and lower triangular
-    // Exploit fact that map has entries sorted by I, then J
-    // Simultaneously, store everything in buffers for communication
+    // Going to do chunking and sorting serially for now; 
+    // need to gather per-row information from each processor
+    // TODO:  think about a parallel implementation
+
     gno_t myFirstRow = initialDist.getFirstRow(me);
     gno_t nMyRows = initialDist.getNumRow(me);
-    Teuchos::Array<size_t> nnzPerRow(nMyRows, 0);
-
-    gno_t prevI = std::numeric_limits<gno_t>::max();
-    for (auto it = localNZ.begin(); it != localNZ.end(); it++) {
-      gno_t I = it->first.first;
-      nnzPerRow[I-myFirstRow]++;
-    }
-
-    // TODO For now, determine the chunks serially; can parallelize later
+    Teuchos::Array<gno_t> nnzPerRow(nMyRows, 0);
 
     Teuchos::Array<int> rcvcnt(np);
     Teuchos::Array<int> disp(np);
@@ -94,42 +139,89 @@ public:
       sum += prows;
     }
 
-    Teuchos::Array<size_t> globalNnzPerRow;
-    if (me == 0) {
-      globalNnzPerRow.resize(nrows, 0);  // TODO:  Ick!  Need parallel
+    // If desire sortByDegree, first need to sort with respect to ALL entries
+    // in matrix (not lower-triangular entries);
+    // decreasing sort by number of entries per row in global matrix.
+    // Generate permuteIndex for the sorted rows
+
+    Teuchos::Array<gno_t> permuteIndex;
+
+    Teuchos::Array<gno_t> globalRowBuf;
+    // TODO Dunno why there isn't a Teuchos::gatherAllv; 
+    // TODO for now, compute and broadcast
+    if (me == 0) { 
+      globalRowBuf.resize(nrows, 0);  // TODO:  Ick!  Need parallel
+    }
+
+    if (sortByDegree) {
+      // Compute nnzPerRow; distribution is currently 1D and includes all nz
+      for (auto it = localNZ.begin(); it != localNZ.end(); it++) {
+        gno_t I = it->first.first;
+        nnzPerRow[I-myFirstRow]++;
+      }
+
+      Teuchos::gatherv<int,gno_t>(nnzPerRow.getRawPtr(), nMyRows,
+                                  globalRowBuf.getRawPtr(), 
+                                  rcvcnt.getRawPtr(), disp.getRawPtr(), 
+                                  0, *comm);
+
+      permuteIndex.resize(nrows); // TODO:  Ick!  Need parallel
+
+      if (me == 0) {  // TODO:  do on all procs once have allgatherv
+
+        for (size_t i = 0 ; i != nrows; i++) permuteIndex[i] = i;
+
+        std::sort(permuteIndex.begin(), permuteIndex.end(),
+                  [&](const size_t& a, const size_t& b) {
+                      return (globalRowBuf[a] > globalRowBuf[b]);
+                  }
+        );
+
+        // Compute inverse permutation; it is more useful for our needs
+
+        gno_t tmp;
+        for (size_t i = 0, change = 0; i < permuteIndex.size(); i++) {
+          globalRowBuf[permuteIndex[i]] = i;
+        }
+        globalRowBuf.swap(permuteIndex);
+      }
+
+      Teuchos::broadcast<int,gno_t>(*comm, 0, permuteIndex(0,nrows)); 
+                                   // Ick!  Use a directory  TODO
+    }
+
+    // Now, to determine the chunks, we care only about the number of 
+    // nonzeros in the lower triangular matrix.
+    // Compute nnzPerRow; distribution is currently 1D 
+    nnzPerRow.assign(nMyRows, 0);
+    for (auto it = localNZ.begin(); it != localNZ.end(); it++) {
+      gno_t I = (sortByDegree ? permuteIndex[it->first.first] 
+                              : it->first.first);
+      gno_t J = (sortByDegree ? permuteIndex[it->first.second]
+                              : it->first.second);
+      if (J <= I) // Lower-triangular part 
+        nnzPerRow[it->first.first - myFirstRow]++;
     }
 
     // TODO Dunno why there isn't a Teuchos::gatherAllv; 
     // TODO for now, compute and broadcast
-    Teuchos::gatherv<int,size_t>(nnzPerRow.getRawPtr(), nMyRows,
-                                 globalNnzPerRow.getRawPtr(), 
-                                 rcvcnt.getRawPtr(), disp.getRawPtr(), 
-                                 0, *comm);
 
-    Teuchos::Array<int>().swap(rcvcnt);
-    Teuchos::Array<int>().swap(disp);
+    Teuchos::gatherv<int,gno_t>(nnzPerRow.getRawPtr(), nMyRows,
+                                globalRowBuf.getRawPtr(), 
+                                rcvcnt.getRawPtr(), disp.getRawPtr(), 
+                                0, *comm);
+
+    Teuchos::Array<int>().swap(rcvcnt);  // no longer needed
+    Teuchos::Array<int>().swap(disp);    // no longer needed
 
     size_t nnz = localNZ.size(), gNnz;
     Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &nnz, &gNnz);
 
     chunkCuts.resize(nChunks+1, 0);
 
-    Teuchos::Array<size_t> permuteIndex;
-    if (sortByDegree) permuteIndex.resize(nrows); // TODO:  Ick!  Need parallel
 
     if (me == 0) { // TODO:  when have allgatherv, can do on all procs
                    // TODO:  or better, implement parallel version
-
-      if (sortByDegree) {
-        // Sort globalNnzPerRow in decreasing order, generating permuteIndex
-        for (size_t i = 0 ; i != nrows; i++) permuteIndex[i] = i;
-
-        std::sort(permuteIndex.begin(), permuteIndex.end(),
-                  [&](const size_t& a, const size_t& b) {
-                      return (globalNnzPerRow[a] > globalNnzPerRow[b]);
-                  }
-        );
-      }
 
       // Determine chunk cuts
       size_t target = gNnz / np;  // target nnz per processor
@@ -139,8 +231,8 @@ public:
       for (int chunkCnt = 0; chunkCnt < nChunks; chunkCnt++) {
         targetRunningTotal += (target * (chunkCnt+1));
         while (I < nrows) {
-          size_t nextNnz = (sortByDegree ? globalNnzPerRow[permuteIndex[I]]
-                                         : globalNnzPerRow[I]);
+          size_t nextNnz = (sortByDegree ? globalRowBuf[permuteIndex[I]]
+                                         : globalRowBuf[I]);
           if (currentRunningTotal + nextNnz < targetRunningTotal) {
             currentRunningTotal += nextNnz;
             I++;
@@ -153,18 +245,14 @@ public:
       chunkCuts[nChunks] = nrows;
     }
 
-    // Free memory associated with globalNnzPerRow
-    Teuchos::Array<size_t>().swap(globalNnzPerRow);
+    // Free memory associated with globalRowBuf
+    Teuchos::Array<gno_t>().swap(globalRowBuf);
 
     Teuchos::broadcast<int,gno_t>(*comm, 0, chunkCuts(0,nChunks+1));
 
-    if (sortByDegree)
-      Teuchos::broadcast<int,size_t>(*comm, 0, permuteIndex(0,nrows)); 
-                                     // Ick!  Use a directory  TODO
-
-    std::cout << comm->getRank() << " KDDKDD chunkCuts: ";
-    for (int kdd = 0; kdd <= nChunks; kdd++) std::cout << chunkCuts[kdd] << " ";
-    std::cout << std::endl;
+    //std::cout << comm->getRank() << " KDDKDD chunkCuts: ";
+    //for (int kdd=0; kdd <= nChunks; kdd++) std::cout << chunkCuts[kdd] << " ";
+    //std::cout << std::endl;
 
     // Determine new owner of each nonzero; buffer for sending
     Teuchos::Array<gno_t> iOut(localNZ.size());
@@ -172,39 +260,42 @@ public:
     Teuchos::Array<scalar_t> vOut(localNZ.size());
     Teuchos::Array<int> pOut(localNZ.size());
 
-    size_t cnt = 0;
-    for (auto it = localNZ.begin(); it != localNZ.end(); it++, cnt++) {
-      iOut[cnt] = (sortByDegree ? permuteIndex[it->first.first] 
-                                : it->first.first);
-      jOut[cnt] = (sortByDegree ? permuteIndex[it->first.second]
-                                : it->first.second);
-      vOut[cnt] = it->second;
-      pOut[cnt] = procFromChunks(iOut[cnt], jOut[cnt]);
+    size_t sendCnt = 0;
+    for (auto it = localNZ.begin(); it != localNZ.end(); it++) {
+      iOut[sendCnt] = (sortByDegree ? permuteIndex[it->first.first] 
+                                    : it->first.first);
+      jOut[sendCnt] = (sortByDegree ? permuteIndex[it->first.second]
+                                    : it->first.second);
+      if (jOut[sendCnt] <= iOut[sendCnt]) { // keep only lower diagonal entries
+        vOut[sendCnt] = it->second;
+        pOut[sendCnt] = procFromChunks(iOut[sendCnt], jOut[sendCnt]);
 
-      std::cout << comm->getRank() 
-                << "    KDDKDD IJ (" 
-                << it->first.first << "," << it->first.second
-                << ") permuted to ("
-                << iOut[cnt] << "," << jOut[cnt] 
-                << ") being sent to " << pOut[cnt]
-                << std::endl;
+        //std::cout << comm->getRank() 
+        //          << "    KDDKDD IJ (" 
+        //          << it->first.first << "," << it->first.second
+        //          << ") permuted to ("
+        //          << iOut[sendCnt] << "," << jOut[sendCnt] 
+        //          << ") being sent to " << pOut[sendCnt]
+        //          << std::endl;
+        sendCnt++;
+      }
     }
 
     // Free memory associated with localNZ and permuteIndex
     LocalNZmap_t().swap(localNZ);
-    if (sortByDegree) Teuchos::Array<size_t>().swap(permuteIndex);
+    if (sortByDegree) Teuchos::Array<gno_t>().swap(permuteIndex);
 
     // Use a Distributor to send nonzeros to new processors.
     Tpetra::Distributor plan(comm);
-    size_t nrecvs = plan.createFromSends(pOut());
+    size_t nrecvs = plan.createFromSends(pOut(0,sendCnt));
     Teuchos::Array<gno_t> iIn(nrecvs);
     Teuchos::Array<gno_t> jIn(nrecvs);
     Teuchos::Array<scalar_t> vIn(nrecvs);
 
     // TODO:  With more clever packing, could do only one round of communication
-    plan.doPostsAndWaits<gno_t>(iOut(), 1, iIn());
-    plan.doPostsAndWaits<gno_t>(jOut(), 1, jIn());
-    plan.doPostsAndWaits<scalar_t>(vOut(), 1, vIn());
+    plan.doPostsAndWaits<gno_t>(iOut(0,sendCnt), 1, iIn());
+    plan.doPostsAndWaits<gno_t>(jOut(0,sendCnt), 1, jIn());
+    plan.doPostsAndWaits<scalar_t>(vOut(0,sendCnt), 1, vIn());
 
     // Put received nonzeros in map
     for (size_t n = 0; n < nrecvs; n++) {
@@ -220,7 +311,7 @@ private:
   Distribution1DLinear<gno_t,scalar_t> initialDist;  
 
   // Flag indicating whether matrix should be reordered and renumbered 
-  // in decreasing sort order of number of nonzeros per row
+  // in decreasing sort order of number of nonzeros per row in full matrix
   bool sortByDegree;
 
   // Flag whether redistribution has occurred yet
@@ -241,8 +332,81 @@ private:
     int m = findIdxInChunks(I);
     int n = findIdxInChunks(J);
     int p = m*(m+1)/2 + n; 
-    // std::cout << "    KDDKDD procFromChunks (" << I << "," << J << "): " << p << std::endl;
     return p;
   }
 };
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Tpetra::Operator that works with the DistributionLowerTriangularBlock
+
+template <typename scalar_t, 
+          class Node = ::Tpetra::Details::DefaultTypes::node_type>
+class LowerTriangularBlockOperator : 
+      public Tpetra::Operator<scalar_t, Tpetra::Map<>::local_ordinal_type,
+                                        Tpetra::Map<>::global_ordinal_type,
+                                        Node> 
+{
+public:
+  using lno_t = Tpetra::Map<>::local_ordinal_type;
+  using gno_t = Tpetra::Map<>::global_ordinal_type;
+  using map_t = Tpetra::Map<>;
+  using import_t = Tpetra::Import<>;
+  using export_t = Tpetra::Export<>;
+  using vector_t = Tpetra::Vector<scalar_t>;
+  using mvector_t = Tpetra::MultiVector<scalar_t>;
+  using matrix_t = Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, Node>;
+
+  LowerTriangularBlockOperator(
+    const Teuchos::RCP<const matrix_t> &lowerTriangularMatrix_) 
+  : lowerTriangularMatrix(lowerTriangularMatrix_)
+  {
+    // Extract diagonals
+
+    vector_t diagByRowMap(lowerTriangularMatrix->getRowMap());
+    lowerTriangularMatrix->getLocalDiagCopy(diagByRowMap);
+    diag = Teuchos::rcp(new vector_t(lowerTriangularMatrix->getRangeMap()));
+    Tpetra::Export<> exporter(lowerTriangularMatrix->getRowMap(), 
+                              lowerTriangularMatrix->getRangeMap());
+    diag->doExport(diagByRowMap, exporter, Tpetra::ADD);
+  }
+
+  void apply(const mvector_t &x, mvector_t &y, Teuchos::ETransp mode,
+             scalar_t alpha, scalar_t beta) const
+  {
+    scalar_t ZERO =  Teuchos::ScalarTraits<scalar_t>::zero();
+    scalar_t ONE =  Teuchos::ScalarTraits<scalar_t>::one();
+    if (alpha == ZERO) {
+      if (beta == ZERO) y.putScalar(ZERO);
+      else y.scale(beta);
+      return;
+    }
+
+    // Multiply lower triangular
+    lowerTriangularMatrix->apply(x, y, Teuchos::NO_TRANS, alpha, beta);
+
+    // Multiply upper triangular
+    lowerTriangularMatrix->apply(x, y, Teuchos::TRANS, alpha, ONE);
+
+    // Subtract out duplicate diagonal terms
+    y.elementWiseMultiply(-ONE, *diag, x, ONE);
+  }
+
+  Teuchos::RCP<const map_t> getDomainMap() const {
+    return lowerTriangularMatrix->getDomainMap();
+  }
+
+  Teuchos::RCP<const map_t> getRangeMap() const {
+    return lowerTriangularMatrix->getRangeMap();
+  }
+
+  bool hasTransposeApply() const {return true;}  // Symmetric matrix
+
+private:
+  const Teuchos::RCP<const matrix_t > lowerTriangularMatrix;
+  Teuchos::RCP<vector_t> diag;
+};
+
+
+}
 #endif

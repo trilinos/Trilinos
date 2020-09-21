@@ -261,7 +261,6 @@ x_baseline->putScalar(2.);
       }
     }
 
-#if 0  // TODO: Not ready for this test yet; need fixes to #7758 and #7745
     // LowerTriangularBlock partition
     {
       Teuchos::ParameterList params;
@@ -284,7 +283,30 @@ x_baseline->putScalar(2.);
         }
       }
     }
-#endif
+
+    // LowerTriangularBlock partition with rows sorted by degree
+    {
+      Teuchos::ParameterList params;
+      const std::string testname = "LowerTriangularBlock";
+      params.set("distribution", "LowerTriangularBlock");
+      params.set("sortByDegree", true);
+      try {
+        ierr += runTestOp(testname, params);
+      }
+      catch (std::exception &e) {
+        int q = int(std::sqrt(float(2 * np)));
+        if (q * (q + 1) != 2 * np) {
+          // runTest should fail with this processor count; ignore
+          // the throw in this case
+          if (comm->getRank() == 0) 
+            std::cout << "Correctly caught error in " << testname << std::endl;
+        }
+        else {
+          // Test should have passed; this error is real
+          throw e;
+        }
+      }
+    }
 
     // Todo: add more
     //   1D with 1D partition
@@ -375,7 +397,6 @@ private:
     return ierr;
   }
 
-#if 0  // TODO: Not ready for this test yet; need fixes to #7758 and #7745
   //////////////////////////////
   // Each test reads, applies, and compares
   int runTestOp(
@@ -394,14 +415,13 @@ private:
 
     Teuchos::RCP<matrix_t> Amat = readFile(testname, params);
 
-    lowerTriangularOperator<scalar_t> lto(Amat);
+    Tpetra::LowerTriangularBlockOperator<scalar_t> lto(Amat);
 
     Teuchos::Array<scalar_t> norm(3);
     applyAndComputeNorms(testname, lto, norm());
 
     return compareToBaseline(testname, norm());
   }
-#endif
 
   //////////////////////////////
   // Each test reads, applies, and compares

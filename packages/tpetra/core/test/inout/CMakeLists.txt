@@ -13,12 +13,55 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE(
   MatrixMarket_Tpetra_CrsMatrix_Dist
   SOURCES
     MatrixMarket_Tpetra_CrsMatrix_Dist.cpp
-  ARGS "--file=simple.mtx"
   COMM serial mpi
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist
+  ARGS "--file=simple.mtx"
+  COMM mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist
+  ARGS "--file=simple.mtx"
+  COMM mpi
+  NUM_MPI_PROCS 3
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist
+  ARGS "--file=simple.mtx"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist
+  ARGS "--file=simple.mtx"
+  COMM mpi
+  NUM_MPI_PROCS 6
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist
+  ARGS "--file=simple.mtx"
+  COMM mpi
+  NUM_MPI_PROCS 9
   STANDARD_PASS_OUTPUT
   )
 
