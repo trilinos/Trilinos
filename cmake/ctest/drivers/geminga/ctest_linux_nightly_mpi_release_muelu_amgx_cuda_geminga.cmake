@@ -76,15 +76,8 @@ SET(Trilinos_PACKAGES MueLu Xpetra Amesos2 Tpetra)
 SET(EXTRA_CONFIGURE_OPTIONS
   ### ETI ###
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-    "-DTpetra_INST_INT_INT:BOOL=ON"
-    "-DTpetra_INST_INT_LONG:BOOL=OFF"
-    "-DTpetra_INST_INT_LONG_LONG:BOOL=OFF"
     "-DTpetra_INST_COMPLEX_DOUBLE:BOOL=OFF"
     "-DTpetra_INST_COMPLEX_FLOAT:BOOL=OFF"
-    "-DTpetra_INST_SERIAL=OFF"
-
-  ### Kokkos ###
-  "-DKOKKOS_ARCH=SNB;Kepler35"
 
   ### MISC ###
   "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
@@ -103,8 +96,8 @@ SET(EXTRA_CONFIGURE_OPTIONS
       "-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
 
   # Disable Pamgen and Shards due to weird nvcc errors
-  "-DTPL_ENALE_Pamgen:BOOL=OFF"
-  "-DTPL_ENALE_Shards:BOOL=OFF"
+  "-DTPL_ENABLE_Pamgen:BOOL=OFF"
+  "-DTPL_ENABLE_Shards:BOOL=OFF"
 
 
 
