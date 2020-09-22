@@ -329,6 +329,7 @@ class MachineLearningStatistics_Hex3D {
     else {
       coordsOwnedPlusShared = coords;
     }
+
     Teuchos::RCP<const Xpetra::Map<LO, GO, Node> > rowMap = gl_StiffGraph->getRowMap();
     Teuchos::RCP<vector_type > laplDiagOwned = vector_factory::Build(rowMap, true);
     Teuchos::ArrayView<const LO> indices;
