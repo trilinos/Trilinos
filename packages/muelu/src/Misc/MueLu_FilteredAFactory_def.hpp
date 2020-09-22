@@ -827,7 +827,7 @@ namespace MueLu {
         // now lets work on lumping dropped negative offdiags
         gamma = -NegOffDropSum - PosFilteredSum;
 
-        if (gamma < 0) {
+        if (TST::real(gamma) < TST::real(zero) ) {
           // the total amount of negative dropping is less than PosFilteredSum,
           // so we can distribute this dropping to pos offdiags. After lumping
           // the sum of the pos offdiags is just -gamma so we just assign pos
@@ -919,7 +919,7 @@ namespace MueLu {
               for(LO j = 0; j < (LO)nnz; j++)  {
                 if  ( (j != diagIndex)&&(TST::magnitude(fvals[inds[j]]) != TST::magnitude(zero) ) && 
                       (TST::real(vals[j]) > TST::real(zero) )) 
-                  fvals[j] = -gamma/NumPosKept;
+                  fvals[j] = -gamma/( (SC) NumPosKept);
               }
             }
             // else abandon rowsum preservation and do nothing
