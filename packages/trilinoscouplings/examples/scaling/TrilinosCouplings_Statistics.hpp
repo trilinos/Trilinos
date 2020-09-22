@@ -40,12 +40,21 @@
 
 // Xpetra
 #include <Xpetra_MultiVector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_CrsGraph.hpp>
 
-#ifdef HAVE_TRILINOSCOUPLINGS_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
 #include <Xpetra_TpetraMultiVector.hpp>
 #include <Xpetra_TpetraCrsGraph.hpp>
 #endif
+
+#ifdef HAVE_XPETRA_EPETRA
+#include <Xpetra_EpetraMultiVector.hpp>
+#include <Xpetra_EpetraCrsGraph.hpp>
+#endif
+
 
 // Teuchos
 #include <Teuchos_Comm.hpp>
@@ -360,10 +369,20 @@ class MachineLearningStatistics_Hex3D {
     globalNumMatrixEntries = gl_StiffGraph->getGlobalNumEntries();
   }
 
-#ifdef HAVE_TRILINOSCOUPLINGS_TPETRA
+#ifdef HAVE_XPETRA_TPETRA
   void Phase2b(Teuchos::RCP<const Tpetra::CrsGraph<LO, GO, Node> > gl_StiffGraph, Teuchos::RCP<Tpetra::MultiVector<ST, LO, GO,Node> > coords) {
     Teuchos::RCP<multivector_type> coords_X = Teuchos::rcp(new Xpetra::TpetraMultiVector<ST,LO,GO,Node>(coords));
     Teuchos::RCP<const crsgraph_type> graph_X = Teuchos::rcp(new Xpetra::TpetraCrsGraph<LO,GO,Node>(Teuchos::rcp_const_cast<Tpetra::CrsGraph<LO,GO,Node> >(gl_StiffGraph)));
+
+    Phase2b(graph_X, coords_X);
+  }
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+  void Phase2b(Teuchos::RCP<const Epetra_CrsGraph> gl_StiffGraph, Teuchos::RCP<Epetra_MultiVector> coords) {
+    Teuchos::RCP<multivector_type> coords_X = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,Node>(coords));
+    Teuchos::RCP<const crsgraph_type> graph_X = Teuchos::rcp(new Xpetra::EpetraCrsGraphT<GO,Node>(Teuchos::rcp_const_cast<Epetra_CrsGraph>(gl_StiffGraph)));
+
     Phase2b(graph_X, coords_X);
   }
 #endif
