@@ -341,7 +341,7 @@ IF(${PACKAGE_NAME}_ENABLE_Belos AND
   IF( TPL_ENABLE_AVATAR OR ${PACKAGE_NAME}_ENABLE_AvatarT)
     TRIBITS_ADD_TEST(
       IntrepidPoisson_Pamgen_Tpetra
-      NAME Example_Maxwell_Avatar
+      NAME IntrepidPoisson_Pamgen_Avatar
       ARGS "--inputParams=Poisson_avatar.xml"
       NUM_MPI_PROCS 1
       COMM mpi serial
