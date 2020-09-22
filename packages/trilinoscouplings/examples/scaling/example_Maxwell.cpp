@@ -638,7 +638,6 @@ int main(int argc, char *argv[]) {
                           &numSideSetsGlobal);
   MachineLearningStatistics_Hex3D<double, int, int, Xpetra::EpetraNode> MLStatistics(numElemsGlobal);
 
-
   long long * block_ids = new long long [numElemBlk];
   error += im_ex_get_elem_blk_ids_l(id, block_ids);
 
@@ -1550,8 +1549,6 @@ int main(int argc, char *argv[]) {
     // Statistics: Phase 2a
     MLStatistics.Phase2a(worksetJacobDet,cubWeights);
 
-
-
     /**********************************************************************************/
     /*                          Compute HCURL Mass Matrix                             */
     /**********************************************************************************/
@@ -1829,8 +1826,7 @@ int main(int argc, char *argv[]) {
   MassMatrixC.GlobalAssemble();  MassMatrixC.FillComplete();
   rhsVector.GlobalAssemble();
 
-  MLStatistics.Phase2b(Teuchos::rcp(&StiffMatrixC.Graph(),false),Teuchos::rcp(&nCoord,false));
-
+  MLStatistics.Phase2b(Teuchos::rcp(&MassMatrixG.Graph(),false),Teuchos::rcp(&nCoord,false));
 
   if(MyPID==0) {std::cout << "Global assembly                             "
                           << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
@@ -1929,7 +1925,10 @@ int main(int argc, char *argv[]) {
 
   MLStatistics.Phase3();
   Teuchos::ParameterList problemStatistics = MLStatistics.GetStatistics();
-
+  if(MyPID==0) {
+    std::cout<<"*** Problem Statistics ***"<<std::endl;
+    std::cout<<problemStatistics<<std::endl;
+  }
 
   double TotalErrorResidual=0, TotalErrorExactSol=0;
 
@@ -1997,25 +1996,28 @@ int main(int argc, char *argv[]) {
     MueList22.sublist("smoother: params").set("chebyshev: ratio eigenvalue",30.0);
     MueList22.sublist("smoother: params").set("chebyshev: degree",2);
     //MueList22.set("coarse: type","Amesos-KLU");
-
-
-#if defined(HAVE_TRILINOSCOUPLINGS_AVATAR) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
-    std::vector<std::string> AvatarSublists{"Avatar-MueLu-Fine","Avatar-MueLu-11","Avatar-MueLu-22"};
-    std::vector<Teuchos::ParameterList *> MueLuSublists{&MueLuList,&MueList11,&MueList22};
-    for (int i=0; i<(int)AvatarSublists.size(); i++) {
-      if (inputList.isSublist(AvatarSublists[i])) {
-	Teuchos::ParameterList problemFeatures = problemStatistics;
-	Teuchos::ParameterList avatarParams = inputList.sublist(AvatarSublists[i]);
-	std::cout<<"*** Avatar["<<AvatarSublists[i]<<"] Parameters ***\n"<<avatarParams<<std::endl;
-	
-	MueLu::AvatarInterface avatar(comm,avatarParams);
-	std::cout<<"*** Avatar Setup ***"<<std::endl;
-	avatar.Setup();
-	avatar.SetMueLuParameters(problemFeatures,*MueLuSublists[i], true);
-      }
-    }
-#endif
   }
+
+  
+#if defined(HAVE_TRILINOSCOUPLINGS_AVATAR) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
+  Teuchos::ParameterList &MueList11=MueLuList.sublist("refmaxwell: 11list");
+  Teuchos::ParameterList &MueList22=MueLuList.sublist("refmaxwell: 22list");
+ 
+  std::vector<std::string> AvatarSublists{"Avatar-MueLu-Fine","Avatar-MueLu-11","Avatar-MueLu-22"};
+  std::vector<Teuchos::ParameterList *> MueLuSublists{&MueLuList,&MueList11,&MueList22};
+  for (int i=0; i<(int)AvatarSublists.size(); i++) {
+    if (inputList.isSublist(AvatarSublists[i])) {
+      Teuchos::ParameterList problemFeatures = problemStatistics;
+      Teuchos::ParameterList avatarParams = inputList.sublist(AvatarSublists[i]);
+      std::cout<<"*** Avatar["<<AvatarSublists[i]<<"] Parameters ***\n"<<avatarParams<<std::endl;
+      
+      MueLu::AvatarInterface avatar(comm,avatarParams);
+      std::cout<<"*** Avatar Setup ***"<<std::endl;
+      avatar.Setup();
+      avatar.SetMueLuParameters(problemFeatures,*MueLuSublists[i], true);
+    }
+  }
+#endif
 
   Epetra_FEVector xh(rhsVector);
 
