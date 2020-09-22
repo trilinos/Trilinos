@@ -631,7 +631,7 @@ setupExodusFile(const std::string& filename,
   meshData_->set_bulk_data(bulkData_);
   meshData_->enable_edge_io();
   Ioss::PropertyManager props;
-  props.add(Ioss::Property("LOWERCASE_VARIABLE_NAMES", "FALSE"));
+  props.add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", "FALSE"));
   if (append) {
     if (append_after_restart_time) {
       meshIndex_ = meshData_->create_output_mesh(filename, stk::io::APPEND_RESULTS,
