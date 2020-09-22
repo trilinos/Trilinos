@@ -747,6 +747,7 @@ namespace MueLu {
   ExperimentalLumping(const Matrix& A, Matrix& filteredA, double rho, double rho2) const {
     using TST = typename Teuchos::ScalarTraits<SC>;
     SC zero = TST::zero();
+    SC one  = TST::one();
 
     ArrayView<const LO> inds;
     ArrayView<const SC> vals;
@@ -785,15 +786,15 @@ namespace MueLu {
             diag = vals[j];
           }
           else { // offdiagonal
-            if (TST::real(vals[j]) > zero) {
+            if (TST::real(vals[j]) > TST::real(zero) ) {
               PosOffSum += vals[j];
-              if (TST::real(fvals[j]) == zero) // not in filtered matrix
+              if (TST::magnitude(fvals[j]) == TST::magnitude(zero) ) // not in filtered matrix
                 PosOffDropSum += vals[j];
               else NumPosKept++;
             }
             else {
               NegOffSum += vals[j];
-              if (TST::real(fvals[j]) == zero) // not in filtered matrix
+              if (TST::magnitude(fvals[j]) == TST::magnitude(zero) ) // not in filtered matrix
                 NegOffDropSum += vals[j];
               else NumNegKept++;
             }
@@ -801,7 +802,7 @@ namespace MueLu {
         }
 
         // measure of diagonal dominance if no lumping is done. 
-        if (TST::real(diag) != zero)
+        if (TST::magnitude(diag) != TST::magnitude(zero)  )
           noLumpDdom = (PosOffSum - NegOffSum)/diag;
 
         // Target is an acceptable diagonal dominance ratio
@@ -836,7 +837,7 @@ namespace MueLu {
 
           if (diagIndex != -1) fvals[diagIndex] = diag;
           for(LO j = 0; j < (LO)nnz; j++)  {
-            if ((j != diagIndex)&&(TST::real(vals[j]) > zero) && (TST::real(fvals[j]) != zero)) 
+            if ((j != diagIndex)&&(TST::real(vals[j]) > TST::real(zero) ) && (TST::magnitude(fvals[j]) != TST::magnitude(zero))) 
               fvals[j] =  -gamma*(vals[j]/PosFilteredSum);
           }
         }
@@ -885,12 +886,12 @@ namespace MueLu {
             // result in a sign flip
             if ( TST::magnitude(denom) < TST::magnitude(numer) ) alpha = TST::one();
             else alpha = numer/denom; 
-            if ( TST::real(alpha) < zero) alpha = zero;
-            if ( TST::real(diag) < TST::real((1-alpha)*gamma) ) alpha =  TST::one();
+            if ( TST::real(alpha) < TST::real(zero)) alpha = zero;
+            if ( TST::real(diag) < TST::real((one-alpha)*gamma) ) alpha =  TST::one();
 
             // first change the diagonal
 
-            if (diagIndex != -1) fvals[diagIndex] = diag - (1-alpha)*gamma;
+            if (diagIndex != -1) fvals[diagIndex] = diag - (one-alpha)*gamma;
 
             // after lumping the sum of neg offdiags will be NegFilteredSum
             // + alpha*gamma. That is the remaining negative entries altered
@@ -902,8 +903,8 @@ namespace MueLu {
             
             SC temp = (NegFilteredSum+alpha*gamma)/NegFilteredSum;
             for(LO j = 0; j < (LO)nnz; j++)  {
-              if  ( (j != diagIndex)&&(TST::real(fvals[inds[j]]) != zero) && 
-                    ( TST::real(vals[j]) < zero ) )
+              if  ( (j != diagIndex)&&(TST::magnitude(fvals[inds[j]]) != TST::magnitude(zero) ) && 
+                    ( TST::real(vals[j]) < TST::real(zero) ) )
                 fvals[j] = temp*vals[j];
             }
           } 
@@ -916,8 +917,8 @@ namespace MueLu {
               flipPosOffDiagsToNeg = true;
 
               for(LO j = 0; j < (LO)nnz; j++)  {
-                if  ( (j != diagIndex)&&(TST::real(fvals[inds[j]]) != zero) && 
-                      (TST::real(vals[j]) > zero )) 
+                if  ( (j != diagIndex)&&(TST::magnitude(fvals[inds[j]]) != TST::magnitude(zero) ) && 
+                      (TST::real(vals[j]) > TST::real(zero) )) 
                   fvals[j] = -gamma/NumPosKept;
               }
             }
@@ -929,7 +930,7 @@ namespace MueLu {
                                        // not originally filtered
                                        // but zeroed due to lumping
               for(LO j = 0; j < (LO)nnz; j++) 
-                if ((j != diagIndex)&& (TST::real(vals[j]) > zero)) fvals[j] = zero;
+                if ((j != diagIndex)&& (TST::real(vals[j]) > TST::real(zero))) fvals[j] = zero;
           }
         } // positive gamma else
 
