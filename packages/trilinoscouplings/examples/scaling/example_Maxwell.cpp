@@ -85,6 +85,7 @@
 // TrilinosCouplings includes
 #include "TrilinosCouplings_config.h"
 #include "TrilinosCouplings_Pamgen_Utils.hpp"
+#include "TrilinosCouplings_Statistics.hpp"
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
@@ -119,6 +120,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_Comm.hpp"
 
 // Shards includes
 #include "Shards_CellTopology.hpp"
@@ -146,6 +148,10 @@
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_Matrix.hpp>
+
+#ifdef HAVE_TRILINOSCOUPLINGS_AVATAR
+#  include "MueLu_AvatarInterface.hpp"
+#endif //HAVE_TRILINOSCOUPLINGS_AVATAR
 
 // MueLu
 #include <MueLu_RefMaxwell.hpp>
@@ -630,6 +636,8 @@ int main(int argc, char *argv[]) {
   im_ne_get_init_global_l(id, &numNodesGlobal, &numElemsGlobal,
                           &numElemBlkGlobal, &numNodeSetsGlobal,
                           &numSideSetsGlobal);
+  MachineLearningStatistics_Hex3D<double, int, int, Xpetra::EpetraNode> MLStatistics(numElemsGlobal);
+
 
   long long * block_ids = new long long [numElemBlk];
   error += im_ex_get_elem_blk_ids_l(id, block_ids);
@@ -1052,6 +1060,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  // Statistics: Phase 1
+  MLStatistics.Phase1(elemToNode,elemToEdge,edgeToNode,nodeCoord,sigmaVal);
+
+
   /**********************************************************************************/
   /********************************* GET CUBATURE ***********************************/
   /**********************************************************************************/
@@ -1170,19 +1182,20 @@ int main(int argc, char *argv[]) {
 
 
   Epetra_Map globalMapElem(numElemsGlobal, numElems, 0, Comm);
-  if (dump){
-    // Put coordinates in multivector for output
-    Epetra_MultiVector nCoord(globalMapG,3);
 
-    int ownedNode = 0;
-    for (int inode=0; inode<numNodes; inode++) {
-      if (nodeIsOwned[inode]) {
-        nCoord[0][ownedNode]=nodeCoord(inode,0);
-        nCoord[1][ownedNode]=nodeCoord(inode,1);
-        nCoord[2][ownedNode]=nodeCoord(inode,2);
-        ownedNode++;
-      }
+  // Put coordinates in multivector for output
+  Epetra_MultiVector nCoord(globalMapG,3);
+  
+  int ownedNode = 0;
+  for (int inode=0; inode<numNodes; inode++) {
+    if (nodeIsOwned[inode]) {
+      nCoord[0][ownedNode]=nodeCoord(inode,0);
+      nCoord[1][ownedNode]=nodeCoord(inode,1);
+      nCoord[2][ownedNode]=nodeCoord(inode,2);
+      ownedNode++;
     }
+  }
+  if (dump){  
     EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
 
     // Put element to node mapping in multivector for output
@@ -1534,6 +1547,10 @@ int main(int argc, char *argv[]) {
     if(MyPID==0) {std::cout << "Compute HGRAD Mass Matrix                   "
                             << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
+    // Statistics: Phase 2a
+    MLStatistics.Phase2a(worksetJacobDet,cubWeights);
+
+
 
     /**********************************************************************************/
     /*                          Compute HCURL Mass Matrix                             */
@@ -1812,6 +1829,8 @@ int main(int argc, char *argv[]) {
   MassMatrixC.GlobalAssemble();  MassMatrixC.FillComplete();
   rhsVector.GlobalAssemble();
 
+  MLStatistics.Phase2b(Teuchos::rcp(&StiffMatrixC.Graph(),false),Teuchos::rcp(&nCoord,false));
+
 
   if(MyPID==0) {std::cout << "Global assembly                             "
                           << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
@@ -1908,6 +1927,10 @@ int main(int argc, char *argv[]) {
   /*********************************** SOLVE ****************************************/
   /**********************************************************************************/
 
+  MLStatistics.Phase3();
+  Teuchos::ParameterList problemStatistics = MLStatistics.GetStatistics();
+
+
   double TotalErrorResidual=0, TotalErrorExactSol=0;
 
   // Parameter list for ML
@@ -1941,9 +1964,10 @@ int main(int argc, char *argv[]) {
   List11.set("y-coordinates",&Ny[0]);
   List11.set("z-coordinates",&Nz[0]);
 
-
   // Parameter list for MueLu
   Teuchos::ParameterList MueLuList;
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
   if(inputList.isSublist("MueLu")) {
     MueLuList = inputList.sublist("MueLu");
   } else {
@@ -1973,6 +1997,24 @@ int main(int argc, char *argv[]) {
     MueList22.sublist("smoother: params").set("chebyshev: ratio eigenvalue",30.0);
     MueList22.sublist("smoother: params").set("chebyshev: degree",2);
     //MueList22.set("coarse: type","Amesos-KLU");
+
+
+#if defined(HAVE_TRILINOSCOUPLINGS_AVATAR) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
+    std::vector<std::string> AvatarSublists{"Avatar-MueLu-Fine","Avatar-MueLu-11","Avatar-MueLu-22"};
+    std::vector<Teuchos::ParameterList *> MueLuSublists{&MueLuList,&MueList11,&MueList22};
+    for (int i=0; i<(int)AvatarSublists.size(); i++) {
+      if (inputList.isSublist(AvatarSublists[i])) {
+	Teuchos::ParameterList problemFeatures = problemStatistics;
+	Teuchos::ParameterList avatarParams = inputList.sublist(AvatarSublists[i]);
+	std::cout<<"*** Avatar["<<AvatarSublists[i]<<"] Parameters ***\n"<<avatarParams<<std::endl;
+	
+	MueLu::AvatarInterface avatar(comm,avatarParams);
+	std::cout<<"*** Avatar Setup ***"<<std::endl;
+	avatar.Setup();
+	avatar.SetMueLuParameters(problemFeatures,*MueLuSublists[i], true);
+      }
+    }
+#endif
   }
 
   Epetra_FEVector xh(rhsVector);
@@ -2261,7 +2303,6 @@ int main(int argc, char *argv[]) {
   }
 
   // Summarize timings
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   Teuchos::TimeMonitor::report (comm.ptr(), std::cout);
 
   return 0;
