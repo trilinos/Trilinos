@@ -87,6 +87,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use absrowsum diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -267,6 +268,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use absrowsum diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -422,6 +424,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use absrowsum diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
