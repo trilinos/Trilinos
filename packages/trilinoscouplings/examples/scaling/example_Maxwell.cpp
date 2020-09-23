@@ -636,7 +636,9 @@ int main(int argc, char *argv[]) {
   im_ne_get_init_global_l(id, &numNodesGlobal, &numElemsGlobal,
                           &numElemBlkGlobal, &numNodeSetsGlobal,
                           &numSideSetsGlobal);
+#ifdef HAVE_XPETRA_EPETRA
   MachineLearningStatistics_Hex3D<double, int, int, Xpetra::EpetraNode> MLStatistics(numElemsGlobal);
+#endif
 
   long long * block_ids = new long long [numElemBlk];
   error += im_ex_get_elem_blk_ids_l(id, block_ids);
@@ -1059,9 +1061,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
+#ifdef HAVE_XPETRA_EPETRA
   // Statistics: Phase 1
   MLStatistics.Phase1(elemToNode,elemToEdge,edgeToNode,nodeCoord,sigmaVal);
-
+#endif
 
   /**********************************************************************************/
   /********************************* GET CUBATURE ***********************************/
@@ -1546,8 +1549,10 @@ int main(int argc, char *argv[]) {
     if(MyPID==0) {std::cout << "Compute HGRAD Mass Matrix                   "
                             << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
+#ifdef HAVE_XPETRA_EPETRA
     // Statistics: Phase 2a
     MLStatistics.Phase2a(worksetJacobDet,cubWeights);
+#endif
 
     /**********************************************************************************/
     /*                          Compute HCURL Mass Matrix                             */
@@ -1826,7 +1831,9 @@ int main(int argc, char *argv[]) {
   MassMatrixC.GlobalAssemble();  MassMatrixC.FillComplete();
   rhsVector.GlobalAssemble();
 
+#ifdef HAVE_XPETRA_EPETRA
   MLStatistics.Phase2b(Teuchos::rcp(&MassMatrixG.Graph(),false),Teuchos::rcp(&nCoord,false));
+#endif
 
   if(MyPID==0) {std::cout << "Global assembly                             "
                           << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
@@ -1923,12 +1930,14 @@ int main(int argc, char *argv[]) {
   /*********************************** SOLVE ****************************************/
   /**********************************************************************************/
 
+#ifdef HAVE_XPETRA_EPETRA
   MLStatistics.Phase3();
   Teuchos::ParameterList problemStatistics = MLStatistics.GetStatistics();
   if(MyPID==0) {
     std::cout<<"*** Problem Statistics ***"<<std::endl;
     std::cout<<problemStatistics<<std::endl;
   }
+#endif
 
   double TotalErrorResidual=0, TotalErrorExactSol=0;
 
@@ -1999,7 +2008,7 @@ int main(int argc, char *argv[]) {
   }
 
   
-#if defined(HAVE_TRILINOSCOUPLINGS_AVATAR) && defined(HAVE_TRILINOSCOUPLINGS_MUELU)
+#if defined(HAVE_TRILINOSCOUPLINGS_AVATAR) && defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_XPETRA_EPETRA)
   Teuchos::ParameterList &MueList11=MueLuList.sublist("refmaxwell: 11list");
   Teuchos::ParameterList &MueList22=MueLuList.sublist("refmaxwell: 22list");
  
