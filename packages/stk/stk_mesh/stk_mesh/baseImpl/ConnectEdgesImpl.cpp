@@ -105,8 +105,9 @@ struct connect_face_impl
         //which is fine
         if (iedge != m_edge_map.end()) {
           Entity edge = iedge->second;
-          Permutation perm = mesh.find_permutation(face_topo, face_nodes, edge_topo, edge_nodes.data(), e);
-          ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
+          Entity const* original_edge_nodes = mesh.begin_nodes(edge);
+          Permutation perm = mesh.find_permutation(face_topo, face_nodes, edge_topo, original_edge_nodes, e);
+          ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to edge");
           mesh.declare_relation(m_bucket[iface], edge, e, perm, scratch1, scratch2, scratch3);
         }
       }
@@ -178,8 +179,10 @@ struct connect_face_entity_impl
       //which is fine
       if (iedge != m_edge_map.end()) {
         Entity edge = iedge->second;
-        Permutation perm = m_bulk.find_permutation(face_topo, face_nodes, edge_topo, edge_nodes.data(), e);
-        ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
+        Entity const* original_edge_nodes = m_bulk.begin_nodes(edge);
+
+        Permutation perm = m_bulk.find_permutation(face_topo, face_nodes, edge_topo, original_edge_nodes, e);
+        ThrowRequireMsg(perm != INVALID_PERMUTATION, "Connect face to edge:  could not find valid permutation to connect face to edge");
         m_bulk.declare_relation(m_face, edge, e, perm, scratch1, scratch2, scratch3);
       }
     }

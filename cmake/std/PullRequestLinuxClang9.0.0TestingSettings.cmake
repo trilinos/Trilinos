@@ -6,6 +6,8 @@
 
 # Usage: cmake -C PullRequestLinuxClang9.0.0TestingSettings.cmake
 
+set (CMAKE_CXX_STANDARD "14" CACHE STRING "Set C++ standard to C++14")
+
 # Misc options typically added by CI testing mode in TriBITS
 
 # Use the below option only when submitting to the dashboard
@@ -37,3 +39,5 @@ set(FEI_multifield_vbr_az_MPI_2_DISABLE ON CACHE BOOL "Temporarily disabled in P
 set(FEI_multifield_vbr_az_MPI_3_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set(ROL_example_PinT_parabolic-control_example_01_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set(Rythmos_StepperBuilder_UnitTest_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+
+set(CMAKE_CXX_FLAGS "-std=c++14" CACHE STRING "Set C++ standard to C++14")

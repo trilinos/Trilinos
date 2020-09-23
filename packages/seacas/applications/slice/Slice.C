@@ -1214,7 +1214,7 @@ namespace {
 
           ex_get_partial_conn(exoid, EX_ELEM_BLOCK, block_id, beg, count, glob_conn.data(), nullptr,
                               nullptr);
-          progress("\tpartial_conn: " + std::to_string(beg) + " " + std::to_string(count));
+          progress(fmt::format("\tpartial_conn-- start: {:L}\tcount: {:L}", beg, count));
 
           size_t el = 0;
           for (size_t j = 0; j < count; j++) {
@@ -1339,7 +1339,7 @@ namespace {
 
           ex_get_partial_conn(exoid, EX_ELEM_BLOCK, block_id, beg, count, glob_conn.data(), nullptr,
                               nullptr);
-          progress("\tpartial_conn: " + std::to_string(beg) + " " + std::to_string(count));
+          progress(fmt::format("\tpartial_conn-- start: {:L}\tcount: {:L}", beg, count));
 
           size_t el = 0;
           for (size_t j = 0; j < count; j++) {

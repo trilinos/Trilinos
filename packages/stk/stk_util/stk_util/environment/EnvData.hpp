@@ -67,7 +67,7 @@ namespace sierra {
     struct ExecInfo
     {
       MPI_Comm              m_groupComm;
-      int                   m_master;
+      int                   m_rootProcessor;
       MPI_Comm              m_worldComm;
       MPI_Comm              m_interComm;
     };

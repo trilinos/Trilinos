@@ -241,6 +241,7 @@ void SculptMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Paral
 
    addSideSets(mesh);
    addNodeSets(mesh);
+   addEdgeBlocks(mesh);
 
    this->rebalance(mesh);
 }
@@ -353,6 +354,7 @@ void SculptMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Int
      mesh.addNodeset("Nodeset"+nPostfix.str());
    }
 
+   mesh.addEdgeBlock(panzer_stk::STK_Interface::edgeBlockString);
 }
 
 void SculptMeshFactory::buildNodes( stk::ParallelMachine paralleMach, STK_Interface &mesh ) const
@@ -600,7 +602,23 @@ void SculptMeshFactory::addNodeSets(STK_Interface & mesh) const
     mesh.endModification();
 }
 
+void ScupltMeshFactory::addEdgeBlocks(STK_Interface & mesh) const
+{
+   mesh.beginModification();
 
+   stk::mesh::Part * edge_block = mesh.getEdgeBlock(panzer_stk::STK_Interface::edgeBlockString);
+
+   Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   Teuchos::RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
+
+   std::vector<stk::mesh::Entity> edges;
+   bulkData->get_entities(mesh.getEdgeRank(),metaData->locally_owned_part(),edges);
+   for(auto edge : edges) {
+      mesh.addEntityToEdgeBlock(edge, edge_block);
+   }
+
+   mesh.endModification();
+}
 
 //! Convert processor rank to a tuple
 Teuchos::Tuple<std::size_t,2> SculptMeshFactory::procRankToProcTuple(std::size_t procRank) const

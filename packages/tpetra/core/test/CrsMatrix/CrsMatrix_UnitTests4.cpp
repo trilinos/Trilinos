@@ -1039,7 +1039,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     for(int i=0; i<(int)alpha.size(); i++) {
       for(int j=0; j<(int)beta.size(); j++) {
         Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp(new Teuchos::ParameterList());
-        Y1a.putScalar(ZERO);Y1b.putScalar(ZERO);
+        Y1a.putScalar(ONE);Y1b.putScalar(ONE);
         Y2a.putScalar(ZERO);Y2b.putScalar(ZERO);
         
         std::vector<MAT*> matrices = {A1.get(),A2.get()};

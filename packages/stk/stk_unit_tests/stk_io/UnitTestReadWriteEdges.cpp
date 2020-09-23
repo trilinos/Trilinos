@@ -173,7 +173,7 @@ void StkEdgeIoTest::test_output_mesh(stk::mesh::BulkData& bulk)
   test_faces(bulk);
 }
 
-void StkEdgeIoTest::set_expected_values(ExpectedValues& expectedValues_)
+void StkEdgeIoTest::set_expected_values(io_test_utils::ExpectedValues& expectedValues_)
 {
   expectedValues = expectedValues_;
 }
@@ -181,7 +181,7 @@ void StkEdgeIoTest::set_expected_values(ExpectedValues& expectedValues_)
 TEST_F(StkEdgeIoTest, SerialWriteMesh)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
-  ExpectedValues expectedValues;
+  io_test_utils::ExpectedValues expectedValues;
   expectedValues.numEdgesPerProc = std::vector<unsigned>{12};
   expectedValues.numLocalEdgesPerProc = std::vector<unsigned>{12};
   expectedValues.numFacesPerProc = std::vector<unsigned>{0};
@@ -201,7 +201,7 @@ TEST_F(StkEdgeIoTest, SerialWriteMesh)
 TEST_F(StkEdgeIoTest, ParallelWriteMesh)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
-  ExpectedValues expectedValues;
+  io_test_utils::ExpectedValues expectedValues;
   expectedValues.numEdgesPerProc = std::vector<unsigned>{12, 12};
   expectedValues.numLocalEdgesPerProc = std::vector<unsigned>{12, 8};
   expectedValues.numFacesPerProc = std::vector<unsigned>{0, 0};
@@ -221,7 +221,7 @@ TEST_F(StkEdgeIoTest, ParallelWriteMesh)
 TEST_F(StkEdgeIoTest, SerialWriteMeshWithFace)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
-  ExpectedValues expectedValues;
+  io_test_utils::ExpectedValues expectedValues;
   expectedValues.numEdgesPerProc = std::vector<unsigned>{20};
   expectedValues.numLocalEdgesPerProc = std::vector<unsigned>{20};
   expectedValues.numFacesPerProc = std::vector<unsigned>{1};
@@ -242,7 +242,7 @@ TEST_F(StkEdgeIoTest, SerialWriteMeshWithFace)
 TEST_F(StkEdgeIoTest, ParallelWriteMeshWithFace)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
-  ExpectedValues expectedValues;
+  io_test_utils::ExpectedValues expectedValues;
   expectedValues.numEdgesPerProc = std::vector<unsigned>{12, 12};
   expectedValues.numLocalEdgesPerProc = std::vector<unsigned>{12, 8};
   expectedValues.numFacesPerProc = std::vector<unsigned>{1, 1};

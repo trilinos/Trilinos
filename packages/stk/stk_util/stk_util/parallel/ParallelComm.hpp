@@ -488,7 +488,7 @@ void parallel_data_exchange_t(std::vector< std::vector<T> > &send_lists,
 template<typename T>
 void parallel_data_exchange_sym_t(std::vector< std::vector<T> > &send_lists,
                                   std::vector< std::vector<T> > &recv_lists,
-                                  MPI_Comm &mpi_communicator )
+                                  const MPI_Comm &mpi_communicator )
 {
   //
   //  Determine the number of processors involved in this communication

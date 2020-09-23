@@ -61,10 +61,6 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("output_extension", GetLongOption::MandatoryValue,
                   "Exodus database extension for the output file", nullptr);
 
-  options_.enroll("offset", GetLongOption::MandatoryValue, "Raid Offset", nullptr);
-
-  options_.enroll("raid_count", GetLongOption::MandatoryValue, "Number of raids", "0");
-
   options_.enroll("processor_count", GetLongOption::MandatoryValue, "Number of processors", "1");
 
   options_.enroll("current_directory", GetLongOption::MandatoryValue, "Current Directory", ".");
@@ -240,20 +236,6 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("output_extension");
     if (temp != nullptr) {
       outExtension_ = temp;
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("offset");
-    if (temp != nullptr) {
-      raidOffset_ = strtol(temp, nullptr, 10);
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("raid_count");
-    if (temp != nullptr) {
-      raidCount_ = strtol(temp, nullptr, 10);
     }
   }
 

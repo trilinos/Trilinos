@@ -48,6 +48,7 @@
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_IteratorOps.hpp> // containing routines to generate Jacobi iterator
+#include <Xpetra_IO.hpp>
 #include <sstream>
 
 #include "MueLu_SaPFactory_decl.hpp"
@@ -171,7 +172,6 @@ namespace MueLu {
 
       {
         SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);
-        //Teuchos::RCP<Vector> invDiag = Utilities::GetMatrixDiagonalInverse(*A);
         Teuchos::RCP<Vector> invDiag;
         if (!useAbsValueRowSum)
           invDiag = Utilities::GetMatrixDiagonalInverse(*A); //default
@@ -180,10 +180,10 @@ namespace MueLu {
           const bool returnReciprocal=true;
           invDiag = Utilities::GetLumpedMatrixDiagonal(A,returnReciprocal);
           TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError, "SaPFactory: diagonal reciprocal is null.");
-        }
-
-        SC omega = dampingFactor / lambdaMax;
-        TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
+        }	
+	
+	      SC omega = dampingFactor / lambdaMax;
+	      TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
         finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP,

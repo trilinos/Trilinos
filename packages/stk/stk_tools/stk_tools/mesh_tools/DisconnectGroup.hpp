@@ -94,10 +94,12 @@ public:
 
   stk::mesh::EntityIdVector get_group_element_ids() const;
 
-  void pack_group_info(stk::CommBuffer& procBuffer, stk::mesh::EntityId newNodeId, int proc, std::ostream& os) const;
+  void pack_group_info(stk::CommBuffer& procBuffer, stk::mesh::EntityId newNodeId, int proc) const;
 
-  void unpack_group_info(stk::CommBuffer& procBuffer, stk::mesh::EntityId& newNodeId, int proc, std::ostream& os);
+  void unpack_group_info(stk::CommBuffer& procBuffer, stk::mesh::EntityId& newNodeId, int proc);
+
   void set_active(bool flag) const { m_active = flag; }
+
   bool is_active() const { return m_active; }
 
   const std::vector<EntityOwnerProc> get_part_owner_proc() const { return m_entityOwnerProcVec; }

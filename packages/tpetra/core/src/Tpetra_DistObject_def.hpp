@@ -767,7 +767,7 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
         this->copyAndPermute (src, numSameIDs, permuteToLIDs,
-                              permuteFromLIDs);
+                              permuteFromLIDs, CM);
         if (verbose) {
           std::ostringstream os;
           os << *prefix << "After copyAndPermute:" << endl
@@ -1218,7 +1218,8 @@ namespace Tpetra {
      buffer_device_type>&,
    const Kokkos::DualView<
      const local_ordinal_type*,
-     buffer_device_type>&)
+     buffer_device_type>&,
+   const CombineMode CM)
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>

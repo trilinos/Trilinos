@@ -407,7 +407,7 @@ private:
   STK_FUNCTION
   void clear_buckets();
 
-  void fill_buckets(const stk::mesh::BulkData& bulk_in);
+  bool fill_buckets(const stk::mesh::BulkData& bulk_in);
 
   void fill_mesh_indices(const stk::mesh::BulkData& bulk_in);
 

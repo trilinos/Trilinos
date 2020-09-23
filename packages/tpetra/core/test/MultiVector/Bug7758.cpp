@@ -40,8 +40,8 @@
 */
 
 // Creates vectors with different maps; tests results of export into them
-// Bug7758 indicates that incorrect results of export are produced when
-// the source map is NOT a superset of the target map #7758
+// Documents behavior of Tpetra::ADD in Tpetra::MultiVector for many common
+// (and a few less common) use cases.
 // Analogous tests for Epetra are in epetra/test/MultiVector/Bug7758.cpp
 
 #include "Tpetra_Core.hpp"
@@ -179,7 +179,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, CyclicToDefault, Scalar,LO,GO,Node)
   std::cout << me << " CYCLIC TO DEFAULT " << std::endl;
   defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
-  // Check result; all vector entries should be srcScalar
+  // Check result
 
   auto invalid = Teuchos::OrdinalTraits<LO>::invalid();
   auto data = defaultVecTgt.getLocalViewHost();
@@ -359,7 +359,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OddEvenToSerial, Scalar,LO,GO,Node)
   std::cout << me << " ODDEVEN TO SERIAL " << std::endl;
   serialVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
-  // Check result; all vector entries should be srcScalar
+  // Check result
 
   auto data = serialVecTgt.getLocalViewHost();
   for (size_t i = 0; i < serialVecTgt.getLocalLength(); i++) {
@@ -515,7 +515,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, NoSamesToDefault, Scalar,LO,GO,Node)
     vector_t noSamesVecSrc(noSamesMap);
     noSamesVecSrc.putScalar(srcScalar);
 
-    // Export Overlap-to-default
+    // Export noSames-to-default
 
     Tpetra::Export<LO,GO,Node> noSamesToDefault(noSamesMap, defaultMap);
     defaultVecTgt.doExport(noSamesVecSrc, noSamesToDefault, Tpetra::ADD);
@@ -536,7 +536,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, NoSamesToDefault, Scalar,LO,GO,Node)
 
   TEST_ASSERT(gerr == 0);
 }
-
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug7758, DefaultToDefault, SCALAR, LO, GO, NODE) \

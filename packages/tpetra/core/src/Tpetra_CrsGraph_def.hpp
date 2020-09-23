@@ -4945,7 +4945,8 @@ namespace Tpetra {
    const Kokkos::DualView<const local_ordinal_type*,
      buffer_device_type>& permuteToLIDs,
    const Kokkos::DualView<const local_ordinal_type*,
-     buffer_device_type>& permuteFromLIDs)
+     buffer_device_type>& permuteFromLIDs,
+   const CombineMode /*CM*/)
   {
     using std::endl;
     using LO = local_ordinal_type;
@@ -6430,7 +6431,7 @@ namespace Tpetra {
         rangeMap = rangeMap_->replaceCommWithSubset (newComm);
       }
     }
-    if (! colMap.is_null ()) {
+    if (! colMap_.is_null ()) {
       colMap = colMap_->replaceCommWithSubset (newComm);
     }
 

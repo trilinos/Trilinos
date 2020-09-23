@@ -418,7 +418,7 @@ bool Behavior::useMergePathMultiVector()
   size_t Behavior::multivectorKernelLocationThreshold ()
 {
   constexpr char envVarName[] = "TPETRA_VECTOR_DEVICE_THRESHOLD";
-  constexpr size_t defaultValue (10000);
+  constexpr size_t defaultValue (22000);
 
   static size_t value_ = defaultValue;
   static bool initialized_ = false;

@@ -87,8 +87,8 @@ namespace Iocgns {
 
     std::pair<StructuredZoneData *, StructuredZoneData *> split(int zone_id, double avg_work,
                                                                 int rank, bool verbose);
-    void resolve_zgc_split_donor(std::vector<Iocgns::StructuredZoneData *> &zones);
-    void update_zgc_processor(std::vector<Iocgns::StructuredZoneData *> &zones);
+    void resolve_zgc_split_donor(const std::vector<Iocgns::StructuredZoneData *> &zones);
+    void update_zgc_processor(const std::vector<Iocgns::StructuredZoneData *> &zones);
   };
 } // namespace Iocgns
 

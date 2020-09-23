@@ -84,6 +84,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tExodusEdgeBlock
+  SOURCES tExodusEdgeBlock.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 2
+  COMM serial mpi
+  )
+
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  tSolutionReader
 #  SOURCES tSolutionReader.cpp ${UNIT_TEST_DRIVER}
