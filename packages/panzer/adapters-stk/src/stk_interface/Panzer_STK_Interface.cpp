@@ -630,17 +630,18 @@ setupExodusFile(const std::string& filename,
   meshData_ = rcp(new StkMeshIoBroker(comm));
   meshData_->set_bulk_data(bulkData_);
   meshData_->enable_edge_io();
+  Ioss::PropertyManager props;
+  props.add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", "FALSE"));
   if (append) {
     if (append_after_restart_time) {
-      Ioss::PropertyManager props;
       meshIndex_ = meshData_->create_output_mesh(filename, stk::io::APPEND_RESULTS,
                                                  props, restart_time);
     }
     else // Append results to the end of the file
-      meshIndex_ = meshData_->create_output_mesh(filename, stk::io::APPEND_RESULTS);
+      meshIndex_ = meshData_->create_output_mesh(filename, stk::io::APPEND_RESULTS, props);
   }
   else
-    meshIndex_ = meshData_->create_output_mesh(filename, stk::io::WRITE_RESULTS);
+    meshIndex_ = meshData_->create_output_mesh(filename, stk::io::WRITE_RESULTS, props);
   const FieldVector& fields = metaData_->get_fields();
   for (size_t i(0); i < fields.size(); ++i) {
     // Do NOT add MESH type stk fields to exodus io, but do add everything
