@@ -6431,7 +6431,7 @@ namespace Tpetra {
         rangeMap = rangeMap_->replaceCommWithSubset (newComm);
       }
     }
-    if (! colMap.is_null ()) {
+    if (! colMap_.is_null ()) {
       colMap = colMap_->replaceCommWithSubset (newComm);
     }
 
