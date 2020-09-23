@@ -71,6 +71,7 @@ namespace MueLu {
     SET_VALID_ENTRY("sa: damping factor");
     SET_VALID_ENTRY("sa: calculate eigenvalue estimate");
     SET_VALID_ENTRY("sa: eigenvalue estimate num iterations");
+    SET_VALID_ENTRY("sa: use absrowsum diagonal scaling");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
@@ -150,6 +151,7 @@ namespace MueLu {
     SC dampingFactor      = as<SC>(pL.get<double>("sa: damping factor"));
     LO maxEigenIterations = as<LO>(pL.get<int>   ("sa: eigenvalue estimate num iterations"));
     bool estimateMaxEigen =        pL.get<bool>  ("sa: calculate eigenvalue estimate");
+    bool useAbsValueRowSum = pL.get<bool>  ("sa: use absrowsum diagonal scaling");
     if (dampingFactor != Teuchos::ScalarTraits<SC>::zero()) {
 
       Scalar lambdaMax;
@@ -169,7 +171,16 @@ namespace MueLu {
 
       {
         SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);
-        Teuchos::RCP<Vector> invDiag = Utilities::GetMatrixDiagonalInverse(*A);
+        //Teuchos::RCP<Vector> invDiag = Utilities::GetMatrixDiagonalInverse(*A);
+        Teuchos::RCP<Vector> invDiag;
+        if (!useAbsValueRowSum)
+          invDiag = Utilities::GetMatrixDiagonalInverse(*A); //default
+        else {
+          GetOStream(Runtime0) << "Using absrowsum diagonal" << std::endl;
+          const bool returnReciprocal=true;
+          invDiag = Utilities::GetLumpedMatrixDiagonal(A,returnReciprocal);
+          TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError, "SaPFactory: diagonal reciprocal is null.");
+        }
 
         SC omega = dampingFactor / lambdaMax;
         TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");

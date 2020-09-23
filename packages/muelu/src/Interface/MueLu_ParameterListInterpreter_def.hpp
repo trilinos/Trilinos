@@ -657,8 +657,16 @@ namespace MueLu {
   UpdateFactoryManager_Smoothers(ParameterList& paramList, const ParameterList& defaultList,
                                  FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const
   {
+    static int ii=0;
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+std::cout << "JHU: entering UpdateFactoryManager_Smoothers " << ii << std::endl;
+paramList.print(std::cout);
+    bool useMaxAbsDiagonalScaling = false;
+    if (defaultList.isParameter("sa: use absrowsum diagonal scaling")) {
+      std::cout << "JHU1: UpdateFactoryManager_Smoothers: \"sa: use absrowsum diagonal scaling\" = " << defaultList.get<bool>("sa: use absrowsum diagonal scaling") << std::endl;
+      useMaxAbsDiagonalScaling = defaultList.get<bool>("sa: use absrowsum diagonal scaling");
+    }
 
     // === Smoothing ===
     // FIXME: should custom smoother check default list too?
@@ -672,8 +680,10 @@ namespace MueLu {
     MUELU_SET_VAR_2LIST(paramList, defaultList, "smoother: pre or post", std::string, PreOrPost);
     if (PreOrPost == "none") {
       manager.SetFactory("Smoother", Teuchos::null);
+      std::cout << "JHU: UpdateFactoryManager_Smoothers: clause 1" << std::endl;
 
     } else if (isCustomSmoother) {
+      std::cout << "JHU: UpdateFactoryManager_Smoothers: clause 2" << std::endl;
       // FIXME: get default values from the factory
       // NOTE: none of the smoothers at the moment use parameter validation framework, so we
       // cannot get the default values from it.
@@ -710,6 +720,7 @@ namespace MueLu {
         overlap = paramList.get<int>("smoother: overlap");
 
       if (PreOrPost == "pre" || PreOrPost == "both") {
+        std::cout << "JHU: UpdateFactoryManager_Smoothers:: pre or both" << std::endl;
         if (paramList.isParameter("smoother: pre type")) {
           preSmootherType = paramList.get<std::string>("smoother: pre type");
         } else {
@@ -727,6 +738,17 @@ namespace MueLu {
           preSmootherParams = defaultList.sublist("smoother: params");
         else if (preSmootherType == "RELAXATION")
           preSmootherParams = defaultSmootherParams;
+
+std::cout << "JHU: UpdateFactoryManager_Smoothers: paramList:" << std::endl;
+paramList.print(std::cout);
+std::cout << "JHU: UpdateFactoryManager_Smoothers: end of paramList:" << std::endl;
+
+
+        //FIXME JHU does case matter at this point?
+std::cout << "JHU: UpdateFactoryManager_Smoothers: the smoother type is " << preSmootherType << std::endl;
+std::cout << "JHU: UpdateFactoryManager_Smoothers: usMaxAbsDiagonalScaling = " << useMaxAbsDiagonalScaling << std::endl;
+        if (preSmootherType == "CHEBYSHEV" && useMaxAbsDiagonalScaling)
+          preSmootherParams.set("chebyshev: use absrowsum diagonal scaling",true);
 
 #ifdef HAVE_MUELU_INTREPID2
       // Propagate P-coarsening for Topo smoothing
@@ -754,6 +776,7 @@ namespace MueLu {
       }
 
       if (PreOrPost == "post" || PreOrPost == "both") {
+        std::cout << "JHU: UpdateFactoryManager_Smoothers:: post or both" << std::endl;
         if (paramList.isParameter("smoother: post type"))
           postSmootherType = paramList.get<std::string>("smoother: post type");
         else {
@@ -771,6 +794,9 @@ namespace MueLu {
           postSmootherParams = defaultSmootherParams;
         if (paramList.isParameter("smoother: post overlap"))
           overlap = paramList.get<int>("smoother: post overlap");
+
+        if (postSmootherType == "CHEBYSHEV" && useMaxAbsDiagonalScaling)
+          postSmootherParams.set("chebyshev: use absrowsum diagonal scaling",true);
 
         if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
           postSmoother = preSmoother;
@@ -857,6 +883,7 @@ namespace MueLu {
       // only pieces of data it generates are PreSmoother and PostSmoother
       keeps.push_back(keep_pair("PreSmoother", manager.GetFactory("CoarseSolver").get()));
     }
+    std::cout << "JHU: exiting UpdateFactoryManager_Smoothers " << ii++ << std::endl;
   }
 
   // =====================================================================================================
@@ -1671,7 +1698,14 @@ namespace MueLu {
     if (defaultList.isSublist("matrixmatrix: kernel params"))
       Pparams.sublist("matrixmatrix: kernel params", false) = defaultList.sublist("matrixmatrix: kernel params");
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: damping factor", double, Pparams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: use absrowsum diagonal scaling", bool, Pparams);
+    const std::string entryName("sa: use absrowsum diagonal scaling");
+    if (paramList.isParameter(entryName)) {
+      std::cout << "JHU3: UpdateFactoryManager_SA \"sa: use absrowsum diagonal scaling\" = " << paramList.get<bool>(entryName) << std::endl;
+    }
+
     P->SetParameterList(Pparams);
+
 
     // Filtering
     MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);

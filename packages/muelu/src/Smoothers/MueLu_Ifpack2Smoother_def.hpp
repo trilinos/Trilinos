@@ -635,12 +635,16 @@ namespace MueLu {
       this->GetOStream(Statistics1) << eigRatioString << " (computed) = " << ratio << std::endl;
       paramList.set(eigRatioString, ratio);
 
-      if (paramList.isParameter("chebyshev: use lumped diagonal")) {
-        this->GetOStream(Runtime1) << "requesting lumped diagonal" << std::endl;
-        paramList.remove("chebyshev: use lumped diagonal");
-        RCP<Vector> lumpedDiagonal = Utilities::GetLumpedMatrixDiagonal(currentLevel.Get<RCP<Matrix> >("A"),true);
-        const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(*lumpedDiagonal);
-        paramList.set("chebyshev: operator inv diagonal",tmpVec.getTpetra_Vector());
+      if (paramList.isParameter("chebyshev: use absrowsum diagonal scaling")) {
+        this->GetOStream(Runtime1) << "chebyshev: using absrowsum diagonal scaling" << std::endl;
+        bool doScale = false;
+        doScale = paramList.get<bool>("chebyshev: use absrowsum diagonal scaling");
+        paramList.remove("chebyshev: use absrowsum diagonal scaling");
+        if (doScale) {
+          RCP<Vector> lumpedDiagonal = Utilities::GetLumpedMatrixDiagonal(currentLevel.Get<RCP<Matrix> >("A"),true);
+          const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(*lumpedDiagonal);
+          paramList.set("chebyshev: operator inv diagonal",tmpVec.getTpetra_Vector());
+        }
       }
     }
 
