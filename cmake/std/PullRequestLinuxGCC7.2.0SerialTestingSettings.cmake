@@ -16,14 +16,7 @@ set (CMAKE_CXX_STANDARD "14" CACHE STRING "Set C++ standard to C++14")
 # Disabling fortran for this build as that is a customer use case
 set (Trilinos_ENABLE_Fortran OFF CACHE BOOL "Set by default for SERIAL PR test")
 
-set (MPI_EXEC_PRE_NUMPROCS_FLAGS "--bind-to;none" CACHE STRING "Set by default for PR testing")
-# NOTE: The above is a workaround for the problem of having threads on MPI
-# ranks bind to the same cores (see #2422).
-
 set (Trilinos_ENABLE_COMPLEX_DOUBLE ON CACHE BOOL "Set by default for PR testing to exercise complex doubles case")
-
-# Disable just one Teko sub-unit test that fails with openmpi 1.10 (#2712)
-set (Teko_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D ON CACHE BOOL "Temporarily disabled in PR testing")
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettingsSERIAL.cmake")
 
