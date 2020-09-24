@@ -87,6 +87,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
       )
   ENDIF()
 
+
   IF(${PACKAGE_NAME}_ENABLE_Belos AND
       ${PACKAGE_NAME}_ENABLE_MueLu)
 
@@ -123,12 +124,25 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
           NUM_MPI_PROCS 4
           COMM mpi
           )
+
+	ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AvatarT)
+	IF( TPL_ENABLE_AVATAR OR ${PACKAGE_NAME}_ENABLE_AvatarT)
+	  TRIBITS_ADD_TEST(
+	    Example_Maxwell
+	    NAME Example_Maxwell_Avatar
+	    ARGS "--inputParams=Maxwell_avatar.xml"
+	    NUM_MPI_PROCS 1
+	    COMM mpi serial
+	    )
+	  
+	ENDIF()
+
       ENDIF()
     ENDIF() # MueLu_ENABLE_Epetra
   ENDIF()
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMaxwellFiles
-    SOURCE_FILES Maxwell.xml Ninja.xml
+    SOURCE_FILES Maxwell.xml Ninja.xml Maxwell_avatar.xml
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
     )
@@ -322,6 +336,20 @@ IF(${PACKAGE_NAME}_ENABLE_Belos AND
       TrilinosCouplings_Pamgen_Utils.cpp
     COMM serial mpi
     )
+
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AvatarT)
+  IF( TPL_ENABLE_AVATAR OR ${PACKAGE_NAME}_ENABLE_AvatarT)
+    TRIBITS_ADD_TEST(
+      IntrepidPoisson_Pamgen_Tpetra
+      NAME IntrepidPoisson_Pamgen_Avatar
+      ARGS "--inputParams=Poisson_avatar.xml"
+      NUM_MPI_PROCS 1
+      COMM mpi serial
+      )
+
+  ENDIF()
+
+
 ENDIF()
 
 # mfh 24 May 2012

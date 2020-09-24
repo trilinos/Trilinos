@@ -72,6 +72,9 @@
 /* Define if TriKota is enabled in TrilinosCouplings */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_TRIKOTA
 
+/* Define if Tpetra is enabled in TrilinosCouplings */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_TPETRA
+
 /* Define if Sacado is enabled in TrilinosCouplings */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_SACADO
 
