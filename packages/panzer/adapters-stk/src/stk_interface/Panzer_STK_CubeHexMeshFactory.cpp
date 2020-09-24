@@ -171,6 +171,7 @@ void CubeHexMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Para
    }
 
    mesh.buildLocalElementIDs();
+   mesh.buildLocalEdgeIDs();
 
    // now that edges are built, side and node sets can be added
    addSideSets(mesh);

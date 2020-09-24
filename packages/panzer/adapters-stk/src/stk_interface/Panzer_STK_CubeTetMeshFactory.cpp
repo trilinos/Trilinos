@@ -156,6 +156,7 @@ void CubeTetMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Para
    // finish up the edges and faces
    mesh.buildSubcells();
    mesh.buildLocalElementIDs();
+   mesh.buildLocalEdgeIDs();
 
    // now that edges are built, sidets can be added
    addSideSets(mesh);

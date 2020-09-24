@@ -207,6 +207,20 @@ def setBuildEnviron(arguments):
                      "sems-cmake/3.10.3",
                      "atdm-env",
                      "atdm-ninja_fortran/1.7.2"],
+                "Trilinos_pullrequest_gcc_7.2.0_serial":
+                     ["sems-env",
+                     "sems-git/2.10.1",
+                     "sems-gcc/7.2.0",
+                     "sems-python/2.7.9",
+                     "sems-boost/1.63.0/base",
+                     "sems-zlib/1.2.8/base",
+                     "sems-hdf5/1.10.6/base",
+                     "sems-netcdf/4.7.3/base",
+                     "sems-metis/5.1.0/base",
+                     "sems-superlu/4.3/base",
+                     "sems-cmake/3.10.3",
+                     "atdm-env",
+                     "atdm-ninja_fortran/1.7.2"],
                 "Trilinos_pullrequest_gcc_8.3.0":
                      ["sems-env",
                      "sems-git/2.10.1",
@@ -381,6 +395,9 @@ def setBuildEnviron(arguments):
                       {"SEMS_FORCE_LOCAL_COMPILER_VERSION": "4.9.3",
                        "OMP_NUM_THREADS": "2"},
                  "Trilinos_pullrequest_gcc_7.2.0_debug":
+                      {"SEMS_FORCE_LOCAL_COMPILER_VERSION": "4.9.3",
+                       "OMP_NUM_THREADS": "2"},
+                 "Trilinos_pullrequest_gcc_7.2.0_serial":
                       {"SEMS_FORCE_LOCAL_COMPILER_VERSION": "4.9.3",
                        "OMP_NUM_THREADS": "2"},
                  "Trilinos_pullrequest_gcc_8.3.0":
@@ -652,6 +669,7 @@ config_map = {
     'Trilinos_pullrequest_gcc_4.9.3_SERIAL': 'PullRequestLinuxGCC4.9.3TestingSettingsSERIAL.cmake',
     'Trilinos_pullrequest_gcc_7.2.0':        'PullRequestLinuxGCC7.2.0TestingSettings.cmake',
     'Trilinos_pullrequest_gcc_7.2.0_debug':  'PullRequestLinuxGCC7.2.0DebugTestingSettings.cmake',
+    'Trilinos_pullrequest_gcc_7.2.0_serial': 'PullRequestLinuxGCC7.2.0SerialTestingSettings.cmake',
     'Trilinos_pullrequest_gcc_8.3.0':        'PullRequestLinuxGCC8.3.0TestingSettings.cmake',
     'Trilinos_pullrequest_clang_7.0.1':      'PullRequestLinuxClang7.0.1TestingSettings.cmake',
     'Trilinos_pullrequest_clang_9.0.0':      'PullRequestLinuxClang9.0.0TestingSettings.cmake',

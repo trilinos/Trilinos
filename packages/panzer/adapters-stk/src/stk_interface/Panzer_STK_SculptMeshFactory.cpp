@@ -238,6 +238,7 @@ void SculptMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Paral
 
    mesh.buildSubcells();
    mesh.buildLocalElementIDs();
+   mesh.buildLocalEdgeIDs();
 
    addSideSets(mesh);
    addNodeSets(mesh);
