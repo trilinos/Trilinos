@@ -69,7 +69,7 @@ function get_python_packages() {
 
 
 
-# Load the right version of Git / Python based on a regex 
+# Load the right version of Git / Python based on a regex
 # match to the Jenkins job name.
 function bootstrap_modules() {
     echo -e "PRDriver> ---------------------------------------"
@@ -99,7 +99,7 @@ function bootstrap_modules() {
         module unload sems-python
         module load sems-git/2.10.1
         module load sems-python/2.7.9
-        # module load sems-python/3.5.2      # Currently not on cloud nodes 
+        # module load sems-python/3.5.2      # Currently not on cloud nodes
         #pip3 install --user configparser
         get_pip python2
         get_python_packages ${HOME}/.local/bin/pip2
@@ -161,7 +161,7 @@ merge_cmd="python ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py ${merge_cmd_optio
 # Call the script to handle merging the incoming branch into
 # the current trilinos/develop branch for testing.
 echo -e "PRDriver> "
-echo -e "PRDriver> Execute Merge Command: ${merge_cmd:?}" 
+echo -e "PRDriver> Execute Merge Command: ${merge_cmd:?}"
 echo -e "PRDriver> "
 ${merge_cmd:?}
 err=$?

@@ -193,6 +193,7 @@ def parse_args():
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     # Print the arguments to the console
     print("\n" + "="*90)
     print("Parameters")
@@ -203,6 +204,8 @@ def parse_args():
     print("- MAX_CORES_ALLOWED      : {max_cores_allowed}".format(**vars(arguments)))
     print("- NUM_CONCURRENT_TESTS   : {num_concurrent_tests}".format(**vars(arguments)))
 =======
+=======
+>>>>>>> b6dae7fa5a4... Framework: PR Driver Overhaul and Cleanup
     moduleMap = {"Trilinos_pullrequest_gcc_4.8.4":
                      ["sems-env",
                      "sems-git/2.10.1",
@@ -555,7 +558,21 @@ def parse_args():
 
     print ("Environment:\n")
     print("  pwd = {cwd}".format(cwd=os.getcwd()))
+<<<<<<< HEAD
 >>>>>>> 39607fcd155... Create new gcc7.2.0 build with std=c++14, serial, & -Wno for warnings that popup only under serial.
+=======
+=======
+    # Print the arguments to the console
+    print("\n" + "="*90)
+    print("Parameters")
+    print("----------")
+    print("- CONFIGURATION_FILE     : {configfile}".format(**vars(arguments)))
+    print("- MODE                   : {mode}".format(**vars(arguments)))
+    print("- REQ_MEM_PER_CORE       : {req_mem_per_core}".format(**vars(arguments)))
+    print("- MAX_CORES_ALLOWED      : {max_cores_allowed}".format(**vars(arguments)))
+    print("- NUM_CONCURRENT_TESTS   : {num_concurrent_tests}".format(**vars(arguments)))
+>>>>>>> ab613413d66... Framework: PR Driver Overhaul and Cleanup
+>>>>>>> b6dae7fa5a4... Framework: PR Driver Overhaul and Cleanup
     print("")
     print("- JOB_BASE_NAME          : {job_base_name}".format(**vars(arguments)))
     print("- WORKSPACE              : {workspaceDir}".format(**vars(arguments)))
