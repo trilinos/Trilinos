@@ -1671,7 +1671,6 @@ namespace Tpetra {
     using std::endl;
     using LO = local_ordinal_type;
     using GO = global_ordinal_type;
-    using DT = device_type;
     using const_lg_view_type = decltype(lgMap_);
     using lg_view_type = typename const_lg_view_type::non_const_type;
     const bool debug = Details::Behavior::debug("Map");
