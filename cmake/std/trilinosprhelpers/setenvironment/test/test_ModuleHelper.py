@@ -24,7 +24,7 @@ try:
 except ImportError:
     from io import StringIO
 
-from trilinosprhelpers.setenvironment import ModuleHelper 
+from trilinosprhelpers.setenvironment import ModuleHelper
 
 
 

@@ -23,7 +23,7 @@ set(PYTHON_EXECUTABLE_SEARCH_PATHS
     /projects/sierra/linux_rh7/install/Python/2.7.15
     /projects/sierra/linux_rh7/install/Python/2.7.5
 )
-find_program(PYTHON_EXECUTABLE 
+find_program(PYTHON_EXECUTABLE
     NAMES python2 python
     PATHS ${PYTHON_EXECUTABLE_SEARCH_PATHS}
     PATH_SUFFIXES bin

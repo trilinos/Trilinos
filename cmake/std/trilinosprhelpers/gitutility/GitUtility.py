@@ -19,7 +19,7 @@ class GitUtility(object):
     def version_str(self):
         if self._version_str is None:
             self._version_str = subprocess.check_output(['git', '--version'])
-            self._version_str = self._version_str.decode('utf-8').strip() 
+            self._version_str = self._version_str.decode('utf-8').strip()
         return self._version_str
 
 
@@ -29,7 +29,7 @@ class GitUtility(object):
             matches = re.findall(r"\d+", self.version_str)
             self._version = { "major": int(matches[0]),
                               "minor": int(matches[1]),
-                              "patch": int(matches[2]) 
+                              "patch": int(matches[2])
                             }
         return self._version
 

@@ -4,8 +4,8 @@
 # Prepare Environment
 #
 
-# The existence of PYTHONHOME can cause some odd problems 
-# if we're seeing errors that look like `No module named 'encodings'` 
+# The existence of PYTHONHOME can cause some odd problems
+# if we're seeing errors that look like `No module named 'encodings'`
 # then a usual fix is to try and unset PYTHONHOME.
 # I think this is due to a conflict in modules loaded by SEMS and then
 # our use of a specific Python that's different.
@@ -15,7 +15,7 @@ unset PYTHONHOME
 
 #
 # Get pip
-# - @param1 python_exe - the python executable to install PIP for 
+# - @param1 python_exe - the python executable to install PIP for
 function get_pip() {
     local python_exe=${1:?}
 
@@ -39,7 +39,7 @@ function get_pip() {
 
 #
 # Install Python pacakges using pip
-# 
+#
 # - @param1 pip_exe - the pip binary to use, i.e., pip3.
 #
 function get_python_packages() {
@@ -72,7 +72,7 @@ echo "----------------------------------------"
 : "${1:?Param 1 ERROR: Python Executable not set or empty}"
 : "${2:?Param 2 ERROR: Pip Executable not set or empty}"
 
-python_exe=${1:?} 
+python_exe=${1:?}
 pip_exe=${2:?}
 
 get_pip ${python_exe:?}

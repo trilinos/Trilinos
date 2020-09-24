@@ -123,7 +123,7 @@ class GitUtilityTest(TestCase):
 
         with self.assertRaises( TypeError ) as m:
             gitutil.check_minimum_version("3")
-        
+
         with self.assertRaises( TypeError ) as m:
             gitutil.check_minimum_version(2, "27")
 

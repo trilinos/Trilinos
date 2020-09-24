@@ -4,7 +4,7 @@ TRIBITS_PACKAGE(TrilinosFrameworkTests)
 TRIBITS_ADD_ADVANCED_TEST( ProjectCiFileChangeLogic_UnitTests
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
-  TEST_0 CMND ${PYTHON_EXECUTABLE} 
+  TEST_0 CMND ${PYTHON_EXECUTABLE}
     ARGS ${CMAKE_CURRENT_SOURCE_DIR}/ProjectCiFileChangeLogic_UnitTests.py -v
     PASS_REGULAR_EXPRESSION "OK"
     ALWAYS_FAIL_ON_NONZERO_RETURN
@@ -25,7 +25,7 @@ TRIBITS_ADD_ADVANCED_TEST( clean_all_jobs_UnitTests
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
   EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
-  TEST_0 CMND ${PYTHON_EXECUTABLE} 
+  TEST_0 CMND ${PYTHON_EXECUTABLE}
     ARGS ${CMAKE_CURRENT_SOURCE_DIR}/clean_workspace/unittests/test_clean_all_jobs.py -v
     PASS_REGULAR_EXPRESSION "OK"
   )
@@ -35,7 +35,7 @@ TRIBITS_ADD_ADVANCED_TEST( clean_sentinel_UnitTests
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
   EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
-  TEST_0 CMND ${PYTHON_EXECUTABLE} 
+  TEST_0 CMND ${PYTHON_EXECUTABLE}
     ARGS ${CMAKE_CURRENT_SOURCE_DIR}/clean_workspace/unittests/test_clean_sentinel.py -v
     PASS_REGULAR_EXPRESSION "OK"
   )
@@ -45,7 +45,7 @@ TRIBITS_ADD_ADVANCED_TEST( clean_workspace_UnitTests
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
   EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
-  TEST_0 CMND ${PYTHON_EXECUTABLE} 
+  TEST_0 CMND ${PYTHON_EXECUTABLE}
     ARGS ${CMAKE_CURRENT_SOURCE_DIR}/clean_workspace/unittests/test_clean_workspace.py -v
     PASS_REGULAR_EXPRESSION "OK"
   )
@@ -55,7 +55,7 @@ TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriverMerge_UnitTests
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
   EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
-  TEST_0 CMND ${PYTHON_EXECUTABLE} 
+  TEST_0 CMND ${PYTHON_EXECUTABLE}
     ARGS ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/std/unittests/TestPullRequestLinuxDriverMerge.py -v
     PASS_REGULAR_EXPRESSION "OK"
   )
@@ -66,7 +66,7 @@ TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriverTest_UnitTests
     OVERALL_WORKING_DIRECTORY TEST_NAME
     OVERALL_NUM_MPI_PROCS 1
     EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
-    TEST_0 CMND bash 
+    TEST_0 CMND bash
         ARGS pr_python_test_driver.sh ${PYTHON_EXECUTABLE} ${PYTHON_PIP_EXECUTABLE}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/std
         SKIP_CLEAN_WORKING_DIRECTORY
@@ -92,7 +92,7 @@ FUNCTION(create_get_changed_trilinos_packages_test  TEST_POSTFIX
   SET(GIT_MOCKPROGRAM_TXT_FILE
     "${CMAKE_CURRENT_BINARY_DIR}/${FULL_TEST_NAME}_git_mockprogram.txt")
 
-  # We need to write the expected input and the output for 
+  # We need to write the expected input and the output for
   FILE(WRITE "${GIT_MOCKPROGRAM_TXT_FILE}"
 "MOCK_PROGRAM_INPUT: diff --name-only sha1-from..sha1-to
 MOCK_PROGRAM_RETURN: 0
@@ -110,7 +110,7 @@ MOCK_PROGRAM_OUTPUT: ${FILES_CHANGED}
     TEST_0
       MESSAGE "Copy the mockprogram.py inout file each time since it gets modifed!"
       CMND "${CMAKE_COMMAND}"
-        ARGS -E copy "${GIT_MOCKPROGRAM_TXT_FILE}" mockprogram_inout.txt 
+        ARGS -E copy "${GIT_MOCKPROGRAM_TXT_FILE}" mockprogram_inout.txt
 
     TEST_1
       MESSAGE "Run get-changed-trilinos-packages.sh with mock git"
