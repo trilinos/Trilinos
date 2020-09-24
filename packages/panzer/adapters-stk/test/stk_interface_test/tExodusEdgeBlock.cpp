@@ -121,8 +121,8 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, edge_count)
    }
    else if(numprocs==2 && rank==0) {
      // rank0 owns all edges in it's half of the mesh including the 
-     // edges on the face shared with rank1
-     std::size_t my_xelems=xelems-1;
+     // edges on the plane shared with rank1
+     std::size_t my_xelems=xelems/2;
      std::size_t my_yelems=yelems;
      std::size_t my_zelems=zelems;
      mesh->getMyEdges(panzer_stk::STK_Interface::edgeBlockString, my_edges);
@@ -131,8 +131,8 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, edge_count)
                                   +my_zelems*(my_xelems+1)*(my_yelems+1));
    }
    else if(numprocs==2 && rank==1) {
-     // rank1 doesn't own the edges on the face shared with rank0
-     std::size_t my_xelems=xelems-1;
+     // rank1 doesn't own the edges on the plane shared with rank0
+     std::size_t my_xelems=xelems/2;
      std::size_t my_yelems=yelems;
      std::size_t my_zelems=zelems;
      mesh->getMyEdges(panzer_stk::STK_Interface::edgeBlockString, my_edges);
@@ -173,9 +173,9 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, is_edge_local)
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
- 
+
    if(mesh->isWritable())
-      mesh->writeToExodus("EdgeBlock1.exo");
+      mesh->writeToExodus("EdgeBlock2.exo");
 
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());
@@ -187,15 +187,15 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, is_edge_local)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),xelems*yelems*(zelems+1)+xelems*zelems*(yelems+1)+yelems*zelems*(xelems+1));
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),xelems*(yelems+1)*(zelems+1)+yelems*(xelems+1)*(zelems+1)+zelems*(xelems+1)*(yelems+1));
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(yelems+1)*(xelems+1)*(zelems+1));
-   
+
    std::vector<stk::mesh::Entity> my_edges;
    mesh->getMyEdges(panzer_stk::STK_Interface::edgeBlockString, my_edges);
    for ( auto edge : my_edges ) {
       TEST_ASSERT(mesh->isEdgeLocal(edge));
    }
-     
+
    std::vector<stk::mesh::Entity> all_edges;
-   mesh->getMyEdges(panzer_stk::STK_Interface::edgeBlockString, all_edges);
+   mesh->getAllEdges(panzer_stk::STK_Interface::edgeBlockString, all_edges);
    for ( auto edge : all_edges ) {
       if (mesh->getBulkData()->parallel_owner_rank(edge)==rank) {
         TEST_ASSERT(mesh->isEdgeLocal(edge));
@@ -244,7 +244,7 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, add_edge_field)
    }
 
    if(mesh->isWritable())
-      mesh->writeToExodus("EdgeBlock2.exo");
+      mesh->writeToExodus("EdgeBlock3.exo");
 
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());
@@ -316,7 +316,7 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, set_edge_field_data)
                           edgeValues);
 
    if(mesh->isWritable())
-      mesh->writeToExodus("EdgeBlock3.exo");
+      mesh->writeToExodus("EdgeBlock4.exo");
 
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());
