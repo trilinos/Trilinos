@@ -294,14 +294,18 @@ class MachineLearningStatistics_Hex3D {
   void Phase2a(Intrepid::FieldContainer<Scalar> &worksetJacobDet,Intrepid::FieldContainer<Scalar> &worksetCubWeights) {
     int worksetSize  = worksetJacobDet.dimension(0);
     int numCubPoints = worksetJacobDet.dimension(1);
+
+    bool weightsWorkset = (worksetCubWeights.rank()==2)?true:false;
+
     for(int i=0; i<worksetSize; i++) {
       // 0 - Material property
       // 1 - Max/min edge - ratio of max to min edge length
       // 2 - det of cell Jacobian (later)
       double elementdetJ = 0.0, elementWeight=0.0;
       for(int j=0; j<numCubPoints; j++) {
-        elementdetJ   += worksetJacobDet(i,j) * worksetCubWeights(i,j);
-        elementWeight += worksetCubWeights(i,j);
+	double weight = weightsWorkset ? worksetCubWeights(i,j) : worksetCubWeights(j);
+        elementdetJ   += worksetJacobDet(i,j) * weight;
+        elementWeight += weight;
       }
       double detJ = elementdetJ / elementWeight;
       local_stat_max[2] = std::max(local_stat_max[2],detJ);
