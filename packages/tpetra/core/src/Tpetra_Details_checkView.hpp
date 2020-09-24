@@ -89,7 +89,6 @@ checkLocalViewValidity
   using Teuchos::TypeNameTraits;
   using std::endl;
   using view_type = Kokkos::View<DataType, Properties...>;
-  using ES = typename view_type::execution_space;
 
   if (view.size () == 0) {
     // Kokkos::View can be zero size with a nonnull pointer.

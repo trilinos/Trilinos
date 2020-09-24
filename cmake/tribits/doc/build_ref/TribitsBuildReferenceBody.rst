@@ -2040,6 +2040,30 @@ at configure time.  Therefore, all of the decisions about what test targets
 should be build and which tests should be run can be made at configure time.
 
 
+Set specific tests to run in serial
++++++++++++++++++++++++++++++++++++
+
+In order to cause a specific test to run by itself on the machine and not at
+the same time as other tests (such as when running multiple tests at the same
+time with something like ``ctest -j16``), set at configure time::
+
+  -D <fullTestName>_SET_RUN_SERIAL=ON
+
+This will set the CTest test property ``RUN_SERIAL`` for the test
+``<fullTestName>``.
+
+This can help to avoid longer runtimes and timeouts when some individual tests
+don't run as quickly when run beside other tests running at the same time on
+the same machine.  These longer runtimes can often occur when running tests
+with CUDA code on GPUs and with OpenMP code on some platforms with some OpenMP
+options.
+
+Also, if individual tests have ``RUN_SERIAL`` set by default internally, they
+can have the ``RUN_SERIAL`` property removed by setting::
+
+  -D <fullTestName>_SET_RUN_SERIAL=OFF
+
+
 Trace test addition or exclusion
 ++++++++++++++++++++++++++++++++
 

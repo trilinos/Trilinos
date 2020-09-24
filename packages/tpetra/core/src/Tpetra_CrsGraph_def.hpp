@@ -5770,8 +5770,6 @@ namespace Tpetra {
     using host_execution_space =
       typename Kokkos::View<size_t*, device_type>::
         HostMirror::execution_space;
-    using device_execution_space =
-      typename device_type::execution_space;
     const char tfecfFuncName[] = "packFillActive: ";
     const bool verbose = verbose_;
 
@@ -5980,7 +5978,6 @@ namespace Tpetra {
       device_type>::HostMirror::execution_space;
     using host_device_type =
       Kokkos::Device<host_execution_space, Kokkos::HostSpace>;
-    using device_execution_space = typename device_type::execution_space;
     using exports_dv_type =
       Kokkos::DualView<packet_type*, buffer_device_type>;
     const char tfecfFuncName[] = "packFillActiveNew: ";
