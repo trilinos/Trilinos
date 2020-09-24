@@ -195,9 +195,9 @@ namespace MueLu {
 
     } // loop over numRows
     
-    size_t g_numSingletons=0;
-    MueLu_sumAll(graph.GetComm(), numSingletons, g_numSingletons);
-    this->GetOStream(Runtime0)<<"  singletons :"<<g_numSingletons<<" (phase)"<<std::endl;
+
+    if(numSingletons > 0)
+      this->GetOStream(Runtime0)<<"  WARNING Rank "<<myRank<<" singletons :"<<numSingletons<<" (phase)"<<std::endl;
 
 
     // update aggregate object
