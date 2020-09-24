@@ -301,8 +301,8 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO,
       {
          std::map<std::string, stk::mesh::Part*>::iterator itr;
          for(itr=edgeBlocks_.begin();itr!=edgeBlocks_.end();++itr)
-            if(!stk::io::is_part_io_part(*itr->second)) {
-               stk::io::put_io_part_attribute(*itr->second); // this can only be called once per part
+            if(!stk::io::is_part_edge_block_io_part(*itr->second)) {
+               stk::io::put_edge_block_io_part_attribute(*itr->second); // this can only be called once per part
             }
       }
 
@@ -324,12 +324,12 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO,
 
       // add nodes
       if(!stk::io::is_part_io_part(*nodesPart_))
-	stk::io::put_io_part_attribute(*nodesPart_);
+         stk::io::put_io_part_attribute(*nodesPart_);
 
       stk::io::set_field_role(*coordinatesField_, Ioss::Field::MESH);
       stk::io::set_field_role(*edgesField_, Ioss::Field::MESH);
       if (dimension_ > 2)
-        stk::io::set_field_role(*facesField_, Ioss::Field::MESH);
+         stk::io::set_field_role(*facesField_, Ioss::Field::MESH);
       stk::io::set_field_role(*processorIdField_, Ioss::Field::TRANSIENT);
       // stk::io::set_field_role(*loadBalField_, Ioss::Field::TRANSIENT);
    }
@@ -1322,6 +1322,21 @@ std::size_t STK_Interface::elementLocalId(stk::mesh::EntityId gid) const
    TEUCHOS_ASSERT(itr!=localIDHash_.end());
    return itr->second;
 }
+
+bool STK_Interface::isEdgeLocal(stk::mesh::Entity edge) const
+{
+   return isEdgeLocal(bulkData_->identifier(edge));
+}
+
+bool STK_Interface::isEdgeLocal(stk::mesh::EntityId gid) const
+{
+   std::unordered_map<stk::mesh::EntityId,std::size_t>::const_iterator itr = localEdgeIDHash_.find(gid);
+   if (itr==localEdgeIDHash_.end()) {
+     return false;
+   }
+   return true;
+}
+
 
 std::size_t STK_Interface::edgeLocalId(stk::mesh::Entity edge) const
 {

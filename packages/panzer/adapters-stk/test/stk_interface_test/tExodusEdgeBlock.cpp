@@ -107,8 +107,8 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, edge_count)
    std::vector<stk::mesh::Entity> all_edges;
    mesh->getAllEdges(panzer_stk::STK_Interface::edgeBlockString, all_edges);
    TEST_EQUALITY(all_edges.size(),xelems*(yelems+1)*(zelems+1)
-                             +yelems*(xelems+1)*(zelems+1)
-                             +zelems*(xelems+1)*(yelems+1));
+                                 +yelems*(xelems+1)*(zelems+1)
+                                 +zelems*(xelems+1)*(yelems+1));
 
    std::vector<stk::mesh::Entity> my_edges;
    if (numprocs==1) {
@@ -145,6 +145,63 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, edge_count)
    else {
      // fail!
      TEST_ASSERT(false && "This test must run with either 1 or 2 ranks.");
+   }
+}
+
+TEUCHOS_UNIT_TEST(tExodusEdgeBlock, is_edge_local)
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+   using Teuchos::rcpFromRef;
+   
+   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
+   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+   out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
+
+   std::size_t xelems=2;
+   std::size_t yelems=4;
+   std::size_t zelems=5;
+   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+   pl->set("X Blocks",1);
+   pl->set("Y Blocks",1);
+   pl->set("Z Blocks",1);
+   pl->set("X Elements",(int)xelems);
+   pl->set("Y Elements",(int)yelems);
+   pl->set("Z Elements",(int)zelems);
+   
+   CubeHexMeshFactory factory; 
+   factory.setParameterList(pl);
+   RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+   TEST_ASSERT(mesh!=Teuchos::null);
+ 
+   if(mesh->isWritable())
+      mesh->writeToExodus("EdgeBlock1.exo");
+
+   // minimal requirements
+   TEST_ASSERT(not mesh->isModifiable());
+
+   TEST_EQUALITY(mesh->getDimension(),3);
+   TEST_EQUALITY(mesh->getNumElementBlocks(),1);
+   TEST_EQUALITY(mesh->getNumSidesets(),6);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),xelems*yelems*zelems);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),xelems*yelems*(zelems+1)+xelems*zelems*(yelems+1)+yelems*zelems*(xelems+1));
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),xelems*(yelems+1)*(zelems+1)+yelems*(xelems+1)*(zelems+1)+zelems*(xelems+1)*(yelems+1));
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(yelems+1)*(xelems+1)*(zelems+1));
+   
+   std::vector<stk::mesh::Entity> my_edges;
+   mesh->getMyEdges(panzer_stk::STK_Interface::edgeBlockString, my_edges);
+   for ( auto edge : my_edges ) {
+      TEST_ASSERT(mesh->isEdgeLocal(edge));
+   }
+     
+   std::vector<stk::mesh::Entity> all_edges;
+   mesh->getMyEdges(panzer_stk::STK_Interface::edgeBlockString, all_edges);
+   for ( auto edge : all_edges ) {
+      if (mesh->getBulkData()->parallel_owner_rank(edge)==rank) {
+        TEST_ASSERT(mesh->isEdgeLocal(edge));
+      } else {
+        TEST_ASSERT(not mesh->isEdgeLocal(edge));
+      }
    }
 }
 
