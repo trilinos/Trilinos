@@ -988,7 +988,6 @@ namespace Tpetra {
     using KokkosRefactor::Details::permute_array_multi_column_variable_stride;
     using Kokkos::Compat::create_const_view;
     using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    using IST = impl_scalar_type;
     const char tfecfFuncName[] = "copyAndPermute: ";
     ProfilingRegion regionCAP ("Tpetra::MultiVector::copyAndPermute");
 
@@ -1623,7 +1622,6 @@ namespace Tpetra {
     using KokkosRefactor::Details::unpack_array_multi_column_variable_stride;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using std::endl;
-    using IST = impl_scalar_type;
     const char longFuncName[] = "Tpetra::MultiVector::unpackAndCombine";
     const char tfecfFuncName[] = "unpackAndCombine: ";
     ProfilingRegion regionUAC (longFuncName);
