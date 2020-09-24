@@ -172,7 +172,7 @@ namespace MueLu {
 
     NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = TST::eps()*100); // FIXME
+    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = TST::eps()*100, const bool doLumped = false); // FIXME
 
 
 
@@ -378,8 +378,8 @@ namespace MueLu {
     static ArrayRCP<SC> GetMatrixDiagonal(const Matrix& A) {
       return UtilitiesBase::GetMatrixDiagonal(A);
     }
-    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<SC>::eps()*100) {
-      return UtilitiesBase::GetMatrixDiagonalInverse(A, tol);
+    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<SC>::eps()*100, const bool doLumped=false) {
+      return UtilitiesBase::GetMatrixDiagonalInverse(A, tol, doLumped);
     }
     static ArrayRCP<SC> GetLumpedMatrixDiagonal(const Matrix& A, const bool doReciprocal=false) {
       return UtilitiesBase::GetLumpedMatrixDiagonal(A, doReciprocal);
