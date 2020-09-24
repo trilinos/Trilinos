@@ -1026,14 +1026,11 @@ init (const keys_type& keys,
     // pass).  However, we're really just moving this sequential search
     // out of Map's constructor here, so there is no loss in doing it
     // sequentially for now.  Later, we can work on parallelization.
-    //
-    // NOTE (mfh 01 Jun 2015, 28 Mar 2016) The code below assumes UVM.
-    // It is rational to assume UVM here, because this is "sparse"
-    // access -- we might not need to look at all the entries of keys,
-    // so it doesn't necessarily make sense to copy the whole thing
-    // back to host.
     if (numKeys > 0) {
-      firstContigKey_ = keys[0];
+      // TODO: make it a parallel kernel with no host copy
+      auto keys_h = Kokkos::create_mirror_view(keys);
+      Kokkos::deep_copy(keys_h, keys);
+      firstContigKey_ = keys_h[0];
       // Start with one plus, then decrement at the end.  That lets us do
       // only one addition per loop iteration, rather than two (if we test
       // against lastContigKey + 1 and then increment lastContigKey).
@@ -1044,7 +1041,7 @@ init (const keys_type& keys,
       // contiguous sequence to be trivial, which for a nonzero number of
       // keys means that the "sequence" has length 1.
       for (offset_type k = 1; k < numKeys; ++k) {
-        if (lastContigKey_ != keys[k]) {
+        if (lastContigKey_ != keys_h[k]) {
           break;
         }
         ++lastContigKey_;
