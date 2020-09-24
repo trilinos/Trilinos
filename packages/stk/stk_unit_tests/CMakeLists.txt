@@ -2,6 +2,7 @@ TRIBITS_SUBPACKAGE(Unit_tests)
 
 IF(Trilinos_ENABLE_STKSimd)
 TRIBITS_ADD_TEST_DIRECTORIES(stk_simd)
+TRIBITS_ADD_TEST_DIRECTORIES(stk_simd_old)
 ENDIF()
 
 IF(Trilinos_ENABLE_STKTransfer)

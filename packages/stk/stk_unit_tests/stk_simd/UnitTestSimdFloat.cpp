@@ -35,7 +35,7 @@
 #include <cmath>
 #include "SimdFloatingPointFixture.hpp"
 
-using SimdFloatMath = SimdFloatingPointFixture<stk::simd::Float, stk::simd::Float, stk::simd::nfloats>;
+using SimdFloatMath = SimdFloatingPointFixture<stk::simd::Float, stk::simd::Float>;
 
 TEST_F(SimdFloatMath, copysign_posNeg)
 {
@@ -121,7 +121,7 @@ TEST_F(SimdFloatMath, multiplysign_varying)
   verify();
 }
 
-using SimdFloatOperator = SimdFloatingPointFixture<stk::simd::Float, stk::simd::Boolf, stk::simd::nfloats>;
+using SimdFloatOperator = SimdFloatingPointFixture<stk::simd::Float, stk::simd::Boolf>;
 
 TEST_F(SimdFloatOperator, equal_aIsSmaller)
 {

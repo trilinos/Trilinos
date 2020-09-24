@@ -95,6 +95,11 @@ public:
     needSyncToDevice = std::make_shared<bool>(false);
   }
 
+  HostField(const HostField<T>&) = default;
+  HostField(HostField<T>&&) = default;
+  HostField<T>& operator=(const HostField<T>&) = default;
+  HostField<T>& operator=(HostField<T>&&) = default;
+
   virtual ~HostField() = default;
 
   void update_field(bool needToSyncAllDataToDevice = false) override {}
@@ -431,6 +436,15 @@ public:
     isFieldLayoutConsistent = true;
 #endif
 
+    for(auto * bucket : allBuckets)
+    {
+      bucket->set_ngp_field_bucket_id(get_ordinal(), INVALID_BUCKET_ID);
+    }
+    for(auto * bucket : buckets)
+    {
+      bucket->set_ngp_field_bucket_id(get_ordinal(), bucket->bucket_id());
+    }
+
     synchronizedCount = hostBulk->synchronized_count();
     hostSelectedBucketOffset = newHostSelectedBucketOffset;
     deviceSelectedBucketOffset = newDeviceSelectedBucketOffset;
@@ -528,6 +542,8 @@ public:
   size_t synchronized_count() const override { return synchronizedCount; }
 
   KOKKOS_DEFAULTED_FUNCTION DeviceField(const DeviceField &) = default;
+  KOKKOS_DEFAULTED_FUNCTION DeviceField<T>& operator=(const DeviceField<T>&) = default;
+  KOKKOS_DEFAULTED_FUNCTION DeviceField<T>& operator=(DeviceField<T>&&) = default;
 
   KOKKOS_FUNCTION virtual ~DeviceField()
   {
@@ -969,7 +985,6 @@ private:
 
       copy_moved_host_bucket_data<FieldDataHostViewType, UnmanagedHostInnerView<T>>(hostData, hostData, oldBucketId, newBucketId, numPerEntity);
       copy_moved_device_bucket_data<FieldDataDeviceViewType, UnmanagedDevInnerView<T>>(deviceData, deviceData, oldBucketId, newBucketId, numPerEntity);
-      buckets[j]->set_ngp_field_bucket_id(get_ordinal(), newBucketId);
     }
     currBaseIndex = endIndex;
   }
@@ -993,7 +1008,6 @@ private:
           } else {
             move_unmodified_buckets_in_range_from_back(buckets, numPerEntity, i);
           }
-          buckets[i]->set_ngp_field_bucket_id(get_ordinal(), newBucketId);
         }
       }
     }
@@ -1010,7 +1024,6 @@ private:
           ThrowRequire(hostData.extent(0) != 0 && hostSelectedBucketOffset.extent(0) != 0);
           copy_moved_host_bucket_data<FieldDataHostViewType, UnmanagedHostInnerView<T>>(destHostView, hostData, oldBucketId, newBucketId, numPerEntity);
           copy_moved_device_bucket_data<FieldDataDeviceViewType, UnmanagedDevInnerView<T>>(destDevView, deviceData, oldBucketId, newBucketId, numPerEntity);
-          buckets[i]->set_ngp_field_bucket_id(get_ordinal(), newBucketId);
         }
       }
     }
@@ -1115,8 +1128,6 @@ private:
       if(oldBucketId == INVALID_BUCKET_ID || bucket->get_ngp_field_bucket_is_modified(get_ordinal())) {
         copy_bucket_from_host_to_device(bucket, numPerEntity);
       }
-
-      bucket->set_ngp_field_bucket_id(get_ordinal(), bucket->bucket_id());
     }
   }
 

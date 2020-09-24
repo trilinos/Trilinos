@@ -428,8 +428,12 @@ namespace TSQR {
 
       bool success = true;
 
-      const int nrows = params.numRows;
-      const int ncols = params.numCols;
+      /* const */ int nrows = params.numRows;
+      /* const */ int ncols = params.numCols;
+      // 9/2020  nrows and ncols should be const, but
+      // gcc7.2+cuda9 with std=c++14 fails when const is used; 
+      // see https://github.com/trilinos/Trilinos/pull/8047
+
 
       Matrix<int, Scalar> A(nrows, ncols);
       Matrix<int, Scalar> A_copy(nrows, ncols);
@@ -817,8 +821,11 @@ namespace TSQR {
                << endl;
         }
       }
-      const int nrows = params.numRows;
-      const int ncols = params.numCols;
+      /* const */ int nrows = params.numRows;
+      /* const */ int ncols = params.numCols;
+      // 9/2020  nrows and ncols should be const, but
+      // gcc7.2+cuda9 with std=c++14 fails when const is used; 
+      // see https://github.com/trilinos/Trilinos/pull/8047
 
       Matrix<int, Scalar> A(nrows, ncols);
       Matrix<int, Scalar> A_copy(nrows, ncols);

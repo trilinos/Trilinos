@@ -101,6 +101,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
       ### TPLS ###
       "-DTPL_ENABLE_CUDA:BOOL=ON"
+      "-DCMAKE_POLICY_DEFAULT_CMP0074=NEW"
       "-DTPL_ENABLE_CUSPARSE:BOOL=ON"
       "-DTPL_ENABLE_HWLOC:BOOL=OFF"
 
@@ -111,13 +112,14 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       # Host Blas is required (https://github.com/kokkos/kokkos-kernels/issues/347) for Kokkos-Kernels to build correctly
       "-DTPL_ENABLE_BLAS:BOOL=ON"
       "-DTPL_ENABLE_LAPACK:BOOL=ON"
-      "-DTPL_BLAS_LIBRARIES=/usr/lib64/libblas.so.3.2.1"
-      "-DTPL_LAPACK_LIBRARIES=/usr/lib64/liblapack.so.3.2.1"
+      "-DTPL_BLAS_LIBRARIES=/usr/lib64/libblas.so"
+      "-DTPL_LAPACK_LIBRARIES=/usr/lib64/liblapack.so"
 
       ### PACKAGE CONFIGURATION ###
-          "-DKokkos_ENABLE_Cuda:BOOL=ON"
-          "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
-          "-DKokkos_ENABLE_Cuda_Lambda:BOOL=ON"
+          "-DKokkos_ENABLE_CUDA:BOOL=ON"
+          "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON"
+          "-DKokkos_ENABLE_CUDA_LAMBDA:BOOL=ON"
+          "-DKokkos_ARCH_KEPLER35:BOOL=ON"
           "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
           "-DTrilinos_ENABLE_ShyLU_Node:BOOL=OFF"
 

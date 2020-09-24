@@ -72,7 +72,7 @@ TEST(many_parts, many_parts)
   stk::mesh::Part& sub4 = meta.declare_part("sub4");
 
   stk::mesh::PartVector parts;
-  unsigned num_parts = 50000;
+  unsigned num_parts = 5000;
   for(unsigned i=0; i<num_parts; ++i) {
     std::ostringstream ossname;
     ossname << "part_"<<i;

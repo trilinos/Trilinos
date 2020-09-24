@@ -79,6 +79,7 @@ int main(int argc, char *argv[])
     }
     catch (std::exception &e) {
       std::cerr << "Aprepro terminated due to exception: " << e.what() << '\n';
+      exit_status = EXIT_FAILURE;
     }
   }
   else {
@@ -148,6 +149,7 @@ int main(int argc, char *argv[])
     }
     catch (std::exception &e) {
       std::cerr << "Aprepro terminated due to exception: " << e.what() << '\n';
+      exit_status = EXIT_FAILURE;
     }
   }
   if (aprepro.ap_options.debugging || aprepro.ap_options.dumpvars) {

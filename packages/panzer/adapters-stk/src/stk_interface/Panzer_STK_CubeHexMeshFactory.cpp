@@ -171,11 +171,14 @@ void CubeHexMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Para
    }
 
    mesh.buildLocalElementIDs();
+   mesh.buildLocalEdgeIDs();
 
    // now that edges are built, side and node sets can be added
    addSideSets(mesh);
    addNodeSets(mesh);
 
+   addEdgeBlocks(mesh);
+   
    // calls Stk_MeshFactory::rebalance
    this->rebalance(mesh);
 }
@@ -313,6 +316,8 @@ void CubeHexMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, 
 
    // add nodesets
    mesh.addNodeset("origin");
+
+   mesh.addEdgeBlock(panzer_stk::STK_Interface::edgeBlockString);
 }
 
 void CubeHexMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const
@@ -699,6 +704,24 @@ void CubeHexMeshFactory::addNodeSets(STK_Interface & mesh) const
       // add zero node to origin node set
       stk::mesh::Entity node = bulkData->get_entity(mesh.getNodeRank(),1);
       mesh.addEntityToNodeset(node,origin);
+   }
+
+   mesh.endModification();
+}
+
+void CubeHexMeshFactory::addEdgeBlocks(STK_Interface & mesh) const
+{
+   mesh.beginModification();
+
+   stk::mesh::Part * edge_block = mesh.getEdgeBlock(panzer_stk::STK_Interface::edgeBlockString);
+
+   Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   Teuchos::RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
+
+   std::vector<stk::mesh::Entity> edges;
+   bulkData->get_entities(mesh.getEdgeRank(),metaData->locally_owned_part(),edges);
+   for(auto edge : edges) {
+      mesh.addEntityToEdgeBlock(edge, edge_block);
    }
 
    mesh.endModification();

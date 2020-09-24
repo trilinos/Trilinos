@@ -40,7 +40,9 @@ int ex_get_attr_param(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, i
   size_t lnum_attr_per_entry;
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   /* Determine index of obj_id in vobjids array */
   if (obj_type == EX_NODAL) {

@@ -115,6 +115,9 @@ public:
    struct SidesetException : public std::logic_error
    { SidesetException(const std::string & what) : std::logic_error(what) {} };
 
+   struct EdgeBlockException : public std::logic_error
+   { EdgeBlockException(const std::string & what) : std::logic_error(what) {} };
+
    STK_Interface();
 
    /** Default constructor
@@ -129,6 +132,10 @@ public:
    /** Add an element block with a string name
      */
    void addElementBlock(const std::string & name,const CellTopologyData * ctData);
+
+   /** Add an edge block with a string name
+     */
+   void addEdgeBlock(const std::string & name);
 
    /** Add a side set with a string name
      */
@@ -145,6 +152,8 @@ public:
    /** Add a solution field
      */
    void addCellField(const std::string & fieldName,const std::string & blockId);
+
+   void addEdgeField(const std::string & fieldName,const std::string & blockId);
 
    /** Add a solution field for coordinates with a particular prefix, force it
      * to be outputed as a to be mesh displacement field. This
@@ -171,7 +180,7 @@ public:
      * \param[in] setupIO If set to true and IOSS is enabled, the output mesh will be initialized.
      * \param[in] buildRefinementSupport If true, build percept uniform refinement objects.
      */
-  void initialize(stk::ParallelMachine parallelMach,bool setupIO=true,
+   void initialize(stk::ParallelMachine parallelMach,bool setupIO=true,
                   const bool buildRefinementSupport = false);
 
    /** Build a bulk data object but don't do anything with it.
@@ -212,6 +221,10 @@ public:
    /** Addes an entity to a specified node set.
      */
    void addEntityToNodeset(stk::mesh::Entity entity,stk::mesh::Part * nodeset);
+
+   /** Addes an entity to a specified edge block.
+     */
+   void addEntityToEdgeBlock(stk::mesh::Entity entity,stk::mesh::Part * edgeblock);
 
    // Methods to interrogate the mesh topology and structure
    //////////////////////////////////////////
@@ -259,6 +272,48 @@ public:
      */
    void getNeighborElements(const std::string & blockID,std::vector<stk::mesh::Entity> & elements) const;
 
+   /** Get a vector of edges owned by this processor
+     */
+   void getMyEdges(std::vector<stk::mesh::Entity> & edges) const;
+   
+   /** Get Entities corresponding to the edge block requested.
+     * The Entites in the vector should be a dimension
+     * lower than <code>getDimension()</code>.
+     *
+     * \param[in] edgeBlockName Name of edge block
+     * \param[in,out] edges Vector of entities containing the requested edges.
+     */
+   void getMyEdges(const std::string & edgeBlockName,std::vector<stk::mesh::Entity> & edges) const;
+
+   /** Get Entities corresponding to the locally owned part of the edge block requested. This also limits
+     * the entities to be in a particular element block. The Entites in the vector should be a dimension
+     * lower than <code>getDimension()</code>.
+     *
+     * \param[in] edgeBlockName Name of edge block
+     * \param[in] blockName Name of block
+     * \param[in,out] edges Vector of entities containing the requested edges.
+     */
+   void getMyEdges(const std::string & edgeBlockName,const std::string & blockName,std::vector<stk::mesh::Entity> & edges) const;
+
+   /** Get Entities corresponding to the locally owned part of the edge block requested.
+     * The Entites in the vector should be a dimension
+     * lower than <code>getDimension()</code>.
+     *
+     * \param[in] edgeBlockName Name of edge block
+     * \param[in,out] edges Vector of entities containing the requested edges.
+     */
+   void getAllEdges(const std::string & edgeBlockName,std::vector<stk::mesh::Entity> & edges) const;
+
+   /** Get Entities corresponding to the edge block requested. This also limits the entities
+     * to be in a particular element block. The Entites in the vector should be a dimension
+     * lower than <code>getDimension()</code>.
+     *
+     * \param[in] edgeBlockName Name of edge block
+     * \param[in] blockName Name of block
+     * \param[in,out] edges Vector of entities containing the requested edges.
+     */
+   void getAllEdges(const std::string & edgeBlockName,const std::string & blockName,std::vector<stk::mesh::Entity> & edges) const;
+
    /** Get Entities corresponding to the side set requested.
      * The Entites in the vector should be a dimension
      * lower then <code>getDimension()</code>.
@@ -295,7 +350,6 @@ public:
      * \param[in] blockName Name of block
      * \param[in,out] sides Vector of entities containing the requested sides.
      */
-
    void getAllSides(const std::string & sideName,const std::string & blockName,std::vector<stk::mesh::Entity> & sides) const;
 
    /** Get Entities corresponding to the node set requested. This also limits the entities
@@ -523,11 +577,19 @@ public:
    stk::mesh::Part * getOwnedPart() const
    { return &getMetaData()->locally_owned_part(); } // I don't like the pointer access here, but it will do for now!
 
-   //! get the block count
+   //! get the block part
    stk::mesh::Part * getElementBlockPart(const std::string & name) const
    {
       std::map<std::string, stk::mesh::Part*>::const_iterator itr = elementBlocks_.find(name);   // Element blocks
       if(itr==elementBlocks_.end()) return 0;
+      return itr->second;
+   }
+
+   //! get the block part
+   stk::mesh::Part * getEdgeBlock(const std::string & name) const
+   {
+      std::map<std::string, stk::mesh::Part*>::const_iterator itr = edgeBlocks_.find(name);   // Element blocks
+      if(itr==edgeBlocks_.end()) return 0;
       return itr->second;
    }
 
@@ -601,6 +663,32 @@ public:
    inline stk::mesh::EntityId elementGlobalId(stk::mesh::Entity elmt) const
    { return bulkData_->identifier(elmt); }
 
+   /** Is an edge local to this processor?
+     */
+   bool isEdgeLocal(stk::mesh::Entity edge) const;
+
+   /** Is an edge local to this processor?
+     */
+   bool isEdgeLocal(stk::mesh::EntityId gid) const;
+
+   /** Get an edge's local index
+     */
+   std::size_t edgeLocalId(stk::mesh::Entity elmt) const;
+
+   /** Get an edge's local index
+     */
+   std::size_t edgeLocalId(stk::mesh::EntityId gid) const;
+
+   /** Get an edges global index
+     */
+   inline stk::mesh::EntityId edgeGlobalId(std::size_t lid) const
+   { return bulkData_->identifier((*orderedEdgeVector_)[lid]); }
+
+   /** Get an edge's global index
+     */
+   inline stk::mesh::EntityId edgeGlobalId(stk::mesh::Entity edge) const
+   { return bulkData_->identifier(edge); }
+
   /** Get an Entity's parallel owner (process rank)
    */
   inline unsigned entityOwnerRank(stk::mesh::Entity entity) const
@@ -627,6 +715,13 @@ public:
      * is found an exception (std::runtime_error) is raised.
      */
    stk::mesh::Field<double> * getCellField(const std::string & fieldName,
+                                           const std::string & blockId) const;
+
+   /** Get the stk mesh field pointer associated with a particular value
+     * Assumes there is a field associated with "fieldName,blockId" pair. If none
+     * is found an exception (std::runtime_error) is raised.
+     */
+   stk::mesh::Field<double> * getEdgeField(const std::string & fieldName,
                                            const std::string & blockId) const;
 
    ProcIdFieldType * getProcessorIdField() { return processorIdField_; }
@@ -691,6 +786,29 @@ public:
      */
    template <typename ArrayT>
    void setCellFieldData(const std::string & fieldName,const std::string & blockId,
+                         const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue=1.0);
+
+   /** Get Vector of edge entities ordered by their LID, returns an RCP so that
+     * it is easily stored by the caller.
+     */
+   Teuchos::RCP<const std::vector<stk::mesh::Entity> > getEdgesOrderedByLID() const;
+   
+   /** Writes a particular field to an edge array. Notice this is setup to work with
+     * the worksets associated with Panzer.
+     *
+     * \param[in] fieldName Name of field to be filled
+     * \param[in] blockId Name of block this set of elements belongs to
+     * \param[in] localElementIds Local element IDs for this set of solution values
+     * \param[in] solutionValues A one dimensional array object sized by (Edges)
+     *
+     * \note The block ID is not strictly needed in this context. However forcing the
+     *       user to provide it does permit an additional level of safety. The implicit
+     *       assumption is that the elements being "set" are part of the specified block.
+     *       This prevents the need to perform a null pointer check on the field data, because
+     *       the STK_Interface construction of the fields should force it to be nonnull...
+     */
+   template <typename ArrayT>
+   void setEdgeFieldData(const std::string & fieldName,const std::string & blockId,
                          const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue=1.0);
 
    /** Get vertices associated with a number of elements of the same geometry.
@@ -802,6 +920,8 @@ public:
      */
    void buildLocalElementIDs();
 
+   void buildLocalEdgeIDs();
+   
    /** Return a vector containing all the periodic boundary conditions.
      */
    const std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > &
@@ -942,6 +1062,7 @@ public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;
    static const std::string edgesString;
+   static const std::string edgeBlockString;
    static const std::string facesString;
 
 protected:
@@ -1009,6 +1130,8 @@ protected:
    std::map<std::string, stk::mesh::Part*> elementBlocks_;   // Element blocks
    std::map<std::string, stk::mesh::Part*> sidesets_; // Side sets
    std::map<std::string, stk::mesh::Part*> nodesets_; // Node sets
+   std::map<std::string, stk::mesh::Part*> edgeBlocks_;   // Edge blocks
+
    std::map<std::string, Teuchos::RCP<shards::CellTopology> > elementBlockCT_;
 
    // for storing/accessing nodes
@@ -1028,6 +1151,7 @@ protected:
    // maps field names to solution field stk mesh handles
    std::map<std::pair<std::string,std::string>,SolutionFieldType*> fieldNameToSolution_;
    std::map<std::pair<std::string,std::string>,SolutionFieldType*> fieldNameToCellField_;
+   std::map<std::pair<std::string,std::string>,SolutionFieldType*> fieldNameToEdgeField_;
 
    unsigned dimension_;
 
@@ -1091,10 +1215,14 @@ protected:
    // uses lazy evaluation
    mutable Teuchos::RCP<std::vector<stk::mesh::Entity> > orderedElementVector_;
 
+   // uses lazy evaluation
+   mutable Teuchos::RCP<std::vector<stk::mesh::Entity> > orderedEdgeVector_;
+
    // for element block weights
    std::map<std::string,double> blockWeights_;
 
    std::unordered_map<stk::mesh::EntityId,std::size_t> localIDHash_;
+   std::unordered_map<stk::mesh::EntityId,std::size_t> localEdgeIDHash_;
 
    // Store mesh displacement fields by element block. This map
    // goes like this meshCoordFields_[eBlock][axis_index] => coordinate FieldName
@@ -1226,6 +1354,24 @@ void STK_Interface::setCellFieldData(const std::string & fieldName,const std::st
       double * solnData = stk::mesh::field_data(*field,element);
       TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
       solnData[0] = scaleValue*solutionValues.access(cell,0);
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::setEdgeFieldData(const std::string & fieldName,const std::string & blockId,
+                                     const std::vector<std::size_t> & localEdgeIds,const ArrayT & solutionValues,double scaleValue)
+{
+   const std::vector<stk::mesh::Entity> & edges = *(this->getEdgesOrderedByLID());
+
+   SolutionFieldType * field = this->getEdgeField(fieldName,blockId);
+
+   for(std::size_t idx=0;idx<localEdgeIds.size();idx++) {
+      std::size_t localId = localEdgeIds[idx];
+      stk::mesh::Entity edge = edges[localId];
+
+      double * solnData = stk::mesh::field_data(*field,edge);
+      TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
+      solnData[0] = scaleValue*solutionValues.access(idx,0);
    }
 }
 

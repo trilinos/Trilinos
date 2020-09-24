@@ -11,8 +11,12 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperExplicit.hpp"
-#include "Tempus_StepperObserverComposite.hpp"
-#include "Tempus_StepperLeapfrogObserver.hpp"
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  #include "Tempus_StepperObserverComposite.hpp"
+  #include "Tempus_StepperLeapfrogObserver.hpp"
+#endif
+#include "Tempus_StepperLeapfrogAppAction.hpp"
+#include "Tempus_StepperLeapfrogAppActionComposite.hpp"
 
 
 namespace Tempus {
@@ -85,6 +89,7 @@ public:
   */
   StepperLeapfrog();
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// Constructor
   StepperLeapfrog(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -92,7 +97,17 @@ public:
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck);
+#endif
 
+  /// Constructor                                                                                                          
+  StepperLeapfrog(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    const Teuchos::RCP<StepperLeapfrogAppAction<Scalar> >& stepperLFAppAction);
+
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// \name Basic stepper methods
   //@{
     virtual void setObserver(
@@ -100,6 +115,13 @@ public:
 
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return this->stepperObserver_; }
+#endif
+
+    virtual void setAppAction(
+      Teuchos::RCP<StepperLeapfrogAppAction<Scalar> > appAction);
+
+    virtual Teuchos::RCP<StepperLeapfrogAppAction<Scalar> > getAppAction() const
+     { return stepperLFAppAction_; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -142,8 +164,13 @@ public:
 
 protected:
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   Teuchos::RCP<StepperObserverComposite<Scalar> >    stepperObserver_;
   Teuchos::RCP<StepperLeapfrogObserver<Scalar> >     stepperLFObserver_;
+#endif
+
+  Teuchos::RCP<StepperLeapfrogAppActionComposite<Scalar> >    stepperLFAppActionComposite__;
+  Teuchos::RCP<StepperLeapfrogAppAction<Scalar> >     stepperLFAppAction_;
 
 };
 

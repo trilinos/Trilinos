@@ -345,3 +345,118 @@ TEUCHOS_UNIT_TEST( Factory, Bug6383 )
 #endif // 0
 }
 
+// Repeat the above test for the float scalar type. 
+TEUCHOS_UNIT_TEST( Factory, Bug6383_Float )
+{
+  using std::endl;
+  typedef float ST;
+  typedef Belos::MultiVec<ST> MV;
+  typedef Belos::Operator<ST> OP;
+  typedef Belos::SolverManager<ST, MV, OP> solver_base_type;
+  typedef Belos::SolverFactory<ST, MV, OP> factory_type;
+
+  Teuchos::OSTab tab0 (out);
+  out << "Test for Bug 6383" << endl;
+  Teuchos::OSTab tab1 (out);
+
+  // List of names of solvers that failed the test.
+  std::vector<std::string> failedSolvers;
+
+  {
+    typedef Belos::GCRODRSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "GCRODR" );
+  }
+  {
+    typedef Belos::PseudoBlockGmresSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "GMRES" );
+  }
+  // Make sure that the factory is case insensitive (Bug 6388).
+  {
+    typedef Belos::PseudoBlockGmresSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "gmres" );
+  }
+  {
+    typedef Belos::PseudoBlockCGSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "CG" );
+  }
+  // Make sure that the factory is case insensitive (Bug 6388).
+  {
+    typedef Belos::PseudoBlockCGSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "cg" );
+  }
+  {
+    typedef Belos::BlockGmresSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "Block GMRES" );
+  }
+  {
+    typedef Belos::BlockGmresSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "Block GMRES" );
+  }
+  {
+    typedef Belos::BlockCGSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "Block CG" );
+  }
+  {
+    typedef Belos::FixedPointSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "Fixed Point" );
+  }
+
+  // FIXME (mfh 05 Aug 2015) When setting "Verbosity" and/or "Output
+  // Style", LSQR throws:
+  //
+  // .../packages/belos/src/BelosStatusTestResNormOutput.hpp:232:
+  //
+  // Throw test that evaluated to true: tmpComboTest == Teuchos::null
+  // StatusTestResNormOutput():  test must be Belos::StatusTest[MaxIters|ResNorm|Combo].
+  if (false) {
+    typedef Belos::LSQRSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "LSQR" );
+  }
+
+  {
+    typedef Belos::PCPGSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "PCPG" );
+  }
+  {
+    typedef Belos::RCGSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "RCG" );
+  }
+  {
+    typedef Belos::BiCGStabSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "BiCGStab" );
+  }
+  // Make sure that the factory is case insensitive (Bug 6388).
+  {
+    typedef Belos::BiCGStabSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "bicgstab" );
+  }
+
+#if 1
+  if (success) {
+    out << endl << "Test SUCCEEDED!" << endl;
+  }
+  else {
+    out << endl << "Test FAILED!" << endl
+        << "Solvers that failed: [";
+    for (size_t k = 0; k < failedSolvers.size (); ++k) {
+      out << "\"" << failedSolvers[k] << "\"";
+      if (k + 1 < failedSolvers.size ()) {
+        out << ", ";
+      }
+    }
+    out << "]" << endl;
+  }
+#else
+  if (! success) {
+    out << endl << "*** Solvers that failed: ";
+    out << "[";
+    for (size_t k = 0; k < failedSolvers.size (); ++k) {
+      out << "\"" << failedSolvers[k] << "\"";
+      if (k + 1 < failedSolvers.size ()) {
+        out << ", ";
+      }
+    }
+    out << "]" << endl;
+  }
+#endif // 0
+}

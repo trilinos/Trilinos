@@ -139,6 +139,8 @@ public:
   {
   }
 
+  CommSparse(const CommSparse&) = delete;
+
   /** Allocate communication buffers based upon
    *  sizing from the surrogate send buffer packing.
    *  Returns true if the local processor is actually
