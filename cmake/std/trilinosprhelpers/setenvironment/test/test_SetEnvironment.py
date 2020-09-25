@@ -327,9 +327,9 @@ class SetEnvironmentTest(TestCase):
         # Verify that TEST_ENVVAR_002 was expanded properly
         expected_test_envvar_002 = "TEST_ENVVAR_002_VALUE/TEST_ENVVAR_001_VALUE"
         actual_test_envvar_002   = os.environ['TEST_ENVVAR_002']
-        print(">>>")
-        print(">>> {}".format(actual_test_envvar_002))
-        print(">>>")
+        print("---")
+        print("--- {}".format(actual_test_envvar_002))
+        print("---")
         self.assertEqual(expected_test_envvar_002, actual_test_envvar_002)
 
 
@@ -422,9 +422,9 @@ class SetEnvironmentTest(TestCase):
 
         options = setEnv.config.options("SAMPLE_MAP")
         for opt in options:
-            print(">>>> {}".format(opt))
+            print("---- {}".format(opt))
         for k,v in setEnv.config.items("SAMPLE_MAP"):
-            print(">>>> {} : {}".format(k,v))
+            print("---- {} : {}".format(k,v))
 
 
     def test_SetEnvironment_pretty_print_envvars(self):

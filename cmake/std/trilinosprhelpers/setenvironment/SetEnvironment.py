@@ -309,7 +309,7 @@ class SetEnvironment(object):
         config = self.config
 
         self.actions = self._load_configuration_r(config, self.profile, actions=self.actions)
-        #print(">>> ACTIONS: ")
+        #print("--- ACTIONS: ")
         #pprint.pprint(self.actions)
         return self.actions
 

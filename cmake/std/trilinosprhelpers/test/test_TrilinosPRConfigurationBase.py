@@ -332,7 +332,7 @@ class TrilinosPRConfigurationTest(TestCase):
         args = args = self.dummy_args_python2()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         cdash_track = pr_config.pullrequest_cdash_track
-        print(">>> cdash_track = {}".format(cdash_track))
+        print("--- cdash_track = {}".format(cdash_track))
         self.assertEqual(cdash_track, "Pull Request")
 
 
@@ -340,7 +340,7 @@ class TrilinosPRConfigurationTest(TestCase):
         args = self.dummy_args_python2()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config.pullrequest_build_name
-        print(">>> build_name = {}".format(build_name))
+        print("--- build_name = {}".format(build_name))
         expected_build_name = "PR-{}-test-{}-{}".format(args.github_pr_number, args.job_base_name, args.job_number)
         self.assertEqual(build_name, expected_build_name)
 
@@ -349,7 +349,7 @@ class TrilinosPRConfigurationTest(TestCase):
         args = self.dummy_args_gcc_720()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config. pullrequest_build_name
-        print(">>> build_name = {}".format(build_name))
+        print("--- build_name = {}".format(build_name))
         expected_build_name = "PR-{}-test-{}-{}".format(args.github_pr_number, args.job_base_name, args.job_number)
         self.assertEqual(build_name, expected_build_name)
 
@@ -503,8 +503,8 @@ class TrilinosPRConfigurationTest(TestCase):
         package_enables = pr_config.get_property_from_config("ENABLE_MAP",
                                                              args.job_base_name)
 
-        print(">>> package_enables = {}".format(package_enables))
-        print(">>> expected_value  = TrilinosFrameworkTests")
+        print("--- package_enables = {}".format(package_enables))
+        print("--- expected_value  = TrilinosFrameworkTests")
         self.assertEqual(package_enables, "TrilinosFrameworkTests")
 
 
@@ -523,8 +523,8 @@ class TrilinosPRConfigurationTest(TestCase):
         with patch('sys.stdout', new=StringIO()) as fake_out:
             package_enables = pr_config.get_property_from_config("NONEXISTENTSECTION", "N/A")
         print(fake_out.getvalue())
-        print(">>> package_enables = {}".format(package_enables))
-        print(">>> expected_value  = {}".format(None))
+        print("--- package_enables = {}".format(package_enables))
+        print("--- expected_value  = {}".format(None))
         self.assertEqual(package_enables, None)
         self.assertIn("WARNING", fake_out.getvalue())
 
@@ -534,8 +534,8 @@ class TrilinosPRConfigurationTest(TestCase):
         with patch('sys.stdout', new=StringIO()) as fake_out:
             package_enables = pr_config.get_property_from_config("NONEXISTENTSECTION", "N/A", default=default_value)
         print(fake_out.getvalue())
-        print(">>> package_enables = {}".format(package_enables))
-        print(">>> expected_value  = {}".format(default_value))
+        print("--- package_enables = {}".format(package_enables))
+        print("--- expected_value  = {}".format(default_value))
         self.assertEqual(package_enables, default_value)
         self.assertIn("WARNING", fake_out.getvalue())
 
@@ -550,8 +550,8 @@ class TrilinosPRConfigurationTest(TestCase):
         print("-----[ TEST 1 ]-----------------------")
         package_enables = pr_config.get_multi_property_from_config("ENABLE_MAP",
                                                                    args.job_base_name)
-        print(">>> package_enables = {}".format(package_enables))
-        print(">>> expected_value  = Teuchos,Tpetra")
+        print("--- package_enables = {}".format(package_enables))
+        print("--- expected_value  = Teuchos,Tpetra")
         self.assertEqual(package_enables, "Teuchos,Tpetra")
 
         # Change the delimiter
@@ -559,8 +559,8 @@ class TrilinosPRConfigurationTest(TestCase):
         package_enables = pr_config.get_multi_property_from_config("ENABLE_MAP",
                                                                    args.job_base_name,
                                                                    delimeter=" ")
-        print(">>> package_enables = {}".format(package_enables))
-        print(">>> expected_value  = Teuchos Tpetra")
+        print("--- package_enables = {}".format(package_enables))
+        print("--- expected_value  = Teuchos Tpetra")
         self.assertEqual(package_enables, "Teuchos Tpetra")
 
 
@@ -577,7 +577,7 @@ class TrilinosPRConfigurationTest(TestCase):
         print("-----[ TEST 1 ]-----------------------")
         package_enables = pr_config.get_multi_property_from_config("NONEXISTENTSECTION",
                                                                    args.job_base_name)
-        print(">>> package_enables = {}".format(package_enables))
+        print("--- package_enables = {}".format(package_enables))
         self.assertEqual(package_enables, None)
 
         # Change the default
@@ -585,14 +585,14 @@ class TrilinosPRConfigurationTest(TestCase):
         package_enables = pr_config.get_multi_property_from_config("NONEXISTENTSECTION",
                                                                    args.job_base_name,
                                                                    default="OOPS!")
-        print(">>> package_enables = {}".format(package_enables))
+        print("--- package_enables = {}".format(package_enables))
         self.assertEqual(package_enables, "OOPS!")
 
         # Test SECTION exists, OPTION does not exist
         print("-----[ TEST 3 ]-----------------------")
         package_enables = pr_config.get_multi_property_from_config("ENABLE_MAP",
                                                                    "NONEXISTENT_OPTION")
-        print(">>> package_enables = {}".format(package_enables))
+        print("--- package_enables = {}".format(package_enables))
         self.assertEqual(package_enables, None)
 
 
@@ -605,7 +605,7 @@ class TrilinosPRConfigurationTest(TestCase):
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         subprojects_file = pr_config.subprojects_file
-        print(">>> subprojects_file = {}".format(subprojects_file))
+        print("--- subprojects_file = {}".format(subprojects_file))
 
         self.assertEqual(subprojects_file, "../package_subproject_list.cmake")
 
@@ -619,7 +619,7 @@ class TrilinosPRConfigurationTest(TestCase):
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         package_enables_file = pr_config.arg_package_enables_file
-        print(">>> package_enables_file = {}".format(package_enables_file))
+        print("--- package_enables_file = {}".format(package_enables_file))
         self.assertEqual(package_enables_file, "../packageEnables.cmake")
 
 
@@ -632,8 +632,8 @@ class TrilinosPRConfigurationTest(TestCase):
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         working_directory_ctest = pr_config.working_directory_ctest
-        print(">>> working_directory:       {}".format(pr_config.arg_workspace_dir))
-        print(">>> working_directory_ctest: {}".format(working_directory_ctest))
+        print("--- working_directory:       {}".format(pr_config.arg_workspace_dir))
+        print("--- working_directory_ctest: {}".format(working_directory_ctest))
         self.assertIn("TFW_testing_single_configure_prototype", working_directory_ctest)
 
 

@@ -27,19 +27,19 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
         """
         Execute the test
         """
-        print("="*80)
-        print("= E X E C U T E   S T A N D A R D   P U L L R E Q E S T   T E S T")
-        print("="*80)
+        print("")
+        print("E X E C U T E   S T A N D A R D   P U L L R E Q E S T   T E S T")
+        print("")
 
         #
         # Typically, we execute the test from $WORKSPACE/TFW_testing_single_configure_prototype
         # We'll skip it if we're doing a dry-run.
         #
         print("")
-        print(">>> Change directory to {}".format(self.working_directory_ctest))
+        print("--- Change directory to {}".format(self.working_directory_ctest))
         if not self.args.dry_run:
             os.chdir(self.working_directory_ctest)
-        print(">>> OK")
+        print("--- OK")
         print("")
 
         # Execute the call to ctest.

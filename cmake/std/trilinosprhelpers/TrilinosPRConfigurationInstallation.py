@@ -36,10 +36,10 @@ class TrilinosPRConfigurationInstallation(TrilinosPRConfigurationBase):
         # We'll skip it if we're doing a dry-run.
         #
         print("")
-        print(">>> Change directory to {}".format(self.working_directory_ctest))
+        print("--- Change directory to {}".format(self.working_directory_ctest))
         if not self.args.dry_run:
             os.chdir(self.working_directory_ctest)
-        print(">>> OK")
+        print("--- OK")
         print("")
 
         # Execute the call to ctest.

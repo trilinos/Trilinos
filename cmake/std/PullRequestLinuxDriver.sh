@@ -31,10 +31,10 @@ function get_md5sum() {
 function get_pip() {
     local python_exe=${1:?}
 
-    echo -e ">>> Python: ${python_exe:?}"
+    echo -e "--- Python: ${python_exe:?}"
 
     # fetch get-pip.py
-    echo -e ">>> curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
+    echo -e "--- curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 
     get_pip_args=(
@@ -44,7 +44,7 @@ function get_pip() {
         --no-wheel
     )
     echo -e ""
-    echo -e ">>> ${python_exe:?} ./get-pip.py ${get_pip_args[@]}"
+    echo -e "--- ${python_exe:?} ./get-pip.py ${get_pip_args[@]}"
     ${python_exe:?} ./get-pip.py ${get_pip_args[@]}
 }
 
@@ -56,13 +56,13 @@ function get_pip() {
 function get_python_packages() {
     local pip_exe=${1:?}
 
-    echo -e ">>> Pip   : ${pip_exe:?}"
+    echo -e "--- Pip   : ${pip_exe:?}"
 
     pip_args=(
         --use-feature=2020-resolver
         configparser
     )
-    echo -e ">>> ${pip_exe:?} install --user ${pip_args[@]}"
+    echo -e "--- ${pip_exe:?} install --user ${pip_args[@]}"
     ${pip_exe:?} install --user ${pip_args[@]}
 }
 
