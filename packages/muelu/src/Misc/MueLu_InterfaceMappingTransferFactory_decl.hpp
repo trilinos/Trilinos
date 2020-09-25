@@ -57,14 +57,14 @@ namespace MueLu
 
 /*!
   @class InterfaceMappingTransferFactory
-  @brief Transfer the primal/dual node mapping for interface aggregation to the coarse level
+  @brief Transfer mapping data for interface aggregation to the coarse level
 
   The fine level knows about the mapping on the coarse level.
-  This factory hast pushes that pre-computed information to the coarse level.
+  This factory just pushes that pre-computed information to the coarse level.
 
-  ## Input/output of InterfaceAggregationFactory ##
+  ## Input/output ##
 
-  ### User parameters of InterfaceAggregationFactory ###
+  ### User parameters ###
   Parameter | type | default | master.xml | validated | requested | description
   ----------|------|---------|:----------:|:---------:|:---------:|------------
   CoarseDualNodeID2PrimalNodeID | Factory | null |   | * | * | Generating factory of the coarse dual-to-primal node mapping
