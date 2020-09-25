@@ -49,6 +49,7 @@
 #include <MueLu_ConfigDefs.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_UseDefaultTypes.hpp>
+#include <MueLu_UseShortNames.hpp>
 
 // Teuchos
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -59,9 +60,6 @@
 #include <BelosXpetraStatusTestGenResSubNorm.hpp>
 #include <BelosXpetraAdapter.hpp>
 #include <BelosMueLuAdapter.hpp>
-
-// Xpetra
-#include <Xpetra_UseShortNames.hpp>
 
 template <typename GlobalOrdinal>
 void read_Lagr2Dof(std::string filemane, std::map<GlobalOrdinal, GlobalOrdinal> &lagr2Dof)
@@ -85,8 +83,6 @@ int main(int argc, char *argv[])
   using SparseMatrixType = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using tpetra_mvector_type = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using tpetra_map_type = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
-
-  using Hierarchy = MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
   using Teuchos::RCP;
   using Teuchos::rcp;

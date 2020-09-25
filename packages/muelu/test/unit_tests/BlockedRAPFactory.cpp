@@ -2,8 +2,8 @@
 //
 // ***********************************************************************
 //
-//    MueLu: A package for multigrid based preconditioning
-//          Copyright 2012 Sandia Corporation
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -36,43 +36,40 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact
-//          Jonathan Hu     (jhu@sandia.gov)
-//          Ray Tuminaro    (rstumin@sandia.gov)
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_INTERFACEMAPPINGTRANSFERFACTORY_DEF_HPP_
-#define MUELU_INTERFACEMAPPINGTRANSFERFACTORY_DEF_HPP_
+#include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_DefaultComm.hpp>
 
-#include "MueLu_InterfaceMappingTransferFactory_decl.hpp"
+#include "MueLu_TestHelpers.hpp"
+#include "MueLu_Version.hpp"
 
-namespace MueLu
-{
+#include "MueLu_Utilities.hpp"
+#include "MueLu_BlockedRAPFactory.hpp"
 
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> InterfaceMappingTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const
-{
-  RCP<ParameterList> validParamList = rcp(new ParameterList());
-  validParamList->set<RCP<const FactoryBase>>("CoarseDualNodeID2PrimalNodeID", Teuchos::null, "Generating factory of the CoarseDualNodeID2PrimalNodeID map");
-  return validParamList;
+#include "MueLu_Exceptions.hpp"
+
+namespace MueLuTests {
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedRAPFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
+
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<BlockedRAPFactory> blockedRAPFactory = rcp(new BlockedRAPFactory());
+    TEST_EQUALITY(blockedRAPFactory != Teuchos::null, true);
+  } // Constructor
+
+# define MUELU_ETI_GROUP(SC, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedRAPFactory, Constructor, SC, LO, GO, Node)
+
+#include <MueLu_ETI_4arg.hpp>
 }
-
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void InterfaceMappingTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const
-{
-  Input(fineLevel, "CoarseDualNodeID2PrimalNodeID");
-}
-
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void InterfaceMappingTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const
-{
-  Monitor m(*this, "Interface Mapping transfer factory");
-
-  RCP<std::map<LocalOrdinal, LocalOrdinal>> coarseLagr2Dof = Get<RCP<std::map<LocalOrdinal, LocalOrdinal>>>(fineLevel, "CoarseDualNodeID2PrimalNodeID");
-  Set(coarseLevel, "DualNodeID2PrimalNodeID", coarseLagr2Dof);
-}
-
-} // namespace MueLu
-
-#endif /* MUELU_INTERFACEMAPPINGTRANSFERFACTORY_DEF_HPP_ */
