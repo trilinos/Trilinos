@@ -1233,8 +1233,7 @@ init (const keys_type& keys,
 
       // Return the old count; decrement afterwards.
       //
-      // NOTE (mfh 28 Mar 2016) This assumes UVM.  It might make more
-      // sense to use a host mirror here, due to the access pattern.
+      // Assumes UVM but this code should not execute for Cuda since buildInParallel is true
       const offset_type count = counts[hashVal];
       --counts[hashVal];
       if (count == 0) {
@@ -1242,7 +1241,7 @@ init (const keys_type& keys,
         break;
       }
       else {
-        // NOTE (mfh 28 Mar 2016) This assumes UVM.
+        // Assumes UVM but this code should not execute for Cuda since buildInParallel is true
         const offset_type curPos = ptr[hashVal+1] - count;
 
         // NOTE (mfh 28 Mar 2016) This assumes UVM.
