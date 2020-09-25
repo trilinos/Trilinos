@@ -86,7 +86,6 @@ namespace MueLuTests {
 
     // Probe all nodes in the mesh
     const LocalOrdinal numLocalDofs = dofMap->getNodeNumElements();
-    std::size_t dim = 0;
     LocalOrdinal localNodeID = Teuchos::ScalarTraits<LocalOrdinal>::zero();
     for (LocalOrdinal localDofID = 0; localDofID < numLocalDofs; ++localDofID)
     {
