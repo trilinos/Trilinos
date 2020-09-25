@@ -27,9 +27,9 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
         """
         Execute the test
         """
-        print("")
+        print("- "*40)
         print("E X E C U T E   S T A N D A R D   P U L L R E Q E S T   T E S T")
-        print("")
+        print("- "*40)
 
         #
         # Typically, we execute the test from $WORKSPACE/TFW_testing_single_configure_prototype

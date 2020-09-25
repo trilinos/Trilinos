@@ -458,9 +458,9 @@ class TrilinosPRConfigurationBase(object):
         print("")
 
 
-        print("="*80)
-        print("=  E N V I R O N M E N T   S E T   U P   S T A R T")
-        print("="*80)
+        print("-"*40)
+        print("E N V I R O N M E N T   S E T   U P   S T A R T")
+        print("- "*40)
         tr_config = setenvironment.SetEnvironment(self.arg_pr_config_file, self.arg_pr_jenkins_job_name)
 
         rval = 0
@@ -494,11 +494,11 @@ class TrilinosPRConfigurationBase(object):
         print("")
         tr_config.pretty_print_envvars(envvar_filter=envvars)
 
-        print("")
+        print("- "*40)
         print("E N V I R O N M E N T   S E T   U P   C O M P L E T E")
-        print("")
-        print("Create packageEnables.cmake")
-        print("")
+        print("- "*40)
+
+        print("--- Create packageEnables.cmake")
         self.create_package_enables_file(dryrun=self.args.dry_run)
         print("")
 

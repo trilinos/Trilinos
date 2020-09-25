@@ -27,9 +27,9 @@ class TrilinosPRConfigurationInstallation(TrilinosPRConfigurationBase):
         """
         Execute the test
         """
-        print("="*80)
-        print("= E X E C U T E   I N S T A L L A T I O N   P U L L R E Q U E S T   T E S T")
-        print("="*80)
+        print("- "*40)
+        print("E X E C U T E   I N S T A L L A T I O N   P U L L R E Q U E S T   T E S T")
+        print("- "*40)
 
         #
         # Typically, we execute the test from $WORKSPACE/TFW_testing_single_configure_prototype
