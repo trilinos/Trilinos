@@ -21,9 +21,9 @@ template<class Scalar>
 StepperOperatorSplit<Scalar>::StepperOperatorSplit()
 {
   this->setStepperType(        "Operator Split");
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setUseFSAL(            false);
+  this->setICConsistency(      "None");
+  this->setICConsistencyCheck( false);
 
   this->setOrder   (1);
   this->setOrderMin(1);

@@ -165,21 +165,21 @@ void StepperNewmarkImplicitAForm<Scalar>::setSchemeName(
   this->isInitialized_ = false;
 }
 
-template<class Scalar>                                                          
-void StepperNewmarkImplicitAForm<Scalar>::setAppAction(                                                                                                                                                                                                                                                                                                                           
-    Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > appAction)               
-{                                                                               
+template<class Scalar>
+void StepperNewmarkImplicitAForm<Scalar>::setAppAction(
+    Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > appAction)
+{
 
-  if (appAction == Teuchos::null) {                                             
-    // Create default appAction                                                 
-    stepperNewmarkImpAppAction_ =                                                       
-	Teuchos::rcp(new StepperNewmarkImplicitAFormModifierDefault<Scalar>());          
-  } else {                                                                      
-    stepperNewmarkImpAppAction_ = appAction;                                            
-  }                                                                             
+  if (appAction == Teuchos::null) {
+    // Create default appAction
+    stepperNewmarkImpAppAction_ =
+      Teuchos::rcp(new StepperNewmarkImplicitAFormModifierDefault<Scalar>());
+  } else {
+    stepperNewmarkImpAppAction_ = appAction;
+  }
 
-  this->isInitialized_ = false;                                                 
-} 
+  this->isInitialized_ = false;
+}
 
 
 template<class Scalar>
@@ -191,9 +191,9 @@ StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm() :
 #endif
 
   this->setStepperType(        "Newmark Implicit a-Form");
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setUseFSAL(            true);
+  this->setICConsistency(      "Consistent");
+  this->setICConsistencyCheck( false);
   this->setZeroInitialGuess(   false);
   this->setSchemeName(         "Average Acceleration");
 
@@ -507,16 +507,6 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
     const Scalar dt = workingState->getTimeStep();
     Scalar t = time+dt;
 
-    // Compute acceleration, a_old, using displacement (d_old) and
-    // velocity (v_old), if needed.
-    if (!(this->getUseFSAL()) && workingState->getNConsecutiveFailures() == 0) {
-      wrapperModel->initializeNewmark(v_old, d_old, dt, time,
-                                      Scalar(0.0), Scalar(0.0));
-      const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_old);
-
-      workingState->setSolutionStatus(sStatus);  // Converged --> pass.
-    }
-
     // Compute displacement and velocity predictors
     predictDisplacement(*d_new, *d_old, *v_old, *a_old, dt);
     predictVelocity(*v_new, *v_old, *a_old, dt);
@@ -634,9 +624,8 @@ StepperNewmarkImplicitAForm<Scalar>::getValidParameters() const
   pl->set<std::string>("Scheme Name", "Average Acceleration");
   pl->set<double>     ("Beta" , 0.25);
   pl->set<double>     ("Gamma", 0.5 );
-  pl->set<bool>       ("Use FSAL", this->getUseFSALDefault());
-  pl->set<std::string>("Initial Condition Consistency",
-                       this->getICConsistencyDefault());
+  pl->set<bool>       ("Use FSAL", true);
+  pl->set<std::string>("Initial Condition Consistency", "Consistent");
   pl->set<std::string>("Solver Name", "Default Solver");
   pl->set<bool>       ("Zero Initial Guess", false);
   Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();

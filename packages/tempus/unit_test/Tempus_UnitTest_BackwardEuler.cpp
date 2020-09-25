@@ -68,9 +68,9 @@ TEUCHOS_UNIT_TEST(BackwardEuler, Default_Construction)
   predictorStepper->initialize();
 
   auto defaultStepper = rcp(new Tempus::StepperBackwardEuler<double>());
-  bool useFSAL              = defaultStepper->getUseFSALDefault();
-  std::string ICConsistency = defaultStepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = defaultStepper->getICConsistencyCheckDefault();
+  bool useFSAL              = defaultStepper->getUseFSAL();
+  std::string ICConsistency = defaultStepper->getICConsistency();
+  bool ICConsistencyCheck   = defaultStepper->getICConsistencyCheck();
   bool zeroInitialGuess     = defaultStepper->getZeroInitialGuess();
 
   // Test the set functions.

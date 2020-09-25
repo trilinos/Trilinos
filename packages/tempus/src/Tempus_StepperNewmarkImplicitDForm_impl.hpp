@@ -182,9 +182,9 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm()
 #endif
 
   this->setStepperType(        "Newmark Implicit d-Form");
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setUseFSAL(            false);
+  this->setICConsistency(      "None");
+  this->setICConsistencyCheck( false);
   this->setZeroInitialGuess(   false);
   this->setSchemeName(         "Average Acceleration");
 

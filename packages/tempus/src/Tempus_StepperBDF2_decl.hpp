@@ -43,7 +43,7 @@ namespace Tempus {
  *                -  \frac{\tau_n}{\tau_n + \tau_{n-1}}
  *                   \left[ \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right], \f$
  *
- *  The First-Same-As-Last (FSAL) principle is not needed BDF2.
+ *  The First-Same-As-Last (FSAL) principle is not needed for BDF2.
  *  The default is to set useFSAL=false, however useFSAL=true will also work
  *  but have no affect (i.e., no-op).
  *
@@ -136,7 +136,6 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return false;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
 
@@ -151,7 +150,6 @@ public:
   virtual void computeStartUp(
     const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   /// \name Overridden from Teuchos::Describable

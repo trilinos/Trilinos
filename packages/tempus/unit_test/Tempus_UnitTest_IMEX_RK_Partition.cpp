@@ -68,9 +68,9 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partition, Default_Construction)
   auto solver = rcp(new Thyra::NOXNonlinearSolver());
   solver->setParameterList(Tempus::defaultSolverParameters());
 
-  bool useFSAL              = stepper->getUseFSALDefault();
-  std::string ICConsistency = stepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
+  bool useFSAL              = stepper->getUseFSAL();
+  std::string ICConsistency = stepper->getICConsistency();
+  bool ICConsistencyCheck   = stepper->getICConsistencyCheck();
   bool zeroInitialGuess     = stepper->getZeroInitialGuess();
   std::string stepperType   = "IMEX RK SSP2";
   auto stepperERK = Teuchos::rcp(new Tempus::StepperERK_Trapezoidal<double>());
