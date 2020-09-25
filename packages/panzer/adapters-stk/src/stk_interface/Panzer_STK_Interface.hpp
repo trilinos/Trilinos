@@ -663,6 +663,14 @@ public:
    inline stk::mesh::EntityId elementGlobalId(stk::mesh::Entity elmt) const
    { return bulkData_->identifier(elmt); }
 
+   /** Is an edge local to this processor?
+     */
+   bool isEdgeLocal(stk::mesh::Entity edge) const;
+
+   /** Is an edge local to this processor?
+     */
+   bool isEdgeLocal(stk::mesh::EntityId gid) const;
+
    /** Get an edge's local index
      */
    std::size_t edgeLocalId(stk::mesh::Entity elmt) const;
