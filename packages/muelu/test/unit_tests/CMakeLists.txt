@@ -107,6 +107,7 @@ ENDIF()
 APPEND_SET(SOURCES_BLOCKED
   BlockedCoarseMapFactory.cpp
   BlockedPFactory.cpp
+  BlockedRAPFactory.cpp
   SchurComplementFactory.cpp
   SubBlockAFactory.cpp
 )
