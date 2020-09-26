@@ -209,6 +209,11 @@ ENDMACRO()
 #
 #     If specified, this TPL will build an INTERFACE library rather than an
 #     IMPORTED target
+IF (KOKKOS_HAS_TRILINOS)
+MACRO(kokkos_import_tpl NAME)
+  #do nothing
+ENDMACRO()
+ELSE()
 MACRO(kokkos_import_tpl NAME)
   CMAKE_PARSE_ARGUMENTS(TPL
    "NO_EXPORT;INTERFACE"
@@ -258,6 +263,7 @@ MACRO(kokkos_import_cmake_tpl MODULE_NAME)
     KOKKOS_EXPORT_CMAKE_TPL(${MODULE_NAME})
   ENDIF()
 ENDMACRO()
+ENDIF()
 
 #
 # @MACRO: KOKKOS_CREATE_IMPORTED_TPL()
