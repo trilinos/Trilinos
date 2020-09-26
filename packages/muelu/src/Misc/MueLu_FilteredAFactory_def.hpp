@@ -744,7 +744,7 @@ namespace MueLu {
   //
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  ExperimentalLumping(const Matrix& A, Matrix& filteredA, double rho, double rho2) const {
+  ExperimentalLumping(const Matrix& A, Matrix& filteredA, double irho, double irho2) const {
     using TST = typename Teuchos::ScalarTraits<SC>;
     SC zero = TST::zero();
     SC one  = TST::one();
@@ -763,8 +763,11 @@ namespace MueLu {
     SC PosFilteredSum, NegFilteredSum;
     SC Target;
 
+    SC rho  = as<Scalar>(irho);
+    SC rho2 = as<Scalar>(irho2);
+
     for (LO row = 0; row < (LO) A.getRowMap()->getNodeNumElements(); row++) {
-        noLumpDdom = 10000.0;  // only used if diagonal is zero
+        noLumpDdom = as<Scalar>(10000.0);  // only used if diagonal is zero
 
         ArrayView<const SC> tvals;
         A.getLocalRowView(row, inds, vals);           
@@ -809,7 +812,7 @@ namespace MueLu {
         // which should really be larger than 1
 
         Target = rho*noLumpDdom;
-        if (TST::real(Target) <= rho2) Target = rho2;//rstumin change
+        if (TST::magnitude(Target) <= TST::magnitude(rho)) Target = rho2;//rstumin change
 
         PosFilteredSum = PosOffSum - PosOffDropSum;
         NegFilteredSum = NegOffSum - NegOffDropSum;
@@ -880,7 +883,7 @@ namespace MueLu {
             // negative offdiags. The rest will go to the diagonal
 
             numer = -NegFilteredSum -  Target*(diag-gamma);
-            denom = gamma*(Target - 1.);
+            denom = gamma*(Target - TST::one());
 
             // make sure that alpha is between 0 and 1 ... and that it doesn't 
             // result in a sign flip
