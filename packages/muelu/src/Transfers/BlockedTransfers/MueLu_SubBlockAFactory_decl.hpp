@@ -101,18 +101,18 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    SubBlockAFactory() { }
+    SubBlockAFactory() = default;
 
     //! Destructor.
-    virtual ~SubBlockAFactory() { }
+    virtual ~SubBlockAFactory() = default;
     //@}
 
     //! Input
     //@{
 
-    RCP<const ParameterList> GetValidParameterList() const;
+    RCP<const ParameterList> GetValidParameterList() const override;
 
-    void DeclareInput(Level &currentLevel) const;
+    void DeclareInput(Level &currentLevel) const override;
 
     //@}
 
@@ -135,7 +135,7 @@ namespace MueLu {
      * information from the sub maps. For strided operators, the striding
      * information of the full map is the best choice.
      */
-    void Build(Level & currentLevel) const;
+    void Build(Level & currentLevel) const override;
 
     //@}
 

@@ -87,11 +87,11 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
   "-DTPL_ENABLE_AmgX=ON"
     "-DAmgX_LIBRARY_DIRS=/usr/local/amgx/lib"
-    "-DAmgX_INCLUDE_DIRS=/usr/local/amgx/include"  
- 
+    "-DAmgX_INCLUDE_DIRS=/usr/local/amgx/include"
+
   ### PACKAGES CONFIGURATION ###
-      "-DTpetra_ENABLE_INST_INT_INT=ON"
-      "-DTpetra_ENABLE_INST_INT_LONG_LONG=OFF"
+      "-DTpetra_INST_INT_INT=ON"
+      "-DTpetra_INST_INT_LONG_LONG=OFF"
       "-DMueLu_ENABLE_Experimental:BOOL=ON"
       "-DMueLu_ENABLE_Kokkos_Refactor:BOOL=ON"
       "-DXpetra_ENABLE_Experimental:BOOL=ON"
