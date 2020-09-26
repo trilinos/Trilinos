@@ -435,7 +435,7 @@ class TrilinosPRConfigurationBase(object):
         self.validate_branch_constraints()
 
         print("Configuration Parameters")
-        print("------------------------")
+        print("- - - - - - - - - - - - -")
         print("--- arg_pr_jenkins_job_name  = {}".format(self.arg_pr_jenkins_job_name))
         print("--- arg_job_number           = {}".format(self.arg_job_number))
         print("--- arg_github_pr_number     = {}".format(self.arg_github_pr_number))
