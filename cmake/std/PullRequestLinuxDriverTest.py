@@ -227,14 +227,14 @@ def main(args):
     pr_config = None
 
     # Banner
-    print("- "*40)
-    print("")
-    print("T R I L I N O S   P U L L R E Q U E S T   D R I V E R   S T A R T")
-    print("")
+    print("+" + "="*78 + "+")
+    print("|")
+    print("|   T R I L I N O S   P U L L R E Q U E S T   D R I V E R   S T A R T")
+    print("|")
     if args.dry_run:
-        print("                D R Y   R U N   M O D E   E N A B L E D")
-        print("")
-    print("- "*40)
+        print("|                D R Y   R U N   M O D E   E N A B L E D")
+        print("|")
+    print("+" + "="*78 + "+")
     print("")
 
     if 'standard' == args.mode:

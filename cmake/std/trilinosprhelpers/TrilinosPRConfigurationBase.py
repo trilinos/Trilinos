@@ -409,17 +409,17 @@ class TrilinosPRConfigurationBase(object):
         if "master" == self.args.targetBranch:
             print("- Target branch is 'master'. Checking source branch constraints...")
             if not re.match(re_master_merge_source, self.args.sourceBranch):
-                message  = "---------------------------------------------------------------------------\n"
+                message  = "+" + "="*78 + "+\n"
                 message += "ERROR: Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS\n"
                 message += "       This violates Trilinos policy for pull requests into the master\n"
                 message += "       branch.\n"
                 message += "       Source branch provided is {}\n".format(self.args.sourceBranch)
                 message += "       Perhaps you forgot to set `develop` as the target in your PR?\n"
-                message += "---------------------------------------------------------------------------"
+                message += "+" + "="*78 + "+\n"
                 #print(message)
                 sys.exit(message)
 
-        print("- target branch constraints OK")
+        print("--- target branch constraints OK")
         print("")
         return 0
 
@@ -434,8 +434,9 @@ class TrilinosPRConfigurationBase(object):
         # sourceBranch must be master_merge_YYYYMMDD_HHMMSS)
         self.validate_branch_constraints()
 
+        print("+" + "="*78 + "+")
         print("Configuration Parameters")
-        print("- - - - - - - - - - - - -")
+        print("+" + "="*78 + "+")
         print("--- arg_pr_jenkins_job_name  = {}".format(self.arg_pr_jenkins_job_name))
         print("--- arg_job_number           = {}".format(self.arg_job_number))
         print("--- arg_github_pr_number     = {}".format(self.arg_github_pr_number))
@@ -458,9 +459,9 @@ class TrilinosPRConfigurationBase(object):
         print("")
 
 
-        print("-"*40)
+        print("=:"*39 + "=")
         print("E N V I R O N M E N T   S E T   U P   S T A R T")
-        print("- "*40)
+        print("=:"*39 + "=")
         tr_config = setenvironment.SetEnvironment(self.arg_pr_config_file, self.arg_pr_jenkins_job_name)
 
         rval = 0
@@ -494,9 +495,9 @@ class TrilinosPRConfigurationBase(object):
         print("")
         tr_config.pretty_print_envvars(envvar_filter=envvars)
 
-        print("- "*40)
-        print("E N V I R O N M E N T   S E T   U P   C O M P L E T E")
-        print("- "*40)
+        print("+" + "="*78 + "+")
+        print("|   E N V I R O N M E N T   S E T   U P   C O M P L E T E")
+        print("+" + "="*78 + "+")
 
         print("--- Create packageEnables.cmake")
         self.create_package_enables_file(dryrun=self.args.dry_run)

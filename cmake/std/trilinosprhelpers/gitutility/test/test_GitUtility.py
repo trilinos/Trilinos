@@ -123,7 +123,7 @@ class GitUtilityTest(TestCase):
 
         with self.assertRaises( TypeError ) as m:
             gitutil.check_minimum_version("3")
-        
+
         with self.assertRaises( TypeError ) as m:
             gitutil.check_minimum_version(2, "27")
 
@@ -138,7 +138,7 @@ class GitUtilityTest(TestCase):
         with patch('sys.stdout', new = StringIO()) as m_out:
             gitutil.pretty_print()
 
-        self.assertEqual(m_out.getvalue(), "Git Version Detected: 2.27.0\n")
+        self.assertEqual(m_out.getvalue().strip(), "Git Version Detected: 2.27.0")
 
 
 

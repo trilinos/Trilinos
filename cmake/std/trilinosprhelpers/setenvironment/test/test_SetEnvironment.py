@@ -493,6 +493,9 @@ class SetEnvironmentTest(TestCase):
         print("\nsetEnv.actions():")
         pprint(setEnv.actions, indent=4, width=90)
 
+        print("\nExpected Actions:")
+        pprint(truth, indent=4, width=90)
+
         # Validation Checks
         self.assertIsInstance( setEnv.actions, dict )
         self.assertDictEqual( truth, setEnv.actions )

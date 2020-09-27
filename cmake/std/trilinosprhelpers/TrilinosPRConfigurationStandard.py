@@ -64,9 +64,9 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
                       '-Dsubprojects_file=' + self.subprojects_file
                     ]
 
-        print("")
+        print("+" + "="*38 + "+")
         print("cmd = {}".format(" \\\n   ".join(cmd)))
-        print("")
+        print("+" + "="*38 + "+")
 
         if not self.args.dry_run:
 

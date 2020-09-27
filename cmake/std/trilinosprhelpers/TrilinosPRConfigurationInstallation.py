@@ -27,9 +27,9 @@ class TrilinosPRConfigurationInstallation(TrilinosPRConfigurationBase):
         """
         Execute the test
         """
-        print("- "*40)
-        print("E X E C U T E   I N S T A L L A T I O N   P U L L R E Q U E S T   T E S T")
-        print("- "*40)
+        print("+" + "="*78 + "+")
+        print("|   E X E C U T E   I N S T A L L A T I O N   P U L L R E Q U E S T   T E S T")
+        print("+" + "="*78 + "+")
 
         #
         # Typically, we execute the test from $WORKSPACE/TFW_testing_single_configure_prototype
@@ -64,9 +64,9 @@ class TrilinosPRConfigurationInstallation(TrilinosPRConfigurationBase):
                       '-Dsubprojects_file=' + self.subprojects_file
                     ]
 
-        print("")
+        print("+" + "="*38 + "+")
         print("cmd = {}".format(" \\\n   ".join(cmd)))
-        print("")
+        print("+" + "="*38 + "+")
 
         if not self.args.dry_run:
             subprocess.check_call(cmd)

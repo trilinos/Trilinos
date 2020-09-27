@@ -54,13 +54,17 @@ class GitUtility(object):
         elif det_major == req_major and det_minor < req_minor:
             raise SystemExit(str_err)
         else:
+            print("")
             print("Git minimum version requirement: OK")
+            print("")
 
         return 0
 
 
     def pretty_print(self):
+        print("")
         print("Git Version Detected: {}".format( self.version_str ))
+        print("")
 
 
 

@@ -72,11 +72,11 @@ class SetEnvironment(object):
                 with open(self._file) as ifp:
                     self._config.read_file(ifp)
             except IOError as err:
-                msg = "="*80 + "\n" + \
-                      "ERROR: Unable to load configuration file\n" + \
-                      "- Requested file: {}\n".format(self._file) + \
-                      "- CWD: {}\n".format(os.getcwd()) + \
-                      "="*80 + "\n"
+                msg = "+" + "="*78 + "+\n" + \
+                      "|   ERROR: Unable to load configuration file\n" + \
+                      "|   - Requested file: {}\n".format(self._file) + \
+                      "|   - CWD: {}\n".format(os.getcwd()) + \
+                      "+" + "="*78 + "+\n"
                 sys.exit(msg)
         return self._config
 
@@ -130,7 +130,7 @@ class SetEnvironment(object):
         """
         status = 0
         print("Module Operations")
-        print("-----------------")
+        print("+---------------+")
         for m in self.actions["module-op"]:
             op     = m[0]
             params = m[1:]
@@ -157,7 +157,7 @@ class SetEnvironment(object):
 
         print("")
         print("Environment Vars")
-        print("----------------")
+        print("+--------------+")
         #print(">> setenv actions:")
         #pprint.pprint(self.actions["setenv"])
         for envvar in self.actions["setenv"]:
@@ -196,10 +196,10 @@ class SetEnvironment(object):
         if envvar_filter is not None:
             assert isinstance(envvar_filter, list)
 
-        print("- "*30)
-        print(" P R I N T   E N V I R O N M E N T   V A R S")
-        print("- "*30)
-        print("-- ")
+        print("+" + "="*38 + "+")
+        print("|   P R I N T   E N V I R O N M E N T   V A R S")
+        print("+" + "="*38 + "+")
+        print("--- ")
         # print("envvar_filter = {}".format(envvar_filter))
         for k,v in os.environ.items():
             matched_key = False
@@ -212,13 +212,13 @@ class SetEnvironment(object):
                 filtered_keys_only = False
 
             if filtered_keys_only == False or matched_key:
-                print("-- {}".format(k), end="")
+                print("--- {}".format(k), end="")
                 if envvar_filter is None:
                     print(" = {}".format(v), end="")
                 elif matched_key:
                     print(" = {}".format(v), end="")
                 print("")
-        print("--")
+        print("---")
         return 0
 
 
@@ -231,7 +231,7 @@ class SetEnvironment(object):
         """
         print("")
         print("Module Operations")
-        print("-----------------")
+        print("+---------------+")
         for m in self.actions["module-op"]:
             op     = m[0]
             params = m[1:]
@@ -244,7 +244,7 @@ class SetEnvironment(object):
 
         print("")
         print("Environment Vars")
-        print("----------------")
+        print("+--------------+")
         for envvar in self.actions["setenv"]:
             # Note: we can't print the expansion here because the source
             #       envvar might not exist yet.
@@ -256,7 +256,7 @@ class SetEnvironment(object):
 
         #print("")
         #print("Print Envvars")
-        #print("-------------")
+        #print("+-----------+")
         #filter_list = ["SEMS_", "TRILINOS_", "PATH"]
         #for k,v in os.environ.items():
         #    for filt in filter_list:
@@ -319,11 +319,26 @@ class SetEnvironment(object):
         Recursive handler for _load_configuration.
         Recursion is called when the operation is a 'use' operation in the key.
         """
-        sec = config[profile]
+        # Load the section and throw if it's not found.
+        sec = None
+        try:
+            sec = config[profile]
+        except KeyError as err:
+            message = "ERROR: No section named '{}' was found in the configuration file.".format(profile)
+            #raise Exception(message) from err  # (This is ok in Python3 but not Python2)
+            raise KeyError(message)
 
-        if None == processed_secs:
+        # Verify that we got a section, if it's None then raise an exception.
+        if sec is None:
+            raise Exception("ERROR: Unable to load section '{}' from configuration for unknown reason.".format(profile))
+
+        # If processed_secs is the default parameter then we seed it with {}
+        # Note: We cannot set the default processed_secs to {} or we'll have
+        #       errors.
+        if processed_secs is None:
             processed_secs = {}
 
+        # Exit if we've already processed this section (recursion breaker)
         if profile in processed_secs.keys():
             return actions
 

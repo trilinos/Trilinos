@@ -60,15 +60,15 @@ function get_python_packages() {
 
 
 
-echo "================================================================================"
-echo "="
-echo "=                   P Y T H O N   T E S T   D R I V E R"
-echo "="
-echo "================================================================================"
+echo "+================================================================================+"
+echo "|"
+echo "|                   P Y T H O N   T E S T   D R I V E R"
+echo "|"
+echo "+================================================================================+"
 echo ""
-echo "----------------------------------------"
-echo "-   P A C K A G E   S E T U P"
-echo "----------------------------------------"
+echo "+--------------------------------------+"
+echo "|   P A C K A G E   S E T U P"
+echo "+--------------------------------------+"
 : "${1:?Param 1 ERROR: Python Executable not set or empty}"
 : "${2:?Param 2 ERROR: Pip Executable not set or empty}"
 
@@ -80,9 +80,9 @@ get_python_packages ${pip_exe:?}
 
 
 echo -e ""
-echo -e "----------------------------------------"
-echo -e "-   E X E C U T E   T E S T S"
-echo -e "----------------------------------------"
+echo -e "+--------------------------------------+"
+echo -e "|   E X E C U T E   T E S T S"
+echo -e "+--------------------------------------+"
 echo -e "--- ${python_exe:?} -m pytest --cov=trilinosprhelpers --cov-report term-missing"
 ${python_exe:?} -m pytest --cov=trilinosprhelpers --cov-report term-missing
 
