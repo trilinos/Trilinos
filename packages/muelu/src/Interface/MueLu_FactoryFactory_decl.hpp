@@ -132,6 +132,7 @@
 #include "MueLu_StructuredAggregationFactory.hpp"
 #include "MueLu_StructuredLineDetectionFactory.hpp"
 #include "MueLu_SubBlockAFactory.hpp"
+#include "MueLu_ZeroSubBlockAFactory.hpp"
 #ifdef HAVE_MUELU_TEKO
 #include "MueLu_TekoSmoother.hpp"
 #endif
@@ -294,6 +295,7 @@ namespace MueLu {
       if (factoryName == "UserAggregationFactory")                return Build2<UserAggregationFactory>                (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UserPFactory")                          return Build2<UserPFactory>                          (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "VariableDofLaplacianFactory")           return Build2<VariableDofLaplacianFactory>           (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "ZeroSubBlockAFactory")                  return Build2<ZeroSubBlockAFactory>                  (paramList, factoryMapIn, factoryManagersIn);
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (factoryName == "AmalgamationFactory_kokkos")            return Build2<AmalgamationFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoalesceDropFactory_kokkos")            return Build2<CoalesceDropFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
