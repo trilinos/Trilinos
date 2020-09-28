@@ -646,6 +646,28 @@ class Test_setEnviron(unittest.TestCase):
                              test_ENV={'OMP_NUM_THREADS': '2'})
 
 
+    def test_buildEnv_passes_with_gcc_720_serial(self):
+        """Find the function"""
+        PR_name = 'Trilinos_pullrequest_gcc_7.2.0_serial'
+        expected_list = [mock.call('use', '/projects/sems/modulefiles/projects'),
+                         mock.call('load', 'sems-env'),
+                         mock.call('load', 'sems-git/2.10.1'),
+                         mock.call('load', 'sems-gcc/7.2.0'),
+                         mock.call('load', 'sems-python/2.7.9'),
+                         mock.call('load', 'sems-boost/1.63.0/base'),
+                         mock.call('load', 'sems-zlib/1.2.8/base'),
+                         mock.call('load', 'sems-hdf5/1.10.6/base'),
+                         mock.call('load', 'sems-netcdf/4.7.3/base'),
+                         mock.call('load', 'sems-metis/5.1.0/base'),
+                         mock.call('load', 'sems-superlu/4.3/base'),
+                         mock.call('load', 'sems-cmake/3.10.3'),
+                         mock.call('load', 'atdm-env'),
+                         mock.call('load', 'atdm-ninja_fortran/1.7.2'),
+                         ]
+        self.buildEnv_passes(PR_name, expected_list,
+                             test_ENV={'OMP_NUM_THREADS': '2'})
+
+
     def test_buildEnv_passes_with_gcc_830(self):
         """Find the function"""
         PR_name = 'Trilinos_pullrequest_gcc_8.3.0'
@@ -676,7 +698,7 @@ class Test_setEnviron(unittest.TestCase):
         expected_list = [mock.call('use', '/projects/sems/modulefiles/projects'),
                          mock.call('load', 'sems-env'),
                          mock.call('load', 'sems-git/2.10.1'),
-                         mock.call('load', 'sems-gcc/4.9.3'),
+                         mock.call('load', 'sems-gcc/5.3.0'),
                          mock.call('load', 'sems-intel/17.0.1'),
                          mock.call('load', 'sems-mpich/3.2'),
                          mock.call('load', 'sems-python/2.7.9'),

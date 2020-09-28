@@ -25,6 +25,7 @@ ENDIF()
 APPEND_SET(SOURCES
   Aggregates.cpp
   AggregateQualityEstimateFactory.cpp
+  AmalgamationFactory.cpp
   BlackBoxPFactory.cpp
   CoalesceDropFactory.cpp
   CoarseMapFactory.cpp
@@ -106,6 +107,7 @@ ENDIF()
 APPEND_SET(SOURCES_BLOCKED
   BlockedCoarseMapFactory.cpp
   BlockedPFactory.cpp
+  BlockedRAPFactory.cpp
   SchurComplementFactory.cpp
   SubBlockAFactory.cpp
 )

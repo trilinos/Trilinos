@@ -85,23 +85,23 @@ namespace MueLu {
     //@{
 
     //! Constructor
-    AmalgamationFactory() { }
+    AmalgamationFactory() = default;
 
     //! Destructor
-    virtual ~AmalgamationFactory() { }
+    virtual ~AmalgamationFactory() = default;
 
-    RCP<const ParameterList> GetValidParameterList() const;
+    RCP<const ParameterList> GetValidParameterList() const override;
 
     //@}
 
     //! Input
     //@{
 
-    void DeclareInput(Level &currentLevel) const;
+    void DeclareInput(Level &currentLevel) const override;
 
     //@}
 
-    void Build(Level &currentLevel) const; // Build
+    void Build(Level &currentLevel) const override;
 
     /*! @brief Translate global (row/column) id to global amalgamation block id
      *
