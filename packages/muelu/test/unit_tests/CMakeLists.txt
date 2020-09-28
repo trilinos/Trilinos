@@ -107,6 +107,7 @@ APPEND_SET(SOURCES_BLOCKED
   BlockedCoarseMapFactory.cpp
   BlockedPFactory.cpp
   BlockedRAPFactory.cpp
+  InterfaceAggregationFactory.cpp
   SchurComplementFactory.cpp
   SubBlockAFactory.cpp
 )

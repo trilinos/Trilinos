@@ -86,7 +86,7 @@ namespace MueLu {
         for (ParameterList::ConstIterator levelListEntry = levelList.begin(); levelListEntry != levelList.end(); levelListEntry++) {
           const std::string& name = levelListEntry->first;
           if (name == "A" || name == "P" || name == "R"  || name== "M" || name == "Mdiag" || name == "K" || name == "Nullspace" || name == "Coordinates"
-              || name == "Node Comm" || name == "DualNodeID2PrimalNodeID"
+              || name == "Node Comm" || name == "DualNodeID2PrimalNodeID" || name == "PrimalInterfaceDofRowMap"
 #ifdef HAVE_MUELU_INTREPID2 // For the IntrepidPCoarsenFactory
               || name == "pcoarsen: element to node map"
 #endif

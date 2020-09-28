@@ -86,16 +86,24 @@ namespace MueLu
     ### User parameters of InterfaceAggregationFactory ###
     Parameter | type | default | master.xml | validated | requested | description
     ----------|------|---------|:----------:|:---------:|:---------:|------------
-    A                       | Factory | null |   | * | * | Generating factory of the matrix A
-    Aggregates              | Factory | null |   | * | * | Generating factory of the aggregates (of type "Aggregates" produced, e.g., by the UncoupledAggregationFactory)
-    DualNodeID2PrimalNodeID | Factory | null |   | * | * | Generating factory of the fine dual-to-primal node mapping
+    A                            | Factory | null  |   | * | * | Generating factory of the matrix A
+    Aggregates                   | Factory | null  |   | * | * | Generating factory of the aggregates (of type "Aggregates" produced, e.g., by the UncoupledAggregationFactory)
+    Dual/primal mapping strategy | string  | vague |   | * | * | Chosen strategy and type of input data to generate dual/primal mappings
+    DualNodeID2PrimalNodeID      | Factory | null  |   | * | * | Generating factory of the fine dual-to-primal node mapping
+    PrimalInterfaceDofRowMap     | Factory | null  |   | * | * | Generating factory of the fine row map of primal interface degrees of freedom
 
     The * in the @c master.xml column denotes that the parameter is defined in the @c master.xml file.<br>
     The * in the @c validated column means that the parameter is declared in the list of valid input parameters (see InterfaceAggregationFactory::GetValidParameters).<br>
     The * in the @c requested column states that the data is requested as input with all dependencies (see InterfaceAggregationFactory::DeclareInput).
 
-    The mapping of dual-to-primal node IDs, \c DualNodeID2PrimalNodeID, is of data type \c std::map<LocalOrdinal,LocalOrdinal>.
+    #### Remarks
+
+    This factory support multiple dual/primal mapping strategies based on different inputs. They are:
+
+    - node-based: The mapping of dual-to-primal node IDs, \c DualNodeID2PrimalNodeID, is of data type \c std::map<LocalOrdinal,LocalOrdinal>.
     The 'key' refers to the local ID of the dual node, while the 'value' represents the local ID of its primal counterpart.
+    - dof-based: The row map of primal interface degrees of freedom (DOFs) is a subset of the row map of all primal DOFs.
+    It only contains the primal DOFs of interface nodes, that also carry a Lagrange multiplier in the context of a mortar method.
 
     ### Variables provided by InterfaceAggregationFactory ###
 
@@ -134,6 +142,28 @@ public:
   void Build(Level &currentLevel) const override;
 
   //@}
+
+private:
+  /*! @brief Build dual aggregates based on a given dual-to-primal node mapping
+   *
+   * @param[in] prefix Prefix for screen output
+   * @param[in/out] currentLevel Level on which the aggregation needs to be performed
+   */
+  void BuildBasedOnNodeMapping(const std::string& prefix, Level& currentLevel) const;
+
+  /*! @brief Build dual aggregates based one given interface row maps of the primal and dual problem
+   *
+   * The row map of the interface portion of the primal problem corresponds to the row map of the dual problem.
+   * This correspondence is expoited to form the dual aggregates based on available primal aggregates.
+   *
+   * @note In the context of mortar methods, the two maps correspond to the range and domain map of the slave-sided
+   * mortar operator \f$D\f$, which connects primal interface unknowns and dual unknowns.
+   *
+   * @param[in] prefix Prefix for screen output
+   * @param[in/out] currentLevel Level on which the aggregation needs to be performed
+   */
+  void BuildBasedOnPrimalInterfaceDofRowMap(const std::string& prefix, Level& currentLevel) const;
+
 };
 
 } // namespace MueLu
