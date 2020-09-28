@@ -123,6 +123,4 @@ set (KokkosCore_UnitTest_Cuda_MPI_1_EXTRA_ARGS
   "--gtest_filter=-cuda.debug_pin_um_to_host:cuda.debug_serial_execution"
   CACHE STRING "Temporary disable for CUDA PR testing")
 
-set(CMAKE_CXX_FLAGS "-std=c++14" CACHE STRING "Set standard to C++14")
-
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
