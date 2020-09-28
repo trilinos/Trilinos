@@ -157,11 +157,16 @@ INCLUDE(TribitsAddTestHelpers)
 #
 #   ``RUN_SERIAL``
 #
-#     If specified then no other tests will be allowed to run while this test
+#     If specified, then no other tests will be allowed to run while this test
 #     is running. This is useful for devices (like CUDA GPUs) that require
 #     exclusive access for processes/threads.  This just sets the CTest test
 #     property ``RUN_SERIAL`` using the built-in CMake function
-#     ``SET_TESTS_PROPERTIES()``.
+#     ``SET_TESTS_PROPERTIES()``.  Also, the addition of the ``RUN_SERIAL``
+#     test property can be triggered by (the user) setting the global cache
+#     variable ``<fullTestName>_SET_RUN_SERIAL=ON``.  NOTE: If ``RUN_SERIAL``
+#     is passed in but ``<fullTestName>_SET_RUN_SERIAL=OFF`` (or any value
+#     evaluating to ``FALSE``), then the ``RUN_SERIAL`` test property will
+#     **NOT** be set on the added test(s).
 #
 #   ``ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...``
 #
@@ -329,7 +334,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     send to stdout.  Otherwise, the test will fail.  This is set using the
 #     built-in CTest property ``PASS_REGULAR_EXPRESSION``.  Consult standard
 #     CMake documentation for full behavior.  TIPS: Replace ';' with '[;]' or
-#     CMake will interpretet this as a array eleemnt boundary.  To match '.',
+#     CMake will interpret this as a array element boundary.  To match '.',
 #     use '[.]'.
 #
 #   ``FAIL_REGULAR_EXPRESSION "<regex0>;<regex1>;..."``
