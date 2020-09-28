@@ -228,17 +228,15 @@ INCLUDE(PrintVar)
 #
 #   ``RUN_SERIAL``
 #
-#     If specified then no other tests will be allowed to run while this test
-#     is running.  This is useful for devices (like CUDA cards) that require
-#     exclusive access for processes/threads.  This just sets the CTest test
-#     property ``RUN_SERIAL`` using the built-in CMake function
-#     ``SET_TESTS_PROPERTIES()``.
+#     If specified, then no other tests will be allowed to run while this test
+#     is running. See the ``RUN_SERIAL`` argument in the fucntion
+#     `TRIBITS_ADD_TEST()`_ for more details.
 #
 #   ``COMM [serial] [mpi]``
 #
 #     If specified, selects if the test will be added in serial and/or MPI
-#     mode.  See the ``COMM`` argument in the script
-#     `TRIBITS_ADD_TEST()`_ for more details.
+#     mode.  See the ``COMM`` argument in the function `TRIBITS_ADD_TEST()`_
+#     for more details.
 #
 #   ``OVERALL_NUM_MPI_PROCS <overallNumProcs>``
 #
@@ -1377,8 +1375,8 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
     IF(NOT TRIBITS_ADD_TEST_ADD_TEST_UNITTEST)
       # Tell CTest to run our script for this test.  Pass the test-type
       # configuration name to the script in the TEST_CONFIG variable.
-      ADD_TEST( ${TEST_NAME}
-        ${CMAKE_COMMAND} "-DTEST_CONFIG=\${CTEST_CONFIGURATION_TYPE}"
+      ADD_TEST( NAME ${TEST_NAME}
+        COMMAND ${CMAKE_COMMAND} "-DTEST_CONFIG=\${CTEST_CONFIGURATION_TYPE}"
         -P "${TEST_SCRIPT_FILE}")
     ENDIF()
 
