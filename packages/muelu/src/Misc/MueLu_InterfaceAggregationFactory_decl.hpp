@@ -53,7 +53,7 @@ namespace MueLu
 
 /*!
     @class InterfaceAggregationFactory class.
-    @brief Factory for building aggregates for Lagrange multipliers.
+    @brief Factory for building aggregates for Lagrange multipliers in surface-coupled problems.
 
     ## Context, assumptions, and use cases ##
 
@@ -73,6 +73,11 @@ namespace MueLu
     Instead of performing an actual aggregation procedure on the dual nodes,
     we grep the existing primal aggregates and use a user-given mapping of dual-to-primal node IDs
     to create the dual aggregates.
+
+    ### References ###
+
+    - Wiesner, T. A.: Flexible Aggregation-based Algebraic Multigrid Methods for Contact and Flow Problems,
+      PhD thesis, Technical University of Munich (2015)
 
     @ingroup Aggregation
 
@@ -112,21 +117,11 @@ class InterfaceAggregationFactory : public SingleLevelFactoryBase
 #include "MueLu_UseShortNamesScalar.hpp"
 
 public:
-  //! @name Constructors/Destructors.
-  //@{
-
-  //! Constructor.
-  InterfaceAggregationFactory() = default;
-
-  //! Destructor.
-  ~InterfaceAggregationFactory() {}
-
-  RCP<const ParameterList> GetValidParameterList() const override;
-
-  //@}
 
   //! Input
   //@{
+
+  RCP<const ParameterList> GetValidParameterList() const override;
 
   void DeclareInput(Level &currentLevel) const override;
 
