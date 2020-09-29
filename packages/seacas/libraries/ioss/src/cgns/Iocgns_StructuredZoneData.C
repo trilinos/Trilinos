@@ -25,7 +25,7 @@ namespace {
 
   bool overlaps(const Range &a, const Range &b)
   {
-    return a.begin() <= b.end() && b.begin() <= a.end();
+    return a.m_beg <= b.m_end && b.m_beg <= a.m_end;
   }
 
   bool zgc_overlaps(const Iocgns::StructuredZoneData *zone, const Ioss::ZoneConnectivity &zgc)
@@ -403,6 +403,7 @@ namespace Iocgns {
       }
     }
   } // namespace
+
   // If a zgc points to a donor zone which was split (has non-null children),
   // then create two zgc that point to each child.  Update range and donor_range
   void StructuredZoneData::resolve_zgc_split_donor(
