@@ -136,6 +136,48 @@ namespace Zoltan2 {
         void getParams();
 
     };
+
+    template<typename Adapter>
+    void AlgSarma<Adapter>::getParams() {
+        const Teuchos::ParameterList &pl = env->getParameters();
+        const Teuchos::ParameterList &sparams = pl.sublist("sarma_params");
+
+        // Set Params
+        const Teuchos::ParameterEntry *pe = sparams.getEntryPtr("alg");
+        if (pe)
+            config.alg = pe->getValue(&config.alg);
+        pe = sparams.getEntryPtr("order");
+        if (pe) {
+            std::string s;
+            s = pe->getValue(&s);
+            if (orders.find(s) == orders.end()) {
+                throw std::logic_error("Wrong order type.");
+            }
+            config.order_type = orders.at(s);
+            config.order_str = s;
+        }
+        pe = sparams.getEntryPtr("p"); // row_cut
+        if (pe)
+            config.row_parts = pe->getValue(&config.row_parts); //col_cut
+        pe = sparams.getEntryPtr("q");
+        if (pe)
+            config.col_parts = pe->getValue(&config.col_parts); // max_load
+        pe = sparams.getEntryPtr("z");
+        if (pe)
+            config.z = pe->getValue(&config.z);
+        pe = sparams.getEntryPtr("sparsify");
+        if (pe)
+            config.sparsify = pe->getValue(&config.sparsify);
+        pe = sparams.getEntryPtr("triangular");
+        if (pe)
+            config.serialize = pe->getValue(&config.serialize);
+        pe = sparams.getEntryPtr("use_data");
+        if (pe)
+            config.use_data = pe->getValue(&config.use_data);
+        pe = sparams.getEntryPtr("seed");
+        if (pe)
+            config.seed = pe->getValue(&config.seed);
+    }
 }
 
 #endif
