@@ -625,6 +625,7 @@ namespace MueLuTests {
     params.set("coarse: max size", Teuchos::as<int>(500));
 
     if (lib == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
       typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
 
       // Matrix
@@ -663,7 +664,9 @@ namespace MueLuTests {
       tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
       out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
           Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
-
+#else
+      std::cout << "Skip PetraOperator::ReusePreconditioner: Tpetra is not available" << std::endl;
+#endif
     } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
       // Matrix
