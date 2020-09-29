@@ -599,7 +599,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     else if (algName_ == std::string("sarma")) {
         this->algorithm_ = rcp(new AlgSarma<Adapter>(this->envConst_,
                                                      this->comm_,
-                                                     this->inputAdapter_));
+                                                     this->baseInputAdapter_));
     }
     else if (algName_ == std::string("forTestingOnly")) {
       this->algorithm_ = rcp(new AlgForTestingOnly<Adapter>(this->envConst_,
@@ -834,6 +834,10 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     else if (algorithm == std::string("pulp"))
     {
       algName_ = algorithm;
+    }
+    else if (algorithm == std::string("sarma"))
+    {
+        algName_ = algorithm;
     }
     else if (algorithm == std::string("patoh") ||
              algorithm == std::string("phg"))
