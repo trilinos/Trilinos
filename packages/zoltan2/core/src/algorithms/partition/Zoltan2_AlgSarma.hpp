@@ -178,6 +178,27 @@ namespace Zoltan2 {
         if (pe)
             config.seed = pe->getValue(&config.seed);
     }
+
+    template<typename Adapter>
+    void AlgSarma<Adapter>::partition(const RCP <PartitioningSolution<Adapter>> &solution) {
+
+        std::ofstream null;
+        null.setstate(std::ios_base::badbit);
+        auto M = std::make_shared<sarma::Matrix<Ordinal, Value> >(std::move(std::vector<Ordinal>(offsets, offsets + offsize)),
+                std::move(std::vector<Ordinal>(colids, colids + nnz)), std::move(std::vector<Value>(vals, vals + nnz)),
+                1 + *std::max_element(offsets, offsets + offsize));
+        auto parts = sarma::Run<Ordinal, Value>(algs.at(config.alg).first, std::cout, M, config.order_type, config.row_parts,
+                                                config.col_parts, config.z, config.triangular, false, config.sparsify,
+                                                algs.at(config.alg).second, config.use_data, config.seed);
+
+        unsigned result_size = parts.first.size() + parts.second.size();
+        auto partl = ArrayRCP<int>(new int[result_size], 0, result_size, true);
+        for (size_t i = 0; i < parts.first.size(); ++i) partl[i] = parts.first[i];
+        for (size_t i = parts.first.size(); i < result_size; ++i)
+            partl[i - parts.first.size()] = parts.first[i - parts.first.size()];
+
+        solution->setParts(partl);
+    }
 }
 
 #endif
