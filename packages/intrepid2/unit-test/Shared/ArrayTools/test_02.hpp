@@ -75,7 +75,7 @@ namespace Intrepid2 {
       };                                                                \
     }
     
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int ArrayTools_Test02(const bool verbose) {
       
       typedef ValueType value_type;
@@ -91,11 +91,11 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+      using DeviceExecSpaceType = typename DeviceType::execution_space;
+      using HostExecSpaceType = Kokkos::DefaultExecutionSpace;
 
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(std::cout, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(std::cout, false);
+      *outStream << "DeviceSpace::  "; DeviceExecSpaceType::print_configuration(std::cout, false);
+      *outStream << "HostSpace::    ";   HostExecSpaceType::print_configuration(std::cout, false);
 
       *outStream                                                        \
         << "===============================================================================\n" \
@@ -112,9 +112,9 @@ namespace Intrepid2 {
         << "|                                                                             |\n" \
         << "===============================================================================\n";      
       
-      typedef RealSpaceTools<DeviceSpaceType> rst;
-      typedef ArrayTools<DeviceSpaceType> art; 
-      typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
+      typedef RealSpaceTools<DeviceType> rst;
+      typedef ArrayTools<DeviceType> art; 
+      typedef Kokkos::DynRankView<value_type,DeviceType> DynRankView;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
       
       const value_type tol = tolerence()*10000.0;
