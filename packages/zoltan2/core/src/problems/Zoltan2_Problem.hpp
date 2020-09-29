@@ -175,6 +175,7 @@ public:
     // these sublists are used for parameters which do not get validated
     pl.sublist("zoltan_parameters");
     pl.sublist("parma_parameters");
+    pl.sublist("sarma_parameters");
   }
 
   /*! \brief Get the current Environment.
