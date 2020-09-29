@@ -41,9 +41,12 @@ aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
+Reusing graph
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
+filtered matrix: Dirichlet threshold = -1   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -199,9 +202,12 @@ aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
+Reusing graph
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
+filtered matrix: Dirichlet threshold = -1   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -388,9 +394,12 @@ aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
+Reusing graph
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
+filtered matrix: Dirichlet threshold = -1   [default]
 
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
@@ -487,9 +496,12 @@ aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Lumping dropped entries
+Reusing graph
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
+filtered matrix: Dirichlet threshold = -1   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)

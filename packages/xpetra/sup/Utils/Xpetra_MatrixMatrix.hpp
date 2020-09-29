@@ -662,6 +662,8 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
       @param transposeB indicate whether to use transpose of B
       @param beta       scalar multiplier for B, defaults to 1.0
       @param C          resulting sum
+      @param fos        output stream for printing to screen
+      @param AHasFixedNnzPerRow
 
       It is up to the caller to ensure that the resulting matrix sum is fillComplete'd.
       */
@@ -1347,6 +1349,8 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
       @param transposeB indicate whether to use transpose of B
       @param beta       scalar multiplier for B, defaults to 1.0
       @param C          resulting sum
+      @param fos        output stream for printing to screen
+      @param AHasFixedNnzPerRow
 
       It is up to the caller to ensure that the resulting matrix sum is fillComplete'd.
       */
@@ -1931,6 +1935,8 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
       @param transposeB indicate whether to use transpose of B
       @param beta       scalar multiplier for B, defaults to 1.0
       @param C          resulting sum
+      @param fos        output stream for printing to screen
+      @param AHasFixedNnzPerRow
 
       It is up to the caller to ensure that the resulting matrix sum is fillComplete'd.
       */

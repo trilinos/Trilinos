@@ -71,7 +71,9 @@ int ex_get_variable_names(int exoid, ex_entity_type obj_type, int num_vars, char
   const char *vvarname;
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   switch (obj_type) {
   case EX_NODAL: vvarname = VAR_NAME_NOD_VAR; break;

@@ -379,3 +379,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
+TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTest_NewmarkImplicitAForm_CopyFiles
+  DEST_FILES Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder.xml Tempus_NewmarkExplicitAForm_HarmonicOscillator_Damped.xml
+  EXEDEPS UnitTest_NewmarkImplicitAForm
+  )

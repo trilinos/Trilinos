@@ -498,13 +498,23 @@ The following `<system_name>` sub-directories exist (in alphabetical order):
 
 ## How to add a new system
 
-To add a new system, first update the file:
+To add a new system, first add a new failing unit test for that system in the
+file:
+
+
+```
+  Trilinos/cmake/std/atdm/test/unit_tests/get_system_info_unit_tests.sh
+```
+
+That unit test should fail!
+
+Second, update the file:
 
 ```
   Trilinos/cmake/std/atdm/utils/get_known_system_info.sh
 ```
 
-First, add the new system name to the list variable:
+by adding the new system name to the list variable:
 
 ```
 ATDM_KNOWN_SYSTEM_NAMES_LIST=(
@@ -512,10 +522,10 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   )
 ```
 
-Second, if the system selection is done by matching to the `hostname`, then
-add a new `elif` statement for that set of machines.  Note that more than one
-`hostname` machine may map to the same `<new_system_name>` (e.g. both `white`
-and `ride` machines map to the system env `ride`).
+Then, if the system selection is done by matching to the `hostname`, add a new
+`elif` statement for that set of machines.  Note that more than one `hostname`
+machine may map to the same `<new_system_name>` (e.g. both `white` and `ride`
+machines map to the system env `ride`).
 
 However, if adding a new system type that will run on many machines and not
 looking at the `hostname` on the machine, then add a new `if` block to the
@@ -534,6 +544,10 @@ tests from "Experimental" builds.)
 The variable `ATDM_SYSTEM_NAME` (set to the exported variable
 `ATDM_CONFIG_SYSTEM_NAME`) must be set to `<new_system_name>` which is
 selected for this new system type.
+
+Make sure the new unit test(s) in the file `get_system_info_unit_tests.sh`
+pass and add more unit tests to cover full behavior for the new system if
+needed.
 
 Then, create a new directory for the new system called `<new_system_name>`:
 
@@ -568,9 +582,9 @@ file:
 
 This file can be used to put in special logic for special compilers and
 compiler versions and other types of logic.  This file gets sourced before the
-standard logic is executed in in `atdm/utils/set_build_options.sh`.  (To see
-an example of the usage of this file, see `atdm/cee-rhel6/custom_builds.sh`
-and `atdm/cee-rhel6/environment.sh`.)
+standard logic is executed in the file `atdm/utils/set_build_options.sh`.  (To
+see an example of the usage of this file, see
+`atdm/cee-rhel6/custom_builds.sh` and `atdm/cee-rhel6/environment.sh`.)
 
 A few of the environment variables that need to be set in the file
 `<new_system_name>/environment.sh` worth specifically discussing are:

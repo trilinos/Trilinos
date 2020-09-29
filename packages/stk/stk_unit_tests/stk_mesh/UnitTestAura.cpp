@@ -33,7 +33,7 @@
 // 
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_TRUE, etc
-#include <stddef.h>                     // for size_t
+#include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/GetEntities.hpp>
@@ -43,6 +43,7 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityId, etc
+#include "stk_mesh/base/Comm.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_io/FillMesh.hpp"
 namespace stk { namespace mesh { class Part; } }
@@ -436,6 +437,119 @@ TEST(BulkData, aura_moveElem1FromProc0ToProc1)
       expect_recv_aura(mesh, stk::topology::NODE_RANK, nodeIds[thisProc]);
     }
   }
+}
+
+class BulkDataAura : public stk::unit_test_util::MeshFixture
+{
+public:
+  void verify_no_aura()
+  {
+    verify_aura(false, 0, 0);
+  }
+
+  void verify_aura(bool expectAuraOptionIsOn,
+                   unsigned expectedNumAuraNodes,
+                   unsigned expectedNumAuraElems)
+  {
+    EXPECT_EQ(expectAuraOptionIsOn, get_bulk().is_automatic_aura_on());
+
+    stk::mesh::Selector selectAura = get_meta().aura_part();
+    unsigned numAuraNodes = stk::mesh::count_selected_entities(selectAura, get_bulk().buckets(stk::topology::NODE_RANK));
+    unsigned numAuraElements = stk::mesh::count_selected_entities(selectAura, get_bulk().buckets(stk::topology::ELEM_RANK));
+    EXPECT_EQ(expectedNumAuraNodes, numAuraNodes);
+    EXPECT_EQ(expectedNumAuraElems, numAuraElements);
+  }
+};
+
+TEST_F(BulkDataAura, turnAuraOnAfterConstruction)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) {
+    return;
+  }
+
+  setup_mesh("generated:2x2x2", stk::mesh::BulkData::NO_AUTO_AURA);
+
+  verify_no_aura();
+
+  bool applyImmediately = true;
+  get_bulk().set_automatic_aura_option(stk::mesh::BulkData::AUTO_AURA, applyImmediately);
+
+  bool expectAuraOptionIsOn = true;
+  unsigned expectedNumAuraNodes = 9;
+  unsigned expectedNumAuraElements = 4;
+  verify_aura(expectAuraOptionIsOn, expectedNumAuraNodes, expectedNumAuraElements);
+}
+
+TEST_F(BulkDataAura, turnAuraOnAfterConstruction_applyAtNextModEnd)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) {
+    return;
+  }
+
+  setup_mesh("generated:2x2x2", stk::mesh::BulkData::NO_AUTO_AURA);
+
+  verify_no_aura();
+
+  bool applyImmediately = false;
+  get_bulk().set_automatic_aura_option(stk::mesh::BulkData::AUTO_AURA, applyImmediately);
+
+  bool expectAuraOptionIsOn = true;
+  unsigned expectedNumAuraNodes = 0;
+  unsigned expectedNumAuraElements = 0;
+  verify_aura(expectAuraOptionIsOn, expectedNumAuraNodes, expectedNumAuraElements);
+
+  get_bulk().modification_begin();
+  get_bulk().modification_end();
+
+  expectedNumAuraNodes = 9;
+  expectedNumAuraElements = 4;
+  verify_aura(expectAuraOptionIsOn, expectedNumAuraNodes, expectedNumAuraElements);
+}
+
+TEST_F(BulkDataAura, turnAuraOffAfterConstruction)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) {
+    return;
+  }
+
+  setup_mesh("generated:2x2x2", stk::mesh::BulkData::AUTO_AURA);
+
+  bool expectAuraOptionIsOn = true;
+  unsigned expectedNumAuraNodes = 9;
+  unsigned expectedNumAuraElements = 4;
+  verify_aura(expectAuraOptionIsOn, expectedNumAuraNodes, expectedNumAuraElements);
+
+  bool applyImmediately = true;
+  get_bulk().set_automatic_aura_option(stk::mesh::BulkData::NO_AUTO_AURA, applyImmediately);
+
+  verify_no_aura();
+}
+
+TEST_F(BulkDataAura, turnAuraOffAfterConstruction_applyAtNextModEnd)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) {
+    return;
+  }
+
+  setup_mesh("generated:2x2x2", stk::mesh::BulkData::AUTO_AURA);
+
+  bool expectAuraOptionIsOn = true;
+  unsigned expectedNumAuraNodes = 9;
+  unsigned expectedNumAuraElements = 4;
+  verify_aura(expectAuraOptionIsOn, expectedNumAuraNodes, expectedNumAuraElements);
+
+  bool applyImmediately = false;
+  get_bulk().set_automatic_aura_option(stk::mesh::BulkData::NO_AUTO_AURA, applyImmediately);
+
+  expectAuraOptionIsOn = false;
+  expectedNumAuraNodes = 9;
+  expectedNumAuraElements = 4;
+  verify_aura(expectAuraOptionIsOn, expectedNumAuraNodes, expectedNumAuraElements);
+
+  get_bulk().modification_begin();
+  get_bulk().modification_end();
+
+  verify_no_aura();
 }
 
 } // empty namespace

@@ -72,24 +72,27 @@ int ex__check_multiple_open(const char *path, int mode, const char *func)
   EX_FUNC_LEAVE(EX_NOERR);
 }
 
-void ex__check_valid_file_id(int exoid, const char *func)
+int ex__check_valid_file_id(int exoid, const char *func)
 {
-  int error = 0;
+  bool error = false;
   if (exoid <= 0) {
-    error = 1;
+    error = true;
   }
 #if !defined BUILT_IN_SIERRA
   else {
     struct ex__file_item *file = ex__find_file_item(exoid);
 
     if (!file) {
-      error = 1;
+      error = true;
     }
   }
 #endif
 
   if (error) {
-    ex_opts(EX_ABORT | EX_VERBOSE);
+    int old_opt = ex_opts(EX_VERBOSE);
+    if (old_opt & EX_ABORT) {
+      ex_opts(EX_VERBOSE | EX_ABORT);
+    }
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: In \"%s\", the file id %d was not obtained via a call "
@@ -98,7 +101,10 @@ void ex__check_valid_file_id(int exoid, const char *func)
              "corruption or data loss or other potential problems.",
              func, exoid);
     ex_err(__func__, errmsg, EX_BADFILEID);
+    ex_opts(old_opt);
+    return EX_FATAL;
   }
+  return EX_NOERR;
 }
 
 int ex__conv_init(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsize,

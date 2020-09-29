@@ -609,8 +609,8 @@ private:
   int (*PrecondSetupPtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
   int (*PrecondSolvePtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
 
-  bool IsSolverSetup_;
-  bool IsPrecondSetup_;
+  bool IsSolverCreated_;
+  bool IsPrecondCreated_;
   //! Is the system to be solved or apply preconditioner
   Hypre_Chooser SolveOrPrec_;
   //! These are linear maps that meet the needs of Hypre

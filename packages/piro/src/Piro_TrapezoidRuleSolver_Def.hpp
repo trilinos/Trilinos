@@ -74,7 +74,7 @@ TrapezoidRuleSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
                      "Not Implemented for Ng>1 : " << num_g << std::endl);
 
   *out << "\nA) Get the base parameter list ...\n";
-
+ 
   RCP<Teuchos::ParameterList> trPL = sublist(appParams, "Trapezoid Rule", true);
   trPL->validateParameters(*getValidTrapezoidRuleParameters(),0);
 
@@ -97,7 +97,7 @@ TrapezoidRuleSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
 
   // Construct NOX solver -- will look for NOX sublist -- this must be set!!
   trPL->sublist("NOX").set("Reset Initial Guess",true);
-  noxSolver = Teuchos::rcp(new Piro::NOXSolver<Scalar>(trPL, model));
+  noxSolver = Teuchos::rcp(new Piro::NOXSolver<Scalar>(appParams, model));
 
 }
 
@@ -418,6 +418,13 @@ Teuchos::RCP<Piro::TrapezoidDecorator<Scalar> >
 Piro::TrapezoidRuleSolver<Scalar>::getDecorator() const
 {
   return model;
+}
+
+template <typename Scalar>
+Teuchos::RCP<Thyra::AdaptiveSolutionManager>
+Piro::TrapezoidRuleSolver<Scalar>::getSolutionManager() const
+{
+  return solMgr;
 }
 
 /****************************************************************************/

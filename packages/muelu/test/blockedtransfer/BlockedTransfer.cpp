@@ -345,7 +345,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     H.SetVerbLevel(MueLu::Test);
     H.Setup(M);
 
-    std::cout << "main AcFact = " << AcFact.get() << std::endl;
     RCP<Level> l0 = H.GetLevel(0);
     RCP<Level> l1 = H.GetLevel(1);
     RCP<Level> l2 = H.GetLevel(2);

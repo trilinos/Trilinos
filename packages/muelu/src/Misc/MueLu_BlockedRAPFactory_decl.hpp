@@ -80,21 +80,21 @@ namespace MueLu {
 
     BlockedRAPFactory();
 
-    virtual ~BlockedRAPFactory() { }
+    virtual ~BlockedRAPFactory() = default;
     //@}
 
     //! @name Input
     //@{
 
-    RCP<const ParameterList> GetValidParameterList() const;
+    RCP<const ParameterList> GetValidParameterList() const override;
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const override;
 
     //@}
 
     //! @name Build methods.
     //@{
-    void Build(Level &fineLevel, Level &coarseLevel) const;
+    void Build(Level &fineLevel, Level &coarseLevel) const override;
     //@}
 
     //! @name Handling of user-defined transfer factories

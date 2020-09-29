@@ -1071,6 +1071,30 @@ namespace MueLu {
 
     }
 
+    // Checks to see if the first chunk of the colMap is also the row map.  This simiplifies a bunch of
+    // operation in coarsening
+    static bool MapsAreNested(const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& rowMap, const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& colMap) {
+      ArrayView<const GlobalOrdinal> rowElements = rowMap.getNodeElementList();
+      ArrayView<const GlobalOrdinal> colElements = colMap.getNodeElementList();
+      
+      const size_t numElements = rowElements.size();
+      
+      if (size_t(colElements.size()) < numElements)
+	return false;
+
+      bool goodMap = true;
+      for (size_t i = 0; i < numElements; i++)
+	if (rowElements[i] != colElements[i]) {
+	  goodMap = false;
+	  break;
+      }
+      
+      return goodMap;
+    }
+
+
+
+
   }; // class Utils
 
 

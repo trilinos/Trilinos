@@ -40,10 +40,10 @@ fi
 #########################################################################
 
 #Perl script to produce prettified HTML
-HTMLPERLSCRIPT="/home/nightlyTesting/trilinos/packages/muelu/utils/misc/drakify-email.pl"
+HTMLPERLSCRIPT="/data/testing/trilinos/packages/muelu/utils/misc/drakify-email.pl"
 #root of cdash testing directory
-TESTLOCATION="/home/nightlyTesting"
-LOGBACKUPDIRECTORY="/home/nightlyTesting/logs"
+TESTLOCATION="/data/testing"
+LOGBACKUPDIRECTORY="/data/testing/logs"
 
 #packages to be summarized
 if [[ -z $PATTERN ]]; then

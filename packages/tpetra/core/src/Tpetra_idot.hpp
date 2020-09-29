@@ -188,7 +188,6 @@ void blockingDotImpl(
   using result_host_view_type = Kokkos::View<dot_type*, Kokkos::HostSpace>;
   using dev_mem_space = typename result_dev_view_type::memory_space;
   using mirror_mem_space = typename result_mirror_view_type::memory_space;
-  using unmanaged_result_dev_view_type = Kokkos::View<dot_type*, dev_mem_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using unmanaged_result_host_view_type = Kokkos::View<dot_type*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   const size_t numVecs = globalResult.extent(0);
   //Logic to compute the local dot is no different than when CUDA-aware MPI.
@@ -236,7 +235,6 @@ idotImpl(const ResultView& globalResult,
          const ::Tpetra::MultiVector<SC, LO, GO, NT>& X,
          const ::Tpetra::MultiVector<SC, LO, GO, NT>& Y)
 {
-  using pair_type = ::Kokkos::pair<size_t, size_t>;
   using MV = ::Tpetra::MultiVector<SC, LO, GO, NT>;
   using dot_type = typename MV::dot_type;
   using global_result_memspace = typename ResultView::memory_space;
@@ -246,7 +244,6 @@ idotImpl(const ResultView& globalResult,
   using dev_mem_space = typename result_dev_view_type::memory_space;
   using mirror_mem_space = typename result_mirror_view_type::memory_space;
   using unmanaged_result_dev_view_type = Kokkos::View<dot_type*, dev_mem_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using unmanaged_result_mirror_view_type = Kokkos::View<dot_type*, mirror_mem_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using unmanaged_result_host_view_type = Kokkos::View<dot_type*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   auto comm = X.getMap()->getComm();
   bool mpiReduceInPlace = !Details::isInterComm(*comm);

@@ -81,6 +81,30 @@ inline bool is_side_set(const stk::mesh::Part &part)
     return isFacePart && !has_super_set_face_part(part) && part.id() > 0;
 }
 
+inline void fill_element_block_parts(const MetaData& meta, stk::topology elemTopo,
+                                     PartVector& elemBlockParts,
+                                     bool sortById=true)
+{
+  elemBlockParts.clear();
+  const PartVector &parts = meta.get_mesh_parts();
+  for (Part* part : parts) {
+    if (elemTopo == stk::topology::INVALID_TOPOLOGY) {
+      if (is_element_block(*part)) {
+        elemBlockParts.push_back(part);
+      }   
+    }   
+    else {
+      stk::topology partTopo = part->topology();
+      if (is_element_block(*part) && partTopo == elemTopo) {
+        elemBlockParts.push_back(part);
+      }   
+    }   
+  }
+  if (sortById) {
+    stk::util::sort_and_unique(elemBlockParts, stk::mesh::PartLessById());
+  }
+}
+
 class ExodusTranslator
 {
 public:
@@ -180,10 +204,7 @@ public:
     stk::mesh::PartVector get_element_block_parts() const
     {
         stk::mesh::PartVector elementBlockParts;
-        const stk::mesh::PartVector &parts = mBulkData.mesh_meta_data().get_mesh_parts();
-        for(size_t i = 0; i < parts.size(); i++)
-            if(is_element_block(*parts[i]))
-                elementBlockParts.push_back(parts[i]);
+        fill_element_block_parts(mBulkData.mesh_meta_data(), stk::topology::INVALID_TOPOLOGY, elementBlockParts, false);
         return elementBlockParts;
     }
 

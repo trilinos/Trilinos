@@ -14,6 +14,7 @@ INCLUDE_DIRECTORIES(
 SET(SOURCES
   GetLongOpt.C
   smart_assert.C
+  iqsort.C
   timer.C
   copyright.C
   SL_tokenize.C

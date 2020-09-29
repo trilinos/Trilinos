@@ -70,19 +70,19 @@ using std::endl;
 
 namespace {
 
-TEST( UnitTestRootTopology, noNewPartsWithTopologyAfterCommit )
+TEST( UnitTestRootTopology, newPartsWithTopologyAfterCommit )
 {
   //Test functions in MetaData.cpp
   const int spatial_dimension = 3;
-  MetaData uncommited_metadata(spatial_dimension);
-  MetaData commited_metadata(spatial_dimension);
+  MetaData uncommitted_metadata(spatial_dimension);
+  MetaData committed_metadata(spatial_dimension);
 
-  commited_metadata.commit();
+  committed_metadata.commit();
 
-  EXPECT_THROW(commited_metadata.declare_part_with_topology( std::string("a") , stk::topology::TRI_3  ), std::logic_error);
+  EXPECT_NO_THROW(committed_metadata.declare_part_with_topology( std::string("a") , stk::topology::TRI_3  ));
 
-  EXPECT_NO_THROW(uncommited_metadata.declare_part_with_topology( std::string("a") , stk::topology::TRI_3 ));
-  uncommited_metadata.commit();
+  EXPECT_NO_THROW(uncommitted_metadata.declare_part_with_topology( std::string("a") , stk::topology::TRI_3 ));
+  uncommitted_metadata.commit();
 }
 
 TEST(UnitTestMetaData, superElemTopoDeclarePartWithTopology)

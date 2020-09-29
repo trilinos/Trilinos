@@ -52,25 +52,7 @@
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_util/parallel/Parallel.hpp>
-
-struct ExpectedValues
-{
-  ExpectedValues()
-    : numConnectedEdges(0), globalEdgeCount(0), globalElemCount(0) {}
-
-  ExpectedValues(std::vector<unsigned> numLocalEdgesPerProc_, unsigned numFaces_,
-                 unsigned numConnectedEdges_, unsigned globalEdgeCount_, unsigned globalElemCount_)
-                 : numLocalEdgesPerProc(numLocalEdgesPerProc_), numConnectedEdges(numConnectedEdges_),
-                   globalEdgeCount(globalEdgeCount_), globalElemCount(globalElemCount_) {}
-
-  std::vector<unsigned> numEdgesPerProc;
-  std::vector<unsigned> numLocalEdgesPerProc;
-  std::vector<unsigned> numFacesPerProc;
-  std::vector<unsigned> numLocalFacesPerProc;
-  unsigned numConnectedEdges;
-  unsigned globalEdgeCount;
-  unsigned globalElemCount;
-};
+#include "UnitTestReadWriteUtils.hpp"
 
 class StkEdgeIoTest : public stk::unit_test_util::MeshFixture
 {
@@ -102,7 +84,7 @@ public:
 
   virtual void load_output_mesh(stk::mesh::BulkData& bulk);
 
-  void set_expected_values(ExpectedValues& expectedValues_);
+  void set_expected_values(io_test_utils::ExpectedValues& expectedValues_);
 
   virtual ~StkEdgeIoTest()
   {
@@ -113,7 +95,7 @@ protected:
   std::string fileName = "output.exo";
   std::string edgePartName = "edgeBlock";
   std::string facePartName = "faceBlock";
-  ExpectedValues expectedValues;
+  io_test_utils::ExpectedValues expectedValues;
 };
 
 #endif
