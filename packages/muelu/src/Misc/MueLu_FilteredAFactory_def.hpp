@@ -906,7 +906,7 @@ namespace MueLu {
             
             SC temp = (NegFilteredSum+alpha*gamma)/NegFilteredSum;
             for(LO j = 0; j < (LO)nnz; j++)  {
-              if  ( (j != diagIndex)&&(TST::magnitude(fvals[inds[j]]) != TST::magnitude(zero) ) && 
+              if  ( (j != diagIndex)&&(TST::magnitude(fvals[j]) != TST::magnitude(zero) ) && 
                     ( TST::real(vals[j]) < TST::real(zero) ) )
                 fvals[j] = temp*vals[j];
             }
@@ -920,7 +920,7 @@ namespace MueLu {
               flipPosOffDiagsToNeg = true;
 
               for(LO j = 0; j < (LO)nnz; j++)  {
-                if  ( (j != diagIndex)&&(TST::magnitude(fvals[inds[j]]) != TST::magnitude(zero) ) && 
+                if  ( (j != diagIndex)&&(TST::magnitude(fvals[j]) != TST::magnitude(zero) ) && 
                       (TST::real(vals[j]) > TST::real(zero) )) 
                   fvals[j] = -gamma/( (SC) NumPosKept);
               }
