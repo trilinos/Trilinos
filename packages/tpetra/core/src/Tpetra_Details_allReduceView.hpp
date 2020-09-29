@@ -176,11 +176,13 @@ allReduceView (const OutputViewType& output,
   // contiguous buffer.  We use a host buffer for that, since device
   // buffers are slow to allocate.
 
+  using execution_space = typename OutputViewType::execution_space;
   const bool viewsAlias = output.data () == input.data ();
   if (comm.getSize () == 1) {
     if (! viewsAlias) {
       // InputViewType and OutputViewType can't be AnonymousSpace
       // Views, because deep_copy needs to know their memory spaces.
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (output, input);
     }
     return;
@@ -212,7 +214,8 @@ allReduceView (const OutputViewType& output,
   if (needContiguousTemporaryBuffers) {
     auto output_tmp = makeContiguousBuffer (output);
     auto input_tmp = makeContiguousBuffer (input);
-    Kokkos::deep_copy (input_tmp, input);
+    // DEEP_COPY REVIEW - X
+    Kokkos::deep_copy (execution_space(), input_tmp, input);
     // It's OK if LayoutLeft allocations have padding at the end of
     // each row.  MPI might write to those padding bytes, but it's
     // undefined behavior for users to use Kokkos to access whatever
@@ -220,7 +223,8 @@ allReduceView (const OutputViewType& output,
     // ValueType instances.
     allReduceRawContiguous (output_tmp.data (), input_tmp.data (),
                             output_tmp.span (), comm);
-    Kokkos::deep_copy (output, output_tmp);
+    // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
+    Kokkos::deep_copy (execution_space(), output, output_tmp);
   }
   else {
     allReduceRawContiguous (output.data (), input.data (),

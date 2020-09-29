@@ -699,7 +699,9 @@ namespace Tpetra {
         View<GO*, LayoutLeft, device_type>
           nonContigGids (view_alloc ("nonContigGids", WithoutInitializing),
                          nonContigGids_host.size ());
-        Kokkos::deep_copy (nonContigGids, nonContigGids_host);
+        // DEEP_COPY REVIEW - HOST-TO-DEVICE
+        Kokkos::deep_copy (execution_space(), nonContigGids, nonContigGids_host);
+        Kokkos::fence(); // for UVM issues below - which will be refatored soon so FixedHashTable can build as pure CudaSpace - then I think remove this fence
 
         // FixedHashTable currently cannot be built on CudaSpace due to UVM
         // dependence so copy back to device_type (CudaUVMSpace).
@@ -738,7 +740,8 @@ namespace Tpetra {
       }
 
       // We filled lgMap on host above; now sync back to device.
-      Kokkos::deep_copy (lgMap, lgMap_host);
+      // DEEP_COPY REVIEW - HOST-TO-DEVICE
+      Kokkos::deep_copy (execution_space(), lgMap, lgMap_host);
 
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
@@ -1043,8 +1046,9 @@ namespace Tpetra {
       View<GO*, array_layout, Kokkos::HostSpace> entryList_host
         (view_alloc ("entryList_host", WithoutInitializing),
          entryList.extent(0));
-      Kokkos::deep_copy (entryList_host, entryList);
-
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
+      Kokkos::deep_copy (execution_space(), entryList_host, entryList);
+      Kokkos::fence(); // UVM follows
       firstContiguousGID_ = entryList_host[0];
       lastContiguousGID_ = firstContiguousGID_+1;
 
@@ -1132,7 +1136,8 @@ namespace Tpetra {
       }
 
       // We filled lgMap on host above; now sync back to device.
-      Kokkos::deep_copy (lgMap, lgMap_host);
+      // DEEP_COPY REVIEW - HOST-TO-DEVICE
+      Kokkos::deep_copy (execution_space(), lgMap, lgMap_host);
 
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
@@ -1727,7 +1732,8 @@ namespace Tpetra {
 
       auto lgMapHost =
         Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMap);
-      Kokkos::deep_copy (lgMapHost, lgMap);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
+      Kokkos::deep_copy (execution_space(), lgMapHost, lgMap);
 
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;

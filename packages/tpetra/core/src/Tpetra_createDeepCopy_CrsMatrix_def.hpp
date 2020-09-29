@@ -17,6 +17,7 @@ template<class SC, class LO, class GO, class NT>
 typename CrsMatrix<SC, LO, GO, NT>::local_matrix_type
 localDeepCopyFillCompleteCrsMatrix (const CrsMatrix<SC, LO, GO, NT>& A)
 {
+  using execution_space = typename NT::execution_space;
   using Kokkos::view_alloc;
   using Kokkos::WithoutInitializing;
   using crs_matrix_type = CrsMatrix<SC, LO, GO, NT>;
@@ -28,19 +29,23 @@ localDeepCopyFillCompleteCrsMatrix (const CrsMatrix<SC, LO, GO, NT>& A)
   using inds_type = typename local_graph_type::entries_type;
   inds_type ind (view_alloc ("ind", WithoutInitializing),
                  A_lcl.graph.entries.extent (0));
-  Kokkos::deep_copy (ind, A_lcl.graph.entries);
+
+  // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
+  Kokkos::deep_copy (execution_space(), ind, A_lcl.graph.entries);
 
   using offsets_type =
     typename local_graph_type::row_map_type::non_const_type;
   offsets_type ptr (view_alloc ("ptr", WithoutInitializing),
                     A_lcl.graph.row_map.extent (0));
-  Kokkos::deep_copy (ptr, A_lcl.graph.row_map);
+
+  // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
+  Kokkos::deep_copy (execution_space(), ptr, A_lcl.graph.row_map);
 
   using values_type = typename local_matrix_type::values_type;
   values_type val (view_alloc ("val", WithoutInitializing),
                    A_lcl.values.extent (0));
-  Kokkos::deep_copy (val, A_lcl.values);
-
+  // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
+  Kokkos::deep_copy (execution_space(), val, A_lcl.values);
   local_graph_type lclGraph (ind, ptr);
   const size_t numCols = A.getColMap ()->getNodeNumElements ();
   return local_matrix_type (A.getObjectLabel (), numCols, val, lclGraph);

@@ -648,6 +648,7 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   using Kokkos::ViewAllocateWithoutInitializing;
   nonconst_keys_type keys_d (ViewAllocateWithoutInitializing ("FixedHashTable::keys"),
                              keys_k.extent (0));
+  // DEEP_COPY REVIEW - NOT TESTED
   Kokkos::deep_copy (keys_d, keys_k);
   const KeyType initMinKey = this->minKey_;
   const KeyType initMaxKey = this->maxKey_;
@@ -702,7 +703,9 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   using Kokkos::ViewAllocateWithoutInitializing;
   nonconst_keys_type keys_d (ViewAllocateWithoutInitializing ("FixedHashTable::keys"),
                              keys_k.extent (0));
-  Kokkos::deep_copy (keys_d, keys_k);
+  // DEEP_COPY REVIEW - HOST-TO_DEVICE
+  using execution_space = typename device_type::execution_space;
+  Kokkos::deep_copy (execution_space(), keys_d, keys_k);
 
   const KeyType initMinKey = ::Kokkos::Details::ArithTraits<KeyType>::max ();
   // min() for a floating-point type returns the minimum _positive_
@@ -828,6 +831,7 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   using Kokkos::ViewAllocateWithoutInitializing;
   nonconst_keys_type keys_d (ViewAllocateWithoutInitializing ("FixedHashTable::keys"),
                              keys_k.extent (0));
+  // DEEP_COPY REVIEW - NOT TESTED
   Kokkos::deep_copy (keys_d, keys_k);
 
   const KeyType initMinKey = ::Kokkos::Details::ArithTraits<KeyType>::max ();
@@ -1122,7 +1126,8 @@ init (const keys_type& keys,
     // assume UVM.
     auto countsHost = Kokkos::create_mirror_view (counts);
     // FIXME (mfh 28 Mar 2016) Does create_mirror_view zero-fill?
-    Kokkos::deep_copy (countsHost, static_cast<offset_type> (0));
+    // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+    Kokkos::deep_copy (execution_space(), countsHost, static_cast<offset_type> (0));
 
     for (offset_type k = 0; k < theNumKeys; ++k) {
       using key_type = typename keys_type::non_const_value_type;
@@ -1139,7 +1144,8 @@ init (const keys_type& keys,
 
       ++countsHost[hashVal];
     }
-    Kokkos::deep_copy (counts, countsHost);
+    // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
+    Kokkos::deep_copy (execution_space(), counts, countsHost);
   }
 
   // KJ: This fence is not required for the 2-argument deep_copy which calls
@@ -1171,7 +1177,8 @@ init (const keys_type& keys,
   if (! buildInParallel || debug) {
     Kokkos::HostSpace hostMemSpace;
     auto counts_h = Kokkos::create_mirror_view (hostMemSpace, counts);
-    Kokkos::deep_copy (counts_h, counts);
+    // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+    Kokkos::deep_copy (execution_space(), counts_h, counts);
     auto ptr_h = Kokkos::create_mirror_view (hostMemSpace, ptr);
 
 #ifdef KOKKOS_ENABLE_SERIAL
@@ -1181,7 +1188,8 @@ init (const keys_type& keys,
 #endif // KOKKOS_ENABLE_SERIAL
 
     computeOffsetsFromCounts (hostExecSpace, ptr_h, counts_h);
-    Kokkos::deep_copy (ptr, ptr_h);
+    // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
+    Kokkos::deep_copy (execution_space(), ptr, ptr_h);
 
     if (debug) {
       bool bad = false;

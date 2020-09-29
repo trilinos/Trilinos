@@ -835,7 +835,8 @@ namespace Tpetra {
     if (LDA == outStride) { // strides are the same; deep_copy once
       // This only works because MultiVector uses LayoutLeft.
       // We would need a custom copy functor otherwise.
-      Kokkos::deep_copy (X_out, X_in);
+      // DEEP_COPY REVIEW - HOST-TO-DEVICE
+      Kokkos::deep_copy (execution_space(), X_out, X_in);
     }
     else { // strides differ; copy one column at a time
       typedef decltype (Kokkos::subview (X_out, Kokkos::ALL (), 0))
@@ -845,7 +846,8 @@ namespace Tpetra {
       for (size_t j = 0; j < numVecs; ++j) {
         out_col_view_type X_out_j = Kokkos::subview (X_out, Kokkos::ALL (), j);
         in_col_view_type X_in_j = Kokkos::subview (X_in, Kokkos::ALL (), j);
-        Kokkos::deep_copy (X_out_j, X_in_j);
+        // DEEP_COPY REVIEW - HOST-TO-DEVICE
+        Kokkos::deep_copy (execution_space(), X_out_j, X_in_j);
       }
     }
   }
@@ -896,7 +898,8 @@ namespace Tpetra {
         Teuchos::av_reinterpret_cast<const IST> (ArrayOfPtrs[j]);
       input_col_view_type X_j_in (X_j_av.getRawPtr (), lclNumRows);
       auto X_j_out = Kokkos::subview (X_out, rowRng, j);
-      Kokkos::deep_copy (X_j_out, X_j_in);
+      // DEEP_COPY REVIEW - HOST-TO-DEVICE
+      Kokkos::deep_copy (execution_space(), X_j_out, X_j_in);
     }
     origView_ = view_;
   }
@@ -980,6 +983,7 @@ namespace Tpetra {
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
    const CombineMode CM)
   {
+    using execution_space = typename device_type::execution_space;
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::getDualViewCopyFromArrayView;
     using ::Tpetra::Details::ProfilingRegion;
@@ -1092,7 +1096,8 @@ namespace Tpetra {
           }
           else { 
             // Copy src_j into tgt_j
-            Kokkos::deep_copy (tgt_j, src_j); 
+            // DEEP_COPY REVIEW - HOSTMIRROR-TO-HOSTMIRROR
+            Kokkos::deep_copy (execution_space(), tgt_j, src_j);
           }
         }
       }
@@ -1118,7 +1123,8 @@ namespace Tpetra {
           }
           else { 
             // Copy src_j into tgt_j
-            Kokkos::deep_copy (tgt_j, src_j); 
+            // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
+            Kokkos::deep_copy (execution_space(), tgt_j, src_j); // Copy src_j into tgt_j
           }
         }
       }
@@ -1716,11 +1722,13 @@ namespace Tpetra {
       whichVecs = Kokkos::DualView<size_t*, device_type> ("whichVecs", numVecs);
       if (unpackOnHost) {
         whichVecs.modify_host ();
+        // DEEP_COPY REVIEW - NOT TESTED FOR CUDA BUILD
         Kokkos::deep_copy (whichVecs.view_host (), whichVecsIn);
       }
       else {
         whichVecs.modify_device ();
-        Kokkos::deep_copy (whichVecs.view_device (), whichVecsIn);
+        // DEEP_COPY REVIEW - HOST-TO-DEVICE
+        Kokkos::deep_copy (execution_space(), whichVecs.view_device (), whichVecsIn);
       }
     }
     auto whichVecs_d = whichVecs.view_device ();
@@ -1947,6 +1955,7 @@ namespace Tpetra {
           // output buffers, so we have to make a copy of the local
           // sum.
           typename RV::non_const_type lclDots (Kokkos::ViewAllocateWithoutInitializing ("tmp"), numVecs);
+          // DEEP_COPY REVIEW - NOT TESTED
           Kokkos::deep_copy (lclDots, dotsOut);
           const dot_type* const lclSum = lclDots.data ();
           dot_type* const gblSum = dotsOut.data ();
@@ -2285,6 +2294,7 @@ namespace Tpetra {
                    lclSums.data (), meansOut.data ());
       }
       else {
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (meansOut, lclSums);
       }
     }
@@ -2314,6 +2324,7 @@ namespace Tpetra {
                    lclSums.data (), meansOut.data ());
       }
       else {
+        // DEEP_COPY REVIEW - HOST-TO-HOST - NOT TESTED FOR MPI BUILD
         Kokkos::deep_copy (meansOut, lclSums);
       }
     }
@@ -2648,6 +2659,7 @@ namespace Tpetra {
       // Work in host memory.  This means we need to create a host
       // mirror of the input View of coefficients.
       auto alphas_h = Kokkos::create_mirror_view (alphas);
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (alphas_h, alphas);
 
       auto Y_lcl = subview (this->getLocalViewHost (), rowRng, ALL ());
@@ -2676,6 +2688,7 @@ namespace Tpetra {
         // would be to fix scal() so that it takes a 0-D View as the
         // second argument.
         auto alphas_h = Kokkos::create_mirror_view (alphas);
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (alphas_h, alphas);
 
         for (size_t k = 0; k < numVecs; ++k) {
@@ -3555,6 +3568,7 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   get1dCopy (const Teuchos::ArrayView<Scalar>& A, const size_t LDA) const
   {
+    using execution_space = typename device_type::execution_space;
     using dev_view_type = typename dual_view_type::t_dev;
     using host_view_type = typename dual_view_type::t_host;
     using IST = impl_scalar_type;
@@ -3601,10 +3615,12 @@ namespace Tpetra {
 
     if (this->isConstantStride ()) {
       if (useHostVersion) {
-        Kokkos::deep_copy (A_view, srcView_host);
+        // DEEP_COPY REVIEW - HOSTMIRROR-TO-HOST
+        Kokkos::deep_copy (execution_space(), A_view, srcView_host);
       }
       else {
-        Kokkos::deep_copy (A_view, srcView_dev);
+        // DEEP_COPY REVIEW - DEVICE-TO-HOST
+        Kokkos::deep_copy (execution_space(), A_view, srcView_dev);
       }
     }
     else {
@@ -3614,10 +3630,12 @@ namespace Tpetra {
 
         if (useHostVersion) {
           auto srcColView_host = Kokkos::subview (srcView_host, rowRange, srcCol);
+          // DEEP_COPY REVIEW - NOT TESTED
           Kokkos::deep_copy (dstColView, srcColView_host);
         }
         else {
           auto srcColView_dev = Kokkos::subview (srcView_dev, rowRange, srcCol);
+          // DEEP_COPY REVIEW - NOT TESTED
           Kokkos::deep_copy (dstColView, srcColView_dev);
         }
       }
@@ -4434,8 +4452,10 @@ namespace Tpetra {
           // temporary host copy and print that.
           auto X_dev = getLocalViewDevice ();
           auto X_host_copy = Kokkos::create_mirror_view (X_dev);
-          Kokkos::deep_copy (X_host_copy, X_dev);
+          // DEEP_COPY REVIEW - DEVICE-TO-HOST
+          Kokkos::deep_copy (execution_space(), X_host_copy, X_dev);
           X_host = X_host_copy;
+          Kokkos::fence(); // for UVM access below
         }
         else {
           // Either host and device are in sync, or host has the

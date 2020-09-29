@@ -789,7 +789,9 @@ namespace Tpetra {
       using Kokkos::WithoutInitializing;
       values_type newvals (view_alloc ("val", WithoutInitializing),
                            vals.extent (0));
-      Kokkos::deep_copy (newvals, vals);
+      // DEEP_COPY REVIEW - DEVICE-TO_DEVICE
+      using execution_space = typename device_type::execution_space;
+      Kokkos::deep_copy (execution_space(), newvals, vals);
       k_values1D_ = newvals;
       if (source.isFillComplete ()) {
         fillComplete (source.getDomainMap (), source.getRangeMap ());
@@ -2597,7 +2599,7 @@ namespace Tpetra {
     // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
     // accurately, it assumes that the host execution space can
     // access data in both InputMemorySpace and ValsMemorySpace.
-
+    Kokkos::fence(); // for UVM - for example setAllToScalar could launch an unfenced deep_copy before this
     if (graph.isLocallyIndexed ()) {
       // NOTE (mfh 04 Nov 2015) Dereferencing an RCP or reading its
       // pointer does NOT change its reference count.  Thus, this
@@ -3779,7 +3781,9 @@ namespace Tpetra {
       // FIXME (mfh 24 Dec 2014) Once CrsMatrix implements DualView
       // semantics, this would be the place to mark memory as
       // modified.
-      Kokkos::deep_copy (k_values1D_, theAlpha);
+      // DEEP_COPY REVIEW - VALUE-TO-DEVICE
+      using execution_space = typename device_type::execution_space;
+      Kokkos::deep_copy (execution_space(), k_values1D_, theAlpha);
     }
   }
 
@@ -3913,7 +3917,8 @@ namespace Tpetra {
       typedef Kokkos::View<size_t*, Kokkos::HostSpace,
                            Kokkos::MemoryUnmanaged> output_type;
       output_type offsetsOut (offsets.getRawPtr (), lclNumRows);
-      Kokkos::deep_copy (offsetsOut, offsetsTmp);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
+      Kokkos::deep_copy (execution_space(), offsetsOut, offsetsTmp);
     }
   }
 
@@ -6523,7 +6528,8 @@ namespace Tpetra {
     row_ptrs_type row_ptr_beg(
       view_alloc("row_ptr_beg", WithoutInitializing),
       myGraph_->k_rowPtrs_.extent(0));
-    Kokkos::deep_copy(row_ptr_beg, myGraph_->k_rowPtrs_);
+    // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
+    Kokkos::deep_copy(execution_space(), row_ptr_beg, myGraph_->k_rowPtrs_);
 
     const size_t N = row_ptr_beg.extent(0) == 0 ? size_t(0) :
       size_t(row_ptr_beg.extent(0) - 1);
@@ -7158,6 +7164,7 @@ namespace Tpetra {
       typedef Kokkos::Device<HES, HostSpace> host_device_type;
       Kokkos::View<const char*, host_device_type>
         exports_a_kv (exports_a.getRawPtr (), newAllocSize);
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (exports_h_sub, exports_a_kv);
     }
 

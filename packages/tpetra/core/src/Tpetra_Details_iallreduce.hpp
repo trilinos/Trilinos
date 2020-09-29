@@ -712,7 +712,9 @@ struct Iallreduce<PacketType,
     // MPI is disabled, so comm is a SerialComm.
     // Avoid needing to check the SerialComm case in Impl::iallreduce.
     // That lets Impl::iallreduce not need to know about DeviceType.
-    ::Kokkos::deep_copy (recvbuf, sendbuf);
+    // DEEP_COPY REVIEW - DEVICE-TO-DEVICE - NOT TESTED FOR MPI BUILD
+    using execution_space = typename RecvDeviceType::execution_space; // what if it's device to host?
+    ::Kokkos::deep_copy (execution_space(), recvbuf, sendbuf);
     // This request has already finished.  There's nothing more to do.
     return Impl::emptyCommRequest ();
 #endif // HAVE_TPETRACORE_MPI
@@ -774,7 +776,9 @@ struct Iallreduce<PacketType,
     // MPI is disabled, so comm is a SerialComm.
     // Avoid needing to check the SerialComm case in Impl::iallreduce.
     // That lets Impl::iallreduce not need to know about DeviceType.
-    ::Kokkos::deep_copy (recvbuf, sendbuf);
+    // DEEP_COPY REVIEW - DEVICE-TO-DEVICE - NOT TESTED FOR MPI BUILD
+    using execution_space = typename RecvDeviceType::execution_space; // what if it's device to host?
+    ::Kokkos::deep_copy (execution_space(), recvbuf, sendbuf);
     // This request has already finished.  There's nothing more to do.
     return Impl::emptyCommRequest ();
 #endif // HAVE_TPETRACORE_MPI

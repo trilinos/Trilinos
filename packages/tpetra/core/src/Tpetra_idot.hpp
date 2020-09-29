@@ -118,6 +118,8 @@ void idotLocal(const ResultView& localResult,
       auto Y_lcl_other = Y.template getLocalView<other_memory_space>();
       typename decltype (Y_lcl)::non_const_type
         Y_lcl_nc (Kokkos::ViewAllocateWithoutInitializing("Y_lcl"), Y_lcl_other.extent(0), Y_numVecs);
+
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (Y_lcl_nc, Y_lcl_other);
       Y_lcl = Y_lcl_nc;
     }
@@ -157,6 +159,7 @@ void idotLocal(const ResultView& localResult,
         //Get a copy of Y's column if needed. If X has k columns but Y has 1, only copy to YLocalCol_nc once.
         if(vec == 0 || Y_numVecs > 1) {
           auto YLocalCol_other_space = Kokkos::subview(Ycol->template getLocalView<other_memory_space>(), rowRange, 0);
+          // DEEP_COPY REVIEW - NOT TESTED
           Kokkos::deep_copy(YLocalCol_nc, YLocalCol_other_space);
         }
         YLocalCol = YLocalCol_nc;
@@ -187,6 +190,7 @@ void blockingDotImpl(
   using result_mirror_view_type = typename result_dev_view_type::HostMirror;
   using result_host_view_type = Kokkos::View<dot_type*, Kokkos::HostSpace>;
   using dev_mem_space = typename result_dev_view_type::memory_space;
+  using dev_exec_space = typename result_dev_view_type::execution_space;
   using mirror_mem_space = typename result_mirror_view_type::memory_space;
   using unmanaged_result_host_view_type = Kokkos::View<dot_type*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   const size_t numVecs = globalResult.extent(0);
@@ -204,8 +208,9 @@ void blockingDotImpl(
     //compute local result on temporary device view, then copy that to host.
     result_dev_view_type localDeviceResult(Kokkos::ViewAllocateWithoutInitializing("DeviceLocalDotResult"), numVecs);
     idotLocal<SC, LO, GO, NT, result_dev_view_type, mirror_mem_space>(localDeviceResult, X, Y);
-    //NOTE: no fence is required: deep_copy will fence.
-    Kokkos::deep_copy(localHostResult, localDeviceResult);
+    // DEEP_COPY REVIEW - DEVICE-TO-HOST
+    Kokkos::deep_copy(dev_exec_space(), localHostResult, localDeviceResult);
+    Kokkos::fence();
   }
   result_host_view_type globalHostResultOwning;
   unmanaged_result_host_view_type globalHostResultNonowning;
@@ -218,8 +223,11 @@ void blockingDotImpl(
     globalHostResultOwning = result_host_view_type(Kokkos::ViewAllocateWithoutInitializing("HostGlobalDotResult"), numVecs);
     globalHostResultNonowning = unmanaged_result_host_view_type(globalHostResultOwning.data(), numVecs);
   }
+  Kokkos::fence();
   Teuchos::reduceAll<int, dot_type> (*X.getMap()->getComm(), Teuchos::REDUCE_SUM, numVecs, localHostResult.data(), globalHostResultNonowning.data());
-  Kokkos::deep_copy(globalResult, globalHostResultNonowning);
+  // DEEP_COPY REVIEW - HOST-TO-DEVICE
+  using result_exec_space = typename ResultView::execution_space;
+  Kokkos::deep_copy(result_exec_space(), globalResult, globalHostResultNonowning);
 }
 
 /// \brief Internal (common) version of idot, a global dot product
@@ -242,6 +250,7 @@ idotImpl(const ResultView& globalResult,
   using result_mirror_view_type = typename result_dev_view_type::HostMirror;
   using result_host_view_type = Kokkos::View<dot_type*, Kokkos::HostSpace>;
   using dev_mem_space = typename result_dev_view_type::memory_space;
+  using dev_exec_space = typename result_dev_view_type::execution_space;
   using mirror_mem_space = typename result_mirror_view_type::memory_space;
   using unmanaged_result_dev_view_type = Kokkos::View<dot_type*, dev_mem_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using unmanaged_result_host_view_type = Kokkos::View<dot_type*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
@@ -310,8 +319,9 @@ idotImpl(const ResultView& globalResult,
     if(communicateFromHost)
     {
       result_host_view_type hostLocalResult(Kokkos::ViewAllocateWithoutInitializing("hostLocalResult"), numVecs);
-      //The deep copy fences.
-      Kokkos::deep_copy(hostLocalResult, nonowningLocalResult);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
+      Kokkos::deep_copy(dev_exec_space(), hostLocalResult, nonowningLocalResult);
+      Kokkos::fence();
       return iallreduce(hostLocalResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
     }
     else

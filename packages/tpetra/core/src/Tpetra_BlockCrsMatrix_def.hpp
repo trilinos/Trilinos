@@ -681,6 +681,8 @@ public:
     localError_ (new bool (false)),
     errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
+    using execution_space = typename Node::execution_space;
+
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::"
       "BlockCrsMatrix constructor: The input CrsGraph does not have sorted "
@@ -715,7 +717,9 @@ public:
 
       row_map_type ptr_d = graph.getLocalGraph ().row_map;
       nc_host_row_map_type ptr_h_nc = Kokkos::create_mirror_view (ptr_d);
-      Kokkos::deep_copy (ptr_h_nc, ptr_d);
+
+      // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+      Kokkos::deep_copy (execution_space(), ptr_h_nc, ptr_d);
       ptrHost_ = ptr_h_nc;
     }
     {
@@ -724,7 +728,8 @@ public:
 
       entries_type ind_d = graph.getLocalGraph ().entries;
       nc_host_entries_type ind_h_nc = Kokkos::create_mirror_view (ind_d);
-      Kokkos::deep_copy (ind_h_nc, ind_d);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+      Kokkos::deep_copy (execution_space(), ind_h_nc, ind_d);
       indHost_ = ind_h_nc;
     }
 
@@ -751,6 +756,8 @@ public:
     localError_ (new bool (false)),
     errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
+    using execution_space = typename Node::execution_space;
+
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::"
       "BlockCrsMatrix constructor: The input CrsGraph does not have sorted "
@@ -781,7 +788,8 @@ public:
 
       row_map_type ptr_d = graph.getLocalGraph ().row_map;
       nc_host_row_map_type ptr_h_nc = Kokkos::create_mirror_view (ptr_d);
-      Kokkos::deep_copy (ptr_h_nc, ptr_d);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+      Kokkos::deep_copy (execution_space(), ptr_h_nc, ptr_d);
       ptrHost_ = ptr_h_nc;
     }
     {
@@ -790,7 +798,8 @@ public:
 
       entries_type ind_d = graph.getLocalGraph ().entries;
       nc_host_entries_type ind_h_nc = Kokkos::create_mirror_view (ind_d);
-      Kokkos::deep_copy (ind_h_nc, ind_d);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+      Kokkos::deep_copy (execution_space(), ind_h_nc, ind_d);
       indHost_ = ind_h_nc;
     }
 
@@ -968,6 +977,7 @@ public:
          prefix << "The matrix's values need sync on both device and host.");
 #endif // HAVE_TPETRA_DEBUG
       this->modify_host ();
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (getValuesHost (), alpha);
     }
     else {
@@ -976,7 +986,9 @@ public:
       // device.  Also, prefer modifying on device if neither side is
       // marked as modified.
       this->modify_device ();
-      Kokkos::deep_copy (this->getValuesDevice (), alpha);
+      // DEEP_COPY REVIEW - VALUE-TO-DEVICE
+      using execution_space = typename device_type::execution_space;
+      Kokkos::deep_copy (execution_space(), this->getValuesDevice (), alpha);
     }
   }
 
@@ -3755,7 +3767,9 @@ public:
 
     // The code below works on host, so use a host View.
     auto diagOffsetsHost = Kokkos::create_mirror_view (diagOffsets);
-    Kokkos::deep_copy (diagOffsetsHost, diagOffsets);
+    // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+    using execution_space = typename device_type::execution_space;
+    Kokkos::deep_copy (execution_space(), diagOffsetsHost, diagOffsets);
     // We're filling diag on host for now.
     diag.template modify<typename decltype (diagOffsetsHost)::memory_space> ();
 
