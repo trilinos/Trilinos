@@ -517,152 +517,6 @@ struct DeepCopyNonContiguous
 } // namespace Experimental
 
 /* Specialize for deep copy of UQ::PCE */
-template< class DT , class ... DP , class ST , class ... SP >
-inline
-void deep_copy( const View<DT,DP...> & dst ,
-                const View<ST,SP...> & src
-  , typename std::enable_if<(
-  std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-  &&
-  std::is_same< typename ViewTraits<ST,SP...>::specialize
-              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
-  )>::type * )
-{
-  static_assert(
-    std::is_same< typename ViewTraits<DT,DP...>::value_type ,
-                  typename ViewTraits<DT,DP...>::non_const_value_type >::value
-    , "Deep copy destination must be non-const" );
-
-  static_assert(
-    ( unsigned(ViewTraits<DT,DP...>::rank) ==
-      unsigned(ViewTraits<ST,SP...>::rank) )
-    , "Deep copy destination and source must have same rank" );
-
-  typedef View<DT,DP...> dst_type ;
-  typedef View<ST,SP...> src_type ;
-  typedef typename dst_type::array_type dst_array_type ;
-  typedef typename src_type::array_type src_array_type ;
-
-  if ( is_allocation_contiguous(dst) && is_allocation_contiguous(src) ) {
-    dst_array_type dst_array = dst ;
-    src_array_type src_array = src ;
-    deep_copy( dst_array , src_array );
-  }
-
-  // otherwise, use a custom kernel
-  else {
-
-    // If views are in the same memory space, copy component-wise
-    if ( std::is_same< typename dst_type::memory_space ,
-                        typename src_type::memory_space >::value ) {
-      Experimental::Impl::DeepCopyNonContiguous< dst_type , src_type >( dst , src );
-    }
-
-    else {
-
-      typedef View< typename src_type::non_const_data_type ,
-                    typename src_type::array_layout ,
-                    typename src_type::execution_space > tmp_src_type;
-      typedef typename tmp_src_type::array_type tmp_src_array_type;
-      typedef View< typename dst_type::non_const_data_type ,
-                    typename dst_type::array_layout ,
-                    typename dst_type::execution_space > tmp_dst_type;
-      typedef typename tmp_dst_type::array_type tmp_dst_array_type;
-
-      // Copy src into a contiguous view in src's memory space,
-      // then copy to dst
-      if (  is_allocation_contiguous(dst) &&
-           !is_allocation_contiguous(src) ) {
-        size_t src_dims[8];
-        //src.dimensions(src_dims);
-        src_dims[0] = src.extent(0);
-        src_dims[1] = src.extent(1);
-        src_dims[2] = src.extent(2);
-        src_dims[3] = src.extent(3);
-        src_dims[4] = src.extent(4);
-        src_dims[5] = src.extent(5);
-        src_dims[6] = src.extent(6);
-        src_dims[7] = src.extent(7);
-        src_dims[src_type::Rank] = dimension_scalar(src);
-        tmp_src_type src_tmp(
-          view_alloc("src_tmp" , WithoutInitializing, cijk(src) ) ,
-          src_dims[0], src_dims[1], src_dims[2], src_dims[3],
-          src_dims[4], src_dims[5], src_dims[6], src_dims[7] );
-        Experimental::Impl::DeepCopyNonContiguous< tmp_src_type , src_type >( src_tmp , src );
-        dst_array_type dst_array = dst ;
-        tmp_src_array_type src_array = src_tmp ;
-        deep_copy( dst_array , src_array );
-      }
-
-      // Copy src into a contiguous view in dst's memory space,
-      // then copy to dst
-      else if ( !is_allocation_contiguous(dst) &&
-                 is_allocation_contiguous(src) ) {
-        size_t dst_dims[8];
-        //dst.dimensions(dst_dims);
-        dst_dims[0] = dst.extent(0);
-        dst_dims[1] = dst.extent(1);
-        dst_dims[2] = dst.extent(2);
-        dst_dims[3] = dst.extent(3);
-        dst_dims[4] = dst.extent(4);
-        dst_dims[5] = dst.extent(5);
-        dst_dims[6] = dst.extent(6);
-        dst_dims[7] = dst.extent(7);
-        dst_dims[dst_type::Rank] = dimension_scalar(dst);
-        tmp_dst_type dst_tmp(
-          view_alloc("dst_tmp" , WithoutInitializing, cijk(dst) ) ,
-          dst_dims[0], dst_dims[1], dst_dims[2], dst_dims[3],
-          dst_dims[4], dst_dims[5], dst_dims[6], dst_dims[7] );
-        tmp_dst_array_type dst_array = dst_tmp ;
-        src_array_type src_array = src ;
-        deep_copy( dst_array , src_array );
-        Experimental::Impl::DeepCopyNonContiguous< dst_type , tmp_dst_type >( dst , dst_tmp );
-      }
-
-      // Copy src into a contiguous view in src's memory space,
-      // copy to a continugous view in dst's memory space, then copy to dst
-      else {
-        size_t src_dims[8];
-        //src.dimensions(src_dims);
-        src_dims[0] = src.extent(0);
-        src_dims[1] = src.extent(1);
-        src_dims[2] = src.extent(2);
-        src_dims[3] = src.extent(3);
-        src_dims[4] = src.extent(4);
-        src_dims[5] = src.extent(5);
-        src_dims[6] = src.extent(6);
-        src_dims[7] = src.extent(7);
-        src_dims[src_type::Rank] = dimension_scalar(src);
-        tmp_src_type src_tmp(
-          view_alloc("src_tmp" , WithoutInitializing, cijk(src) ) ,
-          src_dims[0], src_dims[1], src_dims[2], src_dims[3],
-          src_dims[4], src_dims[5], src_dims[6], src_dims[7] );
-        Experimental::Impl::DeepCopyNonContiguous< tmp_src_type , src_type >( src_tmp , src );
-        size_t dst_dims[8];
-        //dst.dimensions(dst_dims);
-        dst_dims[0] = dst.extent(0);
-        dst_dims[1] = dst.extent(1);
-        dst_dims[2] = dst.extent(2);
-        dst_dims[3] = dst.extent(3);
-        dst_dims[4] = dst.extent(4);
-        dst_dims[5] = dst.extent(5);
-        dst_dims[6] = dst.extent(6);
-        dst_dims[7] = dst.extent(7);
-        dst_dims[dst_type::Rank] = dimension_scalar(dst);
-        tmp_dst_type dst_tmp(
-          view_alloc("dst_tmp" , WithoutInitializing, cijk(dst) ) ,
-          dst_dims[0], dst_dims[1], dst_dims[2], dst_dims[3],
-          dst_dims[4], dst_dims[5], dst_dims[6], dst_dims[7] );
-        tmp_dst_array_type dst_array = dst_tmp ;
-        tmp_src_array_type src_array = src_tmp ;
-        deep_copy( dst_array , src_array );
-        Experimental::Impl::DeepCopyNonContiguous< dst_type , tmp_dst_type >( dst , dst_tmp );
-      }
-    }
-  }
-}
-
 template< class ExecSpace, class DT , class ... DP , class ST , class ... SP >
 inline
 void deep_copy( const ExecSpace &,
@@ -808,6 +662,25 @@ void deep_copy( const ExecSpace &,
       }
     }
   }
+}
+
+/* Specialize for deep copy of UQ::PCE */
+template< class DT , class ... DP , class ST , class ... SP >
+inline
+void deep_copy( const View<DT,DP...> & dst ,
+                const View<ST,SP...> & src
+  , typename std::enable_if<(
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+  &&
+  std::is_same< typename ViewTraits<ST,SP...>::specialize
+              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+  )>::type * )
+{
+  using exec_space = typename View<DT,DP...>::execution_space;
+  Kokkos::fence();
+  Kokkos::deep_copy(exec_space(), dst, src);
+  Kokkos::fence();
 }
 
 }
