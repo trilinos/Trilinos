@@ -279,10 +279,13 @@ namespace { // (anonymous)
         // it's cheaper to allocate.  Hopefully users aren't doing
         // aliased copies in a tight loop.
         auto src_copy = Kokkos::create_mirror (Kokkos::HostSpace (), src);
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (src_copy, src);
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (dst, src_copy);
       }
       else { // no aliasing
+        // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
         Kokkos::deep_copy (dst, src);
       }
     }
@@ -328,6 +331,7 @@ namespace { // (anonymous)
       using output_memory_space = typename OutputViewType::memory_space;
       auto src_outputSpaceCopy =
         Kokkos::create_mirror_view (output_memory_space (), src);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy (src_outputSpaceCopy, src);
 
       // The output View's execution space can access

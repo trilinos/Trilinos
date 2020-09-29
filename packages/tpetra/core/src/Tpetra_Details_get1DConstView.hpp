@@ -98,6 +98,7 @@ struct Get1DConstViewOfUnmanagedHostArray<ST, DT, false> {
       // std::string, else the compiler can't figure out what
       // constructor we're calling.
       Kokkos::View<ST*, DT> x_out (std::string (label), x_len);
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (x_out, x_in);
       return x_out;
     }

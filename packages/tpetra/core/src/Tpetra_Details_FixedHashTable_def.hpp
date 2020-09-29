@@ -648,6 +648,7 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   using Kokkos::ViewAllocateWithoutInitializing;
   nonconst_keys_type keys_d (ViewAllocateWithoutInitializing ("FixedHashTable::keys"),
                              keys_k.extent (0));
+  // DEEP_COPY REVIEW - NOT TESTED
   Kokkos::deep_copy (keys_d, keys_k);
   const KeyType initMinKey = this->minKey_;
   const KeyType initMaxKey = this->maxKey_;
@@ -702,6 +703,7 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   using Kokkos::ViewAllocateWithoutInitializing;
   nonconst_keys_type keys_d (ViewAllocateWithoutInitializing ("FixedHashTable::keys"),
                              keys_k.extent (0));
+  // DEEP_COPY REVIEW - HOST-TO_DEVICE
   Kokkos::deep_copy (keys_d, keys_k);
 
   const KeyType initMinKey = ::Kokkos::Details::ArithTraits<KeyType>::max ();
@@ -828,6 +830,7 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   using Kokkos::ViewAllocateWithoutInitializing;
   nonconst_keys_type keys_d (ViewAllocateWithoutInitializing ("FixedHashTable::keys"),
                              keys_k.extent (0));
+  // DEEP_COPY REVIEW - NOT TESTED
   Kokkos::deep_copy (keys_d, keys_k);
 
   const KeyType initMinKey = ::Kokkos::Details::ArithTraits<KeyType>::max ();
@@ -1122,6 +1125,7 @@ init (const keys_type& keys,
     // assume UVM.
     auto countsHost = Kokkos::create_mirror_view (counts);
     // FIXME (mfh 28 Mar 2016) Does create_mirror_view zero-fill?
+    // DEEP_COPY REVIEW - DEVICE-TO-HOST
     Kokkos::deep_copy (countsHost, static_cast<offset_type> (0));
 
     for (offset_type k = 0; k < theNumKeys; ++k) {
@@ -1139,6 +1143,7 @@ init (const keys_type& keys,
 
       ++countsHost[hashVal];
     }
+    // DEEP_COPY REVIEW - HOST-TO-DEVICE
     Kokkos::deep_copy (counts, countsHost);
   }
 
@@ -1171,6 +1176,7 @@ init (const keys_type& keys,
   if (! buildInParallel || debug) {
     Kokkos::HostSpace hostMemSpace;
     auto counts_h = Kokkos::create_mirror_view (hostMemSpace, counts);
+    // DEEP_COPY REVIEW - DEVICE-TO-HOST
     Kokkos::deep_copy (counts_h, counts);
     auto ptr_h = Kokkos::create_mirror_view (hostMemSpace, ptr);
 
@@ -1181,6 +1187,7 @@ init (const keys_type& keys,
 #endif // KOKKOS_ENABLE_SERIAL
 
     computeOffsetsFromCounts (hostExecSpace, ptr_h, counts_h);
+    // DEEP_COPY REVIEW - HOST-TO-DEVICE
     Kokkos::deep_copy (ptr, ptr_h);
 
     if (debug) {

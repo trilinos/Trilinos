@@ -181,6 +181,7 @@ allReduceView (const OutputViewType& output,
     if (! viewsAlias) {
       // InputViewType and OutputViewType can't be AnonymousSpace
       // Views, because deep_copy needs to know their memory spaces.
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (output, input);
     }
     return;
@@ -212,6 +213,7 @@ allReduceView (const OutputViewType& output,
   if (needContiguousTemporaryBuffers) {
     auto output_tmp = makeContiguousBuffer (output);
     auto input_tmp = makeContiguousBuffer (input);
+    // DEEP_COPY REVIEW - MakeContiguousBuffer
     Kokkos::deep_copy (input_tmp, input);
     // It's OK if LayoutLeft allocations have padding at the end of
     // each row.  MPI might write to those padding bytes, but it's
@@ -220,6 +222,7 @@ allReduceView (const OutputViewType& output,
     // ValueType instances.
     allReduceRawContiguous (output_tmp.data (), input_tmp.data (),
                             output_tmp.span (), comm);
+    // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
     Kokkos::deep_copy (output, output_tmp);
   }
   else {

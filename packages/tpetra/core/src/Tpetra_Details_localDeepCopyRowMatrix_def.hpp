@@ -134,7 +134,9 @@ localDeepCopyLocallyIndexedRowMatrix
     std::copy (inVals, inVals + numEnt, val_h.data () + curPos);
     curPos += offset_type (numEnt);
   }
+  // DEEP_COPY REVIEW - HOST-TO-DEVICE
   Kokkos::deep_copy (ind, ind_h);
+  // DEEP_COPY REVIEW - HOST-TO-DEVICE
   Kokkos::deep_copy (val, val_h);
 
   local_graph_type lclGraph (ind, ptr);

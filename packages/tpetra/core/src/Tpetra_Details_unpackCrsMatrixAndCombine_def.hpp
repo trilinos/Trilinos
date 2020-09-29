@@ -678,11 +678,13 @@ unpackAndCombineIntoCrsMatrix(
 
   Kokkos::HostSpace host_space;
   auto batches_per_lid_h = Kokkos::create_mirror_view(host_space, batches_per_lid);
+  // DEEP_COPY REVIEW - DEVICE-TO-HOST
   Kokkos::deep_copy(batches_per_lid_h, batches_per_lid);
 
   auto batch_info_h = Kokkos::create_mirror_view(host_space, batch_info);
 
   (void) compute_batch_info(batches_per_lid_h, batch_info_h);
+  // DEEP_COPY REVIEW - HOST-TO-DEVICE
   Kokkos::deep_copy(batch_info, batch_info_h);
 
   // FIXME (TJF SEP 2017)
@@ -1592,18 +1594,22 @@ unpackAndCombineIntoCrsArrays (
   // Copy outputs back to host
   typename decltype(crs_rowptr_d)::HostMirror crs_rowptr_h(
       CRS_rowptr.getRawPtr(), CRS_rowptr.size());
+  // DEEP_COPY REVIEW - DEVICE-TO-HOST
   deep_copy(crs_rowptr_h, crs_rowptr_d);
 
   typename decltype(crs_colind_d)::HostMirror crs_colind_h(
       CRS_colind.getRawPtr(), CRS_colind.size());
+  // DEEP_COPY REVIEW - DEVICE-TO-HOST
   deep_copy(crs_colind_h, crs_colind_d);
 
   typename decltype(crs_vals_d)::HostMirror crs_vals_h(
       CRS_vals.getRawPtr(), CRS_vals.size());
+  // DEEP_COPY REVIEW - DEVICE-TO-HOST
   deep_copy(crs_vals_h, crs_vals_d);
 
   typename decltype(tgt_pids_d)::HostMirror tgt_pids_h(
       TargetPids.getRawPtr(), TargetPids.size());
+  // DEEP_COPY REVIEW - DEVICE-TO-HOST
   deep_copy(tgt_pids_h, tgt_pids_d);
 
 }

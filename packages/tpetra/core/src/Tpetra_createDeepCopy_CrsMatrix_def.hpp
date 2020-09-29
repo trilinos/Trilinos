@@ -28,17 +28,23 @@ localDeepCopyFillCompleteCrsMatrix (const CrsMatrix<SC, LO, GO, NT>& A)
   using inds_type = typename local_graph_type::entries_type;
   inds_type ind (view_alloc ("ind", WithoutInitializing),
                  A_lcl.graph.entries.extent (0));
+
+  // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
   Kokkos::deep_copy (ind, A_lcl.graph.entries);
 
   using offsets_type =
     typename local_graph_type::row_map_type::non_const_type;
   offsets_type ptr (view_alloc ("ptr", WithoutInitializing),
                     A_lcl.graph.row_map.extent (0));
+
+  // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
   Kokkos::deep_copy (ptr, A_lcl.graph.row_map);
 
   using values_type = typename local_matrix_type::values_type;
   values_type val (view_alloc ("val", WithoutInitializing),
                    A_lcl.values.extent (0));
+
+  // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
   Kokkos::deep_copy (val, A_lcl.values);
 
   local_graph_type lclGraph (ind, ptr);

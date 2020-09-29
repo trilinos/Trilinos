@@ -926,10 +926,12 @@ namespace Tpetra {
       Kokkos::DualView<T*, DT> x_out (label, len);
       if (leaveOnHost) {
         x_out.modify_host ();
+        // DEEP_COPY REVIEW - NOT TESTED FOR CUDA BUILD
         Kokkos::deep_copy (x_out.view_host (), x_in);
       }
       else {
         x_out.template modify<DMS> ();
+        // DEEP_COPY REVIEW - HOST-TO-DEVICE
         Kokkos::deep_copy (x_out.template view<DMS> (), x_in);
       }
       return x_out;

@@ -789,6 +789,7 @@ namespace Tpetra {
       using Kokkos::WithoutInitializing;
       values_type newvals (view_alloc ("val", WithoutInitializing),
                            vals.extent (0));
+      // DEEP_COPY REVIEW - DEVICE-TO_DEVICE
       Kokkos::deep_copy (newvals, vals);
       k_values1D_ = newvals;
       if (source.isFillComplete ()) {
@@ -3779,6 +3780,7 @@ namespace Tpetra {
       // FIXME (mfh 24 Dec 2014) Once CrsMatrix implements DualView
       // semantics, this would be the place to mark memory as
       // modified.
+      // DEEP_COPY REVIEW - VALUE-TO-DEVICE
       Kokkos::deep_copy (k_values1D_, theAlpha);
     }
   }
@@ -3913,6 +3915,7 @@ namespace Tpetra {
       typedef Kokkos::View<size_t*, Kokkos::HostSpace,
                            Kokkos::MemoryUnmanaged> output_type;
       output_type offsetsOut (offsets.getRawPtr (), lclNumRows);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
       Kokkos::deep_copy (offsetsOut, offsetsTmp);
     }
   }
@@ -6523,6 +6526,7 @@ namespace Tpetra {
     row_ptrs_type row_ptr_beg(
       view_alloc("row_ptr_beg", WithoutInitializing),
       myGraph_->k_rowPtrs_.extent(0));
+    // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
     Kokkos::deep_copy(row_ptr_beg, myGraph_->k_rowPtrs_);
 
     const size_t N = row_ptr_beg.extent(0) == 0 ? size_t(0) :
@@ -7158,6 +7162,7 @@ namespace Tpetra {
       typedef Kokkos::Device<HES, HostSpace> host_device_type;
       Kokkos::View<const char*, host_device_type>
         exports_a_kv (exports_a.getRawPtr (), newAllocSize);
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (exports_h_sub, exports_a_kv);
     }
 
