@@ -64,7 +64,6 @@
 
 // MueLu
 #include <MueLu_RefMaxwell.hpp>
-#include <MueLu_TpetraOperator.hpp>
 #include <MueLu_TestHelpers_Common.hpp>
 #include <MueLu_Exceptions.hpp>
 
@@ -81,7 +80,9 @@ using Teuchos::TimeMonitor;
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosSolverFactory.hpp>
+#ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>
+#endif
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #endif
 
