@@ -32,7 +32,6 @@ ADD_SUBDIRECTORIES(
   Utils
   RowMatrixTransposer
   Tsqr
-  TypeStack
   )
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Epetra)

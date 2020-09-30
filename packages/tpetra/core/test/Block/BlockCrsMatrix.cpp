@@ -1424,9 +1424,6 @@ namespace {
     // Fill all entries of the first matrix with 3.
     const Scalar three = STS::one () + STS::one () + STS::one ();
     A1.setAllToScalar (three);
-    // A1 must have been modified on exactly one side.
-    TEST_ASSERT( (! A1.need_sync_host () && A1.need_sync_device ()) ||
-                 (A1.need_sync_host () && ! A1.need_sync_device ()) );
 
     out << "The matrix A1, after construction:" << endl;
     A1.describe (out, Teuchos::VERB_EXTREME);

@@ -46,6 +46,8 @@
 #ifndef MUELU_NOTAYAGGREGATIONFACTORY_DEF_HPP_
 #define MUELU_NOTAYAGGREGATIONFACTORY_DEF_HPP_
 
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -66,9 +68,7 @@
 #include "MueLu_Types.hpp"
 #include "MueLu_Utilities.hpp"
 
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 #include "MueLu_Utilities_kokkos.hpp"
-#endif
 
 namespace MueLu {
 
@@ -949,4 +949,5 @@ namespace MueLu {
 
 } //namespace MueLu
 
+#endif //ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #endif /* MUELU_NOTAYAGGREGATIONFACTORY_DEF_HPP_ */
