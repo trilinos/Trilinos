@@ -1088,6 +1088,9 @@ init (const keys_type& keys,
   // Count the number of "buckets" per offsets array (ptr) entry.
   //
 
+  // Will only create the mirror for buildInParallel false - but then use it in two places
+  typename keys_type::HostMirror theKeysHost;
+
   // The Kokkos kernel uses atomic update instructions to count the
   // number of "buckets" per offsets array (ptr) entry.  Atomic
   // updates incur overhead, even in the sequential case.  The Kokkos
@@ -1113,17 +1116,17 @@ init (const keys_type& keys,
     }
   }
   else {
-    // Access to counts is not necessarily contiguous, but is
-    // irregular and likely touches all pages of the array.  Thus, it
-    // probably makes sense to use a host copy explicitly, rather than
-    // assume UVM.
+    theKeysHost = Kokkos::create_mirror_view(theKeys);
+    Kokkos::deep_copy(theKeysHost, theKeys);
+
     auto countsHost = Kokkos::create_mirror_view (counts);
     // FIXME (mfh 28 Mar 2016) Does create_mirror_view zero-fill?
     Kokkos::deep_copy (countsHost, static_cast<offset_type> (0));
 
+    Kokkos::deep_copy(theKeysHost, theKeys);
     for (offset_type k = 0; k < theNumKeys; ++k) {
       using key_type = typename keys_type::non_const_value_type;
-      const key_type key = theKeys[k];
+      const key_type key = theKeysHost[k];
 
       using hash_value_type = typename hash_type::result_type;
       const hash_value_type hashVal = hash_type::hashFunc (key, size);
@@ -1219,9 +1222,15 @@ init (const keys_type& keys,
     Kokkos::parallel_reduce (range_type (0, theNumKeys), functor, result);
   }
   else {
+    auto counts_h = Kokkos::create_mirror_view(counts);
+    Kokkos::deep_copy(counts_h, counts);
+    auto ptr_h = Kokkos::create_mirror_view(ptr);
+    Kokkos::deep_copy(ptr_h, ptr);
+    auto val_h = Kokkos::create_mirror_view(val);
+    Kokkos::deep_copy(val_h, val);
     for (offset_type k = 0; k < theNumKeys; ++k) {
       typedef typename hash_type::result_type hash_value_type;
-      const KeyType key = theKeys[k];
+      const KeyType key = theKeysHost[k];
       if (key > result.maxKey_) {
         result.maxKey_ = key;
       }
@@ -1232,23 +1241,20 @@ init (const keys_type& keys,
       const hash_value_type hashVal = hash_type::hashFunc (key, size);
 
       // Return the old count; decrement afterwards.
-      //
-      // Assumes UVM but this code should not execute for Cuda since buildInParallel is false
-      const offset_type count = counts[hashVal];
-      --counts[hashVal];
+      const offset_type count = counts_h[hashVal];
+      --counts_h[hashVal];
       if (count == 0) {
         result.success_ = false; // FAILURE!
         break;
       }
       else {
-        // Assumes UVM but this code should not execute for Cuda since buildInParallel is false
-        const offset_type curPos = ptr[hashVal+1] - count;
-
-        // NOTE (mfh 28 Mar 2016) This assumes UVM.
-        val[curPos].first = key;
-        val[curPos].second = theVal;
+        const offset_type curPos = ptr_h[hashVal+1] - count;
+        val_h[curPos].first = key;
+        val_h[curPos].second = theVal;
       }
     }
+    Kokkos::deep_copy(counts, counts_h); // restore
+    Kokkos::deep_copy(val, val_h); // restore
   }
 
   // FIXME (mfh 01 Jun 2015) Temporarily commented out because of
