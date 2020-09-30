@@ -84,8 +84,8 @@ namespace MueLu {
     SET_VALID_ENTRY("filtered matrix: reuse eigenvalue");
     SET_VALID_ENTRY("filtered matrix: use root stencil");
     SET_VALID_ENTRY("filtered matrix: use spread lumping");
-    SET_VALID_ENTRY("filtered matrix: spreadlumping diag dom growth factor");
-    SET_VALID_ENTRY("filtered matrix: spreadlumping diag dom cap");
+    SET_VALID_ENTRY("filtered matrix: spread lumping diag dom growth factor");
+    SET_VALID_ENTRY("filtered matrix: spread lumping diag dom cap");
     SET_VALID_ENTRY("filtered matrix: Dirichlet threshold");
 #undef  SET_VALID_ENTRY
 
@@ -136,8 +136,8 @@ namespace MueLu {
     double DdomAllowGrowthRate = 1.1;
     double DdomCap = 2.0;
     if (use_spread_lumping) {
-      DdomAllowGrowthRate = pL.get<double>("filtered matrix: spreadlumping diag dom growth factor");    
-      DdomCap             = pL.get<double>("filtered matrix: spreadlumping diag dom cap");    
+      DdomAllowGrowthRate = pL.get<double>("filtered matrix: spread lumping diag dom growth factor");    
+      DdomCap             = pL.get<double>("filtered matrix: spread lumping diag dom cap");    
     }
     bool use_root_stencil = lumping && pL.get<bool>("filtered matrix: use root stencil");
     if (use_root_stencil)
@@ -768,6 +768,17 @@ namespace MueLu {
 
     for (LO row = 0; row < (LO) A.getRowMap()->getNodeNumElements(); row++) {
         noLumpDdom = as<Scalar>(10000.0);  // only used if diagonal is zero
+                                           // the whole idea sort of breaks down
+                                           // when the diagonal is zero. In particular,
+                                           // the old diag dominance ratio is infinity
+                                           // ... so what do we want for the new ddom
+                                           // ratio. Do we want to allow the diagonal
+                                           // to go negative, just to have a better ddom
+                                           // ratio? This current choice essentially
+                                           // changes 'Target' to a large number
+                                           // meaning that we will allow the new
+                                           // ddom number to be fairly large (because
+                                           // the old one was infinity)
 
         ArrayView<const SC> tvals;
         A.getLocalRowView(row, inds, vals);           

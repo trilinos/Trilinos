@@ -931,7 +931,7 @@ public:
     MUELU_TESTING_SET_OSTREAM
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
-    out << "RUNNNNNNNNNNNNING SPREAD LUMPPPPPPPPPPPINGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG" << std::endl;
+    out << "running spread lumping" << std::endl;
 
     // Make a "hot dog" matrix
     Teuchos::ParameterList matrixParams;
@@ -972,8 +972,8 @@ public:
     params.set("filtered matrix: use lumping",true);
     params.set("filtered matrix: use root stencil",true);
     params.set("filtered matrix: use spread lumping",true);
-    params.set("filtered matrix: spreadlumping diag dom growth factor",1.1);
-    params.set("filtered matrix: spreadlumping diag dom cap",2.0);
+    params.set("filtered matrix: spread lumping diag dom growth factor",1.1);
+    params.set("filtered matrix: spread lumping diag dom cap",2.0);
     filterFact->SetParameterList(params);
     level.Request("A",filterFact.get());
 
