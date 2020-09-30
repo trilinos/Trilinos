@@ -92,7 +92,7 @@ namespace Intrepid2 {
       oldFormatState.copyfmt(std::cout);
 
       using DeviceExecSpaceType = typename DeviceType::execution_space;
-      using HostExecSpaceType = Kokkos::DefaultExecutionSpace;
+      using HostExecSpaceType = Kokkos::DefaultHostExecutionSpace;
 
       *outStream << "DeviceSpace::  "; DeviceExecSpaceType::print_configuration(std::cout, false);
       *outStream << "HostSpace::    ";   HostExecSpaceType::print_configuration(std::cout, false);
