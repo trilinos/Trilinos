@@ -178,6 +178,7 @@
 
 
 #define ABS(x) ((x)>0?(x):-(x))
+#define SQR(x) ((x)*(x))
 
 
 /*** Uncomment if you would like output data for plotting ***/
@@ -201,6 +202,14 @@ struct fecomp{
     return false;
   }
 };
+
+template<class Container>
+double distance(Container &nodeCoord, int i1, int i2) {
+  double dist = 0.0;
+  for(int j=0; j<3; j++) 
+    dist+= SQR( nodeCoord(i1,j) - nodeCoord(i2,j) );
+  return sqrt(dist);
+}
 
 /**********************************************************************************/
 /***************** FUNCTION DECLARATION FOR ML PRECONDITIONER *********************/
@@ -690,6 +699,9 @@ int main(int argc, char *argv[]) {
   FieldContainer<int> elemToNode(numElems,numNodesPerElem);
   FieldContainer<double> muVal(numElems);
   FieldContainer<double> sigmaVal(numElems);
+  double l_max_sigma=0.0, l_max_mu = 0.0;
+  double l_min_sigma=std::numeric_limits<double>::max(), l_min_mu=std::numeric_limits<double>::max();
+  
   for(long long b = 0; b < numElemBlk; b++){
     for(long long el = 0; el < elements[b]; el++){
       for (int j=0; j<numNodesPerElem; j++) {
@@ -697,6 +709,10 @@ int main(int argc, char *argv[]) {
       }
       muVal(telct) = mu[b];
       sigmaVal(telct) = sigma[b];
+      l_max_sigma = std::max(l_max_sigma,sigma[b]);
+      l_min_sigma = std::min(l_min_sigma,sigma[b]);
+      l_max_mu    = std::max(l_max_mu,mu[b]);
+      l_min_mu    = std::min(l_min_mu,mu[b]);
       telct ++;
     }
   }
@@ -1235,6 +1251,7 @@ int main(int argc, char *argv[]) {
     if(MyPID==0) {Time.ResetStartTime();}
   }
   
+    
   // Define multi-vector for cell edge sign (fill during cell loop)
   Epetra_MultiVector edgeSign(globalMapElem, numEdgesPerElem);
 
@@ -1245,6 +1262,10 @@ int main(int argc, char *argv[]) {
 
   // Edge to node incidence matrix
   Epetra_FECrsMatrix DGrad(Copy, globalMapC, 2);
+
+  // Estimate the global CFL based on minimum edge length and assumed dt=1"
+  double l_min_dx = std::numeric_limits<double>::max();
+  double l_max_dx = 0.0;
 
   // Grab edge coordinates (for dumping to disk)
   Epetra_Vector EDGE_X(globalMapC);
@@ -1263,15 +1284,35 @@ int main(int argc, char *argv[]) {
       EDGE_X[elid] = (nodeCoordx[edgeToNode(j,0)] + nodeCoordx[edgeToNode(j,1)])/2.0;
       EDGE_Y[elid] = (nodeCoordy[edgeToNode(j,0)] + nodeCoordy[edgeToNode(j,1)])/2.0;
       EDGE_Z[elid] = (nodeCoordz[edgeToNode(j,0)] + nodeCoordz[edgeToNode(j,1)])/2.0;
+      double my_dx = distance(nodeCoord,edgeToNode(j,0),edgeToNode(j,1));
+      l_min_dx = std::min(l_min_dx,my_dx);
+      l_max_dx = std::max(l_max_dx,my_dx);
       elid++;
     }
   }
+
 
   DGrad.GlobalAssemble(globalMapG,globalMapC);
   DGrad.FillComplete(MassMatrixG.RowMap(),MassMatrixC.RowMap());
 
   if(MyPID==0) {std::cout << "Building incidence matrix                   "
                           << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
+
+
+  // CFL Range Calculations (assuming a timestep dt=1)
+  double g_max_dx, g_min_dx, g_max_mu, g_min_mu, g_max_sigma, g_min_sigma;
+  Comm.MaxAll(&l_max_dx,&g_max_dx,1);       Comm.MinAll(&l_min_dx,&g_min_dx,1);
+  Comm.MaxAll(&l_max_sigma,&g_max_sigma,1); Comm.MinAll(&l_min_sigma,&g_min_sigma,1);
+  Comm.MaxAll(&l_max_mu,&g_max_mu,1);       Comm.MinAll(&l_min_mu,&g_min_mu,1);
+
+  if(MyPID==0) {
+    std::cout<<"*** Parameter Ranges ***"<<std::endl;
+    std::cout<<"Edge dx Range      : "<<g_min_dx << " to "<<g_max_dx<<std::endl;
+    std::cout<<"Sigma Range        : "<<g_min_sigma << " to "<<g_max_sigma<<std::endl;
+    std::cout<<"Mu Range           : "<<g_min_mu << " to "<<g_max_mu<<std::endl;
+    std::cout<<"Diffusive CFL Range: " << 1.0/(g_max_sigma * g_max_mu * g_max_dx * g_max_dx) <<
+      " to "<< 1.0/(g_min_sigma * g_min_mu * g_min_dx * g_min_dx) <<std::endl;
+  }
 
 
   /**********************************************************************************/
