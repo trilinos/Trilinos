@@ -19,3 +19,4 @@ export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 export PATH=/projects/atdm_devops/vortex/cmake-3.17.2/bin:$PATH
 export PATH=/projects/atdm_devops/vortex/ninja-fortran-1.8.2:$PATH
 
+mkdir -p /tmp/${USER}
