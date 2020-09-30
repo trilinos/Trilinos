@@ -399,44 +399,6 @@ void deep_copy(
 }
 
 /* Specialize for deep copy of MP::Vector */
-template< class DT , class ... DP , class ST , class ... SP >
-inline
-void deep_copy( const View<DT,DP...> & dst ,
-                const View<ST,SP...> & src
-  , typename std::enable_if<(
-  std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
-  &&
-  std::is_same< typename ViewTraits<ST,SP...>::specialize
-              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
-  )>::type * )
-{
-  static_assert(
-    std::is_same< typename ViewTraits<DT,DP...>::value_type ,
-                  typename ViewTraits<DT,DP...>::non_const_value_type >::value
-    , "Deep copy destination must be non-const" );
-
-  static_assert(
-    ( unsigned(ViewTraits<DT,DP...>::rank) ==
-      unsigned(ViewTraits<ST,SP...>::rank) )
-    , "Deep copy destination and source must have same rank" );
-
-  // Note ETP 09/29/2016:  Use FlatArrayType instead of array_type to work
-  // around issue where dst and src are rank-1, but have differing layouts.
-  // Kokkos' deep_copy() doesn't work in this case because the array_type
-  // will be rank-2.  It should be possible to make deep_copy() work there,
-  // but this seems easier.
-
-  // Kokkos::deep_copy(
-  //   typename View<DT,DP...>::array_type( dst ) ,
-  //   typename View<ST,SP...>::array_type( src ) );
-
-  Kokkos::deep_copy(
-    typename FlatArrayType< View<DT,DP...> >::type( dst ) ,
-    typename FlatArrayType< View<ST,SP...> >::type( src ) );
-}
-
-/* Specialize for deep copy of MP::Vector */
 template< class ExecSpace, class DT , class ... DP , class ST , class ... SP >
 inline
 void deep_copy( const ExecSpace &,
@@ -475,6 +437,25 @@ void deep_copy( const ExecSpace &,
     ExecSpace() ,
     typename FlatArrayType< View<DT,DP...> >::type( dst ) ,
     typename FlatArrayType< View<ST,SP...> >::type( src ) );
+}
+
+/* Specialize for deep copy of MP::Vector */
+template< class DT , class ... DP , class ST , class ... SP >
+inline
+void deep_copy( const View<DT,DP...> & dst ,
+                const View<ST,SP...> & src
+  , typename std::enable_if<(
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
+  &&
+  std::is_same< typename ViewTraits<ST,SP...>::specialize
+              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
+  )>::type * )
+{
+  using exec_space = typename View<DT,DP...>::execution_space;
+  Kokkos::fence();
+  Kokkos::deep_copy(exec_space(), dst, src);
+  Kokkos::fence();
 }
 
 }
