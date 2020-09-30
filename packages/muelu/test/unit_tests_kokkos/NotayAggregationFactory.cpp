@@ -44,7 +44,7 @@
 //
 // @HEADER
 #include "Teuchos_UnitTestHarness.hpp"
-#include "MueLu_TestHelpers.hpp"
+#include "MueLu_TestHelpers_kokkos.hpp"
 #include "MueLu_Version.hpp"
 
 #include "MueLu_AmalgamationFactory.hpp"
@@ -66,13 +66,13 @@ namespace MueLuTests {
     //    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
     //    using real_type             = typename TST::coordinateType;
     //    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
-    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
+    using test_factory          = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
     int rank = comm->getRank();
     int numproc = comm->getSize();
-    RCP<const Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(16*comm->getSize());
+    RCP<const Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(16*comm->getSize());
     const int numRows = static_cast<int>(A->getNodeNumRows());
     RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));
     RCP<NotayAggregationFactory> NAF = rcp(new NotayAggregationFactory());
@@ -134,13 +134,13 @@ namespace MueLuTests {
     //    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
     //    using real_type             = typename TST::coordinateType;
     //    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
-    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
+    using test_factory          = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
     int rank = comm->getRank();
     int numproc = comm->getSize();
-    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+    Xpetra::UnderlyingLib lib = TestHelpers_kokkos::Parameters::getLib();
 
     // Do a 2D Star2D Matrix with up/down as a "weak connection"
     Teuchos::ParameterList mp;
@@ -152,7 +152,7 @@ namespace MueLuTests {
     mp.set("b",-0.1);  mp.set("c",-0.1);
     mp.set("d",-1.0); mp.set("e",-1.0);
     mp.set("z1",0.0);  mp.set("z2",0.0);  mp.set("z3",0.0);  mp.set("z4",0.0);
-    RCP<const Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
+    RCP<const Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
     const int numRows = static_cast<int>(A->getNodeNumRows());
 
     RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));
@@ -215,11 +215,11 @@ namespace MueLuTests {
     //    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
     //    using real_type             = typename TST::coordinateType;
     //    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
-    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
+    using test_factory          = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+    Xpetra::UnderlyingLib lib = TestHelpers_kokkos::Parameters::getLib();
 
     // Do a 2D Star2D Matrix with up/down as a "weak connection"
     Teuchos::ParameterList mp;
@@ -231,7 +231,7 @@ namespace MueLuTests {
     mp.set("b",-0.1);  mp.set("c",-0.1);
     mp.set("d",-1.0); mp.set("e",-1.0);
     mp.set("z1",0.0);  mp.set("z2",0.0);  mp.set("z3",0.0);  mp.set("z4",0.0);
-    RCP<const Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
+    RCP<const Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
     const int numRows = static_cast<int>(A->getNodeNumRows());
 
     RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));
@@ -272,11 +272,11 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
+    using test_factory          = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+    Xpetra::UnderlyingLib lib = TestHelpers_kokkos::Parameters::getLib();
 
     // Do a 2D Star2D Matrix with up/down as a "weak connection"
     Teuchos::ParameterList mp;
@@ -288,7 +288,7 @@ namespace MueLuTests {
     mp.set("b", -0.1); mp.set("c", -0.1);
     mp.set("d", -1.0); mp.set("e", -1.0);
     mp.set("z1", 0.0); mp.set("z2", 0.0);  mp.set("z3", 0.0);  mp.set("z4", 0.0);
-    RCP<const Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
+    RCP<const Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
     const int numRows = static_cast<int>(A->getNodeNumRows());
 
     RCP<Aggregates> aggregates = rcp(new Aggregates(A->getMap()));
@@ -330,11 +330,11 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
+    using test_factory          = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+    Xpetra::UnderlyingLib lib = TestHelpers_kokkos::Parameters::getLib();
 
     // Do a 2D Star2D Matrix with up/down as a "weak connection"
     Teuchos::ParameterList mp;
@@ -346,7 +346,7 @@ namespace MueLuTests {
     mp.set("b",-0.1);  mp.set("c",-0.1);
     mp.set("d",-1.0); mp.set("e",-1.0);
     mp.set("z1",0.0);  mp.set("z2",0.0);  mp.set("z3",0.0);  mp.set("z4",0.0);
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
+    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
 
     // Use default ordering
     {

@@ -76,7 +76,9 @@
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_MasterList.hpp"
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_NotayAggregationFactory.hpp"
+#endif
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
@@ -1027,6 +1029,7 @@ namespace MueLu {
         aggFactory->SetFactory("Coordinates", this->GetFactoryManager(levelID-1)->GetFactory("Coordinates"));
       }
     }
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     else if (aggType == "notay") {
       aggFactory = rcp(new NotayAggregationFactory());
       ParameterList aggParams;
@@ -1039,6 +1042,7 @@ namespace MueLu {
       aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
       aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
     }
+#endif
 #ifdef HAVE_MUELU_MATLAB
     else if(aggType == "matlab") {
       ParameterList aggParams = paramList.sublist("aggregation: params");

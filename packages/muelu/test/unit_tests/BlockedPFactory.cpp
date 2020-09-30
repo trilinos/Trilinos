@@ -55,12 +55,7 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 
-#include "MueLu_CoupledAggregationFactory.hpp"
-#include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_Utilities.hpp"
-#include "MueLu_SmootherFactory.hpp"
 #include "MueLu_SubBlockAFactory.hpp"
 #include "MueLu_BlockedPFactory.hpp"
 #include "MueLu_FactoryManager.hpp"
@@ -140,6 +135,18 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
+
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<BlockedPFactory> blockedPFactory = rcp(new BlockedPFactory());
+    TEST_EQUALITY(blockedPFactory != Teuchos::null, true);
+  } // Constructor
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedPFactory, CreateBlockedP, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -147,12 +154,9 @@ namespace MueLuTests {
     /**********************************************************************************/
     /* CREATE INITIAL MATRIX                                                          */
     /**********************************************************************************/
-    RCP<const Map> bigMap;
-    RCP<const Map> map1;
-    RCP<const Map> map2;
-    GO numElements = 400;
-    GO numElements1 = 200;
-    GO numElements2 = 200;
+    const GO numElements = 400;
+    const GO numElements1 = 200;
+    const GO numElements2 = 200;
 
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
@@ -161,8 +165,8 @@ namespace MueLuTests {
     std::vector<size_t> stridingInfo;
     stridingInfo.push_back(1);
 
-    map1   = StridedMapFactory::Build(lib, numElements1, 0, stridingInfo, comm);
-    map2   = StridedMapFactory::Build(lib, numElements2, numElements1, stridingInfo, comm);
+    RCP<const Map> map1 = StridedMapFactory::Build(lib, numElements1, 0, stridingInfo, comm);
+    RCP<const Map> map2 = StridedMapFactory::Build(lib, numElements2, numElements1, stridingInfo, comm);
 
     std::vector<GlobalOrdinal> localGids; // vector with all local GIDs on cur proc
     Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getNodeElementList(); // append all local gids from map1 and map2
@@ -170,11 +174,11 @@ namespace MueLuTests {
     Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getNodeElementList();
     localGids.insert(localGids.end(), map2eleList.begin(), map2eleList.end());
     Teuchos::ArrayView<GlobalOrdinal> eleList(&localGids[0],localGids.size());
-    bigMap = StridedMapFactory::Build(lib, numElements, eleList, 0, stridingInfo, comm); // create full big map (concatenation of map1 and map2)
+    RCP<const Map> bigMap = StridedMapFactory::Build(lib, numElements, eleList, 0, stridingInfo, comm); // create full big map (concatenation of map1 and map2)
     std::vector<Teuchos::RCP<const Map> > maps;
     maps.push_back(map1); maps.push_back(map2);
 
-    Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LO, GO, Node> > mapExtractor = Xpetra::MapExtractorFactory<Scalar,LO,GO,Node>::Build(bigMap, maps);
+    Teuchos::RCP<const MapExtractor> mapExtractor = MapExtractorFactory::Build(bigMap, maps);
 
     RCP<CrsMatrixWrap> Op11 = GenerateProblemMatrix<Scalar,LO,GO,Node>(map1,map1,2,-1,-1);
     RCP<CrsMatrixWrap> Op12 = GenerateProblemMatrix<Scalar,LO,GO,Node>(map1,map2,1, 0, 0);
@@ -182,8 +186,7 @@ namespace MueLuTests {
     RCP<CrsMatrixWrap> Op22 = GenerateProblemMatrix<Scalar,LO,GO,Node>(map2,map2,3,-2,-1);
 
     // build blocked operator
-    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node>(mapExtractor,mapExtractor,10));
-
+    Teuchos::RCP<BlockedCrsMatrix> bOp = Teuchos::rcp(new BlockedCrsMatrix(mapExtractor,mapExtractor,10));
     bOp->setMatrix(0,0,Op11);
     bOp->setMatrix(0,1,Op12);
     bOp->setMatrix(1,0,Op21);
@@ -257,14 +260,14 @@ namespace MueLuTests {
     levelTwo->Request("P", PFact.get(), MueLu::NoFactory::get());
     TEST_EQUALITY(levelTwo->IsRequested("P", PFact.get()),true);
 
-    RCP<Matrix> P = levelTwo->Get<RCP<Matrix> >("P",PFact.get());
+    RCP<Matrix> P = levelTwo->Get<RCP<Matrix> >("P", PFact.get());
     TEST_EQUALITY(P!=Teuchos::null,true);
 
-    RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bP = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> >(P);
+    RCP<BlockedCrsMatrix> bP = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(P);
     TEST_EQUALITY(bP!=Teuchos::null,true);
 
-    TEST_EQUALITY(bP->Rows(),2);
-    TEST_EQUALITY(bP->Cols(),2);
+    TEST_EQUALITY(bP->Rows(), 2);
+    TEST_EQUALITY(bP->Cols(), 2);
 
     // create test and rhs vector
     RCP<const Map> fullMap = mapExtractor->getFullMap();
@@ -272,13 +275,14 @@ namespace MueLuTests {
     RCP<Vector> iones = VectorFactory::Build(fullMap);
     RCP<Vector> rones = VectorFactory::Build(fullMap);
     iones->putScalar(1.0);
-    bP->apply(*iones,*rones); // the subblocks are chosen, such that bP*ones = zero (except for the first and row and the middle row)
-    TEST_EQUALITY(rones->norm1(),5.0);
-    TEST_EQUALITY(rones->normInf(),2.0);
+    bP->apply(*iones, *rones); // the subblocks are chosen, such that bP*ones = zero (except for the first and row and the middle row)
+    TEST_EQUALITY(rones->norm1(), 5.0);
+    TEST_EQUALITY(rones->normInf(), 2.0);
   } //Constructor
 
 #  define MUELU_ETI_GROUP(SC, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedPFactory, Constructor, SC, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedPFactory, CreateBlockedP, SC, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

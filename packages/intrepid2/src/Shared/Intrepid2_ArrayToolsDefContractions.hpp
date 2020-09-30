@@ -112,8 +112,7 @@ namespace Intrepid2 {
     typedef Kokkos::DynRankView<leftFieldValueType,leftFieldProperties...> leftFieldViewType;
     typedef Kokkos::DynRankView<rightFieldValueType,rightFieldProperties...> rightFieldViewType;
     typedef FunctorArrayTools::F_contractFieldField<outFieldViewType, leftFieldViewType, rightFieldViewType> FunctorType;
-    typedef typename ExecSpace< typename outFieldViewType::execution_space, SpT >::ExecSpaceType ExecSpaceType;
-
+    typedef typename SpT::execution_space ExecSpaceType;
 
     const size_type loopSize = leftFields.extent(0)*leftFields.extent(1)*rightFields.extent(1);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
@@ -196,7 +195,7 @@ namespace Intrepid2 {
     typedef Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>                   inputDataViewType;
     typedef Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>                  inputFieldsViewType;
     typedef FunctorArrayTools::F_contractDataField<outputFieldsViewType, inputDataViewType, inputFieldsViewType>  FunctorType;
-    typedef typename ExecSpace< typename inputFieldsViewType::execution_space , SpT >::ExecSpaceType               ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
 
     const size_type loopSize = inputFields.extent(0)*inputFields.extent(1);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
@@ -266,7 +265,7 @@ namespace Intrepid2 {
     typedef Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>    inputDataLeftViewType;
     typedef Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...>   inputDataRightViewType;
     typedef FunctorArrayTools::F_contractDataData<outputDataViewType, inputDataLeftViewType, inputDataRightViewType> FunctorType;
-    typedef typename ExecSpace< typename inputDataLeftViewType::execution_space , SpT>::ExecSpaceType  ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
 
     const size_type loopSize = inputDataLeft.extent(0);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);

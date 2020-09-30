@@ -617,6 +617,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                      revisedRowMapPerGrp, revisedColMapPerGrp,
                      rowImportPerGrp, maxRegPerProc, quasiRegionGrpMats, regionGrpMats);
 
+  // We don't need the composite operator on the fine level anymore. Free it!
+  A = Teuchos::null;
+
   comm->barrier();
   tmLocal = Teuchos::null;
 
@@ -763,10 +766,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
     // Composite residual vector
     RCP<Vector> compRes = VectorFactory::Build(dofMap, true);
-    {
-      A->apply(*X, *compRes, Teuchos::NO_TRANS);
-      compRes->update(one, *B, -one);
-    }
 
     // transform composite vectors to regional layout
     Array<Teuchos::RCP<Vector> > quasiRegX(maxRegPerProc);

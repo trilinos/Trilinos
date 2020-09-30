@@ -1701,6 +1701,13 @@ optimized neighbor discovery for Importer construction.</description>
       <description>Ratio for the split into sub-communicators.</description>
     </parameter>
 
+    <parameter>
+      <name>refmaxwell: enable reuse</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Prepare for solver reuse.</description>
+    </parameter>
+
   </refmaxwell>
 
 
