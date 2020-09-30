@@ -128,7 +128,10 @@ namespace MueLu {
     if (lumping)
       GetOStream(Runtime0) << "Lumping dropped entries" << std::endl;
 
-    bool use_spread_lumping = lumping && pL.get<bool>("filtered matrix: use spread lumping");
+    bool use_spread_lumping = pL.get<bool>("filtered matrix: use spread lumping");
+    if (use_spread_lumping && (!lumping) )
+      throw std::runtime_error("Must also request 'filtered matrix: use lumping' in order to use spread lumping");
+
     if (use_spread_lumping) {
       GetOStream(Runtime0) << "using spread lumping " << std::endl;
     }
