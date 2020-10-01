@@ -107,7 +107,7 @@
         
 \cbb{aggregation: deterministic}{bool}{false}{Boolean indicating whether or not aggregation will be run deterministically in the kokkos refactored path (only used in uncoupled aggregation).}
         
-\cbb{aggregation: coloring algorithm}{string}{serial}{Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by defulat to COLORING_D2_SERIAL.}
+\cbb{aggregation: coloring algorithm}{string}{serial}{Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by default to COLORING\_D2\_SERIAL.}
         
 \cbb{aggregation: enable phase 1}{bool}{true}{Turn on/off phase 1 of aggregation}
         
@@ -370,4 +370,6 @@ optimized neighbor discovery for Importer construction.}
 \cbb{refmaxwell: subsolves on subcommunicators}{bool}{false}{Redistribute the two subsolves to disjoint sub-communicators (so that the additive solve can occur in parallel).}
         
 \cbb{refmaxwell: ratio AH / A22 subcommunicators}{double}{1.0}{Ratio for the split into sub-communicators.}
+        
+\cbb{refmaxwell: enable reuse}{bool}{false}{Prepare for solver reuse.}
         

@@ -954,30 +954,27 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   setAllToScalar (const Scalar& alpha)
   {
-#ifdef HAVE_TPETRA_DEBUG
-    const char prefix[] = "Tpetra::BlockCrsMatrix::setAllToScalar: ";
-#endif // HAVE_TPETRA_DEBUG
+    // Why do we need to follow the last touch rule in Tpetra ? 
+    // If our main goal is to use device as much as possible, then 
+    // we should give priority to device for almost all operations.
+    // We probably do follow the last touch rule to obtain a certain 
+    // locality but this also can cause unexpected performance behavior
+    // for different use case. This might give inconsistent user experience.
+    
+    // Version 1: giving priority to device
+    //Kokkos::deep_copy(execution_space(), val_.view_device(), alpha);
+    //val_.modify_device();
 
-    if (this->need_sync_device ()) {
-      // If we need to sync to device, then the data were last
-      // modified on host.  In that case, we should again modify them
-      // on host.
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (this->need_sync_host (), std::runtime_error,
-         prefix << "The matrix's values need sync on both device and host.");
-#endif // HAVE_TPETRA_DEBUG
-      this->modify_host ();
-      Kokkos::deep_copy (getValuesHost (), alpha);
-    }
-    else {
-      // If we need to sync to host, then the data were last modified
-      // on device.  In that case, we should again modify them on
-      // device.  Also, prefer modifying on device if neither side is
-      // marked as modified.
-      this->modify_device ();
-      Kokkos::deep_copy (this->getValuesDevice (), alpha);
-    }
+    // Version 2: set both view with the scalar alpha concurrently and reset sync state
+    // Launch a kernel on device and return immediately
+    Kokkos::deep_copy(execution_space(), val_.view_device(), alpha); 
+    // If a host view has different pointer (not mirror of the device view),
+    // then initialize the host view as well.
+    if (val_.view_device().data() != val_.view_host().data()) 
+      Kokkos::deep_copy(val_.view_host(), alpha);
+
+    // Both host and device views are set with alpha. Clear the sync state.
+    val_.clear_sync_state();
   }
 
   template<class Scalar, class LO, class GO, class Node>

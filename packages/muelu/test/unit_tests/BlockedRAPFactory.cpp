@@ -1,11 +1,12 @@
 // @HEADER
-// ************************************************************************
 //
-//                           Intrepid2 Package
-//                 Copyright (2007) Sandia Corporation
+// ***********************************************************************
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -34,29 +35,41 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Kyungjoo Kim  (kyukim@sandia.gov), or
-//                    Mauro Perego  (mperego@sandia.gov)
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
-// ************************************************************************
+// ***********************************************************************
+//
 // @HEADER
+#include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_DefaultComm.hpp>
 
-/** \file test_02.cpp
-\brief  Unit test for the RealSpaceTools class.
-\author Created by Kyungjoo Kim
-*/
+#include "MueLu_TestHelpers.hpp"
+#include "MueLu_Version.hpp"
 
-#include "Kokkos_Core.hpp"
+#include "MueLu_Utilities.hpp"
+#include "MueLu_BlockedRAPFactory.hpp"
 
-#include "test_02.hpp"
+#include "MueLu_Exceptions.hpp"
 
-int main(int argc, char *argv[]) {
+namespace MueLuTests {
 
-  const bool verbose = (argc-1) > 0;
-  Kokkos::initialize();
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedRAPFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
 
-  const int r_val = Intrepid2::Test::ArrayTools_Test02
-    <double,Kokkos::Cuda/* Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>*/ >(verbose);
-  
-  Kokkos::finalize();
-  return r_val;
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<BlockedRAPFactory> blockedRAPFactory = rcp(new BlockedRAPFactory());
+    TEST_EQUALITY(blockedRAPFactory != Teuchos::null, true);
+  } // Constructor
+
+# define MUELU_ETI_GROUP(SC, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedRAPFactory, Constructor, SC, LO, GO, Node)
+
+#include <MueLu_ETI_4arg.hpp>
 }
