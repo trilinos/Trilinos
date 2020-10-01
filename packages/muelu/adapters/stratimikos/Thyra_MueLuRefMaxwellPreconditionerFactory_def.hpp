@@ -101,6 +101,7 @@ namespace Thyra {
     typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node>      XpMultVecDouble;
     typedef Thyra::LinearOpBase<Scalar>                                      ThyLinOpBase;
     typedef Thyra::DiagonalLinearOpBase<Scalar>                              ThyDiagLinOpBase;
+    typedef Thyra::XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> ThyXpOp;
     Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("ThyraMueLuRefMaxwell::initializePrec")));
 
     // Check precondition
@@ -181,7 +182,7 @@ namespace Thyra {
     // make a decision whether to (re)build the multigrid preconditioner or reuse the old one
     // rebuild preconditioner if startingOver == true
     // reuse preconditioner if startingOver == false
-    const bool startingOver = (thyra_precOp.is_null() || !paramList.isParameter("reuse: type") || paramList.get<std::string>("reuse: type") == "none");
+    const bool startingOver = (thyra_precOp.is_null() || !paramList.isParameter("refmaxwell: enable reuse") || !paramList.get<bool>("refmaxwell: enable reuse"));
 
     if (startingOver == true) {
       // extract coordinates from parameter list
@@ -331,6 +332,10 @@ namespace Thyra {
 
     } else {
       // reuse old MueLu preconditioner stored in MueLu Xpetra operator and put in new matrix
+
+      RCP<ThyXpOp> thyXpOp = rcp_dynamic_cast<ThyXpOp>(thyra_precOp, true);
+      RCP<XpOp>    xpOp    = thyXpOp->getXpetraOperator();
+      preconditioner = rcp_dynamic_cast<MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(xpOp, true);
       preconditioner->resetMatrix(A);
     }
 
