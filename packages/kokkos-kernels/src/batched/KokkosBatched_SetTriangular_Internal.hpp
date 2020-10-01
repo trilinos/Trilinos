@@ -50,7 +50,7 @@ namespace KokkosBatched {
 	   const int jdist = j+ dist;
 	   Kokkos::parallel_for
 	     (Kokkos::ThreadVectorRange(member, m),
-	      [&](const int &i) {
+	      [=](const int &i) {
 		if (i >= jdist)
 		  A[i*as0+j*as1] = alpha;
 	      });

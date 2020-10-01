@@ -242,7 +242,7 @@ struct BlockTriDiContainerTester {
         T_bare->initialize();
         T_bare->compute(T_bare->createDefaultComputeParameters());
       }
-      auto apply = [&] (const Tpetra_MultiVector& B, Tpetra_MultiVector& X,
+      auto apply = [=] (const Tpetra_MultiVector& B, Tpetra_MultiVector& X,
                         const bool norm_based) -> int {
         if ( ! T_br.is_null()) {
           T_br->apply(B, X);

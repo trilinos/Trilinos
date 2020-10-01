@@ -184,7 +184,7 @@ void localReducedMatvec(const MatrixClass & A_lcl,
         // NOTE: It looks like I should be able to get this data up above, but if I try to
         // we get internal compiler errors.  Who knew that gcc tried to "gimplify"?
         const LO numVectors = static_cast<LO>(X_lcl.extent(1));
-        Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[&] (const LO loop) {
+        Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[=] (const LO loop) {
             const LO lclRow = static_cast<LO> (dev.league_rank ()) * rows_per_team + loop;
             
             if (lclRow >= numLocalRows) {
