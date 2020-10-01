@@ -73,7 +73,7 @@ namespace Test {
       } else {
 	Kokkos::parallel_for
 	  (Kokkos::TeamVectorRange(member, m*m),
-	   [&](const int &ij) {
+	   [=](const int &ij) {
             const int i = ij/m, j = ij%m;
             value_type tmp(0);
             for (int l=0;l<r;++l)

@@ -1186,7 +1186,12 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Caught nonzero error code " + std::to_string(err) + " returned by Epetra.");
   }
 
-  void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& /* newMap */) { }
+  void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap ) {
+    XPETRA_MONITOR("EpetraCrsMatrixT::removeEmptyProcessesInPlace");
+    const Epetra_Map* newMapEpetra = (!newMap.is_null())? &toEpetra<GlobalOrdinal,Node>(newMap) : 0;
+    int err = mtx_->RemoveEmptyProcessesInPlace(newMapEpetra);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Caught nonzero error code " + std::to_string(err) + " returned by Epetra.");
+  }
 
   //@}
 
@@ -2193,7 +2198,12 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
-  void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& /* newMap */) { }
+  void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap ) {
+    XPETRA_MONITOR("EpetraCrsMatrixT::removeEmptyProcessesInPlace");
+    const Epetra_Map* newMapEpetra = (!newMap.is_null())? &toEpetra<GlobalOrdinal,Node>(newMap) : 0;
+    int err = mtx_->RemoveEmptyProcessesInPlace(newMapEpetra);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Caught nonzero error code " + std::to_string(err) + " returned by Epetra.");
+  }
 
   //@}
 
