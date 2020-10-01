@@ -55,7 +55,7 @@
 #include <string>
 #include <stdio.h>
 #include <map>
-
+#include <HYPRE.h>
 
 namespace {
 using Tpetra::global_size_t;
@@ -64,7 +64,6 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 
 
-// Can we build one?
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Hypre, Construct, Scalar, LocalOrdinal, GlobalOrdinal, Node)
 {
   global_size_t num_rows_per_proc = 10;
@@ -78,7 +77,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Hypre, Construct, Scalar, LocalOrdinal,
   TEST_EQUALITY(0,0);
 }
 
-#if 0
+#ifdef LEAVE_THIS_STUFF_OFF
 // Tests hypre's ability to work when A has a funky row map, but the vectors have
 // a contiguous row map
 TEUCHOS_UNIT_TEST( Ifpack_Hypre, ParameterList ){
@@ -226,18 +225,20 @@ TEUCHOS_UNIT_TEST( Ifpack_Hypre, ParameterList2 ){
     }
   }
 }
+#endif
 
 
 // Tests the hypre interface's ability to work with both a preconditioner and linear
 // solver via ApplyInverse
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Hypre, Apply, Scalar, LocalOrdinal, GlobalOrdinal) {
-  using multivector_type = Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>;
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Hypre, Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+  using multivector_type = Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
   const double tol = 1E-7;
 
   global_size_t num_rows_per_proc = 10;
   const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   
   RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+  int NumProc = rowmap->getComm()->getSize();
 
   Ifpack2::Hypre<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > preconditioner(crsmatrix);
   preconditioner.initialize();
@@ -249,8 +250,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Hypre, Apply, Scalar, LocalOrdinal, Glo
   multivector_type X(preconditioner.getRangeMap(), numVec);
   multivector_type KnownX(preconditioner.getRangeMap(), numVec);
   multivector_type B(preconditioner.getDomainMap(), numVec);
-  TEST_EQUALITY(KnownX.Random(), 0);
-  TEST_EQUALITY(preconditioner.apply(KnownX, B), 0);
+  KnownX.putScalar(Teuchos::ScalarTraits<Scalar>::one());
+  preconditioner.compute();
+  preconditioner.applyMat(KnownX, B);
 
   Teuchos::ParameterList list("New List");
   Teuchos::ParameterList & solverList = list.sublist("hypre: Solver functions");
@@ -263,24 +265,33 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Hypre, Apply, Scalar, LocalOrdinal, Glo
   list.set("hypre: Solver", "PCG");
   list.set("hypre: Preconditioner", "ParaSails");
   list.set("hypre: SetPreconditioner", true);
-  preconditioner.setParameters(list);
-  preconditioner.SetParameter(Solver, PCG); // Use a PCG Solver
-  preconditioner.SetParameter(Preconditioner, ParaSails); // Use a ParaSails Preconditioner
-  preconditioner.SetParameter(Solver, &HYPRE_ParCSRPCGSetMaxIter, 1000); // Set maximum iterations
-  preconditioner.SetParameter(Solver, &HYPRE_ParCSRPCGSetTol, 1e-9); // Set a tolerance
-  preconditioner.SetParameter(Solver); // Solve the problem
+  /*preconditioner.setParameters(list);
+  using namespace Ifpack2;
+    preconditioner.SetParameter(Hypre_Is_Solver, PCG); // Use a PCG Solver
+  preconditioner.SetParameter(Hypre_Is_Preconditioner, ParaSails); // Use a ParaSails Preconditioner
+  preconditioner.SetParameter(Hypre_Is_Solver, &HYPRE_ParCSRPCGSetMaxIter, 1000); // Set maximum iterations
+  preconditioner.SetParameter(Hypre_Is_Solver, &HYPRE_ParCSRPCGSetTol, 1e-9); // Set a tolerance
+  preconditioner.SetParameter(Hypre_Is_Solver); // Solve the problem
+ 
   preconditioner.SetParameter(true); // Use the preconditioner
+  */
   preconditioner.compute();
-  preconditioner.apply(B, X));
-  TEST_EQUALITY(EquivalentVectors(X, KnownX, tol*10*pow(10.0,NumProc)), true);
-  int numIters;
-  double residual;
-  preconditioner.SetParameter(Solver, &HYPRE_ParCSRPCGGetNumIterations, &numIters);
-  preconditioner.SetParameter(Solver, &HYPRE_ParCSRPCGGetFinalRelativeResidualNorm, &residual);
+  preconditioner.apply(B, X);
+
+
+  auto v1v = X.get1dView();
+  auto v2v = KnownX.get1dView();
+  TEST_COMPARE_FLOATING_ARRAYS(v1v,v2v,tol*10*pow(10.0,NumProc));
+
+  //  int numIters;
+  //  double residual;
+  //  preconditioner.SetParameter(Solver, &HYPRE_ParCSRPCGGetNumIterations, &numIters);
+  //  preconditioner.SetParameter(Solver, &HYPRE_ParCSRPCGGetFinalRelativeResidualNorm, &residual);
   preconditioner.CallFunctions();
 }
 
 
+#ifdef LEAVE_THIS_OFF
 // This example uses contiguous maps, so hypre should not have problems
 TEUCHOS_UNIT_TEST( Ifpack_Hypre, DiagonalMatrixInOrder ) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
@@ -340,7 +351,7 @@ TEUCHOS_UNIT_TEST( Ifpack_Hypre, DiagonalMatrixInOrder ) {
   //
   // Solve the linear system
   //
-  TEST_EQUALITY(prec.ApplyInverse(B,X),0);
+  prec.apply(B,X);
 
   TEST_EQUALITY(EquivalentVectors(X, KnownX, tol*10*pow(10.0,numProcs)), true);
 }
@@ -487,12 +498,16 @@ TEUCHOS_UNIT_TEST( Ifpack_Hypre, NonContiguousRowMap ) {
   //
   TEST_EQUALITY(prec.ApplyInverse(RHS,X),0);
 
-  TEST_EQUALITY(EquivalentVectors(X, RHS, tol*10*pow(10.0,numProcs)), true);
+  Teuchos::ArrayRCP<const Scalar> v1v = X.get1dView();
+  Teuchos::ArrayRCP<const Scalar> v2v = RHS.get1dView();
+  TEST_COMPARE_FLOATING_ARRAYS(v1v,v2v,tol*10*pow(10.0,numProcs));
+
 }
 #endif
 
 #define UNIT_TEST_GROUP_SC_LO_GO_NO(Scalar,LocalOrdinal,GlobalOrdinal,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Ifpack2Hypre, Construct, Scalar, LocalOrdinal,GlobalOrdinal,Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Ifpack2Hypre, Construct, Scalar, LocalOrdinal,GlobalOrdinal,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Ifpack2Hypre, Apply, Scalar, LocalOrdinal,GlobalOrdinal,Node)
 
 #include "Ifpack2_ETIHelperMacros.h"
 
