@@ -25,12 +25,8 @@ template<class Scalar> class StepperFactory;
 template<class Scalar>
 void StepperDIRK<Scalar>::setupDefault()
 {
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
-  this->setUseEmbedded(        this->getUseEmbeddedDefault());
+  this->setUseEmbedded(        false);
   this->setZeroInitialGuess(   false);
-
   this->setStageNumber(-1);
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE

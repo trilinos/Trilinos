@@ -21,11 +21,7 @@ namespace Tempus {
 template<class Scalar>
 void StepperExplicitRK<Scalar>::setupDefault()
 {
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
-  this->setUseEmbedded(        this->getUseEmbeddedDefault());
-
+  this->setUseEmbedded(false);
   this->setStageNumber(-1);
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE

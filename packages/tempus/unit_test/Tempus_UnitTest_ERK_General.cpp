@@ -37,10 +37,10 @@ TEUCHOS_UNIT_TEST(ERK_General, Default_Construction)
   auto modifier  = rcp(new Tempus::StepperRKModifierDefault<double>());
   auto modifierX = rcp(new Tempus::StepperRKModifierXDefault<double>());
   auto observer  = rcp(new Tempus::StepperRKObserverDefault<double>());
-  bool useFSAL              = stepper->getUseFSALDefault();
-  std::string ICConsistency = stepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
-  bool useEmbedded          = stepper->getUseEmbeddedDefault();
+  bool useFSAL              = stepper->getUseFSAL();
+  std::string ICConsistency = stepper->getICConsistency();
+  bool ICConsistencyCheck   = stepper->getICConsistencyCheck();
+  bool useEmbedded          = stepper->getUseEmbedded();
 
   int NumStages = 4;
   Teuchos::SerialDenseMatrix<int,double> A(NumStages,NumStages);

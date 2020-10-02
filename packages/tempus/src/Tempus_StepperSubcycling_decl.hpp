@@ -58,7 +58,7 @@ public:
     bool ICConsistencyCheck);
 #endif
 
-  /// Constructor                                                                       
+  /// Constructor
   StepperSubcycling(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<IntegratorBasic<Scalar> >& integrator,
@@ -78,7 +78,7 @@ public:
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getModel(){return scIntegrator_->getStepper()->getModel();}
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE    
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
@@ -127,7 +127,6 @@ public:
     virtual Scalar getOrder() const;
     virtual Scalar getOrderMin() const;
     virtual Scalar getOrderMax() const;
-
     virtual OrderODE getOrderODE()   const;
   //@}
 

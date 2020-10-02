@@ -27,9 +27,9 @@ template<class Scalar>
 StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition()
 {
   this->setStepperType(        "Partitioned IMEX RK SSP2");
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setUseFSAL(            false);
+  this->setICConsistency(      "None");
+  this->setICConsistencyCheck( false);
   this->setZeroInitialGuess(   false);
 
   this->setStageNumber(-1);
@@ -875,8 +875,7 @@ StepperIMEX_RK_Partition<Scalar>::getValidParameters() const
   pl->setName("Default Stepper - Partitioned IMEX RK SSP2");
   pl->set<std::string>("Stepper Type", "Partitioned IMEX RK SSP2");
   getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>("Initial Condition Consistency Check",
-                this->getICConsistencyCheckDefault());
+  pl->set<bool>("Initial Condition Consistency Check", false);
   pl->set<std::string>("Solver Name", "Default Solver");
   pl->set<bool>       ("Zero Initial Guess", false);
   Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();

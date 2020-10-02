@@ -19,9 +19,9 @@ template<class Scalar>
 StepperForwardEuler<Scalar>::StepperForwardEuler()
 {
   this->setStepperType(        "Forward Euler");
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setUseFSAL(            true);
+  this->setICConsistency(      "Consistent");
+  this->setICConsistencyCheck( false);
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   this->setObserver();
 #endif
@@ -159,13 +159,13 @@ void StepperForwardEuler<Scalar>::takeStep(
     RCP<Thyra::VectorBase<Scalar> > xDot = this->getStepperXDot();
     const Scalar dt = workingState->getTimeStep();
 
-    if ( !(this->getUseFSAL()) ) {
+    if (!(this->getUseFSAL()) || workingState->getNConsecutiveFailures() != 0) {
       // Need to compute XDotOld.
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
       if (!Teuchos::is_null(stepperFEObserver_))
         stepperFEObserver_->observeBeforeExplicit(solutionHistory, *this);
 #endif
-     stepperFEAppAction_->execute(solutionHistory, thisStepper,
+      stepperFEAppAction_->execute(solutionHistory, thisStepper,
         StepperForwardEulerAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
 
       auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
