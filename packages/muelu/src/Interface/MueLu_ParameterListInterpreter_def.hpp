@@ -1325,7 +1325,6 @@ namespace MueLu {
     // === Repartitioning ===
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: node repartition level",int,nodeRepartitionLevel);
 
     if (enableRepart) {
 #ifdef HAVE_MPI
@@ -1392,6 +1391,8 @@ namespace MueLu {
         partName = "zoltan";
       }
 #endif
+
+      MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: node repartition level",int,nodeRepartitionLevel);
 
       // RepartitionHeuristic
       auto repartheurFactory = rcp(new RepartitionHeuristicFactory());
