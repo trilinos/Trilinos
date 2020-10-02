@@ -32,12 +32,32 @@ evaluatorTpetra1DFEM(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
  \verbatim
 
    d2T
-   --- - T**2 = 0
+   --- - k * T**2 = 0
    dz2
 
    subject to:
-      T  = 1.0 @ z = zMin
+      T  = p(4) = defaults to 1.0 @ z = zMin
       T' = 0.0 @ z = zMax
+      k = p(2), defaults to 1.0 (independent parameter)
+
+   For LOCA testing, parameters and responses are used to evaluate a
+   contraint equation. The parameter k is the unknown variable used to
+   enforce the response. We add in dummy responses for unit testing
+   correct offsets in LOCA parameter handling code.:
+
+      p(0) is a dummy parameter (throws if queried)
+      p(1) is a dummy parameter (throws if queried)
+      p(2) is a constant "k" multiplier on the source term
+      p(3) is a dummy parameter (throws if queried)
+      p(4) is the Dirichlet BC temperature value for left side node "T_left"
+
+      g(0) is a dummy response (throws if queried)
+      g(1) is a dummy response (throws if queried)
+      g(2) is a dummy response (throws if queried)
+      g(3) is a dummy response (throws if queried)
+      g(4) = T(zMax) - 2.0
+      g(5) is a dummy response (throws if queried)
+      g(6) = 2.0 * T(zMin) - T(zMax)
 
  \endverbatim
 
@@ -47,8 +67,7 @@ evaluatorTpetra1DFEM(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
  * create the linear solver.
  */
 template<class Scalar, class LO, class GO, class Node>
-class EvaluatorTpetra1DFEM
-  : public ::Thyra::StateFuncModelEvaluatorBase<Scalar>
+class EvaluatorTpetra1DFEM : public ::Thyra::ModelEvaluator<Scalar>
 {
 public:
 
@@ -62,6 +81,7 @@ public:
   typedef Tpetra::CrsMatrix<Scalar, LO, GO, Node> tpetra_matrix;
   typedef Tpetra::Vector<Scalar, LO, GO, Node> tpetra_vec;
   typedef ::Thyra::VectorBase<Scalar> thyra_vec;
+  typedef ::Thyra::MultiVectorBase<Scalar> thyra_mvec;
   typedef ::Thyra::VectorSpaceBase<Scalar> thyra_vec_space;
   typedef ::Thyra::LinearOpBase<Scalar> thyra_op;
   typedef ::Thyra::PreconditionerBase<Scalar> thyra_prec;
@@ -88,20 +108,43 @@ public:
   /** \name Public functions overridden from ModelEvaulator. */
   //@{
 
-  /** \brief . */
   Teuchos::RCP<const thyra_vec_space> get_x_space() const;
-  /** \brief . */
   Teuchos::RCP<const thyra_vec_space> get_f_space() const;
-  /** \brief . */
   ::Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
-  /** \brief . */
   Teuchos::RCP<thyra_op> create_W_op() const;
-  /** \brief . */
   Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
-  /** \brief . */
   ::Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
-  /** \brief . */
   Teuchos::RCP<thyra_prec> create_W_prec() const;
+
+  // These are for constraint solver support
+  int Np () const;
+  int Ng () const;
+  ::Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
+  Teuchos::RCP<const ::Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
+  Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  Teuchos::RCP<const ::Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
+  Teuchos::ArrayView<const std::string> get_g_names(int j) const;
+  Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_DfDp_op(int l) const;
+  Teuchos::RCP<::Thyra::LinearOpBase<Scalar> > create_DgDx_op(int j) const;
+  Teuchos::RCP<::Thyra::LinearOpBase<Scalar> > create_DgDx_dot_op(int j) const;
+  Teuchos::RCP<::Thyra::LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
+
+  void evalModel(const ::Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                 const ::Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+
+  // Dummy
+  Teuchos::RCP<const thyra_vec_space> get_f_multiplier_space() const{return Teuchos::null;}
+  Teuchos::RCP<const thyra_vec_space> get_g_multiplier_space(int j) const{return Teuchos::null;}
+  ::Thyra::ModelEvaluatorBase::InArgs<Scalar> getLowerBounds() const{return prototypeInArgs_;}
+  ::Thyra::ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const{return prototypeInArgs_;}
+  Teuchos::RCP<::Thyra::LinearOpWithSolveBase<Scalar>> create_W() const{return Teuchos::null;}
+  Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_hess_f_xx() const{return Teuchos::null;}
+  Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_hess_f_xp(int l) const{return Teuchos::null;}
+  Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_hess_f_pp( int l1, int l2 ) const{return Teuchos::null;}
+  Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_hess_g_xx(int j) const{return Teuchos::null;}
+  Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_hess_g_xp( int j, int l ) const{return Teuchos::null;}
+  Teuchos::RCP<::Thyra::LinearOpBase<Scalar>> create_hess_g_pp( int j, int l1, int l2 ) const{return Teuchos::null;}
+  void reportFinalPoint (const ::Thyra::ModelEvaluatorBase::InArgs<Scalar> &finalPoint, const bool wasSolved);
   //@}
 
 private:
@@ -109,25 +152,15 @@ private:
   /** Allocates and returns the Jacobian matrix graph */
   virtual Teuchos::RCP<const tpetra_graph> createGraph();
 
-  /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
-  //@{
-
-  /** \brief . */
-  ::Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
-  /** \brief . */
-  void evalModelImpl(
-    const ::Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const ::Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-    ) const;
-
-  //@}
-
 private: // data members
 
   const Teuchos::RCP<const Teuchos::Comm<int> >  comm_;
   const Tpetra::global_size_t numGlobalElements_;
   const Scalar zMin_;
   const Scalar zMax_;
+  const int Np_; // Number of parameters
+  const int Ng_; // Number of responses
+  const bool printDebug_;
 
   Teuchos::RCP<const thyra_vec_space> xSpace_;
   Teuchos::RCP<const tpetra_map>   xOwnedMap_;
@@ -156,6 +189,18 @@ private: // data members
 
   mutable Teuchos::RCP<Teuchos::Time> residTimer_;
   mutable Teuchos::RCP<Teuchos::Time> jacTimer_;
+
+  // Optional parameter and response support for LOCA
+  std::vector<Teuchos::RCP<Teuchos::Array<std::string>>> pNames_;
+  std::vector<std::vector<std::string>> gNames_;
+  Teuchos::RCP<const tpetra_map> pMap_; // locally replicated scalar
+  Teuchos::RCP<const thyra_vec_space> pSpace_;
+  Teuchos::RCP<thyra_vec> p2_; // k value in equation
+  Teuchos::RCP<thyra_vec> p4_; // T_left value in equation Dirichlet BC
+  Teuchos::RCP<const tpetra_map> gMap_; // locally replicated scalar
+  Teuchos::RCP<const thyra_vec_space> gSpace_;
+  Teuchos::RCP<const tpetra_map> dgdpMap_; // locally replicated dense matrix
+  Teuchos::RCP<const thyra_vec_space> dgdpSpace_;
 };
 
 //==================================================================
