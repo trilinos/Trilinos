@@ -79,15 +79,19 @@ typedef int (*char_star_func)(HYPRE_Solver, char*);
 namespace Ifpack2 {
 
   void IFPACK2_CHK_ERRV(int code) {
-    std::ostringstream ofs;
-    ofs << "Ifpack2::Hypre: Error with code "<<code<<<std::endl;
-    throw std::runtime_error(ofs.str());
+    if(code) {
+      std::ostringstream ofs;
+      ofs << "Ifpack2::Hypre: Error with code "<<code<<std::endl;
+      throw std::runtime_error(ofs.str());
+    }
   }
 
   void IFPACK2_CHK_ERR(int code) {
-    std::ostringstream ofs;
-    ofs << "Ifpack2::Hypre: Error with code"<<code<<std::endl;
-    throw std::runtime_error(ofs.str());
+    if(code) {
+      std::ostringstream ofs;
+      ofs << "Ifpack2::Hypre: Error with code "<<code<<std::endl;
+      throw std::runtime_error(ofs.str());
+    }
   }
 
 
@@ -390,8 +394,7 @@ Hypre(const Teuchos::RCP<const row_matrix_type>& A):
     IFPACK2_CHK_ERRV(-1);
   }
   // Hypre expects the RowMap to be Linear.
-  if (A_->getRowMap()->isUniform()) {
-    // note these are non-owning pointers, they are deleted by A_'s destructor
+  if (A_->getRowMap()->isContiguous()) {
     GloballyContiguousRowMap_ = A_->getRowMap();
     GloballyContiguousColMap_ = A_->getColMap();
   } else {  
@@ -1190,7 +1193,7 @@ int Hypre<MatrixType>::CopyTpetraToHypre(){
     }
     GO GlobalRow[1];
     LO numEntries = (LO) indices.size();
-    GlobalRow[0] = GloballyContiguousRowMap_->getGlobalElement(i);
+    GlobalRow[0] = GloballyContiguousRowMap_->getGlobalElement(i);    
     IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, new_indices.data(), values.getRawPtr()));
   }
   IFPACK2_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
@@ -1267,7 +1270,7 @@ Hypre<MatrixType>::MakeContiguousColumnMap(Teuchos::RCP<const crs_matrix_type> &
   RCP<const map_type> ColumnMap = Matrix->getColMap();
   RCP<const import_type> importer = Matrix->getGraph()->getImporter();
 
-  if(DomainMap->isUniform() ) {
+  if(DomainMap->isContiguous() ) {
     // If the domain map is linear, then we can just use the column map as is.
     return ColumnMap;
   }
