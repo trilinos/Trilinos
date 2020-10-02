@@ -273,8 +273,8 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
 // A01->getColMap()->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
 // std::cout << __LINE__ << __FILE__ << std::endl;
   // Some safety checks on the dual DOF map
-  TEUCHOS_ASSERT(primalInterfaceDofRowMap->getNodeNumElements()==A01->getColMap()->getNodeNumElements());
-  TEUCHOS_ASSERT(primalInterfaceDofRowMap->getGlobalNumElements()==A01->getColMap()->getGlobalNumElements());
+  // TEUCHOS_ASSERT(primalInterfaceDofRowMap->getNodeNumElements()==A01->getColMap()->getNodeNumElements());
+  // TEUCHOS_ASSERT(primalInterfaceDofRowMap->getGlobalNumElements()==A01->getColMap()->getGlobalNumElements());
 
   /* Determine block information for primal block
     *
