@@ -79,7 +79,7 @@ typedef int (*char_star_func)(HYPRE_Solver, char*);
 namespace Ifpack2 {
 
   void IFPACK2_CHK_ERRV(int code) {
-    if(code) {
+    if(code<0) {
       std::ostringstream ofs;
       ofs << "Ifpack2::Hypre: Error with code "<<code<<std::endl;
       throw std::runtime_error(ofs.str());
@@ -87,7 +87,7 @@ namespace Ifpack2 {
   }
 
   void IFPACK2_CHK_ERR(int code) {
-    if(code) {
+    if(code<0) {
       std::ostringstream ofs;
       ofs << "Ifpack2::Hypre: Error with code "<<code<<std::endl;
       throw std::runtime_error(ofs.str());
@@ -1280,7 +1280,7 @@ Hypre<MatrixType>::MakeContiguousColumnMap(Teuchos::RCP<const crs_matrix_type> &
                                                                       DomainMap->getNodeNumElements(), 0, DomainMap->getComm()));
     if(importer) {    
       // If there's an importer then we can use it to get a new column map
-      go_vector_type MyGIDsHYPRE(DomainMap,ContiguousDomainMap->getGlobalNumElements());
+      go_vector_type MyGIDsHYPRE(DomainMap,ContiguousDomainMap->getNodeElementList());
 
       // import the HYPRE GIDs
       go_vector_type ColGIDsHYPRE(ColumnMap);

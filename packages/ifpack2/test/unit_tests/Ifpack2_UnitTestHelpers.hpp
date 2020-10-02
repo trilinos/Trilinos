@@ -305,7 +305,7 @@ Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > create_
   Teuchos::Array<Scalar> values(1);
   values[0] = Teuchos::ScalarTraits<Scalar>::zero();
   for(LO i=0; i<(LO)A->getNodeNumRows(); i++) {
-    indices[0] = A->getRowMap()->getGlobalElement(i);
+    indices[0] = i;
     values[0] += Teuchos::ScalarTraits<Scalar>::one();
     A->sumIntoLocalValues(i,indices(),values());
   }

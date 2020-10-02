@@ -57,7 +57,6 @@
 #include <map>
 #include <HYPRE.h>
 
-
 namespace {
 using Tpetra::global_size_t;
 typedef tif_utest::Node Node;
@@ -92,7 +91,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Hypre, BoomerAMG, Scalar, LocalOrdinal,
   // Create the parameter list
   Teuchos::ParameterList list("Preconditioner List");
   Teuchos::ParameterList precList = list.sublist("hypre: Preconditioner functions");
-  precList.set("HYPRE_BoomerAMGSetPrintLevel", 1);// print amg solution info
+  precList.set("HYPRE_BoomerAMGSetPrintLevel", 0);// print amg solution info
   precList.set("HYPRE_BoomerAMGSetCoarsenType", 6);
   precList.set("HYPRE_BoomerAMGSetRelaxType", 6);  //Sym G.S./Jacobi hybrid
   precList.set("HYPRE_BoomerAMGSetNumSweeps", 1);
@@ -123,87 +122,50 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Hypre, BoomerAMG, Scalar, LocalOrdinal,
   TEST_COMPARE_FLOATING_ARRAYS(v1v,v2v,tol*10*pow(10.0,NumProc));
 }
 
-
-#if 0
-// Tests hypre's ability to work when A has a funky row map, but the vectors have
-// a contiguous row map
-TEUCHOS_UNIT_TEST( Ifpack_Hypre, ParameterList2 ){
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Hypre, BoomerAMGNonContiguous, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+{
+  const GlobalOrdinal num_rows_per_proc = 1000;
+  using multivector_type = Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
   const double tol = 1e-7;
 
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  auto rowmap = tif_utest::create_odd_even_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  int NumProc = rowmap->getComm()->getSize();
+  auto A = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap,-Teuchos::ScalarTraits<Scalar>::one());
 
-  Epetra_Map*            Map;
-  // pointer to the matrix to be created
-  Epetra_CrsMatrix*      Matrix;
-  // container for parameters
-  Teuchos::ParameterList GaleriList;
-  // here we specify the global dimension of the problem
-  int nx = 10 * Comm.NumProc();
-  int ny = 10 * Comm.NumProc();
-  GaleriList.set("nx", nx);
-  GaleriList.set("ny", ny);
+  // Create the parameter list
+  Teuchos::ParameterList list("Preconditioner List");
+  Teuchos::ParameterList precList = list.sublist("hypre: Preconditioner functions");
+  precList.set("HYPRE_BoomerAMGSetPrintLevel", 0);// print amg solution info
+  precList.set("HYPRE_BoomerAMGSetCoarsenType", 6);
+  precList.set("HYPRE_BoomerAMGSetRelaxType", 6);  //Sym G.S./Jacobi hybrid
+  precList.set("HYPRE_BoomerAMGSetNumSweeps", 1);
+  precList.set("HYPRE_BoomerAMGSetTol", 0.0);      // conv. tolerance zero
+  precList.set("HYPRE_BoomerAMGSetMaxIter", 1);   //do only one iteration!
+  list.set("hypre: Solver", "PCG");
+  list.set("hypre: Preconditioner", "BoomerAMG");
+  list.set("hypre: SolveOrPrecondition", "Solver");
+  list.set("hypre: SetPreconditioner", true);
+  
 
-  try
-  {
-    // Create the matrix
-    Map = Galeri::CreateMap("Cartesian2D", Comm, GaleriList);
-    Matrix   = Galeri::CreateCrsMatrix("Biharmonic2D", Map, GaleriList);
+  // Create the preconditioner
+  Ifpack2::Hypre<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > preconditioner(A);
+  preconditioner.setParameters(list);
+  preconditioner.compute();
+    
+  int numVec = 2;
+  multivector_type X(preconditioner.getRangeMap(), numVec);
+  multivector_type KnownX(preconditioner.getRangeMap(), numVec);
+  multivector_type B(preconditioner.getDomainMap(), numVec);
+  KnownX.putScalar(Teuchos::ScalarTraits<Scalar>::one());
+  preconditioner.applyMat(KnownX, B);
 
-    // Create the parameter list
-    Teuchos::ParameterList list("Preconditioner List");
+  preconditioner.compute();
+  preconditioner.apply(B, X);
 
-    list.set("hypre: Solver", "PCG");
-    Teuchos::ParameterList solverList = list.sublist("hypre: Solver functions");
-    solverList.set("HYPRE_PCGSetMaxIter", 1000);               // max iterations
-    solverList.set("HYPRE_PCGSetTol", tol);                   // conv. tolerance
-    solverList.set("HYPRE_PCGSetTwoNorm", 1);                  // use the two norm as the stopping criteria
-    solverList.set("HYPRE_PCGSetPrintLevel", 0);               // print solve info
-    solverList.set("HYPRE_PCGSetLogging", 1);                  // needed to get run info later
-    list.set("hypre: Solver functions",solverList);
-
-    list.set("hypre: Preconditioner", "BoomerAMG");
-    Teuchos::ParameterList precList = list.sublist("hypre: Preconditioner functions");
-    precList.set("HYPRE_BoomerAMGSetPrintLevel", 1);// print amg solution info
-    precList.set("HYPRE_BoomerAMGSetCoarsenType", 6);
-    precList.set("HYPRE_BoomerAMGSetRelaxType", 6);  //Sym G.S./Jacobi hybrid
-    precList.set("HYPRE_BoomerAMGSetNumSweeps", 1);
-    precList.set("HYPRE_BoomerAMGSetTol", 0.0);      // conv. tolerance zero
-    precList.set("HYPRE_BoomerAMGSetMaxIter", 1);   //do only one iteration!
-    list.set("hypre: Preconditioner functions",precList);
-
-    list.set("hypre: SolveOrPrecondition", "Solver");
-    list.set("hypre: SetPreconditioner", true);
-
-    // Create the preconditioner
-    Ifpack_Hypre preconditioner(Matrix);
-    TEST_EQUALITY(preconditioner.SetParameters(list),0);
-    TEST_EQUALITY(preconditioner.Compute(),0);
-
-    // Create the RHS and solution vector
-    int numVec = 2;
-    Epetra_MultiVector X(preconditioner.OperatorDomainMap(), numVec);
-    Epetra_MultiVector KnownX(preconditioner.OperatorDomainMap(), numVec);
-    TEST_EQUALITY(KnownX.Random(),0);
-    Epetra_MultiVector B(preconditioner.OperatorRangeMap(), numVec);
-    TEST_EQUALITY(preconditioner.Apply(KnownX, B),0);
-
-    TEST_EQUALITY(preconditioner.ApplyInverse(B,X),0);
-    TEST_EQUALITY(EquivalentVectors(X, KnownX, tol*10*pow(10.0,Comm.NumProc())), true);
-
-    //delete preconditioner;
-    delete Map;
-    delete Matrix;
-  }
-  catch (Galeri::Exception& rhs)
-  {
-    if (Comm.MyPID() == 0)
-    {
-      cerr << "Caught exception: ";
-      rhs.Print();
-    }
-  }
+  auto v1v = X.get1dView();
+  auto v2v = KnownX.get1dView();
+  TEST_COMPARE_FLOATING_ARRAYS(v1v,v2v,tol*10*pow(10.0,NumProc));
 }
-#endif
 
 
 // Tests the hypre interface's ability to work with both a preconditioner and linear
@@ -365,9 +327,10 @@ RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Ifpack2Hypre, Construct, Scalar, LocalOrdinal,GlobalOrdinal,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Ifpack2Hypre, Apply, Scalar, LocalOrdinal,GlobalOrdinal,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Ifpack2Hypre, DiagonalMatrixInOrder, Scalar, LocalOrdinal,GlobalOrdinal,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Ifpack2Hypre, BoomerAMG, Scalar, LocalOrdinal,GlobalOrdinal,Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Ifpack2Hypre, DiagonalMatrixNonContiguous, Scalar, LocalOrdinal,GlobalOrdinal,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Ifpack2Hypre, BoomerAMG, Scalar, LocalOrdinal,GlobalOrdinal,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Ifpack2Hypre, BoomerAMGNonContiguous, Scalar, LocalOrdinal,GlobalOrdinal,Node) 
 
-//  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Ifpack2Hypre, DiagonalMatrixNonContiguous, Scalar, LocalOrdinal,GlobalOrdinal,Node)
 
 #include "Ifpack2_ETIHelperMacros.h"
 
