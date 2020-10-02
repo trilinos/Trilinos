@@ -83,6 +83,9 @@ namespace MueLu {
     SET_VALID_ENTRY("filtered matrix: reuse graph");
     SET_VALID_ENTRY("filtered matrix: reuse eigenvalue");
     SET_VALID_ENTRY("filtered matrix: use root stencil");
+    SET_VALID_ENTRY("filtered matrix: use spread lumping");
+    SET_VALID_ENTRY("filtered matrix: spread lumping diag dom growth factor");
+    SET_VALID_ENTRY("filtered matrix: spread lumping diag dom cap");
     SET_VALID_ENTRY("filtered matrix: Dirichlet threshold");
 #undef  SET_VALID_ENTRY
 
@@ -124,6 +127,21 @@ namespace MueLu {
     bool lumping = pL.get<bool>("filtered matrix: use lumping");
     if (lumping)
       GetOStream(Runtime0) << "Lumping dropped entries" << std::endl;
+
+    bool use_spread_lumping = pL.get<bool>("filtered matrix: use spread lumping");
+    if (use_spread_lumping && (!lumping) )
+      throw std::runtime_error("Must also request 'filtered matrix: use lumping' in order to use spread lumping");
+
+    if (use_spread_lumping) {
+      GetOStream(Runtime0) << "using spread lumping " << std::endl;
+    }
+
+    double DdomAllowGrowthRate = 1.1;
+    double DdomCap = 2.0;
+    if (use_spread_lumping) {
+      DdomAllowGrowthRate = pL.get<double>("filtered matrix: spread lumping diag dom growth factor");    
+      DdomCap             = pL.get<double>("filtered matrix: spread lumping diag dom cap");    
+    }
     bool use_root_stencil = lumping && pL.get<bool>("filtered matrix: use root stencil");
     if (use_root_stencil)
       GetOStream(Runtime0) << "Using root stencil for dropping" << std::endl;
@@ -160,22 +178,27 @@ namespace MueLu {
       filteredA = MatrixFactory::Build(A->getCrsGraph());
       filteredA->fillComplete(fillCompleteParams);     
       filteredA->resumeFill();
-      BuildNewUsingRootStencil(*A, *G, dirichlet_threshold, currentLevel,*filteredA);
+      BuildNewUsingRootStencil(*A, *G, dirichlet_threshold, currentLevel,*filteredA, use_spread_lumping,DdomAllowGrowthRate, DdomCap);
       filteredA->fillComplete(fillCompleteParams);
       
     }
     else if (pL.get<bool>("filtered matrix: reuse graph")) {
       filteredA = MatrixFactory::Build(A->getCrsGraph());
       filteredA->resumeFill();
+      BuildReuse(*A, *G, (lumping != use_spread_lumping), dirichlet_threshold,*filteredA);
+            // only lump inside BuildReuse if lumping is true and use_spread_lumping is false
+            // note: they use_spread_lumping cannot be true if lumping is false
 
-      BuildReuse(*A, *G, lumping, dirichlet_threshold,*filteredA);
-
+      if (use_spread_lumping) ExperimentalLumping(*A, *filteredA, DdomAllowGrowthRate, DdomCap);
       filteredA->fillComplete(fillCompleteParams);
 
     } else {
 
       filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries());      
-      BuildNew(*A, *G, lumping, dirichlet_threshold,*filteredA);
+      BuildNew(*A, *G, (lumping != use_spread_lumping), dirichlet_threshold,*filteredA);
+            // only lump inside BuildNew if lumping is true and use_spread_lumping is false
+            // note: they use_spread_lumping cannot be true if lumping is false
+      if (use_spread_lumping) ExperimentalLumping(*A, *filteredA, DdomAllowGrowthRate, DdomCap);
       filteredA->fillComplete(A->getDomainMap(), A->getRangeMap(), fillCompleteParams);
     }
 
@@ -308,10 +331,10 @@ namespace MueLu {
 	    vals[diagIndex] += diagExtra;
 	    if(dirichletThresh >= 0.0 && TST::real(vals[diagIndex]) <= dirichletThresh) {
 
-	      //	      printf("WARNING: row %d diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,vals[diagIndex],diagA);
+		//	      printf("WARNING: row %d diag(Afiltered) = %8.2e diag(A)=%8.2e\n",row,vals[diagIndex],diagA);
 	      for(LO l = 0; l < (LO)nnz; l++) 
 		F_rowsum += vals[l];
-	      //	      printf("       : A rowsum = %8.2e F rowsum = %8.2e\n",A_rowsum,F_rowsum);	    	    
+		//	      printf("       : A rowsum = %8.2e F rowsum = %8.2e\n",A_rowsum,F_rowsum);	    	    
 	      vals[diagIndex] = TST::one();
 	    }
 	  }
@@ -432,7 +455,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  BuildNewUsingRootStencil(const Matrix& A, const GraphBase& G, double dirichletThresh, Level& currentLevel,  Matrix& filteredA) const {
+  BuildNewUsingRootStencil(const Matrix& A, const GraphBase& G, double dirichletThresh, Level& currentLevel,  Matrix& filteredA, bool use_spread_lumping, double DdomAllowGrowthRate, double DdomCap) const {
     using TST = typename Teuchos::ScalarTraits<SC>;
     using Teuchos::arcp_const_cast;
     SC ZERO = Teuchos::ScalarTraits<SC>::zero();
@@ -463,7 +486,7 @@ namespace MueLu {
     RCP<AmalgamationInfo>      amalgInfo      = Get< RCP<AmalgamationInfo> >     (currentLevel, "UnAmalgamationInfo");
     LO                          numAggs       = aggregates->GetNumAggregates();
     Teuchos::ArrayRCP<const LO> vertex2AggId  = aggregates->GetVertex2AggId()->getData(0);
-        
+    
     // Check map nesting
     RCP<const Map> rowMap = A.getRowMap();
     RCP<const Map> colMap = A.getColMap();
@@ -482,11 +505,11 @@ namespace MueLu {
     LO graphNumCols = G.GetImportMap()->getNodeNumElements();
     Array<bool> filter(graphNumCols, false);
 
-    // Loop over the unaggregated nodes. Blitz those rows.  We don't want to smooth singletons.
+    // Loop over the unaggregated nodes. Blitz those rows. We don't want to smooth singletons.
     for(LO i=0; i<nodesInAgg.unaggregated.size(); i++) {
       for (LO m = 0; m < (LO)blkSize; m++) {
 	LO row = amalgInfo->ComputeLocalDOF(nodesInAgg.unaggregated[i],m);
-	if (row >= (LO)numRows) continue;
+ 	if (row >= (LO)numRows) continue;
 	size_t index_start = rowptr[row];
 	A.getLocalRowView(row, indsA, valsA);
 	for(LO k=0; k<(LO)indsA.size(); k++) {
@@ -494,12 +517,12 @@ namespace MueLu {
 	    vals[index_start+k] = ONE;
 	    diagIndex[row] = k;
 	  }
-	  else 
+	  else
 	    vals[index_start+k] = ZERO;
 	}
       }
     }//end nodesInAgg.unaggregated.size();
-
+	  
 
     // Find the biggest aggregate size in *nodes*
     LO maxAggSize=0;
@@ -547,7 +570,7 @@ namespace MueLu {
       badAggNeighbors.resize(0);
       for(LO j = 0; j < (LO)blkSize; j++) {
 	LO row = amalgInfo->ComputeLocalDOF(root_node,j);
-	if (row >= (LO)numRows) continue;
+ 	if (row >= (LO)numRows) continue;
 	A.getLocalRowView(row, indsA, valsA);
 	for(LO k=0; k<(LO)indsA.size(); k++) {
 	  if(indsA[k] < (LO)numRows) {
@@ -568,7 +591,7 @@ namespace MueLu {
 	  LO bad_node = nodesInAgg.nodes[k];
 	  for(LO j = 0; j < (LO)blkSize; j++) {
 	    LO bad_row = amalgInfo->ComputeLocalDOF(bad_node,j);
-	    if (bad_row >= (LO)numRows) continue;
+ 	    if (bad_row >= (LO)numRows) continue;
 	    size_t index_start = rowptr[bad_row];	
 	    A.getLocalRowView(bad_row, indsA, valsA);
 	    for(LO l = 0; l < (LO)indsA.size(); l++) {
@@ -596,7 +619,7 @@ namespace MueLu {
 	
 	for (LO m = 0; m < (LO)blkSize; m++) {
 	  LO row = amalgInfo->ComputeLocalDOF(row_node,m);
-	  if (row >= (LO)numRows) continue;	
+ 	  if (row >= (LO)numRows) continue;
 	  size_t index_start = rowptr[row];	
 	  A.getLocalRowView(row, indsA, valsA);
 	  
@@ -645,59 +668,62 @@ namespace MueLu {
 	
       }// end k loop over number of nodes in this agg
     }//end i loop over numAggs
-    
-    // Now do the diagonal modifications in one, final pass
-    for(LO row=0; row <(LO)numRows; row++) {
-      if (diagIndex[row] != INVALID) {
-	size_t index_start = rowptr[row];	
-	size_t diagIndexInMatrix =  index_start + diagIndex[row];
-	//	    printf("diag_vals pre update =  %8.2e\n", vals[diagIndex] );
-	vals[diagIndexInMatrix] += diagExtra[row];
-	SC A_rowsum=ZERO, A_absrowsum = ZERO, F_rowsum = ZERO;
+
+    if (!use_spread_lumping) {
+      // Now do the diagonal modifications in one, final pass
+      for(LO row=0; row <(LO)numRows; row++) {
+        if (diagIndex[row] != INVALID) {
+	  size_t index_start = rowptr[row];	
+	  size_t diagIndexInMatrix =  index_start + diagIndex[row];
+	  //	    printf("diag_vals pre update =  %8.2e\n", vals[diagIndex] );
+	  vals[diagIndexInMatrix] += diagExtra[row];
+	  SC A_rowsum=ZERO, A_absrowsum = ZERO, F_rowsum = ZERO;
 	
 
-	if( (dirichletThresh >= 0.0 && TST::real(vals[diagIndexInMatrix]) <= dirichletThresh) ||  TST::real(vals[diagIndexInMatrix]) == ZERO) {
+	  if( (dirichletThresh >= 0.0 && TST::real(vals[diagIndexInMatrix]) <= dirichletThresh) ||  TST::real(vals[diagIndexInMatrix]) == ZERO) {
 	  
-	  if(MUELU_FILTEREDAFACTORY_LOTS_OF_PRINTING>0) {
-	    A.getLocalRowView(row, indsA, valsA);
-	    //	    SC diagA = valsA[diagIndex[row]];	    
-	    //	    printf("WARNING: row %d (diagIndex=%d) diag(Afiltered) = %8.2e diag(A)=%8.2e numInds = %d\n",row,diagIndex[row],vals[diagIndexInMatrix],diagA,(LO)indsA.size());
-	    
-	    for(LO l = 0; l < (LO)indsA.size(); l++) {		  
-	      A_rowsum += valsA[l];
-	      A_absrowsum+=std::abs(valsA[l]);
+	    if(MUELU_FILTEREDAFACTORY_LOTS_OF_PRINTING>0) {
+	      A.getLocalRowView(row, indsA, valsA);
+	      //	    SC diagA = valsA[diagIndex[row]];	    
+	      //	    printf("WARNING: row %d (diagIndex=%d) diag(Afiltered) = %8.2e diag(A)=%8.2e numInds = %d\n",row,diagIndex[row],vals[diagIndexInMatrix],diagA,(LO)indsA.size());
+
+	      for(LO l = 0; l < (LO)indsA.size(); l++) {		  
+	        A_rowsum += valsA[l];
+	        A_absrowsum+=std::abs(valsA[l]);
+	      }
+	      for(LO l = 0; l < (LO)indsA.size(); l++) 
+	        F_rowsum += vals[index_start+l];
+	      //		printf("       : A rowsum = %8.2e |A| rowsum = %8.2e rowsum = %8.2e\n",A_rowsum,A_absrowsum,F_rowsum);	    
+	      if(MUELU_FILTEREDAFACTORY_LOTS_OF_PRINTING > 1){
+	        //	      printf("        Avals =");
+	        //	      for(LO l = 0; l < (LO)indsA.size(); l++)
+	        //		printf("%d(%8.2e)[%d] ",(LO)indsA[l],valsA[l],(LO)l);
+	        //	      printf("\n");
+	        //	      printf("        Fvals =");
+	        //	      for(LO l = 0; l < (LO)indsA.size(); l++)
+	        //		if(vals[index_start+l] != ZERO)
+	        //		  printf("%d(%8.2e)[%d] ",(LO)indsA[l],vals[index_start+l],(LO)l);
+	      }
 	    }
-	    for(LO l = 0; l < (LO)indsA.size(); l++) 
-	      F_rowsum += vals[index_start+l];
-	    //	    printf("       : A rowsum = %8.2e |A| rowsum = %8.2e rowsum = %8.2e\n",A_rowsum,A_absrowsum,F_rowsum);	    
-	    if(MUELU_FILTEREDAFACTORY_LOTS_OF_PRINTING > 1){
-	      //	      printf("        Avals =");
-	      //	      for(LO l = 0; l < (LO)indsA.size(); l++)
-	      //		printf("%d(%8.2e)[%d] ",(LO)indsA[l],valsA[l],(LO)l);
-	      //	      printf("\n");
-	      //	      printf("        Fvals =");
-	      //	      for(LO l = 0; l < (LO)indsA.size(); l++)
-		//		if(vals[index_start+l] != ZERO)
-		//		  printf("%d(%8.2e)[%d] ",(LO)indsA[l],vals[index_start+l],(LO)l);
+	    // Don't know what to do, so blitz the row and dump a one on the diagonal
+	    for(size_t l=rowptr[row]; l<rowptr[row+1]; l++) {
+	      vals[l] = ZERO;
 	    }
+	    vals[diagIndexInMatrix] = TST::one();
+	    numFixedDiags++;
 	  }
-	  // Don't know what to do, so blitz the row and dump a one on the diagonal
-	  for(size_t l=rowptr[row]; l<rowptr[row+1]; l++) {
-	    vals[l] = ZERO;
-	  }
-	  vals[diagIndexInMatrix] = TST::one();
-	  numFixedDiags++;
-	}
-      }
-      else {
-        GetOStream(Runtime0)<<"WARNING: Row "<<row<<" has no diagonal "<<std::endl;
-      }
-    }/*end row "numRows" loop"*/
+        }
+        else {
+          GetOStream(Runtime0)<<"WARNING: Row "<<row<<" has no diagonal "<<std::endl;
+        }
+      }/*end row "numRows" loop"*/
+    }
 
     // Copy all the goop out	     
     for(LO row=0; row<(LO)numRows; row++) {      
       filteredA.replaceLocalValues(row, inds(rowptr[row],rowptr[row+1]-rowptr[row]), vals(rowptr[row],rowptr[row+1]-rowptr[row]));
     }
+   if (use_spread_lumping) ExperimentalLumping(A, filteredA, DdomAllowGrowthRate, DdomCap);
 
     size_t g_newDrops = 0, g_oldDrops = 0, g_fixedDiags=0;
     
@@ -706,6 +732,244 @@ namespace MueLu {
     MueLu_sumAll(A.getRowMap()->getComm(), numFixedDiags, g_fixedDiags);
     GetOStream(Runtime0)<< "Filtering out "<<g_newDrops<<" edges, in addition to the "<<g_oldDrops<<" edges dropped earlier"<<std::endl;
     GetOStream(Runtime0)<< "Fixing "<< g_fixedDiags<<" zero diagonal values" <<std::endl;
+  }
+
+  // fancy lumping trying to not just move everything to the diagonal but to also consider moving
+  // some lumping to the kept off-diagonals. We basically aim to not increase the diagonal
+  // dominance in a row. In particular, the goal is that row i satisfies
+  //
+  //        lumpedDiagDomMeasure_i   <= rho2
+  // or 
+  //        lumpedDiagDomMeasure <= rho*unlumpedDiagDomMeasure
+  //
+  // NOTE: THIS CODE assumes direct access to a row. See comments above concerning
+  //       ASSUME_DIRECT_ACCESS_TO_ROW
+  //
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  ExperimentalLumping(const Matrix& A, Matrix& filteredA, double irho, double irho2) const {
+    using TST = typename Teuchos::ScalarTraits<SC>;
+    SC zero = TST::zero();
+    SC one  = TST::one();
+
+    ArrayView<const LO> inds;
+    ArrayView<const SC> vals;
+    ArrayView<const LO> finds;
+    ArrayView<SC> fvals;
+
+    SC PosOffSum, NegOffSum, PosOffDropSum,  NegOffDropSum;
+    SC diag, gamma, alpha; 
+    LO NumPosKept, NumNegKept;
+
+    SC noLumpDdom;
+    SC numer,denom;
+    SC PosFilteredSum, NegFilteredSum;
+    SC Target;
+
+    SC rho  = as<Scalar>(irho);
+    SC rho2 = as<Scalar>(irho2);
+
+    for (LO row = 0; row < (LO) A.getRowMap()->getNodeNumElements(); row++) {
+        noLumpDdom = as<Scalar>(10000.0);  // only used if diagonal is zero
+                                           // the whole idea sort of breaks down
+                                           // when the diagonal is zero. In particular,
+                                           // the old diag dominance ratio is infinity
+                                           // ... so what do we want for the new ddom
+                                           // ratio. Do we want to allow the diagonal
+                                           // to go negative, just to have a better ddom
+                                           // ratio? This current choice essentially
+                                           // changes 'Target' to a large number
+                                           // meaning that we will allow the new
+                                           // ddom number to be fairly large (because
+                                           // the old one was infinity)
+
+        ArrayView<const SC> tvals;
+        A.getLocalRowView(row, inds, vals);           
+        size_t nnz = inds.size();
+        if (nnz == 0) continue;
+        filteredA.getLocalRowView(row, finds, tvals);//assume 2 getLocalRowView()s 
+                                                     // have things in same order
+        fvals = ArrayView<SC>(const_cast<SC*>(tvals.getRawPtr()), nnz);
+
+        LO diagIndex = -1;
+
+        PosOffSum=zero; NegOffSum=zero; PosOffDropSum=zero; NegOffDropSum=zero;
+        diag=zero; NumPosKept=0; NumNegKept=0;
+
+        // first record diagonal, offdiagonal sums and off diag dropped sums
+        for (size_t j = 0; j < nnz; j++) {
+          if (inds[j] == row) {
+            diagIndex = j;
+            diag = vals[j];
+          }
+          else { // offdiagonal
+            if (TST::real(vals[j]) > TST::real(zero) ) {
+              PosOffSum += vals[j];
+              if (TST::magnitude(fvals[j]) == TST::magnitude(zero) ) // not in filtered matrix
+                PosOffDropSum += vals[j];
+              else NumPosKept++;
+            }
+            else {
+              NegOffSum += vals[j];
+              if (TST::magnitude(fvals[j]) == TST::magnitude(zero) ) // not in filtered matrix
+                NegOffDropSum += vals[j];
+              else NumNegKept++;
+            }
+          }
+        }
+
+        // measure of diagonal dominance if no lumping is done. 
+        if (TST::magnitude(diag) != TST::magnitude(zero)  )
+          noLumpDdom = (PosOffSum - NegOffSum)/diag;
+
+        // Target is an acceptable diagonal dominance ratio
+        // which should really be larger than 1
+
+        Target = rho*noLumpDdom;
+        if (TST::magnitude(Target) <= TST::magnitude(rho)) Target = rho2;//rstumin change
+
+        PosFilteredSum = PosOffSum - PosOffDropSum;
+        NegFilteredSum = NegOffSum - NegOffDropSum;
+           // Note: PosNotFilterdSum is not equal to the sum of the
+           // positive entries after lumping. It just reflects the
+           // pos offdiag sum of the filtered matrix before lumping
+           // and does not account for negative dropped terms lumped
+           // to the positive kept terms.
+
+        // dropped positive offdiags always go to the diagonal as these
+        // always improve diagonal dominance.
+
+        diag += PosOffDropSum;
+
+        // now lets work on lumping dropped negative offdiags
+        gamma = -NegOffDropSum - PosFilteredSum;
+
+        if (TST::real(gamma) < TST::real(zero) ) {
+          // the total amount of negative dropping is less than PosFilteredSum,
+          // so we can distribute this dropping to pos offdiags. After lumping
+          // the sum of the pos offdiags is just -gamma so we just assign pos
+          // offdiags proportional to vals[j]/PosFilteredSum
+          // Note: in this case the diagonal is not changed as all lumping
+          //       occurs to the pos offdiags
+
+          if (diagIndex != -1) fvals[diagIndex] = diag;
+          for(LO j = 0; j < (LO)nnz; j++)  {
+            if ((j != diagIndex)&&(TST::real(vals[j]) > TST::real(zero) ) && (TST::magnitude(fvals[j]) != TST::magnitude(zero))) 
+              fvals[j] =  -gamma*(vals[j]/PosFilteredSum);
+          }
+        }
+        else {
+          // So there are more negative values that need lumping than kept
+          // positive offdiags. Meaning there is enough negative lumping to
+          // completely clear out all pos offdiags. If we lump all negs
+          // to pos off diags, we'd actually change them to negative. We
+          // only do this if we are desperate. Otherwise, we'll clear out
+          // all the positive kept offdiags and try to lump the rest
+          // somewhere else.  We defer the clearing of pos off diags
+          // to see first if we are going to be desperate. 
+          
+          bool flipPosOffDiagsToNeg = false;
+
+          // Even if we lumped by zeroing positive offdiags, we are still 
+          // going to have more lumping to distribute to either
+          //     1) the diagonal  
+          //     2) the kept negative offdiags
+          //     3) the kept positive offdiags (desperate)
+ 
+          // Let's first considering lumping the remaining neg offdiag stuff
+          // to the diagonal ... if this does not increase the diagonal
+          // dominance ratio too much (given  by rho).
+
+          if (( TST::real(diag) > TST::real(gamma)) && 
+              ( TST::real((-NegFilteredSum)/(diag - gamma)) <= TST::real(Target))) {
+            // 1st if term above insures that resulting diagonal (=diag-gamma)
+            // is positive. . The left side of 2nd term is the diagonal dominance
+            // if we lump the remaining stuff (gamma) to the diagonal. Recall, 
+            // that now there are no positive off-diags so the sum(abs(offdiags))
+            // is just the negative of NegFilteredSum
+
+            if (diagIndex != -1) fvals[diagIndex] = diag - gamma;
+          }
+          else if (NumNegKept > 0) { 
+            // need to do some lumping to neg offdiags to avoid a large 
+            // increase in diagonal dominance. We first compute alpha
+            // which measures how much gamma should go to the
+            // negative offdiags. The rest will go to the diagonal
+
+            numer = -NegFilteredSum -  Target*(diag-gamma);
+            denom = gamma*(Target - TST::one());
+
+            // make sure that alpha is between 0 and 1 ... and that it doesn't 
+            // result in a sign flip
+            //    Note: when alpha is set to 1, then the diagonal is not modified
+            //          and the negative offdiags just get shifted from those
+            //          removed and those kept, meaning that the digaonal dominance
+            //          should be the same as before
+            //
+            //          can alpha be negative? It looks like denom should always
+            //          be positive. The 'if' statement above 
+            //          Normally, diag-gamma should also be positive (but if it
+            //          is negative then numer is guaranteed to be positve).
+            //          look at the 'if' above,
+            //                if (( TST::real(diag) > TST::real(gamma)) && 
+            //                ( TST::real((-NegFilteredSum)/(diag - gamma)) <= TST::real(Target))) {
+            //
+            //          Should guarantee that numer is positive. This is obvious when 
+            //          the second condition is false. When it is the first condition that
+            //          is false, it follows that the two indiviudal terms in the numer
+            //          formula must be positive. 
+            
+            if ( TST::magnitude(denom) < TST::magnitude(numer) ) alpha = TST::one();
+            else alpha = numer/denom; 
+            if ( TST::real(alpha) < TST::real(zero)) alpha = zero;
+            if ( TST::real(diag) < TST::real((one-alpha)*gamma) ) alpha =  TST::one();
+
+            // first change the diagonal
+
+            if (diagIndex != -1) fvals[diagIndex] = diag - (one-alpha)*gamma;
+
+            // after lumping the sum of neg offdiags will be NegFilteredSum
+            // + alpha*gamma. That is the remaining negative entries altered
+            // by the percent (=alpha) of stuff (=gamma) that needs to be
+            // lumped after taking into account lumping to pos offdiags 
+            
+            // Do this by assigning a fraction of NegFilteredSum+alpha*gamma
+            //  proportional to vals[j]/NegFilteredSum
+            
+            SC temp = (NegFilteredSum+alpha*gamma)/NegFilteredSum;
+            for(LO j = 0; j < (LO)nnz; j++)  {
+              if  ( (j != diagIndex)&&(TST::magnitude(fvals[j]) != TST::magnitude(zero) ) && 
+                    ( TST::real(vals[j]) < TST::real(zero) ) )
+                fvals[j] = temp*vals[j];
+            }
+          } 
+          else { // desperate case
+            // So we don't have any kept negative offdiags  ...
+ 
+            if (NumPosKept > 0) { 
+              // luckily we can push this stuff to the pos offdiags
+              // which now makes them negative
+              flipPosOffDiagsToNeg = true;
+
+              for(LO j = 0; j < (LO)nnz; j++)  {
+                if  ( (j != diagIndex)&&(TST::magnitude(fvals[j]) != TST::magnitude(zero) ) && 
+                      (TST::real(vals[j]) > TST::real(zero) )) 
+                  fvals[j] = -gamma/( (SC) NumPosKept);
+              }
+            }
+            // else abandon rowsum preservation and do nothing
+
+          }
+          if (!flipPosOffDiagsToNeg) { // not desperate so we now zero out
+                                       // all pos terms including some
+                                       // not originally filtered
+                                       // but zeroed due to lumping
+              for(LO j = 0; j < (LO)nnz; j++) 
+                if ((j != diagIndex)&& (TST::real(vals[j]) > TST::real(zero))) fvals[j] = zero;
+          }
+        } // positive gamma else
+
+    } //loop over all rows
   }
 
 
