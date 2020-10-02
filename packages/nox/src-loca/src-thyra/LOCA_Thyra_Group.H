@@ -73,7 +73,7 @@ namespace LOCA {
 
     public:
 
-      //! Constructor
+      //! Constructor (internally constructs nox group)
       Group(const Teuchos::RCP<LOCA::GlobalData>& global_data,
         const NOX::Thyra::Vector& initial_guess,
         const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
@@ -81,6 +81,14 @@ namespace LOCA {
         int p_index,
         bool implement_dfdp = false,
         const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null);
+
+      //! Constructor for Householder continuation where parameters are in separate param vectors.
+      Group(const Teuchos::RCP<LOCA::GlobalData>& global_data,
+            const NOX::Thyra::Group& nox_group,
+            const LOCA::ParameterVector& p,
+            const std::vector<int>& p_index,
+            bool implement_dfdp = false,
+            const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null);
 
       /*!
        * \brief Copy constructor. If type is DeepCopy, takes ownership of
@@ -245,10 +253,10 @@ namespace LOCA {
       LOCA::ParameterVector params;
 
       //! Parameter index in Thyra::ModelEvaluator
-      int param_index;
+      std::vector<int> param_index;
 
       //! Pointer to Thyra vector storing parameters
-      Teuchos::RCP< const ::Thyra::VectorBase<double> > param_thyra_vec;
+      std::vector<Teuchos::RCP< const ::Thyra::VectorBase<double> > > param_thyra_vec;
 
       //! Pointer to x_dot vector of zeros
       Teuchos::RCP< const ::Thyra::VectorBase<double> > x_dot_vec;
@@ -265,6 +273,8 @@ namespace LOCA {
       */
       Teuchos::RCP<const ::Thyra::VectorBase<double> > weight_vec_;
 
+      // If set to true, each parameter is in a separate model evaluator parameter vector
+      bool paramsInSeparatePVecs;
 
     private:
 
