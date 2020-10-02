@@ -1151,6 +1151,33 @@
     </parameter>
 
     <parameter>
+      <name>filtered matrix: use spread lumping</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Lump (but not necessarily to the diagonal, trying not to lose diagonal dominance more than the original matrix) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace. Only used when filtered matrix: use lumping is set to true. </description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>filtered matrix: spread lumping diag dom growth factor</name>
+      <type>double</type>
+      <default>1.1</default>
+      <description>Determines how much a measure of diagonal dominance is allowed to grow when using spread lumping. Only used when filtered matrix: use lumping and filtered matrix: use spread lumping are both set to true. </description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>filtered matrix: spread lumping diag dom cap</name>
+      <type>double</type>
+      <default>2.0</default>
+      <description>For matrix rows that are very diagonally dominant, we ignore the diag dom growth factor and instead use this simple cap as to how large the diagonal dominance measure should allowed to be after dropping. Only used when filtered matrix: use lumping and filtered matrix: use spread lumping are both set to true. </description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>filtered matrix: use root stencil</name>
       <type>bool</type>
       <default>false</default>

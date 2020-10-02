@@ -106,7 +106,8 @@ namespace MueLu {
   private:
     void BuildReuse(const Matrix& A, const GraphBase& G, const bool lumping, double dirichletThresh, Matrix& filteredA) const;
     void BuildNew  (const Matrix& A, const GraphBase& G, const bool lumping, double dirichletThresh, Matrix& filteredA) const;
-    void BuildNewUsingRootStencil(const Matrix& A, const GraphBase& G, double dirichletThresh, Level& currentLevel, Matrix& filteredA) const;
+    void BuildNewUsingRootStencil(const Matrix& A, const GraphBase& G, double dirichletThresh, Level& currentLevel, Matrix& filteredA, bool use_spread_lumping, double DdomAllowGrowthRate, double DdomCap) const;
+    void ExperimentalLumping(const Matrix& A, Matrix& filteredA, double rho, double rho2) const;
 
   }; //class FilteredAFactory
 
