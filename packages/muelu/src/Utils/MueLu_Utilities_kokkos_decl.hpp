@@ -228,6 +228,11 @@ namespace MueLu {
       return Utilities::PowerMethod(A, scaleByDiag, niters, tolerance, verbose, seed);
     }
 
+    static SC PowerMethod(const Matrix& A, const Teuchos::RCP<Vector> &invDiag,
+                          LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
+      return Utilities::PowerMethod(A, invDiag, niters, tolerance, verbose, seed);
+    }
+
     static void MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector, bool doInverse = true,
                                  bool doFillComplete = true, bool doOptimizeStorage = true); // FIXME
 

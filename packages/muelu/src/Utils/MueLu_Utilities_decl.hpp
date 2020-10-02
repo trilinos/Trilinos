@@ -229,6 +229,11 @@ namespace MueLu {
       return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::PowerMethod(A,scaleByDiag,niters,tolerance,verbose,seed);
     }
 
+    static Scalar PowerMethod(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>> &invDiag,
+                              LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
+      return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::PowerMethod(A,invDiag,niters,tolerance,verbose,seed);
+    }
+
     static Scalar Frobenius(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B) {
       return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Frobenius(A, B);
     }
@@ -596,6 +601,11 @@ namespace MueLu {
     static Scalar PowerMethod(const Matrix& A, bool scaleByDiag = true,
                               LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
       return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::PowerMethod(A,scaleByDiag,niters,tolerance,verbose,seed);
+    }
+
+    static Scalar PowerMethod(const Matrix& A, const RCP<Vector> &invDiag,
+                              LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
+      return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::PowerMethod(A,invDiag,niters,tolerance,verbose,seed);
     }
 
     static Scalar Frobenius(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B) {

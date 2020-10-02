@@ -149,20 +149,29 @@ namespace MueLu {
     APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
     APparams->set("compute global constants",APparams->get("compute global constants",false));
 
-    SC dampingFactor      = as<SC>(pL.get<double>("sa: damping factor"));
-    LO maxEigenIterations = as<LO>(pL.get<int>   ("sa: eigenvalue estimate num iterations"));
-    bool estimateMaxEigen =        pL.get<bool>  ("sa: calculate eigenvalue estimate");
-    bool useAbsValueRowSum = pL.get<bool>  ("sa: use absrowsum diagonal scaling");
+    const SC dampingFactor      = as<SC>(pL.get<double>("sa: damping factor"));
+    const LO maxEigenIterations = as<LO>(pL.get<int>   ("sa: eigenvalue estimate num iterations"));
+    const bool estimateMaxEigen =        pL.get<bool>  ("sa: calculate eigenvalue estimate");
+    const bool useAbsValueRowSum =       pL.get<bool>  ("sa: use absrowsum diagonal scaling");
     if (dampingFactor != Teuchos::ScalarTraits<SC>::zero()) {
 
       Scalar lambdaMax;
+      Teuchos::RCP<Vector> invDiag;
       {
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
         lambdaMax = A->GetMaxEigenvalueEstimate();
         if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
-          GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = "<< maxEigenIterations << ")" << std::endl;
+          GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = "<< maxEigenIterations <<
+          ( (useAbsValueRowSum) ?  ", use lumped diagonal)" :  ", use point diagonal)") << std::endl;
           Coordinate stopTol = 1e-4;
-          lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol);
+          if (useAbsValueRowSum) {
+            const bool returnReciprocal=true;
+            invDiag = Utilities::GetLumpedMatrixDiagonal(A,returnReciprocal);
+            TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError,
+                                       "SaPFactory: eigenvalue estimate: diagonal reciprocal is null.");
+            lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
+          } else
+            lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol);
           A->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
@@ -172,10 +181,9 @@ namespace MueLu {
 
       {
         SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);
-        Teuchos::RCP<Vector> invDiag;
         if (!useAbsValueRowSum)
           invDiag = Utilities::GetMatrixDiagonalInverse(*A); //default
-        else {
+        else if (invDiag == Teuchos::null) {
           GetOStream(Runtime0) << "Using absrowsum diagonal" << std::endl;
           const bool returnReciprocal=true;
           invDiag = Utilities::GetLumpedMatrixDiagonal(A,returnReciprocal);

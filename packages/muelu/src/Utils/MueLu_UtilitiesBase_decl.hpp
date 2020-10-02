@@ -510,11 +510,6 @@ namespace MueLu {
      }
 #endif
 
-    /*! @brief Simple transpose for Tpetra::CrsMatrix types
-
-        Note:  This is very inefficient, as it inserts one entry at a time.
-    */
-
     /*! @brief Power method.
 
     @param A matrix
@@ -522,10 +517,40 @@ namespace MueLu {
     @param niters maximum number of iterations
     @param tolerance stopping tolerance
     @verbose if true, print iteration information
+    @seed  seed for randomizing initial guess
 
     (Shamelessly grabbed from tpetra/examples.)
     */
     static Scalar PowerMethod(const Matrix& A, bool scaleByDiag = true,
+                              LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
+      TEUCHOS_TEST_FOR_EXCEPTION(!(A.getRangeMap()->isSameAs(*(A.getDomainMap()))), Exceptions::Incompatible,
+          "Utils::PowerMethod: operator must have domain and range maps that are equivalent.");
+
+      // power iteration
+      RCP<Vector> diagInvVec;
+      if (scaleByDiag) {
+        RCP<Vector> diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRowMap());
+        A.getLocalDiagCopy(*diagVec);
+        diagInvVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRowMap());
+        diagInvVec->reciprocal(*diagVec);
+      }
+
+      Scalar lambda = PowerMethod(A, diagInvVec, niters, tolerance, verbose, seed);
+      return lambda;
+    }
+
+    /*! @brief Power method.
+
+    @param A matrix
+    @param invDiag reciprocal of matrix diagonal
+    @param niters maximum number of iterations
+    @param tolerance stopping tolerance
+    @verbose if true, print iteration information
+    @seed  seed for randomizing initial guess
+
+    (Shamelessly grabbed from tpetra/examples.)
+    */
+    static Scalar PowerMethod(const Matrix& A, const RCP<Vector> &diagInvVec,
                               LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
       TEUCHOS_TEST_FOR_EXCEPTION(!(A.getRangeMap()->isSameAs(*(A.getDomainMap()))), Exceptions::Incompatible,
           "Utils::PowerMethod: operator must have domain and range maps that are equivalent.");
@@ -548,19 +573,11 @@ namespace MueLu {
       Magnitude residual = STS::magnitude(zero);
 
       // power iteration
-      RCP<Vector> diagInvVec;
-      if (scaleByDiag) {
-        RCP<Vector> diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRowMap());
-        A.getLocalDiagCopy(*diagVec);
-        diagInvVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRowMap());
-        diagInvVec->reciprocal(*diagVec);
-      }
-
       for (int iter = 0; iter < niters; ++iter) {
         z->norm2(norms);                                  // Compute 2-norm of z
         q->update(one/norms[0], *z, zero);                // Set q = z / normz
         A.apply(*q, *z);                                  // Compute z = A*q
-        if (scaleByDiag)
+        if (diagInvVec != Teuchos::null)
           z->elementWiseMultiply(one, *diagInvVec, *z, zero);
         lambda = q->dot(*z);                              // Approximate maximum eigenvalue: lamba = dot(q,z)
 
@@ -580,8 +597,6 @@ namespace MueLu {
       }
       return lambda;
     }
-
-
 
     static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream& os) {
       RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(os));
