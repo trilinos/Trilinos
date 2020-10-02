@@ -839,7 +839,7 @@ namespace MueLu {
         // dropped positive offdiags always go to the diagonal as these
         // always improve diagonal dominance.
 
-        diag += PosOffDropSum;// rstumin check in other code? 
+        diag += PosOffDropSum;
 
         // now lets work on lumping dropped negative offdiags
         gamma = -NegOffDropSum - PosFilteredSum;
@@ -901,6 +901,24 @@ namespace MueLu {
 
             // make sure that alpha is between 0 and 1 ... and that it doesn't 
             // result in a sign flip
+            //    Note: when alpha is set to 1, then the diagonal is not modified
+            //          and the negative offdiags just get shifted from those
+            //          removed and those kept, meaning that the digaonal dominance
+            //          should be the same as before
+            //
+            //          can alpha be negative? It looks like denom should always
+            //          be positive. The 'if' statement above 
+            //          Normally, diag-gamma should also be positive (but if it
+            //          is negative then numer is guaranteed to be positve).
+            //          look at the 'if' above,
+            //                if (( TST::real(diag) > TST::real(gamma)) && 
+            //                ( TST::real((-NegFilteredSum)/(diag - gamma)) <= TST::real(Target))) {
+            //
+            //          Should guarantee that numer is positive. This is obvious when 
+            //          the second condition is false. When it is the first condition that
+            //          is false, it follows that the two indiviudal terms in the numer
+            //          formula must be positive. 
+            
             if ( TST::magnitude(denom) < TST::magnitude(numer) ) alpha = TST::one();
             else alpha = numer/denom; 
             if ( TST::real(alpha) < TST::real(zero)) alpha = zero;
