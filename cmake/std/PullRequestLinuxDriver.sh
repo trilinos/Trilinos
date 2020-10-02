@@ -13,6 +13,7 @@ function bootstrap_modules() {
 
     cuda_regex=".*(_cuda_).*"
     ride_regex=".*(ride).*"
+    vortex_regex=".*(vortex).*"
     if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
         if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
             message_std "PRDriver> " "Job is CUDA"
@@ -20,6 +21,12 @@ function bootstrap_modules() {
             module unload python
             module load git/2.10.1
             module load python/3.7.3
+            get_python_packages pip3
+            export PYTHON_EXE=python3
+        elif [[ ${NODE_NAME:?} =~ ${vortex_regex} ]]; then
+            echo -e "Job is CUDA node is vortex"
+            module load git/2.20.0
+            module load python/3.7.2 
             get_python_packages pip3
             export PYTHON_EXE=python3
         else
