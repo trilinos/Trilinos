@@ -240,7 +240,7 @@ main (int argc, char *argv[])
 
     else if (prec_type == "MueLu") {
       // Turns a Epetra_CrsMatrix into a MueLu::Matrix
-      RCP<Xpetra::CrsMatrix<ST, int, int, Xpetra::EpetraNode> > mueluA_ = rcp(new Xpetra::EpetraCrsMatrix(A));
+      RCP<Xpetra::CrsMatrix<ST, int, int, Xpetra::EpetraNode> > mueluA_ = rcp(new Xpetra::EpetraCrsMatrixT<int, Xpetra::EpetraNode>(A));
       RCP<Xpetra::Matrix <ST, int, int, Xpetra::EpetraNode> > mueluA  = rcp(new Xpetra::CrsMatrixWrap<ST, int, int, Xpetra::EpetraNode>(mueluA_));
 
       // Multigrid Hierarchy
