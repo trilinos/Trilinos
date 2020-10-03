@@ -27,9 +27,9 @@ template<class Scalar>
 StepperBackwardEuler<Scalar>::StepperBackwardEuler()
 {
   this->setStepperType(        "Backward Euler");
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setUseFSAL(            false);
+  this->setICConsistency(      "None");
+  this->setICConsistencyCheck( false);
   this->setZeroInitialGuess(   false);
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -204,15 +204,6 @@ void StepperBackwardEuler<Scalar>::setInitialConditions(
     this->setStepperXDot(initialState->getXDot());
 
   StepperImplicit<Scalar>::setInitialConditions(solutionHistory);
-
-  if (this->getUseFSAL()) {
-    RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"StepperBackwardEuler::setInitialConditions()");
-    *out << "\nWarning -- The First-Same-As-Last (FSAL) principle is not "
-         << "needed with Backward Euler.  The default is to set useFSAL=false, "
-         << "however useFSAL=true will also work but have no affect "
-         << "(i.e., no-op).\n" << std::endl;
-  }
 }
 
 

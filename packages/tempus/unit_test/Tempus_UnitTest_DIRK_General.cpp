@@ -56,10 +56,10 @@ TEUCHOS_UNIT_TEST(DIRK_General, Default_Construction)
   auto solver    = rcp(new Thyra::NOXNonlinearSolver());
   solver->setParameterList(Tempus::defaultSolverParameters());
 
-  bool useFSAL              = stepper->getUseFSALDefault();
-  std::string ICConsistency = stepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
-  bool useEmbedded          = stepper->getUseEmbeddedDefault();
+  bool useFSAL              = stepper->getUseFSAL();
+  std::string ICConsistency = stepper->getICConsistency();
+  bool ICConsistencyCheck   = stepper->getICConsistencyCheck();
+  bool useEmbedded          = stepper->getUseEmbedded();
   bool zeroInitialGuess     = stepper->getZeroInitialGuess();
 
   using Teuchos::as;

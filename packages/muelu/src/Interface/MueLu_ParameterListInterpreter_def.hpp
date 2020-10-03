@@ -1325,7 +1325,6 @@ namespace MueLu {
     // === Repartitioning ===
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: node repartition level",int,nodeRepartitionLevel);
 
     if (enableRepart) {
 #ifdef HAVE_MPI
@@ -1392,6 +1391,8 @@ namespace MueLu {
         partName = "zoltan";
       }
 #endif
+
+      MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: node repartition level",int,nodeRepartitionLevel);
 
       // RepartitionHeuristic
       auto repartheurFactory = rcp(new RepartitionHeuristicFactory());
@@ -1692,6 +1693,9 @@ namespace MueLu {
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, fParams);
 	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use root stencil", bool, fParams);
 	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: Dirichlet threshold", double, fParams);
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use spread lumping", bool, fParams);
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom growth factor", double, fParams);
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom cap", double, fParams);
         filterFactory->SetParameterList(fParams);
         filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
         filterFactory->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
@@ -1758,6 +1762,9 @@ namespace MueLu {
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, fParams);
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use root stencil", bool, fParams);
 	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: Dirichlet threshold", double, fParams);
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use spread lumping", bool, fParams);
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom growth factor", double, fParams);
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom cap", double, fParams);
         filterFactory->SetParameterList(fParams);
         filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
         filterFactory->SetFactory("Aggregates", manager.GetFactory("Aggregates"));

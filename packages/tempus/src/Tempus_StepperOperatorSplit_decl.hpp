@@ -63,7 +63,7 @@ public:
     int orderMax);
 #endif
 
-  /// Constructor                                                                                               
+  /// Constructor
   StepperOperatorSplit(
     std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels,
     std::vector<Teuchos::RCP<Stepper<Scalar> > > subStepperList,
@@ -166,7 +166,7 @@ public:
       return isOneStepMethod;
     }
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
+    virtual void setUseFSAL(bool a) { this->useFSAL_ = a; this->isInitialized_ = false; }
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
    //@}
 

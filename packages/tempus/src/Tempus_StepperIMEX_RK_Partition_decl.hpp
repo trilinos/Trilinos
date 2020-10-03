@@ -304,7 +304,7 @@ namespace Tempus {
  *
  *  The First-Same-As-Last (FSAL) principle is not valid for IMEX RK Partition.
  *  The default is to set useFSAL=false, and useFSAL=true will result
- *  in an error.
+ *  in a warning.
  *
  *  #### References
  *  -# Shadid, Cyr, Pawlowski, Widley, Scovazzi, Zeng, Phillips, Conde,
@@ -425,7 +425,6 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
 

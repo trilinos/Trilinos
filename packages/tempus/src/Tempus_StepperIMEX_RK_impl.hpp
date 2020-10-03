@@ -27,9 +27,9 @@ template<class Scalar>
 StepperIMEX_RK<Scalar>::StepperIMEX_RK()
 {
   this->setStepperType(        "IMEX RK SSP2");
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setUseFSAL(            false);
+  this->setICConsistency(      "None");
+  this->setICConsistencyCheck( false);
   this->setZeroInitialGuess(   false);
 
   this->setStageNumber(-1);
@@ -910,8 +910,7 @@ StepperIMEX_RK<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>("Initial Condition Consistency Check",
-                this->getICConsistencyCheckDefault());
+  pl->set<bool>("Initial Condition Consistency Check", false);
   pl->set<std::string>("Solver Name", "Default Solver");
   pl->set<bool>       ("Zero Initial Guess", false);
   Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();

@@ -265,7 +265,7 @@ main (int argc, char *argv[])
 #ifdef HAVE_TRILINOSCOUPLINGS_MUELU
           // Turns a Epetra_CrsMatrix into a MueLu::Matrix
           RCP<Xpetra::CrsMatrix<ST, int, int, Xpetra::EpetraNode> > mueluA_ =
-            rcp(new Xpetra::EpetraCrsMatrix(A));
+            rcp(new Xpetra::EpetraCrsMatrixT<int, Xpetra::EpetraNode>(A));
           RCP<Xpetra::Matrix <ST, int, int, Xpetra::EpetraNode> > mueluA  =
             rcp(new Xpetra::CrsMatrixWrap<ST, int, int, Xpetra::EpetraNode>(mueluA_));
 

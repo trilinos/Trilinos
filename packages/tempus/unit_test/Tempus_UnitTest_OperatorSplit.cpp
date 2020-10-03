@@ -72,9 +72,9 @@ TEUCHOS_UNIT_TEST(OperatorSplit, Default_Construction)
   auto modifier  = rcp(new Tempus::StepperOperatorSplitModifierDefault<double>());
   auto modifierX = rcp(new Tempus::StepperOperatorSplitModifierXDefault<double>());
   auto observer  = rcp(new Tempus::StepperOperatorSplitObserverDefault<double>());
-  bool useFSAL              = stepper->getUseFSALDefault();
-  std::string ICConsistency = stepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
+  bool useFSAL              = stepper->getUseFSAL();
+  std::string ICConsistency = stepper->getICConsistency();
+  bool ICConsistencyCheck   = stepper->getICConsistencyCheck();
   int order = 1;
 
   // Test the set functions.

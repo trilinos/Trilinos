@@ -268,7 +268,7 @@ namespace Tempus {
  *
  *  The First-Same-As-Last (FSAL) principle is not valid for IMEX RK.
  *  The default is to set useFSAL=false, and useFSAL=true will result
- *  in an error.
+ *  in a warning.
  *
  *
  *  #### References
@@ -393,7 +393,6 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
 
@@ -429,8 +428,6 @@ public:
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X,
     Scalar time, Scalar stepSize, Scalar stageNumber,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> > & F) const;
-
-  virtual bool getICConsistencyCheckDefault() const { return false; }
 
   void setOrder(Scalar order) { order_ = order; }
 

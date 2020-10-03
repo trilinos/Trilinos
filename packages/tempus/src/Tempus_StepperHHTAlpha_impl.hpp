@@ -248,9 +248,9 @@ StepperHHTAlpha<Scalar>::StepperHHTAlpha() :
 #endif
 
   this->setStepperType(        "HHT-Alpha");
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setUseFSAL(            false);
+  this->setICConsistency(      "None");
+  this->setICConsistencyCheck( false);
   this->setZeroInitialGuess(   false);
   this->setSchemeName(         "Newmark Beta Average Acceleration");
   this->setAlphaF(             0.0);
