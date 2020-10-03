@@ -32,9 +32,9 @@ public:
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
   {
     this->setStepperType(        this->description());
-    this->setUseFSAL(            this->getUseFSALDefault());
-    this->setICConsistency(      this->getICConsistencyDefault());
-    this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
 
     this->setModel(appModel);
   }

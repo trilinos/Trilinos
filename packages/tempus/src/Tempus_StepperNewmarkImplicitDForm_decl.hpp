@@ -35,7 +35,9 @@ namespace Tempus {
  *  <a href="http://opensees.berkeley.edu/wiki/index.php/Newmark_Method">here</a>.
  *
  *  The First-Same-As-Last (FSAL) principle is not used with the
- *  Newmark implicit D-Form method.
+ *  Newmark implicit D-Form method.  The default is to set useFSAL=false,
+ *  however useFSAL=true will also work but have no affect (i.e., no-op).
+ *
  */
 template <class Scalar>
 class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scalar> {
@@ -125,7 +127,6 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
     virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
 

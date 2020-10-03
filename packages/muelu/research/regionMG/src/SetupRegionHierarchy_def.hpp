@@ -953,7 +953,6 @@ void createRegionHierarchy(const int maxRegPerProc,
   tmLocal = Teuchos::null;
   tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy: CreateCoarseSolver")));
   const std::string coarseSolverType = coarseSolverData->get<std::string>("coarse solver type");
-  const bool coarseSolverRebalance = coarseSolverData->get<bool>("coarse solver rebalance");
   if (coarseSolverType == "smoother") {
     // Set the smoother on the coarsest level.
     const std::string smootherXMLFileName = coarseSolverData->get<std::string>("smoother xml file");
@@ -996,6 +995,7 @@ void createRegionHierarchy(const int maxRegPerProc,
       RCP<Hierarchy> coarseAMGHierarchy;
       std::string amgXmlFileName = coarseSolverData->get<std::string>("amg xml file");
 #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
+      const bool coarseSolverRebalance = coarseSolverData->get<bool>("coarse solver rebalance");
       if(keepCoarseCoords == true && coarseSolverRebalance == true ){
         RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rebalancedCompOp;
         RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > rebalancedCoordinates;

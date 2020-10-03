@@ -20,9 +20,9 @@ template<class Scalar>
 StepperLeapfrog<Scalar>::StepperLeapfrog()
 {
   this->setStepperType(        "Leapfrog");
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setUseFSAL(            false);
+  this->setICConsistency(      "Consistent");
+  this->setICConsistencyCheck( false);
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   this->setObserver();
@@ -298,8 +298,7 @@ StepperLeapfrog<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   getValidParametersBasic(pl, this->getStepperType());
-  pl->set<std::string>("Initial Condition Consistency",
-                       this->getICConsistencyDefault());
+  pl->set<std::string>("Initial Condition Consistency", "Consistent");
   return pl;
 }
 

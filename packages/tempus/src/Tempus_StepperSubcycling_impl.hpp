@@ -30,9 +30,9 @@ StepperSubcycling<Scalar>::StepperSubcycling()
   using Teuchos::ParameterList;
 
   this->setStepperType(        "Subcycling");
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setUseFSAL(            false);
+  this->setICConsistency(      "None");
+  this->setICConsistencyCheck( false);
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   this->setObserver(Teuchos::rcp(new StepperSubcyclingObserver<Scalar>()));
@@ -610,8 +610,8 @@ StepperSubcycling<Scalar>::getValidParameters() const
 
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>("Use FSAL", true);
-  pl->set<std::string>("Initial Condition Consistency", "Consistent");
+  pl->set<bool>("Use FSAL", false);
+  pl->set<std::string>("Initial Condition Consistency", "None");
   return pl;
 }
 

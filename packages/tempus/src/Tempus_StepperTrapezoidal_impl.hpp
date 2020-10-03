@@ -27,9 +27,9 @@ template<class Scalar>
 StepperTrapezoidal<Scalar>::StepperTrapezoidal()
 {
   this->setStepperType(        "Trapezoidal Method");
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setUseFSAL(            true);
+  this->setICConsistency(      "Consistent");
+  this->setICConsistencyCheck( false);
   this->setZeroInitialGuess(   false);
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   this->setObserver();
@@ -77,7 +77,7 @@ StepperTrapezoidal<Scalar>::StepperTrapezoidal(
   bool ICConsistencyCheck,
   bool zeroInitialGuess,
   const Teuchos::RCP<StepperTrapezoidalAppAction<Scalar> >& stepperTrapAppAction)
-  {
+{
   this->setStepperType(        "Trapezoidal");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
@@ -127,7 +127,7 @@ void StepperTrapezoidal<Scalar>::setAppAction(
   Teuchos::RCP<StepperTrapezoidalAppAction<Scalar> > appAction)
 {
   if (appAction == Teuchos::null) {
-    // Create default appAction                                           
+    // Create default appAction
     stepperTrapAppAction_ =
     Teuchos::rcp(new StepperTrapezoidalModifierDefault<Scalar>());
   } else {
@@ -189,7 +189,7 @@ void StepperTrapezoidal<Scalar>::takeStep(
     RCP<StepperTrapezoidal<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
     stepperTrapAppAction_->execute(solutionHistory, thisStepper,
       StepperTrapezoidalAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
- 
+
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
@@ -306,9 +306,9 @@ StepperTrapezoidal<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>       ("Use FSAL", this->getUseFSALDefault());
-  pl->set<std::string>("Initial Condition Consistency",
-                       this->getICConsistencyDefault());
+  pl->set<bool>       ("Use FSAL", true);
+  pl->set<std::string>("Initial Condition Consistency", "Consistent");
+  pl->set<bool>       ("Initial Condition Consistency Check", false);
   pl->set<std::string>("Solver Name", "Default Solver");
   pl->set<bool>       ("Zero Initial Guess", false);
   Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
