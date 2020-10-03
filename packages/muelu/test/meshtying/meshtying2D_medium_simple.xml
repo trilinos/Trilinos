@@ -164,9 +164,9 @@
       <Parameter name="factory" type="string" value="TrilinosSmoother"/>
       <Parameter name="type" type="string" value="RELAXATION"/>
       <ParameterList name="ParameterList">
-        <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
-        <Parameter name="relaxation: sweeps" type="int" value="5"/>
-        <Parameter name="relaxation: damping factor" type="double" value="0.9"/>
+        <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps" type="int" value="1"/>
+        <Parameter name="relaxation: damping factor" type="double" value="0.5"/>
       </ParameterList>
     </ParameterList>
 
@@ -182,17 +182,17 @@
       <Parameter name="factory" type="string" value="TrilinosSmoother"/>
       <Parameter name="type" type="string" value="RELAXATION"/>
       <ParameterList name="ParameterList">
-        <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
-        <Parameter name="relaxation: sweeps" type="int" value="5"/>
-        <Parameter name="relaxation: damping factor" type="double" value="0.9"/>
+        <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps" type="int" value="1"/>
+        <Parameter name="relaxation: damping factor" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
 
     <!-- Use SIMPLE: -->
     <ParameterList name="myBlockSmoother">
       <Parameter name="factory" type="string" value="SimpleSmoother"/>
-      <Parameter name="Sweeps" type="int" value="2"/>
-      <Parameter name="Damping factor" type="double" value="0.9"/>
+      <Parameter name="Sweeps" type="int" value="3"/>
+      <Parameter name="Damping factor" type="double" value="0.5"/>
       <Parameter name="UseSIMPLEC" type="bool" value="false"/>
       <!-- factory manager for block 1 -->
       <ParameterList name="block1">
@@ -224,7 +224,7 @@
     <ParameterList name="AllLevel">
       <Parameter name="startLevel"        type="int"      value="0"/>
       <Parameter name="Smoother"          type="string"   value="myBlockSmoother"/>
-      <Parameter name="CoarseSolver"      type="string"   value="myBlockDirectSolver"/>
+      <Parameter name="CoarseSolver"      type="string"   value="myBlockSmoother"/>
       <Parameter name="P"                 type="string"   value="myBlockedPFact"/>
       <Parameter name="R"                 type="string"   value="myBlockedRFact"/>
       <Parameter name="A"                 type="string"   value="myBlockedRAPFact"/>
