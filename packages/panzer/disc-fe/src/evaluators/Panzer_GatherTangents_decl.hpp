@@ -92,6 +92,7 @@ private:
   Teuchos::RCP<const PointRule> pointRule;
   Kokkos::DynRankView<ScalarT,PHX::Device> edgeTan; // edge tangents
   Kokkos::DynRankView<ScalarT,PHX::Device> refEdgeTan; // reference edge tangents
+  Kokkos::DynRankView<double,PHX::Device> edgeParam; //edgeParametrization
 
   PointValues2<double> pointValues;
   PHX::MDField<const double,Cell,IP,Dim,Dim> constJac_;
