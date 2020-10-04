@@ -14,14 +14,14 @@
       <Parameter name="factory" type="string" value="SubBlockAFactory"/>
       <Parameter name="block row" type="int" value="0"/>
       <Parameter name="block col" type="int" value="0"/>
-      <!--<Parameter name="Range map: Striding info" type="string" value="{ 2 }"/>
+      <!--<Parameter name="Range map: Striding info" type="string" value="{ 2 }"/> // defined in striding information in the cpp file for the finest level
       <Parameter name="Domain map: Striding info" type="string" value="{ 2 }"/>-->
     </ParameterList>
 
     <ParameterList name="myCoarseMap1">
       <Parameter name="factory" type="string" value="CoarseMapFactory"/>
-      <Parameter name="Striding info" type="string" value="{ 3 }"/>
-      <Parameter name="Strided block id" type="int" value="-1"/>
+      <!--<Parameter name="Striding info" type="string" value="{ 3 }"/> // not necessary: information is defined by number of nullspace columns
+      <Parameter name="Strided block id" type="int" value="-1"/>-->
     </ParameterList>
 
     <ParameterList name="myAggFact1">
@@ -53,7 +53,7 @@
       <Parameter name="block col" type="int" value="1"/>
       <Parameter name="row map from block col" type="int" value="0"/>
       <Parameter name="column map from block row" type="int" value="0"/>
-      <Parameter name="Range map: Striding info" type="string" value="{ 2 }"/>
+      <Parameter name="Range map: Striding info" type="string" value="{ 2 }"/> <!-- necessary? have not looked into the code, yet -->
       <Parameter name="Domain map: Striding info" type="string" value="{ 2 }"/>
     </ParameterList>
 
@@ -62,14 +62,12 @@
       <Parameter name="factory" type="string" value="SubBlockAFactory"/>
       <Parameter name="block row" type="int" value="0"/>
       <Parameter name="block col" type="int" value="1"/>
-      <Parameter name="Range map: Striding info" type="string" value="{ 2 }"/>
-      <Parameter name="Domain map: Striding info" type="string" value="{ 2 }"/>
     </ParameterList>
 
     <ParameterList name="myCoarseMap2">
       <Parameter name="factory" type="string" value="BlockedCoarseMapFactory"/>
-      <Parameter name="Striding info" type="string" value="{ 2 }"/>
-      <Parameter name="Strided block id" type="int" value="-1"/>
+      <!--<Parameter name="Striding info" type="string" value="{ 2 }"/> // implicitly clear from the number of nullspace vectors
+      <Parameter name="Strided block id" type="int" value="-1"/>-->
       <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
     </ParameterList>
 
@@ -96,7 +94,7 @@
       <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
       <Parameter name="Aggregates" type="string" value="myInterfaceAggs2"/>
       <Parameter name="CoarseMap" type="string" value="myCoarseMap2"/>
-      <Parameter name="tentative: calculate qr" type="bool" value="false"/>
+      <Parameter name="tentative: calculate qr" type="bool" value="true"/>
       <Parameter name="tentative: build coarse coordinates" type="bool" value="false"/>
       <Parameter name="UnAmalgamationInfo" type="string" value="myInterfaceAggs2"/>
     </ParameterList>
@@ -166,7 +164,7 @@
       <ParameterList name="ParameterList">
         <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
         <Parameter name="relaxation: sweeps" type="int" value="1"/>
-        <Parameter name="relaxation: damping factor" type="double" value="0.7"/>
+        <Parameter name="relaxation: damping factor" type="double" value="0.5"/>
       </ParameterList>
     </ParameterList>
 
@@ -180,20 +178,20 @@
     <!-- block smoother for block A_{11} respective the Schur complement operator -->
     <ParameterList name="mySchurSmooFact">
       <Parameter name="factory" type="string" value="TrilinosSmoother"/>
-      <Parameter name="type" type="string" value="ILUT"/>
+      <Parameter name="type" type="string" value="RELAXATION"/>
       <ParameterList name="ParameterList">
-        <Parameter name="fact:  ilut level-of-fill" type="string" value="0"/>
-        <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
-        <Parameter name="relaxation: sweeps" type="int" value="5"/>
-        <Parameter name="relaxation: damping factor" type="double" value="0.9"/>
+        <!--<Parameter name="fact:  ilut level-of-fill" type="string" value="0"/>-->
+        <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps" type="int" value="1"/>
+        <Parameter name="relaxation: damping factor" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
 
     <!-- Use SIMPLE: -->
     <ParameterList name="myBlockSmoother">
       <Parameter name="factory" type="string" value="SimpleSmoother"/>
-      <Parameter name="Sweeps" type="int" value="1"/>
-      <Parameter name="Damping factor" type="double" value="0.9"/>
+      <Parameter name="Sweeps" type="int" value="3"/>
+      <Parameter name="Damping factor" type="double" value="1.0"/>
       <Parameter name="UseSIMPLEC" type="bool" value="false"/>
       <!-- factory manager for block 1 -->
       <ParameterList name="block1">
@@ -217,7 +215,7 @@
   <!-- Definition of the multigrid preconditioner -->
   <ParameterList name="Hierarchy">
 
-    <Parameter name="max levels"          type="int"      value="1"/>
+    <Parameter name="max levels"          type="int"      value="3"/>
     <Parameter name="coarse: max size"    type="int"      value="25"/>
     <Parameter name="verbosity"           type="string"   value="Extreme"/>
     <Parameter name="use kokkos refactor" type="bool"     value="false"/>

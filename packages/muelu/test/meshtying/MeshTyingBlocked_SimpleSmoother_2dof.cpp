@@ -143,10 +143,35 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 // nullspace1->describe(*out, Teuchos::VERB_EXTREME);
 
   // Read the interface slave dof row map from file
-  TEUCHOS_ASSERT(!dualInterfaceMapFileName.empty());
-  RCP<const Map> primalInterfaceDofMap = Xpetra::IO<SC,LO,GO,NO>::ReadMap(dualInterfaceMapFileName, lib, comm);
+  //TEUCHOS_ASSERT(!dualInterfaceMapFileName.empty());
+  //RCP<const Map> primalInterfaceDofMap = Xpetra::IO<SC,LO,GO,NO>::ReadMap(dualInterfaceMapFileName, lib, comm);
 // primalInterfaceDofMap->describe(*out, Teuchos::VERB_EXTREME);
 
+  // Read the interface slave dof row map from file
+  TEUCHOS_ASSERT(!dualInterfaceMapFileName.empty());
+  RCP<const Map> primalInterfaceDofMapDofs = Xpetra::IO<SC,LO,GO,NO>::ReadMap(dualInterfaceMapFileName, lib, comm);
+  //primalInterfaceDofMapDofs->describe(*out, Teuchos::VERB_EXTREME);
+  std::vector<int> interfaceGlobalDofsOnCurrentProc = std::vector<int>(primalInterfaceDofMapDofs->getGlobalNumElements());
+  std::vector<int> interfaceGlobalDofs = std::vector<int>(primalInterfaceDofMapDofs->getGlobalNumElements());
+  if(comm->getRank() == 0)
+  {
+    for(size_t i = 0; i < primalInterfaceDofMapDofs->getGlobalNumElements(); ++i)
+    {
+      interfaceGlobalDofsOnCurrentProc[i] = primalInterfaceDofMapDofs->getNodeElementList()[i];
+    }
+  }
+  Teuchos::reduceAll<int>(*comm, Teuchos::REDUCE_MAX, interfaceGlobalDofs.size(),
+  &interfaceGlobalDofsOnCurrentProc[0], &interfaceGlobalDofs[0]);
+
+  Array<GlobalOrdinal> primalInterfaceDofMapDofsOnCurProc;
+  for(size_t i = 0; i < interfaceGlobalDofs.size(); ++i)
+  {
+    if(dofRowMapPrimal->isNodeGlobalElement((GlobalOrdinal) interfaceGlobalDofs[i]))
+      primalInterfaceDofMapDofsOnCurProc.push_back((GlobalOrdinal) interfaceGlobalDofs[i]);
+  }
+  RCP<const Map> primalInterfaceDofMap = MapFactory::Build(lib, primalInterfaceDofMapDofs->getGlobalNumElements(), primalInterfaceDofMapDofsOnCurProc, Teuchos::ScalarTraits<GO>::zero(), comm);
+
+  
   // Create the default nullspace vector of the (1,1)-block
   RCP<MultiVector> nullspace2 = MultiVectorFactory::Build(dofRowMapDual, 2, true);
   const int dimNS = 2;
