@@ -14,7 +14,7 @@ fi
 set -x
 
 #TODO: review appropriate job size
-bsub -x -Is -nnodes 2 -J ${JOB_NAME} -W ${BSUB_CTEST_TIME_LIMIT} \
+bsub -Is -nnodes 2 -J ${JOB_NAME} -W ${BSUB_CTEST_TIME_LIMIT} \
   ${WORKSPACE}/Trilinos/cmake/std/PullRequestLinuxDriver.sh
 
 # NOTE: Above, this bsub command should grab a two
