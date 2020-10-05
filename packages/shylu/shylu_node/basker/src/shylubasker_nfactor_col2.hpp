@@ -28,6 +28,7 @@
 //#define BASKER_DEBUG_NFACTOR_COL2
 //#define BASKER_DEBUG_TIME
 //#define BASKER_COUNT_OPS
+//#define BASKER_TIME
 
 namespace BaskerNS
 {
@@ -75,9 +76,6 @@ namespace BaskerNS
       __itt_pause();
       #endif
 
-      //if(kid==12 || kid==13 || kid==14 || kid==15)
-      //if(kid ==8 || kid ==9 || kid ==10 || kid ==11)
-      //if(kid==4 || kid ==5 || kid==6 || kid==7)
       {
       #ifdef BASKER_KOKKOS
         basker->t_nfactor_sep2(kid, lvl, team_leader, thread);
@@ -102,20 +100,46 @@ namespace BaskerNS
    const TeamMember &thread
    )
   {
+    // this routine performs left-looking update LU(U_col)(U_row) diagonabl block
+    // using the previous/descendant diagonal blocks (l < lvl)
+    // 
+    // factor LU(U_col)(U_row) and also compute apply U(U_col)(U_row)^{-1} to 
+    // the blocks below A(U_col)(U_row) to finish computation of L-factor
+    //
+    // before the call to nfactor_sep: off-diagonal blocks of L are already factored as 
+    // a part of nfactor_blk
+    //
+    // For instance, we factor A(7,7):
+    //
+    // LU(1,1)         U(1,3)                        A(1,7)
+    //        LU(2,2)  U(2,3)                        A(2,7)
+    //  L(3,1) L(3,2) LU(3,3)                        A(3,7)
+    //                        LU(4,4)         U(4,6) A(4,7)
+    //                               LU(5,5)  U(5,6) A(5,7)
+    //                         L(6,4) L(6,5) LU(6,6) A(6,7)
+    //  L(7,1) L(7,2)  L(7,3)  L(7,4) L(7,5)  L(7,6) A(7,7)
+    //
+    // 1) t_upper_col_factor          : apply L-solve to A(:,7)
+    // 2) t_add_extend                : accumulate update into A(7,7)
+    // 3) t_lower_col_factor          : factor A(7,7), sequential
+    // 4) t_lower_col_factor_offdiag2 : compute L(8:end, 7)
+
     const Int U_col =  S(lvl)(kid);
     Int U_row       =  0;
-    //const Int scol = LU(U_col)(U_row).scol; //Not used
-    //const Int ecol = LU(U_col)(U_row).ecol; //Not used
+    Int ncol = LU(U_col)(U_row).ncol;
 
+    #ifdef BASKER_TIME
+    Kokkos::Impl::Timer timer;
+    #endif
 
     #ifdef BASKER_DEBUG_NFACTOR_COL2
     printf("\n\n  LVL=%d  ----- kid: %d --\n\n",
            lvl, kid);
     #endif
-    
     //Do all domains (old sublevel 0)
     //If this works well we can move this for into the function
-    for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
+    // > Apply L-solve to compute the first interface in U
+    for(Int k = 0; k < ncol; ++k)
     {
       #ifdef BASKER_DEBUG_NFACTOR_COL2
       printf("UPPER, kid: %d k: %d \n",
@@ -127,6 +151,10 @@ namespace BaskerNS
                          BASKER_FALSE);
     }//over all columns / domains / old sublevel 0
 
+    #ifdef BASKER_TIME
+    printf("Time Upper-Col1(%d): %lf \n", (int)kid, timer.seconds());
+    timer.reset();
+    #endif
     #ifdef BASKER_DEBUG_NFACTOR_COL2
     printf("\n\n\n done with UPPER, kid: %d \n\n\n", kid);
     #endif
@@ -143,13 +171,16 @@ namespace BaskerNS
     //----------------Sep level upper tri-------------
     for(Int l = 1; l < (lvl); ++l)
     {
-      for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
+      for(Int k = 0; k < ncol; ++k)
       {
         #ifdef BASKER_DEBUG_NFACTOR_COL2
         printf("\n\nSep, upper update, kid: %d k=%d \n\n",
                kid, k+LU(U_col)(U_row).scol);
         #endif
-    
+
+        // > apply U-solve (by calling t_upper_col_factor_offdiag2)
+        //   to compute the (l-1)th interface in L, and
+        //   update the (l-1)th diagonal separator block
         t_add_extend(thread, kid,lvl,l-1, k, 
                      LU(U_col)(U_row).scol, 
                      BASKER_FALSE);
@@ -164,6 +195,7 @@ namespace BaskerNS
                  kid);
           #endif
 
+          // > Apply L-solve to compute the l interface in U
          t_upper_col_factor(kid, team_leader, 
                             lvl, l, 
                             k,
@@ -178,6 +210,10 @@ namespace BaskerNS
       //                 1, 2, LU(U_col)(U_row).ncol+1, l-1);
 
     }//for - over all sublevel 1...lvl-2
+    #ifdef BASKER_TIME
+    printf("Time Upper-Col(%d): %lf \n", (int)kid, timer.seconds());
+    timer.reset();
+    #endif
 
     //---------Lower Factor (old sublevel lvl-1)-------
     
@@ -194,20 +230,41 @@ namespace BaskerNS
     //printf("\n\n======= LOWER, KID: %d ======= \n\n", kid);
     //return;
     
-    //if(lvl < 2)
+    // > apply U-solve (by calling t_upper_col_factor_offdiag2)
+    //   to compute the last (lvl-1)th interface in L, and
+    //   update the last (lvl-1)th diagonal separator block
     {
+      #ifdef BASKER_TIME
+      double time_extend = 0.0;
+      double time_faccol = 0.0;
+      double time_facoff = 0.0;
+      Kokkos::Impl::Timer timer_extend;
+      Kokkos::Impl::Timer timer_faccol;
+      Kokkos::Impl::Timer timer_facoff;
+      #endif
       //for(Int k=0; k < 1; ++k)
-      for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
+      for(Int k = 0; k < ncol; ++k)
       {
+        // ------------------------------------------------------- //
+        #ifdef BASKER_TIME
+        timer_extend.reset();
+        #endif
+
         #ifdef BASKER_DEBUG_NFACTOR_COL2
         printf("lower_update, kid: %d k: %d \n",
                kid, k);
         #endif
-        //printf("test: %d \n", LU(U_col)(U_row).scol);
-       
         t_add_extend(thread, kid,lvl,lvl-1, k,
                      LU(U_col)(U_row).scol,
                      BASKER_TRUE);
+        #ifdef BASKER_TIME
+        time_extend += timer_extend.seconds();
+        #endif
+
+        // ------------------------------------------------------- //
+        #ifdef BASKER_TIME
+        timer_faccol.reset();
+        #endif
         Entry pivot (0.0);
         if((kid%(Int)(pow(2,lvl))) == 0)
         {
@@ -216,11 +273,11 @@ namespace BaskerNS
                  kid, k);
           #endif
     
+          // factor the kth column of LU(U_col)(U_row)
           t_lower_col_factor(kid, team_leader, 
                              lvl, lvl-1, 
                              k, pivot);
         }
-
         //nee barrier if multiple thread uppdate
         //thread.team_barrier();
         my_leader = find_leader(kid, lvl-1);
@@ -229,12 +286,19 @@ namespace BaskerNS
         //       my_leader, b_size, lvl);
         t_basker_barrier(thread, kid, my_leader,
                          b_size, 4, k, lvl-1);
+        #ifdef BASKER_TIME
+        time_faccol += timer_faccol.seconds();
+        #endif
+
+        // ------------------------------------------------------- //
+        #ifdef BASKER_TIME
+        timer_facoff.reset();
+        #endif
 
         #ifdef BASKER_DEBUG_NFACTOR_COL2
         printf("lower diag factor, kid: %d k: %d \n",
                kid, k);
         #endif
-
         t_lower_col_factor_offdiag2(kid, lvl, lvl-1, k, pivot);
         //thread.team_barrier();
         my_leader = find_leader(kid, lvl-1);
@@ -243,12 +307,28 @@ namespace BaskerNS
         //       my_leader, b_size, lvl);
         t_basker_barrier(thread, kid, my_leader,
                          b_size, 5, k, lvl-1);
+        #ifdef BASKER_TIME
+        time_facoff += timer_facoff.seconds();
+        #endif
       }
       //Trick for sep = 1
       //t_basker_barrier(thread, kid, kid,
       //                 1, 1, LU(U_col)(U_row).ncol+1, lvl-1);
       //t_basker_barrier(thread, kid, kid,
       //                 1, 1, LU(U_col)(U_row).ncol+1, lvl-1);
+      #ifdef BASKER_TIME
+      double time_factot = timer.seconds();
+      if((kid%(Int)(pow(2,lvl))) == 0) {
+        const Int L_col = S(lvl)(kid);
+        const Int L_row = LU_size(U_col)-1;
+
+        printf("Time Lower-Col(%d): %lf, n = %d, nnz(L) = %d, nnz(U) = %d \n", (int)kid, time_factot,
+               (int)ncol, (int)LL(U_col)(U_row).col_ptr(ncol), (int)LU(L_col)(L_row).col_ptr(ncol));
+        printf(" > Time Lower-Col(%d):extend-add: %lf \n", (int)kid, time_extend);
+        printf(" > Time Lower-Col(%d):fac-col   : %lf \n", (int)kid, time_faccol);
+        printf(" > Time Lower-Col(%d):fac-off   : %lf \n", (int)kid, time_facoff);
+      }
+      #endif
     }
   }//end t_nfactor_sep2
 
@@ -350,7 +430,7 @@ namespace BaskerNS
     //const Int X_col = S(l)(my_leader);
     //Int x_row = 
 
-    BASKER_MATRIX &U   = LU(U_col)(U_row);
+    BASKER_MATRIX &U = LU(U_col)(U_row);
     #ifdef BASKER_DEBUG_NFACTOR_COL2
     if(L_row >= LL_size(L_col))
     {
@@ -369,8 +449,8 @@ namespace BaskerNS
     }
     #endif
 
+    // backward-solve on first block
     Int col_idx_offset  = 0;
-    //const BASKER_BOOL A_option = BASKER_FALSE;
     t_dense_back_solve_offdiag(kid,
                                L_col, L_row,
                                X_col, X_row,
@@ -426,29 +506,20 @@ namespace BaskerNS
    
     //printf("DEBUG, kid: %d k: %d A_col: %d A_row: %d \n", 
     //       kid, k, A_col, A_row);
-
-
-    //BASKER_MATRIX &B    = AVM(A_col)(A_col);
-
     const Int my_idx     = S(0)(kid);
-
     //should remove either as a paramter or here
     Int team_leader      = find_leader(kid, sl);
     const Int leader_idx = S(0)(team_leader);
-    //Int loop_col_idx     = S(l)(kid);
-
-    //#ifdef BASKER_DEBUG_NFACTOR_COL2
+    #ifdef BASKER_DEBUG_NFACTOR_COL2
     if(lower == BASKER_TRUE)
     {
-      #ifdef BASKER_DEBUG_NFACTOR_COL2
       printf("Called t_blk_col_copy_atomic kid: %d \n " , kid);
       printf("Copying col, kid: %d  k: %d lvl: %d l: %d \n", 
              kid,k,lvl, l);
-      #endif
       //printf("Copying Col, kid: %d k:%d  A: %d %d to tl: %d li: %d\n",
       //        kid, k, A_col, A_row, team_leader, leader_idx);
     }
-    //#endif
+    #endif
    
     //If I an not a leader, then need to copy over
     if(kid != team_leader)
@@ -576,6 +647,7 @@ namespace BaskerNS
     //printf("-----------------copy_update_matrx----------");
     //printf("\n\n\n\n");
 
+    const Entry zero (0.0);
     const Int leader_idx = S(0)(kid);
     BASKER_MATRIX     &C = thread_array(kid).C;  
     Int nnz = 0;
@@ -588,19 +660,15 @@ namespace BaskerNS
     }
     */
     
-    for(Int TEMP=0; TEMP < 1; TEMP++)
+    // X += B(:, k)
     {
-      //Copy B -> C
       Int bl = l+1;
       Int A_col = S(lvl)(kid);
 
       Int my_row_leader = S(0)(find_leader(kid,lvl-1));
-      //Int my_new_row = 
-      // S(bl)(kid) - my_row_leader;
       Int A_row = S(bl)(kid) - my_row_leader;
 
-      //Int CM_idx = kid;
-      BASKER_MATRIX  *Bp;
+      BASKER_MATRIX *Bp;
       if(A_row != (LU_size(A_col)-1))
       {
         //printf("upper picked, kid: %d \n", kid);
@@ -613,31 +681,20 @@ namespace BaskerNS
         //printf("lower picked, kid: %d\n", kid);
         Bp = &(ALM(A_col)(0));
       }
-      BASKER_MATRIX   &B  = *Bp;
-      //printf("ADDING UPDATES TO B\n");
-      //B.info();
-      //B.print();
-
-      //Int team_leader   = find_leader(kid, l);
-      ENTRY_1DARRAY   X = LL(leader_idx)(bl).ews;
-      INT_1DARRAY    ws = LL(leader_idx)(bl).iws;
-      //const Int brow    = LL(leader_idx)(bl).srow;
-      //const Int nrow    = LL(leader_idx)(bl).nrow;
-      //Int p_size        = LL(leader_idx)(bl).p_size;
-      //const Int ws_size = LL(leader_idx)(bl).iws_size;
-      //Int *color        = &(ws(0));
-      //Int *pattern      = &(color[ws_size]);
-
       #ifdef BASKER_DEBUG_NFACTOR_COL2
       printf("copy, kid: %d bl: %d  A: %d %d \n", 
              kid, bl, A_col, A_row);
       #endif
 
-      //const Int bbcol = B.scol;
+      // X += B(:, k)
+      BASKER_MATRIX &B = *Bp;
+      ENTRY_1DARRAY  X = LL(leader_idx)(bl).ews;
+      //printf("ADDING UPDATES TO B\n");
+      //B.info();
+      //B.print();
       for(Int i = B.col_ptr(k); i < B.col_ptr(k+1); ++i)
       {
         Int B_row = B.row_idx(i);
-        //Int j = gperm(B_row+B.srow);
 
         #ifdef BASKER_DEBUG_NFACTOR_COL22
         printf("Scanning_2 A: %d %d lvl %d l: %d bl:%d brow: % d %d K: %d \n",
@@ -648,8 +705,8 @@ namespace BaskerNS
  
         X(B_row) += B.val(i);
       }//end for over all nnz
-    }//DUMMY
-        
+    }
+
     //-------------move into C------------------- 
     //(Right now have to do dense but like to do sparse)
 
@@ -657,10 +714,9 @@ namespace BaskerNS
     //printf("------maybe l:%d lastblk: %d kid: %d\n",
     //   l, last_blk, kid);
     
-    for(Int TEMP = 0; TEMP < 1; ++TEMP)
+    // copy C = X
     {
       Int bl = l+1;
-      //Int A_col = S(lvl)(kid);
   
       /*
       Int A_row = (lvl==1)?(2):S(bl)(kid)%(LU_size(A_col));
@@ -680,28 +736,18 @@ namespace BaskerNS
       //        kid, leader_idx, bl);
       */
 
-      //Int CM_idx = kid;
-      ENTRY_1DARRAY   X   = LL(leader_idx)(bl).ews;
-      INT_1DARRAY    ws   = LL(leader_idx)(bl).iws;
-      //const Int   ws_size = LL(leader_idx)(bl).ews_size;
-      //const Int      brow = LL(leader_idx)(bl).srow;
-      const Int      nrow = LL(leader_idx)(bl).nrow;
-      //Int p_size          = LL[leader_idx][bl].p_size;
-
       //For recounting patterns in dense blk
       //Need better sparse update
-      //Int p_count  =0 ; 
-    
+      ENTRY_1DARRAY   X   = LL(leader_idx)(bl).ews;
+      INT_1DARRAY    ws   = LL(leader_idx)(bl).iws;
+      const Int      nrow = LL(leader_idx)(bl).nrow;
       Int *color   = &(ws(0));
-      //Int *pattern = &(color[ws_size]);
-    
       #ifdef BASKER_DEBUG_NFACTOR_COL2
       printf("moving, kid: %d  A: %d %d %d %d p_size: %d \n", 
              kid, A_col, A_row, team_leader, bl,p_size);
       #endif
       
       //over all dim(S)
-      //for(Int jj=brow; jj < (brow+nrow); jj++)
       for(Int jj=0; jj < nrow; ++jj)
       {
         //Int j = pattern[jj];
@@ -711,7 +757,7 @@ namespace BaskerNS
                j,brow,X[j], kid);
         #endif
 
-        if(X(j) != (Entry)(0) )
+        if (X(j) != zero)
         {
           if(bl == l+1)
           {
@@ -722,7 +768,7 @@ namespace BaskerNS
             C.row_idx(nnz) = j;
             C.val(nnz)     = X(j);
             nnz++;
-            X(j)            = 0;
+            X(j)           = zero;
             color[j] = 0;
           }
           else
@@ -735,8 +781,7 @@ namespace BaskerNS
           }
         }//if X(j) != 0
       }//for -- length of x
-
-    }//DUMMY
+    }
     C.col_ptr(0) = 0;
     C.col_ptr(1) = nnz;
 
@@ -830,4 +875,5 @@ namespace BaskerNS
   }//end t_lower_col_factor_offdiag2()
 }//end namespace BaskerNS
 
+#undef BASKER_TIME
 #endif //end ifndef

@@ -18,8 +18,23 @@
 //#undef BASKER_DEBUG_ORDER
 //#define BASKER_TIMER
 
+
 namespace BaskerNS
 {
+#define BASKER_USE_QSORT
+#ifdef BASKER_USE_QSORT
+typedef struct basker_sort_pair_str {
+  int perm;
+  int rowid;
+} basker_sort_pair;
+
+static int basker_sort_matrix_col(const void *arg1, const void *arg2)
+{
+  const basker_sort_pair *val1 = (const basker_sort_pair *) arg1;
+  const basker_sort_pair *val2 = (const basker_sort_pair *) arg2;
+  return (val2->rowid < val1->rowid);
+}
+#endif
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -669,7 +684,7 @@ namespace BaskerNS
     #endif
 
     //--------------------------------------------------------------
-    //3. ND on BTF_A
+    //3. ND on BTF_A (compute ND and apply/permute BTF_A)
     //currently finds ND and permute BTF_A
     //Would like to change so finds permuation, 
     //and move into 2D-Structure
@@ -743,7 +758,8 @@ namespace BaskerNS
 
 
     //--------------------------------------------------------------
-    //5. Permute BTF_A
+    //5. Constrained symamd on A
+    //Init for Constrained symamd on A
     INT_1DARRAY cmember;
     MALLOC_INT_1DARRAY(cmember, BTF_A.ncol+1);
     init_value(cmember,BTF_A.ncol+1,(Int) 0);
@@ -758,7 +774,7 @@ namespace BaskerNS
 
 
     //--------------------------------------------------------------
-    //5. Constrained symamd on A
+    // call Constrained symamd on A
     //printf("============CALLING CSYMAMD============\n");
     csymamd_order(BTF_A, order_csym_array, cmember);
     #if 0 // reset to I for debug
@@ -785,13 +801,13 @@ namespace BaskerNS
     /*printf(" After cAMD\n");
     printf(" p = [\n" );
     for(Int j = 0; j < BTF_A.ncol; j++) {
-      printf("%d\n",order_csym_array(j) );
+      printf("%d\n",(int)order_csym_array(j) );
     }
     printf("];\n");
     printf(" ppT = [\n" );
     for(Int j = 0; j < BTF_A.ncol; j++) {
       for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-        printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+        printf("%d %d %e\n", (int)BTF_A.row_idx[k], (int)j, BTF_A.val[k]);
       }
     }
     printf("];\n");*/
@@ -883,7 +899,7 @@ namespace BaskerNS
 
       #ifdef BASKER_TIMER
       double barrier_init_time = scotch_timer.seconds();
-      std::cout << " ++ Basker apply_scotch : barrier iinit time        : " << barrier_init_time << std::endl;
+      std::cout << " ++ Basker apply_scotch : barrier init time         : " << barrier_init_time << std::endl;
       #endif
     }
     #endif
@@ -1753,6 +1769,14 @@ namespace BaskerNS
     std::cout << " ~~ sort_matrix_store_valperms(n = " << M.ncol << " nnz = " << M.nnz << ")" << std::endl;
     #endif
     //std::cout << " M = [" << std::endl;
+    #ifdef BASKER_USE_QSORT
+    Int max_nnz_row = 0;
+    for(Int k = 0; k < M.ncol; k++) {
+      Int nnz_row = M.col_ptr[k+1] - M.col_ptr[k];
+      if (max_nnz_row < nnz_row) max_nnz_row = nnz_row;
+    }
+    basker_sort_pair *sort_pairs = (basker_sort_pair*)malloc(max_nnz_row * sizeof(basker_sort_pair));
+    #endif
     for(Int k = 0; k < M.ncol; k++)
     {
       #ifdef BASKER_TIMER
@@ -1763,15 +1787,29 @@ namespace BaskerNS
       #if defined(USE_WORKSPACE_FOR_SORT)
       perm(0) = start_row;
       #endif
+      #ifdef BASKER_USE_QSORT
+      {
+        Int nnz = M.col_ptr[k+1] - M.col_ptr[k];
+        for (Int i = 0; i < nnz; i++) {
+          sort_pairs[i].perm = start_row + i;
+          sort_pairs[i].rowid = M.row_idx[start_row + i];
+        }
+        qsort(sort_pairs, (size_t) nnz, sizeof(basker_sort_pair),
+              &basker_sort_matrix_col);
+        for (Int i = 0; i < nnz; i++) {
+          perm(i) = sort_pairs[i].perm;
+        }
+      }
+      #else
       for(Int i = M.col_ptr[k]+1; i < M.col_ptr[k+1]; i++)
       {
-#if 1
-        // binary search
-        Int jj_start = start_row;
-        Int jj_end   = i;
-        Int id = M.row_idx[i];
-        while(jj_end > jj_start)
-        {
+        #if 1
+          // binary search
+          Int jj_start = start_row;
+          Int jj_end   = i;
+          Int id = M.row_idx[i];
+          while(jj_end > jj_start)
+          {
             Int jj_mid = jj_start + (jj_end-jj_start)/2;
             #if defined(USE_WORKSPACE_FOR_SORT)
             Int id_mid = M.row_idx[perm(jj_mid-start_row)];
@@ -1785,24 +1823,24 @@ namespace BaskerNS
             } else {
                 jj_start = jj_mid+1;
             }
-        }
-        Int jj = jj_start;
-        #if defined(USE_WORKSPACE_FOR_SORT)
-        if (jj < i && M.row_idx[perm(jj-start_row)] < id) 
-        #else
-        if (jj < i && M.row_idx[jj] < id) 
-        #endif
-        {
+          }
+          Int jj = jj_start;
+          #if defined(USE_WORKSPACE_FOR_SORT)
+          if (jj < i && M.row_idx[perm(jj-start_row)] < id) 
+          #else
+          if (jj < i && M.row_idx[jj] < id) 
+          #endif
+          {
             jj++;
-        }
-#else
-        //just use insertion sort
-        Int jj = i;
-        while((jj > start_row) && (M.row_idx[jj-1] > M.row_idx[i]))
-        {
+          }
+        #else
+          //just use insertion sort
+          Int jj = i;
+          while((jj > start_row) && (M.row_idx[jj-1] > M.row_idx[i]))
+          {
             jj = jj-1;
-        }   //end while jj
-#endif
+          }   //end while jj
+        #endif
         // insert i at jj
         // NOTE: the complexity of "shift" depends on the inputs 
         //       e.g., if already sorted, then no shift
@@ -1830,13 +1868,17 @@ namespace BaskerNS
         order_vals_perms(jj) = tmp_index;
         #endif
       } //end for i
+      #endif
+
       #if defined(USE_WORKSPACE_FOR_SORT)
       for(Int i = 0; i < M.col_ptr[k+1]-start_row; i++)
       {
+//printf( " perm[%d] = %d, row_idx[%d] = %d\n",(int)i,(int)perm(i),(int)perm(i),(int)M.row_idx[perm(i)] );
           iwork[i] = order_vals_perms(perm(i));
           dwork[i] = M.val[perm(i)];
           perm(i)  = M.row_idx[perm(i)];
       }
+//printf( "\n" );
       for(Int i = 0; i < M.col_ptr[k+1]-start_row; i++)
       {
           Int id = start_row+i;
@@ -1855,7 +1897,9 @@ namespace BaskerNS
       }
       #endif
     }//end over all columns k
-    //std::cout << " ];" << std::endl;
+    #ifdef BASKER_USE_QSORT
+    free(sort_pairs);
+    #endif
 
     return 0;
   }//end sort_matrix()
@@ -1906,4 +1950,6 @@ namespace BaskerNS
   }
 
 }//end namespace basker
+
+#undef BASKER_TIMER
 #endif //end ifndef basker_order_hpp

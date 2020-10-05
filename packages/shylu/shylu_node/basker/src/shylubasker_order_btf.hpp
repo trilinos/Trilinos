@@ -158,12 +158,12 @@ namespace BaskerNS
     if (Options.verbose == BASKER_TRUE)
     {
       printf("Basker: num_threads: %d \n", (int)num_threads);
-      printf("Basker BTF tabs: \n");
-      for(Int i=0; i < nblks+1; i++)
-      {
-        printf(" btf_tabs[%d] = %ld, ", (int)i, (long)btf_tabs(i));
-      }
-      printf("\n");
+      //printf("Basker BTF tabs: \n");
+      //for(Int i=0; i < nblks+1; i++)
+      //{
+      //  printf(" btf_tabs[%d] = %ld, ", (int)i, (long)btf_tabs(i));
+      //}
+      //printf("\n");
     }//if verbose
 
     /*printf(" A = [\n" );

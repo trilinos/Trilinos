@@ -88,7 +88,7 @@ namespace BaskerNS
 
 #ifdef BASKER_KOKKOS
     #ifdef BASKER_TIME
-    Kokkos::Impl::Timer       timer;
+    Kokkos::Impl::Timer timer;
     #endif
 
     typedef Kokkos::TeamPolicy<Exe_Space>        TeamPolicy;
@@ -119,8 +119,8 @@ namespace BaskerNS
       {
         INT_1DARRAY thread_start;
         MALLOC_INT_1DARRAY(thread_start, num_threads+1);
-        init_value(thread_start, num_threads+1, 
-            (Int) BASKER_MAX_IDX);
+        init_value(thread_start, num_threads+1, (Int) BASKER_MAX_IDX);
+
         info = nfactor_domain_error(thread_start);
         //printf( " nfactor_domain: info = %d\n",(int)info );
         if((info == BASKER_SUCCESS) ||
@@ -170,8 +170,13 @@ namespace BaskerNS
       // -------------------------------------------------------- //
       // ---------------------------Sep-------------------------- //
       if(info != BASKER_ERROR) {
+#ifdef BASKER_KOKKOS
+        #ifdef BASKER_NO_LAMBDA
         for(Int l=1; l <= tree.nlvls; l++)
         {
+          #ifdef BASKER_TIME
+          Kokkos::Impl::Timer timer_inner_sep;
+          #endif
           //#ifdef BASKER_OLD_BARRIER
           //Int lthreads = pow(2,l);
           //Int lnteams = num_threads/lthreads;
@@ -188,18 +193,10 @@ namespace BaskerNS
                    (long)lnteams, (long)lthreads);
           }
 
-#ifdef BASKER_KOKKOS
-          Kokkos::Impl::Timer  timer_inner_sep;
-  #ifdef BASKER_NO_LAMBDA
-
-          //kokkos_nfactor_sep <Int, Entry, Exe_Space> 
-          //sep_nfactor(this, l);
-
-          kokkos_nfactor_sep2 <Int, Entry, Exe_Space>
-            sep_nfactor(this,l);
+          kokkos_nfactor_sep2 <Int, Entry, Exe_Space> sep_nfactor(this, l);
 
           Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),
-              sep_nfactor);
+                               sep_nfactor);
           Kokkos::fence();
 
           //======Check for error=====
@@ -207,8 +204,8 @@ namespace BaskerNS
           {
             INT_1DARRAY thread_start;
             MALLOC_INT_1DARRAY(thread_start, num_threads+1);
-            init_value(thread_start, num_threads+1,
-                (Int) BASKER_MAX_IDX);
+            init_value(thread_start, num_threads+1, (Int) BASKER_MAX_IDX);
+
             info = nfactor_sep_error(thread_start);
             //printf( " nfactor_separator: info = %d\n",(int)info );
             if((info == BASKER_SUCCESS) ||
@@ -232,19 +229,17 @@ namespace BaskerNS
               {
                 printf("restart \n");
               }
-              Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),  sep_nfactor);
+              Kokkos::parallel_for(TeamPolicy(lnteams,lthreads), sep_nfactor);
               Kokkos::fence();
             }
           }//end while-true
+          #ifdef BASKER_TIME
+          printf(" > Time INNERSEP %ld: %lf \n", (long int)l, timer_inner_sep.seconds());
+          #endif
         }//end over each level
-        #ifdef BASKER_TIME
-        printf("Time INNERSEP: %ld %lf \n", 
-            (long)l, timer_inner_sep.seconds());
-        #endif
-  #else //ELSE BASKER_NO_LAMBDA
+        #else //ELSE BASKER_NO_LAMBDA
         //Note: to be added
-  #endif //end BASKER_NO_LAMBDA
-
+        #endif //end BASKER_NO_LAMBDA
 #else
 
         #pragma omp parallel
@@ -338,4 +333,6 @@ namespace BaskerNS
   }//end factor_notoken()
   
 }//end namespace baskerNS
+
+#undef BASKER_TIME
 #endif //end ifndef basker_nfactor_hpp

@@ -1013,7 +1013,7 @@ namespace BaskerNS
         // compute MWM on a big block A
         if(Options.verbose == BASKER_TRUE) {
           std::cout << " calling MWM on A(n=" << BTF_A.ncol << ", nnz=" << BTF_A.nnz 
-                    << ", " << btf_tabs_offset << ", " << btf_tabs(0) << " : " << btf_tabs(btf_tabs_offset)-1
+                    << ", btf_tabs_offset=" << btf_tabs_offset << ", " << btf_tabs(0) << " : " << btf_tabs(btf_tabs_offset)-1
                     << " )" << std::endl;
         }
         /*printf("  A = [\n" );
@@ -1125,26 +1125,41 @@ namespace BaskerNS
 
         // ----------------------------------------------------------------------------------------------
         // do symbolic & workspace allocation
-        Kokkos::Timer nd_setup_timer;
-
-        bool flag = true;
+        Kokkos::Timer nd_symbolic_timer;
         symmetric_sfactor();
-        btf_last_dense(flag);
-        #ifdef BASKER_KOKKOS
-          kokkos_sfactor_init_factor<Int,Entry,Exe_Space>
-            iF(this);
-          Kokkos::parallel_for(TeamPolicy(num_threads,1), iF);
-          Kokkos::fence();
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout<< " > Basker Factor: Time for symbolic after ND on a big block A: " << nd_symbolic_timer.seconds() << std::endl;
+        }
 
-          typedef Kokkos::TeamPolicy<Exe_Space>      TeamPolicy;
-          kokkos_sfactor_init_workspace<Int,Entry,Exe_Space>
-              iWS(flag, this);
-          Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
-          Kokkos::fence();
+        Kokkos::Timer nd_last_dense_timer;
+        bool flag = true;
+        btf_last_dense(flag);
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout<< " > Basker Factor: Time for last-dense after ND on a big block A: " << nd_last_dense_timer.seconds() << std::endl;
+        }
+
+
+        #ifdef BASKER_KOKKOS
+        Kokkos::Timer nd_setup1_timer;
+        kokkos_sfactor_init_factor<Int,Entry,Exe_Space>
+          iF(this);
+        Kokkos::parallel_for(TeamPolicy(num_threads,1), iF);
+        Kokkos::fence();
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout<< " > Basker Factor: Time for workspace allocation after ND on a big block A: " << nd_setup1_timer.seconds() << std::endl;
+        }
+
+        Kokkos::Timer nd_setup2_timer;
+        kokkos_sfactor_init_workspace<Int,Entry,Exe_Space>
+          iWS(flag, this);
+        Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
+        Kokkos::fence();
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout<< " > Basker Factor: Time for workspace allocation after ND on a big block A: " << nd_setup2_timer.seconds() << std::endl;
+        }
         #endif
 
         if(Options.verbose == BASKER_TRUE) {
-          std::cout<< " > Basker Factor: Time for symbolic after ND on a big block A: " << nd_setup_timer.seconds() << std::endl;
           std::cout<< "Basker Factor: Time to compute ND and setup: " << nd_perm_timer.seconds() << std::endl << std::endl;
         }
       } // end of ND & setups

@@ -1218,4 +1218,6 @@ namespace BaskerNS
 
 
 }//end namespace BaskerNS
+
+#undef BASKER_TIMER
 #endif//end BASKER_NFACTOR_DIAG_HPP

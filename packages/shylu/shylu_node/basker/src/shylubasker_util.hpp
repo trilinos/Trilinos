@@ -436,7 +436,7 @@ namespace BaskerNS
           {
             LL(b)(row).init_inc_lvl();
           }
-          LL(b)(row).fill();
+          //LL(b)(row).fill();
           LL(b)(row).init_pend();
 
         }//end over all row

@@ -164,6 +164,10 @@ namespace BaskerNS
              kid, b, b, b, LU_size(b)-1); fflush(stdout);
     #endif
 
+    #ifdef BASKER_TIME
+    Kokkos::Impl::Timer timer;
+    #endif
+
     Int i, j;
     //Int top, top1, maxindex, t; //NDE - warning: top1 set but not used
     Int top, maxindex, t;
@@ -258,7 +262,7 @@ namespace BaskerNS
     {
       #ifdef BASKER_DEBUG_NFACTOR_BLK
       printf("\n----------------K=%d--------------\n", 
-          k+M.scol);
+             k+M.scol);
       #endif
       value = zero;
       pivot = zero;
@@ -738,6 +742,12 @@ namespace BaskerNS
 
     L.nnz = lnnz;
     U.nnz = unnz;
+
+    #ifdef BASKER_TIME
+    double time_facto = timer.seconds();
+    printf("Time Dom Facto(%d): %lf, n = %d, nnz(L) = %d, nnz(U) = %d \n", (int)kid, time_facto,
+           (int)L.ncol, (int)L.col_ptr(L.ncol), (int)U.col_ptr(U.ncol));
+    #endif
 
     #ifdef MY_DEBUG_BASKER
     //print_factor(L,U);
