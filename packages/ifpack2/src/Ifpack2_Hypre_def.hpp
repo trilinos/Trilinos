@@ -585,6 +585,8 @@ void Hypre<MatrixType>::setParameters(const Teuchos::ParameterList& list){
       std::string funct_name = it->first;
       if (it->second.isType<HYPRE_Int>()) {
         IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Solver, funct_name , Teuchos::getValue<HYPRE_Int>(it->second)))));
+      } else if (!std::is_same<HYPRE_Int,int>::value && it->second.isType<int>()) {
+        IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Solver, funct_name , Teuchos::as<global_ordinal_type>(Teuchos::getValue<int>(it->second))))));
       } else if (it->second.isType<double>()) {
         IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Solver, funct_name , Teuchos::getValue<double>(it->second)))));
       } else {
@@ -599,6 +601,8 @@ void Hypre<MatrixType>::setParameters(const Teuchos::ParameterList& list){
       std::string funct_name = it->first;
       if (it->second.isType<HYPRE_Int>()) {
         IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name , Teuchos::getValue<HYPRE_Int>(it->second)))));
+      } else if (!std::is_same<HYPRE_Int,int>::value && it->second.isType<int>()) {
+        IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name ,  Teuchos::as<global_ordinal_type>(Teuchos::getValue<int>(it->second)))))); 
       } else if (it->second.isType<double>()) {
         IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name , Teuchos::getValue<double>(it->second)))));
       } else if (it->second.isList()) {
