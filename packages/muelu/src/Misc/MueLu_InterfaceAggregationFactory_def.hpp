@@ -79,9 +79,6 @@ RCP<const ParameterList> InterfaceAggregationFactory<Scalar, LocalOrdinal, Globa
   validParamList->set<RCP<const FactoryBase>>("PrimalInterfaceDofRowMap", Teuchos::null,
       "Generating factory of the primal DOF row map of slave side of the coupling surface");
 
-  validParamList->set<LocalOrdinal>("number of DOFs per dual node", Teuchos::ScalarTraits<LocalOrdinal>::one(), "Number of DOFs per dual node");
-  validParamList->set<LocalOrdinal>("number of DOFs per primal node", Teuchos::ScalarTraits<LocalOrdinal>::one(), "Number of DOFs per primal node");
-
   return validParamList;
 } // GetValidParameterList()
 
@@ -246,10 +243,10 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   const GlobalOrdinal GO_ZERO = Teuchos::ScalarTraits<LocalOrdinal>::zero();
   const GlobalOrdinal GO_ONE = Teuchos::ScalarTraits<GlobalOrdinal>::one();
 
-  const ParameterList &pL = GetParameterList();
-  const LocalOrdinal numDofsPerDualNode = pL.get<LocalOrdinal>("number of DOFs per dual node");
-  const LocalOrdinal numDofsPerPrimalNode = pL.get<LocalOrdinal>("number of DOFs per primal node");
-
+  // filled with striding information from A01
+  LocalOrdinal numDofsPerDualNode = 0;
+  LocalOrdinal numDofsPerPrimalNode = 0;
+ 
   // Grab the off-diagonal block (0,1) from the global blocked operator
   RCP<const Matrix> A01 = Get<RCP<Matrix>>(currentLevel, "A");
 // A01->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
@@ -267,11 +264,23 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   } else {
     primalInterfaceDofRowMap = Get<RCP<const Map>>(currentLevel, "PrimalInterfaceDofRowMap");
   }
-// std::cout << __LINE__ << __FILE__ << std::endl;
-// std::cout << "primalInterfaceDofRowMap on level " << currentLevel.GetLevelID() << ":" << std::endl;
-// primalInterfaceDofRowMap->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
-// A01->getColMap()->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
-// std::cout << __LINE__ << __FILE__ << std::endl;
+  
+  
+  
+  //std::cout << __LINE__ << __FILE__ << std::endl;
+  //std::cout << "primalInterfaceDofRowMap on level " << currentLevel.GetLevelID() << ":" << std::endl;
+  //primalInterfaceDofRowMap->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+  //std::cout << "A01->ColMap(): " << std::endl;
+  //A01->getColMap()->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+  if (A01->IsView("stridedMaps") && rcp_dynamic_cast<const StridedMap>(A01->getRowMap("stridedMaps")) != Teuchos::null) {
+    auto stridedRowMap = rcp_dynamic_cast<const StridedMap>(A01->getRowMap("stridedMaps"));
+    auto stridedColMap = rcp_dynamic_cast<const StridedMap>(A01->getColMap("stridedMaps"));
+    //std::cout << "row block size: " << stridedRowMap->getFixedBlockSize() << std::endl;
+    //std::cout << "col block size: " << stridedColMap->getFixedBlockSize() << std::endl;
+    numDofsPerPrimalNode = Teuchos::as<LocalOrdinal>(stridedRowMap->getFixedBlockSize());
+    numDofsPerDualNode = Teuchos::as<LocalOrdinal>(stridedColMap->getFixedBlockSize());
+  }
+  //std::cout << __LINE__ << __FILE__ << std::endl;
   // Some safety checks on the dual DOF map
   // TEUCHOS_ASSERT(primalInterfaceDofRowMap->getNodeNumElements()==A01->getColMap()->getNodeNumElements());
   // TEUCHOS_ASSERT(primalInterfaceDofRowMap->getGlobalNumElements()==A01->getColMap()->getGlobalNumElements());

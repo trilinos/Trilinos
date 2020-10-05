@@ -53,7 +53,8 @@
       <Parameter name="block col" type="int" value="1"/>
       <Parameter name="row map from block col" type="int" value="0"/>
       <Parameter name="column map from block row" type="int" value="0"/>
-      <Parameter name="Range map: Striding info" type="string" value="{ 2 }"/> <!-- necessary? have not looked into the code, yet -->
+      <!--necessary? have not looked into the code, yet-->
+      <Parameter name="Range map: Striding info" type="string" value="{ 2 }"/> 
       <Parameter name="Domain map: Striding info" type="string" value="{ 2 }"/>
     </ParameterList>
 
@@ -83,8 +84,6 @@
       <Parameter name="factory" type="string" value="InterfaceAggregationFactory"/>
       <Parameter name="A" type="string" value="mySubBlockAFactoryOffDiagonal"/>
       <Parameter name="Aggregates" type="string" value="myAggFact1"/>
-      <Parameter name="number of DOFs per dual node" type="int" value="2"/>
-      <Parameter name="number of DOFs per primal node" type="int" value="2"/>
       <Parameter name="Dual/primal mapping strategy" type="string" value="dof-based"/>
       <Parameter name="PrimalInterfaceDofRowMap" type="string" value="myInterfaceMapTransFact"/>
     </ParameterList>
@@ -164,14 +163,14 @@
       <ParameterList name="ParameterList">
         <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
         <Parameter name="relaxation: sweeps" type="int" value="1"/>
-        <Parameter name="relaxation: damping factor" type="double" value="0.5"/>
+        <Parameter name="relaxation: damping factor" type="double" value="0.4"/>
       </ParameterList>
     </ParameterList>
 
     <!-- Build Schur Complement factory (for being used in SIMPLE type block smoother)-->
     <ParameterList name="mySchurCompFact">
       <Parameter name="factory" type="string" value="SchurComplementFactory"/>
-      <Parameter name="omega" type="double" value="1.0"/>
+      <Parameter name="omega" type="double" value="0.6"/> <!-- should be the same as the Simple damping factor-->
       <Parameter name="lumping" type="bool" value="true"/>
     </ParameterList>
 
@@ -182,7 +181,7 @@
       <ParameterList name="ParameterList">
         <!--<Parameter name="fact:  ilut level-of-fill" type="string" value="0"/>-->
         <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
-        <Parameter name="relaxation: sweeps" type="int" value="1"/>
+        <Parameter name="relaxation: sweeps" type="int" value="3"/>
         <Parameter name="relaxation: damping factor" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
@@ -191,7 +190,7 @@
     <ParameterList name="myBlockSmoother">
       <Parameter name="factory" type="string" value="SimpleSmoother"/>
       <Parameter name="Sweeps" type="int" value="3"/>
-      <Parameter name="Damping factor" type="double" value="1.0"/>
+      <Parameter name="Damping factor" type="double" value="0.6"/>
       <Parameter name="UseSIMPLEC" type="bool" value="false"/>
       <!-- factory manager for block 1 -->
       <ParameterList name="block1">
