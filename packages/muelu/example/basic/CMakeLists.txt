@@ -70,7 +70,7 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
 
     TRIBITS_ADD_TEST(
       Stratimikos
-      NAME Stratimikos
+      NAME Stratimikos_Epetra
       ARGS "--xml=stratimikos_ParameterList2.xml --linAlgebra=Epetra"
       NUM_MPI_PROCS 4
       COMM serial mpi
@@ -82,7 +82,7 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
 
     TRIBITS_ADD_TEST(
       Stratimikos
-      NAME Stratimikos
+      NAME Stratimikos_Tpetra
       ARGS "--xml=stratimikos_ParameterList2.xml --linAlgebra=Tpetra"
       NUM_MPI_PROCS 4
       COMM serial mpi
