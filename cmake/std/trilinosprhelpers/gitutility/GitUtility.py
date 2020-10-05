@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
-
-
+"""
+This class contains a set of utilities for using and querying
+git for information.
+"""
 import re
 import subprocess
 
@@ -9,6 +11,11 @@ import subprocess
 
 class GitUtility(object):
     """
+    This class contains helpers for git.
+
+    Attributes:
+        version_str (str): The version of Git (what you get from `$git --version`)
+        version (dict): a dictionary containing major, minor, and patch information.
     """
     def __init__(self):
         self._version_str = None
@@ -17,19 +24,35 @@ class GitUtility(object):
 
     @property
     def version_str(self):
+        """
+        String based version information for Git.
+
+        Returns:
+            string: the output from a call to `$ git --version`, which generally
+                looks something like "git version 2.28.0".
+        """
         if self._version_str is None:
             self._version_str = subprocess.check_output(['git', '--version'])
-            self._version_str = self._version_str.decode('utf-8').strip() 
+            self._version_str = self._version_str.decode('utf-8').strip()
         return self._version_str
 
 
     @property
     def version(self):
+        """
+        This property has the version of Git that is detected as a dictionary.
+
+        The format of this is:
+            { 'major': <int major>,
+                'minor': <int minor>,
+                'patch': <int patch>
+            }
+        """
         if self._version is None:
             matches = re.findall(r"\d+", self.version_str)
             self._version = { "major": int(matches[0]),
                               "minor": int(matches[1]),
-                              "patch": int(matches[2]) 
+                              "patch": int(matches[2])
                             }
         return self._version
 
@@ -37,6 +60,14 @@ class GitUtility(object):
     def check_minimum_version(self, req_major, req_minor=0):
         """
         Verify the version of git is greater than req_major.req_minor
+
+        Raises:
+            TypeError if req_major or req_minor are not integers.
+            SystemExit if detected major < required major version.
+                or if detected major >= req. major AND det. minor < req. minor.
+
+        Returns:
+            Integer: zero on success.
         """
         if not isinstance(req_major, int):
             raise TypeError("Required parameter 'req_major' must be an integer.")
@@ -62,6 +93,9 @@ class GitUtility(object):
 
 
     def pretty_print(self):
+        """
+        Pretty print the information detected by this class.
+        """
         print("")
         print("Git Version Detected: {}".format( self.version_str ))
         print("")

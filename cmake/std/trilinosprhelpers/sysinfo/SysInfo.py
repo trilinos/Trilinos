@@ -1,5 +1,17 @@
 #!/usr/bin/env python
 # -*- mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
+"""
+System information helpers are contained in this file.
+
+This class attemts to load the psutil module first but if
+it does not exist then we try and work around it by falling
+back to pulling information from the /proc/meminfo file.
+
+Note:
+    `/proc/meminfo` will exist on *nix systems but OSX or Windows
+    systems will not have this file. `psutil` is the best way
+    but sometimes that package isn't available on build systems.
+"""
 
 import multiprocessing
 
@@ -41,6 +53,12 @@ class SysInfo(object):
            on *nix systems.
         3. If ``psutil`` and ``/proc/meminfo`` isn't found then we will
            fail during ``import`` time by raising ``IOError``.
+
+    Attributes:
+        have_psutil: Returns true if the psutil module is available
+            on the system.
+        meminfo: Returns a dictionary containing information about the
+            memory available on the system.
     """
     def __init__(self):
         self._meminfo = None

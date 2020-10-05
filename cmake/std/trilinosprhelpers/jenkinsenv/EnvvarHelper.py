@@ -1,14 +1,26 @@
 #!/usr/bin/env python
 # -*- mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
-
+"""
+"""
 import os
 
 
 
 class EnvvarHelper(object):
+    """
+    Envvar helper class.  This can be used as a base class for specific environment
+    variables for set environments (i.e., Jenkins sets some standard envvars for its
+    jobs).
+
+    This class implements functions that are useful fetching or creating envvars.
+    """
 
     def __init__(self):
+        """
+        Constructor.
+        """
         pass
+
 
     def get_envvar_str(self, envvar_name, error_if_missing=False):
         """

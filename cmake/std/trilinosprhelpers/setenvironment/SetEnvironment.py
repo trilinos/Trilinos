@@ -47,13 +47,13 @@ class SetEnvironment(object):
     Args:
         filename (str): The filename of the .ini file to load.
         profile  (str): The profile or <section> in the .ini file to
-                        process for an action list.
+            process for an action list.
 
     Attributes:
-        profile (str) : The profile section from the .ini file that is
-                        loaded.
-        actions (dict): The actions that would be processed when apply()
-                        is called.
+        config  ()    : The data from the .ini file as loaded by configparser.
+        profile (str) : The profile section from the .ini file that is loaded.
+        actions (dict): The actions that would be processed when apply() is called.
+
     """
 
     def __init__(self, filename, profile):
@@ -65,12 +65,26 @@ class SetEnvironment(object):
 
     @property
     def config(self):
+        """
+        The config property returns the configuration that is specified
+        by the configuration file. If the file has not been loaded yet,
+        then we will load it.
+
+        Returns:
+            ConfigParser object containing the contents of the configuration
+            that is loaded from the .ini file. This does not contain the
+            specific profile data from the file.
+        """
         if self._config is None:
             self._config = configparser.ConfigParser()
-            self._config.optionxform = str                  # Prevent ConfigParser from lowercasing keys.
+
+            # Prevent ConfigParser from lowercasing keys.
+            self._config.optionxform = str
+
             try:
                 with open(self._file) as ifp:
                     self._config.read_file(ifp)
+
             except IOError as err:
                 msg = "+" + "="*78 + "+\n" + \
                       "|   ERROR: Unable to load configuration file\n" + \
@@ -78,16 +92,39 @@ class SetEnvironment(object):
                       "|   - CWD: {}\n".format(os.getcwd()) + \
                       "+" + "="*78 + "+\n"
                 sys.exit(msg)
+
         return self._config
 
 
     @property
     def profile(self):
+        """
+        Returns the profile.
+
+        Returns:
+            String: containing the profile section that was specified in the c'tor.
+        """
         return self._profile
 
 
     @property
     def actions(self):
+        """
+        The actions property encodes the module and environment actions that we
+        are queueing up to do.
+
+        The value to assign to the 'actions' property. It should conform to this:
+
+            { 'setenv': []
+                'unsetenv': []
+                'module-op': []
+                'module-list': {}
+            }
+
+        Returns:
+            dict: containing the list of actions that were specified in the .ini
+                file and will be executed.
+        """
         if self._actions is None:
             self._load_configuration()
         return self._actions
@@ -105,11 +142,7 @@ class SetEnvironment(object):
             raise KeyError("Configuration is missing the 'module-op' key.")
         if "module-list" not in value.keys():
             raise KeyError("Configuration is missing the 'module-list' key.")
-        # cmake-script is not really required currently since it's not really
-        # part of our scripting setup.  TODO: Figure out the right way to add
-        # in proper support for maps.
-        #if "cmake-script" not in value.keys():
-        #    raise KeyError("Configuration is missing the 'cmake-script' key.")
+
         self._actions = value
 
 
@@ -158,8 +191,7 @@ class SetEnvironment(object):
         print("")
         print("Environment Vars")
         print("+--------------+")
-        #print(">> setenv actions:")
-        #pprint.pprint(self.actions["setenv"])
+
         for envvar in self.actions["setenv"]:
             k = envvar['key']
             v = envvar['value']
@@ -180,18 +212,34 @@ class SetEnvironment(object):
 
     def pretty_print_envvars(self, envvar_filter=None, filtered_keys_only=False):
         """
-        Print out a filtered list of environment variables.
+        Print out a filtered list of environment variables. This routine provides
+        a simplified view of the environment variables on a system since sometimes
+        just printing out the contents of all envvars on a system can result in very
+        cluttered console logs that are difficult to read through.
+
+        `envvar_filter` contains a list of strings that is matched against envvar
+        key names, if the envvar key contains one of the strings in envvar_filter
+        then we print both the envvar and its value. Otherwise, we print just the
+        envvar name.
+
+        If we set filtered_keys_only to True then we ONLY print out envvars that
+        matched envvar_filter.
 
         Arguments:
             envvar_filter (list): a list of keys to print out the value.
-                            all envvar values are printed if omitted.
-                            Default: None
-            filtered_keys_only (bool)  : If true, we only display filtered keys.
-                            If false, we display the keys of all keys.
-                            Default: False
+                all envvar values are printed if omitted.
+                Default: None
+            filtered_keys_only (bool): If true, we only display filtered keys.
+                If false, we display the keys of all keys.
+                Default: False
 
         Returns:
             int 0
+
+        Todo:
+            This could probably be moved outside of this class since it's not
+            really directly relevant to the environment setting stuff, but it
+            might also be useful to have here for checking our work.
         """
         if envvar_filter is not None:
             assert isinstance(envvar_filter, list)
@@ -200,7 +248,6 @@ class SetEnvironment(object):
         print("|   P R I N T   E N V I R O N M E N T   V A R S")
         print("+" + "="*38 + "+")
         print("--- ")
-        # print("envvar_filter = {}".format(envvar_filter))
         for k,v in os.environ.items():
             matched_key = False
             if envvar_filter is not None:
@@ -254,14 +301,6 @@ class SetEnvironment(object):
         for k in self.actions["unsetenv"]:
             print("[envvar] unset {}".format(k))
 
-        #print("")
-        #print("Print Envvars")
-        #print("+-----------+")
-        #filter_list = ["SEMS_", "TRILINOS_", "PATH"]
-        #for k,v in os.environ.items():
-        #    for filt in filter_list:
-        #        if filt in k:
-        #            print("[envvar] {} ==> {}".format(k,v))
         return 0
 
 
@@ -293,7 +332,12 @@ class SetEnvironment(object):
 
     def _load_configuration(self):
         """
-        Load and process a configuration file.
+        Loads the environment data from the provided `profile` and saves the
+        information to the `actions` property.
+
+        This is a recursive operation (recurses on the `use <profile>:` entries
+        in the configuration file). We use a DFS recursion strategy with back-edge
+        checking to prevent cyclic recursion. We do not
 
         Returns:
             A dict containing the contents of self.actions.
@@ -301,16 +345,13 @@ class SetEnvironment(object):
         self.actions = { "setenv": [],         # Envvars that we'll set
                          "unsetenv": [],       # Envvars to explicitly unset (after setting)
                          "module-op": [],      # module operations (use, load, unload, etc.)
-                         #"cmake-script": [],   # CMake configuration scripts
-                         "module-list": {}     # Keys = modules already set to 'load',
-                         # on load if key already exists we insert an unload.
+                         "module-list": {}     # Keys = modules already set to 'load'
                         }
 
         config = self.config
 
         self.actions = self._load_configuration_r(config, self.profile, actions=self.actions)
-        #print("--- ACTIONS: ")
-        #pprint.pprint(self.actions)
+
         return self.actions
 
 
@@ -318,6 +359,10 @@ class SetEnvironment(object):
         """
         Recursive handler for _load_configuration.
         Recursion is called when the operation is a 'use' operation in the key.
+
+        Raises:
+            KeyError: If `profile` section is not contained in `config`
+            Exception: If a section isn't loaded for a reason other than a KeyError.
         """
         # Load the section and throw if it's not found.
         sec = None
@@ -340,6 +385,7 @@ class SetEnvironment(object):
 
         # Exit if we've already processed this section (recursion breaker)
         if profile in processed_secs.keys():
+            print("WARNING: Cyclic dependencies encountered when loading {} ... {}".format(self.profile, profile))
             return actions
 
         processed_secs[profile] = True
@@ -392,7 +438,6 @@ class SetEnvironment(object):
 
             elif "setenv" == op:
                 actions["setenv"].append( {'key': k.upper(), 'value': v} )
-                #actions["setenv"][k.upper()]=v
 
             elif "unsetenv" == op:
                 actions["unsetenv"].append(k.upper())

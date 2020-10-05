@@ -2,8 +2,13 @@
 """
 Module helper for *nix systems
 
-Provides:
-- module()
+This module contains a helper for using the modules subsystem on
+*nix systems.  It will attempt to load the env_modules_python
+module and if that does not exist then we generate our own call
+to the `module()` function.
+
+Todo:
+    Check to find what package provides env_modules_python and document.
 """
 from __future__ import print_function
 
@@ -24,6 +29,19 @@ try:
 except ImportError:
 
     def module(*args):
+        """
+        Function that enables operations on environment modules in
+        the system.
+
+        Args:
+
+
+        Raises:
+            FileNotFoundError: This is thrown if `modulecmd` is not found.
+
+        Todo:
+            Update documentation for this function to list args and how its called.
+        """
         try:
             import distutils.spawn
             modulecmd = distutils.spawn.find_executable("modulecmd")

@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # -*- mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
+"""
+This file contains the base class for the Pull Request test driver.
+"""
 import configparser
 import multiprocessing
 import os
@@ -19,7 +22,42 @@ from . import jenkinsenv
 
 class TrilinosPRConfigurationBase(object):
     """
-    Trilinos Pull Request configuration driver
+    Trilinos Pull Request configuration driver. This should be
+    treated as an Abstract Base Class because the `execute()`
+    method is implemented as a stub.
+
+    Note: Attributes / Properties prefixed with `arg_` come from the
+        command line arguments that is passed into this class c'tor.
+        We provide these properties to give a read-only access to the
+        properties.
+
+    Attributes:
+        arg_github_pr_number: PR Number on Github
+        arg_job_number: Job Number of the Jenkins job.
+        arg_req_mem_per_core: Memory required per core (GB)
+        arg_max_cores_allowed: Max cores allowed for building (i.e., make -j <num cores>)
+        arg_num_concurrent_tests: Testing concurrency (i.e., ctest -j <num cores>)
+        arg_package_enables_file: Path to the `packageEnables.cmake` file.
+        arg_workspace_dir: Path to the workspace (this would be the ${WORKSPACE}
+            variable set by Jenkins.)
+        arg_pr_config_file: The config.ini file that specifies the configuration to load.
+        arg_pr_jenkins_job_name: The Jenkins Job Name.
+        subprojects_file:
+        working_directory_ctest: Gen. working dir where TFW_testing_single_configure_prototype
+            is executed from.
+        trilinos_pr_env: Environment variable info specific to Trilinos Jobs.
+        config_data:
+        config_script: Returns the configuration script from the configuration file.
+        max_cores_allowed: Absolute maximum number of cores allowed.
+            For example, if the job weight is 32 (even if we have an 80 core system)
+            this would be set to 32.
+        max_test_parallelism: Maximum test parallelism in any test. For example, if
+            the highest individual test parallelism is 4 cores or threads then this
+            would be set to 4.
+        concurrency_build: Concurrency to use for building Trilinos
+        concurrency_test: Concurrency to use for running Trilinos tests.
+        pullrequest_build_name: PR build name reported to CDash.
+        pullrequest_cdash_track: Attempt to load the envvar PULLREQUEST_CDASH_TRACK.
     """
     def __init__(self, args):
         self.args                  = args
@@ -65,6 +103,8 @@ class TrilinosPRConfigurationBase(object):
         to provide a convenient way to override this value if needed for some
         specialty reason or for a customized test.
 
+        This encodes the # of GB/core required.
+
         Returns:
             float self.args.req_mem_per_core
         """
@@ -95,14 +135,6 @@ class TrilinosPRConfigurationBase(object):
             self.args.num_concurrent_tests
         """
         return int(self.args.num_concurrent_tests)
-
-
-    @property
-    def subprojects_file(self):
-        """
-        This property generates the subprojects_list file to pass into CTest.
-        """
-        return self.args.subprojects_file
 
 
     @property
@@ -144,6 +176,14 @@ class TrilinosPRConfigurationBase(object):
 
 
     @property
+    def subprojects_file(self):
+        """
+        This property generates the subprojects_list file to pass into CTest.
+        """
+        return self.args.subprojects_file
+
+
+    @property
     def working_directory_ctest(self):
         """
         Generate the working directory for where we should launch the CTest command from.
@@ -154,6 +194,12 @@ class TrilinosPRConfigurationBase(object):
 
     @property
     def trilinos_pr_env(self):
+        """
+        Environment variable info specific to Trilinos Jobs.
+
+        See:
+            jenkinsenv module for more information.
+        """
         if self._trilinos_pr_env is None:
             self._trilinos_pr_env = jenkinsenv.TrilinosJenkinsEnv()
         return self._trilinos_pr_env
@@ -161,22 +207,41 @@ class TrilinosPRConfigurationBase(object):
 
     @property
     def config_data(self):
+        """
+        Configuration data.
+
+        This is a setenvironment.SetEnvironment class instance containing the information
+        loaded from the config.ini file.
+        """
         if self._config_data is None:
-            self._config_data = setenvironment.SetEnvironment(self.args.configfile, self.arg_pr_jenkins_job_name)
+            self._config_data = setenvironment.SetEnvironment(self.args.configfile,
+                                                              self.arg_pr_jenkins_job_name)
         return self._config_data
 
 
     @property
     def config_script(self):
+        """
+        Returns the configuration script from the configuration file.
+
+        This function searches the [CONFIG_SCRIPT_MAP] section in the config.ini file
+        and looks for the key matching the Jenkins job name and returns the
+        value from that KV pair.  This would be the .cmake file that maps to the
+        job.
+
+        Returns:
+            String containing the job-specific configuration script to load.
+        """
         return self.get_property_from_config("CONFIG_SCRIPT_MAP", self.arg_pr_jenkins_job_name)
 
 
     @property
     def max_cores_allowed(self):
         """
-        Calculate the true max number of cores we can use. This is the minimum of
-        the available cores detected on the system and the max cores allowed by
-        argument.
+        Calculate the true max number of cores we can use.
+
+        This is the minimum of the available cores detected on the system
+        and the max cores allowed by argument.
 
         If the max_cores_allowd is not > 0 then we use the # of cores on the system.
         """
@@ -208,6 +273,7 @@ class TrilinosPRConfigurationBase(object):
     def concurrency_build(self):
         """
         Concurrency to use for building Trilinos
+
         This is equvalent to running `make -j <concurrency_build>` from the command line.
         """
         if self._concurrency_build is None:
@@ -223,6 +289,7 @@ class TrilinosPRConfigurationBase(object):
     def concurrency_test(self):
         """
         Concurrency to use for running Trilinos tests
+
         This is equivalent to the command `ctest -j <concurrency_test>` if running ctest at the
         command line.
 
@@ -241,6 +308,7 @@ class TrilinosPRConfigurationBase(object):
     def pullrequest_build_name(self):
         """
         Generate the build name string to report back to CDash.
+
         PR-<PR Number>-test-<Jenkins Job Name>-<Job Number">
         """
         output = "PR-{}-test-{}-{}".format(self.arg_github_pr_number, self.arg_pr_jenkins_job_name, self.arg_job_number)
@@ -426,9 +494,10 @@ class TrilinosPRConfigurationBase(object):
 
     def prepare_test(self):
         """
-        Test preparation
-        Things that we generally do to prepare the environment for the test
-        can go here.
+        Prepares a test environment for exeution.
+
+        This includes tasks like determining the # of cores to use, setting
+        environment variables, loading environment modules, etc.
         """
         # Validate the branch constraints (i.e., if targetBranch is master, then
         # sourceBranch must be master_merge_YYYYMMDD_HHMMSS)
@@ -477,7 +546,8 @@ class TrilinosPRConfigurationBase(object):
             print(msg)
             raise Exception(msg)
 
-        envvars = [
+        # Environment variables that we wish to print out.
+        envvars_to_print = [
             "SEMS_",
             "TRILINOS_",
             "PULLREQUEST",
@@ -493,7 +563,7 @@ class TrilinosPRConfigurationBase(object):
             "WORKSPACE"
             ]
         print("")
-        tr_config.pretty_print_envvars(envvar_filter=envvars)
+        tr_config.pretty_print_envvars(envvar_filter=envvars_to_print)
 
         print("+" + "="*78 + "+")
         print("|   E N V I R O N M E N T   S E T   U P   C O M P L E T E")
@@ -503,14 +573,12 @@ class TrilinosPRConfigurationBase(object):
         self.create_package_enables_file(dryrun=self.args.dry_run)
         print("")
 
-
         return 0
 
 
     def execute_test(self):
         """
-        Executes the test. This method should be considered 'virtual' and should
-        be overridden.
+        Executes the test. This method must be overridden by a subclass.
         """
         raise NotImplementedError("This method must be overridden.")
 
