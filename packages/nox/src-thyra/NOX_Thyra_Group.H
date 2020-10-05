@@ -188,6 +188,12 @@ namespace NOX {
       Teuchos::RCP<const ::Thyra::PreconditionerBase<double> >
       getPreconditioner() const;
 
+      /// Dangerous power user function for LOCA Householder bordered algorithm.
+      void setJacobianOperator(const Teuchos::RCP<::Thyra::LinearOpBase<double>>& op);
+
+      /// Dangerous power user function for LOCA Householder bordered algorithm.
+      void setPreconditionerOperator(const Teuchos::RCP<::Thyra::PreconditionerBase<double>>& op);
+
       /** @name "Compute" functions. */
       //@{
 

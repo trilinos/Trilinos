@@ -37,23 +37,52 @@ namespace Tempus {
  *
  *  <b> Algorithm </b>
  *  The algorithm for the Newmark explicit A-form is
- *   - if ( !useFSAL )
- *     - \f$\mathbf{a}^{n-1} =
- *          \bar{\mathbf{f}}(\mathbf{d}^{n-1}, \mathbf{v}^{n-1}, t^{n-1})\f$
- *   - \f$\mathbf{d}^{\ast} = \mathbf{d}^{n-1} + \Delta t \mathbf{v}^{n-1}
- *                            + \Delta t^2 \mathbf{a}^{n-1} / 2\f$
- *   - \f$\mathbf{v}^{\ast} =
- *        \mathbf{v}^{n-1} + \Delta t (1-\gamma) \mathbf{a}^{n-1}\f$
- *   - \f$\mathbf{a}^{\ast} =
- *        \bar{\mathbf{f}}(\mathbf{d}^{\ast}, \mathbf{v}^{\ast}, t^{n-1})\f$
- *   - \f$\mathbf{d}^n = \mathbf{d}^{\ast}\f$
- *   - \f$\mathbf{v}^n =
- *        \mathbf{v}^{\ast} + \Delta t \gamma \mathbf{a}^{\ast}\f$
- *   - if ( useFSAL )
- *     - \f$\mathbf{a}^n =
- *          \bar{\mathbf{f}}(\mathbf{d}^n, \mathbf{v}^n, t^n)\f$
+
+ *  \f{algorithm}{
+ *  \renewcommand{\thealgorithm}{}
+ *  \caption{Forward Euler}
+ *  \begin{algorithmic}[1]
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *    \If { Not ``Use FSAL'' or (previous step failed)}
+ *      \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *      \State $\mathbf{a}^{n-1} =
+ *          \bar{\mathbf{f}}(\mathbf{d}^{n-1}, \mathbf{v}^{n-1}, t^{n-1})$
+ *    \EndIf
+ *    \State $\mathbf{d}^{\ast} = \mathbf{d}^{n-1} + \Delta t \mathbf{v}^{n-1}
+ *                            + \Delta t^2 \mathbf{a}^{n-1} / 2$
+ *    \State $\mathbf{v}^{\ast} =
+ *        \mathbf{v}^{n-1} + \Delta t (1-\gamma) \mathbf{a}^{n-1}$
+ *    \State $\mathbf{a}^{\ast} =
+ *        \bar{\mathbf{f}}(\mathbf{d}^{\ast}, \mathbf{v}^{\ast}, t^{n-1})$
+ *    \State $\mathbf{d}^n = \mathbf{d}^{\ast}$
+ *    \State $\mathbf{v}^n =
+ *        \mathbf{v}^{\ast} + \Delta t \gamma \mathbf{a}^{\ast}$
+ *    \If { ``Use FSAL'' }
+ *      \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *      \State $\mathbf{a}^n =
+ *          \bar{\mathbf{f}}(\mathbf{d}^n, \mathbf{v}^n, t^n)$
+ *    \EndIf
+ *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *  \end{algorithmic}
+ *  \f}
  *
- *  The default for Forward Euler is to use FSAL (useFSAL=true).
+ *  Note that with useFSAL=false \f$x_n\f$ and \f$\dot{x}_{n-1}\f$ are not
+ *  at the same time level at the end of the time step (i.e., they are not
+ *  sync'ed).
+ *
+ *  To have them at the same time level, we can use the First-Same-As-Last
+ *  (FSAL) principle where the function evaulation from the last time step
+ *  can be used as the first function evalulation of the current step.
+ *
+ *  The default is to use FSAL (useFSAL=true), but will also work
+ *  with useFSAL=false.  Using useFSAL=true does assume that the
+ *  solution, \f$x\f$, its time derivative, \f$\dot{x}\f$, and its
+ *  second time derivative, \f$\ddot{x}\f$, are consistent at the
+ *  initial conditions (ICs), i.e.,
+ *  \f$\ddot{x}_{0} = \bar{f}(x_{0},\dot{x}_{0},t_{0})\f$.
+ *  This can be ensured by setting setICConsistency("Consistent"),
+ *  and checked with setICConsistencyCheck(true).
+ *
  */
 template<class Scalar>
 class StepperNewmarkExplicitAForm
@@ -127,7 +156,7 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
+    virtual void setUseFSAL(bool a) { this->useFSAL_ = a; this->isInitialized_ = false; }
     virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
 
@@ -169,11 +198,8 @@ public:
     this->isInitialized_ = false;
   }
 
-  bool getUseFSALDefault() const { return true; }
-  std::string getICConsistencyDefault() const { return "Consistent"; }
-
   virtual void setAppAction(
-      Teuchos::RCP<StepperNewmarkExplicitAFormAppAction<Scalar> > appAction); 
+      Teuchos::RCP<StepperNewmarkExplicitAFormAppAction<Scalar> > appAction);
 
 protected:
 

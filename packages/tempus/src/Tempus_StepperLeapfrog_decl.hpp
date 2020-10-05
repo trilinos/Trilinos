@@ -74,8 +74,8 @@ namespace Tempus {
  *
  *  The First-Same-As-Last (FSAL) principle is not used with Leapfrog
  *  because of the algorithm's prescribed order of solution update.
- *  The default is to set useFSAL=false, however useFSAL=true will also
- *  work (i.e., no-op), but issue a warning that it will have no affect.
+ *  The default is to set useFSAL=false, and useFSAL=true will
+ *  issue a warning that it will have no affect.
  */
 template<class Scalar>
 class StepperLeapfrog : virtual public Tempus::StepperExplicit<Scalar>
@@ -146,13 +146,10 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
     virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
 
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-
-  std::string getICConsistencyDefault() const { return "Consistent"; }
 
   /// \name Overridden from Teuchos::Describable
   //@{

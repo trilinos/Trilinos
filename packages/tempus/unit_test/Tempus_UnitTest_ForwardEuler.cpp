@@ -62,9 +62,9 @@ TEUCHOS_UNIT_TEST(ForwardEuler, Default_Construction)
   stepper->initialize();
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   // Default values for construction.
-  bool useFSAL              = stepper->getUseFSALDefault();
-  std::string ICConsistency = stepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
+  bool useFSAL              = stepper->getUseFSAL();
+  std::string ICConsistency = stepper->getICConsistency();
+  bool ICConsistencyCheck   = stepper->getICConsistencyCheck();
 
   // Test the set functions.
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE

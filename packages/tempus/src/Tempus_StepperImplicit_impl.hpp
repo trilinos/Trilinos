@@ -185,15 +185,24 @@ void StepperImplicit<Scalar>::setInitialConditions(
     else reldiff = Thyra::norm(*f)/normX;
 
     Scalar eps = Scalar(100.0)*std::abs(Teuchos::ScalarTraits<Scalar>::eps());
-    if (reldiff > eps) {
-      RCP<Teuchos::FancyOStream> out = this->getOStream();
-      Teuchos::OSTab ostab(out,1,"StepperImplicit::setInitialConditions()");
-      *out << "Info -- Failed consistency check but continuing!\n"
-         << "  ||f(x,xDot,t)||/||x|| > eps" << std::endl
-         << "  ||f(x,xDot,t)||       = " << Thyra::norm(*f) << std::endl
-         << "  ||x||                 = " << Thyra::norm(*x) << std::endl
-         << "  ||f(x,xDot,t)||/||x|| = " << reldiff         << std::endl
-         << "                    eps = " << eps             << std::endl;
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"StepperImplicit::setInitialConditions()");
+    if (reldiff < eps) {
+      *out << "\n---------------------------------------------------\n"
+           << "Info -- Stepper = " << this->getStepperType() << "\n"
+           << "  Initial condition PASSED consistency check!\n"
+           << "  (||f(x,xDot,t)||/||x|| = " << reldiff << ") < "
+           << "(eps = " << eps << ")"            << std::endl
+           << "---------------------------------------------------\n"<<std::endl;
+    } else {
+      *out << "\n---------------------------------------------------\n"
+           << "Info -- Stepper = " << this->getStepperType() << "\n"
+           << "  Initial condition FAILED consistency check but continuing!\n"
+           << "  (||f(x,xDot,t)||/||x|| = " << reldiff << ") > "
+           << "(eps = " << eps << ")" << std::endl
+           << "  ||f(x,xDot,t)|| = " << Thyra::norm(*f) << std::endl
+           << "  ||x||           = " << Thyra::norm(*x) << std::endl
+           << "---------------------------------------------------\n"<<std::endl;
     }
   }
 }

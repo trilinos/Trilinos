@@ -28,6 +28,9 @@ filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
 filtered matrix: use root stencil = 0   [default]
+filtered matrix: use spread lumping = 0   [default]
+filtered matrix: spread lumping diag dom growth factor = 1.1   [default]
+filtered matrix: spread lumping diag dom cap = 2   [default]
 filtered matrix: Dirichlet threshold = -1   [default]
 
 Build (MueLu::TentativePFactory)
@@ -120,6 +123,9 @@ filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
 filtered matrix: use root stencil = 0   [default]
+filtered matrix: use spread lumping = 0   [default]
+filtered matrix: spread lumping diag dom growth factor = 1.1   [default]
+filtered matrix: spread lumping diag dom cap = 2   [default]
 filtered matrix: Dirichlet threshold = -1   [default]
 
 Build (MueLu::TentativePFactory)
@@ -212,6 +218,9 @@ filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
 filtered matrix: use root stencil = 0   [default]
+filtered matrix: use spread lumping = 0   [default]
+filtered matrix: spread lumping diag dom growth factor = 1.1   [default]
+filtered matrix: spread lumping diag dom cap = 2   [default]
 filtered matrix: Dirichlet threshold = -1   [default]
 
 Build (MueLu::TentativePFactory)
@@ -304,6 +313,9 @@ filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
 filtered matrix: use root stencil = 0   [default]
+filtered matrix: use spread lumping = 0   [default]
+filtered matrix: spread lumping diag dom growth factor = 1.1   [default]
+filtered matrix: spread lumping diag dom cap = 2   [default]
 filtered matrix: Dirichlet threshold = -1   [default]
 
 Build (MueLu::TentativePFactory)
