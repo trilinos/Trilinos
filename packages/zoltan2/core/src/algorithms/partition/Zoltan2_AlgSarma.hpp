@@ -120,7 +120,7 @@ namespace Zoltan2 {
             sarma::Order order_type = sarma::Order::NAT;
             std::string order_str = "nat";
             Ordinal row_parts = 8, col_parts = 0;
-            Value z = 0;
+            Value max_load = 0;
             int seed = 2147483647;
             double sparsify = 1.0;
             bool triangular = false, use_data = false;
@@ -156,15 +156,15 @@ namespace Zoltan2 {
             config.order_type = orders.at(s);
             config.order_str = s;
         }
-        pe = sparams.getEntryPtr("p"); // row_cut
+        pe = sparams.getEntryPtr("row_parts"); // row_cut
         if (pe)
-            config.row_parts = pe->getValue(&config.row_parts); //col_cut
-        pe = sparams.getEntryPtr("q");
+            config.row_parts = pe->getValue(&config.row_parts); 
+        pe = sparams.getEntryPtr("col_parts"); //col_cut
         if (pe)
-            config.col_parts = pe->getValue(&config.col_parts); // max_load
-        pe = sparams.getEntryPtr("z");
+            config.col_parts = pe->getValue(&config.col_parts);  
+        pe = sparams.getEntryPtr("z"); // max_load
         if (pe)
-            config.z = pe->getValue(&config.z);
+            config.max_load = pe->getValue(&config.max_load);
         pe = sparams.getEntryPtr("sparsify");
         if (pe)
             config.sparsify = pe->getValue(&config.sparsify);
@@ -188,7 +188,7 @@ namespace Zoltan2 {
                 std::move(std::vector<Ordinal>(colids, colids + nnz)), std::move(std::vector<Value>(vals, vals + nnz)),
                 1 + *std::max_element(offsets, offsets + offsize));
         auto parts = sarma::Run<Ordinal, Value>(algs.at(config.alg).first, std::cout, M, config.order_type, config.row_parts,
-                                                config.col_parts, config.z, config.triangular, false, config.sparsify,
+                                                config.col_parts, config.max_load, config.triangular, false, config.sparsify,
                                                 algs.at(config.alg).second, config.use_data, config.seed);
 
         unsigned result_size = parts.first.size() + parts.second.size();
