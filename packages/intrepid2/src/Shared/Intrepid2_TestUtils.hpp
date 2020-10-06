@@ -77,9 +77,7 @@ namespace Intrepid2
   bool
   relErrMeetsTol( const Scalar1 &s1, const Scalar2 &s2, const typename Teuchos::ScalarTraits< typename std::common_type<Scalar1,Scalar2>::type >::magnitudeType &smallNumber, const double &tol )
   {
-#ifndef CUDA
     using std::fabs;
-#endif
     const auto s1Abs = fabs(s1);
     const auto s2Abs = fabs(s2);
     const auto maxAbs = (s1Abs > s2Abs) ? s1Abs : s2Abs;
