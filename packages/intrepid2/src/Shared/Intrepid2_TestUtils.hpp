@@ -60,6 +60,41 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 
+namespace Intrepid2
+{
+  //! Use Teuchos small number determination on host; pass this to Intrepid2::relErr() on device.
+  template <class Scalar>
+  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+  smallNumber()
+  {
+    using ST = Teuchos::ScalarTraits<Scalar>;
+    return ST::magnitude(Teuchos::RelErrSmallNumber<ST::hasMachineParameters,Scalar>::smallNumber());
+  }
+
+  //! Adapted from Teuchos::relErr(); for use in code that may be executed on device.
+  template <class Scalar1, class Scalar2>
+  KOKKOS_INLINE_FUNCTION
+  typename Teuchos::ScalarTraits< typename std::common_type<Scalar1,Scalar2>::type >::magnitudeType
+  relErr( const Scalar1 &s1, const Scalar2 &s2, const typename Teuchos::ScalarTraits< typename std::common_type<Scalar1,Scalar2>::type >::magnitudeType &smallNumber )
+  {
+    typedef typename std::common_type<Scalar1,Scalar2>::type Scalar;
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    return
+      ST::magnitude( s1 - s2 )
+      / (
+        smallNumber
+        + std::max( ST::magnitude(s1), ST::magnitude(s2) )
+        );
+  }
+
+  template <class SomeViewType>
+  size_t extraViewDimensionForAllocation(SomeViewType &someView)
+  {
+    
+  }
+// TODO: include the rest of this file in the Intrepid2 namespace
+}
+
 static const double TEST_TOLERANCE_TIGHT = 1.e2 * std::numeric_limits<double>::epsilon();
 
 // we use DynRankView for both input points and values
@@ -67,7 +102,7 @@ template<typename ScalarType>
 using ViewType = Kokkos::DynRankView<ScalarType,Kokkos::DefaultExecutionSpace>;
 
 template<typename ScalarType>
-inline bool valuesAreSmall(const ScalarType &a, const ScalarType &b, const double &epsilon)
+KOKKOS_INLINE_FUNCTION bool valuesAreSmall(const ScalarType &a, const ScalarType &b, const double &epsilon)
 {
   using std::abs;
   return (abs(a) < epsilon) && (abs(b) < epsilon);
