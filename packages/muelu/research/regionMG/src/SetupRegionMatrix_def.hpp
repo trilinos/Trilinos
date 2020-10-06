@@ -598,6 +598,8 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
 
     regCorrection[j] = VectorFactory::Build(revisedRowMapPerGrp[j], true);
     regionGrpMats[j]->apply(*regNsp[j], *regCorrection[j]);
+    regionGrpMats[j]->SetFixedBlockSize(AComp->GetFixedBlockSize());
+
   }
 
   RCP<Vector> regDiag = Teuchos::null;

@@ -182,7 +182,7 @@ public:
   
   // Hypre Specs
   // This will need to be either int or long long depending on how Hypre was built
-  typedef global_ordinal_type HYPRE_int;
+  //    typedef global_ordinal_type global_ordinal_type;
 
   typedef global_ordinal_type (*HYPRE_PtrToParSolverFcn)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
 
@@ -272,7 +272,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
    */
-    int SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int), int parameter);
+    int SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type), global_ordinal_type parameter);
 
     //! Set a parameter that takes a single double.
     /*!
@@ -283,7 +283,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
    */
-    int SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double), double parameter);
+    int SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, double), double parameter);
 
     //! Set a parameter that takes a double then an int.
     /*!
@@ -295,7 +295,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
    */
-    int SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double, int), double parameter1, int parameter2);
+    int SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, double, global_ordinal_type), double parameter1, global_ordinal_type parameter2);
 
     //! Set a parameter that takes two int parameters.
     /*!
@@ -307,7 +307,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
    */
-    int SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int, int), int parameter1, int parameter2);
+    int SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type, global_ordinal_type), global_ordinal_type parameter1, global_ordinal_type parameter2);
 
     //! Set a parameter that takes a double*.
     /*!
@@ -318,7 +318,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
    */
-    int SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double*), double* parameter);
+    int SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, double*), double* parameter);
 
     //! Set a parameter that takes an int*.
     /*!
@@ -329,7 +329,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
    */
-    int SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int*), int* parameter);
+    int SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type*), global_ordinal_type* parameter);
 
     //! Set a parameter that takes an int**.
     /*!
@@ -341,7 +341,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
    */
-    int SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int**), int** parameter);
+    int SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type**), global_ordinal_type** parameter);
 
     //! Sets the solver that is used by the Solve() and ApplyInverse() methods. Until this is called, the default solver is PCG.
     /*!
@@ -413,9 +413,6 @@ public:
   virtual void
   setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
   //@}
-
-
-
 
   /// \brief Apply the preconditioner to X, returning the result in Y.
   ///
@@ -676,14 +673,14 @@ private:
   mutable HYPRE_Solver Preconditioner_;
   //  The following are pointers to functions to use the solver and preconditioner.
   int (Hypre::*SolverCreatePtr_)(MPI_Comm, HYPRE_Solver*);
-  int (*SolverDestroyPtr_)(HYPRE_Solver);
-  int (*SolverSetupPtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
-  int (*SolverSolvePtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
-  int (*SolverPrecondPtr_)(HYPRE_Solver, HYPRE_PtrToParSolverFcn, HYPRE_PtrToParSolverFcn, HYPRE_Solver);
+  global_ordinal_type (*SolverDestroyPtr_)(HYPRE_Solver);
+  global_ordinal_type (*SolverSetupPtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
+  global_ordinal_type (*SolverSolvePtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
+  global_ordinal_type (*SolverPrecondPtr_)(HYPRE_Solver, HYPRE_PtrToParSolverFcn, HYPRE_PtrToParSolverFcn, HYPRE_Solver);
   int (Hypre::*PrecondCreatePtr_)(MPI_Comm, HYPRE_Solver*);
-  int (*PrecondDestroyPtr_)(HYPRE_Solver);
-  int (*PrecondSetupPtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
-  int (*PrecondSolvePtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
+  global_ordinal_type (*PrecondDestroyPtr_)(HYPRE_Solver);
+  global_ordinal_type (*PrecondSetupPtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
+  global_ordinal_type (*PrecondSolvePtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
 
   bool IsSolverCreated_;
   bool IsPrecondCreated_;
