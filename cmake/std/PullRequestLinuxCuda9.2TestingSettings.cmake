@@ -84,6 +84,9 @@ set (Sacado_NEW_FAD_DESIGN_IS_DEFAULT OFF CACHE BOOL "Temporary fix for issue #7
 set (Trilinos_ENABLE_ShyLU_NodeTacho OFF CACHE BOOL
   "Can't test Tacho with CUDA without RDC" FORCE)
 
+# Force some tests to run in serial in this PR build (usually to resolve random timeouts that can occur under contention)
+set (Intrepid2_unit-test_Discretization_Basis_HierarchicalBases_Hierarchical_Basis_Tests_MPI_1_SET_RUN_SERIAL ON CACHE BOOL "Run serial for CUDA PR testing")
+
 # Temporary options to clean up build
 set (Teko_ModALPreconditioner_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (MueLu_ParameterListInterpreterTpetra_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
