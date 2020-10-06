@@ -542,7 +542,7 @@ namespace MueLu {
     /*! @brief Power method.
 
     @param A matrix
-    @param invDiag reciprocal of matrix diagonal
+    @param diagInvVec reciprocal of matrix diagonal
     @param niters maximum number of iterations
     @param tolerance stopping tolerance
     @verbose if true, print iteration information

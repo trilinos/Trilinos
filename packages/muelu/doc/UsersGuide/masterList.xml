@@ -1078,7 +1078,7 @@
     </parameter>
 
     <parameter>
-      <name>sa: use absrowsum diagonal scaling</name>
+      <name>sa: use rowsumabs diagonal scaling</name>
       <type>bool</type>
       <default>false</default>
       <description>Use the row sums of the absolute values of the matrix as the diagonal wherever inverse(D) is required.</description>

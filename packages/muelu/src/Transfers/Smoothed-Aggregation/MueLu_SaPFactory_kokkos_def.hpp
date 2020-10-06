@@ -74,7 +74,7 @@ namespace MueLu {
     SET_VALID_ENTRY("sa: damping factor");
     SET_VALID_ENTRY("sa: calculate eigenvalue estimate");
     SET_VALID_ENTRY("sa: eigenvalue estimate num iterations");
-    SET_VALID_ENTRY("sa: use absrowsum diagonal scaling");
+    SET_VALID_ENTRY("sa: use rowsumabs diagonal scaling");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
@@ -155,7 +155,7 @@ namespace MueLu {
     const SC dampingFactor      = as<SC>(pL.get<double>("sa: damping factor"));
     const LO maxEigenIterations = as<LO>(pL.get<int>("sa: eigenvalue estimate num iterations"));
     const bool estimateMaxEigen = pL.get<bool>("sa: calculate eigenvalue estimate");
-    const bool useAbsValueRowSum = pL.get<bool>  ("sa: use absrowsum diagonal scaling");
+    const bool useAbsValueRowSum = pL.get<bool>  ("sa: use rowsumabs diagonal scaling");
     if (dampingFactor != Teuchos::ScalarTraits<SC>::zero()) {
 
       SC lambdaMax;
@@ -165,7 +165,7 @@ namespace MueLu {
         lambdaMax = A->GetMaxEigenvalueEstimate();
         if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
           GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = "<< maxEigenIterations <<
-          ( (useAbsValueRowSum) ?  ", use lumped diagonal)" :  ", use point diagonal)") << std::endl;
+          ( (useAbsValueRowSum) ?  ", use rowSumAbs diagonal)" :  ", use point diagonal)") << std::endl;
           Magnitude stopTol = 1e-4;
           invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, useAbsValueRowSum);
           if (useAbsValueRowSum)
@@ -184,7 +184,7 @@ namespace MueLu {
         {
           SubFactoryMonitor m3(*this, "Diagonal Extraction", coarseLevel);
           if (useAbsValueRowSum)
-            GetOStream(Runtime0) << "Using absrowsum diagonal" << std::endl;
+            GetOStream(Runtime0) << "Using rowSumAbs diagonal" << std::endl;
           if (invDiag == Teuchos::null)
             invDiag = Utilities_kokkos::GetMatrixDiagonalInverse(*A, Teuchos::ScalarTraits<SC>::eps()*100, useAbsValueRowSum);
         }

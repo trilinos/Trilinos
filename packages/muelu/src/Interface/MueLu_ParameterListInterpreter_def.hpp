@@ -660,8 +660,8 @@ namespace MueLu {
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
     bool useMaxAbsDiagonalScaling = false;
-    if (defaultList.isParameter("sa: use absrowsum diagonal scaling"))
-      useMaxAbsDiagonalScaling = defaultList.get<bool>("sa: use absrowsum diagonal scaling");
+    if (defaultList.isParameter("sa: use rowsumabs diagonal scaling"))
+      useMaxAbsDiagonalScaling = defaultList.get<bool>("sa: use rowsumabs diagonal scaling");
 
     // === Smoothing ===
     // FIXME: should custom smoother check default list too?
@@ -732,7 +732,7 @@ namespace MueLu {
           preSmootherParams = defaultSmootherParams;
 
         if (preSmootherType == "CHEBYSHEV" && useMaxAbsDiagonalScaling)
-          preSmootherParams.set("chebyshev: use absrowsum diagonal scaling",true);
+          preSmootherParams.set("chebyshev: use rowsumabs diagonal scaling",true);
 
 #ifdef HAVE_MUELU_INTREPID2
       // Propagate P-coarsening for Topo smoothing
@@ -779,7 +779,7 @@ namespace MueLu {
           overlap = paramList.get<int>("smoother: post overlap");
 
         if (postSmootherType == "CHEBYSHEV" && useMaxAbsDiagonalScaling)
-          postSmootherParams.set("chebyshev: use absrowsum diagonal scaling",true);
+          postSmootherParams.set("chebyshev: use rowsumabs diagonal scaling",true);
 
         if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
           postSmoother = preSmoother;
@@ -1682,7 +1682,7 @@ namespace MueLu {
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: damping factor", double, Pparams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: calculate eigenvalue estimate", bool, Pparams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: eigenvalue estimate num iterations", int, Pparams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: use absrowsum diagonal scaling", bool, Pparams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: use rowsumabs diagonal scaling", bool, Pparams);
 
     P->SetParameterList(Pparams);
 
