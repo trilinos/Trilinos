@@ -885,7 +885,6 @@ namespace
     
     ViewType<bool> valuesAreBothSmall;
     auto smallNumber = Intrepid2::smallNumber<OutputScalar>();
-    using magnitude_type = decltype(smallNumber);
     ViewType<bool> relativeErrorsMeetTol;
     if (standardOutputView.rank() == 2)
     {
