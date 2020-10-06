@@ -85,6 +85,37 @@ ENDIF()
 ENDIF()
 
 
+##### STRUMPACK Tests #####
+IF (${PACKAGE_NAME}_ENABLE_STRUMPACK)
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopySTRUMPACKFiles
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES STRUMPACK_test.xml
+    EXEDEPS Solver_Test
+    )
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME STRUMPACK_Solver_Test
+    ARGS "--xml-params=STRUMPACK_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    COMM serial mpi
+    )
+
+  IF (NOT ${PROJECT_NAME}_ENABLE_DEBUG)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      STRUMPACK_UnitTests
+      SOURCES
+        STRUMPACK_UnitTests
+        ${TEUCHOS_STD_UNIT_TEST_MAIN}
+      COMM serial mpi
+      NUM_MPI_PROCS 2
+      STANDARD_PASS_OUTPUT
+      )
+  ENDIF()
+
+ENDIF()
+
+
 ##### Umfpack Tests #####
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_UMFPACK)
