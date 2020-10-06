@@ -301,7 +301,7 @@ Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > create_
   using LO = LocalOrdinal;
   auto A = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Graph));
 
-  Teuchos::Array<GlobalOrdinal> indices(1);
+  Teuchos::Array<LocalOrdinal> indices(1);
   Teuchos::Array<Scalar> values(1);
   values[0] = Teuchos::ScalarTraits<Scalar>::zero();
   for(LO i=0; i<(LO)A->getNodeNumRows(); i++) {
