@@ -120,7 +120,7 @@ namespace MueLuTests {
     Teuchos::RCP<Epetra_CrsMatrix> epExpected = Teuchos::rcp(ptrExpected);
 
     // Epetra_CrsMatrix -> Xpetra::Matrix
-    Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
+    Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new EpetraCrsMatrix(epA));
     Teuchos::RCP<CrsMatrixWrap> crsOp = Teuchos::rcp(new CrsMatrixWrap(exA));
     Teuchos::RCP<Matrix> A = Teuchos::rcp_dynamic_cast<Matrix>(crsOp);
     A->SetFixedBlockSize(1);
@@ -220,7 +220,7 @@ namespace MueLuTests {
     Teuchos::RCP<Epetra_CrsMatrix> epExpected = Teuchos::rcp(ptrExpected);
 
     // Epetra_CrsMatrix -> Xpetra::Matrix
-    Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
+    Teuchos::RCP<CrsMatrix> exA = Teuchos::rcp(new EpetraCrsMatrix(epA));
     Teuchos::RCP<CrsMatrixWrap> crsOp = Teuchos::rcp(new CrsMatrixWrap(exA));
     Teuchos::RCP<Matrix> A = Teuchos::rcp_dynamic_cast<Matrix>(crsOp);
     A->SetFixedBlockSize(3);
