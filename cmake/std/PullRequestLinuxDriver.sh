@@ -34,8 +34,9 @@ function get_pip() {
     echo -e "--- Python: ${python_exe:?}"
 
     # fetch get-pip.py
-    echo -e "--- curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
-    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+    local curl_cmd="curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
+    echo -e "--- ${curl_cmd}"
+    eval ${curl_cmd}
 
     get_pip_args=(
         --user

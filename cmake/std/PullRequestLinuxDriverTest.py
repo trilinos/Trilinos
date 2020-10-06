@@ -53,7 +53,7 @@ def parse_args():
     Returns:
         Namespace object containing the arguments from the command line.
     """
-    parser    = argparse.ArgumentParser(description='Parse the repo and build information', add_help=False)
+    parser    = argparse.ArgumentParser(description='Parse the repo and build information')
     required  = parser.add_argument_group('Required Arguments')
     optional  = parser.add_argument_group('Optional Arguments')
     cwd       = os.getcwd()
@@ -64,7 +64,6 @@ def parse_args():
 
     default_package_enables = os.path.join("..", "packageEnables.cmake")
     default_subprojects_file = os.path.join("..", "package_subproject_list.cmake")
-    #default_package_enables = os.path.join(default_workspace, "packageEnables.cmake")
 
 
     required.add_argument('--sourceRepo',
@@ -170,11 +169,6 @@ def parse_args():
                           action="store_true",
                           default=False,
                           help="Enable dry-run mode. Runs script but don't execute the build(s) Default = %(default)s")
-
-    optional.add_argument('-h', '--help',
-                          action='help',
-                          default=argparse.SUPPRESS,
-                          help='show this help message and exit')
 
     arguments = parser.parse_args()
 
