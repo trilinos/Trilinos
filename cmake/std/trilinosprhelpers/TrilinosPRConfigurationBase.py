@@ -293,14 +293,18 @@ class TrilinosPRConfigurationBase(object):
         This is equivalent to the command `ctest -j <concurrency_test>` if running ctest at the
         command line.
 
-        If not overridden, we'll compute the cores / max_test_parallelism
+        If num_concurrent_tests is > 0 then we just use this value.
+        Otherwise, we compute the cores using num_available_cores / max_test_parallelism.
         """
         if self._concurrency_test is None:
+            # If >0 then we use the value provided by the user
             if self.arg_num_concurrent_tests > 0:
                 self._concurrency_test = self.arg_num_concurrent_tests
 
-            num_cores = self.max_cores_allowed
-            self._concurrency_test = max(1, int(num_cores / self.max_test_parallelism))
+            # otherwise we calculate based on number of allowable cores and max test parallelism.
+            else:
+                num_cores = self.max_cores_allowed
+                self._concurrency_test = max(1, int(num_cores / self.max_test_parallelism))
         return self._concurrency_test
 
 
