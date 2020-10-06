@@ -179,7 +179,7 @@ def parse_args():
                           dest="dry_run",
                           action="store_true",
                           default=False,
-                          help="Enable dry-run mode. Runs script but don't execute the build(s) Default = %(default)s")
+                          help="Enable dry-run mode. Script will run but not execute the build steps. Default = %(default)s")
 
     arguments = parser.parse_args()
 
