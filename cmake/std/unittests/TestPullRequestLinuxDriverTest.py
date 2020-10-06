@@ -836,6 +836,39 @@ class Test_setEnviron(unittest.TestCase):
         self.buildEnv_passes(PR_name, expected_list, test_ENV=expected_env)
 
 
+    def test_buildEnv_passes_with_cuda_101(self):
+        """Find the function"""
+        PR_name = 'Trilinos_pullrequest_cuda_10.1.243'
+        expected_list = [mock.call('load', 'StdEnv'),
+                         mock.call('load', 'sparc-dev/cuda-10.1.243_gcc-7.3.1_spmpi-rolling'),
+                         mock.call('swap', 'gcc7.3.1', '8.3.1'),]
+        expected_env = {'OMPI_CXX':
+                       os.path.join(self.jenkins_workspace,
+                                    'Trilinos',
+                                    'packages',
+                                    'kokkos',
+                                    'bin',
+                                    'nvcc_wrapper'),
+                       'OMPI_CC': '/fake/gcc/path/bin/gcc',
+                       'OMPI_FC': '/fake/gcc/path/bin/gfortran',
+                       'CUDA_LAUNCH_BLOCKING': '1',
+                       'CUDA_MANAGED_FORCE_DEVICE_ALLOC': '1',
+                       'PATH': [os.path.join(os.path.sep,
+                                            'projects',
+                                            'atdm_devops',
+                                            'vortex',
+                                            'cmake-3.17.2',
+                                            'bin'),
+                               os.path.join(os.path.sep,
+                                            'projects',
+                                            'atdm_devops',
+                                            'vortex',
+                                            'ninja-fortran-1.8.2'),
+                                '/fake/path']}
+
+        self.buildEnv_passes(PR_name, expected_list, test_ENV=expected_env)
+
+
 
 class Test_GetCDashTrack(unittest.TestCase):
     """use the default or override from environment"""
