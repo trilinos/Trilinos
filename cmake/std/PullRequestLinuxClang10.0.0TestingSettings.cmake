@@ -6,6 +6,8 @@
 
 # Usage: cmake -C PullRequestLinuxClang10.0.0TestingSettings.cmake
 
+set (CMAKE_CXX_STANDARD "14" CACHE STRING "Set C++ standard to C++14")
+
 # Misc options typically added by CI testing mode in TriBITS
 
 # Use the below option only when submitting to the dashboard
@@ -14,8 +16,6 @@
 #set (TPL_ENABLE_Netcdf OFF CACHE BOOL "Turn off for Clang")
 
 #set (TPL_Netcdf_LIBRARIES "-L$ENV{SEMS_NETCDF_ROOT}/lib;-L$ENV{SEMS_HDF5_ROOT}/lib;$ENV{SEMS_NETCDF_ROOT}/lib/libnetcdf.a;$ENV{SEMS_NETCDF_ROOT}/lib/libpnetcdf.a;$ENV{SEMS_HDF5_ROOT}/lib/libhdf5_hl.a;$ENV{SEMS_HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl" CACHE STRING "Set by default for CUDA PR testing")
-
-set (CMAKE_CXX_STANDARD "14" CACHE STRING "Set C++ standard to C++14")
 
 set (MPI_EXEC_PRE_NUMPROCS_FLAGS "--bind-to;none" CACHE STRING "Set by default for PR testing")
 # NOTE: The above is a workaround for the problem of having threads on MPI
@@ -39,5 +39,3 @@ set(FEI_multifield_vbr_az_MPI_2_DISABLE ON CACHE BOOL "Temporarily disabled in P
 set(FEI_multifield_vbr_az_MPI_3_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set(ROL_example_PinT_parabolic-control_example_01_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set(Rythmos_StepperBuilder_UnitTest_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-
-set(CMAKE_CXX_FLAGS "-std=c++14" CACHE STRING "Set standard to C++14")

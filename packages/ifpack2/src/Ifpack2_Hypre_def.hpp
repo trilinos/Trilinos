@@ -65,16 +65,16 @@ using Teuchos::rcp;
 using Teuchos::rcpFromRef;
 
 // The Python script that generates the ParameterMap needs to be after these typedefs
-typedef int (*int_func)(HYPRE_Solver, int);
-typedef int (*double_func)(HYPRE_Solver, double);
-typedef int (*double_int_func)(HYPRE_Solver, double, int);
-typedef int (*int_int_func)(HYPRE_Solver, int, int);
-typedef int (*int_star_func)(HYPRE_Solver, int*);
-typedef int (*int_star_star_func)(HYPRE_Solver, int**);
-typedef int (*double_star_func)(HYPRE_Solver, double*);
-typedef int (*int_int_double_double_func)(HYPRE_Solver, int, int, double, double);
-typedef int (*int_int_int_double_int_int_func)(HYPRE_Solver, int, int, int, double, int, int);
-typedef int (*char_star_func)(HYPRE_Solver, char*);
+typedef HYPRE_Int (*int_func)(HYPRE_Solver, HYPRE_Int);
+typedef HYPRE_Int (*double_func)(HYPRE_Solver, double);
+typedef HYPRE_Int (*double_int_func)(HYPRE_Solver, double, HYPRE_Int);
+typedef HYPRE_Int (*int_int_func)(HYPRE_Solver, HYPRE_Int, HYPRE_Int);
+typedef HYPRE_Int (*int_star_func)(HYPRE_Solver, HYPRE_Int*);
+typedef HYPRE_Int (*int_star_star_func)(HYPRE_Solver, HYPRE_Int**);
+typedef HYPRE_Int (*double_star_func)(HYPRE_Solver, double*);
+typedef HYPRE_Int (*int_int_double_double_func)(HYPRE_Solver, HYPRE_Int, HYPRE_Int, double, double);
+typedef HYPRE_Int (*int_int_int_double_int_int_func)(HYPRE_Solver, HYPRE_Int, HYPRE_Int, HYPRE_Int, double, HYPRE_Int, HYPRE_Int);
+typedef HYPRE_Int (*char_star_func)(HYPRE_Solver, char*);
 
 namespace Ifpack2 {
 
@@ -99,13 +99,13 @@ namespace Ifpack2 {
 class FunctionParameter{
   public:
     //! Single int constructor.
-    FunctionParameter(Hypre_Chooser chooser, int_func funct, int param1) :
+    FunctionParameter(Hypre_Chooser chooser, int_func funct, HYPRE_Int param1) :
       chooser_(chooser),
       option_(0),
       int_func_(funct),
       int_param1_(param1) {}
 
-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, int param1) :
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int param1) :
       chooser_(chooser),
       option_(0),
       int_func_(hypreMapIntFunc_.at(funct_name)),
@@ -125,14 +125,14 @@ class FunctionParameter{
       double_param1_(param1) {}
 
     //! Single double, single int constructor.
-    FunctionParameter(Hypre_Chooser chooser, double_int_func funct, double param1, int param2):
+    FunctionParameter(Hypre_Chooser chooser, double_int_func funct, double param1, HYPRE_Int param2):
       chooser_(chooser),
       option_(2),
       double_int_func_(funct),
       int_param1_(param2),
       double_param1_(param1) {}
 
-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, double param1, int param2):
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, double param1, HYPRE_Int param2):
       chooser_(chooser),
       option_(2),
       double_int_func_(hypreMapDoubleIntFunc_.at(funct_name)),
@@ -140,14 +140,14 @@ class FunctionParameter{
       double_param1_(param1) {}
 
     //! Two ints constructor.
-    FunctionParameter(Hypre_Chooser chooser, int_int_func funct, int param1, int param2):
+    FunctionParameter(Hypre_Chooser chooser, int_int_func funct, HYPRE_Int param1, HYPRE_Int param2):
       chooser_(chooser),
       option_(3),
       int_int_func_(funct),
       int_param1_(param1),
       int_param2_(param2) {}
 
-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, int param1, int param2):
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int param1, HYPRE_Int param2):
       chooser_(chooser),
       option_(3),
       int_int_func_(hypreMapIntIntFunc_.at(funct_name)),
@@ -155,13 +155,13 @@ class FunctionParameter{
       int_param2_(param2) {}
 
     //! Int pointer constructor.
-    FunctionParameter(Hypre_Chooser chooser, int_star_func funct, int *param1):
+    FunctionParameter(Hypre_Chooser chooser, int_star_func funct, HYPRE_Int *param1):
       chooser_(chooser),
       option_(4),
       int_star_func_(funct),
       int_star_param_(param1) {}
 
-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, int *param1):
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int *param1):
       chooser_(chooser),
       option_(4),
       int_star_func_(hypreMapIntStarFunc_.at(funct_name)),
@@ -181,7 +181,7 @@ class FunctionParameter{
       double_star_param_(param1) {}
 
     //! Two ints, two doubles constructor.
-    FunctionParameter(Hypre_Chooser chooser, int_int_double_double_func funct, int param1, int param2, double param3, double param4):
+    FunctionParameter(Hypre_Chooser chooser, int_int_double_double_func funct, HYPRE_Int param1, HYPRE_Int param2, double param3, double param4):
       chooser_(chooser),
       option_(6),
       int_int_double_double_func_(funct),
@@ -190,7 +190,7 @@ class FunctionParameter{
       double_param1_(param3),
       double_param2_(param4) {}
 
-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, int param1, int param2, double param3, double param4):
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int param1, HYPRE_Int param2, double param3, double param4):
       chooser_(chooser),
       option_(6),
       int_int_double_double_func_(hypreMapIntIntDoubleDoubleFunc_.at(funct_name)),
@@ -200,20 +200,20 @@ class FunctionParameter{
       double_param2_(param4) {}
 
     //! Integer pointer to list of integer pointers
-    FunctionParameter(Hypre_Chooser chooser, int_star_star_func funct, int ** param1):
+    FunctionParameter(Hypre_Chooser chooser, int_star_star_func funct, HYPRE_Int ** param1):
       chooser_(chooser),
       option_(7),
       int_star_star_func_(funct),
       int_star_star_param_(param1) {}
 
-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, int** param1):
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int** param1):
       chooser_(chooser),
       option_(7),
       int_star_star_func_(hypreMapIntStarStarFunc_.at(funct_name)),
       int_star_star_param_(param1) {}
 
     //! Five ints, one double constructor.
-    FunctionParameter(Hypre_Chooser chooser, int_int_int_double_int_int_func funct, int param1, int param2, int param3, double param4, int param5, int param6):
+    FunctionParameter(Hypre_Chooser chooser, int_int_int_double_int_int_func funct, HYPRE_Int param1, HYPRE_Int param2, HYPRE_Int param3, double param4, HYPRE_Int param5, HYPRE_Int param6):
       chooser_(chooser),
       option_(8),
       int_int_int_double_int_int_func_(funct),
@@ -224,7 +224,7 @@ class FunctionParameter{
       int_param5_(param6),
       double_param1_(param4) {}
 
-    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, int param1, int param2, int param3, double param4, int param5, int param6):
+    FunctionParameter(Hypre_Chooser chooser, std::string funct_name, HYPRE_Int param1, HYPRE_Int param2, HYPRE_Int param3, double param4, HYPRE_Int param5, HYPRE_Int param6):
       chooser_(chooser),
       option_(8),
       int_int_int_double_int_int_func_(hypreMapIntIntIntDoubleIntIntFunc_.at(funct_name)),
@@ -331,15 +331,15 @@ class FunctionParameter{
     int_int_int_double_int_int_func int_int_int_double_int_int_func_;
     int_star_star_func int_star_star_func_;
     char_star_func char_star_func_;
-    int int_param1_;
-    int int_param2_;
-    int int_param3_;
-    int int_param4_;
-    int int_param5_;
+    HYPRE_Int int_param1_;
+    HYPRE_Int int_param2_;
+    HYPRE_Int int_param3_;
+    HYPRE_Int int_param4_;
+    HYPRE_Int int_param5_;
     double double_param1_;
     double double_param2_;
-    int *int_star_param_;
-    int **int_star_star_param_;
+    HYPRE_Int *int_star_param_;
+    HYPRE_Int **int_star_star_param_;
     double *double_star_param_;
     char *char_star_param_;
 
@@ -583,8 +583,10 @@ void Hypre<MatrixType>::setParameters(const Teuchos::ParameterList& list){
     Teuchos::ParameterList solverList = list.sublist("hypre: Solver functions");
     for (auto it = solverList.begin(); it != solverList.end(); ++it) {
       std::string funct_name = it->first;
-      if (it->second.isType<int>()) {
-        IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Solver, funct_name , Teuchos::getValue<int>(it->second)))));
+      if (it->second.isType<HYPRE_Int>()) {
+        IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Solver, funct_name , Teuchos::getValue<HYPRE_Int>(it->second)))));
+      } else if (!std::is_same<HYPRE_Int,int>::value && it->second.isType<int>()) {
+        IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Solver, funct_name , Teuchos::as<global_ordinal_type>(Teuchos::getValue<int>(it->second))))));
       } else if (it->second.isType<double>()) {
         IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Solver, funct_name , Teuchos::getValue<double>(it->second)))));
       } else {
@@ -597,29 +599,31 @@ void Hypre<MatrixType>::setParameters(const Teuchos::ParameterList& list){
     Teuchos::ParameterList precList = list.sublist("hypre: Preconditioner functions");
     for (auto it = precList.begin(); it != precList.end(); ++it) {
       std::string funct_name = it->first;
-      if (it->second.isType<int>()) {
-        IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name , Teuchos::getValue<int>(it->second)))));
+      if (it->second.isType<HYPRE_Int>()) {
+        IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name , Teuchos::getValue<HYPRE_Int>(it->second)))));
+      } else if (!std::is_same<HYPRE_Int,int>::value && it->second.isType<int>()) {
+        IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name ,  Teuchos::as<global_ordinal_type>(Teuchos::getValue<int>(it->second)))))); 
       } else if (it->second.isType<double>()) {
         IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name , Teuchos::getValue<double>(it->second)))));
       } else if (it->second.isList()) {
         Teuchos::ParameterList pl = Teuchos::getValue<Teuchos::ParameterList>(it->second);
         if (FunctionParameter::isFuncIntInt(funct_name)) {
-          int arg0 = pl.get<int>("arg 0");
-          int arg1 = pl.get<int>("arg 1");
+          HYPRE_Int arg0 = pl.get<int>("arg 0");
+          HYPRE_Int arg1 = pl.get<int>("arg 1");
           IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name , arg0, arg1))));
         } else if (FunctionParameter::isFuncIntIntDoubleDouble(funct_name)) {
-          int arg0 = pl.get<int>("arg 0");
-          int arg1 = pl.get<int>("arg 1");
+          HYPRE_Int arg0 = pl.get<int>("arg 0");
+          HYPRE_Int arg1 = pl.get<int>("arg 1");
           double arg2 = pl.get<double>("arg 2");
           double arg3 = pl.get<double>("arg 3");
           IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name , arg0, arg1, arg2, arg3))));
         } else if (FunctionParameter::isFuncIntIntIntDoubleIntInt(funct_name)) {
-          int arg0 = pl.get<int>("arg 0");
-          int arg1 = pl.get<int>("arg 1");
-          int arg2 = pl.get<int>("arg 2");
+          HYPRE_Int arg0 = pl.get<int>("arg 0");
+          HYPRE_Int arg1 = pl.get<int>("arg 1");
+          HYPRE_Int arg2 = pl.get<int>("arg 2");
           double arg3 = pl.get<double>("arg 3");
-          int arg4 = pl.get<int>("arg 4");
-          int arg5 = pl.get<int>("arg 5");
+          HYPRE_Int arg4 = pl.get<int>("arg 4");
+          HYPRE_Int arg5 = pl.get<int>("arg 5");
           IFPACK2_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Hypre_Is_Preconditioner, funct_name , arg0, arg1, arg2, arg3, arg4, arg5))));
         } else {
           IFPACK2_CHK_ERR(-1);
@@ -647,7 +651,7 @@ int Hypre<MatrixType>::AddFunToList(RCP<FunctionParameter> NewFun){
 
 //==============================================================================
 template<class MatrixType>
-int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int), int parameter){
+int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type), global_ordinal_type parameter){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
   IFPACK2_CHK_ERR(AddFunToList(temp));
   return 0;
@@ -655,7 +659,7 @@ int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_
 
 //=============================================================================
 template<class MatrixType>
-int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double), double parameter){
+int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, global_ordinal_type  (*pt2Func)(HYPRE_Solver, double), double parameter){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
   IFPACK2_CHK_ERR(AddFunToList(temp));
   return 0;
@@ -663,7 +667,7 @@ int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_
 
 //==============================================================================
 template<class MatrixType>
-int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double, int), double parameter1, int parameter2){
+int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, double, global_ordinal_type), double parameter1, global_ordinal_type parameter2){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter1, parameter2));
   IFPACK2_CHK_ERR(AddFunToList(temp));
   return 0;
@@ -671,7 +675,7 @@ int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_
 
 //==============================================================================
 template<class MatrixType>
-int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int, int), int parameter1, int parameter2){
+int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type, global_ordinal_type), global_ordinal_type parameter1, global_ordinal_type parameter2){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter1, parameter2));
   IFPACK2_CHK_ERR(AddFunToList(temp));
   return 0;
@@ -679,7 +683,7 @@ int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_
 
 //==============================================================================
 template<class MatrixType>
-int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double*), double* parameter){
+int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, double*), double* parameter){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
   IFPACK2_CHK_ERR(AddFunToList(temp));
   return 0;
@@ -687,7 +691,7 @@ int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_
 
 //==============================================================================
 template<class MatrixType>
-int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int*), int* parameter){
+int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type*), global_ordinal_type* parameter){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
   IFPACK2_CHK_ERR(AddFunToList(temp));
   return 0;
@@ -695,7 +699,7 @@ int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_
 
 //==============================================================================
 template<class MatrixType>
-int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int**), int** parameter){
+int Hypre<MatrixType>::SetParameter(Hypre_Chooser chooser,  global_ordinal_type (*pt2Func)(HYPRE_Solver, global_ordinal_type**), global_ordinal_type** parameter){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
   IFPACK2_CHK_ERR(AddFunToList(temp));
   return 0;
@@ -747,7 +751,7 @@ int Hypre<MatrixType>::SetDiscreteGradient(Teuchos::RCP<const crs_matrix_type> G
       new_indices[j] = GloballyContiguousNodeColMap_->getGlobalElement(indices[j]);
     }
     GO GlobalRow[1];
-    LO numEntries = (LO) indices.size();
+    GO numEntries = (GO) indices.size();
     GlobalRow[0] = GloballyContiguousRowMap_->getGlobalElement(i);
     IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreG_, 1, &numEntries, GlobalRow, new_indices.data(), values.getRawPtr()));
   }
@@ -1192,7 +1196,7 @@ int Hypre<MatrixType>::CopyTpetraToHypre(){
       new_indices[j] = GloballyContiguousColMap_->getGlobalElement(indices[j]);
     }
     GO GlobalRow[1];
-    LO numEntries = (LO) indices.size();
+    GO numEntries = (GO) indices.size();
     GlobalRow[0] = GloballyContiguousRowMap_->getGlobalElement(i);    
     IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, new_indices.data(), values.getRawPtr()));
   }
