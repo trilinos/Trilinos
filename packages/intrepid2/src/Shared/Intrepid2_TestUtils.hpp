@@ -78,10 +78,11 @@ namespace Intrepid2
   relErrMeetsTol( const Scalar1 &s1, const Scalar2 &s2, const typename Teuchos::ScalarTraits< typename std::common_type<Scalar1,Scalar2>::type >::magnitudeType &smallNumber, const double &tol )
   {
     using std::fabs;
-    const auto s1Abs = fabs(s1);
-    const auto s2Abs = fabs(s2);
-    const auto maxAbs = (s1Abs > s2Abs) ? s1Abs : s2Abs;
-    auto relErr = fabs( s1 - s2 ) / ( smallNumber + maxAbs );
+    using Scalar        = typename std::common_type<Scalar1,Scalar2>::type;
+    const Scalar s1Abs  = fabs(s1);
+    const Scalar s2Abs  = fabs(s2);
+    const Scalar maxAbs = (s1Abs > s2Abs) ? s1Abs : s2Abs;
+    const Scalar relErr = fabs( s1 - s2 ) / ( smallNumber + maxAbs );
     return relErr < tol;
   }
 
