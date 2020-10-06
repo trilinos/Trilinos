@@ -5,4 +5,15 @@ IF (Tpetra_ENABLE_CUDA)
     SOURCES KokkosUVM
     COMM serial
   )
+  TRIBITS_ADD_EXECUTABLE(
+    KokkosDeepcopy
+    SOURCES KokkosDeepcopy
+    COMM serial
+  )
+  TRIBITS_ADD_LIBRARY(
+    Intercept
+    SOURCES Intercept
+    SHARED
+    TESTONLY
+  )
 ENDIF()
