@@ -5,40 +5,6 @@ source ${SCRIPTPATH:?}/common.bash
 # set -x  # echo commands
 
 
-# TODO: Remove this
-# Get the md5sum of a filename.
-# param1: filename
-# returns: md5sum of the file.
-#function get_md5sum() {
-#    local filename=${1:?}
-#    local sig=$(md5sum ${filename:?} | cut -d' ' -f1)
-#    echo "${sig:?}"
-#}
-#
-# Get pip
-# - @param1 python_exe - the python executable to install PIP for
-#function get_pip() {
-#    local python_exe=${1:?}
-#
-#    echo -e "--- Python: ${python_exe:?}"
-#
-#    # fetch get-pip.py
-#    local curl_cmd="curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
-#    echo -e "--- ${curl_cmd}"
-#    eval ${curl_cmd}
-#
-#    get_pip_args=(
-#        --user
-#        --proxy="http://wwwproxy.sandia.gov:80"
-#        --no-setuptools
-#        --no-wheel
-#    )
-#    echo -e ""
-#    echo -e "--- ${python_exe:?} ./get-pip.py ${get_pip_args[@]}"
-#    ${python_exe:?} ./get-pip.py ${get_pip_args[@]}
-#}
-
-
 
 # Load the right version of Git / Python based on a regex
 # match to the Jenkins job name.
@@ -175,20 +141,19 @@ fi
 
 # Prepare the command for the TEST operation
 test_cmd_options=(
-    --sourceRepo=${TRILINOS_SOURCE_REPO:?}
-    --sourceBranch=${TRILINOS_SOURCE_BRANCH:?}
-    --targetRepo=${TRILINOS_TARGET_REPO:?}
-    --targetBranch=${TRILINOS_TARGET_BRANCH:?}
-    --job_base_name=${JOB_BASE_NAME:?}
-    --workspaceDir=${WORKSPACE:?}
-    --github_pr_number=${PULLREQUESTNUM:?}
-    --job_number=${BUILD_NUMBER:?}
+    --source-repo-url=${TRILINOS_SOURCE_REPO:?}
+    --source-branch-name=${TRILINOS_SOURCE_BRANCH:?}
+    --target-repo-url=${TRILINOS_TARGET_REPO:?}
+    --target-branch-name=${TRILINOS_TARGET_BRANCH:?}
+    --pullrequest-build-name=${JOB_BASE_NAME:?}
+    --pullrequest-config-file="Trilinos/cmake/std/pr_config/pullrequest.ini"
+    --pullrequest-number=${PULLREQUESTNUM:?}
+    --jenkins-job-number=${BUILD_NUMBER:?}
     --req-mem-per-core=3.0
     --max-cores-allowed=29
     --num-concurrent-tests=4
-    --mode=${mode}
-    #--mode=installation
-    --config="Trilinos/cmake/std/pr_config/pullrequest.ini"
+    --test-mode=${mode}
+    --workspace-dir=${WORKSPACE:?}
     #--dry-run
 )
 

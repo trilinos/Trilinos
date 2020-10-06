@@ -66,49 +66,49 @@ def parse_args():
     default_subprojects_file = os.path.join("..", "package_subproject_list.cmake")
 
 
-    required.add_argument('--sourceRepo',
+    required.add_argument('--source-repo-url',
                           dest="sourceRepo",
                           action='store',
                           help='Repo with the new changes',
                           required=True)
 
-    required.add_argument('--sourceBranch',
+    required.add_argument('--source-branch-name',
                           dest="sourceBranch",
                           action='store',
                           help='Branch with the new changes',
                           required=True)
 
-    required.add_argument('--targetRepo',
+    required.add_argument('--target-repo-url',
                           dest="targetRepo",
                           action='store',
                           help='Repo to merge into',
                           required=True)
 
-    required.add_argument('--targetBranch',
+    required.add_argument('--target-branch-name',
                           dest="targetBranch",
                           action='store',
                           help='Branch to merge into',
                           required=True)
 
-    required.add_argument('--job_base_name',
+    required.add_argument('--pullrequest-build-name',
                           dest="job_base_name",
                           action='store',
                           help='The Jenkins job base name',
                           required=True)
 
-    required.add_argument('--github_pr_number',
+    required.add_argument('--pullrequest-number',
                           dest="github_pr_number",
                           action='store',
                           help='The github PR number',
                           required=True)
 
-    required.add_argument('--job_number',
+    required.add_argument('--jenkins-job-number',
                           dest="job_number",
                           action='store',
                           help='The Jenkins build number',
                           required=True)
 
-    optional.add_argument('--config',
+    optional.add_argument('--pullrequest-config-file',
                           dest='configfile',
                           action='store',
                           default=os.path.join(cwd, "pr_config/pullrequest.ini"),
@@ -116,7 +116,7 @@ def parse_args():
                                "containing job mappings to environment specifications. Default=%(default)s",
                           required=False)
 
-    optional.add_argument('--workspaceDir',
+    optional.add_argument('--workspace-dir',
                           dest="workspaceDir",
                           action='store',
                           default=default_workspace,
@@ -128,7 +128,7 @@ def parse_args():
                            "based on which packages contain the changes between the source and target " + \
                            "branches."
 
-    optional.add_argument('--packageEnables',
+    optional.add_argument('--filename-packageenables',
                           dest="package_enables",
                           action="store",
                           default=default_package_enables,
@@ -138,13 +138,13 @@ def parse_args():
                             "allows the default, generated file, to be overridden. Generally this should " + \
                             "not be changed from the defaults."
 
-    optional.add_argument('--subprojects_file',
+    optional.add_argument('--filename-subprojects',
                           dest="subprojects_file",
                           action="store",
                           default=default_subprojects_file,
                           help="{}. Default={}".format(desc_subprojects_file, default_subprojects_file))
 
-    optional.add_argument('--mode',
+    optional.add_argument('--test-mode',
                           dest='mode',
                           action='store',
                           default='standard',
