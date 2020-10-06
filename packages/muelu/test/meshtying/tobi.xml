@@ -54,8 +54,8 @@
       <Parameter name="row map from block col" type="int" value="0"/>
       <Parameter name="column map from block row" type="int" value="0"/>
       <!--necessary? have not looked into the code, yet-->
-      <Parameter name="Range map: Striding info" type="string" value="{ 2 }"/> 
-      <Parameter name="Domain map: Striding info" type="string" value="{ 2 }"/>
+      <!--<Parameter name="Range map: Striding info" type="string" value="{ 2 }"/> 
+      <Parameter name="Domain map: Striding info" type="string" value="{ 2 }"/>-->
     </ParameterList>
 
     <!-- for submatrix A_{01}) -->

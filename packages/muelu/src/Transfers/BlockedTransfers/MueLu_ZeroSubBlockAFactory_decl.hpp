@@ -113,9 +113,6 @@ namespace MueLu {
 
     //@}
 
-  private:
-    bool CheckForUserSpecifiedBlockInfo(bool bRange, std::vector<size_t>& stridingInfo, LocalOrdinal& stridedBlockId) const;
-
   }; // class ZeroSubBlockAFactory
 
 } // namespace MueLu

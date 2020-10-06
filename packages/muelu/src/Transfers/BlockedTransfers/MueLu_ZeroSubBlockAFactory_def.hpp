@@ -74,11 +74,6 @@ namespace MueLu {
     validParamList->set<int>("row map from block col", -1, "Block row of subblock matrix A");
     validParamList->set<int>("column map from block row", -1, "Block row of subblock matrix A");
 
-    validParamList->set<std::string >("Range map: Striding info", "{}", "Striding information for range map");
-    validParamList->set<LocalOrdinal>("Range map: Strided block id", -1, "Strided block id for range map");
-    validParamList->set<std::string >("Domain map: Striding info", "{}", "Striding information for domain map");
-    validParamList->set<LocalOrdinal>("Domain map: Strided block id", -1, "Strided block id for domain map");
-
     return validParamList;
   }
 
@@ -128,59 +123,58 @@ namespace MueLu {
     RCP<const StridedMap> stridedRangeMap = Teuchos::null;
     RCP<const StridedMap> stridedDomainMap = Teuchos::null;
 
-    // check for user-specified striding information from XML file
-    std::vector<size_t> rangeStridingInfo;
-    std::vector<size_t> domainStridingInfo;
-    LocalOrdinal rangeStridedBlockId = 0;
-    LocalOrdinal domainStridedBlockId = 0;
-    bool bRangeUserSpecified = CheckForUserSpecifiedBlockInfo(true, rangeStridingInfo, rangeStridedBlockId);
-    bool bDomainUserSpecified = CheckForUserSpecifiedBlockInfo(false, domainStridingInfo, domainStridedBlockId);
-    TEUCHOS_TEST_FOR_EXCEPTION(bRangeUserSpecified != bDomainUserSpecified, Exceptions::RuntimeError,
-        "MueLu::SubBlockAFactory[" << row << "," << col << "]: the user has to specify either both domain and range map or none.");
-
     // extract map information from MapExtractor
     RCP<const MapExtractor> rangeMapExtractor = A->getRangeMapExtractor();
     RCP<const MapExtractor> domainMapExtractor = A->getDomainMapExtractor();
 
-    // use user-specified striding information if available. Otherwise try to use internal striding information from the submaps!
-    if(bRangeUserSpecified) stridedRangeMap = rcp(new StridedMap(rangeMap, rangeStridingInfo, rangeMap->getIndexBase(), rangeStridedBlockId, 0));
-    else stridedRangeMap = rcp_dynamic_cast<const StridedMap>(rangeMap);
-
-    if(bDomainUserSpecified) stridedDomainMap = rcp(new StridedMap(domainMap, domainStridingInfo, domainMap->getIndexBase(), domainStridedBlockId, 0));
-    else stridedDomainMap = rcp_dynamic_cast<const StridedMap>(domainMap);
+    stridedRangeMap = rcp_dynamic_cast<const StridedMap>(rangeMap);
+    stridedDomainMap = rcp_dynamic_cast<const StridedMap>(domainMap);
 
     // In case that both user-specified and internal striding information from the submaps
     // does not contain valid striding information, try to extract it from the global maps
     // in the map extractor.
     if (stridedRangeMap.is_null()) {
-      RCP<const Map> fullRangeMap = rangeMapExtractor->getFullMap();
-      RCP<const StridedMap> stridedFullRangeMap = rcp_dynamic_cast<const StridedMap>(fullRangeMap);
-      TEUCHOS_TEST_FOR_EXCEPTION(stridedFullRangeMap.is_null(), Exceptions::BadCast, "Full rangeMap is not a strided map.");
+      
+      if (rcp_dynamic_cast<const StridedMap>(rangeMapExtractor->getMap(colForRowMap)) != Teuchos::null) {
+        stridedRangeMap = rcp_dynamic_cast<const StridedMap>(rangeMapExtractor->getMap(colForRowMap));
+      }
+      else
+      {     
+        RCP<const Map> fullRangeMap = rangeMapExtractor->getFullMap();
+        RCP<const StridedMap> stridedFullRangeMap = rcp_dynamic_cast<const StridedMap>(fullRangeMap);
+        TEUCHOS_TEST_FOR_EXCEPTION(stridedFullRangeMap.is_null(), Exceptions::BadCast, "Full rangeMap is not a strided map.");
 
-      std::vector<size_t> stridedData = stridedFullRangeMap->getStridingData();
-      if (stridedData.size() == 1 && row > 0) {
-        // We have block matrices. use striding block information 0
-        stridedRangeMap = StridedMapFactory::Build(rangeMap, stridedData, 0, stridedFullRangeMap->getOffset());
+        std::vector<size_t> stridedData = stridedFullRangeMap->getStridingData();
+        if (stridedData.size() == 1 && row > 0) {
+          // We have block matrices. use striding block information 0
+          stridedRangeMap = StridedMapFactory::Build(rangeMap, stridedData, 0, stridedFullRangeMap->getOffset());
 
-      } else {
-        // We have strided matrices. use striding information of the corresponding block
-        stridedRangeMap = StridedMapFactory::Build(rangeMap, stridedData, row, stridedFullRangeMap->getOffset());
+        } else {
+          // We have strided matrices. use striding information of the corresponding block
+          stridedRangeMap = StridedMapFactory::Build(rangeMap, stridedData, row, stridedFullRangeMap->getOffset());
+        }
       }
     }
 
     if (stridedDomainMap.is_null()) {
-      RCP<const Map> fullDomainMap = domainMapExtractor->getFullMap();
-      RCP<const StridedMap> stridedFullDomainMap = rcp_dynamic_cast<const StridedMap>(fullDomainMap);
-      TEUCHOS_TEST_FOR_EXCEPTION(stridedFullDomainMap.is_null(), Exceptions::BadCast, "Full domainMap is not a strided map");
+      if (rcp_dynamic_cast<const StridedMap>(domainMapExtractor->getMap(rowForColMap)) != Teuchos::null) {
+        stridedDomainMap = rcp_dynamic_cast<const StridedMap>(domainMapExtractor->getMap(rowForColMap));
+      }
+      else
+      {        
+        RCP<const Map> fullDomainMap = domainMapExtractor->getFullMap();
+        RCP<const StridedMap> stridedFullDomainMap = rcp_dynamic_cast<const StridedMap>(fullDomainMap);
+        TEUCHOS_TEST_FOR_EXCEPTION(stridedFullDomainMap.is_null(), Exceptions::BadCast, "Full domainMap is not a strided map");
 
-      std::vector<size_t> stridedData = stridedFullDomainMap->getStridingData();
-      if (stridedData.size() == 1 && col > 0) {
-        // We have block matrices. use striding block information 0
-        stridedDomainMap = StridedMapFactory::Build(domainMap, stridedData, 0, stridedFullDomainMap->getOffset());
+        std::vector<size_t> stridedData = stridedFullDomainMap->getStridingData();
+        if (stridedData.size() == 1 && col > 0) {
+          // We have block matrices. use striding block information 0
+          stridedDomainMap = StridedMapFactory::Build(domainMap, stridedData, 0, stridedFullDomainMap->getOffset());
 
-      } else {
-        // We have strided matrices. use striding information of the corresponding block
-        stridedDomainMap = StridedMapFactory::Build(domainMap, stridedData, col, stridedFullDomainMap->getOffset());
+        } else {
+          // We have strided matrices. use striding information of the corresponding block
+          stridedDomainMap = StridedMapFactory::Build(domainMap, stridedData, col, stridedFullDomainMap->getOffset());
+        }
       }
     }
 
@@ -199,34 +193,6 @@ namespace MueLu {
 
 
     currentLevel.Set("A", Op, this);
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool ZeroSubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  CheckForUserSpecifiedBlockInfo(bool bRange, std::vector<size_t>& stridingInfo, LocalOrdinal& stridedBlockId) const {
-    const ParameterList & pL = GetParameterList();
-
-    if(bRange == true)
-      stridedBlockId = pL.get<LocalOrdinal>("Range map: Strided block id");
-    else
-      stridedBlockId = pL.get<LocalOrdinal>("Domain map: Strided block id");
-
-    // read in stridingInfo from parameter list and fill the internal member variable
-    // read the data only if the parameter "Striding info" exists and is non-empty
-    std::string str;
-    if(bRange == true) str = std::string("Range map: Striding info");
-    else str = std::string("Domain map: Striding info");
-
-    if(pL.isParameter(str)) {
-      std::string strStridingInfo = pL.get<std::string>(str);
-      if(strStridingInfo.empty() == false) {
-        Array<size_t> arrayVal = Teuchos::fromStringToArray<size_t>(strStridingInfo);
-        stridingInfo = Teuchos::createVector(arrayVal);
-      }
-    }
-
-    if(stridingInfo.size() > 0) return true;
-    return false;
   }
 
 } // namespace MueLu
