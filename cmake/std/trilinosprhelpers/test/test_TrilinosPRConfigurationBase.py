@@ -476,7 +476,7 @@ class TrilinosPRConfigurationTest(TestCase):
 
         concurrency_test = pr_config.concurrency_test
         print("concurrency_test = {}".format(concurrency_test))
-        self.assertEqual(concurrency_test, 3)
+        self.assertEqual(concurrency_test, 4)
 
 
     def test_TrilinosPRConfigurationBaseProperty_config_script(self):
