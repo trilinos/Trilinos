@@ -903,9 +903,8 @@ namespace
         const OutputScalar & standardValue = standardOutputView(fieldOrdinalStandard, pointOrdinal);
         const OutputScalar & derivedValue  =  derivedOutputView(fieldOrdinalDerived,  pointOrdinal);
 
-        valuesAreBothSmall(fieldOrdinalStandard, pointOrdinal) = valuesAreSmall(standardValue, derivedValue, tol);
-        auto relError = relErr(standardValue, derivedValue, smallNumber);
-        relativeErrorsMeetTol(fieldOrdinalStandard, pointOrdinal) = relError < tol;
+        valuesAreBothSmall   (fieldOrdinalStandard, pointOrdinal) = valuesAreSmall(standardValue, derivedValue, tol);
+        relativeErrorsMeetTol(fieldOrdinalStandard, pointOrdinal) = relErrMeetsTol(standardValue, derivedValue, smallNumber, tol);;
       }
       );
     }
@@ -926,9 +925,8 @@ namespace
         const OutputScalar & standardValue = standardOutputView(fieldOrdinalStandard, pointOrdinal, valueOrdinal);
         const OutputScalar & derivedValue  =  derivedOutputView(fieldOrdinalDerived,  pointOrdinal, valueOrdinal);
 
-        valuesAreBothSmall(fieldOrdinalStandard, pointOrdinal, valueOrdinal) = valuesAreSmall(standardValue, derivedValue, tol);
-        auto relError = relErr(standardValue, derivedValue, smallNumber);
-        relativeErrorsMeetTol(fieldOrdinalStandard, pointOrdinal, valueOrdinal) = relError < tol;
+        valuesAreBothSmall   (fieldOrdinalStandard, pointOrdinal, valueOrdinal) = valuesAreSmall(standardValue, derivedValue, tol);
+        relativeErrorsMeetTol(fieldOrdinalStandard, pointOrdinal, valueOrdinal) = relErrMeetsTol(standardValue, derivedValue, smallNumber, tol);;
       }
       );
     }

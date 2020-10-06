@@ -74,17 +74,18 @@ namespace Intrepid2
   //! Adapted from Teuchos::relErr(); for use in code that may be executed on device.
   template <class Scalar1, class Scalar2>
   KOKKOS_INLINE_FUNCTION
-  typename Teuchos::ScalarTraits< typename std::common_type<Scalar1,Scalar2>::type >::magnitudeType
-  relErr( const Scalar1 &s1, const Scalar2 &s2, const typename Teuchos::ScalarTraits< typename std::common_type<Scalar1,Scalar2>::type >::magnitudeType &smallNumber )
+  bool
+  relErrMeetsTol( const Scalar1 &s1, const Scalar2 &s2, const typename Teuchos::ScalarTraits< typename std::common_type<Scalar1,Scalar2>::type >::magnitudeType &smallNumber, const double &tol )
   {
-    typedef typename std::common_type<Scalar1,Scalar2>::type Scalar;
-    typedef Teuchos::ScalarTraits<Scalar> ST;
-    return
-      ST::magnitude( s1 - s2 )
+    using std::max;
+    using std::fabs;
+    auto relErr =
+      fabs( s1 - s2 )
       / (
         smallNumber
-        + std::max( ST::magnitude(s1), ST::magnitude(s2) )
+        + max( fabs(s1), fabs(s2) )
         );
+    return relErr < tol;
   }
 
   template <class SomeViewType>
