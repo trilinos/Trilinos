@@ -42,11 +42,12 @@ class TrilinosPRConfigurationBase(object):
             variable set by Jenkins.)
         arg_pr_config_file: The config.ini file that specifies the configuration to load.
         arg_pr_jenkins_job_name: The Jenkins Job Name.
-        subprojects_file:
+        subprojects_file: The subprojects file.
         working_directory_ctest: Gen. working dir where TFW_testing_single_configure_prototype
             is executed from.
         trilinos_pr_env: Environment variable info specific to Trilinos Jobs.
-        config_data:
+        config_data: The setenvironment.SetEnvironment class instance containing
+                     the parsed config.ini file data.
         config_script: Returns the configuration script from the configuration file.
         max_cores_allowed: Absolute maximum number of cores allowed.
             For example, if the job weight is 32 (even if we have an 80 core system)
