@@ -946,9 +946,6 @@ namespace
         int fieldOrdinalDerived = dofMapToDerivedHost(fieldOrdinalStandard);
         if (scalarValued)
         {
-          const OutputScalar & standardValue = standardOutputViewHost(fieldOrdinalStandard,pointOrdinal);
-          const OutputScalar & derivedValue  =  derivedOutputViewHost(fieldOrdinalDerived, pointOrdinal);
-          
           bool valuesMatch = true;
           if (!valuesAreBothSmall(fieldOrdinalStandard,pointOrdinal))
           {
