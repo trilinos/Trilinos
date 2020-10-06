@@ -85,11 +85,6 @@ namespace Intrepid2
     return relErr < tol;
   }
 
-  template <class SomeViewType>
-  size_t extraViewDimensionForAllocation(SomeViewType &someView)
-  {
-    
-  }
 // TODO: include the rest of this file in the Intrepid2 namespace
 }
 
