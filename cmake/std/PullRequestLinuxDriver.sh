@@ -1,72 +1,42 @@
 #!/usr/bin/env bash
+SCRIPTFILE=$(realpath $BASH_SOURCE)
+SCRIPTPATH=$(dirname $SCRIPTFILE)
+source ${SCRIPTPATH:?}/common.bash
 # set -x  # echo commands
 
-function get_scriptname() {
-    # Get the full path to the current script
-    local script_name=`basename $0`
-    local script_path=$(dirname $(readlink -f $0))
-    local script_file="${script_path}/${script_name:?}"
-    echo "${script_file}"
-}
 
-function get_scriptpath() {
-    # Get the full path to the current script
-    local script_name=`basename $0`
-    local script_path=$(dirname $(readlink -f $0))
-    echo "${script_path}"
-}
-
+# TODO: Remove this
 # Get the md5sum of a filename.
 # param1: filename
 # returns: md5sum of the file.
-function get_md5sum() {
-    local filename=${1:?}
-    local sig=$(md5sum ${filename:?} | cut -d' ' -f1)
-    echo "${sig:?}"
-}
-
+#function get_md5sum() {
+#    local filename=${1:?}
+#    local sig=$(md5sum ${filename:?} | cut -d' ' -f1)
+#    echo "${sig:?}"
+#}
 #
 # Get pip
 # - @param1 python_exe - the python executable to install PIP for
-function get_pip() {
-    local python_exe=${1:?}
-
-    echo -e "--- Python: ${python_exe:?}"
-
-    # fetch get-pip.py
-    local curl_cmd="curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
-    echo -e "--- ${curl_cmd}"
-    eval ${curl_cmd}
-
-    get_pip_args=(
-        --user
-        --proxy="http://wwwproxy.sandia.gov:80"
-        --no-setuptools
-        --no-wheel
-    )
-    echo -e ""
-    echo -e "--- ${python_exe:?} ./get-pip.py ${get_pip_args[@]}"
-    ${python_exe:?} ./get-pip.py ${get_pip_args[@]}
-}
-
+#function get_pip() {
+#    local python_exe=${1:?}
 #
-# Install Python pacakges using pip
+#    echo -e "--- Python: ${python_exe:?}"
 #
-# - @param1 pip_exe - the pip binary to use, i.e., pip3.
+#    # fetch get-pip.py
+#    local curl_cmd="curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
+#    echo -e "--- ${curl_cmd}"
+#    eval ${curl_cmd}
 #
-function get_python_packages() {
-    local pip_exe=${1:?}
-
-    echo -e "--- Pip   : ${pip_exe:?}"
-
-    pip_args=(
-        --use-feature=2020-resolver
-        configparser
-    )
-    echo -e "--- ${pip_exe:?} install --user ${pip_args[@]}"
-    ${pip_exe:?} install --user ${pip_args[@]}
-}
-
+#    get_pip_args=(
+#        --user
+#        --proxy="http://wwwproxy.sandia.gov:80"
+#        --no-setuptools
+#        --no-wheel
+#    )
+#    echo -e ""
+#    echo -e "--- ${python_exe:?} ./get-pip.py ${get_pip_args[@]}"
+#    ${python_exe:?} ./get-pip.py ${get_pip_args[@]}
+#}
 
 
 
@@ -133,16 +103,12 @@ export no_proxy='localhost,localnets,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
 bootstrap_modules
 
 
-# Identify the path to this script
-SCRIPTPATH=$(get_scriptpath)
-script_file=$(get_scriptname)
-
 # Identify the path to the trilinos repository root
 REPO_ROOT=`readlink -f ${SCRIPTPATH:?}/../..`
 echo -e "PRDriver> REPO_ROOT : ${REPO_ROOT}"
 
 # Get the md5 checksum of this script:
-sig_script_old=$(get_md5sum ${script_file:?})
+sig_script_old=$(get_md5sum ${SCRIPTFILE:?})
 
 # Get the md5 checksum of the Merge script
 sig_merge_old=$(get_md5sum ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py)
@@ -176,9 +142,9 @@ echo -e "PRDriver> "
 
 
 # Get the md5 checksum of this script:
-sig_script_new=$(get_md5sum ${script_file:?})
-echo -e "PRDriver> Old md5 checksum ${sig_script_old:?} for ${script_file:?}"
-echo -e "PRDriver> New md5 checksum ${sig_script_new:?} for ${script_file:?}"
+sig_script_new=$(get_md5sum ${SCRIPTFILE:?})
+echo -e "PRDriver> Old md5 checksum ${sig_script_old:?} for ${SCRIPTFILE:?}"
+echo -e "PRDriver> New md5 checksum ${sig_script_new:?} for ${SCRIPTFILE:?}"
 echo -e "PRDriver> "
 
 # Get the md5 checksum of the Merge script
@@ -191,7 +157,7 @@ then
     echo -e "PRDriver> "
     echo -e "PRDriver> Driver or Merge script change detected. Re-launching PR Driver"
     echo -e "PRDriver> "
-    ${script_file:?}
+    ${SCRIPTFILE:?}
     exit $?
 fi
 

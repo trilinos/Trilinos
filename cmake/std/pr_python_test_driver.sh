@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+SCRIPTFILE=$(realpath $BASH_SOURCE)
+SCRIPTPATH=$(dirname $SCRIPTFILE)
+source ${SCRIPTPATH}/common.bash
 
 #
 # Prepare Environment
@@ -16,47 +19,47 @@ unset PYTHONHOME
 #
 # Get pip
 # - @param1 python_exe - the python executable to install PIP for
-function get_pip() {
-    local python_exe=${1:?}
-
-    echo -e "--- Python: ${python_exe:?}"
-
-    # fetch get-pip.py
-    echo -e "--- curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
-    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-
-    get_pip_args=(
-        --user
-        --proxy="http://wwwproxy.sandia.gov:80"
-        --no-setuptools
-        --no-wheel
-    )
-    echo -e ""
-    echo -e "--- ${python_exe:?} ./get-pip.py ${get_pip_args[@]}"
-    ${python_exe:?} ./get-pip.py ${get_pip_args[@]}
-}
-
-
+#function get_pip() {
+#    local python_exe=${1:?}
+#
+#    echo -e "--- Python: ${python_exe:?}"
+#
+#    # fetch get-pip.py
+#    echo -e "--- curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
+#    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+#
+#    get_pip_args=(
+#        --user
+#        --proxy="http://wwwproxy.sandia.gov:80"
+#        --no-setuptools
+#        --no-wheel
+#    )
+#    echo -e ""
+#    echo -e "--- ${python_exe:?} ./get-pip.py ${get_pip_args[@]}"
+#    ${python_exe:?} ./get-pip.py ${get_pip_args[@]}
+#}
+#
+#
 #
 # Install Python pacakges using pip
 #
 # - @param1 pip_exe - the pip binary to use, i.e., pip3.
 #
-function get_python_packages() {
-    local pip_exe=${1:?}
-
-    echo -e "--- Pip   : ${pip_exe:?}"
-
-    pip_args=(
-        --use-feature=2020-resolver
-        configparser
-        mock
-        pytest
-        pytest-cov
-    )
-    echo -e "--- ${pip_exe:?} install --user ${pip_args[@]}"
-    ${pip_exe:?} install --user ${pip_args[@]}
-}
+#function get_python_packages() {
+#    local pip_exe=${1:?}
+#
+#    echo -e "--- Pip   : ${pip_exe:?}"
+#
+#    pip_args=(
+#        --use-feature=2020-resolver
+#        configparser
+#        mock
+#        pytest
+#        pytest-cov
+#    )
+#    echo -e "--- ${pip_exe:?} install --user ${pip_args[@]}"
+#    ${pip_exe:?} install --user ${pip_args[@]}
+#}
 
 
 
