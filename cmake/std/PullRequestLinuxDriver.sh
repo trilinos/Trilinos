@@ -9,15 +9,17 @@ source ${SCRIPTPATH:?}/common.bash
 # Load the right version of Git / Python based on a regex
 # match to the Jenkins job name.
 function bootstrap_modules() {
-    echo -e "PRDriver> ---------------------------------------"
-    echo -e "PRDriver> Bootstrap environment modules Start"
-    echo -e "PRDriver> ---------------------------------------"
+    #echo -e "PRDriver> ---------------------------------------"
+    #echo -e "PRDriver> Bootstrap environment modules Start"
+    #echo -e "PRDriver> ---------------------------------------"
+    print_banner "Bootstrap environment modules start"
 
     cuda_regex=".*(_cuda_).*"
     ride_regex=".*(ride).*"
     if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
         if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
-            echo -e "PRDriver> Job is CUDA"
+            message_std "PRDriver> " "Job is CUDA"
+            #echo -e "PRDriver> Job is CUDA"
             module unload git
             module unload python
             module load git/2.10.1
@@ -27,7 +29,8 @@ function bootstrap_modules() {
             get_python_packages pip3
             export PYTHON_EXE=python3
         else
-            echo -e "PRDriver> ERROR: Unable to find matching environment for CUDA job not on Ride."
+            message_std "PRDriver> " "ERROR: Unable to find matching environment for CUDA job not on Ride."
+            #echo -e "PRDriver> ERROR: Unable to find matching environment for CUDA job not on Ride."
             exit -1
         fi
     else
@@ -45,19 +48,19 @@ function bootstrap_modules() {
 
     module list
 
-    echo -e "PRDriver> ---------------------------------------"
-    echo -e "PRDriver> Bootstrap environment modules Complete"
-    echo -e "PRDriver> ---------------------------------------"
+    print_banner "Bootstrap environment modules complete"
+    #echo -e "PRDriver> ---------------------------------------"
+    #echo -e "PRDriver> Bootstrap environment modules Complete"
+    #echo -e "PRDriver> ---------------------------------------"
 }
 
 
-
-
-echo -e "PRDRiver> ================================================="
-echo -e "PRDriver> ="
-echo -e "PRDriver> = PullRequestLinuxDriver.sh"
-echo -e "PRDriver> ="
-echo -e "PRDriver> ================================================="
+print_banner "PullRequestLinuxDriver.sh"
+#echo -e "PRDRiver> ================================================="
+#echo -e "PRDriver> ="
+#echo -e "PRDriver> = PullRequestLinuxDriver.sh"
+#echo -e "PRDriver> ="
+#echo -e "PRDriver> ================================================="
 
 # Set up Sandia PROXY environment vars
 export https_proxy=http://wwwproxy.sandia.gov:80
@@ -71,7 +74,8 @@ bootstrap_modules
 
 # Identify the path to the trilinos repository root
 REPO_ROOT=`readlink -f ${SCRIPTPATH:?}/../..`
-echo -e "PRDriver> REPO_ROOT : ${REPO_ROOT}"
+message_std "PRDriver> " "REPO_ROOT : ${REPO_ROOT}"
+#echo -e "PRDriver> REPO_ROOT : ${REPO_ROOT}"
 
 # Get the md5 checksum of this script:
 sig_script_old=$(get_md5sum ${SCRIPTFILE:?})
@@ -93,43 +97,60 @@ merge_cmd="python ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py ${merge_cmd_optio
 
 # Call the script to handle merging the incoming branch into
 # the current trilinos/develop branch for testing.
-echo -e "PRDriver> "
-echo -e "PRDriver> Execute Merge Command: ${merge_cmd:?}"
-echo -e "PRDriver> "
+message_std "PRDriver> " ""
+message_std "PRDriver> " "Execute Merge Command: ${merge_cmd:?}"
+message_std "PRDriver> " ""
+#echo -e "PRDriver> "
+#echo -e "PRDriver> Execute Merge Command: ${merge_cmd:?}"
+#echo -e "PRDriver> "
 ${merge_cmd:?}
 err=$?
 if [ $err != 0 ]; then
-    echo -e "PRDriver> An error occurred during merge"
+    message_std "PRDriver> " "An error occurred during merge"
+    #echo -e "PRDriver> An error occurred during merge"
     exit $err
 else
-    echo -e "PRDriver> Merge completed successfully."
+    message_std "PRDriver> " "Merge completed successfully."
+    #echo -e "PRDriver> Merge completed successfully."
 fi
-echo -e "PRDriver> "
+message_std "PRDriver> " ""
+#echo -e "PRDriver> "
 
 
 # Get the md5 checksum of this script:
 sig_script_new=$(get_md5sum ${SCRIPTFILE:?})
-echo -e "PRDriver> Old md5 checksum ${sig_script_old:?} for ${SCRIPTFILE:?}"
-echo -e "PRDriver> New md5 checksum ${sig_script_new:?} for ${SCRIPTFILE:?}"
-echo -e "PRDriver> "
+message_std "PRDriver> " "Old md5 checksum ${sig_script_old:?} for ${SCRIPTFILE:?}"
+message_std "PRDriver> " "New md5 checksum ${sig_script_new:?} for ${SCRIPTFILE:?}"
+message_std "PRDriver> " ""
+#echo -e "PRDriver> Old md5 checksum ${sig_script_old:?} for ${SCRIPTFILE:?}"
+#echo -e "PRDriver> New md5 checksum ${sig_script_new:?} for ${SCRIPTFILE:?}"
+#echo -e "PRDriver> "
 
 # Get the md5 checksum of the Merge script
 sig_merge_new=$(get_md5sum ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py)
-echo -e "PRDriver> Old md5 checksum ${sig_merge_old:?} for ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py"
-echo -e "PRDriver> New md5 checksum ${sig_merge_new:?} for ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py"
+message_std "PRDriver> " "Old md5 checksum ${sig_merge_old:?} for ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py"
+message_std "PRDriver> " "New md5 checksum ${sig_merge_new:?} for ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py"
+#echo -e "PRDriver> Old md5 checksum ${sig_merge_old:?} for ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py"
+#echo -e "PRDriver> New md5 checksum ${sig_merge_new:?} for ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py"
 
 if [ "${sig_script_old:?}" != "${sig_script_new:?}" ] || [ "${sig_merge_old:?}" != "${sig_merge_new:?}"  ]
 then
-    echo -e "PRDriver> "
-    echo -e "PRDriver> Driver or Merge script change detected. Re-launching PR Driver"
-    echo -e "PRDriver> "
+    message_std "PRDriver> " ""
+    message_std "PRDriver> " "Driver or Merge script change detected. Re-launching PR Driver"
+    message_std "PRDriver> " ""
+    #echo -e "PRDriver> "
+    #echo -e "PRDriver> Driver or Merge script change detected. Re-launching PR Driver"
+    #echo -e "PRDriver> "
     ${SCRIPTFILE:?}
     exit $?
 fi
 
-echo -e "PRDriver> "
-echo -e "PRDriver> Driver and Merge scripts unchanged, proceeding to TEST phase"
-echo -e "PRDriver> "
+message_std "PRDriver> " ""
+message_std "PRDriver> " "Driver and Merge scripts unchanged, proceeding to TEST phase"
+message_std "PRDriver> " ""
+#echo -e "PRDriver> "
+#echo -e "PRDriver> Driver and Merge scripts unchanged, proceeding to TEST phase"
+#echo -e "PRDriver> "
 
 # determine what MODE we are using
 mode="standard"
@@ -162,10 +183,13 @@ test_cmd="${PYTHON_EXE} ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${test_cmd_o
 
 
 # Call the script to launch the tests
-echo -e "PRDriver> "
-echo -e "PRDriver> Execute Test Command:"
-echo -e "PRDriver> ${test_cmd:?}"
-echo -e "PRDriver> "
+print_banner "Execute Test Command"
+message_std "PRDriver> " "${test_cmd:?}"
+#echo -e "PRDriver> ${test_cmd:?}"
+#echo -e "PRDriver> "
+#echo -e "PRDriver> Execute Test Command:"
+#echo -e "PRDriver> ${test_cmd:?}"
+#echo -e "PRDriver> "
 ${test_cmd}
 exit $?
 
