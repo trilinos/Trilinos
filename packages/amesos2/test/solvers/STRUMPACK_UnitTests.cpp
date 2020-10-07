@@ -510,6 +510,9 @@ namespace {
 
     // Create solver interface to STRUMPACK through Amesos2 factory method
     RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("STRUMPACK",A,Xhat,B);
+    Teuchos::ParameterList amesos2_params("Amesos2");
+    amesos2_params.sublist("STRUMPACK").set("Matching", "MAX_DIAGONAL_PRODUCT_SCALING", "Maximum product of diagonal values and row and column scaling");
+    solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
 
     solver->symbolicFactorization().numericFactorization().solve();
 
@@ -557,6 +560,9 @@ namespace {
     // Solve A*Xhat = B for Xhat using the STRUMPACK solver
     RCP<Amesos2::Solver<MAT,MV> > solver
       = Amesos2::create<MAT,MV>("STRUMPACK", A, Xhat, B);
+    Teuchos::ParameterList amesos2_params("Amesos2");
+    amesos2_params.sublist("STRUMPACK").set("Matching", "MAX_DIAGONAL_PRODUCT_SCALING", "Maximum product of diagonal values and row and column scaling");
+    solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
 
     solver->symbolicFactorization().numericFactorization().solve();
 
