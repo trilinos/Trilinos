@@ -48,10 +48,8 @@
 #include <unistd.h>
 
 //strategy: kokkos::deepcopy a view, count the intercepts.  For right now, just report them when mpi_finalize happens.
-void OnHost2Arg() {
-  int N=100;
-  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> a ("a", N);
-  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> b ("b", N);
+void OnHost2Arg(Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> &a,
+		Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> &b) {
   /*  using range_policy = Kokkos::RangePolicy<Kokkos::HostSpace>;
 
   Kokkos::parallel_for("onHost initialize", range_policy(0,N), KOKKOS_LAMBDA(const int &i) {
@@ -61,23 +59,19 @@ void OnHost2Arg() {
   Kokkos::deep_copy(b, a);
 }
 
-void OnDevice2Arg() {
-  int N=100;
-  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> a ("a", N);
-  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> b ("b", N);
-  using range_policy = Kokkos::RangePolicy<Kokkos::Cuda>;
-
+void OnDevice2Arg(Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> &a,
+		  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> &b) {
+ using range_policy = Kokkos::RangePolicy<Kokkos::Cuda>;
+  /*
   Kokkos::parallel_for("onDevice initialize", range_policy(0,N), KOKKOS_LAMBDA(const int &i) {
       a[i] = 2;
     });
-
+  */
   Kokkos::deep_copy(b, a);
 }
 
-void HostToDevice2Arg() {
-  int N=100;
-  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> a ("a", N);
-  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> b ("b", N);
+void HostToDevice2Arg(Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> &a,
+		      Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> &b) {
   /*
   Kokkos::parallel_for("host to device initialize", N, KOKKOS_LAMBDA(const int &i) {
       a[i] = 2;
@@ -86,10 +80,8 @@ void HostToDevice2Arg() {
   Kokkos::deep_copy(b, a);
 }
 
-void DeviceToHost2Arg() {
-  int N=100;
-  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> a ("a", N);
-  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> b ("b", N);
+void DeviceToHost2Arg(Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> &a,
+		      Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> &b) {
   /*
   Kokkos::parallel_for("device to host initialize", N, KOKKOS_LAMBDA(const int &i) {
       a[i] = 2;
@@ -98,10 +90,8 @@ void DeviceToHost2Arg() {
   Kokkos::deep_copy(b, a);
 }
 
-void OnHost3Arg() {
-  int N=100;
-  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> a ("a", N);
-  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> b ("b", N);
+void OnHost3Arg(Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> &a,
+		Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> &b) {
   Kokkos::DefaultExecutionSpace mySpace;
   /*
   using range_policy = Kokkos::RangePolicy<Kokkos::Host>;
@@ -113,24 +103,21 @@ void OnHost3Arg() {
   Kokkos::deep_copy(mySpace, b, a);
 }
 
-void OnDevice3Arg() {
-  int N=100;
-  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> a ("a", N);
-  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> b ("b", N);
+void OnDevice3Arg(Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> &a,
+		  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> &b) {
   Kokkos::DefaultExecutionSpace mySpace;
   using range_policy = Kokkos::RangePolicy<Kokkos::Cuda>;
 
+  /*
   Kokkos::parallel_for("onDevice initialize", range_policy(0,N), KOKKOS_LAMBDA(const int &i) {
       a[i] = 2;
     });
-
+  */
   Kokkos::deep_copy(mySpace, b, a);
 }
 
-void HostToDevice3Arg() {
-  int N=100;
-  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> a ("a", N);
-  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> b ("b", N);
+void HostToDevice3Arg(Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> &a,
+		      Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> &b) {
   Kokkos::DefaultExecutionSpace mySpace;
   /*
   Kokkos::parallel_for("host to device initialize", N, KOKKOS_LAMBDA(const int &i) {
@@ -140,10 +127,8 @@ void HostToDevice3Arg() {
   Kokkos::deep_copy(mySpace, b, a);
 }
 
-void DeviceToHost3Arg() {
-  int N=100;
-  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> a ("a", N);
-  Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> b ("b", N);
+void DeviceToHost3Arg(Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> &a,
+		      Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> &b) {
   Kokkos::DefaultExecutionSpace mySpace;
   /*
   Kokkos::parallel_for("device to host initialize", N, KOKKOS_LAMBDA(const int &i) {
@@ -157,20 +142,23 @@ int main(int argc, char *argv[]) {
   //initialize
   MPI_Init(&argc, &argv);
   Kokkos::initialize(argc, argv);
-
-  fprintf (stderr, "Starting copies\n");
-  //OnHost2Arg();
-  //OnDevice2Arg();
-  //HostToDevice2Arg();
-  //DeviceToHost2Arg();
-  //OnHost3Arg();
-  //OnDevice3Arg();
-  //HostToDevice3Arg();
-  DeviceToHost3Arg();
-  fprintf (stderr, "Finished copies\n");
-
+  {
+    const int N = 100;
+    Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> a ("a", N);
+    Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> b ("b", N);
+    Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> c ("c", N);
+    Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> d ("d", N);
+  
+    OnHost2Arg(a, b);
+    OnDevice2Arg(c, d);
+    HostToDevice2Arg(a, c);
+    DeviceToHost2Arg(c, a);
+    OnHost3Arg(a, b);
+    OnDevice3Arg(c, d);
+    HostToDevice3Arg(a, c);
+    DeviceToHost3Arg(c, a);
+  }
   fprintf(stderr, "summary statistics\n");
-  //finalize
   Kokkos::finalize();
   MPI_Finalize();
 
