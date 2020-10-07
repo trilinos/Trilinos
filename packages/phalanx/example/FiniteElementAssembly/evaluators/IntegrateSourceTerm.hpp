@@ -58,11 +58,11 @@ class IntegrateSourceTerm : public PHX::EvaluatorWithBaseImpl<Traits>,
   PHX::MDField<ScalarT,CELL,BASIS> residual;
 #ifdef PHX_ENABLE_KOKKOS_AMT
   // Make residual atomic so that AMT mode can sum diffusion and source terms at same time
-  Kokkos::View<ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device,Kokkos::MemoryTraits<Kokkos::Atomic>> residual_atomic;
+  Kokkos::View<ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace,Kokkos::MemoryTraits<Kokkos::Atomic>> residual_atomic;
 #endif
-  Kokkos::View<const double**,PHX::Device> basis_view;
-  Kokkos::View<const double*,PHX::Device> weights;
-  Kokkos::View<const double**,PHX::Device> cell_measure;
+  Kokkos::View<const double**,PHX::MemSpace> basis_view;
+  Kokkos::View<const double*,PHX::MemSpace> weights;
+  Kokkos::View<const double**,PHX::MemSpace> cell_measure;
   
 public:
   IntegrateSourceTerm(const std::string& source_name,

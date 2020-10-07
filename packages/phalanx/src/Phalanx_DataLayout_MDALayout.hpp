@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -64,7 +64,7 @@ namespace PHX {
   // ******************************************************************
   /*! \brief A concrete implementation of the DataLayout class for compile time checked multidimensional arrays.
   */
-  template<typename Tag0 = void, typename Tag1 = void, 
+  template<typename Tag0 = void, typename Tag1 = void,
 	   typename Tag2 = void, typename Tag3 = void,
 	   typename Tag4 = void, typename Tag5 = void,
 	   typename Tag6 = void, typename Tag7 = void>
@@ -83,21 +83,21 @@ namespace PHX {
 
     enum { Rank = tag_list::Rank };
 
-    MDALayout(size_type size1, size_type size2, size_type size3, 
+    MDALayout(size_type size1, size_type size2, size_type size3,
 	      size_type size4, size_type size5, size_type size6,
 	      size_type size7, size_type size8);
 
-    MDALayout(size_type size1, size_type size2, size_type size3, 
+    MDALayout(size_type size1, size_type size2, size_type size3,
 	      size_type size4, size_type size5, size_type size6,
 	      size_type size7);
 
-    MDALayout(size_type size1, size_type size2, size_type size3, 
+    MDALayout(size_type size1, size_type size2, size_type size3,
 	      size_type size4, size_type size5, size_type size6);
 
-    MDALayout(size_type size1, size_type size2, size_type size3, 
+    MDALayout(size_type size1, size_type size2, size_type size3,
 	      size_type size4, size_type size5);
 
-    MDALayout(size_type size1, size_type size2, size_type size3, 
+    MDALayout(size_type size1, size_type size2, size_type size3,
 	      size_type size4);
 
     MDALayout(size_type size1, size_type size2, size_type size3);
@@ -107,25 +107,25 @@ namespace PHX {
     MDALayout(size_type size1);
 
     MDALayout(const std::string& prefix,
-	      size_type size1, size_type size2, size_type size3, 
+	      size_type size1, size_type size2, size_type size3,
 	      size_type size4, size_type size5, size_type size6,
 	      size_type size7, size_type size8);
 
     MDALayout(const std::string& prefix,
-	      size_type size1, size_type size2, size_type size3, 
+	      size_type size1, size_type size2, size_type size3,
 	      size_type size4, size_type size5, size_type size6,
 	      size_type size7);
 
     MDALayout(const std::string& prefix,
-	      size_type size1, size_type size2, size_type size3, 
+	      size_type size1, size_type size2, size_type size3,
 	      size_type size4, size_type size5, size_type size6);
 
     MDALayout(const std::string& prefix,
-	      size_type size1, size_type size2, size_type size3, 
+	      size_type size1, size_type size2, size_type size3,
 	      size_type size4, size_type size5);
 
     MDALayout(const std::string& prefix,
-	      size_type size1, size_type size2, size_type size3, 
+	      size_type size1, size_type size2, size_type size3,
 	      size_type size4);
 
     MDALayout(const std::string& prefix,
@@ -141,21 +141,21 @@ namespace PHX {
 
     virtual bool operator==(const DataLayout& right) const override;
 
-    virtual PHX::Device::size_type rank() const override; 
+    virtual PHX::MemSpace::size_type rank() const override;
 
-    virtual PHX::Device::size_type dimension(size_type ordinal) const override;
+    virtual PHX::MemSpace::size_type dimension(size_type ordinal) const override;
 
-    virtual PHX::Device::size_type extent(size_type ordinal) const override;
+    virtual PHX::MemSpace::size_type extent(size_type ordinal) const override;
 
     virtual int extent_int(size_type ordinal) const override;
 
-    virtual void dimensions(std::vector<PHX::Device::size_type>& dim) const override; 
+    virtual void dimensions(std::vector<PHX::MemSpace::size_type>& dim) const override;
 
     virtual std::string name(size_type ordinal) const override;
 
-    virtual void names(std::vector<std::string>& names) const override; 
+    virtual void names(std::vector<std::string>& names) const override;
 
-    virtual PHX::Device::size_type size() const override;
+    virtual PHX::MemSpace::size_type size() const override;
 
     virtual PHX::DataLayout::KokkosLayoutType kokkosLayout() const override;
 
@@ -164,7 +164,7 @@ namespace PHX {
     virtual void print(std::ostream& os, int offset) const override;
 
   private:
-    
+
     std::string createIdentifier(const std::string& prefix = "");
 
     template<typename IndexType>
@@ -180,16 +180,16 @@ namespace PHX {
 
   protected:
 
-    virtual void 
-    setExtentsOnDerivedClass(const std::vector<PHX::Device::size_type>& extents) override;
+    virtual void
+    setExtentsOnDerivedClass(const std::vector<PHX::MemSpace::size_type>& extents) override;
 
   private:
 
     std::vector<std::string> m_dim_name;
 
-    PHX::Device::size_type m_dim_size[Rank];
+    PHX::MemSpace::size_type m_dim_size[Rank];
 
-    PHX::Device::size_type m_size;
+    PHX::MemSpace::size_type m_size;
 
     std::string m_identifier;
 
@@ -197,7 +197,7 @@ namespace PHX {
 
   template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	   typename Tag4, typename Tag5, typename Tag6, typename Tag7>
-  std::ostream& operator<<(std::ostream& os, 
+  std::ostream& operator<<(std::ostream& os,
 			   const PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,
 			   Tag5,Tag6,Tag7>& t);
 

@@ -85,7 +85,7 @@ namespace PHX {
   // Devices
   // ****************************
   template<typename T> struct is_device : std::false_type {};
-  template<> struct is_device<PHX::Device> : std::true_type {};
+  template<> struct is_device<PHX::MemSpace> : std::true_type {};
 
   // ****************************
   // Rank count
@@ -225,7 +225,7 @@ namespace PHX {
     // using extent_vector = typename RankCount<Props...>::vector_type;
     // This sets defaults if not specified
     using layout = typename std::conditional< !std::is_same<typename prop::layout, void>::value,typename prop::layout, typename PHX::DevLayout<Scalar>::type>::type;
-    using device = typename std::conditional< !std::is_same<typename prop::device, void>::value,typename prop::device, PHX::Device>::type;
+    using device = typename std::conditional< !std::is_same<typename prop::device, void>::value,typename prop::device, PHX::MemSpace>::type;
     using data_type = typename ArrayType<Scalar,rank,layout,device>::data_type;
     using array_type = typename ArrayType<Scalar,rank,layout,device>::array_type;
   };
@@ -460,11 +460,11 @@ namespace PHX {
     }
 
     KOKKOS_FORCEINLINE_FUNCTION
-    Kokkos::DynRankView<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> get_view()
+    Kokkos::DynRankView<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::MemSpace> get_view()
     {return m_view;}
 
     KOKKOS_FORCEINLINE_FUNCTION
-    const Kokkos::DynRankView<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> get_view() const
+    const Kokkos::DynRankView<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::MemSpace> get_view() const
     {return m_view;}
 
     /// Returns a static view of the underlying kokkos static view.

@@ -57,7 +57,7 @@ ScatterResidual(const Teuchos::RCP<PHX::FieldTag>& in_scatter_tag,
                 const Teuchos::RCP<PHX::DataLayout>& residual_layout,
                 const int& in_equation_index,
                 const int& in_num_equations,
-                const Kokkos::View<double*,PHX::Device>& in_global_residual) :
+                const Kokkos::View<double*,PHX::MemSpace>& in_global_residual) :
   scatter_tag(in_scatter_tag),
   residual_contribution(residual_name,residual_layout),
   global_residual_atomic(in_global_residual),
@@ -105,8 +105,8 @@ ScatterResidual(const Teuchos::RCP<PHX::FieldTag>& in_scatter_tag,
                 const Teuchos::RCP<PHX::DataLayout>& residual_layout,
                 const int& in_equation_index,
                 const int& in_num_equations,
-                const Kokkos::View<double*,PHX::Device>& in_global_residual,
-                const KokkosSparse::CrsMatrix<double,int,PHX::Device>& in_global_jacobian) :
+                const Kokkos::View<double*,PHX::MemSpace>& in_global_residual,
+                const KokkosSparse::CrsMatrix<double,int,PHX::MemSpace>& in_global_jacobian) :
   scatter_tag(in_scatter_tag),
   residual_contribution(residual_name,residual_layout),
   global_residual_atomic(in_global_residual),

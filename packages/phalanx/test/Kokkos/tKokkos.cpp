@@ -63,19 +63,19 @@
 
 namespace phalanx_test {
 
-  template <typename Scalar,typename Device>
+  template <typename Scalar,typename MemSpace>
   class ComputeRho {
-    Kokkos::View<Scalar**,Device> rho_;
-    Kokkos::View<Scalar**,Device> P_;
-    Kokkos::View<Scalar**,Device> T_;
+    Kokkos::View<Scalar**,MemSpace> rho_;
+    Kokkos::View<Scalar**,MemSpace> P_;
+    Kokkos::View<Scalar**,MemSpace> T_;
     double k_;
 
   public:
-    typedef PHX::Device execution_space;
+    typedef PHX::ExecSpace execution_space;
 
-    ComputeRho(Kokkos::View<Scalar**,Device> &rho,
-	       Kokkos::View<Scalar**,Device> &P,
-	       Kokkos::View<Scalar**,Device> &T,
+    ComputeRho(Kokkos::View<Scalar**,MemSpace> &rho,
+	       Kokkos::View<Scalar**,MemSpace> &P,
+	       Kokkos::View<Scalar**,MemSpace> &T,
 	       double k)
       : rho_(rho)
       , P_(P)
@@ -100,24 +100,24 @@ namespace phalanx_test {
     const int num_cells = 10;
     const int num_ip = 4;
 
-    Kokkos::View<double**,PHX::Device> rho;
-    Kokkos::View<double**,PHX::Device> P;
-    Kokkos::View<double**,PHX::Device> T;
-    rho = Kokkos::View<double**,PHX::Device>("rho",num_cells,num_ip);
-    P = Kokkos::View<double**,PHX::Device>("P",num_cells,num_ip);
-    T = Kokkos::View<double**,PHX::Device>("T",num_cells,num_ip);
+    Kokkos::View<double**,PHX::MemSpace> rho;
+    Kokkos::View<double**,PHX::MemSpace> P;
+    Kokkos::View<double**,PHX::MemSpace> T;
+    rho = Kokkos::View<double**,PHX::MemSpace>("rho",num_cells,num_ip);
+    P = Kokkos::View<double**,PHX::MemSpace>("P",num_cells,num_ip);
+    T = Kokkos::View<double**,PHX::MemSpace>("T",num_cells,num_ip);
 
-    Kokkos::View<double**,PHX::Device>::HostMirror host_rho = Kokkos::create_mirror_view(rho);
-    Kokkos::View<double**,PHX::Device>::HostMirror host_P = Kokkos::create_mirror_view(P);
-    Kokkos::View<double**,PHX::Device>::HostMirror host_T = Kokkos::create_mirror_view(T);
+    Kokkos::View<double**,PHX::MemSpace>::HostMirror host_rho = Kokkos::create_mirror_view(rho);
+    Kokkos::View<double**,PHX::MemSpace>::HostMirror host_P = Kokkos::create_mirror_view(P);
+    Kokkos::View<double**,PHX::MemSpace>::HostMirror host_T = Kokkos::create_mirror_view(T);
 
     std::unordered_map<std::string,PHX::any> data_container;
     data_container["rho"] = rho;
 
-    Kokkos::View<double**,PHX::Device> rhoInAnotherEvaluator =
-      PHX::any_cast<Kokkos::View<double**,PHX::Device> >(data_container["rho"]);
+    Kokkos::View<double**,PHX::MemSpace> rhoInAnotherEvaluator =
+      PHX::any_cast<Kokkos::View<double**,PHX::MemSpace> >(data_container["rho"]);
 
-    Kokkos::View<double**,PHX::Device>::HostMirror host_rhoInAnotherEvaluator = host_rho;
+    Kokkos::View<double**,PHX::MemSpace>::HostMirror host_rhoInAnotherEvaluator = host_rho;
 
     for (int i=0; i< num_cells; i++){
        for (int j=0; j< num_ip; j++){
@@ -129,15 +129,15 @@ namespace phalanx_test {
     Kokkos::deep_copy(P, host_P);
     Kokkos::deep_copy(T, host_T);
 
-    typename PHX::Device().fence();
+    typename PHX::ExecSpace().fence();
 
-    Kokkos::parallel_for(num_cells, ComputeRho<double,PHX::Device>(rho, P, T, k));
+    Kokkos::parallel_for(num_cells, ComputeRho<double,PHX::MemSpace>(rho, P, T, k));
 
-    typename PHX::Device().fence();
+    typename PHX::ExecSpace().fence();
 
     Kokkos::deep_copy(host_rho, rho);
 
-    typename PHX::Device().fence();
+    typename PHX::ExecSpace().fence();
 
     double tol = Teuchos::ScalarTraits<double>::eps()*100.0;
 
@@ -152,20 +152,18 @@ namespace phalanx_test {
 	TEST_FLOATING_EQUALITY(host_rhoInAnotherEvaluator(i,j),1.0,tol);
   }
 
-  template <typename Scalar,typename Device>
+  template <typename Scalar,typename MemSpace>
   class ComputeRho2 {
-    Kokkos::View<Scalar**,Device> rho_;
-    Kokkos::View<Scalar**,Device> P_;
-    Kokkos::View<Scalar**,Device> T_;
-    Kokkos::View<Scalar*,Device> k_;
+    Kokkos::View<Scalar**,MemSpace> rho_;
+    Kokkos::View<Scalar**,MemSpace> P_;
+    Kokkos::View<Scalar**,MemSpace> T_;
+    Kokkos::View<Scalar*,MemSpace> k_;
 
   public:
-    typedef PHX::Device execution_space;
-
-    ComputeRho2(Kokkos::View<Scalar**,Device> &rho,
-		Kokkos::View<Scalar**,Device> &P,
-		Kokkos::View<Scalar**,Device> &T,
-		Kokkos::View<Scalar*,Device>& k)
+    ComputeRho2(Kokkos::View<Scalar**,MemSpace> &rho,
+		Kokkos::View<Scalar**,MemSpace> &P,
+		Kokkos::View<Scalar**,MemSpace> &T,
+		Kokkos::View<Scalar*,MemSpace>& k)
       : rho_(rho)
       , P_(P)
       , T_(T)
@@ -191,31 +189,31 @@ namespace phalanx_test {
 
     typedef Sacado::Fad::DFad<double> FadType;
 
-    Kokkos::View<FadType**,PHX::Device> rho;
-    Kokkos::View<FadType**,PHX::Device> P;
-    Kokkos::View<FadType**,PHX::Device> T;
-    Kokkos::View<FadType*,PHX::Device> k;
-    rho = Kokkos::View<FadType**,PHX::Device>("rho",num_cells,num_ip,deriv_dim);
-    P = Kokkos::View<FadType**,PHX::Device>("P",num_cells,num_ip,deriv_dim);
-    T = Kokkos::View<FadType**,PHX::Device>("T",num_cells,num_ip,deriv_dim);
-    k = Kokkos::View<FadType*,PHX::Device>("k",1,deriv_dim);
+    Kokkos::View<FadType**,PHX::MemSpace> rho;
+    Kokkos::View<FadType**,PHX::MemSpace> P;
+    Kokkos::View<FadType**,PHX::MemSpace> T;
+    Kokkos::View<FadType*,PHX::MemSpace> k;
+    rho = Kokkos::View<FadType**,PHX::MemSpace>("rho",num_cells,num_ip,deriv_dim);
+    P = Kokkos::View<FadType**,PHX::MemSpace>("P",num_cells,num_ip,deriv_dim);
+    T = Kokkos::View<FadType**,PHX::MemSpace>("T",num_cells,num_ip,deriv_dim);
+    k = Kokkos::View<FadType*,PHX::MemSpace>("k",1,deriv_dim);
 
-    Kokkos::View<FadType**,PHX::Device>::HostMirror host_rho;
-    Kokkos::View<FadType**,PHX::Device>::HostMirror host_P;
-    Kokkos::View<FadType**,PHX::Device>::HostMirror host_T;
-    Kokkos::View<FadType*,PHX::Device>::HostMirror host_k;
-    host_rho = Kokkos::View<FadType**,PHX::Device>::HostMirror("host_rho",num_cells,num_ip,deriv_dim);
-    host_P = Kokkos::View<FadType**,PHX::Device>::HostMirror("host_P",num_cells,num_ip,deriv_dim);
-    host_T = Kokkos::View<FadType**,PHX::Device>::HostMirror("host_T",num_cells,num_ip,deriv_dim);
-    host_k = Kokkos::View<FadType*,PHX::Device>::HostMirror("host_k",1,deriv_dim);
+    Kokkos::View<FadType**,PHX::MemSpace>::HostMirror host_rho;
+    Kokkos::View<FadType**,PHX::MemSpace>::HostMirror host_P;
+    Kokkos::View<FadType**,PHX::MemSpace>::HostMirror host_T;
+    Kokkos::View<FadType*,PHX::MemSpace>::HostMirror host_k;
+    host_rho = Kokkos::View<FadType**,PHX::MemSpace>::HostMirror("host_rho",num_cells,num_ip,deriv_dim);
+    host_P = Kokkos::View<FadType**,PHX::MemSpace>::HostMirror("host_P",num_cells,num_ip,deriv_dim);
+    host_T = Kokkos::View<FadType**,PHX::MemSpace>::HostMirror("host_T",num_cells,num_ip,deriv_dim);
+    host_k = Kokkos::View<FadType*,PHX::MemSpace>::HostMirror("host_k",1,deriv_dim);
 
     std::unordered_map<std::string,PHX::any> data_container;
     data_container["rho"] = rho;
 
-    Kokkos::View<FadType**,PHX::Device> rhoInAnotherEvaluator =
-      PHX::any_cast<Kokkos::View<FadType**,PHX::Device> >(data_container["rho"]);
+    Kokkos::View<FadType**,PHX::MemSpace> rhoInAnotherEvaluator =
+      PHX::any_cast<Kokkos::View<FadType**,PHX::MemSpace> >(data_container["rho"]);
 
-    Kokkos::View<FadType**,PHX::Device>::HostMirror host_rhoInAnotherEvaluator = host_rho;
+    Kokkos::View<FadType**,PHX::MemSpace>::HostMirror host_rhoInAnotherEvaluator = host_rho;
 
     for (int i=0; i< num_cells; i++){
        for (int j=0; j< num_ip; j++){
@@ -233,15 +231,15 @@ namespace phalanx_test {
     Kokkos::deep_copy(T, host_T);
     Kokkos::deep_copy(k, host_k);
 
-    typename PHX::Device().fence();
+    typename PHX::ExecSpace().fence();
 
-    Kokkos::parallel_for(num_cells, ComputeRho2<FadType,PHX::Device>(rho, P, T, k));
+    Kokkos::parallel_for(num_cells, ComputeRho2<FadType,PHX::MemSpace>(rho, P, T, k));
 
-    typename PHX::Device().fence();
+    typename PHX::ExecSpace().fence();
 
     Kokkos::deep_copy(host_rho, rho);
 
-    typename PHX::Device().fence();
+    typename PHX::ExecSpace().fence();
 
     double tol = Teuchos::ScalarTraits<double>::eps()*100.0;
 
@@ -274,14 +272,14 @@ namespace phalanx_test {
    */
   TEUCHOS_UNIT_TEST(kokkos, ConstNonConstTranslation)
   {
-    Kokkos::View<double**,PHX::Device> a("a",10,4);
+    Kokkos::View<double**,PHX::MemSpace> a("a",10,4);
 
-    Kokkos::View<const double**,PHX::Device> ca = a;
+    Kokkos::View<const double**,PHX::MemSpace> ca = a;
 
     // Need to get the nonconst array type given the const array type
-    typedef Kokkos::View<const double**,PHX::Device>::non_const_data_type nonconst_array_type;
+    typedef Kokkos::View<const double**,PHX::MemSpace>::non_const_data_type nonconst_array_type;
 
-    Kokkos::View<nonconst_array_type,PHX::Device> b;
+    Kokkos::View<nonconst_array_type,PHX::MemSpace> b;
 
     b = a;
   }
@@ -319,8 +317,8 @@ namespace phalanx_test {
   // Tests the basic DAG dependency model
   TEUCHOS_UNIT_TEST(kokkos, AMT)
   {
-    using execution_space = PHX::exec_space;
-    using memory_space = PHX::Device::memory_space;
+    using execution_space = PHX::ExecSpace;
+    using memory_space = PHX::MemSpace;
     using policy_type = Kokkos::TaskScheduler<execution_space>;
     const unsigned memory_span = 3 * sizeof(TaskDep<execution_space>);
     policy_type policy(memory_space(),memory_span);
@@ -333,7 +331,7 @@ namespace phalanx_test {
     TEST_EQUALITY(f3.get(),6);
   }
 
-  // yes we could do thsi with deep copy, but want to experiment with
+  // yes we could do this with deep copy, but want to experiment with
   // wrapping tasks to insert functions into all PHX nodes
   template <typename Scalar,typename Device>
   class InitializeView {
@@ -342,8 +340,6 @@ namespace phalanx_test {
     double k_;
 
   public:
-    typedef PHX::Device execution_space;
-
     struct DataParallelTag {};
 
     InitializeView(Kokkos::View<Scalar**,Device> &v,double k)
@@ -399,17 +395,17 @@ namespace phalanx_test {
   // Tests hybrid parallelism in that a task is threaded.
   TEUCHOS_UNIT_TEST(kokkos, AMT_TeamHybrid)
   {
-    using execution_space = PHX::exec_space;
-    using memory_space = PHX::Device::memory_space;
+    using execution_space = PHX::ExecSpace;
+    using memory_space = PHX::MemSpace;
     using policy_type = Kokkos::TaskScheduler<execution_space>;
 
     double k=2.0;
     const int num_cells = 10;
     const int num_ip = 4;
 
-    Kokkos::View<double**,PHX::Device> rho("rho",num_cells,num_ip);
-    Kokkos::View<double**,PHX::Device> P("P",num_cells,num_ip);
-    Kokkos::View<double**,PHX::Device> T("T",num_cells,num_ip);
+    Kokkos::View<double**,PHX::MemSpace> rho("rho",num_cells,num_ip);
+    Kokkos::View<double**,PHX::MemSpace> P("P",num_cells,num_ip);
+    Kokkos::View<double**,PHX::MemSpace> T("T",num_cells,num_ip);
 
     Kokkos::deep_copy(P,1.0);
     Kokkos::deep_copy(T,2.0);
@@ -417,17 +413,17 @@ namespace phalanx_test {
     Kokkos::fence();
 
     // Initialize: Single level parallel over cells
-    Kokkos::parallel_for(num_cells,InitializeView<double,execution_space>(P,3.0));
+    Kokkos::parallel_for(num_cells,InitializeView<double,memory_space>(P,3.0));
     // Initialize: Team parallel over cells and qp
     Kokkos::parallel_for(Kokkos::TeamPolicy<execution_space,typename InitializeView<double,execution_space>::DataParallelTag>(num_cells,num_ip,1),
-                         InitializeView<double,execution_space>(T,4.0));
-    typename PHX::Device().fence();
-    Kokkos::parallel_for(num_cells,ComputeRho<double,execution_space>(rho,P,T,k));
-    typename PHX::Device().fence();
+                         InitializeView<double,memory_space>(T,4.0));
+    typename PHX::ExecSpace().fence();
+    Kokkos::parallel_for(num_cells,ComputeRho<double,memory_space>(rho,P,T,k));
+    typename PHX::ExecSpace().fence();
 
-    Kokkos::View<double**,PHX::Device>::HostMirror host_rho = Kokkos::create_mirror_view(rho);
+    Kokkos::View<double**,PHX::MemSpace>::HostMirror host_rho = Kokkos::create_mirror_view(rho);
     Kokkos::deep_copy(host_rho,rho);
-    typename PHX::Device().fence();
+    typename PHX::ExecSpace().fence();
 
     double tol = std::numeric_limits<double>::epsilon() * 100.0;
     for (int i=0; i< num_cells; i++)
@@ -472,7 +468,7 @@ namespace phalanx_test {
     Kokkos::wait(policy);
 
     Kokkos::deep_copy(host_rho,rho);
-    typename PHX::Device().fence();
+    typename PHX::ExecSpace().fence();
 
     for (int i=0; i< num_cells; i++)
       for (int j=0; j< num_ip; j++)
@@ -501,8 +497,6 @@ namespace phalanx_test {
     Array a_;
 
   public:
-    typedef PHX::Device execution_space;
-
     AssignValue(Array& a) : a_(a) {}
 
     KOKKOS_INLINE_FUNCTION
@@ -519,8 +513,6 @@ namespace phalanx_test {
     Array a_;
 
   public:
-    typedef PHX::Device execution_space;
-
     AssignValueBracket(Array& a) : a_(a) {}
 
     KOKKOS_INLINE_FUNCTION
@@ -535,12 +527,10 @@ namespace phalanx_test {
     using array_type =
       Kokkos::DynRankView<int, PHX::exec_space>;
 
-    //using val_t = Kokkos::DynRankView<int, PHX::exec_space>::value_type;
-
     array_type a("a",10,4);
-    Kokkos::parallel_for(a.extent(0),AssignValue<array_type>(a));
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecSpace>(0,a.extent(0)),AssignValue<array_type>(a));
     array_type b("b",40);
-    Kokkos::parallel_for(b.size(),AssignValueBracket<array_type>(b));
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecSpace>(0,b.size()),AssignValueBracket<array_type>(b));
 
     Kokkos::fence();
 
@@ -570,8 +560,8 @@ namespace phalanx_test {
 
     // Create a DynRankView from a compiletime View
     {
-      Kokkos::View<double**,PHX::Device> d("d",100,4);
-      Kokkos::DynRankView<double,PHX::Device,Kokkos::MemoryUnmanaged> e(d.data(),100,4);
+      Kokkos::View<double**,PHX::MemSpace> d("d",100,4);
+      Kokkos::DynRankView<double,PHX::MemSpace,Kokkos::MemoryUnmanaged> e(d.data(),100,4);
       TEST_EQUALITY(d.extent(0),e.extent(0));
       TEST_EQUALITY(d.extent(1),e.extent(1));
 
@@ -579,7 +569,7 @@ namespace phalanx_test {
       // touch. Would have expected test failure below since memory
       // not allocated yet.
 
-      Kokkos::parallel_for(d.extent(0),AssignValue<Kokkos::View<double**,PHX::Device>>(d));
+      Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecSpace>(0,d.extent(0)),AssignValue<Kokkos::View<double**,PHX::MemSpace>>(d));
       Kokkos::fence();
 
       auto host_d = Kokkos::create_mirror_view(d);
@@ -599,10 +589,10 @@ namespace phalanx_test {
 	const int num_cells = 10;
 	const int deriv_dim_plus_one = 2;
 	using FadType = Sacado::Fad::DFad<double>;
-	Kokkos::DynRankView<FadType,PHX::Device> f("f",num_cells,deriv_dim_plus_one);
+	Kokkos::DynRankView<FadType,PHX::MemSpace> f("f",num_cells,deriv_dim_plus_one);
 	const double tol = std::numeric_limits<double>::epsilon() * 100.0;
 
-	Kokkos::parallel_for(num_cells,KOKKOS_LAMBDA (const int i) {
+	Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecSpace>(0,num_cells),KOKKOS_LAMBDA (const int i) {
 	    f(i).val() = 2.0;
 	    f(i).fastAccessDx(0) = 3.0;
 	  });
@@ -613,7 +603,7 @@ namespace phalanx_test {
 	  TEST_FLOATING_EQUALITY(host_f(i).fastAccessDx(0),3.0,tol);
 	}
 
-	Kokkos::parallel_for(num_cells,KOKKOS_LAMBDA (const int i) {
+	Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecSpace>(0,num_cells),KOKKOS_LAMBDA (const int i) {
 	    f[i].val() = 3.0;
 	    f[i].fastAccessDx(0) = 4.0;
 	  });
@@ -636,8 +626,6 @@ namespace phalanx_test {
     Array c_;
 
   public:
-    typedef PHX::Device execution_space;
-
     AssignFad(Array& a, Array& b, Array& c) : a_(a),b_(b),c_(c) {}
 
     KOKKOS_INLINE_FUNCTION
@@ -658,9 +646,9 @@ namespace phalanx_test {
       const int num_ip = 2;
       const int deriv_dim_plus_one = 2;
       using FadType = Sacado::Fad::DFad<double>;
-      Kokkos::DynRankView<FadType,PHX::Device> a("a",num_cells,num_ip,deriv_dim_plus_one);
-      Kokkos::DynRankView<FadType,PHX::Device> b("b",num_cells,num_ip,deriv_dim_plus_one);
-      Kokkos::DynRankView<FadType,PHX::Device> c("c",num_cells,num_ip,deriv_dim_plus_one);
+      Kokkos::DynRankView<FadType,PHX::MemSpace> a("a",num_cells,num_ip,deriv_dim_plus_one);
+      Kokkos::DynRankView<FadType,PHX::MemSpace> b("b",num_cells,num_ip,deriv_dim_plus_one);
+      Kokkos::DynRankView<FadType,PHX::MemSpace> c("c",num_cells,num_ip,deriv_dim_plus_one);
 
       TEST_EQUALITY(a.size(),6);
       TEST_EQUALITY(b.size(),6);
@@ -669,8 +657,8 @@ namespace phalanx_test {
       TEST_EQUALITY(b.rank(),2);
       TEST_EQUALITY(c.rank(),2);
 
-      Kokkos::parallel_for(a.size(), AssignFad<Kokkos::DynRankView<FadType,PHX::Device>>(a,b,c));
-      Kokkos::fence();
+      Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecSpace>(0,a.size()), AssignFad<Kokkos::DynRankView<FadType,PHX::MemSpace>>(a,b,c));
+      PHX::ExecSpace().fence();
       auto host_c = Kokkos::create_mirror_view(c);
       Kokkos::deep_copy(host_c,c);
 
@@ -715,11 +703,10 @@ namespace phalanx_test {
   }
 
   class FillJacobian {
-    KokkosSparse::CrsMatrix<double,int,PHX::Device> Jacobian;
+    KokkosSparse::CrsMatrix<double,int,PHX::MemSpace> Jacobian;
 
   public:
-    typedef PHX::Device execution_space;
-    FillJacobian(KokkosSparse::CrsMatrix<double,int,PHX::Device> inJ)
+    FillJacobian(KokkosSparse::CrsMatrix<double,int,PHX::MemSpace> inJ)
       : Jacobian(inJ)
     {}
     KOKKOS_INLINE_FUNCTION
@@ -751,10 +738,10 @@ namespace phalanx_test {
     const size_t nnz = 21;
 
     using Kokkos::View;
-    using local_matrix_type = KokkosSparse::CrsMatrix<double,int,PHX::Device>;
+    using local_matrix_type = KokkosSparse::CrsMatrix<double,int,PHX::MemSpace>;
     using local_graph_type = typename local_matrix_type::StaticCrsGraphType;
     using size_type = typename local_matrix_type::size_type;
-    View<size_type*,PHX::Device> row_offsets("row_offsets",num_rows+1);
+    View<size_type*,PHX::MemSpace> row_offsets("row_offsets",num_rows+1);
 
     auto host_row_offsets = Kokkos::create_mirror_view(row_offsets);
     host_row_offsets(0) = 0;
@@ -771,7 +758,7 @@ namespace phalanx_test {
 
     Kokkos::deep_copy(row_offsets,host_row_offsets);
 
-    View<int*,PHX::Device> col_ids("col_ids",nnz);
+    View<int*,PHX::MemSpace> col_ids("col_ids",nnz);
     auto host_col_ids = Kokkos::create_mirror_view(col_ids);
 
     host_col_ids(0) = 0;  host_col_ids(1) = 1; host_col_ids(2) = 9; // row 0
@@ -796,14 +783,14 @@ namespace phalanx_test {
     TEST_EQUALITY(J.nnz(),21);
 
     Kokkos::deep_copy(J.values,0.0);
-    Kokkos::parallel_for(J.numRows(),FillJacobian(J),"Fill Jacobian");
-    Kokkos::fence();
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecSpace>(0,J.numRows()),FillJacobian(J),"Fill Jacobian");
+    PHX::ExecSpace().fence();
 
     int check_matrix_entries = 0; // nonzero value means failure
     const double tol = Teuchos::ScalarTraits<double>::eps()*100.0;
 
     Kokkos::parallel_reduce("check matrix values",
-			    Kokkos::RangePolicy<PHX::Device>(0,J.numRows()),
+			    Kokkos::RangePolicy<PHX::ExecSpace>(0,J.numRows()),
 			    KOKKOS_LAMBDA (const int row, int& lsum) {
       if (row == 0) {
 	PHX_TEST_EQUAL(J.rowConst(0).length,3,lsum);
@@ -836,7 +823,7 @@ namespace phalanx_test {
 	PHX_TEST_FLOAT_EQUAL(J.rowConst(9).value(1),9.0,tol,lsum);
       }
     }, check_matrix_entries);
-    Kokkos::fence();
+    PHX::ExecSpace().fence();
 
     TEST_EQUALITY(check_matrix_entries,0);
   }
@@ -882,12 +869,12 @@ namespace phalanx_test {
     std::cout << "DefaultFadLayout   = " << PHX::print<DefaultFadLayout>() << "\n" << std::endl;
 
     // Tests for assignments from static View to DynRankView
-    Kokkos::View<FadType**,typename PHX::DevLayout<FadType>::type,PHX::Device> static_a("static_a",100,8,64);
-    Kokkos::DynRankView<FadType,typename PHX::DevLayout<FadType>::type,PHX::Device> dyn_a;
+    Kokkos::View<FadType**,typename PHX::DevLayout<FadType>::type,PHX::MemSpace> static_a("static_a",100,8,64);
+    Kokkos::DynRankView<FadType,typename PHX::DevLayout<FadType>::type,PHX::MemSpace> dyn_a;
     dyn_a = static_a;
 
-    Kokkos::View<FadType**,Kokkos::LayoutLeft,PHX::Device> static_a_ll("static_a",100,8,64);
-    Kokkos::DynRankView<FadType,Kokkos::LayoutLeft,PHX::Device> dyn_a_ll;
+    Kokkos::View<FadType**,Kokkos::LayoutLeft,PHX::MemSpace> static_a_ll("static_a",100,8,64);
+    Kokkos::DynRankView<FadType,Kokkos::LayoutLeft,PHX::MemSpace> dyn_a_ll;
     dyn_a_ll = static_a_ll;
   }
 }

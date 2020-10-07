@@ -80,21 +80,21 @@ class GatherSolution<PHX::MyTraits::Residual,Traits>
   PHX::MDField<ScalarT,CELL,BASIS> field;
   const int num_equations;
   const int field_index;
-  const Kokkos::View<const double*,PHX::Device> x;
-  const Kokkos::View<const int**,PHX::Device> gids;
+  const Kokkos::View<const double*,PHX::MemSpace> x;
+  const Kokkos::View<const int**,PHX::MemSpace> gids;
 
 public:
   struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
     PHX::View<ScalarT**> field;
     const int num_equations;
     const int field_index;
-    const Kokkos::View<const double*,PHX::Device> x;
-    Kokkos::View<const int**,PHX::Device> gids;
+    const Kokkos::View<const double*,PHX::MemSpace> x;
+    Kokkos::View<const int**,PHX::MemSpace> gids;
     KOKKOS_FUNCTION MyDevEval(const PHX::View<ScalarT**>& in_field,
                               const int in_num_equations,
                               const int in_field_index,
-                              const Kokkos::View<const double*,PHX::Device>& in_x,
-                              const Kokkos::View<const int**,PHX::Device>& in_gids) :
+                              const Kokkos::View<const double*,PHX::MemSpace>& in_x,
+                              const Kokkos::View<const int**,PHX::MemSpace>& in_gids) :
       field(in_field), num_equations(in_num_equations), field_index(in_field_index), x(in_x), gids(in_gids) {}
     KOKKOS_FUNCTION MyDevEval(const MyDevEval& src) = default;
     KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
@@ -105,8 +105,8 @@ public:
                  const Teuchos::RCP<PHX::DataLayout>& layout,
                  const int& in_num_equations,
                  const int& in_field_index,
-                 const Kokkos::View<double*,PHX::Device>& in_x,
-                 const Kokkos::View<const int**,PHX::Device>& in_gids);
+                 const Kokkos::View<double*,PHX::MemSpace>& in_x,
+                 const Kokkos::View<const int**,PHX::MemSpace>& in_gids);
   PHX::DeviceEvaluator<Traits>* createDeviceEvaluator() const override;
   void evaluateFields(typename Traits::EvalData d) override;
 };
@@ -123,21 +123,21 @@ class GatherSolution<PHX::MyTraits::Jacobian,Traits>
   PHX::MDField<ScalarT,CELL,BASIS> field;
   const int num_equations;
   const int field_index;
-  const Kokkos::View<const double*,PHX::Device> x;
-  const Kokkos::View<const int**,PHX::Device> gids;
+  const Kokkos::View<const double*,PHX::MemSpace> x;
+  const Kokkos::View<const int**,PHX::MemSpace> gids;
 
 public:
   struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
     PHX::View<ScalarT**> field;
     const int num_equations;
     const int field_index;
-    const Kokkos::View<const double*,PHX::Device> x;
-    const Kokkos::View<const int**,PHX::Device> gids;
+    const Kokkos::View<const double*,PHX::MemSpace> x;
+    const Kokkos::View<const int**,PHX::MemSpace> gids;
     KOKKOS_FUNCTION MyDevEval(const PHX::View<ScalarT**>& in_field,
                               const int in_num_equations,
                               const int in_field_index,
-                              const Kokkos::View<const double*,PHX::Device>& in_x,
-                              const Kokkos::View<const int**,PHX::Device>& in_gids) :
+                              const Kokkos::View<const double*,PHX::MemSpace>& in_x,
+                              const Kokkos::View<const int**,PHX::MemSpace>& in_gids) :
       field(in_field), num_equations(in_num_equations), field_index(in_field_index), x(in_x), gids(in_gids) {}
     KOKKOS_FUNCTION MyDevEval(const MyDevEval& src) = default;
     KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
@@ -148,8 +148,8 @@ public:
                  const Teuchos::RCP<PHX::DataLayout>& layout,
                  const int& in_num_equations,
                  const int& in_field_index,
-                 const Kokkos::View<double*,PHX::Device>& x,
-                 const Kokkos::View<const int**,PHX::Device>& in_gids);
+                 const Kokkos::View<double*,PHX::MemSpace>& x,
+                 const Kokkos::View<const int**,PHX::MemSpace>& in_gids);
   PHX::DeviceEvaluator<Traits>* createDeviceEvaluator() const override;
   void evaluateFields(typename Traits::EvalData d) override;
 };

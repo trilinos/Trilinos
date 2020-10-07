@@ -14,6 +14,8 @@
 
 namespace PHX {
 
+#if defined(PHX_USE_DEPRECATED_DEVICE_DEFINITION)
+
 #if defined(PHX_KOKKOS_DEVICE_TYPE_CUDA)
   using Device = Kokkos::Cuda;
 #elif defined(PHX_KOKKOS_DEVICE_TYPE_OPENMP)
@@ -30,6 +32,29 @@ namespace PHX {
 
   using ExecSpace  = PHX::Device::execution_space;
   using MemSpace   = PHX::Device::memory_space;
+
+#else // PHX_USE_DEPRECATED_DEVICE_DEFINITION
+
+  // Temporarily rename Device to NewDevice to help transition use of
+  // Device to ExecSpace and MemSpace.
+#if defined(PHX_KOKKOS_DEVICE_TYPE_CUDA)
+  using NewDevice = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>;
+#elif defined(PHX_KOKKOS_DEVICE_TYPE_OPENMP)
+  using NewDevice = Kokkos::Device<Kokkos::OpenMP,Kokkos::OpenMP::memory_space>;
+#elif defined(PHX_KOKKOS_DEVICE_TYPE_THREAD)
+  #include <Kokkos_hwloc.hpp>
+  using NewDevice = Kokkos::Device<Kokkos::Threads,Kokkos::Threads::memory_space>;
+#elif defined(PHX_KOKKOS_DEVICE_TYPE_SERIAL)
+  using NewDevice = Kokkos::Device<Kokkos::Serial,Kokkos::Serial::memory_space>;
+#endif
+
+  using exec_space = PHX::NewDevice::execution_space;
+  using mem_space  = PHX::NewDevice::memory_space;
+
+  using ExecSpace  = PHX::NewDevice::execution_space;
+  using MemSpace   = PHX::NewDevice::memory_space;
+
+#endif // PHX_USE_DEPRECATED_DEVICE_DEFINITION
 
 }
 
@@ -92,10 +117,10 @@ namespace PHX {
   };
 
   template<typename DataType>
-  using View = Kokkos::View<DataType,typename PHX::DevLayout<DataType>::type,PHX::Device>;
+  using View = Kokkos::View<DataType,typename PHX::DevLayout<DataType>::type,PHX::MemSpace>;
 
   template<typename DataType>
-  using AtomicView = Kokkos::View<DataType,typename PHX::DevLayout<DataType>::type,PHX::Device,Kokkos::MemoryTraits<Kokkos::Atomic>>;
+  using AtomicView = Kokkos::View<DataType,typename PHX::DevLayout<DataType>::type,PHX::MemSpace,Kokkos::MemoryTraits<Kokkos::Atomic>>;
 }
 
 #endif

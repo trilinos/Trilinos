@@ -58,8 +58,8 @@ namespace PHX{
   //! Used to set the extents from a parameter pack. Can't use a simple initializer list due to narrowing from in size_type.
   template<typename T, typename... extent_pack>
   struct SetExtentsImpl<T,extent_pack...> {
-    static void setExtents(PHX::Device::size_type index,
-                           std::vector<PHX::Device::size_type>& extents,
+    static void setExtents(PHX::MemSpace::size_type index,
+                           std::vector<PHX::MemSpace::size_type>& extents,
                            T val,
                            extent_pack... pack)
     {
@@ -71,8 +71,8 @@ namespace PHX{
   //! Used to set the extents from a parameter pack. This implementation ends the recursion.
   template<>
   struct SetExtentsImpl<> {
-    static void setExtents(PHX::Device::size_type ,
-                           std::vector<PHX::Device::size_type>& )
+    static void setExtents(PHX::MemSpace::size_type ,
+                           std::vector<PHX::MemSpace::size_type>& )
     {}
   };
 
@@ -99,24 +99,24 @@ namespace PHX{
     enum class KokkosLayoutType {Left,Right,Default};
 
     // typedef long unsigned int size_type;
-    typedef PHX::Device::size_type size_type;
+    typedef PHX::MemSpace::size_type size_type;
 
     DataLayout() = default;
 
     virtual ~DataLayout() = default;
 
-    virtual PHX::Device::size_type rank() const = 0;
+    virtual PHX::MemSpace::size_type rank() const = 0;
 
-    virtual PHX::Device::size_type dimension(size_type ordinal) const = 0;
+    virtual PHX::MemSpace::size_type dimension(size_type ordinal) const = 0;
 
-    virtual PHX::Device::size_type extent(size_type ordinal) const = 0;
+    virtual PHX::MemSpace::size_type extent(size_type ordinal) const = 0;
 
     virtual int extent_int(size_type ordinal) const = 0;
 
     virtual void
-    dimensions(std::vector<PHX::Device::size_type>& dim) const = 0;
+    dimensions(std::vector<PHX::MemSpace::size_type>& dim) const = 0;
 
-    virtual PHX::Device::size_type size() const = 0;
+    virtual PHX::MemSpace::size_type size() const = 0;
 
     virtual std::string name(size_type ordinal) const = 0;
 
@@ -142,14 +142,14 @@ namespace PHX{
       static_assert(sizeof...(extents) < 9,
                     "Error - PHX::Layout - rank must be less than 9!");
 
-      std::vector<PHX::Device::size_type> extents_vec(sizeof...(extents));
+      std::vector<PHX::MemSpace::size_type> extents_vec(sizeof...(extents));
       PHX::SetExtentsImpl<extent_pack...>::setExtents(0,extents_vec,extents...);
       this->setExtentsOnDerivedClass(extents_vec);
     }
 
   protected:
 
-    virtual void setExtentsOnDerivedClass(const std::vector<PHX::Device::size_type>& extents) = 0;
+    virtual void setExtentsOnDerivedClass(const std::vector<PHX::MemSpace::size_type>& extents) = 0;
 
   };
 

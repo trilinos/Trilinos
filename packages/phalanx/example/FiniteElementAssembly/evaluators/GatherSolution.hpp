@@ -79,8 +79,8 @@ class GatherSolution<PHX::MyTraits::Residual,Traits>
   PHX::MDField<ScalarT,CELL,BASIS> field;
   const int num_equations;
   const int field_index;
-  const Kokkos::View<const double*,PHX::Device> x;
-  Kokkos::View<const int**,PHX::Device> gids;
+  const Kokkos::View<const double*,PHX::MemSpace> x;
+  Kokkos::View<const int**,PHX::MemSpace> gids;
   int cell_global_offset_index;
 
 public:
@@ -88,7 +88,7 @@ public:
                  const Teuchos::RCP<PHX::DataLayout>& layout,
                  const int& in_num_equations,
                  const int& in_field_index,
-                 const Kokkos::View<double*,PHX::Device>& x);
+                 const Kokkos::View<double*,PHX::MemSpace>& x);
   void evaluateFields(typename Traits::EvalData d) override;
   KOKKOS_INLINE_FUNCTION
   void operator () (const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;
@@ -106,8 +106,8 @@ class GatherSolution<PHX::MyTraits::Jacobian,Traits>
   PHX::MDField<ScalarT,CELL,BASIS> field;
   const int num_equations;
   const int field_index;
-  const Kokkos::View<const double*,PHX::Device> x;
-  Kokkos::View<const int**,PHX::Device> gids;
+  const Kokkos::View<const double*,PHX::MemSpace> x;
+  Kokkos::View<const int**,PHX::MemSpace> gids;
   int cell_global_offset_index;
   
 public:
@@ -115,7 +115,7 @@ public:
                  const Teuchos::RCP<PHX::DataLayout>& layout,
                  const int& in_num_equations,
                  const int& in_field_index,
-                 const Kokkos::View<double*,PHX::Device>& x);
+                 const Kokkos::View<double*,PHX::MemSpace>& x);
   void evaluateFields(typename Traits::EvalData d) override;
   KOKKOS_INLINE_FUNCTION
   void operator () (const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;

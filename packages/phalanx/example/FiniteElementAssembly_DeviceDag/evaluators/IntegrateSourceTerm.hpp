@@ -75,7 +75,7 @@ public:
     PHX::View<const ScalarT**> source;
 #ifdef PHX_ENABLE_KOKKOS_AMT
     // Make residual atomic so that AMT mode can sum diffusion and source terms at same time
-    Kokkos::View<ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device,Kokkos::MemoryTraits<Kokkos::Atomic>> residual;
+    Kokkos::View<ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace,Kokkos::MemoryTraits<Kokkos::Atomic>> residual;
 #else
     PHX::View<ScalarT**> residual;
 #endif

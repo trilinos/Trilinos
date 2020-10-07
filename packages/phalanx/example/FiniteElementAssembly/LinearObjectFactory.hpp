@@ -18,7 +18,7 @@ namespace phx_example {
     // Phalanx device spaces
     using exec_t = PHX::exec_space;
     using mem_t = PHX::mem_space;
-    using local_matrix_type = KokkosSparse::CrsMatrix<double,int,PHX::Device>;
+    using local_matrix_type = KokkosSparse::CrsMatrix<double,int,PHX::MemSpace>;
     using local_graph_type = typename local_matrix_type::StaticCrsGraphType;
     using team_t =  Kokkos::TeamPolicy<exec_t>::member_type;
     
@@ -28,24 +28,24 @@ namespace phx_example {
     size_t num_matrix_entries_; //! Total number of non-zeros in matrix
 
     // Global node ids <cell,node>
-    Kokkos::View<int**,PHX::Device> gids_;
+    Kokkos::View<int**,PHX::MemSpace> gids_;
     
     //! Stores the global node dependencies for Jacobian creation (mesh nodes, not dofs).
-    using SetType = Kokkos::UnorderedMap<Kokkos::pair<int,int>,void,PHX::Device>;
+    using SetType = Kokkos::UnorderedMap<Kokkos::pair<int,int>,void,Kokkos::Device<PHX::ExecSpace,PHX::MemSpace>>;
     SetType global_node_set_;
 
     //! Number of entries in each row of Jacobian, sizeof(num_dofs_)
-    Kokkos::View<int*,PHX::Device> row_count_;
+    Kokkos::View<int*,PHX::MemSpace> row_count_;
 
     //! Row offsets for building graph, sizeof(num_dofs_+1)
     using row_offset_size_t = typename local_graph_type::size_type;
-    Kokkos::View<row_offset_size_t*,PHX::Device> row_offsets_;
+    Kokkos::View<row_offset_size_t*,PHX::MemSpace> row_offsets_;
 
     //! Single value for the size of the matrix
-    Kokkos::View<size_t,PHX::Device> matrix_size_;
+    Kokkos::View<size_t,PHX::MemSpace> matrix_size_;
     
     //! Global ids for each column
-    Kokkos::View<int*, PHX::Device> col_ids_;
+    Kokkos::View<int*, PHX::MemSpace> col_ids_;
 
     //! Crs Graph for Jacobian
     local_graph_type graph_;
@@ -59,7 +59,7 @@ namespace phx_example {
 
     LinearObjectFactory(const int& num_nodes,
                         const int& num_equations,
-                        const Kokkos::View<int**,PHX::Device>& global_node_ids) :
+                        const Kokkos::View<int**,PHX::MemSpace>& global_node_ids) :
       num_nodes_(num_nodes),
       num_equations_(num_equations),
       num_dofs_(num_nodes * num_equations),
@@ -78,7 +78,7 @@ namespace phx_example {
         do {
           // Zero the row count to restart the fill
           Kokkos::deep_copy(row_count_, 0);
-          global_node_set_ = Kokkos::UnorderedMap<Kokkos::pair<int,int>,void,PHX::Device>( ( set_capacity += failed_insert_count ) );
+          global_node_set_ = Kokkos::UnorderedMap<Kokkos::pair<int,int>,void,Kokkos::Device<PHX::ExecSpace,PHX::MemSpace>>( ( set_capacity += failed_insert_count ) );
           
           // May be larger than requested:
           set_capacity = global_node_set_.capacity();
@@ -105,9 +105,9 @@ namespace phx_example {
       exec_t().fence();
       
       // Free memory for temporaries
-      matrix_size_ = Kokkos::View<size_t,PHX::Device>();
-      row_count_ = Kokkos::View<int*,PHX::Device>();
-      row_offsets_ = Kokkos::View<row_offset_size_t*,PHX::Device>();
+      matrix_size_ = Kokkos::View<size_t,PHX::MemSpace>();
+      row_count_ = Kokkos::View<int*,PHX::MemSpace>();
+      row_offsets_ = Kokkos::View<row_offset_size_t*,PHX::MemSpace>();
       global_node_set_.clear();
       
       // Sort the graph values in each row
@@ -122,8 +122,8 @@ namespace phx_example {
     size_t getMatrixSize() const
     { return num_matrix_entries_; }
 
-    Kokkos::View<double*,PHX::Device> createSolutionVector(const std::string& name) const
-    { return Kokkos::View<double*,PHX::Device>(name,num_dofs_); }
+    Kokkos::View<double*,PHX::MemSpace> createSolutionVector(const std::string& name) const
+    { return Kokkos::View<double*,PHX::MemSpace>(name,num_dofs_); }
     
     local_matrix_type createJacobianMatrix(const std::string& name) const
     { return local_matrix_type(name,graph_); }

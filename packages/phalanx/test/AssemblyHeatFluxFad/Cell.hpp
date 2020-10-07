@@ -58,11 +58,11 @@ public:
   
   virtual ~MyCell() {}
   
-  Kokkos::View<double**,PHX::Device> getNodeCoordinates();
+  Kokkos::View<double**,PHX::MemSpace> getNodeCoordinates();
   
-  Kokkos::View<double**,PHX::Device> getBasisFunctions();
+  Kokkos::View<double**,PHX::MemSpace> getBasisFunctions();
   
-  Kokkos::View<double***,PHX::Device> getBasisFunctionGradients();
+  Kokkos::View<double***,PHX::MemSpace> getBasisFunctionGradients();
   
   std::size_t localIndex();
 
@@ -72,9 +72,9 @@ private:
   
   std::size_t local_index_;
 
-  Kokkos::View<double**,PHX::Device> m_coords;
-  Kokkos::View<double**,PHX::Device> m_phi;
-  Kokkos::View<double***,PHX::Device> m_grad_phi;
+  Kokkos::View<double**,PHX::MemSpace> m_coords;
+  Kokkos::View<double**,PHX::MemSpace> m_phi;
+  Kokkos::View<double***,PHX::MemSpace> m_grad_phi;
 
 };
 

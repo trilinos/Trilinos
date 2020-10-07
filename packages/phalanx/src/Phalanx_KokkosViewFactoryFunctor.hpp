@@ -34,15 +34,15 @@ namespace PHX {
         using LT = PHX::DataLayout::KokkosLayoutType;
         const auto layout = tag_.dataLayout().kokkosLayout();
         if (layout == LT::Default) {
-          PHX::KokkosViewFactory<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> factory;
+          PHX::KokkosViewFactory<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace> factory;
           fields_[tag_.identifier()] = factory.buildView(tag_,extended_dimensions_);
         }
         else if (layout == LT::Left) {
-          PHX::KokkosViewFactory<ScalarT,Kokkos::LayoutLeft,PHX::Device> factory;
+          PHX::KokkosViewFactory<ScalarT,Kokkos::LayoutLeft,PHX::MemSpace> factory;
           fields_[tag_.identifier()] = factory.buildView(tag_,extended_dimensions_);
         }
         else {
-          PHX::KokkosViewFactory<ScalarT,Kokkos::LayoutRight,PHX::Device> factory;
+          PHX::KokkosViewFactory<ScalarT,Kokkos::LayoutRight,PHX::MemSpace> factory;
           fields_[tag_.identifier()] = factory.buildView(tag_,extended_dimensions_);
         }
       }

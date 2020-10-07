@@ -1,0 +1,15 @@
+#!/bin/bash
+## run this script with the following:
+## find . -name '*pp' -exec ~/tmp/Trilinos/packages/phalanx/scripts/refactor_device '{}' \;
+## find . \( -name '*pp' ! -name 'Phalanx_KokkosDeviceTypes.hpp' \) -exec ~/tmp/Trilinos/packages/phalanx/scripts/refactor_device '{}' \;
+
+echo "$1"
+
+perl ~/tmp/Trilinos/commonTools/refactoring/string-replace.pl "PHX::Device::size_type" "PHX::MemSpace::size_type" "$1" "$1"
+perl ~/tmp/Trilinos/commonTools/refactoring/string-replace.pl "PHX::Device::initialize" "PHX::ExecSpace::initialize" "$1" "$1"
+perl ~/tmp/Trilinos/commonTools/refactoring/string-replace.pl "PHX::Device::finalize" "PHX::ExecSpace::finalize" "$1" "$1"
+perl ~/tmp/Trilinos/commonTools/refactoring/string-replace.pl "Policy<PHX::Device" "Policy<PHX::ExecSpace" "$1" "$1"
+perl ~/tmp/Trilinos/commonTools/refactoring/string-replace.pl "PHX::Device\(\).fence" "PHX::ExecSpace().fence" "$1" "$1"
+perl ~/tmp/Trilinos/commonTools/refactoring/string-replace.pl "typedef PHX::Device execution_space" "typedef PHX::ExecSpace execution_space" "$1" "$1"
+perl ~/tmp/Trilinos/commonTools/refactoring/string-replace.pl "PHX::Device," "PHX::MemSpace," "$1" "$1"
+perl ~/tmp/Trilinos/commonTools/refactoring/string-replace.pl "PHX::Device>" "PHX::MemSpace>" "$1" "$1"

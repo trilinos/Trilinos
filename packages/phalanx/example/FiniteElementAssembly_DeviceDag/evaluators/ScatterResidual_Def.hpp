@@ -58,7 +58,7 @@ ScatterResidual(const Teuchos::RCP<PHX::FieldTag>& in_scatter_tag,
                 const Teuchos::RCP<PHX::DataLayout>& residual_layout,
                 const int& in_equation_index,
                 const int& in_num_equations,
-                const Kokkos::View<const int**,PHX::Device>& in_gids) :
+                const Kokkos::View<const int**,PHX::MemSpace>& in_gids) :
   scatter_tag(in_scatter_tag),
   residual_contribution(residual_name,residual_layout),
   gids(in_gids),
@@ -122,7 +122,7 @@ ScatterResidual(const Teuchos::RCP<PHX::FieldTag>& in_scatter_tag,
                 const Teuchos::RCP<PHX::DataLayout>& residual_layout,
                 const int& in_equation_index,
                 const int& in_num_equations,
-                const Kokkos::View<const int**,PHX::Device>& in_gids) :
+                const Kokkos::View<const int**,PHX::MemSpace>& in_gids) :
   scatter_tag(in_scatter_tag),
   residual_contribution(residual_name,residual_layout),
   gids(in_gids),
@@ -196,9 +196,9 @@ evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
 			 const int cell_global_offset_index,
 			 const int num_equations,
 			 const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team,
-			 const Kokkos::View<const int**,PHX::Device>& gids,
+			 const Kokkos::View<const int**,PHX::MemSpace>& gids,
 			 const PHX::View<const ScalarT**>& residual_contribution,
-			 KokkosSparse::CrsMatrix<double,int,PHX::Device>& global_jacobian) {
+			 KokkosSparse::CrsMatrix<double,int,PHX::MemSpace>& global_jacobian) {
 	  // loop over equations
 	  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,num_equations),[&] (const int& col_eq) {
 	    const int global_col_index = gids(cell_global_offset_index+cell,col_node) * num_equations + col_eq;
@@ -211,7 +211,7 @@ evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
       };
       Gcc5_6_Hack::hack(cell,node,num_nodes,global_row_index,col_node,cell_global_offset_index,num_equations,
 			team,gids,residual_contribution,
-			const_cast<KokkosSparse::CrsMatrix<double,int,PHX::Device>&>(workset.global_jacobian_));
+			const_cast<KokkosSparse::CrsMatrix<double,int,PHX::MemSpace>&>(workset.global_jacobian_));
 #else
       // loop over equations
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,num_equations),[&] (const int& col_eq) {

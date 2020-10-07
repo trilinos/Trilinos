@@ -23,6 +23,12 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_EXPLICIT_TEMPLATE_INSTANTIATION
   "Build with explicit template instation enabled in the examples."
   OFF )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_USE_DEPRECATED_DEVICE_DEFINITION
+  PHX_USE_DEPRECATED_DEVICE_DEFINITION
+  "Build with deprecated PHX::Device definition. Can result in all Fields/MDFields being allocated with Cuda UVM if UVM is enabled as the default Cuda space in Kokkos configure."
+  ON )
+MESSAGE(STATUS "ENABLE deprecated Device definition: ${PHX_USE_DEPRECATED_DEVICE_DEFINITION}")
+
 # If not explicitly defined by the user, pick a default node type that
 # is enabled in kokkos.  This is complicated by ETI node type
 # instantiation in Tpetra.  We need to use a node instantiated by

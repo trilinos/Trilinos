@@ -75,13 +75,13 @@ PHX_EXTENT(P)
 
 using size_type = PHX::exec_space::size_type;
 
-template <typename Scalar,typename Device,typename Array>
+template <typename Array>
 class ComputeA {
   Array a_;
   Array b_;
   Array c_;
 public:
-  typedef PHX::Device execution_space;
+  typedef PHX::ExecSpace execution_space;
 
   ComputeA(Array& a,Array& b,Array& c)
   : a_(a), b_(b), c_(c)
@@ -106,13 +106,13 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
   using namespace Teuchos;
   using namespace PHX;
 
-  RCP<Time> phx_ct_time_pf = TimeMonitor::getNewTimer("MDField Compiletime Rank (device="+PHX::print<PHX::Device>()+")");
-  RCP<Time> phx_rt_time_pf = TimeMonitor::getNewTimer("MDField Runtime Rank (device="+PHX::print<PHX::Device>()+")");
-  RCP<Time> k_time_pf = TimeMonitor::getNewTimer("KokkosView<double***>(device="+PHX::print<PHX::Device>()+")");
-  RCP<Time> k_time_pf_static = TimeMonitor::getNewTimer("KokkosView<double[][][]>(device="+PHX::print<PHX::Device>()+")");
+  RCP<Time> phx_ct_time_pf = TimeMonitor::getNewTimer("MDField Compiletime Rank (device="+PHX::print<PHX::ExecSpace>()+")");
+  RCP<Time> phx_rt_time_pf = TimeMonitor::getNewTimer("MDField Runtime Rank (device="+PHX::print<PHX::ExecSpace>()+")");
+  RCP<Time> k_time_pf = TimeMonitor::getNewTimer("KokkosView<double***>(device="+PHX::print<PHX::ExecSpace>()+")");
+  RCP<Time> k_time_pf_static = TimeMonitor::getNewTimer("KokkosView<double[][][]>(device="+PHX::print<PHX::ExecSpace>()+")");
 
   std::cout << std::endl << std::endl
-            << "PHX::Device::size_type = "
+            << "PHX::MemSpace::size_type = "
             << PHX::print<PHX::exec_space::size_type>()
             << std::endl;
 
@@ -146,8 +146,8 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
     cout << "MDField Compiletime Rank" << endl;
     TimeMonitor tm(*phx_ct_time_pf);
     for (size_type l=0; l < num_loops; ++l) {
-      Kokkos::parallel_for(num_cells,ComputeA<double,PHX::ExecSpace,phx_ct_field> (a,b,c),"MDField (Compiletime Rank)");
-      typename PHX::Device().fence();
+      Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecSpace>(0,num_cells),ComputeA<phx_ct_field> (a,b,c),"MDField (Compiletime Rank)");
+      typename PHX::ExecSpace().fence();
     }
   }
 
@@ -163,14 +163,14 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
     cout << "MDField Runtime Rank" << endl;
     TimeMonitor tm(*phx_rt_time_pf);
     for (size_type l=0; l < num_loops; ++l) {
-      Kokkos::parallel_for(num_cells,ComputeA<double,PHX::ExecSpace,phx_rt_field> (a,b,c),"MDField (Runtime Rank)");
-      typename PHX::Device().fence();
+      Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecSpace>(0,num_cells),ComputeA<phx_rt_field> (a,b,c),"MDField (Runtime Rank)");
+      typename PHX::ExecSpace().fence();
     }
   }
 
   // Kokkos View
   {
-    using kokkos_field = Kokkos::View<double***,PHX::Device>;
+    using kokkos_field = Kokkos::View<double***,PHX::MemSpace>;
     kokkos_field a("kv_a",num_cells,num_ip,num_dim);
     kokkos_field b("kv_b",num_cells,num_ip,num_dim);
     kokkos_field c("kv_c",num_cells,num_ip,num_dim);
@@ -180,8 +180,8 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
     cout << "Kokkos View" << endl;
     TimeMonitor tm(*k_time_pf);
     for (size_type l=0; l < num_loops; ++l)
-      Kokkos::parallel_for(num_cells,ComputeA<double,PHX::Device,kokkos_field>(a,b,c),"Kokkos View");
-    typename PHX::Device().fence();
+      Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecSpace>(0,num_cells),ComputeA<kokkos_field>(a,b,c),"Kokkos View");
+    typename PHX::ExecSpace().fence();
   }
 
   // Static Kokkos View
@@ -197,8 +197,8 @@ TEUCHOS_UNIT_TEST(performance, ArrayAccessor)
     cout << "Static Kokkos View" << endl;
     TimeMonitor tm(*k_time_pf_static);
     for (size_type l=0; l < num_loops; ++l)
-      Kokkos::parallel_for(num_cells,ComputeA<double,PHX::Device,kokkos_field_static>(a,b,c),"Kokkos Static View");
-    typename PHX::Device().fence();
+      Kokkos::parallel_for(Kokkos::RangePolicy<PHX::ExecSpace>(0,num_cells),ComputeA<kokkos_field_static>(a,b,c),"Kokkos Static View");
+    typename PHX::ExecSpace().fence();
   }
 
   TimeMonitor::summarize();

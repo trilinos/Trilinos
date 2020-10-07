@@ -335,7 +335,7 @@ namespace PHX {
     bool build_device_dag_;
     
     //! Contians pointers to DeviceEvaluators for Device DAG support.
-    Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::Device> device_evaluators_;
+    Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::MemSpace> device_evaluators_;
 
     //! If non-null, in debug builds, the DAG manager will print when an evaluator starts and stops.
     Teuchos::RCP<std::ostream> start_stop_debug_ostream_;

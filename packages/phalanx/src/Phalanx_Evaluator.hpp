@@ -72,8 +72,6 @@ namespace PHX {
 
   public:
 
-    typedef typename PHX::Device execution_space;
-
     //! Ctor
     Evaluator() {};
 

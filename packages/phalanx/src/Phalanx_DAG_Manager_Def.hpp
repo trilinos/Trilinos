@@ -440,7 +440,7 @@ postRegistrationSetup(typename Traits::SetupData d,
 
   build_device_dag_ = buildDeviceDAG;
   if (build_device_dag_) {
-    device_evaluators_ = Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::Device>("device_evaluators_",topoSortEvalIndex.size());
+    device_evaluators_ = Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::MemSpace>("device_evaluators_",topoSortEvalIndex.size());
     for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n)
       device_evaluators_(n).ptr = nodes_[topoSortEvalIndex[n]].getNonConst()->createDeviceEvaluator();
   }
@@ -489,7 +489,7 @@ evaluateFields(typename Traits::EvalData d)
     using clock = std::chrono::steady_clock;
     std::chrono::time_point<clock> start = clock::now();
 
-    typename PHX::Device().fence(); // temporary fence until UVM in evaluateFields fixed
+    typename PHX::ExecSpace().fence(); // temporary fence until UVM in evaluateFields fixed
 
     nodes_[topoSortEvalIndex[n]].getNonConst()->evaluateFields(d);
 
@@ -533,13 +533,13 @@ namespace PHX {
   template<typename Traits>
   struct RunDeviceDag {
 
-    Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::Device> evaluators_;
+    Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::MemSpace> evaluators_;
 
     // The EvalData may be pass by reference. Remove the reference so
     // that we copy by value to device.
     const typename std::remove_reference<typename Traits::EvalData>::type data_;
 
-    RunDeviceDag(const Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::Device>& evaluators,
+    RunDeviceDag(const Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::MemSpace>& evaluators,
                  typename Traits::EvalData data) :
       evaluators_(evaluators),
       data_(data) {}
