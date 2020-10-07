@@ -896,8 +896,8 @@ namespace
         int fieldOrdinalDerived = dofMapToDerivedHost(fieldOrdinalStandard);
         if (scalarValued)
         {
-          OutputScalar standardValue = standardOutputViewHost(fieldOrdinalStandard,pointOrdinal);
-          OutputScalar derivedValue  =  derivedOutputViewHost(fieldOrdinalDerived, pointOrdinal);
+          const OutputScalar & standardValue = standardOutputViewHost(fieldOrdinalStandard,pointOrdinal);
+          const OutputScalar & derivedValue  =  derivedOutputViewHost(fieldOrdinalDerived, pointOrdinal);
           
           bool valuesMatch = true;
           bool valuesAreBothSmall = valuesAreSmall(standardValue, derivedValue, tol);
@@ -940,8 +940,8 @@ namespace
           int dkcard = standardOutputView.extent_int(2);
           for (int d=0; d<dkcard; d++)
           {
-            OutputScalar standardValue = standardOutputViewHost(fieldOrdinalStandard,pointOrdinal,d);
-            OutputScalar derivedValue  =  derivedOutputViewHost(fieldOrdinalDerived, pointOrdinal,d);
+            const OutputScalar & standardValue = standardOutputViewHost(fieldOrdinalStandard,pointOrdinal,d);
+            const OutputScalar & derivedValue  =  derivedOutputViewHost(fieldOrdinalDerived, pointOrdinal,d);
             
             bool valuesAreBothSmall = valuesAreSmall(standardValue, derivedValue, tol);
             if (!valuesAreBothSmall)
