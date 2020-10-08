@@ -234,9 +234,9 @@ def main(args):
     print("+" + "="*78 + "+")
     print("")
 
-    if 'standard' == args.mode:
+    if 'standard' == args.test_mode:
         pr_config = trilinosprhelpers.TrilinosPRConfigurationStandard(args)
-    elif 'installation' == args.mode:
+    elif 'installation' == args.test_mode:
         pr_config = trilinosprhelpers.TrilinosPRConfigurationInstallation(args)
     else:
         raise KeyError("ERROR: Unknown test mode, {}, was provided.".format(args.test_mode))
