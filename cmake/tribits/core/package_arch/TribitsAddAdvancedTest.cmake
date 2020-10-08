@@ -406,6 +406,10 @@ INCLUDE(PrintVar)
 #     If specified, then ``<numProcs>`` is the number of processors used for
 #     MPI executables.  If not specified, this will default to
 #     ``<overallNumProcs>`` from ``OVERALL_NUM_MPI_PROCS <overallNumProcs>``.
+#     If that is not specified, then the value is taken from
+#     ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds
+#     (i.e. ``TPL_ENABLE_MPI=OFF``), passing in a value ``<numMpiProcs>`` >
+#     ``1`` will cause the entire test to not be added.
 #
 #   ``NUM_TOTAL_CORES_USED <numTotalCoresUsed>``
 #
@@ -1477,6 +1481,10 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   
     IF (TRIBITS_ADD_ADVANCED_TEST_UNITTEST)
       GLOBAL_SET(TRIBITS_ADD_ADVANCED_TEST_NUM_CMNDS ${NUM_CMNDS})
+      # NOTE: This var only gets set if the advanced test gets added after
+      # applying all of the various logic.  Therefore, unit tests should only
+      # check this variable for being empty to determine that the test was not
+      # added.
     ENDIF()
   
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
