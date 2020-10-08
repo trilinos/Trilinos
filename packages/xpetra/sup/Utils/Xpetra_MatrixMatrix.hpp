@@ -59,8 +59,6 @@
 #include "Xpetra_StridedMapFactory.hpp"
 #include "Xpetra_StridedMap.hpp"
 
-#include <execinfo.h>
-
 #ifdef HAVE_XPETRA_EPETRA
 #include <Xpetra_EpetraCrsMatrix_fwd.hpp>
 #endif
