@@ -1051,57 +1051,19 @@ MPI_User_function Zoltan_PartDist_MPIOp;
 
   // Hierarchical Partitioning and not at tree-root 
   else if (zz->Current_Hier_Level > -1 || zz->Highest_Ancestor_ZZ != NULL) {
-//    printf("\n\nHAZZ != NULL, lower level\n\n");
 
-//    if (zz->LB.Num_Global_Parts < num_proc) 
     if (max_global_parts < num_proc) 
       zz->LB.Single_Proc_Per_Part = 0;
 
-    //pdist = zz->LB.PartDist;
-
-//    printf("\n[%d] Max GP: %d %d %d", zz->Proc, max_global_parts, 
-//                                      zz->LB.Num_Global_Parts, num_proc);
-
     zz->LB.Num_Global_Parts = max_global_parts;
-
     zz->LB.PartDist = (int *) ZOLTAN_MALLOC((max_global_parts+1)*sizeof(int));
     
     pdist = zz->LB.PartDist;
     
-//    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL || zz->LB.PartDist != NULL) {
-//      printf("\n[%1d] Before Debug: LB.PartDist = ", zz->Proc);
-//      for (i=0; i < max_global_parts+1; i++)
-//        printf("%d ", zz->LB.PartDist[i]);
-//      printf("\n");
-//    }
-
-//    printf("\nBefore %d\n", num_proc);
-
-//    int part_to_compute = 
-//      zz->Get_Hier_Part(zz->Get_Hier_Part_Data, 0, &ierr);
-      
-//    printf("Rank: %d Part_to_Compute %d", zz->Proc, part_to_compute);
-
-//    int *level_groups = (int *) ZOLTAN_MALLOC((num_groups+1)*sizeof(int));
-
-//    int cdf = 0;
-//    for (int i = 0; i < max_global_parts+1; ++i) { // = 14
-//      pdist[i] = cdf;
-//      cdf += level_groups[i]
-//    }
-
     int *group_count = zz->Group_Count;
-
     int num_unique_groups = zz->Num_Unique_Groups;
 
-//    printf("\nLB_BALANCE Groups point address: %p\n", ((void *)&group_count));
-
     if (zz->Current_Hier_Level >= 0) {
-//      printf("\nFOUND LEVEL %d\n", zz->Current_Hier_Level);
-     
-//      printf("\n Groups[1]: %d, level: %d", group_count[1], zz->Current_Hier_Level);
-//      printf("\n Groups[2]: %d, level: %d\n", group_count[2], zz->Current_Hier_Level);
-
       int cdf = 0;
       for (int i = 0; i < num_unique_groups; ++i) {
         pdist[i] = cdf;
@@ -1111,13 +1073,6 @@ MPI_User_function Zoltan_PartDist_MPIOp;
       pdist[max_global_parts] = cdf;
     }
 
-//    else if (zz->Current_Hier_Level == 1) {
-
-//      printf("\nFOUND LEVEL 11111\n");
-//    } 
-
-//    free(zz->Group_Count);
-
     printf("[%d] LB_PARTDIST Group Count: %d", zz->Proc, zz->Num_Unique_Groups);
 
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL || zz->LB.PartDist != NULL) {
@@ -1126,12 +1081,9 @@ MPI_User_function Zoltan_PartDist_MPIOp;
         printf("%d ", zz->LB.PartDist[i]);
       printf("\n"); 
     }
-
-//    exit(0);
   }
-
   else {
-    printf("\n\nError!\n\n");
+    printf("\n\nError in LB_BALANCE Build_PartDist!\n\n");
     exit(0);
   }
 

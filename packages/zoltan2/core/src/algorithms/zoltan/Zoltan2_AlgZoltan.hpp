@@ -235,85 +235,22 @@ private:
     //                         (void *) &(*adp));
   }
 
-
-
-
-
+  //! \brief set callbacks for hierarchical coordinate partitioning (e.g. RCB)
   void setCallbacksHierTaskMapping(
       const RCP<const MachineRepresentation<scalar_t, part_t> > &machine)
   {
-
-/*
-    zz->Set_HG_Size_CS_Fn(zoltanHGSizeCS_withGraphAdapter<Adapter>,
-                          (void *) &(*adp));
-    zz->Set_HG_CS_Fn(zoltanHGCS_withGraphAdapter<Adapter>,
-                     (void *) &(*adp));
-
-    if (adp->getNumWeightsPerEdge() != 0) {
-      if (adp->getNumWeightsPerEdge() > 1) {
-        std::cout << "Zoltan2 warning:  getNumWeightsPerEdge() returned "
-                  << adp->getNumWeightsPerEdge() << " but PHG supports only "
-                  << " one weight per edge; only first weight will be used."
-                  << std::endl;
-      }
-      zz->Set_HG_Size_Edge_Wts_Fn(zoltanHGSizeEdgeWts_withGraphAdapter<Adapter>,
-                                  (void *) &(*adapter));
-      zz->Set_HG_Edge_Wts_Fn(zoltanHGEdgeWts_withGraphAdapter<Adapter>,
-                             (void *) &(*adapter));
-    }
-
-*/
-
-
     zz->Set_Hier_Num_Levels_Fn(zoltanHierNumLevels<Adapter>, (void *) &(*machine));
     zz->Set_Hier_Part_Fn(zoltanHierPart<Adapter>, (void *) &(*machine));
     zz->Set_Hier_Method_Fn(zoltanHierMethod<Adapter>, (void *) &(*machine));
-//    zz->Set_Hier_Method_Fn(zoltanHierMethod<Adapter>, (void *) &(*zz));
-
-
   }
 
 
-/*
-  void setCallbacksHierTaskMapping_Graph(
-      const RCP<const GraphAdapter<user_t,userCoord_t> > &adp,
-      const RCP<const MachineRepresentation<scalar_t, part_t> > &machine)
-  {
-
-
-    zz->Set_Num_Edges_Multi_Fn(zoltanNumEdgesMulti_withGraphAdapter<Adapter>, (void *) &(*adp));
-    zz->Set_Edge_List_Multi_Fn(zoltanEdgeListMulti_withGraphAdapter<Adapter>, (void *) &(*adp));
-
-
-
-
-    zz->Set_Hier_Num_Levels_Fn(zoltanHierNumLevels<Adapter>, (void *) &(*machine));
-    zz->Set_Hier_Part_Fn(zoltanHierPart<Adapter>, (void *) &(*machine));
-    zz->Set_Hier_Method_Fn(zoltanHierMethod<Adapter>, (void *) &(*machine));
-//    zz->Set_Hier_Method_Fn(zoltanHierMethod<Adapter>, (void *) &(*zz));
-
-  }
-*/
-
-/*  struct HierGraphModelInfo
-  {
-    int nObjs;
-    int *nEdges;
-
-
-
-  }
-*/
-
-
+  //! \brief  set callbacks for hierarchical graph partitioning (e.g. ParMETIS)
   void setCallbacksHierTaskMapping_withGraphModel(
-      //const RCP<const GraphModel<Adapter> > &graph_model,
       const RCP<const GraphAdapter<user_t,userCoord_t> > &adp,
       const RCP<const MachineRepresentation<scalar_t, part_t> > &machine)
   {
-
     typedef GraphModel<GraphAdapter<user_t, userCoord_t>>  graphmodel_t;
-//    typedef typename graphmodel_t::modelFlag_t              modelFlag_t;
 
     Zoltan2::modelFlag_t graphFlags;
 
@@ -322,35 +259,15 @@ private:
 
     graphmodel_t *mdl = new graphmodel_t(adp, env, problemComm, graphFlags);
 
-
-
-
-
-
-
-
-
-
-//    model = rcp(static_cast<const GraphModel<Adapter>* >(mdl),true);
-
     // Needed for ParMetis
     zz->Set_Num_Edges_Multi_Fn(zoltanNumEdgesMulti_withGraphModel<Adapter>, (void *) &(*mdl));
     zz->Set_Edge_List_Multi_Fn(zoltanEdgeListMulti_withGraphModel<Adapter>, (void *) &(*mdl));
-
 
     // Set machine information for hier partitioner
     zz->Set_Hier_Num_Levels_Fn(zoltanHierNumLevels<Adapter>, (void *) &(*machine));
     zz->Set_Hier_Part_Fn(zoltanHierPart<Adapter>, (void *) &(*machine));
     zz->Set_Hier_Method_Fn(zoltanHierMethod<Adapter>, (void *) &(*machine));
-//    zz->Set_Hier_Method_Fn(zoltanHierMethod<Adapter>, (void *) &(*zz));
-
   }
-
-
-
-
-
-
 
   //! \brief  rcb is always binary
   virtual bool isPartitioningTreeBinary() const
@@ -714,8 +631,7 @@ public:
   }
 
 
-//----------------------------------------------------------------------------//
-
+  // JAE: Not implemented yet
   AlgZoltan(const RCP<const Environment> &env__,
             const RCP<const Comm<int> > &problemComm__,
             const RCP<const IdentifierAdapter<user_t> > &adapter__,
@@ -730,10 +646,9 @@ public:
     zoltanInit();
     zz = rcp(new Zoltan(mpicomm));
     setCallbacksIDs();
-    //
+
     //setCallbacksHierTaskMapping(machine__);
   }
-
 
   AlgZoltan(const RCP<const Environment> &env__,
             const RCP<const Comm<int> > &problemComm__,
@@ -750,17 +665,9 @@ public:
     zz = rcp(new Zoltan(mpicomm));
     setCallbacksIDs();
     setCallbacksGeom(&(*adapter));
-    //
+
     setCallbacksHierTaskMapping(machine__);
   }
-
-
-
-
-//--------------------------//
-
-
-
 
   AlgZoltan(const RCP<const Environment> &env__,
             const RCP<const Comm<int> > &problemComm__,
@@ -782,35 +689,11 @@ public:
       setCallbacksGeom(adapter->getCoordinateInput());
     }
 
-
-/*
-    typedef GraphModel<GraphAdapter<user_t, userCoord_t> >  graphmodel_t;
-//    typedef typename graphmodel_t::modelFlag_t              modelFlag_t;
-
-    Zoltan2::modelFlag_t graphFlags;
-
-    graphFlags.set(GENERATE_CONSECUTIVE_IDS);
-    graphFlags.set(REMOVE_SELF_EDGES);
-
-    const RCP<graphmodel_t> graph_model(adapter, env, problemComm, graphFlags);
-*/
-
-
-//    setCallbacksHierTaskMapping_withGraphModel(graph_model, machine__);
-//    setCallbacksHierTaskMapping(adapter, machine__);
     setCallbacksHierTaskMapping_withGraphModel(adapter, machine__);
-//    setCallbacksHierTaskMapping(machine__);
-
   }
 
 
-
-
-//--------------------------//
-
-
-
-
+  // JAE: Not implemented yet
   AlgZoltan(const RCP<const Environment> &env__,
             const RCP<const Comm<int> > &problemComm__,
             const RCP<const MatrixAdapter<user_t, userCoord_t> > &adapter__,
@@ -831,10 +714,10 @@ public:
       setCallbacksGeom(adapter->getCoordinateInput());
     }
 
-    //
     //setCallbacksHierTaskMapping(machine__);
   }
 
+  // JAE: Not implemented yet
   AlgZoltan(const RCP<const Environment> &env__,
             const RCP<const Comm<int> > &problemComm__,
             const RCP<const MeshAdapter<user_t> > &adapter__,
@@ -856,16 +739,8 @@ public:
     setCallbacksHypergraph(adapter);
     setCallbacksGeom(&(*adapter));
 
-    //
     //setCallbacksHierTaskMapping(machine__);
   }
-
-
-
-
-
-//----------------------------------------------------------------------------//
-
 
 
 
