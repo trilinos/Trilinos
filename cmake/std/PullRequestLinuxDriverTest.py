@@ -62,54 +62,54 @@ def parse_args():
     if "WORKSPACE" in os.environ.keys():
         default_workspace = os.environ["WORKSPACE"]
 
-    default_package_enables = os.path.join("..", "packageEnables.cmake")
-    default_subprojects_file = os.path.join("..", "package_subproject_list.cmake")
+    default_filename_packageenables = os.path.join("..", "packageEnables.cmake")
+    default_filename_subprojects = os.path.join("..", "package_subproject_list.cmake")
 
 
     required.add_argument('--source-repo-url',
-                          dest="sourceRepo",
+                          dest="source_repo_url",
                           action='store',
                           help='Repo with the new changes',
                           required=True)
 
     required.add_argument('--source-branch-name',
-                          dest="sourceBranch",
+                          dest="source_branch_name",
                           action='store',
                           help='Branch with the new changes',
                           required=True)
 
     required.add_argument('--target-repo-url',
-                          dest="targetRepo",
+                          dest="target_repo_url",
                           action='store',
                           help='Repo to merge into',
                           required=True)
 
     required.add_argument('--target-branch-name',
-                          dest="targetBranch",
+                          dest="target_branch_name",
                           action='store',
                           help='Branch to merge into',
                           required=True)
 
     required.add_argument('--pullrequest-build-name',
-                          dest="job_base_name",
+                          dest="pullrequest_build_name",
                           action='store',
                           help='The Jenkins job base name',
                           required=True)
 
     required.add_argument('--pullrequest-number',
-                          dest="github_pr_number",
+                          dest="pullrequest_number",
                           action='store',
                           help='The github PR number',
                           required=True)
 
     required.add_argument('--jenkins-job-number',
-                          dest="job_number",
+                          dest="jenkins_job_number",
                           action='store',
                           help='The Jenkins build number',
                           required=True)
 
     optional.add_argument('--pullrequest-config-file',
-                          dest='configfile',
+                          dest='pullrequest_config_file',
                           action='store',
                           default=os.path.join(cwd, "pr_config/pullrequest.ini"),
                           help="The Trilinos PR driver configuration file " + \
@@ -117,7 +117,7 @@ def parse_args():
                           required=False)
 
     optional.add_argument('--workspace-dir',
-                          dest="workspaceDir",
+                          dest="workspace_dir",
                           action='store',
                           default=default_workspace,
                           help="The local workspace directory that Jenkins set up." +
@@ -129,23 +129,23 @@ def parse_args():
                            "branches."
 
     optional.add_argument('--filename-packageenables',
-                          dest="package_enables",
+                          dest="filename_packageenables",
                           action="store",
-                          default=default_package_enables,
-                          help="{} Default={}".format(desc_package_enables, default_package_enables))
+                          default=default_filename_packageenables,
+                          help="{} Default={}".format(desc_package_enables, default_filename_packageenables))
 
     desc_subprojects_file = "The subprojects_file is used by the testing infrastructure. This parameter " + \
                             "allows the default, generated file, to be overridden. Generally this should " + \
                             "not be changed from the defaults."
 
     optional.add_argument('--filename-subprojects',
-                          dest="subprojects_file",
+                          dest="filename_subprojects",
                           action="store",
-                          default=default_subprojects_file,
-                          help="{}. Default={}".format(desc_subprojects_file, default_subprojects_file))
+                          default=default_filename_subprojects,
+                          help="{}. Default={}".format(desc_subprojects_file, default_filename_subprojects))
 
     optional.add_argument('--test-mode',
-                          dest='mode',
+                          dest='test_mode',
                           action='store',
                           default='standard',
                           help="PR testing mode. Use 'standard' for normal PR tests, 'installation'" +
@@ -188,38 +188,29 @@ def parse_args():
     arguments.num_concurrent_tests = int(arguments.num_concurrent_tests)
     arguments.req_mem_per_core     = float(arguments.req_mem_per_core)
 
-    #if arguments.workspaceDir is None:
-        #arguments.workspaceDir = default_workspace
-        #if arguments.package_enables is None:
-            #arguments.package_enables = default_package_enables
-    #else:
-        #if arguments.package_enables is None:
-            #arguments.package_enables = os.path.join(arguments.workspaceDir, "packageEnables.cmake")
-
-
     # Print the arguments to the console
     print("\n")
     print("+" + "-"*78 + "+")
     print("| Parameters")
     print("+" + "-"*78 + "+")
-    print("| - CONFIGURATION_FILE     : {configfile}".format(**vars(arguments)))
-    print("| - MODE                   : {mode}".format(**vars(arguments)))
+    print("| - CONFIGURATION_FILE     : {pullrequest_config_file}".format(**vars(arguments)))
+    print("| - MODE                   : {test_mode}".format(**vars(arguments)))
     print("| - REQ_MEM_PER_CORE       : {req_mem_per_core}".format(**vars(arguments)))
     print("| - MAX_CORES_ALLOWED      : {max_cores_allowed}".format(**vars(arguments)))
     print("| - NUM_CONCURRENT_TESTS   : {num_concurrent_tests}".format(**vars(arguments)))
     print("|")
-    print("| - JOB_BASE_NAME          : {job_base_name}".format(**vars(arguments)))
-    print("| - WORKSPACE              : {workspaceDir}".format(**vars(arguments)))
+    print("| - JOB_BASE_NAME          : {pullrequest_build_name}".format(**vars(arguments)))
+    print("| - WORKSPACE              : {workspace_dir}".format(**vars(arguments)))
     print("|")
-    print("| - TRILINOS_SOURCE_REPO   : {sourceRepo}".format(**vars(arguments)))
-    print("| - TRILINOS_SOURCE_BRANCH : {sourceBranch}".format(**vars(arguments)))
+    print("| - TRILINOS_SOURCE_REPO   : {source_repo_url}".format(**vars(arguments)))
+    print("| - TRILINOS_SOURCE_BRANCH : {source_branch_name}".format(**vars(arguments)))
     print("|")
-    print("| - TRILINOS_TARGET_REPO   : {targetRepo}".format(**vars(arguments)))
-    print("| - TRILINOS_TARGET_BRANCH : {targetBranch}".format(**vars(arguments)))
+    print("| - TRILINOS_TARGET_REPO   : {target_repo_url}".format(**vars(arguments)))
+    print("| - TRILINOS_TARGET_BRANCH : {target_branch_name}".format(**vars(arguments)))
     print("|")
-    print("| - PULLREQUESTNUM         : {github_pr_number}".format(**vars(arguments)))
-    print("| - BUILD_NUMBER           : {job_number}".format(**vars(arguments)))
-    print("| - PACKAGE_ENABLES        : {package_enables}".format(**vars(arguments)))
+    print("| - PULLREQUESTNUM         : {pullrequest_number}".format(**vars(arguments)))
+    print("| - BUILD_NUMBER           : {jenkins_job_number}".format(**vars(arguments)))
+    print("| - PACKAGE_ENABLES        : {filename_packageenables}".format(**vars(arguments)))
     print("|")
     print("| - DRY_RUN                : {dry_run}".format(**vars(arguments)))
     print("+" + "-"*78 + "+")
@@ -248,7 +239,7 @@ def main(args):
     elif 'installation' == args.mode:
         pr_config = trilinosprhelpers.TrilinosPRConfigurationInstallation(args)
     else:
-        raise KeyError("ERROR: Unknown test mode, {}, was provided.".format(args.mode))
+        raise KeyError("ERROR: Unknown test mode, {}, was provided.".format(args.test_mode))
 
     pr_config.prepare_test()
     pr_config.execute_test()

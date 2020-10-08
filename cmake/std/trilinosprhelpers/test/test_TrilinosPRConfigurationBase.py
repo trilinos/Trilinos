@@ -203,17 +203,17 @@ class TrilinosPRConfigurationTest(TestCase):
         Generate dummy command line arguments
         """
         output = argparse.Namespace(
-            sourceRepo="https://github.com/trilinos/Trilinos",
-            sourceBranch="source_branch_name",
-            targetRepo="https://github.com/trilinos/Trilinos",
-            targetBranch="develop",
-            job_base_name="Trilinos_pullrequest_gcc_7.2.0",
-            job_number=99,
-            github_pr_number='0000',
-            configfile=self._config_file,
-            workspaceDir=".",
-            package_enables="../packageEnables.cmake",
-            subprojects_file="../package_subproject_list.cmake",
+            source_repo_url="https://github.com/trilinos/Trilinos",
+            source_branch_name="source_branch_name",
+            target_repo_url="https://github.com/trilinos/Trilinos",
+            target_branch_name="develop",
+            pullrequest_build_name="Trilinos_pullrequest_gcc_7.2.0",
+            jenkins_job_number=99,
+            pullrequest_number='0000',
+            pullrequest_config_file=self._config_file,
+            workspace_dir=".",
+            filename_packageenables="../packageEnables.cmake",
+            filename_subprojects="../package_subproject_list.cmake",
             mode="standard",
             req_mem_per_core=3.0,
             max_cores_allowed=12,
@@ -238,13 +238,13 @@ class TrilinosPRConfigurationTest(TestCase):
         Generate dummy command line arguments
         """
         args = copy.deepcopy(self.dummy_args())
-        args.job_base_name = "Trilinos_pullrequest_python_2"
+        args.pullrequest_build_name = "Trilinos_pullrequest_python_2"
         return args
 
 
     def dummy_args_gcc_720(self):
         args = copy.deepcopy(self.dummy_args())
-        args.job_base_name = "Trilinos_pullrequest_gcc_7.2.0"
+        args.pullrequest_build_name = "Trilinos_pullrequest_gcc_7.2.0"
         return args
 
 
@@ -254,8 +254,8 @@ class TrilinosPRConfigurationTest(TestCase):
         incoming branch name (master_merge_YYYYMMDD_HHMMSS)
         """
         args = copy.deepcopy(self.dummy_args())
-        args.targetBranch = "master"
-        args.sourceBranch = "master_merge_20200101_000000"
+        args.target_branch_name = "master"
+        args.source_branch_name = "master_merge_20200101_000000"
         return args
 
 
@@ -265,8 +265,8 @@ class TrilinosPRConfigurationTest(TestCase):
         incoming branch name (master_merge_YYYYMMDD_HHMMSS)
         """
         args = copy.deepcopy(self.dummy_args())
-        args.targetBranch = "master"
-        args.sourceBranch = "invalid_source_branch_name"
+        args.target_branch_name = "master"
+        args.source_branch_name = "invalid_source_branch_name"
         return args
 
 
@@ -341,7 +341,7 @@ class TrilinosPRConfigurationTest(TestCase):
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config.pullrequest_build_name
         print("--- build_name = {}".format(build_name))
-        expected_build_name = "PR-{}-test-{}-{}".format(args.github_pr_number, args.job_base_name, args.job_number)
+        expected_build_name = "PR-{}-test-{}-{}".format(args.pullrequest_number, args.pullrequest_build_name, args.jenkins_job_number)
         self.assertEqual(build_name, expected_build_name)
 
 
@@ -350,7 +350,7 @@ class TrilinosPRConfigurationTest(TestCase):
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config. pullrequest_build_name
         print("--- build_name = {}".format(build_name))
-        expected_build_name = "PR-{}-test-{}-{}".format(args.github_pr_number, args.job_base_name, args.job_number)
+        expected_build_name = "PR-{}-test-{}-{}".format(args.pullrequest_number, args.pullrequest_build_name, args.jenkins_job_number)
         self.assertEqual(build_name, expected_build_name)
 
 
@@ -360,7 +360,7 @@ class TrilinosPRConfigurationTest(TestCase):
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         # pre-load the property
-        pr_config.get_property_from_config("ENABLE_MAP", args.job_base_name)
+        pr_config.get_property_from_config("ENABLE_MAP", args.pullrequest_build_name)
 
         with patch(mock_str_builtins_open(), new_callable=mock_open()) as m_open:
             with patch('subprocess.check_output', side_effect=mock_subprocess_check_output) as m_call:
@@ -380,7 +380,7 @@ class TrilinosPRConfigurationTest(TestCase):
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         # pre-load the property
-        pr_config.get_property_from_config("ENABLE_MAP", args.job_base_name)
+        pr_config.get_property_from_config("ENABLE_MAP", args.pullrequest_build_name)
 
         with patch(mock_str_builtins_open(), new_callable=mock_open()) as m_open:
             pr_config.create_package_enables_file(dryrun=True)
@@ -397,7 +397,7 @@ class TrilinosPRConfigurationTest(TestCase):
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         # pre-load the property
-        pr_config.get_property_from_config("ENABLE_MAP", args.job_base_name)
+        pr_config.get_property_from_config("ENABLE_MAP", args.pullrequest_build_name)
 
         with patch('subprocess.check_call', side_effect=mock_subprocess_check_call) as m_call:
             with patch('subprocess.check_output', side_effect=mock_subprocess_check_output) as m_output:
@@ -416,7 +416,7 @@ class TrilinosPRConfigurationTest(TestCase):
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         # pre-load the property
-        pr_config.get_property_from_config("ENABLE_MAP", args.job_base_name)
+        pr_config.get_property_from_config("ENABLE_MAP", args.pullrequest_build_name)
         pr_config.create_package_enables_file(dryrun=True)
 
 
@@ -430,7 +430,7 @@ class TrilinosPRConfigurationTest(TestCase):
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         # pre-load the property
-        pr_config.get_property_from_config("ENABLE_MAP", args.job_base_name)
+        pr_config.get_property_from_config("ENABLE_MAP", args.pullrequest_build_name)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
             with self.assertRaises( subprocess.CalledProcessError ) as m_err:
@@ -488,7 +488,7 @@ class TrilinosPRConfigurationTest(TestCase):
         args = self.dummy_args()
 
         # Test the gcc 7.2.0 mapping
-        args.job_base_name = "Trilinos_pullrequest_gcc_7.2.0"
+        args.pullrequest_build_name = "Trilinos_pullrequest_gcc_7.2.0"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         self.assertEqual(pr_config.config_script, "PullRequestLinuxGCC7.2.0TestingSettings.cmake")
 
@@ -496,12 +496,12 @@ class TrilinosPRConfigurationTest(TestCase):
     def test_TrilinosPRConfigurationBaseProperty_get_property_from_config_PASS(self):
         print("")
         args = self.dummy_args()
-        args.job_base_name = "Trilinos_pullrequest_python_3"
+        args.pullrequest_build_name = "Trilinos_pullrequest_python_3"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         # Load the ENABLE_MAP job information to test `get_property_from_config`.
         package_enables = pr_config.get_property_from_config("ENABLE_MAP",
-                                                             args.job_base_name)
+                                                             args.pullrequest_build_name)
 
         print("--- package_enables = {}".format(package_enables))
         print("--- expected_value  = TrilinosFrameworkTests")
@@ -515,7 +515,7 @@ class TrilinosPRConfigurationTest(TestCase):
         """
         print("")
         args = self.dummy_args()
-        args.job_base_name = "Trilinos_pullrequest_python_3"
+        args.pullrequest_build_name = "Trilinos_pullrequest_python_3"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         # Try to load a nonexistent section.
@@ -543,13 +543,13 @@ class TrilinosPRConfigurationTest(TestCase):
     def test_TrilinosPRConfigurationBaseProperty_get_multi_property_from_config_PASS(self):
         print("")
         args = self.dummy_args()
-        args.job_base_name = "Trilinos_pullrequest_gcc_8.3.0_installation_testing"
+        args.pullrequest_build_name = "Trilinos_pullrequest_gcc_8.3.0_installation_testing"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         # Load the ENABLE_MAP job information to test `get_multi_property_from_config`.
         print("-----[ TEST 1 ]-----------------------")
         package_enables = pr_config.get_multi_property_from_config("ENABLE_MAP",
-                                                                   args.job_base_name)
+                                                                   args.pullrequest_build_name)
         print("--- package_enables = {}".format(package_enables))
         print("--- expected_value  = Teuchos,Tpetra")
         self.assertEqual(package_enables, "Teuchos,Tpetra")
@@ -557,7 +557,7 @@ class TrilinosPRConfigurationTest(TestCase):
         # Change the delimiter
         print("-----[ TEST 2 ]-----------------------")
         package_enables = pr_config.get_multi_property_from_config("ENABLE_MAP",
-                                                                   args.job_base_name,
+                                                                   args.pullrequest_build_name,
                                                                    delimeter=" ")
         print("--- package_enables = {}".format(package_enables))
         print("--- expected_value  = Teuchos Tpetra")
@@ -570,20 +570,20 @@ class TrilinosPRConfigurationTest(TestCase):
         """
         print("")
         args = self.dummy_args()
-        args.job_base_name = "Trilinos_pullrequest_gcc_8.3.0_installation_testing"
+        args.pullrequest_build_name = "Trilinos_pullrequest_gcc_8.3.0_installation_testing"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         # Load the ENABLE_MAP job information to test `get_multi_property_from_config`.
         print("-----[ TEST 1 ]-----------------------")
         package_enables = pr_config.get_multi_property_from_config("NONEXISTENTSECTION",
-                                                                   args.job_base_name)
+                                                                   args.pullrequest_build_name)
         print("--- package_enables = {}".format(package_enables))
         self.assertEqual(package_enables, None)
 
         # Change the default
         print("-----[ TEST 2 ]-----------------------")
         package_enables = pr_config.get_multi_property_from_config("NONEXISTENTSECTION",
-                                                                   args.job_base_name,
+                                                                   args.pullrequest_build_name,
                                                                    default="OOPS!")
         print("--- package_enables = {}".format(package_enables))
         self.assertEqual(package_enables, "OOPS!")
@@ -598,16 +598,16 @@ class TrilinosPRConfigurationTest(TestCase):
 
     def test_TrilinosPRConfigurationBaseProperty_subprojects_file(self):
         """
-        Check property: subprojects_file
+        Check property: filename_subprojects
         """
         print("")
         args = self.dummy_args()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
-        subprojects_file = pr_config.subprojects_file
-        print("--- subprojects_file = {}".format(subprojects_file))
+        filename_subprojects = pr_config.arg_filename_subprojects
+        print("--- filename_subprojects = {}".format(filename_subprojects))
 
-        self.assertEqual(subprojects_file, "../package_subproject_list.cmake")
+        self.assertEqual(filename_subprojects, "../package_subproject_list.cmake")
 
 
     def test_TrilinosPRConfigurationBaseProperty_package_enables_file(self):
@@ -618,7 +618,7 @@ class TrilinosPRConfigurationTest(TestCase):
         args = self.dummy_args()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
-        package_enables_file = pr_config.arg_package_enables_file
+        package_enables_file = pr_config.arg_filename_packageenables
         print("--- package_enables_file = {}".format(package_enables_file))
         self.assertEqual(package_enables_file, "../packageEnables.cmake")
 

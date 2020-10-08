@@ -60,8 +60,8 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
                                        'cmake',
                                        'std',
                                        self.config_script),
-                      '-Dpackage_enables=' + self.arg_package_enables_file,
-                      '-Dsubprojects_file=' + self.subprojects_file
+                      '-Dpackage_enables=' + self.arg_filename_packageenables,
+                      '-Dsubprojects_file=' + self.arg_filename_subprojects
                     ]
 
         print("+" + "="*38 + "+")

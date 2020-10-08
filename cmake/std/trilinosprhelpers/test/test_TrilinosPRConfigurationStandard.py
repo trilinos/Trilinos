@@ -143,17 +143,17 @@ class TrilinosPRConfigurationStandardTest(TestCase):
         Generate dummy command line arguments
         """
         output = argparse.Namespace(
-            sourceRepo="https://github.com/trilinos/Trilinos",
-            sourceBranch="source_branch_name",
-            targetRepo="https://github.com/trilinos/Trilinos",
-            targetBranch="develop",
-            job_base_name="Trilinos_pullrequest_gcc_7.2.0",
-            job_number=99,
-            github_pr_number='0000',
-            configfile=self._config_file,
-            workspaceDir=".",
-            package_enables="../packageEnables.cmake",
-            subprojects_file="../package_subproject_list.cmake",
+            source_repo_url="https://github.com/trilinos/Trilinos",
+            source_branch_name="source_branch_name",
+            target_repo_url="https://github.com/trilinos/Trilinos",
+            target_branch_name="develop",
+            pullrequest_build_name="Trilinos_pullrequest_gcc_7.2.0",
+            jenkins_job_number=99,
+            pullrequest_number='0000',
+            pullrequest_config_file=self._config_file,
+            workspace_dir=".",
+            filename_packageenables="../packageEnables.cmake",
+            filename_subprojects="../package_subproject_list.cmake",
             mode="standard",
             req_mem_per_core=3.0,
             max_cores_allowed=12,
@@ -216,12 +216,12 @@ class TrilinosPRConfigurationStandardTest(TestCase):
         """
         Test the Standard Configuration
         - Change args to enable:
-            - job_base_name = "Trilinos_pullrequest_python_3"
+            - pullrequest_build_name = "Trilinos_pullrequest_python_3"
             - dry_run = True
         - Change args to enable dry_run mode.
         """
         args = self.dummy_args()
-        args.job_base_name = "Trilinos_pullrequest_python_3"
+        args.pullrequest_build_name = "Trilinos_pullrequest_python_3"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationStandard(args)
 
         # prepare step

@@ -32,17 +32,17 @@ class TrilinosPRConfigurationBase(object):
         properties.
 
     Attributes:
-        arg_github_pr_number: PR Number on Github
-        arg_job_number: Job Number of the Jenkins job.
+        arg_pullrequest_number: PR Number on Github
+        arg_jenkins_job_number: Job Number of the Jenkins job.
         arg_req_mem_per_core: Memory required per core (GB)
         arg_max_cores_allowed: Max cores allowed for building (i.e., make -j <num cores>)
         arg_num_concurrent_tests: Testing concurrency (i.e., ctest -j <num cores>)
-        arg_package_enables_file: Path to the `packageEnables.cmake` file.
+        arg_filename_packageenables: Path to the `packageEnables.cmake` file.
         arg_workspace_dir: Path to the workspace (this would be the ${WORKSPACE}
             variable set by Jenkins.)
         arg_pr_config_file: The config.ini file that specifies the configuration to load.
         arg_pr_jenkins_job_name: The Jenkins Job Name.
-        subprojects_file: The subprojects file.
+        filename_subprojects: The subprojects file.
         working_directory_ctest: Gen. working dir where TFW_testing_single_configure_prototype
             is executed from.
         trilinos_pr_env: Environment variable info specific to Trilinos Jobs.
@@ -72,29 +72,29 @@ class TrilinosPRConfigurationBase(object):
 
 
     @property
-    def arg_github_pr_number(self):
+    def arg_pullrequest_number(self):
         """
         Argument Wrapper: This property wraps the value provided in self.args
         to provide a convenient way to override this value if needed for some
         specialty reason or for a customized test.
 
         Returns:
-            self.args.github_pr_number
+            self.args.pullrequest_number
         """
-        return self.args.github_pr_number
+        return self.args.pullrequest_number
 
 
     @property
-    def arg_job_number(self):
+    def arg_jenkins_job_number(self):
         """
         Argument Wrapper: This property wraps the value provided in self.args
         to provide a convenient way to override this value if needed for some
         specialty reason or for a customized test.
 
         Returns:
-            self.args.job_number
+            self.args.jenkins_job_number
         """
-        return self.args.job_number
+        return self.args.jenkins_job_number
 
 
     @property
@@ -139,13 +139,13 @@ class TrilinosPRConfigurationBase(object):
 
 
     @property
-    def arg_package_enables_file(self):
+    def arg_filename_packageenables(self):
         """
-        This property generates the package_enables filename. It's in a property so it can
+        This property generates the packageEnables filename. It's in a property so it can
         easily be changed class-wide. The default behavior of this property is to return
-        the `package_enables` entry from the program arguments.
+        the `filename_packageenables` entry from the program arguments.
         """
-        return self.args.package_enables
+        return self.args.filename_packageenables
 
 
     @property
@@ -153,35 +153,35 @@ class TrilinosPRConfigurationBase(object):
         """
         Returns the Jenkins workspace directory for the PR.
         The default behavior of this property is to return the value of
-        the `workspaceDir` argument from the program arguments.
+        the `workspace_dir` argument from the program arguments.
         """
-        return self.args.workspaceDir
+        return self.args.workspace_dir
 
 
     @property
     def arg_pr_config_file(self):
         """
         Returns the configuration file that we'd want to load.
-        The default behavior is to return the value in args.configfile.
+        The default behavior is to return the value in args.pullrequest_config_file.
         """
-        return self.args.configfile
+        return self.args.pullrequest_config_file
 
 
     @property
     def arg_pr_jenkins_job_name(self):
         """
         The Jenkins job name that is executing this Pull Request test.
-        Default is to use the value in args.job_base_name.
+        Default is to use the value in args.pullrequest_build_name.
         """
-        return self.args.job_base_name
+        return self.args.pullrequest_build_name
 
 
     @property
-    def subprojects_file(self):
+    def arg_filename_subprojects(self):
         """
         This property generates the subprojects_list file to pass into CTest.
         """
-        return self.args.subprojects_file
+        return self.args.filename_subprojects
 
 
     @property
@@ -215,7 +215,7 @@ class TrilinosPRConfigurationBase(object):
         loaded from the config.ini file.
         """
         if self._config_data is None:
-            self._config_data = setenvironment.SetEnvironment(self.args.configfile,
+            self._config_data = setenvironment.SetEnvironment(self.arg_pr_config_file,
                                                               self.arg_pr_jenkins_job_name)
         return self._config_data
 
@@ -316,7 +316,7 @@ class TrilinosPRConfigurationBase(object):
 
         PR-<PR Number>-test-<Jenkins Job Name>-<Job Number">
         """
-        output = "PR-{}-test-{}-{}".format(self.arg_github_pr_number, self.arg_pr_jenkins_job_name, self.arg_job_number)
+        output = "PR-{}-test-{}-{}".format(self.arg_pullrequest_number, self.arg_pr_jenkins_job_name, self.arg_jenkins_job_number)
         return output
 
 
@@ -415,7 +415,7 @@ class TrilinosPRConfigurationBase(object):
                                     'commonTools',
                                     'framework',
                                     'get-changed-trilinos-packages.sh'),
-                       os.path.join('origin', self.args.targetBranch),
+                       os.path.join('origin', self.args.target_branch_name),
                        'HEAD',
                        'packageEnables.cmake',
                        'package_subproject_list.cmake']
@@ -476,17 +476,17 @@ class TrilinosPRConfigurationBase(object):
         """
         print("")
         print("Validate target branch constraints:")
-        print("- Target branch is '{}'".format(self.args.targetBranch))
+        print("- Target branch is '{}'".format(self.args.target_branch_name))
 
         re_master_merge_source = "master_merge_[0-9]{8}_[0-9]{6}"
-        if "master" == self.args.targetBranch:
+        if "master" == self.args.target_branch_name:
             print("- Target branch is 'master'. Checking source branch constraints...")
-            if not re.match(re_master_merge_source, self.args.sourceBranch):
+            if not re.match(re_master_merge_source, self.args.source_branch_name):
                 message  = "+" + "="*78 + "+\n"
                 message += "ERROR: Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS\n"
                 message += "       This violates Trilinos policy for pull requests into the master\n"
                 message += "       branch.\n"
-                message += "       Source branch provided is {}\n".format(self.args.sourceBranch)
+                message += "       Source branch provided is {}\n".format(self.args.source_branch_name)
                 message += "       Perhaps you forgot to set `develop` as the target in your PR?\n"
                 message += "+" + "="*78 + "+\n"
                 #print(message)
@@ -504,31 +504,31 @@ class TrilinosPRConfigurationBase(object):
         This includes tasks like determining the # of cores to use, setting
         environment variables, loading environment modules, etc.
         """
-        # Validate the branch constraints (i.e., if targetBranch is master, then
-        # sourceBranch must be master_merge_YYYYMMDD_HHMMSS)
+        # Validate the branch constraints (i.e., if target_branch_name is master, then
+        # source_branch_name must be master_merge_YYYYMMDD_HHMMSS)
         self.validate_branch_constraints()
 
         print("+" + "="*78 + "+")
         print("Configuration Parameters")
         print("+" + "="*78 + "+")
-        print("--- arg_pr_jenkins_job_name  = {}".format(self.arg_pr_jenkins_job_name))
-        print("--- arg_job_number           = {}".format(self.arg_job_number))
-        print("--- arg_github_pr_number     = {}".format(self.arg_github_pr_number))
-        print("--- arg_max_cores_allowed    = {}".format(self.arg_max_cores_allowed))
-        print("--- arg_req_mem_per_core     = {}".format(self.arg_req_mem_per_core))
-        print("--- arg_num_concurrent_tests = {}".format(self.arg_num_concurrent_tests))
-        print("--- arg_pr_config_file       = {}".format(self.arg_pr_config_file))
-        print("--- arg_package_enables_file = {}".format(self.arg_package_enables_file))
-        print("--- arg_workspace_dir        = {}".format(self.arg_workspace_dir))
-        print("--- config_script            = {}".format(self.config_script))
-        print("--- pullrequest_build_name   = {}".format(self.pullrequest_build_name))
-        print("--- pullrequest_cdash_track  = {}".format(self.pullrequest_cdash_track))
-        print("--- subprojects_file         = {}".format(self.subprojects_file))
-        print("--- concurrency_build        = {}".format(self.concurrency_build))
-        print("--- concurrency_test         = {}".format(self.concurrency_test))
-        print("--- max_cores_allowed        = {}".format(self.max_cores_allowed))
-        print("--- max_test_parallelism     = {}".format(self.max_test_parallelism))
-        print("--- working_directory_ctest  = {}".format(self.working_directory_ctest))
+        print("--- arg_pr_jenkins_job_name     = {}".format(self.arg_pr_jenkins_job_name))
+        print("--- arg_jenkins_job_number      = {}".format(self.arg_jenkins_job_number))
+        print("--- arg_pullrequest_number      = {}".format(self.arg_pullrequest_number))
+        print("--- arg_max_cores_allowed       = {}".format(self.arg_max_cores_allowed))
+        print("--- arg_req_mem_per_core        = {}".format(self.arg_req_mem_per_core))
+        print("--- arg_num_concurrent_tests    = {}".format(self.arg_num_concurrent_tests))
+        print("--- arg_pr_config_file          = {}".format(self.arg_pr_config_file))
+        print("--- arg_filename_packageenables = {}".format(self.arg_filename_packageenables))
+        print("--- arg_filename_subprojects    = {}".format(self.arg_filename_subprojects))
+        print("--- arg_workspace_dir           = {}".format(self.arg_workspace_dir))
+        print("--- config_script               = {}".format(self.config_script))
+        print("--- pullrequest_build_name      = {}".format(self.pullrequest_build_name))
+        print("--- pullrequest_cdash_track     = {}".format(self.pullrequest_cdash_track))
+        print("--- concurrency_build           = {}".format(self.concurrency_build))
+        print("--- concurrency_test            = {}".format(self.concurrency_test))
+        print("--- max_cores_allowed           = {}".format(self.max_cores_allowed))
+        print("--- max_test_parallelism        = {}".format(self.max_test_parallelism))
+        print("--- working_directory_ctest     = {}".format(self.working_directory_ctest))
         #print("---         = {}".format(self.))
         print("")
 
