@@ -2,6 +2,16 @@
 Release Notes for TriBITS
 ----------------------------------------
 
+2020/10/08:
+
+*) MAJOR: Tests defined with `TRIBITS_ADD_TEST()` and
+ `TRIBITS_ADD_ADVANCED_TEST()` with `NUM_MPI_PROCS > 1` will now not be added
+ for non-MPI TPL_ENABLE_MPI=OFF configurations.  Before, the test would get
+ added and basically ignore the value of `NUM_MPI_PROCS`.  This change
+ together with the change to move to using `add_test(NAME <name> COMMAND
+ <command>)` mostly restores backward compatbility for projects using TriBITS.
+ For more details, see trilinos/Trilinos#8110.
+
 2020/09/28:
 
 *) MAJOR: Tests defined with `TRIBITS_ADD_TEST()` and

@@ -216,13 +216,15 @@ INCLUDE(TribitsAddTestHelpers)
 #   ``NUM_MPI_PROCS <numMpiProcs>``
 #
 #     If specified, gives the number of MPI processes used to run the test
-#     with the MPI exec program ``${MPI_EXEC}``.  If ``<numMpiProcs>`` is greater
-#     than ``${MPI_EXEC_MAX_NUMPROCS}`` then the test will be excluded.  If
-#     not specified, then the default number of processes for an MPI build
-#     (i.e. ``TPL_ENABLE_MPI=ON``) will be ``${MPI_EXEC_DEFAULT_NUMPROCS}``.
-#     For serial builds (i.e. ``TPL_ENABLE_MPI=OFF``), this argument is
-#     ignored.  This will also be set as the built-in test property
-#     ``PROCESSORS`` if ``NUM_TOTAL_CORES_USED`` is not specified.
+#     with the MPI exec program ``${MPI_EXEC}``.  If ``<numMpiProcs>`` is
+#     greater than ``${MPI_EXEC_MAX_NUMPROCS}`` then the test will be
+#     excluded.  If not specified, then the default number of processes for an
+#     MPI build (i.e. ``TPL_ENABLE_MPI=ON``) will be
+#     ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds
+#     (i.e. ``TPL_ENABLE_MPI=OFF``), passing in a value ``<numMpiProcs>`` >
+#     ``1`` will cause the test to not be added.  The value ``<numMpiProcs>``
+#     will also be set as the built-in test property ``PROCESSORS`` if
+#     ``NUM_TOTAL_CORES_USED`` is not specified.
 #
 #   ``NUM_TOTAL_CORES_USED <numTotalCoresUsed>``
 #
@@ -921,6 +923,7 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
   TRIBITS_ADD_TEST_GET_NUM_PROCS_USED("${PARSE_NUM_MPI_PROCS}"
     "NUM_MPI_PROCS"  NUM_PROCS_USED  NUM_PROCS_USED_NAME)
   IF (NUM_PROCS_USED LESS 0)
+    SET(ADD_SERIAL_TEST FALSE)
     SET(ADD_MPI_TEST FALSE)
   ENDIF()
 
