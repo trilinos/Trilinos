@@ -144,7 +144,7 @@ def mock_se_apply_pass(*args, **kwargs):
 
 def mock_se_apply_fail(*args, **kwargs):
     """
-    Mock for SetEnvironment.apply() call that would pass (i.e., return 1)
+    Mock for SetEnvironment.apply() call that would fail (i.e., return 1)
 
     Returns:
         int 1 for FAIL

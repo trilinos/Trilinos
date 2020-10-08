@@ -51,7 +51,7 @@ class SysInfo(object):
         2. If ``psutil`` isn't available, we attempt to use a fall-back
            by reading in the ``/proc/meminfo`` file, which should exist
            on *nix systems.
-        3. If ``psutil`` and ``/proc/meminfo`` isn't found then we will
+        3. If ``psutil`` and ``/proc/meminfo`` aren't found then we will
            fail during ``import`` time by raising ``IOError``.
 
     Attributes:
@@ -84,7 +84,7 @@ class SysInfo(object):
         Args:
             value (bool): A boolean value that indicates whether or not the
                           algorithm will use psutil or not. Note: even if
-                          psutil is availble, setting this explicitly to False
+                          psutil is available, setting this explicitly to False
                           prior to the first call to 'meminfo' will force the
                           alternative method (/proc/meminfo).
 

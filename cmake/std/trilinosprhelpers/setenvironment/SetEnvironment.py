@@ -229,8 +229,10 @@ class SetEnvironment(object):
             envvar_filter (list): a list of keys to print out the value.
                 all envvar values are printed if omitted.
                 Default: None
-            filtered_keys_only (bool): If true, we only display filtered keys.
-                If false, we display the keys of all keys.
+            filtered_keys_only (bool): If true, we only display envvars that contain
+                a match to an entry in `envvar_filter`.
+                If false, we display the keys of all envvars and key+value of envvars
+                that matched a filter in the `envvar_filter` list.
                 Default: False
 
         Returns:
@@ -337,7 +339,7 @@ class SetEnvironment(object):
 
         This is a recursive operation (recurses on the `use <profile>:` entries
         in the configuration file). We use a DFS recursion strategy with back-edge
-        checking to prevent cyclic recursion. We do not
+        checking to prevent cyclic recursion.
 
         Returns:
             A dict containing the contents of self.actions.
@@ -348,34 +350,41 @@ class SetEnvironment(object):
                          "module-list": {}     # Keys = modules already set to 'load'
                         }
 
-        config = self.config
-
-        self.actions = self._load_configuration_r(config, self.profile, actions=self.actions)
+        self.actions = self._load_configuration_r(self.profile, actions=self.actions)
 
         return self.actions
 
 
-    def _load_configuration_r(self, config, profile, actions=None, processed_secs=None):
+    def _load_configuration_r(self, config_section, actions=None, processed_secs=None):
         """
         Recursive handler for _load_configuration.
         Recursion is called when the operation is a 'use' operation in the key.
 
+        Arguments:
+            config_section (str): The section (profile) name that is getting processed by
+                this recursive call. This matches the [section name] entries from the .ini
+                file.
+            actions (dict): The actions structure that is constructed by this routine.
+                This is the ultimate output of the routine.
+            processed_secs (dict): A dictionary where the keys indicate sections that
+                have already been processed. It is used to prevent cycles in the recursion.
+
         Raises:
-            KeyError: If `profile` section is not contained in `config`
+            KeyError: If `config_section` section is not contained in `config`
             Exception: If a section isn't loaded for a reason other than a KeyError.
         """
         # Load the section and throw if it's not found.
         sec = None
         try:
-            sec = config[profile]
+            sec = self.config[config_section]
         except KeyError as err:
-            message = "ERROR: No section named '{}' was found in the configuration file.".format(profile)
+            message = "ERROR: No section named '{}' was found in the configuration file.".format(config_section)
             #raise Exception(message) from err  # (This is ok in Python3 but not Python2)
             raise KeyError(message)
 
         # Verify that we got a section, if it's None then raise an exception.
         if sec is None:
-            raise Exception("ERROR: Unable to load section '{}' from configuration for unknown reason.".format(profile))
+            raise Exception("ERROR: Unable to load section '{}' from configuration for unknown reason.".format(config_section))
 
         # If processed_secs is the default parameter then we seed it with {}
         # Note: We cannot set the default processed_secs to {} or we'll have
@@ -384,11 +393,11 @@ class SetEnvironment(object):
             processed_secs = {}
 
         # Exit if we've already processed this section (recursion breaker)
-        if profile in processed_secs.keys():
-            print("WARNING: Cyclic dependencies encountered when loading {} ... {}".format(self.profile, profile))
+        if config_section in processed_secs.keys():
+            print("WARNING: Cyclic dependencies encountered when loading {} ... {}".format(self.profile, config_section))
             return actions
 
-        processed_secs[profile] = True
+        processed_secs[config_section] = True
 
         for k,v in sec.items():
             #print("> k=`{}` v=`{}`".format(k,v))
@@ -400,9 +409,8 @@ class SetEnvironment(object):
                 k = str(oplist[1])
 
             if "use" == op:
-                #new_profile = k.upper()
                 new_profile = k
-                self._load_configuration_r(config, new_profile, actions, processed_secs)
+                self._load_configuration_r(new_profile, actions, processed_secs)
 
             elif "module-purge" == op:
                 actions["module-op"].append(["purge", ''])

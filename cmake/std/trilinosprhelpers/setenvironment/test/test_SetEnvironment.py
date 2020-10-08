@@ -473,7 +473,7 @@ class SetEnvironmentTest(TestCase):
     def _setEnv_test(self, filename, profile, truth=None, module_fail=False):
         """
         Test the instantiation of a SetEnvironment class. Loads the
-        ini file and applys its settings.
+        ini file and applyies its settings.
         The 'module' command is mocked out during the apply() step.
 
         Args:

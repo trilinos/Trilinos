@@ -27,6 +27,8 @@ try:
     from env_modules_python import module
 
 except ImportError:
+    # If importing module from env_modules_python fails, we roll our own
+    # version of that function.
 
     def module(*args):
         """

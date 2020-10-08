@@ -24,7 +24,7 @@ try:
 except ImportError:
     from io import StringIO
 
-from trilinosprhelpers.setenvironment import ModuleHelper 
+from trilinosprhelpers.setenvironment import ModuleHelper
 
 
 
@@ -60,7 +60,7 @@ class mock_popen_status_ok(mock_popen):
 
 class mock_popen_status_error(mock_popen):
     """
-    Specialization of popen mock that will return with success.
+    Specialization of popen mock that will return with error.
     """
     def __init__(self, cmd, stdout=None, stderr=None):
         super(mock_popen_status_error, self).__init__(cmd,stdout,stderr)
@@ -75,7 +75,8 @@ class mock_popen_status_error(mock_popen):
 
 class mock_popen_status_error_mlstatus(mock_popen):
     """
-    Specialization of popen mock that will return with success.
+    Specialization of popen mock that will return with error (status==1)
+    and stderr containing '_mlstatus = False' which happens on some systems.
     """
     def __init__(self, cmd, stdout=None, stderr=None):
         super(mock_popen_status_error_mlstatus, self).__init__(cmd,stdout,stderr)
@@ -128,8 +129,12 @@ class moduleHelperTest(TestCase):
 
 
     def test_module_load_args_as_list(self):
+        """
+        The `module()` function can take arguments in as a list.
+        This tests that module works when the parameter is a list of arguments.
+        """
         with patch('subprocess.Popen', side_effect=mock_popen_status_ok):
-            r = ModuleHelper.module(["unload", "sems-gcc/4.8.4"])
+            r = ModuleHelper.module( [ "unload", "sems-gcc/4.8.4" ] )
         print("result = {}".format(r))
         self.assertEqual(0, r)
 
