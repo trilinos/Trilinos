@@ -54,82 +54,53 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc-cuda.cmake")
 
 #
-# Platform/compiler specific options for geminga using gcc
+# Set the options specific to this build case
 #
 
-MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
+# The variable BUILD_DIR_NAME is based COMM_TYPE, BUILD_TYPE, and BUILD_NAME_DETAILS.
+# Tribits creates the variable listed under "Build Name" by prepending the OS type and compiler
+# details to BUILD_DIR_NAME.
+SET(COMM_TYPE MPI)
+SET(BUILD_TYPE RELEASE)
+SET(BUILD_NAME_DETAILS KOKKOS-REFACTOR_EXPERIMENTAL_CUDA-$ENV{SEMS_CUDA_VERSION}_NO_UVM)
 
-  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
+SET(CTEST_PARALLEL_LEVEL 8)
+SET(CTEST_TEST_TYPE Experimental)
+SET(CTEST_TEST_TIMEOUT 900)
 
-  IF(COMM_TYPE STREQUAL MPI)
-    string(TOUPPER $ENV{SEMS_MPI_NAME} UC_MPI_NAME)
-    SET(BUILD_DIR_NAME ${UC_MPI_NAME}-$ENV{SEMS_MPI_VERSION}_${BUILD_TYPE}_${BUILD_NAME_DETAILS})
-  ELSE()
-    SET(BUILD_DIR_NAME ${COMM_TYPE}-${BUILD_TYPE}_${BUILD_NAME_DETAILS})
-  ENDIF()
+SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
-  SET(Trilinos_REPOSITORY_LOCATION_NIGHTLY_DEFAULT "git@github.com:muelu/Trilinos.git")
+SET(EXTRA_CONFIGURE_OPTIONS
+  ### ETI ###
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+  "-DTrilinos_ENABLE_COMPLEX:BOOL=OFF"
 
-  SET(CTEST_DASHBOARD_ROOT  "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
-  SET(CTEST_NOTES_FILES     "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-  SET(CTEST_BUILD_FLAGS     "-j35 -i" )
+  ### MISC ###
+  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
+  "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS:BOOL=ON"
 
-  SET_DEFAULT(CTEST_PARALLEL_LEVEL                  "35" )
-  SET_DEFAULT(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
-  SET(Trilinos_CTEST_DO_ALL_AT_ONCE FALSE)
-  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES             ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
+  ### TPLS ###
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
 
-  SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
-    "-DBUILD_SHARED_LIBS=ON"
-    "-DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
-    "-DCMAKE_VERBOSE_MAKEFILE=ON"
+  ### PACKAGES CONFIGURATION ###
+      "-DMueLu_ENABLE_Experimental:BOOL=ON"
+      "-DMueLu_ENABLE_Kokkos_Refactor:BOOL=ON"
+      "-DXpetra_ENABLE_Experimental:BOOL=ON"
+      "-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
 
-    "-DTrilinos_ENABLE_COMPLEX:BOOL=OFF"
+  # Disable Pamgen and Shards due to weird nvcc errors
+  "-DTPL_ENABLE_Pamgen:BOOL=OFF"
+  "-DTPL_ENABLE_Shards:BOOL=OFF"
 
-    "-DTrilinos_ENABLE_Fortran=OFF"
+  ### Disable UVM ###
+  "-DKokkos_ENABLE_CUDA_UVM:BOOL=OFF"
+)
 
-    "-DSuperLU_INCLUDE_DIRS=$ENV{SEMS_SUPERLU_INCLUDE_PATH}"
-    "-DSuperLU_LIBRARY_DIRS=$ENV{SEMS_SUPERLU_LIBRARY_PATH}"
-    "-DSuperLU_LIBRARY_NAMES=superlu"
+#
+# Set the rest of the system-specific options and run the dashboard build/test
+#
 
-    ### PACKAGE CONFIGURATION ###
-
-    ### MISC ###
-    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
-    )
-
-  SET_DEFAULT(COMPILER_VERSION "$ENV{SEMS_COMPILER_NAME}-$ENV{SEMS_COMPILER_VERSION}")
-
-  # Options for valgrind, if needed
-  SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS
-      "--leak-check=full --gen-suppressions=all --error-limit=no" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
-  SET(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions.txt")
-
-
-  # Ensure that MPI is on for all parallel builds that might be run.
-  IF(COMM_TYPE STREQUAL MPI)
-
-    SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
-        ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-        "-DTPL_ENABLE_MPI=ON"
-            "-DMPI_BASE_DIR:PATH=$ENV{SEMS_OPENMPI_ROOT}"
-            "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=--bind-to\\\;socket\\\;--map-by\\\;socket"
-       )
-
-
-  ELSE()
-
-    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER=$ENV{SEMS_COMPILER_ROOT}/bin/g++"
-      "-DCMAKE_C_COMPILER=$ENV{SEMS_COMPILER_ROOT}/bin/gcc"
-      )
-
-  ENDIF()
-
-  TRILINOS_CTEST_DRIVER()
-
-ENDMACRO()
+TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
