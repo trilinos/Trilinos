@@ -17,25 +17,17 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
   TRIBITS_ADD_EXECUTABLE(
     Maxwell3D
     SOURCES Maxwell3D.cpp
-    COMM mpi
+    COMM serial mpi
     )
 
   IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-    TRIBITS_ADD_TEST(
-      Maxwell3D
-      NAME "Maxwell3D-Tpetra"
-      ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell.xml"
-      ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell2.xml"
-      COMM mpi
-      NUM_MPI_PROCS 1
-      )
 
     TRIBITS_ADD_TEST(
       Maxwell3D
       NAME "Maxwell3D-Tpetra"
       ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell.xml"
       ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell2.xml"
-      COMM mpi
+      COMM serial mpi
       NUM_MPI_PROCS 4
       )
 
@@ -44,15 +36,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
         Maxwell3D
         NAME "Maxwell3D-Tpetra-ML-list"
         ARGS "--linAlgebra=Tpetra --xml=Maxwell_ML_MueLu.xml"
-        COMM mpi
-        NUM_MPI_PROCS 1
-        )
-
-      TRIBITS_ADD_TEST(
-        Maxwell3D
-        NAME "Maxwell3D-Tpetra-ML-list"
-        ARGS "--linAlgebra=Tpetra --xml=Maxwell_ML_MueLu.xml"
-        COMM mpi
+        COMM serial mpi
         NUM_MPI_PROCS 4
         )
     ENDIF()
@@ -63,52 +47,29 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
         NAME "Maxwell3D-Tpetra-Stratimikos"
         ARGS "--linAlgebra=Tpetra --solverName=Stratimikos --instantiation=DOUBLE_INT_INT --reuse --xml=Maxwell.xml"
         ARGS "--linAlgebra=Tpetra --solverName=Stratimikos --instantiation=DOUBLE_INT_INT --reuse --xml=Maxwell2.xml"
-        COMM mpi
-        NUM_MPI_PROCS 1
-        )
-
-      TRIBITS_ADD_TEST(
-        Maxwell3D
-        NAME "Maxwell3D-Tpetra-Stratimikos"
-        ARGS "--linAlgebra=Tpetra --solverName=Stratimikos --instantiation=DOUBLE_INT_INT --reuse --xml=Maxwell.xml"
-        ARGS "--linAlgebra=Tpetra --solverName=Stratimikos --instantiation=DOUBLE_INT_INT --reuse --xml=Maxwell2.xml"
-        COMM mpi
+        COMM serial mpi
         NUM_MPI_PROCS 4
         )
     ENDIF()
   ENDIF()
 
   IF (${PACKAGE_NAME}_ENABLE_Epetra)
-    TRIBITS_ADD_TEST(
-      Maxwell3D
-      NAME "Maxwell3D-Epetra"
-      ARGS "--linAlgebra=Epetra --reuse --xml=Maxwell.xml"
-      COMM mpi
-      NUM_MPI_PROCS 1
-      )
 
     TRIBITS_ADD_TEST(
       Maxwell3D
       NAME "Maxwell3D-Epetra"
       ARGS "--linAlgebra=Epetra --reuse --xml=Maxwell.xml"
-      COMM mpi
+      COMM serial mpi
       NUM_MPI_PROCS 4
       )
 
     IF (${PACKAGE_NAME}_ENABLE_ML)
-      TRIBITS_ADD_TEST(
-        Maxwell3D
-        NAME "Maxwell3D-ML"
-        ARGS "--linAlgebra=Epetra --precType=ML-RefMaxwell  --xml=Maxwell_ML.xml"
-        COMM mpi
-        NUM_MPI_PROCS 1
-        )
 
       TRIBITS_ADD_TEST(
         Maxwell3D
         NAME "Maxwell3D-ML"
         ARGS "--linAlgebra=Epetra --precType=ML-RefMaxwell  --xml=Maxwell_ML.xml"
-        COMM mpi
+        COMM serial mpi
         NUM_MPI_PROCS 4
         )
     ENDIF()
