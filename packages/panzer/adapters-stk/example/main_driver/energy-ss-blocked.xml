@@ -19,6 +19,7 @@
                 <Parameter name="Y0" type="double" value="0.0" />
                 <Parameter name="Xf" type="double" value="1.0" />
                 <Parameter name="Yf" type="double" value="1.0" />
+                <Parameter name="Offset mesh GIDs above 32-bit int limit" type="string" value="ON" />
             </ParameterList>
         </ParameterList>
 
