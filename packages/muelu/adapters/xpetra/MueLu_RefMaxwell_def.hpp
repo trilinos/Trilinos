@@ -2043,6 +2043,11 @@ namespace MueLu {
         AH_ = newAH;
       }
     }
+
+    if (!AH_.is_null()) {
+      size_t dim = Nullspace_->getNumVectors();
+      AH_->SetFixedBlockSize(dim);
+    }
   }
 
 
