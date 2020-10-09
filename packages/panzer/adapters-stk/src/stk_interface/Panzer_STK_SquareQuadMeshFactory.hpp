@@ -107,6 +107,10 @@ protected:
 
    mutable unsigned int machRank_, machSize_;
    mutable Teuchos::Tuple<std::size_t,2> procTuple_;
+
+  /// If true, offset mesh GIDs to exercise 32-bit limits.
+  bool offsetGIDs_;
+  mutable stk::mesh::EntityId offset_;
 };
 
 }
