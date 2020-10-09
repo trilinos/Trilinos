@@ -50,6 +50,22 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 4
     COMM serial mpi
     )
+
+  TRIBITS_ADD_TEST(
+    TogglePFactory_driver
+    NAME "Driver_TogglePFactory_semi_tent_line_Epetra"
+    ARGS "--matrixType=Laplace3D --nx=40 --ny=40 --nz=60 --mz=1 --xmlFile=parameters_semi_tent_line.xml --linAlgebra=Epetra"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    TogglePFactory_driver
+    NAME "Driver_TogglePFactory_semi_sa_line_easy_Epetra"
+    ARGS "--matrixType=Laplace3D --nx=40 --ny=40 --nz=60 --mz=1 --xmlFile=parameters_semi_sa_easy.xml --linAlgebra=Epetra"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
