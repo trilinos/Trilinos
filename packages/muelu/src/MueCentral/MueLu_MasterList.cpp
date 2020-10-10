@@ -155,6 +155,7 @@ namespace MueLu {
     if (name == "refmaxwell: subsolves on subcommunicators") { ss << "<Parameter name=\"refmaxwell: subsolves on subcommunicators\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "refmaxwell: ratio AH / A22 subcommunicators") { ss << "<Parameter name=\"refmaxwell: ratio AH / A22 subcommunicators\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "refmaxwell: enable reuse") { ss << "<Parameter name=\"refmaxwell: enable reuse\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: skip first (1,1) level") { ss << "<Parameter name=\"refmaxwell: skip first (1,1) level\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     return "";
   }
 
@@ -337,6 +338,7 @@ namespace MueLu {
   "<Parameter name=\"refmaxwell: subsolves on subcommunicators\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"refmaxwell: ratio AH / A22 subcommunicators\" type=\"double\" value=\"1.0\"/>"
   "<Parameter name=\"refmaxwell: enable reuse\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"refmaxwell: skip first (1,1) level\" type=\"bool\" value=\"true\"/>"
 "</ParameterList>"
 ;
   std::map<std::string,std::string> MasterList::DefaultProblemTypeLists_ = DefaultProblemStrings<std::string,std::string>
@@ -868,6 +870,8 @@ namespace MueLu {
          ("refmaxwell: ratio AH / A22 subcommunicators","refmaxwell: ratio AH / A22 subcommunicators")
       
          ("refmaxwell: enable reuse","refmaxwell: enable reuse")
+      
+         ("refmaxwell: skip first (1,1) level","refmaxwell: skip first (1,1) level")
       ;
 
 }

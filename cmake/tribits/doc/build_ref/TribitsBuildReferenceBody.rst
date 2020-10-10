@@ -1230,10 +1230,13 @@ c) **Setting up to run MPI programs:**
     -D MPI_EXEC_MAX_NUMPROCS=4
 
   (The maximum number of processes to allow when setting up and running MPI
-  test and example executables.  The default is set to '4' but should be set
-  to the largest number that can be tolerated for the given machine.  Tests
-  with more processes than this are excluded from the test suite at configure
-  time.)
+  tests and examples that use MPI.  The default is set to '4' but should be
+  set to the largest number that can be tolerated for the given machine or the
+  most cores on the machine that you want the test suite to be able to use.
+  Tests and examples that require more processes than this are excluded from
+  the CTest test suite at configure time.  ``MPI_EXEC_MAX_NUMPROCS`` is also
+  used to exclude tests in a non-MPI build (i.e. ``TPL_ENABLE_MPI=OFF``) if
+  the number of required cores for a given test is greater than this value.)
 
   ::
 

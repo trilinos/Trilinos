@@ -1516,7 +1516,8 @@ namespace MueLu {
       // NOTE: This really needs to be set on the *NullSpaceFactory*, not manager.get("Nullspace").
       nullSpaceFactory->SetFactory("Nullspace", newP);
 #else
-      throw Exceptions::RuntimeError("No repartitioning available for a serial run");
+      paramList.set("repartition: enable",false);
+      this->GetOStream(Warnings0) << "No repartitioning available for a serial run\n";
 #endif
     }
   }
