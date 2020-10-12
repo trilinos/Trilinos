@@ -581,6 +581,14 @@ namespace BaskerNS
     double time = 0.0;
     #endif
 
+    if(symb_flag != BASKER_TRUE)
+    {
+      if(Options.verbose == BASKER_TRUE) {
+        printf("BASKER: YOU NEED TO RUN SYMBOLIC BEFORE FACTOR\n");
+      }
+      return BASKER_ERROR;
+    }
+
     //Reset error codes
     reset_error();
 
@@ -629,13 +637,13 @@ namespace BaskerNS
       printf(" == Basker Factor ==\n\n");
     }
 
-/*if (Options.blk_matching != 0 && btf_tabs_offset != 0) {
-  if (btf_nblks > 1 && btf_nblks > btf_tabs_offset) {
-    std::cout << " checking again .. " << std::endl;
-    thread_array[0].iws[0] = 0;
-    std::cout << "worked " << std::endl;
-  }
-}*/
+    if(symb_flag != BASKER_TRUE)
+    {
+      if(Options.verbose == BASKER_TRUE) {
+        printf("BASKER: YOU NEED TO RUN SYMBOLIC BEFORE FACTOR\n");
+      }
+      return BASKER_ERROR;
+    }
 
     //sfactor_copy2 stuff
     // This part is stored in case a matrix_transpose will be needed (if input is passed in as CRS)
@@ -1420,7 +1428,15 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE)
     {
-      printf("Basker Solve Called \n");
+      printf("Basker Solve Called\n");
+    }
+
+    if(factor_flag != BASKER_TRUE)
+    {
+      if(Options.verbose == BASKER_TRUE) {
+        printf("BASKER: YOU NEED TO RUN FACTOR  BEFORE SOLVE\n");
+      }
+      return BASKER_ERROR;
     }
 
     solve_interface(x,b);
@@ -1450,7 +1466,15 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE)
     {
-      printf("Basker MultiSolve Called \n");
+      printf("Basker MultiSolve Called\n");
+    }
+
+    if(factor_flag != BASKER_TRUE)
+    {
+      if(Options.verbose == BASKER_TRUE) {
+        printf("BASKER: YOU NEED TO RUN FACTOR  BEFORE SOLVE\n");
+      }
+      return BASKER_ERROR;
     }
 
     solve_interface(nrhs,x,b);
