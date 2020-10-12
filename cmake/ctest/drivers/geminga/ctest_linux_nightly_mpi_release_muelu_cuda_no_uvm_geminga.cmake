@@ -97,6 +97,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
 
   ### Disable UVM ###
   "-DKokkos_ENABLE_CUDA_UVM:BOOL=OFF"
+  "-DTpetra_ENABLE_CUDA_UVM:BOOL=OFF"
 )
 
 #
