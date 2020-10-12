@@ -70,7 +70,6 @@ public:
   {
     stk::mesh::FieldBase* edgeField = get_meta().get_field(stk::topology::EDGE_RANK, edgeFieldName);
     stk::io::StkMeshIoBroker stkIo;
-    stkIo.enable_edge_io();
     stkIo.set_bulk_data(get_bulk());
     size_t outputFileIndex = stkIo.create_output_mesh(fileName, purpose);
 

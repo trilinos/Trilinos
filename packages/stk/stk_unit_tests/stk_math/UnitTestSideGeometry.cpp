@@ -1,16 +1,16 @@
 #include "gtest/gtest.h"
-#include "stk_balance/internal/SideGeometry.hpp"
+#include "stk_math/SideGeometry.hpp"
 #include "stk_math/StkVector.hpp"
 
 namespace {
 
-stk::balance::internal::QuadGeometry
+stk::math::QuadGeometry
 small_quad(const stk::math::Vector3d & center, double eps)
 {
   stk::math::Vector3d epsX(eps, 0.0, 0.0);
   stk::math::Vector3d epsY(0.0, eps, 0.0);
 
-  return stk::balance::internal::QuadGeometry(center - epsX - epsY,
+  return stk::math::QuadGeometry(center - epsX - epsY,
                                               center + epsX - epsY,
                                               center + epsX + epsY,
                                               center - epsX + epsY);
@@ -28,21 +28,21 @@ bool vector_compare_near(const stk::math::Vector3d & expected, const stk::math::
 
 TEST(ParticleGeometry, constructWithVectorAndQueryNode)
 {
-  stk::balance::internal::PointGeometry particle({1, 2, 3});
+  stk::math::PointGeometry particle({1, 2, 3});
 
   EXPECT_EQ(stk::math::Vector3d(1, 2, 3), particle.node(0));
 }
 
 TEST(ParticleGeometry, centroid)
 {
-  stk::balance::internal::PointGeometry particle({1, 2, 3});
+  stk::math::PointGeometry particle({1, 2, 3});
 
   EXPECT_EQ(stk::math::Vector3d(1, 2, 3), particle.centroid());
 }
 
 TEST(ParticleGeometry, projectionToPointOnFace)
 {
-  stk::balance::internal::PointGeometry particle({1.0, 2.0, 3.0});
+  stk::math::PointGeometry particle({1.0, 2.0, 3.0});
 
   EXPECT_VECTOR_NEAR(stk::math::Vector3d(1.0, 2.0, 3.0),
                      particle.closest_proj_on_face(stk::math::Vector3d(1.0, 2.0, 3.0)));
@@ -54,7 +54,7 @@ TEST(ParticleGeometry, projectionToPointOnFace)
 
 TEST(ParticleGeometry, distanceToPoint)
 {
-  stk::balance::internal::PointGeometry particle({1.0, 2.0, 3.0});
+  stk::math::PointGeometry particle({1.0, 2.0, 3.0});
 
   EXPECT_DOUBLE_EQ(0.0, particle.min_distance_to_point(stk::math::Vector3d(1.0, 2.0, 3.0)));
   EXPECT_DOUBLE_EQ(1.0, particle.min_distance_to_point(stk::math::Vector3d(0.0, 2.0, 3.0)));
@@ -69,10 +69,10 @@ TEST(ParticleGeometry, isNodeCloseToSide)
 
   stk::math::Vector3d node(0.0, 0.0, 0.0);
 
-  stk::balance::internal::PointGeometry particle(node);
+  stk::math::PointGeometry particle(node);
 
-  stk::balance::internal::QuadGeometry quadNode = small_quad(node, 0.01);
-  stk::balance::internal::QuadGeometry quadNotClose = small_quad(notClose, 0.01);
+  stk::math::QuadGeometry quadNode = small_quad(node, 0.01);
+  stk::math::QuadGeometry quadNotClose = small_quad(notClose, 0.01);
 
   EXPECT_TRUE(particle.are_nodes_close_to_side(quadNode, 0.01));
   EXPECT_FALSE(particle.are_nodes_close_to_side(quadNotClose, 0.01));
@@ -80,7 +80,7 @@ TEST(ParticleGeometry, isNodeCloseToSide)
 
 TEST(LineGeometry, constructWithVectorsAndQueryNodes)
 {
-  stk::balance::internal::LineGeometry line({1, 2, 3}, {4, 5, 6});
+  stk::math::LineGeometry line({1, 2, 3}, {4, 5, 6});
 
   EXPECT_EQ(stk::math::Vector3d(1, 2, 3), line.node(0));
   EXPECT_EQ(stk::math::Vector3d(4, 5, 6), line.node(1));
@@ -88,14 +88,14 @@ TEST(LineGeometry, constructWithVectorsAndQueryNodes)
 
 TEST(LineGeometry, centroid)
 {
-  stk::balance::internal::LineGeometry line({0.0, 0.0, 0.0}, {1.0, 2.0, 3.0});
+  stk::math::LineGeometry line({0.0, 0.0, 0.0}, {1.0, 2.0, 3.0});
 
   EXPECT_EQ(stk::math::Vector3d(0.5, 1.0, 1.5), line.centroid());
 }
 
 TEST(LineGeometry, projectionToPointOnLine)
 {
-  stk::balance::internal::LineGeometry line({0.0, 0.0, 0.0}, {1.0, 2.0, 3.0});
+  stk::math::LineGeometry line({0.0, 0.0, 0.0}, {1.0, 2.0, 3.0});
 
   // At the nodes
   EXPECT_VECTOR_NEAR(stk::math::Vector3d(0.0, 0.0, 0.0), line.closest_proj_on_face(stk::math::Vector3d(0.0, 0.0, 0.0)));
@@ -118,8 +118,8 @@ TEST(LineGeometry, projectionToPointOnLine)
 
 TEST(LineGeometry, projectionBetweenTwoLines)
 {
-  stk::balance::internal::LineGeometry line1({0.0, 1.0, 0.0}, {0.0, 0.0, 0.0});
-  stk::balance::internal::LineGeometry line2({4.0, 0.0, 0.0}, {4.0, 1.0, 0.0});
+  stk::math::LineGeometry line1({0.0, 1.0, 0.0}, {0.0, 0.0, 0.0});
+  stk::math::LineGeometry line2({4.0, 0.0, 0.0}, {4.0, 1.0, 0.0});
 
   EXPECT_VECTOR_NEAR(stk::math::Vector3d(0.0, 0.0, 0.0), line1.closest_proj_on_face(stk::math::Vector3d(4.0, 0.0, 0.0)));
   EXPECT_VECTOR_NEAR(stk::math::Vector3d(0.0, 1.0, 0.0), line1.closest_proj_on_face(stk::math::Vector3d(4.0, 1.0, 0.0)));
@@ -132,8 +132,8 @@ TEST(LineGeometry, projectionBetweenTwoLines)
 
 TEST(LineGeometry, distanceBetweenTwoLines)
 {
-  stk::balance::internal::LineGeometry line1({0.0, 1.0, 0.0}, {0.0, 0.0, 0.0});
-  stk::balance::internal::LineGeometry line2({4.0, 0.0, 0.0}, {4.0, 1.0, 0.0});
+  stk::math::LineGeometry line1({0.0, 1.0, 0.0}, {0.0, 0.0, 0.0});
+  stk::math::LineGeometry line2({4.0, 0.0, 0.0}, {4.0, 1.0, 0.0});
 
   EXPECT_DOUBLE_EQ(4.0, line1.min_distance_to_point(stk::math::Vector3d(4.0, 0.0, 0.0)));
   EXPECT_DOUBLE_EQ(4.0, line1.min_distance_to_point(stk::math::Vector3d(4.0, 1.0, 0.0)));
@@ -149,7 +149,7 @@ TEST(LineGeometry, distanceBetweenTwoLines)
 
 TEST(Tri3dGeometry, constructWithVectorsAndQueryNodes)
 {
-  stk::balance::internal::TriGeometry tri({1, 2, 3}, {4, 5, 6}, {7, 8, 9});
+  stk::math::TriGeometry tri({1, 2, 3}, {4, 5, 6}, {7, 8, 9});
 
   EXPECT_EQ(stk::math::Vector3d(1, 2, 3), tri.node(0));
   EXPECT_EQ(stk::math::Vector3d(4, 5, 6), tri.node(1));
@@ -158,15 +158,15 @@ TEST(Tri3dGeometry, constructWithVectorsAndQueryNodes)
 
 TEST(Tri3dGeometry, centroid)
 {
-  stk::balance::internal::TriGeometry tri({0.0, 0.0, 0.0}, {1.0, 2.0, 3.0}, {0.0, 2.0, 0.0});
+  stk::math::TriGeometry tri({0.0, 0.0, 0.0}, {1.0, 2.0, 3.0}, {0.0, 2.0, 0.0});
 
   EXPECT_EQ(stk::math::Vector3d(1.0/3.0, 4.0/3.0, 1.0), tri.centroid());
 }
 
 TEST(Tri3dGeometry, projectionToPointOnFace)
 {
-  stk::balance::internal::TriGeometry tri({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0});
-  stk::balance::internal::TriGeometry triYZ({0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0});
+  stk::math::TriGeometry tri({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0});
+  stk::math::TriGeometry triYZ({0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0});
 
   // At the corners
   EXPECT_VECTOR_NEAR(stk::math::Vector3d(0.0, 0.0, 0.0), tri.closest_proj_on_face(stk::math::Vector3d(0.0, 0.0, 0.0)));
@@ -189,8 +189,8 @@ TEST(Tri3dGeometry, projectionToPointOnFace)
 
 TEST(Tri3dGeometry, projectionToPointAboveFace)
 {
-  stk::balance::internal::TriGeometry tri({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0});
-  stk::balance::internal::TriGeometry triYZ({0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0});
+  stk::math::TriGeometry tri({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0});
+  stk::math::TriGeometry triYZ({0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0});
 
   // Above the corners
   EXPECT_VECTOR_NEAR(stk::math::Vector3d(0.0, 0.0, 0.0), tri.closest_proj_on_face(stk::math::Vector3d(0.0, 0.0, 1.0)));
@@ -213,8 +213,8 @@ TEST(Tri3dGeometry, projectionToPointAboveFace)
 
 TEST(Tri3dGeometry, projectionToPointOutsideFace_inPlane)
 {
-  stk::balance::internal::TriGeometry tri({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0});
-  stk::balance::internal::TriGeometry triYZ({0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0});
+  stk::math::TriGeometry tri({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0});
+  stk::math::TriGeometry triYZ({0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0});
 
   // Along rays projected from left edge
   EXPECT_VECTOR_NEAR(stk::math::Vector3d(0.0, 1.0, 0.0), tri.closest_proj_on_face(stk::math::Vector3d( 0.0, 2.0, 0.0)));
@@ -246,7 +246,7 @@ TEST(Tri3dGeometry, projectionToPointOutsideFace_inPlane)
 
 TEST(Tri3dGeometry, projectionToPointOutsideFace_abovePlane)
 {
-  stk::balance::internal::TriGeometry tri({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0});
+  stk::math::TriGeometry tri({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0});
 
   // Along rays projected from left edge
   EXPECT_VECTOR_NEAR(stk::math::Vector3d(0.0, 1.0, 0.0), tri.closest_proj_on_face(stk::math::Vector3d( 0.0, 2.0, 1.0)));
@@ -273,7 +273,7 @@ TEST(Tri3dGeometry, projectionToPointOutsideFace_abovePlane)
 
 TEST(Tri3dGeometry, distanceToPoint)
 {
-  stk::balance::internal::TriGeometry tri({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0});
+  stk::math::TriGeometry tri({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0});
 
   EXPECT_DOUBLE_EQ(0.0                , tri.min_distance_to_point(stk::math::Vector3d( 0.0, 0.0, 0.0)));
   EXPECT_DOUBLE_EQ(0.0                , tri.min_distance_to_point(stk::math::Vector3d( 0.1, 0.1, 0.0)));
@@ -296,15 +296,15 @@ TEST(Tri3dGeometry, areNodesCloseToSide)
   stk::math::Vector3d node2(1.0, 0.0, 0.0);
   stk::math::Vector3d node3(0.0, 1.0, 0.0);
 
-  stk::balance::internal::TriGeometry tri(node1, node2, node3);
+  stk::math::TriGeometry tri(node1, node2, node3);
 
   stk::math::Vector3d centroid = tri.centroid();
 
-  stk::balance::internal::QuadGeometry quadNode1 = small_quad(node1, 0.01);
-  stk::balance::internal::QuadGeometry quadNode2 = small_quad(node2, 0.01);
-  stk::balance::internal::QuadGeometry quadNode3 = small_quad(node3, 0.01);
-  stk::balance::internal::QuadGeometry quadCentroid = small_quad(centroid, 0.01);
-  stk::balance::internal::QuadGeometry quadNotClose = small_quad(notClose, 0.01);
+  stk::math::QuadGeometry quadNode1 = small_quad(node1, 0.01);
+  stk::math::QuadGeometry quadNode2 = small_quad(node2, 0.01);
+  stk::math::QuadGeometry quadNode3 = small_quad(node3, 0.01);
+  stk::math::QuadGeometry quadCentroid = small_quad(centroid, 0.01);
+  stk::math::QuadGeometry quadNotClose = small_quad(notClose, 0.01);
 
   EXPECT_TRUE(tri.are_nodes_close_to_side(quadNode1, 0.01));
   EXPECT_TRUE(tri.are_nodes_close_to_side(quadNode2, 0.01));
@@ -315,7 +315,7 @@ TEST(Tri3dGeometry, areNodesCloseToSide)
 
 TEST(Quad3dGeometry, constructWithVectorsAndQueryNodes)
 {
-  stk::balance::internal::QuadGeometry quad({1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12});
+  stk::math::QuadGeometry quad({1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12});
 
   EXPECT_EQ(stk::math::Vector3d( 1,  2,  3), quad.node(0));
   EXPECT_EQ(stk::math::Vector3d( 4,  5,  6), quad.node(1));
@@ -325,15 +325,15 @@ TEST(Quad3dGeometry, constructWithVectorsAndQueryNodes)
 
 TEST(Quad3dGeometry, centroid)
 {
-  stk::balance::internal::QuadGeometry quad({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.5, 2.0}, {0.0, 1.5, 2.0});
+  stk::math::QuadGeometry quad({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.5, 2.0}, {0.0, 1.5, 2.0});
 
   EXPECT_EQ(stk::math::Vector3d(0.5, 0.75, 1.0), quad.centroid());
 }
 
 TEST(Quad3dGeometry, projectionToPointOnFace)
 {
-  stk::balance::internal::QuadGeometry quad({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0});
-  stk::balance::internal::QuadGeometry quadYZ({0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 1.0, 1.0}, {0.0, 0.0, 1.0});
+  stk::math::QuadGeometry quad({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0});
+  stk::math::QuadGeometry quadYZ({0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 1.0, 1.0}, {0.0, 0.0, 1.0});
 
   // At the corners
   EXPECT_VECTOR_NEAR(stk::math::Vector3d(0.0, 0.0, 0.0), quad.closest_proj_on_face(stk::math::Vector3d(0.0, 0.0, 0.0)));
@@ -360,7 +360,7 @@ TEST(Quad3dGeometry, projectionToPointOnFace)
 
 TEST(Quad3dGeometry, projectionToPointAboveFace)
 {
-  stk::balance::internal::QuadGeometry quad({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0});
+  stk::math::QuadGeometry quad({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0});
 
   // At the corners
   EXPECT_VECTOR_NEAR(stk::math::Vector3d(0.0, 0.0, 0.0), quad.closest_proj_on_face(stk::math::Vector3d(0.0, 0.0, 1.0)));
@@ -384,7 +384,7 @@ TEST(Quad3dGeometry, projectionToPointAboveFace)
 
 TEST(Quad3dGeometry, projectionToPointOutsideFace_inPlane)
 {
-  stk::balance::internal::QuadGeometry quad({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0});
+  stk::math::QuadGeometry quad({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0});
 
   // Along rays projected from bottom edge
   EXPECT_VECTOR_NEAR(stk::math::Vector3d(0.0, 0.0, 0.0), quad.closest_proj_on_face(stk::math::Vector3d(-1.0, 0.0, 0.0)));
@@ -417,7 +417,7 @@ TEST(Quad3dGeometry, projectionToPointOutsideFace_inPlane)
 
 TEST(Quad3dGeometry, projectionToPointOutsideFace_abovePlane)
 {
-  stk::balance::internal::QuadGeometry quad({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0});
+  stk::math::QuadGeometry quad({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0});
 
   // Along rays projected from bottom edge
   EXPECT_VECTOR_NEAR(stk::math::Vector3d(0.0, 0.0, 0.0), quad.closest_proj_on_face(stk::math::Vector3d(-1.0, 0.0, 1.0)));
@@ -450,7 +450,7 @@ TEST(Quad3dGeometry, projectionToPointOutsideFace_abovePlane)
 
 TEST(Quad3dGeometry, distanceToPoint)
 {
-  stk::balance::internal::QuadGeometry quad({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 2.0, 0.0});
+  stk::math::QuadGeometry quad({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 2.0, 0.0});
 
   EXPECT_DOUBLE_EQ(0.0                , quad.min_distance_to_point(stk::math::Vector3d( 0.0, 0.0, 0.0)));
   EXPECT_DOUBLE_EQ(0.0                , quad.min_distance_to_point(stk::math::Vector3d( 0.0, 2.0, 0.0)));
@@ -478,16 +478,16 @@ TEST(Quad3dGeometry, areNodesCloseToSide)
   stk::math::Vector3d node3(1.0, 1.0, 0.0);
   stk::math::Vector3d node4(0.0, 1.0, 0.0);
 
-  stk::balance::internal::QuadGeometry quad(node1, node2, node3, node4);
+  stk::math::QuadGeometry quad(node1, node2, node3, node4);
 
   stk::math::Vector3d centroid = quad.centroid();
 
-  stk::balance::internal::QuadGeometry quadNode1 = small_quad(node1, 0.01);
-  stk::balance::internal::QuadGeometry quadNode2 = small_quad(node2, 0.01);
-  stk::balance::internal::QuadGeometry quadNode3 = small_quad(node3, 0.01);
-  stk::balance::internal::QuadGeometry quadNode4 = small_quad(node4, 0.01);
-  stk::balance::internal::QuadGeometry quadCentroid = small_quad(centroid, 0.01);
-  stk::balance::internal::QuadGeometry quadNotClose = small_quad(notClose, 0.01);
+  stk::math::QuadGeometry quadNode1 = small_quad(node1, 0.01);
+  stk::math::QuadGeometry quadNode2 = small_quad(node2, 0.01);
+  stk::math::QuadGeometry quadNode3 = small_quad(node3, 0.01);
+  stk::math::QuadGeometry quadNode4 = small_quad(node4, 0.01);
+  stk::math::QuadGeometry quadCentroid = small_quad(centroid, 0.01);
+  stk::math::QuadGeometry quadNotClose = small_quad(notClose, 0.01);
 
   EXPECT_TRUE(quad.are_nodes_close_to_side(quadNode1, 0.01));
   EXPECT_TRUE(quad.are_nodes_close_to_side(quadNode2, 0.01));

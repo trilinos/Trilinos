@@ -39,7 +39,9 @@
 #include <vector>
 #include <cstddef>
 
+#include <stk_util/stk_config.h>
 #include <stk_util/parallel/Parallel.hpp>
+
 namespace stk {
 
 ///

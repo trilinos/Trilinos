@@ -1065,6 +1065,74 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       }
     }
 
+    struct IossAssemblyPartAttribute
+    {
+      bool value;
+    };
+
+    bool is_part_assembly_io_part(const stk::mesh::Part &part)
+    {
+      return has_ioss_part_attribute<IossAssemblyPartAttribute>(part);
+    }
+
+    void put_assembly_io_part_attribute(mesh::Part & part)
+    {
+      if (!is_part_assembly_io_part(part)) {
+        put_io_part_attribute(part);
+        set_ioss_part_attribute<IossAssemblyPartAttribute>(part, true);
+      }
+    }
+
+    std::vector<std::string> get_assembly_names(const stk::mesh::MetaData& meta)
+    {
+      std::vector<std::string> assemblyNames;
+
+      for(const stk::mesh::Part* part : meta.get_parts()) {
+        if (is_part_assembly_io_part(*part)) {
+          assemblyNames.push_back(part->name());
+        }
+      }
+
+      return assemblyNames;
+    }
+
+    std::vector<std::string> get_sub_assembly_names(const stk::mesh::MetaData& meta, const std::string& assemblyName)
+    {
+      const stk::mesh::Part* part = meta.get_part(assemblyName);
+      std::vector<std::string> assemblyNames;
+
+      for(const stk::mesh::Part* subset : part->subsets()) {
+        if (is_part_assembly_io_part(*subset)) {
+          assemblyNames.push_back(subset->name());
+        }
+      }
+
+      return assemblyNames;
+    }
+
+    bool has_sub_assemblies(const stk::mesh::MetaData& meta, const std::string& assemblyName)
+    {
+      const stk::mesh::Part* part = meta.get_part(assemblyName);
+      for(const stk::mesh::Part* subset : part->subsets()) {
+        if (is_part_assembly_io_part(*subset)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    stk::mesh::PartVector get_unique_leaf_parts(const stk::mesh::MetaData& meta, const std::string& assemblyName)
+    {
+      stk::mesh::PartVector leafParts;
+      const stk::mesh::Part* part = meta.get_part(assemblyName);
+      for(stk::mesh::Part* subset : part->subsets()) {
+        if (!is_part_assembly_io_part(*subset)) {
+          leafParts.push_back(subset);
+        }
+      }
+      return leafParts;
+    }
+
     void remove_io_part_attribute(mesh::Part & part)
     {
       const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();

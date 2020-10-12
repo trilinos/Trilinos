@@ -160,6 +160,33 @@ void print_entity_offset_and_state(const BulkData& mesh, const MeshIndex& meshIn
             "), state = " << mesh.state(entity) << std::endl;
 }
 
+void print_connectivity_of_rank(const BulkData& M, Entity entity,
+                                EntityRank connectedRank,
+                                std::ostream & out)
+{
+    if (M.is_valid(entity)) {
+    out << connectedRank << "-connectivity(";
+    const Entity* connectedEntities = M.begin(entity, connectedRank);
+    unsigned numConnected = M.num_connectivity(entity, connectedRank);
+    for(unsigned i=0; i<numConnected; ++i) {
+        if (M.is_valid(connectedEntities[i])) {
+            out<<"{"<<M.identifier(connectedEntities[i])<<",topo="<<M.bucket(connectedEntities[i]).topology()
+                  <<",owned="<<M.bucket(connectedEntities[i]).owned()<<",shared="<<M.bucket(connectedEntities[i]).shared()
+                  <<",in_aura="<<M.bucket(connectedEntities[i]).in_aura()
+                  <<",custom-recv-ghost="<<M.in_receive_custom_ghost(M.entity_key(connectedEntities[i]))
+                  <<"}";
+        }
+        else {
+            out << "{invalid entity!}";
+        }
+    }
+    out<<"), ";
+    }    
+    else {
+        out << "invalid entity!";
+    }
+}
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

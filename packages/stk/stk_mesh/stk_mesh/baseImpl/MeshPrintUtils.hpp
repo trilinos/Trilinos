@@ -81,6 +81,10 @@ void print_entity_offset_and_state(const BulkData& mesh,
                                    const MeshIndex& meshIndex,
                                    std::ostream& out);
 
+void print_connectivity_of_rank(const BulkData& M, Entity entity,
+                                EntityRank connectedRank,
+                                std::ostream & out);
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

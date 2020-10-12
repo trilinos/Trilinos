@@ -48,7 +48,8 @@ namespace mesh {
 //----------------------------------------------------------------------
 
 void get_entities( const BulkData & mesh , EntityRank entity_rank ,
-                   std::vector< Entity> & entities )
+                   std::vector< Entity> & entities,
+                   bool sortByGlobalId )
 {
   const BucketVector & ks = mesh.buckets( entity_rank );
   entities.clear();
@@ -72,7 +73,9 @@ void get_entities( const BulkData & mesh , EntityRank entity_rank ,
     }
   }
 
-  std::sort(entities.begin(), entities.end(), EntityLess(mesh));
+  if (sortByGlobalId) {
+    std::sort(entities.begin(), entities.end(), EntityLess(mesh));
+  }
 }
 
 unsigned count_selected_entities(
@@ -87,6 +90,21 @@ unsigned count_selected_entities(
   for ( ; ik != ie ; ++ik ) {
     const Bucket & k = ** ik ;
     if ( selector( k ) ) { count += k.size(); }
+  }
+
+  return count ;
+}
+
+unsigned count_entities( const BulkData& bulk,
+                         const EntityRank rank,
+                         const Selector & selector )
+{
+  size_t count = 0;
+
+  const BucketVector& buckets = bulk.get_buckets(rank, selector);
+
+  for(const Bucket* bptr : buckets) {
+    count += bptr->size();
   }
 
   return count ;
@@ -120,6 +138,29 @@ void get_selected_entities( const Selector & selector ,
   }
 }
 
+void get_entities( const BulkData& bulk,
+                   const EntityRank rank,
+                   const Selector & selector ,
+                   std::vector< Entity> & entities ,
+                   bool sortByGlobalId )
+{
+  size_t count = count_entities(bulk, rank, selector);
+
+  entities.clear();
+  entities.reserve(count);
+
+  const BucketVector& buckets = bulk.get_buckets(rank, selector);
+
+  for (const Bucket* bptr : buckets) {
+    for(Entity entity : *bptr) {
+      entities.push_back(entity);
+    }
+  }
+
+  if (entities.size() > 0 && sortByGlobalId) {
+    std::sort(entities.begin(), entities.end(), EntityLess(bulk));
+  }
+}
 //----------------------------------------------------------------------
 
 void count_entities(

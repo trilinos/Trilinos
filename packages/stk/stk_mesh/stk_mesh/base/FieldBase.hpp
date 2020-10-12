@@ -213,6 +213,8 @@ public:
   void sync_to_host() const { m_impl.sync_to_host(); }
   void sync_to_device() const { m_impl.sync_to_device(); }
   void clear_sync_state() const { m_impl.clear_sync_state(); }
+  void clear_host_sync_state() const { m_impl.clear_host_sync_state(); }
+  void clear_device_sync_state() const { m_impl.clear_device_sync_state(); }
 
   unsigned synchronized_count() const
   {
@@ -557,6 +559,19 @@ field_data(const FieldType & f, Entity e,
     f.check_stale_field_entity_access(index, fileName, lineNumber);
     f.store_last_entity_access_location(index);
   }
+
+  const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[mi.bucket->bucket_id()];
+  return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * mi.bucket_ordinal);
+}
+
+template<class FieldType>
+inline
+typename FieldTraits<FieldType>::data_type*
+ngp_debug_field_data(const FieldType & f, Entity e)
+{
+  const MeshIndex& mi = f.get_mesh().mesh_index(e);
+  ThrowAssert(f.entity_rank() == mi.bucket->entity_rank());
+  ThrowAssert(&f.get_mesh() == &mi.bucket->mesh());
 
   const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[mi.bucket->bucket_id()];
   return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * mi.bucket_ordinal);

@@ -451,13 +451,15 @@ void set_field_role(mesh::FieldBase &f, const Ioss::Field::RoleType &role);
  *	attributed is defined via the stk::io::put_io_part_attribute()
  *	function.
  */
-bool is_part_io_part(const mesh::Part &part);
+bool is_part_io_part(const stk::mesh::Part &part);
 
 bool is_part_io_part(const stk::mesh::Part* part);
 
-bool is_part_face_block_io_part(const mesh::Part &part);
+bool is_part_face_block_io_part(const stk::mesh::Part &part);
 
-bool is_part_edge_block_io_part(const mesh::Part &part);
+bool is_part_edge_block_io_part(const stk::mesh::Part &part);
+
+bool is_part_assembly_io_part(const stk::mesh::Part &part);
 
 Ioss::GroupingEntity* get_grouping_entity(const Ioss::Region& region, stk::mesh::Part& part);
 
@@ -506,11 +508,21 @@ bool get_edge_block_part_attribute(const stk::mesh::Part& part);
 /** Define an attribute on the specified part 'part' indicating that
  * this part should be used for io.  \see is_part_io_part()
  */
-void put_io_part_attribute( mesh::Part &part);
+void put_io_part_attribute( stk::mesh::Part &part);
 
-void put_face_block_io_part_attribute( mesh::Part &part);
+void put_face_block_io_part_attribute( stk::mesh::Part &part);
 
-void put_edge_block_io_part_attribute( mesh::Part &part);
+void put_edge_block_io_part_attribute( stk::mesh::Part &part);
+
+void put_assembly_io_part_attribute( stk::mesh::Part &part);
+
+std::vector<std::string> get_assembly_names(const stk::mesh::MetaData& meta);
+
+std::vector<std::string> get_sub_assembly_names(const stk::mesh::MetaData& meta, const std::string& assemblyName);
+
+bool has_sub_assemblies(const stk::mesh::MetaData& meta, const std::string& assemblyName);
+
+stk::mesh::PartVector get_unique_leaf_parts(const stk::mesh::MetaData& meta, const std::string& assemblyName);
 
 /** Remove the existing attribute on the specified part 'part' that indicates that
  * this part should be used for io.  \see is_part_io_part()

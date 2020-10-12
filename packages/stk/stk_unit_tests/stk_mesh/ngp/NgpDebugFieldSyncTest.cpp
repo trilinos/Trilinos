@@ -131,7 +131,11 @@ public:
     for (stk::mesh::Bucket * bucket : buckets) {
       for (const stk::mesh::Entity & entity : *bucket) {
         const stk::mesh::EntityId id = get_bulk().identifier(entity);
+#ifdef STK_DEBUG_FIELD_SYNC
+        T * fieldData = stk::mesh::ngp_debug_field_data(stkField, entity);
+#else
         T * fieldData = stk::mesh::field_data(stkField, entity);
+#endif
         const unsigned numComponents = stk::mesh::field_scalars_per_entity(stkField, *bucket);
         for (unsigned component = 0; component < numComponents; ++component) {
           fieldData[component] = 10*id + component;
@@ -422,11 +426,11 @@ void read_scalar_field_on_device(stk::mesh::BulkData & bulk, stk::mesh::Field<T>
 }
 
 template <typename T, typename NGPFIELD>
-void read_scalar_field_on_device(stk::mesh::BulkData & bulk, stk::mesh::Field<T> & stkField, NGPFIELD & ngpField,
-                                 stk::mesh::EntityId maxIdToRead = std::numeric_limits<stk::mesh::EntityId>::max())
+void read_old_scalar_field_on_device(stk::mesh::BulkData & bulk, stk::mesh::Field<T> & stkField, NGPFIELD & ngpField,
+                                     stk::mesh::EntityId maxIdToRead = std::numeric_limits<stk::mesh::EntityId>::max())
 {
   const int component = 0;
-  stk::mesh::NgpMesh & ngpMesh = bulk.get_updated_ngp_mesh();
+  const stk::mesh::NgpMesh & ngpMesh = bulk.get_updated_ngp_mesh();
   const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stkField.entity_rank(), meta.locally_owned_part());
   stk::mesh::EntityRank rank = ngpField.get_rank();
@@ -601,6 +605,7 @@ void check_contains_a_line_number(const std::string & stdoutString)
   EXPECT_GT(lineNumber, 0);
 #endif
 }
+
 
 TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_ProperlySyncToDevice_NoWarning)
 {
@@ -1217,8 +1222,69 @@ TEST_F(NgpDebugFieldSync, VectorIntAccessUsingBucket_MissingAllModifySyncCallsTo
 }
 
 
+TEST_F(NgpDebugFieldSync, ScalarWriteOnHost_ProperlyMarkAsModified_ClearSyncState_AccessOnDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
 
-TEST_F(NgpDebugFieldSync, ScalarDeviceSetAll_ProperlySyncToDevice_NoWarning)
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.clear_sync_state();
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarWriteOnHost_MissingMarkAsModified_ClearSyncState_AccessOnDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.clear_sync_state();
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarWriteOnHost_ProperlyMarkAsModified_ClearHostSyncState_AccessOnDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.clear_host_sync_state();
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarWriteOnHost_MissingMarkAsModified_ClearHostSyncState_AccessOnDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.clear_host_sync_state();
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarWriteOnHost_ProperlySyncToDevice_ClearDeviceSyncState_AccessOnDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
@@ -1227,14 +1293,193 @@ TEST_F(NgpDebugFieldSync, ScalarDeviceSetAll_ProperlySyncToDevice_NoWarning)
   write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
   stkField.modify_on_host();
   stkField.sync_to_device();
+  stkField.clear_device_sync_state();
 
-  device_field_set_all(get_bulk(), stkField, 2.18);
+  read_scalar_field_on_device(get_bulk(), stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync, ScalarDeviceSetAll_MissingAllModifySyncCallsToDevice_NoWarning)
+TEST_F(NgpDebugFieldSync, ScalarWriteOnHost_ProperlyMarkAsModified_ClearDeviceSyncState_AccessOnDevice_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.clear_device_sync_state();
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarWriteOnHost_MissingMarkAsModified_ClearDeviceSyncState_AccessOnDevice_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.clear_device_sync_state();
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarWriteOnDevice_ProperlyMarkAsModified_ClearSyncState_AccessOnHost_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.clear_sync_state();
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarWriteOnDevice_MissingMarkAsModified_ClearSyncState_AccessOnHost_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.clear_sync_state();
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarWriteOnDevice_ProperlySyncToHost_ClearHostSyncState_AccessOnHost_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.sync_to_host();
+  stkField.clear_host_sync_state();
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarWriteOnDevice_ProperlyMarkAsModified_ClearHostSyncState_AccessOnHost_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.clear_host_sync_state();
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleScalarField[0]=10");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleScalarField[0]=20");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarWriteOnDevice_MissingMarkAsModified_ClearHostSyncState_AccessOnHost_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.clear_host_sync_state();
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleScalarField[0]=10");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleScalarField[0]=20");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarWriteOnDevice_ProperlyMarkAsModified_ClearDeviceSyncState_AccessOnHost_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.clear_device_sync_state();
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarWriteOnDevice_MissingMarkAsModified_ClearDeviceSyncState_AccessOnHost_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.clear_device_sync_state();
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+
+TEST_F(NgpDebugFieldSync, ScalarDeviceSetAll_AccessOnHost_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+  device_field_set_all(get_bulk(), stkField, 2.18);
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleScalarField[0]=10");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleScalarField[0]=20");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarDeviceSetAll_AccessOnDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+  device_field_set_all(get_bulk(), stkField, 2.18);
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarDeviceSetAll_MissingAllModifySyncCallsToDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
@@ -1245,38 +1490,41 @@ TEST_F(NgpDebugFieldSync, ScalarDeviceSetAll_MissingAllModifySyncCallsToDevice_N
   device_field_set_all(get_bulk(), stkField, 2.18);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]");
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync, ScalarDeviceSetAll_ProperlySyncToHost_NoWarning)
+TEST_F(NgpDebugFieldSync, ScalarDeviceSetAll_MissingAllModifySyncCallsToHost_AccessOnHost_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
 
   testing::internal::CaptureStdout();
-  device_field_set_all(get_bulk(), stkField, 3.14);
-  stkField.modify_on_device();
-  stkField.sync_to_host();
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
 
-  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
-
-  std::string stdoutString = testing::internal::GetCapturedStdout();
-  check_no_warnings(stdoutString);
-}
-
-TEST_F(NgpDebugFieldSync, ScalarDeviceSetAll_MissingAllModifySyncCallsToHost_Warning)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
-
-  testing::internal::CaptureStdout();
-  device_field_set_all(get_bulk(), stkField, 3.14);
+  device_field_set_all(get_bulk(), stkField, 2.18);
 
   read_scalar_field_on_host_using_entity(get_bulk(), stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleScalarField[0]=10");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleScalarField[0]=20");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarDeviceSetAll_MissingAllModifySyncCallsToHost_AccessOnDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+
+  device_field_set_all(get_bulk(), stkField, 2.18);
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
   check_no_warnings(stdoutString);
 }
 
@@ -1316,6 +1564,43 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MultipleTimestep_MissingAllMod
   std::string stdoutString = testing::internal::GetCapturedStdout();
   extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=20");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MultipleTimestep_ProperlyMarkAsModified_ClearSyncState_AccessOnDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+
+  const size_t numTimeSteps = 2;
+  for (size_t timeStep = 0; timeStep < numTimeSteps; ++timeStep) {
+    write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14+timeStep);
+    stkField.modify_on_host();
+    stkField.clear_sync_state();
+    read_scalar_field_on_device(get_bulk(), stkField);
+  }
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MultipleTimestep_MissingMarkAsModified_ClearSyncState_AccessOnDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+
+  const size_t numTimeSteps = 2;
+  for (size_t timeStep = 0; timeStep < numTimeSteps; ++timeStep) {
+    write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14+timeStep);
+    stkField.clear_sync_state();
+    read_scalar_field_on_device(get_bulk(), stkField);
+  }
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
   check_no_warnings(stdoutString);
 }
 
@@ -1583,6 +1868,43 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MultipleTimestep_MissingAllMod
   check_no_warnings(stdoutString);
 }
 
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MultipleTimestep_ProperlyMarkAsModified_ClearSyncState_AccessOnHost_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+
+  const size_t numTimeSteps = 2;
+  for (size_t timeStep = 0; timeStep < numTimeSteps; ++timeStep) {
+    write_scalar_field_on_device(get_bulk(), stkField, 3.14+timeStep);
+    stkField.modify_on_device();
+    stkField.clear_sync_state();
+    read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+  }
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MultipleTimestep_MissingMarkAsModified_ClearSyncState_AccessOnHost_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"}});
+
+  testing::internal::CaptureStdout();
+
+  const size_t numTimeSteps = 2;
+  for (size_t timeStep = 0; timeStep < numTimeSteps; ++timeStep) {
+    write_scalar_field_on_device(get_bulk(), stkField, 3.14+timeStep);
+    stkField.clear_sync_state();
+    read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+  }
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
 TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MultipleAccesses_ProperlySyncToHost_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
@@ -1832,7 +2154,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_DeleteBucket_
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_MissingAllModifySyncCalls_Warning)
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_ClearSyncState_AccessOnDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
@@ -1842,15 +2164,16 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
   modify_element_part_membership({{2, "Part2", "Part1"}});
 
   write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.clear_sync_state();
 
   read_scalar_field_on_device(get_bulk(), stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 3, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.14");
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_CreateBucket_MissingAllModifySyncCalls_Warning)
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_CreateBucket_ClearSyncState_AccessOnDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
@@ -1861,16 +2184,16 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_CreateBucket_
   create_element(stkField, {{3, "Part1"}});
 
   write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.clear_sync_state();
 
   read_scalar_field_on_device(get_bulk(), stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.14");
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=20.000000");
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_DeleteBucket_MissingAllModifySyncCalls_Warning)
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_DeleteBucket_ClearSyncState_AccessOnDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
@@ -1881,14 +2204,123 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_DeleteBucket_
   delete_element({2});
 
   write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.clear_sync_state();
 
   read_scalar_field_on_device(get_bulk(), stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.14");
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=30.000000");
   check_no_warnings(stdoutString);
 }
+
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_MissingAllModifySyncCallsToDevice_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.14");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_CreateBucket_MissingAllModifySyncCallsToDevice_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  create_element(stkField, {{3, "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.14");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_DeleteBucket_MissingAllModifySyncCallsToDevice_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  delete_element({2});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_MissingAllModifySyncCallsToDevice_ClearSyncState_AccessOnDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.clear_sync_state();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_CreateBucket_MissingAllModifySyncCallsToDevice_ClearSyncState_AccessOnDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  create_element(stkField, {{3, "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.clear_sync_state();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_DeleteBucket_MissingAllModifySyncCallsToDevice_ClearSyncState_AccessOnDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  delete_element({2});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.clear_sync_state();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
 
 
 TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_MissingDeviceFieldUpdate_AccessOnDevice_Warning)
@@ -1906,7 +2338,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
   // a useful warning.  Do a host-side write to confirm that we skip over dangerous code properly.
   write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
 
-  read_scalar_field_on_device(get_bulk(), stkField, ngpField);
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   extract_warning(stdoutString, 3, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
@@ -1930,7 +2362,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_CreateBucket_
   write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
 
   const stk::mesh::EntityId maxIdToRead = 1;  // Avoid memory corruption due to accessing old Field after new bucket allocation
-  read_scalar_field_on_device(get_bulk(), stkField, ngpField, maxIdToRead);
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpField, maxIdToRead);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   extract_warning(stdoutString, 1, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
@@ -1953,12 +2385,13 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_DeleteBucket_
   // a useful warning.  Do a host-side write to confirm that we skip over dangerous code properly.
   write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
 
-  read_scalar_field_on_device(get_bulk(), stkField, ngpField);
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   extract_warning(stdoutString, 2, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
   check_no_warnings(stdoutString);
 }
+
 
 TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ModifyBucket_StaleDeviceFieldCopy_AccessOnDevice_Warning)
 {
@@ -1977,7 +2410,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ModifyBucket_
   stkField.modify_on_host();
   stkField.sync_to_device();
 
-  read_scalar_field_on_device(get_bulk(), stkField, ngpFieldCopy);
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpFieldCopy);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   extract_warning(stdoutString, 3, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
@@ -2003,7 +2436,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_CreateBucket_
   stkField.sync_to_device();
 
   const stk::mesh::EntityId maxIdToRead = 1;  // Avoid memory corruption due to accessing old Field after new bucket allocation
-  read_scalar_field_on_device(get_bulk(), stkField, ngpFieldCopy, maxIdToRead);
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpFieldCopy, maxIdToRead);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   extract_warning(stdoutString, 1, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
@@ -2028,224 +2461,1532 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_DeleteBucket_
   stkField.modify_on_host();
   stkField.sync_to_device();
 
-  read_scalar_field_on_device(get_bulk(), stkField, ngpFieldCopy);
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpFieldCopy);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   extract_warning(stdoutString, 2, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
   check_no_warnings(stdoutString);
 }
 
-//TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ProperlySyncToHost_NoWarning)
-//{
-//  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-//  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
-//                                                                                                   {0, "Part2"}});
-//
-//  testing::internal::CaptureStdout();
-//
-//  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
-//  stkField.modify_on_device();
-//  stkField.sync_to_host();
-//
-//  modify_element_part_membership(get_bulk(), {{2, "Part2"}});
-//
-//  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
-//
-//  std::string stdoutString = testing::internal::GetCapturedStdout();
-//  check_no_warnings(stdoutString);
-//}
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ModifyBucket_StaleDeviceFieldCopy_ClearSyncState_AccessOnDevice_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
+                                                                                                   {1, "Part2"}});
+  stk::mesh::NgpField<double> ngpFieldCopy = stk::mesh::get_updated_ngp_field<double>(stkField);
 
-//TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_MissingAllModifySyncCallsToHost_Warning)
-//{
-//  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-//  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
-//                                                                                                   {0, "Part2"}});
-//
-//  testing::internal::CaptureStdout();
-//
-//  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
-//  modify_element_part_membership(get_bulk(), {{2, "Part2"}});
-//  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
-//
-//  std::string stdoutString = testing::internal::GetCapturedStdout();
-//  extract_warning(stdoutString, 2, "WARNING: Lost Device values for Field doubleScalarField due to a mesh modification before a sync to Host");
-//  check_no_warnings(stdoutString);
-//}
+  testing::internal::CaptureStdout();
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
+  // The device Field is currently out-of-date, so our debugging code on the host side needs to not
+  // mysteriously seg-fault before the user does the read on the Device side, where they will get
+  // a useful warning.  Do a host-side write to confirm that we skip over dangerous code properly.
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.clear_sync_state();
 
-//TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoAdjacentMeshModifications_ProperlySyncToDevice_NoWarning)
-//{
-//  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-//  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
-//                                                                                                   {0, "Part2"}});
-//
-//  testing::internal::CaptureStdout();
-//
-//  modify_element_part_membership(get_bulk(), {{2, "Part2"}});
-//  modify_element_part_membership(get_bulk(), {{2, "Part1"}});
-//
-//  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
-//  stkField.modify_on_host();
-//  stkField.sync_to_device();
-//
-//  read_scalar_field_on_device(get_bulk(), stkField);
-//
-//  std::string stdoutString = testing::internal::GetCapturedStdout();
-//  check_no_warnings(stdoutString);
-//}
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpFieldCopy);
 
-//TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoAdjacentMeshModifications_MissingDeviceFieldUpdate_AccessOnDevice_Warning)
-//{
-//  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-//  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
-//                                                                                                   {0, "Part2"}});
-//  stk::mesh::NgpField<double> & ngpField = stk::mesh::get_updated_ngp_field<double>(stkField);
-//
-//  testing::internal::CaptureStdout();
-//  modify_element_part_membership(get_bulk(), {{2, "Part2"}});
-//  modify_element_part_membership(get_bulk(), {{2, "Part1"}});
-//
-//  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
-//
-//  read_scalar_field_on_device(get_bulk(), stkField, ngpField);
-//
-//  std::string stdoutString = testing::internal::GetCapturedStdout();
-//  extract_warning(stdoutString, 2, "WARNING: Accessing unsynchronized Field doubleScalarField on Device after mesh modification");
-//  check_no_warnings(stdoutString);
-//}
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 3, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
+  check_no_warnings(stdoutString);
+}
 
-//TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoAdjacentMeshModifications_ProperlySyncToHost_NoWarning)
-//{
-//  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-//  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
-//                                                                                                   {0, "Part2"}});
-//
-//  testing::internal::CaptureStdout();
-//
-//  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
-//  stkField.modify_on_device();
-//  stkField.sync_to_host();
-//
-//  modify_element_part_membership(get_bulk(), {{2, "Part2"}});
-//  modify_element_part_membership(get_bulk(), {{2, "Part1"}});
-//
-//  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
-//
-//  std::string stdoutString = testing::internal::GetCapturedStdout();
-//  check_no_warnings(stdoutString);
-//}
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_CreateBucket_StaleDeviceFieldCopy_ClearSyncState_AccessOnDevice_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+  stk::mesh::NgpField<double> ngpFieldCopy = stk::mesh::get_updated_ngp_field<double>(stkField);
 
-//TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoAdjacentMeshModifications_MissingAllModifySyncCallsToHost_Warning)
-//{
-//  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-//  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
-//                                                                                                   {0, "Part2"}});
-//
-//  testing::internal::CaptureStdout();
-//
-//  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
-//
-//  modify_element_part_membership(get_bulk(), {{2, "Part2"}});
-//  modify_element_part_membership(get_bulk(), {{2, "Part1"}});
-//
-//  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
-//
-//  std::string stdoutString = testing::internal::GetCapturedStdout();
-//  extract_warning(stdoutString, 2, "WARNING: Lost Device values for Field doubleScalarField due to a mesh modification before a sync to Host");
-//  check_no_warnings(stdoutString);
-//}
+  testing::internal::CaptureStdout();
+  create_element(stkField, {{3, "Part1"}});
+
+  // The device Field is currently out-of-date, so our debugging code on the host side needs to not
+  // mysteriously seg-fault before the user does the read on the Device side, where they will get
+  // a useful warning.  Do a host-side write to confirm that we skip over dangerous code properly.
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.clear_sync_state();
+
+  const stk::mesh::EntityId maxIdToRead = 1;  // Avoid memory corruption due to accessing old Field after new bucket allocation
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpFieldCopy, maxIdToRead);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_DeleteBucket_StaleDeviceFieldCopy_ClearSyncState_AccessOnDevice_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+  stk::mesh::NgpField<double> ngpFieldCopy = stk::mesh::get_updated_ngp_field<double>(stkField);
+
+  testing::internal::CaptureStdout();
+  delete_element({2});
+
+  // The device Field is currently out-of-date, so our debugging code on the host side needs to not
+  // mysteriously seg-fault before the user does the read on the Device side, where they will get
+  // a useful warning.  Do a host-side write to confirm that we skip over dangerous code properly.
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.clear_sync_state();
+
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpFieldCopy);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 2, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
+  check_no_warnings(stdoutString);
+}
 
 
-//TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ProperlySyncToDevice_NoWarning)
-//{
-//  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-//  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
-//                                                                                                   {0, "Part2"}});
-//
-//  testing::internal::CaptureStdout();
-//
-//  modify_element_part_membership(get_bulk(), {{2, "Part2"}});
-//  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
-//  stkField.modify_on_host();
-//  stkField.sync_to_device();
-//  read_scalar_field_on_device(get_bulk(), stkField);
-//
-//  modify_element_part_membership(get_bulk(), {{2, "Part1"}});
-//  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 2.18);
-//  stkField.modify_on_host();
-//  stkField.sync_to_device();
-//  read_scalar_field_on_device(get_bulk(), stkField);
-//
-//  std::string stdoutString = testing::internal::GetCapturedStdout();
-//  check_no_warnings(stdoutString);
-//}
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_ProperlySyncToHost_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
+                                                                                                   {1, "Part2"}});
 
-//TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_MissingDeviceFieldUpdate_AccessOnDevice_Warning)
-//{
-//  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-//  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
-//                                                                                                   {0, "Part2"}});
-//  stk::mesh::NgpField<double> & ngpField = stk::mesh::get_updated_ngp_field<double>(stkField);
-//
-//  testing::internal::CaptureStdout();
-//
-//  modify_element_part_membership(get_bulk(), {{2, "Part2"}});
-//  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
-//  read_scalar_field_on_device(get_bulk(), stkField, ngpField);
-//
-//  modify_element_part_membership(get_bulk(), {{2, "Part1"}});
-//  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 2.18);
-//  read_scalar_field_on_device(get_bulk(), stkField, ngpField);
-//
-//  std::string stdoutString = testing::internal::GetCapturedStdout();
-//  extract_warning(stdoutString, 4, "WARNING: Accessing unsynchronized Field doubleScalarField on Device after mesh modification");
-//  check_no_warnings(stdoutString);
-//}
+  testing::internal::CaptureStdout();
 
-//TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ProperlySyncToHost_NoWarning)
-//{
-//  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-//  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
-//                                                                                                   {0, "Part2"}});
-//
-//  testing::internal::CaptureStdout();
-//
-//  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
-//  stkField.modify_on_device();
-//  stkField.sync_to_host();
-//  modify_element_part_membership(get_bulk(), {{2, "Part2"}});
-//  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
-//
-//  write_scalar_field_on_device(get_bulk(), stkField, 2.18);
-//  stkField.modify_on_device();
-//  stkField.sync_to_host();
-//  modify_element_part_membership(get_bulk(), {{2, "Part1"}});
-//  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
-//
-//  std::string stdoutString = testing::internal::GetCapturedStdout();
-//  check_no_warnings(stdoutString);
-//}
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.sync_to_host();
 
-//TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_MissingAllModifySyncCallsToHost_Warning)
-//{
-//  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-//  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
-//                                                                                                   {0, "Part2"}});
-//
-//  testing::internal::CaptureStdout();
-//
-//  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
-//  modify_element_part_membership(get_bulk(), {{2, "Part2"}});
-//  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
-//
-//  write_scalar_field_on_device(get_bulk(), stkField, 2.18);
-//  modify_element_part_membership(get_bulk(), {{2, "Part1"}});
-//  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
-//
-//  std::string stdoutString = testing::internal::GetCapturedStdout();
-//  extract_warning(stdoutString, 4, "WARNING: Lost Device values for Field doubleScalarField due to a mesh modification before a sync to Host");
-//  check_no_warnings(stdoutString);
-//}
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_CreateBucket_ProperlySyncToHost_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.sync_to_host();
+
+  create_element(stkField, {{3, "Part1"}});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_DeleteBucket_ProperlySyncToHost_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.sync_to_host();
+
+  delete_element({2});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.clear_sync_state();
+
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_CreateBucket_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.clear_sync_state();
+
+  create_element(stkField, {{3, "Part1"}});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_DeleteBucket_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.clear_sync_state();
+
+  delete_element({2});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_MissingAllModifySyncCallsToHost_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 3, "WARNING: Lost Device values for Field doubleScalarField due to a mesh modification before a sync to Host");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_CreateBucket_MissingAllModifySyncCallsToHost_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  create_element(stkField, {{3, "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 3, "WARNING: Lost Device values for Field doubleScalarField due to a mesh modification before a sync to Host");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_DeleteBucket_MissingAllModifySyncCallsToHost_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  delete_element({2});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 2, "WARNING: Lost Device values for Field doubleScalarField due to a mesh modification before a sync to Host");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_MissingAllModifySyncCallsToHost_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+  stkField.clear_sync_state();
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_CreateBucket_MissingAllModifySyncCallsToHost_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  create_element(stkField, {{3, "Part1"}});
+  stkField.clear_sync_state();
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_DeleteBucket_MissingAllModifySyncCallsToHost_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{2, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  delete_element({2});
+  stkField.clear_sync_state();
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_ChangeBucket_ChangeBucket_ProperlySyncToDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.sync_to_device();
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_CreateBucket_CreateBucket_ProperlySyncToDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+  create_element(stkField, {{3, "Part1"}});
+  create_element(stkField, {{4, "Part1"}});
+
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.sync_to_device();
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_DeleteBucket_DeleteBucket_ProperlySyncToDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+  delete_element({2});
+  delete_element({3});
+
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.sync_to_device();
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_ChangeBucket_ChangeBucket_ModifyOnHost_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.clear_sync_state();
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_CreateBucket_CreateBucket_ModifyOnHost_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+  create_element(stkField, {{3, "Part1"}});
+  create_element(stkField, {{4, "Part1"}});
+
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.clear_sync_state();
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_DeleteBucket_DeleteBucket_ModifyOnHost_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+  delete_element({2});
+  delete_element({3});
+
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.clear_sync_state();
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_ChangeBucket_ChangeBucket_MissingAllModifySyncCalls_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 3, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.140000");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_CreateBucket_CreateBucket_MissingAllModifySyncCalls_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+  create_element(stkField, {{3, "Part1"}});
+  create_element(stkField, {{4, "Part1"}});
+
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.140000");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_DeleteBucket_DeleteBucket_MissingAllModifySyncCalls_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+  delete_element({2});
+  delete_element({3});
+
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_ChangeBucket_ChangeBucket_MissingAllModifySyncCalls_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.clear_sync_state();
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_CreateBucket_CreateBucket_MissingAllModifySyncCalls_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+  create_element(stkField, {{3, "Part1"}});
+  create_element(stkField, {{4, "Part1"}});
+
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.clear_sync_state();
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_DeleteBucket_DeleteBucket_MissingAllModifySyncCalls_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+  delete_element({2});
+  delete_element({3});
+
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.clear_sync_state();
+
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_ChangeBucket_ChangeBucket_MissingDeviceFieldUpdate_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+  stk::mesh::NgpField<double> & ngpField = stk::mesh::get_updated_ngp_field<double>(stkField);
+
+  testing::internal::CaptureStdout();
+
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 4, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_CreateBucket_CreateBucket_MissingDeviceFieldUpdate_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+  stk::mesh::NgpField<double> & ngpField = stk::mesh::get_updated_ngp_field<double>(stkField);
+
+  testing::internal::CaptureStdout();
+  create_element(stkField, {{3, "Part1"}});
+  create_element(stkField, {{4, "Part1"}});
+
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+
+  const stk::mesh::EntityId maxIdToRead = 1;  // Avoid memory corruption due to accessing old Field after new bucket allocation
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpField, maxIdToRead);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_DeleteBucket_DeleteBucket_MissingDeviceFieldUpdate_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+  stk::mesh::NgpField<double> & ngpField = stk::mesh::get_updated_ngp_field<double>(stkField);
+
+  testing::internal::CaptureStdout();
+  delete_element({2});
+  delete_element({3});
+
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 2, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
+  check_no_warnings(stdoutString);
+}
+
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_ChangeBucket_ChangeBucket_ProperlySyncToHost_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.sync_to_host();
+
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_CreateBucket_CreateBucket_ProperlySyncToHost_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.sync_to_host();
+
+  create_element(stkField, {{3, "Part1"}});
+  create_element(stkField, {{4, "Part1"}});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_DeleteBucket_DeleteBucket_ProperlySyncToHost_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.sync_to_host();
+
+  delete_element({2});
+  delete_element({3});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_ChangeBucket_ChangeBucket_ModifyOnDevice_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.clear_sync_state();
+
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_CreateBucket_CreateBucket_ModifyOnDevice_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.clear_sync_state();
+
+  create_element(stkField, {{3, "Part1"}});
+  create_element(stkField, {{4, "Part1"}});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_DeleteBucket_DeleteBucket_ModifyOnDevice_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.clear_sync_state();
+
+  delete_element({2});
+  delete_element({3});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_ChangeBucket_ChangeBucket_MissingAllModifySyncCallsToHost_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 4, "WARNING: Lost Device values for Field doubleScalarField due to a mesh modification before a sync to Host");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_CreateBucket_CreateBucket_MissingAllModifySyncCallsToHost_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+
+  create_element(stkField, {{3, "Part1"}});
+  create_element(stkField, {{4, "Part1"}});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 4, "WARNING: Lost Device values for Field doubleScalarField due to a mesh modification before a sync to Host");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_DeleteBucket_DeleteBucket_MissingAllModifySyncCallsToHost_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+
+  delete_element({2});
+  delete_element({3});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 2, "WARNING: Lost Device values for Field doubleScalarField due to a mesh modification before a sync to Host");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_ChangeBucket_ChangeBucket_MissingAllModifySyncCallsToHost_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.clear_sync_state();
+
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_CreateBucket_CreateBucket_MissingAllModifySyncCallsToHost_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.clear_sync_state();
+
+  create_element(stkField, {{3, "Part1"}});
+  create_element(stkField, {{4, "Part1"}});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModifications_DeleteBucket_DeleteBucket_MissingAllModifySyncCallsToHost_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.clear_sync_state();
+
+  delete_element({2});
+  delete_element({3});
+
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBucket_ChangeBucket_ProperlySyncToDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.sync_to_device();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 2.18);
+  stkField.modify_on_host();
+  stkField.sync_to_device();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_CreateBucket_CreateBucket_ProperlySyncToDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  create_element(stkField, {{3, "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.sync_to_device();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  create_element(stkField, {{4, "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 2.18);
+  stkField.modify_on_host();
+  stkField.sync_to_device();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_DeleteBucket_DeleteBucket_ProperlySyncToDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  delete_element({2});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.sync_to_device();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  delete_element({3});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 2.18);
+  stkField.modify_on_host();
+  stkField.sync_to_device();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBucket_ChangeBucket_ProperlySyncToDevice_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.clear_sync_state();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 2.18);
+  stkField.modify_on_host();
+  stkField.clear_sync_state();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_CreateBucket_CreateBucket_ProperlySyncToDevice_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  create_element(stkField, {{3, "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.clear_sync_state();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  create_element(stkField, {{4, "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 2.18);
+  stkField.modify_on_host();
+  stkField.clear_sync_state();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_DeleteBucket_DeleteBucket_ProperlySyncToDevice_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  delete_element({2});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.clear_sync_state();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  delete_element({3});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 2.18);
+  stkField.modify_on_host();
+  stkField.clear_sync_state();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBucket_ChangeBucket_MissingAllModifySyncCallsToDevice_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 2.18);
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 3, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.14");
+  extract_warning(stdoutString, 3, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=2.18");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_CreateBucket_CreateBucket_MissingAllModifySyncCallsToDevice_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  create_element(stkField, {{3, "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  create_element(stkField, {{4, "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 2.18);
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.140000");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=2.180000");
+  extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_DeleteBucket_DeleteBucket_MissingAllModifySyncCallsToDevice_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  delete_element({2});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  delete_element({3});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 2.18);
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.140000");
+  extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBucket_ChangeBucket_MissingAllModifySyncCallsToDevice_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.clear_sync_state();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 2.18);
+  stkField.clear_sync_state();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_CreateBucket_CreateBucket_MissingAllModifySyncCallsToDevice_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  create_element(stkField, {{3, "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.clear_sync_state();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  create_element(stkField, {{4, "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 2.18);
+  stkField.clear_sync_state();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_DeleteBucket_DeleteBucket_MissingAllModifySyncCallsToDevice_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  delete_element({2});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  stkField.clear_sync_state();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  delete_element({3});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 2.18);
+  stkField.clear_sync_state();
+  read_scalar_field_on_device(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBucket_ChangeBucket_MissingDeviceFieldUpdate_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+  stk::mesh::NgpField<double> & ngpField = stk::mesh::get_updated_ngp_field<double>(stkField);
+
+  testing::internal::CaptureStdout();
+
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpField);
+
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 2.18);
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 8, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_CreateBucket_CreateBucket_MissingDeviceFieldUpdate_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+  stk::mesh::NgpField<double> & ngpField = stk::mesh::get_updated_ngp_field<double>(stkField);
+
+  testing::internal::CaptureStdout();
+  const stk::mesh::EntityId maxIdToRead = 1;  // Avoid memory corruption due to accessing old Field after new bucket allocation
+
+  create_element(stkField, {{3, "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpField, maxIdToRead);
+
+  create_element(stkField, {{4, "Part1"}});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 2.18);
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpField, maxIdToRead);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 2, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_DeleteBucket_DeleteBucket_MissingDeviceFieldUpdate_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+  stk::mesh::NgpField<double> & ngpField = stk::mesh::get_updated_ngp_field<double>(stkField);
+
+  testing::internal::CaptureStdout();
+
+  delete_element({2});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 3.14);
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpField);
+
+  delete_element({3});
+  write_scalar_field_on_host_using_entity(get_bulk(), stkField, 2.18);
+  read_old_scalar_field_on_device(get_bulk(), stkField, ngpField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 5, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
+  check_no_warnings(stdoutString);
+}
+
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBucket_ChangeBucket_ProperlySyncToHost_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.sync_to_host();
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  write_scalar_field_on_device(get_bulk(), stkField, 2.18);
+  stkField.modify_on_device();
+  stkField.sync_to_host();
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_CreateBucket_CreateBucket_ProperlySyncToHost_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.sync_to_host();
+  create_element(stkField, {{3, "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  write_scalar_field_on_device(get_bulk(), stkField, 2.18);
+  stkField.modify_on_device();
+  stkField.sync_to_host();
+  create_element(stkField, {{4, "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_DeleteBucket_DeleteBucket_ProperlySyncToHost_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.sync_to_host();
+  delete_element({2});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  write_scalar_field_on_device(get_bulk(), stkField, 2.18);
+  stkField.modify_on_device();
+  stkField.sync_to_host();
+  delete_element({3});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBucket_ChangeBucket_ModifyOnDevice_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.clear_sync_state();
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  write_scalar_field_on_device(get_bulk(), stkField, 2.18);
+  stkField.modify_on_device();
+  stkField.clear_sync_state();
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_CreateBucket_CreateBucket_ModifyOnDevice_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.clear_sync_state();
+  create_element(stkField, {{3, "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  write_scalar_field_on_device(get_bulk(), stkField, 2.18);
+  stkField.modify_on_device();
+  stkField.clear_sync_state();
+  create_element(stkField, {{4, "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_DeleteBucket_DeleteBucket_ModifyOnDevice_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.modify_on_device();
+  stkField.clear_sync_state();
+  delete_element({2});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  write_scalar_field_on_device(get_bulk(), stkField, 2.18);
+  stkField.modify_on_device();
+  stkField.clear_sync_state();
+  delete_element({3});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBucket_ChangeBucket_MissingAllModifySyncCallsToHost_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  write_scalar_field_on_device(get_bulk(), stkField, 2.18);
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 8, "WARNING: Lost Device values for Field doubleScalarField due to a mesh modification before a sync to Host");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_CreateBucket_CreateBucket_MissingAllModifySyncCallsToHost_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  create_element(stkField, {{3, "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  write_scalar_field_on_device(get_bulk(), stkField, 2.18);
+  create_element(stkField, {{4, "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 7, "WARNING: Lost Device values for Field doubleScalarField due to a mesh modification before a sync to Host");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_DeleteBucket_DeleteBucket_MissingAllModifySyncCallsToHost_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  delete_element({2});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  write_scalar_field_on_device(get_bulk(), stkField, 2.18);
+  delete_element({3});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 5, "WARNING: Lost Device values for Field doubleScalarField due to a mesh modification before a sync to Host");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBucket_ChangeBucket_MissingAllModifySyncCallsToHost_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.clear_sync_state();
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  write_scalar_field_on_device(get_bulk(), stkField, 2.18);
+  stkField.clear_sync_state();
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_CreateBucket_CreateBucket_MissingAllModifySyncCallsToHost_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.clear_sync_state();
+  create_element(stkField, {{3, "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  write_scalar_field_on_device(get_bulk(), stkField, 2.18);
+  stkField.clear_sync_state();
+  create_element(stkField, {{4, "Part1"}});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_DeleteBucket_DeleteBucket_MissingAllModifySyncCallsToHost_ClearSyncState_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{3, "Part1"},
+                                                                                                   {1, "Part2"}}, bucketCapacity);
+
+  testing::internal::CaptureStdout();
+
+  write_scalar_field_on_device(get_bulk(), stkField, 3.14);
+  stkField.clear_sync_state();
+  delete_element({2});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  write_scalar_field_on_device(get_bulk(), stkField, 2.18);
+  stkField.clear_sync_state();
+  delete_element({3});
+  read_scalar_field_on_host_using_entity(get_bulk(), stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
 
 
 TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_FieldStateRotation_Throw)
@@ -2258,67 +3999,4 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_FieldStateRotation_Throw)
 #endif
 }
 
-// Use-cases needing testing:
-// - Single mesh mod, (host --> device)
-//   - If the user accesses *any* value on device without an update after a mesh mod
-//     - Mesh mod that changes a bucket: Warning about un-updated access (done)
-//     - Mesh mod that creates a bucket: Warning about un-updated access (done)
-//     - Mesh mod that deletes a bucket: Warning about un-updated access (done)
-//
-//   - If the user does a mesh mod that changes a bucket's contents:
-//     - If they have previously done a sync to device: No warning (bucket was synced from host)
-//     - If they have not previously done a sync to device and have newer data on host: Warning about stale data (May not be possible/practical)
-//
-//   - If the user does a mesh mod that creates a bucket:
-//     - If they have previously done a sync to device: No warning (state preserved through bucket move)
-//     - If they have not previously done a sync to device and have newer data on host: Warning about stale data (state preserved through bucket move)
-//
-//   - If the user does a mesh mod that deletes a bucket:
-//     - If they have previously done a sync to device: No warning (state preserved through bucket move)
-//     - If they have not previously done a sync to device and have newer data on host: Warning about stale data (May not be possible/practical)
-//
-// - Single mesh mod, (device --> host)
-//   - If the user modified *any* data value on device and correctly calls modify/sync to host, then performs mesh mod:
-//     - Mesh mod that changes a bucket: No warning
-//     - Mesh mod that moves a bucket: No warning
-//     - Mesh mod that creates a bucket: No warning
-//     - Mesh mod that deletes a bucket: No warning
-//
-//   - If the user modified *any* data value on device and misses modify call, then performs mesh mod:
-//     - Mesh mod that changes a bucket: Warning about abandoned data after *any* access on host
-//     - Mesh mod that moves a bucket: Warning about abandoned data after *any* access on host
-//     - Mesh mod that creates a bucket: Warning about abandoned data after *any* access on host
-//     - Mesh mod that deletes a bucket: Warning about abandoned data after *any* access on host
-//
-// - Two consecutive mesh mods, (host --> device)
-//     - Change bucket contents -- Change bucket contents
-//       - Properly update Field before access: No warning
-//     - Move bucket -- Move bucket
-//       - Previously synced to device: No warning
-//       - Not previously synced to device with new data on host: Warning about stale data
-//     - Change bucket contents -- Move bucket
-//       - Previously synced to device; Properly update Field before access: No warning
-//       - Not previously synced to device with new data on host; Properly update Field before access: warning about stale data (May not be possible/practical)
-//     - Move bucket -- Change bucket contents
-//       - Previously synced to device; Properly update Field before access: No warning
-//       - Not previously synced to device with new data on host; Properly update Field before access: warning about stale data (May not be possible/practical)
-//     - New bucket -- Change bucket contents
-//       - Previously synced to device; Properly update Field before access: No warning
-//       - Not previously synced to device with new data on host; Properly update Field before access: warning about stale data (May not be possible/practical)
-//
-// - Two consecutive mesh mods, (device --> host)
-//   - If the user modified *any* data value on device and correctly calls modify/sync to host, then performs mesh mod:
-//     - Two mesh mods that change a bucket: No warning
-//     - Two mesh mods that move a bucket: No warning (may not need this test)
-//     - Two mesh mods that create a bucket: No warning (may not need this test)
-//     - Two mesh mods that delete a bucket: No warning (may not need this test)
-//
-//   - If the user modified *any* data value on device and misses modify call, then performs mesh mod:
-//     - Two mesh mods that change a bucket: Warning about abandoned data after *any* access on host
-//     - Two mesh mods that move a bucket: Warning about abandoned data after *any* access on host (may not need this test)
-//     - Two mesh mods that create a bucket: Warning about abandoned data after *any* access on host (may not need this test)
-//     - Two mesh mods that delete a bucket: Warning about abandoned data after *any* access on host (may not need this test)
-//
-// - Two mesh mods with intermediate activity
-//   - TBD
 }

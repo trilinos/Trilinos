@@ -1533,6 +1533,40 @@ void check_size_of_types()
 #endif
 }
 
+void require_valid_relation(const char action[],
+                            const BulkData& mesh,
+                            const Entity e_from,
+                            const Entity e_to)
+{
+  const bool error_rank      = !(mesh.entity_rank(e_from) > mesh.entity_rank(e_to));
+  const bool error_nil_from  = !mesh.is_valid(e_from);
+  const bool error_nil_to    = !mesh.is_valid(e_to);
+
+  if ( error_rank || error_nil_from || error_nil_to ) {
+    std::ostringstream msg ;
+
+    msg << "Could not " << action << " relation from entity "
+        << mesh.entity_key(e_from) << " to entity " << mesh.entity_key(e_to) << "\n";
+
+    ThrowErrorMsgIf( error_nil_from  || error_nil_to,
+                     msg.str() << ", entity was destroyed");
+    ThrowErrorMsgIf( error_rank, msg.str() <<
+                     "A relation must be from higher to lower ranking entity");
+  }
+}
+
+bool is_good_rank_and_id(const MetaData& meta,
+                         EntityRank rank,
+                         EntityId id)
+{
+  const size_t rank_count = meta.entity_rank_count();
+  const bool ok_id   = EntityKey::is_valid_id(id);
+  const bool ok_rank = rank < rank_count &&
+                 !(rank == stk::topology::FACE_RANK && meta.spatial_dimension() == 2);
+
+  return ok_id && ok_rank;
+}
+
 EntityId get_global_max_id_in_use(const BulkData& mesh,
                                   EntityRank rank,
                                   const std::list<Entity::entity_value_type>& deletedEntitiesCurModCycle)

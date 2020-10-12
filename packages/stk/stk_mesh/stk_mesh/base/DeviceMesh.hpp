@@ -101,7 +101,7 @@ struct DeviceBucket {
   stk::topology topology() const { return bucketTopology; }
 
   STK_FUNCTION
-  unsigned get_num_nodes_per_entity() const { return nodeConnectivity.extent(1); }
+  unsigned get_num_nodes_per_entity() const { return bucketTopology.num_nodes(); }
 
   STK_INLINE_FUNCTION
   ConnectedEntities get_connected_entities(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const;
@@ -465,7 +465,7 @@ DeviceBucket::ConnectedEntities
 DeviceBucket::get_connected_entities(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
   NGP_ThrowAssert(connectedRank < stk::topology::NUM_RANKS);
   if (connectedRank == stk::topology::NODE_RANK) {
-    return ConnectedEntities(&nodeConnectivity(offsetIntoBucket,0), nodeConnectivity.extent(1), bucketCapacity);
+    return ConnectedEntities(&nodeConnectivity(offsetIntoBucket,0), bucketTopology.num_nodes(), bucketCapacity);
   }
   NGP_ThrowAssert(owningMesh != nullptr);
   stk::mesh::FastMeshIndex meshIndex{bucket_id(), offsetIntoBucket};
@@ -477,7 +477,7 @@ DeviceBucket::ConnectedOrdinals
 DeviceBucket::get_connected_ordinals(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
   NGP_ThrowAssert(connectedRank < stk::topology::NUM_RANKS);
   if (connectedRank == stk::topology::NODE_RANK) {
-    return ConnectedOrdinals(&nodeOrdinals(0), nodeOrdinals.extent(0), bucketCapacity);
+    return ConnectedOrdinals(nodeOrdinals.data(), nodeOrdinals.size(), bucketCapacity);
   }
   NGP_ThrowAssert(owningMesh != nullptr);
   stk::mesh::FastMeshIndex meshIndex{bucket_id(), offsetIntoBucket};

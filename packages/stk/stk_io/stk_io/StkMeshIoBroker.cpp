@@ -252,9 +252,7 @@ void StkMeshIoBroker::set_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_
         m_metaData = Teuchos::rcpFromRef(bulk_data().mesh_meta_data());
     }
 
-#ifdef STK_BUILT_IN_SIERRA
     m_communicator = m_bulkData->parallel();
-#endif
     create_sideset_observer();
 }
 
@@ -616,25 +614,16 @@ void StkMeshIoBroker::end_output_step(size_t output_file_index)
 template<typename INT>
 void populate_elements_and_nodes(Ioss::Region &region,
                                  stk::mesh::BulkData& bulkData,
-                                 stk::ParallelMachine communicator,
                                  const bool processAllInputNodes)
 {
     if(processAllInputNodes) {
-#ifdef STK_BUILT_IN_SIERRA
         process_nodeblocks<INT>(region,    bulkData);
-#else
-        process_nodeblocks<INT>(region,    bulkData, communicator);
-#endif
     }
 
     process_elementblocks<INT>(region, bulkData);
 
     if(!processAllInputNodes) {
-#ifdef STK_BUILT_IN_SIERRA
         process_node_sharing<INT>(region,    bulkData);
-#else
-        process_node_sharing<INT>(region,    bulkData, communicator);
-#endif
     }
 
     process_nodesets<INT>(region, bulkData);
@@ -663,9 +652,9 @@ bool StkMeshIoBroker::populate_mesh_elements_and_nodes(bool delay_field_data_all
     }
 
     if (ints64bit) {
-        populate_elements_and_nodes<int64_t>(*region, bulk_data(), m_communicator, processAllInputNodes);
+        populate_elements_and_nodes<int64_t>(*region, bulk_data(), processAllInputNodes);
     } else {
-        populate_elements_and_nodes<int>(*region, bulk_data(), m_communicator, processAllInputNodes);
+        populate_elements_and_nodes<int>(*region, bulk_data(), processAllInputNodes);
     }
 
     stk_mesh_resolve_node_sharing();

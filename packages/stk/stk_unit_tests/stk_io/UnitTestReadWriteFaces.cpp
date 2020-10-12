@@ -80,7 +80,7 @@ void StkFaceIoTest::setup_mesh_with_edges_and_faces(unsigned numBlocks)
   stk::mesh::Part* edgePart = &get_meta().declare_part_with_topology(edgePartName, stk::topology::LINE_2);
   stk::mesh::Part* facePart = &get_meta().declare_part_with_topology(facePartName, stk::topology::QUAD_4);
   stk::io::put_face_block_io_part_attribute(*facePart);
-  stk::io::put_io_part_attribute(*edgePart);
+  stk::io::put_edge_block_io_part_attribute(*edgePart);
   stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coords);
 
   stk::mesh::PartVector faceParts = {facePart};
@@ -145,7 +145,6 @@ void StkFaceIoTest::test_faces(const stk::mesh::BulkData& bulk)
 void StkFaceIoTest::output_mesh()
 {
   stkIoOutput.set_bulk_data(get_bulk());
-  stkIoOutput.enable_edge_io();
   size_t outputFileIndex = stkIoOutput.create_output_mesh(fileName, stk::io::WRITE_RESULTS);
 
   stkIoOutput.write_output_mesh(outputFileIndex);

@@ -277,6 +277,7 @@ void SidesetUpdater::started_modification_end_notification()
 
 void SidesetUpdater::fill_values_to_reduce(std::vector<size_t> &valuesToReduce)
 {
+  if (!isActive){return;}
     valuesToReduce.clear();
     if(bulkData.was_mesh_modified_since_sideset_creation())
     {

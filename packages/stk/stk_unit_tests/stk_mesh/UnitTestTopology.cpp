@@ -46,6 +46,7 @@
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include <stk_mesh/baseImpl/MeshCommVerify.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 
@@ -54,16 +55,6 @@
 
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { struct EntitySideComponent; } }
-
-namespace stk {
-namespace mesh {
-void unpack_not_owned_verify_compare_closure_relations( const BulkData &             mesh,
-                                                        Entity                       entity,
-                                                        std::vector<stk::mesh::Relation> const& recv_relations,
-                                                        bool&                        bad_rel);
-
-}
-}
 
 using stk::ParallelMachine;
 using stk::mesh::MetaData;
@@ -239,7 +230,7 @@ TEST( testTopologyHelpers, element_side_polarity_valid )
   fix.bulk.modification_end();
 
   const int local_side_id = 0;
-  ASSERT_TRUE( fix.bulk.element_side_polarity( element, face2, local_side_id) );
+  ASSERT_TRUE( stk::mesh::element_side_polarity(fix.bulk, element, face2, local_side_id) );
 
 }
 
@@ -259,7 +250,7 @@ TEST( testTopologyHelpers, element_side_polarity_invalid_1 )
     const unsigned invalid_local_side_id = static_cast<unsigned>(-1);
     // Hits "Unsuported local_side_id" error condition:
     ASSERT_THROW(
-        fix.bulk.element_side_polarity( element, face, invalid_local_side_id),
+        stk::mesh::element_side_polarity(fix.bulk, element, face, invalid_local_side_id),
         std::runtime_error
         );
   }
@@ -285,7 +276,7 @@ TEST( testTopologyHelpers, element_side_polarity_invalid_2 )
   Entity face_with_top = fix.bulk.declare_element_side(element_with_top, zero_side_count, stk::mesh::PartVector{&fix.face_tri_part});
   const int valid_local_side_id = 0;
   ASSERT_THROW(
-      fix.bulk.element_side_polarity( element, face_with_top, valid_local_side_id),
+      element_side_polarity(fix.bulk, element, face_with_top, valid_local_side_id),
       std::runtime_error
       );
 
@@ -748,12 +739,12 @@ TEST(stkTopologyFunctions, permutation_consistency_check_3d)
 
         std::vector<stk::mesh::Relation> recv_relations;
         pack_downward_relations_for_entity(mesh, side, recv_relations);
-        unpack_not_owned_verify_compare_closure_relations(mesh, side, recv_relations, rel_bad);
+        stk::mesh::impl::unpack_not_owned_verify_compare_closure_relations(mesh, side, recv_relations, rel_bad);
         EXPECT_FALSE(rel_bad);
 
         std::vector<stk::mesh::Relation> relations;
         pack_downward_relations_for_entity(mesh, elem, relations);
-        unpack_not_owned_verify_compare_closure_relations(mesh, elem, relations, rel_bad);
+        stk::mesh::impl::unpack_not_owned_verify_compare_closure_relations(mesh, elem, relations, rel_bad);
         EXPECT_FALSE(rel_bad);
     }
 }
