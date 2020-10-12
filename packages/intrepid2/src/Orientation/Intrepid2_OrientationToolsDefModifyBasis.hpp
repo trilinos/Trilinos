@@ -56,52 +56,6 @@
 namespace Intrepid2 {
 
   template<typename SpT>
-  template<typename ptViewType>
-  KOKKOS_INLINE_FUNCTION
-  bool OrientationTools<SpT>::
-  isLeftHandedCell(const ptViewType pts) {
-#ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_ABORT( pts.rank() != 2,  // npts x ndim
-                              ">>> ERROR (Intrepid::OrientationTools::isLeftHandedCell): " \
-                              "Point array is supposed to have rank 2.");
-#endif
-    typedef typename ptViewType::value_type value_type;
-
-    const auto dim = pts.extent(1);
-    value_type det = 0.0;
-    switch (dim) {
-    case 2: {
-      // need 3 points (origin, x end point, y end point)
-      const value_type v[2][2] = { { pts(1,0) - pts(0,0), pts(1,1) - pts(0,1) },
-                                   { pts(2,0) - pts(0,0), pts(2,1) - pts(0,1) } };
-
-      det = (v[0][0]*v[1][1] - v[1][0]*v[0][1]);
-      break;
-    }
-    case 3: {
-      // need 4 points (origin, x end point, y end point, z end point)
-      const value_type v[3][3] = { { pts(1,0) - pts(0,0), pts(1,1) - pts(0,1), pts(1,2) - pts(0,2) },
-                                   { pts(2,0) - pts(0,0), pts(2,1) - pts(0,1), pts(2,2) - pts(0,2) },
-                                   { pts(3,0) - pts(0,0), pts(3,1) - pts(0,1), pts(3,2) - pts(0,2) } };
-
-      det = (v[0][0] * v[1][1] * v[2][2] +
-             v[0][1] * v[1][2] * v[2][0] +
-             v[0][2] * v[1][0] * v[2][1] -
-             v[0][2] * v[1][1] * v[2][0] -
-             v[0][0] * v[1][2] * v[2][1] -
-             v[0][1] * v[1][0] * v[2][2]);
-      break;
-    }
-    default:{
-      INTREPID2_TEST_FOR_ABORT( true,
-                                ">>> ERROR (Intrepid::Orientation::isLeftHandedCell): " \
-                                "Dimension of points must be 2 or 3");
-    }
-    }
-    return (det < 0.0);
-  }
-
-  template<typename SpT>
   template<typename elemOrtValueType, class ...elemOrtProperties,
            typename elemNodeValueType, class ...elemNodeProperties>
   void

@@ -192,9 +192,10 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
   this->basisCardinality_  = CardinalityHDivTri(order);
   this->basisDegree_       = order; // small n
   this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
-  this->basisType_         = BASIS_FEM_FIAT;
+  this->basisType_         = BASIS_FEM_LAGRANGIAN;
   this->basisCoordinates_  = COORDINATES_CARTESIAN;
   this->functionSpace_     = FUNCTION_SPACE_HDIV;
+  pointType_ = pointType;
 
   const ordinal_type card = this->basisCardinality_;
 
@@ -299,12 +300,6 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
     CellTools<Kokkos::HostSpace::execution_space>::getReferenceSideNormal( edgeNormal ,
         edge ,
         this->basisCellTopology_ );
-
-    /* multiply by measure of reference edge so that magnitude of the edgeTan is equal to the edge measure */
-    const scalarType refEdgeMeasure = 2.0;
-    for (ordinal_type j=0;j<spaceDim;j++)
-      edgeNormal(j) *= refEdgeMeasure;
-
 
     CellTools<Kokkos::HostSpace::execution_space>::mapToReferenceSubcell( edgePts ,
         linePts ,

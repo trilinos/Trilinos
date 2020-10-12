@@ -256,10 +256,11 @@ Basis_HGRAD_TRI_Cn_FEM( const ordinal_type order,
   this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
   this->basisDegree_       = order; // small n
   this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
-  this->basisType_         = BASIS_FEM_FIAT;
+  this->basisType_         = BASIS_FEM_LAGRANGIAN;
   this->basisCoordinates_  = COORDINATES_CARTESIAN;
   this->functionSpace_     = FUNCTION_SPACE_HGRAD;
 
+  pointType_ = pointType;
   const ordinal_type card = this->basisCardinality_;
 
   // points are computed in the host and will be copied

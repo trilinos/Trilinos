@@ -575,7 +575,7 @@ int feAssemblyHex(int argc, char *argv[]) {
       DynRankView ConstructWithLabel(dofCoordsOriented, numOwnedElems, basisCardinality, dim);
       DynRankView ConstructWithLabel(dofCoeffsPhys, numOwnedElems, basisCardinality);
       
-      li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basis.getRawPtr(), Intrepid2::POINTTYPE_EQUISPACED, elemOrts);
+      li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basis.getRawPtr(), elemOrts);
  
       DynRankView ConstructWithLabel(funAtDofPoints, numOwnedElems, basisCardinality);
       {

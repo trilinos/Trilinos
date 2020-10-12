@@ -62,6 +62,10 @@
 
 namespace Intrepid2
 {
+  /** \class Intrepid2::Basis_Derived_HVOL_HEX
+      \brief Implementation of H(vol) basis on the quadrilateral that is templated on H(vol) on the line.
+  */
+  
   template<class HVOL_LINE>
   class Basis_Derived_HVOL_HEX
   :
@@ -69,6 +73,8 @@ namespace Intrepid2
                            HVOL_LINE>
   // TODO: make this a subclass of TensorBasis3 instead, following what we've done for H(curl) and H(div)
   {
+    std::string name_;
+
   public:
     using ExecutionSpace  = typename HVOL_LINE::ExecutionSpace;
     using OutputValueType = typename HVOL_LINE::OutputValueType;
@@ -86,28 +92,34 @@ namespace Intrepid2
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
         \param [in] polyOrder_z - the polynomial order in the z dimension.
+        \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HVOL_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z)
+    Basis_Derived_HVOL_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType=POINTTYPE_DEFAULT)
     :
-    TensorBasis(QuadBasis(polyOrder_x,polyOrder_y),
-                LineBasis(polyOrder_z))
+    TensorBasis(QuadBasis(polyOrder_x,polyOrder_y,pointType),
+                LineBasis(polyOrder_z,pointType))
     {
       this->functionSpace_ = FUNCTION_SPACE_HVOL;
+
+      std::ostringstream basisName;
+      basisName << "HVOL_HEX (" << this->TensorBasis::getName() << ")";
+      name_ = basisName.str();
     }
     
     /** \brief  Constructor.
         \param [in] polyOrder - the polynomial order to use in all dimensions.
+        \param [in] pointType - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HVOL_HEX(int polyOrder) : Basis_Derived_HVOL_HEX(polyOrder, polyOrder, polyOrder) {}
+    Basis_Derived_HVOL_HEX(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT) : Basis_Derived_HVOL_HEX(polyOrder, polyOrder, polyOrder,pointType) {}
     
     /** \brief  Returns basis name
 
-        \return the name of the basis
-    */
+     \return the name of the basis
+     */
     virtual
     const char*
-    getName() const {
-      return "Intrepid2_DerivedBasis_HVOL_HEX";
+    getName() const override {
+      return name_.c_str();
     }
 
     /** \brief True if orientation is required
@@ -115,7 +127,7 @@ namespace Intrepid2
     virtual bool requireOrientation() const {
       return false;
     }
-
+    
     using TensorBasis::getValues;
     
     /** \brief  multi-component getValues() method (required/called by TensorBasis)

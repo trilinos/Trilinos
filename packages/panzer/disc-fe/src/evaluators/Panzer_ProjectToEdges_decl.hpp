@@ -80,20 +80,14 @@ private:
 
   std::string dof_name;
   Teuchos::RCP<const PureBasis> basis;
-  int num_pts;
+  int num_edges;
   int num_dim;
-  int quad_degree;
 
   PHX::MDField<const ScalarT,Cell,BASIS,Dim> tangents;
   std::vector<PHX::MDField<const ScalarT,Cell,BASIS,Dim> > vector_values;
   PHX::MDField<ScalarT,Cell,BASIS> result;
 
   ProjectToEdges();
-
-  PHX::MDField<const ScalarT,Cell,NODE> dof_orientation;
-  PHX::MDField<ScalarT,Cell,NODE,Dim> gatherFieldTangents;
-
-  Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
 };
 
 }

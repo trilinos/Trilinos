@@ -70,40 +70,40 @@ namespace Intrepid2 {
 
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
         output.access(0, 0) = 0.0;
-        output.access(0, 1) = (y - 1.0)/8.0;
+        output.access(0, 1) = (y - 1.0)/2.0;
         output.access(0, 2) = 0.0;
 
-        output.access(1, 0) = (1.0 + x)/8.0;
+        output.access(1, 0) = (1.0 + x)/2.0;
         output.access(1, 1) = 0.0;
         output.access(1, 2) = 0.0;
 
         output.access(2, 0) = 0.0;
-        output.access(2, 1) = (1.0 + y)/8.0;
+        output.access(2, 1) = (1.0 + y)/2.0;
         output.access(2, 2) = 0.0;
 
-        output.access(3, 0) = (x - 1.0)/8.0;
+        output.access(3, 0) = (x - 1.0)/2.0;
         output.access(3, 1) = 0.0;
         output.access(3, 2) = 0.0;
 
         output.access(4, 0) = 0.0;
         output.access(4, 1) = 0.0;
-        output.access(4, 2) = (z - 1.0)/8.0;
+        output.access(4, 2) = (z - 1.0)/2.0;
 
         output.access(5, 0) = 0.0;
         output.access(5, 1) = 0.0;
-        output.access(5, 2) = (1.0 + z)/8.0;
+        output.access(5, 2) = (1.0 + z)/2.0;
         break;
       }
       case OPERATOR_DIV : {
 
         // output is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
         // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
-        output.access(0) = 0.125;
-        output.access(1) = 0.125;
-        output.access(2) = 0.125;
-        output.access(3) = 0.125;
-        output.access(4) = 0.125;
-        output.access(5) = 0.125;
+        output.access(0) = 0.5;
+        output.access(1) = 0.5;
+        output.access(2) = 0.5;
+        output.access(3) = 0.5;
+        output.access(4) = 0.5;
+        output.access(5) = 0.5;
         break;
       }
       default: {
@@ -256,12 +256,12 @@ namespace Intrepid2 {
       dofCoeffs("dofCoeffsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
 
     // for HDIV_HEX_I1 dofCoeffs are the normals on the hexahedron faces (with normals magnitude equal to faces' areas)
-    dofCoeffs(0,0)  =  0.0;   dofCoeffs(0,1)  = -4.0;   dofCoeffs(0,2)  =  0.0;
-    dofCoeffs(1,0)  =  4.0;   dofCoeffs(1,1)  =  0.0;   dofCoeffs(1,2)  =  0.0;
-    dofCoeffs(2,0)  =  0.0;   dofCoeffs(2,1)  =  4.0;   dofCoeffs(2,2)  =  0.0;
-    dofCoeffs(3,0)  = -4.0;   dofCoeffs(3,1)  =  0.0;   dofCoeffs(3,2)  =  0.0;
-    dofCoeffs(4,0)  =  0.0;   dofCoeffs(4,1)  =  0.0;   dofCoeffs(4,2)  = -4.0;
-    dofCoeffs(5,0)  =  0.0;   dofCoeffs(5,1)  =  0.0;   dofCoeffs(5,2)  =  4.0;
+    dofCoeffs(0,0)  =  0.0;   dofCoeffs(0,1)  = -1.0;   dofCoeffs(0,2)  =  0.0;
+    dofCoeffs(1,0)  =  1.0;   dofCoeffs(1,1)  =  0.0;   dofCoeffs(1,2)  =  0.0;
+    dofCoeffs(2,0)  =  0.0;   dofCoeffs(2,1)  =  1.0;   dofCoeffs(2,2)  =  0.0;
+    dofCoeffs(3,0)  = -1.0;   dofCoeffs(3,1)  =  0.0;   dofCoeffs(3,2)  =  0.0;
+    dofCoeffs(4,0)  =  0.0;   dofCoeffs(4,1)  =  0.0;   dofCoeffs(4,2)  = -1.0;
+    dofCoeffs(5,0)  =  0.0;   dofCoeffs(5,1)  =  0.0;   dofCoeffs(5,2)  =  1.0;
 
     this->dofCoeffs_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoeffs);
     Kokkos::deep_copy(this->dofCoeffs_, dofCoeffs);
