@@ -163,7 +163,7 @@ namespace MueLu {
 
     NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100) {
+    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero()) {
       Teuchos::TimeMonitor MM = *Teuchos::TimeMonitor::getNewTimer("UtilitiesBase::GetMatrixDiagonalInverse");
 
       RCP<const Matrix> rcpA = Teuchos::rcpFromRef(A);
@@ -173,7 +173,7 @@ namespace MueLu {
 
       rcpA->getLocalDiagCopy(*diag);
 
-      RCP<Vector> inv = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetInverse(diag, tol, Teuchos::ScalarTraits<Scalar>::zero());
+      RCP<Vector> inv = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetInverse(diag, tol, tolReplacement);
 
       return inv;
     }
@@ -186,7 +186,7 @@ namespace MueLu {
 
     NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static Teuchos::ArrayRCP<Scalar> GetLumpedMatrixDiagonal(const Matrix& A, const bool doReciprocal = false) {
+    static Teuchos::ArrayRCP<Scalar> GetLumpedMatrixDiagonal(const Matrix& A, const bool doReciprocal = false, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero()) {
 
       size_t numRows = A.getRowMap()->getNodeNumElements();
       const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
@@ -203,7 +203,10 @@ namespace MueLu {
       }
       if (doReciprocal) {
         for (size_t i = 0; i < numRows; ++i)
-          (diag[i] != zero) ?  diag[i] = one / diag[i] : diag[i] = one;
+          if(Teuchos::ScalarTraits<Scalar>::magnitude(diag[i]) > tol)
+            diag[i] = one / diag[i];
+          else
+            diag[i] = tolReplacement;
       }
       return diag;
     }
@@ -214,7 +217,9 @@ namespace MueLu {
 
     NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static Teuchos::RCP<Vector> GetLumpedMatrixDiagonal(Teuchos::RCP<const Matrix> rcpA, const bool doReciprocal = false) {
+    static Teuchos::RCP<Vector> GetLumpedMatrixDiagonal(Teuchos::RCP<const Matrix> rcpA, const bool doReciprocal = false,
+                                                        Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100,
+                                                        Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero()) {
 
       RCP<Vector> diag = Teuchos::null;
       const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
@@ -237,7 +242,10 @@ namespace MueLu {
         }
         if (doReciprocal) {
           for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
-            (diagVals[i] != zero) ? diagVals[i] = one / diagVals[i] : diagVals[i] = one;
+          if(Teuchos::ScalarTraits<Scalar>::magnitude(diagVals[i]) > tol)
+            diagVals[i] = one / diagVals[i];
+          else
+            diagVals[i] = tolReplacement;
           }
         }
       } else {
