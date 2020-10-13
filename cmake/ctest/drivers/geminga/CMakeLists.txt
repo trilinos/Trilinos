@@ -7,7 +7,7 @@ execute_process(COMMAND date +%A OUTPUT_VARIABLE DAYOFWEEK)
 # parallel valgrind tests run every night except Sunday
 # coverage tests run on Saturday night
 
-if((${DAYOFWEEK} MATCHES "Sunday") OR (${DAYOFWEEK} MATCHES "Tuesday") OR (${DAYOFWEEK} MATCHES "Thursday")) 
+if((${DAYOFWEEK} MATCHES "Sunday") OR (${DAYOFWEEK} MATCHES "Tuesday") OR (${DAYOFWEEK} MATCHES "Thursday"))
   SET(RUN_HEAVY_MEMORY_TESTS ON)
   SET(RUN_COVERAGE_TESTS OFF)
 elseif((${DAYOFWEEK} MATCHES "Monday") OR (${DAYOFWEEK} MATCHES "Wednesday"))
@@ -117,7 +117,7 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     RUN_SERIAL
     TIMEOUT_MINUTES 330
     )
-  
+
   # Misc tests
   if(RUN_HEAVY_MEMORY_TESTS)
 
@@ -196,6 +196,15 @@ elseif($ENV{CTEST_CONFIGURATION} MATCHES "nvcc_wrapper")
       RUN_SERIAL
       TIMEOUT_MINUTES 420
       )
+
+    TRILINOS_DRIVER_ADD_DASHBOARD(
+      RELEASE_CUDA_NO_UVM
+      ctest_linux_nightly_mpi_release_muelu_cuda_no_uvm_geminga.cmake
+      CTEST_INSTALLER_TYPE release
+      RUN_SERIAL
+      TIMEOUT_MINUTES 420
+      )
+
 
   endif()
 

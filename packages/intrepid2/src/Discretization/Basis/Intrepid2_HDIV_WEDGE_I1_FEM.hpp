@@ -49,6 +49,7 @@
 #define __INTREPID2_HDIV_WEDGE_I1_FEM_HPP__
 
 #include "Intrepid2_Basis.hpp"
+#include "Intrepid2_HVOL_C0_FEM.hpp"
 
 namespace Intrepid2 {
 
@@ -208,6 +209,24 @@ namespace Intrepid2 {
       Kokkos::deep_copy(dofCoords, this->dofCoords_);
     }
 
+
+    virtual
+    void
+    getDofCoeffs( ScalarViewType dofCoeffs ) const {
+  #ifdef HAVE_INTREPID2_DEBUG
+      // Verify rank of output array.
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.rank() != 2, std::invalid_argument,
+          ">>> ERROR: (Intrepid2::Basis_HDIV_WEDGE_I1_FEM::getDofCoeffs) rank = 2 required for dofCoeffs array");
+      // Verify 0th dimension of output array.
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoeffs.extent(0)) != this->getCardinality(), std::invalid_argument,
+          ">>> ERROR: (Intrepid2::Basis_HDIV_WEDGE_I1_FEM::getDofCoeffs) mismatch in number of dof and 0th dimension of dofCoeffs array");
+      // Verify 1st dimension of output array.
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.extent(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
+          ">>> ERROR: (Intrepid2::Basis_HDIV_WEDGE_I1_FEM::getDofCoeffs) incorrect reference cell (1st) dimension in dofCoeffs array");
+  #endif
+      Kokkos::deep_copy(dofCoeffs, this->dofCoeffs_);
+    }
+
     virtual
     const char*
     getName() const {
@@ -218,6 +237,29 @@ namespace Intrepid2 {
     bool
     requireOrientation() const {
       return true;
+    }
+
+    /** \brief returns the basis associated to a subCell.
+
+        The bases of the subCell are the restriction to the subCell of the bases of the parent cell,
+        projected along normal to the subCell.
+
+        \param [in] subCellDim - dimension of subCell
+        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+     */
+    BasisPtr<ExecSpaceType,outputValueType,pointValueType>
+    getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
+
+      if(subCellDim == 2) {
+        if((subCellOrd >=0) && (subCellOrd<3))
+          return Teuchos::rcp(new
+            Basis_HVOL_C0_FEM<ExecSpaceType,outputValueType,pointValueType>(shards::getCellTopologyData<shards::Quadrilateral<4> >()));
+        if((subCellOrd==3)||(subCellOrd==4))
+          return Teuchos::rcp(new
+            Basis_HVOL_C0_FEM<ExecSpaceType,outputValueType,pointValueType>(shards::getCellTopologyData<shards::Triangle<3> >()));
+      }
+      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
     }
 
   };

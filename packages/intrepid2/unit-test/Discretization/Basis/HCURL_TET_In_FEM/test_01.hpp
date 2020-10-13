@@ -240,8 +240,6 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
               edgeId ,
               tet_4 );
 
-          for (ordinal_type jj=0;jj<dim;jj++)
-            edgeTan(jj) *= 2.0;
           for (ordinal_type k=0;k<dim; k++)
             dofValue += h_basisAtDofCoords(i,j,k)*edgeTan(k);
         }
@@ -286,6 +284,12 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     errorFlag = -1000;
   };
+
+  // Intrepid2 basis have been redefined and they are no longer
+  // equivalent to FIAT basis. However they are proportional to the FIAT basis
+  // with a scaling that depends on the geometric entity (points, edge, face, cell)
+  // associated to the basis
+  scalar_type scaling_factor[4] = {0,2,1,1};
 
   try {
 
@@ -345,11 +349,13 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
         2.789513560273035e-16, -9.999999999999998e-01, -5.551115123125783e-17
     };
 
+    const auto allTags = tetBasis.getAllDofTags();
     ordinal_type cur=0;
     for (ordinal_type i=0;i<numFields;i++) {
+      auto scaling = scaling_factor[allTags(i,0)];
       for (ordinal_type j=0;j<np_lattice;j++) {
         for (ordinal_type k=0;k<dim; k++) {
-          if (std::fabs( h_basisAtLattice(i,j,k) - fiat_vals[cur] ) > tol ) {
+          if (std::fabs( h_basisAtLattice(i,j,k) - scaling*fiat_vals[cur] ) > tol ) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -357,8 +363,8 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
             *outStream << " At multi-index { ";
             *outStream << i << " " << j << " " << k;
             *outStream << "}  computed value: " <<  h_basisAtLattice(i,j,k)
-                              << " but correct value: " << fiat_vals[cur] << "\n";
-            *outStream << "Difference: " << std::fabs(  h_basisAtLattice(i,j,k) - fiat_vals[cur] ) << "\n";
+                              << " but correct value: " << scaling*fiat_vals[cur] << "\n";
+            *outStream << "Difference: " << std::fabs(  h_basisAtLattice(i,j,k) - scaling*fiat_vals[cur] ) << "\n";
           }
           cur++;
         }
@@ -429,12 +435,13 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
         2.000000000000000e+00, -2.185751579730777e-16, 1.526556658859590e-16
     };
 
-
     ordinal_type cur=0;
+    const auto allTags = tetBasis.getAllDofTags();
     for (ordinal_type i=0;i<numFields;i++) {
+      auto scaling = scaling_factor[allTags(i,0)];
       for (ordinal_type j=0;j<np_lattice;j++) {
         for (ordinal_type k=0;k<dim; k++) {
-          if (std::abs( h_curlBasisAtLattice(i,j,k) - fiat_curls[cur] ) > tol ) {
+          if (std::abs( h_curlBasisAtLattice(i,j,k) - scaling*fiat_curls[cur] ) > tol ) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -442,8 +449,8 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
             *outStream << " At multi-index { ";
             *outStream << i << " " << j;
             *outStream << "}  computed value: " <<  h_curlBasisAtLattice(i,j,k)
-                                << " but correct value: " << fiat_curls[cur] << "\n";
-            *outStream << "Difference: " << std::fabs(  h_curlBasisAtLattice(i,j,k) - fiat_curls[cur] ) << "\n";
+                                << " but correct value: " << scaling*fiat_curls[cur] << "\n";
+            *outStream << "Difference: " << std::fabs(  h_curlBasisAtLattice(i,j,k) - scaling*fiat_curls[cur] ) << "\n";
           }
           cur++;
         }

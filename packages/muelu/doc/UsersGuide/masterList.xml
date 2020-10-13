@@ -1708,6 +1708,14 @@ optimized neighbor discovery for Importer construction.</description>
       <description>Prepare for solver reuse.</description>
     </parameter>
 
+    <parameter>
+      <name>refmaxwell: skip first (1,1) level</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Skip the first level of the (1,1) hierarchy.</description>
+      <visible>false</visible>
+    </parameter>
+
   </refmaxwell>
 
 

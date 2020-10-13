@@ -106,7 +106,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # Options for valgrind, if needed
   SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS
       "--leak-check=full --gen-suppressions=all --error-limit=no" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
-  SET(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "$ENV{SEMS_OPENMPI_ROOT}/share/openmpi/openmpi-valgrind.supp")
+  SET(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions.txt")
 
 
   # Ensure that MPI is on for all parallel builds that might be run.

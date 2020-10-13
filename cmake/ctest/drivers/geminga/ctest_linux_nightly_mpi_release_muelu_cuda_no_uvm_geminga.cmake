@@ -53,55 +53,55 @@
 # ************************************************************************
 # @HEADER
 
-#
-# A) Define your project name and set up major project options
-#
 
-# To be safe, define your minimum CMake version.  This may be newer than the
-# min required by TriBITS.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0 FATAL_ERROR)
-
-# Must set the project name as a variable at very beginning before including anything else
-# We set the project name in a separate file so CTest scripts can use it.
-INCLUDE(${CMAKE_CURRENT_LIST_DIR}/ProjectName.cmake)
-
-# CMake requires that you declare the CMake project in the top-level file and
-# not in an include file :-(
-PROJECT(${PROJECT_NAME} NONE)
-
-## set an env so we know we are in configure
-set(ENV{CMAKE_IS_IN_CONFIGURE_MODE} 1)
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc-cuda.cmake")
 
 #
-# B) Pull in the TriBITS system and execute
+# Set the options specific to this build case
 #
 
-INCLUDE(${CMAKE_CURRENT_LIST_DIR}/cmake/tribits/TriBITS.cmake)
+# The variable BUILD_DIR_NAME is based COMM_TYPE, BUILD_TYPE, and BUILD_NAME_DETAILS.
+# Tribits creates the variable listed under "Build Name" by prepending the OS type and compiler
+# details to BUILD_DIR_NAME.
+SET(COMM_TYPE MPI)
+SET(BUILD_TYPE RELEASE)
+SET(BUILD_NAME_DETAILS KOKKOS-REFACTOR_EXPERIMENTAL_CUDA-$ENV{SEMS_CUDA_VERSION}_NO_UVM)
 
+SET(CTEST_PARALLEL_LEVEL 8)
+SET(CTEST_TEST_TYPE Experimental)
+SET(CTEST_TEST_TIMEOUT 900)
 
-# Make Trilinos create <Package>Config.cmake files by default
-SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT ON)
-# Make Trilinos set up CPack support by default
-SET(${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT ON)
-# Don't allow disabled subpackages to be excluded from tarball
-SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE)
+SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
-# Do all of the processing for this Tribits project
-TRIBITS_PROJECT()
+SET(EXTRA_CONFIGURE_OPTIONS
+  ### ETI ###
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+  "-DTrilinos_ENABLE_COMPLEX:BOOL=OFF"
 
-# Install TriBITS so that other projects can use it.
-ADVANCED_SET(${PROJECT_NAME}_INSTALL_TriBITS ON CACHE BOOL
-  "If ture, install TriBITS into <lib-install-dir>/cmake/tribits/")
-IF (${PROJECT_NAME}_INSTALL_TriBITS)
-  ASSERT_DEFINED(Trilinos_SOURCE_DIR)
-  ASSERT_DEFINED(${PROJECT_NAME}_INSTALL_LIB_DIR)
-  INSTALL(
-    DIRECTORY "${Trilinos_SOURCE_DIR}/cmake/tribits"
-    DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake"
-    PATTERN "*.pyc" EXCLUDE
-    )
-ENDIF()
+  ### MISC ###
+  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
+  "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS:BOOL=ON"
 
-IF(${PROJECT_NAME}_ENABLE_YouCompleteMe)
-  INCLUDE(CodeCompletion)
-ENDIF()
+  ### TPLS ###
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
+
+  ### PACKAGES CONFIGURATION ###
+      "-DMueLu_ENABLE_Experimental:BOOL=ON"
+      "-DMueLu_ENABLE_Kokkos_Refactor:BOOL=ON"
+      "-DXpetra_ENABLE_Experimental:BOOL=ON"
+      "-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
+
+  # Disable Pamgen and Shards due to weird nvcc errors
+  "-DTPL_ENABLE_Pamgen:BOOL=OFF"
+  "-DTPL_ENABLE_Shards:BOOL=OFF"
+
+  ### Disable UVM ###
+  "-DKokkos_ENABLE_CUDA_UVM:BOOL=OFF"
+  "-DTpetra_ENABLE_CUDA_UVM:BOOL=OFF"
+)
+
+#
+# Set the rest of the system-specific options and run the dashboard build/test
+#
+
+TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
