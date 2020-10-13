@@ -124,7 +124,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_AMG_CoarseSolver_coarseRepartition_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --coarseSolverType=amg --coarseAmgXml=amg_1dof.xml --rebalance-coarse --keep-coarse-coords --numPartitions=1"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --coarseSolverType=amg --coarseAmgXml=amg_1dof.xml --rebalance-coarse --keep-coarse-coords"
     COMM mpi
     NUM_MPI_PROCS 4
     )
@@ -140,7 +140,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_AMG_CoarseSolver_coarseRepartition_repartitioning_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --coarseSolverType=amg --keep-coarse-coords --coarseAmgXml=amg_1dof_rebalance.xml --rebalance-coarse --numPartitions=1"
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --coarseSolverType=amg --keep-coarse-coords --coarseAmgXml=amg_1dof_rebalance.xml --rebalance-coarse"
     COMM mpi
     NUM_MPI_PROCS 4
     )
