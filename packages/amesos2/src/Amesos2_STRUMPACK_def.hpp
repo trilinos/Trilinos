@@ -401,7 +401,12 @@ namespace Amesos2 {
                                                                            strumpack::MatchingJob::COMBBLAS),
                                                     pl.getRawPtr());
 
-        setStringToIntegralParameter<strumpack::ReorderingStrategy>("Ordering", "PARMETIS",
+#if defined(STRUMPACK_USE_PARMETIS)
+        std::string default_ordering("PARMETIS");
+#else
+        std::string default_ordering("METIS");
+#endif
+        setStringToIntegralParameter<strumpack::ReorderingStrategy>("Ordering", default_ordering,
                                                     "Specifies how to permute the "
                                                     "matrix for sparsity preservation",
                                                     tuple<string>("NATURAL", "PARMETIS", "METIS", "SCOTCH", "GEOMETRIC", "PTSCOTCH", "RCM"),
