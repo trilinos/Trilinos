@@ -196,7 +196,7 @@ namespace MueLu {
       Teuchos::ArrayView<const Scalar> vals;
       for (size_t i = 0; i < numRows; ++i) {
         A.getLocalRowView(i, cols, vals);
-        diag[i] = Teuchos::ScalarTraits<Scalar>::zero();
+        diag[i] = zero;
         for (LocalOrdinal j = 0; j < cols.size(); ++j) {
           diag[i] += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
         }
