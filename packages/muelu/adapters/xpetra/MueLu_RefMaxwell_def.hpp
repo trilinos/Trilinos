@@ -2239,6 +2239,9 @@ namespace MueLu {
       }
     }
 
+    if (!skipFirstLevel_)
+      Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(AH_, true, GetOStream(Warnings1));
+
     if (!AH_.is_null()) {
       size_t dim = Nullspace_->getNumVectors();
       AH_->SetFixedBlockSize(dim);
