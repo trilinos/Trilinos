@@ -288,14 +288,14 @@ namespace {
     // has 48 rows on each process: 12 mesh points, and 4 degrees of
     // freedom per mesh point ("block size").  Rows 20-23 thus
     // correspond to local mesh point 5.
-    typedef typename BMV::little_vec_type little_vec_type;
-    little_vec_type X_5_1 = X.getLocalBlock (5, colToModify);
+    typedef typename BMV::little_vec_type::HostMirror little_host_vec_type;
+    little_host_vec_type X_5_1 = X.getLocalBlock (5, colToModify);
 
     // All entries of X_5_1 must be zero.  First make a block with all
     // zero entries, then test.  It's not worth testing the
     // corresponding entries of X_mv yet; we'll do that below.
     Teuchos::Array<Scalar> zeroArray (blockSize, STS::zero ());
-    little_vec_type zeroLittleVector ( (typename little_vec_type::value_type*)zeroArray.getRawPtr (), blockSize);
+    little_host_vec_type zeroLittleVector ( (typename little_host_vec_type::value_type*)zeroArray.getRawPtr (), blockSize);
     TEST_ASSERT( equal (X_5_1, zeroLittleVector) && equal (zeroLittleVector, X_5_1) );
 
     // Put some data in the block.  This will help us test whether the
@@ -309,7 +309,7 @@ namespace {
     // Make sure that getLocalBlock() returns a read-and-write view,
     // not a deep copy.  Do this by calling getLocalBlock(5,1) again,
     // and testing that changes to X_5_1 are reflected in the result.
-    little_vec_type X_5_1_new = X.getLocalBlock (5, colToModify);
+    little_host_vec_type X_5_1_new = X.getLocalBlock (5, colToModify);
     TEST_ASSERT( equal (X_5_1_new, X_5_1) && equal (X_5_1, X_5_1_new) );
     TEST_ASSERT( ! equal (X_5_1_new, zeroLittleVector) &&
                  ! equal (zeroLittleVector, X_5_1_new) );
@@ -319,7 +319,7 @@ namespace {
          localMeshIndex < static_cast<LO> (numLocalMeshPoints);
          ++localMeshIndex) {
       for (LO curCol = 0; curCol < numVecs; ++curCol) {
-        little_vec_type X_cur = X.getLocalBlock (localMeshIndex, curCol);
+        little_host_vec_type X_cur = X.getLocalBlock (localMeshIndex, curCol);
         if (curCol != colToModify) {
           TEST_ASSERT( equal (X_cur, zeroLittleVector) &&
                        equal (zeroLittleVector, X_cur) );
@@ -380,7 +380,7 @@ namespace {
     using Teuchos::reduceAll;
     using Teuchos::RCP;
     typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
-    typedef typename BMV::little_vec_type little_vec_type;
+    typedef typename BMV::little_vec_type::HostMirror little_host_vec_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::Import<LO, GO, Node> import_type;
     typedef Tpetra::global_size_t GST;
@@ -422,7 +422,7 @@ namespace {
     // the first GID on the calling process in the mesh Map overlaps
     // with one GID on exactly one process.
     const LO colToModify = 1;
-    little_vec_type X_overlap =
+    little_host_vec_type X_overlap =
       X.getLocalBlock (meshMap.getLocalElement (meshMap.getMinGlobalIndex ()), colToModify);
     TEST_ASSERT( X_overlap.data () != NULL );
     TEST_EQUALITY_CONST( static_cast<size_t> (X_overlap.extent (0)), static_cast<size_t> (blockSize) );
@@ -458,18 +458,18 @@ namespace {
       Y.getMultiVectorView().doImport (X.getMultiVectorView(), pointImport, Tpetra::REPLACE);
     }
 
-    little_vec_type Y_overlap = Y.getLocalBlock (overlappingMeshMap.getLocalElement (overlappingMeshMap.getMinGlobalIndex ()), colToModify);
+    little_host_vec_type Y_overlap = Y.getLocalBlock (overlappingMeshMap.getLocalElement (overlappingMeshMap.getMinGlobalIndex ()), colToModify);
 
     // Forestall compiler warning for unused variable.
     (void) Y_overlap;
 
     Teuchos::Array<Scalar> zeroArray (blockSize, STS::zero ());
-    little_vec_type zeroLittleVector ((typename little_vec_type::value_type*)zeroArray.getRawPtr (), blockSize);
+    little_host_vec_type zeroLittleVector ((typename little_host_vec_type::value_type*)zeroArray.getRawPtr (), blockSize);
 
     for (LO col = 0; col < numVecs; ++col) {
       for (LO localMeshRow = meshMap.getMinLocalIndex ();
            localMeshRow < meshMap.getMaxLocalIndex (); ++localMeshRow) {
-        little_vec_type Y_cur = Y.getLocalBlock (localMeshRow, col);
+        little_host_vec_type Y_cur = Y.getLocalBlock (localMeshRow, col);
         if (col != colToModify) {
           TEST_ASSERT( equal (Y_cur, zeroLittleVector) &&
                        equal (zeroLittleVector, Y_cur) );

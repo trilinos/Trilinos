@@ -414,7 +414,7 @@ getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals) con
 }
 
 template<class Scalar, class LO, class GO, class Node>
-typename BlockMultiVector<Scalar, LO, GO, Node>::little_vec_type::HostMirror
+typename BlockMultiVector<Scalar, LO, GO, Node>::little_host_vec_type
 BlockMultiVector<Scalar, LO, GO, Node>::
 getLocalBlock (const LO localRowIndex,
                const LO colIndex) const
@@ -432,13 +432,13 @@ getLocalBlock (const LO localRowIndex,
 // #endif // HAVE_TPETRA_DEBUG
 
   if (! isValidLocalMeshIndex (localRowIndex)) {
-    return typename little_vec_type::HostMirror ();
+    return little_host_vec_type ();
   } else {
     const size_t blockSize = getBlockSize ();
     const size_t offset = colIndex * this->getStrideY () +
       localRowIndex * blockSize;
     impl_scalar_type* blockRaw = this->getRawPtr () + offset;
-    return typename little_vec_type::HostMirror (blockRaw, blockSize);
+    return little_host_vec_type (blockRaw, blockSize);
   }
 }
 
