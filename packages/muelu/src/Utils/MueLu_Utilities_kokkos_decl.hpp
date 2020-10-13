@@ -431,6 +431,10 @@ namespace MueLu {
       return UtilitiesBase::PowerMethod(A,scaleByDiag,niters,tolerance,verbose,seed);
     }
 
+    static Scalar PowerMethod(const Matrix& A, const Teuchos::RCP<Vector> &invDiag, LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
+      return UtilitiesBase::PowerMethod(A, invDiag, niters, tolerance, verbose, seed);
+    }
+
     static void MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector, bool doInverse = true,
         bool doFillComplete = true, bool doOptimizeStorage = true) {
       SC one = Teuchos::ScalarTraits<SC>::one();
