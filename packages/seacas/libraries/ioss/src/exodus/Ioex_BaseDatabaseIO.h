@@ -265,9 +265,9 @@ namespace Ioex {
 
     // Private member data...
   protected:
-    mutable int         m_exodusFilePtr{-1};
+    mutable int m_exodusFilePtr{-1};
     // If using links to file-per-state, the file pointer for "base" file.
-    mutable int         m_exodusBasePtr{-1}; 
+    mutable int m_exodusBasePtr{-1};
 
     mutable std::string m_groupName;
 
