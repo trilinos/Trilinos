@@ -424,6 +424,7 @@ namespace BaskerNS
               b, row, kid, LL[b][row].nnz);
           #endif
 
+          //printf( " lvl=%d: LL(%d,%d): nnz=%d, mnnz=%d\n",lvl,b,row,LL(b)(row).nnz,LL(b)(row).mnnz);
           LL(b)(row).init_matrix("Loffdig",
               LL(b)(row).srow,
               LL(b)(row).nrow,
@@ -436,7 +437,7 @@ namespace BaskerNS
           {
             LL(b)(row).init_inc_lvl();
           }
-          //LL(b)(row).fill();
+          LL(b)(row).fill();
           LL(b)(row).init_pend();
 
         }//end over all row
@@ -456,6 +457,7 @@ namespace BaskerNS
             LU[b][LU_size[b]-1].nnz);
         #endif
 
+        //printf( " lvl=%d: LU(%d,%d): nnz=%d, mnnz=%d\n",lvl, b,LU_size(b)-1, LU(b)(LU_size(b)-1).nnz, LU(b)(LU_size(b)-1).mnnz);
         LU(b)(LU_size(b)-1).init_matrix("Udiag",
             LU(b)(LU_size(b)-1).srow,
             LU(b)(LU_size(b)-1).nrow,
@@ -503,6 +505,7 @@ namespace BaskerNS
               LU[U_col][U_row].nnz);
           #endif
 
+          //printf( " > l=%d: LU(%d,%d): nnz=%d, mnnz=%d\n",l,U_col,U_row,LU(U_col)(U_row).nnz,LU(U_col)(U_row).mnnz);
           LU(U_col)(U_row).init_matrix("Uoffdiag",
               LU(U_col)(U_row).srow,
               LU(U_col)(U_row).nrow,
@@ -532,7 +535,8 @@ namespace BaskerNS
    Int kid, BASKER_BOOL alloc
   )
   {
-    //L
+    // extract strictly Lower blockks into ALM
+    // (blocks in strictly lower part, diagonal blocks are in AVM)
     for(Int lvl = 0; lvl < tree.nlvls+1; lvl++)
     {
       if(kid%((Int)pow(2,lvl)) == 0)
@@ -548,6 +552,7 @@ namespace BaskerNS
               ALM(b)(row).ncol);
           #endif
 
+          //printf(" > kid=%d: convert ALM(%d,%d)\n", kid, b, row);
           if(Options.btf == BASKER_FALSE)
           {
             ALM(b)(row).convert2D(A, alloc, kid);
@@ -567,7 +572,8 @@ namespace BaskerNS
       }//end select which thread
     }//end for over all lvl
    
-    //U
+    //extract Upper blocks into AVM 
+    //(both diagonal blocks + upper offdiagonal blocks)
     for(Int lvl = 0; lvl < tree.nlvls+1; lvl++)
     {
       if(kid%((Int)pow(2,lvl)) == 0)
@@ -589,8 +595,7 @@ namespace BaskerNS
         else
         {
           //printf("Using BTF AU\n");
-          //printf("convert AVM: %d %d kid: %d  \n", 
-          // b, LU_size(b)-1, kid);
+          //printf(" > kid=%d: convert AVM(%d,%d)\n", kid, b, LU_size(b)-1);
           AVM(b)(LU_size(b)-1).convert2D(BTF_A, alloc, kid);
         }
 
@@ -746,6 +751,7 @@ namespace BaskerNS
             LL(b)(l).ews(i) = 0;
           }
 
+          //printf( " LL(%d, %d).fill\n",b,l );
           LL(b)(l).fill();
 
           if(l==0)
@@ -1562,6 +1568,7 @@ namespace BaskerNS
    Entry**  val
   )
   {
+    printf( "\n get_L \n\n" );
     //Add Check
     //Kokkos::Impl::Timer timer;
     n   = gn;
@@ -1640,6 +1647,7 @@ namespace BaskerNS
   )
   {
     //Add Check
+    printf( "\n >> get_U <<\n\n" );
     n       = gn;
     nnz = get_Unnz();
     (*col_ptr) = new Int[gn+1]();

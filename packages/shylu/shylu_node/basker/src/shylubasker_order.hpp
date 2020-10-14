@@ -97,11 +97,11 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //currently finds btf-hybrid and permutes
     //A -> [BTF_A, BTF_C; 0 , BTF B]
 
-    printf("Basker outer num_threads:%d \n", num_threads);
     MALLOC_INT_1DARRAY(btf_schedule, num_threads+1);
     init_value(btf_schedule, num_threads+1, 0);
     find_btf(A); 
    
+    printf("Basker outer num_threads:%d, btf_tabs_offset:%d \n", num_threads, btf_tabs_offset);
     if(btf_tabs_offset != 0)
     {
       //  printf("A/B block stuff called\n");
@@ -171,9 +171,12 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       //finds the shapes for both view and submatrices,
       //need to be changed over to just submatrices
       matrix_to_views_2D(BTF_A);
+
       //finds the starting point of A for submatrices
       find_2D_convert(BTF_A);
-      //now we can fill submatrices
+
+      //now we can fill submatrices 
+      //(strictly-lower blocks in ALM, and upper blocks in AVM)
 #ifdef BASKER_KOKKOS
       kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
       Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);

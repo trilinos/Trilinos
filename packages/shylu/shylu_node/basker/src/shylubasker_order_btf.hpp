@@ -53,7 +53,7 @@ namespace BaskerNS
 
       #ifdef BASKER_DEBUG_ORDER_BTF
       printf("t: %d blk: %d work: %d twork: %d \n", 
-          t_loc,b, blk_work, t_size);
+             t_loc,b, blk_work, t_size);
       #endif
 
       if(((t_size > break_size) && (t_loc < num_threads-1)) || (b == btf_nblks-1))
@@ -365,8 +365,7 @@ namespace BaskerNS
     while(move_fwd==BASKER_TRUE)
     {
 
-      Int blk_size = btf_tabs(blk_idx)-
-        btf_tabs(blk_idx-1);
+      Int blk_size = btf_tabs(blk_idx) - btf_tabs(blk_idx-1);
 
     #ifdef BASKER_DEBUG_ORDER_BTF
       printf("move_fwd loop \n");
@@ -689,8 +688,8 @@ namespace BaskerNS
     while(move_fwd==BASKER_TRUE)
     {
       Int blk_work = btf_blk_work(blk_idx-1);
-      Int blk_size  = btf_tabs(blk_idx) - 
-        btf_tabs(blk_idx-1);       // subtract the bounding column ids to determine size of the (square) block
+      // subtract the bounding column ids to determine size of the (square) block
+      Int blk_size = btf_tabs(blk_idx) - btf_tabs(blk_idx-1);
 
       #ifdef BASKER_DEBUG_ORDER_BTF
       printf(" \n move_fwd loop \n");
@@ -862,7 +861,6 @@ namespace BaskerNS
 
     BTF_B.nnz = bnnz;
     BTF_C.nnz = cnnz;
-
 
     //Malloc need space
     if( (BTF_B.v_fill == BASKER_FALSE) && (BTF_B.nnz > 0) )

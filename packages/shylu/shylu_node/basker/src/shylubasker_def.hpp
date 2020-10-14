@@ -354,7 +354,7 @@ namespace BaskerNS
     if(Options.verbose == BASKER_TRUE)
     {
       std::cout << " == Basker Symbolic ==" << std::endl;
-      std::cout << "Matrix dims: " << nrow << " " << ncol << " " << nnz << std::endl;
+      std::cout << "Matrix dims: " << nrow << " x " << ncol << ", nnz = " << nnz << std::endl;
     }
 
     //Init Matrix A.
@@ -962,9 +962,9 @@ namespace BaskerNS
         }
       }
     }
-    printf("];\n");*/
+    printf("];\n");
 
-    /*printf( "B(%dx%d, nnz=%d)\n",BTF_B.nrow,BTF_B.ncol,BTF_B.nnz);
+    printf( "B(%dx%d, nnz=%d)\n",BTF_B.nrow,BTF_B.ncol,BTF_B.nnz);
     printf(" B = [\n" );
     if (BTF_B.nrow > 0 && BTF_B.ncol > 0) {
       for(Int j = 0; j < BTF_B.ncol; j++) {
@@ -973,9 +973,9 @@ namespace BaskerNS
         }
       }
     }
-    printf("];\n");*/
+    printf("];\n");
 
-    /*printf(" C = [\n" );
+    printf(" C = [\n" );
     if (BTF_C.nrow > 0 && BTF_C.ncol > 0) {
       for(Int j = 0; j < BTF_C.ncol; j++) {
         for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
@@ -1287,6 +1287,9 @@ namespace BaskerNS
       }
       permute_with_workspace(numeric_col_iperm_array, order_blk_amd_array, ncol);
       //for (int i = 0; i < ncol; i++) printf( " %d: %d %d\n",i, numeric_row_iperm_array(i),numeric_col_iperm_array(i) );
+    }
+    else if(Options.verbose == BASKER_TRUE) {
+      std::cout << " No MWM on diagonal blocks " << std::endl;
     }
     reset_error();
 

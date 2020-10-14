@@ -350,7 +350,7 @@ namespace BaskerNS
     unnz = 0;
     lnnz = 0;
 
-    /*printf( " c: %d wsize=%d\n",c,ws_size );
+    /*printf( " c: %d wsize=%d\n", (int)c, (int)ws_size );
     std::cout << " K" << c << " = [" << std::endl;
     for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k) {
       for( i = M.col_ptr(k-bcol); i < M.col_ptr(k-bcol+1); ++i) {
@@ -375,17 +375,17 @@ namespace BaskerNS
     {
       #ifdef BASKER_DEBUG_NFACTOR_DIAG
       {
-        printf("\n------------K=%d-------------\n", k);
+        printf("\n------------ K=%d (%d) -------------\n", (int)(k-btf_tabs(c)), (int)k);
         BASKER_ASSERT(top == ws_size, "nfactor dig, top");
         for( i = 0; i < ws_size; ++i)
         {
           if(X(i) != 0)
           {
-            printf("x(i) error: %d  %e k: %d \n", i , X(i), k);
+            printf("x(i) error: %d  %e k: %d \n", (int)i , X(i), (int)k);
           }
           if(ws[i] != 0)
           {
-            printf("ws(i) error: %d K: %d \n", i, k);
+            printf("ws(i) error: %d K: %d \n", (int)i, (int)k);
           }
           BASKER_ASSERT(X[i] == 0, "X!=0");
           BASKER_ASSERT(ws[i] == 0, "ws!=0");
@@ -406,8 +406,7 @@ namespace BaskerNS
       {
         j = M.row_idx(i);
         j = j - brow2;
-
-        //printf(" Input: %d %d %e (color[%d]=%d)\n", (int)M.row_idx(i), (int)j, M.val(i), (int)j, (int)color[j]);
+        //printf(" Input: %d %d %e (color[%d]=%d)\n", (int)M.row_idx(i), (int)k, M.val(i), (int)j, (int)color[j]);
 
         if(j < 0)
         {
@@ -439,7 +438,7 @@ namespace BaskerNS
       #ifdef BASKER_DEBUG_NFACTOR_DIAG
       {
         printf("xnnz: %d ws_size: %d top: %d \n", 
-            xnnz, ws_size, top);
+               (int)xnnz, (int)ws_size, (int)top);
       }
       #endif
 
@@ -488,8 +487,9 @@ namespace BaskerNS
 
         #ifdef BASKER_DEBUG_NFACTOR_DIAG
         {
-          printf("\nconsider X(%d)=%e, c=%d, i=%d, k=%d->%d: j=%d t=%d: perm=%d, permi=%d: val=%e,max=%e (off=%d, %d, %d)\n", 
-                 j,X(j), c, i, k,k-L.scol, j, t, gperm_array(j+L.srow),gpermi_array(j+L.srow), value,maxv, L.srow,L.scol,btf_tabs(c));
+          printf("\nconsider X(%d)=%e -> %e, c=%d, i=%d, k=%d->%d: j=%d t=%d: perm=%d, permi=%d: val=%e,max=%e (off=%d, %d, %d)\n",
+                 (int)j,X(j),absv, (int)c, (int)i, (int)k,(int)(k-L.scol), (int)j, (int)t,
+                 (int)gperm_array(j+L.srow),(int)gpermi_array(j+L.srow), value,maxv, (int)L.srow,(int)L.scol,(int)btf_tabs(c));
         }
         #endif
 
@@ -518,7 +518,7 @@ namespace BaskerNS
       //printf("b: %d lcnt: %d after \n", b, lcnt);
       #ifdef BASKER_DEBUG_NFACTOR_DIAG
       {
-        printf(" >> pivot: %g maxindex: %d k: %d \n", pivot, maxindex, k);
+        printf(" >> pivot=%g, maxindex=%d, k=%d \n", pivot, (int)maxindex, (int)k);
       }
       #endif
       //printf( "c=%d k=%d (%d) maxindex=%d pivot=%e maxv=%e, diag=%e tol=%e (nopivot=%d)\n", c, k, k-btf_tabs(c), maxindex, pivot, maxv, digv, Options.pivot_tol,Options.no_pivot);
@@ -678,8 +678,8 @@ namespace BaskerNS
         t = gperm(j+L.srow);
 
         #ifdef BASKER_DEBUG_NFACTOR_DIAG
-        printf("j: %d t: %d k: %d x: %g\n", 
-               j, t, k, X(j));
+        printf("j = %d, t = %d, k = %d, x = %g\n",
+                (int)j, (int)t, (int)k, X(j));
         #endif            
 
         if(t != BASKER_MAX_IDX)
@@ -727,7 +727,7 @@ namespace BaskerNS
         //Note: move x[j] inside of if() not 0..
         //..extra ops this way
         #ifdef BASKER_DEBUG_NFACTOR_DIAG
-        printf("Zeroing element: %d \n", j);
+        printf("Zeroing element: %d \n", (int)j);
         #endif
 
         #ifdef BASKER_2DL
@@ -1137,8 +1137,8 @@ namespace BaskerNS
           #ifdef BASKER_DEBUG_NFACTOR_DIAG
           #ifdef BASKER_2DL
           printf("Updating row: %d  with value: %f %f \n",
-              L.row_idx[p],
-              X[L.row_idx[p]], L.val[p]*xj);
+                 (int)L.row_idx[p],
+                 X[L.row_idx[p]], L.val[p]*xj);
           #else
           printf("Updating row: %d with value: %f %f \n",
               L.row_idx(p),

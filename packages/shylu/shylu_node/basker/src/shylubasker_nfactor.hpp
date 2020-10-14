@@ -194,7 +194,6 @@ namespace BaskerNS
           }
 
           kokkos_nfactor_sep2 <Int, Entry, Exe_Space> sep_nfactor(this, l);
-
           Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),
                                sep_nfactor);
           Kokkos::fence();
@@ -207,7 +206,7 @@ namespace BaskerNS
             init_value(thread_start, num_threads+1, (Int) BASKER_MAX_IDX);
 
             info = nfactor_sep_error(thread_start);
-            //printf( " nfactor_separator: info = %d\n",(int)info );
+            //printf( "\n nfactor_separator: info = %d\n",(int)info );
             if((info == BASKER_SUCCESS) ||
                (sep_restart > BASKER_RESTART))
             {

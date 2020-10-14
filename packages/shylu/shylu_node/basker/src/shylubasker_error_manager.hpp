@@ -236,7 +236,6 @@ namespace BaskerNS
     Int nthread_remalloc = 0;
     for(Int ti = 0; ti < num_threads; ti++)
     {
-
       //Note: jdb we can make this into a switch
       if(thread_array(ti).error_type == BASKER_ERROR_NOERROR)
       {

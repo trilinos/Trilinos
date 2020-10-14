@@ -156,7 +156,7 @@ namespace BaskerNS
     int t_nfactor_sep_old(Int kid, Int lvl, Int team_leader);
     #endif
 
-    void t_nfactor_sep2(const Int kid, const Int lvl, const Int team_leader, const TeamMember &thread);
+    int t_nfactor_sep2(const Int kid, const Int lvl, const Int team_leader, const TeamMember &thread);
 
     void t_nfactor_sep2_inc_lvl(const Int kid, const Int lvl, const Int team_leader, const TeamMember &thread);
 
@@ -1426,7 +1426,6 @@ namespace BaskerNS
     //for experimental 
     INT_1DARRAY order_blk_amd_array;
     INT_1DARRAY order_blk_amd_inv;
-
 
     void blk_amd(BASKER_MATRIX &M, INT_1DARRAY p);
 

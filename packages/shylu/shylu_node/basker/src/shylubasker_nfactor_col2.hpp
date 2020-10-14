@@ -92,7 +92,7 @@ namespace BaskerNS
 
 
   template <class Int, class Entry, class Exe_Space>
-  void Basker<Int,Entry,Exe_Space>::t_nfactor_sep2
+  int Basker<Int,Entry,Exe_Space>::t_nfactor_sep2
   (
    const Int kid,
    const Int lvl,
@@ -100,14 +100,16 @@ namespace BaskerNS
    const TeamMember &thread
    )
   {
-    // this routine performs left-looking update LU(U_col)(U_row) diagonabl block
-    // using the previous/descendant diagonal blocks (l < lvl)
-    // 
-    // factor LU(U_col)(U_row) and also compute apply U(U_col)(U_row)^{-1} to 
-    // the blocks below A(U_col)(U_row) to finish computation of L-factor
+    // this routine performs left-looking factorization of the diagonabl block LU(U_col)(U_row)
     //
-    // before the call to nfactor_sep: off-diagonal blocks of L are already factored as 
-    // a part of nfactor_blk
+    // before the call to nfactor_sep: off-diagonal blocks of L have been already factored
+    // as part of nfactor_blk
+    //
+    // so, this routine:
+    // 1) compute the previous blocks U(1:U_col-1)(U_row)
+    // 2) update LU(U_col)(U_row) using the previous diagonal blocks (l < lvl)
+    // 3) factor LU(U_col)(U_row)
+    // 4) apply U(U_col)(U_row)^{-1} to the blocks below A(U_col)(U_row)
     //
     // For instance, we factor A(7,7):
     //
@@ -124,8 +126,8 @@ namespace BaskerNS
     // 3) t_lower_col_factor          : factor A(7,7), sequential
     // 4) t_lower_col_factor_offdiag2 : compute L(8:end, 7)
 
-    const Int U_col =  S(lvl)(kid);
-    Int U_row       =  0;
+    const Int U_col = S(lvl)(kid);
+    const Int U_row = 0;
     Int ncol = LU(U_col)(U_row).ncol;
 
     #ifdef BASKER_TIME
@@ -133,22 +135,20 @@ namespace BaskerNS
     #endif
 
     #ifdef BASKER_DEBUG_NFACTOR_COL2
-    printf("\n\n  LVL=%d  ----- kid: %d --\n\n",
-           lvl, kid);
+    printf("\n\n  LVL=%d  ----- kid: %d -----\n\n", lvl, kid);
     #endif
-    //Do all domains (old sublevel 0)
-    //If this works well we can move this for into the function
-    // > Apply L-solve to compute the first interface in U
-    for(Int k = 0; k < ncol; ++k)
+    // > Apply lower-triangular solve with L(1,1)
+    //   to compute the first block U(1)(U_row) in the upper-triangular part
+    int info = BASKER_SUCCESS;
+    for(Int k = 0; k < ncol && info == BASKER_SUCCESS; ++k)
     {
       #ifdef BASKER_DEBUG_NFACTOR_COL2
-      printf("UPPER, kid: %d k: %d \n",
-             kid, k);
+      printf("UPPER, kid: %d k: %d \n", kid, k);
       #endif
-      t_upper_col_factor(kid, team_leader, 
-                         lvl, 0, 
-                         k,
-                         BASKER_FALSE);
+      info = t_upper_col_factor(kid, team_leader,
+                                lvl, 0,
+                                k,
+                                BASKER_FALSE);
     }//over all columns / domains / old sublevel 0
 
     #ifdef BASKER_TIME
@@ -158,18 +158,23 @@ namespace BaskerNS
     #ifdef BASKER_DEBUG_NFACTOR_COL2
     printf("\n\n\n done with UPPER, kid: %d \n\n\n", kid);
     #endif
-    
 
     //------Need because extend does not 
     //-------------Barrier--Between Domains-------------
     Int my_leader = find_leader(kid, 0);
-    Int b_size    = pow(2,1);
+    Int b_size    = pow(2, 1);
     //barrier k = 0 usedl1
     t_basker_barrier(thread,kid,my_leader,
                      b_size, 0, LU(U_col)(U_row).scol, 0);
+    for(Int ti = 0; ti < num_threads; ti++) {
+      if(thread_array(ti).error_type != BASKER_ERROR_NOERROR) {
+        //printf( " > %d: thread_array(%d).error_type = %d\n",kid,ti,thread_array(ti).error_type );
+        return BASKER_ERROR;
+      }
+    }
 
     //----------------Sep level upper tri-------------
-    for(Int l = 1; l < (lvl); ++l)
+    for(Int l = 1; l < (lvl) && info == BASKER_SUCCESS; ++l)
     {
       for(Int k = 0; k < ncol; ++k)
       {
@@ -178,14 +183,13 @@ namespace BaskerNS
                kid, k+LU(U_col)(U_row).scol);
         #endif
 
-        // > apply U-solve (by calling t_upper_col_factor_offdiag2)
-        //   to compute the (l-1)th interface in L, and
-        //   update the (l-1)th diagonal separator block
-        t_add_extend(thread, kid,lvl,l-1, k, 
-                     LU(U_col)(U_row).scol, 
+        // > Accumulate the update from (l-1)th level:
+        //    LU(U_col)(U_row) -= L(U_col)(l-1) * U(l-1)(U_row)
+        t_add_extend(thread, kid, lvl, l-1, k,
+                     LU(U_col)(U_row).scol,
                      BASKER_FALSE);
 
-        if(kid%((Int)pow(2,l)) == 0)
+        if(kid%((Int)pow(2, l)) == 0)
         {
           my_leader = find_leader(kid,l);
           b_size    = pow(2,l+1);
@@ -195,12 +199,12 @@ namespace BaskerNS
                  kid);
           #endif
 
-          // > Apply L-solve to compute the l interface in U
-         t_upper_col_factor(kid, team_leader, 
-                            lvl, l, 
-                            k,
-                            BASKER_FALSE);
-
+          // > Apply lower-triangular solve with next diagonal L(l,l)
+          //   to compute next U(l)(U_row) in upper-triangular part
+          info = t_upper_col_factor(kid, team_leader, 
+                                    lvl, l, 
+                                    k,
+                                    BASKER_FALSE);
         }//if correct kid to do this sublevels upperfactor
       }//over all columns
       //Trick to just add 1 in case of sep size == 1
@@ -226,13 +230,17 @@ namespace BaskerNS
     //        kid,  my_leader, b_size, lvl);
     t_basker_barrier(thread, kid, my_leader,
                      b_size, 3, LU(U_col)(U_row).scol, 0);
+    for(Int ti = 0; ti < num_threads; ti++) {
+      //printf( " + %d: thread_array(%d).error_type = %d\n",kid,ti,thread_array(ti).error_type );
+      if(thread_array(ti).error_type != BASKER_ERROR_NOERROR) return BASKER_ERROR;
+    }
 
     //printf("\n\n======= LOWER, KID: %d ======= \n\n", kid);
     //return;
-    
-    // > apply U-solve (by calling t_upper_col_factor_offdiag2)
-    //   to compute the last (lvl-1)th interface in L, and
-    //   update the last (lvl-1)th diagonal separator block
+    // > accumulate the last update
+    // > factor the diagonal block LU(U_col)(U_row)
+    // > apply U-solve with U(U_col)(U_row)
+    //   to compute off-diagonal L(:)(U_row)
     {
       #ifdef BASKER_TIME
       double time_extend = 0.0;
@@ -242,14 +250,13 @@ namespace BaskerNS
       Kokkos::Impl::Timer timer_faccol;
       Kokkos::Impl::Timer timer_facoff;
       #endif
-      //for(Int k=0; k < 1; ++k)
       for(Int k = 0; k < ncol; ++k)
       {
         // ------------------------------------------------------- //
+        // > accumulate the last update into k-th column of LU(U_col)(U_row)
         #ifdef BASKER_TIME
         timer_extend.reset();
         #endif
-
         #ifdef BASKER_DEBUG_NFACTOR_COL2
         printf("lower_update, kid: %d k: %d \n",
                kid, k);
@@ -262,6 +269,7 @@ namespace BaskerNS
         #endif
 
         // ------------------------------------------------------- //
+        // > factor the k-th column of LU(U_col)(U_row)
         #ifdef BASKER_TIME
         timer_faccol.reset();
         #endif
@@ -272,13 +280,12 @@ namespace BaskerNS
           printf("lower factor, kid: %d k: %d \n",
                  kid, k);
           #endif
-    
           // factor the kth column of LU(U_col)(U_row)
-          t_lower_col_factor(kid, team_leader, 
-                             lvl, lvl-1, 
-                             k, pivot);
+          info = t_lower_col_factor(kid, team_leader, 
+                                    lvl, lvl-1, 
+                                    k, pivot);
         }
-        //nee barrier if multiple thread uppdate
+        //need barrier if multiple thread uppdate
         //thread.team_barrier();
         my_leader = find_leader(kid, lvl-1);
         b_size    = pow(2,lvl);
@@ -289,12 +296,16 @@ namespace BaskerNS
         #ifdef BASKER_TIME
         time_faccol += timer_faccol.seconds();
         #endif
+        for(Int ti = 0; ti < num_threads; ti++) {
+          //printf( " - %d: thread_array(%d).error_type = %d\n",kid,ti,thread_array(ti).error_type );
+          if(thread_array(ti).error_type != BASKER_ERROR_NOERROR) return BASKER_ERROR;
+        }
 
         // ------------------------------------------------------- //
+        // > factor the k-th column of the off-diagonal blocks
         #ifdef BASKER_TIME
         timer_facoff.reset();
         #endif
-
         #ifdef BASKER_DEBUG_NFACTOR_COL2
         printf("lower diag factor, kid: %d k: %d \n",
                kid, k);
@@ -311,6 +322,7 @@ namespace BaskerNS
         time_facoff += timer_facoff.seconds();
         #endif
       }
+
       //Trick for sep = 1
       //t_basker_barrier(thread, kid, kid,
       //                 1, 1, LU(U_col)(U_row).ncol+1, lvl-1);
@@ -326,10 +338,13 @@ namespace BaskerNS
                (int)ncol, (int)LL(U_col)(U_row).col_ptr(ncol), (int)LU(L_col)(L_row).col_ptr(ncol));
         printf(" > Time Lower-Col(%d):extend-add: %lf \n", (int)kid, time_extend);
         printf(" > Time Lower-Col(%d):fac-col   : %lf \n", (int)kid, time_faccol);
+        printf( "                               : %lf + %lf + %lf\n",time1,time2,time3);
         printf(" > Time Lower-Col(%d):fac-off   : %lf \n", (int)kid, time_facoff);
       }
       #endif
     }
+
+    return BASKER_SUCCESS;
   }//end t_nfactor_sep2
 
   template <class Int, class Entry, class Exe_Space>
@@ -427,8 +442,6 @@ namespace BaskerNS
     Int L_row = l-sl+1; //Might have to think about th
     Int U_row = L_col-my_row_leader;
     Int X_row = l+1; //this will change for us 
-    //const Int X_col = S(l)(my_leader);
-    //Int x_row = 
 
     BASKER_MATRIX &U = LU(U_col)(U_row);
     #ifdef BASKER_DEBUG_NFACTOR_COL2
@@ -501,9 +514,6 @@ namespace BaskerNS
    )
   {
     //Setup
-    //Int A_col = S(lvl)(kid);
-    //Int A_row = (lvl==1)?(2):S(l+1)(kid)%(LU_size(A_col));
-   
     //printf("DEBUG, kid: %d k: %d A_col: %d A_row: %d \n", 
     //       kid, k, A_col, A_row);
     const Int my_idx     = S(0)(kid);
@@ -533,18 +543,12 @@ namespace BaskerNS
 
       for(Int blk = l+1; blk < endblk; ++blk)
       {
-        //const Int blk = l+1;  
         ENTRY_1DARRAY &XL = LL(leader_idx)(blk).ews;
-        //INT_1DARRAY  &wsL = LL(leader_idx)(blk).iws; //NDE - warning: unused 
         Int      p_sizeL  = LL(leader_idx)(blk).p_size;
         ENTRY_1DARRAY &X  = LL(my_idx)(blk).ews;
         INT_1DARRAY   &ws = LL(my_idx)(blk).iws;
-        //const Int ws_size = LL(my_idx)(blk).iws_size;
-        //Int       p_size  = LL(my_idx)(blk).p_size;
         Int       *color  = &(ws[0]);
-        //Int     *pattern  = &(color[ws_size]); 
-        //Int      brow     = LL(my_idx)(blk).srow;
-        //Int      browL    = LL(leader_idx)(blk).srow;
+        //printf( " + t_dense_blk_col_copy_atomic2(kid=%d: LL(%d)(%d) += LL(%d)(%d)\n",kid,leader_idx, blk,my_idx,blk);
 
         #ifdef BASKER_DEBUG_NFACTOR_COL2
         if(lower == BASKER_TRUE)
@@ -554,8 +558,6 @@ namespace BaskerNS
         }
         #endif
 
-        //Int *colorL   = &(wsL(0));
-        //Int *patternL = &(colorL[ws_size]);
         #ifdef BASKER_DEBUG_NFACTOR_COL2
         if(lower == BASKER_TRUE)
         {
@@ -569,8 +571,6 @@ namespace BaskerNS
         //over all nnnz found
         for(Int jj = 0; jj < LL(my_idx)(blk).nrow; ++jj)
         {
-          //Int jj = pattern[j];
-          //color[jj-brow] = 0;
           color[jj] = 0;
           #ifdef BASKER_DEBUG_NFACTOR_COL2
           if(lower == BASKER_TRUE)
@@ -632,6 +632,7 @@ namespace BaskerNS
     }//if not team_leader
   }//end t_dense_blk_col_copy_atomic2()
 
+
   //local idx local blk
   template <class Int, class Entry, class Exe_Space>
   void Basker<Int,Entry,Exe_Space>::t_dense_copy_update_matrix2
@@ -689,6 +690,7 @@ namespace BaskerNS
       // X += B(:, k)
       BASKER_MATRIX &B = *Bp;
       ENTRY_1DARRAY  X = LL(leader_idx)(bl).ews;
+      //printf( " -- t_dense_copy_update_matrix2(kid=%d: LL(%d)(%d) += B)\n",kid,leader_idx,bl );
       //printf("ADDING UPDATES TO B\n");
       //B.info();
       //B.print();
@@ -812,25 +814,28 @@ namespace BaskerNS
 
     const Int leader_id   = find_leader(kid, l);
     const Int lteam_size  = pow(2,l+1);
+
     const Int L_col       = S(lvl)(leader_id);
-    Int L_row             = 0;
     const Int U_col       = S(lvl)(leader_id);
+
+    Int L_row             = 0;
     Int U_row             = LU_size(U_col)-1;
+
     Int X_col             = S(0)(leader_id);
     Int X_row             = l+1;
+
     Int col_idx_offset    = 0;  //can get rid of?
    
-    //BASKER_MATRIX        &L = LL(L_col)(L_row); //NDE - warning: unused L
     BASKER_MATRIX        &U = LU(U_col)(U_row); 
+    pivot = U.tpivot;
     
-    INT_1DARRAY     ws = LL(X_col)(X_row).iws;
+    //BASKER_MATRIX        &L = LL(L_col)(L_row); //NDE - warning: unused L
     //const Int  ws_size = LL(X_col)(X_row).iws_size;
-    ENTRY_1DARRAY    X = LL(X_col)(X_row).ews;
+    //INT_1DARRAY     ws = LL(X_col)(X_row).iws;
+    //ENTRY_1DARRAY    X = LL(X_col)(X_row).ews;
 
     //const Int brow     = U.srow;
     //const Int bcol     = U.scol;
-
-    pivot = U.tpivot;
     
     //printf("OFF_DIAG_LOWER, kid: %d leaderid: %d t_size: %d \n",
     //       kid, leader_id, lteam_size);

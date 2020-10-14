@@ -362,7 +362,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     if(Options.verbose == BASKER_TRUE)
     {
       printf("\n");
-      printf("\n --------------- OVER SEPS ---------------\n");
+      printf("\n --------------- OVER SEPS (nlvls=%d) ---------------\n",tree.nlvls);
       printf("\n");
     }
     for(Int lvl=0; lvl < tree.nlvls; lvl++)
@@ -373,6 +373,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       //over all the seps in a lvle
       for(Int pp = 0; pp < p; pp++)
       {
+        //printf( " -- level = %d separator = %d --\n",lvl,pp );
         //S blks
         Int ppp;
         ppp =  pp*pow(tree.nparts, lvl+1);
@@ -393,22 +394,23 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         //S_blk_sfactor(AL[U_col][U_row], stree,
         //gScol[lvl], gSrow[pp]);
 
+        //printf( " >>> S_blk_sfactor( ALM(%d)(%d) ) <<<\n",U_col,U_row );
         S_blk_sfactor(ALM(U_col)(U_row), stree,
             gScol(lvl), gSrow(pp));
 
 
         //S_assign_nnz(LL[U_col][U_row], stree, 0);
+        //printf( " >>>  S_assign_nnz( LL(%d,%d) )\n",U_col,U_row );
         S_assign_nnz(LL(U_col)(U_row), stree, 0);
         //S_assign_nnz(LU[U_col][LU_size[U_col]-1], stree,0);
+        //printf( " >>>  S_assign_nnz( LU(%d,%d) )\n",U_col,LU_size(U_col)-1 );
         S_assign_nnz(LU(U_col)(LU_size(U_col)-1), stree,0);
 
         Int inner_blk = U_col;
-
         for(Int l = lvl+1; l < tree.nlvls; l++)
         {
           U_col = S(l+1)(ppp);
           U_row = S(lvl+1)(ppp)%LU_size(U_col);
-
 
           Int my_row_leader = S(0)(find_leader(ppp,l));
           //Int my_new_row = 
@@ -2033,7 +2035,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     if(option == 0 )
     {
       Int t_nnz = 0; 
-
       for(Int i = 0; i < M.ncol; i++)
       {
         if (t_nnz + ST.U_col_counts[i] > t_nnz) {
@@ -2057,8 +2058,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       }
       if(Options.verbose == BASKER_TRUE)
       {
-        printf("U_assing with elbow global_nnz = %ld, t_nnz = %ld, M.nnz = %ld (%ld x %ld)\n",
-               (long)global_nnz,(long)t_nnz,(long)M.nnz,(long)M.nrow,(long)M.ncol);
+        printf("U_assing with elbow global_nnz = %ld, t_nnz = %ld (fill_factor = %f + %f = %f), M.nnz = %ld (%ld x %ld)\n",
+               (long)global_nnz,(long)t_nnz, BASKER_DOM_NNZ_OVER,Options.user_fill,fill_factor, (long)M.nnz,(long)M.nrow,(long)M.ncol);
       }
     }
   }//end assign_upper_nnz
@@ -2090,6 +2091,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       #endif
 
      // double fill_factor = 2.05;
+      double old_nnz = M.nnz;
       double fill_factor = BASKER_DOM_NNZ_OVER+Options.user_fill; // used to boost fill estimate
       if ((Int)(fill_factor*t_nnz) >= t_nnz) {
         M.nnz = fill_factor*t_nnz;
@@ -2102,8 +2104,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       }
       if(Options.verbose == BASKER_TRUE)
       {
-        printf("L_assign with elbow global_nnz = %ld, t_nnz = %ld, M.nnz = %ld (%ld x %ld)\n",
-               (long)global_nnz,(long)t_nnz,(long)M.nnz,(long)M.nrow,(long)M.ncol);
+        printf("L_assign with elbow global_nnz = %ld, t_nnz = %ld (fill_factor = %e + %e = %e), M.nnz = %ld -> %ld (%ld x %ld)\n",
+               (long)global_nnz,(long)t_nnz,BASKER_DOM_NNZ_OVER,Options.user_fill,fill_factor,(long)M.nnz,(long)old_nnz,(long)M.nrow,(long)M.ncol);
       }
     }
   }//end assign_lower_nnz
@@ -2183,6 +2185,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       if ((double)nnz > ((double)lblk_size)*((double)lblk_size)) {
           nnz = lblk_size*lblk_size;
       }
+      //printf( " LBTF(%d, nnz = %d)\n",i-btf_tabs_offset, nnz );
       LBTF(i-btf_tabs_offset).init_matrix("LBFT",
           btf_tabs(i),
           lblk_size,
@@ -2191,8 +2194,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           nnz);
 
       //For pruning
+      //printf( " LBTF(%d).init_pend()\n",i-btf_tabs_offset );
       LBTF(i-btf_tabs_offset).init_pend();
 
+      //printf( " UBTF(%d, nnz = %d)\n",i-btf_tabs_offset, nnz );
       UBTF(i-btf_tabs_offset).init_matrix("UBFT",
           btf_tabs(i),
           lblk_size,
