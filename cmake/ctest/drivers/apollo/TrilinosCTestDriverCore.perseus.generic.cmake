@@ -62,6 +62,8 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
+  SET(Trilinos_REPOSITORY_LOCATION_NIGHTLY_DEFAULT "git@github.com:muelu/Trilinos.git")
+
   # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
 
   SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
