@@ -174,6 +174,36 @@ int pop_count(  long long i ){
   return __builtin_popcountll(i);
 }
 
+#elif defined (_MSC_VER)
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count( unsigned i ){
+  return __popcnt(i);
+}
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count( unsigned long i ){
+  return __popcnt(i);
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count( unsigned long long i ){
+  return __popcnt64(i);
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count(int i ){
+  return __popcnt(i);
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count( long i ){
+  return __popcnt(i);
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+int pop_count( long long i ){
+  return __popcnt64(i);
+}
+
 #else
   #error "Popcount function is not defined for this compiler. Please report this with the compiler you are using to KokkosKernels."
 #endif
@@ -289,6 +319,36 @@ int least_set_bit(  long i ){
 KOKKOS_FORCEINLINE_FUNCTION
 int least_set_bit(  long long i ){
   return __builtin_ffsll(i);
+}
+
+#elif defined (_MSC_VER)
+#include <intrin.h>
+KOKKOS_FORCEINLINE_FUNCTION
+int least_set_bit( unsigned i ){
+  return __lzcnt(i);
+}
+KOKKOS_FORCEINLINE_FUNCTION
+int least_set_bit( unsigned long i ){
+  return __lzcnt(i);
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+int least_set_bit( unsigned long long i ){
+  return __lzcnt64(i);
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+int least_set_bit( int i ){
+  return __lzcnt(i);
+}
+KOKKOS_FORCEINLINE_FUNCTION
+int least_set_bit(  long i ){
+  return __lzcnt(i);
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+int least_set_bit(  long long i ){
+  return __lzcnt64(i);
 }
 
 #else
