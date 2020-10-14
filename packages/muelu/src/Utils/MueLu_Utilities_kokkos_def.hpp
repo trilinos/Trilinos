@@ -143,7 +143,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol) {
+  GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol, const bool doLumped) {
     Teuchos::TimeMonitor MM = *Teuchos::TimeMonitor::getNewTimer("Utilities_kokkos::GetMatrixDiagonalInverse");
     // Some useful type definitions
     using local_matrix_type = typename Matrix::local_matrix_type;
@@ -173,25 +173,40 @@ namespace MueLu {
     // This could be implemented with a TeamPolicy over the rows
     // and a TeamVectorRange over the entries in a row if performance
     // becomes more important here.
-    Kokkos::parallel_for("Utilities_kokkos::GetMatrixDiagonalInverse",
-                         Kokkos::RangePolicy<ordinal_type, execution_space>(0, numRows),
-                         KOKKOS_LAMBDA(const ordinal_type rowIdx) {
-                           bool foundDiagEntry = false;
-                           auto myRow = localMatrix.rowConst(rowIdx);
-                           for(ordinal_type entryIdx = 0; entryIdx < myRow.length; ++entryIdx) {
-                             if(myRow.colidx(entryIdx) == rowIdx) {
-                               foundDiagEntry = true;
-                               if(KAT::magnitude(myRow.value(entryIdx)) > KAT::magnitude(tol)) {
-                                 diagVals(rowIdx, 0) = KAT::one() / myRow.value(entryIdx);
-                               } else {
-                                 diagVals(rowIdx, 0) = KAT::zero();
+    if (!doLumped)
+      Kokkos::parallel_for("Utilities_kokkos::GetMatrixDiagonalInverse",
+                           Kokkos::RangePolicy<ordinal_type, execution_space>(0, numRows),
+                           KOKKOS_LAMBDA(const ordinal_type rowIdx) {
+                             bool foundDiagEntry = false;
+                             auto myRow = localMatrix.rowConst(rowIdx);
+                             for(ordinal_type entryIdx = 0; entryIdx < myRow.length; ++entryIdx) {
+                               if(myRow.colidx(entryIdx) == rowIdx) {
+                                 foundDiagEntry = true;
+                                 if(KAT::magnitude(myRow.value(entryIdx)) > KAT::magnitude(tol)) {
+                                   diagVals(rowIdx, 0) = KAT::one() / myRow.value(entryIdx);
+                                 } else {
+                                   diagVals(rowIdx, 0) = KAT::zero();
+                                 }
+                                 break;
                                }
-                               break;
                              }
-                           }
 
-                           if(!foundDiagEntry) {diagVals(rowIdx, 0) = KAT::zero();}
-                         });
+                             if(!foundDiagEntry) {diagVals(rowIdx, 0) = KAT::zero();}
+                           });
+    else
+      Kokkos::parallel_for("Utilities_kokkos::GetMatrixDiagonalInverse",
+                           Kokkos::RangePolicy<ordinal_type, execution_space>(0, numRows),
+                           KOKKOS_LAMBDA(const ordinal_type rowIdx) {
+                             auto myRow = localMatrix.rowConst(rowIdx);
+                             for(ordinal_type entryIdx = 0; entryIdx < myRow.length; ++entryIdx) {
+                               diagVals(rowIdx, 0) += KAT::magnitude(myRow.value(entryIdx));
+                             }
+                             if(KAT::magnitude(diagVals(rowIdx, 0)) > KAT::magnitude(tol))
+                               diagVals(rowIdx, 0) = KAT::one() / diagVals(rowIdx, 0);
+                             else
+                               diagVals(rowIdx, 0) = KAT::zero();
+
+                           });
 
     return diag;
   } //GetMatrixDiagonalInverse
