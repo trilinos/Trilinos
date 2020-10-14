@@ -617,6 +617,8 @@ Piro::PerformROLAnalysis(
        *out << "Checking Consistency of Constraint Gradient and its adjoint" << std::endl;
        constr.checkAdjointConsistencyJacobian(rol_x_direction1, sopt_vec_direction2, sopt_vec,true,*out);
 
+       obj.update(rol_x,rol_p);
+       constr.update(rol_x,rol_p);
        *out << "Checking Symmetry of objective Hessian" << std::endl;
        obj.checkHessSym(sopt_vec,sopt_vec_direction1, sopt_vec_direction2, true,*out);
 
