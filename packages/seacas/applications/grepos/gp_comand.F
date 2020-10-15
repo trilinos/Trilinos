@@ -1330,12 +1330,18 @@ C=======================================================================
         IF (MATSTR(WORD,'MATERIALS',1) .OR.
      &    MATSTR(WORD, 'BLOCKS',1)) THEN
           CALL INCID ('M', IDELB, NELBLK, IDINC)
-        ELSE IF (MATSTR(WORD,'NODESETS',1) .OR.
-     $      MATSTR(WORD,'NSETS',   1)) THEN
+        ELSE IF (MATSTR(WORD,'NODESETS',5) .OR.
+     $      MATSTR(WORD,'NSETS',   2)) THEN
           CALL INCID ('N', IDNPS, NUMNPS, IDINC)
         ELSE IF (MATSTR(WORD,'SIDESETS',1) .OR.
      $      MATSTR(WORD,'SSETS',   1)) THEN
           CALL INCID ('S', IDESS, NUMESS, IDINC)
+        ELSE IF (MATSTR(WORD,'NODEMAP',5) .OR.
+     $      MATSTR(WORD,'NMAP',   2)) THEN
+          CALL INCMAP (MAPNOD, NUMNP, IDINC)
+        ELSE IF (MATSTR(WORD,'ELEMMAP',5) .OR.
+     $      MATSTR(WORD,'EMAP',   2)) THEN
+          CALL INCMAP (MAPEL, NUMEL, IDINC)
         END IF
         VERB = ' '
 
