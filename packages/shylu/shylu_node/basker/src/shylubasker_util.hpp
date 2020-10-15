@@ -23,6 +23,7 @@
 #include <assert.h>
 
 using namespace std;
+//#define BASKER_TIMER
 
 namespace BaskerNS
 {
@@ -411,6 +412,14 @@ namespace BaskerNS
   void Basker<Int,Entry,Exe_Space>::t_init_factor(Int kid)
   {
     //L
+    #ifdef BASKER_TIMER
+    double init_matrixL_time = 0.0;
+    double fill_matrixL_time = 0.0;
+    Kokkos::Timer timer_initL;
+    Kokkos::Timer timer_init_matrixL;
+    Kokkos::Timer timer_fill_matrixL;
+    timer_initL.reset();
+    #endif
     for(Int lvl = 0; lvl < tree.nlvls+1; lvl++)
     {
       if(kid%((Int)pow(2,lvl)) == 0)
@@ -424,6 +433,9 @@ namespace BaskerNS
               b, row, kid, LL[b][row].nnz);
           #endif
 
+          #ifdef BASKER_TIMER
+          timer_init_matrixL.reset();
+          #endif
           //printf( " lvl=%d: LL(%d,%d): nnz=%d, mnnz=%d\n",lvl,b,row,LL(b)(row).nnz,LL(b)(row).mnnz);
           LL(b)(row).init_matrix("Loffdig",
               LL(b)(row).srow,
@@ -431,20 +443,40 @@ namespace BaskerNS
               LL(b)(row).scol,
               LL(b)(row).ncol,
               LL(b)(row).nnz);
+          #ifdef BASKER_TIMER
+          init_matrixL_time += timer_init_matrixL.seconds();
+          #endif
 
           //Fix when this all happens in the future
           if(Options.incomplete == BASKER_TRUE)
           {
             LL(b)(row).init_inc_lvl();
           }
-          LL(b)(row).fill();
+          #ifdef BASKER_TIMER
+          timer_fill_matrixL.reset();
+          #endif
+          //LL(b)(row).fill();
+          Kokkos::deep_copy(LL(b)(row).col_ptr, 0);
+          #ifdef BASKER_TIMER
+          fill_matrixL_time += timer_fill_matrixL.seconds();
+          #endif
           LL(b)(row).init_pend();
 
         }//end over all row
       }//end select which thread
     }//end for over all lvl
-   
+    #ifdef BASKER_TIMER
+    double initL_time = timer_initL.seconds();
+    std::cout << " >   Basker t_init_factor::initL(" << kid << "): time: " << initL_time << std::endl;
+    std::cout << " > + Basker t_init_factor::initL::initMatrix(" << kid << "): time: " << init_matrixL_time << std::endl;
+    std::cout << " > + Basker t_init_factor::initL::fillMatrix(" << kid << "): time: " << fill_matrixL_time << std::endl;
+    #endif
+
     //U
+    #ifdef BASKER_TIMER
+    Kokkos::Timer timer_initU;
+    timer_initU.reset();
+    #endif
     for(Int lvl = 0; lvl < tree.nlvls+1; lvl++)
     {
       if(kid%((Int)pow(2,lvl)) == 0)
@@ -465,7 +497,8 @@ namespace BaskerNS
             LU(b)(LU_size(b)-1).ncol,
             LU(b)(LU_size(b)-1).nnz);
 
-        LU(b)(LU_size(b)-1).fill();
+        //LU(b)(LU_size(b)-1).fill();
+        Kokkos::deep_copy(LU(b)(LU_size(b)-1).col_ptr, 0);
 
         for(Int l = lvl+1; l < tree.nlvls+1; l++)
         {
@@ -513,7 +546,8 @@ namespace BaskerNS
               LU(U_col)(U_row).ncol,
               LU(U_col)(U_row).nnz);
 
-          LU(U_col)(U_row).fill();
+          //LU(U_col)(U_row).fill();
+          Kokkos::deep_copy(LU(U_col)(U_row).col_ptr, 0);
 
           if(Options.incomplete == BASKER_TRUE)
           {
@@ -524,6 +558,10 @@ namespace BaskerNS
       }//if KID
 
     }//end over all lvls
+    #ifdef BASKER_TIMER
+    double initU_time = timer_initU.seconds();
+    std::cout << " > Basker t_init_factor::initU(" << kid << "): time: " << initU_time << std::endl;
+    #endif
 
   }//end t_init_factor()
 
@@ -752,7 +790,8 @@ namespace BaskerNS
           }
 
           //printf( " LL(%d, %d).fill\n",b,l );
-          LL(b)(l).fill();
+          //LL(b)(l).fill();
+          Kokkos::deep_copy(LL(b)(l).col_ptr, 0);
 
           if(l==0)
           {

@@ -5,6 +5,7 @@
 #include "scotch.h"
 
 //#define BASKER_DEBUG_ORDER_SCOTCH
+//#define BASKER_TIMER
 
 //NOTE need to change all the max_idx here still
 
@@ -202,14 +203,12 @@ namespace BaskerNS
     }
 
     //Need to come back to this so update based on nthreads
-    
+    double balrat = 0.2;
     Int num_levels = num_domains; 
+    Int flagval = SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN | SCOTCH_STRATLEAFSIMPLE | SCOTCH_STRATSEPASIMPLE;
     SCOTCH_stratInit(&strdat);
     
-    err = SCOTCH_stratGraphOrderBuild(&strdat, 
-				      SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN | SCOTCH_STRATLEAFSIMPLE | SCOTCH_STRATSEPASIMPLE,
-		  num_levels, 0.2);
-    
+    err = SCOTCH_stratGraphOrderBuild(&strdat, flagval, num_levels, balrat);
 
     /*
     err = SCOTCH_stratGraphOrderBuild(&strdat, 
@@ -223,6 +222,9 @@ namespace BaskerNS
       return -1;
     }
 
+    #ifdef BASKER_TIMER
+    Kokkos::Impl::Timer timer_scotch;
+    #endif
     // permtab[i] = dom id
     if(SCOTCH_graphOrder(&cgrafptr, &strdat, sg.permtab, sg.peritab, 
                          &sg.cblk, sg.rangtab, sg.treetab) != 0)
@@ -230,6 +232,11 @@ namespace BaskerNS
       printf("Scotch: cannot compute ordering \n");
       return -1;
     }
+    #ifdef BASKER_TIMER
+    double time_scotch = timer_scotch.seconds();
+    std::cout << std::endl << " > scotch : time " << time_scotch << std::endl << std::endl;
+    #endif
+
     if(Options.verbose == BASKER_TRUE) {
       std::cout << " calling SCOTCH_graphOrder(" << M.nrow << " x " << M.ncol 
                 << ", num_levels = " << num_domains << ")" << std::endl;
@@ -791,4 +798,5 @@ namespace BaskerNS
 
 }//end namespace Basker
 
+#undef BASKER_TIMER
 #endif //ifndef basker_order_scotch_hpp

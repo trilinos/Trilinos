@@ -28,7 +28,7 @@
 //#define BASKER_DEBUG_NFACTOR_COL2
 //#define BASKER_DEBUG_TIME
 //#define BASKER_COUNT_OPS
-//#define BASKER_TIME
+//#define BASKER_TIMER
 
 namespace BaskerNS
 {
@@ -130,7 +130,7 @@ namespace BaskerNS
     const Int U_row = 0;
     Int ncol = LU(U_col)(U_row).ncol;
 
-    #ifdef BASKER_TIME
+    #ifdef BASKER_TIMER
     Kokkos::Impl::Timer timer;
     #endif
 
@@ -151,7 +151,7 @@ namespace BaskerNS
                                 BASKER_FALSE);
     }//over all columns / domains / old sublevel 0
 
-    #ifdef BASKER_TIME
+    #ifdef BASKER_TIMER
     printf("Time Upper-Col1(%d): %lf \n", (int)kid, timer.seconds());
     timer.reset();
     #endif
@@ -214,7 +214,7 @@ namespace BaskerNS
       //                 1, 2, LU(U_col)(U_row).ncol+1, l-1);
 
     }//for - over all sublevel 1...lvl-2
-    #ifdef BASKER_TIME
+    #ifdef BASKER_TIMER
     printf("Time Upper-Col(%d): %lf \n", (int)kid, timer.seconds());
     timer.reset();
     #endif
@@ -242,7 +242,7 @@ namespace BaskerNS
     // > apply U-solve with U(U_col)(U_row)
     //   to compute off-diagonal L(:)(U_row)
     {
-      #ifdef BASKER_TIME
+      #ifdef BASKER_TIMER
       double time_extend = 0.0;
       double time_faccol = 0.0;
       double time_facoff = 0.0;
@@ -254,7 +254,7 @@ namespace BaskerNS
       {
         // ------------------------------------------------------- //
         // > accumulate the last update into k-th column of LU(U_col)(U_row)
-        #ifdef BASKER_TIME
+        #ifdef BASKER_TIMER
         timer_extend.reset();
         #endif
         #ifdef BASKER_DEBUG_NFACTOR_COL2
@@ -264,13 +264,13 @@ namespace BaskerNS
         t_add_extend(thread, kid,lvl,lvl-1, k,
                      LU(U_col)(U_row).scol,
                      BASKER_TRUE);
-        #ifdef BASKER_TIME
+        #ifdef BASKER_TIMER
         time_extend += timer_extend.seconds();
         #endif
 
         // ------------------------------------------------------- //
         // > factor the k-th column of LU(U_col)(U_row)
-        #ifdef BASKER_TIME
+        #ifdef BASKER_TIMER
         timer_faccol.reset();
         #endif
         Entry pivot (0.0);
@@ -293,7 +293,7 @@ namespace BaskerNS
         //       my_leader, b_size, lvl);
         t_basker_barrier(thread, kid, my_leader,
                          b_size, 4, k, lvl-1);
-        #ifdef BASKER_TIME
+        #ifdef BASKER_TIMER
         time_faccol += timer_faccol.seconds();
         #endif
         for(Int ti = 0; ti < num_threads; ti++) {
@@ -303,7 +303,7 @@ namespace BaskerNS
 
         // ------------------------------------------------------- //
         // > factor the k-th column of the off-diagonal blocks
-        #ifdef BASKER_TIME
+        #ifdef BASKER_TIMER
         timer_facoff.reset();
         #endif
         #ifdef BASKER_DEBUG_NFACTOR_COL2
@@ -318,7 +318,7 @@ namespace BaskerNS
         //       my_leader, b_size, lvl);
         t_basker_barrier(thread, kid, my_leader,
                          b_size, 5, k, lvl-1);
-        #ifdef BASKER_TIME
+        #ifdef BASKER_TIMER
         time_facoff += timer_facoff.seconds();
         #endif
       }
@@ -328,7 +328,7 @@ namespace BaskerNS
       //                 1, 1, LU(U_col)(U_row).ncol+1, lvl-1);
       //t_basker_barrier(thread, kid, kid,
       //                 1, 1, LU(U_col)(U_row).ncol+1, lvl-1);
-      #ifdef BASKER_TIME
+      #ifdef BASKER_TIMER
       double time_factot = timer.seconds();
       if((kid%(Int)(pow(2,lvl))) == 0) {
         const Int L_col = S(lvl)(kid);
@@ -338,7 +338,6 @@ namespace BaskerNS
                (int)ncol, (int)LL(U_col)(U_row).col_ptr(ncol), (int)LU(L_col)(L_row).col_ptr(ncol));
         printf(" > Time Lower-Col(%d):extend-add: %lf \n", (int)kid, time_extend);
         printf(" > Time Lower-Col(%d):fac-col   : %lf \n", (int)kid, time_faccol);
-        printf( "                               : %lf + %lf + %lf\n",time1,time2,time3);
         printf(" > Time Lower-Col(%d):fac-off   : %lf \n", (int)kid, time_facoff);
       }
       #endif
@@ -880,5 +879,5 @@ namespace BaskerNS
   }//end t_lower_col_factor_offdiag2()
 }//end namespace BaskerNS
 
-#undef BASKER_TIME
+#undef BASKER_TIMER
 #endif //end ifndef

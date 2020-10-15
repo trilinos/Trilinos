@@ -1,8 +1,6 @@
 #ifndef SHYLUBASKER_DEF_HPP
 #define SHYLUBASKER_DEF_HPP
 
-//#define BASKER_TIME
-
 /*Basker Includes*/
 #include "shylubasker_decl.hpp"
 #include "shylubasker_matrix_decl.hpp"
@@ -34,6 +32,7 @@
 //  #define BASKER_SUPERLUDIS_MC64
 //#endif
 //#define BASKER_TIMER 
+
 
 namespace BaskerNS
 {
@@ -1146,7 +1145,7 @@ namespace BaskerNS
         Kokkos::parallel_for(TeamPolicy(num_threads,1), iF);
         Kokkos::fence();
         if(Options.verbose == BASKER_TRUE) {
-          std::cout<< " > Basker Factor: Time for workspace allocation after ND on a big block A: " << nd_setup1_timer.seconds() << std::endl;
+          std::cout<< " > Basker Factor: Time for init factors after ND on a big block A: " << nd_setup1_timer.seconds() << std::endl;
         }
 
         Kokkos::Timer nd_setup2_timer;
@@ -1747,4 +1746,5 @@ namespace BaskerNS
 
 }//End namespace
 
+#undef BASKER_TIMER
 #endif //End ifndef

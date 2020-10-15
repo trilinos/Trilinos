@@ -754,6 +754,10 @@ namespace BaskerNS
     //Comeback and change
     // btf_tabs_offset is offset to id of first block after diag blocks in BTF_A 
     btf_tabs_offset = blk_idx;
+    //printf( "\n > btf_tabs_offset = %d\n", btf_tabs_offset );
+    //for (blk_idx = 0; blk_idx < btf_tabs_offset; blk_idx++) printf( " + %d: %d\n",blk_idx,btf_tabs[blk_idx+1]-btf_tabs[blk_idx] );
+    //for (blk_idx = btf_tabs_offset; blk_idx < nblks; blk_idx++) printf( " - %d: %d\n",blk_idx,btf_tabs[blk_idx+1]-btf_tabs[blk_idx] );
+    //printf( "\n" );
 
     //Step 2. Move into Blocks 
     MALLOC_INT_1DARRAY_PAIRS(vals_block_map_perm_pair, M.nnz); //this will store and map A.val indices to val indices of BTF_A, BTF_B, and BTF_C 
@@ -1002,4 +1006,5 @@ namespace BaskerNS
   }//end strong_component <long int>
 
 }//end namespace BaskerNS
+#undef BASKER_TIMER
 #endif

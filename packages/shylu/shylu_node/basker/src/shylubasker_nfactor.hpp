@@ -2,7 +2,7 @@
 #define SHYLUBASKER_NFACTOR_HPP
 
 //#define BASKER_DEBUG_NFACTOR 
-//#define BASKER_TIME
+//#define BASKER_TIMER
 
 /*Basker Includes*/
 #include "shylubasker_types.hpp"
@@ -87,7 +87,7 @@ namespace BaskerNS
     //printf("Switch time: %f \n", tza.seconds());
 
 #ifdef BASKER_KOKKOS
-    #ifdef BASKER_TIME
+    #ifdef BASKER_TIMER
     Kokkos::Impl::Timer timer;
     #endif
 
@@ -151,7 +151,7 @@ namespace BaskerNS
         }
       }//end while
 
-      #ifdef BASKER_TIME
+      #ifdef BASKER_TIMER
       printf("Time DOMAIN: %lf \n", timer.seconds());
       timer.reset();
       #endif
@@ -174,7 +174,7 @@ namespace BaskerNS
         #ifdef BASKER_NO_LAMBDA
         for(Int l=1; l <= tree.nlvls; l++)
         {
-          #ifdef BASKER_TIME
+          #ifdef BASKER_TIMER
           Kokkos::Impl::Timer timer_inner_sep;
           #endif
           //#ifdef BASKER_OLD_BARRIER
@@ -232,7 +232,7 @@ namespace BaskerNS
               Kokkos::fence();
             }
           }//end while-true
-          #ifdef BASKER_TIME
+          #ifdef BASKER_TIMER
           printf(" > Time INNERSEP %ld: %lf \n", (long int)l, timer_inner_sep.seconds());
           #endif
         }//end over each level
@@ -249,7 +249,7 @@ namespace BaskerNS
         //-------------------------End Sep----------------//
       }// info != BASKER_ERROR
       //printf( " End Sep: info = %d (%d, %d)\n",info,BASKER_SUCCESS,BASKER_ERROR );
-      #ifdef BASKER_TIME
+      #ifdef BASKER_TIMER
       printf("Time SEP: %lf \n", timer.seconds());
       #endif
     }
@@ -265,7 +265,7 @@ namespace BaskerNS
             (long)num_threads);
       }
 
-      #ifdef BASKER_TIME
+      #ifdef BASKER_TIMER
       Kokkos::Impl::Timer  timer_btf;
       #endif
 
@@ -313,7 +313,7 @@ namespace BaskerNS
         }
       }//end while
 
-      #ifdef BASKER_TIME
+      #ifdef BASKER_TIMER
       printf("Time BTF: %lf \n", 
           timer_btf.seconds());
       #endif
@@ -333,5 +333,5 @@ namespace BaskerNS
   
 }//end namespace baskerNS
 
-#undef BASKER_TIME
+#undef BASKER_TIMER
 #endif //end ifndef basker_nfactor_hpp

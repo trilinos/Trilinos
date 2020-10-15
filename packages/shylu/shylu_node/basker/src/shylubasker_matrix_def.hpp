@@ -437,6 +437,13 @@ namespace BaskerNS
     if(v_fill == BASKER_TRUE)
       return -1;
 
+    #if 1
+    Kokkos::deep_copy(col_ptr, 0);
+    Kokkos::deep_copy(row_idx, 0);
+
+    const Entry zero(0.0);
+    Kokkos::deep_copy(val, zero);
+    #else
     for(Int i = 0; i < ncol+1; i++)
     {
       col_ptr(i) = 0;
@@ -451,6 +458,7 @@ namespace BaskerNS
     {
       val(i) = 0;
     }
+    #endif
 
     //#ifdef BASKER_INC_LVL
     if(inc_lvl_flg == BASKER_TRUE)
