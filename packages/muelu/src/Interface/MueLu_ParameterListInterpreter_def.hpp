@@ -1406,11 +1406,13 @@ namespace MueLu {
       // RepartitionHeuristic
       auto repartheurFactory = rcp(new RepartitionHeuristicFactory());
       ParameterList repartheurParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: node repartition level",int,repartheurParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: start level",          int, repartheurParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per proc",    int, repartheurParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: target rows per proc", int, repartheurParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance",     double, repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: node repartition level", int,    repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: start level",            int,    repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per proc",      int,    repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: target rows per proc",   int,    repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per thread",    int,    repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: target rows per thread", int,    repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance",          double, repartheurParams);
       repartheurFactory->SetParameterList(repartheurParams);
       repartheurFactory->SetFactory("A",         manager.GetFactory("A"));
       manager.SetFactory("number of partitions", repartheurFactory);
