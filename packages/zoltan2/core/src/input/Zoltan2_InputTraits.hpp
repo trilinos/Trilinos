@@ -67,6 +67,14 @@
 #include <Xpetra_TpetraRowMatrix.hpp>
 #include <Xpetra_CrsGraph.hpp>
 
+// For windows to know ssize_t
+#if defined(_MSC_VER)
+#include <stddef.h>
+#ifndef ssize_t
+#define ssize_t ptrdiff_t
+#endif
+#endif
+
 namespace Zoltan2{
 
 // Default local ordinal
