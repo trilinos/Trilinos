@@ -64,7 +64,7 @@ namespace Intrepid2 {
   class dummyBasis
   : public Basis<ExecutionSpace,OutputScalar,PointScalar> {
   public:
-    dummyBasis(int /*order*/) {};
+    dummyBasis(int /*order*/, EPointType /*pointType*/= POINTTYPE_DEFAULT) {};
   };
 
 // the following defines a family of hierarchical basis functions that matches the unpermuted ESEAS basis functions

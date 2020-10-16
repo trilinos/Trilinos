@@ -181,13 +181,10 @@ int ConvergenceTet(const bool verbose) {
       switch (comp) {
       case 0:
         return gf2[1] - gf1[2];
-        break;
       case 1:
         return gf0[2] - gf2[0];
-        break;
       case 2:
         return gf1[0] - gf0[1];
-        break;
       default:
         return 0;
       }

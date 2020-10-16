@@ -408,6 +408,17 @@ public:
       const ordinal_type targetCubDegree);
 
 
+  /** \brief  Initialize the ProjectionStruct for (discontinuous local-L2) projection
+      \param  cellBasis        [in]  - basis functions for the projection
+      \param  targetCubDegree  [in]  - degree of the cubature needed to integrate the target function
+   */
+  template<typename BasisPtrType>
+  void createL2DGProjectionStruct(const BasisPtrType cellBasis,
+      const ordinal_type targetCubDegree) {
+      createHVolProjectionStruct(cellBasis, targetCubDegree);
+  }
+
+
   /** \brief  Initialize the ProjectionStruct for HGRAD projections
       \param  cellBasis          [in]  - HGRAD basis functions for the projection
       \param  targetCubDegree    [in]  - degree of the cubature needed to integrate the target function

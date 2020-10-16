@@ -193,9 +193,10 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
   this->basisCardinality_  = CardinalityHDivTet(order);
   this->basisDegree_       = order; // small n
   this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
-  this->basisType_         = BASIS_FEM_FIAT;
+  this->basisType_         = BASIS_FEM_LAGRANGIAN;
   this->basisCoordinates_  = COORDINATES_CARTESIAN;
   this->functionSpace_     = FUNCTION_SPACE_HDIV;
+  pointType_ = pointType;
 
   const ordinal_type card = this->basisCardinality_;
 
@@ -305,12 +306,6 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
     CellTools<Kokkos::HostSpace::execution_space>::getReferenceSideNormal( faceNormal ,
         face ,
         this->basisCellTopology_ );
-
-    // multiply to account for reference face areas, so that magnitude of faceNormal is equal to the face measure
-    const scalarType refTriangleMeasure = 0.5;
-    for (ordinal_type j=0;j<spaceDim;j++)
-      faceNormal(j) *= refTriangleMeasure;
-
 
     CellTools<Kokkos::HostSpace::execution_space>::mapToReferenceSubcell( facePts ,
         triPts ,

@@ -69,25 +69,25 @@ namespace Intrepid2 {
         const auto y = input(1);
 
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        output.access(0, 0) =  (1.0 - y)/4.0;
+        output.access(0, 0) =  0.5*(1.0 - y);
         output.access(0, 1) =   0.0;
 
         output.access(1, 0) =   0.0;
-        output.access(1, 1) =  (1.0 + x)/4.0;
+        output.access(1, 1) =  0.5*(1.0 + x);
 
-        output.access(2, 0) = -(1.0 + y)/4.0;
+        output.access(2, 0) = -0.5*(1.0 + y);
         output.access(2, 1) =   0.0;
 
         output.access(3, 0) =   0.0;
-        output.access(3, 1) = -(1.0 - x)/4.0;
+        output.access(3, 1) = -0.5*(1.0 - x);
         break;
       }
       case OPERATOR_CURL: {
         // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
-        output.access(0) = 0.25;
-        output.access(1) = 0.25;
-        output.access(2) = 0.25;
-        output.access(3) = 0.25;
+        output.access(0) = 0.5;
+        output.access(1) = 0.5;
+        output.access(2) = 0.5;
+        output.access(3) = 0.5;
         break;
       }
       default: {
@@ -241,10 +241,10 @@ namespace Intrepid2 {
       dofCoeffs("dofCoeffsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
 
     // for HCURL_QUAD_I1 dofCoeffs are the tangents on the quadrilateral edges (with tangents magnitude equal to edges' lengths)
-    dofCoeffs(0,0) =  2.0;   dofCoeffs(0,1) =  0.0;
-    dofCoeffs(1,0) =  0.0;   dofCoeffs(1,1) =  2.0;
-    dofCoeffs(2,0) = -2.0;   dofCoeffs(2,1) =  0.0;
-    dofCoeffs(3,0) =  0.0;   dofCoeffs(3,1) = -2.0;
+    dofCoeffs(0,0) =  1.0;   dofCoeffs(0,1) =  0.0;
+    dofCoeffs(1,0) =  0.0;   dofCoeffs(1,1) =  1.0;
+    dofCoeffs(2,0) = -1.0;   dofCoeffs(2,1) =  0.0;
+    dofCoeffs(3,0) =  0.0;   dofCoeffs(3,1) = -1.0;
 
     this->dofCoeffs_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoeffs);
     Kokkos::deep_copy(this->dofCoeffs_, dofCoeffs);

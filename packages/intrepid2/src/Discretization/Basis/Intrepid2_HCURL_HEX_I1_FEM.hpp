@@ -50,6 +50,7 @@
 #define __INTREPID2_HCURL_HEX_I1_FEM_HPP__
 
 #include "Intrepid2_Basis.hpp"
+#include "Intrepid2_HCURL_QUAD_I1_FEM.hpp"
 
 namespace Intrepid2 {
 
@@ -262,6 +263,29 @@ namespace Intrepid2 {
     bool
     requireOrientation() const {
       return true;
+    }
+
+    /** \brief returns the basis associated to a subCell.
+
+        The bases of the subCell are the restriction to the subCell of the bases of the parent cell,
+        projected to the subCell plane.
+
+        \param [in] subCellDim - dimension of subCell
+        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+     */
+    BasisPtr<ExecSpaceType,outputValueType,pointValueType>
+      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
+
+      if(subCellDim == 1)
+        return Teuchos::rcp( new
+          Basis_HVOL_C0_FEM<ExecSpaceType,outputValueType,pointValueType>(shards::getCellTopologyData<shards::Line<2> >()));
+      else if(subCellDim == 2) {
+        return Teuchos::rcp(new
+          Basis_HCURL_QUAD_I1_FEM<ExecSpaceType,outputValueType,pointValueType>());
+      }
+
+      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
     }
 
   };

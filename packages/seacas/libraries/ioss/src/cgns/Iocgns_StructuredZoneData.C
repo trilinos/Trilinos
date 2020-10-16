@@ -23,10 +23,7 @@ namespace {
     bool m_reversed;
   };
 
-  bool overlaps(const Range &a, const Range &b)
-  {
-    return a.m_beg <= b.m_end && b.m_beg <= a.m_end;
-  }
+  bool overlaps(const Range &a, const Range &b) { return a.m_beg <= b.m_end && b.m_beg <= a.m_end; }
 
   bool zgc_overlaps(const Iocgns::StructuredZoneData *zone, const Ioss::ZoneConnectivity &zgc)
   {
