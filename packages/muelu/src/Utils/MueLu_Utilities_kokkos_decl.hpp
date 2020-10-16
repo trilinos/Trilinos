@@ -172,7 +172,7 @@ namespace MueLu {
 
     NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = TST::eps()*100); // FIXME
+    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = TST::eps()*100, const bool doLumped = false); // FIXME
 
 
 
@@ -226,6 +226,11 @@ namespace MueLu {
     static SC PowerMethod(const Matrix& A, bool scaleByDiag = true,
                           LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
       return Utilities::PowerMethod(A, scaleByDiag, niters, tolerance, verbose, seed);
+    }
+
+    static SC PowerMethod(const Matrix& A, const Teuchos::RCP<Vector> &invDiag,
+                          LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
+      return Utilities::PowerMethod(A, invDiag, niters, tolerance, verbose, seed);
     }
 
     static void MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector, bool doInverse = true,
@@ -378,14 +383,14 @@ namespace MueLu {
     static ArrayRCP<SC> GetMatrixDiagonal(const Matrix& A) {
       return UtilitiesBase::GetMatrixDiagonal(A);
     }
-    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<SC>::eps()*100) {
-      return UtilitiesBase::GetMatrixDiagonalInverse(A, tol);
+    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<SC>::eps()*100, const bool doLumped=false) {
+      return UtilitiesBase::GetMatrixDiagonalInverse(A, tol, doLumped);
     }
-    static ArrayRCP<SC> GetLumpedMatrixDiagonal(const Matrix& A) {
-      return UtilitiesBase::GetLumpedMatrixDiagonal(A);
+    static ArrayRCP<SC> GetLumpedMatrixDiagonal(const Matrix& A, const bool doReciprocal=false, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero()) {
+      return UtilitiesBase::GetLumpedMatrixDiagonal(A, doReciprocal, tol, tolReplacement);
     }
-    static RCP<Vector> GetLumpedMatrixDiagonal(RCP<const Matrix > A) {
-      return UtilitiesBase::GetLumpedMatrixDiagonal(A);
+    static RCP<Vector> GetLumpedMatrixDiagonal(RCP<const Matrix > A, const bool doReciprocal=false, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero()) {
+      return UtilitiesBase::GetLumpedMatrixDiagonal(A, doReciprocal, tol, tolReplacement);
     }
     static RCP<Vector> GetMatrixOverlappedDiagonal(const Matrix& A) {
       return UtilitiesBase::GetMatrixOverlappedDiagonal(A);
@@ -424,6 +429,10 @@ namespace MueLu {
 
     static Scalar PowerMethod(const Matrix& A, bool scaleByDiag = true, LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
       return UtilitiesBase::PowerMethod(A,scaleByDiag,niters,tolerance,verbose,seed);
+    }
+
+    static Scalar PowerMethod(const Matrix& A, const Teuchos::RCP<Vector> &invDiag, LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
+      return UtilitiesBase::PowerMethod(A, invDiag, niters, tolerance, verbose, seed);
     }
 
     static void MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector, bool doInverse = true,

@@ -214,8 +214,9 @@ namespace {
   // data, but in the node id map mapping, we have an int64_t coming
   // in and either an int or int64_t going out...
   template <typename T, typename U>
-  void filter_owned_nodes(const Ioss::IntVector &owning_processor, int this_processor, const T *data,
-                std::vector<U> &file_data, size_t offset = 0, size_t stride = 1)
+  void filter_owned_nodes(const Ioss::IntVector &owning_processor, int this_processor,
+                          const T *data, std::vector<U> &file_data, size_t offset = 0,
+                          size_t stride = 1)
   {
     size_t index = offset;
     for (auto op : owning_processor) {
@@ -399,8 +400,8 @@ namespace Ioex {
     double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
 
     int app_opt_val = ex_opts(EX_VERBOSE);
-    m_exodusFilePtr   = ex_open_par(filename.c_str(), EX_READ | mode, &cpu_word_size, &io_word_size,
-                                &version, util().communicator(), info);
+    m_exodusFilePtr = ex_open_par(filename.c_str(), EX_READ | mode, &cpu_word_size, &io_word_size,
+                                  &version, util().communicator(), info);
 
     if (do_timer) {
       double t_end    = Ioss::Utils::timer();
@@ -491,8 +492,8 @@ namespace Ioex {
     double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
 
     if (fileExists) {
-      m_exodusFilePtr = ex_open_par(filename.c_str(), EX_WRITE | mode, &cpu_word_size, &io_word_size,
-                                  &version, util().communicator(), info);
+      m_exodusFilePtr = ex_open_par(filename.c_str(), EX_WRITE | mode, &cpu_word_size,
+                                    &io_word_size, &version, util().communicator(), info);
     }
     else {
       // If the first write for this file, create it...
@@ -510,7 +511,7 @@ namespace Ioex {
         }
       }
       m_exodusFilePtr = ex_create_par(filename.c_str(), mode, &cpu_word_size, &dbRealWordSize,
-                                    util().communicator(), info);
+                                      util().communicator(), info);
     }
 
     if (do_timer) {
@@ -2623,16 +2624,16 @@ int64_t ParallelDatabaseIO::write_attribute_field(ex_entity_type type, const Ios
       file_data.reserve(file_count);
       check_node_owning_processor_data(nodeOwningProcessor, file_count);
       if (ioss_type == Ioss::Field::REAL) {
-        filter_owned_nodes(nodeOwningProcessor, myProcessor, static_cast<double *>(data), file_data, i,
-                 comp_count);
+        filter_owned_nodes(nodeOwningProcessor, myProcessor, static_cast<double *>(data), file_data,
+                           i, comp_count);
       }
       else if (ioss_type == Ioss::Field::INTEGER) {
         filter_owned_nodes(nodeOwningProcessor, myProcessor, static_cast<int *>(data), file_data, i,
-                 comp_count);
+                           comp_count);
       }
       else if (ioss_type == Ioss::Field::INT64) {
-        filter_owned_nodes(nodeOwningProcessor, myProcessor, static_cast<int64_t *>(data), file_data, i,
-                 comp_count);
+        filter_owned_nodes(nodeOwningProcessor, myProcessor, static_cast<int64_t *>(data),
+                           file_data, i, comp_count);
       }
       int ierr = ex_put_partial_one_attr(get_file_pointer(), type, id, proc_offset + 1, file_count,
                                          offset + i, file_data.data());
@@ -2768,16 +2769,21 @@ int64_t ParallelDatabaseIO::read_transient_field(ex_entity_type               ty
   // and add suffix to base 'field_name'.  Look up index
   // of this name in 'nodeVariables' map
   size_t comp_count = var_type->component_count();
-  size_t var_index  = 0;
 
   char field_suffix_separator = get_field_separator();
   for (size_t i = 0; i < comp_count; i++) {
     std::string var_name = var_type->label_name(field.get_name(), i + 1, field_suffix_separator);
 
     // Read the variable...
-    int64_t id   = Ioex::get_id(ge, type, &ids_);
-    int     ierr = 0;
-    var_index    = variables.find(var_name)->second;
+    int64_t id       = Ioex::get_id(ge, type, &ids_);
+    int     ierr     = 0;
+    auto    var_iter = variables.find(var_name);
+    if (var_iter == variables.end()) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg, "ERROR: Could not find field '{}'\n", var_name);
+      IOSS_ERROR(errmsg);
+    }
+    size_t var_index = var_iter->second;
     assert(var_index > 0);
     if (type == EX_BLOB) {
       size_t offset = ge->get_property("processor_offset").get_int();
@@ -2839,15 +2845,20 @@ int64_t ParallelDatabaseIO::read_ss_transient_field(const Ioss::Field &field, in
   // and add suffix to base 'field_name'.  Look up index
   // of this name in 'nodeVariables' map
   size_t comp_count = var_type->component_count();
-  size_t var_index  = 0;
 
   char field_suffix_separator = get_field_separator();
   for (size_t i = 0; i < comp_count; i++) {
     std::string var_name = var_type->label_name(field.get_name(), i + 1, field_suffix_separator);
 
     // Read the variable...
-    int ierr  = 0;
-    var_index = m_variables[EX_SIDE_SET].find(var_name)->second;
+    int  ierr     = 0;
+    auto var_iter = m_variables[EX_SIDE_SET].find(var_name);
+    if (var_iter == m_variables[EX_SIDE_SET].end()) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg, "ERROR: Could not find Sideset field '{}'\n", var_name);
+      IOSS_ERROR(errmsg);
+    }
+    size_t var_index = var_iter->second;
     assert(var_index > 0);
     ierr =
         decomp->get_var(get_file_pointer(), step, EX_SIDE_SET, var_index, id, my_side_count, temp);
@@ -3945,7 +3956,6 @@ void ParallelDatabaseIO::write_nodal_transient_field(ex_entity_type /* type */,
   // and add suffix to base 'field_name'.  Look up index
   // of this name in 'm_variables[EX_NODE_BLOCK]' map
   int comp_count = var_type->component_count();
-  int var_index  = 0;
 
   int re_im = 1;
   if (ioss_type == Ioss::Field::COMPLEX) {
@@ -3968,7 +3978,7 @@ void ParallelDatabaseIO::write_nodal_transient_field(ex_entity_type /* type */,
         IOSS_ERROR(errmsg);
       }
 
-      var_index = var_iter->second;
+      int var_index = var_iter->second;
 
       size_t begin_offset = (re_im * i) + complex_comp;
       size_t stride       = re_im * comp_count;
@@ -4063,7 +4073,6 @@ void ParallelDatabaseIO::write_entity_transient_field(ex_entity_type type, const
   // and add suffix to base 'field_name'.  Look up index
   // of this name in 'm_variables[type]' map
   int comp_count = var_type->component_count();
-  int var_index  = 0;
 
   int re_im = 1;
   if (ioss_type == Ioss::Field::COMPLEX) {
@@ -4079,7 +4088,13 @@ void ParallelDatabaseIO::write_entity_transient_field(ex_entity_type type, const
     for (int i = 0; i < comp_count; i++) {
       std::string var_name = var_type->label_name(field_name, i + 1, field_suffix_separator);
 
-      var_index = m_variables[type].find(var_name)->second;
+      auto var_iter = m_variables[type].find(var_name);
+      if (var_iter == m_variables[type].end()) {
+        std::ostringstream errmsg;
+        fmt::print(errmsg, "ERROR: Could not find field '{}'\n", var_name);
+        IOSS_ERROR(errmsg);
+      }
+      int var_index = var_iter->second;
       assert(var_index > 0);
 
       // var is a [count,comp,re_im] array;  re_im = 1(real) or 2(complex)
@@ -4642,7 +4657,7 @@ void ParallelDatabaseIO::output_node_map() const
   // the metadata has been written to the output database AND if
   // the nodeMap.map and nodeGlobalImplicitMap are defined.
 
-  if (metaDataWritten && !nodeMap.map().empty() && !nodeGlobalImplicitMap.empty()) {
+  if (metaDataWritten) {
     const Ioss::NodeBlockContainer &node_blocks = get_region()->get_node_blocks();
     assert(node_blocks[0]->property_exists("processor_offset"));
     assert(node_blocks[0]->property_exists("locally_owned_count"));
@@ -4650,21 +4665,28 @@ void ParallelDatabaseIO::output_node_map() const
     size_t locally_owned_count = node_blocks[0]->get_property("locally_owned_count").get_int();
 
     int ierr;
-    if (int_byte_size_api() == 4) {
-      std::vector<int> file_ids;
-      file_ids.reserve(locally_owned_count);
-      check_node_owning_processor_data(nodeOwningProcessor, locally_owned_count);
-      filter_owned_nodes(nodeOwningProcessor, myProcessor, &nodeMap.map()[1], file_ids);
-      ierr = ex_put_partial_id_map(get_file_pointer(), EX_NODE_MAP, processor_offset + 1,
-                                   locally_owned_count, file_ids.data());
+    if (!nodeMap.map().empty() && !nodeGlobalImplicitMap.empty()) {
+
+      if (int_byte_size_api() == 4) {
+        std::vector<int> file_ids;
+        file_ids.reserve(locally_owned_count);
+        check_node_owning_processor_data(nodeOwningProcessor, locally_owned_count);
+        filter_owned_nodes(nodeOwningProcessor, myProcessor, &nodeMap.map()[1], file_ids);
+        ierr = ex_put_partial_id_map(get_file_pointer(), EX_NODE_MAP, processor_offset + 1,
+                                     locally_owned_count, file_ids.data());
+      }
+      else {
+        std::vector<int64_t> file_ids;
+        file_ids.reserve(locally_owned_count);
+        check_node_owning_processor_data(nodeOwningProcessor, locally_owned_count);
+        filter_owned_nodes(nodeOwningProcessor, myProcessor, &nodeMap.map()[1], file_ids);
+        ierr = ex_put_partial_id_map(get_file_pointer(), EX_NODE_MAP, processor_offset + 1,
+                                     locally_owned_count, file_ids.data());
+      }
     }
     else {
-      std::vector<int64_t> file_ids;
-      file_ids.reserve(locally_owned_count);
-      check_node_owning_processor_data(nodeOwningProcessor, locally_owned_count);
-      filter_owned_nodes(nodeOwningProcessor, myProcessor, &nodeMap.map()[1], file_ids);
       ierr = ex_put_partial_id_map(get_file_pointer(), EX_NODE_MAP, processor_offset + 1,
-                                   locally_owned_count, file_ids.data());
+                                   locally_owned_count, nullptr);
     }
     if (ierr < 0) {
       Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);

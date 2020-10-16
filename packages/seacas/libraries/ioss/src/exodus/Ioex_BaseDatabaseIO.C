@@ -428,7 +428,7 @@ namespace Ioex {
       }
       else {
         m_exodusFilePtr = exoid;
-        success       = true;
+        success         = true;
       }
     }
     return success;
@@ -2381,14 +2381,14 @@ namespace Ioex {
       m_groupCount[EX_ELEM_BLOCK] = element_blocks.size();
 
       if (isParallel) {
-	// Set "global_entity_count" property on all blocks.
-	// Used to skip output on "globally" empty blocks.
-	Ioss::Int64Vector global_counts(element_counts.size());
-	util().global_count(element_counts, global_counts);
-	size_t idx = 0;
-	for (auto &element_block : element_blocks) {
-	  element_block->property_add(Ioss::Property("global_entity_count", global_counts[idx++]));
-	}
+        // Set "global_entity_count" property on all blocks.
+        // Used to skip output on "globally" empty blocks.
+        Ioss::Int64Vector global_counts(element_counts.size());
+        util().global_count(element_counts, global_counts);
+        size_t idx = 0;
+        for (auto &element_block : element_blocks) {
+          element_block->property_add(Ioss::Property("global_entity_count", global_counts[idx++]));
+        }
       }
     }
 
