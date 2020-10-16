@@ -473,6 +473,9 @@ void StkMeshIoBroker::create_input_mesh()
         process_nodesets_without_distribution_factors(*region, meta_data());
     }
 
+    process_assemblies(*region,   meta_data());
+    build_assembly_hierarchies(*region, meta_data());
+
     create_surface_to_block_mapping();
     store_attribute_field_ordering();
 }

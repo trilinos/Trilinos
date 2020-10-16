@@ -324,6 +324,8 @@ void process_face_blocks(Ioss::Region &region, stk::mesh::BulkData &bulk);
 void process_face_blocks(Ioss::Region &region, stk::mesh::MetaData &meta);
 void process_edge_blocks(Ioss::Region &region, stk::mesh::BulkData &bulk);
 void process_edge_blocks(Ioss::Region &region, stk::mesh::MetaData &meta);
+void process_assemblies(Ioss::Region &region, stk::mesh::MetaData &meta);
+void build_assembly_hierarchies(Ioss::Region &region, stk::mesh::MetaData &meta);
 
 }} // namespace stk io
 

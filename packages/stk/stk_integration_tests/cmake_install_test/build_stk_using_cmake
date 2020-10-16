@@ -8,6 +8,7 @@ exe() {
 sierra_proj=${SIERRA_PROJ:-${PWD}}
 output_dir=${OUTPUT_DIR:-${PWD}/../stk-cmake-testing}
 trilinos_dir=${sierra_proj}/TPLs_src/Trilinos
+cuda_on_or_off=${CUDA:-OFF}
 build_type=${CMAKE_BUILD_TYPE:-release}
 date_suffix=`date +%F_%H-%M-%S`
 
@@ -32,6 +33,7 @@ stk_cmake_testing=${sierra_proj}/stk/stk_integration_tests/cmake_install_test
 printf "\nUsing sierra project: ${sierra_proj}\n";
 printf "Using build-type: ${build_type}\n";
 printf "Using SIERRA_COMPILER: ${SIERRA_COMPILER}\n";
+printf "CUDA: ${cuda_on_or_off}\n";
 printf "Putting output and logs here: ${output_dir}\n";
 
 exe cd $sierra_proj
@@ -45,13 +47,6 @@ stk_install_log=${output_dir}/stk-install.out.$date_suffix
 stk_ctest_log=${output_dir}/stk-ctest.out.$date_suffix
 stk_app_config_log=${output_dir}/stk-test-app-config.out.$date_suffix
 stk_app_make_log=${output_dir}/stk-test-app-make.out.$date_suffix
-
-printf "\nDoing \'bake stk_balance\' in order to build pre-requisite libraries...\n";
-exe 'bake -e ${build_type} stk_balance >& ${bake_log}'
-if [ $? -ne 0 ] ; then
-  printf "!! error in bake, check output in ${bake_log} !! ";
-  exit 1;
-fi
 
 if [ -d ${trilinos_dir}/packages/seacas ] ; then
   exe rm -rf ${trilinos_dir}/packages/seacas;
@@ -70,9 +65,13 @@ fi
 exe cp ${stk_cmake_testing}/run_cmake_stk ${stk_build_dir}
 exe cd ${stk_build_dir}
 printf "\nGenerating pre-requisite TPL paths in ${stk_build_dir}/tpl_paths\n";
-exe ${stk_cmake_testing}/generate_tpl_paths_from_sierra_proj ${sierra_proj} ${stk_build_dir}/tpl_paths
+exe ${stk_cmake_testing}/generate_tpl_paths_from_sierra_proj ${sierra_proj} ${output_dir} ${stk_build_dir}/tpl_paths
 printf "Configuring trilinos/stk (running cmake)...\n";
-exe 'TRILINOS_DIR=${trilinos_dir} TRILINOS_INSTALL_DIR=${trilinos_install_dir} CMAKE_BUILD_TYPE=${build_type} ./run_cmake_stk ${stk_build_dir}/tpl_paths >& ${stk_config_log}'
+exe 'TRILINOS_DIR=${trilinos_dir} \
+     TRILINOS_INSTALL_DIR=${trilinos_install_dir} \
+     CMAKE_BUILD_TYPE=${build_type} \
+     CUDA=${cuda_on_or_off} \
+     ./run_cmake_stk ${stk_build_dir}/tpl_paths >& ${stk_config_log}'
 if [ $? -ne 0 ] ; then
   echo "!! error in stk/trilinos config, check output in ${stk_config_log} !!";
   exit 1;

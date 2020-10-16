@@ -2,7 +2,7 @@
 
 findlibdir() {
   local libname=$1
-  local fullpath=`eval "find ${sierra_dir}/objs/tpls/trilinos_tpls -name ${libname}"`
+  local fullpath=`eval "find ${output_dir}/trilinos_tpls -name ${libname}"`
   local libdir=$2
   local dir=`eval "dirname ${fullpath}"`
   eval $libdir="'$dir'"
@@ -10,20 +10,30 @@ findlibdir() {
 
 findincdir() {
   local header=$1
-  local srchdir=$2
-  local incdir=$3
-  local fullpath=`eval "find ${sierra_dir}/${srchdir} -name ${header}"`
+  local incdir=$2
+  local fullpath=`eval "find ${output_dir}/trilinos_tpls/TPLs_src -name ${header}"`
   local dir=`eval "dirname ${fullpath}"`
   eval $incdir="'$dir'"
 }
 
 sierra_dir=$1
-tpl_paths_file=$2
+output_dir=$2
+tpl_paths_file=$3
 
 printf "sierra_proj = ${sierra_dir}\n";
+printf "output_dir = ${output_dir}\n";
 printf "output tpl_paths_file= ${tpl_paths_file}\n";
 
 rm -f ${tpl_paths_file}
+
+cd ${sierra_dir}
+echo "using bake to generate TPLs..."
+bake -j8 --no-trilinos --no-seacas --builddir=${output_dir}/BAKE --installdir=${output_dir}/trilinos_tpls /tpl/trilinos//install-trilinos-tpls >& ${output_dir}/bake-tpls.out
+
+if [ $? -ne 0 ] ; then
+  echo "!! error using bake to generate tpls. check output in ${output_dir}/bake-tpls.out";
+  exit 1;
+fi
 
 echo "------------------------"
 
@@ -33,15 +43,15 @@ blas_lib=/usr/lib64/libblas.so
 lapack_lib=/usr/lib64/liblapack.so
 
 netcdf_root_dir=$sierra_dir/TPLs_src/netcdf/netcdf-c-4.7.4
-findincdir netcdf.h TPLs_src netcdf_inc_dir
+findincdir netcdf.h netcdf_inc_dir
 findlibdir libnetcdf.a netcdf_lib_dir
 echo "netcdf_lib_dir: $netcdf_lib_dir"
 
-findincdir hdf5.h TPLs_src hdf_inc_dir
+findincdir hdf5.h hdf_inc_dir
 findlibdir libhdf5.a hdf_lib_dir
 echo "hdf_lib_dir: $hdf_lib_dir"
 
-findincdir pnetcdf.h TPLs_src pnetcdf_inc_dir
+findincdir pnetcdf.h pnetcdf_inc_dir
 findlibdir libpnetcdf.a pnetcdf_lib_dir
 echo "pnetcdf_lib_dir: $pnetcdf_lib_dir"
 

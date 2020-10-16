@@ -37,6 +37,8 @@
 #include <unistd.h>                     // for unlink
 #include <stk_util/stk_config.h>
 #include <stk_io/IossBridge.hpp>
+#include <stk_io/FillMesh.hpp>
+#include <stk_io/WriteMesh.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Part.hpp>
 #include <string>                       // for string
@@ -128,5 +130,30 @@ TEST(Assemblies, createAssemblyWithElementBlocksAndSurfaces)
   for(const stk::mesh::Part* subAssemblyPart : subAssembly2LeafParts) {
     EXPECT_TRUE(stk::mesh::contains(allLeafParts, *subAssemblyPart));
   }
+}
+
+TEST(Assemblies, cannotCreateAssemblyWithMixedRanks)
+{
+  const unsigned spatialDim = 3;
+  stk::mesh::MetaData meta(spatialDim);
+
+  stk::mesh::Part& block1Part = meta.declare_part_with_topology("block_1", stk::topology::HEX_8);
+  stk::mesh::Part& surface1Part = meta.declare_part_with_topology("surface_1", stk::topology::QUAD_4);
+
+  stk::io::put_io_part_attribute(block1Part);
+  stk::io::put_io_part_attribute(surface1Part);
+
+  std::string assemblyName("assembly");
+
+  stk::mesh::Part& assemblyPart = meta.declare_part(assemblyName);
+  stk::io::put_assembly_io_part_attribute(assemblyPart);
+
+  meta.declare_part_subset(assemblyPart, block1Part);
+  meta.declare_part_subset(assemblyPart, surface1Part);
+
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  stk::io::fill_mesh("generated:2x2x2|sideset:x", bulk);
+
+  EXPECT_THROW(stk::io::write_mesh("outputFile.g", bulk), std::runtime_error);
 }
 

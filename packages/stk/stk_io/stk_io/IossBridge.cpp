@@ -72,6 +72,7 @@
 #include "Ioss_Field.h"                              // for Field, etc
 #include "Ioss_GroupingEntity.h"                     // for GroupingEntity
 #include "Ioss_NodeBlock.h"                          // for NodeBlock
+#include "Ioss_Assembly.h"
 #include "Ioss_NodeSet.h"                            // for NodeSet
 #include "Ioss_Property.h"                           // for Property
 #include "Ioss_Region.h"                             // for Region, etc
@@ -716,12 +717,12 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         set_unique_ioss_part_attribute<IossAlternatePartName>(part, altPartName);
     }
 
-    bool has_alternate_part_name(stk::mesh::Part& part)
+    bool has_alternate_part_name(const stk::mesh::Part& part)
     {
         return has_ioss_part_attribute<IossAlternatePartName>(part);
     }
 
-    std::string get_alternate_part_name(stk::mesh::Part& part)
+    std::string get_alternate_part_name(const stk::mesh::Part& part)
     {
         std::string name = "";
 
@@ -771,7 +772,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         return get_ioss_part_attribute<IossEdgeBlockPartAttribute>(part);
     }
 
-    std::string getPartName(stk::mesh::Part& part)
+    std::string getPartName(const stk::mesh::Part& part)
     {
       std::string apn = get_alternate_part_name(part);
       if (apn.length())
@@ -1096,13 +1097,28 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       return assemblyNames;
     }
 
-    std::vector<std::string> get_sub_assembly_names(const stk::mesh::MetaData& meta, const std::string& assemblyName)
+    bool is_in_subsets_of_parts(const stk::mesh::Part& part,
+                                const stk::mesh::PartVector& parts)
+    {
+      for(const stk::mesh::Part* thisPart : parts) {
+        if (stk::mesh::contains(thisPart->subsets(), part)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    std::vector<std::string> get_sub_assembly_names(const stk::mesh::MetaData& meta,
+                                                    const std::string& assemblyName)
     {
       const stk::mesh::Part* part = meta.get_part(assemblyName);
       std::vector<std::string> assemblyNames;
+      const stk::mesh::PartVector& subsets = part->subsets();
 
-      for(const stk::mesh::Part* subset : part->subsets()) {
-        if (is_part_assembly_io_part(*subset)) {
+      for(const stk::mesh::Part* subset : subsets) {
+        if (is_part_assembly_io_part(*subset) &&
+            !is_in_subsets_of_parts(*subset, subsets))
+        {
           assemblyNames.push_back(subset->name());
         }
       }
@@ -1110,7 +1126,8 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       return assemblyNames;
     }
 
-    bool has_sub_assemblies(const stk::mesh::MetaData& meta, const std::string& assemblyName)
+    bool has_sub_assemblies(const stk::mesh::MetaData& meta,
+                            const std::string& assemblyName)
     {
       const stk::mesh::Part* part = meta.get_part(assemblyName);
       for(const stk::mesh::Part* subset : part->subsets()) {
@@ -1121,7 +1138,8 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       return false;
     }
 
-    stk::mesh::PartVector get_unique_leaf_parts(const stk::mesh::MetaData& meta, const std::string& assemblyName)
+    stk::mesh::PartVector get_unique_leaf_parts(const stk::mesh::MetaData& meta,
+                                                const std::string& assemblyName)
     {
       stk::mesh::PartVector leafParts;
       const stk::mesh::Part* part = meta.get_part(assemblyName);
@@ -1201,16 +1219,28 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       else if (entity->type() == Ioss::EDGEBLOCK) {
         stk::io::put_edge_block_io_part_attribute(part);
       }
+      else if (entity->type() == Ioss::ASSEMBLY) {
+        stk::io::put_assembly_io_part_attribute(part);
+      }
       else {
         stk::io::put_io_part_attribute(part);
+      }
+    }
+
+    stk::mesh::Part& declare_stk_part(Ioss::GroupingEntity* entity, stk::mesh::MetaData& meta)
+    {
+      if (entity->type() == Ioss::ASSEMBLY) {
+        return meta.declare_part(entity->name());
+      }
+      else {
+        return meta.declare_part(entity->name(), get_entity_rank(entity, meta));
       }
     }
 
     void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta)
     {
       if (include_entity(entity)) {
-        mesh::EntityRank type = get_entity_rank(entity, meta);
-        stk::mesh::Part & part = meta.declare_part(entity->name(), type);
+        stk::mesh::Part & part = declare_stk_part(entity, meta);
         if (entity->property_exists("id")) {
           meta.set_part_id(part, entity->get_property("id").get_int());
         }
@@ -2144,6 +2174,53 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
           }
       }
 
+      void define_assembly(stk::io::OutputParams &params,
+                           const stk::mesh::Part &part)
+      {
+        Ioss::Region &io_region = params.io_region();
+
+        std::string name = getPartName(part);
+        Ioss::Assembly *assembly = io_region.get_assembly(name);
+        if(assembly == nullptr)
+        {
+            assembly = new Ioss::Assembly(io_region.get_database() ,
+                                     name);
+            io_region.add(assembly);
+        }
+      }
+
+      void define_assembly_hierarchy(stk::io::OutputParams &params,
+                                     const stk::mesh::Part &part)
+      {
+        const stk::mesh::MetaData & meta = mesh::MetaData::get(part);
+        Ioss::Region &io_region = params.io_region();
+
+        std::string name = getPartName(part);
+        Ioss::Assembly *assembly = io_region.get_assembly(name);
+        ThrowRequireMsg(assembly != nullptr, "Failed to find assembly "<<name);
+
+        if (has_sub_assemblies(meta, part.name())) {
+          std::vector<std::string> subAssemblyNames = get_sub_assembly_names(meta, part.name());
+          for(const std::string& subAssemblyName : subAssemblyNames) {
+            const stk::mesh::Part* subAssemblyPart = meta.get_part(subAssemblyName);
+
+            std::string iossSubAssemblyName = getPartName(*subAssemblyPart);
+            const Ioss::Assembly* subAssembly = io_region.get_assembly(iossSubAssemblyName);
+            ThrowRequireMsg(subAssembly != nullptr, "Failed to find subAssembly "<<iossSubAssemblyName);
+            assembly->add(subAssembly);
+          }
+        }
+        else {
+          stk::mesh::PartVector leafParts = get_unique_leaf_parts(meta, part.name());
+          for(stk::mesh::Part* leafPart : leafParts) {
+            std::string iossLeafPartName = getPartName(*leafPart);
+            const Ioss::GroupingEntity* leafEntity = io_region.get_entity(iossLeafPartName);
+            ThrowRequireMsg(leafEntity != nullptr, "Failed to find leafEntity "<<iossLeafPartName);
+            assembly->add(leafEntity);
+          }
+        }
+      }
+
       void define_face_block(stk::io::OutputParams &params,
                              stk::mesh::Part &part)
       {
@@ -2535,17 +2612,19 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
        const bool order_blocks_by_creation_order = (input_region == nullptr) && !sort_stk_parts_by_name;
        const int spatialDim = meta_data.spatial_dimension();
 
-       for (mesh::PartVector::const_iterator i = parts->begin(); i != parts->end(); ++i) {
-         mesh::Part * const part = *i;
-
+       for (stk::mesh::Part* const part : *parts) {
          stk::mesh::EntityRank rank = part->primary_entity_rank();
          bool isIoPart = stk::io::is_part_io_part(*part);
+         bool isAssemblyIoPart = stk::io::is_part_assembly_io_part(*part);
          bool isFaceBlockIoPart = stk::io::is_part_face_block_io_part(*part);
          bool isEdgeBlockIoPart = stk::io::is_part_edge_block_io_part(*part);
          bool isValidForOutput = is_valid_for_output(*part, params.get_output_selector(rank));
 
          if (isIoPart) {
-           if (rank == mesh::InvalidEntityRank) {
+           if (isAssemblyIoPart) {
+             define_assembly(params, *part);
+           }
+           else if (rank == mesh::InvalidEntityRank) {
              continue;
            }
            else if ((rank == stk::topology::NODE_RANK) && isValidForOutput) {
@@ -2568,6 +2647,13 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
                     params.get_enable_edge_io()) {
              define_edge_block(params, *part);
            }
+         }
+       }
+
+       for (const stk::mesh::Part* part : *parts) {
+         bool isAssemblyIoPart = stk::io::is_part_assembly_io_part(*part);
+         if (isAssemblyIoPart) {
+           define_assembly_hierarchy(params, *part);
          }
        }
 

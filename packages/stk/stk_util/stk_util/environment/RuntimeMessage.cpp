@@ -169,11 +169,7 @@ get_message_type_info(
   return s_messageTypeInfo[type & MSG_TYPE_MASK];
 }
 
-
-
-
-
-
+#ifdef STK_HAS_MPI
 Marshal &operator<<(Marshal &mout, const DeferredMessage &s)  {
   mout << s.m_type << s.m_messageId << s.m_rank << s.m_throttleGroup << s.m_throttleCutoff << s.m_header << s.m_aggregate;
   return mout;
@@ -183,6 +179,7 @@ Marshal &operator>>(Marshal &min, DeferredMessage &s)  {
   min >> s.m_type >> s.m_messageId >> s.m_rank >> s.m_throttleGroup >> s.m_throttleCutoff >> s.m_header >> s.m_aggregate;
   return min;
 }
+#endif // STK_HAS_MPI
 
 } // namespace <empty>
 
@@ -361,7 +358,6 @@ report_deferred_messages(
   std::vector<int> recv_count(p_size, 0);
   int * const recv_count_ptr = recv_count.data() ;
 
-#ifdef STK_HAS_MPI
   int result = MPI_Gather(&send_count, 1, MPI_INT, recv_count_ptr, 1, MPI_INT, p_root, comm);
 
   if (MPI_SUCCESS != result) {
@@ -369,7 +365,6 @@ report_deferred_messages(
     message << "stk::report_deferred_messages FAILED: MPI_Gather = " << result ;
     throw std::runtime_error(message.str());
   }
-#endif
 
   // Receive counts are only non-zero on the root processor:
   std::vector<int> recv_displ(p_size + 1, 0);
@@ -387,7 +382,6 @@ report_deferred_messages(
     char * const recv_ptr = recv_size ? buffer.data() : nullptr ;
     int * const recv_displ_ptr = recv_displ.data() ;
 
-#ifdef STK_HAS_MPI
     result = MPI_Gatherv(const_cast<char*>(send_ptr), send_count, MPI_CHAR,
                          recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
                          p_root, comm);
@@ -396,7 +390,6 @@ report_deferred_messages(
       message << "stk::report_deferred_messages FAILED: MPI_Gatherv = " << result ;
       throw std::runtime_error(message.str());
     }
-#endif
 
     if (p_rank == p_root) {
       for (int i = 0; i < p_size; ++i) {

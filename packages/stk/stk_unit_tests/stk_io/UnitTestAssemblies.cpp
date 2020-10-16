@@ -38,67 +38,7 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_topology/topology.hpp>
 #include <stk_io/IossBridge.hpp>
-
-class Assembly : public ::ngp_testing::Test {
-protected:
-  Assembly()
-  : m_meta(2)
-  {}
-
-  stk::mesh::Part& create_assembly(const std::string& assemblyName)
-  {
-    stk::mesh::Part& assemblyPart = get_meta().declare_part(assemblyName);
-    stk::io::put_assembly_io_part_attribute(assemblyPart);
-    return assemblyPart;
-  }
-
-  stk::mesh::Part& create_io_part(const std::string& partName)
-  {
-    stk::mesh::Part& part = get_meta().declare_part(partName, stk::topology::ELEM_RANK);
-    stk::io::put_io_part_attribute(part);
-    return part;
-  }
-
-  void declare_subsets(stk::mesh::Part& parentPart, const stk::mesh::PartVector& subsetParts)
-  {
-    for(stk::mesh::Part* subsetPart : subsetParts) {
-      get_meta().declare_part_subset(parentPart, *subsetPart);
-    }
-  }
-
-  std::pair<stk::mesh::Part*, stk::mesh::PartVector>
-  create_assembly_hierarchy(const std::string& parentAssemblyName,
-                            const std::vector<std::string>& subAssemblyNames)
-  {
-    stk::mesh::Part& parentAssemblyPart = create_assembly(parentAssemblyName);
-
-    stk::mesh::PartVector subAssemblyParts;
-    for(const std::string& subAssemblyName : subAssemblyNames) {
-      subAssemblyParts.push_back(&create_assembly(subAssemblyName));
-    }
-
-    declare_subsets(parentAssemblyPart, subAssemblyParts);
-
-    return std::make_pair(&parentAssemblyPart, subAssemblyParts);
-  }
-
-  void test_assembly_part_attributes(const stk::mesh::Part& part)
-  {
-    EXPECT_TRUE(stk::io::is_part_assembly_io_part(part));
-    EXPECT_TRUE(stk::io::is_part_io_part(part));
-  }
-
-  void test_assembly_part_attributes(const stk::mesh::PartVector& parts)
-  {
-    for(const stk::mesh::Part* part : parts) {
-      test_assembly_part_attributes(*part);
-    }
-  }
-
-  stk::mesh::MetaData& get_meta() { return m_meta; }
-
-  stk::mesh::MetaData m_meta;
-};
+#include "Assembly.hpp"
 
 TEST_F(Assembly, ioPartIsNotAssembly)
 {
@@ -109,9 +49,12 @@ TEST_F(Assembly, ioPartIsNotAssembly)
 
 TEST_F(Assembly, createAssembly)
 {
-  stk::mesh::Part& assemblyPart = create_assembly("myAssembly");
+  const std::string assemblyName("myAssembly");
+  stk::mesh::Part& assemblyPart = create_assembly(assemblyName);
 
-  test_assembly_part_attributes({&assemblyPart});
+  test_assembly_part_attributes(assemblyPart);
+
+  EXPECT_TRUE(stk::io::get_unique_leaf_parts(get_meta(), assemblyName).empty());
 }
 
 TEST_F(Assembly, getAssemblyNames_empty)
@@ -130,11 +73,9 @@ TEST_F(Assembly, getAssemblyNames_singleAssembly)
   std::vector<std::string> assemblyNames = stk::io::get_assembly_names(get_meta());
   ASSERT_EQ(1u, assemblyNames.size());
   EXPECT_EQ(assemblyName, assemblyNames[0]);
-
-  EXPECT_TRUE(stk::io::get_unique_leaf_parts(get_meta(), assemblyName).empty());
 }
 
-TEST_F(Assembly, getAssemblyNames_multipleAssemblies)
+TEST_F(Assembly, getAssemblyNames_multipleAssemblies_inOrderOfCreation)
 {
   std::string assemblyBBB("BBB_assembly");
   create_assembly(assemblyBBB);
@@ -150,10 +91,6 @@ TEST_F(Assembly, getAssemblyNames_multipleAssemblies)
   EXPECT_EQ(assemblyBBB, assemblyNames[0]);
   EXPECT_EQ(assemblyZZZ, assemblyNames[1]);
   EXPECT_EQ(assemblyAAA, assemblyNames[2]);
-
-  EXPECT_TRUE(stk::io::get_unique_leaf_parts(get_meta(), assemblyAAA).empty());
-  EXPECT_TRUE(stk::io::get_unique_leaf_parts(get_meta(), assemblyBBB).empty());
-  EXPECT_TRUE(stk::io::get_unique_leaf_parts(get_meta(), assemblyZZZ).empty());
 }
 
 TEST_F(Assembly, createAssemblyWithSubAssemblies)
@@ -241,45 +178,42 @@ TEST_F(Assembly, createAssemblyWithSubAssemblies_leafParts)
   EXPECT_EQ(block3Part.mesh_meta_data_ordinal(), leafParts[2]->mesh_meta_data_ordinal());
 }
 
-TEST_F(Assembly, deeperHierarchy)
+TEST_F(Assembly, deeperHierarchy_names)
 {
+  create_deep_assembly_hierarchy();
+
   std::string parentAssemblyName("myParentAssembly");
   std::string subAssembly1Name("mySubAssembly1");
   std::string subAssembly2Name("mySubAssembly2");
-
-  stk::mesh::Part* parentAssemblyPart;
-  stk::mesh::PartVector subAssemblyParts;
-  std::tie(parentAssemblyPart, subAssemblyParts) = create_assembly_hierarchy(parentAssemblyName,
-                                                     {subAssembly1Name, subAssembly2Name});
-
   std::string subSubAssemblyName("mySubSubAssembly");
   std::string subSubSubAssembly1Name("mySubSubSubAssembly1");
   std::string subSubSubAssembly2Name("mySubSubSubAssembly2");
 
-  stk::mesh::Part* subSubAssemblyPart;
-  stk::mesh::PartVector subSubSubAssemblyParts;
-  std::tie(subSubAssemblyPart, subSubSubAssemblyParts) = create_assembly_hierarchy(subSubAssemblyName,
-                                                     {subSubSubAssembly1Name, subSubSubAssembly2Name});
+  std::vector<std::string> assemblyNames = stk::io::get_assembly_names(get_meta());
+  ASSERT_EQ(6u, assemblyNames.size());
+  EXPECT_EQ(parentAssemblyName,     assemblyNames[0]);
+  EXPECT_EQ(subAssembly1Name,       assemblyNames[1]);
+  EXPECT_EQ(subAssembly2Name,       assemblyNames[2]);
+  EXPECT_EQ(subSubAssemblyName,     assemblyNames[3]);
+  EXPECT_EQ(subSubSubAssembly1Name, assemblyNames[4]);
+  EXPECT_EQ(subSubSubAssembly2Name, assemblyNames[5]);
 
-  ASSERT_EQ(2u, subAssemblyParts.size());
-  declare_subsets(*subAssemblyParts[0], {subSubAssemblyPart});
-  declare_subsets(*subAssemblyParts[1], {subSubAssemblyPart});
+  test_sub_assembly_names(parentAssemblyName, {subAssembly1Name, subAssembly2Name});
+  test_sub_assembly_names(subAssembly1Name, {subSubAssemblyName});
+  test_sub_assembly_names(subAssembly2Name, {});
+  test_sub_assembly_names(subSubAssemblyName, {subSubSubAssembly1Name, subSubSubAssembly2Name});
+  test_sub_assembly_names(subSubSubAssembly1Name, {});
+  test_sub_assembly_names(subSubSubAssembly2Name, {});
+}
 
-  stk::mesh::Part& block1Part = create_io_part("block_1");
-  stk::mesh::Part& block2Part = create_io_part("block_2");
+TEST_F(Assembly, deeperHierarchy_parts)
+{
+  create_deep_assembly_hierarchy();
 
-  ASSERT_EQ(2u, subSubSubAssemblyParts.size());
-  declare_subsets(*subSubSubAssemblyParts[0], {&block1Part, &block2Part});
-  declare_subsets(*subSubSubAssemblyParts[1], {&block1Part, &block2Part});
-
-  const bool bottomSubset1IsAddedToTopSuperset = parentAssemblyPart->contains(block1Part);
-  const bool bottomSubset2IsAddedToTopSuperset = parentAssemblyPart->contains(block2Part);
-  EXPECT_TRUE(bottomSubset1IsAddedToTopSuperset);
-  EXPECT_TRUE(bottomSubset2IsAddedToTopSuperset);
-
-  stk::mesh::PartVector leafParts = stk::io::get_unique_leaf_parts(get_meta(), parentAssemblyName);
-  ASSERT_EQ(2u, leafParts.size());
-  EXPECT_EQ(block1Part.mesh_meta_data_ordinal(), leafParts[0]->mesh_meta_data_ordinal());
-  EXPECT_EQ(block2Part.mesh_meta_data_ordinal(), leafParts[1]->mesh_meta_data_ordinal());
+  stk::mesh::PartVector leafParts = stk::io::get_unique_leaf_parts(get_meta(), "myParentAssembly");
+  ASSERT_EQ(3u, leafParts.size());
+  EXPECT_EQ("block_1", leafParts[0]->name());
+  EXPECT_EQ("block_2", leafParts[1]->name());
+  EXPECT_EQ("block_3", leafParts[2]->name());
 }
 

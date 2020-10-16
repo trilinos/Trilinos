@@ -467,11 +467,11 @@ std::vector<Ioss::EntityType> get_ioss_entity_types(const stk::mesh::MetaData& m
 
 std::vector<Ioss::EntityType> get_ioss_entity_types(stk::mesh::Part& part);
 
-std::string getPartName(stk::mesh::Part& part);
+std::string getPartName(const stk::mesh::Part& part);
 
 void set_alternate_part_name(stk::mesh::Part& part, const std::string& altPartName);
-std::string get_alternate_part_name(stk::mesh::Part& part);
-bool has_alternate_part_name(stk::mesh::Part& part);
+std::string get_alternate_part_name(const stk::mesh::Part& part);
+bool has_alternate_part_name(const stk::mesh::Part& part);
 
 void set_original_topology_type(stk::mesh::Part& part);
 void set_original_topology_type(stk::mesh::Part& part, const std::string& origTopo);

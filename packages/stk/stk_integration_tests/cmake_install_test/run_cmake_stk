@@ -23,7 +23,18 @@ if [ $# -ne 1 ] ; then
   echo "Usage: run_cmake_stk tpl_paths_file";
   exit 1;
 fi
+
+if [ ! -d ${trilinos_src_dir}/packages/seacas ] && [ ! -L ${trilinos_src_dir}/packages/seacas ] ; then
+  echo "Trilinos dir (${trilinos_src_dir}) doesn't have packages/seacas directory. If using a Sierra project, make a soft-link to Sierra's seacas directory.";
+  exit 1;
+fi
+if [ ! -d ${trilinos_src_dir}/packages/stk ] && [ ! -L ${trilinos_src_dir}/packages/stk ]; then
+  echo "Trilinos dir (${trilinos_src_dir}) doesn't have packages/stk directory. If using a Sierra project, make a soft-link to Sierra's stk directory.";
+  exit 1;
+fi
+
 tpl_paths=$1
+
 if [ ! -f ${tpl_paths} ] ; then
   echo "Error, tpl_paths file ${tpl_paths} not found.";
   exit 1;
@@ -68,7 +79,7 @@ cmake \
 -DTPL_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DKokkos_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DKokkos_ENABLE_CUDA_UVM:BOOL=${cuda_on_or_off} \
--DKokkos_ENABLE_RELOCATABLE_DEVICE_CODE:BOOL=${cuda_on_or_off} \
+-DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE:BOOL=${cuda_on_or_off} \
 -DKokkos_ARCH_VOLTA70=${cuda_on_or_off} \
 -DTpetra_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DTrilinos_ENABLE_KokkosKernels:BOOL=ON \

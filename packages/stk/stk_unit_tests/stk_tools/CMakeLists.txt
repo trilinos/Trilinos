@@ -45,5 +45,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ARGS "--gtest_filter=Cloning*.*"
     COMM serial mpi
     NUM_MPI_PROCS 1-4
+    NOEXEPREFIX
     )
 
