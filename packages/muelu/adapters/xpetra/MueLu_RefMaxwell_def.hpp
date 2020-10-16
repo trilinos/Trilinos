@@ -163,19 +163,18 @@ namespace MueLu {
                             const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
                             Teuchos::ArrayRCP<bool>& dirichletRows)
   {
-    #include "MueLu_UseShortNames.hpp"
     typedef Teuchos::ScalarTraits<Scalar> STS;
-    RCP<const Map> rowmap = A.getRowMap();
-    for (LO row = 0; row < Teuchos::as<LO>(A.getRowMap()->getNodeNumElements()); ++row) {
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> rowmap = A.getRowMap();
+    for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getNodeNumElements()); ++row) {
       size_t nnz = A.getNumEntriesInLocalRow(row);
-      ArrayView<const LO> indices;
-      ArrayView<const SC> vals;
+      ArrayView<const LocalOrdinal> indices;
+      ArrayView<const Scalar> vals;
       A.getLocalRowView(row, indices, vals);
 
-      SC rowsum = STS::zero();
-      SC diagval = STS::zero();
-      for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
-        LO col = indices[colID];
+      Scalar rowsum = STS::zero();
+      Scalar diagval = STS::zero();
+      for (LocalOrdinal colID = 0; colID < Teuchos::as<LocalOrdinal>(nnz); colID++) {
+        LocalOrdinal col = indices[colID];
         if (row == col)
           diagval = vals[colID];
         rowsum += vals[colID];
@@ -252,19 +251,18 @@ namespace MueLu {
                             const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
                             Kokkos::View<bool*, typename Node::device_type> & dirichletRows)
   {
-    #include "MueLu_UseShortNames.hpp"
     typedef Teuchos::ScalarTraits<Scalar> STS;
-    RCP<const Map> rowmap = A.getRowMap();
-    for (LO row = 0; row < Teuchos::as<LO>(A.getRowMap()->getNodeNumElements()); ++row) {
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> rowmap = A.getRowMap();
+    for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getNodeNumElements()); ++row) {
       size_t nnz = A.getNumEntriesInLocalRow(row);
-      ArrayView<const LO> indices;
-      ArrayView<const SC> vals;
+      ArrayView<const LocalOrdinal> indices;
+      ArrayView<const Scalar> vals;
       A.getLocalRowView(row, indices, vals);
 
-      SC rowsum = STS::zero();
-      SC diagval = STS::zero();
-      for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
-        LO col = indices[colID];
+      Scalar rowsum = STS::zero();
+      Scalar diagval = STS::zero();
+      for (LocalOrdinal colID = 0; colID < Teuchos::as<LocalOrdinal>(nnz); colID++) {
+        LocalOrdinal col = indices[colID];
         if (row == col)
           diagval = vals[colID];
         rowsum += vals[colID];
@@ -611,7 +609,7 @@ namespace MueLu {
       GetOStream(Errors) << "MueLu::RefMaxwell::compute(): either the nullspace or the nodal coordinates must be provided." << std::endl;
     }
 
-    if (!reuse) {
+    if (!reuse && skipFirstLevel_) {
       // Nuke the BC edges in nullspace
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (useKokkos_)
@@ -2256,8 +2254,23 @@ namespace MueLu {
       }
     }
 
-    if (!skipFirstLevel_)
-      Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(AH_, true, GetOStream(Warnings1));
+    if (!AH_.is_null() && !skipFirstLevel_) {
+      ArrayRCP<bool> AHBCrows;
+      AHBCrows.resize(AH_->getRowMap()->getNodeNumElements());
+      size_t dim = Nullspace_->getNumVectors();
+      if (useKokkos_)
+        for (size_t i = 0; i < BCdomainKokkos_.size(); i++)
+          for (size_t k = 0; k < dim; k++)
+            AHBCrows[i*dim+k] = BCdomainKokkos_(i);
+      else
+        for (size_t i = 0; i < static_cast<size_t>(BCdomain_.size()); i++)
+          for (size_t k = 0; k < dim; k++)
+            AHBCrows[i*dim+k] = BCdomain_[i];
+      magnitudeType rowSumTol = parameterList_.get("refmaxwell: row sum drop tol (1,1)",-1.0);
+      if (rowSumTol > 0.)
+        ApplyRowSumCriterion(*AH_, rowSumTol, AHBCrows);
+      Utilities::ApplyOAZToMatrixRows(AH_, AHBCrows);
+    }
 
     if (!AH_.is_null()) {
       size_t dim = Nullspace_->getNumVectors();
