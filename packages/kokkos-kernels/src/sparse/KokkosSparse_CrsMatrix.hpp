@@ -695,12 +695,17 @@ public:
       const ordinal_type offset =
         findRelOffset (&(row_view.colidx(0)), length, cols[i], hint, is_sorted);
       if (offset != length) {
+// Adding this as atomic_assign is in a KOKKOS_ENABLE_CUDA block
+#ifdef KOKKOS_ENABLE_CUDA
         if (force_atomic) {
           Kokkos::atomic_assign (&(row_view.value(offset)), vals[i]);
         }
         else {
+#endif
           row_view.value(offset) = vals[i];
+#ifdef KOKKOS_ENABLE_CUDA
         }
+#endif
         ++numValid;
         // If the hint is out of range, findRelOffset will ignore it.
         // Thus, while it's harmless to have a hint out of range, it

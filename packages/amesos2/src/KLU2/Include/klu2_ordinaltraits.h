@@ -112,33 +112,40 @@ struct KLU_OrdinalTraits<int>
 template<>
 struct KLU_OrdinalTraits<long int>
 {
-    static inline long int btf_order (long int n, long int *Ap, long int *Ai,
-        double maxwork, double *work, long int *P, long int *Q, long int *R, long int *nmatch,
-        long int *Work)
+// These should all be UF_long, which I presume is resolving to ptrdiff_t
+// ptrdiff_t is long int on Linux64, but just to be safe
+#ifdef _WIN32
+#define kluint ptrdiff_t
+#else
+#define kluint long int
+#endif
+    static inline kluint btf_order (kluint n, kluint *Ap, kluint *Ai,
+        double maxwork, double *work, kluint *P, kluint *Q, kluint *R, kluint *nmatch,
+        kluint *Work)
     {
         return (trilinos_btf_l_order (n, Ap, Ai, maxwork, work, P, Q, R, nmatch,
                     Work));
     }
 
-    static inline long int btf_strongcomp (long int n, long int *Ap, long int *Ai, long int *Q,
-        long int *P, long int *R, long int *Work)
+    static inline kluint btf_strongcomp (kluint n, kluint *Ap, kluint *Ai, kluint *Q,
+        kluint *P, kluint *R, kluint *Work)
     {
         return(trilinos_btf_l_strongcomp (n, Ap, Ai, Q, P, R, Work)) ;
     }
 
-    static inline long int amd_order (long int n, long int *Ap, long int *Ai, long int *P,
+    static inline kluint amd_order (kluint n, kluint *Ap, kluint *Ai, kluint *P,
         double *Control, double *Info)
     {
         return (trilinos_amd_l_order(n, Ap, Ai, P, Control, Info)) ;
     }
 
-    static inline long int colamd (long int n_row, long int n_col, long int Alen, long int *A,
-        long int *p, double *knobs, long int *stats)
+    static inline kluint colamd (kluint n_row, kluint n_col, kluint Alen, kluint *A,
+        kluint *p, double *knobs, kluint *stats)
     {
         return(trilinos_colamd_l (n_row, n_col, Alen, A, p, knobs, stats));
     }
 
-    static inline long int colamd_recommended (long int nnz, long int n_row, long int n_col)
+    static inline kluint colamd_recommended (kluint nnz, kluint n_row, kluint n_col)
     {
         return(trilinos_colamd_l_recommended(nnz, n_row, n_col));
     }
