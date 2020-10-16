@@ -752,6 +752,7 @@ Superlu<Matrix,Vector>::getValidParameters_impl() const
 
     // ILU parameters
 
+#if 0
     setStringToIntegralParameter<SLU::rowperm_t>("RowPerm", "LargeDiag",
             "Type of row permutation strategy to use",
             tuple<string>("NOROWPERM","LargeDiag","MY_PERMR"),
@@ -762,6 +763,22 @@ Superlu<Matrix,Vector>::getValidParameters_impl() const
             SLU::LargeDiag,
             SLU::MY_PERMR),
             pl.getRawPtr());
+#else
+// Compilation error on Windows: no member named 'LargeDiag' in namespace 'SLU'
+// So removing it and correspondents.
+    setStringToIntegralParameter<SLU::rowperm_t>("RowPerm", "LargeDiag",
+            "Type of row permutation strategy to use",
+            tuple<string>("NOROWPERM","LargeDiag","MY_PERMR"),
+            tuple<string>("Use natural ordering",
+            "Use weighted bipartite matching algorithm",
+            "Use the ordering given in perm_r input"),
+            tuple<SLU::rowperm_t>(SLU::NOROWPERM,
+            SLU::NOROWPERM,
+            // SLU::LargeDiag,
+            SLU::MY_PERMR),
+            pl.getRawPtr());
+
+#endif
 
     /*setStringToIntegralParameter<SLU::rule_t>("ILU_DropRule", "DROP_BASIC",
             "Type of dropping strategy to use",
