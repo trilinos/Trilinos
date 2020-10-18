@@ -107,22 +107,26 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   const std::string nullspace1FileName = probName + "_nullspace1.mm";
   const std::string dualInterfaceMapFileName = probName + "_interface_dof_map.mm";
 
-  //const int numPrimalDofsPerNode = 2; // set in the StridedMap below
-  //const int numDualDofsPerNode = 2;
+  const int numPrimalDofsPerNode = 2;
+  const int numDualDofsPerNode = 2;
 
-  // Create maps for primal and dual DOFs
- std::vector<size_t> stridingInfo;
- stridingInfo.push_back(2); // 2 dofs per node both for primal and dual variables
- RCP<const StridedMap> dofRowMapPrimal = StridedMapFactory::Build(lib,numGlobalDofsPrimal,Teuchos::ScalarTraits<GO>::zero(),stridingInfo,comm,-1);
- RCP<const StridedMap> dofRowMapDual = StridedMapFactory::Build(lib, numGlobalDofsDual, Teuchos::ScalarTraits<GO>::zero(), stridingInfo, comm, -1, numGlobalDofsPrimal); // The StridedMapFactory supports a global offset of the Dofs (last parameter)
+  // Create maps for primal DOFs
+  std::vector<size_t> stridingInfoPrimal;
+  stridingInfoPrimal.push_back(numPrimalDofsPerNode);
+  RCP<const StridedMap> dofRowMapPrimal = StridedMapFactory::Build(lib, numGlobalDofsPrimal, Teuchos::ScalarTraits<GO>::zero(), stridingInfoPrimal,comm,-1);
 
- // Construct the blocked map of the global system 
- std::vector<RCP<const Map> > rowmaps;
- rowmaps.push_back(dofRowMapPrimal);
- rowmaps.push_back(dofRowMapDual);
- RCP<const Map> fullRowMap = MapUtils::concatenateMaps(rowmaps);
- RCP<const BlockedMap> blockedMap = rcp(new BlockedMap(fullRowMap, rowmaps));
- 
+  // Create maps for dual DOFs
+  std::vector<size_t> stridingInfoDual;
+  stridingInfoDual.push_back(numDualDofsPerNode);
+  RCP<const StridedMap> dofRowMapDual = StridedMapFactory::Build(lib, numGlobalDofsDual, Teuchos::ScalarTraits<GO>::zero(), stridingInfoDual, comm, -1, numGlobalDofsPrimal);
+
+  // Construct the blocked map of the global system
+  std::vector<RCP<const Map> > rowmaps;
+  rowmaps.push_back(dofRowMapPrimal);
+  rowmaps.push_back(dofRowMapDual);
+  RCP<const Map> fullRowMap = MapUtils::concatenateMaps(rowmaps);
+  RCP<const BlockedMap> blockedMap = rcp(new BlockedMap(fullRowMap, rowmaps));
+
   // Read the matrix from file and transform it into a block matrix
   RCP<Matrix> mat = Xpetra::IO<SC,LO,GO,NO>::Read(matrixFileName, fullRowMap);
   RCP<MapExtractor> rangeMapExtractor =
