@@ -84,7 +84,7 @@
       <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
       <Parameter name="Aggregates" type="string" value="myInterfaceAggs2"/>
       <Parameter name="CoarseMap" type="string" value="myCoarseMap2"/>
-      <Parameter name="tentative: calculate qr" type="bool" value="false"/>
+      <Parameter name="tentative: calculate qr" type="bool" value="true"/>
       <Parameter name="tentative: build coarse coordinates" type="bool" value="false"/>
       <Parameter name="UnAmalgamationInfo" type="string" value="myInterfaceAggs2"/>
     </ParameterList>
@@ -154,14 +154,14 @@
       <ParameterList name="ParameterList">
         <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
         <Parameter name="relaxation: sweeps" type="int" value="1"/>
-        <Parameter name="relaxation: damping factor" type="double" value="0.5"/>
+        <Parameter name="relaxation: damping factor" type="double" value="0.4"/>
       </ParameterList>
     </ParameterList>
 
     <!-- Build Schur Complement factory (for being used in SIMPLE type block smoother)-->
     <ParameterList name="mySchurCompFact">
       <Parameter name="factory" type="string" value="SchurComplementFactory"/>
-      <Parameter name="omega" type="double" value="1.0"/>
+      <Parameter name="omega" type="double" value="0.6"/> <!-- should be the same as the Simple damping factor-->
       <Parameter name="lumping" type="bool" value="true"/>
     </ParameterList>
 
@@ -171,7 +171,7 @@
       <Parameter name="type" type="string" value="RELAXATION"/>
       <ParameterList name="ParameterList">
         <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
-        <Parameter name="relaxation: sweeps" type="int" value="1"/>
+        <Parameter name="relaxation: sweeps" type="int" value="3"/>
         <Parameter name="relaxation: damping factor" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
@@ -180,7 +180,7 @@
     <ParameterList name="myBlockSmoother">
       <Parameter name="factory" type="string" value="SimpleSmoother"/>
       <Parameter name="Sweeps" type="int" value="3"/>
-      <Parameter name="Damping factor" type="double" value="0.5"/>
+      <Parameter name="Damping factor" type="double" value="0.6"/>
       <Parameter name="UseSIMPLEC" type="bool" value="false"/>
       <!-- factory manager for block 1 -->
       <ParameterList name="block1">

@@ -68,4 +68,12 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND
     NUM_MPI_PROCS 1
     )
 
+  TRIBITS_ADD_TEST(
+    MeshTyingBlocked_SimpleSmoother_2dof
+    NAME "MeshTyingBlocked_SimpleSmoother_2dof_medium"
+    ARGS "--linAlgebra=Tpetra --xml=meshtying2D_medium_simple.xml --nPrimalDofs=530 --nDualDofs=54 --probName=meshtying2D_medium --expectedNumIts=11"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
 ENDIF()
