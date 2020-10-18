@@ -14,14 +14,10 @@
       <Parameter name="factory" type="string" value="SubBlockAFactory"/>
       <Parameter name="block row" type="int" value="0"/>
       <Parameter name="block col" type="int" value="0"/>
-      <Parameter name="Range map: Striding info" type="string" value="{ 2 }"/>
-      <Parameter name="Domain map: Striding info" type="string" value="{ 2 }"/>
     </ParameterList>
 
     <ParameterList name="myCoarseMap1">
       <Parameter name="factory" type="string" value="CoarseMapFactory"/>
-      <Parameter name="Striding info" type="string" value="{ 3 }"/>
-      <Parameter name="Strided block id" type="int" value="-1"/>
     </ParameterList>
 
     <ParameterList name="myAggFact1">
@@ -48,11 +44,11 @@
 
     <!-- BLOCK 2 (for submatrix A_{11}) w/ 2 dual DOFs per node -->
     <ParameterList name="mySubBlockAFactory2">
-      <Parameter name="factory" type="string" value="SubBlockAFactory"/>
+      <Parameter name="factory" type="string" value="ZeroSubBlockAFactory"/>
       <Parameter name="block row" type="int" value="1"/>
       <Parameter name="block col" type="int" value="1"/>
-      <Parameter name="Range map: Striding info" type="string" value="{ 2 }"/>
-      <Parameter name="Domain map: Striding info" type="string" value="{ 2 }"/>
+      <Parameter name="row map from block col" type="int" value="0"/>
+      <Parameter name="column map from block row" type="int" value="0"/>
     </ParameterList>
 
     <!-- for submatrix A_{01}) -->
@@ -60,14 +56,10 @@
       <Parameter name="factory" type="string" value="SubBlockAFactory"/>
       <Parameter name="block row" type="int" value="0"/>
       <Parameter name="block col" type="int" value="1"/>
-      <Parameter name="Range map: Striding info" type="string" value="{ 2 }"/>
-      <Parameter name="Domain map: Striding info" type="string" value="{ 2 }"/>
     </ParameterList>
 
     <ParameterList name="myCoarseMap2">
       <Parameter name="factory" type="string" value="BlockedCoarseMapFactory"/>
-      <Parameter name="Striding info" type="string" value="{ 2 }"/>
-      <Parameter name="Strided block id" type="int" value="-1"/>
       <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
     </ParameterList>
 
@@ -75,8 +67,6 @@
       <Parameter name="factory" type="string" value="InterfaceAggregationFactory"/>
       <Parameter name="A" type="string" value="mySubBlockAFactoryOffDiagonal"/>
       <Parameter name="Aggregates" type="string" value="myAggFact1"/>
-      <Parameter name="number of DOFs per dual node" type="int" value="2"/>
-      <Parameter name="number of DOFs per primal node" type="int" value="2"/>
       <Parameter name="Dual/primal mapping strategy" type="string" value="dof-based"/>
     </ParameterList>
 
