@@ -180,13 +180,10 @@ int ConvergenceHex(const bool verbose) {
       switch (comp) {
       case 0:
         return gf2[1] - gf1[2];
-        break;
       case 1:
         return gf0[2] - gf2[0];
-        break;
       case 2:
         return gf1[0] - gf0[1];
-        break;
       default:
         return 0;
       }
@@ -370,8 +367,8 @@ int ConvergenceHex(const bool verbose) {
 
     using basisType = Basis<DeviceSpaceType,ValueType,ValueType>;
     using CG_NBasis = NodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
+    using CG_DNBasis = DerivedNodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
     using CG_HBasis = HierarchicalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
-    //using CG_DNBasis = DerivedNodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
 
 
     *outStream
@@ -392,6 +389,7 @@ int ConvergenceHex(const bool verbose) {
 
       std::vector<basisType*> basis_set;
       basis_set.push_back(new typename  CG_NBasis::HGRAD_HEX(order));
+      basis_set.push_back(new typename  CG_DNBasis::HGRAD_HEX(order));
       basis_set.push_back(new typename  CG_HBasis::HGRAD_HEX(order));
 
       for (auto basisPtr:basis_set) {
@@ -406,6 +404,7 @@ int ConvergenceHex(const bool verbose) {
           Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
           hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
+          DeviceSpaceType().fence();
           for(ordinal_type i=0; i<numElems; ++i)
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
@@ -460,6 +459,7 @@ int ConvergenceHex(const bool verbose) {
               hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
               if(numGradPoints>0)
                 hexLinearBasis.getValues(hexLinearBasisValuesAtEvalGradPoints, Kokkos::subview(evaluationGradPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              DeviceSpaceType().fence();
               for(ordinal_type d=0; d<dim; ++d) {
                 for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
                   for(ordinal_type j=0; j<numPoints; ++j)
@@ -596,6 +596,7 @@ int ConvergenceHex(const bool verbose) {
 
       std::vector<basisType*> basis_set;
       basis_set.push_back(new typename  CG_NBasis::HCURL_HEX(order));
+      basis_set.push_back(new typename  CG_DNBasis::HCURL_HEX(order));
       basis_set.push_back(new typename  CG_HBasis::HCURL_HEX(order));
 
       for (auto basisPtr:basis_set) {
@@ -610,6 +611,7 @@ int ConvergenceHex(const bool verbose) {
           Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
           hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
+          DeviceSpaceType().fence();
           for(ordinal_type i=0; i<numElems; ++i)
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
@@ -663,6 +665,7 @@ int ConvergenceHex(const bool verbose) {
             for(ordinal_type i=0; i<numElems; ++i) {
               hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
               hexLinearBasis.getValues(hexLinearBasisValuesAtEvalCurlPoints, Kokkos::subview(evaluationCurlPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              DeviceSpaceType().fence();
               for(ordinal_type d=0; d<dim; ++d) {
                 for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
                   for(ordinal_type j=0; j<numPoints; ++j)
@@ -814,6 +817,7 @@ int ConvergenceHex(const bool verbose) {
 
       std::vector<basisType*> basis_set;
       basis_set.push_back(new typename  CG_NBasis::HDIV_HEX(order));
+      basis_set.push_back(new typename  CG_DNBasis::HDIV_HEX(order));
       basis_set.push_back(new typename  CG_HBasis::HDIV_HEX(order));
 
       for (auto basisPtr:basis_set) {
@@ -829,6 +833,7 @@ int ConvergenceHex(const bool verbose) {
           Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
           hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
+          DeviceSpaceType().fence();
           for(ordinal_type i=0; i<numElems; ++i)
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
@@ -881,6 +886,7 @@ int ConvergenceHex(const bool verbose) {
             for(ordinal_type i=0; i<numElems; ++i) {
               hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
               hexLinearBasis.getValues(hexLinearBasisValuesAtEvalDivPoints, Kokkos::subview(evaluationDivPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              DeviceSpaceType().fence();
               for(ordinal_type d=0; d<dim; ++d) {
                 for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
                   for(ordinal_type j=0; j<numPoints; ++j)
@@ -1029,6 +1035,7 @@ int ConvergenceHex(const bool verbose) {
 
       std::vector<basisType*> basis_set;
       basis_set.push_back(new typename  CG_NBasis::HVOL_HEX(order-1));
+      basis_set.push_back(new typename  CG_DNBasis::HVOL_HEX(order-1));
       basis_set.push_back(new typename  CG_HBasis::HVOL_HEX(order-1));
 
       for (auto basisPtr:basis_set) {
@@ -1043,6 +1050,7 @@ int ConvergenceHex(const bool verbose) {
           Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
           hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
+          DeviceSpaceType().fence();
           for(ordinal_type i=0; i<numElems; ++i)
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
@@ -1085,6 +1093,7 @@ int ConvergenceHex(const bool verbose) {
 
             for(ordinal_type i=0; i<numElems; ++i) {
               hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
+              DeviceSpaceType().fence();
               for(ordinal_type d=0; d<dim; ++d) {
                 for(std::size_t k=0; k<hexa.getNodeCount(); ++k) {
                   for(ordinal_type j=0; j<numPoints; ++j)

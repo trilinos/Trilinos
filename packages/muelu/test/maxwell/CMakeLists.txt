@@ -1,6 +1,5 @@
 # Ensure that these cmake boolean variables are defined
 ASSERT_DEFINED(
-  ${PACKAGE_NAME}_ENABLE_Amesos2
   ${PACKAGE_NAME}_ENABLE_Belos
   ${PACKAGE_NAME}_ENABLE_ML
   )
@@ -13,20 +12,22 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
-IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+IF (${PACKAGE_NAME}_ENABLE_Belos)
 
   TRIBITS_ADD_EXECUTABLE(
     Maxwell3D
     SOURCES Maxwell3D.cpp
-    COMM mpi
+    COMM serial mpi
     )
 
   IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+
     TRIBITS_ADD_TEST(
       Maxwell3D
       NAME "Maxwell3D-Tpetra"
-      ARGS "--linAlgebra=Tpetra"
-      COMM mpi
+      ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell.xml"
+      ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell2.xml"
+      COMM serial mpi
       NUM_MPI_PROCS 4
       )
 
@@ -35,37 +36,40 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
         Maxwell3D
         NAME "Maxwell3D-Tpetra-ML-list"
         ARGS "--linAlgebra=Tpetra --xml=Maxwell_ML_MueLu.xml"
-        COMM mpi
+        COMM serial mpi
         NUM_MPI_PROCS 4
         )
     ENDIF()
 
-    IF (${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
+    IF (${PACKAGE_NAME}_INST_DOUBLE_INT_INT AND ${PACKAGE_NAME}_ENABLE_Stratimikos)
       TRIBITS_ADD_TEST(
         Maxwell3D
         NAME "Maxwell3D-Tpetra-Stratimikos"
-        ARGS "--linAlgebra=Tpetra --solverName=Stratimikos --instantiation=DOUBLE_INT_INT"
-        COMM mpi
+        ARGS "--linAlgebra=Tpetra --solverName=Stratimikos --instantiation=DOUBLE_INT_INT --reuse --xml=Maxwell.xml"
+        ARGS "--linAlgebra=Tpetra --solverName=Stratimikos --instantiation=DOUBLE_INT_INT --reuse --xml=Maxwell2.xml"
+        COMM serial mpi
         NUM_MPI_PROCS 4
         )
     ENDIF()
   ENDIF()
 
   IF (${PACKAGE_NAME}_ENABLE_Epetra)
+
     TRIBITS_ADD_TEST(
       Maxwell3D
       NAME "Maxwell3D-Epetra"
-      ARGS "--linAlgebra=Epetra"
-      COMM mpi
+      ARGS "--linAlgebra=Epetra --reuse --xml=Maxwell.xml"
+      COMM serial mpi
       NUM_MPI_PROCS 4
       )
 
     IF (${PACKAGE_NAME}_ENABLE_ML)
+
       TRIBITS_ADD_TEST(
         Maxwell3D
         NAME "Maxwell3D-ML"
         ARGS "--linAlgebra=Epetra --precType=ML-RefMaxwell  --xml=Maxwell_ML.xml"
-        COMM mpi
+        COMM serial mpi
         NUM_MPI_PROCS 4
         )
     ENDIF()
@@ -73,7 +77,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp
-    SOURCE_FILES M0.mat M1.mat S.mat D0.mat coords.mat Belos.xml Maxwell.xml Maxwell_ML.xml Maxwell_ML_MueLu.xml Maxwell_ML1.xml
+    SOURCE_FILES M0.mat M1.mat S.mat D0.mat coords.mat Belos.xml Maxwell.xml Maxwell2.xml Maxwell_ML.xml Maxwell_ML_MueLu.xml Maxwell_ML1.xml
     )
 
   IF(HAVE_MUELU_COMPLEX)

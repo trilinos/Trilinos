@@ -361,14 +361,14 @@ namespace Sacado {
    * The %Value functor returns the value of an AD type.
    */
   template <typename T> struct Value {
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static const T& eval(const T& x) { return x; }
   };
 
   //! Specialization of Value for const types
   template <typename T> struct Value<const T> {
     typedef typename ValueType<T>::type value_type;
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static const value_type& eval(const T& x) {
       return Value<T>::eval(x);
     }
@@ -380,14 +380,14 @@ namespace Sacado {
    * i.e., something that isn't an AD type.
    */
   template <typename T> struct ScalarValue {
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static const T& eval(const T& x) { return x; }
   };
 
   //! Specialization of ScalarValue for const types
   template <typename T> struct ScalarValue<const T> {
     typedef typename ScalarType<T>::type scalar_type;
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static const scalar_type& eval(const T& x) {
       return ScalarValue<T>::eval(x);
     }
@@ -395,7 +395,7 @@ namespace Sacado {
 
   //! Base template specification for marking constants
   template <typename T> struct MarkConstant {
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static void eval(T& x) {}
   };
 
@@ -406,7 +406,7 @@ namespace Sacado {
 
   //! Base template specification for testing equivalence
   template <typename T> struct IsEqual {
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static bool eval(const T& x, const T& y) { return x == y; }
   };
 
@@ -466,18 +466,18 @@ namespace Sacado {
     static const bool value = true;                       \
   };                                                      \
   template <> struct Value< t > {                         \
-    KOKKOS_INLINE_FUNCTION                                \
+    SACADO_INLINE_FUNCTION                                \
     static const t& eval(const t& x) { return x; }        \
   };                                                      \
   template <> struct ScalarValue< t > {                   \
-    KOKKOS_INLINE_FUNCTION                                \
+    SACADO_INLINE_FUNCTION                                \
     static const t& eval(const t& x) { return x; }        \
   };                                                      \
   template <> struct StringName< t > {                    \
     static std::string eval() { return NAME; }            \
   };                                                      \
   template <> struct IsEqual< t > {                       \
-    KOKKOS_INLINE_FUNCTION                                \
+    SACADO_INLINE_FUNCTION                                \
     static bool eval(const t& x, const t& y) {            \
       return x == y; }                                    \
   };                                                      \
@@ -539,11 +539,11 @@ struct integral_nonzero
   enum { value = T(v) };
   typedef T value_type ;
   typedef integral_nonzero<T,v> type ;
-  KOKKOS_INLINE_FUNCTION integral_nonzero() {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero( const T & ) {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero( const integral_nonzero & ) {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero& operator=(const integral_nonzero &) {return *this;}
-  KOKKOS_INLINE_FUNCTION integral_nonzero& operator=(const T &) {return *this;}
+  SACADO_INLINE_FUNCTION integral_nonzero() {}
+  SACADO_INLINE_FUNCTION integral_nonzero( const T & ) {}
+  SACADO_INLINE_FUNCTION integral_nonzero( const integral_nonzero & ) {}
+  SACADO_INLINE_FUNCTION integral_nonzero& operator=(const integral_nonzero &) {return *this;}
+  SACADO_INLINE_FUNCTION integral_nonzero& operator=(const T &) {return *this;}
 };
 
 template< typename T , T zero >
@@ -552,11 +552,11 @@ struct integral_nonzero<T,zero,false>
   T value ;
   typedef T value_type ;
   typedef integral_nonzero<T,0> type ;
-  KOKKOS_INLINE_FUNCTION integral_nonzero() : value() {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero( const T & v ) : value(v) {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero( const integral_nonzero & v) : value(v.value) {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero& operator=(const integral_nonzero & v) { value = v.value; return *this; }
-  KOKKOS_INLINE_FUNCTION integral_nonzero& operator=(const T & v) { value = v; return *this; }
+  SACADO_INLINE_FUNCTION integral_nonzero() : value() {}
+  SACADO_INLINE_FUNCTION integral_nonzero( const T & v ) : value(v) {}
+  SACADO_INLINE_FUNCTION integral_nonzero( const integral_nonzero & v) : value(v.value) {}
+  SACADO_INLINE_FUNCTION integral_nonzero& operator=(const integral_nonzero & v) { value = v.value; return *this; }
+  SACADO_INLINE_FUNCTION integral_nonzero& operator=(const T & v) { value = v; return *this; }
 };
 
 } // namespace Sacado

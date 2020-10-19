@@ -70,6 +70,8 @@ namespace SLUD {
 
 extern "C" {
 
+#include "superlu_dist_config.h" // provides define for size 32 or 64 int_t
+
   /// use the same function with name space in the macro
 #define USER_FREE(addr) SLUD::superlu_free_dist(addr)
 

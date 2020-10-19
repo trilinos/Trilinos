@@ -149,6 +149,7 @@ exe stk_mesh_utest
   :
     [ glob $(stk_mesh-root)/../stk_unit_tests/stk_mesh/*.cpp 
            $(stk_mesh-root)/../stk_unit_tests/stk_mesh/face_creation/*.cpp 
+           $(stk_mesh-root)/../stk_unit_tests/stk_mesh/edge_creation/*.cpp 
            $(stk_mesh-root)/../stk_unit_tests/stk_mesh/change_parts/*.cpp 
            $(stk_mesh-root)/../stk_unit_tests/stk_mesh/face_creation/user_created/*.cpp 
            $(stk_mesh-root)/../stk_unit_tests/stk_mesh/face_creation/skin_mesh/*.cpp 
@@ -199,7 +200,7 @@ lib stk_mesh_base
     /sierra/stk_util//stk_util_diag
     /sierra/stk_topology//stk_topology
     /tpl/trilinos//shards
-    /tpl/lapack//lapack
+    /tpl/lapack//lapack_interface
     /mpi//mpi
   :
     [ ifuserbuild

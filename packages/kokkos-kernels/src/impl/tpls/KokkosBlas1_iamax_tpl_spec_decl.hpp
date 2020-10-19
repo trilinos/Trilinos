@@ -539,6 +539,32 @@ KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned int, Kokkos::LayoutLeft, Kokko
 KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned int, Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
 KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned int, Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
 
+#if defined (KOKKOS_ENABLE_CUDA_UVM)
+KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned long, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned long, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned long, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned long, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned long, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned long, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned long, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned long, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned int, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_DIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned int, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned int, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_SIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned int, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned int, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_ZIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned int, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+
+KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned int, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, true)
+KOKKOSBLAS1_CIAMAX_TPL_SPEC_DECL_CUBLAS( unsigned int, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace, false)
+#endif
+
 }
 }
 

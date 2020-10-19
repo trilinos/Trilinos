@@ -38,40 +38,19 @@
 #include <stk_simd/Simd.hpp>
 #include <limits>                       // for std::numeric_limits
 
-TEST(Simd, basic)
-{
-#if defined(STK_SIMD_AVX512) || defined(STK_SIMD_AVX) || defined(STK_SIMD_SSE)
-    EXPECT_EQ(stk::simd::nfloats, 2*stk::simd::ndoubles);
-#endif
-}
-
-TEST(Simd, whichInstructions)
-{
-#if defined(STK_SIMD_AVX512)
-   std::cout<<"STK_SIMD_AVX512";
-#elif defined(STK_SIMD_AVX)
-   std::cout<<"STK_SIMD_AVX";
-#elif defined(STK_SIMD_SSE)
-   std::cout<<"STK_SIMD_SSE";
-#else
-   std::cout<<"no simd instructions!"<<std::endl;
-#endif
-   std::cout<<", stk::simd::ndoubles="<<stk::simd::ndoubles<<std::endl;
-}
-
 //BEGINsimdSimd
-TEST(stkMeshHowTo, simdSimdTest)
+TEST(StkSimdHowTo, simdSimdTest)
 {
   const int N = 512; // this is a multiple of the simd width
-                     // if this is not true, the remainder 
+                     // if this is not true, the remainder
                      // must be handled appropriately
-                     
+
   static_assert( N % stk::simd::ndoubles == 0, "Required to be a multiple of ndoubles");
 
   std::vector<double, non_std::AlignedAllocator<double,64> > x(N);
   std::vector<double, non_std::AlignedAllocator<double,64> > y(N);
   std::vector<double, non_std::AlignedAllocator<double,64> > solution(N);
-  
+
   for (int n=0; n < N; ++n) {
     x[n] = (rand()-0.5)/RAND_MAX;
     y[n] = (rand()-0.5)/RAND_MAX;
@@ -82,7 +61,7 @@ TEST(stkMeshHowTo, simdSimdTest)
     const stk::simd::Double yl = stk::simd::load(&y[n]);
     stk::simd::Double zl = stk::math::abs(xl) * stk::math::exp(yl);
     stk::simd::store(&solution[n],zl);
-  }  
+  }
 
   const double epsilon = 1.e-14;
   for (int n=0; n < N; ++n) {

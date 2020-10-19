@@ -58,8 +58,30 @@
 #include <MueLu_AmalgamationFactory.hpp>
 #include <MueLu_AmalgamationInfo.hpp>
 #include <MueLu_Aggregates.hpp>
+#include <MueLu_FilteredAFactory.hpp>
 
 namespace MueLuTests {
+
+  template<class T>
+  void print_matrix(const char * label,const Teuchos::RCP<T> &Mat) {
+    ArrayRCP<const size_t> rowptr;
+    ArrayRCP<const typename T::local_ordinal_type> colind;
+    ArrayRCP<const typename T::scalar_type> vals;
+    Mat->getAllValues(rowptr,colind,vals);
+    
+    printf("*** %s ***\n",label);
+    printf("rowptr = ");
+    for(int i=0; i<(int)rowptr.size();i++)
+      printf("%d ",(int)rowptr[i]);
+    printf("\ncolind =");
+    for(int i=0; i<(int)colind.size();i++)
+      printf("%d ",(int)colind[i]);
+    printf("\nvalues =");
+    for(int i=0; i<(int)vals.size();i++)
+      printf("%8.1e ",vals[i]);
+    printf("\n");
+  }
+  
 
 template
 <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -69,7 +91,7 @@ class AggregateGenerator {
   //typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> xpetra_matrix_type;
 #   include <MueLu_UseShortNames.hpp>
 
-    public:
+public:
 
     // Little utility to generate uncoupled aggregates.
     static RCP<Aggregates>
@@ -81,13 +103,11 @@ class AggregateGenerator {
       level.Set("A", A);
 
       RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
-      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+      RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
       dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-      //std::cout << "Phase2a=" << bPhase2a << std::endl;
-
-      // Setup aggregation factory (use default factory for graph)
-      RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
+      // Setup aggregation factory (use default factory for graph)             
+      RCP<UncoupledAggregationFactory> aggFact  = rcp(new UncoupledAggregationFactory());
       aggFact->SetFactory("Graph", dropFact);
       aggFact->SetParameter("aggregation: max agg size",Teuchos::ParameterEntry(3));
       aggFact->SetParameter("aggregation: min agg size",Teuchos::ParameterEntry(3));
@@ -844,6 +864,131 @@ class AggregateGenerator {
     TEST_EQUALITY(aggregates != Teuchos::null, true);
     TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
   }
+
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(FilteredA, RootStencil, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+
+    // Make a "hot dog" matrix
+    Teuchos::ParameterList matrixParams;
+    matrixParams.set("matrixType","Laplace2D");
+    double factor=10;
+    matrixParams.set("stretchx",1.0);
+    matrixParams.set("stretchy",factor);
+
+
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixParams,TestHelpers::Parameters::getLib());
+									 
+    RCP<AmalgamationInfo> amalgInfo;
+    Level level;
+    TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
+    level.Set("A", A);   
+
+    RCP<CoalesceDropFactory> dropFact;
+    RCP<AmalgamationFactory> amalgFact; 
+    RCP<UncoupledAggregationFactory> aggFact;    
+    double dropTol = 0.025;
+    
+    amalgFact = rcp(new AmalgamationFactory());
+    dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(dropTol));
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    
+    // Setup aggregation factory (use default factory for graph)
+    aggFact = rcp(new UncoupledAggregationFactory());
+    aggFact->SetFactory("Graph", dropFact);
+    
+    RCP<FilteredAFactory> filterFact = rcp(new FilteredAFactory);
+    filterFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    filterFact->SetFactory("Aggregates", aggFact);
+    filterFact->SetFactory("Graph",dropFact);
+    filterFact->SetFactory("Filtering",dropFact);
+
+    Teuchos::ParameterList params;
+    params.set("filtered matrix: use lumping",true);
+    params.set("filtered matrix: use root stencil",true);
+    filterFact->SetParameterList(params);
+    level.Request("A",filterFact.get());
+
+    filterFact->Build(level);
+    RCP<Matrix> Afiltered = level.Get<RCP<Matrix> >("A",filterFact.get());
+
+    // Now check stuff
+    //    print_matrix("A",MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(A));
+    //    print_matrix("Afiltered",MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Afiltered));
+
+    // We use the full graph for the filtered matrix, so the notional nnz should be the same
+    TEST_EQUALITY(A->getNodeNumRows()==Afiltered->getNodeNumRows(), true);
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(FilteredA, SpreadLumping, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+    out << "running spread lumping" << std::endl;
+
+    // Make a "hot dog" matrix
+    Teuchos::ParameterList matrixParams;
+    matrixParams.set("matrixType","Laplace2D");
+    double factor=10;
+    matrixParams.set("stretchx",1.0);
+    matrixParams.set("stretchy",factor);
+
+
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixParams,TestHelpers::Parameters::getLib());
+									 
+    RCP<AmalgamationInfo> amalgInfo;
+    Level level;
+    TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
+    level.Set("A", A);   
+
+    RCP<CoalesceDropFactory> dropFact;
+    RCP<AmalgamationFactory> amalgFact; 
+    RCP<UncoupledAggregationFactory> aggFact;    
+    double dropTol = 0.025;
+    
+    amalgFact = rcp(new AmalgamationFactory());
+    dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(dropTol));
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    
+    // Setup aggregation factory (use default factory for graph)
+    aggFact = rcp(new UncoupledAggregationFactory());
+    aggFact->SetFactory("Graph", dropFact);
+    
+    RCP<FilteredAFactory> filterFact = rcp(new FilteredAFactory);
+    filterFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    filterFact->SetFactory("Aggregates", aggFact);
+    filterFact->SetFactory("Graph",dropFact);
+    filterFact->SetFactory("Filtering",dropFact);
+
+    Teuchos::ParameterList params;
+    params.set("filtered matrix: use lumping",true);
+    params.set("filtered matrix: use root stencil",true);
+    params.set("filtered matrix: use spread lumping",true);
+    params.set("filtered matrix: spread lumping diag dom growth factor",1.1);
+    params.set("filtered matrix: spread lumping diag dom cap",2.0);
+    filterFact->SetParameterList(params);
+    level.Request("A",filterFact.get());
+
+    filterFact->Build(level);
+    RCP<Matrix> Afiltered = level.Get<RCP<Matrix> >("A",filterFact.get());
+
+    // Now check stuff
+    //    print_matrix("A",MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(A));
+    //    print_matrix("Afiltered",MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Afiltered));
+
+    // We use the full graph for the filtered matrix, so the notional nnz should be the same
+    TEST_EQUALITY(A->getNodeNumRows()==Afiltered->getNodeNumRows(), true);
+  }
+
+
 #define MUELU_ETI_GROUP(Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,JustAggregation,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,GetNumAggregates,Scalar,LO,GO,Node) \
@@ -855,7 +1000,9 @@ class AggregateGenerator {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,UncoupledInterface,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,JustStructuredAggregationGlobal,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,JustStructuredAggregationLocal,Scalar,LO,GO,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,HybridAggregation,Scalar,LO,GO,Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(FilteredA ,RootStencil,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(FilteredA ,SpreadLumping,Scalar,LO,GO,Node)
+  //  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,HybridAggregation,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

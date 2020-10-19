@@ -104,93 +104,104 @@ TEUCHOS_UNIT_TEST(BDF2, ParameterList)
 TEUCHOS_UNIT_TEST(BDF2, ConstructingFromDefaults)
 {
   double dt = 0.1;
+  std::vector<std::string> options;
+  options.push_back("Default Parameters");
+  options.push_back("ICConsistency and Check");
 
-  // Read params from .xml file
-  RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_BDF2_SinCos.xml");
-  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+  for(const auto& option: options) {
 
-  // Setup the SinCosModel
-  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
-  //RCP<SinCosModel<double> > model = sineCosineModel(scm_pl);
-  auto model = rcp(new SinCosModel<double>(scm_pl));
+    // Read params from .xml file
+    RCP<ParameterList> pList =
+      getParametersFromXmlFile("Tempus_BDF2_SinCos.xml");
+    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
 
-  // Setup Stepper for field solve ----------------------------
-  auto stepper = rcp(new Tempus::StepperBDF2<double>());
-  stepper->setModel(model);
-  stepper->initialize();
+    // Setup the SinCosModel
+    RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+    //RCP<SinCosModel<double> > model = sineCosineModel(scm_pl);
+    auto model = rcp(new SinCosModel<double>(scm_pl));
 
-  // Setup TimeStepControl ------------------------------------
-  auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
-  ParameterList tscPL = pl->sublist("Default Integrator")
-                           .sublist("Time Step Control");
-  timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
-  timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
-  timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
-  timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));
-  timeStepControl->setInitTimeStep(dt);
-  timeStepControl->initialize();
+    // Setup Stepper for field solve ----------------------------
+    auto stepper = rcp(new Tempus::StepperBDF2<double>());
+    stepper->setModel(model);
+    if ( option == "ICConsistency and Check") {
+      stepper->setICConsistency("Consistent");
+      stepper->setICConsistencyCheck(true);
+    }
+    stepper->initialize();
 
-  // Setup initial condition SolutionState --------------------
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
-  auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  auto icState = Tempus::createSolutionStateX(icSolution);
-  icState->setTime    (timeStepControl->getInitTime());
-  icState->setIndex   (timeStepControl->getInitIndex());
-  icState->setTimeStep(0.0);
-  icState->setOrder   (stepper->getOrder());
-  icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
+    // Setup TimeStepControl ------------------------------------
+    auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
+    ParameterList tscPL = pl->sublist("Default Integrator")
+                             .sublist("Time Step Control");
+    timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
+    timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
+    timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
+    timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));
+    timeStepControl->setInitTimeStep(dt);
+    timeStepControl->initialize();
 
-  // Setup SolutionHistory ------------------------------------
-  auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
-  solutionHistory->setName("Forward States");
-  solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
-  solutionHistory->setStorageLimit(3);
-  solutionHistory->addState(icState);
+    // Setup initial condition SolutionState --------------------
+    Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
+      stepper->getModel()->getNominalValues();
+    auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+    auto icState = Tempus::createSolutionStateX(icSolution);
+    icState->setTime    (timeStepControl->getInitTime());
+    icState->setIndex   (timeStepControl->getInitIndex());
+    icState->setTimeStep(0.0);
+    icState->setOrder   (stepper->getOrder());
+    icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
 
-  // Setup Integrator -----------------------------------------
-  RCP<Tempus::IntegratorBasic<double> > integrator =
-    Tempus::integratorBasic<double>();
-  integrator->setStepperWStepper(stepper);
-  integrator->setTimeStepControl(timeStepControl);
-  integrator->setSolutionHistory(solutionHistory);
-  //integrator->setObserver(...);
-  integrator->initialize();
+    // Setup SolutionHistory ------------------------------------
+    auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
+    solutionHistory->setName("Forward States");
+    solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
+    solutionHistory->setStorageLimit(3);
+    solutionHistory->addState(icState);
+
+    // Setup Integrator -----------------------------------------
+    RCP<Tempus::IntegratorBasic<double> > integrator =
+      Tempus::integratorBasic<double>();
+    integrator->setStepperWStepper(stepper);
+    integrator->setTimeStepControl(timeStepControl);
+    integrator->setSolutionHistory(solutionHistory);
+    //integrator->setObserver(...);
+    integrator->initialize();
 
 
-  // Integrate to timeMax
-  bool integratorStatus = integrator->advanceTime();
-  TEST_ASSERT(integratorStatus)
+    // Integrate to timeMax
+    bool integratorStatus = integrator->advanceTime();
+    TEST_ASSERT(integratorStatus)
 
 
-  // Test if at 'Final Time'
-  double time = integrator->getTime();
-  double timeFinal =pl->sublist("Default Integrator")
-     .sublist("Time Step Control").get<double>("Final Time");
-  TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+    // Test if at 'Final Time'
+    double time = integrator->getTime();
+    double timeFinal =pl->sublist("Default Integrator")
+       .sublist("Time Step Control").get<double>("Final Time");
+    TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
 
-  // Time-integrated solution and the exact solution
-  RCP<Thyra::VectorBase<double> > x = integrator->getX();
-  RCP<const Thyra::VectorBase<double> > x_exact =
-    model->getExactSolution(time).get_x();
+    // Time-integrated solution and the exact solution
+    RCP<Thyra::VectorBase<double> > x = integrator->getX();
+    RCP<const Thyra::VectorBase<double> > x_exact =
+      model->getExactSolution(time).get_x();
 
-  // Calculate the error
-  RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
-  Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
+    // Calculate the error
+    RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
+    Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
 
-  // Check the order and intercept
-  std::cout << "  Stepper = BDF2" << std::endl;
-  std::cout << "  =========================" << std::endl;
-  std::cout << "  Exact solution   : " << get_ele(*(x_exact), 0) << "   "
-                                       << get_ele(*(x_exact), 1) << std::endl;
-  std::cout << "  Computed solution: " << get_ele(*(x      ), 0) << "   "
-                                       << get_ele(*(x      ), 1) << std::endl;
-  std::cout << "  Difference       : " << get_ele(*(xdiff  ), 0) << "   "
-                                       << get_ele(*(xdiff  ), 1) << std::endl;
-  std::cout << "  =========================" << std::endl;
-  TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.839732, 1.0e-4 );
-  TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.542663, 1.0e-4 );
+    // Check the order and intercept
+    std::cout << "  Stepper = " << stepper->description()
+              << "\n            with " << option << std::endl;
+    std::cout << "  =========================" << std::endl;
+    std::cout << "  Exact solution   : " << get_ele(*(x_exact), 0) << "   "
+                                         << get_ele(*(x_exact), 1) << std::endl;
+    std::cout << "  Computed solution: " << get_ele(*(x      ), 0) << "   "
+                                         << get_ele(*(x      ), 1) << std::endl;
+    std::cout << "  Difference       : " << get_ele(*(xdiff  ), 0) << "   "
+                                         << get_ele(*(xdiff  ), 1) << std::endl;
+    std::cout << "  =========================" << std::endl;
+    TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.839732, 1.0e-4 );
+    TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.542663, 1.0e-4 );
+  }
 }
 
 
@@ -280,7 +291,7 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos)
     Thyra::copy(*(integrator->getX()),solution.ptr());
     solutions.push_back(solution);
     auto solutionDot = Thyra::createMember(model->get_x_space());
-    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+    Thyra::copy(*(integrator->getXDot()),solutionDot.ptr());
     solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);
@@ -428,7 +439,7 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
     Thyra::copy(*(integrator->getX()),solution.ptr());
     solutions.push_back(solution);
     auto solutionDot = Thyra::createMember(model->get_x_space());
-    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+    Thyra::copy(*(integrator->getXDot()),solutionDot.ptr());
     solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);
@@ -455,10 +466,10 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
                     solutions,    xErrorNorm,    xSlope,
                     solutionsDot, xDotErrorNorm, xDotSlope);
 
-    TEST_FLOATING_EQUALITY( xSlope,               1.95089, 0.01 );
-    TEST_FLOATING_EQUALITY( xDotSlope,            1.95089, 0.01 );
-    TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.000197325, 1.0e-4 );
-    TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 0.000197325, 1.0e-4 );
+    TEST_FLOATING_EQUALITY( xSlope,               1.96126, 0.01 );
+    TEST_FLOATING_EQUALITY( xDotSlope,            1.96126, 0.01 );
+    TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.000192591, 1.0e-4 );
+    TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 0.000192591, 1.0e-4 );
   }
 
   Teuchos::TimeMonitor::summarize();
@@ -549,7 +560,7 @@ TEUCHOS_UNIT_TEST(BDF2, CDR)
     Thyra::copy(*(integrator->getX()),solution.ptr());
     solutions.push_back(solution);
     auto solutionDot = Thyra::createMember(model->get_x_space());
-    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+    Thyra::copy(*(integrator->getXDot()),solutionDot.ptr());
     solutionsDot.push_back(solutionDot);
 
     // Output finest temporal solution for plotting

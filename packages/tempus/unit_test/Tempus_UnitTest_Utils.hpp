@@ -76,10 +76,10 @@ void testExplicitRKAccessorsFullConstruction(
   auto modifier  = rcp(new Tempus::StepperRKModifierDefault<double>());
   auto modifierX = rcp(new Tempus::StepperRKModifierXDefault<double>());
   auto observer  = rcp(new Tempus::StepperRKObserverDefault<double>());
-  bool useFSAL              = stepper->getUseFSALDefault();
-  std::string ICConsistency = stepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
-  bool useEmbedded          = stepper->getUseEmbeddedDefault();
+  bool useFSAL              = stepper->getUseFSAL();
+  std::string ICConsistency = stepper->getICConsistency();
+  bool ICConsistencyCheck   = stepper->getICConsistencyCheck();
+  bool useEmbedded          = stepper->getUseEmbedded();
 
   // Test the set functions.
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -227,10 +227,10 @@ void testDIRKAccessorsFullConstruction(
   auto solver    = rcp(new Thyra::NOXNonlinearSolver());
   solver->setParameterList(Tempus::defaultSolverParameters());
 
-  bool useFSAL              = stepper->getUseFSALDefault();
-  std::string ICConsistency = stepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
-  bool useEmbedded          = stepper->getUseEmbeddedDefault();
+  bool useFSAL              = stepper->getUseFSAL();
+  std::string ICConsistency = stepper->getICConsistency();
+  bool ICConsistencyCheck   = stepper->getICConsistencyCheck();
+  bool useEmbedded          = stepper->getUseEmbedded();
   bool zeroInitialGuess     = stepper->getZeroInitialGuess();
 
   // Test the set functions.
@@ -914,11 +914,11 @@ void testRKAppAction(
         TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, relTol);
         TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperEDIRK_2StageTheta<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09975062344139651, relTol);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975062344139651, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperEDIRK_TrapezoidalRule<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09975062344139651, relTol);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975062344139651, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_ImplicitMidpoint<double>>(stepper) != Teuchos::null) {
         TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, relTol);
         TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, relTol);
@@ -1128,11 +1128,11 @@ void testRKAppAction(
         TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, relTol);
         TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperEDIRK_2StageTheta<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09975062344139651, relTol);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975062344139651, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperEDIRK_TrapezoidalRule<double>>(stepper) != Teuchos::null) {
-        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.09975062344139651, relTol);
-        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.09975062344139651, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, relTol);
+        TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, relTol);
       } else if (rcp_dynamic_cast<Tempus::StepperSDIRK_ImplicitMidpoint<double>>(stepper) != Teuchos::null) {
         TEST_FLOATING_EQUALITY(modifierX->testStageX,    0.04987531172069826, relTol);
         TEST_FLOATING_EQUALITY(modifierX->testEndStageX, 0.04987531172069826, relTol);

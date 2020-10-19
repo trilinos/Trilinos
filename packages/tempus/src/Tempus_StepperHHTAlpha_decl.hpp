@@ -11,6 +11,7 @@
 
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorSecondOrder.hpp"
+#include "Tempus_StepperHHTAlphaAppAction.hpp"
 
 namespace Tempus {
 
@@ -52,6 +53,7 @@ public:
   */
   StepperHHTAlpha();
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// Constructor
   StepperHHTAlpha(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -66,17 +68,41 @@ public:
     Scalar gamma,
     Scalar alpha_f_,
     Scalar alpha_m_);
+#endif
+
+  /// Constructor                                                           
+  StepperHHTAlpha(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool zeroInitialGuess,
+    std::string schemeName,
+    Scalar beta,
+    Scalar gamma,
+    Scalar alpha_f_,
+    Scalar alpha_m_,
+    const Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> >& stepperHHTAlphaAppAction);
 
   /// \name Basic stepper methods
   //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
 
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return Teuchos::null; }
+#endif
+
+  virtual void setAppAction(
+    Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> > appAction);
+
+  virtual Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> > getAppAction() const
+  { return stepperHHTAlphaAppAction_; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -101,7 +127,6 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
     virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
 
@@ -160,6 +185,8 @@ public:
   void setAlphaM(Scalar alpha_m);
 
 private:
+                                                  
+  Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> > stepperHHTAlphaAppAction_;
 
   std::string schemeName_;
   Scalar beta_;

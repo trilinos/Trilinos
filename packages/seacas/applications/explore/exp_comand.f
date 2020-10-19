@@ -382,6 +382,18 @@ C *** GENESIS Print Commands ***
      *          idnps, nnnps, ixnnps, ltnnps, "nodes")
             end if
 
+          else if (FFMATC (IFLD, INTYP, CFIELD, 'SSET', 4) .OR.
+     *      FFMATC (IFLD, INTYP, CFIELD, 'SIDESET', 7)) THEN
+            CALL RIXID (DUMLIN, IFLD, INTYP, CFIELD, IFIELD,
+     &        'side set ID',
+     &        NUMESS, IDESS, LISESS(0), LISESS(1), *270)
+            if (lisess(0) .gt. 0) then
+               CALL MDRSRV ('SCR',    KSCR,  NUMNP)
+              call selssetn(lisnp(0), lisnp(1), 
+     *              lisess, idess, "nodes", ia(kscr), ia)
+              call MDDEL('SCR')
+            end if
+
           else if (FFMATC (IFLD, INTYP, CFIELD, 'BLOCK', 3) .OR.
      *        FFMATC (IFLD, INTYP, CFIELD, 'MATERIAL', 3)) THEN
             CALL MDRSRV ('SCRSEL', KLELB, 1+NELBLK)

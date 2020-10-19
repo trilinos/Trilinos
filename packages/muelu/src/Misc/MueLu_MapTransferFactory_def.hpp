@@ -69,15 +69,9 @@ namespace MueLu {
   RCP<const ParameterList> MapTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    //#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
-    //SET_VALID_ENTRY("sa: damping factor");
-    //SET_VALID_ENTRY("sa: calculate eigenvalue estimate");
-    //SET_VALID_ENTRY("sa: eigenvalue estimate num iterations");
-    //#undef  SET_VALID_ENTRY
-
     validParamList->setEntry("map: name", Teuchos::ParameterEntry(std::string("")));
     validParamList->setEntry("map: factory", Teuchos::ParameterEntry(std::string("null")));
-    validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Tentative prolongator factory");
+    validParamList->set< RCP<const FactoryBase> >("P", Teuchos::null, "Tentative prolongator factory");
 
     return validParamList;
   }
@@ -109,7 +103,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MapTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
-    Monitor m(*this, "Contact Map transfer factory");
+    Monitor m(*this, "MapTransferFactory");
 
     const ParameterList & pL = GetParameterList();
     std::string mapName     = pL.get<std::string>("map: name");

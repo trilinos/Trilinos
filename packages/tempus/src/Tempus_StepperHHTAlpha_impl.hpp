@@ -11,6 +11,7 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperFactory.hpp"
+#include "Tempus_StepperHHTAlphaModifierDefault.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "NOX_Thyra.H"
 
@@ -238,7 +239,6 @@ void StepperHHTAlpha<Scalar>::setSchemeName(
   this->isInitialized_ = false;
 }
 
-
 template<class Scalar>
 StepperHHTAlpha<Scalar>::StepperHHTAlpha() :
   out_(Teuchos::VerboseObjectBase::getDefaultOStream())
@@ -248,19 +248,21 @@ StepperHHTAlpha<Scalar>::StepperHHTAlpha() :
 #endif
 
   this->setStepperType(        "HHT-Alpha");
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setUseFSAL(            false);
+  this->setICConsistency(      "None");
+  this->setICConsistencyCheck( false);
   this->setZeroInitialGuess(   false);
   this->setSchemeName(         "Newmark Beta Average Acceleration");
   this->setAlphaF(             0.0);
   this->setAlphaM(             0.0);
-
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   this->setObserver();
+#endif
+  this->setAppAction(Teuchos::null);
   this->setDefaultSolver();
 }
 
-
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
 template<class Scalar>
 StepperHHTAlpha<Scalar>::StepperHHTAlpha(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -290,6 +292,7 @@ StepperHHTAlpha<Scalar>::StepperHHTAlpha(
   this->setAlphaF(             alpha_f);
   this->setAlphaM(             alpha_m);
 
+  this->setAppAction(Teuchos::null);
   this->setObserver(obs);
   this->setSolver(solver);
 
@@ -298,7 +301,61 @@ StepperHHTAlpha<Scalar>::StepperHHTAlpha(
     this->initialize();
   }
 }
+#endif
 
+template<class Scalar>
+StepperHHTAlpha<Scalar>::StepperHHTAlpha(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+  bool useFSAL,
+  std::string ICConsistency,
+  bool ICConsistencyCheck,
+  bool zeroInitialGuess,
+  std::string schemeName,
+  Scalar beta,
+  Scalar gamma,
+  Scalar alpha_f,
+  Scalar alpha_m,
+  const Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> >& stepperHHTAlphaAppAction)
+  : out_(Teuchos::VerboseObjectBase::getDefaultOStream())
+{
+  this->setStepperType(        "HHT-Alpha");
+  this->setUseFSAL(            useFSAL);
+  this->setICConsistency(      ICConsistency);
+  this->setICConsistencyCheck( ICConsistencyCheck);
+  this->setZeroInitialGuess(   zeroInitialGuess);
+  this->setSchemeName(         schemeName);
+  if (schemeName == "Newmark Beta User Defined") {
+    this->setBeta(               beta);
+    this->setGamma(              gamma);
+  }
+  this->setAlphaF(             alpha_f);
+  this->setAlphaM(             alpha_m);
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  this->setObserver();
+#endif
+  this->setAppAction(stepperHHTAlphaAppAction);
+  this->setSolver(solver);
+
+  if (appModel != Teuchos::null) {
+    this->setModel(appModel);
+    this->initialize();
+  }
+}
+
+template<class Scalar>
+void StepperHHTAlpha<Scalar>::setAppAction(
+  Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> > appAction)
+{
+  if (appAction == Teuchos::null) {
+  // Create default appAction                                                                                            
+  stepperHHTAlphaAppAction_ =
+    Teuchos::rcp(new StepperHHTAlphaModifierDefault<Scalar>());
+  }
+  else {
+    stepperHHTAlphaAppAction_ = appAction;
+  }
+}
 
 template<class Scalar>
 void StepperHHTAlpha<Scalar>::setModel(
@@ -342,6 +399,10 @@ void StepperHHTAlpha<Scalar>::takeStep(
       "  Number of States = " << solutionHistory->getNumStates() << "\n"
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
+
+    RCP<StepperHHTAlpha<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
+    stepperHHTAlphaAppAction_->execute(solutionHistory, thisStepper,
+      StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
 
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
@@ -405,7 +466,6 @@ void StepperHHTAlpha<Scalar>::takeStep(
     *out_ << "IKT a_old = " << Thyra::max(*a_old) << "\n";
 #endif
 
-
     //allocate d and v predictors
     RCP<Thyra::VectorBase<Scalar> > d_pred =Thyra::createMember(d_old->space());
     RCP<Thyra::VectorBase<Scalar> > v_pred =Thyra::createMember(v_old->space());
@@ -421,9 +481,16 @@ void StepperHHTAlpha<Scalar>::takeStep(
     //inject d_pred, v_pred, a and other relevant data into wrapperModel
     wrapperModel->initializeNewmark(v_pred,d_pred,dt,t,beta_,gamma_);
 
+
+    stepperHHTAlphaAppAction_->execute(solutionHistory, thisStepper,
+      StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
+
     //Solve for new acceleration
     const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_new);
 
+    stepperHHTAlphaAppAction_->execute(solutionHistory, thisStepper,
+      StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
+ 
     //correct acceleration (function of alpha_m)
     correctAcceleration(*a_new, *a_old);
 
@@ -434,6 +501,9 @@ void StepperHHTAlpha<Scalar>::takeStep(
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
+
+    stepperHHTAlphaAppAction_->execute(solutionHistory, thisStepper,
+				  StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
   return;
 }

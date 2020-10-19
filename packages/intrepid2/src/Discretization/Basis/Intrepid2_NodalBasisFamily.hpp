@@ -75,6 +75,36 @@
 #include <Intrepid2_HVOL_TET_Cn_FEM.hpp>
 
 namespace Intrepid2 {
+
+  // the following defines a family of nodal basis functions for the reference Triangle
+  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+           typename OutputScalar = double,
+           typename PointScalar  = double,
+           bool defineVertexFunctions = true>
+  class NodalTriangleBasisFamily
+  {
+  public:
+    using HGRAD = Basis_HGRAD_TRI_Cn_FEM<ExecutionSpace,OutputScalar,PointScalar>;
+    using HCURL = Basis_HCURL_TRI_In_FEM<ExecutionSpace,OutputScalar,PointScalar>;
+    using HDIV  = Basis_HDIV_TRI_In_FEM<ExecutionSpace,OutputScalar,PointScalar>;
+    using HVOL  = Basis_HVOL_TRI_Cn_FEM<ExecutionSpace,OutputScalar,PointScalar>;
+  };
+
+  // the following defines a family of nodal basis functions for the reference Tetrahedron
+  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+  typename OutputScalar = double,
+  typename PointScalar  = double,
+  bool defineVertexFunctions = true>
+  class NodalTetrahedronBasisFamily
+  {
+  public:
+    using HGRAD = Basis_HGRAD_TET_Cn_FEM<ExecutionSpace,OutputScalar,PointScalar>;
+    using HCURL = Basis_HCURL_TET_In_FEM<ExecutionSpace,OutputScalar,PointScalar>;
+    using HDIV  = Basis_HDIV_TET_In_FEM<ExecutionSpace,OutputScalar,PointScalar>;
+    using HVOL  = Basis_HVOL_TET_Cn_FEM<ExecutionSpace,OutputScalar,PointScalar>;
+  };
+
+
   // the following defines a family of nodal basis functions, derived from a the standard high-order Intrepid2 bases on the line
   // note that because the standard H(curl) basis uses a lower-order H(grad) basis in place of the H(vol) that is arguably more natural,
   // the following will *not* match the standard nodal basis declared below.  (Similarly for H(div).)
@@ -90,14 +120,14 @@ namespace Intrepid2 {
            typename OutputScalar = double,
            typename PointScalar  = double>
   using DerivedNodalBasisFamily = DerivedBasisFamily< Basis_HGRAD_LINE_Cn_FEM<ExecutionSpace,OutputScalar,PointScalar>,
-                                                      Basis_HVOL_LINE_Cn_FEM <ExecutionSpace,OutputScalar,PointScalar> >;
+                                                      Basis_HVOL_LINE_Cn_FEM<ExecutionSpace,OutputScalar,PointScalar>,
+                                                      NodalTriangleBasisFamily<ExecutionSpace,OutputScalar,PointScalar>,
+                                                      NodalTetrahedronBasisFamily<ExecutionSpace,OutputScalar,PointScalar> >;
   
   /** \class Intrepid2::NodalBasisFamily
       \brief A family of nodal basis functions representing the higher-order Lagrangian basis family that Intrepid2 has historically supported.
    
    This family is defined with reference to the higher-order implementations (the "Cn" and "In" bases).
-   
-   At present, only hypercube topologies (line, quadrilateral, hexahedron) are supported, but other topologies will be supported in the future.
   */
   template<typename ExecSpace=Kokkos::DefaultExecutionSpace,
            typename OutputScalar = double,

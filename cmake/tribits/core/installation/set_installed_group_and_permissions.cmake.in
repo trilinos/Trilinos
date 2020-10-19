@@ -15,7 +15,9 @@ SET(PROJECT_MAKE_INSTALL_PERMS_CHANGE "@PROJECT_MAKE_INSTALL_PERMS_CHANGE@")
 # Helper functions
 #
 
+
 SET(CHMOD_CHGRP_IDX 0)
+
 
 FUNCTION(ECHO_AND_RUN_CMND)
   STRING(REPLACE ";" " " CMND_STR "${ARGN}")
@@ -26,9 +28,21 @@ FUNCTION(ECHO_AND_RUN_CMND)
   ENDIF()
 ENDFUNCTION()
 
+
 FUNCTION(SET_DIR_OWNER_AND_PERMS  dirPath  recurseFlag)
 
-  EXECUTE_PROCESS(COMMAND stat -c %U "${dirPath}"
+  IF (CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    SET(STAT_ARGS "-f%Su")  # MacOSX stat
+  ELSE()
+    SET(STAT_ARGS "-c%U")  # BinUtils stat
+  ENDIF()
+  # NOTE: Above, we can't have a space between the '-f' and '%Su' strings or
+  # the '-c' and '%U' strings.  If you do, then you get a single space at the
+  # beginning of the returned owner name as ' <dirOwner>' instead of
+  # '<dirOwner>'.  The automated tests on Linux and MacOSX don't pass if you
+  # don't have it this way.
+
+  EXECUTE_PROCESS(COMMAND stat ${STAT_ARGS} "${dirPath}"
     OUTPUT_STRIP_TRAILING_WHITESPACE
     OUTPUT_VARIABLE  dirOwner)
 
@@ -40,12 +54,12 @@ FUNCTION(SET_DIR_OWNER_AND_PERMS  dirPath  recurseFlag)
 
     IF (NOT "${PROJECT_MAKE_INSTALL_GROUP}" STREQUAL "")
       ECHO_AND_RUN_CMND(
-        chgrp ${PROJECT_MAKE_INSTALL_GROUP} ${recurseFlag} "${dirPath}")
+        chgrp ${recurseFlag} ${PROJECT_MAKE_INSTALL_GROUP} "${dirPath}")
     ENDIF()
 
     IF (NOT "${PROJECT_MAKE_INSTALL_PERMS_CHANGE}" STREQUAL "")
       ECHO_AND_RUN_CMND(
-        chmod ${PROJECT_MAKE_INSTALL_PERMS_CHANGE} ${recurseFlag} "${dirPath}")
+        chmod ${recurseFlag} ${PROJECT_MAKE_INSTALL_PERMS_CHANGE} "${dirPath}")
     ENDIF()
 
   ENDIF()
@@ -55,9 +69,11 @@ FUNCTION(SET_DIR_OWNER_AND_PERMS  dirPath  recurseFlag)
 
 ENDFUNCTION()
 
+
 #
 # Executable script
 #
+
 
 IF (EXISTS "${projectInstallBaseDir}")
 

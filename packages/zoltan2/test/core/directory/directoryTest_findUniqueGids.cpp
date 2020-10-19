@@ -417,16 +417,7 @@ void test4(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 
 int main(int argc, char *argv[])
 {
-  Kokkos::initialize(argc, argv);
-
-#ifndef HAVE_MPI
-  // TODO what is cleanest way to support a serial test case?
-  // We still have some non Teuchos MPI calls in the directory and this works
-  // but I think if this all gets incorporated into Teuchos we can clean this up.
-  MPI_Init(NULL, NULL);
-#endif
-
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  Tpetra::ScopeGuard tscope(&argc, &argv);
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
 
@@ -439,8 +430,6 @@ int main(int argc, char *argv[])
   Zoltan2::test2<long long>(comm);
   Zoltan2::test3<long long>(comm);
   Zoltan2::test4<long long>(comm);
-
-  Kokkos::finalize();
 
   return 0;
 }

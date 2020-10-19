@@ -258,7 +258,7 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<outputValueType,outputProperties...> OutputViewType;
     typedef          Kokkos::DynRankView<inputValueType,inputProperties...> inputViewType;
     typedef          FunctorRealSpaceTools::F_extractScalarValues<OutputViewType,inputViewType> FunctorType;
-    typedef typename ExecSpace<typename inputViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
     
     const auto loopSize = input.extent(0);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
@@ -351,7 +351,7 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<outputValueType,outputProperties...>     OutputViewType;
     typedef          Kokkos::DynRankView<inputValueType,inputProperties...>       inputViewType;
     typedef          FunctorRealSpaceTools::F_clone<OutputViewType,inputViewType> FunctorType;
-    typedef typename ExecSpace<typename inputViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
 
     size_type loopSize = 1;
     const ordinal_type out_rank = output.rank();
@@ -421,7 +421,7 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<absArrayValueType,absArrayProperties...>            absArrayViewType;
     typedef          Kokkos::DynRankView<inArrayValueType, inArrayProperties...>             inArrayViewType;
     typedef          FunctorRealSpaceTools::F_absval<absArrayViewType,inArrayViewType>       FunctorType;
-    typedef typename ExecSpace<typename inArrayViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
 
     const auto loopSize = inArray.extent(0);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
@@ -497,7 +497,7 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<normArrayValueType,normArrayProperties...>        normArrayViewType;
     typedef          Kokkos::DynRankView<inVecValueType,    inVecProperties...>            inVecViewType;
     typedef          FunctorRealSpaceTools::F_vectorNorm<normArrayViewType,inVecViewType>  FunctorType;
-    typedef typename ExecSpace<typename inVecViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
 
     // normArray rank is either 1 or 2
     const auto loopSize = normArray.extent(0)*normArray.extent(1);
@@ -580,7 +580,7 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<transposeMatValueType,transposeMatProperties...>   transposeMatViewType;
     typedef          Kokkos::DynRankView<inMatValueType,       inMatProperties...>          inMatViewType;
     typedef          FunctorRealSpaceTools::F_transpose<transposeMatViewType,inMatViewType> FunctorType;
-    typedef typename ExecSpace<typename inMatViewType::execution_space,SpT>::ExecSpaceType  ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
 
     const auto r = transposeMats.rank();
     const auto loopSize = ( r == 2 ? 1 :
@@ -721,7 +721,7 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<inverseMatValueType,inverseMatProperties...>      inverseMatViewType;
     typedef          Kokkos::DynRankView<inMatValueType,     inMatProperties...>           inMatViewType;
     typedef          FunctorRealSpaceTools::F_inverse<inverseMatViewType,inMatViewType>    FunctorType;
-    typedef typename ExecSpace<typename inMatViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
 
     switch (inMats.rank()) {
     case 3: { // output P,D,D and input P,D,D
@@ -731,8 +731,8 @@ namespace Intrepid2 {
       break;
     }
     case 4: { // output C,P,D,D and input C,P,D,D
-      using range_policy_type = Kokkos::Experimental::MDRangePolicy
-        < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+      using range_policy_type = Kokkos::MDRangePolicy
+        < ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
       range_policy_type policy( { 0, 0 },
                                 { inverseMats.extent(0), inverseMats.extent(1) } );
       Kokkos::parallel_for( policy, FunctorType(inverseMats, inMats) );
@@ -805,7 +805,7 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<detArrayValueType,detArrayProperties...>          detArrayViewType;
     typedef          Kokkos::DynRankView<inMatValueType,   inMatProperties...>             inMatViewType;
     typedef          FunctorRealSpaceTools::F_det<detArrayViewType,inMatViewType>          FunctorType;
-    typedef typename ExecSpace<typename inMatViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
 
     switch (detArray.rank()) {
     case 1: { // output P and input P,D,D
@@ -815,8 +815,8 @@ namespace Intrepid2 {
       break;
     }
     case 2: { // output C,P and input C,P,D,D
-      using range_policy_type = Kokkos::Experimental::MDRangePolicy
-        < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+      using range_policy_type = Kokkos::MDRangePolicy
+        < ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
       range_policy_type policy( { 0, 0 },
                                 { detArray.extent(0), detArray.extent(1) } );
       Kokkos::parallel_for( policy, FunctorType(detArray, inMats) );
@@ -892,7 +892,7 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<inArray1ValueType,inArray1Properties...>                     inArray1ViewType;
     typedef          Kokkos::DynRankView<inArray2ValueType,inArray2Properties...>                     inArray2ViewType;
     typedef          FunctorRealSpaceTools::F_add<sumArrayViewType,inArray1ViewType,inArray2ViewType> FunctorType;
-    typedef typename ExecSpace<typename inArray1ViewType::execution_space,SpT>::ExecSpaceType         ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
 
     const auto loopSize = sumArray.extent(0);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
@@ -985,7 +985,7 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<inArray1ValueType, inArray1Properties...>                          inArray1ViewType;
     typedef          Kokkos::DynRankView<inArray2ValueType, inArray2Properties...>                          inArray2ViewType;
     typedef          FunctorRealSpaceTools::F_subtract<diffArrayViewType,inArray1ViewType,inArray2ViewType> FunctorType;
-    typedef typename ExecSpace<typename inArray1ViewType::execution_space,SpT>::ExecSpaceType               ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
 
     const size_type loopSize = diffArray.extent(0);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
@@ -1077,7 +1077,7 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<scaledArrayValueType,scaledArrayProperties...>               scaledArrayViewtype;
     typedef          Kokkos::DynRankView<inArrayValueType,    inArrayProperties...>                   inArrayViewType;
     typedef          FunctorRealSpaceTools::F_scale<ValueType,scaledArrayViewtype,inArrayViewType> FunctorType;
-    typedef typename ExecSpace<typename inArrayViewType::execution_space,SpT>::ExecSpaceType          ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
 
     const auto loopSize = scaledArray.extent(0);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
@@ -1170,7 +1170,7 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<inVec1ValueType,  inVec1Properties...>                   inVec1ViewType;
     typedef          Kokkos::DynRankView<inVec2ValueType,  inVec2Properties...>                   inVec2ViewType;
     typedef          FunctorRealSpaceTools::F_dot<dotArrayViewType,inVec1ViewType,inVec2ViewType> FunctorType;
-    typedef typename ExecSpace<typename inVec1ViewType::execution_space,SpT>::ExecSpaceType       ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
 
     const auto loopSize = dotArray.extent(0)*dotArray.extent(1);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
@@ -1297,7 +1297,7 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<inMatValueType, inMatProperties...>                     inMatViewType;
     typedef          Kokkos::DynRankView<inVecValueType, inVecProperties...>                     inVecViewType;
     typedef          FunctorRealSpaceTools::F_matvec<matVecViewType,inMatViewType,inVecViewType> FunctorType;
-    typedef typename ExecSpace<typename inMatViewType::execution_space,SpT>::ExecSpaceType       ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
 
     size_type loopSize = 1;
     const ordinal_type r = matVecs.rank() - 1;
@@ -1406,7 +1406,7 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<inLeftValueType, inLeftProperties...>                        inLeftViewType;
     typedef          Kokkos::DynRankView<inRightValueType, inRightProperties...>                      inRightViewType;
     typedef          FunctorRealSpaceTools::F_vecprod<vecProdViewType,inLeftViewType,inRightViewType> FunctorType;
-    typedef typename ExecSpace<typename inLeftViewType::execution_space,SpT>::ExecSpaceType           ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
 
     const auto r = inLeft.rank();
     const auto loopSize = ( r == 1 ? 1 :

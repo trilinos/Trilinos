@@ -883,7 +883,8 @@ struct KokkosSPGEMM
     tmp += pow2_hash_size;
 
     //create hashmap accumulator.
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2;
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd> 
+    hm2(MaxRoughNonZero, pow2_hash_func, nullptr, nullptr, nullptr, nullptr);
 
     //set memory for hash begins.
     hm2.hash_begins = (nnz_lno_t *) (tmp);
@@ -901,9 +902,6 @@ struct KokkosSPGEMM
     //currently hashmap accumulator wont use it.
     tmp += MaxRoughNonZero;
     nnz_lno_t *values2 = (nnz_lno_t *) (tmp);
-
-    hm2.hash_key_size = pow2_hash_size;
-    hm2.max_value_size = MaxRoughNonZero;
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index){
       nnz_lno_t globally_used_hash_count = 0;
@@ -925,15 +923,13 @@ struct KokkosSPGEMM
 
           nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
           nnz_lno_t b_set = entriesSetsB[adjind];
-          nnz_lno_t hash = b_set_ind & pow2_hash_func;
 
           //insert it to first hash.
           hm2.sequential_insert_into_hash_mergeOr_TriangleCount_TrackHashes(
-              hash,
-              b_set_ind, b_set, values2,
-              &used_hash_size,
-              hm2.max_value_size,&globally_used_hash_count,
-              globally_used_hash_indices
+            b_set_ind, b_set, values2,
+            &used_hash_size,
+            &globally_used_hash_count,
+            globally_used_hash_indices
           );
         }
       }
@@ -1036,7 +1032,8 @@ struct KokkosSPGEMM
     tmp += pow2_hash_size;
 
     //create hashmap accumulator.
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2;
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+    hm2(MaxRoughNonZero, pow2_hash_func, nullptr, nullptr, nullptr, nullptr);
 
     //set memory for hash begins.
     hm2.hash_begins = (nnz_lno_t *) (tmp);
@@ -1049,9 +1046,6 @@ struct KokkosSPGEMM
     hm2.keys = (nnz_lno_t *) (tmp);
     tmp += MaxRoughNonZero;
     hm2.values = (nnz_lno_t *) (tmp);
-
-    hm2.hash_key_size = pow2_hash_size;
-    hm2.max_value_size = MaxRoughNonZero;
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index){
       nnz_lno_t globally_used_hash_count = 0;
@@ -1068,16 +1062,13 @@ struct KokkosSPGEMM
           const size_type adjind = i + mask_row_begin;
           nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
           nnz_lno_t b_set = entriesSetsB[adjind];
-          nnz_lno_t hash = b_set_ind & pow2_hash_func;
 
           //insert it to first hash.
           hm2.sequential_insert_into_hash_TriangleCount_TrackHashes(
-              hash,
-              b_set_ind, b_set,
-              &used_hash_size,
-              hm2.max_value_size,
-              &globally_used_hash_count,
-              globally_used_hash_indices
+            b_set_ind, b_set,
+            &used_hash_size,
+            &globally_used_hash_count,
+            globally_used_hash_indices
           );
         }
 
@@ -1097,13 +1088,10 @@ struct KokkosSPGEMM
 
             nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
             nnz_lno_t b_set = entriesSetsB[adjind];
-            nnz_lno_t hash = b_set_ind & pow2_hash_func;
 
             //std::cout << "\t and hash:" << hash << " bset:" << b_set << " b_set_ind:" << b_set_ind << std::endl;
             //insert it to first hash.
-            nnz_lno_t intersection = hm2.sequential_insert_into_hash_mergeAnd_TriangleCount_TrackHashes(
-                hash,
-                b_set_ind, b_set);
+            nnz_lno_t intersection = hm2.sequential_insert_into_hash_mergeAnd_TriangleCount_TrackHashes(b_set_ind, b_set);
             if(intersection)
               visit_applier(row_index, b_set_ind, intersection, tid);
           }
@@ -1124,7 +1112,6 @@ struct KokkosSPGEMM
     const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
 
-
     //get memory from memory pool.
     volatile nnz_lno_t * tmp = NULL;
     nnz_lno_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
@@ -1137,7 +1124,8 @@ struct KokkosSPGEMM
     tmp += pow2_hash_size;
 
     //create hashmap accumulator.
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2;
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd> 
+    hm2(MaxRoughNonZero, pow2_hash_func, nullptr, nullptr, nullptr, nullptr);
 
     //set memory for hash begins.
     hm2.hash_begins = (nnz_lno_t *) (tmp);
@@ -1157,7 +1145,6 @@ struct KokkosSPGEMM
     nnz_lno_t *values2 = (nnz_lno_t *) (tmp);
 
     hm2.hash_key_size = pow2_hash_size;
-    hm2.max_value_size = MaxRoughNonZero;
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index){
       nnz_lno_t globally_used_hash_count = 0;
@@ -1176,17 +1163,14 @@ struct KokkosSPGEMM
           const size_type adjind = i + min_row_begin;
           nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
           nnz_lno_t b_set = entriesSetsB[adjind];
-          nnz_lno_t hash = b_set_ind & pow2_hash_func;
 
 
           //std::cout << "\t union hash:" << hash << " bset:" << b_set << " b_set_ind:" << b_set_ind << std::endl;
 
           //insert it to first hash.
           hm2.sequential_insert_into_hash_TriangleCount_TrackHashes(
-              hash,
               b_set_ind, b_set, values2,
               &used_hash_size,
-              hm2.max_value_size,
               &globally_used_hash_count,
               globally_used_hash_indices
           );
@@ -1209,16 +1193,14 @@ struct KokkosSPGEMM
 
             nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
             nnz_lno_t b_set = entriesSetsB[adjind];
-            nnz_lno_t hash = b_set_ind & pow2_hash_func;
 
             //std::cout << "\t and hash:" << hash << " bset:" << b_set << " b_set_ind:" << b_set_ind << std::endl;
             //insert it to first hash.
             hm2.sequential_insert_into_hash_mergeAnd_TriangleCount_TrackHashes(
-                hash,
-                b_set_ind, b_set, values2,
-                &used_hash_size,
-                hm2.max_value_size,&globally_used_hash_count,
-                globally_used_hash_indices
+              b_set_ind, b_set, values2,
+              &used_hash_size,
+              &globally_used_hash_count,
+              globally_used_hash_indices
             );
           }
         }

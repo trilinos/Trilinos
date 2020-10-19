@@ -228,9 +228,9 @@ main(
   int status(0);
 
   // Initialize Kokkos/MPI.
-  Kokkos::initialize(argc, argv);
   oblackholestream blackhole;
   GlobalMPISession mpiSession(&argc, &argv, &blackhole);
+  Kokkos::initialize(argc, argv);
 
   // Set up the fancy output stream.
   RCP<FancyOStream> out = rcp(new FancyOStream(rcp(&cout, false)));

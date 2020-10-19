@@ -44,7 +44,6 @@ public:
 
   virtual void setUseEmbedded(bool a) { useEmbedded_ = a; }
   virtual bool getUseEmbedded() const { return useEmbedded_; }
-  virtual bool getUseEmbeddedDefault() const { return false; }
 
   virtual void setAppAction(Teuchos::RCP<StepperRKAppAction<Scalar> > appAction)
   {
@@ -67,10 +66,10 @@ protected:
 
   // For Embedded RK
   bool useEmbedded_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >  ee_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >  abs_u0;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >  abs_u;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >  sc;
 
   /// The current Runge-Kutta stage number, {0,...,s-1}.  -1 indicates outside stage loop.
   int stageNumber_;

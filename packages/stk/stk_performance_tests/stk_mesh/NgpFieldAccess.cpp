@@ -47,6 +47,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/ExodusTranslator.hpp>
 #include <stk_util/stk_config.h>
 #include <stk_performance_tests/stk_mesh/timer.hpp>
 #include <stk_performance_tests/stk_mesh/calculate_centroid.hpp>
@@ -85,14 +86,7 @@ protected:
   {
     stk::performance_tests::setup_multiple_blocks(get_meta(), numBlocks);
     setup_mesh(stk::unit_test_util::get_mesh_spec(numElemsPerDim), stk::mesh::BulkData::NO_AUTO_AURA);
-    stk::performance_tests::move_elements_to_other_blocks(get_bulk(), numElemsPerDim, numBlocks);
-  }
-
-  stk::mesh::Selector block_selector(unsigned blockId)
-  {
-    std::string blockName = "block_" + std::to_string(blockId);
-    stk::mesh::Selector selector(*get_meta().get_part(blockName));
-    return selector;
+    stk::performance_tests::move_elements_to_other_blocks(get_bulk(), numElemsPerDim);
   }
 
   void verify_averaged_centroids_are_center_of_mesh(int elemsPerDim)
@@ -147,11 +141,14 @@ TEST_F(NgpFieldAccess, CentroidMultiBlock)
   declare_centroid_field();
   setup_multi_block_mesh(ELEMS_PER_DIM, NUM_BLOCKS);
 
+  stk::mesh::PartVector elemBlockParts;
+  stk::mesh::fill_element_block_parts(get_meta(), stk::topology::HEX_8, elemBlockParts);
+
   timer.start_timing();
   for (int run=0; run<NUM_RUNS; run++) {
-    for (int blockId=1; blockId<=NUM_BLOCKS; blockId++) {
+    for (const stk::mesh::Part* blockPart : elemBlockParts) {
       stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpField<double>>(
-            get_bulk(), block_selector(blockId), *centroid);
+            get_bulk(), *blockPart, *centroid);
     }
   }
 
@@ -172,13 +169,16 @@ TEST_F(NgpFieldAccess, CentroidPartialBlock)
   declare_centroid_partial_mesh(BLOCKS);
   setup_multi_block_mesh(ELEMS_PER_DIM, NUM_BLOCKS);
 
+  stk::mesh::PartVector elemBlockParts;
+  stk::mesh::fill_element_block_parts(get_meta(), stk::topology::HEX_8, elemBlockParts);
+
   timer.start_timing();
   get_bulk().get_updated_ngp_mesh();
   for (int run=0; run<NUM_RUNS; run++) {
-    for (int blockId=1; blockId<=BLOCKS; blockId++) {
+    for (const stk::mesh::Part* blockPart : elemBlockParts) {
       stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpField<double>>(
-            get_bulk(), block_selector(blockId), *centroid);
-      verify_averaged_centroids_are_center_of_mesh(ELEMS_PER_DIM, block_selector(blockId));
+            get_bulk(), *blockPart, *centroid);
+      verify_averaged_centroids_are_center_of_mesh(ELEMS_PER_DIM, *blockPart);
     }
   }
 

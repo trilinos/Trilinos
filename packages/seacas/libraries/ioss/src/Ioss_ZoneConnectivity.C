@@ -104,6 +104,13 @@ namespace Ioss {
     return true;
   }
 
+  bool ZoneConnectivity::retain_original() const
+  {
+    // This zgc is just needed in a parallel decomp so can reconstruct the original mesh...
+    return (m_ownerRangeBeg[0] == 0 && m_ownerRangeEnd[0] == 0 && m_ownerRangeBeg[1] == 0 &&
+            m_ownerRangeEnd[1] == 0 && m_ownerRangeBeg[2] == 0 && m_ownerRangeEnd[2] == 0);
+  }
+
   bool ZoneConnectivity::is_valid() const
   {
     bool valid = true;

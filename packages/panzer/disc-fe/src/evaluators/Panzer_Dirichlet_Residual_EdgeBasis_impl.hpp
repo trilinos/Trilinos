@@ -117,6 +117,15 @@ postRegistrationSetup(
 {
   orientations = sd.orientations_;
   this->utils.setFieldData(pointValues.jac,fm);
+
+  const auto cellTopo = *basis->getCellTopology();
+  const int edgeDim = 1;
+  const int faceDim = 2;
+  if(cellTopo.getDimension() > edgeDim)
+    Intrepid2::CellTools<PHX::Device>::getSubcellParametrization(edgeParam, edgeDim, cellTopo);
+
+  if(cellTopo.getDimension() > faceDim)
+    Intrepid2::CellTools<PHX::Device>::getSubcellParametrization(faceParam, faceDim, cellTopo);
 }
 
 //**********************************************************************
@@ -141,19 +150,21 @@ evaluateFields(
     const auto worksetJacobians = pointValues.jac.get_view();
 
     const int cellDim = cellTopo.getDimension();
+    const int edgeDim = 1;
+    const int faceDim = 2;
 
     auto intrepid_basis = basis->getIntrepid2Basis();
     const WorksetDetails & details = workset;
 
-    const bool is_normalize = true;
+    //const bool is_normalize = true;
     auto work = Kokkos::createDynRankView(residual.get_static_view(),"work", 4, cellDim);
 
     // compute residual
     switch (subcellDim) {
     case 1: {  // 2D element Tri and Quad
       if (intrepid_basis->getDofCount(1, subcellOrd)) {
-        auto phyEdgeTan = Kokkos::subview(work, 0, Kokkos::ALL());
-        auto ortEdgeTan = Kokkos::subview(work, 1, Kokkos::ALL());
+        auto ortEdgeTan = Kokkos::subview(work, 0, Kokkos::ALL());
+        auto phyEdgeTan = Kokkos::subview(work, 1, Kokkos::ALL());
         
         const int ndofsEdge = intrepid_basis->getDofCount(1, subcellOrd);
         const int numEdges = cellTopo.getEdgeCount();
@@ -161,11 +172,11 @@ evaluateFields(
         for(index_t c=0;c<workset.num_cells;c++) {
           orientations->at(details.cell_local_ids[c]).getEdgeOrientation(edgeOrts, numEdges);
           
-          Intrepid2::Orientation::getReferenceEdgeTangent(ortEdgeTan,
-                                                          subcellOrd,
-                                                          cellTopo,
-                                                          edgeOrts[subcellOrd],
-                                                          is_normalize);
+          Intrepid2::Impl::OrientationTools::getRefSubcellTangents(work,
+              edgeParam,
+              cellTopo.getKey(edgeDim,subcellOrd),
+              subcellOrd,
+              edgeOrts[subcellOrd]);
 
           for (int i=0;i<ndofsEdge;++i) {
             const int b = intrepid_basis->getDofOrdinal(1, subcellOrd, i);
@@ -185,8 +196,9 @@ evaluateFields(
       const int numFaces = cellTopo.getFaceCount();
       
       {
-        auto phyEdgeTan = Kokkos::subview(work, 0, Kokkos::ALL());
-        auto ortEdgeTan = Kokkos::subview(work, 1, Kokkos::ALL());
+
+        auto ortEdgeTan = Kokkos::subview(work, 0, Kokkos::ALL());
+        auto phyEdgeTan = Kokkos::subview(work, 1, Kokkos::ALL());
 
         const int numEdgesOfFace= cellTopo.getEdgeCount(2, subcellOrd);
 
@@ -198,13 +210,12 @@ evaluateFields(
             const int b = edgeOrd;
             orientations->at(details.cell_local_ids[c]).getEdgeOrientation(edgeOrts, numEdges);
             
-            Intrepid2::Orientation::getReferenceEdgeTangent(ortEdgeTan,
-                                                            edgeOrd,
-                                                            cellTopo,
-                                                            edgeOrts[edgeOrd],
-                                                            is_normalize);
-            
-            // for(int b=0;b<dof.extent_int(1);b++) 
+            Intrepid2::Impl::OrientationTools::getRefSubcellTangents(work,
+                edgeParam,
+                cellTopo.getKey(edgeDim,edgeOrd),
+                edgeOrd,
+                edgeOrts[edgeOrd]);
+
             {
               auto J = Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL());
               Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);
@@ -218,21 +229,21 @@ evaluateFields(
       }
 
       if (intrepid_basis->getDofCount(2, subcellOrd)) {
-        auto phyFaceTanU = Kokkos::subview(work, 0, Kokkos::ALL());
-        auto ortFaceTanU = Kokkos::subview(work, 1, Kokkos::ALL());
-        auto phyFaceTanV = Kokkos::subview(work, 2, Kokkos::ALL());
-        auto ortFaceTanV = Kokkos::subview(work, 3, Kokkos::ALL());
+        auto ortFaceTanU = Kokkos::subview(work, 0, Kokkos::ALL());
+        auto ortFaceTanV = Kokkos::subview(work, 1, Kokkos::ALL());
+        auto phyFaceTanU = Kokkos::subview(work, 2, Kokkos::ALL());
+        auto phyFaceTanV = Kokkos::subview(work, 3, Kokkos::ALL());
         
         int faceOrts[6] = {};
         for(index_t c=0;c<workset.num_cells;c++) {
           orientations->at(details.cell_local_ids[c]).getFaceOrientation(faceOrts, numFaces);
-          Intrepid2::Orientation::getReferenceFaceTangents(ortFaceTanU,
-                                                           ortFaceTanV,
-                                                           subcellOrd,
-                                                           cellTopo,
-                                                           faceOrts[subcellOrd],
-                                                           is_normalize);
-          
+
+          Intrepid2::Impl::OrientationTools::getRefSubcellTangents(work,
+              faceParam,
+              cellTopo.getKey(faceDim,subcellOrd),
+              subcellOrd,
+              faceOrts[subcellOrd]);
+
           for(int b=0;b<dof.extent_int(1);b++) {
             auto J = Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL());
             Intrepid2::Kernels::Serial::matvec_product(phyFaceTanU, J, ortFaceTanU);

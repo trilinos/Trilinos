@@ -29,6 +29,11 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tpetra_1DFEM_ME_UnitTests
+    SOURCES  ${UNIT_TEST_DRIVER} ME_Tpetra_1DFEM.hpp ME_Tpetra_1DFEM_def.hpp tTpetra_1DFEM_ME_UnitTests.cpp
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Tpetra_1DFEM
     SOURCES  ${UNIT_TEST_DRIVER} ME_Tpetra_1DFEM.hpp ME_Tpetra_1DFEM_def.hpp Tpetra_1DFEM.cpp
     )
@@ -37,5 +42,19 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     Tpetra_Heq
     SOURCES  ${UNIT_TEST_DRIVER} ME_Tpetra_Heq.hpp ME_Tpetra_Heq_def.hpp Tpetra_Heq.cpp
     )
+
+  IF(NOX_ENABLE_LOCA)
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tpetra_HouseholderBorderedSolve
+      SOURCES  ${UNIT_TEST_DRIVER} ME_Tpetra_1DFEM.hpp ME_Tpetra_1DFEM_def.hpp tTpetra_HouseholderBorderedSolve.cpp
+      )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tpetra_ConstraintModelEvaluator
+      SOURCES  ${UNIT_TEST_DRIVER} ME_Tpetra_1DFEM.hpp ME_Tpetra_1DFEM_def.hpp tTpetra_ConstraintModelEvaluator.cpp
+      )
+
+  ENDIF()
 
 ENDIF()

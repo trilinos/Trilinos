@@ -42,6 +42,8 @@
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/Part.hpp"
 #include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/base/FEMHelpers.hpp"
+#include "stk_mesh/base/CreateEdges.hpp"
 #include "stk_util/parallel/CommSparse.hpp"
 #include "Ioss_EdgeBlock.h"
 #include "Ioss_EdgeSet.h"
@@ -61,7 +63,6 @@
 #include "Ioss_SideBlock.h"
 #include "Ioss_SideSet.h"
 #include "Ioss_CommSet.h"
-#include "stk_mesh/base/FEMHelpers.hpp"
 
 #include <map>
 
@@ -339,6 +340,10 @@ void process_hidden_nodesets(Ioss::Region &io, stk::mesh::BulkData & bulk)
 
 void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk, const stk::mesh::EntityIdProcMap &elemIdMovedToProc, stk::io::StkMeshIoBroker::SideSetFaceCreationBehavior behavior);
 void process_sidesets(Ioss::Region &region, stk::mesh::MetaData &meta);
+void process_face_blocks(Ioss::Region &region, stk::mesh::BulkData &bulk);
+void process_face_blocks(Ioss::Region &region, stk::mesh::MetaData &meta);
+void process_edge_blocks(Ioss::Region &region, stk::mesh::BulkData &bulk);
+void process_edge_blocks(Ioss::Region &region, stk::mesh::MetaData &meta);
 
 }} // namespace stk io
 

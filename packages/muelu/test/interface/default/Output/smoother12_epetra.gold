@@ -26,6 +26,11 @@ Filtered matrix is not being constructed as no filtering is being done
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
+filtered matrix: use spread lumping = 0   [default]
+filtered matrix: spread lumping diag dom growth factor = 1.1   [default]
+filtered matrix: spread lumping diag dom cap = 2   [default]
+filtered matrix: Dirichlet threshold = -1   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -72,6 +77,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -115,6 +121,11 @@ Filtered matrix is not being constructed as no filtering is being done
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
+filtered matrix: use spread lumping = 0   [default]
+filtered matrix: spread lumping diag dom growth factor = 1.1   [default]
+filtered matrix: spread lumping diag dom cap = 2   [default]
+filtered matrix: Dirichlet threshold = -1   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -161,6 +172,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -204,6 +216,11 @@ Filtered matrix is not being constructed as no filtering is being done
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
+filtered matrix: use spread lumping = 0   [default]
+filtered matrix: spread lumping diag dom growth factor = 1.1   [default]
+filtered matrix: spread lumping diag dom cap = 2   [default]
+filtered matrix: Dirichlet threshold = -1   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -250,6 +267,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -293,6 +311,11 @@ Filtered matrix is not being constructed as no filtering is being done
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
+filtered matrix: use spread lumping = 0   [default]
+filtered matrix: spread lumping diag dom growth factor = 1.1   [default]
+filtered matrix: spread lumping diag dom cap = 2   [default]
+filtered matrix: Dirichlet threshold = -1   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -339,6 +362,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -382,6 +406,11 @@ Filtered matrix is not being constructed as no filtering is being done
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
+filtered matrix: use spread lumping = 0   [default]
+filtered matrix: spread lumping diag dom growth factor = 1.1   [default]
+filtered matrix: spread lumping diag dom cap = 2   [default]
+filtered matrix: Dirichlet threshold = -1   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -428,6 +457,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 

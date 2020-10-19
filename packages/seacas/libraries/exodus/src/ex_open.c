@@ -168,7 +168,10 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
       int type = 0;
       ex__check_file_type(path, &type);
 
-      if (type == 5) {
+      if (type == 0) {
+        /* Error message printed at lower level */
+      }
+      else if (type == 5) {
 #if NC_HAS_HDF5
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "EXODUS: ERROR: Attempting to open the netcdf-4 "
@@ -193,7 +196,6 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
                  "other issue.\n",
                  path);
         ex_err(__func__, errmsg, status);
-
 #endif
       }
       else if (type == 4) {
@@ -226,7 +228,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
       }
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to open %s of type %d for reading. Either "
-               "the file does not exist, or there is a permission or file "
+               "the file does not exist,\n\tor there is a permission or file "
                "format issue.",
                path, type);
       ex_err(__func__, errmsg, status);
@@ -247,7 +249,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
       /* NOTE: netCDF returns an id of -1 on an error - but no error code! */
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to open %s for read/write. Either the file "
-               "does not exist, or there is a permission or file format "
+               "does not exist,\n\tor there is a permission or file format "
                "issue.",
                path);
       ex_err(__func__, errmsg, status);

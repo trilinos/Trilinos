@@ -24,7 +24,7 @@
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "5.17 (2020/07/27)";
+  const char *       version_string = "5.19 (2020/09/29)";
 
   void output_copyright();
 
@@ -76,7 +76,7 @@ namespace SEAMS {
     cleanup_memory();
   }
 
-  std::string Aprepro::version() const { return version_string; }
+  std::string Aprepro::version() { return version_string; }
 
   void Aprepro::clear_results()
   {

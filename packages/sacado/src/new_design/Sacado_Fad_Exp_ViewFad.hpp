@@ -58,18 +58,18 @@ namespace Sacado {
       using view_fad_type::view_fad_type;
 
       // Add overload of dereference operator
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       view_fad_type* operator->() { return this; }
 
       // Add overload of dereference operator
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       view_fad_type& operator*() { *this; }
     };
 
 #if defined(HAVE_SACADO_KOKKOSCORE)
     // Overload of Kokkos::atomic_add for ViewFad types.
     template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     void atomic_add(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& xx) {
       using Kokkos::atomic_add;
 

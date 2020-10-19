@@ -259,7 +259,7 @@ namespace Amesos2 {
      * This form operates on a SuperMatrix having the NRformat_loc
      */
     static void gsequ_loc(SLUD::SuperMatrix* A, double* r, double* c, 
-			  double* rowcnd, double* colcnd, double* amax, int* info, 
+			  double* rowcnd, double* colcnd, double* amax, SLUD::int_t* info,
 			  SLUD::gridinfo_t* grid)
     {
       SLUD::D::pdgsequ(A, r, c, rowcnd, colcnd, amax, info, grid);
@@ -270,7 +270,7 @@ namespace Amesos2 {
      * suitable for a globally-replicated matrix.
      */
     static void gsequ(SLUD::SuperMatrix* A, double* r, double* c, 
-		      double* rowcnd, double* colcnd, double* amax, int* info)
+		      double* rowcnd, double* colcnd, double* amax, SLUD::int_t* info)
     {
       SLUD::D::dgsequ_dist(A, r, c, rowcnd, colcnd, amax, info);
     }

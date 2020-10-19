@@ -362,7 +362,7 @@ struct OnlyGhostsEPM  {
     OnlyGhostsEPM(BulkData & mesh_in, const EntityProcMapping& epm_in, const EntityProcMapping& entityShr)
     : mesh(mesh_in), myMapping(epm_in), entitySharing(entityShr) {}
     bool operator()(Entity entity) {
-      if (mesh.is_valid(entity) && !myMapping.find(entity, proc)) {
+      if (!myMapping.find(entity, proc)) {
         if (proc != mesh.parallel_owner_rank(entity)) {
           const bool isSharedWithProc = entitySharing.find(entity, proc);
           return !isSharedWithProc;

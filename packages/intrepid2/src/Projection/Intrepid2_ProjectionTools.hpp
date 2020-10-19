@@ -244,6 +244,96 @@ public:
       ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct);
 
 
+  /** \brief  Computes evaluation points for local L2 projection
+     for broken HGRAD HCURL HDIV and HVOL spaces
+
+      \code
+      C  - num. cells
+      P  - num. evaluation points
+      D  - spatial dimension
+      \endcode
+
+      \param  evaluationPoints [out] - rank-3 view (C,P,D) containing the coordinates of the evaluation
+                                       points for the projection at each cell
+      \param  cellBasis        [in]  - pointer to the basis for the projection
+      \param  projStruct       [in]  - pointer to ProjectionStruct object
+      \param  evalPointType    [in]  - enum selecting whether the points should be computed for the basis
+                                       functions or for the target function
+   */
+  template<typename BasisType>
+  static void
+  getL2DGEvaluationPoints(typename BasisType::ScalarViewType evaluationPoints,
+      const BasisType* cellBasis,
+      ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct,
+      const EvalPointsType evalPointType = EvalPointsType::TARGET
+  );
+
+  /** \brief  Computes evaluation points for local L2 projection
+     for broken HGRAD HCURL HDIV and HVOL spaces
+
+     This function simply perform an L2 projection in each cell with no guarantee
+     of preserving continuity across cells
+
+      \code
+      C  - num. cells
+      F  - num. fields
+      P  - num. evaluation points
+      D  - spatial dimension
+      \endcode
+
+      \param  basisCoeffs         [out] - rank-2 view (C,F) containing the basis coefficients
+      \param  targetAtEvalPoints  [in]  - variable rank view containing the values of the target function
+                                          evaluated at the evaluation points
+      \param  cellOrientations    [in]  - 1-rank view (C) containing the Orientation objects at each cell
+      \param  cellBasis           [in]  - pointer to the basis for the projection
+      \param  projStruct          [in]  - pointer to ProjectionStruct object
+
+      \remark targetAtEvalPoints has rank 2 (C,P) for HGRAD and HVOL elements, and rank 3 (C,P,D)
+              for HCURL and HDIV elements
+   */
+  template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
+  typename funValsValueType, class ...funValsProperties,
+  typename BasisType,
+  typename ortValueType,       class ...ortProperties>
+  static void
+  getL2DGBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
+      const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtEvalPoints,
+      const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
+      const BasisType* cellBasis,
+      ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct);
+
+  /** \brief  Computes evaluation points for local L2 projection
+     for broken HGRAD HCURL HDIV and HVOL spaces
+
+     This function simply perform an L2 projection in each cell with no guarantee
+     of preserving continuity across cells. It also does not account for orientation.
+
+      \code
+      C  - num. cells
+      F  - num. fields
+      P  - num. evaluation points
+      D  - spatial dimension
+      \endcode
+
+      \param  basisCoeffs         [out] - rank-2 view (C,F) containing the basis coefficients
+      \param  targetAtEvalPoints  [in]  - variable rank view containing the values of the target function
+                                          evaluated at the evaluation points
+      \param  cellBasis           [in]  - pointer to the basis for the projection
+      \param  projStruct          [in]  - pointer to ProjectionStruct object
+
+      \remark targetAtEvalPoints has rank 2 (C,P) for HGRAD and HVOL elements, and rank 3 (C,P,D)
+              for HCURL and HDIV elements
+   */
+  template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
+  typename funValsValueType, class ...funValsProperties,
+  typename BasisType>
+  static void
+  getL2DGBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
+      const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtEvalPoints,
+      const BasisType* cellBasis,
+      ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct);
+
+
   /** \brief  Computes evaluation points for HGrad projection
 
       \code
@@ -610,7 +700,7 @@ public:
           auto b = Kokkos::subview(elemRhs, ic, Kokkos::ALL());
 
           //b'*Q0 -> b
-          KokkosBatched::SerialApplyQ_RightNoTransForwardInternal::invoke(
+          KokkosBatched::SerialApplyQ_RightForwardInternal::invoke(
               1, A0.extent(0), A0.extent(1),
               A0.data(),  A0.stride_0(), A0.stride_1(),
               tau0.data(), tau0.stride_0(),
@@ -651,7 +741,7 @@ public:
           auto b = Kokkos::subview(elemRhs, ic, Kokkos::ALL());
 
           //b'*Q -> b
-          KokkosBatched::SerialApplyQ_RightNoTransForwardInternal::invoke(
+          KokkosBatched::SerialApplyQ_RightForwardInternal::invoke(
               1, A.extent(0), A.extent(1),
               A.data(),  A.stride_0(), A.stride_1(),
               tau.data(), tau.stride_0(),

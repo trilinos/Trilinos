@@ -369,9 +369,9 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
     // Get final state
     t = integrator->getTime();
     x = integrator->getX();
-    x_dot = integrator->getXdot();
+    x_dot = integrator->getXDot();
     dxdp = integrator->getDxDp();
-    dxdotdp = integrator->getDxdotDp();
+    dxdotdp = integrator->getDXDotDp();
   }
   else if (dgdp != Teuchos::null && sensitivity_method_ == "Adjoint") {
     RCP<Tempus::IntegratorAdjointSensitivity<Real> > integrator =
@@ -383,7 +383,7 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
     // Get final state
     t = integrator->getTime();
     x = integrator->getX();
-    x_dot = integrator->getXdot();
+    x_dot = integrator->getXDot();
     Thyra::assign(dgdp.ptr(), *(integrator->getDgDp()));
   }
   else if (dgdp != Teuchos::null &&
@@ -398,9 +398,9 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
     // Get final state
     t = integrator->getTime();
     x = integrator->getX();
-    x_dot = integrator->getXdot();
+    x_dot = integrator->getXDot();
     dxdp = integrator->getDxDp();
-    dxdotdp = integrator->getDxdotDp();
+    dxdotdp = integrator->getDXDotDp();
   }
   else if (dgdp != Teuchos::null &&
            sensitivity_method_ == "Pseudotransient Adjoint") {
@@ -414,7 +414,7 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
     // Get final state
     t = integrator->getTime();
     x = integrator->getX();
-    x_dot = integrator->getXdot();
+    x_dot = integrator->getXDot();
     Thyra::assign(dgdp.ptr(), *(integrator->getDgDp()));
   }
   else if (dgdp != Teuchos::null) {
@@ -434,7 +434,7 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
     // Get final state
     t = integrator->getTime();
     x = integrator->getX();
-    x_dot = integrator->getXdot();
+    x_dot = integrator->getXDot();
   }
 
   // Evaluate response at final state

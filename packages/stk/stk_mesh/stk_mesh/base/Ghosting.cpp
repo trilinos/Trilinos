@@ -55,13 +55,26 @@ void Ghosting::send_list( std::vector< EntityProc > & v ) const
   }
 }
 
-void Ghosting::receive_list( std::vector<EntityKey> & v ) const
+void Ghosting::receive_list( std::vector<EntityKey> & keys ) const
 {
   for ( const EntityCommListInfo& commListInfo : m_mesh.internal_comm_list() ) {
     if ( m_mesh.parallel_owner_rank(commListInfo.entity) != m_mesh.parallel_rank() ) {
       for ( PairIterEntityComm ec = m_mesh.internal_entity_comm_map(commListInfo.key) ; ! ec.empty() ; ++ec ) {
         if ( ec->ghost_id == m_ordinal ) {
-          v.push_back(commListInfo.key);
+          keys.push_back(commListInfo.key);
+        }
+      }
+    }
+  }
+}
+
+void Ghosting::receive_list( std::vector<Entity> & entities ) const
+{
+  for ( const EntityCommListInfo& commListInfo : m_mesh.internal_comm_list() ) {
+    if ( m_mesh.parallel_owner_rank(commListInfo.entity) != m_mesh.parallel_rank() ) {
+      for ( PairIterEntityComm ec = m_mesh.internal_entity_comm_map(commListInfo.key) ; ! ec.empty() ; ++ec ) {
+        if ( ec->ghost_id == m_ordinal ) {
+          entities.push_back(commListInfo.entity);
         }
       }
     }

@@ -21,11 +21,7 @@ namespace Tempus {
 template<class Scalar>
 void StepperExplicitRK<Scalar>::setupDefault()
 {
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
-  this->setUseEmbedded(        this->getUseEmbeddedDefault());
-
+  this->setUseEmbedded(false);
   this->setStageNumber(-1);
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -363,6 +359,17 @@ void StepperExplicitRK<Scalar>::takeStep(
       }
     }
 
+    if (this->getUseFSAL()) {
+      if (numStages == 1) {
+        const Scalar ts = time + dt;
+        auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
+        // Evaluate xDot = f(x,t).
+        this->evaluateExplicitODE(stageXDot_[0], workingState->getX(), ts, p);
+      }
+      if (workingState->getXDot() != Teuchos::null)
+        Thyra::assign((workingState->getXDot()).ptr(), *(stageXDot_.back()));
+    }
+
 
     // At this point, the stepper has passed.
     // But when using adaptive time stepping, the embedded method
@@ -396,8 +403,10 @@ void StepperExplicitRK<Scalar>::takeStep(
 
       //compute: || ee / sc ||
       assign(this->sc.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-      Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *this->ee_, *this->abs_u, this->sc.ptr());
-      Scalar err = std::abs(Thyra::norm_inf(*this->sc));
+      Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *this->ee_, *this->abs_u,this->sc.ptr());
+
+      const auto space_dim = this->ee_->space()->dim();
+      Scalar err = std::abs(Thyra::norm(*this->sc)) / space_dim ;
       workingState->setErrorRel(err);
 
       // test if step should be rejected

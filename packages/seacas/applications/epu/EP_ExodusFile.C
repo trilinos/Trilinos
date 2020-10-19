@@ -164,8 +164,6 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
   std::string sub_dir  = si.sub_dir();
 
   ParallelDisks disks;
-  disks.Raid_Offset(si.raid_offset());
-  disks.Number_of_Raids(si.raid_count());
 
   float version = 0.0;
 

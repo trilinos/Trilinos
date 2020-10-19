@@ -177,16 +177,16 @@ void check_split_assign(std::vector<Iocgns::StructuredZoneData *> &zones,
       for (auto &zone : zones) {
         if (zone->is_active()) {
           for (const auto &zgc : zone->m_zoneConnectivity) {
-            if (zgc.is_active() && zgc.is_from_decomp()) {
+            if (zgc.is_active()) {
               is_symm[std::make_pair(std::min(zgc.m_ownerGUID, zgc.m_donorGUID),
                                      std::max(zgc.m_ownerGUID, zgc.m_donorGUID))]++;
             }
           }
         }
       }
-      // Iterate `is_symm` and make sure all entries == 2
+      // Iterate `is_symm` and make sure there is an even number for all entries.
       for (const auto &item : is_symm) {
-        CHECK(item.second == 2);
+        CHECK(item.second % 2 == 0);
       }
     }
   }
@@ -207,7 +207,7 @@ TEST_CASE("single block", "[single_block]")
 TEST_CASE("single block line", "[single_block_line]")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
-  zones.push_back(new Iocgns::StructuredZoneData(1, "4x4x1"));
+  zones.push_back(new Iocgns::StructuredZoneData(1, "40x40x1"));
   zones.back()->m_lineOrdinal = 0;
 
   int    proc_count             = 4;
@@ -221,11 +221,11 @@ TEST_CASE("cube_2blocks", "[cube_2blocks]")
 {
   int                                       zone = 1;
   std::vector<Iocgns::StructuredZoneData *> zones;
-  zones.push_back(new Iocgns::StructuredZoneData(zone++, "5x2x5"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "50x20x50"));
   zones.back()->m_zoneConnectivity.emplace_back(
       "A1", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{{1, -3, 2}}, Ioss::IJK_t{{1, 1, 1}},
       Ioss::IJK_t{{6, 1, 6}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{6, 6, 1}});
-  zones.push_back(new Iocgns::StructuredZoneData(zone++, "5x5x3"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "50x50x30"));
   zones.back()->m_zoneConnectivity.emplace_back(
       "B1", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{{1, 3, -2}}, Ioss::IJK_t{{1, 1, 1}},
       Ioss::IJK_t{{6, 6, 1}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{6, 1, 6}});
@@ -259,10 +259,7 @@ TEST_CASE("bump", "[bump_zgc]")
       Ioss::IJK_t{{1, 3, 2}}, Ioss::IJK_t{{3, 1, 1}}, Ioss::IJK_t{{3, 3, 2}});
   double load_balance_tolerance = 1.2;
 
-  for (size_t proc_count = 2; proc_count < 8; proc_count += 2) {
-    std::string name = "bump_ProcCount_" + std::to_string(proc_count);
-    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count, 0.8, 1.2); }
-  }
+  SECTION("bump_ProcCount_2") { check_split_assign(zones, load_balance_tolerance, 2, 0.8, 1.2); }
   cleanup(zones);
 }
 
@@ -287,23 +284,9 @@ TEST_CASE("bump_loose", "[bump_loose_zgc]")
       Ioss::IJK_t{{1, 3, 2}}, Ioss::IJK_t{{3, 1, 1}}, Ioss::IJK_t{{3, 3, 2}});
   double load_balance_tolerance = 1.4;
 
-  for (size_t proc_count = 2; proc_count < 8; proc_count++) {
-    std::string name = "bump_loose_ProcCount_" + std::to_string(proc_count);
-    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count, 0.8, 1.2); }
-  }
-  cleanup(zones);
-}
-
-TEST_CASE("prime sides", "[prime_sides]")
-{
-  std::vector<Iocgns::StructuredZoneData *> zones;
-  zones.push_back(new Iocgns::StructuredZoneData(1, "3x5x7"));
-
-  double load_balance_tolerance = 1.25;
-
-  for (size_t proc_count = 2; proc_count < 8; proc_count++) {
-    std::string name = "Prime_ProcCount_" + std::to_string(proc_count);
-    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count, 0.8); }
+  SECTION("bump_loose_ProcCount_2")
+  {
+    check_split_assign(zones, load_balance_tolerance, 2, 0.8, 1.2);
   }
   cleanup(zones);
 }
@@ -1005,7 +988,7 @@ TEST_CASE("farmer_h1_mk21", "[h1_mk21]")
 
   for (size_t proc_count = 3; proc_count <= 384; proc_count *= 2) {
     std::string name = "H1_MK21_ProcCount_" + std::to_string(proc_count);
-    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count, 0.75); }
+    SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count, 0.75, 1.1); }
   }
   cleanup(zones);
 }
@@ -1035,11 +1018,11 @@ TEST_CASE("carnes-mesh", "[carnes-mesh]")
   // Failing for decomposition on 64 processors
   int zone = 1;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "66x2x200"));
-  zones.back()->m_lineOrdinal = 2;
+  zones.back()->m_lineOrdinal = 1;
 
-  double load_balance_tolerance = 1.5;
+  double load_balance_tolerance = 1.2;
 
-  for (size_t proc_count = 4; proc_count <= 64; proc_count += 4) {
+  for (size_t proc_count = 2; proc_count <= 64; proc_count *= 2) {
     std::string name = "Carnes_ProcCount_" + std::to_string(proc_count);
     SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count); }
   }
@@ -1053,11 +1036,11 @@ TEST_CASE("carnes-blunt-wedge", "[carnes-blunt-wedge]")
   // Failing for decomposition on 64 processors
   int zone = 1;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "80x74x1"));
-  zones.back()->m_lineOrdinal = 1;
+  zones.back()->m_lineOrdinal = 2;
 
-  double load_balance_tolerance = 1.75;
+  double load_balance_tolerance = 1.2;
 
-  for (size_t proc_count = 4; proc_count <= 64; proc_count += 4) {
+  for (size_t proc_count = 2; proc_count <= 64; proc_count *= 2) {
     std::string name = "Carnes_BW_ProcCount_" + std::to_string(proc_count);
     SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count); }
   }
@@ -1099,7 +1082,7 @@ TEST_CASE("LotsOfZones", "[LotsOfZones]")
 
 TEST_CASE("half_sphere", "[half_sphere]")
 {
-  int zone = 1;
+  int                                       zone = 1;
   std::vector<Iocgns::StructuredZoneData *> zones;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "80x50x24"));
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "80x50x24"));

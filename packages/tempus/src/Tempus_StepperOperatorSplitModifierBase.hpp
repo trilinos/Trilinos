@@ -44,16 +44,16 @@ class StepperOperatorSplitModifierBase
      *  For the Modifier interface, this adaptor is a "simple pass through".
      */
     void execute(
-		 Teuchos::RCP<SolutionHistory<Scalar> > sh,
-		 Teuchos::RCP<StepperOperatorSplit<Scalar> > stepper,
-		 const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperOperatorSplit<Scalar> > stepper,
+      const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION actLoc)
     { this->modify(sh, stepper, actLoc); }
   public:
     /// Modify OperatorSplit Stepper.
     virtual void modify(
-			Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-			Teuchos::RCP<StepperOperatorSplit<Scalar> > /* stepper */,
-			const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
+      Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<StepperOperatorSplit<Scalar> > /* stepper */,
+      const typename StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
 
   };
 

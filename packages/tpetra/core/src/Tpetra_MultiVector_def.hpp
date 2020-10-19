@@ -351,7 +351,7 @@ namespace { // (anonymous)
       return false; // most up-to-date on device
     }
     else { // most up-to-date on host
-      constexpr size_t localLengthThreshold = 10000;
+      size_t localLengthThreshold = Tpetra::Details::Behavior::multivectorKernelLocationThreshold();
       return X.getLocalLength () <= localLengthThreshold;
     }
   }
@@ -406,6 +406,21 @@ namespace { // (anonymous)
 
 
 namespace Tpetra {
+
+  namespace Details {
+    template <typename DstView, typename SrcView>
+    struct AddAssignFunctor {
+      // This functor would be better as a lambda, but CUDA cannot compile
+      // lambdas in protected functions.  It compiles fine with the functor.
+      AddAssignFunctor(DstView &tgt_, SrcView &src_) : tgt(tgt_), src(src_) {}
+
+      KOKKOS_INLINE_FUNCTION void
+      operator () (const size_t k) const { tgt(k) += src(k); }
+
+      DstView tgt;
+      SrcView src;
+    };
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -962,7 +977,8 @@ namespace Tpetra {
   (const SrcDistObject& sourceObj,
    const size_t numSameIDs,
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs)
+   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+   const CombineMode CM)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::getDualViewCopyFromArrayView;
@@ -1065,7 +1081,19 @@ namespace Tpetra {
 
           auto tgt_j = Kokkos::subview (tgt_h, rows, tgtCol);
           auto src_j = Kokkos::subview (src_h, rows, srcCol);
-          Kokkos::deep_copy (tgt_j, src_j); // Copy src_j into tgt_j
+          if (CM == ADD_ASSIGN) { 
+            // Sum src_j into tgt_j
+            using range_t = 
+                  Kokkos::RangePolicy<typename Node::execution_space, size_t>;
+            range_t rp(0,numSameIDs);
+            Tpetra::Details::AddAssignFunctor<decltype(tgt_j), decltype(src_j)>
+                    aaf(tgt_j, src_j);
+            Kokkos::parallel_for(rp, aaf);
+          }
+          else { 
+            // Copy src_j into tgt_j
+            Kokkos::deep_copy (tgt_j, src_j); 
+          }
         }
       }
       else { // copy on device
@@ -1079,10 +1107,23 @@ namespace Tpetra {
 
           auto tgt_j = Kokkos::subview (tgt_d, rows, tgtCol);
           auto src_j = Kokkos::subview (src_d, rows, srcCol);
-          Kokkos::deep_copy (tgt_j, src_j); // Copy src_j into tgt_j
+          if (CM == ADD_ASSIGN) { 
+            // Sum src_j into tgt_j
+            using range_t = 
+                  Kokkos::RangePolicy<typename Node::execution_space, size_t>;
+            range_t rp(0,numSameIDs);
+            Tpetra::Details::AddAssignFunctor<decltype(tgt_j), decltype(src_j)>
+                    aaf(tgt_j, src_j);
+            Kokkos::parallel_for(rp, aaf);
+          }
+          else { 
+            // Copy src_j into tgt_j
+            Kokkos::deep_copy (tgt_j, src_j); 
+          }
         }
       }
     }
+
 
     // For the remaining GIDs, execute the permutations.  This may
     // involve noncontiguous access of both source and destination
@@ -1208,15 +1249,36 @@ namespace Tpetra {
           create_const_view (tgtWhichVecs.view_host ());
         auto srcWhichVecs_h =
           create_const_view (srcWhichVecs.view_host ());
-        permute_array_multi_column_variable_stride (tgt_h, src_h,
-                                                    permuteToLIDs_h,
-                                                    permuteFromLIDs_h,
-                                                    tgtWhichVecs_h,
-                                                    srcWhichVecs_h, numCols);
+        if (CM == ADD_ASSIGN) {
+          using op_type = KokkosRefactor::Details::AddOp;
+          permute_array_multi_column_variable_stride (tgt_h, src_h,
+                                                      permuteToLIDs_h,
+                                                      permuteFromLIDs_h,
+                                                      tgtWhichVecs_h,
+                                                      srcWhichVecs_h, numCols,
+                                                      op_type());
+        }
+        else {
+          using op_type = KokkosRefactor::Details::InsertOp;
+          permute_array_multi_column_variable_stride (tgt_h, src_h,
+                                                      permuteToLIDs_h,
+                                                      permuteFromLIDs_h,
+                                                      tgtWhichVecs_h,
+                                                      srcWhichVecs_h, numCols,
+                                                      op_type());
+        }
       }
       else {
-        permute_array_multi_column (tgt_h, src_h, permuteToLIDs_h,
-                                    permuteFromLIDs_h, numCols);
+        if (CM == ADD_ASSIGN) {
+          using op_type = KokkosRefactor::Details::AddOp;
+          permute_array_multi_column (tgt_h, src_h, permuteToLIDs_h,
+                                      permuteFromLIDs_h, numCols, op_type());
+        }
+        else {
+          using op_type = KokkosRefactor::Details::InsertOp;
+          permute_array_multi_column (tgt_h, src_h, permuteToLIDs_h,
+                                      permuteFromLIDs_h, numCols, op_type());
+        }
       }
     }
     else { // permute on device
@@ -1244,15 +1306,36 @@ namespace Tpetra {
         // getDualViewCopyFromArrayView puts them in the right place.
         auto tgtWhichVecs_d = create_const_view (tgtWhichVecs.view_device ());
         auto srcWhichVecs_d = create_const_view (srcWhichVecs.view_device ());
-        permute_array_multi_column_variable_stride (tgt_d, src_d,
-                                                    permuteToLIDs_d,
-                                                    permuteFromLIDs_d,
-                                                    tgtWhichVecs_d,
-                                                    srcWhichVecs_d, numCols);
+        if (CM == ADD_ASSIGN) {
+          using op_type = KokkosRefactor::Details::AddOp;
+          permute_array_multi_column_variable_stride (tgt_d, src_d,
+                                                      permuteToLIDs_d,
+                                                      permuteFromLIDs_d,
+                                                      tgtWhichVecs_d,
+                                                      srcWhichVecs_d, numCols,
+                                                      op_type());
+        }
+        else {
+          using op_type = KokkosRefactor::Details::InsertOp;
+          permute_array_multi_column_variable_stride (tgt_d, src_d,
+                                                      permuteToLIDs_d,
+                                                      permuteFromLIDs_d,
+                                                      tgtWhichVecs_d,
+                                                      srcWhichVecs_d, numCols,
+                                                      op_type());
+        }
       }
       else {
-        permute_array_multi_column (tgt_d, src_d, permuteToLIDs_d,
-                                    permuteFromLIDs_d, numCols);
+        if (CM == ADD_ASSIGN) {
+          using op_type = KokkosRefactor::Details::AddOp;
+          permute_array_multi_column (tgt_d, src_d, permuteToLIDs_d,
+                                      permuteFromLIDs_d, numCols, op_type());
+        }
+        else {
+          using op_type = KokkosRefactor::Details::InsertOp;
+          permute_array_multi_column (tgt_d, src_d, permuteToLIDs_d,
+                                      permuteFromLIDs_d, numCols, op_type());
+        }
       }
     }
 
@@ -1539,7 +1622,6 @@ namespace Tpetra {
     using KokkosRefactor::Details::unpack_array_multi_column_variable_stride;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using std::endl;
-    using IST = impl_scalar_type;
     const char longFuncName[] = "Tpetra::MultiVector::unpackAndCombine";
     const char tfecfFuncName[] = "unpackAndCombine: ";
     ProfilingRegion regionUAC (longFuncName);
@@ -1671,7 +1753,7 @@ namespace Tpetra {
       // custom combine modes, start editing here.
 
       if (CM == INSERT || CM == REPLACE) {
-        using op_type = KokkosRefactor::Details::InsertOp<IST>;
+        using op_type = KokkosRefactor::Details::InsertOp;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
@@ -1712,8 +1794,8 @@ namespace Tpetra {
           }
         }
       }
-      else if (CM == ADD) {
-        using op_type = KokkosRefactor::Details::AddOp<IST>;
+      else if (CM == ADD || CM == ADD_ASSIGN) {
+        using op_type = KokkosRefactor::Details::AddOp;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
@@ -1754,7 +1836,7 @@ namespace Tpetra {
         }
       }
       else if (CM == ABSMAX) {
-        using op_type = KokkosRefactor::Details::AbsMaxOp<IST>;
+        using op_type = KokkosRefactor::Details::AbsMaxOp;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),

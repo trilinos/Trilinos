@@ -51,6 +51,9 @@ public:
     this->setStepperType("RK Forward Euler");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            true);
+    this->setICConsistency(      "Consistent");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -91,6 +94,8 @@ public:
                 << "b = [ 1 ]'";
     return Description.str();
   }
+
+  void setUseFSAL(bool a) { this->useFSAL_ = a; this->isInitialized_ = false; }
 
 protected:
 
@@ -145,6 +150,9 @@ public:
     this->setStepperType("RK Explicit 4 Stage");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -265,6 +273,9 @@ public:
     this->setStepperType("Bogacki-Shampine 3(2) Pair");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            true);
+    this->setICConsistency(      "Consistent");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -312,6 +323,8 @@ public:
                 << "bstar = [ 7/24  1/4  1/3  1/8 ]'";
     return Description.str();
   }
+
+  void setUseFSAL(bool a) { this->useFSAL_ = a; this->isInitialized_ = false; }
 
 protected:
 
@@ -398,6 +411,9 @@ public:
     this->setStepperType("Merson 4(5) Pair");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -534,6 +550,9 @@ public:
     this->setStepperType("RK Explicit 3/8 Rule");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -657,6 +676,9 @@ public:
     this->setStepperType("RK Explicit 4 Stage 3rd order by Runge");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -775,6 +797,9 @@ public:
     this->setStepperType("RK Explicit 5 Stage 3rd order by Kinnmark and Gray");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -893,6 +918,9 @@ public:
     this->setStepperType("RK Explicit 3 Stage 3rd order");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -1014,6 +1042,9 @@ public:
     this->setStepperType("RK Explicit 3 Stage 3rd order TVD");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -1146,6 +1177,9 @@ public:
     this->setStepperType("RK Explicit 3 Stage 3rd order by Heun");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -1263,6 +1297,9 @@ public:
     this->setStepperType("RK Explicit Midpoint");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -1371,6 +1408,9 @@ public:
     this->setStepperType("RK Explicit Ralston");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -1480,6 +1520,9 @@ public:
     this->setStepperType("RK Explicit Trapezoidal");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -1592,6 +1635,9 @@ class StepperERK_SSPERK54 :
     this->setStepperType("SSPERK54");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -1736,6 +1782,9 @@ public:
     this->setStepperType("General ERK");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -1897,6 +1946,9 @@ public:
     this->setStepperType("RK Backward Euler");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -1942,15 +1994,11 @@ public:
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
     return pl;
   }
 
@@ -2027,6 +2075,9 @@ public:
     this->setGamma(gammaDefault_);
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -2098,15 +2149,11 @@ public:
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
     pl->set<double>("gamma",gammaDefault_,
       "The default value is gamma = (2-sqrt(2))/2. "
       "This will produce an L-stable 2nd order method with the stage "
@@ -2164,7 +2211,7 @@ protected:
  *  \;\;\;\;\mbox{ where }\;\;\;\;
  *  \begin{array}{c|ccc}  \gamma  & \gamma      &         &        \\
  *                       1-\gamma & 1-2\gamma   & \gamma  &        \\
- *                       1-2      & 1/2 -\gamma & 0       & \gamma \\ \hline
+ *                       1/2      & 1/2 -\gamma & 0       & \gamma \\ \hline
  *                                & 1/6         & 1/6     & 2/3
  *  \end{array}
  *  \f]
@@ -2194,6 +2241,9 @@ public:
     this->setStepperType("SDIRK 3 Stage 2nd order");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   StepperSDIRK_3Stage2ndOrder(
@@ -2253,8 +2303,6 @@ public:
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
     return pl;
   }
 
@@ -2348,6 +2396,9 @@ public:
     this->setGamma(gammaDefault_);
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -2548,6 +2599,9 @@ public:
     this->setStepperType("EDIRK 2 Stage 3rd order");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -2599,15 +2653,11 @@ public:
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
     return pl;
   }
 
@@ -2644,7 +2694,7 @@ protected:
 
 
 // ----------------------------------------------------------------------------
-/** \brief SDIRK 1 Stage Theta
+/** \brief DIRK 1 Stage Theta
  *
  *  The tableau (order = 1 or 2) is
  *  \f[
@@ -2653,7 +2703,7 @@ protected:
  *      & b^T
  *  \end{array}
  *  \;\;\;\;\mbox{ where }\;\;\;\;
- *  \begin{array}{c|c} \theta  & \theta  \\
+ *  \begin{array}{c|c} \theta  & \theta  \\  \hline
  *                             & 1       \end{array}
  *  \f]
  *  Valid values are \f$0 < \theta \leq 1\f$, where \f$\theta\f$ = 0
@@ -2688,6 +2738,9 @@ public:
     this->setTheta(thetaDefault_);
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -2760,16 +2813,12 @@ public:
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
 
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
     pl->set<double>("theta",thetaDefault_,
       "Valid values are 0 <= theta <= 1, where theta = 0 "
       "implies Forward Euler, theta = 1/2 implies implicit midpoint "
@@ -2853,6 +2902,9 @@ public:
     this->setTheta(thetaDefault_);
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            true);
+    this->setICConsistency(      "Consistent");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -2925,15 +2977,12 @@ public:
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
 
-    pl->set<bool>("Initial Condition Consistency Check", false);
     pl->set<double>("theta",thetaDefault_,
       "Valid values are 0 < theta <= 1, where theta = 0 "
       "implies Forward Euler, theta = 1/2 implies trapezoidal "
@@ -2944,6 +2993,8 @@ public:
 
     return pl;
   }
+
+  void setUseFSAL(bool a) { this->useFSAL_ = a; this->isInitialized_ = false; }
 
 protected:
 
@@ -3019,6 +3070,9 @@ public:
     this->setStepperType("RK Trapezoidal Rule");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            true);
+    this->setICConsistency(      "Consistent");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -3066,17 +3120,15 @@ public:
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
     return pl;
   }
+
+  void setUseFSAL(bool a) { this->useFSAL_ = a; this->isInitialized_ = false; }
 
 protected:
 
@@ -3154,6 +3206,9 @@ public:
     this->setStepperType("RK Implicit Midpoint");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -3209,15 +3264,11 @@ public:
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
     return pl;
   }
 
@@ -3281,6 +3332,9 @@ class StepperSDIRK_SSPDIRK22 :
     this->setStepperType("SSPDIRK22");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -3329,15 +3383,11 @@ class StepperSDIRK_SSPDIRK22 :
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
     return pl;
   }
 
@@ -3408,6 +3458,9 @@ class StepperSDIRK_SSPDIRK32 :
     this->setStepperType("SSPDIRK32");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -3457,15 +3510,11 @@ class StepperSDIRK_SSPDIRK32 :
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
     return pl;
   }
 
@@ -3537,6 +3586,9 @@ class StepperSDIRK_SSPDIRK23 :
     this->setStepperType("SSPDIRK23");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -3586,15 +3638,11 @@ class StepperSDIRK_SSPDIRK23 :
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
     return pl;
   }
 
@@ -3667,6 +3715,9 @@ class StepperSDIRK_SSPDIRK33 :
     this->setStepperType("SSPDIRK33");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -3717,15 +3768,11 @@ class StepperSDIRK_SSPDIRK33 :
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
     return pl;
   }
 
@@ -3803,6 +3850,9 @@ public:
     this->setStepperType("RK Implicit 1 Stage 1st order Radau IA");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -3854,15 +3904,11 @@ public:
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
     return pl;
   }
 
@@ -3925,6 +3971,9 @@ public:
     this->setStepperType("RK Implicit 2 Stage 2nd order Lobatto IIIB");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -3977,15 +4026,11 @@ public:
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
     return pl;
   }
 
@@ -4067,6 +4112,9 @@ public:
     this->setStepperType("SDIRK 5 Stage 4th order");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -4123,15 +4171,11 @@ public:
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
     return pl;
   }
 
@@ -4249,6 +4293,9 @@ public:
     this->setStepperType("SDIRK 3 Stage 4th order");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -4304,15 +4351,11 @@ public:
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
     return pl;
   }
 
@@ -4402,6 +4445,9 @@ public:
     this->setStepperType("SDIRK 5 Stage 5th order");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -4485,15 +4531,11 @@ public:
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
     return pl;
   }
 
@@ -4597,6 +4639,9 @@ public:
     this->setStepperType("SDIRK 2(1) Pair");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -4644,15 +4689,11 @@ public:
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
     return pl;
   }
 
@@ -4740,6 +4781,9 @@ public:
     this->setStepperType("General DIRK");
     this->setupTableau();
     this->setupDefault();
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
   }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
@@ -4824,8 +4868,6 @@ public:
     return Description.str();
   }
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-
   void setupTableau()
   {
     if (this->tableau_ == Teuchos::null) {
@@ -4860,8 +4902,6 @@ public:
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     this->getValidParametersBasicDIRK(pl);
-    pl->set<bool>("Initial Condition Consistency Check",
-                  this->getICConsistencyCheckDefault());
 
     // Tableau ParameterList
     Teuchos::RCP<Teuchos::ParameterList> tableauPL = Teuchos::parameterList();

@@ -44,6 +44,7 @@
 // @HEADER
 
 #include "Zoltan2_Directory_Impl.hpp"
+#include "Tpetra_Core.hpp"
 
 // This type will be used by some of these tests
 class gid_struct {
@@ -492,16 +493,7 @@ int test_multiple_lid(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
 }
 
 int main(int narg, char **arg) {
-  Kokkos::initialize(narg, arg);
-
-#ifndef HAVE_MPI
-  // TODO what is cleanest way to support a serial test case?
-  // We still have some non Teuchos MPI calls in the directory and this works
-  // but I think if this all gets incorporated into Teuchos we can clean this up.
-  MPI_Init(NULL, NULL);
-#endif
-
-  Teuchos::GlobalMPISession mpiSession(&narg,&arg);
+  Tpetra::ScopeGuard tscope(&narg, &arg);
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
 
@@ -529,8 +521,6 @@ int main(int narg, char **arg) {
       std::cout << "FAILED!" << std::endl;
     }
   }
-
-  Kokkos::finalize();
 
   return errGlobal;
 }

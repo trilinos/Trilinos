@@ -116,21 +116,17 @@ testAll() {
   echo "GREP_LINE_EXPECTED = [${GREP_LINE_EXPECTED}]"
   ${_ASSERT_EQUALS_} '"${GREP_LINE}"' '"${GREP_LINE_EXPECTED}"'
 
-  ATDM_CONFIG_BUILD_NAME=before_intel-18.0.2-mpich2-3.2-after
+  ATDM_CONFIG_BUILD_NAME=before_intel-19.0.3-mpich2-3.2-after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
-  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} INTEL-18.0.2_MPICH2-3.2
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} INTEL-19.0.3_MPICH2-3.2
 
-  ATDM_CONFIG_BUILD_NAME=before_intel-18.0.2_mpich2-3.2-after
+  ATDM_CONFIG_BUILD_NAME=before_intel-19.0.3_mpich2-3.2-after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
-  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} INTEL-18.0.2_MPICH2-3.2
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} INTEL-19.0.3_MPICH2-3.2
 
-  ATDM_CONFIG_BUILD_NAME=before_intel-18.0.2-after
+  ATDM_CONFIG_BUILD_NAME=before_intel-19.0.3-after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
-  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} INTEL-18.0.2_MPICH2-3.2
-
-  ATDM_CONFIG_BUILD_NAME=before_intel-18-after
-  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
-  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} INTEL-18.0.2_MPICH2-3.2
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPILER} INTEL-19.0.3_INTELMPI-2018.4
 
   ATDM_CONFIG_BUILD_NAME=before-intel-19.0.3-intelmpi-2018.4_after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh

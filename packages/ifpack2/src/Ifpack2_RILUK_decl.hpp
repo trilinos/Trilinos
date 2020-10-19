@@ -46,6 +46,8 @@
 #ifndef IFPACK2_CRSRILUK_DECL_HPP
 #define IFPACK2_CRSRILUK_DECL_HPP
 
+#include "KokkosSparse_spiluk.hpp"
+
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
@@ -266,6 +268,12 @@ class RILUK:
   //! The type of the magnitude (absolute value) of a matrix entry.
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
+  //! The Kokkos device type of the input MatrixType.
+  typedef typename node_type::device_type device_type;
+
+  //! The Kokkos execution space of the input MatrixType.
+  typedef typename node_type::execution_space execution_space;
+
   //! Tpetra::RowMatrix specialization used by this class.
   typedef Tpetra::RowMatrix<scalar_type,
                             local_ordinal_type,
@@ -283,6 +291,21 @@ class RILUK:
 
   template <class NewMatrixType> friend class RILUK;
 
+  //@}
+  //! \name Implementation of Kokkos Kernels ILU(k).
+  //@{
+
+  typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
+  typedef typename local_matrix_type::StaticCrsGraphType::row_map_type lno_row_view_t;
+  typedef typename local_matrix_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
+  typedef typename local_matrix_type::values_type scalar_nonzero_view_t;
+  typedef typename local_matrix_type::StaticCrsGraphType::device_type::memory_space TemporaryMemorySpace;
+  typedef typename local_matrix_type::StaticCrsGraphType::device_type::memory_space PersistentMemorySpace;
+  typedef typename local_matrix_type::StaticCrsGraphType::device_type::execution_space HandleExecSpace;
+  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
+    <typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
+    HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;
+  
   /// \brief Constructor that takes a Tpetra::RowMatrix.
   ///
   /// \param A_in [in] The input matrix.
@@ -512,7 +535,9 @@ public:
   }
 
   //! Return the Ifpack2::IlukGraph associated with this factored matrix.
-  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> > > getGraph () const {
+  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,
+                                                   global_ordinal_type,
+                                                   node_type>, kk_handle_type> > getGraph () const {
     return Graph_;
   }
 
@@ -556,11 +581,14 @@ protected:
   //! The ILU(k) graph.
   Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,
                                                    global_ordinal_type,
-                                                   node_type> > > Graph_;
+                                                   node_type>, kk_handle_type> > Graph_;
   /// \brief The matrix whos numbers are used to to compute ILU(k). The graph
   /// may be computed using a crs_matrix_type that initialize() constructs
   /// temporarily.
   Teuchos::RCP<const row_matrix_type> A_local_;
+  lno_row_view_t A_local_rowmap_; 
+  lno_nonzero_view_t A_local_entries_; 
+  scalar_nonzero_view_t A_local_values_;
 
   //! The L (lower triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> L_;
@@ -570,6 +598,7 @@ protected:
   Teuchos::RCP<crs_matrix_type> U_;
   //! Sparse triangular solver for U
   Teuchos::RCP<LocalSparseTriangularSolver<row_matrix_type> > U_solver_;
+
   //! The diagonal entries of the ILU(k) factorization.
   Teuchos::RCP<vec_type> D_;
 
@@ -592,6 +621,9 @@ protected:
   magnitude_type Athresh_;
   magnitude_type Rthresh_;
 
+  //! Optional KokkosKernels implementation.
+  bool isKokkosKernelsSpiluk_;
+  Teuchos::RCP<kk_handle_type> KernelHandle_;
 };
 
 // NOTE (mfh 11 Feb 2015) This used to exist in order to deal with

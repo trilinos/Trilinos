@@ -26,7 +26,7 @@
 namespace Tempus {
 
 /** \brief TimeStepControl manages the time step size.
- *  There several mechanicisms that effect the time step size and
+ *  There several mechanisms that effect the time step size and
  *  handled with this class:
  *   - Maximum and minimum time
  *   - Maximum and minimum time index
@@ -38,6 +38,13 @@ namespace Tempus {
  *  Additional step control can be added through the step control observer,
  *  or inheriting from this class.
  *   - Stability limits (e.g., CFL number)
+ *
+ * Using TimeStepControlStrategy allows applications to define
+ * their very own  strategy used to determine the next time step size (`getNextTimeStep()`). 
+ * Applications can define multiple strategies and add it to a vector of strategies TimeStepControlStrategyComposite  using setTimeStepControlStrategy().
+ * TimeStepControlStrategyComposite iterates over the list of strategies to determine
+ * the "optimal" next time step size.
+ *
  */
 template<class Scalar>
 class TimeStepControl

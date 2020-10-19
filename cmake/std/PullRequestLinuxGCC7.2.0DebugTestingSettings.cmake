@@ -6,6 +6,8 @@
 
 # Usage: cmake -C PullRequestLinuxGCC7.2.0DebugTestingSettings.cmake
 
+set (CMAKE_CXX_STANDARD "14" CACHE STRING "Set C++ standard to C++14")
+
 # Misc options typically added by CI testing mode in TriBITS
 
 # Use the below option only when submitting to the dashboard
@@ -23,7 +25,11 @@ set (Trilinos_ENABLE_COMPLEX_DOUBLE ON CACHE BOOL "Set by default for PR testing
 # Disable just one Teko sub-unit test that fails with openmpi 1.10 (#2712)
 set (Teko_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D ON CACHE BOOL "Temporarily disabled in PR testing")
 
+# These tests times out in most cases - 
+set (KokkosKernels_blas_serial_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set (ROL_example_PDE-OPT_helmholtz_example_02_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 
 # Adding warnings as errors flags to this PR build
-set(CMAKE_CXX_FLAGS "-Wall -Wno-clobbered -Wno-vla -Wno-pragmas -Wno-unknown-pragmas -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-deprecated-declarations -Wno-misleading-indentation -Wno-int-in-bool-context -Wno-maybe-uninitialized -Wno-nonnull-compare -Wno-address -Wno-inline -DTRILINOS_HIDE_DEPRECATED_HEADER_WARNINGS -Werror" CACHE STRING "Warnings as errors settings")
+set(CMAKE_CXX_FLAGS "-Wall -Wno-clobbered -Wno-vla -Wno-pragmas -Wno-unknown-pragmas -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-deprecated-declarations -Wno-misleading-indentation -Wno-int-in-bool-context -Wno-maybe-uninitialized -Wno-nonnull-compare -Wno-address -Wno-inline -Wno-return-type -Werror -DTRILINOS_HIDE_DEPRECATED_HEADER_WARNINGS" CACHE STRING "Warnings as errors settings")

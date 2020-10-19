@@ -65,6 +65,10 @@
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
 
+//Intrepid2
+#include "Intrepid2_Orientation.hpp"
+#include "Intrepid2_LagrangianInterpolation.hpp"
+
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
@@ -166,6 +170,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
 
   // Set up bases for projections
   auto cellTopology = mesh->getCellTopology(eBlockNames[0]);
+  auto dim = cellTopology->getDimension();
 
   auto hgradBasis = panzer::createIntrepid2Basis<PHX::Device,double,double>(hgradBD.getType(),hgradBD.getOrder(),*cellTopology);
   RCP<const panzer::FieldPattern> hgradFP(new panzer::Intrepid2FieldPattern(hgradBasis));
@@ -305,6 +310,9 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
 
   // Fill the source vector.
   timer->start("Fill Source Vector");
+
+  using DynRankView = Kokkos::DynRankView<double,PHX::Device>;
+  using DynRankViewIntHost = Kokkos::DynRankView<int,Kokkos::HostSpace>;
   auto hostSourceValues = Kokkos::create_mirror_view(sourceValues->getLocalView<PHX::Device>());
   {
     const int PHI_Index = sourceGlobalIndexer->getFieldNum("PHI");
@@ -318,6 +326,17 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
       panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
       const auto worksets = worksetContainer->getWorksets(wd);
       for (const auto& workset : *worksets) {
+
+
+        //Initialize orientation tools
+        DynRankViewIntHost ownedNodesGID("ownedNodesGID", workset.numOwnedCells(), cellTopology->getNodeCount());
+        for (int e = 0; e < (int)workset.numOwnedCells(); ++e) {
+          auto conn = connManager->getConnectivity(e);
+          for(int j=0; j< (int)cellTopology->getNodeCount(); ++j)
+            ownedNodesGID(e,j) = conn[j];
+        }
+        Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device> elemOrts("elemOrts", workset.numOwnedCells());
+        Intrepid2::OrientationTools<PHX::Device>::getOrientation(elemOrts, ownedNodesGID, *cellTopology);
 
         Kokkos::View<LO**,PHX::Device> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                                 sourceGlobalIndexer->getElementBlockGIDCount(block));
@@ -351,32 +370,134 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         const int numBasisE = static_cast<int>(offsetsE.extent(0));
         const int numBasisB = static_cast<int>(offsetsB.extent(0));
 
+        using li = Intrepid2::Experimental::LagrangianInterpolation<PHX::Device>;
+
+        //Computing HGRAD coefficients for PHI to interpolate function f(x,y,z) = 1+x+2y+3z
+        DynRankView basisCoeffsPHI("basisCoeffsPHI", workset.numOwnedCells(), numBasisPHI);
+        {
+          DynRankView dofCoordsPHI("dofCoordsPHI", workset.numOwnedCells(), numBasisPHI, dim);
+          DynRankView dofCoeffsPHI("dofCoeffsPHI", workset.numOwnedCells(), numBasisPHI);
+
+          li::getDofCoordsAndCoeffs(dofCoordsPHI,  dofCoeffsPHI, hgradBasis.getRawPtr(), elemOrts);
+
+          //map the reference Dof coordinates into physical frame
+          DynRankView physCoordsPHI("physCoordsPHI", workset.numOwnedCells(), numBasisPHI, dim);
+          auto wsCoords = Kokkos::subview(coords.get_view(), std::pair<int,int>(0, workset.numOwnedCells()), Kokkos::ALL(), Kokkos::ALL());
+          Intrepid2::CellTools<PHX::Device>::mapToPhysicalFrame(physCoordsPHI,dofCoordsPHI,wsCoords,*cellTopology);
+
+          //evaluate the function f at the coordinates physCoordsPHI
+          DynRankView functValuesAtDofCoordsPHI("funPHI", workset.numOwnedCells(), numBasisPHI);
+          Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
+            for (int basis=0; basis < numBasisPHI; ++basis)
+              functValuesAtDofCoordsPHI(cell, basis) = 1.0 + physCoordsPHI(cell,basis,0) + 2.0 * physCoordsPHI(cell,basis,1)
+            + 3.0 * physCoordsPHI(cell,basis,2);
+          });
+
+          //compute basis coefficients
+          li::getBasisCoeffs(basisCoeffsPHI, functValuesAtDofCoordsPHI, dofCoeffsPHI);
+        }
+
+
+        //Computing HCURL coefficients for E to interpolate the constant vector [1,1,1]
+        DynRankView basisCoeffsE("basisCoeffsE", workset.numOwnedCells(), numBasisE);
+        {
+          DynRankView dofCoordsE("dofCoordsE", workset.numOwnedCells(), numBasisE, dim);
+          DynRankView dofCoeffsE("dofCoeffsE", workset.numOwnedCells(), numBasisE, dim);
+          li::getDofCoordsAndCoeffs(dofCoordsE,  dofCoeffsE, curlBasis.getRawPtr(), elemOrts);
+
+          //Because the function is constant, we do not need to map the coordinates to physical frame.
+
+          // Evaluate the function (in the physical frame) and map it back to the reference frame
+          // In order to map an HCurl function back to the reference frame we need to multiply it
+          // by J^T  (J being the Jacobian of the map from reference to physical frame)
+          // In our case J is diagonal with entries equal to boxLength/2.0/numXElements,
+          // where 2 is the length of the reference cell edge.
+          DynRankView functValuesAtDofCoordsE("funE", workset.numOwnedCells(), numBasisE,dim);
+          double curlScaling = boxLength/2.0/numXElements;
+          Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
+            for (int basis=0; basis < numBasisE; ++basis)
+              for (int d = 0; d < (int)dim; d++)
+                functValuesAtDofCoordsE(cell,basis,d) = curlScaling*1.0;
+          });
+
+          //compute basis coefficients
+          li::getBasisCoeffs(basisCoeffsE, functValuesAtDofCoordsE, dofCoeffsE);
+        }
+
+   /*
+        // Alternative way of computing HCurl coefficients with L2 projection
+        #include "Intrepid2_ProjectionTools.hpp"
+        using pts = Intrepid2::Experimental::ProjectionTools<PHX::Device>;
+        DynRankView basisCoeffsE("basisCoeffsE", workset.numOwnedCells(), numBasisE);
+        {
+          int targetCubDegree(0);
+          Intrepid2::Experimental::ProjectionStruct<PHX::Device,double> projStruct;
+          projStruct.createL2DGProjectionStruct(curlBasis, targetCubDegree);
+          int numPoints = projStruct.getNumTargetEvalPoints();
+          //DynRankView evalPoints("evalPoints", elemOrts, workset.numOwnedCells(), numPoints, dim);
+          //pts::getL2EvaluationPoints(evalPoints, curlBasis, &projStruct);
+
+          DynRankView functValuesAtEvalPoints("funE", workset.numOwnedCells(), numPoints ,dim);
+          double curlScaling = boxLength/2.0/numXElements;
+          Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
+            for (int pt=0; pt < numPoints; ++pt)
+              for (int d = 0; d < (int)dim; d++)
+                functValuesAtEvalPoints(cell,pt,d) = curlScaling*1.0;
+          });
+          pts::getL2DGBasisCoeffs(basisCoeffsE,
+              functValuesAtEvalPoints,
+              elemOrts,
+              curlBasis.getRawPtr(),
+              &projStruct);
+        }
+        */
+
+
+        //Computing HDIV coefficients for B to interpolate the constant vector [1,1,1]
+        DynRankView basisCoeffsB("basisCoeffsB", workset.numOwnedCells(), numBasisB);
+        {
+          DynRankView dofCoordsB("dofCoordsB", workset.numOwnedCells(), numBasisB, dim);
+          DynRankView dofCoeffsB("dofCoeffsB", workset.numOwnedCells(), numBasisB, dim);
+          li::getDofCoordsAndCoeffs(dofCoordsB,  dofCoeffsB, divBasis.getRawPtr(), elemOrts);
+
+
+          // Evaluate the function (in the physical frame) and map it back to the reference frame
+          // In order to map an HDiv function back to the reference frame we need to multiply it
+          // by det(J) J^(-1)   (J being the Jacobian of the map from reference to physical frame)
+          // In our case J is diagonal with entries equal to boxLength/2.0/numXElements,
+          // where 2 is the length of the reference cell edge, so
+          // det(J) J^(-1) = (boxLength/2.0/numXElements)^2 I
+          DynRankView functValuesAtDofCoordsB("funB", workset.numOwnedCells(), numBasisB, dim);
+          double divScaling = std::pow(boxLength/2.0/numXElements,2);
+          Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
+            for (int basis=0; basis < numBasisB; ++basis)
+              for (int d = 0; d < (int)dim; ++d)
+                functValuesAtDofCoordsB(cell, basis,d) = divScaling * 1.0;
+          });
+
+          //compute basis coefficients
+          li::getBasisCoeffs(basisCoeffsB, functValuesAtDofCoordsB, dofCoeffsB);
+        }
+
+
+
+        // fill the vector of basis coefficients x
         Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
           for (int basis=0; basis < numBasisPHI; ++basis) {
             const int lid = localIds(cell,offsetsPHI(basis));
-            if (isOwned(cell,offsetsPHI(basis)))
-              x(lid,0) = 1.0 + coords(cell,basis,0) + 2.0 * coords(cell,basis,1)
-                + 3.0 * coords(cell,basis,2);
+            if (isOwned(cell,offsetsPHI(basis))) {
+              x(lid,0) = basisCoeffsPHI(cell,basis);
+            }
           }
           for (int basis=0; basis < numBasisE; ++basis) {
             const int lid = localIds(cell,offsetsE(basis));
-            // Set the E field in each dircetion to 1.0. This
-            // procedure for setting the vector basis dofs directly is
-            // only valid for lowest order edge basis on square mesh
-            // where we know edge lengths (dof coefficients do not
-            // correspond to field solution values for vector basis).
             if (isOwned(cell,offsetsE(basis)))
-              x(lid,0) = boxLength / (double) numXElements;
+              x(lid,0) = basisCoeffsE(cell,basis);;
           }
           for (int basis=0; basis < numBasisB; ++basis) {
             const int lid = localIds(cell,offsetsB(basis));
-            // Set the B field in each dircetion to 1.0. This
-            // procedure for setting the vector basis dofs directly is
-            // only valid for lowest order face basis on square mesh
-            // where we know face areas (dof coefficients do not
-            // correspond to field solution values for vector basis).
             if (isOwned(cell,offsetsB(basis)))
-              x(lid,0) = boxLength * boxLength / (double) numXElements / (double) numXElements;
+              x(lid,0) = basisCoeffsB(cell,basis);
           }
         });
       }
@@ -520,6 +641,9 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
               const int lid = localIds(cell,offsets[basis]);
               const double phiGold = 1.0 + coords(cell,basis,0) + 2.0 * coords(cell,basis,1)
                 + 3.0 * coords(cell,basis,2);
+
+              //Note: here we are relying on the fact that, for low order HGRAD basis,
+              //the basis coefficients are the values of the function at the nodes
               TEST_FLOATING_EQUALITY(hostValues(lid,phiIndex), phiGold, tol);
               TEST_FLOATING_EQUALITY(hostValues(lid,dphiDxIndex), 1.0, tol);
               TEST_FLOATING_EQUALITY(hostValues(lid,dphiDyIndex), 2.0, tol);
@@ -527,12 +651,9 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
               TEST_FLOATING_EQUALITY(hostValues(lid,exIndex), 1.0, tol);
               TEST_FLOATING_EQUALITY(hostValues(lid,eyIndex), 1.0, tol);
               TEST_FLOATING_EQUALITY(hostValues(lid,ezIndex), 1.0, tol);
-              // Need to address a possible orientation issue in
-              // hdiv. Until then, need to take abs for checking
-              // projected hdiv values.
-              TEST_FLOATING_EQUALITY(std::abs(hostValues(lid,bxIndex)), 1.0, tol);
-              TEST_FLOATING_EQUALITY(std::abs(hostValues(lid,byIndex)), 1.0, tol);
-              TEST_FLOATING_EQUALITY(std::abs(hostValues(lid,bzIndex)), 1.0, tol);
+              TEST_FLOATING_EQUALITY(hostValues(lid,bxIndex), 1.0, tol);
+              TEST_FLOATING_EQUALITY(hostValues(lid,byIndex), 1.0, tol);
+              TEST_FLOATING_EQUALITY(hostValues(lid,bzIndex), 1.0, tol);
             }
           }
         }
@@ -629,6 +750,9 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
               const int lid = localIds(cell,offsets[basis]);
               const double phiGold = 1.0 + coords(cell,basis,0) + 2.0 * coords(cell,basis,1)
                 + 3.0 * coords(cell,basis,2);
+
+              //Note: here we are relying on the fact that, for low order HGRAD basis,
+              //the basis coefficients are the values of the function at the nodes
               TEST_FLOATING_EQUALITY(hostValues(lid,phiIndex), phiGold, looseTol);
               TEST_FLOATING_EQUALITY(hostValues(lid,dphiDxIndex), 1.0, superconvergedTol);
               TEST_FLOATING_EQUALITY(hostValues(lid,dphiDyIndex), 2.0, superconvergedTol);
@@ -636,12 +760,9 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
               TEST_FLOATING_EQUALITY(hostValues(lid,exIndex), 1.0, superconvergedTol);
               TEST_FLOATING_EQUALITY(hostValues(lid,eyIndex), 1.0, superconvergedTol);
               TEST_FLOATING_EQUALITY(hostValues(lid,ezIndex), 1.0, superconvergedTol);
-              // Need to address a possible orientation issue in
-              // hdiv. Until then, need to take abs for checking
-              // projected hdiv values.
-              TEST_FLOATING_EQUALITY(std::abs(hostValues(lid,bxIndex)), 1.0, superconvergedTol);
-              TEST_FLOATING_EQUALITY(std::abs(hostValues(lid,byIndex)), 1.0, superconvergedTol);
-              TEST_FLOATING_EQUALITY(std::abs(hostValues(lid,bzIndex)), 1.0, superconvergedTol);
+              TEST_FLOATING_EQUALITY(hostValues(lid,bxIndex), 1.0, superconvergedTol);
+              TEST_FLOATING_EQUALITY(hostValues(lid,byIndex), 1.0, superconvergedTol);
+              TEST_FLOATING_EQUALITY(hostValues(lid,bzIndex), 1.0, superconvergedTol);
             }
           }
         }
@@ -781,12 +902,12 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   typename PHX::Device().fence();
 
   // fill in the mass matrix
-  // the integral of the edge basis squared over one cell is 1/3
-  // the integral of the edge basis times the basis function across from it in the element is 1/6
+  // the integral of the edge basis squared over one cell is 4/3
+  // the integral of the edge basis times the basis function across from it in the element is 2/3
   const auto localMass = ghostedMatrix->getLocalMatrix();
   const int numElems = lids.extent(0);
   Kokkos::parallel_for(numElems, KOKKOS_LAMBDA (const int& i) {
-    double row_values[2]={1.0/3.0,1.0/6.0};
+    double row_values[2]={4.0/3.0,2.0/3.0};
     LO cols[2];
     for(int r = 0; r < 4; r++){
       cols[0] = lids(i,r);

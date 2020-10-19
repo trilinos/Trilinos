@@ -234,21 +234,27 @@ namespace Intrepid2 {
           art::cloneFields(out_c_f_p, in_f_p);
           art::scalarMultiplyDataField(in_c_f_p, data_c_p_one, in_f_p);
           rst::subtract(out_c_f_p, in_c_f_p);
-          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
+          auto out_c_f_p_h = Kokkos::create_mirror_view(out_c_f_p);
+          Kokkos::deep_copy(out_c_f_p_h, out_c_f_p);
+          if (rst::Serial::vectorNorm(out_c_f_p_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT cloneFields (1): check multiplyScalarData vs. cloneFields\n\n";
             errorFlag = -1000;
           }
           art::cloneFields(out_c_f_p_d, in_f_p_d);
           art::scalarMultiplyDataField(in_c_f_p_d, data_c_p_one, in_f_p_d);
           rst::subtract(out_c_f_p_d, in_c_f_p_d);
-          if (rst::Serial::vectorNorm(out_c_f_p_d, NORM_ONE) > tol) {
+          auto out_c_f_p_d_h = Kokkos::create_mirror_view(out_c_f_p_d);
+          Kokkos::deep_copy(out_c_f_p_d_h, out_c_f_p_d);
+          if (rst::Serial::vectorNorm(out_c_f_p_d_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT cloneFields (2): check multiplyScalarData vs. cloneFields\n\n";
             errorFlag = -1000;
           }
           art::cloneFields(out_c_f_p_d_d, in_f_p_d_d);
           art::scalarMultiplyDataField(in_c_f_p_d_d, data_c_p_one, in_f_p_d_d);
           rst::subtract(out_c_f_p_d_d, in_c_f_p_d_d);
-          if (rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > tol) {
+          auto out_c_f_p_d_d_h = Kokkos::create_mirror_view(out_c_f_p_d_d);
+          Kokkos::deep_copy(out_c_f_p_d_d_h, out_c_f_p_d_d);
+          if (rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT cloneFields (3): check multiplyScalarData vs. cloneFields\n\n";
             errorFlag = -1000;
           }
@@ -294,7 +300,9 @@ namespace Intrepid2 {
           //       out_c_f_p(i,j,k) *= outi_c_f_p(i,j,k);
 
           // rst::subtract(out_c_f_p, c_f_p_one);
-          // if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
+          // auto out_c_f_p_h = Kokkos::create_mirror_view(out_c_f_p);
+          // Kokkos::deep_copy(out_c_f_p_h, out_c_f_p);
+          // if (rst::Serial::vectorNorm(out_c_f_p_h, NORM_ONE) > tol) {
           //   *outStream << "\n\nINCORRECT cloneScaleValue (1): check scalar inverse property\n\n";
           //   errorFlag = -1000;
           // }
@@ -309,7 +317,9 @@ namespace Intrepid2 {
           //         out_c_f_p_d(i,j,k,m) *= outi_c_f_p_d(i,j,k,m);
 
           // rst::subtract(out_c_f_p_d, c_f_p_d_one);
-          // if (rst::Serial::vectorNorm(out_c_f_p_d, NORM_ONE) > tol) {
+          // auto out_c_f_p_d_h = Kokkos::create_mirror_view(out_c_f_p_d);
+          // Kokkos::deep_copy(out_c_f_p_d_h, out_c_f_p_d);
+          // if (rst::Serial::vectorNorm(out_c_f_p_d_h, NORM_ONE) > tol) {
           //   *outStream << "\n\nINCORRECT cloneScaleValue (2): check scalar inverse property\n\n";
           //   errorFlag = -1000;
           // }
@@ -325,7 +335,9 @@ namespace Intrepid2 {
           //           out_c_f_p_d_d(i,j,k,m,n) *= outi_c_f_p_d_d(i,j,k,m,m);
 
           // rst::subtract(out_c_f_p_d_d, c_f_p_d_d_one);
-          // if (rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > tol) {
+          // auto out_c_f_p_d_d_h = Kokkos::create_mirror_view(out_c_f_p_d_d);
+          // Kokkos::deep_copy(out_c_f_p_d_d_h, out_c_f_p_d_d);
+          // if (rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) > tol) {
           //   *outStream << "\n\nINCORRECT cloneScaleValue (3): check scalar inverse property\n\n";
           //   errorFlag = -1000;
           // }
@@ -362,7 +374,9 @@ namespace Intrepid2 {
           // art::scaleFields(out_c_f_p, data_c_f);
           // art::scaleFields(out_c_f_p, datainv_c_f);
           // rst::subtract(out_c_f_p, outi_c_f_p);
-          // if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
+          // auto out_c_f_p_h = Kokkos::create_mirror_view(out_c_f_p);
+          // Kokkos::deep_copy(out_c_f_p_h, out_c_f_p);
+          // if (rst::Serial::vectorNorm(out_c_f_p_h, NORM_ONE) > tol) {
           //   *outStream << "\n\nINCORRECT scaleValue (1): check scalar inverse property\n\n";
           //   errorFlag = -1000;
           // }
@@ -370,7 +384,9 @@ namespace Intrepid2 {
           // art::scaleFields(out_c_f_p_d, data_c_f);
           // art::scaleFields(out_c_f_p_d, datainv_c_f);
           // rst::subtract(out_c_f_p_d, outi_c_f_p_d);
-          // if (rst::Serial::vectorNorm(out_c_f_p_d, NORM_ONE) > tol) {
+          // auto out_c_f_p_d_h = Kokkos::create_mirror_view(out_c_f_p_d);
+          // Kokkos::deep_copy(out_c_f_p_d_h, out_c_f_p_d);
+          // if (rst::Serial::vectorNorm(out_c_f_p_d_h, NORM_ONE) > tol) {
           //   *outStream << "\n\nINCORRECT scaleValue (2): check scalar inverse property\n\n";
           //   errorFlag = -1000;
           // }
@@ -378,7 +394,9 @@ namespace Intrepid2 {
           // art::scaleFields(out_c_f_p_d_d, data_c_f);
           // art::scaleFields(out_c_f_p_d_d, datainv_c_f);
           // rst::subtract(out_c_f_p_d_d, outi_c_f_p_d_d);
-          // if (rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > tol) {
+          // auto out_c_f_p_d_d_h = Kokkos::create_mirror_view(out_c_f_p_d_d);
+          // Kokkos::deep_copy(out_c_f_p_d_d_h, out_c_f_p_d_d);
+          // if (rst::Serial::vectorNorm(out_c_f_p_d_d_h, NORM_ONE) > tol) {
           //   *outStream << "\n\nINCORRECT cloneScaleValue (3): check scalar inverse property\n\n";
           //   errorFlag = -1000;
           // }

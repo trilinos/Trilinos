@@ -40,6 +40,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/EntityProcMapping.hpp>
+#include <stk_mesh/base/EntitySorterBase.hpp>
 #include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc
 
 #include <vector>
@@ -249,9 +250,13 @@ void convert_part_ordinals_to_parts(const stk::mesh::MetaData& meta,
                                     const OrdinalVector& input_ordinals,
                                     stk::mesh::PartVector& output_parts);
 
+bool are_any_parts_ranked(const stk::mesh::MetaData& meta,
+                          const OrdinalVector& partOrdinals);
+
 void filter_out(OrdinalVector& vec,
                 const OrdinalVector& parts,
-                OrdinalVector& removed);
+                OrdinalVector& removed,
+                bool trackRemoved = true);
 
 void merge_in(OrdinalVector& vec, const OrdinalVector& parts);
 
@@ -275,9 +280,17 @@ void fill_part_list_differences(const BulkData &mesh,
 
 void check_size_of_types();
 
+EntityId get_global_max_id_in_use(const BulkData& mesh,
+                                  EntityRank rank,
+                                  const std::list<Entity::entity_value_type>& deletedEntitiesCurModCycle);
+
 void check_declare_element_side_inputs(const BulkData & mesh,
                                        const Entity elem,
                                        const unsigned localSideId);
+
+void connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge);
+void connect_face_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity face);
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

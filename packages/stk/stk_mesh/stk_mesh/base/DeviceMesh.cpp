@@ -113,29 +113,37 @@ void DeviceMesh::update_mesh()
 {
   if (is_up_to_date()) return;
 
-  set_entity_keys(*bulk);
-  copy_entity_keys_to_device();
-  set_bucket_entity_offsets(*bulk);
-  copy_bucket_entity_offsets_to_device();
-  fill_sparse_connectivities(*bulk);
-  copy_sparse_connectivities_to_device();
-  fill_volatile_fast_shared_comm_map(*bulk);
-  copy_volatile_fast_shared_comm_map_to_device();
-  fill_mesh_indices(*bulk);
-  copy_mesh_indices_to_device();
+  const bool anyChanges = fill_buckets(*bulk);
 
-  fill_buckets(*bulk);
+  if (anyChanges) {
+    set_entity_keys(*bulk);
+    copy_entity_keys_to_device();
+    set_bucket_entity_offsets(*bulk);
+    copy_bucket_entity_offsets_to_device();
+    fill_sparse_connectivities(*bulk);
+    copy_sparse_connectivities_to_device();
+    fill_volatile_fast_shared_comm_map(*bulk);
+    copy_volatile_fast_shared_comm_map_to_device();
+    fill_mesh_indices(*bulk);
+    copy_mesh_indices_to_device();
+  }
 
   synchronizedCount = bulk->synchronized_count();
 }
 
-void DeviceMesh::fill_buckets(const stk::mesh::BulkData& bulk_in)
+bool DeviceMesh::fill_buckets(const stk::mesh::BulkData& bulk_in)
 {
+  bool anyBucketChanges = false;
+
   for (stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank < endRank; ++rank) {
     const stk::mesh::BucketVector& stkBuckets = bulk_in.buckets(rank);
     unsigned numStkBuckets = stkBuckets.size();
 
     BucketView bucketBuffer(Kokkos::view_alloc(Kokkos::WithoutInitializing, "BucketBuffer"), numStkBuckets);
+
+    if (numStkBuckets != buckets[rank].size()) {
+      anyBucketChanges = true;
+    }
 
     for (unsigned iBucket = 0; iBucket < numStkBuckets; ++iBucket) {
       stk::mesh::Bucket& stkBucket = *stkBuckets[iBucket];
@@ -147,12 +155,14 @@ void DeviceMesh::fill_buckets(const stk::mesh::BulkData& bulk_in)
         bucketBuffer[iBucket].initialize_bucket_attributes(stkBucket);
         bucketBuffer[iBucket].allocate(stkBucket);
         bucketBuffer[iBucket].initialize_from_host(stkBucket);
+        anyBucketChanges = true;
       }
       else {
         // Pre-existing bucket on host
         new (&bucketBuffer[iBucket]) DeviceBucket(buckets[rank][ngpBucketId]);
         if (stkBucket.is_modified()) {
           bucketBuffer[iBucket].update_from_host(stkBucket);
+          anyBucketChanges = true;
         }
         bucketBuffer[iBucket].bucketId = stkBucket.bucket_id();
       }
@@ -168,6 +178,8 @@ void DeviceMesh::fill_buckets(const stk::mesh::BulkData& bulk_in)
 
     buckets[rank] = bucketBuffer;
   }
+
+  return anyBucketChanges;
 }
 
 STK_FUNCTION
@@ -319,8 +331,8 @@ void DeviceMesh::set_bucket_entity_offsets(const stk::mesh::BulkData& bulk_in)
 
 void DeviceMesh::fill_sparse_connectivities(const stk::mesh::BulkData& bulk_in)
 {
-  unsigned totalNumConnectedEntities[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS] = {{0}, {0}, {0}, {0}};
-  unsigned totalNumPermutations[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS] = {{0}, {0}, {0}, {0}};
+  unsigned totalNumConnectedEntities[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS] = {{0}, {0}, {0}, {0}, {0}};
+  unsigned totalNumPermutations[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS] = {{0}, {0}, {0}, {0}, {0}};
   for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++)
   {
     const stk::mesh::BucketVector& stkBuckets = bulk_in.buckets(rank);

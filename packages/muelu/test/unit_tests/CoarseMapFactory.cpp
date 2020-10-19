@@ -59,7 +59,21 @@
 
 namespace MueLuTests {
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoarseMap, StandardCase, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoarseMapFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<CoarseMapFactory> myCMF = rcp(new CoarseMapFactory());
+    TEST_EQUALITY(myCMF != Teuchos::null, true);
+  } // Constructor
+
+  ///////////////////////////////////////////////////////////////////////////
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoarseMapFactory, StandardCase, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
@@ -89,13 +103,11 @@ namespace MueLuTests {
 
     TEST_EQUALITY(myCoarseMap->getMinAllGlobalIndex() == 0, true);
     TEST_EQUALITY(myCoarseMap->getMaxLocalIndex()==9,true);
-  }
-
-
+  } // StandardCase
 
   ///////////////////////////////////////////////////////////////////////////
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoarseMap, NonStandardCaseA, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoarseMapFactory, NonStandardCaseA, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
@@ -150,11 +162,14 @@ namespace MueLuTests {
 
     TEST_EQUALITY(myCoarseMap->getMinAllGlobalIndex() == 0, true);
     TEST_EQUALITY(myCoarseMap->getMaxLocalIndex()==9,true);
-  }
+  } // NonStandardCaseA
+
+  ///////////////////////////////////////////////////////////////////////////
 
 #define MUELU_ETI_GROUP(Scalar, LocalOrdinal, GlobalOrdinal, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoarseMap, StandardCase, Scalar, LocalOrdinal, GlobalOrdinal, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoarseMap, NonStandardCaseA, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoarseMapFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoarseMapFactory, StandardCase, Scalar, LocalOrdinal, GlobalOrdinal, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoarseMapFactory, NonStandardCaseA, Scalar, LocalOrdinal, GlobalOrdinal, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

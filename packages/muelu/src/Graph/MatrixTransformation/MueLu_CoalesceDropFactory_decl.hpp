@@ -75,7 +75,7 @@ namespace MueLu {
 
   /*!
     @class CoalesceDropFactory
-    @brief Factory for creating a graph base on a given matrix.
+    @brief Factory for creating a graph based on a given matrix.
 
     Factory for creating graphs from matrices with entries selectively dropped.
 
@@ -87,10 +87,10 @@ namespace MueLu {
 
     - one DOF per node without dropping (i.e. "aggregation: drop tol" = 0.0)
     - one DOF per node with dropping (i.e. "aggregation: drop tol" > 0.0)
-    - DOFs per node > 1 withouth dropping
-    - DOFs per node > 1 with dropping
+    - number of DOFs per node > 1 withouth dropping
+    - number of DOFs per node > 1 with dropping
 
-    Additionally there is a code path for the distance-laplacian mode.
+    Additionally, there is a code path for the distance-laplacian mode.
 
     ## Input/output of CoalesceDropFactory ##
 

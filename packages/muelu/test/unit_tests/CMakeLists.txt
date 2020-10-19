@@ -8,7 +8,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers/BlockedSmoot
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Utils)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Smoothers)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../research/mmayr/composite_to_regions/src)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../research/regionMG/src)
 
 #INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
 
@@ -25,6 +25,7 @@ ENDIF()
 APPEND_SET(SOURCES
   Aggregates.cpp
   AggregateQualityEstimateFactory.cpp
+  AmalgamationFactory.cpp
   BlackBoxPFactory.cpp
   CoalesceDropFactory.cpp
   CoarseMapFactory.cpp
@@ -39,7 +40,6 @@ APPEND_SET(SOURCES
   MueLu_UnitTests.cpp
   MueLu_TestHelpers.cpp
   MultiVectorTransferFactory.cpp
-  NotayAggregationFactory.cpp
   ParameterList/FactoryFactory.cpp
   ParameterList/ParameterListInterpreter.cpp
   PermutedTransferFactory.cpp
@@ -106,6 +106,7 @@ ENDIF()
 APPEND_SET(SOURCES_BLOCKED
   BlockedCoarseMapFactory.cpp
   BlockedPFactory.cpp
+  BlockedRAPFactory.cpp
   SchurComplementFactory.cpp
   SubBlockAFactory.cpp
 )

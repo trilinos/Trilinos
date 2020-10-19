@@ -81,6 +81,7 @@
 // Should be removed once we are confident that this works.
 //#define DJS_READ_ENV_VARIABLES
 
+
 namespace MueLu {
 
   namespace Details {
@@ -102,6 +103,9 @@ namespace MueLu {
                   real_type diag {Teuchos::ScalarTraits<real_type>::zero()};
       LO        col  {Teuchos::OrdinalTraits<LO>::invalid()};
       bool      drop {true};
+
+      // CMS: Auxillary information for debugging info
+      //      real_type aux_val {Teuchos::ScalarTraits<real_type>::nan()};
     };
   }
 
@@ -882,13 +886,14 @@ namespace MueLu {
             }
           }
 
+	  ArrayView<const SC>     vals;//CMS hackery
           for (LO row = 0; row < numRows; row++) {
             ArrayView<const LO> indices;
             indicesExtra.resize(0);
 	    bool isBoundary = false;
 
             if (blkSize == 1) {
-	      ArrayView<const SC>     vals;
+	      //	      ArrayView<const SC>     vals;//CMS uncomment
               A->getLocalRowView(row, indices, vals);
 	      isBoundary = pointBoundaryNodes[row];
             } else {
@@ -1021,7 +1026,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_DEBUG
                         if (distanceLaplacianCutVerbose) {
                           std::cout << "DJS: KEEP, N, ROW:  " << i+1 << ", " << n << ", " << row << std::endl;
-                        }
+			}                        
 #endif
                       }
                     }
@@ -1043,13 +1048,16 @@ namespace MueLu {
                   if (row == col) {
                     columns[realnnz++] = col;
                     rownnz++;
+		    //		    printf("(%d,%d) KEEP %13s matrix = %6.4e\n",row,row,"DIAGONAL",drop_vec[idxID].aux_val);
                     continue;
                   }
 
                   if (!drop_vec[idxID].drop) {
                     columns[realnnz++] = col;
+		    //		    printf("(%d,%d) KEEP dlap = %6.4e matrix = %6.4e\n",row,col,drop_vec[idxID].val/drop_vec[idxID].diag,drop_vec[idxID].aux_val);
                     rownnz++;
                   } else {
+		    //		    printf("(%d,%d) DROP dlap = %6.4e matrix = %6.4e\n",row,col,drop_vec[idxID].val/drop_vec[idxID].diag,drop_vec[idxID].aux_val);
                     numDropped++;
                   }
                 }
@@ -1085,18 +1093,20 @@ namespace MueLu {
 	    // Do symmetrization of the cut matrix
 	    // NOTE: We assume nested row/column maps here
 	    for (LO row = 0; row < numRows; row++) {
-	      for (LO col = rows[row]; col < rows_stop[row]; col++) {
+	      for (LO colidx = rows[row]; colidx < rows_stop[row]; colidx++) {
+		LO col = columns[colidx];
 		if(col >= numRows) continue;
 		
 		bool found = false;
 		for(LO t_col = rows[col] ; !found && t_col  < rows_stop[col]; t_col++) {
-		  if (t_col == row) 
+		  if (columns[t_col] == row) 
 		    found = true;
 		}
 		// We didn't find the transpose buddy, so let's symmetrize, unless we'd be symmetrizing
 		// into a Dirichlet unknown.  In that case don't.
 		if(!found && !pointBoundaryNodes[col] && rows_stop[col] < rows[col+1]) {
 		  LO new_idx = rows_stop[col];
+		  //		  printf("(%d,%d) SYMADD entry\n",col,row);
 		  columns[new_idx] = row;
 		  rows_stop[col]++;	
 		  numDropped--;

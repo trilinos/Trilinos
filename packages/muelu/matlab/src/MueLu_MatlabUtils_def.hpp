@@ -1309,8 +1309,8 @@ mxArray* saveDataToMatlab(RCP<FieldContainer_ordinal>& data)
   if(rank!=2)
     throw std::runtime_error("Error: Only rank two FieldContainers are supported.");
 
-  int nr = data->dimension(0);
-  int nc = data->dimension(1);
+  int nr = data->extent(0);
+  int nc = data->extent(1);
 
   mwSize dims[]={(mwSize)nr,(mwSize)nc};
   mxArray* mxa = mxCreateNumericArray(2,dims, mxINT32_CLASS, mxREAL);

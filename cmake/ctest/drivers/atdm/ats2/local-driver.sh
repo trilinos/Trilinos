@@ -18,26 +18,8 @@ if atdm_match_buildname_keyword xl ; then
     export Trilinos_CTEST_RUN_CUDA_AWARE_MPI=0
   fi
   # Only enable the SPARC packages by default
-  export ATDM_CONFIG_CONFIGURE_OPTIONS_FILES=cmake/std/atdm/ATDMDevEnv.cmake,cmake/std/atdm/apps/sparc/SPARC_Trilinos_PACKAGES.cmake
-fi
-
-echo
-echo "Current node type: $(atdm_ats2_get_node_type)"
-echo
-
-if [[ "$(atdm_ats2_get_node_type)" != "login_node" ]] ; then
-  echo
-  echo "***"
-  echo "*** ERROR: $0"
-  echo "*** can only be run from login node '${ATDM_CONFIG_ATS2_LOGIN_NODE}'"
-  echo "*** and not the current node '$(hostname)'!"
-  echo "***"
-  echo "*** See instructions for the ATS-2 ('ats2') env in the file:"
-  echo "***"
-  echo "***   Trilinos/cmake/std/atdm/README.md"
-  echo "***"
-  echo
-  exit 1
+  export ATDM_CONFIG_CONFIGURE_OPTIONS_FILES=cmake/std/atdm/ATDMDevEnv.cmake,cmake/std/atdm/apps/sparc/SPARCTrilinosPackagesEnables.cmake
+  export Trilinos_PACKAGE_ENABLES_FILE=$WORKSPACE/Trilinos/cmake/std/atdm/apps/sparc/SPARCTrilinosPackagesEnables.cmake
 fi
 
 # Allow default setting for TPETRA_ASSUME_CUDA_AWARE_MPI=0 in trilinos_jsrun

@@ -137,7 +137,9 @@ namespace Intrepid2 {
 
         *outStream << "-> vector norm with multidimensional arrays:\n";
 
-        rst::Serial::vectorNorm(a_2_2, NORM_TWO);
+        auto a_2_2_h = Kokkos::create_mirror_view(a_2_2);
+        Kokkos::deep_copy(a_2_2_h, a_2_2);
+        rst::Serial::vectorNorm(a_2_2_h, NORM_TWO);
         INTREPID2_TEST_ERROR_EXPECTED( rst::vectorNorm(a_10_2_2, a_10_2_2, NORM_TWO) );
         INTREPID2_TEST_ERROR_EXPECTED( rst::vectorNorm(a_10_2_2, a_10_2_2_3, NORM_TWO) );
         INTREPID2_TEST_ERROR_EXPECTED( rst::vectorNorm(a_10_3, a_10_2_2, NORM_TWO) );
@@ -329,22 +331,28 @@ namespace Intrepid2 {
           *outStream << "\n-- Checking vectorNorm \n";
 
           rst::vectorNorm(vnorms_x_x, va_x_x_d, NORM_TWO);
-          if ( std::abs(rst::Serial::vectorNorm(vnorms_x_x, NORM_TWO) - 
-                        rst::Serial::vectorNorm(va_x_x_d, NORM_TWO)) > tol) {
+          auto vnorms_x_x_h = Kokkos::create_mirror_view(vnorms_x_x);
+          Kokkos::deep_copy(vnorms_x_x_h, vnorms_x_x);
+          auto va_x_x_d_h = Kokkos::create_mirror_view(va_x_x_d);
+          Kokkos::deep_copy(va_x_x_d_h, va_x_x_d);
+          if ( std::abs(rst::Serial::vectorNorm(vnorms_x_x_h, NORM_TWO) -
+                        rst::Serial::vectorNorm(va_x_x_d_h, NORM_TWO)) > tol) {
             *outStream << "\n\nINCORRECT vectorNorm NORM_TWO\n\n";
             errorFlag = -1000;
           }
           
           rst::vectorNorm(vnorms_x_x, va_x_x_d, NORM_ONE);
-          if ( std::abs(rst::Serial::vectorNorm(vnorms_x_x, NORM_ONE) - 
-                        rst::Serial::vectorNorm(va_x_x_d, NORM_ONE)) > tol) {
+          Kokkos::deep_copy(vnorms_x_x_h, vnorms_x_x);
+          if ( std::abs(rst::Serial::vectorNorm(vnorms_x_x_h, NORM_ONE) -
+                        rst::Serial::vectorNorm(va_x_x_d_h, NORM_ONE)) > tol) {
             *outStream << "\n\nINCORRECT vectorNorm NORM_ONE\n\n";
             errorFlag = -1000;
           }
           
           rst::vectorNorm(vnorms_x_x, va_x_x_d, NORM_INF);
-          if ( std::abs(rst::Serial::vectorNorm(vnorms_x_x, NORM_INF) - 
-                        rst::Serial::vectorNorm(va_x_x_d, NORM_INF)) > tol) {
+          Kokkos::deep_copy(vnorms_x_x_h, vnorms_x_x);
+          if ( std::abs(rst::Serial::vectorNorm(vnorms_x_x_h, NORM_INF) -
+                        rst::Serial::vectorNorm(va_x_x_d_h, NORM_INF)) > tol) {
             *outStream << "\n\nINCORRECT vectorNorm NORM_INF\n\n";
             errorFlag = -1000;
           }
@@ -356,7 +364,9 @@ namespace Intrepid2 {
           
           rst::subtract(mc_x_x_d_d, ma_x_x_d_d); // C = C - A ~= 0 
           
-          if (rst::Serial::vectorNorm(mc_x_x_d_d, NORM_ONE) > tol) {
+          auto mc_x_x_d_d_h = Kokkos::create_mirror_view(mc_x_x_d_d);
+          Kokkos::deep_copy(mc_x_x_d_d_h, mc_x_x_d_d);
+          if (rst::Serial::vectorNorm(mc_x_x_d_d_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT inverse OR subtract OR vectorNorm\n\n";
             errorFlag = -1000;
           }
@@ -389,7 +399,8 @@ namespace Intrepid2 {
           
           rst::subtract(mc_x_x_d_d, ma_x_x_d_d); // C = C - A = 0 
           
-          if (rst::Serial::vectorNorm(mc_x_x_d_d, NORM_ONE) > tol) {
+          Kokkos::deep_copy(mc_x_x_d_d_h, mc_x_x_d_d);
+          if (rst::Serial::vectorNorm(mc_x_x_d_d_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT transpose OR subtract OR vectorNorm\n\n" ;
             errorFlag = -1000;
           }
@@ -404,7 +415,9 @@ namespace Intrepid2 {
           
           rst::vectorNorm(vnorms_x_x, vc_x_x_d, NORM_ONE);
           rst::vectorNorm(vnorms_x, vnorms_x_x, NORM_INF);
-          if (rst::Serial::vectorNorm(vnorms_x, NORM_TWO) > tol) {
+          auto vnorms_x_h = Kokkos::create_mirror_view(vnorms_x);
+          Kokkos::deep_copy(vnorms_x_h, vnorms_x);
+          if (rst::Serial::vectorNorm(vnorms_x_h, NORM_TWO) > tol) {
             *outStream << "\n\nINCORRECT matvec OR inverse OR subtract OR vectorNorm\n\n";
             errorFlag = -1000;
           }
@@ -426,10 +439,11 @@ namespace Intrepid2 {
           
           rst::vectorNorm(vnorms_x_x, vc_x_x_d, NORM_ONE);
           rst::vectorNorm(vnorms_x, vnorms_x_x, NORM_INF);
-          if (rst::Serial::vectorNorm(vnorms_x, NORM_TWO) > tol) {
+          Kokkos::deep_copy(vnorms_x_h, vnorms_x);
+          if (rst::Serial::vectorNorm(vnorms_x_h, NORM_TWO) > tol) {
             *outStream << "\n\nSign flips combined with std::abs might not be invertible on this platform!\n"
                        << "Potential IEEE compliance issues!\n\n";
-            if (rst::Serial::vectorNorm(vnorms_x, NORM_TWO) > tol) {
+            if (rst::Serial::vectorNorm(vnorms_x_h, NORM_TWO) > tol) {
               *outStream << "\n\nINCORRECT add OR subtract OR scale OR absval OR vectorNorm\n\n";
               errorFlag = -1000;
             }
@@ -452,7 +466,8 @@ namespace Intrepid2 {
           rst::dot(vdot_x_x, va_x_x_d, va_x_x_d); // dot = a'*a
 
           rst::vectorNorm(vnorms_x, vdot_x_x, NORM_ONE);
-          if (rst::Serial::vectorNorm(vnorms_x, NORM_ONE) - (value_type)(4.0*dim*i0*i1) > tol) {
+          Kokkos::deep_copy(vnorms_x_h, vnorms_x);
+          if (rst::Serial::vectorNorm(vnorms_x_h, NORM_ONE) - (value_type)(4.0*dim*i0*i1) > tol) {
             *outStream << "\n\nINCORRECT dot OR vectorNorm\n\n";
             errorFlag = -1000;
           }
@@ -500,22 +515,28 @@ namespace Intrepid2 {
           *outStream << "\n-- Checking vectorNorm \n";
           
           rst::vectorNorm(vnorms_x, va_x_d, NORM_TWO);
-          if ( std::abs(rst::Serial::vectorNorm(vnorms_x, NORM_TWO) - 
-                        rst::Serial::vectorNorm(va_x_d, NORM_TWO)) > tol) {
+          auto vnorms_x_h = Kokkos::create_mirror_view(vnorms_x);
+          Kokkos::deep_copy(vnorms_x_h, vnorms_x);
+          auto va_x_d_h = Kokkos::create_mirror_view(va_x_d);
+          Kokkos::deep_copy(va_x_d_h, (va_x_d));
+          if ( std::abs(rst::Serial::vectorNorm(vnorms_x_h, NORM_TWO) -
+                        rst::Serial::vectorNorm(va_x_d_h, NORM_TWO)) > tol) {
             *outStream << "\n\nINCORRECT vectorNorm NORM_TWO\n\n";
             errorFlag = -1000;
           }
           
           rst::vectorNorm(vnorms_x, va_x_d, NORM_ONE);
-          if ( std::abs(rst::Serial::vectorNorm(vnorms_x, NORM_ONE) - 
-                        rst::Serial::vectorNorm(va_x_d, NORM_ONE)) > tol) {
+          Kokkos::deep_copy(vnorms_x_h, vnorms_x);
+          if ( std::abs(rst::Serial::vectorNorm(vnorms_x_h, NORM_ONE) -
+                        rst::Serial::vectorNorm(va_x_d_h, NORM_ONE)) > tol) {
             *outStream << "\n\nINCORRECT vectorNorm NORM_ONE\n\n";
             errorFlag = -1000;
           }
           
           rst::vectorNorm(vnorms_x, va_x_d, NORM_INF);
-          if ( std::abs(rst::Serial::vectorNorm(vnorms_x, NORM_INF) - 
-                        rst::Serial::vectorNorm(va_x_d, NORM_INF)) > tol) {
+          Kokkos::deep_copy(vnorms_x_h, vnorms_x);
+          if ( std::abs(rst::Serial::vectorNorm(vnorms_x_h, NORM_INF) -
+                        rst::Serial::vectorNorm(va_x_d_h, NORM_INF)) > tol) {
             *outStream << "\n\nINCORRECT vectorNorm NORM_INF\n\n";
             errorFlag = -1000;
           }
@@ -526,7 +547,9 @@ namespace Intrepid2 {
           rst::inverse(mc_x_d_d, mb_x_d_d); // C = inv(B) ~= A
           rst::subtract(mc_x_d_d, ma_x_d_d); // C = C - A ~= 0 
           
-          if (rst::Serial::vectorNorm(mc_x_d_d, NORM_ONE) > tol) {
+          auto mc_x_d_d_h = Kokkos::create_mirror_view(mc_x_d_d);
+          Kokkos::deep_copy(mc_x_d_d_h, mc_x_d_d);
+          if (rst::Serial::vectorNorm(mc_x_d_d_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT inverse OR subtract OR vectorNorm\n\n";
             errorFlag = -1000;
           }
@@ -550,7 +573,8 @@ namespace Intrepid2 {
           rst::transpose(mc_x_d_d, mb_x_d_d); // C = B^T = A
           rst::subtract(mc_x_d_d, ma_x_d_d); // C = C - A = 0 
           
-          if (rst::Serial::vectorNorm(mc_x_d_d, NORM_ONE) > tol) {
+          Kokkos::deep_copy(mc_x_d_d_h, mc_x_d_d);
+          if (rst::Serial::vectorNorm(mc_x_d_d_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT transpose OR subtract OR vectorNorm\n\n" ;
             errorFlag = -1000;
           }
@@ -564,7 +588,8 @@ namespace Intrepid2 {
           rst::subtract(vc_x_d, va_x_d); // c = c - a ~= 0
           
           rst::vectorNorm(vnorms_x, vc_x_d, NORM_ONE);
-          if (rst::Serial::vectorNorm(vnorms_x, NORM_TWO) > tol) {
+          Kokkos::deep_copy(vnorms_x_h, vnorms_x);
+          if (rst::Serial::vectorNorm(vnorms_x_h, NORM_TWO) > tol) {
             *outStream << "\n\nINCORRECT matvec OR inverse OR subtract OR vectorNorm\n\n";
             errorFlag = -1000;
           }
@@ -583,10 +608,11 @@ namespace Intrepid2 {
           rst::add(vc_x_d, vb_x_d); // c = c + b === 0
           
           rst::vectorNorm(vnorms_x, vc_x_d, NORM_ONE);
-          if (rst::Serial::vectorNorm(vnorms_x, NORM_TWO) > tol) {
+          Kokkos::deep_copy(vnorms_x_h, vnorms_x);
+          if (rst::Serial::vectorNorm(vnorms_x_h, NORM_TWO) > tol) {
             *outStream << "\n\nSign flips combined with std::abs might not be invertible on this platform!\n"
                        << "Potential IEEE compliance issues!\n\n";
-            if (rst::Serial::vectorNorm(vnorms_x, NORM_TWO) > tol) {
+            if (rst::Serial::vectorNorm(vnorms_x_h, NORM_TWO) > tol) {
               *outStream << "\n\nINCORRECT add OR subtract OR scale OR absval OR vectorNorm\n\n";
               errorFlag = -1000;
             }
@@ -603,8 +629,10 @@ namespace Intrepid2 {
                 va_x_d(i,j) = 2.0;
           }
           rst::dot(vdot_x, va_x_d, va_x_d); // dot = a'*a
-          
-          if (rst::Serial::vectorNorm(vdot_x, NORM_ONE) - (double)(4.0*dim*i0) > tol) {
+
+          auto vdot_x_h = Kokkos::create_mirror_view(vdot_x);
+          Kokkos::deep_copy(vdot_x_h, vdot_x);
+          if (rst::Serial::vectorNorm(vdot_x_h, NORM_ONE) - (double)(4.0*dim*i0) > tol) {
             *outStream << "\n\nINCORRECT dot OR vectorNorm\n\n";
             errorFlag = -1000;
           }

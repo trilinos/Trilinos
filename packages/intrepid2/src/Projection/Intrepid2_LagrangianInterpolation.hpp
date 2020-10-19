@@ -163,7 +163,6 @@ public:
       Kokkos::DynRankView<typename BasisType::scalarType, coordsProperties...> dofCoords,
       Kokkos::DynRankView<typename BasisType::scalarType, coeffsProperties...> dofCoeffs,
       const BasisType* cellBasis,
-      EPointType basisPointType,
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations
   );
 

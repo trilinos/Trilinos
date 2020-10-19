@@ -222,6 +222,30 @@ namespace Intrepid2
       basis2_.getDofCoords(dofCoords2);
     }
     
+    /** \brief  Fills in coefficients of degrees of freedom for Lagrangian basis on the reference cell
+        \param [out] dofCoeffs - the container into which to place the degrees of freedom.
+
+     dofCoeffs have shape (F,D) or (F) if D=1, field dimension matches the cardinality of the basis, and D is the
+     basis dimension.
+
+     Degrees of freedom coefficients are such that
+     \phi_i(dofCoords_(j)) \cdot dofCoeffs_(j)  = \delta_ij,
+     where \phi_i are the basis and \delta_ij the Kronecker delta.
+     Note that getDofCoeffs() is supported only for Lagrangian bases.
+     */
+    virtual void getDofCoeffs( ScalarViewType dofCoeffs ) const override {
+      const int basisCardinality1 = basis1_.getCardinality();
+      const int basisCardinality2 = basis2_.getCardinality();
+      const int basisCardinality  = basisCardinality1 + basisCardinality2;
+
+      auto dofCoeffs1 = Kokkos::subview(dofCoeffs, std::make_pair(0,basisCardinality1), Kokkos::ALL());
+      auto dofCoeffs2 = Kokkos::subview(dofCoeffs, std::make_pair(basisCardinality1,basisCardinality), Kokkos::ALL());
+
+      basis1_.getDofCoeffs(dofCoeffs1);
+      basis2_.getDofCoeffs(dofCoeffs2);
+    }
+
+
     /** \brief  Returns basis name
      
      \return the name of the basis

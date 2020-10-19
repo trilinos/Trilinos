@@ -51,8 +51,6 @@
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 #include <Xpetra_BlockedCrsMatrix_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
@@ -82,21 +80,21 @@ namespace MueLu {
 
     BlockedRAPFactory();
 
-    virtual ~BlockedRAPFactory() { }
+    virtual ~BlockedRAPFactory() = default;
     //@}
 
     //! @name Input
     //@{
 
-    RCP<const ParameterList> GetValidParameterList() const;
+    RCP<const ParameterList> GetValidParameterList() const override;
 
-    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const override;
 
     //@}
 
     //! @name Build methods.
     //@{
-    void Build(Level &fineLevel, Level &coarseLevel) const;
+    void Build(Level &fineLevel, Level &coarseLevel) const override;
     //@}
 
     //! @name Handling of user-defined transfer factories

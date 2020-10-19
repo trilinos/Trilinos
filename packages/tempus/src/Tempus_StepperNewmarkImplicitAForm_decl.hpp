@@ -11,6 +11,7 @@
 
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorSecondOrder.hpp"
+#include "Tempus_StepperNewmarkImplicitAFormAppAction.hpp"
 
 namespace Tempus {
 
@@ -64,10 +65,10 @@ namespace Tempus {
  *     - \f$\mathbf{d}^n = \mathbf{d}^{\ast} + \beta \Delta t^2 \mathbf{a}^n\f$
  *     - \f$\mathbf{v}^n = \mathbf{v}^{\ast} + \gamma \Delta t \mathbf{a}^n\f$
  *
- *  The First-Same-As-Last (FSAL) principle is part of the Newmark
- *  implicit A-Form as the acceleration from the previous time step is
- *  used for the predictors.  The default is to set useFSAL=true,
- *  and useFSAL=false will be ignored.
+ *  The First-Same-As-Last (FSAL) principle is not needed with Newmark
+ *  Implicit A-Form.  The default is to set useFSAL=false, however
+ *  useFSAL=true will also work but have no affect (i.e., no-op).
+ *
  */
 template<class Scalar>
 class StepperNewmarkImplicitAForm
@@ -82,6 +83,7 @@ public:
   */
   StepperNewmarkImplicitAForm();
 
+ #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// Constructor
   StepperNewmarkImplicitAForm(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -94,6 +96,20 @@ public:
     std::string schemeName,
     Scalar beta,
     Scalar gamma);
+#endif
+
+  /// Constructor
+  StepperNewmarkImplicitAForm(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool zeroInitialGuess,
+    std::string schemeName,
+    Scalar beta,
+    Scalar gamma,
+    const Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> >& stepperAppAction);
 
   /// \name Basic stepper methods
   //@{
@@ -103,8 +119,13 @@ public:
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
     virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
     { return Teuchos::null; }
+#endif
+
+     virtual Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > getAppAction() const
+     { return stepperNewmarkImpAppAction_; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -130,7 +151,7 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
+    virtual void setUseFSAL(bool a) { this->setUseFSALTrueOnly(a); }
     virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
 
@@ -172,12 +193,12 @@ public:
                              const Thyra::VectorBase<Scalar>& a,
                              const Scalar dt) const;
 
+  virtual void setAppAction(
+      Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > appAction);
+
   void setSchemeName(std::string schemeName);
   void setBeta(Scalar beta);
   void setGamma(Scalar gamma);
-
-  virtual bool getUseFSALDefault() const { return true; }
-  virtual std::string getICConsistencyDefault() const { return "Consistent"; }
 
 private:
 
@@ -186,6 +207,7 @@ private:
   Scalar gamma_;
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
+  Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > stepperNewmarkImpAppAction_;
 
 };
 } // namespace Tempus

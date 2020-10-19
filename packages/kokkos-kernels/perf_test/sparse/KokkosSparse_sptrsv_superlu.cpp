@@ -265,7 +265,6 @@ void factor_superlu (bool symm_mode, bool metis,
 
 
 /* ========================================================================================= */
-template<typename scalar_type>
 void free_superlu (SuperMatrix &L, SuperMatrix &U,
                    int *perm_r, int *perm_c, int *parents) {
 
@@ -351,7 +350,8 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
     factor_superlu<scalar_type> (symm_mode, metis, nrows,
                                  values_host.data(), const_cast<int*> (row_map_host.data()), entries_host.data(),
                                  panel_size, relax_size, L, U, &perm_r, &perm_c, &etree);
-    std::cout << "   Factorization Time: " << timer.seconds() << std::endl << std::endl;
+    double factor_time = timer.seconds();
+    std::cout << "   Factorization Time: " << factor_time << std::endl << std::endl;
 
     // ==============================================
     // Run all requested algorithms
@@ -404,6 +404,7 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
           khU.set_sptrsv_merge_supernodes (merge);
 
           // specify wheather to invert diagonal blocks
+          std::cout << " Invert diagonal    : " << invert_diag << std::endl;
           khL.set_sptrsv_invert_diagonal (invert_diag);
           khU.set_sptrsv_invert_diagonal (invert_diag);
           
@@ -624,7 +625,7 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
       }
     }
     // free SuperLU data structures
-    free_superlu<scalar_type> (L, U, perm_r, perm_c, etree);
+    free_superlu (L, U, perm_r, perm_c, etree);
   }
   std::cout << std::endl << std::endl;
 

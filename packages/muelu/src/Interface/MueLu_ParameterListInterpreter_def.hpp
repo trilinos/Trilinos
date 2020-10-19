@@ -76,7 +76,9 @@
 #include "MueLu_GenericRFactory.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_MasterList.hpp"
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_NotayAggregationFactory.hpp"
+#endif
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
@@ -659,6 +661,9 @@ namespace MueLu {
   {
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+    bool useMaxAbsDiagonalScaling = false;
+    if (defaultList.isParameter("sa: use rowsumabs diagonal scaling"))
+      useMaxAbsDiagonalScaling = defaultList.get<bool>("sa: use rowsumabs diagonal scaling");
 
     // === Smoothing ===
     // FIXME: should custom smoother check default list too?
@@ -728,6 +733,9 @@ namespace MueLu {
         else if (preSmootherType == "RELAXATION")
           preSmootherParams = defaultSmootherParams;
 
+        if (preSmootherType == "CHEBYSHEV" && useMaxAbsDiagonalScaling)
+          preSmootherParams.set("chebyshev: use rowsumabs diagonal scaling",true);
+
 #ifdef HAVE_MUELU_INTREPID2
       // Propagate P-coarsening for Topo smoothing
       if (multigridAlgo == "pcoarsen" && preSmootherType == "TOPOLOGICAL" &&
@@ -771,6 +779,9 @@ namespace MueLu {
           postSmootherParams = defaultSmootherParams;
         if (paramList.isParameter("smoother: post overlap"))
           overlap = paramList.get<int>("smoother: post overlap");
+
+        if (postSmootherType == "CHEBYSHEV" && useMaxAbsDiagonalScaling)
+          postSmootherParams.set("chebyshev: use rowsumabs diagonal scaling",true);
 
         if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
           postSmoother = preSmoother;
@@ -1027,6 +1038,7 @@ namespace MueLu {
         aggFactory->SetFactory("Coordinates", this->GetFactoryManager(levelID-1)->GetFactory("Coordinates"));
       }
     }
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
     else if (aggType == "notay") {
       aggFactory = rcp(new NotayAggregationFactory());
       ParameterList aggParams;
@@ -1039,6 +1051,7 @@ namespace MueLu {
       aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
       aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
     }
+#endif
 #ifdef HAVE_MUELU_MATLAB
     else if(aggType == "matlab") {
       ParameterList aggParams = paramList.sublist("aggregation: params");
@@ -1321,7 +1334,6 @@ namespace MueLu {
     // === Repartitioning ===
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: node repartition level",int,nodeRepartitionLevel);
 
     if (enableRepart) {
 #ifdef HAVE_MPI
@@ -1389,14 +1401,18 @@ namespace MueLu {
       }
 #endif
 
+      MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: node repartition level",int,nodeRepartitionLevel);
+
       // RepartitionHeuristic
       auto repartheurFactory = rcp(new RepartitionHeuristicFactory());
       ParameterList repartheurParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: node repartition level",int,repartheurParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: start level",          int, repartheurParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per proc",    int, repartheurParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: target rows per proc", int, repartheurParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance",     double, repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: node repartition level", int,    repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: start level",            int,    repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per proc",      int,    repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: target rows per proc",   int,    repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per thread",    int,    repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: target rows per thread", int,    repartheurParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance",          double, repartheurParams);
       repartheurFactory->SetParameterList(repartheurParams);
       repartheurFactory->SetFactory("A",         manager.GetFactory("A"));
       manager.SetFactory("number of partitions", repartheurFactory);
@@ -1511,7 +1527,8 @@ namespace MueLu {
       // NOTE: This really needs to be set on the *NullSpaceFactory*, not manager.get("Nullspace").
       nullSpaceFactory->SetFactory("Nullspace", newP);
 #else
-      throw Exceptions::RuntimeError("No repartitioning available for a serial run");
+      paramList.set("repartition: enable",false);
+      this->GetOStream(Warnings0) << "No repartitioning available for a serial run\n";
 #endif
     }
   }
@@ -1671,7 +1688,12 @@ namespace MueLu {
     if (defaultList.isSublist("matrixmatrix: kernel params"))
       Pparams.sublist("matrixmatrix: kernel params", false) = defaultList.sublist("matrixmatrix: kernel params");
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: damping factor", double, Pparams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: calculate eigenvalue estimate", bool, Pparams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: eigenvalue estimate num iterations", int, Pparams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: use rowsumabs diagonal scaling", bool, Pparams);
+
     P->SetParameterList(Pparams);
+
 
     // Filtering
     MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);
@@ -1686,8 +1708,15 @@ namespace MueLu {
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping",      bool, fParams);
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph",      bool, fParams);
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, fParams);
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use root stencil", bool, fParams);
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: Dirichlet threshold", double, fParams);
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use spread lumping", bool, fParams);
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom growth factor", double, fParams);
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom cap", double, fParams);
         filterFactory->SetParameterList(fParams);
         filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
+        filterFactory->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+	filterFactory->SetFactory("UnAmalgamationInfo", manager.GetFactory("UnAmalgamationInfo"));
         // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above
         filterFactory->SetFactory("Filtering",  manager.GetFactory("Graph"));
 
@@ -1748,8 +1777,15 @@ namespace MueLu {
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping",      bool, fParams);
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph",      bool, fParams);
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, fParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use root stencil", bool, fParams);
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: Dirichlet threshold", double, fParams);
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use spread lumping", bool, fParams);
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom growth factor", double, fParams);
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom cap", double, fParams);
         filterFactory->SetParameterList(fParams);
         filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
+        filterFactory->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+        filterFactory->SetFactory("UnAmalgamationInfo", manager.GetFactory("UnAmalgamationInfo"));
         // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above
         filterFactory->SetFactory("Filtering",  manager.GetFactory("Graph"));
 

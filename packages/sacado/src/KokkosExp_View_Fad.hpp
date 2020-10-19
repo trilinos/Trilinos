@@ -366,7 +366,6 @@ struct SacadoViewFill
       const size_t n0 = output.extent(0);
       Kokkos::RangePolicy<execution_space> policy( 0, n0 );
       Kokkos::parallel_for( policy, *this );
-      execution_space().fence();
     }
 };
 
@@ -413,11 +412,11 @@ void deep_copy(
   Impl::SacadoViewFill< View<DT,DP...> >( view , value );
 }
 
-
 /* Specialize for deep copy of FAD */
-template< class DT , class ... DP , class ST , class ... SP >
+template< class ExecSpace, class DT , class ... DP , class ST , class ... SP >
 inline
-void deep_copy( const View<DT,DP...> & dst ,
+void deep_copy( const ExecSpace &,
+                const View<DT,DP...> & dst ,
                 const View<ST,SP...> & src
   , typename std::enable_if<(
   ( std::is_same< typename ViewTraits<DT,DP...>::specialize
@@ -454,7 +453,32 @@ void deep_copy( const View<DT,DP...> & dst ,
   typename PODViewDeepCopyType< View<DT,DP...> >::type dst_array( dst );
   typename PODViewDeepCopyType< View<ST,SP...> >::type src_array( src );
 #endif
-  Kokkos::deep_copy( dst_array , src_array );
+  Kokkos::deep_copy( ExecSpace(), dst_array , src_array );
+}
+
+/* Specialize for deep copy of FAD */
+template< class DT , class ... DP , class ST , class ... SP >
+inline
+void deep_copy( const View<DT,DP...> & dst ,
+                const View<ST,SP...> & src
+  , typename std::enable_if<(
+  ( std::is_same< typename ViewTraits<DT,DP...>::specialize
+                , Kokkos::Impl::ViewSpecializeSacadoFad >::value
+    ||
+    std::is_same< typename ViewTraits<DT,DP...>::specialize
+                , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+  &&
+  ( std::is_same< typename ViewTraits<ST,SP...>::specialize
+                , Kokkos::Impl::ViewSpecializeSacadoFad >::value
+    ||
+    std::is_same< typename ViewTraits<ST,SP...>::specialize
+                , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+  )>::type * = 0 )
+{
+  using exec_space = typename View<DT,DP...>::execution_space;
+  Kokkos::fence();
+  Kokkos::deep_copy(exec_space(), dst, src);
+  Kokkos::fence();
 }
 
 template< class T , class ... P >
@@ -1394,6 +1418,7 @@ public:
         record->m_destroy = functor_type( ( (ViewCtorProp<void,execution_space> const &) prop).value
                                         , (fad_value_type *) m_impl_handle
                                         , m_array_offset.span()
+                                        , record->get_label()
                                         );
 
         // Construct values

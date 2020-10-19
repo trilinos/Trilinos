@@ -103,7 +103,9 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   /* inquire previously defined dimensions  */
 

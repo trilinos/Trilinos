@@ -92,7 +92,7 @@ private:
   Teuchos::RCP<const PointRule> pointRule;
   Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> faceNormal; // face normals
   Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> refFaceNormal; // reference face normals
-
+  Kokkos::DynRankView<double,PHX::Device> sideParam;
   PointValues2<double> pointValues;
   PHX::MDField<const double,Cell,IP,Dim,Dim> constJac_;
 

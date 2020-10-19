@@ -238,9 +238,13 @@ void SculptMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Paral
 
    mesh.buildSubcells();
    mesh.buildLocalElementIDs();
+   mesh.buildLocalEdgeIDs();
+   mesh.buildLocalFaceIDs();
 
    addSideSets(mesh);
    addNodeSets(mesh);
+   addEdgeBlocks(mesh);
+   addFaceBlocks(mesh);
 
    this->rebalance(mesh);
 }
@@ -327,6 +331,9 @@ void SculptMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Int
    const CellTopologyData * ctd = shards::getCellTopologyData<HexTopo>();
    const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(2,0);
 
+   const CellTopologyData * edge_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(1,0);
+   const CellTopologyData * face_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(2,0);
+
 
    // build meta data
    //mesh.setDimension(3);
@@ -353,6 +360,8 @@ void SculptMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Int
      mesh.addNodeset("Nodeset"+nPostfix.str());
    }
 
+   mesh.addEdgeBlock(panzer_stk::STK_Interface::edgeBlockString, edge_ctd);
+   mesh.addFaceBlock(panzer_stk::STK_Interface::faceBlockString, face_ctd);
 }
 
 void SculptMeshFactory::buildNodes( stk::ParallelMachine paralleMach, STK_Interface &mesh ) const
@@ -600,7 +609,41 @@ void SculptMeshFactory::addNodeSets(STK_Interface & mesh) const
     mesh.endModification();
 }
 
+void ScupltMeshFactory::addEdgeBlocks(STK_Interface & mesh) const
+{
+   mesh.beginModification();
 
+   stk::mesh::Part * edge_block = mesh.getEdgeBlock(panzer_stk::STK_Interface::edgeBlockString);
+
+   Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   Teuchos::RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
+
+   std::vector<stk::mesh::Entity> edges;
+   bulkData->get_entities(mesh.getEdgeRank(),metaData->locally_owned_part(),edges);
+   for(auto edge : edges) {
+      mesh.addEntityToEdgeBlock(edge, edge_block);
+   }
+
+   mesh.endModification();
+}
+
+void ScupltMeshFactory::addFaceBlocks(STK_Interface & mesh) const
+{
+   mesh.beginModification();
+
+   stk::mesh::Part * face_block = mesh.getFaceBlock(panzer_stk::STK_Interface::faceBlockString);
+
+   Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   Teuchos::RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
+
+   std::vector<stk::mesh::Entity> faces;
+   bulkData->get_entities(mesh.getFaceRank(),metaData->locally_owned_part(),faces);
+   for(auto face : faces) {
+      mesh.addEntityToFaceBlock(face, face_block);
+   }
+
+   mesh.endModification();
+}
 
 //! Convert processor rank to a tuple
 Teuchos::Tuple<std::size_t,2> SculptMeshFactory::procRankToProcTuple(std::size_t procRank) const
