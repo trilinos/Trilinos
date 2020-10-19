@@ -1,8 +1,6 @@
 #ifndef KOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
 #define KOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
 
-#include "Teuchos_config.h"
-#include "TeuchosKokkosCompat_config.h"
 #include "Kokkos_Core.hpp"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
