@@ -415,12 +415,9 @@ public:
   }
 
   // Return number of ranks in each group (RCA X-dim) in an allocation
-//  bool getGroupCount(part_t *grp_count) const override {
-  bool getGroupCount2(std::vector<part_t> &grp_count) const override {
+  bool getGroupCountVector(std::vector<part_t> &grp_count) const override {
 
     if (group_count.size() > 0) {
-//      std::copy(group_count.begin(), group_count.end(), grp_count);
-
       grp_count = group_count;
 
       return true;
@@ -439,12 +436,9 @@ public:
   //       [2, 0, 0, 0, ..., 2, 0]]    // (2 unique subgroups)
   //
   // then num_unique subgroups = [3, 4, 4, 2]
-//  bool getNumUniqueSubgroups(part_t *num_unique_subgrps) const override {
   bool getNumUniqueSubgroups(std::vector<part_t> &num_unique_subgrps) const override {
 
     if (num_unique_subgroups.size() > 0) {
-
-//      std::copy(num_unique_subgroups.begin(), num_unique_subgroups.end(), num_unique_subgrps);
       num_unique_subgrps = num_unique_subgroups;
 
       return true;
@@ -470,11 +464,9 @@ public:
   //     [2, 2, ...]]    // (2 unique subgroups)
   //
   // then num_unique subgroups = [3, 4, 4, 2]
-//  bool getSubgroupCounts(part_t **subgrp_counts) const override {
   bool getSubgroupCounts(std::vector<std::vector<part_t>> &subgrp_counts) const override {
 
     if (subgroup_counts.size() > 0 && subgroup_counts[0].size() > 0) {
-
       subgrp_counts = subgroup_counts;
 
       return true;
@@ -482,8 +474,6 @@ public:
     else
       return false;
   }
-
-
 
   // Print allocation coords and extents on rank 0, transformed or actual
   void printAllocation() {
@@ -622,7 +612,7 @@ public:
   // 1.) Group level    (nbohood switches)
   // 2.) Subgroup level (racks with switch nborhood).
   virtual int getNumNonuniformLevels() const override {
-    return 2;
+    return 3;
   }
 
   // Return (approx) hop count from rank1 to rank2. Does not account for

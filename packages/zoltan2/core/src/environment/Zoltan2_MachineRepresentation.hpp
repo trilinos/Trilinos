@@ -201,20 +201,14 @@ public:
          return machine->getGroupCount(grp_count);
     }
 
-
-
-    inline bool getGroupCount2(std::vector<part_t> &grp_count) const {
-      return machine->getGroupCount2(grp_count);
+    inline bool getGroupCountVector(std::vector<part_t> &grp_count) const {
+      return machine->getGroupCountVector(grp_count);
     }
 
-//    inline bool getNumUniqueSubgroups(part_t *num_unique_subgrps) const {
+
     inline bool getNumUniqueSubgroups(std::vector<part_t> &num_unique_subgrps) const {
       return machine->getNumUniqueSubgroups(num_unique_subgrps);
     }
-
-//    inline bool getSubgroupCounts(part_t **subgrp_counts) const {
-//      return machine->getSubgroupCounts(subgrp_counts);
-//    }
 
     inline bool getSubgroupCounts(std::vector<std::vector<part_t>> &subgrp_counts) const {
       return machine->getSubgroupCounts(subgrp_counts);

@@ -367,14 +367,10 @@ struct OVIS_parameters ovisParameters;
    *  communicator.
    */
 
-  if (ZOLTAN_PROC_NOT_IN_COMMUNICATOR(zz)) { 
-//    printf("\nRank: %d Zoltan proc not in comm\n", zz->Proc);
+  if (ZOLTAN_PROC_NOT_IN_COMMUNICATOR(zz))
     goto End;
-  }
 
-  if (zz->LB.Method == NONE) {
-//    printf("\nRank: %d LB METHOD NONE\n", zz->Proc);
-    
+  if (zz->LB.Method == NONE) {    
     if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS)
       printf("%s Balancing method selected == NONE; no balancing performed\n",
               yo);
@@ -961,11 +957,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
     /* Compute the PartDist array. */
 
     if (!local_parts_set) {
-      printf("\nNOLOCALPARTS\n");
       if (max_global_parts > num_proc) {
-
-        printf("\nGREATER\n");
-
         /* NUM_LOCAL_PARTS is not set; NUM_GLOBAL_PARTS > num_proc. */
         /* Even distribution of parts to processors. */
         zz->LB.Single_Proc_Per_Part = 1;
@@ -981,8 +973,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
       }
       else {
         /* NUM_LOCAL_PARTS is not set; NUM_GLOBAL_PARTS < num_proc. */
-        /* Even distribution of processors to parts. */
-        printf("\nGREATER ELSE\n");
+        /* Even distribution of processors to parts. */ 
         zz->LB.Single_Proc_Per_Part = 0;  /* Parts are spread across procs */
         pdist[0] = 0;
         frac = num_proc / max_global_parts;
@@ -993,8 +984,6 @@ MPI_User_function Zoltan_PartDist_MPIOp;
       }
     }
     else /* local_parts_set */ {
-
-      printf("LOCALPARTS");
 
       /* NUM_LOCAL_PARTS is set on at least some processors. */
       /* Distribute parts to processors to match NUM_LOCAL_PARTS
@@ -1043,10 +1032,8 @@ MPI_User_function Zoltan_PartDist_MPIOp;
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL || zz->LB.PartDist != NULL) {
       printf("\n[%1d] Debug: LB.PartDist = ", zz->Proc);
       for (i=0; i<=zz->LB.Num_Global_Parts; i++)
-        printf("%d ", zz->LB.PartDist[i]);
-      
-    }
-    printf("\n\nHAZZ == NULL, highest level\n\n");
+        printf("%d ", zz->LB.PartDist[i]); 
+    } 
   }
 
   // Hierarchical Partitioning and not at tree-root 
@@ -1083,8 +1070,10 @@ MPI_User_function Zoltan_PartDist_MPIOp;
     }
   }
   else {
-    printf("\n\nError in LB_BALANCE Build_PartDist!\n\n");
-    exit(0);
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+      "Error in LB_BALANCE Build_PartDist");
+    ierr = ZOLTAN_FATAL;
+    goto End;
   }
 
 End:

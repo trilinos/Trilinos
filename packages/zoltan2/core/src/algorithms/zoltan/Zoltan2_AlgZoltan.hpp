@@ -742,13 +742,8 @@ public:
     //setCallbacksHierTaskMapping(machine__);
   }
 
-
-
   void partition(const RCP<PartitioningSolution<Adapter> > &solution);
   // void color(const RCP<ColoringSolution<Adapter> > &solution);
-
-
-//  void hier_partition(const RCP<PartitioningSolution<Adapter> > &solution);
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -760,9 +755,8 @@ void AlgZoltan<Adapter>::partition(
   HELLO;
   char paramstr[128];
 
-
   if (problemComm->getRank() == 0)
-    std::cout << "\n\nBegin ALGZOLTAN Partition\n\n" << std::endl;
+    std::cout << "\n\nBegin AlgZoltan Partition\n\n" << std::endl;
 
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
@@ -898,12 +892,6 @@ void AlgZoltan<Adapter>::partition(
   for (int i = 0; i < nObj; i++) {
     lno_t tmp;
     TPL_Traits<lno_t, ZOLTAN_ID_PTR>::ASSIGN(tmp, &(oLids[i*nLidEnt]));
-
-//    if (problemComm->getRank() == 0) {
-//      std::cout << "i: " << i << "oParts[i]: " << oParts[i] << std::endl;
-//    }
-
-
     partList[tmp] = oParts[i];
   }
 

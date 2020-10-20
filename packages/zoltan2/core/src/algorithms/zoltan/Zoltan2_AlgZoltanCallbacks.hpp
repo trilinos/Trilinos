@@ -839,8 +839,7 @@ static int zoltanHierNumLevels(void *data,
   *ierr = ZOLTAN_OK;
 
   // Group, Subgroup, Rack
-  return machine->getNumNonuniformLevels() + 1;
-//  return machine->getNumNonuniformLevels();
+  return machine->getNumNonuniformLevels();
 }
 
 //////////////////////
@@ -950,7 +949,7 @@ static void zoltanHierMethod(void *data,
   Zoltan_Set_Param(zz, "LB_Approach", "repartition");
   Zoltan_Set_Param(zz, "LB_Method", "RCB");
 
-
+// Options for ParMETIS partitioning.
 //  Zoltan_Set_Param(zz, "LB_Method", "PARMETIS");
 //  Zoltan_Set_Param(zz, "CHECK_GRAPH", "0");
 //  Zoltan_Set_Param(zz, "GRAPH_BUILD_TYPE", "FAST_NO_DUP");

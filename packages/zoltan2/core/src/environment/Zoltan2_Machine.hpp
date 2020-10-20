@@ -116,7 +116,7 @@ public:
     }
 
     /*! \brief getGroupCount function
-     *  return the number of ranks in each group (RCA X-dim, e.g. first dim)
+     *  return the number of ranks in each group (RCA X-dim / FatTree switch-neighborhood, or i.e. first dim)
      *
      *  Ex, 4 ranks with coord (3, 1, 1) and 8 ranks with coord (5, 2, 4),
      *  will produce
@@ -125,29 +125,61 @@ public:
      *  grp_count = [4, 8]
      *
      *
-     *  (Currently only for Zoltan2_MachineDragonflyRCA, and used for
+     *  (Currently only for Zoltan2_MachineDragonflyRCA and Zoltan2_MachineFatTree, 
+     *  and used for
      *  MultiJagged's first cut in "algorithms/partition/Zoltan2_TaskMapper.hpp"
-     *  thru "problems/Zoltan2_MappingProblem.hpp".
+     *  thru "problems/Zoltan2_MappingProblem.hpp" or
+     *  AlgZoltan's machine-informed hierarchical "hier" partitioning.
+     *
      *  return true if group_count is available
      */
     virtual bool getGroupCount(part_t *grp_count) const {
       return false;
     }
-
-    virtual bool getGroupCount2(std::vector<part_t> &grp_count) const {
+    
+    /*! \brief getGroupCountVector function
+     *
+     *  JAE: Must fully convert from raw arrays to std::vectors
+     *
+     *  return the number of ranks in each group as std::vector
+     */
+    virtual bool getGroupCountVector(std::vector<part_t> &grp_count) const {
       return false;
     }
-
-//    virtual bool getNumUniqueSubgroups(part_t *num_unique_subgrps) const {
+ 
+    /*! \brief getNumUniqueSubgroups function
+     *
+     *  JAE: Must fully convert from raw arrays to std::vectors
+     *
+     *  Currently only for Zoltan2_MachineFatTree, and used for number of racks occupied
+     *  within each switch-neighborhood
+     *
+     *  return the number of unique subgroups in each group (1D vector)
+     */
     virtual bool getNumUniqueSubgroups(std::vector<part_t> &num_unique_subgrps) const {
       return false;
     }
 
-//    virtual bool getSubgroupCounts(part_t **subgrp_counts) const {
+    /*! \brief getNumUniqueSubgroups function 
+     *
+     *  JAE: Must fully convert from raw arrays to std::vectors
+     *
+     *  Currently only for Zoltan2_MachineFatTree, and used for the racks occupied
+     *  within each switch-neighborhood
+     *
+     *  return the subgroup counts in each group (2D vector)
+     */
     virtual bool getSubgroupCounts(std::vector<std::vector<part_t>> &subgrp_counts) const {
       return false;
     }
 
+    /*! \brief getNumUniqueSubgroups function
+     * 
+     *
+     *  Currently only for Zoltan2_MachineFatTree, and used for AlgZoltan's hier partitioning
+     *
+     *  return the number of levels in the hierarchical machine representation
+     */
     virtual int getNumNonuniformLevels() const {
       return 0;
     }
