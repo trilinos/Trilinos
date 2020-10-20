@@ -148,6 +148,7 @@ class TrilinosPRConfigurationStandardTest(TestCase):
             target_repo_url="https://github.com/trilinos/Trilinos",
             target_branch_name="develop",
             pullrequest_build_name="Trilinos_pullrequest_gcc_7.2.0",
+            pullrequest_cdash_track="Pull Request",
             jenkins_job_number=99,
             pullrequest_number='0000',
             pullrequest_config_file=self._config_file,

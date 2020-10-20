@@ -108,6 +108,13 @@ def parse_args():
                           help='The Jenkins build number',
                           required=True)
 
+    optional.add_argument('--pullrequest-cdash-track',
+                          dest='pullrequest_cdash_track',
+                          action='store',
+                          default="Pull Request",
+                          help="The CDash Track to add results to. Default=%(default)s",
+                          required=False)
+
     optional.add_argument('--pullrequest-config-file',
                           dest='pullrequest_config_file',
                           action='store',
@@ -199,7 +206,8 @@ def parse_args():
     print("| - MAX_CORES_ALLOWED      : {max_cores_allowed}".format(**vars(arguments)))
     print("| - NUM_CONCURRENT_TESTS   : {num_concurrent_tests}".format(**vars(arguments)))
     print("|")
-    print("| - JOB_BASE_NAME          : {pullrequest_build_name}".format(**vars(arguments)))
+    print("| - PULLREQUEST_CDASH_TRACK: {pullrequest_cdash_track}".format(**vars(arguments)))
+    print("| - PULLREQUEST_BUILD_NAME : {pullrequest_build_name}".format(**vars(arguments)))
     print("| - WORKSPACE              : {workspace_dir}".format(**vars(arguments)))
     print("|")
     print("| - TRILINOS_SOURCE_REPO   : {source_repo_url}".format(**vars(arguments)))
@@ -208,9 +216,9 @@ def parse_args():
     print("| - TRILINOS_TARGET_REPO   : {target_repo_url}".format(**vars(arguments)))
     print("| - TRILINOS_TARGET_BRANCH : {target_branch_name}".format(**vars(arguments)))
     print("|")
-    print("| - PULLREQUESTNUM         : {pullrequest_number}".format(**vars(arguments)))
-    print("| - BUILD_NUMBER           : {jenkins_job_number}".format(**vars(arguments)))
-    print("| - PACKAGE_ENABLES        : {filename_packageenables}".format(**vars(arguments)))
+    print("| - PULLREQUEST NUMBER     : {pullrequest_number}".format(**vars(arguments)))
+    print("| - JENKINS_JOB_NUMBER     : {jenkins_job_number}".format(**vars(arguments)))
+    print("| - PACKAGE_ENABLES FILE   : {filename_packageenables}".format(**vars(arguments)))
     print("|")
     print("| - DRY_RUN                : {dry_run}".format(**vars(arguments)))
     print("+" + "-"*78 + "+")

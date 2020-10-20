@@ -169,6 +169,7 @@ test_cmd_options=(
     --pullrequest-build-name=${JOB_BASE_NAME:?}
     --pullrequest-config-file="Trilinos/cmake/std/pr_config/pullrequest.ini"
     --pullrequest-number=${PULLREQUESTNUM:?}
+    --pullrequest-cdash-track=${PULLREQUEST_CDASH_TRACK:?}
     --jenkins-job-number=${BUILD_NUMBER:?}
     --req-mem-per-core=3.0
     --max-cores-allowed=29

@@ -171,7 +171,7 @@ class TrilinosPRConfigurationTest(TestCase):
         #os.environ["TRILINOS_TARGET_REPO"]    = "trilinos_target_repo_value"
         #os.environ["TRILINOS_TARGET_SHA"]     = "trilinos_target_sha_value"
         #os.environ["PULLREQUESTNUM"]          = "0000"
-        os.environ["PULLREQUEST_CDASH_TRACK"] = "Pull Request"
+        #os.environ["PULLREQUEST_CDASH_TRACK"] = "Pull Request"
 
         # Find the config file
         #config_file = 'test_config.ini'
@@ -192,7 +192,7 @@ class TrilinosPRConfigurationTest(TestCase):
 
     def tearDown(self):
         #del os.environ["PULLREQUESTNUM"]
-        del os.environ["PULLREQUEST_CDASH_TRACK"]
+        #del os.environ["PULLREQUEST_CDASH_TRACK"]
 
         self.patch_cpu_count.stop()
 
@@ -210,6 +210,7 @@ class TrilinosPRConfigurationTest(TestCase):
             pullrequest_build_name="Trilinos_pullrequest_gcc_7.2.0",
             jenkins_job_number=99,
             pullrequest_number='0000',
+            pullrequest_cdash_track="Pull Request",
             pullrequest_config_file=self._config_file,
             workspace_dir=".",
             filename_packageenables="../packageEnables.cmake",
@@ -331,7 +332,7 @@ class TrilinosPRConfigurationTest(TestCase):
     def test_TrilinosPRConfigurationCDashTrack(self):
         args = args = self.dummy_args_python2()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        cdash_track = pr_config.pullrequest_cdash_track
+        cdash_track = pr_config.arg_pullrequest_cdash_track
         print("--- cdash_track = {}".format(cdash_track))
         self.assertEqual(cdash_track, "Pull Request")
 
@@ -439,28 +440,6 @@ class TrilinosPRConfigurationTest(TestCase):
                         pr_config.create_package_enables_file(dryrun=False)
 
         self.assertTrue( "There was an issue generating packageEnables.cmake" in fake_out.getvalue())
-
-
-    def test_TrilinosPRConfigurationBaseProperty_pullrequest_cdash_track_Missing(self):
-        """
-        Test the fall-back use of a default value for the PULLREQUEST_CDASH_TRACK
-        for the case where the envvar PULLREQUEST_CDASH_TRACK does not exist.
-        This should default to "Pull Request" and print out a warning.
-        """
-        del os.environ["PULLREQUEST_CDASH_TRACK"]
-
-        args = self.dummy_args_python2()
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-
-        with patch('sys.stdout', new=StringIO()) as fake_out:
-            cdash_track = pr_config.pullrequest_cdash_track
-
-            self.assertEqual(cdash_track, "Pull Request")
-            self.assertIn("WARNING", fake_out.getvalue())
-
-
-        # Restore envvar for the rest of the tests.
-        os.environ["PULLREQUEST_CDASH_TRACK"] = "Pull Request"
 
 
     def test_TrilinosPRConfigurationBaseProperty_concurrency_test_err(self):

@@ -16,7 +16,7 @@ sys.dont_write_bytecode = True
 
 from . import setenvironment
 from . import sysinfo
-from . import jenkinsenv
+#from . import jenkinsenv
 
 
 
@@ -33,6 +33,8 @@ class TrilinosPRConfigurationBase(object):
 
     Attributes:
         arg_pullrequest_number: PR Number on Github
+        arg_pullrequest_cdash_track: The Pull Request track to post results to.
+                                     Defaults to "Pull Request" in arguments.
         arg_jenkins_job_number: Job Number of the Jenkins job.
         arg_req_mem_per_core: Memory required per core (GB)
         arg_max_cores_allowed: Max cores allowed for building (i.e., make -j <num cores>)
@@ -45,7 +47,7 @@ class TrilinosPRConfigurationBase(object):
         filename_subprojects: The subprojects file.
         working_directory_ctest: Gen. working dir where TFW_testing_single_configure_prototype
             is executed from.
-        trilinos_pr_env: Environment variable info specific to Trilinos Jobs.
+#        trilinos_pr_env: Environment variable info specific to Trilinos Jobs.
         config_data: The setenvironment.SetEnvironment class instance containing
                      the parsed config.ini file data.
         config_script: Returns the configuration script from the configuration file.
@@ -58,12 +60,12 @@ class TrilinosPRConfigurationBase(object):
         concurrency_build: Concurrency to use for building Trilinos
         concurrency_test: Concurrency to use for running Trilinos tests.
         pullrequest_build_name: PR build name reported to CDash.
-        pullrequest_cdash_track: Attempt to load the envvar PULLREQUEST_CDASH_TRACK.
+#        pullrequest_cdash_track: Attempt to load the envvar PULLREQUEST_CDASH_TRACK.
     """
     def __init__(self, args):
         self.args                  = args
         self._config_data          = None
-        self._trilinos_pr_env      = None
+        #self._trilinos_pr_env      = None
         self._mem_per_core         = None
         self._max_cores_allowed    = None
         self._max_test_parallelism = None
@@ -82,6 +84,19 @@ class TrilinosPRConfigurationBase(object):
             self.args.pullrequest_number
         """
         return self.args.pullrequest_number
+
+
+    @property
+    def arg_pullrequest_cdash_track(self):
+        """
+        Argument Wrapper: This property wraps the value provided in self.args
+        to provide a convenient way to override this value if needed for some
+        specialty reason or for a customized test.
+
+        Returns:
+            self.args.pullrequest_cdash_track
+        """
+        return self.args.pullrequest_cdash_track
 
 
     @property
@@ -193,17 +208,17 @@ class TrilinosPRConfigurationBase(object):
         return os.path.join(self.arg_workspace_dir, 'TFW_testing_single_configure_prototype')
 
 
-    @property
-    def trilinos_pr_env(self):
-        """
-        Environment variable info specific to Trilinos Jobs.
+    #@property
+    #def trilinos_pr_env(self):
+        #"""
+        #Environment variable info specific to Trilinos Jobs.
 
-        See:
-            jenkinsenv module for more information.
-        """
-        if self._trilinos_pr_env is None:
-            self._trilinos_pr_env = jenkinsenv.TrilinosJenkinsEnv()
-        return self._trilinos_pr_env
+        #See:
+            #jenkinsenv module for more information.
+        #"""
+        #if self._trilinos_pr_env is None:
+            #self._trilinos_pr_env = jenkinsenv.TrilinosJenkinsEnv()
+        #return self._trilinos_pr_env
 
 
     @property
@@ -320,18 +335,18 @@ class TrilinosPRConfigurationBase(object):
         return output
 
 
-    @property
-    def pullrequest_cdash_track(self):
-        """
-        Attempt to load the envvar PULLREQUEST_CDASH_TRACK, but if it's missing,
-        we just use "Pull Request"
-        """
-        try:
-            output = self.trilinos_pr_env.pullrequest_cdash_track
-        except:
-            print("WARNING: envvar PULLREQUEST_CDASH_TRACK missing. Using default 'Pull Request'")
-            output = "Pull Request"
-        return output
+    #@property
+    #def pullrequest_cdash_track(self):
+        #"""
+        #Attempt to load the envvar PULLREQUEST_CDASH_TRACK, but if it's missing,
+        #we just use "Pull Request"
+        #"""
+        #try:
+            #output = self.trilinos_pr_env.pullrequest_cdash_track
+        #except:
+            #print("WARNING: envvar PULLREQUEST_CDASH_TRACK missing. Using default 'Pull Request'")
+            #output = "Pull Request"
+        #return output
 
 
     def get_property_from_config(self, section, option, default=None):
@@ -514,6 +529,7 @@ class TrilinosPRConfigurationBase(object):
         print("--- arg_pr_jenkins_job_name     = {}".format(self.arg_pr_jenkins_job_name))
         print("--- arg_jenkins_job_number      = {}".format(self.arg_jenkins_job_number))
         print("--- arg_pullrequest_number      = {}".format(self.arg_pullrequest_number))
+        print("--- arg_pullrequest_cdash_track = {}".format(self.arg_pullrequest_cdash_track))
         print("--- arg_max_cores_allowed       = {}".format(self.arg_max_cores_allowed))
         print("--- arg_req_mem_per_core        = {}".format(self.arg_req_mem_per_core))
         print("--- arg_num_concurrent_tests    = {}".format(self.arg_num_concurrent_tests))
@@ -523,7 +539,6 @@ class TrilinosPRConfigurationBase(object):
         print("--- arg_workspace_dir           = {}".format(self.arg_workspace_dir))
         print("--- config_script               = {}".format(self.config_script))
         print("--- pullrequest_build_name      = {}".format(self.pullrequest_build_name))
-        print("--- pullrequest_cdash_track     = {}".format(self.pullrequest_cdash_track))
         print("--- concurrency_build           = {}".format(self.concurrency_build))
         print("--- concurrency_test            = {}".format(self.concurrency_test))
         print("--- max_cores_allowed           = {}".format(self.max_cores_allowed))

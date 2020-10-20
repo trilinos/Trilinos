@@ -7,10 +7,6 @@ Custom PR Executor for Installation testing
 import os
 import subprocess
 
-#from . import setenvironment
-#from . import sysinfo
-#from . import jenkinsenv
-
 from . import TrilinosPRConfigurationBase
 
 
@@ -50,7 +46,7 @@ class TrilinosPRConfigurationInstallation(TrilinosPRConfigurationBase):
                       '-Dskip_by_parts_submit=OFF',
                       '-Dskip_update_step=ON',
                       '-Ddashboard_model=Experimental',
-                      '-Ddashboard_track={}'.format(self.pullrequest_cdash_track),
+                      '-Ddashboard_track={}'.format(self.arg_pullrequest_cdash_track),
                       '-DPARALLEL_LEVEL={}'.format(self.concurrency_build),
                       '-DTEST_PARALLEL_LEVEL={}'.format(self.concurrency_test),
                       '-Dbuild_dir={}/pull_request_test'.format(self.arg_workspace_dir),
