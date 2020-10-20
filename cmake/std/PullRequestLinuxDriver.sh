@@ -169,7 +169,7 @@ test_cmd_options=(
     --pullrequest-build-name=${JOB_BASE_NAME:?}
     --pullrequest-config-file="Trilinos/cmake/std/pr_config/pullrequest.ini"
     --pullrequest-number=${PULLREQUESTNUM:?}
-    --pullrequest-cdash-track=${PULLREQUEST_CDASH_TRACK:?}
+    --pullrequest-cdash-track="'${PULLREQUEST_CDASH_TRACK:?}'"
     --jenkins-job-number=${BUILD_NUMBER:?}
     --req-mem-per-core=3.0
     --max-cores-allowed=29
@@ -185,6 +185,7 @@ test_cmd="${PYTHON_EXE} ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${test_cmd_o
 
 # Call the script to launch the tests
 print_banner "Execute Test Command"
+message_std "PRDriver> " "cd $(pwd)"
 message_std "PRDriver> " "${test_cmd:?}"
 #echo -e "PRDriver> ${test_cmd:?}"
 #echo -e "PRDriver> "

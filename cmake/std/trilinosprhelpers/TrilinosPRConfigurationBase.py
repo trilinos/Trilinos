@@ -351,7 +351,11 @@ class TrilinosPRConfigurationBase(object):
 
     def get_property_from_config(self, section, option, default=None):
         """
-        Helper to load a property from the ConfigParser configuration data.
+        Helper to load a property from the ConfigParser configuration data
+        that was loaded up by the SetEnvironment class. We use this to load
+        information from free-form sections that we include int he .ini file
+        which encode information that isn't used by the parser but is used
+        to encode Trilinos PR configuration data.
 
         Args:
             section (str) : The section name we're loading (i.e., [SECTION_NAME])
@@ -400,7 +404,9 @@ class TrilinosPRConfigurationBase(object):
                     if output is None:
                         output = self.config_data.config.get(section, option_full)
                     else:
-                        output = delimeter.join([output, self.config_data.config.get(section, option_full)])
+                        output = delimeter.join(
+                            [output, self.config_data.config.get(section, option_full)]
+                        )
         except configparser.NoSectionError:
             print("WARNING: Configuration section '{}' does not exist.".format(section))
             print("       : Returning default value: {}".format(output))
