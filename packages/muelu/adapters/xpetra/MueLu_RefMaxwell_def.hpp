@@ -2258,11 +2258,13 @@ namespace MueLu {
       ArrayRCP<bool> AHBCrows;
       AHBCrows.resize(AH_->getRowMap()->getNodeNumElements());
       size_t dim = Nullspace_->getNumVectors();
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (useKokkos_)
         for (size_t i = 0; i < BCdomainKokkos_.size(); i++)
           for (size_t k = 0; k < dim; k++)
             AHBCrows[i*dim+k] = BCdomainKokkos_(i);
       else
+#endif
         for (size_t i = 0; i < static_cast<size_t>(BCdomain_.size()); i++)
           for (size_t k = 0; k < dim; k++)
             AHBCrows[i*dim+k] = BCdomain_[i];
