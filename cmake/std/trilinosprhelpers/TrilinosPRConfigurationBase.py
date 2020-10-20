@@ -47,7 +47,6 @@ class TrilinosPRConfigurationBase(object):
         filename_subprojects: The subprojects file.
         working_directory_ctest: Gen. working dir where TFW_testing_single_configure_prototype
             is executed from.
-#        trilinos_pr_env: Environment variable info specific to Trilinos Jobs.
         config_data: The setenvironment.SetEnvironment class instance containing
                      the parsed config.ini file data.
         config_script: Returns the configuration script from the configuration file.
@@ -60,7 +59,6 @@ class TrilinosPRConfigurationBase(object):
         concurrency_build: Concurrency to use for building Trilinos
         concurrency_test: Concurrency to use for running Trilinos tests.
         pullrequest_build_name: PR build name reported to CDash.
-#        pullrequest_cdash_track: Attempt to load the envvar PULLREQUEST_CDASH_TRACK.
     """
     def __init__(self, args):
         self.args                  = args
@@ -72,6 +70,10 @@ class TrilinosPRConfigurationBase(object):
         self._concurrency_build    = None
         self._concurrency_test     = None
 
+
+    # --------------------
+    # A R G U M E N T S
+    # --------------------
 
     @property
     def arg_pullrequest_number(self):
@@ -199,6 +201,10 @@ class TrilinosPRConfigurationBase(object):
         return self.args.filename_subprojects
 
 
+    # --------------------
+    # P R O P E R T I E S
+    # --------------------
+
     @property
     def working_directory_ctest(self):
         """
@@ -206,19 +212,6 @@ class TrilinosPRConfigurationBase(object):
         For PR testing this should be in $WORKSPACE/TFW_testing_single_configure_prototype
         """
         return os.path.join(self.arg_workspace_dir, 'TFW_testing_single_configure_prototype')
-
-
-    #@property
-    #def trilinos_pr_env(self):
-        #"""
-        #Environment variable info specific to Trilinos Jobs.
-
-        #See:
-            #jenkinsenv module for more information.
-        #"""
-        #if self._trilinos_pr_env is None:
-            #self._trilinos_pr_env = jenkinsenv.TrilinosJenkinsEnv()
-        #return self._trilinos_pr_env
 
 
     @property
@@ -335,19 +328,9 @@ class TrilinosPRConfigurationBase(object):
         return output
 
 
-    #@property
-    #def pullrequest_cdash_track(self):
-        #"""
-        #Attempt to load the envvar PULLREQUEST_CDASH_TRACK, but if it's missing,
-        #we just use "Pull Request"
-        #"""
-        #try:
-            #output = self.trilinos_pr_env.pullrequest_cdash_track
-        #except:
-            #print("WARNING: envvar PULLREQUEST_CDASH_TRACK missing. Using default 'Pull Request'")
-            #output = "Pull Request"
-        #return output
-
+    # --------------------
+    # M E T H O D S
+    # --------------------
 
     def get_property_from_config(self, section, option, default=None):
         """
