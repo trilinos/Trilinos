@@ -22,9 +22,11 @@ APPEND_SET(HEADERS
     Kokkos_BufferMacros.hpp
     Kokkos_DefaultNode.hpp
     Kokkos_NodeAPIConfigDefs.hpp
+    KokkosCompat_ClassicNodeAPI_Wrapper.hpp
   )
 APPEND_SET(SOURCES
     Kokkos_DefaultNode.cpp
+    KokkosCompat_ClassicNodeAPI_Wrapper.cpp
   )
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_SerialNode)
