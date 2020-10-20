@@ -60,12 +60,16 @@ class TrilinosPRConfigurationInstallation(TrilinosPRConfigurationBase):
                       '-Dsubprojects_file=' + self.arg_filename_subprojects
                     ]
 
-        print("+" + "="*38 + "+")
-        print("cmd = {}".format(" \\\n   ".join(cmd)))
-        print("+" + "="*38 + "+")
+        print("--- ctest command:")
+        print("--- cmd = {}".format(" \\\n   ".join(cmd)))
+        print("--- ")
 
         if not self.args.dry_run:
             subprocess.check_call(cmd)
+            # Note: check_call will throw an exception if there's a problem.
+        else:
+            print("--- SKIPPED DUE TO DRYRUN")
+        print("---")
 
         return 0
 

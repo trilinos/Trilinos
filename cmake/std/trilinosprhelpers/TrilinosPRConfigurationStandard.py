@@ -23,9 +23,9 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
         """
         Execute the test
         """
-        print("- "*40)
-        print("E X E C U T E   S T A N D A R D   P U L L R E Q E S T   T E S T")
-        print("- "*40)
+        print("+" + "="*78 + "+")
+        print("|   E X E C U T E   S T A N D A R D   P U L L R E Q E S T   T E S T")
+        print("+" + "="*78 + "+")
 
         #
         # Typically, we execute the test from $WORKSPACE/TFW_testing_single_configure_prototype
@@ -60,13 +60,16 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
                       '-Dsubprojects_file=' + self.arg_filename_subprojects
                     ]
 
-        print("+" + "="*38 + "+")
-        print("cmd = {}".format(" \\\n   ".join(cmd)))
-        print("+" + "="*38 + "+")
+        print("--- ctest command:")
+        print("--- cmd = {}".format(" \\\n   ".join(cmd)))
+        print("--- ")
 
         if not self.args.dry_run:
             subprocess.check_call(cmd)
             # Note: check_call will throw an exception if there's a problem.
+        else:
+            print("--- SKIPPED DUE TO DRYRUN")
+        print("---")
 
         return 0
 

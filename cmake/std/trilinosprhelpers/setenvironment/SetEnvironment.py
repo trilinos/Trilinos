@@ -246,9 +246,9 @@ class SetEnvironment(object):
         if envvar_filter is not None:
             assert isinstance(envvar_filter, list)
 
-        print("+" + "="*38 + "+")
+        print("+" + "="*68 + "+")
         print("|   P R I N T   E N V I R O N M E N T   V A R S")
-        print("+" + "="*38 + "+")
+        print("+" + "="*68 + "+")
         print("--- ")
         for k,v in os.environ.items():
             matched_key = False

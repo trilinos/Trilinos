@@ -63,7 +63,6 @@ class TrilinosPRConfigurationBase(object):
     def __init__(self, args):
         self.args                  = args
         self._config_data          = None
-        #self._trilinos_pr_env      = None
         self._mem_per_core         = None
         self._max_cores_allowed    = None
         self._max_test_parallelism = None
@@ -430,7 +429,9 @@ class TrilinosPRConfigurationBase(object):
                 if not dryrun:
                     subprocess.check_call(cmd)
                 else:
-                    print("-\n- SKIPPED DUE TO DRYRUN\n-")
+                    print("---")
+                    print("--- SKIPPED DUE TO DRYRUN")
+                    print("---")
             else:
                 # Use the values in the PACKAGE_ENABLES section of the .ini file
                 with open('packageEnables.cmake',  'w') as f_out:
@@ -458,7 +459,9 @@ class TrilinosPRConfigurationBase(object):
             if not dryrun:
                 cmake_rstring = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
             else:
-                print("-\n- SKIPPED DUE TO DRYRUN\n-")
+                print("---")
+                print("--- SKIPPED DUE TO DRYRUN")
+                print("---")
                 cmake_rstring = str.encode("")
             cmake_rstring = cmake_rstring.decode('utf-8')
             print(cmake_rstring)
@@ -515,31 +518,32 @@ class TrilinosPRConfigurationBase(object):
         print("+" + "="*78 + "+")
         print("Configuration Parameters")
         print("+" + "="*78 + "+")
-        print("--- arg_pr_jenkins_job_name     = {}".format(self.arg_pr_jenkins_job_name))
-        print("--- arg_jenkins_job_number      = {}".format(self.arg_jenkins_job_number))
-        print("--- arg_pullrequest_number      = {}".format(self.arg_pullrequest_number))
-        print("--- arg_pullrequest_cdash_track = {}".format(self.arg_pullrequest_cdash_track))
-        print("--- arg_max_cores_allowed       = {}".format(self.arg_max_cores_allowed))
-        print("--- arg_req_mem_per_core        = {}".format(self.arg_req_mem_per_core))
-        print("--- arg_num_concurrent_tests    = {}".format(self.arg_num_concurrent_tests))
-        print("--- arg_pr_config_file          = {}".format(self.arg_pr_config_file))
         print("--- arg_filename_packageenables = {}".format(self.arg_filename_packageenables))
         print("--- arg_filename_subprojects    = {}".format(self.arg_filename_subprojects))
+        print("--- arg_jenkins_job_number      = {}".format(self.arg_jenkins_job_number))
+        print("--- arg_max_cores_allowed       = {}".format(self.arg_max_cores_allowed))
+        print("--- arg_num_concurrent_tests    = {}".format(self.arg_num_concurrent_tests))
+        print("--- arg_pr_config_file          = {}".format(self.arg_pr_config_file))
+        print("--- arg_pr_jenkins_job_name     = {}".format(self.arg_pr_jenkins_job_name))
+        print("--- arg_pullrequest_number      = {}".format(self.arg_pullrequest_number))
+        print("--- arg_pullrequest_cdash_track = {}".format(self.arg_pullrequest_cdash_track))
+        print("--- arg_req_mem_per_core        = {}".format(self.arg_req_mem_per_core))
         print("--- arg_workspace_dir           = {}".format(self.arg_workspace_dir))
-        print("--- config_script               = {}".format(self.config_script))
-        print("--- pullrequest_build_name      = {}".format(self.pullrequest_build_name))
+        print("---")
         print("--- concurrency_build           = {}".format(self.concurrency_build))
         print("--- concurrency_test            = {}".format(self.concurrency_test))
+        print("--- config_script               = {}".format(self.config_script))
         print("--- max_cores_allowed           = {}".format(self.max_cores_allowed))
         print("--- max_test_parallelism        = {}".format(self.max_test_parallelism))
+        print("--- pullrequest_build_name      = {}".format(self.pullrequest_build_name))
         print("--- working_directory_ctest     = {}".format(self.working_directory_ctest))
         #print("---         = {}".format(self.))
         print("")
 
 
-        print("=:"*39 + "=")
-        print("E N V I R O N M E N T   S E T   U P   S T A R T")
-        print("=:"*39 + "=")
+        print("+" + "="*68 + "+")
+        print("|   E N V I R O N M E N T   S E T   U P   S T A R T")
+        print("+" + "="*68 + "+")
         tr_config = setenvironment.SetEnvironment(self.arg_pr_config_file, self.arg_pr_jenkins_job_name)
 
         rval = 0
@@ -548,7 +552,9 @@ class TrilinosPRConfigurationBase(object):
             print("apply() rval: {}".format(rval))
         else:
             tr_config.pretty_print()
-            print("\nNOTICE: ENVVARS not set due to dry-run flag.")
+            print("---")
+            print("--- NOTICE: ENVVARS not set due to dry-run flag.")
+            print("---")
 
         if rval:
             msg = "ERROR: There was a problem configuring the environment."
@@ -574,9 +580,9 @@ class TrilinosPRConfigurationBase(object):
         print("")
         tr_config.pretty_print_envvars(envvar_filter=envvars_to_print)
 
-        print("+" + "="*78 + "+")
+        print("+" + "="*68 + "+")
         print("|   E N V I R O N M E N T   S E T   U P   C O M P L E T E")
-        print("+" + "="*78 + "+")
+        print("+" + "="*68 + "+")
 
         print("--- Create packageEnables.cmake")
         self.create_package_enables_file(dryrun=self.args.dry_run)
