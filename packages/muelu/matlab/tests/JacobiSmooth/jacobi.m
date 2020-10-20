@@ -33,6 +33,6 @@ resnrm(1) = norm(b - A * x0);
 for I = 1:nits,
   %disp(['MATLAB: Running Jacobi iteration #', I]);
   % Next iterate
-  sol = sol + omega * (D \ (b - A * sol));  
+  sol = sol + omega * ((b - A * sol) ./ D);
 end
 end
