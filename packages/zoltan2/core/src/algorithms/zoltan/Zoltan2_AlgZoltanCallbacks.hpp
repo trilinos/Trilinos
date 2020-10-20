@@ -868,7 +868,7 @@ static int zoltanHierPart(void *data,
   part_t num_unique_groups = machine->getNumUniqueGroups();
 
   std::vector<part_t> group_count;
-  machine->getGroupCount2(group_count);
+  machine->getGroupCountVector(group_count);
 
   int group_idx;
 
@@ -962,13 +962,13 @@ static void zoltanHierMethod(void *data,
 
   if (level == 0) {
     zz->Num_Unique_Groups = num_unique_groups;
-    machine->getGroupCount2(group_count);
+    machine->getGroupCountVector(group_count);
   }
   else if (level == 1) {
     std::vector<std::vector<part_t>> subgroup_counts;
     std::vector<part_t> num_unique_subgroups;
 
-    machine->getGroupCount2(group_count);
+    machine->getGroupCountVector(group_count);
     machine->getSubgroupCounts(subgroup_counts);
     machine->getNumUniqueSubgroups(num_unique_subgroups);
 
@@ -998,7 +998,7 @@ static void zoltanHierMethod(void *data,
     std::vector<std::vector<part_t>> subgroup_counts;
     std::vector<part_t> num_unique_subgroups;
 
-    machine->getGroupCount2(group_count);
+    machine->getGroupCountVector(group_count);
     machine->getSubgroupCounts(subgroup_counts);
     machine->getNumUniqueSubgroups(num_unique_subgroups);
 
