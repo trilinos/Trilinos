@@ -562,10 +562,6 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
                                            this->baseInputAdapter_));
     }
     else if (algName_ == std::string("hier")) {
-
-      if (this->comm_->getRank() == 0)
-        std::cout << "Building algorithm" << std::endl;
-
       this->algorithm_ = rcp(new AlgZoltan<Adapter>(this->envConst_,
                                            this->comm_,
                                            this->baseInputAdapter_,
@@ -814,9 +810,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
     else if (algorithm == std::string("hier"))
     {
-      if (this->comm_->getRank() == 0)
-        std::cout << "\nfound hier" << std::endl;
-
       algName_ = algorithm;
       
       pl.set("Machine_Optimization_Level", 10, 

@@ -1,5 +1,5 @@
-#ifndef _ZOLTAN2_MACHINE_FATTREE_LIBTEST_HPP_
-#define _ZOLTAN2_MACHINE_FATTREE_LIBTEST_HPP_
+#ifndef _ZOLTAN2_MACHINE_FATTREE_LIB_HPP_
+#define _ZOLTAN2_MACHINE_FATTREE_LIB_HPP_
 
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -13,6 +13,44 @@ namespace Zoltan2{
 
 /*! \brief A FatTree (e.g. Astra, Summit, & Sierra) Machine Class for
  *  production.
+ *
+ *  Required to be on Summit and -D ZOLTAN2_MACHINE_FATTREE:BOOL=ON.
+ *
+ *  Summit racks are arranged in rows (a-h) and columns (01-36) with 
+ *  each rack containing 18 nodes.
+ *
+ *  A group of 18 racks (2 per row) forms a switch-neighborhood which is the 
+ *  highest level of division in our fat-tree model.
+ *  Within the switch-neighborhood, racks are the next level of division.
+ *  And finally within a rack, nodes are the last level of division.
+ *
+ *  Key
+ *  R   = rack
+ *  NB  = switch-neighborhood
+ *
+ *  SUMMIT RACK LAYOUT (ON THE FLOOR):
+ *
+ *                        NB 0                                  NB 1
+ *  Row a: R R R R R R R R R R R R R R R R R R | R R R R R R R R R R R R R R R R R R 
+ *          
+ *                        NB 2                                  NB 3
+ *  Row b: R R R R R R R R R R R R R R R R R R | R R R R R R R R R R R R R R R R R R  
+ *
+ *                        NB 4                                  NB 5
+ *  Row c: R R R R R R R R R R R R R R R R R R | R R R R R R R R R R R R R R R R R R  
+ *
+ *                        NB 6                                  NB 7
+ *  Row d: R R R R R R R R R R R R R R R R R R | R R R R R R R R R R R R R R R R R R  
+ *  ...
+ *
+ *
+ *  Original coordinate           [1, 24, 10]   = Row b, 25th Rack, 11th Node
+ *  Transformed coordinate        [3, 6, 10]    = 4th NB, 7th Rack in NB, 11th Node in Rack
+ *
+ *  Original machine extents      [8, 36, 18]   = 8 Rows, 36 Racks, 18 Nodes
+ *  Transformed machine extents   [16, 18, 18]  = 16 NBs, 18 Racks per NB, 18 Nodes 
+ *
+ *
  */
 
 template <typename pcoord_t, typename part_t>
@@ -177,17 +215,17 @@ public:
         << actual_machine_extent[0] << ")! Exiting. "
         << std::endl;
 
-        exit(0);
+      throw std::runtime_error("XYZ coord is outside actual machine extents in FatTree Machine Class"); 
     }
 
     const Teuchos::ParameterEntry *pe2 =
       this->pl->getEntryPtr("Machine_Optimization_Level");
 
-    if (pe2 || 1) {
+    if (pe2) {
 
       int optimization_level = pe2->getValue<int>(&optimization_level);
 
-      if (optimization_level > 0 || 1) {
+      if (optimization_level > 0) {
         is_transformed = true;
 
         if (this->myRank == 0)
@@ -436,13 +474,6 @@ public:
   bool getSubgroupCounts(std::vector<std::vector<part_t>> &subgrp_counts) const override {
 
     if (subgroup_counts.size() > 0 && subgroup_counts[0].size() > 0) {
-//      for (int i = 0; i < num_unique_groups; ++i) {
-
-//        std::copy(subgroup_counts[i].begin(),
-//                  subgroup_counts[i].end(),
-//                  subgrp_counts[i]);
-
-//      }
 
       subgrp_counts = subgroup_counts;
 
@@ -511,16 +542,18 @@ public:
       return false;
   }
 
-  // Return the fake "RCA" coord for this rank for testing
+  // Return the "RCA" coord for this rank from gethostname
+  // Accurate only for OLCF Summit's layout and gethostname
+  // NOTE: Must write your own convertHostnameToCoordinate 
+  // function for a new machine.
   bool getMyActualMachineCoordinate(std::vector<pcoord_t> &xyz) {
 
     char hostname[7];
     int rc = gethostname(hostname, sizeof(hostname));
 
-//    if (rc != 0) {
-//      std::cout << "\nrc: " << rc << " Error reading hostname: " << hostname << ". Done!" << std::endl;
-//      exit(1);
-//    }
+    if (rc != 0) {
+      throw std::runtime_error("Error reading hostname for FatTree machine class"); 
+    }
 
     convertHostnameToCoordinate(hostname, xyz);
 
@@ -599,8 +632,7 @@ public:
     if (rank1 == rank2)
       return true;
     if (rank1 >= this->numRanks || rank2 >= this->numRanks) {
-      std::cerr << "Rank " << rank1 << " " << rank2 << " are outside bounds for the machine ranks: " << this->numRanks << std::endl;
-      exit(1);
+      throw std::runtime_error("Rank outside numRanks in getHopCount of FatTree Machine Class");
     }
 
     if (this->is_transformed) {
@@ -661,33 +693,25 @@ private:
   pcoord_t **actual_procCoords;
 
   // Maximum extents for each dimension, transformed or actual
-//  part_t *transformed_machine_extent;
-//  part_t *actual_machine_extent;
-
   std::vector<int> transformed_machine_extent;
   std::vector<int> actual_machine_extent;
 
   // Number of groups (FatTree neighborhoods) with nonzero
   // nodes allocated
   part_t num_unique_groups;
+
   // Distribution of nodes in each group (zero node groups
   // have been trimmed)
-//  part_t *group_count;
-
   std::vector<part_t> group_count;
 
+  // Number of subgroups
   std::vector<part_t> num_unique_subgroups;
   std::vector<std::vector<part_t>> subgroup_counts;
-
-  // Number of subgroup
-//  part_t *num_unique_subgroups;
-//  part_t **subgroup_counts;
 
   // Are out coordinates transformed?
   bool is_transformed;
 
   const Teuchos::ParameterList *pl;
-
 
   // reduceAll the machine coordinates
   void gatherMachineCoordinates(pcoord_t** coords, int netDim,

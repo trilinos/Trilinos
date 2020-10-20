@@ -369,9 +369,6 @@ static int set_hier_part_sizes(HierPartParams *hpp, float *part_sizes) {
                            hpp->num_parts * part_weight_dim,
                            part_ids, wgt_idx, level_part_sizes);
 
-
-  printf("\n\nEnd of SET_PART_SIZES\n\n");
-
 End:
   ZOLTAN_FREE(&my_level_part_sizes);
   ZOLTAN_FREE(&level_part_sizes);
@@ -1391,9 +1388,6 @@ int Zoltan_Hier(
   hpp.geom_vec=NULL;
   hpp.spec=NULL;
   hpp.use_timers=0;
-
-  if (zz->Proc == 0)
-    printf("\n\nStart HIERRRRRRRRR\n\n");
 
   /* Cannot currently do hierarchical balancing for num_parts != num_procs */
   if ((zz->Num_Proc != zz->LB.Num_Global_Parts) ||

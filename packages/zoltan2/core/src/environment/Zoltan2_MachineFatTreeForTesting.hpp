@@ -12,8 +12,7 @@
 namespace Zoltan2{
 
 /*! \brief A FatTree (e.g. Astra, Summit, & Sierra) Machine Class for
- *  testing only. A more realistic machine should be used for
- *  task mapping (i.e. see Zoltan2_MachineFatTree.hpp).
+ *  testing.
  */
 
 template <typename pcoord_t, typename part_t>
@@ -45,29 +44,21 @@ public:
     pl(NULL) {
 
 
-//    comm.barrier();
-
     if (this->myRank == 0)
-        std::cout << "\nCreating FatTree Machine!. Entered no PL FatTree\n" << std::endl;
+        std::cout << "\nCreating FatTree Machine For Testing. Entered no ParameterList FatTree\n" << std::endl;
 
-//    actual_machine_extent = new int[actual_networkDim];
     getActualMachineExtent(actual_machine_extent);
-
-//    transformed_machine_extent = new int[transformed_networkDim];
 
     transformed_machine_extent =
         { nborhoods_per_row * actual_machine_extent[0],
           actual_machine_extent[1] / nborhoods_per_row,
           actual_machine_extent[2]};
 
-
-
     // Number of parts in each FatTree network neighborhood
     // a neighborhood is defined as links connected by the L1 switch
     // (below director level switches)
     // (i.e. Row * nborhoods_per_row +
     // ( Col / (num_cols / nborhoods_per_row))  == Grp g)
-
 
     group_count.resize(actual_machine_extent[0]);
     subgroup_counts.resize(actual_machine_extent[0]);
@@ -86,8 +77,6 @@ public:
           sizeof(pcoord_t) * this->numRanks);
     }
 
-//    pcoord_t *xyz = new pcoord_t[actual_networkDim];
-
     std::vector<pcoord_t> xyz(actual_networkDim);
 
     if (this->myRank == 0)
@@ -100,8 +89,6 @@ public:
 
     for (size_t i = 0; i < xyz.size(); ++i)
       actual_procCoords[i][this->myRank] = xyz[i];
-//    delete [] xyz;
-
 
     group_count[int(xyz[0])] = 1;
     subgroup_counts[int(xyz[0])][int(xyz[1])] = 1;
@@ -142,9 +129,8 @@ public:
     pl(&pl_) {
 
     if (this->myRank == 0)
-      std::cout << "\nCreating FatTree Machine!. Entered  PL FatTree for transformation\n" << std::endl;
+      std::cout << "\nCreating FatTree Machine For Testing. Entered ParameterList FatTree for transformation\n" << std::endl;
 
-//    actual_machine_extent = new int[actual_networkDim];
     getActualMachineExtent(actual_machine_extent);
 
     transformed_machine_extent =
@@ -160,19 +146,28 @@ public:
 
     getMyActualMachineCoordinate(xyz);
 
-//    if (this->myRank == 0)
-//      std::cout << "\nTransforming Coordinates" << std::endl;
+    if(xyz[0] > actual_machine_extent[0] ||
+       xyz[1] > actual_machine_extent[1] ||
+       xyz[2] > actual_machine_extent[2]) {
+
+      std::cout << "Rank: " << this->myRank
+        << " Coord: (" << xyz[0]
+        << ", " << xyz[1] << ", " << xyz[2]
+        << ") is beyond extents ("
+        << actual_machine_extent[0] << ", "
+        << actual_machine_extent[0] << ", "
+        << actual_machine_extent[0] << ")! Exiting. "
+        << std::endl;
+
+      throw std::runtime_error("XYZ coord is outside actual machine extents in FatTree Machine Class"); 
+    }
 
     const Teuchos::ParameterEntry *pe2 =
       this->pl->getEntryPtr("Machine_Optimization_Level");
 
-    // Transform with mach opt level
     if (pe2) {
 
       int optimization_level = pe2->getValue<int>(&optimization_level);
-
-//      if (this->myRank == 0)
-//        std::cout << "\nMach Level: " << optimization_level << std::endl;
 
       if (optimization_level > 0) {
         is_transformed = true;
@@ -180,7 +175,6 @@ public:
         if (this->myRank == 0)
           std::cout << "\nOptimizing!" << std::endl;
 
-//        transformed_machine_extent = new int[transformed_networkDim];
         transformed_procCoords = new pcoord_t *[transformed_networkDim];
 
         // Allocate memory for transformed coordinates
@@ -201,7 +195,6 @@ public:
           subgroup_counts[i].resize(transformed_machine_extent[1]);
         }
 
-
         int transformed_group =
             nborhoods_per_row * xyz[0] +
             int(xyz[1] / transformed_machine_extent[1]);
@@ -217,7 +210,6 @@ public:
         transformed_procCoords[2][this->myRank] = transformed_node;
 
         // Group Count calculations
-
         group_count[transformed_group] = 1;
         subgroup_counts[transformed_group][transformed_subgroup] = 1;
 
@@ -230,7 +222,6 @@ public:
         printAllocation();
       }
     }
-
 
     // If no coordinate transformation, gather actual coords
     if (!is_transformed) {
@@ -321,23 +312,9 @@ public:
 
   // Return the fake "RCA" machine extents for testing
   bool getActualMachineExtent(std::vector<int> &nxyz) const {
-/*
-#if defined (HAVE_ZOLTAN2_RCALIB)
-    mesh_coord_t mxyz;
-    rca_get_max_dimension(&mxyz);
-
-    int dim = 0;
-    nxyz[dim++] = mxyz.mesh_x + 1; // X - group [0, ~100]
-    nxyz[dim++] = mxyz.mesh_y + 1; // Y - row within group [0, 5]
-    nxyz[dim++] = mxyz.mesh_z + 1; // Z - col within row [0, 15]
-    return true;
-#else
-    return false;
-#endif
-*/
 
    // Actual FatTree Coordinate Extents
-    nxyz[0] = 8;  // X - Row of rack on Summit floor, [A-H]
+    nxyz[0] = 8;  // X - Row of rack on Summit floor, [a-h]
     nxyz[1] = 36; // Y - Col of rack on Summit floor, [01-36]
     nxyz[2] = 18; // Z - Node within rack,            [01-18]
 
@@ -513,43 +490,24 @@ public:
       return false;
   }
 
-  // Return the fake "RCA" coord for this rank for testing
+  // Return simulated "RCA" coord for this rank from "gethostname"
+  // Accurate only for OLCF Summit's layout and gethostname
+  // NOTE: Must write your own convertHostnameToCoordinate 
+  // function for a new machine.
   bool getMyActualMachineCoordinate(std::vector<pcoord_t> &xyz) {
-/*
-#if defined (HAVE_ZOLTAN2_RCALIB)
-    // Cray node info for current node
-    rs_node_t nodeInfo;
-    rca_get_nodeid(&nodeInfo);
 
-    // Current node ID
-    int NIDs = (int)nodeInfo.rs_node_s._node_id;
-
-    mesh_coord_t node_coord;
-    int returnval = rca_get_meshcoord((uint16_t)NIDs, &node_coord);
-    if (returnval == -1) {
-      return false;
-    }
-    xyz[0] = node_coord.mesh_x;
-    xyz[1] = node_coord.mesh_y;
-    xyz[2] = node_coord.mesh_z;
-    return true;
-#else
-    return false;
-#endif
-*/
-//    srand(this->myRank);
-
+    char hostname[7];
+    
     int large_primex = 1117;
     int large_primey = 5903;
     int large_primez = 7393;
     int base = 3947;
 
-    int x = (base + this->myRank * large_primex) % 8;   // [A-H]
+    int x = (base + this->myRank * large_primex) % 8;   // [a-h]
     int y = (base + this->myRank * large_primey) % 36 + 1;  // [01-36]
     int z = (base + this->myRank * large_primez) % 18 + 1;  // [01-18]
 
-
-    char row  = 'A' + x; // convert x to letter
+    char row  = 'a' + x; // convert x to letter
 
     char col[2];
     col[0] = '0' + int(y / 10);
@@ -559,13 +517,11 @@ public:
     node[0] = '0' + int(z / 10);
     node[1] = '0' + (z % 10);
 
-//    if (this->myRank == 0) {
-//      std::cout << "\nRank: " << this->myRank << " Row: " << row
-//        << " Col: " << col[0] << col[1]
-//        << " Node: " << node[0] << node[1] << std::endl;
-  //  }
-
-    char hostname[6];
+    if (this->myRank == 0) {
+      std::cout << "\nRank: " << this->myRank << " Row: " << row
+        << " Col: " << col[0] << col[1]
+        << " Node: " << node[0] << node[1] << std::endl;
+    }
 
     hostname[0] = row;
     hostname[1] = col[0];
@@ -574,25 +530,7 @@ public:
     hostname[4] = node[0];
     hostname[5] = node[1];
 
-//    if (this->myRank == 0) {
-//    std::cout << "\nRank: " << this->myRank << " Hostname: " << hostname << std::endl;
-//    }
-//      std::cout << "\nRank: " << this->myRank << " Hostname: " << hostname << std::endl;
     convertHostnameToCoordinate(hostname, xyz);
-
-//    std::cout << "\nRank: " << this->myRank
-//      << " X: " << xyz[0]
-//      << " Y: " << xyz[1]
-//      << " Z: " << xyz[2] << std::endl;
-
-    //xyz[0] = x;
-    //xyz[1] = y;
-    //xyz[2] = z;
-
-      // Needed for test/unit_test/Machine.cpp PASS
-//    xyz[0] = this->myRank;
-//    xyz[1] = this->numRanks;
-//    xyz[2] = this->numRanks + 1;
 
     return true;
   }
@@ -664,14 +602,12 @@ public:
 
   // Return (approx) hop count from rank1 to rank2. Does not account for
   // FatTree's dynamic routing.
-  virtual bool getHopCount(int rank1, int rank2, pcoord_t &hops) const override {
-
+  bool getHopCount(int rank1, int rank2, pcoord_t &hops) const {
 
     if (rank1 == rank2)
       return true;
     if (rank1 >= this->numRanks || rank2 >= this->numRanks) {
-      std::cerr << "Rank outside bounds for the machine ranks";
-      exit(1);
+      throw std::runtime_error("Rank outside numRanks in getHopCount of FatTree Machine Class");
     }
 
     if (this->is_transformed) {
@@ -858,8 +794,8 @@ private:
 
     subgroup_counts.resize(num_unique_groups);
 
+/*
     if (this->myRank == 0) {
-
       std::cout << "\nTransformed: " << is_transformed << std::endl;
       std::cout << "Num_Uniques_Groups: " << num_unique_groups << std::endl;
 
@@ -884,14 +820,14 @@ private:
       }
       std::cout << std::endl;
     }
-
+*/
   }
 
   // Convert hostname to coordinate
   bool convertHostnameToCoordinate(const char *nodename, std::vector<pcoord_t> &xyz) {
 
-    // [A-H]
-    int x = nodename[0] - 'A';
+    // [a-h]
+    int x = nodename[0] - 'a';
 
     // [0-35]
     int y10 = nodename[1] - '0';
@@ -910,9 +846,6 @@ private:
 
     return true;
   }
-
-
-
 
 };
 
