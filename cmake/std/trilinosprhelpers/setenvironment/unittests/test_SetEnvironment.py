@@ -44,7 +44,7 @@ def mock_module_pass(*args):
     """
     Mock the module() command that 'passes', returning a 0.
     """
-    print("mock> module({}) ==> 0".format(args))
+    print("\nmock> module({}) ==> 0".format(args))
     return 0
 
 
@@ -52,7 +52,7 @@ def mock_module_fail(*args):
     """
     Mock the module() command that 'fails', returning a 1.
     """
-    print("mock> module({}) ==> 1".format(args))
+    print("\nmock> module({}) ==> 1".format(args))
     return 1
 
 
@@ -347,6 +347,85 @@ class SetEnvironmentTest(TestCase):
         self._setEnv_test(filename, profile, truth=truth, module_fail=module_fail)
 
 
+    def test_SetEnvironment_ModuleRemoveMulti(self):
+        """
+        Test Module Remove.
+
+        This test loads a sequence of sections that adds a module-load gcc/1.0
+        and a module-load gcc/2.0 so that there are two 'gcc' modules being loaded.
+        The Module_Remove section then issues a module-remove gcc.
+
+        The expected result of this is that we have an empty set of actions
+        since module-remove removes ALL occurrences of the module load operation.
+        """
+        filename    = self._filename
+        profile     = "Module_Remove"
+        module_fail = False
+
+        truth = {
+            'module-list': {},
+            'module-op': [],
+            'setenv': [],
+            'unsetenv': []
+        }
+
+        self._setEnv_test(filename, profile, truth=truth, module_fail=module_fail)
+
+
+    def test_SetEnvironment_ModuleUnloadMulti(self):
+        """
+        Test Module Unload.
+
+        This test loads a sequence of sections that adds a module-load gcc/1.0
+        and a module-load gcc/2.0 so that there are two 'gcc' modules being loaded.
+        The Module_Unload section then issues a `module-unload gcc`.
+
+        The expected result of this is that we will have the following items in the
+        module operation list:
+        - ['load', 'gcc/1.0']
+        - ['load', 'gcc/2.0']
+        - ['unload', 'gcc']
+        In practice, this wouldn't be likely to happen but one might have a project
+        which needs two versions of Python so they might have a module-load python/2.7.3
+        but that might be something that environment modules don't allow (I'd need to
+        check) since two modules of the same kind could cause problems w/rt to envvars
+        such as PYTHON_HOME in the python exampe.
+
+        One thing that the module-unload does do though is that it will remove the
+        'gcc' entry from the modle-list dictionary, which is just used for bookkeeping.
+        """
+        filename    = self._filename
+        profile     = "Module_Unload"
+        module_fail = False
+
+        truth = {
+            'module-list': {},
+            'module-op': [['load','gcc/1.0'],['load','gcc/2.0'],['unload','gcc']],
+            'setenv': [],
+            'unsetenv': []
+        }
+
+        self._setEnv_test(filename, profile, truth=truth, module_fail=module_fail)
+
+
+    def test_SetEnvironment_ModulePurge(self):
+        """
+        Test the `module-purge` operation.
+        """
+        filename    = self._filename
+        profile     = "Module_Purge"
+        module_fail = False
+
+        truth = {
+            'module-list': {},
+            'module-op': [['purge','']],
+            'setenv': [],
+            'unsetenv': []
+        }
+
+        self._setEnv_test(filename, profile, truth=truth, module_fail=module_fail)
+
+
     def test_SetEnvironment_actions_A(self):
         setEnv = SetEnvironment(self._filename, "TEST_PROFILE_001")
         #with self.assertRaisesRegexp(TypeError, "Invalid type provided"):
@@ -501,6 +580,7 @@ class SetEnvironmentTest(TestCase):
 
         print("\nExpected Actions:")
         pprint(truth, indent=4, width=90)
+        print("")
 
         # Validation Checks
         self.assertIsInstance( setEnv.actions, dict )

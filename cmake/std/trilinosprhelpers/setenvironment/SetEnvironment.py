@@ -169,7 +169,7 @@ class SetEnvironment(object):
             params = m[1:]
             cmd_status = 0
             print("[module] module {} {}".format(op, " ".join(params)), end="")
-            if   0 == len(params) and op in ["purge"]:
+            if   1 == len(params) and op in ["purge"]:
                 cmd_status = max(ModuleHelper.module(op), status)
             elif 1 == len(params):
                 cmd_status = max(ModuleHelper.module(op, params[0]), status)
@@ -383,8 +383,9 @@ class SetEnvironment(object):
             raise KeyError(message)
 
         # Verify that we got a section, if it's None then raise an exception.
-        if sec is None:
-            raise Exception("ERROR: Unable to load section '{}' from configuration for unknown reason.".format(config_section))
+        if sec is None:                                                                             # pragma: no cover
+            raise Exception("ERROR: Unable to load section '{}'".format(config_section) +           # pragma: no cover
+                            " from configuration for unknown reason.")                              # pragma: no cover
 
         # If processed_secs is the default parameter then we seed it with {}
         # Note: We cannot set the default processed_secs to {} or we'll have
@@ -399,56 +400,58 @@ class SetEnvironment(object):
 
         processed_secs[config_section] = True
 
-        for k,v in sec.items():
+        for op2,value in sec.items():
             #print("> k=`{}` v=`{}`".format(k,v))
-            v      = str(v.strip('"'))
-            oplist = k.split()
-            op     = str(oplist[0])
+            value  = str(value.strip('"'))
+            oplist = op2.split()
+            op1    = str(oplist[0])
 
             if(2==len(oplist)):
-                k = str(oplist[1])
+                op2 = str(oplist[1])
 
-            if "use" == op:
-                new_profile = k
+            if "use" == op1:
+                new_profile = op2
                 self._load_configuration_r(new_profile, actions, processed_secs)
 
-            elif "module-purge" == op:
+            elif "module-purge" == op1:
                 actions["module-op"].append(["purge", ''])
 
-            elif "module-use" == op:
-                actions["module-op"].append(["use", v])
+            elif "module-use" == op1:
+                actions["module-op"].append(["use", value])
 
-            elif "module-load" == op:
-                if 0 == len(v) or v is None:
-                    actions["module-op"].append(["load", k])
+            elif "module-load" == op1:
+                if 0 == len(value) or value is None:
+                    actions["module-op"].append(["load", op2])
                 else:
-                    actions["module-list"][k] = True
-                    actions["module-op"].append(["load", "{}/{}".format(k,v)])
+                    actions["module-list"][op2] = True
+                    actions["module-op"].append(["load", "{}/{}".format(op2,value)])
 
-            elif "module-remove" == op:
-                if k in actions["module-list"].keys():
-                    del actions["module-list"][k]
+            elif "module-remove" == op1:
+                if op2 in actions["module-list"].keys():
+                    del actions["module-list"][op2]
 
-                regexp = re.compile(r"^{}/.*".format(k))
+                regexp = re.compile(r"^{}/.*".format(op2))
                 new_modules = list(filter(lambda x : not regexp.search(x[1]), actions["module-op"]))
                 actions["module-op"] = new_modules
 
-            elif "module-unload" == op:
-                actions["module-op"].append(["unload", k])
+            elif "module-unload" == op1:
+                actions["module-op"].append(["unload", op2])
                 # If the module is in the list of keys we have, we remove it from
                 # module-list since the net effect of a load/unload would be to not
                 # have the module.
-                if(k in actions['module-list'].keys()):
-                    del actions['module-list'][k]
+                # Note: This does NOT remove it from the list of operations... just from
+                # module-list entry, which is used for bookkeeping.
+                if(op2 in actions['module-list'].keys()):
+                    del actions['module-list'][op2]
 
-            elif "module-swap" == op:
-                actions["module-op"].append(["swap", k, v])
+            elif "module-swap" == op1:
+                actions["module-op"].append(["swap", op2, value])
 
-            elif "setenv" == op:
-                actions["setenv"].append( {'key': k.upper(), 'value': v} )
+            elif "setenv" == op1:
+                actions["setenv"].append( {'key': op2.upper(), 'value': value} )
 
-            elif "unsetenv" == op:
-                actions["unsetenv"].append(k.upper())
+            elif "unsetenv" == op1:
+                actions["unsetenv"].append(op2.upper())
 
         return actions
 
