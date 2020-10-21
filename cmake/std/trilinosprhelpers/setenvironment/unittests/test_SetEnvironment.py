@@ -382,6 +382,12 @@ class SetEnvironmentTest(TestCase):
             setEnv.actions = {'setenv': None, 'unsetenv': None, 'module-op': None}
 
 
+    def test_SetEnvironment_missing_section_name(self):
+        setEnv = SetEnvironment(self._filename, "MISSING SECTION NAME!")
+        with self.assertRaises(KeyError):
+            setEnv.pretty_print()       # this should throw a KeyError
+
+
     def test_SetEnvironment_module_too_many_params(self):
         setEnv = SetEnvironment(self._filename, "TEST_PROFILE_001")
         setEnv.actions = {'setenv': None,
