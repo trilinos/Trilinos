@@ -10,8 +10,10 @@ FUNCTION(KOKKOS_TPL_OPTION PKG DEFAULT)
 
   IF (PARSED_TRIBITS)
     #this is also a TPL option you can activate with Tribits
-    #Tribits brings its own default
-    SET(DEFAULT ${TPL_ENABLE_${PARSED_TRIBITS}})
+    IF (NOT "${TPL_ENABLE_${PARSED_TRIBITS}}" STREQUAL "")
+      #Tribits brought its own default that should take precedence
+      SET(DEFAULT ${TPL_ENABLE_${PARSED_TRIBITS}})
+    ENDIF()
   ENDIF()
 
   KOKKOS_ENABLE_OPTION(${PKG} ${DEFAULT} "Whether to enable the ${PKG} library")
