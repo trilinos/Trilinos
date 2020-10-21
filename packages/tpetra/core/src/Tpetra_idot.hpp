@@ -203,7 +203,7 @@ void blockingDotImpl(
   {
     //compute local result on temporary device view, then copy that to host.
     result_dev_view_type localDeviceResult(Kokkos::ViewAllocateWithoutInitializing("DeviceLocalDotResult"), numVecs);
-    idotLocal<SC, LO, GO, NT, result_dev_view_type, mirror_mem_space>(localDeviceResult, X, Y);
+    idotLocal<SC, LO, GO, NT, result_dev_view_type, dev_mem_space>(localDeviceResult, X, Y);
     //NOTE: no fence is required: deep_copy will fence.
     Kokkos::deep_copy(localHostResult, localDeviceResult);
   }
