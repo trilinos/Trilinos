@@ -217,7 +217,7 @@ namespace MueLu {
     TEUCHOS_ASSERT(dirichletDomain.extent(0) == domMap->getNodeNumElements());
     RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > myColsToZero = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap, /*zeroOut=*/true);
     // Find all local column indices that are in Dirichlet rows, record in myColsToZero as 1.0
-    auto myColsToZeroView = myColsToZero->template getLocalView<typename Node::device_type>();
+    auto myColsToZeroView = myColsToZero->getDeviceLocalView();
     auto localMatrix = A.getLocalMatrix();
     Kokkos::parallel_for("MueLu:RefMaxwell::DetectDirichletCols", range_type(0,rowMap->getNodeNumElements()),
                          KOKKOS_LAMBDA(const LocalOrdinal row) {
@@ -241,8 +241,8 @@ namespace MueLu {
     }
     else
       globalColsToZero = myColsToZero;
-    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(globalColsToZero->template getLocalView<typename Node::device_type>(),dirichletDomain);
-    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myColsToZero->template getLocalView<typename Node::device_type>(),dirichletCols);
+    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(globalColsToZero->getDeviceLocalView(),dirichletDomain);
+    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myColsToZero->getDeviceLocalView(),dirichletCols);
   }
 
 
@@ -1654,7 +1654,7 @@ namespace MueLu {
                                  }
                                });
 
-          auto localNullspace = Nullspace_->template getLocalView<device_t>();
+          auto localNullspace = Nullspace_->getDeviceLocalView();
 
           // enter values
           if (D0_Matrix_->getNodeMaxNumRowEntries()>2) {
@@ -1753,7 +1753,7 @@ namespace MueLu {
                                  }
                                });
 
-          auto localNullspace = Nullspace_->template getLocalView<device_t>();
+          auto localNullspace = Nullspace_->getDeviceLocalView();
 
           // enter values
           if (D0_Matrix_->getNodeMaxNumRowEntries()>2) {
