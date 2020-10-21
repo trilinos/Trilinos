@@ -59,6 +59,8 @@
 #include "MueLu_MatlabUtils.hpp"
 #include "MueLu_TwoLevelMatlabFactory.hpp"
 #include "MueLu_SingleLevelMatlabFactory.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
 
 using namespace std;
 using namespace Teuchos;
@@ -262,30 +264,46 @@ mxArray* TpetraSystem<Scalar>::solve(RCP<ParameterList> params, RCP<Tpetra::CrsM
     RCP<Tpetra_MultiVector> rhs = loadDataFromMatlab<RCP<Tpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(b);
     RCP<Tpetra_MultiVector> lhs = rcp(new Tpetra_MultiVector(map, rhs->getNumVectors()));
     //rhs is initialized, lhs is not
-    iters = 0;
     // Default params
     params->get("Output Frequency", 1);
     params->get("Output Style", Belos::Brief);
 
+    bool verbose;
 #ifdef VERBOSE_OUTPUT
     params->get("Verbosity", Belos::Errors | Belos::Warnings | Belos::Debug | Belos::FinalSummary | Belos::IterationDetails | Belos::OrthoDetails | Belos::TimingDetails | Belos::StatusTestDetails);
+    verbose = true;
 #else
-    params->get("Verbosity", Belos::Errors + Belos::Warnings + Belos::IterationDetails + Belos::Warnings + Belos::StatusTestDetails);
+    params->get("Verbosity", Belos::Errors | Belos::Warnings | Belos::IterationDetails | Belos::Warnings | Belos::StatusTestDetails);
+    verbose = false;
 #endif
-
-    RCP<Belos::LinearProblem<Scalar, Tpetra_MultiVector, Tpetra_Operator>> problem = rcp(new Belos::LinearProblem<Scalar, Tpetra_MultiVector, Tpetra_Operator>(matrix, lhs, rhs));
+    //register all possible solvers
+    auto problem = rcp(new Belos::LinearProblem<Scalar, Tpetra_MultiVector, Tpetra_Operator>(matrix, lhs, rhs));
     problem->setRightPrec(prec);
-    bool set = problem->setProblem();
-    TEUCHOS_TEST_FOR_EXCEPTION(!set, runtime_error, "Linear Problem failed to set up correctly!");
-    Belos::SolverFactory<Scalar, Tpetra_MultiVector, Tpetra_Operator> factory;
-    string solverName = params->get("solver", "GMRES");
-    RCP<Belos::SolverManager<Scalar, Tpetra_MultiVector, Tpetra_Operator>> solver = factory.create(solverName, params);
-    solver->setProblem(problem);
-    Belos::ReturnType ret = solver->solve();
+    if(!problem->setProblem())
+    {
+      throw std::runtime_error("ERROR: failed to set up Belos problem.");
+    }
+    std::string solverName = "CG";
+    if(params->isParameter("solver"))
+    {
+      solverName = params->template get<std::string>("solver");
+    }
+    Belos::ReturnType ret;
+    if(solverName == "GMRES")
+    {
+      Belos::PseudoBlockGmresSolMgr<Scalar,Tpetra_MultiVector,Tpetra_Operator> solver(problem, params);
+      ret = solver.solve();
+      iters = solver.getNumIters();
+    }
+    else if(solverName == "CG")
+    {
+      Belos::PseudoBlockCGSolMgr<Scalar,Tpetra_MultiVector,Tpetra_Operator> solver(problem, params);
+      ret = solver.solve();
+      iters = solver.getNumIters();
+    }
     if(ret == Belos::Converged)
     {
       mexPrintf("Success, Belos converged!\n");
-      iters = solver->getNumIters();
       output = saveDataToMatlab(lhs);
     }
     else
@@ -571,7 +589,11 @@ int EpetraSystem::setup(const mxArray* matlabA, bool haveCoords, const mxArray* 
       /* Matrix Fill */
       A = loadDataFromMatlab<RCP<Epetra_CrsMatrix>>(matlabA);
       if(haveCoords)
-        List->set("Coordinates", loadDataFromMatlab<RCP<Epetra_MultiVector>>(matlabCoords));
+      {
+        //Create 'user data' sublist if it doesn't already exist
+        auto userData = Teuchos::sublist(List, "user data");
+        userData->set("Coordinates", loadDataFromMatlab<RCP<Epetra_MultiVector>>(matlabCoords));
+      }
       prec = MueLu::CreateEpetraPreconditioner(A, *List);
       //underlying the Epetra_Operator prec is a MueLu::EpetraOperator
       RCP<MueLu::EpetraOperator> meo = rcp_static_cast<MueLu::EpetraOperator, Epetra_Operator>(prec);
@@ -703,7 +725,51 @@ void TpetraSystem<Scalar>::normalSetup(const mxArray* matlabA, bool haveCoords, 
   RCP<Tpetra::Operator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > opA(A);
   RCP<MueLu::TpetraOperator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mop;
   if(haveCoords)
-    List->set("Coordinates", loadDataFromMatlab<RCP<Tpetra_MultiVector_double>>(matlabCoords));
+  {
+    auto userData = Teuchos::sublist(List, "user data");
+    userData->set("Coordinates", loadDataFromMatlab<RCP<Tpetra_MultiVector_double>>(matlabCoords));
+  }
+  //Create the nullspace if not already set by user through XML
+  if(!(List->isSublist("level 0") && List->sublist("level 0", true).isParameter("Nullspace"))
+    && !(List->isSublist("user data") && List->sublist("user data", true).isParameter("Nullspace")))
+  {
+    int nPDE = MasterList::getDefault<int>("number of equations");
+    if (List->isSublist("Matrix"))
+    {
+      // Factory style parameter list
+      const Teuchos::ParameterList& operatorList = List->sublist("Matrix");
+      if (operatorList.isParameter("PDE equations"))
+        nPDE = operatorList.get<int>("PDE equations");
+    }
+    else if (List->isParameter("number of equations"))
+    {
+      // Easy style parameter list
+      nPDE = List->get<int>("number of equations");
+    }
+    mexPrintf("** Constructing nullspace for %d PDEs\n", nPDE);
+    auto domainMap = A->getDomainMap();
+    auto nullspace = rcp(new Tpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(domainMap, nPDE));
+    if (nPDE == 1)
+    {
+      nullspace->putScalar(Teuchos::ScalarTraits<Scalar>::one());
+    }
+    else
+    {
+      typedef typename Teuchos::ArrayRCP<Scalar>::size_type arrayRCPSizeType;
+      for (int i = 0; i < nPDE; i++)
+      {
+        Teuchos::ArrayRCP<Scalar> nsData = nullspace->getDataNonConst(i);
+        for (arrayRCPSizeType j = 0; j < nsData.size(); j++)
+        {
+          mm_GlobalOrd GID = domainMap->getGlobalElement(j) - domainMap->getIndexBase();
+          if ((GID - i) % nPDE == 0)
+            nsData[j] = Teuchos::ScalarTraits<Scalar>::one();
+        }
+      }
+    }
+    auto userData = Teuchos::sublist(List, "user data");
+    userData->set("Nullspace", nullspace);
+  }
   mop = MueLu::CreateTpetraPreconditioner<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(opA, *List);
   prec = rcp_implicit_cast<Tpetra::Operator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(mop);
 
@@ -986,7 +1052,7 @@ MODE_TYPE sanity_check(int nrhs, const mxArray *prhs[])
   MODE_TYPE rv = MODE_ERROR;
   /* Check for mode */
   if(nrhs == 0)
-    mexErrMsgTxt("Error: Invalid Inputs\n");
+    mexErrMsgTxt("Error: muelu() expects at least one argument\n");
   /* Pull mode data from 1st Input */
   MODE_TYPE mode = (MODE_TYPE) loadDataFromMatlab<int>(prhs[0]);
   switch (mode)
@@ -1530,7 +1596,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         else if(MuemexSystemList::size() > 0 && nrhs == 2)
         {
           /* Cleanup one problem */
-          int probID = (int) *((double*) mxGetData(prhs[1]));
+          int probID = loadDataFromMatlab<int>(prhs[1]);
           mexPrintf("Cleaning up problem #%d\n", probID);
           rv = MuemexSystemList::remove(probID);
           if(rv)
