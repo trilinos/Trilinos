@@ -175,8 +175,8 @@ namespace MueLu {
     auto aggGraph = aggregates->GetGraph();
     auto numAggs  = aggGraph.numRows();
 
-    auto fineCoordsView   = fineCoords  ->template getLocalView<DeviceType>();
-    auto coarseCoordsView = coarseCoords->template getLocalView<DeviceType>();
+    auto fineCoordsView   = fineCoords  ->getDeviceLocalView();
+    auto coarseCoordsView = coarseCoords->getDeviceLocalView();
 
     // Fill in coarse coordinates
     {

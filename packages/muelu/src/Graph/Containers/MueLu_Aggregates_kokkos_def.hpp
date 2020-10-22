@@ -106,8 +106,8 @@ namespace MueLu {
 
       int myPID = GetMap()->getComm()->getRank();
 
-      auto vertex2AggId = vertex2AggId_->template getLocalView<DeviceType>();
-      auto procWinner   = procWinner_  ->template getLocalView<DeviceType>();
+      auto vertex2AggId = vertex2AggId_->getDeviceLocalView();
+      auto procWinner   = procWinner_  ->getDeviceLocalView();
 
       typename AppendTrait<decltype(aggregateSizes_), Kokkos::Atomic>::type aggregateSizesAtomic = aggregateSizes;
       Kokkos::parallel_for("MueLu:Aggregates:ComputeAggregateSizes:for", range_type(0,procWinner.size()),
@@ -134,8 +134,8 @@ namespace MueLu {
     if (static_cast<LO>(graph_.numRows()) == numAggregates)
       return graph_;
 
-    auto vertex2AggId = vertex2AggId_->template getLocalView<DeviceType>();
-    auto procWinner   = procWinner_  ->template getLocalView<DeviceType>();
+    auto vertex2AggId = vertex2AggId_->getDeviceLocalView();
+    auto procWinner   = procWinner_  ->getDeviceLocalView();
     auto sizes        = ComputeAggregateSizes();
 
     // FIXME_KOKKOS: replace by ViewAllocateWithoutInitializing + rows(0) = 0.

@@ -811,8 +811,8 @@ void ApplyMatVec(const Scalar alpha,
   // since in region formate the matrix is block diagonal
   // regionMatrix->apply(*X, *Y, Teuchos::NO_TRANS, alpha, beta);
   local_matrix_type localA = regionMatrix->getLocalMatrix();
-  auto localX = X->template getLocalView<device_type>();
-  auto localY = Y->template getLocalView<device_type>();
+  auto localX = X->getDeviceLocalView();
+  auto localY = Y->getDeviceLocalView();
   char spmvMode = KokkosSparse::NoTranspose[0];
   if (transposeMode == Teuchos::TRANS)
     spmvMode = KokkosSparse::Transpose[0];

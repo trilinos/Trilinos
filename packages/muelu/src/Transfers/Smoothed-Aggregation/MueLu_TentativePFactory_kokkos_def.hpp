@@ -502,8 +502,8 @@ namespace MueLu {
       auto aggGraph = aggregates->GetGraph();
       auto numAggs  = aggGraph.numRows();
 
-      auto fineCoordsView   = fineCoords  ->template getLocalView<DeviceType>();
-      auto coarseCoordsView = coarseCoords->template getLocalView<DeviceType>();
+      auto fineCoordsView   = fineCoords  ->getDeviceLocalView();
+      auto coarseCoordsView = coarseCoords->getDeviceLocalView();
 
       // Fill in coarse coordinates
       {
@@ -613,8 +613,8 @@ namespace MueLu {
     GO globalOffset = amalgInfo->GlobalOffset();
 
     // Extract aggregation info (already in Kokkos host views)
-    auto         procWinner    = aggregates->GetProcWinner()  ->template getLocalView<DeviceType>();
-    auto         vertex2AggId  = aggregates->GetVertex2AggId()->template getLocalView<DeviceType>();
+    auto         procWinner    = aggregates->GetProcWinner()  ->getDeviceLocalView();
+    auto         vertex2AggId  = aggregates->GetVertex2AggId()->getDeviceLocalView();
     const size_t numAggregates = aggregates->GetNumAggregates();
 
     int myPID = aggregates->GetMap()->getComm()->getRank();
@@ -707,8 +707,8 @@ namespace MueLu {
     coarseNullspace = MultiVectorFactory::Build(coarseMap, NSDim);
 
     // Pull out the nullspace vectors so that we can have random access (on the device)
-    auto fineNS   = fineNullspace  ->template getLocalView<DeviceType>();
-    auto coarseNS = coarseNullspace->template getLocalView<DeviceType>();
+    auto fineNS   = fineNullspace  ->getDeviceLocalView();
+    auto coarseNS = coarseNullspace->getDeviceLocalView();
 
     size_t nnz = 0;                       // actual number of nnz
 
