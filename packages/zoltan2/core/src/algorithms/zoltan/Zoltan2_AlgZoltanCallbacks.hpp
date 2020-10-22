@@ -60,10 +60,10 @@
 #include <Zoltan2_TPLTraits.hpp>
 #include <zoltan_cpp.h>
 
-extern "C" {
+//extern "C" {
 #include <zz_const.h>
 #include <zoltan_mem.h>
-}
+//}
 
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgZoltanCallbacks.hpp
@@ -708,9 +708,8 @@ static void zoltanNumEdgesMulti_withGraphModel(void *data,
   ArrayView<const gno_t>    adjIds;
   ArrayView<const offset_t> offsets;
   ArrayView<input_t>        ewgts;
-  size_t nLocalEdges;
 
-  nLocalEdges = graph_model->getEdgeList(adjIds, offsets, ewgts);
+  graph_model->getEdgeList(adjIds, offsets, ewgts);
 
   int tot_edges = 0;
 
@@ -754,13 +753,13 @@ static void zoltanEdgeListMulti_withGraphModel(void *data,
   ArrayView<const gno_t> Ids;
   ArrayView<input_t> vwgts;
 
-  size_t nLocalVerts = graph_model->getVertexList(Ids, vwgts);
+  graph_model->getVertexList(Ids, vwgts);
 
   ArrayView<const gno_t> adjIds;
   ArrayView<const offset_t> offsets;
   ArrayView<input_t> ewgts;
 
-  size_t nLocalEdges = graph_model->getEdgeList(adjIds, offsets, ewgts);
+  graph_model->getEdgeList(adjIds, offsets, ewgts);
 
   ArrayView<size_t> vtxdist;
 
@@ -814,10 +813,6 @@ static void zoltanEdgeListMulti_withGraphModel(void *data,
   }
 }
 
-
-
-
-
 ////////////////////////////
 // ZOLTAN_HIER_NUM_LEVELS_FN
 template <typename Adapter>
@@ -827,10 +822,7 @@ static int zoltanHierNumLevels(void *data,
                                //int *parts,
                                int *ierr)
 {
-
-
   // Find the number of hierarchy levels this proc will participate in
-
   typedef typename Adapter::scalar_t   pcoord_t;
   typedef typename Adapter::part_t     part_t;
 
@@ -838,7 +830,7 @@ static int zoltanHierNumLevels(void *data,
     = static_cast<MachineRepresentation<pcoord_t, part_t> *>(data);
   *ierr = ZOLTAN_OK;
 
-  // Group, Subgroup, Rack
+  // Group, Subgroup, Rack = 3 for FatTree machines
   return machine->getNumNonuniformLevels();
 }
 
@@ -851,11 +843,7 @@ static int zoltanHierPart(void *data,
                            int level,
                            int *ierr)
 {
-
-
   // Determines parts to compute at this level
-
-
   typedef typename Adapter::scalar_t   pcoord_t;
   typedef typename Adapter::part_t     part_t;
 
@@ -871,12 +859,10 @@ static int zoltanHierPart(void *data,
   machine->getGroupCountVector(group_count);
 
   int group_idx;
-
   int upper_cdf = 0;
   int lower_cdf = 0;
 
   for (int i = 0; i < num_unique_groups; ++i) {
-
     lower_cdf = upper_cdf;
     upper_cdf += int(group_count[i]);
 
@@ -887,7 +873,6 @@ static int zoltanHierPart(void *data,
     }
   }
 
-
   if (level == 0)
     return group_idx;
 
@@ -896,7 +881,6 @@ static int zoltanHierPart(void *data,
 
   machine->getNumUniqueSubgroups(num_unique_subgroups);
   machine->getSubgroupCounts(subgroup_counts);
-
 
   int subgroup_idx = 0;
   int group_rank = rank - lower_cdf;
@@ -920,7 +904,6 @@ static int zoltanHierPart(void *data,
     return subgroup_idx;
 
   return group_rank - lower_cdf;
-
 }
 
 ////////////////////////
@@ -1024,7 +1007,6 @@ static void zoltanHierMethod(void *data,
     upper_cdf = 0;
 
     for (int i = 0; i < int(num_unique_subgroups[group_idx]); ++i) {
-
       lower_cdf = upper_cdf;
       upper_cdf += int(subgroup_counts[group_idx][i]);
 
@@ -1047,7 +1029,9 @@ static void zoltanHierMethod(void *data,
   std::vector<int> group_count_ints(group_count.begin(), group_count.end());
 
   zz->Group_Count =
-    (int *) ZOLTAN_MALLOC(zz->Num_Unique_Groups * sizeof(int));
+//    (int *) ZOLTAN_MALLOC(zz->Num_Unique_Groups * sizeof(int));
+    (int *) malloc(zz->Num_Unique_Groups * sizeof(int));
+
 
   std::copy(group_count_ints.begin(),
             group_count_ints.end(),
@@ -1057,6 +1041,5 @@ static void zoltanHierMethod(void *data,
 }
 
 }
-
 
 #endif
