@@ -113,7 +113,7 @@ FUNCTION(KOKKOS_ADD_TEST)
     if(TEST_TOOL)
       foreach(TEST_ADDED ${ALL_TESTS_ADDED})
         add_dependencies(${EXE} ${TEST_TOOL}) #make sure the exe has to build the tool
-        set_property(TEST ${TEST_ADDED} APPEND_STRING PROPERTY ENVIRONMENT "KOKKOS_PROFILE_LIBRARY=$<TARGET_FILE:${TEST_TOOL}>")
+        set_property(TEST ${TEST_ADDED} APPEND PROPERTY ENVIRONMENT "KOKKOS_PROFILE_LIBRARY=$<TARGET_FILE:${TEST_TOOL}>")
       endforeach()
     endif()
   else()
