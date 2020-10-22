@@ -911,7 +911,7 @@ namespace FROSch {
         this->ElementNodeList_ =Xpetra::CrsGraphFactory<LO,GO,NO>::Build(this->MLCoarseMap_,maxNumElements);
 
         if (this->OnCoarseSolveComm_) {
-            const size_t numMyElementS = this->MLCoarseMap_->getNodeNumElements();
+            const size_t numMyElementS = elemSGraph->getMap()->getNodeNumElements();
             Teuchos::ArrayView<const GO> va;
             for (UN i = 0; i < numMyElementS; i++) {
                 GO kg = this->MLGatheringMaps_[this->MLGatheringMaps_.size()-1]->getGlobalElement(i);
