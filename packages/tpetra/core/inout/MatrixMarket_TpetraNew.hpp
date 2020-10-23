@@ -137,37 +137,21 @@ buildDistribution(
   return Teuchos::rcp<basedist_t>(retval);
 }
 
-public:
-
-// This is the default interface.
-static Teuchos::RCP<sparse_matrix_type>
-readSparseFile(
-  const std::string &filename,    // MatrixMarket file to read
-  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,  
-  const Teuchos::ParameterList &params
-)
-{
-  Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > dist;
-  return readSparseFile(filename, comm, params, dist);
-}
-
-// This version has the Distribution object as an output parameter.
-// S. Acer needs the distribution object to get the chunk cuts from
-// LowerTriangularBlock distribution.  
-static Teuchos::RCP<sparse_matrix_type>
-readSparseFile(
+static
+void 
+readMatrixMarket(  
   const std::string &filename,    // MatrixMarket file to read
   const Teuchos::RCP<const Teuchos::Comm<int> > &comm,  
   const Teuchos::ParameterList &params,
-  Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > &dist 
+  size_t &nRow,
+  size_t &nCol,
+  typename Distribution<global_ordinal_type,scalar_type>::LocalNZmap_t &localNZ,
+  Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > &dist
 )
 {
 
   int me = comm->getRank();
   int np = comm->getSize();
-
-  // Check parameters to determine how to process the matrix while reading
-  // TODO:  Add validators for the parameters
 
   bool verbose = false;   // Print status as reading
   {
@@ -181,20 +165,6 @@ readSparseFile(
   const Teuchos::ParameterEntry *pe = params.getEntryPtr("chunkSize");
   if (pe != NULL) 
     chunkSize = pe->getValue<size_t>(&chunkSize);
-  }
-
-  bool callFillComplete = true;   // should we fillComplete the new CrsMatrix?
-  {
-  const Teuchos::ParameterEntry *pe = params.getEntryPtr("callFillComplete");
-  if (pe != NULL) 
-    callFillComplete = pe->getValue<bool>(&callFillComplete);
-  }
-
-  std::string timeFillComplete = ""; // use this name for timer of fillComplete
-  {
-  const Teuchos::ParameterEntry *pe = params.getEntryPtr("timeFillComplete");
-  if (pe != NULL)
-    timeFillComplete = pe->getValue<std::string>(&timeFillComplete);
   }
 
   bool symmetrize = false;  // Symmetrize the matrix
@@ -231,7 +201,6 @@ readSparseFile(
 
   if (verbose && me == 0)
     std::cout << "Reading matrix market file... " << filename << std::endl;
-
 
   FILE *fp = NULL;
   size_t dim[3] = {0,0,0};  // nRow, nCol, nNz as read from MatrixMarket
@@ -280,8 +249,8 @@ readSparseFile(
   }
   Teuchos::broadcast<int, char>(*comm, 0, sizeof(MM_typecode), mmcode);
 
-  size_t nRow = dim[0];
-  size_t nCol = dim[1];
+  nRow = dim[0];
+  nCol = dim[1];
   size_t nNz = dim[2];
   bool patternInput = mm_is_pattern(mmcode);
   bool symmetricInput = mm_is_symmetric(mmcode);
@@ -300,23 +269,13 @@ readSparseFile(
 							    nRow, nCol, params,
 							    comm);
 
-  // Don't want to use MatrixMarket's coordinate reader, because don't want
-  // entire matrix on one processor.
-  // Instead, Proc 0 reads nonzeros in chunks and broadcasts chunks to all 
-  // processors.
-  // All processors insert nonzeros they own into a std::map
-
-  // Storage for this processor's nonzeros.
-  using nzindex_t = 
-        typename Distribution<global_ordinal_type,scalar_type>::NZindex_t;
-  using localNZmap_t = 
-        typename Distribution<global_ordinal_type,scalar_type>::LocalNZmap_t;
-  localNZmap_t localNZ;
-
   std::set<global_ordinal_type> diagset;  
                             // If diagonal == require, this set keeps track of 
                             // which diagonal entries already existing so we can
                             // add those that don't
+
+  using nzindex_t = 
+        typename Distribution<global_ordinal_type,scalar_type>::NZindex_t;
 
   // Chunk information and buffers
   const int maxLineLength = 81;
@@ -437,6 +396,80 @@ readSparseFile(
   }
   // Done with diagset; free its memory
   std::set<global_ordinal_type>().swap(diagset);
+
+}
+
+public:
+
+// This is the default interface.
+static Teuchos::RCP<sparse_matrix_type>
+readSparseFile(
+  const std::string &filename,    // MatrixMarket file to read
+  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,  
+  const Teuchos::ParameterList &params
+)
+{
+  Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > dist;
+  return readSparseFile(filename, comm, params, dist);
+}
+
+// This version has the Distribution object as an output parameter.
+// S. Acer needs the distribution object to get the chunk cuts from
+// LowerTriangularBlock distribution.  
+static Teuchos::RCP<sparse_matrix_type>
+readSparseFile(
+  const std::string &filename,    // MatrixMarket file to read
+  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,  
+  const Teuchos::ParameterList &params,
+  Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > &dist 
+)
+{
+
+  int me = comm->getRank();
+  int np = comm->getSize();
+
+  // Check parameters to determine how to process the matrix while reading
+  // TODO:  Add validators for the parameters
+
+  bool verbose = false;   // Print status as reading
+  {
+  const Teuchos::ParameterEntry *pe = params.getEntryPtr("verbose");
+  if (pe != NULL) 
+    verbose = pe->getValue<bool>(&verbose);
+  }
+
+  bool callFillComplete = true;   // should we fillComplete the new CrsMatrix?
+  {
+  const Teuchos::ParameterEntry *pe = params.getEntryPtr("callFillComplete");
+  if (pe != NULL) 
+    callFillComplete = pe->getValue<bool>(&callFillComplete);
+  }
+
+  std::string timeFillComplete = ""; // use this name for timer of fillComplete
+  {
+  const Teuchos::ParameterEntry *pe = params.getEntryPtr("timeFillComplete");
+  if (pe != NULL)
+    timeFillComplete = pe->getValue<std::string>(&timeFillComplete);
+  }
+
+
+  // Don't want to use MatrixMarket's coordinate reader, because don't want
+  // entire matrix on one processor.
+  // Instead, Proc 0 reads nonzeros in chunks and broadcasts chunks to all 
+  // processors.
+  // All processors insert nonzeros they own into a std::map
+
+  // Storage for this processor's nonzeros.
+  using localNZmap_t = 
+        typename Distribution<global_ordinal_type,scalar_type>::LocalNZmap_t;
+  localNZmap_t localNZ;
+
+
+
+  // read nonzeros from the given  matrix market file
+  size_t nRow = 0, nCol = 0;
+  readMatrixMarket(filename, comm, params, nRow, nCol, localNZ, dist);
+
 
   // Redistribute nonzeros as needed to satisfy the Distribution
   // For most Distributions, this is a no-op
