@@ -75,7 +75,7 @@ public:
 private:
   using execution_space = typename NT::device_type::execution_space;
   using memory_space =
-    ::Tpetra::Details::DefaultTypes::comm_buffer_memory_space<execution_space>;
+    ::Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename NT::device_type>;
   using device_type = Kokkos::Device<execution_space, memory_space>;
 
 public:

@@ -394,7 +394,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
-            const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
+            const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
             const ProfileType /* pftype */,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
@@ -434,7 +434,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
-            const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
+            const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
             const ProfileType /* pftype */,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
@@ -1294,7 +1294,7 @@ namespace Tpetra {
   {
     using Kokkos::subview;
     typedef LocalOrdinal LO;
-    typedef Kokkos::View<const LO*, execution_space,
+    typedef Kokkos::View<const LO*, device_type,
       Kokkos::MemoryUnmanaged> row_view_type;
 
     if (rowinfo.allocSize == 0) {
@@ -1350,7 +1350,7 @@ namespace Tpetra {
   {
     using Kokkos::subview;
     typedef LocalOrdinal LO;
-    typedef Kokkos::View<LO*, execution_space,
+    typedef Kokkos::View<LO*, device_type,
       Kokkos::MemoryUnmanaged> row_view_type;
 
     if (rowinfo.allocSize == 0) { // nothing in the row to view
@@ -1379,13 +1379,13 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Kokkos::View<const LocalOrdinal*,
-               typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::execution_space,
+               typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::device_type,
                Kokkos::MemoryUnmanaged>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalKokkosRowView (const RowInfo& rowInfo) const
   {
     typedef LocalOrdinal LO;
-    typedef Kokkos::View<const LO*, execution_space,
+    typedef Kokkos::View<const LO*, device_type,
       Kokkos::MemoryUnmanaged> row_view_type;
 
     if (rowInfo.allocSize == 0) {
@@ -1412,13 +1412,13 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Kokkos::View<LocalOrdinal*,
-               typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::execution_space,
+               typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::device_type,
                Kokkos::MemoryUnmanaged>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalKokkosRowViewNonConst (const RowInfo& rowInfo)
   {
     using row_view_type = Kokkos::View<LocalOrdinal*,
-      execution_space, Kokkos::MemoryUnmanaged>;
+      device_type, Kokkos::MemoryUnmanaged>;
 
     if (rowInfo.allocSize == 0) {
       return row_view_type ();
@@ -1444,13 +1444,13 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Kokkos::View<const GlobalOrdinal*,
-               typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::execution_space,
+               typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::device_type,
                Kokkos::MemoryUnmanaged>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalKokkosRowView (const RowInfo& rowinfo) const
   {
     using row_view_type = Kokkos::View<const GlobalOrdinal*,
-      execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+      device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
     if (rowinfo.allocSize == 0) {
       return row_view_type ();
@@ -1492,7 +1492,7 @@ namespace Tpetra {
       // that.  That touches the reference count, which costs
       // performance in a measurable way.
       using row_view_type = Kokkos::View<const GO*,
-        execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+        device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
       row_view_type k_gblInds1D_unmanaged = k_gblInds1D_;
       using Kokkos::Compat::getConstArrayView;
       using Kokkos::subview;
@@ -1543,7 +1543,7 @@ namespace Tpetra {
       // _managed_ subview, then returns an unmanaged version of
       // that.  That touches the reference count, which costs
       // performance in a measurable way.
-      using row_view_type = Kokkos::View<GO*, execution_space,
+      using row_view_type = Kokkos::View<GO*, device_type,
         Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
       row_view_type k_gblInds1D_unmanaged = k_gblInds1D_;
       using Kokkos::Compat::getArrayView;
@@ -1833,7 +1833,7 @@ namespace Tpetra {
     const LO lclRow = static_cast<LO> (rowInfo.localRow);
 
     auto numEntries = rowInfo.numEntries;
-    using inp_view_type = View<const GO*, execution_space, MemoryUnmanaged>;
+    using inp_view_type = View<const GO*, device_type, MemoryUnmanaged>;
     inp_view_type inputInds(inputGblColInds, numInputInds);
     size_t numInserted = Details::insertCrsIndices(lclRow, k_rowPtrs_,
       this->k_gblInds1D_, numEntries, inputInds, fun);
@@ -1979,7 +1979,7 @@ namespace Tpetra {
     using Kokkos::MemoryUnmanaged;
     auto invalidCount = Teuchos::OrdinalTraits<size_t>::invalid();
 
-    using inp_view_type = View<const GO*, execution_space, MemoryUnmanaged>;
+    using inp_view_type = View<const GO*, device_type, MemoryUnmanaged>;
     inp_view_type inputInds(indices.getRawPtr(), indices.size());
 
     size_t numFound = 0;
@@ -3031,7 +3031,7 @@ namespace Tpetra {
         // FIXME (mfh 24 Mar 2015) If CUDA UVM, running in the host's
         // execution space would avoid the double copy.
         //
-        View<size_t*, layout_type ,execution_space > ptr_st ("Tpetra::CrsGraph::ptr", size);
+        View<size_t*, layout_type, device_type> ptr_st ("Tpetra::CrsGraph::ptr", size);
         Kokkos::deep_copy (ptr_st, ptr_in);
         // Copy on device (casting from size_t to row_offset_type,
         // with bounds checking if necessary) to ptr_rot.  This
@@ -3041,7 +3041,7 @@ namespace Tpetra {
       }
     }
 
-    Kokkos::View<LocalOrdinal*, layout_type , execution_space > k_ind =
+    Kokkos::View<LocalOrdinal*, layout_type, device_type> k_ind =
       Kokkos::Compat::getKokkosViewDeepCopy<device_type> (columnIndices ());
     setAllIndices (ptr_rot, k_ind);
   }
