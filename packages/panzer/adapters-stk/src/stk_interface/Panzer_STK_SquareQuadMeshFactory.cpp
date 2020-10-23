@@ -327,8 +327,8 @@ void SquareQuadMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */,i
 
    offset_ = 0;
    if (offsetGIDs_) {
-     if (std::numeric_limits<panzer::GlobalOrdinal>::max() > std::numeric_limits<panzer::LocalOrdinal>::max())
-       offset_ = panzer::GlobalOrdinal(std::numeric_limits<panzer::LocalOrdinal>::max()) + 1;
+     if (std::numeric_limits<panzer::GlobalOrdinal>::max() > std::numeric_limits<unsigned int>::max())
+       offset_ = panzer::GlobalOrdinal(std::numeric_limits<unsigned int>::max()) + 1;
    }
 
    // build the nodes

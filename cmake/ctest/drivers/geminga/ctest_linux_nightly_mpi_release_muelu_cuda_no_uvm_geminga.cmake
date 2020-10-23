@@ -64,14 +64,14 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc-cuda.cmak
 # Tribits creates the variable listed under "Build Name" by prepending the OS type and compiler
 # details to BUILD_DIR_NAME.
 SET(COMM_TYPE MPI)
-SET(BUILD_TYPE RELEASE)
+SET(BUILD_TYPE RELWITHDEBINFO)
 SET(BUILD_NAME_DETAILS KOKKOS-REFACTOR_EXPERIMENTAL_CUDA-$ENV{SEMS_CUDA_VERSION}_NO_UVM)
 
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Experimental)
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
+SET(Trilinos_PACKAGES MueLu Xpetra Amesos2 Tpetra Ifpack2 Belos Panzer)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   ### ETI ###
@@ -84,6 +84,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
 
   ### TPLS ###
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
+  "-DTPL_ENABLE_BinUtils:BOOL=ON"
 
   ### PACKAGES CONFIGURATION ###
       "-DMueLu_ENABLE_Experimental:BOOL=ON"

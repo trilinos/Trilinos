@@ -54,6 +54,7 @@
 
 #include <type_traits>
 #include "Amesos2_KokkosMultiVecAdapter_decl.hpp"
+#include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 
 #define AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(S,LO,EXEC_SPACE)                             \
@@ -61,11 +62,14 @@
     typename EXEC_SPACE::device_type>,                                                           \
     Kokkos::View<S**, Kokkos::LayoutLeft, typename EXEC_SPACE::device_type> >;
 
-#define AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_UVM_OFF(S,LO)                                 \
+#ifdef KOKKOS_ENABLE_CUDA_UVM
+#define AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_UVM_OFF(S,LO)       \
   template class Amesos2::AMESOS2_KOKKOS_IMPL_SOLVER_NAME<KokkosSparse::CrsMatrix<S, LO,          \
     Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>>,                                              \
     Kokkos::View<S**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>> >;
-
+#else
+#define AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_UVM_OFF(S,LO)
+#endif
 
 #if defined(KOKKOS_ENABLE_SERIAL)
 #ifdef HAVE_TPETRA_INST_FLOAT

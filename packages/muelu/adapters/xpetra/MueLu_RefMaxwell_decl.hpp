@@ -310,6 +310,12 @@ namespace MueLu {
     //! Setup the preconditioner
     void compute(bool reuse=false);
 
+    //! Detect Dirichlet boundary conditions
+    void detectBoundaryConditionsSM();
+
+    //! Remove explicit zeros
+    void removeExplicitZeros();
+
     //! Setup the prolongator for the (1,1)-block
     void buildProlongator();
 
