@@ -12,6 +12,7 @@ try
                         'pcoarsen: schedule','{1,1}',...
                         'pcoarsen: element','hgrad_line_c',...
                         'level 0',{'pcoarsen: element to node map',e2n});
+  muelu('cleanup');
   disp('P-coarsening test passed by running to completion.');
   exit(0);
 catch me

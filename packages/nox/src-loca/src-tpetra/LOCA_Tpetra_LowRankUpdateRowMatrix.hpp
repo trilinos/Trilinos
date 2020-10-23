@@ -160,10 +160,10 @@ namespace LOCA {
       Teuchos::RCP<NOX::TMultiVector> nonconst_V;
 
       //! View of U
-      const typename NOX::TMultiVector::dual_view_type::t_host U_DeviceView;
+      const typename NOX::TMultiVector::dual_view_type::t_dev U_DeviceView;
 
       //! View of V
-      const typename NOX::TMultiVector::dual_view_type::t_host V_DeviceView;
+      const typename NOX::TMultiVector::dual_view_type::t_dev V_DeviceView;
 
       //! Flag indicating whether to include U*V^T terms
       bool includeUV;

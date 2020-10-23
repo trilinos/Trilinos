@@ -103,11 +103,18 @@ FUNCTION(KOKKOS_ADD_TEST)
       COMM serial mpi
       NUM_MPI_PROCS 1
       ${TEST_UNPARSED_ARGUMENTS}
+      ADDED_TESTS_NAMES_OUT ALL_TESTS_ADDED
     )
 
+    # We will get prepended package name here
+    SET(TEST_NAME ${PACKAGE_NAME}_${TEST_NAME})
+    SET(EXE ${PACKAGE_NAME}_${EXE_ROOT})
+
     if(TEST_TOOL)
-      add_dependencies(${EXE} ${TEST_TOOL}) #make sure the exe has to build the tool
-      set_property(TEST ${TEST_NAME} APPEND_STRING PROPERTY ENVIRONMENT "KOKKOS_PROFILE_LIBRARY=$<TARGET_FILE:${TEST_TOOL}>")
+      foreach(TEST_ADDED ${ALL_TESTS_ADDED})
+        add_dependencies(${EXE} ${TEST_TOOL}) #make sure the exe has to build the tool
+        set_property(TEST ${TEST_ADDED} APPEND PROPERTY ENVIRONMENT "KOKKOS_PROFILE_LIBRARY=$<TARGET_FILE:${TEST_TOOL}>")
+      endforeach()
     endif()
   else()
     CMAKE_PARSE_ARGUMENTS(TEST
