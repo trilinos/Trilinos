@@ -56,9 +56,6 @@ TEUCHOS_UNIT_TEST(Leapfrog, Default_Construction)
 
 
   // Default values for construction.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  auto obs    = rcp(new Tempus::StepperLeapfrogObserver<double>());
-#endif
   auto modifier = rcp(new Tempus::StepperLeapfrogModifierDefault<double>());
   stepper->setAppAction(modifier);
   bool useFSAL              = stepper->getUseFSAL();
@@ -67,20 +64,12 @@ TEUCHOS_UNIT_TEST(Leapfrog, Default_Construction)
 
 
   // Test the set functions.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper->setAppAction(modifier);                      stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   // Full argument list construction.
-  stepper = rcp(new Tempus::StepperLeapfrog<double>(
-    model, obs, useFSAL, ICConsistency, ICConsistencyCheck));
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper = rcp(new Tempus::StepperLeapfrog<double>(
     model, useFSAL, ICConsistency, ICConsistencyCheck,modifier));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());

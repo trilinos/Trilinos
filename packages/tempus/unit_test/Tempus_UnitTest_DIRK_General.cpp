@@ -84,10 +84,6 @@ TEUCHOS_UNIT_TEST(DIRK_General, Default_Construction)
   int order = 2;
 
   // Test the set functions.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  auto obs    = rcp(new Tempus::StepperRKObserverComposite<double>());
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -102,13 +98,6 @@ TEUCHOS_UNIT_TEST(DIRK_General, Default_Construction)
 
 
   // Full argument list construction.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  stepper = rcp(new Tempus::StepperDIRK_General<double>(
-    model, obs, solver, useFSAL,
-    ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess,
-    A, b, c, order, order, order,bstar));
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper = rcp(new Tempus::StepperDIRK_General<double>(
     model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
     useEmbedded, zeroInitialGuess, modifier,

@@ -50,27 +50,6 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
   */
   StepperNewmarkImplicitDForm();
 
- #ifndef TEMPUS_HIDE_DEPRECATED_CODE 
-  /// Constructor
-  StepperNewmarkImplicitDForm(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    bool zeroInitialGuess,
-    std::string schemeName,
-    Scalar beta,
-    Scalar gamma);
-
-  virtual void setObserver(
-    Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
-
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return Teuchos::null; }
-#endif 
-
   /// Constructor
   StepperNewmarkImplicitDForm(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -93,7 +72,7 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
     { return stepperNewmarkImpAppAction_; }
 
   virtual void setAppAction(
-      Teuchos::RCP<StepperNewmarkImplicitDFormAppAction<Scalar> > appAction); 
+      Teuchos::RCP<StepperNewmarkImplicitDFormAppAction<Scalar> > appAction);
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (

@@ -11,10 +11,6 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperExplicit.hpp"
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  #include "Tempus_StepperObserverComposite.hpp"
-  #include "Tempus_StepperLeapfrogObserver.hpp"
-#endif
 #include "Tempus_StepperLeapfrogAppAction.hpp"
 #include "Tempus_StepperLeapfrogAppActionComposite.hpp"
 
@@ -89,17 +85,7 @@ public:
   */
   StepperLeapfrog();
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// Constructor
-  StepperLeapfrog(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck);
-#endif
-
-  /// Constructor                                                                                                          
   StepperLeapfrog(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     bool useFSAL,
@@ -107,16 +93,8 @@ public:
     bool ICConsistencyCheck,
     const Teuchos::RCP<StepperLeapfrogAppAction<Scalar> >& stepperLFAppAction);
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// \name Basic stepper methods
   //@{
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
-
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperObserver_; }
-#endif
-
     virtual void setAppAction(
       Teuchos::RCP<StepperLeapfrogAppAction<Scalar> > appAction);
 
@@ -161,12 +139,6 @@ public:
 
 protected:
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  Teuchos::RCP<StepperObserverComposite<Scalar> >    stepperObserver_;
-  Teuchos::RCP<StepperLeapfrogObserver<Scalar> >     stepperLFObserver_;
-#endif
-
-  Teuchos::RCP<StepperLeapfrogAppActionComposite<Scalar> >    stepperLFAppActionComposite__;
   Teuchos::RCP<StepperLeapfrogAppAction<Scalar> >     stepperLFAppAction_;
 
 };

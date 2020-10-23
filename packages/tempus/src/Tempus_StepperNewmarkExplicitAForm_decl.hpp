@@ -107,28 +107,8 @@ public:
     Scalar gamma,
     const Teuchos::RCP<StepperNewmarkExplicitAFormAppAction<Scalar> >& stepperAppAction);
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  /// Constructor
-  StepperNewmarkExplicitAForm(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    Scalar gamma);
-
-
-  /// \name Basic stepper methods
-  //@{
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
-
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return Teuchos::null; }
-#endif
-
-     virtual Teuchos::RCP<StepperNewmarkExplicitAFormAppAction<Scalar> > getAppAction() const
-     { return stepperNewmarkExpAppAction_; }
+    virtual Teuchos::RCP<StepperNewmarkExplicitAFormAppAction<Scalar> > getAppAction() const
+    { return stepperNewmarkExpAppAction_; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (

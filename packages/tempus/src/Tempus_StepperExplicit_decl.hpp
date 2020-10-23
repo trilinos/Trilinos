@@ -108,7 +108,6 @@ protected:
   Thyra::ModelEvaluatorBase::InArgs<Scalar>          inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar>         outArgs_;
 
-  Teuchos::RCP<StepperObserver<Scalar> >             stepperObserver_;
  };
 
 } // namespace Tempus
