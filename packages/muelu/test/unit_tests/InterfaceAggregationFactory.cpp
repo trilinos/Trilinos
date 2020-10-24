@@ -66,8 +66,23 @@ namespace MueLuTests {
     TEST_INEQUALITY(interfaceAggregatioFactory, Teuchos::null);
   } // Constructor
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InterfaceAggregationFactory, GetNonEmptyValidParameterList, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<InterfaceAggregationFactory> interfaceAggregatioFactory = rcp(new InterfaceAggregationFactory());
+    RCP<const Teuchos::ParameterList> params = interfaceAggregatioFactory->GetValidParameterList();
+
+    TEST_INEQUALITY(params, Teuchos::null);
+    TEST_ASSERT(params->numParams() > 0)
+  } // GetNonEmptyValidParameterList
+
   # define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(InterfaceAggregationFactory, Constructor, Scalar, LO, GO, Node)
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(InterfaceAggregationFactory, Constructor, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(InterfaceAggregationFactory, GetNonEmptyValidParameterList, Scalar, LO, GO, Node)
 
 # include <MueLu_ETI_4arg.hpp>
 
