@@ -399,6 +399,239 @@ readMatrixMarket(
 
 }
 
+static
+void 
+readBinary(  
+  const std::string &filename,    // MatrixMarket file to read
+  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,  
+  const Teuchos::ParameterList &params,
+  size_t &nRow,
+  size_t &nCol,
+  typename Distribution<global_ordinal_type,scalar_type>::LocalNZmap_t &localNZ,
+  Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > &dist
+)
+{
+
+  int me = comm->getRank();
+  int np = comm->getSize();
+
+  bool verbose = false;   // Print status as reading
+  {
+  const Teuchos::ParameterEntry *pe = params.getEntryPtr("verbose");
+  if (pe != NULL) 
+    verbose = pe->getValue<bool>(&verbose);
+  }
+
+  size_t chunkSize = 500000;   // Number of lines to read / broadcast at once
+  {
+  const Teuchos::ParameterEntry *pe = params.getEntryPtr("chunkSize");
+  if (pe != NULL) 
+    chunkSize = pe->getValue<size_t>(&chunkSize);
+  }
+
+  bool symmetrize = false;  // Symmetrize the matrix
+  {
+  const Teuchos::ParameterEntry *pe = params.getEntryPtr("symmetrize");
+  if (pe != NULL) 
+    symmetrize = pe->getValue<bool>(&symmetrize);
+  }
+
+  bool transpose = false;   // Store the transpose
+  {
+  const Teuchos::ParameterEntry *pe = params.getEntryPtr("transpose");
+  if (pe != NULL) 
+    transpose = pe->getValue<bool>(&transpose);
+  }
+
+  std::string diagonal = "";  // Are diagonal entries required (so add them)
+                              // or ignored (so delete them) or neither?
+                              // Default is neither.
+  {
+  const Teuchos::ParameterEntry *pe = params.getEntryPtr("diagonal");
+  if (pe != NULL) 
+    diagonal = pe->getValue<std::string>(&diagonal);
+  }
+  bool ignoreDiagonal = (diagonal == "ignore");
+  bool requireDiagonal = (diagonal == "require");
+
+  std::string distribution = "1D";  // Default distribution is 1D row-based
+  {
+  const Teuchos::ParameterEntry *pe = params.getEntryPtr("distribution");
+  if (pe != NULL) 
+    distribution = pe->getValue<std::string>(&distribution);
+  }
+
+  if (verbose && me == 0)
+    std::cout << "Reading binary file... " << filename << std::endl;
+
+  FILE *fp = NULL;
+  size_t dim[3] = {0,0,0};  // Expected to read nRow and nNz, nCol = nRow
+
+  if (me == 0) {
+
+    fp = fopen(filename.c_str(), "rb");
+
+    if (fp == NULL) {
+      std::cout << "Error:  cannot open file " << filename << std::endl;
+    }
+    else {
+      // The header in the binary file contains only numVertices and numEdges
+      unsigned int nv = 0;
+      unsigned long long ne = 0;
+      fread(&nv, sizeof(unsigned int), 1, fp);
+      fread(&ne, sizeof(unsigned long long), 1, fp);
+      dim[0] = nv;
+      dim[1] = dim[0];
+      dim[2] = ne;
+    }
+  }
+
+  // Broadcast relevant info
+  // Bad input if dim[0] or dim[1] still is zero after broadcast; 
+  // all procs throw together
+  Teuchos::broadcast<int, size_t>(*comm, 0, 3, dim);
+  if (dim[0] == 0 || dim[1] == 0) {
+    throw std::runtime_error("Error:  bad matrix header information");
+  }
+
+  nRow = dim[0];
+  nCol = dim[1];
+  size_t nNz = dim[2];
+
+  if (verbose && me == 0)
+    std::cout << "Binary file... " 
+              << "\n  symmetrize          = " << symmetrize
+              << "\n  transpose           = " << transpose
+              << "\n  change diagonal     = " << diagonal
+              << "\n  distribution        = " << distribution
+              << std::endl;
+  
+  // Create distribution based on nRow, nCol, npRow, npCol
+  dist = buildDistribution<global_ordinal_type,scalar_type>(distribution,
+							    nRow, nCol, params,
+							    comm);
+
+  std::set<global_ordinal_type> diagset;  
+                            // If diagonal == require, this set keeps track of 
+                            // which diagonal entries already existing so we can
+                            // add those that don't
+
+  using nzindex_t = 
+        typename Distribution<global_ordinal_type,scalar_type>::NZindex_t;
+
+  // Chunk information and buffers
+  unsigned int *buffer = new unsigned int[chunkSize*2];
+  size_t nChunk; 
+  size_t nMillion = 0;
+  size_t nRead = 0;
+  size_t rlen;
+
+  // Read chunks until the entire file is read
+  while (nRead < nNz) {
+    if (nNz-nRead > chunkSize) nChunk = chunkSize;
+    else nChunk = (nNz - nRead);
+
+    // Processor 0 reads a chunk
+    if (me == 0) {
+      size_t ret = 0;
+      rlen = 0;
+      for (int i = 0; i < nChunk; i++) {
+	ret = fread(&buffer[rlen], sizeof(unsigned int), 2, fp);
+        if (ret == 0) {
+          std::cout << "Unexpected end of matrix file." << std::endl;
+          std::cout.flush();
+          exit(-1);
+        }
+        rlen += 2;
+      }
+    }
+
+    // Processor 0 broadcasts the chunk
+    Teuchos::broadcast<int, size_t>(*comm, 0, 1, &rlen);
+    Teuchos::broadcast<int, unsigned int>(*comm, 0, rlen, buffer);
+
+    nRead += nChunk;
+
+    // All processors check the received data, saving nonzeros belonging to them
+    for (rlen = 0; rlen < nChunk; rlen++) {
+
+      global_ordinal_type I = buffer[2*rlen]-1;
+      global_ordinal_type J = buffer[2*rlen+1]-1;
+      scalar_type V = -1.;
+      
+      // Special processing of nonzero
+      if ((I == J) && ignoreDiagonal) continue;
+
+      if (transpose) std::swap<global_ordinal_type>(I,J);
+
+      // Add nonzero (I,J) to the map if it should be on this processor
+      // Some file-based distributions have processor assignment stored as 
+      // the non-zero's value, so pass the value to Mine.
+      if (dist->Mine(I,J,int(V))) {
+        nzindex_t idx = std::make_pair(I,J);
+        localNZ[idx] = V;   
+        if (requireDiagonal && (I == J)) diagset.insert(I);
+      }
+
+      // If symmetrizing, add (J,I) to the map if it should be on this processor
+      // Some file-based distributions have processor assignment stored as 
+      // the non-zero's value, so pass the value to Mine.
+      if (symmetrize && (I != J) && dist->Mine(J,I,int(V))) {
+        //  Add entry (J, I) if need to symmetrize
+        //  This processor keeps this non-zero.
+        nzindex_t idx = std::make_pair(J,I);
+        localNZ[idx] = V;   
+      }
+    }
+
+    // Status check
+    if (verbose) {
+      if (nRead / 1000000 > nMillion) {
+        nMillion++;
+        if (me == 0) std::cout << nMillion << "M ";
+      }
+    }
+  }
+
+  if (verbose && me == 0) 
+    std::cout << std::endl << nRead << " nonzeros read " << std::endl;
+
+  if (fp != NULL) fclose(fp);
+  delete [] buffer;
+
+  //  Add diagonal entries if they are required.
+  //  Check to make sure they are all here; add them if they are not.
+  if (requireDiagonal) {
+    if (dist->DistType() == MMFile) {
+      // All diagonal entries should be present in the file; we cannot create
+      // them for file-based data distributions.  
+      // Do an error check to ensure they are all there.
+      global_ordinal_type localss = diagset.size();
+      global_ordinal_type globalss;
+      Teuchos::reduceAll<int, global_ordinal_type>(*comm, Teuchos::REDUCE_SUM, 1,
+                                     &localss, &globalss);
+      TEUCHOS_TEST_FOR_EXCEPTION(globalss != nRow, std::logic_error,
+        "File-based nonzero distribution requires all diagonal "
+         << "entries to be present in the file.  \n" 
+         << "Number of diagonal entries in file = " << globalss << "\n"
+         << "Number of matrix rows = " << nRow << "\n");
+    }
+    else {
+      for (global_ordinal_type i = 0; i < nRow; i++) {
+        if (dist->Mine(i,i)) {
+          if (diagset.find(i) == diagset.end()) {
+            nzindex_t idx = std::make_pair(i,i);
+            localNZ[idx] = 1;   
+          }
+        }
+      }
+    }
+  }
+  // Done with diagset; free its memory
+  std::set<global_ordinal_type>().swap(diagset);
+
+}
+
 public:
 
 // This is the default interface.
@@ -466,10 +699,19 @@ readSparseFile(
 
 
 
-  // read nonzeros from the given  matrix market file
-  size_t nRow = 0, nCol = 0;
-  readMatrixMarket(filename, comm, params, nRow, nCol, localNZ, dist);
+  bool binary = false;   // should we read a binary file?
+  {
+  const Teuchos::ParameterEntry *pe = params.getEntryPtr("binary");
+  if (pe != NULL) 
+    binary = pe->getValue<bool>(&binary);
+  }
 
+  // read nonzeros from the given file
+  size_t nRow = 0, nCol = 0;
+  if(binary)
+    readBinary(filename, comm, params, nRow, nCol, localNZ, dist);
+  else
+    readMatrixMarket(filename, comm, params, nRow, nCol, localNZ, dist);
 
   // Redistribute nonzeros as needed to satisfy the Distribution
   // For most Distributions, this is a no-op
