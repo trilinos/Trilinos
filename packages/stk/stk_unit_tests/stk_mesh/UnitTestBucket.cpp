@@ -43,6 +43,7 @@
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field_on_mesh
+#include <stk_mesh/base/GetNgpField.hpp>
 #include <stk_unit_test_utils/FaceTestingUtils.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
@@ -462,5 +463,52 @@ TEST(UnitTestingOfBucket, changing_conn_on_bucket_for_edge_to_element)
         test_nodes_and_permutation(bulk, elem, edge, new_nodes);
     }
 }
+
+#ifdef STK_USE_DEVICE_MESH
+void do_nonmodifying_debug_check(const stk::mesh::BulkData & bulk, const stk::mesh::FieldBase & coordsField)
+{
+  const stk::mesh::BucketVector & buckets = bulk.buckets(stk::topology::NODE_RANK);
+  ASSERT_EQ(buckets.size(), 1u);
+
+  buckets[0]->check_size_invariant();
+
+  EXPECT_FALSE(buckets[0]->get_ngp_field_bucket_is_modified(coordsField.mesh_meta_data_ordinal()));
+}
+
+void do_modifying_entity_creation(stk::mesh::BulkData & bulk, const stk::mesh::FieldBase & coordsField)
+{
+  unsigned face_node_ids[] = { 5, 6, 8, 7 };
+  stk::mesh::EntityVector nodes(4);
+  for (size_t i = 0 ; i < nodes.size(); ++i) {
+    nodes[i] = bulk.get_entity(stk::topology::NODE_RANK, face_node_ids[i]);
+  }
+
+  const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+  stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1);
+  bulk.modification_begin();
+  stk::unit_test_util::declare_element_side_with_nodes(bulk, elem, nodes, 1, meta.get_topology_root_part(stk::topology::QUAD_4));
+  bulk.modification_end();
+
+  const stk::mesh::BucketVector & buckets = bulk.buckets(stk::topology::NODE_RANK);
+  ASSERT_EQ(buckets.size(), 2u);
+  EXPECT_TRUE(buckets[0]->get_ngp_field_bucket_is_modified(coordsField.mesh_meta_data_ordinal()));
+  EXPECT_TRUE(buckets[1]->get_ngp_field_bucket_is_modified(coordsField.mesh_meta_data_ordinal()));
+}
+
+TEST(UnitTestingOfBucket, checkModifiedStatus)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  stk::mesh::MetaData meta(3);
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  stk::io::fill_mesh("generated:1x1x1", bulk);
+
+  const stk::mesh::FieldBase & coordsField = *meta.coordinate_field();
+  stk::mesh::get_updated_ngp_field<double>(coordsField);
+
+  do_nonmodifying_debug_check(bulk, coordsField);
+  do_modifying_entity_creation(bulk, coordsField);
+}
+#endif
 
 }

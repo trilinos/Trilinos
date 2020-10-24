@@ -25,14 +25,6 @@ TEST_F(StkToolsC, DeleteMeshExceptSpecifiedElems)
 
     std::set<stk::mesh::EntityId> elemIdsToKeep;
     elemIdsToKeep.insert(inputElemId);
-//     elemIdsToKeep.insert(21081);
-//     elemIdsToKeep.insert(21080);
-//     elemIdsToKeep.insert(20832);
-//     elemIdsToKeep.insert(20833);
-//     elemIdsToKeep.insert(115099);
-//     elemIdsToKeep.insert(105459);
-//     elemIdsToKeep.insert(106976);
-//     elemIdsToKeep.insert(108648);
 
     std::vector<size_t> entityCounts;
     stk::mesh::comm_mesh_counts(get_bulk(), entityCounts);

@@ -47,10 +47,10 @@ LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestModificationEnd.cp
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     stk_mesh_unit_tests
     SOURCES ${SOURCES}
-    TESTONLYLIBS stk_unit_main
-    DEPLIBS
+    TESTONLYLIBS stk_unit_main stk_unit_test_utils stk_mesh_fixtures stk_ngp_test
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1-4
+    NOEXEPREFIX
     )
 

@@ -38,12 +38,12 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 FILE(GLOB SOURCES *.cpp)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    stk_ngp_test_utest
+    stk_ngp_test_unit_tests
     SOURCES ${SOURCES}
-    TESTONLYLIBS stk_unit_main
-    DEPLIBS
-    ARGS ""
+    TESTONLYLIBS stk_unit_main stk_unit_test_utils
+    ARGS "--gtest_filter=-*Device*"
     COMM serial mpi
     NUM_MPI_PROCS 1-4
+    NOEXEPREFIX
     )
 

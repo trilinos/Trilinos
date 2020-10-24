@@ -32,9 +32,10 @@ namespace stk {
 namespace mesh {
 
 enum LastModLocation : uint8_t {
-  NONE   = 0x00,
-  HOST   = 0x01,
-  DEVICE = 0x02
+  NONE           = 0x00,
+  HOST           = 0x01,
+  DEVICE         = 0x02,
+  HOST_OR_DEVICE = HOST | DEVICE
 };
 
 using LastFieldModLocationType = Kokkos::View<LastModLocation***, Kokkos::LayoutRight, UVMMemSpace>;

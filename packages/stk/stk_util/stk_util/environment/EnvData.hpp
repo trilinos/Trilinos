@@ -36,9 +36,7 @@
 #define STK_UTIL_ENVIRONMENT_EnvData_h
 
 #include <stk_util/stk_config.h>
-#if defined( STK_HAS_MPI)
-#  include "mpi.h"
-#endif
+#include <stk_util/parallel/Parallel.hpp>
 #include <iosfwd>
 #include <map>
 #include <string>

@@ -41,7 +41,8 @@ FILE(GLOB SOURCES *.cpp)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     util_parallel_UnitTest
     SOURCES ${SOURCES}
-    TESTONLYLIBS stk_unit_main
+    TESTONLYLIBS stk_unit_main stk_unit_test_utils
     COMM serial mpi
     NUM_MPI_PROCS 1-6
+    NOEXEPREFIX
     )

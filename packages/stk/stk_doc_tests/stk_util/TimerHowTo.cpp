@@ -36,7 +36,7 @@
 #include <gtest/gtest.h>
 #include <stk_util/diag/PrintTimer.hpp>
 #include <stk_util/diag/Timer.hpp>
-#include <stk_unit_test_utils/comparison/stringAndNumberComparisons.hpp>
+#include <stk_unit_test_utils/stringAndNumberComparisons.hpp>
 
 namespace
 {

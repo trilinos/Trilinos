@@ -56,9 +56,10 @@ LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/RenamedInputFields.cpp")
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     stk_io_doc_tests
     SOURCES ${SOURCES}
-    TESTONLYLIBS stk_unit_main
+    TESTONLYLIBS stk_unit_main stk_unit_test_utils stk_mesh_fixtures
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1
+    NOEXEPREFIX
     )
 

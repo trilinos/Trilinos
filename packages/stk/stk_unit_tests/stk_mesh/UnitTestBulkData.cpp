@@ -1999,7 +1999,7 @@ TEST(BulkData, test_total_field_data_footprint )
     const stk::mesh::BulkData &mesh = hf.m_bulk_data;
 
     // Call function we're testing
-    size_t field_data_footprint = mesh.total_field_data_footprint(stk::topology::NODE_RANK);
+    size_t field_data_footprint = stk::mesh::get_total_ngp_field_allocation_bytes(hf.m_coord_field);
 
     // Alternative computation explicitly gathers buckets.
     size_t node_fields_footprint = 0;
@@ -2030,7 +2030,7 @@ TEST(BulkData, test_get_entities )
     Selector select_owned(mesh.mesh_meta_data().locally_owned_part());
     const stk::mesh::BucketVector &bucket_ptrs = mesh.get_buckets(stk::topology::NODE_RANK, select_owned);
     stk::mesh::EntityVector entities;
-    mesh.get_entities(stk::topology::NODE_RANK, select_owned, entities);
+    stk::mesh::get_selected_entities(select_owned, mesh.buckets(stk::topology::NODE_RANK), entities);
     //
     //  Confirm that the number of entities exracted by either bucket or entity access is identical
     //
@@ -3382,7 +3382,7 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_non_owner_adds_element)
   if (myRank == 0)
   {
     std::vector<Entity> element_vector;
-    bulk.get_entities(stk::topology::ELEMENT_RANK, meta.universal_part(), element_vector);
+    stk::mesh::get_entities(bulk, stk::topology::ELEMENT_RANK, element_vector);
     ASSERT_EQ(1u, element_vector.size());
     EXPECT_TRUE(bulk.destroy_entity(element_vector[0]));
     EXPECT_TRUE(bulk.destroy_entity(node1));

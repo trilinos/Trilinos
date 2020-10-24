@@ -39,8 +39,9 @@ FILE(GLOB SOURCES *.cpp)
 TRIBITS_ADD_EXECUTABLE(
     search_unit_tests
     SOURCES ${SOURCES}
-    TESTONLYLIBS stk_unit_main
+    TESTONLYLIBS stk_unit_main stk_unit_test_utils
     COMM serial mpi
+    NOEXEPREFIX
     )
 
 TRIBITS_ADD_TEST(
@@ -51,4 +52,5 @@ TRIBITS_ADD_TEST(
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
     NUM_MPI_PROCS 1
+    NOEXEPREFIX
 )

@@ -40,9 +40,9 @@ FILE(GLOB SOURCES *.cpp)
 TRIBITS_ADD_EXECUTABLE(
     stk_balance_unit_tester
     SOURCES ${SOURCES}
-    TESTONLYLIBS stk_unit_main
-    DEPLIBS
+    TESTONLYLIBS stk_unit_main stk_unit_test_utils stk_mesh_fixtures
     COMM serial mpi
+    NOEXEPREFIX
     )
 
 TRIBITS_ADD_TEST(
@@ -52,5 +52,6 @@ TRIBITS_ADD_TEST(
     COMM serial mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
+    NOEXEPREFIX
     )
 

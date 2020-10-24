@@ -12,6 +12,10 @@ class NgpFieldBase
 {
 public:
   KOKKOS_DEFAULTED_FUNCTION NgpFieldBase() = default;
+  KOKKOS_DEFAULTED_FUNCTION NgpFieldBase(const NgpFieldBase&) = default;
+  KOKKOS_DEFAULTED_FUNCTION NgpFieldBase(NgpFieldBase&&) = default;
+  KOKKOS_FUNCTION NgpFieldBase& operator=(const NgpFieldBase&) { return *this; }
+  KOKKOS_FUNCTION NgpFieldBase& operator=(NgpFieldBase&&) { return *this; }
   KOKKOS_FUNCTION virtual ~NgpFieldBase() {}
   virtual void update_field(bool needToSyncAllDataToDevice = false) = 0;
   virtual void rotate_multistate_data() = 0;
@@ -30,7 +34,8 @@ public:
 #ifdef STK_DEBUG_FIELD_SYNC
   virtual void detect_device_field_modification() = 0;
   virtual void update_debug_storage(size_t hostSynchronizedCount) = 0;
-  virtual bool any_device_field_modification() const = 0;
+  virtual bool lost_device_field_data() const = 0;
+  virtual unsigned get_bucket_offset(unsigned bucketOrdinal) const = 0;
 #endif
 };
 
