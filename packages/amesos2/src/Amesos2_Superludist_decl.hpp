@@ -294,7 +294,9 @@ private:
     Teuchos::Array<magnitude_type> berr; ///< backward error bounds
     Teuchos::Array<magnitude_type> ferr; ///< forward error bounds
 
-    SLUD::ScalePermstruct_t        scale_perm; // R, C, perm_r, and perm_c found in here
+    // Pick up data type specific ScalePermstruct_t
+    typename type_map::ScalePermstruct_t        scale_perm; // R, C, perm_r, and perm_c found in here
+
     Teuchos::Array<magnitude_type> R, C;       // equilibration scalings
     Teuchos::Array<magnitude_type> R1, C1;     // row-permutation scalings
     Teuchos::Array<SLUD::int_t>    perm_r, perm_c;
