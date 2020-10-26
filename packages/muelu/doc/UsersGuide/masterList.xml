@@ -1508,6 +1508,15 @@
     </parameter>
 
     <parameter>
+      <name>rap: fix zero diagonals replacement</name>
+      <type>double</type>
+      <default>1.</default>
+      <description>Replacement value for diagonal entries that are considered zero.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
       <name>rap: shift</name>
       <type>double</type>
       <default>0.0</default>
