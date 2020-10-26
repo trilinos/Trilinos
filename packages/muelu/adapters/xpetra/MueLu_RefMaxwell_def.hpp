@@ -645,6 +645,7 @@ namespace MueLu {
         ParameterList rapList = *(rapFact->GetValidParameterList());
         rapList.set("transpose: use implicit", true);
         rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
+        rapList.set("rap: fix zero diagonals threshold", parameterList_.get<double>("rap: fix zero diagonals threshold", Teuchos::ScalarTraits<double>::eps()));
         rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
         rapFact->SetParameterList(rapList);
 
@@ -954,6 +955,7 @@ namespace MueLu {
         ParameterList rapList = *(rapFact->GetValidParameterList());
         rapList.set("transpose: use implicit", true);
         rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
+        rapList.set("rap: fix zero diagonals threshold", parameterList_.get<double>("rap: fix zero diagonals threshold", Teuchos::ScalarTraits<double>::eps()));
         rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
         rapFact->SetParameterList(rapList);
 
