@@ -14,9 +14,6 @@
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorPairPartIMEX_Basic.hpp"
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  #include "Tempus_StepperRKObserverComposite.hpp"
-#endif
 
 
 namespace Tempus {
@@ -327,20 +324,6 @@ public:
   StepperIMEX_RK_Partition();
 
   /// Constructor to for all member data.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  StepperIMEX_RK_Partition(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    bool zeroInitialGuess,
-    std::string stepperType,
-    Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau,
-    Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau,
-    Scalar order);
-#endif
   StepperIMEX_RK_Partition(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
@@ -394,14 +377,6 @@ public:
     virtual void setModelPair(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel);
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
-
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperObserver_; }
-#endif
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -475,10 +450,6 @@ protected:
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageGx_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  Teuchos::RCP<StepperRKObserverComposite<Scalar> >      stepperObserver_;
-#endif
 
 };
 
