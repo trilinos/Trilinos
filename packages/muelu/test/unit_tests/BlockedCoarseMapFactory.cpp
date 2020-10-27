@@ -128,7 +128,6 @@ namespace MueLuTests {
     GO numGlobalAggs = 0;
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     MueLu_sumAll(comm, numAggs, numGlobalAggs);
-    out << "Found " << numGlobalAggs << " aggregates" << std::endl;
 
     using Teuchos::as;
 
