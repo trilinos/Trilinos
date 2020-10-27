@@ -1727,6 +1727,14 @@ optimized neighbor discovery for Importer construction.</description>
       <visible>false</visible>
     </parameter>
 
+    <parameter>
+      <name>refmaxwell: normalize nullspace</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Normalize the nullspace.</description>
+      <visible>false</visible>
+    </parameter>
+
   </refmaxwell>
 
 
