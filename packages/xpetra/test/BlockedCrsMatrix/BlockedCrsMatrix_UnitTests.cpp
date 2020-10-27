@@ -43,12 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * BlockedCrsMatrix_UnitTests.cpp
- *
- *  Created on: Aug 22, 2011
- *      Author: wiesner
- */
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Xpetra_UnitTestHelpers.hpp>
