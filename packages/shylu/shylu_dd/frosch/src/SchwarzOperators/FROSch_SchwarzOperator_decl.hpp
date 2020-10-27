@@ -130,6 +130,8 @@ namespace FROSch {
         using CoarseSpacePtrVecPtr              = ArrayRCP<CoarseSpacePtr>;
 
         using InterfaceEntityPtr                = RCP<InterfaceEntity<SC,LO,GO,NO> >;
+        using InterfaceEntityPtrVec             = Array<InterfaceEntityPtr>;
+        using InterfaceEntityPtrVecPtr          = ArrayRCP<InterfaceEntityPtr>;
 
         using PartitionOfUnityPtr               = RCP<PartitionOfUnity<SC,LO,GO,NO> >;
         using InterfacePartitionOfUnityPtr      = RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> >;
@@ -149,6 +151,9 @@ namespace FROSch {
         using UNVec                             = Array<UN>;
         using UNVecPtr                          = ArrayRCP<UN>;
         using ConstUNVecView                    = ArrayView<const UN>;
+
+        using IntVec                            = Array<int>;
+        using IntVec2D                          = Array<IntVec>;
 
         using LOVec                             = Array<LO>;
         using LOVecPtr                          = ArrayRCP<LO>;
@@ -170,6 +175,7 @@ namespace FROSch {
 
         using BoolVec                           = Array<bool>;
         using BoolVecPtr                        = ArrayRCP<bool>;
+        using ConstBoolVecPtr                   = ArrayRCP<const bool>;
 
     public:
 
@@ -212,7 +218,6 @@ namespace FROSch {
         bool isComputed() const;
 
         int resetMatrix(ConstXMatrixPtr &k);
-
 
         virtual void residual(const XMultiVector & X,
                               const XMultiVector & B,

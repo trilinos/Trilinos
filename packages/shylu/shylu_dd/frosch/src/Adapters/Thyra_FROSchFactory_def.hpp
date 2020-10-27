@@ -265,9 +265,9 @@ namespace Thyra {
                         }
                     }
                     // Extract the nodeList map vector
-                    if(!nodeListVecTmp.is_null()){
+                    if (!nodeListVecTmp.is_null()) {
                       coordinatesList.resize(nodeListVecTmp.size());
-                      for(unsigned i = 0; i<coordinatesList.size();i++){
+                      for (unsigned i = 0; i<coordinatesList.size();i++) {
                         coordinatesList[i] = nodeListVecTmp[i].getConst();
                       }
                     }

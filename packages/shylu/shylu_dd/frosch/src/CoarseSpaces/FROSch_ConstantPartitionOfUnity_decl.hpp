@@ -64,24 +64,25 @@ namespace FROSch {
         using ConstXMapPtr                  = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMapPtr;
         using XMapPtrVecPtr                 = typename PartitionOfUnity<SC,LO,GO,NO>::XMapPtrVecPtr;
         using ConstXMapPtrVecPtr            = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMapPtrVecPtr;
-        
+
         using XMultiVectorPtr               = typename PartitionOfUnity<SC,LO,GO,NO>::XMultiVectorPtr;
         using ConstXMultiVectorPtr          = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMultiVectorPtr;
         using XMultiVectorPtrVecPtr         = typename PartitionOfUnity<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
-        
+        using ConstXMultiVectorPtrVecPtr    = typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMultiVectorPtrVecPtr;
+
         using ParameterListPtr              = typename PartitionOfUnity<SC,LO,GO,NO>::ParameterListPtr;
-        
+
         using DDInterfacePtr                = typename PartitionOfUnity<SC,LO,GO,NO>::DDInterfacePtr;
-        
+
         using EntitySetPtr                  = typename PartitionOfUnity<SC,LO,GO,NO>::EntitySetPtr;
-        
+
         using UN                            = typename PartitionOfUnity<SC,LO,GO,NO>::UN;
-        
+
         using LOVec                         = typename PartitionOfUnity<SC,LO,GO,NO>::LOVec;
-        
+
         using GOVec                         = typename PartitionOfUnity<SC,LO,GO,NO>::GOVec;
         using GOVecView                     = typename PartitionOfUnity<SC,LO,GO,NO>::GOVecView;
-        
+
         using SCVec                         = typename PartitionOfUnity<SC,LO,GO,NO>::SCVec;
 
     public:
@@ -107,7 +108,7 @@ namespace FROSch {
     protected:
 
         DDInterfacePtr DDInterface_;
-        
+
         bool UseVolumes_ = false;
 
         EntitySetPtr Volumes_;
