@@ -192,6 +192,8 @@ public:
     @param domainMapExtractor MapExtractor object describing the splitting of columns of the output block matrix
     @param columnMapExtractor (not fully clear whether we need that. is always Teuchos::null)
     @param bThyraMode If true, build a n x n blocked operator using Thyra GIDs
+
+    @return Fill-completed block version of intput matrix
   */
   static Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > SplitMatrix(
                        const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& input,
