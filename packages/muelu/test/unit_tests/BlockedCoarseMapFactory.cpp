@@ -73,8 +73,6 @@ namespace MueLuTests {
 
   } //Constructor
 
-  //TODO test BuildP
-
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedCoarseMapFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
