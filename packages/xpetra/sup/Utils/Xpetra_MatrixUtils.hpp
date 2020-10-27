@@ -547,13 +547,13 @@ public:
     Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("RelativeDiagonalBoost"));
 
     TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() != relativeThreshold.size()  && relativeThreshold.size() != 1,Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::RelativeDiagonal Boost:  Either A->GetFixedBlockSize() != relativeThreshold.size() OR relativeThreshold.size() == 1");
-    
+
     LocalOrdinal numPDEs = A->GetFixedBlockSize();
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
     Scalar zero = TST::zero();
     Scalar one = TST::one();
-    
+
     // Get the diagonal
     RCP<Vector> diag = VectorFactory::Build(A->getRowMap());
     A->getLocalDiagCopy(*diag);
@@ -564,7 +564,7 @@ public:
     std::vector<MT> l_diagMax(numPDEs), g_diagMax(numPDEs);
     for(size_t i=0; i<N; i++) {
       int pde = (int) (i % numPDEs);
-      if((int)i < numPDEs) 
+      if((int)i < numPDEs)
         l_diagMax[pde] = TST::magnitude(dataVal[i]);
       else
         l_diagMax[pde] = std::max(l_diagMax[pde],TST::magnitude(dataVal[i]));
@@ -579,11 +579,11 @@ public:
       GlobalOrdinal GRID = A->getRowMap()->getGlobalElement(i);
       int pde = (int) (i % numPDEs);
       index[0] = GRID;
-      if (TST::magnitude(dataVal[i]) < relativeThreshold[pde] * g_diagMax[pde]) 
+      if (TST::magnitude(dataVal[i]) < relativeThreshold[pde] * g_diagMax[pde])
         value[0] = relativeThreshold[pde] * g_diagMax[pde] - TST::magnitude(dataVal[i]);
       else
         value[0] =zero;
-      boostMatrix->insertGlobalValues(GRID,index(),value());      
+      boostMatrix->insertGlobalValues(GRID,index(),value());
     }
     boostMatrix->fillComplete(A->getDomainMap(),A->getRangeMap());
 
@@ -619,7 +619,7 @@ public:
   static void inverseScaleBlockDiagonal(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  & blockDiagonal,
 					bool doTranspose,
 					Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & toBeScaled) {
-                            
+
     const UnderlyingLib lib = blockDiagonal.getMap()->lib();
 
       if(lib == Xpetra::UseEpetra) {
