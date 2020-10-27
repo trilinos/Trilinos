@@ -47,9 +47,10 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Xpetra_UnitTestHelpers.hpp>
 #include <Teuchos_Array.hpp>
-#include <Teuchos_Tuple.hpp>
+#include <Teuchos_as.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_Tuple.hpp>
 
 #ifdef HAVE_MPI
 #  include "Epetra_MpiComm.h"
@@ -72,28 +73,29 @@
 #include "BlockedMatrixTestHelpers.hpp"
 
 #include <Xpetra_DefaultPlatform.hpp>
-#include <Teuchos_as.hpp>
 
-#include <Xpetra_Map.hpp>
-#include <Xpetra_MapUtils.hpp>
-#include <Xpetra_MapFactory.hpp>
-#include <Xpetra_MapExtractorFactory.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_MultiVector.hpp>
-#include <Xpetra_BlockedMultiVector.hpp>
-#include <Xpetra_ReorderedBlockedMultiVector.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
-#include <Xpetra_Exceptions.hpp>
-#include <Xpetra_Matrix.hpp>
+#include <Xpetra_BlockedMultiVector.hpp>
+#include <Xpetra_BlockReorderManager.hpp>
 #include <Xpetra_CrsMatrix.hpp>
+#include <Xpetra_Exceptions.hpp>
+#include <Xpetra_IO.hpp>
+#include <Xpetra_Map.hpp>
+#include <Xpetra_MapExtractorFactory.hpp>
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_MapUtils.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_MatrixUtils.hpp>
-#include <Xpetra_IO.hpp>
-#include <Xpetra_BlockReorderManager.hpp>
+#include <Xpetra_MultiVector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_ReorderedBlockedCrsMatrix.hpp>
+#include <Xpetra_ReorderedBlockedMultiVector.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
+
 
 namespace XpetraBlockMatrixTests {
 
