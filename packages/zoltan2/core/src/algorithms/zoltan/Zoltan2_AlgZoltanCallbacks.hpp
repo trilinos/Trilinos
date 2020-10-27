@@ -60,10 +60,9 @@
 #include <Zoltan2_TPLTraits.hpp>
 #include <zoltan_cpp.h>
 
-//extern "C" {
+extern "C" {
 #include <zz_const.h>
-#include <zoltan_mem.h>
-//}
+}
 
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgZoltanCallbacks.hpp

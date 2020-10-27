@@ -211,8 +211,8 @@ public:
         << ", " << xyz[1] << ", " << xyz[2]
         << ") is beyond extents ("
         << actual_machine_extent[0] << ", "
-        << actual_machine_extent[0] << ", "
-        << actual_machine_extent[0] << ")! Exiting. "
+        << actual_machine_extent[1] << ", "
+        << actual_machine_extent[2] << ")! Exiting. "
         << std::endl;
 
       throw std::runtime_error("XYZ coord is outside actual machine extents in FatTree Machine Class"); 

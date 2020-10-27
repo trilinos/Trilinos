@@ -77,15 +77,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF)
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_Machine_FatTree
-  ${PACKAGE_NAME_UC}_MACHINE_FATTREE
-  "Enable Cray FatTree Machine representation for task mapping."
-  OFF)
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Machine_Dragonfly
   ${PACKAGE_NAME_UC}_MACHINE_DRAGONFLY
   "Enable Cray Dragonfly Machine representation for task mapping."
+  OFF)
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Machine_FatTree
+  ${PACKAGE_NAME_UC}_MACHINE_FATTREE
+  "Enable FatTree Machine representation for task mapping."
   OFF)
 
 TRIBITS_ADD_OPTION_AND_DEFINE(

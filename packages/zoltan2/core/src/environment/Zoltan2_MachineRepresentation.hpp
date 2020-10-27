@@ -64,6 +64,7 @@ public:
 #else
   #if defined(ZOLTAN2_MACHINE_FATTREE)
     typedef MachineFatTree<pcoord_t, part_t> machine_t;
+//    typedef MachineFatTreeForTesting<pcoord_t, part_t> machine_t;
   #elif defined(ZOLTAN2_MACHINE_TORUS)
     typedef MachineTorusRCAForTesting<pcoord_t, part_t> machine_t;
   #elif defined(ZOLTAN2_MACHINE_DRAGONFLY)
