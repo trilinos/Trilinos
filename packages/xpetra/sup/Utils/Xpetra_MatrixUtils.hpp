@@ -439,11 +439,11 @@ public:
   /** Given a matrix A, detect too small diagonals and replace any found with ones. */
 
   static void CheckRepairMainDiagonal(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Ac,
-                                 bool const &repairZeroDiagonals, Teuchos::FancyOStream &fos,
-                                 const typename Teuchos::ScalarTraits<Scalar>::magnitudeType threshold = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero())
+                                      bool const &repairZeroDiagonals, Teuchos::FancyOStream &fos,
+                                      const typename Teuchos::ScalarTraits<Scalar>::magnitudeType threshold = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero(),
+                                      const Scalar replacementValue = Teuchos::ScalarTraits<Scalar>::one())
   {
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
-    Scalar one = TST::one();
 
     Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList());
     p->set("DoOptimizeStorage", true);
@@ -486,7 +486,7 @@ public:
         if (TST::magnitude(diagVal[r]) <= threshold) {
           GlobalOrdinal grid = rowMap->getGlobalElement(r);
           indout[0] = grid;
-          valout[0] = one;
+          valout[0] = replacementValue;
           fixDiagMatrix->insertGlobalValues(grid,indout(), valout());
         }
       }
@@ -516,7 +516,7 @@ public:
 
     // print some output
     fos << "CheckRepairMainDiagonal: " << (repairZeroDiagonals ? "repaired " : "found ")
-              << gZeroDiags << " too small entries on main diagonal of Ac." << std::endl;
+        << gZeroDiags << " too small entries (threshold = " << threshold <<") on main diagonal of Ac." << std::endl;
 
 #ifdef HAVE_XPETRA_DEBUG // only for debugging
     // check whether Ac has been repaired...

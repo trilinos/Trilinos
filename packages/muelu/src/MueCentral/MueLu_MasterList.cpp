@@ -317,6 +317,7 @@ namespace MueLu {
   "<Parameter name=\"rap: relative diagonal floor\" type=\"Array(double)\" value=\"{}\"/>"
   "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: fix zero diagonals threshold\" type=\"double\" value=\"0.\"/>"
+  "<Parameter name=\"rap: fix zero diagonals replacement\" type=\"double\" value=\"1.\"/>"
   "<Parameter name=\"rap: shift\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"rap: shift diagonal M\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: shift low storage\" type=\"bool\" value=\"false\"/>"
@@ -828,6 +829,8 @@ namespace MueLu {
          ("rap: fix zero diagonals","rap: fix zero diagonals")
       
          ("rap: fix zero diagonals threshold","rap: fix zero diagonals threshold")
+      
+         ("rap: fix zero diagonals replacement","rap: fix zero diagonals replacement")
       
          ("rap: shift","rap: shift")
       
