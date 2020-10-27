@@ -1310,15 +1310,9 @@ init (const host_input_keys_type& keys,
     "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
-  // NOTE (mfh 14 May 2015) This method currently assumes UVM.  We
-  // could change that by setting up ptr and val as Kokkos::DualView
-  // instances.  If we do that, since we are filling on host for now,
-  // we want to make sure that we only zero-fill ptr on host
-  // initially, and that we don't fill val at all.  Once we finish
-  // Kokkos-izing all the set-up kernels, we won't need DualView for
-  // either ptr or val.
-
   typename ptr_type::non_const_type ptr ("FixedHashTable::ptr", size + 1);
+  auto ptr_h = Kokkos::create_mirror_view(ptr);
+  Kokkos::deep_copy(ptr_h, ptr);
 
   // Allocate the array of key,value pairs.  Don't waste time filling
   // it with zeros, because we will fill it with actual data below.
@@ -1326,13 +1320,15 @@ init (const host_input_keys_type& keys,
   typedef typename val_type::non_const_type nonconst_val_type;
   nonconst_val_type val (ViewAllocateWithoutInitializing ("FixedHashTable::pairs"),
                          numKeys);
+  auto val_h = Kokkos::create_mirror_view(val);
+  Kokkos::deep_copy(val_h, val);
 
   // Compute number of entries in each hash table position.
   for (offset_type k = 0; k < numKeys; ++k) {
     const typename hash_type::result_type hashVal =
       hash_type::hashFunc (keys[k], size);
     // Shift over one, so that counts[j] = ptr[j+1].  See below.
-    ++ptr[hashVal+1];
+    ++ptr_h[hashVal+1];
   }
 
   // Compute row offsets via prefix sum:
@@ -1343,12 +1339,12 @@ init (const host_input_keys_type& keys,
   // counts[i].  If we stored counts[i] in ptr[i+1] on input, then the
   // formula is ptr[i+1] += ptr[i].
   for (offset_type i = 0; i < size; ++i) {
-    ptr[i+1] += ptr[i];
+    ptr_h[i+1] += ptr_h[i];
   }
   //ptr[0] = 0; // We've already done this when initializing ptr above.
 
   // curRowStart[i] is the offset of the next element in row i.
-  typename ptr_type::non_const_type curRowStart ("FixedHashTable::curRowStart", size);
+  typename ptr_type::non_const_type::HostMirror curRowStart ("FixedHashTable::curRowStart", size);
 
   // Fill in the hash table.
   FHT::FillPairsResult<KeyType> result (initMinKey, initMaxKey);
@@ -1371,13 +1367,13 @@ init (const host_input_keys_type& keys,
     const hash_value_type hashVal = hash_type::hashFunc (key, size);
 
     const offset_type offset = curRowStart[hashVal];
-    const offset_type curPos = ptr[hashVal] + offset;
-    if (curPos >= ptr[hashVal+1]) {
+    const offset_type curPos = ptr_h[hashVal] + offset;
+    if (curPos >= ptr_h[hashVal+1]) {
       result.success_ = false; // FAILURE!
     }
     else {
-      val[curPos].first = key;
-      val[curPos].second = theVal;
+      val_h[curPos].first = key;
+      val_h[curPos].second = theVal;
       ++curRowStart[hashVal];
     }
   }
@@ -1388,6 +1384,9 @@ init (const host_input_keys_type& keys,
      "Tpetra developers.");
 
   // "Commit" the computed arrays and other computed quantities.
+  Kokkos::deep_copy(ptr, ptr_h);
+  Kokkos::deep_copy(val, val_h);
+
   ptr_ = ptr;
   val_ = val;
   minKey_ = result.minKey_;
