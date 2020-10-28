@@ -62,7 +62,7 @@ namespace FROSch {
                                                                               UN levelID) :
     InterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID)
     {
-        FROSCH_TIMER_START_LEVELID(gDSWInterfacePartitionOfUnityTime,"GDSWInterfacePartitionOfUnity::GDSWInterfacePartitionOfUnity");
+        FROSCH_DETAILTIMER_START_LEVELID(gDSWInterfacePartitionOfUnityTime,"GDSWInterfacePartitionOfUnity::GDSWInterfacePartitionOfUnity");
         if (!this->ParameterList_->get("Type","Full").compare("Full")) {
             UseVertices_ = true;
             UseShortEdges_ = true;
@@ -116,8 +116,8 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(false,"FROSch::GDSWInterfacePartitionOfUnity : ERROR: Specify a valid Type.");
         }
-        this->LocalPartitionOfUnity_ = XMultiVectorPtrVecPtr(5);
-        this->PartitionOfUnityMaps_ = XMapPtrVecPtr(5);
+        this->LocalPartitionOfUnity_ = ConstXMultiVectorPtrVecPtr(5);
+        this->PartitionOfUnityMaps_ = ConstXMapPtrVecPtr(5);
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -130,7 +130,7 @@ namespace FROSch {
     int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::removeDirichletNodes(GOVecView dirichletBoundaryDofs,
                                                                          ConstXMultiVectorPtr nodeList)
     {
-        FROSCH_TIMER_START_LEVELID(removeDirichletNodesTime,"GDSWInterfacePartitionOfUnity::removeDirichletNodes");
+        FROSCH_DETAILTIMER_START_LEVELID(removeDirichletNodesTime,"GDSWInterfacePartitionOfUnity::removeDirichletNodes");
         if (!dirichletBoundaryDofs.is_null()) {
             GOVec tmpDirichletBoundaryDofs(dirichletBoundaryDofs());
             sortunique(tmpDirichletBoundaryDofs);
@@ -144,8 +144,7 @@ namespace FROSch {
     int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::sortInterface(ConstXMatrixPtr matrix,
                                                                   ConstXMultiVectorPtr nodeList)
     {
-
-        FROSCH_TIMER_START_LEVELID(sortInterfaceTime,"GDSWInterfacePartitionOfUnity::sortInterface");
+        FROSCH_DETAILTIMER_START_LEVELID(sortInterfaceTime,"GDSWInterfacePartitionOfUnity::sortInterface");
         if (this->ParameterList_->get("Test Unconnected Interface",true)) {
             if (matrix.is_null()) {
                 FROSCH_WARNING("FROSch::GDSWInterfacePartitionOfUnity",this->Verbose_,"divideUnconnectedEntities() cannot be performed without the matrix.");
@@ -159,10 +158,11 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::computePartitionOfUnity(ConstXMultiVectorPtr nodeList)
     {
-        FROSCH_TIMER_START_LEVELID(computePartitionOfUnityTime,"GDSWInterfacePartitionOfUnity::computePartitionOfUnity");
+        FROSCH_DETAILTIMER_START_LEVELID(computePartitionOfUnityTime,"GDSWInterfacePartitionOfUnity::computePartitionOfUnity");
         // Interface
         UN dofsPerNode = this->DDInterface_->getInterface()->getEntity(0)->getDofsPerNode();
         UN numInterfaceDofs = dofsPerNode*this->DDInterface_->getInterface()->getEntity(0)->getNumNodes();
+
         this->DDInterface_->buildEntityMaps(UseVertices_,
                                             UseShortEdges_,
                                             UseStraightEdges_,
@@ -170,7 +170,6 @@ namespace FROSch {
                                             UseFaces_,
                                             false,
                                             false);
-
 
         // Maps
         if (UseVertices_) {
@@ -200,35 +199,35 @@ namespace FROSch {
 
         if (this->Verbose_) {
             cout
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "-----------------------------------------------------------------------------------------"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| "
-            << left << setw(74) << "GDSW Interface Partition Of Unity " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")" << right
+            << left << setw(74) << "> GDSW Interface Partition Of Unity " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")" << right
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "========================================================================================="
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(41) << "Vertices" << right
             << " | " << setw(41) << boolalpha << UseVertices_ << noboolalpha
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(41) << "Short edges" << right
             << " | " << setw(41) << boolalpha << UseShortEdges_ << noboolalpha
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(41) << "Straight edges" << right
             << " | " << setw(41) << boolalpha << UseStraightEdges_ << noboolalpha
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(41) << "Edges" << right
             << " | " << setw(41) << boolalpha << UseEdges_ << noboolalpha
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(41) << "Faces" << right
             << " | " << setw(41) << boolalpha << UseFaces_ << noboolalpha
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "-----------------------------------------------------------------------------------------"
             << endl;
         }

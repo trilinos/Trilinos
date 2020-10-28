@@ -83,21 +83,6 @@ public:
   */
   StepperNewmarkImplicitAForm();
 
- #ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  /// Constructor
-  StepperNewmarkImplicitAForm(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    bool zeroInitialGuess,
-    std::string schemeName,
-    Scalar beta,
-    Scalar gamma);
-#endif
-
   /// Constructor
   StepperNewmarkImplicitAForm(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -116,16 +101,11 @@ public:
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
+    virtual void setAppAction(
+      Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > appAction);
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return Teuchos::null; }
-#endif
-
-     virtual Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > getAppAction() const
-     { return stepperNewmarkImpAppAction_; }
+    virtual Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > getAppAction() const
+    { return stepperNewmarkImpAppAction_; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -192,9 +172,6 @@ public:
                              const Thyra::VectorBase<Scalar>& dPred,
                              const Thyra::VectorBase<Scalar>& a,
                              const Scalar dt) const;
-
-  virtual void setAppAction(
-      Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > appAction);
 
   void setSchemeName(std::string schemeName);
   void setBeta(Scalar beta);

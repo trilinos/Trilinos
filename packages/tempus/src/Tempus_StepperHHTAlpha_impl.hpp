@@ -255,53 +255,9 @@ StepperHHTAlpha<Scalar>::StepperHHTAlpha() :
   this->setSchemeName(         "Newmark Beta Average Acceleration");
   this->setAlphaF(             0.0);
   this->setAlphaM(             0.0);
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  this->setObserver();
-#endif
   this->setAppAction(Teuchos::null);
   this->setDefaultSolver();
 }
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-template<class Scalar>
-StepperHHTAlpha<Scalar>::StepperHHTAlpha(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
-  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-  bool useFSAL,
-  std::string ICConsistency,
-  bool ICConsistencyCheck,
-  bool zeroInitialGuess,
-  std::string schemeName,
-  Scalar beta,
-  Scalar gamma,
-  Scalar alpha_f,
-  Scalar alpha_m)
-  : out_(Teuchos::VerboseObjectBase::getDefaultOStream())
-{
-  this->setStepperType(        "HHT-Alpha");
-  this->setUseFSAL(            useFSAL);
-  this->setICConsistency(      ICConsistency);
-  this->setICConsistencyCheck( ICConsistencyCheck);
-  this->setZeroInitialGuess(   zeroInitialGuess);
-  this->setSchemeName(         schemeName);
-  if (schemeName == "Newmark Beta User Defined") {
-    this->setBeta(               beta);
-    this->setGamma(              gamma);
-  }
-  this->setAlphaF(             alpha_f);
-  this->setAlphaM(             alpha_m);
-
-  this->setAppAction(Teuchos::null);
-  this->setObserver(obs);
-  this->setSolver(solver);
-
-  if (appModel != Teuchos::null) {
-    this->setModel(appModel);
-    this->initialize();
-  }
-}
-#endif
 
 template<class Scalar>
 StepperHHTAlpha<Scalar>::StepperHHTAlpha(
@@ -331,9 +287,6 @@ StepperHHTAlpha<Scalar>::StepperHHTAlpha(
   }
   this->setAlphaF(             alpha_f);
   this->setAlphaM(             alpha_m);
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  this->setObserver();
-#endif
   this->setAppAction(stepperHHTAlphaAppAction);
   this->setSolver(solver);
 
@@ -348,7 +301,7 @@ void StepperHHTAlpha<Scalar>::setAppAction(
   Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> > appAction)
 {
   if (appAction == Teuchos::null) {
-  // Create default appAction                                                                                            
+  // Create default appAction
   stepperHHTAlphaAppAction_ =
     Teuchos::rcp(new StepperHHTAlphaModifierDefault<Scalar>());
   }
@@ -490,7 +443,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
 
     stepperHHTAlphaAppAction_->execute(solutionHistory, thisStepper,
       StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
- 
+
     //correct acceleration (function of alpha_m)
     correctAcceleration(*a_new, *a_old);
 
@@ -503,7 +456,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
     workingState->computeNorms(currentState);
 
     stepperHHTAlphaAppAction_->execute(solutionHistory, thisStepper,
-				  StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION::END_STEP);
+      StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
   return;
 }

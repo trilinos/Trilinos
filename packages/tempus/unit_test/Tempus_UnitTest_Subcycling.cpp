@@ -56,9 +56,6 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Default values for construction.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  auto obs       = rcp(new Tempus::StepperSubcyclingObserver<double>());
-#endif
   auto modifier  = rcp(new Tempus::StepperSubcyclingModifierDefault<double>());
   auto modifierX = rcp(new Tempus::StepperSubcyclingModifierXDefault<double>());
   auto observer  = rcp(new Tempus::StepperSubcyclingObserverDefault<double>());
@@ -71,9 +68,6 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
 
   // Test the set functions
   stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -87,12 +81,6 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
   auto stepperFE = sf->createStepperForwardEuler(model, Teuchos::null);
   scIntegrator->setStepperWStepper(stepperFE);
   scIntegrator->initialize();
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  stepper = rcp(new Tempus::StepperSubcycling<double>(
-    model, obs, scIntegrator, useFSAL, ICConsistency, ICConsistencyCheck));
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
 
   stepper = rcp(new Tempus::StepperSubcycling<double>(
     model,scIntegrator, useFSAL, ICConsistency, ICConsistencyCheck,modifier));

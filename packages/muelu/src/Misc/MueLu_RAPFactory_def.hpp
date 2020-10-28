@@ -79,6 +79,8 @@ namespace MueLu {
     SET_VALID_ENTRY("transpose: use implicit");
     SET_VALID_ENTRY("rap: triple product");
     SET_VALID_ENTRY("rap: fix zero diagonals");
+    SET_VALID_ENTRY("rap: fix zero diagonals threshold");
+    SET_VALID_ENTRY("rap: fix zero diagonals replacement");
     SET_VALID_ENTRY("rap: relative diagonal floor");
 #undef  SET_VALID_ENTRY
     validParamList->set< RCP<const FactoryBase> >("A",                   null, "Generating factory of the matrix A used during the prolongator smoothing process");
@@ -219,8 +221,12 @@ namespace MueLu {
 
         bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
         bool checkAc             = pL.get<bool>("CheckMainDiagonal")|| pL.get<bool>("rap: fix zero diagonals"); ;
-        if (checkAc || repairZeroDiagonals)
-          Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Ac, repairZeroDiagonals, GetOStream(Warnings1));
+        if (checkAc || repairZeroDiagonals) {
+          using magnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+          magnitudeType threshold = pL.get<magnitudeType>("rap: fix zero diagonals threshold");
+          Scalar replacement = Teuchos::as<Scalar>(pL.get<double>("rap: fix zero diagonals replacement"));
+          Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Ac, repairZeroDiagonals, GetOStream(Warnings1), threshold, replacement);
+        }
 
         if (IsPrint(Statistics2)) {
           RCP<ParameterList> params = rcp(new ParameterList());;
@@ -288,9 +294,12 @@ namespace MueLu {
 
         bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
         bool checkAc             = pL.get<bool>("CheckMainDiagonal")|| pL.get<bool>("rap: fix zero diagonals"); ;
-        if (checkAc || repairZeroDiagonals)
-          Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Ac, repairZeroDiagonals, GetOStream(Warnings1));
-
+        if (checkAc || repairZeroDiagonals) {
+          using magnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+          magnitudeType threshold = pL.get<magnitudeType>("rap: fix zero diagonals threshold");
+          Scalar replacement = Teuchos::as<Scalar>(pL.get<double>("rap: fix zero diagonals replacement"));
+          Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Ac, repairZeroDiagonals, GetOStream(Warnings1), threshold, replacement);
+        }
 
 
         if (IsPrint(Statistics2)) {

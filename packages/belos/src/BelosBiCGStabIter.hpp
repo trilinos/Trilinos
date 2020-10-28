@@ -122,6 +122,7 @@ namespace Belos {
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
+    typedef Teuchos::ScalarTraits<MagnitudeType> MT;
 
     //! @name Constructors/Destructor
     //@{
@@ -232,6 +233,9 @@ namespace Belos {
     // amk TODO: what is this supposed to be doing?
     Teuchos::RCP<MV> getCurrentUpdate() const { return Teuchos::null; }
 
+    //! Has breakdown been detected in any linear system.
+    bool breakdownDetected() { return breakdown_; }
+
     //@}
 
     //! @name Accessor methods
@@ -280,6 +284,9 @@ namespace Belos {
     // For the implications of the state of initialized_, please see documentation for initialize()
     bool initialized_;
 
+    // Breakdown has been observed for at least one of the linear systems
+    bool breakdown_;
+
     // Current number of iterations performed.
     int iter_;
 
@@ -313,6 +320,7 @@ namespace Belos {
     stest_(tester),
     numRHS_(0),
     initialized_(false),
+    breakdown_(false),
     iter_(0)
   {
   }
@@ -349,12 +357,15 @@ namespace Belos {
       omega_.resize(numRHS_);
     }
 
+    // Reset breakdown to false before initializing iteration
+    breakdown_ = false;
+
     // NOTE:  In BiCGStabIter R_, the initial residual, is required!!!
     //
     std::string errstr("Belos::BlockPseudoCGIter::initialize(): Specified multivectors must have a consistent length and width.");
 
     // Create convenience variable for one.
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+    const ScalarType one = SCT::one();
 
     if (!Teuchos::is_null(newstate.R)) {
 
@@ -465,7 +476,7 @@ namespace Belos {
     std::vector<ScalarType> rhatV( numRHS_ ), tT( numRHS_ ), tS( numRHS_ );
 
     // Create convenience variable for one.
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+    const ScalarType one = SCT::one();
 
     // TODO: We may currently be using more space than is required
     RCP<MV> leftPrecVec, leftPrecVec2;
@@ -488,13 +499,7 @@ namespace Belos {
     ////////////////////////////////////////////////////////////////
     // Iterate until the status test tells us to stop.
     //
-    while (stest_->checkStatus(this) != Passed) {
-//      std::cout << std::endl;
-
-      // std::vector<ScalarType> tempResids(numRHS_);
-      // MVT::MvNorm(*R_,tempResids);
-//      for(i=0; i<numRHS_; i++)
-//        std::cout << "r[" << i << "] = " << tempResids[i] << std::endl;
+    while (stest_->checkStatus(this) != Passed && !breakdown_) {
 
       // Increment the iteration
       iter_++;
@@ -502,15 +507,15 @@ namespace Belos {
       // rho_new = <R_, Rhat_>
       MVT::MvDot(*R_,*Rhat_,rho_new);
 
-//      for(i=0; i<numRHS_; i++) {
-//        std::cout << "rho[" << i << "] = " << rho_new[i] << std::endl;
-//      }
-
       // beta = ( rho_new / rho_old ) (alpha / omega )
       // TODO: None of these loops are currently threaded
       for(i=0; i<numRHS_; i++) {
+        // Catch breakdown in rho_old here, since
+        // it is just rho_new from the previous iteration.
+        if (SCT::magnitude(rho_new[i]) < MT::sfmin())
+          breakdown_ = true;
+
         beta[i] = (rho_new[i] / rho_old_[i]) * (alpha_[i] / omega_[i]);
-//        std::cout << "beta[" << i << "] = " << beta[i] << std::endl;
       }
 
       // p = r + beta (p - omega v)
@@ -543,12 +548,14 @@ namespace Belos {
       // alpha = rho_new / <Rhat, V>
       MVT::MvDot(*V_,*Rhat_,rhatV);
       for(i=0; i<numRHS_; i++) {
-        alpha_[i] = rho_new[i] / rhatV[i];
+        if (SCT::magnitude(rhatV[i]) < MT::sfmin())
+        {
+          breakdown_ = true;
+          return;
+        }
+        else 
+          alpha_[i] = rho_new[i] / rhatV[i];
       }
-
-//      for(i=0; i<numRHS_; i++) {
-//        std::cout << "alpha[" << i << "] = " << alpha_[i] << std::endl;
-//      }
 
       // s = r - alpha v
       axpy(one, *R_, alpha_, *V_, *S, true);
@@ -573,9 +580,6 @@ namespace Belos {
       // t = Az
       lp_->applyOp(*Z,*T);
 
-//      std::cout << "T:\n";
-//      T->Print(std::cout);
-
       // omega = <K1\t,K1\s> / <K1\t,K1\t>
       if(lp_->isLeftPrec()) {
         if(leftPrecVec == Teuchos::null) {
@@ -593,12 +597,14 @@ namespace Belos {
         MVT::MvDot(*T,*S,tS);
       }
       for(i=0; i<numRHS_; i++) {
-        omega_[i] = tS[i] / tT[i];
+        if (SCT::magnitude(tT[i]) < MT::sfmin())
+        {
+          omega_[i] = SCT::zero();
+          breakdown_ = true;
+        }
+        else
+          omega_[i] = tS[i] / tT[i];
       }
-
-//      for(i=0; i<numRHS_; i++) {
-//        std::cout << "omega[" << i << "] = " << omega_[i] << " = " << tS[i] << " / " << tT[i] << std::endl;
-//      }
 
       // x = x + alpha y + omega z
       axpy(one, *X, alpha_, *Y, *X); // x = x + alpha y

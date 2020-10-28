@@ -23,42 +23,10 @@ void StepperExplicitRK<Scalar>::setupDefault()
 {
   this->setUseEmbedded(false);
   this->setStageNumber(-1);
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  this->setObserver(Teuchos::rcp(new StepperRKObserver<Scalar>()));
-#endif
   this->setAppAction(Teuchos::null);
 }
 
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-template<class Scalar>
-void StepperExplicitRK<Scalar>::setup(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
-  bool useFSAL,
-  std::string ICConsistency,
-  bool ICConsistencyCheck,
-  bool useEmbedded)
-{
-  this->setUseFSAL(            useFSAL);
-  this->setICConsistency(      ICConsistency);
-  this->setICConsistencyCheck( ICConsistencyCheck);
-  this->setUseEmbedded(        useEmbedded);
-
-  this->setStageNumber(-1);
-
-  this->stepperObserver_ =
-    Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
-  this->setObserver(obs);
-  this->setAppAction(Teuchos::null);
-
-  if (appModel != Teuchos::null) {
-    this->setModel(appModel);
-    this->initialize();
-  }
-}
-#endif
 template<class Scalar>
 void StepperExplicitRK<Scalar>::setup(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -72,12 +40,8 @@ void StepperExplicitRK<Scalar>::setup(
   this->setICConsistency(      ICConsistency);
   this->setICConsistencyCheck( ICConsistencyCheck);
   this->setUseEmbedded(        useEmbedded);
-
   this->setStageNumber(-1);
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  this->setObserver();
-#endif
   this->setAppAction(stepperRKAppAction);
 
   if (appModel != Teuchos::null) {
@@ -183,38 +147,6 @@ void StepperExplicitRK<Scalar>::getValidParametersBasicERK(
 }
 
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-template<class Scalar>
-void StepperExplicitRK<Scalar>::setObserver(
-  Teuchos::RCP<StepperObserver<Scalar> > obs)
-{
-  if (this->stepperObserver_ == Teuchos::null)
-     this->stepperObserver_  =
-        Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
-
-  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() >0 ) )
-    return;
-
-  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
-     obs = Teuchos::rcp(new StepperRKObserver<Scalar>());
-
-  // Check that this casts to prevent a runtime error if it doesn't
-  if (Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs) != Teuchos::null) {
-    this->stepperObserver_->addObserver(
-         Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
-  } else {
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,0,"setObserver");
-    *out << "Tempus::StepperExplicit_RK::setObserver: Warning: An observer has been provided that";
-    *out << " does not support Tempus::StepperRKObserver. This observer WILL NOT be added.";
-    *out << " In the future, this will result in a runtime error!" << std::endl;
-  }
-
-  this->isInitialized_ = false;
-}
-#endif
-
-
 template<class Scalar>
 void StepperExplicitRK<Scalar>::initialize()
 {
@@ -292,9 +224,6 @@ void StepperExplicitRK<Scalar>::takeStep(
 
     Thyra::assign(workingState->getX().ptr(), *(currentState->getX()));
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
-#endif
     RCP<StepperExplicitRK<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
     this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
       StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
@@ -310,14 +239,6 @@ void StepperExplicitRK<Scalar>::takeStep(
       }
       this->setStepperXDot(stageXDot_[i]);
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-      this->stepperObserver_->observeBeginStage(solutionHistory, *this);
-      this->stepperObserver_
-          ->observeBeforeImplicitExplicitly(solutionHistory, *this);
-      this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
-      this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
-      this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
-#endif
       this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
         StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STAGE);
       this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
@@ -342,9 +263,6 @@ void StepperExplicitRK<Scalar>::takeStep(
         this->evaluateExplicitODE(stageXDot_[i], workingState->getX(), ts, p);
       }
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-      this->stepperObserver_->observeEndStage(solutionHistory, *this);
-#endif
       this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
         StepperRKAppAction<Scalar>::ACTION_LOCATION::END_STAGE);
     }
@@ -416,9 +334,6 @@ void StepperExplicitRK<Scalar>::takeStep(
 
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
-#endif
     this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
       StepperRKAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
@@ -454,9 +369,6 @@ void StepperExplicitRK<Scalar>::describe(
   out << "--- StepperExplicitRK ---\n";
   if (this->tableau_ != Teuchos::null) this->tableau_->describe(out, verbLevel);
   out << "  tableau_           = " << this->tableau_ << std::endl;
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  out << "  stepperObserver_   = " << stepperObserver_ << std::endl;
-#endif
   out << "  stepperRKAppAction_= " << this->stepperRKAppAction_ << std::endl;
   out << "  stageXDot_.size()  = " << stageXDot_.size() << std::endl;
   const int numStages = stageXDot_.size();
@@ -485,12 +397,6 @@ bool StepperExplicitRK<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
     out << "The tableau is not set!\n";
   }
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  if (stepperObserver_ == Teuchos::null) {
-    isValidSetup = false;
-    out << "The observer is not set!\n";
-  }
-#endif
   if (this->stepperRKAppAction_ == Teuchos::null) {
     isValidSetup = false;
     out << "The AppAction is not set!\n";

@@ -315,8 +315,6 @@ NUM_MPI_PROCS 4
 #  )
 #ENDIF() # IF(ShyLU_DDFROSch_ENABLE_MueLu)
 
-
-
 TRIBITS_ADD_TEST(
 thyra_xpetra_laplace
 NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM3_DPN1_ORD0_TPETRA
@@ -556,6 +554,7 @@ COMM mpi
 NUM_MPI_PROCS 4
 )
 ENDIF()
+
 ################################################
 # TwoLevelPreconditioner_IPOUHarmonic_GDSWStar #
 ################################################

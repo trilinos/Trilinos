@@ -1508,6 +1508,15 @@
     </parameter>
 
     <parameter>
+      <name>rap: fix zero diagonals replacement</name>
+      <type>double</type>
+      <default>1.</default>
+      <description>Replacement value for diagonal entries that are considered zero.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
       <name>rap: shift</name>
       <type>double</type>
       <default>0.0</default>
@@ -1715,6 +1724,14 @@ optimized neighbor discovery for Importer construction.</description>
       <type>bool</type>
       <default>true</default>
       <description>Skip the first level of the (1,1) hierarchy.</description>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>refmaxwell: normalize nullspace</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Normalize the nullspace.</description>
       <visible>false</visible>
     </parameter>
 

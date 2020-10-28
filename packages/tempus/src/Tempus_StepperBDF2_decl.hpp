@@ -11,10 +11,6 @@
 
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
-#include "Tempus_StepperObserverComposite.hpp"
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  #include "Tempus_StepperBDF2Observer.hpp"
-#endif
 #include "Tempus_StepperBDF2AppAction.hpp"
 
 namespace Tempus {
@@ -86,22 +82,6 @@ public:
      */
     StepperBDF2();
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    /** \brief Constructor.
-     *
-     *  Constructs a fully initialized stepper.
-     */
-    StepperBDF2(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-      const Teuchos::RCP<StepperObserver<Scalar> >& obs,
-      const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-      const Teuchos::RCP<Stepper<Scalar> >& startUpStepper,
-      bool useFSAL,
-      std::string ICConsistency,
-      bool ICConsistencyCheck,
-      bool zeroInitialGuess);
-#endif
-
     StepperBDF2(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
       const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
@@ -116,14 +96,6 @@ public:
     //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
-
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperObserver_; }
-#endif
 
     virtual void setAppAction(
       Teuchos::RCP<StepperBDF2AppAction<Scalar> > appAction);
@@ -184,13 +156,9 @@ public:
 
   private:
 
-    Teuchos::RCP<Stepper<Scalar> >             startUpStepper_;
-    Teuchos::RCP<StepperObserverComposite<Scalar> >     stepperObserver_;
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    Teuchos::RCP<StepperBDF2Observer<Scalar> > stepperBDF2Observer_;
-#endif
+    Teuchos::RCP<Stepper<Scalar> >              startUpStepper_;
     Teuchos::RCP<StepperBDF2AppAction<Scalar> > stepperBDF2AppAction_;
-    Scalar                                     order_ = Scalar(2.0);
+    Scalar                                      order_ = Scalar(2.0);
   };
 
 /** \brief Time-derivative interface for BDF2.

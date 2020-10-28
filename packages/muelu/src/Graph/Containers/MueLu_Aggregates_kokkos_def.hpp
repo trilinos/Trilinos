@@ -126,8 +126,9 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   typename Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::local_graph_type
   Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::GetGraph() const {
-    typedef typename local_graph_type::row_map_type row_map_type;
-    typedef typename local_graph_type::entries_type entries_type;
+    using row_map_type = typename local_graph_type::row_map_type;
+    using entries_type = typename local_graph_type::entries_type;
+    using size_type    = typename local_graph_type::size_type;
 
     auto numAggregates = numAggregates_;
 
@@ -154,7 +155,14 @@ namespace MueLu {
 
     int myPID = GetMap()->getComm()->getRank();
 
-    typename entries_type::non_const_type cols(Kokkos::ViewAllocateWithoutInitializing("Agg_cols"), rows(numAggregates));
+    size_type numNNZ;
+    {
+      Kokkos::View<size_type, device_type> numNNZ_device = Kokkos::subview(rows, numAggregates);
+      typename Kokkos::View<size_type, device_type>::HostMirror numNNZ_host = Kokkos::create_mirror_view(numNNZ_device);
+      Kokkos::deep_copy(numNNZ_host, numNNZ_device);
+      numNNZ = numNNZ_host();
+    }
+    typename entries_type::non_const_type cols(Kokkos::ViewAllocateWithoutInitializing("Agg_cols"), numNNZ);
     size_t realnnz = 0;
     Kokkos::parallel_reduce("MueLu:Aggregates:GetGraph:compute_cols", range_type(0, procWinner.size()),
       KOKKOS_LAMBDA(const LO i, size_t& nnz) {
@@ -165,8 +173,8 @@ namespace MueLu {
           nnz++;
         }
       }, realnnz);
-    TEUCHOS_TEST_FOR_EXCEPTION(realnnz != rows(numAggregates), Exceptions::RuntimeError,
-        "MueLu: Internal error: Something is wrong with aggregates graph construction");
+    TEUCHOS_TEST_FOR_EXCEPTION(realnnz != numNNZ, Exceptions::RuntimeError,
+                               "MueLu: Internal error: Something is wrong with aggregates graph construction: numNNZ = " << numNNZ << " != " << realnnz << " = realnnz");
 
     graph_ = local_graph_type(cols, rows);
 

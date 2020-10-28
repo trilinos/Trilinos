@@ -20,7 +20,6 @@
 #include "Tempus_StepperTrapezoidalModifierDefault.hpp"
 #include "Tempus_StepperTrapezoidalModifierXDefault.hpp"
 #include "Tempus_StepperTrapezoidalObserverDefault.hpp"
-#include "Tempus_StepperTrapezoidalObserver.hpp"
 #include "Tempus_UnitTest_Utils.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
@@ -59,7 +58,6 @@ TEUCHOS_UNIT_TEST(Trapezoidal, Default_Construction)
   // Default values for construction.
   auto modifier  = rcp(new Tempus::StepperTrapezoidalModifierDefault<double>());
   auto modifierX = rcp(new Tempus::StepperTrapezoidalModifierXDefault<double>());
-  auto obs       = rcp(new Tempus::StepperTrapezoidalObserver<double>());
   auto solver    = rcp(new Thyra::NOXNonlinearSolver());
   solver->setParameterList(Tempus::defaultSolverParameters());
 
@@ -71,22 +69,11 @@ TEUCHOS_UNIT_TEST(Trapezoidal, Default_Construction)
   // Test the set functions.
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
     stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setZeroInitialGuess(zeroInitialGuess);      stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  // Full argument list construction.
-  stepper = rcp(new Tempus::StepperTrapezoidal<double>(
-    model, obs, solver, useFSAL,
-    ICConsistency, ICConsistencyCheck, zeroInitialGuess));
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
 
 // Full argument list construction.
 stepper = rcp(new Tempus::StepperTrapezoidal<double>(

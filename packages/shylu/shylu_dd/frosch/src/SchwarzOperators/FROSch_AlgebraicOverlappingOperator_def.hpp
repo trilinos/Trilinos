@@ -56,7 +56,7 @@ namespace FROSch {
                                                                             ParameterListPtr parameterList) :
     OverlappingOperator<SC,LO,GO,NO> (k,parameterList)
     {
-        FROSCH_TIMER_START_LEVELID(algebraicOverlappingOperatorTime,"AlgebraicOverlappingOperator::AlgebraicOverlappingOperator");
+        FROSCH_DETAILTIMER_START_LEVELID(algebraicOverlappingOperatorTime,"AlgebraicOverlappingOperator::AlgebraicOverlappingOperator");
         if (!this->ParameterList_->get("Adding Layers Strategy","CrsGraph").compare("CrsGraph")) {
             AddingLayersStrategy_ = LayersFromGraph;
         } else if (!this->ParameterList_->get("Adding Layers Strategy","CrsGraph").compare("CrsMatrix")) {
@@ -73,11 +73,40 @@ namespace FROSch {
                                                               ConstXMapPtr repeatedMap)
     {
         FROSCH_TIMER_START_LEVELID(initializeTime,"AlgebraicOverlappingOperator::initialize");
+
         if (this->Verbose_) {
-            cout << "\n\
-+------------------------------+\n\
-| AlgebraicOverlappingOperator |\n\
-+------------------------------+\n";
+            cout
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << "| "
+            << left << setw(74) << "AlgebraicOverlappingOperator " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+            << " |"
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << setw(89) << "========================================================================================="
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << "| " << left << setw(41) << "Adding layers strategy" << right
+            << " | " << setw(41) << this->ParameterList_->get("Adding Layers Strategy","CrsGraph")
+            << " |"
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << "| " << left << setw(41) << "Combine mode in overlap" << right
+            << " | " << setw(41) << this->ParameterList_->get("Combine Values in Overlap","Restricted")
+            << " |"
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << "| " << left << setw(41) << "Solver type" << right
+            << " | " << setw(41) << this->ParameterList_->sublist("Solver").get("SolverType","Amesos")
+            << " |"
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << "| " << left << setw(41) << "Solver" << right
+            << " | " << setw(41) << this->ParameterList_->sublist("Solver").get("Solver","Mumps")
+            << " |"
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << "| " << left << setw(41) << "Reuse symbolic factorization" << right
+            << " | " << setw(41) << this->ParameterList_->get("Reuse: Symbolic Factorization",true)
+            << " |"
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << endl;
         }
 
         if (repeatedMap.is_null()) repeatedMap = this->K_->getRangeMap();
@@ -115,7 +144,7 @@ namespace FROSch {
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::buildOverlappingMatrices(int overlap,
                                                                             ConstXMapPtr repeatedMap)
     {
-        FROSCH_TIMER_START_LEVELID(buildOverlappingMatricesTime,"AlgebraicOverlappingOperator::buildOverlappingMatrices");
+        FROSCH_DETAILTIMER_START_LEVELID(buildOverlappingMatricesTime,"AlgebraicOverlappingOperator::buildOverlappingMatrices");
         // ====================================================================================
         // AH 08/09/2019: This is just temporary. Implement this properly in all the classes
         Verbosity verbosity = All;
@@ -135,7 +164,7 @@ namespace FROSch {
         LO local,sum,minVal,maxVal;
         SC avg;
         if (verbosity==All) {
-            FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print statistics");
+            FROSCH_DETAILTIMER_START_LEVELID(printStatisticsTime,"print statistics");
 
             global = this->OverlappingMap_->getMaxAllGlobalIndex();
             if (this->OverlappingMap_->lib()==UseEpetra || this->OverlappingMap_->getGlobalNumElements()>0) {
@@ -150,15 +179,15 @@ namespace FROSch {
 
             if (this->Verbose_) {
                 cout
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "-----------------------------------------------------------------------------------------"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| "
-                << left << setw(74) << "Overlapping subdomains statistics " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+                << left << setw(74) << "> Overlapping Subdomains Statistics " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "========================================================================================="
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(20) << " " << right
                 << " | " << setw(10) << "total"
                 << " | " << setw(10) << "avg"
@@ -166,9 +195,9 @@ namespace FROSch {
                 << " | " << setw(10) << "max"
                 << " | " << setw(10) << "global sum"
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "-----------------------------------------------------------------------------------------"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(20) << "Layer 0" << right
                 << " | " << setw(10) << global
                 << " | " << setw(10) << setprecision(5) << avg
@@ -200,7 +229,7 @@ namespace FROSch {
                     break;
             }
             if (verbosity==All) {
-                FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print statistics");
+                FROSCH_DETAILTIMER_START_LEVELID(printStatisticsTime,"print statistics");
                 local = (LO) max((LO) this->OverlappingMap_->getNodeNumElements(),(LO) 0);
                 reduceAll(*this->MpiComm_,REDUCE_SUM,local,ptr(&sum));
                 avg = max(sum/double(this->MpiComm_->getSize()),0.0);
@@ -209,7 +238,7 @@ namespace FROSch {
 
                 if (this->Verbose_) {
                     cout
-                    << "\n" << setw(FROSCH_INDENT) << " "
+                    << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << "Layer " << setw(14) << i+1 << right
                     << " | " << setw(10) << global
                     << " | " << setw(10) << setprecision(5) << avg
@@ -222,10 +251,10 @@ namespace FROSch {
         }
 
         if (verbosity==All) {
-            FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print statistics");
+            FROSCH_DETAILTIMER_START_LEVELID(printStatisticsTime,"print statistics");
             if (this->Verbose_) {
                 cout
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << endl;
             }

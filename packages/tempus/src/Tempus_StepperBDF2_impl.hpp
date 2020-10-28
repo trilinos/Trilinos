@@ -31,25 +31,22 @@ StepperBDF2<Scalar>::StepperBDF2()
   this->setICConsistency(      "None");
   this->setICConsistencyCheck( false);
   this->setZeroInitialGuess(   false);
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  this->setObserver();
-#endif
+
   this->setAppAction(Teuchos::null);
   this->setDefaultSolver();
   this->setStartUpStepper("DIRK 1 Stage Theta Method");
 }
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
 template<class Scalar>
 StepperBDF2<Scalar>::StepperBDF2(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
   const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
   const Teuchos::RCP<Stepper<Scalar> >& startUpStepper,
   bool useFSAL,
   std::string ICConsistency,
   bool ICConsistencyCheck,
-  bool zeroInitialGuess)
+  bool zeroInitialGuess,
+  const Teuchos::RCP<StepperBDF2AppAction<Scalar> >& stepperBDF2AppAction)
 {
   this->setStepperType(        "BDF2");
   this->setUseFSAL(            useFSAL);
@@ -57,37 +54,6 @@ StepperBDF2<Scalar>::StepperBDF2(
   this->setICConsistencyCheck( ICConsistencyCheck);
   this->setZeroInitialGuess(   zeroInitialGuess);
 
-  this->setObserver(obs);
-  this->setAppAction(Teuchos::null);
-  this->setSolver(solver);
-  this->setStartUpStepper(startUpStepper);
-
-  if (appModel != Teuchos::null) {
-    this->setModel(appModel);
-    this->initialize();
-  }
-}
-#endif
-
-template<class Scalar>
-StepperBDF2<Scalar>::StepperBDF2(
-                                 const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-                                 const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-                                 const Teuchos::RCP<Stepper<Scalar> >& startUpStepper,
-                                 bool useFSAL,
-                                 std::string ICConsistency,
-                                 bool ICConsistencyCheck,
-                                 bool zeroInitialGuess,
-                                 const Teuchos::RCP<StepperBDF2AppAction<Scalar> >& stepperBDF2AppAction)
-{
-  this->setStepperType(        "BDF2");
-  this->setUseFSAL(            useFSAL);
-  this->setICConsistency(      ICConsistency);
-  this->setICConsistencyCheck( ICConsistencyCheck);
-  this->setZeroInitialGuess(   zeroInitialGuess);
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  this->setObserver();
-#endif
   this->setAppAction(stepperBDF2AppAction);
   this->setSolver(solver);
   this->setStartUpStepper(startUpStepper);
@@ -100,7 +66,7 @@ StepperBDF2<Scalar>::StepperBDF2(
 
 template<class Scalar>
 void StepperBDF2<Scalar>::setModel(
-                                   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
   StepperImplicit<Scalar>::setModel(appModel);
   if (startUpStepper_->getModel() == Teuchos::null) {
@@ -133,7 +99,7 @@ void StepperBDF2<Scalar>::setStartUpStepper(std::string startupStepperType)
 /// Set the start up stepper.
 template<class Scalar>
 void StepperBDF2<Scalar>::setStartUpStepper(
-                                            Teuchos::RCP<Stepper<Scalar> > startUpStepper)
+     Teuchos::RCP<Stepper<Scalar> > startUpStepper)
 {
   startUpStepper_ = startUpStepper;
 
@@ -152,33 +118,9 @@ void StepperBDF2<Scalar>::setStartUpStepper(
   this->isInitialized_ = false;
 }
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-template<class Scalar>
-void StepperBDF2<Scalar>::setObserver(
-                                      Teuchos::RCP<StepperObserver<Scalar> > obs)
-{
-  if (this->stepperObserver_ == Teuchos::null)
-  this->stepperObserver_  =
-    Teuchos::rcp(new StepperObserverComposite<Scalar>());
-
-  if (obs == Teuchos::null) {
-    if (stepperBDF2Observer_ == Teuchos::null)
-      stepperBDF2Observer_ = Teuchos::rcp(new StepperBDF2Observer<Scalar>());
-    if (this->stepperObserver_->getSize() == 0)
-      this->stepperObserver_->addObserver(stepperBDF2Observer_);
-  } else {
-  stepperBDF2Observer_ =
-    Teuchos::rcp_dynamic_cast<StepperBDF2Observer<Scalar> >(obs,true);
-  this->stepperObserver_->addObserver(stepperBDF2Observer_);
-  }
-
-  this->isInitialized_ = false;
-}
-#endif
-
 template<class Scalar>
 void StepperBDF2<Scalar>::setAppAction(
-                                       Teuchos::RCP<StepperBDF2AppAction<Scalar> > appAction)
+  Teuchos::RCP<StepperBDF2AppAction<Scalar> > appAction)
 {
   if (appAction == Teuchos::null) {
     // Create default appAction
@@ -201,7 +143,7 @@ void StepperBDF2<Scalar>::initialize()
 
 template<class Scalar>
 void StepperBDF2<Scalar>::setInitialConditions(
-                                               const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
+  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   using Teuchos::RCP;
 
@@ -219,7 +161,7 @@ void StepperBDF2<Scalar>::setInitialConditions(
 
 template<class Scalar>
 void StepperBDF2<Scalar>::takeStep(
-                                   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
+  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   this->checkInitialized();
 
@@ -278,22 +220,14 @@ void StepperBDF2<Scalar>::takeStep(
 
     auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
                                                             timeDer, dt, alpha, beta));
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    if (!Teuchos::is_null(stepperBDF2Observer_))
-      stepperBDF2Observer_->observeBeforeSolve(solutionHistory, *this);
-#endif
     stepperBDF2AppAction_->execute(solutionHistory, thisStepper,
-                                   StepperBDF2AppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
+      StepperBDF2AppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
 
     const Thyra::SolveStatus<Scalar> sStatus =
       this->solveImplicitODE(x, xDot, time, p);
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    if (!Teuchos::is_null(stepperBDF2Observer_))
-      stepperBDF2Observer_->observeAfterSolve(solutionHistory, *this);
-#endif
     stepperBDF2AppAction_->execute(solutionHistory, thisStepper,
-                                   StepperBDF2AppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
+      StepperBDF2AppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
 
 
     if (workingState->getXDot() != Teuchos::null)
@@ -310,7 +244,7 @@ void StepperBDF2<Scalar>::takeStep(
 
 template<class Scalar>
 void StepperBDF2<Scalar>::computeStartUp(
-                                         const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
+  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"StepperBDF2::computeStartUp()");
@@ -342,8 +276,8 @@ getDefaultStepperState()
 
 template<class Scalar>
 void StepperBDF2<Scalar>::describe(
-                                   Teuchos::FancyOStream               &out,
-                                   const Teuchos::EVerbosityLevel      verbLevel ) const
+  Teuchos::FancyOStream               &out,
+  const Teuchos::EVerbosityLevel      verbLevel ) const
 {
   out << std::endl;
   Stepper<Scalar>::describe(out, verbLevel);
@@ -358,11 +292,7 @@ void StepperBDF2<Scalar>::describe(
       << startUpStepper_ << std::endl;
   out << "  startUpStepper_->isInitialized() = "
       << Teuchos::toString(startUpStepper_->isInitialized()) << std::endl;
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  out << "  stepperBDF2Observer_             = "
-      << stepperBDF2Observer_ << std::endl;
-#endif
-  out << "  stepperBDF2AppAction_                = "
+  out << "  stepperBDF2AppAction_            = "
       << stepperBDF2AppAction_ << std::endl;
   out << "----------------------------" << std::endl;
   out << "  order_                           = " << order_ << std::endl;
@@ -382,12 +312,6 @@ bool StepperBDF2<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
     isValidSetup = false;
     out << "The startup stepper is not initialized!\n";
   }
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  if (stepperBDF2Observer_ == Teuchos::null) {
-    isValidSetup = false;
-    out << "The BDF2 observer is not set!\n";
-  }
-#endif
   if (stepperBDF2AppAction_ == Teuchos::null) {
     isValidSetup = false;
     out << "The BDF2 AppAction is not set!\n";

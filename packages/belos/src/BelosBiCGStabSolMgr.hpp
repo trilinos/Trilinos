@@ -671,7 +671,7 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
   //////////////////////////////////////////////////////////////////////////////////////
   // Pseudo-Block BiCGStab solver
 
-  Teuchos::RCP<BiCGStabIter<ScalarType,MV,OP> > block_cg_iter
+  Teuchos::RCP<BiCGStabIter<ScalarType,MV,OP> > bicgstab_iter
     = Teuchos::rcp( new BiCGStabIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,plist) );
 
   // Enter solve() iterations
@@ -688,7 +688,7 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
       currRHSIdx.resize(numCurrRHS);
 
       // Reset the number of iterations.
-      block_cg_iter->resetNumIters();
+      bicgstab_iter->resetNumIters();
 
       // Reset the number of calls that the status test output knows about.
       outputTest_->resetNumCalls();
@@ -699,14 +699,14 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
       // Get a new state struct and initialize the solver.
       BiCGStabIterationState<ScalarType,MV> newState;
       newState.R = R_0;
-      block_cg_iter->initializeBiCGStab(newState);
+      bicgstab_iter->initializeBiCGStab(newState);
 
       while(1) {
 
         // tell block_gmres_iter to iterate
         try {
 
-          block_cg_iter->iterate();
+          bicgstab_iter->iterate();
 
           ////////////////////////////////////////////////////////////////////////////////////
           //
@@ -721,7 +721,7 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
             // If the number of converged linear systems is equal to the
             // number of current linear systems, then we are done with this block.
             if (convIdx.size() == currRHSIdx.size())
-              break;  // break from while(1){block_cg_iter->iterate()}
+              break;  // break from while(1){bicgstab_iter->iterate()}
 
             // Inform the linear problem that we are finished with this current linear system.
             problem_->setCurrLS();
@@ -750,13 +750,13 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
 
             // Get the current residual vector.
             std::vector<MagnitudeType> norms;
-            R_0 = MVT::CloneCopy( *(block_cg_iter->getNativeResiduals(&norms)),currIdx2 );
+            R_0 = MVT::CloneCopy( *(bicgstab_iter->getNativeResiduals(&norms)),currIdx2 );
             for (int i=0; i<have; ++i) { currIdx2[i] = i; }
 
             // Set the new state and initialize the solver.
             BiCGStabIterationState<ScalarType,MV> defstate;
             defstate.R = R_0;
-            block_cg_iter->initializeBiCGStab(defstate);
+            bicgstab_iter->initializeBiCGStab(defstate);
           }
 
           ////////////////////////////////////////////////////////////////////////////////////
@@ -767,8 +767,23 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
             isConverged = false;
-            break;  // break from while(1){block_cg_iter->iterate()}
+            break;  // break from while(1){bicgstab_iter->iterate()}
           }
+
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // we returned from iterate(), but none of our status tests Passed.
+          // breakdown was detected within the solver iteration.
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+
+          else if ( bicgstab_iter->breakdownDetected() ) {
+            // we don't have convergence
+            isConverged = false;
+            printer_->stream(Warnings) <<
+              "Belos::BiCGStabSolMgr::solve(): Warning! Solver has experienced a breakdown!" << std::endl;
+            break;  // break from while(1){bicgstab_iter->iterate()}
+          } 
 
           ////////////////////////////////////////////////////////////////////////////////////
           //
@@ -784,7 +799,7 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
         }
         catch (const std::exception &e) {
           printer_->stream(Errors) << "Error! Caught std::exception in BiCGStabIter::iterate() at iteration "
-                                   << block_cg_iter->getNumIters() << std::endl
+                                   << bicgstab_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;
           throw;
         }

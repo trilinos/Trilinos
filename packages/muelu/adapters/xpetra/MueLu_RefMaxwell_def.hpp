@@ -557,17 +557,6 @@ namespace MueLu {
       TEUCHOS_ASSERT(Nullspace_->getMap()->isCompatible(*(SM_Matrix_->getRowMap())));
     }
     else if(Nullspace_ == null && Coords_ != null) {
-      // normalize coordinates
-      Array<coordinateType> norms(Coords_->getNumVectors());
-      Coords_->norm2(norms);
-      for (size_t i=0;i<Coords_->getNumVectors();i++)
-        norms[i] = ((coordinateType)1.0)/norms[i];
-      Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors());
-
-      // Cast coordinates to Scalar so they can be multiplied against D0
-      Array<Scalar> normsSC(Coords_->getNumVectors());
-      for (size_t i=0;i<Coords_->getNumVectors();i++)
-        normsSC[i] = (SC) norms[i];
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
       RCP<MultiVector> CoordsSC;
       if (useKokkos_)
@@ -577,7 +566,9 @@ namespace MueLu {
 #else
       RCP<MultiVector> CoordsSC = Utilities::RealValuedToScalarMultiVector(Coords_);
 #endif
+      Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors());
       D0_Matrix_->apply(*CoordsSC,*Nullspace_);
+
       if (IsPrint(Statistics2)) {
         // compute edge lengths
         ArrayRCP<ArrayRCP<const Scalar> > localNullspace(Nullspace_->getNumVectors());
@@ -603,7 +594,22 @@ namespace MueLu {
         meanLen /= Nullspace_->getMap()->getGlobalNumElements();
         GetOStream(Statistics0) << "Edge length (min/mean/max): " << minLen << " / " << meanLen << " / " << maxLen << std::endl;
       }
-      Nullspace_->scale(normsSC());
+
+      bool normalize = parameterList_.get<bool>("refmaxwell: normalize nullspace", MasterList::getDefault<bool>("refmaxwell: normalize nullspace"));
+      if (normalize) {
+        // normalize the nullspace
+        GetOStream(Runtime0) << "RefMaxwell::compute(): normalizing nullspace" << std::endl;
+
+        const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+        Array<coordinateType> norms(Coords_->getNumVectors());
+        Coords_->normInf(norms);
+
+        // Cast coordinates to Scalar so they can be multiplied against the nullspace
+        Array<Scalar> normsSC(Coords_->getNumVectors());
+        for (size_t i=0; i < Coords_->getNumVectors(); i++)
+          normsSC[i] = one / Teuchos::as<Scalar>(norms[i]);
+        Nullspace_->scale(normsSC());
+      }
     }
     else {
       GetOStream(Errors) << "MueLu::RefMaxwell::compute(): either the nullspace or the nodal coordinates must be provided." << std::endl;
@@ -645,6 +651,7 @@ namespace MueLu {
         ParameterList rapList = *(rapFact->GetValidParameterList());
         rapList.set("transpose: use implicit", true);
         rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
+        rapList.set("rap: fix zero diagonals threshold", parameterList_.get<double>("rap: fix zero diagonals threshold", Teuchos::ScalarTraits<double>::eps()));
         rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
         rapFact->SetParameterList(rapList);
 
@@ -954,6 +961,7 @@ namespace MueLu {
         ParameterList rapList = *(rapFact->GetValidParameterList());
         rapList.set("transpose: use implicit", true);
         rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
+        rapList.set("rap: fix zero diagonals threshold", parameterList_.get<double>("rap: fix zero diagonals threshold", Teuchos::ScalarTraits<double>::eps()));
         rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
         rapFact->SetParameterList(rapList);
 
