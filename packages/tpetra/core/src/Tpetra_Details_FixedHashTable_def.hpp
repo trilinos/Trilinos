@@ -1027,7 +1027,7 @@ init (const keys_type& keys,
     // out of Map's constructor here, so there is no loss in doing it
     // sequentially for now.  Later, we can work on parallelization.
     if (numKeys > 0) {
-      // TODO: make it a parallel kernel with no host copy
+      // FIXME: make it a parallel kernel with no host copy
       auto keys_h = Kokkos::create_mirror_view(keys);
       Kokkos::deep_copy(keys_h, keys);
       firstContigKey_ = keys_h[0];
@@ -1310,6 +1310,9 @@ init (const host_input_keys_type& keys,
     "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
+  // FIXME: Investigate a couple options:
+  // 1. Allocate ptr_h, val_h directly on host and only deep_copy to ptr_ and val_ once at the end
+  // 2. Do all this work as a parallel kernel with the same execution/memory spaces as ptr_ and val_
   typename ptr_type::non_const_type ptr ("FixedHashTable::ptr", size + 1);
   auto ptr_h = Kokkos::create_mirror_view(ptr);
   Kokkos::deep_copy(ptr_h, ptr);
