@@ -247,7 +247,7 @@ struct TypeMap<Superludist,double>
   typedef SLUD::D::dSOLVEstruct_t SOLVEstruct_t;
   typedef SLUD::D::dScalePermstruct_t ScalePermstruct_t;
 #else
-  typedef SLUD::D::LUstruct_tdLUstruct_t;
+  typedef SLUD::D::LUstruct_t LUstruct_t;
   typedef SLUD::D::SOLVEstruct_t SOLVEstruct_t;
   typedef SLUD::ScalePermstruct_t ScalePermstruct_t;
 #endif
