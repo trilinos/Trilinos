@@ -39,7 +39,7 @@
 template <typename T>
 using SimdFloatingPointMath = SimdFloatingPointFixture<T, T>;
 using FloatingPointTypes = ::testing::Types<stk::simd::Double, stk::simd::Float>;
-TYPED_TEST_SUITE(SimdFloatingPointMath, FloatingPointTypes);
+TYPED_TEST_SUITE(SimdFloatingPointMath, FloatingPointTypes,);
 
 TYPED_TEST(SimdFloatingPointMath, copysign_posNeg)
 {
@@ -159,7 +159,7 @@ TYPED_TEST(SimdFloatingPointMath, multiplysign_varying)
 template <typename T>
 using SimdFloatingPointOperator = SimdFloatingPointFixture<T, typename stk::BoolT<T>::type>;
 using FloatingPointTypes = ::testing::Types<stk::simd::Double, stk::simd::Float>;
-TYPED_TEST_SUITE(SimdFloatingPointOperator, FloatingPointTypes);
+TYPED_TEST_SUITE(SimdFloatingPointOperator, FloatingPointTypes,);
 
 TYPED_TEST(SimdFloatingPointOperator, equal_aIsSmaller)
 {

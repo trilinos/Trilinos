@@ -37,7 +37,7 @@
 
 
 using BoolTypes = ::testing::Types<stk::simd::Bool, stk::simd::Boolf>;
-TYPED_TEST_SUITE(SimdBoolFixture, BoolTypes);
+TYPED_TEST_SUITE(SimdBoolFixture, BoolTypes,);
 
 TYPED_TEST(SimdBoolFixture, selectByLane_allTrue)
 {
