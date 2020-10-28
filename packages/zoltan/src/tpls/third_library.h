@@ -51,6 +51,7 @@
 #include <limits.h>
 #include "zoltan_comm.h"
 #include "third_library_const.h"
+#include "third_library_const_pridx.h"
 #include "graph.h"
 
 #ifdef __cplusplus

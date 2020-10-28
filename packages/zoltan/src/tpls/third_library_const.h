@@ -152,8 +152,8 @@ extern "C" {
     #define realtype real_t
     #define TPL_INTEGRAL_WEIGHT
     #define MAX_WGT_SUM (IDX_MAX/8)
-    #define TPL_IDX_SPEC "%"PRIDX
-    #define TPL_WGT_SPEC "%"PRIDX
+//    #define TPL_IDX_SPEC "%"PRIDX
+//    #define TPL_WGT_SPEC "%"PRIDX
   #else
     /* Assume IDXTYPE_INT in ParMETIS v3.x */
     #ifndef IDXTYPE_INT
