@@ -1313,6 +1313,9 @@ init (const host_input_keys_type& keys,
   // FIXME: Investigate a couple options:
   // 1. Allocate ptr_h, val_h directly on host and only deep_copy to ptr_ and val_ once at the end
   // 2. Do all this work as a parallel kernel with the same execution/memory spaces as ptr_ and val_
+  // An old comment from MFH noted ptr_h should be zero-initialized, while val_h should not be initialized.
+  // It further noted that we shouldn't need a DualView type arrangement when all setup kernels have
+  // been "Kokkos-ized".
   typename ptr_type::non_const_type ptr ("FixedHashTable::ptr", size + 1);
   auto ptr_h = Kokkos::create_mirror_view(ptr);
   Kokkos::deep_copy(ptr_h, ptr);
