@@ -98,7 +98,7 @@ void DeviceBucket::update_from_host(const stk::mesh::Bucket &bucket)
   Kokkos::deep_copy(nodeConnectivity, hostNodeConnectivity);
 }
 
-STK_FUNCTION
+KOKKOS_FUNCTION
 bool DeviceBucket::member(stk::mesh::PartOrdinal partOrdinal) const
 {
   for(unsigned i=0; i<partOrdinals.size(); i++) {
@@ -182,7 +182,7 @@ bool DeviceMesh::fill_buckets(const stk::mesh::BulkData& bulk_in)
   return anyBucketChanges;
 }
 
-STK_FUNCTION
+KOKKOS_FUNCTION
 void DeviceMesh::clear_buckets()
 {
   #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
@@ -200,7 +200,7 @@ void DeviceMesh::clear_buckets()
   #endif
 }
 
-STK_FUNCTION
+KOKKOS_FUNCTION
 DeviceMesh::ConnectedEntities
 DeviceMesh::get_connected_entities(
                 stk::mesh::EntityRank rank,
@@ -225,7 +225,7 @@ DeviceMesh::get_connected_entities(
   return connectedEntities;
 }
 
-STK_FUNCTION
+KOKKOS_FUNCTION
 DeviceMesh::ConnectedOrdinals
 DeviceMesh::get_connected_ordinals(
                 stk::mesh::EntityRank rank,
@@ -250,7 +250,7 @@ DeviceMesh::get_connected_ordinals(
   return connectedOrdinals;
 }
 
-STK_FUNCTION
+KOKKOS_FUNCTION
 DeviceMesh::Permutations
 DeviceMesh::get_permutations(
                 stk::mesh::EntityRank rank,

@@ -20,6 +20,7 @@
 #include <stk_tools/mesh_tools/DisconnectUtils.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
+#include <stk_unit_test_utils/ConstructedMesh.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <string>
 
@@ -44,6 +45,18 @@ TEST_F(TestDisconnectBlocks2D, disconnect_1block_1quad)
   EXPECT_FALSE(check_orphaned_nodes(get_bulk()));
 
   output_mesh(get_bulk(), "disconnect_1block_1quad.g");
+}
+
+TEST_F(TestDisconnectBlocks2D, disconnect_user_block_1block_1quad_empty_part)
+{
+  stk::mesh::Part & block2 = create_part(get_meta(), stk::topology::QUAD_4_2D, "block_2", 2);
+  stk::mesh::PartVector blocks = setup_mesh_1block_1quad(get_bulk());
+
+  stk::tools::BlockPairVector blocksToDisconnect;
+  blocksToDisconnect.emplace_back(blocks[0], &block2);
+
+  stk::tools::DisconnectBlocksOption option(stk::tools::DISCONNECT_LOCAL, stk::tools::SNIP_ALL_HINGES);
+  EXPECT_NO_THROW(stk::tools::disconnect_user_blocks(get_bulk(), blocksToDisconnect, option));
 }
 
 TEST_F(TestDisconnectBlocks2D, disconnect_2block_1quad)
@@ -72,6 +85,17 @@ TEST_F(TestDisconnectBlocks2D, disconnect_2block_2quad)
   EXPECT_FALSE(check_orphaned_nodes(get_bulk()));
 
   output_mesh(get_bulk(), "disconnect_2block_2quad.g");
+}
+
+TEST_F(TestDisconnectBlocks2D, disconnect_user_blocks_2block_2quad_in_reverse_block_order)
+{
+  stk::mesh::PartVector blocks = setup_mesh_2block_2quad(get_bulk());
+  stk::tools::BlockPairVector blocksToDisconnect;
+  blocksToDisconnect.emplace_back(blocks[1], blocks[0]);
+
+  stk::tools::DisconnectBlocksOption option(stk::tools::DISCONNECT_LOCAL, stk::tools::SNIP_ALL_HINGES);
+
+  EXPECT_NO_THROW(stk::tools::disconnect_user_blocks(get_bulk(), blocksToDisconnect, option));
 }
 
 TEST_F(TestDisconnectBlocks2D, disconnect_2block_2quad_updateGraph)
@@ -1777,19 +1801,6 @@ stk::tools::BlockNamePairVector convert_connection_vector_to_name_pair_vector(co
   return namePairVector;
 }
 
-void test_named_user_block_disconnect(stk::mesh::BulkData& bulk,
-                                      BlockConnectionVector& blockPairConnectionsToDisconnect,
-                                      unsigned expectedFinalCommonNodeCount)
-{
-  stk::mesh::PartVector allBlocksInMesh;
-  stk::tools::impl::get_all_blocks_in_mesh(bulk, allBlocksInMesh);
-  stk::tools::BlockNamePairVector blockPairsToDisconnect = convert_connection_vector_to_name_pair_vector(bulk, blockPairConnectionsToDisconnect);
-
-  stk::tools::disconnect_user_blocks(bulk, blockPairsToDisconnect);
-
-  test_connection_pairs(bulk, allBlocksInMesh, blockPairConnectionsToDisconnect, expectedFinalCommonNodeCount);
-}
-
 TEST_F(TestDisconnectFullAlgorithm2D, disconnect_full_algorithm_2block_2quad)
 {
   stk::mesh::PartVector initialMesh = setup_mesh_2block_2quad(get_bulk());
@@ -1982,10 +1993,7 @@ TEST_F(TestDisconnectFullAlgorithmPartial, disconnect_full_algorithm_8block_8hex
 
 std::string get_basename(const std::string& path)
 {
-  char tempPath[path.length()+1];
-  tempPath[path.length()] = 0;
-  path.copy(tempPath, path.length());
-  return std::string(basename(tempPath));
+  return path.substr(path.find_last_of("/\\")+1);
 }
 
 TEST(TestDisconnectInputFile, input_mesh)
@@ -2001,7 +2009,7 @@ TEST(TestDisconnectInputFile, input_mesh)
   std::string disconnectBlockFile = stk::unit_test_util::get_option("-blockFile", "");
   if (disconnectBlockFile.empty()) return;
 
-  stk::io::fill_mesh_with_auto_decomp(exodusFileName, bulk);
+  stk::io::fill_mesh(exodusFileName, bulk);
 
   std::ifstream infile(disconnectBlockFile);
 
@@ -2013,9 +2021,18 @@ TEST(TestDisconnectInputFile, input_mesh)
     stk::mesh::Part* block1Part = meta.get_part(block1);
     stk::mesh::Part* block2Part = meta.get_part(block2);
 
-    ThrowRequire(block1Part != nullptr);
-    ThrowRequire(block2Part != nullptr);
-    ThrowRequire(block1Part != block2Part);
+    if(block1Part == nullptr || block2Part == nullptr) {
+      if(bulk.parallel_rank() == 0) {
+        if(block1Part == nullptr) {
+          std::cout << "could not find block name: " << block1 << std::endl;
+        }
+        if(block2Part == nullptr) {
+          std::cout << "could not find block name: " << block2 << std::endl;
+        }
+      }
+
+      continue;
+    }
 
     disconnectBlockVec.push_back(stk::tools::impl::get_block_pair(block1Part, block2Part));
   }
@@ -2024,7 +2041,7 @@ TEST(TestDisconnectInputFile, input_mesh)
   double meshReadTime = stk::wall_time();
 
   std::cout << "Starting disconnect block sequence" << std::endl;
-  stk::tools::disconnect_user_blocks(bulk, disconnectBlockVec);
+  stk::tools::disconnect_user_blocks(bulk, disconnectBlockVec, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_LOCAL, stk::tools::PRESERVE_INITIAL_HINGES));
 
   double disconnectTime = stk::wall_time();
 
@@ -2039,26 +2056,16 @@ TEST(TestDisconnectInputFile, input_mesh)
 }
 
 typedef TestDisconnectFullAlgorithm TestDisconnectUserBlocks;
+typedef TestDisconnectFullAlgorithm2D TestDisconnectUserBlocks2D;
 
 TEST_F(TestDisconnectUserBlocks, disconnect_user_blocks_8block_8hex_opposite_corners)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
     stk::mesh::PartVector blocks = setup_mesh_8block_8hex_cube(get_bulk());
 
-    BlockConnectionVector blockPairsToDisconnectPairs{BlockConnection("block_1","block_2",0), BlockConnection("block_2","block_4",0), BlockConnection("block_2","block_6",0),
-                                                      BlockConnection("block_3","block_7",0), BlockConnection("block_7","block_8",0), BlockConnection("block_5","block_7",0)};
-    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectPairs, 13u);
-  }
-}
-
-TEST_F(TestDisconnectUserBlocks, disconnect_named_user_blocks_8block_8hex_opposite_corners)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
-    stk::mesh::PartVector blocks = setup_mesh_8block_8hex_cube(get_bulk());
-
-    BlockConnectionVector blockPairsToDisconnectPairs{BlockConnection("block_1","block_2",0), BlockConnection("block_2","block_4",0), BlockConnection("block_2","block_6",0),
-                                                      BlockConnection("block_3","block_7",0), BlockConnection("block_7","block_8",0), BlockConnection("block_5","block_7",0)};
-    test_named_user_block_disconnect(get_bulk(), blockPairsToDisconnectPairs, 13u);
+    BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("block_1","block_2",0), BlockConnection("block_2","block_4",0), BlockConnection("block_2","block_6",0),
+                                                       BlockConnection("block_3","block_7",0), BlockConnection("block_7","block_8",0), BlockConnection("block_5","block_7",0)};
+    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 13u);
   }
 }
 
@@ -2067,8 +2074,8 @@ TEST_F(TestDisconnectUserBlocks, disconnect_user_blocks_preserve_snip_option_4bl
   if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
     stk::mesh::PartVector blocks = setup_mesh_4block_4hex(get_bulk());
 
-    BlockConnectionVector blockPairsToDisconnectPairs{BlockConnection("block_2","block_1",0), BlockConnection("block_2","block_4",0), BlockConnection("block_2","block_3",0)};
-    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectPairs, 6u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_GLOBAL, stk::tools::PRESERVE_INITIAL_HINGES));
+    BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("block_2","block_1",0), BlockConnection("block_2","block_4",0), BlockConnection("block_2","block_3",0)};
+    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 6u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_GLOBAL, stk::tools::PRESERVE_INITIAL_HINGES));
   }
 }
 
@@ -2077,10 +2084,43 @@ TEST_F(TestDisconnectUserBlocks, disconnect_user_blocks_snip_all_hinges_snip_opt
   if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
     stk::mesh::PartVector blocks = setup_mesh_4block_4hex(get_bulk());
 
-    BlockConnectionVector blockPairsToDisconnectPairs{BlockConnection("block_2","block_1",0), BlockConnection("block_2","block_4",0)};
-    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectPairs, 6u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_GLOBAL, stk::tools::SNIP_ALL_HINGES));
+    BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("block_2","block_1",0), BlockConnection("block_2","block_4",0)};
+    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 6u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_GLOBAL, stk::tools::SNIP_ALL_HINGES));
   }
 }
+
+TEST_F(TestDisconnectUserBlocks2D, disconnect_user_blocks_2block_3quad_1hinge)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
+    stk::mesh::PartVector blocks = setup_mesh_3block_3quad_1hinge_linear_stack(get_bulk());
+
+    BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("block_1","block_3",0)};
+    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 3u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_LOCAL, stk::tools::PRESERVE_INITIAL_HINGES));
+  }
+}
+
+TEST_F(TestDisconnectUserBlocks2D, disconnect_user_blocks_3blocks_4quad_3proc)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 2) {
+    stk::mesh::PartVector blocks = setup_mesh_3block_4quad_keepLowerRight(get_bulk(), 1);
+
+    BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("block_1","block_3",0), BlockConnection("block_2","block_3",0)};
+    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 2u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_LOCAL, stk::tools::PRESERVE_INITIAL_HINGES));
+  }
+}
+
+TEST_F(TestDisconnectUserBlocks2D, disconnect_user_blocks_3blocks_4quad_custom_ordinal)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  stk::mesh::PartVector blocks = setup_mesh_3block_4quad_reverse_ordinal(get_bulk());
+
+  BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("vl","lateral",0), BlockConnection("radax","lateral",0)};
+  test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 2u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_LOCAL, stk::tools::PRESERVE_INITIAL_HINGES));
+
+  stk::io::write_mesh("custom_ordinal_unit_test_mesh.g", get_bulk());
+}
+
 
 typedef TestDisconnectBlocks2D TestBlockPairCreation;
 
@@ -2101,4 +2141,85 @@ TEST_F(TestBlockPairCreation, test_block_pair_creation)
   EXPECT_EQ("block_3", partPairs[1].second->name());
   EXPECT_EQ("block_2", partPairs[2].first->name());
   EXPECT_EQ("block_3", partPairs[2].second->name());
+}
+
+void create_ngs_jtd_sub_mesh(stk::mesh::BulkData& bulk)
+{
+  stk::unit_test_util::ConstructedMesh data(3);
+
+  data.set_x_coordinates({ 2.69902090331971, 2.66623140978201, 2.75874573101832, 2.69902090331971,
+                           2.69659806972163, 2.68053633989566, 2.66870203682596, 2.7137889539581,
+                           2.67272988291214, 2.65367227486113, 2.76694241182748, 2.72228375387999,
+                           2.68782101822595, 2.69659805697906, 2.71378890566682, 2.73602958156478});
+
+  data.set_y_coordinates({ -2.54798187240236, -2.625, -2.625, -2.54798187240236, -2.66,
+                           -2.67627405696173, -2.71269330410536, -2.625, -2.625, -2.66, -2.625,
+                           -2.625, -2.625, -2.625, -2.67580141240548, -2.63747011593858 });
+
+  data.set_z_coordinates({ -7.71929967118528, -7.76787460984145, -7.87919008575732,
+                           -7.82910729232061, -7.83153012591869, -7.73778423460932,
+                           -7.77420348175294, -7.81433924168221, -7.71000549971963,
+                           -7.72979606467204, -7.87099340494817, -7.80584444176032,
+                           -7.72193754541886, -7.83153013866126, -7.81433928997349, -7.84971773066203 });
+
+  data.set_node_ids( {953299,  953347,  1046307, 1086643, 1086883, 1543476, 1598788, 3021447,
+                      3121015, 3292103, 3357047, 3704977, 3705289, 3705425, 4715689, 5185015} );
+
+  data.set_elem_ids( {25203969, 26788853, 27186527, 29884816, 30162566, 30162567,
+                      30822787, 30824958, 30824959, 30824960, 30824961, 26778235, 26788861,
+                      29528157, 29886393, 24040308, 24040314, 24045937, 24467153, 24467347,
+                      24562607, 24562617, 29861241, 30822789} );
+
+  data.set_elem_distribution( {{30824959, 1}, {26788861, 1}, {29886393, 1}, {24045937, 1}, {24467153, 1},
+                               {24467347, 1}, {24562607, 1}, {24562617, 1}, {25203969, 1}, {26788853, 1},
+                               {29884816, 1}, {30824960, 1}, {30824961, 1}, {24040308, 1}, {24040314, 1},
+                               {30822787, 1}, {30824958, 1}, {26778235, 1}, {30822789, 1}, {30162567, 0},
+                               {27186527, 1}, {29861241, 1}, {29528157, 0}, {30162566, 0}} );
+
+  stk::unit_test_util::ConstructedElementBlock block1(stk::topology::TET_4, "block_1", 202, { {2, 8, 9, 10},
+                                                                                              {10, 8, 9, 6},
+                                                                                              {5, 15, 16, 8},
+                                                                                              {2, 8, 10, 5},
+                                                                                              {14, 16, 3, 8},
+                                                                                              {14, 16, 8, 5},
+                                                                                              {14, 5, 8, 2},
+                                                                                              {7, 5, 8, 15},
+                                                                                              {8, 5, 7, 10},
+                                                                                              {7, 8, 6, 15},
+                                                                                              {6, 8, 7, 10} });
+  data.add_elem_block(block1);
+
+  stk::unit_test_util::ConstructedElementBlock block2(stk::topology::TET_4, "block_2", 223, { {15, 12, 8, 6},
+                                                                                              {8, 13, 9, 6},
+                                                                                              {12, 16, 15, 8},
+                                                                                              {8, 12, 13, 6} });
+  data.add_elem_block(block2);
+
+  stk::unit_test_util::ConstructedElementBlock block3(stk::topology::TET_4, "block_3", 245, { {2, 8, 4, 1},
+                                                                                              {2, 8, 1, 9},
+                                                                                              {8, 11, 3, 4},
+                                                                                              {8, 12, 11, 4},
+                                                                                              {8, 13, 1, 9},
+                                                                                              {8, 12, 4, 1},
+                                                                                              {8, 12, 1, 13},
+                                                                                              {3, 4, 14, 8},
+                                                                                              {4, 14, 8, 2} });
+  data.add_elem_block(block3);
+
+  data.create_mesh(bulk);
+}
+
+TEST(TestNGSDisconnect, jtd_sub_mesh)
+{
+  stk::mesh::MetaData meta(3);
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  create_ngs_jtd_sub_mesh(bulk);
+
+  stk::mesh::Part* block1 = meta.get_part("block_1");
+  stk::mesh::Part* block2 = meta.get_part("block_2");
+  stk::mesh::Part* block3 = meta.get_part("block_3");
+
+  stk::tools::DisconnectBlocksOption disconnectOption(stk::tools::DISCONNECT_LOCAL, stk::tools::PRESERVE_INITIAL_HINGES);
+  stk::tools::BlockPairVector disconnectPairs{{block1, block3}, {block2, block3}};
+  EXPECT_NO_THROW(stk::tools::disconnect_user_blocks(bulk, disconnectPairs, disconnectOption));
 }

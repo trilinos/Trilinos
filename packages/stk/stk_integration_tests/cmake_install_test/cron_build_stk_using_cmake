@@ -1,0 +1,70 @@
+#!/bin/bash
+
+
+source ~/.bashrc
+module load sierra-devel
+
+USERNAME=william
+sierra_code=/scratch/${USERNAME}/code_stk_cmake_testing
+output_dir=/scratch/${USERNAME}/stk-cmake-testing-output
+rm -rf ${output_dir}
+mkdir -p ${output_dir}
+
+date_suffix=`date +%F_%H-%M-%S`
+
+repo_log=${output_dir}/reposync.out.$date_suffix
+stk_cmake_test_log=${output_dir}/test_stk_cmake.out.$date_suffix
+stk_user_facing_cmake_test_log=${output_dir}/test_stk_user_facing_cmake.out.$date_suffix
+stk_no_mesh_cmake_test_log=${output_dir}/test_stk_no_mesh_cmake.out.$date_suffix
+stk_serial_cmake_test_log=${output_dir}/test_stk_serial_cmake.out.$date_suffix
+
+#if your cronjob doesn't have access to a kerberos ticket you can't do repo sync here.
+cd ${sierra_code}
+repo sync >& ${repo_log}
+if [ $? -ne 0 ] ; then
+  mail -s "Error doing 'repo sync' before cmake testing" ${USERNAME}@sandia.gov < ${repo_log};
+  exit 1;
+fi
+
+SIERRA_PROJ=${sierra_code} \
+OUTPUT_DIR=${output_dir} \
+CMAKE_BUILD_TYPE=release \
+${sierra_code}/stk/stk_integration_tests/cmake_install_test/build_stk_serial_using_cmake >& ${stk_serial_cmake_test_log}
+
+if [ $? -ne 0 ] ; then
+  mail -s "Error in stk serial cmake/install testing" ${USERNAME}@sandia.gov < ${stk_serial_cmake_test_log};
+  exit 1;
+fi
+
+SIERRA_PROJ=${sierra_code} \
+OUTPUT_DIR=${output_dir} \
+CMAKE_BUILD_TYPE=release \
+${sierra_code}/stk/stk_integration_tests/cmake_install_test/build_stk_no_mesh_using_cmake >& ${stk_no_mesh_cmake_test_log}
+
+if [ $? -ne 0 ] ; then
+  mail -s "Error in stk no-mesh cmake/install testing" ${USERNAME}@sandia.gov < ${stk_no_mesh_cmake_test_log};
+  exit 1;
+fi
+
+SIERRA_PROJ=${sierra_code} \
+OUTPUT_DIR=${output_dir} \
+CMAKE_BUILD_TYPE=release \
+${sierra_code}/stk/stk_integration_tests/cmake_install_test/build_stk_using_cmake >& ${stk_cmake_test_log}
+
+if [ $? -ne 0 ] ; then
+  mail -s "Error in stk cmake testing" ${USERNAME}@sandia.gov < ${stk_cmake_test_log};
+  exit 1;
+fi
+
+SIERRA_PROJ=${sierra_code} \
+OUTPUT_DIR=${output_dir} \
+CMAKE_BUILD_TYPE=release \
+${sierra_code}/stk/stk_integration_tests/cmake_install_test/build_stk_user_facing >& ${stk_user_facing_cmake_test_log}
+
+if [ $? -ne 0 ] ; then
+  mail -s "Error in stk user-facing cmake/install testing" ${USERNAME}@sandia.gov < ${stk_user_facing_cmake_test_log};
+  exit 1;
+fi
+
+exit 0;
+

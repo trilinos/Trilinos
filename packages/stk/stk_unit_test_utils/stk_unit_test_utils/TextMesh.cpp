@@ -150,10 +150,9 @@ private:
     if (namePrefix != blockPrefix) return;
 
     unsigned id;
-    try {
-      id = std::stoul(nameSuffix);
-    }
-    catch (...) {
+    std::istringstream nameSuffixStream(nameSuffix);
+    nameSuffixStream >> id;
+    if (nameSuffixStream.fail()) {
       return;
     }
     assign(name, id);
@@ -399,13 +398,10 @@ private:
 
   bool is_number(const std::string& name)
   {
-    try {
-      std::stoul(name);
-      return true;
-    }
-    catch (...) {
-      return false;
-    }
+    unsigned num;
+    std::istringstream nameStream(name);
+    nameStream >> num;
+    return !nameStream.fail();
   }
 
   void set_part_id(ElementData& elem)

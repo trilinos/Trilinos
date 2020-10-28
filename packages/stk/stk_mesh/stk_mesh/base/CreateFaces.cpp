@@ -70,9 +70,6 @@ namespace mesh {
 
 namespace {
 
-typedef std::vector<EntityKey> EntityKeyVector;
-typedef std::vector<EntityId>  EntityIdVector;
-
 struct shared_face_type
 {
   stk::topology::topology_t topology;

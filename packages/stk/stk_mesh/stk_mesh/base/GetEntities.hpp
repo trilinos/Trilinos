@@ -61,18 +61,29 @@ void count_entities( const Selector & selector ,
                      const BulkData & mesh ,
                      std::vector<size_t> & count );
 
-/** \brief Get all entities of the specified type, sorted by ID.  */
+unsigned count_entities( const BulkData& bulk,
+                         const EntityRank rank,
+                         const Selector & selector );
+
+/** \brief Get all entities of the specified type, optionally sorted by ID.  */
 void get_entities( const BulkData & mesh , EntityRank entity_rank,
-                   std::vector< Entity> & entities);
+                   std::vector< Entity> & entities,
+                   bool sortByGlobalId = true);
+
+void get_entities( const BulkData& bulk,
+                   const EntityRank rank,
+                   const Selector & selector ,
+                   std::vector< Entity> & entities ,
+                   bool sortByGlobalId = false );
 
 /** \brief  Count entities in selected buckets (selected by the
- *          given selector instance), and sorted by ID.
+ *          given selector instance)
  */
 unsigned count_selected_entities( const Selector & selector ,
                                   const BucketVector & input_buckets );
 
 /** \brief  Get entities in selected buckets (selected by the
- *          given selector instance), and sorted by ID.
+ *          given selector instance), optionally sorted by ID.
  */
 void get_selected_entities( const Selector & selector ,
                             const BucketVector & input_buckets ,

@@ -3,6 +3,7 @@
 #include <map>
 #include <vector>
 #include <stk_mesh/base/FEMHelpers.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
 #include <stk_util/parallel/ParallelVectorConcat.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
@@ -43,7 +44,7 @@ protected:
     void add_elements_to_graph()
     {
         stk::mesh::EntityVector elements_to_add;
-        get_bulk().get_entities(stk::topology::ELEMENT_RANK, get_bulk().mesh_meta_data().locally_owned_part(), elements_to_add);
+        stk::mesh::get_entities(get_bulk(), stk::topology::ELEMENT_RANK, get_bulk().mesh_meta_data().locally_owned_part(), elements_to_add);
         elementGraph->add_elements(elements_to_add);
         EXPECT_EQ(elements_to_add.size(), elementGraph->size());
     }

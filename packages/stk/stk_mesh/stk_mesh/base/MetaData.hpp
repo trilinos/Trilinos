@@ -622,6 +622,8 @@ private:
   void clean_field_restrictions();
 };
 
+void sync_to_host_and_mark_modified(const MetaData& meta);
+
 /** \brief  Verify that the meta data is identical on all processors */
 void verify_parallel_consistency( const MetaData & , ParallelMachine );
 

@@ -16,10 +16,10 @@ LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/TimerHowTo.cpp")
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/TimerHowToParallel.cpp")
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    util_DocTest
+    stk_util_doc_test
     SOURCES ${SOURCES}
-    TESTONLYLIBS stk_unit_main
     COMM serial mpi
     NUM_MPI_PROCS 1
+    NOEXEPREFIX
     )
 

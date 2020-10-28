@@ -70,8 +70,6 @@ void disconnect_all_blocks(stk::mesh::BulkData& bulk, bool preserveOrphans = fal
 void disconnect_all_blocks(stk::mesh::BulkData & bulk, impl::LinkInfo& info, bool preserveOrphans = false);
 void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockPairVector& blockPairsToDisconnect,
                             DisconnectBlocksOption options = DisconnectBlocksOption());
-void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockNamePairVector& blockNamePairsToDisconnect,
-                            DisconnectBlocksOption options = DisconnectBlocksOption());
 }
 
 }

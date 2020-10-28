@@ -145,7 +145,7 @@ private:
     void verify_num_nodes()
     {
       stk::mesh::EntityVector nodes;
-      bulk.get_entities(stk::topology::NODE_RANK, meta.universal_part(), nodes);
+      stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodes);
       EXPECT_EQ(goldNodeIds.size(), nodes.size());
     }
 

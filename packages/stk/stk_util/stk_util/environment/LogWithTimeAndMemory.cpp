@@ -1,4 +1,5 @@
-#include <mpi.h>
+#include <stk_util/stk_config.h>
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/environment/Env.hpp>
 #include <stk_util/environment/memory_util.hpp>
 #include <stk_util/environment/WallTime.hpp>
