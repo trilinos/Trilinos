@@ -1,4 +1,4 @@
-#include <stk_unit_test_utils/comparison/stringAndNumberComparisons.hpp>
+#include <stk_unit_test_utils/stringAndNumberComparisons.hpp>
 
 #include <iostream>
 #include <sstream>

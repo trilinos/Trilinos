@@ -2,7 +2,7 @@
 #include "stk_util/util/ReportHandler.hpp"
 #include <algorithm>
 
-namespace stk { namespace balance { namespace internal {
+namespace stk { namespace math {
 
 SideGeometry::SideGeometry(size_t numNodes)
   : m_numNodes(numNodes)
@@ -289,5 +289,5 @@ QuadGeometry::closest_proj_on_face(const stk::math::Vector3d & point) const
 }
 
 
-}}}
+}}
 

@@ -2,6 +2,7 @@
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_io/FillMesh.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
+#include <fstream>
 
 namespace
 {
@@ -38,6 +39,11 @@ protected:
 
 TEST_F(AttributesInFile, reading_fieldsReturnedInOrder)
 {
+    if (!std::ifstream(filename)) {
+      std::cout<<"file "<<filename<<" doesn't exist, skipping test."<<std::endl;
+      return;
+    }
+
     if(stk::parallel_machine_size(get_comm()) == 1)
     {
         setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
@@ -50,6 +56,11 @@ TEST_F(AttributesInFile, reading_fieldsReturnedInOrder)
 
 TEST_F(AttributesInFile, readWriteRead_fieldsReturnedInOrder)
 {
+    if (!std::ifstream(filename)) {
+      std::cout<<"file "<<filename<<" doesn't exist, skipping test."<<std::endl;
+      return;
+    }
+
     if(stk::parallel_machine_size(get_comm()) == 1)
     {
         const std::string outputFilename = "fileWithAttrOut.e";

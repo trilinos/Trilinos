@@ -5,19 +5,38 @@ INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/stk_ngp_test)
 INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/stk_util)
 INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_util)
 
+
 IF(Trilinos_ENABLE_STKIO)
 
-ADD_SUBDIRECTORY(comparison)
-
-FILE(GLOB HEADERS *.hpp)
+FILE(GLOB HEADERS *.h *.hpp)
 FILE(GLOB SOURCES *.cpp)
+
+ELSEIF(TPL_ENABLE_MPI)
+
+SET(HEADERS
+     ParallelGtestOutput.hpp
+     getOption.h
+     StkReportRedirector.hpp
+     stringAndNumberComparisons.hpp)
+
+SET(SOURCES
+     ParallelGtestOutput.cpp
+     StkReportRedirector.cpp
+     stringAndNumberComparisons.cpp)
 
 ELSE()
 
-FILE(GLOB HEADERS ParallelGtest*.hpp)
-FILE(GLOB SOURCES ParallelGtest*.cpp)
+SET(HEADERS
+    getOption.h
+    StkReportRedirector.hpp
+    stringAndNumberComparisons.hpp)
+
+SET(SOURCES
+    StkReportRedirector.cpp
+    stringAndNumberComparisons.cpp)
 
 ENDIF()
+
 
 IF(Trilinos_ENABLE_STKIO)
   ADD_SUBDIRECTORY(stk_mesh_fixtures)
@@ -42,8 +61,6 @@ IF (STK_ENABLE_UnitMain)
 
   TRIBITS_ADD_LIBRARY(
     stk_unit_main
-    DEPLIBS
-    TESTONLY
     SOURCES ${UNIT_MAIN_SOURCES}
   )
 ENDIF()

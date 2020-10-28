@@ -93,9 +93,6 @@ public:
 
   BulkData& mesh() const { return m_mesh; }
 
-  //------------------------------------
-  size_t total_field_data_footprint(const FieldBase &f, EntityRank rank) const;
-
   void set_needs_to_be_sorted(stk::mesh::Bucket &bucket, bool needsSorting);
   void internal_default_sort_bucket_entities(bool mustSortFacesByNodeIds=false);
   void internal_custom_sort_bucket_entities(const EntitySorterBase& sorter);

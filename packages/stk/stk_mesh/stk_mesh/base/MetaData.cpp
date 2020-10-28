@@ -1407,6 +1407,17 @@ void MetaData::dump_all_meta_info(std::ostream& out) const
   }
 }
 
+void sync_to_host_and_mark_modified(const MetaData& meta)
+{
+  const std::vector<FieldBase*>& fields = meta.get_fields();
+  for(FieldBase* field : fields) {
+    if (field->number_of_states() > 1) {
+      field->sync_to_host();
+      field->modify_on_host();
+    }
+  }
+}
+
 } // namespace mesh
 } // namespace stk
 
