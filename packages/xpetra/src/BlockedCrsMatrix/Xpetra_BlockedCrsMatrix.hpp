@@ -64,6 +64,7 @@
 #include "Xpetra_CrsMatrixFactory.hpp"
 
 #include "Xpetra_MapExtractor.hpp"
+#include "Xpetra_MapExtractorFactory.hpp"
 
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_MatrixFactory.hpp"
@@ -121,8 +122,8 @@ namespace Xpetra {
                      size_t numEntriesPerRow)
       : is_diagonal_(true)
     {
-      domainmaps_ = Teuchos::rcp(new MapExtractor(domainMaps));
-      rangemaps_  = Teuchos::rcp(new MapExtractor(rangeMaps));
+      domainmaps_ = MapExtractorFactory::Build(domainMaps);
+      rangemaps_ = MapExtractorFactory::Build(rangeMaps);
       bRangeThyraMode_ = rangeMaps->getThyraMode();
       bDomainThyraMode_ = domainMaps->getThyraMode();
 
