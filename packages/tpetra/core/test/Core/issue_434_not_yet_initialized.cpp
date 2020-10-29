@@ -55,7 +55,6 @@
 #include <iostream>
 #include <stdexcept>
 
-namespace { // (anonymous)
 
   // Is Kokkos initialized?
   bool kokkosInitialized ()
@@ -65,7 +64,6 @@ namespace { // (anonymous)
     // space, so we can check that.
     return Kokkos::is_initialized ();
   }
-}
 
 int
 main (int argc, char* argv[])

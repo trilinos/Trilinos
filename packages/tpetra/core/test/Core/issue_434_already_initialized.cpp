@@ -54,8 +54,6 @@
 #include <cstdlib> // EXIT_SUCCESS, EXIT_FAILURE
 #include <iostream>
 
-namespace { // (anonymous)
-
   // Is Kokkos initialized?
   bool kokkosInitialized ()
   {
@@ -101,10 +99,7 @@ namespace { // (anonymous)
   }
 #endif // HAVE_TPETRACORE_MPI
 
-} // namespace (anonymous)
-
-int
-main (int argc, char* argv[])
+int main (int argc, char* argv[])
 {
   using std::endl;
   bool success = true;
