@@ -1,0 +1,103 @@
+#!/bin/bash
+
+exe() {
+  stdbuf -o0 -e0 echo "% $@" ;
+  eval "$@" ;
+}
+
+sierra_proj=${SIERRA_PROJ:-${PWD}}
+output_dir=${OUTPUT_DIR:-${PWD}/../stk-cmake-testing}
+trilinos_dir=${output_dir}/Trilinos
+cuda_on_or_off=${CUDA:-OFF}
+build_type=${CMAKE_BUILD_TYPE:-release}
+date_suffix=`date +%F_%H-%M-%S`
+
+if [ -z "${SIERRA_COMPILER}" ] ; then
+  echo "Can't find SIERRA_COMPILER env var. Make sure you have a sierra-devel module loaded.";
+  exit 1;
+fi
+
+if [ ! -d ${output_dir} ] ; then
+  exe mkdir -p ${output_dir};
+fi
+
+if [ ! -d ${trilinos_dir} ] ; then
+  exe git clone -b develop https://github.com/trilinos/Trilinos.git ${trilinos_dir}
+else
+  exe cd ${trilinos_dir}
+  exe git reset --hard develop
+  exe git pull
+fi
+
+trilinos_install_dir=${output_dir}/trilinos_install_${build_type}_${SIERRA_COMPILER}
+exe rm -rf $trilinos_install_dir
+
+stk_build_dir=${output_dir}/stk_build_${build_type}_${SIERRA_COMPILER}
+exe rm -rf $stk_build_dir
+exe mkdir -p $stk_build_dir
+
+stk_cmake_testing=${sierra_proj}/stk/stk_integration_tests/cmake_install_test
+
+printf "\nUsing sierra project: ${sierra_proj}\n";
+printf "Using build-type: ${build_type}\n";
+printf "Using SIERRA_COMPILER: ${SIERRA_COMPILER}\n";
+printf "CUDA: ${cuda_on_or_off}\n";
+printf "Putting output and logs here: ${output_dir}\n";
+
+exe cd $sierra_proj
+
+exe rm -rf objs/tpls/trilinos_tpls/*
+
+bake_log=${output_dir}/bake-stk_balance.out.$date_suffix
+stk_config_log=${output_dir}/stk-config.out.$date_suffix
+stk_make_log=${output_dir}/stk-make.out.$date_suffix
+stk_install_log=${output_dir}/stk-install.out.$date_suffix
+stk_ctest_log=${output_dir}/stk-ctest.out.$date_suffix
+stk_app_config_log=${output_dir}/stk-test-app-config.out.$date_suffix
+stk_app_make_log=${output_dir}/stk-test-app-make.out.$date_suffix
+
+if [ -d ${trilinos_dir}/packages/seacas ] ; then
+  exe rm -rf ${trilinos_dir}/packages/seacas;
+fi
+if [ ! -L ${trilinos_dir}/packages/seacas ] ; then
+  exe ln -s ${sierra_proj}/seacas ${trilinos_dir}/packages
+fi
+
+if [ -d ${trilinos_dir}/packages/stk ] ; then
+  exe rm -rf ${trilinos_dir}/packages/stk;
+fi
+if [ ! -L ${trilinos_dir}/packages/stk ] ; then
+  exe ln -s ${sierra_proj}/stk ${trilinos_dir}/packages
+fi
+
+exe cp ${stk_cmake_testing}/run_cmake_stk ${stk_build_dir}
+exe cd ${stk_build_dir}
+printf "\nGenerating pre-requisite TPL paths in ${stk_build_dir}/tpl_paths\n";
+exe ${stk_cmake_testing}/generate_tpl_paths_from_sierra_proj ${sierra_proj} ${output_dir} ${stk_build_dir}/tpl_paths
+printf "Configuring trilinos/stk (running cmake)...\n";
+exe 'TRILINOS_DIR=${trilinos_dir} \
+     TRILINOS_INSTALL_DIR=${trilinos_install_dir} \
+     CMAKE_BUILD_TYPE=${build_type} \
+     CUDA=${cuda_on_or_off} \
+     ./run_cmake_stk ${stk_build_dir}/tpl_paths >& ${stk_config_log}'
+if [ $? -ne 0 ] ; then
+  echo "!! error in stk/trilinos config, check output in ${stk_config_log} !!";
+  exit 1;
+fi
+
+printf "Now building trilinos/stk using make...\n";
+exe 'make VERBOSE=1 -j8 >& ${stk_make_log}';
+if [ $? -ne 0 ] ; then
+  echo "!! error in make, check output in ${stk_make_log} !!";
+  exit 1;
+fi
+
+exe 'ctest >& ${stk_ctest_log}';
+if [ $? -ne 0 ] ; then
+  echo "!! error in ctest, check output in ${stk_ctest_log} !!";
+  exit 1;
+fi
+
+echo "all done, SUCCESS!";
+exit 0;
+

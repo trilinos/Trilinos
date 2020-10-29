@@ -3,7 +3,7 @@
 
 #include "stk_math/StkVector.hpp"
 
-namespace stk { namespace balance { namespace internal {
+namespace stk { namespace math {
 
 class SideGeometry
 {
@@ -87,6 +87,6 @@ private:
 };
 
 
-}}}
+}}
 
 #endif

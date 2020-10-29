@@ -32,7 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include <StkVector.hpp>
+#include "stk_math/StkVector.hpp"
 
 namespace stk {
 namespace math {

@@ -424,11 +424,11 @@ private:
   // bucket[to_ordinal] = entity;
   // whatever was there before is lost
   //  With optional fields argument only copy listed fields
-  void overwrite_entity(size_type to_ordinal, Entity entity, const std::vector<FieldBase*>* fields=NULL);
+  void overwrite_entity(size_type to_ordinal, Entity entity, const std::vector<FieldBase*>* fields = nullptr);
 
   void initialize_slot(size_type ordinal, Entity entity);
   //  Optional fields argument, only copy listed fields
-  void reset_entity_location(Entity entity, size_type to_ordinal, const std::vector<FieldBase*>* fields = NULL);
+  void reset_entity_location(Entity entity, size_type to_ordinal, const std::vector<FieldBase*>* fields = nullptr);
 
   size_type get_others_begin_index(size_type bucket_ordinal, EntityRank rank) const;
   size_type get_others_end_index(size_type bucket_ordinal, EntityRank rank) const;
@@ -438,7 +438,7 @@ private:
   void modify_connectivity(T& callable, EntityRank rank);
 
   template <typename T>
-  void modify_all_connectivity(T& callable, Bucket* other_bucket=NULL);
+  void process_all_connectivity(T& callable, Bucket* other_bucket = nullptr);
 
   void check_for_invalid_connectivity_request(ConnectivityType const* type) const
   {
@@ -628,38 +628,47 @@ ConnectivityType Bucket::connectivity_type(EntityRank rank) const
   }
 }
 
-
 template <typename T>
 inline
-void Bucket::modify_all_connectivity(T& callable, Bucket* other_bucket)
+void Bucket::process_all_connectivity(T& callable, Bucket* other_bucket)
 {
-  mark_for_modification();
+  if (callable.is_modifying()) {
+    mark_for_modification();
+  }
 
   switch(m_node_kind) {
-  case FIXED_CONNECTIVITY:   callable(*this, m_fixed_node_connectivity,   T::template generate_args<stk::topology::NODE_RANK, FIXED_CONNECTIVITY>(other_bucket)); break;
-  case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_node_connectivity, T::template generate_args<stk::topology::NODE_RANK, DYNAMIC_CONNECTIVITY>(other_bucket)); break;
+  case FIXED_CONNECTIVITY:
+    callable.template operator()<stk::topology::NODE_RANK, FIXED_CONNECTIVITY>(*this, m_fixed_node_connectivity, other_bucket); break;
+  case DYNAMIC_CONNECTIVITY:
+    callable.template operator()<stk::topology::NODE_RANK, DYNAMIC_CONNECTIVITY>(*this, m_dynamic_node_connectivity, other_bucket); break;
   default: break;
   }
 
   switch(m_edge_kind) {
-  case FIXED_CONNECTIVITY:   callable(*this, m_fixed_edge_connectivity,   T::template generate_args<stk::topology::EDGE_RANK, FIXED_CONNECTIVITY>(other_bucket)); break;
-  case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_edge_connectivity, T::template generate_args<stk::topology::EDGE_RANK, DYNAMIC_CONNECTIVITY>(other_bucket)); break;
+  case FIXED_CONNECTIVITY:
+    callable.template operator()<stk::topology::EDGE_RANK, FIXED_CONNECTIVITY>(*this, m_fixed_edge_connectivity, other_bucket); break;
+  case DYNAMIC_CONNECTIVITY:
+    callable.template operator()<stk::topology::EDGE_RANK, DYNAMIC_CONNECTIVITY>(*this, m_dynamic_edge_connectivity, other_bucket); break;
   default: break;
   }
 
   switch(m_face_kind) {
-  case FIXED_CONNECTIVITY:   callable(*this, m_fixed_face_connectivity,   T::template generate_args<stk::topology::FACE_RANK, FIXED_CONNECTIVITY>(other_bucket)); break;
-  case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_face_connectivity, T::template generate_args<stk::topology::FACE_RANK, DYNAMIC_CONNECTIVITY>(other_bucket)); break;
+  case FIXED_CONNECTIVITY:
+    callable.template operator()<stk::topology::FACE_RANK, FIXED_CONNECTIVITY>(*this, m_fixed_face_connectivity, other_bucket); break;
+  case DYNAMIC_CONNECTIVITY:
+    callable.template operator()<stk::topology::FACE_RANK, DYNAMIC_CONNECTIVITY>(*this, m_dynamic_face_connectivity, other_bucket); break;
   default: break;
   }
 
   switch(m_element_kind) {
-  case FIXED_CONNECTIVITY:   callable(*this, m_fixed_element_connectivity,   T::template generate_args<stk::topology::ELEMENT_RANK, FIXED_CONNECTIVITY>(other_bucket)); break;
-  case DYNAMIC_CONNECTIVITY: callable(*this, m_dynamic_element_connectivity, T::template generate_args<stk::topology::ELEMENT_RANK, DYNAMIC_CONNECTIVITY>(other_bucket)); break;
+  case FIXED_CONNECTIVITY:
+    callable.template operator()<stk::topology::ELEM_RANK, FIXED_CONNECTIVITY>(*this, m_fixed_element_connectivity, other_bucket); break;
+  case DYNAMIC_CONNECTIVITY:
+    callable.template operator()<stk::topology::ELEM_RANK, DYNAMIC_CONNECTIVITY>(*this, m_dynamic_element_connectivity, other_bucket); break;
   default: break;
   }
 
-  callable(*this, m_dynamic_other_connectivity, T::template generate_args<stk::topology::INVALID_RANK, DYNAMIC_CONNECTIVITY>(other_bucket));
+  callable.template operator()<stk::topology::INVALID_RANK, DYNAMIC_CONNECTIVITY>(*this, m_dynamic_other_connectivity, other_bucket);
 }
 
 template <typename T>

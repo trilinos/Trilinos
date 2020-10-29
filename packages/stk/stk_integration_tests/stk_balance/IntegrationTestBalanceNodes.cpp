@@ -76,7 +76,7 @@ double get_node_imbalance(const stk::mesh::BulkData & bulk)
 {
   stk::mesh::Selector localSelector = bulk.mesh_meta_data().locally_owned_part();
   stk::mesh::EntityVector ownedNodes;
-  bulk.get_entities(stk::topology::NODE_RANK, localSelector, ownedNodes);
+  stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, localSelector, ownedNodes);
 
   const size_t numLocallyOwnedNodes = ownedNodes.size();
   size_t maxLocallyOwned = 0;

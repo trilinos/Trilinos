@@ -62,8 +62,6 @@
 namespace stk {
 namespace mesh {
 
-typedef std::vector<EntityKey> EntityKeyVector;
-
 struct create_single_edge_impl
 {
   typedef void result_type;
