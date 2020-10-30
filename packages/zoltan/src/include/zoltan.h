@@ -3194,6 +3194,38 @@ extern int Zoltan_LB_Free_Data(
 );
 
 /*****************************************************************************/
+/*****************************************************************************/
+/* AUSTIN:  NEED BETTER DOCUMENTATION HERE */
+/* 
+ * Routine to set ??? AUSTIN
+ * 
+ * Input:
+ *   zz                   -- pointer to Zoltan structure
+ *   num_groups           -- ??? AUSTIN
+ *
+ *  Returned value:       --  Error code
+ */
+
+int Zoltan_Set_Num_Unique_Groups(
+  struct Zoltan_Struct *zz, 
+  int num_groups);
+
+/* 
+ * Routine to set ??? AUSTIN
+ * 
+ * Input:
+ *   zz                   -- pointer to Zoltan structure
+ *   num_groups           -- ??? AUSTIN
+ *   group_count          -- ??? AUSTIN
+ *
+ *  Returned value:       --  Error code
+ */
+
+int Zoltan_Set_Group_Count(
+  struct Zoltan_Struct *zz, 
+  int num_groups, 
+  int* group_count);
+
 
 /*****************************************************************************/
 /* 
