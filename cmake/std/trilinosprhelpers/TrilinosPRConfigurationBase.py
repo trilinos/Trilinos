@@ -483,11 +483,11 @@ class TrilinosPRConfigurationBase(object):
         """
         print("")
         print("Validate target branch constraints:")
-        print("- Target branch is '{}'".format(self.args.target_branch_name))
+        print("--- Target branch is '{}'".format(self.args.target_branch_name))
 
         re_master_merge_source = "master_merge_[0-9]{8}_[0-9]{6}"
         if "master" == self.args.target_branch_name:
-            print("- Target branch is 'master'. Checking source branch constraints...")
+            print("--- Target branch is 'master'. Checking source branch constraints...")
             if not re.match(re_master_merge_source, self.args.source_branch_name):
                 message  = "+" + "="*78 + "+\n"
                 message += "ERROR: Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS\n"
