@@ -46,6 +46,10 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_View.hpp>
 #include <unistd.h>
+#include <map>
+#include <string>
+#include <list>
+#include "ApiTest.h"
 
 //strategy: kokkos::deepcopy a view, count the intercepts.  For right now, just report them when mpi_finalize happens.
 void OnHost2Arg(Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> &a,
@@ -139,6 +143,7 @@ void DeviceToHost3Arg(Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> 
 }
 
 int main(int argc, char *argv[]) {
+  ApiTest *counter = ApiTest::getInstance();
   //initialize
   MPI_Init(&argc, &argv);
   Kokkos::initialize(argc, argv);
@@ -148,17 +153,40 @@ int main(int argc, char *argv[]) {
     Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> b ("b", N);
     Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> c ("c", N);
     Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::CudaSpace> d ("d", N);
-  
+
+    counter->map_zero();
     OnHost2Arg(a, b);
+    fprintf(stderr, "OnHost2Arg()\n");
+    counter->printAll();
+    counter->map_zero();
     OnDevice2Arg(c, d);
+    fprintf(stderr, "OnDevice2Arg()\n");
+    counter->printAll();
+    counter->map_zero();
     HostToDevice2Arg(a, c);
+    fprintf(stderr, "HostToDevice2Arg()\n");
+    counter->printAll();
+    counter->map_zero();
     DeviceToHost2Arg(c, a);
+    fprintf(stderr, "DeviceToHost2Arg()\n");
+    counter->printAll();
+    counter->map_zero();
     OnHost3Arg(a, b);
+    fprintf(stderr, "OnHost3Arg()\n");
+    counter->printAll();
+    counter->map_zero();
     OnDevice3Arg(c, d);
+    fprintf(stderr, "OnDevice3Arg()\n");
+    counter->printAll();
+    counter->map_zero();
     HostToDevice3Arg(a, c);
+    fprintf(stderr, "HostToDevice3Arg()\n");
+    counter->printAll();
+    counter->map_zero();
     DeviceToHost3Arg(c, a);
+    fprintf(stderr, "DeviceToHost3Arg()\n");
+    counter->printAll();
   }
-  fprintf(stderr, "summary statistics\n");
   Kokkos::finalize();
   MPI_Finalize();
 

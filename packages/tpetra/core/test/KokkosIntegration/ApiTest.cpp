@@ -4,6 +4,19 @@
 #include <list>
 #include "ApiTest.h"
 
+ApiTest *instance = NULL;
+
+ApiTest *ApiTest::getInstance() {
+  if (instance == NULL)
+    instance = new ApiTest;
+  return instance;
+}
+
+void ApiTest::finalizeInstance() {
+  if (instance != NULL)
+    delete instance;
+}
+
 ApiTest::ApiTest() { }
 
 ApiTest::~ApiTest() { }
@@ -19,6 +32,15 @@ int ApiTest::setExpectations(std::map<std::string, int> &exp) {
     }
   }
   return 0;
+}
+
+bool ApiTest::testExpectations() {
+  for (std::map<std::string, std::pair<int, int> >::iterator it = counter.begin();
+       it != counter.end(); it++) {
+    if (it->second.first != it->second.second)
+      return false;
+  }
+  return true;
 }
 
 void ApiTest::map_zero() {
@@ -50,7 +72,8 @@ void ApiTest::printAll() {
   fprintf (stderr, "call                                           times\n");
   for (std::map<std::string, std::pair<int, int> >::iterator it = counter.begin(); 
        it != counter.end(); it++) {
-    fprintf(stderr, "%-50s %d\t%d\n", it->first.c_str(), it->second.first, it->second.second);
+    if (it->second.first != 0 || it->second.second != 0) 
+      fprintf(stderr, "%-50s %d\t%d\n", it->first.c_str(), it->second.first, it->second.second);
   }
   fprintf (stderr, "**************** cuda call analysis ****************\n"); 
 }

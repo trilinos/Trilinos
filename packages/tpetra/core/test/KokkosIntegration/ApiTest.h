@@ -3,15 +3,18 @@
 
 class ApiTest {
  public:
-  ApiTest();
-  ~ApiTest();
+  static ApiTest *getInstance();
+  void finalizeInstance();
   int setExpectations(std::map<std::string, int> &exp);
+  bool testExpectations();
   void map_zero();
   void pincr(std::string key, int value);
   void incr(std::string key);
   void printAll();
 
  private:
+  ApiTest();
+  ~ApiTest();
   std::map<std::string, std::pair<int, int> > counter;
   std::list<std::string> funcs {
       "cudaDeviceSynchronize",
