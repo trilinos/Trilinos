@@ -179,7 +179,7 @@ class TrilinosPRConfigurationTest(TestCase):
         self._config_file = self.find_config_ini(config_file)
 
         # Set up dummy command line arguments
-        self._args = self. dummy_args_python3()
+        self._args = self.dummy_args_python3()
 
         # Create SetEnvironment object for tests
         self._env  = setenvironment.SetEnvironment(filename=self._config_file, profile="Trilinos_pullrequest_gcc_4.8.4")
