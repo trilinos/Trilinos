@@ -197,48 +197,10 @@ StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm() :
   this->setZeroInitialGuess(   false);
   this->setSchemeName(         "Average Acceleration");
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  this->setObserver();
-#endif
   this->setAppAction(Teuchos::null);
   this->setDefaultSolver();
 }
 
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-template<class Scalar>
-StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
-  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-  bool useFSAL,
-  std::string ICConsistency,
-  bool ICConsistencyCheck,
-  bool zeroInitialGuess,
-  std::string schemeName,
-  Scalar beta,
-  Scalar gamma)
-  : out_(Teuchos::VerboseObjectBase::getDefaultOStream())
-{
-  this->setStepperType(        "Newmark Implicit a-Form");
-  this->setUseFSAL(            useFSAL);
-  this->setICConsistency(      ICConsistency);
-  this->setICConsistencyCheck( ICConsistencyCheck);
-  this->setZeroInitialGuess(   zeroInitialGuess);
-  this->setSchemeName(         schemeName);
-  this->setBeta(               beta);
-  this->setGamma(              gamma);
-  this->setObserver(obs);
-  this->setAppAction(Teuchos::null);
-  this->setSolver(solver);
-
-  if (appModel != Teuchos::null) {
-
-    this->setModel(appModel);
-    this->initialize();
-  }
-}
-#endif
 
 template<class Scalar>
 StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm(

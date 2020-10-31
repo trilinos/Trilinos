@@ -120,11 +120,11 @@ namespace FROSch {
 
         int assembledPartitionOfUnityMaps();
 
-        XMultiVectorPtrVecPtr getLocalPartitionOfUnity() const;
+        ConstXMultiVectorPtrVecPtr getLocalPartitionOfUnity() const;
 
-        XMapPtrVecPtr getPartitionOfUnityMaps() const;
+        ConstXMapPtrVecPtr getPartitionOfUnityMaps() const;
 
-        XMapPtr getAssembledPartitionOfUnityMap() const;
+        ConstXMapPtr getAssembledPartitionOfUnityMap() const;
 
     protected:
 
@@ -133,11 +133,11 @@ namespace FROSch {
 
         ParameterListPtr ParameterList_;
 
-        XMultiVectorPtrVecPtr LocalPartitionOfUnity_;
+        ConstXMultiVectorPtrVecPtr LocalPartitionOfUnity_;
 
-        XMapPtrVecPtr PartitionOfUnityMaps_;
+        ConstXMapPtrVecPtr PartitionOfUnityMaps_;
 
-        XMapPtr AssmbledPartitionOfUnityMap_;
+        ConstXMapPtr AssmbledPartitionOfUnityMap_;
 
         bool Verbose_ = false;
 

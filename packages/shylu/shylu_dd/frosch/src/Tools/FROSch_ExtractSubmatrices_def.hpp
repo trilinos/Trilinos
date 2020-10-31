@@ -55,7 +55,7 @@ namespace FROSch {
     RCP<const Matrix<SC,LO,GO,NO> > ExtractLocalSubdomainMatrix(RCP<const Matrix<SC,LO,GO,NO> > globalMatrix,
                                                                 RCP<const Map<LO,GO,NO> > map)
     {
-        FROSCH_TIMER_START(extractLocalSubdomainMatrixTime,"ExtractLocalSubdomainMatrix");
+        FROSCH_DETAILTIMER_START(extractLocalSubdomainMatrixTime,"ExtractLocalSubdomainMatrix");
         RCP<Matrix<SC,LO,GO,NO> > subdomainMatrix = MatrixFactory<SC,LO,GO,NO>::Build(map,globalMatrix->getGlobalMaxNumRowEntries());
         RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(),map);
         subdomainMatrix->doImport(*globalMatrix,*scatter,ADD);
@@ -92,7 +92,7 @@ namespace FROSch {
                                                                 RCP<const Map<LO,GO,NO> > map,
                                                                 SC value)
     {
-        FROSCH_TIMER_START(extractLocalSubdomainMatrixTime,"ExtractLocalSubdomainMatrix");
+        FROSCH_DETAILTIMER_START(extractLocalSubdomainMatrixTime,"ExtractLocalSubdomainMatrix");
         RCP<Matrix<SC,LO,GO,NO> > subdomainMatrix = MatrixFactory<SC,LO,GO,NO>::Build(map,2*globalMatrix->getGlobalMaxNumRowEntries());
         RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(),map);
         subdomainMatrix->doImport(*globalMatrix,*scatter,ADD);
@@ -129,7 +129,7 @@ namespace FROSch {
                                    RCP<Map<LO,GO,NO> > &map,
                                    RCP<Matrix<SC,LO,GO,NO> > &localSubdomainMatrix)
     {
-        FROSCH_TIMER_START(updateLocalSubdomainMatrixTime,"UpdateLocalSubdomainMatrix");
+        FROSCH_DETAILTIMER_START(updateLocalSubdomainMatrixTime,"UpdateLocalSubdomainMatrix");
         RCP<Matrix<SC,LO,GO,NO> > subdomainMatrix = MatrixFactory<SC,LO,GO,NO>::Build(map,2*globalMatrix->getGlobalMaxNumRowEntries());
         RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(),map);
         subdomainMatrix->doImport(*globalMatrix,*scatter,ADD);
@@ -167,7 +167,7 @@ namespace FROSch {
                          RCP<Matrix<SC,LO,GO,NO> > &kJI,
                          RCP<Matrix<SC,LO,GO,NO> > &kJJ)
     {
-        FROSCH_TIMER_START(buildSubmatricesTime,"BuildSubmatrices");
+        FROSCH_DETAILTIMER_START(buildSubmatricesTime,"BuildSubmatrices");
         // We need four Maps
         RCP<Map<LO,GO,NO> > mapI = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI(),0,k->getRowMap()->getComm());
         RCP<Map<LO,GO,NO> > mapILocal = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI.size(),0,k->getRowMap()->getComm());
@@ -244,7 +244,7 @@ namespace FROSch {
                        ArrayView<GO> indI,
                        RCP<Matrix<SC,LO,GO,NO> > &kII)
     {
-        FROSCH_TIMER_START(buildSubmatrixTime,"BuildSubmatrix");
+        FROSCH_DETAILTIMER_START(buildSubmatrixTime,"BuildSubmatrix");
         //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout));
         RCP<Map<LO,GO,NO> > mapI = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI(),0,k->getRowMap()->getComm());
 
@@ -284,7 +284,7 @@ namespace FROSch {
                       ArrayView<GO> indI,
                       RCP<CrsGraph<LO,GO,NO> > &kII)
     {
-        FROSCH_TIMER_START(buildSubgraphTime,"BuildSubgraph");
+        FROSCH_DETAILTIMER_START(buildSubgraphTime,"BuildSubgraph");
         //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout));
         RCP<Map<LO,GO,NO> > mapI = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI(),0,k->getRowMap()->getComm());
 

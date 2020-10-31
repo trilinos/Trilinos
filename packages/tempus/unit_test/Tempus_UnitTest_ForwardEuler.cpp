@@ -67,10 +67,6 @@ TEUCHOS_UNIT_TEST(ForwardEuler, Default_Construction)
   bool ICConsistencyCheck   = stepper->getICConsistencyCheck();
 
   // Test the set functions.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  auto obs    = rcp(new Tempus::StepperForwardEulerObserver<double>());
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -78,12 +74,6 @@ TEUCHOS_UNIT_TEST(ForwardEuler, Default_Construction)
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  // Full argument list construction.
-  stepper = rcp(new Tempus::StepperForwardEuler<double>(
-    model, obs, useFSAL, ICConsistency, ICConsistencyCheck));
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper = rcp(new Tempus::StepperForwardEuler<double>(
     model, useFSAL, ICConsistency, ICConsistencyCheck,modifier));
     TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());

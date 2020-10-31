@@ -82,24 +82,24 @@ namespace FROSch {
             FROSCH_NOTIFICATION("FROSch::PartitionOfUnity",Verbosity_,"AssmbledPartitionOfUnityMap_ has already been assembled previously.");
         }
         LOVecPtr2D partMappings;
-        AssmbledPartitionOfUnityMap_ = AssembleMapsNonConst(PartitionOfUnityMaps_(),partMappings);
+        AssmbledPartitionOfUnityMap_ = AssembleMaps(PartitionOfUnityMaps_(),partMappings);
         return 0;
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename PartitionOfUnity<SC,LO,GO,NO>::XMultiVectorPtrVecPtr PartitionOfUnity<SC,LO,GO,NO>::getLocalPartitionOfUnity() const
+    typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMultiVectorPtrVecPtr PartitionOfUnity<SC,LO,GO,NO>::getLocalPartitionOfUnity() const
     {
         return LocalPartitionOfUnity_;
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename PartitionOfUnity<SC,LO,GO,NO>::XMapPtrVecPtr PartitionOfUnity<SC,LO,GO,NO>::getPartitionOfUnityMaps() const
+    typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMapPtrVecPtr PartitionOfUnity<SC,LO,GO,NO>::getPartitionOfUnityMaps() const
     {
         return PartitionOfUnityMaps_;
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename PartitionOfUnity<SC,LO,GO,NO>::XMapPtr PartitionOfUnity<SC,LO,GO,NO>::getAssembledPartitionOfUnityMap() const
+    typename PartitionOfUnity<SC,LO,GO,NO>::ConstXMapPtr PartitionOfUnity<SC,LO,GO,NO>::getAssembledPartitionOfUnityMap() const
     {
         return AssmbledPartitionOfUnityMap_;
     }

@@ -129,10 +129,11 @@ void FieldBase::rotate_multistate_data()
 
 #ifdef STK_DEBUG_FIELD_SYNC
 unsigned
-FieldBase::get_num_components(const FastMeshIndex & index) const
+FieldBase::get_num_components(const Entity & entity) const
 {
+  const MeshIndex & index = get_mesh().mesh_index(entity);
   const unsigned bytesPerScalar = data_traits().size_of;
-  return m_field_meta_data[index.bucket_id].m_bytes_per_entity/bytesPerScalar;
+  return m_field_meta_data[index.bucket->bucket_id()].m_bytes_per_entity/bytesPerScalar;
 }
 
 void
@@ -142,56 +143,79 @@ FieldBase::set_last_modification_view(const LastFieldModLocationType & lastModVi
 }
 
 bool
-FieldBase::last_accessed_entity_value_has_changed(const FastMeshIndex & index, unsigned component) const
+FieldBase::last_accessed_entity_value_has_changed(const Entity & entity, const uint8_t * lastEntityValues, unsigned component) const
 {
-  const unsigned bytesPerScalar = data_traits().size_of;
-  const FieldMetaData& field_meta_data = m_field_meta_data[index.bucket_id];
-  const unsigned entityOffset = field_meta_data.m_bytes_per_entity * index.bucket_ord;
-  const unsigned componentOffset = bytesPerScalar * component;
+  if (get_mesh().is_valid(entity)) {
+    const MeshIndex & index = get_mesh().mesh_index(entity);
+    const unsigned bytesPerScalar = data_traits().size_of;
+    const FieldMetaData& field_meta_data = m_field_meta_data[index.bucket->bucket_id()];
+    const unsigned entityOffset = field_meta_data.m_bytes_per_entity * index.bucket_ordinal;
+    const unsigned componentOffset = bytesPerScalar * component;
 
-  const uint8_t * data = field_meta_data.m_data + entityOffset + componentOffset;
-  const uint8_t * lastValueData = m_lastFieldValue.data() + entityOffset + componentOffset;
+    const uint8_t * currentValue = field_meta_data.m_data + entityOffset + componentOffset;
+    const uint8_t * lastValue = lastEntityValues + componentOffset;
 
-  return std::memcmp(data, lastValueData, bytesPerScalar);
+    return std::memcmp(currentValue, lastValue, bytesPerScalar);
+  }
+  else {
+    return false;
+  }
 }
 
 void
-FieldBase::set_last_modification(const FastMeshIndex & index, unsigned component, LastModLocation location) const
+FieldBase::set_last_modification(const Entity & entity, unsigned component, LastModLocation location) const
 {
-  m_debugFieldLastModification(index.bucket_id, ORDER_INDICES(index.bucket_ord, component)) = location;
+  const MeshIndex & index = get_mesh().mesh_index(entity);
+  if (get_mesh().in_modifiable_state()) {
+    stk::mesh::FieldBase & lastModLocationField = get_last_mod_location_field();
+    uint8_t * lastModLocation = reinterpret_cast<uint8_t*>(stk::mesh::ngp_debug_field_data(lastModLocationField,
+                                                                                           index.bucket->bucket_id(), index.bucket_ordinal));
+    lastModLocation[component] = location;
+  }
+  else {
+    m_debugFieldLastModification(index.bucket->bucket_id(), ORDER_INDICES(index.bucket_ordinal, component)) = location;
+  }
 }
 
 void
 FieldBase::detect_host_field_entity_modification() const
 {
-  if (m_lastFieldEntityLocation.bucket_id == INVALID_BUCKET_ID) return;
+  if (!get_mesh().is_valid(m_lastFieldEntity)) return;
 
-  for (unsigned component = 0; component < get_num_components(m_lastFieldEntityLocation);  ++component) {
-    if (last_accessed_entity_value_has_changed(m_lastFieldEntityLocation, component)) {
-      set_last_modification(m_lastFieldEntityLocation, component, LastModLocation::HOST);
+  for (unsigned component = 0; component < get_num_components(m_lastFieldEntity);  ++component) {
+    if (last_accessed_entity_value_has_changed(m_lastFieldEntity, m_lastFieldValue.data(), component)) {
+      set_last_modification(m_lastFieldEntity, component, LastModLocation::HOST);
     }
   }
 }
 
 bool
-FieldBase::last_entity_modification_not_on_host(const FastMeshIndex & index, unsigned component) const
+FieldBase::data_is_stale_on_host(const Entity & entity, unsigned component) const
 {
-  return !(m_debugFieldLastModification(index.bucket_id,
-                                        ORDER_INDICES(index.bucket_ord, component)) & LastModLocation::HOST);
+  const MeshIndex & index = get_mesh().mesh_index(entity);
+  if (get_mesh().in_modifiable_state()) {
+    stk::mesh::FieldBase & lastModLocationField = get_last_mod_location_field();
+    const uint8_t * lastModLocation = reinterpret_cast<uint8_t*>(stk::mesh::ngp_debug_field_data(lastModLocationField,
+                                                                                                 index.bucket->bucket_id(),
+                                                                                                 index.bucket_ordinal));
+    return !(lastModLocation[component] & LastModLocation::HOST);
+  }
+  else {
+    return !(m_debugFieldLastModification(index.bucket->bucket_id(),
+                                          ORDER_INDICES(index.bucket_ordinal, component)) & LastModLocation::HOST);
+  }
 }
 
 void
-FieldBase::store_last_entity_access_location(const FastMeshIndex & index) const
+FieldBase::store_last_entity_access_location(const Entity & entity) const
 {
-  const FieldMetaData& field_meta_data = m_field_meta_data[index.bucket_id];
-  const uint8_t * data = field_meta_data.m_data + field_meta_data.m_bytes_per_entity * index.bucket_ord;
+  const MeshIndex & index = get_mesh().mesh_index(entity);
+  const FieldMetaData& field_meta_data = m_field_meta_data[index.bucket->bucket_id()];
+  const uint8_t * data = field_meta_data.m_data + field_meta_data.m_bytes_per_entity * index.bucket_ordinal;
 
-  const unsigned bucketCapacity = get_mesh().buckets(entity_rank())[index.bucket_id]->capacity();
-  m_lastFieldValue.resize(field_meta_data.m_bytes_per_entity * bucketCapacity);
-  uint8_t * lastValueData = m_lastFieldValue.data() + field_meta_data.m_bytes_per_entity * index.bucket_ord;
-
-  std::memcpy(lastValueData, data, field_meta_data.m_bytes_per_entity);
-  m_lastFieldEntityLocation = index;
+  m_lastFieldValue.resize(field_meta_data.m_bytes_per_entity);
+  std::memcpy(m_lastFieldValue.data(), data, field_meta_data.m_bytes_per_entity);
+  m_lastFieldEntity = entity;
 }
 
 std::string location_string(const char * fullPath, int lineNumber)
@@ -210,20 +234,21 @@ std::string location_string(const char * fullPath, int lineNumber)
 }
 
 void
-FieldBase::check_stale_field_entity_access(const FastMeshIndex & index, const char * fileName, int lineNumber) const
+FieldBase::check_stale_field_entity_access(const Entity & entity, const char * fileName, int lineNumber) const
 {
-  if (get_ngp_field()->any_device_field_modification()) {
+  if (get_ngp_field()->lost_device_field_data()) {
     std::cout << location_string(fileName, lineNumber)
               << "*** WARNING: Lost Device values for Field " << name()
               << " due to a mesh modification before a sync to Host" << std::endl;
     return;
   }
 
-  for (unsigned component = 0; component < get_num_components(index);  ++component) {
-    if (last_entity_modification_not_on_host(index, component)) {
+  for (unsigned component = 0; component < get_num_components(entity);  ++component) {
+    if (data_is_stale_on_host(entity, component)) {
+      const MeshIndex & index = get_mesh().mesh_index(entity);
       const unsigned bytesPerScalar = data_traits().size_of;
-      const FieldMetaData& field_meta_data = m_field_meta_data[index.bucket_id];
-      const unsigned entityOffset = field_meta_data.m_bytes_per_entity * index.bucket_ord;
+      const FieldMetaData& field_meta_data = m_field_meta_data[index.bucket->bucket_id()];
+      const unsigned entityOffset = field_meta_data.m_bytes_per_entity * index.bucket_ordinal;
       const unsigned componentOffset = bytesPerScalar * component;
 
       uint8_t * data = field_meta_data.m_data + entityOffset + componentOffset;
@@ -267,22 +292,28 @@ void
 FieldBase::store_last_bucket_access_location(const stk::mesh::Bucket & bucket) const
 {
   const FieldMetaData& field_meta_data = m_field_meta_data[bucket.bucket_id()];
-  m_lastFieldValue.resize(field_meta_data.m_bytes_per_entity * bucket.capacity());
+  m_lastFieldBucketValues.resize(field_meta_data.m_bytes_per_entity * bucket.capacity());
 
-  std::memcpy(m_lastFieldValue.data(), field_meta_data.m_data, field_meta_data.m_bytes_per_entity * bucket.size());
-  m_lastFieldBucketLocation = &const_cast<stk::mesh::Bucket&>(bucket);
+  std::memcpy(m_lastFieldBucketValues.data(), field_meta_data.m_data, field_meta_data.m_bytes_per_entity * bucket.size());
+  m_lastFieldBucketEntities.clear();
+  for (const stk::mesh::Entity & entity : bucket) {
+    m_lastFieldBucketEntities.push_back(entity);
+  }
 }
 
 void
 FieldBase::detect_host_field_bucket_modification() const
 {
-  if (m_lastFieldBucketLocation == nullptr) return;
 
-  for (unsigned ordinal = 0; ordinal < m_lastFieldBucketLocation->size(); ++ordinal) {
-    const FastMeshIndex index {m_lastFieldBucketLocation->bucket_id(), ordinal};
-    for (unsigned component = 0; component < get_num_components(index);  ++component) {
-      if (last_accessed_entity_value_has_changed(index, component)) {
-        set_last_modification(index, component, LastModLocation::HOST);
+  for (unsigned ordinal = 0; ordinal < m_lastFieldBucketEntities.size(); ++ordinal) {
+    const stk::mesh::Entity & entity = m_lastFieldBucketEntities[ordinal];
+    const MeshIndex & index = get_mesh().mesh_index(entity);
+    const unsigned bytesPerEntity = m_field_meta_data[index.bucket->bucket_id()].m_bytes_per_entity;
+    const uint8_t * lastEntityValues = m_lastFieldBucketValues.data() + ordinal * bytesPerEntity;
+
+    for (unsigned component = 0; component < get_num_components(entity);  ++component) {
+      if (last_accessed_entity_value_has_changed(entity, lastEntityValues, component)) {
+        set_last_modification(entity, component, LastModLocation::HOST);
       }
     }
   }
@@ -291,17 +322,83 @@ FieldBase::detect_host_field_bucket_modification() const
 void
 FieldBase::check_stale_field_bucket_access(const stk::mesh::Bucket & bucket, const char * fileName, int lineNumber) const
 {
-  for (unsigned ordinal = 0; ordinal < bucket.size(); ++ordinal) {
-    const FastMeshIndex index {bucket.bucket_id(), ordinal};
-    check_stale_field_entity_access(index, fileName, lineNumber);
+  for (const Entity & entity : bucket) {
+    check_stale_field_entity_access(entity, fileName, lineNumber);
   }
 }
 
 void
 FieldBase::reset_debug_state()
 {
-  m_lastFieldEntityLocation = {INVALID_BUCKET_ID, 0};
-  m_lastFieldBucketLocation = nullptr;
+  m_lastFieldEntity = stk::mesh::Entity();
+  m_lastFieldBucketEntities.clear();
+}
+
+FieldBase &
+FieldBase::get_last_mod_location_field() const
+{
+  if (m_lastModLocationField == nullptr) {
+    ThrowRequire(get_debug_ngp_field() != nullptr);
+    stk::mesh::MetaData & meta = get_mesh().mesh_meta_data();
+    meta.enable_late_fields();
+    stk::mesh::Field<uint8_t> & lastModLocationField =
+        meta.declare_field<stk::mesh::Field<uint8_t>>(entity_rank(),
+                                                      "DEBUG_lastFieldModLocation_"+name(),
+                                                      number_of_states());
+
+    const RestrictionVector & fieldRestrictions = restrictions();
+    for (const Restriction & restriction : fieldRestrictions) {
+      const stk::mesh::BucketVector & buckets = get_mesh().get_buckets(entity_rank(), restriction.selector());
+      const unsigned numComponents = stk::mesh::field_scalars_per_entity(*this, *buckets.front());
+      std::vector<uint8_t> initLastModLocation(numComponents, LastModLocation::HOST_OR_DEVICE);
+      stk::mesh::put_field_on_mesh(lastModLocationField, restriction.selector(), numComponents, initLastModLocation.data());
+    }
+
+    m_lastModLocationField = &lastModLocationField;
+  }
+  return *m_lastModLocationField;
+}
+
+void
+FieldBase::fill_last_mod_location_field_from_device() const
+{
+  FieldBase & lastModLocationField = get_last_mod_location_field();
+  stk::mesh::NgpFieldBase & ngpField = *get_ngp_field();
+
+  const stk::mesh::BucketVector & buckets = get_mesh().buckets(entity_rank());
+  for (const stk::mesh::Bucket * bucket : buckets) {
+    for (unsigned ordinal = 0; ordinal < bucket->size(); ++ordinal) {
+      const stk::mesh::Entity & entity = (*bucket)[ordinal];
+      const unsigned numComponents = stk::mesh::field_scalars_per_entity(lastModLocationField, entity);
+      uint8_t * lastModLocation = reinterpret_cast<uint8_t*>(stk::mesh::ngp_debug_field_data(lastModLocationField, entity));
+      for (unsigned component = 0; component < numComponents; ++component) {
+        const unsigned bucketOffset = ngpField.get_bucket_offset(bucket->bucket_id());
+        lastModLocation[component] = m_debugFieldLastModification(bucketOffset, ORDER_INDICES(ordinal, component));
+      }
+    }
+  }
+}
+
+void
+FieldBase::fill_last_mod_location_view_from_host() const
+{
+  FieldBase & lastModLocationField = get_last_mod_location_field();
+  stk::mesh::NgpFieldBase & ngpField = *get_ngp_field();
+
+  const stk::mesh::BucketVector & buckets = get_mesh().buckets(entity_rank());
+  for (const stk::mesh::Bucket * bucket : buckets) {
+    for (unsigned ordinal = 0; ordinal < bucket->size(); ++ordinal) {
+      const stk::mesh::Entity & entity = (*bucket)[ordinal];
+      uint8_t * lastModLocation = reinterpret_cast<uint8_t*>(stk::mesh::ngp_debug_field_data(lastModLocationField, entity));
+      const unsigned bucketOffset = ngpField.get_bucket_offset(bucket->bucket_id());
+      const unsigned numComponents = stk::mesh::field_scalars_per_entity(lastModLocationField, entity);
+
+      for (unsigned component = 0; component < numComponents; ++component) {
+        m_debugFieldLastModification(bucketOffset, ORDER_INDICES(ordinal, component)) =
+            static_cast<LastModLocation>(lastModLocation[component]);
+      }
+    }
+  }
 }
 
 #endif

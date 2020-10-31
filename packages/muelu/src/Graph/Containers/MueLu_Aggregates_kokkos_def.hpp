@@ -159,6 +159,7 @@ namespace MueLu {
     {
       Kokkos::View<size_type, device_type> numNNZ_device = Kokkos::subview(rows, numAggregates);
       typename Kokkos::View<size_type, device_type>::HostMirror numNNZ_host = Kokkos::create_mirror_view(numNNZ_device);
+      Kokkos::deep_copy(numNNZ_host, numNNZ_device);
       numNNZ = numNNZ_host();
     }
     typename entries_type::non_const_type cols(Kokkos::ViewAllocateWithoutInitializing("Agg_cols"), numNNZ);
@@ -173,7 +174,7 @@ namespace MueLu {
         }
       }, realnnz);
     TEUCHOS_TEST_FOR_EXCEPTION(realnnz != numNNZ, Exceptions::RuntimeError,
-        "MueLu: Internal error: Something is wrong with aggregates graph construction");
+                               "MueLu: Internal error: Something is wrong with aggregates graph construction: numNNZ = " << numNNZ << " != " << realnnz << " = realnnz");
 
     graph_ = local_graph_type(cols, rows);
 

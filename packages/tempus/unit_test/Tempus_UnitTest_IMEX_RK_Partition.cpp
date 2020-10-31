@@ -81,10 +81,6 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partition, Default_Construction)
 
 
   // Test the set functions.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  auto obs    = rcp(new Tempus::StepperRKObserverComposite<double>());
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -104,13 +100,6 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partition, Default_Construction)
   TEUCHOS_TEST_FOR_EXCEPT(implicitTableau != stepper->getImplicitTableau());
 
   // Full argument list construction.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  stepper = rcp(new Tempus::StepperIMEX_RK_Partition<double>(
-    model, obs, solver, useFSAL,
-    ICConsistency, ICConsistencyCheck, zeroInitialGuess,
-    stepperType, explicitTableau, implicitTableau, order));
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper = rcp(new Tempus::StepperIMEX_RK_Partition<double>(
     model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
     zeroInitialGuess, modifier, stepperType, explicitTableau,

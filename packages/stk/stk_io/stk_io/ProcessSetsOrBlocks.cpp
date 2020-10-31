@@ -15,6 +15,7 @@
 #include "Ioss_NodeBlock.h"                        // for NodeBlock
 #include "Ioss_SideBlock.h"                        // for SideBlock
 #include "Ioss_SideSet.h"                          // for SideSet, etc
+#include "Ioss_Assembly.h"
 #include "StkIoUtils.hpp"
 #include "StkMeshIoBroker.hpp"                     // for StkMeshIoBroker, etc
 #include "stk_mesh/base/Bucket.hpp"                // for Bucket
@@ -624,6 +625,26 @@ void process_edge_blocks(Ioss::Region &region, stk::mesh::MetaData &meta)
 {
   const Ioss::EdgeBlockContainer& edge_blocks = region.get_edge_blocks();
   stk::io::default_part_processing(edge_blocks, meta);
+}
+
+void process_assemblies(Ioss::Region &region, stk::mesh::MetaData &meta)
+{
+  const Ioss::AssemblyContainer& assemblies = region.get_assemblies();
+  stk::io::default_part_processing(assemblies, meta);
+}
+
+void build_assembly_hierarchies(Ioss::Region &region, stk::mesh::MetaData &meta)
+{
+  const Ioss::AssemblyContainer& assemblies = region.get_assemblies();
+  for(const Ioss::Assembly* assembly : assemblies) {
+    const std::string& assemblyName = assembly->name();
+    stk::mesh::Part* assemblyPart = meta.get_part(assemblyName);
+    const Ioss::EntityContainer& members = assembly->get_members();
+    for(const Ioss::GroupingEntity* member : members) {
+      stk::mesh::Part* memberPart = meta.get_part(member->name());
+      meta.declare_part_subset(*assemblyPart, *memberPart);
+    }
+  }
 }
 
 void populate_hidden_nodesets(Ioss::Region &io, const stk::mesh::MetaData & meta, NodesetMap &nodesetMap)

@@ -1,6 +1,8 @@
 #ifndef STK_STK_UTIL_STK_UTIL_ENVIRONMENT_LOGWITHTIMEANDMEMORY_HPP_
 #define STK_STK_UTIL_STK_UTIL_ENVIRONMENT_LOGWITHTIMEANDMEMORY_HPP_
-#include <mpi.h>
+
+#include <stk_util/stk_config.h>
+#include <stk_util/parallel/Parallel.hpp>
 #include <string>
 
 namespace stk {

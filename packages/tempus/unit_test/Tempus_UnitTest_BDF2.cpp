@@ -63,9 +63,6 @@ namespace Tempus_Unit_Test {
 
 
     // Default values for construction.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    auto obs    = rcp(new Tempus::StepperBDF2Observer<double>());
-#endif
     auto modifier = rcp(new Tempus::StepperBDF2ModifierDefault<double>());
     auto solver = rcp(new Thyra::NOXNonlinearSolver());
     solver->setParameterList(Tempus::defaultSolverParameters());
@@ -81,9 +78,6 @@ namespace Tempus_Unit_Test {
     bool zeroInitialGuess     = defaultStepper->getZeroInitialGuess();
 
     // Test the set functions.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
     stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
     stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
     stepper->setStartUpStepper(startUpStepper);          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -92,12 +86,6 @@ namespace Tempus_Unit_Test {
     stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
     stepper->setZeroInitialGuess(zeroInitialGuess);      stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    // Full argument list construction.
-    stepper = rcp(new Tempus::StepperBDF2<double>(model, obs, solver, startUpStepper, useFSAL,
-						    ICConsistency, ICConsistencyCheck, zeroInitialGuess));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
     stepper = rcp(new Tempus::StepperBDF2<double>(model, solver, startUpStepper, useFSAL,
 						    ICConsistency, ICConsistencyCheck, zeroInitialGuess,modifier));
     TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());

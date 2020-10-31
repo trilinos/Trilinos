@@ -39,9 +39,6 @@ public:
     this->setModel(appModel);
   }
 
-  void setObserver(Teuchos::RCP<Tempus::StepperObserver<Scalar> > /*obs*/) {}
-  virtual Teuchos::RCP<Tempus::StepperObserver<Scalar> > getObserver() const
-  { return Teuchos::null; }
   void initialize() {}
   Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState()
   { return Teuchos::null; }

@@ -39,7 +39,6 @@
 // ************************************************************************
 //@HEADER
 
-
 #ifndef _FROSCH_CONSTANTPARTITIONOFUNITY_DEF_HPP
 #define _FROSCH_CONSTANTPARTITIONOFUNITY_DEF_HPP
 
@@ -66,8 +65,8 @@ namespace FROSch {
     PartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID),
     DDInterface_ (ddInterface)
     {
-        FROSCH_TIMER_START_LEVELID(constantPartitionOfUnityTime,"ConstantPartitionOfUnity::ConstantPartitionOfUnity");
-      
+        FROSCH_DETAILTIMER_START_LEVELID(constantPartitionOfUnityTime,"ConstantPartitionOfUnity::ConstantPartitionOfUnity");
+
         if (!this->ParameterList_->get("Type","Full").compare("Full")) {
             UseVolumes_ = true;
         } else if (!this->ParameterList_->get("Type","Full").compare("Volumes")) {
@@ -77,8 +76,7 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(false,"FROSch::ConstantPartitionOfUnity : ERROR: Specify a valid Type.");
         }
-        this->MpiComm_->barrier();this->MpiComm_->barrier();this->MpiComm_->barrier();
-        if(this->Verbose_)std::cout<<"CPart1\n";
+
         CommunicationStrategy communicationStrategy = CreateOneToOneMap;
         if (!this->ParameterList_->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsMatrix")) {
             communicationStrategy = CommCrsMatrix;
@@ -95,8 +93,8 @@ namespace FROSch {
         DDInterface_->resetGlobalDofs(dofsMaps);
         Volumes_ = DDInterface_->getInterior()->deepCopy();
 
-        this->LocalPartitionOfUnity_ = XMultiVectorPtrVecPtr(1);
-        this->PartitionOfUnityMaps_ = XMapPtrVecPtr(1);
+        this->LocalPartitionOfUnity_ = ConstXMultiVectorPtrVecPtr(1);
+        this->PartitionOfUnityMaps_ = ConstXMapPtrVecPtr(1);
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -109,7 +107,7 @@ namespace FROSch {
     int ConstantPartitionOfUnity<SC,LO,GO,NO>::removeDirichletNodes(GOVecView dirichletBoundaryDofs,
                                                                     ConstXMultiVectorPtr nodeList)
     {
-        FROSCH_TIMER_START_LEVELID(removeDirichletNodesTime,"ConstantPartitionOfUnity::removeDirichletNodes");
+        FROSCH_DETAILTIMER_START_LEVELID(removeDirichletNodesTime,"ConstantPartitionOfUnity::removeDirichletNodes");
         if (!dirichletBoundaryDofs.is_null()) {
             GOVec tmpDirichletBoundaryDofs(dirichletBoundaryDofs());
             sortunique(tmpDirichletBoundaryDofs);
@@ -123,17 +121,15 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int ConstantPartitionOfUnity<SC,LO,GO,NO>::computePartitionOfUnity(ConstXMultiVectorPtr nodeList)
     {
-        FROSCH_TIMER_START_LEVELID(computePartitionOfUnityTime,"ConstantPartitionOfUnity::computePartitionOfUnity");
+        FROSCH_DETAILTIMER_START_LEVELID(computePartitionOfUnityTime,"ConstantPartitionOfUnity::computePartitionOfUnity");
         // Interface
-
         UN dofsPerNode = DDInterface_->getInterior()->getEntity(0)->getDofsPerNode();
-
         UN numInteriorDofs = dofsPerNode*DDInterface_->getInterior()->getEntity(0)->getNumNodes();
 
         if (UseVolumes_) Volumes_->buildEntityMap(DDInterface_->getNodesMap());
 
         if (this->Verbosity_==All) {
-            FROSCH_TIMER_START_LEVELID(printStatisticsTime,"print statistics");
+            FROSCH_DETAILTIMER_START_LEVELID(printStatisticsTime,"print statistics");
             // Count entities
             GOVec globalVec(1);
             LOVec localVec(1);
@@ -166,15 +162,15 @@ namespace FROSch {
 
             if (this->Verbose_) {
                 cout
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "-----------------------------------------------------------------------------------------"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| "
-                << left << setw(74) << "Volumes statistics " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")" << right
+                << left << setw(74) << "> Volumes statistics " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")" << right
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "========================================================================================="
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(20) << " " << right
                 << " | " << setw(10) << "total"
                 << " | " << setw(10) << "avg"
@@ -182,9 +178,9 @@ namespace FROSch {
                 << " | " << setw(10) << "max"
                 << " | " << setw(10) << "global sum"
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "-----------------------------------------------------------------------------------------"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << "| " << left << setw(20) << "Volumes" << right
                 << " | "; globalVec[0]<0 ? cout << setw(10) << " " : cout << setw(10) << globalVec[0]; cout
                 << " | "; avgVec[0]<0 ? cout << setw(10) << " " : cout << setw(10) << setprecision(5) << avgVec[0]; cout
@@ -192,7 +188,7 @@ namespace FROSch {
                 << " | "; maxVec[0]<0 ? cout << setw(10) << " " : cout << setw(10) << maxVec[0]; cout
                 << " | "; sumVec[0]<0 ? cout << setw(10) << " " : cout << setw(10) << sumVec[0]; cout
                 << " |"
-                << "\n" << setw(FROSCH_INDENT) << " "
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "-----------------------------------------------------------------------------------------"
                 << endl;
             }
@@ -205,19 +201,19 @@ namespace FROSch {
 
         if (this->Verbose_) {
             cout
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "-----------------------------------------------------------------------------------------"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| "
-            << left << setw(74) << "Constant Partition Of Unity " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+            << left << setw(74) << "> Constant Partition Of Unity " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "========================================================================================="
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(41) << "Volumes" << right
             << " | " << setw(41) << boolalpha << UseVolumes_ << noboolalpha
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "-----------------------------------------------------------------------------------------"
             << endl;
         }

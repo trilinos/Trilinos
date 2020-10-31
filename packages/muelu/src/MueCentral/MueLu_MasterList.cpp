@@ -156,6 +156,7 @@ namespace MueLu {
     if (name == "refmaxwell: subsolves on subcommunicators") { ss << "<Parameter name=\"refmaxwell: subsolves on subcommunicators\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "refmaxwell: enable reuse") { ss << "<Parameter name=\"refmaxwell: enable reuse\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "refmaxwell: skip first (1,1) level") { ss << "<Parameter name=\"refmaxwell: skip first (1,1) level\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: normalize nullspace") { ss << "<Parameter name=\"refmaxwell: normalize nullspace\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     return "";
   }
 
@@ -317,6 +318,7 @@ namespace MueLu {
   "<Parameter name=\"rap: relative diagonal floor\" type=\"Array(double)\" value=\"{}\"/>"
   "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: fix zero diagonals threshold\" type=\"double\" value=\"0.\"/>"
+  "<Parameter name=\"rap: fix zero diagonals replacement\" type=\"double\" value=\"1.\"/>"
   "<Parameter name=\"rap: shift\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"rap: shift diagonal M\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: shift low storage\" type=\"bool\" value=\"false\"/>"
@@ -339,6 +341,7 @@ namespace MueLu {
   "<Parameter name=\"refmaxwell: subsolves on subcommunicators\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"refmaxwell: enable reuse\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"refmaxwell: skip first (1,1) level\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"refmaxwell: normalize nullspace\" type=\"bool\" value=\"false\"/>"
 "</ParameterList>"
 ;
   std::map<std::string,std::string> MasterList::DefaultProblemTypeLists_ = DefaultProblemStrings<std::string,std::string>
@@ -829,6 +832,8 @@ namespace MueLu {
       
          ("rap: fix zero diagonals threshold","rap: fix zero diagonals threshold")
       
+         ("rap: fix zero diagonals replacement","rap: fix zero diagonals replacement")
+      
          ("rap: shift","rap: shift")
       
          ("rap: shift diagonal M","rap: shift diagonal M")
@@ -872,6 +877,8 @@ namespace MueLu {
          ("refmaxwell: enable reuse","refmaxwell: enable reuse")
       
          ("refmaxwell: skip first (1,1) level","refmaxwell: skip first (1,1) level")
+      
+         ("refmaxwell: normalize nullspace","refmaxwell: normalize nullspace")
       ;
 
 }

@@ -82,7 +82,7 @@ typedef std::vector< FieldBase * >  FieldVector;
 typedef std::vector< unsigned >     OrdinalVector;
 typedef std::vector< unsigned >     PermutationIndexVector;
 typedef std::vector<Entity>         EntityVector;
-
+typedef std::vector<EntityKey>      EntityKeyVector;
 
 template< typename Scalar = void ,
           class Tag1 = void , class Tag2 = void ,
