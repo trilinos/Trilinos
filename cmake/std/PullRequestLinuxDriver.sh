@@ -40,12 +40,16 @@ function bootstrap_modules() {
         #pip3 install --user configparser
         get_python_packages pip3
         export PYTHON_EXE=python3
+
 #        get_pip python2
 #        get_python_packages ${HOME}/.local/bin/pip2
 #        export PYTHON_EXE=python2
     fi
 
     module list
+
+    message_std "PRDriver> " "Python EXE : ${PYTHON_EXE:?}"
+    message_std "PRDriver> " "           : $(which ${PYTHON_EXE})"
 
     print_banner "Bootstrap environment modules complete"
 }
@@ -82,7 +86,7 @@ merge_cmd_options=(
     ${TRILINOS_SOURCE_SHA:?}
     ${WORKSPACE:?}
     )
-merge_cmd="python ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py ${merge_cmd_options[@]}"
+merge_cmd="${PYTHON_EXE:?} ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py ${merge_cmd_options[@]}"
 
 
 # Call the script to handle merging the incoming branch into
