@@ -1551,8 +1551,7 @@ int Zoltan_Hier(
         zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
       printf("HIER: Proc %d computing part %d of %d at level %d\n",
              zz->Proc, hpp.part_to_compute, hpp.num_parts, hpp.level);
-    }
-    MPI_Barrier(zz->Communicator);
+    } 
 
     /* should make sure we have reasonable parts to compute */
 
@@ -1576,10 +1575,7 @@ int Zoltan_Hier(
       hpp.hierzz = Zoltan_Create(hpp.hier_comm);
       hpp.hierzz->Current_Hier_Level = hpp.level;
 
-      //if (hpp.level != 0 || 1) {
-      //if (hpp.level != 0) {
       hpp.hierzz->Highest_Ancestor_ZZ = zz;
-      //}
 
       /* and copy in some specified params from zz where appropriate */
 

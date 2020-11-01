@@ -1036,7 +1036,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
     } 
   }
 
-  // Hierarchical Partitioning and not at tree-root 
+  /* Hierarchical Partitioning and not at tree-root */ 
   else if (zz->Current_Hier_Level > -1 || zz->Highest_Ancestor_ZZ != NULL) {
 
     if (max_global_parts < num_proc) 

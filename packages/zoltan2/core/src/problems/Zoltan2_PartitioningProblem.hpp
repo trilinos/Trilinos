@@ -50,7 +50,7 @@
 #ifndef _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
 #define _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
 
-#define ZOLTAN2_TASKMAPPING_MOVE
+//#define ZOLTAN2_TASKMAPPING_MOVE
 
 #include <Zoltan2_Problem.hpp>
 #include <Zoltan2_PartitioningAlgorithms.hpp>
@@ -61,9 +61,9 @@
 #include <Zoltan2_IntegerRangeList.hpp>
 #include <Zoltan2_MachineRepresentation.hpp>
 #include <Zoltan2_AlgSerialGreedy.hpp>
-#ifdef ZOLTAN2_TASKMAPPING_MOVE
-#include <Zoltan2_TaskMapping.hpp>
-#endif
+//#ifdef ZOLTAN2_TASKMAPPING_MOVE
+//#include <Zoltan2_TaskMapping.hpp>
+//#endif
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -381,9 +381,9 @@ private:
   void createPartitioningProblem(bool newData);
 
   RCP<PartitioningSolution<Adapter> > solution_;
-#ifdef ZOLTAN2_TASKMAPPING_MOVE
+//#ifdef ZOLTAN2_TASKMAPPING_MOVE
   RCP<MachineRepresentation<scalar_t,part_t> > machine_;
-#endif
+//#endif
 
   BaseAdapterType inputType_;
 
@@ -448,7 +448,7 @@ template <typename Adapter>
 
   // Create a copy of the user's communicator.
 
-#ifdef ZOLTAN2_TASKMAPPING_MOVE
+//#ifdef ZOLTAN2_TASKMAPPING_MOVE
 //  machine_ = RCP<MachineRepresentation<scalar_t,part_t> >(
 //                 new MachineRepresentation<scalar_t,part_t>(*(this->comm_), 
 //                                                              this->env_->getParametersNonConst()));
@@ -456,7 +456,7 @@ template <typename Adapter>
   
 //  machine_ = RCP<MachineRepresentation<scalar_t,part_t> >(
 //                 new MachineRepresentation<scalar_t,part_t>(*(this->comm_)));
-#endif
+//#endif
 
   // Number of criteria is number of user supplied weights if non-zero.
   // Otherwise it is 1 and uniform weight is implied.
@@ -659,7 +659,8 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
 //  mapping_type = 0;
 
-#ifdef ZOLTAN2_TASKMAPPING_MOVE_B
+/*
+#ifdef ZOLTAN2_TASKMAPPING_MOVE
   if (mapping_type == 0){
 
     //part_t *task_communication_xadj = NULL, *task_communication_adj = NULL;
@@ -696,6 +697,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     delete ctm;
   }
 #endif
+*/
 
   else if (mapping_type == 1){
     //if mapping is 1 -- graph mapping
@@ -789,9 +791,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
   if (algorithm != defString)
   {
-
-//    std::cout << "Algorithm: " << algorithm << std::endl;
-
     // Figure out the model required by the algorithm
     if (algorithm == std::string("block") ||
         algorithm == std::string("random") ||
