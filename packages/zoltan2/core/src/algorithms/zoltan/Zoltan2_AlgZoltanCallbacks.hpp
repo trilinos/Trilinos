@@ -60,10 +60,6 @@
 #include <Zoltan2_TPLTraits.hpp>
 #include <zoltan_cpp.h>
 
-extern "C" {
-#include <zz_const.h>
-}
-
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgZoltanCallbacks.hpp
 //! \brief callback functions for the Zoltan package (templated on Adapter)
@@ -943,7 +939,7 @@ static void zoltanHierMethod(void *data,
   std::vector<part_t> group_count;
 
   if (level == 0) {
-    zz->Num_Unique_Groups = num_unique_groups;
+    Zoltan_Set_Num_Unique_Groups(zz, num_unique_groups);
     machine->getGroupCountVector(group_count);
   }
   else if (level == 1) {
@@ -969,10 +965,14 @@ static void zoltanHierMethod(void *data,
       }
     }
 
-    zz->Num_Unique_Groups = int(num_unique_subgroups[group_idx]);
-    group_count.resize(zz->Num_Unique_Groups);
+    num_unique_groups = int(num_unique_subgroups[group_idx]);
+    Zoltan_Set_Num_Unique_Groups(zz, num_unique_groups);
+    group_count.resize(num_unique_groups);
     group_count = subgroup_counts[group_idx];
-    group_count.resize(zz->Num_Unique_Groups);
+    group_count.resize(num_unique_groups);
+    // AUSTIN:  These resizes look odd to me.
+    // AUSTIN:  Why are two needed?  Doesn't the second one resize an 
+    // AUSTIN:  internal member of the machine class?
   }
 
   // level > 1
@@ -1016,9 +1016,10 @@ static void zoltanHierMethod(void *data,
       }
     }
 
-    zz->Num_Unique_Groups = int(subgroup_counts[group_idx][subgroup_idx]);
+    num_unique_groups = int(subgroup_counts[group_idx][subgroup_idx]);
+    Zoltan_Set_Num_Unique_Groups(zz, num_unique_groups);
 
-    group_count.resize(zz->Num_Unique_Groups);
+    group_count.resize(num_unique_groups);
 
     for (size_t i = 0; i < group_count.size(); ++i) {
         group_count[i] = i;
@@ -1026,15 +1027,7 @@ static void zoltanHierMethod(void *data,
   }
 
   std::vector<int> group_count_ints(group_count.begin(), group_count.end());
-
-  zz->Group_Count =
-//    (int *) ZOLTAN_MALLOC(zz->Num_Unique_Groups * sizeof(int));
-    (int *) malloc(zz->Num_Unique_Groups * sizeof(int));
-
-
-  std::copy(group_count_ints.begin(),
-            group_count_ints.end(),
-            zz->Group_Count);
+  Zoltan_Set_Group_Count(zz, num_unique_groups, group_count_ints.data());
 
   return;
 }

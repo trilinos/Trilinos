@@ -222,6 +222,7 @@ static void Zoltan_Free_Zoltan_Struct_Members(ZZ *zz)
   Zoltan_LB_Free_Struct(&(zz->LB));
   Zoltan_Order_Free_Struct(&(zz->Order));
   Zoltan_TPL_Order_Free_Struct(&(zz->TPL_Order));
+  if (zz->Group_Count != NULL) ZOLTAN_FREE(&(zz->Group_Count));
 }
 
 /****************************************************************************/

@@ -255,9 +255,9 @@ struct Zoltan_Struct {
   struct Zoltan_Struct *Highest_Ancestor_ZZ; /* ZZ Struct used for hier 
                                                 awareness in recursive calls */
 
-  int *Group_Count;
-  int Num_Unique_Groups;
-  int Current_Hier_Level;
+  int *Group_Count;               /* AUSTIN Description of this field needed */
+  int Num_Unique_Groups;          /* AUSTIN Description of this field needed */
+  int Current_Hier_Level;         /* AUSTIN Description of this field needed */
 
   /***************************************************************************/
   ZOLTAN_PART_MULTI_FN *Get_Part_Multi;/* Fn ptr to get objects'
