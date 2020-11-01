@@ -77,6 +77,9 @@ sig_script_old=$(get_md5sum ${SCRIPTFILE:?})
 # Get the md5 checksum of the Merge script
 sig_merge_old=$(get_md5sum ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py)
 
+
+print_banner "Merge Source into Target"
+
 # Prepare the command for the MERGE operation
 merge_cmd_options=(
     ${TRILINOS_SOURCE_REPO:?}
@@ -136,6 +139,7 @@ if [[ "${JOB_BASE_NAME}" == "Trilinos_pullrequest_gcc_8.3.0_installation_testing
 fi
 
 
+print_banner "Launch the Test Driver"
 
 # Prepare the command for the TEST operation
 test_cmd_options=(
@@ -156,7 +160,7 @@ test_cmd_options=(
 )
 
 # Execute the TEST operation
-test_cmd="${PYTHON_EXE} ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"
+test_cmd="${PYTHON_EXE:?} ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"
 
 
 # Call the script to launch the tests
