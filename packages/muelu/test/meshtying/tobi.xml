@@ -51,11 +51,6 @@
       <Parameter name="factory" type="string" value="ZeroSubBlockAFactory"/>
       <Parameter name="block row" type="int" value="1"/>
       <Parameter name="block col" type="int" value="1"/>
-      <Parameter name="row map from block col" type="int" value="0"/>
-      <Parameter name="column map from block row" type="int" value="0"/>
-      <!--necessary? have not looked into the code, yet-->
-      <!--<Parameter name="Range map: Striding info" type="string" value="{ 2 }"/> 
-      <Parameter name="Domain map: Striding info" type="string" value="{ 2 }"/>-->
     </ParameterList>
 
     <!-- for submatrix A_{01}) -->
@@ -67,8 +62,6 @@
 
     <ParameterList name="myCoarseMap2">
       <Parameter name="factory" type="string" value="BlockedCoarseMapFactory"/>
-      <!--<Parameter name="Striding info" type="string" value="{ 2 }"/> // implicitly clear from the number of nullspace vectors
-      <Parameter name="Strided block id" type="int" value="-1"/>-->
       <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
     </ParameterList>
 
