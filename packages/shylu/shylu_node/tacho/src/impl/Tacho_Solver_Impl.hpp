@@ -108,6 +108,13 @@ namespace Tacho {
     TACHO_TEST_FOR_EXCEPTION(_mode != Cholesky, std::logic_error, "Cholesky is only supported now");
   }
 
+  template<typename VT, typename ST>
+  void
+  Solver<VT,ST>
+  ::setOrderConnectedGraphSeparately(const ordinal_type order_connected_graph_separately) {
+    _order_connected_graph_separately = order_connected_graph_separately;
+  }
+
   ///
   /// tasking options
   ///
@@ -243,6 +250,11 @@ namespace Tacho {
       if (use_condensed_graph) {
         Graph graph(_m_graph, _nnz_graph, _h_ap_graph, _h_aj_graph);
         graph_tools_type G(graph);
+#if defined(TACHO_HAVE_METIS)
+        if (_order_connected_graph_separately) {
+          G.setOption(METIS_OPTION_CCORDER, 1);
+        }
+#endif
         G.reorder(_verbose);
         
         _h_perm_graph = G.PermVector();
@@ -254,6 +266,11 @@ namespace Tacho {
 	if (use_graph_partitioner) {
 	  Graph graph(_m, _nnz, _h_ap, _h_aj);
 	  graph_tools_type G(graph);
+#if defined(TACHO_HAVE_METIS)
+        if (_order_connected_graph_separately) {
+          G.setOption(METIS_OPTION_CCORDER, 1);          
+        }
+#endif
 	  G.reorder(_verbose);
 	  
 	  _h_perm = G.PermVector(); 
