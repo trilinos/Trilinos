@@ -120,7 +120,9 @@ public:
   /*! \brief Constructor where communicator is Teuchos default.
       \param ia the problem input adapter
       \param p the parameter list
+      \param ucomm_ the problem communicator
       \param soln  the mapping solution
+      \param machine_ the machine's architecture representation
       \param graphModel the graph model
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
@@ -140,7 +142,9 @@ public:
   /*! \brief Constructor where communicator is Teuchos default.
       \param ia the problem input adapter
       \param p the parameter list
+      \param ucomm_ the problem communicator
       \param soln  a partitioning solution
+      \param machine_ the machine's architecture representation
       \param graphModel the graph model
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
