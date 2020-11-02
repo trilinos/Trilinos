@@ -1422,7 +1422,7 @@ private:
         }
         else if(paramName == "dim"){
           int dim = fromString<int>(getParamVal<std::string>(pe, paramName));
-          if(dim < 2 && dim > 3){
+          if(dim < 2 || dim > 3){
             throw INVALID(paramName);
           } else {
             this->coordinate_dimension = dim;
@@ -1438,7 +1438,7 @@ private:
         }
         else if(paramName == "predistribution"){
           int pre_distribution = fromString<int>(getParamVal<std::string>(pe, paramName));
-          if(pre_distribution < 0 && pre_distribution > 3){
+          if(pre_distribution < 0 || pre_distribution > 3){
             throw INVALID(paramName);
           } else {
             this->predistribution = pre_distribution;
@@ -1514,14 +1514,13 @@ private:
 			}
        */
     }
-    catch(std::string s){
-      throw s;
+    catch(std::string &s){
+      throw std::runtime_error(s);
     }
 
-    catch(char * s){
-      throw s;
+    catch(const char *s){
+      throw std::runtime_error(s);
     }
-
   }
 public:
 
@@ -1636,14 +1635,19 @@ public:
     try {
       this->parseParams(params);
     }
-    catch(std::string s){
+    catch(std::string &s){
       if(myRank == 0){
         print_description();
       }
-      throw s;
+      throw std::runtime_error(s);
     }
 
-
+    catch(const char *s){
+      if(myRank == 0){
+        print_description();
+      }
+      throw std::runtime_error(s);
+    }
 
 
     lno_t myPointCount = 0;
