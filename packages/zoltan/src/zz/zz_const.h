@@ -255,9 +255,13 @@ struct Zoltan_Struct {
   struct Zoltan_Struct *Highest_Ancestor_ZZ; /* ZZ Struct used for hier 
                                                 awareness in recursive calls */
 
-  int *Group_Count;               /* AUSTIN Description of this field needed */
-  int Num_Unique_Groups;          /* AUSTIN Description of this field needed */
-  int Current_Hier_Level;         /* AUSTIN Description of this field needed */
+  int *Group_Count;               /* an array containing the nonuniform 
+                                     distribution of elements to each part in
+                                     this hierarchical level                 */
+  int Num_Unique_Groups;          /* the number of parts to partition into 
+                                     during the hierarchical level           */
+  int Current_Hier_Level;         /* the current level in the hierarchical 
+                                     partitioning                            */
 
   /***************************************************************************/
   ZOLTAN_PART_MULTI_FN *Get_Part_Multi;/* Fn ptr to get objects'

@@ -969,10 +969,6 @@ static void zoltanHierMethod(void *data,
     Zoltan_Set_Num_Unique_Groups(zz, num_unique_groups);
     group_count.resize(num_unique_groups);
     group_count = subgroup_counts[group_idx];
-    group_count.resize(num_unique_groups);
-    // AUSTIN:  These resizes look odd to me.
-    // AUSTIN:  Why are two needed?  Doesn't the second one resize an 
-    // AUSTIN:  internal member of the machine class?
   }
 
   // level > 1

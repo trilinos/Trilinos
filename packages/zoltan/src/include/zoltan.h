@@ -3201,7 +3201,8 @@ extern int Zoltan_LB_Free_Data(
  * 
  * Input:
  *   zz                   -- pointer to Zoltan structure
- *   num_groups           -- ??? AUSTIN
+ *   num_groups           -- the number of parts to partition into during
+ *                           this hierarchical level
  *
  *  Returned value:       --  Error code
  */
@@ -3215,8 +3216,11 @@ int Zoltan_Set_Num_Unique_Groups(
  * 
  * Input:
  *   zz                   -- pointer to Zoltan structure
- *   num_groups           -- ??? AUSTIN
- *   group_count          -- ??? AUSTIN
+ *   num_groups           -- the number of parts to partition into during
+ *                           this hierarchical level
+ *   group_count          -- an array containing the nonuniform distribution 
+ *                           of elements to each part in this hierarchical
+ *                           level
  *
  *  Returned value:       --  Error code
  */
