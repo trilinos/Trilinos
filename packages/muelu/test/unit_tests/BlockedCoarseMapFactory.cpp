@@ -68,33 +68,31 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<BlockedCoarseMapFactory> mapFact = rcp(new BlockedCoarseMapFactory);
+    RCP<BlockedCoarseMapFactory> mapFact = rcp(new BlockedCoarseMapFactory());
     TEST_EQUALITY(mapFact != Teuchos::null, true);
+  }
 
-  } //Constructor
-
-  //TODO test BuildP
-
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedCoarseMapFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedCoarseMapFactory, BuildBlockedCoarseMapWithGIDOffset, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
-    Level fineLevel, coarseLevel;
+    Level fineLevel;
+    Level coarseLevel;
     TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
-    fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
+    fineLevel.SetFactoryManager(Teuchos::null);
     coarseLevel.SetFactoryManager(Teuchos::null);
 
-    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(/*199*/29);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(29);
     A->SetFixedBlockSize(1);
-    fineLevel.Set("A",A);
+    fineLevel.Set("A", A);
 
     LO NSdim = 2;
-    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
+    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(), NSdim);
     nullSpace->randomize();
-    fineLevel.Set("Nullspace",nullSpace);
+    fineLevel.Set("Nullspace", nullSpace);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
@@ -117,34 +115,30 @@ namespace MueLuTests {
 
     // request input for BlockedCoarseMapFactory by hand
     fineLevel.Request("Aggregates", UncoupledAggFact.get());
-    fineLevel.Request("Aggregates", UncoupledAggFact.get()); // request aggregates twice as we need them here too!
     fineLevel.Request("CoarseMap", coarseMapFact.get());
     fineLevel.Request("CoarseMap", blockedCoarseMapFact.get());
     blockedCoarseMapFact->Build(fineLevel);
-    RCP<const Map> map1 = fineLevel.Get<RCP<const Map> >("CoarseMap", coarseMapFact.get());
-    RCP<const Map> map2 = fineLevel.Get<RCP<const Map> >("CoarseMap", blockedCoarseMapFact.get());
+    RCP<const Map> map1 = fineLevel.Get<RCP<const Map>>("CoarseMap", coarseMapFact.get());
+    RCP<const Map> map2 = fineLevel.Get<RCP<const Map>>("CoarseMap", blockedCoarseMapFact.get());
 
     // access aggregates
-    RCP<Aggregates> aggregates = fineLevel.Get<RCP<Aggregates> >("Aggregates",UncoupledAggFact.get()); // fix me
+    RCP<Aggregates> aggregates = fineLevel.Get<RCP<Aggregates>>("Aggregates", UncoupledAggFact.get());
     GO numAggs = aggregates->GetNumAggregates();
     GO numGlobalAggs = 0;
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     MueLu_sumAll(comm, numAggs, numGlobalAggs);
-    out << "Found " << numGlobalAggs << " aggregates" << std::endl;
 
-    using Teuchos::as;
-
-    TEST_EQUALITY(map1->getMinAllGlobalIndex(),         0 );
-    TEST_EQUALITY(map1->getMaxAllGlobalIndex(),         numGlobalAggs * as<GO>(NSdim) - 1);
-    TEST_EQUALITY(map2->getMinAllGlobalIndex(),         numGlobalAggs * as<GO>(NSdim) );
-    TEST_EQUALITY(map2->getMaxAllGlobalIndex(),     2 * numGlobalAggs * as<GO>(NSdim) - 1);
-    TEST_EQUALITY(as<GO>(map1->getNodeNumElements()),   numAggs       * as<GO>(NSdim));
-    TEST_EQUALITY(as<GO>(map2->getNodeNumElements()),   numAggs       * as<GO>(NSdim));
-  } //BlockedCoarseMapFactory, Build
+    TEST_EQUALITY(map1->getMinAllGlobalIndex(), 0);
+    TEST_EQUALITY(map1->getMaxAllGlobalIndex(), numGlobalAggs * Teuchos::as<GO>(NSdim) - 1);
+    TEST_EQUALITY(map2->getMinAllGlobalIndex(), numGlobalAggs * Teuchos::as<GO>(NSdim));
+    TEST_EQUALITY(map2->getMaxAllGlobalIndex(), 2 * numGlobalAggs * Teuchos::as<GO>(NSdim) - 1);
+    TEST_EQUALITY(Teuchos::as<GO>(map1->getNodeNumElements()), numAggs * Teuchos::as<GO>(NSdim));
+    TEST_EQUALITY(Teuchos::as<GO>(map2->getNodeNumElements()), numAggs * Teuchos::as<GO>(NSdim));
+  }
 
 #define MUELU_ETI_GROUP(Scalar,LocalOrdinal,GlobalOrdinal,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedCoarseMapFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedCoarseMapFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedCoarseMapFactory, BuildBlockedCoarseMapWithGIDOffset, Scalar, LocalOrdinal, GlobalOrdinal, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
