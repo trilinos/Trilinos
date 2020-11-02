@@ -247,8 +247,10 @@ def main(args):
         raise KeyError("ERROR: Unknown test mode, {}, was provided.".format(args.test_mode))
 
     pr_config.prepare_test()
-    pr_config.execute_test()
-    return 0
+
+    status = pr_config.execute_test()
+
+    return status
 
 
 

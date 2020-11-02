@@ -267,7 +267,7 @@ class SetEnvironment(object):
                 elif matched_key:
                     print(" = {}".format(v), end="")
                 print("")
-        print("---")
+        print("")
         return 0
 
 
