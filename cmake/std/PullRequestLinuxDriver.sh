@@ -38,10 +38,11 @@ function bootstrap_modules() {
 #        export PYTHON_EXE=python3
 
 
-         envvar_set_or_create    PYTHONHOME /projects/sierra/linux_rh7/install/Python/3.6.10
-         envvar_set_or_create    PYTHONPATH ${HOME}/.local/lib/python3.6/site-packages
-         envvar_append_or_create PYTHONPATH ${PYTHONHOME:?}/lib/python3.6/site-packages
-         envvar_set_or_create    PATH       ${PYTHONHOME:?}/bin/python3
+         envvar_set_or_create     PYTHONHOME /projects/sierra/linux_rh7/install/Python/3.6.10
+         envvar_set_or_create     PYTHONPATH ${HOME}/.local/lib/python3.6/site-packages
+         envvar_append_or_create  PYTHONPATH ${PYTHONHOME:?}/lib/python3.6/site-packages
+         envvar_prepend_or_create PATH       ${PYTHONHOME:?}/bin
+         envvar_set_or_create     PYTHON_EXE ${PYTHONHOME:?}/bin/python3
          #export PYTHONHOME=/projects/sierra/linux_rh7/install/Python/3.6.10
          #export PYTHONPATH=${HOME}/.local/lib/python3.6/site-packages:${PYTHONHOME:?}/lib/python3.6/site-packages
 
