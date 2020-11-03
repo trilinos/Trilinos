@@ -16,18 +16,14 @@ function bootstrap_modules() {
     if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
         if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
             message_std "PRDriver> " "Job is CUDA"
-            #echo -e "PRDriver> Job is CUDA"
             module unload git
             module unload python
             module load git/2.10.1
-            #module load python/2.7.12
             module load python/3.7.3
-            #get_pip python3
             get_python_packages pip3
             export PYTHON_EXE=python3
         else
             message_std "PRDriver> " "ERROR: Unable to find matching environment for CUDA job not on Ride."
-            #echo -e "PRDriver> ERROR: Unable to find matching environment for CUDA job not on Ride."
             exit -1
         fi
     else
@@ -35,11 +31,19 @@ function bootstrap_modules() {
         module unload sems-git
         module unload sems-python
         module load sems-git/2.10.1
-#        module load sems-python/2.7.9
-        module load sems-python/3.5.2      # Currently not on cloud nodes
-        #pip3 install --user configparser
-        get_python_packages pip3
-        export PYTHON_EXE=python3
+
+#        module load sems-python/3.5.2      # Currently not on cloud nodes
+#        #pip3 install --user configparser
+#        get_python_packages pip3
+#        export PYTHON_EXE=python3
+
+
+         envvar_set_or_create    PYTHONHOME /projects/sierra/linux_rh7/install/Python/3.6.10
+         envvar_set_or_create    PYTHONPATH ${HOME}/.local/lib/python3.6/site-packages
+         envvar_append_or_create PYTHONPATH ${PYTHONHOME:?}/lib/python3.6/site-packages
+         envvar_set_or_create    PATH       ${PYTHONHOME:?}/bin/python3
+         #export PYTHONHOME=/projects/sierra/linux_rh7/install/Python/3.6.10
+         #export PYTHONPATH=${HOME}/.local/lib/python3.6/site-packages:${PYTHONHOME:?}/lib/python3.6/site-packages
 
 #        get_pip python2
 #        get_python_packages ${HOME}/.local/bin/pip2
