@@ -467,7 +467,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  Transpose (Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, bool /* optimizeTranspose */,const std::string & label,const Teuchos::RCP<Teuchos::ParameterList> &params) {
+  Transpose (const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, bool /* optimizeTranspose */,const std::string & label,const Teuchos::RCP<Teuchos::ParameterList> &params) {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
     std::string TorE = "epetra";
 #else
