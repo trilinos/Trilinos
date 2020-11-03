@@ -85,9 +85,9 @@ function print_banner_2lines()
 function envvar_append_or_create() {
     # envvar $1 is not set
     if [[ ! -n "${!1+1}" ]]; then
-    ¦   export ${1}="${2}"
+        export ${1}="${2}"
     else
-    ¦   export ${1}="${!1}:${2}"
+        export ${1}="${!1}:${2}"
     fi
 }
 
@@ -98,9 +98,9 @@ function envvar_append_or_create() {
 function envvar_prepend_or_create() {
     # envvar $1 is not set
     if [[ ! -n "${!1+1}" ]]; then
-    ¦   export ${1}="${2}"
+        export ${1}="${2}"
     else
-    ¦   export ${1}="${2}:${!1}"
+        export ${1}="${2}:${!1}"
     fi
 }
 
