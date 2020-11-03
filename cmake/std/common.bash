@@ -150,6 +150,7 @@ function get_md5sum() {
 function get_pip() {
     local python_exe=${1:?}
 
+    echo -e "--- get_pip():"
     echo -e "--- Python: ${python_exe:?}"
 
     # fetch get-pip.py
