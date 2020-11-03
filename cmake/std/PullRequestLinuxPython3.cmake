@@ -36,14 +36,14 @@ else()
 endif()
 
 
-set (TPL_ENABLE_Boost OFF CACHE BOOL "Set by default for PR testing")
+set (TPL_ENABLE_Boost    OFF CACHE BOOL "Set by default for PR testing")
 set (TPL_ENABLE_BoostLib OFF CACHE BOOL "Set by default for PR testing")
 set (TPL_ENABLE_ParMETIS OFF CACHE BOOL "Set by default for PR testing")
-set (TPL_ENABLE_Zlib OFF CACHE BOOL "Set by default for PR testing")
-set (TPL_ENABLE_HDF5 OFF CACHE BOOL "Set by default for PR testing")
-set (TPL_ENABLE_Netcdf OFF CACHE BOOL "Set by default for PR testing")
-set (TPL_ENABLE_SuperLU OFF CACHE BOOL "Set by default for PR testing")
-set (TPL_ENABLE_Scotch OFF CACHE BOOL "Set by default for PR testing")
+set (TPL_ENABLE_Zlib     OFF CACHE BOOL "Set by default for PR testing")
+set (TPL_ENABLE_HDF5     OFF CACHE BOOL "Set by default for PR testing")
+set (TPL_ENABLE_Netcdf   OFF CACHE BOOL "Set by default for PR testing")
+set (TPL_ENABLE_SuperLU  OFF CACHE BOOL "Set by default for PR testing")
+set (TPL_ENABLE_Scotch   OFF CACHE BOOL "Set by default for PR testing")
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 
