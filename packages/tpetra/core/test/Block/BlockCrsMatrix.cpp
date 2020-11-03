@@ -161,7 +161,7 @@ namespace {
     // The typedef below is also a test.  BlockCrsMatrix must have
     // this typedef, or this test won't compile.
     typedef typename BCM::little_block_type little_block_type;
-    typedef typename BV::little_vec_type little_vec_type;
+    typedef typename BV::little_host_vec_type little_host_vec_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType MT;
 
@@ -434,7 +434,7 @@ namespace {
       const map_type& meshDomainMap = * (graph.getDomainMap ());
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
-        little_vec_type X_lcl = X.getLocalBlock (lclDomIdx);
+        little_host_vec_type X_lcl = X.getLocalBlock (lclDomIdx);
         TEST_ASSERT( X_lcl.data () != NULL );
         TEST_ASSERT( static_cast<size_t> (X_lcl.extent (0)) == static_cast<size_t> (blockSize) );
         for (LO i = 0; i < blockSize; ++i) {
@@ -448,7 +448,7 @@ namespace {
       const map_type& meshRangeMap = * (graph.getRangeMap ());
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
-        little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
+        little_host_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
         TEST_ASSERT( Y_lcl.data () != NULL );
         TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
@@ -480,7 +480,7 @@ namespace {
 
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
-        little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
+        little_host_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
         TEST_ASSERT( Y_lcl.data () != NULL );
         TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
@@ -545,7 +545,7 @@ namespace {
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
         for (LO j = 0; j < numVecs; ++j) {
-          little_vec_type X_lcl = X.getLocalBlock (lclDomIdx, j);
+          little_host_vec_type X_lcl = X.getLocalBlock (lclDomIdx, j);
           TEST_ASSERT( X_lcl.data () != NULL );
           TEST_ASSERT( static_cast<size_t> (X_lcl.extent (0)) == static_cast<size_t> (blockSize) );
           for (LO i = 0; i < blockSize; ++i) {
@@ -561,7 +561,7 @@ namespace {
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         for (LO col = 0; col < numVecs; ++col) {
-          little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
+          little_host_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
           TEST_ASSERT( Y_lcl.data () != NULL );
           TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
@@ -596,7 +596,7 @@ namespace {
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         for (LO col = 0; col < numVecs; ++col) {
-          little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
+          little_host_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
           TEST_ASSERT( Y_lcl.data () != NULL );
           TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
@@ -657,7 +657,7 @@ namespace {
       const map_type& meshDomainMap = * (graph.getDomainMap ());
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
-        little_vec_type X_lcl = X.getLocalBlock (lclDomIdx);
+        little_host_vec_type X_lcl = X.getLocalBlock (lclDomIdx);
         TEST_ASSERT( X_lcl.data () != NULL );
         TEST_ASSERT( static_cast<size_t> (X_lcl.extent (0)) == static_cast<size_t> (blockSize) );
         for (LO i = 0; i < blockSize; ++i) {
@@ -678,7 +678,7 @@ namespace {
       const map_type& meshRangeMap = * (graph.getRangeMap ());
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
-        little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
+        little_host_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
         TEST_ASSERT( Y_lcl.data () != NULL );
         TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
@@ -710,7 +710,7 @@ namespace {
 
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
-        little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
+        little_host_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
         TEST_ASSERT( Y_lcl.data () != NULL );
         TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
@@ -775,7 +775,7 @@ namespace {
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
         for (LO j = 0; j < numVecs; ++j) {
-          little_vec_type X_lcl = X.getLocalBlock (lclDomIdx, j);
+          little_host_vec_type X_lcl = X.getLocalBlock (lclDomIdx, j);
           TEST_ASSERT( X_lcl.data () != NULL );
           TEST_ASSERT( static_cast<size_t> (X_lcl.extent (0)) == static_cast<size_t> (blockSize) );
           for (LO i = 0; i < blockSize; ++i) {
@@ -798,7 +798,7 @@ namespace {
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         for (LO col = 0; col < numVecs; ++col) {
-          little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
+          little_host_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
           TEST_ASSERT( Y_lcl.data () != NULL );
           TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
@@ -833,7 +833,7 @@ namespace {
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         for (LO col = 0; col < numVecs; ++col) {
-          little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
+          little_host_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
           TEST_ASSERT( Y_lcl.data () != NULL );
           TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
@@ -1341,7 +1341,7 @@ namespace {
     const LO myMinLclMeshRow = Y.getMap ()->getMinLocalIndex ();
     const LO myMaxLclMeshRow = Y.getMap ()->getMaxLocalIndex ();
     for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
-      typename BMV::little_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
+      typename BMV::little_host_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
       for (LO i = 0; i < blockSize; ++i) {
         TEST_EQUALITY( static_cast<Scalar> (Y_lcl(i)), requiredValue );
       }
@@ -1352,7 +1352,7 @@ namespace {
     Kokkos::fence ();
 
     for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
-      typename BMV::little_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
+      typename BMV::little_host_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
       for (LO i = 0; i < blockSize; ++i) {
         TEST_EQUALITY( static_cast<Scalar> (Y_lcl(i)), STS::zero () );
       }
@@ -1424,9 +1424,6 @@ namespace {
     // Fill all entries of the first matrix with 3.
     const Scalar three = STS::one () + STS::one () + STS::one ();
     A1.setAllToScalar (three);
-    // A1 must have been modified on exactly one side.
-    TEST_ASSERT( (! A1.need_sync_host () && A1.need_sync_device ()) ||
-                 (A1.need_sync_host () && ! A1.need_sync_device ()) );
 
     out << "The matrix A1, after construction:" << endl;
     A1.describe (out, Teuchos::VERB_EXTREME);
@@ -1507,7 +1504,7 @@ namespace {
     const LO myMaxLclMeshRow = Y.getMap ()->getMaxLocalIndex ();
     bool valsMatch = true;
     for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
-      typename BMV::little_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
+      typename BMV::little_host_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
       for (LO i = 0; i < blockSize; ++i) {
         if (static_cast<Scalar> (Y_lcl(i)) != requiredValue) {
           valsMatch = false;
@@ -1935,7 +1932,7 @@ namespace {
 
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
-      typename BV::little_vec_type xlcl = solution.getLocalBlock (lclRowInd);
+      typename BV::little_host_vec_type xlcl = solution.getLocalBlock (lclRowInd);
       ST* x = reinterpret_cast<ST*> (xlcl.data ());
       out << "row = " << lclRowInd << endl;
       for (LO k = 0; k < blockSize; ++k) {
@@ -1948,7 +1945,7 @@ namespace {
                                STS::one (), Tpetra::Backward);
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
-      typename BV::little_vec_type xlcl = solution.getLocalBlock (lclRowInd);
+      typename BV::little_host_vec_type xlcl = solution.getLocalBlock (lclRowInd);
       ST* x = reinterpret_cast<ST*> (xlcl.data ());
       for (LO k = 0; k < blockSize; ++k) {
         TEST_FLOATING_EQUALITY( x[k], exactSolution[k], tol );
@@ -2133,7 +2130,7 @@ namespace {
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
       const LO rowOffset = lclRowInd - meshRowMap.getMinLocalIndex ();
-      typename BV::little_vec_type xlcl = solution.getLocalBlock (lclRowInd);
+      typename BV::little_host_vec_type xlcl = solution.getLocalBlock (lclRowInd);
       ST* x = reinterpret_cast<ST*> (xlcl.data ());
       for (LO k = 0; k < blockSize; ++k) {
         TEST_FLOATING_EQUALITY( x[k], exactSolution[rowOffset], tol );
@@ -2200,7 +2197,7 @@ namespace {
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
       const LO rowOffset = lclRowInd - meshRowMap.getMinLocalIndex ();
-      typename BV::little_vec_type xlcl = solution.getLocalBlock (lclRowInd);
+      typename BV::little_host_vec_type xlcl = solution.getLocalBlock (lclRowInd);
       ST* x = reinterpret_cast<ST*> (xlcl.data ());
       for (LO k = 0; k < blockSize; ++k) {
         TEST_FLOATING_EQUALITY( x[k], exactSolution[rowOffset], tol );

@@ -1,35 +1,8 @@
-C Copyright (C) 2009-2017 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C     * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C     * Redistributions in binary form must reproduce the above
-C       copyright notice, this list of conditions and the following
-C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.
-C
-C     * Neither the name of NTESS nor the names of its
-C       contributors may be used to endorse or promote products derived
-C       from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C See packages/seacas/LICENSE for details
 
 C $Id: vdicps_dual.f,v 1.3 2008/01/09 18:18:53 gdsjaar Exp $
 
@@ -1959,8 +1932,8 @@ C                   unsupported value is specified, it should be ignored.
 C
 C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
-      INTEGER NUM,INDEX(NUM),CLRMOD
-      REAL CLRARY(3,NUM)
+      INTEGER INDEX,CLRMOD
+      REAL CLRARY(3)
       CHARACTER*6 KOLIND
       CHARACTER*20 KOLCOM
       COMMON /VCVEC1/ IVECT
@@ -1974,12 +1947,6 @@ C     mopoly controls polygon fill =0, on ;  =1, off
 C     mocolr controls color =0, on ;  =1, off
       COMMON /VCPSTB/ MOPOLY, MOCOLR
 C
-C CHECK FOR VALID NUM.
-      IF(NUM.LT.1.OR.NUM.GT.256) THEN
-         CALL VBERRH(723,5)
-         GOTO 999
-      END IF
-C
 C CHECK FOR VALID CLRMOD.
       IF(CLRMOD.NE.0.AND.CLRMOD.NE.1) THEN
          CALL VBERRH(725,5)
@@ -1987,16 +1954,15 @@ C CHECK FOR VALID CLRMOD.
       END IF
 C
 C CHECK FOR VALID INDEXES.
-      DO 100 I=1,NUM
-         INDEXN=INDEX(I)
+         INDEXN=INDEX
          IF(INDEXN.LT.0.OR.INDEXN.GT.255) THEN
             CALL VBERRH(724,5)
             GOTO 100
          END IF
 C CHECK FOR VALID CLRARY.
-         CLRAR1=CLRARY(1,I)
-         CLRAR2=CLRARY(2,I)
-         CLRAR3=CLRARY(3,I)
+         CLRAR1=CLRARY(1)
+         CLRAR2=CLRARY(2)
+         CLRAR3=CLRARY(3)
          IF(CLRMOD.EQ.0) THEN
             IF(CLRAR1.LT.0..OR.CLRAR1.GT.1.
      X      .OR.CLRAR2.LT.0..OR.CLRAR2.GT.1.
@@ -2007,7 +1973,7 @@ C CHECK FOR VALID CLRARY.
 C
 C 256 INDEXES ARE SUPPORTED:
               DO 200 IC=1,3
-  200         PCOLS(IC,INDEXN+1)=CLRARY(IC,I)
+  200         PCOLS(IC,INDEXN+1)=CLRARY(IC)
 C
 C           define symbol for color reference
 C

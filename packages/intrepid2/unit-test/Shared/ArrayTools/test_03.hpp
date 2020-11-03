@@ -75,7 +75,7 @@ namespace Intrepid2 {
       };                                                                \
     }
     
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int ArrayTools_Test03(const bool verbose) {
       
       typedef ValueType value_type;
@@ -91,11 +91,11 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+      using DeviceExecSpaceType = typename DeviceType::execution_space;
+      using HostExecSpaceType = Kokkos::DefaultHostExecutionSpace;
 
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(std::cout, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(std::cout, false);
+      *outStream << "DeviceSpace::  "; DeviceExecSpaceType::print_configuration(std::cout, false);
+      *outStream << "HostSpace::    ";   HostExecSpaceType::print_configuration(std::cout, false);
 
       *outStream                                                        \
         << "===============================================================================\n" \
@@ -112,9 +112,9 @@ namespace Intrepid2 {
         << "|                                                                             |\n" \
         << "===============================================================================\n";      
       
-      typedef RealSpaceTools<DeviceSpaceType> rst;
-      typedef ArrayTools<DeviceSpaceType> art; 
-      typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
+      typedef RealSpaceTools<DeviceType> rst;
+      typedef ArrayTools<DeviceType> art; 
+      typedef Kokkos::DynRankView<value_type,DeviceType> DynRankView;
 
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
       const value_type tol = tolerence()*10000.0;
@@ -266,34 +266,41 @@ namespace Intrepid2 {
           art::scalarMultiplyDataField(outSM_c_f_p, data_c_p, in_c_f_p);
           art::dotMultiplyDataField(outDM_c_f_p, data_c_p, in_c_f_p);
           rst::subtract(out_c_f_p, outSM_c_f_p, outDM_c_f_p);
-          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
+          auto out_c_f_p_h = Kokkos::create_mirror_view(out_c_f_p);
+          Kokkos::deep_copy(out_c_f_p_h, out_c_f_p);
+          if (rst::Serial::vectorNorm(out_c_f_p_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (1): check dot multiply for scalars vs. scalar multiply\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataField(out_c_f_p, data_c_p_d, in_c_f_p_d);
-          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out_c_f_p_h, out_c_f_p);
+          if (rst::Serial::vectorNorm(out_c_f_p_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (2): check dot multiply of orthogonal vectors\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataField(out_c_f_p, data_c_p_d_d, in_c_f_p_d_d);
-          if ((rst::Serial::vectorNorm(out_c_f_p, NORM_INF) - d1*d2) > tol) {
+          Kokkos::deep_copy(out_c_f_p_h, out_c_f_p);
+          if ((rst::Serial::vectorNorm(out_c_f_p_h, NORM_INF) - d1*d2) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (3): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
           art::scalarMultiplyDataField(outSM_c_f_p, data_c_1, in_c_f_p);
           art::dotMultiplyDataField(outDM_c_f_p, data_c_1, in_c_f_p);
           rst::subtract(out_c_f_p, outSM_c_f_p, outDM_c_f_p);
-          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out_c_f_p_h, out_c_f_p);
+          if (rst::Serial::vectorNorm(out_c_f_p_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (4): check dot multiply for scalars vs. scalar multiply\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataField(out_c_f_p, data_c_1_d, in_c_f_p_d);
-          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out_c_f_p_h, out_c_f_p);
+          if (rst::Serial::vectorNorm(out_c_f_p_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (5): check dot multiply of orthogonal vectors\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataField(out_c_f_p, data_c_1_d_d, in_c_f_p_d_d);
-          if ((rst::Serial::vectorNorm(out_c_f_p, NORM_INF) - d1*d2) > tol) {
+          Kokkos::deep_copy(out_c_f_p_h, out_c_f_p);
+          if ((rst::Serial::vectorNorm(out_c_f_p_h, NORM_INF) - d1*d2) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (6): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
@@ -342,34 +349,41 @@ namespace Intrepid2 {
           art::scalarMultiplyDataField(outSM_c_f_p, data_c_p, in_f_p);
           art::dotMultiplyDataField(outDM_c_f_p, data_c_p, in_f_p);
           rst::subtract(out_c_f_p, outSM_c_f_p, outDM_c_f_p);
-          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
+          auto out_c_f_p_h = Kokkos::create_mirror_view(out_c_f_p);
+          Kokkos::deep_copy(out_c_f_p_h, out_c_f_p);
+          if (rst::Serial::vectorNorm(out_c_f_p_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (7): check dot multiply for scalars vs. scalar multiply\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataField(out_c_f_p, data_c_p_d, in_f_p_d);
-          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out_c_f_p_h, out_c_f_p);
+          if (rst::Serial::vectorNorm(out_c_f_p_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (8): check dot multiply of orthogonal vectors\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataField(out_c_f_p, data_c_p_d_d, in_f_p_d_d);
-          if ((rst::Serial::vectorNorm(out_c_f_p, NORM_INF) - d1*d2) > tol) {
+          Kokkos::deep_copy(out_c_f_p_h, out_c_f_p);
+          if ((rst::Serial::vectorNorm(out_c_f_p_h, NORM_INF) - d1*d2) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (9): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
           art::scalarMultiplyDataField(outSM_c_f_p, data_c_1, in_f_p);
           art::dotMultiplyDataField(outDM_c_f_p, data_c_1, in_f_p);
           rst::subtract(out_c_f_p, outSM_c_f_p, outDM_c_f_p);
-          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out_c_f_p_h, out_c_f_p);
+          if (rst::Serial::vectorNorm(out_c_f_p_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (10): check dot multiply for scalars vs. scalar multiply\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataField(out_c_f_p, data_c_1_d, in_f_p_d);
-          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out_c_f_p_h, out_c_f_p);
+          if (rst::Serial::vectorNorm(out_c_f_p_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (11): check dot multiply of orthogonal vectors\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataField(out_c_f_p, data_c_1_d_d, in_f_p_d_d);
-          if ((rst::Serial::vectorNorm(out_c_f_p, NORM_INF) - d1*d2) > tol) {
+          Kokkos::deep_copy(out_c_f_p_h, out_c_f_p);
+          if ((rst::Serial::vectorNorm(out_c_f_p_h, NORM_INF) - d1*d2) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (12): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
@@ -414,34 +428,41 @@ namespace Intrepid2 {
           art::scalarMultiplyDataData(outSM_c_p, data_c_p, in_c_p);
           art::dotMultiplyDataData(outDM_c_p, data_c_p, in_c_p);
           rst::subtract(out_c_p, outSM_c_p, outDM_c_p);
-          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > tol) {
+          auto out_c_p_h = Kokkos::create_mirror_view(out_c_p);
+          Kokkos::deep_copy(out_c_p_h, out_c_p);
+          if (rst::Serial::vectorNorm(out_c_p_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (1): check dot multiply for scalars vs. scalar multiply\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataData(out_c_p, data_c_p_d, in_c_p_d);
-          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > tol) {
-            *outStream << "\n\nINCORRECT dotMultiplyDataData (2): check dot multiply of orthogonal vectors"<<rst::Serial::vectorNorm(out_c_p, NORM_ONE)<<" \n\n";
+          Kokkos::deep_copy(out_c_p_h, out_c_p);
+          if (rst::Serial::vectorNorm(out_c_p_h, NORM_ONE) > tol) {
+            *outStream << "\n\nINCORRECT dotMultiplyDataData (2): check dot multiply of orthogonal vectors"<<rst::Serial::vectorNorm(out_c_p_h, NORM_ONE)<<" \n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataData(out_c_p, data_c_p_d_d, in_c_p_d_d);
-          if ((rst::Serial::vectorNorm(out_c_p, NORM_INF) - d1*d2) > tol) {
+          Kokkos::deep_copy(out_c_p_h, out_c_p);
+          if ((rst::Serial::vectorNorm(out_c_p_h, NORM_INF) - d1*d2) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (3): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
           art::scalarMultiplyDataData(outSM_c_p, data_c_1, in_c_p);
           art::dotMultiplyDataData(outDM_c_p, data_c_1, in_c_p);
           rst::subtract(out_c_p, outSM_c_p, outDM_c_p);
-          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out_c_p_h, out_c_p);
+          if (rst::Serial::vectorNorm(out_c_p_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (4): check dot multiply for scalars vs. scalar multiply\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataData(out_c_p, data_c_1_d, in_c_p_d);
-          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out_c_p_h, out_c_p);
+          if (rst::Serial::vectorNorm(out_c_p_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (5): check dot multiply of orthogonal vectors\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataData(out_c_p, data_c_1_d_d, in_c_p_d_d);
-          if ((rst::Serial::vectorNorm(out_c_p, NORM_INF) - d1*d2) > tol) {
+          Kokkos::deep_copy(out_c_p_h, out_c_p);
+          if ((rst::Serial::vectorNorm(out_c_p_h, NORM_INF) - d1*d2) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (6): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
@@ -488,34 +509,41 @@ namespace Intrepid2 {
           art::dotMultiplyDataData(outDM_c_p, data_c_p, in_p);
           
           rst::subtract(out_c_p, outSM_c_p, outDM_c_p);
-          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > tol) {
+          auto out_c_p_h = Kokkos::create_mirror_view(out_c_p);
+          Kokkos::deep_copy(out_c_p_h, out_c_p);
+          if (rst::Serial::vectorNorm(out_c_p_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (7): check dot multiply for scalars vs. scalar multiply\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataData(out_c_p, data_c_p_d, in_p_d);
-          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out_c_p_h, out_c_p);
+          if (rst::Serial::vectorNorm(out_c_p_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (8): check dot multiply of orthogonal vectors\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataData(out_c_p, data_c_p_d_d, in_p_d_d);
-          if ((rst::Serial::vectorNorm(out_c_p, NORM_INF) - d1*d2) > tol) {
+          Kokkos::deep_copy(out_c_p_h, out_c_p);
+          if ((rst::Serial::vectorNorm(out_c_p_h, NORM_INF) - d1*d2) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (9): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
           art::scalarMultiplyDataData(outSM_c_p, data_c_1, in_p);
           art::dotMultiplyDataData(outDM_c_p, data_c_1, in_p);
           rst::subtract(out_c_p, outSM_c_p, outDM_c_p);
-          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out_c_p_h, out_c_p);
+          if (rst::Serial::vectorNorm(out_c_p_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (10): check dot multiply for scalars vs. scalar multiply\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataData(out_c_p, data_c_1_d, in_p_d);
-          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out_c_p_h, out_c_p);
+          if (rst::Serial::vectorNorm(out_c_p_h, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (11): check dot multiply of orthogonal vectors\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataData(out_c_p, data_c_1_d_d, in_p_d_d);
-          if ((rst::Serial::vectorNorm(out_c_p, NORM_INF) - d1*d2) > tol) {
+          Kokkos::deep_copy(out_c_p_h, out_c_p);
+          if ((rst::Serial::vectorNorm(out_c_p_h, NORM_INF) - d1*d2) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (12): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }

@@ -43,38 +43,58 @@
 namespace stk {
 namespace mesh {
 
-
-template<typename T, typename Index>
-KOKKOS_FUNCTION
-T reduction_value_type_from_field_value(const T& i, const Index, const T&) 
+template<typename T>
+STK_FUNCTION
+T reduction_value_type_from_field_value(const T& i, const int, const T&) 
 {
   return i;
 }
 
-template<typename T, typename Index>
-KOKKOS_FUNCTION
-Kokkos::MinMaxScalar<T> reduction_value_type_from_field_value(const T& i, const Index, const Kokkos::MinMaxScalar<T>&)
+template<typename T>
+STK_FUNCTION
+Kokkos::MinMaxScalar<T> reduction_value_type_from_field_value(const T& i, const unsigned, const Kokkos::MinMaxScalar<T>&)
 {
   return {i,i};
 }
 
-template<typename T, typename Index>
-KOKKOS_FUNCTION
-Kokkos::ValLocScalar<T,Index> reduction_value_type_from_field_value(const T& i, const Index index, const Kokkos::ValLocScalar<T,Index>&)
+template<typename T>
+STK_FUNCTION
+Kokkos::ValLocScalar<T, stk::mesh::EntityId> reduction_value_type_from_field_value(const T& i, const unsigned index, const Kokkos::ValLocScalar<T, stk::mesh::EntityId>&)
 {
   return {i,index};
 }
 
-template<typename T, typename Index>
-KOKKOS_FUNCTION
-Kokkos::MinMaxLocScalar<T,Index> reduction_value_type_from_field_value(const T& i, const Index index, const Kokkos::MinMaxLocScalar<T,Index>&)
+template<typename T>
+STK_FUNCTION
+Kokkos::MinMaxLocScalar<T, stk::mesh::EntityId> reduction_value_type_from_field_value(const T& i, const unsigned index, const Kokkos::MinMaxLocScalar<T, stk::mesh::EntityId>&)
 {
   return {i,i,index,index};
 }
 
+template<typename T, typename Mesh>
+STK_FUNCTION
+void replace_loc_with_entity_id(T & t, const Mesh & mesh, const typename Mesh::BucketType & bucket)
+{
+}
+
+template<typename T, typename Mesh>
+STK_FUNCTION
+void replace_loc_with_entity_id(Kokkos::ValLocScalar<T, stk::mesh::EntityId> & t, const Mesh & mesh, const typename Mesh::BucketType & bucket)
+{
+  t.loc = mesh.identifier(bucket[t.loc]);
+}
+
+template<typename T, typename Mesh>
+STK_FUNCTION
+void replace_loc_with_entity_id(Kokkos::MinMaxLocScalar<T, stk::mesh::EntityId> & t, const Mesh & mesh, const typename Mesh::BucketType & bucket)
+{
+  t.min_loc = mesh.identifier(bucket[t.min_loc]);
+  t.max_loc = mesh.identifier(bucket[t.max_loc]);
+}
+
 template<typename T>
 struct identity {
-  KOKKOS_FUNCTION
+  STK_FUNCTION
   T operator()(const T t) const {
     return t;
   }
@@ -84,26 +104,26 @@ template<typename Mesh, typename Field, typename ReductionOp, typename Modifier 
 struct FieldAccessFunctor{
   using value_type = typename ReductionOp::value_type;
   using reduction_op = ReductionOp;
-  KOKKOS_FUNCTION
+  STK_FUNCTION
   FieldAccessFunctor(Field f, ReductionOp r, const int comp = -1) :
     field(f), bucket_id(0), reduction(r), fm(Modifier()), component(comp) {}
-  KOKKOS_FUNCTION
-  value_type operator()(const int i, const int j) const
+  STK_FUNCTION
+  value_type operator()(const unsigned i, const unsigned j) const
   {
     const int comp_index = (component > -1) ? component : j;
     auto field_value = field.get(typename stk::mesh::FastMeshIndex{bucket_id, static_cast<unsigned>(i)}, comp_index);
     auto value = fm(field_value);
-    value_type input = reduction_value_type_from_field_value(value,i,reduction.reference());
+    value_type input = reduction_value_type_from_field_value(value, i, reduction.reference());
     return input;
   }
-  KOKKOS_FUNCTION
+  STK_FUNCTION
   stk::mesh::EntityRank get_rank() const { return field.get_rank(); }
-  KOKKOS_DEFAULTED_FUNCTION
+  STK_FUNCTION
   FieldAccessFunctor(const FieldAccessFunctor& rhs) = default;
-  KOKKOS_FUNCTION
+  STK_FUNCTION
   FieldAccessFunctor(const FieldAccessFunctor& rhs, unsigned b_id, ReductionOp r)
     : field(rhs.field), bucket_id(b_id), reduction(r), fm(Modifier()), component(rhs.component) {}
-  KOKKOS_FUNCTION
+  STK_FUNCTION
   int num_components(const int i) const {
     if(component > -1) return 1;
     stk::mesh::FastMeshIndex f = {bucket_id, static_cast<unsigned>(i)};
@@ -147,15 +167,18 @@ struct ReductionTeamFunctor
     ReductionOp reduction(my_value);
     Accessor thread_local_accessor(accessor, bucket.bucket_id(), reduction);
     Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, 0u, numElements),
-                            [&](int i, value_type& reduce){
-      const int nc = thread_local_accessor.num_components(i);
-      for(int j = 0; j < nc; ++j){
+                            [&](unsigned i, value_type& reduce){
+      const unsigned nc = thread_local_accessor.num_components(i);
+      for(unsigned j = 0; j < nc; ++j){
         value_type input = thread_local_accessor(i,j);
         accessor.reduction.join(reduce,input);
       }
     },
     reduction);
-    Kokkos::single(Kokkos::PerTeam(team), [&](){accessor.reduction.join(update, my_value);});
+    Kokkos::single(Kokkos::PerTeam(team), [&](){
+      replace_loc_with_entity_id(my_value, mesh, bucket);
+      accessor.reduction.join(update, my_value);
+    });
   }
 private:
   const Mesh mesh;

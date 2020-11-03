@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
     CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
-    if(parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
+    if (parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
         return(EXIT_SUCCESS);
     }
 
@@ -165,16 +165,16 @@ int main(int argc, char *argv[])
     if (color==0) {
 
         RCP<ParameterList> parameterList = getParametersFromXmlFile(xmlFile);
-        
+
         Comm->barrier();
-        if(Comm->getRank()==0) {
+        if (Comm->getRank()==0) {
             cout << "##################\n# Parameter List #\n##################" << endl;
             parameterList->print(cout);
             cout << endl;
         }
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "##############################\n# Assembly Laplacian #\n##############################\n" << endl;
-        
+
         ParameterList GaleriList;
         GaleriList.set("nx", GO(N*M));
         GaleriList.set("ny", GO(N*M));
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
         GaleriList.set("mx", GO(N));
         GaleriList.set("my", GO(N));
         GaleriList.set("mz", GO(N));
-        
+
         RCP<const Map<LO,GO,NO> > UniqueNodeMap;
         RCP<const Map<LO,GO,NO> > UniqueMap;
         RCP<MultiVector<SC,LO,GO,NO> > Coordinates;
@@ -219,39 +219,39 @@ int main(int argc, char *argv[])
         sublist(plList,"FROSch")->set("Overlap",Overlap);
         sublist(plList,"FROSch")->set("DofOrdering","NodeWise");
         sublist(plList,"FROSch")->set("DofsPerNode",Dimension);
-        
+
         sublist(plList,"FROSch")->set("Repeated Map",RepeatedMap);
         sublist(plList,"FROSch")->set("Coordinates List",Coordinates);
 
         Comm->barrier();
-        if(Comm->getRank()==0) {
+        if (Comm->getRank()==0) {
             cout << "##################\n# Parameter List #\n##################" << endl;
             parameterList->print(cout);
             cout << endl;
         }
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "###################################\n# Stratimikos LinearSolverBuilder #\n###################################\n" << endl;
         Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
         Stratimikos::enableFROSch<LO,GO,NO>(linearSolverBuilder);
         linearSolverBuilder.setParameterList(parameterList);
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "######################\n# Thyra PrepForSolve #\n######################\n" << endl;
-        
+
         RCP<LinearOpWithSolveFactoryBase<SC> > lowsFactory =
         linearSolverBuilder.createLinearSolveStrategy("");
-        
+
         lowsFactory->setOStream(out);
         lowsFactory->setVerbLevel(VERB_HIGH);
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "###########################\n# Thyra LinearOpWithSolve #\n###########################" << endl;
-        
+
         RCP<LinearOpWithSolveBase<SC> > lows =
         linearOpWithSolve(*lowsFactory, K_thyra);
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#########\n# Solve #\n#########" << endl;
         SolveStatus<double> status =
         solve<double>(*lows, Thyra::NOTRANS, *thyraB, thyraX.ptr());
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
     }
 

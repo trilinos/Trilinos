@@ -1,41 +1,14 @@
-C    Copyright (c) 2005-2017 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C        * Redistributions of source code must retain the above copyright
-C          notice, this list of conditions and the following disclaimer.
-C
-C        * Redistributions in binary form must reproduce the above
-C          copyright notice, this list of conditions and the following
-C          disclaimer in the documentation and/or other materials provided
-C          with the distribution.
-C
-C        * Neither the name of NTESS nor the names of its
-C          contributors may be used to endorse or promote products derived
-C          from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C    See packages/seacas/LICENSE for details
 
       program testwtm
-c
+
 c This is a test program for the Fortran binding of the EXODUS II
 c database write routines. It tests multiple simultaneous output files.
-c
+
 c     09/07/93  V.R. Yarberry - Revised for 2.00 API
 
       include 'exodusII.inc'
@@ -89,12 +62,11 @@ c     09/07/93  V.R. Yarberry - Revised for 2.00 API
 
       data iin /5/, iout /6/, nexofiles /5/
 
-c
 c  create EXODUS II files
-c
+
       cpu_word_size = 0
       io_word_size = 4
-c
+
       exoid = excre ("test.exo",
      1               EXCLOB, cpu_word_size, io_word_size, ierr)
       write (iout,'("after excre for test.exo,id: ",i4,", err=",i3)')
@@ -114,9 +86,7 @@ c
      1          i, ierr
 1000  continue
 
-c
 c  initialize file with parameters
-c
 
       title = "This is test m"
       num_dim = 2
@@ -149,10 +119,7 @@ c
      1          i, ierr
 1001  continue
 
-
-c
 c  write nodal coordinates values and names to database
-c
 
       x(1) = 0.0
       x(2) = 1.0
@@ -212,10 +179,7 @@ c
      1          i, ierr
 1003  continue
 
-
-c
 c write element order map
-c
 
       do 10 i = 1, num_elem
          elem_map(i) = i
@@ -234,9 +198,7 @@ c
      1          i, ierr
 1004  continue
 
-c
 c write element block parameters
-c
 
       num_elem_in_block(1) = 1
       num_elem_in_block(2) = 1
@@ -299,9 +261,7 @@ c  write element block properties
      1          i, ierr
 1006  continue
 
-c
 c write element connectivity
-c
 
       connect(1) = 1
       connect(2) = 2
@@ -341,9 +301,7 @@ c
      1          i, ierr
 1008  continue
 
-c
 c write element block attributes
-c
 
       attrib(1) = 3.14159
       call expeat (exoid, ebids(1), attrib, ierr)
@@ -367,9 +325,7 @@ c
      1          i, ierr
 1010  continue
 
-c
 c write individual node sets
-c
 
       call expnp (exoid, 20, 5, 5, ierr)
       write (iout, '("after expnp, error = ", i4)' ) ierr
@@ -469,10 +425,8 @@ C**** file 2
      1          i, ierr
 1012  continue
 
-c
 c write concatenated node sets; this produces the same information as
 c the above code which writes individual node sets
-c
 
       ids(1) = 20
       ids(2) = 21
@@ -504,7 +458,6 @@ c
 c     call expcns (exoid, ids, num_nodes_per_set, node_ind, node_list,
 c    1        dist_fact, ierr)
 c     write (iout, '("after expcns, error = ", i4)' ) ierr
-c
 
       do 1013 i=1,nexofiles
         prop_names(1) = "FACE"
@@ -526,7 +479,6 @@ c
 1013  continue
 
 c write individual side sets
-c
 
       elem_list(1) = 11
       elem_list(2) = 12
@@ -569,7 +521,6 @@ c
 
       call expssd (exoid, 31, dist_fact, ierr)
       write (iout, '("after expssd, error = ", i3)' ) ierr
-
 
       elem_list2(1) = 11
       elem_list2(2) = 12
@@ -623,10 +574,8 @@ c
      1          i, ierr
 1015  continue
 
-c
 c write concatenated side sets; this produces the same information as
 c the above code which writes individual side sets
-c
 
       ids(1) = 30
       ids(2) = 31
@@ -679,7 +628,6 @@ c     write (iout, '("after expcss (",i1,"), error = ", i4)' ) ierr
       call expp(exoid, EXSSET, 31, prop_names(1), 101, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
 
-
       do 1016 i=1,nexofiles
         prop_names(1) = "COLOR"
         call expp(exoidm(i), EXSSET, 30, prop_names(1), 100, ierr)
@@ -691,10 +639,7 @@ c     write (iout, '("after expcss (",i1,"), error = ", i4)' ) ierr
      1          i, ierr
 1016  continue
 
-
-c
 c write QA records
-c
 
       num_qa_rec = 2
 
@@ -727,10 +672,7 @@ c
      1          i, ierr
 1017  continue
 
-
-c
 c write information records
-c
 
       num_info = 3
 
@@ -826,9 +768,8 @@ c write results variables parameters and names
         write (iout, '("after expvan (",i1,"), error = ", i4)')
      1          i, ierr
 1021  continue
-c
+
 c write element variable truth table
-c
 
       k = 0
 
@@ -851,12 +792,11 @@ c
         write (iout, '("after expvtt (",i1,"), error = ", i4)')
      1          i, ierr
 1022  continue
-c
+
 c for each time step, write the analysis results;
 c the code below fills the arrays glob_var_vals,
 c nodal_var_vals, and elem_var_vals with values for debugging purposes;
 c obviously the analysis code will populate these arrays
-c
 
       whole_time_step = 1
       num_time_steps = 10
@@ -864,9 +804,8 @@ c
       do 110 iii = 1, num_time_steps
         time_value = real(iii)/100
         time_value2 = real(iii)/100
-c
+
 c write time value to regular file
-c
 
         call exptim (exoid, whole_time_step, time_value, ierr)
         write (iout, '("after exptim, error = ", i4)' ) ierr
@@ -877,9 +816,7 @@ c
      1          i, ierr
 1023    continue
 
-c
 c write global variables
-c
 
         do 50 j = 1, num_glo_vars
           glob_var_vals(j) = real(j+1) * time_value
@@ -896,9 +833,7 @@ c
      1          i, ierr
 1024    continue
 
-c
 c write nodal variables
-c
 
         do 70 k = 1, num_nod_vars
           do 60 j = 1, num_nodes
@@ -920,9 +855,7 @@ c
 
 70      continue
 
-c
 c write element variables
-c
 
         do 100 k = 1, num_ele_vars
           do 90 j = 1, num_elem_blk
@@ -948,10 +881,9 @@ c
 
         whole_time_step = whole_time_step + 1
 
-c
 c update the data file; this should be done at the end of every time
 c step to ensure that no data is lost if the analysis dies
-c
+
         call exupda (exoid, ierr)
         write (iout, '("after exupda, error = ", i4)' ) ierr
         do 1027 i=1,nexofiles
@@ -962,9 +894,8 @@ c
 
 110   continue
 
-c
 c close the EXODUS files
-c
+
       call exclos (exoid, ierr)
       write (iout, '("after exclos, error = ", i4)' ) ierr
 

@@ -97,8 +97,8 @@ namespace MueLu {
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
 
-    auto vertex2AggId  = aggregates.GetVertex2AggId()->template getLocalView<memory_space>();
-    auto procWinner    = aggregates.GetProcWinner()  ->template getLocalView<memory_space>();
+    auto vertex2AggId  = aggregates.GetVertex2AggId()->getDeviceLocalView();
+    auto procWinner    = aggregates.GetProcWinner()  ->getDeviceLocalView();
     auto colors        = aggregates.GetGraphColors();
     const LO numColors = aggregates.GetGraphNumColors();
 
@@ -213,8 +213,8 @@ namespace MueLu {
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
 
-    auto vertex2AggId  = aggregates.GetVertex2AggId()->template getLocalView<memory_space>();
-    auto procWinner    = aggregates.GetProcWinner()  ->template getLocalView<memory_space>();
+    auto vertex2AggId  = aggregates.GetVertex2AggId()->getDeviceLocalView();
+    auto procWinner    = aggregates.GetProcWinner()  ->getDeviceLocalView();
     auto colors        = aggregates.GetGraphColors();
     const LO numColors = aggregates.GetGraphNumColors();
 

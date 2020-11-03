@@ -248,7 +248,7 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
 std::pair<std::string, std::string> getPrefix(const std::string &name) {
   for (std::size_t i=name.size()-1; i>0; --i)
     if (name[i] == '@') {
-      return std::pair<std::string, std::string>(name.substr(0,i), name.substr(i+1, name.size()));
+      return std::pair<std::string, std::string>(name.substr(0,i), name.substr(i+1));
     }
   return std::pair<std::string, std::string>(std::string(""), name);
 }
@@ -636,12 +636,12 @@ static void printXMLEscapedString(std::ostream& os, const std::string& str)
 double
 StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream& os, std::vector<bool> &printed, double parent_time, const std::string& rootName)
 {
-  //Adding an extra indent level, since the <performance-report> header is at indent 0
-  int indent = 4 * (print_level + 1);
+  constexpr int indSpaces = 2;
+  int indent = indSpaces * print_level;
 
   double total_time = 0.0;
 
-  for (int i=0; i<flat_names_.size(); ++i ) {
+  for (int i=0; i<flat_names_.size(); ++i) {
     if (printed[i])
       continue;
     int level = std::count(flat_names_[i].begin(), flat_names_[i].end(), '@');
@@ -653,31 +653,37 @@ StackedTimer::printLevelXML (std::string prefix, int print_level, std::ostream& 
     // Output the indentation level
     for (int j = 0; j < indent; j++)
       os << " ";
-    bool leaf = split_names.first.length() > 0;
     os << "<timing name=\"";
     if(level == 0 && rootName.length())
       printXMLEscapedString(os, rootName);
     else
       printXMLEscapedString(os, split_names.second);
     os << "\" value=\"" << sum_[i]/active_[i] << "\"";
-    if(leaf)
-      os << "/>\n";
-    else
-      os << ">\n";
     printed[i] = true;
     //note: don't need to pass in prependRoot, since the recursive calls don't apply to the root level
-    double sub_time = printLevelXML(flat_names_[i], print_level+1, os, printed, sum_[i]/active_[i]);
-    // Print Remainder
-    if (sub_time > 0 ) {
-      for (int j = 0; j < indent + 4; j++)
-        os << " ";
-      os << "<timing name=\"Remainder\" value=\"" << (sum_[i]/active_[i] - sub_time) << "\"/>\n";
-    }
-    if(!leaf)
+    //Print the children to a temporary string. If it's empty, can close the current XML element on the same line.
+    std::ostringstream osInner;
+    double sub_time = printLevelXML(flat_names_[i], print_level+1, osInner, printed, sum_[i]/active_[i]);
+    std::string innerContents = osInner.str();
+    if(innerContents.length())
     {
+      os << ">\n";
+      os << innerContents;
+      // Print Remainder
+      if (sub_time > 0 ) {
+        for (int j = 0; j < indent + indSpaces; j++)
+          os << " ";
+        os << "<timing name=\"Remainder\" value=\"" << (sum_[i]/active_[i] - sub_time) << "\"/>\n";
+      }
+      //having printed child nodes, close the XML element on its own line
       for (int j = 0; j < indent; j++)
         os << " ";
       os << "</timing>\n";
+    }
+    else
+    {
+      //Just a leaf node.
+      os << "/>\n";
     }
     total_time += sum_[i]/active_[i];
   }
@@ -738,6 +744,7 @@ std::string
 StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   const char* rawWatchrDir = getenv("WATCHR_PERF_DIR");
   const char* rawBuildName = getenv("WATCHR_BUILD_NAME");
+  const char* rawGitSHA = getenv("TRILINOS_GIT_SHA");
   //WATCHR_PERF_DIR is required (will also check nonempty below)
   if(!rawWatchrDir)
     return "";
@@ -792,6 +799,14 @@ StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teucho
     std::vector<bool> printed(flat_names_.size(), false);
     os << "<?xml version=\"1.0\"?>\n";
     os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\"seconds\">\n";
+    if(rawGitSHA)
+    {
+      std::string gitSHA(rawGitSHA);
+      //Output the first 10 (hex) characters
+      if(gitSHA.length() > 10)
+        gitSHA = gitSHA.substr(0, 10);
+      os << "  <metadata key=\"Trilinos Version\" value=\"" << gitSHA << "\"/>\n";
+    }
     printLevelXML("", 0, os, printed, 0.0, buildName + ": " + name);
     os << "</performance-report>\n";
   }

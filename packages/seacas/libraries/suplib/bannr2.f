@@ -1,46 +1,9 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C     * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C     * Redistributions in binary form must reproduce the above
-C       copyright notice, this list of conditions and the following
-C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.
-C
-C     * Neither the name of NTESS nor the names of its
-C       contributors may be used to endorse or promote products derived
-C       from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C See packages/seacas/LICENSE for details
 
-C $Id: bannr2.f,v 1.3 2009/03/25 12:46:01 gdsjaar Exp $
-C $Log: bannr2.f,v $
-C Revision 1.3  2009/03/25 12:46:01  gdsjaar
-C Add copyright and license notice to all files.
-C
-C Revision 1.2  1993/07/30 20:26:42  gdsjaar
-C Fixed to write to unit * if iout equals 0
-C
-c Revision 1.1  1991/07/11  19:58:14  gdsjaar
-c Initial revision
-c
 C=======================================================================
       SUBROUTINE BANNR2 (NCOLS, LINEIN, IOUT)
 C=======================================================================
@@ -56,12 +19,12 @@ C=======================================================================
       DATA MATRIX(1:36)  /'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'/
       DATA MATRIX(37:48) /'$()*+,/.: -='/
       DATA MATRIX(49:49) /''''/
-C
+
 C     THE FOLLOWING CHARACTER SET IS NOT ANSI STANDARD
-C
+
 C      DATA MATRIX(37:68) /'!"#$%&()*+,/.:;<>?@[\]^_`{|}~ -='/
 C      DATA MATRIX(69:69) /''''/
-C
+
       DATA (LETTER(I, 1),I=1,7) /
      *   ' AAAAA  ',
      *   'AA   AA ',
@@ -614,11 +577,11 @@ C     * '        '/
      *   '        ',
      *   '        ',
      *   '        '/
-C
+
       MAXCOL = MIN(NCOLS/9, MAXCHR)
-C
+
 C     DELIMIT NONBLANK STRING.
-C
+
       CALL STRIPB (LINEIN, ILEFT, IRIGHT)
       IF (ILEFT .LE. IRIGHT) THEN
          LINE = LINEIN (ILEFT:IRIGHT)
@@ -631,67 +594,66 @@ C
          LINE = ' '
          LENIN = 0
       END IF
-C
+
 C     LENIN IS LAST PRINTABLE NONBLANK
-C
+
 C     CONVERT ALPHABET TO UPPER CASE
-C
+
       DO 100 J=1,LENIN
          IF (LGE(LINE(J:J),'a') .AND. LLE(LINE(J:J),'z')) THEN
             ITEMP = ICHAR(LINE(J:J))
             LINE(J:J)=CHAR(ITEMP-(ICHAR('a')-ICHAR('A')))
          END IF
   100 CONTINUE
-C
+
 C     CALCULATE BLANK FILL.
-C
+
       NBLANK = (NCOLS - LENIN * 9) / 2
       NBLANK = MIN (NBLANK, 66)
-C
+
 C     LOAD UP CHARACTERS
-C
+
       DO 130 ICOL = 1, LENIN
          IPT = INDEX(MATRIX,LINE(ICOL:ICOL))
          IF (IPT .EQ. 0) THEN
-C
+
 C           CHARACTER NOT FOUND - REPLACE WITH A BLANK
-C
+
             DO 110 IROW = 1, 7
                SECT(IROW,ICOL) = ' '
   110       CONTINUE
-C
+
          ELSE
-C
+
 C           CHARACTER FOUND - INSERT BANNER LETTER
-C
+
             DO 120 IROW = 1, 7
                SECT(IROW,ICOL) = LETTER(IROW,IPT)
   120       CONTINUE
-C
+
          END IF
   130 CONTINUE
-C
+
       IF ((IRIGHT - ILEFT + 1) .NE. LENIN .AND. LENIN .NE. 0) THEN
-C
+
 C        STRING IS TRUNCATED.
-C
+
         if (iout .eq. 0) then
           WRITE (*, 5010) LINEIN(ILEFT:IRIGHT)
         else
           WRITE (IOUT, 5010) LINEIN(ILEFT:IRIGHT)
         end if
 
-C
       ELSE
-C
+
 C        STRING IS NOT TRUNCATED OR IS NULL.
-C
+
         if (iout .eq. 0) then
           WRITE (*,5000)
         else
           WRITE (IOUT,5000)
         end if
-C
+
       END IF
       if (iout .eq. 0) then
         DO 140 IROW = 1, 7

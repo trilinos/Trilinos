@@ -157,10 +157,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Xpetra::Parameters xpetraParameters(clp);
 
     switch (clp.parse(argc,argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
     }
 
     const int numLists = 1;
@@ -170,7 +170,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     bool failed = false;
     for (int k = 0; k < numLists; k++) {
       const std::string& dirName = dirList[k];
-      std::string problemFile = dirName + "problem_" + typeid(GlobalOrdinal).name() + ".xml";
+      std::string problemFile = dirName + "problem.xml";
 
       Teuchos::ParameterList galeriParameters;
       Teuchos::updateParametersFromXmlFileAndBroadcast(problemFile, Teuchos::Ptr<Teuchos::ParameterList>(&galeriParameters), *comm);
@@ -255,7 +255,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       for (int i = 0; i < fileList.size(); i++) {
         if (fileList[i] == "problem_i.xml" ||
             fileList[i] == "problem_l.xml" ||
-            fileList[i] == "problem_x.xml")
+            fileList[i] == "problem_x.xml" ||
+            fileList[i] == "problem.xml")
           continue;
 
         std::string xmlFile = dirName + fileList[i];

@@ -43,7 +43,7 @@
     <Parameter docString="" id="29" isDefault="false" isUsed="true" name="Stepper Type" type="string" value="Forward Euler"/>
     <Parameter docString="" id="34" isDefault="false" isUsed="true" name="Use FSAL" type="bool" value="true"/>
     <Parameter docString="" id="35" isDefault="false" isUsed="true" name="Initial Condition Consistency" type="string" value="Consistent"/>
-    <Parameter docString="" id="36" isDefault="false" isUsed="true" name="Initial Condition Consistency Check" type="bool" value="true"/>
+    <Parameter docString="" id="36" isDefault="false" isUsed="true" name="Initial Condition Consistency Check" type="bool" value="false"/>
   </ParameterList>
   <Validators/>
 </ParameterList>

@@ -185,9 +185,6 @@ public:
   //! Destructor
   virtual ~ParameterList();
 
-  //! Get the number of stored parameters.
-  Ordinal numParams () const;
-
   //@}
   //! @name Set Functions 
   //@{
@@ -576,6 +573,9 @@ public:
   template<typename T>
   bool isType(const std::string& name, T* ptr) const;
 #endif
+
+  //! Get the number of stored parameters.
+  Ordinal numParams () const;
 
   //@}
   

@@ -95,10 +95,10 @@ public:
    * - the KLU2 type that corresponds to scalar_type and
    * - the corresponding type to use for magnitude
    */
-  typedef typename type_map::type                                  slu_type;
-  typedef typename type_map::magnitude_type                  magnitude_type;
+  typedef typename type_map::type                                 klu2_type;
+  typedef typename type_map::dtype                               klu2_dtype;
 
-  typedef FunctionMap<Amesos2::KLU2,slu_type>               function_map;
+  typedef FunctionMap<Amesos2::KLU2,klu2_type>                 function_map;
 
   typedef Matrix                                                matrix_type;
   typedef MatrixAdapter<matrix_type>                    matrix_adapter_type;
@@ -229,23 +229,33 @@ private:
 
   // struct holds all data necessary for KLU2 factorization or solve call
   mutable struct KLU2Data {
-      ::KLU2::klu_symbolic<slu_type, local_ordinal_type> *symbolic_;
-      ::KLU2::klu_numeric<slu_type, local_ordinal_type> *numeric_;
-      ::KLU2::klu_common<slu_type, local_ordinal_type> common_;
+      ::KLU2::klu_symbolic<klu2_dtype, local_ordinal_type> *symbolic_;
+      ::KLU2::klu_numeric<klu2_dtype, local_ordinal_type> *numeric_;
+      ::KLU2::klu_common<klu2_dtype, local_ordinal_type> common_;
   } data_ ;
 
-  // The following Arrays are persisting storage arrays for A, X, and B
-  /// Stores the values of the nonzero entries for KLU2
-  Teuchos::Array<slu_type> nzvals_;
+  typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
+  typedef Kokkos::View<local_ordinal_type*, HostSpaceType> host_ordinal_type_array;
+
+  typedef Kokkos::View<klu2_type*, HostSpaceType>     host_value_type_array;
+
+  // The following Views are persisting storage arrays for A, X, and B
+  /// Stores the values of the nonzero entries for CHOLMOD
+  host_value_type_array host_nzvals_view_;
+
   /// Stores the location in \c Ai_ and Aval_ that starts row j
-  Teuchos::Array<local_ordinal_type> rowind_;
+  host_ordinal_type_array host_rows_view_;
   /// Stores the row indices of the nonzero entries
-  Teuchos::Array<local_ordinal_type> colptr_;
+  host_ordinal_type_array host_col_ptr_view_;
+
+  typedef typename Kokkos::View<klu2_type**, Kokkos::LayoutLeft, HostSpaceType>
+    host_solve_array_t;
 
   /// Persisting 1D store for X
-  Teuchos::Array<slu_type> xvals_;  local_ordinal_type ldx_;
+  mutable host_solve_array_t xValues_;
+
   /// Persisting 1D store for B
-  Teuchos::Array<slu_type> bvals_;  local_ordinal_type ldb_;
+  mutable host_solve_array_t bValues_;
 
   /// Transpose flag
   /// 0: Non-transpose, 1: Transpose, 2: Conjugate-transpose
@@ -256,17 +266,24 @@ private:
 
 
 // Specialize solver_traits struct for KLU2
-// TODO
 template <>
 struct solver_traits<KLU2> {
 #ifdef HAVE_TEUCHOS_COMPLEX
-  typedef Meta::make_list4<float,
+  typedef Meta::make_list6<float,
                            double,
+                           Kokkos::complex<float>,
+                           Kokkos::complex<double>,
                            std::complex<float>,
                            std::complex<double> > supported_scalars;
 #else
   typedef Meta::make_list2<float, double> supported_scalars;
 #endif
+};
+
+template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
+struct solver_supports_matrix<KLU2,
+  KokkosSparse::CrsMatrix<Scalar, LocalOrdinal, ExecutionSpace>> {
+  static const bool value = true;
 };
 
 } // end namespace Amesos2

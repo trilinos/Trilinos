@@ -64,7 +64,7 @@
 
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 #include "Teuchos_AbstractFactoryStd.hpp"
-#if defined(HAVE_MUELU_THYRATPETRAADAPTERS)
+#if defined(HAVE_MUELU_THYRATPETRAADAPTERS) && defined(HAVE_MUELU_IFPACK2)
 #include <Thyra_Ifpack2PreconditionerFactory.hpp>
 #endif
 
@@ -109,7 +109,7 @@ namespace MueLu {
     // Build Stratimikos solver
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
     typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
-#if defined(HAVE_MUELU_THYRATPETRAADAPTERS)
+#if defined(HAVE_MUELU_THYRATPETRAADAPTERS) && defined(HAVE_MUELU_IFPACK2)
     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Impl;
     linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 #endif

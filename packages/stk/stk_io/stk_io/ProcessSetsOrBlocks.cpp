@@ -15,6 +15,7 @@
 #include "Ioss_NodeBlock.h"                        // for NodeBlock
 #include "Ioss_SideBlock.h"                        // for SideBlock
 #include "Ioss_SideSet.h"                          // for SideSet, etc
+#include "Ioss_Assembly.h"
 #include "StkIoUtils.hpp"
 #include "StkMeshIoBroker.hpp"                     // for StkMeshIoBroker, etc
 #include "stk_mesh/base/Bucket.hpp"                // for Bucket
@@ -22,6 +23,7 @@
 #include "stk_mesh/base/Field.hpp"                 // for Field
 #include "stk_mesh/base/TopologyDimensions.hpp"    // for ElementNode
 #include "stk_mesh/base/Types.hpp"                 // for OrdinalVector, etc
+#include "stk_mesh/baseImpl/ConnectEdgesImpl.hpp"
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_topology/topology.hpp"               // for topology, etc
 #include "stk_util/util/ReportHandler.hpp"
@@ -330,6 +332,216 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
   }
 }
 
+template<typename INT>
+void process_faces(stk::mesh::BulkData& bulk, std::vector<INT>& face_ids, std::vector<INT>& connectivity,
+                  int nodes_per_face, size_t offset, stk::mesh::PartVector& faceParts)
+{
+    stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+    stk::mesh::EntityVector faces;
+    bulk.declare_entities(stk::topology::FACE_RANK, face_ids, faceParts, faces);
+    stk::mesh::Part& nodePart = meta.get_topology_root_part(stk::topology::NODE);
+    stk::mesh::PartVector nodeParts = {&nodePart};
+    stk::mesh::Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
+    stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
+
+    size_t face_count = face_ids.size();
+
+    for(size_t i=0; i<face_count; ++i) {
+        INT *conn = &connectivity[i*nodes_per_face];
+        stk::mesh::Entity face = faces[i];
+
+        bulk.set_local_id(face, offset + i);
+
+        for(int j = 0; j < nodes_per_face; ++j)
+        {
+            stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, conn[j]);
+            if (!bulk.is_valid(node)) {
+                node = bulk.declare_node(conn[j], nodeParts);
+            }
+            bulk.declare_relation(face, node, j, perm, scratch1, scratch2, scratch3);
+        }
+        stk::mesh::impl::connect_face_to_elements(bulk, face);
+        stk::mesh::impl::connect_face_to_edges(bulk, face);
+    }
+}
+
+template<typename INT>
+void process_edges(stk::mesh::BulkData& bulk, std::vector<INT>& edge_ids, std::vector<INT>& connectivity,
+                  int nodes_per_edge, size_t offset, stk::mesh::PartVector& edgeParts)
+{
+    stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+    stk::mesh::EntityVector edges;
+    bulk.declare_entities(stk::topology::EDGE_RANK, edge_ids, edgeParts, edges);
+    stk::mesh::Part& nodePart = meta.get_topology_root_part(stk::topology::NODE);
+    stk::mesh::PartVector nodeParts = {&nodePart};
+    stk::mesh::Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
+    stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
+
+    size_t edge_count = edge_ids.size();
+
+    for(size_t i=0; i<edge_count; ++i) {
+        INT *conn = &connectivity[i*nodes_per_edge];
+        stk::mesh::Entity edge = edges[i];
+
+        bulk.set_local_id(edge, offset + i);
+
+        for(int j = 0; j < nodes_per_edge; ++j)
+        {
+            stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, conn[j]);
+            if (!bulk.is_valid(node)) {
+                node = bulk.declare_node(conn[j], nodeParts);
+            }
+            bulk.declare_relation(edge, node, j, perm, scratch1, scratch2, scratch3);
+        }
+        stk::mesh::impl::connect_edge_to_elements(bulk, edge);
+    }
+}
+
+void create_shared_edges(stk::mesh::BulkData& bulk, stk::mesh::Part* part)
+{
+    stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+    if(meta.side_rank() == stk::topology::EDGE_RANK) { return; }
+
+    stk::mesh::EntityVector edges;
+    stk::mesh::get_selected_entities(*part, bulk.buckets(stk::topology::EDGE_RANK), edges);
+    stk::mesh::EntityVector edgeNodes;
+    std::vector<int> sharedProcs;
+    stk::CommSparse commSparse(bulk.parallel());
+
+    pack_and_communicate(commSparse, [&commSparse, &bulk, &sharedProcs, &edgeNodes, &edges]()
+                        {
+                            for(auto edge : edges) {
+                                bool isShared = true;
+                                const stk::mesh::Entity* nodes = bulk.begin_nodes(edge);
+                                unsigned numNodes = bulk.num_nodes(edge);
+                                edgeNodes.resize(numNodes);
+
+                                for(unsigned i = 0; i < numNodes; i++) {
+                                    isShared |= bulk.bucket(nodes[i]).shared();
+                                    edgeNodes[i] = nodes[i];
+                                }
+
+                                if(isShared) {
+                                    bulk.shared_procs_intersection(edgeNodes, sharedProcs);
+
+                                    for(int proc : sharedProcs) {
+                                        stk::CommBuffer& buf = commSparse.send_buffer(proc);
+                                        buf.pack<stk::mesh::EntityId>(bulk.identifier(edge));
+                                        buf.pack<unsigned>(numNodes);
+
+                                        for(auto edgeNode : edgeNodes) {
+                                            buf.pack<stk::mesh::EntityKey>(bulk.entity_key(edgeNode));
+                                        }
+                                    }
+                                }
+                            }  
+                        });
+                    
+    std::vector<stk::mesh::EntityId> edgeIds;
+    std::vector<stk::mesh::EntityId> connectivity;
+    unsigned nodesPerEdge = 0;
+
+    unpack_communications(commSparse, [&commSparse, &nodesPerEdge, &edgeIds, &connectivity](int procId)
+                         {
+                             stk::mesh::EntityKey nodeKey;
+                             stk::mesh::EntityId edgeId;
+                             unsigned numNodes;
+    
+                             commSparse.recv_buffer(procId).unpack<stk::mesh::EntityId>(edgeId);
+                             edgeIds.push_back(edgeId);
+                             commSparse.recv_buffer(procId).unpack<unsigned>(numNodes);
+    
+                             if(nodesPerEdge == 0) {
+                                 nodesPerEdge = numNodes;
+                             }
+                             ThrowAssert(numNodes == nodesPerEdge);
+    
+                             for(unsigned i = 0; i < numNodes; i++) {
+                                 commSparse.recv_buffer(procId).unpack<stk::mesh::EntityKey>(nodeKey);
+                                 connectivity.push_back(nodeKey.id());
+                             }
+                         });
+
+    stk::mesh::PartVector partVector{part};
+    process_edges<stk::mesh::EntityId>(bulk, edgeIds, connectivity, nodesPerEdge, 0, partVector);
+}
+
+template <typename INT>
+void process_face_entity(const Ioss::FaceBlock* fb, stk::mesh::BulkData & bulk)
+{
+    assert(fb->type() == Ioss::FACEBLOCK);
+
+    const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
+
+    Ioss::Region *region = fb->get_database()->get_region();
+
+    stk::mesh::Part *part = get_part_for_grouping_entity(*region, meta, fb);
+    ThrowRequireMsg(part != nullptr, " INTERNAL_ERROR: Part for edge block: " << fb->name() << " does not exist");
+    stk::mesh::PartVector faceParts = {part};
+
+    stk::topology topo = part->topology();
+    ThrowRequireMsg( topo != stk::topology::INVALID_TOPOLOGY, " INTERNAL_ERROR: Part " << part->name() << " has invalid topology");
+
+    std::vector<INT> face_ids;
+    std::vector<INT> connectivity ;
+
+    fb->get_field_data("ids", face_ids);
+    fb->get_field_data("connectivity", connectivity);
+
+    int nodes_per_face = topo.num_nodes();
+    size_t offset = fb->get_offset();
+    process_faces<INT>(bulk, face_ids, connectivity, nodes_per_face, offset, faceParts);
+}
+
+template <typename INT>
+void process_edge_entity(const Ioss::EdgeBlock* eb, stk::mesh::BulkData & bulk)
+{
+    assert(eb->type() == Ioss::EDGEBLOCK);
+
+    const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
+
+    Ioss::Region *region = eb->get_database()->get_region();
+
+    stk::mesh::Part *part = get_part_for_grouping_entity(*region, meta, eb);
+    ThrowRequireMsg(part != nullptr, " INTERNAL_ERROR: Part for edge block: " << eb->name() << " does not exist");
+    stk::mesh::PartVector edgeParts = {part};
+
+    stk::topology topo = part->topology();
+    ThrowRequireMsg( topo != stk::topology::INVALID_TOPOLOGY, " INTERNAL_ERROR: Part " << part->name() << " has invalid topology");
+
+    std::vector<INT> edge_ids;
+    std::vector<INT> connectivity ;
+
+    eb->get_field_data("ids", edge_ids);
+    eb->get_field_data("connectivity", connectivity);
+
+    int nodes_per_edge = topo.num_nodes();
+    size_t offset = eb->get_offset();
+    process_edges<INT>(bulk, edge_ids, connectivity, nodes_per_edge, offset, edgeParts);
+
+    create_shared_edges(bulk, part);
+}
+
+
+void process_face_entity(const Ioss::FaceBlock* fb, stk::mesh::BulkData & bulk)
+{
+  if (stk::io::db_api_int_size(fb) == 4) {
+    process_face_entity<int>(fb, bulk);
+  }
+  else {
+    process_face_entity<int64_t>(fb, bulk);
+  }
+}
+
+void process_edge_entity(const Ioss::EdgeBlock* eb, stk::mesh::BulkData & bulk)
+{
+  if (stk::io::db_api_int_size(eb) == 4) {
+    process_edge_entity<int>(eb, bulk);
+  }
+  else {
+    process_edge_entity<int64_t>(eb, bulk);
+  }
+}
 
 void send_element_side_to_element_owner(stk::CommSparse &comm,
                                         const stk::mesh::EntityIdProcMap &elemIdMovedToProc,
@@ -379,6 +591,60 @@ void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk, const stk
             process_surface_entity(*it, bulk, sidesToMove, behavior);
 
     move_sideset_to_follow_element(bulk, elemIdMovedToProc, sidesToMove);
+}
+
+void process_face_blocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
+{
+    const Ioss::FaceBlockContainer& face_blocks = region.get_face_blocks();
+
+    for(const Ioss::FaceBlock* faceBlock : face_blocks) {
+        if(stk::io::include_entity(faceBlock)) {
+            process_face_entity(faceBlock, bulk);
+        }
+    }
+}
+
+void process_edge_blocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
+{
+    const Ioss::EdgeBlockContainer& edge_blocks = region.get_edge_blocks();
+
+    for(const Ioss::EdgeBlock* edgeBlock : edge_blocks) {
+        if(stk::io::include_entity(edgeBlock)) {
+            process_edge_entity(edgeBlock, bulk);
+        }
+    }
+}
+
+void process_face_blocks(Ioss::Region &region, stk::mesh::MetaData &meta)
+{
+  const Ioss::FaceBlockContainer& face_blocks = region.get_face_blocks();
+  stk::io::default_part_processing(face_blocks, meta);
+}
+
+void process_edge_blocks(Ioss::Region &region, stk::mesh::MetaData &meta)
+{
+  const Ioss::EdgeBlockContainer& edge_blocks = region.get_edge_blocks();
+  stk::io::default_part_processing(edge_blocks, meta);
+}
+
+void process_assemblies(Ioss::Region &region, stk::mesh::MetaData &meta)
+{
+  const Ioss::AssemblyContainer& assemblies = region.get_assemblies();
+  stk::io::default_part_processing(assemblies, meta);
+}
+
+void build_assembly_hierarchies(Ioss::Region &region, stk::mesh::MetaData &meta)
+{
+  const Ioss::AssemblyContainer& assemblies = region.get_assemblies();
+  for(const Ioss::Assembly* assembly : assemblies) {
+    const std::string& assemblyName = assembly->name();
+    stk::mesh::Part* assemblyPart = meta.get_part(assemblyName);
+    const Ioss::EntityContainer& members = assembly->get_members();
+    for(const Ioss::GroupingEntity* member : members) {
+      stk::mesh::Part* memberPart = meta.get_part(member->name());
+      meta.declare_part_subset(*assemblyPart, *memberPart);
+    }
+  }
 }
 
 void populate_hidden_nodesets(Ioss::Region &io, const stk::mesh::MetaData & meta, NodesetMap &nodesetMap)

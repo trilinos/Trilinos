@@ -77,6 +77,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33333
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -87,6 +88,8 @@ matrixmatrix: kernel params ->
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
@@ -217,6 +220,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33333
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -227,6 +231,8 @@ matrixmatrix: kernel params ->
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
@@ -357,6 +363,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33333
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -367,6 +374,8 @@ matrixmatrix: kernel params ->
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
@@ -497,6 +506,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33333
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -507,6 +517,8 @@ matrixmatrix: kernel params ->
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
@@ -637,6 +649,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33333
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -647,6 +660,8 @@ matrixmatrix: kernel params ->
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0

@@ -42,7 +42,7 @@
 #include <string>                       // for string
 #include <vector>                       // for vector, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
-#include <stk_mesh/base/EntityLess.hpp>
+#include <stk_mesh/base/EntitySorterBase.hpp>
 
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
@@ -84,14 +84,12 @@ public:
 
   /// Sort the entities in this partition by EntityKey without changing
   /// the number or sizes of buckets.
-  void default_sort_if_needed();
+  void default_sort_if_needed(bool mustSortFacesByNodeIds=false);
   void sort(const EntitySorterBase& sorter);
 
   void set_flag_needs_to_be_sorted(bool flag) { m_updated_since_sort = flag; }
 
   bool needs_to_be_sorted() const { return m_updated_since_sort; }
-
-  size_t field_data_footprint(const FieldBase &f) const;
 
   ////
   //// This part of the interface exposes the Buckets that are currently a part of

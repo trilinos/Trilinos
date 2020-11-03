@@ -82,6 +82,7 @@
 /**************************************************************/
 /*                          Includes                          */
 /**************************************************************/
+#include <stdlib.h>
 
 // TrilinosCouplings includes
 #include "TrilinosCouplings_config.h"
@@ -461,12 +462,20 @@ int main(int argc, char *argv[]) {
   clp.setOption ("coordsFilename", &coordsFilename, "If nonempty, dump the "
 		  "generated coordinates to that file in MatrixMarket format.");
   
+  // Random number seed
+  int randomSeed=24601;
+  clp.setOption ("seed", &randomSeed, "Random Seed.");
+  
+  
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
+  
+  // Initialize RNG
+  srand(randomSeed);
 
   if (MyPID == 0){
     std::cout \
@@ -1434,6 +1443,26 @@ int main(int argc, char *argv[]) {
     amgList = inputSolverList.sublist("MueLu");
   else
     amgList = inputSolverList;
+
+
+#ifdef HAVE_TRILINOSCOUPLINGS_AVATAR
+  // If we have Avatar, then let's use it
+  if (inputSolverList.isSublist("Avatar-MueLu")) {
+    // NOTE: User will need to make sure these are named consistently with the tree files specified
+    ParameterList problemFeatures = problemStatistics;
+    ParameterList avatarParams    = inputSolverList.sublist("Avatar-MueLu");
+    std::cout<<"*** Avatar Parameters ***\n"<<avatarParams<<std::endl;
+    Teuchos::RCP<const Teuchos::Comm<int> > mycomm = StiffMatrix.getRowMap()->getComm();
+
+    MueLu::AvatarInterface avatar(mycomm,avatarParams);
+    std::cout<<"*** Avatar Setup ***"<<std::endl;
+    avatar.Setup();
+    avatar.SetMueLuParameters(problemFeatures,amgList, true);
+    std::cout<<"*** Updated MueLu Parameters ***\n"<<amgList<<std::endl;
+    avatar.Cleanup();
+  }
+#endif
+
   std::string lev0List = "level 0";
   if (amgList.isSublist(lev0List)) {
     std::cout << "found \"" << lev0List << "\" sublist" << std::endl;

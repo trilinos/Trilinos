@@ -11,7 +11,8 @@
 
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
-#include "Tempus_StepperTrapezoidalObserver.hpp"
+#include "Tempus_StepperTrapezoidalAppAction.hpp"
+#include "Tempus_StepperOptimizationInterface.hpp"
 
 
 namespace Tempus {
@@ -23,19 +24,28 @@ namespace Tempus {
  *  solver (e.g., a non-linear solver, like NOX).
  *
  *  <b> Algorithm </b>
- *  The single-timestep algorithm for Trapezoidal method is simply,
- *   - Solve \f$\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}, x_n, t_n)=0\f$ for \f$x_n\f$
- *   - \f$\dot{x}_n \leftarrow (x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}\f$
+ *  The single-timestep algorithm for Forward Euler is
+ *  \f{algorithm}{
+ *  \renewcommand{\thealgorithm}{}
+ *  \caption{Forward Euler}
+ *  \begin{algorithmic}[1]
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *    \State {Get $\dot{x}$ from SolutionHistory or from Stepper}
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
+ *    \State $\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}, x_n, t_n)=0\f$ for \f$x_n$
+ *    \State {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
+ *    \State $\dot{x}_n \leftarrow (x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}$
+ *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *  \end{algorithmic}
+ *  \f}
  *
- *   The First-Step-As-Last (FSAL) principle is required for the Trapezoidal
- *   Stepper (i.e., useFSAL=true)!  There are at least two ways around this,
- *   but are not implemented.
- *    - Do a solve for xDotOld, xDot_{n-1}, at each time step as for the
- *      initial conditions.  This is expensive since you would be doing
- *      two solves every time step.
- *    - Use evaluateExplicitODE to get xDot_{n-1} if the application
- *      provides it.  Explicit evaluations are cheaper but requires the
- *      application to implement xDot = f(x,t).
+ *  The First-Same-As-Last (FSAL) principle is required for the Trapezoidal
+ *  Stepper (i.e., useFSAL=true)!  With useFSAL=true does assume that the
+ *  solution, \f$x\f$, and its time derivative, \f$\dot{x}\f$, are consistent
+ *  at the initial conditions (ICs), i.e.,
+ *  \f$\dot{x}_{0} = \bar{f}(x_{0},t_{0})\f$.  This can be ensured by setting
+ *  setICConsistency("Consistent"), and checked with
+ *  setICConsistencyCheck(true).
  *
  *  <b> Iteration Matrix, \f$W\f$.</b>
  *  Recalling that the definition of the iteration matrix, \f$W\f$, is
@@ -73,20 +83,20 @@ public:
   /// Constructor
   StepperTrapezoidal(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
-    bool zeroInitialGuess);
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperTrapezoidalAppAction<Scalar> >& stepperTrapAppAction);
 
   /// \name Basic stepper methods
   //@{
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+    virtual void setAppAction(
+    Teuchos::RCP<StepperTrapezoidalAppAction<Scalar> > appAction);
 
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperTrapObserver_; }
+    virtual Teuchos::RCP<StepperTrapezoidalAppAction<Scalar> > getAppAction() const
+    { return stepperTrapAppAction_; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -108,6 +118,7 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+    virtual void setUseFSAL(bool a) { this->setUseFSALTrueOnly(a); }
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
 
@@ -126,12 +137,10 @@ public:
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
-  virtual bool getUseFSALDefault() const { return true; }
-  virtual std::string getICConsistencyDefault() const { return "Consistent"; }
 
 private:
 
-  Teuchos::RCP<StepperTrapezoidalObserver<Scalar> > stepperTrapObserver_;
+  Teuchos::RCP<StepperTrapezoidalAppAction<Scalar> > stepperTrapAppAction_;
 
 };
 

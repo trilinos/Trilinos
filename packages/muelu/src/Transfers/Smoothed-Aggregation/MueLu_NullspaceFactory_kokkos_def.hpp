@@ -163,7 +163,7 @@ namespace MueLu {
         GetOStream(Runtime1) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
 
         nullspace = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
-        auto nullspaceView = nullspace->template getLocalView<DeviceType>();
+        auto nullspaceView = nullspace->getDeviceLocalView();
 
         int numBlocks = nullspace->getLocalLength() / numPDEs;
 

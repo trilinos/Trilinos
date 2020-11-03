@@ -1,50 +1,23 @@
-C    Copyright(C) 2008-2017 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C    * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C    * Redistributions in binary form must reproduce the above
-C      copyright notice, this list of conditions and the following
-C      disclaimer in the documentation and/or other materials provided
-C      with the distribution.
-C
-C    * Neither the name of NTESS nor the names of its
-C      contributors may be used to endorse or promote products derived
-C      from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C    See packages/seacas/LICENSE for details
       SUBROUTINE MXEXEC (MYV, MYCV, MYLOC, MYCLOC, UCLOC, COFFST,
      *   OFFSET, DPOINT, LDICT, NNAMES,
      *   VOID, LVOID, NVOIDS, FILL, FDATA, CFILL, CFDATA, CHRNUM,
      *   CHRCOL, LASTER)
-C
+
       IMPLICIT INTEGER (A-Z)
       INCLUDE 'params.inc'
-C
+
 C     This routine satisfies deferred memory requests.
 C     It will service both numeric and character
 C     deferred requests in the mixed mode.  In the nonmixed mode,
 C     character memory is not deferred.
-C
+
 C***********************************************************************
-C
+
 C     MYV      Internal reference vector.
                DIMENSION MYV(*)
 C     MYCV     Internal reference array.
@@ -73,9 +46,9 @@ C     CFDATA   Data for fill.
 C     CHRNUM   Number of characters per numeric storage unit
 C     CHRCOL   Column for character tables.
 C     LASTER   Error return.
-C
+
 C***********************************************************************
-C
+
       LASTER = SUCESS
       MEM = 0
       DO 100 IDICT = 1, NNAMES(1)
@@ -83,14 +56,13 @@ C
   100 CONTINUE
       IF (MEM .EQ. 0) RETURN
       MEM = - MEM
-C
-C
+
       CALL MXGET (MYLOC, MEM, VOID, LVOID, NVOIDS,
      *   CHRCOL, LASTER, VROW)
       IF (LASTER .NE. SUCESS) RETURN
-C
+
 C     Now satisfy all the deferred requests.
-C
+
       DO 130 IDICT = 1, NNAMES(1)
          IF (DPOINT(IDICT,1,2) .LT. 0) THEN
             IF (DPOINT(IDICT,1,3) .EQ. -1) THEN
@@ -104,9 +76,9 @@ C
             DPOINT(IDICT,1,2) = - DPOINT(IDICT,1,2)
             DPOINT(IDICT,1,1) = VOID(VROW,1,1)
             VOID(VROW,1,1) = VOID(VROW,1,1) + DPOINT(IDICT,1,2)
-C
+
 C           Perform data fill if appropriate.
-C
+
             IF (FILL .AND. DPOINT(IDICT,1,3) .EQ. -1) THEN
                DO 110 I = DPOINT(IDICT,1,1),
      *            DPOINT(IDICT,1,1)+DPOINT(IDICT,1,2)-1
@@ -119,10 +91,10 @@ C
                   MYCV(I) = CFDATA
   120          CONTINUE
             END IF
-C
+
          END IF
   130 CONTINUE
-C
+
       CALL VTABLE (0, 0, VOID, LVOID, NVOIDS(1), CHRCOL, LASTER)
       RETURN
       END

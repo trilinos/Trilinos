@@ -1,62 +1,18 @@
-C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
-C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C    * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C    * Redistributions in binary form must reproduce the above
-C      copyright notice, this list of conditions and the following
-C      disclaimer in the documentation and/or other materials provided
-C      with the distribution.
-C
-C    * Neither the name of NTESS nor the names of its
-C      contributors may be used to endorse or promote products derived
-C      from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C    See packages/seacas/LICENSE for details
 
-C $Id: elpspr.f,v 1.2 1991/03/21 15:44:38 gdsjaar Exp $
-C $Log: elpspr.f,v $
-C Revision 1.2  1991/03/21 15:44:38  gdsjaar
-C Changed all 3.14159... to atan2(0.0, -1.0)
-C
-c Revision 1.1.1.1  1990/11/30  11:06:35  gdsjaar
-c FASTQ Version 2.0X
-c
-c Revision 1.1  90/11/30  11:06:34  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]ELPSPR.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE ELPSPR (MP, KT, KNUM, COOR, LINKP, IPNTR1, IPNTR2,
      &   IPNTR3, IP3, XCEN, YCEN, THETA1, THETA2, TANG, ICCW, ICW,
      &   AVALUE, BVALUE, ERR)
 C***********************************************************************
-C
+
 C  SUBROUTINE ELPSPR = THIS ROUTINE CALCULATES THE ELIPSE PARAMETERS
-C
+
 C***********************************************************************
-C
+
 C  VARIABLES USED:
 C     TANG   = TOTAL ANGLE SCRIBED BY THE ARC
 C     THETA1 = FIRST CCW ANGLE OF THE ARC
@@ -65,25 +21,25 @@ C     IPNTR1 = POINTER TO FIRST COORDINATE VALUE
 C     IPNTR2 = POINTER TO SECOND COORDINATE VALUE
 C     IPNTR3 = POINTER TO THIRD COORDINATE VALUE
 C     IP3    = THE THIRD POINT NUMBER  (CAN BE NEGATED)
-C
+
 C***********************************************************************
-C
+
       DIMENSION COOR (2, MP), LINKP (2, MP)
-C
+
       LOGICAL ERR
-C
+
       PI = ATAN2(0.0, -1.0)
-C
+
       TWOPI = PI + PI
       ERR = .FALSE.
-C
+
 C  ELIPSE GOES FROM 1ST POINT TO 2ND IN *COUNTER-CLOCKWISE* DIRECTION.
-C
+
       XCEN = COOR (1, IPNTR3)
       YCEN = COOR (2, IPNTR3)
-C
+
 C  CHECK TO MAKE SURE THAT THE BEGINNING AND ENDING RADIUS EXIST
-C
+
       IF (( (COOR (1, IPNTR1) .EQ. XCEN).AND.
      &   (COOR (2,IPNTR1) .EQ. YCEN)).OR.
      &   ((COOR (1, IPNTR2) .EQ. XCEN).AND.
@@ -95,16 +51,16 @@ C
       ENDIF
       THETA1 = ATAN2 (COOR (2, IPNTR1) - YCEN, COOR (1, IPNTR1) - XCEN)
       THETA2 = ATAN2 (COOR (2, IPNTR2) - YCEN, COOR (1, IPNTR2) - XCEN)
-C
+
 C  NOW CALCULATE THE MAJOR AXIS (AVALUE) AND THE MINOR AXIS (BVALUE)
-C
+
       X1 = COOR (1, IPNTR1) - XCEN
       Y1 = COOR (2, IPNTR1) - YCEN
       X2 = COOR (1, IPNTR2) - XCEN
       Y2 = COOR (2, IPNTR2) - YCEN
-C
+
 C  CHOOSE THE APPROPRIATE ELIPSE DEFINITION
-C
+
       IF (Y1 * Y1 .EQ. Y2 * Y2) THEN
          AVALUE = SQRT (X1 * X1 + Y1 * Y1)
          BVALUE = AVALUE
@@ -154,22 +110,22 @@ C
                A2 = ABS (ATAN2 (Y2, X2))
                THETA1 = ABS(ATAN2 (VY, 1.))
             ENDIF
-C
+
             RADMAX = MAX(A7,A8)
             CALL ETHETA (A7, A8, A2, THETA1, RADMAX, THETA, ERR)
             IF (ERR) THEN
                WRITE (*, 10010) ABS (KNUM)
                GOTO 100
             ENDIF
-C
+
             CVALUE = D0 * SIN (A8 - THETA) / SIN (A2 - A8 + THETA)
             BVALUE = SQRT (ABS (CVALUE **2 / (RATIO **2 - 1)) )
             AVALUE = BVALUE * RATIO
          ENDIF
       ENDIF
-C
+
 C  NOW GET THE ANGLES GOING THE RIGHT WAY
-C
+
       THETA1 = ATAN2 (COOR (2, IPNTR1) - YCEN, COOR (1, IPNTR1) - XCEN)
       THETA2 = ATAN2 (COOR (2, IPNTR2) - YCEN, COOR (1, IPNTR2) - XCEN)
       IF (IPNTR1 .EQ. IPNTR2) THEN
@@ -187,13 +143,13 @@ C
          ICCW = IPNTR1
          ICW = IPNTR2
       ENDIF
-C
+
   100 CONTINUE
-C
+
       RETURN
-C
+
 10000 FORMAT (' CENTER POINT FOR LINE', I5, ' LIES ON ONE OF',
      &   ' THE ENDPOINTS')
 10010 FORMAT (' POINTS GIVEN FOR LINE', I5, ' DO NOT DEFINE AN ELIPSE')
-C
+
       END

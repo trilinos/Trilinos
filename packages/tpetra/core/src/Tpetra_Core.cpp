@@ -46,8 +46,10 @@
 #include <Teuchos_DefaultSerialComm.hpp>
 
 #include <Kokkos_Core.hpp>
+#include "Tpetra_Details_checkLaunchBlocking.hpp"
 
 namespace Tpetra {
+
   namespace { // (anonymous)
 
     class HideOutputExceptOnProcess0 {
@@ -148,7 +150,7 @@ namespace Tpetra {
           tpetraInitializedKokkos_ = true;
         }
       }
-
+      Details::checkOldCudaLaunchBlocking();
       const bool kokkosIsInitialized =
         Kokkos::is_initialized ();
       TEUCHOS_TEST_FOR_EXCEPTION

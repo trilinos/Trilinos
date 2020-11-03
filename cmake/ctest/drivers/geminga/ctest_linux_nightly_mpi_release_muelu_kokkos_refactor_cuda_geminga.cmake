@@ -75,24 +75,24 @@ SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   ### ETI ###
-  "-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-  "-D Trilinos_ENABLE_COMPLEX:BOOL=OFF"
-    "-D Tpetra_INST_INT_LONG_LONG:BOOL=OFF"
-    "-D Tpetra_INST_INT_INT:BOOL=ON"
-    "-D Tpetra_INST_SERIAL=ON"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+  "-DTrilinos_ENABLE_COMPLEX:BOOL=OFF"
 
   ### MISC ###
-  "-D Trilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
-  "-D Teuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS:BOOL=ON"
+  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
+  "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS:BOOL=ON"
 
   ### TPLS ###
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
 
   ### PACKAGES CONFIGURATION ###
-      "-D MueLu_ENABLE_Experimental:BOOL=ON"
-      "-D MueLu_ENABLE_Kokkos_Refactor:BOOL=ON"
-      "-D Xpetra_ENABLE_Experimental:BOOL=ON"
-      "-D Xpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
+      "-DMueLu_ENABLE_Experimental:BOOL=ON"
+      "-DMueLu_ENABLE_Kokkos_Refactor:BOOL=ON"
+      "-DXpetra_ENABLE_Experimental:BOOL=ON"
+      "-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
+
+  # Disable Pamgen due to weird nvcc errors
+  "-DTrilinos_ENABLE_Pamgen:BOOL=OFF"
 )
 
 #

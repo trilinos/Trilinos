@@ -1,67 +1,39 @@
-C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
-C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C    * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C    * Redistributions in binary form must reproduce the above
-C      copyright notice, this list of conditions and the following
-C      disclaimer in the documentation and/or other materials provided
-C      with the distribution.
-C
-C    * Neither the name of NTESS nor the names of its
-C      contributors may be used to endorse or promote products derived
-C      from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C    See packages/seacas/LICENSE for details
 
-C $Id: fastq.f,v 1.38 2007/07/24 13:10:18 gdsjaar Exp $
       PROGRAM FASTQ
 C***********************************************************************
-C
+
 C  FASTQ = A PROGRAM TO QUICKLY GENERATE QUADRALATERAL MESHES
-C
+
 C***********************************************************************
-C
+
 C                       WRITTEN AND MAINTAINED BY
 C                             TED D. BLACKER
 C                             DIVISION 1523
 C                              VERSION 1.4X
-C
+
 C***********************************************************************
-C
+
 C                          USES WORK PREVIOUSLY
 C                              COMPLETED BY
 C                            RONDALL E. JONES
 C                             DIVISION 2644
 C                     (QMESH, RENUM, AND QNUM CODES)
-C
+
 C***********************************************************************
-C
+
 C  NOTE:  FASTQ CALLS SEVERAL GRAPHICS ROUTINES FROM THE PLT PLOT
 C         PACKAGE, AS WELL AS A NUMBER OF UTILITY ROUTINES FROM
 C         THE DEPARTMENT 1520 SUPES LIBRARY OF ROUTINES.  OF PRIME
 C         USE IS THE FREE FIELD READER ROUTINES AND THE DYNAMIC
 C         MEMORY ALLOCATION ROUTINES.
-C
+
 C***********************************************************************
-C
+
 C  VARIABLES USED:
 C     IANS   = LOGICAL RESPONSE FROM YES-NO QUESTION
 C     TITLE  = MESH TITLE
@@ -81,9 +53,9 @@ C     START  = .TRUE. IF THE PROGRAM IS JUST STARTING - TRY A READ FIRST
 C     VAXVMS = .TRUE. IF THE INSTALLATION IS ON A VAX/VMS MACHINE
 C              (IT IS ASSUMED THAT VAXVMS WILL HAVE MULTIPLE VIRTUAL
 C              DEVICE DRIVERS AVAILABLE - MVDI)
-C
+
 C***********************************************************************
-C
+
       LOGICAL IANS, DRWTAB, WROTE, OPTIM, MERGE, NOROOM, TBZOOM
       LOGICAL LABP, LABL, LABR, AXISD, LABMD, LABI, LABF, LABPB, LABLB,
      &   LABSBD
@@ -92,9 +64,9 @@ C
       LOGICAL BATCH, VAXVMS, START, ALPHA, HARDPL, SNAP
       LOGICAL THREE, EIGHT, NINE, REGWRT, BARWRT
       LOGICAL EXODUSII
-C
+
       PARAMETER (MSC = 60, MA = 4, MCOM = 50, MSNAP = 100)
-C
+
 C  NOTE:  IF DYNAMIC VARIABLE DIMENSIONING IS NOT BEING USED, THIS
 C         PARAMETER STATEMENT SHOULD BE EXPANDED TO THE FORM:
 C      PARAMETER (MP = 100, ML = 100, MS = 50, MR = 30, MSC = 30, MA = 4)
@@ -102,22 +74,22 @@ C         IF LARGER DIMENSIONS ARE DESIRED, MP, ML, MS, AND MR CAN
 C         BE INCREASED ACCORDINGLY.
 C         ALSO, THE VARIABLE A SHOULD BE DIMENSIONED AS:
 C            DIMENSION A(MP*17 + ML*31 + MS*10 + MR*15)
-C
+
       CHARACTER  DEV1*3, DEV2*3, VERSN*10, NUMBER*80, DATATYPE*8
       CHARACTER*8  HARD, SOFT, DATE, TIME
       CHARACTER*72 SCHEME, DEFSCH, TITLE, CIN(MCOM)
       CHARACTER*8  MEMDBG
       CHARACTER*2048 FNAME
-C
+
       DIMENSION K(67), N(29), ISCHM(MSC), SCHEME(MSC), NUMBER(MSC)
       DIMENSION IDEV(2), SNAPDX(2,MSNAP), NSNAP(2)
       DIMENSION KIN(MCOM), IIN(MCOM), RIN(MCOM)
       DIMENSION A(1), IA(1)
-C
+
       EQUIVALENCE (A, IA)
-C
+
 C  INITIALIZE VARIABLES
-C
+
 C ... By default, write exodusII format. If the environment variable
 C     EXT04 is set to 'EXODUSII', write exodusII format.  If EXT04
 C     is set to 'GENESIS', write exodusI format
@@ -150,16 +122,13 @@ C     is set to 'GENESIS', write exodusI format
       eight = .false.
       nine  = .false.
       optim = .false.
-C
+
 C  GET THE CURRENT SYSTEM PARAMETERS AND SET MODE FOR RUNNING
-C
+
       CALL EXPARM (HARD, SOFT, MODE, KCSU, KNSU, IDAU)
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/18/90
-CC* MODIFICATION: COMMENTED OUT THE BATCH MODE STUFF TO RUN IN A COMMAND
+
 C**               FILE MODE
-C
+
       call exname (-3, dev2, klen)
       if (dev2(:3) .eq. 'BAT') THEN
          BATCH = .TRUE.
@@ -188,16 +157,16 @@ C
       ENDIF
 
       IF (HARD(1:4) .EQ. 'CRAY' .AND. SOFT(1:3) .NE. 'UNI') THEN
-C
+
 C  WE MUST NOW INPUT THE DEVICE IN AN ADHOCK MANNER FROM THE CRAY
-C
+
          CALL EXNAME (75, FNAME, LEN)
          DEV1 = FNAME (1:3)
          CALL EXUPCS (DEV1)
       END IF
-C
+
 C***********************************************************************
-C
+
       TITLE = ' '
       DEFSCH = 'M'
       WROTE = .TRUE.
@@ -206,9 +175,9 @@ C
       DO 110 I = 1, 29
          N(I) = 0
   110 CONTINUE
-C
+
 C  SET UP THE DEFAULT LABELING FOR DATA PLOTTING
-C
+
       AREACG = .FALSE.
       AXIS = .FALSE.
       AXISD = .FALSE.
@@ -232,9 +201,9 @@ C
       LABSB = .FALSE.
       LABM = .FALSE.
       LABW = .FALSE.
-C
+
 C  PRINT GREETING AND TRACE
-C
+
       CALL MESAGE (' ')
       CALL MESAGE ('WELCOME TO FASTQ:')
       CALL EXDATE (DATE)
@@ -260,11 +229,9 @@ C
       WRITE (*, *)
      *  '+++               United States Government                +++'
 
-C
 C  IF THE CODE IS BEING RUN ON THE VAX INTERACTIVELY,
 C  GET WHICH DEVICE IS BEING USED
 C  AND SET UP THE MULTIPLE DEVICE OUTPUT ROUTINES
-C
 
       IF ((VAXVMS) .AND. (.NOT.BATCH)) THEN
          CALL EXNAME (-1, DEV1, LEN)
@@ -285,28 +252,28 @@ C
          CALL VDESCP (10001, 0, 0)
          CALL PLTSTV (2, 160.)
       END IF
-C
+
 C  SET UP THE DUMP LOCATION FOR THE LOG FILE
-C
+
       IDUMP = 0
-C
+
 C-----------------------------------------------------------------------
-C
+
 C  THE NEXT SERIES OF STATEMENTS MUST BE TAKEN OUT IF NOT USING
 C  DYNAMIC VARIABLE DIMENSIONING
-C
+
 C  SET UP THE INITIAL POINTER ARRAY SYSTEM
-C
+
       MP = 1000
       ML = 1000
       MS = 1000
       MR = 1000
-C
+
 C  INITIALIZE THE DYNAMIC DIMENSIONING ROUTINES
-C
+
       CALL MDINIT (A)
       CALL MDFILL(0)
-C
+
 C ... See if supes memory debugging desired
 C     If EXT99 Environment variable set, turn on supes memory debugging
 C     The numeric value of the variable is used as the unit to write
@@ -318,9 +285,8 @@ C     debug information to.
       END IF
  20   CONTINUE
 
-C
 C  GET INITIAL SPACE IN ARRAY A
-C
+
       CALL MDRSRV ('IPOINT', K(1), MP)
       CALL MDRSRV ('COOR', K(2), MP*2)
       CALL MDRSRV ('IPBOUN', K(3), MP)
@@ -393,8 +359,7 @@ C
          CALL MDEROR (6)
          STOP' '
       END IF
-C
-C
+
 C  THIS ENDS THE SECTION THAT NEEDS TO BE REMOVED IF NOT USING
 C  DYNAMIC VARIABLE DIMENSIONING.  AS A REPLACEMENT, THE POINTERS
 C  MUST BE HARD WIRED INTO THE PROGRAM.  THIS WOULD BE HANDLED IN THE
@@ -406,11 +371,11 @@ C        K(4) = K(3) + MP
 C        K(5) = K(4) + ML
 C         ....
 C        K(67) = K(66) + MR
-C
+
 C-----------------------------------------------------------------------
-C
+
 C  ZERO THE LINK ARRAYS
-C
+
       CALL LTNEW (MP, IA(K(40)))
       CALL LTNEW (ML, IA(K(41)))
       CALL LTNEW (MS, IA(K(42)))
@@ -421,9 +386,9 @@ C
       CALL LTNEW (MP, IA(K(47)))
       CALL LTNEW (ML, IA(K(48)))
       CALL LTNEW (ML, IA(K(49)))
-C
+
 C  ENTER FASTQ MAIN OPTION
-C
+
       IZ = 0
   120 CONTINUE
       IF ((.NOT.BATCH) .AND. (ICOM .GT. JCOM)) THEN
@@ -432,9 +397,9 @@ C
      &      KIN, CIN, IIN, RIN)
          ICOM = 1
       END IF
-C
+
 C  GRAPHICS OPTION - PLOTS FASTQ DATA
-C
+
       IF ((CIN(ICOM)(1:1) .EQ. 'G') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'g')) THEN
          ICOM = ICOM + 1
@@ -449,9 +414,9 @@ C
      &      TITLE, LABP, LABL, LABR, AXISD, LABMD, LABI, LABF, LABPB,
      &      LABLB, LABSBD, LABSC, LABSZ, FULL, IDEV, ALPHA, DEV1,
      &      VAXVMS, VERSN, WROTE, TIME1, HARDPL, BATCH)
-C
+
 C  DELETE OPTION - DELETES FASTQ DATA
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'D') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'd')) THEN
          ICOM = ICOM + 1
@@ -466,9 +431,9 @@ C
      &      IA(K(64)), IA(K(65)), IA(K(66)), IA(K(67)), NUMBER, DEFSCH,
      &      OPTIM, VAXVMS, WROTE, TIME1, BATCH, VERSN)
          WROTE = .FALSE.
-C
+
 C  FLUSH OPTION - ERASES ALL DATA
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'F') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'f')) THEN
          ICOM = ICOM + 1
@@ -497,9 +462,9 @@ C
             CALL LTNEW (ML, IA(K(48)))
             CALL LTNEW (ML, IA(K(49)))
          END IF
-C
+
 C  MESH OPTION - BEGINS MESH PROCESSING
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'M') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'm')) THEN
          ICOM = ICOM + 1
@@ -519,24 +484,24 @@ C
      &      TITLE, OPTIM, IDEV, ALPHA, DEV1, THREE, EIGHT, NINE, BATCH,
      &      VAXVMS, VERSN, AXIS, AREACG, LABN, LABE, LABO, LABNB,
      &      LABSB, LABM, LABW, WROTE, TIME1, HARDPL, EXODUSII)
-C
+
 C  SPAWN A PROCESS
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'SP') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'sp')) THEN
          ICOM = ICOM + 1
          CALL SPAWN (VAXVMS)
-C
+
 C  STRAIGHTEN OPTION - STRAIGHTEN LINES IN THE X OR Y DIRECTION
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'S') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 's')) THEN
          ICOM = ICOM + 1
          CALL STRAIT (MP, ML, MCOM, ICOM, JCOM, CIN, RIN, IIN, KIN,
      &      IDUMP, N, A(K(2)), IA(K(8)), IA(K(40)), IA(K(41)))
-C
+
 C  TABLET DIGITIZE OPTION - DIGITIZE THE GEOMETRY
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'T') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 't')) THEN
          ICOM = ICOM + 1
@@ -556,13 +521,13 @@ C
      &      IA(K(62)), IA(K(67)), TITLE, NOROOM, DRWTAB, XX1, YY1,
      &      SCALE, CT, ST, X1, X2, Y1, Y2, ALPHA, DEV1, SNAP, SNAPDX,
      &      NSNAP, VAXVMS, TBZOOM, AXIST, WROTE, BATCH, VERSN, TIME1)
-C
+
 C  EXTEND THE MEMORY AND CONTINUE IF USING DYNAMIC VARIABLE DIMENSIONING.
 C  IN CONVERTING TO NORMAL VARIABLE DIMENSIONING, THE EXTEND MEMORY LINES
 C  MUST BE TAKEN OUT, AND AN EXIT OF THE PROGRAM INPUT.  THEN THE
 C  PARAMETER STATEMENT CONTAINING MP, ML, MS, AND MR MUST BE INCREASED TO
 C  INCREASE DIMESIONING.
-C
+
          IF (NOROOM) THEN
             MPOLD = MP
             MLOLD = ML
@@ -644,9 +609,9 @@ C
                CALL MDEROR (6)
                STOP' '
             END IF
-C
+
 C  RESORT THE LINK ARRAYS
-C
+
             CALL LTNEW (ML, IA(K(51)))
             CALL LTADD (ML, MLOLD, N(1), IA(K(40)), IA(K(51)))
             CALL LTNEW (ML, IA(K(51)))
@@ -680,9 +645,9 @@ C
             GO TO 150
          END IF
          WROTE = .FALSE.
-C
+
 C  KEY-IN OPTION - TYPE IN THE DATA FROM THE KEYBOARD
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'K') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'k')) THEN
          ICOM = ICOM + 1
@@ -787,9 +752,9 @@ C
                CALL MDEROR (6)
                STOP' '
             END IF
-C
+
 C  RESORT THE LINK ARRAYS
-C
+
             CALL LTNEW (ML, IA(K(51)))
             CALL LTADD (ML, MLOLD, N(1), IA(K(40)), IA(K(51)))
             CALL LTNEW (ML, IA(K(51)))
@@ -822,9 +787,9 @@ C
             CALL MESAGE ('KEYIN OPTION CAN NOW BE CONTINUED')
             GO TO 160
          END IF
-C
+
 C  LIST OPTION - LISTS FASTQ DATA
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'L') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'l')) THEN
          ICOM = ICOM + 1
@@ -842,18 +807,18 @@ C
      &      A(K(63)), IA(K(64)), IA(K(65)), IA(K(66)), IA(K(67)), ISCHM,
      &      SCHEME, NUMBER, DEFSCH, DEFSIZ, TITLE, OPTIM, THREE, EIGHT,
      &      NINE, VAXVMS, WROTE, TIME1, VERSN, BATCH)
-C
+
 C  READ OPTION - READS FASTQ DATA
-C
+
       ELSE IF (((CIN(ICOM)(1:1) .EQ. 'R') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'r')) .AND.
      &   (CIN(ICOM)(2:2).NE.'P') .AND. (CIN(ICOM)(2:2).NE.'p') .AND.
      &   (CIN(ICOM)(2:2).NE.'W') .AND. (CIN(ICOM)(2:2).NE.'w')) THEN
          ICOM = ICOM + 1
          IF ((N(1) .GT. 0) .OR. (N(2) .GT. 0)) THEN
-C
+
 C  CHECK TO SEE IF A FASTQ DATA MERGING IS DESIRED
-C
+
             CALL INTRUP ('MERGE FILE WITH EXISTING DATA', MERGE, MCOM,
      &         ICOM, JCOM, CIN, IIN, RIN, KIN)
             IF (MERGE) THEN
@@ -888,7 +853,7 @@ C
                CALL LTNEW (ML, IA(K(49)))
             END IF
          END IF
-C
+
          IUNIT = 1
          ITRY = 0
   180    CONTINUE
@@ -1030,9 +995,9 @@ C
                   CALL MDEROR (6)
                   STOP' '
                END IF
-C
+
 C  RESORT THE LINK ARRAYS
-C
+
                CALL LTNEW (ML, IA(K(51)))
                CALL LTADD (ML, MLOLD, N(1), IA(K(40)), IA(K(51)))
                CALL LTNEW (ML, IA(K(51)))
@@ -1069,9 +1034,9 @@ C
             REWIND IUNIT
             CLOSE (IUNIT)
          END IF
-C
+
 C  EXIT OPTION - EXITS FASTQ
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'EX') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ex')) THEN
          ICOM = ICOM + 1
@@ -1084,10 +1049,9 @@ C
      &         TIME1, BATCH, VERSN)
          ENDIF
          GO TO 120
-C
+
 C  WRITE OPTION - WRITES A FASTQ DATA FILE
-C
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'W') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'w') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'BW') .OR.
@@ -1133,14 +1097,14 @@ C
      &      BARWRT)
          WROTE = .TRUE.
          CLOSE (IUNIT)
-C
+
 C  GET THE APPROPRIATE HELP MESAGE
-C
+
       ELSE
          ICOM = ICOM + 1
          CALL HELP_FQ (1)
       END IF
       GO TO 120
-C
+
 10000 FORMAT (' ', 'ERROR OPENING FILE: ', A)
       END

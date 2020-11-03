@@ -216,38 +216,48 @@ namespace panzer {
        point_coords_jac_inv(point_rule_basis->getName()+"_"+"jac_inv",point_rule_basis->dl_tensor);
     fm.getFieldData<panzer::Traits::Residual,panzer::Traits::Residual::ScalarT,Cell,IP,Dim,Dim>(point_coords_jac_inv);
 
+    auto point_coords_h = Kokkos::create_mirror_view(point_coords.get_view());
+    Kokkos::deep_copy(point_coords_h, point_coords.get_view());
+    auto point_coords_basis_h = Kokkos::create_mirror_view(point_coords_basis.get_view());
+    Kokkos::deep_copy(point_coords_basis_h, point_coords_basis.get_view());
+    auto point_coords_jac_det_h = Kokkos::create_mirror_view(point_coords_jac_det.get_view());
+    Kokkos::deep_copy(point_coords_jac_det_h, point_coords_jac_det.get_view());
+    auto point_coords_jac_h = Kokkos::create_mirror_view(point_coords_jac.get_view());
+    Kokkos::deep_copy(point_coords_jac_h, point_coords_jac.get_view());
+    auto point_coords_jac_inv_h = Kokkos::create_mirror_view(point_coords_jac_inv.get_view());
+    Kokkos::deep_copy(point_coords_jac_inv_h, point_coords_jac_inv.get_view());
     for(int c=0;c<basis_q1->numCells();c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {
           double x = dx*(point_coordinates(p,0)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,0);
           double y = dy*(point_coordinates(p,1)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,1);
-          TEST_FLOATING_EQUALITY(point_coords(c,p,0),x,1e-10);
-          TEST_FLOATING_EQUALITY(point_coords(c,p,1),y,1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_h(c,p,0),x,1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_h(c,p,1),y,1e-10);
        }
 
        for(int p=0;p<basis_q1->cardinality();p++) {
           double x = dx*(workset.bases[1]->basis_coordinates_ref(p,0)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,0);
           double y = dy*(workset.bases[1]->basis_coordinates_ref(p,1)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,1);
-          TEST_FLOATING_EQUALITY(point_coords_basis(c,p,0),x,1e-10);
-          TEST_FLOATING_EQUALITY(point_coords_basis(c,p,1),y,1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_basis_h(c,p,0),x,1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_basis_h(c,p,1),y,1e-10);
        }
 
        for(int p=0;p<num_points;p++)
-          TEST_FLOATING_EQUALITY(point_coords_jac_det(c,p),dx*dy/4.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_jac_det_h(c,p),dx*dy/4.0,1e-10);
 
        for(int p=0;p<num_points;p++) {
-          TEST_FLOATING_EQUALITY(point_coords_jac(c,p,0,0),dx/2.0,1e-10);
-          TEST_FLOATING_EQUALITY(point_coords_jac(c,p,0,1),0.0,1e-10);
-          TEST_FLOATING_EQUALITY(point_coords_jac(c,p,1,0),0.0,1e-10);
-          TEST_FLOATING_EQUALITY(point_coords_jac(c,p,1,1),dy/2.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_jac_h(c,p,0,0),dx/2.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_jac_h(c,p,0,1),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_jac_h(c,p,1,0),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_jac_h(c,p,1,1),dy/2.0,1e-10);
        }
 
        for(int p=0;p<num_points;p++) {
-          TEST_FLOATING_EQUALITY(point_coords_jac_inv(c,p,0,0),1.0/(dx/2.0),1e-10);
-          TEST_FLOATING_EQUALITY(point_coords_jac_inv(c,p,0,1),0.0,1e-10);
-          TEST_FLOATING_EQUALITY(point_coords_jac_inv(c,p,1,0),0.0,1e-10);
-          TEST_FLOATING_EQUALITY(point_coords_jac_inv(c,p,1,1),1.0/(dy/2.0),1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_jac_inv_h(c,p,0,0),1.0/(dx/2.0),1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_jac_inv_h(c,p,0,1),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_jac_inv_h(c,p,1,0),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_coords_jac_inv_h(c,p,1,1),1.0/(dy/2.0),1e-10);
        }
     }
   }
@@ -342,10 +352,12 @@ namespace panzer {
     Teuchos::RCP<panzer::BasisValues2<double> > bases = workset.bases[basisIndex];
     TEST_ASSERT(bases!=Teuchos::null);
     // TEST_EQUALITY(bases->basis.size(),basis.size());
+    auto basis_h = Kokkos::create_mirror_view(basis.get_view());
+    Kokkos::deep_copy(basis_h, basis.get_view());
     for(int i=0;i<4;i++) {
       for(int j=0;j<4;j++) {
         for(unsigned int k=0;k<bases->basis_scalar.extent(2);k++) {
-          TEST_FLOATING_EQUALITY(bases->basis_scalar(i,j,k),basis(i,j,k),1e-10);
+          TEST_FLOATING_EQUALITY(bases->basis_scalar(i,j,k),basis_h(i,j,k),1e-10);
         }
       }
     }
@@ -495,20 +507,24 @@ namespace panzer {
     TEST_EQUALITY(bases->basis_vector.size(),basis.size());
     TEST_EQUALITY(bases->curl_basis_scalar.size(),curl_basis.size());
 
+    auto basis_h = Kokkos::create_mirror_view(basis.get_view());
+    Kokkos::deep_copy(basis_h, basis.get_view());
     for(int i=0;i<4;i++) {
       for(int j=0;j<4;j++) {
         for(unsigned int k=0;k<bases->curl_basis_scalar.extent(2);k++) {
           for(unsigned int d=0;d<bases->basis_vector.extent(3);d++) {
-            TEST_FLOATING_EQUALITY(bases->basis_vector(i,j,k,d),basis(i,j,k,d),1e-10);
+            TEST_FLOATING_EQUALITY(bases->basis_vector(i,j,k,d),basis_h(i,j,k,d),1e-10);
           }
         }
       }
     }
 
+    auto curl_basis_h = Kokkos::create_mirror_view(curl_basis.get_view());
+    Kokkos::deep_copy(curl_basis_h, curl_basis.get_view());
     for(int i=0;i<4;i++) {
       for(int j=0;j<4;j++) {
         for(unsigned int k=0;k<bases->curl_basis_scalar.extent(2);k++) {
-          TEST_FLOATING_EQUALITY(bases->curl_basis_scalar(i,j,k),curl_basis(i,j,k),1e-10);
+          TEST_FLOATING_EQUALITY(bases->curl_basis_scalar(i,j,k),curl_basis_h(i,j,k),1e-10);
         }
       }
     }
@@ -669,9 +685,13 @@ namespace panzer {
     // for(int i=0;i<ref_field.size();i++) {
     //   TEST_FLOATING_EQUALITY(fut_field[i].val(),ref_field[i].val(),1e-10);
     // }
+    auto fut_field_h = Kokkos::create_mirror_view(fut_field.get_view());
+    Kokkos::deep_copy(fut_field_h, fut_field.get_view());
+    auto ref_field_h = Kokkos::create_mirror_view(ref_field.get_view());
+    Kokkos::deep_copy(ref_field_h, ref_field.get_view());
     for(int i=0;i<4;i++) {
       for(int j=0;j<4;j++) {
-        TEST_FLOATING_EQUALITY(fut_field(i,j).val(),ref_field(i,j).val(),1e-10);
+        TEST_FLOATING_EQUALITY(fut_field_h(i,j).val(),ref_field_h(i,j).val(),1e-10);
       }
     }
   }

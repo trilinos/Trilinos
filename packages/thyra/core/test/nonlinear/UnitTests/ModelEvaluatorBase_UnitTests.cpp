@@ -232,13 +232,330 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, setArgs, Scalar )
   TEST_EQUALITY(g_out.getType(), MEB::EVAL_TYPE_VERY_APPROX_DERIV);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Responses, get_g_names, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, setArgs )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, get_g_names, Scalar )
 {
   const RCP<const ModelEvaluator<Scalar> > model = getXGTestModel<Scalar>(2, 1);
   TEST_ASSERT( model->get_g_names(0).size() == 0);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, setArgs )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, get_g_names )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_DgDx_get_DgDx, Scalar )
+{
+  typedef ModelEvaluatorBase MEB;
+  const Ordinal x_size = 2;
+  const Ordinal g_size = 2;
+  const RCP<const ModelEvaluator<Scalar> > model =
+    dummyTestModelEvaluator<Scalar>(x_size, null, Teuchos::tuple<Ordinal>(1,1), false, false, true, true, true);
+  MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+
+  out << "Test that 'DgDx' can be set and gotten as a DerivativeMultiVector<Scalar>!\n";
+  for (int j=0; j<g_size; ++j)
+  {
+    auto g_space = model->get_g_space(j);
+    auto dgdx = Thyra::createMembers(g_space, g_size);
+    MEB::DerivativeMultiVector<Scalar> DgDx(dgdx);
+
+    outArgs.set_DgDx(j, DgDx);
+    const MEB::Derivative<Scalar> DgDx_out = outArgs.get_DgDx(j);
+    TEST_EQUALITY(DgDx_out.getDerivativeMultiVector().getMultiVector(), DgDx.getMultiVector());
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, set_DgDx_get_DgDx )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_hess_vec_prod_f_get_hess_vec_prod_f, Scalar )
+{
+  typedef ModelEvaluatorBase MEB;
+  const Ordinal x_size = 2;
+  const Ordinal g_size = 2;
+  const Ordinal p_size = 3;
+  const RCP<const ModelEvaluator<Scalar> > model =
+    dummyTestModelEvaluator<Scalar>(x_size, Teuchos::tuple<Ordinal>(1,1,1), Teuchos::tuple<Ordinal>(1,1), false, false, true, true, true);
+  MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+
+  out << "Test that 'hess_vec_prod_f' can be set and gotten as a DerivativeMultiVector<Scalar>!\n";
+
+  auto g_space = model->get_g_space(0);
+
+  auto hess_vec_prod_f_xx_tmp = Thyra::createMembers(g_space, g_size);
+
+  RCP<MultiVectorBase<Scalar> > hess_vec_prod_f_xx(hess_vec_prod_f_xx_tmp);
+
+  outArgs.set_hess_vec_prod_f_xx(hess_vec_prod_f_xx);
+
+  RCP<MultiVectorBase<Scalar> > hess_vec_prod_f_xx_out = outArgs.get_hess_vec_prod_f_xx();
+
+  TEST_EQUALITY(hess_vec_prod_f_xx_out, hess_vec_prod_f_xx);
+
+  for (int l1=0; l1<p_size; ++l1)
+  {
+    auto p_space_l1 = model->get_p_space(l1);
+
+    auto hess_vec_prod_f_xp_tmp = Thyra::createMembers(g_space, g_size);
+    auto hess_vec_prod_f_px_tmp = Thyra::createMembers(p_space_l1, p_size);
+
+    RCP<MultiVectorBase<Scalar> > hess_vec_prod_f_xp(hess_vec_prod_f_xp_tmp);
+    RCP<MultiVectorBase<Scalar> > hess_vec_prod_f_px(hess_vec_prod_f_px_tmp);
+
+    outArgs.set_hess_vec_prod_f_xp(l1, hess_vec_prod_f_xp);
+    outArgs.set_hess_vec_prod_f_px(l1, hess_vec_prod_f_px);
+
+    RCP<MultiVectorBase<Scalar> > hess_vec_prod_f_xp_out = outArgs.get_hess_vec_prod_f_xp(l1);
+    RCP<MultiVectorBase<Scalar> > hess_vec_prod_f_px_out = outArgs.get_hess_vec_prod_f_px(l1);
+
+    TEST_EQUALITY(hess_vec_prod_f_xp_out, hess_vec_prod_f_xp);
+    TEST_EQUALITY(hess_vec_prod_f_px_out, hess_vec_prod_f_px);
+
+    for (int l2=0; l2<p_size; ++l2)
+    {
+      auto hess_vec_prod_f_pp_tmp = Thyra::createMembers(p_space_l1, p_size);
+      RCP<MultiVectorBase<Scalar> > hess_vec_prod_f_pp(hess_vec_prod_f_pp_tmp);
+
+      outArgs.set_hess_vec_prod_f_pp(l1, l2, hess_vec_prod_f_pp);
+
+      RCP<MultiVectorBase<Scalar> > hess_vec_prod_f_pp_out = outArgs.get_hess_vec_prod_f_pp(l1, l2);
+
+      TEST_EQUALITY(hess_vec_prod_f_pp_out, hess_vec_prod_f_pp);
+    }
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, set_hess_vec_prod_f_get_hess_vec_prod_f )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_hess_vec_prod_g_get_hess_vec_prod_g, Scalar )
+{
+  typedef ModelEvaluatorBase MEB;
+  const Ordinal x_size = 2;
+  const Ordinal g_size = 2;
+  const Ordinal p_size = 3;
+  const RCP<const ModelEvaluator<Scalar> > model =
+    dummyTestModelEvaluator<Scalar>(x_size, Teuchos::tuple<Ordinal>(1,1,1), Teuchos::tuple<Ordinal>(1,1), false, false, true, true, true);
+  MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+
+  out << "Test that 'hess_vec_prod_g' can be set and gotten as a DerivativeMultiVector<Scalar>!\n";
+  for (int j=0; j<g_size; ++j)
+  {
+    auto g_space = model->get_g_space(j);
+
+    auto hess_vec_prod_g_xx_tmp = Thyra::createMembers(g_space, g_size);
+
+    RCP<MultiVectorBase<Scalar> > hess_vec_prod_g_xx(hess_vec_prod_g_xx_tmp);
+
+    outArgs.set_hess_vec_prod_g_xx(j, hess_vec_prod_g_xx);
+
+    RCP<MultiVectorBase<Scalar> > hess_vec_prod_g_xx_out = outArgs.get_hess_vec_prod_g_xx(j);
+
+    TEST_EQUALITY(hess_vec_prod_g_xx_out, hess_vec_prod_g_xx);
+
+    for (int l1=0; l1<p_size; ++l1)
+    {
+      auto p_space_l1 = model->get_p_space(l1);
+
+      auto hess_vec_prod_g_xp_tmp = Thyra::createMembers(g_space, g_size);
+      auto hess_vec_prod_g_px_tmp = Thyra::createMembers(p_space_l1, p_size);
+
+      RCP<MultiVectorBase<Scalar> > hess_vec_prod_g_xp(hess_vec_prod_g_xp_tmp);
+      RCP<MultiVectorBase<Scalar> > hess_vec_prod_g_px(hess_vec_prod_g_px_tmp);
+
+      outArgs.set_hess_vec_prod_g_xp(j, l1, hess_vec_prod_g_xp);
+      outArgs.set_hess_vec_prod_g_px(j, l1, hess_vec_prod_g_px);
+
+      RCP<MultiVectorBase<Scalar> > hess_vec_prod_g_xp_out = outArgs.get_hess_vec_prod_g_xp(j, l1);
+      RCP<MultiVectorBase<Scalar> > hess_vec_prod_g_px_out = outArgs.get_hess_vec_prod_g_px(j, l1);
+
+      TEST_EQUALITY(hess_vec_prod_g_xp_out, hess_vec_prod_g_xp);
+      TEST_EQUALITY(hess_vec_prod_g_px_out, hess_vec_prod_g_px);
+
+      for (int l2=0; l2<p_size; ++l2)
+      {
+        auto hess_vec_prod_g_pp_tmp = Thyra::createMembers(p_space_l1, p_size);
+        RCP<MultiVectorBase<Scalar> > hess_vec_prod_g_pp(hess_vec_prod_g_pp_tmp);
+
+        outArgs.set_hess_vec_prod_g_pp(j, l1, l2, hess_vec_prod_g_pp);
+
+        RCP<MultiVectorBase<Scalar> > hess_vec_prod_g_pp_out = outArgs.get_hess_vec_prod_g_pp(j, l1, l2);
+
+        TEST_EQUALITY(hess_vec_prod_g_pp_out, hess_vec_prod_g_pp);
+      }
+    }
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, set_hess_vec_prod_g_get_hess_vec_prod_g )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_hess_f_get_hess_f, Scalar )
+{
+  typedef ModelEvaluatorBase MEB;
+  const Ordinal x_size = 2;
+  const Ordinal g_size = 2;
+  const Ordinal p_size = 3;
+  const RCP<const ModelEvaluator<Scalar> > model =
+    dummyTestModelEvaluator<Scalar>(x_size, Teuchos::tuple<Ordinal>(1,1,1), Teuchos::tuple<Ordinal>(1,1), false, false, true, true, true);
+  MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+
+  out << "Test that 'hess_f' can be set and gotten as a RCP<LinearOpBase<Scalar> >!\n";
+
+  auto g_space = model->get_g_space(0);
+
+  auto hess_f_xx_tmp = Thyra::createMembers(g_space, g_size);
+
+  RCP<LinearOpBase<Scalar> > hess_f_xx(hess_f_xx_tmp);
+
+  outArgs.set_hess_f_xx(hess_f_xx);
+
+  RCP<LinearOpBase<Scalar> > hess_f_xx_out = outArgs.get_hess_f_xx();
+
+  TEST_EQUALITY(hess_f_xx_out, hess_f_xx);
+
+  for (int l1=0; l1<p_size; ++l1)
+  {
+    auto p_space_l1 = model->get_p_space(l1);
+
+    auto hess_f_xp_tmp = Thyra::createMembers(g_space, g_size);
+
+    RCP<LinearOpBase<Scalar> > hess_f_xp(hess_f_xp_tmp);
+
+    outArgs.set_hess_f_xp(l1, hess_f_xp);
+
+    RCP<LinearOpBase<Scalar> > hess_f_xp_out = outArgs.get_hess_f_xp(l1);
+
+    TEST_EQUALITY(hess_f_xp_out, hess_f_xp);
+
+    for (int l2=0; l2<p_size; ++l2)
+    {
+      auto hess_f_pp_tmp = Thyra::createMembers(p_space_l1, p_size);
+      RCP<LinearOpBase<Scalar> > hess_f_pp(hess_f_pp_tmp);
+
+      outArgs.set_hess_f_pp(l1, l2, hess_f_pp);
+
+      RCP<LinearOpBase<Scalar> > hess_f_pp_out = outArgs.get_hess_f_pp(l1, l2);
+
+      TEST_EQUALITY(hess_f_pp_out, hess_f_pp);
+    }
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, set_hess_f_get_hess_f )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_hess_g_get_hess_g, Scalar )
+{
+  typedef ModelEvaluatorBase MEB;
+  const Ordinal x_size = 2;
+  const Ordinal g_size = 2;
+  const Ordinal p_size = 3;
+  const RCP<const ModelEvaluator<Scalar> > model =
+    dummyTestModelEvaluator<Scalar>(x_size, Teuchos::tuple<Ordinal>(1,1,1), Teuchos::tuple<Ordinal>(1,1), false, false, true, true, true);
+  MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+
+  out << "Test that 'hess_g' can be set and gotten as a RCP<LinearOpBase<Scalar> >!\n";
+  for (int j=0; j<g_size; ++j)
+  {
+    auto g_space = model->get_g_space(j);
+
+    auto hess_g_xx_tmp = Thyra::createMembers(g_space, g_size);
+
+    RCP<LinearOpBase<Scalar> > hess_g_xx(hess_g_xx_tmp);
+
+    outArgs.set_hess_g_xx(j, hess_g_xx);
+
+    RCP<LinearOpBase<Scalar> > hess_g_xx_out = outArgs.get_hess_g_xx(j);
+
+    TEST_EQUALITY(hess_g_xx_out, hess_g_xx);
+
+    for (int l1=0; l1<p_size; ++l1)
+    {
+      auto p_space_l1 = model->get_p_space(l1);
+
+      auto hess_g_xp_tmp = Thyra::createMembers(g_space, g_size);
+
+      RCP<LinearOpBase<Scalar> > hess_g_xp(hess_g_xp_tmp);
+
+      outArgs.set_hess_g_xp(j, l1, hess_g_xp);
+
+      RCP<LinearOpBase<Scalar> > hess_g_xp_out = outArgs.get_hess_g_xp(j, l1);
+
+      TEST_EQUALITY(hess_g_xp_out, hess_g_xp);
+
+      for (int l2=0; l2<p_size; ++l2)
+      {
+        auto hess_g_pp_tmp = Thyra::createMembers(p_space_l1, p_size);
+        RCP<LinearOpBase<Scalar> > hess_g_pp(hess_g_pp_tmp);
+
+        outArgs.set_hess_g_pp(j, l1, l2, hess_g_pp);
+
+        RCP<LinearOpBase<Scalar> > hess_g_pp_out = outArgs.get_hess_g_pp(j, l1, l2);
+
+        TEST_EQUALITY(hess_g_pp_out, hess_g_pp);
+      }
+    }
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, set_hess_g_get_hess_g )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_H_get_H, Scalar )
+{
+  typedef ModelEvaluatorBase MEB;
+  const Ordinal x_size = 2;
+  const Ordinal g_size = 2;
+  const Ordinal p_size = 3;
+  const RCP<const ModelEvaluator<Scalar> > model =
+    dummyTestModelEvaluator<Scalar>(x_size, Teuchos::tuple<Ordinal>(1,1,1), Teuchos::tuple<Ordinal>(1,1), false, false, true, true, true);
+  MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+
+  out << "Test that 'H' can be set and gotten as a RCP<LinearOpBase<Scalar> >!\n";
+
+  auto g_space = model->get_g_space(0);
+
+  auto H_xx_tmp = Thyra::createMembers(g_space, g_size);
+
+  RCP<LinearOpBase<Scalar> > H_xx(H_xx_tmp);
+
+  outArgs.set_H_xx(H_xx);
+
+  RCP<LinearOpBase<Scalar> > H_xx_out = outArgs.get_H_xx();
+
+  TEST_EQUALITY(H_xx_out, H_xx);
+
+  for (int l1=0; l1<p_size; ++l1)
+  {
+    auto p_space_l1 = model->get_p_space(l1);
+
+    auto H_xp_tmp = Thyra::createMembers(g_space, g_size);
+
+    RCP<LinearOpBase<Scalar> > H_xp(H_xp_tmp);
+
+    outArgs.set_H_xp(l1, H_xp);
+
+    RCP<LinearOpBase<Scalar> > H_xp_out = outArgs.get_H_xp(l1);
+
+    TEST_EQUALITY(H_xp_out, H_xp);
+
+    for (int l2=0; l2<p_size; ++l2)
+    {
+      auto H_pp_tmp = Thyra::createMembers(p_space_l1, p_size);
+      RCP<LinearOpBase<Scalar> > H_pp(H_pp_tmp);
+
+      outArgs.set_H_pp(l1, l2, H_pp);
+
+      RCP<LinearOpBase<Scalar> > H_pp_out = outArgs.get_H_pp(l1, l2);
+
+      TEST_EQUALITY(H_pp_out, H_pp);
+    }
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, set_H_get_H )
 
 //
 // MEB::InArgs
@@ -248,7 +565,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( InArgs, setSolutionArgs, Scalar )
 {
   //const RCP<const ModelEvaluator<Scalar> > model = getXGTestModel<Scalar>(2, 1);
   const RCP<const ModelEvaluator<Scalar> > model = 
-    dummyTestModelEvaluator<Scalar>(2, null, Teuchos::tuple<Ordinal>(1), true, true);
+    dummyTestModelEvaluator<Scalar>(2, Teuchos::tuple<Ordinal>(1), Teuchos::tuple<Ordinal>(1), true, true);
 
   auto inArgs = model->createInArgs();
 
@@ -261,6 +578,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( InArgs, setSolutionArgs, Scalar )
   RCP<VectorBase<Scalar>> x_dot_dot = createMember(model->get_x_space());
   inArgs.set_x_dot_dot(x_dot_dot);
 
+  RCP<VectorBase<Scalar>> x_direction = createMember(model->get_x_space());
+  inArgs.set_x_direction(x_direction);
+
+  RCP<VectorBase<Scalar>> p_direction = createMember(model->get_p_space(0));
+  inArgs.set_p_direction(0, p_direction);
+
+  RCP<VectorBase<Scalar>> f_multiplier = createMember(model->get_x_space());
+  inArgs.set_f_multiplier(f_multiplier);
+
+  RCP<VectorBase<Scalar>> g_multiplier = createMember(model->get_x_space());
+  inArgs.set_g_multiplier(0, g_multiplier);
+
   auto inArgs2 = model->createInArgs();
   inArgs2.setArgs(inArgs);
 
@@ -272,6 +601,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( InArgs, setSolutionArgs, Scalar )
 
   auto x_dot_dot_out = inArgs2.get_x_dot_dot();
   TEST_EQUALITY(x_dot_dot_out, x_dot_dot);
+
+  auto x_direction_out = inArgs2.get_x_direction();
+  TEST_EQUALITY(x_direction_out, x_direction);
+
+  auto p_direction_out = inArgs2.get_p_direction(0);
+  TEST_EQUALITY(p_direction_out, p_direction);
+
+  auto f_multiplier_out = inArgs2.get_f_multiplier();
+  TEST_EQUALITY(f_multiplier_out, f_multiplier);
+
+  auto g_multiplier_out = inArgs2.get_g_multiplier(0);
+  TEST_EQUALITY(g_multiplier_out, g_multiplier);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( InArgs, setSolutionArgs )

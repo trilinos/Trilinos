@@ -466,7 +466,7 @@ namespace Tpetra {
     /// execution_space's execution space.
     using dual_view_type = Kokkos::DualView<impl_scalar_type**,
                                             Kokkos::LayoutLeft,
-                                            execution_space>;
+                                            device_type>;
 
     //@}
     //! @name Constructors and destructor
@@ -2331,7 +2331,8 @@ namespace Tpetra {
     (const SrcDistObject& sourceObj,
      const size_t numSameIDs,
      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs);
+     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+     const CombineMode CM);
 
     virtual void
     packAndPrepare

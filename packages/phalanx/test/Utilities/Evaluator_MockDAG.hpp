@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -57,12 +57,12 @@ namespace PHX {
     void postRegistrationSetup(typename Traits::SetupData d,
 			       PHX::FieldManager<Traits>& fm);
     void evaluateFields(typename Traits::EvalData d);
-    void evaluates(const std::string& field_name);
-    void requires(const std::string& field_name);
-    void contributes(const std::string& field_name);
+    void evaluates(const std::string& field_name, const bool use_dynamic_layout=false);
+    void requires(const std::string& field_name, const bool use_dynamic_layout=false);
+    void contributes(const std::string& field_name, const bool use_dynamic_layout=false);
     void unshared(const std::string& field_name);
   };
-  
+
 }
 
 #include "Evaluator_MockDAG_Def.hpp"

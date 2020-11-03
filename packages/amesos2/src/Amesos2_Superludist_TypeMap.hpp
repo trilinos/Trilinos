@@ -57,6 +57,9 @@
 #ifndef AMESOS2_SUPERLUDIST_TYPEMAP_HPP
 #define AMESOS2_SUPERLUDIST_TYPEMAP_HPP
 
+//#if SUPERLU_DIST_MAJOR_VERSION > 6 || (SUPERLU_DIST_MAJOR_VERSION == 6 && SUPERLU_DIST_MINOR_VERSION > 2)
+//#endif
+
 #include <functional>
 
 #include <Teuchos_as.hpp>
@@ -66,9 +69,12 @@
 
 #include "Amesos2_TypeMap.hpp"
 
+
 namespace SLUD {
 
 extern "C" {
+
+#include "superlu_dist_config.h" // provides define for size 32 or 64 int_t
 
   /// use the same function with name space in the macro
 #define USER_FREE(addr) SLUD::superlu_free_dist(addr)
@@ -77,6 +83,7 @@ extern "C" {
   // SuperLU enabled
 #undef __SUPERLU_SUPERMATRIX
 #include "superlu_defs.h"
+//
 
 #if SUPERLU_DIST_MAJOR_VERSION > 4
   typedef superlu_dist_options_t   amesos2_superlu_dist_options_t;
@@ -86,6 +93,7 @@ extern "C" {
   typedef superlu_options_t        amesos2_superlu_dist_options_t;
   typedef mem_usage_t              amesos2_superlu_dist_mem_usage_t;
 #endif
+
 
   namespace D {
 #include "superlu_ddefs.h"	// double-precision real definitions
@@ -97,7 +105,10 @@ extern "C" {
   }
 #endif  // HAVE_TEUCHOS_COMPLEX
 
+
 } // end extern "C"
+
+
 #if defined(HAVE_TEUCHOS_COMPLEX)  && !defined(__clang__)
 
   // Declare and specialize a std::binary_funtion class for
@@ -233,8 +244,15 @@ struct TypeMap<Superludist,double>
   static const SLUD::Dtype_t dtype = SLUD::SLU_D;
   typedef double type;
   typedef double magnitude_type;
+#if SUPERLU_DIST_MAJOR_VERSION > 6 || (SUPERLU_DIST_MAJOR_VERSION == 6 && SUPERLU_DIST_MINOR_VERSION > 2)
+  typedef SLUD::D::dLUstruct_t LUstruct_t;
+  typedef SLUD::D::dSOLVEstruct_t SOLVEstruct_t;
+  typedef SLUD::D::dScalePermstruct_t ScalePermstruct_t;
+#else
   typedef SLUD::D::LUstruct_t LUstruct_t;
   typedef SLUD::D::SOLVEstruct_t SOLVEstruct_t;
+  typedef SLUD::ScalePermstruct_t ScalePermstruct_t;
+#endif
 };
 
 #if defined(HAVE_TEUCHOS_COMPLEX) && !defined(__clang__)
@@ -244,8 +262,15 @@ struct TypeMap<Superludist,std::complex<double> >
   static const SLUD::Dtype_t dtype = SLUD::SLU_Z;
   typedef SLUD::Z::doublecomplex type;
   typedef double magnitude_type;
+#if SUPERLU_DIST_MAJOR_VERSION > 6 || (SUPERLU_DIST_MAJOR_VERSION == 6 && SUPERLU_DIST_MINOR_VERSION > 2)
+  typedef SLUD::Z::zLUstruct_t LUstruct_t;
+  typedef SLUD::Z::zSOLVEstruct_t SOLVEstruct_t;
+  typedef SLUD::Z::zScalePermstruct_t ScalePermstruct_t;
+#else
   typedef SLUD::Z::LUstruct_t LUstruct_t;
   typedef SLUD::Z::SOLVEstruct_t SOLVEstruct_t;
+  typedef SLUD::ScalePermstruct_t ScalePermstruct_t;
+#endif
 };
 
   // It probably won't happen, but what if someone does create a
@@ -257,8 +282,15 @@ struct TypeMap<Superludist,SLUD::Z::doublecomplex>
   static const SLUD::Dtype_t dtype = SLUD::SLU_Z;
   typedef SLUD::Z::doublecomplex type;
   typedef double magnitude_type;
+#if SUPERLU_DIST_MAJOR_VERSION > 6 || (SUPERLU_DIST_MAJOR_VERSION == 6 && SUPERLU_DIST_MINOR_VERSION > 2)
+  typedef SLUD::Z::zLUstruct_t LUstruct_t;
+  typedef SLUD::Z::zSOLVEstruct_t SOLVEstruct_t;
+  typedef SLUD::Z::zScalePermstruct_t ScalePermstruct_t;
+#else
   typedef SLUD::Z::LUstruct_t LUstruct_t;
   typedef SLUD::Z::SOLVEstruct_t SOLVEstruct_t;
+  typedef SLUD::ScalePermstruct_t ScalePermstruct_t;
+#endif
 };
 
 #endif	// HAVE_TEUCHOS_COMPLEX

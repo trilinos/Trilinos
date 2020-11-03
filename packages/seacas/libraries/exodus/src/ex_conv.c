@@ -1,49 +1,10 @@
 /*
- * Copyright (c) 2005-2017, 2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * See packages/seacas/LICENSE for details
  */
-/*****************************************************************************
- *
- * exutils - exodus utilities
- *
- * entry conditions -
- *
- * exit conditions -
- *
- * revision history -
- *
- *
- *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex__file_item, EX_FATAL, etc
@@ -99,7 +60,11 @@ int ex__check_multiple_open(const char *path, int mode, const char *func)
                  " File corruption or incorrect behavior can occur.\n",
                  path);
         ex_err(func, errmsg, EX_BADFILEID);
+#if defined BUILT_IN_SIERRA
+        EX_FUNC_LEAVE(EX_NOERR);
+#else
         EX_FUNC_LEAVE(EX_FATAL);
+#endif
       }
     }
     ptr = ptr->next;
@@ -107,24 +72,27 @@ int ex__check_multiple_open(const char *path, int mode, const char *func)
   EX_FUNC_LEAVE(EX_NOERR);
 }
 
-void ex__check_valid_file_id(int exoid, const char *func)
+int ex__check_valid_file_id(int exoid, const char *func)
 {
-  int error = 0;
+  bool error = false;
   if (exoid <= 0) {
-    error = 1;
+    error = true;
   }
 #if !defined BUILT_IN_SIERRA
   else {
     struct ex__file_item *file = ex__find_file_item(exoid);
 
     if (!file) {
-      error = 1;
+      error = true;
     }
   }
 #endif
 
   if (error) {
-    ex_opts(EX_ABORT | EX_VERBOSE);
+    int old_opt = ex_opts(EX_VERBOSE);
+    if (old_opt & EX_ABORT) {
+      ex_opts(EX_VERBOSE | EX_ABORT);
+    }
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: In \"%s\", the file id %d was not obtained via a call "
@@ -133,7 +101,10 @@ void ex__check_valid_file_id(int exoid, const char *func)
              "corruption or data loss or other potential problems.",
              func, exoid);
     ex_err(__func__, errmsg, EX_BADFILEID);
+    ex_opts(old_opt);
+    return EX_FATAL;
   }
+  return EX_NOERR;
 }
 
 int ex__conv_init(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsize,

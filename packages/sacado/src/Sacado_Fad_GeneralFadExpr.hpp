@@ -57,7 +57,7 @@ namespace Sacado {
       typedef typename BaseExpr< GeneralFad<T,Storage> >::type base_expr_type;
 
       //! Default constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr() :
         GeneralFad<T,Storage>() {}
 
@@ -66,7 +66,7 @@ namespace Sacado {
        * Initializes value to \c x and derivative array is empty
        */
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
         GeneralFad<T,Storage>(x) {}
 
@@ -74,7 +74,7 @@ namespace Sacado {
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const int sz, const T & x, const DerivInit zero_out = InitDerivArray) :
         GeneralFad<T,Storage>(sz,x,zero_out) {}
 
@@ -84,28 +84,28 @@ namespace Sacado {
        * as row \c i of the identity matrix, i.e., sets derivative component
        * \c i to 1 and all other's to zero.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const int sz, const int i, const T & x) :
         GeneralFad<T,Storage>(sz,i,x) {}
 
       //! Constructor with supplied storage \c s
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const Storage& s) :
         GeneralFad<T,Storage>(s) {}
 
       //! Copy constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const Expr& x) :
         GeneralFad<T,Storage>(static_cast<const GeneralFad<T,Storage>&>(x)) {}
 
       //! Copy constructor from any Expression object
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       Expr(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL) :
         GeneralFad<T,Storage>(x) {}
 
       //! Destructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ~Expr() {}
 
     }; // class Expr<GeneralFad>

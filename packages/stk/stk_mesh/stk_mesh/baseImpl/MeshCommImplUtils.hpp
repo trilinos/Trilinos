@@ -80,10 +80,85 @@ void unpack_induced_parts_from_sharers(OrdinalVector& induced_parts,
 
 void pack_and_send_induced_parts_from_sharers_to_owners(const BulkData& bulkData, stk::CommSparse& comm, EntityCommListInfoVector& entity_comm_list);
 
+bool pack_and_send_modified_shared_entity_states(stk::CommSparse& comm,
+                                                 const BulkData& bulk,
+                                                 const EntityCommListInfoVector& commList);
+
+void pack_entity_keys_to_send(stk::CommSparse &comm,
+                              const std::vector<stk::mesh::EntityKeyProc> &entities_to_send_data);
+
+void unpack_entity_keys_from_procs(stk::CommSparse &comm,
+                                   std::vector<stk::mesh::EntityKey> &receivedEntityKeys);
+
+void unpack_shared_entities(const BulkData& mesh,
+                            stk::CommSparse &comm,
+                            std::vector< std::pair<int, shared_entity_type> > &shared_entities_and_proc);
+
 void filter_out_unneeded_induced_parts(const BulkData& bulkData,
                                        Entity entity,
                                        const OrdinalVector& induced_parts,
                                        OrdinalVector& remove_parts);
+
+void communicate_shared_entity_info(const BulkData &mesh,
+                                 stk::CommSparse &comm,
+                                 std::vector<std::vector<shared_entity_type> > &shared_entities);
+
+void communicateSharingInfoToProcsThatShareEntity(
+                           const int numProcs,
+                           const int myProcId,
+                           stk::CommSparse& commStage2,
+                           stk::mesh::EntityToDependentProcessorsMap &entityKeySharing);
+
+void unpackCommunicationsAndStoreSharedEntityToProcPair(
+                    const int numProcs,
+                    const int myProcId,
+                    stk::CommSparse& commStage2,
+                    std::vector<std::pair<stk::mesh::EntityKey, int> >& sharedEntities);
+
+bool is_received_entity_in_local_shared_entity_list(
+                      bool use_entity_ids_for_resolving_sharing,
+                      const std::vector<shared_entity_type>::iterator &shared_itr,
+                      const std::vector<shared_entity_type>& shared_entities_this_proc,
+                      const shared_entity_type &shared_entity_from_other_proc);
+
+bool ghost_id_is_found_in_comm_data(const PairIterEntityComm& comm_data,
+                                    int entity_owner,
+                                    int ghost_id);
+
+bool all_ghost_ids_are_found_in_comm_data(const PairIterEntityComm& comm_data,
+                                          int entity_owner,
+                                          const std::vector<int>& recvd_ghost_ids);
+
+void comm_shared_procs(const EntityCommInfoVector& commInfoVec,
+                       std::vector<int>& sharingProcs);
+
+void fill_sorted_procs(const PairIterEntityComm& ec, std::vector<int>& procs);
+
+void fill_ghosting_procs(const PairIterEntityComm& ec, unsigned ghost_id, std::vector<int>& procs);
+
+inline
+bool is_comm_ordered(const PairIterEntityComm& ec)
+{
+  int n = ec.size();
+  for (int i=1; i<n; ++i) {
+    if (!(ec[i-1] < ec[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+inline
+PairIterEntityComm get_entity_comm_range(const EntityCommListInfo& entityCommListInfo)
+{
+  if (entityCommListInfo.entity_comm != nullptr) {
+    return PairIterEntityComm(entityCommListInfo.entity_comm->comm_map.begin(),
+                              entityCommListInfo.entity_comm->comm_map.end());
+  }
+
+  return PairIterEntityComm();
+}
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

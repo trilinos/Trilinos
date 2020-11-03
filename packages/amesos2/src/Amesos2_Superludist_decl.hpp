@@ -294,7 +294,9 @@ private:
     Teuchos::Array<magnitude_type> berr; ///< backward error bounds
     Teuchos::Array<magnitude_type> ferr; ///< forward error bounds
 
-    SLUD::ScalePermstruct_t        scale_perm; // R, C, perm_r, and perm_c found in here
+    // Pick up data type specific ScalePermstruct_t
+    typename type_map::ScalePermstruct_t        scale_perm; // R, C, perm_r, and perm_c found in here
+
     Teuchos::Array<magnitude_type> R, C;       // equilibration scalings
     Teuchos::Array<magnitude_type> R1, C1;     // row-permutation scalings
     Teuchos::Array<SLUD::int_t>    perm_r, perm_c;
@@ -308,9 +310,9 @@ private:
   /// Stores the values of the nonzero entries for SuperLU_DIST
   Teuchos::Array<slu_type> nzvals_;
   /// Stores the row indices of the nonzero entries
-  Teuchos::Array<int> colind_;
+  Teuchos::Array<SLUD::int_t> colind_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
-  Teuchos::Array<int> rowptr_;
+  Teuchos::Array<SLUD::int_t> rowptr_;
   /// 1D store for B values
   mutable Teuchos::Array<slu_type> bvals_;
   /// 1D store for X values

@@ -52,9 +52,6 @@ void parse_command_line(int argc,
                         MPI_Comm comm);
 namespace parallel {
 void print_and_exit(const std::string &msg, MPI_Comm comm);
-void require(bool requirement, const std::string &msg, MPI_Comm comm);
-bool does_file_exist(const std::string& filename);
-void require_file_exists(const std::string& inFile, const std::string& execName, const std::string& quickExample, MPI_Comm comm);
 }
 
 

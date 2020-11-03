@@ -87,6 +87,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
       )
   ENDIF()
 
+
   IF(${PACKAGE_NAME}_ENABLE_Belos AND
       ${PACKAGE_NAME}_ENABLE_MueLu)
 
@@ -123,12 +124,25 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
           NUM_MPI_PROCS 4
           COMM mpi
           )
+
+	ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AvatarT)
+	IF( TPL_ENABLE_AVATAR OR ${PACKAGE_NAME}_ENABLE_AvatarT)
+	  TRIBITS_ADD_TEST(
+	    Example_Maxwell
+	    NAME Example_Maxwell_Avatar
+	    ARGS "--inputParams=Maxwell_avatar.xml"
+	    NUM_MPI_PROCS 1
+	    COMM mpi serial
+	    )
+	  
+	ENDIF()
+
       ENDIF()
     ENDIF() # MueLu_ENABLE_Epetra
   ENDIF()
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMaxwellFiles
-    SOURCE_FILES Maxwell.xml Ninja.xml
+    SOURCE_FILES Maxwell.xml Ninja.xml Maxwell_avatar.xml
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
     )
@@ -256,6 +270,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyMeshFilesSTK
   SOURCE_FILES unit_cube_10int_hex.exo
                unit_cube_5int_tet.exo
+	       unit_cube_int_tri.exo
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   )
@@ -321,6 +336,20 @@ IF(${PACKAGE_NAME}_ENABLE_Belos AND
       TrilinosCouplings_Pamgen_Utils.cpp
     COMM serial mpi
     )
+
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AvatarT)
+  IF( TPL_ENABLE_AVATAR OR ${PACKAGE_NAME}_ENABLE_AvatarT)
+    TRIBITS_ADD_TEST(
+      IntrepidPoisson_Pamgen_Tpetra
+      NAME IntrepidPoisson_Pamgen_Avatar
+      ARGS "--inputParams=Poisson_avatar.xml"
+      NUM_MPI_PROCS 1
+      COMM mpi serial
+      )
+
+  ENDIF()
+
+
 ENDIF()
 
 # mfh 24 May 2012
@@ -465,4 +494,33 @@ IF(${PACKAGE_NAME}_ENABLE_Belos AND
    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
    )
+ENDIF()
+
+
+# Just build this executable; don't run it as a test.
+IF (${PACKAGE_NAME}_ENABLE_Pamgen AND 
+    ${PACKAGE_NAME}_ENABLE_SEACASExodus AND
+    ${PACKAGE_NAME}_ENABLE_SEACASNemesis)
+  message("-- TrilinosCouplings: Building rtpamgen")
+   TRIBITS_ADD_EXECUTABLE(
+     rtpamgen
+     SOURCES rtpamgen.cpp
+     COMM serial mpi
+     )
+   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestRtpamgen
+     SOURCE_FILES test.rtp
+     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+     DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+     )
+
+   
+  TRIBITS_ADD_TEST(
+   rtpamgen
+   NAME "RTpamgen_test"
+   ARGS "--file=test.rtp"
+   COMM serial mpi
+   NUM_MPI_PROCS 1
+   )
+
+
 ENDIF()

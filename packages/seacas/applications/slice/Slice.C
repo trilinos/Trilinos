@@ -1,35 +1,8 @@
-// Copyright(C) 2016-2017, 2020 National Technology & Engineering Solutions of
-// Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above
-//   copyright notice, this list of conditions and the following
-//   disclaimer in the documentation and/or other materials provided
-//   with the distribution.
-//
-// * Neither the name of NTESS nor the names of its
-//   contributors may be used to endorse or promote products derived
-//   from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// See packages/seacas/LICENSE for details
 
 #include <SL_SystemInterface.h>
 #include <SL_tokenize.h>
@@ -1241,7 +1214,7 @@ namespace {
 
           ex_get_partial_conn(exoid, EX_ELEM_BLOCK, block_id, beg, count, glob_conn.data(), nullptr,
                               nullptr);
-          progress("\tpartial_conn: " + std::to_string(beg) + " " + std::to_string(count));
+          progress(fmt::format("\tpartial_conn-- start: {:L}\tcount: {:L}", beg, count));
 
           size_t el = 0;
           for (size_t j = 0; j < count; j++) {
@@ -1366,7 +1339,7 @@ namespace {
 
           ex_get_partial_conn(exoid, EX_ELEM_BLOCK, block_id, beg, count, glob_conn.data(), nullptr,
                               nullptr);
-          progress("\tpartial_conn: " + std::to_string(beg) + " " + std::to_string(count));
+          progress(fmt::format("\tpartial_conn-- start: {:L}\tcount: {:L}", beg, count));
 
           size_t el = 0;
           for (size_t j = 0; j < count; j++) {
@@ -1436,7 +1409,7 @@ namespace {
     }
     // Output histogram..
     fmt::print(stderr, "Processor count per node histogram:\n");
-    for (size_t i = 0; i < proc_histo.size(); i++) {
+    for (size_t i = 1; i < proc_histo.size(); i++) {
       if (proc_histo[i] > 0) {
         fmt::print(stderr, "\tNodes on {:2n} processors = {:12n}\t({:2})%\n", i, proc_histo[i],
                    (proc_histo[i] * 100 + node_count / 2) / node_count);

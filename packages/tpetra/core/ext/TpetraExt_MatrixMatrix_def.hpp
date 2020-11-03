@@ -813,10 +813,7 @@ add (const Scalar& alpha,
                               col_inds_array, global_col_inds_array,
                               typename map_type::local_map_type>
         (localColinds, globalColinds, CcolMap->getLocalMap()));
-    //TODO: use KokkosKernels batched sort on device as soon as it's available
-    //But now, have to sort on host (using UVM)
-    exec_space().fence();
-    Tpetra::Import_Util::sortCrsEntries(rowptrs, localColinds, vals);
+    KokkosKernels::Impl::sort_crs_matrix<exec_space, row_ptrs_array, col_inds_array, values_array>(rowptrs, localColinds, vals);
     C.setAllValues(rowptrs, localColinds, vals);
     C.fillComplete(CDomainMap, CRangeMap, params);
     if(!doFillComplete)
@@ -1684,7 +1681,7 @@ void mult_A_B_newmatrix(
   // Run through all the hash table lookups once and for all
   lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
   lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
-  Kokkos::fence();
+
   Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::construct_tables",range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
       GO aidx = Acolmap_local.getGlobalElement(i);
       LO B_LID = Browmap_local.getLocalElement(aidx);
@@ -2019,8 +2016,6 @@ void mult_A_B_reuse(
       }
     });
 
-  Kokkos::fence();
-
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
   KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::mult_A_B_reuse_kernel_wrapper(Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
@@ -2324,8 +2319,6 @@ void jacobi_A_B_newmatrix(
 
       }
     });
-
-  Kokkos::fence();
 
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
@@ -2670,8 +2663,6 @@ void jacobi_A_B_reuse(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null;
 #endif
-
-  Kokkos::fence();
 
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
@@ -3167,12 +3158,11 @@ addSorted(
   typename MMdetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Ccolinds)
 {
   using Teuchos::TimeMonitor;
+  using AddKern = MMdetails::AddKernels<SC, LO, GO, NO>;
   TEUCHOS_TEST_FOR_EXCEPTION(Arowptrs.extent(0) != Browptrs.extent(0), std::runtime_error, "Can't add matrices with different numbers of rows.");
   auto nrows = Arowptrs.extent(0) - 1;
   Crowptrs = row_ptrs_array(Kokkos::ViewAllocateWithoutInitializing("C row ptrs"), nrows + 1);
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<typename col_inds_array::size_type, LO, impl_scalar_type,
-              execution_space, memory_space, memory_space> KKH;
-  KKH handle;
+  typename AddKern::KKH handle;
   handle.create_spadd_handle(true);
   auto addHandle = handle.get_spadd_handle();
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -3185,8 +3175,8 @@ addSorted(
     row_ptrs_array, col_inds_array>
     (&handle, Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
   //KokkosKernels requires values to be zeroed
-  Cvals = values_array("C values", addHandle->get_max_result_nnz());
-  Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_max_result_nnz());
+  Cvals = values_array("C values", addHandle->get_c_nnz());
+  Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null;
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted numeric")));
@@ -3214,13 +3204,12 @@ addUnsorted(
   typename MMdetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Ccolinds)
 {
   using Teuchos::TimeMonitor;
+  using AddKern = MMdetails::AddKernels<SC, LO, GO, NO>;
   TEUCHOS_TEST_FOR_EXCEPTION(Arowptrs.extent(0) != Browptrs.extent(0), std::runtime_error, "Can't add matrices with different numbers of rows.");
   auto nrows = Arowptrs.extent(0) - 1;
   Crowptrs = row_ptrs_array(Kokkos::ViewAllocateWithoutInitializing("C row ptrs"), nrows + 1);
   typedef MMdetails::AddKernels<SC, LO, GO, NO> AddKern;
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<typename col_inds_array::size_type, LO, AddKern::impl_scalar_type,
-              AddKern::execution_space, AddKern::memory_space, AddKern::memory_space> KKH;
-  KKH handle;
+  typename AddKern::KKH handle;
   handle.create_spadd_handle(false);
   auto addHandle = handle.get_spadd_handle();
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -3233,8 +3222,8 @@ addUnsorted(
     row_ptrs_array, col_inds_array>
       (&handle, Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
   //Cvals must be zeroed out
-  Cvals = values_array("C values", addHandle->get_max_result_nnz());
-  Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_max_result_nnz());
+  Cvals = values_array("C values", addHandle->get_c_nnz());
+  Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null;
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted kernel: sorted numeric")));
@@ -3283,6 +3272,10 @@ convertToGlobalAndAdd(
   typename MMdetails::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Ccolinds)
 {
   using Teuchos::TimeMonitor;
+  //Need to use a different KokkosKernelsHandle type than other versions,
+  //since the ordinals are now GO
+  using KKH_GO = KokkosKernels::Experimental::KokkosKernelsHandle<size_t, GO, impl_scalar_type,
+              typename NO::execution_space, typename NO::memory_space, typename NO::memory_space>;
 
   const values_array Avals = A.values;
   const values_array Bvals = B.values;
@@ -3299,9 +3292,7 @@ convertToGlobalAndAdd(
   Kokkos::parallel_for("Tpetra_MatrixMatrix_convertColIndsA", range_type(0, Acolinds.extent(0)), convertA);
   ConvertLocalToGlobalFunctor<GO, col_inds_array, global_col_inds_array, local_map_type> convertB(Bcolinds, BcolindsConverted, BcolMap);
   Kokkos::parallel_for("Tpetra_MatrixMatrix_convertColIndsB", range_type(0, Bcolinds.extent(0)), convertB);
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<typename col_inds_array::size_type, GO, impl_scalar_type,
-              execution_space, memory_space, memory_space> KKH;
-  KKH handle;
+  KKH_GO handle;
   handle.create_spadd_handle(false);
   auto addHandle = handle.get_spadd_handle();
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -3311,10 +3302,10 @@ convertToGlobalAndAdd(
   auto nrows = Arowptrs.extent(0) - 1;
   Crowptrs = row_ptrs_array(Kokkos::ViewAllocateWithoutInitializing("C row ptrs"), nrows + 1);
   KokkosSparse::Experimental::spadd_symbolic
-    <KKH, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, row_ptrs_array, global_col_inds_array>
+    <KKH_GO, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, typename row_ptrs_array::const_type, typename global_col_inds_array::const_type, row_ptrs_array, global_col_inds_array>
     (&handle, Arowptrs, AcolindsConverted, Browptrs, BcolindsConverted, Crowptrs);
-  Cvals = values_array("C values", addHandle->get_max_result_nnz());
-  Ccolinds = global_col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_max_result_nnz());
+  Cvals = values_array("C values", addHandle->get_c_nnz());
+  Ccolinds = global_col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null;
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() diff col map kernel: unsorted numeric")));

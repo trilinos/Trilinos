@@ -1,9 +1,15 @@
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C    NTESS, the U.S. Government retains certain rights in this software.
+C
+C    See packages/seacas/LICENSE for details
+
 C=======================================================================
       SUBROUTINE GRGPARD (PARTYP, INDEV, IPARMS, IPSTR)
 C=======================================================================
 C     .. Same as GRGPAR, but only handles 'DEVICE' and 'SOFTCHAR'for PARTYP
 C     .. this is to avoid issues with passing logical or integer for `iparms`
-      
+
       COMMON /GRPCOC/ DEVNAM(2), DEVCOD(2)
       CHARACTER*3 DEVNAM
       CHARACTER*8 DEVCOD

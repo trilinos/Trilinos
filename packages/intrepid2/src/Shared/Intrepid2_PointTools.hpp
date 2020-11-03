@@ -222,9 +222,9 @@ public:
       const ordinal_type offset = 0 );
 
   /** \brief Computes a lattice of points of a given
-        order on a reference simplex (currently disabled for
-        other cell types).  The output array is
-        (P,D), where
+        order on a reference simplex, quadrilateral or hexahedron
+        (currently disabled for other cell types).
+        The output array is (P,D), where
         \code
         P - number of points per cell
         D - is the spatial dimension
@@ -245,6 +245,69 @@ public:
       const ordinal_type offset = 0 ,
       const EPointType pointType = POINTTYPE_EQUISPACED );
 
+  /** \brief Computes a lattice of points of a given
+        order on a reference line.
+        The output array is (P,D), where
+        \code
+        P - number of points per cell
+        D - is the spatial dimension
+        \endcode
+
+        \param  points      [out] - Output array of point coords
+        \param  order       [in]  - number of points per side, plus 1
+        \param  offset      [in]  - Number of points on boundary to skip
+        \param  pointType   [in]  - flag for point distribution.  Currently equispaced and
+        warp/blend points are supported
+   */
+  template<typename pointValueType, class ...pointProperties>
+  static void
+  getLatticeLine(     Kokkos::DynRankView<pointValueType,pointProperties...> points,
+      const ordinal_type order,
+      const ordinal_type offset = 0 ,
+      const EPointType pointType = POINTTYPE_EQUISPACED );
+
+  /** \brief Computes a lattice of points of a given
+        order on a reference triangle.
+        The output array is (P,D), where
+        \code
+        P - number of points per cell
+        D - is the spatial dimension
+        \endcode
+
+        \param  points      [out] - Output array of point coords
+        \param  order       [in]  - number of points per side, plus 1
+        \param  offset      [in]  - Number of points on boundary to skip
+        \param  pointType   [in]  - flag for point distribution.  Currently equispaced and
+        warp/blend points are supported
+   */
+  template<typename pointValueType, class ...pointProperties>
+  static void
+  getLatticeTriangle(     Kokkos::DynRankView<pointValueType,pointProperties...> points,
+      const ordinal_type order,
+      const ordinal_type offset = 0 ,
+      const EPointType pointType = POINTTYPE_EQUISPACED );
+
+  /** \brief Computes a lattice of points of a given
+        order on a reference tetrahedron.
+        The output array is (P,D), where
+        \code
+        P - number of points per cell
+        D - is the spatial dimension
+        \endcode
+
+        \param  points      [out] - Output array of point coords
+        \param  order       [in]  - number of points per side, plus 1
+        \param  offset      [in]  - Number of points on boundary to skip
+        \param  pointType   [in]  - flag for point distribution.  Currently equispaced and
+        warp/blend points are supported
+   */
+  template<typename pointValueType, class ...pointProperties>
+  static void
+  getLatticeTetrahedron(     Kokkos::DynRankView<pointValueType,pointProperties...> points,
+      const ordinal_type order,
+      const ordinal_type offset = 0 ,
+      const EPointType pointType = POINTTYPE_EQUISPACED );
+
   /** Retrieves the Gauss-Legendre points from PolyLib, but lets us
 	do it in an arbitrary ArrayType.
 	\param  points      [out] - Output array of point coords (P,)
@@ -255,50 +318,6 @@ public:
       const ordinal_type order );
 
 private:
-
-  /** \brief Computes an equispaced lattice of a given
-        order on a reference simplex (currently disabled for
-        other cell types).  The output array is (P,D), where
-        \code
-        P - number of points per cell
-        D - is the spatial dimension
-        \endcode
-
-        \param  points      [out] - Output array of point coords
-        \param  cellType    [in]  - type of reference cell (currently only supports the simplex)
-        \param  order       [in]  - number of points per side, plus 1
-        \param  offset      [in]  - Number of points on boundary to skip
-
-   */
-  template<typename pointValueType, class ...pointProperties>
-  static void
-  getEquispacedLattice(      Kokkos::DynRankView<pointValueType,pointProperties...> points,
-      const shards::CellTopology cellType,
-      const ordinal_type order,
-      const ordinal_type offset = 0 );
-
-
-  /** \brief Computes a warped lattice (ala Warburton's warp-blend points of a given
-        order on a reference simplex (currently disabled for
-        other cell types).  The output array is (P,D), where
-        \code
-        P - number of points per cell
-        D - is the spatial dimension
-        \endcode
-
-        \param  points      [out] - Output array of point coords
-        \param  cellType    [in]  - type of reference cell (currently only supports the simplex)
-        \param  order       [in]  - number of points per side, plus 1
-        \param  offset      [in]  - Number of points on boundary to skip
-
-   */
-  template<typename pointValueType, class ...pointProperties>
-  static void
-  getWarpBlendLattice(     Kokkos::DynRankView<pointValueType,pointProperties...> points,
-      const shards::CellTopology cellType,
-      const ordinal_type order,
-      const ordinal_type offset = 0 );
-
 
   /** \brief Computes an equispaced lattice of a given
         order on the reference line [-1,1].  The output array is

@@ -59,16 +59,19 @@ namespace Details {
 struct TrisolverType {
   enum Enum {
     Internal, //!< Tpetra::CrsMatrix::localSolve
-    HTS       //!< Multicore ShyLU/HTS
+    HTS,      //!< Multicore ShyLU/HTS
+    KSPTRSV   //!< Multicore/GPU KokkosKernels sptrsv
   };
 
   static void loadPLTypeOption (Teuchos::Array<std::string>& type_strs, Teuchos::Array<Enum>& type_enums) {
-    type_strs.resize(2);
+    type_strs.resize(3);
     type_strs[0] = "Internal";
     type_strs[1] = "HTS";
-    type_enums.resize(2);
+    type_strs[2] = "KSPTRSV";
+    type_enums.resize(3);
     type_enums[0] = Internal;
     type_enums[1] = HTS;
+    type_enums[2] = KSPTRSV;
   }
 };
 }
@@ -306,6 +309,7 @@ void LocalSparseTriangularSolver<MatrixType>::initializeState ()
   initializeTime_ = 0.0;
   computeTime_ = 0.0;
   applyTime_ = 0.0;
+  isKokkosKernelsSptrsv_ = false;
   uplo_ = "N";
   diag_ = "N";
 }
@@ -313,7 +317,12 @@ void LocalSparseTriangularSolver<MatrixType>::initializeState ()
 template<class MatrixType>
 LocalSparseTriangularSolver<MatrixType>::
 ~LocalSparseTriangularSolver ()
-{}
+{
+  if (Teuchos::nonnull (kh_))
+  {
+    kh_->destroy_sptrsv_handle();
+  }
+}
 
 template<class MatrixType>
 void
@@ -345,13 +354,17 @@ setParameters (const Teuchos::ParameterList& pl)
     htsImpl_->setParameters (pl);
   }
 
+  if (trisolverType == Details::TrisolverType::KSPTRSV) {
+    kh_ = Teuchos::rcp (new k_handle());
+  }
+
   if (pl.isParameter("trisolver: reverse U"))
     reverseStorage_ = pl.get<bool>("trisolver: reverse U");
 
   TEUCHOS_TEST_FOR_EXCEPTION
-    (reverseStorage_ && trisolverType == Details::TrisolverType::HTS,
+    (reverseStorage_ && (trisolverType == Details::TrisolverType::HTS || trisolverType == Details::TrisolverType::KSPTRSV),
      std::logic_error, "Ifpack2::LocalSparseTriangularSolver::setParameters: "
-     "You are not allowed to enable both HTS and the \"trisolver: reverse U\" "
+     "You are not allowed to enable both HTS or KSPTRSV and the \"trisolver: reverse U\" "
      "options.  See GitHub issue #2647.");
 }
 
@@ -499,6 +512,16 @@ initialize ()
     isInternallyChanged_ = true;
   }
 
+  const bool ksptrsv_valid_uplo = (this->uplo_ != "N");
+  if (Teuchos::nonnull(kh_) && ksptrsv_valid_uplo && this->diag_ != "U")
+  {
+    this->isKokkosKernelsSptrsv_ = true;
+  }
+  else
+  {
+    this->isKokkosKernelsSptrsv_ = false;
+  }
+
   isInitialized_ = true;
   ++numInitialize_;
 }
@@ -535,6 +558,33 @@ compute ()
 
   if (Teuchos::nonnull (htsImpl_))
     htsImpl_->compute (*A_crs_, out_);
+
+  if (Teuchos::nonnull(kh_) && this->isKokkosKernelsSptrsv_)
+  {
+    auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
+    auto Alocal = A_crs->getLocalMatrix();
+    auto ptr    = Alocal.graph.row_map;
+    auto ind    = Alocal.graph.entries;
+    auto val    = Alocal.values;
+
+    auto numRows = Alocal.numRows();
+    const bool is_lower_tri = (this->uplo_ == "L") ? true : false;
+
+    // Destroy existing handle and recreate in case new matrix provided - requires rerunning symbolic analysis
+    kh_->destroy_sptrsv_handle();
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
+    // CuSparse only supports int type ordinals
+    if (std::is_same<Kokkos::Cuda, HandleExecSpace>::value && std::is_same<int,local_ordinal_type >::value)
+    {
+      kh_->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE, numRows, is_lower_tri);
+    }
+    else
+#endif
+    {
+      kh_->create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1, numRows, is_lower_tri);
+    }
+    KokkosSparse::Experimental::sptrsv_symbolic(kh_.getRawPtr(), ptr, ind, val);
+  }
 
   isComputed_ = true;
   ++numCompute_;
@@ -683,39 +733,71 @@ localTriangularSolve (const MV& Y,
   const std::string uplo = this->uplo_;
   const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
     (mode == Teuchos::TRANS ? "T" : "N");
-  const std::string diag = this->diag_;
-  auto A_lcl = this->A_crs_->getLocalMatrix ();
 
-  // NOTE (mfh 20 Aug 2017): KokkosSparse::trsv currently is a
-  // sequential, host-only code.  See
-  // https://github.com/kokkos/kokkos-kernels/issues/48.  This
-  // means that we need to sync to host, then sync back to device
-  // when done.
-  X.sync_host ();
-  const_cast<MV&> (Y).sync_host ();
-  X.modify_host (); // we will write to X
+  if (Teuchos::nonnull(kh_) && this->isKokkosKernelsSptrsv_ && trans == "N")
+  {
+    auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (this->A_);
+    auto A_lclk = A_crs->getLocalMatrix ();
+    auto ptr    = A_lclk.graph.row_map;
+    auto ind    = A_lclk.graph.entries;
+    auto val    = A_lclk.values;
 
-  if (X.isConstantStride () && Y.isConstantStride ()) {
-    auto X_lcl = X.getLocalViewHost ();
-    auto Y_lcl = Y.getLocalViewHost ();
-    KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
-                        A_lcl, Y_lcl, X_lcl);
-  }
-  else {
-    const size_t numVecs =
-      std::min (X.getNumVectors (), Y.getNumVectors ());
+    X.sync_device ();
+    const_cast<MV&> (Y).sync_device ();
+    X.modify_device (); // we will write to X
+
+    const size_t numVecs = std::min (X.getNumVectors (), Y.getNumVectors ());
+
     for (size_t j = 0; j < numVecs; ++j) {
       auto X_j = X.getVector (j);
-      auto Y_j = X.getVector (j);
-      auto X_lcl = X_j->getLocalViewHost ();
-      auto Y_lcl = Y_j->getLocalViewHost ();
-      KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
-                          diag.c_str (), A_lcl, Y_lcl, X_lcl);
+      auto Y_j = Y.getVector (j);
+      auto X_lcl = X_j->getLocalViewDevice ();
+      auto Y_lcl = Y_j->getLocalViewDevice ();
+      auto X_lcl_1d = Kokkos::subview (X_lcl, Kokkos::ALL (), 0);
+      auto Y_lcl_1d = Kokkos::subview (Y_lcl, Kokkos::ALL (), 0);
+      KokkosSparse::Experimental::sptrsv_solve(kh_.getRawPtr(), ptr, ind, val, Y_lcl_1d, X_lcl_1d);
+      // TODO is this fence needed...
+      typename k_handle::HandleExecSpace().fence();
     }
+    // TODO: This forces a sync on host that may be unnecessary, but unclear where users may need to check for this...
+    X.sync_host ();
+    const_cast<MV&> (Y).sync_host ();
   }
+  else
+  {
+    const std::string diag = this->diag_;
+    // NOTE (mfh 20 Aug 2017): KokkosSparse::trsv currently is a
+    // sequential, host-only code.  See
+    // https://github.com/kokkos/kokkos-kernels/issues/48.  This
+    // means that we need to sync to host, then sync back to device
+    // when done.
+    auto A_lcl = this->A_crs_->getLocalMatrix ();
+    X.sync_host ();
+    const_cast<MV&> (Y).sync_host ();
+    X.modify_host (); // we will write to X
 
-  X.sync_device ();
-  const_cast<MV&> (Y).sync_device ();
+    if (X.isConstantStride () && Y.isConstantStride ()) {
+      auto X_lcl = X.getLocalViewHost ();
+      auto Y_lcl = Y.getLocalViewHost ();
+      KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
+          A_lcl, Y_lcl, X_lcl);
+    }
+    else {
+      const size_t numVecs =
+        std::min (X.getNumVectors (), Y.getNumVectors ());
+      for (size_t j = 0; j < numVecs; ++j) {
+        auto X_j = X.getVector (j);
+        auto Y_j = X.getVector (j);
+        auto X_lcl = X_j->getLocalViewHost ();
+        auto Y_lcl = Y_j->getLocalViewHost ();
+        KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
+            diag.c_str (), A_lcl, Y_lcl, X_lcl);
+      }
+    }
+
+    X.sync_device ();
+    const_cast<MV&> (Y).sync_device ();
+  }
 }
 
 template<class MatrixType>

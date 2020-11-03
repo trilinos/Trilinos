@@ -18,6 +18,12 @@
 #  
 # If it can't, these vars will not get set (and in fact are unset)
 #
+# If an error does not occur, then the var:
+#
+#   ATDM_CONFIG_GET_CUSTOM_SYSTEM_INFO_COMPLETED=1
+#
+# will get set.
+#
 ################################################################################
 
 # Clean out vars in case this crashes before finishing
@@ -74,10 +80,10 @@ if [[ "${custom_system_name}" == "" ]] ; then
   # No custom configuration even defined
   select_custom_system_config=0
 elif [[ "${ATDM_CONFIG_CUSTOM_CONFIG_DIR_ARG}" != "" ]] ; then
-  # Alway use the custome configuraiton if passed into load-env.sh
+  # Alway use the custom configuraiton if passed into load-env.sh
   select_custom_system_config=1
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"${custom_system_name}"* ]] ; then
-  # Use te registered custom configuration because it was listed in the build
+  # Use the registered custom configuration because it was listed in the build
   # name.
   select_custom_system_config=1
 else
@@ -89,12 +95,8 @@ fi
 
 # Set varaibles for custom configuration if selected
 if [[ "${select_custom_system_config}" == "1" ]] ; then
-  echo "Selecting custom system configuration '${custom_system_name}'"
-  export ATDM_CONFIG_REAL_HOSTNAME=`hostname`
-  export ATDM_CONFIG_CDASH_HOSTNAME=$ATDM_CONFIG_REAL_HOSTNAME
-  export ATDM_CONFIG_SYSTEM_NAME=$custom_system_name
-  export ATDM_CONFIG_SYSTEM_DIR=$(readlink -f ${ATDM_CUSTOM_CONFIG_DIR})
-  export ATDM_CONFIG_CUSTOM_CONFIG_DIR=${ATDM_CONFIG_SYSTEM_DIR}
+  source ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_custom_system_info_vars.sh \
+    ${ATDM_CUSTOM_CONFIG_DIR}
 fi
 
 export ATDM_CONFIG_GET_CUSTOM_SYSTEM_INFO_COMPLETED=1

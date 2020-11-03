@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// See packages/seacas/LICENSE for details
 
 #include <exodus/Ioex_Internals.h> // for Internals, ElemBlock, etc
 #include <exodus/Ioex_Utils.h>
@@ -773,7 +747,9 @@ int Internals::initialize_state_file(Mesh &mesh, const ex_var_params &var_params
     }
 
     struct ex__file_item *file = ex__find_file_item(exodusFilePtr);
-    file->time_varid           = varid;
+    if (file) {
+      file->time_varid = varid;
+    }
 
     ex__compress_variable(exodusFilePtr, varid, 2);
   } // Exit redefine mode
@@ -1349,7 +1325,9 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
   }
   {
     struct ex__file_item *file = ex__find_file_item(exodusFilePtr);
-    file->time_varid           = varid;
+    if (file) {
+      file->time_varid = varid;
+    }
   }
 
   ex__compress_variable(exodusFilePtr, varid, 2);
@@ -1847,7 +1825,13 @@ int Internals::put_metadata(const std::vector<Assembly> &assemblies)
   }
   int dims[1];
 
-  ex__check_valid_file_id(exodusFilePtr, __func__);
+  std::string errmsg;
+  int         status;
+  if ((status = ex__check_valid_file_id(exodusFilePtr, __func__)) != EX_NOERR) {
+    errmsg = fmt::format("Error: Invalid exodus file handle: {}", exodusFilePtr);
+    ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+    return (EX_FATAL);
+  }
 
   int int_type = NC_INT;
   if (ex_int64_status(exodusFilePtr) & EX_IDS_INT64_DB) {
@@ -1859,33 +1843,74 @@ int Internals::put_metadata(const std::vector<Assembly> &assemblies)
 
     /* define dimensions and variables */
     int dimid;
-    nc_def_dim(exodusFilePtr, numentryptr, assemblies[i].entityCount, &dimid);
+    status = nc_def_dim(exodusFilePtr, numentryptr, assemblies[i].entityCount, &dimid);
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      errmsg = fmt::format("Error: failed to define number of entities in assembly in file id {}",
+                           exodusFilePtr);
+      ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+      return (EX_FATAL);
+    }
 
     /* create variable array in which to store the entry lists */
     int entlst_id;
     dims[0] = dimid;
-    nc_def_var(exodusFilePtr, VAR_ENTITY_ASSEMBLY(assemblies[i].id), int_type, 1, dims, &entlst_id);
+    if ((status = nc_def_var(exodusFilePtr, VAR_ENTITY_ASSEMBLY(assemblies[i].id), int_type, 1,
+                             dims, &entlst_id)) != NC_NOERR) {
+      errmsg = fmt::format("Error: failed to define entity assembly variable in file id {}",
+                           exodusFilePtr);
+      ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+      return (EX_FATAL);
+    }
     ex__compress_variable(exodusFilePtr, entlst_id, 1);
 
     if (ex_int64_status(exodusFilePtr) & EX_IDS_INT64_DB) {
       long long tmp = assemblies[i].id;
-      nc_put_att_longlong(exodusFilePtr, entlst_id, EX_ATTRIBUTE_ID, NC_INT64, 1, &tmp);
+      status = nc_put_att_longlong(exodusFilePtr, entlst_id, EX_ATTRIBUTE_ID, NC_INT64, 1, &tmp);
     }
     else {
       int id = assemblies[i].id;
-      nc_put_att_int(exodusFilePtr, entlst_id, EX_ATTRIBUTE_ID, NC_INT, 1, &id);
+      status = nc_put_att_int(exodusFilePtr, entlst_id, EX_ATTRIBUTE_ID, NC_INT, 1, &id);
+    }
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      errmsg = fmt::format("Error: failed to define '{}' attribute to file id {}", EX_ATTRIBUTE_ID,
+                           exodusFilePtr);
+      ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+      return (EX_FATAL);
     }
 
     int type = assemblies[i].type;
-    nc_put_att_int(exodusFilePtr, entlst_id, EX_ATTRIBUTE_TYPE, NC_INT, 1, &type);
+    status   = nc_put_att_int(exodusFilePtr, entlst_id, EX_ATTRIBUTE_TYPE, NC_INT, 1, &type);
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      errmsg = fmt::format("Error: failed to define '{}' attribute to file id {}",
+                           EX_ATTRIBUTE_TYPE, exodusFilePtr);
+      ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+      return (EX_FATAL);
+    }
 
-    nc_put_att_text(exodusFilePtr, entlst_id, EX_ATTRIBUTE_NAME, assemblies[i].name.size() + 1,
-                    assemblies[i].name.c_str());
+    status = nc_put_att_text(exodusFilePtr, entlst_id, EX_ATTRIBUTE_NAME,
+                             assemblies[i].name.size() + 1, assemblies[i].name.c_str());
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      errmsg = fmt::format("Error: failed to define '{}' attribute to file id {}",
+                           EX_ATTRIBUTE_NAME, exodusFilePtr);
+      ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+      return (EX_FATAL);
+    }
 
     {
       char *contains = ex_name_of_object(assemblies[i].type);
-      nc_put_att_text(exodusFilePtr, entlst_id, EX_ATTRIBUTE_TYPENAME, strlen(contains) + 1,
-                      contains);
+      status         = nc_put_att_text(exodusFilePtr, entlst_id, EX_ATTRIBUTE_TYPENAME,
+                               strlen(contains) + 1, contains);
+      if (status != NC_NOERR) {
+        ex_opts(EX_VERBOSE);
+        errmsg = fmt::format("Error: failed to define '{}' attribute to file id {}",
+                             EX_ATTRIBUTE_TYPENAME, exodusFilePtr);
+        ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+        return (EX_FATAL);
+      }
     }
 
     /* Increment assembly count */
@@ -2179,7 +2204,7 @@ int Internals::put_metadata(const std::vector<ElemBlock> &blocks, bool count_onl
       // 1 and in parallel mode, set the mode to independent.
       if (blocks[iblk].attributeCount > 1) {
         struct ex__file_item *file = ex__find_file_item(exodusFilePtr);
-        if (file->is_parallel && file->is_hdf5) {
+        if (file && file->is_parallel && file->is_hdf5) {
           nc_var_par_access(exodusFilePtr, varid, NC_INDEPENDENT);
         }
       }
@@ -2761,7 +2786,14 @@ int Internals::put_non_define_data(const std::vector<Assembly> &assemblies)
     int status = EX_NOERR;
     if (!assembly.memberIdList.empty()) {
       int entlst_id = 0;
-      nc_inq_varid(exodusFilePtr, VAR_ENTITY_ASSEMBLY(assembly.id), &entlst_id);
+      if ((status = nc_inq_varid(exodusFilePtr, VAR_ENTITY_ASSEMBLY(assembly.id), &entlst_id)) !=
+          EX_NOERR) {
+        std::string errmsg =
+            fmt::format("Error: failed to locate entity list for assembly {} in file id {}",
+                        assembly.id, exodusFilePtr);
+        ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+        return (EX_FATAL);
+      }
       if ((status = nc_put_var_longlong(exodusFilePtr, entlst_id,
                                         (long long int *)assembly.memberIdList.data())) !=
           EX_NOERR) {

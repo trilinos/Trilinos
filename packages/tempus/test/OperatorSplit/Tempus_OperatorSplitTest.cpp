@@ -198,7 +198,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, VanDerPol)
     Thyra::copy(*(integrator->getX()),solution.ptr());
     solutions.push_back(solution);
     auto solutionDot = Thyra::createMember(implicitModel->get_x_space());
-    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+    Thyra::copy(*(integrator->getXDot()),solutionDot.ptr());
     solutionsDot.push_back(solutionDot);
 
     // Output finest temporal solution for plotting

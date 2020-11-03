@@ -107,8 +107,9 @@ namespace MueLu {
   //!
   typedef int VerbLevel;
 
-  //!
+  //! Translate Teuchos verbosity level to MueLu verbosity level
   VerbLevel toMueLuVerbLevel(const Teuchos::EVerbosityLevel verbLevel);
+
   //!
   MsgType toVerbLevel(const std::string& verbLevelStr);
 

@@ -35,7 +35,7 @@
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
-#include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
+#include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Selector.hpp>   // for Selector
@@ -78,7 +78,7 @@ namespace
     }
 
     //+ Create the faces on just the selected shell parts.
-    stk::mesh::create_faces(stkIo.bulk_data(), shell_subset);
+    stk::mesh::create_all_sides(stkIo.bulk_data(), shell_subset);
 
     // ==================================================
     // VERIFICATION

@@ -34,9 +34,7 @@
 
 #include <stk_util/stk_config.h>
 #include <stk_util/environment/EnvData.hpp>
-#if defined( STK_HAS_MPI)
-#  include "mpi.h"                        // for MPI_COMM_NULL, MPI_Comm, etc
-#endif
+#include <stk_util/parallel/Parallel.hpp>
 #include <time.h>                       // for time
 #include <iostream>                     // for cout, cerr
 #include <stk_util/environment/OutputLog.hpp>  // for register_ostream, etc
@@ -76,10 +74,10 @@ namespace stk {
       m_inputFile(""),
       m_outPath("")
   {
-    m_execMap[sierra::Env::EXEC_TYPE_LAG].m_master      = -1;
+    m_execMap[sierra::Env::EXEC_TYPE_LAG].m_rootProcessor      = -1;
     m_execMap[sierra::Env::EXEC_TYPE_LAG].m_groupComm   = MPI_COMM_NULL;
     m_execMap[sierra::Env::EXEC_TYPE_LAG].m_interComm   = MPI_COMM_NULL;
-    m_execMap[sierra::Env::EXEC_TYPE_FLUID].m_master    = -1;
+    m_execMap[sierra::Env::EXEC_TYPE_FLUID].m_rootProcessor    = -1;
     m_execMap[sierra::Env::EXEC_TYPE_FLUID].m_groupComm = MPI_COMM_NULL;
     m_execMap[sierra::Env::EXEC_TYPE_FLUID].m_interComm = MPI_COMM_NULL;
     stk::register_log_ostream(std::cout, "cout");

@@ -14,7 +14,26 @@
 set (TFW_Python2_Testing ON CACHE BOOL "Set by default for PR testing")
 set (TFW_Python_Testing ON CACHE BOOL "Set by default for PR testing")
 
-set(PYTHON_EXECUTABLE /projects/sierra/linux_rh7/install/Python/2.7.15/bin/python CACHE FILEPATH "Set by default for PR testing")
+#set(PYTHON_EXECUTABLE /projects/sierra/linux_rh7/install/Python/2.7.15/bin/python CACHE FILEPATH "Set by default for PR testing")
+#set(PYTHON_EXECUTABLE /projects/sierra/linux_rh7/install/Python/2.7.5/bin/python CACHE FILEPATH "Set by default for PR testing")
+set(PYTHON_PIP_EXECUTABLE "pip2" CACHE STRING "Set by default for PR testing")
+
+
+set(PYTHON_EXECUTABLE_SEARCH_PATHS
+    /projects/sierra/linux_rh7/install/Python/2.7.15
+    /projects/sierra/linux_rh7/install/Python/2.7.5
+)
+find_program(PYTHON_EXECUTABLE 
+    NAMES python2 python
+    PATHS ${PYTHON_EXECUTABLE_SEARCH_PATHS}
+    PATH_SUFFIXES bin
+    DOC "Set by default for PR testing"
+    NO_DEFAULT_PATH
+    )
+if(DEFINED PYTHON_EXECUTABLE_NOTFOUND)
+    message(FATAL_ERROR "Unable to locate Python in ${PYTHON_EXECUTABLE_SEARCH_PATHS}")
+endif()
+
 
 set (TPL_ENABLE_Boost OFF CACHE BOOL "Set by default for PR testing")
 set (TPL_ENABLE_BoostLib OFF CACHE BOOL "Set by default for PR testing")

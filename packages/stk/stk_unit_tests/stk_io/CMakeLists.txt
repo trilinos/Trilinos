@@ -44,12 +44,18 @@ LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/UnitTestReadWriteSideSets.c
 LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/AttributeTests.cpp)
 
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE(
     stk_io_unit_tests
     SOURCES ${SOURCES}
-    TESTONLYLIBS stk_unit_main
+    COMM serial mpi
+    NOEXEPREFIX
+    )
+
+TRIBITS_ADD_TEST(
+    stk_io_unit_tests
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1
+    NOEXEPREFIX
     )
 

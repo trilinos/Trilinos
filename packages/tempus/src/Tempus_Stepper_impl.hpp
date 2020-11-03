@@ -20,7 +20,7 @@ void getValidParametersBasic(
   pl->set<std::string>("Stepper Type", stepperType);
 
   pl->set<bool>("Use FSAL", false,
-    "The First-Step-As-Last (FSAL) principle is the situation where the\n"
+    "The First-Same-As-Last (FSAL) principle is the situation where the\n"
     "last function evaluation, f(x^{n-1},t^{n-1}) [a.k.a. xDot^{n-1}],\n"
     "can be used for the first function evaluation, f(x^n,t^n)\n"
     "[a.k.a. xDot^n].  For RK methods, this applies to the stages.\n"
@@ -65,7 +65,7 @@ void getValidParametersBasic(
     "another Jacobian from the application.  Individual steppers may\n"
     "override these defaults.");
 
-  pl->set<bool>("Initial Condition Consistency Check", true,
+  pl->set<bool>("Initial Condition Consistency Check", false,
     "Check if the initial condition, x and xDot, is consistent with the\n"
     "governing equations, xDot = f(x,t), or f(x, xDot, t) = 0.\n"
     "\n"
@@ -172,15 +172,36 @@ void Stepper<Scalar>::checkInitialized()
 }
 
 
+template<class Scalar>
+void Stepper<Scalar>::setUseFSALTrueOnly(bool a)
+{
+  if (a == false) {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"Stepper::setUseFSALTrueOnly()");
+    *out << "Warning -- useFSAL for '" << this->getStepperType() << "'\n"
+         << "can only be set to true.  Leaving set to true." << std::endl;
+  }
+  useFSAL_ = true;
+}
+
+
+template<class Scalar>
+void Stepper<Scalar>::setUseFSALFalseOnly(bool a)
+{
+  if (a == true) {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"Stepper::setUseFSALFalseOnly()");
+    *out << "Warning -- useFSAL for '" << this->getStepperType() << "'\n"
+         << "can only be set to false.  Leaving set to false." << std::endl;
+  }
+  useFSAL_ = false;
+}
+
 
 template<class Scalar>
 Teuchos::RCP<Thyra::VectorBase<Scalar> >
-Stepper<Scalar>::getStepperX(Teuchos::RCP<SolutionState<Scalar> > state)
+Stepper<Scalar>::getStepperX()
 {
-  if (state->getX() != Teuchos::null) stepperX_ = state->getX();
-  // Else use temporary storage stepperX_ which should have been set in
-  // setInitialConditions().
-
   TEUCHOS_TEST_FOR_EXCEPTION( stepperX_ == Teuchos::null, std::logic_error,
     "Error - stepperX_ has not been set in setInitialConditions() or\n"
     "        can not be set from the state!\n");
@@ -190,19 +211,27 @@ Stepper<Scalar>::getStepperX(Teuchos::RCP<SolutionState<Scalar> > state)
 
 template<class Scalar>
 Teuchos::RCP<Thyra::VectorBase<Scalar> >
-Stepper<Scalar>::getStepperXDot(Teuchos::RCP<SolutionState<Scalar> > state)
+Stepper<Scalar>::getStepperXDot()
 {
-  if (state->getXDot() != Teuchos::null) stepperXDot_ = state->getXDot();
-  // Else use temporary storage stepperXDot_ which should have been set in
-  // setInitialConditions().
-
   TEUCHOS_TEST_FOR_EXCEPTION( stepperXDot_ == Teuchos::null, std::logic_error,
-    "Error - stepperXDot_ has not set in setInitialConditions() or\n"
+    "Error - stepperXDot_ has not been set in setInitialConditions() or\n"
     "        can not be set from the state!\n");
 
   return stepperXDot_;
 }
 
+template<class Scalar>
+Teuchos::RCP<Thyra::VectorBase<Scalar> >
+Stepper<Scalar>::getStepperXDotDot()
+{
+  TEUCHOS_TEST_FOR_EXCEPTION( stepperXDotDot_==Teuchos::null, std::logic_error,
+    "Error - stepperXDotDot_ has not been set in setInitialConditions() or\n"
+    "        can not be set from the state!\n");
+
+  return stepperXDotDot_;
+}
+
+// Need to deprecate.
 template<class Scalar>
 Teuchos::RCP<Thyra::VectorBase<Scalar> >
 Stepper<Scalar>::getStepperXDotDot(Teuchos::RCP<SolutionState<Scalar> > state)
@@ -212,7 +241,7 @@ Stepper<Scalar>::getStepperXDotDot(Teuchos::RCP<SolutionState<Scalar> > state)
   // setInitialConditions().
 
   TEUCHOS_TEST_FOR_EXCEPTION( stepperXDotDot_==Teuchos::null, std::logic_error,
-    "Error - stepperXDotDot_ has not set in setInitialConditions() or\n"
+    "Error - stepperXDotDot_ has not been set in setInitialConditions() or\n"
     "        can not be set from the state!\n");
 
   return stepperXDotDot_;

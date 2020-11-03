@@ -187,6 +187,20 @@ void deep_copy( const View<DT,DP...> & dst ,
               , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
                   )>::type * = 0 );
 
+/* Specialize for deep copy of UQ::PCE */
+template< class ExecSpace, class DT , class ... DP , class ST , class ... SP >
+inline
+void deep_copy( const ExecSpace &,
+                const View<DT,DP...> & dst ,
+                const View<ST,SP...> & src
+  , typename std::enable_if<(
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+  &&
+  std::is_same< typename ViewTraits<ST,SP...>::specialize
+              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+                  )>::type * = 0 );
+
 template <typename T, typename ... P>
 struct is_view_uq_pce< View<T,P...> > {
   typedef View<T,P...> view_type;
@@ -503,9 +517,10 @@ struct DeepCopyNonContiguous
 } // namespace Experimental
 
 /* Specialize for deep copy of UQ::PCE */
-template< class DT , class ... DP , class ST , class ... SP >
+template< class ExecSpace, class DT , class ... DP , class ST , class ... SP >
 inline
-void deep_copy( const View<DT,DP...> & dst ,
+void deep_copy( const ExecSpace &,
+                const View<DT,DP...> & dst ,
                 const View<ST,SP...> & src
   , typename std::enable_if<(
   std::is_same< typename ViewTraits<DT,DP...>::specialize
@@ -533,7 +548,7 @@ void deep_copy( const View<DT,DP...> & dst ,
   if ( is_allocation_contiguous(dst) && is_allocation_contiguous(src) ) {
     dst_array_type dst_array = dst ;
     src_array_type src_array = src ;
-    deep_copy( dst_array , src_array );
+    deep_copy( ExecSpace(), dst_array , src_array );
   }
 
   // otherwise, use a custom kernel
@@ -578,7 +593,7 @@ void deep_copy( const View<DT,DP...> & dst ,
         Experimental::Impl::DeepCopyNonContiguous< tmp_src_type , src_type >( src_tmp , src );
         dst_array_type dst_array = dst ;
         tmp_src_array_type src_array = src_tmp ;
-        deep_copy( dst_array , src_array );
+        deep_copy( ExecSpace(), dst_array , src_array );
       }
 
       // Copy src into a contiguous view in dst's memory space,
@@ -602,7 +617,7 @@ void deep_copy( const View<DT,DP...> & dst ,
           dst_dims[4], dst_dims[5], dst_dims[6], dst_dims[7] );
         tmp_dst_array_type dst_array = dst_tmp ;
         src_array_type src_array = src ;
-        deep_copy( dst_array , src_array );
+        deep_copy( ExecSpace(), dst_array , src_array );
         Experimental::Impl::DeepCopyNonContiguous< dst_type , tmp_dst_type >( dst , dst_tmp );
       }
 
@@ -642,11 +657,30 @@ void deep_copy( const View<DT,DP...> & dst ,
           dst_dims[4], dst_dims[5], dst_dims[6], dst_dims[7] );
         tmp_dst_array_type dst_array = dst_tmp ;
         tmp_src_array_type src_array = src_tmp ;
-        deep_copy( dst_array , src_array );
+        deep_copy( ExecSpace(), dst_array , src_array );
         Experimental::Impl::DeepCopyNonContiguous< dst_type , tmp_dst_type >( dst , dst_tmp );
       }
     }
   }
+}
+
+/* Specialize for deep copy of UQ::PCE */
+template< class DT , class ... DP , class ST , class ... SP >
+inline
+void deep_copy( const View<DT,DP...> & dst ,
+                const View<ST,SP...> & src
+  , typename std::enable_if<(
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+  &&
+  std::is_same< typename ViewTraits<ST,SP...>::specialize
+              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+  )>::type * )
+{
+  using exec_space = typename View<DT,DP...>::execution_space;
+  Kokkos::fence();
+  Kokkos::deep_copy(exec_space(), dst, src);
+  Kokkos::fence();
 }
 
 }
@@ -911,7 +945,7 @@ struct PCEAllocation {
                              const cijk_type& cijk,
                              scalar_type* scalar_ptr,
                              value_type* value_ptr) :
-      m_scalar_functor( space , scalar_ptr , span*pce_size ),
+      m_scalar_functor( space , scalar_ptr , span*pce_size , "Stokhos_UQ_PCE_Contig_ConstructDestructFunctor" ),
       m_pce_functor( space , value_ptr , scalar_ptr , span , pce_size , cijk ),
       m_initialize(initialize) {}
 

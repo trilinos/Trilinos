@@ -1,65 +1,27 @@
-C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
-C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C    * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C    * Redistributions in binary form must reproduce the above
-C      copyright notice, this list of conditions and the following
-C      disclaimer in the documentation and/or other materials provided
-C      with the distribution.
-C
-C    * Neither the name of NTESS nor the names of its
-C      contributors may be used to endorse or promote products derived
-C      from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C    See packages/seacas/LICENSE for details
 
-C $Id: initdg.f,v 1.1 1990/11/30 11:09:49 gdsjaar Exp $
-C $Log: initdg.f,v $
-C Revision 1.1  1990/11/30 11:09:49  gdsjaar
-C Initial revision
-C
-C
-CC* FILE: [.MAIN]INITDG.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE INITDG (MCOM, ICOM, JCOM, CIN, RIN, IIN, KIN, IDUMP,
      &   XX1, YY1, SCALE, CT, ST, X1, X2, Y1, Y2, DRWTAB, SNAP)
 C***********************************************************************
-C
+
 C  SUBROUTINE INITDG = INITIALIZES THE DIGITIZING TABLET
-C
+
 C***********************************************************************
-C
+
       DIMENSION KIN (MCOM), IIN (MCOM), RIN (MCOM)
-C
+
       CHARACTER * 72 CIN (MCOM), BUTTON * 1
-C
+
       LOGICAL DRWTAB, IANS, SNAP
-C
+
       IZ = 0
-C
+
 C  CHECK TO MAKE SURE THAT THE DRAWING IS NOT BEING TOGGLED
-C
+
       IF (DRWTAB) THEN
          CALL MESAGE ('DRAWING INITIALIZATION IS ALREADY ACTIVE')
          CALL INTRUP  ('TOGGLE ALL DRAWING INITIALIZATION OFF',
@@ -71,10 +33,9 @@ C
             RETURN
          ENDIF
       ENDIF
-C
-C
+
 C  GET THE ZOOM LIMITS
-C
+
       CALL MESAGE (' ')
       IF (ICOM .GT. JCOM) THEN
          CALL FREFLD (IZ, IZ, 'ENTER DRAWING XMIN, XMAX, YMIN, YMAX:',
@@ -95,9 +56,9 @@ C
          CALL MESAGE (' ')
          RETURN
       ENDIF
-C
+
 C  GET THE DIGITIZING POINTS
-C
+
       CALL MESAGE ('NOW DIGITIZE THOSE 2 POINTS')
       CALL MESAGE ('       PUSH "PUCK - 1" FOR LOWER LEFT')
       CALL MESAGE ('       PUSH "PUCK - 2" FOR UPPER RIGHT')
@@ -131,7 +92,7 @@ C
      &   DRWTAB)
       CALL MESAGE ('INITIALIZATION COMPLETE')
       CALL MESAGE (' ')
-C
+
       RETURN
-C
+
       END

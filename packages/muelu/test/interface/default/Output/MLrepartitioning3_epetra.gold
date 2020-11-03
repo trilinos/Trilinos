@@ -21,11 +21,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
@@ -68,6 +69,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33333
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -78,6 +80,8 @@ matrixmatrix: kernel params ->
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
@@ -152,11 +156,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
@@ -199,6 +204,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33333
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -209,6 +215,8 @@ matrixmatrix: kernel params ->
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
@@ -283,11 +291,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
@@ -330,6 +339,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33333
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -340,6 +350,8 @@ matrixmatrix: kernel params ->
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
@@ -414,11 +426,12 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1   [default]
 
 BuildAggregates (Phase - (Dirichlet))
@@ -461,6 +474,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33333
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -471,6 +485,8 @@ matrixmatrix: kernel params ->
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0

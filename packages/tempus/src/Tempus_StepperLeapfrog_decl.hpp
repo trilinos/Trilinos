@@ -11,8 +11,8 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperExplicit.hpp"
-#include "Tempus_StepperObserverComposite.hpp"
-#include "Tempus_StepperLeapfrogObserver.hpp"
+#include "Tempus_StepperLeapfrogAppAction.hpp"
+#include "Tempus_StepperLeapfrogAppActionComposite.hpp"
 
 
 namespace Tempus {
@@ -68,10 +68,10 @@ namespace Tempus {
  *     - \f$ \dot{x}_{n+3/2} \leftarrow
  *           \dot{x}_{n+1/2} + \Delta t\, \ddot{x}_{n+1} \f$
  *
- *  The First-Step-As-Last (FSAL) principle is not used with Leapfrog
+ *  The First-Same-As-Last (FSAL) principle is not used with Leapfrog
  *  because of the algorithm's prescribed order of solution update.
- *  The default is to set useFSAL=false, however useFSAL=true will also
- *  work (i.e., no-op), but issue a warning that it will have no affect.
+ *  The default is to set useFSAL=false, and useFSAL=true will
+ *  issue a warning that it will have no affect.
  */
 template<class Scalar>
 class StepperLeapfrog : virtual public Tempus::StepperExplicit<Scalar>
@@ -88,18 +88,18 @@ public:
   /// Constructor
   StepperLeapfrog(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
-    bool ICConsistencyCheck);
+    bool ICConsistencyCheck,
+    const Teuchos::RCP<StepperLeapfrogAppAction<Scalar> >& stepperLFAppAction);
 
   /// \name Basic stepper methods
   //@{
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+    virtual void setAppAction(
+      Teuchos::RCP<StepperLeapfrogAppAction<Scalar> > appAction);
 
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperObserver_; }
+    virtual Teuchos::RCP<StepperLeapfrogAppAction<Scalar> > getAppAction() const
+     { return stepperLFAppAction_; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -124,13 +124,10 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
     virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
 
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-
-  std::string getICConsistencyDefault() const { return "Consistent"; }
 
   /// \name Overridden from Teuchos::Describable
   //@{
@@ -142,8 +139,7 @@ public:
 
 protected:
 
-  Teuchos::RCP<StepperObserverComposite<Scalar> >    stepperObserver_;
-  Teuchos::RCP<StepperLeapfrogObserver<Scalar> >     stepperLFObserver_;
+  Teuchos::RCP<StepperLeapfrogAppAction<Scalar> >     stepperLFAppAction_;
 
 };
 

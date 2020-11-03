@@ -11,9 +11,6 @@
 
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  #include "Tempus_StepperBackwardEulerObserver.hpp"
-#endif
 #include "Tempus_StepperBackwardEulerAppAction.hpp"
 #include "Tempus_StepperOptimizationInterface.hpp"
 
@@ -43,7 +40,7 @@ namespace Tempus {
  *  \end{algorithmic}
  *  \f}
  *
- *  The First-Step-As-Last (FSAL) principle is not needed with Backward Euler.
+ *  The First-Same-As-Last (FSAL) principle is not needed with Backward Euler.
  *  The default is to set useFSAL=false, however useFSAL=true will also work
  *  but have no affect (i.e., no-op).
  *
@@ -82,19 +79,6 @@ public:
   */
   StepperBackwardEuler();
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  /// Constructor
-  StepperBackwardEuler(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-    const Teuchos::RCP<Stepper<Scalar> >& predictorStepper,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    bool zeroInitialGuess);
-#endif
-
   /// Constructor
   StepperBackwardEuler(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -108,14 +92,6 @@ public:
 
   /// \name Basic stepper methods
   //@{
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
-
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return stepperBEObserver_; }
-#endif
-
     virtual void setAppAction(
       Teuchos::RCP<StepperBackwardEulerAppAction<Scalar> > appAction);
 
@@ -146,7 +122,6 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
 
@@ -213,9 +188,6 @@ private:
 private:
 
   Teuchos::RCP<Stepper<Scalar> >                       predictorStepper_;
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > stepperBEObserver_;
-#endif
   Teuchos::RCP<StepperBackwardEulerAppAction<Scalar> > stepperBEAppAction_;
 
 };

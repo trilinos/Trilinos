@@ -11,9 +11,7 @@
 
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
-#include "Tempus_StepperObserverComposite.hpp"
-#include "Tempus_StepperBDF2Observer.hpp"
-
+#include "Tempus_StepperBDF2AppAction.hpp"
 
 namespace Tempus {
 
@@ -43,7 +41,7 @@ namespace Tempus {
  *                -  \frac{\tau_n}{\tau_n + \tau_{n-1}}
  *                   \left[ \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right], \f$
  *
- *  The First-Step-As-Last (FSAL) principle is not needed BDF2.
+ *  The First-Same-As-Last (FSAL) principle is not needed for BDF2.
  *  The default is to set useFSAL=false, however useFSAL=true will also work
  *  but have no affect (i.e., no-op).
  *
@@ -77,37 +75,33 @@ class StepperBDF2 : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
-  /** \brief Default constructor.
-   *
-   *  - Requires the following calls before takeStep():
-   *    setModel() and initialize().
-  */
-  StepperBDF2();
+    /** \brief Default constructor.
+     *
+     *  - Requires the following calls before takeStep():
+     *    setModel() and initialize().
+     */
+    StepperBDF2();
 
-  /** \brief Constructor.
-   *
-   *  Constructs a fully initialized stepper.
-   */
-  StepperBDF2(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-    const Teuchos::RCP<Stepper<Scalar> >& startUpStepper,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    bool zeroInitialGuess);
+    StepperBDF2(
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+      const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+      const Teuchos::RCP<Stepper<Scalar> >& startUpStepper,
+      bool useFSAL,
+      std::string ICConsistency,
+      bool ICConsistencyCheck,
+      bool zeroInitialGuess,
+      const Teuchos::RCP<StepperBDF2AppAction<Scalar> >& stepperBDF2AppAction);
 
-  /// \name Basic stepper methods
-  //@{
+    /// \name Basic stepper methods
+    //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+    virtual void setAppAction(
+      Teuchos::RCP<StepperBDF2AppAction<Scalar> > appAction);
 
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperObserver_; }
+    virtual Teuchos::RCP<StepperBDF2AppAction<Scalar> > getAppAction() const
+    { return stepperBDF2AppAction_; }
 
     /// Set the stepper to use in first step
     void setStartUpStepper(std::string startupStepperType);
@@ -133,42 +127,39 @@ public:
     virtual bool isExplicit()         const {return false;}
     virtual bool isImplicit()         const {return true;}
     virtual bool isExplicitImplicit() const
-      {return isExplicit() and isImplicit();}
+    {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return false;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
-  //@}
+    //@}
 
-  /// Return alpha = d(xDot)/dx.
-  virtual Scalar getAlpha(const Scalar dt) const {return getAlpha(dt,dt);}
-  virtual Scalar getAlpha(const Scalar dt, const Scalar dtOld) const
+    /// Return alpha = d(xDot)/dx.
+    virtual Scalar getAlpha(const Scalar dt) const {return getAlpha(dt,dt);}
+    virtual Scalar getAlpha(const Scalar dt, const Scalar dtOld) const
     { return (Scalar(2.0)*dt + dtOld)/(dt*(dt + dtOld)); }
-  /// Return beta  = d(x)/dx.
-  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
+    /// Return beta  = d(x)/dx.
+    virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
 
-  /// Compute the first time step given the supplied startup stepper
-  virtual void computeStartUp(
-    const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+    /// Compute the first time step given the supplied startup stepper
+    virtual void computeStartUp(
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-  virtual bool getICConsistencyCheckDefault() const { return false; }
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
-  /// \name Overridden from Teuchos::Describable
-  //@{
+    /// \name Overridden from Teuchos::Describable
+    //@{
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
-  //@}
+    //@}
 
-  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+    virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
-private:
+  private:
 
-  Teuchos::RCP<Stepper<Scalar> >             startUpStepper_;
-  Teuchos::RCP<StepperObserverComposite<Scalar> >     stepperObserver_;
-  Teuchos::RCP<StepperBDF2Observer<Scalar> > stepperBDF2Observer_;
-  Scalar                                     order_ = Scalar(2.0);
-};
+    Teuchos::RCP<Stepper<Scalar> >              startUpStepper_;
+    Teuchos::RCP<StepperBDF2AppAction<Scalar> > stepperBDF2AppAction_;
+    Scalar                                      order_ = Scalar(2.0);
+  };
 
 /** \brief Time-derivative interface for BDF2.
  *
@@ -218,7 +209,7 @@ public:
   virtual void initialize(Scalar dt, Scalar dtOld,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOld,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOldOld)
-  { dt_ = dt; dtOld_ = dtOld; xOld_ = xOld; xOldOld_ = xOldOld;}
+    { dt_ = dt; dtOld_ = dtOld; xOld_ = xOld; xOldOld_ = xOldOld;}
 
 private:
 

@@ -40,6 +40,7 @@
 #include "stk_mesh/base/Part.hpp"
 #include "stk_mesh/base/SideSetEntry.hpp"
 #include "stk_mesh/base/Types.hpp"
+#include "stk_tools/mesh_tools/DisconnectTypes.hpp"
 #include "stk_util/parallel/ParallelComm.hpp"
 #include <utility>
 #include <vector>
@@ -64,6 +65,8 @@ public:
   DisconnectGroup(const stk::mesh::BulkData& bulk);
 
   DisconnectGroup(const stk::mesh::BulkData& bulk, const stk::mesh::Part* part, stk::mesh::Entity node);
+
+  DisconnectGroup(const stk::mesh::BulkData& bulk, const BlockPair& blockPair, stk::mesh::Entity node);
 
   DisconnectGroup(const stk::mesh::BulkData& bulk, const stk::mesh::Part* part);
 
@@ -94,11 +97,17 @@ public:
 
   stk::mesh::EntityIdVector get_group_element_ids() const;
 
-  void pack_group_info(stk::CommBuffer& procBuffer, stk::mesh::EntityId newNodeId, int proc, std::ostream& os) const;
+  void pack_group_info(stk::CommBuffer& procBuffer, stk::mesh::EntityId newNodeId, int proc) const;
 
-  void unpack_group_info(stk::CommBuffer& procBuffer, stk::mesh::EntityId& newNodeId, int proc, std::ostream& os);
+  void unpack_group_info(stk::CommBuffer& procBuffer, stk::mesh::EntityId& newNodeId, int proc);
+
   void set_active(bool flag) const { m_active = flag; }
+
   bool is_active() const { return m_active; }
+
+  bool has_block_pair() const { return m_hasBlockPair; }
+
+  BlockPair get_block_pair() const { return m_blockPair; }
 
   const std::vector<EntityOwnerProc> get_part_owner_proc() const { return m_entityOwnerProcVec; }
   std::vector<int> get_sharing_procs(const stk::mesh::Part& part) const;
@@ -116,6 +125,8 @@ private:
   mutable bool m_active = true;
   int m_id = -1;
   std::vector<EntityOwnerProc> m_entityOwnerProcVec;
+  BlockPair m_blockPair;
+  bool m_hasBlockPair = false;
 };
 
 stk::mesh::EntityVector get_elements_for_node_in_parts(const stk::mesh::BulkData& bulk, const stk::mesh::Entity node, const stk::mesh::ConstPartVector& parts);

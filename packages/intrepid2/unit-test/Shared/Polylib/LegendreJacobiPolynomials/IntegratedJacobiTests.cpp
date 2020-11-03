@@ -83,7 +83,8 @@ namespace
         {
           integratedJacobiValues(integratedJacobiView, alpha, polyOrder, x, t);
         });
-        
+
+        Kokkos::fence();
         for (int i=1; i<=polyOrder; i++)
         {
           if ( abs(integratedJacobiView(i)) > tol)
@@ -118,6 +119,7 @@ namespace
           integratedJacobiValues(integratedJacobiView, alpha, polyOrder, x, t);
         });
         
+        Kokkos::fence();
         const int i = 2;
         double diff = integratedJacobiView(i) - expected_value;
         if ( abs(diff) > tol)

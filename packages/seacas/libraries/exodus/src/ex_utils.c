@@ -1,36 +1,9 @@
 /*
- * Copyright (c) 2005-2017, 2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * See packages/seacas/LICENSE for details
  */
 /*****************************************************************************
  *
@@ -130,21 +103,31 @@ void ex_print_config(void)
 #endif
 #endif
 #endif
+#if defined(PARALLEL_AWARE_EXODUS)
 #if NC_HAS_PARALLEL
   fprintf(stderr, "\t\tParallel IO enabled via HDF5 and/or PnetCDF\n");
+#else
+  fprintf(stderr,
+          "\t\tParallel IO *NOT* enabled via HDF5 and/or PnetCDF (PROBABLY A BUILD ERROR!)\n");
 #endif
 #if NC_HAS_PARALLEL4
   fprintf(stderr, "\t\tParallel IO enabled via HDF5\n");
+#else
+  fprintf(stderr, "\t\tParallel IO *NOT* enabled via HDF5\n");
+#endif
 #if NC_HAS_PAR_FILTERS
   fprintf(stderr, "\t\tParallel IO supports filters\n");
-#endif
 #endif
 #if NC_HAS_PNETCDF
   {
     char *libver = ncmpi_inq_libvers();
     fprintf(stderr, "\t\tParallel IO enabled via PnetCDF (%s)\n", libver);
   }
+#else
+  fprintf(stderr, "\t\tParallel IO *NOT* enabled via PnetCDF\n");
 #endif
+#endif /* PARALLEL_AWARE_EXODUS */
+
 #if NC_HAS_ERANGE_FILL
   fprintf(stderr, "\t\tERANGE_FILL support\n");
 #endif
@@ -190,12 +173,20 @@ int ex__check_file_type(const char *path, int *type)
     int   i;
 
     if (!(fp = fopen(path, "r"))) {
-      EX_FUNC_LEAVE(errno);
+      char errmsg[MAX_ERR_LENGTH];
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Could not open file '%s', error = %s.", path,
+               strerror(errno));
+      ex_err(__func__, errmsg, EX_WRONGFILETYPE);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
     i = fread(magic, MAGIC_NUMBER_LEN, 1, fp);
     fclose(fp);
     if (i != 1) {
-      EX_FUNC_LEAVE(errno);
+      char errmsg[MAX_ERR_LENGTH];
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Could not read magic data from file '%s', err = %s.",
+               path, strerror(errno));
+      ex_err(__func__, errmsg, EX_WRONGFILETYPE);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
   }
 
@@ -214,6 +205,15 @@ int ex__check_file_type(const char *path, int *type)
       *type = 4; /* cdf5 (including pnetcdf) file */
     }
   }
+  if (*type == 0) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(
+        errmsg, MAX_ERR_LENGTH,
+        "ERROR: Could not recognize %s as a valid Exodus/NetCDF file variant.  Magic value is '%s'",
+        path, magic);
+    ex_err(__func__, errmsg, EX_WRONGFILETYPE);
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
   EX_FUNC_LEAVE(EX_NOERR);
 }
 
@@ -226,7 +226,9 @@ int ex_set_max_name_length(int exoid, int length)
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
   if (length <= 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Max name length must be positive.");
     ex_err_fn(exoid, __func__, errmsg, NC_EMAXNAME);
@@ -255,7 +257,9 @@ void ex__update_max_name_length(int exoid, int length)
   int rootid    = exoid & EX_FILE_ID_MASK;
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_VOID();
+  }
 
   /* Get current value of the maximum_name_length attribute... */
   if ((status = nc_get_att_int(rootid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &db_length)) != NC_NOERR) {
@@ -299,7 +303,9 @@ int ex__put_names(int exoid, int varid, size_t num_names, char **names, ex_entit
   int    found_name = 0;
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
   /* inquire previously defined dimensions  */
   name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH) + 1;
 
@@ -363,7 +369,9 @@ int ex__put_name(int exoid, int varid, size_t index, const char *name, ex_entity
   char   errmsg[MAX_ERR_LENGTH];
   size_t name_length;
 
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   /* inquire previously defined dimensions  */
   name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH) + 1;

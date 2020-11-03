@@ -451,9 +451,15 @@ void set_field_role(mesh::FieldBase &f, const Ioss::Field::RoleType &role);
  *	attributed is defined via the stk::io::put_io_part_attribute()
  *	function.
  */
-bool is_part_io_part(const mesh::Part &part);
+bool is_part_io_part(const stk::mesh::Part &part);
 
 bool is_part_io_part(const stk::mesh::Part* part);
+
+bool is_part_face_block_io_part(const stk::mesh::Part &part);
+
+bool is_part_edge_block_io_part(const stk::mesh::Part &part);
+
+bool is_part_assembly_io_part(const stk::mesh::Part &part);
 
 Ioss::GroupingEntity* get_grouping_entity(const Ioss::Region& region, stk::mesh::Part& part);
 
@@ -461,11 +467,11 @@ std::vector<Ioss::EntityType> get_ioss_entity_types(const stk::mesh::MetaData& m
 
 std::vector<Ioss::EntityType> get_ioss_entity_types(stk::mesh::Part& part);
 
-std::string getPartName(stk::mesh::Part& part);
+std::string getPartName(const stk::mesh::Part& part);
 
 void set_alternate_part_name(stk::mesh::Part& part, const std::string& altPartName);
-std::string get_alternate_part_name(stk::mesh::Part& part);
-bool has_alternate_part_name(stk::mesh::Part& part);
+std::string get_alternate_part_name(const stk::mesh::Part& part);
+bool has_alternate_part_name(const stk::mesh::Part& part);
 
 void set_original_topology_type(stk::mesh::Part& part);
 void set_original_topology_type(stk::mesh::Part& part, const std::string& origTopo);
@@ -491,10 +497,32 @@ void set_derived_nodeset_attribute(stk::mesh::Part& part, const bool hasAttribut
 bool get_derived_nodeset_attribute(stk::mesh::Part& part);
 bool has_derived_nodeset_attribute(stk::mesh::Part& part);
 
+void set_face_block_part_attribute(stk::mesh::Part& part, const bool isFaceBlockPart);
+bool has_face_block_part_attribute(const stk::mesh::Part& part);
+bool get_face_block_part_attribute(const stk::mesh::Part& part);
+
+void set_edge_block_part_attribute(stk::mesh::Part& part, const bool isFaceBlockPart);
+bool has_edge_block_part_attribute(const stk::mesh::Part& part);
+bool get_edge_block_part_attribute(const stk::mesh::Part& part);
+
 /** Define an attribute on the specified part 'part' indicating that
  * this part should be used for io.  \see is_part_io_part()
  */
-void put_io_part_attribute( mesh::Part &part);
+void put_io_part_attribute( stk::mesh::Part &part);
+
+void put_face_block_io_part_attribute( stk::mesh::Part &part);
+
+void put_edge_block_io_part_attribute( stk::mesh::Part &part);
+
+void put_assembly_io_part_attribute( stk::mesh::Part &part);
+
+std::vector<std::string> get_assembly_names(const stk::mesh::MetaData& meta);
+
+std::vector<std::string> get_sub_assembly_names(const stk::mesh::MetaData& meta, const std::string& assemblyName);
+
+bool has_sub_assemblies(const stk::mesh::MetaData& meta, const std::string& assemblyName);
+
+stk::mesh::PartVector get_unique_leaf_parts(const stk::mesh::MetaData& meta, const std::string& assemblyName);
 
 /** Remove the existing attribute on the specified part 'part' that indicates that
  * this part should be used for io.  \see is_part_io_part()
@@ -573,6 +601,15 @@ void fill_data_for_side_block( OutputParams &params,
 
     fill_element_and_side_ids(params, part, parentElementBlock, stk_elem_topology, sides, elem_side_ids);
 }
+
+namespace impl {
+
+const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta,
+                                                       stk::mesh::EntityRank type,
+                                                       stk::mesh::Part &part,
+                                                       const Ioss::Field &io_field,
+                                                       bool use_cartesian_for_scalar);
+}//namespace impl
 
 }//namespace io
 }//namespace stk

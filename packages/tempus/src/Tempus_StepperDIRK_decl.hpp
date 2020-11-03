@@ -11,12 +11,8 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperRKBase.hpp"
-#include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  #include "Tempus_StepperRKObserverComposite.hpp"
-#endif
 
 
 namespace Tempus {
@@ -70,22 +66,20 @@ namespace Tempus {
  *  \renewcommand{\thealgorithm}{}
  *  \caption{DIRK with the application-action locations indicated.}
  *  \begin{algorithmic}[1]
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
  *    \If {``Reset initial guess.''}
  *      \State $X \leftarrow x_{n-1}$
  *        \Comment{Reset initial guess to last timestep.}
  *    \EndIf
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
  *    \For {$i = 0 \ldots s-1$}
- *      \If { $a_{k,i} = 0 \;\forall k = (i+1,\ldots, s-1)$, $b(i) = 0$, $b^\ast(i) = 0$}
- *        \State $\dot{X}_i \leftarrow 0$
- *          \Comment{Not needed for later calculations.}
- *        \State {\bf continue}
- *      \EndIf
  *      \State $\tilde{X} \leftarrow
  *                      x_{n-1} +\Delta t \sum_{j=1}^{i-1} a_{ij}\,\dot{X}_{j}$
  *      \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STAGE)}
- *      \If {$a_{ii} = 0$}             \Comment{Explicit stage.}
- *        \If {$i=0$ and ``Use FSAL''} \Comment{Save an evaluation?}
+ *      \If { $a_{k,i} = 0 \;\forall k = (i+1,\ldots, s-1)$, $b(i) = 0$, $b^\ast(i) = 0$}
+ *        \State $\dot{X}_i \leftarrow 0$
+ *          \Comment{Not needed for later calculations.}
+ *      \ElsIf {$a_{ii} = 0$}             \Comment{Explicit stage.}
+ *        \If {$i=0$ and ``Use FSAL'' and (previous step not failed)}
  *          \State $\dot{X}_0 \leftarrow \dot{X}_{s-1}$
  *            \Comment{Use $\dot{X}_{s-1}$ from $n-1$ time step.}
  *        \Else
@@ -118,7 +112,7 @@ namespace Tempus {
  *  \end{algorithmic}
  *  \f}
  *
- *  The First-Step-As-Last (FSAL) principle is not needed with DIRK, but
+ *  The First-Same-As-Last (FSAL) principle is not needed with DIRK, but
  *  maybe useful if the first stage is explicit (EDIRK) (e.g., Trapezoidal
  *  Method).  The default is to set useFSAL=false.
  *
@@ -158,16 +152,6 @@ public:
 
   /// \name Basic stepper methods
   //@{
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
-
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperObserver_; }
-#endif
-    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getTableau()
-    { return tableau_; }
-
     /// Initialize after construction and changing input parameters.
     virtual void initialize();
 
@@ -187,14 +171,11 @@ public:
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> >getDefaultStepperState();
-    virtual Scalar getOrder()    const{return tableau_->order();}
-    virtual Scalar getOrderMin() const{return tableau_->orderMin();}
-    virtual Scalar getOrderMax() const{return tableau_->orderMax();}
 
     virtual bool isExplicit() const
     {
-      const int numStages = tableau_->numStages();
-      Teuchos::SerialDenseMatrix<int,Scalar> A = tableau_->A();
+      const int numStages = this->tableau_->numStages();
+      Teuchos::SerialDenseMatrix<int,Scalar> A = this->tableau_->A();
       bool isExplicit = false;
       for (int i=0; i<numStages; ++i) if (A(i,i) == 0.0) isExplicit = true;
       return isExplicit;
@@ -219,7 +200,7 @@ public:
   /// Return alpha = d(xDot)/dx.
   virtual Scalar getAlpha(const Scalar dt) const
   {
-    const Teuchos::SerialDenseMatrix<int,Scalar> & A=tableau_->A();
+    const Teuchos::SerialDenseMatrix<int,Scalar> & A=this->tableau_->A();
     return Scalar(1.0)/(dt*A(0,0));  // Getting the first diagonal coeff!
   }
   /// Return beta  = d(x)/dx.
@@ -235,14 +216,6 @@ public:
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
-  /// \name Accessors methods
-  //@{
-    /** \brief Use embedded if avialable. */
-    virtual void setUseEmbedded(bool a) { useEmbedded_ = a; }
-    virtual bool getUseEmbedded() const { return useEmbedded_; }
-    virtual bool getUseEmbeddedDefault() const { return false; }
-  //@}
-
 
 protected:
 
@@ -250,17 +223,6 @@ protected:
   virtual void setupDefault();
 
   /// Setup for constructor.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  virtual void setup(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& wrapperModel,
-    const Teuchos::RCP<StepperRKObserver<Scalar> >& obs,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    bool useEmbedded,
-    bool zeroInitialGuess);
-#endif
   virtual void setup(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& wrapperModel,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
@@ -273,21 +235,8 @@ protected:
 
   virtual void setupTableau() = 0;
 
-  Teuchos::RCP<RKButcherTableau<Scalar> >                tableau_;
-
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  Teuchos::RCP<StepperRKObserverComposite<Scalar> >      stepperObserver_;
-#endif
-
-  // For Embedded RK
-  bool useEmbedded_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
 
   bool resetGuess_ = true;
 };

@@ -954,30 +954,27 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   setAllToScalar (const Scalar& alpha)
   {
-#ifdef HAVE_TPETRA_DEBUG
-    const char prefix[] = "Tpetra::BlockCrsMatrix::setAllToScalar: ";
-#endif // HAVE_TPETRA_DEBUG
+    // Why do we need to follow the last touch rule in Tpetra ? 
+    // If our main goal is to use device as much as possible, then 
+    // we should give priority to device for almost all operations.
+    // We probably do follow the last touch rule to obtain a certain 
+    // locality but this also can cause unexpected performance behavior
+    // for different use case. This might give inconsistent user experience.
+    
+    // Version 1: giving priority to device
+    //Kokkos::deep_copy(execution_space(), val_.view_device(), alpha);
+    //val_.modify_device();
 
-    if (this->need_sync_device ()) {
-      // If we need to sync to device, then the data were last
-      // modified on host.  In that case, we should again modify them
-      // on host.
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (this->need_sync_host (), std::runtime_error,
-         prefix << "The matrix's values need sync on both device and host.");
-#endif // HAVE_TPETRA_DEBUG
-      this->modify_host ();
-      Kokkos::deep_copy (getValuesHost (), alpha);
-    }
-    else {
-      // If we need to sync to host, then the data were last modified
-      // on device.  In that case, we should again modify them on
-      // device.  Also, prefer modifying on device if neither side is
-      // marked as modified.
-      this->modify_device ();
-      Kokkos::deep_copy (this->getValuesDevice (), alpha);
-    }
+    // Version 2: set both view with the scalar alpha concurrently and reset sync state
+    // Launch a kernel on device and return immediately
+    Kokkos::deep_copy(execution_space(), val_.view_device(), alpha); 
+    // If a host view has different pointer (not mirror of the device view),
+    // then initialize the host view as well.
+    if (val_.view_device().data() != val_.view_host().data()) 
+      Kokkos::deep_copy(val_.view_host(), alpha);
+
+    // Both host and device views are set with alpha. Clear the sync state.
+    val_.clear_sync_state();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -1088,7 +1085,7 @@ public:
     const LO blockSize = getBlockSize ();
     Teuchos::Array<impl_scalar_type> localMem (blockSize);
     Teuchos::Array<impl_scalar_type> localMat (blockSize*blockSize);
-    little_vec_type X_lcl (localMem.getRawPtr (), blockSize);
+    little_host_vec_type X_lcl (localMem.getRawPtr (), blockSize);
 
     // FIXME (mfh 12 Aug 2014) This probably won't work if LO is unsigned.
     LO rowBegin = 0, rowEnd = 0, rowStride = 0;
@@ -1111,11 +1108,13 @@ public:
     const Scalar one_minus_omega = Teuchos::ScalarTraits<Scalar>::one()-omega;
     const Scalar     minus_omega = -omega;
 
+    Kokkos::fence();
+
     if (numVecs == 1) {
       for (LO lclRow = rowBegin; lclRow != rowEnd; lclRow += rowStride) {
         const LO actlRow = lclRow - 1;
 
-        little_vec_type B_cur = B.getLocalBlock (actlRow, 0);
+        little_host_vec_type B_cur = B.getLocalBlock (actlRow, 0);
         COPY (B_cur, X_lcl);
         SCAL (static_cast<impl_scalar_type> (omega), X_lcl);
 
@@ -1125,7 +1124,7 @@ public:
           const LO meshCol = indHost_[absBlkOff];
           const_little_block_type A_cur =
             getConstLocalBlockFromAbsOffset (absBlkOff);
-          little_vec_type X_cur = X.getLocalBlock (meshCol, 0);
+          little_host_vec_type X_cur = X.getLocalBlock (meshCol, 0);
 
           // X_lcl += alpha*A_cur*X_cur
           const Scalar alpha = meshCol == actlRow ? one_minus_omega : minus_omega;
@@ -1137,7 +1136,7 @@ public:
         // unmanaged already, so we don't have to take unmanaged
         // subviews first.
         auto D_lcl = Kokkos::subview (D_inv, actlRow, ALL (), ALL ());
-        little_vec_type X_update = X.getLocalBlock (actlRow, 0);
+        little_host_vec_type X_update = X.getLocalBlock (actlRow, 0);
         FILL (X_update, zero);
         GEMV (one, D_lcl, X_lcl, X_update); // overwrite X_update
       } // for each local row of the matrix
@@ -1147,7 +1146,7 @@ public:
         for (LO j = 0; j < numVecs; ++j) {
           LO actlRow = lclRow-1;
 
-          little_vec_type B_cur = B.getLocalBlock (actlRow, j);
+          little_host_vec_type B_cur = B.getLocalBlock (actlRow, j);
           COPY (B_cur, X_lcl);
           SCAL (static_cast<impl_scalar_type> (omega), X_lcl);
 
@@ -1157,7 +1156,7 @@ public:
             const LO meshCol = indHost_[absBlkOff];
             const_little_block_type A_cur =
               getConstLocalBlockFromAbsOffset (absBlkOff);
-            little_vec_type X_cur = X.getLocalBlock (meshCol, j);
+            little_host_vec_type X_cur = X.getLocalBlock (meshCol, j);
 
             // X_lcl += alpha*A_cur*X_cur
             const Scalar alpha = meshCol == actlRow ? one_minus_omega : minus_omega;
@@ -2066,7 +2065,8 @@ public:
    const Kokkos::DualView<const local_ordinal_type*,
      buffer_device_type>& permuteToLIDs,
    const Kokkos::DualView<const local_ordinal_type*,
-     buffer_device_type>& permuteFromLIDs)
+     buffer_device_type>& permuteFromLIDs,
+   const CombineMode /*CM*/)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::dualViewStatusToString;

@@ -71,53 +71,53 @@ namespace Intrepid2 {
         const auto z = input(2);
 
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        output.access(0, 0) = (1.0 - y)*(1.0 - z)/8.0;
+        output.access(0, 0) = (1.0 - y)*(1.0 - z)/4.0;
         output.access(0, 1) = 0.0;
         output.access(0, 2) = 0.0;
 
         output.access(1, 0) = 0.0;
-        output.access(1, 1) = (1.0 + x)*(1.0 - z)/8.0;
+        output.access(1, 1) = (1.0 + x)*(1.0 - z)/4.0;
         output.access(1, 2) = 0.0;
 
-        output.access(2, 0) = -(1.0 + y)*(1.0 - z)/8.0;
+        output.access(2, 0) = -(1.0 + y)*(1.0 - z)/4.0;
         output.access(2, 1) = 0.0;
         output.access(2, 2) = 0.0;
 
         output.access(3, 0) = 0.0;
-        output.access(3, 1) = -(1.0 - x)*(1.0 - z)/8.0;
+        output.access(3, 1) = -(1.0 - x)*(1.0 - z)/4.0;
         output.access(3, 2) = 0.0;
 
-        output.access(4, 0) = (1.0 - y)*(1.0 + z)/8.0;
+        output.access(4, 0) = (1.0 - y)*(1.0 + z)/4.0;
         output.access(4, 1) = 0.0;
         output.access(4, 2) = 0.0;
 
         output.access(5, 0) = 0.0;
-        output.access(5, 1) = (1.0 + x)*(1.0 + z)/8.0;
+        output.access(5, 1) = (1.0 + x)*(1.0 + z)/4.0;
         output.access(5, 2) = 0.0;
 
-        output.access(6, 0) = -(1.0 + y)*(1.0 + z)/8.0;
+        output.access(6, 0) = -(1.0 + y)*(1.0 + z)/4.0;
         output.access(6, 1) = 0.0;
         output.access(6, 2) = 0.0;
 
         output.access(7, 0) = 0.0;
-        output.access(7, 1) = -(1.0 - x)*(1.0 + z)/8.0;
+        output.access(7, 1) = -(1.0 - x)*(1.0 + z)/4.0;
         output.access(7, 2) = 0.0;
 
         output.access(8, 0) = 0.0;
         output.access(8, 1) = 0.0;
-        output.access(8, 2) = (1.0 - x)*(1.0 - y)/8.0;
+        output.access(8, 2) = (1.0 - x)*(1.0 - y)/4.0;
 
         output.access(9, 0) = 0.0;
         output.access(9, 1) = 0.0;
-        output.access(9, 2) = (1.0 + x)*(1.0 - y)/8.0;
+        output.access(9, 2) = (1.0 + x)*(1.0 - y)/4.0;
 
         output.access(10, 0) = 0.0;
         output.access(10, 1) = 0.0;
-        output.access(10, 2) = (1.0 + x)*(1.0 + y)/8.0;
+        output.access(10, 2) = (1.0 + x)*(1.0 + y)/4.0;
 
         output.access(11, 0) = 0.0;
         output.access(11, 1) = 0.0;
-        output.access(11, 2) = (1.0 - x)*(1.0 + y)/8.0;
+        output.access(11, 2) = (1.0 - x)*(1.0 + y)/4.0;
         break;
       }
       case OPERATOR_CURL: {
@@ -127,51 +127,51 @@ namespace Intrepid2 {
 
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
         output.access(0, 0) = 0.0;
-        output.access(0, 1) = -(1.0 - y)/8.0;
-        output.access(0, 2) = (1.0 - z)/8.0;
+        output.access(0, 1) = -(1.0 - y)/4.0;
+        output.access(0, 2) = (1.0 - z)/4.0;
 
-        output.access(1, 0) = (1.0 + x)/8.0;
+        output.access(1, 0) = (1.0 + x)/4.0;
         output.access(1, 1) = 0.0;
-        output.access(1, 2) = (1.0 - z)/8.0;
+        output.access(1, 2) = (1.0 - z)/4.0;
 
         output.access(2, 0) = 0.0;
-        output.access(2, 1) = (1.0 + y)/8.0;
-        output.access(2, 2) = (1.0 - z)/8.0;
+        output.access(2, 1) = (1.0 + y)/4.0;
+        output.access(2, 2) = (1.0 - z)/4.0;
 
-        output.access(3, 0) = -(1.0 - x)/8.0;
+        output.access(3, 0) = -(1.0 - x)/4.0;
         output.access(3, 1) = 0.0;
-        output.access(3, 2) = (1.0 - z)/8.0;
+        output.access(3, 2) = (1.0 - z)/4.0;
 
         output.access(4, 0) = 0.0;
-        output.access(4, 1) = (1.0 - y)/8.0;
-        output.access(4, 2) = (1.0 + z)/8.0;
+        output.access(4, 1) = (1.0 - y)/4.0;
+        output.access(4, 2) = (1.0 + z)/4.0;
 
-        output.access(5, 0) = -(1.0 + x)/8.0;
+        output.access(5, 0) = -(1.0 + x)/4.0;
         output.access(5, 1) = 0.0;
-        output.access(5, 2) = (1.0 + z)/8.0;
+        output.access(5, 2) = (1.0 + z)/4.0;
 
         output.access(6, 0) = 0.0;
-        output.access(6, 1) = -(1.0 + y)/8.0;
-        output.access(6, 2) = (1.0 + z)/8.0;
+        output.access(6, 1) = -(1.0 + y)/4.0;
+        output.access(6, 2) = (1.0 + z)/4.0;
 
-        output.access(7, 0) = (1.0 - x)/8.0;
+        output.access(7, 0) = (1.0 - x)/4.0;
         output.access(7, 1) = 0.0;
-        output.access(7, 2) = (1.0 + z)/8.0;
+        output.access(7, 2) = (1.0 + z)/4.0;
 
-        output.access(8, 0) = -(1.0 - x)/8.0;
-        output.access(8, 1) = (1.0 - y)/8.0;
+        output.access(8, 0) = -(1.0 - x)/4.0;
+        output.access(8, 1) = (1.0 - y)/4.0;
         output.access(8, 2) = 0.0;
 
-        output.access(9, 0) = -(1.0 + x)/8.0;
-        output.access(9, 1) = -(1.0 - y)/8.0;
+        output.access(9, 0) = -(1.0 + x)/4.0;
+        output.access(9, 1) = -(1.0 - y)/4.0;
         output.access(9, 2) = 0.0;
 
-        output.access(10, 0) = (1.0 + x)/8.0;
-        output.access(10, 1) = -(1.0 + y)/8.0;
+        output.access(10, 0) = (1.0 + x)/4.0;
+        output.access(10, 1) = -(1.0 + y)/4.0;
         output.access(10, 2) = 0.0;
 
-        output.access(11, 0) = (1.0 - x)/8.0;
-        output.access(11, 1) = (1.0 + y)/8.0;
+        output.access(11, 0) = (1.0 - x)/4.0;
+        output.access(11, 1) = (1.0 + y)/4.0;
         output.access(11, 2) = 0.0;
         break;
       }
@@ -343,19 +343,19 @@ namespace Intrepid2 {
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoeffs("dofCoeffsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
 
-    // for HCURL_HEX_I1 dofCoeffs are the tangents on the hexahedron edges (with tangents magnitude equal to edges' lengths)
-    dofCoeffs(0,0)  =  2.0;   dofCoeffs(0,1)  =  0.0;   dofCoeffs(0,2)  =  0.0;
-    dofCoeffs(1,0)  =  0.0;   dofCoeffs(1,1)  =  2.0;   dofCoeffs(1,2)  =  0.0;
-    dofCoeffs(2,0)  = -2.0;   dofCoeffs(2,1)  =  0.0;   dofCoeffs(2,2)  =  0.0;
-    dofCoeffs(3,0)  =  0.0;   dofCoeffs(3,1)  = -2.0;   dofCoeffs(3,2)  =  0.0;
-    dofCoeffs(4,0)  =  2.0;   dofCoeffs(4,1)  =  0.0;   dofCoeffs(4,2)  =  0.0;
-    dofCoeffs(5,0)  =  0.0;   dofCoeffs(5,1)  =  2.0;   dofCoeffs(5,2)  =  0.0;
-    dofCoeffs(6,0)  = -2.0;   dofCoeffs(6,1)  =  0.0;   dofCoeffs(6,2)  =  0.0;
-    dofCoeffs(7,0)  =  0.0;   dofCoeffs(7,1)  = -2.0;   dofCoeffs(7,2)  =  0.0;
-    dofCoeffs(8,0)  =  0.0;   dofCoeffs(8,1)  =  0.0;   dofCoeffs(8,2)  =  2.0;
-    dofCoeffs(9,0)  =  0.0;   dofCoeffs(9,1)  =  0.0;   dofCoeffs(9,2)  =  2.0;
-    dofCoeffs(10,0) =  0.0;   dofCoeffs(10,1) =  0.0;   dofCoeffs(10,2) =  2.0;
-    dofCoeffs(11,0) =  0.0;   dofCoeffs(11,1) =  0.0;   dofCoeffs(11,2) =  2.0;
+    // for HCURL_HEX_I1 dofCoeffs are the tangents on the hexahedron edges
+    dofCoeffs(0,0)  =  1.0;   dofCoeffs(0,1)  =  0.0;   dofCoeffs(0,2)  =  0.0;
+    dofCoeffs(1,0)  =  0.0;   dofCoeffs(1,1)  =  1.0;   dofCoeffs(1,2)  =  0.0;
+    dofCoeffs(2,0)  = -1.0;   dofCoeffs(2,1)  =  0.0;   dofCoeffs(2,2)  =  0.0;
+    dofCoeffs(3,0)  =  0.0;   dofCoeffs(3,1)  = -1.0;   dofCoeffs(3,2)  =  0.0;
+    dofCoeffs(4,0)  =  1.0;   dofCoeffs(4,1)  =  0.0;   dofCoeffs(4,2)  =  0.0;
+    dofCoeffs(5,0)  =  0.0;   dofCoeffs(5,1)  =  1.0;   dofCoeffs(5,2)  =  0.0;
+    dofCoeffs(6,0)  = -1.0;   dofCoeffs(6,1)  =  0.0;   dofCoeffs(6,2)  =  0.0;
+    dofCoeffs(7,0)  =  0.0;   dofCoeffs(7,1)  = -1.0;   dofCoeffs(7,2)  =  0.0;
+    dofCoeffs(8,0)  =  0.0;   dofCoeffs(8,1)  =  0.0;   dofCoeffs(8,2)  =  1.0;
+    dofCoeffs(9,0)  =  0.0;   dofCoeffs(9,1)  =  0.0;   dofCoeffs(9,2)  =  1.0;
+    dofCoeffs(10,0) =  0.0;   dofCoeffs(10,1) =  0.0;   dofCoeffs(10,2) =  1.0;
+    dofCoeffs(11,0) =  0.0;   dofCoeffs(11,1) =  0.0;   dofCoeffs(11,2) =  1.0;
 
     this->dofCoeffs_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoeffs);
     Kokkos::deep_copy(this->dofCoeffs_, dofCoeffs);

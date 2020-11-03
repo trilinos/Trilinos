@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// See packages/seacas/LICENSE for details
 
 #include <Ioss_Assembly.h>
 #include <Ioss_Blob.h>
@@ -90,24 +64,25 @@ namespace {
     return nullptr;
   }
 
-  template <typename T> size_t get_variable_count(const std::vector<T> &entities)
+  template <typename T>
+  size_t internal_get_variable_count(const std::vector<T> &entities, Ioss::Field::RoleType role)
   {
     Ioss::NameList names;
     for (auto ent : entities) {
-      ent->field_describe(Ioss::Field::TRANSIENT, &names);
+      ent->field_describe(role, &names);
     }
     Ioss::Utils::uniquify(names);
     return names.size();
   }
 
+  template <typename T> size_t get_variable_count(const std::vector<T> &entities)
+  {
+    return internal_get_variable_count(entities, Ioss::Field::TRANSIENT);
+  }
+
   template <typename T> size_t get_reduction_variable_count(const std::vector<T> &entities)
   {
-    Ioss::NameList names;
-    for (auto ent : entities) {
-      ent->field_describe(Ioss::Field::REDUCTION, &names);
-    }
-    Ioss::Utils::uniquify(names);
-    return names.size();
+    return internal_get_variable_count(entities, Ioss::Field::REDUCTION);
   }
 
   template <typename T> int64_t get_entity_count(const std::vector<T> &entities)
@@ -146,19 +121,19 @@ namespace {
 
       if (old_ge != nullptr &&
           !(old_ge->type() == Ioss::SIDEBLOCK || old_ge->type() == Ioss::SIDESET)) {
-        std::string        filename = region->get_database()->get_filename();
-        std::ostringstream errmsg;
-        int64_t            id1 = 0;
-        int64_t            id2 = 0;
+        std::string filename = region->get_database()->get_filename();
+        int64_t     id1      = 0;
+        int64_t     id2      = 0;
         if (entity->property_exists(id_str())) {
           id1 = entity->get_property(id_str()).get_int();
         }
         if (old_ge->property_exists(id_str())) {
           id2 = old_ge->get_property(id_str()).get_int();
         }
+        std::ostringstream errmsg;
         fmt::print(errmsg,
                    "ERROR: There are multiple blocks or sets with the same name defined in the "
-                   "exodus file '{}'.\n"
+                   "database file '{}'.\n"
                    "\tBoth {} {} and {} {} are named '{}'.  All names must be unique.",
                    filename, entity->type_string(), id1, old_ge->type_string(), id2, name);
         IOSS_ERROR(errmsg);
@@ -545,17 +520,17 @@ namespace Ioss {
     size_t num_blob_vars = get_variable_count(get_blobs());
 
     size_t num_glo_red_vars  = field_count(Ioss::Field::REDUCTION);
-    size_t num_nod_red_vars  = get_variable_count(get_node_blocks());
-    size_t num_edg_red_vars  = get_variable_count(get_edge_blocks());
-    size_t num_fac_red_vars  = get_variable_count(get_face_blocks());
-    size_t num_ele_red_vars  = get_variable_count(get_element_blocks());
-    size_t num_str_red_vars  = get_variable_count(get_structured_blocks());
-    size_t num_ns_red_vars   = get_variable_count(get_nodesets());
-    size_t num_es_red_vars   = get_variable_count(get_edgesets());
-    size_t num_fs_red_vars   = get_variable_count(get_facesets());
-    size_t num_els_red_vars  = get_variable_count(get_elementsets());
+    size_t num_nod_red_vars  = get_reduction_variable_count(get_node_blocks());
+    size_t num_edg_red_vars  = get_reduction_variable_count(get_edge_blocks());
+    size_t num_fac_red_vars  = get_reduction_variable_count(get_face_blocks());
+    size_t num_ele_red_vars  = get_reduction_variable_count(get_element_blocks());
+    size_t num_str_red_vars  = get_reduction_variable_count(get_structured_blocks());
+    size_t num_ns_red_vars   = get_reduction_variable_count(get_nodesets());
+    size_t num_es_red_vars   = get_reduction_variable_count(get_edgesets());
+    size_t num_fs_red_vars   = get_reduction_variable_count(get_facesets());
+    size_t num_els_red_vars  = get_reduction_variable_count(get_elementsets());
     size_t num_asm_red_vars  = get_reduction_variable_count(get_assemblies());
-    size_t num_blob_red_vars = get_variable_count(get_blobs());
+    size_t num_blob_red_vars = get_reduction_variable_count(get_blobs());
 
     size_t                       num_ss_vars = 0;
     const Ioss::SideSetContainer fss         = get_sidesets();

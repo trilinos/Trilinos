@@ -1,5 +1,25 @@
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 
+# Parse the Hypre headers
+IF (${PACKAGE_NAME}_ENABLE_HYPRE)
+  IF (PYTHON_EXECUTABLE)
+    EXECUTE_PROCESS(
+      COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../utils/parseHypre.py ${HYPRE_INCLUDE_DIRS} Ifpack2_HypreParameterMap.hpp
+      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+      RESULT_VARIABLE RETURN_VALUE
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+  ELSE ()
+    MESSAGE(FATAL_ERROR "Python needed to parse Hypre headers")
+  ENDIF ()
+  IF (RETURN_VALUE EQUAL 0)
+    MESSAGE("-- Parsed Hypre headers")
+  ELSE ()
+    MESSAGE(FATAL_ERROR "Failed to parse Hypre headers")
+  ENDIF ()
+ENDIF ()
+
+
 # Function to generate ETI (explicit template instantiation) files
 # from a template and list of class names
 FUNCTION(IFPACK2_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOURCES_LIST)
@@ -247,6 +267,12 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
       Details::Fic
       Details::Fildl
     )
+  ENDIF()
+
+  IF(Ifpack2_ENABLE_HYPRE)
+    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES
+      Hypre
+      )
   ENDIF()
 
   # Set the list of Ifpack2 classes templated on <LO, GO, Node> for

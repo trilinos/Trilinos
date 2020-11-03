@@ -4,37 +4,11 @@
 // * Single Base.
 // * ZoneGridConnectivity is 1to1 with point lists for unstructured
 
-// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// See packages/seacas/LICENSE for details
 
 #include <cgns/Iocgns_Defines.h>
 
@@ -104,6 +78,42 @@ namespace {
       }
     }
     return has_decomp_flag;
+  }
+
+  bool has_decomp_name_kluge(int cgns_file_ptr, int base, int zone, int zgc_idx)
+  {
+    // Check the `zgc_idx`-th ZGC node to see if the name matches the
+    // form described in the `name_is_decomp` function below.  We want to
+    // see if there are *any* names that match this form and if so, we can
+    // use the kluge; otherwise we can't and need to rely on other hueristics.
+    char                    connectname[CGNS_MAX_NAME_LENGTH + 1];
+    char                    donorname[CGNS_MAX_NAME_LENGTH + 1];
+    std::array<cgsize_t, 6> range;
+    std::array<cgsize_t, 6> donor_range;
+    Ioss::IJK_t             transform;
+
+    cg_1to1_read(cgns_file_ptr, base, zone, zgc_idx, connectname, donorname, range.data(),
+                 donor_range.data(), transform.data());
+
+    std::string name{connectname};
+    bool        has_decomp_name = ((name.find_first_not_of("0123456789_-") == std::string::npos) &&
+                            (name.find("--", 1 != std::string::npos)));
+
+    return has_decomp_name;
+  }
+
+  bool name_is_decomp(const std::string &name)
+  {
+    // Major kluge to deal with fpp files which don't have the
+    // decomp descriptor.  Usually only required if the model is
+    // periodic...
+    //
+    // A zgc name that is generated as part of the decomposition process
+    // has the following characteristics:
+    // * is all [0-9_-] characters
+    // * has "--" in the middle (approx) of the name
+    return ((name.find_first_not_of("0123456789_-") == std::string::npos) &&
+            (name.find("--", 1 != std::string::npos)));
   }
 
   void zgc_check_descriptor(int cgns_file_ptr, int base, int zone, int zgc_idx,
@@ -282,6 +292,12 @@ namespace {
           int    br   = bb;
           do {
             global[ijk] += blocks[br].range[ijk];
+#if IOSS_DEBUG_OUTPUT
+            const auto b = blocks[br];
+            fmt::print(Ioss::DEBUG(), "Min {}: {} {} ({} {} {})  [{}]\n",
+                       (ijk == 0 ? 'i' : ijk == 1 ? 'j' : 'k'), b.name, b.face_adj[ijk], b.range[0],
+                       b.range[1], b.range[2], b.face_adj.to_string('.', '+'));
+#endif
             br = adjacent_block(blocks[br], ijk + 3, proc_block_map);
             if (++iter > end - begin) {
               auto               bp = adjacent_block(blocks[br], ijk + 3, proc_block_map);
@@ -340,11 +356,14 @@ namespace {
     // We can unambiguously determine whether a ZGC is from decomp or is
     // normal inter-zone ZGC. If the descriptor does not exist, then have
     // to rely on hueristics...
-    bool has_decomp_flag = false;
+    bool has_decomp_flag  = false;
+    bool has_decomp_names = false;
     for (int i = 0; i < nconn; i++) {
       if (has_decomp_descriptor(cgns_file_ptr, base, zone, i + 1)) {
         has_decomp_flag = true;
-        break;
+      }
+      if (has_decomp_name_kluge(cgns_file_ptr, base, zone, i + 1)) {
+        has_decomp_names = true;
       }
     }
 
@@ -371,7 +390,11 @@ namespace {
         is_from_decomp = has_decomp_descriptor(cgns_file_ptr, base, zone, i + 1);
       }
       else {
-        is_from_decomp = donor_name == zone_name && donor_proc >= 0 && donor_proc != myProcessor;
+#if IOSS_DEBUG_OUTPUT
+        fmt::print("Name: {}, decomp? = {}\n", connectname, name_is_decomp(connectname));
+#endif
+        is_from_decomp = donor_name == zone_name && donor_proc >= 0 && donor_proc != myProcessor &&
+                         (!has_decomp_names || name_is_decomp(connectname));
       }
 
       if (is_from_decomp) {
@@ -508,6 +531,14 @@ namespace Iocgns {
       if (properties.exists("FLUSH_INTERVAL")) {
         m_flushInterval = properties.get("FLUSH_INTERVAL").get_int();
       }
+
+      {
+        bool file_per_state = false;
+        Ioss::Utils::check_set_bool_property(properties, "FILE_PER_STATE", file_per_state);
+        if (file_per_state) {
+          set_file_per_state(true);
+        }
+      }
     }
 
     Ioss::DatabaseIO::openDatabase__();
@@ -519,6 +550,10 @@ namespace Iocgns {
       delete gtb.second;
     }
     try {
+      if (m_cgnsBasePtr > 0) {
+        CGCHECKM(cg_close(m_cgnsBasePtr));
+        m_cgnsBasePtr = -1;
+      }
       closeDatabase__();
     }
     catch (...) {
@@ -687,7 +722,14 @@ namespace Iocgns {
     }
 
     if (!m_dbFinalized) {
-      Utils::finalize_database(get_file_pointer(), m_timesteps, get_region(), myProcessor, false);
+      int file_ptr;
+      if (get_file_per_state()) {
+        file_ptr = m_cgnsBasePtr;
+      }
+      else {
+        file_ptr = get_file_pointer();
+      }
+      Utils::finalize_database(file_ptr, m_timesteps, get_region(), myProcessor, false);
       m_dbFinalized = true;
     }
   }
@@ -863,7 +905,7 @@ namespace Iocgns {
         fmt::print(Ioss::DEBUG(), "{} {} {} ({} {} {}) ({} {} {}) ({} {} {}) [{}]\n", b.name,
                    b.proc, b.local_zone, b.range[0], b.range[1], b.range[2], b.glob_range[0],
                    b.glob_range[1], b.glob_range[2], b.offset[0], b.offset[1], b.offset[2],
-                   b.face_adj);
+                   b.face_adj.to_string('.', '+'));
       }
 #endif
 
@@ -1591,6 +1633,39 @@ namespace Iocgns {
     return true;
   }
 
+  void DatabaseIO::free_state_pointer()
+  {
+    // If this is the first state file created, then we need to save a reference
+    // to the base CGNS file so we can update the metadata and create links to
+    // the state files.
+    if (m_cgnsBasePtr < 0) {
+      m_cgnsBasePtr = m_cgnsFilePtr;
+      m_cgnsFilePtr = -1;
+    }
+    closeDatabase__();
+  }
+
+  void DatabaseIO::open_state_file(int state)
+  {
+    // Close current state file (if any)...
+    free_state_pointer();
+
+    // Update filename to append state count...
+    decodedFilename.clear();
+
+    Ioss::FileInfo db(originalDBFilename);
+    std::string    new_filename;
+    if (!db.pathname().empty()) {
+      new_filename += db.pathname() + "/";
+    }
+
+    new_filename += fmt::format("{}-SolutionAtStep{:05}.{}", db.basename(), state, db.extension());
+
+    DBFilename = new_filename;
+
+    Iocgns::Utils::write_state_meta_data(get_file_pointer(), *get_region(), false);
+  }
+
   bool DatabaseIO::end__(Ioss::State state)
   {
     // Transitioning out of state 'state'
@@ -1623,7 +1698,12 @@ namespace Iocgns {
     if (is_input()) {
       return true;
     }
-    Utils::write_flow_solution_metadata(get_file_pointer(), get_region(), state,
+    if (get_file_per_state()) {
+      // Close current state file (if any); create new state file and output metadata...
+      open_state_file(state);
+      write_results_meta_data();
+    }
+    Utils::write_flow_solution_metadata(get_file_pointer(), m_cgnsBasePtr, get_region(), state,
                                         &m_currentVertexSolutionIndex,
                                         &m_currentCellCenterSolutionIndex, false);
 
@@ -2576,6 +2656,8 @@ namespace Iocgns {
           eb->property_update("guid", zone);
           eb->property_update("section", 1);
           eb->property_update("base", base);
+          eb->property_update("zone_node_count", size[0]);
+          eb->property_update("zone_element_count", size[1]);
 
           if (eb->property_exists("assembly")) {
             std::string assembly = eb->get_property("assembly").get_string();

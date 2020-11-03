@@ -87,7 +87,7 @@ namespace MueLu {
     using map_type            = Xpetra::Map<LocalOrdinal, GlobalOrdinal, node_type>;
     using local_graph_type    = Kokkos::StaticCrsGraph<LocalOrdinal,
                                                        Kokkos::LayoutLeft,
-                                                       device_type>;
+                                                       device_type, void, size_t>;
     using boundary_nodes_type = Kokkos::View<const bool*, memory_space>;
     using row_type            = Kokkos::View<const LocalOrdinal*, memory_space>;
 

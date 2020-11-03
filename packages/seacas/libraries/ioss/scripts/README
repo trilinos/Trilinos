@@ -6,7 +6,7 @@ not require any other Sierra Framework code.
 
 This code includes database readers/writers for the exodusII and cgns
 database formats.  There is also a unit test code which can function
-as a translator.  
+as a translator.
 
 To compile the code, move the Makefile in io_system/scripts to the
 top-level directory and then modify any paths that are required.  Then
@@ -27,7 +27,7 @@ libraries.
 
 1. The io_system/src/main/Main_io_shell.C file can serve as minimal
 documentation of how to use the Sierra IO system and also the
-conventions used in the Sierra IO system. 
+conventions used in the Sierra IO system.
 
 2. There is also some documentation in the io_system/documents
 directory. Typing "make" in that directory should build the

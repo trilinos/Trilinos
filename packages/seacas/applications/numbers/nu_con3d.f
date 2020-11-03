@@ -1,74 +1,27 @@
-C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C    * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C    * Redistributions in binary form must reproduce the above
-C      copyright notice, this list of conditions and the following
-C      disclaimer in the documentation and/or other materials provided
-C      with the distribution.
-C
-C    * Neither the name of NTESS nor the names of its
-C      contributors may be used to endorse or promote products derived
-C      from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C    See packages/seacas/LICENSE for details
 
-C $Id: con3d.f,v 1.5 2004/06/29 18:05:32 gdsjaar Exp $
-C $Log: con3d.f,v $
-C Revision 1.5  2004/06/29 18:05:32  gdsjaar
-C General cleanup. Remove unused labels and variables.
-C
-C Revision 1.4  2000/07/06 16:49:57  gdsjaar
-C Changed real*4 to real
-C
-C Revision 1.3  1998/02/12 00:03:01  gdsjaar
-C Added calculation of minimum jacobian to the condition command output.
-C Routine borrowed from cubit (which borrowed it originally from numbers...)
-C
-C Revision 1.2  1996/06/25 21:48:57  gdsjaar
-C Modified output to support large (millions of elements) models
-C
-c Revision 1.1.1.1  1991/02/21  15:42:42  gdsjaar
-c NUMBERS: Greg Sjaardema, initial Unix release
-c
-c Revision 1.1  1991/02/21  15:42:41  gdsjaar
-c Initial revision
-c
 C=======================================================================
       SUBROUTINE CON3D (CRD, NDIM, NUMNP, IX, NNODES, NUMEL, MAT,
      *   NELBLK, SELECT, ASPECT1, ASPECT2, ASPECT3, AREA,
      *   SUMRY, ISUMRY, SKEWX, SKEWY, SKEWZ, TAPERX, TAPERY, TAPERZ,
      *   JAC, DEBUG)
 C=======================================================================
-C
+
 C *** CON3D *** Calculate state of mesh -- Aspect ratio, Skewness,
 C               and Taper  (Three-dimensional mesh)
-C
+
 C    (Greg Sjaardema, 16 April, 1989)
-C
+
 C Based on article by John Robinson, "CRE Method of element testing
 C    and the Jacobian shape parameters," Eng. Comput., 1987, Vol. 4,
 C    June, pp 113 - 118
-C
+
 C     NOTE:  This is an experimental routine.
-C
+
 C -- ARRAYS:
 C     CRD(NUMNP, NDIM)  - IN -
 C     IX(NNODES, NUMEL) - IN -
@@ -78,24 +31,24 @@ C     ASPECT(NUMEL)     - OUT- Aspect ratio (1.0 <= AR <= infinity)
 C     SKEW(NUMEL)       - OUT- Skewness of mesh, degrees (0 <= skew <= ?)
 C     TAPER(NUMEL)      - OUT- Taper of mesh, combination of X and Y taper
 C     AREA(NUMEL)       - OUT- Area of element
-C
+
 C -- SCALARS:
 C     NDIM   - Number of spatial dimensions
 C     NUMNP  - Number of nodal points
 C     NNODES - Number of nodes per element
 C     NUMEL  - Number of elements
 C     NELBLK - Number of material/element blocks
-C
+
 C         E2                                               E4
 C     +----------+          +-----------+       +---------+ |
 C     |          | F3      /           /       /           \
 C     |          |        / A         /       /             \
 C     +----------+       +-----------+       +---------------+
-C
+
 C      AR = E2/F3        SKEW = SIN(A)            TAPER Y
-C
+
 C=======================================================================
-C
+
 C      REAL   CRD(NUMNP, NDIM), ASPECT(*), SKEW(*), TAPER(*), AREA(*)
       REAL   CRD(NUMNP, NDIM)
       REAL   ASPECT1(*), ASPECT2(*), ASPECT3(*), AREA(*)
@@ -113,12 +66,12 @@ C      REAL   SUMRY(4,4,1)
 C      LOGICAL  SELECT(1)
 C      REAL   SKEWX(1), SKEWY(1)
 C      REAL   TAPERX(1), TAPERY(1), TAPERZ(1)
-C
+
 C      DATA IX/1,2,3,4,5,6,7,8/
 C      DATA MAT /1,1,1,1,1/
 C      DATA SELECT /.TRUE./
 C      DATA NELBLK /1/
-C
+
       include 'nu_io.blk'
 
 C      IOMIN = 6

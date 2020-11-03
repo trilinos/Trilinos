@@ -155,6 +155,12 @@ namespace FROSch {
 
         string description() const;
 
+        // AH: Could this be moved to protected?
+        virtual XMapPtr BuildRepeatedMapCoarseLevel(ConstXMapPtr &nodesMap,
+                                                    UN dofsPerNode,
+                                                    ConstXMapPtrVecPtr dofsMaps,
+                                                    UN partitionType );
+
     protected:
 
         int buildCoarseSpace(UN dimension,

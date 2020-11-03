@@ -53,7 +53,6 @@ public:
      volatile const Scalar errorRel = workingState->getErrorRel();
      int order = workingState->getOrder();
      Scalar dt = workingState->getTimeStep();
-     //bool printDtChanges = tsc.getPrintDtChanges();
 
      Teuchos::RCP<Teuchos::FancyOStream> out = tsc.getOStream();
      Teuchos::OSTab ostab(out,1,"getNextTimeStep");
@@ -69,21 +68,41 @@ public:
      };
      */
 
-     // update errors
-     errNm2_ = errNm1_;
-     errNm1_ = errN_;
-     errN_ = errorRel;
-
+     Scalar beta = 1.0;
+     const std::string strategy_name = this->tscsPL_->template get<std::string>("Name");
      Scalar k1 = Teuchos::as<Scalar>(-k1_ / order);
      Scalar k2 = Teuchos::as<Scalar>(k2_ / order);
      Scalar k3 = Teuchos::as<Scalar>(-k3_ / order);
 
-     k1 = std::pow(errN_, k1);
-     k2 = std::pow(errNm1_, k2);
-     k3 = std::pow(errNm2_, k3);
-     Scalar beta = safetyFactor_*k1*k2*k3;
-     beta = std::max(facMin_, beta);
-     beta = std::min(facMax_, beta);
+
+     if (strategy_name == "PID")
+     {
+       // update errors
+       errNm2_ = errNm1_;
+       errNm1_ = errN_;
+       errN_ = errorRel;
+
+       k1 = std::pow(errN_, k1);
+       k2 = std::pow(errNm1_, k2);
+       k3 = std::pow(errNm2_, k3);
+       beta = safetyFactor_*k1*k2*k3;
+     }
+     else if (strategy_name == "PI")
+     {
+       // update errors
+       errNm1_ = errN_;
+       errN_ = errorRel;
+       k1 = std::pow(errN_, k1);
+       k2 = std::pow(errNm1_, k2);
+       beta = safetyFactor_*k1*k2;
+     }
+     else if (strategy_name == "I")
+     {
+       // update errors
+       errN_ = errorRel;
+       k1 = std::pow(errN_, k1);
+       beta = safetyFactor_*k1;
+     }
 
      // new (optimal) suggested time step
      dt = beta * dt;
@@ -91,7 +110,7 @@ public:
      if (workingState->getSolutionStatus() == Status::PASSED or
          workingState->getSolutionStatus() == Status::WORKING) {
         if(lastStepRejected_){
-           dt = std::min(dt, workingState->getTimestep());
+           dt = std::min(dt, workingState->getTimeStep());
         } else {
            facMax_ = tscsPL_->get<Scalar>("Maximum Safety Factor");
         }

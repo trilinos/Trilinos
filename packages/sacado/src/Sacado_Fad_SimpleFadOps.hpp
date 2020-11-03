@@ -146,7 +146,7 @@ namespace Sacado {
     SimpleFad<ValueT>
     tanh(const SimpleFad<ValueT>& a) {
       ValueT t = std::tanh(a.val());
-      return SimpleFad<ValueT>(a, t, 1-t*t);
+      return SimpleFad<ValueT>(a, t, 1.0-t*t);
     }
 
     template <typename ValueT>
@@ -334,7 +334,7 @@ namespace Sacado {
       SimpleFad<ValueT> c(sz, std::pow(a.val(), b.val()));
       typedef typename SimpleFad<ValueT>::value_type value_type;
       if (a.hasFastAccess() && b.hasFastAccess()) {
-	if (a.val() != value_type(0)) {
+        if (a.val() != value_type(0)) {
 	  ValueT t1 = c.val()*b.val()/a.val();
 	  ValueT t2 = c.val()*std::log(a.val());
 	  for (int i=0; i<sz; i++)
@@ -343,7 +343,11 @@ namespace Sacado {
 	}
       }
       else if (a.hasFastAccess()) {
-	if (a.val() != value_type(0)) {
+        if (b.val() == value_type(1)) {
+          for (int i=0; i<sz; i++)
+	    c.fastAccessDx(i) = a.fastAccessDx(i);
+        }
+        else if (a.val() != value_type(0)) {
 	  ValueT t1 = c.val()*b.val()/a.val();
 	  for (int i=0; i<sz; i++)
 	    c.fastAccessDx(i) = a.fastAccessDx(i)*t1;
@@ -378,7 +382,9 @@ namespace Sacado {
 	const typename SimpleFad<ValueT>::value_type& b) {
       typedef typename SimpleFad<ValueT>::value_type value_type;
       ValueT t = std::pow(a.val(),b);
-      if (a.val() != value_type(0))
+      if (b == value_type(1))
+        return a;
+      else if (a.val() != value_type(0))
 	return SimpleFad<ValueT>(a, t, t*b/a.val());
       else
 	return SimpleFad<ValueT>(a, t, value_type(0));

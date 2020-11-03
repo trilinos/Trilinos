@@ -32,17 +32,23 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Filtered matrix is not being constructed as no filtering is being done
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
+filtered matrix: use spread lumping = 0   [default]
+filtered matrix: spread lumping diag dom growth factor = 1.1   [default]
+filtered matrix: spread lumping diag dom cap = 2   [default]
+filtered matrix: Dirichlet threshold = -1   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -89,6 +95,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -110,6 +117,8 @@ interface aggregation = 0   [default]
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]
@@ -189,17 +198,23 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Filtered matrix is not being constructed as no filtering is being done
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
+filtered matrix: use spread lumping = 0   [default]
+filtered matrix: spread lumping diag dom growth factor = 1.1   [default]
+filtered matrix: spread lumping diag dom cap = 2   [default]
+filtered matrix: Dirichlet threshold = -1   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -246,6 +261,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -267,6 +283,8 @@ interface aggregation = 0   [default]
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]
@@ -368,22 +386,29 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Filtered matrix is not being constructed as no filtering is being done
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
+filtered matrix: use spread lumping = 0   [default]
+filtered matrix: spread lumping diag dom growth factor = 1.1   [default]
+filtered matrix: spread lumping diag dom cap = 2   [default]
+filtered matrix: Dirichlet threshold = -1   [default]
 
 Reusing previous AP data
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -429,6 +454,8 @@ interface aggregation = 0   [default]
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]
@@ -469,17 +496,23 @@ Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 
-algorithm = "classical": threshold = 0, blocksize = 1
+algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 aggregation: drop tol = 0   [default]
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
 aggregation: distance laplacian algo = default   [default]
+aggregation: classical algo = default   [default]
 lightweight wrap = 1
 
 Filtered matrix is not being constructed as no filtering is being done
 filtered matrix: use lumping = 1   [default]
 filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
+filtered matrix: use root stencil = 0   [default]
+filtered matrix: use spread lumping = 0   [default]
+filtered matrix: spread lumping diag dom growth factor = 1.1   [default]
+filtered matrix: spread lumping diag dom cap = 2   [default]
+filtered matrix: Dirichlet threshold = -1   [default]
 
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
@@ -526,6 +559,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -547,6 +581,8 @@ interface aggregation = 0   [default]
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]
@@ -640,6 +676,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -661,6 +698,8 @@ interface aggregation = 0   [default]
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]

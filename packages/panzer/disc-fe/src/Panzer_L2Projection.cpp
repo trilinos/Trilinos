@@ -93,7 +93,6 @@ namespace panzer {
     ownedMatrix->setAllToScalar(0.0);
     ghostedMatrix->resumeFill();
     ghostedMatrix->setAllToScalar(0.0);
-    PHX::Device().fence();
 
     auto M = ghostedMatrix->getLocalMatrix();
     const int fieldIndex = targetGlobalIndexer_->getFieldNum(targetBasisDescriptor_.getType());
@@ -124,8 +123,6 @@ namespace panzer {
           PHX::View<panzer::LocalOrdinal*> kOffsets("MassMatrix: Offsets",offsets.size());
           for(const auto& i : offsets)
             kOffsets(i) = offsets[i];
-
-          PHX::Device().fence();
 
           // Local Ids
           Kokkos::View<panzer::LocalOrdinal**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
@@ -227,8 +224,6 @@ namespace panzer {
           for(const auto& i : offsets)
             kOffsets(i) = offsets[i];
 
-          PHX::Device().fence();
-
           // Local Ids
           Kokkos::View<panzer::LocalOrdinal**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                                   targetGlobalIndexer_->getElementBlockGIDCount(block));
@@ -268,7 +263,6 @@ namespace panzer {
         }
       }
     }
-    PHX::exec_space().fence();
 
     {
       PANZER_FUNC_TIME_MONITOR_DIFF("Exporting of mass matrix",ExportMM);
@@ -412,7 +406,6 @@ namespace panzer {
 
     ghostedMatrix->setAllToScalar(0.0);
     ownedMatrix->setAllToScalar(0.0);
-    PHX::Device().fence();
 
     // *******************
     // Fill ghosted matrix
@@ -467,7 +460,6 @@ namespace panzer {
           for(size_t i=0; i < offsets.size(); ++i)
             hostOffsets(i) = offsets[i];
           Kokkos::deep_copy(targetFieldOffsets,hostOffsets);
-          PHX::Device().fence();
         }
 
         Kokkos::View<panzer::LocalOrdinal*,PHX::Device> sourceFieldOffsets;
@@ -483,7 +475,6 @@ namespace panzer {
           for(size_t i=0; i <offsets.size(); ++i)
             hostOffsets(i) = offsets[i];
           Kokkos::deep_copy(sourceFieldOffsets,hostOffsets);
-          PHX::Device().fence();
         }
 
         const auto localMatrix = ghostedMatrix->getLocalMatrix();

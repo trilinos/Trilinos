@@ -250,9 +250,11 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
    // for counting row sizes
    std::vector<size_t> numEntriesPerRow(numMyRows,0);
 
+   const size_t invalid = Teuchos::OrdinalTraits<size_t>::invalid();
+
    // Count the sizes of each row, using same logic as insertion below
    for(LO localRow=0;localRow<numMyRows;localRow++) {
-      size_t numEntries = -1; 
+      size_t numEntries = invalid;
       GO globalRow = gRowMap.getGlobalElement(localRow);
       GO contigRow = rowMap.getGlobalElement(localRow);
 
@@ -292,7 +294,7 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
    // insert each row into subblock
    // let FillComplete handle column distribution
    for(LO localRow=0;localRow<numMyRows;localRow++) {
-      size_t numEntries = -1; 
+      size_t numEntries = invalid;
       GO globalRow = gRowMap.getGlobalElement(localRow);
       GO contigRow = rowMap.getGlobalElement(localRow);
 
@@ -388,10 +390,12 @@ void rebuildSubBlock(int i,int j,const RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> 
    std::vector<GO> colIndices(maxNumEntries);
    std::vector<ST> colValues(maxNumEntries);
 
+   const size_t invalid = Teuchos::OrdinalTraits<size_t>::invalid();
+
    // insert each row into subblock
    // let FillComplete handle column distribution
    for(LO localRow=0;localRow<numMyRows;localRow++) {
-      size_t numEntries = -1; 
+      size_t numEntries = invalid;
       GO globalRow = gRowMap.getGlobalElement(localRow);
       GO contigRow = rowMap.getGlobalElement(localRow);
 

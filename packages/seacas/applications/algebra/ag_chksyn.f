@@ -1,35 +1,8 @@
-C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
-C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C    * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C    * Redistributions in binary form must reproduce the above
-C      copyright notice, this list of conditions and the following
-C      disclaimer in the documentation and/or other materials provided
-C      with the distribution.
-C
-C    * Neither the name of NTESS nor the names of its
-C      contributors may be used to endorse or promote products derived
-C      from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C    See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE CHKSYN (NINENT, IENTYP, CENTRY, RENTRY, NAMES,
@@ -124,37 +97,6 @@ C      --FIRST - true only on the first time through routine
 
       DATA OPSYM / ' +-*/^()=,' /
 C      --Note first space to reserve index 1 for unary minus
-
-C      DATA (FNCNAM(I), FNCTYP(I), NPARM(I), FNCSTO(I), I = 1, 22) /
-C     1   'AINT    ',' ', 1,.FALSE., 'ANINT   ',' ', 1,.FALSE.,
-C     2   'ABS     ',' ', 1,.FALSE., 'MOD     ',' ', 2,.FALSE.,
-C     3   'SIGN    ',' ', 2,.FALSE., 'DIM     ',' ', 2,.FALSE.,
-C     4   'MAX     ',' ',-1,.FALSE., 'MIN     ',' ',-1,.FALSE.,
-C     5   'SQRT    ',' ', 1,.FALSE., 'EXP     ',' ', 1,.FALSE.,
-C     6   'LOG     ',' ', 1,.FALSE., 'LOG10   ',' ', 1,.FALSE.,
-C     7   'SIN     ',' ', 1,.FALSE., 'COS     ',' ', 1,.FALSE.,
-C     8   'TAN     ',' ', 1,.FALSE., 'ASIN    ',' ', 1,.FALSE.,
-C     9   'ACOS    ',' ', 1,.FALSE., 'ATAN    ',' ', 1,.FALSE.,
-C     #   'ATAN2   ',' ', 2,.FALSE., 'SINH    ',' ', 1,.FALSE.,
-C     1   'COSH    ',' ', 1,.FALSE., 'TANH    ',' ', 1,.FALSE. /
-C      DATA (FNCNAM(I), FNCTYP(I), NPARM(I), FNCSTO(I), I = 23, NUMFNC) /
-C     1   'TMAG    ',' ', 6,.FALSE.,
-C     2   'PMAX    ',' ', 6,.FALSE., 'PMIN    ',' ', 6,.FALSE.,
-C     3   'PMAX2   ',' ', 3,.FALSE., 'PMIN2   ',' ', 3,.FALSE.,
-C     4   'IFLZ    ',' ', 3,.FALSE., 'IFEZ    ',' ', 3,.FALSE.,
-C     5   'IFGZ    ',' ', 3,.FALSE.,
-C     6   'SUM     ','G', 1,.FALSE.,
-C     7   'SMAX    ','G', 1,.TRUE.,  'SMIN    ','G', 1,.TRUE.,
-C     8   'ENVMAX  ',' ', 1,.TRUE.,  'ENVMIN  ',' ', 1,.TRUE.,
-C     9   'UHIST   ','H',-1,.FALSE., 'UGLOB   ','G',-1,.FALSE.,
-C     #   'UNODE   ','N',-1,.FALSE., 'UELEM   ','E',-1,.FALSE. /
-C#????C Take out FNCOLD after the manual is prepared
-C      DATA (FNCOLD(I), FNCNEW(I), I = 1, 4) /
-C     1   'ATN2    ','ATAN2   ',
-C     2   'PMX2    ','PMAX2   ', 'PMN2    ','PMIN2   ',
-C     3   '        ','        ' /
-C     Created new subroutine that fills the arrays with the above
-C     data.  The should be compatible with both SGI and IBM
 
       call infunc(nparm, fncold, fncnew)
 
@@ -622,7 +564,6 @@ C      --Set up a special type for ")" to prevent special checks
 
       RETURN
       END
-
 
       subroutine infunc(nparm, fncold, fncnew)
 

@@ -250,6 +250,25 @@ namespace Intrepid2 {
       return true;
     }
     
+    /** \brief returns the basis associated to a subCell.
+
+        The bases of the subCell are the restriction to the subCell of the bases of the parent cell,
+        projected to the subCell line.
+
+        \param [in] subCellDim - dimension of subCell
+        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+     */
+    BasisPtr<ExecSpaceType,outputValueType,pointValueType>
+    getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
+      if(subCellDim == 1)
+        return Teuchos::rcp( new
+            Basis_HGRAD_LINE_Cn_FEM<ExecSpaceType,outputValueType,pointValueType>
+            ( this->basisDegree_ - 1, POINTTYPE_GAUSS ) );
+
+      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
+    }
+
   private:
 
     /** \brief inverse of Generalized Vandermonde matrix (isotropic order) */

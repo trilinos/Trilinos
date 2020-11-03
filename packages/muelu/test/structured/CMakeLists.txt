@@ -21,7 +21,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     )
 
   IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       Structured
       NAME "Structured_Laplace2D_Tpetra"
       ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Laplace2D"
@@ -29,7 +29,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       NUM_MPI_PROCS 4
       )
 
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       Structured
       NAME "Structured_Laplace2D_Shift_Tpetra"
       ARGS "--linAlgebra=Tpetra --xml=structured_1dof_shift.xml --matrixType=Laplace2D"
@@ -37,7 +37,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       NUM_MPI_PROCS 4
       )
 
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       Structured
       NAME "Structured_Elasticity3D_Tpetra"
       ARGS "--linAlgebra=Tpetra --xml=structured_3dof.xml --matrixType=Elasticity3D --nx=25 --ny=25 --nz=25"
@@ -45,7 +45,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       NUM_MPI_PROCS 4
       )
 
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       Structured
       NAME "Structured_Line_Tpetra"
       ARGS "--linAlgebra=Tpetra --xml=structured_interp_line.xml --matrixType=Laplace3D --nx=25 --ny=25 --nz=25"
@@ -53,8 +53,24 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       NUM_MPI_PROCS 4
       )
 
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
+      Structured
+      NAME "Structured_Laplace3D_SCP_Tpetra"
+      ARGS "--linAlgebra=Tpetra --xml=structured_scp_1dof.xml --matrixType=Laplace3D --nx=10 --ny=10 --nz=10"
+      COMM serial mpi
+      NUM_MPI_PROCS 4
+      )
+
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
+      Structured
+      NAME "Structured_Laplace3D_SPARC_Tpetra"
+      ARGS "--linAlgebra=Tpetra --xml=structured_sparc_1dof.xml --matrixType=Laplace3D --nx=25 --ny=25 --nz=10"
+      COMM serial mpi
+      NUM_MPI_PROCS 4
+      )
+
     IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
-      TRIBITS_ADD_TEST(
+      MUELU_ADD_SERIAL_AND_MPI_TEST(
         Structured
         NAME "Structured_Interp_Laplace2D_kokkos"
         ARGS "--linAlgebra=Tpetra --xml=structured_interp_kokkos.xml --matrixType=Laplace2D --nx=25 --ny=25"
@@ -62,7 +78,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
         NUM_MPI_PROCS 4
         )
 
-      TRIBITS_ADD_TEST(
+      MUELU_ADD_SERIAL_AND_MPI_TEST(
         Structured
         NAME "Structured_Interp_SA_Laplace2D_kokkos"
         ARGS "--linAlgebra=Tpetra --xml=structured_interp_sa_kokkos.xml --matrixType=Laplace2D --nx=25 --ny=25"
@@ -70,7 +86,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
         NUM_MPI_PROCS 4
         )
 
-      TRIBITS_ADD_TEST(
+      MUELU_ADD_SERIAL_AND_MPI_TEST(
         Structured
         NAME "Structured_Tentative_Laplace2D_kokkos"
         ARGS "--linAlgebra=Tpetra --xml=structured_tentative_kokkos.xml --matrixType=Laplace2D --nx=25 --ny=25"
@@ -82,7 +98,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   ENDIF()
 
   IF (${PACKAGE_NAME}_ENABLE_Epetra AND (NOT ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor))
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       Structured
       NAME "Structured_Laplace2D_Epetra"
       ARGS "--linAlgebra=Epetra --xml=structured_1dof.xml --matrixType=Laplace2D"
@@ -90,7 +106,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       NUM_MPI_PROCS 4
       )
 
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       Structured
       NAME "Structured_Laplace2D_Shift_Epetra"
       ARGS "--linAlgebra=Epetra --xml=structured_1dof_shift.xml --matrixType=Laplace2D"
@@ -98,7 +114,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       NUM_MPI_PROCS 4
       )
 
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       Structured
       NAME "Structured_Elasticity3D_Epetra"
       ARGS "--linAlgebra=Epetra --xml=structured_3dof.xml --matrixType=Elasticity3D --nx=25 --ny=25 --nz=25"
@@ -106,7 +122,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       NUM_MPI_PROCS 4
       )
 
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       Structured
       NAME "Structured_Line_Epetra"
       ARGS "--linAlgebra=Epetra --xml=structured_interp_line.xml --matrixType=Laplace3D --nx=25 --ny=25 --nz=25"
@@ -117,7 +133,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Structured_cp
-    SOURCE_FILES structured_1dof.xml structured_1dof_shift.xml structured_2dof.xml structured_3dof.xml structured_interp_line.xml structured_interp_kokkos.xml structured_interp_sa_kokkos.xml structured_tentative_kokkos.xml
+    SOURCE_FILES structured_1dof.xml structured_1dof_shift.xml structured_2dof.xml structured_3dof.xml structured_interp_line.xml structured_interp_kokkos.xml structured_interp_sa_kokkos.xml structured_tentative_kokkos.xml structured_scp_1dof.xml structured_sparc_1dof.xml
     )
 
 

@@ -16,8 +16,9 @@ namespace Tacho {
   class Graph;
 #if defined(TACHO_HAVE_METIS)
   class GraphTools_Metis;
+#else 
+  class GraphTools;
 #endif
-  class GraphTools_CAMD;
   
   class SymbolicTools;
   template<typename ValueType, typename DeviceType> class CrsMatrixBase;
@@ -58,13 +59,14 @@ namespace Tacho {
 #if defined(TACHO_HAVE_METIS)
     typedef GraphTools_Metis graph_tools_type;
 #else
-    typedef GraphTools_CAMD graph_tools_type;
+    typedef GraphTools graph_tools_type;
 #endif
 
     typedef SymbolicTools symbolic_tools_type;
     typedef NumericTools<value_type,scheduler_type> numeric_tools_type;
     typedef LevelSetTools<value_type,scheduler_type,0> levelset_tools_var0_type;
     typedef LevelSetTools<value_type,scheduler_type,1> levelset_tools_var1_type;
+    typedef LevelSetTools<value_type,scheduler_type,2> levelset_tools_var2_type;
 
   public:
     enum : int { Cholesky = 1,
@@ -76,6 +78,9 @@ namespace Tacho {
     bool _transpose;
     ordinal_type _mode;
 
+    // ** ordering options
+    ordinal_type _order_connected_graph_separately;
+
     // ** problem
     ordinal_type _m;
     size_type _nnz;
@@ -86,6 +91,17 @@ namespace Tacho {
     ordinal_type_array _perm; ordinal_type_array_host _h_perm;
     ordinal_type_array _peri; ordinal_type_array_host _h_peri;
 
+    // ** condensed graph
+    ordinal_type _m_graph;
+    size_type _nnz_graph;
+    
+    size_type_array_host _h_ap_graph;
+    ordinal_type_array_host _h_aj_graph;
+    ordinal_type_array_host _h_aw_graph;
+    
+    ordinal_type_array_host _h_perm_graph; 
+    ordinal_type_array_host _h_peri_graph;
+ 
     // ** symbolic factorization output
     // supernodes output
     ordinal_type _nsupernodes;
@@ -115,6 +131,7 @@ namespace Tacho {
     // ** level set interface
     levelset_tools_var0_type *_L0;
     levelset_tools_var1_type *_L1;
+    levelset_tools_var2_type *_L2;
 
     // small dense matrix
     value_type_matrix_host _U;
@@ -157,6 +174,11 @@ namespace Tacho {
                        const bool is_positive_definite);
 
     ///
+    /// Graph options
+    ///
+    void setOrderConnectedGraphSeparately(const ordinal_type order_connected_graph_separately = 1);
+
+    ///
     /// tasking options
     ///
     void setSerialThresholdsize(const ordinal_type serial_thres_size = -1);
@@ -185,11 +207,8 @@ namespace Tacho {
 
     // internal only
     int analyze();
-    int analyze(const ordinal_type m,
-                const size_type_array_host &ap,
-                const ordinal_type_array_host &aj,
-                const ordinal_type_array_host &perm,
-                const ordinal_type_array_host &peri);
+    int analyze_linear_system();
+    int analyze_condensed_graph();
 
     template<typename arg_size_type_array,
              typename arg_ordinal_type_array>
@@ -204,8 +223,89 @@ namespace Tacho {
       _h_ap = Kokkos::create_mirror_view(host_memory_space(), ap); Kokkos::deep_copy(_h_ap, ap);
       _h_aj = Kokkos::create_mirror_view(host_memory_space(), aj); Kokkos::deep_copy(_h_aj, aj);
 
-      _nnz = _h_ap(m);
+      _h_perm = ordinal_type_array_host();
+      _h_peri = ordinal_type_array_host();
       
+      _nnz = _h_ap(m);
+
+      _m_graph = 0;
+      _nnz_graph = 0;
+
+      _h_ap_graph = size_type_array_host();
+      _h_aj_graph = ordinal_type_array_host();
+
+      _h_perm_graph = ordinal_type_array_host();
+      _h_peri_graph = ordinal_type_array_host();
+      
+      return analyze();
+    }
+
+    template<typename arg_size_type_array,
+             typename arg_ordinal_type_array,
+	     typename arg_perm_type_array>
+    int analyze(const ordinal_type m,
+                const arg_size_type_array &ap,
+                const arg_ordinal_type_array &aj,
+		const arg_perm_type_array &perm,
+		const arg_perm_type_array &peri) {
+      _m = m;
+
+      _ap   = Kokkos::create_mirror_view(exec_memory_space(), ap); Kokkos::deep_copy(_ap, ap);
+      _aj   = Kokkos::create_mirror_view(exec_memory_space(), aj); Kokkos::deep_copy(_aj, aj);
+
+      _h_ap = Kokkos::create_mirror_view(host_memory_space(), ap); Kokkos::deep_copy(_h_ap, ap);
+      _h_aj = Kokkos::create_mirror_view(host_memory_space(), aj); Kokkos::deep_copy(_h_aj, aj);
+
+      _h_perm = Kokkos::create_mirror_view(host_memory_space(), perm); Kokkos::deep_copy(_h_perm, perm);
+      _h_peri = Kokkos::create_mirror_view(host_memory_space(), peri); Kokkos::deep_copy(_h_peri, peri);
+      
+      _nnz = _h_ap(m);
+
+      _m_graph = 0;
+      _nnz_graph = 0;
+
+      _h_ap_graph = size_type_array_host();
+      _h_aj_graph = ordinal_type_array_host();
+
+      _h_perm_graph = ordinal_type_array_host();
+      _h_peri_graph = ordinal_type_array_host();
+      
+      return analyze();
+    }
+
+    
+    template<typename arg_size_type_array,
+             typename arg_ordinal_type_array>
+    int analyze(const ordinal_type m,
+                const arg_size_type_array &ap,
+                const arg_ordinal_type_array &aj,
+                const ordinal_type m_graph,
+                const arg_size_type_array &ap_graph,
+                const arg_ordinal_type_array &aj_graph,
+                const arg_ordinal_type_array &aw_graph) {
+      _m = m;
+
+      _ap   = Kokkos::create_mirror_view(exec_memory_space(), ap); Kokkos::deep_copy(_ap, ap);
+      _aj   = Kokkos::create_mirror_view(exec_memory_space(), aj); Kokkos::deep_copy(_aj, aj);
+
+      _h_ap = Kokkos::create_mirror_view(host_memory_space(), ap); Kokkos::deep_copy(_h_ap, ap);
+      _h_aj = Kokkos::create_mirror_view(host_memory_space(), aj); Kokkos::deep_copy(_h_aj, aj);
+
+      _h_perm = ordinal_type_array_host();
+      _h_peri = ordinal_type_array_host();
+      
+      _nnz = _h_ap(m);
+
+      _m_graph = m_graph;
+      _h_ap_graph = Kokkos::create_mirror_view(host_memory_space(), ap_graph); Kokkos::deep_copy(_h_ap_graph, ap_graph);
+      _h_aj_graph = Kokkos::create_mirror_view(host_memory_space(), aj_graph); Kokkos::deep_copy(_h_aj_graph, aj_graph);
+      _h_aw_graph = Kokkos::create_mirror_view(host_memory_space(), aw_graph); Kokkos::deep_copy(_h_aw_graph, aw_graph);
+
+      _h_perm_graph = ordinal_type_array_host();
+      _h_peri_graph = ordinal_type_array_host();
+      
+      _nnz_graph = _h_ap_graph(m_graph);
+
       return analyze();
     }
 

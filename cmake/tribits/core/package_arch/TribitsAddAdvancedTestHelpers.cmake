@@ -45,11 +45,9 @@ INCLUDE(TribitsAddTestHelpers)
 SET(TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX 19)
 
 
-#
 # Join arguments together to add to a SET(...) statement to passed to
 # EXECUTE_PROCESS(...)
 #
-
 FUNCTION(TRIBITS_JOIN_EXEC_PROCESS_SET_ARGS  OUTPUT_STRING_VAR)
   SET(OUTPUT_STRING "")
   FOREACH(STRING_VAL_RAW ${ARGN})
@@ -65,19 +63,32 @@ FUNCTION(TRIBITS_JOIN_EXEC_PROCESS_SET_ARGS  OUTPUT_STRING_VAR)
 ENDFUNCTION()
 
 
-#
 # Unit test helper function for TRIBITS_ADD_ADVANCED_TEST(...) that resets
 # state before calling TRIBITS_ADD_ADVANCED_TEST(...) in unit test mode.
 #
-
+# NOTE: The varaibles:
+#
+#   TRIBITS_ADD_ADVANCED_TEST_CMND_ARRAY_${TEST_CMND_IDX}
+#
+# may get set, even if the test does not get added.  That is because the
+# decision to add a test may not be made until much later in the script.
+# Therefore, to determine if an advanced test is added or not, one should
+# check the variable:
+#
+#   TRIBITS_ADD_ADVANCED_TEST_NUM_CMNDS
+#
+# If that variable is empty, then the advanced test did *not* get added.
+#
 FUNCTION(TRIBITS_ADD_ADVANCED_TEST_UNITTEST_RESET)
 
   GLOBAL_SET(TRIBITS_ADD_ADVANCED_TEST_UNITTEST TRUE)
 
-  GLOBAL_SET(TRIBITS_ADD_ADVANCED_TEST_NUM_CMNDS)
+  GLOBAL_SET(TRIBITS_ADD_ADVANCED_TEST_NUM_CMNDS "")
 
-  FOREACH( TEST_CMND_IDX RANGE ${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX})
-    GLOBAL_SET(TRIBITS_ADD_ADVANCED_TEST_CMND_ARRAY_${TEST_CMND_IDX})
+  FOREACH( TEST_CMND_IDX RANGE
+      ${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX}
+    )
+    GLOBAL_SET(TRIBITS_ADD_ADVANCED_TEST_CMND_ARRAY_${TEST_CMND_IDX} "")
   ENDFOREACH()
 
 ENDFUNCTION()

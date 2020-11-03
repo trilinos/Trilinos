@@ -102,6 +102,9 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
     Teuchos::CommandLineProcessor clp(false);
     std::string node   = "";    clp.setOption("node",               &node,   "node type (serial | openmp | cuda)");
     bool        config = false; clp.setOption("config", "noconfig", &config, "display kokkos configuration");
+#ifdef HAVE_TEUCHOS_STACKTRACE
+    bool stacktrace = true;     clp.setOption("stacktrace", "nostacktrace", &stacktrace, "display stacktrace");
+#endif
     Xpetra::Parameters xpetraParameters(clp);
 
     clp.recogniseAllOptions(false);
@@ -111,6 +114,11 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
       case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:         break;
     }
+
+#ifdef HAVE_TEUCHOS_STACKTRACE
+    if (stacktrace)
+      Teuchos::print_stack_on_segfault();
+#endif
 
     auto lib = xpetraParameters.GetLib();
     if (lib == Xpetra::UseEpetra) {

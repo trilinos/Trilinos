@@ -36,7 +36,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
       COMM serial mpi
       )
 
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       Viz
       NAME "Viz3DTpetra"
       ARGS "--matrixType=Laplace3D --nx=20 --ny=20 --nz=20 --linAlgebra=Tpetra"
@@ -44,7 +44,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
       COMM serial mpi
       )
 
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       Viz
       NAME "Viz2DTpetra"
       ARGS "--matrixType=Laplace2D --nx=40 --ny=40 --linAlgebra=Tpetra"
@@ -55,7 +55,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
     # Test Epetra variant, too.
     IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos AND (NOT Xpetra_INT_LONG_LONG))
 
-      TRIBITS_ADD_TEST(
+      MUELU_ADD_SERIAL_AND_MPI_TEST(
         Viz
         NAME "Viz3DEpetra"
         ARGS "--matrixType=Laplace3D --nx=20 --ny=20 --nz=20 --linAlgebra=Epetra"
@@ -63,7 +63,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
         COMM serial mpi
         )
 
-      TRIBITS_ADD_TEST(
+      MUELU_ADD_SERIAL_AND_MPI_TEST(
         Viz
         NAME "Viz2DEpetra"
         ARGS "--matrixType=Laplace2D --nx=40 --ny=40 --linAlgebra=Epetra"

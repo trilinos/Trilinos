@@ -108,6 +108,16 @@ namespace FROSch {
                        ConstXMapPtrVecPtr2D dofsMapsVec = null,
                        GOVecPtr2D dirichletBoundaryDofsVec = null);
 
+        int initialize(UN dimension,
+                       UNVecPtr dofsPerNodeVec,
+                       DofOrderingVecPtr dofOrderingVec,
+                       int overlap = -1,
+                       ConstXMultiVectorPtrVecPtr nodeListVec = null,
+                       ConstXMapPtrVecPtr repeatedMapVec = null,
+                       ConstXMultiVectorPtrVecPtr nullSpaceBasisVec = null,
+                       ConstXMapPtrVecPtr2D dofsMapsVec = null,
+                       GOVecPtr2D dirichletBoundaryDofsVec = null);
+
         int compute();
 
         void describe(FancyOStream &out,

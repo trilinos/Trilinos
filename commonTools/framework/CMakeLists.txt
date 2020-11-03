@@ -61,14 +61,18 @@ TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriverMerge_UnitTests
   )
 
 
+# Run the discoverable unit tests under the cmake/std directory tree
 TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriverTest_UnitTests
-  OVERALL_WORKING_DIRECTORY TEST_NAME
-  OVERALL_NUM_MPI_PROCS 1
-  EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
-  TEST_0 CMND ${PYTHON_EXECUTABLE} 
-    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/std/unittests/TestPullRequestLinuxDriverTest.py -v
-    PASS_REGULAR_EXPRESSION "OK"
-  )
+    OVERALL_WORKING_DIRECTORY TEST_NAME
+    OVERALL_NUM_MPI_PROCS 1
+    EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
+    TEST_0 CMND bash 
+        ARGS pr_python_test_driver.sh ${PYTHON_EXECUTABLE} ${PYTHON_PIP_EXECUTABLE}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/std
+        SKIP_CLEAN_WORKING_DIRECTORY
+        FAIL_REGULAR_EXPRESSION "FAILED"
+        #ALWAYS_FAIL_ON_NONZERO_RETURN
+)
 
 
 FUNCTION(create_get_changed_trilinos_packages_test  TEST_POSTFIX

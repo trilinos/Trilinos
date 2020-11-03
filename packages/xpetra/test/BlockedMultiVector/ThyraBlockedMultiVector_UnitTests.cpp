@@ -59,7 +59,7 @@
 
 #include <Xpetra_MapUtils.hpp>
 #include <Xpetra_MapFactory.hpp>
-#include <Xpetra_MapExtractorFactory.hpp>
+#include <Xpetra_MapExtractor.hpp>
 #include <Xpetra_BlockedMultiVector.hpp>
 #include <Xpetra_ReorderedBlockedMultiVector.hpp>
 #include <Xpetra_Exceptions.hpp>

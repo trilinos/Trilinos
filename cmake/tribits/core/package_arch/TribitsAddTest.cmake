@@ -157,11 +157,16 @@ INCLUDE(TribitsAddTestHelpers)
 #
 #   ``RUN_SERIAL``
 #
-#     If specified then no other tests will be allowed to run while this test
+#     If specified, then no other tests will be allowed to run while this test
 #     is running. This is useful for devices (like CUDA GPUs) that require
 #     exclusive access for processes/threads.  This just sets the CTest test
 #     property ``RUN_SERIAL`` using the built-in CMake function
-#     ``SET_TESTS_PROPERTIES()``.
+#     ``SET_TESTS_PROPERTIES()``.  Also, the addition of the ``RUN_SERIAL``
+#     test property can be triggered by (the user) setting the global cache
+#     variable ``<fullTestName>_SET_RUN_SERIAL=ON``.  NOTE: If ``RUN_SERIAL``
+#     is passed in but ``<fullTestName>_SET_RUN_SERIAL=OFF`` (or any value
+#     evaluating to ``FALSE``), then the ``RUN_SERIAL`` test property will
+#     **NOT** be set on the added test(s).
 #
 #   ``ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...``
 #
@@ -211,13 +216,15 @@ INCLUDE(TribitsAddTestHelpers)
 #   ``NUM_MPI_PROCS <numMpiProcs>``
 #
 #     If specified, gives the number of MPI processes used to run the test
-#     with the MPI exec program ``${MPI_EXEC}``.  If ``<numMpiProcs>`` is greater
-#     than ``${MPI_EXEC_MAX_NUMPROCS}`` then the test will be excluded.  If
-#     not specified, then the default number of processes for an MPI build
-#     (i.e. ``TPL_ENABLE_MPI=ON``) will be ``${MPI_EXEC_DEFAULT_NUMPROCS}``.
-#     For serial builds (i.e. ``TPL_ENABLE_MPI=OFF``), this argument is
-#     ignored.  This will also be set as the built-in test property
-#     ``PROCESSORS`` if ``NUM_TOTAL_CORES_USED`` is not specified.
+#     with the MPI exec program ``${MPI_EXEC}``.  If ``<numMpiProcs>`` is
+#     greater than ``${MPI_EXEC_MAX_NUMPROCS}`` then the test will be
+#     excluded.  If not specified, then the default number of processes for an
+#     MPI build (i.e. ``TPL_ENABLE_MPI=ON``) will be
+#     ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds
+#     (i.e. ``TPL_ENABLE_MPI=OFF``), passing in a value ``<numMpiProcs>`` >
+#     ``1`` will cause the test to not be added.  The value ``<numMpiProcs>``
+#     will also be set as the built-in test property ``PROCESSORS`` if
+#     ``NUM_TOTAL_CORES_USED`` is not specified.
 #
 #   ``NUM_TOTAL_CORES_USED <numTotalCoresUsed>``
 #
@@ -329,7 +336,7 @@ INCLUDE(TribitsAddTestHelpers)
 #     send to stdout.  Otherwise, the test will fail.  This is set using the
 #     built-in CTest property ``PASS_REGULAR_EXPRESSION``.  Consult standard
 #     CMake documentation for full behavior.  TIPS: Replace ';' with '[;]' or
-#     CMake will interpretet this as a array eleemnt boundary.  To match '.',
+#     CMake will interpret this as a array element boundary.  To match '.',
 #     use '[.]'.
 #
 #   ``FAIL_REGULAR_EXPRESSION "<regex0>;<regex1>;..."``
@@ -886,9 +893,6 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
     RETURN()
   ENDIF()
 
-  TRIBITS_SET_DISABLED_AND_MSG(${TEST_NAME} "${PARSE_DISABLED}"
-    SET_DISABLED_AND_MSG)  # Adds the test but sets DISABLED test prop!
-
   #
   # C) Set the name and path of the binary that will be run
   #
@@ -919,6 +923,7 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
   TRIBITS_ADD_TEST_GET_NUM_PROCS_USED("${PARSE_NUM_MPI_PROCS}"
     "NUM_MPI_PROCS"  NUM_PROCS_USED  NUM_PROCS_USED_NAME)
   IF (NUM_PROCS_USED LESS 0)
+    SET(ADD_SERIAL_TEST FALSE)
     SET(ADD_MPI_TEST FALSE)
   ENDIF()
 
@@ -967,10 +972,16 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
         PRINT_VAR(INARGS)
       ENDIF()
 
+      TRIBITS_SET_RUN_SERIAL(${TEST_NAME_INSTANCE} "${PARSE_RUN_SERIAL}"
+        SET_RUN_SERIAL)
+
+      TRIBITS_SET_DISABLED_AND_MSG(${TEST_NAME_INSTANCE} "${PARSE_DISABLED}"
+        SET_DISABLED_AND_MSG)
+
       TRIBITS_ADD_TEST_ADD_TEST_ALL( ${TEST_NAME_INSTANCE}
         "${EXECUTABLE_PATH}" "${PARSE_CATEGORIES}"  "${NUM_PROCS_USED}"
         "${NUM_TOTAL_CORES_USED}"
-        ${PARSE_RUN_SERIAL} "${SET_DISABLED_AND_MSG}" ADDED_TEST_NAME  ${INARGS}
+        "${SET_RUN_SERIAL}" "${SET_DISABLED_AND_MSG}" ADDED_TEST_NAME  ${INARGS}
 	"${${TEST_NAME_INSTANCE}_EXTRA_ARGS}" )
       IF(PARSE_ADDED_TESTS_NAMES_OUT AND ADDED_TEST_NAME)
         LIST(APPEND ADDED_TESTS_NAMES_OUT ${ADDED_TEST_NAME})
@@ -1002,11 +1013,17 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
 
       SET(TEST_NAME_INSTANCE "${TEST_NAME}_${POSTFIX}${MPI_NAME_POSTFIX}")
 
+      TRIBITS_SET_RUN_SERIAL(${TEST_NAME_INSTANCE} "${PARSE_RUN_SERIAL}"
+        SET_RUN_SERIAL)
+
+      TRIBITS_SET_DISABLED_AND_MSG(${TEST_NAME_INSTANCE} "${PARSE_DISABLED}"
+        SET_DISABLED_AND_MSG)
+
       TRIBITS_ADD_TEST_ADD_TEST_ALL( ${TEST_NAME_INSTANCE}
         "${EXECUTABLE_PATH}" "${PARSE_CATEGORIES}" "${NUM_PROCS_USED}" 
         "${NUM_TOTAL_CORES_USED}"
         ${PARSE_CREATE_WORKING_DIR}
-        ${PARSE_RUN_SERIAL} "${SET_DISABLED_AND_MSG}" ADDED_TEST_NAME  ${INARGS}
+        "${SET_RUN_SERIAL}" "${SET_DISABLED_AND_MSG}" ADDED_TEST_NAME  ${INARGS}
 	"${${TEST_NAME_INSTANCE}_EXTRA_ARGS}"
         )
       IF(PARSE_ADDED_TESTS_NAMES_OUT AND ADDED_TEST_NAME)

@@ -1,35 +1,8 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// See packages/seacas/LICENSE for details
 
 #include <algorithm>
 #include <cfloat>
@@ -911,7 +884,9 @@ namespace {
            INT *id, size_t N, int dim, bool ignore_dups)
   {
     SMART_ASSERT(x != nullptr);
-    SMART_ASSERT(N > 0);
+    if (N == 0) {
+      return -1;
+    }
 
     // Cannot ignore the comparisons, so make sure the coord_tol_type
     // is not -1 which is "ignore"
@@ -1183,20 +1158,23 @@ bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *nod
     if (!interFace.dump_mapping) {
       // There is a map between file1 and file2, but all elements are
       // used in both files.
-      for (size_t i = 0; i < num_elmts1; i++) {
-        if (elem_id_map1[i] != elem_id_map2[elmt_map[i]]) {
-          if (!(elem_id_map2[elmt_map[i]] == 0 &&
-                partial_flag)) { // Don't output diff if non-matched and partial
-            fmt::print(stderr,
-                       "exodiff: WARNING .. The local element {} with global id {} in file1 has "
-                       "the global id "
-                       "{} in file2.\n",
-                       i + 1, elem_id_map1[i], elem_id_map2[elmt_map[i]]);
-            diff = true;
-            warn_count++;
-            if (warn_count >= interFace.max_warnings) {
-              fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
-              break;
+      if (elem_id_map2 != nullptr) {
+        for (size_t i = 0; i < num_elmts1; i++) {
+          if (elem_id_map1[i] != elem_id_map2[elmt_map[i]]) {
+            if (!(elem_id_map2[elmt_map[i]] == 0 &&
+                  partial_flag)) { // Don't output diff if non-matched and partial
+              fmt::print(stderr,
+                         "exodiff: WARNING .. The local element {} with global id {} in file1 has "
+                         "the global id "
+                         "{} in file2.\n",
+                         i + 1, elem_id_map1[i], elem_id_map2[elmt_map[i]]);
+              diff = true;
+              warn_count++;
+              if (warn_count >= interFace.max_warnings) {
+                fmt::print(stderr,
+                           "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
+                break;
+              }
             }
           }
         }
@@ -1205,20 +1183,23 @@ bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *nod
   }
   else {
     // No element mapping between file1 and file2 -- do a straight compare.
-    for (size_t i = 0; i < num_elmts1; i++) {
-      if (elem_id_map1[i] != elem_id_map2[i]) {
-        if (!(elem_id_map2[i] == 0 &&
-              partial_flag)) { // Don't output diff if non-matched and partial
-          fmt::print(stderr,
-                     "exodiff: WARNING .. The local element {} with global id {} in file1 has the "
-                     "global id "
-                     "{} in file2.\n",
-                     i + 1, elem_id_map1[i], elem_id_map2[i]);
-          diff = true;
-          warn_count++;
-          if (warn_count >= interFace.max_warnings) {
-            fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
-            break;
+    if (elem_id_map2 != nullptr) {
+      for (size_t i = 0; i < num_elmts1; i++) {
+        if (elem_id_map1[i] != elem_id_map2[i]) {
+          if (!(elem_id_map2[i] == 0 &&
+                partial_flag)) { // Don't output diff if non-matched and partial
+            fmt::print(
+                stderr,
+                "exodiff: WARNING .. The local element {} with global id {} in file1 has the "
+                "global id "
+                "{} in file2.\n",
+                i + 1, elem_id_map1[i], elem_id_map2[i]);
+            diff = true;
+            warn_count++;
+            if (warn_count >= interFace.max_warnings) {
+              fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
+              break;
+            }
           }
         }
       }

@@ -1,72 +1,25 @@
-C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
-C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C    * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C    * Redistributions in binary form must reproduce the above
-C      copyright notice, this list of conditions and the following
-C      disclaimer in the documentation and/or other materials provided
-C      with the distribution.
-C
-C    * Neither the name of NTESS nor the names of its
-C      contributors may be used to endorse or promote products derived
-C      from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C    See packages/seacas/LICENSE for details
 
-C $Id: help.f,v 1.2 1998/07/14 18:19:09 gdsjaar Exp $
-C $Log: help.f,v $
-C Revision 1.2  1998/07/14 18:19:09  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.1.1.1  1990/11/30 11:09:12  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:09:10  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]HELP.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE HELP_FQ (I)
 C************************************************************************
-C
+
 C  SUBROUTINE HELP = WRITES HELP MESSAGES ONTO THE SCREEN
-C
+
 C************************************************************************
-C
+
 C  SUBROUTINE CALLED BY ANY ROUTINE NEEDED HELP MESSAGES
-C
+
 C************************************************************************
-C
+
 C  VARIABLES USED:
 C     I = THE POINTER TO DESIGNATE WHICH MESSAGE IS NEEDED
-C
+
 C***********************************************************************
-C
+
       IF (I .EQ. 1) THEN
          CALL MESAGE ('        ')
          CALL MESAGE ('THE FOLLOWING MAIN OPTIONS ARE AVAILABLE:')
@@ -90,7 +43,7 @@ C
          CALL MESAGE ('     F*LUSH      = CLEARS ALL FASTQ DATA')
          CALL MESAGE ('     EX*IT       = EXITS FASTQ')
          CALL MESAGE ('     SP*AWN      = SPAWNS A SUBPROCESS')
-C
+
       ELSE IF (I .EQ. 2) THEN
          CALL MESAGE (' ')
          CALL MESAGE ( '|-----------------+-----------------+'//
@@ -135,7 +88,7 @@ C
      &      '                 |                 |')
          CALL MESAGE ( '+-----------------+-----------------+'//
      &      '-----------------+-----------------+')
-C
+
       ELSE IF (I .EQ. 3) THEN
          CALL MESAGE (' ')
          CALL MESAGE ('THE FOLLOWING SCHEME AND STEP PROCESSING '//
@@ -217,7 +170,7 @@ C
      &      'HAS OCCURRED')
          CALL MESAGE ('              SUCH AS A SMOOTH, DELETION, '//
      &      'RESTRUCTURE, ETC.)')
-C
+
       ELSE IF (I .EQ. 4) THEN
          CALL MESAGE (' ')
          CALL MESAGE ('THE FOLLOWING LIST OPTIONS ARE AVAILABLE:')
@@ -241,7 +194,7 @@ C
          CALL MESAGE ('    EX*IT       = EXITS FASTQ')
          CALL MESAGE ('                  (CARRIAGE RETURN TO EXIT '//
      &      'LISTING)')
-C
+
       ELSE IF (I .EQ. 5) THEN
          CALL MESAGE (' ')
          CALL MESAGE ('THE FOLLOWING GRAPHICS OPTIONS ARE AVAILABLE:')
@@ -280,7 +233,7 @@ C
          CALL MESAGE ('    EX*IT       = EXITS FASTQ')
          CALL MESAGE ('                  (CARRIAGE RETURN TO EXIT '//
      &      'GRAPHICS)')
-C
+
       ELSE IF (I .EQ. 6) THEN
          CALL MESAGE (' ')
          CALL MESAGE ('THE FOLLOWING DELETE OPTIONS ARE AVAILABLE:')
@@ -296,7 +249,7 @@ C
          CALL MESAGE ('    EX*IT     = EXITS FASTQ')
          CALL MESAGE ('                (CARRIAGE RETURN TO EXIT '//
      &      'DELETE)')
-C
+
       ELSE IF (I .EQ. 7) THEN
          CALL MESAGE (' ')
          CALL MESAGE ('THE FOLLOWING DEVICES ARE AVAILABLE:')
@@ -314,14 +267,14 @@ C
          CALL MESAGE ('    V40 = VT 240')
          CALL MESAGE ('    R25 = RASTER TECH ONE-25')
          CALL MESAGE ('    RET = RETROGRAPHICS')
-C
+
       ELSE IF (I .EQ. 8) THEN
          CALL MESAGE (' ')
          CALL MESAGE ('THE FOLLOWING CORRECTION OPTIONS ARE AVAILABLE')
          CALL MESAGE ('    X     = CONSTANT X VALUES ALONG LINE(S)')
          CALL MESAGE ('    Y     = CONSTANT Y VALUES ALONG LINE(S)')
          CALL MESAGE ('    Z*ERO = ZERO X VALUES (CENTERLINES)')
-C
+
       ELSE IF (I .EQ. 9) THEN
          CALL MESAGE (' ')
          CALL MESAGE ('THE FOLLOWING KEYIN OPTIONS ARE AVAILABLE:')
@@ -348,7 +301,7 @@ C
          CALL MESAGE ('    SP*AWN    = SPAWNS A SUBPROCESS')
          CALL MESAGE ('    EX*IT     = EXITS FASTQ')
          CALL MESAGE ('                (CARRIAGE RETURN TO EXIT KEYIN)')
-C
+
       ELSE IF (I .EQ. 10) THEN
          CALL MESAGE (' ')
          CALL MESAGE ('THE FOLLOWING NUMBERING OPTIONS ARE AVAILABLE:')
@@ -358,7 +311,7 @@ C
      &      'START FROM')
          CALL MESAGE ('    N*ODE       = ENTERS NODE NUID''S '//
      &      'LOCATION TO START FROM')
-C
+
       ELSE IF (I .EQ. 11) THEN
          CALL MESAGE (' ')
          CALL MESAGE ('THE FOLLOWING MESH GRAPHICS OPTIONS ARE '//
@@ -396,7 +349,7 @@ C
          CALL MESAGE ('    EX*IT       = EXITS FASTQ')
          CALL MESAGE ('                  (CARRIAGE RETURN TO EXIT '//
      &      'MESH GRAPHICS)')
-C
+
       ELSE IF (I .EQ. 12) THEN
          CALL MESAGE (' ')
          CALL MESAGE ('THE FOLLOWING MESH OPTIONS ARE AVAILABLE:')
@@ -428,7 +381,7 @@ C
      &      'INDEX')
          CALL MESAGE ('                  (CARRIAGE RETURN TO EXIT '//
      &      'MESH)')
-C
+
       ELSE IF (I .EQ. 13) THEN
          CALL MESAGE ('THE FOLLOWING INITIAL MESH GENERATION SCHEMES '//
      &      'ARE AVAILABLE:')
@@ -443,7 +396,7 @@ C
          CALL MESAGE ('             NO SCHEME (CARRIAGE RETURN) '//
      &      'DEFAULTS TO A')
          CALL MESAGE ('             FORCED RECTANGULAR SCHEME')
-C
+
       ELSE IF (I .EQ. 14) THEN
          CALL MESAGE ('THE FOLLOWING TABLET OPTIONS ARE '//
      &      'AVAILABLE: ')
@@ -478,7 +431,7 @@ C
          CALL MESAGE ('                  (CARRIAGE RETURN TO EXIT '//
      &      'TABLET)')
       END IF
-C
+
       RETURN
-C
+
       END

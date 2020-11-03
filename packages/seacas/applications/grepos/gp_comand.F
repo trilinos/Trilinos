@@ -1,34 +1,8 @@
-C Copyright(C) 2011-2017, 2020 National Technology & Engineering Solutions of
-C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C * Redistributions of source code must retain the above copyright
-C    notice, this list of conditions and the following disclaimer.
-C
-C * Redistributions in binary form must reproduce the above
-C   copyright notice, this list of conditions and the following
-C   disclaimer in the documentation and/or other materials provided
-C   with the distribution.
-C
-C * Neither the name of NTESS nor the names of its
-C   contributors may be used to endorse or promote products derived
-C   from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C See packages/seacas/LICENSE for details
 
 C     -*- Mode: fortran -*-
 C=======================================================================
@@ -375,14 +349,14 @@ C=======================================================================
       ELSE IF (VERB .EQ. 'ADJUST') THEN
 C...  ADJUST {CENTER|MINIMUM|MAXIMUM} {X|Y|Z} adjustment
 C...  ADJUST {MINIMUM|MAXIMUM} {X|Y|Z} adjustment
-C
+
 C...  Calculate offset such that the value in the generated mesh
 C     (ignoring any other offsets, scales, or rotations)
 C     will equal the input value.
-C
+
 C...EXAMPLE:adjust maximum x 10
 C     will set the maximum x in the generated mesh equal to 10.
-C
+
  140    CONTINUE
         IF (FFEXST (IFLD, INTYP)) THEN
           CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
@@ -626,7 +600,7 @@ C ... Field is Attribute number
 C ... Setup the scale and echo to the user
             CALL SCLATR(NELBLK, IDELB, NUMATR, IDATR, DOALLA,
      *        IDBLK, DOALLB, ASCALE, ATRSCL, .TRUE., .TRUE.)
-C
+
           ELSE IF (MATSTR(WORD, 'BLOCK', 1)) THEN
             DO 220 IBLK = 1, NELBLK
               CALL INTSTR (1, 0, IDELB(IBLK), WORD, LW)
@@ -1356,12 +1330,18 @@ C=======================================================================
         IF (MATSTR(WORD,'MATERIALS',1) .OR.
      &    MATSTR(WORD, 'BLOCKS',1)) THEN
           CALL INCID ('M', IDELB, NELBLK, IDINC)
-        ELSE IF (MATSTR(WORD,'NODESETS',1) .OR.
-     $      MATSTR(WORD,'NSETS',   1)) THEN
+        ELSE IF (MATSTR(WORD,'NODESETS',5) .OR.
+     $      MATSTR(WORD,'NSETS',   2)) THEN
           CALL INCID ('N', IDNPS, NUMNPS, IDINC)
         ELSE IF (MATSTR(WORD,'SIDESETS',1) .OR.
      $      MATSTR(WORD,'SSETS',   1)) THEN
           CALL INCID ('S', IDESS, NUMESS, IDINC)
+        ELSE IF (MATSTR(WORD,'NODEMAP',5) .OR.
+     $      MATSTR(WORD,'NMAP',   2)) THEN
+          CALL INCMAP (MAPNOD, NUMNP, IDINC)
+        ELSE IF (MATSTR(WORD,'ELEMMAP',5) .OR.
+     $      MATSTR(WORD,'EMAP',   2)) THEN
+          CALL INCMAP (MAPEL, NUMEL, IDINC)
         END IF
         VERB = ' '
 
@@ -2320,6 +2300,8 @@ C========================================================================
 
 C========================================================================
       ELSE IF (VERB .EQ. 'QUIT') THEN
+         call prterr('WARNING', 
+     &   'Aborting current execution; no output file will be written')
         CALL SCNEOF
         RETURN 1
 

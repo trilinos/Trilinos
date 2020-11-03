@@ -1395,11 +1395,14 @@ makeMatrixTestWithExplicitZeroDiag (Teuchos::FancyOStream& out,
     Kokkos::deep_copy (ptr_h, A_lcl.graph.row_map);
     auto ind_h = Kokkos::create_mirror_view (A_lcl.graph.entries);
     Kokkos::deep_copy (ind_h, A_lcl.graph.entries);
+    // Work-around gcc/7.2.0 bug, see PR
+    // https://github.com/trilinos/Trilinos/pull/8031
+    const int myRank_ = myRank;
 
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       using size_type = typename decltype (A_lcl.graph)::size_type;
       for (size_type k = ptr_h[lclRow]; k < ptr_h[lclRow+1]; ++k) {
-        const val_type expectedUnscaledVal = myRank == 1 ? 0.0 : 1.0;
+        const val_type expectedUnscaledVal = myRank_ == 1 ? 0.0 : 1.0;
         const mag_type rowNorm = gblRowNorms[lclRow];
         const mag_type scalingFactor = assumeSymmetric ?
           KAM::sqrt (rowNorm) : rowNorm;
@@ -1880,15 +1883,18 @@ makeMatrixTestWithExplicitInfAndNan (Teuchos::FancyOStream& out,
     Kokkos::deep_copy (ptr_h, A_lcl.graph.row_map);
     auto ind_h = Kokkos::create_mirror_view (A_lcl.graph.entries);
     Kokkos::deep_copy (ind_h, A_lcl.graph.entries);
+    // Work-around gcc/7.2.0 bug, see PR
+    // https://github.com/trilinos/Trilinos/pull/8031
+    const int myRank_ = myRank;
 
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       using size_type = typename decltype (A_lcl.graph)::size_type;
       for (size_type k = ptr_h[lclRow]; k < ptr_h[lclRow+1]; ++k) {
         val_type expectedUnscaledVal = 1.0;
-        if (myRank == 1) {
+        if (myRank_ == 1) {
           expectedUnscaledVal = NaughtyValues<val_type>::infinity ();
         }
-        else if (myRank == 2) {
+        else if (myRank_ == 2) {
           expectedUnscaledVal = NaughtyValues<val_type>::quiet_NaN ();
         }
         const mag_type rowNorm = gblRowNorms[lclRow];

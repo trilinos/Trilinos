@@ -32,10 +32,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <stk_util/util/Marshal.hpp>    // for Marshal, operator<<, etc
+#ifdef STK_HAS_MPI
+
 #include <list>                         // for list
 #include <stdexcept>                    // for runtime_error
 #include <gtest/gtest.h>
-#include <stk_util/util/Marshal.hpp>    // for Marshal, operator<<, etc
 #include <string>                       // for operator==, string, etc
 #include <vector>                       // for vector
 
@@ -246,3 +248,5 @@ TEST(UnitTestMarshal, UnitTest)
     ASSERT_NO_THROW(min >> v_in);
   }
 }
+#endif // STK_HAS_MPI
+

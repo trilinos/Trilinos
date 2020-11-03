@@ -14,9 +14,6 @@
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorPairPartIMEX_Basic.hpp"
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  #include "Tempus_StepperRKObserverComposite.hpp"
-#endif
 
 
 namespace Tempus {
@@ -220,8 +217,8 @@ namespace Tempus {
  *  \renewcommand{\thealgorithm}{}
  *  \caption{IMEX RK with the application-action locations indicated.}
  *  \begin{algorithmic}[1]
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
  *    \State $Z \leftarrow z_{n-1}$ (Recall $Z_i = \{Y_i,X_i\}^T$)
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
  *      \Comment Set initial guess to last timestep.
  *    \For {$i = 0 \ldots s-1$}
  *      \State $Y_i = y_{n-1} -\Delta t \sum_{j=1}^{i-1} \hat{a}_{ij}\;f^y_j$
@@ -263,7 +260,7 @@ namespace Tempus {
  *
  *  The following table contains the pre-coded IMEX-RK tableaus.
  *  <table>
- *  <caption id="multi_row">Partitioned IMEX-RK Tableaus</caption>
+ *  <caption id="multi_row_part">Partitioned IMEX-RK Tableaus</caption>
  *  <tr><th> Name  <th> Order <th> Implicit Tableau <th> Explicit Tableau
  *  <tr><td> Partitioned IMEX RK 1st order  <td> 1st
  *      <td> \f[ \begin{array}{c|cc}
@@ -302,9 +299,9 @@ namespace Tempus {
  *           \end{array} \f]
  *  </table>
  *
- *  The First-Step-As-Last (FSAL) principle is not valid for IMEX RK Partition.
+ *  The First-Same-As-Last (FSAL) principle is not valid for IMEX RK Partition.
  *  The default is to set useFSAL=false, and useFSAL=true will result
- *  in an error.
+ *  in a warning.
  *
  *  #### References
  *  -# Shadid, Cyr, Pawlowski, Widley, Scovazzi, Zeng, Phillips, Conde,
@@ -327,20 +324,6 @@ public:
   StepperIMEX_RK_Partition();
 
   /// Constructor to for all member data.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  StepperIMEX_RK_Partition(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    bool zeroInitialGuess,
-    std::string stepperType,
-    Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau,
-    Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau,
-    Scalar order);
-#endif
   StepperIMEX_RK_Partition(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
@@ -356,14 +339,26 @@ public:
 
   /// \name Basic stepper methods
   //@{
+    /// Returns the explicit tableau!
+    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getTableau() const
+    { return getExplicitTableau(); }
+
     /// Set both the explicit and implicit tableau from ParameterList
     virtual void setTableaus(std::string stepperType = "",
       Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau = Teuchos::null,
       Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau = Teuchos::null);
 
+    /// Return explicit tableau.
+    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getExplicitTableau() const
+    { return explicitTableau_; }
+
     /// Set the explicit tableau from tableau
     virtual void setExplicitTableau(
       Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau);
+
+    /// Return implicit tableau.
+    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getImplicitTableau() const
+    { return implicitTableau_; }
 
     /// Set the implicit tableau from tableau
     virtual void setImplicitTableau(
@@ -382,14 +377,6 @@ public:
     virtual void setModelPair(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel);
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
-
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperObserver_; }
-#endif
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -413,11 +400,9 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
 
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >& getStageZ() {return stageZ_;};
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageF() {return stageF_;};
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageGx() {return stageGx_;};
   Teuchos::RCP<Thyra::VectorBase<Scalar> >& getXTilde() {return xTilde_;};
@@ -461,15 +446,10 @@ protected:
 
   Scalar order_;
 
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageZ_;
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageF_;
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageGx_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  Teuchos::RCP<StepperRKObserverComposite<Scalar> >      stepperObserver_;
-#endif
 
 };
 

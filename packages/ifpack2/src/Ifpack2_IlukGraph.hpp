@@ -52,6 +52,8 @@
 #include <algorithm>
 #include <vector>
 
+#include "KokkosSparse_spiluk.hpp"
+
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -93,7 +95,7 @@ namespace Ifpack2 {
 /// via the Tpetra::CrsGraph InsertIndices and RemoveIndices
 /// functions.  However, in this case FillComplete must be called
 /// before the graph is used for subsequent operations.
-template<class GraphType>
+template<class GraphType, class KKHandleType>
 class IlukGraph : public Teuchos::Describable {
 public:
   typedef typename GraphType::local_ordinal_type local_ordinal_type;
@@ -146,7 +148,8 @@ public:
   /// initialize(), but not compute().  RILUK calls IlukGraph's
   /// initialize() method in its own initialize() method, as one would
   /// expect.
-  void initialize ();
+  void initialize();
+  void initialize(const Teuchos::RCP<KKHandleType>& KernelHandle);
 
   //! The level of fill used to construct this graph.
   int getLevelFill () const { return LevelFill_; }
@@ -173,7 +176,7 @@ public:
   size_t getNumGlobalDiagonals() const { return NumGlobalDiagonals_; }
 
 private:
-  typedef typename GraphType::map_type map_type;
+  typedef typename GraphType::map_type map_type;  
 
   /// \brief Copy constructor (UNIMPLEMENTED; DO NOT USE).
   ///
@@ -183,7 +186,7 @@ private:
   /// internal graphs.  It may do a shallow copy of the input graph
   /// (which is not modified).  Also, you must implement operator= in
   /// a similar way.
-  IlukGraph (const IlukGraph<GraphType>&);
+  IlukGraph (const IlukGraph<GraphType, KKHandleType>&);
 
   /// \brief Assignment operator (UNIMPLEMENTED; DO NOT USE).
   ///
@@ -193,7 +196,7 @@ private:
   /// all internal graphs.  It may do a shallow copy of the input
   /// graph (which is not modified).  Also, you must implement the
   /// copy constructor in a similar way.
-  IlukGraph& operator= (const IlukGraph<GraphType>&);
+  IlukGraph& operator= (const IlukGraph<GraphType, KKHandleType>&);
 
   //! Construct the overlap graph.
   void constructOverlapGraph();
@@ -210,8 +213,8 @@ private:
 };
 
 
-template<class GraphType>
-IlukGraph<GraphType>::
+template<class GraphType, class KKHandleType>
+IlukGraph<GraphType, KKHandleType>::
 IlukGraph (const Teuchos::RCP<const GraphType>& G,
            const int levelFill,
            const int levelOverlap,
@@ -228,13 +231,13 @@ IlukGraph (const Teuchos::RCP<const GraphType>& G,
 }
 
 
-template<class GraphType>
-IlukGraph<GraphType>::~IlukGraph()
+template<class GraphType, class KKHandleType>
+IlukGraph<GraphType, KKHandleType>::~IlukGraph()
 {}
 
 
-template<class GraphType>
-void IlukGraph<GraphType>::
+template<class GraphType, class KKHandleType>
+void IlukGraph<GraphType, KKHandleType>::
 setParameters (const Teuchos::ParameterList& parameterlist)
 {
   getParameter (parameterlist, "iluk level-of-fill", LevelFill_);
@@ -242,8 +245,8 @@ setParameters (const Teuchos::ParameterList& parameterlist)
 }
 
 
-template<class GraphType>
-void IlukGraph<GraphType>::constructOverlapGraph () {
+template<class GraphType, class KKHandleType>
+void IlukGraph<GraphType, KKHandleType>::constructOverlapGraph () {
   // FIXME (mfh 22 Dec 2013) This won't do if we want
   // RILUK::initialize() to do the right thing (that is,
   // unconditionally recompute the "symbolic factorization").
@@ -253,8 +256,8 @@ void IlukGraph<GraphType>::constructOverlapGraph () {
 }
 
 
-template<class GraphType>
-void IlukGraph<GraphType>::initialize()
+template<class GraphType, class KKHandleType>
+void IlukGraph<GraphType, KKHandleType>::initialize()
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
@@ -274,7 +277,6 @@ void IlukGraph<GraphType>::initialize()
   // FIXME (mfh 23 Dec 2013) Use size_t or whatever
   // getNodeNumElements() returns, instead of ptrdiff_t.
   const int NumMyRows = OverlapGraph_->getRowMap ()->getNodeNumElements ();
-
 
   using device_type = typename node_type::device_type;
   using execution_space = typename device_type::execution_space;
@@ -549,6 +551,88 @@ void IlukGraph<GraphType>::initialize()
 
   reduceAll<int, size_t> (* (L_DomainMap->getComm ()), REDUCE_SUM, 1,
                           &NumMyDiagonals_, &NumGlobalDiagonals_);
+}
+
+
+template<class GraphType, class KKHandleType>
+void IlukGraph<GraphType, KKHandleType>::initialize(const Teuchos::RCP<KKHandleType>& KernelHandle)
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::reduceAll;
+
+  typedef typename crs_graph_type::local_graph_type local_graph_type;
+  typedef typename local_graph_type::size_type      size_type;
+  typedef typename local_graph_type::data_type      data_type;
+  typedef typename local_graph_type::array_layout   array_layout;
+  typedef typename local_graph_type::device_type    device_type;
+
+  typedef typename Kokkos::View<size_type*, array_layout, device_type> lno_row_view_t;
+  typedef typename Kokkos::View<data_type*, array_layout, device_type> lno_nonzero_view_t;
+  
+  constructOverlapGraph();
+
+  // FIXME (mfh 23 Dec 2013) Use size_t or whatever
+  // getNodeNumElements() returns, instead of ptrdiff_t.
+  const int NumMyRows = OverlapGraph_->getRowMap()->getNodeNumElements();
+  auto localOverlapGraph = OverlapGraph_->getLocalGraph();
+
+  if (KernelHandle->get_spiluk_handle()->get_nrows() < static_cast<size_type>(NumMyRows)) {
+    KernelHandle->get_spiluk_handle()->reset_handle(NumMyRows,
+                                                    KernelHandle->get_spiluk_handle()->get_nnzL(),
+                                                    KernelHandle->get_spiluk_handle()->get_nnzU());
+  }
+
+  lno_row_view_t     L_row_map("L_row_map", NumMyRows + 1);
+  lno_nonzero_view_t L_entries("L_entries", KernelHandle->get_spiluk_handle()->get_nnzL());
+  lno_row_view_t     U_row_map("U_row_map", NumMyRows + 1);
+  lno_nonzero_view_t U_entries("U_entries", KernelHandle->get_spiluk_handle()->get_nnzU());
+
+  bool symbolicError;
+  do {
+    symbolicError = false;
+    try {
+      KokkosSparse::Experimental::spiluk_symbolic( KernelHandle.getRawPtr(), LevelFill_, 
+                                                   localOverlapGraph.row_map, localOverlapGraph.entries, 
+                                                   L_row_map, L_entries, U_row_map, U_entries );
+    }
+    catch (std::runtime_error &e) {
+      symbolicError = true;
+      data_type nnzL = static_cast<data_type>(Overalloc_)*L_entries.extent(0);
+      data_type nnzU = static_cast<data_type>(Overalloc_)*U_entries.extent(0);	  
+      KernelHandle->get_spiluk_handle()->reset_handle(NumMyRows, nnzL, nnzU);
+      Kokkos::resize(L_entries, KernelHandle->get_spiluk_handle()->get_nnzL());
+      Kokkos::resize(U_entries, KernelHandle->get_spiluk_handle()->get_nnzU());
+    }
+    const int localSymbolicError = symbolicError ? 1 : 0;
+    int globalSymbolicError = 0;
+    reduceAll (* (OverlapGraph_->getRowMap ()->getComm ()), REDUCE_SUM, 1,
+                   &localSymbolicError, &globalSymbolicError);
+    symbolicError = globalSymbolicError > 0;
+  } while (symbolicError);
+
+  Kokkos::resize(L_entries, KernelHandle->get_spiluk_handle()->get_nnzL());
+  Kokkos::resize(U_entries, KernelHandle->get_spiluk_handle()->get_nnzU());
+  
+  RCP<Teuchos::ParameterList> params = Teuchos::parameterList ();
+  params->set ("Optimize Storage",false);
+  
+  L_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
+                                      OverlapGraph_->getRowMap (), 
+                                      L_row_map, L_entries));
+  U_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
+                                      OverlapGraph_->getRowMap (), 
+                                      U_row_map, U_entries));
+									  
+  RCP<const map_type> L_DomainMap = OverlapGraph_->getRowMap ();
+  RCP<const map_type> L_RangeMap  = Graph_->getRangeMap ();
+  RCP<const map_type> U_DomainMap = Graph_->getDomainMap ();
+  RCP<const map_type> U_RangeMap  = OverlapGraph_->getRowMap ();
+  L_Graph_->fillComplete (L_DomainMap, L_RangeMap, params);
+  U_Graph_->fillComplete (U_DomainMap, U_RangeMap, params);
 }
 
 } // namespace Ifpack2

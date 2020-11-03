@@ -63,7 +63,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0 FATAL_ERROR)
 
 # Must set the project name as a variable at very beginning before including anything else
 # We set the project name in a separate file so CTest scripts can use it.
-INCLUDE(${CMAKE_SOURCE_DIR}/ProjectName.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/ProjectName.cmake)
 
 # CMake requires that you declare the CMake project in the top-level file and
 # not in an include file :-(
@@ -76,7 +76,7 @@ set(ENV{CMAKE_IS_IN_CONFIGURE_MODE} 1)
 # B) Pull in the TriBITS system and execute
 #
 
-INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/TriBITS.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/cmake/tribits/TriBITS.cmake)
 
 
 # Make Trilinos create <Package>Config.cmake files by default

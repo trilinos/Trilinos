@@ -47,7 +47,7 @@ ENDIF()
 
     TRIBITS_ADD_TEST(
       Redirection
-      NAME "Redirection"
+      NAME "Redirection_Tpetra"
       ARGS "--linAlgebra=Tpetra"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
@@ -59,7 +59,7 @@ ENDIF()
 
     TRIBITS_ADD_TEST(
       Redirection
-      NAME "Redirection"
+      NAME "Redirection_Epetra"
       ARGS "--linAlgebra=Epetra"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required

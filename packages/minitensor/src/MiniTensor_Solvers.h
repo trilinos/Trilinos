@@ -510,7 +510,7 @@ stepFactory(StepType step_type);
 /// Plain Newton Step
 ///
 template<typename FN, typename T, Index N>
-struct NewtonStep final : public StepBase<FN, T, N>
+struct NewtonStep : public StepBase<FN, T, N>
 {
   static constexpr
   char const * const
@@ -540,7 +540,7 @@ struct NewtonStep final : public StepBase<FN, T, N>
 /// Newton Step with line search
 ///
 template<typename FN, typename T, Index N>
-struct NewtonWithLineSearchStep final : public StepBase<FN, T, N>
+struct NewtonWithLineSearchStep : public StepBase<FN, T, N>
 {
   static constexpr
   char const * const
@@ -569,7 +569,7 @@ struct NewtonWithLineSearchStep final : public StepBase<FN, T, N>
 /// Trust Region Step
 ///
 template<typename FN, typename T, Index N>
-struct TrustRegionStep final : public StepBase<FN, T, N>
+struct TrustRegionStep : public StepBase<FN, T, N>
 {
   static constexpr
   char const * const
@@ -611,7 +611,7 @@ private:
 /// Conjugate Gradient Step
 ///
 template<typename FN, typename T, Index N>
-struct ConjugateGradientStep final : public StepBase<FN, T, N>
+struct ConjugateGradientStep : public StepBase<FN, T, N>
 {
   static constexpr
   char const * const
@@ -656,7 +656,7 @@ private:
 /// Line Search Regularized Step
 ///
 template<typename FN, typename T, Index N>
-struct LineSearchRegularizedStep final : public StepBase<FN, T, N>
+struct LineSearchRegularizedStep : public StepBase<FN, T, N>
 {
   static constexpr
   char const * const

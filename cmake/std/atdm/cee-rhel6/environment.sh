@@ -16,6 +16,9 @@ fi
 
 if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
   unset ATDM_CONFIG_KOKKOS_ARCH
+  if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GCC-7.2.0_OPENMPI-4.0.3" ]] ; then
+    export ATDM_CONFIG_KOKKOS_ARCH=VOLTA70
+  fi
 else
   echo
   echo "***"
@@ -108,8 +111,8 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.3_INTELMPI-2018.4" ]; then
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
 
-elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
-  module load sparc-dev/intel-18.0.2_mpich2-3.2
+elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.3_MPICH2-3.2" ]; then
+  module load sparc-dev/intel-19.0.3_mpich2-3.2
   export OMP_NUM_THREADS=3 # Because Si H. requested this
   export OMP_PROC_BIND=false
   unset OMP_PLACES
@@ -122,19 +125,7 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
   if [[ "$ATDM_CONFIG_ENABLE_STRONG_WARNINGS" == "1" ]]; then
     export ATDM_CONFIG_CXX_FLAGS="${ATDM_CONFIG_INTEL_CXX_WARNINGS}"
   fi
-  # Replace Intel MKL 18.0.2 wiht 18.0.5 which fixes some LAPACK bugs (see #3499, #3914)
-  export ATDM_CONFIG_MKL_ROOT=/sierra/sntools/SDK/compilers/intel/composer_xe_2018.5.274/compilers_and_libraries/linux/
-  LD_LIBRARY_PATH_TMP=
-  for a_path in `echo ${LD_LIBRARY_PATH} | sed 's/:/ /g'` ; do
-    #echo "a_path='${a_path}'"
-    if [[ "${a_path}" == "/sierra/sntools/SDK/compilers/intel/composer_xe_2018.2.199/compilers_and_libraries/linux/mkl/lib/intel64" ]] ; then
-      LD_LIBRARY_PATH_TMP=${LD_LIBRARY_PATH_TMP}:/sierra/sntools/SDK/compilers/intel/composer_xe_2018.5.274/compilers_and_libraries/linux/mkl/lib/intel64
-    else
-      LD_LIBRARY_PATH_TMP=${LD_LIBRARY_PATH_TMP}:${a_path}
-    fi
-  done
-  export LD_LIBRARY_PATH=${LD_LIBRARY_PATH_TMP}
-  #
+  export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
   export ATDM_CONFIG_MPI_EXEC=mpirun
   export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
   export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;none"
@@ -142,6 +133,36 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_MPICH2-3.2" ]; then
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
 
+elif [ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GCC-7.2.0_OPENMPI-4.0.3" ]; then
+  # ninja is running into issues with response files when building shared libraries with CUDA.
+  # nvcc reports that no input files were given when generating shared libraries with nvcc.
+  # Using the Unix Makefiles cmake generator works.
+  export ATDM_CONFIG_USE_NINJA=OFF
+
+  module load sparc-dev/cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3
+
+  # OpenMPI Settings
+  export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}
+  if [ ! -x "$OMPI_CXX" ]; then
+      echo "No nvcc_wrapper found"
+      return
+  fi
+  # NOTE: The above export overrides the value set by the module load above
+  export MPICC=`which mpicc`
+  export MPICXX=`which mpicxx`
+  export MPIF90=`which mpif90`
+
+  # CUDA Settings
+  if [[ ! -d /tmp/${USER} ]] ; then
+    echo "Creating /tmp/${USER} for nvcc wrapper!"
+    mkdir /tmp/${USER}
+  fi
+
+  export ATDM_CONFIG_MPI_EXEC=mpirun
+  export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
+  export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;none"
+
+  export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
 else
   echo
   echo "***"
@@ -211,7 +232,13 @@ atdm_config_add_libs_to_var ATDM_CONFIG_BOOST_LIBS ${BOOST_ROOT}/lib .a \
 # However, set the direct libs for HDF5 and NetCDF in case we use that option
 # for building (see env var ATDM_CONFIG_USE_SPARC_TPL_FIND_SETTINGS).
 
-export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
+if [[ "${ATDM_CONFIG_USE_MPI}" == "ON" ]] ; then
+  USE_HDF5_ROOT="${HDF5_ROOT}"
+else
+  USE_HDF5_ROOT="${SPARC_SERIAL_HDF5_ROOT}"
+fi
+
+export ATDM_CONFIG_HDF5_LIBS="-L${USE_HDF5_ROOT}/lib;${USE_HDF5_ROOT}/lib/libhdf5_hl.a;${USE_HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 
 if [[ "${PNETCDF_ROOT}" == "" ]] ; then
   export PNETCDF_ROOT=${NETCDF_ROOT}

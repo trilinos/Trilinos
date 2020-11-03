@@ -44,6 +44,26 @@ namespace KokkosBatched {
              alpha, 
              A.data(), A.stride_0(), A.stride_1());
   }
+
+  ///
+  /// TeamVector Impl
+  /// ===============
+    
+  template<typename MemberType>
+  template<typename ScalarType,
+           typename AViewType>
+  KOKKOS_INLINE_FUNCTION
+  int
+  TeamVectorScale<MemberType>::
+  invoke(const MemberType &member, 
+         const ScalarType alpha,
+         const AViewType &A) {
+    return TeamVectorScaleInternal::
+      invoke(member, 
+             A.extent(0), A.extent(1),
+             alpha, 
+             A.data(), A.stride_0(), A.stride_1());
+  }
   
 }
 

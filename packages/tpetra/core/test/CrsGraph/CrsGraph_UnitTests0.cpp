@@ -41,25 +41,9 @@
 
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Details_Behavior.hpp"
-#include "Tpetra_Details_determineLocalTriangularStructure.hpp"
 #include "Tpetra_TestingUtilities.hpp"
 
 namespace { // (anonymous)
-
-  template<class LO, class GO, class NT>
-  Tpetra::Details::LocalTriangularStructureResult<LO>
-  getLocalTriangularStructure (const Tpetra::RowGraph<LO, GO, NT>& G)
-  {
-    using Tpetra::Details::determineLocalTriangularStructure;
-    using crs_graph_type = Tpetra::CrsGraph<LO, GO, NT>;
-
-    const crs_graph_type& G_crs = dynamic_cast<const crs_graph_type&> (G);
-
-    auto G_lcl = G_crs.getLocalGraph ();
-    auto lclRowMap = G.getRowMap ()->getLocalMap ();
-    auto lclColMap = G.getColMap ()->getLocalMap ();
-    return determineLocalTriangularStructure (G_lcl, lclRowMap, lclColMap, true);
-  }
 
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
@@ -249,40 +233,26 @@ namespace { // (anonymous)
     RCP<const map_type> map =
       rcp (new map_type (INVALID, numLocal, indexBase, comm));
 
-    // Test (GitHub Issue) #2565 fix, while we're at it.
-    //
-    // clts == 0: Don't set "compute local triangular constants"
-    // clts == 1: Set "compute local triangular constants" to false
-    // clts == 2: Set "compute local triangular constants" to true
-    for (int clts : {0, 1, 2}) {
-      // send in a parameterlist, check the defaults
-      RCP<ParameterList> params = parameterList();
-      if (clts == 1) {
-        params->set ("compute local triangular constants", false);
-      }
-      else if (clts == 2) {
-        params->set ("compute local triangular constants", true);
-      }
-
-      // create static-profile graph, fill-complete without inserting (and therefore, without allocating)
-      GRPH graph (map, 3, StaticProfile);
-      for (GO i = map->getMinGlobalIndex(); i <= map->getMaxGlobalIndex(); ++i) {
-        graph.insertGlobalIndices (i, tuple<GO> (i));
-      }
-      params->set("Optimize Storage",false);
-      graph.fillComplete(params);
-      TEST_EQUALITY(graph.getNodeNumEntries(), (size_t)numLocal);
-      TEST_EQUALITY_CONST(graph.isStorageOptimized(), false);
-      //
-      graph.resumeFill();
-      for (int i=0; i < numLocal; ++i) graph.removeLocalIndices(i);
-      params->set("Optimize Storage",true);
-      graph.fillComplete(params);
-      TEST_EQUALITY_CONST(params->get<bool>("Optimize Storage"), true);
-      TEST_EQUALITY(graph.getNodeNumEntries(), 0);
-      TEST_EQUALITY_CONST(graph.getProfileType(), StaticProfile);
-      TEST_EQUALITY_CONST(graph.isStorageOptimized(), true);
+    // send in a parameterlist, check the defaults
+    RCP<ParameterList> params = parameterList();
+    // create static-profile graph, fill-complete without inserting (and therefore, without allocating)
+    GRPH graph (map, 3, StaticProfile);
+    for (GO i = map->getMinGlobalIndex(); i <= map->getMaxGlobalIndex(); ++i) {
+      graph.insertGlobalIndices (i, tuple<GO> (i));
     }
+    params->set("Optimize Storage",false);
+    graph.fillComplete(params);
+    TEST_EQUALITY(graph.getNodeNumEntries(), (size_t)numLocal);
+    TEST_EQUALITY_CONST(graph.isStorageOptimized(), false);
+    //
+    graph.resumeFill();
+    for (int i=0; i < numLocal; ++i) graph.removeLocalIndices(i);
+    params->set("Optimize Storage",true);
+    graph.fillComplete(params);
+    TEST_EQUALITY_CONST(params->get<bool>("Optimize Storage"), true);
+    TEST_EQUALITY(graph.getNodeNumEntries(), 0);
+    TEST_EQUALITY_CONST(graph.getProfileType(), StaticProfile);
+    TEST_EQUALITY_CONST(graph.isStorageOptimized(), true);
 
     int lclSuccess = success ? 1 : 0;
     int gblSuccess = 1;
@@ -313,24 +283,23 @@ namespace { // (anonymous)
     const GO indexBase = 0;
     RCP<const map_type> map =
       rcp (new map_type (INVALID, numLocal, indexBase, comm));
-    {
-      Array<LO> lids(1);
-      lids[0] = myRank;
-      GRAPH diaggraph(map,map,1);
-      TEST_EQUALITY(diaggraph.hasColMap(), true);
-      const LO row = 0;
-      // insert
-      diaggraph.insertLocalIndices(row, lids());
-      TEST_EQUALITY( static_cast<size_t> (diaggraph.getNumEntriesInLocalRow (row)),
-                     static_cast<size_t> (lids.size ()) );
-      // remove the row
-      diaggraph.removeLocalIndices(row);
-      TEST_EQUALITY(diaggraph.getNumEntriesInLocalRow(row), 0)
-      // now inserting the index again, should make the row-length be 1 again...
-      diaggraph.insertLocalIndices(row, lids());
-      TEST_EQUALITY( static_cast<size_t> (diaggraph.getNumEntriesInLocalRow (row)),
-                     static_cast<size_t> (lids.size ()) );
-    }
+
+    Array<LO> lids(1);
+    lids[0] = myRank;
+    GRAPH diaggraph(map,map,1);
+    TEST_EQUALITY(diaggraph.hasColMap(), true);
+    const LO row = 0;
+    // insert
+    diaggraph.insertLocalIndices(row, lids());
+    TEST_EQUALITY( static_cast<size_t> (diaggraph.getNumEntriesInLocalRow (row)),
+                   static_cast<size_t> (lids.size ()) );
+    // remove the row
+    diaggraph.removeLocalIndices(row);
+    TEST_EQUALITY(diaggraph.getNumEntriesInLocalRow(row), 0)
+    // now inserting the index again, should make the row-length be 1 again...
+    diaggraph.insertLocalIndices(row, lids());
+      TEST_EQUALITY(static_cast<size_t> (diaggraph.getNumEntriesInLocalRow (row)),
+                    static_cast<size_t> (lids.size ()) );
 
     int lclSuccess = success ? 1 : 0;
     int gblSuccess = 1;
@@ -385,64 +354,51 @@ namespace { // (anonymous)
     RCP<const map_type> cmap =
       rcp (new map_type (INVALID, ginds, 0, comm));
 
-    // Test (GitHub Issue) #2565 fix, while we're at it.
-    //
-    // clts == 0: Don't set "compute local triangular constants"
-    // clts == 1: Set "compute local triangular constants" to false
-    // clts == 2: Set "compute local triangular constants" to true
-    for (int clts : {0, 1, 2}) {
-      RCP<ParameterList> params = parameterList();
-      if (clts == 1) {
-        params->set ("compute local triangular constants", false);
+    RCP<ParameterList> params = parameterList();
+    for (int T=0; T<4; ++T) {
+      if ( (T & 1) != 1 ) continue;
+      ProfileType pftype = StaticProfile;
+      params->set("Optimize Storage",((T & 2) == 2));
+      GRAPH trigraph(rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
+      Array<GO> GCopy(4); Array<LO> LCopy(4);
+      ArrayView<const GO> GView;
+      ArrayView<const LO> LView;
+      size_t numindices;
+      // at this point, there are no global or local indices, but views and copies should succeed
+      trigraph.getLocalRowCopy(0,LCopy,numindices);
+      trigraph.getLocalRowView(0,LView);
+      trigraph.getGlobalRowCopy(myrowind,GCopy,numindices);
+      trigraph.getGlobalRowView(myrowind,GView);
+      // use multiple inserts: this illustrated an overwrite bug for column-map-specified graphs
+      typedef typename Teuchos::ArrayView<const GO>::size_type size_type;
+      for (size_type j=0; j < ginds.size(); ++j) {
+        trigraph.insertGlobalIndices(myrowind,ginds(j,1));
       }
-      else if (clts == 2) {
-        params->set ("compute local triangular constants", true);
+      TEST_EQUALITY( trigraph.getNumEntriesInLocalRow(0), trigraph.getNumAllocatedEntriesInLocalRow(0) ); // test that we only allocated as much room as necessary
+      // If StaticProfile, then attempt to insert one additional entry
+      // in my row that is not already in the row, and verify that it
+      // throws an exception.
+      if (pftype == StaticProfile) {
+        TEST_THROW( trigraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind+2)), std::runtime_error );
       }
-
-      for (int T=0; T<4; ++T) {
-        if ( (T & 1) != 1 ) continue;
-        ProfileType pftype = StaticProfile;
-        params->set("Optimize Storage",((T & 2) == 2));
-        GRAPH trigraph(rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
-        Array<GO> GCopy(4); Array<LO> LCopy(4);
-        ArrayView<const GO> GView;
-        ArrayView<const LO> LView;
-        size_t numindices;
-        // at this point, there are no global or local indices, but views and copies should succeed
-        trigraph.getLocalRowCopy(0,LCopy,numindices);
-        trigraph.getLocalRowView(0,LView);
-        trigraph.getGlobalRowCopy(myrowind,GCopy,numindices);
-        trigraph.getGlobalRowView(myrowind,GView);
-        // use multiple inserts: this illustrated an overwrite bug for column-map-specified graphs
-        typedef typename Teuchos::ArrayView<const GO>::size_type size_type;
-        for (size_type j=0; j < ginds.size(); ++j) {
-          trigraph.insertGlobalIndices(myrowind,ginds(j,1));
-        }
-        TEST_EQUALITY( trigraph.getNumEntriesInLocalRow(0), trigraph.getNumAllocatedEntriesInLocalRow(0) ); // test that we only allocated as much room as necessary
-        // If StaticProfile, then attempt to insert one additional entry
-        // in my row that is not already in the row, and verify that it
-        // throws an exception.
-        if (pftype == StaticProfile) {
-          TEST_THROW( trigraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind+2)), std::runtime_error );
-        }
-        trigraph.fillComplete(params);
-        // check that inserting global entries throws (inserting local entries is still allowed)
-        {
-          Array<GO> zero(0);
-          TEST_THROW( trigraph.insertGlobalIndices(0,zero()), std::runtime_error );
-        }
-        // check for throws and no-throws/values
-        TEST_THROW( trigraph.getGlobalRowView(myrowind,GView), std::runtime_error );
-        TEST_THROW( trigraph.getLocalRowCopy(    0       ,LCopy(0,1),numindices), std::runtime_error );
-        TEST_THROW( trigraph.getGlobalRowCopy(myrowind,GCopy(0,1),numindices), std::runtime_error );
-        TEST_NOTHROW( trigraph.getLocalRowView(0,LView) );
-        TEST_COMPARE_ARRAYS( LView, linds );
-        TEST_NOTHROW( trigraph.getLocalRowCopy(0,LCopy,numindices) );
-        TEST_COMPARE_ARRAYS( LCopy(0,numindices), linds );
-        TEST_NOTHROW( trigraph.getGlobalRowCopy(myrowind,GCopy,numindices) );
-        TEST_COMPARE_ARRAYS( GCopy(0,numindices), ginds );
-        STD_TESTS(trigraph);
+      trigraph.fillComplete(params);
+      // check that inserting global entries throws (inserting local entries is still allowed)
+      {
+        Array<GO> zero(0);
+        TEST_THROW( trigraph.insertGlobalIndices(0,zero()), std::runtime_error );
       }
+      // check for throws and no-throws/values
+      TEST_THROW( trigraph.getGlobalRowView(myrowind,GView), std::runtime_error );
+      TEST_THROW( trigraph.getLocalRowCopy(    0       ,LCopy(0,1),numindices), std::runtime_error );
+      TEST_THROW( trigraph.getGlobalRowCopy(myrowind,GCopy(0,1),numindices), std::runtime_error );
+      TEST_NOTHROW( trigraph.getLocalRowView(0,LView) );
+      TEST_COMPARE_ARRAYS( LView, linds );
+      TEST_NOTHROW( trigraph.getLocalRowCopy(0,LCopy,numindices) );
+      TEST_COMPARE_ARRAYS( LCopy(0,numindices), linds );
+      TEST_NOTHROW( trigraph.getGlobalRowCopy(myrowind,GCopy,numindices) );
+      TEST_COMPARE_ARRAYS( GCopy(0,numindices), ginds );
+      STD_TESTS(trigraph);
+      
       // All procs fail if any node fails
       int globalSuccess_int = -1;
       reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
@@ -463,16 +419,16 @@ namespace { // (anonymous)
     // create a Map, one row per processor
     const size_t numLocal = 1;
     RCP<const map_type> map = rcp (new map_type (INVALID, numLocal, 0, comm));
-    {
-      // add too many entries to a static graph
-      // let node i contribute to row i+1, where node the last node contributes to row 0
-      GRAPH diaggraph(map,1,StaticProfile);
-      GO grow = myRank;
-      Array<GO> colinds(1);
-      colinds[0] = grow;
-      TEST_NOTHROW( diaggraph.insertGlobalIndices(grow,colinds()) );
-      TEST_THROW( diaggraph.insertGlobalIndices(grow, Teuchos::tuple<GO> (grow+1)), std::runtime_error );
-    }
+
+    // add too many entries to a static graph
+    // let node i contribute to row i+1, where node the last node contributes to row 0
+    GRAPH diaggraph(map,1,StaticProfile);
+    GO grow = myRank;
+    Array<GO> colinds(1);
+    colinds[0] = grow;
+    TEST_NOTHROW( diaggraph.insertGlobalIndices(grow,colinds()) );
+    TEST_THROW( diaggraph.insertGlobalIndices(grow, Teuchos::tuple<GO> (grow+1)), std::runtime_error );
+
     // All procs fail if any node fails
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
@@ -503,76 +459,33 @@ namespace { // (anonymous)
       RCP<const map_type> map =
         rcp (new map_type (INVALID, (myRank == 1 ? 0 : numLocal), 0, comm));
 
-      // Test (GitHub Issue) #2565 fix, while we're at it.
-      //
-      // clts == 0: Don't set "compute local triangular constants"
-      // clts == 1: Set "compute local triangular constants" to false
-      // clts == 2: Set "compute local triangular constants" to true
-      // clts == 3: Don't give a ParameterList to fillComplete at all
-      for (int clts : {0, 1, 2, 3}) {
+      Teuchos::OSTab tab1 (out);
 
-        if (clts == 0) {
-          out << "Don't set \"compute local triangular constants\"" << endl;
-        }
-        else if (clts == 1) {
-          out << "Set \"compute local triangular constants to false\"" << endl;
-        }
-        else if (clts == 2) {
-          out << "Set \"compute local triangular constants to true\"" << endl;
-        }
-        else if (clts == 3) {
-          out << "Don't give a ParameterList to fillComplete at all" << endl;
-        }
-        Teuchos::OSTab tab1 (out);
-
-        RCP<row_graph_type> test_row;
-        {
-          // allocate
-          RCP<crs_graph_type> test_crs = rcp (new crs_graph_type (map, 1));
-          // invalid, because none are allocated yet
-          TEST_EQUALITY_CONST( test_crs->getNodeAllocationSize(), STINV );
-          if (myRank != 1) {
-            test_crs->insertGlobalIndices (map->getMinGlobalIndex (),
-                                           tuple<GO> (map->getMinGlobalIndex ()));
-          }
-          if (clts == 3) {
-            test_crs->fillComplete ();
-          }
-          else {
-            RCP<ParameterList> params (new ParameterList);
-            if (clts == 1) {
-              params->set ("compute local triangular constants", false);
-            }
-            else if (clts == 2) {
-              params->set ("compute local triangular constants", true);
-            }
-            test_crs->fillComplete (params);
-          }
-          TEST_EQUALITY( test_crs->getNodeAllocationSize(), numLocal );
-          test_row = test_crs;
-        }
-        RCP<const map_type> cmap = test_row->getColMap();
-        TEST_EQUALITY( cmap->getGlobalNumElements(), (size_t)numProcs-1 );
-        TEST_EQUALITY( test_row->getGlobalNumRows(), (size_t)numProcs-1 );
-        TEST_EQUALITY( test_row->getNodeNumRows(), numLocal );
-        TEST_EQUALITY( test_row->getGlobalNumCols(), (size_t)numProcs-1 );
-        TEST_EQUALITY( test_row->getNodeNumCols(), numLocal );
-        TEST_EQUALITY( test_row->getIndexBase(), 0 );
-
-        auto lclTri = getLocalTriangularStructure (*test_row);
-        TEST_ASSERT( lclTri.couldBeLowerTriangular );
-        TEST_ASSERT( lclTri.couldBeUpperTriangular );
-        TEST_EQUALITY( lclTri.diagCount, static_cast<LO> (numLocal) );
-        GO gblDiagCount = 0;
-        reduceAll<int, GO> (*comm, REDUCE_SUM, static_cast<GO> (lclTri.diagCount), outArg (gblDiagCount));
-        TEST_EQUALITY( gblDiagCount, static_cast<GO> (numProcs-1) );
-
-        TEST_EQUALITY( test_row->getGlobalNumEntries(), (size_t)numProcs-1 );
-        TEST_EQUALITY( test_row->getNodeNumEntries(), numLocal );
-        TEST_EQUALITY( test_row->getGlobalMaxNumRowEntries(), 1 );
-        TEST_EQUALITY( test_row->getNodeMaxNumRowEntries(), numLocal );
-        STD_TESTS((*test_row));
+      RCP<row_graph_type> test_row;
+      // allocate
+      RCP<crs_graph_type> test_crs = rcp (new crs_graph_type (map, 1));
+      // invalid, because none are allocated yet
+      TEST_EQUALITY_CONST( test_crs->getNodeAllocationSize(), STINV );
+      if (myRank != 1) {
+        test_crs->insertGlobalIndices (map->getMinGlobalIndex (),
+                                       tuple<GO> (map->getMinGlobalIndex ()));
       }
+      test_crs->fillComplete ();
+      TEST_EQUALITY( test_crs->getNodeAllocationSize(), numLocal );
+      test_row = test_crs;
+      RCP<const map_type> cmap = test_row->getColMap();
+      TEST_EQUALITY( cmap->getGlobalNumElements(), (size_t)numProcs-1 );
+      TEST_EQUALITY( test_row->getGlobalNumRows(), (size_t)numProcs-1 );
+      TEST_EQUALITY( test_row->getNodeNumRows(), numLocal );
+      TEST_EQUALITY( test_row->getGlobalNumCols(), (size_t)numProcs-1 );
+      TEST_EQUALITY( test_row->getNodeNumCols(), numLocal );
+      TEST_EQUALITY( test_row->getIndexBase(), 0 );
+
+      TEST_EQUALITY( test_row->getGlobalNumEntries(), (size_t)numProcs-1 );
+      TEST_EQUALITY( test_row->getNodeNumEntries(), numLocal );
+      TEST_EQUALITY( test_row->getGlobalMaxNumRowEntries(), 1 );
+      TEST_EQUALITY( test_row->getNodeMaxNumRowEntries(), numLocal );
+      STD_TESTS((*test_row));
     }
 
     // this one is empty on all nodes because of zero allocation size
@@ -582,36 +495,16 @@ namespace { // (anonymous)
       RCP<const map_type> map =
         rcp (new map_type (INVALID, numLocal, 0, comm));
 
-      // Test (GitHub Issue) #2565 fix, while we're at it.
-      //
-      // clts == 0: Don't set "compute local triangular constants"
-      // clts == 1: Set "compute local triangular constants" to false
-      // clts == 2: Set "compute local triangular constants" to true
-      // clts == 3: Don't give a ParameterList to fillComplete at all
-      for (int clts : {0, 1, 2, 3}) {
+      {
         RCP<row_graph_type> zero;
-        {
-          // allocate with no space
-          RCP<crs_graph_type> zero_crs = rcp (new crs_graph_type (map, 0));
-          // invalid, because none are allocated yet
-          TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), STINV );
-          if (clts == 3) {
-            zero_crs->fillComplete ();
-          }
-          else {
-            RCP<ParameterList> params (new ParameterList);
-            if (clts == 1) {
-              params->set ("compute local triangular constants", false);
-            }
-            else if (clts == 2) {
-              params->set ("compute local triangular constants", true);
-            }
-            zero_crs->fillComplete (params);
-          }
-          // zero, because none were allocated.
-          TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), 0 );
-          zero = zero_crs;
-        }
+        // allocate with no space
+        RCP<crs_graph_type> zero_crs = rcp (new crs_graph_type (map, 0));
+        // invalid, because none are allocated yet
+        TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), STINV );
+        zero_crs->fillComplete ();
+        // zero, because none were allocated.
+        TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), 0 );
+        zero = zero_crs;
         RCP<const map_type> cmap = zero->getColMap();
         TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
         TEST_EQUALITY( zero->getGlobalNumRows(), numProcs*numLocal );
@@ -619,14 +512,6 @@ namespace { // (anonymous)
         TEST_EQUALITY( zero->getGlobalNumCols(), numProcs*numLocal );
         TEST_EQUALITY( zero->getNodeNumCols(), 0 );
         TEST_EQUALITY( zero->getIndexBase(), 0 );
-
-        auto lclTri = getLocalTriangularStructure (*zero);
-        TEST_ASSERT( lclTri.couldBeLowerTriangular );
-        TEST_ASSERT( lclTri.couldBeUpperTriangular );
-        TEST_EQUALITY( lclTri.diagCount, static_cast<LO> (0) );
-        GO gblDiagCount = 0;
-        reduceAll<int, GO> (*comm, REDUCE_SUM, static_cast<GO> (lclTri.diagCount), outArg (gblDiagCount));
-        TEST_EQUALITY( gblDiagCount, static_cast<GO> (0) );
 
         TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
         TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
@@ -641,58 +526,28 @@ namespace { // (anonymous)
       const size_t numLocal = 0;
       RCP<const map_type> map = rcp (new map_type (INVALID, numLocal, 0, comm));
 
-      // Test (GitHub Issue) #2565 fix, while we're at it.
-      //
-      // clts == 0: Don't set "compute local triangular constants"
-      // clts == 1: Set "compute local triangular constants" to false
-      // clts == 2: Set "compute local triangular constants" to true
-      // clts == 3: Don't give a ParameterList to fillComplete at all
-      for (int clts : {0, 1, 2, 3}) {
-        RCP<row_graph_type> zero;
-        {
-          // allocate with no space
-          RCP<crs_graph_type> zero_crs = rcp (new crs_graph_type (map, 0));
-          // invalid, because none are allocated yet
-          TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), STINV );
-          if (clts == 3) {
-            zero_crs->fillComplete ();
-          }
-          else {
-            RCP<ParameterList> params (new ParameterList);
-            if (clts == 1) {
-              params->set ("compute local triangular constants", false);
-            }
-            else if (clts == 2) {
-              params->set ("compute local triangular constants", true);
-            }
-            zero_crs->fillComplete (params);
-          }
-          // zero, because none were allocated.
-          TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), 0 );
-          zero = zero_crs;
-        }
-        RCP<const map_type> cmap = zero->getColMap();
-        TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
-        TEST_EQUALITY( zero->getGlobalNumRows(), numProcs*numLocal );
-        TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
-        TEST_EQUALITY( zero->getGlobalNumCols(), numProcs*numLocal );
-        TEST_EQUALITY( zero->getNodeNumCols(), 0 );
-        TEST_EQUALITY( zero->getIndexBase(), 0 );
+      RCP<row_graph_type> zero;
+      // allocate with no space
+      RCP<crs_graph_type> zero_crs = rcp (new crs_graph_type (map, 0));
+      // invalid, because none are allocated yet
+        TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), STINV );
+      zero_crs->fillComplete ();
+      // zero, because none were allocated.
+      TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), 0 );
+      zero = zero_crs;
+      RCP<const map_type> cmap = zero->getColMap();
+      TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
+      TEST_EQUALITY( zero->getGlobalNumRows(), numProcs*numLocal );
+      TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
+      TEST_EQUALITY( zero->getGlobalNumCols(), numProcs*numLocal );
+      TEST_EQUALITY( zero->getNodeNumCols(), 0 );
+      TEST_EQUALITY( zero->getIndexBase(), 0 );
 
-        auto lclTri = getLocalTriangularStructure (*zero);
-        TEST_ASSERT( lclTri.couldBeLowerTriangular );
-        TEST_ASSERT( lclTri.couldBeUpperTriangular );
-        TEST_EQUALITY( lclTri.diagCount, static_cast<LO> (0) );
-        GO gblDiagCount = 0;
-        reduceAll<int, GO> (*comm, REDUCE_SUM, static_cast<GO> (lclTri.diagCount), outArg (gblDiagCount));
-        TEST_EQUALITY( gblDiagCount, static_cast<GO> (0) );
-
-        TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
-        TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
-        TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
-        TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
-        STD_TESTS((*zero));
-      }
+      TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
+      TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
+      TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
+      TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
+      STD_TESTS((*zero));
     }
 
     // All procs fail if any proc fails
@@ -717,60 +572,30 @@ namespace { // (anonymous)
     // create the empty graph
     RCP<Tpetra::RowGraph<LO,GO,Node> > zero;
 
-    // Test (GitHub Issue) #2565 fix, while we're at it.
-    //
-    // clts == 0: Don't set "compute local triangular constants"
-    // clts == 1: Set "compute local triangular constants" to false
-    // clts == 2: Set "compute local triangular constants" to true
-    // clts == 3: Don't give a ParameterList to fillComplete at all
-    for (int clts : {0, 1, 2, 3}) {
-      {
-        // allocated with space for one entry per row
-        RCP<graph_type> zero_crs = rcp (new graph_type (map,1));
-        TEST_EQUALITY( zero_crs->getNodeAllocationSize(), STINV ); // zero, because none are allocated yet
+    // allocated with space for one entry per row
+    RCP<graph_type> zero_crs = rcp (new graph_type (map,1));
+    TEST_EQUALITY( zero_crs->getNodeAllocationSize(), STINV ); // zero, because none are allocated yet
 
-        if (clts == 3) {
-          zero_crs->fillComplete ();
-        }
-        else {
-          RCP<ParameterList> params (new ParameterList);
-          if (clts == 1) {
-            params->set ("compute local triangular constants", false);
-          }
-          else if (clts == 2) {
-            params->set ("compute local triangular constants", true);
-          }
-          zero_crs->fillComplete (params);
-        }
-        zero = zero_crs;
-      }
-      RCP<const map_type> cmap = zero->getColMap();
-      TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
-      TEST_EQUALITY( zero->getGlobalNumRows(), numProcs*numLocal );
-      TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
-      TEST_EQUALITY( zero->getGlobalNumCols(), numProcs*numLocal );
-      TEST_EQUALITY( zero->getNodeNumCols(), 0 );
-      TEST_EQUALITY( zero->getIndexBase(), 0 );
+    zero_crs->fillComplete ();
+    zero = zero_crs;
+    RCP<const map_type> cmap = zero->getColMap();
+    TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
+    TEST_EQUALITY( zero->getGlobalNumRows(), numProcs*numLocal );
+    TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
+    TEST_EQUALITY( zero->getGlobalNumCols(), numProcs*numLocal );
+    TEST_EQUALITY( zero->getNodeNumCols(), 0 );
+    TEST_EQUALITY( zero->getIndexBase(), 0 );
 
-      auto lclTri = getLocalTriangularStructure (*zero);
-      TEST_ASSERT( lclTri.couldBeLowerTriangular );
-      TEST_ASSERT( lclTri.couldBeUpperTriangular );
-      TEST_EQUALITY( lclTri.diagCount, static_cast<LO> (0) );
-      GO gblDiagCount = 0;
-      reduceAll<int, GO> (*comm, REDUCE_SUM, static_cast<GO> (lclTri.diagCount), outArg (gblDiagCount));
-      TEST_EQUALITY( gblDiagCount, static_cast<GO> (0) );
+    TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
+    TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
+    TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
+    TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
+    STD_TESTS((*zero));
 
-      TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
-      TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
-      TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
-      TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
-      STD_TESTS((*zero));
-
-      // All procs fail if any proc fails
-      int globalSuccess_int = -1;
-      reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-      TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-    }
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, DottedDiag, LO, GO , Node )
@@ -793,54 +618,35 @@ namespace { // (anonymous)
       RCP<ParameterList> params = parameterList ();
       params->set("Optimize Storage",((T & 2) == 2));
 
-      // Test (GitHub Issue) #2565 fix, while we're at it.
-      //
-      // clts == 0: Don't set "compute local triangular constants"
-      // clts == 1: Set "compute local triangular constants" to false
-      // clts == 2: Set "compute local triangular constants" to true
-      for (int clts : {0, 1, 2}) {
-        if (clts == 1) {
-          params->set ("compute local triangular constants", false);
-        }
-        else if (clts == 2) {
-          params->set ("compute local triangular constants", true);
-        }
-        // create a diagonal graph, but where only my middle row has an entry
-        ArrayRCP<size_t> toalloc = arcpClone<size_t>( tuple<size_t>(0,1,0) );
-        GRAPH ddgraph(map, toalloc (), pftype);
-        ddgraph.insertGlobalIndices(mymiddle, tuple<GO>(mymiddle));
-        // before globalAssemble(), there should be one local entry on middle, none on the others
-        ArrayView<const GO> myrow_gbl;
-        ddgraph.getGlobalRowView(mymiddle-1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
-        ddgraph.getGlobalRowView(mymiddle  ,myrow_gbl); TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO>(mymiddle) );
-        ddgraph.getGlobalRowView(mymiddle+1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
-        if (pftype == StaticProfile) { // no room for more, on any row
-          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle-1,tuple<GO>(mymiddle+1)), std::runtime_error );
-          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle  ,tuple<GO>(mymiddle+1)), std::runtime_error );
-          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle+1,tuple<GO>(mymiddle+1)), std::runtime_error );
-        }
-        ddgraph.fillComplete(params);
-        // after fillComplete(), there should be a single entry on my middle, corresponding to the diagonal, none on the others
-        ArrayView<const LO> myrow_lcl;
-        TEST_EQUALITY_CONST( ddgraph.getNumEntriesInLocalRow(0), 0 );
-        TEST_EQUALITY_CONST( ddgraph.getNumEntriesInLocalRow(2), 0 );
-        ddgraph.getLocalRowView(1,myrow_lcl);
-        TEST_EQUALITY_CONST( myrow_lcl.size(), 1 );
-        if (myrow_lcl.size() == 1) {
-          TEST_EQUALITY( ddgraph.getColMap()->getGlobalElement(myrow_lcl[0]), mymiddle );
-        }
-        // also, the row map and column map should be equivalent
-        TEST_EQUALITY( ddgraph.getGlobalNumCols(), static_cast<GST> (3*numProcs) );
-        TEST_EQUALITY( ddgraph.getGlobalNumRows(), ddgraph.getGlobalNumCols() );
-
-        auto lclTri = getLocalTriangularStructure (ddgraph);
-        TEST_EQUALITY( lclTri.diagCount, static_cast<LO> (1) );
-        GO gblDiagCount = 0;
-        reduceAll<int, GO> (*comm, REDUCE_SUM, static_cast<GO> (lclTri.diagCount), outArg (gblDiagCount));
-        TEST_EQUALITY( gblDiagCount, static_cast<GO> (numProcs) );
-
-        STD_TESTS(ddgraph);
+      // create a diagonal graph, but where only my middle row has an entry
+      ArrayRCP<size_t> toalloc = arcpClone<size_t>( tuple<size_t>(0,1,0) );
+      GRAPH ddgraph(map, toalloc (), pftype);
+      ddgraph.insertGlobalIndices(mymiddle, tuple<GO>(mymiddle));
+      // before globalAssemble(), there should be one local entry on middle, none on the others
+      ArrayView<const GO> myrow_gbl;
+      ddgraph.getGlobalRowView(mymiddle-1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
+      ddgraph.getGlobalRowView(mymiddle  ,myrow_gbl); TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO>(mymiddle) );
+      ddgraph.getGlobalRowView(mymiddle+1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
+      if (pftype == StaticProfile) { // no room for more, on any row
+        TEST_THROW( ddgraph.insertGlobalIndices(mymiddle-1,tuple<GO>(mymiddle+1)), std::runtime_error );
+        TEST_THROW( ddgraph.insertGlobalIndices(mymiddle  ,tuple<GO>(mymiddle+1)), std::runtime_error );
+        TEST_THROW( ddgraph.insertGlobalIndices(mymiddle+1,tuple<GO>(mymiddle+1)), std::runtime_error );
       }
+      ddgraph.fillComplete(params);
+      // after fillComplete(), there should be a single entry on my middle, corresponding to the diagonal, none on the others
+      ArrayView<const LO> myrow_lcl;
+      TEST_EQUALITY_CONST( ddgraph.getNumEntriesInLocalRow(0), 0 );
+      TEST_EQUALITY_CONST( ddgraph.getNumEntriesInLocalRow(2), 0 );
+      ddgraph.getLocalRowView(1,myrow_lcl);
+      TEST_EQUALITY_CONST( myrow_lcl.size(), 1 );
+      if (myrow_lcl.size() == 1) {
+        TEST_EQUALITY( ddgraph.getColMap()->getGlobalElement(myrow_lcl[0]), mymiddle );
+      }
+      // also, the row map and column map should be equivalent
+      TEST_EQUALITY( ddgraph.getGlobalNumCols(), static_cast<GST> (3*numProcs) );
+      TEST_EQUALITY( ddgraph.getGlobalNumRows(), ddgraph.getGlobalNumCols() );
+
+      STD_TESTS(ddgraph);
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
@@ -870,187 +676,151 @@ namespace { // (anonymous)
 
     GO myrowind = map->getGlobalElement (0);
 
-    // Test (GitHub Issue) #2565 fix, while we're at it.
-    //
-    // clts == 0: Don't set "compute local triangular constants"
-    // clts == 1: Set "compute local triangular constants" to false
-    // clts == 2: Set "compute local triangular constants" to true
-    for (int clts : {0, 1, 2}) {
-      if (clts == 0) {
-        out << "Don't set \"compute local triangular constants\"" << endl;
-      }
-      else if (clts == 1) {
-        out << "Set \"compute local triangular constants\" to false" << endl;
-      }
-      else if (clts == 2) {
-        out << "Set \"compute local triangular constants\" to true" << endl;
-      }
-      Teuchos::OSTab tab1 (out);
+    Teuchos::OSTab tab1 (out);
 
-      const Tpetra::ProfileType profileTypes[1] = {Tpetra::StaticProfile};
-      for (ProfileType pftype : profileTypes) {
-        Teuchos::OSTab tab2 (out);
-        for (bool optimizeStorage : {false, true}) {
-          out << "Optimize Storage: " << (optimizeStorage ? "true" : "false")
-              << endl;
-          Teuchos::OSTab tab3 (out);
+    const Tpetra::ProfileType profileTypes[1] = {Tpetra::StaticProfile};
+    for (ProfileType pftype : profileTypes) {
+      Teuchos::OSTab tab2 (out);
+      for (bool optimizeStorage : {false, true}) {
+        out << "Optimize Storage: " << (optimizeStorage ? "true" : "false")
+            << endl;
+        Teuchos::OSTab tab3 (out);
 
-          RCP<ParameterList> params = parameterList ();
-          if (clts == 1) {
-            params->set ("compute local triangular constants", false);
+        RCP<ParameterList> params = parameterList ();
+        params->set ("Optimize Storage", optimizeStorage);
+
+        // Diagonal graph
+        {
+          out << "Diagonal graph test" << endl;
+          Teuchos::OSTab tab4 (out);
+
+          // create a diagonal graph, where the graph entries are
+          // contributed by a single off-node contribution, no
+          // filtering.  let node i contribute to row i+1, where node
+          // the last node contributes to row 0
+          GRAPH diaggraph (map, 1, pftype);
+          GO grow = myRank+1;
+          if (as<int> (grow) == numProcs) {
+            grow = 0;
           }
-          else if (clts == 2) {
-            params->set ("compute local triangular constants", true);
-          }
-          params->set ("Optimize Storage", optimizeStorage);
+          diaggraph.insertGlobalIndices (grow, tuple<GO> (grow));
+          // before globalAssemble(), there should be no local entries if numProcs > 1
+          ArrayView<const GO> myrow_gbl;
+          diaggraph.getGlobalRowView (myrowind, myrow_gbl);
+          TEST_EQUALITY( myrow_gbl.size (), (numProcs == 1 ? 1 : 0) );
+          diaggraph.globalAssemble ();
+          // after globalAssemble(), there should be one local entry per
+          // row, corresponding to the diagonal
+          diaggraph.getGlobalRowView (myrowind, myrow_gbl);
+          TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO> (myrowind) );
 
-          // Diagonal graph
+          if (pftype == StaticProfile) { // no room for more
+            out << "Attempt to insert global column index " << (myrowind+1) << " into"
+              " global row " << myrowind << "; it should throw, because the graph"
+              " is StaticProfile, has an upper bound of one entry per row, and "
+              "already has a different column index " << grow << " in this row."
+                << endl;
+            TEST_THROW( diaggraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind+1)),
+                        std::runtime_error );
+          }
+
+          diaggraph.fillComplete (params);
+
+          // after fillComplete(), there should be a single entry on my
+          // row, corresponding to the diagonal
+          ArrayView<const LO> myrow_lcl;
+          diaggraph.getLocalRowView (0, myrow_lcl);
+          TEST_EQUALITY_CONST( myrow_lcl.size (), 1 );
+          if (myrow_lcl.size() == 1) {
+            TEST_EQUALITY( diaggraph.getColMap ()->getGlobalElement (myrow_lcl[0]),
+                           myrowind );
+          }
+          // also, the row map and column map should be equivalent
+          TEST_EQUALITY_CONST( diaggraph.getRowMap()->isSameAs(*diaggraph.getColMap()), true );
+
+          STD_TESTS(diaggraph);
+        }
+
+        // Next-door-neighbor graph
+        {
+          out << "Next-door-neighbor graph test" << endl;
+          Teuchos::OSTab tab4 (out);
+
+          // create a next-door-neighbor graph (tridiagonal plus
+          // corners), where the graph entries are contributed by single
+          // off-node contribution, no filtering.  let node i add the
+          // contributions for column i of the graph: (i-1,i), (i,i),
+          // (i+1,i). allocate only as much space as we need. some
+          // hacking here to support this test when numProcs == 1 or 2
+          GRAPH ngraph(map,3,pftype);
+          Array<GO> grows(3);
+          grows[0] = (numProcs+myRank-1) % numProcs;   // my left neighbor
+          grows[1] = (numProcs+myRank  ) % numProcs;   // myself
+          grows[2] = (numProcs+myRank+1) % numProcs;   // my right neighbor
+
+          // Add me to the graph for my neighbors
+          ngraph.insertGlobalIndices (grows[0], tuple<GO> (myRank));
+          ngraph.insertGlobalIndices (grows[1], tuple<GO> (myRank));
+          ngraph.insertGlobalIndices (grows[2], tuple<GO> (myRank));
+
+          // before globalAssemble(), there should be a single local
+          // entry on parallel runs, three on serial runs
+          ArrayView<const GO> myrow_gbl;
+          ngraph.getGlobalRowView (myrowind, myrow_gbl);
+
+          // after globalAssemble(), storage should be maxed out
+          out << "Calling globalAssemble()" << endl;
+          ngraph.globalAssemble();
+          TEST_EQUALITY( ngraph.getNumEntriesInLocalRow(0),
+                        ( numProcs == 1 && pftype == StaticProfile ? 1 :
+                          ngraph.getNumAllocatedEntriesInLocalRow(0) ));
+          out << "Calling fillComplete(params)" << endl;
+          ngraph.fillComplete (params);
+
+          // after fillComplete(), there should be entries for me and my
+          // neighbors on my row
+          ArrayView<const LO> myrow_lcl;
+          ngraph.getLocalRowView (0, myrow_lcl);
+          out << "Returned view of column indices on Proc 0: "
+              << Teuchos::toString (myrow_lcl) << endl;
+
           {
-            out << "Diagonal graph test" << endl;
-            Teuchos::OSTab tab4 (out);
+            // check indices on my row
+            typename Array<GO>::iterator glast;
+            std::sort (grows.begin (), grows.end ());
+            glast = std::unique (grows.begin (), grows.end ());
+            size_t numunique = glast - grows.begin ();
+            // test the test: numunique == min(numProcs,3)
+            TEST_EQUALITY( numunique, (size_t)min(numProcs,3) );
+            TEST_EQUALITY_CONST( (size_t)myrow_lcl.size(), numunique );
+            if ((size_t)myrow_lcl.size() == numunique) {
+              size_t numinds;
+              Array<GO> inds(numunique+1);
+              TEST_THROW(
+                         ngraph.getGlobalRowCopy (myrowind, inds (0, numunique-1), numinds),
+                         std::runtime_error );
+              TEST_NOTHROW(
+                           ngraph.getGlobalRowCopy (myrowind, inds (0, numunique), numinds) );
+              TEST_NOTHROW( ngraph.getGlobalRowCopy (myrowind,inds (), numinds) );
+              std::sort (inds.begin (), inds.begin () + numinds);
+              TEST_COMPARE_ARRAYS( inds (0, numinds), grows (0, numunique) );
 
-            // create a diagonal graph, where the graph entries are
-            // contributed by a single off-node contribution, no
-            // filtering.  let node i contribute to row i+1, where node
-            // the last node contributes to row 0
-            GRAPH diaggraph (map, 1, pftype);
-            GO grow = myRank+1;
-            if (as<int> (grow) == numProcs) {
-              grow = 0;
+              out << "On Proc 0:" << endl;
+              Teuchos::OSTab tab5 (out);
+              out << "numinds: " << numinds << endl
+                  << "inds(0,numinds): " << inds (0, numinds) << endl
+                  << "numunique: " << numunique << endl
+                  << "grows(0,numunique): " << grows (0, numunique) << endl;
             }
-            diaggraph.insertGlobalIndices (grow, tuple<GO> (grow));
-            // before globalAssemble(), there should be no local entries if numProcs > 1
-            ArrayView<const GO> myrow_gbl;
-            diaggraph.getGlobalRowView (myrowind, myrow_gbl);
-            TEST_EQUALITY( myrow_gbl.size (), (numProcs == 1 ? 1 : 0) );
-            diaggraph.globalAssemble ();
-            // after globalAssemble(), there should be one local entry per
-            // row, corresponding to the diagonal
-            diaggraph.getGlobalRowView (myrowind, myrow_gbl);
-            TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO> (myrowind) );
-
-            if (pftype == StaticProfile) { // no room for more
-              out << "Attempt to insert global column index " << (myrowind+1) << " into"
-                " global row " << myrowind << "; it should throw, because the graph"
-                " is StaticProfile, has an upper bound of one entry per row, and "
-                "already has a different column index " << grow << " in this row."
-                  << endl;
-              TEST_THROW( diaggraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind+1)),
-                          std::runtime_error );
-            }
-
-            diaggraph.fillComplete (params);
-
-            // after fillComplete(), there should be a single entry on my
-            // row, corresponding to the diagonal
-            ArrayView<const LO> myrow_lcl;
-            diaggraph.getLocalRowView (0, myrow_lcl);
-            TEST_EQUALITY_CONST( myrow_lcl.size (), 1 );
-            if (myrow_lcl.size() == 1) {
-              TEST_EQUALITY( diaggraph.getColMap ()->getGlobalElement (myrow_lcl[0]),
-                             myrowind );
-            }
-            // also, the row map and column map should be equivalent
-            TEST_EQUALITY_CONST( diaggraph.getRowMap()->isSameAs(*diaggraph.getColMap()), true );
-
-            auto lclTri = getLocalTriangularStructure (diaggraph);
-            TEST_ASSERT( lclTri.couldBeLowerTriangular );
-            TEST_ASSERT( lclTri.couldBeUpperTriangular );
-            TEST_EQUALITY( lclTri.diagCount, static_cast<LO> (1) );
-            GO gblDiagCount = 0;
-            reduceAll<int, GO> (*comm, REDUCE_SUM, static_cast<GO> (lclTri.diagCount), outArg (gblDiagCount));
-            TEST_EQUALITY( gblDiagCount, static_cast<GO> (numProcs) );
-
-            STD_TESTS(diaggraph);
           }
+          TEST_EQUALITY_CONST( ngraph.getRowMap ()->isSameAs (* (ngraph.getColMap ())),
+                               (numProcs == 1 ? true : false) );
 
-          // Next-door-neighbor graph
-          {
-            out << "Next-door-neighbor graph test" << endl;
-            Teuchos::OSTab tab4 (out);
-
-            // create a next-door-neighbor graph (tridiagonal plus
-            // corners), where the graph entries are contributed by single
-            // off-node contribution, no filtering.  let node i add the
-            // contributions for column i of the graph: (i-1,i), (i,i),
-            // (i+1,i). allocate only as much space as we need. some
-            // hacking here to support this test when numProcs == 1 or 2
-            GRAPH ngraph(map,3,pftype);
-            Array<GO> grows(3);
-            grows[0] = (numProcs+myRank-1) % numProcs;   // my left neighbor
-            grows[1] = (numProcs+myRank  ) % numProcs;   // myself
-            grows[2] = (numProcs+myRank+1) % numProcs;   // my right neighbor
-
-            // Add me to the graph for my neighbors
-            ngraph.insertGlobalIndices (grows[0], tuple<GO> (myRank));
-            ngraph.insertGlobalIndices (grows[1], tuple<GO> (myRank));
-            ngraph.insertGlobalIndices (grows[2], tuple<GO> (myRank));
-
-            // before globalAssemble(), there should be a single local
-            // entry on parallel runs, three on serial runs
-            ArrayView<const GO> myrow_gbl;
-            ngraph.getGlobalRowView (myrowind, myrow_gbl);
-
-            // after globalAssemble(), storage should be maxed out
-            out << "Calling globalAssemble()" << endl;
-            ngraph.globalAssemble();
-            TEST_EQUALITY( ngraph.getNumEntriesInLocalRow(0),
-                          ( numProcs == 1 && pftype == StaticProfile ? 1 :
-                            ngraph.getNumAllocatedEntriesInLocalRow(0) ));
-            out << "Calling fillComplete(params)" << endl;
-            ngraph.fillComplete (params);
-
-            // after fillComplete(), there should be entries for me and my
-            // neighbors on my row
-            ArrayView<const LO> myrow_lcl;
-            ngraph.getLocalRowView (0, myrow_lcl);
-            out << "Returned view of column indices on Proc 0: "
-                << Teuchos::toString (myrow_lcl) << endl;
-
-            {
-              // check indices on my row
-              typename Array<GO>::iterator glast;
-              std::sort (grows.begin (), grows.end ());
-              glast = std::unique (grows.begin (), grows.end ());
-              size_t numunique = glast - grows.begin ();
-              // test the test: numunique == min(numProcs,3)
-              TEST_EQUALITY( numunique, (size_t)min(numProcs,3) );
-              TEST_EQUALITY_CONST( (size_t)myrow_lcl.size(), numunique );
-              if ((size_t)myrow_lcl.size() == numunique) {
-                size_t numinds;
-                Array<GO> inds(numunique+1);
-                TEST_THROW(
-                           ngraph.getGlobalRowCopy (myrowind, inds (0, numunique-1), numinds),
-                           std::runtime_error );
-                TEST_NOTHROW(
-                             ngraph.getGlobalRowCopy (myrowind, inds (0, numunique), numinds) );
-                TEST_NOTHROW( ngraph.getGlobalRowCopy (myrowind,inds (), numinds) );
-                std::sort (inds.begin (), inds.begin () + numinds);
-                TEST_COMPARE_ARRAYS( inds (0, numinds), grows (0, numunique) );
-
-                out << "On Proc 0:" << endl;
-                Teuchos::OSTab tab5 (out);
-                out << "numinds: " << numinds << endl
-                    << "inds(0,numinds): " << inds (0, numinds) << endl
-                    << "numunique: " << numunique << endl
-                    << "grows(0,numunique): " << grows (0, numunique) << endl;
-              }
-            }
-            TEST_EQUALITY_CONST( ngraph.getRowMap ()->isSameAs (* (ngraph.getColMap ())),
-                                 (numProcs == 1 ? true : false) );
-
-            auto lclTri = getLocalTriangularStructure (ngraph);
-            TEST_EQUALITY( lclTri.diagCount, 1 );
-            GO gblDiagCount = 0;
-            reduceAll<int, GO> (*comm, REDUCE_SUM, static_cast<GO> (lclTri.diagCount), outArg (gblDiagCount));
-            TEST_EQUALITY( gblDiagCount, static_cast<GO> (numProcs) );
-
-            out << "Concluding with standard graph tests" << endl;
-            STD_TESTS(ngraph);
-          }
-        } // optimizeStorage
-      } // pftype
-    } // clts
+          out << "Concluding with standard graph tests" << endl;
+          STD_TESTS(ngraph);
+        }
+      } // optimizeStorage
+    } // pftype
 
     // All procs fail if any node fails
     int globalSuccess_int = -1;

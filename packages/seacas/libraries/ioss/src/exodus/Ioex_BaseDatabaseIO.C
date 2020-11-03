@@ -1,34 +1,8 @@
-// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// See packages/seacas/LICENSE for details
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ElementTopology.h>
@@ -89,12 +63,8 @@
 
 // Transitioning from treating global variables as Ioss::Field::TRANSIENT
 // to Ioss::Field::REDUCTION.  To get the old behavior, define the value
-// below to '1'.  Not sure if how new behavior will affect STK and Trilinos...
-#if defined(BUILT_IN_SIERRA)
-#define GLOBALS_ARE_TRANSIENT 1
-#else
-#define GLOBALS_ARE_TRANSIENT 1
-#endif
+// below to '1'.
+#define GLOBALS_ARE_TRANSIENT 0
 
 // ========================================================================
 // Static internal helper functions
@@ -242,7 +212,7 @@ namespace Ioex {
 
   void BaseDatabaseIO::set_int_byte_size_api(Ioss::DataSize size) const
   {
-    if (exodusFilePtr > 0) {
+    if (m_exodusFilePtr > 0) {
       int old_status = ex_int64_status(get_file_pointer());
       if (size == 8) {
         ex_set_int64_status(get_file_pointer(), EX_ALL_INT64_API | old_status);
@@ -252,7 +222,7 @@ namespace Ioex {
         if ((old_status & EX_ALL_INT64_API) != 0) {
           old_status &= ~EX_ALL_INT64_API;
           assert(!(old_status & EX_ALL_INT64_API));
-          ex_set_int64_status(exodusFilePtr, old_status);
+          ex_set_int64_status(m_exodusFilePtr, old_status);
         }
       }
     }
@@ -302,7 +272,7 @@ namespace Ioex {
   {
     // Returns the file_pointer used to access the file on disk.
     // Checks that the file is open and if not, opens it first.
-    if (exodusFilePtr < 0) {
+    if (m_exodusFilePtr < 0) {
       bool write_message  = true;
       bool abort_if_error = true;
       if (is_input()) {
@@ -314,24 +284,24 @@ namespace Ioex {
       }
 
       if (!m_groupName.empty()) {
-        ex_get_group_id(exodusFilePtr, m_groupName.c_str(), &exodusFilePtr);
+        ex_get_group_id(m_exodusFilePtr, m_groupName.c_str(), &m_exodusFilePtr);
       }
     }
-    assert(exodusFilePtr >= 0);
+    assert(m_exodusFilePtr >= 0);
     fileExists = true;
-    return exodusFilePtr;
+    return m_exodusFilePtr;
   }
 
   int BaseDatabaseIO::free_file_pointer() const
   {
-    if (exodusFilePtr != -1) {
+    if (m_exodusFilePtr != -1) {
       bool do_timer = false;
       if (isParallel) {
         Ioss::Utils::check_set_bool_property(properties, "IOSS_TIME_FILE_OPEN_CLOSE", do_timer);
       }
       double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
 
-      ex_close(exodusFilePtr);
+      ex_close(m_exodusFilePtr);
       closeDW();
       if (do_timer && isParallel) {
         double t_end    = Ioss::Utils::timer();
@@ -341,9 +311,9 @@ namespace Ioex {
         }
       }
     }
-    exodusFilePtr = -1;
+    m_exodusFilePtr = -1;
 
-    return exodusFilePtr;
+    return m_exodusFilePtr;
   }
 
   bool BaseDatabaseIO::ok__(bool write_message, std::string *error_msg, int *bad_count) const
@@ -375,9 +345,9 @@ namespace Ioex {
       bool overwrite = false;
       is_ok = handle_output_file(write_message, error_msg, bad_count, overwrite, abort_if_error);
       // Close all open files...
-      if (exodusFilePtr >= 0) {
-        ex_close(exodusFilePtr);
-        exodusFilePtr = -1;
+      if (m_exodusFilePtr >= 0) {
+        ex_close(m_exodusFilePtr);
+        m_exodusFilePtr = -1;
       }
     }
     return is_ok;
@@ -385,25 +355,25 @@ namespace Ioex {
 
   void BaseDatabaseIO::finalize_file_open() const
   {
-    assert(exodusFilePtr >= 0);
+    assert(m_exodusFilePtr >= 0);
     // Check byte-size of integers stored on the database...
-    if ((ex_int64_status(exodusFilePtr) & EX_ALL_INT64_DB) != 0) {
+    if ((ex_int64_status(m_exodusFilePtr) & EX_ALL_INT64_DB) != 0) {
       if (myProcessor == 0) {
         fmt::print(Ioss::OUTPUT(),
                    "IOSS: Input database contains 8-byte integers. Setting Ioss to use "
                    "8-byte integers.\n");
       }
-      ex_set_int64_status(exodusFilePtr, EX_ALL_INT64_API);
+      ex_set_int64_status(m_exodusFilePtr, EX_ALL_INT64_API);
       set_int_byte_size_api(Ioss::USE_INT64_API);
     }
 
     // Check for maximum name length used on the input file.
-    int max_name_length = ex_inquire_int(exodusFilePtr, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+    int max_name_length = ex_inquire_int(m_exodusFilePtr, EX_INQ_DB_MAX_USED_NAME_LENGTH);
     if (max_name_length > maximumNameLength) {
       maximumNameLength = max_name_length;
     }
 
-    ex_set_max_name_length(exodusFilePtr, maximumNameLength);
+    ex_set_max_name_length(m_exodusFilePtr, maximumNameLength);
   }
 
   bool BaseDatabaseIO::open_group__(const std::string &group_name)
@@ -414,9 +384,9 @@ namespace Ioex {
     int exoid = get_file_pointer();
 
     m_groupName = group_name;
-    ex_get_group_id(exoid, m_groupName.c_str(), &exodusFilePtr);
+    ex_get_group_id(exoid, m_groupName.c_str(), &m_exodusFilePtr);
 
-    if (exodusFilePtr < 0) {
+    if (m_exodusFilePtr < 0) {
       std::ostringstream errmsg;
       fmt::print(errmsg, "ERROR: Could not open group named '{}' in file '{}'.\n", m_groupName,
                  get_filename());
@@ -453,8 +423,8 @@ namespace Ioex {
         IOSS_ERROR(errmsg);
       }
       else {
-        exodusFilePtr = exoid;
-        success       = true;
+        m_exodusFilePtr = exoid;
+        success         = true;
       }
     }
     return success;
@@ -656,7 +626,7 @@ namespace Ioex {
 
     if (nblob > 0) {
       std::vector<ex_blob> blobs(nblob);
-      int max_name_length = ex_inquire_int(exodusFilePtr, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+      int max_name_length = ex_inquire_int(m_exodusFilePtr, EX_INQ_DB_MAX_USED_NAME_LENGTH);
       for (auto &bl : blobs) {
         bl.name = new char[max_name_length + 1];
       }
@@ -2301,6 +2271,16 @@ namespace Ioex {
   {
     Ioss::Region *region = get_region();
 
+    // Verify that exodus supports the mesh_type...
+    if (region->mesh_type() != Ioss::MeshType::UNSTRUCTURED) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg,
+                 "ERROR: The mesh type is '{}' which Exodus does not support.\n"
+                 "       Only 'Unstructured' is supported at this time.\n",
+                 region->mesh_type_string());
+      IOSS_ERROR(errmsg);
+    }
+
     const Ioss::NodeBlockContainer &node_blocks = region->get_node_blocks();
     assert(node_blocks.size() <= 1);
     if (!node_blocks.empty()) {
@@ -2396,13 +2376,15 @@ namespace Ioex {
       }
       m_groupCount[EX_ELEM_BLOCK] = element_blocks.size();
 
-      // Set "global_entity_count" property on all blocks.
-      // Used to skip output on "globally" empty blocks.
-      Ioss::Int64Vector global_counts(element_counts.size());
-      util().global_count(element_counts, global_counts);
-      size_t idx = 0;
-      for (auto &element_block : element_blocks) {
-        element_block->property_add(Ioss::Property("global_entity_count", global_counts[idx++]));
+      if (isParallel) {
+        // Set "global_entity_count" property on all blocks.
+        // Used to skip output on "globally" empty blocks.
+        Ioss::Int64Vector global_counts(element_counts.size());
+        util().global_count(element_counts, global_counts);
+        size_t idx = 0;
+        for (auto &element_block : element_blocks) {
+          element_block->property_add(Ioss::Property("global_entity_count", global_counts[idx++]));
+        }
       }
     }
 
@@ -2484,7 +2466,7 @@ namespace Ioex {
           // the id of the sideblock must be the same as the sideset
           // id.
           new_block->property_update("id", id);
-          new_block->property_update("guid", util().generate_guid(1));
+          new_block->property_update("guid", util().generate_guid(id));
 
           entity_count += block->entity_count();
           df_count += block->get_property("distribution_factor_count").get_int();

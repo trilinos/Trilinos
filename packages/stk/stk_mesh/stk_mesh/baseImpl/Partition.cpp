@@ -217,11 +217,11 @@ void Partition::remove_impl()
   internal_check_invariants();
 }
 
-void Partition::default_sort_if_needed()
+void Partition::default_sort_if_needed(bool mustSortFacesByNodeIds)
 {
   if (!empty() && m_updated_since_sort)
   {
-      sort(GlobalIdEntitySorter());
+      sort(GlobalIdEntitySorter(mustSortFacesByNodeIds));
   }
 }
 
@@ -356,19 +356,3 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
   return bucket;
 }
 
-size_t Partition::field_data_footprint(const FieldBase& f) const
-{
-  size_t retval = 0;
-
-  size_t num_bkts = m_buckets.size();
-  for (size_t i = 0; i < num_bkts; ++i)
-  {
-    Bucket *b_ptr = m_buckets[i];
-    if (b_ptr)
-    {
-      retval += b_ptr->capacity() * field_bytes_per_entity(f, *b_ptr);
-    }
-  }
-
-  return retval;
-}

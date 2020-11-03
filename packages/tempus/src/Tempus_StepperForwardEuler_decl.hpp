@@ -11,9 +11,6 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperExplicit.hpp"
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  #include "Tempus_StepperForwardEulerObserver.hpp"
-#endif
 #include "Tempus_StepperForwardEulerAppAction.hpp"
 
 namespace Tempus {
@@ -35,21 +32,41 @@ namespace Tempus {
  *  \f]
  *
  *  <b> Algorithm </b>
- *  The single-timestep algorithm for Forward Euler is simply,
- *   - \f$\dot{x}_{n-1} \leftarrow \bar{f}(x_{n-1},t_{n-1})\f$
- *   - \f$x_{n} \leftarrow x_{n-1} + \Delta t\, \dot{x}_{n-1}\f$
+ *  The single-timestep algorithm for Forward Euler is
+ *  \f{algorithm}{
+ *  \renewcommand{\thealgorithm}{}
+ *  \caption{Forward Euler}
+ *  \begin{algorithmic}[1]
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *    \If { Not ``Use FSAL'' or (previous step failed)}
+ *      \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *      \State $\dot{x}_{n-1} \leftarrow \bar{f}(x_{n-1},t_{n-1})$
+ *    \EndIf
+ *    \State $x_{n} \leftarrow x_{n-1} + \Delta t\, \dot{x}_{n-1}$
+ *        \Comment{Forward Euler update.}
+ *    \If { ``Use FSAL'' }
+ *      \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *      \State $\dot{x}_n \leftarrow \bar{f}(x_{n},t_{n})$
+ *    \EndIf
+ *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *  \end{algorithmic}
+ *  \f}
  *
- *  Note that \f$x_n\f$ and \f$\dot{x}_{n-1}\f$ are not at the same time
- *  level at the end of the time step (i.e., they are not sync'ed).
+ *  Note that with useFSAL=false \f$x_n\f$ and \f$\dot{x}_{n-1}\f$ are not
+ *  at the same time level at the end of the time step (i.e., they are not
+ *  sync'ed).
  *
- *  To have them at the same time level, we can use the First-Step-As-Last
+ *  To have them at the same time level, we can use the First-Same-As-Last
  *  (FSAL) principle where the function evaulation from the last time step
  *  can be used as the first function evalulation of the current step.
- *  For the Forward Euler, the FSAL algorithm is
- *   - \f$x_{n} \leftarrow x_{n-1} + \Delta t\, \dot{x}_{n-1}\f$
- *   - \f$\dot{x}_n \leftarrow \bar{f}(x_{n},t_{n})\f$
  *
- *  The default for Forward Euler is to use FSAL (useFSAL=true).
+ *  The default for Forward Euler is to use FSAL (useFSAL=true), but will
+ *  also work with useFSAL=false.  Using useFSAL=true does assume that the
+ *  solution, \f$x\f$, and its time derivative, \f$\dot{x}\f$, are consistent
+ *  at the initial conditions (ICs), i.e.,
+ *  \f$\dot{x}_{0} = \bar{f}(x_{0},t_{0})\f$.  This can be ensured by setting
+ *  setICConsistency("Consistent"), and checked with
+ *  setICConsistencyCheck(true).
  */
 template<class Scalar>
 class StepperForwardEuler : virtual public Tempus::StepperExplicit<Scalar>
@@ -63,16 +80,6 @@ public:
   */
   StepperForwardEuler();
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  /// Constructor
-  StepperForwardEuler(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck);
-#endif
- 
   /// Constructor
   StepperForwardEuler(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -81,21 +88,11 @@ public:
     bool ICConsistencyCheck,
     const Teuchos::RCP<StepperForwardEulerAppAction<Scalar> >& stepperFEAppAction);
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  /// \name Basic stepper methods
-  //@{
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
-
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperFEObserver_; }
-#endif
-
     virtual void setAppAction(
       Teuchos::RCP<StepperForwardEulerAppAction<Scalar> > appAction);
 
     virtual Teuchos::RCP<StepperForwardEulerAppAction<Scalar> > getAppAction() const
-      { return stepperFEAppAction_; }
+    { return stepperFEAppAction_; }
 
     /// Set the initial conditions, make them consistent, and set needed memory.
     virtual void setInitialConditions (
@@ -110,7 +107,7 @@ public:
     virtual Scalar getOrder() const {return 1.0;}
     virtual Scalar getOrderMin() const {return 1.0;}
     virtual Scalar getOrderMax() const {return 1.0;}
-
+    virtual void setUseFSAL(bool a) { this->useFSAL_ = a; this->isInitialized_ = false; }
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
   //@}
 
@@ -126,11 +123,7 @@ public:
 
 protected:
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  Teuchos::RCP<StepperForwardEulerObserver<Scalar> >  stepperFEObserver_;
-#endif
   Teuchos::RCP<StepperForwardEulerAppAction<Scalar> > stepperFEAppAction_;
-
 
 };
 

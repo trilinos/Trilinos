@@ -34,7 +34,10 @@ namespace KokkosBatched {
            const int m,
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
-           /**/  ValueType *__restrict__ b, const int bs0);
+           /**/  ValueType *__restrict__ b, const int bs0) {
+      assert(false && "Error: encounter dummy impl");
+      return 0;
+    }
   };
 
   template<>
@@ -73,11 +76,12 @@ namespace KokkosBatched {
         if (!use_unit_diag) {
           const ValueType alpha11 = A[p*as0+p*as1];
           local_beta1 = local_beta1 / alpha11;
-
+          /// make sure all local beta1 is same for threads
+          member.team_barrier();
           if (member.team_rank() == 0)
             *beta1 = local_beta1;
         }
-        member.team_barrier();
+        ///member.team_barrier();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,iend),[&](const int &i) {
             b2[i*bs0] -= a21[i*as0] * local_beta1;
           });
@@ -161,7 +165,10 @@ namespace KokkosBatched {
            const int m,
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
-           /**/  ValueType *__restrict__ b, const int bs0);
+           /**/  ValueType *__restrict__ b, const int bs0) {
+      assert(false && "Error: encounter dummy impl");
+      return 0;
+    }
   };
 
   template<>
@@ -197,12 +204,12 @@ namespace KokkosBatched {
         if (!use_unit_diag) {
           const ValueType alpha11 = A[p*as0+p*as1];
           local_beta1 = local_beta1 / alpha11;
-
+          /// make sure local beta is same for all threads
+          member.team_barrier();
           if (member.team_rank() == 0)
             *beta1 = local_beta1;
         }
-
-        member.team_barrier();
+        //member.team_barrier();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,iend),[&](const int &i) {
             b0[i*bs0] -= a01[i*as0] * local_beta1;
           });

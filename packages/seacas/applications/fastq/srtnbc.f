@@ -1,55 +1,17 @@
-C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
-C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C    * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C    * Redistributions in binary form must reproduce the above
-C      copyright notice, this list of conditions and the following
-C      disclaimer in the documentation and/or other materials provided
-C      with the distribution.
-C
-C    * Neither the name of NTESS nor the names of its
-C      contributors may be used to endorse or promote products derived
-C      from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C    See packages/seacas/LICENSE for details
 
-C $Id: srtnbc.f,v 1.1 1990/11/30 11:16:33 gdsjaar Exp $
-C $Log: srtnbc.f,v $
-C Revision 1.1  1990/11/30 11:16:33  gdsjaar
-C Initial revision
-C
-C
-CC* FILE: [.RENUM]SRTNBC.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE SRTNBC (MXNFLG, NPNBC, NNN, NNFLG, NNLEN, NNPTR,
      &   NODES, LSTNBC, IHERE, NNNBC, NBCNOD, NNLIST)
 C***********************************************************************
-C
+
 C  SUBROUTINE SRTNBC = SORTS THE LIST OF NODAL BOUNDARY FLAGS
-C
+
 C***********************************************************************
-C
+
 C  VARIABLES USED:
 C     IHERE  = AN ATTENDANCE ARRAY TO SEE IF A NODE HAS BEEN FLAGGED
 C     NNFLG  = THE ARRAY OF FLAG VALUES
@@ -61,28 +23,28 @@ C     NNN    = THE NUMBER OF NODES IN THE MESH
 C     MXNFLG = THE NUMBER OF ENTRIES IN THE BOUNDARY LIST
 C     ENTER  = .TRUE. IF THE FOLLOWING NODES ARE TO BE CHECKED "HERE"
 C     FOUND  = .TRUE. IF A NEW UNIQUE FLAG HAS BEEN FOUND
-C
+
 C***********************************************************************
-C
+
       DIMENSION NNFLG (MXNFLG), NNLEN (MXNFLG), NNPTR (MXNFLG)
       DIMENSION NODES (NPNBC), LSTNBC (NPNBC), IHERE (NNN)
-C
+
       LOGICAL ENTER, FOUND
-C
+
       NNLIST = 0
       IHOLD = 1
       NBCNOD = 0
-C
+
   100 CONTINUE
       ISTART = IHOLD
       IHOLD = NNNBC
       ENTER = .FALSE.
       FOUND = .FALSE.
-C
+
       DO 110 I = 1, NNN
          IHERE (I) = 0
   110 CONTINUE
-C
+
       DO 120 I = ISTART, NNNBC
          IF (LSTNBC (I) .LT. 0) THEN
             IF (FOUND) THEN
@@ -110,7 +72,7 @@ C
             ENDIF
          ENDIF
   120 CONTINUE
-C
+
       IF (FOUND) THEN
          DO 130 I = 1, NNN
             IF (IHERE (I) .EQ. 1) THEN
@@ -123,5 +85,5 @@ C
       ELSE
          RETURN
       ENDIF
-C
+
       END

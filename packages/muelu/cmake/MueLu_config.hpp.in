@@ -78,7 +78,11 @@
 
 #cmakedefine HAVE_MUELU_ZOLTAN
 
-#cmakedefine HAVE_MUELU_ZOLTAN2
+#cmakedefine HAVE_MUELU_ZOLTAN2CORE
+#ifdef HAVE_MUELU_ZOLTAN2CORE
+#  define HAVE_MUELU_ZOLTAN2
+#endif
+
 
 /* Optional TPL */
 

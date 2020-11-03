@@ -69,7 +69,7 @@ SET(BUILD_NAME_DETAILS DEFAULT)
 
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
-SET(Trilinos_TRACK  Nightly)     # Set CDash board to Nightly
+SET(Trilinos_TRACK  Experimental)     # Set CDash board to Nightly
 SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_PACKAGES MueLu)

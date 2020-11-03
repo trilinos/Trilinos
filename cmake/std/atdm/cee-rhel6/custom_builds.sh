@@ -31,12 +31,10 @@ elif atdm_match_any_buildname_keyword \
   # matching of defaults
 
 elif atdm_match_any_buildname_keyword \
-    intel-18.0.2-mpich2-3.2 \
-    intel-18.0.2_mpich2-3.2 \
-    intel-18.0.2 \
-    intel-18 \
+    intel-19.0.3-mpich2-3.2 \
+    intel-19.0.3_mpich2-3.2 \
   ; then
-  export ATDM_CONFIG_COMPILER=INTEL-18.0.2_MPICH2-3.2
+  export ATDM_CONFIG_COMPILER=INTEL-19.0.3_MPICH2-3.2
 
 elif atdm_match_any_buildname_keyword \
     intel-19.0.3-intelmpi-2018.4 \
@@ -49,6 +47,16 @@ elif atdm_match_any_buildname_keyword \
   # List default intel build last of all the 'intel' builds for correct
   # matching!
 
+elif atdm_match_any_buildname_keyword \
+    cuda-10.1.243_gcc-7.2.0-openmpi-4.0.3 \
+    cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3 \
+    cuda-10.1.243_gcc-7.2.0 \
+    cuda-10.1.243 \
+    cuda-10 \
+    cuda \
+  ; then
+  export ATDM_CONFIG_COMPILER=CUDA-10.1.243_GCC-7.2.0_OPENMPI-4.0.3
+
 else
   echo
   echo "***"
@@ -56,10 +64,11 @@ else
   echo "***"
   echo "*** Supported compilers include:"
   echo "***"
-  echo "****  clang-9.0.1-openmpi-4.0.3      (default, default clang)"
-  echo "****  gnu-7.2.0-openmpi-4.0.3        (default gnu)"
-  echo "****  intel-18.0.2-mpich2-3.2"
-  echo "****  intel-19.0.3-intelmpi-2018.4   (default intel)"
+  echo "****  clang-9.0.1-openmpi-4.0.3               (default, default clang)"
+  echo "****  gnu-7.2.0-openmpi-4.0.3                 (default gnu)"
+  echo "****  intel-19.0.3-mpich2-3.2"
+  echo "****  intel-19.0.3-intelmpi-2018.4            (default intel)"
+  echo "****  cuda-10.1.243_gcc-7.2.0-openmpi-4.0.3   (default cuda)"
   echo "***"  
   return
 

@@ -52,64 +52,88 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, BallParabolic)
 {
   //Tolerance to check if test passed
   double tolerance = 1.0e-14;
-  // Read params from .xml file
-  RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_NewmarkExplicitAForm_BallParabolic.xml");
+  std::vector<std::string> options;
+  options.push_back("useFSAL=true");
+  options.push_back("useFSAL=false");
+  options.push_back("ICConsistency and Check");
 
-  // Setup the HarmonicOscillatorModel
-  RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
-  RCP<HarmonicOscillatorModel<double> > model =
-    Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
+  for(const auto& option: options) {
 
-  // Setup the Integrator and reset initial time step
-  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-  RCP<ParameterList> stepperPL = sublist(pl, "Default Stepper", true);
-  stepperPL->remove("Zero Initial Guess");
+    // Read params from .xml file
+    RCP<ParameterList> pList =
+      getParametersFromXmlFile("Tempus_NewmarkExplicitAForm_BallParabolic.xml");
 
-  RCP<Tempus::IntegratorBasic<double> > integrator =
-    Tempus::integratorBasic<double>(pl, model);
+    // Setup the HarmonicOscillatorModel
+    RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
+    RCP<HarmonicOscillatorModel<double> > model =
+      Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
 
-  // Integrate to timeMax
-  bool integratorStatus = integrator->advanceTime();
-  TEST_ASSERT(integratorStatus)
+    // Setup the Integrator and reset initial time step
+    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+    RCP<ParameterList> stepperPL = sublist(pl, "Default Stepper", true);
+    stepperPL->remove("Zero Initial Guess");
+    if (option == "useFSAL=true") stepperPL->set("Use FSAL", true);
+    else if (option == "useFSAL=false") stepperPL->set("Use FSAL", false);
+    else if (option == "ICConsistency and Check") {
+      stepperPL->set("Initial Condition Consistency", "Consistent");
+      stepperPL->set("Initial Condition Consistency Check", true);
+    }
 
-// Test if at 'Final Time'
-  double time = integrator->getTime();
-  double timeFinal =pl->sublist("Default Integrator")
-     .sublist("Time Step Control").get<double>("Final Time");
-  TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+    RCP<Tempus::IntegratorBasic<double> > integrator =
+      Tempus::integratorBasic<double>(pl, model);
 
-  // Time-integrated solution and the exact solution
-  RCP<Thyra::VectorBase<double> > x = integrator->getX();
-  RCP<const Thyra::VectorBase<double> > x_exact =
-    model->getExactSolution(time).get_x();
+    // Integrate to timeMax
+    bool integratorStatus = integrator->advanceTime();
+    TEST_ASSERT(integratorStatus)
 
-  // Plot sample solution and exact solution
-  std::ofstream ftmp("Tempus_NewmarkExplicitAForm_BallParabolic.dat");
-  ftmp.precision(16);
-  RCP<const SolutionHistory<double> > solutionHistory =
-    integrator->getSolutionHistory();
-  bool passed = true;
-  double err = 0.0;
-  RCP<const Thyra::VectorBase<double> > x_exact_plot;
-  for (int i=0; i<solutionHistory->getNumStates(); i++) {
-    RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
-    double time_i = solutionState->getTime();
-    RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
-    x_exact_plot = model->getExactSolution(time_i).get_x();
-    ftmp << time_i << "   "
-         << get_ele(*(x_plot), 0) << "   "
-         << get_ele(*(x_exact_plot), 0) << std::endl;
-    if (abs(get_ele(*(x_plot),0) - get_ele(*(x_exact_plot), 0)) > err)
-      err = abs(get_ele(*(x_plot),0) - get_ele(*(x_exact_plot), 0));
+//   Test if at 'Final Time'
+    double time = integrator->getTime();
+    double timeFinal =pl->sublist("Default Integrator")
+       .sublist("Time Step Control").get<double>("Final Time");
+    TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+
+    // Time-integrated solution and the exact solution
+    RCP<Thyra::VectorBase<double> > x = integrator->getX();
+    RCP<const Thyra::VectorBase<double> > x_exact =
+      model->getExactSolution(time).get_x();
+
+    // Plot sample solution and exact solution
+    std::ofstream ftmp("Tempus_NewmarkExplicitAForm_BallParabolic.dat");
+    ftmp.precision(16);
+    RCP<const SolutionHistory<double> > solutionHistory =
+      integrator->getSolutionHistory();
+    bool passed = true;
+    double err = 0.0;
+    RCP<const Thyra::VectorBase<double> > x_exact_plot;
+    for (int i=0; i<solutionHistory->getNumStates(); i++) {
+      RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
+      double time_i = solutionState->getTime();
+      RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
+      x_exact_plot = model->getExactSolution(time_i).get_x();
+      ftmp << time_i << "   "
+           << get_ele(*(x_plot), 0) << "   "
+           << get_ele(*(x_exact_plot), 0) << std::endl;
+      if (abs(get_ele(*(x_plot),0) - get_ele(*(x_exact_plot), 0)) > err)
+        err = abs(get_ele(*(x_plot),0) - get_ele(*(x_exact_plot), 0));
+    }
+    ftmp.close();
+    std::cout << "Max error = " << err << "\n \n";
+    if (err > tolerance)
+      passed = false;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(!passed, std::logic_error,
+      "\n Test failed!  Max error = " << err << " > tolerance = " << tolerance << "\n!");
+
+    // Check the order and intercept
+    RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
+    std::cout << "  Stepper = " << stepper->description()
+              << "\n            with " << option << std::endl;
+    std::cout << "  =========================" << std::endl;
+    std::cout << "  Exact solution   : " << get_ele(*(x_exact), 0) << std::endl;
+    std::cout << "  Computed solution: " << get_ele(*(x      ), 0) << std::endl;
+    std::cout << "  =========================" << std::endl;
+    TEST_ASSERT(std::abs(get_ele(*(x), 0)) < 1.0e-14);
   }
-  ftmp.close();
-  std::cout << "Max error = " << err << "\n \n";
-  if (err > tolerance)
-    passed = false;
-
-  TEUCHOS_TEST_FOR_EXCEPTION(!passed, std::logic_error,
-    "\n Test failed!  Max error = " << err << " > tolerance = " << tolerance << "\n!");
 }
 
 
@@ -194,7 +218,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, SinCos)
     Thyra::copy(*(integrator->getX()),solution.ptr());
     solutions.push_back(solution);
     auto solutionDot = Thyra::createMember(model->get_x_space());
-    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+    Thyra::copy(*(integrator->getXDot()),solutionDot.ptr());
     solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);
@@ -308,7 +332,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, HarmonicOscillatorDamped)
     Thyra::copy(*(integrator->getX()),solution.ptr());
     solutions.push_back(solution);
     auto solutionDot = Thyra::createMember(model->get_x_space());
-    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+    Thyra::copy(*(integrator->getXDot()),solutionDot.ptr());
     solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);
@@ -345,103 +369,115 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, HarmonicOscillatorDamped)
 TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, ConstructingFromDefaults)
 {
   double dt = 1.0;
+  std::vector<std::string> options;
+  options.push_back("Default Parameters");
+  options.push_back("ICConsistency and Check");
 
-  // Read params from .xml file
-  RCP<ParameterList> pList = getParametersFromXmlFile(
-    "Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder.xml");
-  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+  for(const auto& option: options) {
 
-  // Setup the HarmonicOscillatorModel
-  RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
-  RCP<HarmonicOscillatorModel<double> > model =
-    Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
+    // Read params from .xml file
+    RCP<ParameterList> pList = getParametersFromXmlFile(
+      "Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder.xml");
+    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
 
-  // Setup Stepper for field solve ----------------------------
-  auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
-  RCP<Tempus::StepperNewmarkImplicitAForm<double> > stepper =
-    sf->createStepperNewmarkImplicitAForm(model, Teuchos::null);
+    // Setup the HarmonicOscillatorModel
+    RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
+    RCP<HarmonicOscillatorModel<double> > model =
+      Teuchos::rcp(new HarmonicOscillatorModel<double>(hom_pl));
 
-  // Setup TimeStepControl ------------------------------------
-  RCP<Tempus::TimeStepControl<double> > timeStepControl =
-    Teuchos::rcp(new Tempus::TimeStepControl<double>());
-  ParameterList tscPL = pl->sublist("Default Integrator")
-                           .sublist("Time Step Control");
-  timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
-  timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
-  timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
-  timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));
-  timeStepControl->setInitTimeStep(dt);
-  timeStepControl->initialize();
+    // Setup Stepper for field solve ----------------------------
+    auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
+    RCP<Tempus::StepperNewmarkImplicitAForm<double> > stepper =
+      sf->createStepperNewmarkImplicitAForm(model, Teuchos::null);
+    if (option == "ICConsistency and Check") {
+      stepper->setICConsistency("Consistent");
+      stepper->setICConsistencyCheck(true);
+    }
+    stepper->initialize();
 
-  // Setup initial condition SolutionState --------------------
-  using Teuchos::rcp_const_cast;
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
-  RCP<Thyra::VectorBase<double> > icX =
-    rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
-  RCP<Thyra::VectorBase<double> > icXDot =
-    rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
-  RCP<Thyra::VectorBase<double> > icXDotDot =
-    rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot_dot());
-  RCP<Tempus::SolutionState<double> > icState =
-    Tempus::createSolutionStateX(icX, icXDot, icXDotDot);
-  icState->setTime    (timeStepControl->getInitTime());
-  icState->setIndex   (timeStepControl->getInitIndex());
-  icState->setTimeStep(0.0);
-  icState->setOrder   (stepper->getOrder());
-  icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
+    // Setup TimeStepControl ------------------------------------
+    RCP<Tempus::TimeStepControl<double> > timeStepControl =
+      Teuchos::rcp(new Tempus::TimeStepControl<double>());
+    ParameterList tscPL = pl->sublist("Default Integrator")
+                             .sublist("Time Step Control");
+    timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
+    timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
+    timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
+    timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));
+    timeStepControl->setInitTimeStep(dt);
+    timeStepControl->initialize();
 
-  // Setup SolutionHistory ------------------------------------
-  RCP<Tempus::SolutionHistory<double> > solutionHistory =
-    Teuchos::rcp(new Tempus::SolutionHistory<double>());
-  solutionHistory->setName("Forward States");
-  solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
-  solutionHistory->setStorageLimit(2);
-  solutionHistory->addState(icState);
+    // Setup initial condition SolutionState --------------------
+    using Teuchos::rcp_const_cast;
+    Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
+      stepper->getModel()->getNominalValues();
+    RCP<Thyra::VectorBase<double> > icX =
+      rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
+    RCP<Thyra::VectorBase<double> > icXDot =
+      rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
+    RCP<Thyra::VectorBase<double> > icXDotDot =
+      rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot_dot());
+    RCP<Tempus::SolutionState<double> > icState =
+      Tempus::createSolutionStateX(icX, icXDot, icXDotDot);
+    icState->setTime    (timeStepControl->getInitTime());
+    icState->setIndex   (timeStepControl->getInitIndex());
+    icState->setTimeStep(0.0);
+    icState->setOrder   (stepper->getOrder());
+    icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
 
-  // Setup Integrator -----------------------------------------
-  RCP<Tempus::IntegratorBasic<double> > integrator =
-    Tempus::integratorBasic<double>();
-  integrator->setStepperWStepper(stepper);
-  integrator->setTimeStepControl(timeStepControl);
-  integrator->setSolutionHistory(solutionHistory);
-  //integrator->setObserver(...);
-  integrator->initialize();
+    // Setup SolutionHistory ------------------------------------
+    RCP<Tempus::SolutionHistory<double> > solutionHistory =
+      Teuchos::rcp(new Tempus::SolutionHistory<double>());
+    solutionHistory->setName("Forward States");
+    solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
+    solutionHistory->setStorageLimit(2);
+    solutionHistory->addState(icState);
+
+    // Setup Integrator -----------------------------------------
+    RCP<Tempus::IntegratorBasic<double> > integrator =
+      Tempus::integratorBasic<double>();
+    integrator->setStepperWStepper(stepper);
+    integrator->setTimeStepControl(timeStepControl);
+    integrator->setSolutionHistory(solutionHistory);
+    //integrator->setObserver(...);
+    integrator->initialize();
 
 
-  // Integrate to timeMax
-  bool integratorStatus = integrator->advanceTime();
-  TEST_ASSERT(integratorStatus)
+    // Integrate to timeMax
+    bool integratorStatus = integrator->advanceTime();
+    TEST_ASSERT(integratorStatus)
 
 
-  // Test if at 'Final Time'
-  double time = integrator->getTime();
-  double timeFinal =pl->sublist("Default Integrator")
-     .sublist("Time Step Control").get<double>("Final Time");
-  TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+    // Test if at 'Final Time'
+    double time = integrator->getTime();
+    double timeFinal =pl->sublist("Default Integrator")
+       .sublist("Time Step Control").get<double>("Final Time");
+    TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
 
-  // Time-integrated solution and the exact solution
-  RCP<Thyra::VectorBase<double> > x = integrator->getX();
-  RCP<const Thyra::VectorBase<double> > x_exact =
-    model->getExactSolution(time).get_x();
+    // Time-integrated solution and the exact solution
+    RCP<Thyra::VectorBase<double> > x = integrator->getX();
+    RCP<const Thyra::VectorBase<double> > x_exact =
+      model->getExactSolution(time).get_x();
 
-  // Calculate the error
-  RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
-  Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
+    // Calculate the error
+    RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
+    Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
 
-  // Check the order and intercept
-  std::cout << "  Stepper = " << stepper->description() << std::endl;
-  std::cout << "  =========================" << std::endl;
-  std::cout << "  Exact solution   : " << get_ele(*(x_exact), 0) << std::endl;
-  std::cout << "  Computed solution: " << get_ele(*(x      ), 0) << std::endl;
-  std::cout << "  Difference       : " << get_ele(*(xdiff  ), 0) << std::endl;
-  std::cout << "  =========================" << std::endl;
-  TEST_FLOATING_EQUALITY(get_ele(*(x), 0), -0.222222, 1.0e-4 );
+    // Check the order and intercept
+    std::cout << "  Stepper = " << stepper->description()
+              << "\n            with " << option << std::endl;
+    std::cout << "  =========================" << std::endl;
+    std::cout << "  Exact solution   : " << get_ele(*(x_exact), 0) << std::endl;
+    std::cout << "  Computed solution: " << get_ele(*(x      ), 0) << std::endl;
+    std::cout << "  Difference       : " << get_ele(*(xdiff  ), 0) << std::endl;
+    std::cout << "  =========================" << std::endl;
+    TEST_FLOATING_EQUALITY(get_ele(*(x), 0), -0.222222, 1.0e-4 );
+  }
 }
 
 
 // ************************************************************
-TEUCHOS_UNIT_TEST(NewmarkImplicitDForm, ConstructingFromDefaults)
+TEUCHOS_UNIT_TEST(NewmarkImplicitDForm, Constructing_From_Defaults)
 {
   double dt = 1.0;
 
@@ -618,7 +654,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_SecondOrder)
     Thyra::copy(*(integrator->getX()),solution.ptr());
     solutions.push_back(solution);
     auto solutionDot = Thyra::createMember(model->get_x_space());
-    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+    Thyra::copy(*(integrator->getXDot()),solutionDot.ptr());
     solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);
@@ -730,7 +766,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitDForm, HarmonicOscillatorDamped_SecondOrder)
     Thyra::copy(*(integrator->getX()),solution.ptr());
     solutions.push_back(solution);
     auto solutionDot = Thyra::createMember(model->get_x_space());
-    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+    Thyra::copy(*(integrator->getXDot()),solutionDot.ptr());
     solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);
@@ -842,7 +878,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_FirstOrder)
     Thyra::copy(*(integrator->getX()),solution.ptr());
     solutions.push_back(solution);
     auto solutionDot = Thyra::createMember(model->get_x_space());
-    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+    Thyra::copy(*(integrator->getXDot()),solutionDot.ptr());
     solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);

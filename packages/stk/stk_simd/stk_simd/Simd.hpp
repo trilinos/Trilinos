@@ -39,7 +39,6 @@
 #include <STK_Trilinos_config.h>
 #endif
 
-#include "stk_simd/SimdConfig.hpp" // IWYU pragma: export
 #include <iostream>
 
 #include <stk_math/StkMath.hpp>
@@ -47,17 +46,53 @@
 #define STK_HAVE_SIMD
 #define SIMD_NAMESPACE kokkos_simd
 
-#if defined ( STK_KOKKOS_SIMD )
-#include "disimd/DISimd.hpp"
-#elif defined ( STK_SIMD_AVX512 )
-#include "avx512/Avx512.hpp"
-#elif defined ( STK_SIMD_AVX )
-#include "avx/Avx.hpp"
-#elif defined ( STK_SIMD_SSE )
-#include "sse/Sse.hpp"
-#else
-#include "no_simd/NoSimd.hpp"
-#endif // Check SIMD version
+#ifndef SIMD_ALWAYS_INLINE
+//currently necessary to avoid the 'always_inline' defined in simd.hpp
+#define SIMD_ALWAYS_INLINE __attribute__((always_inline))
+#endif
+
+#ifdef USE_STK_SIMD_NONE
+#define native native_junk
+#define native_simd native_simd_junk
+#endif
+
+#include "kokkos_simd/simd.hpp"
+
+#ifdef USE_STK_SIMD_NONE
+#undef native
+#undef native_simd
+
+namespace SIMD_NAMESPACE {
+
+namespace simd_abi {
+using native = scalar;
+}
+
+template <class T>
+using native_simd = simd<T, simd_abi::native>;
+
+}
+#endif
+
+namespace stk {
+namespace simd {
+constexpr int ndoubles = SIMD_NAMESPACE::native_simd<double>::size();
+constexpr int nfloats = SIMD_NAMESPACE::native_simd<float>::size();
+}
+}
+
+#include "SimdDouble.hpp"
+#include "SimdFloat.hpp"
+#include "SimdBool.hpp"
+#include "SimdBoolF.hpp"
+//
+#include "SimdDoubleOperators.hpp"
+#include "SimdDoubleLoadStore.hpp"
+#include "SimdDoubleMath.hpp"
+//
+#include "SimdFloatOperators.hpp"
+#include "SimdFloatLoadStore.hpp"
+#include "SimdFloatMath.hpp"
 
 #include "AlignedAllocator.hpp"
 #include "Traits.hpp" // has to be included after Double, Bool, Float, Boolf are defined
@@ -76,6 +111,54 @@ inline double get_time_in_seconds() {
 }
 
 namespace simd {
+
+STK_MATH_FORCE_INLINE double reduce_sum(const Double& x) {
+  double sum = x[0];
+  for (int i=1; i<ndoubles; ++i) {
+    sum += x[i];
+  }
+  return sum;
+}
+
+STK_MATH_FORCE_INLINE float reduce_sum(const Float& x) {
+  double sum = x[0];
+  for (int i=1; i<nfloats; ++i) {
+    sum += x[i];
+  }
+  return sum;
+}
+
+STK_MATH_FORCE_INLINE double reduce_max(const Double& x) {
+  double max = x[0];
+  for (int i=1; i<ndoubles; ++i){
+    max = max > x[i] ? max : x[i];
+  }
+  return max;
+}
+
+STK_MATH_FORCE_INLINE float reduce_max(const Float& x) {
+  float max = x[0];
+  for (int i=1; i<nfloats; ++i){
+    max = max > x[i] ? max : x[i];
+  }
+  return max;
+}
+
+STK_MATH_FORCE_INLINE double reduce_min(const Double& x) {
+  double max = x[0];
+  for (int i=1; i<ndoubles; ++i){
+    max = max < x[i] ? max : x[i];
+  }
+  return max;
+}
+
+STK_MATH_FORCE_INLINE float reduce_min(const Float& x) {
+  float max = x[0];
+  for (int i=1; i<nfloats; ++i){
+    max = max < x[i] ? max : x[i];
+  }
+  return max;
+}
 
 //
 //  These are helper functions for processing remainder loops.  The end pieces of SIMD loops

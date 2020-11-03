@@ -144,6 +144,10 @@
 #include "Amesos2_MUMPS.hpp"
 #endif
 
+#ifdef HAVE_AMESOS2_STRUMPACK
+#include "Amesos2_STRUMPACK.hpp"
+#endif
+
 
 namespace Amesos2 {
 
@@ -404,7 +408,7 @@ struct throw_no_matrix_support_exception {
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true,
                         std::invalid_argument,
-                        "Currently only the Tacho solver supports the kokkos adapter." );
+                        "This solver does not support the kokkos adapter." );
   }
 };
 
@@ -656,6 +660,14 @@ struct throw_no_matrix_support_exception {
        (solverName == "amesos2_MUMPS") || (solverName == "amesos2_mumps"))
       {
         return handle_solver_matrix_and_type_support<MUMPS,Matrix,Vector>::apply(A,X,B);
+      }
+#endif
+              
+#ifdef HAVE_AMESOS2_STRUMPACK
+    if((solverName == "STRUMPACK") || (solverName == "strumpack") ||
+       (solverName == "amesos2_STRUMPACK") || (solverName == "amesos2_strumpack"))
+      {
+        return handle_solver_matrix_and_type_support<STRUMPACK,Matrix,Vector>::apply(A,X,B);
       }
 #endif
 

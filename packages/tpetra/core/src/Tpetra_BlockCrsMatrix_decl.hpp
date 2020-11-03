@@ -201,6 +201,8 @@ public:
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           little_vec_type;
+  typedef typename little_vec_type::HostMirror
+          little_host_vec_type;
   //! The type used to access const vector blocks.
   typedef Kokkos::View<const impl_scalar_type*,
                        Kokkos::LayoutRight,
@@ -725,7 +727,8 @@ protected:
    const Kokkos::DualView<const local_ordinal_type*,
      buffer_device_type>& permuteToLIDs,
    const Kokkos::DualView<const local_ordinal_type*,
-     buffer_device_type>& permuteFromLIDs);
+     buffer_device_type>& permuteFromLIDs,
+   const CombineMode CM);
 
   virtual void
   packAndPrepare

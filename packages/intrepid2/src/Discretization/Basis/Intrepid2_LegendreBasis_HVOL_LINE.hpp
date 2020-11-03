@@ -201,10 +201,11 @@ namespace Intrepid2
      polynomial order.
      
      */
-    LegendreBasis_HVOL_LINE(int polyOrder)
+    LegendreBasis_HVOL_LINE(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT)
     :
     polyOrder_(polyOrder)
     {
+      INTREPID2_TEST_FOR_EXCEPTION(pointType!=POINTTYPE_DEFAULT,std::invalid_argument,"PointType not supported");
       this->basisCardinality_  = polyOrder+1;
       this->basisDegree_       = polyOrder;
       this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );
@@ -258,6 +259,16 @@ namespace Intrepid2
     // (It's an error to use the FVD variant on this basis.)
     using Basis<ExecutionSpace,OutputScalar,PointScalar>::getValues;
     
+    /** \brief  Returns basis name
+     
+     \return the name of the basis
+     */
+    virtual
+    const char*
+    getName() const override {
+      return "Intrepid2_LegendreBasis_HVOL_LINE";
+    }
+      
     /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>.
 
         Returns values of <var>operatorType</var> acting on FEM basis functions for a set of

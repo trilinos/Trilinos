@@ -56,7 +56,7 @@ namespace FROSch {
                                                         ParameterListPtr parameterList) :
     AlgebraicOverlappingPreconditioner<SC,LO,GO,NO> (k,parameterList)
     {
-        FROSCH_TIMER_START_LEVELID(gDSWPreconditionerTime,"GDSWPreconditioner::GDSWPreconditioner");
+        FROSCH_DETAILTIMER_START_LEVELID(gDSWPreconditionerTime,"GDSWPreconditioner::GDSWPreconditioner");
         // Set the LevelID in the sublist
         parameterList->sublist("GDSWCoarseOperator").set("Level ID",this->LevelID_);
         CoarseOperator_.reset(new GDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"GDSWCoarseOperator")));
@@ -265,7 +265,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int GDSWPreconditioner<SC,LO,GO,NO>::resetMatrix(ConstXMatrixPtr &k)
     {
-        FROSCH_TIMER_START_LEVELID(resetMatrixTime,"GDSWPreconditioner::resetMatrix");
+        FROSCH_DETAILTIMER_START_LEVELID(resetMatrixTime,"GDSWPreconditioner::resetMatrix");
         this->K_ = k;
         this->OverlappingOperator_->resetMatrix(this->K_);
         CoarseOperator_->resetMatrix(this->K_);

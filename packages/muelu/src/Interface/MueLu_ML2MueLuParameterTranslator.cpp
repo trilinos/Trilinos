@@ -112,7 +112,7 @@ namespace MueLu {
 
       bool valid = false;
       const int  validatorSize = 5;
-      std::string validator[validatorSize] = {"superlu", "superludist", "klu", "umfpack"};
+      std::string validator[validatorSize] = {"superlu", "superludist", "klu", "umfpack", "mumps"};
       for (int i=0; i < validatorSize; i++)
         if (validator[i] == solverType)
           valid = true;

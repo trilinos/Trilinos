@@ -40,6 +40,7 @@
 #include <iterator>                     // for back_insert_iterator, etc
 #include <vector>                       // for vector, etc
 #include <unordered_map>
+#include <array>
 
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, EntityLess, etc
 #include <stk_mesh/base/Entity.hpp>     // for Entity, hash_value
@@ -60,6 +61,7 @@
 
 #include "stk_util/util/NamedPair.hpp"  // for EntityCommInfo::operator=, etc
 #include <stk_mesh/base/CreateEdges.hpp>
+#include <stk_mesh/baseImpl/ConnectEdgesImpl.hpp>
 
 
 
@@ -67,9 +69,6 @@ namespace stk {
 namespace mesh {
 
 namespace {
-
-typedef std::vector<EntityKey> EntityKeyVector;
-typedef std::vector<EntityId>  EntityIdVector;
 
 struct shared_face_type
 {

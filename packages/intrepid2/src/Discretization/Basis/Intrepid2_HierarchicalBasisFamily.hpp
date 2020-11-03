@@ -57,9 +57,18 @@
 #include "Intrepid2_LegendreBasis_HVOL_LINE.hpp"
 
 namespace Intrepid2 {
-  // the following defines a family of hierarchical basis functions that matches the unpermuted ESEAS basis functions
-  // each basis member is associated with appropriate subcell topologies, making this suitable for continuous Galerkin finite elements.
   
+
+//Dummy basis to be temporarily used for Hierarchical bases that have not been implemented yet
+  template<typename ExecutionSpace, typename OutputScalar, typename PointScalar>
+  class dummyBasis
+  : public Basis<ExecutionSpace,OutputScalar,PointScalar> {
+  public:
+    dummyBasis(int /*order*/, EPointType /*pointType*/= POINTTYPE_DEFAULT) {};
+  };
+
+// the following defines a family of hierarchical basis functions that matches the unpermuted ESEAS basis functions
+// each basis member is associated with appropriate subcell topologies, making this suitable for continuous Galerkin finite elements.
   template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
            typename OutputScalar = double,
            typename PointScalar  = double,
@@ -69,9 +78,9 @@ namespace Intrepid2 {
   public:
     // we will fill these in as we implement them
     using HGRAD = IntegratedLegendreBasis_HGRAD_TRI<ExecutionSpace,OutputScalar,PointScalar,defineVertexFunctions>;
-    using HCURL = void;
-    using HDIV  = void;
-    using HVOL  = void;
+    using HCURL = dummyBasis<ExecutionSpace,OutputScalar,PointScalar>;
+    using HDIV  = dummyBasis<ExecutionSpace,OutputScalar,PointScalar>;
+    using HVOL  = dummyBasis<ExecutionSpace,OutputScalar,PointScalar>;
   };
   
   template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
@@ -83,9 +92,9 @@ namespace Intrepid2 {
   public:
     // we will fill these in as we implement them
     using HGRAD = IntegratedLegendreBasis_HGRAD_TET<ExecutionSpace,OutputScalar,PointScalar,defineVertexFunctions>;
-    using HCURL = void;
-    using HDIV  = void;
-    using HVOL  = void;
+    using HCURL = dummyBasis<ExecutionSpace,OutputScalar,PointScalar>;
+    using HDIV  = dummyBasis<ExecutionSpace,OutputScalar,PointScalar>;
+    using HVOL  = dummyBasis<ExecutionSpace,OutputScalar,PointScalar>;
   };
   
   /** \class Intrepid2::HierarchicalBasisFamily

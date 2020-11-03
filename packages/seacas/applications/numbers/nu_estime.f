@@ -1,63 +1,14 @@
-C    Copyright(C) 1988-2017 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C    * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C    * Redistributions in binary form must reproduce the above
-C      copyright notice, this list of conditions and the following
-C      disclaimer in the documentation and/or other materials provided
-C      with the distribution.
-C
-C    * Neither the name of NTESS nor the names of its
-C      contributors may be used to endorse or promote products derived
-C      from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C    See packages/seacas/LICENSE for details
 
-C     $Id: estime.f,v 1.5 2001/02/20 23:27:03 gdsjaar Exp $
-C     $Log: estime.f,v $
-C     Revision 1.5  2001/02/20 23:27:03  gdsjaar
-C     Special modification for Frank Dempsey.
-C     The command 'list nodalvol' calculates an approximate nodal volume at
-C     each node.  A nodes nodal volume is 1/8th of the volume of each
-C     element connected to it.
-C
-C     Revision 1.4  1991/12/02 17:37:16  gdsjaar
-C     Updated title format
-C
-c Revision 1.3  1991/09/24  17:42:52  gdsjaar
-c Added actual pronto3d time step estimation
-c
-c     Revision 1.2  1991/02/21  16:37:57  gdsjaar
-c     Moved ENGNOT function out of write statements
-c
-c     Revision 1.1.1.1  1991/02/21  15:43:09  gdsjaar
-c     NUMBERS: Greg Sjaardema, initial Unix release
-c
-c     Revision 1.1  1991/02/21  15:43:08  gdsjaar
-c     Initial revision
-c
       SUBROUTINE ESTIME (CRD, WAVE, IX, MAT, LABEL, NDIM, NNODE,
      *     NELBLK, SSQ, CCC, CDAMP, NUMNP)
-C
+
 C     ... ESTIMATE TIMESTEP FOR MESH --- BRICKS ONLY
-C
+
       DIMENSION CRD(NUMNP, *), IX(NNODE,*), MAT(6,*),
      *     WAVE(*), SSQ(3,NELBLK), CCC(NDIM,NNODE)
       DIMENSION GRADOP(8,3)
@@ -67,7 +18,7 @@ C
       CHARACTER*16 ENGNOT, ENG1
 
       include 'nu_io.blk'
-C
+
       IF (NDIM .EQ. 3) THEN
          DO 30 IBLK = 1, NELBLK
             IF (MAT(5,IBLK) .NE. 1) GOTO 30
@@ -265,20 +216,20 @@ C ... for quads we calculate
             IELEND = MAT(4,IBLK)
             MIEL   = IBLK
             DO 50 IEL = IELBEG, IELEND
-C
+
                DO 40 I=1,4
                   CCC(1,I) = CRD(IX(I,IEL),1)
                   CCC(2,I) = CRD(IX(I,IEL),2)
  40            CONTINUE
-C
+
 C     ... CALCULATE SUM OF SQUARES OF INVERSE LENGTHS, ASSUME RECTANGULAR
 C     USE SIDES 1-2 1-4
-C
+
                S12 = (CCC(1,1)-CCC(1,2))**2 +
      *              (CCC(2,1)-CCC(2,2))**2
                S14 = (CCC(1,1)-CCC(1,4))**2 +
      *              (CCC(2,1)-CCC(2,4))**2
-C
+
                IF (S12 .EQ. 0.0 .OR. S14 .EQ. 0.0)
      *              THEN
                   PRINT *,'*** WARNING *** Coincident nodes in element',
@@ -290,7 +241,7 @@ C
                      SSQ(2,MIEL)  = IEL
                   END IF
                END IF
-C
+
  50         CONTINUE
  60      CONTINUE
       END IF

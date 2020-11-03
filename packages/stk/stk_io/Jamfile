@@ -223,6 +223,7 @@ exe stk_io_doc_test
     [ glob $(stk_io-root)/../stk_doc_tests/stk_io/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_io//stk_io_util
+    /sierra/stk_unit_test_utils//stk_mesh_fixtures
     /sierra/stk_util//stk_util_unit_test_support
   : <tag>@sierra-exec-tag
     <include>$(stk_io-root)/../stk_doc_tests/stk_io

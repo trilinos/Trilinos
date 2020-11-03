@@ -43,27 +43,6 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
     CACHE PATH
     "Path TrilinosData directory to find more tests and other stuff" )
 
-  #
-  # Put in disables based on various criteria
-  #
-  IF (
-      NOT ${PROJECT_NAME}_ENABLE_Fortran
-      AND
-      (
-        "${${PROJECT_NAME}_ENABLE_ForTrilinos}" STREQUAL ""
-        OR
-        ${PROJECT_NAME}_ENABLE_ForTrilinos
-      )
-    )
-    MESSAGE(
-      "\n***"
-      "\n*** NOTE: Setting ${PROJECT_NAME}_ENABLE_ForTrilinos=OFF"
-      " because ${PROJECT_NAME}_ENABLE_Fortran=OFF!"
-      "\n***\n"
-      )
-    SET(${PROJECT_NAME}_ENABLE_ForTrilinos OFF)
-  ENDIF()
-
   IF (
       NOT BUILD_SHARED_LIBS
       AND
@@ -95,7 +74,7 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
       " because '${Trilinos_SOURCE_DIR}/packages/TriKota/Dakota' does not exist!")
     SET(${PROJECT_NAME}_ENABLE_TriKota OFF)
   ENDIF()
-    
+
   # Used by some Trilinos packages?
   SET(TRILINOS_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
 
