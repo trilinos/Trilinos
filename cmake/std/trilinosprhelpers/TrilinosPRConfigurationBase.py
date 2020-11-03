@@ -429,9 +429,9 @@ class TrilinosPRConfigurationBase(object):
                 if not dryrun:
                     subprocess.check_call(cmd)
                 else:
-                    print("---")
+                    print("")
                     print("--- SKIPPED DUE TO DRYRUN")
-                    print("---")
+                    print("")
             else:
                 # Use the values in the PACKAGE_ENABLES section of the .ini file
                 with open('packageEnables.cmake',  'w') as f_out:
@@ -459,9 +459,9 @@ class TrilinosPRConfigurationBase(object):
             if not dryrun:
                 cmake_rstring = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
             else:
-                print("---")
+                print("")
                 print("--- SKIPPED DUE TO DRYRUN")
-                print("---")
+                print("")
                 cmake_rstring = str.encode("")
             cmake_rstring = cmake_rstring.decode('utf-8')
             print(cmake_rstring)
@@ -483,11 +483,11 @@ class TrilinosPRConfigurationBase(object):
         """
         print("")
         print("Validate target branch constraints:")
-        print("- Target branch is '{}'".format(self.args.target_branch_name))
+        print("--- Target branch is '{}'".format(self.args.target_branch_name))
 
         re_master_merge_source = "master_merge_[0-9]{8}_[0-9]{6}"
         if "master" == self.args.target_branch_name:
-            print("- Target branch is 'master'. Checking source branch constraints...")
+            print("--- Target branch is 'master'. Checking source branch constraints...")
             if not re.match(re_master_merge_source, self.args.source_branch_name):
                 message  = "+" + "="*78 + "+\n"
                 message += "ERROR: Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS\n"
@@ -529,7 +529,7 @@ class TrilinosPRConfigurationBase(object):
         print("--- arg_pullrequest_cdash_track = {}".format(self.arg_pullrequest_cdash_track))
         print("--- arg_req_mem_per_core        = {}".format(self.arg_req_mem_per_core))
         print("--- arg_workspace_dir           = {}".format(self.arg_workspace_dir))
-        print("---")
+        print("")
         print("--- concurrency_build           = {}".format(self.concurrency_build))
         print("--- concurrency_test            = {}".format(self.concurrency_test))
         print("--- config_script               = {}".format(self.config_script))
@@ -552,9 +552,9 @@ class TrilinosPRConfigurationBase(object):
             print("apply() rval: {}".format(rval))
         else:
             tr_config.pretty_print()
-            print("---")
+            print("")
             print("--- NOTICE: ENVVARS not set due to dry-run flag.")
-            print("---")
+            print("")
 
         if rval:
             msg = "ERROR: There was a problem configuring the environment."

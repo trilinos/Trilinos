@@ -62,14 +62,18 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
 
         print("--- ctest command:")
         print("--- cmd = {}".format(" \\\n   ".join(cmd)))
-        print("--- ")
+        print("")
 
         if not self.args.dry_run:
-            subprocess.check_call(cmd)
-            # Note: check_call will throw an exception if there's a problem.
+            try:
+                subprocess.check_call(cmd)
+                # Note: check_call will throw an exception if there's a problem.
+            except:
+                print("--- ctest command failed!")
+                return 1
         else:
             print("--- SKIPPED DUE TO DRYRUN")
-        print("---")
+        print("")
 
         return 0
 
