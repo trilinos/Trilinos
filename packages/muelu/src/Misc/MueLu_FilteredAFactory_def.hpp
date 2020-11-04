@@ -576,7 +576,7 @@ namespace MueLu {
  	if (row >= (LO)numRows) continue;
 	A.getLocalRowView(row, indsA, valsA);
 	for(LO k=0; k<(LO)indsA.size(); k++) {
-	  if ( (indsA[k] < (LO)numRows) && (valsA[k] != 0.0) ) {
+	  if ( (indsA[k] < (LO)numRows) && (TST::magnitude(valsA[k]) != TST::magnitude(ZERO))) {
 	    LO node = amalgInfo->ComputeLocalNode(indsA[k]);
 	    LO agg = vertex2AggId[node];
 	    if(!std::binary_search(goodAggNeighbors.begin(),goodAggNeighbors.end(),agg))
