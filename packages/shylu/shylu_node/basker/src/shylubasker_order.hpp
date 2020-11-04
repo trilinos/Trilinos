@@ -927,7 +927,12 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       //printf("Scotch Nonsymmetrix\n");
       BASKER_MATRIX MMT;
       AplusAT(M,MMT);
-      //printMTX("AAT.mtx", MMT);
+      std::cout << " part_scotch(nnz(M) = " << M.nnz << " nnz(M+Mt) = " << MMT.nnz << std::endl;
+      /*printf( " MMT = [\n" );
+      for(Int i = 0; i < M.nrow; i++) {
+        for(Int k = M.col_ptr(i); k < M.col_ptr(i+1); k++) printf( "%d %d\n",i,M.row_idx(k) );
+      }
+      printf( "];\n" );*/
       part_scotch(MMT, part_tree);
       FREE(MMT);
     }

@@ -163,6 +163,78 @@ namespace BaskerNS
       sg.Ap[i+1] = sg.Ap[i]+sj;
     }
     sg.nz = sg.Ap[sg.m];
+#if 0
+    {
+      // -- testing size of separators using METIS (before/after merge) -- 
+      //idx_t  metis_offset = 74;
+      idx_t  metis_offset = btf_tabs(btf_tabs_offset-1);
+      idx_t  metis_size = M.nrow - metis_offset;
+      idx_t  metis_nnz = M.col_ptr(M.nrow);
+      INT_1DARRAY metis_rowptr;
+      INT_1DARRAY metis_colidx;
+      INT_1DARRAY metis_part;
+      //MALLOC_INT_1DARRAY(metis_part,   metis_size+1);
+      MALLOC_INT_1DARRAY(metis_part,   M.nrow+1);
+      MALLOC_INT_1DARRAY(metis_rowptr, metis_size+1);
+      MALLOC_INT_1DARRAY(metis_colidx, metis_nnz);
+
+      metis_nnz = 0;
+      metis_rowptr(0) = 0;
+      for(Int i = metis_offset; i < sg.m; i++)
+      {
+        for(Int k = sg.Ap[i]; k < sg.Ap[i+1]; k++)
+        {
+          if(sg.Ai[k] >= metis_offset)
+          {
+            metis_colidx[metis_nnz] = sg.Ai[k]-metis_offset;
+            metis_nnz++;
+          }
+        }
+        metis_rowptr[i-metis_offset+1] = metis_nnz;
+      }
+      /*printf( " M = [\n" );
+      for(Int i = 0; i < M.nrow; i++) {
+        for(Int k = M.col_ptr(i); k < M.col_ptr(i+1); k++) printf( "%d %d\n",i,M.row_idx(k) );
+      }
+      printf( "];\n" );
+      printf( " Me = [\n" );
+      for(Int i = 0; i < metis_size; i++) {
+        for(Int k = metis_rowptr(i); k < metis_rowptr(i+1); k++) printf( "%d %d\n",i,metis_colidx(k) );
+      }
+      printf( "];\n" );*/
+
+      idx_t options[METIS_NOPTIONS];
+      if (METIS_OK != METIS_SetDefaultOptions(options)) {
+        std::cout << std::endl << " > METIS_SetDefaultOptions failed < " << std::endl << std::endl;
+      }
+
+      idx_t sepsize = 0;
+      std::cout << " >> calling METIS_ComputeVertexSeparator on the last big block ( block-offset = " << btf_tabs_offset << " row-offset = " << metis_offset
+                << " n = " << metis_size << ", nnz = " << metis_nnz << ")" << std::endl;
+      int info = METIS_ComputeVertexSeparator(&metis_size,
+                                              &(metis_rowptr(0)),
+                                              &(metis_colidx(0)),
+                                               nullptr,
+                                               options,
+                                              &sepsize,
+                                              &(metis_part(0)));
+      std::cout << " METIS_ComputeVertexSeparator: info = " << info << " sepsize = " << sepsize << std::endl;
+
+      std::cout << " >> calling METIS_ComputeVertexSeparator after merge ( n = " << sg.m << ", nnz = " << sg.Ap[sg.m] << ")" << std::endl;
+      info = METIS_ComputeVertexSeparator(&metis_size,
+                                           sg.Ap,
+                                           sg.Ai,
+                                           nullptr,
+                                           options,
+                                          &sepsize,
+                                          &(metis_part(0)));
+      std::cout << " METIS_ComputeVertexSeparator: info = " << info << " sepsize = " << sepsize << std::endl;
+      /*printf( " P = [\n" );
+      for(Int i = 0; i < M.nrow; i++) printf("%d\n",metis_part(i) );
+      printf( "];\n" );*/
+
+    }
+#endif
 
     //printf("num self_edge: %d sg.m: %d \n",
     //	   self_edge, sg.m);
@@ -203,9 +275,9 @@ namespace BaskerNS
     }
 
     //Need to come back to this so update based on nthreads
-    double balrat = 0.2;
     Int num_levels = num_domains; 
     Int flagval = SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN | SCOTCH_STRATLEAFSIMPLE | SCOTCH_STRATSEPASIMPLE;
+    double balrat = 0.2;
     SCOTCH_stratInit(&strdat);
     
     err = SCOTCH_stratGraphOrderBuild(&strdat, flagval, num_levels, balrat);

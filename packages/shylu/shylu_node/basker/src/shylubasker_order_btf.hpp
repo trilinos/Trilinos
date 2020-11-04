@@ -244,6 +244,10 @@ namespace BaskerNS
     MALLOC_INT_1DARRAY(vals_order_blk_amd_array, M.nnz);
     if (Options.blk_matching == 0) // no blk_matching (TODO: should we add cardinality-matrching on each block?)
     {
+      if (Options.verbose == BASKER_TRUE)
+      {
+        printf("Basker find BTF: apply BLK AMD\n");
+      }
       /*printf(" B = [\n" );
       for(Int j = 0; j < M.ncol; j++) {
         for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
@@ -281,7 +285,11 @@ namespace BaskerNS
       #endif
     } else {
       // reset matrix order and scale since they will be computed during numerical factorization
-      Entry one = (Entry)1.0;
+      if (Options.verbose == BASKER_TRUE)
+      {
+        printf("Basker find BTF: skip applying BLK AMD\n");
+      }
+      Entry one (1.0);
       for (Int i = 0; i < (Int)M.nrow; i++) {
         order_blk_mwm_array(i) = i;
         order_blk_amd_array(i) = i;
@@ -709,7 +717,8 @@ namespace BaskerNS
       if( (Options.use_sequential_diag_facto || blk_work < break_size) && (blk_idx > 1) )
       {
       #ifdef BASKER_DEBUG_ORDER_BTF
-        printf("Basker: continue with fine structure btf blocks\n");
+        printf("Basker(blk_idx=%d, blk_size=%d, blk_work=%d, break_size=%d): continue with fine structure btf blocks\n",
+                (int)blk_idx,(int)blk_size,(int)blk_work,(int)break_size);
       #endif
 
         t_size  = t_size+blk_size;
@@ -794,13 +803,11 @@ namespace BaskerNS
         {
           BTF_A.row_idx(annz) = M.row_idx(i);
           BTF_A.val(annz)     = M.val(i);  //NDE: Track movement of vals (lin_ind of row,col) here
-//std::cout << " ++ A : " << M.row_idx(i) << " " << k << " " << M.val(i) << std::endl;
 
           vals_block_map_perm_pair(i) = std::pair<Int,Int>(0,annz);
 
           annz++;
         }
-
         BTF_A.col_ptr(k+1) = annz;
       }
     }//no A
@@ -908,7 +915,6 @@ namespace BaskerNS
           //Note: do not offset because B srow = 0
           BTF_B.row_idx(bnnz) = M.row_idx(i);
           BTF_B.val(bnnz)     = M.val(i);
-//std::cout << " ++ B : " << M.row_idx(i) << " " << k << " " << M.val(i) << std::endl;
 
           vals_block_map_perm_pair(i) = std::pair<Int,Int>(1,bnnz);
 

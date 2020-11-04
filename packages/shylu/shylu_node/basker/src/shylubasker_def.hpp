@@ -1090,6 +1090,12 @@ namespace BaskerNS
         // ----------------------------------------------------------------------------------------------
         // Apply AMD perm to rows and cols
         // NOTE: no need to udpate vals_order_blk_amd_array (it will read in A without permutations, and compute perm here)
+        #if 1
+        // skip applying AMD since we do ND
+        for (Int i = 0; i < (Int)BTF_A.nrow; i++) {
+          order_nd_amd(i) = i;
+        }
+        #else
         permute_row(BTF_A, order_nd_amd);
         permute_col(BTF_A, order_nd_amd);
         if (btf_tabs_offset < btf_nblks) {
@@ -1099,6 +1105,7 @@ namespace BaskerNS
         if(Options.verbose == BASKER_TRUE) {
           std::cout<< " > Basker Factor: Time to compute and apply MWM+AMD on a big block A: " << nd_mwm_amd_timer.seconds() << std::endl;
         }
+        #endif
 
         // ----------------------------------------------------------------------------------------------
         // compute & apply ND on a big block A

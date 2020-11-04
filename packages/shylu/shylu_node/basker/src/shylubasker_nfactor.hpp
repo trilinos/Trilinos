@@ -1,9 +1,6 @@
 #ifndef SHYLUBASKER_NFACTOR_HPP
 #define SHYLUBASKER_NFACTOR_HPP
 
-//#define BASKER_DEBUG_NFACTOR 
-//#define BASKER_TIMER
-
 /*Basker Includes*/
 #include "shylubasker_types.hpp"
 #include "shylubasker_util.hpp"
@@ -29,6 +26,9 @@
 /*System Includes*/
 #include <iostream>
 #include <string>
+
+//#define BASKER_DEBUG_NFACTOR 
+//#define BASKER_TIMER
 
 namespace BaskerNS
 {
