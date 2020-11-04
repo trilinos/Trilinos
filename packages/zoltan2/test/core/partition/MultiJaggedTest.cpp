@@ -533,7 +533,7 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
     }
     comm->broadcast(0, sizeof(int), (char*) &size);
     if(size == -1){
-        throw "File " + paramFileName + " cannot be opened.";
+        throw std::runtime_error("File " + paramFileName + " cannot be opened.");
     }
     comm->broadcast(0, size, inp);
     std::istringstream inParam(inp);
@@ -543,7 +543,7 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
         if(str[0] != param_comment){
             size_t pos = str.find('=');
             if(pos == string::npos){
-                throw  "Invalid Line:" + str  + " in parameter file";
+                throw std::runtime_error("Invalid Line:" + str  + " in parameter file");
             }
             string paramname = trim_copy(str.substr(0,pos));
             string paramvalue = trim_copy(str.substr(pos + 1));
@@ -1220,28 +1220,28 @@ void getArgVals(
             if(value == 0 || value == 1){
                 print_details = (value == 0 ? false : true);
             } else {
-                throw "Invalid argument at " + tmp;
+                throw std::runtime_error("Invalid argument at " + tmp);
             }
         }
         else if(identifier == "UVM"){
             if(value == 0 || value == 1){
                 uvm = (value == 0 ? false : true);
             } else {
-                throw "Invalid argument at " + tmp;
+                throw std::runtime_error("Invalid argument at " + tmp);
             }
         }
         else if(identifier == "T"){
             if(value > 0){
                 numTeams=value;
             } else {
-                throw  "Invalid argument at " + tmp;
+                throw  std::runtime_error("Invalid argument at " + tmp);
             }
         } else if(identifier == "C"){
             if(value > 0){
                 numParts=value;
                 isCset = true;
             } else {
-                throw  "Invalid argument at " + tmp;
+                throw  std::runtime_error("Invalid argument at " + tmp);
             }
         } else if(identifier == "P"){
             std::stringstream stream(std::stringstream::in | std::stringstream::out);
@@ -1254,25 +1254,25 @@ void getArgVals(
             if(fval > 0){
                 imbalance=fval;
             } else {
-                throw "Invalid argument at " + tmp;
+                throw std::runtime_error("Invalid argument at " + tmp);
             }
         } else if(identifier == "MI"){
             if(fval > 0){
                 migration_imbalance_cut_off=fval;
             } else {
-                throw "Invalid argument at " + tmp;
+                throw std::runtime_error("Invalid argument at " + tmp);
             }
         } else if(identifier == "MO"){
             if(value >=0 ){
                 migration_check_option = value;
             } else {
-                throw "Invalid argument at " + tmp;
+                throw std::runtime_error("Invalid argument at " + tmp);
             }
         } else if(identifier == "AT"){
             if(value >=0 ){
                 migration_processor_assignment_type = value;
             } else {
-                throw "Invalid argument at " + tmp;
+                throw std::runtime_error("Invalid argument at " + tmp);
             }
         }
 
@@ -1280,14 +1280,14 @@ void getArgVals(
             if(value >=0 ){
                 migration_all_to_all_type = value;
             } else {
-                throw "Invalid argument at " + tmp;
+                throw std::runtime_error("Invalid argument at " + tmp);
             }
         }
         else if(identifier == "PCC"){
             if(value >=0 ){
                 mj_coordinate_cutoff = value;
             } else {
-                throw "Invalid argument at " + tmp;
+                throw std::runtime_error("Invalid argument at " + tmp);
             }
         }
 
@@ -1295,7 +1295,7 @@ void getArgVals(
             if(value >=0 ){
 		mj_premigration_option = value;
             } else {
-                throw "Invalid argument at " + tmp;
+                throw std::runtime_error("Invalid argument at " + tmp);
             }
         }
 
@@ -1303,7 +1303,7 @@ void getArgVals(
             if(value >=0 ){
                 migration_doMigration_type = value;
             } else {
-                throw "Invalid argument at " + tmp;
+                throw std::runtime_error("Invalid argument at " + tmp);
             }
         }
         else if(identifier == "F"){
@@ -1327,37 +1327,37 @@ void getArgVals(
             if(value >= 0 && value <= 3){
                 opt = value;
             } else {
-                throw "Invalid argument at " + tmp;
+                throw std::runtime_error("Invalid argument at " + tmp);
             }
         }
         else if(identifier == "K"){
             if(value >=0 ){
                 k = value;
             } else {
-                throw "Invalid argument at " + tmp;
+                throw std::runtime_error("Invalid argument at " + tmp);
             }
         }
         else if(identifier == "TB"){
             if(value >=0 ){
                 test_boxes = (value == 0 ? false : true);
             } else {
-                throw "Invalid argument at " + tmp;
+                throw std::runtime_error("Invalid argument at " + tmp);
             }
         }
         else if(identifier == "R"){
             if(value >=0 ){
                 rectilinear = (value == 0 ? false : true);
             } else {
-                throw "Invalid argument at " + tmp;
+                throw std::runtime_error("Invalid argument at " + tmp);
             }
         }
         else {
-            throw "Invalid argument at " + tmp;
+            throw std::runtime_error("Invalid argument at " + tmp);
         }
 
     }
     if(!( (isCset || isPset || isPFset) && isFset)){
-        throw "(C || P || PF) && F are mandatory arguments.";
+        throw std::runtime_error("(C || P || PF) && F are mandatory arguments.");
     }
 
 }
@@ -1447,14 +1447,7 @@ int main(int narg, char *arg[])
                     rectilinear,
                     mj_premigration_option, mj_premigration_coordinate_cutoff);
         }
-        catch(std::string s){
-            if(tcomm->getRank() == 0){
-                print_usage(arg[0]);
-            }
-            throw s;
-        }
-
-        catch(char * s){
+        catch(std::exception &s){
             if(tcomm->getRank() == 0){
                 print_usage(arg[0]);
             }
