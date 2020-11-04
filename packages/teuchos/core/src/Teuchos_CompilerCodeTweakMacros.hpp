@@ -76,7 +76,7 @@
  *
  * Consider a function like:
  *
- * \begin{code}
+ * \code
   int func(const ESomeEnum val)
   {
     switch (val) {
@@ -85,13 +85,13 @@
       default: TEUCHOS_TEST_FOR_EXCEPT(true);
     }
   }
- * \end{code} 
+ * \endcode
  *
  * That code will never execute out of the switch statement.  However, some
  * compilers will provide a warning that the function may not return a value.
  * Therefore, one can remove this warning by adding a dummy return value like:
  *
- * \begin{code}
+ * \code
   int func(const ESomeEnum val)
   {
     switch (val) {
@@ -101,14 +101,14 @@
     }
     return -1; // Will never get called!
   }
- * \end{code} 
+ * \endcode
  *
  * That removes the "may not return value" warning on those compilers.  But
  * other compilers will correctly warn that <tt>return -1;</tt> will never be
  * executed with a warning like "statement is unreachable".  Therefore, to
  * address warnings like this, this macro is used like:
  *
- * \begin{code}
+ * \code
   int func(const ESomeEnum val)
   {
     switch (val) {
@@ -118,7 +118,7 @@
     }
     TEUCHOS_UNREACHABLE_RETURN(-1);
   }
- * \end{code} 
+ * \endcode
  *
  * On compilers that warn about the return being unreachable the return
  * statement is skipped.  On every other compiler, the return statement is
