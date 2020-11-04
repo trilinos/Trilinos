@@ -1575,7 +1575,9 @@ int Zoltan_Hier(
       hpp.hierzz = Zoltan_Create(hpp.hier_comm);
       hpp.hierzz->Current_Hier_Level = hpp.level;
 
-      hpp.hierzz->Highest_Ancestor_ZZ = zz;
+      if (hpp.level != 0) {
+        hpp.hierzz->Highest_Ancestor_ZZ = zz;
+      }
 
       /* and copy in some specified params from zz where appropriate */
 
