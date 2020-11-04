@@ -56,7 +56,7 @@ def readCsvFileIntoDictOfLists(csvFileName, colNameAndTypeList):
     # Fill the columns of data
     dataRowIdx = 0
     for lineList in csvReader:
-      if not lineList: continue # Ingore blank line
+      if not lineList: continue # Ignore blank line
       CDQAR.stripWhiltespaceFromStrList(lineList)
       assertNumExpectedCsvFileLineEntries(csvFileName, columnHeadersList,
         dataRowIdx, lineList)
@@ -256,8 +256,9 @@ Full Project: sum(file_size_mb) = ??? (??? entries)
 Full Project: max(file_size_mb) = ??? (<file-name>)
 """
 
+
 #
-# Helper functions
+# Helper functions for main()
 #
 
 
