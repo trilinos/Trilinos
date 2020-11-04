@@ -64,7 +64,7 @@ namespace Intrepid2 {
     try {                                                               \
       S ;                                                               \
     }                                                                   \
-    catch (std::logic_error &err) {                                      \
+    catch (std::logic_error &err) {                                     \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
@@ -90,7 +90,7 @@ namespace Intrepid2 {
         \param  outStream       [in]  - output stream to write
     */
     template<typename ValueType,
-             typename DeviceSpaceType,
+             typename DeviceType,
              typename subcParamVertAType,
              typename subcParamVertBType,
              typename tolType,
@@ -102,8 +102,8 @@ namespace Intrepid2 {
                                       const int                   subcDim,
                                       const tolType               tol,
                                       const outStreamPtrType      outStreamPtr ) {
-      typedef CellTools<DeviceSpaceType> ct;
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef CellTools<DeviceType> ct;
+      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
 
       // Get cell dimension and subcell count
       const auto cellDim   = parentCell.getDimension();
@@ -114,7 +114,7 @@ namespace Intrepid2 {
       const ordinal_type maxNodeCount = 256;
       DynRankView ConstructWithLabel(refSubcellNodesMax,  maxNodeCount, cellDim);
       DynRankView ConstructWithLabel(mappedParamNodesMax, maxNodeCount, cellDim);
-      
+
       // Loop over subcells of the specified dimension
       for(size_type subcOrd=0;subcOrd<subcCount;++subcOrd) {
         const auto subcVertexCount = parentCell.getVertexCount(subcDim, subcOrd);
@@ -122,12 +122,12 @@ namespace Intrepid2 {
 
         const Kokkos::pair<ordinal_type,ordinal_type> nodeRange(0, subcNodeCount);
         
-        auto refSubcellNodes  = Kokkos::subdynrankview( refSubcellNodesMax,  nodeRange, Kokkos::ALL() );
-        auto mappedParamNodes = Kokkos::subdynrankview( mappedParamNodesMax, nodeRange, Kokkos::ALL() );
+        auto refSubcellNodes  = Kokkos::subview( refSubcellNodesMax,  nodeRange, Kokkos::ALL() );
+        auto mappedParamNodes = Kokkos::subview( mappedParamNodesMax, nodeRange, Kokkos::ALL() );
         
         // Retrieve correct reference subcell vertices
-        ct::getReferenceSubcellVertices(refSubcellNodes, subcDim, subcOrd, parentCell);
 
+        ct::getReferenceSubcellVertices(refSubcellNodes, subcDim, subcOrd, parentCell);
         // Map vertices of the parametrization domain to 1 or 2-subcell with ordinal subcOrd
         switch (subcDim) {
         case 1: {
@@ -141,20 +141,20 @@ namespace Intrepid2 {
         }
         case 2: {
           // For faces need to treat Triangle and Quadrilateral faces separately          
-          if (subcVertexCount == 3) // domain "subcParamVert_A" is the standard 2-simplex  
+          if (subcVertexCount == 3) {// domain "subcParamVert_A" is the standard 2-simplex  
             ct::mapToReferenceSubcell(mappedParamNodes,
                                       subcParamVert_A,
                                       subcDim,
                                       subcOrd,
                                       parentCell);
 
-          else if (subcVertexCount == 4) // Domain "subcParamVert_B" is the standard 2-cube
+          } else if (subcVertexCount == 4) {// Domain "subcParamVert_B" is the standard 2-cube
             ct::mapToReferenceSubcell(mappedParamNodes,
                                       subcParamVert_B,
                                       subcDim,
                                       subcOrd,
                                       parentCell);
-          else {
+          } else {
             errorFlag = 1000;
             INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error,
                                           ">>> ERROR (Intrepid2::CellTools::Test01::testSubcellParametrizations): subcell topology is not tri nor quad.");
@@ -169,15 +169,17 @@ namespace Intrepid2 {
         }
         
         // Compare the images of the parametrization domain vertices with the true vertices (test provide vertices only).
+        const auto mappedParamNodes_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), mappedParamNodes);
+        const auto refSubcellNodes_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), refSubcellNodes);
         for (size_type subcVertOrd=0;subcVertOrd<subcVertexCount;++subcVertOrd) 
           for (size_type i=0;i<cellDim;++i)
-            if (std::abs(mappedParamNodes(subcVertOrd, i) - refSubcellNodes(subcVertOrd, i)) > tol) {
+            if (std::abs(mappedParamNodes_host(subcVertOrd, i) - refSubcellNodes_host(subcVertOrd, i)) > tol) {
               ++errorFlag; 
               *outStreamPtr 
                 << std::setw(70) << "^^^^----FAILURE!" << "\n"
                 << " Cell Topology = " << parentCell.getName() << "\n"
-                << " Mapped vertex = " << mappedParamNodes(subcVertOrd, i) 
-                << " Reference subcell vertex = " << refSubcellNodes(subcVertOrd, i) << "\n"
+                << " Mapped vertex = " << mappedParamNodes_host(subcVertOrd, i) 
+                << " Reference subcell vertex = " << refSubcellNodes_host(subcVertOrd, i) << "\n"
                 << " Parametrization of subcell " << subcOrd << " which is "
                 << parentCell.getName(subcDim,subcOrd) << " failed for vertex " << subcVertOrd << ":\n"
                 << " parametrization map fails to map correctly coordinate " << i << " of that vertex\n\n";
@@ -185,145 +187,150 @@ namespace Intrepid2 {
       }
     }
       
-      template<typename ValueType, typename DeviceSpaceType>
-      int CellTools_Test01(const bool verbose) {
-        typedef ValueType value_type;
+    template<typename ValueType, typename DeviceType>
+    int CellTools_Test01(const bool verbose) {
+      typedef ValueType value_type;
 
-        Teuchos::RCP<std::ostream> outStream;
-        Teuchos::oblackholestream bhs; // outputs nothing
+      Teuchos::RCP<std::ostream> outStream;
+      Teuchos::oblackholestream bhs; // outputs nothing
 
-        if (verbose)
-          outStream = Teuchos::rcp(&std::cout, false);
-        else
-          outStream = Teuchos::rcp(&bhs,       false);
+      if (verbose)
+        outStream = Teuchos::rcp(&std::cout, false);
+      else
+        outStream = Teuchos::rcp(&bhs,       false);
 
-        Teuchos::oblackholestream oldFormatState;
-        oldFormatState.copyfmt(std::cout);
+      Teuchos::oblackholestream oldFormatState;
+      oldFormatState.copyfmt(std::cout);
 
-        typedef typename
-          Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+      using DeviceSpaceType = typename DeviceType::execution_space;
+      using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
 
-        *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-        *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
       
+      *outStream
+        << "===============================================================================\n"
+        << "|                                                                             |\n"
+        << "|                              Unit Test CellTools                            |\n"
+        << "|                                                                             |\n"
+        << "|     1) Edge parametrizations                                                |\n"
+        << "|     2) Face parametrizations                                                |\n"
+        << "|     3) Edge tangents                                                        |\n"
+        << "|     4) Face tangents and normals                                            |\n"
+        << "|                                                                             |\n"
+        << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov)                      |\n"
+        << "|                      Denis Ridzal (dridzal@sandia.gov), or                  |\n"
+        << "|                      Kara Peterson(kjpeter@sandia.gov), or                  |\n"
+        << "|                      Kyungjoo Kim (kyukim@sandia.gov)                       |\n"
+        << "|                                                                             |\n"
+        << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
+        << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
+        << "|                                                                             |\n"
+        << "===============================================================================\n";
+  
+      typedef CellTools<DeviceType> ct;
+      typedef Kokkos::DynRankView<value_type,DeviceType> DynRankView;
+
+      const value_type tol = tolerence()*100.0;
+
+      int errorFlag = 0;
+      
+      // Vertices of the parametrization domain for 1-subcells: standard 1-cube [-1,1]
+      DynRankView ConstructWithLabel(cube_1, 2, 1);
+      const auto cube_1_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), cube_1);
+      cube_1_host(0,0) = -1.0; 
+      cube_1_host(1,0) = 1.0;
+      Kokkos::deep_copy(cube_1, cube_1_host);
+  
+      // Vertices of the parametrization domain for triangular faces: the standard 2-simplex
+      DynRankView ConstructWithLabel(simplex_2, 3, 2);
+      const auto simplex_2_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), simplex_2);
+      simplex_2_host(0, 0) = 0.0;   simplex_2_host(0, 1) = 0.0;
+      simplex_2_host(1, 0) = 1.0;   simplex_2_host(1, 1) = 0.0;
+      simplex_2_host(2, 0) = 0.0;   simplex_2_host(2, 1) = 1.0;
+      Kokkos::deep_copy(simplex_2, simplex_2_host);      
+      
+      // Vertices of the parametrization domain for quadrilateral faces: the standard 2-cube
+      DynRankView ConstructWithLabel(cube_2, 4, 2);
+      const auto cube_2_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), cube_2);
+      cube_2_host(0, 0) =  -1.0;    cube_2_host(0, 1) =  -1.0;
+      cube_2_host(1, 0) =   1.0;    cube_2_host(1, 1) =  -1.0;
+      cube_2_host(2, 0) =   1.0;    cube_2_host(2, 1) =   1.0;
+      cube_2_host(3, 0) =  -1.0;    cube_2_host(3, 1) =   1.0;
+      Kokkos::deep_copy(cube_2, cube_2_host);            
+
+      try {
+        // Pull all available topologies from Shards
+        std::vector<shards::CellTopology> allTopologies;
+        shards::getTopologies(allTopologies);
+
+        const auto topoSize = allTopologies.size();
+
         *outStream
-          << "===============================================================================\n"
-          << "|                                                                             |\n"
-          << "|                              Unit Test CellTools                            |\n"
-          << "|                                                                             |\n"
-          << "|     1) Edge parametrizations                                                |\n"
-          << "|     2) Face parametrizations                                                |\n"
-          << "|     3) Edge tangents                                                        |\n"
-          << "|     4) Face tangents and normals                                            |\n"
-          << "|                                                                             |\n"
-          << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov)                      |\n"
-          << "|                      Denis Ridzal (dridzal@sandia.gov), or                  |\n"
-          << "|                      Kara Peterson(kjpeter@sandia.gov), or                  |\n"
-          << "|                      Kyungjoo Kim (kyukim@sandia.gov)                       |\n"
-          << "|                                                                             |\n"
-          << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
-          << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
-          << "|                                                                             |\n"
-          << "===============================================================================\n";
-  
-        typedef CellTools<DeviceSpaceType> ct;
-        typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
-
-        const value_type tol = tolerence()*100.0;
-
-        int errorFlag = 0;
-      
-        // Vertices of the parametrization domain for 1-subcells: standard 1-cube [-1,1]
-        DynRankView ConstructWithLabel(cube_1, 2, 1);
-        cube_1(0,0) = -1.0; 
-        cube_1(1,0) = 1.0;
-  
-        // Vertices of the parametrization domain for triangular faces: the standard 2-simplex
-        DynRankView ConstructWithLabel(simplex_2, 3, 2);
-        simplex_2(0, 0) = 0.0;   simplex_2(0, 1) = 0.0;
-        simplex_2(1, 0) = 1.0;   simplex_2(1, 1) = 0.0;
-        simplex_2(2, 0) = 0.0;   simplex_2(2, 1) = 1.0;
-      
-      
-        // Vertices of the parametrization domain for quadrilateral faces: the standard 2-cube
-        DynRankView ConstructWithLabel(cube_2, 4, 2);
-        cube_2(0, 0) =  -1.0;    cube_2(0, 1) =  -1.0;
-        cube_2(1, 0) =   1.0;    cube_2(1, 1) =  -1.0;
-        cube_2(2, 0) =   1.0;    cube_2(2, 1) =   1.0;
-        cube_2(3, 0) =  -1.0;    cube_2(3, 1) =   1.0;
-      
-        try {
-          // Pull all available topologies from Shards
-          std::vector<shards::CellTopology> allTopologies;
-          shards::getTopologies(allTopologies);
-
-          const auto topoSize = allTopologies.size();
-
-          *outStream
-            << "\n"
-            << "===============================================================================\n" 
-            << "| Test 1: edge parametrizations:                                              |\n" 
-            << "===============================================================================\n\n";
-          {
-            const auto subcDim = 1;
+          << "\n"
+          << "===============================================================================\n" 
+          << "| Test 1: edge parametrizations:                                              |\n" 
+          << "===============================================================================\n\n";
+        {
+          const auto subcDim = 1;
           
-            // Loop over the cell topologies
-            for (size_type topoOrd=0;topoOrd<topoSize;++topoOrd) 
-              // Test only 2D and 3D topologies that have reference cells, e.g., exclude Line, Pentagon, etc.
-              if ( allTopologies[topoOrd].getDimension() > 1 && 
-                   ct::hasReferenceCell(allTopologies[topoOrd]) ) {
-                *outStream << " Testing edge parametrization for " <<  allTopologies[topoOrd].getName() <<"\n";
-                testSubcellParametrizations<value_type,DeviceSpaceType>( errorFlag,
-                                                                         allTopologies[topoOrd],
-                                                                         cube_1,
-                                                                         cube_1,
-                                                                         subcDim,
-                                                                         tol,
-                                                                         outStream );
-              }
-          }
-    
-          *outStream
-            << "\n"
-            << "===============================================================================\n" 
-            << "| Test 2: face parametrizations:                                              |\n" 
-            << "===============================================================================\n\n";
-    
-          {
-            const auto subcDim = 2;
-          
-            // Loop over the cell topologies
-            for (size_type topoOrd=0;topoOrd<topoSize;++topoOrd) 
-              // Test only 3D topologies that have reference cells
-              if ( allTopologies[topoOrd].getDimension() > 2 && 
-                   ct::hasReferenceCell(allTopologies[topoOrd]) ) {
-                *outStream << " Testing face parametrization for cell topology " <<  allTopologies[topoOrd].getName() <<"\n";
-                testSubcellParametrizations<value_type,DeviceSpaceType>( errorFlag,
-                                                                         allTopologies[topoOrd],
-                                                                         simplex_2,
-                                                                         cube_2,
-                                                                         subcDim,
-                                                                         tol,
-                                                                         outStream );
-              }
-          }          
-        } catch (std::logic_error &err) {
-          //============================================================================================//
-          // Wrap up test: check if the test broke down unexpectedly due to an exception                //
-          //============================================================================================//
-          *outStream << err.what() << "\n";
-          errorFlag = -1000;
+          // Loop over the cell topologies
+          for (size_type topoOrd=0;topoOrd<topoSize;++topoOrd) 
+            // Test only 2D and 3D topologies that have reference cells, e.g., exclude Line, Pentagon, etc.
+            if ( allTopologies[topoOrd].getDimension() > 1 && 
+                 ct::hasReferenceCell(allTopologies[topoOrd]) ) {
+              *outStream << " Testing edge parametrization for " <<  allTopologies[topoOrd].getName() <<"\n";
+              testSubcellParametrizations<value_type,DeviceType>( errorFlag,
+                                                                  allTopologies[topoOrd],
+                                                                  cube_1,
+                                                                  cube_1,
+                                                                  subcDim,
+                                                                  tol,
+                                                                  outStream );
+            }
         }
-  
-        if (errorFlag != 0)
-          std::cout << "End Result: TEST FAILED\n";
-        else
-          std::cout << "End Result: TEST PASSED\n";
-      
-        // reset format state of std::cout
-        std::cout.copyfmt(oldFormatState);
-
-        return errorFlag;
+    
+        *outStream
+          << "\n"
+          << "===============================================================================\n" 
+          << "| Test 2: face parametrizations:                                              |\n" 
+          << "===============================================================================\n\n";
+    
+        {
+          const auto subcDim = 2;
+          
+          // Loop over the cell topologies
+          for (size_type topoOrd=0;topoOrd<topoSize;++topoOrd) 
+            // Test only 3D topologies that have reference cells
+            if ( allTopologies[topoOrd].getDimension() > 2 && 
+                 ct::hasReferenceCell(allTopologies[topoOrd]) ) {
+              *outStream << " Testing face parametrization for cell topology " <<  allTopologies[topoOrd].getName() <<"\n";
+              testSubcellParametrizations<value_type,DeviceType>( errorFlag,
+                                                                  allTopologies[topoOrd],
+                                                                  simplex_2,
+                                                                  cube_2,
+                                                                  subcDim,
+                                                                  tol,
+                                                                  outStream );
+            }
+        }          
+      } catch (std::logic_error &err) {
+        //============================================================================================//
+        // Wrap up test: check if the test broke down unexpectedly due to an exception                //
+        //============================================================================================//
+        *outStream << err.what() << "\n";
+        errorFlag = -1000;
       }
+  
+      if (errorFlag != 0)
+        std::cout << "End Result: TEST FAILED\n";
+      else
+        std::cout << "End Result: TEST PASSED\n";
+      
+      // reset format state of std::cout
+      std::cout.copyfmt(oldFormatState);
+
+      return errorFlag;
+    }
   }
 }

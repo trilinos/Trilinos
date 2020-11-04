@@ -125,6 +125,19 @@ namespace Intrepid2 {
   }
 #endif
 
+  template<typename AViewType, typename BViewType>
+  void createConformingViewAndCopy(const char *label, AViewType &A, BViewType &B) {
+    if (B.rank() == 1) {
+      A = AViewType(label, B.extent(0)); Kokkos::deep_copy(A, B);
+    } else if (B.rank() == 2) {
+      A = AViewType(label, B.extent(0), B.extent(1)); Kokkos::deep_copy(A, B);
+    } else if (B.rank() == 3) {
+      A = AViewType(label, B.extent(0), B.extent(1), B.extent(2)); Kokkos::deep_copy(A, B);
+    } else if (B.rank() == 4) {
+      A = AViewType(label, B.extent(0), B.extent(1), B.extent(2), B.extent(3)); Kokkos::deep_copy(A, B);
+    }
+  }
+
   /**
    \brief scalar type traits
   */ 
