@@ -679,7 +679,7 @@ static void zoltanHGCS_withModel(void *data, int nGidEnt, int nEdges, int nPins,
 template <typename Adapter>
 static void zoltanNumEdgesMulti_withGraphModel(void *data,
                                                  int nGidEnt,
-                                                 int nLigEnt,
+                                                 int nLidEnt,
                                                  int nObjs,
                                                  ZOLTAN_ID_PTR gids,
                                                  ZOLTAN_ID_PTR lids,
@@ -709,7 +709,9 @@ static void zoltanNumEdgesMulti_withGraphModel(void *data,
   int tot_edges = 0;
 
   for (int i = 0; i < nObjs; ++i) {
-    nEdges[i] = Teuchos::as<int>(offsets[i + 1] - offsets[i]);
+    lno_t lidx;
+    TPL_Traits<lno_t,ZOLTAN_ID_PTR>::ASSIGN(lidx, &(lids[i*nLidEnt]));
+    nEdges[i] = Teuchos::as<int>(offsets[lidx + 1] - offsets[lidx]);
     tot_edges += nEdges[i];
   }
 }
@@ -719,7 +721,7 @@ static void zoltanNumEdgesMulti_withGraphModel(void *data,
 template <typename Adapter>
 static void zoltanEdgeListMulti_withGraphModel(void *data,
                                                  int nGidEnt,
-                                                 int nLigEnt,
+                                                 int nLidEnt,
                                                  int nObjs,
                                                  ZOLTAN_ID_PTR gids,
                                                  ZOLTAN_ID_PTR lids,
@@ -765,18 +767,19 @@ static void zoltanEdgeListMulti_withGraphModel(void *data,
   int proc_idx = 0;
 
   for (int i = 0; i < nObjs; ++i) {
-    for (int j = 0;  j < nEdges[i]; ++j) {
+    lno_t lidx;
+    TPL_Traits<lno_t,ZOLTAN_ID_PTR>::ASSIGN(lidx, &(lids[i*nLidEnt]));
 
-      nbor_gids[edge_idx] = Teuchos::as<int>(adjIds[edge_idx]);
+    for (offset_t j = offsets[lidx];  j < offsets[lidx+1]; ++j) {
 
-      for (int k = 0; k < vtxdist.size() - 1; ++k) {
+      ZOLTAN_ID_PTR idPtr = &(nbor_gids[edge_idx*nGidEnt]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, adjIds[j]);
 
-        if (nbor_gids[edge_idx] >= vtxdist[k] &&
-            nbor_gids[edge_idx] < vtxdist[k + 1]) {
-
+      for (Teuchos::ArrayView<size_t>::size_type k = 0; k < vtxdist.size() - 1; ++k) {
+        // TODO:  replace this serial search
+        if (adjIds[j] >= gno_t(vtxdist[k]) && adjIds[j] < gno_t(vtxdist[k+1])) {
           proc_idx = k;
         }
-
       }
 
       nbor_procs[edge_idx] = proc_idx;
@@ -790,11 +793,14 @@ static void zoltanEdgeListMulti_withGraphModel(void *data,
     int mywdim = graph_model->getNumWeightsPerEdge();
     edge_idx = 0;
 
-    for (int obj = 0; obj < nObjs; ++obj) {
-      for (int i = 0; i < nEdges[obj]; ++i) {
+    for (int i = 0; i < nObjs; ++i) {
+      lno_t lidx;
+      TPL_Traits<lno_t,ZOLTAN_ID_PTR>::ASSIGN(lidx, &(lids[i*nLidEnt]));
+
+      for (offset_t j = offsets[lidx]; j < offsets[lidx+1]; ++j) {
         for (int w = 0; w < wdim; ++w) {
           if (w < mywdim) {
-            nbor_ewgts[edge_idx + w] = Teuchos::as<float>(ewgts[w][i]);
+            nbor_ewgts[edge_idx + w] = Teuchos::as<float>(ewgts[w][j]);
           }
           else {
             nbor_ewgts[edge_idx + w] = 1.;
