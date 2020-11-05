@@ -931,6 +931,7 @@ static void zoltanHierMethod(void *data,
   int rank = machine->getMyRank();
 
   Zoltan_Set_Param(zz, "LB_Approach", "repartition");
+  Zoltan_Set_Param(zz, "HIER_CALLBACK_NAME", "zoltan2");
   Zoltan_Set_Param(zz, "LB_Method", "RCB");
 
 // Options for ParMETIS partitioning.
