@@ -112,7 +112,7 @@ public:
      *  otherwise we consider the whole allocation to be one group.
      */
     virtual part_t getNumUniqueGroups() const {
-      return numRanks;
+      return 1;
     }
 
     /*! \brief getGroupCount function
