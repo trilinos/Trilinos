@@ -426,11 +426,16 @@ class TrilinosPRConfigurationBase(object):
 
             if not dryrun:
                 try:
+                    sys.stdout.flush()
+                    sys.stderr.flush()
                     subprocess.check_call(cmd)
+
                 except subprocess.CalledProcessError as cpe:
                     print("--- There was an issue generating `packageEnables.cmake`.")
                     print("--- The error code was: {}".format(cpe.returncode))
                     print("--- Console Output:\n{}".format(cpe.output))
+                    sys.stdout.flush()
+                    sys.stderr.flush()
                     raise cpe
             else:
                 print("")
