@@ -425,7 +425,13 @@ class TrilinosPRConfigurationBase(object):
             print("packageEnables Command: \n$ {}\n".format(" \\\n    ".join(cmd)))
 
             if not dryrun:
-                subprocess.check_call(cmd)
+                try:
+                    subprocess.check_call(cmd)
+                except subprocess.CalledProcessError as cpe:
+                    print("--- There was an issue generating `packageEnables.cmake`.")
+                    print("--- The error code was: {}\n".format(cpe.returncode))
+                    print("--- Console Output:\n{}".format(cpe.output))
+                    raise cpe
             else:
                 print("")
                 print("--- SKIPPED DUE TO DRYRUN")
@@ -462,7 +468,6 @@ class TrilinosPRConfigurationBase(object):
                 print("--- There was an issue generating `packageEnables.cmake`.")
                 print("--- The error code was: {}\n".format(cpe.returncode))
                 print("--- Console Output:\n{}".format(cpe.output))
-
                 raise cpe
         else:
             print("")
@@ -517,9 +522,9 @@ class TrilinosPRConfigurationBase(object):
         # source_branch_name must be master_merge_YYYYMMDD_HHMMSS)
         self.validate_branch_constraints()
 
-        print("+" + "="*78 + "+")
+        print("+" + "-"*78 + "+")
         print("Configuration Parameters")
-        print("+" + "="*78 + "+")
+        print("+" + "-"*78 + "+")
         print("--- arg_filename_packageenables = {}".format(self.arg_filename_packageenables))
         print("--- arg_filename_subprojects    = {}".format(self.arg_filename_subprojects))
         print("--- arg_jenkins_job_number      = {}".format(self.arg_jenkins_job_number))
@@ -543,9 +548,9 @@ class TrilinosPRConfigurationBase(object):
         print("")
 
 
-        print("+" + "="*68 + "+")
+        print("+" + "-"*68 + "+")
         print("|   E N V I R O N M E N T   S E T   U P   S T A R T")
-        print("+" + "="*68 + "+")
+        print("+" + "-"*68 + "+")
         tr_config = setenvironment.SetEnvironment(self.arg_pr_config_file, self.arg_pr_jenkins_job_name)
 
         rval = 0
@@ -582,12 +587,20 @@ class TrilinosPRConfigurationBase(object):
         print("")
         tr_config.pretty_print_envvars(envvar_filter=envvars_to_print)
 
-        print("+" + "="*68 + "+")
+        print("+" + "-"*68 + "+")
         print("|   E N V I R O N M E N T   S E T   U P   C O M P L E T E")
-        print("+" + "="*68 + "+")
+        print("+" + "-"*68 + "+")
 
-        print("--- Create packageEnables.cmake")
+
+        print("+" + "-"*68 + "+")
+        print("|   G e n e r a t e   `packageEnables.cmake`   S T A R T I N G")
+        print("+" + "-"*68 + "+")
+
         self.create_package_enables_file(dryrun=self.args.dry_run)
+
+        print("+" + "-"*68 + "+")
+        print("|   G e n e r a t e   `packageEnables.cmake`   C O M P L E T E D")
+        print("+" + "-"*68 + "+")
         print("")
 
         return 0
