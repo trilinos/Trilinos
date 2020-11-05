@@ -429,7 +429,7 @@ class TrilinosPRConfigurationBase(object):
                     subprocess.check_call(cmd)
                 except subprocess.CalledProcessError as cpe:
                     print("--- There was an issue generating `packageEnables.cmake`.")
-                    print("--- The error code was: {}\n".format(cpe.returncode))
+                    print("--- The error code was: {}".format(cpe.returncode))
                     print("--- Console Output:\n{}".format(cpe.output))
                     raise cpe
             else:
