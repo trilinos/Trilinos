@@ -75,7 +75,7 @@ class StridedMapFactory
   private:
 
     //! Private constructor. This is a static class.
-    StridedMapFactory();
+    StridedMapFactory() = delete;
 
   public:
 
@@ -107,7 +107,7 @@ class StridedMapFactory
     Build(const RCP<const Map>& map, std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0);
 
 
-    // special constructor for generating a given subblock of a strided map
+    //! special constructor for generating a given subblock of a strided map
     static RCP<StridedMap>
     Build(const RCP<const StridedMap>& map, LocalOrdinal stridedBlockId);
 
@@ -117,8 +117,11 @@ class StridedMapFactory
     Build(const StridedMap& map);
 
 
-    //! Map constructor with a user-defined contiguous distribution.
-    //! (for experts only. There is no special check whether the generated strided maps are valid)
+    /*!
+      @brief Map constructor with a user-defined contiguous distribution.
+
+      \warning For experts only. There is no special check whether the generated strided maps are valid.
+    */
     static RCP<StridedMap>
     Build(UnderlyingLib                                  lib,
           global_size_t                                  numGlobalElements,
@@ -129,14 +132,13 @@ class StridedMapFactory
           LocalOrdinal                                   stridedBlockId = -1,      // FIXME (mfh 03 Sep 2014) This breaks if LocalOrdinal is unsigned
           GlobalOrdinal                                  /* offset */  = 0);
 
-};     // class StridedMapFactory
+}; // class StridedMapFactory
 
 
-}      // namespace Xpetra
+} // namespace Xpetra
 
 
 #define XPETRA_STRIDEDMAPFACTORY_SHORT
-
-#endif  // XPETRA_STRIDEDMAPFACTORY_DECL_HPP
+#endif // XPETRA_STRIDEDMAPFACTORY_DECL_HPP
 
 // TODO: removed unused methods

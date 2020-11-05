@@ -75,6 +75,7 @@
 #include <Xpetra_DefaultPlatform.hpp>
 
 #include <Xpetra_BlockedCrsMatrix.hpp>
+#include <Xpetra_BlockedMap.hpp>
 #include <Xpetra_BlockedMultiVector.hpp>
 #include <Xpetra_BlockReorderManager.hpp>
 #include <Xpetra_CrsMatrix.hpp>
@@ -2742,6 +2743,103 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, BlockedOperatorApply, M, MA
 
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ConstructFromBlockedMap, M, MA, Scalar, LO, GO, Node )
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  using BlockedCrsMatrix = Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node>;
+  using BlockedMap = Xpetra::BlockedMap<LO,GO,Node>;
+  using Map = Xpetra::Map<LO,GO,Node>;
+  using MapFactory = Xpetra::MapFactory<LO,GO,Node>;
+  using MapUtils = Xpetra::MapUtils<LO,GO,Node>;
+
+  RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  M testMap(1, 0, comm);
+  Xpetra::UnderlyingLib lib = testMap.lib();
+
+  const GO gNumElementsPerBlock = 29;
+  Array<GO> gidsOne;
+
+  RCP<const Map> map1 = MapFactory::Build(lib, gNumElementsPerBlock, Teuchos::ScalarTraits<GO>::zero(), comm);
+
+  TEST_ASSERT(!map1.is_null());
+  TEST_EQUALITY_CONST(map1->getGlobalNumElements(), gNumElementsPerBlock);
+
+  ArrayView<const GO> myGIDs1 = map1->getNodeElementList();
+  Array<GO> myGIDs2;
+  for (const auto& gid1 : myGIDs1)
+    myGIDs2.push_back(gid1 + gNumElementsPerBlock);
+  RCP<const Map> map2 = MapFactory::Build(lib, gNumElementsPerBlock, myGIDs2, Teuchos::ScalarTraits<GO>::zero(), comm);
+
+  TEST_ASSERT(!map2.is_null());
+  TEST_EQUALITY_CONST(map2->getGlobalNumElements(), gNumElementsPerBlock);
+
+  std::vector<RCP<const Map>> maps;
+  maps.push_back(map1);
+  maps.push_back(map2);
+  RCP<const Map> fullMap = MapUtils::concatenateMaps(maps);
+  RCP<const BlockedMap> blockedMap = rcp(new BlockedMap(fullMap, maps));
+
+  TEST_ASSERT(!blockedMap.is_null());
+  TEST_EQUALITY(blockedMap->getNumMaps(), 2);
+
+  RCP<BlockedCrsMatrix> blockMatrix = rcp(new BlockedCrsMatrix(blockedMap, blockedMap, 1));
+  TEST_ASSERT(!blockMatrix.is_null());
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ConstructFromMapExtractor, M, MA, Scalar, LO, GO, Node )
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  using BlockedCrsMatrix = Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node>;
+  using Map = Xpetra::Map<LO,GO,Node>;
+  using MapExtractor = Xpetra::MapExtractor<Scalar,LO,GO,Node>;
+  using MapExtractorFactory = Xpetra::MapExtractorFactory<Scalar,LO,GO,Node>;
+  using MapFactory = Xpetra::MapFactory<LO,GO,Node>;
+  using MapUtils = Xpetra::MapUtils<LO,GO,Node>;
+
+  RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  M testMap(1, 0, comm);
+  Xpetra::UnderlyingLib lib = testMap.lib();
+
+  const GO gNumElementsPerBlock = 29;
+  Array<GO> gidsOne;
+
+  RCP<const Map> map1 = MapFactory::Build(lib, gNumElementsPerBlock, Teuchos::ScalarTraits<GO>::zero(), comm);
+
+  TEST_ASSERT(!map1.is_null());
+  TEST_EQUALITY_CONST(map1->getGlobalNumElements(), gNumElementsPerBlock);
+
+  ArrayView<const GO> myGIDs1 = map1->getNodeElementList();
+  Array<GO> myGIDs2;
+  for (const auto& gid1 : myGIDs1)
+    myGIDs2.push_back(gid1 + gNumElementsPerBlock);
+  RCP<const Map> map2 = MapFactory::Build(lib, gNumElementsPerBlock, myGIDs2, Teuchos::ScalarTraits<GO>::zero(), comm);
+
+  TEST_ASSERT(!map2.is_null());
+  TEST_EQUALITY_CONST(map2->getGlobalNumElements(), gNumElementsPerBlock);
+
+  std::vector<RCP<const Map>> maps;
+  maps.push_back(map1);
+  maps.push_back(map2);
+  RCP<const Map> fullMap = MapUtils::concatenateMaps(maps);
+  RCP<const MapExtractor> mapExtractor = MapExtractorFactory::Build(fullMap, maps);
+
+  TEST_ASSERT(!mapExtractor.is_null());
+
+  RCP<BlockedCrsMatrix> blockMatrix = rcp(new BlockedCrsMatrix(mapExtractor, mapExtractor, 1));
+  TEST_ASSERT(!blockMatrix.is_null());
+}
+
 
 // simple test for matrix-matrix multiplication for a 2x2 blocked matrix with a 2x1 blocked matrix
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, EpetraMatrixMatrixMult2x1,  M, MA, Scalar, LO, GO, Node )
@@ -2888,7 +2986,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, EpetraMatrixMatrixMult2x1, 
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, MatrixMatrixAdd, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, MatrixMatrixMultDiag, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, MatrixMatrixMult, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, BlockedOperatorApply, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, BlockedOperatorApply, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ConstructFromBlockedMap, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ConstructFromMapExtractor, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
 // List of tests which run only with Tpetra
 #define XP_TPETRA_MATRIX_INSTANT(S,LO,GO,N) \
