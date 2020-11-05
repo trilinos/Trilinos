@@ -407,69 +407,73 @@ class TrilinosPRConfigurationBase(object):
         """
         job_name = self.arg_pr_jenkins_job_name
 
-        #enable_map_entry = self.get_property_from_config("ENABLE_MAP", job_name)
         enable_map_entry = self.get_multi_property_from_config("ENABLE_MAP", job_name, delimeter=" ")
 
-        try:
-            # Generate files using ATDM/TriBiTS Scripts
-            if enable_map_entry is None:
-                cmd = [os.path.join( self.arg_workspace_dir,
-                                    'Trilinos',
-                                    'commonTools',
-                                    'framework',
-                                    'get-changed-trilinos-packages.sh'),
-                       os.path.join('origin', self.args.target_branch_name),
-                       'HEAD',
-                       'packageEnables.cmake',
-                       'package_subproject_list.cmake']
-
-                print("")
-                print("packageEnables Command: \n$ {}\n".format(" \\\n    ".join(cmd)))
-
-                if not dryrun:
-                    subprocess.check_call(cmd)
-                else:
-                    print("---")
-                    print("--- SKIPPED DUE TO DRYRUN")
-                    print("---")
-            else:
-                # Use the values in the PACKAGE_ENABLES section of the .ini file
-                with open('packageEnables.cmake',  'w') as f_out:
-                    f_out.write(dedent('''\
-                        MACRO(PR_ENABLE_BOOL  VAR_NAME  VAR_VAL)
-                          MESSAGE("-- Setting ${VAR_NAME} = ${VAR_VAL}")
-                          SET(${VAR_NAME} ${VAR_VAL} CACHE BOOL "Set in $CMAKE_PACKAGE_ENABLES_OUT")
-                        ENDMACRO()
-                        '''))
-
-                    for entry in enable_map_entry.split(" "):
-                        f_out.write("PR_ENABLE_BOOL(Trilinos_ENABLE_{} ON)\n".format(entry))
-                    #    '''
-                    #    PR_ENABLE_BOOL(Trilinos_ENABLE_''' + enable_map_entry + ''' ON)
-                    #    '''))
-                with open ('package_subproject_list.cmake', 'w') as f_out:
-                    f_out.write(dedent('''\
-                        set(CTEST_LABELS_FOR_SUBPROJECTS ''' + enable_map_entry + ''')
-                        '''))
+        # Generate files using ATDM/TriBiTS Scripts
+        if enable_map_entry is None:
+            cmd = [os.path.join( self.arg_workspace_dir,
+                                'Trilinos',
+                                'commonTools',
+                                'framework',
+                                'get-changed-trilinos-packages.sh'),
+                   os.path.join('origin', self.args.target_branch_name),
+                   'HEAD',
+                   'packageEnables.cmake',
+                   'package_subproject_list.cmake']
 
             print("")
-            print("Enabled Packages:")
-            cmd = ['cmake', '-P', 'packageEnables.cmake']
-            cmake_rstring=None
+            print("packageEnables Command: \n$ {}\n".format(" \\\n    ".join(cmd)))
+
             if not dryrun:
-                cmake_rstring = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+                subprocess.check_call(cmd)
             else:
                 print("---")
                 print("--- SKIPPED DUE TO DRYRUN")
                 print("---")
-                cmake_rstring = str.encode("")
-            cmake_rstring = cmake_rstring.decode('utf-8')
-            print(cmake_rstring)
+        else:
+            # Use the values in the PACKAGE_ENABLES section of the .ini file
+            with open('packageEnables.cmake',  'w') as f_out:
+                f_out.write(dedent('''\
+                    MACRO(PR_ENABLE_BOOL  VAR_NAME  VAR_VAL)
+                      MESSAGE("-- Setting ${VAR_NAME} = ${VAR_VAL}")
+                      SET(${VAR_NAME} ${VAR_VAL} CACHE BOOL "Set in $CMAKE_PACKAGE_ENABLES_OUT")
+                    ENDMACRO()
+                    '''))
 
-        except subprocess.CalledProcessError as cpe:
-            print('There was an issue generating packageEnables.cmake. '
-                  'The error code was: {}'.format(cpe.returncode))
-            raise cpe
+                for entry in enable_map_entry.split(" "):
+                    f_out.write("PR_ENABLE_BOOL(Trilinos_ENABLE_{} ON)\n".format(entry))
+                #    '''
+                #    PR_ENABLE_BOOL(Trilinos_ENABLE_''' + enable_map_entry + ''' ON)
+                #    '''))
+            with open ('package_subproject_list.cmake', 'w') as f_out:
+                f_out.write(dedent('''\
+                    set(CTEST_LABELS_FOR_SUBPROJECTS ''' + enable_map_entry + ''')
+                    '''))
+
+        print("")
+        print("Enabled Packages:")
+        cmd = ['cmake', '-P', 'packageEnables.cmake']
+        cmake_rstring=None
+
+        if not dryrun:
+            try:
+                cmake_rstring = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+            except subprocess.CalledProcessError as cpe:
+                print("--- There was an issue generating `packageEnables.cmake`.")
+                print("--- The error code was: {}\n".format(cpe.returncode))
+                print("--- Console Output:\n{}".format(cpe.output))
+
+                raise cpe
+        else:
+            print("---")
+            print("--- SKIPPED DUE TO DRYRUN")
+            print("---")
+            cmake_rstring = str.encode("")
+
+        cmake_rstring = cmake_rstring.decode('utf-8')
+        print(cmake_rstring)
+
+
 
         return 0
 

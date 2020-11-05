@@ -177,6 +177,9 @@ class TrilinosPRConfigurationTest(TestCase):
         #config_file = 'test_config.ini'
         config_file = 'trilinos_pr_test.ini'
         self._config_file = self.find_config_ini(config_file)
+        print("")
+        print("--- Config file found: {}".format(self._config_file))
+        print("")
 
         # Set up dummy command line arguments
         self._args = self.dummy_args_python3()
@@ -189,13 +192,11 @@ class TrilinosPRConfigurationTest(TestCase):
         self.mock_cpu_count  = self.patch_cpu_count.start()
 
 
-
     def tearDown(self):
         #del os.environ["PULLREQUESTNUM"]
         #del os.environ["PULLREQUEST_CDASH_TRACK"]
 
         self.patch_cpu_count.stop()
-
 
 
     def dummy_args(self):
@@ -232,15 +233,6 @@ class TrilinosPRConfigurationTest(TestCase):
         args = copy.deepcopy(self.dummy_args())
         args.num_concurrent_tests = value
         return args
-
-
-#    def dummy_args_python2(self):
-#        """
-#        Generate dummy command line arguments
-#        """
-#        args = copy.deepcopy(self.dummy_args())
-#        args.pullrequest_build_name = "Trilinos_pullrequest_python_2"
-#        return args
 
 
     def dummy_args_python3(self):
@@ -448,7 +440,17 @@ class TrilinosPRConfigurationTest(TestCase):
                     with patch('subprocess.check_output', side_effect=mock_subprocess_raise_CalledProcessError) as m_output:
                         pr_config.create_package_enables_file(dryrun=False)
 
-        self.assertTrue( "There was an issue generating packageEnables.cmake" in fake_out.getvalue())
+        expected_output = "There was an issue generating `packageEnables.cmake`"
+        actual_output   = fake_out.getvalue()
+
+        print("--- BEGIN expected output")
+        print(expected_output)
+        print("--- END expected output")
+        print("--- BEGIN actual output")
+        print(actual_output)
+        print("--- END actual output")
+        print("--- actual output must contain the expected output string")
+        self.assertTrue( expected_output in actual_output)
 
 
     def test_TrilinosPRConfigurationBaseProperty_concurrency_test_err(self):
