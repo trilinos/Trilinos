@@ -553,7 +553,7 @@ class TrilinosPRConfigurationBase(object):
         rval = 0
         if not self.args.dry_run:
             rval = tr_config.apply(throw_on_error=True)
-            print("apply() rval: {}".format(rval))
+            print("--- Environment setup completed ({})".format(rval))
         else:
             tr_config.pretty_print()
             print("---")
