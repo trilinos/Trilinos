@@ -186,6 +186,33 @@ To see more documentation for each of these options, run a configure with
 (as raw text or using the CMake QT GUI or ``ccmake``).
 
 
+Setting the C++ language standard for Trilinos
+----------------------------------------------
+
+Trilinos currently supports building with the C++14 language standard as
+supported by a wide range of C++ compilers.  In addition, the library targets
+imported from the installed ``<Package>Config.cmake`` files (also pulled in
+through ``TrilinosConfig.cmake``) will automatically require downstream CMake
+projects turn on C++14 or later standard support in the compiler options
+(using the CMake ``INTERFACE_COMPILE_FEATURES`` properties of the Trilinos
+library targets).  Building Trilinos with C++11 or lower C++ language
+standards is not supported.
+
+However, to try building Trilinos with a higher C++ language standard (with a
+supporting compiler), set the CMake cache variable ``CMAKE_CXX_STANDARD`` to
+an appropriate value.  For example, to try building Trilinos with C++17 turned
+on, configure with::
+
+  -D CMAKE_CXX_STANDARD:STRING=17
+
+As mentioned above, that will also result in all downstream C++ software built
+CMake to be built with C++17 compiler options turned on as well.
+
+However, Trilinos is currently only rigorously tested with C++14 compiler
+options so trying to build and use with a higher language standard may not
+give satisfactory results.
+
+
 Addressing problems with large builds of Trilinos
 -------------------------------------------------
 
@@ -244,3 +271,5 @@ to do dependency analysis have been reported to determine if a single target
 needs to be rebuilt).  The solution is to switch from the default ``Unix
 Makefiles`` generator to the ``Ninja`` generator (see `Enabling support for
 Ninja`_).
+
+..  LocalWords:  Trilinos
