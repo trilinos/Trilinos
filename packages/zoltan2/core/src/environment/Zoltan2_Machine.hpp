@@ -112,7 +112,7 @@ public:
      *  otherwise we consider the whole allocation to be one group.
      */
     virtual part_t getNumUniqueGroups() const {
-      return 1;
+      return numRanks;
     }
 
     /*! \brief getGroupCount function
@@ -144,7 +144,9 @@ public:
      *  return the number of ranks in each group as std::vector
      */
     virtual bool getGroupCountVector(std::vector<part_t> &grp_count) const {
-      return false;
+      grp_count.resize(numRanks);
+      std::fill(grp_count.begin(), grp_count.end(), 1); 
+      return true;
     }
  
     /*! \brief getNumUniqueSubgroups function
@@ -181,7 +183,7 @@ public:
      *  return the number of levels in the hierarchical machine representation
      */
     virtual int getNumNonuniformLevels() const {
-      return 0;
+      return 1;
     }
 
     // KDD TODO: Add Graph interface and methods supporting full LDMS interface.
