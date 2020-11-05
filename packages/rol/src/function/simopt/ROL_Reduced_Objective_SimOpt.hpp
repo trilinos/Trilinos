@@ -53,7 +53,7 @@ namespace ROL {
 
 template <class Real>
 class Reduced_Objective_SimOpt : public Objective<Real> {
-private:
+protected:
   const ROL::Ptr<Objective_SimOpt<Real> > obj_;          
   const ROL::Ptr<Constraint_SimOpt<Real> > con_; 
   ROL::Ptr<SimController<Real> > stateStore_;

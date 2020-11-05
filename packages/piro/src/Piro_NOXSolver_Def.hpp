@@ -141,44 +141,9 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
     auto analysisParams = appParams->sublist("Analysis");
     if(analysisParams.isSublist("Optimization Status")){
       auto optimizationParams = analysisParams.sublist("Optimization Status");
-      if(optimizationParams.isParameter("Optimizer Iteration Number")) {
-        int iteration = optimizationParams.template get<int>("Optimizer Iteration Number");
-        int write_interval = analysisParams.get("Write Interval",1);
-        Teuchos::RCP<Teuchos::ParameterList> writeParams = Teuchos::rcp(new Teuchos::ParameterList());
-        if(analysisParams.isSublist("ROL") && analysisParams.sublist("ROL").get("Use Old Reduced Space Interface", false)) {
-          if (write_interval > 0) {
-            observeFinalSolution = (iteration >= 0 && solving_sensitivities && iteration != current_iteration) ? (iteration%write_interval == 0) : false;
-            if(observeFinalSolution)
-              current_iteration = iteration;
-          }
-          else if (write_interval == 0)
-            observeFinalSolution = false;
-          else if (write_interval == -1)
-            observeFinalSolution = true;
-        }
-        else
-          observeFinalSolution = false;
-      }
+      if(optimizationParams.isParameter("Optimizer Iteration Number"))
+        observeFinalSolution = false;
 
-      // Call observer method for each parameter if optimization variables have changed
-      if (optimizationParams.isParameter("Optimization Variables Changed")) {
-        if (optimizationParams.template get<bool>("Optimization Variables Changed")) {
-          if (analysisParams.isSublist("ROL")) {
-            auto rolParams = analysisParams.sublist("ROL");
-            if(rolParams.get("Use Old Reduced Space Interface", false)) {
-              int num_parameters = rolParams.get("Number of Parameters", 1);
-              for(int i=0; i<num_parameters; ++i) {
-                std::ostringstream ss; ss << "Parameter Vector Index " << i;
-                const int p_ind = rolParams.get(ss.str(), i);
-                const auto paramNames = *this->getModel().get_p_names(p_ind);
-                if(Teuchos::nonnull(this->observer))
-                  this->observer->parameterChanged(paramNames[0]);
-              }
-              optimizationParams.set("Optimization Variables Changed", false);
-            }
-          }
-        }
-      }
       solveState = optimizationParams.isParameter("Compute State") ? optimizationParams.template get<bool>("Compute State") : true;
     }
   }
@@ -187,6 +152,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = this->getModel().createInArgs();
   for (int l = 0; l < this->num_p(); ++l) {
     modelInArgs.set_p(l, inArgs.get_p(l));
+    modelInArgs.set_p_direction(l, inArgs.get_p_direction(l));
   }
 
   // Find the solution of the implicit underlying model
@@ -248,6 +214,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   modelInArgs.set_x(finalSolution);
 
   this->evalConvergedModelResponsesAndSensitivities(modelInArgs, outArgs);
+  this->evalReducedHessian(modelInArgs, outArgs);
 
   if (Teuchos::nonnull(this->observer) && observeFinalSolution) {
     this->observer->observeSolution(*finalSolution);

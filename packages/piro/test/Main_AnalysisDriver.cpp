@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
 
   Piro::Epetra::SolverFactory solverFactory;
 
-  for (int iTest=0; iTest<3; iTest++) {
+  for (int iTest=0; iTest<1; iTest++) {
 
     if (doAll) {
       switch (iTest) {

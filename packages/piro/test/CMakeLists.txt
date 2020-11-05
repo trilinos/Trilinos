@@ -82,6 +82,21 @@ IF (Piro_ENABLE_NOX)
   )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ThyraSolverTpetra
+    EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+    EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+    SOURCES
+      Main_ThyraSolver_Tpetra.cpp
+      MockModelEval_A_Tpetra.cpp
+      MockModelEval_A_Tpetra.hpp
+    NUM_MPI_PROCS 1-4
+    ARGS -v
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADDED_EXE_TARGET_NAME_OUT ThyraSolver_NAME
+    ADDED_TESTS_NAMES_OUT ThyraSolverTpetra_NAME
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     AnalysisDriver
     SOURCES
     Main_AnalysisDriver.cpp
@@ -161,6 +176,7 @@ IF (Piro_ENABLE_NOX)
     DEST_FILES   input_Solve_NOX_1.xml
                  input_Solve_NOX_2.xml
                  input_Solve_NOX_3.xml
+                 input_Solve_NOX_4.xml
 		 input_Solve_NOX_Adjoint.xml
                  input_Solve_LOCA_1.xml
                  input_Solve_Rythmos_1.xml

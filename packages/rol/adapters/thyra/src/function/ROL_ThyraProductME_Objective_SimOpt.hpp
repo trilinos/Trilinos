@@ -50,7 +50,7 @@
 #include "ROL_Types.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
 
-using namespace ROL;
+namespace ROL {
 
 template <class Real>
 class ThyraProductME_Objective_SimOpt : public Objective_SimOpt<Real> {
@@ -58,7 +58,7 @@ class ThyraProductME_Objective_SimOpt : public Objective_SimOpt<Real> {
 public:
 
 
-  ThyraProductME_Objective_SimOpt(Thyra::ModelEvaluatorDefaultBase<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_,
+  ThyraProductME_Objective_SimOpt(const Thyra::ModelEvaluator<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_,
       Teuchos::RCP<Teuchos::ParameterList> params_ = Teuchos::null, Teuchos::EVerbosityLevel verbLevel= Teuchos::VERB_HIGH) :
         thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_), params(params_),
         out(Teuchos::VerboseObjectBase::getDefaultOStream()),
@@ -652,7 +652,7 @@ public:
   bool computeValue, computeGradient1, computeGradient2;
 
 private:
-  Thyra::ModelEvaluatorDefaultBase<Real>& thyra_model;
+  const Thyra::ModelEvaluator<Real>& thyra_model;
   const int g_index;
   const std::vector<int> p_indices;
   Real value_;
@@ -666,5 +666,5 @@ private:
 
 };
 
-
+}
 #endif

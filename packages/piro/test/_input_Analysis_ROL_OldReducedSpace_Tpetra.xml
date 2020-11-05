@@ -155,7 +155,6 @@
         <Parameter name="Error File" type="string" value="dak.err" />
       </ParameterList>
       <ParameterList name="ROL">
-        <Parameter name="Use Old Reduced Space Interface" type="bool" value="true" />
       
         <Parameter name="Response Vector Index" type="int" value="0" />
         <Parameter name="Parameter Vector Index" type="int" value="0" />
