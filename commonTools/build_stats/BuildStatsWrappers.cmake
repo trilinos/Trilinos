@@ -4,7 +4,6 @@
 #
 ################################################################################
 
-
 set(BUILD_STATS_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
 set(BUILD_STATS_CSV_FILE "${${PROJECT_NAME}_BINARY_DIR}/build_stats.csv")
@@ -35,6 +34,7 @@ function(generate_build_stats_wrappers)
   #print_var(${PROJECT_NAME}_ENABLE_BUILD_STATS)
 
   # Generate the build-stats compiler wrappers
+  get_base_build_dir_for_python()
   if (${PROJECT_NAME}_ENABLE_BUILD_STATS)
     generate_build_stats_wrapper_for_lang(C)
     generate_build_stats_wrapper_for_lang(CXX)
@@ -48,6 +48,25 @@ function(generate_build_stats_wrappers)
   endif()
 
 endfunction()
+
+
+# Get the var BASE_BUILD_DIR_FOR_PYTHON
+#
+macro(get_base_build_dir_for_python)
+  set(get_cwd_for_python ${BUILD_STATS_SRC_DIR}/get_cwd_for_python.py)
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${get_cwd_for_python}
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    OUTPUT_VARIABLE BASE_BUILD_DIR_FOR_PYTHON
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+endmacro()
+# NOTE: We need this function to get the value of os.getcwd() from Python so
+# that it matches the value returned inside of magic_wapper.py.  The issue is
+# that some platforms, CMake determines a different absolute base build dir
+# for systems with mounted filesystems.  The only systems I know this happens
+# on are some systems at SNL with the mounted home directories.  By using the
+# same Python code, we ensure that we get the same base directory, which is
+# needed when computing relative paths.
 
 
 # Generate the build stats compiler wrapper for a single language.

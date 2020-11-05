@@ -132,7 +132,8 @@ class WrapperOpTimer:
   def time_op(op,
               op_output_file,
               output_stats_file,
-              op_args):
+              op_args,
+              base_build_dir=None):
     """
       evaluate 'op' with 'op_args', and gather stats into output_stats_file
     """
@@ -166,9 +167,19 @@ class WrapperOpTimer:
       for row in csvreader:
         csv_row = dict(zip(fields, row))
 
-    # markup the output
+    # FileSize
     csv_row['FileSize'] = WrapperOpTimer.get_file_size(op_output_file)
-    csv_row['FileName'] = op_output_file
+
+    # FileName
+    if base_build_dir:
+      abs_base_build_dir = os.path.abspath(base_build_dir)
+      current_working_dir = os.path.abspath(os.getcwd())
+      rel_path_to_base_build_dir = os.path.relpath(
+        current_working_dir, start=abs_base_build_dir)
+      rel_op_output_file = os.path.join(rel_path_to_base_build_dir, op_output_file)
+    else:
+      rel_op_output_file = op_output_file
+    csv_row['FileName'] = rel_op_output_file
 
     # Remove the build stats output file if the build failed
     if returncode != 0 and os.path.exists(output_stats_file):

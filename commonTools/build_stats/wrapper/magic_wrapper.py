@@ -39,7 +39,9 @@ def main(cmdline_args):
   # first do the operation
   # this must be first, as it generates the output file
   (csv_map, returncode) = \
-     WrapperOpTimer.time_op(op=wcp.op,
+     WrapperOpTimer.time_op(
+       base_build_dir=wcp.base_build_dir,
+       op=wcp.op,
        op_output_file=wcp.op_output_file,
        output_stats_file=wcp.output_stats_file,
        op_args=wcp.op_args)
@@ -59,11 +61,11 @@ def main(cmdline_args):
     # make sure to quote csv columns
     write_csv_map(wcp.output_stats_file, csv_map)
 
-  # NOTE: Above, we don't even write the *.timing file if the build failued
-  # because the ouptut target file may not exist!  And we don't want an CSV
-  # file entry that does not have all of the fields.  ToDo: I might be nice to
-  # have an entry for files that don't build and just put in empty values for
-  # NM data so we can display that with the other stats
+  # NOTE: Above, we don't write the *.timing file if the build failed because
+  # the output target file may not exist!  And we don't want a CSV file entry
+  # that does not have all of the fields.  ToDo: It might be nice to have an
+  # entry for files that don't build and just put in empty values for NM data
+  # so we can display that with the other stats
 
   return returncode
 
