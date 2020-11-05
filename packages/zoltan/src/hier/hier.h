@@ -94,14 +94,17 @@ struct HierPartParamsStruct {
  
   ZZ *origzz;                        /* Zoltan struct passed into top level */
   ZZ *hierzz;                        /* internal zoltan struct for balancing 
-					within the hierarchy */
+					                              within the hierarchy */
 
   int part_to_compute;               /* part to compute at each level */
   int num_parts;                     /* number of parts to compute */
 
   int use_geom, use_graph;           /* flags for whether methods to be
-					used will require geometric
-					and/or graph information */
+					                              used will require geometric
+					                              and/or graph information */
+  int use_callbacks;                 /* user has set outside hier 
+                                        callbacks */
+
   int num_obj;                       /* number of local objects at start */
   int obj_wgt_dim, edge_wgt_dim;     /* object and edge weight dimensions */
   ZOLTAN_GNO_TYPE invalid_gno;  /* a value guaranteed not to be one of the gnos */

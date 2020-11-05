@@ -86,6 +86,7 @@ static PARAM_VARS Key_params[] = {
   { "REMAP", NULL, "INT", 0 },
   { "SEED", NULL, "INT", 0 },
   { "LB_APPROACH", NULL, "STRING", 0 },
+  { "HIER_CALLBACK_NAME", NULL, "STRING", 0 },
   { NULL, NULL, NULL, 0 } };
 /*****************************************************************************/
 /*****************************************************************************/
@@ -367,6 +368,13 @@ int  idx 			/* index of vector param, -1 if scalar */
         if (result.def)
           strcpy(result.sval, ZOLTAN_LB_APPROACH_DEF);
         strcpy(zz->LB.Approach, result.sval);
+        status = 3;
+        break;
+
+      case 22:          /* CALLBACK_NAME */
+        if (result.def)
+          strcpy(result.sval, "default");
+        strcpy(zz->Hier_Callback_Name, result.sval);
         status = 3;
         break;
 

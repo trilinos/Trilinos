@@ -1350,6 +1350,7 @@ int Zoltan_Hier(
   hpp.num_parts=0;
   hpp.use_geom=0;
   hpp.use_graph=0;
+  hpp.use_callbacks=0;
   hpp.num_obj=0;
   hpp.obj_wgt_dim=zz->Obj_Weight_Dim;
   hpp.edge_wgt_dim=zz->Edge_Weight_Dim;
@@ -1362,7 +1363,7 @@ int Zoltan_Hier(
   hpp.ndims=0;
   hpp.geom_vec=NULL;
   hpp.spec=NULL;
-  hpp.use_timers=0;
+  hpp.use_timers=0; 
 
   /* Cannot currently do hierarchical balancing for num_parts != num_procs */
   if ((zz->Num_Proc != zz->LB.Num_Global_Parts) ||
@@ -1395,6 +1396,9 @@ int Zoltan_Hier(
     if (zz->Get_Hier_Method == NULL) {
       ZOLTAN_HIER_ERROR(ZOLTAN_FATAL, "Must register ZOLTAN_HIER_METHOD_FN");
     }
+    
+    // No spec set, using callbacks
+    hpp.use_callbacks = 1;
   }
   else{
 
@@ -1573,9 +1577,9 @@ int Zoltan_Hier(
       /* construct appropriate ZZ and input arrays */
       /* create a brand new one */
       hpp.hierzz = Zoltan_Create(hpp.hier_comm);
-      hpp.hierzz->Current_Hier_Level = hpp.level;
+      hpp.hierzz->Current_Hier_Level = hpp.level; 
 
-      if (hpp.level != 0) {
+      if (hpp.level != 0 && hpp.use_callbacks && strcmp("zoltan2", hpp.hierzz->Hier_Callback_Name) == 0) {
         hpp.hierzz->Highest_Ancestor_ZZ = zz;
       }
 

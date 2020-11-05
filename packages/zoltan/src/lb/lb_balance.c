@@ -1037,7 +1037,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
   }
 
   /* Hierarchical Partitioning and not at tree-root */ 
-  else if (zz->Current_Hier_Level > -1 || zz->Highest_Ancestor_ZZ != NULL) {
+  else if (zz->Current_Hier_Level > -1 && zz->Highest_Ancestor_ZZ != NULL) {
 
     if (max_global_parts < num_proc) 
       zz->LB.Single_Proc_Per_Part = 0;

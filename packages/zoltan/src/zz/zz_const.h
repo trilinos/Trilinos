@@ -62,6 +62,7 @@
 #include "par_const.h"
 #include "third_library_const.h"
 #include "zoltan_timer.h"
+#include "params_const.h"
 
 #ifdef _MSC_VER
 #define __func__ __FUNCTION__
@@ -255,6 +256,8 @@ struct Zoltan_Struct {
   struct Zoltan_Struct *Highest_Ancestor_ZZ; /* ZZ Struct used for hier 
                                                 awareness in recursive calls */
 
+  char Hier_Callback_Name[MAX_PARAM_STRING_LEN];      
+                                  /* Name of hier callbacks being used */
   int *Group_Count;               /* an array containing the nonuniform 
                                      distribution of elements to each part in
                                      this hierarchical level                 */
