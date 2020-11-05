@@ -3194,10 +3194,9 @@ extern int Zoltan_LB_Free_Data(
 );
 
 /*****************************************************************************/
-/*****************************************************************************/
-/* AUSTIN:  NEED BETTER DOCUMENTATION HERE */
 /* 
- * Routine to set ??? AUSTIN
+ * Routine to set the number of parts to partition into during the 
+ * hierarchical level
  * 
  * Input:
  *   zz                   -- pointer to Zoltan structure
@@ -3212,7 +3211,8 @@ int Zoltan_Set_Num_Unique_Groups(
   int num_groups);
 
 /* 
- * Routine to set ??? AUSTIN
+ * Routine to set an array containing the nonuniform distribution of
+ * elements to each part in this hierarchical level
  * 
  * Input:
  *   zz                   -- pointer to Zoltan structure
