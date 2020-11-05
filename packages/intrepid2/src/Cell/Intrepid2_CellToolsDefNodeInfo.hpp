@@ -62,9 +62,9 @@ namespace Intrepid2 {
   //                                                                                            //          
   //============================================================================================//   
 
-  template<typename SpT>
+  template<typename DeviceType>
   void 
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   setReferenceNodeData() {
 
     {
@@ -162,11 +162,11 @@ namespace Intrepid2 {
     isReferenceNodeDataSet_ = true;
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename cellCenterValueType, class ...cellCenterProperties,
            typename cellVertexValueType, class ...cellVertexProperties>
   void 
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getReferenceCellCenter( Kokkos::DynRankView<cellCenterValueType,cellCenterProperties...> cellCenter,
                           Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertex,
                           const shards::CellTopology cell ) {
@@ -180,30 +180,41 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( cellCenter.extent(0) < cell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellCenter must have dimension bigger than Parameters::MaxDimension." );
 
+    INTREPID2_TEST_FOR_EXCEPTION( !cellCenter.span_is_contiguous(), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellCenter span must be contiguous." );
+
     INTREPID2_TEST_FOR_EXCEPTION( cellVertex.rank() != 1, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellVertex must have rank 1." );
 
     INTREPID2_TEST_FOR_EXCEPTION( cellVertex.extent(0) < cell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellVertex must have dimension bigger than Parameters::MaxDimension." );
+
+    INTREPID2_TEST_FOR_EXCEPTION( !cellVertex.span_is_contiguous(), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellVertex span must be contiguous." );
 #endif
     const ordinal_type vertexCount = cell.getVertexCount();
     const ordinal_type dim = cell.getDimension();
-
-    for (ordinal_type i=0;i<dim;++i) {
-      cellCenter(i) = 0;
-      for (ordinal_type vertOrd=0;vertOrd<vertexCount;++vertOrd) {
-        getReferenceVertex(cellVertex, cell, vertOrd); 
-        cellCenter(i) += cellVertex(i);
+    
+    {
+      const auto cellCenter_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), cellCenter);
+      const auto cellVertex_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), cellVertex);
+      for (ordinal_type i=0;i<dim;++i) {
+        cellCenter_host(i) = 0;
+        for (ordinal_type vertOrd=0;vertOrd<vertexCount;++vertOrd) {
+          getReferenceVertex(cellVertex_host, cell, vertOrd); 
+          cellCenter_host(i) += cellVertex_host(i);
+        }
+        cellCenter_host(i) /= vertexCount;
       }
-      cellCenter(i) /= vertexCount;
+      Kokkos::deep_copy(cellCenter, cellCenter_host);
+      Kokkos::deep_copy(cellVertex, cellVertex_host);
     }
   }
 
-
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename cellVertexValueType, class ...cellVertexProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getReferenceVertex(       Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertex,
                       const shards::CellTopology cell,
                       const ordinal_type         vertexOrd ) {
@@ -226,10 +237,10 @@ namespace Intrepid2 {
   }
     
   
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename subcellVertexValueType, class ...subcellVertexProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getReferenceSubcellVertices(       Kokkos::DynRankView<subcellVertexValueType,subcellVertexProperties...> subcellVertices,
                                const ordinal_type         subcellDim,
                                const ordinal_type         subcellOrd,
@@ -262,10 +273,10 @@ namespace Intrepid2 {
   }  
   
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename cellNodeValueType, class ...cellNodeProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getReferenceNode(       Kokkos::DynRankView<cellNodeValueType,cellNodeProperties...> cellNode,
                     const shards::CellTopology  cell,
                     const ordinal_type          nodeOrd ) {
@@ -332,20 +343,19 @@ namespace Intrepid2 {
     }
     }
     
-    // subview version; this is dangerous that users get control over the static data
-    // cellNode = Kokkos::subdynrankview( ref, nodeOrd, Kokkos::ALL() );
-
-    // let's copy;
     const ordinal_type dim = cell.getDimension();
-
-    for (ordinal_type i=0;i<dim;++i) 
-      cellNode(i) = ref(nodeOrd, i);
+    {
+      const Kokkos::pair<int,int> rangeDim(0,dim);
+      const auto tgt = Kokkos::subview(cellNode, rangeDim);
+      const auto src = Kokkos::subview(ref, nodeOrd, rangeDim);
+      Kokkos::deep_copy(tgt, src);
+    }
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename subcellNodeValueType, class ...subcellNodeProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getReferenceSubcellNodes(       Kokkos::DynRankView<subcellNodeValueType,subcellNodeProperties...> subcellNodes,
                             const ordinal_type         subcellDim,
                             const ordinal_type         subcellOrd,
@@ -379,15 +389,15 @@ namespace Intrepid2 {
       // Get the node number relative to the parent reference cell
       const auto cellNodeOrd = parentCell.getNodeMap(subcellDim, subcellOrd, subcNodeOrd);
 
-      auto dst = Kokkos::subdynrankview(subcellNodes, subcNodeOrd, Kokkos::ALL());
+      auto dst = Kokkos::subview(subcellNodes, subcNodeOrd, Kokkos::ALL());
       getReferenceNode(dst, parentCell, cellNodeOrd);
     }
   }  
 
-  template<typename SpT>  
+  template<typename DeviceType>  
   template<typename refEdgeTangentValueType, class ...refEdgeTangentProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getReferenceEdgeTangent(       Kokkos::DynRankView<refEdgeTangentValueType,refEdgeTangentProperties...> refEdgeTangent,
                            const ordinal_type         edgeOrd,
                            const shards::CellTopology parentCell ) {
@@ -415,16 +425,19 @@ namespace Intrepid2 {
     // All ref. edge maps have affine coordinate functions: f_dim(u) = C_0(dim) + C_1(dim)*u, 
     //                                     => edge Tangent: -> C_1(*)
     const ordinal_type dim = parentCell.getDimension();
-    for (ordinal_type i=0;i<dim;++i)
-      refEdgeTangent(i) = edgeMap(edgeOrd, i, 1);
+    {
+      const Kokkos::pair<int,int> rangeDim(0,dim);
+      const auto tgt = Kokkos::subview(refEdgeTangent, rangeDim);
+      const auto src = Kokkos::subview(edgeMap, edgeOrd, rangeDim, 1);
+      Kokkos::deep_copy(tgt, src);
+    }
   }
 
-
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename refFaceTanUValueType, class ...refFaceTanUProperties,
            typename refFaceTanVValueType, class ...refFaceTanVProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getReferenceFaceTangents(       Kokkos::DynRankView<refFaceTanUValueType,refFaceTanUProperties...> refFaceTanU,
                                   Kokkos::DynRankView<refFaceTanVValueType,refFaceTanVProperties...> refFaceTanV,
                             const ordinal_type         faceOrd,
@@ -458,16 +471,23 @@ namespace Intrepid2 {
     // set refFaceTanU -> C_1(*)
     // set refFaceTanV -> C_2(*)
     const ordinal_type dim = parentCell.getDimension();
-    for (ordinal_type i=0;i<dim;++i) {
-      refFaceTanU(i) = faceMap(faceOrd, i, 1);
-      refFaceTanV(i) = faceMap(faceOrd, i, 2);
+    {
+      const Kokkos::pair<int,int> rangeDim(0,dim);
+      const auto tgt_u = Kokkos::subview(refFaceTanU, rangeDim);
+      const auto tgt_v = Kokkos::subview(refFaceTanV, rangeDim);
+
+      const auto src_u = Kokkos::subview(faceMap, faceOrd, rangeDim, 1);
+      const auto src_v = Kokkos::subview(faceMap, faceOrd, rangeDim, 2);
+      
+      Kokkos::deep_copy(tgt_u, src_u);
+      Kokkos::deep_copy(tgt_v, src_v);
     }
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename refSideNormalValueType, class ...refSideNormalProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getReferenceSideNormal(       Kokkos::DynRankView<refSideNormalValueType,refSideNormalProperties...> refSideNormal,
                           const ordinal_type         sideOrd,
                           const shards::CellTopology parentCell ) {
@@ -483,13 +503,15 @@ namespace Intrepid2 {
 
     const auto dim = parentCell.getDimension();
     if (dim == 2) {
+      const auto refSideNormal_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), refSideNormal);
       // 2D parent cells: side = 1D subcell (edge), call the edge tangent method and rotate tangents
-      getReferenceEdgeTangent(refSideNormal, sideOrd, parentCell);
+      getReferenceEdgeTangent(refSideNormal_host, sideOrd, parentCell);
     
       // rotate t(t1, t2) to get n(t2, -t1) so that (n,t) is positively oriented: det(n1,n2/t1,t2)>0
-      refSideNormalValueType tmp = refSideNormal(0);
-      refSideNormal(0) = refSideNormal(1);
-      refSideNormal(1) = -tmp;
+      refSideNormalValueType tmp = refSideNormal_host(0);
+      refSideNormal_host(0) = refSideNormal_host(1);
+      refSideNormal_host(1) = -tmp;
+      Kokkos::deep_copy(refSideNormal, refSideNormal_host);
     } else {
       // 3D parent cell: side = 2D subcell (face), call the face normal method.
       getReferenceFaceNormal(refSideNormal, sideOrd, parentCell);
@@ -497,10 +519,10 @@ namespace Intrepid2 {
   }
 
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename refFaceNormalValueType, class ...refFaceNormalProperties>
   void 
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getReferenceFaceNormal(       Kokkos::DynRankView<refFaceNormalValueType,refFaceNormalProperties...> refFaceNormal,
                           const ordinal_type         faceOrd,
                           const shards::CellTopology parentCell ) {
@@ -522,18 +544,18 @@ namespace Intrepid2 {
     const auto dim = parentCell.getDimension();
     auto vcprop = Kokkos::common_view_alloc_prop(refFaceNormal);
     using common_value_type = typename decltype(vcprop)::value_type;
-    Kokkos::DynRankView< common_value_type, SpT > refFaceTanU ( Kokkos::view_alloc("CellTools::getReferenceFaceNormal::refFaceTanU", vcprop), dim );
-    Kokkos::DynRankView< common_value_type, SpT > refFaceTanV ( Kokkos::view_alloc("CellTools::getReferenceFaceNormal::refFaceTanV", vcprop), dim );
+    Kokkos::DynRankView< common_value_type, DeviceType > refFaceTanU ( Kokkos::view_alloc("CellTools::getReferenceFaceNormal::refFaceTanU", vcprop), dim );
+    Kokkos::DynRankView< common_value_type, DeviceType > refFaceTanV ( Kokkos::view_alloc("CellTools::getReferenceFaceNormal::refFaceTanV", vcprop), dim );
     getReferenceFaceTangents(refFaceTanU, refFaceTanV, faceOrd, parentCell);
   
-    RealSpaceTools<SpT>::vecprod(refFaceNormal, refFaceTanU, refFaceTanV);
+    RealSpaceTools<DeviceType>::vecprod(refFaceNormal, refFaceTanU, refFaceTanV);
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename edgeTangentValueType,     class ...edgeTangentProperties,
            typename worksetJacobianValueType, class ...worksetJacobianProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getPhysicalEdgeTangents(       Kokkos::DynRankView<edgeTangentValueType,edgeTangentProperties...>         edgeTangents,
                            const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                            const ordinal_type         worksetEdgeOrd,
@@ -570,19 +592,20 @@ namespace Intrepid2 {
     const auto dim = parentCell.getDimension();
     auto vcprop = Kokkos::common_view_alloc_prop(edgeTangents);
     using common_value_type = typename decltype(vcprop)::value_type;
-    Kokkos::DynRankView< common_value_type, SpT > refEdgeTan ( Kokkos::view_alloc("CellTools::getPhysicalEdgeTangents::refEdgeTan", vcprop), dim);
+    Kokkos::DynRankView< common_value_type, DeviceType > refEdgeTan 
+      ( Kokkos::view_alloc("CellTools::getPhysicalEdgeTangents::refEdgeTan", vcprop), dim);
     getReferenceEdgeTangent(refEdgeTan, worksetEdgeOrd, parentCell);
     
-    RealSpaceTools<SpT>::matvec(edgeTangents, worksetJacobians, refEdgeTan);
+    RealSpaceTools<DeviceType>::matvec(edgeTangents, worksetJacobians, refEdgeTan);
   }
 
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename faceTanUValueType,        class ...faceTanUProperties,
            typename faceTanVValueType,        class ...faceTanVProperties,
            typename worksetJacobianValueType, class ...worksetJacobianProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getPhysicalFaceTangents(       Kokkos::DynRankView<faceTanUValueType,faceTanUProperties...> faceTanU,
                                  Kokkos::DynRankView<faceTanVValueType,faceTanVProperties...> faceTanV,
                            const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
@@ -628,24 +651,24 @@ namespace Intrepid2 {
 
     auto vcpropU = Kokkos::common_view_alloc_prop(faceTanU);
     using common_value_typeU = typename decltype(vcpropU)::value_type;
-    Kokkos::DynRankView< common_value_typeU, SpT > refFaceTanU ( Kokkos::view_alloc("CellTools::getPhysicalFaceTangents::refFaceTanU", vcpropU), dim);
+    Kokkos::DynRankView< common_value_typeU, DeviceType > refFaceTanU ( Kokkos::view_alloc("CellTools::getPhysicalFaceTangents::refFaceTanU", vcpropU), dim);
 
     auto vcpropV = Kokkos::common_view_alloc_prop(faceTanV);
     using common_value_typeV = typename decltype(vcpropV)::value_type;
-    Kokkos::DynRankView< common_value_typeV, SpT > refFaceTanV ( Kokkos::view_alloc("CellTools::getPhysicalFaceTangents::refFaceTanV", vcpropV), dim);
+    Kokkos::DynRankView< common_value_typeV, DeviceType > refFaceTanV ( Kokkos::view_alloc("CellTools::getPhysicalFaceTangents::refFaceTanV", vcpropV), dim);
 
     getReferenceFaceTangents(refFaceTanU, refFaceTanV, worksetFaceOrd, parentCell);
 
-    RealSpaceTools<SpT>::matvec(faceTanU, worksetJacobians, refFaceTanU);    
-    RealSpaceTools<SpT>::matvec(faceTanV, worksetJacobians, refFaceTanV);    
+    RealSpaceTools<DeviceType>::matvec(faceTanU, worksetJacobians, refFaceTanU);    
+    RealSpaceTools<DeviceType>::matvec(faceTanV, worksetJacobians, refFaceTanV);    
   }
 
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename sideNormalValueType,      class ...sideNormalProperties,
            typename worksetJacobianValueType, class ...worksetJacobianProperties>
   void 
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getPhysicalSideNormals(       Kokkos::DynRankView<sideNormalValueType,sideNormalProperties...> sideNormals,
                           const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                           const ordinal_type         worksetSideOrd,
@@ -666,28 +689,29 @@ namespace Intrepid2 {
       // compute edge tangents and rotate it
       auto vcprop = Kokkos::common_view_alloc_prop(sideNormals);
       using common_value_type = typename decltype(vcprop)::value_type;
-      Kokkos::DynRankView< common_value_type, SpT > edgeTangents ( Kokkos::view_alloc("CellTools::getPhysicalSideNormals::edgeTan", vcprop),
+      Kokkos::DynRankView< common_value_type, DeviceType > edgeTangents ( Kokkos::view_alloc("CellTools::getPhysicalSideNormals::edgeTan", vcprop),
                                                               sideNormals.extent(0),
                                                               sideNormals.extent(1),
                                                               sideNormals.extent(2));
       getPhysicalEdgeTangents(edgeTangents, worksetJacobians, worksetSideOrd, parentCell);
 
-      Kokkos::DynRankView< common_value_type, SpT > rotation ( Kokkos::view_alloc("CellTools::getPhysicalSideNormals::rotation", vcprop), dim, dim);
-      rotation(0,0) =  0; rotation(0,1) =  1;
-      rotation(1,0) = -1; rotation(1,1) =  0;
-
-      RealSpaceTools<SpT>::matvec(sideNormals, rotation, edgeTangents);    
+      Kokkos::DynRankView< common_value_type, DeviceType > rotation ( Kokkos::view_alloc("CellTools::getPhysicalSideNormals::rotation", vcprop), dim, dim);
+      const auto rotation_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), rotation);
+      rotation_host(0,0) =  0; rotation_host(0,1) =  1;
+      rotation_host(1,0) = -1; rotation_host(1,1) =  0;
+      Kokkos::deep_copy(rotation, rotation_host);
+      RealSpaceTools<DeviceType>::matvec(sideNormals, rotation, edgeTangents);    
     } else {
       getPhysicalFaceNormals(sideNormals, worksetJacobians, worksetSideOrd, parentCell);
     }
   }
   
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename faceNormalValueType,      class ...faceNormalProperties,
            typename worksetJacobianValueType, class ...worksetJacobianProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getPhysicalFaceNormals(       Kokkos::DynRankView<faceNormalValueType,faceNormalProperties...> faceNormals,
                           const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                           const ordinal_type         worksetFaceOrd,
@@ -725,31 +749,31 @@ namespace Intrepid2 {
 
     auto vcprop = Kokkos::common_view_alloc_prop(faceNormals);
     using common_value_type = typename decltype(vcprop)::value_type;
-    Kokkos::DynRankView< common_value_type, SpT > faceTanU ( Kokkos::view_alloc("CellTools::getPhysicalFaceNormals::faceTanU", vcprop), worksetSize, facePtCount, dim);
-    Kokkos::DynRankView< common_value_type, SpT > faceTanV ( Kokkos::view_alloc("CellTools::getPhysicalFaceNormals::faceTanV", vcprop), worksetSize, facePtCount, dim);
+    Kokkos::DynRankView< common_value_type, DeviceType > faceTanU ( Kokkos::view_alloc("CellTools::getPhysicalFaceNormals::faceTanU", vcprop), worksetSize, facePtCount, dim);
+    Kokkos::DynRankView< common_value_type, DeviceType > faceTanV ( Kokkos::view_alloc("CellTools::getPhysicalFaceNormals::faceTanV", vcprop), worksetSize, facePtCount, dim);
 
     getPhysicalFaceTangents(faceTanU, faceTanV, 
                             worksetJacobians, 
                             worksetFaceOrd, 
                             parentCell);
   
-    RealSpaceTools<SpT>::vecprod(faceNormals, faceTanU, faceTanV);
+    RealSpaceTools<DeviceType>::vecprod(faceNormals, faceTanU, faceTanV);
   }
 
 
-  template<typename SpT>
+  template<typename DeviceType>
   bool 
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   isReferenceNodeDataSet_ = false;
 
-  template<typename SpT>
-  typename CellTools<SpT>::ReferenceNodeData
-  CellTools<SpT>::
-  refNodeData_ = typename CellTools<SpT>::ReferenceNodeData();
+  template<typename DeviceType>
+  typename CellTools<DeviceType>::ReferenceNodeData
+  CellTools<DeviceType>::
+  refNodeData_ = typename CellTools<DeviceType>::ReferenceNodeData();
 
-  template<typename SpT>
-  const typename CellTools<SpT>::ReferenceNodeDataStatic
-  CellTools<SpT>::
+  template<typename DeviceType>
+  const typename CellTools<DeviceType>::ReferenceNodeDataStatic
+  CellTools<DeviceType>::
   refNodeDataStatic_ = {    
     // line
     { // 2

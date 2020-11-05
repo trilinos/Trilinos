@@ -168,9 +168,13 @@ namespace Intrepid2 {
         }          
         }
         
-        // Compare the images of the parametrization domain vertices with the true vertices (test provide vertices only).
-        const auto mappedParamNodes_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), mappedParamNodes);
-        const auto refSubcellNodes_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), refSubcellNodes);
+        // Compare the images of the parametrization domain vertices with the true vertices (test provide vertices only).        
+        const auto mappedParamNodesMax_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), mappedParamNodesMax);
+        const auto refSubcellNodesMax_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), refSubcellNodesMax);
+
+        const auto refSubcellNodes_host  = Kokkos::subview( refSubcellNodesMax_host,  nodeRange, Kokkos::ALL() );
+        const auto mappedParamNodes_host = Kokkos::subview( mappedParamNodesMax_host, nodeRange, Kokkos::ALL() );
+
         for (size_type subcVertOrd=0;subcVertOrd<subcVertexCount;++subcVertOrd) 
           for (size_type i=0;i<cellDim;++i)
             if (std::abs(mappedParamNodes_host(subcVertOrd, i) - refSubcellNodes_host(subcVertOrd, i)) > tol) {

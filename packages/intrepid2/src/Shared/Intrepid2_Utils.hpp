@@ -125,6 +125,12 @@ namespace Intrepid2 {
   }
 #endif
 
+  template<typename DeviceType, typename ViewType>
+  bool isViewAccessibleFromDevice(const DeviceType &, const ViewType &) {
+    return Kokkos::Impl::MemorySpaceAccess
+      <typename DeviceType::memory_space, typename ViewType::traits::memory_space>::accessible;    
+  }
+
   template<typename AViewType, typename BViewType>
   void createConformingViewAndCopy(const char *label, AViewType &A, BViewType &B) {
     if (B.rank() == 1) {

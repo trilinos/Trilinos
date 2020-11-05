@@ -253,7 +253,9 @@ namespace Intrepid2 {
     subcellParam = subcellParamViewType("CellTools::setSubcellParametrization",
                                         sc, pcd, coeff);
 
-    referenceNodeDataViewType 
+    const auto subcellParam_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), subcellParam);
+
+    typename referenceNodeDataViewType::HostMirror  
       v0("CellTools::setSubcellParametrization::v0", Parameters::MaxDimension), 
       v1("CellTools::setSubcellParametrization::v1", Parameters::MaxDimension),
       v2("CellTools::setSubcellParametrization::v1", Parameters::MaxDimension),
@@ -269,19 +271,19 @@ namespace Intrepid2 {
 
         getReferenceVertex(v0, parentCell, v0ord);
         getReferenceVertex(v1, parentCell, v1ord);
-        
+
         // x(t) = (x0 + x1)/2 + t*(x1 - x0)/2 
-        subcellParam(subcellOrd, 0, 0) = (v0[0] + v1[0])/2.0;
-        subcellParam(subcellOrd, 0, 1) = (v1[0] - v0[0])/2.0;
+        subcellParam_host(subcellOrd, 0, 0) = (v0[0] + v1[0])/2.0;
+        subcellParam_host(subcellOrd, 0, 1) = (v1[0] - v0[0])/2.0;
         
         // y(t) = (y0 + y1)/2 + t*(y1 - y0)/2 
-        subcellParam(subcellOrd, 1, 0) = (v0[1] + v1[1])/2.0;
-        subcellParam(subcellOrd, 1, 1) = (v1[1] - v0[1])/2.0;
+        subcellParam_host(subcellOrd, 1, 0) = (v0[1] + v1[1])/2.0;
+        subcellParam_host(subcellOrd, 1, 1) = (v1[1] - v0[1])/2.0;
         
         if( pcd == 3 ) {
           // z(t) = (z0 + z1)/2 + t*(z1 - z0)/2 
-          subcellParam(subcellOrd, 2, 0) = (v0[2] + v1[2])/2.0;
-          subcellParam(subcellOrd, 2, 1) = (v1[2] - v0[2])/2.0;
+          subcellParam_host(subcellOrd, 2, 0) = (v0[2] + v1[2])/2.0;
+          subcellParam_host(subcellOrd, 2, 1) = (v1[2] - v0[2])/2.0;
         }
       }
     }
@@ -305,19 +307,19 @@ namespace Intrepid2 {
           getReferenceVertex(v2, parentCell, v2ord);
           
           // x(u,v) = x0 + (x1 - x0)*u + (x2 - x0)*v
-          subcellParam(subcellOrd, 0, 0) = v0[0];
-          subcellParam(subcellOrd, 0, 1) = v1[0] - v0[0];
-          subcellParam(subcellOrd, 0, 2) = v2[0] - v0[0];
-          
+          subcellParam_host(subcellOrd, 0, 0) = v0[0];
+          subcellParam_host(subcellOrd, 0, 1) = v1[0] - v0[0];
+          subcellParam_host(subcellOrd, 0, 2) = v2[0] - v0[0];
+
           // y(u,v) = y0 + (y1 - y0)*u + (y2 - y0)*v
-          subcellParam(subcellOrd, 1, 0) = v0[1];
-          subcellParam(subcellOrd, 1, 1) = v1[1] - v0[1];
-          subcellParam(subcellOrd, 1, 2) = v2[1] - v0[1];
+          subcellParam_host(subcellOrd, 1, 0) = v0[1];
+          subcellParam_host(subcellOrd, 1, 1) = v1[1] - v0[1];
+          subcellParam_host(subcellOrd, 1, 2) = v2[1] - v0[1];
           
           // z(u,v) = z0 + (z1 - z0)*u + (z2 - z0)*v
-          subcellParam(subcellOrd, 2, 0) = v0[2];
-          subcellParam(subcellOrd, 2, 1) = v1[2] - v0[2];
-          subcellParam(subcellOrd, 2, 2) = v2[2] - v0[2];
+          subcellParam_host(subcellOrd, 2, 0) = v0[2];
+          subcellParam_host(subcellOrd, 2, 1) = v1[2] - v0[2];
+          subcellParam_host(subcellOrd, 2, 2) = v2[2] - v0[2];
           break;
         }
         case shards::Quadrilateral<4>::key:
@@ -334,19 +336,19 @@ namespace Intrepid2 {
           getReferenceVertex(v3, parentCell, v3ord);
                 
           // x(u,v) = (x0+x1+x2+x3)/4+u*(-x0+x1+x2-x3)/4+v*(-x0-x1+x2+x3)/4+uv*(0=x0-x1+x2-x3)/4 
-          subcellParam(subcellOrd, 0, 0) = ( v0[0] + v1[0] + v2[0] + v3[0])/4.0;
-          subcellParam(subcellOrd, 0, 1) = (-v0[0] + v1[0] + v2[0] - v3[0])/4.0;
-          subcellParam(subcellOrd, 0, 2) = (-v0[0] - v1[0] + v2[0] + v3[0])/4.0;
+          subcellParam_host(subcellOrd, 0, 0) = ( v0[0] + v1[0] + v2[0] + v3[0])/4.0;
+          subcellParam_host(subcellOrd, 0, 1) = (-v0[0] + v1[0] + v2[0] - v3[0])/4.0;
+          subcellParam_host(subcellOrd, 0, 2) = (-v0[0] - v1[0] + v2[0] + v3[0])/4.0;
           
           // y(u,v) = (y0+y1+y2+y3)/4+u*(-y0+y1+y2-y3)/4+v*(-y0-y1+y2+y3)/4+uv*(0=y0-y1+y2-y3)/4 
-          subcellParam(subcellOrd, 1, 0) = ( v0[1] + v1[1] + v2[1] + v3[1])/4.0;
-          subcellParam(subcellOrd, 1, 1) = (-v0[1] + v1[1] + v2[1] - v3[1])/4.0;
-          subcellParam(subcellOrd, 1, 2) = (-v0[1] - v1[1] + v2[1] + v3[1])/4.0;
+          subcellParam_host(subcellOrd, 1, 0) = ( v0[1] + v1[1] + v2[1] + v3[1])/4.0;
+          subcellParam_host(subcellOrd, 1, 1) = (-v0[1] + v1[1] + v2[1] - v3[1])/4.0;
+          subcellParam_host(subcellOrd, 1, 2) = (-v0[1] - v1[1] + v2[1] + v3[1])/4.0;
           
           // z(u,v) = (z0+z1+z2+z3)/4+u*(-z0+z1+z2-z3)/4+v*(-z0-z1+z2+z3)/4+uv*(0=z0-z1+z2-z3)/4 
-          subcellParam(subcellOrd, 2, 0) = ( v0[2] + v1[2] + v2[2] + v3[2])/4.0;
-          subcellParam(subcellOrd, 2, 1) = (-v0[2] + v1[2] + v2[2] - v3[2])/4.0;
-          subcellParam(subcellOrd, 2, 2) = (-v0[2] - v1[2] + v2[2] + v3[2])/4.0;
+          subcellParam_host(subcellOrd, 2, 0) = ( v0[2] + v1[2] + v2[2] + v3[2])/4.0;
+          subcellParam_host(subcellOrd, 2, 1) = (-v0[2] + v1[2] + v2[2] - v3[2])/4.0;
+          subcellParam_host(subcellOrd, 2, 2) = (-v0[2] - v1[2] + v2[2] + v3[2])/4.0;
           break;
         }
         default: {
@@ -356,6 +358,7 @@ namespace Intrepid2 {
         }
       }
     }
+    Kokkos::deep_copy(subcellParam, subcellParam_host);
   }
 
 

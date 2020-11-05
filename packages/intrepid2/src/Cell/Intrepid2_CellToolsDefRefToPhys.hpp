@@ -87,12 +87,12 @@ namespace Intrepid2 {
                            _physPoints.extent(0),
                            _physPoints.extent(1),
                            iter );
-              auto phys = Kokkos::subdynrankview( _physPoints, cell, pt, Kokkos::ALL());
-        const auto dofs = Kokkos::subdynrankview( _worksetCells, cell, Kokkos::ALL(), Kokkos::ALL());
+              auto phys = Kokkos::subview( _physPoints, cell, pt, Kokkos::ALL());
+        const auto dofs = Kokkos::subview( _worksetCells, cell, Kokkos::ALL(), Kokkos::ALL());
 
         const auto valRank = _basisVals.rank();
-        const auto val = ( valRank == 2 ? Kokkos::subdynrankview( _basisVals,       Kokkos::ALL(), pt) :
-                                          Kokkos::subdynrankview( _basisVals, cell, Kokkos::ALL(), pt));
+        const auto val = ( valRank == 2 ? Kokkos::subview( _basisVals,       Kokkos::ALL(), pt) :
+                                          Kokkos::subview( _basisVals, cell, Kokkos::ALL(), pt));
 
         const ordinal_type dim = phys.extent(0);
         const ordinal_type cardinality = val.extent(0);
@@ -168,8 +168,8 @@ namespace Intrepid2 {
       //vals = valViewType("CellTools::mapToPhysicalFrame::vals", numCells, basisCardinality, numPoints);
       vals = valViewType(Kokkos::view_alloc("CellTools::mapToPhysicalFrame::vals", vcprop), numCells, basisCardinality, numPoints);
       for (size_type cell=0;cell<numCells;++cell)
-        basis->getValues(Kokkos::subdynrankview( vals,      cell, Kokkos::ALL(), Kokkos::ALL() ),
-                         Kokkos::subdynrankview( refPoints, cell, Kokkos::ALL(), Kokkos::ALL() ),
+        basis->getValues(Kokkos::subview( vals,      cell, Kokkos::ALL(), Kokkos::ALL() ),
+                         Kokkos::subview( refPoints, cell, Kokkos::ALL(), Kokkos::ALL() ),
                          OPERATOR_VALUE);
       break;
     }
@@ -177,7 +177,7 @@ namespace Intrepid2 {
 
     typedef Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCellViewType;
     typedef FunctorCellTools::F_mapToPhysicalFrame<physPointViewType,worksetCellViewType,valViewType> FunctorType;
-    typedef typename ExecSpace<typename worksetCellViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
 
     const auto loopSize = physPoints.extent(0)*physPoints.extent(1);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
@@ -246,7 +246,7 @@ namespace Intrepid2 {
   template<typename refSubcellPointValueType, class ...refSubcellPointProperties,
            typename paramPointValueType, class ...paramPointProperties>
   void
-  KOKKOS_INLINE_FUNCTION
+  inline
   CellTools<SpT>::
   mapToReferenceSubcell(       Kokkos::DynRankView<refSubcellPointValueType,refSubcellPointProperties...> refSubcellPoints,
                          const Kokkos::DynRankView<paramPointValueType,paramPointProperties...>           paramPoints,
@@ -257,30 +257,41 @@ namespace Intrepid2 {
 
     const ordinal_type numPts  = paramPoints.extent(0);
 
+    Kokkos::DynRankView<refSubcellPointValueType,SpT> 
+      tmpRefSubcellPoints("tmpRefSubcellPoints", refSubcellPoints.extent(0), refSubcellPoints.extent(1));
+    const auto refSubcellPoints_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), tmpRefSubcellPoints);
+    const auto paramPoints_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), paramPoints);
+    const auto subcellMap_host =  Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), subcellMap);
+
     // Apply the parametrization map to every point in parameter domain
     switch (subcellDim) {
     case 2: {
       for (ordinal_type pt=0;pt<numPts;++pt) {
-        const auto u = paramPoints(pt, 0);
-        const auto v = paramPoints(pt, 1);
+        const auto u = paramPoints_host(pt, 0);
+        const auto v = paramPoints_host(pt, 1);
 
         // map_dim(u,v) = c_0(dim) + c_1(dim)*u + c_2(dim)*v because both Quad and Tri ref faces are affine!
         for (ordinal_type i=0;i<parentCellDim;++i)
-          refSubcellPoints(pt, i) = subcellMap(subcellOrd, i, 0) + ( subcellMap(subcellOrd, i, 1)*u +
-                                                                     subcellMap(subcellOrd, i, 2)*v );
+          refSubcellPoints_host(pt, i) = subcellMap_host(subcellOrd, i, 0) + ( subcellMap_host(subcellOrd, i, 1)*u +
+                                                                               subcellMap_host(subcellOrd, i, 2)*v );
       }
       break;
     }
     case 1: {
       for (ordinal_type pt=0;pt<numPts;++pt) {
-        const auto u = paramPoints(pt, 0);
-        for (ordinal_type i=0;i<parentCellDim;++i)
-          refSubcellPoints(pt, i) = subcellMap(subcellOrd, i, 0) + ( subcellMap(subcellOrd, i, 1)*u );
+        const auto u = paramPoints_host(pt, 0);
+        for (ordinal_type i=0;i<parentCellDim;++i) 
+          refSubcellPoints_host(pt, i) = subcellMap_host(subcellOrd, i, 0) + ( subcellMap_host(subcellOrd, i, 1)*u );
       }
       break;
     }
     default: {}
     }
+    /// deep copy does not work for strided view...sigh
+    //Kokkos::deep_copy(refSubcellPoints, refSubcellPoints_host);
+    Kokkos::deep_copy(tmpRefSubcellPoints, refSubcellPoints_host);
+    Kokkos::deep_copy(refSubcellPoints, tmpRefSubcellPoints);
+
   }
 }
 
