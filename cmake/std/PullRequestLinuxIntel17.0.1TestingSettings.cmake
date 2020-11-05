@@ -6,7 +6,6 @@
 
 # Usage: cmake -C PullRequestLinuxIntel17.0.1TestingSettings.cmake
 
-set (CMAKE_CXX_STANDARD "14" CACHE STRING "Set C++ standard to C++14")
 #Failing tests under C++14
 #Remove line if test has been fixed
 set (Piro_AnalysisDriver_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
