@@ -103,12 +103,10 @@ message_std "PRDriver> " ""
 ${merge_cmd:?}
 err=$?
 if [ $err != 0 ]; then
-    message_std "PRDriver> " "An error occurred during merge"
+    print_banner "An error occurred during merge"
     exit $err
-else
-    message_std "PRDriver> " "Merge completed successfully."
 fi
-message_std "PRDriver> " ""
+print_banner "Merge completed"
 
 
 # Get the md5 checksum of this script:
