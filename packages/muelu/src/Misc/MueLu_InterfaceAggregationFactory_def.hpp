@@ -74,8 +74,12 @@ RCP<const ParameterList> InterfaceAggregationFactory<Scalar, LocalOrdinal, Globa
 
   validParamList->set<std::string>("Dual/primal mapping strategy", "vague",
       "Strategy to represent mapping between dual and primal quantities [node-based, dof-based]");
+
   validParamList->set<RCP<const FactoryBase>>("DualNodeID2PrimalNodeID", Teuchos::null,
       "Generating factory of the DualNodeID2PrimalNodeID map as input data in a Moertel-compatible std::map<LO,LO> to map local IDs of dual nodes to local IDs of primal nodes");
+  validParamList->set<LocalOrdinal>("number of DOFs per dual node", -Teuchos::ScalarTraits<LocalOrdinal>::one(),
+      "Number of DOFs per dual node");
+
   validParamList->set<RCP<const FactoryBase>>("PrimalInterfaceDofRowMap", Teuchos::null,
       "Generating factory of the primal DOF row map of slave side of the coupling surface");
 
@@ -147,6 +151,9 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
 
   RCP<const Matrix> A = Get<RCP<Matrix>>(currentLevel, "A");
   const LocalOrdinal numDofsPerDualNode = pL.get<LocalOrdinal>("number of DOFs per dual node");
+  TEUCHOS_TEST_FOR_EXCEPTION(numDofsPerDualNode<Teuchos::ScalarTraits<LocalOrdinal>::one(), Exceptions::InvalidArgument,
+      "Number of dual DOFs per node < 0 (default value). Specify a valid \"number of DOFs per dual node\" in the parameter list for the InterfaceAggregationFactory.");
+
   RCP<const Aggregates> primalAggregates = Get<RCP<Aggregates>>(currentLevel, "Aggregates");
   ArrayRCP<const LocalOrdinal> primalVertex2AggId = primalAggregates->GetVertex2AggId()->getData(0);
 
@@ -246,7 +253,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   // filled with striding information from A01
   LocalOrdinal numDofsPerDualNode = 0;
   LocalOrdinal numDofsPerPrimalNode = 0;
- 
+
   // Grab the off-diagonal block (0,1) from the global blocked operator
   RCP<const Matrix> A01 = Get<RCP<Matrix>>(currentLevel, "A");
 // A01->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
@@ -264,9 +271,9 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   } else {
     primalInterfaceDofRowMap = Get<RCP<const Map>>(currentLevel, "PrimalInterfaceDofRowMap");
   }
-  
-  
-  
+
+
+
   //std::cout << __LINE__ << __FILE__ << std::endl;
   //std::cout << "primalInterfaceDofRowMap on level " << currentLevel.GetLevelID() << ":" << std::endl;
   //primalInterfaceDofRowMap->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
