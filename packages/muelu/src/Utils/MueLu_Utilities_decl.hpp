@@ -248,7 +248,7 @@ namespace MueLu {
     static void MyOldScaleMatrix_Tpetra(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const Teuchos::ArrayRCP<Scalar>& scalingVector,
                                         bool doFillComplete, bool doOptimizeStorage);
 
-    static RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Transpose(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, bool optimizeTranspose = false,const std::string & label = std::string(),const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null);
+    static RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Transpose(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, bool optimizeTranspose = false,const std::string & label = std::string(),const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null);
 
     static RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> > X);
 
@@ -754,10 +754,8 @@ namespace MueLu {
 
         Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
         In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
-
-        \warning In case of Epetra, the @c const qualifier of the operator @c Op is cast away.
     */
-    static RCP<Matrix> Transpose(const Matrix& Op, bool /* optimizeTranspose */ = false,const std::string & label = std::string(),const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null) {
+    static RCP<Matrix> Transpose(Matrix& Op, bool /* optimizeTranspose */ = false,const std::string & label = std::string(),const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null) {
       switch (Op.getRowMap()->lib()) {
         case Xpetra::UseTpetra: {
 #ifdef HAVE_MUELU_TPETRA
@@ -805,7 +803,7 @@ namespace MueLu {
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
             Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("ZZ Entire Transpose"));
             // Epetra case
-            Epetra_CrsMatrix& epetraOp = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstEpetraCrs(const_cast<Matrix&>(Op));
+            Epetra_CrsMatrix& epetraOp = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstEpetraCrs(Op);
             EpetraExt::RowMatrix_Transpose transposer;
             Epetra_CrsMatrix * A = dynamic_cast<Epetra_CrsMatrix*>(&transposer(epetraOp));
             transposer.ReleaseTranspose(); // So we can keep A in Muelu...

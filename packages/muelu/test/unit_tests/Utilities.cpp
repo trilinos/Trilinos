@@ -510,7 +510,7 @@ namespace MueLuTests {
     TEST_ASSERT(!matrix.is_null());
     TEST_EQUALITY_CONST(matrix->getGlobalNumRows(), numGlobalElements);
 
-    RCP<const Matrix> transposedMatrix = Utilities::Transpose(*matrix);
+    RCP<const Matrix> transposedMatrix = Utilities::Transpose(const_cast<Matrix&>(*matrix));
     TEST_ASSERT(!transposedMatrix.is_null());
 
     TEST_ASSERT(transposedMatrix->getRangeMap()->isSameAs(*matrix->getDomainMap()));
@@ -540,7 +540,7 @@ namespace MueLuTests {
       TEST_ASSERT(!allEntriesAreZero);
     }
 
-    RCP<const Matrix> doubleTransposedMatrix = Utilities::Transpose(*transposedMatrix);
+    RCP<const Matrix> doubleTransposedMatrix = Utilities::Transpose(const_cast<Matrix&>(*transposedMatrix));
     TEST_ASSERT(!doubleTransposedMatrix.is_null());
 
     TEST_ASSERT(doubleTransposedMatrix->getRangeMap()->isSameAs(*matrix->getRangeMap()));
