@@ -728,13 +728,13 @@ void createRegionHierarchy(const int numDimensions,
                            const std::string xmlFileName,
                            RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& nullspace,
                            RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> >& coordinates,
-                           RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regionGrpMats,
+                           RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regionMats,
                            const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > mapComp,
-                           const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMapPerGrp,
-                           const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > colMapPerGrp,
-                           const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMapPerGrp,
-                           const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedColMapPerGrp,
-                           const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImportPerGrp,
+                           const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap,
+                           const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > colMap,
+                           const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,
+                           const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedColMap,
+                           const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport,
                            Array<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& compRowMaps,
                            Array<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& compColMaps,
                            Array<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& regRowMaps,
@@ -768,10 +768,10 @@ void createRegionHierarchy(const int numDimensions,
   // std::cout << mapComp->getComm()->getRank() << " | Setting up MueLu hierarchies ..." << std::endl;
   int numLevels = 0;
 
-  // A hierarchy for each group
-  RCP<Hierarchy> regGrpHierarchy;
+  // A hierarchy
+  RCP<Hierarchy> regHierarchy;
 
-  RCP<TimeMonitor> tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy: GrpHierarchy")));
+  RCP<TimeMonitor> tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy: Hierarchy")));
 
   /* Set number of nodes per processor per dimension
    *
@@ -801,16 +801,16 @@ void createRegionHierarchy(const int numDimensions,
   }
 
   // Setup hierarchy
-  regGrpHierarchy = MueLu::CreateXpetraPreconditioner(regionGrpMats, *mueluParams);
+  regHierarchy = MueLu::CreateXpetraPreconditioner(regionMats, *mueluParams);
 
   // std::cout << mapComp->getComm()->getRank() << " | Resize containers..." << std::endl;
 
   tmLocal = Teuchos::null;
-  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy: ExtractGrpData")));
+  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy: ExtractData")));
   // resize Arrays and vectors
   {
     // resize level containers
-    numLevels = regGrpHierarchy->GetNumLevels();
+    numLevels = regHierarchy->GetNumLevels();
     compRowMaps.resize(numLevels);
     compColMaps.resize(numLevels);
     regRowMaps.resize(numLevels);
@@ -839,12 +839,12 @@ void createRegionHierarchy(const int numDimensions,
   // Fill fine level with our data
   {
     compRowMaps[0]     = mapComp;
-    quasiRegRowMaps[0] = rowMapPerGrp;
-    quasiRegColMaps[0] = colMapPerGrp;
-    regRowMaps[0]      = revisedRowMapPerGrp;
-    regColMaps[0]      = revisedColMapPerGrp;
-    regRowImporters[0] = rowImportPerGrp;
-    regMatrices[0]     = regionGrpMats;
+    quasiRegRowMaps[0] = rowMap;
+    quasiRegColMaps[0] = colMap;
+    regRowMaps[0]      = revisedRowMap;
+    regColMaps[0]      = revisedColMap;
+    regRowImporters[0] = rowImport;
+    regMatrices[0]     = regionMats;
 
     /* MueLu stores prolongator on coarse level, so there is no prolongator
      * on the fine level. To have level containers of the same size, let's
@@ -864,7 +864,7 @@ void createRegionHierarchy(const int numDimensions,
   using realvaluedmultivector_type = Xpetra::MultiVector<real_type, LocalOrdinal, GlobalOrdinal, Node>;
   RCP<realvaluedmultivector_type> regCoarseCoordinates;
   for (int l = 1; l < numLevels; ++l) { // Note: we start at level 1 (which is the first coarse level)
-    RCP<MueLu::Level> level = regGrpHierarchy->GetLevel(l);
+    RCP<MueLu::Level> level = regHierarchy->GetLevel(l);
 
     if(keepCoarseCoords && (l == numLevels - 1)) {
       regCoarseCoordinates = level->Get<RCP<realvaluedmultivector_type> >("Coordinates2", MueLu::NoFactory::get());
@@ -880,8 +880,8 @@ void createRegionHierarchy(const int numDimensions,
     std::string levelName("level");
     levelName += std::to_string(l);
     ParameterList& levelList = hierarchyData->sublist(levelName, false, "list of data on current level");
-    RCP<Vector> regRes = VectorFactory::Build(revisedRowMapPerGrp, true);
-    RCP<Vector> regSol = VectorFactory::Build(revisedRowMapPerGrp, true);
+    RCP<Vector> regRes = VectorFactory::Build(revisedRowMap, true);
+    RCP<Vector> regSol = VectorFactory::Build(revisedRowMap, true);
 
     levelList.set<RCP<Vector> >("residual", regRes, "Cached residual vector");
     levelList.set<RCP<Vector> >("solution", regSol, "Cached solution vector");
@@ -1007,59 +1007,6 @@ void createRegionHierarchy(const int numDimensions,
   }
 
 } // createRegionHierarchy
-
-
-//// Wrapper to be used from the Matlab-based driver
-//template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-//void createRegionHierarchy(const int maxRegPerProc,
-//                           const int numDimensions,
-//                           const Array<Array<int> > lNodesPerDim,
-//                           const Array<std::string> aggregationRegionType,
-//                           const std::string xmlFileName,
-//                           Array<RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& nullspace,
-//                           Array<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > >& coordinates,
-//                           std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regionGrpMats,
-//                           const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > mapComp,
-//                           const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp,
-//                           const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > colMapPerGrp,
-//                           const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,
-//                           const std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedColMapPerGrp,
-//                           const std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp,
-//                           Array<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& compRowMaps,
-//                           Array<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& compColMaps,
-//                           Array<std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > >& regRowMaps,
-//                           Array<std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > >& regColMaps,
-//                           Array<std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > >& quasiRegRowMaps,
-//                           Array<std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > >& quasiRegColMaps,
-//                           Array<std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > >& regMatrices,
-//                           Array<std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > >& regProlong,
-//                           Array<std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > >& regRowImporters,
-//                           Array<Array<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > >& regInterfaceScalings,
-//                           Array<RCP<Teuchos::ParameterList> >& smootherParams
-//                           )
-//{
-//  // Define dummy values
-//  const int maxRegPerGID = 0;
-//  ArrayView<LocalOrdinal> compositeToRegionLIDs = {};
-//  RCP<ParameterList> coarseSolverParams = rcp(new ParameterList("Coarse solver parameters"));
-//  coarseSolverParams->set<bool>("use coarse solver", true);
-//  RCP<ParameterList> dummy = Teuchos::parameterList();
-//  Array<RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > > interfaceGIDsPerLevel;
-//  Array<RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > > regionsPerGIDWithGhostsPerLevel;
-//  Array<ArrayRCP<LocalOrdinal> > regionMatVecLIDsPerLevel;
-//  Array<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > regionInterfaceImporterPerLevel;
-//
-//  // Call the actual routine
-//  createRegionHierarchy(maxRegPerProc, numDimensions, lNodesPerDim,
-//                        aggregationRegionType, dummy, xmlFileName, nullspace, coordinates,
-//                        regionGrpMats, mapComp, rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp,
-//                        revisedColMapPerGrp, rowImportPerGrp, compRowMaps, compColMaps, regRowMaps,
-//                        regColMaps, quasiRegRowMaps, quasiRegColMaps, regMatrices, regProlong,
-//                        regRowImporters, regInterfaceScalings, interfaceGIDsPerLevel,
-//                        regionsPerGIDWithGhostsPerLevel, regionMatVecLIDsPerLevel,
-//                        regionInterfaceImporterPerLevel, maxRegPerGID,
-//                        compositeToRegionLIDs, coarseSolverParams, smootherParams, dummy, false);
-//}
 
 
 //! Recursive V-cycle in region fashion

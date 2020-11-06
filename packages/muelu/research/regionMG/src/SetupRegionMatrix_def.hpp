@@ -125,10 +125,10 @@ Teuchos::Array<int> findCommonRegions(const GlobalOrdinal nodeA, ///< GID of fir
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AComp,
                              RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > regionsPerGIDWithGhosts,
-                             RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& rowMapPerGrp,
-                             RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& colMapPerGrp,
-                             RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rowImportPerGrp,
-                             RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& quasiRegionGrpMats) {
+                             RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& rowMap,
+                             RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& colMap,
+                             RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rowImport,
+                             RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& quasiRegionMats) {
 #include "Xpetra_UseShortNames.hpp"
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
@@ -150,34 +150,34 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
   // bound of the number of nonzeros per row in quasiRegionMat
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MakeQuasiregionMatrices: 1 - Create Matrix")));
 
-  quasiRegionGrpMats = MatrixFactory::Build(rowMapPerGrp,
-                                               colMapPerGrp,
-                                               AComp->getCrsGraph()->getNodeMaxNumRowEntries());
+  quasiRegionMats = MatrixFactory::Build(rowMap,
+                                         colMap,
+                                         AComp->getCrsGraph()->getNodeMaxNumRowEntries());
 
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MakeQuasiregionMatrices: 2 - Import data")));
 
-  quasiRegionGrpMats->doImport(*AComp,
-                                  *(rowImportPerGrp),
-                                  Xpetra::INSERT);
+  quasiRegionMats->doImport(*AComp,
+                            *(rowImport),
+                            Xpetra::INSERT);
 
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MakeQuasiregionMatrices: 3 - Scale interface entries")));
 
-  RCP<CrsMatrixWrap> quasiRegionCrsWrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(quasiRegionGrpMats);
+  RCP<CrsMatrixWrap> quasiRegionCrsWrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(quasiRegionMats);
   RCP<CrsMatrix> quasiRegionCrs = quasiRegionCrsWrap->getCrsMatrix();
   const LO numRows = Teuchos::as<LO>(quasiRegionCrs->getNodeNumRows());
 
   for (LO row = 0; row < numRows; ++row) { // loop over local rows of composite matrix
-    GO rowGID = rowMapPerGrp->getGlobalElement(row);
-    std::size_t numEntries = quasiRegionGrpMats->getNumEntriesInLocalRow(row); // number of entries in this row
+    GO rowGID = rowMap->getGlobalElement(row);
+    std::size_t numEntries = quasiRegionMats->getNumEntriesInLocalRow(row); // number of entries in this row
     Teuchos::Array<SC> vals(numEntries); // non-zeros in this row
     Teuchos::Array<LO> inds(numEntries); // local column indices
-    quasiRegionGrpMats->getLocalRowCopy(row, inds, vals, numEntries);
+    quasiRegionMats->getLocalRowCopy(row, inds, vals, numEntries);
 
     for (std::size_t c = 0; c < Teuchos::as<std::size_t>(inds.size()); ++c) { // loop over all entries in this row
       LocalOrdinal col = inds[c];
-      GlobalOrdinal colGID = colMapPerGrp->getGlobalElement(col);
+      GlobalOrdinal colGID = colMap->getGlobalElement(col);
       Array<int> commonRegions;
       if (rowGID != colGID) { // Skip the diagonal entry. It will be processed later.
         // commonRegions = findCommonRegions(rowGID, colGID, *regionsPerGIDWithGhosts);
@@ -190,13 +190,13 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
       }
     }
 
-    quasiRegionGrpMats->replaceLocalValues(row, inds, vals);
+    quasiRegionMats->replaceLocalValues(row, inds, vals);
   }
 
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MakeQuasiregionMatrices: 4 - fillComplete")));
 
-  quasiRegionGrpMats->fillComplete();
+  quasiRegionMats->fillComplete();
 
   tm = Teuchos::null;
 } // MakeQuasiregionMatrices
@@ -205,12 +205,12 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AComp,
                         const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > mapComp,
-                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& rowMapPerGrp,
-                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& revisedRowMapPerGrp,
-                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& revisedColMapPerGrp,
-                        RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rowImportPerGrp,
-                        RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& quasiRegionGrpMats,
-                        RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regionGrpMats) {
+                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& rowMap,
+                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& revisedRowMap,
+                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& revisedColMap,
+                        RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rowImport,
+                        RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& quasiRegionMats,
+                        RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regionMats) {
 #include "Xpetra_UseShortNames.hpp"
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
@@ -219,15 +219,15 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
 
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MakeRegionMatrices: 1 - Create Matrix")));
 
-  // Copy data from quasiRegionGrpMats, but into new map layout
+  // Copy data from quasiRegionMats, but into new map layout
   {
-      regionGrpMats = rcp(new CrsMatrixWrap(revisedRowMapPerGrp, revisedColMapPerGrp, 9));
+      regionMats = rcp(new CrsMatrixWrap(revisedRowMap, revisedColMap, 9));
 
       // Extract current region CrsMatrix
-      RCP<CrsMatrix> regionCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(regionGrpMats)->getCrsMatrix();
+      RCP<CrsMatrix> regionCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(regionMats)->getCrsMatrix();
 
       // Extract current quasi-region CrsMatrix
-      RCP<CrsMatrix> quasiRegionCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(quasiRegionGrpMats)->getCrsMatrix();
+      RCP<CrsMatrix> quasiRegionCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(quasiRegionMats)->getCrsMatrix();
 
       // Pull out the data from the quasi-region CrsMatrix
       ArrayRCP<const size_t> rowptrQuasiRegion;
@@ -254,7 +254,7 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
 
       // Set and fillComplete the region CrsMatrix
       regionCrsMat->setAllValues(rowptrRegion, colindRegion, valuesRegion);
-      regionCrsMat->expertStaticFillComplete(revisedRowMapPerGrp, revisedRowMapPerGrp);
+      regionCrsMat->expertStaticFillComplete(revisedRowMap, revisedRowMap);
   }
 
   tm = Teuchos::null;
@@ -270,10 +270,10 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
     AComp->apply(*nspVec, *nspViolation);
 
     // move to regional layout
-    RCP<Vector> quasiRegNspViolation = VectorFactory::Build(rowMapPerGrp, true);
-    regNspViolation = VectorFactory::Build(revisedRowMapPerGrp, true);
+    RCP<Vector> quasiRegNspViolation = VectorFactory::Build(rowMap, true);
+    regNspViolation = VectorFactory::Build(revisedRowMap, true);
     compositeToRegional(nspViolation, quasiRegNspViolation, regNspViolation,
-                        revisedRowMapPerGrp, rowImportPerGrp);
+                        revisedRowMap, rowImport);
 
     /* The nullspace violation computed in the composite layout needs to be
      * transfered to the regional layout. Since we use this to compute
@@ -285,12 +285,12 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
      */
     {
       // initialize region vector with all ones.
-      RCP<Vector> interfaceScaling = VectorFactory::Build(revisedRowMapPerGrp);
+      RCP<Vector> interfaceScaling = VectorFactory::Build(revisedRowMap);
       interfaceScaling->putScalar(SC_ONE);
 
       // transform to composite layout while adding interface values via the Export() combine mode
       RCP<Vector> compInterfaceScalingSum = VectorFactory::Build(mapComp, true);
-      regionalToComposite(interfaceScaling, compInterfaceScalingSum, rowImportPerGrp);
+      regionalToComposite(interfaceScaling, compInterfaceScalingSum, rowImport);
 
       /* transform composite layout back to regional layout. Now, GIDs associated
        * with region interface should carry a scaling factor (!= 1).
@@ -298,7 +298,7 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
       RCP<Vector> quasiRegInterfaceScaling;
       compositeToRegional(compInterfaceScalingSum, quasiRegInterfaceScaling,
                           interfaceScaling,
-                          revisedRowMapPerGrp, rowImportPerGrp);
+                          revisedRowMap, rowImport);
 
       // modify its interface entries
       RCP<Vector> inverseInterfaceScaling = VectorFactory::Build(interfaceScaling->getMap(), true);
@@ -311,22 +311,22 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MakeRegionMatrices: 3 - Replace diagonal")));
 
   RCP<Vector> regNsp;
-  regNsp = VectorFactory::Build(revisedRowMapPerGrp);
+  regNsp = VectorFactory::Build(revisedRowMap);
   regNsp->putScalar(SC_ONE);
 
   RCP<Vector> regCorrection;
-  regCorrection = VectorFactory::Build(revisedRowMapPerGrp, true);
-  regionGrpMats->apply(*regNsp, *regCorrection);
-  regionGrpMats->SetFixedBlockSize(AComp->GetFixedBlockSize());
+  regCorrection = VectorFactory::Build(revisedRowMap, true);
+  regionMats->apply(*regNsp, *regCorrection);
+  regionMats->SetFixedBlockSize(AComp->GetFixedBlockSize());
 
 
   RCP<Vector> regDiag = Teuchos::null;
-  regDiag = VectorFactory::Build(revisedRowMapPerGrp, true);
-  regionGrpMats->getLocalDiagCopy(*regDiag);
+  regDiag = VectorFactory::Build(revisedRowMap, true);
+  regionMats->getLocalDiagCopy(*regDiag);
   regDiag->update(-SC_ONE, *regCorrection, SC_ONE, *regNspViolation, SC_ONE);
 
   // Extract current region matrix in as CrsMatrix
-  RCP<CrsMatrix> regionCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(regionGrpMats)->getCrsMatrix();
+  RCP<CrsMatrix> regionCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(regionMats)->getCrsMatrix();
   regionCrsMat->replaceDiag(*regDiag);
 
   tm = Teuchos::null;
@@ -348,9 +348,9 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
  */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void regionalToComposite(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regMat, ///< Matrix in region layout [in]
-                         const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMapPerGrp, ///< row maps in quasiRegion layout [in]
-                         const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > colMapPerGrp, ///< col maps in quasiRegion layout [in]
-                         const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImportPerGrp, ///< row importer in region layout [in]
+                         const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap, ///< row maps in quasiRegion layout [in]
+                         const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > colMap, ///< col maps in quasiRegion layout [in]
+                         const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport, ///< row importer in region layout [in]
                          const Xpetra::CombineMode combineMode, ///< Combine mode for import/export [in]
                          RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& compMat ///< Matrix in composite layout [in/out]
                          )
@@ -376,8 +376,8 @@ void regionalToComposite(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOr
   // Copy data from regMat into quasiRegMat
   RCP<Matrix> quasiRegMat;
   {
-    quasiRegMat = rcp(new CrsMatrixWrap(rowMapPerGrp,
-                                           colMapPerGrp,
+    quasiRegMat = rcp(new CrsMatrixWrap(rowMap,
+                                           colMap,
                                            regMat->getCrsGraph()->getNodeMaxNumRowEntries()));
 
     // Extract current quasi-region CrsMatrix
@@ -411,14 +411,14 @@ void regionalToComposite(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOr
 
     // Set and fillComplete the quasiRegion CrsMatrix
     quasiRegionCrsMat->setAllValues(rowptrQuasiRegion, colindQuasiRegion, valuesQuasiRegion);
-    quasiRegionCrsMat->expertStaticFillComplete(rowMapPerGrp, rowMapPerGrp);
+    quasiRegionCrsMat->expertStaticFillComplete(rowMap, rowMap);
   }
 
   // Export from quasiRegional format to composite layout
   RCP<Matrix> partialCompMat;
   partialCompMat = MatrixFactory::Build(compMat->getRowMap(),
                                            8*regMat->getCrsGraph()->getNodeMaxNumRowEntries());
-  partialCompMat->doExport(*(quasiRegMat), *(rowImportPerGrp), Xpetra::INSERT);
+  partialCompMat->doExport(*(quasiRegMat), *(rowImport), Xpetra::INSERT);
   partialCompMat->fillComplete();
 
   // Add all partialCompMat together
@@ -437,7 +437,7 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void SetupMatVec(const Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& interfaceGIDsMV,
                  const Teuchos::RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& regionsPerGIDWithGhosts,
                  const Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& regionRowMap,
-                 const Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rowImportPerGrp,
+                 const Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rowImport,
                  Teuchos::ArrayRCP<LocalOrdinal>& regionMatVecLIDs,
                  Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter) {
 #include "Xpetra_UseShortNamesOrdinal.hpp"
@@ -449,9 +449,9 @@ void SetupMatVec(const Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdi
   const LO  maxRegPerGID  = static_cast<LO>(regionsPerGIDWithGhosts->getNumVectors());
   const int myRank        = regionRowMap->getComm()->getRank();
   interfaceGIDsMV->replaceMap(regionRowMap);
-  RCP<Xpetra::MultiVector<GO, LO, GO, NO> > interfaceGIDsPerGrp;
-  interfaceGIDsPerGrp = interfaceGIDsMV;
-  sumInterfaceValues(interfaceGIDsPerGrp, regionRowMap, rowImportPerGrp);
+  RCP<Xpetra::MultiVector<GO, LO, GO, NO> > interfaceGIDs;
+  interfaceGIDs = interfaceGIDsMV;
+  sumInterfaceValues(interfaceGIDs, regionRowMap, rowImport);
 
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("SetupMatVec: 2 - build regionInterfaceMap")));
@@ -462,7 +462,7 @@ void SetupMatVec(const Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdi
   Array<ArrayRCP<const GO> > interfaceGIDsData(maxRegPerGID);
   for(LO regionIdx = 0; regionIdx < maxRegPerGID; ++regionIdx) {
     regionsPerGIDWithGhostsData[regionIdx] = regionsPerGIDWithGhosts->getData(regionIdx);
-    interfaceGIDsData[regionIdx] = interfaceGIDsPerGrp->getData(regionIdx);
+    interfaceGIDsData[regionIdx] = interfaceGIDs->getData(regionIdx);
     for(LO idx = 0; idx < static_cast<LO>(regionsPerGIDWithGhostsData[regionIdx].size()); ++idx) {
       if((regionsPerGIDWithGhostsData[regionIdx][idx] != -1)
          && (regionsPerGIDWithGhostsData[regionIdx][idx] != myRank)) {
@@ -564,7 +564,7 @@ void
 computeResidual(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regRes, ///< residual (to be evaluated)
                 const RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regX, ///< left-hand side (solution)
                 const RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regB, ///< right-hand side (forcing term)
-                const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionGrpMats, ///< matrix in region format
+                const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionMats, ///< matrix in region format
                 const Teuchos::ParameterList& params ///< parameter with fast MatVec parameters and pre-computed communication patterns
     )
 {
@@ -579,8 +579,8 @@ computeResidual(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >&
   const RCP<Import> regionInterfaceImporter = params.get<RCP<Import>>("Fast MatVec: interface importer");
 
   // Step 1: Compute region version of y = Ax
-  RCP<Vector> aTimesX = VectorFactory::Build(regionGrpMats->getRangeMap(), true);
-  ApplyMatVec(TST::one(), regionGrpMats, regX,
+  RCP<Vector> aTimesX = VectorFactory::Build(regionMats->getRangeMap(), true);
+  ApplyMatVec(TST::one(), regionMats, regX,
       TST::zero(), regionInterfaceImporter, regionInterfaceLIDs, aTimesX, Teuchos::NO_TRANS, true);
 
   // Step 2: Compute region version of r = b - y
