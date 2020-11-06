@@ -11,6 +11,12 @@ IF (Tpetra_ENABLE_CUDA)
     COMM serial
   )
   TRIBITS_ADD_LIBRARY(
+    ApiTest
+    SOURCES ApiTest
+    SHARED
+    TESTONLY
+  )
+  TRIBITS_ADD_LIBRARY(
     Intercept
     SOURCES Intercept
     SHARED
