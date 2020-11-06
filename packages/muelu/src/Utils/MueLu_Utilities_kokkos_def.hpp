@@ -143,7 +143,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol) {
+  GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol, const bool doLumped) {
     Teuchos::TimeMonitor MM = *Teuchos::TimeMonitor::getNewTimer("Utilities_kokkos::GetMatrixDiagonalInverse");
     // Some useful type definitions
     using local_matrix_type = typename Matrix::local_matrix_type;
@@ -165,7 +165,7 @@ namespace MueLu {
 
     // Now generate local objects
     local_matrix_type localMatrix = A.getLocalMatrix();
-    auto diagVals = diag->template getLocalView<memory_space>();
+    auto diagVals = diag->getDeviceLocalView();
 
     ordinal_type numRows = localMatrix.graph.numRows();
 
@@ -173,25 +173,40 @@ namespace MueLu {
     // This could be implemented with a TeamPolicy over the rows
     // and a TeamVectorRange over the entries in a row if performance
     // becomes more important here.
-    Kokkos::parallel_for("Utilities_kokkos::GetMatrixDiagonalInverse",
-                         Kokkos::RangePolicy<ordinal_type, execution_space>(0, numRows),
-                         KOKKOS_LAMBDA(const ordinal_type rowIdx) {
-                           bool foundDiagEntry = false;
-                           auto myRow = localMatrix.rowConst(rowIdx);
-                           for(ordinal_type entryIdx = 0; entryIdx < myRow.length; ++entryIdx) {
-                             if(myRow.colidx(entryIdx) == rowIdx) {
-                               foundDiagEntry = true;
-                               if(KAT::magnitude(myRow.value(entryIdx)) > KAT::magnitude(tol)) {
-                                 diagVals(rowIdx, 0) = KAT::one() / myRow.value(entryIdx);
-                               } else {
-                                 diagVals(rowIdx, 0) = KAT::zero();
+    if (!doLumped)
+      Kokkos::parallel_for("Utilities_kokkos::GetMatrixDiagonalInverse",
+                           Kokkos::RangePolicy<ordinal_type, execution_space>(0, numRows),
+                           KOKKOS_LAMBDA(const ordinal_type rowIdx) {
+                             bool foundDiagEntry = false;
+                             auto myRow = localMatrix.rowConst(rowIdx);
+                             for(ordinal_type entryIdx = 0; entryIdx < myRow.length; ++entryIdx) {
+                               if(myRow.colidx(entryIdx) == rowIdx) {
+                                 foundDiagEntry = true;
+                                 if(KAT::magnitude(myRow.value(entryIdx)) > KAT::magnitude(tol)) {
+                                   diagVals(rowIdx, 0) = KAT::one() / myRow.value(entryIdx);
+                                 } else {
+                                   diagVals(rowIdx, 0) = KAT::zero();
+                                 }
+                                 break;
                                }
-                               break;
                              }
-                           }
 
-                           if(!foundDiagEntry) {diagVals(rowIdx, 0) = KAT::zero();}
-                         });
+                             if(!foundDiagEntry) {diagVals(rowIdx, 0) = KAT::zero();}
+                           });
+    else
+      Kokkos::parallel_for("Utilities_kokkos::GetMatrixDiagonalInverse",
+                           Kokkos::RangePolicy<ordinal_type, execution_space>(0, numRows),
+                           KOKKOS_LAMBDA(const ordinal_type rowIdx) {
+                             auto myRow = localMatrix.rowConst(rowIdx);
+                             for(ordinal_type entryIdx = 0; entryIdx < myRow.length; ++entryIdx) {
+                               diagVals(rowIdx, 0) += KAT::magnitude(myRow.value(entryIdx));
+                             }
+                             if(KAT::magnitude(diagVals(rowIdx, 0)) > KAT::magnitude(tol))
+                               diagVals(rowIdx, 0) = KAT::one() / diagVals(rowIdx, 0);
+                             else
+                               diagVals(rowIdx, 0) = KAT::zero();
+
+                           });
 
     return diag;
   } //GetMatrixDiagonalInverse
@@ -438,7 +453,7 @@ namespace MueLu {
     Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > colMap = A.getColMap();
     Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > myColsToZero = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(colMap,1);
     myColsToZero->putScalar(zero);
-    auto myColsToZeroView = myColsToZero->template getLocalView<typename NO::device_type>();
+    auto myColsToZeroView = myColsToZero->getDeviceLocalView();
     // Find all local column indices that are in Dirichlet rows, record in myColsToZero as 1.0
     Kokkos::parallel_for("MueLu:Utils::DetectDirichletCols1", range_type(0,numRows),
                          KOKKOS_LAMBDA(const LO row) {
@@ -459,7 +474,7 @@ namespace MueLu {
     // import to column map
     myColsToZero->doImport(*globalColsToZero,*exporter,Xpetra::INSERT);
 
-    auto myCols = myColsToZero->template getLocalView<typename NO::device_type>();
+    auto myCols = myColsToZero->getDeviceLocalView();
     size_t numColEntries = colMap->getNodeNumElements();
     Kokkos::View<bool*, typename NO::device_type> dirichletCols(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), numColEntries);
     const typename ATS::magnitudeType eps = 2.0*ATS::eps();
@@ -537,7 +552,7 @@ namespace MueLu {
                     const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows,
                     Scalar replaceWith) {
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
-    auto myCols = X->template getLocalView<typename Node::device_type>();
+    auto myCols = X->getDeviceLocalView();
     size_t numVecs = X->getNumVectors();
     Kokkos::parallel_for("MueLu:Utils::ZeroDirichletRows_MV", range_type(0,dirichletRows.size()),
                          KOKKOS_LAMBDA(const size_t i) {
@@ -621,8 +636,8 @@ namespace MueLu {
         (typeid(Scalar).name() == typeid(std::complex<float>).name())) {
       size_t numVecs = X->getNumVectors();
       Xscalar = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(X->getMap(),numVecs);
-      auto XVec = X->template getLocalView<typename Node::device_type>();
-      auto XVecScalar = Xscalar->template getLocalView<typename Node::device_type>();
+      auto XVec = X->getDeviceLocalView();
+      auto XVecScalar = Xscalar->getDeviceLocalView();
 
       Kokkos::parallel_for("MueLu:Utils::RealValuedToScalarMultiVector", range_type(0,X->getLocalLength()),
                            KOKKOS_LAMBDA(const size_t i) {
@@ -665,7 +680,7 @@ namespace MueLu {
       Xpetra::VectorFactory<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(Op.getRowMap());
 
     // Copy out and reorder data
-    auto view1D = Kokkos::subview(retval->template getLocalView<device>(),Kokkos::ALL (), 0);
+    auto view1D = Kokkos::subview(retval->getDeviceLocalView(),Kokkos::ALL (), 0);
     Kokkos::parallel_for("Utilities_kokkos::ReverseCuthillMcKee",
                          Kokkos::RangePolicy<ordinal_type, execution_space>(0, localMatrix.numRows()),
                          KOKKOS_LAMBDA(const ordinal_type rowIdx) {
@@ -696,7 +711,7 @@ namespace MueLu {
       Xpetra::VectorFactory<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(Op.getRowMap());
 
     // Copy out data
-    auto view1D = Kokkos::subview(retval->template getLocalView<device>(),Kokkos::ALL (), 0);
+    auto view1D = Kokkos::subview(retval->getDeviceLocalView(),Kokkos::ALL (), 0);
     Kokkos::parallel_for("Utilities_kokkos::ReverseCuthillMcKee",
                          Kokkos::RangePolicy<ordinal_type, execution_space>(0, localMatrix.numRows()),
                          KOKKOS_LAMBDA(const ordinal_type rowIdx) {

@@ -20,7 +20,6 @@
 #include "Tempus_StepperTrapezoidalModifierDefault.hpp"
 #include "Tempus_StepperTrapezoidalModifierXDefault.hpp"
 #include "Tempus_StepperTrapezoidalObserverDefault.hpp"
-#include "Tempus_StepperTrapezoidalObserver.hpp"
 #include "Tempus_UnitTest_Utils.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
@@ -59,36 +58,24 @@ TEUCHOS_UNIT_TEST(Trapezoidal, Default_Construction)
   // Default values for construction.
   auto modifier  = rcp(new Tempus::StepperTrapezoidalModifierDefault<double>());
   auto modifierX = rcp(new Tempus::StepperTrapezoidalModifierXDefault<double>());
-  auto obs       = rcp(new Tempus::StepperTrapezoidalObserver<double>());
   auto solver    = rcp(new Thyra::NOXNonlinearSolver());
   solver->setParameterList(Tempus::defaultSolverParameters());
 
-  bool useFSAL              = stepper->getUseFSALDefault();
-  std::string ICConsistency = stepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
+  bool useFSAL              = stepper->getUseFSAL();
+  std::string ICConsistency = stepper->getICConsistency();
+  bool ICConsistencyCheck   = stepper->getICConsistencyCheck();
   bool zeroInitialGuess     = stepper->getZeroInitialGuess();
 
   // Test the set functions.
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
     stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setZeroInitialGuess(zeroInitialGuess);      stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  // Full argument list construction.
-  stepper = rcp(new Tempus::StepperTrapezoidal<double>(
-    model, obs, solver, useFSAL,
-    ICConsistency, ICConsistencyCheck, zeroInitialGuess));
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
-
-// Full argument list construction.                                                                                                             
+// Full argument list construction.
 stepper = rcp(new Tempus::StepperTrapezoidal<double>(
 model, solver, useFSAL,
   ICConsistency, ICConsistencyCheck, zeroInitialGuess, modifier));
@@ -106,13 +93,13 @@ TEUCHOS_UNIT_TEST(Trapezoidal, StepperFactory_Construction)
   auto model = rcp(new Tempus_Test::SinCosModel<double>());
   testFactoryConstruction("Trapezoidal Method", model);
 }
-  // ************************************************************                                                   
-  // ************************************************************                        
+  // ************************************************************
+  // ************************************************************
 class StepperTrapezoidalModifierTest
   : virtual public Tempus::StepperTrapezoidalModifierBase<double>
 {
 public:
-  /// Constructor                                                                          
+  /// Constructor
   StepperTrapezoidalModifierTest()
     : testBEGIN_STEP(false), testBEFORE_SOLVE(false),
       testAFTER_SOLVE(false), testEND_STEP(false),
@@ -120,10 +107,10 @@ public:
       testDt(-1.5), testType("")
   {}
 
-  /// Destructor                                                                 
+  /// Destructor
   virtual ~StepperTrapezoidalModifierTest(){}
 
-  /// Modify Trapezoidal Stepper at action location.             
+  /// Modify Trapezoidal Stepper at action location.
   virtual void modify(
 		      Teuchos::RCP<Tempus::SolutionHistory<double> > sh,
 		      Teuchos::RCP<Tempus::StepperTrapezoidal<double> > stepper,
@@ -179,30 +166,30 @@ TEUCHOS_UNIT_TEST(Trapezoidal, AppAction_Modifier)
   Teuchos::RCP<const Thyra::ModelEvaluator<double> >
     model = rcp(new Tempus_Test::SinCosModel<double>());
 
-  // Setup Stepper for field solve ----------------------------                                                          
+  // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperTrapezoidal<double>());
   stepper->setModel(model);
   auto modifier = rcp(new StepperTrapezoidalModifierTest());
   stepper->setAppAction(modifier);
   stepper->initialize();
 
-  // Create a SolutionHistory.                                                                             
+  // Create a SolutionHistory.
   auto solutionHistory = Tempus::createSolutionHistoryME(model);
 
-  // Take one time step.                                                                                              
+  // Take one time step.
   stepper->setInitialConditions(solutionHistory);
   solutionHistory->initWorkingState();
   double dt = 0.1;
   solutionHistory->getWorkingState()->setTimeStep(dt);
   stepper->takeStep(solutionHistory);
 
-  // Testing that each ACTION_LOCATION has been called.                                                                 
+  // Testing that each ACTION_LOCATION has been called.
   TEST_COMPARE(modifier->testBEGIN_STEP, ==, true);
   TEST_COMPARE(modifier->testBEFORE_SOLVE, ==, true);
   TEST_COMPARE(modifier->testAFTER_SOLVE, ==, true);
   TEST_COMPARE(modifier->testEND_STEP, ==, true);
 
-  // Testing that values can be set through the Modifier.                                                              
+  // Testing that values can be set through the Modifier.
   auto x = solutionHistory->getCurrentState()->getX();
   TEST_FLOATING_EQUALITY(modifier->testCurrentValue, get_ele(*(x), 0), 1.0e-14);
   x = solutionHistory->getWorkingState()->getX();
@@ -212,14 +199,14 @@ TEUCHOS_UNIT_TEST(Trapezoidal, AppAction_Modifier)
   TEST_COMPARE(modifier->testType, ==, "Trapezoidal - Modifier");
 }
 
-// ************************************************************                                                        
-// ************************************************************                                                      
+// ************************************************************
+// ************************************************************
 class StepperTrapezoidalObserverTest
   : virtual public Tempus::StepperTrapezoidalObserverBase<double>
 {
 public:
 
-  /// Constructor                                                                                             
+  /// Constructor
   StepperTrapezoidalObserverTest()
     : testBEGIN_STEP(false), testBEFORE_SOLVE(false),
       testAFTER_SOLVE(false), testEND_STEP(false),
@@ -227,10 +214,10 @@ public:
       testDt(-1.5), testType("")
   {}
 
-  /// Destructor                                                                                                      
+  /// Destructor
   virtual ~StepperTrapezoidalObserverTest(){}
 
-  /// Observe Trapezoidal Stepper at action location.                                                       
+  /// Observe Trapezoidal Stepper at action location.
   virtual void observe(
     Teuchos::RCP<const Tempus::SolutionHistory<double> > sh,
     Teuchos::RCP<const Tempus::StepperTrapezoidal<double> > stepper,
@@ -283,30 +270,30 @@ TEUCHOS_UNIT_TEST(Trapezoidal, AppAction_Observer)
   Teuchos::RCP<const Thyra::ModelEvaluator<double> >
     model = rcp(new Tempus_Test::SinCosModel<double>());
 
-  // Setup Stepper for field solve ----------------------------                                                         
+  // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperTrapezoidal<double>());
   stepper->setModel(model);
   auto observer = rcp(new StepperTrapezoidalObserverTest());
   stepper->setAppAction(observer);
   stepper->initialize();
 
-  // Setup a SolutionHistory.                                                                                        
+  // Setup a SolutionHistory.
   auto solutionHistory = Tempus::createSolutionHistoryME(model);
 
-  // Take one time step.                                                                                                
+  // Take one time step.
   stepper->setInitialConditions(solutionHistory);
   solutionHistory->initWorkingState();
   double dt = 0.1;
   solutionHistory->getWorkingState()->setTimeStep(dt);
   stepper->takeStep(solutionHistory);
 
-  // Testing that each ACTION_LOCATION has been called.                                                              
+  // Testing that each ACTION_LOCATION has been called.
   TEST_COMPARE(observer->testBEGIN_STEP, ==, true);
   TEST_COMPARE(observer->testBEFORE_SOLVE, ==, true);
   TEST_COMPARE(observer->testAFTER_SOLVE, ==, true);
   TEST_COMPARE(observer->testEND_STEP, ==, true);
 
-  // Testing that values can be observed through the observer.                                                            
+  // Testing that values can be observed through the observer.
   auto x = solutionHistory->getCurrentState()->getX();
   TEST_FLOATING_EQUALITY(observer->testCurrentValue, get_ele(*(x), 0), 1.0e-14);
   x = solutionHistory->getWorkingState()->getX();
@@ -315,14 +302,14 @@ TEUCHOS_UNIT_TEST(Trapezoidal, AppAction_Observer)
   TEST_COMPARE(observer->testType, ==, "Trapezoidal Method");
 }
 
-// ************************************************************                                       
-// ************************************************************                                                      
+// ************************************************************
+// ************************************************************
 class StepperTrapezoidalModifierXTest
   : virtual public Tempus::StepperTrapezoidalModifierXBase<double>
 {
 public:
 
-  /// Constructor                                                                                                        
+  /// Constructor
   StepperTrapezoidalModifierXTest()
     : testX_BEGIN_STEP(false), testX_BEFORE_SOLVE(false),
       testX_AFTER_SOLVE(false), testXDOT_END_STEP(false),
@@ -330,9 +317,9 @@ public:
       testDt(-1.5), testTime(-1.5)
   {}
 
-  /// Destructor                                                                                                          
+  /// Destructor
   virtual ~StepperTrapezoidalModifierXTest(){}
-  /// Modify Trapezoidal Stepper at action location.                                                               
+  /// Modify Trapezoidal Stepper at action location.
   virtual void modify(
     Teuchos::RCP<Thyra::VectorBase<double> > x,
     const double time, const double dt,
@@ -383,33 +370,33 @@ TEUCHOS_UNIT_TEST(Trapezoidal, AppAction_ModifierX)
   Teuchos::RCP<const Thyra::ModelEvaluator<double> >
     model = rcp(new Tempus_Test::SinCosModel<double>());
 
-  // Setup Stepper for field solve ----------------------------                                                           
+  // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperTrapezoidal<double>());
   stepper->setModel(model);
   auto modifierX = rcp(new StepperTrapezoidalModifierXTest());
   stepper->setAppAction(modifierX);
   stepper->initialize();
 
-  // Setup a SolutionHistory.                                                                                   
+  // Setup a SolutionHistory.
   auto solutionHistory = Tempus::createSolutionHistoryME(model);
 
-  // Take one time step.                                                                                                   
+  // Take one time step.
   stepper->setInitialConditions(solutionHistory);
   solutionHistory->initWorkingState();
   double dt = 0.1;
   solutionHistory->getWorkingState()->setTimeStep(dt);
   stepper->takeStep(solutionHistory);
 
-  // Testing that each ACTION_LOCATION has been called.                                                                    
+  // Testing that each ACTION_LOCATION has been called.
   TEST_COMPARE(modifierX->testX_BEGIN_STEP, ==, true);
   TEST_COMPARE(modifierX->testX_BEFORE_SOLVE, ==, true);
   TEST_COMPARE(modifierX->testX_AFTER_SOLVE, ==, true);
   TEST_COMPARE(modifierX->testXDOT_END_STEP, ==, true);
 
-  // Testing that values can be set through the Modifier.                                                                  
+  // Testing that values can be set through the Modifier.
   auto x = solutionHistory->getCurrentState()->getX();
   TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-14);
-  // Temporary memory for xDot is not guarranteed to exist outside the Stepper.                                            
+  // Temporary memory for xDot is not guarranteed to exist outside the Stepper.
   auto xDot = solutionHistory->getWorkingState()->getXDot();
   if (xDot == Teuchos::null) xDot = stepper->getStepperXDot();
 

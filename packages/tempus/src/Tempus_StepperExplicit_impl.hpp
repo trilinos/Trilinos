@@ -184,15 +184,24 @@ void StepperExplicit<Scalar>::setInitialConditions(
       else reldiff = Thyra::norm(*f)/normX;
 
       Scalar eps = Scalar(100.0)*std::abs(Teuchos::ScalarTraits<Scalar>::eps());
-      if (reldiff > eps) {
-        RCP<Teuchos::FancyOStream> out = this->getOStream();
-        Teuchos::OSTab ostab(out,1,"StepperExplicit::setInitialConditions()");
-        *out << "Warning -- Failed consistency check but continuing!\n"
-           << "  ||xDot-f(x,t)||/||x|| > eps" << std::endl
-           << "  ||xDot-f(x,t)||       = " << Thyra::norm(*f) << std::endl
-           << "  ||x||                 = " << Thyra::norm(*x) << std::endl
-           << "  ||xDot-f(x,t)||/||x|| = " << reldiff         << std::endl
-           << "                    eps = " << eps             << std::endl;
+      RCP<Teuchos::FancyOStream> out = this->getOStream();
+      Teuchos::OSTab ostab(out,1,"StepperExplicit::setInitialConditions()");
+      if (reldiff < eps) {
+        *out << "\n---------------------------------------------------\n"
+           << "Info -- Stepper = " << this->getStepperType() << "\n"
+           << "  Initial condition PASSED consistency check!\n"
+           << "  (||xDot-f(x,t)||/||x|| = " << reldiff << ") < "
+           << "(eps = " << eps << ")" << std::endl
+           << "---------------------------------------------------\n"<<std::endl;
+      } else {
+        *out << "\n---------------------------------------------------\n"
+           << "Info -- Stepper = " << this->getStepperType() << "\n"
+           << "  Initial condition FAILED consistency check but continuing!\n"
+           << "  (||xDot-f(x,t)||/||x|| = " << reldiff << ") > "
+           << "(eps = " << eps << ")" << std::endl
+           << "  ||xDot-f(x,t)|| = " << Thyra::norm(*f) << std::endl
+           << "  ||x||           = " << Thyra::norm(*x) << std::endl
+           << "---------------------------------------------------\n"<<std::endl;
       }
     }
     else if (this->getOrderODE() == SECOND_ORDER_ODE) {
@@ -208,17 +217,24 @@ void StepperExplicit<Scalar>::setInitialConditions(
       else reldiff = Thyra::norm(*f)/normX;
 
       Scalar eps = Scalar(100.0)*std::abs(Teuchos::ScalarTraits<Scalar>::eps());
-      if (reldiff > eps) {
-        RCP<Teuchos::FancyOStream> out = this->getOStream();
-        Teuchos::OSTab ostab(out,1,"StepperExplicit::setInitialConditions()");
-        *out << "Warning -- Failed consistency check but continuing!\n"
-           << "  ||xDotDot-f(x,xDot,t)||/||x|| > eps" << std::endl
-           << "  ||xDotDot-f(x,xDot,t)||       = " << Thyra::norm(*f)
-           << std::endl
-           << "  ||x||                         = " << Thyra::norm(*x)
-           << std::endl
-           << "  ||xDotDot-f(x,xDot,t)||/||x|| = " << reldiff << std::endl
-           << "                            eps = " << eps     << std::endl;
+      RCP<Teuchos::FancyOStream> out = this->getOStream();
+      Teuchos::OSTab ostab(out,1,"StepperExplicit::setInitialConditions()");
+      if (reldiff < eps) {
+        *out << "\n---------------------------------------------------\n"
+           << "Info -- Stepper = " << this->getStepperType() << "\n"
+           << "  Initial condition PASSED consistency check!\n"
+           << "  (||xDotDot-f(x,xDot,t)||/||x|| = " << reldiff << ") > "
+           << "(eps = " << eps << ")" << std::endl
+           << "---------------------------------------------------\n"<<std::endl;
+      } else {
+        *out << "\n---------------------------------------------------\n"
+            << "Info -- Stepper = " << this->getStepperType() << "\n"
+           << "Initial condition FAILED consistency check but continuing!\n"
+           << "  (||xDotDot-f(x,xDot,t)||/||x|| = " << reldiff << ") > "
+           << "(eps = " << eps << ")" << std::endl
+           << "  ||xDotDot-f(x,xDot,t)|| = " << Thyra::norm(*f) << std::endl
+           << "  ||x||                   = " << Thyra::norm(*x) << std::endl
+           << "---------------------------------------------------\n"<<std::endl;
       }
     }
   }

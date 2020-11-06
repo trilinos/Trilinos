@@ -65,6 +65,7 @@
 
 #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
 #include <MueLu_RepartitionFactory.hpp>
+#include <MueLu_RepartitionHeuristicFactory.hpp>
 #include <MueLu_Zoltan2Interface.hpp>
 #endif
 
@@ -475,12 +476,13 @@ void RebalanceCoarseCompositeOperator(const int maxRegPerProc,
 {
 #include "MueLu_UseShortNames.hpp"
   using CoordType = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
+  using Teuchos::TimeMonitor;
+
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ReblanceCoarseCompositeOperator: ")));
 
   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   fos->setOutputToRootOnly(0);
   *fos << "Rebalancing coarse composite operator." << std::endl;
-
-  //RCP<const Map> map = coarseCompOp->getMap();
 
   const int numPartitions = rebalanceNumPartitions;
 
@@ -491,22 +493,33 @@ void RebalanceCoarseCompositeOperator(const int maxRegPerProc,
   RCP<FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
   level.SetFactoryManager(factoryHandler);
 
+  RCP<TimeMonitor> tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("rebalanceCoarse: Zoltan construction:")));
+
   RCP<Zoltan2Interface> zoltan = rcp(new Zoltan2Interface());
 
   level.Set<RCP<Matrix> >     ("A",                    coarseCompOp);
   level.Set<RCP<MultiVector> >("Coordinates",          compCoarseCoordinates);
-  level.Set<int>              ("number of partitions", numPartitions);
 
   RCP<RepartitionFactory> repart = rcp(new RepartitionFactory());
   Teuchos::ParameterList paramList;
   paramList.set("repartition: remap parts",       false);
+  if( numPartitions > 0 ){ // If number of coarse rebalance partitions was provided by the user.
+    level.Set<int>              ("number of partitions", numPartitions);
+  } else {
+    Teuchos::ParameterList paramListHeuristic;
+    paramListHeuristic.set("repartition: start level",       1);
+    RCP<RepartitionHeuristicFactory> repartHeuristic = rcp(new RepartitionHeuristicFactory());
+    repartHeuristic->SetParameterList(paramListHeuristic);
+    repart->SetFactory("number of partitions", repartHeuristic );
+  }
   repart->SetParameterList(paramList);
   repart->SetFactory("Partition", zoltan);
-
 
   // Build
   level.Request("Importer", repart.get());
   repart->Build(level);
+
+  tmLocal = Teuchos::null;
 
   // Build importer for rebalancing
   level.Get("Importer", rebalanceImporter, repart.get());
@@ -953,7 +966,6 @@ void createRegionHierarchy(const int maxRegPerProc,
   tmLocal = Teuchos::null;
   tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("createRegionHierarchy: CreateCoarseSolver")));
   const std::string coarseSolverType = coarseSolverData->get<std::string>("coarse solver type");
-  const bool coarseSolverRebalance = coarseSolverData->get<bool>("coarse solver rebalance");
   if (coarseSolverType == "smoother") {
     // Set the smoother on the coarsest level.
     const std::string smootherXMLFileName = coarseSolverData->get<std::string>("smoother xml file");
@@ -996,6 +1008,7 @@ void createRegionHierarchy(const int maxRegPerProc,
       RCP<Hierarchy> coarseAMGHierarchy;
       std::string amgXmlFileName = coarseSolverData->get<std::string>("amg xml file");
 #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
+      const bool coarseSolverRebalance = coarseSolverData->get<bool>("coarse solver rebalance");
       if(keepCoarseCoords == true && coarseSolverRebalance == true ){
         RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rebalancedCompOp;
         RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > rebalancedCoordinates;

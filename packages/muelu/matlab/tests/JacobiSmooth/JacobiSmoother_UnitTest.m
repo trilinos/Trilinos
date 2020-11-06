@@ -10,13 +10,11 @@ try
   matlabSoln = 0 * b; %Set 'initial guesses' to all 0
   mueluSoln = matlabSoln;
   %Note: In both of these problems, set reuse type to full so that P is not discarded
-  %Set up the problem normally in MueLu through MueMex
   mueluProblem = muelu('setup', A, 'xml parameter file', 'mueluParams.xml');
-  %Set up the problem using a Matlab TwoLevelFactory for Ptent
   matlabProblem = muelu('setup', A, 'xml parameter file', 'matlabParams.xml');
-  mueluSoln = muelu(mueluProblem, b);     %Grab the (smoothed) prolongator from both problems
-  matlabSoln = muelu(matlabProblem, b);   %to compare
-                                          %Compare the matrices to near machine precision for equality
+  mueluSoln = muelu(mueluProblem, b);
+  matlabSoln = muelu(matlabProblem, b);
+  %Compare the solutions to near machine precision for equality
   areEqual = true(1);
   for index = 1:numel(matlabSoln)
     %Use machine precision minus a few digits
@@ -26,6 +24,7 @@ try
       break
     end
   end
+  muelu('cleanup');
   if areEqual
     disp('Test passed, MueLu produced same solution as gold standard in MATLAB.');
     exit(0);

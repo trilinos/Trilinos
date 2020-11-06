@@ -3194,7 +3194,7 @@ namespace Tpetra {
         ") > k_values1D_.extent(0) (" << k_values1D_.extent (0) << ").");
 #endif // HAVE_TPETRA_DEBUG
       range_type range (rowinfo.offset1D, rowinfo.offset1D + rowinfo.allocSize);
-      typedef View<const ST*, execution_space, MemoryUnmanaged> subview_type;
+      typedef View<const ST*, device_type, MemoryUnmanaged> subview_type;
       // mfh 23 Nov 2015: Don't just create a subview of k_values1D_
       // directly, because that first creates a _managed_ subview,
       // then returns an unmanaged version of that.  That touches the
@@ -3258,7 +3258,7 @@ namespace Tpetra {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Kokkos::View<const typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type*,
-               typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::execution_space,
+               typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::device_type,
                Kokkos::MemoryUnmanaged>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getRowView (const RowInfo& rowInfo) const
@@ -3266,7 +3266,7 @@ namespace Tpetra {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
     typedef impl_scalar_type ST;
-    typedef View<const ST*, execution_space, MemoryUnmanaged> subview_type;
+    typedef View<const ST*, device_type, MemoryUnmanaged> subview_type;
     typedef std::pair<size_t, size_t> range_type;
 
     if (k_values1D_.extent (0) != 0 && rowInfo.allocSize > 0) {
@@ -3295,7 +3295,7 @@ namespace Tpetra {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Kokkos::View<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type*,
-               typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::execution_space,
+               typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::device_type,
                Kokkos::MemoryUnmanaged>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getRowViewNonConst (const RowInfo& rowInfo) const
@@ -3303,7 +3303,7 @@ namespace Tpetra {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
     typedef impl_scalar_type ST;
-    typedef View<ST*, execution_space, MemoryUnmanaged> subview_type;
+    typedef View<ST*, device_type, MemoryUnmanaged> subview_type;
     typedef std::pair<size_t, size_t> range_type;
 
     if (k_values1D_.extent (0) != 0 && rowInfo.allocSize > 0) {

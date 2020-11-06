@@ -63,7 +63,7 @@ namespace FROSch {
                                                                                       UN levelID) :
     GDSWInterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID)
     {
-        FROSCH_TIMER_START_LEVELID(GDSWStarInterfacePartitionOfUnityTime,"GDSWStarInterfacePartitionOfUnity::GDSWStarInterfacePartitionOfUnity");
+        FROSCH_DETAILTIMER_START_LEVELID(GDSWStarInterfacePartitionOfUnityTime,"GDSWStarInterfacePartitionOfUnity::GDSWStarInterfacePartitionOfUnity");
         this->UseVertices_ = false;
         this->UseShortEdges_ = false;
         this->UseStraightEdges_ = false;
@@ -93,14 +93,14 @@ namespace FROSch {
         } else {
             FROSCH_ASSERT(false,"FROSch::GDSWStarInterfacePartitionOfUnity : ERROR: Specify a valid Distance Function.");
         }
-        this->LocalPartitionOfUnity_ = XMultiVectorPtrVecPtr(2);
-        this->PartitionOfUnityMaps_ = XMapPtrVecPtr(2);
+        this->LocalPartitionOfUnity_ = ConstXMultiVectorPtrVecPtr(2);
+        this->PartitionOfUnityMaps_ = ConstXMapPtrVecPtr(2);
     }
 
     template <class SC,class LO,class GO,class NO>
     int GDSWStarInterfacePartitionOfUnity<SC,LO,GO,NO>::computePartitionOfUnity(ConstXMultiVectorPtr nodeList)
     {
-        FROSCH_TIMER_START_LEVELID(computePartitionOfUnityTime,"GDSWStarInterfacePartitionOfUnity::computePartitionOfUnity");
+        FROSCH_DETAILTIMER_START_LEVELID(computePartitionOfUnityTime,"GDSWStarInterfacePartitionOfUnity::computePartitionOfUnity");
         // Interface
         UN dofsPerNode = this->DDInterface_->getInterface()->getEntity(0)->getDofsPerNode();
         UN numInterfaceDofs = dofsPerNode*this->DDInterface_->getInterface()->getEntity(0)->getNumNodes();
@@ -131,23 +131,23 @@ namespace FROSch {
 
         if (this->Verbose_) {
             cout
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "-----------------------------------------------------------------------------------------"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| "
-            << left << setw(74) << "GDSW Star Interface Partition Of Unity " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")" << right
+            << left << setw(74) << "> GDSW Star Interface Partition Of Unity " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")" << right
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "========================================================================================="
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(41) << "Roots" << right
             << " | " << setw(41) << boolalpha << UseRoots_ << noboolalpha
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(41) << "Leafs" << right
             << " | " << setw(41) << boolalpha << UseLeafs_ << noboolalpha
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "-----------------------------------------------------------------------------------------"
             << endl;
         }

@@ -87,6 +87,16 @@ getLatticeSize( const shards::CellTopology cellType,
     r_val = (effectiveOrder < 0 ? 0 : (effectiveOrder+1));
     break;
   }
+  case shards::Quadrilateral<>::key: {
+    const auto effectiveOrder = order - 2 * offset;
+    r_val = std::pow(effectiveOrder < 0 ? 0 : (effectiveOrder+1),2);
+    break;
+  }
+  case shards::Hexahedron<>::key: {
+    const auto effectiveOrder = order - 2 * offset;
+    r_val = std::pow(effectiveOrder < 0 ? 0 : (effectiveOrder+1),3);
+    break;
+  }
   default: {
     INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
         ">>> ERROR (Intrepid2::PointTools::getLatticeSize): the specified cell type is not supported." );
@@ -120,24 +130,49 @@ getLattice(       Kokkos::DynRankView<pointValueType,pointProperties...> points,
       ">>> ERROR (PointTools::getLattice): dimension does not match to lattice size." );
 #endif
 
-  // const auto latticeSize = getLatticeSize( cell, order, offset );
-  // const auto spaceDim = cell.getDimension();
+  auto hostPoints = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace::memory_space(), points);
 
-  // // the interface assumes that the input array follows the cell definition
-  // // so, let's match all dimensions according to the cell specification
-  // typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-  // auto pts = Kokkos::subview( points,
-  //                                    range_type(0, latticeSize),
-  //                                    range_type(0, spaceDim) );
-  switch (pointType) {
-  case POINTTYPE_EQUISPACED:  getEquispacedLattice( points, cell, order, offset ); break;
-  case POINTTYPE_WARPBLEND:   getWarpBlendLattice ( points, cell, order, offset ); break;
+  switch (cell.getBaseKey()) {
+  case shards::Tetrahedron<>::key: getLatticeTetrahedron( hostPoints, order, offset, pointType );  break;
+  case shards::Triangle<>::key:    getLatticeTriangle   ( hostPoints, order, offset, pointType );  break;
+  case shards::Line<>::key:        getLatticeLine       ( hostPoints, order, offset, pointType );  break;
+  case shards::Quadrilateral<>::key:   {
+    shards::CellTopology line(shards::getCellTopologyData<shards::Line<2> >());
+    const ordinal_type numPoints = getLatticeSize( line, order, offset );
+    Kokkos::DynRankView<pointValueType,Kokkos::HostSpace> linePoints("linePoints",numPoints,1);
+    getLatticeLine( linePoints, order, offset, pointType );
+    ordinal_type idx=0;
+    for (ordinal_type j=0; j<numPoints; ++j) {
+      for (ordinal_type i=0; i<numPoints; ++i, ++idx) {
+        hostPoints(idx,0) = linePoints(i,0);
+        hostPoints(idx,1) = linePoints(j,0);
+      }
+    }
+  }
+  break;
+  case shards::Hexahedron<>::key:   {
+    shards::CellTopology line(shards::getCellTopologyData<shards::Line<2> >());
+    const ordinal_type numPoints = getLatticeSize( line, order, offset );
+    Kokkos::DynRankView<pointValueType,Kokkos::HostSpace> linePoints("linePoints",numPoints,1);
+    getLatticeLine( linePoints, order, offset, pointType );
+    ordinal_type idx=0;
+    for (ordinal_type k=0; k<numPoints; ++k) {
+      for (ordinal_type j=0; j<numPoints; ++j) {
+        for (ordinal_type i=0; i<numPoints; ++i, ++idx) {
+          hostPoints(idx,0) = linePoints(i,0);
+          hostPoints(idx,1) = linePoints(j,0);
+          hostPoints(idx,2) = linePoints(k,0);
+        }
+      }
+    }
+  }
+  break;
   default: {
-    INTREPID2_TEST_FOR_EXCEPTION( true ,
-        std::invalid_argument ,
-        ">>> ERROR (PointTools::getLattice): invalid EPointType." );
+    INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+        ">>> ERROR (Intrepid2::PointTools::getLattice): the specified cell type is not supported." );
   }
   }
+  Kokkos::deep_copy(points,hostPoints);
 }
 
 template<typename pointValueType, class ...pointProperties>
@@ -145,7 +180,7 @@ void
 PointTools::
 getGaussPoints(      Kokkos::DynRankView<pointValueType,pointProperties...> points,
     const ordinal_type order ) {
-#ifdef HAVE_INTREPID2_DEBUG    
+#ifdef HAVE_INTREPID2_DEBUG
   INTREPID2_TEST_FOR_EXCEPTION( points.rank() != 2,
       std::invalid_argument ,
       ">>> ERROR (PointTools::getGaussPoints): points rank must be 1." );
@@ -178,37 +213,56 @@ getGaussPoints(      Kokkos::DynRankView<pointValueType,pointProperties...> poin
 // -----------------------------------------------------------------------------------------
 
 template<typename pointValueType, class ...pointProperties>
-void PointTools::
-getEquispacedLattice(       Kokkos::DynRankView<pointValueType,pointProperties...> points,
-    const shards::CellTopology cell,
-    const ordinal_type order,
-    const ordinal_type offset ) {
-  switch (cell.getBaseKey()) {
-  case shards::Tetrahedron<>::key: getEquispacedLatticeTetrahedron( points, order, offset );  break;
-  case shards::Triangle<>::key:    getEquispacedLatticeTriangle   ( points, order, offset );  break;
-  case shards::Line<>::key:        getEquispacedLatticeLine       ( points, order, offset );  break;
+void
+PointTools::
+getLatticeLine(       Kokkos::DynRankView<pointValueType,pointProperties...> points,
+    const ordinal_type         order,
+    const ordinal_type         offset,
+    const EPointType           pointType ) {
+  switch (pointType) {
+  case POINTTYPE_EQUISPACED:  getEquispacedLatticeLine( points, order, offset ); break;
+  case POINTTYPE_WARPBLEND:   getWarpBlendLatticeLine( points, order, offset ); break;
   default: {
-    INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
-        ">>> ERROR (Intrepid2::PointTools::getEquispacedLattice): the specified cell type is not supported." );
+    INTREPID2_TEST_FOR_EXCEPTION( true ,
+        std::invalid_argument ,
+        ">>> ERROR (PointTools::getLattice): invalid EPointType." );
   }
   }
-
 }
 
 template<typename pointValueType, class ...pointProperties>
-void PointTools::
-getWarpBlendLattice(      Kokkos::DynRankView<pointValueType,pointProperties...> points,
-    const shards::CellTopology cell,
-    const ordinal_type order,
-    const ordinal_type offset ) {
-    switch (cell.getBaseKey()) {
-      case shards::Tetrahedron<>::key: getWarpBlendLatticeTetrahedron( points, order, offset );  break;
-      case shards::Triangle<>::key:    getWarpBlendLatticeTriangle  ( points, order, offset );  break;
-      case shards::Line<>::key:        getWarpBlendLatticeLine      ( points, order, offset );  break;
-      default: {
-        INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument ,
-          ">>> ERROR (Intrepid2::PointTools::getWarpBlendLattice): the specified cell type is not supported." );
-    }
+void
+PointTools::
+getLatticeTriangle(       Kokkos::DynRankView<pointValueType,pointProperties...> points,
+    const ordinal_type         order,
+    const ordinal_type         offset,
+    const EPointType           pointType ) {
+  switch (pointType) {
+  case POINTTYPE_EQUISPACED:  getEquispacedLatticeTriangle( points, order, offset ); break;
+  case POINTTYPE_WARPBLEND:   getWarpBlendLatticeTriangle ( points, order, offset ); break;
+  default: {
+    INTREPID2_TEST_FOR_EXCEPTION( true ,
+        std::invalid_argument ,
+        ">>> ERROR (PointTools::getLattice): invalid EPointType." );
+  }
+  }
+}
+
+template<typename pointValueType, class ...pointProperties>
+void
+PointTools::
+getLatticeTetrahedron(       Kokkos::DynRankView<pointValueType,pointProperties...> points,
+    const ordinal_type         order,
+    const ordinal_type         offset,
+    const EPointType           pointType ) {
+  switch (pointType) {
+  case POINTTYPE_EQUISPACED:  getEquispacedLatticeTetrahedron( points, order, offset ); break;
+  case POINTTYPE_WARPBLEND:   getWarpBlendLatticeTetrahedron ( points, order, offset ); break;
+  default: {
+    INTREPID2_TEST_FOR_EXCEPTION( true ,
+        std::invalid_argument ,
+        ">>> ERROR (PointTools::getLattice): invalid EPointType." );
+  }
   }
 }
 

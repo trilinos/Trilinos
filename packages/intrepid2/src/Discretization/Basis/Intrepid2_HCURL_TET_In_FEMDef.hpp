@@ -198,10 +198,10 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
   this->basisCardinality_  = CardinalityHCurlTet(order);
   this->basisDegree_       = order; // small n
   this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
-  this->basisType_         = BASIS_FEM_FIAT;
+  this->basisType_         = BASIS_FEM_LAGRANGIAN;
   this->basisCoordinates_  = COORDINATES_CARTESIAN;
   this->functionSpace_     = FUNCTION_SPACE_HCURL;
-
+  pointType_ = pointType;
   const ordinal_type card = this->basisCardinality_;
 
   const ordinal_type  cardPn = Intrepid2::getPnCardinality<spaceDim>(order); // dim of (P_{n}) -- smaller space
@@ -369,10 +369,6 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
     CellTools<Kokkos::HostSpace::execution_space>::getReferenceEdgeTangent( edgeTan ,
         i ,
         this->basisCellTopology_ );
-    /* multiply by measure of reference edge so that magnitude of the edgeTan is equal to the edge measure */
-    const scalarType refEdgeMeasure = 2.0;
-    for (ordinal_type j=0;j<spaceDim;j++)
-      edgeTan(j) *= refEdgeMeasure;
 
     CellTools<Kokkos::HostSpace::execution_space>::mapToReferenceSubcell( edgePts ,
         linePts ,

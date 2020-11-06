@@ -108,9 +108,12 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::MatlabSmoother::Apply(): Setup() has not been called");
+    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError,
+        "MueLu::MatlabSmoother::Apply(): Setup() has not been called");
     using namespace Teuchos;
     using namespace std;
+    if(InitialGuessIsZero)
+      X.putScalar(0.0);
     // Push on A as first input
     vector<RCP<MuemexArg>> InputArgs;
     InputArgs.push_back(rcp(new MuemexData<RCP<Matrix>>(A_)));

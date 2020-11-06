@@ -99,6 +99,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 {
   orientations = d.orientations_;
   this->utils.setFieldData(pointValues.jac,fm);
+  const shards::CellTopology & parentCell = *basis->getCellTopology();
+  int edgeDim = 1;
+  Intrepid2::CellTools<PHX::Device>::getSubcellParametrization(edgeParam, edgeDim, parentCell);
 }
 
 // **********************************************************************
@@ -112,6 +115,7 @@ evaluateFields(typename Traits::EvalData workset)
   else {
     const shards::CellTopology & parentCell = *basis->getCellTopology();
     int cellDim = parentCell.getDimension();
+    int edgeDim = 1;
     int numEdges = gatherFieldTangents.extent(1);
 
     auto workspace = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"workspace", 4, cellDim);
@@ -128,14 +132,16 @@ evaluateFields(typename Traits::EvalData workset)
 
       for(int pt = 0; pt < numEdges; pt++) {
         auto phyEdgeTan = Kokkos::subview(gatherFieldTangents.get_static_view(), c, pt, Kokkos::ALL());
-        auto ortEdgeTan = Kokkos::subview(workspace, 1, Kokkos::ALL());
+        auto ortEdgeTan = Kokkos::subview(workspace, 0, Kokkos::ALL());
 
-        // Apply parent cell Jacobian to ref. edge tangent
-        Intrepid2::Orientation::getReferenceEdgeTangent(ortEdgeTan,
-                                                        pt,
-                                                        parentCell,
-                                                        edgeOrts[pt]);
-        
+
+        Intrepid2::Impl::OrientationTools::getRefSubcellTangents(
+            workspace,
+            edgeParam,
+            parentCell.getKey(edgeDim,pt),
+            pt,
+            edgeOrts[pt]);
+
         auto J = Kokkos::subview(worksetJacobians, c, pt, Kokkos::ALL(), Kokkos::ALL());
         Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);            
 

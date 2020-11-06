@@ -392,7 +392,7 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
   static double cutlsum = 0.0, cutnsum = 0.0, movesum = 0.0, repartsum = 0.0;
   static float cutlmax = 0, cutnmax = 0;
   static double movemax = 0, repartmax = 0;
-  static float cutlmin = INT_MAX, cutnmin = INT_MAX;
+  static float cutlmin = (float)INT_MAX, cutnmin = (float)INT_MAX;
   static double movemin = 1e100, repartmin = 1e100;
   static int timer_final_output = -1;
   double bal[FOMAXDIM];    /* Balance:  max / avg */

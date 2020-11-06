@@ -598,6 +598,8 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
 
     regCorrection[j] = VectorFactory::Build(revisedRowMapPerGrp[j], true);
     regionGrpMats[j]->apply(*regNsp[j], *regCorrection[j]);
+    regionGrpMats[j]->SetFixedBlockSize(AComp->GetFixedBlockSize());
+
   }
 
   RCP<Vector> regDiag = Teuchos::null;
@@ -809,8 +811,8 @@ void ApplyMatVec(const Scalar alpha,
   // since in region formate the matrix is block diagonal
   // regionMatrix->apply(*X, *Y, Teuchos::NO_TRANS, alpha, beta);
   local_matrix_type localA = regionMatrix->getLocalMatrix();
-  auto localX = X->template getLocalView<device_type>();
-  auto localY = Y->template getLocalView<device_type>();
+  auto localX = X->getDeviceLocalView();
+  auto localY = Y->getDeviceLocalView();
   char spmvMode = KokkosSparse::NoTranspose[0];
   if (transposeMode == Teuchos::TRANS)
     spmvMode = KokkosSparse::Transpose[0];

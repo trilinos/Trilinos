@@ -68,10 +68,8 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<CoarseMapFactory> myCMF = rcp(new CoarseMapFactory());
-    TEST_EQUALITY(myCMF != Teuchos::null, true);
-  } // Constructor
-
-  ///////////////////////////////////////////////////////////////////////////
+    TEST_ASSERT(!myCMF.is_null());
+  }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoarseMapFactory, StandardCase, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -103,9 +101,7 @@ namespace MueLuTests {
 
     TEST_EQUALITY(myCoarseMap->getMinAllGlobalIndex() == 0, true);
     TEST_EQUALITY(myCoarseMap->getMaxLocalIndex()==9,true);
-  } // StandardCase
-
-  ///////////////////////////////////////////////////////////////////////////
+  }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoarseMapFactory, NonStandardCaseA, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {

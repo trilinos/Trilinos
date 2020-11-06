@@ -45,7 +45,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --convergence-log=Star2D_4.log"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
@@ -61,7 +61,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_Tpetra_GS"
     ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --convergence-log=Star2D_GS_4.log --smootherType=Gauss"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
@@ -77,7 +77,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_Tpetra_SGS"
     ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --smootherType=SymmetricGauss"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
@@ -93,7 +93,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_CoarseSmoother_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --coarseSolverType=smoother --coarseSmootherXML=coarse_smoother.xml"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
@@ -109,7 +109,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_Tpetra_Chebyshev"
     ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --convergence-log=Star2D_Chebyshev_4.log --smootherType=Chebyshev --smootherChebyBoostFactor=1.2"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
@@ -117,15 +117,15 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_AMG_CoarseSolver_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --coarseSolverType=amg --coarseAmgXml=amg_1dof.xml"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_AMG_CoarseSolver_coarseRepartition_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --coarseSolverType=amg --coarseAmgXml=amg_1dof.xml --rebalance-coarse --keep-coarse-coords --numPartitions=1"
-    COMM serial mpi
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --coarseSolverType=amg --coarseAmgXml=amg_1dof.xml --rebalance-coarse --keep-coarse-coords"
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
@@ -133,15 +133,15 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_AMG_CoarseSolver_repartitioning_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --coarseSolverType=amg --keep-coarse-coords --coarseAmgXml=amg_1dof_rebalance.xml"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_AMG_CoarseSolver_coarseRepartition_repartitioning_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --coarseSolverType=amg --keep-coarse-coords --coarseAmgXml=amg_1dof_rebalance.xml --rebalance-coarse --numPartitions=1"
-    COMM serial mpi
+    ARGS "--linAlgebra=Tpetra --xml=structured_1dof_3level.xml --matrixType=Star2D --nx=50 --ny=50 --smootherIts=2 --coarseSolverType=amg --keep-coarse-coords --coarseAmgXml=amg_1dof_rebalance.xml --rebalance-coarse"
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
@@ -157,7 +157,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Linear_Star2D_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_linear_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --convergence-log=Star2D_linear_4.log"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
@@ -173,7 +173,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Brick3D_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Brick3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Brick3D_4.log"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
@@ -189,7 +189,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Linear_Brick3D_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_linear_1dof.xml --matrixType=Brick3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Brick3D_linear_4.log"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
@@ -205,7 +205,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Linear_R_Brick3D_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_linear_R_1dof.xml --matrixType=Brick3D --nx=19 --ny=19 --nz=10 --smootherIts=2 --convergence-log=Brick3D_linear_R_4.log"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
@@ -221,7 +221,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Linear_R_Elasticity3D_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_linear_R_3dof.xml --matrixType=Elasticity3D --nx=19 --ny=19 --nz=19 --smootherIts=2 --convergence-log=Elasticity3D_linear_R_4.log"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
@@ -229,14 +229,14 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Unstructured_Laplace3D_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_unstructured_1dof.xml --matrixType=Laplace3D --nx=9 --ny=9 --nz=5 --smootherIts=2 --unstructured={3}"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
   TRIBITS_ADD_TEST(
     StructuredRegionDriver
     NAME "Structured_Region_Linear_Elasticity3D_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=7 --ny=7 --nz=7 --smootherIts=2 --tol=1.0e-8 --convergence-log=Elasticity3D_linear_1.log"
+    ARGS "--linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --tol=1.0e-8 --convergence-log=Elasticity3D_linear_1.log"
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
@@ -245,7 +245,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Linear_Elasticity3D_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=7 --ny=7 --nz=7 --smootherIts=2 --tol=1.0e-8 --convergence-log=Elasticity3D_linear_4.log"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
@@ -253,7 +253,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Linear_Elasticity3D_repartitioning_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --tol=1.0e-8  --coarseSolverType=amg --keep-coarse-coords --coarseAmgXml=amg_3dof_rebalance.xml"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
@@ -261,7 +261,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Linear_Elasticity3D_coarseRepartition_repartitioning_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --tol=1.0e-8  --coarseSolverType=amg --keep-coarse-coords --rebalance-coarse --numPartitions=2 --coarseAmgXml=amg_3dof_rebalance.xml"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 
@@ -277,7 +277,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     StructuredRegionDriver
     NAME "Structured_Region_Star2D_Tpetra_Wcycle"
     ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --cycleType=W"
-    COMM serial mpi
+    COMM mpi
     NUM_MPI_PROCS 4
     )
 

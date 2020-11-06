@@ -596,7 +596,7 @@ namespace MueLu {
           {
             SubFactoryMonitor m2(*this, "MainLoop", currentLevel);
 
-            auto ghostedDiagView = ghostedDiag->template getLocalView<DeviceType>();
+            auto ghostedDiagView = ghostedDiag->getDeviceLocalView();
 
             CoalesceDrop_Kokkos_Details::ClassicalDropFunctor<LO, decltype(ghostedDiagView)> dropFunctor(ghostedDiagView, threshold);
             CoalesceDrop_Kokkos_Details::ScalarFunctor<SC, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
@@ -626,7 +626,7 @@ namespace MueLu {
             ghostedCoords->doImport(*coords, *importer, Xpetra::INSERT);
           }
 
-          auto ghostedCoordsView = ghostedCoords->template getLocalView<DeviceType>();
+          auto ghostedCoordsView = ghostedCoords->getDeviceLocalView();
           CoalesceDrop_Kokkos_Details::DistanceFunctor<LO, decltype(ghostedCoordsView)> distFunctor(ghostedCoordsView);
 
           // Construct Laplacian diagonal
@@ -636,7 +636,7 @@ namespace MueLu {
 
             localLaplDiag = VectorFactory::Build(uniqueMap);
 
-            auto localLaplDiagView = localLaplDiag->template getLocalView<DeviceType>();
+            auto localLaplDiagView = localLaplDiag->getDeviceLocalView();
             auto kokkosGraph = kokkosMatrix.graph;
 
             Kokkos::parallel_for("MueLu:CoalesceDropF:Build:scalar_filter:laplacian_diag", range_type(0,numRows),
@@ -666,7 +666,7 @@ namespace MueLu {
           {
             SubFactoryMonitor m2(*this, "MainLoop", currentLevel);
 
-            auto ghostedLaplDiagView = ghostedLaplDiag->template getLocalView<DeviceType>();
+            auto ghostedLaplDiagView = ghostedLaplDiag->getDeviceLocalView();
 
             CoalesceDrop_Kokkos_Details::DistanceLaplacianDropFunctor<LO, decltype(ghostedLaplDiagView), decltype(distFunctor)>
                 dropFunctor(ghostedLaplDiagView, distFunctor, threshold);

@@ -213,10 +213,10 @@ namespace Thyra {
             RCP<DetachedMultiVectorView<SC> > thyData = rcp(new DetachedMultiVectorView<SC>(*rcpFromPtr(Y_inout),Range1D(localOffset,localOffset+localSubDim-1)));
 
             // AH 08/14/2019 TODO: Is this necessary??
-            for( size_t j = 0; j <xY->getNumVectors(); ++j) {
+            for ( size_t j = 0; j <xY->getNumVectors(); ++j) {
                 ArrayRCP< const SC > xpData = xY->getData(j); // access const data from Xpetra object
                 // loop over all local rows
-                for( LO i = 0; i < localSubDim; ++i) {
+                for ( LO i = 0; i < localSubDim; ++i) {
                     (*thyData)(i,j) = xpData[i];
                 }
             }

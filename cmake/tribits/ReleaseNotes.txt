@@ -2,6 +2,26 @@
 Release Notes for TriBITS
 ----------------------------------------
 
+2020/10/08:
+
+*) MAJOR: Tests defined with `TRIBITS_ADD_TEST()` and
+ `TRIBITS_ADD_ADVANCED_TEST()` with `NUM_MPI_PROCS > 1` will now not be added
+ for non-MPI TPL_ENABLE_MPI=OFF configurations.  Before, the test would get
+ added and basically ignore the value of `NUM_MPI_PROCS`.  This change
+ together with the change to move to using `add_test(NAME <name> COMMAND
+ <command>)` mostly restores backward compatbility for projects using TriBITS.
+ For more details, see trilinos/Trilinos#8110.
+
+2020/09/28:
+
+*) MAJOR: Tests defined with `TRIBITS_ADD_TEST()` and
+ `TRIBITS_ADD_ADVANCED_TEST()` have been updated from using `add_test(<name>
+ <command>)` to using `add_test(NAME <name> COMMAND <command>)`.  This now
+ causes CMake to error out if there is more than one test with the same name
+ in the same directory.  Before, CMake would allow it (but the behavior in
+ that case was undocumented and undefined).  For more details, see
+ trilinos/Trilinos#8110.
+
 2020/06/16:
 
 (*) MINOR: The variables <Package>_FORTRAN_COMPILER and

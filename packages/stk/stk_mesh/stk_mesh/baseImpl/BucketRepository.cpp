@@ -98,23 +98,6 @@ BucketRepository::~BucketRepository()
   } catch(...) {}
 }
 
-size_t BucketRepository::total_field_data_footprint(const FieldBase& f, EntityRank rank) const
-{
-  if (rank > m_partitions.size() || static_cast<unsigned>(f.entity_rank()) != rank)
-  {
-    return 0;
-  }
-
-  size_t retval = 0;
-  const std::vector<Partition *> &r_partitions = m_partitions[rank];
-  size_t num_partitions = r_partitions.size();
-  for (size_t i = 0; i < num_partitions; ++i)
-  {
-    retval += r_partitions[i]->field_data_footprint(f);
-  }
-  return retval;
-}
-
 void BucketRepository::set_needs_to_be_sorted(stk::mesh::Bucket &bucket, bool needsSorting)
 {
     bucket.getPartition()->set_flag_needs_to_be_sorted(needsSorting);

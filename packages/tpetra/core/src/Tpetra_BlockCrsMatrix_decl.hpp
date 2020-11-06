@@ -201,6 +201,8 @@ public:
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           little_vec_type;
+  typedef typename little_vec_type::HostMirror
+          little_host_vec_type;
   //! The type used to access const vector blocks.
   typedef Kokkos::View<const impl_scalar_type*,
                        Kokkos::LayoutRight,

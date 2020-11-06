@@ -1,3 +1,5 @@
+INCLUDE(MueluAddSerialAndMpiTest)
+
 ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Tpetra
   ${PACKAGE_NAME}_ENABLE_Ifpack2

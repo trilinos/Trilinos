@@ -105,7 +105,7 @@
           <!--       <Parameter name="repartition: enable" type="bool" value="true"/> -->
           <!--       <Parameter name="repartition: partitioner" type="string" value="zoltan2"/> -->
           <!--       <Parameter name="repartition: start level" type="int" value="2"/> -->
-          <!--       <Parameter name="repartition: min rows per proc" type="int" value="800"/> -->
+          <!--       <Parameter name="repartition: min rows per thread" type="int" value="800"/> -->
           <!--       <Parameter name="repartition: max imbalance" type="double" value="1.1"/> -->
           <!--       <Parameter name="repartition: remap parts" type="bool" value="true"/> -->
           <!--       <Parameter name="repartition: rebalance P and R" type="bool" value="false"/> -->
@@ -236,7 +236,8 @@
                   <Parameter name="repartition: enable" type="bool" value="true"/>
                   <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
                   <Parameter name="repartition: start level" type="int" value="1"/>
-                  <Parameter name="repartition: min rows per proc" type="int" value="1000"/>
+                  <Parameter name="repartition: target rows per thread" type="int" value="2500"/>
+                  <Parameter name="repartition: min rows per thread" type="int" value="250"/>
                   <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
                   <Parameter name="repartition: remap parts" type="bool" value="true"/>
                   <Parameter name="repartition: rebalance P and R" type="bool" value="false"/>
@@ -289,7 +290,8 @@
                   <Parameter name="repartition: enable" type="bool" value="true"/>
                   <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
                   <Parameter name="repartition: start level" type="int" value="1"/>
-                  <Parameter name="repartition: min rows per proc" type="int" value="1000"/>
+                  <Parameter name="repartition: target rows per thread" type="int" value="10000"/>
+                  <Parameter name="repartition: min rows per thread" type="int" value="1000"/>
                   <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
                   <Parameter name="repartition: remap parts" type="bool" value="true"/>
                   <Parameter name="repartition: rebalance P and R" type="bool" value="false"/>

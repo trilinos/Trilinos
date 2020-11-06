@@ -99,7 +99,7 @@ const Ioss::GroupingEntity *Ioss::Assembly::get_member(const std::string &my_nam
 {
   IOSS_FUNC_ENTER(m_);
   const Ioss::GroupingEntity *ge = nullptr;
-  for (auto mem : m_members) {
+  for (const auto &mem : m_members) {
     if (mem->name() == my_name) {
       ge = mem;
       break;

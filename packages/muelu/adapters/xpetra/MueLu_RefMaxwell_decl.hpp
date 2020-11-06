@@ -310,6 +310,12 @@ namespace MueLu {
     //! Setup the preconditioner
     void compute(bool reuse=false);
 
+    //! Detect Dirichlet boundary conditions
+    void detectBoundaryConditionsSM();
+
+    //! Remove explicit zeros
+    void removeExplicitZeros();
+
     //! Setup the prolongator for the (1,1)-block
     void buildProlongator();
 
@@ -440,7 +446,7 @@ namespace MueLu {
     Teuchos::RCP<Teuchos::ParameterList> AH_AP_reuse_data_, AH_RAP_reuse_data_;
     Teuchos::RCP<Teuchos::ParameterList> A22_AP_reuse_data_, A22_RAP_reuse_data_;
     //! Some options
-    bool disable_addon_, dump_matrices_, useKokkos_, use_as_preconditioner_, implicitTranspose_, fuseProlongationAndUpdate_, syncTimers_, enable_reuse_;
+    bool disable_addon_, dump_matrices_, useKokkos_, use_as_preconditioner_, implicitTranspose_, fuseProlongationAndUpdate_, syncTimers_, enable_reuse_, skipFirstLevel_;
     int numItersH_, numIters22_;
     std::string mode_;
     //! Temporary memory

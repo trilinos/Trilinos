@@ -119,16 +119,17 @@ struct AlwaysVisit {
 };
 
 struct OnlyVisitOnce {
-    OnlyVisitOnce(const BulkData& mesh_in) : mesh(mesh_in) {}
+    OnlyVisitOnce(const BulkData& mesh_in)
+    : mesh(mesh_in), already_visited(mesh.get_size_of_entity_index_space(), false) {}
     bool operator()(Entity entity) {
-        if (mesh.is_valid(entity) && already_visited.find(entity) == already_visited.end()) {
-            already_visited.insert(entity);
+        if (mesh.is_valid(entity) && !already_visited[entity.local_offset()]) {
+            already_visited[entity.local_offset()] = true;
             return true;
         }
         return false;
     }
     const BulkData& mesh;
-    std::set<Entity> already_visited;
+    std::vector<bool> already_visited;
 };
 
 struct OnlyVisitUnchanged

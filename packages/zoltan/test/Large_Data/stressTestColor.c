@@ -107,9 +107,6 @@ static void free_graph()
 
 static int create_a_graph(int nx, int ny, int nz)
 {
-  int i, sum, n, j;
-  long gid, nbors[6], count[2];
-
   /* Divide z direction among procs */
   if (myRank == 0)
     printf("%d x %d x %d = %d\n", nx, ny, nz, nx*ny*nz);
@@ -251,7 +248,6 @@ int main(int argc, char *argv[])
   int rc, status;
   float ver;
   struct Zoltan_Struct *zz;
-  int ierr = ZOLTAN_OK;
   int *colors = NULL;
 
 #ifndef _MSC_VER

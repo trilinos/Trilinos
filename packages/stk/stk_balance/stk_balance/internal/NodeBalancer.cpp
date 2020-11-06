@@ -5,6 +5,7 @@
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Selector.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
 #include <stk_topology/topology.hpp>
 #include <stk_util/environment/Env.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -86,7 +87,7 @@ NodeBalancer::getGlobalLoadImbalance(double &loadFactor, int& numLocallyOwnedNod
 {
   stk::mesh::Selector localSelector = m_metaData.locally_owned_part();
   stk::mesh::EntityVector ownedNodes;
-  m_bulkData.get_entities(stk::topology::NODE_RANK, localSelector, ownedNodes);
+  stk::mesh::get_entities(m_bulkData, stk::topology::NODE_RANK, localSelector, ownedNodes);
 
   numLocallyOwnedNodes = ownedNodes.size();
   int maxLocallyOwned = 0;

@@ -23,7 +23,6 @@
 #include "Tempus_StepperOperatorSplitModifierDefault.hpp"
 #include "Tempus_StepperOperatorSplitModifierXDefault.hpp"
 #include "Tempus_StepperOperatorSplitObserverDefault.hpp"
-#include "Tempus_StepperOperatorSplitObserver.hpp"
 
 #include "../TestModels/VanDerPol_IMEX_ExplicitModel.hpp"
 #include "../TestModels/VanDerPol_IMEX_ImplicitModel.hpp"
@@ -66,21 +65,15 @@ TEUCHOS_UNIT_TEST(OperatorSplit, Default_Construction)
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Default values for construction.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  auto obs    = rcp(new Tempus::StepperOperatorSplitObserver<double>());
-#endif
   auto modifier  = rcp(new Tempus::StepperOperatorSplitModifierDefault<double>());
   auto modifierX = rcp(new Tempus::StepperOperatorSplitModifierXDefault<double>());
   auto observer  = rcp(new Tempus::StepperOperatorSplitObserverDefault<double>());
-  bool useFSAL              = stepper->getUseFSALDefault();
-  std::string ICConsistency = stepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
+  bool useFSAL              = stepper->getUseFSAL();
+  std::string ICConsistency = stepper->getICConsistency();
+  bool ICConsistencyCheck   = stepper->getICConsistencyCheck();
   int order = 1;
 
   // Test the set functions.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -101,11 +94,6 @@ TEUCHOS_UNIT_TEST(OperatorSplit, Default_Construction)
   subStepperList.push_back(subStepper1);
   subStepperList.push_back(subStepper2);
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  stepper = rcp(new Tempus::StepperOperatorSplit<double>(
-    models, subStepperList, obs, useFSAL, ICConsistency, ICConsistencyCheck,
-    order, order, order));
-#endif
   stepper = rcp(new Tempus::StepperOperatorSplit<double>(
     models, subStepperList, useFSAL, ICConsistency, ICConsistencyCheck,order, order, order,modifier));
 

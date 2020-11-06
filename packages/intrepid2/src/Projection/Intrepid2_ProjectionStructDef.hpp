@@ -575,26 +575,24 @@ void ProjectionStruct<SpT,ValueType>::createHVolProjectionStruct(const BasisPtrT
   subCellTopologyKey(dim,0) = cellBasis->getBaseCellTopology().getBaseKey();
 
   maxNumBasisEvalPoints = 0; maxNumTargetEvalPoints =0;
-  if(cellBasis->getDofCount(dim,0)>0) {
 
-    ordinal_type cub_degree = 2*basisCubDegree;
-    auto elemBasisCub = cub_factory.create<host_space_type, ValueType, ValueType>(cellTopo.getBaseKey(), cub_degree);
-    basisPointsRange(dim,0) = range_type(0, elemBasisCub->getNumPoints());
-    numBasisEvalPoints +=  elemBasisCub->getNumPoints();
-    maxNumBasisEvalPoints = elemBasisCub->getNumPoints();
-    basisCubPoints[dim][0] = view_type("basisCubPoints",elemBasisCub->getNumPoints(),dim);
-    basisCubWeights[dim][0] = view_type("basisCubWeights",elemBasisCub->getNumPoints());
-    elemBasisCub->getCubature(basisCubPoints[dim][0], basisCubWeights[dim][0]);
+  ordinal_type cub_degree = 2*basisCubDegree;
+  auto elemBasisCub = cub_factory.create<host_space_type, ValueType, ValueType>(cellTopo.getBaseKey(), cub_degree);
+  basisPointsRange(dim,0) = range_type(0, elemBasisCub->getNumPoints());
+  numBasisEvalPoints +=  elemBasisCub->getNumPoints();
+  maxNumBasisEvalPoints = elemBasisCub->getNumPoints();
+  basisCubPoints[dim][0] = view_type("basisCubPoints",elemBasisCub->getNumPoints(),dim);
+  basisCubWeights[dim][0] = view_type("basisCubWeights",elemBasisCub->getNumPoints());
+  elemBasisCub->getCubature(basisCubPoints[dim][0], basisCubWeights[dim][0]);
 
-    cub_degree = basisCubDegree + targetCubDegree;
-    auto elemTargetCub = cub_factory.create<host_space_type, ValueType, ValueType>(cellTopo.getBaseKey(), cub_degree);
-    targetPointsRange(dim,0) = range_type(0, elemTargetCub->getNumPoints());
-    numTargetEvalPoints +=  elemTargetCub->getNumPoints();
-    maxNumTargetEvalPoints = elemTargetCub->getNumPoints();
-    targetCubPoints[dim][0] = view_type("targetCubPoints",elemTargetCub->getNumPoints(),dim);
-    targetCubWeights[dim][0] = view_type("targetCubWeights",elemTargetCub->getNumPoints());
-    elemTargetCub->getCubature(targetCubPoints[dim][0], targetCubWeights[dim][0]);
-  }
+  cub_degree = basisCubDegree + targetCubDegree;
+  auto elemTargetCub = cub_factory.create<host_space_type, ValueType, ValueType>(cellTopo.getBaseKey(), cub_degree);
+  targetPointsRange(dim,0) = range_type(0, elemTargetCub->getNumPoints());
+  numTargetEvalPoints +=  elemTargetCub->getNumPoints();
+  maxNumTargetEvalPoints = elemTargetCub->getNumPoints();
+  targetCubPoints[dim][0] = view_type("targetCubPoints",elemTargetCub->getNumPoints(),dim);
+  targetCubWeights[dim][0] = view_type("targetCubWeights",elemTargetCub->getNumPoints());
+  elemTargetCub->getCubature(targetCubPoints[dim][0], targetCubWeights[dim][0]);
 }
 
 }

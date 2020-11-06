@@ -223,6 +223,7 @@ namespace Intrepid2 {
     return r_val;
   }
 
+  /*
   template<typename refTanType>
   inline
   void
@@ -449,6 +450,7 @@ namespace Intrepid2 {
     if (is_normalize) normalize(v, 3);
     assign_normal(normalV, v, 3);
   }
+  */
   
   KOKKOS_INLINE_FUNCTION
   Orientation::Orientation()

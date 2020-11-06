@@ -5,7 +5,6 @@
 #include <stk_balance/internal/StkGeometricMethodViaZoltan.hpp>
 #include <stk_balance/internal/MxNutils.hpp>
 #include <stk_balance/internal/StkBalanceUtils.hpp>
-#include <stk_balance/internal/SideGeometry.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/SkinMesh.hpp>
@@ -25,6 +24,7 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/LogWithTimeAndMemory.hpp>
 #include <stk_util/diag/StringUtil.hpp>
+#include <stk_math/SideGeometry.hpp>
 #include <zoltan.h>
 #include <Zoltan2_Version.hpp>
 #include <map>
@@ -306,7 +306,7 @@ struct SideInfo {
 };
 
 using SideInfoMap = std::map<stk::mesh::EntityId, std::vector<SideInfo>>;
-using SideGeometryPtr = std::unique_ptr<SideGeometry>;
+using SideGeometryPtr = std::unique_ptr<stk::math::SideGeometry>;
 
 bool is_line_side(const stk::topology::topology_t & t)
 {
@@ -321,22 +321,22 @@ bool is_point_side(const stk::topology::topology_t & t)
 SideGeometryPtr makeSideGeometry(const SideInfo & sideInfo)
 {
   if (stk::is_quad_side(sideInfo.sideTopology)) {
-    return SideGeometryPtr(new QuadGeometry(sideInfo.nodeCoordinates[0],
-                                              sideInfo.nodeCoordinates[1],
-                                              sideInfo.nodeCoordinates[2],
-                                              sideInfo.nodeCoordinates[3]));
+    return SideGeometryPtr(new stk::math::QuadGeometry(sideInfo.nodeCoordinates[0],
+                                                       sideInfo.nodeCoordinates[1],
+                                                       sideInfo.nodeCoordinates[2],
+                                                       sideInfo.nodeCoordinates[3]));
   }
   else if (stk::is_tri_side(sideInfo.sideTopology)) {
-    return SideGeometryPtr(new TriGeometry(sideInfo.nodeCoordinates[0],
-                                             sideInfo.nodeCoordinates[1],
-                                             sideInfo.nodeCoordinates[2]));
+    return SideGeometryPtr(new stk::math::TriGeometry(sideInfo.nodeCoordinates[0],
+                                                      sideInfo.nodeCoordinates[1],
+                                                      sideInfo.nodeCoordinates[2]));
   }
   else if (is_line_side(sideInfo.sideTopology)) {
-    return SideGeometryPtr(new LineGeometry(sideInfo.nodeCoordinates[0],
-                                            sideInfo.nodeCoordinates[1]));
+    return SideGeometryPtr(new stk::math::LineGeometry(sideInfo.nodeCoordinates[0],
+                                                       sideInfo.nodeCoordinates[1]));
   }
   else if (is_point_side(sideInfo.sideTopology)) {
-    return SideGeometryPtr(new PointGeometry(sideInfo.nodeCoordinates[0]));
+    return SideGeometryPtr(new stk::math::PointGeometry(sideInfo.nodeCoordinates[0]));
   }
   else {
     ThrowErrorMsg("Unsupported side topology: " << stk::topology(sideInfo.sideTopology).name());
@@ -780,7 +780,7 @@ void fill_decomp_using_geometric_method(const BalanceSettings& balanceSettings, 
     if (balanceSettings.isMultiCriteriaRebalance())
         get_multicriteria_decomp_using_selectors_as_segregation(stkMeshBulkData, selectors, balanceSettings, numSubdomainsToCreate, decomp, localIds);
     else
-        for(const stk::mesh::Selector selector : selectors)
+        for(const stk::mesh::Selector& selector : selectors)
             get_multicriteria_decomp_using_selectors_as_segregation(stkMeshBulkData, std::vector<stk::mesh::Selector>{selector}, balanceSettings, numSubdomainsToCreate, decomp, localIds);
 
     logMessage(stkMeshBulkData.parallel(), "Finished decomposition solve");
@@ -973,7 +973,7 @@ void pack_new_spider_entity_owners(const stk::mesh::BulkData & bulk,
                                    stk::CommSparse & comm,
                                    const stk::mesh::EntityProcMap & newSpiderEntityOwners)
 {
-  for (const stk::mesh::EntityProc & entityNewOwner : newSpiderEntityOwners) {
+  for (const stk::mesh::EntityProcMap::value_type & entityNewOwner : newSpiderEntityOwners) {
     const int currentOwner = bulk.parallel_owner_rank(entityNewOwner.first);
     const stk::mesh::EntityKey entityKey = bulk.entity_key(entityNewOwner.first);
     comm.send_buffer(currentOwner).pack<stk::mesh::EntityKey>(entityKey);

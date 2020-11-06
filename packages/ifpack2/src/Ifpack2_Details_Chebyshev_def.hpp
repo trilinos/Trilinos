@@ -1538,8 +1538,10 @@ description () const {
       << ", lambdaMax: " << lambdaMaxForApply_
       << ", alpha: " << eigRatioForApply_
       << ", lambdaMin: " << lambdaMinForApply_
-      << ", boost factor: " << boostFactor_
-      << "}";
+      << ", boost factor: " << boostFactor_;
+  if (!userInvDiag_.is_null())
+    oss << ", diagonal: user-supplied";
+  oss << "}";
   return oss.str();
 }
 

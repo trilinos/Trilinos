@@ -351,7 +351,7 @@ int OrientationHexNewBasis(const bool verbose) {
         bool areDifferent(false);
         for(ordinal_type j=0;j<numFaceDOFs && !areDifferent;j++) {
           areDifferent = std::abs(basisCoeffs(0,basis->getDofOrdinal(2,faceIndex[0],j))
-              - basisCoeffs(1,basis->getDofOrdinal(2,faceIndex[1],j))) > 10*tol;
+              - basisCoeffs(1,basis->getDofOrdinal(2,faceIndex[1],j))) > 100*tol;
         }
 
         if(areDifferent) {

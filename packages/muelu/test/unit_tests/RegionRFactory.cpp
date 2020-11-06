@@ -568,14 +568,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionRFactory, RegionRFactElasticity3D, Scala
   // R->describe(out, Teuchos::VERB_EXTREME);
 
   if(numRanks == 1) {
-    TEST_EQUALITY(R->getGlobalNumRows(),                 18);
+    TEST_EQUALITY(R->getGlobalNumRows(),                 54);
     TEST_EQUALITY(R->getGlobalNumCols(),                588);
-    TEST_EQUALITY(R->getNodeNumRows(),                   18);
+    TEST_EQUALITY(R->getNodeNumRows(),                   54);
     TEST_EQUALITY(R->getCrsGraph()->getNodeNumCols(),   588);
-    TEST_EQUALITY(R->getNodeNumEntries(),               726);
+    TEST_EQUALITY(R->getNodeNumEntries(),              2178);
 
-    Array<LO> rowLength = {{27, 45, 27, 45, 75, 45, 27, 45, 27,
-                            27, 45, 27, 45, 75, 45, 27, 45, 27}};
+    Array<LO> rowLength = {{27, 27, 27, 45, 45, 45, 27, 27, 27, 45, 45, 45, 
+                            75, 75, 75, 45, 45, 45, 27, 27, 27, 45, 45, 45, 
+                            27, 27, 27, 27, 27, 27, 45, 45, 45, 27, 27, 27, 
+                            45, 45, 45, 75, 75, 75, 45, 45, 45, 27, 27, 27, 
+                            45, 45, 45, 27, 27, 27}};
     ArrayView<const LO> rowEntries;
     ArrayView<const SC> rowValues;
     for(int rowIdx = 0; rowIdx < static_cast<int>(R->getNodeNumRows()); ++rowIdx) {
@@ -584,48 +587,56 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionRFactory, RegionRFactElasticity3D, Scala
     }
 
   } else { // Running with 4 ranks
-    TEST_EQUALITY(R->getGlobalNumRows(),               32);
+    TEST_EQUALITY(R->getGlobalNumRows(),               96);
     TEST_EQUALITY(R->getCrsGraph()->getNodeNumCols(), 192);
-    TEST_EQUALITY(R->getNodeNumEntries(),             216);
+    TEST_EQUALITY(R->getNodeNumEntries(),             648);
 
     ArrayView<const LO> rowEntries;
     ArrayView<const SC> rowValues;
     if(myRank == 0) {
-      TEST_EQUALITY(R->getNodeNumRows(),                  8);
+      TEST_EQUALITY(R->getNodeNumRows(),                 24);
       TEST_EQUALITY(R->getCrsGraph()->getNodeNumCols(), 192);
-      TEST_EQUALITY(R->getNodeNumEntries(),             216);
+      TEST_EQUALITY(R->getNodeNumEntries(),             648);
 
-      Array<LO> rowLength = {{27, 27, 27, 27, 27, 27, 27, 27}};
+      Array<LO> rowLength = {{27, 27, 27, 27, 27, 27, 27, 27,
+                              27, 27, 27, 27, 27, 27, 27, 27,
+                              27, 27, 27, 27, 27, 27, 27, 27}};
       for(int rowIdx = 0; rowIdx < static_cast<int>(R->getNodeNumRows()); ++rowIdx) {
         R->getLocalRowView(rowIdx, rowEntries, rowValues);
         TEST_EQUALITY(static_cast<LO>(rowEntries.size()), rowLength[rowIdx]);
       }
     } else if(myRank == 1) {
-      TEST_EQUALITY(R->getNodeNumRows(),                  8);
+      TEST_EQUALITY(R->getNodeNumRows(),                 24);
       TEST_EQUALITY(R->getCrsGraph()->getNodeNumCols(), 192);
-      TEST_EQUALITY(R->getNodeNumEntries(),             216);
+      TEST_EQUALITY(R->getNodeNumEntries(),             648);
 
-      Array<LO> rowLength = {{27, 27, 27, 27, 27, 27, 27, 27}};
+      Array<LO> rowLength = {{27, 27, 27, 27, 27, 27, 27, 27,
+                              27, 27, 27, 27, 27, 27, 27, 27,
+                              27, 27, 27, 27, 27, 27, 27, 27}};
       for(int rowIdx = 0; rowIdx < static_cast<int>(R->getNodeNumRows()); ++rowIdx) {
         R->getLocalRowView(rowIdx, rowEntries, rowValues);
         TEST_EQUALITY(static_cast<LO>(rowEntries.size()), rowLength[rowIdx]);
       }
     } else if(myRank == 2) {
-      TEST_EQUALITY(R->getNodeNumRows(),                  8);
+      TEST_EQUALITY(R->getNodeNumRows(),                 24);
       TEST_EQUALITY(R->getCrsGraph()->getNodeNumCols(), 192);
-      TEST_EQUALITY(R->getNodeNumEntries(),             216);
+      TEST_EQUALITY(R->getNodeNumEntries(),             648);
 
-      Array<LO> rowLength = {{27, 27, 27, 27, 27, 27, 27, 27}};
+      Array<LO> rowLength = {{27, 27, 27, 27, 27, 27, 27, 27,
+                              27, 27, 27, 27, 27, 27, 27, 27,
+                              27, 27, 27, 27, 27, 27, 27, 27}};
       for(int rowIdx = 0; rowIdx < static_cast<int>(R->getNodeNumRows()); ++rowIdx) {
         R->getLocalRowView(rowIdx, rowEntries, rowValues);
         TEST_EQUALITY(static_cast<LO>(rowEntries.size()), rowLength[rowIdx]);
       }
     } else if(myRank == 3) {
-      TEST_EQUALITY(R->getNodeNumRows(),                  8);
+      TEST_EQUALITY(R->getNodeNumRows(),                 24);
       TEST_EQUALITY(R->getCrsGraph()->getNodeNumCols(), 192);
-      TEST_EQUALITY(R->getNodeNumEntries(),             216);
+      TEST_EQUALITY(R->getNodeNumEntries(),             648);
 
-      Array<LO> rowLength = {{27, 27, 27, 27, 27, 27, 27, 27}};
+      Array<LO> rowLength = {{27, 27, 27, 27, 27, 27, 27, 27,
+                              27, 27, 27, 27, 27, 27, 27, 27,
+                              27, 27, 27, 27, 27, 27, 27, 27}};
       for(int rowIdx = 0; rowIdx < static_cast<int>(R->getNodeNumRows()); ++rowIdx) {
         R->getLocalRowView(rowIdx, rowEntries, rowValues);
         TEST_EQUALITY(static_cast<LO>(rowEntries.size()), rowLength[rowIdx]);

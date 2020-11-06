@@ -85,6 +85,7 @@ namespace SEAMS {
   const char *do_get_iso_date();
   const char *do_get_time();
   const char *do_get_temp_filename();
+  const char *do_version();
 
   const char *do_dumpsym1(char *pre);
   const char *do_dumpfunc1(char *pre);
