@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
   Kokkos::initialize();
 
   const int r_val = Intrepid2::Test::ArrayTools_Test02
-    <double,Kokkos::Cuda/* Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>*/ >(verbose);
+    <double,Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace> >(verbose);
   
   Kokkos::finalize();
   return r_val;
