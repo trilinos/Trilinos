@@ -463,6 +463,127 @@ namespace {
 #endif
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( MatrixMatrix, AddTwoNonTransposedMatrices, M, MA, Scalar, LO, GO, Node )
+  {
+    using Teuchos::rcp_dynamic_cast;
+    using Teuchos::ArrayView;
+    using Teuchos::ArrayRCP;
+
+    using CrsMatrix = Xpetra::CrsMatrix<Scalar,LO,GO,Node>;
+    using CrsMatrixFactory = Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>;
+    using CrsMatrixWrap = Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>;
+    using Map = Xpetra::Map<LO,GO,Node>;
+    using MapFactory = Xpetra::MapFactory<LO,GO,Node>;
+    using Matrix = Xpetra::Matrix<Scalar,LO,GO,Node>;
+    using MatrixMatrix = Xpetra::MatrixMatrix<Scalar,LO,GO,Node>;
+
+    // Get basi data for map constructions
+    RCP<const Comm<int> > comm = getDefaultComm();
+    M testMap(1,0,comm);
+    Xpetra::UnderlyingLib lib = testMap.lib();
+
+    const Scalar SC_one = Teuchos::ScalarTraits<Scalar>::one();
+
+    // define a map
+    const LO nLocalEle = 15;
+    const GO nGlobalEle = nLocalEle * comm->getSize();
+    RCP<const Map> map = MapFactory::Build(lib, nGlobalEle, nLocalEle, 0, comm);
+
+    TEST_ASSERT(!map.is_null());
+
+    Array<size_t> numEntriesPerRow(nLocalEle, 3);
+    numEntriesPerRow[0] = 2;
+    numEntriesPerRow[nLocalEle - 1] = 2;
+    LO localNumEntries = Teuchos::ScalarTraits<LO>::zero();
+    for (const auto& numEntries : numEntriesPerRow)
+      localNumEntries += numEntries;
+    const GO globalNumEntries = localNumEntries * comm->getSize();
+
+    RCP<CrsMatrix> crsMatrixOne = CrsMatrixFactory::Build(map, map, 3);
+    RCP<Matrix> matrixOne = rcp(new CrsMatrixWrap(crsMatrixOne));
+
+    TEST_ASSERT(!matrixOne.is_null());
+    TEST_EQUALITY_CONST(matrixOne->getNodeNumRows(), nLocalEle);
+    TEST_EQUALITY_CONST(matrixOne->getGlobalNumRows(), nGlobalEle);
+
+    for (LO lRow = 0; lRow < nLocalEle; ++lRow)
+    {
+      Array<LO> lCols;
+      Array<Scalar> vals;
+      if (lRow == 0)
+      {
+        lCols.push_back(0);
+        lCols.push_back(1);
+
+        vals.push_back(SC_one);
+        vals.push_back(-SC_one);
+      }
+      else if (lRow == nLocalEle - 1)
+      {
+        lCols.push_back(nLocalEle - 2);
+        lCols.push_back(nLocalEle - 1);
+
+        vals.push_back(-SC_one);
+        vals.push_back(SC_one);
+      }
+      else
+      {
+        lCols.push_back(lRow - 1);
+        lCols.push_back(lRow);
+        lCols.push_back(lRow + 1);
+
+        vals.push_back(-SC_one);
+        vals.push_back(2 * SC_one);
+        vals.push_back(-SC_one);
+      }
+      matrixOne->insertLocalValues(lRow, lCols(), vals());
+    }
+    matrixOne->fillComplete();
+
+    TEST_ASSERT(matrixOne->isFillComplete());
+    TEST_EQUALITY_CONST(matrixOne->getNodeNumEntries(), localNumEntries);
+    TEST_EQUALITY_CONST(matrixOne->getGlobalNumEntries(), globalNumEntries);
+
+    // Test TwoMatrixAdd, that puts result into a third matrix
+    {
+      RCP<const Matrix> matrixTwo = rcp(new CrsMatrixWrap(rcp_dynamic_cast<CrsMatrixWrap>(matrixOne, true)->getCrsMatrix()));
+
+      TEST_ASSERT(!matrixTwo.is_null());
+      TEST_ASSERT(matrixTwo->isFillComplete());
+
+      RCP<Matrix> matrixAfterSummation = rcp(new CrsMatrixWrap(matrixOne->getCrsGraph()));
+
+      TEST_ASSERT(!matrixAfterSummation.is_null());
+
+      MatrixMatrix::TwoMatrixAdd(*matrixOne, false, 1.0, *matrixTwo, false, 1.0, matrixAfterSummation, out);
+
+      // We've added two identical matrices. Hence, entries need to be doubled values.
+      for (LO lRow = 0; lRow < matrixAfterSummation->getNodeNumRows(); ++lRow)
+      {
+        ArrayView<const LO> lCols;
+        ArrayView<const Scalar> vals;
+        matrixAfterSummation->getLocalRowView(lRow, lCols, vals);
+
+        if (lRow == 0)
+        {
+          TEST_EQUALITY_CONST(vals[0], 2 * SC_one);
+          TEST_EQUALITY_CONST(vals[1], -2 * SC_one);
+        }
+        else if (lRow == matrixAfterSummation->getNodeNumRows() - 1)
+        {
+          TEST_EQUALITY_CONST(vals[0], -2 * SC_one);
+          TEST_EQUALITY_CONST(vals[1], 2 * SC_one);
+        }
+        else
+        {
+          TEST_EQUALITY_CONST(vals[0], -2 * SC_one);
+          TEST_EQUALITY_CONST(vals[1], 4 * SC_one);
+          TEST_EQUALITY_CONST(vals[2], -2 * SC_one);
+        }
+      }
+    }
+  }
+
   //
   // INSTANTIATIONS
   //
@@ -481,6 +602,10 @@ namespace {
     typedef typename Xpetra::EpetraCrsMatrixT<GO,N> MA##S##LO##GO##N;
 
 #endif
+
+  // List of tests (which run both on Epetra and Tpetra)
+#define XP_MATRIX_INSTANT(S,LO,GO,N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( MatrixMatrix, AddTwoNonTransposedMatrices, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
   // List of tests which run only with Tpetra
 #define XP_TPETRA_MATRIX_INSTANT(S,LO,GO,N) \
@@ -502,6 +627,7 @@ namespace {
 TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XPETRA_TPETRA_TYPES )
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MATRIX_INSTANT )
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_MATRIX_INSTANT )
 
 #endif
 
@@ -513,11 +639,13 @@ typedef Xpetra::EpetraNode EpetraNode;
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 XPETRA_EPETRA_TYPES(double,int,int,EpetraNode)
 XP_EPETRA_MATRIX_INSTANT(double,int,int,EpetraNode)
+XP_MATRIX_INSTANT(double,int,int,EpetraNode)
 #endif
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
 typedef long long LongLong;
 XPETRA_EPETRA_TYPES(double,int,LongLong,EpetraNode)
 XP_EPETRA64_MATRIX_INSTANT(double,int,LongLong,EpetraNode)
+XP_MATRIX_INSTANT(double,int,LongLong,EpetraNode)
 #endif
 
 #endif
