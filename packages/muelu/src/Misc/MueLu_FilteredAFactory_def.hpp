@@ -212,6 +212,7 @@ namespace MueLu {
        Xpetra::IO<SC,LO,GO,NO>::Write("A.dat", *A);
        RCP<Matrix> origFilteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries());
        BuildNew(*A, *G, lumping, dirichlet_threshold,*origFilteredA);
+       if (use_spread_lumping) ExperimentalLumping(*A, *origFilteredA, DdomAllowGrowthRate, DdomCap);
        origFilteredA->fillComplete(A->getDomainMap(), A->getRangeMap(), fillCompleteParams);
        Xpetra::IO<SC,LO,GO,NO>::Write("origFilteredA.dat", *origFilteredA);       
      }
@@ -524,6 +525,8 @@ namespace MueLu {
     }//end nodesInAgg.unaggregated.size();
 	  
 
+    std::vector<LO> badCount(numAggs,0);
+
     // Find the biggest aggregate size in *nodes*
     LO maxAggSize=0;
     for(LO i=0; i<numAggs; i++) 
@@ -573,7 +576,7 @@ namespace MueLu {
  	if (row >= (LO)numRows) continue;
 	A.getLocalRowView(row, indsA, valsA);
 	for(LO k=0; k<(LO)indsA.size(); k++) {
-	  if(indsA[k] < (LO)numRows) {
+	  if ( (indsA[k] < (LO)numRows) && (TST::magnitude(valsA[k]) != TST::magnitude(ZERO))) {
 	    LO node = amalgInfo->ComputeLocalNode(indsA[k]);
 	    LO agg = vertex2AggId[node];
 	    if(!std::binary_search(goodAggNeighbors.begin(),goodAggNeighbors.end(),agg))
@@ -583,10 +586,33 @@ namespace MueLu {
       }
       sort_and_unique(badAggNeighbors);
 
-      // For each of the badAggNeighbors, we go and blitz their connections to dofs in this aggregate.
-      // We remove the INVALID marker when we do this so we don't wind up doubling this up lated      
-      for(LO b=0; b<(LO)badAggNeighbors.size(); b++) {
-	LO bad_agg = badAggNeighbors[b];
+      // Go through the filtered graph and count the number of connections to the badAggNeighbors
+      // if there are 2 or more of these connections, remove them from the bad list.
+
+      for (LO k=nodesInAgg.ptr[i]; k < nodesInAgg.ptr[i+1]; k++) {
+        ArrayView<const LO> nodeNeighbors  = G.getNeighborVertices(k);
+        for (LO kk=0; kk < nodeNeighbors.size(); kk++) {
+          if ( (vertex2AggId[nodeNeighbors[kk]] >= 0) && (vertex2AggId[nodeNeighbors[kk]] < numAggs)) 
+            (badCount[vertex2AggId[nodeNeighbors[kk]]])++;
+        }
+      }
+      std::vector<LO> reallyBadAggNeighbors(std::min(G.getNodeMaxNumRowEntries()*maxAggSize,numNodes));
+      reallyBadAggNeighbors.resize(0);
+      for (LO k=0; k < (LO) badAggNeighbors.size(); k++) {
+        if (badCount[badAggNeighbors[k]] <= 1 ) reallyBadAggNeighbors.push_back(badAggNeighbors[k]);
+      }
+      for (LO k=nodesInAgg.ptr[i]; k < nodesInAgg.ptr[i+1]; k++) {
+        ArrayView<const LO> nodeNeighbors  = G.getNeighborVertices(k);
+        for (LO kk=0; kk < nodeNeighbors.size(); kk++) {
+          if ( (vertex2AggId[nodeNeighbors[kk]] >= 0) && (vertex2AggId[nodeNeighbors[kk]] < numAggs)) 
+            badCount[vertex2AggId[nodeNeighbors[kk]]] = 0;
+        }
+      }
+
+      // For each of the reallyBadAggNeighbors, we go and blitz their connections to dofs in this aggregate.
+      // We remove the INVALID marker when we do this so we don't wind up doubling this up later      
+      for(LO b=0; b<(LO)reallyBadAggNeighbors.size(); b++) {
+	LO bad_agg = reallyBadAggNeighbors[b];
 	for (LO k=nodesInAgg.ptr[bad_agg]; k < nodesInAgg.ptr[bad_agg+1]; k++) {
 	  LO bad_node = nodesInAgg.nodes[k];
 	  for(LO j = 0; j < (LO)blkSize; j++) {
@@ -644,7 +670,7 @@ namespace MueLu {
 	    // we won'd do secondary dropping on off-processor neighbors
 	    if(is_good && indsA[l] < (LO)numRows)  {
 	      int agg = vertex2AggId[col_node];
-	      if(std::binary_search(badAggNeighbors.begin(),badAggNeighbors.end(),agg))
+	      if(std::binary_search(reallyBadAggNeighbors.begin(),reallyBadAggNeighbors.end(),agg))
 		is_good = false;
 	    }
 	    
@@ -791,7 +817,7 @@ namespace MueLu {
                                                      // have things in same order
         fvals = ArrayView<SC>(const_cast<SC*>(tvals.getRawPtr()), nnz);
 
-        LO diagIndex = -1;
+        LO diagIndex = -1, fdiagIndex = -1;
 
         PosOffSum=zero; NegOffSum=zero; PosOffDropSum=zero; NegOffDropSum=zero;
         diag=zero; NumPosKept=0; NumNegKept=0;
@@ -803,17 +829,27 @@ namespace MueLu {
             diag = vals[j];
           }
           else { // offdiagonal
+            if (TST::real(vals[j]) > TST::real(zero) ) PosOffSum += vals[j];
+            else                                       NegOffSum += vals[j];
+          }
+        }
+        PosOffDropSum = PosOffSum;
+        NegOffDropSum = NegOffSum;
+        NumPosKept = 0;
+        NumNegKept = 0;
+        LO j = 0;
+        for (size_t jj = 0; jj < (size_t) finds.size(); jj++) {
+          while( inds[j] != finds[jj] ) j++;    // assumes that finds is in the same order as
+                                                // inds ... but perhaps has some entries missing
+          if (finds[jj] == row) fdiagIndex = jj;
+          else {
             if (TST::real(vals[j]) > TST::real(zero) ) {
-              PosOffSum += vals[j];
-              if (TST::magnitude(fvals[j]) == TST::magnitude(zero) ) // not in filtered matrix
-                PosOffDropSum += vals[j];
-              else NumPosKept++;
+              PosOffDropSum -=  fvals[jj];
+              if (TST::real(fvals[jj]) != TST::real(zero) ) NumPosKept++;
             }
             else {
-              NegOffSum += vals[j];
-              if (TST::magnitude(fvals[j]) == TST::magnitude(zero) ) // not in filtered matrix
-                NegOffDropSum += vals[j];
-              else NumNegKept++;
+              NegOffDropSum -=  fvals[jj];
+              if (TST::real(fvals[jj]) != TST::real(zero) ) NumNegKept++;
             }
           }
         }
@@ -826,7 +862,7 @@ namespace MueLu {
         // which should really be larger than 1
 
         Target = rho*noLumpDdom;
-        if (TST::magnitude(Target) <= TST::magnitude(rho)) Target = rho2;//rstumin change
+        if (TST::magnitude(Target) <= TST::magnitude(rho)) Target = rho2;
 
         PosFilteredSum = PosOffSum - PosOffDropSum;
         NegFilteredSum = NegOffSum - NegOffDropSum;
@@ -852,10 +888,14 @@ namespace MueLu {
           // Note: in this case the diagonal is not changed as all lumping
           //       occurs to the pos offdiags
 
-          if (diagIndex != -1) fvals[diagIndex] = diag;
-          for(LO j = 0; j < (LO)nnz; j++)  {
-            if ((j != diagIndex)&&(TST::real(vals[j]) > TST::real(zero) ) && (TST::magnitude(fvals[j]) != TST::magnitude(zero))) 
-              fvals[j] =  -gamma*(vals[j]/PosFilteredSum);
+          if (fdiagIndex != -1) fvals[fdiagIndex] = diag;
+          j = 0;
+          for(LO jj = 0; jj < (LO)finds.size(); jj++)  {
+            while( inds[j] != finds[jj] ) j++;   // assumes that finds is in the same order as
+                                                  // inds ... but perhaps has some entries missing
+            if ((j != diagIndex)&&(TST::real(vals[j]) > TST::real(zero) ) && (TST::magnitude(fvals[jj]) != TST::magnitude(zero)))
+              fvals[jj] =  -gamma*(vals[j]/PosFilteredSum);
+
           }
         }
         else {
@@ -888,7 +928,7 @@ namespace MueLu {
             // that now there are no positive off-diags so the sum(abs(offdiags))
             // is just the negative of NegFilteredSum
 
-            if (diagIndex != -1) fvals[diagIndex] = diag - gamma;
+            if (fdiagIndex != -1) fvals[fdiagIndex] = diag - gamma;
           }
           else if (NumNegKept > 0) { 
             // need to do some lumping to neg offdiags to avoid a large 
@@ -918,7 +958,7 @@ namespace MueLu {
             //          the second condition is false. When it is the first condition that
             //          is false, it follows that the two indiviudal terms in the numer
             //          formula must be positive. 
-            
+
             if ( TST::magnitude(denom) < TST::magnitude(numer) ) alpha = TST::one();
             else alpha = numer/denom; 
             if ( TST::real(alpha) < TST::real(zero)) alpha = zero;
@@ -926,7 +966,7 @@ namespace MueLu {
 
             // first change the diagonal
 
-            if (diagIndex != -1) fvals[diagIndex] = diag - (one-alpha)*gamma;
+            if (fdiagIndex != -1) fvals[fdiagIndex] = diag - (one-alpha)*gamma;
 
             // after lumping the sum of neg offdiags will be NegFilteredSum
             // + alpha*gamma. That is the remaining negative entries altered
@@ -937,10 +977,13 @@ namespace MueLu {
             //  proportional to vals[j]/NegFilteredSum
             
             SC temp = (NegFilteredSum+alpha*gamma)/NegFilteredSum;
-            for(LO j = 0; j < (LO)nnz; j++)  {
-              if  ( (j != diagIndex)&&(TST::magnitude(fvals[j]) != TST::magnitude(zero) ) && 
+            j = 0;
+            for(LO jj = 0; jj < (LO)finds.size(); jj++)  {
+              while( inds[j] != finds[jj] ) j++;   // assumes that finds is in the same order as
+                                                    // inds ... but perhaps has some entries missing
+              if  ( (jj != fdiagIndex)&&(TST::magnitude(fvals[jj]) != TST::magnitude(zero) ) && 
                     ( TST::real(vals[j]) < TST::real(zero) ) )
-                fvals[j] = temp*vals[j];
+                fvals[jj] = temp*vals[j];
             }
           } 
           else { // desperate case
@@ -951,10 +994,13 @@ namespace MueLu {
               // which now makes them negative
               flipPosOffDiagsToNeg = true;
 
-              for(LO j = 0; j < (LO)nnz; j++)  {
-                if  ( (j != diagIndex)&&(TST::magnitude(fvals[j]) != TST::magnitude(zero) ) && 
+              j = 0;
+              for(LO jj = 0; jj < (LO)finds.size(); jj++)  {
+                while( inds[j] != finds[jj] ) j++;    // assumes that finds is in the same order as
+                                                      // inds ... but perhaps has some entries missing
+                if  ( (j != diagIndex)&&(TST::magnitude(fvals[jj]) != TST::magnitude(zero) ) && 
                       (TST::real(vals[j]) > TST::real(zero) )) 
-                  fvals[j] = -gamma/( (SC) NumPosKept);
+                  fvals[jj] = -gamma/( (SC) NumPosKept);
               }
             }
             // else abandon rowsum preservation and do nothing
@@ -964,8 +1010,12 @@ namespace MueLu {
                                        // all pos terms including some
                                        // not originally filtered
                                        // but zeroed due to lumping
-              for(LO j = 0; j < (LO)nnz; j++) 
-                if ((j != diagIndex)&& (TST::real(vals[j]) > TST::real(zero))) fvals[j] = zero;
+              j = 0;
+              for(LO jj = 0; jj < (LO)finds.size(); jj++) {
+                while( inds[j] != finds[jj] ) j++;    // assumes that finds is in the same order as
+                                                      // inds ... but perhaps has some entries missing
+                if ((jj != fdiagIndex)&& (TST::real(vals[j]) > TST::real(zero))) fvals[jj] = zero;
+              }
           }
         } // positive gamma else
 
