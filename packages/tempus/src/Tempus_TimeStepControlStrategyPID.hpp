@@ -124,10 +124,33 @@ public:
      workingState->setTimeStep(dt);
   }
 
+  /// \name Overridden from Teuchos::Describable
+  //@{
+    std::string description() const override
+    { return "Tempus::TimeStepControlStrategyPID"; }
+
+    void describe(Teuchos::FancyOStream          &out,
+                  const Teuchos::EVerbosityLevel verbLevel) const override
+    {
+      Teuchos::OSTab ostab(out,2,"describe");
+      out << description() << "::describe:" << std::endl
+          << "Name                               = " << tscsPL_->get<std::string>("Name") << std::endl
+          << "K1                                 = " << k1_           << std::endl
+          << "K2                                 = " << k2_           << std::endl
+          << "K3                                 = " << k3_           << std::endl
+          << "errN_                              = " << errN_         << std::endl
+          << "errNm1_                            = " << errNm1_       << std::endl
+          << "errNm2_                            = " << errNm2_       << std::endl
+          << "Safety Factor                      = " << safetyFactor_ << std::endl
+          << "Maximum Safety Factor              = " << facMax_       << std::endl
+          << "Minimum Safety Factor              = " << facMin_       << std::endl;
+    }
+  //@}
+
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
-  void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pList){
-
+  void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pList) override
+  {
      if (pList == Teuchos::null) {
         // Create default parameters if null, otherwise keep current parameters.
         if (tscsPL_ == Teuchos::null) {
@@ -163,7 +186,7 @@ public:
 
   }
 
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const {
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override {
      Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
      pl->set<std::string>("Name","PID");
@@ -176,11 +199,11 @@ public:
      return pl;
   }
 
-  Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() {
+  Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() override {
      return tscsPL_;
   }
 
-  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() {
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() override {
      Teuchos::RCP<Teuchos::ParameterList> temp_plist = tscsPL_;
      tscsPL_ = Teuchos::null;
      return(temp_plist);
