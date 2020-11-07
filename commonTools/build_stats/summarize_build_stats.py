@@ -168,6 +168,50 @@ def addNewFieldByScalingExistingField(dictOfLists, existingFieldName,
   dictOfLists.update( {newFieldName : newFieldDataList} )
 
 
+# Bin the build stats dict of lists by subdirs under a given list of dirs for
+# the 'FileName' field.
+#
+def binBuildStatsDictOfListsBySubdirUnderDirs(
+    buildStatsDOL,
+    binBySubdirsUnderDirsList,
+  ):
+  binnedBuildStatsDOL_dict = {}
+  numTotalRows = len(buildStatsDOL.get('FileName'))
+  row_idx = 0
+  while row_idx < numTotalRows:
+    fileName = buildStatsDOL.get('FileName')[row_idx]
+    for baseDir in binBySubdirsUnderDirsList:
+      if fileName.startswith(baseDir+"/"):
+        subdirUnderBaseDir = getSubdirUnderBaseDir(baseDir, fileName)
+        fileNameBuildStatsDOL = \
+          binnedBuildStatsDOL_dict.setdefault(subdirUnderBaseDir, {})
+        addRowFromDictOfListsToDictOfLists(buildStatsDOL, row_idx,
+          fileNameBuildStatsDOL)
+    row_idx += 1
+  #
+  return BuildStatsBinnedBySubdirs(buildStatsDOL, binnedBuildStatsDOL_dict)
+
+
+class BuildStatsBinnedBySubdirs(object):
+  def __init__(self, fullBuildStatsDOL, binnedBuildStatsDOL_dict):
+    self.fullBuildStatsDOL = fullBuildStatsDOL
+    self.binnedBuildStatsDOL_dict = binnedBuildStatsDOL_dict
+
+
+def getSubdirUnderBaseDir(baseDir, fileName):
+  lenBaseDir = len(baseDir)
+  positionOfDirCharAfterSubDir = fileName.find("/", lenBaseDir+2)
+  subdirUnderBaseDir = fileName[lenBaseDir+1 : positionOfDirCharAfterSubDir]
+  return subdirUnderBaseDir
+
+
+def addRowFromDictOfListsToDictOfLists(inputDOL, row_idx, inoutDOL):
+  keysList = inputDOL.keys()
+  for key in keysList:
+    keyValList = inoutDOL.setdefault(key, [])
+    keyValList.append(inputDOL.get(key)[row_idx])
+
+
 # Compute summary info about a sinlgle build stat from a dict of list of build
 # stats
 #
@@ -200,12 +244,20 @@ class BuildStatSummary(object):
     self.sumValue = None
     self.maxValue = None
     self.maxFileName = None
+  def __str__(self):
+    return "{"+\
+      "fieldName="+self.fieldName+", " + \
+      "numValues="+str(self.numValues)+", " + \
+      "sumValue="+str(self.sumValue)+", " + \
+      "maxValue="+str(self.maxValue)+", " + \
+      "maxFileName="+self.maxFileName + \
+      "}"
 
 
 # Compute and return a list of standard build stats summaries from a dict of
 # lists of build stats.
 #
-def computeStdBuildStatsSummaries(buildStatsDOL):
+def computeStdBuildStatsSummariesSingleDOL(buildStatsDOL):
   buildStatsSummariesList = []
   buildStatsSummariesList.append(
     computeBuildStatusSummaryForOneField(buildStatsDOL, 'max_resident_size_mb', 2) )
@@ -216,9 +268,35 @@ def computeStdBuildStatsSummaries(buildStatsDOL):
   return buildStatsSummariesList
 
 
-# Create an ASCII text report block for a list of build stats summaries
+# Compute and return the lists of standard build stats summaries for the full
+# project as well as those binned by subdirs.
 #
-def createAsciiReportOfBuildStatsSummaries(buildStatsSummariesList,
+def computeStdBuildStatsSummaries(buildStatsBinnedBySubdirs):
+  fullBuildStatsSummariesList = \
+    computeStdBuildStatsSummariesSingleDOL(buildStatsBinnedBySubdirs.fullBuildStatsDOL)
+  binnedBuildStatsSummariesList_dict = {}
+  for subdir in buildStatsBinnedBySubdirs.binnedBuildStatsDOL_dict.keys():
+    binnedBuildStatsSummariesList_dict.update(
+      {
+        subdir :
+        computeStdBuildStatsSummariesSingleDOL(
+          buildStatsBinnedBySubdirs.binnedBuildStatsDOL_dict.get(subdir) )
+        }
+      )
+  return BuildStatsSummariesBinnedBySubdirs(fullBuildStatsSummariesList,
+    binnedBuildStatsSummariesList_dict)
+
+
+class BuildStatsSummariesBinnedBySubdirs(object):
+  def __init__(self, fullBuildStatsSummariesList, binnedBuildStatsSummariesList_dict):
+    self.fullBuildStatsSummariesList = fullBuildStatsSummariesList
+    self.binnedBuildStatsSummariesList_dict = binnedBuildStatsSummariesList_dict
+
+
+# Create an ASCII text report block for a list of build stats summaries for a
+# single list of stats.
+#
+def createAsciiReportOfBuildStatsSummariesSingleSet(buildStatsSummariesList,
     buildStatsSetName,
   ):
   asciiReportStr = ""
@@ -239,21 +317,50 @@ def createAsciiReportOfOneBuildStatsSummary(buildStatsSummary, buildStatsSetName
     bssn+": max("+bss.fieldName+") = "+str(bss.maxValue)+" ("+bss.maxFileName+")\n"
   return asciiReportStr
 
+
+
+# Create an ASCII text report block for a list of build stats summaries for a
+# single list of stats.
+#
+def createAsciiReportOfBuildStatsSummaries(buildStatsSummariesBinnedBySubdirs):
+  asciiReportStr = ""
+  asciiReportStr += createAsciiReportOfBuildStatsSummariesSingleSet(
+    buildStatsSummariesBinnedBySubdirs.fullBuildStatsSummariesList,
+    "Full Project")
+  binnedBuildStatsSummariesList_dict = \
+    buildStatsSummariesBinnedBySubdirs.binnedBuildStatsSummariesList_dict
+  for subdir in sorted(binnedBuildStatsSummariesList_dict.keys()):
+    asciiReportStr += "\n"
+    asciiReportStr += createAsciiReportOfBuildStatsSummariesSingleSet(
+      binnedBuildStatsSummariesList_dict.get(subdir), subdir )
+  return asciiReportStr
+
+
 #
 # Help message
 #
 
 usageHelp = r"""summarize_build_stats.py --build-stats-csv-file=<csv-file>
+  --bin-by-subdirs-under-dirs=<basedir0>,<basedir1>,...
 
 Summarize gathered build stats from the the build stats CSV file and print the
 report as ASCII text to STDOUT.  This prints a report like:
 
-Full Project: sum(max_resident_size_size_mb) = ??? (??? entries)
-Full Project: max(max_resident_size_size_mb) = ??? (<file-name>)
+Full Project: sum(max_resident_size_mb) = ??? (??? entries)
+Full Project: max(max_resident_size_mb) = ??? (<file-name>)
 Full Project: max(elapsed_real_time_sec) = ??? (<file-name>)
 Full Project: sum(elapsed_real_time_sec) = ??? (??? entries)
 Full Project: sum(file_size_mb) = ??? (??? entries)
 Full Project: max(file_size_mb) = ??? (<file-name>)
+
+<subdir0>: sum(max_resident_size_mb) = ??? (??? entries)
+<subdir0>: max(max_resident_size_mb) = ??? (<file-name>)
+<subdir0>: max(elapsed_real_time_sec) = ??? (<file-name>)
+<subdir0>: sum(elapsed_real_time_sec) = ??? (??? entries)
+<subdir0>: sum(file_size_mb) = ??? (??? entries)
+<subdir0>: max(file_size_mb) = ??? (<file-name>)
+
+...
 """
 
 
@@ -267,6 +374,12 @@ def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
   clp.add_option(
     "--build-stats-csv-file", dest="buildStatsCsvFile", type="string", default="",
     help="The build status CSV file created by build wappers and gathered up." )
+  
+  clp.add_option(
+    "--bin-by-subdirs-under-dirs", dest="binBySubdirsUnderDirsStr", type="string",
+    default="",
+    help="List of base dirs to group results by subdir under."+\
+      " Format '<basedir0>,<basedir1>,..." )
 
 
 def getCmndLineOptions():
@@ -293,8 +406,11 @@ if __name__ == '__main__':
 
   buildStatsDOL = readBuildStatsCsvFileIntoDictOfLists(inOptions.buildStatsCsvFile)
   addStdScaledBuildStatsFields(buildStatsDOL)
-  buildStatsSummariesList = computeStdBuildStatsSummaries(buildStatsDOL)
+  buildStatsBinnedBySubdirs = binBuildStatsDictOfListsBySubdirUnderDirs(
+    buildStatsDOL, inOptions.binBySubdirsUnderDirsStr.split(',') )
+  buildStatsSummariesBinnedBySubdirs = computeStdBuildStatsSummaries(
+    buildStatsBinnedBySubdirs )
   buildStatsAsciiReport = createAsciiReportOfBuildStatsSummaries(
-    buildStatsSummariesList, "Full Project")
+    buildStatsSummariesBinnedBySubdirs )
 
   print(buildStatsAsciiReport)

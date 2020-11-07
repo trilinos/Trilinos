@@ -55,6 +55,12 @@ import GeneralScriptSupport as GSS
 g_pp = pprint.PrettyPrinter(indent=2)
 
 
+# Round to n decimal places
+#
+def roundNum(numIn, numDecPlaces):
+  return round(Decimal(numIn), numDecPlaces)
+
+
 # Get a copied dict of lists of build stats read from input file
 #
 def getBuildStatusWithComputedForTests(computeStdScaledFields=True):
@@ -303,10 +309,114 @@ class test_addNewFieldByScalingExistingField(unittest.TestCase):
 
 #############################################################################
 #
-# Test summarize_build_stats.computeBuildStatusSummaryForOneField()
+# Test summarize_build_stats.binBuildStatsDictOfListsBySubdirUnderDirs()
 #
 #############################################################################
 
+
+dummy1BuildStatsDOL = {
+  'field1' : [ "00", "01", "02", "03", "04" ],
+  'FileName' : [
+    "basedir/pkg0/some_file0",
+    "basedir/pkg1/some_file1",
+    "basedir/pkg0/some_file2",
+    "basedir/pkg1/some_file3",
+    "basedir/pkg2/some_file4",
+    ],
+  'field2' : [ "10", "11", "12", "13", "14" ],
+  }
+
+binnedDummy1BuildStatsDOL_dict = {
+  "pkg0": {
+    'field1' : [ "00", "02" ],
+    'FileName' : [
+      "basedir/pkg0/some_file0",
+      "basedir/pkg0/some_file2",
+      ],
+    'field2' : [ "10", "12" ],
+    },
+  "pkg1" : {
+    'field1' : [ "01", "03" ],
+    'FileName' : [
+      "basedir/pkg1/some_file1",
+      "basedir/pkg1/some_file3",
+       ],
+    'field2' : [ "11", "13" ],
+    },
+  "pkg2" : {
+    'field1' : [ "04" ],
+    'FileName' : [
+      "basedir/pkg2/some_file4",
+      ],
+    'field2' : [ "14" ],
+     },
+  }
+
+dummy2BuildStatsDOL = {
+  'field1' : [ "00", "01", "02", "03", "04" ],
+  'FileName' : [
+    "dir2/pkg0/some_file0",
+    "basedir/pkg1/some_file1",
+    "dir2/pkg0/some_file2",
+    "basedir/pkg1/some_file3",
+    "basedir/pkg2/some_file4",
+    ],
+  'field2' : [ "10", "11", "12", "13", "14" ],
+  }
+
+binnedDummy2BuildStatsDOL_dict = {
+  "pkg0": {
+    'field1' : [ "00", "02" ],
+    'FileName' : [
+      "dir2/pkg0/some_file0",
+      "dir2/pkg0/some_file2",
+      ],
+    'field2' : [ "10", "12" ],
+    },
+  "pkg1" : {
+    'field1' : [ "01", "03" ],
+    'FileName' : [
+      "basedir/pkg1/some_file1",
+      "basedir/pkg1/some_file3",
+       ],
+    'field2' : [ "11", "13" ],
+    },
+  "pkg2" : {
+    'field1' : [ "04" ],
+    'FileName' : [
+      "basedir/pkg2/some_file4",
+      ],
+    'field2' : [ "14" ],
+     },
+  }
+
+
+class test_binBuildStatsDictOfListsBySubdirUnderDirs(unittest.TestCase):
+
+  def test_1(self):
+    buildStatsDOL = dummy1BuildStatsDOL
+    buildStatsBinnedBySubdirs = SBS.binBuildStatsDictOfListsBySubdirUnderDirs(
+      buildStatsDOL, [ "basedir" ] )
+    self.assertEqual(buildStatsBinnedBySubdirs.fullBuildStatsDOL, dummy1BuildStatsDOL)
+    binnedBuildStatsDOL_dict = buildStatsBinnedBySubdirs.binnedBuildStatsDOL_dict
+    self.assertEqual(len(binnedBuildStatsDOL_dict.keys()), 3)
+    self.assertEqual(binnedBuildStatsDOL_dict, binnedDummy1BuildStatsDOL_dict)
+
+  def test_2(self):
+    buildStatsDOL = dummy2BuildStatsDOL
+    buildStatsBinnedBySubdirs = SBS.binBuildStatsDictOfListsBySubdirUnderDirs(
+      buildStatsDOL, [ "basedir", "dir2" ] )
+    self.assertEqual(buildStatsBinnedBySubdirs.fullBuildStatsDOL, dummy2BuildStatsDOL)
+    binnedBuildStatsDOL_dict = buildStatsBinnedBySubdirs.binnedBuildStatsDOL_dict
+    self.assertEqual(len(binnedBuildStatsDOL_dict.keys()), 3)
+    self.assertEqual(binnedBuildStatsDOL_dict, binnedDummy2BuildStatsDOL_dict)
+
+
+#############################################################################
+#
+# Test summarize_build_stats.computeBuildStatusSummaryForOneField()
+#
+#############################################################################
 
 class test_computeBuildStatusSummaryForOneField(unittest.TestCase):
 
@@ -324,16 +434,16 @@ class test_computeBuildStatusSummaryForOneField(unittest.TestCase):
 
 #############################################################################
 #
-# Test summarize_build_stats.computeStdBuildStatsSummaries()
+# Test summarize_build_stats.computeStdBuildStatsSummariesSingleDOL()
 #
 #############################################################################
 
 
-class test_computeStdBuildStatsSummaries(unittest.TestCase):
+class test_computeStdBuildStatsSummariesSingleDOL(unittest.TestCase):
 
   def test_big_small(self):
     buildStatsDOL = getBuildStatusWithComputedForTests()
-    bssl = SBS.computeStdBuildStatsSummaries(buildStatsDOL)
+    bssl = SBS.computeStdBuildStatsSummariesSingleDOL(buildStatsDOL)
     self.assertEqual(len(bssl), 3)
     self.assertEqual(bssl[0].fieldName, 'max_resident_size_mb')
     self.assertEqual(bssl[0].numValues, 21)
@@ -350,8 +460,7 @@ class test_computeStdBuildStatsSummaries(unittest.TestCase):
     self.assertEqual(bssl[2].fieldName, 'file_size_mb')
     self.assertEqual(bssl[2].numValues, 21)
     self.assertEqual(bssl[2].sumValue, 157.19)
-    self.assertEqual(bssl[2].maxValue,
-      round(Decimal(45000000/(1024.0*1024.0)), 2) )
+    self.assertEqual(bssl[2].maxValue, roundNum(45000000/(1024.0*1024.0),2))
     self.assertEqual(bssl[2].maxFileName,
       'packages/panzer/adapters-stk/example/CurlLaplacianExample/CMakeFiles/PanzerAdaptersSTK_CurlLaplacianExample.dir/main.cpp.o' )
   # NOTE: Above is a white-box test and we want to validate the order as that
@@ -360,17 +469,144 @@ class test_computeStdBuildStatsSummaries(unittest.TestCase):
 
 #############################################################################
 #
-# Test summarize_build_stats.createAsciiReportOfBuildStatsSummaries()
+# Test summarize_build_stats.computeStdBuildStatsSummaries()
+#
+#############################################################################
+
+class test_computeStdBuildStatsSummaries(unittest.TestCase):
+
+  def test_big_small(self):
+    buildStatsDOL = getBuildStatusWithComputedForTests()
+    buildStatsBinnedBySubdirs = SBS.binBuildStatsDictOfListsBySubdirUnderDirs(
+      buildStatsDOL, [ "commonTools", "packages" ] )
+    #print("\nbuildStatsBinnedBySubdirs.fullBuildStatsDOL:")
+    #g_pp.pprint(buildStatsBinnedBySubdirs.fullBuildStatsDOL)
+    #print("buildStatsBinnedBySubdirs.binnedBuildStatsDOL_dict:")
+    #g_pp.pprint(buildStatsBinnedBySubdirs.binnedBuildStatsDOL_dict)
+    buildStatsSummariesBinnedBySubdirs = SBS.computeStdBuildStatsSummaries(
+      buildStatsBinnedBySubdirs )
+    # Full project build stats
+    bssl = buildStatsSummariesBinnedBySubdirs.fullBuildStatsSummariesList
+    self.assertEqual(len(bssl), 3)
+    self.assertEqual(bssl[0].fieldName, 'max_resident_size_mb')
+    self.assertEqual(bssl[0].numValues, 21)
+    self.assertEqual(bssl[0].sumValue, 10023.45)
+    self.assertEqual(bssl[0].maxValue, 2400000/1024.0)
+    self.assertEqual(bssl[0].maxFileName,
+      'packages/tpetra/classic/NodeAPI/CMakeFiles/tpetraclassicnodeapi.dir/Kokkos_DefaultNode.cpp.o' )
+    self.assertEqual(bssl[1].fieldName, 'elapsed_real_time_sec')
+    self.assertEqual(bssl[1].numValues, 21)
+    self.assertEqual(bssl[1].sumValue, 157.9)
+    self.assertEqual(bssl[1].maxValue, 48.2)
+    self.assertEqual(bssl[1].maxFileName,
+     'packages/rol/adapters/epetra/test/sol/CMakeFiles/ROL_adapters_epetra_test_sol_EpetraSROMSampleGenerator.dir/test_02.cpp.o' )
+    self.assertEqual(bssl[2].fieldName, 'file_size_mb')
+    self.assertEqual(bssl[2].numValues, 21)
+    self.assertEqual(bssl[2].sumValue, 157.19)
+    self.assertEqual(bssl[2].maxValue, roundNum(45000000/(1024.0*1024.0),2))
+    self.assertEqual(bssl[2].maxFileName,
+      'packages/panzer/adapters-stk/example/CurlLaplacianExample/CMakeFiles/PanzerAdaptersSTK_CurlLaplacianExample.dir/main.cpp.o' )
+    # Verify number of build stats summaries binned by subdirs
+    self.assertEqual(
+      len(buildStatsSummariesBinnedBySubdirs.binnedBuildStatsSummariesList_dict.keys()),
+      6)
+    self.assertEqual(
+      sorted(buildStatsSummariesBinnedBySubdirs.binnedBuildStatsSummariesList_dict.keys()),
+      ['adelus', 'gtest', 'panzer', 'rol', 'thyra', 'tpetra'])
+    # Build stats for 'adelus'
+    bssl = buildStatsSummariesBinnedBySubdirs.binnedBuildStatsSummariesList_dict['adelus']
+    #print("\nbssl[0]:"); g_pp.pprint(str(bssl[0]))
+    self.assertEqual(len(bssl), 3)
+    self.assertEqual(bssl[0].fieldName, 'max_resident_size_mb')
+    self.assertEqual(bssl[0].numValues, 4)
+    self.assertEqual(bssl[0].sumValue, roundNum((680000+35000+64000+77000)/1024.0,2))
+    self.assertEqual(bssl[0].maxValue, roundNum(680000/1024.0,2))
+    self.assertEqual(bssl[0].maxFileName, 'packages/adelus/src/CMakeFiles/zadelus.dir/Adelus_pcomm.cpp.o')
+    #print("\nbssl[1]:"); g_pp.pprint(str(bssl[1]))
+    self.assertEqual(bssl[1].fieldName, 'elapsed_real_time_sec')
+    self.assertEqual(bssl[1].numValues, 4)
+    self.assertEqual(bssl[1].sumValue, roundNum(0.5+0.2+0.3+0.4,2))
+    self.assertEqual(bssl[1].maxValue, 0.5)
+    self.assertEqual(bssl[1].maxFileName, 'packages/adelus/src/CMakeFiles/zadelus.dir/Adelus_pcomm.cpp.o')
+    self.assertEqual(bssl[2].fieldName, 'file_size_mb')
+    self.assertEqual(bssl[2].numValues, 4)
+    self.assertEqual(bssl[2].sumValue, 5.73)
+    self.assertEqual(bssl[2].maxValue, roundNum(5200000/(1024.0*1024.0),2))
+    self.assertEqual(bssl[2].maxFileName, 'packages/adelus/test/vector_random/Adelus_vector_random.exe')
+    # Build stats for 'gtest'
+    bssl = buildStatsSummariesBinnedBySubdirs.binnedBuildStatsSummariesList_dict['gtest']
+    #print("\nbssl[0]:"); g_pp.pprint(str(bssl[0]))
+    self.assertEqual(len(bssl), 3)
+    self.assertEqual(bssl[0].fieldName, 'max_resident_size_mb')
+    self.assertEqual(bssl[0].numValues, 1)
+    self.assertEqual(bssl[0].sumValue, roundNum(240000/1024.0,2))
+    self.assertEqual(bssl[0].maxValue, roundNum(240000/1024.0,2))
+    self.assertEqual(bssl[0].maxFileName, 'commonTools/gtest/CMakeFiles/gtest.dir/gtest/gtest-all.cc.o')
+    self.assertEqual(bssl[1].fieldName, 'elapsed_real_time_sec')
+    self.assertEqual(bssl[1].numValues, 1)
+    self.assertEqual(bssl[1].sumValue, 3.5)
+    self.assertEqual(bssl[1].maxValue, 3.5)
+    self.assertEqual(bssl[1].maxFileName, 'commonTools/gtest/CMakeFiles/gtest.dir/gtest/gtest-all.cc.o')
+    self.assertEqual(bssl[2].fieldName, 'file_size_mb')
+    self.assertEqual(bssl[2].numValues, 1)
+    self.assertEqual(bssl[2].sumValue, roundNum(3300000/(1024.0*1024.0),2))
+    self.assertEqual(bssl[2].maxValue, roundNum(3300000/(1024.0*1024.0),2))
+    self.assertEqual(bssl[2].maxFileName,  'commonTools/gtest/CMakeFiles/gtest.dir/gtest/gtest-all.cc.o')
+    # Build stats for 'panzer' (don't bother checking values, above is good enough)
+    bssl = buildStatsSummariesBinnedBySubdirs.binnedBuildStatsSummariesList_dict['panzer']
+    #print("\nbssl[0]:"); g_pp.pprint(str(bssl[0]))
+    self.assertEqual(len(bssl), 3)
+    self.assertEqual(bssl[0].fieldName, 'max_resident_size_mb')
+    self.assertEqual(bssl[0].numValues, 4)
+    self.assertEqual(bssl[1].fieldName, 'elapsed_real_time_sec')
+    self.assertEqual(bssl[1].numValues, 4)
+    self.assertEqual(bssl[2].fieldName, 'file_size_mb')
+    self.assertEqual(bssl[2].numValues, 4)
+    # Build stats for 'rol'  (don't bother checking values, above is good enough)
+    bssl = buildStatsSummariesBinnedBySubdirs.binnedBuildStatsSummariesList_dict['rol']
+    #print("\nbssl[0]:"); g_pp.pprint(str(bssl[0]))
+    self.assertEqual(len(bssl), 3)
+    self.assertEqual(bssl[0].fieldName, 'max_resident_size_mb')
+    self.assertEqual(bssl[0].numValues, 4)
+    self.assertEqual(bssl[1].fieldName, 'elapsed_real_time_sec')
+    self.assertEqual(bssl[1].numValues, 4)
+    self.assertEqual(bssl[2].fieldName, 'file_size_mb')
+    self.assertEqual(bssl[2].numValues, 4)
+    # Build stats for 'thyra' (don't bother checking values, above is good enough)
+    bssl = buildStatsSummariesBinnedBySubdirs.binnedBuildStatsSummariesList_dict['thyra']
+    #print("\nbssl[0]:"); g_pp.pprint(str(bssl[0]))
+    self.assertEqual(len(bssl), 3)
+    self.assertEqual(bssl[0].fieldName, 'max_resident_size_mb')
+    self.assertEqual(bssl[0].numValues, 4)
+    self.assertEqual(bssl[1].fieldName, 'elapsed_real_time_sec')
+    self.assertEqual(bssl[1].numValues, 4)
+    self.assertEqual(bssl[2].fieldName, 'file_size_mb')
+    self.assertEqual(bssl[2].numValues, 4)
+    # Build stats for 'tpetra' (don't bother checking values, above is good enough)
+    bssl = buildStatsSummariesBinnedBySubdirs.binnedBuildStatsSummariesList_dict['tpetra']
+    #print("\nbssl[0]:"); g_pp.pprint(str(bssl[0]))
+    self.assertEqual(len(bssl), 3)
+    self.assertEqual(bssl[0].fieldName, 'max_resident_size_mb')
+    self.assertEqual(bssl[0].numValues, 4)
+    self.assertEqual(bssl[1].fieldName, 'elapsed_real_time_sec')
+    self.assertEqual(bssl[1].numValues, 4)
+    self.assertEqual(bssl[2].fieldName, 'file_size_mb')
+    self.assertEqual(bssl[2].numValues, 4)
+
+
+#############################################################################
+#
+# Test summarize_build_stats.createAsciiReportOfBuildStatsSummariesSingleSet()
 #
 #############################################################################
 
 
-class test_createAsciiReportOfBuildStatsSummaries(unittest.TestCase):
+class test_createAsciiReportOfBuildStatsSummariesSingleSet(unittest.TestCase):
 
   def test_big_small(self):
     buildStatsDOL = getBuildStatusWithComputedForTests()
-    buildStatsSummariesList = SBS.computeStdBuildStatsSummaries(buildStatsDOL)
-    buildStatsAsciiReport = SBS.createAsciiReportOfBuildStatsSummaries(
+    buildStatsSummariesList = SBS.computeStdBuildStatsSummariesSingleDOL(buildStatsDOL)
+    buildStatsAsciiReport = SBS.createAsciiReportOfBuildStatsSummariesSingleSet(
       buildStatsSummariesList, "Full Project")
     self.assertEqual(buildStatsAsciiReport,
       "Full Project: sum(max_resident_size_mb) = 10023.45 (21 entries)\n"+\
@@ -380,6 +616,83 @@ class test_createAsciiReportOfBuildStatsSummaries(unittest.TestCase):
       "Full Project: sum(file_size_mb) = 157.19 (21 entries)\n"+\
       "Full Project: max(file_size_mb) = 42.92 (packages/panzer/adapters-stk/example/CurlLaplacianExample/CMakeFiles/PanzerAdaptersSTK_CurlLaplacianExample.dir/main.cpp.o)\n" )
 
+
+#############################################################################
+#
+# Test summarize_build_stats.createAsciiReportOfBuildStatsSummariesSingleSet()
+#
+#############################################################################
+
+
+big_small_summary_full_project_ascii = \
+r"""Full Project: sum(max_resident_size_mb) = 10023.45 (21 entries)
+Full Project: max(max_resident_size_mb) = 2343.75 (packages/tpetra/classic/NodeAPI/CMakeFiles/tpetraclassicnodeapi.dir/Kokkos_DefaultNode.cpp.o)
+Full Project: sum(elapsed_real_time_sec) = 157.9 (21 entries)
+Full Project: max(elapsed_real_time_sec) = 48.2 (packages/rol/adapters/epetra/test/sol/CMakeFiles/ROL_adapters_epetra_test_sol_EpetraSROMSampleGenerator.dir/test_02.cpp.o)
+Full Project: sum(file_size_mb) = 157.19 (21 entries)
+Full Project: max(file_size_mb) = 42.92 (packages/panzer/adapters-stk/example/CurlLaplacianExample/CMakeFiles/PanzerAdaptersSTK_CurlLaplacianExample.dir/main.cpp.o)
+"""
+
+big_small_summary_ascii = \
+big_small_summary_full_project_ascii + \
+"\n" + \
+r"""adelus: sum(max_resident_size_mb) = 835.94 (4 entries)
+adelus: max(max_resident_size_mb) = 664.06 (packages/adelus/src/CMakeFiles/zadelus.dir/Adelus_pcomm.cpp.o)
+adelus: sum(elapsed_real_time_sec) = 1.4 (4 entries)
+adelus: max(elapsed_real_time_sec) = 0.5 (packages/adelus/src/CMakeFiles/zadelus.dir/Adelus_pcomm.cpp.o)
+adelus: sum(file_size_mb) = 5.73 (4 entries)
+adelus: max(file_size_mb) = 4.96 (packages/adelus/test/vector_random/Adelus_vector_random.exe)
+
+gtest: sum(max_resident_size_mb) = 234.38 (1 entries)
+gtest: max(max_resident_size_mb) = 234.38 (commonTools/gtest/CMakeFiles/gtest.dir/gtest/gtest-all.cc.o)
+gtest: sum(elapsed_real_time_sec) = 3.5 (1 entries)
+gtest: max(elapsed_real_time_sec) = 3.5 (commonTools/gtest/CMakeFiles/gtest.dir/gtest/gtest-all.cc.o)
+gtest: sum(file_size_mb) = 3.15 (1 entries)
+gtest: max(file_size_mb) = 3.15 (commonTools/gtest/CMakeFiles/gtest.dir/gtest/gtest-all.cc.o)
+
+panzer: sum(max_resident_size_mb) = 3828.13 (4 entries)
+panzer: max(max_resident_size_mb) = 1660.16 (packages/panzer/adapters-stk/example/CurlLaplacianExample/CMakeFiles/PanzerAdaptersSTK_CurlLaplacianExample.dir/main.cpp.o)
+panzer: sum(elapsed_real_time_sec) = 68.5 (4 entries)
+panzer: max(elapsed_real_time_sec) = 37.9 (packages/panzer/adapters-stk/example/CurlLaplacianExample/CMakeFiles/PanzerAdaptersSTK_CurlLaplacianExample.dir/main.cpp.o)
+panzer: sum(file_size_mb) = 91.65 (4 entries)
+panzer: max(file_size_mb) = 42.92 (packages/panzer/adapters-stk/example/CurlLaplacianExample/CMakeFiles/PanzerAdaptersSTK_CurlLaplacianExample.dir/main.cpp.o)
+
+rol: sum(max_resident_size_mb) = 1982.42 (4 entries)
+rol: max(max_resident_size_mb) = 712.89 (packages/rol/adapters/epetra/test/sol/CMakeFiles/ROL_adapters_epetra_test_sol_EpetraSROMSampleGenerator.dir/test_02.cpp.o)
+rol: sum(elapsed_real_time_sec) = 75.7 (4 entries)
+rol: max(elapsed_real_time_sec) = 48.2 (packages/rol/adapters/epetra/test/sol/CMakeFiles/ROL_adapters_epetra_test_sol_EpetraSROMSampleGenerator.dir/test_02.cpp.o)
+rol: sum(file_size_mb) = 51.88 (4 entries)
+rol: max(file_size_mb) = 18.12 (packages/rol/adapters/belos/test/vector/CMakeFiles/ROL_adapters_belos_test_vector_BelosInterface.dir/test_01.cpp.o)
+
+thyra: sum(max_resident_size_mb) = 732.42 (4 entries)
+thyra: max(max_resident_size_mb) = 195.31 (packages/thyra/adapters/epetra/example/CMakeFiles/ThyraEpetraAdapters_sillyPowerMethod_epetra.dir/sillyPowerMethod_epetra.cpp.o)
+thyra: sum(elapsed_real_time_sec) = 7.4 (4 entries)
+thyra: max(elapsed_real_time_sec) = 2.2 (packages/thyra/adapters/epetra/example/CMakeFiles/ThyraEpetraAdapters_sillyPowerMethod_epetra.dir/sillyPowerMethod_epetra.cpp.o)
+thyra: sum(file_size_mb) = 4.5 (4 entries)
+thyra: max(file_size_mb) = 1.43 (packages/thyra/adapters/epetra/example/CMakeFiles/ThyraEpetraAdapters_sillyPowerMethod_epetra.dir/sillyPowerMethod_epetra.cpp.o)
+
+tpetra: sum(max_resident_size_mb) = 2410.16 (4 entries)
+tpetra: max(max_resident_size_mb) = 2343.75 (packages/tpetra/classic/NodeAPI/CMakeFiles/tpetraclassicnodeapi.dir/Kokkos_DefaultNode.cpp.o)
+tpetra: sum(elapsed_real_time_sec) = 1.4 (4 entries)
+tpetra: max(elapsed_real_time_sec) = 1.0 (packages/tpetra/classic/NodeAPI/CMakeFiles/tpetraclassicnodeapi.dir/Kokkos_DefaultNode.cpp.o)
+tpetra: sum(file_size_mb) = 0.28 (4 entries)
+tpetra: max(file_size_mb) = 0.16 (packages/tpetra/classic/NodeAPI/CMakeFiles/tpetraclassicnodeapi.dir/Kokkos_DefaultNode.cpp.o)
+"""
+
+class test_createAsciiReportOfBuildStatsSummaries(unittest.TestCase):
+
+  def test_big_small(self):
+    buildStatsDOL = getBuildStatusWithComputedForTests()
+    buildStatsBinnedBySubdirs = SBS.binBuildStatsDictOfListsBySubdirUnderDirs(
+      buildStatsDOL, [ "commonTools", "packages" ] )
+    buildStatsSummariesBinnedBySubdirs = SBS.computeStdBuildStatsSummaries(
+      buildStatsBinnedBySubdirs )
+    buildStatsAsciiReport = SBS.createAsciiReportOfBuildStatsSummaries(
+      buildStatsSummariesBinnedBySubdirs )
+    self.assertEqual(buildStatsAsciiReport,
+      big_small_summary_ascii )
+
+
 #############################################################################
 #
 # Test summarize_build_stats.py
@@ -388,17 +701,18 @@ class test_createAsciiReportOfBuildStatsSummaries(unittest.TestCase):
 
 class test_summarize_build_stats_py(unittest.TestCase):
 
-  def test_big_small(self):
+  def test_big_small_full_project(self):
     cmnd = thisScriptsDir+"/../summarize_build_stats.py"+\
       " --build-stats-csv-file="+g_testBaseDir+"/build_stats.big.small.csv"
     output = GSS.getCmndOutput(cmnd)
-    self.assertEqual(output,
-      "Full Project: sum(max_resident_size_mb) = 10023.45 (21 entries)\n"+\
-      "Full Project: max(max_resident_size_mb) = 2343.75 (packages/tpetra/classic/NodeAPI/CMakeFiles/tpetraclassicnodeapi.dir/Kokkos_DefaultNode.cpp.o)\n"+\
-      "Full Project: sum(elapsed_real_time_sec) = 157.9 (21 entries)\n"+\
-      "Full Project: max(elapsed_real_time_sec) = 48.2 (packages/rol/adapters/epetra/test/sol/CMakeFiles/ROL_adapters_epetra_test_sol_EpetraSROMSampleGenerator.dir/test_02.cpp.o)\n"+\
-      "Full Project: sum(file_size_mb) = 157.19 (21 entries)\n"+\
-      "Full Project: max(file_size_mb) = 42.92 (packages/panzer/adapters-stk/example/CurlLaplacianExample/CMakeFiles/PanzerAdaptersSTK_CurlLaplacianExample.dir/main.cpp.o)\n\n" )
+    self.assertEqual(output, big_small_summary_full_project_ascii+"\n")
+
+  def test_big_small_by_subdir(self):
+    cmnd = thisScriptsDir+"/../summarize_build_stats.py"+\
+      " --build-stats-csv-file="+g_testBaseDir+"/build_stats.big.small.csv"+\
+      " --bin-by-subdirs-under-dirs=commonTools,packages"
+    output = GSS.getCmndOutput(cmnd)
+    self.assertEqual(output, big_small_summary_ascii+"\n")
 
 
 #
