@@ -42,6 +42,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     stk_tools_unit_tests
     SOURCES ${SOURCES}
     ARGS "--gtest_filter=Cloning*.*"
+    TESTONLYLIBS stk_unit_main
     COMM serial mpi
     NUM_MPI_PROCS 1-4
     NOEXEPREFIX

@@ -245,6 +245,7 @@ exe stk_balance
         $(stk_balance-root)/stk_balance/balance_main/*.cpp
     ]
     stk_balance_lib
+    /tpl/operating_system//pthread
   :
     <tag>@sierra-exec-tag
   ;
@@ -255,6 +256,7 @@ exe stk_balance_m2n
         $(stk_balance-root)/stk_balance/m2n_main/*.cpp
     ]
     stk_balance_lib
+    /tpl/operating_system//pthread
   :
     <tag>@sierra-exec-tag
   ;
