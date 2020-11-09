@@ -53,7 +53,7 @@
 namespace stk { namespace io {
 
 struct part_compare_by_ordinal {
-  bool operator() (const stk::mesh::Part * const i, const stk::mesh::Part * const j) {
+  bool operator() (const stk::mesh::Part * const i, const stk::mesh::Part * const j) const {
       if(i == j) return false;
       if(nullptr == i) return true;
       if(nullptr == j) return false;

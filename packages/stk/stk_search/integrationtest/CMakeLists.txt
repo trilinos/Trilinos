@@ -42,6 +42,7 @@ LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/UnitTestNaluPerformance.cpp
 TRIBITS_ADD_EXECUTABLE(
     search_integration_tests
     SOURCES ${SOURCES}
+    TESTONLYLIBS stk_unit_main
     COMM serial mpi
     NOEXEPREFIX
     )

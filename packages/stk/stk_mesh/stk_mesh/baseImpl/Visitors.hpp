@@ -82,6 +82,30 @@ void VisitClosureGeneral(
     }
 }
 
+inline
+Entity get_entity(const Entity* iter)
+{
+  return *iter;
+}
+
+inline
+Entity get_entity(std::vector<Entity>::const_iterator iter)
+{
+  return *iter;
+}
+
+inline
+Entity get_entity(std::vector<EntityProc>::const_iterator iter)
+{
+  return iter->first;
+}
+
+inline
+Entity get_entity(std::set<EntityProc,EntityLess>::const_iterator iter)
+{
+  return iter->first;
+}
+
 template<class DO_THIS_FOR_ENTITY_IN_CLOSURE, typename FORWARD_ITERATOR, class DESIRED_ENTITY>
 void VisitClosureGeneral(
         const stk::mesh::BulkData & mesh,
@@ -92,7 +116,7 @@ void VisitClosureGeneral(
 {
     for (FORWARD_ITERATOR entity_iterator = start ; entity_iterator != finish ; ++entity_iterator)
     {
-        VisitClosureGeneral<DO_THIS_FOR_ENTITY_IN_CLOSURE,DESIRED_ENTITY>(mesh,*entity_iterator,do_this,desired_entity);
+        VisitClosureGeneral<DO_THIS_FOR_ENTITY_IN_CLOSURE,DESIRED_ENTITY>(mesh,get_entity(entity_iterator),do_this,desired_entity);
     }
 }
 
@@ -235,7 +259,7 @@ void VisitUpwardClosureGeneral(
 {
     for (FORWARD_ITERATOR entity_iterator = start ; entity_iterator != finish ; ++entity_iterator)
     {
-        VisitUpwardClosureGeneral<DO_THIS_FOR_ENTITY_IN_UPWARD_CLOSURE,DESIRED_ENTITY>(mesh,*entity_iterator,do_this,desired_entity);
+        VisitUpwardClosureGeneral<DO_THIS_FOR_ENTITY_IN_UPWARD_CLOSURE,DESIRED_ENTITY>(mesh,get_entity(entity_iterator),do_this,desired_entity);
     }
 }
 
@@ -260,6 +284,46 @@ void VisitUpwardClosure(
     VisitUpwardClosureGeneral(mesh,start,finish,do_this,ovo);
 }
 
+struct StoreEntity
+{
+    StoreEntity(const BulkData& mesh_in)
+    : mesh(mesh_in), visitedEntity(mesh_in.get_size_of_entity_index_space(), false) {}
+    void operator()(Entity entity) {
+       visitedEntity[entity.local_offset()] = true;
+    }
+
+    void split_shared(std::vector<Entity>& sharedEntities,
+                      std::vector<Entity>& nonSharedEntities)
+    {
+      sharedEntities.clear();
+      nonSharedEntities.clear();
+      for(unsigned i=0; i<visitedEntity.size(); ++i) {
+        if (visitedEntity[i]) {
+          Entity entity(i);
+          if (mesh.in_shared(entity)) {
+            sharedEntities.push_back(entity);
+          }
+          else {
+            nonSharedEntities.push_back(entity);
+          }
+        }
+      }
+    }
+
+    void store_visited_entities_in_vec(std::vector<Entity>& entities)
+    {
+      entities.clear();
+      for(unsigned i=0; i<visitedEntity.size(); ++i) {
+        if (visitedEntity[i]) {
+          entities.emplace_back(i);
+        }
+      }
+    }
+
+    const BulkData& mesh;
+    std::vector<bool> visitedEntity;
+};
+
 template<class DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE, typename FORWARD_ITERATOR, class DESIRED_ENTITY>
 void VisitAuraClosureGeneral(
         const BulkData & mesh,
@@ -268,11 +332,15 @@ void VisitAuraClosureGeneral(
         DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE & do_this,
         DESIRED_ENTITY & desired_entity)
 {
-    std::set<Entity> entity_set;
-    StoreInSet<std::set<Entity> > sis(entity_set);
-    VisitClosure(mesh,start,finish,sis);
-    VisitUpwardClosure(mesh,entity_set.begin(),entity_set.end(),sis);
-    VisitClosureGeneral(mesh,entity_set.begin(),entity_set.end(),do_this,desired_entity);
+    StoreEntity visitedEntityTracker(mesh);
+    EntityVector entityTmpSpace;
+    VisitClosure(mesh,start,finish,visitedEntityTracker);
+    visitedEntityTracker.store_visited_entities_in_vec(entityTmpSpace);
+
+    VisitUpwardClosure(mesh,entityTmpSpace.begin(),entityTmpSpace.end(),visitedEntityTracker);
+    visitedEntityTracker.store_visited_entities_in_vec(entityTmpSpace);
+
+    VisitClosureGeneral(mesh,entityTmpSpace.begin(),entityTmpSpace.end(),do_this,desired_entity);
 }
 
 template<class DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE, class DESIRED_ENTITY>
@@ -282,8 +350,8 @@ void VisitAuraClosureGeneral(
         DO_THIS_FOR_ENTITY_IN_AURA_CLOSURE & do_this,
         DESIRED_ENTITY & desired_entity)
 {
-    Entity * start = &entity_of_interest;
-    Entity * finish = start+1;
+    const Entity * start = &entity_of_interest;
+    const Entity * finish = start+1;
     VisitAuraClosureGeneral(mesh,start,finish,do_this,desired_entity);
 }
 
@@ -331,11 +399,13 @@ struct StoreInEntityProcSet {
     ,myset(set_in)
     ,alreadyGhostedToProc(mesh_in.get_size_of_entity_index_space(), -1) { }
 
-    void operator()(Entity entity) {
+    bool operator()(Entity entity) {
       if (proc != alreadyGhostedToProc[entity.local_offset()]) {
         alreadyGhostedToProc[entity.local_offset()] = proc;
         myset.insert(stk::mesh::EntityProc(entity,proc));
+        return true;
       }
+      return false;
     }
 
     BulkData & mesh;
