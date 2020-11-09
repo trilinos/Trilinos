@@ -66,6 +66,7 @@
 #include "Teuchos_MatrixMarket_Banner.hpp"
 #include "Teuchos_MatrixMarket_CoordDataReader.hpp"
 #include "Teuchos_SetScientific.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 extern "C" {
 #include "mmio_Tpetra.h"

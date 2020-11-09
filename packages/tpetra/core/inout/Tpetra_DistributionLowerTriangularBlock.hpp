@@ -50,7 +50,6 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Teuchos_TimeMonitor.hpp"
 
 namespace Tpetra 
 {

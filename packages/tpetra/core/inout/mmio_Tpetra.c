@@ -19,7 +19,7 @@ int mm_read_unsymmetric_sparse(const char *fname, int *M_, int *N_, int *nz_,
 {
     FILE *f;
     MM_typecode matcode;
-    int M, N, nz;
+    size_t M, N, nz;
     int i;
     double *val;
     int *I, *J;

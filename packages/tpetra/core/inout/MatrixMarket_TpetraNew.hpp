@@ -149,6 +149,17 @@ readMatrixMarket(
   Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > &dist
 )
 {
+  bool useTimers = false;   // should we time various parts of the reader?
+  {
+  const Teuchos::ParameterEntry *pe = params.getEntryPtr("useTimers");
+  if (pe != NULL) 
+    useTimers = pe->getValue<bool>(&useTimers);
+  }
+
+  Teuchos::RCP<Teuchos::TimeMonitor> timer = Teuchos::null;
+  if (useTimers) 
+    timer = rcp(new Teuchos::TimeMonitor(
+                    *Teuchos::TimeMonitor::getNewTimer("RMM parameterSetup")));
 
   int me = comm->getRank();
   int np = comm->getSize();
@@ -197,6 +208,12 @@ readMatrixMarket(
   const Teuchos::ParameterEntry *pe = params.getEntryPtr("distribution");
   if (pe != NULL) 
     distribution = pe->getValue<std::string>(&distribution);
+  }
+
+  if (useTimers) {
+    timer = Teuchos::null;
+    timer = rcp(new Teuchos::TimeMonitor(
+                    *Teuchos::TimeMonitor::getNewTimer("RMM header")));
   }
 
   if (verbose && me == 0)
@@ -263,11 +280,22 @@ readMatrixMarket(
               << "\n  change diagonal     = " << diagonal
               << "\n  distribution        = " << distribution
               << std::endl;
+
+  if (useTimers) {
+    timer = Teuchos::null;
+    timer = rcp(new Teuchos::TimeMonitor(
+                    *Teuchos::TimeMonitor::getNewTimer("RMM distribution")));
+  }
   
   // Create distribution based on nRow, nCol, npRow, npCol
   dist = buildDistribution<global_ordinal_type,scalar_type>(distribution,
 							    nRow, nCol, params,
 							    comm);
+  if (useTimers) {
+    timer = Teuchos::null;
+    timer = rcp(new Teuchos::TimeMonitor(
+                    *Teuchos::TimeMonitor::getNewTimer("RMM readChunks")));
+  }
 
   std::set<global_ordinal_type> diagset;  
                             // If diagonal == require, this set keeps track of 
@@ -366,6 +394,12 @@ readMatrixMarket(
   if (fp != NULL) fclose(fp);
   delete [] buffer;
 
+  if (useTimers) {
+    timer = Teuchos::null;
+    timer = rcp(new Teuchos::TimeMonitor(
+                    *Teuchos::TimeMonitor::getNewTimer("RMM diagonal")));
+  }
+
   //  Add diagonal entries if they are required.
   //  Check to make sure they are all here; add them if they are not.
   if (requireDiagonal) {
@@ -397,6 +431,8 @@ readMatrixMarket(
   // Done with diagset; free its memory
   std::set<global_ordinal_type>().swap(diagset);
 
+  if (useTimers) 
+    timer = Teuchos::null;
 }
 
 public:
@@ -424,6 +460,17 @@ readSparseFile(
   Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > &dist 
 )
 {
+  bool useTimers = false;   // should we time various parts of the reader?
+  {
+  const Teuchos::ParameterEntry *pe = params.getEntryPtr("useTimers");
+  if (pe != NULL) 
+    useTimers = pe->getValue<bool>(&useTimers);
+  }
+
+  Teuchos::RCP<Teuchos::TimeMonitor> timer = Teuchos::null;
+  if (useTimers) 
+    timer = rcp(new Teuchos::TimeMonitor(
+                    *Teuchos::TimeMonitor::getNewTimer("RSF parameterSetup")));
 
   int me = comm->getRank();
   int np = comm->getSize();
@@ -437,21 +484,13 @@ readSparseFile(
   if (pe != NULL) 
     verbose = pe->getValue<bool>(&verbose);
   }
-
+  
   bool callFillComplete = true;   // should we fillComplete the new CrsMatrix?
   {
   const Teuchos::ParameterEntry *pe = params.getEntryPtr("callFillComplete");
   if (pe != NULL) 
     callFillComplete = pe->getValue<bool>(&callFillComplete);
   }
-
-  std::string timeFillComplete = ""; // use this name for timer of fillComplete
-  {
-  const Teuchos::ParameterEntry *pe = params.getEntryPtr("timeFillComplete");
-  if (pe != NULL)
-    timeFillComplete = pe->getValue<std::string>(&timeFillComplete);
-  }
-
 
   // Don't want to use MatrixMarket's coordinate reader, because don't want
   // entire matrix on one processor.
@@ -465,15 +504,33 @@ readSparseFile(
   localNZmap_t localNZ;
 
 
-
   // read nonzeros from the given  matrix market file
+
+  if (useTimers) {
+    timer = Teuchos::null;
+    timer = rcp(new Teuchos::TimeMonitor(
+                   *Teuchos::TimeMonitor::getNewTimer("RSF readMatrixMarket")));
+  }
+
   size_t nRow = 0, nCol = 0;
   readMatrixMarket(filename, comm, params, nRow, nCol, localNZ, dist);
 
-
   // Redistribute nonzeros as needed to satisfy the Distribution
   // For most Distributions, this is a no-op
+
+  if (useTimers) {
+    timer = Teuchos::null;
+    timer = rcp(new Teuchos::TimeMonitor(
+                   *Teuchos::TimeMonitor::getNewTimer("RSF redistribute")));
+  }
+
   dist->Redistribute(localNZ);
+
+  if (useTimers) {
+    timer = Teuchos::null;
+    timer = rcp(new Teuchos::TimeMonitor(
+                   *Teuchos::TimeMonitor::getNewTimer("RSF nonzerosConstruction")));
+  }
 
   //  Now construct the matrix.
   //  Count number of entries in each row for best use of StaticProfile
@@ -511,15 +568,16 @@ readSparseFile(
   for (size_t row = 0; row < rowIdx.size(); row++)
     offsets[row+1] = offsets[row] + nnzPerRow[row];
 
-  // std::cout << me << " ROWS IN ME ";
-  // for (size_t row = 0; row < rowIdx.size(); row++)
-  //   std::cout << rowIdx[row] << " ";
-  // std::cout << std::endl;
+  if (useTimers) {
+    timer = Teuchos::null;
+    timer = rcp(new Teuchos::TimeMonitor(
+                   *Teuchos::TimeMonitor::getNewTimer("RSF insertNonzeros")));
+  }
 
   // Create a new RowMap with only rows having non-zero entries.
   size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
   Teuchos::RCP<const Tpetra::Map<> > rowMap = 
-         Teuchos::rcp(new Tpetra::Map<>(dummy, rowIdx(), 0, comm));
+       Teuchos::rcp(new Tpetra::Map<>(dummy, rowIdx(), 0, comm));
 
   Teuchos::RCP<sparse_matrix_type> A = 
            rcp(new sparse_matrix_type(rowMap, nnzPerRow()));
@@ -541,10 +599,19 @@ readSparseFile(
   Teuchos::Array<global_ordinal_type>().swap(colIdx);
   Teuchos::Array<scalar_type>().swap(val);
 
+  if (useTimers)
+    timer = Teuchos::null;
+
   if (callFillComplete) {
 
     if (verbose && me == 0) 
       std::cout << "Building vector maps" << std::endl;
+
+    if (useTimers) {
+      timer = Teuchos::null;
+      timer = rcp(new Teuchos::TimeMonitor(
+                     *Teuchos::TimeMonitor::getNewTimer("RSF buildVectorMaps")));
+    }
 
     // Build domain map that corresponds to distribution 
     Teuchos::Array<global_ordinal_type> vectorSet;
@@ -564,22 +631,23 @@ readSparseFile(
     dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
     Teuchos::RCP<const Tpetra::Map<> > rangeMap = 
            Teuchos::rcp(new Tpetra::Map<>(dummy, vectorSet(), 0, comm));
-  
+
     Teuchos::Array<global_ordinal_type>().swap(vectorSet);
 
     // FillComplete the matrix
+    if (useTimers) {
+      timer = Teuchos::null;
+      timer = rcp(new Teuchos::TimeMonitor(
+                     *Teuchos::TimeMonitor::getNewTimer("RSF fillComplete")));
+    }
+
     if (verbose && me == 0) 
       std::cout << "Calling fillComplete" << std::endl;
 
-    {
-      if (timeFillComplete != "") {
-        auto timer = Teuchos::TimeMonitor::getNewTimer(timeFillComplete);
-        Teuchos::TimeMonitor timeMonFill(*timer);
-        A->fillComplete(domainMap, rangeMap);
-      }
-      else 
-        A->fillComplete(domainMap, rangeMap);
-    }
+    A->fillComplete(domainMap, rangeMap);
+
+    if (useTimers) 
+      timer = Teuchos::null;
 
     if (verbose) {
       std::cout << "\nRank " << A->getComm()->getRank() 
