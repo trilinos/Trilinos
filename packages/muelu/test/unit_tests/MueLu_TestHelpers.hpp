@@ -743,7 +743,7 @@ namespace MueLuTests {
       Meshes match at the interface to allow for the trivial implementation of the off-diagonal coupling blocks
       in a 2x2 saddle-point system inspired by surface-coupled meshtying.
     */
-    static RCP<Matrix> BuildPoissonSaddlePointMatrix(const GO nx, GO ny = -1, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified)
+    static RCP<BlockedCrsMatrix> BuildPoissonSaddlePointMatrix(const GO nx, GO ny = -1, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified)
     {
       using Teuchos::ParameterList;
 
