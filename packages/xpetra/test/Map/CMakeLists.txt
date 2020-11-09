@@ -28,6 +28,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MapUtils_UnitTests
+  SOURCES
+    MapUtils_UnitTests
+    ../Xpetra_UnitTests
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   StridedMap_UnitTests
   SOURCES
     StridedMap_UnitTests
