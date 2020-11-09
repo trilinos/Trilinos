@@ -313,8 +313,14 @@ readMatrixMarket(
   size_t nRead = 0;
   size_t rlen;
 
+  auto timerRead = Teuchos::TimeMonitor::getNewTimer("RMM    readNonzeros");
+  auto timerSelect = Teuchos::TimeMonitor::getNewTimer("RMM    selectNonzeros");
   // Read chunks until the entire file is read
+  Teuchos::RCP<Teuchos::TimeMonitor> innerTimer = Teuchos::null;
   while (nRead < nNz) {
+
+    innerTimer = rcp(new Teuchos::TimeMonitor(*timerRead));
+
     if (nNz-nRead > chunkSize) nChunk = chunkSize;
     else nChunk = (nNz - nRead);
 
@@ -340,6 +346,9 @@ readMatrixMarket(
 
     buffer[rlen++] = '\0';
     nRead += nChunk;
+
+    innerTimer = Teuchos::null;
+    innerTimer = rcp(new Teuchos::TimeMonitor(*timerSelect));
 
     // All processors check the received data, saving nonzeros belonging to them
     char *lineptr = buffer;
@@ -386,6 +395,8 @@ readMatrixMarket(
         if (me == 0) std::cout << nMillion << "M ";
       }
     }
+
+    innerTimer = Teuchos::null;
   }
 
   if (verbose && me == 0) 
