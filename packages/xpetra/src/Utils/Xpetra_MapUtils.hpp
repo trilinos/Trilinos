@@ -52,6 +52,7 @@
 #include "Xpetra_Exceptions.hpp"
 #include "Xpetra_Map.hpp"
 #include "Xpetra_MapFactory.hpp"
+#include "../../sup/StridedMap/Xpetra_StridedMap_decl.hpp"
 
 namespace Xpetra {
 
@@ -78,35 +79,39 @@ public:
 
   /*! @brief Helper function to concatenate several maps
 
-    @param  subMaps    vector of maps which are concatenated
+    @param  subMaps    vector of maps to be concatenated
     @return            concatenated map
 
     The routine builds a global map by concatenating all provided maps in the ordering defined by the vector.
     The GIDs are just appended in the same ordering as in the subMaps. No reordering or sorting is performed.
-    This routine is supposed to generate the full map in an Xpetra::MapExtractor for a block operator. Note, it
-    should not be used for strided maps since the GIDs are not reordered.
+    This routine is supposed to generate the full map in an Xpetra::MapExtractor for a block operator.
+
+    \warning Do not use for strided maps since the GIDs are not reordered.
 
     Example: subMap[0] = { 0, 1, 3, 4 };
              subMap[1] = { 2, 5 };
              concatenated map = { 0, 1, 3, 4, 2 ,5 };
     */
-  static Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > concatenateMaps(const std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > & subMaps) {
-
+  static Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
+  concatenateMaps(const std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > & subMaps)
+  {
     // ToDo Resolve header issues to allow for using this routing in Xpetra::BlockedMap.
 
-    // merge submaps to global map
+    // Append list of GIDs of individual maps in to one large list
     std::vector<GlobalOrdinal> gids;
-    for(size_t tt = 0; tt<subMaps.size(); ++tt) {
-      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > subMap = subMaps[tt];
-      Teuchos::ArrayView< const GlobalOrdinal > subMapGids = subMap->getNodeElementList();
+    for (const auto& map : subMaps) {
+      Teuchos::RCP<const StridedMap> stridedMap = Teuchos::rcp_dynamic_cast<const StridedMap>(map);
+      TEUCHOS_TEST_FOR_EXCEPTION(!stridedMap.is_null(), Xpetra::Exceptions::RuntimeError,
+          "Xpetra::MatrixUtils::concatenateMaps: cannot concatenate 'StridedMap' due to reordering of GIDs. Input maps must be plain 'Map' objects.");
+      Teuchos::ArrayView<const GlobalOrdinal> subMapGids = map->getNodeElementList();
       gids.insert(gids.end(), subMapGids.begin(), subMapGids.end());
     }
 
+    // Create the concatenated map object
     const GlobalOrdinal INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
-    //std::sort(gids.begin(), gids.end());
-    //gids.erase(std::unique(gids.begin(), gids.end()), gids.end());
     Teuchos::ArrayView<GlobalOrdinal> gidsView(&gids[0], gids.size());
-    Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > fullMap = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(subMaps[0]->lib(), INVALID, gidsView, subMaps[0]->getIndexBase(), subMaps[0]->getComm());
+    Teuchos::RCP<const Map> fullMap = MapFactory::Build(subMaps[0]->lib(), INVALID, gidsView, subMaps[0]->getIndexBase(), subMaps[0]->getComm());
+
     return fullMap;
   }
 
@@ -125,16 +130,16 @@ public:
              result = { 0, 1, 2, 3, 4 }; on proc 0
              result = { 3, 4, 5, 6, 7 }; on proc 1
     */
-  static Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > 
+  static Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
   shrinkMapGIDs(const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& input,
                 const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& nonOvlInput)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getNodeNumElements() > input.getNodeNumElements(), 
-                               Xpetra::Exceptions::Incompatible, 
+    TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getNodeNumElements() > input.getNodeNumElements(),
+                               Xpetra::Exceptions::Incompatible,
                                "Xpetra::MatrixUtils::shrinkMapGIDs: the non-overlapping map must not have more local ids than the overlapping map.")
 
-    TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getMaxAllGlobalIndex() != input.getMaxAllGlobalIndex(), 
-            Xpetra::Exceptions::Incompatible, 
+    TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getMaxAllGlobalIndex() != input.getMaxAllGlobalIndex(),
+            Xpetra::Exceptions::Incompatible,
             "Xpetra::MatrixUtils::shrinkMapGIDs: the maximum GIDs of the overlapping and non-overlapping maps must be the same.")
 
     RCP< const Teuchos::Comm<int> > comm = input.getComm();
@@ -153,7 +158,7 @@ public:
 
     // we use nonOvlInput to assign the globally unique shrinked GIDs and communicate them to input.
     std::map<const GlobalOrdinal, GlobalOrdinal> origGID2newGID;
-    for(size_t i = 0; i < nonOvlInput.getNodeNumElements(); i++) 
+    for(size_t i = 0; i < nonOvlInput.getNodeNumElements(); i++)
     {
       origGID2newGID[nonOvlInput.getGlobalElement(i)] = Teuchos::as<GlobalOrdinal>(i) + Teuchos::as<GlobalOrdinal>(gidOffset);
     }
