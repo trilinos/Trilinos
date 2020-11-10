@@ -111,6 +111,7 @@ APPEND_SET(SOURCES_BLOCKED
   InterfaceAggregationFactory.cpp
   SchurComplementFactory.cpp
   SubBlockAFactory.cpp
+  ZeroSubBlockAFactory.cpp
 )
 IF (TPL_ENABLE_MPI)
   APPEND_SET(SOURCES_BLOCKED
