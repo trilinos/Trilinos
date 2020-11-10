@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-SCRIPTFILE=$(realpath $BASH_SOURCE)
+SCRIPTFILE=$(realpath ${WORKSPACE:?}/Trilinos/cmake/std/PullRequestLinuxDriver.sh)
 SCRIPTPATH=$(dirname $SCRIPTFILE)
 source ${SCRIPTPATH:?}/common.bash
 # set -x  # echo commands
@@ -143,7 +143,7 @@ message_std "PRDriver> " ""
 
 # determine what MODE we are using
 mode="standard"
-if [[ "${JOB_BASE_NAME}" == "Trilinos_pullrequest_gcc_8.3.0_installation_testing" ]]; then
+if [[ "${JOB_BASE_NAME:?}" == "Trilinos_pullrequest_gcc_8.3.0_installation_testing" ]]; then
     mode="installation"
 fi
 
