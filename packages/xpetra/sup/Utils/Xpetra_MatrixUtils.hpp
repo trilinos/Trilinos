@@ -653,6 +653,17 @@ public:
                                "Local parts of row and column map do not match!");
   }
 
+  //! Convert matrix to strided range and domain maps
+  static void convertMatrixToStridedMaps(
+      Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> matrix,
+      std::vector<size_t>& rangeStridingInfo, std::vector<size_t>& domainStridingInfo)
+  {
+    RCP<const StridedMap> stridedRangeMap = StridedMapFactory::Build(matrix->getRowMap(), rangeStridingInfo, -1, 0);
+    RCP<const StridedMap> stridedDomainMap = StridedMapFactory::Build(matrix->getDomainMap(), domainStridingInfo, -1, 0);
+
+    if (matrix->IsView("stridedMaps") == true) matrix->RemoveView("stridedMaps");
+    matrix->CreateView("stridedMaps", stridedRangeMap, stridedDomainMap);
+  }
 
 };
 
