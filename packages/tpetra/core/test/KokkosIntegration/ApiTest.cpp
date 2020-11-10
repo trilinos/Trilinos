@@ -21,6 +21,15 @@ ApiTest::ApiTest() { }
 
 ApiTest::~ApiTest() { }
 
+int ApiTest::setExpectation(std::string key, int value) {
+  std::map<std::string, std::pair<int, int> >::iterator found = counter.find(key);
+  if (found != counter.end()) {
+    found->second.second = value;
+    return 0;
+  }
+  return -1;
+}
+
 int ApiTest::setExpectations(std::map<std::string, int> &exp) {
   for (std::map<std::string, int>::iterator it = exp.begin();
        it != exp.end(); it++) {

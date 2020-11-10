@@ -5,6 +5,7 @@ class ApiTest {
  public:
   static ApiTest *getInstance();
   void finalizeInstance();
+  int setExpectation(std::string, int);
   int setExpectations(std::map<std::string, int> &exp);
   bool testExpectations();
   void map_zero();
