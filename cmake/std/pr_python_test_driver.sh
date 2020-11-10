@@ -33,8 +33,9 @@ get_python_packages ${pip_exe:?}
 
 message_std "" ""
 print_banner "E X E C U T E   T E S T S"
-message_std "--- " "${python_exe:?} -m pytest --cov=trilinosprhelpers --cov-report term-missing"
-${python_exe:?} -m pytest --cov=trilinosprhelpers --cov-report term-missing
+message_std "--- " "${python_exe:?} -m pytest --cov=. --cov-report term-missing"
+${python_exe:?} -m pytest --cov=. --cov-report term-missing
+
 err=$?
 message_std "" ""
 message_std "--- " "STATUS: ${err:?}"
