@@ -51,7 +51,6 @@
 #include "MueLu_ZeroSubBlockAFactory_decl.hpp"
 
 #include <Xpetra_BlockedCrsMatrix.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_Vector.hpp>
@@ -68,8 +67,8 @@ namespace MueLu {
 
     validParamList->set<RCP<const FactoryBase>>("A", MueLu::NoFactory::getRCP(), "Generating factory for A.");
 
-    validParamList->set<int>("block row", 0, "Block row of subblock matrix A");
-    validParamList->set<int>("block col", 0, "Block column of subblock matrix A");
+    validParamList->set<int>("block row", 0, "Block row of subblock in block matrix A");
+    validParamList->set<int>("block col", 0, "Block column of subblock in block matrix A");
 
     return validParamList;
   }
@@ -103,23 +102,25 @@ namespace MueLu {
     // extract map information from MapExtractor
     RCP<const MapExtractor> rangeMapExtractor = A->getRangeMapExtractor();
     RCP<const MapExtractor> domainMapExtractor = A->getDomainMapExtractor();
-    
+
     // In case that both user-specified and internal striding information from the submaps
     // does not contain valid striding information, try to extract it from the global maps
     // in the map extractor.
     if (stridedRangeMap.is_null()) {
-      TEUCHOS_TEST_FOR_EXCEPTION(rangeMapExtractor->getMap(row).is_null(), Exceptions::BadCast, "Range map extractor contains non-strided maps. This should not be.");      
+      TEUCHOS_TEST_FOR_EXCEPTION(rangeMapExtractor->getMap(row).is_null(), Exceptions::BadCast,
+          "Range map extractor contains non-strided maps in block row " << row << ". This should not be.");
       stridedRangeMap = rcp_dynamic_cast<const StridedMap>(rangeMapExtractor->getMap(row));
     }
 
-    if (stridedDomainMap.is_null()) {      
-      TEUCHOS_TEST_FOR_EXCEPTION(domainMapExtractor->getMap(row).is_null(), Exceptions::BadCast, "Domain map extractor contains non-strided maps. This should not be.");
+    if (stridedDomainMap.is_null()) {
+      TEUCHOS_TEST_FOR_EXCEPTION(domainMapExtractor->getMap(row).is_null(), Exceptions::BadCast,
+          "Domain map extractor contains non-strided maps in block row " << row << ". This should not be.");
       stridedDomainMap = rcp_dynamic_cast<const StridedMap>(domainMapExtractor->getMap(col));
     }
-    
+
     TEUCHOS_TEST_FOR_EXCEPTION(stridedRangeMap.is_null(), Exceptions::BadCast, "rangeMap " << row << " is not a strided map.");
     TEUCHOS_TEST_FOR_EXCEPTION(stridedDomainMap.is_null(), Exceptions::BadCast, "domainMap " << col << " is not a strided map.");
-    
+
     RCP<Matrix> Op = MatrixFactory::Build(stridedRangeMap, stridedDomainMap, static_cast<size_t>(0));
     TEUCHOS_ASSERT(!Op.is_null());
 
@@ -134,7 +135,7 @@ namespace MueLu {
     if (Op->IsView("stridedMaps") == true)
       Op->RemoveView("stridedMaps");
     Op->CreateView("stridedMaps", stridedRangeMap, stridedDomainMap);
-   
+
     currentLevel.Set("A", Op, this);
   }
 
