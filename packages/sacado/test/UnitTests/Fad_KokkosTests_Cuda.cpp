@@ -30,16 +30,16 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Fad_KokkosTests.hpp"
+#include "Kokkos_Macros.hpp"
 
-#include "Kokkos_Core.hpp"
-
-// Instantiate tests for Cuda device.  We can only test DFad is UVM is enabled.
 #if defined(KOKKOS_ENABLE_CUDA_UVM)
 #define SACADO_TEST_DFAD 1
 #else
 #define SACADO_TEST_DFAD 0
 #endif
+#include "Fad_KokkosTests.hpp"
+
+// Instantiate tests for Cuda device.  We can only test DFad is UVM is enabled.
 using Kokkos::Cuda;
 VIEW_FAD_TESTS_D( Cuda )
 
