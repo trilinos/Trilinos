@@ -340,8 +340,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionRFactory, RegionRFactLaplace3D, Scalar, 
                 revisedRowMap, rowImport,
                 regionMatVecLIDs, regionInterfaceImporter, rNodesPerDim);
 
-  RCP<Matrix> regionMat = regionMats;
-
   // Generate levels for a two level hierarchy
   MueLu::Level fineLevel, coarseLevel;
   test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
@@ -350,7 +348,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionRFactory, RegionRFactLaplace3D, Scalar, 
 
   // Set requests and input data on fine level
   fineLevel.Request("A");
-  fineLevel.Set("A", regionMat);
+  fineLevel.Set("A", regionMats);
   fineLevel.Set("numDimensions", numDimensions);
   fineLevel.Set("lNodesPerDim",  rNodesPerDim);
   fineLevel.Set("Nullspace", regionNullspace);
@@ -507,8 +505,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionRFactory, RegionRFactElasticity3D, Scala
                 revisedRowMap, rowImport,
                 regionMatVecLIDs, regionInterfaceImporter, rNodesPerDim);
 
-  RCP<Matrix> regionMat = regionMats;
-
   // Generate levels for a two level hierarchy
   MueLu::Level fineLevel, coarseLevel;
   test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
@@ -517,7 +513,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionRFactory, RegionRFactElasticity3D, Scala
 
   // Set requests and input data on fine level
   fineLevel.Request("A");
-  fineLevel.Set("A", regionMat);
+  fineLevel.Set("A", regionMats);
   fineLevel.Set("numDimensions", numDimensions);
   fineLevel.Set("lNodesPerDim",  rNodesPerDim);
   fineLevel.Set("Nullspace", regionNullspace);

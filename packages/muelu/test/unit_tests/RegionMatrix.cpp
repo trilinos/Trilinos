@@ -422,7 +422,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
                      rowMap, colMap, revisedRowMap, revisedColMap,
                      rowImport, colImport, regionMats,
                      regionMatVecLIDs, regionInterfaceImporter);
-  RCP<Matrix> regionMat = regionMats;
 
   // Extract the local data from the region matrix
   using local_matrix_type = typename Matrix::local_matrix_type;
@@ -430,7 +429,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
   using entries_type      = typename local_graph_type::entries_type;
   using values_type       = typename local_matrix_type::values_type;
 
-  local_matrix_type myLocalA  = regionMat->getLocalMatrix();  // Local matrix
+  local_matrix_type myLocalA  = regionMats->getLocalMatrix();  // Local matrix
   entries_type      myEntries = myLocalA.graph.entries;       // view of local column indices
   values_type       myValues  = myLocalA.values;              // view of local values
 
@@ -441,11 +440,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
 
   // Now do a bunch of checks regarding the values stored in region A
   if(numRanks == 1) {
-    TEST_EQUALITY(regionMat->getGlobalNumRows(),     25);
-    TEST_EQUALITY(regionMat->getGlobalNumCols(),     25);
-    TEST_EQUALITY(regionMat->getNodeNumRows(),       25);
-    TEST_EQUALITY(regionMat->getGlobalNumEntries(), 105);
-    TEST_EQUALITY(regionMat->getNodeNumEntries(),   105);
+    TEST_EQUALITY(regionMats->getGlobalNumRows(),     25);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(),     25);
+    TEST_EQUALITY(regionMats->getNodeNumRows(),       25);
+    TEST_EQUALITY(regionMats->getGlobalNumEntries(), 105);
+    TEST_EQUALITY(regionMats->getNodeNumEntries(),   105);
 
     // In the serial case we can just compare to the values in A
     entries_type refEntries = A->getLocalMatrix().graph.entries;
@@ -463,11 +462,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
     }
   } else if(numRanks == 4) {
     // All ranks will have the same number of rows/cols/entries
-    TEST_EQUALITY(regionMat->getGlobalNumRows(),     36);
-    TEST_EQUALITY(regionMat->getGlobalNumCols(),     36);
-    TEST_EQUALITY(regionMat->getNodeNumRows(),        9);
-    TEST_EQUALITY(regionMat->getGlobalNumEntries(), 132);
-    TEST_EQUALITY(regionMat->getNodeNumEntries(),    33);
+    TEST_EQUALITY(regionMats->getGlobalNumRows(),     36);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(),     36);
+    TEST_EQUALITY(regionMats->getNodeNumRows(),        9);
+    TEST_EQUALITY(regionMats->getGlobalNumEntries(), 132);
+    TEST_EQUALITY(regionMats->getNodeNumEntries(),    33);
 
     ArrayRCP<LO> refEntries;
     ArrayRCP<SC> refValues;
@@ -712,8 +711,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal
                      rowImport, colImport, regionMats,
                      regionMatVecLIDs, regionInterfaceImporter);
 
-  RCP<Matrix> regionMat = regionMats;
-
   // Create initial vectors in composite format and apply composite A.
   // This will give a reference to compare with.
   RCP<Vector> X = VectorFactory::Build(dofMap);
@@ -733,7 +730,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal
   RCP<Vector> regB = Teuchos::null;
   compositeToRegional(X, quasiRegX, regX, revisedRowMap, rowImport);
   regB = VectorFactory::Build(revisedRowMap, true);
-  regionMat->apply(*regX, *regB, Teuchos::NO_TRANS, TST::one(), TST::zero());
+  regionMats->apply(*regX, *regB, Teuchos::NO_TRANS, TST::one(), TST::zero());
   sumInterfaceValues(regB, revisedRowMap, rowImport);
 
   // Now create a refRegB vector using B as a starting point
@@ -758,7 +755,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal
 
   RCP<Vector> regC = Teuchos::null;
   regC = VectorFactory::Build(revisedRowMap, true);
-  ApplyMatVec(TST::one(), regionMat, regX, TST::zero(),
+  ApplyMatVec(TST::one(), regionMats, regX, TST::zero(),
               regionInterfaceImporter, regionMatVecLIDs,
               regC, Teuchos::NO_TRANS, true);
 
@@ -813,8 +810,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdin
                 A, regionMats, revisedRowMap, rowImport,
                 regionMatVecLIDs, regionInterfaceImporter);
 
-  RCP<Matrix> regionMat = regionMats;
-
   // Create initial vectors in composite format and apply composite A.
   // This will give a reference to compare with.
   RCP<Vector> X = VectorFactory::Build(A->getRowMap());
@@ -835,7 +830,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdin
   compositeToRegional(X, quasiRegX, regX,
                       revisedRowMap, rowImport);
   regB = VectorFactory::Build(revisedRowMap, true);
-  regionMat->apply(*regX, *regB, Teuchos::NO_TRANS, TST::one(), TST::zero());
+  regionMats->apply(*regX, *regB, Teuchos::NO_TRANS, TST::one(), TST::zero());
   sumInterfaceValues(regB, revisedRowMap, rowImport);
 
   // Now create a refRegB vector using B as a starting point
@@ -860,7 +855,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdin
 
   RCP<Vector> regC = Teuchos::null;
   regC = VectorFactory::Build(revisedRowMap, true);
-  ApplyMatVec(TST::one(), regionMat, regX, TST::zero(),
+  ApplyMatVec(TST::one(), regionMats, regX, TST::zero(),
               regionInterfaceImporter, regionMatVecLIDs,
               regC, Teuchos::NO_TRANS, true);
 
@@ -911,8 +906,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec2D_Elasticity, Scalar,
                 A, regionMats, revisedRowMap, rowImport,
                 regionMatVecLIDs, regionInterfaceImporter);
 
-  RCP<Matrix> regionMat = regionMats;
-
   // Create initial vectors in composite format and apply composite A.
   // This will give a reference to compare with.
   RCP<Vector> X = VectorFactory::Build(A->getRowMap());
@@ -932,7 +925,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec2D_Elasticity, Scalar,
   RCP<Vector> regB = Teuchos::null;
   compositeToRegional(X, quasiRegX, regX, revisedRowMap, rowImport);
   regB = VectorFactory::Build(revisedRowMap, true);
-  regionMat->apply(*regX, *regB, Teuchos::NO_TRANS, TST::one(), TST::zero());
+  regionMats->apply(*regX, *regB, Teuchos::NO_TRANS, TST::one(), TST::zero());
   sumInterfaceValues(regB, revisedRowMap, rowImport);
 
   // Now create a refRegB vector using B as a starting point
@@ -957,7 +950,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec2D_Elasticity, Scalar,
 
   RCP<Vector> regC = Teuchos::null;
   regC = VectorFactory::Build(revisedRowMap, true);
-  ApplyMatVec(TST::one(), regionMat, regX, TST::zero(),
+  ApplyMatVec(TST::one(), regionMats, regX, TST::zero(),
               regionInterfaceImporter, regionMatVecLIDs,
               regC, Teuchos::NO_TRANS, true);
 
@@ -1008,8 +1001,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar,
                 A, regionMats, revisedRowMap, rowImport,
                 regionMatVecLIDs, regionInterfaceImporter);
 
-  RCP<Matrix> regionMat = regionMats;
-
   // Create initial vectors in composite format and apply composite A.
   // This will give a reference to compare with.
   RCP<Vector> X = VectorFactory::Build(A->getRowMap());
@@ -1029,7 +1020,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar,
   RCP<Vector> regB = Teuchos::null;
   compositeToRegional(X, quasiRegX, regX, revisedRowMap, rowImport);
   regB = VectorFactory::Build(revisedRowMap, true);
-  regionMat->apply(*regX, *regB, Teuchos::NO_TRANS, TST::one(), TST::zero());
+  regionMats->apply(*regX, *regB, Teuchos::NO_TRANS, TST::one(), TST::zero());
   sumInterfaceValues(regB, revisedRowMap, rowImport);
 
   // Now create a refRegB vector using B as a starting point
@@ -1054,7 +1045,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar,
 
   RCP<Vector> regC = Teuchos::null;
   regC = VectorFactory::Build(revisedRowMap, true);
-  ApplyMatVec(TST::one(), regionMat, regX, TST::zero(),
+  ApplyMatVec(TST::one(), regionMats, regX, TST::zero(),
               regionInterfaceImporter, regionMatVecLIDs,
               regC, Teuchos::NO_TRANS, true);
 
@@ -1130,7 +1121,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
   test_matrix(A, regionMats,
               rowMap, colMap, revisedRowMap, rowImport,
               out, success);
-  RCP<Matrix> regionMat = regionMats;
 
   // Extract the local data from the region matrix
   using local_matrix_type = typename Matrix::local_matrix_type;
@@ -1138,7 +1128,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
   using entries_type      = typename local_graph_type::entries_type;
   using values_type       = typename local_matrix_type::values_type;
 
-  local_matrix_type myLocalA  = regionMat->getLocalMatrix();  // Local matrix
+  local_matrix_type myLocalA  = regionMats->getLocalMatrix();  // Local matrix
   entries_type      myEntries = myLocalA.graph.entries;       // view of local column indices
   values_type       myValues  = myLocalA.values;              // view of local values
 
@@ -1150,11 +1140,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
   const int numRanks = comm->getSize();
   const int myRank   = comm->getRank();
   if(numRanks == 1) {
-    TEST_EQUALITY(regionMat->getGlobalNumRows(),    30);
-    TEST_EQUALITY(regionMat->getGlobalNumCols(),    30);
-    TEST_EQUALITY(regionMat->getNodeNumRows(),      30);
-    TEST_EQUALITY(regionMat->getGlobalNumEntries(), 128);
-    TEST_EQUALITY(regionMat->getNodeNumEntries(),   128);
+    TEST_EQUALITY(regionMats->getGlobalNumRows(),    30);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(),    30);
+    TEST_EQUALITY(regionMats->getNodeNumRows(),      30);
+    TEST_EQUALITY(regionMats->getGlobalNumEntries(), 128);
+    TEST_EQUALITY(regionMats->getNodeNumEntries(),   128);
 
     // In the serial case we can just compare to the values in A
     entries_type refEntries = A->getLocalMatrix().graph.entries;
@@ -1172,14 +1162,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
     }
   } else if(numRanks == 4) {
     // All ranks will have the same number of rows/cols/entries
-    TEST_EQUALITY(regionMat->getGlobalNumRows(),    42);
-    TEST_EQUALITY(regionMat->getGlobalNumCols(),    42);
-    TEST_EQUALITY(regionMat->getGlobalNumEntries(), 158);
+    TEST_EQUALITY(regionMats->getGlobalNumRows(),    42);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(),    42);
+    TEST_EQUALITY(regionMats->getGlobalNumEntries(), 158);
 
     ArrayRCP<SC> refValues;
     if(myRank == 0) {
-      TEST_EQUALITY(regionMat->getNodeNumRows(),      9);
-      TEST_EQUALITY(regionMat->getNodeNumEntries(),   33);
+      TEST_EQUALITY(regionMats->getNodeNumRows(),      9);
+      TEST_EQUALITY(regionMats->getNodeNumEntries(),   33);
       refValues.deepCopy(ArrayView<const SC>({4.0, -1.0, -1.0,
               -1.0, 4.0, -1.0, -1.0,
               -1.0, 2.0, -0.5,
@@ -1191,8 +1181,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
               -0.5, -0.5, 1.0}));
 
     } else if(myRank == 1) {
-      TEST_EQUALITY(regionMat->getNodeNumRows(),      12);
-      TEST_EQUALITY(regionMat->getNodeNumEntries(),   46);
+      TEST_EQUALITY(regionMats->getNodeNumRows(),      12);
+      TEST_EQUALITY(regionMats->getNodeNumEntries(),   46);
       refValues.deepCopy(ArrayView<const SC>({2.0, -1.0, -0.5,
               -1.0, 4.0, -1.0, -1.0,
               -1.0, 4.0, -1.0, -1.0,
@@ -1207,8 +1197,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
               -1.0, -0.5, 2.0}));
 
     } else if(myRank == 2) {
-      TEST_EQUALITY(regionMat->getNodeNumRows(),      9);
-      TEST_EQUALITY(regionMat->getNodeNumEntries(),   33);
+      TEST_EQUALITY(regionMats->getNodeNumRows(),      9);
+      TEST_EQUALITY(regionMats->getNodeNumEntries(),   33);
       refValues.deepCopy(ArrayView<const SC>({2.0, -0.5, -1.0,
               -0.5, 2.0, -0.5, -1.0,
               -0.5, 1.0, -0.5,
@@ -1220,8 +1210,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
               -0.5, -1.0, 2.0}));
 
     } else if(myRank == 3) {
-      TEST_EQUALITY(regionMat->getNodeNumRows(),      12);
-      TEST_EQUALITY(regionMat->getNodeNumEntries(),   46);
+      TEST_EQUALITY(regionMats->getNodeNumRows(),      12);
+      TEST_EQUALITY(regionMats->getNodeNumEntries(),   46);
       refValues.deepCopy(ArrayView<const SC>({1.0, -0.5, -0.5,
               -0.5, 2.0, -0.5, -1.0,
               -0.5, 2.0, -0.5, -1.0,
@@ -1309,7 +1299,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
   test_matrix(A, regionMats,
               rowMap, colMap, revisedRowMap, rowImport,
               out, success);
-  RCP<Matrix> regionMat = regionMats;
 
   // Extract the local data from the region matrix
   using local_matrix_type = typename Matrix::local_matrix_type;
@@ -1317,7 +1306,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
   using entries_type      = typename local_graph_type::entries_type;
   using values_type       = typename local_matrix_type::values_type;
 
-  local_matrix_type myLocalA  = regionMat->getLocalMatrix();  // Local matrix
+  local_matrix_type myLocalA  = regionMats->getLocalMatrix();  // Local matrix
   entries_type      myEntries = myLocalA.graph.entries;       // view of local column indices
   values_type       myValues  = myLocalA.values;              // view of local values
 
@@ -1329,11 +1318,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
   const int numRanks = comm->getSize();
   const int myRank   = comm->getRank();
   if((numRanks == 1) && (myRank == 0)) {
-    TEST_EQUALITY(regionMat->getGlobalNumRows(),    120);
-    TEST_EQUALITY(regionMat->getGlobalNumCols(),    120);
-    TEST_EQUALITY(regionMat->getNodeNumRows(),      120);
-    TEST_EQUALITY(regionMat->getGlobalNumEntries(), 692);
-    TEST_EQUALITY(regionMat->getNodeNumEntries(),   692);
+    TEST_EQUALITY(regionMats->getGlobalNumRows(),    120);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(),    120);
+    TEST_EQUALITY(regionMats->getNodeNumRows(),      120);
+    TEST_EQUALITY(regionMats->getGlobalNumEntries(), 692);
+    TEST_EQUALITY(regionMats->getNodeNumEntries(),   692);
 
     // In the serial case we can just compare to the values in A
     entries_type refEntries = A->getLocalMatrix().graph.entries;
@@ -1351,14 +1340,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
     }
   } else if(numRanks == 4) {
     // All ranks will have the same number of rows/cols/entries
-    TEST_EQUALITY(regionMat->getGlobalNumRows(),    168);
-    TEST_EQUALITY(regionMat->getGlobalNumCols(),    168);
-    TEST_EQUALITY(regionMat->getGlobalNumEntries(), 884);
+    TEST_EQUALITY(regionMats->getGlobalNumRows(),    168);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(),    168);
+    TEST_EQUALITY(regionMats->getGlobalNumEntries(), 884);
 
     ArrayRCP<SC> refValues;
     if(myRank == 0) {
-      TEST_EQUALITY(regionMat->getNodeNumRows(),     36);
-      TEST_EQUALITY(regionMat->getNodeNumEntries(), 186);
+      TEST_EQUALITY(regionMats->getNodeNumRows(),     36);
+      TEST_EQUALITY(regionMats->getNodeNumEntries(), 186);
       refValues.deepCopy(ArrayView<const SC>({6.0, -1.0, -1.0, -1.0,
               -1.0, 6.0, -1.0, -1.0, -1.0,
               -1.0, 3.0, -0.5, -0.5,
@@ -1404,8 +1393,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
       }
 
     } else if(myRank == 1) {
-      TEST_EQUALITY(regionMat->getNodeNumRows(),     48);
-      TEST_EQUALITY(regionMat->getNodeNumEntries(), 256);
+      TEST_EQUALITY(regionMats->getNodeNumRows(),     48);
+      TEST_EQUALITY(regionMats->getNodeNumEntries(), 256);
       refValues.deepCopy(ArrayView<const SC>({3.0, -1.0, -0.5, -0.5,
               -1.0, 6.0, -1.0, -1.0, -1.0,
               -1.0, 6.0, -1.0, -1.0, -1.0,
@@ -1463,8 +1452,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
       }
 
     } else if(myRank == 2) {
-      TEST_EQUALITY(regionMat->getNodeNumRows(),     36);
-      TEST_EQUALITY(regionMat->getNodeNumEntries(), 186);
+      TEST_EQUALITY(regionMats->getNodeNumRows(),     36);
+      TEST_EQUALITY(regionMats->getNodeNumEntries(), 186);
       refValues.deepCopy(ArrayView<const SC>({3.0, -0.5, -1.0, -0.5,
               -0.5, 2.5, -0.5, -1.0, -0.5,
               -0.5, 1.25, -0.5, -0.25,
@@ -1510,8 +1499,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
       }
 
     } else if(myRank == 3) {
-      TEST_EQUALITY(regionMat->getNodeNumRows(),     48);
-      TEST_EQUALITY(regionMat->getNodeNumEntries(), 256);
+      TEST_EQUALITY(regionMats->getNodeNumRows(),     48);
+      TEST_EQUALITY(regionMats->getNodeNumEntries(), 256);
       refValues.deepCopy(ArrayView<const SC>({1.25, -0.5, -0.5, -0.25,
               -0.5, 2.5, -0.5, -1.0, -0.5,
               -0.5, 2.5, -0.5, -1.0, -0.5,
