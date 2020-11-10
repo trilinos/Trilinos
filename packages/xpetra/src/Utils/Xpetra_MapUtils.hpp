@@ -52,7 +52,7 @@
 #include "Xpetra_Exceptions.hpp"
 #include "Xpetra_Map.hpp"
 #include "Xpetra_MapFactory.hpp"
-#include "../../sup/StridedMap/Xpetra_StridedMap_decl.hpp"
+// #include "Xpetra_StridedMap.hpp"
 
 namespace Xpetra {
 
@@ -100,9 +100,9 @@ public:
     // Append list of GIDs of individual maps in to one large list
     std::vector<GlobalOrdinal> gids;
     for (const auto& map : subMaps) {
-      Teuchos::RCP<const StridedMap> stridedMap = Teuchos::rcp_dynamic_cast<const StridedMap>(map);
-      TEUCHOS_TEST_FOR_EXCEPTION(!stridedMap.is_null(), Xpetra::Exceptions::RuntimeError,
-          "Xpetra::MatrixUtils::concatenateMaps: cannot concatenate 'StridedMap' due to reordering of GIDs. Input maps must be plain 'Map' objects.");
+      // Teuchos::RCP<const StridedMap> stridedMap = Teuchos::rcp_dynamic_cast<const StridedMap>(map);
+      // TEUCHOS_TEST_FOR_EXCEPTION(!stridedMap.is_null(), Xpetra::Exceptions::RuntimeError,
+      //     "Xpetra::MatrixUtils::concatenateMaps: cannot concatenate 'StridedMap' due to reordering of GIDs. Input maps must be plain 'Map' objects.");
       Teuchos::ArrayView<const GlobalOrdinal> subMapGids = map->getNodeElementList();
       gids.insert(gids.end(), subMapGids.begin(), subMapGids.end());
     }
