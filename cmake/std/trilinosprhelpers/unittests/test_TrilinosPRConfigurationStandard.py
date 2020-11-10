@@ -106,7 +106,7 @@ class TrilinosPRConfigurationStandardTest(TestCase):
         self._config_file = self.find_config_ini(config_file)
 
         # Set up dummy command line arguments
-        self._args = self. dummy_args()
+        self._args = self.dummy_args()
 
         # Set up some global mock patches
         self.patch_cpu_count = patch('multiprocessing.cpu_count', return_value=64)
