@@ -75,7 +75,7 @@ public:
   }
 
   /** \brief Clear the composite list.*/
-  void clearObservers(){
+  void clearStrategies(){
      strategies_.clear();
   }
 
