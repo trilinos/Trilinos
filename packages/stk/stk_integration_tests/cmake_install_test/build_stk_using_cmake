@@ -92,7 +92,7 @@ if [ $? -ne 0 ] ; then
   exit 1;
 fi
 
-exe 'ctest >& ${stk_ctest_log}';
+exe 'ctest -j8 >& ${stk_ctest_log}';
 if [ $? -ne 0 ] ; then
   echo "!! error in ctest, check output in ${stk_ctest_log} !!";
   exit 1;

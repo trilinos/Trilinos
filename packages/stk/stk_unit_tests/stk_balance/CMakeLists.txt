@@ -40,6 +40,7 @@ FILE(GLOB SOURCES *.cpp)
 TRIBITS_ADD_EXECUTABLE(
     stk_balance_unit_tester
     SOURCES ${SOURCES}
+    TESTONLYLIBS stk_unit_main
     COMM serial mpi
     NOEXEPREFIX
     )

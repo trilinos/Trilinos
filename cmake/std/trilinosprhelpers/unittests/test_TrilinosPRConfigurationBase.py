@@ -177,9 +177,12 @@ class TrilinosPRConfigurationTest(TestCase):
         #config_file = 'test_config.ini'
         config_file = 'trilinos_pr_test.ini'
         self._config_file = self.find_config_ini(config_file)
+        print("")
+        print("--- Config file found: {}".format(self._config_file))
+        print("")
 
         # Set up dummy command line arguments
-        self._args = self. dummy_args_python2()
+        self._args = self.dummy_args_python3()
 
         # Create SetEnvironment object for tests
         self._env  = setenvironment.SetEnvironment(filename=self._config_file, profile="Trilinos_pullrequest_gcc_4.8.4")
@@ -189,13 +192,11 @@ class TrilinosPRConfigurationTest(TestCase):
         self.mock_cpu_count  = self.patch_cpu_count.start()
 
 
-
     def tearDown(self):
         #del os.environ["PULLREQUESTNUM"]
         #del os.environ["PULLREQUEST_CDASH_TRACK"]
 
         self.patch_cpu_count.stop()
-
 
 
     def dummy_args(self):
@@ -234,12 +235,12 @@ class TrilinosPRConfigurationTest(TestCase):
         return args
 
 
-    def dummy_args_python2(self):
+    def dummy_args_python3(self):
         """
         Generate dummy command line arguments
         """
         args = copy.deepcopy(self.dummy_args())
-        args.pullrequest_build_name = "Trilinos_pullrequest_python_2"
+        args.pullrequest_build_name = "Trilinos_pullrequest_python_3"
         return args
 
 
@@ -285,7 +286,7 @@ class TrilinosPRConfigurationTest(TestCase):
         """
         Tests if we can instantiate a TrilinosPRConfiguration object.
         """
-        args = self.dummy_args_python2()
+        args = self.dummy_args_python3()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         #with patch('sysinfo.SysInfo.compute_num_usable_cores', return_value=6):
@@ -330,7 +331,7 @@ class TrilinosPRConfigurationTest(TestCase):
 
 
     def test_TrilinosPRConfigurationCDashTrack(self):
-        args = args = self.dummy_args_python2()
+        args = self.dummy_args_python3()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         cdash_track = pr_config.arg_pullrequest_cdash_track
         print("--- cdash_track = {}".format(cdash_track))
@@ -338,7 +339,7 @@ class TrilinosPRConfigurationTest(TestCase):
 
 
     def test_TrilinosPRConfigurationBuildNamePython2(self):
-        args = self.dummy_args_python2()
+        args = self.dummy_args_python3()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config.pullrequest_build_name
         print("--- build_name = {}".format(build_name))
@@ -357,7 +358,7 @@ class TrilinosPRConfigurationTest(TestCase):
 
     def test_TrilinosPRConfigurationBasePackageEnablesPython2(self):
         print("")
-        args = self.dummy_args_python2()
+        args = self.dummy_args_python3()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         # pre-load the property
@@ -377,7 +378,7 @@ class TrilinosPRConfigurationTest(TestCase):
         Test the PackageEnables generator in DryRun mode
         """
         print("")
-        args = self.dummy_args_python2()
+        args = self.dummy_args_python3()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         # pre-load the property
@@ -439,7 +440,17 @@ class TrilinosPRConfigurationTest(TestCase):
                     with patch('subprocess.check_output', side_effect=mock_subprocess_raise_CalledProcessError) as m_output:
                         pr_config.create_package_enables_file(dryrun=False)
 
-        self.assertTrue( "There was an issue generating packageEnables.cmake" in fake_out.getvalue())
+        expected_output = "There was an issue generating `packageEnables.cmake`"
+        actual_output   = fake_out.getvalue()
+
+        print("--- BEGIN expected output")
+        print(expected_output)
+        print("--- END expected output")
+        print("--- BEGIN actual output")
+        print(actual_output)
+        print("--- END actual output")
+        print("--- actual output must contain the expected output string")
+        self.assertTrue( expected_output in actual_output)
 
 
     def test_TrilinosPRConfigurationBaseProperty_concurrency_test_err(self):
@@ -474,8 +485,7 @@ class TrilinosPRConfigurationTest(TestCase):
 
     def test_TrilinosPRConfigurationBaseProperty_get_property_from_config_PASS(self):
         print("")
-        args = self.dummy_args()
-        args.pullrequest_build_name = "Trilinos_pullrequest_python_3"
+        args = self.dummy_args_python3()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         # Load the ENABLE_MAP job information to test `get_property_from_config`.
@@ -493,8 +503,7 @@ class TrilinosPRConfigurationTest(TestCase):
         This should return the default value and print out a warning.
         """
         print("")
-        args = self.dummy_args()
-        args.pullrequest_build_name = "Trilinos_pullrequest_python_3"
+        args = self.dummy_args_python3()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         # Try to load a nonexistent section.

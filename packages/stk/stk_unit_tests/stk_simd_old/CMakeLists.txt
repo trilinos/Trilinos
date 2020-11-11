@@ -16,6 +16,7 @@ LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestStkSimdView3d.cpp"
 TRIBITS_ADD_EXECUTABLE(
     simd_old_unit_tests
     SOURCES ${SOURCES}
+    TESTONLYLIBS stk_unit_main
     COMM serial mpi
     NOEXEPREFIX
     )
