@@ -1752,6 +1752,27 @@ void test_mesh_3block_4quad(stk::mesh::BulkData& bulk, unsigned blockOrder, unsi
   output_mesh(bulk, "disconnect_3block_4quad_blockOrder" + std::to_string(blockOrder) + "_decomp" + std::to_string(decompPattern) + ".g");
 }
 
+stk::mesh::PartVector setup_mesh_3block_4quad_reverse_ordinal(stk::mesh::BulkData& bulk)
+{
+  stk::mesh::Part & vl = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "vl", 1);
+  stk::mesh::Part & radax = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "radax", 2);
+  stk::mesh::Part & lateral = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "lateral", 3);
+
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,5,4,lateral\n"
+                         "0,2,QUAD_4_2D,2,3,6,5,vl\n"
+                         "0,3,QUAD_4_2D,4,5,8,7,lateral\n"
+                         "0,4,QUAD_4_2D,5,6,9,8,radax";
+
+  std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
+
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+
+  EXPECT_EQ(4u, get_num_intersecting_nodes(bulk, {&vl, &radax, &lateral}));
+  EXPECT_EQ(9u, get_num_total_nodes(bulk));
+
+  return {&vl, &radax, &lateral};
+}
+
 stk::mesh::PartVector setup_mesh_3block_4quad_keepLowerRight(stk::mesh::BulkData& bulk, unsigned decompPattern)
 {
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);

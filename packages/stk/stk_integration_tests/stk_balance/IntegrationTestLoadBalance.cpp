@@ -11,7 +11,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_mesh/base/SkinMesh.hpp>
-#include <stk_unit_test_utils/StkMeshFromGeneratedMesh.h>
+#include <stk_unit_test_utils/StkMeshFromGeneratedMesh.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <test_utils/OptionsForTesting.hpp>

@@ -184,6 +184,9 @@ int driver (int argc, char *argv[]) {
     solver.setSmallProblemThresholdsize(small_problem_thres);
     solver.setVerbose(verbose);
 
+    /// graph options
+    solver.setOrderConnectedGraphSeparately();
+
     /// tasking options
     solver.setMaxNumberOfSuperblocks(max_num_superblocks);
     solver.setBlocksize(mb);

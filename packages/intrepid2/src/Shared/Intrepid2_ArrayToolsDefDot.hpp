@@ -128,7 +128,7 @@ namespace Intrepid2 {
     typedef Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInputViewType;
     typedef Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInputViewType;
     typedef FunctorArrayTools::F_dotMultiply<OutputViewType, leftInputViewType, rightInputViewType> FunctorType;
-    typedef typename ExecSpace< typename leftInputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType; 
 
     const size_type loopSize = ( hasField ? output.extent(0)*output.extent(1)*output.extent(2) :
                                             output.extent(0)*output.extent(1) );

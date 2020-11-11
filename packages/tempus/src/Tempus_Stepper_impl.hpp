@@ -65,7 +65,7 @@ void getValidParametersBasic(
     "another Jacobian from the application.  Individual steppers may\n"
     "override these defaults.");
 
-  pl->set<bool>("Initial Condition Consistency Check", true,
+  pl->set<bool>("Initial Condition Consistency Check", false,
     "Check if the initial condition, x and xDot, is consistent with the\n"
     "governing equations, xDot = f(x,t), or f(x, xDot, t) = 0.\n"
     "\n"
@@ -169,6 +169,32 @@ void Stepper<Scalar>::checkInitialized()
     TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
       "Error - " << this->description() << " is not initialized!");
   }
+}
+
+
+template<class Scalar>
+void Stepper<Scalar>::setUseFSALTrueOnly(bool a)
+{
+  if (a == false) {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"Stepper::setUseFSALTrueOnly()");
+    *out << "Warning -- useFSAL for '" << this->getStepperType() << "'\n"
+         << "can only be set to true.  Leaving set to true." << std::endl;
+  }
+  useFSAL_ = true;
+}
+
+
+template<class Scalar>
+void Stepper<Scalar>::setUseFSALFalseOnly(bool a)
+{
+  if (a == true) {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"Stepper::setUseFSALFalseOnly()");
+    *out << "Warning -- useFSAL for '" << this->getStepperType() << "'\n"
+         << "can only be set to false.  Leaving set to false." << std::endl;
+  }
+  useFSAL_ = false;
 }
 
 

@@ -20,40 +20,12 @@ template<class Scalar>
 StepperLeapfrog<Scalar>::StepperLeapfrog()
 {
   this->setStepperType(        "Leapfrog");
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setUseFSAL(            false);
+  this->setICConsistency(      "Consistent");
+  this->setICConsistencyCheck( false);
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  this->setObserver();
-#endif
   this->setAppAction(Teuchos::null);
 }
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-template<class Scalar>
-StepperLeapfrog<Scalar>::StepperLeapfrog(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
-  bool useFSAL,
-  std::string ICConsistency,
-  bool ICConsistencyCheck)
-{
-  this->setStepperType(        "Leapfrog");
-  this->setUseFSAL(            useFSAL);
-  this->setICConsistency(      ICConsistency);
-  this->setICConsistencyCheck( ICConsistencyCheck);
-
-  this->setObserver(obs);
-  this->setAppAction(Teuchos::null);
-
-  if (appModel != Teuchos::null) {
-
-    this->setModel(appModel);
-    this->initialize();
-  }
-}
-#endif
 
 template<class Scalar>
 StepperLeapfrog<Scalar>::StepperLeapfrog(
@@ -67,9 +39,6 @@ StepperLeapfrog<Scalar>::StepperLeapfrog(
     this->setUseFSAL(            useFSAL);
     this->setICConsistency(      ICConsistency);
     this->setICConsistencyCheck( ICConsistencyCheck);
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    this->setObserver();
-#endif
     this->setAppAction(stepperLFAppAction);
     if (appModel != Teuchos::null) {
 
@@ -79,36 +48,12 @@ StepperLeapfrog<Scalar>::StepperLeapfrog(
   }
 
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-template<class Scalar>
-void StepperLeapfrog<Scalar>::setObserver(
-  Teuchos::RCP<StepperObserver<Scalar> > obs)
-{
-  if (this->stepperObserver_ == Teuchos::null)
-    this->stepperObserver_  =
-      Teuchos::rcp(new StepperObserverComposite<Scalar>());
-
-  if (obs == Teuchos::null) {
-    if (stepperLFObserver_ == Teuchos::null)
-      stepperLFObserver_ = Teuchos::rcp(new StepperLeapfrogObserver<Scalar>());
-    if (this->stepperObserver_->getSize() == 0)
-      this->stepperObserver_->addObserver(stepperLFObserver_);
-  } else {
-    stepperLFObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperLeapfrogObserver<Scalar> >(obs,true);
-    this->stepperObserver_->addObserver(stepperLFObserver_);
-  }
-
-  this->isInitialized_ = false;
-}
-#endif
-
 template<class Scalar>
 void StepperLeapfrog<Scalar>::setAppAction(
   Teuchos::RCP<StepperLeapfrogAppAction<Scalar> > appAction)
   {
   if (appAction == Teuchos::null) {
-    // Create default appAction                                                               
+    // Create default appAction
     stepperLFAppAction_ =
       Teuchos::rcp(new StepperLeapfrogModifierDefault<Scalar>());
   }
@@ -163,7 +108,6 @@ void StepperLeapfrog<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    //this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar time = currentState->getTime();
@@ -171,34 +115,22 @@ void StepperLeapfrog<Scalar>::takeStep(
 
 
     RCP<StepperLeapfrog<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
-   
+
     // Perform half-step startup if working state is synced
     // (i.e., xDot and x are at the same time level).
     if (workingState->getIsSynced() == true) {
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-      if (!Teuchos::is_null(stepperLFObserver_))
-        stepperLFObserver_->observeBeforeXDotUpdateInitialize(
-          solutionHistory, *this);
-#endif
       stepperLFAppAction_->execute(solutionHistory, thisStepper,
         StepperLeapfrogAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
       // Half-step startup: xDot_{n+1/2} = xDot_n + 0.5*dt*xDotDot_n
       Thyra::V_VpStV(Teuchos::outArg(*(workingState->getXDot())),
         *(currentState->getXDot()),0.5*dt,*(currentState->getXDotDot()));
     }
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    if (!Teuchos::is_null(stepperLFObserver_))
-      stepperLFObserver_->observeBeforeXUpdate(solutionHistory, *this);
-#endif
     stepperLFAppAction_->execute(solutionHistory, thisStepper,
       StepperLeapfrogAppAction<Scalar>::ACTION_LOCATION::BEFORE_X_UPDATE);
     // x_{n+1} = x_n + dt*xDot_{n+1/2}
     Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
       *(currentState->getX()),dt,*(workingState->getXDot()));
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    if (!Teuchos::is_null(stepperLFObserver_))
-      stepperLFObserver_->observeBeforeExplicit(solutionHistory, *this);
-#endif
+
     stepperLFAppAction_->execute(solutionHistory, thisStepper,
       StepperLeapfrogAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
     auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
@@ -207,10 +139,6 @@ void StepperLeapfrog<Scalar>::takeStep(
     this->evaluateExplicitODE(workingState->getXDotDot(),
                               workingState->getX(),
                               Teuchos::null, time+dt, p);
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    if (!Teuchos::is_null(stepperLFObserver_))
-      stepperLFObserver_->observeBeforeXDotUpdate(solutionHistory, *this);
-#endif
     stepperLFAppAction_->execute(solutionHistory, thisStepper,
       StepperLeapfrogAppAction<Scalar>::ACTION_LOCATION::BEFORE_XDOT_UPDATE);
     if (workingState->getOutput() == true) {
@@ -228,7 +156,6 @@ void StepperLeapfrog<Scalar>::takeStep(
     workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
-    //this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }
@@ -260,9 +187,6 @@ void StepperLeapfrog<Scalar>::describe(
   StepperExplicit<Scalar>::describe(out, verbLevel);
 
   out << "--- StepperLeapfrog ---\n";
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  out << "  stepperLFObserver_ = " << stepperLFObserver_ << std::endl;
-#endif
   out << "  stepperLFAppAction_                = "
       << stepperLFAppAction_ << std::endl;
   out << "-----------------------" << std::endl;
@@ -276,12 +200,6 @@ bool StepperLeapfrog<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
   if ( !StepperExplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  if (stepperLFObserver_ == Teuchos::null) {
-    isValidSetup = false;
-    out << "The Leapfrog observer is not set!\n";
-  }
-#endif
   if (stepperLFAppAction_ == Teuchos::null) {
     isValidSetup = false;
     out << "The Leapfrog AppAction is not set!\n";
@@ -298,8 +216,7 @@ StepperLeapfrog<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   getValidParametersBasic(pl, this->getStepperType());
-  pl->set<std::string>("Initial Condition Consistency",
-                       this->getICConsistencyDefault());
+  pl->set<std::string>("Initial Condition Consistency", "Consistent");
   return pl;
 }
 

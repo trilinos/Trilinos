@@ -283,13 +283,13 @@ int InterpolationProjectionTri(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HGRAD_TRI_C1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          basis_set.push_back(new typename  CG_NBasis::HGRAD_TRI(degree));
-          basis_set.push_back(new typename  CG_DNBasis::HGRAD_TRI(degree));
+          basis_set.push_back(new typename  CG_NBasis::HGRAD_TRI(degree,POINTTYPE_EQUISPACED));
+          basis_set.push_back(new typename  CG_DNBasis::HGRAD_TRI(degree,POINTTYPE_WARPBLEND));
 
           for (auto basisPtr:basis_set) {
 
             auto name = basisPtr->getName();
-            *outStream << " " << name << std::endl;
+            *outStream << " " << name <<  ": " << degree << std::endl;
             ordinal_type basisCardinality = basisPtr->getCardinality();
 
             //compute DofCoords Oriented
@@ -301,7 +301,7 @@ int InterpolationProjectionTri(const bool verbose) {
 
             //compute Lagrangian Interpolation of fun
             {
-              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffsPhys, basisPtr, POINTTYPE_EQUISPACED, elemOrts);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffsPhys, basisPtr, elemOrts);
 
               //Compute physical Dof Coordinates
               {
@@ -668,13 +668,13 @@ int InterpolationProjectionTri(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HCURL_TRI_I1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          basis_set.push_back(new typename  CG_NBasis::HCURL_TRI(degree));
-          basis_set.push_back(new typename  CG_DNBasis::HCURL_TRI(degree));
+          basis_set.push_back(new typename  CG_NBasis::HCURL_TRI(degree,POINTTYPE_WARPBLEND));
+          basis_set.push_back(new typename  CG_DNBasis::HCURL_TRI(degree,POINTTYPE_EQUISPACED));
 
           for (auto basisPtr:basis_set) {
 
             auto name = basisPtr->getName();
-            *outStream << " " << name << std::endl;
+            *outStream << " " << name <<  ": " << degree << std::endl;
 
             ordinal_type basisCardinality = basisPtr->getCardinality();
 
@@ -687,7 +687,7 @@ int InterpolationProjectionTri(const bool verbose) {
 
             //compute Lagrangian Interpolation of fun
             {
-              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffs, basisPtr,POINTTYPE_EQUISPACED, elemOrts);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffs, basisPtr, elemOrts);
 
               //Compute physical Dof Coordinates
               {
@@ -1057,13 +1057,13 @@ int InterpolationProjectionTri(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HDIV_TRI_I1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          basis_set.push_back(new typename  CG_NBasis::HDIV_TRI(degree));
-          basis_set.push_back(new typename  CG_DNBasis::HDIV_TRI(degree));
+          basis_set.push_back(new typename  CG_NBasis::HDIV_TRI(degree,POINTTYPE_EQUISPACED));
+          basis_set.push_back(new typename  CG_DNBasis::HDIV_TRI(degree,POINTTYPE_WARPBLEND));
 
           for (auto basisPtr:basis_set) {
 
             auto name = basisPtr->getName();
-            *outStream << " " << name << std::endl;
+            *outStream << " " << name <<  ": " << degree << std::endl;
             ordinal_type basisCardinality = basisPtr->getCardinality();
 
             //compute DofCoords Oriented
@@ -1076,7 +1076,7 @@ int InterpolationProjectionTri(const bool verbose) {
 
             //compute Lagrangian Interpolation of fun
             {
-              li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffs, basisPtr, POINTTYPE_EQUISPACED, elemOrts);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffs, basisPtr, elemOrts);
 
               //Compute physical Dof Coordinates
               Basis_HGRAD_TRI_C1_FEM<DeviceSpaceType,ValueType,ValueType> triLinearBasis; //used for computing physical coordinates
@@ -1433,8 +1433,8 @@ int InterpolationProjectionTri(const bool verbose) {
       basis_set.clear();
       if(degree==1)
         basis_set.push_back(new Basis_HVOL_C0_FEM<DeviceSpaceType,ValueType,ValueType>(tri));
-      basis_set.push_back(new typename  CG_NBasis::HVOL_TRI(degree));
-      basis_set.push_back(new typename  CG_DNBasis::HVOL_TRI(degree));
+      basis_set.push_back(new typename  CG_NBasis::HVOL_TRI(degree,POINTTYPE_WARPBLEND));
+      basis_set.push_back(new typename  CG_DNBasis::HVOL_TRI(degree,POINTTYPE_EQUISPACED));
 
       for (auto basisPtr:basis_set) {
 
@@ -1452,7 +1452,7 @@ int InterpolationProjectionTri(const bool verbose) {
 
         //compute Lagrangian Interpolation of fun
         {
-          li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr, POINTTYPE_EQUISPACED, elemOrts);
+          li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr, elemOrts);
 
           //Compute physical Dof Coordinates
           {

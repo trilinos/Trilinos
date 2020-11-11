@@ -243,7 +243,7 @@ Trace::Trace(
     m_diagWriter.incTraceDepth();
 
     m_diagWriter.m(m_lineMask) << m_functionSpec
-                               << (std::uncaught_exception() ? " (throw unwinding) " : "")
+                               << (has_uncaught_exception() ? " (throw unwinding) " : "")
                                << push << dendl;
 
     if (dout.shouldPrint(LOG_TRACE_STATS)) {
@@ -264,7 +264,7 @@ Trace::~Trace()
       m_diagWriter.m(m_lineMask) << "[" << stk::formatTime(m_startCpuTime) << "s]" << dendl;
     }
 
-    m_diagWriter.m(m_lineMask) << (std::uncaught_exception() ? " (throw unwinding) " : "")
+    m_diagWriter.m(m_lineMask) << (has_uncaught_exception() ? " (throw unwinding) " : "")
                                << pop << dendl;
 
     m_diagWriter.decTraceDepth();

@@ -82,23 +82,43 @@ namespace Intrepid2
     using QuadBasis = Intrepid2::Basis_Derived_HGRAD_QUAD<HGRAD_LINE>;
     using TensorBasis = Basis_TensorBasis<QuadBasis,LineBasis>;
 
+    std::string name_;
+    ordinal_type order_x_;
+    ordinal_type order_y_;
+    ordinal_type order_z_;
+    EPointType pointType_;
+
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
         \param [in] polyOrder_z - the polynomial order in the z dimension.
+        \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HGRAD_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z)
+    Basis_Derived_HGRAD_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType=POINTTYPE_DEFAULT)
     :
-    TensorBasis(QuadBasis(polyOrder_x,polyOrder_y),
-                LineBasis(polyOrder_z))
+    TensorBasis(QuadBasis(polyOrder_x,polyOrder_y, pointType),
+                LineBasis(polyOrder_z, pointType))
     {
       this->functionSpace_ = FUNCTION_SPACE_HGRAD;
+
+      std::ostringstream basisName;
+      basisName << "HGRAD_HEX (" << this->TensorBasis::getName() << ")";
+      name_ = basisName.str();
+
+      order_x_ = polyOrder_x;
+      order_y_ = polyOrder_y;
+      order_z_ = polyOrder_z;
+      pointType_ = pointType;
     }
+
     
     /** \brief  Constructor.
         \param [in] polyOrder - the polynomial order to use in all dimensions.
+        \param [in] pointType - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HGRAD_HEX(int polyOrder) : Basis_Derived_HGRAD_HEX(polyOrder, polyOrder, polyOrder) {}
+    Basis_Derived_HGRAD_HEX(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT) :
+      Basis_Derived_HGRAD_HEX(polyOrder, polyOrder, polyOrder, pointType) {}
+
 
     /** \brief True if orientation is required
     */
@@ -161,6 +181,65 @@ namespace Intrepid2
       {
         INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
       }
+    }
+
+    /** \brief  Returns basis name
+
+     \return the name of the basis
+     */
+    virtual
+    const char*
+    getName() const override {
+      return name_.c_str();
+    }
+
+    /** \brief returns the basis associated to a subCell.
+
+        The bases of the subCell should be the restriction to the subCell
+        of the bases of the parent cell.
+        TODO: test this method when different orders are used in different directions
+        \param [in] subCellDim - dimension of subCell
+        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+     */
+    BasisPtr<ExecutionSpace, OutputValueType, PointValueType>
+      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
+      if(subCellDim == 1) {
+        switch(subCellOrd) {
+        case 0:
+        case 2:
+        case 4:
+        case 6:
+          return Teuchos::rcp( new LineBasis(order_x_, pointType_) );
+        case 1:
+        case 3:
+        case 5:
+        case 7:
+          return Teuchos::rcp( new LineBasis(order_y_, pointType_) );
+        case 8:
+        case 9:
+        case 10:
+        case 11:
+          return Teuchos::rcp( new LineBasis(order_z_, pointType_) );
+        }
+      } else if(subCellDim == 2) {
+        switch(subCellOrd) {
+        case 0:
+          return Teuchos::rcp( new QuadBasis(order_x_, order_z_, pointType_) );
+        case 1:
+          return Teuchos::rcp( new QuadBasis(order_y_,order_z_, pointType_) );
+        case 2:
+          return Teuchos::rcp( new QuadBasis(order_x_, order_z_, pointType_) );
+        case 3:
+          return Teuchos::rcp( new QuadBasis(order_z_, order_y_, pointType_) );
+        case 4:
+          return Teuchos::rcp( new QuadBasis(order_y_, order_x_, pointType_) );
+        case 5:
+          return Teuchos::rcp( new QuadBasis(order_x_, order_y_, pointType_) );
+        }
+      }
+
+      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
     }
   };
 } // end namespace Intrepid2

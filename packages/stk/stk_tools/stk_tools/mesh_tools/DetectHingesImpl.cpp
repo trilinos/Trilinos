@@ -52,7 +52,7 @@ namespace impl {
 void print_node_count(stk::mesh::BulkData& bulk, const std::string str)
 {
   stk::mesh::EntityVector nodes;
-  bulk.get_entities(stk::topology::NODE_RANK, bulk.mesh_meta_data().universal_part(), nodes);
+  stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodes);
 
   std::cout << str << std::endl;
   std::cout << "p:" << bulk.parallel_rank() << " node vec size: " << nodes.size() << std::endl;
@@ -246,7 +246,7 @@ HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk, const stk::mesh
 HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk)
 {
   stk::mesh::EntityVector nodes;
-  bulk.get_entities(stk::topology::NODE_RANK, bulk.mesh_meta_data().universal_part(), nodes);
+  stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodes);
 
   HingeNodeVector hingeNodes = get_hinge_nodes(bulk, nodes);
 

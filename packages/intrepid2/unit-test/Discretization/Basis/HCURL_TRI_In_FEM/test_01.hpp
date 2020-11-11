@@ -203,6 +203,8 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
     const ordinal_type order = std::min(4, maxOrder);
     TriBasisType triBasis(order, POINTTYPE_WARPBLEND);
 
+    shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
+
     const ordinal_type cardinality = triBasis.getCardinality();
     DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, cardinality , dim);
     triBasis.getDofCoords(dofCoords_scalar);
@@ -221,9 +223,13 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
 
     //Normals at each edge
     DynRankViewHostScalarValueType ConstructWithLabelScalar(tangents, numFields,dim); // normals at each point basis point
-    tangents(0,0)  =  1.0; tangents(0,1)  = 0.0;
-    tangents(1,0)  =  -1.0; tangents(1,1)  =  1.0;
-    tangents(2,0)  =  0.0; tangents(2,1)  =  -1.0;
+
+    for (int edgeId = 0; edgeId < 3; ++edgeId) {
+      auto tangent = Kokkos::subview(tangents, edgeId, Kokkos::ALL());
+    CellTools<Kokkos::HostSpace::execution_space>::getReferenceEdgeTangent( tangent ,
+        edgeId ,
+        tri_3 );
+    }
 
     const auto allTags = triBasis.getAllDofTags();
 
@@ -331,7 +337,11 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
     errorFlag = -1000;
   };
 
-
+  // Intrepid2 basis have been redefined and they are no longer
+  // equivalent to FIAT basis. However they are proportional to the FIAT basis
+  // with a scaling that depends on the geometric entity (points, edge, face, cell)
+  // associated to the basis
+  scalar_type scaling_factor[4] = {0,2,1,0};
 
   try {
 
@@ -415,11 +425,13 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
           0.000000000000000e+00, 0.000000000000000e+00
       };
 
+      const auto allTags = triBasis.getAllDofTags();
       ordinal_type cur=0;
       for (ordinal_type i=0;i<cardinality;i++) {
+        auto scaling = scaling_factor[allTags(i,0)];
         for (ordinal_type j=0;j<np_lattice;j++) {
           for (ordinal_type k=0;k<dim; k++) {
-            if (std::abs( h_basisAtLattice(i,j,k) - fiat_vals[cur] ) > tol ) {
+            if (std::abs( h_basisAtLattice(i,j,k) - scaling*fiat_vals[cur] ) > tol ) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -427,8 +439,8 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
               *outStream << " At multi-index { ";
               *outStream << i << " " << j << " " << k;
               *outStream << "}  computed value: " <<  h_basisAtLattice(i,j,k)
-                            << " but correct value: " << fiat_vals[cur] << "\n";
-              *outStream << "Difference: " << std::fabs(  h_basisAtLattice(i,j,k) - fiat_vals[cur] ) << "\n";
+                            << " but correct value: " << scaling*fiat_vals[cur] << "\n";
+              *outStream << "Difference: " << std::fabs(  h_basisAtLattice(i,j,k) - scaling*fiat_vals[cur] ) << "\n";
             }
             cur++;
           }
@@ -527,9 +539,11 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
 
 
     ordinal_type cur=0;
+    const auto allTags = triBasis.getAllDofTags();
     for (ordinal_type i=0;i<cardinality;i++) {
+      auto scaling = scaling_factor[allTags(i,0)];
       for (ordinal_type j=0;j<np_lattice;j++) {
-        if (std::abs( h_basisDivAtLattice(i,j) - fiat_divs[cur] ) > tol ) {
+        if (std::abs( h_basisDivAtLattice(i,j) - scaling*fiat_divs[cur] ) > tol ) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -537,8 +551,8 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
           *outStream << " At multi-index { ";
           *outStream << i << " " << j;
           *outStream << "}  computed value: " <<  h_basisDivAtLattice(i,j)
-                          << " but correct value: " << fiat_divs[cur] << "\n";
-          *outStream << "Difference: " << std::fabs(  h_basisDivAtLattice(i,j) - fiat_divs[cur] ) << "\n";
+                          << " but correct value: " << scaling*fiat_divs[cur] << "\n";
+          *outStream << "Difference: " << std::fabs(  h_basisDivAtLattice(i,j) - scaling*fiat_divs[cur] ) << "\n";
         }
         cur++;
       }

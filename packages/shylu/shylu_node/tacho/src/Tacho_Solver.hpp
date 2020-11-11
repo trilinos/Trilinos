@@ -78,6 +78,9 @@ namespace Tacho {
     bool _transpose;
     ordinal_type _mode;
 
+    // ** ordering options
+    ordinal_type _order_connected_graph_separately;
+
     // ** problem
     ordinal_type _m;
     size_type _nnz;
@@ -169,6 +172,11 @@ namespace Tacho {
     void setTransposeSolve(const bool transpose);
     void setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - structure sym, 2 - symmetric, 3 - hermitian
                        const bool is_positive_definite);
+
+    ///
+    /// Graph options
+    ///
+    void setOrderConnectedGraphSeparately(const ordinal_type order_connected_graph_separately = 1);
 
     ///
     /// tasking options

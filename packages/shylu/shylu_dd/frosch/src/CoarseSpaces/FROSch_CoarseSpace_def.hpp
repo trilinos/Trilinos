@@ -86,8 +86,6 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int CoarseSpace<SC,LO,GO,NO>::assembleCoarseSpace()
     {
-
-
         FROSCH_ASSERT(UnassembledBasesMaps_.size()>0,"FROSch::CoarseSpace : ERROR: UnassembledBasesMaps_.size()==0");
         FROSCH_ASSERT(UnassembledBasesMapsUnique_.size()>0,"FROSch::CoarseSpace : ERROR: UnassembledBasesMapsUnique_.size()==0");
         FROSCH_ASSERT(UnassembledSubspaceBases_.size()>0,"FROSch::CoarseSpace : ERROR: UnassembledSubspaceBases_.size()==0");

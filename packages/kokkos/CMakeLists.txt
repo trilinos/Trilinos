@@ -269,7 +269,7 @@ INCLUDE(${KOKKOS_SRC_PATH}/cmake/kokkos_install.cmake)
 # Kokkos needs nvcc_wrapper in order to build.  Other libraries and
 # executables also need nvcc_wrapper.  Thus, we need to install it.
 # If the argument of DESTINATION is a relative path, CMake computes it
-# as relative to ${CMAKE_INSTALL_PATH}.
+# as relative to ${CMAKE_INSTALL_PREFIX}.
 INSTALL(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/bin/nvcc_wrapper DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 #  Finally - if we are a subproject - make sure the enabled devices are visible

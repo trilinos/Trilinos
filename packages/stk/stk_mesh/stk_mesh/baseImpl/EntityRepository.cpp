@@ -101,7 +101,8 @@ size_t EntityRepository::heap_memory_in_bytes() const
 
 void EntityRepository::clear_all_cache()
 {
-  for(EntityRank rank=stk::topology::BEGIN_RANK; rank<m_create_cache.size(); ++rank) {
+  EntityRank nRanks = static_cast<EntityRank>(m_create_cache.size());
+  for(EntityRank rank=stk::topology::BEGIN_RANK; rank<nRanks; ++rank) {
     clear_cache(rank);
   }
 }

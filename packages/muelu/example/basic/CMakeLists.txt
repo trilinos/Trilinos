@@ -68,9 +68,9 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
 
   IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
 
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       Stratimikos
-      NAME Stratimikos
+      NAME Stratimikos_Epetra
       ARGS "--xml=stratimikos_ParameterList2.xml --linAlgebra=Epetra"
       NUM_MPI_PROCS 4
       COMM serial mpi
@@ -80,9 +80,9 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
 
   IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       Stratimikos
-      NAME Stratimikos
+      NAME Stratimikos_Tpetra
       ARGS "--xml=stratimikos_ParameterList2.xml --linAlgebra=Tpetra"
       NUM_MPI_PROCS 4
       COMM serial mpi

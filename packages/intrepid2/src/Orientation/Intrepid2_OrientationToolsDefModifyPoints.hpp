@@ -368,8 +368,84 @@ namespace Intrepid2 {
       }
     }
 
+    template<typename TanViewType, typename ParamViewType>
+    KOKKOS_INLINE_FUNCTION
+    void
+    OrientationTools::getRefSubcellTangents(TanViewType tangents,
+                                        const ParamViewType subcellParametrization,
+                                        const unsigned subcellTopoKey,
+                                        const ordinal_type subcellOrd,
+                                        const ordinal_type ort){
+      typename ParamViewType::value_type data[4];
+      ParamViewType jac(data, 2, 2);
+
+      ordinal_type cellDim = subcellParametrization.extent(1);
+      ordinal_type numTans = subcellParametrization.extent(2)-1;
+
+      getJacobianOfOrientationMap(jac,subcellTopoKey,ort);
+      for(ordinal_type d=0; d<cellDim; ++d)
+        for(ordinal_type j=0; j<numTans; ++j) {
+          tangents(j,d) = 0;
+          for(ordinal_type k=0; k<numTans; ++k)
+            tangents(j,d) += subcellParametrization(subcellOrd,d,k+1)*jac(k,j);
+        }
+    }
 
 
+    template<typename TanNormViewType, typename ParamViewType>
+    KOKKOS_INLINE_FUNCTION
+    void
+    OrientationTools::getRefSideTangentsAndNormal(TanNormViewType tangentsAndNormal,
+                                        const ParamViewType subcellParametrization,
+                                        const unsigned subcellTopoKey,
+                                        const ordinal_type subcellOrd,
+                                        const ordinal_type ort){
+      ordinal_type cellDim = subcellParametrization.extent(1);
+      auto range = Kokkos::pair<ordinal_type, ordinal_type>(0,cellDim-1);
+      auto tangents = Kokkos::subview(tangentsAndNormal,range,Kokkos::ALL());
+      getRefSubcellTangents(tangents,subcellParametrization,subcellTopoKey,subcellOrd,ort);
+
+      //compute normal
+      if(cellDim==2){
+        tangentsAndNormal(1,0) = tangents(0,1);
+        tangentsAndNormal(1,1) = -tangents(0,0);
+      } else { // cellDim==3
+          //cross-product
+        tangentsAndNormal(2,0) = tangents(0,1)*tangents(1,2) - tangents(0,2)*tangents(1,1);
+        tangentsAndNormal(2,1) = tangents(0,2)*tangents(1,0) - tangents(0,0)*tangents(1,2);
+        tangentsAndNormal(2,2) = tangents(0,0)*tangents(1,1) - tangents(0,1)*tangents(1,0);
+      }
+    }
+
+    template<typename coordsViewType, typename subcellCoordsViewType, typename ParamViewType>
+    KOKKOS_INLINE_FUNCTION
+    void
+    OrientationTools::mapSubcellCoordsToRefCell(coordsViewType cellCoords,
+                                        const subcellCoordsViewType subcellCoords,
+                                        const ParamViewType subcellParametrization,
+                                        const unsigned subcellTopoKey,
+                                        const ordinal_type subcellOrd,
+                                        const ordinal_type ort){
+
+      ordinal_type cellDim = subcellParametrization.extent(1);
+      ordinal_type numCoords = subcellCoords.extent(0);
+      ordinal_type subcellDim = subcellCoords.extent(1);
+      auto range = Kokkos::pair<ordinal_type, ordinal_type>(0,subcellDim);
+      auto modSubcellCoords = Kokkos::subview(cellCoords, Kokkos::ALL(),range);
+      mapToModifiedReference(modSubcellCoords,subcellCoords,subcellTopoKey,ort);
+      typename coordsViewType::value_type subCoord[2];
+
+      for(ordinal_type i=0; i<numCoords; ++i) {
+        for(ordinal_type d=0; d<subcellDim; ++d)
+          subCoord[d] = modSubcellCoords(i,d);
+
+        for(ordinal_type d=0; d<cellDim; ++d) {
+          cellCoords(i,d) = subcellParametrization(subcellOrd, d, 0);
+          for(ordinal_type k=0; k<subcellDim; ++k)
+            cellCoords(i,d) += subcellParametrization(subcellOrd, d, k+1)*subCoord[k];
+        }
+      }
+    }
   }
 }
 

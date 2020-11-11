@@ -466,7 +466,7 @@ namespace Tpetra {
     /// execution_space's execution space.
     using dual_view_type = Kokkos::DualView<impl_scalar_type**,
                                             Kokkos::LayoutLeft,
-                                            execution_space>;
+                                            device_type>;
 
     //@}
     //! @name Constructors and destructor

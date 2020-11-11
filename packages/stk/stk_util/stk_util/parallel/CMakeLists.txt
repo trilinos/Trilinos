@@ -49,36 +49,30 @@ SET(HEADERS "")
 SET(SOURCES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-
-#
-# Core headers
-#
-
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+
+IF (TPL_ENABLE_MPI)
 
 FILE(GLOB HEADERS *.hpp *.h)
 FILE(GLOB SOURCES *.cpp)
 
-#APPEND_SET(HEADERS
-#BroadcastArg.hpp
-#DistributedIndex.hpp
-#ParallelComm.hpp
-#Parallel.hpp
-#ParallelIndex.hpp
-#ParallelReduce.hpp
-#  )
-#
-#APPEND_SET(SOURCES
-#BroadcastArg.cpp
-#DistributedIndex.cpp
-#ParallelComm.cpp
-#Parallel.cpp
-#ParallelIndex.cpp
-#ParallelReduce.cpp
-#  )
-#
-#IF (TPL_ENABLE_MPI)
-#ENDIF()
+ELSE()
+
+FILE(GLOB HEADERS
+     Parallel.hpp
+     ParallelComm.hpp
+     ParallelReduce.hpp
+     ParallelReduceBool.hpp
+     ParallelVectorConcat.hpp
+    )
+FILE(GLOB SOURCES
+     Parallel.cpp
+     ParallelComm.cpp
+     ParallelReduce.cpp
+    )
+
+ENDIF()
 
 #
 # C) Define the targets for package's library(s)

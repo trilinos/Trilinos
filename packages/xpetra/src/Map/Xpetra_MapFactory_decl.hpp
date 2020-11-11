@@ -109,9 +109,9 @@ class MapFactory
 
 
     /*!
-      @brief Map constructor transforming degrees of freedom for numDofPerNode
+      @brief Map constructor generating degrees of freedom with numDofPerNode for given nodeMap
 
-      @param[in] map Existing (node) map
+      @param[in] nodeMap Existing (node) map
       @param[in] numDofPerNode Number of DOFs per node for output map
       @param[in] gidOffset GID offset for output map
       @return Map
@@ -119,7 +119,7 @@ class MapFactory
       \note This acts like a deep copy.
     */
     static Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node>>
-    Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
+    Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& nodeMap,
           const LocalOrdinal numDofPerNode,
           const GlobalOrdinal gidOffset = Teuchos::ScalarTraits<GlobalOrdinal>::zero());
 

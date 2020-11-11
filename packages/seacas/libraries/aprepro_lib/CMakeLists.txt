@@ -107,8 +107,7 @@ endif()
 
 # Currently doesn't run on windows due to use of sed...
 if (${CMAKE_PROJECT_NAME}_ENABLE_TESTS)
-  add_executable(aprepro_test_app apr_test.cc)
-  target_link_libraries(aprepro_test_app aprepro_lib)
+  TRIBITS_ADD_EXECUTABLE(aprepro_test_app NOEXEPREFIX NOEXESUFFIX SOURCES apr_test.cc LINKER_LANGUAGE CXX)
 
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_lib_unit_test
@@ -159,4 +158,3 @@ endif()
 else()
   add_library(aprepro_lib ${HEADERS} ${SOURCES})
 endif()
-

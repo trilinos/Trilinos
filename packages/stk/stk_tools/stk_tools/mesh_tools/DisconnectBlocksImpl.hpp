@@ -193,6 +193,8 @@ bool should_be_reconnected(const DisconnectGroup& disconnectedGroup, const NodeM
 
 bool can_be_reconnected(const DisconnectGroup& disconnectedGroup, const NodeMapValue& nodeMapValue, const BlockPair& blockPair, LinkInfo& info);
 
+bool can_be_reconnected(const DisconnectGroup& disconnectedGroup, const NodeMapValue& nodeMapValue, const BlockPair& blockPair, stk::mesh::Entity currentEntity, LinkInfo& info);
+
 bool is_block(const stk::mesh::BulkData & bulk, stk::mesh::Part & part);
 
 stk::mesh::Part* get_block_part_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element);

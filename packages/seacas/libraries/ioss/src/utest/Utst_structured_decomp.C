@@ -177,16 +177,16 @@ void check_split_assign(std::vector<Iocgns::StructuredZoneData *> &zones,
       for (auto &zone : zones) {
         if (zone->is_active()) {
           for (const auto &zgc : zone->m_zoneConnectivity) {
-            if (zgc.is_active() && zgc.is_from_decomp()) {
+            if (zgc.is_active()) {
               is_symm[std::make_pair(std::min(zgc.m_ownerGUID, zgc.m_donorGUID),
                                      std::max(zgc.m_ownerGUID, zgc.m_donorGUID))]++;
             }
           }
         }
       }
-      // Iterate `is_symm` and make sure all entries == 2
+      // Iterate `is_symm` and make sure there is an even number for all entries.
       for (const auto &item : is_symm) {
-        CHECK(item.second == 2);
+        CHECK(item.second % 2 == 0);
       }
     }
   }

@@ -582,5 +582,6 @@ TEST(skinning_large_cube_perf_test, skinning_large_cube)
   double edgeTime = run_skinning_large_cube_test(true, numRuns, dims);
 
   double maxTime = stk::get_max_time_across_procs(edgeTime, MPI_COMM_WORLD);
-  stk::print_stats_for_performance_compare(std::cout, maxTime, 0, numRuns, MPI_COMM_WORLD);
+  size_t maxHwm = stk::get_max_hwm_across_procs(MPI_COMM_WORLD);
+  stk::print_stats_for_performance_compare(std::cout, maxTime, maxHwm, numRuns, MPI_COMM_WORLD);
 }

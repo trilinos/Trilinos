@@ -71,10 +71,32 @@ LOCA::Thyra::Group::Group(
   LOCA::Abstract::Group(global_data),
   globalData(global_data),
   params(p),
+  param_index(1,p_index),
+  saveDataStrategy(),
+  implement_dfdp(impl_dfdp),
+  weight_vec_(weight_vector),
+  paramsInSeparatePVecs(false)
+{
+  updateThyraParamView();
+  updateThyraXDot();
+}
+
+LOCA::Thyra::Group::Group(
+        const Teuchos::RCP<LOCA::GlobalData>& global_data,
+        const NOX::Thyra::Group& nox_group,
+        const LOCA::ParameterVector& p,
+        const std::vector<int>& p_index,
+        bool impl_dfdp,
+        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector) :
+  NOX::Thyra::Group(nox_group, NOX::DeepCopy),
+  LOCA::Abstract::Group(global_data),
+  globalData(global_data),
+  params(p),
   param_index(p_index),
   saveDataStrategy(),
   implement_dfdp(impl_dfdp),
-  weight_vec_(weight_vector)
+  weight_vec_(weight_vector),
+  paramsInSeparatePVecs(true)
 {
   updateThyraParamView();
   updateThyraXDot();
@@ -88,7 +110,8 @@ LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source,
   params(source.params),
   param_index(source.param_index),
   saveDataStrategy(source.saveDataStrategy),
-  implement_dfdp(source.implement_dfdp)
+  implement_dfdp(source.implement_dfdp),
+  paramsInSeparatePVecs(source.paramsInSeparatePVecs)
 {
   updateThyraParamView();
   updateThyraXDot();
@@ -108,6 +131,7 @@ LOCA::Thyra::Group::operator=(const LOCA::Thyra::Group& source)
     param_index = source.param_index;
     saveDataStrategy = source.saveDataStrategy;
     implement_dfdp = source.implement_dfdp;
+    paramsInSeparatePVecs = source.paramsInSeparatePVecs;
     updateThyraParamView();
   }
   return *this;
@@ -142,13 +166,16 @@ LOCA::Thyra::Group::computeF()
   in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
   if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
     in_args_.set_x_dot(x_dot_vec);
-  in_args_.set_p(param_index, param_thyra_vec);
+  for (size_t i=0; i < param_index.size(); ++i)
+    in_args_.set_p(param_index[i], param_thyra_vec[i]);
   out_args_.set_f(f_vec_->getThyraRCPVector().assert_not_null());
 
   model_->evalModel(in_args_, out_args_);
 
   in_args_.set_x(Teuchos::null);
-  in_args_.set_p(param_index, Teuchos::null);
+
+  for (const auto& p : param_index)
+    in_args_.set_p(p, Teuchos::null);
   out_args_.set_f(Teuchos::null);
 
   is_valid_f_ = true;
@@ -174,7 +201,8 @@ LOCA::Thyra::Group::computeJacobian()
     in_args_.set_alpha(0.0);
   if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_beta))
     in_args_.set_beta(1.0);
-  in_args_.set_p(param_index, param_thyra_vec);
+  for (size_t i=0; i < param_index.size(); ++i)
+    in_args_.set_p(param_index[i], param_thyra_vec[i]);
   out_args_.set_W_op(lop_);
 
   model_->evalModel(in_args_, out_args_);
@@ -248,8 +276,8 @@ LOCA::Thyra::Group::getParam(std::string paramID) const
 
 NOX::Abstract::Group::ReturnType
 LOCA::Thyra::Group::computeDfDpMulti(const std::vector<int>& paramIDs,
-                     NOX::Abstract::MultiVector& fdfdp,
-                     bool isValidF)
+                                     NOX::Abstract::MultiVector& fdfdp,
+                                     bool isValidF)
 {
   // Currently this does not work because the thyra modelevaluator is not
   // setting the parameter names correctly in the epetraext modelevalator,
@@ -260,7 +288,7 @@ LOCA::Thyra::Group::computeDfDpMulti(const std::vector<int>& paramIDs,
   // it doesn't support it
   if (!implement_dfdp ||
       !out_args_.supports(::Thyra::ModelEvaluatorBase::OUT_ARG_DfDp,
-              param_index).supports(::Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL)) {
+              param_index[0]).supports(::Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL)) {
     NOX::Abstract::Group::ReturnType res =
       LOCA::Abstract::Group::computeDfDpMulti(paramIDs, fdfdp, isValidF);
     return res;
@@ -289,10 +317,11 @@ LOCA::Thyra::Group::computeDfDpMulti(const std::vector<int>& paramIDs,
   in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
   if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
     in_args_.set_x_dot(x_dot_vec);
-  in_args_.set_p(param_index, param_thyra_vec);
+  for (size_t i=0; i < param_index.size(); ++i)
+    in_args_.set_p(param_index[i], param_thyra_vec[i]);
   if (!isValidF)
     out_args_.set_f(f.getThyraRCPVector().assert_not_null());
-  out_args_.set_DfDp(param_index, deriv);
+  out_args_.set_DfDp(param_index[0], deriv);
 
   // Evaluate model
   model_->evalModel(in_args_, out_args_);
@@ -303,9 +332,10 @@ LOCA::Thyra::Group::computeDfDpMulti(const std::vector<int>& paramIDs,
 
   // Reset inargs/outargs
   in_args_.set_x(Teuchos::null);
-  in_args_.set_p(param_index, Teuchos::null);
+  for (const auto& p : param_index)
+    in_args_.set_p(p, Teuchos::null);
   out_args_.set_f(Teuchos::null);
-  out_args_.set_DfDp(param_index,
+  out_args_.set_DfDp(param_index[0],
              ::Thyra::ModelEvaluatorBase::Derivative<double>());
 
   if (out_args_.isFailed())
@@ -339,7 +369,8 @@ LOCA::Thyra::Group::postProcessContinuationStep(
     in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
     if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
       in_args_.set_x_dot(x_dot_vec);
-    in_args_.set_p(param_index, param_thyra_vec);
+    for (size_t i=0; i < param_index.size(); ++i)
+      in_args_.set_p(param_index[i], param_thyra_vec[i]);
     out_args_.set_f(f_vec_->getThyraRCPVector().assert_not_null());
     // This is the key part. It makes the model evaluator call the response
     // functions.
@@ -350,7 +381,8 @@ LOCA::Thyra::Group::postProcessContinuationStep(
     model_->evalModel(in_args_, out_args_);
 
     in_args_.set_x(Teuchos::null);
-    in_args_.set_p(param_index, Teuchos::null);
+    for (const auto& p : param_index)
+      in_args_.set_p(p, Teuchos::null);
     out_args_.set_f(Teuchos::null);
     // Set g back to null to restore the original state of out_args_.
     out_args_.set_g(0, Teuchos::null);
@@ -412,7 +444,8 @@ LOCA::Thyra::Group::computeShiftedMatrix(double alpha, double beta)
   in_args_.set_x(x_vec_->getThyraRCPVector());
   if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
     in_args_.set_x_dot(x_dot_vec);
-  in_args_.set_p(param_index, param_thyra_vec);
+  for (size_t i=0; i < param_index.size(); ++i)
+    in_args_.set_p(param_index[i], param_thyra_vec[i]);
   if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_alpha))
     in_args_.set_alpha(-beta);
   if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_beta))
@@ -422,7 +455,8 @@ LOCA::Thyra::Group::computeShiftedMatrix(double alpha, double beta)
   model_->evalModel(in_args_, out_args_);
 
   in_args_.set_x(Teuchos::null);
-  in_args_.set_p(param_index, Teuchos::null);
+  for (const auto& p : param_index)
+    in_args_.set_p(p, Teuchos::null);
   if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_alpha))
     in_args_.set_alpha(0.0);
   if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_beta))
@@ -490,13 +524,24 @@ LOCA::Thyra::Group::setSaveDataStrategy(
 void
 LOCA::Thyra::Group::updateThyraParamView()
 {
-  // Create thyra vector to store parameters that is a view of LOCA
-  // parameter vector
-  const RTOpPack::ConstSubVectorView<double> pv(
-      Teuchos::ArrayRCP<const double>(params.getDoubleArrayPointer(),0,params.length(),false));
-  Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > ps =
-    model_->get_p_space(param_index);
-  param_thyra_vec = ::Thyra::createMemberView(ps,pv);
+  if (paramsInSeparatePVecs) {
+    param_thyra_vec.resize(param_index.size());
+    for (size_t i=0; i < param_thyra_vec.size(); ++i) {
+      const RTOpPack::ConstSubVectorView<double> pv(Teuchos::ArrayRCP<const double>(params.getDoubleArrayPointer()+i,0,1,false));
+      Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > ps =
+        model_->get_p_space(param_index[i]);
+      param_thyra_vec[i] = ::Thyra::createMemberView(ps,pv);
+    }
+  }
+  else {
+    // Create thyra vector to store parameters that is a view of LOCA
+    // parameter vector
+    param_thyra_vec.resize(1);
+    const RTOpPack::ConstSubVectorView<double> pv(Teuchos::ArrayRCP<const double>(params.getDoubleArrayPointer(),0,params.length(),false));
+    Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > ps =
+      model_->get_p_space(param_index[0]);
+    param_thyra_vec[0] = ::Thyra::createMemberView(ps,pv);
+  }
 }
 
 void

@@ -41,8 +41,8 @@
 // @HEADER
 
 /** \file test_03.hpp
-\brief  Unit test for the dot multiply operations of the ArrayTools class.
-\author Created by P. Bochev and D. Ridzal.
+    \brief  Unit test for the dot multiply operations of the ArrayTools class.
+    \author Created by P. Bochev and D. Ridzal.
 */
 
 #include "Intrepid2_config.h"
@@ -68,14 +68,14 @@ namespace Intrepid2 {
       try {                                                             \
         S ;                                                             \
       }                                                                 \
-      catch (std::logic_error &err) {                                    \
+      catch (std::logic_error &err) {                                   \
         *outStream << "Expected Error ----------------------------------------------------------------\n"; \
         *outStream << err.what() << '\n';                               \
         *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
       };                                                                \
     }
     
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int ArrayTools_Test03(const bool verbose) {
       
       typedef ValueType value_type;
@@ -91,11 +91,11 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+      using DeviceExecSpaceType = typename DeviceType::execution_space;
+      using HostExecSpaceType = Kokkos::DefaultHostExecutionSpace;
 
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(std::cout, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(std::cout, false);
+      *outStream << "DeviceSpace::  "; DeviceExecSpaceType::print_configuration(std::cout, false);
+      *outStream << "HostSpace::    ";   HostExecSpaceType::print_configuration(std::cout, false);
 
       *outStream                                                        \
         << "===============================================================================\n" \
@@ -112,9 +112,9 @@ namespace Intrepid2 {
         << "|                                                                             |\n" \
         << "===============================================================================\n";      
       
-      typedef RealSpaceTools<DeviceSpaceType> rst;
-      typedef ArrayTools<DeviceSpaceType> art; 
-      typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
+      typedef RealSpaceTools<DeviceType> rst;
+      typedef ArrayTools<DeviceType> art; 
+      typedef Kokkos::DynRankView<value_type,DeviceType> DynRankView;
 
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
       const value_type tol = tolerence()*10000.0;
@@ -128,102 +128,102 @@ namespace Intrepid2 {
 
       try{
 
-      #ifdef HAVE_INTREPID2_DEBUG
-          DynRankView ConstructWithLabel(a_2, 2);
-          DynRankView ConstructWithLabel(a_2_2, 2, 2);
-          DynRankView ConstructWithLabel(a_3_2, 3, 2);
-          DynRankView ConstructWithLabel(a_2_2_2, 2, 2, 2);
-          DynRankView ConstructWithLabel(a_2_2_2_2, 2, 2, 2, 2);
-          DynRankView ConstructWithLabel(a_10_1, 10, 1);
-          DynRankView ConstructWithLabel(a_10_2, 10, 2);
-          DynRankView ConstructWithLabel(a_10_3, 10, 3);
-          DynRankView ConstructWithLabel(a_10_1_2, 10, 1, 2);
-          DynRankView ConstructWithLabel(a_10_2_2, 10, 2, 2);
-          DynRankView ConstructWithLabel(a_10_2_2_2, 10, 2, 2, 2);
-          DynRankView ConstructWithLabel(a_10_2_2_2_2, 10, 2, 2, 2, 2);
-          DynRankView ConstructWithLabel(a_9_2_2, 9, 2, 2);
-          DynRankView ConstructWithLabel(a_10_3_2, 10, 3, 2);
-          DynRankView ConstructWithLabel(a_10_2_3, 10, 2, 3);
-          DynRankView ConstructWithLabel(a_10_2_2_3, 10, 2, 2, 3);
-          DynRankView ConstructWithLabel(a_10_1_2_2, 10, 1, 2, 2);
+#ifdef HAVE_INTREPID2_DEBUG
+        DynRankView ConstructWithLabel(a_2, 2);
+        DynRankView ConstructWithLabel(a_2_2, 2, 2);
+        DynRankView ConstructWithLabel(a_3_2, 3, 2);
+        DynRankView ConstructWithLabel(a_2_2_2, 2, 2, 2);
+        DynRankView ConstructWithLabel(a_2_2_2_2, 2, 2, 2, 2);
+        DynRankView ConstructWithLabel(a_10_1, 10, 1);
+        DynRankView ConstructWithLabel(a_10_2, 10, 2);
+        DynRankView ConstructWithLabel(a_10_3, 10, 3);
+        DynRankView ConstructWithLabel(a_10_1_2, 10, 1, 2);
+        DynRankView ConstructWithLabel(a_10_2_2, 10, 2, 2);
+        DynRankView ConstructWithLabel(a_10_2_2_2, 10, 2, 2, 2);
+        DynRankView ConstructWithLabel(a_10_2_2_2_2, 10, 2, 2, 2, 2);
+        DynRankView ConstructWithLabel(a_9_2_2, 9, 2, 2);
+        DynRankView ConstructWithLabel(a_10_3_2, 10, 3, 2);
+        DynRankView ConstructWithLabel(a_10_2_3, 10, 2, 3);
+        DynRankView ConstructWithLabel(a_10_2_2_3, 10, 2, 2, 3);
+        DynRankView ConstructWithLabel(a_10_1_2_2, 10, 1, 2, 2);
 
-          *outStream << "-> dotMultiplyDataField:\n";
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_2_2, a_2, a_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_2_2, a_10_2_2, a_10_2_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2, a_10_2_2, a_10_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_9_2_2, a_10_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_3_2, a_10_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_3, a_10_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2_3, a_10_2_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_2_2_2, a_10_2_2_2, a_10_2_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_3_2, a_10_2_2_2, a_10_2_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_3, a_10_2_2_2, a_10_2_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2_2, a_10_2_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_1_2_2, a_10_2_2_2_2) );
-          //
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_2_2, a_2, a_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_2_2, a_10_2_2, a_10_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2, a_10_2_2, a_10_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2, a_10_3_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2, a_10_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_3, a_10_2_2, a_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_9_2_2, a_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_3, a_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2_3, a_2_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2_2, a_2_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_1, a_2_2) );
+        *outStream << "-> dotMultiplyDataField:\n";
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_2_2, a_2, a_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_2_2, a_10_2_2, a_10_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2, a_10_2_2, a_10_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_9_2_2, a_10_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_3_2, a_10_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_3, a_10_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2_3, a_10_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_2_2_2, a_10_2_2_2, a_10_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_3_2, a_10_2_2_2, a_10_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_3, a_10_2_2_2, a_10_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2_2, a_10_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_1_2_2, a_10_2_2_2_2) );
+        //
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_2_2, a_2, a_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_2_2, a_10_2_2, a_10_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2, a_10_2_2, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2, a_10_3_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_3, a_10_2_2, a_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_9_2_2, a_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_3, a_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2_3, a_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2_2, a_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_1, a_2_2) );
 
-          *outStream << "-> dotMultiplyDataData:\n";
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_2_2, a_2, a_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_2_2, a_10_2_2, a_10_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2_2, a_10_2_2, a_10_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_9_2_2, a_10_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_3_2, a_10_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_3, a_10_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2_2, a_10_2_2_3) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_9_2_2, a_9_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_3_2, a_10_3_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2, a_10_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2, a_10_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2_2, a_10_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1, a_10_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1_2, a_10_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1_2_2, a_10_2_2_2) );
-          //
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_2_2, a_10_2_2_2_2, a_10_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_2_2, a_10_2_2, a_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2_2, a_10_2_2, a_10_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2, a_10_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_3, a_10_2_2, a_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_9_2_2, a_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_3, a_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2_3, a_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2, a_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2, a_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2_2, a_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1, a_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1_2, a_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1_2_2, a_2_2_2) );
-      #endif
+        *outStream << "-> dotMultiplyDataData:\n";
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_2_2, a_2, a_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_2_2, a_10_2_2, a_10_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2_2, a_10_2_2, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_9_2_2, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_3_2, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_3, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2_2, a_10_2_2_3) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_9_2_2, a_9_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_3_2, a_10_3_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2, a_10_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2_2, a_10_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1, a_10_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1_2, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1_2_2, a_10_2_2_2) );
+        //
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_2_2, a_10_2_2_2_2, a_10_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_2_2, a_10_2_2, a_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2_2, a_10_2_2, a_10_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2, a_10_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_3, a_10_2_2, a_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_9_2_2, a_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_3, a_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2_3, a_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2, a_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2, a_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2_2, a_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1, a_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1_2, a_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1_2_2, a_2_2_2) );
+#endif
 
-        }
-          catch (std::logic_error &err) {
-            *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
-            *outStream << err.what() << '\n';
-            *outStream << "-------------------------------------------------------------------------------" << "\n\n";
-            errorFlag = -1000;
-          };
+      }
+      catch (std::logic_error &err) {
+        *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+        *outStream << err.what() << '\n';
+        *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+        errorFlag = -1000;
+      };
 
-        *outStream \
+      *outStream \
         << "\n"
         << "===============================================================================\n"\
         << "| TEST 2: correctness of math operations                                      |\n"\
         << "===============================================================================\n";
 
-        outStream->precision(20);
+      outStream->precision(20);
 
-        try {
-          { // start scope
+      try {
+        { // start scope
           *outStream << "\n************ Checking dotMultiplyDataField, (branch 1) ************\n";
 
           int c=5, p=9, f=7, d1=6, d2=14;
@@ -241,27 +241,37 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(outSM_c_f_p, c, f, p);
           DynRankView ConstructWithLabel(outDM_c_f_p, c, f, p);
 
+          const auto in_c_f_p_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), in_c_f_p);
+          const auto in_c_f_p_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), in_c_f_p_d);
 
+          const auto data_c_p_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), data_c_p);
+          const auto data_c_1_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), data_c_1);
 
           // fill with random numbers
           for (auto i=0;i<c;++i) {
             for (auto j=0;j<f;++j)
               for (auto k=0;k<p;++k){
-                in_c_f_p(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
+                in_c_f_p_host(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
                 for (auto m=0;m<d1;++m)  //fill with alternating 1's and -1's
-                  in_c_f_p_d(i,j,k,m) = 1.0 -2.0*((i*f*p*d1+j*p*d1+k*d1+m)%2);
+                  in_c_f_p_d_host(i,j,k,m) = 1.0 -2.0*((i*f*p*d1+j*p*d1+k*d1+m)%2);
               }
             for (auto j=0;j<p;++j) {
-              data_c_p(i,j)  = Teuchos::ScalarTraits<value_type>::random();
+              data_c_p_host(i,j)  = Teuchos::ScalarTraits<value_type>::random();
             }
-            data_c_1(i,0)  = Teuchos::ScalarTraits<value_type>::random();
+            data_c_1_host(i,0)  = Teuchos::ScalarTraits<value_type>::random();
           }
 
-          // fill with 1's
-          deep_copy(in_c_f_p_d_d, 1.0);
-          deep_copy(data_c_p_d, 1.0); deep_copy(data_c_1_d, 1.0);
-          deep_copy(data_c_p_d_d, 1.0); deep_copy(data_c_1_d_d, 1.0);
+          Kokkos::deep_copy(in_c_f_p, in_c_f_p_host);
+          Kokkos::deep_copy(in_c_f_p_d, in_c_f_p_d_host);
+          Kokkos::deep_copy(data_c_p, data_c_p_host);
+          Kokkos::deep_copy(data_c_1, data_c_1_host);
 
+          // fill with 1's
+          Kokkos::deep_copy(in_c_f_p_d_d, 1.0);
+          Kokkos::deep_copy(data_c_p_d, 1.0); 
+          Kokkos::deep_copy(data_c_1_d, 1.0);
+          Kokkos::deep_copy(data_c_p_d_d, 1.0); 
+          Kokkos::deep_copy(data_c_1_d_d, 1.0);
 
           art::scalarMultiplyDataField(outSM_c_f_p, data_c_p, in_c_f_p);
           art::dotMultiplyDataField(outDM_c_f_p, data_c_p, in_c_f_p);
@@ -304,10 +314,10 @@ namespace Intrepid2 {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (6): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
-          } // end scope
+        } // end scope
 
 
-          { // start scope
+        { // start scope
           *outStream << "\n************ Checking dotMultiplyDataField, (branch 2) ************\n";
 
           int c=5, p=9, f=7, d1=6, d2=14;
@@ -325,26 +335,38 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(outSM_c_f_p, c, f, p);
           DynRankView ConstructWithLabel(outDM_c_f_p, c, f, p);
 
+          const auto in_f_p_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), in_f_p);
+          const auto in_f_p_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), in_f_p_d);
+
+          const auto data_c_p_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), data_c_p);
+          const auto data_c_1_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), data_c_1);
+
           // fill with random numbers
           for (auto i=0;i<f;++i)
             for (auto j=0;j<p;++j) {
-                in_f_p(i,j) = Teuchos::ScalarTraits<value_type>::random();
-                for (auto m=0;m<d1;++m)  //fill with alternating 1's and -1's
-                  in_f_p_d(i,j,m) = 1.0 -2.0*((i*p*d1+j*d1+m)%2);
-              }
+              in_f_p_host(i,j) = Teuchos::ScalarTraits<value_type>::random();
+              for (auto m=0;m<d1;++m)  //fill with alternating 1's and -1's
+                in_f_p_d_host(i,j,m) = 1.0 -2.0*((i*p*d1+j*d1+m)%2);
+            }
 
           for (auto i=0;i<c;++i) {
             for (auto j=0;j<p;++j) {
-              data_c_p(i,j)  = Teuchos::ScalarTraits<value_type>::random();
+              data_c_p_host(i,j)  = Teuchos::ScalarTraits<value_type>::random();
             }
-            data_c_1(i,0)  = Teuchos::ScalarTraits<value_type>::random();
+            data_c_1_host(i,0)  = Teuchos::ScalarTraits<value_type>::random();
           }
 
+          Kokkos::deep_copy(in_f_p, in_f_p_host);
+          Kokkos::deep_copy(in_f_p_d, in_f_p_d_host);
+          Kokkos::deep_copy(data_c_p, data_c_p_host);
+          Kokkos::deep_copy(data_c_1, data_c_1_host);
 
           // fill with 1's
-          deep_copy(in_f_p_d_d, 1.0);
-          deep_copy(data_c_p_d, 1.0); deep_copy(data_c_1_d, 1.0);
-          deep_copy(data_c_p_d_d, 1.0); deep_copy(data_c_1_d_d, 1.0);
+          Kokkos::deep_copy(in_f_p_d_d, 1.0);
+          Kokkos::deep_copy(data_c_p_d, 1.0); 
+          Kokkos::deep_copy(data_c_1_d, 1.0);
+          Kokkos::deep_copy(data_c_p_d_d, 1.0); 
+          Kokkos::deep_copy(data_c_1_d_d, 1.0);
 
           art::scalarMultiplyDataField(outSM_c_f_p, data_c_p, in_f_p);
           art::dotMultiplyDataField(outDM_c_f_p, data_c_p, in_f_p);
@@ -387,12 +409,12 @@ namespace Intrepid2 {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (12): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
-          } // end scope
+        } // end scope
 
 
 
 
-          { // start scope
+        { // start scope
           *outStream << "\n************ Checking dotMultiplyDataData, (branch 1) ************\n";
 
           int c=5, p=9, d1=6, d2=14;
@@ -410,20 +432,33 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(outSM_c_p, c, p);
           DynRankView ConstructWithLabel(outDM_c_p, c, p);
 
+          const auto in_c_p_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), in_c_p);
+          const auto in_c_p_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), in_c_p_d);
+
+          const auto data_c_p_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), data_c_p);
+          const auto data_c_1_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), data_c_1);
+
           for (auto i=0;i<c;++i) {
             for (auto j=0;j<p;++j) {
-                in_c_p(i,j) = Teuchos::ScalarTraits<value_type>::random();
-                data_c_p(i,j)  = Teuchos::ScalarTraits<value_type>::random();
-                for (auto m=0;m<d1;++m)  //fill with alternating 1's and -1's
-                  in_c_p_d(i,j,m) = 1.0 -2.0*(m%2);
-              }
-            data_c_1(i,0)  = Teuchos::ScalarTraits<value_type>::random();
+              in_c_p_host(i,j) = Teuchos::ScalarTraits<value_type>::random();
+              data_c_p_host(i,j)  = Teuchos::ScalarTraits<value_type>::random();
+              for (auto m=0;m<d1;++m)  //fill with alternating 1's and -1's
+                in_c_p_d_host(i,j,m) = 1.0 -2.0*(m%2);
+            }
+            data_c_1_host(i,0)  = Teuchos::ScalarTraits<value_type>::random();
           }
 
+          Kokkos::deep_copy(in_c_p, in_c_p_host);
+          Kokkos::deep_copy(in_c_p_d, in_c_p_d_host);
+          Kokkos::deep_copy(data_c_p, data_c_p_host);
+          Kokkos::deep_copy(data_c_1, data_c_1_host);
+
           // fill with 1's
-          deep_copy(in_c_p_d_d, 1.0);
-          deep_copy(data_c_p_d, 1.0); deep_copy(data_c_1_d, 1.0);
-          deep_copy(data_c_p_d_d, 1.0); deep_copy(data_c_1_d_d, 1.0);
+          Kokkos::deep_copy(in_c_p_d_d, 1.0);
+          Kokkos::deep_copy(data_c_p_d, 1.0); 
+          Kokkos::deep_copy(data_c_1_d, 1.0);
+          Kokkos::deep_copy(data_c_p_d_d, 1.0); 
+          Kokkos::deep_copy(data_c_1_d_d, 1.0);
 
           art::scalarMultiplyDataData(outSM_c_p, data_c_p, in_c_p);
           art::dotMultiplyDataData(outDM_c_p, data_c_p, in_c_p);
@@ -466,10 +501,10 @@ namespace Intrepid2 {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (6): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
-          } // end scope
+        } // end scope
 
 
-          { // start scope
+        { // start scope
           *outStream << "\n************ Checking dotMultiplyDataData, (branch 2) ************\n";
 
           int c=5, p=9, d1=6, d2=14;
@@ -487,23 +522,37 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(outSM_c_p, c, p);
           DynRankView ConstructWithLabel(outDM_c_p, c, p);
 
+          const auto in_p_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), in_p);
+          const auto in_p_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), in_p_d);
+
+          const auto data_c_p_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), data_c_p);
+          const auto data_c_1_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), data_c_1);
+
           // fill with random numbers
           for (auto i=0;i<c;++i) {
             for (auto j=0;j<p;++j)
-              data_c_p(i,j)  = 1;//Teuchos::ScalarTraits<value_type>::random();
-            data_c_1(i,0)  = Teuchos::ScalarTraits<value_type>::random();
+              data_c_p_host(i,j)  = 1;//Teuchos::ScalarTraits<value_type>::random();
+            data_c_1_host(i,0)  = Teuchos::ScalarTraits<value_type>::random();
           }
 
           for (auto i=0;i<p;++i) {
-            in_p(i) = 3; //Teuchos::ScalarTraits<value_type>::random();
+            in_p_host(i) = 3; //Teuchos::ScalarTraits<value_type>::random();
             for (auto m=0;m<d1;++m)  //fill with alternating 1's and -1's
-              in_p_d(i,m) = 1.0 -2.0*(m%2);
+              in_p_d_host(i,m) = 1.0 -2.0*(m%2);
           }
 
+          Kokkos::deep_copy(in_p, in_p_host);
+          Kokkos::deep_copy(in_p_d, in_p_d_host);
+          Kokkos::deep_copy(data_c_p, data_c_p_host);
+          Kokkos::deep_copy(data_c_1, data_c_1_host);
+
+
           // fill with 1's
-          deep_copy(in_p_d_d, 1.0);
-          deep_copy(data_c_p_d, 1.0); deep_copy(data_c_1_d, 1.0);
-          deep_copy(data_c_p_d_d, 1.0); deep_copy(data_c_1_d_d, 1.0);
+          Kokkos::deep_copy(in_p_d_d, 1.0);
+          Kokkos::deep_copy(data_c_p_d, 1.0); 
+          Kokkos::deep_copy(data_c_1_d, 1.0);
+          Kokkos::deep_copy(data_c_p_d_d, 1.0); 
+          Kokkos::deep_copy(data_c_1_d_d, 1.0);
 
           art::scalarMultiplyDataData(outSM_c_p, data_c_p, in_p);
           art::dotMultiplyDataData(outDM_c_p, data_c_p, in_p);
@@ -547,10 +596,10 @@ namespace Intrepid2 {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (12): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
-          } // end scope
+        } // end scope
 
           /******************************************/
-          *outStream << "\n";
+        *outStream << "\n";
       }
       catch (std::logic_error &err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";

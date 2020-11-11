@@ -97,9 +97,8 @@ SET(EXTRA_CONFIGURE_OPTIONS
       "-DXpetra_ENABLE_Experimental:BOOL=ON"
       "-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
 
-  # Disable Pamgen and Shards due to weird nvcc errors
-  "-DTPL_ENABLE_Pamgen:BOOL=OFF"
-  "-DTPL_ENABLE_Shards:BOOL=OFF"
+  # Disable Pamgen due to weird nvcc errors
+  "-DTrilinos_ENABLE_Pamgen:BOOL=OFF"
 
 
 

@@ -1,5 +1,3 @@
-INCLUDE(CombinedOption)
-
 #
 # A) Define the package
 #
@@ -457,7 +455,7 @@ ENDIF()
 
 
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
-TRIBITS_ADD_EXAMPLE_DIRECTORIES(research)
+ADD_SUBDIRECTORY(research)
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 
 #

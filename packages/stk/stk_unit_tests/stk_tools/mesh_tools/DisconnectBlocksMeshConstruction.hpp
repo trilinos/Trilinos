@@ -317,6 +317,8 @@ stk::mesh::PartVector setup_mesh_2block_2quad_diagonal(stk::mesh::BulkData& bulk
 
 stk::mesh::PartVector setup_mesh_3block_4quad_bowtie(stk::mesh::BulkData& bulk);
 
+stk::mesh::PartVector setup_mesh_3block_4quad_reverse_ordinal(stk::mesh::BulkData& bulk);
+
 void fill_mesh_description_4block_4quad_np1(stk::mesh::BulkData& bulk, unsigned blockOrder,
                                             std::string& meshDesc, std::vector<double>& coordinates);
 

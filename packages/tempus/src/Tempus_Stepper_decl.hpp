@@ -19,7 +19,6 @@
 // Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperObserver.hpp"
 
 
 namespace Tempus {
@@ -73,7 +72,7 @@ public:
     virtual void setNonConstModel(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& /* appModel */){}
 
-#endif // TEMPUS_HIDE_DEPRECATED_CODE
+#endif
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel()
     { return Teuchos::null; }
 
@@ -83,14 +82,6 @@ public:
 
     /// Get solver
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
-    { return Teuchos::null; }
-
-    /// Set Observer
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null){}
-
-    /// Get Observer
-    virtual Teuchos::RCP<StepperObserver<Scalar> >  getObserver() const
     { return Teuchos::null; }
 
     /// Initialize after construction and changing input parameters.
@@ -133,19 +124,18 @@ public:
       isInitialized_ = false; }
     std::string getStepperType() const { return stepperType_; }
 
-    void setUseFSAL(bool a) { useFSAL_ = a; isInitialized_ = false; }
+    virtual void setUseFSAL(bool a) { setUseFSALFalseOnly(a); }
+    void setUseFSALTrueOnly(bool a);
+    void setUseFSALFalseOnly(bool a);
     bool getUseFSAL() const { return useFSAL_; }
-    virtual bool getUseFSALDefault() const { return false; }
 
     void setICConsistency(std::string s) { ICConsistency_ = s;
       isInitialized_ = false; }
     std::string getICConsistency() const { return ICConsistency_; }
-    virtual std::string getICConsistencyDefault() const { return "None"; }
 
     void setICConsistencyCheck(bool c) {ICConsistencyCheck_ = c;
       isInitialized_ = false; }
     bool getICConsistencyCheck() const { return ICConsistencyCheck_; }
-    virtual bool getICConsistencyCheckDefault() const { return false; }
 
     virtual OrderODE getOrderODE() const = 0;
 
@@ -187,9 +177,8 @@ public:
 private:
 
   std::string stepperType_;        ///< Name of stepper type
-  bool useFSAL_ = false;           ///< Use First-Same-As-Last (FSAL) principle
   std::string ICConsistency_ = std::string("None");  ///< Type of consistency to apply to ICs.
-  bool ICConsistencyCheck_ = true; ///< Check if the initial condition is consistent
+  bool ICConsistencyCheck_ = false; ///< Check if the initial condition is consistent
 
   // RCP to SolutionState memory or Stepper temporary memory (if needed).
   Teuchos::RCP<Thyra::VectorBase<Scalar> > stepperX_;
@@ -210,6 +199,7 @@ protected:
   virtual void setStepperXDotDot(Teuchos::RCP<Thyra::VectorBase<Scalar> > xDotDot)
   { stepperXDotDot_ = xDotDot; }
 
+  bool useFSAL_ = false;       ///< Use First-Same-As-Last (FSAL) principle
   bool isInitialized_ = false; ///< True if stepper's member data is initialized.
 };
 
