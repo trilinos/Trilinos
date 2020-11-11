@@ -140,7 +140,7 @@ namespace Zoltan2 {
     template<typename Adapter>
     void AlgSarma<Adapter>::getParams() {
         const Teuchos::ParameterList &pl = env->getParameters();
-        const Teuchos::ParameterList &sparams = pl.sublist("sarma_params");
+        const Teuchos::ParameterList &sparams = pl.sublist("sarma_parameters");
 
         // Set Params
         const Teuchos::ParameterEntry *pe = sparams.getEntryPtr("alg");
@@ -170,7 +170,7 @@ namespace Zoltan2 {
             config.sparsify = pe->getValue(&config.sparsify);
         pe = sparams.getEntryPtr("triangular");
         if (pe)
-            config.serialize = pe->getValue(&config.serialize);
+            config.triangular = pe->getValue(&config.triangular);
         pe = sparams.getEntryPtr("use_data");
         if (pe)
             config.use_data = pe->getValue(&config.use_data);
