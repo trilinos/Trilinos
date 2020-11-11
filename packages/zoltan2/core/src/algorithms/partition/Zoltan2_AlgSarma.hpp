@@ -195,7 +195,7 @@ namespace Zoltan2 {
         auto partl = ArrayRCP<int>(new int[result_size], 0, result_size, true);
         for (size_t i = 0; i < parts.first.size(); ++i) partl[i] = parts.first[i];
         for (size_t i = parts.first.size(); i < result_size; ++i)
-            partl[i - parts.first.size()] = parts.first[i - parts.first.size()];
+            partl[i] = parts.second[i - parts.first.size()];
 
         solution->setParts(partl);
     }
