@@ -63,8 +63,8 @@ namespace MueLuTests {
 
     RCP<InterfaceAggregationFactory> interfaceAggregatioFactory = rcp(new InterfaceAggregationFactory());
 
-    TEST_INEQUALITY(interfaceAggregatioFactory, Teuchos::null);
-  } // Constructor
+    TEST_ASSERT(!interfaceAggregatioFactory.is_null());
+  }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InterfaceAggregationFactory, GetNonEmptyValidParameterList, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -76,9 +76,9 @@ namespace MueLuTests {
     RCP<InterfaceAggregationFactory> interfaceAggregatioFactory = rcp(new InterfaceAggregationFactory());
     RCP<const Teuchos::ParameterList> params = interfaceAggregatioFactory->GetValidParameterList();
 
-    TEST_INEQUALITY(params, Teuchos::null);
-    TEST_ASSERT(params->numParams() > 0)
-  } // GetNonEmptyValidParameterList
+    TEST_ASSERT(!params.is_null());
+    TEST_ASSERT(params->numParams() > 0);
+  }
 
   # define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(InterfaceAggregationFactory, Constructor, Scalar, LO, GO, Node) \
