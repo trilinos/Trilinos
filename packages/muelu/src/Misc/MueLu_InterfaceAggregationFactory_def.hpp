@@ -130,12 +130,14 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
 
   // Call a specialized build routine based on the format of user-given input
   const ParameterList &pL = GetParameterList();
-  if (pL.get<std::string>("Dual/primal mapping strategy") == "node-based")
+  const std::string parameterName = "Dual/primal mapping strategy";
+  if (pL.get<std::string>(parameterName) == "node-based")
     BuildBasedOnNodeMapping(prefix, currentLevel);
-  else if (pL.get<std::string>("Dual/primal mapping strategy") == "dof-based")
+  else if (pL.get<std::string>(parameterName) == "dof-based")
     BuildBasedOnPrimalInterfaceDofRowMap(prefix, currentLevel);
   else
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::InvalidArgument, "Unknown strategy for dual/primal mapping.")
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::InvalidArgument,
+        "MueLu::InterfaceAggregationFactory::Builld(): Unknown strategy for dual/primal mapping. Set a valid value for the parameter \"" << parameterName << "\".")
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
