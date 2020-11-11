@@ -228,7 +228,7 @@ public:
       size_t currentRunningTotal = 0;
       gno_t I = gno_t(0);
       for (int chunkCnt = 0; chunkCnt < nChunks; chunkCnt++) {
-        targetRunningTotal += (target * (chunkCnt+1));
+        targetRunningTotal = (target * (chunkCnt+1));
         while (I < nrows) {
           size_t nextNnz = (sortByDegree ? globalRowBuf[permuteIndex[I]]
                                          : globalRowBuf[I]);
