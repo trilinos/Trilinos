@@ -24,48 +24,19 @@ else:                                                                           
 
 try:
 
-    # Try to import the LMOD version of the module() function.
-    # See: https://github.com/TACC/Lmod/blob/master/init/env_modules_python.py.in
-    import env_modules_python
+    # This will force the use of our own module command because the LMOD module
+    # command returns nothing, which won't help us deterine if the command actually
+    # passsed or failed.
+    # TODO: Remove this and clean up the file to just have the module() command.
+    raise ImportError("Force use of _our_ module command for testing")
+
+    from env_modules_python import module
     print("NOTICE> [ModuleHelper.py] Using the lmod based `env_modules_python` module handler.")
 
-
-    def module(command, *arguments):
-        """
-        `module` wrapper for the LMOD based modules function.
-
-        Args:
-            command (str): The `module` command that we're executing. i.e., `load`, `unload`, `swap`, etc.
-            *arguments   : Variable length argument list.
-
-        Returns:
-            int: status indicating success or failure. 0 = success, nonzero for failure
-
-            For now, because the LMOD `module()` command returns nothing (`NoneType`)
-            and provides no way to determine success or failure, we will only return 0.
-
-        Raises:
-            Any exception thrown by env_modules_python.module() will get caught and passed along.
-
-        """
-        output = 0
-
-        try:
-
-            status = env_modules_python.module(command, *arguments)
-
-        except BaseException as error:
-            print("")
-            print("An ERROR occurred during execution of module command")
-            print("")
-            raise error
-
-        return output
-
-
-
 except ImportError:
-    print("NOTICE> [ModuleHelper.py] Using the modulecmd based environment modules handler.")
+    # If importing module from env_modules_python fails, we roll our own
+    # version of that function.
+    print("NOTICE> [ModuleHelper.py] `env_modules_python` not found, using our own `module` command.")
 
 
     def module(command, *arguments):
@@ -123,31 +94,7 @@ except ImportError:
             stderr_ok = False
             errcode = 1
 
-        if stderr_ok and errcode != 0:
-            print("")
-            print("Failed to execute the module command: {}".format(" ".join(cmd[2:])))
-            print("- Returned {} exit status.".format(errcode))
-
-        if stderr_ok and errcode == 0:
-            try:
-                # This is where we _actually_ execute the module command body.
-                exec(output)
-
-                # Check for _mlstatus = True/False (set by some versions of modulecmd)
-                if "_mlstatus" in locals():
-                    if locals()["_mlstatus"] == False:
-                        print("")
-                        print("modulecmd set _mlstatus == False, command failed")
-                        print("")
-                        errcode = 1
-
-            except BaseException as error:
-                print("")
-                print("An ERROR occurred during execution of module commands")
-                print("")
-                raise error
-
-        if errcode != 0:
+        if errcode:
             print("")
             print("[module output start]\n{}\n[module output end]".format(output))
             print("[module stderr start]\n{}\n[module stderr end]".format(stderr))

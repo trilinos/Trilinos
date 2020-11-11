@@ -172,11 +172,14 @@ class SetEnvironment(object):
             params = m[1:]
             cmd_status = 0
             print("[module] module {} {}".format(op, " ".join(params)), end="")
+            module_op_status = -1
             try:
                 if   1 == len(params) and op in ["purge"]:
                     cmd_status = max(ModuleHelper.module(op), status)
                 elif 1 == len(params):
-                    cmd_status = max(ModuleHelper.module(op, params[0]), status)
+                    module_op_status = ModuleHelper.module(op, params[0])
+                    cmd_status = max(module_op_status, status)
+                    #cmd_status = max(ModuleHelper.module(op, params[0]), status)
                 elif 2 == len(params):
                     cmd_status = max(ModuleHelper.module(op, params[0], params[1]), status)
                 else:
@@ -191,6 +194,7 @@ class SetEnvironment(object):
                 print(":  params           : {}".format(params))
                 print(":     len(params)   : {}".format(len(params)))
                 print(":  status           : {}".format(status))
+                print(":  module_op_status : {}".format(module_op_status))
                 sys.stdout.flush()
                 raise(err)
 
