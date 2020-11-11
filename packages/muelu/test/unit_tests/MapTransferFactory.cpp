@@ -386,7 +386,7 @@ namespace MueLuTests {
     mapTransferFactory->SetParameter("map: factory", Teuchos::ParameterEntry(mapName));
     mapTransferFactory->SetParameter("map: name", Teuchos::ParameterEntry(mapName));
     mapTransferFactory->SetFactory("P", tentativePFact);
-    mapTransferFactory->SetParameter("nullspace vectors: limit to", Teuchos::ParameterEntry(std::string("3D translations")));
+    mapTransferFactory->SetParameter("nullspace vectors: limit to", Teuchos::ParameterEntry(std::string("translations")));
 
     coarseLevel.Request(mapName, MueLu::NoFactory::get());
     coarseLevel.Request("P", tentativePFact.get(), mapTransferFactory.get());
@@ -507,7 +507,7 @@ namespace MueLuTests {
     mapTransferFactory->SetParameter("map: factory", Teuchos::ParameterEntry(mapName));
     mapTransferFactory->SetParameter("map: name", Teuchos::ParameterEntry(mapName));
     mapTransferFactory->SetFactory("P", tentativePFact);
-    mapTransferFactory->SetParameter("nullspace vectors: limit to", Teuchos::ParameterEntry(std::string("2D translations")));
+    mapTransferFactory->SetParameter("nullspace vectors: limit to", Teuchos::ParameterEntry(std::string("translations")));
 
     coarseLevel.Request(mapName, MueLu::NoFactory::get());
     coarseLevel.Request("P", tentativePFact.get(), mapTransferFactory.get());

@@ -187,9 +187,7 @@ namespace MueLu {
 
     // ToDo (mayrmt): simplify! Maybe replace by boolean flag "nullspace: exclude rotations"
     int maxNumProlongCols = -1;
-    if (useTheseNspVectors == "2D translations")
-      maxNumProlongCols = 1;
-    else if (useTheseNspVectors == "3D translations")
+    if (useTheseNspVectors == "translations")
       maxNumProlongCols = 1;
     else
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Unknown subset of nullspace vectors to be used, when performing a map transfer.")

@@ -68,7 +68,7 @@
       <Parameter name="map: factory" type="string" value="PrimalInterfaceDofRowMap"/>
       <Parameter name="map: name" type="string" value="PrimalInterfaceDofRowMap"/>
       <Parameter name="P" type="string" value="myTentativePFact1"/>
-      <Parameter name="nullspace vectors: limit to" type="string" value="2D translations"/>
+      <Parameter name="nullspace vectors: limit to" type="string" value="translations"/>
     </ParameterList>
 
     <ParameterList name="myInterfaceAggs2">
