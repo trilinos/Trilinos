@@ -91,7 +91,7 @@ namespace Zoltan2 {
         AlgSarma(const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
                  const RCP<const MatrixAdapter <user_t, userCoord_t> > &adapter)
                 : env(env), comm(comm), adapter(adapter),
-                  offsize(adapter->getLocalNumRows()), nnz(adapter->getLocalNumEntries()),
+                  offsize(1 + adapter->getLocalNumRows()), nnz(adapter->getLocalNumEntries()),
                   algs(sarma::get_algorithm_map<Ordinal, Value>()), orders(sarma::get_order_map()) {
             getParams();
             if (adapter->CRSViewAvailable()) {
