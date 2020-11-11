@@ -35,7 +35,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   ##
   GLOBAL_SET( XPETRA_LO_GO_NO_ETI_CLASSES )
 
-  # Include the list of all Xpetra classes that should be ETI'd 
+  # Include the list of all Xpetra classes that should be ETI'd
   INCLUDE(Utils/ExplicitInstantiation/ETI_LO_GO_NO_classes.cmake)
 
   # generate the cpp files and record the file names
@@ -49,7 +49,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
 
 
   ##
-  ## XPETRA_SC_LO_GO_NO_ETI_CLASSES is a list of all class names which ETI 
+  ## XPETRA_SC_LO_GO_NO_ETI_CLASSES is a list of all class names which ETI
   ## *.cpp files have to be generated for using the 4-arg template (SC-LO-GO-NO)
   ##
   GLOBAL_SET(XPETRA_SC_LO_GO_NO_ETI_CLASSES)
@@ -74,7 +74,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   SET(SOURCES ${XPETRA_ETI_CPP_SOURCES})
   # grab any hand rolled ETI source files
   APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/Utils/ExplicitInstantiation/*.cpp)
-  
+
 ENDIF() # if XPETRA_ENABLE_EXPLICIT_INSTANTIATION
 
 
@@ -86,15 +86,13 @@ APPEND_GLOB(SOURCES */*.cpp)
 APPEND_GLOB(SOURCES mac.cpp) # Avoid empty library (MacOs 'ar' utility doesn't work on empty library).
 
 # Create the .hpp file in BUILD/packages/xpetra/sup
-TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/Matrix     NOSIERRABJAM)
-TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/StridedMap NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/Matrix      NOSIERRABJAM)
 
 #
 #
 #
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Matrix)
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/StridedMap)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Utils)
 
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
