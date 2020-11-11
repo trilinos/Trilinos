@@ -78,7 +78,7 @@ namespace MueLu {
       External        = 0x01000000, //!< Print external lib objects
       Debug           = 0x02000000, //!< Print additional debugging information
 
-      Developer       = 0x03000000, //!< Print information primarily of interest to developers
+      Developer       = 0x04000000, //!< Print information primarily of interest to developers
 
       Test0           = 0x10000000, //!< Print skeleton for the run, i.e. factory calls and used parameters
 
