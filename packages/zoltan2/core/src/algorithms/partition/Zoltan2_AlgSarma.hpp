@@ -93,7 +93,7 @@ namespace Zoltan2 {
                 : env(env), comm(comm), adapter(adapter),
                   offsize(adapter->getLocalNumRows()), nnz(adapter->getLocalNumEntries()),
                   algs(sarma::get_algorithm_map<Ordinal, Value>()), orders(sarma::get_order_map()) {
-
+            getParams();
             if (adapter->CRSViewAvailable()) {
                 offsets = new offset_t[offsize]();
                 colids = new gno_t[nnz]();
