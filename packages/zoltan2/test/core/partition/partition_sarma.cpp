@@ -52,7 +52,7 @@ auto testFromFile(const RCP<const Teuchos::Comm<int> > &comm, int nparts, std::s
     // Sarma params
     Teuchos::ParameterList &sparams = params.sublist("sarma_parameters", false);
     sparams.set("alg", "opal");
-//    sparams.set("row_parts", 4);
+    sparams.set("row_parts", nparts);
 
 
     #ifdef HAVE_ZOLTAN2_MPI
@@ -80,9 +80,9 @@ int main(int argc, char *argv[]) {
     Parameters params;
     params.alg = "opal";
 
-    int nParts = std::atoi(argv[2]);
+    int nParts = 8;
     bool doRemap = false;
-    std::string filename = argv[1];
+    std::string filename = "USAir97";
 
     // Run-time options
     Teuchos::CommandLineProcessor cmdp(false, false);
