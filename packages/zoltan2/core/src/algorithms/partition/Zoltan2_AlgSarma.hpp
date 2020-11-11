@@ -187,7 +187,7 @@ namespace Zoltan2 {
         auto M = std::make_shared<sarma::Matrix<Ordinal, Value> >(std::move(std::vector<Ordinal>(offsets, offsets + offsize)),
                 std::move(std::vector<Ordinal>(colids, colids + nnz)), std::move(std::vector<Value>(vals, vals + nnz)),
                 1 + *std::max_element(offsets, offsets + offsize));
-        auto parts = sarma::Run<Ordinal, Value>(algs.at(config.alg).first, std::cout, M, config.order_type, config.row_parts,
+        auto parts = sarma::Run<Ordinal, Value>(algs.at(config.alg).first, null, M, config.order_type, config.row_parts,
                                                 config.col_parts, config.max_load, config.triangular, false, config.sparsify,
                                                 algs.at(config.alg).second, config.use_data, config.seed);
 
