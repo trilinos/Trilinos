@@ -14,6 +14,8 @@ using Teuchos::rcp;
 
 typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> myTypes_t;
 
+#ifdef HAVE_ZOLTAN2_SARMA
+
 struct Parameters {
     std::string alg = "pal";
     sarma::Order order_type = sarma::Order::NAT;
@@ -68,8 +70,10 @@ auto testFromFile(const RCP<const Teuchos::Comm<int> > &comm, int nparts, std::s
     #endif
     return problem.getSolution();
 }
+#endif
 
 int main(int argc, char *argv[]) {
+    #ifdef HAVE_ZOLTAN2_SARMA
     Tpetra::ScopeGuard tscope(&argc, &argv);
     RCP<const Teuchos::Comm<int> > tcomm = Tpetra::getDefaultComm();
 
@@ -112,6 +116,7 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
     }
+    #endif
     std::cout << "PASSED\n";
 
     return EXIT_SUCCESS;
