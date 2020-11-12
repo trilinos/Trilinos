@@ -117,8 +117,10 @@ APPEND_SET(HEADERS
   SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_def.hpp
   Tools/FROSch_ExtractSubmatrices_decl.hpp
   Tools/FROSch_ExtractSubmatrices_def.hpp
+  Tools/FROSch_Output.h
   Tools/FROSch_SubdomainSolver_decl.hpp
   Tools/FROSch_SubdomainSolver_def.hpp
+  Tools/FROSch_Timers.h
   Tools/FROSch_Tools_decl.hpp
   Tools/FROSch_Tools_def.hpp
 )
@@ -134,4 +136,3 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
-

@@ -10,17 +10,19 @@ INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_BINARY_DIR}/stk_simd)
 FILE(GLOB SOURCES *.cpp)
 
 TRIBITS_ADD_EXECUTABLE(
-    simd_unit_tests
+    stk_simd_unit_tests
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     COMM serial mpi
+    NOEXEPREFIX
     )
 
 TRIBITS_ADD_TEST(
-   simd_unit_tests
+   stk_simd_unit_tests
    NAME STKSimd_Simd
    COMM serial mpi
    PASS_REGULAR_EXPRESSION "PASS"
    FAIL_REGULAR_EXPRESSION "FAIL"
    NUM_MPI_PROCS 1
+   NOEXEPREFIX
    )

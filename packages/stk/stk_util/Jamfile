@@ -153,7 +153,7 @@ exe stk_util_doc_test
   :
     [ glob $(stk_util-root)/../stk_doc_tests/stk_util/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    /sierra/stk_unit_test_utils//comparisonUtils
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
     stk_util_command_line
   : <tag>@sierra-exec-tag
     <include>$(stk_util-root)/../stk_doc_tests/stk_util
@@ -167,7 +167,7 @@ exe stk_util_utest
     [ glob $(stk_util-root)/../stk_unit_tests/stk_util/command_line/*.cpp ]
     [ glob $(stk_util-root)/../stk_unit_tests/stk_util/diag/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    /sierra/stk_unit_test_utils//comparisonUtils
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
     stk_util_command_line
   : <tag>@sierra-exec-tag
     <include>$(stk_util-root)/../stk_unit_tests/stk_util
@@ -177,7 +177,7 @@ exe stk_util_parallel_utest
   :
     [ glob $(stk_util-root)/../stk_unit_tests/stk_util/parallel/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    /sierra/stk_unit_test_utils//comparisonUtils
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
     stk_util_command_line
   : <tag>@sierra-exec-tag
     <include>$(stk_util-root)/../stk_unit_tests/stk_util/parallel

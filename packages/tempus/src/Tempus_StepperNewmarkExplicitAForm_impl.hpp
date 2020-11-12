@@ -57,7 +57,6 @@ correctVelocity(Thyra::VectorBase<Scalar>& v,
   Thyra::V_StVpStV(Teuchos::ptrFromRef(v), 1.0, vPred, dt*gamma_, a);
 }
 
-
 template<class Scalar>
 StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm()
   : gammaDefault_(Scalar(0.5)), gamma_(Scalar(0.5))
@@ -68,34 +67,6 @@ StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm()
   this->setICConsistencyCheck( false);
   this->setAppAction(Teuchos::null);
 }
-
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-template<class Scalar>
-StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
-  bool useFSAL,
-  std::string ICConsistency,
-  bool ICConsistencyCheck,
-  Scalar gamma)
-  : gammaDefault_(Scalar(0.5)), gamma_(Scalar(0.5))
-{
-  this->setStepperType(        "Newmark Explicit a-Form");
-  this->setUseFSAL(            useFSAL);
-  this->setICConsistency(      ICConsistency);
-  this->setICConsistencyCheck( ICConsistencyCheck);
-  this->setAppAction(Teuchos::null);
-
-  setGamma(gamma);
-
-  if (appModel != Teuchos::null) {
-
-    this->setModel(appModel);
-    this->initialize();
-  }
-}
-#endif
 
 template<class Scalar>
 StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm(

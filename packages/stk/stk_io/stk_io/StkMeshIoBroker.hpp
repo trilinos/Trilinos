@@ -207,10 +207,12 @@ namespace stk {
           m_autoLoadDistributionFactorPerNodeSet = shouldAutoLoad;
       }
 
-      void enable_edge_io()
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after November 2020
+      STK_DEPRECATED void enable_edge_io()
       {
           m_enableEdgeIO = true;
       }
+#endif
 
       // Create the Ioss::DatabaseIO associated with the specified filename
       // and type (exodus by default). The routine checks that the
@@ -554,7 +556,7 @@ namespace stk {
                                    const boost::any *value,
                                    stk::util::ParameterType::Type type,
                                    int copies = 1,
-                                   Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+                                   Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
 
       void define_heartbeat_global(size_t index,
                                    const std::string &globalVarName,
@@ -562,14 +564,14 @@ namespace stk {
                                    const std::string &storage,
                                    Ioss::Field::BasicType dataType,
                                    int copies = 1,
-                                   Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+                                   Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
 
       void add_heartbeat_global(size_t index,
                                 const std::string &name,
                                 const boost::any *value,
                                 stk::util::ParameterType::Type type,
                                 int copies = 1,
-                                Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+                                Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
   
       void add_heartbeat_global(size_t index,
                                 const std::string &globalVarName,
@@ -577,7 +579,7 @@ namespace stk {
                                 const std::string &storage,
                                 Ioss::Field::BasicType dataType,
                                 int copies = 1,
-                                Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+                                Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
 
       bool has_heartbeat_global(size_t output_file_index,
                                 const std::string &globalVarName) const;

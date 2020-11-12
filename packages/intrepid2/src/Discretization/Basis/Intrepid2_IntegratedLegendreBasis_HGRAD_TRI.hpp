@@ -373,7 +373,6 @@ namespace Intrepid2
     using ScalarViewType = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::ScalarViewType;
   protected:
     int polyOrder_; // the maximum order of the polynomial
-    bool defineVertexFunctions_; // if true, first and second basis functions are x and 1-x.  Otherwise, they are 1 and x.
   public:
     /** \brief  Constructor.
         \param [in] polyOrder - the polynomial order of the basis.
@@ -385,10 +384,12 @@ namespace Intrepid2
      If defineVertexFunctions is true, then the first two basis functions are 1-x and x, and these are identified with the left and right vertices of the cell.
      
      */
-    IntegratedLegendreBasis_HGRAD_TRI(int polyOrder)
+    IntegratedLegendreBasis_HGRAD_TRI(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT)
     :
     polyOrder_(polyOrder)
     {
+      INTREPID2_TEST_FOR_EXCEPTION(pointType!=POINTTYPE_DEFAULT,std::invalid_argument,"PointType not supported");
+
       this->basisCardinality_  = ((polyOrder+2) * (polyOrder+1)) / 2;
       this->basisDegree_       = polyOrder;
       this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<> >() );
@@ -568,6 +569,25 @@ namespace Intrepid2
       auto policy = Kokkos::TeamPolicy<ExecutionSpace>(numPoints,teamSize,vectorSize);
       Kokkos::parallel_for( policy , functor, "Hierarchical_HGRAD_TRI_Functor");
     }
+
+    /** \brief returns the basis associated to a subCell.
+
+        The bases of the subCell are the restriction to the subCell
+        of the bases of the parent cell.
+        \param [in] subCellDim - dimension of subCell
+        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+     */
+    BasisPtr<ExecutionSpace,OutputScalar,PointScalar>
+      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
+      if(subCellDim == 1) {
+        return Teuchos::rcp(new
+            IntegratedLegendreBasis_HGRAD_LINE<ExecutionSpace,OutputScalar,PointScalar>
+                    (this->basisDegree_));
+      }
+      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
+    }
+
   };
 } // end namespace Intrepid2
 

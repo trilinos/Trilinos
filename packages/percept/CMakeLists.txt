@@ -134,6 +134,65 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCE}
   )
 
+SET(HEADER_SUBDIRS 
+     adapt
+     adapt/sierra_element
+     adapt/markers
+
+     percept
+
+     percept/eigen_verify
+     percept/element/intrepid
+
+     percept/fixtures
+     percept/function
+     percept/function/internal
+
+     percept/math
+     percept/mesh/diff
+     percept/mesh/gen
+     percept/mesh/geometry/kernel
+     percept/mesh/geometry/kernel/xfer
+     percept/mesh/geometry/recovery
+     percept/mesh/geometry/stk_geom
+     percept/mesh/geometry/stk_geom/3D
+     percept/mesh/geometry/volume
+     percept/mesh/geometry/volume/sierra_only
+     percept/mesh/mod/smoother
+     percept/mesh_transfer
+
+     percept/norm
+
+     percept/stk_rebalance
+     percept/stk_rebalance_utils
+     percept/structured
+     percept/uq
+     percept/util
+     percept/verifier/mesh
+     percept/xfer
+    )
+
+FOREACH(SUBDIR ${HEADER_SUBDIRS})
+    FILE (GLOB HEADERS_TMP src/${SUBDIR}/*.hpp)
+    MESSAGE("Install Percept:" ${SUBDIR})
+    TRIBITS_INSTALL_HEADERS(
+        HEADERS ${HEADERS_TMP}
+        INSTALL_SUBDIR ${SUBDIR}
+        )
+ENDFOREACH()
+        
+#FILE (GLOB HEADERS_TMP src/percept/util/*.hpp)
+#TRIBITS_INSTALL_HEADERS(
+#  HEADERS ${HEADERS_TMP}
+#  INSTALL_SUBDIR percept/util
+#  )
+
+#FILE (GLOB HEADERS_TMP src/percept/xfer/*.hpp)
+#TRIBITS_INSTALL_HEADERS(
+#  HEADERS ${HEADERS_TMP}
+#  INSTALL_SUBDIR percept/xfer
+#  )
+
 TRIBITS_ADD_EXECUTABLE(
   perceptX
   NOEXEPREFIX

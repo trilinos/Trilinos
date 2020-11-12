@@ -33,6 +33,7 @@
 // 
 
 #include <stk_util/stk_config.h>        // for STK_HAS_MPI
+
 #include <stk_util/environment/RuntimeMessage.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <algorithm>                    // for max, stable_sort
@@ -168,11 +169,7 @@ get_message_type_info(
   return s_messageTypeInfo[type & MSG_TYPE_MASK];
 }
 
-
-
-
-
-
+#ifdef STK_HAS_MPI
 Marshal &operator<<(Marshal &mout, const DeferredMessage &s)  {
   mout << s.m_type << s.m_messageId << s.m_rank << s.m_throttleGroup << s.m_throttleCutoff << s.m_header << s.m_aggregate;
   return mout;
@@ -182,6 +179,7 @@ Marshal &operator>>(Marshal &min, DeferredMessage &s)  {
   min >> s.m_type >> s.m_messageId >> s.m_rank >> s.m_throttleGroup >> s.m_throttleCutoff >> s.m_header >> s.m_aggregate;
   return min;
 }
+#endif // STK_HAS_MPI
 
 } // namespace <empty>
 
@@ -451,3 +449,4 @@ operator<<(
 }
 
 } // namespace stk
+

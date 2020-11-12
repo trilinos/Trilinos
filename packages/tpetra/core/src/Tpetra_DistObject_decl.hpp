@@ -704,8 +704,7 @@ namespace Tpetra {
     /// \typedef buffer_memory_space
     /// \brief Kokkos memory space for communication buffers.
     using buffer_memory_space =
-      ::Tpetra::Details::DefaultTypes::comm_buffer_memory_space<
-        typename device_type::execution_space>;
+      ::Tpetra::Details::DefaultTypes::comm_buffer_memory_space<device_type>;
 
   public:
     /// \typedef buffer_device_type

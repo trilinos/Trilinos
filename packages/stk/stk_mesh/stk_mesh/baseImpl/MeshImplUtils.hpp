@@ -280,6 +280,15 @@ void fill_part_list_differences(const BulkData &mesh,
 
 void check_size_of_types();
 
+void require_valid_relation(const char action[],
+                            const BulkData& mesh,
+                            const Entity e_from,
+                            const Entity e_to);
+
+bool is_good_rank_and_id(const MetaData& meta,
+                         EntityRank rank,
+                         EntityId id);
+
 EntityId get_global_max_id_in_use(const BulkData& mesh,
                                   EntityRank rank,
                                   const std::list<Entity::entity_value_type>& deletedEntitiesCurModCycle);

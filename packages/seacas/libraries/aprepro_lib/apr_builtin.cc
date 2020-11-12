@@ -495,6 +495,13 @@ namespace SEAMS {
   double do_cols(const array *arr) { return arr->cols; }
 
   // --------------------------STRING FUNCTIONS------------------------
+  const char *do_version()
+  {
+    char *tmp;
+    new_string(SEAMS::Aprepro::version().c_str(), &tmp);
+    return tmp;
+  }
+
   const char *do_get_date()
   {
     char *       tmp;

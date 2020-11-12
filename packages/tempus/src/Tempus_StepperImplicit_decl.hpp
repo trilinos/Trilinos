@@ -317,7 +317,6 @@ protected:
   Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initialGuess_;
   bool zeroInitialGuess_;
 
-  Teuchos::RCP<StepperObserver<Scalar> >              stepperObserver_;
 };
 
 } // namespace Tempus

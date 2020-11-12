@@ -119,6 +119,8 @@ def merge_branch(source_url, source_branch, target_branch, sourceSHA):
     subprocess.check_call(['git', 'merge', '--no-edit', 'source_remote/' + source_branch]),
 
     actual_source_SHA = subprocess.check_output(['git', 'rev-parse', 'source_remote/' + source_branch])
+    if isinstance(actual_source_SHA, bytes):
+        actual_source_SHA = actual_source_SHA.decode('utf-8')
 
     if isinstance(actual_source_SHA, bytes):
         actual_source_SHA = actual_source_SHA.decode('utf-8')

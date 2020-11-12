@@ -71,8 +71,8 @@ namespace Xpetra {
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    MapExtractor(const Teuchos::RCP<const BlockedMap>& map)
-        : map_(map)
+    MapExtractor(const Teuchos::RCP<const BlockedMap>& blockedMap)
+        : map_(blockedMap)
     {}
 
 

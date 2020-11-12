@@ -19,7 +19,6 @@
 // Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperObserver.hpp"
 
 
 namespace Tempus {
@@ -73,7 +72,7 @@ public:
     virtual void setNonConstModel(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& /* appModel */){}
 
-#endif // TEMPUS_HIDE_DEPRECATED_CODE
+#endif
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel()
     { return Teuchos::null; }
 
@@ -83,14 +82,6 @@ public:
 
     /// Get solver
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
-    { return Teuchos::null; }
-
-    /// Set Observer
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null){}
-
-    /// Get Observer
-    virtual Teuchos::RCP<StepperObserver<Scalar> >  getObserver() const
     { return Teuchos::null; }
 
     /// Initialize after construction and changing input parameters.

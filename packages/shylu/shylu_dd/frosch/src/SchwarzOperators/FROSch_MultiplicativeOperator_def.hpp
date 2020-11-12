@@ -56,7 +56,7 @@ namespace FROSch {
                                                                 ParameterListPtr parameterList) :
     SchwarzOperator<SC,LO,GO,NO> (k, parameterList)
     {
-        FROSCH_TIMER_START_LEVELID(multiplicativeOperatorTime,"MultiplicativeOperator::MultiplicativeOperator");
+        FROSCH_DETAILTIMER_START_LEVELID(multiplicativeOperatorTime,"MultiplicativeOperator::MultiplicativeOperator");
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -65,7 +65,7 @@ namespace FROSch {
                                                                 ParameterListPtr parameterList) :
     SchwarzOperator<SC,LO,GO,NO> (k, parameterList)
     {
-        FROSCH_TIMER_START_LEVELID(multiplicativeOperatorTime,"MultiplicativeOperator::MultiplicativeOperator");
+        FROSCH_DETAILTIMER_START_LEVELID(multiplicativeOperatorTime,"MultiplicativeOperator::MultiplicativeOperator");
         OperatorVector_.push_back(operators.at(0));
         for (unsigned i=1; i<operators.size(); i++) {
             FROSCH_ASSERT(operators[i]->OperatorDomainMap().SameAs(OperatorVector_[i]->OperatorDomainMap()),"The DomainMaps of the operators are not identical.");
@@ -86,7 +86,7 @@ namespace FROSch {
     void MultiplicativeOperator<SC,LO,GO,NO>::preApplyCoarse(XMultiVector &x,
                                                              XMultiVector &y)
     {
-        FROSCH_TIMER_START_LEVELID(preApplyCoarseTime,"MultiplicativeOperator::preApplyCoarse");
+        FROSCH_DETAILTIMER_START_LEVELID(preApplyCoarseTime,"MultiplicativeOperator::preApplyCoarse");
         FROSCH_ASSERT(this->OperatorVector_.size()==2,"Should be a Two-Level Operator.");
         this->OperatorVector_[1]->apply(x,y,true);
     }
@@ -185,14 +185,14 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)
     {
-        FROSCH_TIMER_START_LEVELID(addOperatorTime,"MultiplicativeOperator::addOperator");
+        FROSCH_DETAILTIMER_START_LEVELID(addOperatorTime,"MultiplicativeOperator::addOperator");
         int ret = 0;
         if (OperatorVector_.size()>0) {
             if (!op->getDomainMap()->isSameAs(*OperatorVector_[0]->getDomainMap())) {
                 if (this->Verbose_) cerr << "MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getDomainMap().isSameAs(OperatorVector_[0]->getDomainMap())\n";
                 ret -= 1;
             }
-            if (!op->getRangeMap()->isSameAs(*OperatorVector_[0]->getRangeMap())){
+            if (!op->getRangeMap()->isSameAs(*OperatorVector_[0]->getRangeMap())) {
                 if (this->Verbose_) cerr << "MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())\n";
                 ret -= 10;
             }
@@ -207,7 +207,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::addOperators(SchwarzOperatorPtrVecPtr operators)
     {
-        FROSCH_TIMER_START_LEVELID(addOperatorsTime,"MultiplicativeOperator::addOperators");
+        FROSCH_DETAILTIMER_START_LEVELID(addOperatorsTime,"MultiplicativeOperator::addOperators");
         int ret = 0;
         for (UN i=1; i<operators.size(); i++) {
             if (0>addOperator(operators[i])) ret -= pow(10,i);
@@ -219,14 +219,14 @@ namespace FROSch {
     int MultiplicativeOperator<SC,LO,GO,NO>::resetOperator(UN iD,
                                                            SchwarzOperatorPtr op)
     {
-        FROSCH_TIMER_START_LEVELID(resetOperatorTime,"MultiplicativeOperator::resetOperator");
+        FROSCH_DETAILTIMER_START_LEVELID(resetOperatorTime,"MultiplicativeOperator::resetOperator");
         FROSCH_ASSERT(iD<OperatorVector_.size(),"iD exceeds the length of the OperatorVector_");
         int ret = 0;
         if (!op->getDomainMap().isSameAs(OperatorVector_[0]->getDomainMap())) {
             if (this->Verbose_) cerr << "MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getDomainMap().isSameAs(OperatorVector_[0]->getDomainMap())\n";
             ret -= 1;
         }
-        if (!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())){
+        if (!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())) {
             if (this->Verbose_) cerr << "MultiplicativeOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())\n";
             ret -= 10;
         }
@@ -238,7 +238,7 @@ namespace FROSch {
     int MultiplicativeOperator<SC,LO,GO,NO>::enableOperator(UN iD,
                                                             bool enable)
     {
-        FROSCH_TIMER_START_LEVELID(enableOperatorTime,"MultiplicativeOperator::enableOperator");
+        FROSCH_DETAILTIMER_START_LEVELID(enableOperatorTime,"MultiplicativeOperator::enableOperator");
         EnableOperators_[iD] = enable;
         return 0;
     }

@@ -2555,7 +2555,9 @@ void Iocgns::Utils::assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData
   // in `work_vector`.  Avoids searching...
   if (zones.size() < work_vector.size()) {
     std::ostringstream errmsg;
-    fmt::print(errmsg, "IOCGNS error: Could not decompose mesh across {} processors based on constraints.", work_vector.size());
+    fmt::print(errmsg,
+               "IOCGNS error: Could not decompose mesh across {} processors based on constraints.",
+               work_vector.size());
     IOSS_ERROR(errmsg);
   }
   assert(zones.size() >= work_vector.size());

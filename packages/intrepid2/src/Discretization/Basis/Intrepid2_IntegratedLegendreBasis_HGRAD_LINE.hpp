@@ -256,10 +256,12 @@ namespace Intrepid2
      If defineVertexFunctions is true, then the first two basis functions are 1-x and x, and these are identified with the left and right vertices of the cell.
      
      */
-    IntegratedLegendreBasis_HGRAD_LINE(int polyOrder)
+    IntegratedLegendreBasis_HGRAD_LINE(int polyOrder, EPointType pointType=POINTTYPE_DEFAULT)
     :
     polyOrder_(polyOrder)
     {
+      INTREPID2_TEST_FOR_EXCEPTION(pointType!=POINTTYPE_DEFAULT,std::invalid_argument,"PointType not supported");
+
       this->basisCardinality_  = polyOrder+1;
       this->basisDegree_       = polyOrder;
       this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );

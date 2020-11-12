@@ -414,9 +414,11 @@ KOKKOS_ADD_ADVANCED_TEST( UnitTest_PushFinalizeHook_terminate
   endif()
   if(KOKKOS_ENABLE_LIBDL)
 
-    KOKKOS_ADD_LIBRARY(
-    printer-tool SHARED
-    SOURCES tools/printing-tool.cpp
+    # Use a a raw call to add_library
+    # so that Tribits doesn't pick this up
+    ADD_LIBRARY(
+      printer-tool SHARED
+      tools/printing-tool.cpp
     )
 
     KOKKOS_ADD_TEST_EXECUTABLE(

@@ -87,13 +87,19 @@ namespace Intrepid2 {
                                              const ordinal_type subcellOrd,
                                              const shards::CellTopology cellTopo);
 
+
+    /*
+    Function Removed. Use instead Impl::OrientationTools::getRefSubcellTangents
     template<typename refTanViewType>
     static void getReferenceEdgeTangent(const refTanViewType &tanE,
                                         const ordinal_type subcellOrd,
                                         const shards::CellTopology cellTopo,
                                         const ordinal_type ort,
                                         const bool is_normalize = true);
+    */
     
+    /*
+    Function Removed. Use instead Impl::OrientationTools::getRefSubcellTangents
     template<typename refTanViewType>
     static void getReferenceFaceTangents(const refTanViewType &tanU,
                                          const refTanViewType &tanV,
@@ -101,13 +107,17 @@ namespace Intrepid2 {
                                          const shards::CellTopology cellTopo,
                                          const ordinal_type ort,
                                          const bool is_normalize = true);
+    */
 
+    /*
+    Function Removed. Use instead Impl::OrientationTools::getRefSideTangentsAndNormal
     template<typename refNormalViewType>
     static void getReferenceFaceNormal(const refNormalViewType &normalV,
                                        const ordinal_type subcellOrd,
                                        const shards::CellTopology cellTopo,
                                        const ordinal_type ort,
                                        const bool is_normalize = true);
+    */
 
       
   private:

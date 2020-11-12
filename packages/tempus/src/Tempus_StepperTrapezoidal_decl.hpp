@@ -11,9 +11,6 @@
 
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  #include "Tempus_StepperTrapezoidalObserver.hpp"
-#endif
 #include "Tempus_StepperTrapezoidalAppAction.hpp"
 #include "Tempus_StepperOptimizationInterface.hpp"
 
@@ -83,18 +80,6 @@ public:
   */
   StepperTrapezoidal();
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  /// Constructor
-  StepperTrapezoidal(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    bool zeroInitialGuess);
-#endif
-
   /// Constructor
   StepperTrapezoidal(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -107,19 +92,11 @@ public:
 
   /// \name Basic stepper methods
   //@{
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+    virtual void setAppAction(
+    Teuchos::RCP<StepperTrapezoidalAppAction<Scalar> > appAction);
 
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperObserver_; }
-#endif
-
-  virtual void setAppAction(
-  Teuchos::RCP<StepperTrapezoidalAppAction<Scalar> > appAction);
-
-  virtual Teuchos::RCP<StepperTrapezoidalAppAction<Scalar> > getAppAction() const
-  { return stepperTrapAppAction_; }
+    virtual Teuchos::RCP<StepperTrapezoidalAppAction<Scalar> > getAppAction() const
+    { return stepperTrapAppAction_; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -162,10 +139,6 @@ public:
 
 
 private:
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  Teuchos::RCP<StepperTrapezoidalObserver<Scalar> > stepperTrapObserver_;
-#endif
 
   Teuchos::RCP<StepperTrapezoidalAppAction<Scalar> > stepperTrapAppAction_;
 

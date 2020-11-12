@@ -181,7 +181,7 @@ TEST(StkEdgeIo, ParallelWriteMesh)
     stk::mesh::MetaData meta(3);
     stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
     stk::mesh::Part* part = &meta.declare_part_with_topology("edgeBlock", stk::topology::LINE_2);
-    stk::io::put_io_part_attribute(*part);
+    stk::io::put_edge_block_io_part_attribute(*part);
     stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coords);
     stk::mesh::create_edges(bulk, meta.universal_part(), part);
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::EDGE_RANK);
@@ -192,7 +192,6 @@ TEST(StkEdgeIo, ParallelWriteMesh)
 
     stk::io::StkMeshIoBroker stkIo;
     stkIo.set_bulk_data(bulk);
-    stkIo.enable_edge_io();
     size_t outputFileIndex = stkIo.create_output_mesh(filename, stk::io::WRITE_RESULTS);
     stkIo.write_output_mesh(outputFileIndex);
   }
@@ -228,7 +227,7 @@ TEST(StkEdgeIo, ParallelWriteMeshWithFace)
     stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
     stk::mesh::Part* edgePart = &meta.declare_part_with_topology("edgeBlock", stk::topology::LINE_2);
     stk::mesh::Part* facePart = &meta.declare_part_with_topology("faceBlock", stk::topology::QUAD_4);
-    stk::io::put_io_part_attribute(*edgePart);
+    stk::io::put_edge_block_io_part_attribute(*edgePart);
     stk::io::put_io_part_attribute(*facePart);
     stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coords);
 
@@ -248,7 +247,6 @@ TEST(StkEdgeIo, ParallelWriteMeshWithFace)
 
     stk::io::StkMeshIoBroker stkIo;
     stkIo.set_bulk_data(bulk);
-    stkIo.enable_edge_io();
     size_t outputFileIndex = stkIo.create_output_mesh(filename, stk::io::WRITE_RESULTS);
     stkIo.write_output_mesh(outputFileIndex);
   }

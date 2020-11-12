@@ -368,6 +368,18 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUDist) # This naming syntax is consistent with 
     )
 ENDIF()
 
+IF (${PACKAGE_NAME}_ENABLE_STRUMPACK)
+  APPEND_SET(HEADERS
+    Amesos2_STRUMPACK.hpp
+    Amesos2_STRUMPACK_decl.hpp
+    Amesos2_STRUMPACK_def.hpp
+    )
+
+  APPEND_SET(SOURCES
+    Amesos2_STRUMPACK.cpp
+    )
+ENDIF()
+
 IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
   APPEND_SET(HEADERS
     Amesos2_PardisoMKL.hpp

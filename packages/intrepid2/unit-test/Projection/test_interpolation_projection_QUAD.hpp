@@ -284,13 +284,13 @@ int InterpolationProjectionQuad(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HGRAD_QUAD_C1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          basis_set.push_back(new typename  CG_NBasis::HGRAD_QUAD(degree));
-          basis_set.push_back(new typename  CG_DNBasis::HGRAD_QUAD(degree));
+          basis_set.push_back(new typename  CG_NBasis::HGRAD_QUAD(degree,POINTTYPE_WARPBLEND));
+          basis_set.push_back(new typename  CG_DNBasis::HGRAD_QUAD(degree,POINTTYPE_EQUISPACED));
 
           for (auto basisPtr:basis_set) {
 
             auto name = basisPtr->getName();
-            *outStream << " " << name << std::endl;
+            *outStream << " " << name <<  ": " << degree << std::endl;
             ordinal_type basisCardinality = basisPtr->getCardinality();
 
             //compute DofCoords Oriented
@@ -302,7 +302,7 @@ int InterpolationProjectionQuad(const bool verbose) {
 
             //compute Lagrangian Interpolation of fun
             {
-              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffsPhys, basisPtr, POINTTYPE_EQUISPACED, elemOrts);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffsPhys, basisPtr, elemOrts);
 
               //Compute physical Dof Coordinates
               {
@@ -573,10 +573,68 @@ int InterpolationProjectionQuad(const bool verbose) {
               if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                *outStream << "HGRAD_C" << degree << ": The weights recovered with the optimization are different than the one used for generating the functon."<<
+                *outStream << "HGRAD_C" << degree << ": The weights recovered with the L2 optimization are different than the one used for generating the functon."<<
                     "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
               }
             }
+
+            //compute Broken L2 projection of the Lagrangian interpolation
+            DynRankView ConstructWithLabel(basisCoeffsL2DG, numCells, basisCardinality);
+            {
+              ordinal_type targetCubDegree(basisPtr->getDegree());
+
+              Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
+              projStruct.createL2DGProjectionStruct(basisPtr, targetCubDegree);
+
+              ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
+              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
+
+              pts::getL2DGEvaluationPoints(evaluationPoints,
+                  basisPtr,
+                  &projStruct);
+
+
+              DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
+              DynRankView ConstructWithLabel(hgradBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
+              DynRankView ConstructWithLabel(hgradBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
+              for(int ic=0; ic<numCells; ic++)
+                basisPtr->getValues(Kokkos::subview(hgradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              ots::modifyBasisByOrientation(hgradBasisAtEvaluationPoints,
+                  hgradBasisAtEvaluationPointsNonOriented,
+                  elemOrts,
+                  basisPtr);
+
+
+              for(int ic=0; ic<numCells; ic++) {
+                for(int i=0;i<numPoints;i++) {
+                  for(int k=0;k<basisCardinality;k++)
+                    targetAtEvalPoints(ic,i) += basisCoeffsLI(ic,k)*hgradBasisAtEvaluationPoints(ic,k,i);
+                }
+              }
+
+              pts::getL2DGBasisCoeffs(basisCoeffsL2DG,
+                  targetAtEvalPoints,
+                  elemOrts,
+                  basisPtr,
+                  &projStruct);
+            }
+
+            //check that the basis coefficients of the Lagrangian interpolation are the same as those of the L2 projection
+            {
+              ValueType diffErr =0;
+              for(int k=0;k<basisCardinality;k++) {
+                for(int ic=0; ic<numCells; ic++)
+                  diffErr = std::max(diffErr, std::abs(basisCoeffsLI(ic,k) - basisCoeffsL2DG(ic,k)));
+              }
+
+              if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << "HGRAD_C" << degree << ": The weights recovered with the L2DG optimization are different than the one used for generating the functon."<<
+                    "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
+              }
+            }
+
             delete basisPtr;
           }
         }
@@ -669,13 +727,13 @@ int InterpolationProjectionQuad(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HCURL_QUAD_I1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          basis_set.push_back(new typename  CG_NBasis::HCURL_QUAD(degree));
-          basis_set.push_back(new typename  CG_DNBasis::HCURL_QUAD(degree));
+          basis_set.push_back(new typename  CG_NBasis::HCURL_QUAD(degree,POINTTYPE_EQUISPACED));
+          basis_set.push_back(new typename  CG_DNBasis::HCURL_QUAD(degree,POINTTYPE_WARPBLEND));
 
           for (auto basisPtr:basis_set) {
 
             auto name = basisPtr->getName();
-            *outStream << " " << name << std::endl;
+            *outStream << " " << name <<  ": " << degree << std::endl;
 
             ordinal_type basisCardinality = basisPtr->getCardinality();
 
@@ -688,7 +746,7 @@ int InterpolationProjectionQuad(const bool verbose) {
 
             //compute Lagrangian Interpolation of fun
             {
-              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffs, basisPtr, POINTTYPE_WARPBLEND, elemOrts);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffs, basisPtr, elemOrts);
 
               //Compute physical Dof Coordinates
 
@@ -971,6 +1029,64 @@ int InterpolationProjectionQuad(const bool verbose) {
                     "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
               }
             }
+
+            //compute Broken L2 projection of the Lagrangian interpolation
+            DynRankView ConstructWithLabel(basisCoeffsL2DG, numCells, basisCardinality);
+            {
+              ordinal_type targetCubDegree(basisPtr->getDegree());
+
+              Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
+              projStruct.createL2DGProjectionStruct(basisPtr, targetCubDegree);
+
+              ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
+              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
+
+              pts::getL2DGEvaluationPoints(evaluationPoints,
+                  basisPtr,
+                  &projStruct);
+
+
+              DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
+
+              DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
+              DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
+              for(int ic=0; ic<numCells; ic++)
+                basisPtr->getValues(Kokkos::subview(hcurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              ots::modifyBasisByOrientation(hcurlBasisAtEvaluationPoints,
+                  hcurlBasisAtEvaluationPointsNonOriented,
+                  elemOrts,
+                  basisPtr);
+
+              for(int ic=0; ic<numCells; ic++){
+                for(int i=0;i<numPoints;i++) {
+                  for(int k=0;k<basisCardinality;k++)
+                    for(int d=0;d<dim;d++)
+                      targetAtEvalPoints(ic,i,d) += basisCoeffsLI(ic,k)*hcurlBasisAtEvaluationPoints(ic,k,i,d);
+                }
+              }
+
+              pts::getL2DGBasisCoeffs(basisCoeffsL2DG,
+                  targetAtEvalPoints,
+                  elemOrts,
+                  basisPtr,
+                  &projStruct);
+            }
+
+            //check that the basis coefficients of the Lagrangian interpolation are the same as those of the L2 projection
+            {
+              ValueType diffErr = 0;
+              for(int k=0;k<basisCardinality;k++) {
+                for(int ic=0; ic<numCells; ic++)
+                  diffErr = std::max(diffErr, std::abs(basisCoeffsLI(ic,k) - basisCoeffsL2DG(ic,k)));
+              }
+
+              if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << "HCURL_I" << degree << ": The weights recovered with the L2DG optimization are different than the one used for generating the functon."<<
+                    "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
+              }
+            }
             delete basisPtr;
           }
         }
@@ -1059,13 +1175,13 @@ int InterpolationProjectionQuad(const bool verbose) {
           basis_set.clear();
           if(degree==1)
             basis_set.push_back(new Basis_HDIV_QUAD_I1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          basis_set.push_back(new typename  CG_NBasis::HDIV_QUAD(degree));
-          basis_set.push_back(new typename  CG_DNBasis::HDIV_QUAD(degree));
+          basis_set.push_back(new typename  CG_NBasis::HDIV_QUAD(degree,POINTTYPE_WARPBLEND));
+          basis_set.push_back(new typename  CG_DNBasis::HDIV_QUAD(degree,POINTTYPE_EQUISPACED));
 
           for (auto basisPtr:basis_set) {
 
             auto name = basisPtr->getName();
-            *outStream << " " << name << std::endl;
+            *outStream << " " << name <<  ": " << degree << std::endl;
             ordinal_type basisCardinality = basisPtr->getCardinality();
 
             //compute DofCoords Oriented
@@ -1079,7 +1195,7 @@ int InterpolationProjectionQuad(const bool verbose) {
             //compute Lagrangian Interpolation of fun
             {
 
-              li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffs, basisPtr, POINTTYPE_EQUISPACED, elemOrts);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffs, basisPtr, elemOrts);
 
               //Compute physical Dof Coordinates
               Basis_HGRAD_QUAD_C1_FEM<DeviceSpaceType,ValueType,ValueType> quadLinearBasis; //used for computing physical coordinates
@@ -1373,6 +1489,67 @@ int InterpolationProjectionQuad(const bool verbose) {
                     "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
               }
             }
+
+            //compute L2 Discontinuous projection interpolation of the Lagrangian interpolation
+            DynRankView ConstructWithLabel(basisCoeffsL2DG, numCells, basisCardinality);
+            {
+              ordinal_type targetCubDegree(basisPtr->getDegree());
+
+              Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
+              projStruct.createL2DGProjectionStruct(basisPtr, targetCubDegree);
+
+              ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
+
+              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
+
+              pts::getL2DGEvaluationPoints(evaluationPoints,
+                  basisPtr,
+                  &projStruct);
+
+              DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
+
+              DynRankView ConstructWithLabel(hdivBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
+              DynRankView ConstructWithLabel(hdivBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
+              for(ordinal_type ic=0; ic<numCells; ++ic)
+                basisPtr->getValues(Kokkos::subview(hdivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              ots::modifyBasisByOrientation(hdivBasisAtEvaluationPoints,
+                  hdivBasisAtEvaluationPointsNonOriented,
+                  elemOrts,
+                  basisPtr);
+
+              for(ordinal_type ic=0; ic<numCells; ++ic) {
+                for(int i=0;i<numPoints;i++) {
+                  for(int k=0;k<basisCardinality;k++)
+                    for(int d=0;d<dim;d++)
+                      targetAtEvalPoints(ic,i,d) += basisCoeffsLI(ic,k)*hdivBasisAtEvaluationPoints(ic,k,i,d);
+                }
+              }
+
+              pts::getL2DGBasisCoeffs(basisCoeffsL2DG,
+                  targetAtEvalPoints,
+                  elemOrts,
+                  basisPtr,
+                  &projStruct);
+            }
+
+            //check that the basis coefficients of the Lagrangian interpolation are the same as those of the L2 projection
+            {
+              ValueType diffErr = 0;
+              for(int k=0;k<basisCardinality;k++) {
+                //std::cout << "["<< basisCoeffsLI(0,k) << " " <<  basisCoeffsHDiv(0,k) << "] [" << basisCoeffsLI(1,k) << " " <<  basisCoeffsHDiv(1,k) << "]" <<std::endl;
+                for(ordinal_type ic=0; ic<numCells; ++ic)
+                  diffErr = std::max(diffErr, std::abs(basisCoeffsLI(ic,k) - basisCoeffsL2DG(ic,k)));
+              }
+
+              if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << "HDIV_I" << degree << ": The weights recovered with the L2DG optimization are different than the one used for generating the function."<<
+                    "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
+              }
+            }
+
+
             delete basisPtr;
           }
         }
@@ -1436,13 +1613,13 @@ int InterpolationProjectionQuad(const bool verbose) {
       basis_set.clear();
       if(degree==1)
         basis_set.push_back(new Basis_HVOL_C0_FEM<DeviceSpaceType,ValueType,ValueType>(quad));
-      basis_set.push_back(new typename  CG_NBasis::HVOL_QUAD(degree));
-      basis_set.push_back(new typename  CG_DNBasis::HVOL_QUAD(degree));
+      basis_set.push_back(new typename  CG_NBasis::HVOL_QUAD(degree,POINTTYPE_EQUISPACED));
+      basis_set.push_back(new typename  CG_DNBasis::HVOL_QUAD(degree,POINTTYPE_WARPBLEND));
 
       for (auto basisPtr:basis_set) {
 
         auto name = basisPtr->getName();
-        *outStream << " " << name << std::endl;
+        *outStream << " " << name <<  ": " << degree << std::endl;
 
         ordinal_type basisCardinality = basisPtr->getCardinality();
 
@@ -1453,7 +1630,7 @@ int InterpolationProjectionQuad(const bool verbose) {
         DynRankView ConstructWithLabel(funAtDofCoords, numCells, basisCardinality);
         DynRankView ConstructWithLabel(basisCoeffsLI, numCells, basisCardinality);
         {
-          li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr, POINTTYPE_WARPBLEND, elemOrts);
+          li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr, elemOrts);
 
           //Compute physical Dof Coordinates
           {
@@ -1685,6 +1862,65 @@ int InterpolationProjectionQuad(const bool verbose) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
             *outStream << "HVOL_C" << degree << ": The weights recovered with the L2 optimization are different than the one used for generating the functon."<<
+                "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
+          }
+        }
+
+        //compute L2DG projection of the Lagrangian interpolation
+        DynRankView ConstructWithLabel(basisCoeffsL2DG, numCells, basisCardinality);
+        {
+          ordinal_type targetCubDegree(basisPtr->getDegree());
+
+          Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
+          projStruct.createL2DGProjectionStruct(basisPtr, targetCubDegree);
+
+          ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
+          DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
+
+
+          pts::getL2DGEvaluationPoints(evaluationPoints,
+              basisPtr,
+              &projStruct);
+
+
+          DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
+
+          DynRankView ConstructWithLabel(hvolBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
+          DynRankView ConstructWithLabel(hvolBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
+          for(int ic=0; ic<numCells; ic++)
+            basisPtr->getValues(Kokkos::subview(hvolBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+          ots::modifyBasisByOrientation(hvolBasisAtEvaluationPoints,
+              hvolBasisAtEvaluationPointsNonOriented,
+              elemOrts,
+              basisPtr);
+
+          for(int ic=0; ic<numCells; ic++) {
+            for(int i=0;i<numPoints;i++) {
+              for(int k=0;k<basisCardinality;k++)
+                targetAtEvalPoints(ic,i) += basisCoeffsLI(ic,k)*hvolBasisAtEvaluationPoints(ic,k,i);
+            }
+          }
+
+          pts::getL2DGBasisCoeffs(basisCoeffsL2DG,
+              targetAtEvalPoints,
+              //evaluationPoints,
+              //elemOrts,
+              basisPtr,
+              &projStruct);
+        }
+
+        //check that the basis coefficients of the Lagrangian interpolation are the same as those of the L2 projection
+        {
+          ValueType diffErr = 0;
+          for(int k=0;k<basisCardinality;k++) {
+            for(int ic=0; ic<numCells; ic++)
+              diffErr = std::max(diffErr, std::abs(basisCoeffsLI(ic,k) - basisCoeffsL2DG(ic,k)));
+          }
+
+          if(diffErr > pow(16, degree)*tol) { //heuristic relation on how round-off error depends on degree
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            *outStream << "HVOL_C" << degree << ": The weights recovered with the L2DG optimization are different than the one used for generating the functon."<<
                 "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
           }
         }

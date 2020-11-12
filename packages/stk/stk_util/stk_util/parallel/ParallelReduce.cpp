@@ -32,13 +32,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <stk_util/stk_config.h>        // for STK_HAS_MPI
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <sstream>                      // for basic_ostream::operator<<, etc
 #include <stdexcept>                    // for runtime_error
 #include <vector>                       // for vector
-#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, etc
-#include "stk_util/stk_config.h"        // for STK_HAS_MPI
 
 namespace stk {
 

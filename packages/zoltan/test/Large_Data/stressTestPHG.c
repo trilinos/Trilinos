@@ -917,7 +917,7 @@ static int create_a_graph()
         vwgts[i] = 1.0;
       }
       else{
-        vwgts[i*vwgt_dim] = ((float) rand())/RAND_MAX;
+        vwgts[i*vwgt_dim] = ((float) rand())/(float)RAND_MAX;
         if (heavyPart){
           vwgts[i*vwgt_dim] += .2;
         }

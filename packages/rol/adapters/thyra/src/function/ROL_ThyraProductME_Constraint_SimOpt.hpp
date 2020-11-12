@@ -107,7 +107,9 @@ public:
     }
     else {
       const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(z);
-      const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(u);
+      Ptr<Vector<Real>> unew = u.clone();
+      unew->set(u);
+      const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(*unew);
       ThyraVector<Real>  & thyra_f = dynamic_cast<ThyraVector<Real>&>(c);
       Teuchos::RCP<const Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
 
@@ -522,7 +524,14 @@ public:
     TEUCHOS_ASSERT(Teuchos::nonnull(lows_factory));
     Teuchos::RCP< Thyra::LinearOpBase<double> > lop;
 
-    if(computeJacobian1)
+    bool explicitlyTransposMatrix = false;
+    if(params != Teuchos::null) {
+      explicitlyTransposMatrix = params->get("Enable Explicit Matrix Transpose", false);
+      if(explicitlyTransposMatrix)
+        params->set("Compute Transposed Jacobian", true);
+    }
+
+    if(computeJacobian1 || explicitlyTransposMatrix)
       lop = thyra_model.create_W_op();
     else {
       if(verbosityLevel >= Teuchos::VERB_HIGH)
@@ -542,14 +551,14 @@ public:
     }
     const Teuchos::RCP<Thyra::LinearOpWithSolveBase<Real> > jacobian = lows_factory->createOp();
 
-    if(computeJacobian1)
+    if(computeJacobian1 || explicitlyTransposMatrix)
     {
       outArgs.set_W_op(lop);
       thyra_model.evalModel(inArgs, outArgs);
       outArgs.set_W_op(Teuchos::null);
       jac1 = lop;
 
-      computeJacobian1 = false;
+      computeJacobian1 = explicitlyTransposMatrix;
     }
 
     if (Teuchos::nonnull(prec_factory))
@@ -559,14 +568,25 @@ public:
       thyra_model.evalModel(inArgs, outArgs);
     }
 
-    if(Teuchos::nonnull(prec))
-      Thyra::initializePreconditionedOp<double>(*lows_factory,
-          Thyra::transpose<double>(lop),
-          Thyra::unspecifiedPrec<double>(::Thyra::transpose<double>(prec->getUnspecifiedPrecOp())),
+    if(Teuchos::nonnull(prec)) {
+      if(explicitlyTransposMatrix) {
+        Thyra::initializePreconditionedOp<double>(*lows_factory,
+          lop,
+          prec,
           jacobian.ptr());
-    else
-      Thyra::initializeOp<double>(*lows_factory, Thyra::transpose<double>(lop), jacobian.ptr());
-
+      } else {
+        Thyra::initializePreconditionedOp<double>(*lows_factory,
+            Thyra::transpose<double>(lop),
+            Thyra::unspecifiedPrec<double>(::Thyra::transpose<double>(prec->getUnspecifiedPrecOp())),
+            jacobian.ptr());
+      }
+    }
+    else {
+      if(explicitlyTransposMatrix)
+        Thyra::initializeOp<double>(*lows_factory, lop, jacobian.ptr());
+      else
+        Thyra::initializeOp<double>(*lows_factory, Thyra::transpose<double>(lop), jacobian.ptr());
+    }
     const Thyra::SolveCriteria<Real> solve_criteria;
 
     lop->apply(Thyra::NOTRANS, *thyra_v.getVector(), thyra_iajv.getVector().ptr(), 1.0, 0.0);
@@ -578,6 +598,11 @@ public:
         *thyra_v.getVector(),
         thyra_iajv_ptr.ptr(),
         Teuchos::ptr(&solve_criteria));
+
+    if(params != Teuchos::null) {
+      params->set("Compute Transposed Jacobian", false);
+    }
+
   };
 
   void applyAdjointJacobian_2(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &u,
@@ -758,7 +783,9 @@ public:
 
       inArgs.set_x(thyra_x.getVector());
 
-      params->set<bool>("Compute State", true);
+      if(params != Teuchos::null)
+        params->set<bool>("Compute State", true);
+
       thyra_solver->evalModel(inArgs, outArgs);
 
       Teuchos::RCP<const Thyra::VectorBase<double> > gx_out = outArgs.get_g(num_responses);
@@ -797,7 +824,9 @@ public:
 
     if(supports_deriv) { //use derivatives computed by model evaluator
       const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(z);
-      const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(u);
+      Ptr<Vector<Real>> unew = u.clone();
+      unew->set(u);
+      const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(*unew);
       const ThyraVector<Real>  & thyra_v = dynamic_cast<const ThyraVector<Real>&>(v);
       const ThyraVector<Real>  & thyra_w = dynamic_cast<const ThyraVector<Real>&>(w);
 
@@ -841,6 +870,7 @@ public:
       // Compute Newton quotient
       ahwv.axpy(-1.0,*jv);
       ahwv.scale(0.5/h);
+      this->update(u,z);
     }
   }
 
@@ -870,7 +900,9 @@ public:
     if(supports_deriv) {  //use derivatives computed by model evaluator
 
       const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(z);
-      const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(u);
+      Ptr<Vector<Real>> unew = u.clone();
+      unew->set(u);
+      const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(*unew);
       const ThyraVector<Real>  & thyra_v = dynamic_cast<const ThyraVector<Real>&>(v);
       const ThyraVector<Real>  & thyra_w = dynamic_cast<const ThyraVector<Real>&>(w);
 
@@ -918,6 +950,7 @@ public:
       // Compute Newton quotient
       ahwv.axpy(-1.0,*jv);
       ahwv.scale(0.5/h);
+      this->update(u,z);
     }
   }
 
@@ -946,7 +979,9 @@ public:
     if(supports_deriv) { //use derivatives computed by model evaluator
 
       const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(z);
-      const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(u);
+      Ptr<Vector<Real>> unew = u.clone();
+      unew->set(u);
+      const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(*unew);
       const ThyraVector<Real>  & thyra_v = dynamic_cast<const ThyraVector<Real>&>(v);
       const ThyraVector<Real>  & thyra_w = dynamic_cast<const ThyraVector<Real>&>(w);
 
@@ -1003,6 +1038,7 @@ public:
       // Compute Newton quotient
       ahwv.axpy(-1.0,*jv);
       ahwv.scale(0.5/h);
+      this->update(u,z);
     }
   }
 
@@ -1031,7 +1067,9 @@ public:
     if(supports_deriv) {  //use derivatives computed by model evaluator
 
       const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(z);
-      const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(u);
+      Ptr<Vector<Real>> unew = u.clone();
+      unew->set(u);
+      const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(*unew);
       const ThyraVector<Real>  & thyra_v = dynamic_cast<const ThyraVector<Real>&>(v);
       const ThyraVector<Real>  & thyra_w = dynamic_cast<const ThyraVector<Real>&>(w);
 
@@ -1096,6 +1134,7 @@ public:
       // Compute Newton quotient
       ahwv.axpy(-1.0,*jv);
       ahwv.scale(0.5/h);
+      this->update(u,z);
     }
   }
 

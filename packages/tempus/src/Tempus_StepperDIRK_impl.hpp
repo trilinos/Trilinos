@@ -29,45 +29,11 @@ void StepperDIRK<Scalar>::setupDefault()
   this->setZeroInitialGuess(   false);
   this->setStageNumber(-1);
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  stepperObserver_ = Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
-#endif
   this->setAppAction(Teuchos::null);
   this->setDefaultSolver();
 }
 
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-template<class Scalar>
-void StepperDIRK<Scalar>::setup(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperRKObserver<Scalar> >& obs,
-  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-  bool useFSAL,
-  std::string ICConsistency,
-  bool ICConsistencyCheck,
-  bool useEmbedded,
-  bool zeroInitialGuess)
-{
-  this->setUseFSAL(            useFSAL);
-  this->setICConsistency(      ICConsistency);
-  this->setICConsistencyCheck( ICConsistencyCheck);
-  this->setUseEmbedded(        useEmbedded);
-  this->setZeroInitialGuess(   zeroInitialGuess);
-
-  this->setStageNumber(-1);
-
-  stepperObserver_ = Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
-  this->setObserver(obs);
-  this->setAppAction(Teuchos::null);
-  this->setSolver(solver);
-
-  if (appModel != Teuchos::null) {
-    this->setModel(appModel);
-    this->initialize();
-  }
-}
-#endif
 template<class Scalar>
 void StepperDIRK<Scalar>::setup(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
@@ -86,11 +52,6 @@ void StepperDIRK<Scalar>::setup(
   this->setZeroInitialGuess(   zeroInitialGuess);
 
   this->setStageNumber(-1);
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  stepperObserver_ = Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
-  this->setObserver(Teuchos::null);
-#endif
   this->setAppAction(stepperRKAppAction);
   this->setSolver(solver);
 
@@ -118,38 +79,6 @@ void StepperDIRK<Scalar>::getValidParametersBasicDIRK(
   Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
   pl->set("Default Solver", *solverPL);
 }
-
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-template<class Scalar>
-void StepperDIRK<Scalar>::setObserver(
-  Teuchos::RCP<StepperObserver<Scalar> > obs)
-{
-  if (this->stepperObserver_ == Teuchos::null)
-    this->stepperObserver_  =
-      Teuchos::rcp(new StepperRKObserverComposite<Scalar>());
-
-  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() >0 ) )
-    return;
-
-  if (( obs == Teuchos::null ) and (this->stepperObserver_->getSize() == 0) )
-     obs = Teuchos::rcp(new StepperRKObserver<Scalar>());
-
-  // Check that this casts to prevent a runtime error if it doesn't
-  if (Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs) != Teuchos::null) {
-    this->stepperObserver_->addObserver(
-         Teuchos::rcp_dynamic_cast<StepperRKObserver<Scalar> > (obs, true) );
-  } else {
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,0,"setObserver");
-    *out << "Tempus::StepperIMEX_RK::setObserver: Warning: An observer has been provided that";
-    *out << " does not support Tempus::StepperRKObserver. This observer WILL NOT be added.";
-    *out << " In the future, this will result in a runtime error!" << std::endl;
-  }
-
-  this->isInitialized_ = false;
-}
-#endif
 
 
 template<class Scalar>
@@ -217,9 +146,6 @@ void StepperDIRK<Scalar>::takeStep(
     if ( this->getResetInitialGuess() && (!this->getZeroInitialGuess()) )
       Thyra::assign(workingState->getX().ptr(), *(currentState->getX()));
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
-#endif
     RCP<StepperDIRK<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
     this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
       StepperRKAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
@@ -229,13 +155,6 @@ void StepperDIRK<Scalar>::takeStep(
     Thyra::SolveStatus<Scalar> sStatus;
     for (int i=0; i < numStages; ++i) {
       this->setStageNumber(i);
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-      this->stepperObserver_->observeBeginStage(solutionHistory, *this);
-
-      // ???: is it a good idea to leave this (no-op) here?
-      this->stepperObserver_
-          ->observeBeforeImplicitExplicitly(solutionHistory, *this);
-#endif
 
       Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
       for (int j=0; j < i; ++j) {
@@ -279,9 +198,6 @@ void StepperDIRK<Scalar>::takeStep(
             inArgs.set_x_dot(Teuchos::null);
           outArgs.set_f(stageXDot_[i]);
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-          this->stepperObserver_->observeBeforeExplicit(solutionHistory, *this);
-#endif
           this->wrapperModel_->getAppModel()->evalModel(inArgs,outArgs);
         }
       } else {
@@ -297,9 +213,6 @@ void StepperDIRK<Scalar>::takeStep(
         auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
           timeDer, dt, alpha, beta, SOLVE_FOR_X, i));
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-        this->stepperObserver_->observeBeforeSolve(solutionHistory, *this);
-#endif
         this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
           StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
 
@@ -307,17 +220,11 @@ void StepperDIRK<Scalar>::takeStep(
 
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass=false;
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-        this->stepperObserver_->observeAfterSolve(solutionHistory, *this);
-#endif
         this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
           StepperRKAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
 
         timeDer->compute(workingState->getX(), stageXDot_[i]);
       }
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-      this->stepperObserver_->observeEndStage(solutionHistory, *this);
-#endif
       this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
         StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
       this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
@@ -375,9 +282,6 @@ void StepperDIRK<Scalar>::takeStep(
 
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
-#endif
     this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
       StepperRKAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
@@ -413,10 +317,7 @@ void StepperDIRK<Scalar>::describe(
   out << "--- StepperDIRK ---\n";
   out << "  tableau_            = " << this->tableau_ << std::endl;
   if (this->tableau_ != Teuchos::null) this->tableau_->describe(out, verbLevel);
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  out << "  stepperObserver_    = " << stepperObserver_ << std::endl;
-#endif
-  out << "  stepperRKAppAction_= " << this->stepperRKAppAction_ << std::endl;
+  out << "  stepperRKAppAction_ = " << this->stepperRKAppAction_ << std::endl;
   out << "  xTilde_             = " << xTilde_ << std::endl;
   out << "  stageXDot_.size()   = " << stageXDot_.size() << std::endl;
   const int numStages = stageXDot_.size();
@@ -445,12 +346,6 @@ bool StepperDIRK<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
     out << "The tableau is not set!\n";
   }
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  if (stepperObserver_ == Teuchos::null) {
-    isValidSetup = false;
-    out << "The observer is not set!\n";
-  }
-#endif
   if (this->stepperRKAppAction_ == Teuchos::null) {
     isValidSetup = false;
     out << "The AppAction is not set!\n";

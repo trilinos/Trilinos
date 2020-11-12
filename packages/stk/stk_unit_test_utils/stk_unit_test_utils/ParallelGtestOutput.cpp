@@ -93,11 +93,18 @@ private:
     {
         if(mProcId == 0)
         {
+#ifdef STK_BUILT_IN_SIERRA
             printf("*** Starting test %s.%s from %s:%d\n",
                    test_info.test_case_name(),
                    test_info.name(),
                    get_filename_for_print(test_info.file()).c_str(),
                    test_info.line());
+#else
+//older versions of gtest don't have TestInfo::file() nor TestInfo::line()
+            printf("*** Starting test %s.%s\n",
+                   test_info.test_case_name(),
+                   test_info.name());
+#endif
         }
     }
 

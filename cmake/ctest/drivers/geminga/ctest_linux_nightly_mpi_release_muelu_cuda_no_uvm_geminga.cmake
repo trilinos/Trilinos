@@ -64,14 +64,14 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc-cuda.cmak
 # Tribits creates the variable listed under "Build Name" by prepending the OS type and compiler
 # details to BUILD_DIR_NAME.
 SET(COMM_TYPE MPI)
-SET(BUILD_TYPE RELEASE)
+SET(BUILD_TYPE RELWITHDEBINFO)
 SET(BUILD_NAME_DETAILS KOKKOS-REFACTOR_EXPERIMENTAL_CUDA-$ENV{SEMS_CUDA_VERSION}_NO_UVM)
 
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Experimental)
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
+SET(Trilinos_PACKAGES MueLu Xpetra Amesos2 Tpetra Ifpack2 Belos Panzer)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   ### ETI ###
@@ -84,6 +84,8 @@ SET(EXTRA_CONFIGURE_OPTIONS
 
   ### TPLS ###
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
+  "-DTPL_ENABLE_BinUtils:BOOL=ON"
+  "-DTPL_ENABLE_Matio:BOOL=OFF"
 
   ### PACKAGES CONFIGURATION ###
       "-DMueLu_ENABLE_Experimental:BOOL=ON"
@@ -91,12 +93,12 @@ SET(EXTRA_CONFIGURE_OPTIONS
       "-DXpetra_ENABLE_Experimental:BOOL=ON"
       "-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
 
-  # Disable Pamgen and Shards due to weird nvcc errors
-  "-DTPL_ENABLE_Pamgen:BOOL=OFF"
-  "-DTPL_ENABLE_Shards:BOOL=OFF"
+  # Disable Pamgen due to weird nvcc errors
+  "-DTrilinos_ENABLE_Pamgen:BOOL=OFF"
 
   ### Disable UVM ###
   "-DKokkos_ENABLE_CUDA_UVM:BOOL=OFF"
+  "-DTpetra_ENABLE_CUDA_UVM:BOOL=OFF"
 )
 
 #

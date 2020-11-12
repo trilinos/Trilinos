@@ -74,10 +74,6 @@ TEUCHOS_UNIT_TEST(BackwardEuler, Default_Construction)
   bool zeroInitialGuess     = defaultStepper->getZeroInitialGuess();
 
   // Test the set functions.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  auto obs    = rcp(new Tempus::StepperBackwardEulerObserver<double>());
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -87,15 +83,6 @@ TEUCHOS_UNIT_TEST(BackwardEuler, Default_Construction)
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setZeroInitialGuess(zeroInitialGuess);      stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  // Full argument list construction.
-  stepper = rcp(new Tempus::StepperBackwardEuler<double>(
-    model, obs, solver, predictorStepper, useFSAL,
-    ICConsistency, ICConsistencyCheck, zeroInitialGuess));
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
 
   // Full argument list construction.
   stepper = rcp(new Tempus::StepperBackwardEuler<double>(

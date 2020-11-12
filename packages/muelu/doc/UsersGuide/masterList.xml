@@ -1078,6 +1078,15 @@
     </parameter>
 
     <parameter>
+      <name>sa: use rowsumabs diagonal scaling</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Use the row sums of the absolute values of the matrix as the diagonal wherever inverse(D) is required.</description>
+      <visible>false</visible>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
       <name>interp: interpolation order</name>
       <type>int</type>
       <default>1</default>
@@ -1499,6 +1508,15 @@
     </parameter>
 
     <parameter>
+      <name>rap: fix zero diagonals replacement</name>
+      <type>double</type>
+      <default>1.</default>
+      <description>Replacement value for diagonal entries that are considered zero.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
       <name>rap: shift</name>
       <type>double</type>
       <default>0.0</default>
@@ -1695,13 +1713,6 @@ optimized neighbor discovery for Importer construction.</description>
     </parameter>
 
     <parameter>
-      <name>refmaxwell: ratio AH / A22 subcommunicators</name>
-      <type>double</type>
-      <default>1.0</default>
-      <description>Ratio for the split into sub-communicators.</description>
-    </parameter>
-
-    <parameter>
       <name>refmaxwell: enable reuse</name>
       <type>bool</type>
       <default>false</default>
@@ -1713,6 +1724,14 @@ optimized neighbor discovery for Importer construction.</description>
       <type>bool</type>
       <default>true</default>
       <description>Skip the first level of the (1,1) hierarchy.</description>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>refmaxwell: normalize nullspace</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Normalize the nullspace.</description>
       <visible>false</visible>
     </parameter>
 

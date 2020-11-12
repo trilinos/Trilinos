@@ -41,8 +41,8 @@
 // @HEADER
 
 /** \file test_01.cpp
-\brief  Unit test for the RealSpaceTools class.
-\author Created by P. Bochev and D. Ridzal and Kyungjoo Kim.
+    \brief  Unit test for the RealSpaceTools class.
+    \author Created by P. Bochev and D. Ridzal and Kyungjoo Kim.
 */
 
 #include "Intrepid2_config.h"
@@ -66,14 +66,14 @@ namespace Intrepid2 {
       try {                                                             \
         S ;                                                             \
       }                                                                 \
-      catch (std::logic_error &err) {                                    \
+      catch (std::logic_error &err) {                                   \
         *outStream << "Expected Error ----------------------------------------------------------------\n"; \
         *outStream << err.what() << '\n';                               \
         *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
       };                                                                \
     }
     
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int RealSpaceTools_Test01(const bool verbose) {
       
       typedef ValueType value_type;
@@ -89,8 +89,8 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+      using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
+      using DeviceSpaceType = typename DeviceType::execution_space;
 
       *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
@@ -112,8 +112,8 @@ namespace Intrepid2 {
         << "|                                                                             |\n" \
         << "===============================================================================\n";
 
-      typedef RealSpaceTools<DeviceSpaceType> rst;
-      typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
+      typedef RealSpaceTools<DeviceType> rst;
+      typedef Kokkos::DynRankView<value_type,DeviceType> DynRankView;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       int errorFlag = 0;
@@ -301,7 +301,9 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(vnorms_x_x, i0, i1);
           DynRankView ConstructWithLabel(vnorms_x, i0);
 
-          
+          const auto ma_x_x_d_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), ma_x_x_d_d);
+          const auto va_x_x_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), va_x_x_d);
+
           // fill with random numbers
           {
             const auto iend = ma_x_x_d_d.extent(0);
@@ -313,7 +315,7 @@ namespace Intrepid2 {
               for (size_type j=0;j<jend;++j)
                 for (size_type k=0;k<kend;++k)
                   for (size_type l=0;l<lend;++l)
-                    ma_x_x_d_d(i,j,k,l) = Teuchos::ScalarTraits<value_type>::random();
+                    ma_x_x_d_d_host(i,j,k,l) = Teuchos::ScalarTraits<value_type>::random();
           }
           {
             const auto iend = va_x_x_d.extent(0);
@@ -324,9 +326,12 @@ namespace Intrepid2 {
               for (size_type i=0;i<iend;++i)
                 for (size_type j=0;j<jend;++j)
                   for (size_type k=0;k<kend;++k)
-                    va_x_x_d(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
+                    va_x_x_d_host(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
             }
           }
+
+          Kokkos::deep_copy(ma_x_x_d_d, ma_x_x_d_d_host);
+          Kokkos::deep_copy(va_x_x_d, va_x_x_d_host);
           
           *outStream << "\n-- Checking vectorNorm \n";
 
@@ -378,12 +383,15 @@ namespace Intrepid2 {
           
           rst::det(detA_x_x, ma_x_x_d_d);
           rst::det(detB_x_x, mb_x_x_d_d);
+
+          const auto detA_x_x_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), detA_x_x);
+          const auto detB_x_x_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), detB_x_x);
           
           { 
             value_type val = 0;
             for (size_type i=0;i<detA_x_x.extent(0);++i) 
-              val += rst::Serial::dot( Kokkos::subdynrankview(detA_x_x, i, Kokkos::ALL()),
-                                       Kokkos::subdynrankview(detB_x_x, i, Kokkos::ALL()) );
+              val += rst::Serial::dot( Kokkos::subview(detA_x_x_host, i, Kokkos::ALL()),
+                                       Kokkos::subview(detB_x_x_host, i, Kokkos::ALL()) );
 
             const value_type diff = std::abs(val - value_type(i0*i1));
             if (diff  > tol) {
@@ -450,28 +458,14 @@ namespace Intrepid2 {
           }
           
           *outStream << "\n-- Checking dot and vectorNorm \n";
-          
-          // fill with random numbers
-          {
-            const auto iend = va_x_x_d.extent(0);
-            const auto jend = va_x_x_d.extent(1);
-            const auto kend = va_x_x_d.extent(2);
-            
-            for (size_type i=0;i<iend;++i)
-              for (size_type j=0;j<jend;++j)
-                for (size_type k=0;k<kend;++k)
-                  va_x_x_d(i,j,k) = 2.0;
-          }
-          
+          Kokkos::deep_copy(va_x_x_d, 2.0);
           rst::dot(vdot_x_x, va_x_x_d, va_x_x_d); // dot = a'*a
-
           rst::vectorNorm(vnorms_x, vdot_x_x, NORM_ONE);
           Kokkos::deep_copy(vnorms_x_h, vnorms_x);
           if (rst::Serial::vectorNorm(vnorms_x_h, NORM_ONE) - (value_type)(4.0*dim*i0*i1) > tol) {
             *outStream << "\n\nINCORRECT dot OR vectorNorm\n\n";
             errorFlag = -1000;
           }
-          
           *outStream << "\n";
         }
     
@@ -486,8 +480,10 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(vc_x_d, i0, dim);
           DynRankView ConstructWithLabel(vdot_x, i0);
           DynRankView ConstructWithLabel(vnorms_x, i0);
+
+          const auto ma_x_d_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), ma_x_d_d);
+          const auto va_x_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), va_x_d);
           
-          // fill with random numbers
           // fill with random numbers
           {
             const auto iend = ma_x_d_d.extent(0);
@@ -499,7 +495,7 @@ namespace Intrepid2 {
               for (size_type j=0;j<jend;++j)
                 for (size_type k=0;k<kend;++k)
                   for (size_type l=0;l<lend;++l)
-                    ma_x_d_d(i,j,k,l) = Teuchos::ScalarTraits<value_type>::random();
+                    ma_x_d_d_host(i,j,k,l) = Teuchos::ScalarTraits<value_type>::random();
           }
           {
             const auto iend = va_x_d.extent(0);
@@ -509,8 +505,11 @@ namespace Intrepid2 {
             for (size_type i=0;i<iend;++i)
               for (size_type j=0;j<jend;++j)
                 for (size_type k=0;k<kend;++k)
-                  va_x_d(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
+                  va_x_d_host(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
           }
+
+          Kokkos::deep_copy(ma_x_d_d, ma_x_d_d_host);
+          Kokkos::deep_copy(va_x_d, va_x_d_host);
           
           *outStream << "\n-- Checking vectorNorm \n";
           
@@ -561,8 +560,11 @@ namespace Intrepid2 {
           
           rst::det(detA_x, ma_x_d_d);
           rst::det(detB_x, mb_x_d_d);
-          
-          if ( (rst::Serial::dot(detA_x, detB_x) - (value_type)i0) > tol) {
+
+          const auto detA_x_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), detA_x);
+          const auto detB_x_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), detB_x);
+
+          if ( (rst::Serial::dot(detA_x_host, detB_x_host) - (value_type)i0) > tol) {
             *outStream << "\n\nINCORRECT det\n\n" ;
             errorFlag = -1000;
           }
@@ -620,16 +622,8 @@ namespace Intrepid2 {
           
           *outStream << "\n-- Checking dot and vectorNorm \n";
 
-          {
-            const auto iend = va_x_d.extent(0);
-            const auto jend = va_x_d.extent(1);
-            
-            for (size_type i=0;i<iend;++i)
-              for (size_type j=0;j<jend;++j)
-                va_x_d(i,j) = 2.0;
-          }
+          Kokkos::deep_copy(va_x_d, 2.0); Kokkos::fence();
           rst::dot(vdot_x, va_x_d, va_x_d); // dot = a'*a
-
           auto vdot_x_h = Kokkos::create_mirror_view(vdot_x);
           Kokkos::deep_copy(vdot_x_h, vdot_x);
           if (rst::Serial::vectorNorm(vdot_x_h, NORM_ONE) - (double)(4.0*dim*i0) > tol) {

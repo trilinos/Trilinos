@@ -98,6 +98,10 @@ OrdinalAndPermutation get_ordinal_and_permutation(const stk::mesh::BulkData& mes
                                                   stk::mesh::EntityRank to_rank,
                                                   const stk::mesh::EntityVector &nodes_of_sub_rank);
 
+bool element_side_polarity(const BulkData& mesh,
+                           const Entity elem ,
+                           const Entity side , unsigned local_side_id );
+
 stk::EquivalentPermutation sub_rank_equivalent(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned ordinal, stk::mesh::EntityRank subRank,
                                                             const stk::mesh::Entity* subRankNodes);
 
