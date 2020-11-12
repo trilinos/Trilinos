@@ -41,17 +41,16 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_STABILIZEDLCLALGORITHM_G_DEF_H
-#define ROL_STABILIZEDLCLALGORITHM_G_DEF_H
+#ifndef ROL_STABILIZEDLCLALGORITHM_E_DEF_H
+#define ROL_STABILIZEDLCLALGORITHM_E_DEF_H
 
 #include "ROL_Algorithm_B_Factory.hpp"
-#include "ROL_Bounds.hpp"
 
 namespace ROL {
 
 template<typename Real>
-StabilizedLCLAlgorithm_G<Real>::StabilizedLCLAlgorithm_G( ParameterList &list )
-  : Algorithm_G<Real>::Algorithm_G(), list_(list), subproblemIter_(0) {
+StabilizedLCLAlgorithm_E<Real>::StabilizedLCLAlgorithm_E( ParameterList &list )
+  : Algorithm_E<Real>::Algorithm_E(), list_(list), subproblemIter_(0) {
   // Set status test
   status_->reset();
   status_->add(makePtr<ConstraintStatusTest<Real>>(list));
@@ -97,24 +96,16 @@ StabilizedLCLAlgorithm_G<Real>::StabilizedLCLAlgorithm_G( ParameterList &list )
 }
 
 template<typename Real>
-void StabilizedLCLAlgorithm_G<Real>::initialize( Vector<Real>           &x,
+void StabilizedLCLAlgorithm_E<Real>::initialize( Vector<Real>           &x,
                                                  const Vector<Real>     &g,
                                                  const Vector<Real>     &l,
                                                  const Vector<Real>     &c,
                                                  ElasticObjective<Real> &alobj,
-                                                 BoundConstraint<Real>  &bnd,
                                                  Constraint<Real>       &con,
                                                  std::ostream           &outStream ) {
-  hasPolyProj_ = true;
-  if (proj_ == nullPtr) {
-    proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(bnd));
-    hasPolyProj_ = false;
-  }
-  proj_->project(x,outStream);
-
   const Real one(1), TOL(1.e-2);
   Real tol = std::sqrt(ROL_EPSILON<Real>());
-  Algorithm_G<Real>::initialize(x,g,l,c);
+  Algorithm_E<Real>::initialize(x,g,l,c);
 
   // Initialize the algorithm state
   state_->nfval = 0;
@@ -155,11 +146,7 @@ void StabilizedLCLAlgorithm_G<Real>::initialize( Vector<Real>           &x,
   alobj.setScaling(fscale_,cscale_);
 
   // Compute gradient of the lagrangian
-  x.axpy(-one,state_->gradientVec->dual());
-  proj_->project(x,outStream);
-  x.axpy(-one/std::min(fscale_,cscale_),*state_->iterateVec);
-  state_->gnorm = x.norm();
-  x.set(*state_->iterateVec);
+  state_->gnorm = state_->gradientVec->norm()/std::min(fscale_,cscale_);
 
   // Compute initial penalty parameter
   if (useDefaultInitPen_) {
@@ -189,15 +176,14 @@ void StabilizedLCLAlgorithm_G<Real>::initialize( Vector<Real>           &x,
 }
 
 template<typename Real>
-std::vector<std::string> StabilizedLCLAlgorithm_G<Real>::run( NewOptimizationProblem<Real> &problem,
+std::vector<std::string> StabilizedLCLAlgorithm_E<Real>::run( NewOptimizationProblem<Real> &problem,
                                                               std::ostream                 &outStream ) {
-  if (problem.getProblemType() == TYPE_EB) {
+  if (problem.getProblemType() == TYPE_E) {
     problem.edit();
     problem.finalize(true,verbosity_>3,outStream); // Lump linear and nonlinear constraints
     std::vector<std::string> output = run(*problem.getPrimalOptimizationVector(),
                                           *problem.getDualOptimizationVector(),
                                           *problem.getObjective(),
-                                          *problem.getBoundConstraint(),
                                           *problem.getConstraint(),
                                           *problem.getMultiplierVector(),
                                           *problem.getResidualVector(),
@@ -206,15 +192,14 @@ std::vector<std::string> StabilizedLCLAlgorithm_G<Real>::run( NewOptimizationPro
     return output;
   }
   else {
-    throw Exception::NotImplemented(">>> ROL::Algorithm_G::run : Optimization problem is not Type G!");
+    throw Exception::NotImplemented(">>> ROL::Algorithm_E::run : Optimization problem is not Type E!");
   }
 }
 
 template<typename Real>
-std::vector<std::string> StabilizedLCLAlgorithm_G<Real>::run( Vector<Real>          &x,
+std::vector<std::string> StabilizedLCLAlgorithm_E<Real>::run( Vector<Real>          &x,
                                                               const Vector<Real>    &g,
                                                               Objective<Real>       &obj,
-                                                              BoundConstraint<Real> &bnd,
                                                               Constraint<Real>      &econ,
                                                               Vector<Real>          &emul,
                                                               const Vector<Real>    &eres,
@@ -226,11 +211,11 @@ std::vector<std::string> StabilizedLCLAlgorithm_G<Real>::run( Vector<Real>      
   ElasticObjective<Real> alobj(makePtrFromRef(obj),makePtrFromRef(econ),
                                state_->searchSize,sigma_,g,eres,emul,
                                scaleLagrangian_,HessianApprox_);
-  initialize(x,g,emul,eres,alobj,bnd,econ,outStream);
+  initialize(x,g,emul,eres,alobj,econ,outStream);
   // Define Elastic Subproblem
   Ptr<Vector<Real>>  u = eres.clone(),  v = eres.clone(), c = eres.clone();
   Ptr<Vector<Real>> gu = emul.clone(), gv = emul.clone(), l = emul.clone();
-  Ptr<Vector<Real>> s = x.clone(), gs = g.clone(), cvec = eres.clone();
+  Ptr<Vector<Real>> s  = x.clone(), gs = g.clone(), cvec = eres.clone();
   Ptr<ElasticLinearConstraint<Real>> lcon
     = makePtr<ElasticLinearConstraint<Real>>(makePtrFromRef(x),
                                              makePtrFromRef(econ),
@@ -240,7 +225,7 @@ std::vector<std::string> StabilizedLCLAlgorithm_G<Real>::run( Vector<Real>      
   Ptr<PartitionedVector<Real>> gxp = makePtr<PartitionedVector<Real>>({gs,gu,gv});
   Ptr<Vector<Real>>            lb  = u->clone(); lb->zero();
   std::vector<Ptr<BoundConstraint<Real>>> bndList(3);
-  bndList[0] = makePtrFromRef(bnd);
+  bndList[0] = makePtr<BoundConstraint<Real>>(); bndList[0]->deactivate();
   bndList[1] = makePtr<Bounds<Real>>(*lb,true);
   bndList[2] = makePtr<Bounds<Real>>(*lb,true);
   Ptr<BoundConstraint<Real>>  xbnd
@@ -253,8 +238,9 @@ std::vector<std::string> StabilizedLCLAlgorithm_G<Real>::run( Vector<Real>      
   NewOptimizationProblem<Real> elc(makePtrFromRef(alobj),xp,gxp);
   elc.addBoundConstraint(xbnd);
   elc.addLinearConstraint("ElasticLinearConstraint",lcon,l,c);
-  elc.setProjectionAlgorithm(ppa_list);
   elc.finalize(false,verbosity_>2,outStream);
+  Ptr<Vector<Real>> b2 = eres.clone(), xpwa = xp->clone(), mul = emul.clone();
+  b2->zero();
  
   // Initialize subproblem algorithm
   Ptr<Algorithm_B<Real>> algo;
@@ -297,21 +283,19 @@ std::vector<std::string> StabilizedLCLAlgorithm_G<Real>::run( Vector<Real>      
       state_->cnorm = cnorm;
 
       // Update multipliers
-      emul.axpy(static_cast<Real>(-1),*elc.getPolyhedralProjection()->getMultiplier());
+      alobj.gradient(*gxp,*xp,tol);
+      gxp->scale(static_cast<Real>(-1));
+      lcon->solveAugmentedSystem(*xpwa,*mul,*gxp,*b2,*xp,tol);
+      emul.plus(*mul);
       emul.axpy(state_->searchSize*cscale_,state_->constraintVec->dual());
 
-      alobj.getAugmentedLagrangian()->gradient(*state_->gradientVec,x,tol);
+      // Update gradient of Lagrangian
+      state_->gradientVec->set(staticPtrCast<PartitionedVector<Real>>(xpwa)->get(0)->dual());
+      state_->gnorm = state_->gradientVec->norm();
       if (scaleLagrangian_) state_->gradientVec->scale(state_->searchSize);
-      econ.applyAdjointJacobian(*gs,*elc.getPolyhedralProjection()->getMultiplier(),x,tol);
-      state_->gradientVec->axpy(static_cast<Real>(-1),*gs);
-      x.axpy(-one/std::min(fscale_,cscale_),state_->gradientVec->dual());
-      proj_->project(x,outStream);
-      x.axpy(-one,*state_->iterateVec);
-      state_->gnorm = x.norm();
-      x.set(*state_->iterateVec);
 
       // Update subproblem information
-      lnorm  = elc.getPolyhedralProjection()->getMultiplier()->norm();
+      lnorm  = mul->norm();
       sigma_ = std::min(one+lnorm,sigmaMax_)/(one+state_->searchSize);
       if ( algo->getState()->statusFlag == EXITSTATUS_CONVERGED ) {
         optTolerance_  = std::max(oem2*outerOptTolerance_,
@@ -339,13 +323,13 @@ std::vector<std::string> StabilizedLCLAlgorithm_G<Real>::run( Vector<Real>      
     output.push_back(print(printHeader_));
     if (verbosity_ > 0) outStream << print(printHeader_);
   }
-  output.push_back(Algorithm_G<Real>::printExitStatus());
-  if (verbosity_ > 0) outStream << Algorithm_G<Real>::printExitStatus();
+  output.push_back(Algorithm_E<Real>::printExitStatus());
+  if (verbosity_ > 0) outStream << Algorithm_E<Real>::printExitStatus();
   return output;
 }
 
 template<typename Real>
-std::string StabilizedLCLAlgorithm_G<Real>::printHeader( void ) const {
+std::string StabilizedLCLAlgorithm_E<Real>::printHeader( void ) const {
   std::stringstream hist;
   if(verbosity_>1) {
     hist << std::string(114,'-') << std::endl;
@@ -384,16 +368,16 @@ std::string StabilizedLCLAlgorithm_G<Real>::printHeader( void ) const {
 }
 
 template<typename Real>
-std::string StabilizedLCLAlgorithm_G<Real>::printName( void ) const {
+std::string StabilizedLCLAlgorithm_E<Real>::printName( void ) const {
   std::stringstream hist;
-  hist << std::endl << "Stabilized LCL Solver (Type G, General Constraints)";
+  hist << std::endl << "Stabilized LCL Solver (Type E, Equality Constraints)";
   hist << std::endl;
   hist << "Subproblem Solver: " << subStep_ << std::endl;
   return hist.str();
 }
 
 template<typename Real>
-std::string StabilizedLCLAlgorithm_G<Real>::print( const bool print_header ) const {
+std::string StabilizedLCLAlgorithm_E<Real>::print( const bool print_header ) const {
   std::stringstream hist;
   hist << std::scientific << std::setprecision(6);
   if ( state_->iter == 0 ) hist << printName();

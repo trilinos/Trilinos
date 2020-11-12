@@ -126,7 +126,11 @@ std::vector<std::string> Algorithm_E<Real>::run( Vector<Real>     &x,
                                                  Constraint<Real> &econ,
                                                  Vector<Real>     &emul,
                                                  std::ostream     &outStream ) {
-  return run(x,x.dual(),obj,econ,emul,emul.dual(),outStream);
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj), makePtrFromRef(x));
+  problem.addConstraint("NEC",makePtrFromRef(econ),makePtrFromRef(emul));
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //return run(x,x.dual(),obj,econ,emul,emul.dual(),outStream);
 }
 
 template<typename Real>
@@ -137,7 +141,12 @@ std::vector<std::string> Algorithm_E<Real>::run( Vector<Real>     &x,
                                                  Constraint<Real> &linear_econ,
                                                  Vector<Real>     &linear_emul,
                                                  std::ostream     &outStream ) {
-  return run(x,x.dual(),obj,econ,emul,emul.dual(),linear_econ,linear_emul,linear_emul.dual(),outStream);
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj), makePtrFromRef(x));
+  problem.addConstraint("NEC",makePtrFromRef(econ),makePtrFromRef(emul));
+  problem.addLinearConstraint("LEC",makePtrFromRef(linear_econ),makePtrFromRef(linear_emul));
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //return run(x,x.dual(),obj,econ,emul,emul.dual(),linear_econ,linear_emul,linear_emul.dual(),outStream);
 }
 
 template<typename Real>
@@ -151,14 +160,20 @@ std::vector<std::string> Algorithm_E<Real>::run( Vector<Real>       &x,
                                                  Vector<Real>       &linear_emul,
                                                  const Vector<Real> &linear_eres,
                                                  std::ostream       &outStream ) {
-  Ptr<Vector<Real>> xfeas = x.clone(); xfeas->set(x);
-  ReduceLinearConstraint<Real> rlc(makePtrFromRef(linear_econ),xfeas,makePtrFromRef(linear_eres));
-  Ptr<Vector<Real>> s = x.clone(); s->zero();
-  std::vector<std::string> output = run(*s,g,*rlc.transform(makePtrFromRef(obj)),
-                                        *rlc.transform(makePtrFromRef(econ)),emul,eres,outStream);
-  rlc.project(x,*s);
-  x.plus(*rlc.getFeasibleVector());
-  return output;
+  Ptr<Vector<Real>> gp = g.clone(), erp = eres.clone(), lerp = linear_eres.clone();
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj), makePtrFromRef(x),gp);
+  problem.addConstraint("NEC",makePtrFromRef(econ),makePtrFromRef(emul),erp,false);
+  problem.addLinearConstraint("LEC",makePtrFromRef(linear_econ),makePtrFromRef(linear_emul),lerp,false);
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //Ptr<Vector<Real>> xfeas = x.clone(); xfeas->set(x);
+  //ReduceLinearConstraint<Real> rlc(makePtrFromRef(linear_econ),xfeas,makePtrFromRef(linear_eres));
+  //Ptr<Vector<Real>> s = x.clone(); s->zero();
+  //std::vector<std::string> output = run(*s,g,*rlc.transform(makePtrFromRef(obj)),
+  //                                      *rlc.transform(makePtrFromRef(econ)),emul,eres,outStream);
+  //rlc.project(x,*s);
+  //x.plus(*rlc.getFeasibleVector());
+  //return output;
 }
 
 template<typename Real>

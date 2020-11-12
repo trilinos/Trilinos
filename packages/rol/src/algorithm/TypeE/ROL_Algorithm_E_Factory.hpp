@@ -47,6 +47,7 @@
 #include "ROL_AugmentedLagrangianAlgorithm_E.hpp"
 #include "ROL_FletcherAlgorithm_E.hpp"
 #include "ROL_CompositeStepAlgorithm_E.hpp"
+#include "ROL_StabilizedLCLAlgorithm_E.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {
@@ -60,6 +61,7 @@ enum EAlgorithmE{
   ALGORITHM_E_AUGMENTEDLAGRANGIAN = 0,
   ALGORITHM_E_FLETCHER,
   ALGORITHM_E_COMPOSITESTEP,
+  ALGORITHM_E_STABILIZEDLCL,
   ALGORITHM_E_LAST
 };
 
@@ -69,6 +71,7 @@ inline std::string EAlgorithmEToString(EAlgorithmE alg) {
     case ALGORITHM_E_AUGMENTEDLAGRANGIAN: retString = "Augmented Lagrangian"; break;
     case ALGORITHM_E_FLETCHER:            retString = "Fletcher";             break;
     case ALGORITHM_E_COMPOSITESTEP:       retString = "Composite Step";       break;
+    case ALGORITHM_E_STABILIZEDLCL:       retString = "Stabilized LCL";       break;
     case ALGORITHM_E_LAST:                retString = "Last Type (Dummy)";    break;
     default:                              retString = "INVALID EAlgorithmE";
   }
@@ -84,6 +87,7 @@ inline int isValidAlgorithmE(EAlgorithmE alg){
   return( (alg == ALGORITHM_E_AUGMENTEDLAGRANGIAN) ||
           (alg == ALGORITHM_E_FLETCHER)            ||
           (alg == ALGORITHM_E_COMPOSITESTEP)       ||
+          (alg == ALGORITHM_E_STABILIZEDLCL)       ||
           (alg == ALGORITHM_E_LAST)
         );
 }
@@ -125,6 +129,7 @@ inline Ptr<Algorithm_E<Real>> AlgorithmEFactory(ParameterList &parlist) {
     case ALGORITHM_E_AUGMENTEDLAGRANGIAN: return makePtr<AugmentedLagrangianAlgorithm_E<Real>>(parlist);
     case ALGORITHM_E_FLETCHER:            return makePtr<FletcherAlgorithm_E<Real>>(parlist);
     case ALGORITHM_E_COMPOSITESTEP:       return makePtr<CompositeStepAlgorithm_E<Real>>(parlist);
+    case ALGORITHM_E_STABILIZEDLCL:       return makePtr<StabilizedLCLAlgorithm_E<Real>>(parlist);
     default:                              return nullPtr;
   }
 }
