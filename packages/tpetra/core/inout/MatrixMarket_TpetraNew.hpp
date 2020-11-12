@@ -758,7 +758,7 @@ readSparseFile(
   }
 
   if (useTimers) {
-    char *timername = (binary ? "RSF readBinary" : "RSF readMatrixMarket");
+    const char *timername = (binary?"RSF readBinary":"RSF readMatrixMarket");
     timer = Teuchos::null;
     timer = rcp(new Teuchos::TimeMonitor(
                    *Teuchos::TimeMonitor::getNewTimer(timername)));
