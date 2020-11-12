@@ -65,7 +65,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_StackedTimer.hpp"
 #include "Teuchos_Array.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 
@@ -154,6 +154,7 @@ x_baseline->putScalar(2.);
       const std::string testname = "1D";
       params.set("distribution", "1D");
       params.set("randomize", false);
+      params.set("useTimers", true);
       ierr += runTest(testname, params);
     }
 
@@ -163,6 +164,7 @@ x_baseline->putScalar(2.);
       const std::string testname = "1DRandom";
       params.set("distribution", "1D");
       params.set("randomize", true);
+      params.set("useTimers", true);
       ierr += runTest(testname, params);
     }
 
@@ -172,6 +174,7 @@ x_baseline->putScalar(2.);
       const std::string testname = "2D";
       params.set("distribution", "2D");
       params.set("randomize", false);
+      params.set("useTimers", true);
       ierr += runTest(testname, params);
     }
 
@@ -181,6 +184,7 @@ x_baseline->putScalar(2.);
       const std::string testname = "2DRandom";
       params.set("distribution", "2D");
       params.set("randomize", true);
+      params.set("useTimers", true);
       ierr += runTest(testname, params);
     }
 
@@ -192,6 +196,7 @@ x_baseline->putScalar(2.);
       params.set("distribution", "2D");
       params.set("randomize", false);
       params.set("nProcessorRows", npRow);
+      params.set("useTimers", true);
       try {
         ierr += runTest(testname, params);
       }
@@ -217,6 +222,7 @@ x_baseline->putScalar(2.);
       params.set("distribution", "2D");
       params.set("randomize", false);
       params.set("nProcessorCols", npCol);
+      params.set("useTimers", true);
       try {
         ierr += runTest(testname, params);
       }
@@ -244,6 +250,7 @@ x_baseline->putScalar(2.);
       params.set("randomize", false);
       params.set("nProcessorCols", npCol);
       params.set("nProcessorRows", npRow);
+      params.set("useTimers", true);
       try {
         ierr += runTest(testname, params);
       }
@@ -266,6 +273,7 @@ x_baseline->putScalar(2.);
       Teuchos::ParameterList params;
       const std::string testname = "LowerTriangularBlock";
       params.set("distribution", "LowerTriangularBlock");
+      params.set("useTimers", true);
       try {
         ierr += runTestOp(testname, params);
       }
@@ -287,9 +295,10 @@ x_baseline->putScalar(2.);
     // LowerTriangularBlock partition with rows sorted by degree
     {
       Teuchos::ParameterList params;
-      const std::string testname = "LowerTriangularBlock";
+      const std::string testname = "LowerTriangularBlockSorted";
       params.set("distribution", "LowerTriangularBlock");
       params.set("sortByDegree", true);
+      params.set("useTimers", true);
       try {
         ierr += runTestOp(testname, params);
       }
@@ -407,9 +416,6 @@ private:
     if (comm->getRank() == 0) 
       std::cout << "\n\nBEGIN " << testname << "\n" << std::endl;
 
-    const std::string timername(std::string("fillComplete:  ") + testname);
-    params.set("timeFillComplete", timername);
-
     params.set("verbose", true);
     params.set("callFillComplete", true);
 
@@ -432,9 +438,6 @@ private:
   {
     if (comm->getRank() == 0) 
       std::cout << "\n\nBEGIN " << testname << "\n" << std::endl;
-
-    const std::string timername(std::string("fillComplete:  ") + testname);
-    params.set("timeFillComplete", timername);
 
     params.set("verbose", true);
     params.set("callFillComplete", true);
@@ -464,6 +467,10 @@ int main(int narg, char *arg[])
   Tpetra::ScopeGuard scope(&narg, &arg);
   const Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
+  Teuchos::RCP<Teuchos::StackedTimer> stackedTimer =
+                        rcp(new Teuchos::StackedTimer("main"));
+  Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
+
   int ierr = 0;
 
   // Get the filename (set up tests with general, pattern, symmetric, etc.)
@@ -479,8 +486,21 @@ int main(int narg, char *arg[])
   TestReader test(filename, comm);
   ierr += test.run();
 
-  Teuchos::TimeMonitor::summarize();
+  // Output timing info
+  stackedTimer->stop("main");
 
+  Teuchos::StackedTimer::OutputOptions options;
+  options.output_fraction = true;
+  options.output_histogram = true;
+  options.output_minmax = true;
+
+  Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+  out.setOutputToRootOnly(0);
+
+  stackedTimer->report(out, comm, options);
+  stackedTimer = Teuchos::null;
+
+  // Report test result
   if (comm->getRank() == 0) {
     if (ierr == 0) 
       std::cout << "End Result: TEST PASSED" << std::endl;
