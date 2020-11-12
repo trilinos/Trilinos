@@ -79,6 +79,11 @@ int main(int narg, char *arg[])
   std::string diagonal = "";
   cmdp.setOption("diagonal", &diagonal,
                  "How to manipulate the matrix diagonal entries, if necessary");
+
+  bool binary = false;  
+  cmdp.setOption("binary", "mtx", &binary,
+                 "Reading a binary file instead of a matrix market file");
+
   if (cmdp.parse(narg,arg)!=Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -89,6 +94,7 @@ int main(int narg, char *arg[])
   params.set("randomize", randomize);
   params.set("symmetrize", symmetrize);
   params.set("diagonal", diagonal);
+  params.set("binary", binary);
 
   // Call readSparseFile to read the file
   using matrix_t = Tpetra::CrsMatrix<double>;
