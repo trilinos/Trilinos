@@ -45,6 +45,7 @@
 #define ROL_STABILIZEDLCLALGORITHM_E_DEF_H
 
 #include "ROL_Algorithm_B_Factory.hpp"
+#include "ROL_Bounds.hpp"
 
 namespace ROL {
 
@@ -283,16 +284,14 @@ std::vector<std::string> StabilizedLCLAlgorithm_E<Real>::run( Vector<Real>      
       state_->cnorm = cnorm;
 
       // Update multipliers
-      alobj.gradient(*gxp,*xp,tol);
-      gxp->scale(static_cast<Real>(-1));
-      lcon->solveAugmentedSystem(*xpwa,*mul,*gxp,*b2,*xp,tol);
-      emul.plus(*mul);
+      emul.axpy(static_cast<Real>(-1),*elc.getPolyhedralProjection()->getMultiplier());
       emul.axpy(state_->searchSize*cscale_,state_->constraintVec->dual());
 
-      // Update gradient of Lagrangian
-      state_->gradientVec->set(staticPtrCast<PartitionedVector<Real>>(xpwa)->get(0)->dual());
-      state_->gnorm = state_->gradientVec->norm();
+      alobj.getAugmentedLagrangian()->gradient(*state_->gradientVec,x,tol);
       if (scaleLagrangian_) state_->gradientVec->scale(state_->searchSize);
+      econ.applyAdjointJacobian(*gs,*elc.getPolyhedralProjection()->getMultiplier(),x,tol);
+      state_->gradientVec->axpy(-cscale_,*gs);
+      state_->gnorm = state_->gradientVec->norm();
 
       // Update subproblem information
       lnorm  = mul->norm();

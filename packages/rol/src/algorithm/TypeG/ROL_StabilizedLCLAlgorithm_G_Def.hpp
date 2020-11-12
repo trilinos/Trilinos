@@ -303,7 +303,7 @@ std::vector<std::string> StabilizedLCLAlgorithm_G<Real>::run( Vector<Real>      
       alobj.getAugmentedLagrangian()->gradient(*state_->gradientVec,x,tol);
       if (scaleLagrangian_) state_->gradientVec->scale(state_->searchSize);
       econ.applyAdjointJacobian(*gs,*elc.getPolyhedralProjection()->getMultiplier(),x,tol);
-      state_->gradientVec->axpy(static_cast<Real>(-1),*gs);
+      state_->gradientVec->axpy(-cscale_,*gs);
       x.axpy(-one/std::min(fscale_,cscale_),state_->gradientVec->dual());
       proj_->project(x,outStream);
       x.axpy(-one,*state_->iterateVec);
