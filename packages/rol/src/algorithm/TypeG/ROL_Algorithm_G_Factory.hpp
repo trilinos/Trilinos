@@ -47,21 +47,24 @@
 #include "ROL_AugmentedLagrangianAlgorithm_G.hpp"
 #include "ROL_MoreauYosidaAlgorithm_G.hpp"
 #include "ROL_InteriorPointAlgorithm_G.hpp"
+#include "ROL_StabilizedLCLAlgorithm_G.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {
 
 /** \enum   ROL::EAlgorithmG
-    \brief  Enumeration of bound constrained algorithm types.
+    \brief  Enumeration of generally constrained algorithm types.
 
     \arg    ALGORITHM_G_AUGMENTEDLAGRANGIAN describe
     \arg    ALGORITHM_G_MOREAUYOSIDA        describe
     \arg    ALGORITHM_G_INTERIORPOINT       describe
+    \arg    ALGORITHM_G_STABILIZEDLCL       describe
  */
 enum EAlgorithmG{
   ALGORITHM_G_AUGMENTEDLAGRANGIAN = 0,
   ALGORITHM_G_MOREAUYOSIDA,
   ALGORITHM_G_INTERIORPOINT,
+  ALGORITHM_G_STABILIZEDLCL,
   ALGORITHM_G_LAST
 };
 
@@ -71,6 +74,7 @@ inline std::string EAlgorithmGToString(EAlgorithmG alg) {
     case ALGORITHM_G_AUGMENTEDLAGRANGIAN: retString = "Augmented Lagrangian"; break;
     case ALGORITHM_G_MOREAUYOSIDA:        retString = "Moreau-Yosida";          break;
     case ALGORITHM_G_INTERIORPOINT:       retString = "Interior Point";         break;
+    case ALGORITHM_G_STABILIZEDLCL:       retString = "Stabilized LCL";         break;
     case ALGORITHM_G_LAST:                retString = "Last Type (Dummy)";    break;
     default:                              retString = "INVALID EAlgorithmG";
   }
@@ -86,6 +90,7 @@ inline int isValidAlgorithmG(EAlgorithmG alg){
   return( (alg == ALGORITHM_G_AUGMENTEDLAGRANGIAN) ||
           (alg == ALGORITHM_G_MOREAUYOSIDA)        ||
           (alg == ALGORITHM_G_INTERIORPOINT)       ||
+          (alg == ALGORITHM_G_STABILIZEDLCL)       ||
           (alg == ALGORITHM_G_LAST)
         );
 }
@@ -127,6 +132,7 @@ inline Ptr<Algorithm_G<Real>> AlgorithmGFactory(ParameterList &parlist) {
     case ALGORITHM_G_AUGMENTEDLAGRANGIAN: return makePtr<AugmentedLagrangianAlgorithm_G<Real>>(parlist);
     case ALGORITHM_G_MOREAUYOSIDA:        return makePtr<MoreauYosidaAlgorithm_G<Real>>(parlist);
     case ALGORITHM_G_INTERIORPOINT:       return makePtr<InteriorPointAlgorithm_G<Real>>(parlist);
+    case ALGORITHM_G_STABILIZEDLCL:       return makePtr<StabilizedLCLAlgorithm_G<Real>>(parlist);
     default:                              return nullPtr;
   }
 }

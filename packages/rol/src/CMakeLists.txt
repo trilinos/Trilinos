@@ -157,6 +157,7 @@ INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/TypeG/fletcher
                     ${DIR}/TypeG/interiorpoint
                     ${DIR}/TypeG/moreauyosida
+                    ${DIR}/TypeG/stabilizedlcl
                     ${DIR}/TypeU/bundle
                     ${DIR}/TypeU/linesearch
                     ${DIR}/TypeU/linesearch/descent

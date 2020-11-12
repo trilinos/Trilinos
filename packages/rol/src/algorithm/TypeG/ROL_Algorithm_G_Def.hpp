@@ -131,7 +131,14 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  Constraint<Real>      &econ,
                                                  Vector<Real>          &emul,
                                                  std::ostream          &outStream ) {
-  return run(x,x.dual(),obj,bnd,econ,emul,emul.dual(),outStream);
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x));
+  problem.addBoundConstraint(makePtrFromRef(bnd));
+  problem.addConstraint("EqualityConstraint",makePtrFromRef(econ),
+                        makePtrFromRef(emul));
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //return run(x,x.dual(),obj,bnd,econ,emul,emul.dual(),outStream);
 }
 
 template<typename Real>
@@ -141,7 +148,13 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  Vector<Real>          &imul,
                                                  BoundConstraint<Real> &ibnd,
                                                  std::ostream          &outStream ) {
-  return run(x,x.dual(),obj,icon,imul,ibnd,imul.dual(),outStream);
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x));
+  problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
+                        makePtrFromRef(imul),makePtrFromRef(ibnd));
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //return run(x,x.dual(),obj,icon,imul,ibnd,imul.dual(),outStream);
 }
 
 template<typename Real>
@@ -152,7 +165,14 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  Vector<Real>          &imul,
                                                  BoundConstraint<Real> &ibnd,
                                                  std::ostream          &outStream ) {
-  return run(x,x.dual(),obj,bnd,icon,imul,ibnd,imul.dual(),outStream);
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x));
+  problem.addBoundConstraint(makePtrFromRef(bnd));
+  problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
+                        makePtrFromRef(imul),makePtrFromRef(ibnd));
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //return run(x,x.dual(),obj,bnd,icon,imul,ibnd,imul.dual(),outStream);
 }
 
 template<typename Real>
@@ -164,7 +184,15 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  Vector<Real>          &imul,
                                                  BoundConstraint<Real> &ibnd,
                                                  std::ostream          &outStream ) {
-  return run(x,x.dual(),obj,econ,emul,emul.dual(),icon,imul,ibnd,imul.dual(),outStream);
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x));
+  problem.addConstraint("EqualityConstraint",makePtrFromRef(econ),
+                        makePtrFromRef(emul));
+  problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
+                        makePtrFromRef(imul),makePtrFromRef(ibnd));
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //return run(x,x.dual(),obj,econ,emul,emul.dual(),icon,imul,ibnd,imul.dual(),outStream);
 }
 
 template<typename Real>
@@ -177,7 +205,16 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  Vector<Real>          &imul,
                                                  BoundConstraint<Real> &ibnd,
                                                  std::ostream          &outStream ) {
-  return run(x,x.dual(),obj,bnd,econ,emul,emul.dual(),icon,imul,ibnd,imul.dual(),outStream);
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x));
+  problem.addBoundConstraint(makePtrFromRef(bnd));
+  problem.addConstraint("EqualityConstraint",makePtrFromRef(econ),
+                        makePtrFromRef(emul));
+  problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
+                        makePtrFromRef(imul),makePtrFromRef(ibnd));
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //return run(x,x.dual(),obj,bnd,econ,emul,emul.dual(),icon,imul,ibnd,imul.dual(),outStream);
 }
 
 
@@ -191,15 +228,22 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  BoundConstraint<Real> &ibnd,
                                                  const Vector<Real>    &ires,
                                                  std::ostream          &outStream ) {
-  ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
-                             makePtrFromRef(ibnd),makePtrFromRef(x));
-  Ptr<Constraint<Real>>      econ = cm.getConstraint();
-  Ptr<Vector<Real>>          emul = cm.getMultiplier();
-  Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
-  Ptr<Vector<Real>>          xvec = cm.getOptVector();
-  Ptr<Objective<Real>>       sobj = makePtr<SlacklessObjective<Real>>(makePtrFromRef(obj));
-  Ptr<Vector<Real>>         xdual = xvec->dual().clone();
-  return run(*xvec,*xdual,*sobj,*xbnd,*econ,*emul,emul->dual(),outStream);
+  Ptr<Vector<Real>> gp = g.clone(), irp = ires.clone();
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x),gp);
+  problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
+                        makePtrFromRef(imul),makePtrFromRef(ibnd),irp,false);
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
+  //                           makePtrFromRef(ibnd),makePtrFromRef(x));
+  //Ptr<Constraint<Real>>      econ = cm.getConstraint();
+  //Ptr<Vector<Real>>          emul = cm.getMultiplier();
+  //Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
+  //Ptr<Vector<Real>>          xvec = cm.getOptVector();
+  //Ptr<Objective<Real>>       sobj = makePtr<SlacklessObjective<Real>>(makePtrFromRef(obj));
+  //Ptr<Vector<Real>>         xdual = xvec->dual().clone();
+  //return run(*xvec,*xdual,*sobj,*xbnd,*econ,*emul,emul->dual(),outStream);
 }
 
 template<typename Real>
@@ -212,16 +256,24 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  BoundConstraint<Real> &ibnd,
                                                  const Vector<Real>    &ires,
                                                  std::ostream          &outStream ) {
-  ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
-                             makePtrFromRef(ibnd),makePtrFromRef(x),
-                             makePtrFromRef(bnd));
-  Ptr<Constraint<Real>>      econ = cm.getConstraint();
-  Ptr<Vector<Real>>          emul = cm.getMultiplier();
-  Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
-  Ptr<Vector<Real>>          xvec = cm.getOptVector();
-  Ptr<Objective<Real>>       sobj = makePtr<SlacklessObjective<Real>>(makePtrFromRef(obj));
-  Ptr<Vector<Real>>         xdual = xvec->dual().clone();
-  return run(*xvec,*xdual,*sobj,*xbnd,*econ,*emul,emul->dual(),outStream);
+  Ptr<Vector<Real>> gp = g.clone(), irp = ires.clone();
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x),gp);
+  problem.addBoundConstraint(makePtrFromRef(bnd));
+  problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
+                        makePtrFromRef(imul),makePtrFromRef(ibnd),irp,false);
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
+  //                           makePtrFromRef(ibnd),makePtrFromRef(x),
+  //                           makePtrFromRef(bnd));
+  //Ptr<Constraint<Real>>      econ = cm.getConstraint();
+  //Ptr<Vector<Real>>          emul = cm.getMultiplier();
+  //Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
+  //Ptr<Vector<Real>>          xvec = cm.getOptVector();
+  //Ptr<Objective<Real>>       sobj = makePtr<SlacklessObjective<Real>>(makePtrFromRef(obj));
+  //Ptr<Vector<Real>>         xdual = xvec->dual().clone();
+  //return run(*xvec,*xdual,*sobj,*xbnd,*econ,*emul,emul->dual(),outStream);
 }
 
 template<typename Real>
@@ -236,20 +288,29 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  BoundConstraint<Real> &ibnd,
                                                  const Vector<Real>    &ires,
                                                  std::ostream          &outStream ) {
-  std::vector<Ptr<Constraint<Real>>>
-    cvec = {makePtrFromRef(econ), makePtrFromRef(icon)};
-  std::vector<Ptr<Vector<Real>>>
-    lvec = {makePtrFromRef(emul), makePtrFromRef(imul)};
-  std::vector<Ptr<BoundConstraint<Real>>>
-    bvec = {             nullPtr, makePtrFromRef(ibnd)};
-  ConstraintManager<Real> cm(cvec,lvec,bvec,makePtrFromRef(x));
-  Ptr<Constraint<Real>>       con = cm.getConstraint();
-  Ptr<Vector<Real>>           mul = cm.getMultiplier();
-  Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
-  Ptr<Vector<Real>>          xvec = cm.getOptVector();
-  Ptr<Objective<Real>>       sobj = makePtr<SlacklessObjective<Real>>(makePtrFromRef(obj));
-  Ptr<Vector<Real>>         xdual = xvec->dual().clone();
-  return run(*xvec,*xdual,*sobj,*xbnd,*con,*mul,mul->dual(),outStream);
+  Ptr<Vector<Real>> gp = g.clone(), erp = eres.clone(), irp = ires.clone();
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x),gp);
+  problem.addConstraint("EqualityConstraint",makePtrFromRef(econ),
+                        makePtrFromRef(emul),erp,false);
+  problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
+                        makePtrFromRef(imul),makePtrFromRef(ibnd),irp,false);
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //std::vector<Ptr<Constraint<Real>>>
+  //  cvec = {makePtrFromRef(econ), makePtrFromRef(icon)};
+  //std::vector<Ptr<Vector<Real>>>
+  //  lvec = {makePtrFromRef(emul), makePtrFromRef(imul)};
+  //std::vector<Ptr<BoundConstraint<Real>>>
+  //  bvec = {             nullPtr, makePtrFromRef(ibnd)};
+  //ConstraintManager<Real> cm(cvec,lvec,bvec,makePtrFromRef(x));
+  //Ptr<Constraint<Real>>       con = cm.getConstraint();
+  //Ptr<Vector<Real>>           mul = cm.getMultiplier();
+  //Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
+  //Ptr<Vector<Real>>          xvec = cm.getOptVector();
+  //Ptr<Objective<Real>>       sobj = makePtr<SlacklessObjective<Real>>(makePtrFromRef(obj));
+  //Ptr<Vector<Real>>         xdual = xvec->dual().clone();
+  //return run(*xvec,*xdual,*sobj,*xbnd,*con,*mul,mul->dual(),outStream);
 }
 
 template<typename Real>
@@ -265,20 +326,30 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  BoundConstraint<Real> &ibnd,
                                                  const Vector<Real>    &ires,
                                                  std::ostream          &outStream ) {
-  std::vector<Ptr<Constraint<Real>>>
-    cvec = {makePtrFromRef(econ), makePtrFromRef(icon)};
-  std::vector<Ptr<Vector<Real>>>
-    lvec = {makePtrFromRef(emul), makePtrFromRef(imul)};
-  std::vector<Ptr<BoundConstraint<Real>>>
-    bvec = {             nullPtr, makePtrFromRef(ibnd)};
-  ConstraintManager<Real> cm(cvec,lvec,bvec,makePtrFromRef(x),makePtrFromRef(bnd));
-  Ptr<Constraint<Real>>       con = cm.getConstraint();
-  Ptr<Vector<Real>>           mul = cm.getMultiplier();
-  Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
-  Ptr<Vector<Real>>          xvec = cm.getOptVector();
-  Ptr<Objective<Real>>       sobj = makePtr<SlacklessObjective<Real>>(makePtrFromRef(obj));
-  Ptr<Vector<Real>>         xdual = xvec->dual().clone();
-  return run(*xvec,*xdual,*sobj,*xbnd,*con,*mul,mul->dual(),outStream);
+  Ptr<Vector<Real>> gp = g.clone(), erp = eres.clone(), irp = ires.clone();
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x),gp);
+  problem.addBoundConstraint(makePtrFromRef(bnd));
+  problem.addConstraint("EqualityConstraint",makePtrFromRef(econ),
+                        makePtrFromRef(emul),erp,false);
+  problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
+                        makePtrFromRef(imul),makePtrFromRef(ibnd),irp,false);
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //std::vector<Ptr<Constraint<Real>>>
+  //  cvec = {makePtrFromRef(econ), makePtrFromRef(icon)};
+  //std::vector<Ptr<Vector<Real>>>
+  //  lvec = {makePtrFromRef(emul), makePtrFromRef(imul)};
+  //std::vector<Ptr<BoundConstraint<Real>>>
+  //  bvec = {             nullPtr, makePtrFromRef(ibnd)};
+  //ConstraintManager<Real> cm(cvec,lvec,bvec,makePtrFromRef(x),makePtrFromRef(bnd));
+  //Ptr<Constraint<Real>>       con = cm.getConstraint();
+  //Ptr<Vector<Real>>           mul = cm.getMultiplier();
+  //Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
+  //Ptr<Vector<Real>>          xvec = cm.getOptVector();
+  //Ptr<Objective<Real>>       sobj = makePtr<SlacklessObjective<Real>>(makePtrFromRef(obj));
+  //Ptr<Vector<Real>>         xdual = xvec->dual().clone();
+  //return run(*xvec,*xdual,*sobj,*xbnd,*con,*mul,mul->dual(),outStream);
 }
 
 
@@ -292,8 +363,18 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  Constraint<Real>      &linear_econ,
                                                  Vector<Real>          &linear_emul,
                                                  std::ostream          &outStream ) {
-  return run(x,x.dual(),obj,bnd,econ,emul,emul.dual(),
-             linear_econ,linear_emul,linear_emul.dual(),outStream);
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x));
+  problem.addBoundConstraint(makePtrFromRef(bnd));
+  problem.addConstraint("EqualityConstraint",makePtrFromRef(econ),
+                        makePtrFromRef(emul));
+  problem.addLinearConstraint("LinearEqualityConstraint",
+                              makePtrFromRef(linear_econ),
+                              makePtrFromRef(linear_emul));
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+//  return run(x,x.dual(),obj,bnd,econ,emul,emul.dual(),
+//             linear_econ,linear_emul,linear_emul.dual(),outStream);
 }
 
 template<typename Real>
@@ -305,8 +386,17 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  Constraint<Real>      &linear_econ,
                                                  Vector<Real>          &linear_emul,
                                                  std::ostream          &outStream ) {
-  return run(x,x.dual(),obj,icon,imul,ibnd,imul.dual(),
-             linear_econ,linear_emul,linear_emul.dual(),outStream);
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x));
+  problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
+                        makePtrFromRef(imul),makePtrFromRef(ibnd));
+  problem.addLinearConstraint("LinearEqualityConstraint",
+                              makePtrFromRef(linear_econ),
+                              makePtrFromRef(linear_emul));
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //return run(x,x.dual(),obj,icon,imul,ibnd,imul.dual(),
+  //           linear_econ,linear_emul,linear_emul.dual(),outStream);
 }
 
 template<typename Real>
@@ -319,8 +409,18 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  Constraint<Real>      &linear_econ,
                                                  Vector<Real>          &linear_emul,
                                                  std::ostream          &outStream ) {
-  return run(x,x.dual(),obj,bnd,icon,imul,ibnd,imul.dual(),
-             linear_econ,linear_emul,linear_emul.dual(),outStream);
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x));
+  problem.addBoundConstraint(makePtrFromRef(bnd));
+  problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
+                        makePtrFromRef(imul),makePtrFromRef(ibnd));
+  problem.addLinearConstraint("LinearEqualityConstraint",
+                              makePtrFromRef(linear_econ),
+                              makePtrFromRef(linear_emul));
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //return run(x,x.dual(),obj,bnd,icon,imul,ibnd,imul.dual(),
+  //           linear_econ,linear_emul,linear_emul.dual(),outStream);
 }
 
 template<typename Real>
@@ -334,8 +434,19 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  Constraint<Real>      &linear_econ,
                                                  Vector<Real>          &linear_emul,
                                                  std::ostream          &outStream ) {
-  return run(x,x.dual(),obj,econ,emul,emul.dual(),icon,imul,ibnd,imul.dual(),
-             linear_econ,linear_emul,linear_emul.dual(),outStream);
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x));
+  problem.addConstraint("EqualityConstraint",makePtrFromRef(econ),
+                        makePtrFromRef(emul));
+  problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
+                        makePtrFromRef(imul),makePtrFromRef(ibnd));
+  problem.addLinearConstraint("LinearEqualityConstraint",
+                              makePtrFromRef(linear_econ),
+                              makePtrFromRef(linear_emul));
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //return run(x,x.dual(),obj,econ,emul,emul.dual(),icon,imul,ibnd,imul.dual(),
+  //           linear_econ,linear_emul,linear_emul.dual(),outStream);
 }
 
 template<typename Real>
@@ -350,8 +461,20 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  Constraint<Real>      &linear_econ,
                                                  Vector<Real>          &linear_emul,
                                                  std::ostream          &outStream ) {
-  return run(x,x.dual(),obj,bnd,econ,emul,emul.dual(),icon,imul,ibnd,imul.dual(),
-             linear_econ,linear_emul,linear_emul.dual(),outStream);
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x));
+  problem.addBoundConstraint(makePtrFromRef(bnd));
+  problem.addConstraint("EqualityConstraint",makePtrFromRef(econ),
+                        makePtrFromRef(emul));
+  problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
+                        makePtrFromRef(imul),makePtrFromRef(ibnd));
+  problem.addLinearConstraint("LinearEqualityConstraint",
+                              makePtrFromRef(linear_econ),
+                              makePtrFromRef(linear_emul));
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //return run(x,x.dual(),obj,bnd,econ,emul,emul.dual(),icon,imul,ibnd,imul.dual(),
+  //           linear_econ,linear_emul,linear_emul.dual(),outStream);
 }
 
 
@@ -368,9 +491,21 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  Vector<Real>          &linear_emul,
                                                  const Vector<Real>    &linear_eres,
                                                  std::ostream          &outStream ) {
-  ParameterList list;
-  proj_ = PolyhedralProjectionFactory<Real>(x,g,makePtrFromRef(bnd),makePtrFromRef(linear_econ),linear_emul,linear_eres,list);
-  return run(x,g,obj,bnd,econ,emul,eres,outStream);
+  Ptr<Vector<Real>> gp = g.clone(), erp = eres.clone(), lerp = linear_eres.clone();
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x),gp);
+  problem.addBoundConstraint(makePtrFromRef(bnd));
+  problem.addConstraint("EqualityConstraint",makePtrFromRef(econ),
+                        makePtrFromRef(emul),erp,false);
+  problem.addLinearConstraint("LinearEqualityConstraint",
+                              makePtrFromRef(linear_econ),
+                              makePtrFromRef(linear_emul),
+                              lerp,false);
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //ParameterList list;
+  //proj_ = PolyhedralProjectionFactory<Real>(x,g,makePtrFromRef(bnd),makePtrFromRef(linear_econ),linear_emul,linear_eres,list);
+  //return run(x,g,obj,bnd,econ,emul,eres,outStream);
 }
 
 template<typename Real>
@@ -385,14 +520,26 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  Vector<Real>          &linear_emul,
                                                  const Vector<Real>    &linear_eres,
                                                  std::ostream          &outStream ) {
-  Ptr<Vector<Real>> xfeas = x.clone(); xfeas->set(x);
-  ReduceLinearConstraint<Real> rlc(makePtrFromRef(linear_econ),xfeas,makePtrFromRef(linear_eres));
-  Ptr<Vector<Real>> s = x.clone(); s->zero();
-  std::vector<std::string> output = run(*s,g,*rlc.transform(makePtrFromRef(obj)),
-                                        *rlc.transform(makePtrFromRef(icon)),imul,ibnd,ires,outStream);
-  rlc.project(x,*s);
-  x.plus(*rlc.getFeasibleVector());
-  return output;
+  Ptr<Vector<Real>> gp = g.clone(), irp = ires.clone(), lerp = linear_eres.clone();
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x),gp);
+  problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
+                        makePtrFromRef(imul),makePtrFromRef(ibnd),
+                        irp,false);
+  problem.addLinearConstraint("LinearEqualityConstraint",
+                              makePtrFromRef(linear_econ),
+                              makePtrFromRef(linear_emul),
+                              lerp,false);
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //Ptr<Vector<Real>> xfeas = x.clone(); xfeas->set(x);
+  //ReduceLinearConstraint<Real> rlc(makePtrFromRef(linear_econ),xfeas,makePtrFromRef(linear_eres));
+  //Ptr<Vector<Real>> s = x.clone(); s->zero();
+  //std::vector<std::string> output = run(*s,g,*rlc.transform(makePtrFromRef(obj)),
+  //                                      *rlc.transform(makePtrFromRef(icon)),imul,ibnd,ires,outStream);
+  //rlc.project(x,*s);
+  //x.plus(*rlc.getFeasibleVector());
+  //return output;
 }
 
 template<typename Real>
@@ -408,17 +555,30 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  Vector<Real>          &linear_emul,
                                                  const Vector<Real>    &linear_eres,
                                                  std::ostream          &outStream ) {
-  ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),makePtrFromRef(ibnd),
-                             makePtrFromRef(x), makePtrFromRef(bnd));
-  Ptr<Vector<Real>>          xvec = cm.getOptVector();
-  Ptr<Constraint<Real>>      econ = cm.getConstraint();
-  Ptr<Vector<Real>>          emul = cm.getMultiplier();
-  Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
-  Ptr<Objective<Real>>       sobj = makePtr<SlacklessObjective<Real>>(makePtrFromRef(obj));
-  Ptr<Constraint<Real>>      scon = makePtr<SlacklessConstraint<Real>>(makePtrFromRef(linear_econ));
-  Ptr<Vector<Real>>         xdual = xvec->dual().clone();
-  Ptr<Vector<Real>>          eres = emul->dual().clone();
-  return run(*xvec,*xdual,*sobj,*xbnd,*econ,*emul,*eres,*scon,linear_emul,linear_eres,outStream);
+  Ptr<Vector<Real>> gp = g.clone(), irp = ires.clone(), lerp = linear_eres.clone();
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x),gp);
+  problem.addBoundConstraint(makePtrFromRef(bnd));
+  problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
+                        makePtrFromRef(imul),makePtrFromRef(ibnd),
+                        irp,false);
+  problem.addLinearConstraint("LinearEqualityConstraint",
+                              makePtrFromRef(linear_econ),
+                              makePtrFromRef(linear_emul),
+                              lerp,false);
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),makePtrFromRef(ibnd),
+  //                           makePtrFromRef(x), makePtrFromRef(bnd));
+  //Ptr<Vector<Real>>          xvec = cm.getOptVector();
+  //Ptr<Constraint<Real>>      econ = cm.getConstraint();
+  //Ptr<Vector<Real>>          emul = cm.getMultiplier();
+  //Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
+  //Ptr<Objective<Real>>       sobj = makePtr<SlacklessObjective<Real>>(makePtrFromRef(obj));
+  //Ptr<Constraint<Real>>      scon = makePtr<SlacklessConstraint<Real>>(makePtrFromRef(linear_econ));
+  //Ptr<Vector<Real>>         xdual = xvec->dual().clone();
+  //Ptr<Vector<Real>>          eres = emul->dual().clone();
+  //return run(*xvec,*xdual,*sobj,*xbnd,*econ,*emul,*eres,*scon,linear_emul,linear_eres,outStream);
 }
 
 template<typename Real>
@@ -436,15 +596,29 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  Vector<Real>          &linear_emul,
                                                  const Vector<Real>    &linear_eres,
                                                  std::ostream          &outStream ) {
-  Ptr<Vector<Real>> xfeas = x.clone(); xfeas->set(x);
-  ReduceLinearConstraint<Real> rlc(makePtrFromRef(linear_econ),xfeas,makePtrFromRef(linear_eres));
-  Ptr<Vector<Real>> s = x.clone(); s->zero();
-  std::vector<std::string> output = run(*s,g,*rlc.transform(makePtrFromRef(obj)),
-                                        *rlc.transform(makePtrFromRef(econ)),emul,eres,
-                                        *rlc.transform(makePtrFromRef(icon)),imul,ibnd,ires,outStream);
-  rlc.project(x,*s);
-  x.plus(*rlc.getFeasibleVector());
-  return output;
+  Ptr<Vector<Real>> gp = g.clone(), erp = eres.clone(), irp = ires.clone(), lerp = linear_eres.clone();
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x),gp);
+  problem.addConstraint("EqualityConstraint",makePtrFromRef(econ),
+                        makePtrFromRef(emul),erp,false);
+  problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
+                        makePtrFromRef(imul),makePtrFromRef(ibnd),
+                        irp,false);
+  problem.addLinearConstraint("LinearEqualityConstraint",
+                              makePtrFromRef(linear_econ),
+                              makePtrFromRef(linear_emul),
+                              lerp,false);
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //Ptr<Vector<Real>> xfeas = x.clone(); xfeas->set(x);
+  //ReduceLinearConstraint<Real> rlc(makePtrFromRef(linear_econ),xfeas,makePtrFromRef(linear_eres));
+  //Ptr<Vector<Real>> s = x.clone(); s->zero();
+  //std::vector<std::string> output = run(*s,g,*rlc.transform(makePtrFromRef(obj)),
+  //                                      *rlc.transform(makePtrFromRef(econ)),emul,eres,
+  //                                      *rlc.transform(makePtrFromRef(icon)),imul,ibnd,ires,outStream);
+  //rlc.project(x,*s);
+  //x.plus(*rlc.getFeasibleVector());
+  //return output;
 }
 
 template<typename Real>
@@ -463,19 +637,34 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                                                  Vector<Real>          &linear_emul,
                                                  const Vector<Real>    &linear_eres,
                                                  std::ostream          &outStream ) {
-  std::vector<Ptr<Constraint<Real>>> cvec = {makePtrFromRef(econ), makePtrFromRef(icon)};
-  std::vector<Ptr<Vector<Real>>>     lvec = {makePtrFromRef(emul), makePtrFromRef(imul)};
-  std::vector<Ptr<BoundConstraint<Real>>> bvec = {        nullPtr, makePtrFromRef(ibnd)};
-  ConstraintManager<Real> cm(cvec, lvec, bvec, makePtrFromRef(x), makePtrFromRef(bnd));
-  Ptr<Vector<Real>>          xvec = cm.getOptVector();
-  Ptr<Constraint<Real>>      xcon = cm.getConstraint();
-  Ptr<Vector<Real>>          xmul = cm.getMultiplier();
-  Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
-  Ptr<Objective<Real>>       sobj = makePtr<SlacklessObjective<Real>>(makePtrFromRef(obj));
-  Ptr<Constraint<Real>>      scon = makePtr<SlacklessConstraint<Real>>(makePtrFromRef(linear_econ));
-  Ptr<Vector<Real>>         xdual = xvec->dual().clone();
-  Ptr<Vector<Real>>          xres = xmul->dual().clone();
-  return run(*xvec,*xdual,*sobj,*xbnd,*xcon,*xmul,*xres,*scon,linear_emul,linear_eres,outStream);
+  Ptr<Vector<Real>> gp = g.clone(), erp = eres.clone(), irp = ires.clone(), lerp = linear_eres.clone();
+  NewOptimizationProblem<Real> problem(makePtrFromRef(obj),
+                                       makePtrFromRef(x),gp);
+  problem.addBoundConstraint(makePtrFromRef(bnd));
+  problem.addConstraint("EqualityConstraint",makePtrFromRef(econ),
+                        makePtrFromRef(emul),erp,false);
+  problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
+                        makePtrFromRef(imul),makePtrFromRef(ibnd),
+                        irp,false);
+  problem.addLinearConstraint("LinearEqualityConstraint",
+                              makePtrFromRef(linear_econ),
+                              makePtrFromRef(linear_emul),
+                              lerp,false);
+  problem.finalize(false,false,outStream);
+  return run(problem,outStream);
+  //std::vector<Ptr<Constraint<Real>>> cvec = {makePtrFromRef(econ), makePtrFromRef(icon)};
+  //std::vector<Ptr<Vector<Real>>>     lvec = {makePtrFromRef(emul), makePtrFromRef(imul)};
+  //std::vector<Ptr<BoundConstraint<Real>>> bvec = {        nullPtr, makePtrFromRef(ibnd)};
+  //ConstraintManager<Real> cm(cvec, lvec, bvec, makePtrFromRef(x), makePtrFromRef(bnd));
+  //Ptr<Vector<Real>>          xvec = cm.getOptVector();
+  //Ptr<Constraint<Real>>      xcon = cm.getConstraint();
+  //Ptr<Vector<Real>>          xmul = cm.getMultiplier();
+  //Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
+  //Ptr<Objective<Real>>       sobj = makePtr<SlacklessObjective<Real>>(makePtrFromRef(obj));
+  //Ptr<Constraint<Real>>      scon = makePtr<SlacklessConstraint<Real>>(makePtrFromRef(linear_econ));
+  //Ptr<Vector<Real>>         xdual = xvec->dual().clone();
+  //Ptr<Vector<Real>>          xres = xmul->dual().clone();
+  //return run(*xvec,*xdual,*sobj,*xbnd,*xcon,*xmul,*xres,*scon,linear_emul,linear_eres,outStream);
 }
 
 

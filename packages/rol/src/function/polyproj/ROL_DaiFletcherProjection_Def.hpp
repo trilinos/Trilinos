@@ -121,6 +121,7 @@ void DaiFletcherProjection<Real>::project(Vector<Real> &x, std::ostream &stream)
     dlam1_ = static_cast<Real>(2);
     //dlam1_ = static_cast<Real>(1)+std::abs(mul1_);
     project_df(x, mul1_, dlam1_, stream);
+    mul_->setScalar(mul1_);
   }
 }
 

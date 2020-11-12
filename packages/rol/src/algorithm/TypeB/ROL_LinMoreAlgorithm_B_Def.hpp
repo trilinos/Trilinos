@@ -145,7 +145,7 @@ void LinMoreAlgorithm_B<Real>::initialize(Vector<Real>          &x,
                                                    makePtrFromRef(bnd),
                                                    makePtrFromRef(x));
     ns_   = makePtr<NullSpaceOperator<Real>>(rcon_,x,
-                                             proj_->getMultiplier()->dual());
+                                             *proj_->getResidual());
   }
 }
 
