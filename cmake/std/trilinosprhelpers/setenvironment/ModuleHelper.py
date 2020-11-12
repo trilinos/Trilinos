@@ -24,12 +24,6 @@ else:                                                                           
 
 try:
 
-    # This will force the use of our own module command because the LMOD module
-    # command returns nothing, which won't help us deterine if the command actually
-    # passsed or failed.
-    # TODO: Remove this and clean up the file to just have the module() command.
-    raise ImportError("Force use of _our_ module command for testing")
-
     from env_modules_python import module
     print("NOTICE> [ModuleHelper.py] Using the lmod based `env_modules_python` module handler.")
 
