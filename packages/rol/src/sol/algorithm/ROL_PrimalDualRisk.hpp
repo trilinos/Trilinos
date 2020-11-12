@@ -216,12 +216,8 @@ public:
       parlist_.sublist("Status Test").set("Gradient Tolerance",   gtol_);
       parlist_.sublist("Status Test").set("Constraint Tolerance", ctol_);
       solver = makePtr<NewOptimizationSolver<Real>>(pd_problem_, parlist_);
-      if (print_) {
-        solver->solve(outStream);
-      }
-      else {
-        solver->solve();
-      }
+      if (print_) solver->solve(outStream);
+      else        solver->solve();
       converged_ = (solver->getAlgorithmState()->statusFlag == EXITSTATUS_CONVERGED
                   ||solver->getAlgorithmState()->statusFlag == EXITSTATUS_USERDEFINED
                    ? true : false);
