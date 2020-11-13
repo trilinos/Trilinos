@@ -33,12 +33,10 @@
 // Disable view specializations
 #define SACADO_DISABLE_FAD_VIEW_SPEC
 
+#define SACADO_TEST_DFAD 1
 #include "Fad_KokkosTests.hpp"
 
-#include "Kokkos_Core.hpp"
-
 // Instantiate tests for Serial device
-#define SACADO_TEST_DFAD 1
 using Kokkos::Serial;
 VIEW_FAD_TESTS_D( Serial )
 
