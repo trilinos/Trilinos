@@ -1577,8 +1577,9 @@ namespace Tpetra {
         ret.allocSize = 0;
       }
       else {
-        ret.offset1D  = this->k_rowPtrs_(myRow);
-        ret.allocSize = this->k_rowPtrs_(myRow+1) - this->k_rowPtrs_(myRow);
+        auto lclRowPtrs = ::Tpetra::Details::getEntriesOnHost(this->k_rowPtrs_, myRow, 2);
+        ret.offset1D  = lclRowPtrs(0);
+        ret.allocSize = lclRowPtrs(1) - lclRowPtrs(0);
       }
 
       ret.numEntries = (this->k_numRowEntries_.extent (0) == 0) ?
@@ -1633,8 +1634,9 @@ namespace Tpetra {
         ret.allocSize = 0;
       }
       else {
-        ret.offset1D  = this->k_rowPtrs_(myRow);
-        ret.allocSize = this->k_rowPtrs_(myRow+1) - this->k_rowPtrs_(myRow);
+        auto lclRowPtrs = ::Tpetra::Details::getEntriesOnHost(this->k_rowPtrs_, myRow, 2);
+        ret.offset1D  = lclRowPtrs(0);
+        ret.allocSize = lclRowPtrs(1) - lclRowPtrs(0);
       }
 
       ret.numEntries = (this->k_numRowEntries_.extent (0) == 0) ?
@@ -2196,7 +2198,7 @@ namespace Tpetra {
         (this->isLocallyIndexed () &&
          this->k_rowPtrs_.extent (0) != 0 &&
          (static_cast<size_t> (k_rowPtrs_.extent (0)) != static_cast<size_t> (lclNumRows + 1) ||
-          this->k_rowPtrs_(lclNumRows) != static_cast<size_t> (this->k_lclInds1D_.extent (0))),
+          ::Tpetra::Details::getEntryOnHost(this->k_rowPtrs_, lclNumRows) != static_cast<size_t> (this->k_lclInds1D_.extent (0))),
          std::logic_error, "If k_rowPtrs_ has nonzero size and "
          "the graph is locally indexed, then "
          "k_rowPtrs_ must have N+1 rows, and "
@@ -3085,8 +3087,9 @@ namespace Tpetra {
         // We have to iterate through the row offsets anyway, so we
         // might as well check whether all rows' bounds are the same.
         bool allRowsReallySame = false;
+        auto k_rowPtrs_h = ::Tpetra::Details::getEntriesOnHost(this->k_rowPtrs_, 0, numRows);
         for (ptrdiff_t i = 0; i < numRows; ++i) {
-          numEnt[i] = this->k_rowPtrs_(i+1) - this->k_rowPtrs_(i);
+          numEnt[i] = k_rowPtrs_h(i+1) - k_rowPtrs_h(i);
           if (i != 0 && numEnt[i] != numEnt[i-1]) {
             allRowsReallySame = false;
           }
