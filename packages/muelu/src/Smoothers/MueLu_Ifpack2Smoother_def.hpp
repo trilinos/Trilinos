@@ -735,7 +735,10 @@ namespace MueLu {
       SetPrecParameters(paramList);
       supportInitialGuess = true;
 
-    } else if (type_ == "RELAXATION") {
+    } else if (type_ == "RELAXATION"       ||
+               type_ == "BLOCKRELAXATION"  ||
+               type_ == "BANDEDRELAXATION" ||
+               type_ == "TRIDIAGONALRELAXATION") {
       paramList.set("relaxation: zero starting solution", InitialGuessIsZero);
       SetPrecParameters(paramList);
       supportInitialGuess = true;
