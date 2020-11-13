@@ -122,6 +122,11 @@ struct ApplyDirichletBoundaryConditionToLocalMatrixRows {
        const local_row_indices_type& lclRowInds,
        const bool runOnHost)
   {
+    // Notes for future refactoring:  This routine seems to have one more layer 
+    // of options than it probably needs.  For instance, if you passed a Kokkos::Serial 
+    // execution_space instance as the first argument you probably wound't need the runOnHost
+    // option and then the code below could be collapsed out removing one of the parallel_for's
+
     using IST = typename crs_matrix_type::impl_scalar_type;
     using KAT = Kokkos::ArithTraits<IST>;
 
