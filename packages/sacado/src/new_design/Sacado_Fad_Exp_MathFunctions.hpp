@@ -142,16 +142,101 @@ namespace Sacado {
     template <typename S>
     SACADO_INLINE_FUNCTION
     void atomic_add(GeneralFad<S>* dst, const GeneralFad<S>& x);
-
     template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
     SACADO_INLINE_FUNCTION
     void atomic_add(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& x);
+
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_max_fetch(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_max_fetch(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_min_fetch(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_min_fetch(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_add_fetch(GeneralFad<S>* dst, const GeneralFad<S>& x);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_add_fetch(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& x);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_sub_fetch(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_sub_fetch(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_mul_fetch(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_mul_fetch(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_div_fetch(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_div_fetch(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_fetch_max(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_fetch_max(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_fetch_min(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_fetch_min(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_fetch_add(GeneralFad<S>* dst, const GeneralFad<S>& x);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_fetch_add(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& x);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_fetch_sub(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_fetch_sub(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_fetch_mul(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_fetch_mul(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
+    template <typename S>
+    SACADO_INLINE_FUNCTION GeneralFad<S>
+    atomic_fetch_div(GeneralFad<S>* dest, const GeneralFad<S>& val);
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    SACADO_INLINE_FUNCTION U
+    atomic_fetch_div(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
   }
   }
 }
 
 namespace Kokkos {
   using Sacado::Fad::Exp::atomic_add;
+  using Sacado::Fad::Exp::atomic_max_fetch;
+  using Sacado::Fad::Exp::atomic_min_fetch;
+  using Sacado::Fad::Exp::atomic_add_fetch;
+  using Sacado::Fad::Exp::atomic_sub_fetch;
+  using Sacado::Fad::Exp::atomic_mul_fetch;
+  using Sacado::Fad::Exp::atomic_div_fetch;
+  using Sacado::Fad::Exp::atomic_fetch_max;
+  using Sacado::Fad::Exp::atomic_fetch_min;
+  using Sacado::Fad::Exp::atomic_fetch_add;
+  using Sacado::Fad::Exp::atomic_fetch_sub;
+  using Sacado::Fad::Exp::atomic_fetch_mul;
+  using Sacado::Fad::Exp::atomic_fetch_div;
 }
 
 #endif
