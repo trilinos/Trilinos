@@ -43,7 +43,7 @@
 #include <Panzer_STK_CubeHexMeshFactory.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <PanzerAdaptersSTK_config.hpp>
-#include <FEMHelpers.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>
 
 using Teuchos::RCP;
 using Teuchos::rcp;

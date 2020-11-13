@@ -25,20 +25,19 @@ print_banner "P A C K A G E   S E T U P"
 python_exe=${1:?}
 pip_exe=${2:?}
 
+message_std "--- " "python: ${python_exe:?}"
+message_std "--- " "pip   : ${pip_exe:?}"
+
 get_pip ${python_exe:?}
 get_python_packages ${pip_exe:?}
-
 
 message_std "" ""
 print_banner "E X E C U T E   T E S T S"
 message_std "--- " "${python_exe:?} -m pytest --cov=trilinosprhelpers --cov-report term-missing"
-#echo -e "--- ${python_exe:?} -m pytest --cov=trilinosprhelpers --cov-report term-missing"
 ${python_exe:?} -m pytest --cov=trilinosprhelpers --cov-report term-missing
 err=$?
 message_std "" ""
 message_std "--- " "STATUS: ${err:?}"
-#echo -e ""
-#echo -e "--- STATUS: ${err:?}"
 
 
 # Some Cleanup

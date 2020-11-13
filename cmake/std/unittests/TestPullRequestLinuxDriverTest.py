@@ -2,6 +2,9 @@
 # -*- mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
 '''
 Tests for the Test chunk of the Driver script
+
+This file should now be deprecated with the updated PR testing system.
+TODO: Delete this file (wcmclen)
 '''
 from __future__ import print_function
 import sys

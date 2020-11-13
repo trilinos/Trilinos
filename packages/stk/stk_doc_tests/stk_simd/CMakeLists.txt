@@ -9,6 +9,7 @@ FILE(GLOB SOURCES *.cpp)
 TRIBITS_ADD_EXECUTABLE(
     stk_simd_doc_test
     SOURCES ${SOURCES}
+    TESTONLYLIBS stk_unit_main
     COMM serial mpi
     NOEXEPREFIX
     )

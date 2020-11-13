@@ -1178,13 +1178,13 @@ refert to interface DOFs, so we can grab them and stick them into the list of \c
 */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void ExtractListOfInterfaceRegionGIDs(
-    std::vector<Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& regionRowMap,
+    Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > & regionRowMap,
     const Teuchos::Array<LocalOrdinal>& interfaceRegionLIDs, Teuchos::Array<GlobalOrdinal>& interfaceRegionGIDs)
 {
   interfaceRegionGIDs.resize(interfaceRegionLIDs.size());
   for(LocalOrdinal interfaceIdx = 0; interfaceIdx < static_cast<LocalOrdinal>(interfaceRegionLIDs.size()); ++interfaceIdx) {
     interfaceRegionGIDs[interfaceIdx] =
-      regionRowMap[0]->getGlobalElement(interfaceRegionLIDs[interfaceIdx]);
+      regionRowMap->getGlobalElement(interfaceRegionLIDs[interfaceIdx]);
   }
 } // ExtractListOfInterfaceRegionGIDs
 

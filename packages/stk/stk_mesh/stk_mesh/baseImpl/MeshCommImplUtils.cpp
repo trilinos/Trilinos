@@ -210,9 +210,7 @@ void unpack_induced_parts_from_sharers(OrdinalVector& induced_parts,
     for(PairIterEntityComm ec = shared_comm_info_range(entity_comm_info); !ec.empty(); ++ec)
     {
         CommBuffer & buf = comm.recv_buffer(ec->proc);
-        if (!buf.remaining()) {
-          break;
-        }
+        ThrowRequireMsg(buf.remaining(), "P"<<comm.parallel_rank()<<" empty buf, expected to recv parts for: "<<expected_key<<" from proc "<<ec->proc);
 
         unsigned count = 0;
         stk::mesh::EntityKey key;
