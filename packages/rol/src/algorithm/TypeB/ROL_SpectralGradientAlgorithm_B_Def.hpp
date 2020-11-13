@@ -144,7 +144,7 @@ std::vector<std::string> SpectralGradientAlgorithm_B<Real>::run( Vector<Real>   
       outStream << "    Number of function evaluations:   " << ls_nfval             << std::endl;
     }
     while (ftrial > fmax + gamma_*alpha*gs && ls_nfval < maxit_) {
-      alphaTmp = half*alpha*alpha*gs/(ftrial-state_->value-alpha*gs);
+      alphaTmp = -half*alpha*alpha*gs/(ftrial-state_->value-alpha*gs);
       alpha    = (sigma1_ <= alphaTmp && alphaTmp <= sigma2_*alpha) ? alphaTmp : rhodec_*alpha;
       state_->iterateVec->set(x);
       state_->iterateVec->axpy(alpha,*s);
