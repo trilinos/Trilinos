@@ -69,6 +69,7 @@ private:
 
   ParameterList list_;
 
+  bool hasLEC_;
   int ls_nfval_, spgIter_;
   int verbosity_;
   bool printHeader_;

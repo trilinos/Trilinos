@@ -57,7 +57,7 @@ namespace ROL {
 template<typename Real>
 QuasiNewtonAlgorithm_B<Real>::QuasiNewtonAlgorithm_B(ParameterList           &list,
                                                      const Ptr<Secant<Real>> &secant)
-  : secant_(secant), esec_(SECANT_USERDEFINED), list_(list) {
+  : secant_(secant), esec_(SECANT_USERDEFINED), list_(list), hasLEC_(true) {
   // Set status test
   status_->reset();
   status_->add(makePtr<StatusTest<Real>>(list));
@@ -100,8 +100,10 @@ void QuasiNewtonAlgorithm_B<Real>::initialize(Vector<Real>          &x,
                                               BoundConstraint<Real> &bnd,
                                               std::ostream &outStream) {
   const Real one(1);
-  if (proj_ == nullPtr)
-    proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(bnd));
+  if (proj_ == nullPtr) {
+    proj_   = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(bnd));
+    hasLEC_ = false;
+  }
   // Initialize data
   Algorithm_B<Real>::initialize(x,g);
   // Update approximate gradient and approximate objective function.
@@ -143,10 +145,12 @@ std::vector<std::string> QuasiNewtonAlgorithm_B<Real>::run( Vector<Real>        
   Ptr<NewOptimizationProblem<Real>>
     problem = makePtr<NewOptimizationProblem<Real>>(qobj,xs);
   problem->addBoundConstraint(makePtrFromRef(bnd));
-  problem->addLinearConstraint("LEC",proj_->getLinearConstraint(),
-                                     proj_->getMultiplier(),
-                                     proj_->getResidual());
-  problem->setProjectionAlgorithm(list_);
+  if (hasLEC_) {
+    problem->addLinearConstraint("LEC",proj_->getLinearConstraint(),
+                                       proj_->getMultiplier(),
+                                       proj_->getResidual());
+    problem->setProjectionAlgorithm(list_);
+  }
   problem->finalize(false,verbosity_>2,outStream);
 
   // Output
