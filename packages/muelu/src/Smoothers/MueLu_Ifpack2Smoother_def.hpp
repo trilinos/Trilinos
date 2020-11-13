@@ -122,7 +122,10 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetPrecParameters(const Teuchos::ParameterList& list) const {
+    std::string prefix = this->ShortClassName() + ": SetPrecParameters";
+    RCP<TimeMonitor> tM = rcp(new TimeMonitor(*this, prefix, Timings0));
     ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+
     paramList.setParameters(list);
 
     RCP<ParameterList> precList = this->RemoveFactoriesFromList(this->GetParameterList());
@@ -765,7 +768,14 @@ namespace MueLu {
       prec_->apply(tpB, tpX);
     } else {
       typedef Teuchos::ScalarTraits<Scalar> TST;
-      RCP<MultiVector> Residual   = Utilities::Residual(*A_, X, B);
+
+      RCP<MultiVector> Residual;
+      {
+        std::string prefix = this->ShortClassName() + ": Apply: ";
+        RCP<TimeMonitor> tM = rcp(new TimeMonitor(*this, prefix + "residual calculation", Timings0));
+        Residual = Utilities::Residual(*A_, X, B);
+      }
+
       RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
 
       Tpetra::MultiVector<SC,LO,GO,NO>&       tpX = Utilities::MV2NonConstTpetraMV(*Correction);
