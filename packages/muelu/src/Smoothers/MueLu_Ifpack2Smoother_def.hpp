@@ -736,8 +736,19 @@ namespace MueLu {
       supportInitialGuess = true;
 
     } else if (type_ == "RELAXATION"       ||
+               type_ == "BLOCK_RELAXATION" ||
+               type_ == "BLOCK RELAXATION" ||
                type_ == "BLOCKRELAXATION"  ||
-               type_ == "BANDEDRELAXATION" ||
+               // Banded
+               type_ == "BANDED_RELAXATION" ||
+               type_ == "BANDED RELAXATION" ||
+               type_ == "BANDEDRELAXATION"  ||
+               // Tridiagonal
+               type_ == "TRIDI_RELAXATION"       ||
+               type_ == "TRIDI RELAXATION"       ||
+               type_ == "TRIDIRELAXATION"        ||
+               type_ == "TRIDIAGONAL_RELAXATION" ||
+               type_ == "TRIDIAGONAL RELAXATION" ||
                type_ == "TRIDIAGONALRELAXATION") {
       paramList.set("relaxation: zero starting solution", InitialGuessIsZero);
       SetPrecParameters(paramList);
