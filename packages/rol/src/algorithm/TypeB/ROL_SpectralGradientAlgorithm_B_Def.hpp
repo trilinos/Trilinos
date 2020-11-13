@@ -58,8 +58,8 @@ SpectralGradientAlgorithm_B<Real>::SpectralGradientAlgorithm_B(ParameterList &li
   ParameterList &lslist = list.sublist("Step").sublist("Spectral Gradient");
   maxit_        = lslist.get("Function Evaluation Limit",                        20);
   lambda_       = lslist.get("Initial Spectral Step Size",                     -1.0);
-  lambdaMin_    = lslist.get("Minimum Spectral Step Size",                     1e-3); 
-  lambdaMax_    = lslist.get("Maximum Spectral Step Size",                      1e3); 
+  lambdaMin_    = lslist.get("Minimum Spectral Step Size",                     1e-8); 
+  lambdaMax_    = lslist.get("Maximum Spectral Step Size",                      1e8); 
   sigma1_       = lslist.get("Lower Step Size Safeguard",                       0.1);
   sigma2_       = lslist.get("Upper Step Size Safeguard",                       0.9);
   rhodec_       = lslist.get("Backtracking Rate",                               0.5);
