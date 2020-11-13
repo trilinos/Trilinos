@@ -1832,6 +1832,7 @@ namespace Tpetra {
     const char tfecfFuncName[] = "insertGlobalIndicesImpl: ";
     const LO lclRow = static_cast<LO> (rowInfo.localRow);
 
+    printf("asdf\n");
     auto numEntries = rowInfo.numEntries;
     using inp_view_type = View<const GO*, device_type, MemoryUnmanaged>;
     inp_view_type inputInds(inputGblColInds, numInputInds);

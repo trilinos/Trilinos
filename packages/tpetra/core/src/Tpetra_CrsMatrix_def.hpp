@@ -1942,19 +1942,24 @@ namespace Tpetra {
     const size_t curNumEnt = rowInfo.numEntries;
 #endif // HAVE_TPETRA_DEBUG
 
+    printf("fdsa\n");
     if (! graph.indicesAreAllocated ()) {
       // We only allocate values at most once per process, so it's OK
       // to check TPETRA_VERBOSE here.
+      printf("fdsa00\n");
       using ::Tpetra::Details::Behavior;
       const bool verbose = Behavior::verbose("CrsMatrix");
+      printf("fdsa01\n");
       this->allocateValues (GlobalIndices, GraphNotYetAllocated, verbose);
       // mfh 23 Jul 2017: allocateValues invalidates existing
       // getRowInfo results.  Once we get rid of lazy graph
       // allocation, we'll be able to move the getRowInfo call outside
       // of this method.
+      printf("fdsa02\n");
       rowInfo = graph.getRowInfo (rowInfo.localRow);
+      printf("fdsa03\n");
     }
-
+    printf("fdsa1\n");
     Teuchos::ArrayView<IST> valsView = this->getViewNonConst(rowInfo);
     auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset) {
                  valsView[offset] += vals[k];

@@ -182,10 +182,13 @@ namespace { // (anonymous)
     mvrand.randomize();
     // create the identity matrix
     GO base = numLocal*myImageID;
+    printf("1\n");
     RCP<Tpetra::RowMatrix<Scalar,LO,GO,Node> > eye;
     {
+      printf("1a\n");
       RCP<MAT> eye_crs = rcp(new MAT(map,numLocal,TPETRA_DEFAULT_PROFILE_TYPE));
       for (size_t i=0; i<numLocal; ++i) {
+	printf("1aa, %lu, %lu\n", i, numLocal);
         eye_crs->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<Scalar>(ST::one()));
       }
       TEST_ASSERT( eye_crs->getProfileType() == TPETRA_DEFAULT_PROFILE_TYPE );
@@ -193,6 +196,7 @@ namespace { // (anonymous)
       eye = eye_crs;
     }
     // test the properties
+    printf("2\n");
     TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
     TEST_EQUALITY(eye->getNodeNumEntries()      , numLocal);
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
