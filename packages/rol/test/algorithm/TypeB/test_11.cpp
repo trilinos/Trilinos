@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
     e4 = (data[3]-static_cast<RealT>(2.0));
     err = std::max(std::max(std::max(std::abs(e1),std::abs(e2)),std::abs(e3)),std::abs(e4));
     *outStream << "  Max-Error = " << err << std::endl;
-    errorFlag += (err > tol ? 1 : 0);
+    errorFlag += (err > 1e1*tol ? 1 : 0);
 
     *outStream << std::endl << "Hock and Schittkowski Problem #53" << std::endl << std::endl;
     ROL::ZOO::getHS53<RealT> HS53;
