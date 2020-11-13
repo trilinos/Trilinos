@@ -67,6 +67,8 @@ QuasiNewtonAlgorithm_B<Real>::QuasiNewtonAlgorithm_B(ParameterList           &li
   maxit_        = lslist.get("Function Evaluation Limit",                        20);
   c1_           = lslist.get("Sufficient Decrease Tolerance",                  1e-4);
   rhodec_       = lslist.sublist("Line-Search Method").get("Backtracking Rate", 0.5);
+  sigma1_       = lslist.sublist("PQN").get("Lower Step Size Safeguard",        0.1);
+  sigma2_       = lslist.sublist("PQN").get("Upper Step Size Safeguard",        0.9);
   algoName_     = lslist.sublist("PQN").get("Subproblem Solver","Spectral Gradient");
   int sp_maxit  = lslist.sublist("PQN").get("Subproblem Iteration Limit",      1000);
   Real sp_tol   = lslist.sublist("PQN").get("Subproblem Tolerance",           1e-10);
@@ -123,13 +125,12 @@ std::vector<std::string> QuasiNewtonAlgorithm_B<Real>::run( Vector<Real>        
                                                             Objective<Real>       &obj,
                                                             BoundConstraint<Real> &bnd,
                                                             std::ostream          &outStream ) {
-  const Real one(1);
+  const Real half(0.5), one(1);
   // Initialize trust-region data
   std::vector<std::string> output;
   initialize(x,g,obj,bnd,outStream);
   Ptr<Vector<Real>> s = x.clone(), gp = x.clone(), gold = g.clone(), xs = x.clone();
-  Ptr<Vector<Real>> pwa = x.clone(), pwa1 = x.clone();
-  Real ftrial(0), gs(0), tol(std::sqrt(ROL_EPSILON<Real>()));
+  Real ftrial(0), gs(0), alphaTmp(0), tol(std::sqrt(ROL_EPSILON<Real>()));
 
   Ptr<Algorithm_B<Real>> algo;
   if (algoName_ == "Trust Region")                algo = makePtr<LinMoreAlgorithm_B<Real>>(list_);
@@ -179,7 +180,11 @@ std::vector<std::string> QuasiNewtonAlgorithm_B<Real>::run( Vector<Real>        
       outStream << "    Number of function evaluations:   " << ls_nfval_                  << std::endl;
     }
     while ( ftrial > state_->value + c1_*state_->searchSize*gs && ls_nfval_ < maxit_ ) {
-      state_->searchSize *= rhodec_;
+      alphaTmp = -half*state_->searchSize*state_->searchSize*gs
+                 / (ftrial-state_->value-state_->searchSize*gs);
+      state_->searchSize = (sigma1_*state_->searchSize <= alphaTmp && alphaTmp <= sigma2_*state_->searchSize)
+                            ? alphaTmp : rhodec_*state_->searchSize;
+      //state_->searchSize *= rhodec_;
       x.set(*state_->iterateVec);
       x.axpy(state_->searchSize,*s);
       obj.update(x,UPDATE_TRIAL);

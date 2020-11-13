@@ -63,6 +63,8 @@ private:
   int maxit_;         ///< Maximum number of line search steps (default: 20)
   Real rhodec_;       ///< Backtracking rate (default: 0.5)
   Real c1_;           ///< Sufficient Decrease Parameter (default: 1e-4)
+  Real sigma1_;       ///< Lower safeguard for quadratic line search (default: 0.1)
+  Real sigma2_;       ///< Upper safeguard for quadratic line search (default: 0.9)
   std::string algoName_;
 
   ParameterList list_;
