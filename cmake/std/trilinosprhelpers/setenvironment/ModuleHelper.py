@@ -24,13 +24,48 @@ else:                                                                           
 
 try:
 
-    from env_modules_python import module
+    # Try to import the LMOD version of the module() function.
+    # See: https://github.com/TACC/Lmod/blob/master/init/env_modules_python.py.in
+    import env_modules_python
     print("NOTICE> [ModuleHelper.py] Using the lmod based `env_modules_python` module handler.")
 
+
+    def module(command, *arguments):
+        """
+        `module` wrapper for the LMOD based modules function.
+
+        Args:
+            command (str): The `module` command that we're executing. i.e., `load`, `unload`, `swap`, etc.
+            *arguments   : Variable length argument list.
+
+        Returns:
+            int: status indicating success or failure. 0 = success, nonzero for failure
+
+            For now, because the LMOD `module()` command returns nothing (`NoneType`)
+            and provides no way to determine success or failure, we will only return 0.
+
+        Raises:
+            Any exception thrown by env_modules_python.module() will get caught and passed along.
+
+        """
+        output = 0
+
+        try:
+
+            status = env_modules_python.module(command, *arguments)
+
+        except BaseException as error:
+            print("")
+            print("An ERROR occurred during execution of module command")
+            print("")
+            raise error
+
+        return output
+
+
+
 except ImportError:
-    # If importing module from env_modules_python fails, we roll our own
-    # version of that function.
-    print("NOTICE> [ModuleHelper.py] `env_modules_python` not found, using our own `module` command.")
+    print("NOTICE> [ModuleHelper.py] Using the modulecmd based environment modules handler.")
 
 
     def module(command, *arguments):
@@ -75,6 +110,17 @@ except ImportError:
         proc = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
         (output,stderr) = proc.communicate()
         errcode = proc.returncode
+
+        if errcode:
+            print("Failed to execute the module command: {}".format(" ".join(cmd[2:])))
+            print("- Returned {} exit status.".format(errcode))
+        else:
+            try:
+                # This is where we _actually_ execute the module command body.
+                exec(output)
+            except BaseException as error:
+                print("An ERROR occurred during execution of module command")
+                raise error
 
         # Convert the bytes into UTF-8 strings
         output = output.decode()
