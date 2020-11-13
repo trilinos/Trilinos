@@ -150,6 +150,7 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/algorithm)
 INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/TypeB
+                    ${DIR}/TypeB/pqn
                     ${DIR}/TypeE
                     ${DIR}/TypeG
                     ${DIR}/TypeU
