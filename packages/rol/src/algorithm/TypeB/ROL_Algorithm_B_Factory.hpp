@@ -52,6 +52,7 @@
 #include "ROL_PrimalDualActiveSetAlgorithm_B.hpp"
 #include "ROL_KelleySachsAlgorithm_B.hpp"
 #include "ROL_SpectralGradientAlgorithm_B.hpp"
+#include "ROL_QuasiNewtonAlgorithm_B.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {
@@ -146,8 +147,10 @@ inline Ptr<Algorithm_B<Real>> AlgorithmBFactory(ParameterList &parlist) {
     = parlist.sublist("Step").sublist("Trust Region").get("Subproblem Model","Lin-More");
   switch(ealg) {
     case ALGORITHM_B_LINESEARCH:
-      if (desc=="Newton-Krylov" || desc=="Newton" || desc=="Quasi-Newton Method")
+      if (desc=="Newton-Krylov" || desc=="Newton")
         return makePtr<NewtonKrylovAlgorithm_B<Real>>(parlist);
+      else if (desc=="Quasi-Newton Method")
+        return makePtr<QuasiNewtonAlgorithm_B<Real>>(parlist);
       else
         return makePtr<GradientAlgorithm_B<Real>>(parlist);
     case ALGORITHM_B_TRUSTREGION:
