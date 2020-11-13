@@ -145,7 +145,7 @@ std::vector<std::string> SpectralGradientAlgorithm_B<Real>::run( Vector<Real>   
     }
     while (ftrial > fmax + gamma_*alpha*gs && ls_nfval < maxit_) {
       alphaTmp = -half*alpha*alpha*gs/(ftrial-state_->value-alpha*gs);
-      alpha    = (sigma1_ <= alphaTmp && alphaTmp <= sigma2_*alpha) ? alphaTmp : rhodec_*alpha;
+      alpha    = (sigma1_*alpha <= alphaTmp && alphaTmp <= sigma2_*alpha) ? alphaTmp : rhodec_*alpha;
       state_->iterateVec->set(x);
       state_->iterateVec->axpy(alpha,*s);
       obj.update(*state_->iterateVec,UPDATE_TRIAL);
