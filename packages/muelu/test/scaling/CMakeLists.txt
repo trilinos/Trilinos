@@ -329,6 +329,15 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         COMM mpi # HAVE_MPI required
         )
 
+        TRIBITS_ADD_TEST(
+          Driver
+          NAME "DriverEnforceConstaints"
+          ARGS "--xml=sa_enforce_constraints.xml --stretchx=3. --matrixType=Laplace2D --nx=43 --ny=40"
+          NUM_MPI_PROCS 1
+          COMM mpi # HAVE_MPI required
+          RUN_SERIAL
+          )
+
       IF(${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
         TRIBITS_ADD_TEST(
           Driver
