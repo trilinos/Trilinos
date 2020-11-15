@@ -1028,8 +1028,8 @@ init (const keys_type& keys,
     // sequentially for now.  Later, we can work on parallelization.
     if (numKeys > 0) {
       // FIXME: make it a parallel kernel with no host copy
-      auto keys_h = Kokkos::create_mirror_view(keys);
-      Kokkos::deep_copy(keys_h, keys);
+      auto keys_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                        keys);
       firstContigKey_ = keys_h[0];
       // Start with one plus, then decrement at the end.  That lets us do
       // only one addition per loop iteration, rather than two (if we test
@@ -1116,14 +1116,11 @@ init (const keys_type& keys,
     }
   }
   else {
+    Kokkos::HostSpace hostMemSpace;
     theKeysHost = Kokkos::create_mirror_view(theKeys);
     Kokkos::deep_copy(theKeysHost, theKeys);
+    auto countsHost = Kokkos::create_mirror_view (hostMemSpace, counts);
 
-    auto countsHost = Kokkos::create_mirror_view (counts);
-    // FIXME (mfh 28 Mar 2016) Does create_mirror_view zero-fill?
-    Kokkos::deep_copy (countsHost, static_cast<offset_type> (0));
-
-    Kokkos::deep_copy(theKeysHost, theKeys);
     for (offset_type k = 0; k < theNumKeys; ++k) {
       using key_type = typename keys_type::non_const_value_type;
       const key_type key = theKeysHost[k];
@@ -1170,8 +1167,7 @@ init (const keys_type& keys,
 
   if (! buildInParallel || debug) {
     Kokkos::HostSpace hostMemSpace;
-    auto counts_h = Kokkos::create_mirror_view (hostMemSpace, counts);
-    Kokkos::deep_copy (counts_h, counts);
+    auto counts_h = Kokkos::create_mirror_view_and_copy (hostMemSpace, counts);
     auto ptr_h = Kokkos::create_mirror_view (hostMemSpace, ptr);
 
 #ifdef KOKKOS_ENABLE_SERIAL
@@ -1222,12 +1218,10 @@ init (const keys_type& keys,
     Kokkos::parallel_reduce (range_type (0, theNumKeys), functor, result);
   }
   else {
-    auto counts_h = Kokkos::create_mirror_view(counts);
-    Kokkos::deep_copy(counts_h, counts);
-    auto ptr_h = Kokkos::create_mirror_view(ptr);
-    Kokkos::deep_copy(ptr_h, ptr);
-    auto val_h = Kokkos::create_mirror_view(val);
-    Kokkos::deep_copy(val_h, val);
+    Kokkos::HostSpace hostMemSpace;
+    auto counts_h = Kokkos::create_mirror_view_and_copy(hostMemSpace, counts);
+    auto ptr_h = Kokkos::create_mirror_view_and_copy(hostMemSpace, ptr);
+    auto val_h = Kokkos::create_mirror_view_and_copy(hostMemSpace, val);
     for (offset_type k = 0; k < theNumKeys; ++k) {
       typedef typename hash_type::result_type hash_value_type;
       const KeyType key = theKeysHost[k];
@@ -1316,9 +1310,9 @@ init (const host_input_keys_type& keys,
   // An old comment from MFH noted ptr_h should be zero-initialized, while val_h should not be initialized.
   // It further noted that we shouldn't need a DualView type arrangement when all setup kernels have
   // been "Kokkos-ized".
+  Kokkos::HostSpace hostMemSpace;
   typename ptr_type::non_const_type ptr ("FixedHashTable::ptr", size + 1);
-  auto ptr_h = Kokkos::create_mirror_view(ptr);
-  Kokkos::deep_copy(ptr_h, ptr);
+  auto ptr_h = Kokkos::create_mirror_view_and_copy(hostMemSpace, ptr);
 
   // Allocate the array of key,value pairs.  Don't waste time filling
   // it with zeros, because we will fill it with actual data below.
@@ -1326,8 +1320,7 @@ init (const host_input_keys_type& keys,
   typedef typename val_type::non_const_type nonconst_val_type;
   nonconst_val_type val (ViewAllocateWithoutInitializing ("FixedHashTable::pairs"),
                          numKeys);
-  auto val_h = Kokkos::create_mirror_view(val);
-  Kokkos::deep_copy(val_h, val);
+  auto val_h = Kokkos::create_mirror_view_and_copy(hostMemSpace, val);
 
   // Compute number of entries in each hash table position.
   for (offset_type k = 0; k < numKeys; ++k) {
