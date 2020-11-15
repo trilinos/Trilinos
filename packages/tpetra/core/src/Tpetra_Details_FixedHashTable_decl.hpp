@@ -321,17 +321,11 @@ public:
     const typename hash_type::result_type hashVal =
       hash_type::hashFunc (key, size);
 
-    // FIXME: Is it worth it to launch a device kernel here to avoid the deep_copy?
-    auto ptr_h = Kokkos::create_mirror_view(ptr_);
-    Kokkos::deep_copy(ptr_h, ptr_);
-    auto val_h = Kokkos::create_mirror_view(val_);
-    Kokkos::deep_copy(val_h, val_);
-
-    const offset_type start = ptr_h[hashVal];
-    const offset_type end = ptr_h[hashVal+1];
+    const offset_type start = ptr_[hashVal];
+    const offset_type end = ptr_[hashVal+1];
     for (offset_type k = start; k < end; ++k) {
-      if (val_h[k].first == key) {
-        return val_h[k].second;
+      if (val_[k].first == key) {
+        return val_[k].second;
       }
     }
 

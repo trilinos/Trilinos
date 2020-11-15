@@ -415,18 +415,36 @@ namespace Tpetra {
       /// This hash table implements a mapping from an LID in the
       /// Directory Map (corresponding to a GID in the input Map) to
       /// the GID's owning PID in the input Map.
-      Teuchos::RCP<Details::FixedHashTable<LocalOrdinal, int,
-                                           Kokkos::Device<typename NodeType::execution_space,
-                                                          typename NodeType::memory_space> > > lidToPidTable_;
+      ///
+      /// At present, this hash table is accessed only on the host.
+      /// Previous implementations that exploited UVM may have constructed
+      /// the hash table on device, but then accessed it on host.
+      /// The current implementation constructs the hash table on host.
+      /// Future implementations could construct the hash table on device
+      /// and copy it to host, or modify the directory to access the hash table
+      /// on device.
+      typedef typename Details::FixedHashTable<LocalOrdinal, int,
+                                               Kokkos::HostSpace::device_type> 
+                       lidToPidTable_type;
+      Teuchos::RCP<lidToPidTable_type> lidToPidTable_;
 
       /// \brief Mapping from Directory Map LID to input Map LID.
       ///
       /// This hash table implements a mapping from an LID in the
       /// Directory Map (corresponding to a GID in the input Map), to
       /// the GID's LID in the input Map on the GID's owning process.
-      Teuchos::RCP<Details::FixedHashTable<LocalOrdinal, LocalOrdinal,
-                                           Kokkos::Device<typename NodeType::execution_space,
-                                                          typename NodeType::memory_space> > > lidToLidTable_;
+      ///
+      /// At present, this hash table is accessed only on the host.
+      /// Previous implementations that exploited UVM may have constructed
+      /// the hash table on device, but then accessed it on host.
+      /// The current implementation constructs the hash table on host.
+      /// Future implementations could construct the hash table on device
+      /// and copy it to host, or modify the directory to access the hash table
+      /// on device.
+      typedef typename Details::FixedHashTable<LocalOrdinal, LocalOrdinal,
+                                           Kokkos::HostSpace::device_type>
+                       lidToLidTable_type;
+      Teuchos::RCP<lidToLidTable_type> lidToLidTable_;
       //@}
 
       /// \brief The result of the first call to isOneToOne() on this object.
