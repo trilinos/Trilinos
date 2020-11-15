@@ -541,15 +541,6 @@ private:
 //
 
 template<class KeyType, class ValueType, class DeviceType>
-void
-FixedHashTable<KeyType, ValueType, DeviceType>::
-check () const
-{
-  // const char prefix[] = "Tpetra::Details::FixedHashTable: ";
-  // const char suffix[] = "  Please report this bug to the Tpetra developers.";
-}
-
-template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable () :
   minKey_ (::Kokkos::Details::ArithTraits<KeyType>::max ()),
@@ -568,9 +559,6 @@ FixedHashTable () :
   checkedForDuplicateKeys_ (true), // it's an empty table; no need to check
   hasDuplicateKeys_ (false)
 {
-#ifdef HAVE_TPETRA_DEBUG
-  check ();
-#endif // HAVE_TPETRA_DEBUG
 }
 
 template<class KeyType, class ValueType, class DeviceType>
@@ -597,10 +585,6 @@ FixedHashTable (const keys_type& keys) :
   const KeyType initMaxKey = this->maxKey_;
   this->init (keys, startingValue, initMinKey, initMaxKey,
               initMinKey, initMinKey, false);
-
-#ifdef HAVE_TPETRA_DEBUG
-  check ();
-#endif // HAVE_TPETRA_DEBUG
 }
 
 template<class KeyType, class ValueType, class DeviceType>
@@ -638,10 +622,6 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys) :
   const KeyType initMaxKey = this->maxKey_;
   this->init (keys_d, startingValue, initMinKey, initMaxKey,
               initMinKey, initMinKey, false);
-
-#ifdef HAVE_TPETRA_DEBUG
-  check ();
-#endif // HAVE_TPETRA_DEBUG
 }
 
 template<class KeyType, class ValueType, class DeviceType>
@@ -695,9 +675,6 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
   this->init (keys_d, startingValue, initMinKey, initMaxKey,
               initMinKey, initMinKey, false);
 
-#ifdef HAVE_TPETRA_DEBUG
-  check ();
-#endif // HAVE_TPETRA_DEBUG
 }
 
 template<class KeyType, class ValueType, class DeviceType>
@@ -738,10 +715,6 @@ FixedHashTable (const keys_type& keys,
     -::Kokkos::Details::ArithTraits<KeyType>::max ();
   this->init (keys, startingValue, initMinKey, initMaxKey,
               firstContigKey, lastContigKey, true);
-
-#ifdef HAVE_TPETRA_DEBUG
-  check ();
-#endif // HAVE_TPETRA_DEBUG
 }
 
 template<class KeyType, class ValueType, class DeviceType>
@@ -794,10 +767,6 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
     -::Kokkos::Details::ArithTraits<KeyType>::max ();
   this->init (keys_d, startingValue, initMinKey, initMaxKey,
               firstContigKey, lastContigKey, true);
-
-#ifdef HAVE_TPETRA_DEBUG
-  check ();
-#endif // HAVE_TPETRA_DEBUG
 }
 
 template<class KeyType, class ValueType, class DeviceType>
@@ -838,10 +807,6 @@ FixedHashTable (const keys_type& keys,
     -::Kokkos::Details::ArithTraits<KeyType>::max ();
   this->init (keys, startingValue, initMinKey, initMaxKey,
               initMinKey, initMinKey, false);
-
-#ifdef HAVE_TPETRA_DEBUG
-  check ();
-#endif // HAVE_TPETRA_DEBUG
 }
 
 template<class KeyType, class ValueType, class DeviceType>
@@ -888,10 +853,6 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
     ::Kokkos::Details::ArithTraits<KeyType>::min () :
     -::Kokkos::Details::ArithTraits<KeyType>::max ();
   this->init (keys_k, vals_k, initMinKey, initMaxKey);
-
-#ifdef HAVE_TPETRA_DEBUG
-  check ();
-#endif // HAVE_TPETRA_DEBUG
 }
 
 template<class KeyType, class ValueType, class DeviceType>
@@ -1015,7 +976,7 @@ init (const keys_type& keys,
   // The array of counts must be separate from the array of offsets,
   // in order for parallel_scan to work correctly.
   typedef typename ptr_type::non_const_type counts_type;
-  counts_type counts ("FixedHashTable::counts", size);
+  counts_type counts ("Tpetra::FixedHashTable::counts", size);
 
   //
   // Count the number of "buckets" per offsets array (ptr) entry.
@@ -1081,7 +1042,7 @@ init (const keys_type& keys,
   execution_space().fence ();
 
   // Kokkos::View fills with zeros by default.
-  typename ptr_type::non_const_type ptr ("FixedHashTable::ptr", size+1);
+  typename ptr_type::non_const_type ptr ("Tpetra::FixedHashTable::ptr", size+1);
 
   // Compute row offsets via prefix sum:
   //
@@ -1139,7 +1100,7 @@ init (const keys_type& keys,
   // zeros, because we will fill it with actual data below.
   using Kokkos::ViewAllocateWithoutInitializing;
   typedef typename val_type::non_const_type nonconst_val_type;
-  nonconst_val_type val (ViewAllocateWithoutInitializing ("FixedHashTable::pairs"),
+  nonconst_val_type val (ViewAllocateWithoutInitializing ("Tpetra::FixedHashTable::pairs"),
                          theNumKeys);
 
   // Fill in the hash table's "values" (the (key,value) pairs).
@@ -1251,13 +1212,13 @@ init (const host_input_keys_type& keys,
   // Kokkos-izing all the set-up kernels, we won't need DualView for
   // either ptr or val.
 
-  typename ptr_type::non_const_type ptr ("FixedHashTable::ptr", size + 1);
+  typename ptr_type::non_const_type ptr ("Tpetra::FixedHashTable::ptr", size + 1);
 
   // Allocate the array of key,value pairs.  Don't waste time filling
   // it with zeros, because we will fill it with actual data below.
   using Kokkos::ViewAllocateWithoutInitializing;
   typedef typename val_type::non_const_type nonconst_val_type;
-  nonconst_val_type val (ViewAllocateWithoutInitializing ("FixedHashTable::pairs"),
+  nonconst_val_type val (ViewAllocateWithoutInitializing ("Tpetra::FixedHashTable::pairs"),
                          numKeys);
 
   // Compute number of entries in each hash table position.
@@ -1281,7 +1242,7 @@ init (const host_input_keys_type& keys,
   //ptr[0] = 0; // We've already done this when initializing ptr above.
 
   // curRowStart[i] is the offset of the next element in row i.
-  typename ptr_type::non_const_type curRowStart ("FixedHashTable::curRowStart", size);
+  typename ptr_type::non_const_type curRowStart ("Tpetra::FixedHashTable::curRowStart", size);
 
   // Fill in the hash table.
   FHT::FillPairsResult<KeyType> result (initMinKey, initMaxKey);

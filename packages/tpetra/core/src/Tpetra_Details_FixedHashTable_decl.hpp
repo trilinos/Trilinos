@@ -257,10 +257,10 @@ public:
     // offset_type comes from the memory space's size_type typedef.
     // That's why we use a specialized deep copy function here instead
     // of Kokkos::deep_copy.
-    nonconst_ptr_type ptr (ViewAllocateWithoutInitializing ("ptr"),
+    nonconst_ptr_type ptr (ViewAllocateWithoutInitializing ("Tpetra::FixedHashTable::ptr"),
                            src.ptr_.extent (0));
     ::Tpetra::Details::copyOffsets (ptr, src.ptr_);
-    nonconst_val_type val (ViewAllocateWithoutInitializing ("val"),
+    nonconst_val_type val (ViewAllocateWithoutInitializing ("Tpetra::FixedHashTable::val"),
                            src.val_.extent (0));
     // val and src.val_ have the same entry types, unlike (possibly)
     // ptr and src.ptr_.  Thus, we can use Kokkos::deep_copy here.
@@ -277,10 +277,6 @@ public:
     this->contiguousValues_ = src.contiguousValues_;
     this->checkedForDuplicateKeys_ = src.checkedForDuplicateKeys_;
     this->hasDuplicateKeys_ = src.hasDuplicateKeys_;
-
-#if defined(HAVE_TPETRA_DEBUG)
-    this->check ();
-#endif // defined(HAVE_TPETRA_DEBUG)
   }
 
   //! Get the value corresponding to the given key.
@@ -486,9 +482,6 @@ private:
       static_cast<offset_type> (0) :
       static_cast<offset_type> (ptr_.extent (0) - 1);
   }
-
-  //! Sanity checks; throw std::logic_error if any of them fail.
-  void check () const;
 
   typedef Kokkos::View<const KeyType*,
                        typename ptr_type::HostMirror::array_layout,
