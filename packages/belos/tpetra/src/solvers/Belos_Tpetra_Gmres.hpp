@@ -312,7 +312,7 @@ public:
     this->input_.maxOrthoSteps = maxOrthoSteps;
   }
 
-private:
+protected:
   //! Create Belos::OrthoManager instance.
   void
   setOrthogonalizer (const std::string& ortho)
@@ -339,19 +339,21 @@ private:
     }
   }
 
+private:
   int
   projectAndNormalize (const int n,
-                       const SolverInput<SC>& /* input */,
+                       const SolverInput<SC>& input,
                        MV& Q,
                        dense_matrix_type& H,
                        dense_matrix_type& /* WORK */)
   {
-    return this->projectAndNormalizeBelosOrthoManager (n, Q, H);
+    return this->projectAndNormalizeBelosOrthoManager (n, Q, H, input);
   }
 
   // ! Apply the orthogonalization using Belos' OrthoManager
   int
-  projectAndNormalizeBelosOrthoManager (int n, MV &Q, dense_matrix_type &H)
+  projectAndNormalizeBelosOrthoManager (int n, MV &Q, dense_matrix_type &H,
+                                        const SolverInput<SC>& input)
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -369,7 +371,7 @@ private:
     auto r_new = rcp (new dense_matrix_type (Teuchos::View, H, 1, 1, n+1, n));
 
     if (ortho_.get () == nullptr) {
-      setOrthogonalizer (this->input_.orthoType);
+      setOrthogonalizer (input.orthoType);
     }
     TEUCHOS_TEST_FOR_EXCEPTION
       (ortho_.get () == nullptr, std::logic_error, "Gmres: Failed to create "

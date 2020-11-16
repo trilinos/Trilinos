@@ -57,7 +57,18 @@ public:
   getStepSize() {
     return stepSize_;
   }
-  
+
+protected:
+  virtual void
+  setOrthogonalizer (const std::string& ortho)
+  {
+    if (ortho == "MGS" || ortho == "CGS" || ortho == "CGS2") {
+      this->input_.orthoType = ortho;
+    } else {
+      base_type::setOrthogonalizer (ortho);
+    }
+  }
+
 private:
   //! Apply the orthogonalization using a single all-reduce
   int
@@ -66,6 +77,140 @@ private:
                                    MV& Q,
                                    dense_matrix_type& H,
                                    dense_matrix_type& WORK) const
+  {
+    int rank = 0;
+    if (input.orthoType == "MGS") {
+      rank = projectAndNormalizeSingleReduce_MGS (n, input, Q, H, WORK);
+    } else if (input.orthoType == "CGS") {
+      rank = projectAndNormalizeSingleReduce_CGS (n, input, Q, H, WORK);
+    } else {
+      rank = projectAndNormalizeSingleReduce_CGS (n, input, Q, H, WORK);
+    }
+    return rank;
+  }
+
+
+  //! MGS specialization
+  int
+  projectAndNormalizeSingleReduce_MGS (int n,
+                                       const SolverInput<SC>& input, 
+                                       MV& Q,
+                                       dense_matrix_type& H,
+                                       dense_matrix_type& T) const
+  {
+    const SC one  = STS::one  ();
+    const SC zero = STS::zero ();
+    const mag_type eps  = STS::eps ();
+    const mag_type tolOrtho = static_cast<mag_type> (10.0) * eps;
+
+    Teuchos::RCP< Teuchos::Time > dotsTimer = Teuchos::TimeMonitor::getNewCounter ("MixedGmres::LowSynch::dot-prod");
+    Teuchos::RCP< Teuchos::Time > projTimer = Teuchos::TimeMonitor::getNewCounter ("MixedGmres::LowSynch::project");
+
+    int rank = 1;
+    // ----------------------------------------------------------
+    // dot-product for single-reduce orthogonalization
+    // ----------------------------------------------------------
+    Teuchos::Range1D index_next (n, n+1);
+    MV Qnext = * (Q.subView (index_next));
+
+    // vectors to be orthogonalized against
+    Teuchos::Range1D index (0, n+1);
+    Teuchos::RCP< const MV > Qi = MVT::CloneView (Q, index);
+
+    // compute coefficient, T(:,n:n+1) = Q(:,0:n+1)'*Q(n:n+1)
+    Teuchos::RCP< dense_matrix_type > tj
+      = Teuchos::rcp (new dense_matrix_type (Teuchos::View, T, n+2, 2, 0, n));
+    {
+      Teuchos::TimeMonitor LocalTimer (*dotsTimer);
+      MVT::MvTransMv (one, *Qi, Qnext, *tj);
+    }
+
+    // ----------------------------------------------------------
+    // lagged/delayed re-orthogonalization
+    // ----------------------------------------------------------
+    if (input.needToReortho) {
+      Teuchos::Range1D index_old (n, n);
+      MV Qold = * (Q.subView (index_old));
+      MVT::MvScale (Qold, one / T (n, n)); // normalize
+
+      // update coefficients after reortho
+      T (n, n+1) /= T (n, n);
+      for (int i = 0; i <= n; i++) {
+        T (i, n) /= T (n, n);
+      }
+      if (n > 0) {
+        H (n, n-1) *= T (n, n);
+      }
+    }
+
+    // ----------------------------------------------------------
+    // comopute new coefficients (one-synch MGS)
+    // ----------------------------------------------------------
+    // update new coefficients 
+    // H := (I+T)^(-T) H, where T is upper-triangular
+    // extract new coefficients 
+    for (int i = 0; i <= n+1; i++) {
+      H (i, n) = T (i, n+1);
+    }
+
+    Teuchos::BLAS<LO ,SC> blas;
+    dense_matrix_type Hnew (Teuchos::View, H, n+1, 1, 0, n);
+    blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,
+               Teuchos::TRANS, Teuchos::NON_UNIT_DIAG,
+               n+1, 1,
+               one, T.values(), T.stride(),
+                    Hnew.values(), Hnew.stride());
+
+    // ----------------------------------------------------------
+    // orthogonalize the new vectors against the previous columns
+    // ----------------------------------------------------------
+    Teuchos::Range1D index_new (n+1, n+1);
+    MV Qnew = * (Q.subView (index_new));
+
+    Teuchos::Range1D index_prev (0, n);
+    Teuchos::RCP< const MV > Qprev = MVT::CloneView (Q, index_prev);
+    {
+      Teuchos::TimeMonitor LocalTimer (*projTimer);
+      MVT::MvTimesMatAddMv (-one, *Qprev, Hnew, one, Qnew);
+    }
+
+    // ----------------------------------------------------------
+    // normalize the new vector
+    // ----------------------------------------------------------
+    // fix the norm
+    mag_type oldNorm = STS::real (H(n+1, n));
+    for (int i = 0; i <= n; ++i) {
+      H(n+1, n) -= (H(i, n)*H(i, n));
+    }
+    mag_type newNorm = STS::real (H(n+1, n));
+
+    // check
+    if (newNorm > oldNorm * tolOrtho) {
+      // compute norm
+      newNorm = STM::squareroot (newNorm);
+      H(n+1, n) = SC {newNorm};
+
+      // scale
+      MVT::MvScale (Qnew, one / H (n+1, n)); // normalize
+      rank = 1;
+    }
+    else {
+      H(n+1, n) = zero;
+      rank = 0;
+    }
+
+
+    return rank;
+  }
+
+
+  //! CGS1 specialization
+  int
+  projectAndNormalizeSingleReduce_CGS (int n,
+                                       const SolverInput<SC>& input, 
+                                       MV& Q,
+                                       dense_matrix_type& H,
+                                       dense_matrix_type& WORK) const
   {
     Teuchos::BLAS<LO, SC> blas;
     const SC one = STS::one ();
@@ -88,27 +233,31 @@ private:
     // orthogonalize (project)
     MVT::MvTimesMatAddMv (-one, Qprev, h_prev, one, AP);
 
-    // fix the norm
+    // save the norm before ortho
     mag_type oldNorm = STS::real (H(n+1, n));
-    for (int i = 0; i <= n; ++i) {
-      H(n+1, n) -= (H(i, n)*H(i, n));
-    }
 
     // reorthogonalize if requested
     if (input.needToReortho) {
       // Q(:,0:j+1)'*Q(:,j+1)
-      MVT::MvTransMv(one, Qall, AP, WORK);
+      dense_matrix_type w_all (Teuchos::View, WORK, n+2, 1, 0, n);
+      dense_matrix_type w_prev (Teuchos::View, WORK, n+1, 1, 0, n);
+      MVT::MvTransMv(one, Qall, AP, w_all);
       // orthogonalize (project)
-      MVT::MvTimesMatAddMv (-one, Qprev, WORK, one, AP);
+      MVT::MvTimesMatAddMv (-one, Qprev, w_prev, one, AP);
       // recompute the norm
       for (int i = 0; i <= n; ++i) {
-        WORK(n+1, 0) -= (WORK(i, 0)*WORK(i, 0));
+        w_all(n+1, 0) -= (w_prev(i, 0)*w_prev(i, 0));
       }
 
       // accumulate results
-      blas.AXPY (n+1, one, WORK.values (), 1, h_prev.values (), 1);
-      H(n+1, n) = WORK(n+1, 0); 
+      blas.AXPY (n+1, one, w_prev.values (), 1, h_prev.values (), 1);
+      H(n+1, n) = w_all(n+1, 0); 
+    } else {
+      for (int i = 0; i <= n; ++i) {
+        H(n+1, n) -= (H(i, n)*H(i, n));
+      }
     }
+
     // check for negative norm
     TEUCHOS_TEST_FOR_EXCEPTION
       (STS::real (H(n+1, n)) < STM::zero (), std::runtime_error, "At iteration "
@@ -162,8 +311,9 @@ private:
 
     Teuchos::BLAS<LO ,SC> blas;
     dense_matrix_type H (restart+1, restart, true);
-    dense_matrix_type h (restart+1, 1, true);
+    dense_matrix_type T (restart+1, restart, true);
     dense_vector_type y (restart+1, true);
+    dense_vector_type z (restart+1, true);
     std::vector<mag_type> cs (restart);
     std::vector<SC> sn (restart);
 
@@ -197,6 +347,30 @@ private:
       SolverInput<SC> input_gmres = input;
       input_gmres.maxNumIters = input.resCycle;
       input_gmres.computeRitzValues = computeRitzValues;
+      if (input.orthoType == "MGS") {
+        // MGS1 or MGS2
+        input_gmres.orthoType = "IMGS";
+        if (input.needToReortho) {
+          input_gmres.maxOrthoSteps = 2;
+        } else {
+          input_gmres.maxOrthoSteps = 1;
+        }
+      } else if (input.orthoType == "CGS") {
+        // CGS1 or CGS2
+        input_gmres.orthoType = "ICGS";
+        if (input.needToReortho) {
+          input_gmres.maxOrthoSteps = 2;
+        } else {
+          input_gmres.maxOrthoSteps = 1;
+        }
+      } else if (input.orthoType == "CGS2") {
+        // CGS2
+        input_gmres.orthoType = "ICGS";
+        input_gmres.maxOrthoSteps = 2;
+      }
+      if (outPtr != nullptr) {
+        *outPtr << "Run standard GMRES for first restart cycle" << endl;
+      }
 
       Tpetra::deep_copy (R, B);
       output = Gmres<SC, MV, OP>::solveOneVec (outPtr, X, R, A, M,
@@ -260,7 +434,7 @@ private:
         output.numIters++; 
 
         // Orthogonalization
-        projectAndNormalizeSingleReduce (iter, input, Q, H, h);
+        projectAndNormalizeSingleReduce (iter, input, Q, H, T);
         // Shift back for Newton basis
         if (computeRitzValues) {
           // H(iter, iter) += output.ritzValues[iter];
@@ -284,7 +458,7 @@ private:
       if (iter < restart) {
         // save the old solution, just in case explicit residual norm failed the convergence test
         Tpetra::deep_copy (Y, X);
-        blas.COPY (1+iter, y.values(), 1, h.values(), 1);
+        blas.COPY (1+iter, y.values(), 1, z.values(), 1);
       }
       r_norm_imp = STS::magnitude (y (iter)); // save implicit residual norm
       if (iter > 0) {
@@ -350,7 +524,7 @@ private:
             *outPtr << " > not-restart with iter=" << iter << endl;
           }
           Tpetra::deep_copy (X, Y);
-          blas.COPY (1+iter, h.values(), 1, y.values(), 1);
+          blas.COPY (1+iter, z.values(), 1, y.values(), 1);
         }
       }
     }
