@@ -157,6 +157,10 @@ private:
   size_type size_of_edge_list;
   nnz_lno_persistent_work_view_t lower_triangle_src;
   nnz_lno_persistent_work_view_t lower_triangle_dst;
+  
+  bool use_vtx_list;
+  nnz_lno_temp_work_view_t vertex_list;  
+  size_type vertex_list_size;
 
   color_view_t vertex_colors;
   bool is_coloring_called_before;
@@ -673,7 +677,15 @@ private:
   int get_num_phases() const { return this->num_phases;}
   color_view_t get_vertex_colors() const {return this->vertex_colors;}
   bool is_coloring_called() const {return this->is_coloring_called_before;}
+  bool get_use_vtx_list() const {return this->use_vtx_list;}
+  nnz_lno_temp_work_view_t get_vertex_list() const{return this->vertex_list;}
+  size_type get_vertex_list_size() const {return this->vertex_list_size;}
   //setters
+  void set_vertex_list(nnz_lno_temp_work_view_t vertex_list_, size_type vertex_list_size_){
+    this->vertex_list = vertex_list_;
+    this->vertex_list_size = vertex_list_size_;
+    this->use_vtx_list = true;
+  }
   void set_coloring_algo_type(const ColoringAlgorithm &col_algo){this->coloring_algorithm_type = col_algo;}
   void set_conflict_list_type(const ConflictList &cl){this->conflict_list_type = cl;}
   void set_min_reduction_for_conflictlist(const double &min_reduction){this->min_reduction_for_conflictlist = min_reduction;}

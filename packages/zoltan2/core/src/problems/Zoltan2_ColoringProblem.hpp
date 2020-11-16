@@ -135,9 +135,10 @@ public:
   {
     RCP<Teuchos::StringValidator> color_method_Validator = Teuchos::rcp(
       new Teuchos::StringValidator(
-        Teuchos::tuple<std::string>( "SerialGreedy" )));
+        Teuchos::tuple<std::string>( "SerialGreedy","Hybrid","2GL","D2" )));
     pl.set("color_method", "SerialGreedy", "coloring algorithm",
      color_method_Validator);
+    pl.set("verbose", false, "print all output", Environment::getBoolValidator());
   }
 
   //!  \brief Direct the problem to create a solution.
@@ -202,13 +203,23 @@ void ColoringProblem<Adapter>::solve(bool newData)
                                    this->env_, this->comm_);
       alg.color(this->solution_);
   }
-#if 0 // TODO later
-  else if (method.compare("speculative") == 0) // Gebremedhin-Manne
+  else if (method.compare("Hybrid") == 0)
   {
-      AlgGM<base_adapter_t> alg(this->graphModel_, this->comm_);
-      alg.color(this->solution_, this->params_);
+      AlgHybridGMB<Adapter> alg(this->inputAdapter_, this->params_,
+		                this->env_, this->comm_);
+      alg.color(this->solution_);
   }
-#endif
+  else if (method.compare("2GL") == 0)
+  {
+      AlgDistance1TwoGhostLayer<Adapter> alg(this->inputAdapter_,this->params_,
+		                             this->env_, this->comm_);
+      alg.color(this->solution_);
+  } else if(method.compare("D2") == 0)
+  {
+      AlgDistance2<Adapter> alg(this->inputAdapter_, this->params_,
+ 		                this->env_, this->comm_);
+      alg.color(this->solution_);
+  }
   }
   Z2_FORWARD_EXCEPTIONS;
 }
