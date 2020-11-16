@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Tpetra_CrsColorer.hpp"
-#include "Tpetra_CrsColorerUtils.hpp"
+#include "Zoltan2_CrsColorer.hpp"
+#include "Zoltan2_CrsColorerUtils.hpp"
 
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayView.hpp"
@@ -10,7 +10,7 @@
 
 #include "zoltan_cpp.h"
 
-namespace Tpetra
+namespace Zoltan
 {
 
 // Implementation of CrsColorer<> using Zoltan partial distance-2 coloring.
@@ -41,6 +41,7 @@ public:
   computeColoring(Teuchos::ParameterList &coloring_params) override;
 
 private:
+
   Teuchos::RCP<const graph_type> transpose_graph;
 
   //
@@ -65,16 +66,24 @@ private:
       graph       = graph_;
       trans_graph = trans_graph_;
       col_procs.resize(graph->getColMap()->getNodeNumElements());
-      auto gids                = graph->getColMap()->getNodeElementList();
-      Tpetra::LookupStatus ret = graph->getRowMap()->getRemoteIndexList(gids, col_procs());
-      TEUCHOS_TEST_FOR_EXCEPTION(ret != Tpetra::AllIDsPresent, std::logic_error, "getRemoteIndexList() failed!");
+      auto gids = graph->getColMap()->getNodeElementList();
+
+      Tpetra::LookupStatus ret = 
+              graph->getRowMap()->getRemoteIndexList(gids, col_procs());
+      TEUCHOS_TEST_FOR_EXCEPTION(ret != Tpetra::AllIDsPresent, std::logic_error,
+                                 "Zoltan2::CrsADColorer: getRemoteIndexList() "
+                                 "failed!");
 
       if (trans_graph != Teuchos::null)
       {
         trans_col_procs.resize(trans_graph->getColMap()->getNodeNumElements());
         gids = trans_graph->getColMap()->getNodeElementList();
-        ret  = trans_graph->getRowMap()->getRemoteIndexList(gids, trans_col_procs());
-        TEUCHOS_TEST_FOR_EXCEPTION(ret != Tpetra::AllIDsPresent, std::logic_error, "getRemoteIndexList() failed!");
+        ret = trans_graph->getRowMap()->getRemoteIndexList(gids,
+                                                           trans_col_procs());
+        TEUCHOS_TEST_FOR_EXCEPTION(ret != Tpetra::AllIDsPresent,
+                                   std::logic_error,
+                                   "Zoltan2::CrsADColorer getRemoteIndexList() "
+                                   "failed!");
       }
     }
   };
@@ -97,7 +106,13 @@ private:
 
   // Get number of edges on this processor
   static int
-  get_number_of_edges(void *data, int sizeGID, int sizeLID, ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int *ierr);
+  get_number_of_edges(
+      void *data,
+       int sizeGID,
+       int sizeLID,
+       ZOLTAN_ID_PTR global_id,
+       ZOLTAN_ID_PTR local_id,
+       int *ierr);
 
   // Get edge ids on this processor
   static void
@@ -158,21 +173,26 @@ private:
       int *ierr);
 };
 
+//////////////////////////////////////////////////////////////////////////////
 template <typename CrsMatrixType>
-ZoltanCrsColorer<CrsMatrixType>::ZoltanCrsColorer(const Teuchos::RCP<matrix_type> &matrix_)
-    : base_type(matrix_), transpose_graph()
+ZoltanCrsColorer<CrsMatrixType>::ZoltanCrsColorer(
+  const Teuchos::RCP<matrix_type> &matrix_)
+  : base_type(matrix_), transpose_graph()
 {
 }
 
+//////////////////////////////////////////////////////////////////////////////
 template <typename CrsMatrixType>
 void
-ZoltanCrsColorer<CrsMatrixType>::computeColoring(Teuchos::ParameterList &coloring_params)
+ZoltanCrsColorer<CrsMatrixType>::computeColoring(
+  Teuchos::ParameterList &coloring_params)
 {
   const bool symmetric  = coloring_params.get("Symmetric", false);
   const bool symmetrize = coloring_params.get("Symmetrize", false);
 
   // Get MPI communicator, and throw an exception if our comm isn't MPI
-  Teuchos::RCP<const Teuchos::Comm<int>> comm = this->graph->getRowMap()->getComm();
+  Teuchos::RCP<const Teuchos::Comm<int>> comm = 
+           this->graph->getRowMap()->getComm();
   Teuchos::RCP<const Teuchos::MpiComm<int>> mpi_comm =
       Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm, true);
 
@@ -217,26 +237,36 @@ ZoltanCrsColorer<CrsMatrixType>::computeColoring(Teuchos::ParameterList &colorin
   // columns we don't own
   const size_t num_local_cols  = this->graph->getNodeNumCols();
   const size_t num_global_rows = this->graph->getGlobalNumRows();
+
   Teuchos::Array<ZOLTAN_ID_TYPE> col_gids(num_local_cols);
   auto gids = this->graph->getColMap()->getNodeElementList();
+
   if (symmetric || symmetrize)
     for (size_t i = 0; i < num_local_cols; ++i)
       col_gids[i] = gids[i];
   else
     for (size_t i = 0; i < num_local_cols; ++i)
       col_gids[i] = gids[i] + num_global_rows;
-  list_of_colors_type my_list_of_colors("list_of_colors", num_local_cols);
+
+  list_of_colors_type my_list_of_colors("Zoltan2::CrsColorer::list_of_colors",
+                                        num_local_cols);
   this->list_of_colors_host = Kokkos::create_mirror_view(my_list_of_colors);
-  int num_gid_entries       = 1;
-  int ret = zz->Color(num_gid_entries, num_local_cols, col_gids.getRawPtr(), this->list_of_colors_host.data());
-  TEUCHOS_TEST_FOR_EXCEPTION(ret < 0, std::logic_error, "Zoltan returned " << ret << std::endl);
+
+  int num_gid_entries = 1;
+  int ret = zz->Color(num_gid_entries, num_local_cols, col_gids.getRawPtr(),
+                      this->list_of_colors_host.data());
+
+  TEUCHOS_TEST_FOR_EXCEPTION(ret != ZOLTAN_OK, std::logic_error,
+                             "Zoltan::Color returned " << ret << std::endl);
+
   Kokkos::deep_copy(my_list_of_colors, this->list_of_colors_host);
   this->list_of_colors = my_list_of_colors;
 
   const bool dump_zoltan = coloring_params.get("Dump Zoltan Data", false);
   if (dump_zoltan)
   {
-    std::string zoltan_dump_file = coloring_params.get("Zoltan Dump File Name", "zoltan_graph.txt");
+    std::string zoltan_dump_file =
+         coloring_params.get("Zoltan Dump File Name", "zoltan_graph.txt");
     zz->Generate_Files(zoltan_dump_file, 0, 0, 1, 0);
   }
 
@@ -244,25 +274,30 @@ ZoltanCrsColorer<CrsMatrixType>::computeColoring(Teuchos::ParameterList &colorin
 
   // Compute global number of colors
   int local_num_colors = 0;
-  Kokkos::parallel_reduce(
-      "ZoltanCrsColorer::find_num_colors", Kokkos::RangePolicy<execution_space>(0, num_local_cols),
+  Kokkos::parallel_reduce("ZoltanCrsColorer::find_num_colors",
+      Kokkos::RangePolicy<execution_space>(0, num_local_cols),
       KOKKOS_LAMBDA(const size_t i, int &lcl_max) {
         if (my_list_of_colors[i] > lcl_max)
           lcl_max = my_list_of_colors[i];
       },
       Kokkos::Max<int>(local_num_colors));
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &local_num_colors, &this->num_colors);
+
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &local_num_colors,
+                     &this->num_colors);
 }
 
+//////////////////////////////////////////////////////////////////////////////
 template <typename CrsMatrixType>
 int
 ZoltanCrsColorer<CrsMatrixType>::get_number_of_vertices(void *data, int *ierr)
 {
   ZoltanData *zoltan_data = static_cast<ZoltanData *>(data);
-  *ierr                   = ZOLTAN_OK;
-  return zoltan_data->graph->getNodeNumRows() + zoltan_data->trans_graph->getNodeNumRows();
+  *ierr = ZOLTAN_OK;
+  return zoltan_data->graph->getNodeNumRows() +
+         zoltan_data->trans_graph->getNodeNumRows();
 }
 
+//////////////////////////////////////////////////////////////////////////////
 template <typename CrsMatrixType>
 void
 ZoltanCrsColorer<CrsMatrixType>::get_vertex_list(
@@ -275,16 +310,20 @@ ZoltanCrsColorer<CrsMatrixType>::get_vertex_list(
     float *obj_wgts,
     int *ierr)
 {
+  assert(sizeGID == 1 && sizeLID == 1);
+
   ZoltanData *zoltan_data      = static_cast<ZoltanData *>(data);
   *ierr                        = ZOLTAN_OK;
+
   const size_t num_local_rows  = zoltan_data->graph->getNodeNumRows();
   const size_t num_local_cols  = zoltan_data->trans_graph->getNodeNumRows();
   const size_t num_global_rows = zoltan_data->graph->getGlobalNumRows();
-  auto row_gids                = zoltan_data->graph->getRowMap()->getNodeElementList();
-  auto col_gids                = zoltan_data->trans_graph->getRowMap()->getNodeElementList();
+  auto row_gids = zoltan_data->graph->getRowMap()->getNodeElementList();
+  auto col_gids = zoltan_data->trans_graph->getRowMap()->getNodeElementList();
+
   for (size_t i = 0; i < num_local_rows; ++i)
   {
-    local_ids[i]  = i;
+    local_ids[i] = i;
     global_ids[i] = row_gids[i];
   }
   for (size_t i = 0; i < num_local_cols; ++i)
@@ -294,6 +333,7 @@ ZoltanCrsColorer<CrsMatrixType>::get_vertex_list(
   }
 }
 
+//////////////////////////////////////////////////////////////////////////////
 template <typename CrsMatrixType>
 int
 ZoltanCrsColorer<CrsMatrixType>::get_number_of_edges(
@@ -304,18 +344,25 @@ ZoltanCrsColorer<CrsMatrixType>::get_number_of_edges(
     ZOLTAN_ID_PTR local_id,
     int *ierr)
 {
-  ZoltanData *zoltan_data     = static_cast<ZoltanData *>(data);
-  *ierr                       = ZOLTAN_OK;
+  assert(sizeGID == 1 && sizeLID == 1);
+
+  ZoltanData *zoltan_data = static_cast<ZoltanData *>(data);
+  *ierr = ZOLTAN_OK;
+
   const size_t num_local_rows = zoltan_data->graph->getNodeNumRows();
-  const ZOLTAN_ID_TYPE lid    = *local_id;
-  int num_edges               = 0;
+  const ZOLTAN_ID_TYPE lid = *local_id;
+  int num_edges = 0;
+
   if (lid < num_local_rows)
     num_edges = zoltan_data->graph->getNumEntriesInLocalRow(lid);
   else
-    num_edges = zoltan_data->trans_graph->getNumEntriesInLocalRow(lid - num_local_rows);
+    num_edges = 
+        zoltan_data->trans_graph->getNumEntriesInLocalRow(lid - num_local_rows);
+
   return num_edges;
 }
 
+//////////////////////////////////////////////////////////////////////////////
 template <typename CrsMatrixType>
 void
 ZoltanCrsColorer<CrsMatrixType>::get_edge_list(
@@ -334,44 +381,56 @@ ZoltanCrsColorer<CrsMatrixType>::get_edge_list(
   using Teuchos::ArrayView;
   using Teuchos::arrayView;
 
-  ZoltanData *zoltan_data      = static_cast<ZoltanData *>(data);
-  *ierr                        = ZOLTAN_OK;
-  const size_t num_local_rows  = zoltan_data->graph->getNodeNumRows();
+  ZoltanData *zoltan_data = static_cast<ZoltanData *>(data);
+  *ierr = ZOLTAN_OK;
+
+  const size_t num_local_rows = zoltan_data->graph->getNodeNumRows();
   const size_t num_global_rows = zoltan_data->graph->getGlobalNumRows();
-  const ZOLTAN_ID_TYPE lid     = *local_id;
+  const ZOLTAN_ID_TYPE lid = *local_id;
+
   if (lid < num_local_rows)
   {
     const int num_nbr = zoltan_data->graph->getNumEntriesInLocalRow(lid);
+    const auto colMap = zoltan_data->graph->getColMap();
+
     ArrayView<const local_ordinal_type> lcl_ids;
     zoltan_data->graph->getLocalRowView(lid, lcl_ids);
-    for (int j = 0; j < num_nbr; ++j)
-    {
-      nbor_global_ids[j] = num_global_rows + zoltan_data->graph->getColMap()->getGlobalElement(lcl_ids[j]);
-      nbor_procs[j]      = zoltan_data->col_procs[lcl_ids[j]];
+
+    for (int j = 0; j < num_nbr; ++j) {
+      nbor_global_ids[j] = num_global_rows 
+                         + colMap->getGlobalElement(lcl_ids[j]);
+      nbor_procs[j] = zoltan_data->col_procs[lcl_ids[j]];
     }
   }
   else
   {
-    const int num_nbr = zoltan_data->trans_graph->getNumEntriesInLocalRow(lid - num_local_rows);
+    const int num_nbr = 
+          zoltan_data->trans_graph->getNumEntriesInLocalRow(lid-num_local_rows);
+    const auto colMap = zoltan_data->trans_graph->getColMap();
+
     ArrayView<const local_ordinal_type> lcl_ids;
     zoltan_data->trans_graph->getLocalRowView(lid - num_local_rows, lcl_ids);
     for (int j = 0; j < num_nbr; ++j)
     {
-      nbor_global_ids[j] = zoltan_data->trans_graph->getColMap()->getGlobalElement(lcl_ids[j]);
-      nbor_procs[j]      = zoltan_data->trans_col_procs[lcl_ids[j]];
+      nbor_global_ids[j] = colMap->getGlobalElement(lcl_ids[j]);
+      nbor_procs[j] = zoltan_data->trans_col_procs[lcl_ids[j]];
     }
   }
 }
 
+//////////////////////////////////////////////////////////////////////////////
 template <typename CrsMatrixType>
 int
-ZoltanCrsColorer<CrsMatrixType>::sym_get_number_of_vertices(void *data, int *ierr)
+ZoltanCrsColorer<CrsMatrixType>::sym_get_number_of_vertices(
+  void *data,
+  int *ierr)
 {
   ZoltanData *zoltan_data = static_cast<ZoltanData *>(data);
-  *ierr                   = ZOLTAN_OK;
+  *ierr = ZOLTAN_OK;
   return zoltan_data->graph->getNodeNumRows();
 }
 
+//////////////////////////////////////////////////////////////////////////////
 template <typename CrsMatrixType>
 void
 ZoltanCrsColorer<CrsMatrixType>::sym_get_vertex_list(
@@ -384,10 +443,11 @@ ZoltanCrsColorer<CrsMatrixType>::sym_get_vertex_list(
     float *obj_wgts,
     int *ierr)
 {
-  ZoltanData *zoltan_data     = static_cast<ZoltanData *>(data);
-  *ierr                       = ZOLTAN_OK;
+  ZoltanData *zoltan_data = static_cast<ZoltanData *>(data);
+  *ierr = ZOLTAN_OK;
+
   const size_t num_local_rows = zoltan_data->graph->getNodeNumRows();
-  auto row_gids               = zoltan_data->graph->getRowMap()->getNodeElementList();
+  auto row_gids = zoltan_data->graph->getRowMap()->getNodeElementList();
   for (size_t i = 0; i < num_local_rows; ++i)
   {
     local_ids[i]  = i;
@@ -395,6 +455,7 @@ ZoltanCrsColorer<CrsMatrixType>::sym_get_vertex_list(
   }
 }
 
+//////////////////////////////////////////////////////////////////////////////
 template <typename CrsMatrixType>
 int
 ZoltanCrsColorer<CrsMatrixType>::sym_get_number_of_edges(
@@ -406,12 +467,14 @@ ZoltanCrsColorer<CrsMatrixType>::sym_get_number_of_edges(
     int *ierr)
 {
   ZoltanData *zoltan_data  = static_cast<ZoltanData *>(data);
-  *ierr                    = ZOLTAN_OK;
+  *ierr = ZOLTAN_OK;
+
   const ZOLTAN_ID_TYPE lid = *local_id;
-  int num_edges            = zoltan_data->graph->getNumEntriesInLocalRow(lid);
+  int num_edges = zoltan_data->graph->getNumEntriesInLocalRow(lid);
   return num_edges;
 }
 
+//////////////////////////////////////////////////////////////////////////////
 template <typename CrsMatrixType>
 void
 ZoltanCrsColorer<CrsMatrixType>::sym_get_edge_list(
@@ -431,15 +494,19 @@ ZoltanCrsColorer<CrsMatrixType>::sym_get_edge_list(
   using Teuchos::arrayView;
 
   ZoltanData *zoltan_data  = static_cast<ZoltanData *>(data);
-  *ierr                    = ZOLTAN_OK;
+  *ierr = ZOLTAN_OK;
+
   const ZOLTAN_ID_TYPE lid = *local_id;
-  const int num_nbr        = zoltan_data->graph->getNumEntriesInLocalRow(lid);
+  const int num_nbr = zoltan_data->graph->getNumEntriesInLocalRow(lid);
+
   ArrayView<const local_ordinal_type> lcl_ids;
   zoltan_data->graph->getLocalRowView(lid, lcl_ids);
+  const auto colMap = zoltan_data->graph->getColMap();
+
   for (int j = 0; j < num_nbr; ++j)
   {
-    nbor_global_ids[j] = zoltan_data->graph->getColMap()->getGlobalElement(lcl_ids[j]);
+    nbor_global_ids[j] = colMap->getGlobalElement(lcl_ids[j]);
     nbor_procs[j]      = zoltan_data->col_procs[lcl_ids[j]];
   }
 }
-} // namespace Tpetra
+} // namespace Zoltan2
