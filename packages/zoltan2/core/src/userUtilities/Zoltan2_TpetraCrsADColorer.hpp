@@ -72,6 +72,7 @@ public:
   reconstructMatrixFitted(MultiVectorType &W, matrix_type &mat) const;
 
   // Return number of colors
+  // KDD should num_colors be int or size_t?
   int
   getNumColors() const
   {
@@ -193,6 +194,7 @@ CrsColorer<CrsMatrixType>::CrsColorer(const Teuchos::RCP<matrix_type> &matrix_)
     list_of_colors_host(), 
     num_colors(0)
 {
+
 }
 
 //////////////////////////////////////////////////////////////////////////////
