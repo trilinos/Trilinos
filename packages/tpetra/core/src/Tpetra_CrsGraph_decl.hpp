@@ -1057,24 +1057,13 @@ namespace Tpetra {
                      const Teuchos::ArrayView<local_ordinal_type>& lclColInds,
                      size_t& numColInds) const override;
 
-    /// \brief Get a const, non-persisting view of the given global
-    ///   row's global column indices, as a Teuchos::ArrayView.
-    ///
-    /// \param gblRow [in] Global index of the row.
-    /// \param gblColInds [out] Global column indices in the row.  If
-    ///   the given row is not a valid row index on the calling
-    ///   process, then the result has no entries (its size is zero).
-    ///
-    /// \pre <tt>! isLocallyIndexed()</tt>
-    /// \post <tt>gblColInds.size() == getNumEntriesInGlobalRow(gblRow)</tt>
-    void
-    getGlobalRowView (const global_ordinal_type gblRow,
-                      Teuchos::ArrayView<const global_ordinal_type>& gblColInds) const override;
-
     /// \brief Whether this class implements getLocalRowView() and
     ///   getGlobalRowView() (it does).
     bool supportsRowViews () const override;
 
+#if defined(TPETRA_KYUNGJOO)
+    /// we really do not want to play with pointers
+#else
     /// \brief Get a const, non-persisting view of the given local
     ///   row's local column indices, as a Teuchos::ArrayView.
     ///
@@ -1088,6 +1077,21 @@ namespace Tpetra {
     void
     getLocalRowView (const local_ordinal_type lclRow,
                      Teuchos::ArrayView<const local_ordinal_type>& lclColInds) const override;
+
+    /// \brief Get a const, non-persisting view of the given global
+    ///   row's global column indices, as a Teuchos::ArrayView.
+    ///
+    /// \param gblRow [in] Global index of the row.
+    /// \param gblColInds [out] Global column indices in the row.  If
+    ///   the given row is not a valid row index on the calling
+    ///   process, then the result has no entries (its size is zero).
+    ///
+    /// \pre <tt>! isLocallyIndexed()</tt>
+    /// \post <tt>gblColInds.size() == getNumEntriesInGlobalRow(gblRow)</tt>
+    void
+    getGlobalRowView (const global_ordinal_type gblRow,
+                      Teuchos::ArrayView<const global_ordinal_type>& gblColInds) const override;
+#endif
 
     //@}
     //! @name Overridden from Teuchos::Describable
@@ -1991,6 +1995,9 @@ namespace Tpetra {
     /// CrsMatrix::replaceGlobalValues().
     RowInfo getRowInfoFromGlobalRowIndex (const global_ordinal_type gblRow) const;
 
+#if defined(TPETRA_KYUNGJOO)
+    //// pointer play is dangerous and not desired.
+#else
     /// \brief Get a const, nonowned, locally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
@@ -2018,8 +2025,25 @@ namespace Tpetra {
     getLocalViewRawConst (const local_ordinal_type*& lclInds,
                           local_ordinal_type& capacity,
                           const RowInfo& rowInfo) const;
-
+#endif
   private:
+
+#if defined(TPETRA_KYUNGJOO)
+    using local_row_view_type = Kokkos::View<local_ordinal_type*, device_type, Kokkos::MemoryUnmanaged>;
+    using local_const_row_view_type = Kokkos::View<const local_ordinal_type*, device_type, Kokkos::MemoryUnmanaged>;
+
+    typename local_const_row_view_type::HostMirror
+    getLocalKokkosRowInernalHostView (const RowInfo& rowInfo) const;
+
+    typename local_row_view_type::HostMirror
+    getLocalKokkosRowHostInternalHostViewNonConst (const RowInfo& rowInfo);    
+
+    using global_const_row_view_type = Kokkos::View<const global_ordinal_type*, device_type, Kokkos::MemoryUnmanaged>;
+
+    typename global_const_row_view_type::HostMirror
+    getGlobalKokkosRowInternalHostView (const RowInfo& rowInfo) const;
+#endif
+
 
     /// \brief Get a const nonowned view of the local column indices
     ///   indices of row rowinfo.localRow (only works if the matrix is
@@ -2050,6 +2074,9 @@ namespace Tpetra {
 
   protected:
 
+#if defined(TPETRA_KYUNGJOO)
+    /// pointer play is not wanted
+#else
     /// \brief Get a const, nonowned, globally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
@@ -2078,7 +2105,7 @@ namespace Tpetra {
     getGlobalViewRawConst (const global_ordinal_type*& gblInds,
                            local_ordinal_type& capacity,
                            const RowInfo& rowInfo) const;
-
+#endif
 
   public:
 
@@ -2206,6 +2233,9 @@ namespace Tpetra {
     ///   - The calling process has a nonzero number of entries
     ///   - The graph is locally indexed
     typename local_graph_type::entries_type::non_const_type k_lclInds1D_;
+#if defined(TPETRA_KYUNGJOO)
+    typename local_graph_type::entries_type::non_const_type::HostMirror k_lclInds1D_InternalHost_;
+#endif
 
     //! Type of the k_gblInds1D_ array of global column indices.
     typedef Kokkos::View<global_ordinal_type*, device_type> t_GlobalOrdinal_1D;
@@ -2217,6 +2247,9 @@ namespace Tpetra {
     ///   - The calling process has a nonzero number of entries
     ///   - The graph is globally indexed
     t_GlobalOrdinal_1D k_gblInds1D_;
+#if defined(TPETRA_KYUNGJOO)
+    typename t_GlobalOrdinal_1D::HostMirror k_gblInds1D_InternalHost_;
+#endif
 
     /// \brief Row offsets for "1-D" storage.
     ///
@@ -2240,6 +2273,10 @@ namespace Tpetra {
     /// The k_numRowEntries_ array has has length getNodeNumRows(),
     /// again if it is allocated.
     typename local_graph_type::row_map_type::const_type k_rowPtrs_;
+#if defined(TPETRA_KYUNGJOO)
+    typename local_graph_type::row_map_type::non_const_type::HostMirror k_rowPtrs_InternalHost_;
+#endif
+
 
     /// \brief The type of k_numRowEntries_ (see below).
     ///
