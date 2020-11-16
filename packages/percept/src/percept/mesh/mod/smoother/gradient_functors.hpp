@@ -303,7 +303,7 @@ struct sGrid_GenericAlgorithm_get_gradient_1 {
             //filter out unfixed nodes for fixup
             std::vector<StructuredGrid::MTNode> FixedNodes_from_block;
             std::vector<StructuredGrid::MTNode> nodes_from_block;
-            std::pair<bool, int> fixed;
+            Kokkos::pair<bool, int> fixed;
 
             std::vector<
                     Kokkos::View<unsigned**, DataLayout, MemSpace>::HostMirror> nodes_mirror;
