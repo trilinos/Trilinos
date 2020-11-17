@@ -3454,9 +3454,6 @@ namespace Tpetra {
     boundSameForAllLocalRows = allRowsSame;
   }
 
-#if defined(TPETRA_KYUNGJOO)
-        ////Today is done
-#endif
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
@@ -4112,7 +4109,6 @@ namespace Tpetra {
     // The graph's column indices are currently stored in a 1-D
     // format, with row offsets in k_rowPtrs_ and local column indices
     // in k_lclInds1D_.
-
     if (debug_) {
       // The graph's array of row offsets must already be allocated.
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -4134,7 +4130,6 @@ namespace Tpetra {
          << " != k_rowPtrs_(" << numOffsets << ")=" << valToCheck
          << ".");
     }
-
     size_t allocSize = 0;
     try {
       allocSize = this->getNodeAllocationSize ();
@@ -4166,7 +4161,6 @@ namespace Tpetra {
       // should be.  This could happen, for example, if the user set
       // an upper bound on the number of entries in each row, but
       // didn't fill all those entries.
-
       if (debug_) {
         if (k_rowPtrs_.extent (0) != 0) {
           const size_t numOffsets =
@@ -4325,6 +4319,12 @@ namespace Tpetra {
     }
 
     // FIXME (mfh 28 Aug 2014) "Local Graph" sublist no longer used.
+#if defined(TPETRA_KYUNGJOO)
+    /// the above local fill complete is done on the device; 
+    /// create host copy
+    k_lclInds1D_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_lclInds1D_);
+    k_rowPtrs_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_rowPtrs_);
+#endif
 
     // Build the local graph.
     lclGraph_ = local_graph_type (ind_d, ptr_d_const);
@@ -4428,6 +4428,9 @@ namespace Tpetra {
           // Allocate storage for the new local indices.
           const size_t allocSize = this->getNodeAllocationSize ();
           newLclInds1D = col_inds_type ("Tpetra::CrsGraph::ind", allocSize);
+#if defined(TPETRA_KYUNGJOO)
+          auto newLclInds1D_InternalHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), newLclInds1D);
+#endif
           // Attempt to convert the new indices locally.
           for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
             const RowInfo rowInfo = this->getRowInfo (lclRow);
@@ -4436,7 +4439,11 @@ namespace Tpetra {
             for (size_t k = beg; k < end; ++k) {
               // FIXME (mfh 21 Aug 2014) This assumes UVM.  Should
               // use a DualView instead.
+#if defined(TPETRA_KYUNGJOO)
+              const LO oldLclCol = k_lclInds1D_InternalHost_(k);
+#else
               const LO oldLclCol = k_lclInds1D_(k);
+#endif
               if (oldLclCol == Teuchos::OrdinalTraits<LO>::invalid ()) {
                 allCurColIndsValid = false;
                 break; // Stop at the first invalid index
@@ -4458,10 +4465,17 @@ namespace Tpetra {
                 }
                 // FIXME (mfh 21 Aug 2014) This assumes UVM.  Should
                 // use a DualView instead.
+#if defined(TPETRA_KYUNGJOO)
+                newLclInds1D_InternalHost(k) = newLclCol;
+#else
                 newLclInds1D(k) = newLclCol;
+#endif
               }
             } // for each entry in the current row
           } // for each locally owned row
+#if defined(TPETRA_KYUNGJOO) 
+          Kokkos::deep_copy(newLclInds1D, newLclInds1D_InternalHost);
+#endif
         }
         else { // locally indexed, but no column Map
           // This case is only possible if replaceColMap() was called
@@ -4488,7 +4502,12 @@ namespace Tpetra {
         // column Map on the calling process.
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
           const RowInfo rowInfo = this->getRowInfo (lclRow);
+
+#if defined(TPETRA_KYUNGJOO)
+          const auto oldGblRowView = getGlobaKokkoslRowInternalHostViewNonConst(rowInfo);
+#else
           Teuchos::ArrayView<const GO> oldGblRowView = getGlobalView (rowInfo);
+#endif
           for (size_t k = 0; k < rowInfo.numEntries; ++k) {
             const GO gblCol = oldGblRowView[k];
             if (! newColMap->isNodeGlobalElement (gblCol)) {
@@ -4532,6 +4551,9 @@ namespace Tpetra {
     // Commit the results.
     if (isLocallyIndexed ()) {
       k_lclInds1D_ = newLclInds1D;
+#if defined(TPETRA_KYUNGJOO)
+      k_lclInds1D_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_lclInds1D_);
+#endif
       // We've reindexed, so we don't know if the indices are sorted.
       //
       // FIXME (mfh 17 Sep 2014) It could make sense to check this,
