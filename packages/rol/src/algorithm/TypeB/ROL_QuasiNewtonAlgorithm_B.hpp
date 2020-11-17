@@ -65,6 +65,9 @@ private:
   Real c1_;           ///< Sufficient Decrease Parameter (default: 1e-4)
   Real sigma1_;       ///< Lower safeguard for quadratic line search (default: 0.1)
   Real sigma2_;       ///< Upper safeguard for quadratic line search (default: 0.9)
+  Real sp_tol1_;
+  Real sp_tol2_;
+  Real sp_tol_min_;
   std::string algoName_;
 
   ParameterList list_;

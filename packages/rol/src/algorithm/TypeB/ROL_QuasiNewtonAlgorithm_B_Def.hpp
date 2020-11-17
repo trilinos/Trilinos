@@ -71,13 +71,13 @@ QuasiNewtonAlgorithm_B<Real>::QuasiNewtonAlgorithm_B(ParameterList           &li
   sigma2_       = lslist.sublist("PQN").get("Upper Step Size Safeguard",        0.9);
   algoName_     = lslist.sublist("PQN").get("Subproblem Solver","Spectral Gradient");
   int sp_maxit  = lslist.sublist("PQN").get("Subproblem Iteration Limit",      1000);
-  Real sp_tol   = lslist.sublist("PQN").get("Subproblem Tolerance",           1e-10);
+  sp_tol1_      = lslist.sublist("PQN").get("Subproblem Absolute Tolerance",   1e-4);
+  sp_tol2_      = lslist.sublist("PQN").get("Subproblem Relative Tolerance",   1e-2);
   Real opt_tol  = lslist.sublist("Status Test").get("Gradient Tolerance",      1e-8);
+  sp_tol_min_   = static_cast<Real>(1e-2)*opt_tol;
   verbosity_    = list.sublist("General").get("Output Level",                     0);
   printHeader_  = verbosity_ > 2;
 
-  sp_tol        = std::min(sp_tol,static_cast<Real>(1e-2)*opt_tol);
-  list_.sublist("Status Test").set("Gradient Tolerance", sp_tol);
   list_.sublist("Status Test").set("Iteration Limit",    sp_maxit);
   list_.sublist("General").set("Output Level", verbosity_>0 ? verbosity_-1 : 0);
 
@@ -132,15 +132,9 @@ std::vector<std::string> QuasiNewtonAlgorithm_B<Real>::run( Vector<Real>        
   std::vector<std::string> output;
   initialize(x,g,obj,bnd,outStream);
   Ptr<Vector<Real>> s = x.clone(), gp = x.clone(), gold = g.clone(), xs = x.clone();
-  Real ftrial(0), gs(0), alphaTmp(0), tol(std::sqrt(ROL_EPSILON<Real>()));
+  Real ftrial(0), gs(0), alphaTmp(0), tol(std::sqrt(ROL_EPSILON<Real>())), gtol(1);
 
   Ptr<Algorithm_B<Real>> algo;
-  if (algoName_ == "Trust Region")                algo = makePtr<LinMoreAlgorithm_B<Real>>(list_);
-  else if (algoName_ == "Line Search")            algo = makePtr<GradientAlgorithm_B<Real>>(list_);
-  else if (algoName_ == "Primal Dual Active Set") algo = makePtr<PrimalDualActiveSetAlgorithm_B<Real>>(list_);
-  else if (algoName_ == "Moreau-Yosida")          algo = makePtr<MoreauYosidaAlgorithm_B<Real>>(list_);
-  else if (algoName_ == "Interior Point")         algo = makePtr<InteriorPointAlgorithm_B<Real>>(list_);
-  else                                            algo = makePtr<SpectralGradientAlgorithm_B<Real>>(list_);
   Ptr<PQNObjective<Real>> qobj = makePtr<PQNObjective<Real>>(secant_,x,g);
   Ptr<NewOptimizationProblem<Real>>
     problem = makePtr<NewOptimizationProblem<Real>>(qobj,xs);
@@ -163,6 +157,14 @@ std::vector<std::string> QuasiNewtonAlgorithm_B<Real>::run( Vector<Real>        
     // Compute step
     qobj->setAnchor(x,*state_->gradientVec);
     xs->set(x); xs->axpy(-one,*gp); proj_->project(*xs,outStream);
+    gtol = std::max(sp_tol_min_,std::min(sp_tol1_,sp_tol2_*state_->gnorm));
+    list_.sublist("Status Test").set("Gradient Tolerance",gtol);
+    if (algoName_ == "Trust Region")                algo = makePtr<LinMoreAlgorithm_B<Real>>(list_);
+    else if (algoName_ == "Line Search")            algo = makePtr<GradientAlgorithm_B<Real>>(list_);
+    else if (algoName_ == "Primal Dual Active Set") algo = makePtr<PrimalDualActiveSetAlgorithm_B<Real>>(list_);
+    else if (algoName_ == "Moreau-Yosida")          algo = makePtr<MoreauYosidaAlgorithm_B<Real>>(list_);
+    else if (algoName_ == "Interior Point")         algo = makePtr<InteriorPointAlgorithm_B<Real>>(list_);
+    else                                            algo = makePtr<SpectralGradientAlgorithm_B<Real>>(list_);
     algo->run(*problem,outStream);
     s->set(*xs); s->axpy(-one,x);
     spgIter_ = algo->getState()->iter;
