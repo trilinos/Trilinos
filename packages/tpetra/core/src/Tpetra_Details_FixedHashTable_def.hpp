@@ -1027,9 +1027,9 @@ init (const keys_type& keys,
     // out of Map's constructor here, so there is no loss in doing it
     // sequentially for now.  Later, we can work on parallelization.
     if (numKeys > 0) {
-      // TODO: make it a parallel kernel with no host copy
-      auto keys_h = Kokkos::create_mirror_view(keys);
-      Kokkos::deep_copy(keys_h, keys);
+      // FIXME: make it a parallel kernel with no host copy
+      auto keys_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                        keys);
       firstContigKey_ = keys_h[0];
       // Start with one plus, then decrement at the end.  That lets us do
       // only one addition per loop iteration, rather than two (if we test
@@ -1116,14 +1116,11 @@ init (const keys_type& keys,
     }
   }
   else {
+    Kokkos::HostSpace hostMemSpace;
     theKeysHost = Kokkos::create_mirror_view(theKeys);
     Kokkos::deep_copy(theKeysHost, theKeys);
+    auto countsHost = Kokkos::create_mirror_view (hostMemSpace, counts);
 
-    auto countsHost = Kokkos::create_mirror_view (counts);
-    // FIXME (mfh 28 Mar 2016) Does create_mirror_view zero-fill?
-    Kokkos::deep_copy (countsHost, static_cast<offset_type> (0));
-
-    Kokkos::deep_copy(theKeysHost, theKeys);
     for (offset_type k = 0; k < theNumKeys; ++k) {
       using key_type = typename keys_type::non_const_value_type;
       const key_type key = theKeysHost[k];
@@ -1170,8 +1167,7 @@ init (const keys_type& keys,
 
   if (! buildInParallel || debug) {
     Kokkos::HostSpace hostMemSpace;
-    auto counts_h = Kokkos::create_mirror_view (hostMemSpace, counts);
-    Kokkos::deep_copy (counts_h, counts);
+    auto counts_h = Kokkos::create_mirror_view_and_copy (hostMemSpace, counts);
     auto ptr_h = Kokkos::create_mirror_view (hostMemSpace, ptr);
 
 #ifdef KOKKOS_ENABLE_SERIAL
@@ -1222,12 +1218,10 @@ init (const keys_type& keys,
     Kokkos::parallel_reduce (range_type (0, theNumKeys), functor, result);
   }
   else {
-    auto counts_h = Kokkos::create_mirror_view(counts);
-    Kokkos::deep_copy(counts_h, counts);
-    auto ptr_h = Kokkos::create_mirror_view(ptr);
-    Kokkos::deep_copy(ptr_h, ptr);
-    auto val_h = Kokkos::create_mirror_view(val);
-    Kokkos::deep_copy(val_h, val);
+    Kokkos::HostSpace hostMemSpace;
+    auto counts_h = Kokkos::create_mirror_view_and_copy(hostMemSpace, counts);
+    auto ptr_h = Kokkos::create_mirror_view_and_copy(hostMemSpace, ptr);
+    auto val_h = Kokkos::create_mirror_view_and_copy(hostMemSpace, val);
     for (offset_type k = 0; k < theNumKeys; ++k) {
       typedef typename hash_type::result_type hash_value_type;
       const KeyType key = theKeysHost[k];
@@ -1310,15 +1304,15 @@ init (const host_input_keys_type& keys,
     "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
-  // NOTE (mfh 14 May 2015) This method currently assumes UVM.  We
-  // could change that by setting up ptr and val as Kokkos::DualView
-  // instances.  If we do that, since we are filling on host for now,
-  // we want to make sure that we only zero-fill ptr on host
-  // initially, and that we don't fill val at all.  Once we finish
-  // Kokkos-izing all the set-up kernels, we won't need DualView for
-  // either ptr or val.
-
+  // FIXME: Investigate a couple options:
+  // 1. Allocate ptr_h, val_h directly on host and only deep_copy to ptr_ and val_ once at the end
+  // 2. Do all this work as a parallel kernel with the same execution/memory spaces as ptr_ and val_
+  // An old comment from MFH noted ptr_h should be zero-initialized, while val_h should not be initialized.
+  // It further noted that we shouldn't need a DualView type arrangement when all setup kernels have
+  // been "Kokkos-ized".
+  Kokkos::HostSpace hostMemSpace;
   typename ptr_type::non_const_type ptr ("FixedHashTable::ptr", size + 1);
+  auto ptr_h = Kokkos::create_mirror_view_and_copy(hostMemSpace, ptr);
 
   // Allocate the array of key,value pairs.  Don't waste time filling
   // it with zeros, because we will fill it with actual data below.
@@ -1326,13 +1320,14 @@ init (const host_input_keys_type& keys,
   typedef typename val_type::non_const_type nonconst_val_type;
   nonconst_val_type val (ViewAllocateWithoutInitializing ("FixedHashTable::pairs"),
                          numKeys);
+  auto val_h = Kokkos::create_mirror_view_and_copy(hostMemSpace, val);
 
   // Compute number of entries in each hash table position.
   for (offset_type k = 0; k < numKeys; ++k) {
     const typename hash_type::result_type hashVal =
       hash_type::hashFunc (keys[k], size);
     // Shift over one, so that counts[j] = ptr[j+1].  See below.
-    ++ptr[hashVal+1];
+    ++ptr_h[hashVal+1];
   }
 
   // Compute row offsets via prefix sum:
@@ -1343,12 +1338,12 @@ init (const host_input_keys_type& keys,
   // counts[i].  If we stored counts[i] in ptr[i+1] on input, then the
   // formula is ptr[i+1] += ptr[i].
   for (offset_type i = 0; i < size; ++i) {
-    ptr[i+1] += ptr[i];
+    ptr_h[i+1] += ptr_h[i];
   }
   //ptr[0] = 0; // We've already done this when initializing ptr above.
 
   // curRowStart[i] is the offset of the next element in row i.
-  typename ptr_type::non_const_type curRowStart ("FixedHashTable::curRowStart", size);
+  typename ptr_type::non_const_type::HostMirror curRowStart ("FixedHashTable::curRowStart", size);
 
   // Fill in the hash table.
   FHT::FillPairsResult<KeyType> result (initMinKey, initMaxKey);
@@ -1371,13 +1366,13 @@ init (const host_input_keys_type& keys,
     const hash_value_type hashVal = hash_type::hashFunc (key, size);
 
     const offset_type offset = curRowStart[hashVal];
-    const offset_type curPos = ptr[hashVal] + offset;
-    if (curPos >= ptr[hashVal+1]) {
+    const offset_type curPos = ptr_h[hashVal] + offset;
+    if (curPos >= ptr_h[hashVal+1]) {
       result.success_ = false; // FAILURE!
     }
     else {
-      val[curPos].first = key;
-      val[curPos].second = theVal;
+      val_h[curPos].first = key;
+      val_h[curPos].second = theVal;
       ++curRowStart[hashVal];
     }
   }
@@ -1388,6 +1383,9 @@ init (const host_input_keys_type& keys,
      "Tpetra developers.");
 
   // "Commit" the computed arrays and other computed quantities.
+  Kokkos::deep_copy(ptr, ptr_h);
+  Kokkos::deep_copy(val, val_h);
+
   ptr_ = ptr;
   val_ = val;
   minKey_ = result.minKey_;
