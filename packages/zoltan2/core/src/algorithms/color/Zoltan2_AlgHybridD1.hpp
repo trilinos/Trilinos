@@ -101,7 +101,6 @@ class AlgHybridGMB : public Algorithm<Adapter>
       kh.get_graph_coloring_handle()->set_tictoc(verbose);
       KokkosGraph::Experimental::graph_color_symbolic<KernelHandle, lno_row_view_t, lno_nnz_view_t>
                                                      (&kh, nVtx, nVtx, offset_view, adjs_view);
-       
       numColors = kh.get_graph_coloring_handle()->get_num_colors();
 
       if(verbose){
@@ -112,11 +111,11 @@ class AlgHybridGMB : public Algorithm<Adapter>
     double doOwnedToGhosts(RCP<const map_t> mapOwnedPlusGhosts,
                          size_t nVtx,
 			 typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_send,
-			 Kokkos::View<int[1], device_type>& verts_to_send_size,
+			 Kokkos::View<size_t[1], device_type>& verts_to_send_size,
                          Kokkos::View<int*, device_type>& colors,
                          gno_t& recv, gno_t& send){
-      
       int nprocs = comm->getSize();
+      
       std::vector<int> sendcnts(comm->getSize(), 0);
       std::vector<gno_t> sdispls(comm->getSize()+1, 0);
       for(size_t i = 0; i < verts_to_send_size(0); i++){
@@ -161,12 +160,13 @@ class AlgHybridGMB : public Algorithm<Adapter>
       comm_total += timer() - comm_temp;
       
       gno_t recvsize = 0;
+
       for(int i = 0; i < recvcnts_view.size(); i++){
         recvsize += recvcnts_view[i];
       }
       recv = recvsize;
       for(int i = 0; i < recvsize; i+=2){
-        lno_t lid = mapOwnedPlusGhosts->getLocalElement(recvbuf[i]);
+        size_t lid = mapOwnedPlusGhosts->getLocalElement(recvbuf[i]);
 	if(lid<nVtx && verbose) std::cout<<comm->getRank()<<": received a locally owned vertex, somehow\n";
 	colors(lid) = recvbuf[i+1];
       }
@@ -202,8 +202,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
 
     //Main entry point for graph coloring
     void color( const RCP<ColoringSolution<Adapter> > &solution ) {
-      if(verbose) std::cout<<comm->getRank()<<": inside coloring function\n";
-      int rank = comm->getRank(); 
+      if(verbose) std::cout<<comm->getRank()<<": inside coloring function\n"; 
       //this will color the global graph in a manner similar to Zoltan
       
       //get vertex GIDs in a locally indexed array
@@ -217,7 +216,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       ArrayView<const gno_t> adjs;
       ArrayView<const offset_t> offsets;
       ArrayView<StridedData<lno_t, scalar_t> > ewgts;
-      size_t nEdge = model->getEdgeList(adjs, offsets, ewgts);
+      model->getEdgeList(adjs, offsets, ewgts);
       //again, weights are not used
       
       RCP<const map_t> mapOwned;
@@ -296,12 +295,12 @@ class AlgHybridGMB : public Algorithm<Adapter>
 
       std::vector<int> ghostOwners(finalGIDs.size() - nVtx);
       std::vector<gno_t> ghosts(finalGIDs.size() - nVtx);
-      for(int i = nVtx; i < finalGIDs.size(); i++) ghosts[i-nVtx] = finalGIDs[i];
+      for(size_t i = nVtx; i < finalGIDs.size(); i++) ghosts[i-nVtx] = finalGIDs[i];
       ArrayView<int> owners = Teuchos::arrayViewFromVector(ghostOwners);
       ArrayView<const gno_t> ghostGIDs = Teuchos::arrayViewFromVector(ghosts);
-      Tpetra::LookupStatus ls = mapOwned->getRemoteIndexList(ghostGIDs, owners);
+      mapOwned->getRemoteIndexList(ghostGIDs, owners);
       
-      for(int i = 0; i < finalOffset_vec.size()-1; i++){
+      for(size_t i = 0; i < finalOffset_vec.size()-1; i++){
         std::sort(finalAdjs_vec.begin()+finalOffset_vec[i],finalAdjs_vec.begin()+finalOffset_vec[i+1]);
       }
       
@@ -345,7 +344,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       //determine max degree locally and globally
       offset_t local_max_degree = 0;
       offset_t global_max_degree = 0;
-      for(int i = 0; i < nVtx; i++){
+      for(size_t i = 0; i < nVtx; i++){
         offset_t curr_degree = offsets[i+1] - offsets[i];
         if(curr_degree > local_max_degree){
           local_max_degree = curr_degree;
@@ -359,7 +358,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       typename Kokkos::View<offset_t*, device_type>::HostMirror dist_degrees_host = Kokkos::create_mirror(dist_degrees);
       //set degree counts for ghosts
       for(int i = 0; i < adjs.size(); i++){
-        if(adjs[i] < nVtx) continue;
+        if((size_t)adjs[i] < nVtx) continue;
         dist_degrees_host(adjs[i])++;
       }
       //set degree counts for owned verts
@@ -432,7 +431,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       offset_t boundary_size = 0;
       for(offset_t i = 0; i < nVtx; i++){
         for(offset_t j = offsets[i]; j < offsets[i+1]; j++){
-          if(adjs[j] >= nVtx) {
+          if((size_t)adjs[j] >= nVtx) {
             boundary_size++;
             break;
           }
@@ -449,16 +448,16 @@ class AlgHybridGMB : public Algorithm<Adapter>
       Kokkos::View<lno_t*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_atomic = verts_to_send_view;
       
       //size information for the list of vertices to send. Also includes an atomic copy
-      Kokkos::View<int[1], device_type> verts_to_send_size("verts to send size");
+      Kokkos::View<size_t[1], device_type> verts_to_send_size("verts to send size");
       verts_to_send_size(0) = 0;
-      Kokkos::View<int[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_size_atomic = verts_to_send_size;
+      Kokkos::View<size_t[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_size_atomic = verts_to_send_size;
 
       if(verbose)std::cout<<comm->getRank()<<": Done creating send views, initializing...\n";
       if(verbose)std::cout<<comm->getRank()<<": boundary_size = "<<boundary_size<<" verts_to_send_size_atomic(0) = "<<verts_to_send_size_atomic(0)<<"\n";
       //initially the verts to send include all boundary vertices.
       Kokkos::parallel_for(nVtx, KOKKOS_LAMBDA(const int&i){
         for(offset_t j = dist_offsets(i); j < dist_offsets(i+1); j++){
-	  if(dist_adjs(j) >= nVtx){
+	  if((size_t)dist_adjs(j) >= nVtx){
 	    verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
 	    break;
 	  }
@@ -685,9 +684,9 @@ class AlgHybridGMB : public Algorithm<Adapter>
       if(verbose){
         std::cout<<comm->getRank()<<": done recoloring loop, computing statistics\n";
         int localBoundaryVertices = 0;
-        for(int i = 0; i < nVtx; i++){
-          for(int j = offsets[i]; j < offsets[i+1]; j++){
-            if(adjs[j] >= nVtx){
+        for(size_t i = 0; i < nVtx; i++){
+          for(offset_t j = offsets[i]; j < offsets[i+1]; j++){
+            if((size_t)adjs[j] >= nVtx){
               localBoundaryVertices++;
               break;
             }
@@ -739,8 +738,8 @@ class AlgHybridGMB : public Algorithm<Adapter>
           if(comm->getRank()==0) printf("min recoloring time in round %d: %f\n",i,minRecoloringPerRound[i]);
           if(comm->getRank()==0) printf("conflict detection time in round %d: %f\n",i,finalConflictDetectionPerRound[i]);
           if(comm->getRank()==0) printf("comm time in round %d: %f\n",i,finalCommPerRound[i]);
-          if(comm->getRank()==0) printf("total sent in round %d: %d\n",i,finalSentPerRound[i]);
-          if(comm->getRank()==0) printf("total recv in round %d: %d\n",i,finalRecvPerRound[i]);
+          if(comm->getRank()==0) printf("total sent in round %d: %lld\n",i,finalSentPerRound[i]);
+          if(comm->getRank()==0) printf("total recv in round %d: %lld\n",i,finalRecvPerRound[i]);
           if(comm->getRank()==0) printf("comp time in round %d: %f\n",i,finalCompPerRound[i]);
         }
         

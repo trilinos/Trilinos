@@ -192,7 +192,7 @@ private:
     overall_coloring_time_phase4(0),
     overall_coloring_time_phase5(0),
     coloring_time(0),
-    num_phases(0), size_of_edge_list(0), lower_triangle_src(), lower_triangle_dst(),
+    num_phases(0), size_of_edge_list(0), lower_triangle_src(), lower_triangle_dst(),use_vtx_list(false),
     vertex_colors(), is_coloring_called_before(false), num_colors(0)
   {
     this->choose_default_algorithm();

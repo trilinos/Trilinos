@@ -131,7 +131,7 @@ int validateDistributedColoring(RCP<SparseMatrix> A, int *color){
   for(size_t i = 0; i < n; i++){
     A->getLocalRowView(i, indices, values);
     for(Teuchos_Ordinal j = 0; j < indices.size(); j++){
-      if( (indices[j] != i) && (color[i] == colorData[indices[j]]) ){
+      if( ((size_t)indices[j] != i) && (color[i] == colorData[indices[j]]) ){
         nconflicts++;
       }
     }
@@ -169,7 +169,7 @@ int validateDistributedDistance2Coloring(RCP<SparseMatrix> A, int* color){
   for(size_t i = 0; i < n; i++){
     S.getLocalRowView(i, indices, values);
     for(Teuchos_Ordinal j = 0; j < indices.size(); j++){
-      if( (indices[j] != i) && (color[i] == colorData[indices[j]]) ){
+      if( ((size_t)indices[j] != i) && (color[i] == colorData[indices[j]]) ){
         nconflicts++;
       }
     }
@@ -209,9 +209,9 @@ int checkBalance(zlno_t n, int *color)
     }
   }
 
-  /*std::cout << "Color size[0:2] = " << colorCount[0] << ", " << colorCount[1] << ", " << colorCount[2] << std::endl;
+  //std::cout << "Color size[0:2] = " << colorCount[0] << ", " << colorCount[1] << ", " << colorCount[2] << std::endl;
   std::cout << "Largest color class = " << largest << " with " << colorCount[largest] << " vertices." << std::endl;
-  std::cout << "Smallest color class = " << smallest << " with " << colorCount[smallest] << " vertices." << std::endl;*/
+  std::cout << "Smallest color class = " << smallest << " with " << colorCount[smallest] << " vertices." << std::endl;
 
   return 0;
 }

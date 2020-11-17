@@ -162,7 +162,7 @@ class AlgDistance2 : public Algorithm<Adapter> {
       if(verbose) std::cout<<comm->getRank()<<": calculating number of rounds\n";
       int rounds = 1;
       for(int i = 0; i < comm->getSize(); i++){
-        if( adjsendcounts[i]*sizeof(gno_t)/ INT_MAX > rounds){
+        if( adjsendcounts[i]*sizeof(gno_t)/ INT_MAX > (size_t)rounds){
           rounds = (adjsendcounts[i]*sizeof(gno_t)/ INT_MAX)+1;
         }
       }
@@ -200,7 +200,7 @@ class AlgDistance2 : public Algorithm<Adapter> {
       if(verbose) std::cout<<comm->getRank()<<": created recv_GID schedule per proc\n"; 
       for(int i = 0; i < comm->getSize(); i++){
         int curr_round = 0;
-        int curr_idx = 0;
+        size_t curr_idx = 0;
         for(int j = sdispls[i]; j < sdispls[i+1]; j++){
           if(curr_idx > per_proc_round_vtx_sums[curr_round][i]){
             curr_round++;
@@ -215,7 +215,7 @@ class AlgDistance2 : public Algorithm<Adapter> {
       gno_t reorder_idx = 0;
       for(int i = 0; i < max_rounds; i++){
         for(int j = 0; j < comm->getSize(); j++){
-          for(int k = 0; k < per_proc_round_vtx_sums[i][j]; k++){
+          for(size_t k = 0; k < per_proc_round_vtx_sums[i][j]; k++){
             final_gid_vec[reorder_idx] = sendbuf[recv_GID_per_proc_per_round[i][j][k]];
             final_degree_vec[reorder_idx++] = recvDegrees[recv_GID_per_proc_per_round[i][j][k]];
           }
@@ -271,7 +271,7 @@ class AlgDistance2 : public Algorithm<Adapter> {
         std::vector<int> send_adj_counts(comm->getSize(),0);
         for(int curr_proc = 0; curr_proc < comm->getSize(); curr_proc++){
           uint64_t curr_adj_sum = 0;
-          while( curr_idx_per_proc[curr_proc] < rdispls[curr_proc+1]){
+          while( curr_idx_per_proc[curr_proc] < (uint64_t)rdispls[curr_proc+1]){
             lno_t lid = mapOwned->getLocalElement(recvbuf[curr_idx_per_proc[curr_proc]++]);
             if((curr_adj_sum + (offsets[lid+1]-offsets[lid]))*sizeof(gno_t) >= INT_MAX){
               break;
@@ -296,7 +296,7 @@ class AlgDistance2 : public Algorithm<Adapter> {
         Teuchos::ArrayView<int> adjsrecvcounts_view = Teuchos::arrayViewFromVector(adjrecvcounts);
         Zoltan2::AlltoAllv<gno_t>(*comm, *env, send_adjs_view, adjsendcounts_view, ghost_adjs, adjsrecvcounts_view);
         //build the adjacencies and offsets for the second ghost layer
-        for(offset_t i = 0; i < ghost_adjs.size(); i ++){
+        for(offset_t i = 0; i < (offset_t)ghost_adjs.size(); i ++){
           adjs_2GL.push_back(ghost_adjs[i]);
         }
       }
@@ -307,7 +307,7 @@ class AlgDistance2 : public Algorithm<Adapter> {
     double doOwnedToGhosts(RCP<const map_t> mapOwnedPlusGhosts,
                          size_t nVtx,
 			 Kokkos::View<lno_t*,device_type> verts_to_send,
-			 Kokkos::View<lno_t[1], device_type> verts_to_send_size,
+			 Kokkos::View<size_t[1], device_type> verts_to_send_size,
                          Kokkos::View<int*, device_type>& colors){
       int nprocs = comm->getSize();
       std::vector<int> sendcnts(comm->getSize(), 0);
@@ -358,7 +358,7 @@ class AlgDistance2 : public Algorithm<Adapter> {
       }
       
       for(int i = 0; i < recvsize; i+= 2){
-        lno_t lid = mapOwnedPlusGhosts->getLocalElement(recvbuf[i]);
+        size_t lid = mapOwnedPlusGhosts->getLocalElement(recvbuf[i]);
 	if(lid < nVtx && verbose) std::cout<<comm->getRank()<<": received a locally owned vertex, somehow\n";
 	colors(lid) = recvbuf[i+1];
       }
@@ -377,7 +377,7 @@ class AlgDistance2 : public Algorithm<Adapter> {
       ArrayView<const gno_t> adjs;
       ArrayView<const offset_t> offsets;
       ArrayView<StridedData<lno_t, scalar_t> > ewgts;
-      size_t nEdge = model->getEdgeList(adjs, offsets, ewgts);      
+      model->getEdgeList(adjs, offsets, ewgts);      
       
 
       std::unordered_map<gno_t,lno_t> globalToLocal;
@@ -413,7 +413,7 @@ class AlgDistance2 : public Algorithm<Adapter> {
       //get the owners of the vertices
       ArrayView<int> owningProcs = Teuchos::arrayViewFromVector(ghostowners);
       ArrayView<const gno_t> gids = Teuchos::arrayViewFromVector(ghosts);
-      Tpetra::LookupStatus ls = mapOwned->getRemoteIndexList(gids, owningProcs);
+      mapOwned->getRemoteIndexList(gids, owningProcs);
       
       for(size_t i = 0; i < ghostowners.size(); i++){
         owners.push_back(ghostowners[i]);
@@ -472,10 +472,10 @@ class AlgDistance2 : public Algorithm<Adapter> {
       Teuchos::ArrayView<const lno_t> ghost_adjacencies = Teuchos::arrayViewFromVector(local_ghost_adjs);
       std::vector<int> ghostOwners(ownedPlusGhosts.size() - nVtx);
       std::vector<gno_t> ghosts_vec(ownedPlusGhosts.size() - nVtx);
-      for(int i = nVtx; i < ownedPlusGhosts.size(); i++) ghosts_vec[i-nVtx] = ownedPlusGhosts[i];
+      for(size_t i = nVtx; i < ownedPlusGhosts.size(); i++) ghosts_vec[i-nVtx] = ownedPlusGhosts[i];
       ArrayView<int> ghostOwners_view = Teuchos::arrayViewFromVector(ghostOwners);
       ArrayView<const gno_t> ghostGIDs = Teuchos::arrayViewFromVector(ghosts_vec);
-      Tpetra::LookupStatus ls2 = mapOwned->getRemoteIndexList(ghostGIDs, ghostOwners_view);
+      mapOwned->getRemoteIndexList(ghostGIDs, ghostOwners_view);
 
       Teuchos::ArrayView<const lno_t> exportLIDs = importer->getExportLIDs();
       Teuchos::ArrayView<const int> exportPIDs = importer->getExportPIDs();
@@ -518,7 +518,7 @@ class AlgDistance2 : public Algorithm<Adapter> {
       //find global max degree
       offset_t local_max_degree = 0;
       offset_t global_max_degree = 0;
-      for(int i = 0; i < n_local; i++){
+      for(size_t i = 0; i < n_local; i++){
         offset_t curr_degree = offsets[i+1] - offsets[i];
 	if(curr_degree > local_max_degree){
 	  local_max_degree = curr_degree;
@@ -610,13 +610,13 @@ class AlgDistance2 : public Algorithm<Adapter> {
       offset_t boundary_size = 0;
       for(offset_t i = 0; i < n_local; i++){
         for(offset_t j = dist_offsets_host(i); j < dist_offsets_host(i+1); j++){
-          if(dist_adjs_host(j) >= n_local){
+          if((size_t)dist_adjs_host(j) >= n_local){
             boundary_size++;
             break;
           }
           bool found = false;
           for(offset_t k = dist_offsets_host(dist_adjs_host(j)); k < dist_offsets_host(dist_adjs_host(j)+1); k++){
-            if(dist_adjs_host(k) >= n_local){
+            if((size_t)dist_adjs_host(k) >= n_local){
               boundary_size++;
               found = true;
               break;
@@ -644,19 +644,19 @@ class AlgDistance2 : public Algorithm<Adapter> {
       });
       Kokkos::View<lno_t*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_atomic = verts_to_send_view;
 
-      Kokkos::View<int[1], device_type> verts_to_send_size("verts to send size");
+      Kokkos::View<size_t[1], device_type> verts_to_send_size("verts to send size");
       verts_to_send_size(0) = 0;
-      Kokkos::View<int[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic = verts_to_send_size;
+      Kokkos::View<size_t[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic = verts_to_send_size;
       if(verbose) std::cout<<comm->getRank()<<": initializing the list of vertices to send\n";
       Kokkos::parallel_for(n_local, KOKKOS_LAMBDA(const int& i){
         for(offset_t j = dist_offsets_dev(i); j < dist_offsets_dev(i+1); j++){
-          if(dist_adjs_dev(j) >= n_local){
+          if((size_t)dist_adjs_dev(j) >= n_local){
             verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
             break;
           }
           bool found = false;
           for(offset_t k = dist_offsets_dev(dist_adjs_dev(j)); k < dist_offsets_dev(dist_adjs_dev(j)+1); k++){
-            if(dist_adjs_dev(k) >= n_local){
+            if((size_t)dist_adjs_dev(k) >= n_local){
               verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
               found = true;
               break;
@@ -674,7 +674,9 @@ class AlgDistance2 : public Algorithm<Adapter> {
       }
       interior_time = timer();
       total_time = timer();
-      this->colorInterior(n_local, dist_adjs_dev, dist_offsets_dev, femv, verts_to_recolor_view, verts_to_recolor_size(0), false);
+      if(n_local > 0){
+        this->colorInterior(n_local, dist_adjs_dev, dist_offsets_dev, femv, verts_to_recolor_view, verts_to_recolor_size(0), false);
+      }
       interior_time = timer() - interior_time;
       comp_time = interior_time;
       
@@ -690,82 +692,85 @@ class AlgDistance2 : public Algorithm<Adapter> {
       verts_to_send_size(0) = 0;
       comm->barrier();
       double temp = timer();
-      Kokkos::RangePolicy<execution_space> policy(n_local, rand.size());
-      Kokkos::parallel_reduce("conflict detection", policy, KOKKOS_LAMBDA(const int& i, gno_t& recoloring_size){
-        const lno_t curr_lid = i;
-        const int curr_color = femv_colors(curr_lid);
-        const size_t vid_d1_adj_begin = dist_offsets_dev(i);
-        const size_t vid_d1_adj_end   = dist_offsets_dev(i+1);
-        for(size_t vid_d1_adj = vid_d1_adj_begin; vid_d1_adj < vid_d1_adj_end; vid_d1_adj++){
-          lno_t vid_d1 = dist_adjs_dev(vid_d1_adj);
-          if( vid_d1 != curr_lid && femv_colors(vid_d1) == curr_color){
-            if(rand_dev(curr_lid) < rand_dev(vid_d1)){
-              femv_colors(curr_lid) = 0;
-	      recoloring_size++;
-              break;
-            } else if(rand_dev(vid_d1) < rand_dev(curr_lid)){
-              if(vid_d1 >= n_local){
-                femv_colors(vid_d1) = 0;
-		recoloring_size++;
-              }
-            } else{
-              if(gid_dev(curr_lid) >= gid_dev(vid_d1)){ 
-                femv_colors(curr_lid) = 0;
-		recoloring_size++;
-                break;
-              } else {
-                if(vid_d1 >= n_local){
-                  femv_colors(vid_d1) = 0;
-		  recoloring_size++;
-                }
-              }
-            }
-          }
-          size_t d2_adj_begin = 0;
-          size_t d2_adj_end   = 0;
-          d2_adj_begin = dist_offsets_dev(vid_d1);
-          d2_adj_end   = dist_offsets_dev(vid_d1+1);
-          bool found = false;
-	  for(size_t vid_d2_adj = d2_adj_begin; vid_d2_adj < d2_adj_end; vid_d2_adj++){
-            const lno_t vid_d2 = dist_adjs_dev(vid_d2_adj);
-            if(curr_lid != vid_d2 && femv_colors(vid_d2) == curr_color){
-              if(rand_dev(curr_lid) < rand_dev(vid_d2)){
-		found = true;
-                femv_colors(curr_lid) = 0;
-		recoloring_size++;
-                break;
-              } else if(rand_dev(vid_d2) < rand_dev(curr_lid)){
-                if(vid_d2 >= n_local){
-                  femv_colors(vid_d2) = 0;
-		  recoloring_size++;
-                }
-              } else {
-                if(gid_dev(curr_lid) >= gid_dev(vid_d2)){ 
-		  found = true;
-                  femv_colors(curr_lid) = 0;
-		  recoloring_size++;
-                  break;
-                } else {
-                  if(vid_d2 >= n_local){
-                    femv_colors(vid_d2) = 0;
-		    recoloring_size++;
-                  }
-                }
-              }
-            }
-          }
-	  if(found) break;
-        }
-      },recoloringSize(0));
-      Kokkos::fence();
-      Kokkos::parallel_for(femv_colors.size(), KOKKOS_LAMBDA(const int& i){
-        if(femv_colors(i) == 0){
-	  if( i < n_local){
-	    verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
+      Kokkos::parallel_for(offsets.size()-1, KOKKOS_LAMBDA(const uint64_t& i){
+	const size_t curr_lid = i;
+	const int curr_color = femv_colors(curr_lid);
+	const size_t vid_d1_adj_begin = dist_offsets_dev(i);
+	const size_t vid_d1_adj_end   = dist_offsets_dev(i+1);
+	for(size_t vid_d1_adj = vid_d1_adj_begin; vid_d1_adj < vid_d1_adj_end; vid_d1_adj++){
+	  size_t vid_d1 = dist_adjs_dev(vid_d1_adj);
+	  if( vid_d1 != curr_lid && femv_colors(vid_d1) == curr_color){
+	    if(rand_dev(curr_lid) < rand_dev(vid_d1)){
+	      femv_colors(curr_lid) = 0;
+	      recoloringSize_atomic(0)++;
+	      //add to recolor list/send list
+	      verts_to_recolor_atomic(verts_to_recolor_size_atomic(0)++) = i;
+	      verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
+	      break;
+	    } else if(rand_dev(vid_d1) < rand_dev(curr_lid)){
+	      if(vid_d1 >= n_local){
+	        femv_colors(vid_d1) = 0;
+	        recoloringSize_atomic(0)++;
+	      }
+	    } else{
+	      if(gid_dev(curr_lid) >= gid_dev(vid_d1)){
+	        femv_colors(curr_lid) = 0;
+	        recoloringSize_atomic(0)++;
+	        //add to recolor/send list
+                verts_to_recolor_atomic(verts_to_recolor_size_atomic(0)++) = i;
+		verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
+		break;
+	      } else {
+	        if(vid_d1 >= n_local){
+	          femv_colors(vid_d1) = 0;
+	          recoloringSize_atomic(0)++;
+	        }
+	      }
+	    }
 	  }
-	  verts_to_recolor_atomic(verts_to_recolor_size_atomic(0)++) = i;
-	}		      
+	  size_t d2_adj_begin = 0;
+	  size_t d2_adj_end   = 0;
+	  d2_adj_begin = dist_offsets_dev(vid_d1);
+	  d2_adj_end   = dist_offsets_dev(vid_d1+1);
+	  bool found = false;
+	  for(size_t vid_d2_adj = d2_adj_begin; vid_d2_adj < d2_adj_end; vid_d2_adj++){
+	    const size_t vid_d2 = dist_adjs_dev(vid_d2_adj);
+	    if(curr_lid != vid_d2 && femv_colors(vid_d2) == curr_color){
+	      if(rand_dev(curr_lid) < rand_dev(vid_d2)){
+	        found = true;
+	        femv_colors(curr_lid) = 0;
+	        recoloringSize_atomic(0)++;
+	        //add to recolor/send list
+	        verts_to_recolor_atomic(verts_to_recolor_size_atomic(0)++) = i;
+		verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
+	        break;
+	      } else if(rand_dev(vid_d2) < rand_dev(curr_lid)){
+	        if(vid_d2 >= n_local){
+	          femv_colors(vid_d2) = 0;
+	          recoloringSize_atomic(0)++;
+	        }
+	      } else {
+	        if(gid_dev(curr_lid) >= gid_dev(vid_d2)){
+	          found = true;
+	          femv_colors(curr_lid) = 0;
+	          recoloringSize_atomic(0)++;
+		  //add to recolor/send list
+	          verts_to_recolor_atomic(verts_to_recolor_size_atomic(0)++) = i;
+	          verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
+	          break;
+	        } else {
+	          if(vid_d2 >= n_local){
+	            femv_colors(vid_d2) = 0;
+	            recoloringSize_atomic(0)++;
+	          }
+	        }
+ 	      }
+	    }
+	  }
+       	  if(found) break;
+        }
       });
+      Kokkos::fence();
       if(comm->getSize() > 1){
         conflict_detection = timer() - temp;
         comp_time += conflict_detection;
@@ -833,63 +838,85 @@ class AlgDistance2 : public Algorithm<Adapter> {
         comm->barrier();
 
         double detection_temp = timer();
-        Kokkos::parallel_reduce(offsets.size()-1, KOKKOS_LAMBDA(const uint64_t& i, gno_t& recoloring_size){
-          const lno_t curr_lid = i;
-          const int curr_color = femv_colors(curr_lid);
-          const size_t vid_d1_adj_begin = dist_offsets_dev(i);
-          const size_t vid_d1_adj_end   = dist_offsets_dev(i+1);
-          for(size_t vid_d1_adj = vid_d1_adj_begin; vid_d1_adj < vid_d1_adj_end; vid_d1_adj++){
-            lno_t vid_d1 = dist_adjs_dev(vid_d1_adj);
-            if( vid_d1 != curr_lid && femv_colors(vid_d1) == curr_color){
-              if(rand_dev(curr_lid) < rand_dev(vid_d1)){
-                femv_colors(curr_lid) = 0;
-		recoloring_size++;
-                break;
-              } else{
-                if(gid_dev(curr_lid) >= gid_dev(vid_d1) && rand_dev(vid_d1) == rand_dev(curr_lid)){
-                  femv_colors(curr_lid) = 0;
-		  recoloring_size++;
-                  break;
-                }
-              }
-            }
-            size_t d2_adj_begin = 0;
-            size_t d2_adj_end   = 0;
-            d2_adj_begin = dist_offsets_dev(vid_d1);
-            d2_adj_end   = dist_offsets_dev(vid_d1+1);
-            bool found = false;
-	    for(size_t vid_d2_adj = d2_adj_begin; vid_d2_adj < d2_adj_end; vid_d2_adj++){
-              const lno_t vid_d2 = dist_adjs_dev(vid_d2_adj);
-              if(curr_lid != vid_d2 && femv_colors(vid_d2) == curr_color){
-                if(rand_dev(curr_lid) < rand_dev(vid_d2)){
-  	 	  found = true;
-                  femv_colors(curr_lid) = 0;
-		  recoloring_size++;
-                  break;
-                } else {
-                  if(gid_dev(curr_lid) >= gid_dev(vid_d2) && rand_dev(vid_d2) == rand_dev(curr_lid)){
-		    found = true;
-                    femv_colors(curr_lid) = 0;
-		    recoloring_size++;
-                    break;
-                  }
-                }
-              }
-            }
-	    if(found) break;
-          }
-        },recoloringSize(0));
-        //ensure the parallel_for finishes before continuing
-        Kokkos::fence(); 
-        Kokkos::parallel_for(femv_colors.size(), KOKKOS_LAMBDA(const int& i){
-          if(femv_colors(i) == 0){
-	    if( i < n_local){
-	      verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
+        Kokkos::parallel_for(offsets.size()-1, KOKKOS_LAMBDA(const uint64_t& i){
+  	  const size_t curr_lid = i;
+	  const int curr_color = femv_colors(curr_lid);
+	  const size_t vid_d1_adj_begin = dist_offsets_dev(i);
+	  const size_t vid_d1_adj_end   = dist_offsets_dev(i+1);
+	  for(size_t vid_d1_adj = vid_d1_adj_begin; vid_d1_adj < vid_d1_adj_end; vid_d1_adj++){
+	    size_t vid_d1 = dist_adjs_dev(vid_d1_adj);
+	    if( vid_d1 != curr_lid && femv_colors(vid_d1) == curr_color){
+	      if(rand_dev(curr_lid) < rand_dev(vid_d1)){
+	        femv_colors(curr_lid) = 0;
+	        recoloringSize_atomic(0)++;
+	        //add to recolor list/send list
+	        verts_to_recolor_atomic(verts_to_recolor_size_atomic(0)++) = i;
+	        verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
+	        break;
+	      } else if(rand_dev(vid_d1) < rand_dev(curr_lid)){
+	        if(vid_d1 >= n_local){
+	          femv_colors(vid_d1) = 0;
+	          recoloringSize_atomic(0)++;
+	        }
+	      } else{
+	        if(gid_dev(curr_lid) >= gid_dev(vid_d1)){
+	          femv_colors(curr_lid) = 0;
+	          recoloringSize_atomic(0)++;
+	          //add to recolor/send list
+                  verts_to_recolor_atomic(verts_to_recolor_size_atomic(0)++) = i;
+	  	  verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
+	  	  break;
+	        } else {
+	          if(vid_d1 >= n_local){
+	            femv_colors(vid_d1) = 0;
+	            recoloringSize_atomic(0)++;
+	          }
+	        }
+	      }
 	    }
-	    verts_to_recolor_atomic(verts_to_recolor_size_atomic(0)++) = i;
-  	  }		      
+	    size_t d2_adj_begin = 0;
+	    size_t d2_adj_end   = 0;
+	    d2_adj_begin = dist_offsets_dev(vid_d1);
+	    d2_adj_end   = dist_offsets_dev(vid_d1+1);
+	    bool found = false;
+	    for(size_t vid_d2_adj = d2_adj_begin; vid_d2_adj < d2_adj_end; vid_d2_adj++){
+	      const size_t vid_d2 = dist_adjs_dev(vid_d2_adj);
+	      if(curr_lid != vid_d2 && femv_colors(vid_d2) == curr_color){
+	        if(rand_dev(curr_lid) < rand_dev(vid_d2)){
+	          found = true;
+	          femv_colors(curr_lid) = 0;
+	          recoloringSize_atomic(0)++;
+	          //add to recolor/send list
+	          verts_to_recolor_atomic(verts_to_recolor_size_atomic(0)++) = i;
+	  	verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
+	          break;
+	        } else if(rand_dev(vid_d2) < rand_dev(curr_lid)){
+	          if(vid_d2 >= n_local){
+	            femv_colors(vid_d2) = 0;
+	            recoloringSize_atomic(0)++;
+	          }
+	        } else {
+	          if(gid_dev(curr_lid) >= gid_dev(vid_d2)){
+	            found = true;
+	            femv_colors(curr_lid) = 0;
+	            recoloringSize_atomic(0)++;
+	    	    //add to recolor/send list
+	            verts_to_recolor_atomic(verts_to_recolor_size_atomic(0)++) = i;
+	            verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
+	            break;
+	          } else {
+	            if(vid_d2 >= n_local){
+	              femv_colors(vid_d2) = 0;
+	              recoloringSize_atomic(0)++;
+	            }
+	          }
+ 	        }
+	      }
+	    }
+       	    if(found) break;
+          }
         });
-	Kokkos::fence();
+        Kokkos::fence();
         conflictDetectionPerRound[distributedRounds] = timer() - detection_temp;
         conflict_detection += conflictDetectionPerRound[distributedRounds];
         compPerRound[distributedRounds] += conflictDetectionPerRound[distributedRounds];
@@ -907,16 +934,16 @@ class AlgDistance2 : public Algorithm<Adapter> {
       if(verbose){
         std::cout<<comm->getRank()<<": done recoloring loop, computing statistics\n";
         uint64_t localBoundaryVertices = 0;
-        for(int i = 0; i < n_local; i++){
-          for(int j = offsets[i]; j < offsets[i+1]; j++){
-            if(adjs[j] >= n_local){
+        for(size_t i = 0; i < n_local; i++){
+          for(size_t j = offsets[i]; j < offsets[i+1]; j++){
+            if((size_t)adjs[j] >= n_local){
               localBoundaryVertices++;
               break;
             }
           }
         }
         
-        if(comm->getRank() == 0) printf("did %d rounds of distributed coloring\n", distributedRounds);
+        if(comm->getRank() == 0) printf("did %ld rounds of distributed coloring\n", distributedRounds);
         uint64_t totalVertsPerRound[100];
         uint64_t totalBoundarySize = 0;
         double finalTotalPerRound[100];
@@ -942,10 +969,10 @@ class AlgDistance2 : public Algorithm<Adapter> {
         Teuchos::reduceAll<int,double>(*comm, Teuchos::REDUCE_MAX,100,commPerRound,finalCommPerRound);
         Teuchos::reduceAll<int,double>(*comm, Teuchos::REDUCE_MAX,100,compPerRound,finalCompPerRound);
         Teuchos::reduceAll<int,double>(*comm, Teuchos::REDUCE_MAX,100,conflictDetectionPerRound, finalConflictDetectionPerRound);
-        printf("Rank %d: boundary size: %d\n",comm->getRank(),localBoundaryVertices);
+        printf("Rank %d: boundary size: %ld\n",comm->getRank(),localBoundaryVertices);
         for(int i = 0; i < std::min((int)distributedRounds,100); i++){
-          printf("Rank %d: recolor %d vertices in round %d\n",comm->getRank(),vertsPerRound[i],i);
-          if(comm->getRank()==0) printf("recolored %d vertices in round %d\n",totalVertsPerRound[i],i);
+          printf("Rank %d: recolor %ld vertices in round %d\n",comm->getRank(),vertsPerRound[i],i);
+          if(comm->getRank()==0) printf("recolored %ld vertices in round %d\n",totalVertsPerRound[i],i);
           if(comm->getRank()==0) printf("total time in round %d: %f\n",i,finalTotalPerRound[i]);
           if(comm->getRank()==0) printf("recoloring time in round %d: %f\n",i,maxRecoloringPerRound[i]);
           if(comm->getRank()==0) printf("min recoloring time in round %d: %f\n",i,minRecoloringPerRound[i]);
@@ -970,7 +997,7 @@ class AlgDistance2 : public Algorithm<Adapter> {
         comm->barrier();
         fflush(stdout);
         if(comm->getRank()==0){
-          printf("Boundary size: %d\n",totalBoundarySize);
+          printf("Boundary size: %ld\n",totalBoundarySize);
           printf("Total Time: %f\n",global_total_time);
           printf("Interior Time: %f\n",global_interior_time);
           printf("Recoloring Time: %f\n",global_recoloring_time);

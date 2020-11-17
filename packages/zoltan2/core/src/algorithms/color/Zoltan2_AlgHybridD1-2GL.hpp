@@ -178,7 +178,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       if(verbose) std::cout<<comm->getRank()<<": determining number of rounds necessary\n";
       int rounds = 1;
       for(int i = 0; i < comm->getSize(); i++){
-        if(adjsendcounts[i]*sizeof(gno_t)/ INT_MAX > rounds){
+        if(adjsendcounts[i]*sizeof(gno_t)/ INT_MAX > (size_t)rounds){
           rounds = (adjsendcounts[i]*sizeof(gno_t)/INT_MAX)+1;
         }
       }
@@ -217,7 +217,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       if(verbose) std::cout<<comm->getRank()<<": filling out recv GID schedule\n";
       for(int i = 0; i < comm->getSize(); i++){
         int curr_round = 0;
-        int curr_idx = 0;
+        size_t curr_idx = 0;
         for(int j = sdispls[i]; j < sdispls[i+1]; j++){
           if(curr_idx > per_proc_round_vtx_sums[curr_round][i]){
             curr_round++;
@@ -233,7 +233,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       gno_t reorder_idx = 0;
       for(int i = 0; i < max_rounds; i++){
         for(int j = 0; j < comm->getSize(); j++){
-          for(int k = 0; k < per_proc_round_vtx_sums[i][j]; k++){
+          for(size_t k = 0; k < per_proc_round_vtx_sums[i][j]; k++){
             final_gid_vec[reorder_idx] = sendbuf[recv_GID_per_proc_per_round[i][j][k]];
             final_degree_vec[reorder_idx++] = recvDegrees[recv_GID_per_proc_per_round[i][j][k]];
           }
@@ -285,7 +285,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         if(verbose) std::cout<<comm->getRank()<<": round "<<round<<", constructing send_adj\n";
         for(int curr_proc = 0; curr_proc < comm->getSize(); curr_proc++){
           uint64_t curr_adj_sum = 0;
-          while( curr_idx_per_proc[curr_proc] < rdispls[curr_proc+1]){
+          while( curr_idx_per_proc[curr_proc] < (size_t)rdispls[curr_proc+1]){
             lno_t lid = mapOwned->getLocalElement(recvbuf[curr_idx_per_proc[curr_proc]++]);
             if((curr_adj_sum + (offsets[lid+1]-offsets[lid]))*sizeof(gno_t) >= INT_MAX){
               break;
@@ -308,7 +308,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         std::vector<int> adjrecvcounts(comm->getSize(),0);
         Teuchos::ArrayView<int> adjsrecvcounts_view = Teuchos::arrayViewFromVector(adjrecvcounts);
         Zoltan2::AlltoAllv<gno_t>(*comm, *env, send_adjs_view, adjsendcounts_view, ghost_adjs, adjsrecvcounts_view);
-        for(offset_t i = 0; i< ghost_adjs.size(); i++){
+        for(offset_t i = 0; i< (offset_t)ghost_adjs.size(); i++){
           adjs_2GL.push_back(ghost_adjs[i]);
         }
       }
@@ -322,7 +322,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
     double doOwnedToGhosts(RCP<const map_t> mapOwnedPlusGhosts,
                            size_t nVtx,
 			   Kokkos::View<lno_t*,device_type> verts_to_send,
-			   Kokkos::View<lno_t[1],device_type> verts_to_send_size,
+			   Kokkos::View<size_t[1],device_type> verts_to_send_size,
                            Kokkos::View<int*, device_type>& colors,
                            gno_t& total_sent, gno_t& total_recvd){
       int nprocs = comm->getSize();
@@ -376,7 +376,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       }
       total_recvd = recvsize;
       for(int i = 0; i < recvsize; i+=2){
-        lno_t lid = mapOwnedPlusGhosts->getLocalElement(recvbuf[i]);
+        size_t lid = mapOwnedPlusGhosts->getLocalElement(recvbuf[i]);
 	if(lid < nVtx && verbose) std::cout<<comm->getRank()<<": received a locally owned vertex, somehow\n";
 	colors(lid) = recvbuf[i+1];
       }
@@ -395,7 +395,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       ArrayView<const gno_t> adjs;
       ArrayView<const offset_t> offsets;
       ArrayView<StridedData<lno_t, scalar_t> > ewgts;
-      size_t nEdge = model->getEdgeList(adjs, offsets, ewgts);      
+      model->getEdgeList(adjs, offsets, ewgts);      
       
 
       std::unordered_map<gno_t,lno_t> globalToLocal;
@@ -431,7 +431,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       //get the owners of the vertices
       ArrayView<int> owningProcs = Teuchos::arrayViewFromVector(ghostowners);
       ArrayView<const gno_t> gids = Teuchos::arrayViewFromVector(ghosts);
-      Tpetra::LookupStatus ls = mapOwned->getRemoteIndexList(gids, owningProcs);
+      mapOwned->getRemoteIndexList(gids, owningProcs);
       
       for(size_t i = 0; i < ghostowners.size(); i++){
         owners.push_back(ghostowners[i]);
@@ -492,10 +492,10 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       
       std::vector<int> ghostOwners2(ownedPlusGhosts.size() -nVtx);
       std::vector<gno_t> ghosts2(ownedPlusGhosts.size() - nVtx);
-      for(int i = nVtx; i < ownedPlusGhosts.size(); i++) ghosts2[i-nVtx] = ownedPlusGhosts[i];
+      for(size_t i = nVtx; i < ownedPlusGhosts.size(); i++) ghosts2[i-nVtx] = ownedPlusGhosts[i];
       Teuchos::ArrayView<int> owners2 = Teuchos::arrayViewFromVector(ghostOwners2);
       Teuchos::ArrayView<const gno_t> ghostGIDs = Teuchos::arrayViewFromVector(ghosts2);
-      Tpetra::LookupStatus ls2 = mapOwned->getRemoteIndexList(ghostGIDs,owners2);
+      mapOwned->getRemoteIndexList(ghostGIDs,owners2);
       if(verbose) std::cout<<comm->getRank()<<": done getting ghost owners\n";
       
       //calculations for how many 2GL verts are in the boundary of another process, only
@@ -521,7 +521,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         }
         //construct sendbuf to send GIDs to owning processes
         std::vector<gno_t> sendbuf(sendcount,0);
-        for(size_t i = nGhosts; i < ghostGIDs.size(); i++){
+        for(size_t i = nGhosts; i < (size_t)ghostGIDs.size(); i++){
           if(owners2[i] != comm->getRank() && owners2[i] != -1){
             sendbuf[idx[owners2[i]]++] = ghostGIDs[i];
           }
@@ -534,15 +534,15 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         Zoltan2::AlltoAllv<gno_t>(*comm, *env, sendbuf_view, sendcounts_view, recvbuf, recvcounts_view);
         std::vector<int> is_bndry_send(recvbuf.size(),0);
         for(int i = 0; i < recvbuf.size(); i++){
-          lno_t lid = mapWithCopies->getLocalElement(recvbuf[i]);
+          size_t lid = mapWithCopies->getLocalElement(recvbuf[i]);
           is_bndry_send[i] = 0;
           if(lid < nVtx){
-            for(int j = offsets[lid]; j < offsets[lid+1]; j++){
-              if(local_adjs[j] >= nVtx) is_bndry_send[i] = 1;
+            for(offset_t j = offsets[lid]; j < offsets[lid+1]; j++){
+              if((size_t)local_adjs[j] >= nVtx) is_bndry_send[i] = 1;
             }
           } else{
-            for(int j = first_layer_ghost_offsets[lid]; j < first_layer_ghost_offsets[lid+1]; j++){
-              if(local_ghost_adjs[j] >= nVtx) is_bndry_send[i] = 1;
+            for(offset_t j = first_layer_ghost_offsets[lid]; j < first_layer_ghost_offsets[lid+1]; j++){
+              if((size_t)local_ghost_adjs[j] >= nVtx) is_bndry_send[i] = 1;
             }
           }
         }
@@ -606,7 +606,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       //find global max degree
       offset_t local_max_degree = 0;
       offset_t global_max_degree = 0;
-      for(int i = 0; i < n_local; i++){
+      for(size_t i = 0; i < n_local; i++){
 	offset_t curr_degree = offsets[i+1] - offsets[i];
 	if(curr_degree > local_max_degree){
 	  local_max_degree = curr_degree;
@@ -698,13 +698,13 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       offset_t boundary_size = 0;
       for(offset_t i = 0; i < n_local; i++){
         for(offset_t j = dist_offsets_host(i); j < dist_offsets_host(i+1); j++){
-	  if(dist_adjs_host(j) >= n_local){
+	  if((size_t)dist_adjs_host(j) >= n_local){
 	    boundary_size++;
 	    break;
 	  }
 	  bool found = false;
 	  for(offset_t k = dist_offsets_host(dist_adjs_host(j)); k < dist_offsets_host(dist_adjs_host(j)+1); k++){
-	    if(dist_adjs_host(k) >= n_local){
+	    if((size_t)dist_adjs_host(k) >= n_local){
 	      boundary_size++;
 	      found = true;
 	      break;
@@ -736,20 +736,20 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       Kokkos::View<lno_t*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_atomic = verts_to_send_view;
       
 
-      Kokkos::View<int[1], device_type> verts_to_send_size("verts to send size");
+      Kokkos::View<size_t[1], device_type> verts_to_send_size("verts to send size");
       verts_to_send_size(0) = 0;
-      Kokkos::View<int[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic = verts_to_send_size;
+      Kokkos::View<size_t[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic = verts_to_send_size;
       if(verbose) std::cout<<comm->getRank()<<": initializing the list of vertices to send\n";
       Kokkos::parallel_for(n_local, KOKKOS_LAMBDA(const int& i){
         for(offset_t j = dist_offsets_dev(i); j < dist_offsets_dev(i+1); j++){
-	  if(dist_adjs_dev(j) >= n_local){
+	  if((size_t)dist_adjs_dev(j) >= n_local){
 	    verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
 	    send_flags(i) = true;
 	    break;
 	  }
 	  bool found = false;
 	  for(offset_t k = dist_offsets_dev(dist_adjs_dev(j)); k < dist_offsets_dev(dist_adjs_dev(j)+1); k++){
-	    if(dist_adjs_dev(k) >= n_local){
+	    if((size_t)dist_adjs_dev(k) >= n_local){
 	      verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
 	      found = true;
 	      send_flags(i) = true;
@@ -774,7 +774,6 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       //get the color view from the FEMultiVector
       Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
       Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
-      offset_t max_uncolored_degree = 0;
       Kokkos::View<int*,device_type> ghost_colors("ghost color backups", rand.size() - n_local);
       comm->barrier();
 
@@ -826,7 +825,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         conflict_detection = timer() - temp;
         comp_time += conflict_detection;
       }
-      Kokkos::parallel_for(femv_colors.size(), KOKKOS_LAMBDA (const int& i){
+      Kokkos::parallel_for(femv_colors.size(), KOKKOS_LAMBDA (const size_t& i){
         if(femv_colors(i) == 0){
           if(i < n_local){
             verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
@@ -892,7 +891,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         std::vector<int> old_colors;
 	//only loop through these if we're going to use them
 	if(verbose){
-          for(int i = 0; i < femv_colors.size(); i++){
+          for(size_t i = 0; i < femv_colors.size(); i++){
             old_colors.push_back(femv_colors(i));
           }
 	}
@@ -908,7 +907,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         incorrectGhostsPerRound[distributedRounds] = 0;
         //only compute this metric if it will be displayed
 	if(verbose){
-          for(int i = 0; i < femv_colors.size(); i++){
+          for(size_t i = 0; i < femv_colors.size(); i++){
             if(i >= n_local && femv_colors(i) != old_colors[i]) incorrectGhostsPerRound[distributedRounds]++;
           }
 	}
@@ -950,7 +949,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
           }
         },recoloringSize(0));
         Kokkos::fence();
-        Kokkos::parallel_for(femv_colors.size(), KOKKOS_LAMBDA (const int& i){
+        Kokkos::parallel_for(femv_colors.size(), KOKKOS_LAMBDA (const size_t& i){
           if(femv_colors(i) == 0){
             if(i < n_local){
               verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
@@ -979,9 +978,9 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
       //only compute stats if they will be displayed
       if(verbose){
         uint64_t localBoundaryVertices = 0;
-        for(int i = 0; i < n_local; i++){
-          for(int j = offsets[i]; j < offsets[i+1]; j++){
-            if(adjs[j] >= n_local){
+        for(size_t i = 0; i < n_local; i++){
+          for(offset_t j = offsets[i]; j < offsets[i+1]; j++){
+            if((size_t)adjs[j] >= n_local){
               localBoundaryVertices++;
               break;
             }
@@ -1022,20 +1021,20 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         Teuchos::reduceAll<int,double>(*comm, Teuchos::REDUCE_MAX,100,conflictDetectionPerRound, finalConflictDetectionPerRound);
         Teuchos::reduceAll<int,gno_t> (*comm, Teuchos::REDUCE_SUM,100,recvPerRound,finalRecvPerRound);
         Teuchos::reduceAll<int,gno_t> (*comm, Teuchos::REDUCE_SUM,100,sentPerRound,finalSentPerRound);
-        printf("Rank %d: boundary size: %d\n",comm->getRank(),localBoundaryVertices);
+        printf("Rank %d: boundary size: %ld\n",comm->getRank(),localBoundaryVertices);
         for(int i = 0; i < std::min((int)distributedRounds,100); i++){
-          printf("Rank %d: recolor %d vertices in round %d\n",comm->getRank(), vertsPerRound[i],i);
-          printf("Rank %d: sentbuf had %d entries in round %d\n", comm->getRank(), sentPerRound[i],i);
+          printf("Rank %d: recolor %ld vertices in round %d\n",comm->getRank(), vertsPerRound[i],i);
+          printf("Rank %d: sentbuf had %lld entries in round %d\n", comm->getRank(), sentPerRound[i],i);
           if(comm->getRank()==0){
-            printf("recolored %d vertices in round %d\n",totalVertsPerRound[i], i);
-            printf("%d inconsistent ghosts in round %d\n",totalIncorrectGhostsPerRound[i],i);
+            printf("recolored %ld vertices in round %d\n",totalVertsPerRound[i], i);
+            printf("%ld inconsistent ghosts in round %d\n",totalIncorrectGhostsPerRound[i],i);
             printf("total time in round %d: %f\n",i,finalTotalPerRound[i]);
             printf("recoloring time in round %d: %f\n",i,maxRecoloringPerRound[i]);
             printf("min recoloring time in round %d: %f\n",i,minRecoloringPerRound[i]);
             printf("conflict detection time in round %d: %f\n",i,finalConflictDetectionPerRound[i]);
             printf("comm time in round %d: %f\n",i,finalCommPerRound[i]);
-            printf("recvbuf size in round %d: %d\n",i,finalRecvPerRound[i]);
-            printf("sendbuf size in round %d: %d\n",i,finalSentPerRound[i]);
+            printf("recvbuf size in round %d: %lld\n",i,finalRecvPerRound[i]);
+            printf("sendbuf size in round %d: %lld\n",i,finalSentPerRound[i]);
             printf("comp time in round %d: %f\n",i,finalCompPerRound[i]);
           }
         }
@@ -1056,7 +1055,7 @@ class AlgDistance1TwoGhostLayer : public Algorithm<Adapter> {
         comm->barrier();
         fflush(stdout);
         if(comm->getRank()==0){
-          printf("Boundary size: %d\n",totalBoundarySize);
+          printf("Boundary size: %ld\n",totalBoundarySize);
           printf("Total Time: %f\n",global_total_time);
           printf("Interior Time: %f\n",global_interior_time);
           printf("Recoloring Time: %f\n",global_recoloring_time);
