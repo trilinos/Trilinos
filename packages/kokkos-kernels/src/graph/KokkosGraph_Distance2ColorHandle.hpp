@@ -148,6 +148,7 @@ class GraphColorDistance2Handle
         , overall_coloring_time_phase4(0)
         , overall_coloring_time_phase5(0)
         , coloring_time(0)
+	, use_vtx_list(false)  
         , num_phases(0)
         , vertex_colors()
         , is_coloring_called_before(false)
