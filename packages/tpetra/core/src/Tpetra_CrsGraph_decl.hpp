@@ -70,6 +70,9 @@
 
 namespace Tpetra {
 
+#if !defined(TPETRA_KYUNGJOO)
+#define TPETRA_KYUNGJOO
+#endif
 
   // Forward declaration for CrsGraph::swap() test
   template<class LocalOrdinal, class GlobalOrdinal, class Node> class crsGraph_Swap_Tester;
@@ -1063,7 +1066,8 @@ namespace Tpetra {
 
 #if defined(TPETRA_KYUNGJOO)
     /// we really do not want to play with pointers
-#else
+    /// to compile others, we leave the interface alive
+#endif
     /// \brief Get a const, non-persisting view of the given local
     ///   row's local column indices, as a Teuchos::ArrayView.
     ///
@@ -1091,7 +1095,7 @@ namespace Tpetra {
     void
     getGlobalRowView (const global_ordinal_type gblRow,
                       Teuchos::ArrayView<const global_ordinal_type>& gblColInds) const override;
-#endif
+
 
     //@}
     //! @name Overridden from Teuchos::Describable
@@ -1997,7 +2001,7 @@ namespace Tpetra {
 
 #if defined(TPETRA_KYUNGJOO)
     //// pointer play is dangerous and not desired.
-#else
+#endif
     /// \brief Get a const, nonowned, locally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
@@ -2025,7 +2029,7 @@ namespace Tpetra {
     getLocalViewRawConst (const local_ordinal_type*& lclInds,
                           local_ordinal_type& capacity,
                           const RowInfo& rowInfo) const;
-#endif
+
   private:
 
 #if defined(TPETRA_KYUNGJOO)
@@ -2033,14 +2037,17 @@ namespace Tpetra {
     using local_const_row_view_type = Kokkos::View<const local_ordinal_type*, device_type, Kokkos::MemoryUnmanaged>;
 
     typename local_const_row_view_type::HostMirror
-    getLocalKokkosRowInernalHostView (const RowInfo& rowInfo) const;
+    getLocalKokkosRowInternalHostView (const RowInfo& rowInfo) const;
 
     typename local_row_view_type::HostMirror
-    getLocalKokkosRowHostInternalHostViewNonConst (const RowInfo& rowInfo);    
+    getLocalKokkosRowInternalHostViewNonConst (const RowInfo& rowInfo);    
 
     using global_const_row_view_type = Kokkos::View<const global_ordinal_type*, device_type, Kokkos::MemoryUnmanaged>;
 
-    typename global_const_row_view_type::HostMirror
+    typename Kokkos::View<const GlobalOrdinal*,
+                          typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::device_type,
+                          Kokkos::MemoryUnmanaged>::HostMirror
+  //typename global_const_row_view_type::HostMirror
     getGlobalKokkosRowInternalHostView (const RowInfo& rowInfo) const;
 #endif
 
@@ -2076,7 +2083,7 @@ namespace Tpetra {
 
 #if defined(TPETRA_KYUNGJOO)
     /// pointer play is not wanted
-#else
+#endif
     /// \brief Get a const, nonowned, globally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
@@ -2105,7 +2112,6 @@ namespace Tpetra {
     getGlobalViewRawConst (const global_ordinal_type*& gblInds,
                            local_ordinal_type& capacity,
                            const RowInfo& rowInfo) const;
-#endif
 
   public:
 
@@ -2274,7 +2280,7 @@ namespace Tpetra {
     /// again if it is allocated.
     typename local_graph_type::row_map_type::const_type k_rowPtrs_;
 #if defined(TPETRA_KYUNGJOO)
-    typename local_graph_type::row_map_type::non_const_type::HostMirror k_rowPtrs_InternalHost_;
+    typename local_graph_type::row_map_type::const_type::HostMirror k_rowPtrs_InternalHost_;
 #endif
 
 

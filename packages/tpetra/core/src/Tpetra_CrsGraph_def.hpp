@@ -75,6 +75,10 @@
 #include <utility>
 #include <vector>
 
+#if !defined(TPETRA_KYUNGJOO)
+#define TPETRA_KYUNGJOO
+#endif
+
 namespace Tpetra {
   namespace Details {
     namespace Impl {
@@ -653,7 +657,11 @@ namespace Tpetra {
     k_rowPtrs_ = lclGraph_.row_map;
 #if defined(TPETRA_KYUNGJOO)
     k_lclInds1D_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_lclInds1D_);
-    k_rowPtrs_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_rowPtrs_);
+    /// k_rowPtrs_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_rowPtrs_);
+    /// this does not work.... why do we declare row ptrs non const view ??????????
+    k_rowPtrs_InternalHost_ = typename local_graph_type::row_map_type::non_const_type
+      ::HostMirror("i do not like this", k_rowPtrs_); 
+    Kokkos::deep_copy(k_rowPtrs_InternalHost_, k_rowPtrs_);
 #endif
 
     set_need_sync_host_uvm_access(); // lclGraph_ potentially still in a kernel
@@ -703,7 +711,10 @@ namespace Tpetra {
     k_rowPtrs_ = lclGraph_.row_map;
 #if defined(TPETRA_KYUNGJOO)
     k_lclInds1D_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_lclInds1D_);
-    k_rowPtrs_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_rowPtrs_);
+    //k_rowPtrs_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_rowPtrs_);
+    k_rowPtrs_InternalHost_ = typename local_graph_type::row_map_type::non_const_type
+      ::HostMirror("i do not like this", k_rowPtrs_); 
+    Kokkos::deep_copy(k_rowPtrs_InternalHost_, k_rowPtrs_);
 #endif
 
     set_need_sync_host_uvm_access(); // lclGraph_ potentially still in a kernel
@@ -1324,11 +1335,15 @@ namespace Tpetra {
 
 #if defined(TPETRA_KYUNGJOO)
       /// Teuchos pointer play is dangerous and not desired.
+#endif
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const LocalOrdinal>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalView (const RowInfo& rowinfo) const
   {
+#if defined(TPETRA_KYUNGJOO)
+    printf("getLocalView: this can rely on uvm\n");
+#endif
     using Kokkos::subview;
     typedef LocalOrdinal LO;
     typedef Kokkos::View<const LO*, device_type,
@@ -1365,6 +1380,10 @@ namespace Tpetra {
                         LocalOrdinal& capacity,
                         const RowInfo& rowInfo) const
   {
+#if defined(TPETRA_KYUNGJOO)
+    printf("getLocalViewRawConst: this can rely on uvm\n");
+#endif
+
     lclInds = nullptr;
     capacity = 0;
 
@@ -1386,6 +1405,10 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalViewNonConst (const RowInfo& rowinfo)
   {
+#if defined(TPETRA_KYUNGJOO)
+    printf("getLocalViewNonConst: this can rely on uvm\n");
+#endif
+
     using Kokkos::subview;
     typedef LocalOrdinal LO;
     typedef Kokkos::View<LO*, device_type,
@@ -1413,7 +1436,6 @@ namespace Tpetra {
       }
     }
   }
-#endif
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Kokkos::View<const LocalOrdinal*,
@@ -1521,8 +1543,8 @@ namespace Tpetra {
   getLocalKokkosRowInternalHostView (const RowInfo& rowInfo) const
   {
     typedef LocalOrdinal LO;
-    typedef Kokkos::View<const LO*, device_type,
-                         Kokkos::MemoryUnmanaged>::HostMirror row_view_type;
+    typedef typename Kokkos::View<const LO*, device_type,
+                                  Kokkos::MemoryUnmanaged>::HostMirror row_view_type;
 
     if (rowInfo.allocSize == 0) {
       return row_view_type ();
@@ -1614,12 +1636,15 @@ namespace Tpetra {
 
 #if defined(TPETRA_KYUNGJOO)
     /// pointer play is not wanted
-#else
+#endif
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const GlobalOrdinal>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalView (const RowInfo& rowinfo) const
   {
+#if defined(TPETRA_KYUNGJOO)
+    printf("getGlobalView: this can assume uvm\n");
+#endif
     using GO = global_ordinal_type;
 
     Teuchos::ArrayView<const GO> view;
@@ -1650,6 +1675,10 @@ namespace Tpetra {
                          LocalOrdinal& capacity,
                          const RowInfo& rowInfo) const
   {
+#if defined(TPETRA_KYUNGJOO)
+    printf("getGlobalViewRawConst: this can assume uvm\n");
+#endif
+
     gblInds = nullptr;
     capacity = 0;
 
@@ -1672,6 +1701,10 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalViewNonConst (const RowInfo& rowinfo)
   {
+#if defined(TPETRA_KYUNGJOO)
+    printf("getGlobalViewNonConst: this can assume uvm\n");
+#endif
+
     using GO = global_ordinal_type;
 
     Teuchos::ArrayView<GO> view;
@@ -1693,7 +1726,6 @@ namespace Tpetra {
     }
     return view;
   }
-#endif
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   RowInfo
@@ -1902,7 +1934,7 @@ namespace Tpetra {
       numNewInds = new_ginds.size();
       if (I == GlobalIndices) { // store global indices
 #if defined(TPETRA_KYUNGJOO)
-        const auto gind_view = this->getGlobaKokkoslRowInternalHostViewNonConst (rowinfo);
+        const auto gind_view = this->getGlobaKokkosRowInternalHostViewNonConst (rowinfo);
         GO* const gblColInds_out = gind_view.data() + rowinfo.numEntries;
 #else
         ArrayView<GO> gind_view = this->getGlobalViewNonConst (rowinfo);
@@ -2609,8 +2641,8 @@ namespace Tpetra {
     }
     else { // size_t != row_offset_type
       typedef Kokkos::View<size_t*, Kokkos::HostSpace> ret_view_type;
-      ret_view_type ptr_d (ViewAllocateWithoutInitializing ("ptr"), size);
-      Kokkos::deep_copy(ptr_d, k_rowPtrs_InternalHost_);
+      ret_view_type ptr_h (ViewAllocateWithoutInitializing ("ptr"), size);
+      Kokkos::deep_copy(ptr_h, k_rowPtrs_InternalHost_);
       ptr_st = Kokkos::Compat::persistingView (ptr_h);
     }
 #else
@@ -2787,15 +2819,18 @@ namespace Tpetra {
   }
 
 
-#if defined(TPETRA_KYUYNGJOO)
+#if defined(TPETRA_KYUNGJOO)
 /// let's not play with teuchose array view..... 
-#else
+#endif
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalRowView (const LocalOrdinal localRow,
                    Teuchos::ArrayView<const LocalOrdinal>& indices) const
   {
+#if defined(TPETRA_KYUNGJOO)
+    printf("getLocalRowView: This can relies on UVM\n");
+#endif
     const char tfecfFuncName[] = "getLocalRowView: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -2835,6 +2870,10 @@ namespace Tpetra {
   getGlobalRowView (const GlobalOrdinal globalRow,
                     Teuchos::ArrayView<const GlobalOrdinal>& indices) const
   {
+#if defined(TPETRA_KYUNGJOO)
+    printf("getGlobalRowView: This can relies on UVM\n");
+#endif
+
     const char tfecfFuncName[] = "getGlobalRowView: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -2861,7 +2900,6 @@ namespace Tpetra {
          << ".  Please report this bug to the Tpetra developers.");
     }
   }
-#endif
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -2912,10 +2950,11 @@ namespace Tpetra {
           os << "Tpetra::CrsGraph::insertLocalIndices: You attempted to insert "
             "entries in owned row " << localRow << ", at the following column "
             "indices: " << toString (indices) << "." << endl;
-          os << "Of those, the following indices are not in the column Map on "
-            "this process: " << toString (badColInds) << "." << endl << "Since "
-            "the graph has a column Map already, it is invalid to insert entries "
-            "at those locations.";
+          /// TPETRA_KYUNGJOO std vector does not work in the following toString.
+          // os << "Of those, the following indices are not in the column Map on "
+          //   "this process: " << toString (badColInds) << "." << endl << "Since "
+          //   "the graph has a column Map already, it is invalid to insert entries "
+          //   "at those locations.";
           TEUCHOS_TEST_FOR_EXCEPTION(! allInColMap, std::invalid_argument, os.str ());
         }
       }
@@ -3138,15 +3177,9 @@ namespace Tpetra {
     // FIXME (mfh 13 Aug 2014) What if they haven't been cleared on
     // all processes?
     clearGlobalConstants ();
-#if defined(TPETRA_KYUNGJOO)
-    if (k_numRowEntries_InternalHost_.extent (0) != 0) {
-      this->k_numRowEntries_InternalHost_(lrow) = 0;
-    }
-#else
     if (k_numRowEntries_.extent (0) != 0) {
       this->k_numRowEntries_(lrow) = 0;
     }
-#endif
     if (debug_) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (getNumEntriesInLocalRow (lrow) != 0 ||
@@ -3236,7 +3269,10 @@ namespace Tpetra {
 
 #if defined(TPETRA_KYUNGJOO)
     k_lclInds1D_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_lclInds1D_);
-    k_rowPtrs_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_rowPtrs_);
+    ///k_rowPtrs_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_rowPtrs_);
+    k_rowPtrs_InternalHost_ = typename local_graph_type::row_map_type::non_const_type
+      ::HostMirror("i do not like this", k_rowPtrs_); 
+    Kokkos::deep_copy(k_rowPtrs_InternalHost_, k_rowPtrs_);
 #endif
     set_need_sync_host_uvm_access(); // columnIndices and rowPointers potentially still in a kernel
 
@@ -4504,7 +4540,7 @@ namespace Tpetra {
           const RowInfo rowInfo = this->getRowInfo (lclRow);
 
 #if defined(TPETRA_KYUNGJOO)
-          const auto oldGblRowView = getGlobaKokkoslRowInternalHostViewNonConst(rowInfo);
+          const auto oldGblRowView = this->getGlobaKokkosRowInternalHostView(rowInfo);
 #else
           Teuchos::ArrayView<const GO> oldGblRowView = getGlobalView (rowInfo);
 #endif
