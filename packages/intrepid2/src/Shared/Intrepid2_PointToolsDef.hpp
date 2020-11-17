@@ -48,10 +48,6 @@
 #ifndef __INTREPID2_POINTTOOLS_DEF_HPP__
 #define __INTREPID2_POINTTOOLS_DEF_HPP__
 
-#ifdef _MSC_VER
-#include "winmath.h"
-#endif
-
 
 namespace Intrepid2 {
 
