@@ -17,10 +17,10 @@ namespace Zoltan2
 // Implementation of CrsColorer<> using Zoltan2.  Currently this is a distance-1
 // algorithm, which requires forming A^T*A, and only works in serial
 template <typename CrsMatrixType>
-class Zoltan2CrsColorer : public CrsColorer<CrsMatrixType>
+class Zoltan2CrsColorer 
 {
 public:
-  typedef CrsColorer<CrsMatrixType> base_type;
+  typedef Zoltan2_TpetraCrs2DColorer<CrsMatrixType> base_type;
   typedef typename base_type::matrix_type matrix_type;
   typedef typename base_type::device_type device_type;
   typedef typename base_type::list_of_colors_type list_of_colors_type;
@@ -28,15 +28,28 @@ public:
 
   // Constructor
   Zoltan2CrsColorer(const Teuchos::RCP<matrix_type> &matrix_) 
-    : base_type(matrix_) {}
+    : matrix(matrix_), graph(matrix_->getCrsGraph()) 
+  {}
 
   // Destructor
   ~Zoltan2CrsColorer() {}
 
   // Compute coloring data
-  virtual void
-  computeColoring(Teuchos::ParameterList &coloring_params) override
+  void
+  computeColoring(
+    const Teuchos::ParameterList &coloring_params,
+    const std::string &method,
+    int &num_colors,
+    list_of_colors_host_t &list_of_colors_host,
+    list_of_colors_t &list_of_colors);
   {
+    // TODO:  Until Ian's code is ready...
+    // TODO:  Check the logic here:  doing Partial Distance-2 via local
+    // TODO:  distance-1 on J^T*J
+    TEUCHOS_TEST_FOR_EXCEPTION(method == "PARTIAL-DISTANCE-2", std::exception,
+            "Zoltan2CrsColorer not yet ready for coloring method " << method
+            << std::endl);
+
     // Compute A^T*A where A = jac
     // We have to do this because Zoltan2 can only do distance-1 coloring
     this->matrix->setAllToScalar(1.0);
@@ -73,21 +86,17 @@ public:
     list_of_colors_host_type list_of_colors_tmp(
                                      local_list_of_colors.getRawPtr(), len);
 
-    this->list_of_colors = list_of_colors_type("list_of_colors", len);
-    this->list_of_colors_host = 
-                         Kokkos::create_mirror_view(this->list_of_colors);
+    list_of_colors = list_of_colors_type("list_of_colors", len);
+    list_of_colors_host = Kokkos::create_mirror_view(list_of_colors);
 
-    Kokkos::deep_copy(this->list_of_colors_host, list_of_colors_tmp);
-    Kokkos::deep_copy(this->list_of_colors, this->list_of_colors_host);
+    Kokkos::deep_copy(list_of_colors_host, list_of_colors_tmp);
+    Kokkos::deep_copy(list_of_colors, list_of_colors_host);
 
     // Compute global number of colors
     Teuchos::RCP<const Teuchos::Comm<int>> comm =
              this->graph->getRowMap()->getComm();
     Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1,
-                       &local_num_colors, &this->num_colors);
-    // KDD:  Not sure the above allReduce is correct; can Zoltan2 return
-    // KDD:  local_num_colors = 4 but the colors are {5,8,9,10} (in which
-    // KDD:  the REDUCE_MAX is incorrect)?
+                       &local_num_colors, &num_colors);
   }
 };
 
@@ -95,16 +104,15 @@ public:
 // Specialization of Tpetra::Zoltan2CrsColorer for BlockCrsMatrix
 // Zoltan2 does not support BlockCrs, so this just throws an error
 template <typename SC, typename LO, typename GO, typename NO>
-class Zoltan2CrsColorer<BlockCrsMatrix<SC, LO, GO, NO>> 
-  : public CrsColorer<BlockCrsMatrix<SC, LO, GO, NO>>
+class Zoltan2CrsColorer<Tpetra::BlockCrsMatrix<SC, LO, GO, NO> > 
 {
 public:
-  typedef BlockCrsMatrix<SC, LO, GO, NO> matrix_type;
-  typedef CrsColorer<matrix_type> base_type;
+  typedef Tpetra::BlockCrsMatrix<SC, LO, GO, NO> matrix_type;
 
   // Constructor
   Zoltan2CrsColorer(const Teuchos::RCP<matrix_type> &matrix_) 
-    : base_type(matrix_) {}
+    : matrix(matrix_), graph(matrix_->getCrsGraph())
+  {}
 
   // Destructor
   ~Zoltan2CrsColorer() {}

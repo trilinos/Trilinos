@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Zoltan2_CrsColorer.hpp"
-#include "Zoltan2_CrsColorerUtils.hpp"
+#include "Zoltan2_TpetraCrsADColorer.hpp"
+#include "Zoltan2_TpetraCrsADColorerUtils.hpp"
 
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayView.hpp"
@@ -16,10 +16,11 @@ namespace Zoltan
 // Implementation of CrsColorer<> using Zoltan partial distance-2 coloring.
 // This is distributed-parallel, but not shared.
 template <typename CrsMatrixType>
-class ZoltanCrsColorer : public CrsColorer<CrsMatrixType>
+class ZoltanCrsColorer
 {
 public:
-  typedef CrsColorer<CrsMatrixType> base_type;
+
+  typedef Zoltan2_TpetraCrsADColorer<CrsMatrixType> base_type;
   typedef typename base_type::matrix_type matrix_type;
   typedef typename base_type::graph_type graph_type;
   typedef typename base_type::scalar_type scalar_type;
@@ -31,17 +32,26 @@ public:
   typedef typename base_type::list_of_colors_host_type list_of_colors_host_type;
 
   // Constructor
-  ZoltanCrsColorer(const Teuchos::RCP<matrix_type> &matrix_);
+  ZoltanCrsColorer(const Teuchos::RCP<matrix_type> &matrix_)
+    : matrix(matrix_), graph(matrix_->getCrsGraph()), transpose_graph()
+  {}
 
   // Destructor
   ~ZoltanCrsColorer() {}
 
   // Compute coloring data
-  virtual void
-  computeColoring(Teuchos::ParameterList &coloring_params) override;
+  void
+  computeColoring(
+    const Teuchos::ParameterList &coloring_params, 
+    const std::string &method, 
+    int &num_colors,
+    list_of_colors_host_t &list_of_colors_host,
+    list_of_colors_t &list_of_colors);
 
 private:
 
+  Teuchos::RCP<const matrix_type> graph;
+  Teuchos::RCP<const graph_type> graph;
   Teuchos::RCP<const graph_type> transpose_graph;
 
   //
@@ -63,7 +73,7 @@ private:
         const Teuchos::RCP<const graph_type> &graph_,
         const Teuchos::RCP<const graph_type> &trans_graph_ = Teuchos::null)
     {
-      graph       = graph_;
+      graph = graph_;
       trans_graph = trans_graph_;
       col_procs.resize(graph->getColMap()->getNodeNumElements());
       auto gids = graph->getColMap()->getNodeElementList();
@@ -175,17 +185,14 @@ private:
 
 //////////////////////////////////////////////////////////////////////////////
 template <typename CrsMatrixType>
-ZoltanCrsColorer<CrsMatrixType>::ZoltanCrsColorer(
-  const Teuchos::RCP<matrix_type> &matrix_)
-  : base_type(matrix_), transpose_graph()
-{
-}
-
-//////////////////////////////////////////////////////////////////////////////
-template <typename CrsMatrixType>
 void
 ZoltanCrsColorer<CrsMatrixType>::computeColoring(
-  Teuchos::ParameterList &coloring_params)
+  const Teuchos::RCP<const matrix_t> &matrix, 
+  const Teuchos::ParameterList &coloring_params, 
+  const std::string &method, 
+  int &num_colors,
+  list_of_colors_host_t &list_of_colors_host,
+  list_of_colors_t &list_of_colors
 {
   const bool symmetric  = coloring_params.get("Symmetric", false);
   const bool symmetrize = coloring_params.get("Symmetrize", false);
@@ -196,6 +203,8 @@ ZoltanCrsColorer<CrsMatrixType>::computeColoring(
   Teuchos::RCP<const Teuchos::MpiComm<int>> mpi_comm =
       Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm, true);
 
+  Teuchos::RCP<const graph_type> transpose_graph;
+
   // Compute transpose graph
   if (!symmetric && !symmetrize)
   {
@@ -204,7 +213,7 @@ ZoltanCrsColorer<CrsMatrixType>::computeColoring(
 
   // Create Zoltan for distance-2 coloring
   Zoltan *zz = new Zoltan(*(mpi_comm->getRawMpiComm()));
-  zz->Set_Param("COLORING_PROBLEM", "PARTIAL-DISTANCE-2");
+  zz->Set_Param("COLORING_PROBLEM", method.c_str());
   zz->Set_Param("DEBUG_LEVEL", "0");
   if (!symmetric && symmetrize)
     zz->Set_Param("GRAPH_SYMMETRIZE", "TRANSPOSE");
@@ -248,19 +257,19 @@ ZoltanCrsColorer<CrsMatrixType>::computeColoring(
     for (size_t i = 0; i < num_local_cols; ++i)
       col_gids[i] = gids[i] + num_global_rows;
 
-  list_of_colors_type my_list_of_colors("Zoltan2::CrsColorer::list_of_colors",
+  list_of_colors_type my_list_of_colors("ZoltanCrsColorer::list_of_colors",
                                         num_local_cols);
-  this->list_of_colors_host = Kokkos::create_mirror_view(my_list_of_colors);
+  list_of_colors_host = Kokkos::create_mirror_view(my_list_of_colors);
 
   int num_gid_entries = 1;
   int ret = zz->Color(num_gid_entries, num_local_cols, col_gids.getRawPtr(),
-                      this->list_of_colors_host.data());
+                      list_of_colors_host.data());
 
   TEUCHOS_TEST_FOR_EXCEPTION(ret != ZOLTAN_OK, std::logic_error,
                              "Zoltan::Color returned " << ret << std::endl);
 
-  Kokkos::deep_copy(my_list_of_colors, this->list_of_colors_host);
-  this->list_of_colors = my_list_of_colors;
+  Kokkos::deep_copy(my_list_of_colors, list_of_colors_host);
+  list_of_colors = my_list_of_colors;
 
   const bool dump_zoltan = coloring_params.get("Dump Zoltan Data", false);
   if (dump_zoltan)
@@ -283,7 +292,7 @@ ZoltanCrsColorer<CrsMatrixType>::computeColoring(
       Kokkos::Max<int>(local_num_colors));
 
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &local_num_colors,
-                     &this->num_colors);
+                     &num_colors);
 }
 
 //////////////////////////////////////////////////////////////////////////////
