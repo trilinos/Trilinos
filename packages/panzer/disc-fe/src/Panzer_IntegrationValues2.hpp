@@ -55,6 +55,8 @@
 
 namespace panzer {
 
+  class SubcellConnectivity;
+
   template <typename Scalar>
   class IntegrationValues2 {
   public:
@@ -89,9 +91,12 @@ namespace panzer {
         workset. This can be less than the workset size. If set to
         zero, extent(0) of the evaluated array is used which equates
         to the workset size.
+        @param face_connectivity [in] (optional) connectivity used to
+        enforce quadrature alignment for surface integration.
      */
     void evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
-                        const int num_cells = -1);
+                        const int num_cells = -1,
+                        const Teuchos::RCP<const SubcellConnectivity> & face_connectivity = Teuchos::null);
 
     /** \brief Match IP.
 
@@ -144,24 +149,6 @@ namespace panzer {
 
     Array_Point scratch_for_compute_side_measure; // <Point> size: span() == jac.span()
 
-
-    /**
-     * \brief Using coordinate build an arrray that specifies a unique ordering.
-     *
-     * Used for side integration points. Compute a unique ordering in a cell and
-     * point offset.
-     *
-     * \param[in] coords Coordinates array (cell,IP,Dim)
-     * \param[in] cell   Cell index
-     * \param[in] offset Offset into the points
-     * \param[out] order Ordering array on output, correctly sized on input
-     *                   (offset + order.size() <= coords.extent(1))
-     */
-    static void uniqueCoordOrdering(Array_CellIPDim & coords,
-                                    int cell,
-                                    int offset,
-                                    std::vector<int> & order);
-
     /**
      * \brief Swap the ordering of quadrature points in a specified cell.
      *
@@ -186,7 +173,7 @@ namespace panzer {
     std::string prefix;
     std::vector<PHX::index_size_type> ddims_;
 
-    void generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
+    void generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells,const SubcellConnectivity & face_connectivity);
     void getCubature(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
     void getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
     void evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);

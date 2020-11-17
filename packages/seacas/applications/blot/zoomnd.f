@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -36,9 +36,9 @@ C=======================================================================
       include 'nodzom.blk'
       include 'rotopt.blk'
       include 'd3nums.blk'
-C
+
 C FOR NODE TRACKING MODE, GET THE WINDOW CENTER COORDS FOR THE NODE
-C
+
       IF( NODEZM .NE. 0) THEN
          XCEN = XN(NODEZM)
          YCEN = YN(NODEZM)

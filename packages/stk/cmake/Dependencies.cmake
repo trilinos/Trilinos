@@ -1,12 +1,11 @@
 SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
-  Math            stk_math             PT  OPTIONAL
   Util            stk_util             PT  OPTIONAL
+  Math            stk_math             PT  OPTIONAL
   Simd            stk_simd             PT  OPTIONAL
+  NGP_TEST        stk_ngp_test         PT  OPTIONAL
   Topology        stk_topology         PT  OPTIONAL
   Mesh            stk_mesh             PT  OPTIONAL
-  NGP             stk_ngp              PT  OPTIONAL
   IO              stk_io               PT  OPTIONAL
-  NGP_TEST        stk_ngp_test         PT  OPTIONAL
   Unit_test_utils stk_unit_test_utils  PT  OPTIONAL
   Search          stk_search           PT  OPTIONAL
   SearchUtil      stk_search_util      PT  OPTIONAL
@@ -15,7 +14,6 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Balance         stk_balance          PT  OPTIONAL
   Unit_tests      stk_unit_tests       PT  OPTIONAL
   Doc_tests       stk_doc_tests        PT  OPTIONAL
-  Exp             stk_exp              EX  OPTIONAL
   ExprEval        stk_expreval         PT  OPTIONAL
 )
 

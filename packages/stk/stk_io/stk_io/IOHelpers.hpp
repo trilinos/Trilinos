@@ -110,14 +110,14 @@ void internal_add_global(Teuchos::RCP<Ioss::Region> region,
                          const std::string &storage,
                          Ioss::Field::BasicType dataType,
                          int copies = 1,
-                         Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+                         Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
 
 void internal_add_global(Teuchos::RCP<Ioss::Region> region,
                          const std::string &globalVarName,
                          int component_count,
                          Ioss::Field::BasicType dataType,
                          int copies = 1,
-                         Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+                         Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
 
 size_t get_entities(const stk::mesh::Part &part,
                     const stk::mesh::BulkData &bulk,

@@ -12,10 +12,6 @@
 #include "Tempus_config.hpp"
 #include "Tempus_StepperRKBase.hpp"
 #include "Tempus_StepperExplicit.hpp"
-#include "Tempus_RKButcherTableau.hpp"
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  #include "Tempus_StepperRKObserverComposite.hpp"
-#endif
 
 
 namespace Tempus {
@@ -59,21 +55,21 @@ namespace Tempus {
  *  \renewcommand{\thealgorithm}{}
  *  \caption{Explicit RK with the application-action locations indicated.}
  *  \begin{algorithmic}[1]
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
  *    \State $X \leftarrow x_{n-1}$ \Comment Set initial guess to last timestep.
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
  *    \For {$i = 0 \ldots s-1$}
- *        \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STAGE)}
- *        \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
+ *      \State $X \leftarrow x_{n-1}
+ *                + \Delta t\,\sum_{j=1}^{i-1} a_{ij}\,\dot{X}_j$
+ *      \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STAGE)}
+ *      \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
+ *      \State {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
+ *      \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
  *      \If { i==0 and useFSAL and (previous step not failed) }
  *        \State tmp = $\dot{X}_0$
  *        \State $\dot{X}_0 = \dot{X}_s$
  *        \State $\dot{X}_s$ = tmp
  *        \State {\bf continue}
  *      \Else
- *        \State $X \leftarrow x_{n-1}
- *                  + \Delta t\,\sum_{j=1}^{i-1} a_{ij}\,\dot{X}_j$
- *        \State {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
- *        \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
  *        \State $\dot{X}_i \leftarrow \bar{f}(X_i,t_{n-1}+c_i\Delta t)$
  *      \EndIf
  *      \State {\it appAction.execute(solutionHistory, stepper, END\_STAGE)}
@@ -88,8 +84,8 @@ namespace Tempus {
  *   the Bogacki-Shampine 3(2) method.
  *   \f[
  *   \begin{array}{c|cccc}  0  & 0    &     &     &   \\
- *                         1/3 & 1/2  & 0   &     &   \\
- *                         2/3 & 0    & 3/4 & 0   &   \\
+ *                         1/2 & 1/2  & 0   &     &   \\
+ *                         3/4 & 0    & 3/4 & 0   &   \\
  *                          1  & 2/9  & 1/3 & 4/9 & 0 \\ \hline
  *                             & 2/9  & 1/3 & 4/9 & 0 \\
  *                             & 7/24 & 1/4 & 1/3 & 1/8 \end{array}
@@ -104,16 +100,6 @@ public:
 
   /// \name Basic stepper methods
   //@{
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
-
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperObserver_; }
-#endif
-    virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getTableau()
-    { return tableau_; }
-
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
@@ -127,9 +113,6 @@ public:
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
-    virtual Scalar getOrder() const {return tableau_->order();}
-    virtual Scalar getOrderMin() const {return tableau_->orderMin();}
-    virtual Scalar getOrderMax() const {return tableau_->orderMax();}
     virtual Scalar getInitTimeStep(
         const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const;
 
@@ -156,14 +139,6 @@ public:
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
-  /// \name Accessors methods
-  //@{
-    /** \brief Use embedded if avialable. */
-    virtual void setUseEmbedded(bool a) { useEmbedded_ = a; }
-    virtual bool getUseEmbedded() const { return useEmbedded_; }
-    virtual bool getUseEmbeddedDefault() const { return false; }
-  //@}
-
 
 protected:
 
@@ -171,15 +146,6 @@ protected:
   virtual void setupDefault();
 
   /// Setup for constructor.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  virtual void setup(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperRKObserverComposite<Scalar> >& obs,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    bool useEmbedded);
-#endif
   virtual void setup(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     bool useFSAL,
@@ -191,20 +157,7 @@ protected:
   virtual void setupTableau() = 0;
 
 
-  Teuchos::RCP<RKButcherTableau<Scalar> >                tableau_;
-
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  Teuchos::RCP<StepperRKObserverComposite<Scalar> >      stepperObserver_;
-#endif
-
-  // For Embedded RK
-  bool useEmbedded_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
 
 };
 

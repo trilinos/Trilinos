@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -229,7 +229,7 @@ C         --Use the standard color table
             N = 3
          END IF
          IF (MODTYP .EQ. 'NODE') THEN
-            CALL VECTORN (MODTYP, VARNP, NUMNPF, 
+            CALL VECTORN (MODTYP, VARNP, NUMNPF,
      &         HIDENP, XN, YN, ZN, IN2ELB, VECMAX,
      &         BLKCOL,  IDELB, *100)
          ELSE

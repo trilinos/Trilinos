@@ -496,6 +496,12 @@ namespace Tpetra {
                               void,
                               typename local_graph_type::size_type>;
 
+    /// \brief The type of the local matrix-vector operator (a wrapper of \c KokkosSparse::CrsMatrix )
+    using local_multiply_op_type =
+      LocalCrsMatrixOperator<scalar_type,
+                             scalar_type,
+                             device_type>;
+
     //@}
     //! @name Constructors and destructor
     //@{
@@ -2176,6 +2182,12 @@ namespace Tpetra {
     ///   method.
     local_matrix_type getLocalMatrix () const;
 
+    /// \brief The local sparse matrix operator (a wrapper of \c getLocalMatrix()
+    ///   that supports local matrix-vector multiply)
+    ///
+    /// \warning It is only valid to call this method if this->isFillComplete().
+    std::shared_ptr<local_multiply_op_type> getLocalMultiplyOperator () const;
+
     /// \brief Number of global elements in the row map of this matrix.
     ///
     /// This is <it>not</it> the number of rows in the matrix as a
@@ -3337,7 +3349,8 @@ namespace Tpetra {
        buffer_device_type>& permuteToLIDs,
      const Kokkos::DualView<
        const local_ordinal_type*,
-       buffer_device_type>& permuteFromLIDs) override;
+       buffer_device_type>& permuteFromLIDs,
+     const CombineMode CM) override;
 
     virtual void
     packAndPrepare
@@ -4292,7 +4305,7 @@ namespace Tpetra {
     /// <tt>impl_scalar_type</tt>, not \c Scalar.  This is because
     /// this method is <i>not</i> part of the public interface of
     /// CrsMatrix.
-    Kokkos::View<const impl_scalar_type*, execution_space, Kokkos::MemoryUnmanaged>
+    Kokkos::View<const impl_scalar_type*, device_type, Kokkos::MemoryUnmanaged>
     getRowView (const RowInfo& rowInfo) const;
 
     /// \brief Nonconst view of all entries (including extra space) in
@@ -4306,7 +4319,7 @@ namespace Tpetra {
     /// This method is \c const because it doesn't change allocations
     /// (and thus doesn't change pointers).  Consider the difference
     /// between <tt>const double*</tt> and <tt>double* const</tt>.
-    Kokkos::View<impl_scalar_type*, execution_space, Kokkos::MemoryUnmanaged>
+    Kokkos::View<impl_scalar_type*, device_type, Kokkos::MemoryUnmanaged>
     getRowViewNonConst (const RowInfo& rowInfo) const;
 
 
@@ -4356,10 +4369,6 @@ namespace Tpetra {
     Teuchos::RCP<      Graph>     myGraph_;
     //@}
 
-    using local_multiply_op_type =
-      LocalCrsMatrixOperator<scalar_type,
-                             scalar_type,
-                             device_type>;
     //! The local sparse matrix, wrapped in a multiply operator.
     std::shared_ptr<local_multiply_op_type> lclMatrix_;
 

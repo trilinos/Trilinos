@@ -3,31 +3,31 @@
 ***** Reading Blob Example File...
 
 Blob Tempus contains: 100 item(s).
-	Attributes (Reduction): 
-	Offset: 1.0  2.0  0.0	Scale: 10.5  11.5  17.5	
+	Attributes (Reduction):
+	Offset: 1.0  2.0  0.0	Scale: 10.5  11.5  17.5
 
-	Transient: 
-	    x:1  xddot:1   xdot:1  
+	Transient:
+	    x:1  xddot:1   xdot:1
 
-	Transient (Reduction):  	kinetic_energy:1        momentum:3  
+	Transient (Reduction):  	kinetic_energy:1        momentum:3
 
 Blob Solver contains: 200 item(s).
-	Attributes (Reduction): 
+	Attributes (Reduction):
 	 *** No attributes ***
 
-	Transient: 
-	   x:1  xdot:1  
+	Transient:
+	   x:1  xdot:1
 
-	Transient (Reduction):  	kinetic_energy:1        momentum:3  
+	Transient (Reduction):  	kinetic_energy:1        momentum:3
 
 Blob ABlob contains: 57 item(s).
-	Attributes (Reduction): 
+	Attributes (Reduction):
 	 *** No attributes ***
 
-	Transient: 
-	x:1  
+	Transient:
+	x:1
 
-	Transient (Reduction):  	kinetic_energy:1        momentum:3  
+	Transient (Reduction):  	kinetic_energy:1        momentum:3
 
 File contains 10 timesteps.
 
@@ -36,167 +36,167 @@ File contains 10 timesteps.
 		Field x, Minimum Value = 0, Maximum Value = 990
 		Field xddot, Minimum Value = 1, Maximum Value = 991
 		Field xdot, Minimum Value = 2, Maximum Value = 992
-		Reduction Field kinetic_energy, Value = 4 
-		Reduction Field momentum, Value = 3 13 23 
+		Reduction Field kinetic_energy, Value = 4
+		Reduction Field momentum, Value = 3 13 23
 	Blob Solver:
 		Field x, Minimum Value = 5, Maximum Value = 1995
 		Field xdot, Minimum Value = 6, Maximum Value = 1996
-		Reduction Field kinetic_energy, Value = 8 
-		Reduction Field momentum, Value = 7 17 27 
+		Reduction Field kinetic_energy, Value = 8
+		Reduction Field momentum, Value = 7 17 27
 	Blob ABlob:
 		Field x, Minimum Value = 9, Maximum Value = 569
-		Reduction Field kinetic_energy, Value = 11 
-		Reduction Field momentum, Value = 10 20 30 
+		Reduction Field kinetic_energy, Value = 11
+		Reduction Field momentum, Value = 10 20 30
 
 *** Step 2 is at time 0.1
 	Blob Tempus:
 		Field x, Minimum Value = 10, Maximum Value = 1000
 		Field xddot, Minimum Value = 11, Maximum Value = 1001
 		Field xdot, Minimum Value = 12, Maximum Value = 1002
-		Reduction Field kinetic_energy, Value = 14 
-		Reduction Field momentum, Value = 13 23 33 
+		Reduction Field kinetic_energy, Value = 14
+		Reduction Field momentum, Value = 13 23 33
 	Blob Solver:
 		Field x, Minimum Value = 15, Maximum Value = 2005
 		Field xdot, Minimum Value = 16, Maximum Value = 2006
-		Reduction Field kinetic_energy, Value = 18 
-		Reduction Field momentum, Value = 17 27 37 
+		Reduction Field kinetic_energy, Value = 18
+		Reduction Field momentum, Value = 17 27 37
 	Blob ABlob:
 		Field x, Minimum Value = 19, Maximum Value = 579
-		Reduction Field kinetic_energy, Value = 21 
-		Reduction Field momentum, Value = 20 30 40 
+		Reduction Field kinetic_energy, Value = 21
+		Reduction Field momentum, Value = 20 30 40
 
 *** Step 3 is at time 0.2
 	Blob Tempus:
 		Field x, Minimum Value = 20, Maximum Value = 1010
 		Field xddot, Minimum Value = 21, Maximum Value = 1011
 		Field xdot, Minimum Value = 22, Maximum Value = 1012
-		Reduction Field kinetic_energy, Value = 24 
-		Reduction Field momentum, Value = 23 33 43 
+		Reduction Field kinetic_energy, Value = 24
+		Reduction Field momentum, Value = 23 33 43
 	Blob Solver:
 		Field x, Minimum Value = 25, Maximum Value = 2015
 		Field xdot, Minimum Value = 26, Maximum Value = 2016
-		Reduction Field kinetic_energy, Value = 28 
-		Reduction Field momentum, Value = 27 37 47 
+		Reduction Field kinetic_energy, Value = 28
+		Reduction Field momentum, Value = 27 37 47
 	Blob ABlob:
 		Field x, Minimum Value = 29, Maximum Value = 589
-		Reduction Field kinetic_energy, Value = 31 
-		Reduction Field momentum, Value = 30 40 50 
+		Reduction Field kinetic_energy, Value = 31
+		Reduction Field momentum, Value = 30 40 50
 
 *** Step 4 is at time 0.3
 	Blob Tempus:
 		Field x, Minimum Value = 30, Maximum Value = 1020
 		Field xddot, Minimum Value = 31, Maximum Value = 1021
 		Field xdot, Minimum Value = 32, Maximum Value = 1022
-		Reduction Field kinetic_energy, Value = 34 
-		Reduction Field momentum, Value = 33 43 53 
+		Reduction Field kinetic_energy, Value = 34
+		Reduction Field momentum, Value = 33 43 53
 	Blob Solver:
 		Field x, Minimum Value = 35, Maximum Value = 2025
 		Field xdot, Minimum Value = 36, Maximum Value = 2026
-		Reduction Field kinetic_energy, Value = 38 
-		Reduction Field momentum, Value = 37 47 57 
+		Reduction Field kinetic_energy, Value = 38
+		Reduction Field momentum, Value = 37 47 57
 	Blob ABlob:
 		Field x, Minimum Value = 39, Maximum Value = 599
-		Reduction Field kinetic_energy, Value = 41 
-		Reduction Field momentum, Value = 40 50 60 
+		Reduction Field kinetic_energy, Value = 41
+		Reduction Field momentum, Value = 40 50 60
 
 *** Step 5 is at time 0.4
 	Blob Tempus:
 		Field x, Minimum Value = 40, Maximum Value = 1030
 		Field xddot, Minimum Value = 41, Maximum Value = 1031
 		Field xdot, Minimum Value = 42, Maximum Value = 1032
-		Reduction Field kinetic_energy, Value = 44 
-		Reduction Field momentum, Value = 43 53 63 
+		Reduction Field kinetic_energy, Value = 44
+		Reduction Field momentum, Value = 43 53 63
 	Blob Solver:
 		Field x, Minimum Value = 45, Maximum Value = 2035
 		Field xdot, Minimum Value = 46, Maximum Value = 2036
-		Reduction Field kinetic_energy, Value = 48 
-		Reduction Field momentum, Value = 47 57 67 
+		Reduction Field kinetic_energy, Value = 48
+		Reduction Field momentum, Value = 47 57 67
 	Blob ABlob:
 		Field x, Minimum Value = 49, Maximum Value = 609
-		Reduction Field kinetic_energy, Value = 51 
-		Reduction Field momentum, Value = 50 60 70 
+		Reduction Field kinetic_energy, Value = 51
+		Reduction Field momentum, Value = 50 60 70
 
 *** Step 6 is at time 0.5
 	Blob Tempus:
 		Field x, Minimum Value = 50, Maximum Value = 1040
 		Field xddot, Minimum Value = 51, Maximum Value = 1041
 		Field xdot, Minimum Value = 52, Maximum Value = 1042
-		Reduction Field kinetic_energy, Value = 54 
-		Reduction Field momentum, Value = 53 63 73 
+		Reduction Field kinetic_energy, Value = 54
+		Reduction Field momentum, Value = 53 63 73
 	Blob Solver:
 		Field x, Minimum Value = 55, Maximum Value = 2045
 		Field xdot, Minimum Value = 56, Maximum Value = 2046
-		Reduction Field kinetic_energy, Value = 58 
-		Reduction Field momentum, Value = 57 67 77 
+		Reduction Field kinetic_energy, Value = 58
+		Reduction Field momentum, Value = 57 67 77
 	Blob ABlob:
 		Field x, Minimum Value = 59, Maximum Value = 619
-		Reduction Field kinetic_energy, Value = 61 
-		Reduction Field momentum, Value = 60 70 80 
+		Reduction Field kinetic_energy, Value = 61
+		Reduction Field momentum, Value = 60 70 80
 
 *** Step 7 is at time 0.6
 	Blob Tempus:
 		Field x, Minimum Value = 60, Maximum Value = 1050
 		Field xddot, Minimum Value = 61, Maximum Value = 1051
 		Field xdot, Minimum Value = 62, Maximum Value = 1052
-		Reduction Field kinetic_energy, Value = 64 
-		Reduction Field momentum, Value = 63 73 83 
+		Reduction Field kinetic_energy, Value = 64
+		Reduction Field momentum, Value = 63 73 83
 	Blob Solver:
 		Field x, Minimum Value = 65, Maximum Value = 2055
 		Field xdot, Minimum Value = 66, Maximum Value = 2056
-		Reduction Field kinetic_energy, Value = 68 
-		Reduction Field momentum, Value = 67 77 87 
+		Reduction Field kinetic_energy, Value = 68
+		Reduction Field momentum, Value = 67 77 87
 	Blob ABlob:
 		Field x, Minimum Value = 69, Maximum Value = 629
-		Reduction Field kinetic_energy, Value = 71 
-		Reduction Field momentum, Value = 70 80 90 
+		Reduction Field kinetic_energy, Value = 71
+		Reduction Field momentum, Value = 70 80 90
 
 *** Step 8 is at time 0.7
 	Blob Tempus:
 		Field x, Minimum Value = 70, Maximum Value = 1060
 		Field xddot, Minimum Value = 71, Maximum Value = 1061
 		Field xdot, Minimum Value = 72, Maximum Value = 1062
-		Reduction Field kinetic_energy, Value = 74 
-		Reduction Field momentum, Value = 73 83 93 
+		Reduction Field kinetic_energy, Value = 74
+		Reduction Field momentum, Value = 73 83 93
 	Blob Solver:
 		Field x, Minimum Value = 75, Maximum Value = 2065
 		Field xdot, Minimum Value = 76, Maximum Value = 2066
-		Reduction Field kinetic_energy, Value = 78 
-		Reduction Field momentum, Value = 77 87 97 
+		Reduction Field kinetic_energy, Value = 78
+		Reduction Field momentum, Value = 77 87 97
 	Blob ABlob:
 		Field x, Minimum Value = 79, Maximum Value = 639
-		Reduction Field kinetic_energy, Value = 81 
-		Reduction Field momentum, Value = 80 90 100 
+		Reduction Field kinetic_energy, Value = 81
+		Reduction Field momentum, Value = 80 90 100
 
 *** Step 9 is at time 0.8
 	Blob Tempus:
 		Field x, Minimum Value = 80, Maximum Value = 1070
 		Field xddot, Minimum Value = 81, Maximum Value = 1071
 		Field xdot, Minimum Value = 82, Maximum Value = 1072
-		Reduction Field kinetic_energy, Value = 84 
-		Reduction Field momentum, Value = 83 93 103 
+		Reduction Field kinetic_energy, Value = 84
+		Reduction Field momentum, Value = 83 93 103
 	Blob Solver:
 		Field x, Minimum Value = 85, Maximum Value = 2075
 		Field xdot, Minimum Value = 86, Maximum Value = 2076
-		Reduction Field kinetic_energy, Value = 88 
-		Reduction Field momentum, Value = 87 97 107 
+		Reduction Field kinetic_energy, Value = 88
+		Reduction Field momentum, Value = 87 97 107
 	Blob ABlob:
 		Field x, Minimum Value = 89, Maximum Value = 649
-		Reduction Field kinetic_energy, Value = 91 
-		Reduction Field momentum, Value = 90 100 110 
+		Reduction Field kinetic_energy, Value = 91
+		Reduction Field momentum, Value = 90 100 110
 
 *** Step 10 is at time 0.9
 	Blob Tempus:
 		Field x, Minimum Value = 90, Maximum Value = 1080
 		Field xddot, Minimum Value = 91, Maximum Value = 1081
 		Field xdot, Minimum Value = 92, Maximum Value = 1082
-		Reduction Field kinetic_energy, Value = 94 
-		Reduction Field momentum, Value = 93 103 113 
+		Reduction Field kinetic_energy, Value = 94
+		Reduction Field momentum, Value = 93 103 113
 	Blob Solver:
 		Field x, Minimum Value = 95, Maximum Value = 2085
 		Field xdot, Minimum Value = 96, Maximum Value = 2086
-		Reduction Field kinetic_energy, Value = 98 
-		Reduction Field momentum, Value = 97 107 117 
+		Reduction Field kinetic_energy, Value = 98
+		Reduction Field momentum, Value = 97 107 117
 	Blob ABlob:
 		Field x, Minimum Value = 99, Maximum Value = 659
-		Reduction Field kinetic_energy, Value = 101 
-		Reduction Field momentum, Value = 100 110 120 
+		Reduction Field kinetic_energy, Value = 101
+		Reduction Field momentum, Value = 100 110 120

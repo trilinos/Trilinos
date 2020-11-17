@@ -345,7 +345,7 @@ namespace MueLu {
                                                                numRanks,
                                                                Array<GO>(3, -1),
                                                                lFineNodesPerDir,
-                                                               coarseRate));
+                                                               coarseRate, false));
 
       TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getNodeNumElements()
                                  != static_cast<size_t>(geoData->getNumLocalFineNodes()),
@@ -472,12 +472,13 @@ namespace MueLu {
       for(int interfaceIdx = 0; interfaceIdx < numInterfaces; ++interfaceIdx) {
         numCoarseNodes = 1;
         for(int dim = 0; dim < 3; ++dim) {
-          endRate = interfacesDimensions[3*interfaceIdx + dim] % coarseRate[dim];
+          endRate = (interfacesDimensions[3*interfaceIdx + dim] - 1) % coarseRate[dim];
           if(interfacesDimensions[3*interfaceIdx + dim] == 1) {
             coarseInterfacesDimensions[3*interfaceIdx + dim] = 1;
           } else {
             coarseInterfacesDimensions[3*interfaceIdx + dim]
-              = (interfacesDimensions[3*interfaceIdx + dim] - endRate - 1) / coarseRate[dim] + 2;
+              = (interfacesDimensions[3*interfaceIdx+dim]-1) / coarseRate[dim] + 2;
+            if(endRate==0){ coarseInterfacesDimensions[3*interfaceIdx + dim]--;}
           }
           numCoarseNodes *= coarseInterfacesDimensions[3*interfaceIdx + dim];
         }
@@ -495,7 +496,7 @@ namespace MueLu {
       for(int dim = 0; dim < 3; ++dim) {
         numInterfaceNodes *= fineNodesPerDim[dim];
         numCoarseNodes    *= coarseNodesPerDim[dim];
-        endRate[dim]       = fineNodesPerDim[dim] % coarseRate[dim];
+        endRate[dim]       = (fineNodesPerDim[dim]-1) % coarseRate[dim];
       }
       ArrayView<LO> interfaceNodes = nodesOnInterfaces(interfaceOffset, numInterfaceNodes);
 

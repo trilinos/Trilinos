@@ -11,6 +11,7 @@
 
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorSecondOrder.hpp"
+#include "Tempus_StepperNewmarkImplicitDFormAppAction.hpp"
 
 namespace Tempus {
 
@@ -33,8 +34,10 @@ namespace Tempus {
  *  Beta scheme can be found
  *  <a href="http://opensees.berkeley.edu/wiki/index.php/Newmark_Method">here</a>.
  *
- *  The First-Step-As-Last (FSAL) principle is not used with the
- *  Newmark implicit D-Form method.
+ *  The First-Same-As-Last (FSAL) principle is not used with the
+ *  Newmark implicit D-Form method.  The default is to set useFSAL=false,
+ *  however useFSAL=true will also work but have no affect (i.e., no-op).
+ *
  */
 template <class Scalar>
 class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scalar> {
@@ -49,8 +52,7 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
 
   /// Constructor
   StepperNewmarkImplicitDForm(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -58,18 +60,19 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
     bool zeroInitialGuess,
     std::string schemeName,
     Scalar beta,
-    Scalar gamma);
+    Scalar gamma,
+    const Teuchos::RCP<StepperNewmarkImplicitDFormAppAction<Scalar> >& stepperAppAction);
 
   /// \name Basic stepper methods
   //@{
     virtual void
     setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel);
 
-  virtual void setObserver(
-    Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
+    virtual Teuchos::RCP<StepperNewmarkImplicitDFormAppAction<Scalar> > getAppAction() const
+    { return stepperNewmarkImpAppAction_; }
 
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return Teuchos::null; }
+  virtual void setAppAction(
+      Teuchos::RCP<StepperNewmarkImplicitDFormAppAction<Scalar> > appAction);
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -103,7 +106,6 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
     virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
 
@@ -163,6 +165,7 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
   Scalar gamma_;
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
+  Teuchos::RCP<StepperNewmarkImplicitDFormAppAction<Scalar> > stepperNewmarkImpAppAction_;
 
 };
 }  // namespace Tempus

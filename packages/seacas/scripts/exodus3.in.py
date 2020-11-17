@@ -1,5 +1,5 @@
 """
-exodus.py v 1.19.1 (seacas-beta) is a python wrapper of some of the exodus library
+exodus.py v 1.20.0 (seacas-beta) is a python wrapper of some of the exodus library
 (Python 3 Version)
 
 Exodus is a common database for multiple application codes (mesh
@@ -70,12 +70,12 @@ from enum import Enum
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.19.1 (seacas-py3)"
+EXODUS_PY_VERSION = "1.20.0 (seacas-py3)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.19.1 (seacas-py3), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.20.0 (seacas-py3), a python wrapper of some of the exodus library.
 
-Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019 National Technology &
+Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
 Contract DE-NA0003525 with NTESS, the U.S. Government retains certain
 rights in this software.
@@ -543,7 +543,7 @@ class attribute:
 
     def __repr__(self):
         return "attribute(name=%r, entity_type=%r, entity_id=%r, values=%r)" % (self.name,self.entity_type,self.entity_id,self.values)
-    
+
 class ex_attribute(ctypes.Structure):
     """
     Used for accessing underlying exodus library...
@@ -656,6 +656,17 @@ class exodus:
                     self.init_params.title = title
                 self.put_info_ext(self.init_params)
             else:
+                if numNodeSets is None:
+                    numNodeSets = 0
+                if numSideSets is None:
+                    numSideSets = 0
+                if numNodes is None:
+                    numNodes = 0
+                if numElems is None:
+                    numElems = 0
+                if numBlocks is None:
+                    numBlocks = 0
+
                 info = [title, numDims, numNodes, numElems, numBlocks,
                         numNodeSets, numSideSets]
                 assert None not in info
@@ -709,7 +720,7 @@ class exodus:
         num_ss_vars = self.get_variable_number('EX_SIDE_SET')
         num_assem_vars = self.get_reduction_variable_number('EX_ASSEMBLY')
         num_blob_vars = self.get_reduction_variable_number('EX_BLOB')
-        
+
         print("\n Database: {0}\n"
               " Title:\t{17}\n\n"
               " Number of spatial dimensions = {1:3d}\t"
@@ -744,8 +755,8 @@ class exodus:
                       self.num_side_sets(),
                       total_ns_nodes, total_sides,
                       num_glo_vars, num_nod_vars, num_ele_vars,
-                      num_ns_vars, num_ss_vars, self.num_times(), self.title(), 
-                      self.num_assembly(), num_assem_vars, 
+                      num_ns_vars, num_ss_vars, self.num_times(), self.title(),
+                      self.num_assembly(), num_assem_vars,
                       self.num_blob(), num_blob_vars))
     #
     # build the info struct
@@ -797,13 +808,11 @@ class exodus:
         -------
         exo_copy : exodus object
         """
-        fileId = EXODUS_LIB.ex_create_int(fileName.encode('ascii'), EX_NOCLOBBER,
+        i64Status = EXODUS_LIB.ex_int64_status(self.fileId)
+        fileId = EXODUS_LIB.ex_create_int(fileName.encode('ascii'), EX_NOCLOBBER|i64Status,
                                           ctypes.byref(self.comp_ws),
                                           ctypes.byref(self.io_ws),
                                           EX_API_VERSION_NODOT)
-
-        i64Status = EXODUS_LIB.ex_int64_status(self.fileId)
-        EXODUS_LIB.ex_set_int64_status(fileId, i64Status)
 
         self.__copy_file(fileId, include_transient)
         EXODUS_LIB.ex_close(fileId)
@@ -1438,6 +1447,39 @@ class exodus:
         var_id = names.index(name) + 1
         numVals = self.num_nodes()
         values = self.__ex_get_var(step, 'EX_NODAL', var_id, 0, numVals)
+        if self.use_numpy:
+            values = ctype_to_numpy(self, values)
+        return values
+
+    # --------------------------------------------------------------------
+
+    def get_partial_node_variable_values(self, name, step, start_index, num_nodes):
+        """
+        get partial list of nodal variable values for a nodal variable name
+        and time step.  Start at node `node_index` (1-based) and return `num_nodes`
+        from that point.
+
+        >>> nvar_vals = exo.get_partial_node_variable_values(nvar_name, time_step, 10, 100)
+
+        Parameters
+        ----------
+            <string>  nvar_name   name of nodal variable
+            <int>     time_step   1-based index of time step
+            <int>     start_index 1-based index of node to start returning data
+            <int>     num_nodes   number of nodes to return data for.
+
+        Returns
+        -------
+
+            if array_type == 'ctype':
+              <list<ctypes.c_double>>  nvar_vals
+
+            if array_type == 'numpy':
+              <np_array<double>>  nvar_vals
+        """
+        names = self.get_variable_names('EX_NODAL')
+        var_id = names.index(name) + 1
+        values = self.__ex_get_partial_var(step, 'EX_NODAL', var_id, 0, start_index, num_nodes)
         if self.use_numpy:
             values = ctype_to_numpy(self, values)
         return values
@@ -2693,6 +2735,45 @@ class exodus:
 
     # --------------------------------------------------------------------
 
+    def get_partial_element_variable_values(self, blockId, name, step, start_index, num_elements):
+        """
+        get list of element variable values for a specified element
+        block, element variable name, and time step
+
+        >>> evar_vals = exo.get_element_variable_values(elem_blk_id,
+        ...                                            evar_name, time_step)
+
+        Parameters
+        ----------
+        elem_blk_id : int
+            element block *ID* (not *INDEX*)
+        evar_name : string
+            name of element variable
+        time_step : int
+            1-based index of time step
+        start_index: int
+            1-based index of element in block to start returning data
+        num_elements: int
+            number of elements to return data for.
+
+        Returns
+        -------
+
+            if array_type == 'ctype':
+              <list<ctypes.c_double>>  evar_vals
+
+            if array_type == 'numpy':
+              <np_array<double>>  evar_vals
+        """
+        names = self.get_variable_names('EX_ELEM_BLOCK')
+        var_id = names.index(name) + 1
+        values = self.__ex_get_partial_var(step, 'EX_ELEM_BLOCK', var_id, blockId, start_index, num_elements)
+        if self.use_numpy:
+            values = ctype_to_numpy(self, values)
+        return values
+
+    # --------------------------------------------------------------------
+
     def put_element_variable_values(self, blockId, name, step, values):
         """
         store a list of element variable values for a specified element
@@ -3274,6 +3355,42 @@ class exodus:
         (numNodeInSet, _numDistFactInSet) = self.__ex_get_set_param('EX_NODE_SET', object_id)
 
         values = self.__ex_get_var(step, 'EX_NODE_SET', var_id, object_id, numNodeInSet)
+        if self.use_numpy:
+            values = ctype_to_numpy(self, values)
+        return values
+
+    # --------------------------------------------------------------------
+
+    def get_partial_node_set_variable_values(self, object_id, name, step, start_index, num_nodes):
+        """
+        get list of node set variable values for a specified node
+        set, node set variable name, and time step; the list has
+        one variable value per node in the set
+
+        >>> nsvar_vals =
+        ...   exo.get_node_set_variable_values(node_set_id,
+        ...    nsvar_name, time_step)
+
+        Parameters
+        ----------
+            <int>     node_set_id  node set *ID* (not *INDEX*)
+            <string>  nsvar_name   name of node set variable
+            <int>     time_step    1-based index of time step
+            <int>     start_index 1-based index of node to start returning data
+            <int>     num_nodes   number of nodes to return data for.
+
+        Returns
+        -------
+
+            if array_type == 'ctype':
+              <list<ctypes.c_double>>  nsvar_vals
+
+            if array_type == 'numpy':
+              <np_array<double>>  nsvar_vals
+        """
+        names = self.get_variable_names('EX_NODE_SET')
+        var_id = names.index(name) + 1
+        values = self.__ex_get_partial_var(step, 'EX_NODE_SET', var_id, object_id, start_index, num_nodes)
         if self.use_numpy:
             values = ctype_to_numpy(self, values)
         return values
@@ -3949,6 +4066,41 @@ class exodus:
         (numSideInSet, _numDistFactInSet) = self.__ex_get_set_param('EX_SIDE_SET', object_id)
 
         values = self.__ex_get_var(step, 'EX_SIDE_SET', var_id, object_id, numSideInSet)
+        if self.use_numpy:
+            values = ctype_to_numpy(self, values)
+        return values
+
+    # --------------------------------------------------------------------
+
+    def get_partial_side_set_variable_values(self, object_id, name, step, start_index, num_sides):
+        """
+        get list of side set variable values for a specified side
+        set, side set variable name, and time step; the list has
+        one variable value per side in the set
+
+        >>> ssvar_vals = exo.get_side_set_variable_values(side_set_id,
+        ...    ssvar_name, time_step)
+
+        Parameters
+        ----------
+            <int>     side_set_id  side set *ID* (not *INDEX*)
+            <string>  ssvar_name   name of side set variable
+            <int>     time_step    1-based index of time step
+            <int>     start_index 1-based index of side to start returning data
+            <int>     num_nodes   number of sides to return data for.
+
+        Returns
+        -------
+
+            if array_type == 'ctype':
+              <list<ctypes.c_double>>  ssvar_vals
+
+            if array_type == 'numpy':
+              <np_array<double>>  ssvar_vals
+        """
+        names = self.get_variable_names('EX_SIDE_SET')
+        var_id = names.index(name) + 1
+        values = self.__ex_get_partial_var(step, 'EX_SIDE_SET', var_id, object_id, start_index, num_sides)
         if self.use_numpy:
             values = ctype_to_numpy(self, values)
         return values
@@ -5408,6 +5560,27 @@ class exodus:
 
     # --------------------------------------------------------------------
 
+    def __ex_get_partial_var(self, timeStep, varType, varId, blkId, startIndex, numValues):
+        step = ctypes.c_int(timeStep)
+        var_type = ctypes.c_int(get_entity_type(varType))
+        var_id = ctypes.c_int(varId)
+        block_id = ctypes.c_longlong(blkId)
+        start_index = ctypes.c_longlong(startIndex)
+        num_values = ctypes.c_longlong(numValues)
+        var_vals = (ctypes.c_double * num_values.value)()
+        EXODUS_LIB.ex_get_var(
+            self.fileId,
+            step,
+            var_type,
+            var_id,
+            block_id,
+            start_index, 
+            num_values,
+            var_vals)
+        return var_vals
+
+    # --------------------------------------------------------------------
+
     def __ex_put_var(self, timeStep, varType, varId, blkId, numValues, values):
         step = ctypes.c_int(timeStep)
         var_type = ctypes.c_int(get_entity_type(varType))
@@ -6413,7 +6586,7 @@ def internal_add_variables(exo, obj_type, entvars, debugPrint):
 
     if len(entvars) == 0:
         return
-    
+
     if debugPrint:
         print("Construct Truth Table for additional variables")
 

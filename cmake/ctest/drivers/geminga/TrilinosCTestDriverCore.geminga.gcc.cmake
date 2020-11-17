@@ -95,6 +95,14 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DSuperLU_LIBRARY_DIRS=$ENV{SEMS_SUPERLU_LIBRARY_PATH}"
     "-DSuperLU_LIBRARY_NAMES=superlu"
 
+    "-DBoost_INCLUDE_DIRS:STRING=$ENV{SEMS_BOOST_INCLUDE_PATH}"
+    "-DBoost_LIBRARY_DIRS:STRING=$ENV{SEMS_BOOST_LIBRARY_PATH}"
+    "-DBoostLib_INCLUDE_DIRS:STRING=$ENV{SEMS_BOOST_INCLUDE_PATH}"
+    "-DBoostLib_LIBRARY_DIRS:STRING=$ENV{SEMS_BOOST_LIBRARY_PATH}"
+
+    "-DNetcdf_LIBRARY_DIRS:STRING=$ENV{SEMS_NETCDF_LIBRARY_PATH}"
+    "-DNetcdf_INCLUDE_DIRS:STRING=$ENV{SEMS_NETCDF_INCLUDE_PATH}"
+
     ### PACKAGE CONFIGURATION ###
 
     ### MISC ###
@@ -105,7 +113,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   # Options for valgrind, if needed
   SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS
-      "--leak-check=full --gen-suppressions=all --error-limit=no --log-file=nightly_suppressions.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
+      "--leak-check=full --gen-suppressions=all --error-limit=no" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
+  SET(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions.txt")
 
 
   # Ensure that MPI is on for all parallel builds that might be run.

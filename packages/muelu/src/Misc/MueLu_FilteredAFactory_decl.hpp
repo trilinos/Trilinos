@@ -54,7 +54,8 @@
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
-
+#include "MueLu_AmalgamationInfo_fwd.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
 namespace MueLu {
 
   /*!
@@ -103,8 +104,10 @@ namespace MueLu {
 
     //@}
   private:
-    void BuildReuse(const Matrix& A, const GraphBase& G, const bool lumping, Matrix& filteredA) const;
-    void BuildNew  (const Matrix& A, const GraphBase& G, const bool lumping, Matrix& filteredA) const;
+    void BuildReuse(const Matrix& A, const GraphBase& G, const bool lumping, double dirichletThresh, Matrix& filteredA) const;
+    void BuildNew  (const Matrix& A, const GraphBase& G, const bool lumping, double dirichletThresh, Matrix& filteredA) const;
+    void BuildNewUsingRootStencil(const Matrix& A, const GraphBase& G, double dirichletThresh, Level& currentLevel, Matrix& filteredA, bool use_spread_lumping, double DdomAllowGrowthRate, double DdomCap) const;
+    void ExperimentalLumping(const Matrix& A, Matrix& filteredA, double rho, double rho2) const;
 
   }; //class FilteredAFactory
 

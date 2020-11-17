@@ -1,15 +1,14 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C     $Id: prnvol.f,v 1.4 2005/07/14 21:18:17 gdsjaar Exp $
 C ... Calculate nodal volume...
 
       SUBROUTINE PRNVOL (NDIM, CRD, IX, NUMNP, NUMEL, NNODE,
      &  VOLUME, IUNIT)
-C
+
       DIMENSION CRD(NUMNP, *), IX(NNODE,*)
       DIMENSION GRADOP(8)
       REAL volume(*)

@@ -216,15 +216,8 @@ Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_banded_g
 }
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
-Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_diagonal_graph(LocalOrdinal num_rows_per_proc)
+Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_diagonal_graph(Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap) 
 {
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
-
-  const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
-  const LocalOrdinal indexBase = 0;
-
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(INVALID, num_rows_per_proc, indexBase, comm));
-
   const size_t maxNumEntPerRow = 1;
   Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = Teuchos::rcp(new Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>(rowmap, maxNumEntPerRow, Tpetra::StaticProfile));
 
@@ -240,6 +233,86 @@ Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_diagonal
 
   return crsgraph;
 }
+
+
+template<class LocalOrdinal,class GlobalOrdinal,class Node>
+Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_diagonal_graph(LocalOrdinal num_rows_per_proc)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
+  const LocalOrdinal indexBase = 0;
+
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(INVALID, num_rows_per_proc, indexBase, comm));
+
+  return create_diagonal_graph<LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+}
+
+
+
+template<class LocalOrdinal,class GlobalOrdinal,class Node>
+Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > create_odd_even_map(LocalOrdinal num_rows_per_proc)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+  int rank     = comm->getRank();
+  int numProcs = comm->getSize();
+  const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
+  const LocalOrdinal indexBase = 0;
+  Teuchos::Array<GlobalOrdinal> indices(num_rows_per_proc);
+
+  if(numProcs == 1)  {
+    for(LocalOrdinal i=0; i<num_rows_per_proc / 2; i++)  {
+      indices[i] = 2*i;
+      indices[num_rows_per_proc / 2 + i] = 2*i+1;
+    }    
+  }
+  else if (numProcs %2 == 1) 
+    throw std::runtime_error("create_odd_even_diagonal_graph does not work on odd proc counts that aren't one");
+  else {
+    int odd_boost,offset_rank;
+    if (rank >=numProcs / 2) {odd_boost=1; offset_rank = rank-numProcs/2;}
+    else{odd_boost=0; offset_rank=rank;}
+    
+    GlobalOrdinal start_idx = offset_rank*num_rows_per_proc + odd_boost;
+        
+    for(LocalOrdinal i=0; i<num_rows_per_proc; i++) 
+      indices[i] = start_idx + 2*i;
+  }
+
+  Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(INVALID,indices(), indexBase, comm));
+  
+  return rowmap;
+}
+
+template<class LocalOrdinal,class GlobalOrdinal,class Node>
+Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_odd_even_diagonal_graph(LocalOrdinal num_rows_per_proc)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+  auto rowmap = create_odd_even_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+
+  return create_diagonal_graph<LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+}
+
+
+
+template<class Scalar, class LocalOrdinal,class GlobalOrdinal,class Node>
+Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > create_diagonal_matrix(Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > Graph)
+{
+  using LO = LocalOrdinal;
+  auto A = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Graph));
+
+  Teuchos::Array<LocalOrdinal> indices(1);
+  Teuchos::Array<Scalar> values(1);
+  values[0] = Teuchos::ScalarTraits<Scalar>::zero();
+  for(LO i=0; i<(LO)A->getNodeNumRows(); i++) {
+    indices[0] = i;
+    values[0] += Teuchos::ScalarTraits<Scalar>::one();
+    A->sumIntoLocalValues(i,indices(),values());
+  }
+  A->fillComplete();
+  return A;
+}
+
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_dense_local_graph(LocalOrdinal num_rows_per_proc)

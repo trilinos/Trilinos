@@ -704,8 +704,7 @@ namespace Tpetra {
     /// \typedef buffer_memory_space
     /// \brief Kokkos memory space for communication buffers.
     using buffer_memory_space =
-      ::Tpetra::Details::DefaultTypes::comm_buffer_memory_space<
-        typename device_type::execution_space>;
+      ::Tpetra::Details::DefaultTypes::comm_buffer_memory_space<device_type>;
 
   public:
     /// \typedef buffer_device_type
@@ -788,13 +787,17 @@ namespace Tpetra {
     /// \param permuteFromLIDs [in] List of the elements that are
     ///   permuted.  They are listed by their local index (LID) in the
     ///   source object.
+    /// \param CM [in] CombineMode to be used during copyAndPermute; 
+    ///   may or may not be used by the particular object being called;
+    ///   behavior with respect to CombineMode may differ by object.
     virtual void
     copyAndPermute (const SrcDistObject& source,
                     const size_t numSameIDs,
                     const Kokkos::DualView<const local_ordinal_type*,
                       buffer_device_type>& permuteToLIDs,
                     const Kokkos::DualView<const local_ordinal_type*,
-                      buffer_device_type>& permuteFromLIDs);
+                      buffer_device_type>& permuteFromLIDs,
+                    const CombineMode CM);
 
     /// \brief Pack data and metadata for communication (sends).
     ///

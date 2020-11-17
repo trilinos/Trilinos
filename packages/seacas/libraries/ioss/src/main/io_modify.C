@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include "modify_interface.h"
@@ -19,6 +19,8 @@
 #include <unistd.h>
 #include <utility>
 #include <vector>
+
+#include <glob.h>
 
 #include <Ionit_Initializer.h>
 #include <Ioss_Assembly.h>
@@ -57,13 +59,13 @@
 #include <fmt/ostream.h>
 
 #if defined(SEACAS_HAVE_EXODUS)
-#include <exodusII.h>
 #include <exodus/Ioex_Internals.h>
 #include <exodus/Ioex_Utils.h>
+#include <exodusII.h>
 #endif
 
 #if defined(SEACAS_HAVE_CGNS)
-#include <Iocgns_Utils.h>
+#include <cgns/Iocgns_Utils.h>
 #endif
 
 #if defined(_MSC_VER)
@@ -74,7 +76,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "0.92 (2020-05-20)";
+  std::string version = "0.94 (2020-10-12)";
 
   std::vector<Ioss::GroupingEntity *> attributes_modified;
 
@@ -176,6 +178,34 @@ namespace {
       if (!matched) {
         fmt::print(stderr, fg(fmt::color::yellow),
                    "WARNING: Regular Expression '{}' did not match any {}\n", tokens[3], type);
+      }
+    }
+    else if (tokens.size() == 4 && Ioss::Utils::substr_equal(tokens[2], "glob")) {
+      //   0       1           2       3
+      // LIST {entity_type} GLOB {glob}
+      auto entity_type = get_entity_type(tokens[1]);
+      if (entity_type == Ioss::INVALID_TYPE) {
+        fmt::print(stderr, fg(fmt::color::yellow), "WARNING: Unrecognized entity type '{}'.\n",
+                   tokens[1]);
+      }
+      glob::glob     glob(tokens[3]);
+      Ioss::NameList names = get_name_list(region, entity_type);
+
+      // Check for match against all names in list...
+      bool matched = false;
+      for (const auto &name : names) {
+        if (glob::glob_match(name, glob)) {
+          const auto *entity = region.get_entity(name, entity_type);
+          const T *   ge     = dynamic_cast<const T *>(entity);
+          if (ge != nullptr) {
+            info_entity(ge, show_property);
+            matched = true;
+          }
+        }
+      }
+      if (!matched) {
+        fmt::print(stderr, fg(fmt::color::yellow),
+                   "WARNING: Glob Expression '{}' did not match any {}\n", tokens[3], type);
       }
     }
     else if (tokens.size() == 2 ||
@@ -285,7 +315,7 @@ int main(int argc, char *argv[])
     if (from_term) {
       fmt::print(fg(fmt::terminal_color::magenta), "\n");
       const char *cinput = getline_int("COMMAND> ");
-      if (cinput[0] == '\0') {
+      if (cinput && cinput[0] == '\0') {
         break;
       }
       if (cinput) {
@@ -501,20 +531,15 @@ namespace {
                  "\t\tThis will cause the database to be rewritten. Without this option, it is "
                  "updated in place.\n");
     }
-    if (all || Ioss::Utils::substr_equal(topic, "regex")) {
-      fmt::print("\n\tRegular Expression help (used in ASSEMBLY MATCHES and LIST MATCHES and "
-                 "ATTRIBUTE LIST MATCHES options)\n"
-                 "\tSupports \"POSIX Extended Regular Expressions\" syntax\n"
-                 "\tSee https://www.regular-expressions.info/posix.html\n"
-                 "\tQuickStart: https://www.regular-expressions.info/quickstart.html\n");
-    }
     if (all || Ioss::Utils::substr_equal(topic, "list")) {
       fmt::print(
-          "\n\tLIST summary|elementblock|block|structuredblock|assembly|nodeset|sideset|blob\n");
-      fmt::print("\n\tLIST elementblock|block|structuredblock|assembly|nodeset|sideset|blob "
-                 "{{names...}}\n\n");
-      fmt::print("\n\tLIST elementblock|block|structuredblock|assembly|nodeset|sideset|blob "
-                 "MATCHES {{regex}}\n\n");
+          "\n\tLIST elementblock|block|structuredblock|assembly|nodeset|sideset|blob|summary\n");
+      fmt::print("\tLIST elementblock|block|structuredblock|assembly|nodeset|sideset|blob "
+                 "{{names...}}\n");
+      fmt::print("\tLIST elementblock|block|structuredblock|assembly|nodeset|sideset|blob "
+                 "MATCHES {{regex}}\n");
+      fmt::print("\tLIST elementblock|block|structuredblock|assembly|nodeset|sideset|blob "
+                 "GLOB {{glob}}\n");
     }
     if (all || Ioss::Utils::substr_equal(topic, "assembly")) {
       fmt::print("\n\tFor all commands, if an assembly named `name` does not exist, it will be "
@@ -532,6 +557,9 @@ namespace {
       fmt::print("\n\tASSEMBLY {{name}} TYPE {{type}} MATCHES {{regex}}\n");
       fmt::print("\t\tAdds the entities of the specified type to the assembly.\n"
                  "\t\tAll entities whose name matches the {{regex}} will be added.\n");
+      fmt::print("\n\tASSEMBLY {{name}} TYPE {{type}} GLOB {{glob}}\n");
+      fmt::print("\t\tAdds the entities of the specified type to the assembly.\n"
+                 "\t\tAll entities whose name matches the {{glob}} will be added.\n");
 
       fmt::print("\n\tASSEMBLY {{name}} TYPE {{type}} NAMED {{list of one or more names}}\n");
       fmt::print("\t\tAdds the entities of the specified type to the assembly.\n"
@@ -576,6 +604,16 @@ namespace {
       fmt::print("\tATTRIBUTE {{ent_type}} MATCH {{regex}}\n"
                  "\t\tList attributes for all entities in the specified entity type whose name "
                  "matches the regex.\n");
+      fmt::print("\tATTRIBUTE {{ent_type}} GLOB {{glob}}\n"
+                 "\t\tList attributes for all entities in the specified entity type whose name "
+                 "matches the glob.\n");
+    }
+    if (all || Ioss::Utils::substr_equal(topic, "regex")) {
+      fmt::print("\n\tRegular Expression help (used in ASSEMBLY MATCHES and LIST MATCHES and "
+                 "ATTRIBUTE LIST MATCHES options)\n"
+                 "\t\tSupports \"POSIX Extended Regular Expressions\" syntax\n"
+                 "\t\tSee https://www.regular-expressions.info/posix.html\n"
+                 "\t\tQuickStart: https://www.regular-expressions.info/quickstart.html\n");
     }
   }
 
@@ -682,20 +720,22 @@ namespace {
       recStack[v] = true;
 
       // Recur for all the m_vertices adjacent to this vertex
-      for (auto i = m_adj[v].begin(); i != m_adj[v].end(); ++i) {
-        if (!visited[*i] && is_cyclic_internal(*i, visited, recStack)) {
-          if (*i != 0 && v != 0) {
-            fmt::print(fg(fmt::color::yellow), "\t*** Cycle contains {} -> {}\n", m_vertex[v],
-                       m_vertex[*i]);
+      if (v < (int)m_adj.size()) {
+        for (auto i = m_adj[v].begin(); i != m_adj[v].end(); ++i) {
+          if (!visited[*i] && is_cyclic_internal(*i, visited, recStack)) {
+            if (*i != 0 && v != 0) {
+              fmt::print(fg(fmt::color::yellow), "\t*** Cycle contains {} -> {}\n", m_vertex[v],
+                         m_vertex[*i]);
+            }
+            return true;
           }
-          return true;
-        }
-        else if (recStack[*i]) {
-          if (*i != 0 && v != 0) {
-            fmt::print(fg(fmt::color::yellow), "\t*** Cycle contains {} -> {}\n", m_vertex[v],
-                       m_vertex[*i]);
+          else if (recStack[*i]) {
+            if (*i != 0 && v != 0) {
+              fmt::print(fg(fmt::color::yellow), "\t*** Cycle contains {} -> {}\n", m_vertex[v],
+                         m_vertex[*i]);
+            }
+            return true;
           }
-          return true;
         }
       }
     }
@@ -943,6 +983,11 @@ namespace {
       handle_list(tokens, region, true);
       return false;
     }
+    else if (Ioss::Utils::substr_equal(tokens[2], "glob")) {
+      // ATTRIBUTE {{ent_type}} MATCH {regex}
+      handle_list(tokens, region, true);
+      return false;
+    }
     else {
       fmt::print(stderr, fg(fmt::color::red), "ERROR: Unrecognized attribute command.\n");
       handle_help("attribute");
@@ -961,7 +1006,12 @@ namespace {
       assem = region.get_assembly(tokens[1]);
       if (assem == nullptr) {
         // New assembly...
-        assem      = new Ioss::Assembly(region.get_database(), tokens[1]);
+        assem = new Ioss::Assembly(region.get_database(), tokens[1]);
+        if (assem == nullptr) {
+          fmt::print(stderr, fg(fmt::color::red),
+                     "ERROR: Unable to create or access assembly '{}'.\n", tokens[1]);
+          return false;
+        }
         auto my_id = get_next_assembly_id(region);
         assem->property_add(Ioss::Property("id", my_id));
         assem->property_add(Ioss::Property("created", 1));
@@ -1041,6 +1091,25 @@ namespace {
             // Check for match against all names in list...
             for (const auto &name : names) {
               if (std::regex_match(name, reg)) {
+                const auto *entity = region.get_entity(name, type);
+                if (entity != nullptr) {
+                  if (assem->add(entity)) {
+                    changed = true;
+                  }
+                }
+              }
+            }
+          }
+          else if (Ioss::Utils::substr_equal(tokens[4], "glob")) {
+            // regex match on names
+            // Get list of all names for this entity type...
+            Ioss::NameList names = get_name_list(region, type);
+
+            glob::glob glob(tokens[5]);
+
+            // Check for match against all names in list...
+            for (const auto &name : names) {
+              if (glob::glob_match(name, glob)) {
                 const auto *entity = region.get_entity(name, type);
                 if (entity != nullptr) {
                   if (assem->add(entity)) {
@@ -1158,7 +1227,7 @@ namespace {
   }
 
 #if defined(SEACAS_HAVE_CGNS)
-  void           update_cgns_assembly_info(Ioss::Region &region, const Modify::Interface &interFace)
+  void update_cgns_assembly_info(Ioss::Region &region, const Modify::Interface &interFace)
   {
     region.end_mode(Ioss::STATE_DEFINE_MODEL);
     int file_ptr = region.get_database()->get_file_pointer();
@@ -1169,18 +1238,19 @@ namespace {
       if (assembly->property_exists("modified")) {
         if (assembly->property_exists("created")) {
           fmt::print(fg(fmt::color::cyan), "\t*** Creating assembly '{}'\n", assembly->name());
-	  Iocgns::Utils::output_assembly(file_ptr, assembly, false, true);
+          Iocgns::Utils::output_assembly(file_ptr, assembly, false, true);
         }
         else {
-	  fmt::print(stderr, fg(fmt::color::yellow), "WARNING: Can not modify existing assembly '{}'  yet.\n",
-		     assembly->name());
+          fmt::print(stderr, fg(fmt::color::yellow),
+                     "WARNING: Can not modify existing assembly '{}'  yet.\n", assembly->name());
         }
       }
     }
   }
 #endif
 
-  void           update_exodus_assembly_info(Ioss::Region &region, const Modify::Interface &interFace)
+#if defined(SEACAS_HAVE_EXODUS)
+  void update_exodus_assembly_info(Ioss::Region &region, const Modify::Interface &interFace)
   {
     std::vector<Ioex::Assembly> ex_assemblies;
     bool                        modify_existing = false;
@@ -1242,22 +1312,30 @@ namespace {
       Ioex::write_reduction_attributes(exoid, attributes_modified);
     }
   }
+#endif
 
   void update_assembly_info(Ioss::Region &region, const Modify::Interface &interFace)
   {
     // Determine type of underlying database...
     const auto type = region.get_database()->get_format();
     if (type == "Exodus") {
+#if defined(SEACAS_HAVE_EXODUS)
       update_exodus_assembly_info(region, interFace);
+#else
+      fmt::print(stderr, fg(fmt::color::red), "ERROR: Exodus capability is not enabled.\n");
+#endif
     }
-#if defined(SEACAS_HAVE_CGNS)
     else if (type == "CGNS") {
+#if defined(SEACAS_HAVE_CGNS)
       update_cgns_assembly_info(region, interFace);
+#else
+      fmt::print(stderr, fg(fmt::color::red), "ERROR: CGNS capability is not enabled.\n");
+#endif
     }
-#endif    
     else {
-      fmt::print(stderr, fg(fmt::color::red), "ERROR: Can not modify the database '{}' of type '{}'.\n",
-		 interFace.filename(), type);
+      fmt::print(stderr, fg(fmt::color::red),
+                 "ERROR: Can not modify the database '{}' of type '{}'.\n", interFace.filename(),
+                 type);
     }
   }
 

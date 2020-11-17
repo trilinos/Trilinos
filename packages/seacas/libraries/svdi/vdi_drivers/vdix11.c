@@ -2,28 +2,10 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
-/* $Id: vdix11.c,v 1.4 1991/07/23 15:38:19 gdsjaar Exp $
-   $Log: vdix11.c,v $
-   Revision 1.4  1991/07/23 15:38:19  gdsjaar
-   Changed spec for x_width and x_height from static short
-   to static unsigned int
-
- * Revision 1.3  1991/05/16  19:53:43  gdsjaar
- * Changed CRA symbol to CRAY--source of many trials and tribulations
- *
- * Revision 1.2  1991/03/29  15:45:13  gdsjaar
- * Fixed Backing store attribute - was getting set even if  window did not have backing store
- *
- * Revision 1.1.1.1  1991/03/07  22:46:44  gdsjaar
- * VDI Drivers for graphics programs
- *
- * Revision 1.1  1991/03/07  22:46:43  gdsjaar
- * Initial revision
- *
-*/
+** /
 
 /* The following ifdef redefines entry points for use of this X driver
    as an SVDI driver on systems which require an underscore "_" appended
@@ -381,7 +363,7 @@
  *      vector[5] = character box y
  *      vector[6] = character box x      */
 #define MAX_VECTOR 7
-static float vector[MAX_VECTOR] = {0., 7., 1., 0., 0., 0., 0.};
+    static float vector[MAX_VECTOR] = {0., 7., 1., 0., 0., 0., 0.};
 
 /* current position */
 static float xcp = 0.;

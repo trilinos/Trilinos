@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 /***
@@ -11,6 +11,7 @@
      Initialize variables and functions Aprepro
 ***/
 #include "apr_builtin.h"
+#include "apr_tokenize.h"
 #include "aprepro.h"      // for symrec, Aprepro, etc
 #include "init_structs.h" // for array_a_init, array_c_init, etc
 #include <string>         // for string
@@ -141,6 +142,8 @@ namespace SEAMS {
       {"get_temp_filename", do_get_temp_filename, "get_temp_filename()",
        "Returns a string which can be used for a temporary filename without conflicting with any "
        "other filenames."},
+      {"version", do_version, "version()",
+       "Return the version string (See also _VERSION variable)"},
       {nullptr, nullptr, nullptr, nullptr}};
 
   str_c_init string_c_fncts[] = {
@@ -406,8 +409,9 @@ namespace SEAMS {
 
     add_variable("_C_", comment, false, true);
 
-    if (aprepro) {
-      add_variable("VERSION", aprepro->version(), true, true);
-    }
+    std::string version = SEAMS::Aprepro::version();
+    auto        tokens  = tokenize(version, " ");
+    double      ver     = std::stod(tokens[0]);
+    add_variable("_VERSION_", ver, true, true);
   }
 } // namespace SEAMS

@@ -269,7 +269,7 @@ void panzer::BC::print(std::ostream& os) const
 
   os << "panzer::BC" << endl;
 
-  os << "  BC ID =" << m_bc_id << endl;
+  os << "  BC ID = " << m_bc_id << endl;
 
   std::string type;
   if (m_bc_type == BCT_Dirichlet)
@@ -282,6 +282,7 @@ void panzer::BC::print(std::ostream& os) const
     type = "Neumann";
 
   os << "  Type = " << type << endl;
+  os << "  Identifier = " << identifier() << endl;
   os << "  Side Set ID = " << m_sideset_id << endl;
   os << "  Element Block ID = " << m_element_block_id << endl;
   if (m_bc_type == BCT_Interface)

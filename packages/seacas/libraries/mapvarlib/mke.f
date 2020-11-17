@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=====================================================================
@@ -10,17 +10,17 @@ C=====================================================================
      &     VELX,VELY,VELZ,EMSS,RNMS,
      &     RMX,RMY,RMZ,RKE,PSQ,RJ2,
      &     SIGXX,SIGYY,SIGZZ,SIGXY,SIGYZ,SIGZX)
-C     
+C
 C     ****************************************************************
-C     
+C
 C     Compute momenta (x, y, and z) and kinetic energy
 C     for an element block. Totals are stored in MKEI.
 C     Called when check on accuracy of map is requested
-C     
+C
 C     Called by MAPVAR
-C     
+C
 C     ****************************************************************
-C     
+C
 C     NELND  INT   Number of nodes per element
 C     NUMEB  INT   Number of elements in element block
 C     NUMND  int   Number of nodes in element block
@@ -45,33 +45,33 @@ C     SIGXY  REAL  Component of stress tensot
 C     SIGYZ  REAL  Component of stress tensot
 C     SIGZX  REAL  Component of stress tensot
 
-C     
+C
 C     ****************************************************************
-C     
+C
       include 'amesh.blk'
-C     
+C
       DIMENSION ICON(NELND,*),NDLST(*)
       DIMENSION VELX(*),VELY(*),VELZ(*),EMSS(*),RNMS(*)
       DIMENSION SIGXX(*),SIGYY(*),SIGZZ(*),SIGXY(*),SIGYZ(*),SIGZX(*)
-C     
+C
 C     ****************************************************************
-C     
+C
 C     zero nodal mass array
-C     
+C
       DO I = 1, NUMEB
          DO J = 1, NELND
             RNMS(ICON(J,I)) = 0.
          end do
       end do
-C     
+C
 C     Translate element mass to nodal mass
 C     First cut, come back and do better if necessary
-C     
+C
       IF (ITYPE .EQ. 3 .OR. ITYPE .EQ. 4 .OR. ITYPE .EQ. 5)THEN
-C     
+C
 C     Treat all quads the same, use only four corner nodes
 C     can fix if needed
-C     
+C
          NEND = 4
          DO I = 1, NUMEB
             DO J = 1, NEND
@@ -79,9 +79,9 @@ C
             end do
          end do
       ELSE IF (ITYPE .EQ. 10)THEN
-C     
+C
 C     8-node hex
-C     
+C
          NEND = 8
          DO I = 1, NUMEB
             DO J = 1, NEND
@@ -89,9 +89,9 @@ C
             end do
          end do
       ELSE IF (ITYPE .EQ. 13)THEN
-C     
+C
 C     4-node shell
-C     
+C
          NEND = 4
          DO I = 1, NUMEB
             DO J = 1, NEND
@@ -99,10 +99,10 @@ C
             end do
          end do
       ELSE IF (ITYPE .EQ. 6)THEN
-C     
+C
 C     treat all tets the same, use only four corner nodes
 C     can fix if needed
-C     
+C
          NEND = 4
          DO I = 1, NUMEB
             DO J = 1, NEND
@@ -113,10 +113,10 @@ C
          CALL ERROR ('MKE','UNSUPPORTED ELEMENT TYPE','ITYPE',itype,
      &        ' ',0,' ',' ',1)
       END IF
-C     
+C
 C     compute momenta, KE, P-sqM, J2-sqM for element block
 C     loop over all nodes in element block
-C     
+C
       RMX = 0.
       RMY = 0.
       RMZ = 0.
@@ -136,7 +136,7 @@ C
          RMY = RMY + (VELY(INOD) * RNMS(INOD))
          RKE = RKE + (0.5 * RNMS(INOD) * VELSQ)
       end do
-C     
+C
       DO I = 1, NUMEB
          P = (SIGXX(I) + SIGYY(I) + SIGZZ(I)) / 3.
          PSQ = PSQ + P*P*EMSS(I)
@@ -151,6 +151,6 @@ C
      &           + SIGXY(I)**2) * EMSS(I))
          END IF
       end do
-C     
+C
       RETURN
       END

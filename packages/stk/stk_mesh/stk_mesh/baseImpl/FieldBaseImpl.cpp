@@ -378,6 +378,22 @@ FieldBaseImpl::modify_on_device() const
 }
 
 void
+FieldBaseImpl::modify_on_host(const Selector& s) const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->modify_on_host(s);
+  }
+}
+
+void
+FieldBaseImpl::modify_on_device(const Selector& s) const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->modify_on_device(s);
+  }
+}
+
+void
 FieldBaseImpl::sync_to_host() const
 {
   if (m_ngpField != nullptr) {
@@ -393,6 +409,30 @@ FieldBaseImpl::sync_to_device() const
   }
 }
 
+void
+FieldBaseImpl::clear_sync_state() const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->clear_sync_state();
+  }
+}
+
+void
+FieldBaseImpl::clear_host_sync_state() const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->clear_host_sync_state();
+  }
+}
+
+void
+FieldBaseImpl::clear_device_sync_state() const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->clear_device_sync_state();
+  }
+}
+
 NgpFieldBase *
 FieldBaseImpl::get_ngp_field() const
 {
@@ -402,9 +442,8 @@ FieldBaseImpl::get_ngp_field() const
 void
 FieldBaseImpl::set_ngp_field(NgpFieldBase * ngpField) const
 {
-  if (m_ngpField != nullptr) {
-    delete m_ngpField;
-  }
+  ThrowRequireMsg(m_ngpField == nullptr || m_ngpField == ngpField,
+                  "Error: Only one NgpField may be set on a StkField(" << m_name << ")");
   m_ngpField = ngpField;
 }
 
@@ -431,6 +470,7 @@ FieldBaseImpl::increment_num_syncs_to_device() const
 {
   ++m_numSyncsToDevice;
 }
+
 
 //----------------------------------------------------------------------
 

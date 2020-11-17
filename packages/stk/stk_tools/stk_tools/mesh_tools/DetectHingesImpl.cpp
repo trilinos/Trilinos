@@ -34,7 +34,9 @@
 
 #include "stk_tools/mesh_tools/DetectHingesImpl.hpp"
 #include "stk_tools/mesh_tools/DisconnectBlocksImpl.hpp"
+#include "stk_util/util/GraphCycleDetector.hpp"
 #include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp"
 #include "stk_util/parallel/ParallelReduce.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
 #include "stk_mesh/base/FEMHelpers.hpp"
@@ -50,7 +52,7 @@ namespace impl {
 void print_node_count(stk::mesh::BulkData& bulk, const std::string str)
 {
   stk::mesh::EntityVector nodes;
-  bulk.get_entities(stk::topology::NODE_RANK, bulk.mesh_meta_data().universal_part(), nodes);
+  stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodes);
 
   std::cout << str << std::endl;
   std::cout << "p:" << bulk.parallel_rank() << " node vec size: " << nodes.size() << std::endl;
@@ -244,7 +246,7 @@ HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk, const stk::mesh
 HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk)
 {
   stk::mesh::EntityVector nodes;
-  bulk.get_entities(stk::topology::NODE_RANK, bulk.mesh_meta_data().universal_part(), nodes);
+  stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodes);
 
   HingeNodeVector hingeNodes = get_hinge_nodes(bulk, nodes);
 
@@ -591,29 +593,18 @@ void print_disconnect_group_info(const DisconnectGroup& group, unsigned indentLe
   }
 }
 
-void snip_all_hinges(stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, bool debug)
+void snip_all_hinges(stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes)
 {
-  HingeEdgeVector hingeEdges = get_hinge_edges(bulk,hingeNodes);
   HingeGroupVector hingeGroups;
   std::vector<stk::mesh::EntityId> newNodeIdVec;
   std::pair<stk::mesh::Part*, stk::mesh::PartVector> hingeBlocks;
 
   LinkInfo info;
-  std::ostringstream& os = info.os;
-
-  if(debug) {
-    os << "P" << bulk.parallel_rank() << std::endl;
-  }
 
   bulk.modification_begin();
 
   for(HingeNode& hinge : hingeNodes) {
     hingeGroups = get_convex_groupings(bulk, hinge);
-
-    if(debug) {
-      print_hinge_node_info(bulk, hinge, 1u, os);
-      print_hinge_group_info(bulk, hingeGroups, 2u, os);
-    }
 
     for (size_t firstGroupIdx = 0; firstGroupIdx < hingeGroups.size()-1; ++firstGroupIdx) {
       for (size_t secondGroupIdx = firstGroupIdx+1; secondGroupIdx < hingeGroups.size(); ++secondGroupIdx) {
@@ -629,21 +620,14 @@ void snip_all_hinges(stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, boo
         stk::mesh::ConstPartVector blocksForSecondGroup = get_blocks_for_hinge_group(bulk, *secondGroup);
         DisconnectGroup group(bulk, blocksForSecondGroup, hinge.get_node());
 
-        if(debug) {
-          os << indent(1u) << "Creating disconnect group for hinge group with id " << group.id() << std::endl;
-        }
-
         add_to_sharing_lookup(bulk, hinge.get_node(), info.sharedInfo);
 
         if(group.needs_to_communicate()) {
-          if(debug) {
-            os << indent(1u) << "Group needs to communicate ... adding to node map" << std::endl;
-          }
           NodeMapKey key(hinge.get_node(), group);
           info.clonedNodeMap[key] = NodeMapValue(bulk, hinge.get_node());
         } else {
           NodeMapKey key(hinge.get_node(), group);
-          info.preservedNodeMap[key] = NodeMapValue(bulk, hinge.get_node());
+          info.originalNodeMap[key] = NodeMapValue(bulk, hinge.get_node());
         }
       }
     }
@@ -651,38 +635,80 @@ void snip_all_hinges(stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, boo
 
   create_new_duplicate_node_IDs(bulk, info);
 
-  if(debug) {
-    for (auto & nodeMapEntry : info.clonedNodeMap) {
-      os << indent(1u) << "Disconnect group with id " << nodeMapEntry.first.disconnectedGroup.id()
-                       << " has duplicate node id: " << nodeMapEntry.second.newNodeId << std::endl;
-    }
-  }
-
   communicate_shared_node_information(bulk, info);
 
   for(auto mapEntry = info.clonedNodeMap.begin(); mapEntry != info.clonedNodeMap.end(); ++mapEntry) {
     const NodeMapKey& key = mapEntry->first;
-
-    if(debug) {
-      print_disconnect_group_info(key.disconnectedGroup, 1u, os);
-      os << indent(2u) << "New node id: " << mapEntry->second.newNodeId << std::endl;
-    }
     disconnect_elements(bulk, key, mapEntry->second, info);
   }
   info.flush(std::cout);
   bulk.modification_end();
 }
 
-void snip_all_hinges_for_input_nodes(stk::mesh::BulkData& bulk, const stk::mesh::EntityVector nodes, bool debug)
+HingeNodeVector get_cyclic_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes)
 {
-  HingeNodeVector hingeNodes = get_hinge_nodes(bulk, nodes);
-  snip_all_hinges(bulk, hingeNodes, debug); 
+  HingeEdgeVector hingeEdges = get_hinge_edges(bulk, hingeNodes);
+  stk::mesh::impl::LocalIdMapper localIdMapper;
+  localIdMapper.set_size(bulk);
+
+  for(unsigned i  = 0; i < hingeNodes.size(); i++) {
+    localIdMapper.add_new_entity_with_local_id(hingeNodes[i].get_node(), i);
+  }
+
+  GraphCycleDetector hingeGraph(hingeNodes.size());
+
+  for(auto hingeEdge : hingeEdges) {
+    unsigned hingeNode1Id = localIdMapper.entity_to_local(hingeEdge.first.get_node());
+    unsigned hingeNode2Id = localIdMapper.entity_to_local(hingeEdge.second.get_node());
+    hingeGraph.add_edge(hingeNode1Id, hingeNode2Id);
+  }
+
+  HingeNodeVector cyclicHingeNodes;
+  const std::vector<unsigned>& nodesInCycles = hingeGraph.get_nodes_in_cycles();
+
+  for(unsigned nodeId : nodesInCycles) {
+    cyclicHingeNodes.push_back(hingeNodes[nodeId]);
+  }
+
+  return cyclicHingeNodes;
 }
 
-void snip_all_hinges_between_blocks(stk::mesh::BulkData& bulk, bool debug)
+void prune_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, const HingeNodeVector& prunedHingeNodes)
+{
+  for(auto node : prunedHingeNodes) {
+    auto it = std::find(hingeNodes.begin(), hingeNodes.end(), node);
+
+    if(it != hingeNodes.end()) {
+      hingeNodes.erase(it);
+    }
+  }
+}
+
+void prune_cyclic_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes)
+{
+  HingeNodeVector cyclicHingeNodes = get_cyclic_hinge_nodes(bulk, hingeNodes);
+  prune_hinge_nodes(bulk, hingeNodes, cyclicHingeNodes);
+}
+
+void snip_all_hinges_for_input_nodes(stk::mesh::BulkData& bulk, const stk::mesh::EntityVector nodes)
+{
+  snip_all_hinges_for_input_nodes(bulk, nodes, HingeNodeVector{});
+}
+
+void snip_all_hinges_for_input_nodes(stk::mesh::BulkData& bulk, const stk::mesh::EntityVector nodes,
+                                     const HingeNodeVector& preservedHingeNodes)
+{
+  HingeNodeVector hingeNodes = get_hinge_nodes(bulk, nodes);
+  // prune_cyclic_hinge_nodes(bulk, hingeNodes);
+  prune_hinge_nodes(bulk, hingeNodes, preservedHingeNodes);
+  snip_all_hinges(bulk, hingeNodes); 
+}
+
+void snip_all_hinges_between_blocks(stk::mesh::BulkData& bulk)
 {
   HingeNodeVector hingeNodes = get_hinge_nodes(bulk);
-  snip_all_hinges(bulk, hingeNodes, debug); 
+  // prune_cyclic_hinge_nodes(bulk, hingeNodes);
+  snip_all_hinges(bulk, hingeNodes); 
 }
 
 } } }

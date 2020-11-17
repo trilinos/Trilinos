@@ -445,24 +445,6 @@ namespace Xpetra {
 
     //@}
 
-    //! @name Advanced Matrix-vector multiplication and solve methods
-    //@{
-
-    //! Multiplies this matrix by a MultiVector.
-    /*! \c X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix.
-
-    Both are required to have constant stride, and they are not permitted to ocupy overlapping space. No runtime checking will be performed in a non-debug build.
-
-    This method is templated on the scalar type of MultiVector objects, allowing this method to be applied to MultiVector objects of arbitrary type. However, it is recommended that multiply() not be called directly; instead, use the CrsMatrixMultiplyOp, as it will handle the import/exprt operations required to apply a matrix with non-trivial communication needs.
-
-    If \c beta is equal to zero, the operation will enjoy overwrite semantics (\c Y will be overwritten with the result of the multiplication). Otherwise, the result of the multiplication
-    will be accumulated into \c Y.
-    */
-    //TODO virtual=0 // TODO: Add default parameters ?
-//     virtual void multiply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, Scalar alpha, Scalar beta) const=0;
-
-    //@}
-
     //! Implements DistObject interface
     //{@
 
@@ -491,17 +473,6 @@ namespace Xpetra {
 
     //! @name Overridden from Teuchos::Describable
     //@{
-
-    // TODO: describe of views can be done here
-
-    //   /** \brief Return a simple one-line description of this object. */
-    //   virtual std::string description() const =0;
-
-    //   /** \brief Print the object with some verbosity level to an FancyOStream object. */
-    //   virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const =0;
-
-    //@}
-
 
     //! @name Overridden from Teuchos::Describable
     //@{

@@ -426,7 +426,14 @@ namespace panzer_stk {
     std::string loadBalanceString = ""; // what is the load balancing information
     bool blockedAssembly = false;
 
+    const bool has_interface_condition = hasInterfaceCondition(bcs);
+
     if(panzer::BlockedDOFManagerFactory::requiresBlocking(field_order) && !useTpetra) {
+
+       // Can't yet handle interface conditions for this system
+       TEUCHOS_TEST_FOR_EXCEPTION(has_interface_condition,
+                                  Teuchos::Exceptions::InvalidParameter,
+                                  "ERROR: Blocked Epetra systems cannot handle interface conditions.");
 
        // use a blocked DOF manager
        blockedAssembly = true;
@@ -467,6 +474,11 @@ namespace panzer_stk {
     }
     else if(panzer::BlockedDOFManagerFactory::requiresBlocking(field_order) && useTpetra) {
 
+       // Can't yet handle interface conditions for this system
+       TEUCHOS_TEST_FOR_EXCEPTION(has_interface_condition,
+                                  Teuchos::Exceptions::InvalidParameter,
+                                  "ERROR: Blocked Tpetra system cannot handle interface conditions.");
+
        // use a blocked DOF manager
        blockedAssembly = true;
 
@@ -506,6 +518,10 @@ namespace panzer_stk {
        loadBalanceString = printUGILoadBalancingInformation(*dofManager);
     }
     else if(useTpetra) {
+
+       if (has_interface_condition)
+         buildInterfaceConnections(bcs, conn_manager);
+
        // use a flat DOF manager
 
        TEUCHOS_ASSERT(!use_dofmanager_fei);
@@ -516,6 +532,9 @@ namespace panzer_stk {
          = globalIndexerFactory.buildGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
        globalIndexer = dofManager;
 
+       if (has_interface_condition)
+         checkInterfaceConnections(conn_manager, dofManager->getComm());
+
        TEUCHOS_ASSERT(!useDiscreteAdjoint); // safety check
        linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>(mpi_comm,dofManager));
 
@@ -523,7 +542,7 @@ namespace panzer_stk {
        loadBalanceString = printUGILoadBalancingInformation(*dofManager);
     }
     else {
-       const bool has_interface_condition = hasInterfaceCondition(bcs);
+
        if (has_interface_condition)
          buildInterfaceConnections(bcs, conn_manager);
 

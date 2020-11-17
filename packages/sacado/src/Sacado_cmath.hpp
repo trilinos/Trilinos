@@ -59,7 +59,7 @@ namespace Sacado {
   // a simd bool.  Sacado overloaded operators use this internally when ever
   // the ternary operator would be used.  It can also be used by client code.
   template <typename Cond, typename T>
-  KOKKOS_INLINE_FUNCTION
+  SACADO_INLINE_FUNCTION
   T if_then_else(const Cond cond, const T& a, const T& b) {
     return cond ? a : b;
   }
@@ -67,7 +67,7 @@ namespace Sacado {
   // Special version of sqrt(x) that avoids the NaN if x==0 in the derivative.
   // The default implementation just calls the standard sqrt(x).
   template <typename T>
-  KOKKOS_INLINE_FUNCTION
+  SACADO_INLINE_FUNCTION
   T safe_sqrt(const T& x) {
     using std::sqrt;
     return sqrt(x);

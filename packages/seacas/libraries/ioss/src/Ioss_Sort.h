@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_Sort_h
@@ -66,13 +66,10 @@ namespace {
 
   template <typename INT> void qsort_int(INT v[], size_t left, size_t right)
   {
-    size_t pivot;
-    size_t i, j;
-
     if (left + QSORT_CUTOFF < right) {
-      pivot = median3(v, left, right);
-      i     = left;
-      j     = right - 1;
+      size_t pivot = median3(v, left, right);
+      size_t i     = left;
+      size_t j     = right - 1;
 
       for (;;) {
         while (v[++i] < v[pivot]) {
@@ -97,16 +94,14 @@ namespace {
 
   template <typename INT> void isort_int(INT v[], size_t N)
   {
-    size_t i, j;
+    size_t j;
     size_t ndx = 0;
-    INT    small;
-    INT    tmp;
 
     if (N <= 1) {
       return;
     }
-    small = v[0];
-    for (i = 1; i < N; i++) {
+    INT small = v[0];
+    for (size_t i = 1; i < N; i++) {
       if (v[i] < small) {
         small = v[i];
         ndx   = i;
@@ -115,8 +110,8 @@ namespace {
     /* Put smallest value in slot 0 */
     SWAP(v, 0, ndx);
 
-    for (i = 1; i < N; i++) {
-      tmp = v[i];
+    for (size_t i = 1; i < N; i++) {
+      INT tmp = v[i];
       for (j = i; tmp < v[j - 1]; j--) {
         v[j] = v[j - 1];
       }

@@ -49,6 +49,19 @@
 
 // TODO: Member sortieren!?
 
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRAEXT
+#include "EpetraExt_OperatorOut.h"
+#include "EpetraExt_VectorOut.h"
+#include "EpetraExt_RowMatrixOut.h"
+#endif
+
+#ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
+#include <Zoltan2_MatrixAdapter.hpp>
+#include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
+#include <Zoltan2_PartitioningProblem.hpp>
+#include <Zoltan2_XpetraCrsGraphAdapter.hpp>
+#endif
+
 
 namespace FROSch {
 
@@ -63,45 +76,60 @@ namespace FROSch {
 
     protected:
 
-        using CommPtr               = typename SchwarzOperator<SC,LO,GO,NO>::CommPtr;
+        using CommPtr                       = typename SchwarzOperator<SC,LO,GO,NO>::CommPtr;
 
-        using XMap                  = typename SchwarzOperator<SC,LO,GO,NO>::XMap;
-        using XMapPtr               = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtr;
-        using ConstXMapPtr          = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr;
-        using XMapPtrVecPtr         = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtrVecPtr;
-        using ConstXMapPtrVecPtr    = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtrVecPtr;
+        using XMap                          = typename SchwarzOperator<SC,LO,GO,NO>::XMap;
+        using XMapPtr                       = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr                  = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr;
+        using XMapPtrVecPtr                 = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtrVecPtr;
+        using ConstXMapPtrVecPtr            = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtrVecPtr;
+        using ConstXMapPtrVecPtr2D          = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtrVecPtr2D;
 
-        using XMatrixPtr            = typename SchwarzOperator<SC,LO,GO,NO>::XMatrixPtr;
-        using ConstXMatrixPtr       = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMatrixPtr;
+        using XMatrixPtr                    = typename SchwarzOperator<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr               = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMatrixPtr;
 
-        using XMultiVector          = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVector;
-        using XMultiVectorPtr       = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtr;
+        using XCrsGraph                     = typename SchwarzOperator<SC,LO,GO,NO>::XCrsGraph;
+        using GraphPtr                      = typename SchwarzOperator<SC,LO,GO,NO>::GraphPtr;
+        using ConstXCrsGraphPtr             = typename SchwarzOperator<SC,LO,GO,NO>::ConstXCrsGraphPtr;
 
-        using XImportPtrVecPtr      = typename SchwarzOperator<SC,LO,GO,NO>::XImportPtrVecPtr;
+        using XMultiVector                  = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVector;
+        using XMultiVectorPtr               = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtr;
+        using XMultiVectorPtrVecPtr         = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
+        using ConstXMultiVectorPtr          = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMultiVectorPtr;
+        using ConstXMultiVectorPtrVecPtr    = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMultiVectorPtrVecPtr;
 
-        using XExportPtrVecPtr      = typename SchwarzOperator<SC,LO,GO,NO>::XExportPtrVecPtr;
+        using XImport                       = typename SchwarzOperator<SC,LO,GO,NO>::XImport;
+        using XImportPtr                    = typename SchwarzOperator<SC,LO,GO,NO>::XImportPtr;
+        using XImportPtrVecPtr              = typename SchwarzOperator<SC,LO,GO,NO>::XImportPtrVecPtr;
 
-        using ParameterListPtr      = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
+        using XExport                       = typename SchwarzOperator<SC,LO,GO,NO>::XExport;
+        using XExportPtr                    = typename SchwarzOperator<SC,LO,GO,NO>::XExportPtr;
+        using XExportPtrVecPtr              = typename SchwarzOperator<SC,LO,GO,NO>::XExportPtrVecPtr;
 
-        using CoarseSpacePtr        = typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtr;
+        using ParameterListPtr              = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
 
-        using SubdomainSolverPtr    = typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr;
+        using CoarseSpacePtr                = typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtr;
 
-        using UN                    = typename SchwarzOperator<SC,LO,GO,NO>::UN;
+        using SubdomainSolverPtr            = typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr;
 
-        using GOVec                 = typename SchwarzOperator<SC,LO,GO,NO>::GOVec;
-        using GOVecPtr              = typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr;
+        using UN                            = typename SchwarzOperator<SC,LO,GO,NO>::UN;
 
-        using LOVec                 = typename SchwarzOperator<SC,LO,GO,NO>::LOVec;
-        using LOVecPtr2D            = typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D;
+        using IntVec                        = typename SchwarzOperator<SC,LO,GO,NO>::IntVec;
+        using IntVec2D                      = typename SchwarzOperator<SC,LO,GO,NO>::IntVec2D;
 
-        using SCVec                 = typename SchwarzOperator<SC,LO,GO,NO>::SCVec;
+        using GOVec                         = typename SchwarzOperator<SC,LO,GO,NO>::GOVec;
+        using GOVecPtr                      = typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr;
 
-        using ConstLOVecView        = typename SchwarzOperator<SC,LO,GO,NO>::ConstLOVecView;
+        using LOVec                         = typename SchwarzOperator<SC,LO,GO,NO>::LOVec;
+        using LOVecPtr2D                    = typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D;
 
-        using ConstGOVecView        = typename SchwarzOperator<SC,LO,GO,NO>::ConstGOVecView;
+        using SCVec                         = typename SchwarzOperator<SC,LO,GO,NO>::SCVec;
 
-        using ConstSCVecView        = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecView;
+        using ConstLOVecView                = typename SchwarzOperator<SC,LO,GO,NO>::ConstLOVecView;
+
+        using ConstGOVecView                = typename SchwarzOperator<SC,LO,GO,NO>::ConstGOVecView;
+
+        using ConstSCVecView                = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecView;
 
     public:
 
@@ -137,6 +165,19 @@ namespace FROSch {
 
         virtual CoarseSpacePtr getCoarseSpace() const;
 
+        //Repeated Coarse map
+        virtual int buildElementNodeList() = 0;
+
+        virtual int buildGlobalGraph(Teuchos::RCP<DDInterface<SC,LO,GO,NO> > theDDInterface_) = 0;
+
+        virtual int buildCoarseGraph() = 0;
+
+        // AH: Can this be moved to protected?
+        virtual XMapPtr BuildRepeatedMapCoarseLevel(ConstXMapPtr &nodesMap,
+                                                    UN dofsPerNode,
+                                                    ConstXMapPtrVecPtr dofsMaps,
+                                                    UN partition) = 0;
+
     protected:
 
         virtual int setUpCoarseOperator();
@@ -168,13 +209,30 @@ namespace FROSch {
         mutable XMultiVectorPtr YCoarseSolveTmp_;
 
         ConstXMapPtrVecPtr GatheringMaps_ = ConstXMapPtrVecPtr(0);
+        XMapPtrVecPtr MLGatheringMaps_ = XMapPtrVecPtr(0); // AH: Could this be const as well?
+
+        // AH: Improve the naming
+        XMapPtr CoarseMap_;
         XMapPtr CoarseSolveMap_;
+        XMapPtr CoarseSolveRepeatedMap_;
+        XMapPtr RepMapCoarse_;
+        XMapPtr MLCoarseMap_;
+
+        GraphPtr SubdomainConnectGraph_;
+        GraphPtr ElementNodeList_;
+
+        // What are the default values?
+        UN CoarseDofsPerNode_;
+
+        UN PartitionType_;
 
         SubdomainSolverPtr CoarseSolver_;
 
         ParameterListPtr DistributionList_;
 
         XExportPtrVecPtr CoarseSolveExporters_ = XExportPtrVecPtr(0);
+        XExportPtrVecPtr MLCoarseSolveExporters_;
+
 #ifdef FROSCH_COARSEOPERATOR_EXPORT_AND_IMPORT
         XImportPtrVecPtr CoarseSolveImporters_ = XImportPtrVecPtr(0);
 #endif

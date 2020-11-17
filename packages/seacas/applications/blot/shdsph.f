@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -24,7 +24,7 @@ C   --Only elements of selected element blocks are drawn.
 C   --
 C   --Parameters:
 C   --   LENE - IN - the cumulative element counts by element block
-C   --   LINK - IN - the master connectivity array
+C   --   LINK - IN - the connectivity array
 C   --   NUMLNK - IN - the number of nodes per element by block
 C   --   NUMATR - IN - the number of attributes per element by block
 C   --   XN, YN, ZN - IN - the nodal coordinates
@@ -93,7 +93,7 @@ C     ISHDCL(3, *) = Starting location in color map (SET)
       IF ( FIRST ) THEN
         FIRST = .FALSE.
       END IF
-C
+
 C ... Calculate surface normals
 C ... On a unit sphere, normals are simply x,y,z coords of point.
       do 30 ip=1, npoly
@@ -184,7 +184,7 @@ C ... Plotting of spheres starts here.
  120    continue
  130  continue
       call pltflu
-C
+
       CALL GRCOLU('STANDARD')
 
       RETURN

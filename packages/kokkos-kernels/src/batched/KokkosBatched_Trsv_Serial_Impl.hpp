@@ -25,9 +25,9 @@ namespace KokkosBatched {
   ///
 
 #if                                                     \
-  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
-  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
   template<typename ArgDiag>
   struct SerialTrsv<Uplo::Lower,Trans::NoTranspose,ArgDiag,Algo::Trsv::CompactMKL> {
     template<typename ScalarType,
@@ -121,9 +121,9 @@ namespace KokkosBatched {
   ///
 
 #if                                                     \
-  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
-  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
   template<typename ArgDiag>
   struct SerialTrsv<Uplo::Lower,Trans::Transpose,ArgDiag,Algo::Trsv::CompactMKL> {
     template<typename ScalarType,
@@ -217,9 +217,9 @@ namespace KokkosBatched {
   ///
 
 #if                                                     \
-  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
-  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
   template<typename ArgDiag>
   struct SerialTrsv<Uplo::Upper,Trans::NoTranspose,ArgDiag,Algo::Trsv::CompactMKL> {
     template<typename ScalarType,
@@ -313,9 +313,9 @@ namespace KokkosBatched {
   ///
 
 #if                                                     \
-  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
-  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
   template<typename ArgDiag>
   struct SerialTrsv<Uplo::Upper,Trans::Transpose,ArgDiag,Algo::Trsv::CompactMKL> {
     template<typename ScalarType,

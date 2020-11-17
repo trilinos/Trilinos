@@ -1,32 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: perim.f,v 1.2 2001/11/05 13:26:51 gdsjaar Exp $
-C $Log: perim.f,v $
-C Revision 1.2  2001/11/05 13:26:51  gdsjaar
-C  Fixed array boundary problem in region check code.
-C
-C Revision 1.1.1.1  1990/11/30 11:13:18  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:13:16  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.QMESH]PERIM.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO PERIM TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
       SUBROUTINE PERIM (MP, ML, MS, NS, MAXNL, MAXNP, MAXNBC, MAXSBC,
      &   KNBC, KSBC, KNUM, IPOINT, COOR, IPBOUN, ILINE, LTYPE, NINT,
      &   FACTOR, LCON, ILBOUN, ISBOUN, ISIDE, NLPS, IFLINE, ILLIST,
@@ -37,16 +14,16 @@ C
      &   BMESUR, MLINK, NPROLD, NPNOLD, NPEOLD, NNXK, REMESH, REXMIN,
      &   REXMAX, REYMIN, REYMAX, IDIVIS, SIZMIN, EMAX, EMIN)
 C***********************************************************************
-C
+
 C  SUBROUTINE PERIM = GENERATES THE PERIMETER OF A REGION
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINE CALLED BY:
 C     QMESH = GENERATES THE QUADRILATERAL MESH
-C
+
 C***********************************************************************
-C
+
 C  VARIABLES USED:
 C     X   = THE X VALUES OF THE PERIMETER LIST
 C     Y   = THE Y VALUES OF THE PERIMETER LIST
@@ -55,9 +32,9 @@ C           IF 00000YYYYY,  YYYYY IS AN INDEX INTO THE POINT TABLE.
 C           IF 1XXXXYYYYY,  XXXX IS AN INDEX INTO THE LINE TABLE.
 C     N   = THE NUMBER OF NODES ON THE PERIMETER
 C     ERR = .TRUE. IF ERRORS WERE ENCOUNTERED
-C
+
 C***********************************************************************
-C
+
       DIMENSION IPOINT (MP), COOR (2, MP), IPBOUN (MP)
       DIMENSION ILINE (ML), NINT (ML), LTYPE (ML)
       DIMENSION FACTOR (ML), LCON (3, ML)
@@ -70,14 +47,14 @@ C
       DIMENSION LINKLB (2, ML), NLPF (ML), IFLB (ML), LISTLB (2, ML)
       DIMENSION LINKSB (2, ML), NSPF (ML), IFSB (ML), LISTSB (2, ML)
       DIMENSION LSTNBC (MAXNBC), MARKED (3, MAXNL)
-C
+
       DIMENSION AMESUR(NPEOLD), XNOLD(NPNOLD), YNOLD(NPNOLD)
       DIMENSION NXKOLD(NNXK, NPEOLD), MMPOLD(3, NPROLD)
       DIMENSION LINKEG(2, MLINK), LISTEG(4 * NPEOLD), BMESUR(NPNOLD)
-C
+
       LOGICAL ERR, REAL, EVEN, CCW, TEST, ADDLNK, ITRIED, INDETR, NOROOM
       LOGICAL COUNT, REMESH, GRAPH
-C
+
       N = 0
       ADDLNK = .FALSE.
       GRAPH = .FALSE.
@@ -113,16 +90,16 @@ C
          CALL MPORT2 (XX1, XX2, YY1, YY2)
          CALL PLTFRM (0)
       ENDIF
-C
+
 C  GET LIST OF LINES
-C
+
       CALL LLIST (MS, ML, MAXNL, NS, NL, KNUM, LISTL, ILINE, ISIDE,
      &   NLPS, IFLINE, ILLIST, LCON, ISLIST, LINKS, LINKL, ERR)
       IF (ERR)RETURN
       ERR = .TRUE.
-C
+
 C  DEFINE VALUE OF KP,  THE BEGINNING CONNECTIVITY POINT
-C
+
       IF (NL .LT. 2) THEN
          CALL LTSORT (ML, LINKL, LISTL (1), ILI, ADDLNK)
          KP = LCON (1, ILI)
@@ -142,10 +119,10 @@ C
             RETURN
          ENDIF
       ENDIF
-C
+
 C  IF PERIMETER HAS ODD NUMBER OF POINTS,
 C  DO A TRIAL PERIMETER GENERATION TO SEE WHERE TO INSERT A NODE.
-C
+
       IF (EVEN) THEN
          NUMINT = 0
          DO 100 IL = 1, NL
@@ -157,10 +134,10 @@ C
             IX = 0
             DO 140 IL = 1, NL
                CALL LTSORT (ML, LINKL, LISTL (IL), ILI, ADDLNK)
-C
+
 C  SKIP PREVIOUSLY USED LINES
 C  SKIP LINES USED TWICE IN THIS BOUNDARY  (RECALL ANNULUS)
-C
+
                IF (NINT (ILI) .GT. 0) THEN
                   DO 110 I = 1, NL
                      CALL LTSORT (ML, LINKL, LISTL (I), IPNTR, ADDLNK)
@@ -178,12 +155,7 @@ C
                      IP3 = 0
                   ENDIF
                   TEST = .TRUE.
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO PLINE TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
+
                   CALL PLINE (MP, ML, MAXNP, MAXNBC, MAXSBC, IPOINT,
      &               COOR, LINKP, ILINE (ILI), LTYPE (ILI), NINT (ILI),
      &               FACTOR (ILI), IP1, IP2, IP3, X, Y, NID,
@@ -224,9 +196,9 @@ C
                WRITE (*, 10010)KNUM
                RETURN
             ENDIF
-C
+
 C  RECALCULATE THE NUMBER OF INTERVALS IF REMESHING
-C
+
             IF (REMESH) THEN
                NUMINT = 0
                DO 150 IL = 1, NL
@@ -243,9 +215,9 @@ C
             ENDIF
          ENDIF
       ENDIF
-C
+
 C  NOW LOOP THROUGH THE LINES TO GENERATE THE PERIMETER
-C
+
       IF (GRAPH) THEN
          CALL PLTBGN
          CALL MPVIEW (0., XDIMD, 0., YDIMD)
@@ -276,12 +248,7 @@ C
          ENDIF
          IMAXNP = MAXNP-N
          TEST = .FALSE.
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO PLINE TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
+
          if (imaxnp .lt. nint(ili)) then
            stop 'ERROR: Intervals larger than space'
          end if
@@ -298,26 +265,26 @@ C
      &      GRAPH, DXMAX)
          IF (ERR)RETURN
          ERR = .TRUE.
-C
+
 C  REVERSE LINE IF NECESSARY
-C
+
          IF (K1.NE.KP) THEN
             CALL REVERS (X (N+1), IABS (NINT (ILI))+1)
             CALL REVERS (Y (N+1), IABS (NINT (ILI))+1)
             CALL IREVER (NID (N+1), IABS (NINT (ILI))+1)
          ENDIF
          IF (N .GT. 0)NID (N+1) = NIDSAV
-C
+
 C  FINISH UP WITH THIS LINE
 C  KP IS THE POINT ON THE FAR END OF THE LINE
 C  DON'T INCLUDE THE LAST POINT ON THIS LINE IN THE LIST
-C
+
          KP =  (K1+K2)-KP
          N = N+IABS (NINT (ILI))
-C
+
 C  MARK ALL THE LINES AS USED AND
 C  REMEMBER WHICH HAVE JUST BEEN MARKED
-C
+
          IF (IPOINT (IP1) .GT. 0) THEN
             MARKED (1, IL) = IP1
             IPOINT (IP1) = - IABS (IPOINT (IP1))
@@ -337,17 +304,17 @@ C
             MARKED (3, IL) = 0
          ENDIF
   170 CONTINUE
-C
+
 C  LINES ARE EXHAUSTED  -  CHECK FOR CIRCULARITY
-C
+
       CALL LTSORT (ML, LINKL, LISTL (1), ILI, ADDLNK)
       IF (KP.NE.J1) THEN
          WRITE (*, 10000)ILINE (ILI)
          RETURN
       ENDIF
-C
+
 C  RESET THE JUST MARKED LINES
-C
+
       DO 180 I = 1, NL
          IF (MARKED (1, I) .GT. 0)
      &      IPOINT (MARKED (1, I)) = IABS (IPOINT (MARKED (1, I)))
@@ -356,14 +323,14 @@ C
          IF (MARKED (3, I) .GT. 0)
      &      NINT (MARKED (3, I)) = IABS (NINT (MARKED (3, I)))
   180 CONTINUE
-C
+
 C  PERIMETER COMPLETED
 C  INSURE PROPER ORIENTATION  (COUNTER-CLOCKWISE)
-C
+
       CALL CCLOCK (X, Y, N, CCW, ERR, INDETR)
-C
+
 C  THE LINE ORIENTATION MAY BE BAD - TRY A SIMPLE FIX
-C
+
       IF ((INDETR).AND. (.NOT.ITRIED)) THEN
          DO 190 IL = 1, NL
             CALL LTSORT (ML, LINKL, LISTL (IL), ILI, ADDLNK)
@@ -383,16 +350,16 @@ C
          CALL REVERS (Y (2), N-1)
          CALL IREVER (NID (2), N-1)
       ENDIF
-C
+
 C  EXIT
-C
+
       ERR = .FALSE.
       RETURN
-C
+
 10000 FORMAT (' LINE', I5, ' DOES NOT CONNECT TO THE', /,
      +   ' PREVIOUS SECTION OF THE PERIMETER')
 10010 FORMAT (' IN REGION', I5, ' NO LINE IS ALTERABLE TO ENFORCE', /,
      +   ' AN EVEN NUMBER OF PERIMETER POINTS')
 10020 FORMAT (' NO. OF INTERVALS ON LINE', I5, ' WAS INCREASED BY 1')
-C
+
       END

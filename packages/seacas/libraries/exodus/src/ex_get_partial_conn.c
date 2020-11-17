@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 /*****************************************************************************
@@ -61,7 +61,9 @@ int ex_get_partial_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id,
   const char *vfaceconn  = NULL;
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   /* The partial connectivity input function can currently only handle nodal
    * connectivity.  Print a warning if edgeconn or faceconn is non-NULL

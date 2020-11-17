@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include "apr_builtin.h"
@@ -495,6 +495,13 @@ namespace SEAMS {
   double do_cols(const array *arr) { return arr->cols; }
 
   // --------------------------STRING FUNCTIONS------------------------
+  const char *do_version()
+  {
+    char *tmp;
+    new_string(SEAMS::Aprepro::version().c_str(), &tmp);
+    return tmp;
+  }
+
   const char *do_get_date()
   {
     char *       tmp;

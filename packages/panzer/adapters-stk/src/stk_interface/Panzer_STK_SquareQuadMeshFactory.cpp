@@ -43,6 +43,7 @@
 #include <Panzer_STK_SquareQuadMeshFactory.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <PanzerAdaptersSTK_config.hpp>
+#include "Teuchos_StandardParameterEntryValidators.hpp" // for plist validation
 
 // #define ENABLE_UNIFORM
 
@@ -194,6 +195,8 @@ void SquareQuadMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::Paramet
    xProcs_ = paramList->get<int>("X Procs");
    yProcs_ = paramList->get<int>("Y Procs");
 
+   offsetGIDs_ = (paramList->get<std::string>("Offset mesh GIDs above 32-bit int limit") == "ON") ? true : false;
+
    // read in periodic boundary conditions
    parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
 }
@@ -221,6 +224,13 @@ Teuchos::RCP<const Teuchos::ParameterList> SquareQuadMeshFactory::getValidParame
 
       defaultParams->set<int>("X Elements",5);
       defaultParams->set<int>("Y Elements",5);
+
+      Teuchos::setStringToIntegralParameter<int>(
+        "Offset mesh GIDs above 32-bit int limit",
+        "OFF",
+        "If 64-bit GIDs are supported, the mesh element and node global indices will start at a value greater than 32-bit limit.",
+        Teuchos::tuple<std::string>("OFF", "ON"),
+        defaultParams.get());
 
       Teuchos::ParameterList & bcs = defaultParams->sublist("Periodic BCs");
       bcs.set<int>("Count",0); // no default periodic boundary conditions
@@ -315,13 +325,19 @@ void SquareQuadMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */,i
  
    std::vector<double> coord(2,0.0);
 
+   offset_ = 0;
+   if (offsetGIDs_) {
+     if (std::numeric_limits<panzer::GlobalOrdinal>::max() > std::numeric_limits<unsigned int>::max())
+       offset_ = panzer::GlobalOrdinal(std::numeric_limits<unsigned int>::max()) + 1;
+   }
+
    // build the nodes
    for(int nx=myXElems_start;nx<myXElems_end+1;++nx) {
       coord[0] = this->getMeshCoord(nx, deltaX, x0_);
       for(int ny=myYElems_start;ny<myYElems_end+1;++ny) {
          coord[1] = this->getMeshCoord(ny, deltaY, y0_);
 
-         mesh.addNode(ny*(totalXElems+1)+nx+1,coord);
+         mesh.addNode(ny*(totalXElems+1)+nx+1+offset_,coord);
       }
    }
 
@@ -332,12 +348,15 @@ void SquareQuadMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */,i
    // build the elements
    for(int nx=myXElems_start;nx<myXElems_end;++nx) {
       for(int ny=myYElems_start;ny<myYElems_end;++ny) {
-         stk::mesh::EntityId gid = totalXElems*ny+nx+1;
+         stk::mesh::EntityId gid = totalXElems*ny+nx+1 + offset_;
          std::vector<stk::mesh::EntityId> nodes(4);
          nodes[0] = nx+1+ny*(totalXElems+1);
          nodes[1] = nodes[0]+1;
          nodes[2] = nodes[1]+(totalXElems+1);
          nodes[3] = nodes[2]-1;
+
+         for (int i=0; i < 4; ++i)
+           nodes[i] += offset_;
 
          RCP<ElementDescriptor> ed = rcp(new ElementDescriptor(gid,nodes));
          mesh.addElement(ed,block);
@@ -425,6 +444,9 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
    for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
       stk::mesh::Entity element = (*itr);
       stk::mesh::EntityId gid = mesh.elementGlobalId(element);
+
+      // reverse the offset for local gid numbering scheme
+      gid -= offset_;
 
       std::size_t nx,ny;
       ny = (gid-1) / totalXElems;
@@ -527,7 +549,7 @@ void SquareQuadMeshFactory::addNodeSets(STK_Interface & mesh) const
    if(machRank_==0) 
    {
       // add zero node to lower_left node set
-      stk::mesh::Entity node = bulkData->get_entity(mesh.getNodeRank(),1);
+      stk::mesh::Entity node = bulkData->get_entity(mesh.getNodeRank(),1 + offset_);
       mesh.addEntityToNodeset(node,lower_left);
 
       // add zero node to origin node set

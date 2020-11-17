@@ -248,7 +248,9 @@ namespace Intrepid2 {
                     }
                     
                     rst::vecprod(faceNormal, tanX, tanY);
-                    
+
+                    DeviceSpaceType().fence();
+
                     // Compare direct normal with d-component of the face/side normal by CellTools
                     for (ordinal_type d=0;d<cellDim;++d) {
                       
@@ -322,6 +324,8 @@ namespace Intrepid2 {
                     }
 
                     rst::vecprod(faceNormal, tanX, tanY);
+
+                    DeviceSpaceType().fence();
 
                     // Compare direct normal with d-component of the face/side normal by CellTools
                     for (ordinal_type d=0;d<cellDim;++d) {

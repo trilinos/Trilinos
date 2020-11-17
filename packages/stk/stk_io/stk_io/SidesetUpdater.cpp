@@ -91,22 +91,20 @@ std::pair<bool,bool> is_side_internal_and_modified(const stk::mesh::BulkData& bu
     bool isModified = !(bulk.state(side) == stk::mesh::Unchanged);
     bool isInternal = false;
     unsigned numElems = bulk.num_elements(side);
-    if (numElems > 1)
-    {
+    if (numElems > 1) {
         const stk::mesh::Entity* elems = bulk.begin_elements(side);
-        for(const stk::mesh::Part* block : blocks)
-        {
+        for (const stk::mesh::Part* block : blocks) {
             unsigned numSolidElementsInBlock = 0;
 
-            for(unsigned i=0; i<numElems; ++i)
-            {
+            for (unsigned i=0; i<numElems; ++i) {
                 stk::mesh::Entity elem = elems[i];
                 const stk::mesh::Bucket& bucket = bulk.bucket(elem);
-                bool isShell = bucket.topology().is_shell();
-                bool isInBlock = bucket.member(*block);
-                bool isActive = activeSelector(bucket);
-                if (!isShell && isInBlock && isActive) {
-                    numSolidElementsInBlock++;
+                if (!bucket.topology().is_shell()) {
+                    if (bucket.member(block->mesh_meta_data_ordinal())) {
+                        if (activeSelector(bucket)) {
+                            numSolidElementsInBlock++;
+                        }
+                    }
                 }
                 if (!isModified) {
                     isModified = !(bulk.state(elem) == stk::mesh::Unchanged);
@@ -127,15 +125,15 @@ std::pair<bool,bool> is_sideset_internal_and_modified(const stk::mesh::BulkData&
     {
         std::vector<const stk::mesh::Part*> blocks = bulk.mesh_meta_data().get_blocks_touching_surface(&surfacePart);
 
-        stk::mesh::EntityVector sides;
-        stk::mesh::get_selected_entities(surfacePart, bulk.buckets(bulk.mesh_meta_data().side_rank()), sides);
-
-        for(stk::mesh::Entity side : sides) {
-            std::pair<bool,bool> internalAndModified = is_side_internal_and_modified(bulk, side, blocks, activeSelector);
-            isInternalAndModified.first |= internalAndModified.first;
-            isInternalAndModified.second |= internalAndModified.second;
-            if (isInternalAndModified.first && isInternalAndModified.second) {
-              return isInternalAndModified;
+        const stk::mesh::BucketVector& buckets = bulk.get_buckets(bulk.mesh_meta_data().side_rank(), surfacePart);
+        for(const stk::mesh::Bucket* bptr : buckets) {
+            for(stk::mesh::Entity side : *bptr) {
+                std::pair<bool,bool> internalAndModified = is_side_internal_and_modified(bulk, side, blocks, activeSelector);
+                isInternalAndModified.first |= internalAndModified.first;
+                isInternalAndModified.second |= internalAndModified.second;
+                if (isInternalAndModified.first && isInternalAndModified.second) {
+                  return isInternalAndModified;
+                }
             }
         }
     }
@@ -279,11 +277,11 @@ void SidesetUpdater::started_modification_end_notification()
 
 void SidesetUpdater::fill_values_to_reduce(std::vector<size_t> &valuesToReduce)
 {
+  if (!isActive){return;}
     valuesToReduce.clear();
     if(bulkData.was_mesh_modified_since_sideset_creation())
     {
         std::vector<const stk::mesh::Part *> surfacesInMap = bulkData.mesh_meta_data().get_surfaces_in_surface_to_block_map();
-        std::set<const stk::mesh::Part*, part_compare_by_ordinal> parents;
 
         valuesToReduce.assign(surfacesInMap.size(), 0);
 

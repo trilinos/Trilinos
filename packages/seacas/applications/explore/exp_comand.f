@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       SUBROUTINE COMAND (A, IA, EXODUS, DBNAME, QAREC, INFO,
@@ -380,6 +380,18 @@ C *** GENESIS Print Commands ***
               call selset(lisnp(0), lisnp(1),
      *          numnps, lisnps, lnpsnl,
      *          idnps, nnnps, ixnnps, ltnnps, "nodes")
+            end if
+
+          else if (FFMATC (IFLD, INTYP, CFIELD, 'SSET', 4) .OR.
+     *      FFMATC (IFLD, INTYP, CFIELD, 'SIDESET', 7)) THEN
+            CALL RIXID (DUMLIN, IFLD, INTYP, CFIELD, IFIELD,
+     &        'side set ID',
+     &        NUMESS, IDESS, LISESS(0), LISESS(1), *270)
+            if (lisess(0) .gt. 0) then
+               CALL MDRSRV ('SCR',    KSCR,  NUMNP)
+              call selssetn(lisnp(0), lisnp(1), 
+     *              lisess, idess, "nodes", ia(kscr), ia)
+              call MDDEL('SCR')
             end if
 
           else if (FFMATC (IFLD, INTYP, CFIELD, 'BLOCK', 3) .OR.

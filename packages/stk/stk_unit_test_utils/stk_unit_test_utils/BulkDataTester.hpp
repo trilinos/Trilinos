@@ -191,7 +191,7 @@ public:
 
     bool my_is_entity_in_sharing_comm_map(stk::mesh::Entity entity)
     {
-        return this->is_entity_in_sharing_comm_map(entity);
+        return this->in_shared(entity);
     }
 
     void my_update_sharing_after_change_entity_owner()
@@ -232,7 +232,7 @@ public:
     void my_internal_resolve_shared_modify_delete()
     {
         stk::mesh::EntityVector entitiesNoLongerShared;
-        this->internal_resolve_shared_modify_delete(entitiesNoLongerShared);
+        this->m_meshModification.internal_resolve_shared_modify_delete(entitiesNoLongerShared);
     }
 
     void my_internal_resolve_ghosted_modify_delete()

@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -84,7 +84,6 @@ LocalNodeIds).
 
 \param[out]  side_sets_side_list  Returned array containing the sides for all
 side sets.
-
 
 The following code segment will convert side sets described
 by nodes to side sets described by local side numbers:
@@ -244,7 +243,9 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   EX_UNUSED(side_sets_elem_index);
   EX_UNUSED(side_sets_node_index);

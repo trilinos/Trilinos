@@ -61,7 +61,7 @@ void SharedSidesCommunication::pack_shared_side_nodes_of_elements(stk::CommSpars
     }
 }
 
-SideNodeToReceivedElementDataMap SharedSidesCommunication::unpack_side_data(stk::CommSparse comm) const
+SideNodeToReceivedElementDataMap SharedSidesCommunication::unpack_side_data(stk::CommSparse &comm) const
 {
     SideNodeToReceivedElementDataMap element_side_data_received;
     std::vector<stk::mesh::EntityKey> node_keys;
@@ -1539,8 +1539,6 @@ void add_shared_side_to_element(stk::mesh::BulkData& bulkData,
 
     int other_proc = parallel_edge_info.get_proc_rank_of_neighbor();
     int owning_proc = std::min(other_proc, bulkData.parallel_rank());
-    if(bulkData.state(side) != stk::mesh::Created)
-        owning_proc = bulkData.parallel_owner_rank(side);
     shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, owning_proc));
 }
 
@@ -1568,11 +1566,6 @@ const stk::mesh::BulkData& ElemElemGraph::get_mesh() const
 {
     return m_bulk_data;
 }
-
-// SideSetEntry
-// extract_skinned_sideset
-// SideSetEntryLess
-// create_side_entities_given_sideset
 
 void ElemElemGraph::create_side_entities(const std::vector<int> &exposedSides,
                                          impl::LocalId localId,

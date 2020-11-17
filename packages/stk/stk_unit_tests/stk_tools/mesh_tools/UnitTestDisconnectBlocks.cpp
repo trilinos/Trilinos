@@ -1,5 +1,6 @@
 #include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
 #include "stk_unit_test_utils/getOption.h"
+#include "DisconnectBlocksMeshConstruction.hpp"
 #include "stk_util/parallel/ParallelReduce.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
 #include <algorithm>
@@ -19,1369 +20,9 @@
 #include <stk_tools/mesh_tools/DisconnectUtils.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
+#include <stk_unit_test_utils/ConstructedMesh.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <string>
-
-namespace {
-
-struct BlockConnection {
-  BlockConnection(const std::string& b1, const std::string& b2)
-  : block1(b1), block2(b2), numExpectedIntersectingNodes(0) { }
-
-  BlockConnection(const std::string& b1, const std::string& b2, unsigned expectedNumNodes)
-  : block1(b1), block2(b2), numExpectedIntersectingNodes(expectedNumNodes) { }
-
-  std::string block1;
-  std::string block2 = 0;
-  unsigned numExpectedIntersectingNodes = 0;
-};
-
-typedef std::vector<BlockConnection> BlockConnectionVector;
-
-stk::tools::BlockPairVector convert_connection_vector_to_pair_vector(const stk::mesh::BulkData& bulk, const BlockConnectionVector& disconnectConnVector)
-{
-  stk::tools::BlockPairVector pairVector;
-  const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
-  stk::tools::impl::PartPairLess comparator;
-
-  for(const BlockConnection& connection : disconnectConnVector) {
-    stk::mesh::Part* part1 = meta.get_part(connection.block1);
-    stk::mesh::Part* part2 = meta.get_part(connection.block2);
-
-    stk::util::insert_keep_sorted_and_unique(stk::tools::impl::get_block_pair(part1, part2), pairVector, comparator);
-  }
-
-  return pairVector;
-}
-
-stk::tools::BlockPairVector get_local_reconnect_list(const stk::mesh::BulkData& bulk, const BlockConnectionVector& disconnectList)
-{
-  stk::tools::BlockPairVector convertedDisconnectList = convert_connection_vector_to_pair_vector(bulk, disconnectList);
-
-  return stk::tools::impl::get_local_reconnect_list(bulk, convertedDisconnectList);
-}
-
-void create_sides_between_blocks(stk::mesh::BulkData& bulk,
-                                 const std::string& block1Name,
-                                 const std::string& block2Name,
-                                 const std::string& sidePartName)
-{
-  stk::mesh::Part& block1 = *bulk.mesh_meta_data().get_part(block1Name);
-  stk::mesh::Part& block2 = *bulk.mesh_meta_data().get_part(block2Name);
-  stk::mesh::Part& sidePart = *bulk.mesh_meta_data().get_part(sidePartName);
-
-  stk::mesh::Selector blockSelector = block1 | block2;
-  stk::mesh::create_interior_block_boundary_sides(bulk, blockSelector, stk::mesh::PartVector{&sidePart});
-}
-
-void create_all_boundary_sides(stk::mesh::BulkData& bulk, const std::string& sidePartName)
-{
-  stk::mesh::Part& sidePart = *bulk.mesh_meta_data().get_part(sidePartName);
-  stk::mesh::PartVector allBlocksInMesh;
-  stk::tools::impl::get_all_blocks_in_mesh(bulk, allBlocksInMesh);
-
-  stk::mesh::Selector blockSelector = stk::mesh::selectUnion(allBlocksInMesh);
-  stk::mesh::create_exposed_block_boundary_sides(bulk, blockSelector, stk::mesh::PartVector{&sidePart});
-}
-
-unsigned get_num_surface_nodes(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blockPartNames)
-{
-  stk::mesh::PartVector blockParts;
-  stk::mesh::EntityRank rank = bulk.mesh_meta_data().side_rank();
-  for(const std::string& blockName : blockPartNames) {
-    stk::mesh::Part* part = bulk.mesh_meta_data().get_part(blockName);
-    ThrowRequire(part != nullptr);
-    ThrowRequire(part->primary_entity_rank() == rank);
-    blockParts.push_back(part);
-  }
-  stk::mesh::Selector blockSelector =  stk::mesh::selectUnion(blockParts) & bulk.mesh_meta_data().locally_owned_part();
-  unsigned localCount = stk::mesh::count_selected_entities(blockSelector, bulk.buckets(stk::topology::NODE_RANK));
-  return stk::get_global_sum(MPI_COMM_WORLD, localCount);
-}
-
-void create_sideset(stk::mesh::BulkData& bulk,
-                    const std::string& surfacePartName,
-                    const std::vector<std::string>& blockPartNames)
-{
-  stk::mesh::ConstPartVector blockParts;
-  for(const std::string& blockName : blockPartNames) {
-    stk::mesh::Part* part = bulk.mesh_meta_data().get_part(blockName);
-    ThrowRequire(part != nullptr);
-    blockParts.push_back(part);
-  }
-  stk::mesh::Part& surfacePart = *bulk.mesh_meta_data().get_part(surfacePartName);
-
-  bulk.mesh_meta_data().set_surface_to_block_mapping(&surfacePart, blockParts);
-  bulk.create_sideset(surfacePart);
-}
-
-void move_elems_from_block_to_block(stk::mesh::BulkData& bulk,
-                                    const std::vector<stk::mesh::EntityId>& elemIDs,
-                                    const std::string& fromBlockName,
-                                    const std::string& toBlockName)
-{
-  stk::mesh::Part& fromBlock = *bulk.mesh_meta_data().get_part(fromBlockName);
-  stk::mesh::Part& toBlock = *bulk.mesh_meta_data().get_part(toBlockName);
-
-  stk::mesh::EntityVector elems;
-  for(stk::mesh::EntityId elemID : elemIDs) {
-    stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, elemID);
-    if (bulk.is_valid(elem) && bulk.bucket(elem).owned()) {
-      elems.push_back(elem);
-    }
-  }
-
-  bulk.batch_change_entity_parts(elems, stk::mesh::PartVector{&toBlock}, stk::mesh::PartVector{&fromBlock});
-}
-
-unsigned get_num_common_entities(const stk::mesh::BulkData & bulk, const stk::mesh::PartVector & blocks, const stk::mesh::EntityRank rank)
-{
-  stk::mesh::Selector selector;
-  if(!blocks.empty()) {
-    for (size_t i = 0; i < blocks.size()-1; ++i) {
-      for (size_t j = i+1; j < blocks.size(); ++j) {
-        selector |= (*blocks[i] & *blocks[j]);
-      }
-    }
-  }
-
-  selector &= bulk.mesh_meta_data().locally_owned_part();
-
-  unsigned localNumCommonEntities = stk::mesh::count_selected_entities(selector, bulk.buckets(rank));
-
-  return stk::get_global_sum(MPI_COMM_WORLD, localNumCommonEntities);
-}
-
-unsigned get_num_intersecting_nodes(const stk::mesh::BulkData & bulk, const stk::mesh::PartVector & blocks)
-{
-  return get_num_common_entities(bulk, blocks, stk::topology::NODE_RANK);
-}
-
-unsigned get_num_common_sides(const stk::mesh::BulkData & bulk, const stk::mesh::PartVector & blocks)
-{
-  return get_num_common_entities(bulk, blocks, bulk.mesh_meta_data().side_rank());
-}
-
-unsigned get_num_total_entities(const stk::mesh::BulkData & bulk, const stk::mesh::EntityRank rank)
-{
-  unsigned localNumTotalEntities = stk::mesh::count_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(rank));
-
-  return stk::get_global_sum(MPI_COMM_WORLD, localNumTotalEntities);
-}
-
-unsigned get_num_total_nodes(const stk::mesh::BulkData & bulk)
-{
-  return get_num_total_entities(bulk, stk::topology::NODE_RANK);
-}
-
-unsigned get_num_total_sides(const stk::mesh::BulkData & bulk)
-{
-  return get_num_total_entities(bulk, bulk.mesh_meta_data().side_rank());
-}
-
-bool check_orphaned_nodes(stk::mesh::BulkData & bulk)
-{
-  bool foundOrphanedNode = false;
-  for (stk::mesh::Bucket * bucket : bulk.buckets(stk::topology::NODE_RANK)) {
-    for (stk::mesh::Entity node : *bucket) {
-      const unsigned numElems = bulk.num_elements(node);
-      if (numElems == 0u) {
-        foundOrphanedNode = true;
-        std::cout << "[p" << bulk.parallel_rank() << "] Found orphaned node: " << bulk.entity_key(node) << std::endl;
-      }
-    }
-  }
-  return foundOrphanedNode;
-}
-
-void output_mesh(stk::mesh::BulkData & bulk, const std::string & fileName)
-{
-  std::string writeOutput = stk::unit_test_util::get_option("--output", "off");
-  if (writeOutput == "on") {
-    stk::io::write_mesh(fileName, bulk);
-  }
-}
-
-void output_mesh(stk::mesh::BulkData & bulk)
-{
-  const std::string fileName = std::string(::testing::UnitTest::GetInstance()->current_test_info()->name()) + ".g";
-  output_mesh(bulk, fileName);
-}
-
-int get_debug_level()
-{
-  int level = stk::unit_test_util::get_command_line_option("--debug", 0);
-  return std::max(level, 0);
-}
-
-// create mesh
-stk::mesh::Part & create_part(stk::mesh::MetaData& meta, const stk::topology topology, const std::string & blockName, int64_t blockId)
-{
-  stk::mesh::Part& part = meta.declare_part_with_topology(blockName, topology);
-  stk::io::put_io_part_attribute(part);
-  meta.set_part_id(part, blockId);
-  return part;
-}
-
-stk::mesh::PartVector setup_mesh_1block_1quad(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1";
-  std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
-
-  EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {&block1}));
-
-  return {&block1};
-}
-
-stk::mesh::PartVector setup_mesh_2block_1quad(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1";
-  std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
-
-  EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {&block1, &block2}));
-  EXPECT_EQ(4u, get_num_total_nodes(bulk));
-
-  return {&block1, &block2};
-}
-
-stk::mesh::PartVector setup_mesh_2block_2quad(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-
-  std::string meshDesc;
-  if (bulk.parallel_size() == 1) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-               "0,2,QUAD_4_2D,2,3,6,5,block_2";
-  }
-  else {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-               "1,2,QUAD_4_2D,2,3,6,5,block_2";
-  }
-  std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
-
-  EXPECT_EQ(2u, get_num_intersecting_nodes(bulk, {&block1, &block2}));
-  EXPECT_EQ(6u, get_num_total_nodes(bulk));
-
-  return {&block1, &block2};
-}
-
-stk::mesh::PartVector setup_mesh_2block_2quad_reversed(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-
-  std::string meshDesc;
-  if (bulk.parallel_size() == 1) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_2\n"
-               "0,2,QUAD_4_2D,2,3,6,5,block_1";
-  }
-  else {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_2\n"
-               "1,2,QUAD_4_2D,2,3,6,5,block_1";
-  }
-  std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
-
-  EXPECT_EQ(2u, get_num_intersecting_nodes(bulk, {&block1, &block2}));
-  EXPECT_EQ(6u, get_num_total_nodes(bulk));
-
-  return {&block1, &block2};
-}
-
-stk::mesh::PartVector setup_mesh_2block_4quad_corner(stk::mesh::BulkData& bulk, int decompPattern = 0)
-{
-  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-
-  std::string meshDesc;
-  if (bulk.parallel_size() == 1) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-               "0,2,QUAD_4_2D,2,3,6,5,block_2\n"
-               "0,3,QUAD_4_2D,4,5,8,7,block_1\n"
-               "0,4,QUAD_4_2D,5,6,9,8,block_1";
-  }
-  else {
-    if (decompPattern == 1) {
-      // p0 for block_1 and p1 for block_2
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-                 "1,2,QUAD_4_2D,2,3,6,5,block_2\n"
-                 "0,3,QUAD_4_2D,4,5,8,7,block_1\n"
-                 "0,4,QUAD_4_2D,5,6,9,8,block_1";
-    }
-    else if (decompPattern == 2) {
-      // p0 for bottom half and p1 for top half
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-                 "0,2,QUAD_4_2D,2,3,6,5,block_2\n"
-                 "1,3,QUAD_4_2D,4,5,8,7,block_1\n"
-                 "1,4,QUAD_4_2D,5,6,9,8,block_1";
-    }
-    else if (decompPattern == 3) {
-      // p0 for non-face-adjacent block_1 element, p1 for block_2 and face-adjacent block_1 elements
-      meshDesc = "1,1,QUAD_4_2D,1,2,5,4,block_1\n"
-                 "1,2,QUAD_4_2D,2,3,6,5,block_2\n"
-                 "0,3,QUAD_4_2D,4,5,8,7,block_1\n"
-                 "1,4,QUAD_4_2D,5,6,9,8,block_1";
-    }
-    else if (decompPattern == 4) {
-      // p0 diagonal, p1 off-diagonal (checkerboard)
-      meshDesc = "1,1,QUAD_4_2D,1,2,5,4,block_1\n"
-                 "0,2,QUAD_4_2D,2,3,6,5,block_2\n"
-                 "0,3,QUAD_4_2D,4,5,8,7,block_1\n"
-                 "1,4,QUAD_4_2D,5,6,9,8,block_1";
-    }
-    else {
-      std::cerr << "ERROR: Unexpected decomposition pattern (" << decompPattern << ")!" << std::endl;
-      exit(1);
-    }
-  }
-  std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
-
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
-
-  EXPECT_EQ(3u, get_num_intersecting_nodes(bulk, {&block1, &block2}));
-  EXPECT_EQ(9u, get_num_total_nodes(bulk));
-
-  return {&block1, &block2};
-}
-
-stk::mesh::PartVector setup_mesh_2block_4quad_swappedCorner(stk::mesh::BulkData& bulk, int decompPattern = 0)
-{
-  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-
-  std::string meshDesc;
-  if (bulk.parallel_size() == 1) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_2\n"
-               "0,2,QUAD_4_2D,2,3,6,5,block_1\n"
-               "0,3,QUAD_4_2D,4,5,8,7,block_2\n"
-               "0,4,QUAD_4_2D,5,6,9,8,block_2";
-  }
-  else if (bulk.parallel_size() == 2) {
-    if (decompPattern == 1) {
-      // p0 for block_1 and p1 for block_2
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_2\n"
-                 "1,2,QUAD_4_2D,2,3,6,5,block_1\n"
-                 "0,3,QUAD_4_2D,4,5,8,7,block_2\n"
-                 "0,4,QUAD_4_2D,5,6,9,8,block_2";
-    }
-    else if (decompPattern == 2) {
-      // p0 for bottom half and p1 for top half
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_2\n"
-                 "0,2,QUAD_4_2D,2,3,6,5,block_1\n"
-                 "1,3,QUAD_4_2D,4,5,8,7,block_2\n"
-                 "1,4,QUAD_4_2D,5,6,9,8,block_2";
-    }
-    else if (decompPattern == 3) {
-      // p0 for non-face-adjacent block_2 element, p1 for block_1 and face-adjacent block_2 elements
-      meshDesc = "1,1,QUAD_4_2D,1,2,5,4,block_2\n"
-                 "1,2,QUAD_4_2D,2,3,6,5,block_1\n"
-                 "0,3,QUAD_4_2D,4,5,8,7,block_2\n"
-                 "1,4,QUAD_4_2D,5,6,9,8,block_2";
-    }
-    else if (decompPattern == 4) {
-      // p0 diagonal, p1 off-diagonal (checkerboard)
-      meshDesc = "1,1,QUAD_4_2D,1,2,5,4,block_2\n"
-                 "0,2,QUAD_4_2D,2,3,6,5,block_1\n"
-                 "0,3,QUAD_4_2D,4,5,8,7,block_2\n"
-                 "1,4,QUAD_4_2D,5,6,9,8,block_2";
-    }
-    else {
-      std::cerr << "ERROR: Unexpected decomposition pattern (" << decompPattern << ")!" << std::endl;
-      exit(1);
-    }
-  }
-  else {
-    if (decompPattern == 1) {
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_2\n"
-                 "0,2,QUAD_4_2D,2,3,6,5,block_1\n"
-                 "1,3,QUAD_4_2D,4,5,8,7,block_2\n"
-                 "2,4,QUAD_4_2D,5,6,9,8,block_2";
-    }
-    else if (decompPattern == 2) {
-      meshDesc = "1,1,QUAD_4_2D,1,2,5,4,block_2\n"
-                 "0,2,QUAD_4_2D,2,3,6,5,block_1\n"
-                 "1,3,QUAD_4_2D,4,5,8,7,block_2\n"
-                 "2,4,QUAD_4_2D,5,6,9,8,block_2";
-    }
-    else if (decompPattern == 3) {
-      meshDesc = "1,1,QUAD_4_2D,1,2,5,4,block_2\n"
-                 "0,2,QUAD_4_2D,2,3,6,5,block_1\n"
-                 "0,3,QUAD_4_2D,4,5,8,7,block_2\n"
-                 "2,4,QUAD_4_2D,5,6,9,8,block_2";
-    }
-    else if (decompPattern == 4) {
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_2\n"
-                 "1,2,QUAD_4_2D,2,3,6,5,block_1\n"
-                 "2,3,QUAD_4_2D,4,5,8,7,block_2\n"
-                 "0,4,QUAD_4_2D,5,6,9,8,block_2";
-    }
-  }
-  std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
-
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
-
-  EXPECT_EQ(3u, get_num_intersecting_nodes(bulk, {&block1, &block2}));
-  EXPECT_EQ(9u, get_num_total_nodes(bulk));
-
-  return {&block1, &block2};
-}
-
-stk::mesh::PartVector create_3_blocks_order1(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::PartVector blocks(3);
-  blocks[0] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  blocks[1] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-  blocks[2] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
-  return blocks;
-}
-
-stk::mesh::PartVector create_3_blocks_order2(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::PartVector blocks(3);
-  blocks[0] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-  blocks[1] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
-  blocks[2] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  return blocks;
-}
-
-stk::mesh::PartVector create_3_blocks_order3(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::PartVector blocks(3);
-  blocks[0] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
-  blocks[1] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  blocks[2] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-  return blocks;
-}
-
-stk::mesh::PartVector create_3_blocks_order4(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::PartVector blocks(3);
-  blocks[0] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
-  blocks[1] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-  blocks[2] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  return blocks;
-}
-
-stk::mesh::PartVector create_3_blocks_order5(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::PartVector blocks(3);
-  blocks[0] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-  blocks[1] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  blocks[2] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
-  return blocks;
-}
-
-stk::mesh::PartVector create_3_blocks_order6(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::PartVector blocks(3);
-  blocks[0] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  blocks[1] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
-  blocks[2] = &create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-  return blocks;
-}
-
-void setup_mesh_3block_4quad_base(stk::mesh::BulkData& bulk, stk::mesh::PartVector & blocks, unsigned decompPattern)
-{
-  std::string meshDesc;
-  if (bulk.parallel_size() == 1) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-               "0,2,QUAD_4_2D,2,3,6,5,block_2\n"
-               "0,3,QUAD_4_2D,4,5,8,7,block_1\n"
-               "0,4,QUAD_4_2D,5,6,9,8,block_3";
-  }
-  else if (bulk.parallel_size() == 2) {
-    if (decompPattern == 1) {
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-                 "1,2,QUAD_4_2D,2,3,6,5,block_2\n"
-                 "0,3,QUAD_4_2D,4,5,8,7,block_1\n"
-                 "1,4,QUAD_4_2D,5,6,9,8,block_3";
-    }
-    else if (decompPattern == 2) {
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-                 "0,2,QUAD_4_2D,2,3,6,5,block_2\n"
-                 "1,3,QUAD_4_2D,4,5,8,7,block_1\n"
-                 "1,4,QUAD_4_2D,5,6,9,8,block_3";
-    }
-    else if (decompPattern == 3) {
-      meshDesc = "1,1,QUAD_4_2D,1,2,5,4,block_1\n"
-                 "0,2,QUAD_4_2D,2,3,6,5,block_2\n"
-                 "0,3,QUAD_4_2D,4,5,8,7,block_1\n"
-                 "0,4,QUAD_4_2D,5,6,9,8,block_3";
-    }
-    else {
-      std::cerr << "ERROR: Unexpected decomposition pattern (" << decompPattern << ")!" << std::endl;
-      exit(1);
-    }
-  }
-  else {
-    if (decompPattern == 1) {
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-                 "2,2,QUAD_4_2D,2,3,6,5,block_2\n"
-                 "0,3,QUAD_4_2D,4,5,8,7,block_1\n"
-                 "1,4,QUAD_4_2D,5,6,9,8,block_3";
-    }
-    else if (decompPattern == 2) {
-      meshDesc = "2,1,QUAD_4_2D,1,2,5,4,block_1\n"
-                 "0,2,QUAD_4_2D,2,3,6,5,block_2\n"
-                 "1,3,QUAD_4_2D,4,5,8,7,block_1\n"
-                 "0,4,QUAD_4_2D,5,6,9,8,block_3";
-    }
-    else if (decompPattern == 3) {
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-                 "0,2,QUAD_4_2D,2,3,6,5,block_2\n"
-                 "1,3,QUAD_4_2D,4,5,8,7,block_1\n"
-                 "2,4,QUAD_4_2D,5,6,9,8,block_3";
-    }
-    else {
-      std::cerr << "ERROR: Unexpected decomposition pattern (" << decompPattern << ")!" << std::endl;
-      exit(1);
-    }
-  }
-  std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
-
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
-
-  EXPECT_EQ(4u, get_num_intersecting_nodes(bulk, blocks));
-  EXPECT_EQ(9u, get_num_total_nodes(bulk));
-}
-
-stk::mesh::PartVector setup_mesh_3block_4quad(stk::mesh::BulkData& bulk, unsigned blockOrder, unsigned decompPattern)
-{
-  stk::mesh::PartVector blocks;
-  if (blockOrder == 1) {
-    blocks = create_3_blocks_order1(bulk);
-  } else if (blockOrder == 2) {
-    blocks = create_3_blocks_order2(bulk);
-  } else if (blockOrder == 3) {
-    blocks = create_3_blocks_order3(bulk);
-  } else if (blockOrder == 4) {
-    blocks = create_3_blocks_order4(bulk);
-  } else if (blockOrder == 5) {
-    blocks = create_3_blocks_order5(bulk);
-  } else if (blockOrder == 6) {
-    blocks = create_3_blocks_order6(bulk);
-  } else {
-    std::cerr << "ERROR: Unexpected part ordinal ordering!!!" << std::endl;
-    exit(1);
-  }
-
-  setup_mesh_3block_4quad_base(bulk, blocks, decompPattern);
-  return blocks;
-}
-
-void test_mesh_3block_4quad(stk::mesh::BulkData& bulk, unsigned blockOrder, unsigned decompPattern) {
-  stk::mesh::PartVector blocks = setup_mesh_3block_4quad(bulk, blockOrder, decompPattern);
-
-  output_mesh(bulk, "disconnect_3block_4quad_blockOrder" + std::to_string(blockOrder) + "_decomp" + std::to_string(decompPattern) + "_init.g");
-
-  stk::tools::disconnect_all_blocks(bulk);
-
-  EXPECT_EQ(0u,  get_num_intersecting_nodes(bulk, blocks));
-  EXPECT_EQ(14u, get_num_total_nodes(bulk));
-  EXPECT_FALSE(check_orphaned_nodes(bulk));
-
-  output_mesh(bulk, "disconnect_3block_4quad_blockOrder" + std::to_string(blockOrder) + "_decomp" + std::to_string(decompPattern) + ".g");
-}
-
-stk::mesh::PartVector setup_mesh_3block_4quad_keepLowerRight(stk::mesh::BulkData& bulk, unsigned decompPattern)
-{
-  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-  stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
-
-  std::string meshDesc;
-  if (bulk.parallel_size() == 1) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_3\n"
-               "0,2,QUAD_4_2D,2,3,6,5,block_1\n"
-               "0,3,QUAD_4_2D,4,5,8,7,block_3\n"
-               "0,4,QUAD_4_2D,5,6,9,8,block_2";
-  }
-  else if (bulk.parallel_size() == 2) {
-    if (decompPattern == 1) {
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_3\n"
-                 "1,2,QUAD_4_2D,2,3,6,5,block_1\n"
-                 "0,3,QUAD_4_2D,4,5,8,7,block_3\n"
-                 "1,4,QUAD_4_2D,5,6,9,8,block_2";
-    }
-    else if (decompPattern == 2) {
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_3\n"
-                 "0,2,QUAD_4_2D,2,3,6,5,block_1\n"
-                 "1,3,QUAD_4_2D,4,5,8,7,block_3\n"
-                 "1,4,QUAD_4_2D,5,6,9,8,block_2";
-    }
-    else if (decompPattern == 3) {
-      meshDesc = "1,1,QUAD_4_2D,1,2,5,4,block_3\n"
-                 "0,2,QUAD_4_2D,2,3,6,5,block_1\n"
-                 "0,3,QUAD_4_2D,4,5,8,7,block_3\n"
-                 "0,4,QUAD_4_2D,5,6,9,8,block_2";
-    }
-    else {
-      std::cerr << "ERROR: Unexpected decomposition pattern (" << decompPattern << ")!" << std::endl;
-      exit(1);
-    }
-  }
-  else {
-    if (decompPattern == 1) {
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_3\n"
-                 "2,2,QUAD_4_2D,2,3,6,5,block_1\n"
-                 "0,3,QUAD_4_2D,4,5,8,7,block_3\n"
-                 "1,4,QUAD_4_2D,5,6,9,8,block_2";
-    }
-    else if (decompPattern == 2) {
-      meshDesc = "2,1,QUAD_4_2D,1,2,5,4,block_3\n"
-                 "0,2,QUAD_4_2D,2,3,6,5,block_1\n"
-                 "1,3,QUAD_4_2D,4,5,8,7,block_3\n"
-                 "0,4,QUAD_4_2D,5,6,9,8,block_2";
-    }
-    else if (decompPattern == 3) {
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_3\n"
-                 "0,2,QUAD_4_2D,2,3,6,5,block_1\n"
-                 "1,3,QUAD_4_2D,4,5,8,7,block_3\n"
-                 "2,4,QUAD_4_2D,5,6,9,8,block_2";
-    }
-    else {
-      std::cerr << "ERROR: Unexpected decomposition pattern (" << decompPattern << ")!" << std::endl;
-      exit(1);
-    }
-  }
-  std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
-
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
-
-  EXPECT_EQ(4u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3}));
-  EXPECT_EQ(9u, get_num_total_nodes(bulk));
-
-  return {&block1, &block2, &block3};
-}
-
-stk::mesh::PartVector setup_mesh_2block_4quad_checkerboard(stk::mesh::BulkData& bulk, unsigned decompPattern)
-{
-  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-
-  std::string meshDesc;
-  if (bulk.parallel_size() == 1) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-               "0,2,QUAD_4_2D,2,3,6,5,block_2\n"
-               "0,3,QUAD_4_2D,4,5,8,7,block_2\n"
-               "0,4,QUAD_4_2D,5,6,9,8,block_1";
-  }
-  else {
-    if (decompPattern == 1) {
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-                 "0,2,QUAD_4_2D,2,3,6,5,block_2\n"
-                 "1,3,QUAD_4_2D,4,5,8,7,block_2\n"
-                 "1,4,QUAD_4_2D,5,6,9,8,block_1";
-    }
-    else if (decompPattern == 2) {
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-                 "1,2,QUAD_4_2D,2,3,6,5,block_2\n"
-                 "1,3,QUAD_4_2D,4,5,8,7,block_2\n"
-                 "0,4,QUAD_4_2D,5,6,9,8,block_1";
-    }
-    else if (decompPattern == 3) {
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-                 "1,2,QUAD_4_2D,2,3,6,5,block_2\n"
-                 "1,3,QUAD_4_2D,4,5,8,7,block_2\n"
-                 "1,4,QUAD_4_2D,5,6,9,8,block_1";
-    }
-    else {
-      std::cerr << "ERROR: Unexpected decomposition pattern (" << decompPattern << ")!" << std::endl;
-      exit(1);
-    }
-  }
-  std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
-
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
-
-  EXPECT_EQ(5u, get_num_intersecting_nodes(bulk, {&block1, &block2}));
-  EXPECT_EQ(9u, get_num_total_nodes(bulk));
-
-  return {&block1, &block2};
-}
-
-stk::mesh::PartVector setup_mesh_3block_4quad_checkerboard(stk::mesh::BulkData& bulk, unsigned decompPattern)
-{
-  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-  stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
-
-  std::string meshDesc;
-  if (bulk.parallel_size() == 1) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-               "0,2,QUAD_4_2D,2,3,6,5,block_3\n"
-               "0,3,QUAD_4_2D,4,5,8,7,block_2\n"
-               "0,4,QUAD_4_2D,5,6,9,8,block_1";
-  }
-  else {
-    if (decompPattern == 1) {
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-                 "0,2,QUAD_4_2D,2,3,6,5,block_3\n"
-                 "1,3,QUAD_4_2D,4,5,8,7,block_2\n"
-                 "1,4,QUAD_4_2D,5,6,9,8,block_1";
-    }
-    else if (decompPattern == 2) {
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-                 "1,2,QUAD_4_2D,2,3,6,5,block_3\n"
-                 "1,3,QUAD_4_2D,4,5,8,7,block_2\n"
-                 "0,4,QUAD_4_2D,5,6,9,8,block_1";
-    }
-    else if (decompPattern == 3) {
-      meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-                 "1,2,QUAD_4_2D,2,3,6,5,block_3\n"
-                 "1,3,QUAD_4_2D,4,5,8,7,block_2\n"
-                 "1,4,QUAD_4_2D,5,6,9,8,block_1";
-    }
-    else {
-      std::cerr << "ERROR: Unexpected decomposition pattern (" << decompPattern << ")!" << std::endl;
-      exit(1);
-    }
-  }
-  std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
-
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
-
-  EXPECT_EQ(5u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3}));
-  EXPECT_EQ(9u, get_num_total_nodes(bulk));
-
-  return {&block1, &block2, &block3};
-}
-
-stk::mesh::PartVector setup_mesh_2block_2quad_diagonal(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-
-  std::string meshDesc;
-  if (bulk.parallel_size() == 1) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
-               "0,2,QUAD_4_2D,4,5,7,6,block_2";
-  }
-  else {
-    meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
-               "1,2,QUAD_4_2D,4,5,7,6,block_2";
-  }
-  std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,1, 1,2, 2,2 };
-
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
-
-  EXPECT_EQ(1u, get_num_intersecting_nodes(bulk, {&block1, &block2}));
-  EXPECT_EQ(7u, get_num_total_nodes(bulk));
-
-  return {&block1, &block2};
-}
-
-stk::mesh::PartVector setup_mesh_3block_4quad_bowtie(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-  stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
-
-  std::string meshDesc = "0,1,QUAD_4_2D,1,2, 6, 5,block_1\n"
-                         "0,2,QUAD_4_2D,3,4, 7, 6,block_2\n"
-                         "0,3,QUAD_4_2D,8,6,11,10,block_3\n"
-                         "0,4,QUAD_4_2D,6,9,13,12,block_1";
-  std::vector<double> coordinates = { 0,0, 0.9,0, 1.1,0, 2,0, 0,0.9, 1,1, 2,0.9, 0,1.1, 2,1.1, 0,2, 0.9,2, 1.1,2, 2,2 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
-
-  EXPECT_EQ( 1u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3}));
-  EXPECT_EQ(13u, get_num_total_nodes(bulk));
-
-  return {&block1, &block2, &block3};
-}
-
-void fill_mesh_description_4block_4quad_np1(stk::mesh::BulkData& bulk, unsigned blockOrder,
-    std::string& meshDesc, std::vector<double>& coordinates)
-{
-  ThrowRequire(bulk.parallel_size() == 1);
-
-  if (blockOrder == 1) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_4\n"
-               "0,2,QUAD_4_2D,2,3,6,5,block_3\n"
-               "0,3,QUAD_4_2D,4,5,8,7,block_2\n"
-               "0,4,QUAD_4_2D,5,6,9,8,block_1";
-  }
-  else if (blockOrder == 2) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_4\n"
-               "0,2,QUAD_4_2D,2,3,6,5,block_3\n"
-               "0,3,QUAD_4_2D,4,5,8,7,block_1\n"
-               "0,4,QUAD_4_2D,5,6,9,8,block_2";
-  }
-  else if (blockOrder == 3) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-               "0,2,QUAD_4_2D,2,3,6,5,block_2\n"
-               "0,3,QUAD_4_2D,4,5,8,7,block_3\n"
-               "0,4,QUAD_4_2D,5,6,9,8,block_4";
-  }
-  coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
-}
-
-void fill_mesh_description_4block_4quad_np2(stk::mesh::BulkData& bulk, unsigned blockOrder,
-    std::string& meshDesc, std::vector<double>& coordinates)
-{
-  ThrowRequire(bulk.parallel_size() == 2);
-  ThrowRequire(blockOrder <= 3 && blockOrder > 0);
-
-  if (blockOrder == 1) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_4\n"
-               "0,2,QUAD_4_2D,2,3,6,5,block_3\n"
-               "1,3,QUAD_4_2D,4,5,8,7,block_2\n"
-               "1,4,QUAD_4_2D,5,6,9,8,block_1";
-  }
-  else if (blockOrder == 2) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_4\n"
-               "0,2,QUAD_4_2D,2,3,6,5,block_3\n"
-               "1,3,QUAD_4_2D,4,5,8,7,block_1\n"
-               "1,4,QUAD_4_2D,5,6,9,8,block_2";
-  }
-  else if (blockOrder == 3) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-               "0,2,QUAD_4_2D,2,3,6,5,block_2\n"
-               "1,3,QUAD_4_2D,4,5,8,7,block_3\n"
-               "1,4,QUAD_4_2D,5,6,9,8,block_4";
-  }
-  coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
-}
-
-void fill_mesh_description_4block_4quad_np3(stk::mesh::BulkData& bulk, unsigned blockOrder,
-    std::string& meshDesc, std::vector<double>& coordinates)
-{
-  ThrowRequire(bulk.parallel_size() == 3);
-  ThrowRequire(blockOrder <= 3 && blockOrder > 0);
-
-  if (blockOrder == 1) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_4\n"
-               "1,2,QUAD_4_2D,2,3,6,5,block_3\n"
-               "1,3,QUAD_4_2D,4,5,8,7,block_2\n"
-               "2,4,QUAD_4_2D,5,6,9,8,block_1";
-  }
-  else if (blockOrder == 2) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_4\n"
-               "1,2,QUAD_4_2D,2,3,6,5,block_3\n"
-               "1,3,QUAD_4_2D,4,5,8,7,block_1\n"
-               "2,4,QUAD_4_2D,5,6,9,8,block_2";
-  }
-  else if (blockOrder == 3) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-               "1,2,QUAD_4_2D,2,3,6,5,block_2\n"
-               "1,3,QUAD_4_2D,4,5,8,7,block_3\n"
-               "2,4,QUAD_4_2D,5,6,9,8,block_4";
-  }
-  coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
-}
-
-void fill_mesh_description_4block_4quad_np4(stk::mesh::BulkData& bulk, unsigned blockOrder,
-    std::string& meshDesc, std::vector<double>& coordinates)
-{
-  ThrowRequire(bulk.parallel_size() == 4);
-  ThrowRequire(blockOrder <= 4 && blockOrder > 0);
-
-  if (blockOrder == 1) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
-        "1,2,QUAD_4_2D,2,3,6,5,block_2\n"
-        "2,3,QUAD_4_2D,4,5,8,7,block_3\n"
-        "3,4,QUAD_4_2D,5,6,9,8,block_4";
-  }
-  else if (blockOrder == 2) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_4\n"
-        "1,2,QUAD_4_2D,2,3,6,5,block_1\n"
-        "2,3,QUAD_4_2D,4,5,8,7,block_2\n"
-        "3,4,QUAD_4_2D,5,6,9,8,block_3";
-  }
-  else if (blockOrder == 3) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_3\n"
-        "1,2,QUAD_4_2D,2,3,6,5,block_4\n"
-        "2,3,QUAD_4_2D,4,5,8,7,block_1\n"
-        "3,4,QUAD_4_2D,5,6,9,8,block_2";
-  }
-  else if (blockOrder == 4) {
-    meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_2\n"
-        "1,2,QUAD_4_2D,2,3,6,5,block_3\n"
-        "2,3,QUAD_4_2D,4,5,8,7,block_4\n"
-        "3,4,QUAD_4_2D,5,6,9,8,block_1";
-  }
-
-  coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
-}
-
-stk::mesh::PartVector setup_mesh_4block_4quad(stk::mesh::BulkData& bulk, unsigned blockOrder)
-{
-  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-  stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
-  stk::mesh::Part & block4 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_4", 4);
-
-  std::string meshDesc;
-  std::vector<double> coordinates;
-  switch(bulk.parallel_size()) {
-  case 1:
-    fill_mesh_description_4block_4quad_np1(bulk, blockOrder, meshDesc, coordinates);
-    break;
-  case 2:
-    fill_mesh_description_4block_4quad_np2(bulk, blockOrder, meshDesc, coordinates);
-    break;
-  case 3:
-    fill_mesh_description_4block_4quad_np3(bulk, blockOrder, meshDesc, coordinates);
-    break;
-  case 4:
-    fill_mesh_description_4block_4quad_np4(bulk, blockOrder, meshDesc, coordinates);
-    break;
-  default:
-    ThrowRequireMsg(false, "Unexpected proc count for this test\n");
-    break;
-  }
-
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
-
-  EXPECT_EQ(5u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3, &block4}));
-  EXPECT_EQ(9u, get_num_total_nodes(bulk));
-
-  return {&block1, &block2, &block3, &block4};
-}
-
-void fill_mesh_description_6block_6quad_np1(stk::mesh::BulkData& bulk, std::string& meshDesc, std::vector<double>& coordinates)
-{
-  ThrowRequire(bulk.parallel_size() == 1);
-
-  meshDesc = "0,1,QUAD_4_2D,1,2,6,5,block_1\n"
-             "0,2,QUAD_4_2D,2,3,7,6,block_2\n"
-             "0,3,QUAD_4_2D,3,4,8,7,block_3\n"
-             "0,4,QUAD_4_2D,5,6,10,9,block_4\n"
-             "0,5,QUAD_4_2D,6,7,11,10,block_5\n"
-             "0,6,QUAD_4_2D,7,8,12,11,block_6\n";
-
-  coordinates = { 0,0, 1,0, 2,0, 3,0,
-                  0,1, 1,1, 2,1, 3,1,
-                  0,2, 1,2, 2,2, 3,2};
-}
-
-stk::mesh::PartVector setup_mesh_6block_6quad(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-  stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
-  stk::mesh::Part & block4 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_4", 4);
-  stk::mesh::Part & block5 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_5", 5);
-  stk::mesh::Part & block6 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_6", 6);
-
-  std::string meshDesc;
-  std::vector<double> coordinates;
-  switch(bulk.parallel_size()) {
-  case 1:
-    fill_mesh_description_6block_6quad_np1(bulk, meshDesc, coordinates);
-    break;
-  default:
-    ThrowRequireMsg(false, "Unexpected proc count for this test\n");
-    break;
-  }
-
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
-
-  EXPECT_EQ(8u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3, &block4, &block5, &block6}));
-  EXPECT_EQ(12u, get_num_total_nodes(bulk));
-
-  bulk.dump_mesh_per_proc("dump");
-  output_mesh(bulk, "initial.g");
-
-  return {&block1, &block2, &block3, &block4, &block5, &block6};
-}
-
-void fill_mesh_description_9block_9quad_np1(stk::mesh::BulkData& bulk, std::string& meshDesc, std::vector<double>& coordinates)
-{
-  ThrowRequire(bulk.parallel_size() == 1);
-
-  meshDesc = "0,1,QUAD_4_2D,1,2,6,5,block_1\n"
-             "0,2,QUAD_4_2D,2,3,7,6,block_2\n"
-             "0,3,QUAD_4_2D,3,4,8,7,block_3\n"
-             "0,4,QUAD_4_2D,5,6,10,9,block_4\n"
-             "0,5,QUAD_4_2D,6,7,11,10,block_5\n"
-             "0,6,QUAD_4_2D,7,8,12,11,block_6\n"
-             "0,7,QUAD_4_2D,9,10,14,13,block_7\n"
-             "0,8,QUAD_4_2D,10,11,15,14,block_8\n"
-             "0,9,QUAD_4_2D,11,12,16,15,block_9\n";
-
-  coordinates = { 0,0, 1,0, 2,0, 3,0,
-                  0,1, 1,1, 2,1, 3,1,
-                  0,2, 1,2, 2,2, 3,2,
-                  0,3, 1,3, 2,3, 3,3};
-}
-
-stk::mesh::PartVector setup_mesh_9block_9quad(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
-  stk::mesh::Part & block2 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_2", 2);
-  stk::mesh::Part & block3 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_3", 3);
-  stk::mesh::Part & block4 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_4", 4);
-  stk::mesh::Part & block5 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_5", 5);
-  stk::mesh::Part & block6 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_6", 6);
-  stk::mesh::Part & block7 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_7", 7);
-  stk::mesh::Part & block8 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_8", 8);
-  stk::mesh::Part & block9 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_9", 9);
-
-  std::string meshDesc;
-  std::vector<double> coordinates;
-  switch(bulk.parallel_size()) {
-  case 1:
-    fill_mesh_description_9block_9quad_np1(bulk, meshDesc, coordinates);
-    break;
-  default:
-    ThrowRequireMsg(false, "Unexpected proc count for this test\n");
-    break;
-  }
-
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
-
-  EXPECT_EQ(12u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3, &block4, &block5, &block6, &block7, &block8, &block9}));
-  EXPECT_EQ(16u, get_num_total_nodes(bulk));
-
-  bulk.dump_mesh_per_proc("dump");
-  output_mesh(bulk, "initial.g");
-
-  return {&block1, &block2, &block3, &block4, &block5, &block6, &block7, &block8, &block9};
-}
-
-stk::mesh::PartVector setup_mesh_1block_1hex(stk::mesh::BulkData& bulk)
-{
-  stk::io::fill_mesh("generated:1x1x1", bulk);
-
-  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
-
-  EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1}));
-  EXPECT_EQ(8u, get_num_total_nodes(bulk));
-  EXPECT_FALSE(check_orphaned_nodes(bulk));
-
-  return {block1};
-}
-
-stk::mesh::PartVector setup_mesh_2block_1hex(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part * block2 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
-  stk::io::fill_mesh("generated:1x1x1", bulk);
-  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
-
-  EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {block1, block2}));
-  EXPECT_EQ(8u, get_num_total_nodes(bulk));
-  EXPECT_FALSE(check_orphaned_nodes(bulk));
-
-  return {block1, block2};
-}
-
-stk::mesh::PartVector setup_mesh_2block_2hex(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part * block2 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
-  stk::io::fill_mesh("generated:1x1x2", bulk);
-  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
-
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{2}, "block_1", "block_2");
-
-  EXPECT_EQ( 4u, get_num_intersecting_nodes(bulk, {block1, block2}));
-  EXPECT_EQ(12u, get_num_total_nodes(bulk));
-  EXPECT_FALSE(check_orphaned_nodes(bulk));
-
-  return {block1, block2};
-}
-
-stk::mesh::PartVector setup_mesh_2block_2hex_withInternalSides(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part * block2 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
-  create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4, "surface_1", 1);
-
-  stk::io::fill_mesh("generated:1x1x2", bulk);
-  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
-
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{2}, "block_1", "block_2");
-
-  create_sideset(bulk, "surface_1", {"block_1"});
-  create_sides_between_blocks(bulk, "block_1", "block_2", "surface_1");
-
-  EXPECT_EQ( 4u, get_num_intersecting_nodes(bulk, {block1, block2}));
-  EXPECT_EQ( 1u, get_num_common_sides(bulk, {block1, block2}));
-  EXPECT_EQ(12u, get_num_total_nodes(bulk));
-  EXPECT_EQ( 1u, get_num_total_sides(bulk));
-  EXPECT_FALSE(check_orphaned_nodes(bulk));
-
-  return {block1, block2};
-}
-
-stk::mesh::PartVector setup_mesh_2block_2hex_withExternalSides(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part * block2 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
-  create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4, "surface_1", 1);
-
-  stk::io::fill_mesh("generated:1x1x2", bulk);
-  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
-
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{2}, "block_1", "block_2");
-
-  create_sideset(bulk, "surface_1", {"block_1", "block_2"});
-  create_all_boundary_sides(bulk, "surface_1");
-
-  EXPECT_EQ( 4u, get_num_intersecting_nodes(bulk, {block1, block2}));
-  EXPECT_EQ(12u, get_num_total_nodes(bulk));
-  EXPECT_EQ(10u, get_num_total_sides(bulk));
-  EXPECT_FALSE(check_orphaned_nodes(bulk));
-
-  return {block1, block2};
-}
-
-stk::mesh::PartVector setup_mesh_3block_4hex(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part * block2 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
-  stk::mesh::Part * block3 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_3", 3);
-
-  stk::io::fill_mesh("generated:1x2x2", bulk);
-  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
-
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{2}, "block_1", "block_2");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{4}, "block_1", "block_3");
-
-  EXPECT_EQ( 8u, get_num_intersecting_nodes(bulk, {block1, block2, block3}));
-  EXPECT_EQ(18u, get_num_total_nodes(bulk));
-  EXPECT_FALSE(check_orphaned_nodes(bulk));
-
-  return {block1, block2, block3};
-}
-
-stk::mesh::PartVector setup_mesh_3block_4hex_withInternalSides(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part * block2 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
-  stk::mesh::Part * block3 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_3", 3);
-  create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4, "surface_1", 1);
-  create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4, "surface_2", 2);
-
-  stk::io::fill_mesh("generated:1x2x2", bulk);
-  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
-
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{2}, "block_1", "block_2");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{4}, "block_1", "block_3");
-
-  create_sideset(bulk, "surface_1", {"block_1"});
-  create_sides_between_blocks(bulk, "block_1", "block_2", "surface_1");
-  create_sides_between_blocks(bulk, "block_1", "block_3", "surface_1");
-  create_sideset(bulk, "surface_2", {"block_2"});
-  create_sides_between_blocks(bulk, "block_2", "block_3", "surface_2");
-
-  EXPECT_EQ( 8u, get_num_intersecting_nodes(bulk, {block1, block2, block3}));
-  EXPECT_EQ( 3u, get_num_common_sides(bulk, {block1, block2, block3}));
-  EXPECT_EQ(18u, get_num_total_nodes(bulk));
-  EXPECT_EQ( 3u, get_num_total_sides(bulk));
-  EXPECT_FALSE(check_orphaned_nodes(bulk));
-
-  return {block1, block2, block3};
-}
-
-stk::mesh::PartVector setup_mesh_2block_2cubeOfTet(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part * block2 = &create_part(bulk.mesh_meta_data(), stk::topology::TET_4, "block_2", 2);
-
-  stk::io::fill_mesh("generated:1x1x2|tets", bulk);
-  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
-
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{7, 8, 9, 10, 11, 12},
-      "block_1", "block_2");
-
-  EXPECT_EQ( 4u, get_num_intersecting_nodes(bulk, {block1, block2}));
-  EXPECT_EQ(12u, get_num_total_nodes(bulk));
-  EXPECT_FALSE(check_orphaned_nodes(bulk));
-
-  return {block1, block2};
-}
-
-stk::mesh::PartVector setup_mesh_2block_2cubeOfTet_withInternalSides(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part * block2 = &create_part(bulk.mesh_meta_data(), stk::topology::TET_4, "block_2", 2);
-  create_part(bulk.mesh_meta_data(), stk::topology::TRI_3, "surface_1", 1);
-
-  stk::io::fill_mesh("generated:1x1x2|tets", bulk);
-  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
-
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{7, 8, 9, 10, 11, 12},
-      "block_1", "block_2");
-
-  create_sideset(bulk, "surface_1", {"block_1"});
-  create_sides_between_blocks(bulk, "block_1", "block_2", "surface_1");
-
-  EXPECT_EQ( 4u, get_num_intersecting_nodes(bulk, {block1, block2}));
-  EXPECT_EQ( 2u, get_num_common_sides(bulk, {block1, block2}));
-  EXPECT_EQ(12u, get_num_total_nodes(bulk));
-  EXPECT_EQ( 2u, get_num_total_sides(bulk));
-  EXPECT_FALSE(check_orphaned_nodes(bulk));
-
-  return {block1, block2};
-}
-
-stk::mesh::PartVector setup_mesh_3block_4cubeOfTet(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part * block2 = &create_part(bulk.mesh_meta_data(), stk::topology::TET_4, "block_2", 2);
-  stk::mesh::Part * block3 = &create_part(bulk.mesh_meta_data(), stk::topology::TET_4, "block_3", 3);
-
-  stk::io::fill_mesh("generated:1x2x2|tets", bulk);
-  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
-
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{7, 8, 9, 10, 11, 12}, "block_1", "block_2");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{19, 20, 21, 22, 23, 24}, "block_1", "block_3");
-
-  EXPECT_EQ( 8u, get_num_intersecting_nodes(bulk, {block1, block2, block3}));
-  EXPECT_EQ(18u, get_num_total_nodes(bulk));
-  EXPECT_FALSE(check_orphaned_nodes(bulk));
-
-  return {block1, block2, block3};
-}
-
-stk::mesh::PartVector setup_mesh_3block_4cubeOfTet_withInternalSides(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part * block2 = &create_part(bulk.mesh_meta_data(), stk::topology::TET_4, "block_2", 2);
-  stk::mesh::Part * block3 = &create_part(bulk.mesh_meta_data(), stk::topology::TET_4, "block_3", 3);
-  create_part(bulk.mesh_meta_data(), stk::topology::TRI_3, "surface_1", 1);
-  create_part(bulk.mesh_meta_data(), stk::topology::TRI_3, "surface_2", 2);
-
-  stk::io::fill_mesh("generated:1x2x2|tets", bulk);
-  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
-
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{7, 8, 9, 10, 11, 12}, "block_1", "block_2");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{19, 20, 21, 22, 23, 24}, "block_1", "block_3");
-
-  create_sideset(bulk, "surface_1", {"block_1"});
-  create_sides_between_blocks(bulk, "block_1", "block_2", "surface_1");
-  create_sides_between_blocks(bulk, "block_1", "block_3", "surface_1");
-  create_sideset(bulk, "surface_2", {"block_2"});
-  create_sides_between_blocks(bulk, "block_2", "block_3", "surface_2");
-
-  EXPECT_EQ( 8u, get_num_intersecting_nodes(bulk, {block1, block2, block3}));
-  EXPECT_EQ( 6u, get_num_common_sides(bulk, {block1, block2, block3}));
-  EXPECT_EQ(18u, get_num_total_nodes(bulk));
-  EXPECT_EQ( 6u, get_num_total_sides(bulk));
-  EXPECT_FALSE(check_orphaned_nodes(bulk));
-
-  return {block1, block2, block3};
-}
-
-stk::mesh::PartVector setup_mesh_4block_4hex(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part * block2 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
-  stk::mesh::Part * block3 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_3", 3);
-  stk::mesh::Part * block4 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_4", 4);
-
-  stk::io::fill_mesh("generated:1x2x2", bulk);
-  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
-
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{2}, "block_1", "block_2");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{3}, "block_1", "block_3");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{4}, "block_1", "block_4");
-
-  EXPECT_EQ(10u, get_num_intersecting_nodes(bulk, {block1, block2, block3, block4}));
-  EXPECT_EQ(18u, get_num_total_nodes(bulk));
-  EXPECT_FALSE(check_orphaned_nodes(bulk));
-
-  return {block1, block2, block3, block4};
-}
-
-stk::mesh::PartVector setup_mesh_4block_4hex_vertical_stack(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part * block2 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
-  stk::mesh::Part * block3 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_3", 3);
-  stk::mesh::Part * block4 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_4", 4);
-
-  stk::io::fill_mesh("generated:1x1x4", bulk);
-  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
-
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{2}, "block_1", "block_2");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{3}, "block_1", "block_3");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{4}, "block_1", "block_4");
-
-  EXPECT_EQ(12u, get_num_intersecting_nodes(bulk, {block1, block2, block3, block4}));
-  EXPECT_EQ(20u, get_num_total_nodes(bulk));
-  EXPECT_FALSE(check_orphaned_nodes(bulk));
-
-  return {block1, block2, block3, block4};
-}
-
-stk::mesh::PartVector setup_mesh_4block_8hex_cube(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part * block2 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
-  stk::mesh::Part * block3 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_3", 3);
-  stk::mesh::Part * block4 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_4", 4);
-
-  stk::io::fill_mesh("generated:2x2x2", bulk);
-  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
-
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{3}, "block_1", "block_2");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{4}, "block_1", "block_2");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{5}, "block_1", "block_3");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{6}, "block_1", "block_3");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{7}, "block_1", "block_4");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{8}, "block_1", "block_4");
-
-  EXPECT_EQ(15u, get_num_intersecting_nodes(bulk, {block1, block2, block3, block4}));
-  EXPECT_EQ(27u, get_num_total_nodes(bulk));
-  EXPECT_FALSE(check_orphaned_nodes(bulk));
-
-  return {block1, block2, block3, block4};
-}
-
-stk::mesh::PartVector setup_mesh_8block_8hex_cube(stk::mesh::BulkData& bulk)
-{
-  stk::mesh::Part * block2 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_2", 2);
-  stk::mesh::Part * block3 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_3", 3);
-  stk::mesh::Part * block4 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_4", 4);
-  stk::mesh::Part * block5 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_5", 5);
-  stk::mesh::Part * block6 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_6", 6);
-  stk::mesh::Part * block7 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_7", 7);
-  stk::mesh::Part * block8 = &create_part(bulk.mesh_meta_data(), stk::topology::HEX_8, "block_8", 8);
-
-  stk::io::fill_mesh("generated:2x2x2", bulk);
-  stk::mesh::Part * block1 = bulk.mesh_meta_data().get_part("block_1");
-
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{2}, "block_1", "block_2");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{3}, "block_1", "block_3");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{4}, "block_1", "block_4");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{5}, "block_1", "block_5");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{6}, "block_1", "block_6");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{7}, "block_1", "block_7");
-  move_elems_from_block_to_block(bulk, std::vector<stk::mesh::EntityId>{8}, "block_1", "block_8");
-
-  EXPECT_EQ(19u, get_num_intersecting_nodes(bulk, {block1, block2, block3, block4, block5, block6, block7, block8}));
-  EXPECT_EQ(27u, get_num_total_nodes(bulk));
-  EXPECT_FALSE(check_orphaned_nodes(bulk));
-
-  return {block1, block2, block3, block4, block5, block6, block7, block8};
-}
-
-std::vector<std::string> get_part_names(const stk::mesh::PartVector& parts)
-{
-  std::vector<std::string> partNames;
-
-  for(stk::mesh::Part* part : parts) {
-    partNames.push_back(part->name());
-  }
-
-  return partNames;
-}
-
-stk::mesh::PartVector setup_mesh_8block_8hex_withExternalSides(stk::mesh::BulkData& bulk)
-{
-  create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4, "surface_1", 1);
-
-  stk::mesh::PartVector createdParts = setup_mesh_8block_8hex_cube(bulk);
-
-  create_sideset(bulk, "surface_1", get_part_names(createdParts));
-  create_all_boundary_sides(bulk, "surface_1");
-
-  EXPECT_EQ(27u, get_num_total_nodes(bulk));
-  EXPECT_EQ(24u, get_num_total_sides(bulk));
-  EXPECT_FALSE(check_orphaned_nodes(bulk));
-
-  return createdParts;
-}
-}//namespace
 
 class TestDisconnectBlocks2D : public stk::unit_test_util::MeshFixture
 {
@@ -1404,6 +45,18 @@ TEST_F(TestDisconnectBlocks2D, disconnect_1block_1quad)
   EXPECT_FALSE(check_orphaned_nodes(get_bulk()));
 
   output_mesh(get_bulk(), "disconnect_1block_1quad.g");
+}
+
+TEST_F(TestDisconnectBlocks2D, disconnect_user_block_1block_1quad_empty_part)
+{
+  stk::mesh::Part & block2 = create_part(get_meta(), stk::topology::QUAD_4_2D, "block_2", 2);
+  stk::mesh::PartVector blocks = setup_mesh_1block_1quad(get_bulk());
+
+  stk::tools::BlockPairVector blocksToDisconnect;
+  blocksToDisconnect.emplace_back(blocks[0], &block2);
+
+  stk::tools::DisconnectBlocksOption option(stk::tools::DISCONNECT_LOCAL, stk::tools::SNIP_ALL_HINGES);
+  EXPECT_NO_THROW(stk::tools::disconnect_user_blocks(get_bulk(), blocksToDisconnect, option));
 }
 
 TEST_F(TestDisconnectBlocks2D, disconnect_2block_1quad)
@@ -1432,6 +85,17 @@ TEST_F(TestDisconnectBlocks2D, disconnect_2block_2quad)
   EXPECT_FALSE(check_orphaned_nodes(get_bulk()));
 
   output_mesh(get_bulk(), "disconnect_2block_2quad.g");
+}
+
+TEST_F(TestDisconnectBlocks2D, disconnect_user_blocks_2block_2quad_in_reverse_block_order)
+{
+  stk::mesh::PartVector blocks = setup_mesh_2block_2quad(get_bulk());
+  stk::tools::BlockPairVector blocksToDisconnect;
+  blocksToDisconnect.emplace_back(blocks[1], blocks[0]);
+
+  stk::tools::DisconnectBlocksOption option(stk::tools::DISCONNECT_LOCAL, stk::tools::SNIP_ALL_HINGES);
+
+  EXPECT_NO_THROW(stk::tools::disconnect_user_blocks(get_bulk(), blocksToDisconnect, option));
 }
 
 TEST_F(TestDisconnectBlocks2D, disconnect_2block_2quad_updateGraph)
@@ -2046,10 +710,10 @@ TEST_F(TestDisconnectBlocks, disconnect_2block_2hex)
   }
 }
 
-TEST_F(TestDisconnectBlocks, DISABLED_disconnect_2block_2hex_withInternalSides)
+TEST_F(TestDisconnectBlocks, DISABLED_disconnect_2block_2hex_with_internal_sides)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
-    stk::mesh::PartVector blocks = setup_mesh_2block_2hex_withInternalSides(get_bulk());
+    stk::mesh::PartVector blocks = setup_mesh_2block_2hex_with_internal_sides(get_bulk());
 
     stk::tools::disconnect_all_blocks(get_bulk());
 
@@ -2057,14 +721,14 @@ TEST_F(TestDisconnectBlocks, DISABLED_disconnect_2block_2hex_withInternalSides)
     EXPECT_EQ(16u, get_num_total_nodes(get_bulk()));
     EXPECT_FALSE(check_orphaned_nodes(get_bulk()));
 
-    output_mesh(get_bulk(), "disconnect_2block_2hex_withInternalSides.g");
+    output_mesh(get_bulk(), "disconnect_2block_2hex_with_internal_sides.g");
   }
 }
 
-TEST_F(TestDisconnectBlocks, disconnect_2block_2hex_withExternalSides)
+TEST_F(TestDisconnectBlocks, disconnect_2block_2hex_with_external_sides)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
-    stk::mesh::PartVector blocks = setup_mesh_2block_2hex_withExternalSides(get_bulk());
+    stk::mesh::PartVector blocks = setup_mesh_2block_2hex_with_external_sides(get_bulk());
 
     EXPECT_EQ(12u, get_num_surface_nodes(get_bulk(), {"surface_1"}));
 
@@ -2075,14 +739,14 @@ TEST_F(TestDisconnectBlocks, disconnect_2block_2hex_withExternalSides)
     EXPECT_EQ(16u,get_num_total_nodes(get_bulk()));
     EXPECT_FALSE(check_orphaned_nodes(get_bulk()));
 
-    output_mesh(get_bulk(), "disconnect_2block_2hex_withExternalSides.g");
+    output_mesh(get_bulk(), "disconnect_2block_2hex_with_external_sides.g");
   }
 }
 
-TEST_F(TestDisconnectBlocks, disconnect_8block_8hex_withExternalSides)
+TEST_F(TestDisconnectBlocks, disconnect_8block_8hex_with_external_sides)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
-    stk::mesh::PartVector blocks = setup_mesh_8block_8hex_withExternalSides(get_bulk());
+    stk::mesh::PartVector blocks = setup_mesh_8block_8hex_with_external_sides(get_bulk());
 
     EXPECT_EQ(26u, get_num_surface_nodes(get_bulk(), {"surface_1"}));
 
@@ -2093,7 +757,7 @@ TEST_F(TestDisconnectBlocks, disconnect_8block_8hex_withExternalSides)
     EXPECT_EQ(64u,get_num_total_nodes(get_bulk()));
     EXPECT_FALSE(check_orphaned_nodes(get_bulk()));
 
-    output_mesh(get_bulk(), "disconnect_8block_8hex_withExternalSides.g");
+    output_mesh(get_bulk(), "disconnect_8block_8hex_with_external_sides.g");
   }
 }
 
@@ -2112,10 +776,10 @@ TEST_F(TestDisconnectBlocks, disconnect_2block_2cubeOfTet)
   }
 }
 
-TEST_F(TestDisconnectBlocks, DISABLED_disconnect_2block_2cubeOfTet_withInternalSides)
+TEST_F(TestDisconnectBlocks, DISABLED_disconnect_2block_2cubeOfTet_with_internal_sides)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
-    stk::mesh::PartVector blocks = setup_mesh_2block_2cubeOfTet_withInternalSides(get_bulk());
+    stk::mesh::PartVector blocks = setup_mesh_2block_2cubeOfTet_with_internal_sides(get_bulk());
 
     stk::tools::disconnect_all_blocks(get_bulk());
 
@@ -2123,7 +787,7 @@ TEST_F(TestDisconnectBlocks, DISABLED_disconnect_2block_2cubeOfTet_withInternalS
     EXPECT_EQ(16u, get_num_total_nodes(get_bulk()));
     EXPECT_FALSE(check_orphaned_nodes(get_bulk()));
 
-    output_mesh(get_bulk(), "disconnect_2block_2cubeOfTet_withInternalSides.g");
+    output_mesh(get_bulk(), "disconnect_2block_2cubeOfTet_with_internal_sides.g");
   }
 }
 
@@ -2144,10 +808,10 @@ TEST_F(TestDisconnectBlocks, disconnect_3block_4hex)
   }
 }
 
-TEST_F(TestDisconnectBlocks, DISABLED_disconnect_3block_4hex_withInternalSides)
+TEST_F(TestDisconnectBlocks, DISABLED_disconnect_3block_4hex_with_internal_sides)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
-    stk::mesh::PartVector blocks = setup_mesh_3block_4hex_withInternalSides(get_bulk());
+    stk::mesh::PartVector blocks = setup_mesh_3block_4hex_with_internal_sides(get_bulk());
 
     stk::tools::disconnect_all_blocks(get_bulk());
 
@@ -2155,7 +819,7 @@ TEST_F(TestDisconnectBlocks, DISABLED_disconnect_3block_4hex_withInternalSides)
     EXPECT_EQ(28u, get_num_total_nodes(get_bulk()));
     EXPECT_FALSE(check_orphaned_nodes(get_bulk()));
 
-    output_mesh(get_bulk(), "disconnect_3block_4hex_withInternalSides.g");
+    output_mesh(get_bulk(), "disconnect_3block_4hex_with_internal_sides.g");
   }
 }
 
@@ -2174,10 +838,10 @@ TEST_F(TestDisconnectBlocks, disconnect_3block_4cubeOfTet)
   }
 }
 
-TEST_F(TestDisconnectBlocks, DISABLED_disconnect_3block_4cubeOfTet_withInternalSides)
+TEST_F(TestDisconnectBlocks, DISABLED_disconnect_3block_4cubeOfTet_with_internal_sides)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
-    stk::mesh::PartVector blocks = setup_mesh_3block_4cubeOfTet_withInternalSides(get_bulk());
+    stk::mesh::PartVector blocks = setup_mesh_3block_4cubeOfTet_with_internal_sides(get_bulk());
 
     stk::tools::disconnect_all_blocks(get_bulk());
 
@@ -2185,7 +849,7 @@ TEST_F(TestDisconnectBlocks, DISABLED_disconnect_3block_4cubeOfTet_withInternalS
     EXPECT_EQ(28u, get_num_total_nodes(get_bulk()));
     EXPECT_FALSE(check_orphaned_nodes(get_bulk()));
 
-    output_mesh(get_bulk(), "disconnect_3block_4cubeOfTet_withInternalSides.g");
+    output_mesh(get_bulk(), "disconnect_3block_4cubeOfTet_with_internal_sides.g");
   }
 }
 
@@ -2236,7 +900,6 @@ void test_one_block_reconnect(stk::mesh::BulkData& bulk)
   ThrowRequire(allBlocksInMesh.size() == 1u);
   stk::tools::impl::LinkInfo info;
   info.preserveOrphans = true;
-  info.debugLevel = get_debug_level();
 
   std::vector<stk::tools::BlockPair> blockPairs;
 
@@ -2257,7 +920,6 @@ void test_two_block_reconnect(stk::mesh::BulkData& bulk, const stk::mesh::PartVe
   stk::tools::impl::get_all_blocks_in_mesh(bulk, allBlocksInMesh);
   stk::tools::impl::LinkInfo info;
   info.preserveOrphans = true;
-  info.debugLevel = get_debug_level();
 
   std::vector<stk::tools::BlockPair> blockPairs;
 
@@ -2372,7 +1034,6 @@ void test_reconnect_block_pairs(stk::mesh::BulkData& bulk, stk::mesh::PartVector
   stk::tools::impl::get_all_blocks_in_mesh(bulk, allBlocksInMesh);
   stk::tools::impl::LinkInfo info;
   info.preserveOrphans = false;
-  info.debugLevel = get_debug_level();
 
   std::vector<stk::tools::BlockPair> disconnectBlockPairs;
   for(unsigned i = 0; i < allBlocksInMesh.size() - 1; i++) {
@@ -2816,16 +1477,15 @@ TEST_F(TestReconnectBlocks, DISABLED_reconnect_8block_8hex_cube)
   }
 }
 
-TEST_F(TestReconnectBlocks, reconnect_2block_2hex_withExternalSides)
+TEST_F(TestReconnectBlocks, reconnect_2block_2hex_with_external_sides)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
-    stk::mesh::PartVector blocks = setup_mesh_2block_2hex_withExternalSides(get_bulk());
+    stk::mesh::PartVector blocks = setup_mesh_2block_2hex_with_external_sides(get_bulk());
 
     EXPECT_EQ(12u, get_num_surface_nodes(get_bulk(), {"surface_1"}));
 
     stk::tools::impl::LinkInfo info;
     info.preserveOrphans = true;
-    info.debugLevel = get_debug_level();
 
     stk::tools::disconnect_all_blocks(get_bulk(), info);
 
@@ -2834,7 +1494,7 @@ TEST_F(TestReconnectBlocks, reconnect_2block_2hex_withExternalSides)
     EXPECT_EQ(16u,get_num_total_nodes(get_bulk()));
     EXPECT_FALSE(check_orphaned_nodes(get_bulk()));
 
-    output_mesh(get_bulk(), "disconnect_2block_2hex_withExternalSides.g");
+    output_mesh(get_bulk(), "disconnect_2block_2hex_with_external_sides.g");
 
     stk::tools::impl::reconnect_block_pairs(get_bulk(), {stk::tools::BlockPair(blocks[0], blocks[1])}, info);
 
@@ -2847,16 +1507,15 @@ TEST_F(TestReconnectBlocks, reconnect_2block_2hex_withExternalSides)
   }
 }
 
-TEST_F(TestReconnectBlocks, reconnect_8block_8hex_withExternalSides)
+TEST_F(TestReconnectBlocks, reconnect_8block_8hex_with_external_sides)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
-    stk::mesh::PartVector blocks = setup_mesh_8block_8hex_withExternalSides(get_bulk());
+    stk::mesh::PartVector blocks = setup_mesh_8block_8hex_with_external_sides(get_bulk());
 
     EXPECT_EQ(26u, get_num_surface_nodes(get_bulk(), {"surface_1"}));
 
     stk::tools::impl::LinkInfo info;
     info.preserveOrphans = true;
-    info.debugLevel = get_debug_level();
 
     stk::tools::disconnect_all_blocks(get_bulk(), info);
 
@@ -2865,7 +1524,7 @@ TEST_F(TestReconnectBlocks, reconnect_8block_8hex_withExternalSides)
     EXPECT_EQ(64u,get_num_total_nodes(get_bulk()));
     EXPECT_FALSE(check_orphaned_nodes(get_bulk()));
 
-    output_mesh(get_bulk(), "disconnect_8block_8hex_withExternalSides.g");
+    output_mesh(get_bulk(), "disconnect_8block_8hex_with_external_sides.g");
 
     stk::tools::BlockPairVector blockPairs { stk::tools::impl::get_block_pair(blocks[0], blocks[1]),
                                              stk::tools::impl::get_block_pair(blocks[0], blocks[2]),
@@ -3012,17 +1671,10 @@ void test_block_disconnect_full_algorithm_partial_disconnect(stk::mesh::BulkData
   stk::tools::impl::get_all_blocks_in_mesh(bulk, allBlocksInMesh);
   stk::tools::impl::LinkInfo info;
   info.preserveOrphans = true;
-  info.debugLevel = get_debug_level();
 
   stk::tools::BlockPairVector blockPairsToDisconnect = convert_connection_vector_to_pair_vector(bulk, blockPairConnectionsToDisconnect);
   stk::tools::BlockPairVector blockPairsToReconnect;
   blockPairsToReconnect = get_local_reconnect_list(bulk, blockPairConnectionsToDisconnect);
-  print_block_pair_list(blockPairsToReconnect);
-
-  info.print_debug_msg_p0(1) << "PRINTING RECONNECT PAIRS" << std::endl;
-  for(stk::tools::BlockPair& blockPair : blockPairsToReconnect) {
-    info.print_debug_msg_p0(1,false) << "\t{" << blockPair.first->name() << ", " << blockPair.second->name() << "}" << std::endl;
-  }
 
   EXPECT_EQ(expectedGlobalInitialCommonNodes, get_num_intersecting_nodes(bulk, allBlocksInMesh));
   stk::tools::impl::disconnect_block_pairs(bulk, blockPairsToDisconnect, info);
@@ -3040,7 +1692,7 @@ void test_block_disconnect_full_algorithm_partial_disconnect(stk::mesh::BulkData
 
   output_mesh(bulk, "dis_seq_reconnected_mesh.g");
 
-  stk::tools::impl::snip_all_hinges_between_blocks(bulk, info.debugLevel > 0);
+  stk::tools::impl::snip_all_hinges_between_blocks(bulk);
 
   EXPECT_EQ(expectedGlobalConnectCommonNodesAfterHingeSnip, get_num_intersecting_nodes(bulk, allBlocksInMesh));
   EXPECT_EQ(expectedGlobalTotalNumberOfNodes, get_num_total_nodes(bulk));
@@ -3068,7 +1720,6 @@ void test_block_disconnect_full_algorithm(stk::mesh::BulkData& bulk,
   stk::tools::impl::get_all_blocks_in_mesh(bulk, allBlocksInMesh);
   stk::tools::impl::LinkInfo info;
   info.preserveOrphans = true;
-  info.debugLevel = get_debug_level();
 
   stk::tools::BlockPairVector orderedBlockPairsInMesh;
   stk::tools::impl::fill_ordered_block_pairs(allBlocksInMesh, orderedBlockPairsInMesh);
@@ -3076,12 +1727,6 @@ void test_block_disconnect_full_algorithm(stk::mesh::BulkData& bulk,
   stk::tools::BlockPairVector blockPairsToDisconnect = convert_connection_vector_to_pair_vector(bulk, blockPairConnectionsToDisconnect);
   stk::tools::BlockPairVector blockPairsToReconnect;
   stk::tools::impl::populate_blocks_to_reconnect(bulk, orderedBlockPairsInMesh, blockPairsToDisconnect, blockPairsToReconnect);
-  print_block_pair_list(blockPairsToReconnect);
-
-  info.print_debug_msg_p0(1) << "PRINTING RECONNECT PAIRS" << std::endl;
-  for(stk::tools::BlockPair& blockPair : blockPairsToReconnect) {
-    info.print_debug_msg_p0(1,false) << "\t{" << blockPair.first->name() << ", " << blockPair.second->name() << "}" << std::endl;
-  }
 
   EXPECT_EQ(expectedGlobalInitialCommonNodes, get_num_intersecting_nodes(bulk, allBlocksInMesh));
   stk::tools::impl::disconnect_block_pairs(bulk, orderedBlockPairsInMesh, info);
@@ -3092,7 +1737,7 @@ void test_block_disconnect_full_algorithm(stk::mesh::BulkData& bulk,
 
   output_mesh(bulk, "dis_seq_reconnected_mesh.g");
 
-  stk::tools::impl::snip_all_hinges_between_blocks(bulk, info.debugLevel > 0);
+  stk::tools::impl::snip_all_hinges_between_blocks(bulk);
 
   EXPECT_EQ(expectedGlobalConnectCommonNodesAfterHingeSnip, get_num_intersecting_nodes(bulk, allBlocksInMesh));
   EXPECT_EQ(expectedGlobalTotalNumberOfNodes, get_num_total_nodes(bulk));
@@ -3133,13 +1778,14 @@ void test_connection_pairs(stk::mesh::BulkData& bulk, stk::mesh::PartVector& all
 
 void test_user_block_disconnect(stk::mesh::BulkData& bulk,
                                BlockConnectionVector& blockPairConnectionsToDisconnect,
-                               unsigned expectedFinalCommonNodeCount)
+                               unsigned expectedFinalCommonNodeCount,
+                               stk::tools::DisconnectBlocksOption disconnectOptions = stk::tools::DisconnectBlocksOption())
 {
   stk::mesh::PartVector allBlocksInMesh;
   stk::tools::impl::get_all_blocks_in_mesh(bulk, allBlocksInMesh);
   stk::tools::BlockPairVector blockPairsToDisconnect = convert_connection_vector_to_pair_vector(bulk, blockPairConnectionsToDisconnect);
 
-  stk::tools::disconnect_user_blocks(bulk, blockPairsToDisconnect);
+  stk::tools::disconnect_user_blocks(bulk, blockPairsToDisconnect, disconnectOptions);
 
   test_connection_pairs(bulk, allBlocksInMesh, blockPairConnectionsToDisconnect, expectedFinalCommonNodeCount);
 }
@@ -3153,19 +1799,6 @@ stk::tools::BlockNamePairVector convert_connection_vector_to_name_pair_vector(co
   }
 
   return namePairVector;
-}
-
-void test_named_user_block_disconnect(stk::mesh::BulkData& bulk,
-                                      BlockConnectionVector& blockPairConnectionsToDisconnect,
-                                      unsigned expectedFinalCommonNodeCount)
-{
-  stk::mesh::PartVector allBlocksInMesh;
-  stk::tools::impl::get_all_blocks_in_mesh(bulk, allBlocksInMesh);
-  stk::tools::BlockNamePairVector blockPairsToDisconnect = convert_connection_vector_to_name_pair_vector(bulk, blockPairConnectionsToDisconnect);
-
-  stk::tools::disconnect_user_blocks(bulk, blockPairsToDisconnect);
-
-  test_connection_pairs(bulk, allBlocksInMesh, blockPairConnectionsToDisconnect, expectedFinalCommonNodeCount);
 }
 
 TEST_F(TestDisconnectFullAlgorithm2D, disconnect_full_algorithm_2block_2quad)
@@ -3360,10 +1993,7 @@ TEST_F(TestDisconnectFullAlgorithmPartial, disconnect_full_algorithm_8block_8hex
 
 std::string get_basename(const std::string& path)
 {
-  char tempPath[path.length()+1];
-  tempPath[path.length()] = 0;
-  path.copy(tempPath, path.length());
-  return std::string(basename(tempPath));
+  return path.substr(path.find_last_of("/\\")+1);
 }
 
 TEST(TestDisconnectInputFile, input_mesh)
@@ -3379,7 +2009,7 @@ TEST(TestDisconnectInputFile, input_mesh)
   std::string disconnectBlockFile = stk::unit_test_util::get_option("-blockFile", "");
   if (disconnectBlockFile.empty()) return;
 
-  stk::io::fill_mesh_with_auto_decomp(exodusFileName, bulk);
+  stk::io::fill_mesh(exodusFileName, bulk);
 
   std::ifstream infile(disconnectBlockFile);
 
@@ -3391,9 +2021,18 @@ TEST(TestDisconnectInputFile, input_mesh)
     stk::mesh::Part* block1Part = meta.get_part(block1);
     stk::mesh::Part* block2Part = meta.get_part(block2);
 
-    ThrowRequire(block1Part != nullptr);
-    ThrowRequire(block2Part != nullptr);
-    ThrowRequire(block1Part != block2Part);
+    if(block1Part == nullptr || block2Part == nullptr) {
+      if(bulk.parallel_rank() == 0) {
+        if(block1Part == nullptr) {
+          std::cout << "could not find block name: " << block1 << std::endl;
+        }
+        if(block2Part == nullptr) {
+          std::cout << "could not find block name: " << block2 << std::endl;
+        }
+      }
+
+      continue;
+    }
 
     disconnectBlockVec.push_back(stk::tools::impl::get_block_pair(block1Part, block2Part));
   }
@@ -3402,7 +2041,7 @@ TEST(TestDisconnectInputFile, input_mesh)
   double meshReadTime = stk::wall_time();
 
   std::cout << "Starting disconnect block sequence" << std::endl;
-  stk::tools::disconnect_user_blocks_partial(bulk, disconnectBlockVec, get_debug_level());
+  stk::tools::disconnect_user_blocks(bulk, disconnectBlockVec, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_LOCAL, stk::tools::PRESERVE_INITIAL_HINGES));
 
   double disconnectTime = stk::wall_time();
 
@@ -3417,28 +2056,71 @@ TEST(TestDisconnectInputFile, input_mesh)
 }
 
 typedef TestDisconnectFullAlgorithm TestDisconnectUserBlocks;
+typedef TestDisconnectFullAlgorithm2D TestDisconnectUserBlocks2D;
 
 TEST_F(TestDisconnectUserBlocks, disconnect_user_blocks_8block_8hex_opposite_corners)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
     stk::mesh::PartVector blocks = setup_mesh_8block_8hex_cube(get_bulk());
 
-    BlockConnectionVector blockPairsToDisconnectPairs{BlockConnection("block_1","block_2",0), BlockConnection("block_2","block_4",0), BlockConnection("block_2","block_6",0),
-                                                      BlockConnection("block_3","block_7",0), BlockConnection("block_7","block_8",0), BlockConnection("block_5","block_7",0)};
-    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectPairs, 13u);
+    BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("block_1","block_2",0), BlockConnection("block_2","block_4",0), BlockConnection("block_2","block_6",0),
+                                                       BlockConnection("block_3","block_7",0), BlockConnection("block_7","block_8",0), BlockConnection("block_5","block_7",0)};
+    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 13u);
   }
 }
 
-TEST_F(TestDisconnectUserBlocks, disconnect_named_user_blocks_8block_8hex_opposite_corners)
+TEST_F(TestDisconnectUserBlocks, disconnect_user_blocks_preserve_snip_option_4block_4hex)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
-    stk::mesh::PartVector blocks = setup_mesh_8block_8hex_cube(get_bulk());
+    stk::mesh::PartVector blocks = setup_mesh_4block_4hex(get_bulk());
 
-    BlockConnectionVector blockPairsToDisconnectPairs{BlockConnection("block_1","block_2",0), BlockConnection("block_2","block_4",0), BlockConnection("block_2","block_6",0),
-                                                      BlockConnection("block_3","block_7",0), BlockConnection("block_7","block_8",0), BlockConnection("block_5","block_7",0)};
-    test_named_user_block_disconnect(get_bulk(), blockPairsToDisconnectPairs, 13u);
+    BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("block_2","block_1",0), BlockConnection("block_2","block_4",0), BlockConnection("block_2","block_3",0)};
+    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 6u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_GLOBAL, stk::tools::PRESERVE_INITIAL_HINGES));
   }
 }
+
+TEST_F(TestDisconnectUserBlocks, disconnect_user_blocks_snip_all_hinges_snip_option_4block_4hex)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
+    stk::mesh::PartVector blocks = setup_mesh_4block_4hex(get_bulk());
+
+    BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("block_2","block_1",0), BlockConnection("block_2","block_4",0)};
+    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 6u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_GLOBAL, stk::tools::SNIP_ALL_HINGES));
+  }
+}
+
+TEST_F(TestDisconnectUserBlocks2D, disconnect_user_blocks_2block_3quad_1hinge)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
+    stk::mesh::PartVector blocks = setup_mesh_3block_3quad_1hinge_linear_stack(get_bulk());
+
+    BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("block_1","block_3",0)};
+    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 3u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_LOCAL, stk::tools::PRESERVE_INITIAL_HINGES));
+  }
+}
+
+TEST_F(TestDisconnectUserBlocks2D, disconnect_user_blocks_3blocks_4quad_3proc)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 2) {
+    stk::mesh::PartVector blocks = setup_mesh_3block_4quad_keepLowerRight(get_bulk(), 1);
+
+    BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("block_1","block_3",0), BlockConnection("block_2","block_3",0)};
+    test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 2u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_LOCAL, stk::tools::PRESERVE_INITIAL_HINGES));
+  }
+}
+
+TEST_F(TestDisconnectUserBlocks2D, disconnect_user_blocks_3blocks_4quad_custom_ordinal)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  stk::mesh::PartVector blocks = setup_mesh_3block_4quad_reverse_ordinal(get_bulk());
+
+  BlockConnectionVector blockPairsToDisconnectVector{BlockConnection("vl","lateral",0), BlockConnection("radax","lateral",0)};
+  test_user_block_disconnect(get_bulk(), blockPairsToDisconnectVector, 2u, stk::tools::DisconnectBlocksOption(stk::tools::DISCONNECT_LOCAL, stk::tools::PRESERVE_INITIAL_HINGES));
+
+  stk::io::write_mesh("custom_ordinal_unit_test_mesh.g", get_bulk());
+}
+
 
 typedef TestDisconnectBlocks2D TestBlockPairCreation;
 
@@ -3459,4 +2141,85 @@ TEST_F(TestBlockPairCreation, test_block_pair_creation)
   EXPECT_EQ("block_3", partPairs[1].second->name());
   EXPECT_EQ("block_2", partPairs[2].first->name());
   EXPECT_EQ("block_3", partPairs[2].second->name());
+}
+
+void create_ngs_jtd_sub_mesh(stk::mesh::BulkData& bulk)
+{
+  stk::unit_test_util::ConstructedMesh data(3);
+
+  data.set_x_coordinates({ 2.69902090331971, 2.66623140978201, 2.75874573101832, 2.69902090331971,
+                           2.69659806972163, 2.68053633989566, 2.66870203682596, 2.7137889539581,
+                           2.67272988291214, 2.65367227486113, 2.76694241182748, 2.72228375387999,
+                           2.68782101822595, 2.69659805697906, 2.71378890566682, 2.73602958156478});
+
+  data.set_y_coordinates({ -2.54798187240236, -2.625, -2.625, -2.54798187240236, -2.66,
+                           -2.67627405696173, -2.71269330410536, -2.625, -2.625, -2.66, -2.625,
+                           -2.625, -2.625, -2.625, -2.67580141240548, -2.63747011593858 });
+
+  data.set_z_coordinates({ -7.71929967118528, -7.76787460984145, -7.87919008575732,
+                           -7.82910729232061, -7.83153012591869, -7.73778423460932,
+                           -7.77420348175294, -7.81433924168221, -7.71000549971963,
+                           -7.72979606467204, -7.87099340494817, -7.80584444176032,
+                           -7.72193754541886, -7.83153013866126, -7.81433928997349, -7.84971773066203 });
+
+  data.set_node_ids( {953299,  953347,  1046307, 1086643, 1086883, 1543476, 1598788, 3021447,
+                      3121015, 3292103, 3357047, 3704977, 3705289, 3705425, 4715689, 5185015} );
+
+  data.set_elem_ids( {25203969, 26788853, 27186527, 29884816, 30162566, 30162567,
+                      30822787, 30824958, 30824959, 30824960, 30824961, 26778235, 26788861,
+                      29528157, 29886393, 24040308, 24040314, 24045937, 24467153, 24467347,
+                      24562607, 24562617, 29861241, 30822789} );
+
+  data.set_elem_distribution( {{30824959, 1}, {26788861, 1}, {29886393, 1}, {24045937, 1}, {24467153, 1},
+                               {24467347, 1}, {24562607, 1}, {24562617, 1}, {25203969, 1}, {26788853, 1},
+                               {29884816, 1}, {30824960, 1}, {30824961, 1}, {24040308, 1}, {24040314, 1},
+                               {30822787, 1}, {30824958, 1}, {26778235, 1}, {30822789, 1}, {30162567, 0},
+                               {27186527, 1}, {29861241, 1}, {29528157, 0}, {30162566, 0}} );
+
+  stk::unit_test_util::ConstructedElementBlock block1(stk::topology::TET_4, "block_1", 202, { {2, 8, 9, 10},
+                                                                                              {10, 8, 9, 6},
+                                                                                              {5, 15, 16, 8},
+                                                                                              {2, 8, 10, 5},
+                                                                                              {14, 16, 3, 8},
+                                                                                              {14, 16, 8, 5},
+                                                                                              {14, 5, 8, 2},
+                                                                                              {7, 5, 8, 15},
+                                                                                              {8, 5, 7, 10},
+                                                                                              {7, 8, 6, 15},
+                                                                                              {6, 8, 7, 10} });
+  data.add_elem_block(block1);
+
+  stk::unit_test_util::ConstructedElementBlock block2(stk::topology::TET_4, "block_2", 223, { {15, 12, 8, 6},
+                                                                                              {8, 13, 9, 6},
+                                                                                              {12, 16, 15, 8},
+                                                                                              {8, 12, 13, 6} });
+  data.add_elem_block(block2);
+
+  stk::unit_test_util::ConstructedElementBlock block3(stk::topology::TET_4, "block_3", 245, { {2, 8, 4, 1},
+                                                                                              {2, 8, 1, 9},
+                                                                                              {8, 11, 3, 4},
+                                                                                              {8, 12, 11, 4},
+                                                                                              {8, 13, 1, 9},
+                                                                                              {8, 12, 4, 1},
+                                                                                              {8, 12, 1, 13},
+                                                                                              {3, 4, 14, 8},
+                                                                                              {4, 14, 8, 2} });
+  data.add_elem_block(block3);
+
+  data.create_mesh(bulk);
+}
+
+TEST(TestNGSDisconnect, jtd_sub_mesh)
+{
+  stk::mesh::MetaData meta(3);
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  create_ngs_jtd_sub_mesh(bulk);
+
+  stk::mesh::Part* block1 = meta.get_part("block_1");
+  stk::mesh::Part* block2 = meta.get_part("block_2");
+  stk::mesh::Part* block3 = meta.get_part("block_3");
+
+  stk::tools::DisconnectBlocksOption disconnectOption(stk::tools::DISCONNECT_LOCAL, stk::tools::PRESERVE_INITIAL_HINGES);
+  stk::tools::BlockPairVector disconnectPairs{{block1, block3}, {block2, block3}};
+  EXPECT_NO_THROW(stk::tools::disconnect_user_blocks(bulk, disconnectPairs, disconnectOption));
 }

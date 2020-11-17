@@ -1,10 +1,10 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C     -*- Mode: fortran -*-
       QAINFO(1) = 'Grepos                          '
-      QAINFO(2) = '2019/01/31                      '
-      QAINFO(3) = ' 1.86                           '
+      QAINFO(2) = '2020/09/22                      '
+      QAINFO(3) = ' 1.87                           '

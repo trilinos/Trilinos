@@ -134,6 +134,8 @@ PairwiseSideInfoVector get_hinge_info_vec(const stk::mesh::BulkData& bulk, stk::
 
 HingeNode convert_to_hinge_node (const stk::mesh::BulkData& bulk, stk::mesh::Entity node);
 
+HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk, const stk::mesh::EntityVector& nodes);
+
 HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk);
 
 void fill_hinge_edges_for_hinge_node(const stk::mesh::BulkData& bulk, const HingeNodeVector& hingeNodes, const HingeNode& hingeNode, HingeEdgeVector& hingeEdges);
@@ -156,6 +158,7 @@ bool hinge_edge_is_locally_owned(const stk::mesh::BulkData& bulk, const HingeEdg
 
 std::pair<unsigned, unsigned> get_hinge_count(const stk::mesh::BulkData& bulk);
 
+HingeNodeVector get_cyclic_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes);
 
 // Convex Groupings
 void merge_groups(HingeGroupVector& groupVec, int idx1, int idx2, const stk::mesh::EntityLess& compare);
@@ -179,8 +182,12 @@ HingeGroupVector get_convex_groupings(const stk::mesh::BulkData& bulk, const Hin
 
 
 // Hinge Snipping
-void snip_all_hinges_for_input_nodes(stk::mesh::BulkData& bulk, const stk::mesh::EntityVector nodes, bool debug = false);
-void snip_all_hinges_between_blocks(stk::mesh::BulkData& bulk, bool debug = false);
+void snip_all_hinges_for_input_nodes(stk::mesh::BulkData& bulk, const stk::mesh::EntityVector nodes);
+
+void snip_all_hinges_for_input_nodes(stk::mesh::BulkData& bulk, const stk::mesh::EntityVector nodes,
+                                     const HingeNodeVector& preservedHingeNodes);
+
+void snip_all_hinges_between_blocks(stk::mesh::BulkData& bulk);
 
 }}}
 

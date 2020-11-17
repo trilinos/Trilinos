@@ -162,7 +162,7 @@ int create_random_triangles(
       switch (ndim) {
       case 1:
         for (i = 0; i < nvtxs; i+=3)  {
-          x[i] = ((float) rand())/RAND_MAX;
+          x[i] = ((float) rand())/(float)RAND_MAX;
           x[i+1] = x[i] - diff;
           x[i+2] = x[i] + diff;
           if (fpc != NULL) fprintf(fpc, "%e\n%e\n%e\n", x[i],x[i+1],x[i+2]);
@@ -170,8 +170,8 @@ int create_random_triangles(
         break;
       case 2:
         for (i = 0; i < nvtxs; i+=3)  {
-          x[i] = ((float) rand())/RAND_MAX;
-          y[i] = ((float) rand())/RAND_MAX;
+          x[i] = ((float) rand())/(float)RAND_MAX;
+          y[i] = ((float) rand())/(float)RAND_MAX;
           x[i+1] = x[i] - diff;
           y[i+1] = y[i];
           x[i+2] = x[i];
@@ -182,9 +182,9 @@ int create_random_triangles(
         break;
       case 3:
         for (i = 0; i < nvtxs; i+=3)  {
-          x[i] = ((float) rand())/RAND_MAX;
-          y[i] = ((float) rand())/RAND_MAX;
-          z[i] = ((float) rand())/RAND_MAX;
+          x[i] = ((float) rand())/(float)RAND_MAX;
+          y[i] = ((float) rand())/(float)RAND_MAX;
+          z[i] = ((float) rand())/(float)RAND_MAX;
           x[i+1] = x[i] - diff;
           y[i+1] = y[i];
           z[i+1] = z[i];
@@ -211,7 +211,7 @@ int create_random_triangles(
             /* Only assign one of the weight dimensions a weight>0. */
             /* Modify to get more complicated test cases. */
             if (j == i%vwgt_dim){
-              wgt = ((float) rand())/RAND_MAX;
+              wgt = ((float) rand())/(float)RAND_MAX;
               vwgts[w+j] = wgt;
               w += vwgt_dim;
               vwgts[w+j] = wgt;
@@ -356,22 +356,22 @@ int create_random_input(
       switch (ndim) {
       case 1:
         for (i = 0; i < nvtxs; i++)  {
-          x[i] = ((float) rand())/RAND_MAX;
+          x[i] = ((float) rand())/(float)RAND_MAX;
           if (fpc != NULL) fprintf(fpc, "%e\n", x[i]);
         }
         break;
       case 2:
         for (i = 0; i < nvtxs; i++)  {
-          x[i] = ((float) rand())/RAND_MAX;
-          y[i] = ((float) rand())/RAND_MAX;
+          x[i] = ((float) rand())/(float)RAND_MAX;
+          y[i] = ((float) rand())/(float)RAND_MAX;
           if (fpc != NULL) fprintf(fpc, "%e %e\n", x[i], y[i]);
         }
         break;
       case 3:
         for (i = 0; i < nvtxs; i++)  {
-          x[i] = ((float) rand())/RAND_MAX;
-          y[i] = ((float) rand())/RAND_MAX;
-          z[i] = ((float) rand())/RAND_MAX;
+          x[i] = ((float) rand())/(float)RAND_MAX;
+          y[i] = ((float) rand())/(float)RAND_MAX;
+          z[i] = ((float) rand())/(float)RAND_MAX;
           if (fpc != NULL) fprintf(fpc, "%e %e %e\n", x[i], y[i], z[i]);
         }
         break;
@@ -386,7 +386,7 @@ int create_random_input(
             /* Only assign one of the weight dimensions a weight>0. */
             /* Modify to get more complicated test cases. */
             if (j == i%vwgt_dim)
-              vwgts[i*vwgt_dim+j] = ((float) rand())/RAND_MAX;
+              vwgts[i*vwgt_dim+j] = ((float) rand())/(float)RAND_MAX;
             else
               vwgts[i*vwgt_dim+j] = 0.0;
           }
@@ -633,7 +633,7 @@ int create_a_graph(
         /* Only assign one of the weight dimensions a weight>0. */
         /* Modify to get more complicated test cases. */
         if (jj == (int)(i%vwgt_dim))
-          vwgts[i*vwgt_dim+jj] = ((float) rand())/RAND_MAX;
+          vwgts[i*vwgt_dim+jj] = ((float) rand())/(float)RAND_MAX;
         else
           vwgts[i*vwgt_dim+jj] = 0.0;
       }

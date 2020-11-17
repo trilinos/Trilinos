@@ -24,8 +24,6 @@ smoother ->
 
 Level 1
 Prolongator minimization (MueLu::EminPFactory)
-Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
@@ -39,6 +37,8 @@ filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1
 
+Build (MueLu::TentativePFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
@@ -97,6 +97,8 @@ Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]
@@ -127,8 +129,6 @@ smoother ->
 
 Level 2
 Prolongator minimization (MueLu::EminPFactory)
-Build (MueLu::TentativePFactory_kokkos)
-Build (MueLu::UncoupledAggregationFactory_kokkos)
 Build (MueLu::CoalesceDropFactory_kokkos)
 Build (MueLu::AmalgamationFactory_kokkos)
 [empty list]
@@ -142,6 +142,8 @@ filtered matrix: reuse graph = 1   [default]
 filtered matrix: reuse eigenvalue = 1   [default]
 lightweight wrap = 1
 
+Build (MueLu::TentativePFactory_kokkos)
+Build (MueLu::UncoupledAggregationFactory_kokkos)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
@@ -200,6 +202,8 @@ Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]

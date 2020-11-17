@@ -46,6 +46,8 @@
 #ifndef MUELU_NOTAYAGGREGATIONFACTORY_DEF_HPP_
 #define MUELU_NOTAYAGGREGATIONFACTORY_DEF_HPP_
 
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -66,9 +68,7 @@
 #include "MueLu_Types.hpp"
 #include "MueLu_Utilities.hpp"
 
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 #include "MueLu_Utilities_kokkos.hpp"
-#endif
 
 namespace MueLu {
 
@@ -91,7 +91,6 @@ namespace MueLu {
   RCP<const ParameterList> NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("aggregation: pairwise: size");
@@ -446,7 +445,7 @@ namespace MueLu {
         // Skip aggregated neighbors, off-rank neighbors, hard zeros and self
         LO col = indices[colidx];
         SC val = vals[colidx];
-        if(current_idx == col || aggStat[col] != READY || col > numRows || val == SC_ZERO)
+        if(current_idx == col || col >= numRows || aggStat[col] != READY  || val == SC_ZERO)
           continue;
 
 	MT aij = STS::real(val);
@@ -606,7 +605,7 @@ namespace MueLu {
       const magnitude_type si      = Teuchos::ScalarTraits<value_type>::real(rowSum_h(currentIdx));
       for(auto entryIdx = row_map_h(currentIdx); entryIdx < row_map_h(currentIdx + 1); ++entryIdx) {
         const LO colIdx = static_cast<LO>(entries_h(entryIdx));
-        if(currentIdx == colIdx || localAggStat[colIdx] != READY || values_h(entryIdx) == KAT_zero || colIdx > numRows) {
+        if(currentIdx == colIdx || colIdx >= numRows || localAggStat[colIdx] != READY || values_h(entryIdx) == KAT_zero) {
           continue;
         }
 
@@ -950,4 +949,5 @@ namespace MueLu {
 
 } //namespace MueLu
 
+#endif //ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #endif /* MUELU_NOTAYAGGREGATIONFACTORY_DEF_HPP_ */

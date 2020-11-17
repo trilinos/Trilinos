@@ -36,15 +36,17 @@
 #define stk_mesh_ForEachEntityLoopAbstractions_hpp
 
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
-#include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::size_type, etc
-#include "stk_mesh/base/Selector.hpp"
+#include <stk_mesh/base/Bucket.hpp>     // for Bucket, Bucket::size_type, etc
+#include <stk_mesh/base/Selector.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 
 namespace stk {
 namespace mesh {
 namespace impl {
 
-template <typename BULK_DATA, typename ALGORITHM_PER_ENTITY>
-void for_each_selected_entity_run(BULK_DATA &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const ALGORITHM_PER_ENTITY &functor)
+inline
+void for_each_selected_entity_run(const BulkData &mesh, stk::topology::rank_t rank, const Selector &selector,
+                                  const std::function<void(const BulkData&,const MeshIndex&)>& functor)
 {
     const stk::mesh::BucketVector & buckets = mesh.get_buckets(rank, selector);
     const size_t numBuckets = buckets.size();
@@ -61,15 +63,27 @@ void for_each_selected_entity_run(BULK_DATA &mesh, stk::topology::rank_t rank, c
     }
 }
 
-template <typename BULK_DATA, typename ALGORITHM_PER_ENTITY>
-void for_each_entity_run(BULK_DATA &mesh, stk::topology::rank_t rank, const ALGORITHM_PER_ENTITY &functor)
+inline
+void for_each_selected_entity_run(const BulkData &mesh, stk::topology::rank_t rank, const Selector &selector,
+                                  const std::function<void(const BulkData&,const Entity&)>& functor)
 {
-    const stk::mesh::Selector selectAll = !stk::mesh::Selector();
-    for_each_selected_entity_run(mesh, rank, selectAll, functor);
+    const stk::mesh::BucketVector & buckets = mesh.get_buckets(rank, selector);
+    const size_t numBuckets = buckets.size();
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+    for(size_t j=0; j<numBuckets; j++)
+    {
+        stk::mesh::Bucket *bucket = buckets[j];
+        for(size_t i=0; i<bucket->size(); i++)
+        {
+            functor(mesh, (*bucket)[i]);
+        }
+    }
 }
 
-template <typename BULK_DATA, typename ALGORITHM_PER_ENTITY>
-void for_each_selected_entity_run_no_threads(BULK_DATA &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const ALGORITHM_PER_ENTITY &functor)
+template <typename ALGORITHM_PER_ENTITY>
+void for_each_selected_entity_run_no_threads(const BulkData &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const ALGORITHM_PER_ENTITY &functor)
 {
     const stk::mesh::BucketVector & buckets = mesh.get_buckets(rank, selector);
     for(size_t j=0; j<buckets.size(); j++)
@@ -82,8 +96,8 @@ void for_each_selected_entity_run_no_threads(BULK_DATA &mesh, stk::topology::ran
     }
 }
 
-template <typename BULK_DATA, typename ALGORITHM_PER_ENTITY>
-void for_each_entity_run_no_threads(BULK_DATA &mesh, stk::topology::rank_t rank, const ALGORITHM_PER_ENTITY &functor)
+template <typename ALGORITHM_PER_ENTITY>
+void for_each_entity_run_no_threads(const BulkData &mesh, stk::topology::rank_t rank, const ALGORITHM_PER_ENTITY &functor)
 {
     const stk::mesh::Selector selectAll = !stk::mesh::Selector();
     for_each_selected_entity_run_no_threads(mesh, rank, selectAll, functor);

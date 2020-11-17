@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -29,7 +29,6 @@ ex_create() or ex_open().
                        define the number of info records instead of
                        defining and outputting, pass NULL for
                        info argument.
-
 
 The following code will write out three information records
 to an open exodus file -
@@ -61,7 +60,6 @@ num_info = 3;
 
 error = ex_put_info(exoid, num_info, NULL);
 
-
 \comment{Now, actually write the information records}
 info[0] = "This is the first information record.";
 info[1] = "This is the second information record.";
@@ -82,7 +80,9 @@ int ex_put_info(int exoid, int num_info, char *info[])
   int rootid = exoid & EX_FILE_ID_MASK;
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(exoid, __func__);
+  if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   /* only do this if there are records */
   if (num_info > 0) {

@@ -26,13 +26,67 @@
 namespace stk {
 namespace transfer {
 
+struct TrivialTestKey {
+  TrivialTestKey(int in=0) : m_id(in){}
+  int id() const { return m_id; }
+  bool operator<(const TrivialTestKey& other) const
+  { return id() < other.id(); }
+  bool operator==(const TrivialTestKey& other) const
+  { return id() == other.id(); }
+private:
+  int m_id;
+};
+
+class TrivialTestSrcMesh {
+public:
+  typedef TrivialTestKey Key;
+  typedef stk::search::IdentProc<Key, int> EntityProc;
+  typedef std::pair<stk::search::Box<double>,EntityProc> BoundingBox;
+  void bounding_boxes(std::vector<BoundingBox>& boxes) const
+  { /* empty to test coarse_search_impl with empty domain */ }
+};
+
+class TrivialTestDestMesh {
+public:
+  typedef TrivialTestKey Key;
+  typedef stk::search::IdentProc<Key, int> EntityProc;
+  typedef std::pair<stk::search::Box<double>,EntityProc> BoundingBox;
+  void bounding_boxes(std::vector<BoundingBox>& boxes) const
+  {
+    boxes.clear();
+    boxes.push_back(BoundingBox(stk::search::Box<double>(),EntityProc(0,0)));
+  }
+};
+
+class TrivialTestInterp {
+public:
+  typedef TrivialTestSrcMesh MeshA;
+  typedef TrivialTestDestMesh MeshB;
+  typedef MeshA::EntityProc EntityProcA;
+  typedef MeshB::EntityProc EntityProcB;
+  typedef std::pair<EntityProcA, EntityProcB> EntityProcRelation;
+  typedef std::vector<EntityProcRelation> EntityProcRelationVec;
+};
+
+TEST(GeomXferImpl, coarseSearchImpl_emptyDomain)
+{
+  TrivialTestInterp::EntityProcRelationVec entProcRelVec;
+  TrivialTestSrcMesh empty_meshA;
+  TrivialTestDestMesh meshB;
+  const double expansionFactor = 1.1; // >1 so coarse_search_impl will try
+                                    //to expand boxes to find range entries
+  EXPECT_NO_THROW(stk::transfer::impl::coarse_search_impl<TrivialTestInterp>
+                  (entProcRelVec, MPI_COMM_WORLD, &empty_meshA, &meshB,
+                  stk::search::KDTREE, expansionFactor));
+  EXPECT_TRUE(entProcRelVec.empty());
+}
 
 using EntityKey = uint64_t;
 
 class MockMeshA_Common
 {
 public:
-  using EntityProc = stk::search::IdentProc<EntityKey, unsigned>;
+  using EntityProc = stk::search::IdentProc<EntityKey>;
   using EntityProcVec = std::vector<EntityProc>;
   using BoundingBox = std::pair<stk::search::Box<double>, EntityProc>;
 
@@ -48,7 +102,7 @@ public:
 class MockMeshB_Common
 {
 public:
-  using EntityProc = stk::search::IdentProc<EntityKey, unsigned>;
+  using EntityProc = stk::search::IdentProc<EntityKey>;
   using EntityProcVec = std::vector<EntityProc>;
   using BoundingBox = std::pair<stk::search::Sphere<double>, EntityProc>;
 
@@ -527,9 +581,9 @@ public:
       {
         ASSERT_EQ(2u, from_entity_keys_masked.size());
         EXPECT_EQ(0u, from_entity_keys_masked[0].id());
-        EXPECT_EQ(1u, from_entity_keys_masked[0].proc());
+        EXPECT_EQ(1, from_entity_keys_masked[0].proc());
         EXPECT_EQ(0u, from_entity_keys_masked[1].id());
-        EXPECT_EQ(2u, from_entity_keys_masked[1].proc());
+        EXPECT_EQ(2, from_entity_keys_masked[1].proc());
       }else {
         EXPECT_EQ(3u, FromElem->elemToUse);
         EXPECT_EQ(0u, from_entity_keys_masked.size());
@@ -541,15 +595,15 @@ public:
       if( FromElem->elemToUse == 0)
       {
         ASSERT_EQ(0u, from_entity_keys_masked.size());
-        EXPECT_EQ(0u, to_entity_keys_masked[0].proc());
+        EXPECT_EQ(0, to_entity_keys_masked[0].proc());
       }else {
         EXPECT_EQ(3u, FromElem->elemToUse);
         ASSERT_EQ(2u, from_entity_keys_masked.size());
         EXPECT_EQ(3u, from_entity_keys_masked[0].id());
-        EXPECT_EQ(1u, from_entity_keys_masked[0].proc());
+        EXPECT_EQ(1, from_entity_keys_masked[0].proc());
         EXPECT_EQ(3u, from_entity_keys_masked[1].id());
-        EXPECT_EQ(2u, from_entity_keys_masked[1].proc());
-        EXPECT_EQ(1u, to_entity_keys_masked[0].proc());
+        EXPECT_EQ(2, from_entity_keys_masked[1].proc());
+        EXPECT_EQ(1, to_entity_keys_masked[0].proc());
       }
       EXPECT_EQ(ToPoints->point_ids[0], to_entity_keys_masked[0].id());
     }
@@ -559,9 +613,9 @@ public:
       EXPECT_EQ(ToPoints->point_ids[1], to_entity_keys_masked[0].id());
 
       if( FromElem->elemToUse == 0)
-        EXPECT_EQ(0u, to_entity_keys_masked[0].proc());
+        EXPECT_EQ(0, to_entity_keys_masked[0].proc());
       else
-        EXPECT_EQ(1u, to_entity_keys_masked[0].proc());
+        EXPECT_EQ(1, to_entity_keys_masked[0].proc());
 
       ASSERT_EQ(0u, from_entity_keys_masked.size());
     }
@@ -667,8 +721,8 @@ TEST_P(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointLocalPointIds)
   test.run(GetParam());
 }
 
-//Note, these test segfault with the stk::search::SearchMethod::MORTON_LINEARIZED_BVH
-//I'm not sure who uses that search method or it is supposed to be production ready
+//Note, these tests segfault with stk::search::SearchMethod::MORTON_LINEARIZED_BVH
+//I'm not sure who uses that search method or if it is supposed to be production ready
 #ifdef INSTANTIATE_TEST_SUITE_P
 INSTANTIATE_TEST_SUITE_P(GeometricTransferTest, GeometricTransferTest,
     ::testing::Values(stk::search::SearchMethod::KDTREE));

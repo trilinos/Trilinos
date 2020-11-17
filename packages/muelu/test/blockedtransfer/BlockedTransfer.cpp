@@ -200,10 +200,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
 
     switch (clp.parse(argc,argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
     }
 
     xpetraParameters.check();
@@ -345,7 +345,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     H.SetVerbLevel(MueLu::Test);
     H.Setup(M);
 
-    std::cout << "main AcFact = " << AcFact.get() << std::endl;
     RCP<Level> l0 = H.GetLevel(0);
     RCP<Level> l1 = H.GetLevel(1);
     RCP<Level> l2 = H.GetLevel(2);

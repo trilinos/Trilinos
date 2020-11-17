@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -9,19 +9,19 @@ C=======================================================================
       SUBROUTINE INTRPN(ICONA,SOLNA,IELPT,STRPT,
      &                  SOLNB,NDLSTB,XB,YB,ZB,
      &                  IDBLK,TIMES,INSUB,SN)
-C
+
 C     ******************************************************************
-C
+
 C     SUBROUTINE TO CONTROL INTERPOLATION OF NODAL RESULTS FROM MESH-A
 C     TO MESH-B
 C     INTERPOLATED SOLUTION IS WRITTEN TO MESH-C EXODUS FILE
-C
+
 C     Calls subroutine SHAPEF, ININOD
-C
+
 C     Called by MAPVAR
-C
+
 C     ******************************************************************
-C
+
 C ICONA   INT   Connectivity of donor Mesh (1:nelnda,1:numeba)
 C SOLNA   REAL  Nodal variables  for donor mesh
 C IELPT   INT   The element in donor mesh within which the point
@@ -34,9 +34,9 @@ C TIMES   REAL  Array of times - just passed through
 C INSUB   INT   Number of times into subroutine for this element block
 C               1-first time; >1-second,etc time;
 C               used to control mapping for many element blocks to one
-C
+
 C     ******************************************************************
-C
+
       include 'amesh.blk'
       include 'bmesh.blk'
       include 'aexds1.blk'
@@ -46,64 +46,63 @@ C
       include 'steps.blk'
       include 'tapes.blk'
       include 'varnpt.blk'
-C
+
       DIMENSION XB(*), YB(*), ZB(*), TIMES(*)
       DIMENSION ICONA(NELNDA,*), SOLNA(NODESA,NVARNP)
       DIMENSION SOLNB(NODESB,NVARNP), NDLSTB(*)
       DIMENSION IELPT(*), STRPT(3,NODESB)
       DIMENSION SOLN(27), SN(*)
-C
+
 C     ******************************************************************
-C
+
 C set up time steps
-C
+
       IF (ISTEP .EQ. -1)THEN
         NTM = NTIMES
       ELSE
         NTM = 1
       END IF
-C
+
       DO 5 IST = 1, NTM
         IF (ISTEP .EQ. -1)THEN
           ISTP = IST
         ELSE
           ISTP = ISTEP
         END IF
-C
+
 C Start interpolation
-C
+
         DO 10 IVAR = 1, NVARNP
-C
+
 C For IDEF = 2 do mesh annealing (used by GOMA); write out all
 C displacements as zero.
-C
+
           IF (IDEF .EQ. 2 .AND. (IVAR .EQ. IXDIS .OR. IVAR .EQ. IYDIS
      &        .OR. IVAR .EQ. IZDIS))GO TO 10
-C
-C
+
 C If first time into INTRPN for this element block, initialize
 C else you are mapping many to one and retrieve partially mapped
 C results from temporary storage in EXODUS
-C
+
           IF (INSUB .EQ. 1)THEN
             CALL ININOD(SOLNB,IVAR,TIMES,ISTP,IDBLK,NDLSTB,XB,YB,ZB,
      &                  SN)
           ELSE
             CALL EXGNV(NTP4EX,IST,IVAR,NODESB,SOLNB(1,IVAR),IERR)
           END IF
-C
+
 C Get nodal results on donor mesh
-C
+
           CALL EXGNV(NTP2EX,ISTP,IVAR,NODESA,SOLNA(1,IVAR),IERR)
-C
+
 C Loop on nodes in recipient mesh
-C
+
           DO 30 I = 1,NUMNDB
             NEL = IELPT(I)
             IF (NEL .NE. 0) THEN
-C
+
 C Set parameters for element in donor mesh
-C
+
               S = STRPT(1,I)
               T = STRPT(2,I)
               R = 0.
@@ -115,20 +114,20 @@ C              NNODES = NNELM(ITYPE)
                 INODE = ICONA(J,NEL)
                 SOLN(J) = SOLNA(INODE,IVAR)
  20           CONTINUE
-C
+
 C Shape function
-C
+
               CALL SHAPEF(ITYPE,S,T,R,SOLN,BVALUE)
               SOLNB(NDLSTB(I),IVAR) = BVALUE
             END IF
  30       CONTINUE
-C
+
 C Save results, it doesn't matter if they are preliminary or final
-C
+
           CALL EXPNV(NTP4EX,IST,IVAR,NODESB,SOLNB(1,IVAR),IERR)
 
  10     CONTINUE
   5   CONTINUE
-C
+
       RETURN
       END

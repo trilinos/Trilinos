@@ -159,17 +159,17 @@ namespace Tpetra {
   }
 
   template<class Scalar, class LO, class GO, class Node>
-  typename BlockVector<Scalar, LO, GO, Node>::little_vec_type
+  typename BlockVector<Scalar, LO, GO, Node>::little_host_vec_type
   BlockVector<Scalar, LO, GO, Node>::
   getLocalBlock (const LO localRowIndex) const
   {
     if (! this->isValidLocalMeshIndex (localRowIndex)) {
-      return little_vec_type ();
+      return little_host_vec_type ();
     }
     else {
       const size_t blockSize = this->getBlockSize ();
       const size_t offset = localRowIndex * blockSize;
-      return little_vec_type (this->getRawPtr () + offset, blockSize);
+      return little_host_vec_type (this->getRawPtr () + offset, blockSize);
     }
   }
 

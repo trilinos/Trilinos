@@ -36,6 +36,7 @@
 
 #include "Sacado_DynamicArrayTraits.hpp"
 #include "Sacado_mpl_integral_nonzero_constant.hpp"
+#include "Sacado_mpl_apply.hpp"
 
 namespace Sacado {
 
@@ -78,7 +79,10 @@ namespace Sacado {
       //! Turn ViewStorage into a meta-function class usable with mpl::apply
       template <typename TT>
       struct apply {
-        typedef ViewStorage<TT,static_length,static_stride,U> type;
+        typedef typename std::remove_cv<TT>::type non_const_TT;
+        typedef typename BaseExprType<non_const_TT>::type base_expr_TT;
+        typedef typename mpl::apply<U,base_expr_TT>::type UU;
+        typedef ViewStorage<TT,static_length,static_stride,UU> type;
       };
 
       //! Replace static derivative length
@@ -88,36 +92,46 @@ namespace Sacado {
       };
 
       //! Default constructor (needed to satisfy interface)
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewStorage() :
         sz_(0), stride_(0), val_(0), dx_(0) {}
 
       //! Constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewStorage(T* v, const int arg_size = 0, const int arg_stride = 0) :
         sz_(arg_size), stride_(arg_stride), val_(v+sz_.value*stride_.value), dx_(v) {}
 
       //! Constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewStorage(T* arg_dx, T* arg_val, const int arg_size = 0,
                   const int arg_stride = 0) :
         sz_(arg_size), stride_(arg_stride), val_(arg_val), dx_(arg_dx) {}
 
       //! Copy constructor
-      KOKKOS_INLINE_FUNCTION
-      ViewStorage(const ViewStorage& x) :
-        sz_(x.sz_), stride_(x.stride_), val_(x.val_), dx_(x.dx_) {}
+      /*!
+        Allow, e.g., ViewStorage<double,...>(ViewStorage<double,...>),
+        ViewStorage<const double,...>(ViewStorage<double,...>), and
+        ViewStorage<const double,...>(ViewStorage<const double,...>) but not
+        ViewStorage<double,...>(ViewStorage<const double,...>).
+      */
+      template <typename TT>
+      SACADO_INLINE_FUNCTION
+      ViewStorage(
+        const ViewStorage<TT,static_length,static_stride,U>& x,
+        typename std::enable_if< std::is_same<TT,T>::value ||
+                                 std::is_same<const TT,T>::value >::type* = 0)
+        : sz_(x.sz_), stride_(x.stride_), val_(x.val_), dx_(x.dx_) {}
 
       // Move does not make sense for this storage since it is always tied to
       // some preallocated data.  Don't define move constructor so compiler will
       // always fall-back to copy
 
       //! Destructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ~ViewStorage() {}
 
       //! Assignment
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewStorage& operator=(const ViewStorage& x) {
         // Can't use std::addressof() on the GPU, so this is equivalent
         // according to cppreference.com
@@ -142,11 +156,11 @@ namespace Sacado {
       // always fall-back to copy
 
       //! Returns number of derivative components
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       constexpr int size() const { return sz_.value;}
 
       //! Returns array length
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       constexpr int length() const { return sz_.value; }
 
       //! Resize the derivative array to sz
@@ -155,7 +169,7 @@ namespace Sacado {
        * which signify assigning a constant.  Thus we zero out the derivative
        * components.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void resize(int sz) {
         if (sz == 0) ds_array<T>::strided_zero(dx_, stride_.value, sz_.value);
       }
@@ -166,57 +180,60 @@ namespace Sacado {
        * the derivative array to zero and then back to some size > 0.  Instead
        * we zero out components when it is resized to zero above.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void resizeAndZero(int sz) {}
 
       //! Expand derivative array to size sz
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void expand(int sz) {}
 
       //! Zero out derivative array
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void zero() {
         ds_array<T>::strided_zero(dx_, stride_.value, sz_.value);
       }
 
       //! Returns value
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const T& val() const { return *val_; }
 
       //! Returns value
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       T& val() { return *val_; }
 
       //! Returns derivative array
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const T* dx() const { return dx_;}
 
       //! Returns derivative component \c i with bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       T dx(int i) const {
         return unsigned(sz_.value) ? dx_[ stride_one ? i : i * stride_.value ] : T(0.);
       }
 
       //! Returns derivative component \c i without bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       T& fastAccessDx(int i) {
         return dx_[ stride_one ? i : i * stride_.value ];
       }
 
       //! Returns derivative component \c i without bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const T& fastAccessDx(int i) const {
         return dx_[ stride_one ? i : i * stride_.value ];
       }
 
       //! Overload of addressof operator
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewFadPtr<T,static_length,static_stride,U> operator&() const {
         return ViewFadPtr<T,static_length,static_stride,U>(
           this->dx_, this->val_, this->sz_.value, this->stride_.value);
       }
 
     protected:
+
+      template <typename, unsigned, unsigned, typename>
+      friend class ViewStorage;
 
       //! Derivative array size
       const mpl::integral_nonzero_constant< int, static_length > sz_;

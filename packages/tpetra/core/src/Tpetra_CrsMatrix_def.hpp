@@ -48,10 +48,10 @@
 /// for you).  If you only want the declaration of Tpetra::CrsMatrix,
 /// include "Tpetra_CrsMatrix_decl.hpp".
 
-#include "Tpetra_LocalCrsMatrixOperator.hpp"
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
 #include "Tpetra_RowMatrix.hpp"
+#include "Tpetra_LocalCrsMatrixOperator.hpp"
 
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_castAwayConstDualView.hpp"
@@ -1040,6 +1040,14 @@ namespace Tpetra {
     return lclMatrix_.get () == nullptr ?
       local_matrix_type () :
       lclMatrix_->getLocalMatrix ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::shared_ptr<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_multiply_op_type>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalMultiplyOperator () const
+  {
+    return lclMatrix_;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -3186,7 +3194,7 @@ namespace Tpetra {
         ") > k_values1D_.extent(0) (" << k_values1D_.extent (0) << ").");
 #endif // HAVE_TPETRA_DEBUG
       range_type range (rowinfo.offset1D, rowinfo.offset1D + rowinfo.allocSize);
-      typedef View<const ST*, execution_space, MemoryUnmanaged> subview_type;
+      typedef View<const ST*, device_type, MemoryUnmanaged> subview_type;
       // mfh 23 Nov 2015: Don't just create a subview of k_values1D_
       // directly, because that first creates a _managed_ subview,
       // then returns an unmanaged version of that.  That touches the
@@ -3250,7 +3258,7 @@ namespace Tpetra {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Kokkos::View<const typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type*,
-               typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::execution_space,
+               typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::device_type,
                Kokkos::MemoryUnmanaged>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getRowView (const RowInfo& rowInfo) const
@@ -3258,7 +3266,7 @@ namespace Tpetra {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
     typedef impl_scalar_type ST;
-    typedef View<const ST*, execution_space, MemoryUnmanaged> subview_type;
+    typedef View<const ST*, device_type, MemoryUnmanaged> subview_type;
     typedef std::pair<size_t, size_t> range_type;
 
     if (k_values1D_.extent (0) != 0 && rowInfo.allocSize > 0) {
@@ -3287,7 +3295,7 @@ namespace Tpetra {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Kokkos::View<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type*,
-               typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::execution_space,
+               typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::device_type,
                Kokkos::MemoryUnmanaged>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getRowViewNonConst (const RowInfo& rowInfo) const
@@ -3295,7 +3303,7 @@ namespace Tpetra {
     using Kokkos::MemoryUnmanaged;
     using Kokkos::View;
     typedef impl_scalar_type ST;
-    typedef View<ST*, execution_space, MemoryUnmanaged> subview_type;
+    typedef View<ST*, device_type, MemoryUnmanaged> subview_type;
     typedef std::pair<size_t, size_t> range_type;
 
     if (k_values1D_.extent (0) != 0 && rowInfo.allocSize > 0) {
@@ -4054,7 +4062,7 @@ namespace Tpetra {
     Kokkos::parallel_for
       ("Tpetra::CrsMatrix::getLocalDiagCopy",
        range_type (0, myNumRows),
-       [&] (const LO lclRow) {
+       [&, INV, h_offsets] (const LO lclRow) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
         lclVecHost1d(lclRow) = STS::zero (); // default value if no diag entry
         if (h_offsets[lclRow] != INV) {
           auto curRow = lclMat.rowConst (lclRow);
@@ -4077,7 +4085,6 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::rcpFromRef;
-    using LO = local_ordinal_type;
     using vec_type = Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "leftScale: ";
 
@@ -4106,17 +4113,7 @@ namespace Tpetra {
          "either the row Map or the range Map of the CrsMatrix.");
     }
 
-    // Check whether A has a valid local matrix.  It might not if it
-    // was not created with a local matrix, and if fillComplete has
-    // never been called on it before.  A never-initialized (and thus
-    // invalid) local matrix has zero rows, because it was default
-    // constructed.
-    const LO lclNumRows =
-      static_cast<LO> (this->getRowMap ()->getNodeNumElements ());
-    const bool validLocalMatrix = lclMatrix_.get () != nullptr &&
-      lclMatrix_->getLocalMatrix ().numRows () == lclNumRows;
-
-    if (validLocalMatrix) {
+    if (this->isFillComplete()) {
       using dev_memory_space = typename device_type::memory_space;
       if (xp->template need_sync<dev_memory_space> ()) {
         using Teuchos::rcp_const_cast;
@@ -4129,19 +4126,10 @@ namespace Tpetra {
                                x_lcl_1d, false, false);
     }
     else {
-      execution_space().fence (); // for UVM's sake
-
-      ArrayRCP<const Scalar> vectorVals = xp->getData (0);
-      ArrayView<impl_scalar_type> rowValues = Teuchos::null;
-      for (LocalOrdinal i = 0; i < lclNumRows; ++i) {
-        const RowInfo rowinfo = this->staticGraph_->getRowInfo (i);
-        rowValues = this->getViewNonConst (rowinfo);
-        const impl_scalar_type scaleValue = static_cast<impl_scalar_type> (vectorVals[i]);
-        for (size_t j = 0; j < rowinfo.numEntries; ++j) {
-          rowValues[j] *= scaleValue;
-        }
-      }
-      execution_space().fence (); // for UVM's sake
+      // 6/2020  Disallow leftScale of non-fillComplete matrices #7446
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsMatrix::leftScale requires matrix to be"
+         " fillComplete");
     }
   }
 
@@ -4157,7 +4145,6 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::rcpFromRef;
-    using LO = local_ordinal_type;
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vec_type;
     const char tfecfFuncName[] = "rightScale: ";
 
@@ -4185,17 +4172,7 @@ namespace Tpetra {
          "either the domain Map or the column Map of the CrsMatrix.");
     }
 
-    // Check whether A has a valid local matrix.  It might not if it
-    // was not created with a local matrix, and if fillComplete has
-    // never been called on it before.  A never-initialized (and thus
-    // invalid) local matrix has zero rows, because it was default
-    // constructed.
-    const LO lclNumRows =
-      static_cast<LO> (this->getRowMap ()->getNodeNumElements ());
-    const bool validLocalMatrix = lclMatrix_.get () != nullptr &&
-      lclMatrix_->getLocalMatrix ().numRows () == lclNumRows;
-
-    if (validLocalMatrix) {
+    if (this->isFillComplete()) {
       using dev_memory_space = typename device_type::memory_space;
       if (xp->template need_sync<dev_memory_space> ()) {
         using Teuchos::rcp_const_cast;
@@ -4208,20 +4185,10 @@ namespace Tpetra {
                                 x_lcl_1d, false, false);
     }
     else {
-      execution_space().fence (); // for UVM's sake
-
-      ArrayRCP<const Scalar> vectorVals = xp->getData (0);
-      ArrayView<impl_scalar_type> rowValues = null;
-      for (LO i = 0; i < lclNumRows; ++i) {
-        const RowInfo rowinfo = this->staticGraph_->getRowInfo (i);
-        rowValues = this->getViewNonConst (rowinfo);
-        ArrayView<const LO> colInds;
-        this->getCrsGraphRef ().getLocalRowView (i, colInds);
-        for (size_t j = 0; j < rowinfo.numEntries; ++j) {
-          rowValues[j] *= static_cast<impl_scalar_type> (vectorVals[colInds[j]]);
-        }
-      }
-      execution_space().fence (); // for UVM's sake
+      // 6/2020  Disallow rightScale of non-fillComplete matrices #7446
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsMatrix::rightScale requires matrix to be"
+         " fillComplete");
     }
   }
 
@@ -4887,13 +4854,11 @@ namespace Tpetra {
 
       const bool callGraphComputeGlobalConstants = params.get () == nullptr ||
         params->get ("compute global constants", true);
-      const bool computeLocalTriangularConstants = params.get () == nullptr ||
-        params->get ("compute local triangular constants", true);
       if (callGraphComputeGlobalConstants) {
-        this->myGraph_->computeGlobalConstants (computeLocalTriangularConstants);
+        this->myGraph_->computeGlobalConstants ();
       }
       else {
-        this->myGraph_->computeLocalConstants (computeLocalTriangularConstants);
+        this->myGraph_->computeLocalConstants ();
       }
       this->myGraph_->fillComplete_ = true;
       this->myGraph_->checkInternalState ();
@@ -5231,7 +5196,7 @@ namespace Tpetra {
           Y_in.scale (beta);
         }
         // Do the Export operation.
-        Y_in.doExport (*Y_rowMap, *exporter, ADD);
+        Y_in.doExport (*Y_rowMap, *exporter, ADD_ASSIGN);
       }
     }
     else { // Don't do an Export: row Map and range Map are the same.
@@ -5373,12 +5338,13 @@ namespace Tpetra {
       importMV_->putScalar (ZERO);
       // Do the local computation.
       this->localApply (*X, *importMV_, mode, alpha, ZERO);
+
       if (Y_is_overwritten) {
         Y_in.putScalar (ZERO);
       } else {
         Y_in.scale (beta);
       }
-      Y_in.doExport (*importMV_, *importer, ADD);
+      Y_in.doExport (*importMV_, *importer, ADD_ASSIGN);
     }
     // otherwise, multiply into Y
     else {
@@ -5481,7 +5447,14 @@ namespace Tpetra {
          std::runtime_error, "X and Y may not alias one another.");
     }
 
-    lclMatrix_->apply (X_lcl, Y_lcl, mode, alpha, beta);
+    LocalOrdinal nrows = getNodeNumRows();
+    LocalOrdinal maxRowImbalance = 0;
+    if(nrows != 0)
+      maxRowImbalance = getNodeMaxNumRowEntries() - (getNodeNumEntries() / nrows);
+    if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
+      lclMatrix_->applyImbalancedRows (X_lcl, Y_lcl, mode, alpha, beta);
+    else
+      lclMatrix_->apply (X_lcl, Y_lcl, mode, alpha, beta);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -6943,7 +6916,8 @@ namespace Tpetra {
     const SrcDistObject& srcObj,
     const size_t numSameIDs,
     const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs)
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+    const CombineMode /*CM*/)
   {
     using Details::Behavior;
     using Details::dualViewStatusToString;
@@ -9628,7 +9602,7 @@ namespace Tpetra {
         }
 
         Teuchos::ArrayView<const int>  EPID1 = MyImporter.is_null() ? Teuchos::ArrayView<const int>() : MyImporter->getExportPIDs();
-        Teuchos::ArrayView<const LO>   ELID1 = MyImporter.is_null() ? Teuchos::ArrayView<const int>() : MyImporter->getExportLIDs();
+        Teuchos::ArrayView<const LO>   ELID1 = MyImporter.is_null() ? Teuchos::ArrayView<const LO>() : MyImporter->getExportLIDs();
 
         Teuchos::ArrayView<const int>  TEPID2  =  rowTransfer.getExportPIDs(); // row matrix
         Teuchos::ArrayView<const LO>   TELID2  =  rowTransfer.getExportLIDs();

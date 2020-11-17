@@ -56,8 +56,9 @@ template <class SC, class LO, class GO, class NT>
 KokkosSparse::CrsMatrix<
   typename Kokkos::ArithTraits<SC>::val_type,
     LO,
-    typename NT::execution_space,
-    void>
+    typename NT::device_type,
+    void,
+    size_t>
 localDeepCopyLocallyIndexedRowMatrix
   (const RowMatrix<SC, LO, GO, NT>& A,
    const char label[]);

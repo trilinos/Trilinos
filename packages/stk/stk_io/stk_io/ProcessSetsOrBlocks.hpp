@@ -42,6 +42,8 @@
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/Part.hpp"
 #include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/base/FEMHelpers.hpp"
+#include "stk_mesh/base/CreateEdges.hpp"
 #include "stk_util/parallel/CommSparse.hpp"
 #include "Ioss_EdgeBlock.h"
 #include "Ioss_EdgeSet.h"
@@ -61,34 +63,21 @@
 #include "Ioss_SideBlock.h"
 #include "Ioss_SideSet.h"
 #include "Ioss_CommSet.h"
-#include "stk_mesh/base/FEMHelpers.hpp"
 
 #include <map>
 
 namespace stk { namespace io {
 
 template <typename INT>
-#ifdef STK_BUILT_IN_SIERRA
 void process_node_sharing(Ioss::Region &region, stk::mesh::BulkData &bulk)
-#else
-void process_node_sharing(Ioss::Region &region, stk::mesh::BulkData &bulk, stk::ParallelMachine comm)
-#endif
 {
   // Register node sharing information for all nodes on processor
   // boundaries.
   //
-  stk::ParallelMachine myComm;
-  int numProc = -1;
 
-#ifdef STK_BUILT_IN_SIERRA
-  myComm = bulk.parallel();
-  numProc = bulk.parallel_size();
+  stk::ParallelMachine myComm = bulk.parallel();
+  int numProc = bulk.parallel_size();
   if (bulk.parallel_size() > 1)
-#else
-  myComm = comm;
-  numProc = stk::parallel_machine_size(comm);
-  if (stk::parallel_machine_size(comm) > 1)
-#endif
   {
     Ioss::CommSet* io_cs = region.get_commset("commset_node");
     size_t num_sharings = io_cs->get_field("entity_processor").raw_count();
@@ -162,11 +151,7 @@ void process_node_sharing(Ioss::Region &region, stk::mesh::BulkData &bulk, stk::
 void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta);
 
 template <typename INT>
-#ifdef STK_BUILT_IN_SIERRA
 void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
-#else
-void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, stk::ParallelMachine comm)
-#endif
 {
   // This must be called after the "process_element_blocks" call
   // since there may be nodes that exist in the database that are
@@ -199,11 +184,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, stk::Pa
     bulk.set_local_id(nodes[i], i);
   }
 
-#ifdef STK_BUILT_IN_SIERRA
   process_node_sharing<INT>(region, bulk);
-#else
-  process_node_sharing<INT>(region, bulk, comm);
-#endif
 }
 
 stk::mesh::Part* get_part_from_alias(const Ioss::Region &region, const stk::mesh::MetaData &meta, const std::string &name);
@@ -339,6 +320,12 @@ void process_hidden_nodesets(Ioss::Region &io, stk::mesh::BulkData & bulk)
 
 void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk, const stk::mesh::EntityIdProcMap &elemIdMovedToProc, stk::io::StkMeshIoBroker::SideSetFaceCreationBehavior behavior);
 void process_sidesets(Ioss::Region &region, stk::mesh::MetaData &meta);
+void process_face_blocks(Ioss::Region &region, stk::mesh::BulkData &bulk);
+void process_face_blocks(Ioss::Region &region, stk::mesh::MetaData &meta);
+void process_edge_blocks(Ioss::Region &region, stk::mesh::BulkData &bulk);
+void process_edge_blocks(Ioss::Region &region, stk::mesh::MetaData &meta);
+void process_assemblies(Ioss::Region &region, stk::mesh::MetaData &meta);
+void build_assembly_hierarchies(Ioss::Region &region, stk::mesh::MetaData &meta);
 
 }} // namespace stk io
 

@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 #include <algorithm>
 #include <cfloat>
@@ -1115,7 +1115,7 @@ const double *get_nodal_values(ExoII_Read<INT> &filen, int time_step, size_t idx
 
     if (vals != nullptr) {
       if (Invalid_Values(vals, filen.Num_Nodes())) {
-        Error(fmt::format("NaN found for variable '{}' in file {}\n", name, fno));
+        Error(fmt::format("NaN found for nodal variable '{}' in file {}\n", name, fno));
         *diff_flag = true;
       }
     }
@@ -1133,7 +1133,7 @@ const double *get_nodal_values(ExoII_Read<INT> &filen, const TimeInterp &t, size
 
     if (vals != nullptr) {
       if (Invalid_Values(vals, filen.Num_Nodes())) {
-        Error(fmt::format("NaN found for variable '{}' in file {}\n", name, fno));
+        Error(fmt::format("NaN found for nodal variable '{}' in file {}\n", name, fno));
         *diff_flag = true;
       }
     }
@@ -1260,12 +1260,12 @@ bool diff_globals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
     }
 
     if (Invalid_Values(&vals1[idx1], 1)) {
-      Error(fmt::format("NaN found for variable '{}' in file 1\n", name));
+      Error(fmt::format("NaN found for global variable '{}' in file 1\n", name));
       diff_flag = true;
     }
 
     if (Invalid_Values(&vals2[idx2], 1)) {
-      Error(fmt::format("NaN found for variable '{}' in file 2\n", name));
+      Error(fmt::format("NaN found for global variable '{}' in file 2\n", name));
       diff_flag = true;
     }
 
@@ -1470,12 +1470,12 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
     SMART_ASSERT(evals != nullptr);
   }
 
+  int name_length = max_string_length(interFace.elmt_var_names) + 1;
+
   if (out_file_id < 0 && !interFace.quiet_flag && !interFace.summary_flag &&
       !interFace.elmt_var_names.empty()) {
     fmt::print("Element variables:\n");
   }
-
-  int name_length = max_string_length(interFace.elmt_var_names) + 1;
 
   for (unsigned e_idx = 0; e_idx < interFace.elmt_var_names.size(); ++e_idx) {
     const std::string &name = (interFace.elmt_var_names)[e_idx];
@@ -1537,8 +1537,8 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
       }
 
       if (Invalid_Values(vals1, eblock1->Size())) {
-        Error(
-            fmt::format("NaN found for variable '{}' in block {}, file 1\n", name, eblock1->Id()));
+        Error(fmt::format("NaN found for element variable '{}' in block {}, file 1\n", name,
+                          eblock1->Id()));
         diff_flag = true;
       }
 
@@ -1565,7 +1565,7 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
         }
 
         if (Invalid_Values(vals2, eblock2->Size())) {
-          Error(fmt::format("NaN found for variable '{}' in block {}, file 2\n", name,
+          Error(fmt::format("NaN found for element variable '{}' in block {}, file 2\n", name,
                             eblock2->Id()));
           diff_flag = true;
         }
@@ -1705,6 +1705,7 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
 
     for (size_t b = 0; b < file1.Num_Node_Sets(); ++b) {
       Node_Set<INT> *nset1 = file1.Get_Node_Set_by_Index(b);
+      SMART_ASSERT(nset1 != nullptr);
       if (nset1->Size() == 0) {
         continue;
       }
@@ -1721,8 +1722,7 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
         else {
           nset2 = file2.Get_Node_Set_by_Id(id);
         }
-        SMART_ASSERT(nset2 != nullptr);
-        if (!nset2->is_valid_var(vidx2)) {
+        if (nset2 == nullptr || !nset2->is_valid_var(vidx2)) {
           continue;
         }
       }
@@ -1738,8 +1738,8 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
       }
 
       if (Invalid_Values(vals1, nset1->Size())) {
-        Error(
-            fmt::format("NAN found for variable '{}' in nodeset {}, file 1.\n", name, nset1->Id()));
+        Error(fmt::format("NAN found for nodeset variable '{}' in nodeset {}, file 1.\n", name,
+                          nset1->Id()));
         diff_flag = true;
       }
 
@@ -1758,7 +1758,7 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
         }
 
         if (Invalid_Values(vals2, nset2->Size())) {
-          Error(fmt::format("NAN found for variable '{}' in nodeset {}, file 2.\n", name,
+          Error(fmt::format("NAN found for nodeset variable '{}' in nodeset {}, file 2.\n", name,
                             nset2->Id()));
           diff_flag = true;
         }
@@ -1869,7 +1869,6 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
       !interFace.ss_var_names.empty()) {
     fmt::print("Sideset variables:\n");
   }
-  Norm norm;
 
   for (unsigned e_idx = 0; e_idx < interFace.ss_var_names.size(); ++e_idx) {
     const std::string &name  = (interFace.ss_var_names)[e_idx];
@@ -1884,6 +1883,8 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
     }
 
     DiffData max_diff;
+    Norm     norm;
+
     for (size_t b = 0; b < file1.Num_Side_Sets(); ++b) {
       Side_Set<INT> *sset1 = file1.Get_Side_Set_by_Index(b);
       SMART_ASSERT(sset1 != nullptr);
@@ -1918,8 +1919,8 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
       }
 
       if (Invalid_Values(vals1, sset1->Size())) {
-        Error(
-            fmt::format("NaN found for variable '{}' in sideset {}, file 1.\n", name, sset1->Id()));
+        Error(fmt::format("NaN found for sideset variable '{}' in sideset {}, file 1.\n", name,
+                          sset1->Id()));
         diff_flag = true;
       }
 
@@ -1937,7 +1938,7 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
         }
 
         if (Invalid_Values(vals2, sset2->Size())) {
-          Error(fmt::format("NaN found for variable '{}' in sideset {}, file 2.\n", name,
+          Error(fmt::format("NaN found for sideset variable '{}' in sideset {}, file 2.\n", name,
                             sset2->Id()));
           diff_flag = true;
         }

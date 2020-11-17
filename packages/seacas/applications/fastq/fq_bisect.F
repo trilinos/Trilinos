@@ -1,27 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: bisect.F,v 1.1 1998/04/10 04:30:07 gdsjaar Exp $
-C $Log: bisect.F,v $
-C Revision 1.1  1998/04/10 04:30:07  gdsjaar
-C Added the ifdef needsdoubleescape to the graphics symbol
-C plotting. Required moving some .f to .F files and specifying in Imakefile
-C
-C Revision 1.1.1.1  1990/11/30 11:04:02  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:04:00  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]BISECT.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE BISECT (MP, ML, MS, MR, MSNAP, N, IPOINT, COOR, IPBOUN,
      &   ILINE, LTYPE, NINT, FACTOR, LCON, ILBOUN, ISBOUN, ISIDE, NLPS,
      &   IFLINE, ILLIST, IREGN, IMAT, NSPR, IFSIDE, ISLIST, IRPB, IPBF,
@@ -31,21 +13,21 @@ C
      &   IWTPBF, IWTLBF, IWTSBF, IRGFLG, X, Y, MERGE, LASTP, ALPHA,
      &   NOROOM, SNAP, SNAPDX, NSNAP)
 C***********************************************************************
-C
+
 C  SUBROUTINE BISECT = FINDS CLOSEST PERPENDICULAR BISECTED LINE
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINE CALLED BY:
 C     INPUT  = INPUTS MESH DEFINITIONS FROM THE LIGHT TABLE
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINES CALLED:
 C     DLPARA = DETERMINES LINE PARAMETERS FROM TWO POINTS
-C
+
 C***********************************************************************
-C
+
       DIMENSION IPOINT(MP), COOR(2, MP), IPBOUN(MP)
       DIMENSION ILINE(ML), LTYPE(ML), NINT(ML), FACTOR(ML), LCON(3, ML)
       DIMENSION ILBOUN(ML), ISBOUN(ML)
@@ -63,23 +45,23 @@ C
       DIMENSION IHOLDM(2, (MS + MR)), IHOLD3(2, ML), IHOLDS(2, MS)
       DIMENSION IRGFLG(MR)
       DIMENSION N(29), SNAPDX(2, MSNAP), NSNAP(2)
-C
+
       LOGICAL BIFIND, ADDLNK, NOROOM, ALPHA, TEST, MERGE, NUMPLT, NEWNUM
       LOGICAL ADDCEN, CHANGE, ADJUST, ADDOLD, SIDEOK, GETMAX, SNAP
-C
+
       NUMPLT = .FALSE.
-C
+
 C  FIND THE CLOSEST LINE ABOVE THE POINT INPUT
-C
+
       ADDLNK = .FALSE.
       TEST = .FALSE.
       GETMAX = .FALSE.
       N3OLD = N(3)
       CALL CLOSEL (MP, ML, N, COOR, ILINE, LTYPE, LCON, LINKP, LINKL,
      &   X, Y, BIFIND, IFIND, ADDCEN, XCHOLD, YCHOLD)
-C
+
 C  INPUT THE NEW POINT
-C
+
       IF (BIFIND) THEN
          CALL LTSORT (ML, LINKL, IFIND, L1, ADDLNK)
          LT = LTYPE(L1)
@@ -137,9 +119,9 @@ C         END IF
             CALL PLTSTD (1, 7.)
             CALL PLTFLU
          END IF
-C
+
 C  INPUT THE NEW CENTER IF NEEDED
-C
+
          IF (ADDCEN) THEN
             JJ = N(18) + 1
             CALL INPOIN (MP, N(1), N(18), JJ, XCHOLD, YCHOLD, NHOLDP,
@@ -158,9 +140,9 @@ C
             END IF
             I3 = JJ
          END IF
-C
+
 C  CALCULATE HOW TO DIVIDE UP THE ORIGINAL INERVALS
-C
+
          IF (NINT(L1) .EQ. 0) THEN
             NN1 = 0
             NN2 = 0
@@ -173,9 +155,9 @@ C
             NN1 = MAX0(1, NN1)
             NN2 = MAX0(1, NINT(L1) - NN1)
          END IF
-C
+
 C  INPUT THE ORIGINAL LINE
-C
+
          FACT = FACTOR(L1)
          ILB = ILBOUN(L1)
          ISB = ISBOUN(L1)
@@ -185,25 +167,25 @@ C
      &      FACT, NHOLDL, IHOLDL, ILINE, LTYPE, NINT, FACTOR, LCON,
      &      ILBOUN, ISBOUN, LINKL, MERGE, NOROOM)
          IF (NOROOM)RETURN
-C
+
 C  PLOT THE LINE
-C
+
          IF (.NOT.ALPHA) THEN
             CALL DLINE (MP, ML, COOR, LINKP, KNUM, LT, I1, LASTP, I3,
      &         NUMPLT, DUM1, DUM2, TEST, GETMAX, DUM3, DUM4, DUM5, DUM6)
             CALL PLTFLU
          END IF
-C
+
 C  INPUT THE NEW LINE
-C
+
          JJ = N(19) + 1
          CALL INLINE (ML, N(2), N(19), JJ, LT, LASTP, I2, I3, NN2, FACT,
      &      NHOLDL, IHOLDL, ILINE, LTYPE, NINT, FACTOR, LCON, ILBOUN,
      &      ISBOUN, LINKL, MERGE, NOROOM)
          IF (NOROOM)RETURN
-C
+
 C  INPUT THE NEW LINE'S FLAGS AND THEN LINK UP FLAGS FOR BOTH LINES
-C
+
          SIDEOK = .TRUE.
          NHOLD2 = 0
          IF (ILB .NE. 0) THEN
@@ -230,26 +212,26 @@ C
      &         ISBOUN, LINKSB, IWTSBF, LINKL, LINKS, SIDEOK, NOROOM)
             IF (NOROOM)RETURN
          END IF
-C
+
 C  PLOT THE NEW LINE
-C
+
          IF (.NOT.ALPHA) THEN
             CALL DLINE (MP, ML, COOR, LINKP, KNUM, LT, LASTP, I2, I3,
      &         NUMPLT, DUM1, DUM2, TEST, GETMAX, DUM3, DUM4, DUM5, DUM6)
             CALL PLTFLU
          END IF
-C
+
 C  UPDATE ANY REGION OR SIDE DEFINITIONS TO INCLUDE THE NEW LINES
-C
+
          IEND = N(22)
          DO 120 I = 1, IEND
             CALL LTSORT (MR, LINKR, I, II, ADDLNK)
             IF (II .GT. 0) THEN
                ADJUST = .FALSE.
                KKOUNT = 0
-C
+
 C  GET THE MATCH POINTS FROM THE LAST LINE IN THE REGION
-C
+
                JBEGIN = IFSIDE(II)
                JEND = IFSIDE(II) + NSPR(II) - 1
                CALL LTSORT (MS, LINKS, ISLIST(JEND), IPNTR, ADDLNK)
@@ -290,27 +272,27 @@ C
                   J1END = 0
                   J2END = 0
                END IF
-C
+
 C  NOW LOOP THROUGH THE SIDES/LINES AND CHECK FOR REPLACEMENT
-C
+
                DO 110 J = JBEGIN, JEND
                   KKOUNT = KKOUNT + 1
                   IHOLDL(KKOUNT) = ISLIST(J)
                   CALL LTSORT (MS, LINKS, ISLIST(J), IPNTR, ADDLNK)
                   IF ((ISLIST(J) .GT. 0) .AND. (IPNTR .GT. 0) .AND.
      &               (ISIDE(IPNTR) .GT. 0)) THEN
-C
+
 C  CHECK THE SIDE FOR LINE INCLUSION IF THE SIDE EXISTS, AND IT
 C  HAS NOT ALREADY BEEN FIXED (ISIDE(IPNTR)  .LT.  0)
-C
+
                      JJ = ISLIST(J)
                      KOUNT = 0
                      CHANGE = .FALSE.
                      KBEGIN = IFLINE(IPNTR)
                      KEND = IFLINE(IPNTR) + NLPS(IPNTR) - 1
-C
+
 C  GET THE BEGINNING OF THE SIDE FOR SWITCHING
-C
+
                      CALL LTSORT (ML, LINKL, ILLIST(KBEGIN), KK, ADDLNK)
                      IF (KK .GT. 0.) THEN
                         J1END = LCON(1, KK)
@@ -328,9 +310,9 @@ C
                            CHANGE = .TRUE.
                            KOUNT = KOUNT + 1
                            IHOLDP(KOUNT) = N(19)
-C
+
 C  CHECK TO MAKE SURE THE TWO LINES DON'T NEED SWITCHING
-C
+
                            IF ((I2 .EQ. I1END) .OR.
      &                        (I2 .EQ. I2END)) THEN
                               I1END = I1
@@ -349,24 +331,24 @@ C
                            I2END = 0
                         END IF
   100                CONTINUE
-C
+
 C  INCLUDE THE LINE IN THE SIDE LIST IF NEEDED
-C
+
                      IF (CHANGE) THEN
                         ID = JJ
                         CALL INSIDE (MS, N(3), N(4), N(20), JJ, IHOLDP,
      &                     KOUNT, ISIDE, NLPS, IFLINE, ILLIST, LINKS,
      &                     NHOLDS, IHOLDS, MERGE, NOROOM)
                         IF (NOROOM)RETURN
-C
+
 C  FLAG THE SIDE DATA AS ALREADY FIXED
-C
+
                         CALL LTSORT (MS, LINKS, ID, KK, ADDLNK)
                         IF (KK .GT. 0)ISIDE(KK) = -IABS(ISIDE(KK))
                      END IF
-C
+
 C  CHECK THE LINE FOR INCLUSION
-C
+
                   ELSE IF (ISLIST(J) .LT. 0) THEN
                      JJ = IABS(ISLIST(J))
                      CALL LTSORT (ML, LINKL, JJ, KK, ADDLNK)
@@ -374,9 +356,9 @@ C
                         ADJUST = .TRUE.
                         KKOUNT = KKOUNT + 1
                         IHOLDL(KKOUNT) = -N(19)
-C
+
 C  CHECK TO MAKE SURE THE TWO LINES DON'T NEED SWITCHING
-C
+
                         IF ((I2 .EQ. I1END) .OR. (I2 .EQ. I2END) .OR.
      &                     (I2 .EQ. J1END) .OR. (I2 .EQ. J2END)) THEN
                            I1END = I1
@@ -409,9 +391,9 @@ C
                END IF
             END IF
   120    CONTINUE
-C
+
 C  RESTORE ALL THE FLAGGED SIDE DATA
-C
+
          DO 130 I = N3OLD + 1, N(3)
             ISIDE(I) = IABS(ISIDE(I))
   130    CONTINUE

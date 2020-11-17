@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_Sort.h>
@@ -35,6 +35,7 @@ int main()
 
   for (size_t n : {100, 1023, 1024, 1025, (2 << 16) - 1, 2 << 16, (2 << 16) + 1}) {
     std::cerr << "\nSize: " << n << ": ";
+    // 'm' shapes the values in the vector; all sorts are on vectors of size 'n'
     for (size_t m = 1; m < 2 * n; m *= 2) {
       std::cerr << m;
       for (auto dist : {sawtooth, do_rand, stagger, plateau, shuffle}) {
@@ -70,17 +71,21 @@ int main()
           break;
         }
 
+        auto xsave = x;
         Ioss::qsort(x); // Copy of x
         assert(verify_sorted(x));
 
+        x = xsave;
         std::reverse(x.begin(), x.end()); // Reversed
         Ioss::qsort(x);
         assert(verify_sorted(x));
 
+        x = xsave;
         std::reverse(&x[0], &x[n / 2]); // Front half reversed
         Ioss::qsort(x);
         assert(verify_sorted(x));
 
+        x = xsave;
         std::reverse(&x[n / 2], &x[n]); // Back half reversed
         Ioss::qsort(x);
         assert(verify_sorted(x));
@@ -88,6 +93,7 @@ int main()
         Ioss::qsort(x); // Already sorted
         assert(verify_sorted(x));
 
+        x = xsave;
         for (size_t p = 0; p < n; p++) {
           x[p] += p % 5;
         }

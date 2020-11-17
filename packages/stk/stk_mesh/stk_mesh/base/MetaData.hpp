@@ -42,6 +42,10 @@
 #include <sys/types.h>                  // for int64_t
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <map>                          // for map, map<>::value_compare
+#include <string>                       // for string, char_traits
+#include <typeinfo>                     // for type_info
+#include <utility>                      // for pair
+#include <vector>                       // for vector, vector<>::size_type
 #include <stk_util/stk_config.h>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/EntityKey.hpp>  // for EntityKey
@@ -53,10 +57,6 @@
 #include <stk_topology/topology.hpp>    // for topology, topology::rank_t, etc
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/util/string_case_compare.hpp>  // for equal_case
-#include <string>                       // for string, char_traits
-#include <typeinfo>                     // for type_info
-#include <utility>                      // for pair
-#include <vector>                       // for vector, vector<>::size_type
 #include "Shards_CellTopology.hpp"      // for operator<, CellTopology
 #include "Shards_CellTopologyTraits.hpp"  // for getCellTopologyData
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits (ptr only), etc
@@ -69,9 +69,7 @@
 
 namespace shards { class ArrayDimTag; }
 namespace shards { class CellTopologyManagedData; }
-namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace mesh { class Ghosting; } }
 namespace stk { namespace mesh { class MetaData; } }
 
 namespace stk {
@@ -82,13 +80,6 @@ typedef Field<double, stk::mesh::Cartesian> CoordinatesField;
 /** \addtogroup stk_mesh_module
  *  \{
  */
-
-/** \brief  Print an entity key for this meta data */
-std::ostream &
-print_entity_key( std::ostream & os, const MetaData & meta_data, const EntityKey & key);
-
-std::string
-print_entity_key( const MetaData & meta_data, const EntityKey & key );
 
 bool is_topology_root_part(const Part & part);
 
@@ -630,6 +621,8 @@ private:
 
   void clean_field_restrictions();
 };
+
+void sync_to_host_and_mark_modified(const MetaData& meta);
 
 /** \brief  Verify that the meta data is identical on all processors */
 void verify_parallel_consistency( const MetaData & , ParallelMachine );

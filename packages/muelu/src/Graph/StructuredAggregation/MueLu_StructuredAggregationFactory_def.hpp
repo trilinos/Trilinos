@@ -97,6 +97,8 @@ namespace MueLu {
                                                  "Local number of nodes per spatial dimension provided by CoordinatesTransferFactory.");
     validParamList->set<RCP<const FactoryBase> >("DofsPerNode",             Teuchos::null,
                                                  "Generating factory for variable \'DofsPerNode\', usually the same as the \'Graph\' factory");
+    validParamList->set<const bool>("aggregation: single coarse point", false,
+                                                 "Allows the aggreagtion process to reduce spacial dimensions to a single layer");
 
     return validParamList;
   } // GetValidParameterList()
@@ -181,6 +183,7 @@ namespace MueLu {
     const bool coupled           = (coupling == "coupled" ? true : false);
     std::string outputType       = pL.get<std::string>("aggregation: output type");
     const bool outputAggregates  = (outputType == "Aggregates" ? true : false);
+    const bool singleCoarsePoint = pL.get<bool>("aggregation: single coarse point");
     int numDimensions;
     Array<GO> gFineNodesPerDir(3);
     Array<LO> lFineNodesPerDir(3);
@@ -235,7 +238,8 @@ namespace MueLu {
                                                                numRanks,
                                                                gFineNodesPerDir,
                                                                lFineNodesPerDir,
-                                                               coarseRate));
+                                                               coarseRate,
+                                                               singleCoarsePoint));
     } else if(meshLayout == "Local Lexicographic") {
       Array<GO> meshData;
       if(currentLevel.GetLevelID() == 0) {
@@ -306,6 +310,7 @@ namespace MueLu {
 
     if(interpolationOrder == 0 && outputAggregates){
       // Create aggregates for prolongation
+      *out << "Compute Aggregates" << std::endl;
       RCP<Aggregates> aggregates = rcp(new Aggregates(graph->GetDomainMap()));
       aggregates->setObjectLabel("ST");
       aggregates->SetIndexManager(geoData);
@@ -325,6 +330,7 @@ namespace MueLu {
 
     } else {
       // Create the graph of the prolongator
+      *out << "Compute CrsGraph" << std::endl;
       RCP<CrsGraph> myGraph;
       myStructuredAlgorithm->BuildGraph(*graph, geoData, dofsPerNode, myGraph,
                                         coarseCoordinatesFineMap, coarseCoordinatesMap);

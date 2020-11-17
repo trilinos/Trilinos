@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_Assembly.h>
@@ -99,7 +99,7 @@ const Ioss::GroupingEntity *Ioss::Assembly::get_member(const std::string &my_nam
 {
   IOSS_FUNC_ENTER(m_);
   const Ioss::GroupingEntity *ge = nullptr;
-  for (auto mem : m_members) {
+  for (const auto &mem : m_members) {
     if (mem->name() == my_name) {
       ge = mem;
       break;

@@ -34,8 +34,11 @@
 #ifndef STK_PARAMETER_TEST_UTILS_H
 #define STK_PARAMETER_TEST_UTILS_H
 
+#include <stk_util/stk_config.h>
 #include <gtest/gtest.h>
 #include <stk_util/util/ParameterList.hpp>
+
+#ifdef STK_HAVE_BOOST
 
 inline void validate_parameters_equal_value(const stk::util::Parameter &parameter,
 					    const stk::util::Parameter &gold_parameter)
@@ -77,4 +80,8 @@ inline void validate_parameters_equal_value(const stk::util::Parameter &paramete
       ASSERT_EQ(1,0) << "Invalid type found in validate_parameters_equal_value";
     }
 }
-#endif
+
+#endif //STK_HAVE_BOOST
+
+#endif //include-guard
+

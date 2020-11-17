@@ -3,7 +3,7 @@ Trilinos
 
 Trilinos Website: http://trilinos.org
 
-- See `<trilinos_base_directory>/TrilinosBuildQuickRef.*` for
+- See `<trilinos_base_directory>/doc/build_ref/TrilinosBuildReferenceTemplate.rst` for
   information about installing Trilinos with the CMake build system.
 
 - See `<trilinos_base_directory>/cmake/README.windows` for information on
@@ -35,7 +35,7 @@ Trilinos Website: http://trilinos.org
 - Information on how to extend Trilinos with your own add-on packages in your
   own external repository see:
 
-      `<trilinos_base_directory>/TrilinosBuildQuickRef.*`
+      `<trilinos_base_directory>/doc/build_ref/TrilinosBuildReferenceTemplate.rst`
       `<trilinos_base_directory>/cmake/HOWTO.ADD_EXTRA_REPO`
 
 - If you are having problems, visit:

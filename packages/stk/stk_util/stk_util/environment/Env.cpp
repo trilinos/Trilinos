@@ -261,7 +261,7 @@ parallel_world_comm()
 
 int peer_group() 
 {
-  return stk::EnvData::instance().m_execMap[EXEC_TYPE_PEER].m_master;
+  return stk::EnvData::instance().m_execMap[EXEC_TYPE_PEER].m_rootProcessor;
 }
 
 bool
@@ -370,8 +370,8 @@ void set_mpi_communicator(MPI_Comm communicator)
   if (communicator != MPI_COMM_NULL) {
     env_data.m_parallelComm = communicator;
 
-    MPI_Comm_size(env_data.m_parallelComm, &env_data.m_parallelSize);
-    MPI_Comm_rank(env_data.m_parallelComm, &env_data.m_parallelRank);
+    env_data.m_parallelSize = stk::parallel_machine_size(communicator);
+    env_data.m_parallelRank = stk::parallel_machine_rank(communicator);
   }
 }
 

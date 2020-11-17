@@ -491,12 +491,93 @@ namespace MueLuTests {
     TEST_EQUALITY(tv->normInf(),Teuchos::ScalarTraits<Scalar>::zero());
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities,TransposeNonsymmetricConstMatrix,Scalar,LocalOrdinal,GlobalOrdinal,Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+
+    const GO numGlobalElements = 29;
+    RCP<Map> dofMap  = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(lib, numGlobalElements, 0, comm);
+
+    TEST_ASSERT(!dofMap.is_null());
+    TEST_EQUALITY_CONST(dofMap->getGlobalNumElements(), numGlobalElements);
+
+    RCP<const Matrix> matrix = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildTridiag(dofMap, 1.0, 2.0, 3.0, lib);
+    TEST_ASSERT(!matrix.is_null());
+    TEST_EQUALITY_CONST(matrix->getGlobalNumRows(), numGlobalElements);
+
+    RCP<const Matrix> transposedMatrix = Utilities::Transpose(const_cast<Matrix&>(*matrix));
+    TEST_ASSERT(!transposedMatrix.is_null());
+
+    TEST_ASSERT(transposedMatrix->getRangeMap()->isSameAs(*matrix->getDomainMap()));
+    TEST_ASSERT(transposedMatrix->getDomainMap()->isSameAs(*matrix->getRangeMap()));
+
+    // Verify, that A^T actually differs from A
+    {
+      RCP<Matrix> diffMatrix = rcp(new CrsMatrixWrap(matrix->getCrsGraph()));
+      MatrixMatrix::TwoMatrixAdd(*matrix, false, 1.0, *transposedMatrix, false, -1.0, diffMatrix, out);
+      diffMatrix->fillComplete();
+      TEST_ASSERT(!diffMatrix.is_null());
+
+      bool allEntriesAreZero = true;
+      for (LO lRowId = 0; lRowId < Teuchos::as<LO>(diffMatrix->getNodeNumRows()); ++lRowId)
+      {
+        ArrayView<const LO> cols;
+        ArrayView<const Scalar> vals;
+        diffMatrix->getLocalRowView(lRowId, cols, vals);
+
+        TEST_INEQUALITY_CONST(cols.size(), 0);
+        TEST_INEQUALITY_CONST(vals.size(), 0);
+
+        for (const auto& entry : vals) {
+          if (entry != Teuchos::ScalarTraits<Scalar>::zero()) allEntriesAreZero = false;
+        }
+      }
+      TEST_ASSERT(!allEntriesAreZero);
+    }
+
+    RCP<const Matrix> doubleTransposedMatrix = Utilities::Transpose(const_cast<Matrix&>(*transposedMatrix));
+    TEST_ASSERT(!doubleTransposedMatrix.is_null());
+
+    TEST_ASSERT(doubleTransposedMatrix->getRangeMap()->isSameAs(*matrix->getRangeMap()));
+    TEST_ASSERT(doubleTransposedMatrix->getDomainMap()->isSameAs(*matrix->getDomainMap()));
+
+    // Transpose twice: A - (A^T)^T needs to be the zero matrix
+    {
+      RCP<Matrix> diffMatrix = rcp(new CrsMatrixWrap(matrix->getCrsGraph()));
+      MatrixMatrix::TwoMatrixAdd(*matrix, false, 1.0, *doubleTransposedMatrix, false, -1.0, diffMatrix, out);
+      diffMatrix->fillComplete();
+      TEST_ASSERT(!diffMatrix.is_null());
+
+      bool allEntriesAreZero = true;
+      for (LO lRowId = 0; lRowId < Teuchos::as<LO>(diffMatrix->getNodeNumRows()); ++lRowId)
+      {
+        ArrayView<const LO> cols;
+        ArrayView<const Scalar> vals;
+        diffMatrix->getLocalRowView(lRowId, cols, vals);
+
+        TEST_INEQUALITY_CONST(cols.size(), 0);
+        TEST_INEQUALITY_CONST(vals.size(), 0);
+
+        for (const auto& entry : vals) {
+          if (entry != Teuchos::ScalarTraits<Scalar>::zero()) allEntriesAreZero = false;
+        }
+      }
+      TEST_ASSERT(allEntriesAreZero);
+    }
+  }
+
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-         TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,MatMatMult_EpetraVsTpetra,Scalar,LO,GO,Node) \
-         TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,DetectDirichletRows,Scalar,LO,GO,Node) \
-         TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetDiagonalInverse,Scalar,LO,GO,Node) \
-         TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetLumpedDiagonal,Scalar,LO,GO,Node) \
-         TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetInverse,Scalar,LO,GO,Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,MatMatMult_EpetraVsTpetra,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,DetectDirichletRows,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetDiagonalInverse,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetLumpedDiagonal,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetInverse,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,TransposeNonsymmetricConstMatrix,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

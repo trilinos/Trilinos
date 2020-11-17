@@ -48,7 +48,7 @@ int StkMeshZoltanAdapter::getDimension() const
 void StkMeshZoltanAdapter::debuggingInfo(int proc_id, std::ofstream& out) const
 {
     int stride = 0;
-    const scalar_t** coords = new const scalar_t*[this->getDimension()]; // int *vect = new int[num];
+    const scalar_t** coords = new const scalar_t*[this->getDimension()];
 
     for(int coordim = 0; coordim < this->getDimension(); ++coordim)
     {
@@ -56,7 +56,7 @@ void StkMeshZoltanAdapter::debuggingInfo(int proc_id, std::ofstream& out) const
     }
 
     // vertex weights
-    const scalar_t** weights = new const scalar_t*[getNumWeightsPerOf(getPrimaryEntityType())]; // int *vect = new int[num];
+    const scalar_t** weights = new const scalar_t*[getNumWeightsPerOf(getPrimaryEntityType())];
     int weightstride = 0;
     for(int weightdim = 0; weightdim < getNumWeightsPerOf(getPrimaryEntityType()); ++weightdim)
     {
@@ -107,7 +107,6 @@ int StkMeshZoltanAdapter::getNumWeightsPerOf(Zoltan2::MeshEntityType etype) cons
     {
         numWeightsPerVertex = mGraph.get_num_field_criteria();
     }
-    //std::cerr << "Num weights per = " << numWeightsPerVertex << std::endl;
     return numWeightsPerVertex;
 }
 
@@ -122,7 +121,6 @@ void StkMeshZoltanAdapter::getWeightsViewOf(Zoltan2::MeshEntityType etype, const
             weights = mGraph.get_vertex_weights().data() + idx;
         }
     }
-    //std::cerr << "Weights = " << weights[0] << ", " << weights[1] << ", " << weights[2] << ", " << weights[3] << std::endl;
 }
 
 bool StkMeshZoltanAdapter::avail2ndAdjs(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through) const
@@ -165,7 +163,6 @@ int StkMeshZoltanAdapter::getNumWeightsPer2ndAdj(Zoltan2::MeshEntityType sourcet
     if(sourcetarget == Zoltan2::MESH_REGION && through == Zoltan2::MESH_FACE)
     {
         numWeightsPerEdge = 1;
-        // numWeightsPerEdge = mEdgeWeights.size();
     }
     return numWeightsPerEdge;
 }

@@ -122,7 +122,7 @@ struct ComputeBasisCoeffsOnEdges_HCurl {
 
 
 template<typename ViewType1, typename ViewType2, typename ViewType3, typename ViewType4,
-typename ViewType5, typename ViewType6, typename ViewType7, typename ViewType8>
+typename ViewType5, typename ViewType6, typename ViewType7, typename ViewType8, typename ViewType9>
 struct ComputeBasisCoeffsOnFaces_HCurl {
   const ViewType1 basisCoeffs_;
   const ViewType2 orts_;
@@ -150,9 +150,8 @@ struct ComputeBasisCoeffsOnFaces_HCurl {
   const ViewType6 tagToOrdinal_;
   const ViewType6 hGradTagToOrdinal_;
   const ViewType7 refTopologyKey_;
-  const ViewType3 refFacesNormal_;
-  const ViewType3 refFacesTangents_;
-  const ViewType8 computedDofs_;
+  const ViewType8 faceParametrization_;
+  const ViewType9 computedDofs_;
   ordinal_type offsetBasis_;
   ordinal_type offsetBasisCurl_;
   ordinal_type offsetTarget_;
@@ -182,8 +181,8 @@ struct ComputeBasisCoeffsOnFaces_HCurl {
       const ViewType5 basisEWeights, const ViewType5 targetEWeights,
       const ViewType5 basisCurlEWeights, const ViewType5 targetCurlEWeights, const ViewType6 tagToOrdinal,
       const ViewType6 hGradTagToOrdinal, const ViewType7 refTopologyKey,
-      const ViewType3 refFacesNormal, const ViewType3 refFacesTangents,
-      const ViewType8 computedDofs, ordinal_type offsetBasis,
+      const ViewType8 faceParametrization,
+      const ViewType9 computedDofs, ordinal_type offsetBasis,
       ordinal_type offsetBasisCurl, ordinal_type offsetTarget,
       ordinal_type offsetTargetCurl, ordinal_type iface,
       ordinal_type hgradCardinality, ordinal_type numFaces,
@@ -202,7 +201,7 @@ struct ComputeBasisCoeffsOnFaces_HCurl {
         basisEWeights_(basisEWeights),  targetEWeights_(targetEWeights),
         basisCurlEWeights_(basisCurlEWeights), targetCurlEWeights_(targetCurlEWeights),  tagToOrdinal_(tagToOrdinal),
         hGradTagToOrdinal_(hGradTagToOrdinal),  refTopologyKey_(refTopologyKey),
-        refFacesNormal_(refFacesNormal),  refFacesTangents_(refFacesTangents),
+        faceParametrization_(faceParametrization),
         computedDofs_(computedDofs), offsetBasis_(offsetBasis),
         offsetBasisCurl_(offsetBasisCurl), offsetTarget_(offsetTarget),
         offsetTargetCurl_(offsetTargetCurl), iface_(iface),
@@ -218,9 +217,11 @@ struct ComputeBasisCoeffsOnFaces_HCurl {
     orts_(ic).getFaceOrientation(fOrt, numFaces_);
 
     ordinal_type ort = fOrt[iface_];
-    typename ViewType3::value_type ortJacData[4]; //faceDim x faceDim
-    auto ortJac = ViewType3(ortJacData, faceDim_, faceDim_);
-    Impl::OrientationTools::getJacobianOfOrientationMap(ortJac, refTopologyKey_(faceDim_,iface_), ort);
+
+    typename ViewType3::value_type data[3*3];
+    auto tangentsAndNormal = ViewType3(data, dim_, dim_);
+
+    Impl::OrientationTools::getRefSideTangentsAndNormal(tangentsAndNormal, faceParametrization_,refTopologyKey_(faceDim_,iface_), iface_, ort);
 
     ordinal_type numBasisEPoints = basisEWeights_.extent(0);
     ordinal_type numTargetEPoints = targetEWeights_.extent(0);
@@ -241,13 +242,12 @@ struct ComputeBasisCoeffsOnFaces_HCurl {
       for(ordinal_type iq=0; iq <numBasisEPoints; ++iq) {
         for(ordinal_type d=0; d <dim_; ++d) {
           for(ordinal_type itan=0; itan <dim_-1; ++itan)
-            for(ordinal_type jtan=0; jtan <dim_-1; ++jtan)
-              basisTanAtBasisEPoints_(ic,j,iq,itan) += refFacesTangents_(iface_,d,jtan)*ortJac(jtan,itan)*basisAtBasisEPoints_(ic,jdof,offsetBasis_+iq,d);
+            basisTanAtBasisEPoints_(ic,j,iq,itan) += tangentsAndNormal(itan,d)*basisAtBasisEPoints_(ic,jdof,offsetBasis_+iq,d);
         }
       }
       for(ordinal_type iq=0; iq <numBasisCurlEPoints; ++iq) {
         for(ordinal_type d=0; d <dim_; ++d)
-          basisCurlNormalAtBasisCurlEPoints_(ic,j,iq) += refFacesNormal_(iface_,d)*basisCurlAtBasisCurlEPoints_(ic,jdof,offsetBasisCurl_+iq,d);
+          basisCurlNormalAtBasisCurlEPoints_(ic,j,iq) += tangentsAndNormal(dim_-1,d)*basisCurlAtBasisCurlEPoints_(ic,jdof,offsetBasisCurl_+iq,d);
         wNormalBasisCurlAtBasisCurlEPoints_(ic,j,iq) = basisCurlNormalAtBasisCurlEPoints_(ic,j,iq) * basisCurlEWeights_(iq);
       }
 
@@ -255,7 +255,7 @@ struct ComputeBasisCoeffsOnFaces_HCurl {
       for(ordinal_type iq=0; iq <numTargetCurlEPoints; ++iq) {
         typename ViewType3::value_type tmp=0;
         for(ordinal_type d=0; d <dim_; ++d)
-          tmp += refFacesNormal_(iface_,d)*basisCurlAtTargetCurlEPoints_(ic,jdof,offsetTargetCurl_+iq,d);
+          tmp += tangentsAndNormal(dim_-1,d)*basisCurlAtTargetCurlEPoints_(ic,jdof,offsetTargetCurl_+iq,d);
         wNormalBasisCurlBasisAtTargetCurlEPoints_(ic,j,iq) = tmp*targetCurlEWeights_(iq);
       }
     }
@@ -264,10 +264,9 @@ struct ComputeBasisCoeffsOnFaces_HCurl {
       ordinal_type jdof = computedDofs_(j);
       for(ordinal_type iq=0; iq <numBasisEPoints; ++iq)
         for(ordinal_type d=0; d <dim_; ++d) {
-          negPartialProjCurlNormal_(ic,iq) -=  refFacesNormal_(iface_,d)*basisCoeffs_(ic,jdof)*basisCurlAtBasisCurlEPoints_(ic,jdof,offsetBasisCurl_+iq,d);
+          negPartialProjCurlNormal_(ic,iq) -=  tangentsAndNormal(dim_-1,d)*basisCoeffs_(ic,jdof)*basisCurlAtBasisCurlEPoints_(ic,jdof,offsetBasisCurl_+iq,d);
           for(ordinal_type itan=0; itan <dim_-1; ++itan)
-            for(ordinal_type jtan=0; jtan <dim_-1; ++jtan)
-              negPartialProjTan_(ic,iq,itan) -=  refFacesTangents_(iface_,d,jtan)*ortJac(jtan,itan)*basisCoeffs_(ic,jdof)*basisAtBasisEPoints_(ic,jdof,offsetBasis_+iq,d);
+              negPartialProjTan_(ic,iq,itan) -=  tangentsAndNormal(itan,d)*basisCoeffs_(ic,jdof)*basisAtBasisEPoints_(ic,jdof,offsetBasis_+iq,d);
         }
     }
 
@@ -275,12 +274,11 @@ struct ComputeBasisCoeffsOnFaces_HCurl {
     for(ordinal_type iq=0; iq <numTargetEPoints; ++iq)
       for(ordinal_type d=0; d <dim_; ++d)
         for(ordinal_type itan=0; itan <dim_-1; ++itan)
-          for(ordinal_type jtan=0; jtan <dim_-1; ++jtan)
-            targetTanAtTargetEPoints_(ic,iq,itan) += refFacesTangents_(iface_,d,jtan)*ortJac(jtan,itan)*targetAtTargetEPoints_(ic,offsetTarget_+iq,d);
+            targetTanAtTargetEPoints_(ic,iq,itan) += tangentsAndNormal(itan,d)*targetAtTargetEPoints_(ic,offsetTarget_+iq,d);
 
     for(ordinal_type iq=0; iq <numTargetCurlEPoints; ++iq)
       for(ordinal_type d=0; d <dim_; ++d)
-        normalTargetCurlAtTargetEPoints_(ic,iq) += refFacesNormal_(iface_,d)*targetCurlAtTargetCurlEPoints_(ic,offsetTargetCurl_+iq,d);
+        normalTargetCurlAtTargetEPoints_(ic,iq) += tangentsAndNormal(dim_-1,d)*targetCurlAtTargetCurlEPoints_(ic,offsetTargetCurl_+iq,d);
   }
 };
 
@@ -403,9 +401,6 @@ ProjectionTools<SpT>::getHCurlEvaluationPoints(typename BasisType::ScalarViewTyp
     const BasisType* cellBasis,
     ProjectionStruct<SpT, typename BasisType::scalarType> * projStruct,
     const EvalPointsType evalPointType) {
-  typedef typename BasisType::scalarType scalarType;
-  typedef Kokkos::DynRankView<scalarType,ortProperties...> ScalarViewType;
-  typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
   const auto cellTopo = cellBasis->getBaseCellTopology();
   ordinal_type dim = cellTopo.getDimension();
   ordinal_type numCells = targetEPoints.extent(0);
@@ -427,12 +422,9 @@ ProjectionTools<SpT>::getHCurlEvaluationPoints(typename BasisType::ScalarViewTyp
   auto evalPointsRange  = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getPointsRange(evalPointType));
   auto curlEPointsRange  = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getDerivPointsRange(evalPointType));
 
-
-  ScalarViewType workView("workView", numCells, std::max(projStruct->getMaxNumEvalPoints(evalPointType),projStruct->getMaxNumDerivPoints(evalPointType)), dim-1);
   for(ordinal_type ie=0; ie<numEdges; ++ie) {
 
     auto edgePointsRange = evalPointsRange(edgeDim, ie);
-    auto edgeRefPointsRange = range_type(0, range_size(edgePointsRange));
     auto edgeEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getEvalPoints(edgeDim,ie,evalPointType));
 
     Kokkos::parallel_for
@@ -444,20 +436,17 @@ ProjectionTools<SpT>::getHCurlEvaluationPoints(typename BasisType::ScalarViewTyp
       orts(ic).getEdgeOrientation(eOrt, numEdges);
       ordinal_type ort = eOrt[ie];
 
-      auto orientedEdgeEPoints = Kokkos::subview(workView, ic, edgeRefPointsRange, range_type(0,edgeDim));
-      Impl::OrientationTools::mapToModifiedReference(orientedEdgeEPoints,edgeEPoints,refTopologyKey(edgeDim, ie),ort);
-      CellTools<SpT>::mapToReferenceSubcell(Kokkos::subview(targetEPoints,ic,edgePointsRange,Kokkos::ALL()), orientedEdgeEPoints, subcellParamEdge, edgeDim, ie, dim);
+      Impl::OrientationTools::mapSubcellCoordsToRefCell(Kokkos::subview(targetEPoints,ic,edgePointsRange,Kokkos::ALL()),
+          edgeEPoints, subcellParamEdge, refTopologyKey(edgeDim, ie), ie, ort);
     });
   }
 
 
   for(ordinal_type iface=0; iface<numFaces; ++iface) {
     auto faceCurlPointsRange = curlEPointsRange(faceDim, iface);
-    auto faceRefCurlPointsRange = range_type(0, range_size(faceCurlPointsRange));
     auto faceCurlEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getDerivEvalPoints(faceDim,iface,evalPointType));
 
     auto facePointsRange = evalPointsRange(faceDim, iface);
-    auto faceRefPointsRange = range_type(0, range_size(facePointsRange));
     auto faceEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getEvalPoints(faceDim,iface,evalPointType));
 
     Kokkos::parallel_for
@@ -469,14 +458,11 @@ ProjectionTools<SpT>::getHCurlEvaluationPoints(typename BasisType::ScalarViewTyp
       orts(ic).getFaceOrientation(fOrt, numFaces);
       ordinal_type ort = fOrt[iface];
 
+      Impl::OrientationTools::mapSubcellCoordsToRefCell(Kokkos::subview(targetEPoints, ic, facePointsRange, Kokkos::ALL()),
+          faceEPoints, subcellParamFace, refTopologyKey(faceDim, iface), iface, ort);
 
-      auto orientedFaceEPoints = Kokkos::subview(workView, ic, faceRefPointsRange, Kokkos::ALL());
-      Impl::OrientationTools::mapToModifiedReference(orientedFaceEPoints,faceEPoints,refTopologyKey(faceDim, iface),ort);
-      CellTools<SpT>::mapToReferenceSubcell(Kokkos::subview(targetEPoints, ic, facePointsRange, Kokkos::ALL()), orientedFaceEPoints , subcellParamFace, faceDim, iface, dim);
-
-      auto orientedFaceCurlEPoints = Kokkos::subview(workView, ic, faceRefCurlPointsRange, Kokkos::ALL());
-      Impl::OrientationTools::mapToModifiedReference(orientedFaceCurlEPoints,faceCurlEPoints,refTopologyKey(faceDim, iface),ort);
-      CellTools<SpT>::mapToReferenceSubcell(Kokkos::subview(targetCurlEPoints,  ic, faceCurlPointsRange, Kokkos::ALL()), orientedFaceCurlEPoints, subcellParamFace, faceDim, iface, dim);
+      Impl::OrientationTools::mapSubcellCoordsToRefCell(Kokkos::subview(targetCurlEPoints,  ic, faceCurlPointsRange, Kokkos::ALL()),
+          faceCurlEPoints, subcellParamFace, refTopologyKey(faceDim, iface), iface, ort);
     });
   }
 
@@ -656,6 +642,11 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
 
   }
 
+  CellTools<SpT>::setSubcellParametrization();
+  typename CellTools<SpT>::subcellParamViewType  subcellParamFace;
+  if(numFaces>0)
+    CellTools<SpT>::getSubcellParametrization(subcellParamFace,  faceDim, cellBasis->getBaseCellTopology());
+
   Basis<SpT,scalarType,scalarType> *hgradBasis = NULL;
   for(ordinal_type iface=0; iface<numFaces; ++iface) {
 
@@ -668,20 +659,6 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
       ss << ">>> ERROR (Intrepid2::ProjectionTools::getHCurlBasisCoeffs): "
           << "Method not implemented for basis " << name;
       INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, ss.str().c_str() );
-    }
-
-    {
-      auto refFaceTanU = Kokkos::subview(refFacesTangents, iface, Kokkos::ALL, 0);
-      auto refFaceTanV = Kokkos::subview(refFacesTangents, iface, Kokkos::ALL,1);
-      auto refFaceTanUHost = Kokkos::create_mirror_view(refFaceTanU);
-      auto refFaceTanVHost = Kokkos::create_mirror_view(refFaceTanV);
-      CellTools<SpT>::getReferenceFaceTangents(refFaceTanUHost, refFaceTanVHost, iface, cellTopo);
-      Kokkos::deep_copy(refFaceTanU, refFaceTanUHost);
-      Kokkos::deep_copy(refFaceTanV, refFaceTanVHost);
-      auto refFaceNormal = Kokkos::subview(refFacesNormal,iface,Kokkos::ALL());
-      auto refFaceNormalHost = Kokkos::create_mirror_view(refFaceNormal);
-      CellTools<SpT>::getReferenceFaceNormal(refFaceNormalHost, iface, cellTopo);
-      Kokkos::deep_copy(refFaceNormal, refFaceNormalHost);
     }
 
     ordinal_type numTargetEPoints = range_size(targetEPointsRange(faceDim, iface));
@@ -729,7 +706,7 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
     auto targetCurlEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTargetDerivEvalWeights(faceDim,iface));
     auto basisCurlEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getBasisDerivEvalWeights(faceDim,iface));
     typedef ComputeBasisCoeffsOnFaces_HCurl<decltype(basisCoeffs), decltype(orts), ScalarViewType,  decltype(targetAtTargetEPoints), decltype(basisEWeights),
-        decltype(tagToOrdinal), decltype(refTopologyKey),  decltype(computedDofs)> functorTypeFaces;
+        decltype(tagToOrdinal), decltype(refTopologyKey),  decltype(subcellParamFace), decltype(computedDofs)> functorTypeFaces;
     Kokkos::parallel_for(policy, functorTypeFaces(basisCoeffs,
         orts, negPartialProjTan, negPartialProjCurlNormal,
         hgradBasisGradAtBasisEPoints, wHgradBasisGradAtBasisEPoints,
@@ -743,7 +720,7 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
         basisEWeights, targetEWeights,
         basisCurlEWeights, targetCurlEWeights, tagToOrdinal,
         hGradTagToOrdinal, refTopologyKey,
-        refFacesNormal, refFacesTangents,
+        subcellParamFace,
         computedDofs, offsetBasis,
         offsetBasisCurl, offsetTarget,
         offsetTargetCurl, iface,

@@ -57,10 +57,21 @@
 #include "Intrepid2_CellTopologyTags.hpp"
 #include "Kokkos_Vector.hpp"
 #include "Shards_CellTopology.hpp"
+#include <Teuchos_RCPDecl.hpp>
 
 #include <vector>
 
 namespace Intrepid2 {
+
+template<typename ExecSpaceType = void,
+         typename OutputType = double,
+         typename PointType = double>
+class Basis;
+
+  /**  \brief Basis Pointer
+    */
+template <typename ExecSpaceType = void, typename OutputType = double, typename PointType = double>
+using BasisPtr = Teuchos::RCP<Basis<ExecSpaceType,OutputType,PointType> >;
 
   /** \class  Intrepid2::Basis
       \brief  An abstract base class that defines interface for concrete basis implementations for
@@ -98,9 +109,9 @@ namespace Intrepid2 {
       \todo  restore test for inclusion of reference points in their resective reference cells in
              getValues_HGRAD_Args, getValues_CURL_Args, getValues_DIV_Args
   */
-  template<typename ExecSpaceType = void,
-           typename outputValueType = double,
-           typename pointValueType = double>
+  template<typename ExecSpaceType,
+           typename outputValueType,
+           typename pointValueType>
   class Basis {
   public:
     /**  \brief (Kokkos) Execution space for basis.
@@ -704,8 +715,27 @@ namespace Intrepid2 {
       return ordinalToTag_;
     }
 
-  }; // class Basis
+    /** \brief returns the basis associated to a subCell.
 
+        HGRAD case: The bases of the subCell are the restriction to the subCell
+        of the bases of the parent cell.
+        HCURL case: The bases of the subCell are the restriction to the subCell
+        of the bases of the parent cell, projected onto the manifold tangent to the subCell
+        HDIV case: The bases of the subCell are the restriction to the subCell
+        of the bases of the parent cell, projected along the normal of the subCell
+
+        This method is not supported by all bases (e.g. bases defined on a line and HVOL bases).
+        \param [in] subCellDim - dimension of subCell
+        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+     */
+    virtual BasisPtr<ExecutionSpace, OutputValueType, PointValueType>
+      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+                                    ">>> ERROR (Basis::getSubCellRefBasis): this method is not supported or should be overridden accordingly by derived classes.");
+    }
+
+  }; // class Basis
 
   //--------------------------------------------------------------------------------------------//
   //                                                                                            //

@@ -12,6 +12,7 @@ smoother ->
  chebyshev: eigenvalue max iterations = 10
  chebyshev: boost factor = 1.1   [unused]
  chebyshev: min diagonal value = 2.22045e-16   [default]
+ chebyshev: eigenvalue normalization frequency = 1   [default]
  chebyshev: assume matrix does not change = 0   [default]
 
 Level 1
@@ -72,6 +73,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -89,6 +91,8 @@ structured aggregation = 0   [default]
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]
@@ -148,6 +152,7 @@ smoother ->
  chebyshev: eigenvalue max iterations = 10
  chebyshev: boost factor = 1.1   [unused]
  chebyshev: min diagonal value = 2.22045e-16   [default]
+ chebyshev: eigenvalue normalization frequency = 1   [default]
  chebyshev: assume matrix does not change = 0   [default]
 
 Level 2
@@ -208,6 +213,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -225,6 +231,8 @@ structured aggregation = 0   [default]
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]
@@ -284,6 +292,7 @@ smoother ->
  chebyshev: eigenvalue max iterations = 10
  chebyshev: boost factor = 1.1   [unused]
  chebyshev: min diagonal value = 2.22045e-16   [default]
+ chebyshev: eigenvalue normalization frequency = 1   [default]
  chebyshev: assume matrix does not change = 0   [default]
 
 Level 3
@@ -344,6 +353,7 @@ matrixmatrix: kernel params ->
 sa: damping factor = 1.33   [default]
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
+sa: use rowsumabs diagonal scaling = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -361,6 +371,8 @@ structured aggregation = 0   [default]
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0   [default]

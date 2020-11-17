@@ -1,14 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: stimes.f,v 1.1 1991/02/21 15:45:43 gdsjaar Exp $
-C $Log: stimes.f,v $
-C Revision 1.1  1991/02/21 15:45:43  gdsjaar
-C Initial revision
-C
 C=======================================================================
       SUBROUTINE STIMES (OPTION, ALLPRT, ALLTIM, NSTEPS, TIMES, SELTIM)
 C=======================================================================

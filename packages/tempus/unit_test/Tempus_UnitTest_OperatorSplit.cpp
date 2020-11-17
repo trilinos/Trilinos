@@ -23,7 +23,6 @@
 #include "Tempus_StepperOperatorSplitModifierDefault.hpp"
 #include "Tempus_StepperOperatorSplitModifierXDefault.hpp"
 #include "Tempus_StepperOperatorSplitObserverDefault.hpp"
-#include "Tempus_StepperOperatorSplitObserver.hpp"
 
 #include "../TestModels/VanDerPol_IMEX_ExplicitModel.hpp"
 #include "../TestModels/VanDerPol_IMEX_ImplicitModel.hpp"
@@ -66,21 +65,15 @@ TEUCHOS_UNIT_TEST(OperatorSplit, Default_Construction)
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Default values for construction.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  auto obs    = rcp(new Tempus::StepperOperatorSplitObserver<double>());
-#endif
   auto modifier  = rcp(new Tempus::StepperOperatorSplitModifierDefault<double>());
   auto modifierX = rcp(new Tempus::StepperOperatorSplitModifierXDefault<double>());
   auto observer  = rcp(new Tempus::StepperOperatorSplitObserverDefault<double>());
-  bool useFSAL              = stepper->getUseFSALDefault();
-  std::string ICConsistency = stepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
+  bool useFSAL              = stepper->getUseFSAL();
+  std::string ICConsistency = stepper->getICConsistency();
+  bool ICConsistencyCheck   = stepper->getICConsistencyCheck();
   int order = 1;
 
   // Test the set functions.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -101,11 +94,6 @@ TEUCHOS_UNIT_TEST(OperatorSplit, Default_Construction)
   subStepperList.push_back(subStepper1);
   subStepperList.push_back(subStepper2);
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  stepper = rcp(new Tempus::StepperOperatorSplit<double>(
-    models, subStepperList, obs, useFSAL, ICConsistency, ICConsistencyCheck,
-    order, order, order));
-#endif
   stepper = rcp(new Tempus::StepperOperatorSplit<double>(
     models, subStepperList, useFSAL, ICConsistency, ICConsistencyCheck,order, order, order,modifier));
 
@@ -137,7 +125,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, StepperFactory_Construction)
 
   // Test using ParameterList.
   // Passing in model.
-  auto stepper = sf->createMultiSteppers(stepperPL, models);
+  auto stepper = sf->createStepper(stepperPL, models);
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
 }
@@ -260,11 +248,11 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_Modifier)
 
   // Testing that values can be set through the Modifier.
   auto x = solutionHistory->getCurrentState()->getX();
-  TEST_FLOATING_EQUALITY(modifier->testCurrentValue, get_ele(*(x), 0), 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifier->testCurrentValue, get_ele(*(x), 0), 1.0e-14);
   x = solutionHistory->getWorkingState()->getX();
-  TEST_FLOATING_EQUALITY(modifier->testWorkingValue, get_ele(*(x), 0), 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifier->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
-  TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-14);
 
   TEST_COMPARE(modifier->testType, ==, "OperatorSplit - Modifier");
 }
@@ -386,10 +374,10 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_Observer)
 
   // Testing that values can be observed through the observer.
   auto x = solutionHistory->getCurrentState()->getX();
-  TEST_FLOATING_EQUALITY(observer->testCurrentValue, get_ele(*(x), 0), 1.0e-15);
+  TEST_FLOATING_EQUALITY(observer->testCurrentValue, get_ele(*(x), 0), 1.0e-14);
   x = solutionHistory->getWorkingState()->getX();
-  TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-15);
-  TEST_FLOATING_EQUALITY(observer->testDt, -1.5, 1.0e-15);
+  TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
+  TEST_FLOATING_EQUALITY(observer->testDt, -1.5, 1.0e-14);
 
   TEST_COMPARE(observer->testType, ==, "Operator Split");
 }
@@ -509,15 +497,17 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_ModifierX)
 
   // Testing that values can be set through the Modifier.
   auto x = solutionHistory->getCurrentState()->getX();
-  TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-14);
   // Temporary memory for xDot is not guarranteed to exist outside the Stepper.
-  auto xDot = stepper->getStepperXDot(solutionHistory->getWorkingState());
-  TEST_FLOATING_EQUALITY(modifierX->testXDot, get_ele(*(xDot), 0),1.0e-15);
+  auto xDot = solutionHistory->getWorkingState()->getXDot();
+  if (xDot == Teuchos::null) xDot = stepper->getStepperXDot();
+
+  TEST_FLOATING_EQUALITY(modifierX->testXDot, get_ele(*(xDot), 0),1.0e-14);
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
-  TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, 1.0e-14);
 
   auto time = solutionHistory->getWorkingState()->getTime();
-  TEST_FLOATING_EQUALITY(modifierX->testTime, time, 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifierX->testTime, time, 1.0e-14);
 }
 
 } // namespace Tempus_Test

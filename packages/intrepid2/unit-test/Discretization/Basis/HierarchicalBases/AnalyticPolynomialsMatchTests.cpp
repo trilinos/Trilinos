@@ -787,6 +787,7 @@ namespace
   {
     using namespace Intrepid2;
     using BasisPtr = typename DerivedNodalBasisFamily::BasisPtr;
+    using ExecutionSpace = typename DerivedNodalBasisFamily::ExecutionSpace;
     using Teuchos::rcp;
     
     BasisPtr derivedBasis, standardBasis;
@@ -829,10 +830,10 @@ namespace
     using ValueType    = typename ScalarViewType::value_type;
     using ResultLayout = typename DeduceLayout< ScalarViewType >::result_layout;
     using DeviceType = typename ScalarViewType::device_type;
-    using ViewType = Kokkos::DynRankView<ValueType, ResultLayout, DeviceType >;
+    using AllocatableScalarViewType = Kokkos::DynRankView<ValueType, ResultLayout, DeviceType >;
     
-    ViewType dofCoordsStandard("dofCoordsStandard", standardCardinality, spaceDim);
-    ViewType dofCoordsDerived ("dofCoordsDerived",  standardCardinality, spaceDim);
+    AllocatableScalarViewType dofCoordsStandard ("dofCoordsStandard", standardCardinality, spaceDim);
+    AllocatableScalarViewType dofCoordsDerived  ("dofCoordsDerived",  standardCardinality, spaceDim);
     standardBasis->getDofCoords(dofCoordsStandard);
     derivedBasis-> getDofCoords(dofCoordsDerived );
     
@@ -882,9 +883,58 @@ namespace
     standardBasis->getValues(standardOutputView, inputPointsView, op);
     derivedBasis->getValues(derivedOutputView, inputPointsView, op);
     
-    auto standardOutputViewHost = getHostCopy(standardOutputView);
-    auto derivedOutputViewHost  = getHostCopy(derivedOutputView);
-    auto inputPointsViewHost    = getHostCopy(inputPointsView);
+    ViewType<bool> valuesAreBothSmall;
+    auto smallNumber = Intrepid2::smallNumber<OutputScalar>();
+    ViewType<bool> relativeErrorsMeetTol;
+    if (standardOutputView.rank() == 2)
+    {
+      valuesAreBothSmall    = getView<bool>("valuesAreBothSmall",    standardCardinality, numPoints);
+      relativeErrorsMeetTol = getView<bool>("relativeErrorsMeetTol", standardCardinality, numPoints);
+      
+      using RangePolicy = Kokkos::MDRangePolicy < ExecutionSpace, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+      RangePolicy policy( { 0, 0 }, { standardCardinality, numPoints} );
+      
+      Kokkos::parallel_for( policy,
+      KOKKOS_LAMBDA (const int &fieldOrdinalStandard, const int &pointOrdinal )
+      {
+        const int & fieldOrdinalDerived = dofMapToDerived(fieldOrdinalStandard);
+        
+        const OutputScalar & standardValue = standardOutputView(fieldOrdinalStandard, pointOrdinal);
+        const OutputScalar & derivedValue  =  derivedOutputView(fieldOrdinalDerived,  pointOrdinal);
+
+        valuesAreBothSmall   (fieldOrdinalStandard, pointOrdinal) = valuesAreSmall(standardValue, derivedValue, tol);
+        relativeErrorsMeetTol(fieldOrdinalStandard, pointOrdinal) = relErrMeetsTol(standardValue, derivedValue, smallNumber, tol);;
+      }
+      );
+    }
+    else
+    {
+      const int valuesPerPoint = standardOutputView.extent_int(2);
+      valuesAreBothSmall    = getView<bool>("valuesAreBothSmall",    standardCardinality, numPoints, valuesPerPoint);
+      relativeErrorsMeetTol = getView<bool>("relativeErrorsMeetTol", standardCardinality, numPoints, valuesPerPoint);
+      
+      using RangePolicy = Kokkos::MDRangePolicy < ExecutionSpace, Kokkos::Rank<3>, Kokkos::IndexType<ordinal_type> >;
+      RangePolicy policy( { 0, 0, 0 }, { standardCardinality, numPoints,  valuesPerPoint} );
+      
+      Kokkos::parallel_for( policy,
+      KOKKOS_LAMBDA (const int &fieldOrdinalStandard, const int &pointOrdinal, const int &valueOrdinal )
+      {
+        const int & fieldOrdinalDerived = dofMapToDerived(fieldOrdinalStandard);
+        
+        const OutputScalar & standardValue = standardOutputView(fieldOrdinalStandard, pointOrdinal, valueOrdinal);
+        const OutputScalar & derivedValue  =  derivedOutputView(fieldOrdinalDerived,  pointOrdinal, valueOrdinal);
+
+        valuesAreBothSmall   (fieldOrdinalStandard, pointOrdinal, valueOrdinal) = valuesAreSmall(standardValue, derivedValue, tol);
+        relativeErrorsMeetTol(fieldOrdinalStandard, pointOrdinal, valueOrdinal) = relErrMeetsTol(standardValue, derivedValue, smallNumber, tol);;
+      }
+      );
+    }
+    
+    auto relativeErrorsMeetTolHost = getHostCopy(relativeErrorsMeetTol);
+    auto valuesAreBothSmallHost    = getHostCopy(valuesAreBothSmall);
+    auto standardOutputViewHost    = getHostCopy(standardOutputView);
+    auto derivedOutputViewHost     = getHostCopy(derivedOutputView);
+    auto inputPointsViewHost       = getHostCopy(inputPointsView);
     
     bool scalarValued = (standardOutputView.rank() == 2); // F,P -- if vector-valued, F,P,D or F,P,Dk
     
@@ -896,18 +946,17 @@ namespace
         int fieldOrdinalDerived = dofMapToDerivedHost(fieldOrdinalStandard);
         if (scalarValued)
         {
-          OutputScalar standardValue = standardOutputViewHost(fieldOrdinalStandard,pointOrdinal);
-          OutputScalar derivedValue  =  derivedOutputViewHost(fieldOrdinalDerived, pointOrdinal);
-          
           bool valuesMatch = true;
-          bool valuesAreBothSmall = valuesAreSmall(standardValue, derivedValue, tol);
-          if (!valuesAreBothSmall)
+          if (!valuesAreBothSmall(fieldOrdinalStandard,pointOrdinal))
           {
-            TEUCHOS_TEST_FLOATING_EQUALITY(standardValue, derivedValue, tol, out, valuesMatch);
+            valuesMatch = relativeErrorsMeetTolHost(fieldOrdinalStandard,pointOrdinal);
           }
           
           if (!valuesMatch)
           {
+            const OutputScalar & standardValue = standardOutputViewHost(fieldOrdinalStandard,pointOrdinal);
+            const OutputScalar & derivedValue  =  derivedOutputViewHost(fieldOrdinalDerived, pointOrdinal);
+            
             pointPassed = false;
             if (fs == Intrepid2::FUNCTION_SPACE_HCURL)
             {
@@ -940,13 +989,9 @@ namespace
           int dkcard = standardOutputView.extent_int(2);
           for (int d=0; d<dkcard; d++)
           {
-            OutputScalar standardValue = standardOutputViewHost(fieldOrdinalStandard,pointOrdinal,d);
-            OutputScalar derivedValue  =  derivedOutputViewHost(fieldOrdinalDerived, pointOrdinal,d);
-            
-            bool valuesAreBothSmall = valuesAreSmall(standardValue, derivedValue, tol);
-            if (!valuesAreBothSmall)
+            if (!valuesAreBothSmall(fieldOrdinalStandard,pointOrdinal,d))
             {
-              TEUCHOS_TEST_FLOATING_EQUALITY(standardValue, derivedValue, tol, out, valuesMatch);
+              valuesMatch = valuesMatch && relativeErrorsMeetTolHost(fieldOrdinalStandard,pointOrdinal,d);
             }
           }
           

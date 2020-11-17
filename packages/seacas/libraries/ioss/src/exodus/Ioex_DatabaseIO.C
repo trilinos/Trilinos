@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_CodeTypes.h>
@@ -191,7 +191,7 @@ namespace Ioex {
     if (isParallel && no_collective_calls) {
       // Can't output a nice error message on processor 0 and throw a consistent error.
       // Have to just write message on processors that have issue and throw exception.
-      if (exodusFilePtr < 0) {
+      if (m_exodusFilePtr < 0) {
         std::ostringstream errmsg;
         std::string        open_create = is_input() ? "open input" : "create output";
         fmt::print(errmsg, "ERROR: Unable to {} exodus decomposed database file '{}'\n",
@@ -209,19 +209,19 @@ namespace Ioex {
     }
 
     // Check for valid exodus_file_ptr (valid >= 0; invalid < 0)
-    int global_file_ptr = exodusFilePtr;
+    int global_file_ptr = m_exodusFilePtr;
     if (isParallel) {
-      global_file_ptr = util().global_minmax(exodusFilePtr, Ioss::ParallelUtils::DO_MIN);
+      global_file_ptr = util().global_minmax(m_exodusFilePtr, Ioss::ParallelUtils::DO_MIN);
     }
 
     if (global_file_ptr < 0) {
       if (write_message || error_msg != nullptr || bad_count != nullptr) {
         Ioss::IntVector status;
         if (isParallel) {
-          util().all_gather(exodusFilePtr, status);
+          util().all_gather(m_exodusFilePtr, status);
         }
         else {
-          status.push_back(exodusFilePtr);
+          status.push_back(m_exodusFilePtr);
         }
 
         std::string open_create = is_input() ? "open input" : "create output";
@@ -288,8 +288,8 @@ namespace Ioex {
     double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
 
     int app_opt_val = ex_opts(EX_VERBOSE);
-    exodusFilePtr   = ex_open(decoded_filename().c_str(), EX_READ | mode, &cpu_word_size,
-                            &io_word_size, &version);
+    m_exodusFilePtr = ex_open(decoded_filename().c_str(), EX_READ | mode, &cpu_word_size,
+                              &io_word_size, &version);
 
     if (do_timer) {
       double t_end    = Ioss::Utils::timer();
@@ -356,8 +356,8 @@ namespace Ioex {
 #endif
     int app_opt_val = ex_opts(EX_VERBOSE);
     if (fileExists) {
-      exodusFilePtr = ex_open(decoded_filename().c_str(), EX_WRITE | mode, &cpu_word_size,
-                              &io_word_size, &version);
+      m_exodusFilePtr = ex_open(decoded_filename().c_str(), EX_WRITE | mode, &cpu_word_size,
+                                &io_word_size, &version);
     }
     else {
       // If the first write for this file, create it...
@@ -374,22 +374,23 @@ namespace Ioex {
           mode |= EX_ALL_INT64_DB;
         }
       }
-      exodusFilePtr = ex_create(decoded_filename().c_str(), mode, &cpu_word_size, &dbRealWordSize);
+      m_exodusFilePtr =
+          ex_create(decoded_filename().c_str(), mode, &cpu_word_size, &dbRealWordSize);
     }
 
     is_ok = check_valid_file_ptr(write_message, error_msg, bad_count, abort_if_error);
 
     if (is_ok) {
-      ex_set_max_name_length(exodusFilePtr, maximumNameLength);
+      ex_set_max_name_length(m_exodusFilePtr, maximumNameLength);
 
       // Check properties handled post-create/open...
       if (properties.exists("COMPRESSION_LEVEL")) {
         int comp_level = properties.get("COMPRESSION_LEVEL").get_int();
-        ex_set_option(exodusFilePtr, EX_OPT_COMPRESSION_LEVEL, comp_level);
+        ex_set_option(m_exodusFilePtr, EX_OPT_COMPRESSION_LEVEL, comp_level);
       }
       if (properties.exists("COMPRESSION_SHUFFLE")) {
         int shuffle = properties.get("COMPRESSION_SHUFFLE").get_int();
-        ex_set_option(exodusFilePtr, EX_OPT_COMPRESSION_SHUFFLE, shuffle);
+        ex_set_option(m_exodusFilePtr, EX_OPT_COMPRESSION_SHUFFLE, shuffle);
       }
       if (properties.exists("COMPRESSION_METHOD")) {
         auto method                    = properties.get("COMPRESSION_METHOD").get_string();
@@ -412,7 +413,7 @@ namespace Ioex {
                      " 'zlib' will be used instead.\n\n",
                      method);
         }
-        ex_set_option(exodusFilePtr, EX_OPT_COMPRESSION_TYPE, exo_method);
+        ex_set_option(m_exodusFilePtr, EX_OPT_COMPRESSION_TYPE, exo_method);
       }
     }
     ex_opts(app_opt_val); // Reset back to what it was.
@@ -3527,7 +3528,6 @@ int64_t DatabaseIO::read_transient_field(ex_entity_type               type,
   // and add suffix to base 'field_name'.  Look up index
   // of this name in 'nodeVariables' map
   size_t comp_count = var_type->component_count();
-  size_t var_index  = 0;
 
   char field_suffix_separator = get_field_separator();
   if (comp_count == 1 && field.get_type() == Ioss::Field::REAL) {
@@ -3536,7 +3536,14 @@ int64_t DatabaseIO::read_transient_field(ex_entity_type               type,
     // Read the variable...
     int64_t id   = Ioex::get_id(ge, type, &ids_);
     int     ierr = 0;
-    var_index    = variables.find(var_name)->second;
+
+    auto var_iter = variables.find(var_name);
+    if (var_iter == variables.end()) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg, "ERROR: Could not find field '{}'\n", var_name);
+      IOSS_ERROR(errmsg);
+    }
+    size_t var_index = var_iter->second;
     assert(var_index > 0);
     ierr = ex_get_var(get_file_pointer(), step, type, var_index, id, num_entity, data);
     if (ierr < 0) {
@@ -3548,9 +3555,15 @@ int64_t DatabaseIO::read_transient_field(ex_entity_type               type,
       std::string var_name = var_type->label_name(field.get_name(), i + 1, field_suffix_separator);
 
       // Read the variable...
-      int64_t id   = Ioex::get_id(ge, type, &ids_);
-      int     ierr = 0;
-      var_index    = variables.find(var_name)->second;
+      int64_t id       = Ioex::get_id(ge, type, &ids_);
+      int     ierr     = 0;
+      auto    var_iter = variables.find(var_name);
+      if (var_iter == variables.end()) {
+        std::ostringstream errmsg;
+        fmt::print(errmsg, "ERROR: Could not find field '{}'\n", var_name);
+        IOSS_ERROR(errmsg);
+      }
+      size_t var_index = var_iter->second;
       assert(var_index > 0);
       ierr = ex_get_var(get_file_pointer(), step, type, var_index, id, num_entity, temp.data());
       if (ierr < 0) {
@@ -3605,15 +3618,20 @@ int64_t DatabaseIO::read_ss_transient_field(const Ioss::Field &field, int64_t id
   // and add suffix to base 'field_name'.  Look up index
   // of this name in 'nodeVariables' map
   size_t comp_count = var_type->component_count();
-  size_t var_index  = 0;
 
   char field_suffix_separator = get_field_separator();
   for (size_t i = 0; i < comp_count; i++) {
     std::string var_name = var_type->label_name(field.get_name(), i + 1, field_suffix_separator);
 
     // Read the variable...
-    int ierr  = 0;
-    var_index = m_variables[EX_SIDE_SET].find(var_name)->second;
+    int  ierr     = 0;
+    auto var_iter = m_variables[EX_SIDE_SET].find(var_name);
+    if (var_iter == m_variables[EX_SIDE_SET].end()) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg, "ERROR: Could not find Sideset field '{}'\n", var_name);
+      IOSS_ERROR(errmsg);
+    }
+    size_t var_index = var_iter->second;
     assert(var_index > 0);
     ierr = ex_get_var(get_file_pointer(), step, EX_SIDE_SET, var_index, id, my_side_count,
                       temp.data());
@@ -4625,7 +4643,6 @@ void DatabaseIO::write_nodal_transient_field(ex_entity_type /* type */, const Io
         fmt::print(errmsg, "ERROR: Could not find nodal variable '{}'\n", var_name);
         IOSS_ERROR(errmsg);
       }
-
       var_index = var_iter->second;
 
       size_t  begin_offset = (re_im * i) + complex_comp;
@@ -4708,7 +4725,6 @@ void DatabaseIO::write_entity_transient_field(ex_entity_type type, const Ioss::F
   // and add suffix to base 'field_name'.  Look up index
   // of this name in 'm_variables[type]' map
   int comp_count = var_type->component_count();
-  int var_index  = 0;
 
   // Handle quick easy, hopefully common case first...
   if (comp_count == 1 && ioss_type == Ioss::Field::REAL && type != EX_SIDE_SET &&
@@ -4716,7 +4732,13 @@ void DatabaseIO::write_entity_transient_field(ex_entity_type type, const Ioss::F
     // Simply output the variable...
     int64_t     id       = Ioex::get_id(ge, type, &ids_);
     std::string var_name = var_type->label_name(field.get_name(), 1);
-    var_index            = m_variables[type].find(var_name)->second;
+    auto        var_iter = m_variables[type].find(var_name);
+    if (var_iter == m_variables[type].end()) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg, "ERROR: Could not find field '{}'\n", var_name);
+      IOSS_ERROR(errmsg);
+    }
+    int var_index = var_iter->second;
     assert(var_index > 0);
     int ierr = ex_put_var(get_file_pointer(), step, type, var_index, id, count, variables);
 
@@ -4742,7 +4764,13 @@ void DatabaseIO::write_entity_transient_field(ex_entity_type type, const Ioss::F
     for (int i = 0; i < comp_count; i++) {
       std::string var_name = var_type->label_name(field_name, i + 1, field_suffix_separator);
 
-      var_index = m_variables[type].find(var_name)->second;
+      auto var_iter = m_variables[type].find(var_name);
+      if (var_iter == m_variables[type].end()) {
+        std::ostringstream errmsg;
+        fmt::print(errmsg, "ERROR: Could not find field '{}'\n", var_name);
+        IOSS_ERROR(errmsg);
+      }
+      int var_index = var_iter->second;
       assert(var_index > 0);
 
       // var is a [count,comp,re_im] array;  re_im = 1(real) or 2(complex)

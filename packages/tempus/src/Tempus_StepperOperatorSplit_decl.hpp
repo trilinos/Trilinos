@@ -11,9 +11,6 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_Stepper.hpp"
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  #include "Tempus_StepperOperatorSplitObserver.hpp"
-#endif
 #include "Tempus_StepperOperatorSplitAppAction.hpp"
 
 namespace Tempus {
@@ -49,21 +46,7 @@ public:
   */
   StepperOperatorSplit();
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// Constructor
-  StepperOperatorSplit(
-    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels,
-    std::vector<Teuchos::RCP<Stepper<Scalar> > > subStepperList,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    int order,
-    int orderMin,
-    int orderMax);
-#endif
-
-  /// Constructor                                                                                               
   StepperOperatorSplit(
     std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels,
     std::vector<Teuchos::RCP<Stepper<Scalar> > > subStepperList,
@@ -89,18 +72,10 @@ public:
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
       { return Teuchos::null; }
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+    virtual void setAppAction(Teuchos::RCP<StepperOperatorSplitAppAction<Scalar> > appAction);
 
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperOSObserver_; }
-#endif
-
-  virtual void setAppAction(Teuchos::RCP<StepperOperatorSplitAppAction<Scalar> > appAction);
-
-  virtual Teuchos::RCP<StepperOperatorSplitAppAction<Scalar> > getAppAction() const
-  { return stepperOSAppAction_; }
+    virtual Teuchos::RCP<StepperOperatorSplitAppAction<Scalar> > getAppAction() const
+    { return stepperOSAppAction_; }
 
     virtual void setTempState(Teuchos::RCP<Tempus::SolutionState<Scalar>> state)
       { tempState_ = state; }
@@ -166,7 +141,7 @@ public:
       return isOneStepMethod;
     }
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
+    virtual void setUseFSAL(bool a) { this->useFSAL_ = a; this->isInitialized_ = false; }
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
    //@}
 
@@ -207,13 +182,11 @@ protected:
   Scalar orderMin_;
   Scalar orderMax_;
 
-  std::vector<Teuchos::RCP<Stepper<Scalar> > >        subStepperList_;
-  Teuchos::RCP<SolutionHistory<Scalar> >              OpSpSolnHistory_;
-  Teuchos::RCP<SolutionState<Scalar> >                tempState_;
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > stepperOSObserver_;
-#endif
+  std::vector<Teuchos::RCP<Stepper<Scalar> > >         subStepperList_;
+  Teuchos::RCP<SolutionHistory<Scalar> >               OpSpSolnHistory_;
+  Teuchos::RCP<SolutionState<Scalar> >                 tempState_;
   Teuchos::RCP<StepperOperatorSplitAppAction<Scalar> > stepperOSAppAction_;
+
 };
 
 } // namespace Tempus

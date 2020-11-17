@@ -1,80 +1,63 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: srchge.f,v 1.3 2007/10/17 18:40:36 gdsjaar Exp $
-C $Log: srchge.f,v $
-C Revision 1.3  2007/10/17 18:40:36  gdsjaar
-C Added copyright notice to all files.
-C
-C Mapvar is licensed under the BSD license
-C
-C Revision 1.2  2000/11/14 17:30:40  gdsjaar
-C Removed old cray compiler directives
-C
-C Revision 1.1  1998/03/13 18:12:28  gdsjaar
-C New code -- mapvar. Interpolates results form an exodusII results file
-C to a differently mesh geometry.  Written by Gerry Wellman,
-C 9117. Loosely based on MERLIN. Provides a superset of merlin
-C functionality.
-C
-C
       SUBROUTINE SRCHGE( LBLK,NE,X,IND,XV,IMIN,IMAX,NDIM,I,
      *                  IL,IU,IT,INDX1,INDX2,XTST )
-C
+
 C-----------------------------------------------------------------------
-C
+
 C DESCRIPTION:
-C
+
 C  PERFORM A BINARY SEARCH TO FIND THE ELEMENT NUMBER I
 C  OF A SORTED ARRAY FOR WHICH ALL ELEMENTS AT I OR ABOVE ARE
 C  GREATER OR EQUAL TO THAN SOME VALUE XV,
 C  WHILE ALL ELEMENTS BELOW I ARE LESS THAN THE VALUE.
-C
+
 C       X(I-2)     X(I-1)    X(I)    X(I+1)   X(I+2)
 C                      XV                             X>
-C
+
 C  ASSUMED THAT THE ARRAY X HAS BEEN SORTED IN INCREASING ORDER,
 C  BUT THE ELEMENTS HAVE NOT BEEN MOVED.
 C  THE SORTED LIST IS DETERMINED BY THE ARRAY INDX,
 C  WHICH POSITIONS THE ORIGINAL UNSORTED X ARRAY ELEMENTS
 C  IN THE SORTED LIST. THUS, THE 5TH ELEMENT IN THE SORTED LIST IS
 C    X(IND(5))
-C
+
 C-----------------------------------------------------------------------
-C
+
 C  INPUT:
-C
+
 C  X      -  ARRAY IN UNSORTED ORDER
 C  IND    -  INDEX ARRAY GIVING THE ELEMENT ORDER IN THE SORTED LIST
 C  XV     -  X VALUE TO TEST AGAINST
 C  IMIN   -  THE LOWEST NUMBERED POSITION IN THE SORTED LIST TO TEST
 C  IMAX   -  THE HIGHEST NUMBERED POSITION IN THE SORTED LIST TO TEST
 C  NDIM   -  THE DIMENSION OF THE ARRAYS
-C
+
 C  OUTPUT:
-C
+
 C  I      -  THE FIRST POSITION IN THE SORTED LIST .GT. XV
-C
+
 C  SCRATCH:
-C
+
 C  IL
 C  IU
 C  IT
 C  INDX1
 C  INDX2
 C  XTST
-C
+
 C-----------------------------------------------------------------------
-C
+
       DIMENSION
      *  X(NDIM), IND(NDIM), XV(LBLK), I(LBLK)
       DIMENSION
      *  IL(LBLK),IU(LBLK),IT(LBLK),INDX1(LBLK),INDX2(LBLK),
      *  XTST(LBLK)
-C
+
       IF (IMAX.EQ.0.OR.NDIM.EQ.0) THEN
          DO J = 1, NE
             I(J) = 0
@@ -88,7 +71,7 @@ C
  25   CONTINUE
         ILOOP = NE
  1000 CONTINUE
-C
+
       DO 50 JJ = 1, ILOOP
         INDX2(JJ) = INDX1(JJ)
         J = INDX1(JJ)
@@ -97,7 +80,7 @@ C
       DO 35 J = 1, NE
        XTST(J) = X( IND(IT(J)) )
  35   CONTINUE
-C
+
       IF ( ILOOP .GT. 64) THEN
 
       ILP = 0
@@ -129,9 +112,9 @@ C
         ENDIF
  51   CONTINUE
       ENDIF
-c
+
       ILOOP = ILP
-c
+
       IF(ILOOP .NE. 0 )GO TO 1000
 C  RANGE HAD NARROWED TO 1 LOCATION. HOWEVER, THE POINT LAST TESTED
 C  COULD BE ABOVE, BELOW, OR ON THE SEARCH POINT. CHECK FOR PROPER CASE
@@ -142,7 +125,7 @@ C  COULD BE ABOVE, BELOW, OR ON THE SEARCH POINT. CHECK FOR PROPER CASE
           I(J) = IT(J)
         ENDIF
  200  CONTINUE
-C
+
       RETURN
       END
-C
+

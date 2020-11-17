@@ -243,6 +243,7 @@ namespace MueLu {
                          LvlMngr(levelID-1, lastLevelID),
                          LvlMngr(levelID,   lastLevelID),
                          LvlMngr(levelID+1, lastLevelID));
+        H.GetLevel(levelID)->print(H.GetOStream(Developer), verbosity_);
 
         isLastLevel = r || (levelID == lastLevelID);
         levelID++;
@@ -250,6 +251,9 @@ namespace MueLu {
       if (!matvecParams_.is_null())
         H.SetMatvecParams(matvecParams_);
       H.AllocateLevelMultiVectors(sizeOfMultiVectors_);
+      // Set hierarchy description.
+      // This is cached, but involves and MPI_Allreduce.
+      H.description();
       H.describe(H.GetOStream(Runtime0), verbosity_);
 
       // When we reuse hierarchy, it is necessary that we don't

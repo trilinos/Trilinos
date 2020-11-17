@@ -68,16 +68,12 @@ TEUCHOS_UNIT_TEST(BackwardEuler, Default_Construction)
   predictorStepper->initialize();
 
   auto defaultStepper = rcp(new Tempus::StepperBackwardEuler<double>());
-  bool useFSAL              = defaultStepper->getUseFSALDefault();
-  std::string ICConsistency = defaultStepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = defaultStepper->getICConsistencyCheckDefault();
+  bool useFSAL              = defaultStepper->getUseFSAL();
+  std::string ICConsistency = defaultStepper->getICConsistency();
+  bool ICConsistencyCheck   = defaultStepper->getICConsistencyCheck();
   bool zeroInitialGuess     = defaultStepper->getZeroInitialGuess();
 
   // Test the set functions.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  auto obs    = rcp(new Tempus::StepperBackwardEulerObserver<double>());
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -87,15 +83,6 @@ TEUCHOS_UNIT_TEST(BackwardEuler, Default_Construction)
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setZeroInitialGuess(zeroInitialGuess);      stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  // Full argument list construction.
-  stepper = rcp(new Tempus::StepperBackwardEuler<double>(
-    model, obs, solver, predictorStepper, useFSAL,
-    ICConsistency, ICConsistencyCheck, zeroInitialGuess));
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
 
   // Full argument list construction.
   stepper = rcp(new Tempus::StepperBackwardEuler<double>(
@@ -216,11 +203,11 @@ TEUCHOS_UNIT_TEST(BackwardEuler, AppAction_Modifier)
 
   // Testing that values can be set through the Modifier.
   auto x = solutionHistory->getCurrentState()->getX();
-  TEST_FLOATING_EQUALITY(modifier->testCurrentValue, get_ele(*(x), 0), 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifier->testCurrentValue, get_ele(*(x), 0), 1.0e-14);
   x = solutionHistory->getWorkingState()->getX();
-  TEST_FLOATING_EQUALITY(modifier->testWorkingValue, get_ele(*(x), 0), 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifier->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
-  TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-14);
 
   TEST_COMPARE(modifier->testType, ==, "Backward Euler - Modifier");
 
@@ -324,10 +311,10 @@ TEUCHOS_UNIT_TEST(BackwardEuler, AppAction_Observer)
 
   // Testing that values can be observed through the observer.
   auto x = solutionHistory->getCurrentState()->getX();
-  TEST_FLOATING_EQUALITY(observer->testCurrentValue, get_ele(*(x), 0), 1.0e-15);
+  TEST_FLOATING_EQUALITY(observer->testCurrentValue, get_ele(*(x), 0), 1.0e-14);
   x = solutionHistory->getWorkingState()->getX();
-  TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-15);
-  TEST_FLOATING_EQUALITY(observer->testDt, dt, 1.0e-15);
+  TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
+  TEST_FLOATING_EQUALITY(observer->testDt, dt, 1.0e-14);
 
   TEST_COMPARE(observer->testType, ==, "Backward Euler");
 }
@@ -428,15 +415,17 @@ TEUCHOS_UNIT_TEST(BackwardEuler, AppAction_ModifierX)
 
   // Testing that values can be set through the Modifier.
   auto x = solutionHistory->getCurrentState()->getX();
-  TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-14);
   // Temporary memory for xDot is not guarranteed to exist outside the Stepper.
-  auto xDot = stepper->getStepperXDot(solutionHistory->getWorkingState());
-  TEST_FLOATING_EQUALITY(modifierX->testXDot, get_ele(*(xDot), 0),1.0e-15);
+  auto xDot = solutionHistory->getWorkingState()->getXDot();
+  if (xDot == Teuchos::null) xDot = stepper->getStepperXDot();
+
+  TEST_FLOATING_EQUALITY(modifierX->testXDot, get_ele(*(xDot), 0),1.0e-14);
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
-  TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, 1.0e-14);
 
   auto time = solutionHistory->getWorkingState()->getTime();
-  TEST_FLOATING_EQUALITY(modifierX->testTime, time, 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifierX->testTime, time, 1.0e-14);
 }
 
 

@@ -10,7 +10,6 @@
 #define Tempus_StepperRKAppActionComposite_hpp
 
 #include "Tempus_StepperRKAppAction.hpp"
-#include "Tempus_TimeStepControl.hpp"
 #include <vector>
 
 namespace Tempus {
@@ -27,15 +26,15 @@ class StepperRKAppActionComposite
 public:
 
   /// Default constructor
-  StepperRKAppActionComposite();
+  StepperRKAppActionComposite() {}
 
   /// Destructor
-  virtual ~StepperRKAppActionComposite();
+  virtual ~StepperRKAppActionComposite() {}
 
   /// Execute application action for RK Stepper.
   virtual void execute(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperRK<Scalar> > stepper,
+    Teuchos::RCP<StepperRKBase<Scalar> > stepper,
     const typename StepperRKAppAction<Scalar>::ACTION_LOCATION actLoc)
   {
     for(auto& a : appActions_)
@@ -43,13 +42,13 @@ public:
   }
 
   // Add AppAction to the AppAction vector.
-  void addRKAppAction(Teuchos::RCP<StepperRKAppAction<Scalar> > appAction);
+  void addRKAppAction(Teuchos::RCP<StepperRKAppAction<Scalar> > appAction)
   {
     appActions_.push_back(appAction);
   }
 
   // Clear the AppAction vector.
-  void clearRKAppActions();
+  void clearRKAppActions()
   { appActions_.clear(); }
 
   // Return the size of the AppAction vector.

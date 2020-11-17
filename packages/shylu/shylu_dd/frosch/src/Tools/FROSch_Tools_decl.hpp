@@ -42,41 +42,14 @@
 #ifndef _FROSCH_TOOLS_DECL_HPP
 #define _FROSCH_TOOLS_DECL_HPP
 
-#ifndef FROSCH_ASSERT
-#define FROSCH_ASSERT(A,S) TEUCHOS_TEST_FOR_EXCEPTION(!(A),std::logic_error,S);
-#endif
-
-#ifndef FROSCH_TIMER_START
-#define FROSCH_TIMER_START(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S))));
-#endif
-
-#ifndef FROSCH_TIMER_START_LEVELID
-#define FROSCH_TIMER_START_LEVELID(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S) + " (Level " + std::to_string(this->LevelID_) + std::string(")"))));
-#endif
-
-#ifndef FROSCH_TIMER_STOP
-#define FROSCH_TIMER_STOP(A) A.reset();
-#endif
-
-#ifndef FROSCH_WARNING
-#define FROSCH_WARNING(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cerr << CLASS << " : WARNING: " << OUTPUT << std::endl;
-#endif
-
-#ifndef FROSCH_NOTIFICATION
-#define FROSCH_NOTIFICATION(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cout << CLASS << " : NOTIFICATION: " << OUTPUT << std::endl;
-#endif
-
-#ifndef FROSCH_TEST_OUTPUT
-#define FROSCH_TEST_OUTPUT(COMM,VERBOSE,OUTPUT) COMM->barrier(); COMM->barrier(); COMM->barrier(); if (VERBOSE) std::cout << OUTPUT << std::endl;
-#endif
-
-#ifndef FROSCH_INDENT
-#define FROSCH_INDENT 5
-#endif
-
 #include <ShyLU_DDFROSch_config.h>
 
+#include <FROSch_Output.h>
+#include <FROSch_Timers.h>
+
 #include <Tpetra_Distributor.hpp>
+
+#include <MatrixMarket_Tpetra.hpp>
 
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_CrsGraphFactory.hpp>
@@ -88,6 +61,7 @@
 #include <Zoltan2_MatrixAdapter.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
+#include <Zoltan2_XpetraCrsGraphAdapter.hpp>
 #endif
 
 
@@ -150,7 +124,13 @@ namespace FROSch {
 
         using CommPtr                   = RCP<const Comm<int> >;
 
-        using ConstXMapPtr              = RCP<const Map<LO,GO,NO> >;
+        using XMap                      = Map<LO,GO,NO>;
+        using XMapPtr                   = RCP<XMap>;
+        using ConstXMapPtr              = RCP<const XMap>;
+        using XMapPtrVecPtr             = ArrayRCP<XMapPtr>;
+        using ConstXMapPtrVecPtr        = ArrayRCP<ConstXMapPtr>;
+        using XMapPtrVecPtr2D           = ArrayRCP<XMapPtrVecPtr>;
+        using ConstXMapPtrVecPtr2D      = ArrayRCP<ConstXMapPtrVecPtr>;
 
         using OverlappingDataPtr        = RCP<OverlappingData<LO,GO> >;
         using OverlappingDataPtrVec     = Array<OverlappingDataPtr>;
@@ -202,6 +182,15 @@ namespace FROSch {
         UN LevelID_ = 1;
     };
 
+    template <class SC, class LO, class GO, class NO>
+    void writeMM(std::string fileName, Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &matrix_);
+
+    template<class SC, class LO, class GO, class NO>
+    void writeMM(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> >& matrix_,std::string fileName);
+
+    template <class SC, class LO, class GO, class NO>
+    void readMM(std::string fileName, Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &matrix_,RCP<const Comm<int> > &comm);
+
     template <class LO,class GO,class NO>
     RCP<const Map<LO,GO,NO> > BuildUniqueMap(const RCP<const Map<LO,GO,NO> > map,
                                              bool useCreateOneToOneMap = true,
@@ -239,6 +228,11 @@ namespace FROSch {
     template <class LO,class GO,class NO>
     RCP<const Map<LO,GO,NO> > BuildRepeatedMap(RCP<const CrsGraph<LO,GO,NO> > graph);
 
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildMapFromNodeMapRepeated(Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > &nodesMap,
+                                                                     unsigned dofsPerNode,
+                                                                     unsigned dofOrdering);
+
     template <class SC,class LO,class GO,class NO>
     int ExtendOverlapByOneLayer_Old(RCP<const Matrix<SC,LO,GO,NO> > inputMatrix,
                                     RCP<const Map<LO,GO,NO> > inputMap,
@@ -266,6 +260,10 @@ namespace FROSch {
     template <class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > AssembleMaps(ArrayView<RCP<const Map<LO,GO,NO> > > mapVector,
                                      ArrayRCP<ArrayRCP<LO> > &partMappings);
+
+    template <class LO,class GO,class NO>
+    RCP<Map<LO,GO,NO> > AssembleMapsNonConst(ArrayView<RCP<Map<LO,GO,NO> > > mapVector,
+                                             ArrayRCP<ArrayRCP<LO> > &partMappings);
 
     template <class LO,class GO,class NO>
     RCP<Map<LO,GO,NO> > AssembleSubdomainMap(unsigned numberOfBlocks,
@@ -428,6 +426,13 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int RepartionMatrixZoltan2(RCP<Matrix<SC,LO,GO,NO> > &crsMatrix,
                                RCP<ParameterList> parameterList);
+
+    template <class LO,class GO, class NO>
+    int BuildRepMapZoltan(RCP<CrsGraph<LO,GO,NO> > Xgraph,
+                          RCP<CrsGraph<LO,GO,NO> > B,
+                          RCP<ParameterList> parameterList,
+                          Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm,
+                          RCP<Map<LO,GO,NO> > &RepeatedMap);
 #endif
 
     /*!

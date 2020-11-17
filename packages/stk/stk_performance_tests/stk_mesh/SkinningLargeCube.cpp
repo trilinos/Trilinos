@@ -40,6 +40,7 @@
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/perf_util.hpp>
+#include <stk_performance_tests/stk_mesh/timer.hpp>
 
 #include <stk_mesh/base/BulkModification.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -50,10 +51,13 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/EntityCommDatabase.hpp>
+#include <stk_mesh/base/CreateEdges.hpp>
 
 #include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"
 #include <stk_mesh/base/BoundaryAnalysis.hpp>
 #include <stk_mesh/base/SkinMesh.hpp>
+
+#include <stk_io/WriteMesh.hpp>
 
 namespace {
 
@@ -537,4 +541,47 @@ TEST( skinning_large_cube, skinning_large_cube)
   }
 
   stk::parallel_print_time_without_output_and_hwm(pm, timings[5]);
+}
+
+double run_skinning_large_cube_test(bool createEdges, unsigned numRuns, std::vector<size_t>& dims)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  EXPECT_TRUE(dims.size() >= 3);
+  const size_t NX = dims[0], NY = dims[1], NZ = dims[2];
+
+  double skinningTime = 0.0;
+
+  for (unsigned testRun = 0; testRun < numRuns; ++testRun) {
+    stk::mesh::fixtures::HexFixture fixture(pm,NX,NY,NZ);
+
+    stk::mesh::MetaData & fem_meta = fixture.m_meta;
+
+    stk::mesh::Part & skin_part = fem_meta.declare_part("skin_part");
+    fem_meta.commit();
+
+    fixture.generate_mesh();
+    
+    if(createEdges) {
+      stk::mesh::create_edges(fixture.m_bulk_data);
+    }
+
+    stk::mesh::PartVector add_parts(1,&skin_part);
+    double startTime = stk::wall_time();
+    stk::mesh::skin_mesh(fixture.m_bulk_data, add_parts);
+    skinningTime += stk::wall_dtime(startTime);
+  }
+
+  return skinningTime;
+}
+
+TEST(skinning_large_cube_perf_test, skinning_large_cube)
+{
+  unsigned numRuns = 100;
+  std::vector<size_t> dims = {50, 50, 50};
+  double edgeTime = run_skinning_large_cube_test(true, numRuns, dims);
+
+  double maxTime = stk::get_max_time_across_procs(edgeTime, MPI_COMM_WORLD);
+  size_t maxHwm = stk::get_max_hwm_across_procs(MPI_COMM_WORLD);
+  stk::print_stats_for_performance_compare(std::cout, maxTime, maxHwm, numRuns, MPI_COMM_WORLD);
 }

@@ -291,6 +291,11 @@ namespace Intrepid2 {
 
 
         /******************* START COMPARISON ***********************/
+
+        //bases definition has changed and we need to scale
+        //them for comparison with old stored values
+        double basisScalingFactor = 1.0/4.0;
+
         std::string basedir = "../testdata";
         for (auto cid=0;cid<num_cells-1;++cid) {
           std::stringstream namestream;
@@ -303,6 +308,11 @@ namespace Intrepid2 {
           std::ifstream massfile(&filename[0]);
           if (massfile.is_open()) {
             const auto mass_matrix_cell = Kokkos::subdynrankview(mass_matrices, cid, Kokkos::ALL(), Kokkos::ALL());
+
+            for (ordinal_type i=0; i < num_fields; ++i)
+              for (ordinal_type j=0; j < num_fields; ++j)
+                mass_matrix_cell(i,j) *= basisScalingFactor;
+
             errorFlag += compareToAnalytic(massfile,
                                            mass_matrix_cell, 
                                            1e-10, 
@@ -323,6 +333,11 @@ namespace Intrepid2 {
           std::ifstream stifffile(&filename[0]);
           if (stifffile.is_open()) {
             const auto stiffness_matrix_cell = Kokkos::subdynrankview(stiffness_matrices, cid, Kokkos::ALL(), Kokkos::ALL());
+
+            for (ordinal_type i=0; i < num_fields; ++i)
+              for (ordinal_type j=0; j < num_fields; ++j)
+                stiffness_matrix_cell(i,j) *= basisScalingFactor;
+
             errorFlag += compareToAnalytic(stifffile,
                                            stiffness_matrix_cell,
                                            1e-10,
@@ -345,6 +360,11 @@ namespace Intrepid2 {
           std::ifstream massfile(&filename[0]);
           if (massfile.is_open()) {
             const auto mass_matrix_cell = Kokkos::subdynrankview(mass_matrices, cid, Kokkos::ALL(), Kokkos::ALL());
+            
+            for (ordinal_type i=0; i < num_fields; ++i)
+              for (ordinal_type j=0; j < num_fields; ++j)
+                mass_matrix_cell(i,j) *= basisScalingFactor;
+
             errorFlag += compareToAnalytic(massfile,
                                            mass_matrix_cell,
                                            1e-4,
@@ -366,6 +386,12 @@ namespace Intrepid2 {
           std::ifstream stifffile(&filename[0]);
           if (stifffile.is_open()) {
             const auto stiffness_matrix_cell = Kokkos::subdynrankview(stiffness_matrices, cid, Kokkos::ALL(), Kokkos::ALL());
+            
+            for (ordinal_type i=0; i < num_fields; ++i)
+              for (ordinal_type j=0; j < num_fields; ++j)
+                stiffness_matrix_cell(i,j) *= basisScalingFactor;
+
+
             errorFlag += compareToAnalytic(stifffile,
                                            stiffness_matrix_cell,
                                            1e-4,

@@ -200,7 +200,7 @@ private:
   bool supports_x_dotdot_; 
   
   //! Set observer
-  void setObserver(); 
+  void setObserver() const; 
 
   //! Boolean to tell TempusSolver whether or not to abort if a transient solve fails 
   bool abort_on_failure_;
@@ -210,7 +210,10 @@ private:
   //from Albany.  
   bool abort_on_fail_at_min_dt_;
 
-  SENS_METHOD sens_method_; 
+  SENS_METHOD sens_method_;
+
+  //Boolean to mark whether initial state was reset using setInitialState routine
+  bool initial_state_reset_; 
 };
 
 /** \brief Non-member constructor function */

@@ -56,11 +56,13 @@ inline std::tm localtime(std::time_t time)
 
     bool handle(std::tm *tm) { return tm != nullptr; }
 
+#if (!defined(__INTEL_COMPILER) || (defined(__INTEL_COMPILER) && __INTEL_COMPILER > 1800))
     bool handle(internal::null<>)
     {
       using namespace fmt::internal;
       return fallback(localtime_s(&tm_, &time_));
     }
+#endif
 
     bool fallback(int res) { return res == 0; }
 
@@ -100,11 +102,13 @@ inline std::tm gmtime(std::time_t time)
 
     bool handle(std::tm *tm) { return tm != nullptr; }
 
+#if (!defined(__INTEL_COMPILER) || (defined(__INTEL_COMPILER) && __INTEL_COMPILER > 1800))
     bool handle(internal::null<>)
     {
       using namespace fmt::internal;
       return fallback(gmtime_s(&tm_, &time_));
     }
+#endif
 
     bool fallback(int res) { return res == 0; }
 

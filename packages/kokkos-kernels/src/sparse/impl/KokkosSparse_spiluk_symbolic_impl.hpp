@@ -226,7 +226,7 @@ void iluk_symbolic ( IlukHandle& thandle,
 
   typedef Kokkos::View<nnz_lno_t*, Kokkos::LayoutLeft, Kokkos::HostSpace> HostTmpViewType;
     
-  HostTmpViewType h_lev ( "h_lev",  thandle.get_nnzL() );
+  HostTmpViewType h_lev ( "h_lev",  thandle.get_nnzU() );
   HostTmpViewType h_iw  ( "h_iw",   nrows              );
   HostTmpViewType h_iL  ( "h_iL",   nrows              );
   HostTmpViewType h_llev( "h_llev", nrows              );
@@ -252,18 +252,20 @@ void iluk_symbolic ( IlukHandle& thandle,
 
     for ( size_type k = k1; k < k2; ++k ) {
       size_type col = static_cast<size_type>(A_entries(k));
-      if (col > i) {//U part
-        h_iw(col)         = lenu;
-        h_iL(iU+lenu)     = col;
-        h_llev(ulev+lenu) = 0;
-        lenu++;
-      } 
-      else if (col < i) {//L part
-        h_iw(col)    = lenl;
-        h_iL(lenl)   = col;
-        h_llev(lenl) = 0;
-        lenl++;
-      }
+      if (col < nrows) { // Ignore column elements that are not in the square matrix
+        if (col > i) {//U part
+          h_iw(col)         = lenu;
+          h_iL(iU+lenu)     = col;
+          h_llev(ulev+lenu) = 0;
+          lenu++;
+        } 
+        else if (col < i) {//L part
+          h_iw(col)    = lenl;
+          h_iL(lenl)   = col;
+          h_llev(lenl) = 0;
+          lenl++;
+        }
+      }  
     }
 
     //Eliminate rows
@@ -306,11 +308,15 @@ void iluk_symbolic ( IlukHandle& thandle,
     for (size_type k = 0; k < lenu; ++k) h_iw(h_iL(iU+k)) = -1;
 
     //Copy U part+diag and levels
-    //if (cntU+lenu+1 > U_entries_d.extent(0)) {
-    //  size_type newsize = (size_type)(U_entries_d.extent(0)*EXPAND_FACT);
-    //  //thandle.set_nnzU(newsize);
-    //  Kokkos::resize(h_lev, newsize);
-    //}
+    if (cntU+lenu+1 > static_cast<size_type>(U_entries_d.extent(0))) {
+      //size_type newsize = (size_type)(U_entries_d.extent(0)*EXPAND_FACT);
+      //Kokkos::resize(h_lev, newsize);
+      //Kokkos::resize(U_entries, newsize);
+      //Kokkos::resize(U_entries_d, newsize);
+      std::ostringstream os;
+      os << "KokkosSparse::Experimental::spiluk_symbolic: U_entries's extent must be larger than " << U_entries_d.extent(0);
+      Kokkos::Impl::throw_runtime_exception (os.str ());
+    }
     //U diag entry
     U_entries(cntU) = i;
     cntU++;
@@ -323,10 +329,18 @@ void iluk_symbolic ( IlukHandle& thandle,
     U_row_map(i+1) = cntU;
 
     //Copy L part
-    //if (cntL+lenl > L_entries_d.extent(0)) {
-    //  size_type newsize = (size_type) (L_entries_d.extent(0)*EXPAND_FACT);
-    //  //thandle.set_nnzL(newsize);
-    //}
+#ifdef KEEP_DIAG
+    if (cntL+lenl+1 > static_cast<size_type>(L_entries_d.extent(0))) {
+#else
+    if (cntL+lenl > static_cast<size_type>(L_entries_d.extent(0))) {
+#endif
+      //size_type newsize = (size_type) (L_entries_d.extent(0)*EXPAND_FACT);
+      //Kokkos::resize(L_entries, newsize);
+      //Kokkos::resize(L_entries_d, newsize);
+      std::ostringstream os;
+      os << "KokkosSparse::Experimental::spiluk_symbolic: L_entries's extent must be larger than " << L_entries_d.extent(0);
+      Kokkos::Impl::throw_runtime_exception (os.str ());
+    }
     for (size_type k = 0; k < lenl; ++k) {
       L_entries(cntL) = h_iL(k);
       cntL++;

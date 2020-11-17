@@ -87,13 +87,6 @@ public:
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
     { return stateStepper_->getSolver(); }
 
-    /// Set Observer
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
-
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return Teuchos::null; }
-
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
       const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */){}

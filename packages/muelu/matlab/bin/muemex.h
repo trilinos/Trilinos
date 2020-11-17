@@ -74,12 +74,16 @@
 #include "BelosSolverFactory.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosTpetraAdapter.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
 #include "BelosMueLuAdapter.hpp"
 #include "MueLu_MatlabUtils.hpp"
 
 #include "mex.h"
 
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
 #define HAVE_COMPLEX_SCALARS
+#endif
 
 namespace MueLu
 {

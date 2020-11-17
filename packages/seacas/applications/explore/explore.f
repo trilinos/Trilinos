@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       PROGRAM EXPLORE
@@ -440,6 +440,17 @@ C   --Process commands
       CALL MDDEL ('FACNPS')
       CALL MCDEL ('NSNAME')
       CALL MDDEL ('LISNP')
+
+      CALL MDDEL ('IDESS')
+      CALL MDDEL ('NEESS')
+      CALL MDDEL ('NDESS')
+      CALL MDDEL ('IXEESS')
+      CALL MDDEL ('IXDESS')
+      CALL MDDEL ('LTEESS')
+      CALL MDDEL ('LTSESS')
+      CALL MDDEL ('FACESS')
+      CALL MCDEL ('SSNAME')
+
       CALL MDDEL ('NLISEL')
       CALL MDDEL ('LISEL')
       CALL MDDEL ('LISBEL')

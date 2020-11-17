@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_ZoneConnectivity_h
@@ -74,6 +74,7 @@ namespace Ioss {
     // transform must have valid entries.
     bool is_valid() const;
     bool has_faces() const;
+    bool retain_original() const; // True if need to retain in parallel decomp
 
     std::array<INT, 9> transform_matrix() const;
     Ioss::IJK_t        transform(const Ioss::IJK_t &index_1) const;

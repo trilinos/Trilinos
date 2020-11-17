@@ -515,7 +515,7 @@ public:
 
 private:
   const T* ptr_;
-  int size_;
+  size_type size_;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   ArrayRCP<const T> arcp_;
 #endif

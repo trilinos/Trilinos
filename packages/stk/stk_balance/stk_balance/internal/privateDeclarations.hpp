@@ -97,6 +97,7 @@ bool shouldOmitSpiderElement(const stk::mesh::BulkData & stkMeshBulkData,
                              const stk::balance::BalanceSettings & balanceSettings,
                              stk::mesh::Entity elem);
 
+void fill_spider_connectivity_count_fields(stk::mesh::BulkData & bulk, const BalanceSettings & balanceSettings);
 void keep_spiders_on_original_proc(stk::mesh::BulkData &bulk, const stk::balance::BalanceSettings & balanceSettings, DecompositionChangeList &changeList);
 void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::BulkData & stkMeshBulkData);
 

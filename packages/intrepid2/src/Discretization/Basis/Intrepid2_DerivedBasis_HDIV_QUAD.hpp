@@ -80,11 +80,12 @@ namespace Intrepid2
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
+        \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HDIV_Family1_QUAD(int polyOrder_x, int polyOrder_y)
+    Basis_Derived_HDIV_Family1_QUAD(int polyOrder_x, int polyOrder_y, const EPointType pointType)
     :
-    TensorBasis(LineHVolBasis(polyOrder_x-1),
-                LineGradBasis(polyOrder_y))
+    TensorBasis(LineHVolBasis(polyOrder_x-1,pointType),
+                LineGradBasis(polyOrder_y,pointType))
     {
       this->functionSpace_ = FUNCTION_SPACE_HDIV;
     }
@@ -138,6 +139,29 @@ namespace Intrepid2
         INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
       }
     }
+
+    /** \brief  Fills in coefficients of degrees of freedom for Lagrangian basis on the reference cell
+        \param [out] dofCoeffs - the container into which to place the degrees of freedom.
+
+     dofCoeffs have shape (F,D), field dimension matches the cardinality of the basis, and D is the
+     basis dimension.
+
+     Degrees of freedom coefficients are such that
+     \phi_i(dofCoords_(j)) \cdot dofCoeffs_(j)  = \delta_ij,
+     where \phi_i are the basis and \delta_ij the Kronecker delta.
+     Note that getDofCoeffs() is supported only for Lagrangian bases.
+     */
+    virtual void getDofCoeffs( ScalarViewType dofCoeffs ) const {
+      auto dofCoeffs1 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),0);
+      auto dofCoeffs2 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),1);
+      Kokkos::deep_copy(dofCoeffs1,0.0);
+      this->TensorBasis::getDofCoeffs(dofCoeffs2);
+      //multiply by weight = -1.0
+      using ExecutionSpace = typename TensorBasis::ExecutionSpace;
+      Kokkos::parallel_for( Kokkos::RangePolicy<ExecutionSpace>(0, dofCoeffs2.extent(0)),
+          KOKKOS_LAMBDA (const int i){ dofCoeffs2(i) *= -1.0; });
+    }
+
   };
 
   template<class HGRAD_LINE, class HVOL_LINE>
@@ -156,11 +180,12 @@ namespace Intrepid2
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
+        \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HDIV_Family2_QUAD(int polyOrder_x, int polyOrder_y)
+    Basis_Derived_HDIV_Family2_QUAD(int polyOrder_x, int polyOrder_y, const EPointType pointType)
     :
-    TensorBasis(LineGradBasis(polyOrder_x),
-                LineHVolBasis(polyOrder_y-1))
+    TensorBasis(LineGradBasis(polyOrder_x,pointType),
+                LineHVolBasis(polyOrder_y-1,pointType))
     {
       this->functionSpace_ = FUNCTION_SPACE_HDIV;
     }
@@ -210,6 +235,25 @@ namespace Intrepid2
         INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
       }
     }
+
+    /** \brief  Fills in coefficients of degrees of freedom for Lagrangian basis on the reference cell
+        \param [out] dofCoeffs - the container into which to place the degrees of freedom.
+
+     dofCoeffs have shape (F,D), field dimension matches the cardinality of the basis, and D is the
+     basis dimension.
+
+     Degrees of freedom coefficients are such that
+     \phi_i(dofCoords_(j)) \cdot dofCoeffs_(j)  = \delta_ij,
+     where \phi_i are the basis and \delta_ij the Kronecker delta.
+     Note that getDofCoeffs() is supported only for Lagrangian bases.
+     */
+    virtual void getDofCoeffs( ScalarViewType dofCoeffs ) const {
+      auto dofCoeffs1 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),0);
+      auto dofCoeffs2 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),1);
+      this->TensorBasis::getDofCoeffs(dofCoeffs1);
+      Kokkos::deep_copy(dofCoeffs2,0.0);
+    }
+
   };
   
   template<class HGRAD_LINE, class HVOL_LINE>
@@ -220,28 +264,84 @@ namespace Intrepid2
     using Family1 = Basis_Derived_HDIV_Family1_QUAD<HGRAD_LINE, HVOL_LINE>;
     using Family2 = Basis_Derived_HDIV_Family2_QUAD<HGRAD_LINE, HVOL_LINE>;
     using DirectSumBasis = Basis_DirectSumBasis<Family1,Family2>;
+
+    using ExecutionSpace  = typename HGRAD_LINE::ExecutionSpace;
+    using OutputValueType = typename HGRAD_LINE::OutputValueType;
+    using PointValueType  = typename HGRAD_LINE::PointValueType;
+
+  protected:
+    std::string name_;
+    ordinal_type order_x_;
+    ordinal_type order_y_;
+    EPointType pointType_;
   public:
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
+        \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HDIV_QUAD(int polyOrder_x, int polyOrder_y)
+    Basis_Derived_HDIV_QUAD(int polyOrder_x, int polyOrder_y, const EPointType pointType=POINTTYPE_DEFAULT)
     :
-    DirectSumBasis(Family1(polyOrder_x, polyOrder_y),
-                   Family2(polyOrder_x, polyOrder_y))
+    DirectSumBasis(Family1(polyOrder_x, polyOrder_y, pointType),
+                   Family2(polyOrder_x, polyOrder_y, pointType))
     {
       this->functionSpace_ = FUNCTION_SPACE_HDIV;
+
+      std::ostringstream basisName;
+      basisName << "HDIV_QUAD (" << this->DirectSumBasis::getName() << ")";
+      name_ = basisName.str();
+
+      order_x_ = polyOrder_x;
+      order_y_ = polyOrder_y;
+      pointType_ = pointType;
     }
     
     /** \brief  Constructor.
         \param [in] polyOrder - the polynomial order to use in all dimensions.
+        \param [in] pointType - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HDIV_QUAD(int polyOrder) : Basis_Derived_HDIV_QUAD(polyOrder, polyOrder) {}
+    Basis_Derived_HDIV_QUAD(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT) : Basis_Derived_HDIV_QUAD(polyOrder, polyOrder, pointType) {}
 
     /** \brief True if orientation is required
     */
     virtual bool requireOrientation() const {
       return (this->getDofCount(1,0) > 0); //if it has side DOFs, than it needs orientations
+    }
+
+    /** \brief  Returns basis name
+
+     \return the name of the basis
+     */
+    virtual
+    const char*
+    getName() const override {
+      return name_.c_str();
+    }
+
+    /** \brief returns the basis associated to a subCell.
+
+        The bases of the subCell are the restriction to the subCell of the bases of the parent cell,
+        projected along normal to the subCell.
+
+        TODO: test this method when different orders are used in different directions
+        \param [in] subCellDim - dimension of subCell
+        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+     */
+    BasisPtr<ExecutionSpace, OutputValueType, PointValueType>
+      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
+      if(subCellDim == 1) {
+        switch(subCellOrd) {
+        case 0:
+        case 2:
+          return Teuchos::rcp( new HVOL_LINE(order_x_-1, pointType_) );
+        case 1:
+        case 3:
+          return Teuchos::rcp( new HVOL_LINE(order_y_-1, pointType_) );
+        }
+      }
+
+      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
     }
   };
 } // end namespace Intrepid2

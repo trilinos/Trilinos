@@ -80,37 +80,14 @@ private:
 
   std::string dof_name;
   Teuchos::RCP<const PureBasis> basis;
-  int num_pts;
+  int num_faces;
   int num_dim;
-  int quad_degree;
-  //! If true, a fast algorithm can be used, but this requires a rectangular/square structured hex mesh.
-  bool use_fast_method_on_rectangular_hex_mesh;
 
   PHX::MDField<const ScalarT,Cell,BASIS,Dim> normals;
   std::vector<PHX::MDField<const ScalarT,Cell,BASIS,Dim> > vector_values;
   PHX::MDField<ScalarT,Cell,BASIS> result;
 
   ProjectToFaces();
-
-  PHX::MDField<ScalarT,Cell,NODE,Dim> gatherFieldNormals;
-
-  Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
-
-  // Caching values instead of creating temporaries in loops. Also
-  // moved intrepid calculations to use host space to avoid UVM
-  // allocation of internal temporaries created in interpid calls that
-  // are made per cell.
-  using ProjectionSpace = Kokkos::HostSpace;
-  Kokkos::DynRankView<ScalarT,ProjectionSpace> refEdges;
-  Kokkos::DynRankView<ScalarT,ProjectionSpace> phyEdges;
-  std::vector<Teuchos::RCP< Intrepid2::Cubature<ProjectionSpace::execution_space,double,double>>> faceQuads;
-  Kokkos::DynRankView<double,ProjectionSpace> quadWts;
-  Kokkos::DynRankView<double,ProjectionSpace> quadPts;
-  Kokkos::DynRankView<double,ProjectionSpace> physicalNodes;
-  Kokkos::DynRankView<double,ProjectionSpace> refQuadPts;
-  Kokkos::DynRankView<double,ProjectionSpace> jacobianSide;
-  Kokkos::DynRankView<double,ProjectionSpace> weighted_measure;
-  Kokkos::DynRankView<double,ProjectionSpace> scratch_space;
 };
 
 }

@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -113,8 +113,8 @@ int main(int argc, char **argv)
       blobs[i].name[0] = '\0';
 
       EXCHECK(ex_get_blob(exoid, &blobs[i]));
-      printf("Blob named '%s' has id %" PRId64 ". It contains %" PRId64 " entries.\n\t", blobs[i].name,
-             blobs[i].id, blobs[i].num_entry);
+      printf("Blob named '%s' has id %" PRId64 ". It contains %" PRId64 " entries.\n\t",
+             blobs[i].name, blobs[i].id, blobs[i].num_entry);
       printf("\n");
     }
 
@@ -127,8 +127,8 @@ int main(int argc, char **argv)
     }
     EXCHECK(ex_get_blobs(exoid, blb));
     for (i = 0; i < num_blob; i++) {
-      printf("Blob named '%s' has id %" PRId64 ". It contains %" PRId64 " entries.\n", blb[i].name, blb[i].id,
-             blb[i].num_entry);
+      printf("Blob named '%s' has id %" PRId64 ". It contains %" PRId64 " entries.\n", blb[i].name,
+             blb[i].id, blb[i].num_entry);
     }
 
     /* Read attributes... */
@@ -137,8 +137,8 @@ int main(int argc, char **argv)
     for (i = 0; i < num_blob; i++) {
       memset(attr, 0, sizeof(ex_attribute) * 10);
       int att_count = ex_get_attribute_count(exoid, EX_BLOB, blb[i].id);
-      printf("Blob named '%s' with id %" PRId64 ". It contains %d attributes:\n", blb[i].name, blb[i].id,
-             att_count);
+      printf("Blob named '%s' with id %" PRId64 ". It contains %d attributes:\n", blb[i].name,
+             blb[i].id, att_count);
 
       ex_get_attribute_param(exoid, EX_BLOB, blb[i].id, attr);
       ex_get_attributes(exoid, att_count, attr);
@@ -231,8 +231,8 @@ int main(int argc, char **argv)
 
       for (int k = 0; k < num_blob; k++) {
         EXCHECK(ex_get_reduction_vars(exoid, i + 1, EX_BLOB, blb[k].id, num_red_vars, var_values));
-        printf("Values for Blob %" PRId64 " at step %d: %f\t%f\t%f\t%f\n", blb[k].id, i + 1, var_values[0],
-               var_values[1], var_values[2], var_values[3]);
+        printf("Values for Blob %" PRId64 " at step %d: %f\t%f\t%f\t%f\n", blb[k].id, i + 1,
+               var_values[0], var_values[1], var_values[2], var_values[3]);
 
         for (int var_idx = 0; var_idx < num_vars; var_idx++) {
           EXCHECK(ex_get_var(exoid, i + 1, EX_BLOB, var_idx + 1, blobs[k].id, blobs[k].num_entry,

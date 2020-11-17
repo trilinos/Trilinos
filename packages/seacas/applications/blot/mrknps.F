@@ -1,37 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Log: mrknps.F,v $
-C Revision 1.6  2009/03/25 12:36:45  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.5  2000/07/11 16:50:23  gdsjaar
-C SGI had problems with logical statement function, inlined it
-C
-C Revision 1.4  1999/03/02 19:12:36  gdsjaar
-C Fixed nodeset scaling interpolation equation
-C
-C Revision 1.3  1997/06/26 17:51:37  caforsy
-C Substituted if NeedsDoubleEscape for ifdef sun.  This define is needed on cougar, sun and ibm platforms
-C
-C Revision 1.2  1995/11/02 16:59:11  caforsy
-C Changes compute and io word size defaults.  Changed node set
-C markings to "O"'s. Node set markings will scale depending upon the
-C number of nodes.
-C
-C Revision 1.1  1994/04/07 20:05:14  gdsjaar
-C Initial checkin of ACCESS/graphics/blotII2
-C
-CRevision 1.3  1993/07/08  21:57:16  gdsjaar
-CReplaced SUN with sun in all ifdef statements.
-C
-CRevision 1.2  1990/12/14  08:53:37  gdsjaar
-CAdded RCS Id and Log to all files
-C
 C=======================================================================
       SUBROUTINE MRKNPS (HIDENP,
      &   XN, YN, ZN, IX2NP, IN2ELB, DODEAD, IDN2B,

@@ -11,6 +11,7 @@
 
 #include "NOX_Thyra.H"
 #include "Tempus_StepperFactory.hpp"
+#include "Tempus_StepperNewmarkImplicitDFormModifierDefault.hpp"
 #include "Tempus_config.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
@@ -181,28 +182,28 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm()
 #endif
 
   this->setStepperType(        "Newmark Implicit d-Form");
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setUseFSAL(            false);
+  this->setICConsistency(      "None");
+  this->setICConsistencyCheck( false);
   this->setZeroInitialGuess(   false);
   this->setSchemeName(         "Average Acceleration");
 
-  this->setObserver();
+  this->setAppAction(Teuchos::null);
   this->setDefaultSolver();
 }
 
-template <class Scalar>
+template<class Scalar>
 StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
-  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
-  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-  bool useFSAL,
-  std::string ICConsistency,
-  bool ICConsistencyCheck,
-  bool zeroInitialGuess,
-  std::string schemeName,
-  Scalar beta,
-  Scalar gamma)
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool zeroInitialGuess,
+    std::string schemeName,
+    Scalar beta,
+    Scalar gamma,
+    const Teuchos::RCP<StepperNewmarkImplicitDFormAppAction<Scalar> >& stepperAppAction)
   : out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
   this->setStepperType(        "Newmark Implicit d-Form");
@@ -213,8 +214,7 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
   this->setSchemeName(         schemeName);
   this->setBeta(               beta);
   this->setGamma(              gamma);
-
-  this->setObserver(obs);
+  this->setAppAction(stepperAppAction);
   this->setSolver(solver);
 
   if (appModel != Teuchos::null) {
@@ -222,7 +222,6 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
     this->initialize();
   }
 }
-
 
 template <class Scalar>
 void
@@ -236,6 +235,23 @@ StepperNewmarkImplicitDForm<Scalar>::setModel(
     Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(
       appModel, "Newmark Implicit d-Form"));
   this->wrapperModel_ = wrapperModel;
+
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void StepperNewmarkImplicitDForm<Scalar>::setAppAction(
+    Teuchos::RCP<StepperNewmarkImplicitDFormAppAction<Scalar> > appAction)
+{
+
+  if (appAction == Teuchos::null) {
+    // Create default appAction
+    stepperNewmarkImpAppAction_ =
+      Teuchos::rcp(new StepperNewmarkImplicitDFormModifierDefault<Scalar>());
+  } else {
+    stepperNewmarkImpAppAction_ = appAction;
+  }
 
   this->isInitialized_ = false;
 }
@@ -261,6 +277,10 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
       "  Number of States = " << solutionHistory->getNumStates() << "\n"
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
+
+    auto thisStepper = Teuchos::rcpFromRef(*this);
+    stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
+        StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
 
     RCP<SolutionState<Scalar>> workingState =solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar>> currentState =solutionHistory->getCurrentState();
@@ -356,11 +376,18 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
       Thyra::copy(*d_pred, initial_guess.ptr());
     }
 
+    stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
+        StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
+
+
     //Set d_pred as initial guess for NOX solver, and solve nonlinear system.
     const Thyra::SolveStatus<Scalar> sStatus =
       this->solveImplicitODE(initial_guess);
 
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
+
+    stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
+        StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
 
     //solveImplicitODE will return converged solution in initial_guess
     //vector.  Copy it here to d_new, to define the new displacement.
@@ -395,6 +422,9 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
 
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
+
+    stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
+        StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
   return;
 }

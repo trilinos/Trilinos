@@ -198,6 +198,8 @@ public:
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           little_vec_type;
+  typedef typename little_vec_type::HostMirror
+          little_host_vec_type;
 
   /// \brief "Const block view" of all degrees of freedom at a mesh point,
   ///   for a single column of the MultiVector.
@@ -604,8 +606,7 @@ public:
   /// future.  If you insist not to use \c auto, then please use the
   /// \c little_vec_type typedef to deduce the correct return type;
   /// don't try to hard-code the return type yourself.
-  typename little_vec_type::HostMirror
-  getLocalBlock (const LO localRowIndex, const LO colIndex) const;
+  little_host_vec_type getLocalBlock (const LO localRowIndex, const LO colIndex) const;
   //@}
 
 protected:
@@ -625,7 +626,8 @@ protected:
    const Kokkos::DualView<const local_ordinal_type*,
      buffer_device_type>& permuteToLIDs,
    const Kokkos::DualView<const local_ordinal_type*,
-     buffer_device_type>& permuteFromLIDs);
+     buffer_device_type>& permuteFromLIDs,
+   const CombineMode CM);
 
   virtual void
   packAndPrepare

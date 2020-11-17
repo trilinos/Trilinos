@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -275,7 +275,6 @@ C      --Assign each node to a block in the mesh
 
          CALL MDDEL ('NPX')
          CALL MDDEL ('NPY')
-C#????         CALL MDLONG ('NPCR', KNPCR, LNPCR)
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 360
 

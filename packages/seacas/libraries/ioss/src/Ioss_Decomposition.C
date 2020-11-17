@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -178,6 +178,11 @@ namespace Ioss {
     Utils::check_set_bool_property(props, "DECOMP_SHOW_PROGRESS", m_showProgress);
     if (!m_showProgress) {
       Utils::check_set_bool_property(props, "ENABLE_TRACING", m_showProgress);
+    }
+
+    if (props.exists("PARMETIS_COMMON_NODE_COUNT") &&
+        props.get("PARMETIS_COMMON_NODE_COUNT").get_int() > 0) {
+      m_commonNodeCount = props.get("PARMETIS_COMMON_NODE_COUNT").get_int();
     }
   }
 
@@ -710,11 +715,12 @@ namespace Ioss {
                                                     idx_t *element_dist, idx_t *pointer,
                                                     idx_t *adjacency, idx_t *elem_partition)
   {
-    idx_t  wgt_flag     = 0; // No weights
-    idx_t *elm_wgt      = nullptr;
-    idx_t  ncon         = 1;
-    idx_t  num_flag     = 0; // Use C-based numbering
-    idx_t  common_nodes = get_common_node_count(el_blocks, m_comm);
+    idx_t  wgt_flag = 0; // No weights
+    idx_t *elm_wgt  = nullptr;
+    idx_t  ncon     = 1;
+    idx_t  num_flag = 0; // Use C-based numbering
+    idx_t  common_nodes =
+        m_commonNodeCount > 0 ? m_commonNodeCount : get_common_node_count(el_blocks, m_comm);
 
     idx_t               nparts = m_processorCount;
     idx_t               ndims  = m_spatialDimension;
@@ -1221,7 +1227,7 @@ namespace Ioss {
     //
     // * iterate all local nodes (those that are in both file and ioss
     // decomposition)
-    //   on this procesor and all exported nodes,
+    //   on this processor and all exported nodes,
     // * put in a vector and sort on (id,proc).
     // * iterate and create a vector of all shared nodes and the
     //   processor they are on..

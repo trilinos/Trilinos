@@ -1,20 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: mxzero.f,v 1.3 1993/07/19 18:08:46 gdsjaar Exp $
-C $Log: mxzero.f,v $
-C Revision 1.3  1993/07/19 18:08:46  gdsjaar
-C Added special case for n=4 since that is how plt calls it primarily
-C
-c Revision 1.2  1993/07/16  19:35:48  gdsjaar
-c Restructured to optimize faster
-c
-c Revision 1.1  1993/07/16  16:47:37  gdsjaar
-c Changed plt to library rather than single source file.
-c
 C=======================================================================
       SUBROUTINE MXZERO(N,MAT)
       REAL MAT(N,*)

@@ -1,13 +1,11 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef STRINGX_H
 #define STRINGX_H
-
-#include "util.h" // for free_name_array, etc
 
 //! Compare a string against another "master" string, where the string, str,
 //! can be abbreiviated to as little as min_length characters.  Returns true

@@ -51,6 +51,15 @@ namespace stk { namespace diag { class Writer; } }
 namespace stk {
 namespace diag {
 
+inline
+bool has_uncaught_exception()
+{
+#if __cplusplus > 201402L
+  return std::uncaught_exceptions() > 0;
+#else
+  return std::uncaught_exception();
+#endif
+}
 ///
 /// @addtogroup DiagTraceDetail
 /// @{
@@ -167,7 +176,7 @@ public:
       s_top = s_stack;
     *s_top++ = function_spec;
 
-    if (s_tracebackState == THROWING && !s_tracebackPreserve && !std::uncaught_exception())
+    if (s_tracebackState == THROWING && !s_tracebackPreserve && !has_uncaught_exception())
       s_tracebackState = RUNNING;
 
 #ifdef SLIB_TRACE_COVERAGE
@@ -181,7 +190,7 @@ public:
    * the function specification if unwinding the stack.
    */
   ~Traceback() {
-    if (!s_tracebackPreserve && std::uncaught_exception() && s_tracebackState == RUNNING) {
+    if (!s_tracebackPreserve && has_uncaught_exception() && s_tracebackState == RUNNING) {
       s_tracebackState = THROWING;
       s_storedTop = s_storedStack + (s_top - s_stack);
       std::copy(s_stack, s_top, s_storedStack);

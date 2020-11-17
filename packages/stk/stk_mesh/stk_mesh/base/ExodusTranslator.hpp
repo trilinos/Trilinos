@@ -81,17 +81,41 @@ inline bool is_side_set(const stk::mesh::Part &part)
     return isFacePart && !has_super_set_face_part(part) && part.id() > 0;
 }
 
+inline void fill_element_block_parts(const MetaData& meta, stk::topology elemTopo,
+                                     PartVector& elemBlockParts,
+                                     bool sortById=true)
+{
+  elemBlockParts.clear();
+  const PartVector &parts = meta.get_mesh_parts();
+  for (Part* part : parts) {
+    if (elemTopo == stk::topology::INVALID_TOPOLOGY) {
+      if (is_element_block(*part)) {
+        elemBlockParts.push_back(part);
+      }   
+    }   
+    else {
+      stk::topology partTopo = part->topology();
+      if (is_element_block(*part) && partTopo == elemTopo) {
+        elemBlockParts.push_back(part);
+      }   
+    }   
+  }
+  if (sortById) {
+    stk::util::sort_and_unique(elemBlockParts, stk::mesh::PartLessById());
+  }
+}
+
 class ExodusTranslator
 {
 public:
     typedef int64_t IdType;
 
-    ExodusTranslator(const stk::mesh::BulkData& b) : mBulkData(b) {}
+    ExodusTranslator(const stk::mesh::BulkData& b) : bulkData(b) {}
 
     size_t get_number_global_entities(stk::mesh::EntityRank rank) const
     {
         std::vector<size_t> counts;
-        stk::mesh::comm_mesh_counts(mBulkData, counts);
+        stk::mesh::comm_mesh_counts(bulkData, counts);
         return counts[rank];
     }
 
@@ -152,45 +176,42 @@ public:
 
     size_t get_local_num_entities_for_id(int setId, stk::mesh::EntityRank rank)
     {
-        stk::mesh::Selector localAndShared = mBulkData.mesh_meta_data().locally_owned_part() | mBulkData.mesh_meta_data().globally_shared_part();
+        stk::mesh::Selector localAndShared = bulkData.mesh_meta_data().locally_owned_part() | bulkData.mesh_meta_data().globally_shared_part();
         return get_local_num_entitites_for_id_and_selector(setId, rank, localAndShared);
     }
 
     size_t get_global_num_entities_for_id(int setId, stk::mesh::EntityRank rank)
     {
-        size_t numLocal = get_local_num_entitites_for_id_and_selector(setId, rank, mBulkData.mesh_meta_data().locally_owned_part());
-        return stk::get_global_sum(mBulkData.parallel(), numLocal);
+        size_t numLocal = get_local_num_entitites_for_id_and_selector(setId, rank, bulkData.mesh_meta_data().locally_owned_part());
+        return stk::get_global_sum(bulkData.parallel(), numLocal);
     }
 
     size_t get_global_num_distribution_factors_in_side_set(int setId) const
     {
-        const stk::mesh::Part *part = get_exodus_part_of_rank(setId, mBulkData.mesh_meta_data().side_rank());
-        stk::mesh::Selector localAndShared = mBulkData.mesh_meta_data().locally_owned_part() | mBulkData.mesh_meta_data().globally_shared_part();
+        const stk::mesh::Part *part = get_exodus_part_of_rank(setId, bulkData.mesh_meta_data().side_rank());
+        stk::mesh::Selector localAndShared = bulkData.mesh_meta_data().locally_owned_part() | bulkData.mesh_meta_data().globally_shared_part();
 
         std::vector<stk::mesh::Entity> entities;
-        stk::mesh::get_selected_entities(*part & localAndShared, mBulkData.buckets(mBulkData.mesh_meta_data().side_rank()), entities);
+        stk::mesh::get_selected_entities(*part & localAndShared, bulkData.buckets(bulkData.mesh_meta_data().side_rank()), entities);
 
         size_t numDF=0;
         for(size_t i = 0; i < entities.size(); i++)
-            numDF += mBulkData.num_nodes(entities[i]);
+            numDF += bulkData.num_nodes(entities[i]);
 
-        return stk::get_global_sum(mBulkData.parallel(), numDF);
+        return stk::get_global_sum(bulkData.parallel(), numDF);
     }
 
     stk::mesh::PartVector get_element_block_parts() const
     {
         stk::mesh::PartVector elementBlockParts;
-        const stk::mesh::PartVector &parts = mBulkData.mesh_meta_data().get_mesh_parts();
-        for(size_t i = 0; i < parts.size(); i++)
-            if(is_element_block(*parts[i]))
-                elementBlockParts.push_back(parts[i]);
+        fill_element_block_parts(bulkData.mesh_meta_data(), stk::topology::INVALID_TOPOLOGY, elementBlockParts, false);
         return elementBlockParts;
     }
 
     stk::mesh::PartVector get_side_set_parts() const
     {
         stk::mesh::PartVector sideParts;
-        const stk::mesh::PartVector &parts = mBulkData.mesh_meta_data().get_mesh_parts();
+        const stk::mesh::PartVector &parts = bulkData.mesh_meta_data().get_mesh_parts();
         for(size_t i = 0; i < parts.size(); i++)
             if(is_side_set(*parts[i]))
                 sideParts.push_back(parts[i]);
@@ -200,7 +221,7 @@ public:
     stk::mesh::PartVector get_node_set_parts() const
     {
         stk::mesh::PartVector nodeParts;
-        const stk::mesh::PartVector &parts = mBulkData.mesh_meta_data().get_mesh_parts();
+        const stk::mesh::PartVector &parts = bulkData.mesh_meta_data().get_mesh_parts();
         for(size_t i = 0; i < parts.size(); i++)
             if(is_node_set(*parts[i]))
                 nodeParts.push_back(parts[i]);
@@ -211,18 +232,18 @@ public:
     {
         if(rank == stk::topology::NODE_RANK)
             return get_exodus_part_from_map(get_node_set_parts(), id);
-        if(rank == mBulkData.mesh_meta_data().side_rank())
+        if(rank == bulkData.mesh_meta_data().side_rank())
             return get_exodus_part_from_map(get_side_set_parts(), id);
         if(rank == stk::topology::ELEM_RANK)
             return get_exodus_part_from_map(get_element_block_parts(), id);
         return nullptr;
     }
 
-private:
+protected:
     size_t get_local_num_entitites_for_id_and_selector(int setId, stk::mesh::EntityRank rank, stk::mesh::Selector sel)
     {
         const stk::mesh::Part *part = get_exodus_part_of_rank(setId, rank);
-        return stk::mesh::count_selected_entities(*part & sel, mBulkData.buckets(rank));
+        return stk::mesh::count_selected_entities(*part & sel, bulkData.buckets(rank));
     }
 
     template<typename ExodusPartMap, typename ExodusIdVector>
@@ -267,8 +288,7 @@ private:
         return part;
     }
 
-private:
-    const stk::mesh::BulkData& mBulkData;
+    const stk::mesh::BulkData& bulkData;
 };
 
 }

@@ -29,6 +29,8 @@ int driver (int argc, char *argv[]) {
   bool verbose = true;
   bool sanitize = false;
   std::string file = "test.mtx";
+  std::string graph_file = "";
+  std::string weight_file = "";
   int nrhs = 1;
   int sym = 3;
   int posdef = 1;
@@ -53,6 +55,8 @@ int driver (int argc, char *argv[]) {
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
   opts.set_option<bool>("sanitize", "Flag to sanitize input matrix (remove zeros)", &sanitize);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
+  opts.set_option<std::string>("graph", "Input condensed graph", &graph_file);
+  opts.set_option<std::string>("weight", "Input condensed graph weight", &weight_file);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
   opts.set_option<int>("symmetric", "Symmetric type: 0 - unsym, 1 - structure sym, 2 - symmetric, 3 - hermitian", &sym);
   opts.set_option<int>("posdef", "Positive definite: 0 - indef, 1 - positive definite", &posdef);
@@ -105,6 +109,53 @@ int driver (int argc, char *argv[]) {
       }
       Tacho::MatrixMarket<value_type>::read(file, A, sanitize, verbose);
     }
+
+    /// read graph file if available
+    using size_type_array_host = typename CrsMatrixBaseTypeHost::size_type_array;
+    using ordinal_type_array_host = typename CrsMatrixBaseTypeHost::ordinal_type_array;
+    
+    ordinal_type m_graph(0);
+    size_type_array_host ap_graph;
+    ordinal_type_array_host aw_graph, aj_graph;
+    {
+      if (graph_file.length() > 0 && weight_file.length() > 0) {
+        {
+          std::ifstream in;
+          in.open(graph_file);
+          if (!in.good()) {
+            std::cout << "Failed in open the file: " << graph_file << std::endl;
+            return -1;
+          }
+          in >> m_graph;
+          
+          ap_graph = size_type_array_host("ap", m_graph+1);
+          for (ordinal_type i=0,iend=m_graph+1;i<iend;++i)
+            in >> ap_graph(i);
+          
+          aj_graph = ordinal_type_array_host("aj", ap_graph(m_graph));
+          for (ordinal_type i=0;i<m_graph;++i) {
+            const ordinal_type jbeg = ap_graph(i), jend = ap_graph(i+1);
+            for (ordinal_type j=jbeg;j<jend;++j)
+              in >> aj_graph(j);
+          }
+        }
+        
+        {
+          std::ifstream in;
+          in.open(weight_file);
+          if (!in.good()) {
+            std::cout << "Failed in open the file: " << weight_file << std::endl;
+            return -1;
+          }
+          ordinal_type m(0);
+          in >> m;
+          in >> m_graph;
+          aw_graph = ordinal_type_array_host("aw", m_graph);
+          for (ordinal_type i=0;i<m_graph;++i) 
+            in >> aw_graph(i);
+        }
+      }
+    }
     
     ///
     /// * to wrap triple pointers, declare following view types
@@ -133,6 +184,9 @@ int driver (int argc, char *argv[]) {
     solver.setSmallProblemThresholdsize(small_problem_thres);
     solver.setVerbose(verbose);
 
+    /// graph options
+    solver.setOrderConnectedGraphSeparately();
+
     /// tasking options
     solver.setMaxNumberOfSuperblocks(max_num_superblocks);
     solver.setBlocksize(mb);
@@ -149,9 +203,18 @@ int driver (int argc, char *argv[]) {
     Kokkos::deep_copy(values_on_device, A.Values());
 
     /// inputs are used for graph reordering and analysis
-    solver.analyze(A.NumRows(),
-                   A.RowPtr(),
-                   A.Cols());
+    if (m_graph > 0 && m_graph < A.NumRows())
+      solver.analyze(A.NumRows(),
+                     A.RowPtr(),
+                     A.Cols(),
+                     m_graph,
+                     ap_graph,
+                     aj_graph,
+                     aw_graph);
+    else 
+      solver.analyze(A.NumRows(),
+                     A.RowPtr(),
+                     A.Cols());
 
     /// create numeric tools and levelset tools
     solver.initialize();

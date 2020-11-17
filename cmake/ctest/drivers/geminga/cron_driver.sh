@@ -74,15 +74,16 @@ export CTEST_CONFIGURATION="nvcc_wrapper"
 #module load nvcc-wrapper/gcc
 
 module load sems-env
-module load kokkos-env
-module load sems-cmake/3.10.3
-module load sems-gcc/5.3.0
-module load sems-boost/1.58.0/base
+module load sems-cmake/3.12.2
+module load sems-gcc/8.3.0
+module load sems-boost/1.69.0/base
 module load sems-python/2.7.9
 module load sems-zlib/1.2.8/base
-module load kokkos-cuda/8.0.44
-module load kokkos-openmpi/2.0.1/cuda
+module load sems-openmpi/4.0.2
+module load sems-cuda/10.1
+module load sems-cuda_openmpi/4.0.2/base
 module load sems-superlu/4.3
+module load sems-netcdf/4.7.3/parallel
 # See Trilinos github issue #2115.
 export OMPI_CXX=/home/jhu/code/trilinos-test/trilinos/packages/kokkos/bin/nvcc_wrapper
 
@@ -107,16 +108,16 @@ $SCRIPT_DIR/../cron_driver.py
 #module unload cuda
 #module unload gcc
 #module unload openmpi
-module load sems-superlu/4.3
-module unload kokkos-openmpi/2.0.1/cuda
-module unload kokkos-nvcc_wrapper/1
-module unload kokkos-cuda/8.0.44
+module unload sems-netcdf/4.7.3/parallel
+module unload sems-superlu/4.3
+module unload sems-cuda_openmpi/4.0.2/base
+module unload sems-cuda/10.1
+module unload sems-openmpi/4.0.2
 module unload sems-zlib/1.2.8/base
 module unload sems-python/2.7.9
-module unload sems-boost/1.58.0/base
-module unload sems-gcc/5.3.0
-module unload sems-cmake/3.10.3
-module unload kokkos-env
+module unload sems-boost/1.69.0/base
+module unload sems-gcc/8.3.0
+module unload sems-cmake/3.12.2
 module unload sems-env
 # ===========================================================================
 

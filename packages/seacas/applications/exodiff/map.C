@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <algorithm>
@@ -884,7 +884,9 @@ namespace {
            INT *id, size_t N, int dim, bool ignore_dups)
   {
     SMART_ASSERT(x != nullptr);
-    SMART_ASSERT(N > 0);
+    if (N == 0) {
+      return -1;
+    }
 
     // Cannot ignore the comparisons, so make sure the coord_tol_type
     // is not -1 which is "ignore"
@@ -1156,20 +1158,23 @@ bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *nod
     if (!interFace.dump_mapping) {
       // There is a map between file1 and file2, but all elements are
       // used in both files.
-      for (size_t i = 0; i < num_elmts1; i++) {
-        if (elem_id_map1[i] != elem_id_map2[elmt_map[i]]) {
-          if (!(elem_id_map2[elmt_map[i]] == 0 &&
-                partial_flag)) { // Don't output diff if non-matched and partial
-            fmt::print(stderr,
-                       "exodiff: WARNING .. The local element {} with global id {} in file1 has "
-                       "the global id "
-                       "{} in file2.\n",
-                       i + 1, elem_id_map1[i], elem_id_map2[elmt_map[i]]);
-            diff = true;
-            warn_count++;
-            if (warn_count >= interFace.max_warnings) {
-              fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
-              break;
+      if (elem_id_map2 != nullptr) {
+        for (size_t i = 0; i < num_elmts1; i++) {
+          if (elem_id_map1[i] != elem_id_map2[elmt_map[i]]) {
+            if (!(elem_id_map2[elmt_map[i]] == 0 &&
+                  partial_flag)) { // Don't output diff if non-matched and partial
+              fmt::print(stderr,
+                         "exodiff: WARNING .. The local element {} with global id {} in file1 has "
+                         "the global id "
+                         "{} in file2.\n",
+                         i + 1, elem_id_map1[i], elem_id_map2[elmt_map[i]]);
+              diff = true;
+              warn_count++;
+              if (warn_count >= interFace.max_warnings) {
+                fmt::print(stderr,
+                           "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
+                break;
+              }
             }
           }
         }
@@ -1178,20 +1183,23 @@ bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *nod
   }
   else {
     // No element mapping between file1 and file2 -- do a straight compare.
-    for (size_t i = 0; i < num_elmts1; i++) {
-      if (elem_id_map1[i] != elem_id_map2[i]) {
-        if (!(elem_id_map2[i] == 0 &&
-              partial_flag)) { // Don't output diff if non-matched and partial
-          fmt::print(stderr,
-                     "exodiff: WARNING .. The local element {} with global id {} in file1 has the "
-                     "global id "
-                     "{} in file2.\n",
-                     i + 1, elem_id_map1[i], elem_id_map2[i]);
-          diff = true;
-          warn_count++;
-          if (warn_count >= interFace.max_warnings) {
-            fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
-            break;
+    if (elem_id_map2 != nullptr) {
+      for (size_t i = 0; i < num_elmts1; i++) {
+        if (elem_id_map1[i] != elem_id_map2[i]) {
+          if (!(elem_id_map2[i] == 0 &&
+                partial_flag)) { // Don't output diff if non-matched and partial
+            fmt::print(
+                stderr,
+                "exodiff: WARNING .. The local element {} with global id {} in file1 has the "
+                "global id "
+                "{} in file2.\n",
+                i + 1, elem_id_map1[i], elem_id_map2[i]);
+            diff = true;
+            warn_count++;
+            if (warn_count >= interFace.max_warnings) {
+              fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
+              break;
+            }
           }
         }
       }

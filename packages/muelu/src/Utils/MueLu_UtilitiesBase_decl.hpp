@@ -163,7 +163,7 @@ namespace MueLu {
 
     NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100) {
+    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero()) {
       Teuchos::TimeMonitor MM = *Teuchos::TimeMonitor::getNewTimer("UtilitiesBase::GetMatrixDiagonalInverse");
 
       RCP<const Matrix> rcpA = Teuchos::rcpFromRef(A);
@@ -173,7 +173,7 @@ namespace MueLu {
 
       rcpA->getLocalDiagCopy(*diag);
 
-      RCP<Vector> inv = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetInverse(diag, tol, Teuchos::ScalarTraits<Scalar>::zero());
+      RCP<Vector> inv = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetInverse(diag, tol, tolReplacement);
 
       return inv;
     }
@@ -186,18 +186,27 @@ namespace MueLu {
 
     NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static Teuchos::ArrayRCP<Scalar> GetLumpedMatrixDiagonal(const Matrix& A) {
+    static Teuchos::ArrayRCP<Scalar> GetLumpedMatrixDiagonal(const Matrix& A, const bool doReciprocal = false, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero()) {
 
       size_t numRows = A.getRowMap()->getNodeNumElements();
+      const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
       Teuchos::ArrayRCP<Scalar> diag(numRows);
       Teuchos::ArrayView<const LocalOrdinal> cols;
       Teuchos::ArrayView<const Scalar> vals;
       for (size_t i = 0; i < numRows; ++i) {
         A.getLocalRowView(i, cols, vals);
-        diag[i] = Teuchos::ScalarTraits<Scalar>::zero();
+        diag[i] = zero;
         for (LocalOrdinal j = 0; j < cols.size(); ++j) {
           diag[i] += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
         }
+      }
+      if (doReciprocal) {
+        for (size_t i = 0; i < numRows; ++i)
+          if(Teuchos::ScalarTraits<Scalar>::magnitude(diag[i]) > tol)
+            diag[i] = one / diag[i];
+          else
+            diag[i] = tolReplacement;
       }
       return diag;
     }
@@ -208,9 +217,13 @@ namespace MueLu {
 
     NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static Teuchos::RCP<Vector> GetLumpedMatrixDiagonal(Teuchos::RCP<const Matrix> rcpA) {
+    static Teuchos::RCP<Vector> GetLumpedMatrixDiagonal(Teuchos::RCP<const Matrix> rcpA, const bool doReciprocal = false,
+                                                        Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100,
+                                                        Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero()) {
 
       RCP<Vector> diag = Teuchos::null;
+      const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
 
       RCP<const Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bA =
           Teuchos::rcp_dynamic_cast<const Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(rcpA);
@@ -222,13 +235,22 @@ namespace MueLu {
         Teuchos::ArrayView<const Scalar> vals;
         for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
           rcpA->getLocalRowView(i, cols, vals);
-          diagVals[i] = Teuchos::ScalarTraits<Scalar>::zero();
+          diagVals[i] = zero;
           for (LocalOrdinal j = 0; j < cols.size(); ++j) {
             diagVals[i] += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
           }
         }
-
+        if (doReciprocal) {
+          for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
+          if(Teuchos::ScalarTraits<Scalar>::magnitude(diagVals[i]) > tol)
+            diagVals[i] = one / diagVals[i];
+          else
+            diagVals[i] = tolReplacement;
+          }
+        }
       } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(doReciprocal, Xpetra::Exceptions::RuntimeError,
+          "UtilitiesBase::GetLumpedMatrixDiagonal(): extracting reciprocal of diagonal of a blocked matrix is not supported");
         //TEUCHOS_TEST_FOR_EXCEPTION(bA->Rows() != bA->Cols(), Xpetra::Exceptions::RuntimeError,
         //  "UtilitiesBase::GetLumpedMatrixDiagonal(): you cannot extract the diagonal of a "<< bA->Rows() << "x"<< bA->Cols() << " blocked matrix." );
 
@@ -496,11 +518,6 @@ namespace MueLu {
      }
 #endif
 
-    /*! @brief Simple transpose for Tpetra::CrsMatrix types
-
-        Note:  This is very inefficient, as it inserts one entry at a time.
-    */
-
     /*! @brief Power method.
 
     @param A matrix
@@ -508,10 +525,40 @@ namespace MueLu {
     @param niters maximum number of iterations
     @param tolerance stopping tolerance
     @verbose if true, print iteration information
+    @seed  seed for randomizing initial guess
 
     (Shamelessly grabbed from tpetra/examples.)
     */
     static Scalar PowerMethod(const Matrix& A, bool scaleByDiag = true,
+                              LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
+      TEUCHOS_TEST_FOR_EXCEPTION(!(A.getRangeMap()->isSameAs(*(A.getDomainMap()))), Exceptions::Incompatible,
+          "Utils::PowerMethod: operator must have domain and range maps that are equivalent.");
+
+      // power iteration
+      RCP<Vector> diagInvVec;
+      if (scaleByDiag) {
+        RCP<Vector> diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRowMap());
+        A.getLocalDiagCopy(*diagVec);
+        diagInvVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRowMap());
+        diagInvVec->reciprocal(*diagVec);
+      }
+
+      Scalar lambda = PowerMethod(A, diagInvVec, niters, tolerance, verbose, seed);
+      return lambda;
+    }
+
+    /*! @brief Power method.
+
+    @param A matrix
+    @param diagInvVec reciprocal of matrix diagonal
+    @param niters maximum number of iterations
+    @param tolerance stopping tolerance
+    @verbose if true, print iteration information
+    @seed  seed for randomizing initial guess
+
+    (Shamelessly grabbed from tpetra/examples.)
+    */
+    static Scalar PowerMethod(const Matrix& A, const RCP<Vector> &diagInvVec,
                               LocalOrdinal niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
       TEUCHOS_TEST_FOR_EXCEPTION(!(A.getRangeMap()->isSameAs(*(A.getDomainMap()))), Exceptions::Incompatible,
           "Utils::PowerMethod: operator must have domain and range maps that are equivalent.");
@@ -534,19 +581,11 @@ namespace MueLu {
       Magnitude residual = STS::magnitude(zero);
 
       // power iteration
-      RCP<Vector> diagInvVec;
-      if (scaleByDiag) {
-        RCP<Vector> diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRowMap());
-        A.getLocalDiagCopy(*diagVec);
-        diagInvVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(A.getRowMap());
-        diagInvVec->reciprocal(*diagVec);
-      }
-
       for (int iter = 0; iter < niters; ++iter) {
         z->norm2(norms);                                  // Compute 2-norm of z
         q->update(one/norms[0], *z, zero);                // Set q = z / normz
         A.apply(*q, *z);                                  // Compute z = A*q
-        if (scaleByDiag)
+        if (diagInvVec != Teuchos::null)
           z->elementWiseMultiply(one, *diagInvVec, *z, zero);
         lambda = q->dot(*z);                              // Approximate maximum eigenvalue: lamba = dot(q,z)
 
@@ -566,8 +605,6 @@ namespace MueLu {
       }
       return lambda;
     }
-
-
 
     static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream& os) {
       RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(os));
@@ -1070,6 +1107,30 @@ namespace MueLu {
       return rcp(new BlockedMap(targetMap,subMaps));
 
     }
+
+    // Checks to see if the first chunk of the colMap is also the row map.  This simiplifies a bunch of
+    // operation in coarsening
+    static bool MapsAreNested(const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& rowMap, const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& colMap) {
+      ArrayView<const GlobalOrdinal> rowElements = rowMap.getNodeElementList();
+      ArrayView<const GlobalOrdinal> colElements = colMap.getNodeElementList();
+      
+      const size_t numElements = rowElements.size();
+      
+      if (size_t(colElements.size()) < numElements)
+	return false;
+
+      bool goodMap = true;
+      for (size_t i = 0; i < numElements; i++)
+	if (rowElements[i] != colElements[i]) {
+	  goodMap = false;
+	  break;
+      }
+      
+      return goodMap;
+    }
+
+
+
 
   }; // class Utils
 

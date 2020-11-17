@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_ZoneConnectivity.h>
@@ -102,6 +102,13 @@ namespace Ioss {
       return false;
     }
     return true;
+  }
+
+  bool ZoneConnectivity::retain_original() const
+  {
+    // This zgc is just needed in a parallel decomp so can reconstruct the original mesh...
+    return (m_ownerRangeBeg[0] == 0 && m_ownerRangeEnd[0] == 0 && m_ownerRangeBeg[1] == 0 &&
+            m_ownerRangeEnd[1] == 0 && m_ownerRangeBeg[2] == 0 && m_ownerRangeEnd[2] == 0);
   }
 
   bool ZoneConnectivity::is_valid() const

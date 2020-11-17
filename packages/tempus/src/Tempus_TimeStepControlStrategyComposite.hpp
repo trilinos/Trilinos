@@ -17,8 +17,23 @@ namespace Tempus {
 
 template<class Scalar> class TimeStepControl;
 
-/** \brief StepControlStrategy class for TimeStepControl
+/** \brief TimeStepControlStrategyComposite loops over a vector of TimeStepControlStrategy.
  *
+ *
+ * Essentially, this is an <b>and</b> case if each strategies do a `min`
+ * \f$ \Delta t = \min_{i \leq N} \{ \Delta t_i \}\f$
+ *
+ * The assumption is that each strategy will simply
+ * update (or override) the step size `dt` with `metadata->setDt(dt)`
+ * sequentially.
+ *
+ *  Examples of TimeStepControlStrategy:
+ *   - TimeStepControlStrategyConstant
+ *   - TimeStepControlStrategyBasicVS
+ *   - TimeStepControlStrategyIntegralController
+ *
+ * <b>Note:<b> The ordering in the TimeStepControlStrategyComposite list is very important.
+ * The final TimeStepControlStrategy from the composite could negate all previous step size updates.
  */
 template<class Scalar>
 class TimeStepControlStrategyComposite : virtual public TimeStepControlStrategy<Scalar>
@@ -38,12 +53,13 @@ public:
         s->getNextTimeStep(tsc, sh, integratorStatus);
   }
 
-  // add strategy to the composite strategy list
+  /** \brief Append strategy to the composite list.*/
   void addStrategy(const Teuchos::RCP<TimeStepControlStrategy<Scalar> > &strategy){
      if (Teuchos::nonnull(strategy))
         strategies_.push_back(strategy);
   }
 
+  /** \brief Clear the composite list.*/
   void clearObservers(){
      strategies_.clear();
   }

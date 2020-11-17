@@ -76,26 +76,44 @@ Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 
 /* Kokkos macros */
 
-#ifdef HAVE_SACADO_KOKKOSCORE
+#if defined(HAVE_SACADO_KOKKOSCORE)
 #include "Kokkos_Macros.hpp"
+
+#ifndef SACADO_FUNCTION
+#define SACADO_FUNCTION KOKKOS_FUNCTION
 #endif
 
+#ifndef SACADO_DEFAULTED_FUNCTION
+#define SACADO_DEFAULTED_FUNCTION KOKKOS_DEFAULTED_FUNCTION
+#endif
+
+#ifndef SACADO_INLINE_FUNCTION
+#define SACADO_INLINE_FUNCTION KOKKOS_INLINE_FUNCTION
+#endif
+
+#ifndef SACADO_FORCEINLINE_FUNCTION
+#define SACADO_FORCEINLINE_FUNCTION  KOKKOS_FORCEINLINE_FUNCTION
+#endif
+
+#else
 /* Define them even if Kokkos isn't enabled */
 
-#ifndef KOKKOS_FUNCTION
-#define KOKKOS_FUNCTION /* */
+#ifndef SACADO_FUNCTION
+#define SACADO_FUNCTION /* */
 #endif
 
-#ifndef KOKKOS_DEFAULTED_FUNCTION
-#define KOKKOS_DEFAULTED_FUNCTION /* */
+#ifndef SACADO_DEFAULTED_FUNCTION
+#define SACADO_DEFAULTED_FUNCTION /* */
 #endif
 
-#ifndef KOKKOS_INLINE_FUNCTION
-#define KOKKOS_INLINE_FUNCTION inline
+#ifndef SACADO_INLINE_FUNCTION
+#define SACADO_INLINE_FUNCTION inline
 #endif
 
-#ifndef KOKKOS_FORCEINLINE_FUNCTION
-#define KOKKOS_FORCEINLINE_FUNCTION  inline
+#ifndef SACADO_FORCEINLINE_FUNCTION
+#define SACADO_FORCEINLINE_FUNCTION  inline
+#endif
+
 #endif
 
 /* Determine if the new fad design is supported.  Requies C++11,

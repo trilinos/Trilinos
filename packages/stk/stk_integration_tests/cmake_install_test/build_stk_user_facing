@@ -1,0 +1,137 @@
+#!/bin/bash
+
+exe() {
+  stdbuf -o0 -e0 echo "% $@" ;
+  eval "$@" ;
+}
+
+sierra_proj=${SIERRA_PROJ:-${PWD}}
+output_dir=${OUTPUT_DIR:-${PWD}/../stk-user-facing-cmake-testing}
+trilinos_dir=${output_dir}/Trilinos
+build_type=${CMAKE_BUILD_TYPE:-release}
+date_suffix=`date +%F_%H-%M-%S`
+
+if [ -z "${SIERRA_COMPILER}" ] ; then
+  echo "Can't find SIERRA_COMPILER env var. Make sure you have a sierra-devel module loaded.";
+  exit 1;
+fi
+
+if [ ! -d ${output_dir} ] ; then
+  exe mkdir -p ${output_dir};
+fi
+
+if [ ! -d ${trilinos_dir} ] ; then
+  exe git clone -b develop https://github.com/trilinos/Trilinos.git ${trilinos_dir}
+else
+  exe cd ${trilinos_dir}
+  exe git reset --hard develop
+  exe git pull
+fi
+
+trilinos_install_dir=${output_dir}/trilinos_install_${build_type}_${SIERRA_COMPILER}
+exe rm -rf $trilinos_install_dir
+
+stk_build_dir=${output_dir}/stk_build_${build_type}_${SIERRA_COMPILER}
+exe rm -rf $stk_build_dir
+exe mkdir -p $stk_build_dir
+
+stk_cmake_testing=${sierra_proj}/stk/stk_integration_tests/cmake_install_test
+
+stk_app_build_dir=${output_dir}/stk_test_app_build
+exe rm -rf ${stk_app_build_dir}
+exe mkdir -p ${stk_app_build_dir}
+
+printf "\nUsing sierra project: ${sierra_proj}\n";
+printf "Using build-type: ${build_type}\n";
+printf "Using SIERRA_COMPILER: ${SIERRA_COMPILER}\n";
+printf "Putting output and logs here: ${output_dir}\n";
+
+exe cd $sierra_proj
+
+exe rm -rf objs/tpls/trilinos_tpls/*
+
+bake_log=${output_dir}/bake-stk_balance.out.$date_suffix
+stk_config_log=${output_dir}/stk-user-facing-config.out.$date_suffix
+stk_make_log=${output_dir}/stk-user-facing-make.out.$date_suffix
+stk_install_log=${output_dir}/stk-user-facing-install.out.$date_suffix
+stk_ctest_log=${output_dir}/stk-user-facing-ctest.out.$date_suffix
+stk_app_config_log=${output_dir}/stk-test-app-user-facing-config.out.$date_suffix
+stk_app_make_log=${output_dir}/stk-test-app-user-facing-make.out.$date_suffix
+
+if [ -d ${trilinos_dir}/packages/seacas ] ; then
+  exe rm -rf ${trilinos_dir}/packages/seacas;
+fi
+if [ ! -L ${trilinos_dir}/packages/seacas ] ; then
+  exe ln -s ${sierra_proj}/seacas ${trilinos_dir}/packages
+fi
+
+if [ -d ${trilinos_dir}/packages/stk ] ; then
+  exe rm -rf ${trilinos_dir}/packages/stk;
+fi
+if [ ! -L ${trilinos_dir}/packages/stk ] ; then
+  exe ln -s ${sierra_proj}/stk ${trilinos_dir}/packages
+fi
+
+exe cp ${stk_cmake_testing}/run_cmake_stk_user_facing ${stk_build_dir}
+exe cd ${stk_build_dir}
+printf "\nGenerating pre-requisite TPL paths in ${stk_build_dir}/tpl_paths\n";
+exe ${stk_cmake_testing}/generate_tpl_paths_from_sierra_proj ${sierra_proj} ${output_dir} ${stk_build_dir}/tpl_paths
+printf "Configuring trilinos/stk (running cmake)...\n";
+exe 'TRILINOS_DIR=${trilinos_dir} TRILINOS_INSTALL_DIR=${trilinos_install_dir} CMAKE_BUILD_TYPE=${build_type} ./run_cmake_stk_user_facing ${stk_build_dir}/tpl_paths >& ${stk_config_log}'
+if [ $? -ne 0 ] ; then
+  echo "!! error in stk/trilinos config, check output in ${stk_config_log} !!";
+  exit 1;
+fi
+
+printf "Now building trilinos/stk using make...\n";
+exe 'make VERBOSE=1 -j8 >& ${stk_make_log}';
+if [ $? -ne 0 ] ; then
+  echo "!! error in make, check output in ${stk_make_log} !!";
+  exit 1;
+fi
+
+exe 'ctest >& ${stk_ctest_log}';
+if [ $? -ne 0 ] ; then
+  echo "!! error in ctest, check output in ${stk_ctest_log} !!";
+  exit 1;
+fi
+
+exe 'make install >& ${stk_install_log}';
+if [ $? -ne 0 ] ; then
+  echo "!! error in make install, check output in ${stk_install_log} !!";
+  exit 1;
+fi
+
+printf "\nNow building stk test-app...\n";
+
+exe rm -rf ${stk_app_build_dir}
+exe mkdir ${stk_app_build_dir}
+exe cp ${stk_cmake_testing}/stk_test_app/run_cmake_stk_test_app ${stk_app_build_dir}
+exe cd ${stk_app_build_dir};
+
+exe './run_cmake_stk_test_app ${trilinos_install_dir} ${stk_cmake_testing}/stk_test_app >& ${stk_app_config_log}';
+if [ $? -ne 0 ] ; then
+  printf "!! error running cmake for stk test-app, check output in ${stk_app_config_log}\n";
+  exit 1;
+fi
+
+exe 'make >& ${stk_app_make_log}';
+if [ $? -ne 0 ] ; then
+  printf "!! error building stk-test-app, check output in ${stk_app_make_log}\n";
+  exit 1;
+fi
+
+#Follow-on work: run test_stk_app, improve testing of user-facing stk installation.
+#But not by replicating the sierra testrun system!
+#The fact that the stk-test-app built is at least a partial check that the installation
+#is correct, but how do we know the stk_balance executable was built/installed?
+#What about all the headers/libraries that stk-test-app doesn't use?
+
+if [ ! -x ${trilinos_install_dir}/bin/stk_balance.exe ] ; then
+  print "!! error, stk_balance executable not installed.\n";
+  exit 1;
+fi
+
+echo "all done, SUCCESS!";
+exit 0;
+

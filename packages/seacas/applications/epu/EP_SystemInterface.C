@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 #include "EP_SystemInterface.h"
@@ -60,10 +60,6 @@ void Excn::SystemInterface::enroll_options()
 
   options_.enroll("output_extension", GetLongOption::MandatoryValue,
                   "Exodus database extension for the output file", nullptr);
-
-  options_.enroll("offset", GetLongOption::MandatoryValue, "Raid Offset", nullptr);
-
-  options_.enroll("raid_count", GetLongOption::MandatoryValue, "Number of raids", "0");
 
   options_.enroll("processor_count", GetLongOption::MandatoryValue, "Number of processors", "1");
 
@@ -240,20 +236,6 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("output_extension");
     if (temp != nullptr) {
       outExtension_ = temp;
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("offset");
-    if (temp != nullptr) {
-      raidOffset_ = strtol(temp, nullptr, 10);
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("raid_count");
-    if (temp != nullptr) {
-      raidCount_ = strtol(temp, nullptr, 10);
     }
   }
 

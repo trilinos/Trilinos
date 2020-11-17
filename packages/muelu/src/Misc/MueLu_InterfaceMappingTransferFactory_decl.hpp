@@ -37,7 +37,6 @@
 //
 // Questions? Contact
 //                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
 //
 // ***********************************************************************
@@ -56,6 +55,24 @@
 namespace MueLu
 {
 
+/*!
+  @class InterfaceMappingTransferFactory
+  @brief Transfer mapping data for interface aggregation to the coarse level
+
+  The fine level knows about the mapping on the coarse level.
+  This factory just pushes that pre-computed information to the coarse level.
+
+  ## Input/output ##
+
+  ### User parameters ###
+  Parameter | type | default | master.xml | validated | requested | description
+  ----------|------|---------|:----------:|:---------:|:---------:|------------
+  CoarseDualNodeID2PrimalNodeID | Factory | null |   | * | * | Generating factory of the coarse dual-to-primal node mapping
+
+  The * in the @c master.xml column denotes that the parameter is defined in the @c master.xml file.<br>
+  The * in the @c validated column means that the parameter is declared in the list of valid input parameters (see InterfaceAggregationFactory::GetValidParameters).<br>
+  The * in the @c requested column states that the data is requested as input with all dependencies (see InterfaceAggregationFactory::DeclareInput).
+*/
 template <class LocalOrdinal = DefaultLocalOrdinal,
           class GlobalOrdinal = DefaultGlobalOrdinal,
           class Node = DefaultNode>

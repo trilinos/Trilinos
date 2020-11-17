@@ -111,6 +111,24 @@ IF (Sacado_ENABLE_TeuchosCore)
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
         )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosAtomicTests_Serial
+        SOURCES Fad_KokkosAtomicTests.hpp
+                Fad_KokkosAtomicTests_Serial.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosAtomicTests_NoViewSpec_Serial
+        SOURCES Fad_KokkosAtomicTests.hpp
+                Fad_KokkosAtomicTests_NoViewSpec_Serial.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        )
     ENDIF ()
 
     IF (Kokkos_ENABLE_PTHREAD)
@@ -153,6 +171,26 @@ IF (Sacado_ENABLE_TeuchosCore)
         NUM_MPI_PROCS 1
         RUN_SERIAL
         )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosAtomicTests_Threads
+        SOURCES Fad_KokkosAtomicTests.hpp
+                Fad_KokkosAtomicTests_Threads.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosAtomicTests_NoViewSpec_Threads
+        SOURCES Fad_KokkosAtomicTests.hpp
+                Fad_KokkosAtomicTests_NoViewSpec_Threads.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
     ENDIF()
 
     IF (Kokkos_ENABLE_OPENMP)
@@ -190,6 +228,26 @@ IF (Sacado_ENABLE_TeuchosCore)
         FadFadKokkosTests_OpenMP
         SOURCES Fad_Fad_KokkosTests.hpp
                 Fad_Fad_KokkosTests_OpenMP.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosAtomicTests_OpenMP
+        SOURCES Fad_KokkosAtomicTests.hpp
+                Fad_KokkosAtomicTests_OpenMP.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosAtomicTests_NoViewSpec_OpenMP
+        SOURCES Fad_KokkosAtomicTests.hpp
+                Fad_KokkosAtomicTests_NoViewSpec_OpenMP.cpp
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
@@ -262,6 +320,56 @@ IF (Sacado_ENABLE_TeuchosCore)
         FadFadKokkosTests_Cuda
         SOURCES Fad_Fad_KokkosTests.hpp
                 Fad_Fad_KokkosTests_Cuda.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosAtomicTests_Cuda
+        SOURCES Fad_KokkosAtomicTests.hpp
+                Fad_KokkosAtomicTests_Cuda.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosAtomicTests_NoViewSpec_Cuda
+        SOURCES Fad_KokkosAtomicTests.hpp
+                Fad_KokkosAtomicTests_NoViewSpec_Cuda.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosAtomicTests_Cuda_Hierarchical
+        SOURCES Fad_KokkosAtomicTests.hpp
+                Fad_KokkosAtomicTests_Cuda_Hierarchical.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosAtomicTests_Cuda_Hierarchical_SFad
+        SOURCES Fad_KokkosAtomicTests.hpp
+                Fad_KokkosAtomicTests_Cuda_Hierarchical_SFad.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadKokkosAtomicTests_Cuda_Hierarchical_DFad
+        SOURCES Fad_KokkosAtomicTests.hpp
+                Fad_KokkosAtomicTests_Cuda_Hierarchical_DFad.cpp
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1

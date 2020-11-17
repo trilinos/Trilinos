@@ -48,6 +48,7 @@
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_IteratorOps.hpp> // containing routines to generate Jacobi iterator
+#include <Xpetra_IO.hpp>
 #include <sstream>
 
 #include "MueLu_SaPFactory_decl.hpp"
@@ -71,6 +72,7 @@ namespace MueLu {
     SET_VALID_ENTRY("sa: damping factor");
     SET_VALID_ENTRY("sa: calculate eigenvalue estimate");
     SET_VALID_ENTRY("sa: eigenvalue estimate num iterations");
+    SET_VALID_ENTRY("sa: use rowsumabs diagonal scaling");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
@@ -147,19 +149,29 @@ namespace MueLu {
     APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
     APparams->set("compute global constants",APparams->get("compute global constants",false));
 
-    SC dampingFactor      = as<SC>(pL.get<double>("sa: damping factor"));
-    LO maxEigenIterations = as<LO>(pL.get<int>   ("sa: eigenvalue estimate num iterations"));
-    bool estimateMaxEigen =        pL.get<bool>  ("sa: calculate eigenvalue estimate");
+    const SC dampingFactor      = as<SC>(pL.get<double>("sa: damping factor"));
+    const LO maxEigenIterations = as<LO>(pL.get<int>   ("sa: eigenvalue estimate num iterations"));
+    const bool estimateMaxEigen =        pL.get<bool>  ("sa: calculate eigenvalue estimate");
+    const bool useAbsValueRowSum =       pL.get<bool>  ("sa: use rowsumabs diagonal scaling");
     if (dampingFactor != Teuchos::ScalarTraits<SC>::zero()) {
 
       Scalar lambdaMax;
+      Teuchos::RCP<Vector> invDiag;
       {
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
         lambdaMax = A->GetMaxEigenvalueEstimate();
         if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
-          GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = "<< maxEigenIterations << ")" << std::endl;
+          GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = "<< maxEigenIterations <<
+          ( (useAbsValueRowSum) ?  ", use rowSumAbs diagonal)" :  ", use point diagonal)") << std::endl;
           Coordinate stopTol = 1e-4;
-          lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol);
+          if (useAbsValueRowSum) {
+            const bool returnReciprocal=true;
+            invDiag = Utilities::GetLumpedMatrixDiagonal(A,returnReciprocal);
+            TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError,
+                                       "SaPFactory: eigenvalue estimate: diagonal reciprocal is null.");
+            lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
+          } else
+            lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol);
           A->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
@@ -169,10 +181,17 @@ namespace MueLu {
 
       {
         SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);
-        Teuchos::RCP<Vector> invDiag = Utilities::GetMatrixDiagonalInverse(*A);
-
-        SC omega = dampingFactor / lambdaMax;
-        TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
+        if (!useAbsValueRowSum)
+          invDiag = Utilities::GetMatrixDiagonalInverse(*A); //default
+        else if (invDiag == Teuchos::null) {
+          GetOStream(Runtime0) << "Using rowsumabs diagonal" << std::endl;
+          const bool returnReciprocal=true;
+          invDiag = Utilities::GetLumpedMatrixDiagonal(A,returnReciprocal);
+          TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError, "SaPFactory: diagonal reciprocal is null.");
+        }	
+	
+	      SC omega = dampingFactor / lambdaMax;
+	      TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
         finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP,

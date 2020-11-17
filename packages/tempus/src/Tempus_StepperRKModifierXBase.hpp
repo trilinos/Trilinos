@@ -72,52 +72,49 @@ private:
     using Teuchos::RCP;
 
     MODIFIER_TYPE modType = X_BEGIN_STEP;
+    const int stageNumber = stepper->getStageNumber();
+    Teuchos::SerialDenseVector<int,Scalar> c = stepper->getTableau()->c();
     RCP<SolutionState<Scalar> > workingState = sh->getWorkingState();
-    const Scalar time = workingState->getTime();
-    const Scalar dt   = workingState->getTimeStep();
-    RCP<Thyra::VectorBase<Scalar> > x;
+    const Scalar dt = workingState->getTimeStep();
+    Scalar time = sh->getCurrentState()->getTime();
+    if (stageNumber >= 0) time += c(stageNumber)*dt;
+    RCP<Thyra::VectorBase<Scalar> > x = workingState->getX();
 
     switch(actLoc) {
       case StepperRKAppAction<Scalar>::BEGIN_STEP:
       {
         modType = X_BEGIN_STEP;
-        x = workingState->getX();
         break;
       }
       case StepperRKAppAction<Scalar>::BEGIN_STAGE:
       {
         modType = X_BEGIN_STAGE;
-        x = workingState->getX();
         break;
       }
       case StepperRKAppAction<Scalar>::BEFORE_SOLVE:
       {
         modType = X_BEFORE_SOLVE;
-        x = workingState->getX();
         break;
       }
       case StepperRKAppAction<Scalar>::AFTER_SOLVE:
       {
         modType = X_AFTER_SOLVE;
-        x = workingState->getX();
         break;
       }
       case StepperRKAppAction<Scalar>::BEFORE_EXPLICIT_EVAL:
       {
         modType = X_BEFORE_EXPLICIT_EVAL;
-        x = workingState->getX();
         break;
       }
       case StepperRKAppAction<Scalar>::END_STAGE:
       {
-        modType = XDOT_END_STAGE;
-        x = stepper->getStepperXDot(workingState);
+        modType = X_END_STAGE;
         break;
       }
       case StepperRKAppAction<Scalar>::END_STEP:
       {
         modType = X_END_STEP;
-        x = workingState->getX();
+        time = workingState->getTime();
         break;
       }
       default:
@@ -125,7 +122,7 @@ private:
         "Error - unknown action location.\n");
     }
 
-    this->modify(x, time, dt, modType);
+    this->modify(x, time, dt, stageNumber, modType);
   }
 
 public:
@@ -137,7 +134,7 @@ public:
     X_BEFORE_SOLVE,         ///< Modify \f$x\f$ before the implicit solve.
     X_AFTER_SOLVE,          ///< Modify \f$x\f$ after the implicit solve.
     X_BEFORE_EXPLICIT_EVAL, ///< Modify \f$x\f$ before the explicit evaluation.
-    XDOT_END_STAGE,         ///< Modify \f$\dot{x}\f$ at the end of the stage.
+    X_END_STAGE,            ///< Modify \f$x\f$ at the end of the stage.
     X_END_STEP              ///< Modify \f$x\f$ at the end of the step.
   };
 
@@ -145,6 +142,7 @@ public:
   virtual void modify(
     Teuchos::RCP<Thyra::VectorBase<Scalar> > /* x */,
     const Scalar /* time */, const Scalar /* dt */,
+    const int /* stageNumber */,
     const MODIFIER_TYPE modType) = 0;
 
 };

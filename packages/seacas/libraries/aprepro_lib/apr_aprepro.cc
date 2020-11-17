@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include "apr_scanner.h"    // for Scanner
@@ -24,7 +24,7 @@
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "5.16 (2020/06/09)";
+  const char *       version_string = "5.19 (2020/09/29)";
 
   void output_copyright();
 
@@ -76,7 +76,7 @@ namespace SEAMS {
     cleanup_memory();
   }
 
-  std::string Aprepro::version() const { return version_string; }
+  std::string Aprepro::version() { return version_string; }
 
   void Aprepro::clear_results()
   {

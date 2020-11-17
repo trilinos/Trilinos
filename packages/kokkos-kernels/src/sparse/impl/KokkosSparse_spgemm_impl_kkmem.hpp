@@ -324,8 +324,8 @@ struct KokkosSPGEMM
     const nnz_lno_t team_row_begin = teamMember.league_rank() * team_work_size;
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, numrows);
 
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
-    hm2(pow2_hash_size, pow2_hash_size,NULL, NULL, NULL, NULL);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+    hm2(pow2_hash_size, pow2_hash_func, NULL, NULL, NULL, NULL);
 
     volatile nnz_lno_t * tmp = NULL;
     size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
@@ -344,10 +344,7 @@ struct KokkosSPGEMM
       nnz_lno_t used_hash_sizes = 0;
 
       const size_type c_row_begin = rowmapC[row_index];
-      const size_type c_row_end = rowmapC[row_index + 1];
 
-      const nnz_lno_t global_memory_hash_size = nnz_lno_t(c_row_end - c_row_begin);
-      hm2.max_value_size = global_memory_hash_size;
       hm2.keys = pEntriesC + c_row_begin;
       hm2.values = pvaluesC + c_row_begin;
 
@@ -367,15 +364,14 @@ struct KokkosSPGEMM
           nnz_lno_t b_col_ind = entriesB[adjind];
           scalar_t b_val = valuesB[adjind] * valA;
           //nnz_lno_t hash = (b_col_ind * 107) & pow2_hash_func;
-          nnz_lno_t hash = b_col_ind & pow2_hash_func;
 
           //this has to be a success, we do not need to check for the success.
           //int insertion =
           hm2.sequential_insert_into_hash_mergeAdd_TrackHashes(
-              hash, b_col_ind, b_val,
-              &used_hash_sizes, hm2.max_value_size
-              ,&globally_used_hash_count,
-              globally_used_hash_indices
+            b_col_ind, b_val,
+            &used_hash_sizes,
+            &globally_used_hash_count,
+            globally_used_hash_indices
           );
         }
       }
@@ -394,16 +390,19 @@ struct KokkosSPGEMM
 
     const nnz_lno_t team_row_begin = teamMember.league_rank() * team_work_size;
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, numrows);
-
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
-    hm2(pow2_hash_size, pow2_hash_size,NULL, NULL, NULL, NULL);
-
     volatile nnz_lno_t * tmp = NULL;
     size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
+    nnz_lno_t chunk_size = 0;
+
     while (tmp == NULL){
       tmp = (volatile nnz_lno_t * )( memory_space.allocate_chunk(tid));
+      // issue-508, TODO: chunk_size = ???
     }
     nnz_lno_t *globally_used_hash_indices = (nnz_lno_t *) tmp;
+
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+    hm2(chunk_size, pow2_hash_func, NULL, NULL, NULL, NULL);
+
     tmp += pow2_hash_size ;
 
     hm2.hash_begins = (nnz_lno_t *) (tmp);
@@ -423,7 +422,6 @@ struct KokkosSPGEMM
       const size_type c_row_end = rowmapC[row_index + 1];
 
       const nnz_lno_t global_memory_hash_size = nnz_lno_t(c_row_end - c_row_begin);
-      hm2.max_value_size = global_memory_hash_size;
 
       const size_type col_begin = row_mapA[row_index];
       const nnz_lno_t left_work = row_mapA[row_index + 1] - col_begin;
@@ -444,10 +442,10 @@ struct KokkosSPGEMM
           //this has to be a success, we do not need to check for the success.
           //int insertion =
           hm2.sequential_insert_into_hash_mergeAdd_TrackHashes(
-              hash, b_col_ind, b_val,
-              &used_hash_sizes, hm2.max_value_size
-              ,&globally_used_hash_count,
-              globally_used_hash_indices
+            b_col_ind, b_val,
+            &used_hash_sizes,
+            &globally_used_hash_count,
+            globally_used_hash_indices
           );
         }
       }
@@ -501,11 +499,11 @@ struct KokkosSPGEMM
     // remainder of shmem allocation for vals
     scalar_t * vals = KokkosKernels::Impl::alignPtr<char*, scalar_t>(all_shared_memory);
 
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
-    hm(thread_shmem_hash_size, thread_shmem_key_size, begins, nexts, keys, vals);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+    hm(thread_shmem_key_size, thread_shared_memory_hash_func, begins, nexts, keys, vals);
 
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
-    hm2(pow2_hash_size, pow2_hash_size,
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+    hm2(pow2_hash_size, pow2_hash_func,
         NULL, NULL, NULL, NULL);
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index) {
       const size_type c_row_begin = rowmapC[row_index];
@@ -538,7 +536,6 @@ struct KokkosSPGEMM
 		  tmp += pow2_hash_size ;
 		  hm2.hash_nexts = (nnz_lno_t *) (tmp);
 	  }
-      hm2.max_value_size = global_memory_hash_size;
       hm2.keys = pEntriesC + c_row_begin;
       hm2.values = pvaluesC + c_row_begin;
 
@@ -571,26 +568,17 @@ struct KokkosSPGEMM
           const size_type adjind = i + rowBegin;
           nnz_lno_t b_col_ind = entriesB[adjind];
           scalar_t b_val = valuesB[adjind] * valA;
-          //hash = b_col_ind % shmem_key_size;
-          nnz_lno_t hash = b_col_ind & thread_shared_memory_hash_func;
           volatile int num_unsuccess = hm.vector_atomic_insert_into_hash_mergeAdd(
-              teamMember, vector_size,
-              hash, b_col_ind, b_val,
-              used_hash_sizes,
-              thread_shmem_key_size);
-          if (num_unsuccess){
-
-        	  hash = b_col_ind & pow2_hash_func;
+                                         b_col_ind, b_val,
+                                         used_hash_sizes
+                                       );
+          if (num_unsuccess) {
         	  hm2.vector_atomic_insert_into_hash_mergeAdd_TrackHashes(
-        			  teamMember, vector_size,
-					  hash,b_col_ind,b_val,
-					  used_hash_sizes + 1, hm2.max_value_size
-					  ,globally_used_hash_count, globally_used_hash_indices
-        	  );
-
-
+              b_col_ind,b_val,
+              used_hash_sizes + 1,
+              globally_used_hash_count, globally_used_hash_indices
+            );
           }
-
         });
       }
 

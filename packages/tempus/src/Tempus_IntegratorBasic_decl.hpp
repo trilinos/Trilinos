@@ -145,10 +145,10 @@ public:
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getX() const
       {return solutionHistory_->getCurrentState()->getX();}
     /// Get current the time derivative of the solution, xdot
-    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXdot() const
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDot() const
       {return solutionHistory_->getCurrentState()->getXDot();}
     /// Get current the second time derivative of the solution, xdotdot
-    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXdotdot() const
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotDot() const
       {return solutionHistory_->getCurrentState()->getXDotDot();}
 
     /// Get current state

@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 // Might be good to add a callback function which would be called
@@ -183,7 +183,7 @@ namespace SEAMS {
     void                      clear_results();
 
     /** Return string representation of current version of aprepro.  */
-    std::string version() const;
+    static std::string version();
 
     /** Invoke the scanner and parser for a stream.
      * @param in        input stream

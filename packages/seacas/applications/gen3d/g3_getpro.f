@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
       SUBROUTINE GETPRO (NEREPL, NNREPL, *)
@@ -78,13 +78,13 @@ C   --Perform command
      *         'Zero length vector entered')
             GO TO 10
          ELSE
-C
+
 C ... NOTE: Since mesh is translated in -Z direction, Z normal to plane
 C           must be negative.  If not, then reverse total vector
 C           (This was done wrong originally, therefore to not screw
 C            up people who figured out a correct orientation, we allow
 C            the bug to continue if they enter DOOLDWAY.
-C
+
             DOOLD = .FALSE.
             IF (FFEXST (IFLD, INTYP)) THEN
                CALL FFCHAR (IFLD, INTYP, CFIELD, ' ', WORD)
@@ -105,7 +105,7 @@ C
                XXB =  XXB / RMAG
                XXC =  XXC / RMAG
             END IF
-C
+
          END IF
          ISXWRP = ISFLAT
 

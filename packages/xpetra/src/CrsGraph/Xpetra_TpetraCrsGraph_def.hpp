@@ -249,8 +249,7 @@ typename Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::local_graph_type Tpe
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::computeGlobalConstants() {
       // mfh 07 May 2018: See GitHub Issue #2565.
-      constexpr bool computeLocalTriangularConstants = true;
-      graph_->computeGlobalConstants(computeLocalTriangularConstants);
+      graph_->computeGlobalConstants();
     }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -45,12 +45,12 @@
 #endif
 
 /* EXODUS version number */
-#define EXODUS_VERSION "8.06"
+#define EXODUS_VERSION "8.08"
 #define EXODUS_VERSION_MAJOR 8
-#define EXODUS_VERSION_MINOR 06
-#define EXODUS_RELEASE_DATE "May 27, 2020"
+#define EXODUS_VERSION_MINOR 8
+#define EXODUS_RELEASE_DATE "September 2, 2020"
 
-#define EX_API_VERS 8.06f
+#define EX_API_VERS 8.08f
 
 #define EX_API_VERS_NODOT (100 * EXODUS_VERSION_MAJOR + EXODUS_VERSION_MINOR)
 
@@ -130,74 +130,74 @@ extern "C" {
 
 /** @}*/
 
-/*! \sa ex_inquire() */
+/*! \sa ex_inquire() All inquiries return an integer of the current database integer size unless
+ * otherwise noted. */
 enum ex_inquiry {
-  EX_INQ_FILE_TYPE    = 1,  /**< inquire EXODUS file type*/
-  EX_INQ_API_VERS     = 2,  /**< inquire API version number */
-  EX_INQ_DB_VERS      = 3,  /**< inquire database version number */
-  EX_INQ_TITLE        = 4,  /**< inquire database title     */
-  EX_INQ_DIM          = 5,  /**< inquire number of dimensions */
-  EX_INQ_NODES        = 6,  /**< inquire number of nodes    */
-  EX_INQ_ELEM         = 7,  /**< inquire number of elements */
-  EX_INQ_ELEM_BLK     = 8,  /**< inquire number of element blocks */
-  EX_INQ_NODE_SETS    = 9,  /**< inquire number of node sets*/
-  EX_INQ_NS_NODE_LEN  = 10, /**< inquire length of node set node list */
-  EX_INQ_SIDE_SETS    = 11, /**< inquire number of side sets*/
-  EX_INQ_SS_NODE_LEN  = 12, /**< inquire length of side set node list */
-  EX_INQ_SS_ELEM_LEN  = 13, /**< inquire length of side set element list */
-  EX_INQ_QA           = 14, /**< inquire number of QA records */
-  EX_INQ_INFO         = 15, /**< inquire number of info records */
-  EX_INQ_TIME         = 16, /**< inquire number of time steps in the database */
-  EX_INQ_EB_PROP      = 17, /**< inquire number of element block properties */
-  EX_INQ_NS_PROP      = 18, /**< inquire number of node set properties */
-  EX_INQ_SS_PROP      = 19, /**< inquire number of side set properties */
-  EX_INQ_NS_DF_LEN    = 20, /**< inquire length of node set distribution factor list*/
-  EX_INQ_SS_DF_LEN    = 21, /**< inquire length of side set distribution factor list*/
-  EX_INQ_LIB_VERS     = 22, /**< inquire API Lib vers number*/
-  EX_INQ_EM_PROP      = 23, /**< inquire number of element map properties */
-  EX_INQ_NM_PROP      = 24, /**< inquire number of node map properties */
-  EX_INQ_ELEM_MAP     = 25, /**< inquire number of element maps */
-  EX_INQ_NODE_MAP     = 26, /**< inquire number of node maps*/
-  EX_INQ_EDGE         = 27, /**< inquire number of edges    */
-  EX_INQ_EDGE_BLK     = 28, /**< inquire number of edge blocks */
-  EX_INQ_EDGE_SETS    = 29, /**< inquire number of edge sets   */
-  EX_INQ_ES_LEN       = 30, /**< inquire length of concat edge set edge list       */
-  EX_INQ_ES_DF_LEN    = 31, /**< inquire length of concat edge set dist factor list*/
-  EX_INQ_EDGE_PROP    = 32, /**< inquire number of properties stored per edge block    */
-  EX_INQ_ES_PROP      = 33, /**< inquire number of properties stored per edge set      */
-  EX_INQ_FACE         = 34, /**< inquire number of faces */
-  EX_INQ_FACE_BLK     = 35, /**< inquire number of face blocks */
-  EX_INQ_FACE_SETS    = 36, /**< inquire number of face sets */
-  EX_INQ_FS_LEN       = 37, /**< inquire length of concat face set face list */
-  EX_INQ_FS_DF_LEN    = 38, /**< inquire length of concat face set dist factor list*/
-  EX_INQ_FACE_PROP    = 39, /**< inquire number of properties stored per face block */
-  EX_INQ_FS_PROP      = 40, /**< inquire number of properties stored per face set */
-  EX_INQ_ELEM_SETS    = 41, /**< inquire number of element sets */
-  EX_INQ_ELS_LEN      = 42, /**< inquire length of concat element set element list       */
-  EX_INQ_ELS_DF_LEN   = 43, /**< inquire length of concat element set dist factor list*/
-  EX_INQ_ELS_PROP     = 44, /**< inquire number of properties stored per elem set      */
-  EX_INQ_EDGE_MAP     = 45, /**< inquire number of edge maps                     */
-  EX_INQ_FACE_MAP     = 46, /**< inquire number of face maps                     */
-  EX_INQ_COORD_FRAMES = 47, /**< inquire number of coordinate frames */
-  EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH =
-      48,                              /**< inquire size of MAX_NAME_LENGTH dimension on database */
-  EX_INQ_DB_MAX_USED_NAME_LENGTH = 49, /**< inquire size of MAX_NAME_LENGTH dimension on database */
-  EX_INQ_MAX_READ_NAME_LENGTH    = 50, /**< inquire client-specified max size of returned names */
+  EX_INQ_FILE_TYPE                  = 1,  /**< EXODUS file type (deprecated) */
+  EX_INQ_API_VERS                   = 2,  /**< API version number (float) */
+  EX_INQ_DB_VERS                    = 3,  /**< database version number (float) */
+  EX_INQ_TITLE                      = 4,  /**< database title. MAX_LINE_LENGTH+1 char* size */
+  EX_INQ_DIM                        = 5,  /**< number of dimensions */
+  EX_INQ_NODES                      = 6,  /**< number of nodes    */
+  EX_INQ_ELEM                       = 7,  /**< number of elements */
+  EX_INQ_ELEM_BLK                   = 8,  /**< number of element blocks */
+  EX_INQ_NODE_SETS                  = 9,  /**< number of node sets*/
+  EX_INQ_NS_NODE_LEN                = 10, /**< length of node set node list */
+  EX_INQ_SIDE_SETS                  = 11, /**< number of side sets*/
+  EX_INQ_SS_NODE_LEN                = 12, /**< length of side set node list */
+  EX_INQ_SS_ELEM_LEN                = 13, /**< length of side set element list */
+  EX_INQ_QA                         = 14, /**< number of QA records */
+  EX_INQ_INFO                       = 15, /**< number of info records */
+  EX_INQ_TIME                       = 16, /**< number of time steps in the database */
+  EX_INQ_EB_PROP                    = 17, /**< number of element block properties */
+  EX_INQ_NS_PROP                    = 18, /**< number of node set properties */
+  EX_INQ_SS_PROP                    = 19, /**< number of side set properties */
+  EX_INQ_NS_DF_LEN                  = 20, /**< length of node set distribution factor list*/
+  EX_INQ_SS_DF_LEN                  = 21, /**< length of side set distribution factor list*/
+  EX_INQ_LIB_VERS                   = 22, /**< API Lib vers number (float) */
+  EX_INQ_EM_PROP                    = 23, /**< number of element map properties */
+  EX_INQ_NM_PROP                    = 24, /**< number of node map properties */
+  EX_INQ_ELEM_MAP                   = 25, /**< number of element maps */
+  EX_INQ_NODE_MAP                   = 26, /**< number of node maps*/
+  EX_INQ_EDGE                       = 27, /**< number of edges    */
+  EX_INQ_EDGE_BLK                   = 28, /**< number of edge blocks */
+  EX_INQ_EDGE_SETS                  = 29, /**< number of edge sets   */
+  EX_INQ_ES_LEN                     = 30, /**< length of concat edge set edge list       */
+  EX_INQ_ES_DF_LEN                  = 31, /**< length of concat edge set dist factor list*/
+  EX_INQ_EDGE_PROP                  = 32, /**< number of properties stored per edge block    */
+  EX_INQ_ES_PROP                    = 33, /**< number of properties stored per edge set      */
+  EX_INQ_FACE                       = 34, /**< number of faces */
+  EX_INQ_FACE_BLK                   = 35, /**< number of face blocks */
+  EX_INQ_FACE_SETS                  = 36, /**< number of face sets */
+  EX_INQ_FS_LEN                     = 37, /**< length of concat face set face list */
+  EX_INQ_FS_DF_LEN                  = 38, /**< length of concat face set dist factor list*/
+  EX_INQ_FACE_PROP                  = 39, /**< number of properties stored per face block */
+  EX_INQ_FS_PROP                    = 40, /**< number of properties stored per face set */
+  EX_INQ_ELEM_SETS                  = 41, /**< number of element sets */
+  EX_INQ_ELS_LEN                    = 42, /**< length of concat element set element list       */
+  EX_INQ_ELS_DF_LEN                 = 43, /**< length of concat element set dist factor list*/
+  EX_INQ_ELS_PROP                   = 44, /**< number of properties stored per elem set      */
+  EX_INQ_EDGE_MAP                   = 45, /**< number of edge maps                     */
+  EX_INQ_FACE_MAP                   = 46, /**< number of face maps                     */
+  EX_INQ_COORD_FRAMES               = 47, /**< number of coordinate frames */
+  EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH = 48, /**< size of MAX_NAME_LENGTH dimension on database */
+  EX_INQ_DB_MAX_USED_NAME_LENGTH    = 49, /**< size of MAX_NAME_LENGTH dimension on database */
+  EX_INQ_MAX_READ_NAME_LENGTH       = 50, /**< client-specified max size of returned names */
 
-  EX_INQ_DB_FLOAT_SIZE    = 51, /**< inquire size of floating-point values stored on database */
-  EX_INQ_NUM_CHILD_GROUPS = 52, /**< inquire number of groups contained in this (exoid) group */
-  EX_INQ_GROUP_PARENT =
-      53, /**< inquire id of parent of this (exoid) group; returns exoid if at root */
+  EX_INQ_DB_FLOAT_SIZE    = 51, /**< size of floating-point values stored on database */
+  EX_INQ_NUM_CHILD_GROUPS = 52, /**< number of groups contained in this (exoid) group */
+  EX_INQ_GROUP_PARENT     = 53, /**< id of parent of this (exoid) group; returns exoid if at root */
   EX_INQ_GROUP_ROOT =
-      54, /**< inquire id of root group "/" of this (exoid) group; returns exoid if at root */
-  EX_INQ_GROUP_NAME_LEN      = 55, /**< inquire length of name of group exoid */
-  EX_INQ_GROUP_NAME          = 56, /**< inquire name of group exoid. "/" returned for root group */
-  EX_INQ_FULL_GROUP_NAME_LEN = 57, /**< inquire length of full path name of this (exoid) group */
-  EX_INQ_FULL_GROUP_NAME = 58, /**< inquire full "/"-separated path name of this (exoid) group */
-  EX_INQ_THREADSAFE      = 59, /**< Returns 1 if library is thread-safe; 0 otherwise */
-  EX_INQ_ASSEMBLY        = 60, /**< inquire number of assemblies */
-  EX_INQ_BLOB            = 61, /**< inquire number of blobs */
-  EX_INQ_INVALID         = -1
+      54, /**< id of root group "/" of this (exoid) group; returns exoid if at root */
+  EX_INQ_GROUP_NAME_LEN = 55, /**< length of name of group exoid */
+  EX_INQ_GROUP_NAME =
+      56, /**< name of group exoid. "/" returned for root group (char* GROUP_NAME_LEN+1 size) */
+  EX_INQ_FULL_GROUP_NAME_LEN = 57, /**< length of full path name of this (exoid) group */
+  EX_INQ_FULL_GROUP_NAME     = 58, /**< full "/"-separated path name of this (exoid) group */
+  EX_INQ_THREADSAFE          = 59, /**< Returns 1 if library is thread-safe; 0 otherwise */
+  EX_INQ_ASSEMBLY            = 60, /**< number of assemblies */
+  EX_INQ_BLOB                = 61, /**< number of blobs */
+  EX_INQ_INVALID             = -1
 };
 
 typedef enum ex_inquiry ex_inquiry;

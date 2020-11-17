@@ -66,16 +66,17 @@ namespace MueLu {
     @brief Factory for building blocked, segregated prolongation operators.
 
     Factory for building blocked, segregated prolongation operators of the form
-    \f$ P=\diag(P_{11},P_{22},\ldots)\f$, where \f$ P_{ii}\f$ are prolongation operators for the corresponding subblocks \f$i\f$ in the blocked operator \f$ A \f$
+    \f$ P=\diag(P_{11},P_{22},\ldots)\f$, where \f$ P_{ii}\f$ are prolongation operators
+    for the corresponding subblocks \f$A_{ii}\f$ in the blocked operator \f$ A \f$.
 
     @param RCP<FactoryBase> AFact = Teuchos::null: factory for generating blocked operator \f$ A\f$.
 
-    The blocked operator \f$ A \f$ is need for accessing the underlaying blocked maps (MapExtractors).
+    The blocked operator \f$ A \f$ is needed for accessing the underlaying blocked maps (MapExtractors).
     Use the AddFactoryManager function to define block rows in the blocked operator. For each block row you have to define
     a special factory manager that handles the prolongation and restriction operator for the corresponding blocks. The
-    SubBlockAFactory class provides a factory interface for accessing specific blocks in the blocked operator A
+    SubBlockAFactory class provides a factory interface for accessing specific blocks in the blocked operator \f$ A \f$.
 
-    \code
+    \code{.cpp}
     // define SubBlockAFactory objects for accessing the diagonal blocks in the blocked operator A
     RCP<SubBlockAFactory> A11Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 0, 0));
     RCP<SubBlockAFactory> A22Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 1, 1));
@@ -173,7 +174,8 @@ namespace MueLu {
     /*!
       @brief Build method.
 
-      Builds smoothed aggregation prolongator and returns it in <tt>coarseLevel</tt>.
+      Build segregated blocked prolongator by assembly from prolongators of each subblock in A
+      and return it in \c coarseLevel .
     */
     void Build(Level& fineLevel, Level &coarseLevel) const;
 
@@ -189,7 +191,6 @@ namespace MueLu {
 
     //! Input factories
     std::vector<Teuchos::RCP<const FactoryManagerBase> > FactManager_;
-    //RCP<FactoryBase> AFact_; //! A Factory
 
     //! Factory parameters
     std::string diagonalView_;

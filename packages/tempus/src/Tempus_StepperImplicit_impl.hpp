@@ -45,16 +45,18 @@ void StepperImplicit<Scalar>::setInitialConditions(
     "        to set the initial condition.  Number of States = " << numStates);
 
   RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
-  RCP<Thyra::VectorBase<Scalar> > x = initialState->getX();
+  RCP<Thyra::VectorBase<Scalar> > x    = initialState->getX();
+  RCP<Thyra::VectorBase<Scalar> > xDot = initialState->getXDot();
+  if (xDot() == Teuchos::null) xDot = this->getStepperXDot();
+
 
   auto inArgs = this->wrapperModel_->getNominalValues();
   if (this->getOrderODE() == SECOND_ORDER_ODE) {
-    RCP<Thyra::VectorBase<Scalar> > xDot = initialState->getXDot();
-
+    RCP<Thyra::VectorBase<Scalar> > initialXDot = initialState->getXDot();
     // If initialState has x and xDot set, treat them as the initial conditions.
     // Otherwise use the x and xDot from getNominalValues() as the ICs.
     TEUCHOS_TEST_FOR_EXCEPTION(
-      !((x != Teuchos::null && xDot != Teuchos::null) ||
+      !((x != Teuchos::null && initialXDot != Teuchos::null) ||
         (inArgs.get_x() != Teuchos::null &&
          inArgs.get_x_dot() != Teuchos::null)), std::logic_error,
       "Error - We need to set the initial conditions for x and xDot from\n"
@@ -77,7 +79,6 @@ void StepperImplicit<Scalar>::setInitialConditions(
   else if (this->getOrderODE() == SECOND_ORDER_ODE) {
     // Use the x and xDot from getNominalValues() as the ICs.
     using Teuchos::rcp_const_cast;
-    RCP<Thyra::VectorBase<Scalar> > xDot = initialState->getXDot();
     if ( x == Teuchos::null || xDot == Teuchos::null ) {
       TEUCHOS_TEST_FOR_EXCEPTION( (inArgs.get_x() == Teuchos::null) ||
         (inArgs.get_x_dot() == Teuchos::null), std::logic_error,
@@ -85,8 +86,9 @@ void StepperImplicit<Scalar>::setInitialConditions(
         "        or getNominalValues()!\n");
       x = rcp_const_cast<Thyra::VectorBase<Scalar> >(inArgs.get_x());
       initialState->setX(x);
-      xDot = rcp_const_cast<Thyra::VectorBase<Scalar> >(inArgs.get_x_dot());
-      initialState->setXDot(xDot);
+      RCP<Thyra::VectorBase<Scalar> > x_dot =
+        rcp_const_cast<Thyra::VectorBase<Scalar> >(inArgs.get_x_dot());
+      initialState->setXDot(x_dot);
     }
   }
 
@@ -96,7 +98,7 @@ void StepperImplicit<Scalar>::setInitialConditions(
   if (icConsistency == "None") {
     if (this->getOrderODE() == FIRST_ORDER_ODE) {
       if (initialState->getXDot() == Teuchos::null)
-        Thyra::assign(this->getStepperXDot(initialState).ptr(), Scalar(0.0));
+        Thyra::assign(xDot.ptr(), Scalar(0.0));
     }
     else if (this->getOrderODE() == SECOND_ORDER_ODE) {
       if (initialState->getXDotDot() == Teuchos::null)
@@ -105,18 +107,18 @@ void StepperImplicit<Scalar>::setInitialConditions(
   }
   else if (icConsistency == "Zero") {
     if (this->getOrderODE() == FIRST_ORDER_ODE)
-      Thyra::assign(this->getStepperXDot(initialState).ptr(), Scalar(0.0));
+      Thyra::assign(xDot.ptr(), Scalar(0.0));
     else if (this->getOrderODE() == SECOND_ORDER_ODE)
       Thyra::assign(this->getStepperXDotDot(initialState).ptr(), Scalar(0.0));
   }
   else if (icConsistency == "App") {
     if (this->getOrderODE() == FIRST_ORDER_ODE) {
-      auto xDot = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(
+      auto x_dot = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(
                     inArgs.get_x_dot());
-      TEUCHOS_TEST_FOR_EXCEPTION(xDot == Teuchos::null, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(x_dot == Teuchos::null, std::logic_error,
         "Error - setInitialConditions() requested 'App' for IC consistency,\n"
         "        but 'App' returned a null pointer for xDot!\n");
-      Thyra::assign(this->getStepperXDot(initialState).ptr(), *xDot);
+      Thyra::assign(xDot.ptr(), *x_dot);
     }
     else if (this->getOrderODE() == SECOND_ORDER_ODE) {
       auto xDotDot = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(
@@ -138,7 +140,6 @@ void StepperImplicit<Scalar>::setInitialConditions(
       auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
         timeDer, dt, alpha, beta, SOLVE_FOR_XDOT_CONST_X));
 
-      auto xDot = this->getStepperXDot(initialState);
       const Thyra::SolveStatus<Scalar> sStatus =
         this->solveImplicitODE(x, xDot, time, p);
 
@@ -167,7 +168,6 @@ void StepperImplicit<Scalar>::setInitialConditions(
   // Test for consistency.
   if (this->getICConsistencyCheck()) {
     auto f    = initialState->getX()->clone_v();
-    auto xDot = this->getStepperXDot(initialState);
 
     const Scalar time = initialState->getTime();
     const Scalar dt   = initialState->getTimeStep();
@@ -185,15 +185,24 @@ void StepperImplicit<Scalar>::setInitialConditions(
     else reldiff = Thyra::norm(*f)/normX;
 
     Scalar eps = Scalar(100.0)*std::abs(Teuchos::ScalarTraits<Scalar>::eps());
-    if (reldiff > eps) {
-      RCP<Teuchos::FancyOStream> out = this->getOStream();
-      Teuchos::OSTab ostab(out,1,"StepperImplicit::setInitialConditions()");
-      *out << "Info -- Failed consistency check but continuing!\n"
-         << "  ||f(x,xDot,t)||/||x|| > eps" << std::endl
-         << "  ||f(x,xDot,t)||       = " << Thyra::norm(*f) << std::endl
-         << "  ||x||                 = " << Thyra::norm(*x) << std::endl
-         << "  ||f(x,xDot,t)||/||x|| = " << reldiff         << std::endl
-         << "                    eps = " << eps             << std::endl;
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"StepperImplicit::setInitialConditions()");
+    if (reldiff < eps) {
+      *out << "\n---------------------------------------------------\n"
+           << "Info -- Stepper = " << this->getStepperType() << "\n"
+           << "  Initial condition PASSED consistency check!\n"
+           << "  (||f(x,xDot,t)||/||x|| = " << reldiff << ") < "
+           << "(eps = " << eps << ")"            << std::endl
+           << "---------------------------------------------------\n"<<std::endl;
+    } else {
+      *out << "\n---------------------------------------------------\n"
+           << "Info -- Stepper = " << this->getStepperType() << "\n"
+           << "  Initial condition FAILED consistency check but continuing!\n"
+           << "  (||f(x,xDot,t)||/||x|| = " << reldiff << ") > "
+           << "(eps = " << eps << ")" << std::endl
+           << "  ||f(x,xDot,t)|| = " << Thyra::norm(*f) << std::endl
+           << "  ||x||           = " << Thyra::norm(*x) << std::endl
+           << "---------------------------------------------------\n"<<std::endl;
     }
   }
 }

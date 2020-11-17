@@ -127,7 +127,6 @@ install install-user-lib
   : stk_unit_test_utils
     stk_unit_main
     stk_mesh_fixtures
-    comparisonUtils
   : <location>$(install-root)/stk/stk_unit_test_utils/lib
   ;
 
@@ -142,7 +141,11 @@ lib stk_unit_test_utils
     [ ifdevbuild
       [ glob $(stk_unit_test_utils-root)/stk_unit_test_utils/*.cpp ]
       /sierra/stk_io//stk_io
+      /sierra/stk_simd//stk_simd_headers
+      /sierra/stk_math//stk_math
       /sierra/stk_ngp_test//stk_ngp_test
+      /sierra/stk_util//stk_util_parallel
+      /sierra/stk_util//stk_util_util
       /tpl/gtest//gtest
     ]
   : 
@@ -191,16 +194,5 @@ lib stk_unit_main
     ]
   :
   :
-  ;
-
-lib comparisonUtils
-  :
-    [ ifdevbuild
-      $(stk_unit_test_utils-root)/stk_unit_test_utils/comparison/stringAndNumberComparisons.cpp
-    ]   
-  :
-    [ ifuserbuild
-      <file>$(stk_unit_test_utils-root)/lib/libcomparisonUtils.a
-    ]   
   ;
 

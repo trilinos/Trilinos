@@ -11,7 +11,7 @@
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
-
+#include "Tempus_StepperLeapfrogModifierDefault.hpp"
 
 namespace Tempus {
 
@@ -20,57 +20,46 @@ template<class Scalar>
 StepperLeapfrog<Scalar>::StepperLeapfrog()
 {
   this->setStepperType(        "Leapfrog");
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setUseFSAL(            false);
+  this->setICConsistency(      "Consistent");
+  this->setICConsistencyCheck( false);
 
-  this->setObserver();
+  this->setAppAction(Teuchos::null);
 }
-
 
 template<class Scalar>
 StepperLeapfrog<Scalar>::StepperLeapfrog(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperObserver<Scalar> >& obs,
   bool useFSAL,
   std::string ICConsistency,
-  bool ICConsistencyCheck)
-{
-  this->setStepperType(        "Leapfrog");
-  this->setUseFSAL(            useFSAL);
-  this->setICConsistency(      ICConsistency);
-  this->setICConsistencyCheck( ICConsistencyCheck);
+  bool ICConsistencyCheck,
+  const Teuchos::RCP<StepperLeapfrogAppAction<Scalar> >& stepperLFAppAction)
+  {
+    this->setStepperType(        "Leapfrog");
+    this->setUseFSAL(            useFSAL);
+    this->setICConsistency(      ICConsistency);
+    this->setICConsistencyCheck( ICConsistencyCheck);
+    this->setAppAction(stepperLFAppAction);
+    if (appModel != Teuchos::null) {
 
-  this->setObserver(obs);
-
-  if (appModel != Teuchos::null) {
-
-    this->setModel(appModel);
-    this->initialize();
+      this->setModel(appModel);
+      this->initialize();
+    }
   }
-}
 
 
 template<class Scalar>
-void StepperLeapfrog<Scalar>::setObserver(
-  Teuchos::RCP<StepperObserver<Scalar> > obs)
-{
-  if (this->stepperObserver_ == Teuchos::null)
-    this->stepperObserver_  =
-      Teuchos::rcp(new StepperObserverComposite<Scalar>());
-
-  if (obs == Teuchos::null) {
-    if (stepperLFObserver_ == Teuchos::null)
-      stepperLFObserver_ = Teuchos::rcp(new StepperLeapfrogObserver<Scalar>());
-    if (this->stepperObserver_->getSize() == 0)
-      this->stepperObserver_->addObserver(stepperLFObserver_);
-  } else {
-    stepperLFObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperLeapfrogObserver<Scalar> >(obs,true);
-    this->stepperObserver_->addObserver(stepperLFObserver_);
+void StepperLeapfrog<Scalar>::setAppAction(
+  Teuchos::RCP<StepperLeapfrogAppAction<Scalar> > appAction)
+  {
+  if (appAction == Teuchos::null) {
+    // Create default appAction
+    stepperLFAppAction_ =
+      Teuchos::rcp(new StepperLeapfrogModifierDefault<Scalar>());
   }
-
-  this->isInitialized_ = false;
+  else {
+    stepperLFAppAction_ = appAction;
+  }
 }
 
 
@@ -85,13 +74,15 @@ void StepperLeapfrog<Scalar>::setInitialConditions(
   // Check if we need Stepper storage for xDotDot
   if (initialState->getXDotDot() == Teuchos::null)
     this->setStepperXDotDot(initialState->getX()->clone_v());
+  else
+    this->setStepperXDotDot(initialState->getXDotDot());
 
   StepperExplicit<Scalar>::setInitialConditions(solutionHistory);
 
   if (this->getUseFSAL()) {
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"StepperLeapfrog::setInitialConditions()");
-    *out << "Warning -- The First-Step-As-Last (FSAL) principle is not "
+    *out << "Warning -- The First-Same-As-Last (FSAL) principle is not "
          << "used with Leapfrog because of the algorithm's prescribed "
          << "order of solution update. The default is to set useFSAL=false, "
          << "however useFSAL=true will also work but have no affect "
@@ -117,41 +108,39 @@ void StepperLeapfrog<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    //this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar time = currentState->getTime();
     const Scalar dt   = workingState->getTimeStep();
 
+
+    RCP<StepperLeapfrog<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
+
     // Perform half-step startup if working state is synced
     // (i.e., xDot and x are at the same time level).
     if (workingState->getIsSynced() == true) {
-      if (!Teuchos::is_null(stepperLFObserver_))
-        stepperLFObserver_->observeBeforeXDotUpdateInitialize(
-          solutionHistory, *this);
+      stepperLFAppAction_->execute(solutionHistory, thisStepper,
+        StepperLeapfrogAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
       // Half-step startup: xDot_{n+1/2} = xDot_n + 0.5*dt*xDotDot_n
       Thyra::V_VpStV(Teuchos::outArg(*(workingState->getXDot())),
         *(currentState->getXDot()),0.5*dt,*(currentState->getXDotDot()));
     }
-
-    if (!Teuchos::is_null(stepperLFObserver_))
-      stepperLFObserver_->observeBeforeXUpdate(solutionHistory, *this);
+    stepperLFAppAction_->execute(solutionHistory, thisStepper,
+      StepperLeapfrogAppAction<Scalar>::ACTION_LOCATION::BEFORE_X_UPDATE);
     // x_{n+1} = x_n + dt*xDot_{n+1/2}
     Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
       *(currentState->getX()),dt,*(workingState->getXDot()));
 
-    if (!Teuchos::is_null(stepperLFObserver_))
-      stepperLFObserver_->observeBeforeExplicit(solutionHistory, *this);
-
+    stepperLFAppAction_->execute(solutionHistory, thisStepper,
+      StepperLeapfrogAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
     auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
 
     // Evaluate xDotDot = f(x,t).
     this->evaluateExplicitODE(workingState->getXDotDot(),
                               workingState->getX(),
                               Teuchos::null, time+dt, p);
-
-    if (!Teuchos::is_null(stepperLFObserver_))
-      stepperLFObserver_->observeBeforeXDotUpdate(solutionHistory, *this);
+    stepperLFAppAction_->execute(solutionHistory, thisStepper,
+      StepperLeapfrogAppAction<Scalar>::ACTION_LOCATION::BEFORE_XDOT_UPDATE);
     if (workingState->getOutput() == true) {
       // Half-step sync: xDot_{n+1} = xDot_{n+1/2} + 0.5*dt*xDotDot_{n+1}
       Thyra::V_VpStV(Teuchos::outArg(*(workingState->getXDot())),
@@ -167,7 +156,6 @@ void StepperLeapfrog<Scalar>::takeStep(
     workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
-    //this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }
@@ -199,7 +187,8 @@ void StepperLeapfrog<Scalar>::describe(
   StepperExplicit<Scalar>::describe(out, verbLevel);
 
   out << "--- StepperLeapfrog ---\n";
-  out << "  stepperLFObserver_ = " << stepperLFObserver_ << std::endl;
+  out << "  stepperLFAppAction_                = "
+      << stepperLFAppAction_ << std::endl;
   out << "-----------------------" << std::endl;
 }
 
@@ -211,11 +200,11 @@ bool StepperLeapfrog<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
   if ( !StepperExplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
-
-  if (stepperLFObserver_ == Teuchos::null) {
+  if (stepperLFAppAction_ == Teuchos::null) {
     isValidSetup = false;
-    out << "The Leapfrog observer is not set!\n";
+    out << "The Leapfrog AppAction is not set!\n";
   }
+
 
   return isValidSetup;
 }
@@ -227,8 +216,7 @@ StepperLeapfrog<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   getValidParametersBasic(pl, this->getStepperType());
-  pl->set<std::string>("Initial Condition Consistency",
-                       this->getICConsistencyDefault());
+  pl->set<std::string>("Initial Condition Consistency", "Consistent");
   return pl;
 }
 

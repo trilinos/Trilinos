@@ -34,7 +34,9 @@
 #ifndef stk_util_util_SortAndUnique_hpp
 #define stk_util_util_SortAndUnique_hpp
 
-#include<algorithm>
+#include <algorithm>
+#include <functional>
+#include <stk_util/util/ReportHandler.hpp>
 
 namespace stk
 {
@@ -63,21 +65,30 @@ void sort_and_unique(VECTOR &vec)
     sort_and_unique(vec,std::less<typename VECTOR::value_type>());
 }
 
-template<class VECTOR, typename COMPARE>
-bool is_sorted_and_unique(const VECTOR& vec, COMPARE compare)
+template<class VECTOR, class COMPARE_LESS>
+bool is_sorted_and_unique(const VECTOR& vec, COMPARE_LESS cmp)
 {
-    bool sorted_and_unique = true;
-    for(size_t i=1; i<vec.size(); ++i) {
-        if (!compare(vec[i-1],vec[i])) {
-            sorted_and_unique = false;
-        }
+  for(size_t i=1; i<vec.size(); ++i) {
+    if (!cmp(vec[i-1], vec[i])) {
+      return false;
     }
-    return sorted_and_unique;
+  }
+  return true;
+}
+
+
+template<class VECTOR>
+bool is_sorted_and_unique(const VECTOR& vec)
+{
+  return is_sorted_and_unique(vec, std::less<typename VECTOR::value_type>());
 }
 
 template<class VECTOR>
 bool insert_keep_sorted_and_unique(typename VECTOR::value_type item, VECTOR& vec)
 {
+  //This ThrowAssert causes a DetectHinge unit-test to fail! That needs to be debugged so that this can be turned on!
+  //ThrowAssertMsg(is_sorted_and_unique(vec), "input vector must be sorted and unique");
+
   typename VECTOR::iterator iter = std::lower_bound(vec.begin(), vec.end(), item);
   if (iter == vec.end() || *iter != item) {
     vec.insert(iter, item);
@@ -89,6 +100,9 @@ bool insert_keep_sorted_and_unique(typename VECTOR::value_type item, VECTOR& vec
 template<class VECTOR, typename COMPARE_LESS>
 bool insert_keep_sorted_and_unique(typename VECTOR::value_type item, VECTOR& vec, COMPARE_LESS compare_less)
 {
+  //This ThrowAssert causes a DetectHinge unit-test to fail! That needs to be debugged so that this can be turned on!
+  //ThrowAssertMsg(is_sorted_and_unique(vec,compare_less), "input vector must be sorted and unique");
+
   typename VECTOR::iterator iter = std::lower_bound(vec.begin(), vec.end(), item, compare_less);
   if (iter == vec.end() || *iter != item) {
     vec.insert(iter, item);
@@ -100,12 +114,74 @@ bool insert_keep_sorted_and_unique(typename VECTOR::value_type item, VECTOR& vec
 template<class VECTOR, typename COMPARE_LESS, typename COMPARE_EQUALS>
 bool insert_keep_sorted_and_unique(typename VECTOR::value_type item, VECTOR& vec, COMPARE_LESS compare_less, COMPARE_EQUALS compare_equals)
 {
+  ThrowAssertMsg(is_sorted_and_unique(vec,compare_less), "input vector must be sorted and unique");
+
   typename VECTOR::iterator iter = std::lower_bound(vec.begin(), vec.end(), item, compare_less);
   if (iter == vec.end() || !compare_equals(*iter, item)) {
     vec.insert(iter, item);
     return true;
   }
   return false;
+}
+
+namespace impl {
+
+template<class ITEM, class COMPARE_LESS>
+struct CompareEqual {
+  CompareEqual(COMPARE_LESS compareLess) : cmp(compareLess)
+  {}
+
+  bool operator()(const ITEM& lhs, const ITEM& rhs) const
+  { return (!cmp(lhs,rhs) && !cmp(rhs,lhs)); }
+
+  COMPARE_LESS cmp;
+};
+
+} //namespace impl
+
+template<class VECTOR, class COMPARE_LESS>
+bool insert_keep_sorted_and_unique(const VECTOR& sortedItemsToInsert, VECTOR& sortedVec, COMPARE_LESS cmp)
+{
+  if (sortedItemsToInsert.empty()) {
+    return false;
+  }
+
+  ThrowAssertMsg(is_sorted_and_unique(sortedItemsToInsert, cmp), "input items must be sorted and unique");
+  ThrowAssertMsg(is_sorted_and_unique(sortedVec, cmp), "input vector must be sorted and unique");
+
+  const size_t oldLength = sortedVec.size();
+
+  if (oldLength > 0) {
+    typename VECTOR::value_type firstNewItem = sortedItemsToInsert[0];
+    typename VECTOR::value_type lastNewItem = sortedItemsToInsert.back();
+
+    typename VECTOR::iterator startOfNew = std::lower_bound(sortedVec.begin(), sortedVec.end(),
+                                                            firstNewItem, cmp);
+    const unsigned num = startOfNew-sortedVec.begin();
+
+    sortedVec.insert(startOfNew, sortedItemsToInsert.begin(), sortedItemsToInsert.end());
+    startOfNew = sortedVec.begin()+num;
+
+    typename VECTOR::iterator endOfNew = startOfNew+sortedItemsToInsert.size();
+    typename VECTOR::iterator endOfMerge = std::lower_bound(endOfNew, sortedVec.end(), lastNewItem, cmp);
+
+    std::inplace_merge(startOfNew, endOfNew, endOfMerge);
+
+    typename VECTOR::iterator iter = std::unique(startOfNew, sortedVec.end(),
+                           impl::CompareEqual<typename VECTOR::value_type,COMPARE_LESS>(cmp));
+    sortedVec.resize(iter - sortedVec.begin());
+  }
+  else {
+    sortedVec = sortedItemsToInsert;
+  }
+
+  return sortedVec.size() > oldLength;
+}
+
+template<class VECTOR>
+bool insert_keep_sorted_and_unique(const VECTOR& sortedItemsToInsert, VECTOR& sortedVec)
+{
+  return insert_keep_sorted_and_unique(sortedItemsToInsert, sortedVec, std::less<typename VECTOR::value_type>());
 }
 
 } //namespace util
