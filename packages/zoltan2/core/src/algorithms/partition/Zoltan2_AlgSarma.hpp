@@ -162,7 +162,7 @@ namespace Zoltan2 {
         pe = sparams.getEntryPtr("col_parts"); //col_cut
         if (pe)
             config.col_parts = pe->getValue(&config.col_parts);  
-        pe = sparams.getEntryPtr("z"); // max_load
+        pe = sparams.getEntryPtr("max_load"); // max_load
         if (pe)
             config.max_load = pe->getValue(&config.max_load);
         pe = sparams.getEntryPtr("sparsify");
