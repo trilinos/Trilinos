@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
         }
     }
     #endif
-    std::cout << "PASSED\n";
+    std::cout << "PASS\n";
 
     return EXIT_SUCCESS;
 }
