@@ -2,6 +2,7 @@ ADD_SUBDIRECTORIES(
 unit
 partition
 order
+ADColorer
 color
 scaling
 correctness
