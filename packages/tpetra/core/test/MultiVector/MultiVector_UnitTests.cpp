@@ -1749,7 +1749,7 @@ namespace {
     mvec2.norm1(norms2());
     std::fill(ans.begin(), ans.end(), M0);
     TEST_COMPARE_FLOATING_ARRAYS(norms1,ans,M0);
-    TEST_COMPARE_FLOATING_ARRAYS(norms1,ans,M0);
+    TEST_COMPARE_FLOATING_ARRAYS(norms2,ans,M0);
     // replace local entries s.t.
     // mvec1 = [1 1]  and  mvec2 = [0 0]
     //         [0 0]               [1 1]
