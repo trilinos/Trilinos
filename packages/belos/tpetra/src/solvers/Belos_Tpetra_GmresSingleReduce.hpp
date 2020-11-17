@@ -65,7 +65,8 @@ protected:
     if (ortho == "MGS" || ortho == "CGS" || ortho == "CGS2") {
       this->input_.orthoType = ortho;
     } else {
-      base_type::setOrthogonalizer (ortho);
+      this->input_.orthoType = "CGS";
+      //base_type::setOrthogonalizer (ortho);
     }
   }
 
@@ -79,27 +80,28 @@ private:
                                    dense_matrix_type& WORK) const
   {
     int rank = 0;
-    if (input.orthoType == "MGS") {
-      rank = projectAndNormalizeSingleReduce_MGS (n, input, Q, H, WORK);
-    } else if (input.orthoType == "CGS") {
+    if (input.orthoType == "CGS") {
+      // default, one-synch CGS, optionally with reortho
       rank = projectAndNormalizeSingleReduce_CGS (n, input, Q, H, WORK);
     } else {
-      rank = projectAndNormalizeSingleReduce_CGS (n, input, Q, H, WORK);
+      // one-synch MGS or CGS2, optionally with delayed renorm
+      rank = projectAndNormalizeSingleReduce_GS (n, input, Q, H, WORK);
     }
     return rank;
   }
 
 
-  //! MGS specialization
+  //! MGS/CGS2 specialization
   int
-  projectAndNormalizeSingleReduce_MGS (int n,
-                                       const SolverInput<SC>& input, 
-                                       MV& Q,
-                                       dense_matrix_type& H,
-                                       dense_matrix_type& T) const
+  projectAndNormalizeSingleReduce_GS (int n,
+                                      const SolverInput<SC>& input, 
+                                      MV& Q,
+                                      dense_matrix_type& H,
+                                      dense_matrix_type& T) const
   {
-    const SC one  = STS::one  ();
     const SC zero = STS::zero ();
+    const SC one  = STS::one  ();
+    const SC two  = one + one;
     const mag_type eps  = STS::eps ();
     const mag_type tolOrtho = static_cast<mag_type> (10.0) * eps;
 
@@ -128,6 +130,9 @@ private:
     // ----------------------------------------------------------
     // lagged/delayed re-orthogonalization
     // ----------------------------------------------------------
+    mag_type prevNorm = STS::real (T(n, n));
+    prevNorm = STM::squareroot (prevNorm);
+    T(n, n) = SC {prevNorm};
     if (input.needToReortho) {
       Teuchos::Range1D index_old (n, n);
       MV Qold = * (Q.subView (index_old));
@@ -144,22 +149,38 @@ private:
     }
 
     // ----------------------------------------------------------
-    // comopute new coefficients (one-synch MGS)
+    // comopute new coefficients (one-synch MGS/CGS2)
     // ----------------------------------------------------------
-    // update new coefficients 
-    // H := (I+T)^(-T) H, where T is upper-triangular
     // extract new coefficients 
     for (int i = 0; i <= n+1; i++) {
       H (i, n) = T (i, n+1);
     }
 
+    // update new coefficients 
     Teuchos::BLAS<LO ,SC> blas;
     dense_matrix_type Hnew (Teuchos::View, H, n+1, 1, 0, n);
-    blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,
-               Teuchos::TRANS, Teuchos::NON_UNIT_DIAG,
-               n+1, 1,
-               one, T.values(), T.stride(),
-                    Hnew.values(), Hnew.stride());
+    if (input.orthoType == "MGS") {
+      // H := (I+T)^(-T) H, where T is upper-triangular
+      blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,
+                 Teuchos::TRANS, Teuchos::UNIT_DIAG,
+                 n+1, 1,
+                 one, T.values(), T.stride(),
+                      Hnew.values(), Hnew.stride());
+    } else {
+      // expand from triangular to full, conjugate
+      for (int j = 0; j < n; j++) {
+        T(n, j) = STS::conjugate(T(j, n));
+      }
+
+      // H := (2*I-L) H, where T is full symmetrix Q'*Q
+      dense_matrix_type Told (Teuchos::View, T, n+1, 1, 0, n+1);
+      blas.COPY (n+1, Hnew.values(), 1, Told.values(), 1);
+      blas.GEMV(Teuchos::NO_TRANS,
+                n+1, n+1,
+                -one, T.values(), T.stride(),
+                      Told.values(), 1,
+                 two, Hnew.values(), 1);
+    }
 
     // ----------------------------------------------------------
     // orthogonalize the new vectors against the previous columns
@@ -303,15 +324,17 @@ private:
     mag_type b0_norm; // initial residual norm, not left-preconditioned
     mag_type r_norm;
     mag_type r_norm_imp;
-    MV Q (B.getMap (), restart+1);
+
+    bool zeroOut = false; 
+    MV Q (B.getMap (), restart+1, zeroOut);
+    vec_type R  (B.getMap (), zeroOut);
+    vec_type Y  (B.getMap (), zeroOut);
+    vec_type MP (B.getMap (), zeroOut);
     vec_type P = * (Q.getVectorNonConst (0));
-    vec_type R (B.getMap ());
-    vec_type Y (B.getMap ());
-    vec_type MP (B.getMap ());
 
     Teuchos::BLAS<LO ,SC> blas;
-    dense_matrix_type H (restart+1, restart, true);
-    dense_matrix_type T (restart+1, restart, true);
+    dense_matrix_type H (restart+1, restart,   true);
+    dense_matrix_type T (restart+1, restart+2, true);
     dense_vector_type y (restart+1, true);
     dense_vector_type z (restart+1, true);
     std::vector<mag_type> cs (restart);
@@ -397,6 +420,8 @@ private:
     y[0] = SC {r_norm};
     const int s = getStepSize ();
     // main loop
+    bool delayed_ortho = ((input.orthoType == "MGS" && input.needToReortho) ||
+                          (input.orthoType == "CGS2"));
     int iter = 0;
     while (output.numIters < input.maxNumIters && ! output.converged) {
       if (input.maxNumIters < output.numIters+restart) {
@@ -404,13 +429,6 @@ private:
       }
       // restart cycle
       for (; iter < restart && metric > input.tol; ++iter) {
-        if (outPtr != nullptr) {
-          *outPtr << "Current iteration: iter=" << iter
-                  << ", restart=" << restart
-                  << ", metric=" << metric << endl;
-          Indent indent3 (outPtr);
-        }
-
         // AP = A*P
         vec_type P  = * (Q.getVectorNonConst (iter));
         vec_type AP = * (Q.getVectorNonConst (iter+1));
@@ -435,26 +453,58 @@ private:
 
         // Orthogonalization
         projectAndNormalizeSingleReduce (iter, input, Q, H, T);
-        // Shift back for Newton basis
-        if (computeRitzValues) {
-          // H(iter, iter) += output.ritzValues[iter];
-          const complex_type theta = output.ritzValues[iter % s];
-          UpdateNewton<SC, MV>::updateNewtonH (iter, H, theta);
-        }
+
 
         // Convergence check
-        if (H(iter+1, iter) != zero) {
+        if (!delayed_ortho || iter > 0) {
+          int check = (delayed_ortho ? iter-1 : iter);
+          if (outPtr != nullptr) {
+            *outPtr << "Current iteration: iter=" << iter
+                    << ", restart=" << restart
+                    << ", metric=" << metric << endl;
+            Indent indent3 (outPtr);
+          }
+
+          // Shift back for Newton basis
+          if (computeRitzValues) {
+            const complex_type theta = output.ritzValues[check % s];
+            UpdateNewton<SC, MV>::updateNewtonH (check, H, theta);
+          }
+
+          if (H(check+1, check) != zero) {
+            // Apply Givens rotations to new column of H and y
+            this->reduceHessenburgToTriangular (check, H, cs, sn, y.values ());
+            // Convergence check
+            metric = this->getConvergenceMetric (STS::magnitude (y[check+1]),
+                                                 b_norm, input);
+          }
+          else {
+            H(check+1, check) = zero;
+            metric = STM::zero ();
+          }
+        }
+      } // end of restart cycle 
+      if (delayed_ortho) {
+        int check = iter-1;
+        // Shift back for Newton basis
+        if (computeRitzValues) {
+          const complex_type theta = output.ritzValues[check % s];
+          UpdateNewton<SC, MV>::updateNewtonH (check, H, theta);
+        }
+
+        if (H(check+1, check) != zero) {
           // Apply Givens rotations to new column of H and y
-          this->reduceHessenburgToTriangular (iter, H, cs, sn, y.values ());
+          this->reduceHessenburgToTriangular (check, H, cs, sn, y.values ());
           // Convergence check
-          metric = this->getConvergenceMetric (STS::magnitude (y[iter+1]),
+          metric = this->getConvergenceMetric (STS::magnitude (y[check+1]),
                                                b_norm, input);
         }
         else {
-          H(iter+1, iter) = zero;
+          H(check+1, check) = zero;
           metric = STM::zero ();
         }
-      } // end of restart cycle 
+      }
+
       if (iter < restart) {
         // save the old solution, just in case explicit residual norm failed the convergence test
         Tpetra::deep_copy (Y, X);
@@ -498,7 +548,7 @@ private:
       else if (output.numIters < input.maxNumIters) {
         // Restart, only if max inner-iteration was reached.
         // Otherwise continue the inner-iteration.
-        if (iter >= restart) {
+        if (iter >= restart || H(iter,iter-1) == zero) { // done with restart cycyle, or probably lost ortho
           // Initialize starting vector for restart
           iter = 0;
           P = * (Q.getVectorNonConst (0));
