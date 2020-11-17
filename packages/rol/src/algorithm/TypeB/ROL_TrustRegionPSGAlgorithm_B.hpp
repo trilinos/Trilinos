@@ -47,8 +47,6 @@
 #include "ROL_Algorithm_B.hpp"
 #include "ROL_TrustRegionModel_U.hpp"
 #include "ROL_TrustRegionUtilities.hpp"
-#include "ROL_NullSpaceOperator.hpp"
-#include "ROL_ReducedLinearConstraint.hpp"
 
 /** \class ROL::TrustRegionPSGAlgorithm_B
     \brief Provides an interface to run the trust-region algorithm of Lin and More.
@@ -106,15 +104,10 @@ private:
   Real sigma2_;
   int lsmax_;
   int maxSize_;
-  int maxProjIt_;
 
   mutable int nhess_;  ///< Number of Hessian applications
   unsigned verbosity_; ///< Output level (default: 0)
   bool printHeader_;   ///< Flag to print header at every iteration
-
-  bool hasEcon_;                            ///< Flag signifies if equality constraints exist
-  Ptr<ReducedLinearConstraint<Real>> rcon_; ///< Equality constraint restricted to current active variables
-  Ptr<NullSpaceOperator<Real>> ns_;         ///< Null space projection onto reduced equality constraint Jacobian
 
   using Algorithm_B<Real>::state_;
   using Algorithm_B<Real>::status_;
@@ -172,11 +165,11 @@ private:
   void dpsg(Vector<Real> &y, Real &q, Vector<Real> &gmod,
             const Vector<Real> &x, Real del, TrustRegionModel_U<Real> &model,
             Vector<Real> &pwa, Vector<Real> &pwa1, Vector<Real> &pwa2,
-            Vector<Real> &pwa3, Vector<Real> &pwa4, Vector<Real> &dwa,
+            Vector<Real> &pwa3, Vector<Real> &dwa,
             std::ostream &outStream = std::cout);
 
   void dproj(Vector<Real> &x, const Vector<Real> &x0, Real del,
-            Vector<Real> &y, Vector<Real> &p, Vector<Real> &q,
+            Vector<Real> &y, Vector<Real> &p,
             std::ostream &outStream = std::cout) const;
 
 }; // class ROL::TrustRegionPSGAlgorithm_B

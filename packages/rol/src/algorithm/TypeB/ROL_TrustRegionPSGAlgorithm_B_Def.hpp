@@ -90,7 +90,6 @@ TrustRegionPSGAlgorithm_B<Real>::TrustRegionPSGAlgorithm_B(ParameterList &list,
   rhodec_    = lmlist.sublist("PSG").get("Backtracking Rate",                          0.5);
   gamma_     = lmlist.sublist("PSG").get("Sufficient Decrease Tolerance",              1e-4);
   maxSize_   = lmlist.sublist("PSG").get("Maximum Storage Size",                       10);
-  maxProjIt_ = lmlist.sublist("PSG").get("Projection Iteration Limit",                 1000);
   maxit_     = lmlist.sublist("PSG").get("Iteration Limit",                            25);
   tol1_      = lmlist.sublist("PSG").get("Absolute Tolerance",                         1e-4);
   tol2_      = lmlist.sublist("PSG").get("Relative Tolerance",                         1e-2);
@@ -117,11 +116,8 @@ void TrustRegionPSGAlgorithm_B<Real>::initialize(Vector<Real>          &x,
                                                  BoundConstraint<Real> &bnd,
                                                  std::ostream &outStream) {
   const Real one(1);
-  hasEcon_ = true;
-  if (proj_ == nullPtr) {
+  if (proj_ == nullPtr)
     proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(bnd));
-    hasEcon_ = false;
-  }
   // Initialize data
   Algorithm_B<Real>::initialize(x,g);
   nhess_ = 0;
@@ -141,21 +137,10 @@ void TrustRegionPSGAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   state_->gnorm = state_->stepVec->norm();
   state_->snorm = ROL_INF<Real>();
   // Normalize initial CP step length
-  if (normAlpha_) {
-    alpha_ /= state_->gradientVec->norm();
-  }
+  if (normAlpha_) alpha_ /= state_->gradientVec->norm();
   // Compute initial trust region radius if desired.
-  if ( state_->searchSize <= static_cast<Real>(0) ) {
+  if ( state_->searchSize <= static_cast<Real>(0) )
     state_->searchSize = state_->gradientVec->norm();
-  }
-  // Initialize null space projection
-  if (hasEcon_) {
-    rcon_ = makePtr<ReducedLinearConstraint<Real>>(proj_->getLinearConstraint(),
-                                                   makePtrFromRef(bnd),
-                                                   makePtrFromRef(x));
-    ns_   = makePtr<NullSpaceOperator<Real>>(rcon_,x,
-                                             *proj_->getResidual());
-  }
 }
 
 template<typename Real>
@@ -171,8 +156,8 @@ std::vector<std::string> TrustRegionPSGAlgorithm_B<Real>::run(Vector<Real>      
   std::vector<std::string> output;
   initialize(x,g,obj,bnd,outStream);
   Ptr<Vector<Real>> gmod = g.clone();
-  Ptr<Vector<Real>> pwa1 = x.clone(), pwa2 = x.clone(), pwa3 = x.clone();
-  Ptr<Vector<Real>> pwa4 = x.clone(), pwa5 = x.clone();
+  Ptr<Vector<Real>> pwa1 = x.clone(), pwa2 = x.clone();
+  Ptr<Vector<Real>> pwa3 = x.clone(), pwa4 = x.clone();
   Ptr<Vector<Real>> dwa1 = g.clone(), dwa2 = g.clone();
 
   // Output
@@ -196,7 +181,7 @@ std::vector<std::string> TrustRegionPSGAlgorithm_B<Real>::run(Vector<Real>      
 
     // Apply PSG starting from the Cauchy point
     dpsg(x,q,*gmod,*state_->iterateVec,state_->searchSize,*model_,
-         *pwa1,*pwa2,*pwa3,*pwa4,*pwa5,*dwa1,outStream);
+         *pwa1,*pwa2,*pwa3,*pwa4,*dwa1,outStream);
     pRed = -q;
     state_->stepVec->set(x); state_->stepVec->axpy(-one,*state_->iterateVec);
     state_->snorm = state_->stepVec->norm();
@@ -254,8 +239,8 @@ std::vector<std::string> TrustRegionPSGAlgorithm_B<Real>::run(Vector<Real>      
 
 template<typename Real>
 Real TrustRegionPSGAlgorithm_B<Real>::dgpstep(Vector<Real> &s, const Vector<Real> &w,
-                                 const Vector<Real> &x, const Real alpha,
-                                 std::ostream &outStream) const {
+                                              const Vector<Real> &x, const Real alpha,
+                                              std::ostream &outStream) const {
   s.set(x); s.axpy(alpha,w);
   proj_->project(s,outStream);
   s.axpy(static_cast<Real>(-1),x);
@@ -264,14 +249,14 @@ Real TrustRegionPSGAlgorithm_B<Real>::dgpstep(Vector<Real> &s, const Vector<Real
 
 template<typename Real>
 Real TrustRegionPSGAlgorithm_B<Real>::dcauchy(Vector<Real> &s,
-                                       Real &alpha,
-                                       Real &q,
-                                       const Vector<Real> &x,
-                                       const Vector<Real> &g,
-                                       const Real del,
-                                       TrustRegionModel_U<Real> &model,
-                                       Vector<Real> &dwa, Vector<Real> &dwa1,
-                                       std::ostream &outStream) {
+                                              Real &alpha,
+                                              Real &q,
+                                              const Vector<Real> &x,
+                                              const Vector<Real> &g,
+                                              const Real del,
+                                              TrustRegionModel_U<Real> &model,
+                                              Vector<Real> &dwa, Vector<Real> &dwa1,
+                                              std::ostream &outStream) {
   const Real half(0.5);
   // const Real zero(0); // Unused
   Real tol = std::sqrt(ROL_EPSILON<Real>());
@@ -362,7 +347,6 @@ void TrustRegionPSGAlgorithm_B<Real>::dpsg(Vector<Real> &y,
                                            Vector<Real> &pwa1,
                                            Vector<Real> &pwa2,
                                            Vector<Real> &pwa3,
-                                           Vector<Real> &pwa4,
                                            Vector<Real> &dwa,
                                            std::ostream &outStream) {
   // Use PSG to approximately solve TR subproblem:
@@ -382,7 +366,7 @@ void TrustRegionPSGAlgorithm_B<Real>::dpsg(Vector<Real> &y,
   pwa1.set(gmod.dual());
   pwa.set(y);
   pwa.axpy(-one,pwa1);
-  dproj(pwa,x,del,pwa2,pwa3,pwa4,outStream);
+  dproj(pwa,x,del,pwa2,pwa3,outStream);
   pwa.axpy(-one,y);
   Real gnorm = pwa.norm();
   const Real gtol = std::min(tol1_,tol2_*gnorm);
@@ -390,7 +374,7 @@ void TrustRegionPSGAlgorithm_B<Real>::dpsg(Vector<Real> &y,
   // Compute initial step
   Real lambda = std::max(lambdaMin_,std::min(one/gmod.norm(),lambdaMax_));
   pwa.set(y); pwa.axpy(-lambda,pwa1);        // pwa = y - lambda gmod.dual()
-  dproj(pwa,x,del,pwa2,pwa3,pwa4,outStream); // pwa = P(y - lambda gmod.dual())
+  dproj(pwa,x,del,pwa2,pwa3,outStream); // pwa = P(y - lambda gmod.dual())
   pwa.axpy(-one,y);                          // pwa = P(y - lambda gmod.dual()) - y = step
   Real gs = gmod.apply(pwa);                 // gs  = <step, model gradient>
   Real ss = pwa.dot(pwa);                    // Norm squared of step
@@ -426,7 +410,7 @@ void TrustRegionPSGAlgorithm_B<Real>::dpsg(Vector<Real> &y,
     pwa1.set(gmod.dual());
     pwa.set(y);
     pwa.axpy(-one,pwa1);
-    dproj(pwa,x,del,pwa2,pwa3,pwa4,outStream);
+    dproj(pwa,x,del,pwa2,pwa3,outStream);
     pwa.axpy(-one,y);
     gnorm = pwa.norm();
 
@@ -442,7 +426,7 @@ void TrustRegionPSGAlgorithm_B<Real>::dpsg(Vector<Real> &y,
     // Compute new spectral step
     lambda = (sHs<=eps ? lambdaMax_ : std::max(lambdaMin_,std::min(ss/sHs,lambdaMax_)));
     pwa.set(y); pwa.axpy(-lambda,pwa1);
-    dproj(pwa,x,del,pwa2,pwa3,pwa4,outStream);
+    dproj(pwa,x,del,pwa2,pwa3,outStream);
     pwa.axpy(-one,y);
     gs = gmod.apply(pwa);
     ss = pwa.dot(pwa);
@@ -456,33 +440,29 @@ void TrustRegionPSGAlgorithm_B<Real>::dproj(Vector<Real> &x,
                                             Real del,
                                             Vector<Real> &y,
                                             Vector<Real> &p,
-                                            Vector<Real> &q,
                                             std::ostream &outStream) const {
-  const Real one(1), ctol(std::min(1e-2*std::sqrt(ROL_EPSILON<Real>()),1e-4*x0.norm()));
-  Real snorm(0), alpha(1), pnorm(0), qnorm(0), rnorm(0);
-
-  p.zero(); q.zero();
-  for (int i = 0; i < maxProjIt_; ++i) {
-    // y <-- P1(x + p) :: linear constraints projection
-    y.set(x); y.plus(p);
-    proj_->project(y,outStream);
-    // compute error between old and new p's
-    x.axpy(-one,y); pnorm = x.norm();
-    // p <-- x + p - y
-    p.plus(x);
-    // x <-- P2(y + q) :: trust region projection
-    x.set(y); x.plus(q); x.axpy(-one,x0);
-    snorm = x.norm();
-    alpha = (snorm > del ? del/snorm : one);
-    x.scale(alpha); x.plus(x0);
-    // compute error between old and new q's
-    y.axpy(-one,x); qnorm = y.norm();
-    // q <-- y + q - x
-    q.plus(y);
-    // Stopping condition
-    rnorm = std::sqrt(pnorm*pnorm + qnorm*qnorm);
-    if (rnorm <= ctol) break;
+  const Real half(0.5), one(1), tol(1e-2*std::sqrt(ROL_EPSILON<Real>()));
+  const Real fudge(1.0-1e-6);
+  Real e(0), a0(0), a1(1), a(0.5);
+  y.set(x);
+  proj_->project(y,outStream);
+  p.set(y); p.axpy(-one,x0);
+  e = p.norm();
+  if (e <= del) {
+    x.set(y);
+    return;
   }
+  while (a1-a0 > tol) {
+    y.set(x); y.scale(a); y.axpy(one-a,x0);
+    proj_->project(y,outStream);
+    p.set(y); p.axpy(-one,x0);
+    e = p.norm();
+    if (e < fudge*del) a0 = a; // Move lower end point
+    else if (e > del)  a1 = a; // Move upper end point
+    else               break;  // Exit if (1-1e-6)*del <= snorm <= del
+    a = a0 + half*(a1-a0);
+  }
+  x.set(y);
 }
 
 template<typename Real>
