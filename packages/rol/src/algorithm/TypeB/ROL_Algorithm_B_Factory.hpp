@@ -53,6 +53,7 @@
 #include "ROL_KelleySachsAlgorithm_B.hpp"
 #include "ROL_SpectralGradientAlgorithm_B.hpp"
 #include "ROL_QuasiNewtonAlgorithm_B.hpp"
+#include "ROL_TrustRegionPSGAlgorithm_B.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {
@@ -156,6 +157,8 @@ inline Ptr<Algorithm_B<Real>> AlgorithmBFactory(ParameterList &parlist) {
     case ALGORITHM_B_TRUSTREGION:
       if (trmod=="Kelley-Sachs")
         return makePtr<KelleySachsAlgorithm_B<Real>>(parlist);
+      else if (trmod=="PSG")
+        return makePtr<TrustRegionPSGAlgorithm_B<Real>>(parlist);
       else
         return makePtr<LinMoreAlgorithm_B<Real>>(parlist);
     case ALGORITHM_B_MOREAUYOSIDA:        return makePtr<MoreauYosidaAlgorithm_B<Real>>(parlist);
