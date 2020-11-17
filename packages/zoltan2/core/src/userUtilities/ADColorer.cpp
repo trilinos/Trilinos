@@ -1,24 +1,6 @@
-Zoltan2::TpetraCrsColorer<matrix_t> colorer(J);
-{
+#include "Zoltan2_TpetraCrsADColorer.hpp"
 
-  if (Jacobian)
-    if IanNotReady && !testZoltan2anyway
-      ZoltanCrsColorer(PartialDistance2)
-    else if IanReady || testZoltan2anyway
-      Zoltan2CrsColorer(PartialDistance2)
-
-  else if (Hessian)
-    // Hessian is already symmetric; 
-    // code currently still uses partial distance 2.
-    // Should use Distance2 instead?
-    if IanNotReady && !testZoltan2anyway
-      ZoltanCrsColorer(Distance2)
-    else if IanReady || testZoltan2anyway
-      Zoltan2CrsColorer(Distance2)
-
-
-}
-
+// Class to test the Colorer utility
 class ColorerTest {
 public:
   using map_t = Tpetra::Map<>;
@@ -27,6 +9,10 @@ public:
   using multivector_t = Tpetra::MultiVector<zscalar_t>;
 
   ///////////////////////////////////////////////////////////
+  // Construct the test:  
+  //   Read or generate a matrix with fitted range and domain maps
+  //   Construct identical matrix with non-fitted range and domain maps
+
   ColorerTest(Teuchos::RCP<const Teucho::Comm<int> > &comm) {
     // Process command line arguments
     bool distributeInput = true;
@@ -50,23 +36,29 @@ public:
     if (filename != "") {
       // Read from a file
       UserInputForTests uinput(".", filename, comm, true, distributeInput);
-      J = uinput.getUITpetraCrsMatrix();
+      JFitted = uinput.getUITpetraCrsMatrix();
     }
     else {
       // Generate a matrix
       UserInputForTests uinput(xdim, ydim, zdim, string("Laplace3D"), comm,
                                true, distributeInput);
-      J = uinput.getUITpetraCrsMatrix();
+      JFitted = uinput.getUITpetraCrsMatrix();
     }
 
-    vMapFitted = J->getDomainMap();
-    wMapFitted = J->getRangeMap();
+    // Build same matrix with non-fitted domain and range maps
 
-    size_t nIndices = std::max(J->getGlobalNumCols(), J->getGlobalNumRows()));
+    size_t nIndices = std::max(JFitted->getGlobalNumCols(),
+                               JFitted->getGlobalNumRows()));
     Teuchos::Array<gno_t> indices(nIndices);
 
-    vMapNotFitted = getNotFittedMap(J->getGlobalNumCols(), indices);
-    wMapNotFitted = getNotFittedMap(J->getGlobalNumRows(), indices);
+    Teuchos::RCP<const map_t> vMapNotFitted = 
+                       getNotFittedMap(JFitted->getGlobalNumCols(), indices);
+    Teuchos::RCP<const map_t> wMapNotFitted =
+                       getNotFittedMap(JFitted->getGlobalNumRows(), indices);
+
+    JNotFitted = rcp(new matrix_t(*JFitted));
+    JNotFitted->resumeFill();
+    JNotFitted->fillComplete(vMapNotFitted, wMapNotFitted);
   }
 
   ////////////////////////////////////////////////////////////////
@@ -94,11 +86,11 @@ public:
 
     // test with fitted maps
     ok = buildAndCheckSeedMatrix(testname, colorer, params, true);
-    printCheckStatus(testname, ok, params, true);
 
     // test with non-fitted maps
-    ok = buildAndCheckSeedMatrix(testname, colorer, params, false);
-    printCheckStatus(testname, ok, params);
+    ok &= buildAndCheckSeedMatrix(testname, colorer, params, false);
+
+    return ok;
   }
     
   
@@ -129,41 +121,35 @@ private:
   {
     bool ok = true;
 
-    // Pick maps for V, W depending on useFitted flag
-    Teuchos::RCP<const map_t> vmap, wmap;
-    if (useFitted) {
-      vmap = vMapFitted;
-      wmap = wMapFitted;
-    }
-    else {
-      vmap = vMapNotFitted;
-      wmap = wMapNotFitted;
-    } 
+    // Pick matrix depending on useFitted flag
+    Teuchos::RCP<const matrix_t> J = (useFitted ? JFitted : JNotFitted);
 
-    // Compute the seed matrix; applications want this matrix
+    // Compute the seed matrix; applications want this seed matrix
 
     int numColors = colorer.getNumColors();
-    multivector_t V(vmap, numColors);
+    multivector_t V(J->getDomainMap(), numColors);
 
     colorer.computeSeedMatrix(V);
 
     // To test the result...
     // Compute compression vector
-    multivector_t W(wmap, numColors);  // W is the compressed matrix
+    multivector_t W(J->getRangeMap(), numColors);  // W is the compressed matrix
   
     J->apply(W, V);
 
     // Reconstruct matrix from compression vector
     // TODO matrix_t Jp();
     // TODO colorer.reconstructMatrix(W, Jp);
+    // TODO KDD:  I do not understand the operation here
   
     // Check J = Jp somehow
     // KDD is there a way to do this comparison in Tpetra?
 
     if (!ok) {
       if (me == 0) {
-        std::cout << testname << " FAILED:  "
-                  << " fitted=" << useFitted << std::endl;
+        std::cout << testname << " FAILED "
+                  << (useFitted ? "with fitted maps" : "with non-fitted maps")
+                  << std::endl;
         params.print();
       }
     }
@@ -173,17 +159,14 @@ private:
 
   ////////////////////////////////////////////////////////////////
   // Input matrix -- built in Constructor
-  Teuchos::RCP<const matrix_t> J;
+  Teuchos::RCP<const matrix_t> JFitted;     // has locally fitted domain and 
+                                            // range maps
+  Teuchos::RCP<const matrix_t> JNotFitted;  // does NOT have locally fitted
+                                            // domain and range maps
+};
 
-  // Test with V and W having maps that are LocallyFitted
-  Teuchos::RCP<const map_t> vMapFitted;
-  Teuchos::RCP<const map_t> wMapFitted;
 
-  // Test with V and W having NOT maps that are LocallyFitted
-  Teuchos::RCP<const map_t> vMapNotFitted;
-  Teuchos::RCP<const map_t> wMapNotFitted;
-}
-
+///////////////////////////////////////////////////////////////////////////////
 int main(int narg, char **arg)
 {
   Tpetra::ScopeGuard scope(narg, arg);
@@ -208,23 +191,25 @@ int main(int narg, char **arg)
     if (!ok) ierr++;
   }
 
+//Through cmake...
+//Test cases -- UserInputForTests can generate Galeri or read files:
+//-  tri-diagonal matrix -- can check the number of colors
+//-  galeri matrix
+//-  read from file:  symmetric matrix and non-symmetric matrix
 
+//Through code ...
+//Test with fitted and non-fitted maps  DONE
+//Call regular and fitted versions of functions
+
+//Through code ...
+//Test both with and without Symmetrize -- 
+//test both to exercise both sets of callbacks in Zoltan
+// --matrixType = Jacobian/Hessian
+// --symmetric, --no-symmetric
+// --symmetrize, --no-symmetrize
+
+//Through cmake
+//Test both with and without distributeInput
+// --distribute, --no-distribute
 
 }
-
-Test cases -- UserInputForTests can generate Galeri or read files:
--  tri-diagonal matrix -- can check the number of colors
--  galeri matrix
--  read from file:  symmetric matrix and non-symmetric matrix
-
-Test with fitted and non-fitted maps
-Call regular and fitted versions of functions
-
-Test both with and without Symmetrize -- 
-test both to exercise both sets of callbacks in Zoltan
- --symmetric, --no-symmetric
- --symmetrize, --no-symmetrize
-
-Test both with and without distributeInput
- --distribute, --no-distribute
-
