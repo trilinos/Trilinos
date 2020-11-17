@@ -12,7 +12,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> myTypes_t;
+typedef Zoltan2::BasicUserTypes <zscalar_t, zlno_t, zgno_t> myTypes_t;
 
 #ifdef HAVE_ZOLTAN2_SARMA
 
@@ -27,7 +27,12 @@ struct Parameters {
     bool triangular = false, use_data = false;
 };
 
-auto testFromFile(const RCP<const Teuchos::Comm<int> > &comm, int nparts, std::string &filename, bool doRemap, Parameters &sarma) {
+const static std::vector<std::pair<Parameters, std::vector<Ordinal> > > expected = {
+        {{.alg="opal"}, {0, 48, 94, 143, 175, 218, 257, 295, 332, 0, 48, 94, 143, 175, 218, 257, 295, 332}}
+};
+
+auto testFromFile(const RCP<const Teuchos::Comm<int> > &comm, int nparts, std::string &filename, bool doRemap,
+                  const Parameters sarma) {
     int me = comm->getRank();
 
     UserInputForTests userInputForTests(testDataFilePath, filename, comm, false, true);
@@ -51,9 +56,15 @@ auto testFromFile(const RCP<const Teuchos::Comm<int> > &comm, int nparts, std::s
 
     // Sarma params
     Teuchos::ParameterList &sparams = params.sublist("sarma_parameters", false);
-    sparams.set("alg", "opal");
-    sparams.set("row_parts", nparts);
-
+    sparams.set("alg", sarma.alg);
+    sparams.set("order", sarma.order_str);
+    sparams.set("row_parts", sarma.row_parts);
+    sparams.set("col_parts", sarma.col_parts);
+    sparams.set("max_load", sarma.max_load);
+    sparams.set("sparsify", sarma.sparsify);
+    sparams.set("triangular", sarma.triangular);
+    sparams.set("use_data", sarma.use_data);
+    sparams.set("seed", sarma.seed);
 
     #ifdef HAVE_ZOLTAN2_MPI
     Zoltan2::PartitioningProblem<xCM_tCM_t> problem(&matrixAdapter, &params, comm);
@@ -78,46 +89,29 @@ int main(int argc, char *argv[]) {
     RCP<const Teuchos::Comm<int> > tcomm = Tpetra::getDefaultComm();
 
     Parameters params;
-    params.alg = "opal";
 
     int nParts = 8;
     bool doRemap = false;
     std::string filename = "USAir97";
 
     // Run-time options
-    Teuchos::CommandLineProcessor cmdp(false, false);
-    cmdp.setOption("file", &filename);
-    cmdp.setOption("nparts", &nParts);
-    cmdp.setOption("remap", "no-remap", &doRemap);
-    cmdp.parse(argc, argv);
 
-    auto zsoln = testFromFile(tcomm, nParts, filename, doRemap, params);
+    for (auto test : expected){
 
-    // compare zoltan vs raw
-    std::ofstream null;
-    null.setstate(std::ios_base::badbit);
-    const auto algs = sarma::get_algorithm_map<Ordinal,Value>();
-    const auto parts = sarma::Run<Ordinal, Value>(algs.at(params.alg).first, null, filename + ".mtx", params.order_type, params.row_parts, params.col_parts, params.max_load, params.triangular,
-                                                   false, params.sparsify, algs.at(params.alg).second, params.use_data, params.seed);
+        auto zsoln = testFromFile(tcomm, nParts, filename, doRemap, test.first);
 
-    const auto &p = parts.first;
-    const auto &q = parts.second;
+        // compare zoltan vs raw
 
-    const int *zparts = zsoln.getPartListView();
-    for (int i = 0; i < p.size(); ++i) {
-        if (zparts[i] != (int) p[i]) {
-            std::cerr << "Not same";
-            return EXIT_FAILURE;
-        }
-    }
-    for (int i = p.size(); i < p.size() + q.size(); ++i) {
-        if (zparts[i] != (int) q[i-p.size()]) {
-            std::cerr << "Not Same";
-            return EXIT_FAILURE;
+        const int *zparts = zsoln.getPartListView();
+        for (unsigned i = 0; i < test.second.size(); ++i) {
+            if (zparts[i] != (int) test.second[i]) {
+                std::cout << "FAIL" << std::endl;
+                return EXIT_FAILURE;
+            }
         }
     }
     #endif
-    std::cout << "PASS\n";
+    std::cout << "PASS" << std::endl;
 
     return EXIT_SUCCESS;
 }

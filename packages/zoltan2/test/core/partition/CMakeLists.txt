@@ -211,8 +211,8 @@ ENDIF()
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     sarmaTest
     SOURCES partition_sarma.cpp
-    NUM_MPI_PROCS 1
     COMM serial mpi
+    NUM_MPI_PROCS 1
     ARGS
     ""
     PASS_REGULAR_EXPRESSION "PASS"
