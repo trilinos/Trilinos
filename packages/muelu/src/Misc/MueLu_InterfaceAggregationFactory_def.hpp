@@ -346,15 +346,17 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   Array<GlobalOrdinal> local_dualDofId2primalDofId(primalInterfaceDofRowMap->getGlobalNumElements(), -GO_ONE);
 
   // Fill mapping of Lagrange Node IDs to displacement aggregate IDs
-  for (size_t r = 0; r < primalInterfaceDofRowMap->getNodeNumElements(); r += numDofsPerPrimalNode)
+  const size_t numMyPrimalInterfaceDOFs = primalInterfaceDofRowMap->getNodeNumElements();
+  for (size_t r = 0; r < numMyPrimalInterfaceDOFs; r += numDofsPerPrimalNode)
   {
     GlobalOrdinal gPrimalRowId = primalInterfaceDofRowMap->getGlobalElement(r);
 
     if (A01->getRowMap()->isNodeGlobalElement(gPrimalRowId)) // Remove this if?
     {
       const LocalOrdinal lPrimalRowId = A01->getRowMap()->getLocalElement(gPrimalRowId);
-      const GlobalOrdinal gPrimalNodeId = AmalgamationFactory::DOFGid2NodeId(gPrimalRowId, primalBlockDim, primalDofOffset, 0);
-      const LocalOrdinal primalAggId = primalVertex2AggId[gPrimalNodeId];
+      const GlobalOrdinal gPrimalNodeId = AmalgamationFactory::DOFGid2NodeId(gPrimalRowId, primalBlockDim, primalDofOffset, primalInterfaceDofRowMap->getIndexBase());
+      const LocalOrdinal lPrimalNodeId = lPrimalRowId / numDofsPerPrimalNode;
+      const LocalOrdinal primalAggId = primalVertex2AggId[lPrimalNodeId];
 
       const GlobalOrdinal gDualDofId = A01->getColMap()->getGlobalElement(r);
 
