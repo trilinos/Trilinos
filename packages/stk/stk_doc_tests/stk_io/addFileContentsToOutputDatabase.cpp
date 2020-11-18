@@ -123,9 +123,10 @@ TEST(StkMeshIoBrokerHowTo, addFileContentsToOutputDatabase)
       // data that follows (1) File contains 4 records; 1 is longer than 
       // 80 characters, so it wraps (4+1) Next line is the
       // "additional_info_record" added above (1)
-      // Last records are the IOSS configuration summary (35).
-      size_t expected_info_record_count = 2 + 35 + (4+1)  + 1 + 1;
-      EXPECT_EQ(expected_info_record_count, info_records.size());
+      // Last records are the IOSS configuration summary (variable).
+      //
+      // Don't check size of info records since that can change; 
+      // Just verify that what we wrote was written
 
       EXPECT_STREQ(input_file.c_str(), info_records[2].c_str());
 
