@@ -437,7 +437,7 @@ TpetraCrsColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::computeSeedMatrixFitted(
           V_view_dev(i*block_size+j, (my_list_of_colors[i]-1)*block_size+j) = 
                                      scalar_t(1.0);
       },
-      "TpetraCrsColorer::computeSeedMatrixOverlapped()");
+      "TpetraCrsColorer::computeSeedMatrixFitted()");
 
   V.modify_device();
 }

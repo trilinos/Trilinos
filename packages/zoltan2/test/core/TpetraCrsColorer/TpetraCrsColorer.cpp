@@ -12,8 +12,8 @@ public:
 
   ///////////////////////////////////////////////////////////
   // Construct the test:  
-  //   Read or generate a matrix with fitted range and domain maps
-  //   Construct identical matrix with non-fitted range and domain maps
+  //   Read or generate a matrix (JBlock) with default range and domain maps
+  //   Construct identical matrix (JCyclic) with cyclic range and domain maps
 
   ColorerTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm,
               int narg, char**arg)
@@ -21,7 +21,7 @@ public:
     // Process command line arguments
     bool distributeInput = true;
     std::string filename = "";
-    size_t xdim = 1, ydim = 1, zdim = 1;
+    size_t xdim = 10, ydim = 11, zdim = 12;
 
     Teuchos::CommandLineProcessor cmdp(false, false);
     cmdp.setOption("file", &filename, 
@@ -40,29 +40,29 @@ public:
     if (filename != "") {
       // Read from a file
       UserInputForTests uinput(".", filename, comm, true, distributeInput);
-      JFitted = uinput.getUITpetraCrsMatrix();
+      JBlock = uinput.getUITpetraCrsMatrix();
     }
     else {
       // Generate a matrix
       UserInputForTests uinput(xdim, ydim, zdim, string("Laplace3D"), comm,
                                true, distributeInput);
-      JFitted = uinput.getUITpetraCrsMatrix();
+      JBlock = uinput.getUITpetraCrsMatrix();
     }
 
-    // Build same matrix with non-fitted domain and range maps
+    // Build same matrix with cyclic domain and range maps
 
-    size_t nIndices = std::max(JFitted->getGlobalNumCols(),
-                               JFitted->getGlobalNumRows());
+    size_t nIndices = std::max(JBlock->getGlobalNumCols(),
+                               JBlock->getGlobalNumRows());
     Teuchos::Array<gno_t> indices(nIndices);
 
-    Teuchos::RCP<const map_t> vMapNotFitted = 
-                 getNotFittedMap(JFitted->getGlobalNumCols(), indices, comm);
-    Teuchos::RCP<const map_t> wMapNotFitted =
-                 getNotFittedMap(JFitted->getGlobalNumRows(), indices, comm);
+    Teuchos::RCP<const map_t> vMapCyclic = 
+                 getCyclicMap(JBlock->getGlobalNumCols(), indices, comm);
+    Teuchos::RCP<const map_t> wMapCyclic =
+                 getCyclicMap(JBlock->getGlobalNumRows(), indices, comm);
 
-    JNotFitted = rcp(new matrix_t(*JFitted));
-    JNotFitted->resumeFill();
-    JNotFitted->fillComplete(vMapNotFitted, wMapNotFitted);
+    JCyclic = rcp(new matrix_t(*JBlock));
+    JCyclic->resumeFill();
+    JCyclic->fillComplete(vMapCyclic, wMapCyclic);
   }
 
   ////////////////////////////////////////////////////////////////
@@ -70,10 +70,10 @@ public:
 
     bool ok = true;
 
-    // test with fitted maps
+    // test with default maps
     ok = buildAndCheckSeedMatrix(testname, params, true);
 
-    // test with non-fitted maps
+    // test with cyclic maps
     ok &= buildAndCheckSeedMatrix(testname, params, false);
 
     return ok;
@@ -84,7 +84,7 @@ private:
 
   ////////////////////////////////////////////////////////////////
   // Return a map that is cyclic (like dealing rows to processors)
-  Teuchos::RCP<const map_t> getNotFittedMap(
+  Teuchos::RCP<const map_t> getCyclicMap(
     size_t nIndices, 
     Teuchos::Array<gno_t> &indices,
     const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
@@ -106,18 +106,18 @@ private:
   bool buildAndCheckSeedMatrix(
     const char *testname,
     Teuchos::ParameterList &params,
-    const bool useFitted
+    const bool useBlock
   )
   {
     bool ok = true;
 
-    // Pick matrix depending on useFitted flag
-    Teuchos::RCP<matrix_t> J = (useFitted ? JFitted : JNotFitted);
+    // Pick matrix depending on useBlock flag
+    Teuchos::RCP<matrix_t> J = (useBlock ? JBlock : JCyclic);
     int me = J->getRowMap()->getComm()->getRank();
 
     if (me == 0)
       std::cout << "Running " << testname << " with "
-                << (useFitted ? "fitted maps" : "non-fitted maps")
+                << (useBlock ? "Block maps" : "Cyclic maps")
                 << std::endl;
 
     // Create a colorer
@@ -160,8 +160,8 @@ private:
 
     if (!ok) {
       if (me == 0) {
-        std::cout << testname << " FAILED "
-                  << (useFitted ? "with fitted maps" : "with non-fitted maps")
+        std::cout << testname << " FAILED with "
+                  << (useBlock ? "Block maps" : "Cyclic maps")
                   << std::endl;
         params.print();
       }
@@ -172,10 +172,8 @@ private:
 
   ////////////////////////////////////////////////////////////////
   // Input matrix -- built in Constructor
-  Teuchos::RCP<matrix_t> JFitted;     // has locally fitted domain and 
-                                      // range maps
-  Teuchos::RCP<matrix_t> JNotFitted;  // does NOT have locally fitted
-                                      // domain and range maps
+  Teuchos::RCP<matrix_t> JBlock;   // has Trilinos default domain and range maps
+  Teuchos::RCP<matrix_t> JCyclic;  // has cyclic domain and range maps
 };
 
 
@@ -242,7 +240,7 @@ int main(int narg, char **arg)
 //-  read from file:  symmetric matrix and non-symmetric matrix
 
 //Through code ...
-//Test with fitted and non-fitted maps  DONE
+//Test with fitted and non-fitted maps 
 //Call regular and fitted versions of functions
 
 //Through code ...
