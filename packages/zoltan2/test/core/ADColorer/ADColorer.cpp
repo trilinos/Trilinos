@@ -199,7 +199,7 @@ int main(int narg, char **arg)
     if (!ok) ierr++;
   }
 
-  if (ok)
+  if (ierr == 0)
     std::cout << "TEST PASSED" << std::endl;
 
 //Through cmake...
