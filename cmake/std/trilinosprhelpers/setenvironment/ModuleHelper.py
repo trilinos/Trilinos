@@ -111,6 +111,10 @@ except ImportError:
         (output,stderr) = proc.communicate()
         errcode = proc.returncode
 
+        # Convert the bytes into UTF-8 strings
+        output = output.decode()
+        stderr = stderr.decode()
+
         if errcode:
             print("")
             print("Failed to execute the module command: {}".format(" ".join(cmd[2:])))
@@ -118,25 +122,25 @@ except ImportError:
         else:
             try:
                 # This is where we _actually_ execute the module command body.
-                pGlobals = {}
-                pLocals  = {}
-                exec(output, pGlobals, pLocals)
+                exec(output)
 
                 # Check for _mlstatus = True/False (set by some versions of modulecmd)
-                if "_mlstatus" in pLocals:
-                    if pLocals["_mlstatus"] == False:
+                if "_mlstatus" in locals():
+                    if locals()["_mlstatus"] == False:
                         print("")
                         print("modulecmd set _mlstatus == False, command failed")
                         print("")
                         errcode = 1
 
             except BaseException as error:
+                print("")
                 print("An ERROR occurred during execution of module commands")
+                print("exec() code:")
+                print("```")
+                print(output)
+                print("```")
+                print("")
                 raise error
-
-        # Convert the bytes into UTF-8 strings
-        output = output.decode()
-        stderr = stderr.decode()
 
         # Check for success... module tends to return 0 regardless of outcome
         # so we'll have a look at the stderr for indications that there was a
