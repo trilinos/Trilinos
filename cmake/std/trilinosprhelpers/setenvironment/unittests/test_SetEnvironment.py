@@ -39,6 +39,12 @@ from trilinosprhelpers.setenvironment import SetEnvironment
 #
 #===============================================================================
 
+def mock_module_noreturn(*args):
+    """
+    Mock the module() command that has no return value.
+    """
+    print("\nmock> module({}) ==> NoneType".format(args))
+
 
 def mock_module_pass(*args):
     """
@@ -239,7 +245,7 @@ class SetEnvironmentTest(TestCase):
                 output = os.path.join(dirpath, filename)
                 break
         if output is None:
-            raise FileNotFoundError("Unable to find {} in {}".format(filename, os.getcwd()))
+            raise FileNotFoundError("Unable to find {} in {}".format(filename, os.getcwd()))        # pragma: no cover
         return output
 
 
@@ -553,6 +559,28 @@ class SetEnvironmentTest(TestCase):
         # cleanup
         del os.environ["SETENVIRONMENT_TEST_ENVVAR_001"]
         del os.environ["SETENVIRONMENT_HIDDEN_ENVVAR_001"]
+
+
+    def test_SetEnvironment_module_returns_NoneType(self):
+        """
+        Test handling of errors when the ModuleHelper.module() command has no
+        return value (i.e., it returns a NoneType)
+
+        This mimics the NoneType returned by the lmod based `module()` command
+        which does not return anything. We now handle this through the addition
+        of a wrapper for lmod modules that always returns a value but in case
+        we ever have a module operation that returns NoneType we check the
+        type. This test forces `apply()` to follow that exception branch.
+        """
+        setEnv = SetEnvironment(self._filename, "TEST_PROFILE_001")
+        setEnv.actions = {'setenv': None,
+                          'unsetenv': None,
+                          'module-op': [ ['load','a','b'] ],
+                          'module-list': None
+                          }
+        with self.assertRaises(TypeError):
+            with patch('trilinosprhelpers.setenvironment.ModuleHelper.module', side_effect=mock_module_noreturn):
+                setEnv.apply()
 
 
     def _setEnv_test(self, filename, profile, truth=None, module_fail=False):

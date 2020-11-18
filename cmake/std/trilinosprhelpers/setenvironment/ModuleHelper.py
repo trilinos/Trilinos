@@ -112,14 +112,26 @@ except ImportError:
         errcode = proc.returncode
 
         if errcode:
+            print("")
             print("Failed to execute the module command: {}".format(" ".join(cmd[2:])))
             print("- Returned {} exit status.".format(errcode))
         else:
             try:
                 # This is where we _actually_ execute the module command body.
-                exec(output)
+                pGlobals = {}
+                pLocals  = {}
+                exec(output, pGlobals, pLocals)
+
+                # Check for _mlstatus = True/False (set by some versions of modulecmd)
+                if "_mlstatus" in pLocals:
+                    if pLocals["_mlstatus"] == False:
+                        print("")
+                        print("modulecmd set _mlstatus == False, command failed")
+                        print("")
+                        errcode = 1
+
             except BaseException as error:
-                print("An ERROR occurred during execution of module command")
+                print("An ERROR occurred during execution of module commands")
                 raise error
 
         # Convert the bytes into UTF-8 strings
@@ -130,8 +142,9 @@ except ImportError:
         # so we'll have a look at the stderr for indications that there was a
         # problem.
         if "ERROR:" in stderr:
-            errcode = 1
-        elif "_mlstatus = False" in stderr:
+            print("")
+            print("An unknown error occurred in modulecmd.")
+            print("")
             errcode = 1
 
         if errcode:
@@ -149,5 +162,4 @@ except ImportError:
             raise TypeError("ERROR: the errorcode can not be `None`")
 
         return errcode
-
 
