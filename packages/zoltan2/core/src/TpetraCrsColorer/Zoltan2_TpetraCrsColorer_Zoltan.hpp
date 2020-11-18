@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Zoltan2_TpetraCrsADColorer.hpp"
-#include "Zoltan2_TpetraCrsADColorerUtils.hpp"
+#include "Zoltan2_TpetraCrsColorerUtils.hpp"
 
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayView.hpp"
@@ -81,7 +80,7 @@ private:
       Tpetra::LookupStatus ret = 
               graph->getRowMap()->getRemoteIndexList(gids, col_procs());
       TEUCHOS_TEST_FOR_EXCEPTION(ret != Tpetra::AllIDsPresent, std::logic_error,
-                                 "Zoltan2::CrsADColorer: getRemoteIndexList() "
+                                 "Zoltan2::CrsColorer: getRemoteIndexList() "
                                  "failed!");
 
       if (trans_graph != Teuchos::null)
@@ -92,7 +91,7 @@ private:
                                                            trans_col_procs());
         TEUCHOS_TEST_FOR_EXCEPTION(ret != Tpetra::AllIDsPresent,
                                    std::logic_error,
-                                   "Zoltan2::CrsADColorer getRemoteIndexList() "
+                                   "Zoltan2::CrsColorer getRemoteIndexList() "
                                    "failed!");
       }
     }

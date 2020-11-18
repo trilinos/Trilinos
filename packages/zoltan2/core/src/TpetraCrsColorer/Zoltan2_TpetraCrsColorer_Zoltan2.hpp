@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Zoltan2_TpetraCrsADColorer.hpp"
-
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_TestForException.hpp"
 

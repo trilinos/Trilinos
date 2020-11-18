@@ -1,8 +1,8 @@
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      ADColorer
-      NAME ADColorer_simple
-      SOURCES ADColorer.cpp
+      TpetraCrsColorer
+      NAME TpetraCrsColorer_simple
+      SOURCES TpetraCrsColorer.cpp
       ARGS "--file=simple"
       COMM serial mpi
       PASS_REGULAR_EXPRESSION "PASS"
@@ -10,8 +10,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     )
 
 TRIBITS_ADD_TEST(
-      ADColorer
-      NAME ADColorer_simple_nodistrib
+      TpetraCrsColorer
+      NAME TpetraCrsColorer_simple_nodistrib
       ARGS "--file=simple --no-distribute"
       COMM serial mpi
       PASS_REGULAR_EXPRESSION "PASS"
@@ -20,8 +20,8 @@ TRIBITS_ADD_TEST(
 
 IF (${PROJECT_NAME}_ENABLE_Galeri)
 TRIBITS_ADD_TEST(
-    ADColorer
-    NAME ADColorer_galeri
+    TpetraCrsColorer
+    NAME TpetraCrsColorer_galeri
     ARGS "--xdim=20 --ydim=16 --zdim=10"
     COMM serial mpi
     PASS_REGULAR_EXPRESSION "PASS"

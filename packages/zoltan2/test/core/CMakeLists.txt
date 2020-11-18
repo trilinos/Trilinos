@@ -2,7 +2,7 @@ ADD_SUBDIRECTORIES(
 unit
 partition
 order
-ADColorer
+TpetraCrsColorer
 color
 scaling
 correctness

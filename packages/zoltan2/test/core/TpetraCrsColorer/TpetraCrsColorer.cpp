@@ -1,6 +1,6 @@
 #include "Tpetra_Core.hpp"
 #include "Zoltan2_TestHelpers.hpp"
-#include "Zoltan2_TpetraCrsADColorer.hpp"
+#include "Zoltan2_TpetraCrsColorer.hpp"
 
 // Class to test the Colorer utility
 class ColorerTest {
@@ -121,7 +121,7 @@ private:
                 << std::endl;
 
     // Create a colorer
-    Zoltan2::TpetraCrsADColorer<matrix_t> colorer(J);
+    Zoltan2::TpetraCrsColorer<matrix_t> colorer(J);
 
     colorer.computeColoring(params);
 
