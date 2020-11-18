@@ -956,8 +956,10 @@ namespace Tpetra {
             /// in other words, numRowEntries should be populated when the lclGraph is complted.
             /// now I know why we do this. there is storage pack and unpack state. 
             /// do we need this state as well as fill complete ?  
-#endif
+            return k_rowPtrs_InternalHost_(lclNumRows);
+#else
             return ::Tpetra::Details::getEntryOnHost (this->lclGraph_.row_map, lclNumRows);
+#endif
           }
         }
         else { // k_numRowEntries_ is populated
@@ -1062,7 +1064,11 @@ namespace Tpetra {
           return static_cast<size_t> (0);
         }
         else {
+#if defined(TPETRA_KYUNGJOO)
+          return this->k_rowPtrs_InternalHost_(lclNumRows);
+#else
           return ::Tpetra::Details::getEntryOnHost (this->lclGraph_.row_map, lclNumRows);
+#endif
         }
       }
       else if (storageStatus_ == Details::STORAGE_1D_UNPACKED) {
@@ -1070,11 +1076,7 @@ namespace Tpetra {
           return static_cast<size_t> (0);
         }
         else {
-#if defined(TPETRA_KYUNGJOO)
-          return this->k_rowPtrs_InternalHost_(lclNumRows);
-#else
           return ::Tpetra::Details::getEntryOnHost (this->k_rowPtrs_, lclNumRows);
-#endif
         }
       }
       else {
@@ -1347,6 +1349,30 @@ namespace Tpetra {
 #if defined(TPETRA_KYUNGJOO)
     printf("getLocalView: this can rely on uvm\n");
 #endif
+
+#if defined(TPETRA_KYUNGJOO)
+    typedef LocalOrdinal LO;
+    typedef Kokkos::View<const LO*, device_type,
+      Kokkos::MemoryUnmanaged> row_view_type;
+
+    if (rowinfo.allocSize == 0) {
+      return Teuchos::ArrayView<const LO> ();
+    }
+    else { // nothing in the row to view
+      if (k_lclInds1D_InternalHost_.extent (0) != 0) { // 1-D storage
+        const size_t start = rowinfo.offset1D;
+        const size_t len = rowinfo.allocSize;
+        const std::pair<size_t, size_t> rng (start, start + len);
+        const auto rowView = Kokkos::subview (k_lclInds1D_InternalHost_, rng);
+        const LO* const rowViewRaw = (len == 0) ? nullptr : rowView.data ();
+        return Teuchos::ArrayView<const LO> (rowViewRaw, len, Teuchos::RCP_DISABLE_NODE_LOOKUP);
+
+      }
+      else {
+        return Teuchos::ArrayView<const LO> (); // nothing in the row to view
+      }
+    }    
+#else /// why why why ???? why do this wrap device view with teuchos array..... ??????
     using Kokkos::subview;
     typedef LocalOrdinal LO;
     typedef Kokkos::View<const LO*, device_type,
@@ -1374,6 +1400,7 @@ namespace Tpetra {
         return Teuchos::ArrayView<const LO> (); // nothing in the row to view
       }
     }
+#endif
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1553,7 +1580,10 @@ namespace Tpetra {
       return row_view_type ();
     }
     else { // nothing in the row to view
-      if (k_lclInds1D_InternalHost_.extent (0) != 0) { // 1-D storage
+      if (k_lclInds1D_.extent (0) != 0) { // 1-D storage
+        /// this is bad....
+        const auto k_lclInds1D = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_lclInds1D_);
+
         const size_t start = rowInfo.offset1D;
         const size_t len = rowInfo.allocSize;
         const std::pair<size_t, size_t> rng (start, start + len);
@@ -1562,7 +1592,7 @@ namespace Tpetra {
         // _managed_ subview, then returns an unmanaged version of
         // that.  That touches the reference count, which costs
         // performance in a measurable way.
-        return Kokkos::subview (row_view_type (k_lclInds1D_InternalHost_), rng);
+        return Kokkos::subview (row_view_type (k_lclInds1D), rng);
       }
       else {
         return row_view_type (); // nothing in the row to view
@@ -1586,7 +1616,8 @@ namespace Tpetra {
       return row_view_type ();
     }
     else { // nothing in the row to view
-      if (k_lclInds1D_InternalHost_.extent (0) != 0) { // 1-D storage
+      if (k_lclInds1D_.extent (0) != 0) { // 1-D storage
+        const auto k_lclInds1D = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_lclInds1D_);
         const size_t start = rowInfo.offset1D;
         const size_t len = rowInfo.allocSize;
         const std::pair<size_t, size_t> rng (start, start + len);
@@ -1595,7 +1626,7 @@ namespace Tpetra {
         // _managed_ subview, then returns an unmanaged version of
         // that.  That touches the reference count, which costs
         // performance in a measurable way.
-        return Kokkos::subview (row_view_type (this->k_lclInds1D_InternalHost_), rng);
+        return Kokkos::subview (row_view_type (k_lclInds1D), rng);
       }
       else {
         return row_view_type (); // nothing in the row to view
@@ -1660,12 +1691,22 @@ namespace Tpetra {
       // _managed_ subview, then returns an unmanaged version of
       // that.  That touches the reference count, which costs
       // performance in a measurable way.
+#if defined(TPETRA_KYUNGJOO)
+      /// this really needs overhaul
+      using row_view_type = Kokkos::View<const GO*,
+         Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+      row_view_type k_gblInds1D_unmanaged = k_gblInds1D_InternalHost_;
+      using Kokkos::Compat::getConstArrayView;
+      using Kokkos::subview;
+      view = getConstArrayView (subview (k_gblInds1D_unmanaged, rng));      
+#else /// here again it uses device memory and wrap it with teuchos array
       using row_view_type = Kokkos::View<const GO*,
         device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
       row_view_type k_gblInds1D_unmanaged = k_gblInds1D_;
       using Kokkos::Compat::getConstArrayView;
       using Kokkos::subview;
       view = getConstArrayView (subview (k_gblInds1D_unmanaged, rng));
+#endif
     }
     return view;
   }
@@ -2062,6 +2103,10 @@ namespace Tpetra {
 #if defined(TPETRA_KYUNGJOO)
     size_t numInserted = Details::insertCrsIndices(lclRow, k_rowPtrs_InternalHost_,
       this->k_gblInds1D_InternalHost_, numEntries, inputInds, fun);
+    /// just make it work..... this should be deep copied in fill completes
+    /// we need to precisely define entering and exiting conditions
+    Kokkos::deep_copy(this->k_rowPtrs_, this->k_rowPtrs_InternalHost_);
+    Kokkos::deep_copy(this->k_gblInds1D_, this->k_gblInds1D_InternalHost_);
 #else
     size_t numInserted = Details::insertCrsIndices(lclRow, k_rowPtrs_,
       this->k_gblInds1D_, numEntries, inputInds, fun);
@@ -2088,8 +2133,13 @@ namespace Tpetra {
       verbosePrintArray(os, inputGblColIndsView, "Input global "
                         "column indices", maxNumToPrint);
       os << ", ";
+#if defined(TPETRA_KYUNGJOO)
+      const GO* const curGblColInds =
+        k_gblInds1D_InternalHost_.data() + rowInfo.offset1D;
+#else /// why do we access pointer ????? this is device pointer....
       const GO* const curGblColInds =
         k_gblInds1D_.data() + rowInfo.offset1D;
+#endif
       ArrayView<const GO> curGblColIndsView(curGblColInds,
                                             rowInfo.numEntries);
       verbosePrintArray(os, curGblColIndsView, "Current global "
@@ -2097,7 +2147,6 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (true, std::runtime_error, os.str());
     }
-
     this->k_numRowEntries_(lclRow) += numInserted;
     this->setLocallyModified();
     return numInserted;
@@ -2275,10 +2324,15 @@ namespace Tpetra {
         std::sort (lclColIndsRaw, lclColIndsRaw + origNumEnt);
 #if defined(TPETRA_KYUNGJOO)
         auto lclColInds_device = this->getLocalKokkosRowViewNonConst (rowInfo);
-        Kokkos::deep_copy(lclColInds_device, lclColInds);
+        const int 
+          ext_l = lclColInds_device.extent(0),
+          ext_r = lclColInds.extent(0),
+          ext_m = std::min(ext_l,ext_r);
+        const Kokkos::pair<int,int> range(0,ext_m);
+        Kokkos::deep_copy(Kokkos::subview(lclColInds_device, range),
+                          Kokkos::subview(lclColInds, range));
 #endif
       }
-
       if (! merged) {
         LocalOrdinal* const beg = lclColIndsRaw;
         LocalOrdinal* const end = beg + rowInfo.numEntries;
@@ -2286,7 +2340,13 @@ namespace Tpetra {
         LocalOrdinal* const newend = std::unique (beg, end);
 #if defined(TPETRA_KYUNGJOO)
         auto lclColInds_device = this->getLocalKokkosRowViewNonConst (rowInfo);
-        Kokkos::deep_copy(lclColInds_device, lclColInds);
+        const int 
+          ext_l = lclColInds_device.extent(0),
+          ext_r = lclColInds.extent(0),
+          ext_m = std::min(ext_l,ext_r);
+        const Kokkos::pair<int,int> range(0,ext_m);
+        Kokkos::deep_copy(Kokkos::subview(lclColInds_device, range),
+                          Kokkos::subview(lclColInds, range));
 #endif
         const size_t newNumEnt = newend - beg;
 
@@ -3781,7 +3841,9 @@ namespace Tpetra {
        "must be true) before calling fillComplete().");
 
     const int numProcs = getComm ()->getSize ();
-
+#if defined(TPETRA_KYUNGJOO)
+    const int myRank = getComm ()->getRank();
+#endif
     //
     // Read and set parameters
     //
@@ -3800,7 +3862,7 @@ namespace Tpetra {
                              sortGhostsAssociatedWithEachProcessor_);
       }
     }
-
+    
     // If true, the caller promises that no process did nonlocal
     // changes since the last call to fillComplete.
     bool assertNoNonlocalInserts = false;
@@ -3808,6 +3870,14 @@ namespace Tpetra {
       assertNoNonlocalInserts =
         params->get<bool> ("No Nonlocal Changes", assertNoNonlocalInserts);
     }
+#if defined(TPETRA_KYUNGJOO)
+    /// create mirro view if device bufer already created
+    if (k_lclInds1D_.span() && !k_lclInds1D_InternalHost_.span())
+      k_lclInds1D_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_lclInds1D_);
+
+    if (k_rowPtrs_.span() && !k_rowPtrs_InternalHost_.span())
+      k_rowPtrs_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_rowPtrs_);    
+#endif
 
     //
     // Allocate indices, if they haven't already been allocated
@@ -3827,6 +3897,7 @@ namespace Tpetra {
     // contains more than one process.
     //
     const bool mayNeedGlobalAssemble = ! assertNoNonlocalInserts && numProcs > 1;
+
     if (mayNeedGlobalAssemble) {
       // This first checks if we need to do global assembly.
       // The check costs a single all-reduce.
@@ -3967,6 +4038,7 @@ namespace Tpetra {
     else {
       this->computeLocalConstants ();
     }
+    
     this->fillComplete_ = true;
     this->checkInternalState ();
 
@@ -4090,8 +4162,8 @@ namespace Tpetra {
     MM = Teuchos::null;
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-fLG"))));
 #endif
-    this->fillLocalGraph (params);
 
+    this->fillLocalGraph (params);
     const bool callComputeGlobalConstants = params.get () == nullptr ||
       params->get ("compute global constants", true);
 
@@ -4147,7 +4219,6 @@ namespace Tpetra {
     if (! params.is_null () && ! params->get ("Optimize Storage", true)) {
       requestOptimizedStorage = false;
     }
-
     // The graph's column indices are currently stored in a 1-D
     // format, with row offsets in k_rowPtrs_ and local column indices
     // in k_lclInds1D_.
@@ -4196,7 +4267,6 @@ namespace Tpetra {
         (true, std::runtime_error, "getNodeAllocationSize threw "
          "an exception not a subclass of std::exception.");
     }
-
     if (this->getNodeNumEntries () != allocSize) {
       // The graph's current 1-D storage is "unpacked."  This means
       // the row offsets may differ from what the final row offsets
@@ -4217,7 +4287,7 @@ namespace Tpetra {
              << k_lclInds1D_.extent (0) << ".");
         }
       }
-
+      
       // Pack the row offsets into ptr_d, by doing a sum-scan of the
       // array of valid entry counts per row (k_numRowEntries_).
 
@@ -4240,9 +4310,15 @@ namespace Tpetra {
              "numRowEnt_h.extent(0)=" << numRowEnt_h.extent(0)
              << " != getNodeNumRows()=" << lclNumRows << "");
         }
-
+#if defined(TPETRA_KYUNGJOO)
+        {
+          const auto ptr_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), ptr_d);
+          lclTotalNumEntries = computeOffsetsFromCounts (ptr_h, numRowEnt_h);
+          Kokkos::deep_copy(ptr_d, ptr_h);
+        }
+#else
         lclTotalNumEntries = computeOffsetsFromCounts (ptr_d, numRowEnt_h);
-
+#endif
         if (debug_) {
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
             (static_cast<size_t> (ptr_d.extent (0)) != lclNumRows + 1,
@@ -4260,7 +4336,6 @@ namespace Tpetra {
              << ".");
         }
       }
-
       // Allocate the array of packed column indices.
       ind_d = lclinds_1d_type ("Tpetra::CrsGraph::ind", lclTotalNumEntries);
 
@@ -4283,7 +4358,6 @@ namespace Tpetra {
         typedef Kokkos::RangePolicy<exec_space, LocalOrdinal> range_type;
         Kokkos::parallel_for (range_type (0, lclNumRows), f);
       }
-
       if (debug_) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (ptr_d.extent (0) == 0, std::logic_error,
@@ -4326,7 +4400,6 @@ namespace Tpetra {
         }
       }
     }
-
     if (debug_) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (static_cast<size_t> (ptr_d_const.extent (0)) != lclNumRows + 1,
@@ -4344,7 +4417,6 @@ namespace Tpetra {
            << ind_d.extent (0) << ".");
       }
     }
-
     if (requestOptimizedStorage) {
       // With optimized storage, we don't need to store
       // the array of row entry counts.
@@ -4355,8 +4427,8 @@ namespace Tpetra {
 
       // Keep the new 1-D packed allocations.
 #if defined(TPETRA_KYUNGJOO)
-      using row_ptrs_value_type = typename local_graph_type::row_map_type::non_const_type::value_type;
-      k_rowPtrs_ = typename local_graph_type::row_map_type::non_const_type((row_ptrs_value_type*)ptr_d_const.data(), ptr_d_const.extent(0));
+      //using row_ptrs_value_type = typename local_graph_type::row_map_type::non_const_type::value_type;
+      k_rowPtrs_ = ptr_d; //typename local_graph_type::row_map_type::non_const_type((row_ptrs_value_type*)ptr_d_const.data(), ptr_d_const.extent(0));
 #else
       k_rowPtrs_   = ptr_d_const;
 #endif
@@ -4364,18 +4436,17 @@ namespace Tpetra {
 
       storageStatus_ = Details::STORAGE_1D_PACKED;
     }
-
     // FIXME (mfh 28 Aug 2014) "Local Graph" sublist no longer used.
 #if defined(TPETRA_KYUNGJOO)
     /// the above local fill complete is done on the device; 
     /// create host copy
     k_lclInds1D_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_lclInds1D_);
+    /// why this generate seg fault ???
     k_rowPtrs_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_rowPtrs_);
 #endif
 
     // Build the local graph.
     lclGraph_ = local_graph_type (ind_d, ptr_d_const);
-
     set_need_sync_host_uvm_access(); // make sure kernel setup of indices is fenced before a host access
   }
 
@@ -5073,12 +5144,19 @@ namespace Tpetra {
       }
       else {
         // FIXME (mfh 08 May 2017) This may assume CUDA UVM.
+#if defined(TPETRA_KYUNGJOO)
+        for (LO lclRow=0;lclRow<lclNumRows;++lclRow) {
+          const RowInfo rowInfo = this->getRowInfo(lclRow);
+          this->sortAndMergeRowIndices(rowInfo, sorted, merged);
+        }
+#else  /// why do we do this  ???? this is not a good design the sort merge function can also use parallel for inside.
         Kokkos::parallel_for(range,
           [this, sorted, merged] (const LO lclRow)
           {
             const RowInfo rowInfo = this->getRowInfo(lclRow);
             this->sortAndMergeRowIndices(rowInfo, sorted, merged);
           });
+#endif
       }
       this->indicesAreSorted_ = true; // we just sorted every row
       this->noRedundancies_ = true; // we just merged every row

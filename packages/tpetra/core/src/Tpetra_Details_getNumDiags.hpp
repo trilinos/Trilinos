@@ -117,9 +117,8 @@ namespace Impl {
     using crs_graph_type = ::Tpetra::CrsGraph<LO, GO, NT>;
     using local_map_type = typename crs_graph_type::map_type::local_map_type;
     using local_graph_type = typename crs_graph_type::local_graph_type;
-    using functor_type = CountLocalNumDiags<local_graph_type, local_map_type>;
+
     using execution_space = typename crs_graph_type::device_type::execution_space;
-    using policy_type = Kokkos::RangePolicy<execution_space, LO>;
 
     const auto rowMap = G.getRowMap ();
     const auto colMap = G.getColMap ();
@@ -128,7 +127,19 @@ namespace Impl {
     }
     else {
       LO lclNumDiags {0};
+#if defined(TPETRA_KYUNGJOO)
+      const auto local_graph = G.getLocalGraph();
+      const auto row_map_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), local_graph.row_map);
+      const auto entries_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), local_graph.entries);
+      typename crs_graph_type::local_graph_host_type g(entries_host, row_map_host);
+      using functor_type = CountLocalNumDiags<typename crs_graph_type::local_graph_host_type, local_map_type>;
+      using policy_type = Kokkos::RangePolicy<typename Kokkos::HostSpace::execution_space, LO>;
+      functor_type f (g, rowMap->getLocalMap (), colMap->getLocalMap ());
+#else /// this is wrong.... local graph lives in device while maps live on host....
+      using functor_type = CountLocalNumDiags<local_graph_type, local_map_type>;
+      using policy_type = Kokkos::RangePolicy<execution_space, LO>;
       functor_type f (G.getLocalGraph (), rowMap->getLocalMap (), colMap->getLocalMap ());
+#endif
       Kokkos::parallel_reduce (policy_type (0, G.getNodeNumRows ()), f, lclNumDiags);
       return lclNumDiags;
     }

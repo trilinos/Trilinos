@@ -263,6 +263,14 @@ namespace Tpetra {
                                                     void,
                                                     size_t>;
 
+#if defined(TPETRA_KYUNGJOO)
+    using local_graph_host_type = Kokkos::StaticCrsGraph<local_ordinal_type,
+                                                    Kokkos::LayoutLeft,
+                                                    typename Kokkos::HostSpace::device_type,
+                                                    void,
+                                                    size_t>;
+#endif    
+
     //! The Map specialization used by this class.
     using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
     //! The Import specialization used by this class.
