@@ -1,3 +1,5 @@
+#include "Tpetra_Core.hpp"
+#include "Zoltan2_TestHelpers.hpp"
 #include "Zoltan2_TpetraCrsADColorer.hpp"
 
 // Class to test the Colorer utility
@@ -13,7 +15,9 @@ public:
   //   Read or generate a matrix with fitted range and domain maps
   //   Construct identical matrix with non-fitted range and domain maps
 
-  ColorerTest(Teuchos::RCP<const Teucho::Comm<int> > &comm) {
+  ColorerTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+              int narg, char**arg)
+  {
     // Process command line arguments
     bool distributeInput = true;
     std::string filename = "";
@@ -29,7 +33,7 @@ public:
     cmdp.setOption("zdim", &zdim, 
                    "Number of nodes in z-direction for generated matrix");
     cmdp.setOption("distribute", "no-distribute", &distributeInput, 
-                   "Should Zoltan2 symmetrize the matrix?"
+                   "Should Zoltan2 symmetrize the matrix?");
     cmdp.parse(narg, arg);
 
     // Get and store a matrix
@@ -48,13 +52,13 @@ public:
     // Build same matrix with non-fitted domain and range maps
 
     size_t nIndices = std::max(JFitted->getGlobalNumCols(),
-                               JFitted->getGlobalNumRows()));
+                               JFitted->getGlobalNumRows());
     Teuchos::Array<gno_t> indices(nIndices);
 
     Teuchos::RCP<const map_t> vMapNotFitted = 
-                       getNotFittedMap(JFitted->getGlobalNumCols(), indices);
+                 getNotFittedMap(JFitted->getGlobalNumCols(), indices, comm);
     Teuchos::RCP<const map_t> wMapNotFitted =
-                       getNotFittedMap(JFitted->getGlobalNumRows(), indices);
+                 getNotFittedMap(JFitted->getGlobalNumRows(), indices, comm);
 
     JNotFitted = rcp(new matrix_t(*JFitted));
     JNotFitted->resumeFill();
@@ -62,33 +66,15 @@ public:
   }
 
   ////////////////////////////////////////////////////////////////
-  bool run(const char* testname, Teuchos::ParameterList *params) {
+  bool run(const char* testname, Teuchos::ParameterList &params) {
 
     bool ok = true;
 
-    // Create a colorer
-    Zoltan2::TpetraCrsADColorer<matrix_t> colorer(J);
-
-    colorer.computeColoring(params);
-
-    // Check coloring
-    if (! colorer.checkColoring()) {
-      if (me == 0)
-        std::cout << testname << " FAILED: invalid coloring returned"
-                  << std::endl;
-      return false;
-    }
-
-    // Compute seed matrix V -- the application wants this matrix
-    // Dense matrix of 0/1 indicating the compression via coloring
-
-    const int numColors = colorer.getNumColors();
-
     // test with fitted maps
-    ok = buildAndCheckSeedMatrix(testname, colorer, params, true);
+    ok = buildAndCheckSeedMatrix(testname, params, true);
 
     // test with non-fitted maps
-    ok &= buildAndCheckSeedMatrix(testname, colorer, params, false);
+    ok &= buildAndCheckSeedMatrix(testname, params, false);
 
     return ok;
   }
@@ -100,39 +86,61 @@ private:
   // Return a map that is cyclic (like dealing rows to processors)
   Teuchos::RCP<const map_t> getNotFittedMap(
     size_t nIndices, 
-    Teuchos::Array<gno_t> &indices)
+    Teuchos::Array<gno_t> &indices,
+    const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   {
     size_t cnt = 0;
+    int me = comm->getRank();
+    int np = comm->getSize();
+
     for (size_t i = 0; i < nIndices; i++) 
       if (me == int(i % np)) indices[cnt++] = i;
 
     Tpetra::global_size_t dummy =
             Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
 
-    return rcp(new map_t(dummy, indices(0,cnt), 0, comm);
+    return rcp(new map_t(dummy, indices(0,cnt), 0, comm));
   }
 
   ///////////////////////////////////////////////////////////////
   bool buildAndCheckSeedMatrix(
     const char *testname,
-    Zoltan2::TpetraCrsADColorer<matrix_t> &colorer,
-    bool useFitted
+    Teuchos::ParameterList &params,
+    const bool useFitted
   )
   {
     bool ok = true;
 
     // Pick matrix depending on useFitted flag
-    Teuchos::RCP<const matrix_t> J = (useFitted ? JFitted : JNotFitted);
+    Teuchos::RCP<matrix_t> J = (useFitted ? JFitted : JNotFitted);
+    int me = J->getRowMap()->getComm()->getRank();
+
+    // Create a colorer
+    Zoltan2::TpetraCrsADColorer<matrix_t> colorer(J);
+
+    colorer.computeColoring(params);
+
+    // Check coloring
+    if (!colorer.checkColoring()) {
+      if (me == 0)
+        std::cout << testname << " FAILED: invalid coloring returned"
+                  << std::endl;
+      return false;
+    }
+
+    // Compute seed matrix V -- the application wants this matrix
+    // Dense matrix of 0/1 indicating the compression via coloring
+
+    const int numColors = colorer.getNumColors();
 
     // Compute the seed matrix; applications want this seed matrix
 
-    int numColors = colorer.getNumColors();
     multivector_t V(J->getDomainMap(), numColors);
-
     colorer.computeSeedMatrix(V);
 
     // To test the result...
     // Compute compression vector
+
     multivector_t W(J->getRangeMap(), numColors);  // W is the compressed matrix
   
     J->apply(W, V);
@@ -159,22 +167,22 @@ private:
 
   ////////////////////////////////////////////////////////////////
   // Input matrix -- built in Constructor
-  Teuchos::RCP<const matrix_t> JFitted;     // has locally fitted domain and 
-                                            // range maps
-  Teuchos::RCP<const matrix_t> JNotFitted;  // does NOT have locally fitted
-                                            // domain and range maps
+  Teuchos::RCP<matrix_t> JFitted;     // has locally fitted domain and 
+                                      // range maps
+  Teuchos::RCP<matrix_t> JNotFitted;  // does NOT have locally fitted
+                                      // domain and range maps
 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
 int main(int narg, char **arg)
 {
-  Tpetra::ScopeGuard scope(narg, arg);
+  Tpetra::ScopeGuard scope(&narg, &arg);
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   bool ok = true;
   int ierr = 0;
 
-  ColorTest<zscalar_t> testColorer(J);
+  ColorerTest testColorer(comm, narg, arg);
 
   // Set parameters and compute coloring
   {
@@ -190,6 +198,9 @@ int main(int narg, char **arg)
     testColorer.run("Test One", coloring_params);
     if (!ok) ierr++;
   }
+
+  if (ok)
+    std::cout << "TEST PASSED" << std::endl;
 
 //Through cmake...
 //Test cases -- UserInputForTests can generate Galeri or read files:

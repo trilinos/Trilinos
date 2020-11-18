@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Zoltan2_CrsColorer.hpp"
+#include "Zoltan2_TpetraCrsADColorer.hpp"
 
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -20,14 +20,15 @@ template <typename CrsMatrixType>
 class Zoltan2CrsColorer 
 {
 public:
-  typedef Zoltan2_TpetraCrs2DColorer<CrsMatrixType> base_type;
-  typedef typename base_type::matrix_type matrix_type;
-  typedef typename base_type::device_type device_type;
-  typedef typename base_type::list_of_colors_type list_of_colors_type;
-  typedef typename base_type::list_of_colors_host_type list_of_colors_host_type;
+  typedef CrsMatrixType matrix_t;
+  typedef typename matrix_t::crs_graph_type graph_t;
+  typedef typename matrix_t::node_type node_t;
+  typedef typename node_t::device_type device_t;
+  typedef Kokkos::View<int *, device_t> list_of_colors_t;
+  typedef typename list_of_colors_t::HostMirror list_of_colors_host_t;
 
   // Constructor
-  Zoltan2CrsColorer(const Teuchos::RCP<matrix_type> &matrix_) 
+  Zoltan2CrsColorer(const Teuchos::RCP<matrix_t> &matrix_) 
     : matrix(matrix_), graph(matrix_->getCrsGraph()) 
   {}
 
@@ -37,16 +38,16 @@ public:
   // Compute coloring data
   void
   computeColoring(
-    const Teuchos::ParameterList &coloring_params,
+    Teuchos::ParameterList &coloring_params,
     const std::string &method,
     int &num_colors,
     list_of_colors_host_t &list_of_colors_host,
-    list_of_colors_t &list_of_colors);
+    list_of_colors_t &list_of_colors)
   {
     // TODO:  Until Ian's code is ready...
     // TODO:  Check the logic here:  doing Partial Distance-2 via local
     // TODO:  distance-1 on J^T*J
-    TEUCHOS_TEST_FOR_EXCEPTION(method == "PARTIAL-DISTANCE-2", std::exception,
+    TEUCHOS_TEST_FOR_EXCEPTION(method != "PARTIAL-DISTANCE-2", std::logic_error,
             "Zoltan2CrsColorer not yet ready for coloring method " << method
             << std::endl);
 
@@ -58,13 +59,13 @@ public:
       this->matrix->fillComplete();
 
     const size_t nzpr = this->matrix->getGlobalMaxNumRowEntries();
-    matrix_type C(this->matrix->getRowMap(), nzpr * nzpr); // TODO: Check this
+    matrix_t C(this->matrix->getRowMap(), nzpr * nzpr); // TODO: Check this
 
     Tpetra::MatrixMatrix::Multiply(*(this->matrix), true,
                                    *(this->matrix), false, C);
 
     // Create Zoltan2 coloring problem and solve
-    typedef Zoltan2::XpetraCrsMatrixAdapter<matrix_type> Z2Adapter_t;
+    typedef Zoltan2::XpetraCrsMatrixAdapter<matrix_t> Z2Adapter_t;
     Z2Adapter_t z2_adapter(rcp(&C, false));
 
     Teuchos::ParameterList z2_params = coloring_params.sublist("Zoltan2");
@@ -83,10 +84,10 @@ public:
         len != this->graph->getColMap()->getNodeNumElements(), std::logic_error,
         "Incorrect length of color list!");
 
-    list_of_colors_host_type list_of_colors_tmp(
+    list_of_colors_host_t list_of_colors_tmp(
                                      local_list_of_colors.getRawPtr(), len);
 
-    list_of_colors = list_of_colors_type("list_of_colors", len);
+    list_of_colors = list_of_colors_t("list_of_colors", len);
     list_of_colors_host = Kokkos::create_mirror_view(list_of_colors);
 
     Kokkos::deep_copy(list_of_colors_host, list_of_colors_tmp);
@@ -98,6 +99,11 @@ public:
     Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1,
                        &local_num_colors, &num_colors);
   }
+
+private:
+
+  const Teuchos::RCP<matrix_t> matrix;
+  const Teuchos::RCP<const graph_t> graph;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -107,10 +113,11 @@ template <typename SC, typename LO, typename GO, typename NO>
 class Zoltan2CrsColorer<Tpetra::BlockCrsMatrix<SC, LO, GO, NO> > 
 {
 public:
-  typedef Tpetra::BlockCrsMatrix<SC, LO, GO, NO> matrix_type;
+  typedef Tpetra::BlockCrsMatrix<SC, LO, GO, NO> matrix_t;
+  typedef typename matrix_t::crs_graph_type graph_t;
 
   // Constructor
-  Zoltan2CrsColorer(const Teuchos::RCP<matrix_type> &matrix_) 
+  Zoltan2CrsColorer(const Teuchos::RCP<matrix_t> &matrix_) 
     : matrix(matrix_), graph(matrix_->getCrsGraph())
   {}
 
@@ -118,12 +125,17 @@ public:
   ~Zoltan2CrsColorer() {}
 
   // Compute coloring data
-  virtual void
-  computeColoring(Teuchos::ParameterList &coloring_params) override
+  void
+  computeColoring(Teuchos::ParameterList &coloring_params) 
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "Zoltan2 colorer does not support "
                                "Tpetra::BlockCrsMatrix!");
   }
+
+private:
+
+  const Teuchos::RCP<matrix_t> matrix;
+  const Teuchos::RCP<const graph_t> graph;
 };
 } // namespace Zoltan2

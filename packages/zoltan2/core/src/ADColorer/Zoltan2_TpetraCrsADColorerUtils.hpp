@@ -18,13 +18,13 @@ namespace Impl
 {
 
 // Check coloring is valid for a given graph
-template <typename LO, typename GO, typename NO, typename list_of_colors_type>
+template <typename LO, typename GO, typename NO, typename list_of_colors_t>
 bool
 check_coloring(
   const Tpetra::CrsGraph<LO, GO, NO> &graph, 
-  const list_of_colors_type &list_of_colors)
+  const list_of_colors_t &list_of_colors)
 {
-  typedef typename list_of_colors_type::execution_space execution_space;
+  typedef typename list_of_colors_t::execution_space execution_space;
 
   Teuchos::RCP<const Teuchos::Comm<int>> comm = graph.getRowMap()->getComm();
   const int rank = comm->getRank();
@@ -118,22 +118,22 @@ compute_transpose_graph(const Tpetra::CrsGraph<LO, GO, NO> &graph)
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  typedef Tpetra::CrsGraph<LO, GO, NO> graph_type;
-  typedef typename graph_type::local_graph_type local_graph_type;
+  typedef Tpetra::CrsGraph<LO, GO, NO> graph_t;
+  typedef typename graph_t::local_graph_type local_graph_t;
 
   // Transpose local graph
-  local_graph_type local_graph = graph.getLocalGraph();
-  local_graph_type local_trans_graph = 
+  local_graph_t local_graph = graph.getLocalGraph();
+  local_graph_t local_trans_graph = 
                    compute_local_transpose_graph(local_graph,
                                                  graph.getNodeNumCols());
 
   // Build (possibly overlapped) transpose graph using original graph's
   // column map as the new row map, and vice versa
-  RCP<graph_type> trans_graph_shared = rcp(new graph_type(
+  RCP<graph_t> trans_graph_shared = rcp(new graph_t(
                   local_trans_graph, graph.getColMap(), graph.getRowMap(),
                   graph.getRangeMap(), graph.getDomainMap()));
 
-  RCP<graph_type> trans_graph;
+  RCP<graph_t> trans_graph;
 
   // Export graph to non-overlapped distribution if necessary.
   // If the exporter is null, we don't need to export
@@ -143,7 +143,7 @@ compute_transpose_graph(const Tpetra::CrsGraph<LO, GO, NO> &graph)
     trans_graph = trans_graph_shared;
   else
   {
-    RCP<const graph_type> trans_graph_shared_const = trans_graph_shared;
+    RCP<const graph_t> trans_graph_shared_const = trans_graph_shared;
     trans_graph = Tpetra::exportAndFillCompleteCrsGraph(
                                 trans_graph_shared_const, *exporter,
                                 Teuchos::null, Teuchos::null, Teuchos::null);

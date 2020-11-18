@@ -10,7 +10,7 @@
 
 #include "zoltan_cpp.h"
 
-namespace Zoltan
+namespace Zoltan2
 {
 
 // Implementation of CrsColorer<> using Zoltan partial distance-2 coloring.
@@ -20,19 +20,19 @@ class ZoltanCrsColorer
 {
 public:
 
-  typedef Zoltan2_TpetraCrsADColorer<CrsMatrixType> base_type;
-  typedef typename base_type::matrix_type matrix_type;
-  typedef typename base_type::graph_type graph_type;
-  typedef typename base_type::scalar_type scalar_type;
-  typedef typename base_type::local_ordinal_type local_ordinal_type;
-  typedef typename base_type::global_ordinal_type global_ordinal_type;
-  typedef typename base_type::node_type node_type;
-  typedef typename base_type::execution_space execution_space;
-  typedef typename base_type::list_of_colors_type list_of_colors_type;
-  typedef typename base_type::list_of_colors_host_type list_of_colors_host_type;
+  typedef CrsMatrixType matrix_t;
+  typedef typename matrix_t::crs_graph_type graph_t;
+  typedef typename matrix_t::scalar_type scalar_t;
+  typedef typename matrix_t::local_ordinal_type lno_t;
+  typedef typename matrix_t::global_ordinal_type gno_t;
+  typedef typename matrix_t::node_type node_t;
+  typedef typename node_t::device_type device_t;
+  typedef typename device_t::execution_space execution_space;
+  typedef Kokkos::View<int *, device_t> list_of_colors_t;
+  typedef typename list_of_colors_t::HostMirror list_of_colors_host_t;
 
   // Constructor
-  ZoltanCrsColorer(const Teuchos::RCP<matrix_type> &matrix_)
+  ZoltanCrsColorer(const Teuchos::RCP<matrix_t> &matrix_)
     : matrix(matrix_), graph(matrix_->getCrsGraph()), transpose_graph()
   {}
 
@@ -42,17 +42,17 @@ public:
   // Compute coloring data
   void
   computeColoring(
-    const Teuchos::ParameterList &coloring_params, 
+    Teuchos::ParameterList &coloring_params, 
     const std::string &method, 
     int &num_colors,
     list_of_colors_host_t &list_of_colors_host,
-    list_of_colors_t &list_of_colors);
+    list_of_colors_t &list_of_colors) const;
 
 private:
 
-  Teuchos::RCP<const matrix_type> graph;
-  Teuchos::RCP<const graph_type> graph;
-  Teuchos::RCP<const graph_type> transpose_graph;
+  const Teuchos::RCP<const matrix_t> matrix;
+  const Teuchos::RCP<const graph_t> graph;
+  Teuchos::RCP<const graph_t> transpose_graph;
 
   //
   // Call-back functions for Zoltan interface
@@ -61,7 +61,7 @@ private:
   // Data for call-back functions
   struct ZoltanData
   {
-    Teuchos::RCP<const graph_type> graph, trans_graph;
+    Teuchos::RCP<const graph_t> graph, trans_graph;
     Teuchos::Array<int> col_procs, trans_col_procs;
 
     // Set matrix graphs (trans_graph_ may be null for symmetric/symmetrized
@@ -70,8 +70,8 @@ private:
     // be done inside the Zoltan call-back functions).
     void
     setGraphs(
-        const Teuchos::RCP<const graph_type> &graph_,
-        const Teuchos::RCP<const graph_type> &trans_graph_ = Teuchos::null)
+        const Teuchos::RCP<const graph_t> &graph_,
+        const Teuchos::RCP<const graph_t> &trans_graph_ = Teuchos::null)
     {
       graph = graph_;
       trans_graph = trans_graph_;
@@ -187,15 +187,15 @@ private:
 template <typename CrsMatrixType>
 void
 ZoltanCrsColorer<CrsMatrixType>::computeColoring(
-  const Teuchos::RCP<const matrix_t> &matrix, 
-  const Teuchos::ParameterList &coloring_params, 
+  Teuchos::ParameterList &coloring_params, 
   const std::string &method, 
   int &num_colors,
   list_of_colors_host_t &list_of_colors_host,
   list_of_colors_t &list_of_colors
+) const
 {
-  const bool symmetric  = coloring_params.get("Symmetric", false);
-  const bool symmetrize = coloring_params.get("Symmetrize", false);
+  const bool symmetric  = coloring_params.get<bool>("Symmetric", false);
+  const bool symmetrize = coloring_params.get<bool>("Symmetrize", false);
 
   // Get MPI communicator, and throw an exception if our comm isn't MPI
   Teuchos::RCP<const Teuchos::Comm<int>> comm = 
@@ -203,7 +203,7 @@ ZoltanCrsColorer<CrsMatrixType>::computeColoring(
   Teuchos::RCP<const Teuchos::MpiComm<int>> mpi_comm =
       Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm, true);
 
-  Teuchos::RCP<const graph_type> transpose_graph;
+  Teuchos::RCP<const graph_t> transpose_graph;
 
   // Compute transpose graph
   if (!symmetric && !symmetrize)
@@ -257,7 +257,7 @@ ZoltanCrsColorer<CrsMatrixType>::computeColoring(
     for (size_t i = 0; i < num_local_cols; ++i)
       col_gids[i] = gids[i] + num_global_rows;
 
-  list_of_colors_type my_list_of_colors("ZoltanCrsColorer::list_of_colors",
+  list_of_colors_t my_list_of_colors("ZoltanCrsColorer::list_of_colors",
                                         num_local_cols);
   list_of_colors_host = Kokkos::create_mirror_view(my_list_of_colors);
 
@@ -402,7 +402,7 @@ ZoltanCrsColorer<CrsMatrixType>::get_edge_list(
     const int num_nbr = zoltan_data->graph->getNumEntriesInLocalRow(lid);
     const auto colMap = zoltan_data->graph->getColMap();
 
-    ArrayView<const local_ordinal_type> lcl_ids;
+    ArrayView<const lno_t> lcl_ids;
     zoltan_data->graph->getLocalRowView(lid, lcl_ids);
 
     for (int j = 0; j < num_nbr; ++j) {
@@ -417,7 +417,7 @@ ZoltanCrsColorer<CrsMatrixType>::get_edge_list(
           zoltan_data->trans_graph->getNumEntriesInLocalRow(lid-num_local_rows);
     const auto colMap = zoltan_data->trans_graph->getColMap();
 
-    ArrayView<const local_ordinal_type> lcl_ids;
+    ArrayView<const lno_t> lcl_ids;
     zoltan_data->trans_graph->getLocalRowView(lid - num_local_rows, lcl_ids);
     for (int j = 0; j < num_nbr; ++j)
     {
@@ -508,7 +508,7 @@ ZoltanCrsColorer<CrsMatrixType>::sym_get_edge_list(
   const ZOLTAN_ID_TYPE lid = *local_id;
   const int num_nbr = zoltan_data->graph->getNumEntriesInLocalRow(lid);
 
-  ArrayView<const local_ordinal_type> lcl_ids;
+  ArrayView<const lno_t> lcl_ids;
   zoltan_data->graph->getLocalRowView(lid, lcl_ids);
   const auto colMap = zoltan_data->graph->getColMap();
 

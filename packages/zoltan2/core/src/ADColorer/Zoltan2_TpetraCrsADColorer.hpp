@@ -13,36 +13,38 @@
 #include "Tpetra_BlockMultiVector.hpp"
 #include "Tpetra_BlockCrsMatrix.hpp"
 
-#include "Zoltan2_CrsColorerUtils.hpp"
+#include "Zoltan2_TpetraCrsADColorerUtils.hpp"
+#include "Zoltan2_TpetraCrsADColorer_Zoltan.hpp"
+#include "Zoltan2_TpetraCrsADColorer_Zoltan2.hpp"
 
 namespace Zoltan2
 {
 
 // Base class for coloring Tpetra::CrsMatrix for use in column compression
 template <typename CrsMatrixType>
-class CrsColorer
+class TpetraCrsADColorer
 {
 public:
-  typedef CrsMatrixType matrix_type;
-  typedef typename matrix_type::crs_graph_type graph_type;
-  typedef typename matrix_type::scalar_type scalar_type;
-  typedef typename matrix_type::local_ordinal_type local_ordinal_type;
-  typedef typename matrix_type::global_ordinal_type global_ordinal_type;
-  typedef typename matrix_type::node_type node_type;
-  typedef typename node_type::device_type device_type;
-  typedef typename device_type::execution_space execution_space;
-  typedef Kokkos::View<int *, device_type> list_of_colors_type;
-  typedef typename list_of_colors_type::HostMirror list_of_colors_host_type;
+  typedef CrsMatrixType matrix_t;
+  typedef typename matrix_t::crs_graph_type graph_t;
+  typedef typename matrix_t::scalar_type scalar_t;
+  typedef typename matrix_t::local_ordinal_type lno_t;
+  typedef typename matrix_t::global_ordinal_type gno_t;
+  typedef typename matrix_t::node_type node_t;
+  typedef typename node_t::device_type device_t;
+  typedef typename device_t::execution_space execution_space;
+  typedef Kokkos::View<int *, device_t> list_of_colors_t;
+  typedef typename list_of_colors_t::HostMirror list_of_colors_host_t;
 
   // Constructor
-  CrsColorer(const Teuchos::RCP<matrix_type> &matrix_);
+  TpetraCrsADColorer(const Teuchos::RCP<matrix_t> &matrix_);
 
   // Destructor
-  virtual ~CrsColorer() {}
+  ~TpetraCrsADColorer() {}
 
   // Compute coloring data
-  virtual void
-  computeColoring(Teuchos::ParameterList &coloring_params) = 0;
+  void
+  computeColoring(Teuchos::ParameterList &coloring_params);
 
   // Compute seed matrix
   template <typename MultiVectorType>
@@ -60,7 +62,7 @@ public:
   reconstructMatrix(MultiVectorType &W) const;
   template <typename MultiVectorType>
   void
-  reconstructMatrix(MultiVectorType &W, matrix_type &mat) const;
+  reconstructMatrix(MultiVectorType &W, matrix_t &mat) const;
 
   // Reconstruct matrix from supplied compressed vector fitted to the graph's
   // row map
@@ -69,7 +71,7 @@ public:
   reconstructMatrixFitted(MultiVectorType &W) const;
   template <typename MultiVectorType>
   void
-  reconstructMatrixFitted(MultiVectorType &W, matrix_type &mat) const;
+  reconstructMatrixFitted(MultiVectorType &W, matrix_t &mat) const;
 
   // Return number of colors
   // KDD should num_colors be int or size_t?
@@ -95,61 +97,61 @@ public:
   }
 
 protected:
-  Teuchos::RCP<matrix_type> matrix;
-  Teuchos::RCP<const graph_type> graph;
-  list_of_colors_type list_of_colors;
-  list_of_colors_host_type list_of_colors_host;
+  Teuchos::RCP<matrix_t> matrix;
+  Teuchos::RCP<const graph_t> graph;
+  list_of_colors_t list_of_colors;
+  list_of_colors_host_t list_of_colors_host;
   int num_colors;
 };
 
 //////////////////////////////////////////////////////////////////////////////
-// Specialization of Tpetra::CrsColorer for BlockCrsMatrix
+// Specialization of TpetraCrsADColorer for BlockCrsMatrix
 template <typename SC, typename LO, typename GO, typename NO>
-class CrsColorer<BlockCrsMatrix<SC, LO, GO, NO>>
+class TpetraCrsADColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >
 {
 public:
-  typedef BlockCrsMatrix<SC, LO, GO, NO> matrix_type;
-  typedef BlockMultiVector<SC, LO, GO, NO> multivector_type;
-  typedef typename matrix_type::crs_graph_type graph_type;
-  typedef typename matrix_type::scalar_type scalar_type;
-  typedef typename matrix_type::local_ordinal_type local_ordinal_type;
-  typedef typename matrix_type::global_ordinal_type global_ordinal_type;
-  typedef typename matrix_type::node_type node_type;
-  typedef typename node_type::device_type device_type;
-  typedef typename device_type::execution_space execution_space;
-  typedef Kokkos::View<int *, device_type> list_of_colors_type;
-  typedef typename list_of_colors_type::HostMirror list_of_colors_host_type;
+  typedef Tpetra::BlockCrsMatrix<SC, LO, GO, NO> matrix_t;
+  typedef Tpetra::BlockMultiVector<SC, LO, GO, NO> multivector_t;
+  typedef typename matrix_t::crs_graph_type graph_t;
+  typedef typename matrix_t::scalar_type scalar_t;
+  typedef typename matrix_t::local_ordinal_type lno_t;
+  typedef typename matrix_t::global_ordinal_type gno_t;
+  typedef typename matrix_t::node_type node_t;
+  typedef typename node_t::device_type device_t;
+  typedef typename device_t::execution_space execution_space;
+  typedef Kokkos::View<int *, device_t> list_of_colors_t;
+  typedef typename list_of_colors_t::HostMirror list_of_colors_host_t;
 
   // Constructor
-  CrsColorer(const Teuchos::RCP<matrix_type> &matrix_);
+  TpetraCrsADColorer(const Teuchos::RCP<matrix_t> &matrix_);
 
   // Destructor
-  virtual ~CrsColorer() {}
+  ~TpetraCrsADColorer() {}
 
   // Compute coloring data
-  virtual void
-  computeColoring(Teuchos::ParameterList &coloring_params) = 0;
+  void
+  computeColoring(Teuchos::ParameterList &coloring_params);
 
   // Compute seed matrix
   void
-  computeSeedMatrix(multivector_type &V) const;
+  computeSeedMatrix(multivector_t &V) const;
 
   // Compute seed matrix with distribution fitted to the graph's column map
   void
-  computeSeedMatrixFitted(multivector_type &V) const;
+  computeSeedMatrixFitted(multivector_t &V) const;
 
   // Reconstruct matrix from supplied compressed vector
   void
-  reconstructMatrix(multivector_type &W) const;
+  reconstructMatrix(multivector_t &W) const;
   void
-  reconstructMatrix(multivector_type &W, matrix_type &mat) const;
+  reconstructMatrix(multivector_t &W, matrix_t &mat) const;
 
   // Reconstruct matrix from supplied compressed vector fitted to the graph's
   // row map
   void
-  reconstructMatrixFitted(multivector_type &W) const;
+  reconstructMatrixFitted(multivector_t &W) const;
   void
-  reconstructMatrixFitted(multivector_type &W, matrix_type &mat) const;
+  reconstructMatrixFitted(multivector_t &W, matrix_t &mat) const;
 
   // Return number of colors
   int
@@ -177,17 +179,19 @@ public:
   }
 
 protected:
-  Teuchos::RCP<matrix_type> matrix;
-  Teuchos::RCP<const graph_type> graph;
-  list_of_colors_type list_of_colors;
-  list_of_colors_host_type list_of_colors_host;
+  Teuchos::RCP<matrix_t> matrix;
+  Teuchos::RCP<const graph_t> graph;
+  list_of_colors_t list_of_colors;
+  list_of_colors_host_t list_of_colors_host;
   int num_colors;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
 template <typename CrsMatrixType>
-CrsColorer<CrsMatrixType>::CrsColorer(const Teuchos::RCP<matrix_type> &matrix_)
+TpetraCrsADColorer<CrsMatrixType>::TpetraCrsADColorer(
+  const Teuchos::RCP<matrix_t> &matrix_
+)
   : matrix(matrix_), 
     graph(matrix->getCrsGraph()), 
     list_of_colors(), 
@@ -199,7 +203,8 @@ CrsColorer<CrsMatrixType>::CrsColorer(const Teuchos::RCP<matrix_type> &matrix_)
 
 //////////////////////////////////////////////////////////////////////////////
 template <typename CrsMatrixType>
-CrsColorer<CrsMatrixType>::computeColoring(
+void 
+TpetraCrsADColorer<CrsMatrixType>::computeColoring(
   Teuchos::ParameterList &coloring_params
 )
 {
@@ -211,16 +216,17 @@ CrsColorer<CrsMatrixType>::computeColoring(
   if (matrixType == "Jacobian") {
     if (library == "zoltan") {
       // Use Zoltan's partial distance 2 coloring
-      ZoltanCrsColorer zz(J);
+      ZoltanCrsColorer<matrix_t> zz(matrix);
       zz.computeColoring(coloring_params, "PARTIAL-DISTANCE-2", 
                          num_colors, list_of_colors_host, list_of_colors);
     }
     else {
       // Use Zoltan2's partial distance 2 coloring when it is ready
-      Zoltan2CrsColorer zz2(J);
+      Zoltan2CrsColorer<matrix_t> zz2(matrix);
       zz2.computeColoring(coloring_params, "PARTIAL-DISTANCE-2", 
                           num_colors, list_of_colors_host, list_of_colors);
     }
+  }
   else if (matrixType == "Hessian") {
     // TODO: Figure out whether this is the right thing to do and whether
     // TODO: the code supports it
@@ -228,12 +234,12 @@ CrsColorer<CrsMatrixType>::computeColoring(
     // code currently still uses partial distance 2.
     // Should use Distance2 instead
     if (library == "zoltan") {
-      ZoltanCrsColorer zz(J);
+      ZoltanCrsColorer<matrix_t> zz(matrix);
       zz.computeColoring(coloring_params, "DISTANCE-2", 
                          num_colors, list_of_colors_host, list_of_colors);
     }
     else {
-      Zoltan2CrsColorer zz2(J);
+      Zoltan2CrsColorer<matrix_t> zz2(matrix);
       zz2.computeColoring(coloring_params, "DISTANCE-2", 
                           num_colors, list_of_colors_host, list_of_colors);
     }
@@ -244,13 +250,13 @@ CrsColorer<CrsMatrixType>::computeColoring(
 template <typename CrsMatrixType>
 template <typename MultiVectorType>
 void
-CrsColorer<CrsMatrixType>::computeSeedMatrix(MultiVectorType &V) const
+TpetraCrsADColorer<CrsMatrixType>::computeSeedMatrix(MultiVectorType &V) const
 {
   MultiVectorType V_fitted(graph->getColMap(), num_colors);
 
   computeSeedMatrixFitted(V_fitted);
 
-  Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> 
+  Tpetra::Import<lno_t, gno_t, node_t> 
           importer(graph->getColMap(), V.getMap());
 
   V.doImport(V_fitted, importer, Tpetra::INSERT);
@@ -260,7 +266,8 @@ CrsColorer<CrsMatrixType>::computeSeedMatrix(MultiVectorType &V) const
 template <typename CrsMatrixType>
 template <typename MultiVectorType>
 void
-CrsColorer<CrsMatrixType>::computeSeedMatrixFitted(MultiVectorType &V) const
+TpetraCrsADColorer<CrsMatrixType>::computeSeedMatrixFitted(
+  MultiVectorType &V) const
 {
   // Check V's map is locally fitted to the graph's column map
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -273,13 +280,13 @@ CrsColorer<CrsMatrixType>::computeSeedMatrixFitted(MultiVectorType &V) const
 
   auto V_view_dev = V.getLocalViewDevice();
   const size_t num_local_cols = graph->getNodeNumCols();
-  list_of_colors_type my_list_of_colors = list_of_colors;
+  list_of_colors_t my_list_of_colors = list_of_colors;
 
   Kokkos::parallel_for(
       Kokkos::RangePolicy<execution_space>(0, num_local_cols),
       KOKKOS_LAMBDA(const size_t i) { 
-        V_view_dev(i, my_list_of_colors[i] - 1) = scalar_type(1.0); },
-        "CrsColorer::computeSeedMatrixFitted()");
+        V_view_dev(i, my_list_of_colors[i] - 1) = scalar_t(1.0); },
+        "TpetraCrsADColorer::computeSeedMatrixFitted()");
 
   V.modify_device();
 }
@@ -288,7 +295,7 @@ CrsColorer<CrsMatrixType>::computeSeedMatrixFitted(MultiVectorType &V) const
 template <typename CrsMatrixType>
 template <typename MultiVectorType>
 void
-CrsColorer<CrsMatrixType>::reconstructMatrix(MultiVectorType &W) const
+TpetraCrsADColorer<CrsMatrixType>::reconstructMatrix(MultiVectorType &W) const
 {
   reconstructMatrix(W, *matrix);
 }
@@ -297,13 +304,13 @@ CrsColorer<CrsMatrixType>::reconstructMatrix(MultiVectorType &W) const
 template <typename CrsMatrixType>
 template <typename MultiVectorType>
 void
-CrsColorer<CrsMatrixType>::reconstructMatrix(
+TpetraCrsADColorer<CrsMatrixType>::reconstructMatrix(
   MultiVectorType &W, 
-  matrix_type &mat) const
+  matrix_t &mat) const
 {
   MultiVectorType W_fitted(graph->getRowMap(), num_colors);
 
-  Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> 
+  Tpetra::Import<lno_t, gno_t, node_t> 
           importer(W.getMap(), graph->getRowMap());
 
   W_fitted.doImport(W, importer, Tpetra::INSERT);
@@ -315,7 +322,8 @@ CrsColorer<CrsMatrixType>::reconstructMatrix(
 template <typename CrsMatrixType>
 template <typename MultiVectorType>
 void
-CrsColorer<CrsMatrixType>::reconstructMatrixFitted(MultiVectorType &W) const
+TpetraCrsADColorer<CrsMatrixType>::reconstructMatrixFitted(
+  MultiVectorType &W) const
 {
   reconstructMatrixFitted(W, *matrix);
 }
@@ -324,9 +332,9 @@ CrsColorer<CrsMatrixType>::reconstructMatrixFitted(MultiVectorType &W) const
 template <typename CrsMatrixType>
 template <typename MultiVectorType>
 void
-CrsColorer<CrsMatrixType>::reconstructMatrixFitted(
+TpetraCrsADColorer<CrsMatrixType>::reconstructMatrixFitted(
   MultiVectorType &W, 
-  matrix_type &mat) const
+  matrix_t &mat) const
 {
   // Check the graph's row map is locally fitted to W's map
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -340,7 +348,7 @@ CrsColorer<CrsMatrixType>::reconstructMatrixFitted(
   auto local_matrix = mat.getLocalMatrix();
   auto local_graph = graph->getLocalGraph();
   const size_t num_local_rows = graph->getNodeNumRows();
-  list_of_colors_type my_list_of_colors = list_of_colors;
+  list_of_colors_t my_list_of_colors = list_of_colors;
 
   Kokkos::parallel_for(
       Kokkos::RangePolicy<execution_space>(0, num_local_rows),
@@ -353,13 +361,13 @@ CrsColorer<CrsMatrixType>::reconstructMatrixFitted(
           local_matrix.values(entry) = W_view_dev(row,my_list_of_colors[col]-1);
         }
       },
-      "CrsColorer::reconstructMatrixFitted()");
+      "TpetraCrsADColorer::reconstructMatrixFitted()");
 }
 
 //////////////////////////////////////////////////////////////////////////////
 template <typename SC, typename LO, typename GO, typename NO>
-CrsColorer<BlockCrsMatrix<SC, LO, GO, NO>>::CrsColorer(
-  const Teuchos::RCP<matrix_type> &matrix_
+TpetraCrsADColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::TpetraCrsADColorer(
+  const Teuchos::RCP<matrix_t> &matrix_
 )
     : matrix(matrix_)
     , graph(Teuchos::rcp(&(matrix->getCrsGraph()), false))
@@ -372,18 +380,18 @@ CrsColorer<BlockCrsMatrix<SC, LO, GO, NO>>::CrsColorer(
 //////////////////////////////////////////////////////////////////////////////
 template <typename SC, typename LO, typename GO, typename NO>
 void
-CrsColorer<BlockCrsMatrix<SC, LO, GO, NO>>::computeSeedMatrix(
-  multivector_type &block_V) const
+TpetraCrsADColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::computeSeedMatrix(
+  multivector_t &block_V) const
 {
-  multivector_type block_V_fitted(*(graph->getColMap()), matrix->getBlockSize(),
-                                  num_colors * matrix->getBlockSize());
+  multivector_t block_V_fitted(*(graph->getColMap()), matrix->getBlockSize(),
+                                    num_colors * matrix->getBlockSize());
 
   computeSeedMatrixFitted(block_V_fitted);
 
-  const local_ordinal_type block_size = block_V.getBlockSize();
-  auto col_point_map = multivector_type::makePointMap(*graph->getColMap(),
+  const lno_t block_size = block_V.getBlockSize();
+  auto col_point_map = multivector_t::makePointMap(*graph->getColMap(),
                                                       block_size);
-  auto blockV_point_map = multivector_type::makePointMap(*block_V.getMap(),
+  auto blockV_point_map = multivector_t::makePointMap(*block_V.getMap(),
                                                          block_size);
   const auto col_point_map_rcp = 
              Teuchos::rcp(new Tpetra::Map<LO, GO, NO>(col_point_map));
@@ -403,8 +411,8 @@ CrsColorer<BlockCrsMatrix<SC, LO, GO, NO>>::computeSeedMatrix(
 //////////////////////////////////////////////////////////////////////////////
 template <typename SC, typename LO, typename GO, typename NO>
 void
-CrsColorer<BlockCrsMatrix<SC, LO, GO, NO> >::computeSeedMatrixFitted(
-  multivector_type &blockV) const
+TpetraCrsADColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::computeSeedMatrixFitted(
+  multivector_t &blockV) const
 {
   // Check blockV's map is locally fitted to the graph's column map
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -414,22 +422,22 @@ CrsColorer<BlockCrsMatrix<SC, LO, GO, NO> >::computeSeedMatrixFitted(
       " Jacobian graph.  "
       "You must call the non-fitted version of this function.");
 
-  const local_ordinal_type block_size = blockV.getBlockSize();
+  const lno_t block_size = blockV.getBlockSize();
   auto V = blockV.getMultiVectorView();
 
   V.sync_device();
   auto V_view_dev = V.getLocalViewDevice();
   const size_t num_local_cols = V_view_dev.extent(0) / block_size;
-  list_of_colors_type my_list_of_colors = list_of_colors;
+  list_of_colors_t my_list_of_colors = list_of_colors;
 
   Kokkos::parallel_for(
       Kokkos::RangePolicy<execution_space>(0, num_local_cols),
       KOKKOS_LAMBDA(const size_t i) {
-        for (local_ordinal_type j = 0; j < block_size; ++j)
+        for (lno_t j = 0; j < block_size; ++j)
           V_view_dev(i*block_size+j, (my_list_of_colors[i]-1)*block_size+j) = 
-                                     scalar_type(1.0);
+                                     scalar_t(1.0);
       },
-      "CrsColorer::computeSeedMatrixOverlapped()");
+      "TpetraCrsADColorer::computeSeedMatrixOverlapped()");
 
   V.modify_device();
 }
@@ -437,8 +445,8 @@ CrsColorer<BlockCrsMatrix<SC, LO, GO, NO> >::computeSeedMatrixFitted(
 //////////////////////////////////////////////////////////////////////////////
 template <typename SC, typename LO, typename GO, typename NO>
 void
-CrsColorer<BlockCrsMatrix<SC, LO, GO, NO>>::reconstructMatrix(
-  multivector_type &W) const
+TpetraCrsADColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::reconstructMatrix(
+  multivector_t &W) const
 {
   reconstructMatrix(W, *matrix);
 }
@@ -446,24 +454,24 @@ CrsColorer<BlockCrsMatrix<SC, LO, GO, NO>>::reconstructMatrix(
 //////////////////////////////////////////////////////////////////////////////
 template <typename SC, typename LO, typename GO, typename NO>
 void
-CrsColorer<BlockCrsMatrix<SC, LO, GO, NO> >::reconstructMatrix(
-  multivector_type &block_W, 
-  matrix_type &mat) const
+TpetraCrsADColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::reconstructMatrix(
+  multivector_t &block_W, 
+  matrix_t &mat) const
 {
-  multivector_type block_W_fitted(*(graph->getRowMap()), matrix->getBlockSize(),
+  multivector_t block_W_fitted(*(graph->getRowMap()), matrix->getBlockSize(),
                                   num_colors * matrix->getBlockSize());
 
-  const local_ordinal_type block_size = block_W.getBlockSize();
-  auto row_point_map = multivector_type::makePointMap(*graph->getRowMap(),
+  const lno_t block_size = block_W.getBlockSize();
+  auto row_point_map = multivector_t::makePointMap(*graph->getRowMap(),
                                                       block_size);
-  auto blockW_point_map = multivector_type::makePointMap(*block_W.getMap(),
+  auto blockW_point_map = multivector_t::makePointMap(*block_W.getMap(),
                                                          block_size);
   const auto row_point_map_rcp = 
              Teuchos::rcp(new Tpetra::Map<LO, GO, NO>(row_point_map));
   const auto blockW_point_map_rcp = 
              Teuchos::rcp(new Tpetra::Map<LO, GO, NO>(blockW_point_map));
 
-  Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> 
+  Tpetra::Import<lno_t, gno_t, node_t> 
           importer_point(blockW_point_map_rcp, row_point_map_rcp);
 
   block_W_fitted.getMultiVectorView().doImport(block_W.getMultiVectorView(),
@@ -474,8 +482,8 @@ CrsColorer<BlockCrsMatrix<SC, LO, GO, NO> >::reconstructMatrix(
 //////////////////////////////////////////////////////////////////////////////
 template <typename SC, typename LO, typename GO, typename NO>
 void
-CrsColorer<BlockCrsMatrix<SC, LO, GO, NO> >::reconstructMatrixFitted(
-  multivector_type &W) const
+TpetraCrsADColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::reconstructMatrixFitted(
+  multivector_t &W) const
 {
   reconstructMatrixFitted(W, *matrix);
 }
@@ -483,9 +491,9 @@ CrsColorer<BlockCrsMatrix<SC, LO, GO, NO> >::reconstructMatrixFitted(
 //////////////////////////////////////////////////////////////////////////////
 template <typename SC, typename LO, typename GO, typename NO>
 void
-CrsColorer<BlockCrsMatrix<SC, LO, GO, NO>>::reconstructMatrixFitted(
-  multivector_type &block_W,
-  matrix_type &mat) const
+TpetraCrsADColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::reconstructMatrixFitted(
+  multivector_t &block_W,
+  matrix_t &mat) const
 {
   // Check the graph's row map is locally fitted to W's map
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -495,9 +503,9 @@ CrsColorer<BlockCrsMatrix<SC, LO, GO, NO>>::reconstructMatrixFitted(
       "  You must call the non-fitted version of this function.");
 
   // Blocks are block_size x block_size stored with LayoutRight
-  const local_ordinal_type block_size       = block_W.getBlockSize();
-  const local_ordinal_type block_stride     = block_size * block_size;
-  const local_ordinal_type block_row_stride = block_size;
+  const lno_t block_size       = block_W.getBlockSize();
+  const lno_t block_stride     = block_size * block_size;
+  const lno_t block_row_stride = block_size;
 
   auto W = block_W.getMultiVectorView();
   W.sync_device();
@@ -505,7 +513,7 @@ CrsColorer<BlockCrsMatrix<SC, LO, GO, NO>>::reconstructMatrixFitted(
   auto matrix_vals                      = matrix->getValuesDevice();
   auto local_graph                      = graph->getLocalGraph();
   const size_t num_local_rows           = graph->getNodeNumRows();
-  list_of_colors_type my_list_of_colors = list_of_colors;
+  list_of_colors_t my_list_of_colors = list_of_colors;
 
   Kokkos::parallel_for(
       Kokkos::RangePolicy<execution_space>(0, num_local_rows),
@@ -518,10 +526,10 @@ CrsColorer<BlockCrsMatrix<SC, LO, GO, NO>>::reconstructMatrixFitted(
           const size_t block_col    = local_graph.entries(block_entry);
           const size_t block_offset = block_stride * block_entry;
           const int block_color     = my_list_of_colors[block_col] - 1;
-          for (local_ordinal_type i = 0; i < block_size; ++i)
+          for (lno_t i = 0; i < block_size; ++i)
           {
             const size_t row = block_row * block_size + i;
-            for (local_ordinal_type j = 0; j < block_size; ++j)
+            for (lno_t j = 0; j < block_size; ++j)
             {
               const size_t entry = block_offset + block_row_stride * i + j;
               matrix_vals(entry) = W_view_dev(row, block_color*block_size+j);
@@ -529,6 +537,6 @@ CrsColorer<BlockCrsMatrix<SC, LO, GO, NO>>::reconstructMatrixFitted(
           }
         }
       },
-      "CrsColorer::reconstructMatrix()");
+      "TpetraCrsADColorer::reconstructMatrix()");
 }
 } // namespace Tpetra
