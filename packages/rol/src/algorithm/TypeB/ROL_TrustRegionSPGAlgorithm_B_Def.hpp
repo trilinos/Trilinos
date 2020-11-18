@@ -82,17 +82,17 @@ TrustRegionSPGAlgorithm_B<Real>::TrustRegionSPGAlgorithm_B(ParameterList &list,
   extrapf_   = lmlist.sublist("Cauchy Point").get("Expansion Rate",                    10.0);
   qtol_      = lmlist.sublist("Cauchy Point").get("Decrease Tolerance",                1e-8);
   // Spectral projected gradient parameters
-  lsmax_     = lmlist.sublist("SPG").get("Function Evaluation Limit",                  20);
-  lambdaMin_ = lmlist.sublist("SPG").get("Minimum Spectral Step Size",                 1e-8); 
-  lambdaMax_ = lmlist.sublist("SPG").get("Maximum Spectral Step Size",                 5e2); 
-  sigma1_    = lmlist.sublist("SPG").get("Lower Step Size Safeguard",                  0.1);
-  sigma2_    = lmlist.sublist("SPG").get("Upper Step Size Safeguard",                  0.9);
-  rhodec_    = lmlist.sublist("SPG").get("Backtracking Rate",                          0.5);
-  gamma_     = lmlist.sublist("SPG").get("Sufficient Decrease Tolerance",              1e-4);
-  maxSize_   = lmlist.sublist("SPG").get("Maximum Storage Size",                       10);
-  maxit_     = lmlist.sublist("SPG").get("Iteration Limit",                            25);
-  tol1_      = lmlist.sublist("SPG").get("Absolute Tolerance",                         1e-4);
-  tol2_      = lmlist.sublist("SPG").get("Relative Tolerance",                         1e-2);
+  lsmax_     = lmlist.sublist("Solver").get("Model Evaluation Limit",              20);
+  lambdaMin_ = lmlist.sublist("Solver").get("Minimum Spectral Step Size",          1e-8); 
+  lambdaMax_ = lmlist.sublist("Solver").get("Maximum Spectral Step Size",          5e2); 
+  sigma1_    = lmlist.sublist("Solver").get("Lower Step Size Safeguard",           0.1);
+  sigma2_    = lmlist.sublist("Solver").get("Upper Step Size Safeguard",           0.9);
+  rhodec_    = lmlist.sublist("Solver").get("Backtracking Rate",                   0.5);
+  gamma_     = lmlist.sublist("Solver").get("Sufficient Decrease Tolerance",       1e-4);
+  maxSize_   = lmlist.sublist("Solver").get("Maximum Storage Size",                10);
+  maxit_     = lmlist.sublist("Solver").get("Iteration Limit",                     25);
+  tol1_      = lmlist.sublist("Solver").get("Absolute Tolerance",                  1e-4);
+  tol2_      = lmlist.sublist("Solver").get("Relative Tolerance",                  1e-2);
   // Output Parameters
   verbosity_   = list.sublist("General").get("Output Level",0);
   printHeader_ = verbosity_ > 2;
