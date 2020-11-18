@@ -147,7 +147,8 @@ except ImportError:
         # problem.
         if "ERROR:" in stderr:
             print("")
-            print("An unknown error occurred in modulecmd.")
+            print("An error occurred in modulecmd:")
+            print("> {}".format(stderr))
             print("")
             errcode = 1
 
