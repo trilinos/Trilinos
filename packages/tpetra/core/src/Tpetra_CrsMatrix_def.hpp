@@ -1587,7 +1587,13 @@ namespace Tpetra {
            << k_ptrs_const.extent(0) << endl;
         std::cerr << os.str();
       }
+#if defined(TPETRA_KYUNGJOO)
+      /// direct access to graph member variables is no good.
+      /// this does not know the status and we do not have a clear clue
+      /// about syncing between host and device
+#else
       myGraph_->k_rowPtrs_ = k_ptrs_const;
+#endif
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Assign k_lclInds1D_: old="

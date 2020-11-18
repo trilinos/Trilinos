@@ -654,14 +654,15 @@ namespace Tpetra {
     this->makeImportExport (remotePIDs, false);
 
     k_lclInds1D_ = lclGraph_.entries;
-    k_rowPtrs_ = lclGraph_.row_map;
+
 #if defined(TPETRA_KYUNGJOO)
+    using row_ptrs_value_type = typename local_graph_type::row_map_type::non_const_type::value_type;
+    k_rowPtrs_ = typename local_graph_type::row_map_type::non_const_type((row_ptrs_value_type*)lclGraph_.row_map.data(), lclGraph_.row_map.extent(0));
+
     k_lclInds1D_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_lclInds1D_);
-    /// k_rowPtrs_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_rowPtrs_);
-    /// this does not work.... why do we declare row ptrs non const view ??????????
-    k_rowPtrs_InternalHost_ = typename local_graph_type::row_map_type::non_const_type
-      ::HostMirror("i do not like this", k_rowPtrs_); 
-    Kokkos::deep_copy(k_rowPtrs_InternalHost_, k_rowPtrs_);
+    k_rowPtrs_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_rowPtrs_);
+#else
+    k_rowPtrs_ = lclGraph_.row_map;
 #endif
 
     set_need_sync_host_uvm_access(); // lclGraph_ potentially still in a kernel
@@ -708,13 +709,15 @@ namespace Tpetra {
        "The input column Map must be nonnull.");
 
     k_lclInds1D_ = lclGraph_.entries;
-    k_rowPtrs_ = lclGraph_.row_map;
+
 #if defined(TPETRA_KYUNGJOO)
+    using row_ptrs_value_type = typename local_graph_type::row_map_type::non_const_type::value_type;
+    k_rowPtrs_ = typename local_graph_type::row_map_type::non_const_type((row_ptrs_value_type*)lclGraph_.row_map.data(), lclGraph_.row_map.extent(0));
+
     k_lclInds1D_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_lclInds1D_);
-    //k_rowPtrs_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_rowPtrs_);
-    k_rowPtrs_InternalHost_ = typename local_graph_type::row_map_type::non_const_type
-      ::HostMirror("i do not like this", k_rowPtrs_); 
-    Kokkos::deep_copy(k_rowPtrs_InternalHost_, k_rowPtrs_);
+    k_rowPtrs_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_rowPtrs_);
+#else
+    k_rowPtrs_ = lclGraph_.row_map;
 #endif
 
     set_need_sync_host_uvm_access(); // lclGraph_ potentially still in a kernel
@@ -1934,7 +1937,7 @@ namespace Tpetra {
       numNewInds = new_ginds.size();
       if (I == GlobalIndices) { // store global indices
 #if defined(TPETRA_KYUNGJOO)
-        const auto gind_view = this->getGlobaKokkosRowInternalHostViewNonConst (rowinfo);
+        const auto gind_view = this->getGlobalKokkosRowInternalHostView (rowinfo);
         GO* const gblColInds_out = gind_view.data() + rowinfo.numEntries;
 #else
         ArrayView<GO> gind_view = this->getGlobalViewNonConst (rowinfo);
@@ -1979,7 +1982,7 @@ namespace Tpetra {
       if (I == LocalIndices) { // store local indices
 #if defined(TPETRA_KYUNGJOO)
         const auto lind_view = this->getLocalKokkosRowInternalHostViewNonConst (rowinfo);        
-        LO* const lclColInds_out = lind_view.getRawPtr () + rowinfo.numEntries;
+        LO* const lclColInds_out = lind_view.data () + rowinfo.numEntries;
 #else
         ArrayView<LO> lind_view = this->getLocalViewNonConst (rowinfo);
         if (debug_) {
@@ -2637,7 +2640,7 @@ namespace Tpetra {
     ArrayRCP<const size_t> ptr_st;
 #if defined(TPETRA_KYUNGJOO)
     if (same) { // size_t == row_offset_type
-      ptr_rot = Kokkos::Compat::persistingView (k_rowPtrs_InternalHost_.data());
+      ptr_rot = Kokkos::Compat::persistingView (k_rowPtrs_InternalHost_);
     }
     else { // size_t != row_offset_type
       typedef Kokkos::View<size_t*, Kokkos::HostSpace> ret_view_type;
@@ -3265,14 +3268,16 @@ namespace Tpetra {
     indicesAreSorted_    = true;
     noRedundancies_      = true;
     k_lclInds1D_         = columnIndices;
-    k_rowPtrs_           = rowPointers;
+
 
 #if defined(TPETRA_KYUNGJOO)
+    using row_ptrs_value_type = typename local_graph_type::row_map_type::non_const_type::value_type;
+    k_rowPtrs_ = typename local_graph_type::row_map_type::non_const_type((row_ptrs_value_type*)rowPointers.data(), rowPointers.extent(0));
+
     k_lclInds1D_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_lclInds1D_);
-    ///k_rowPtrs_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_rowPtrs_);
-    k_rowPtrs_InternalHost_ = typename local_graph_type::row_map_type::non_const_type
-      ::HostMirror("i do not like this", k_rowPtrs_); 
-    Kokkos::deep_copy(k_rowPtrs_InternalHost_, k_rowPtrs_);
+    k_rowPtrs_InternalHost_ = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), k_rowPtrs_);
+#else
+    k_rowPtrs_           = rowPointers;
 #endif
     set_need_sync_host_uvm_access(); // columnIndices and rowPointers potentially still in a kernel
 
@@ -3329,7 +3334,8 @@ namespace Tpetra {
       Kokkos::View<size_t*,layout_type,Kokkos::HostSpace> 
         sizeTypeRowPointersHostView("sizeTypeRowPointersHostView", rowPointers.size());
       Kokkos::deep_copy(sizeTypeRowPointersHostView, rowPointersHostView);
-      setAllIndices (sizeTypeRowPointersHostView, columnIndicesDeviceView);      
+      const auto sizeTypeRowPointersDeviceView = Kokkos::create_mirror_view_and_copy(typename device_type::memory_space(), sizeTypeRowPointersHostView);
+      setAllIndices (sizeTypeRowPointersDeviceView, columnIndicesDeviceView);      
     }
 #else /// the following is too complicated
     input_view_type ptr_in (rowPointers.getRawPtr (), size);
@@ -4348,7 +4354,12 @@ namespace Tpetra {
       k_numRowEntries_ = row_entries_type ();
 
       // Keep the new 1-D packed allocations.
+#if defined(TPETRA_KYUNGJOO)
+      using row_ptrs_value_type = typename local_graph_type::row_map_type::non_const_type::value_type;
+      k_rowPtrs_ = typename local_graph_type::row_map_type::non_const_type((row_ptrs_value_type*)ptr_d_const.data(), ptr_d_const.extent(0));
+#else
       k_rowPtrs_   = ptr_d_const;
+#endif
       k_lclInds1D_ = ind_d;
 
       storageStatus_ = Details::STORAGE_1D_PACKED;
@@ -4540,7 +4551,7 @@ namespace Tpetra {
           const RowInfo rowInfo = this->getRowInfo (lclRow);
 
 #if defined(TPETRA_KYUNGJOO)
-          const auto oldGblRowView = this->getGlobaKokkosRowInternalHostView(rowInfo);
+          const auto oldGblRowView = this->getGlobalKokkosRowInternalHostView(rowInfo);
 #else
           Teuchos::ArrayView<const GO> oldGblRowView = getGlobalView (rowInfo);
 #endif
