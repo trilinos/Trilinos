@@ -32,18 +32,16 @@ class mock_popen(object):
     """
     Abstract base class for popen mock
     """
-    #__metaclass__ = abc.ABCMeta
     def __init__(self, cmd, stdout=None, stderr=None):
         print("mock_popen> {}".format(cmd))
         self.stdout = stdout
         self.stderr = stderr
         self.returncode = None
 
-    #@abc.abstractmethod
     def communicate(self):
         print("mock_popen> communicate()")
-        stdout = b"stdout=1"
-        stderr = b"stderr=2"
+        stdout = b"os.environ['__foobar__'] ='baz'\ndel os.environ['__foobar__']"
+        stderr = b"stderr=1"
         self.returncode = 0
         return (stdout,stderr)
 
@@ -74,18 +72,42 @@ class mock_popen_status_error_return_nonetype(mock_popen):
 
 
 
-class mock_popen_status_error(mock_popen):
+class mock_popen_status_error_rc1(mock_popen):
     """
     Specialization of popen mock that will return with error.
+
+    Test the condition where modulecmd returned a status of 1 and
+    has `ERROR:` in its stderr field.
     """
     def __init__(self, cmd, stdout=None, stderr=None):
-        super(mock_popen_status_error, self).__init__(cmd,stdout,stderr)
+        super(mock_popen_status_error_rc1, self).__init__(cmd,stdout,stderr)
 
     def communicate(self):
         print("mock_popen> communicate()")
         stdout = b"stdout=1"
         stderr = b"ERROR: Something wrong happened."
         self.returncode = 1
+        return (stdout,stderr)
+
+
+
+class mock_popen_status_error_rc0(mock_popen):
+    """
+    Specialization of popen mock.
+
+    Simulates the results from a modulecmd operation that had
+    an error loading a module (maybe not found). Modulecmd will tend
+    to have a message like "ERROR: could not load module" in its stderr
+    field but it will generally return an exit status of 0.
+    """
+    def __init__(self, cmd, stdout=None, stderr=None):
+        super(mock_popen_status_error_rc0, self).__init__(cmd,stdout,stderr)
+
+    def communicate(self):
+        print("mock_popen> communicate()")
+        stdout = b"os.environ['__foobar__'] ='baz'\ndel os.environ['__foobar__']"
+        stderr = b"ERROR: Something wrong happened."
+        self.returncode = 0
         return (stdout,stderr)
 
 
@@ -158,7 +180,14 @@ class moduleHelperTest(TestCase):
         self.assertEqual(0, r)
 
 
-    @patch('subprocess.Popen', side_effect=mock_popen_status_error)
+    @patch('subprocess.Popen', side_effect=mock_popen_status_error_rc1)
+    def test_module_load_status_error(self, arg_popen):
+        r = ModuleHelper.module("load", "sems-gcc/4.8.4")
+        print("result = {}".format(r))
+        self.assertEqual(1, r)
+
+
+    @patch('subprocess.Popen', side_effect=mock_popen_status_error_rc0)
     def test_module_load_status_error(self, arg_popen):
         r = ModuleHelper.module("load", "sems-gcc/4.8.4")
         print("result = {}".format(r))

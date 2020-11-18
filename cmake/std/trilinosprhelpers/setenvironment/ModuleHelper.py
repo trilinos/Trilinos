@@ -115,11 +115,20 @@ except ImportError:
         output = output.decode()
         stderr = stderr.decode()
 
-        if errcode:
+        stderr_ok = True
+        if "ERROR:" in stderr:
+            print("")
+            print("An error occurred in modulecmd:")
+            print("")
+            stderr_ok = False
+            errcode = 1
+
+        if stderr_ok and errcode != 0:
             print("")
             print("Failed to execute the module command: {}".format(" ".join(cmd[2:])))
             print("- Returned {} exit status.".format(errcode))
-        else:
+
+        if stderr_ok and errcode == 0:
             try:
                 # This is where we _actually_ execute the module command body.
                 exec(output)
@@ -135,24 +144,10 @@ except ImportError:
             except BaseException as error:
                 print("")
                 print("An ERROR occurred during execution of module commands")
-                print("exec() code:")
-                print("```")
-                print(output)
-                print("```")
                 print("")
                 raise error
 
-        # Check for success... module tends to return 0 regardless of outcome
-        # so we'll have a look at the stderr for indications that there was a
-        # problem.
-        if "ERROR:" in stderr:
-            print("")
-            print("An error occurred in modulecmd:")
-            print("> {}".format(stderr))
-            print("")
-            errcode = 1
-
-        if errcode:
+        if errcode != 0:
             print("")
             print("[module output start]\n{}\n[module output end]".format(output))
             print("[module stderr start]\n{}\n[module stderr end]".format(stderr))
