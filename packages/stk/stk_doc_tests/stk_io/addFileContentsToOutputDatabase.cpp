@@ -120,7 +120,8 @@ TEST(StkMeshIoBrokerHowTo, addFileContentsToOutputDatabase)
       const std::vector<std::string> &info_records = stkIo.get_info_records();
       // First 2 lines of info records are host information (node name,
       // os version) (2) Next record is the file name of the input file
-      // data that follows (1) File contains 4 records; 1 is longer than // 80 characters, so it wraps (4+1) Next line is the
+      // data that follows (1) File contains 4 records; 1 is longer than 
+      // 80 characters, so it wraps (4+1) Next line is the
       // "additional_info_record" added above (1)
       // Last records are the IOSS configuration summary (35).
       size_t expected_info_record_count = 2 + 35 + (4+1)  + 1 + 1;
