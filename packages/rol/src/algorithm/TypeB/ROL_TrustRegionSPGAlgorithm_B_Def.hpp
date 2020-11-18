@@ -441,28 +441,44 @@ void TrustRegionSPGAlgorithm_B<Real>::dproj(Vector<Real> &x,
                                             Vector<Real> &y,
                                             Vector<Real> &p,
                                             std::ostream &outStream) const {
+  // Solve ||P(t*x0 + (1-t)*(x-x0))-x0|| = del using Ridder's method
   const Real half(0.5), one(1), tol(1e-2*std::sqrt(ROL_EPSILON<Real>()));
   const Real fudge(1.0-1e-6);
-  Real e(0), a0(0), a1(1), a(0.5);
+  Real e0(0), e1(0), e2(0), e(0), a0(0), a1(0.5), a2(1), a(0);
+  int cnt(0);
   y.set(x);
-  proj_->project(y,outStream);
+  proj_->project(y,outStream); cnt++;
   p.set(y); p.axpy(-one,x0);
-  e = p.norm();
-  if (e <= del) {
+  e2 = p.norm();
+  if (e2 <= del) {
     x.set(y);
     return;
   }
-  while (a1-a0 > tol) {
+  while (a2-a0 > tol) {
+    a1 = half*(a0+a2);
+    y.set(x); y.scale(a1); y.axpy(one-a1,x0);
+    proj_->project(y,outStream); cnt++;
+    p.set(y); p.axpy(-one,x0);
+    e1 = p.norm();
+    if (e1 >= fudge*del && e1 <= del) break;
+    a = a1-(a1-a0)*(e1-del)/std::sqrt((e1-del)*(e1-del)-(e0-del)*(e2-del));
     y.set(x); y.scale(a); y.axpy(one-a,x0);
-    proj_->project(y,outStream);
+    proj_->project(y,outStream); cnt++;
     p.set(y); p.axpy(-one,x0);
     e = p.norm();
-    if (e < fudge*del) a0 = a; // Move lower end point
-    else if (e > del)  a1 = a; // Move upper end point
-    else               break;  // Exit if (1-1e-6)*del <= snorm <= del
-    a = a0 + half*(a1-a0);
+    if (e < fudge*del) {
+      if (e1 < fudge*del) { e0 = (a < a1 ? e1 : e); a0 = (a < a1 ? a1 : a); }
+      else                { e0 = e; a0 = a; e2 = e1; a2 = a1; };
+    }
+    else if (e > del) {
+      if (e1 < fudge*del) { e0 = e1; a0 = a1; e2 = e; a2 = a; }
+      else                { e2 = (a < a1 ? e : e1); a2 = (a < a1 ? a : a1); }
+    }
+    else break; // Exit if (1-1e-6)*del <= snorm <= del
   }
   x.set(y);
+  if (verbosity_ > 1)
+    outStream << "    Number of polyhedral projections: " << cnt << std::endl;
 }
 
 template<typename Real>
