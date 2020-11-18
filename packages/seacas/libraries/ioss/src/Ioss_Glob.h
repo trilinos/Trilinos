@@ -1,5 +1,5 @@
-#ifndef GLOB_CPP_H
-#define GLOB_CPP_H
+#ifndef IOSS_GLOB_CPP_H
+#define IOSS_GLOB_CPP_H
 
 #include <memory>
 #include <string>
@@ -45,7 +45,7 @@ namespace glob {
   template <class charT> class State
   {
   public:
-    State(StateType type, Automata<charT> &states) : type_{type}, states_{states} {}
+    State(StateType type, Automata<charT> &states) : type_(type), states_(states) {}
 
     virtual ~State() = default;
 
@@ -170,7 +170,7 @@ namespace glob {
       return vec;
     }
 
-    template <class T, typename... Args> size_t NewState(Args &&... args)
+    template <class T, typename... Args> size_t NewState(Args &&...args)
     {
       size_t state_pos = states_.size();
       auto   state     = std::unique_ptr<State<charT>>(new T(*this, std::forward<Args>(args)...));
@@ -310,6 +310,7 @@ namespace glob {
   {
   public:
     SetItem() = default;
+    virtual ~SetItem() = default;
 
     virtual bool Check(charT c) const = 0;
   };
@@ -399,7 +400,7 @@ namespace glob {
     StateGroup(Automata<charT> &states, Type type,
                std::vector<std::unique_ptr<Automata<charT>>> &&automatas)
         : State<charT>(StateType::GROUP, states), type_{type}, automatas_{std::move(automatas)},
-								 match_one_{false}
+          match_one_{false}
     {
     }
 
@@ -479,7 +480,7 @@ namespace glob {
         break;
       }
       }
-      return std::tuple<size_t, size_t>(0,0);
+      return std::tuple<size_t, size_t>(0, 0);
     }
 
     std::tuple<size_t, size_t> NextNeg(const String<charT> &str, size_t pos)
@@ -625,7 +626,7 @@ namespace glob {
     friend std::ostream &operator<<(std::ostream &stream, const Token<charU> &token);
 
     TokenKind kind_;
-    charT     value_;
+    charT     value_{};
   };
 
   template <class charT>
@@ -1424,7 +1425,7 @@ namespace glob {
       return vec_automatas;
     }
 
-    template <class T, typename... Args> void NewState(Automata<charT> &automata, Args &&... args)
+    template <class T, typename... Args> void NewState(Automata<charT> &automata, Args &&...args)
     {
       current_state_ = automata.template NewState<T>(std::forward<Args>(args)...);
       if (preview_state_ >= 0) {
@@ -1692,4 +1693,4 @@ namespace glob {
 
 } // namespace glob
 
-#endif // GLOB_CPP_H
+#endif // IOSS_GLOB_CPP_H

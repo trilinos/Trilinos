@@ -96,8 +96,9 @@ Ioss::DatabaseIO *Ioss::IOFactory::create(const std::string &type, const std::st
     if (my_props.exists("SHOW_CONFIG")) {
       static bool output = false;
       if (!output && pu.parallel_rank() == 0) {
-        output = true;
-        show_configuration();
+        output             = true;
+        std::string config = show_configuration();
+        Ioss::OUTPUT() << config;
       }
     }
     Ioss::IOFactory *factory = (*iter).second;
@@ -117,19 +118,20 @@ int Ioss::IOFactory::describe(NameList *names)
   return describe__(registry(), names);
 }
 
-void Ioss::IOFactory::show_configuration()
+std::string Ioss::IOFactory::show_configuration()
 {
-  fmt::print(Ioss::OUTPUT(), "\nIOSS Library Version '{}'\n\n", Ioss::Version());
+  std::stringstream config;
+  fmt::print(config, "IOSS Library Version '{}'\n\n", Ioss::Version());
   NameList db_types;
   describe(&db_types);
-  fmt::print(Ioss::OUTPUT(), "Supported database types:\n\t{}\n", fmt::join(db_types, ", "));
+  fmt::print(config, "Supported database types:\n\t{}\n", fmt::join(db_types, ", "));
 
 #if defined(SEACAS_HAVE_MPI)
-  fmt::print(Ioss::OUTPUT(), "\nSupported decomposition methods:\n\t{}\n",
+  fmt::print(config, "\nSupported decomposition methods:\n\t{}\n",
              fmt::join(Ioss::valid_decomp_methods(), ", "));
 #endif
 
-  fmt::print(Ioss::OUTPUT(), "\nThird-Party Library Configuration Information:\n\n");
+  fmt::print(config, "\nThird-Party Library Configuration Information:\n\n");
 
   // Each database type may appear multiple times in the registry
   // due to aliasing (i.e. exodus, genesis, exodusII, ...)
@@ -140,9 +142,10 @@ void Ioss::IOFactory::show_configuration()
   for (const auto &db : *registry()) {
     auto result = unique_facs.insert(db.second);
     if (result.second) {
-      db.second->show_config();
+      config << db.second->show_config();
     }
   }
+  return config.str();
 }
 
 Ioss::IOFactory::IOFactory(const std::string &type)

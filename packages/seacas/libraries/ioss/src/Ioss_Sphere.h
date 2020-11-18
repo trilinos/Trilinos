@@ -21,6 +21,7 @@ namespace Ioss {
 
     static void factory();
     ~Sphere() override;
+    Sphere(const Sphere &) = delete;
 
     ElementShape shape() const override { return ElementShape::POINT; }
     int          spatial_dimension() const override;
@@ -49,8 +50,6 @@ namespace Ioss {
 
   private:
     static Sphere instance_;
-
-    Sphere(const Sphere &) = delete;
   };
 } // namespace Ioss
 #endif // IOSS_Ioss_Sphere_h

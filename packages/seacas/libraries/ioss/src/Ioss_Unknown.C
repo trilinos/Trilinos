@@ -50,7 +50,7 @@ Ioss::Unknown::Unknown() : Ioss::ElementTopology(Ioss::Unknown::name, Ioss::Unkn
 Ioss::Unknown::~Unknown() = default;
 
 int Ioss::Unknown::parametric_dimension() const { return 0; }
-int Ioss::Unknown::spatial_dimension() const { return 0; }
+int Ioss::Unknown::spatial_dimension() const { return 3; }
 int Ioss::Unknown::order() const { return 0; }
 
 int Ioss::Unknown::number_corner_nodes() const { return number_nodes(); }

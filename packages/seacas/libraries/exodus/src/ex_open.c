@@ -281,7 +281,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
           snprintf(errmsg, MAX_ERR_LENGTH,
                    "ERROR: failed to add maximum_name_length attribute in file id %d", exoid);
           ex_err_fn(exoid, __func__, errmsg, status);
-          return (EX_FATAL);
+          EX_FUNC_LEAVE(EX_FATAL);
         }
       }
 
@@ -367,8 +367,8 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
   }
 
   /* initialize floating point and integer size conversion. */
-  if (ex__conv_init(exoid, comp_ws, io_ws, file_wordsize, int64_status, 0, 0, 0, mode & EX_WRITE) !=
-      EX_NOERR) {
+  if (ex__conv_init(exoid, comp_ws, io_ws, file_wordsize, int64_status, false, false, false,
+                    mode & EX_WRITE) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to initialize conversion routines in file id %d named %s", exoid, path);
     ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);

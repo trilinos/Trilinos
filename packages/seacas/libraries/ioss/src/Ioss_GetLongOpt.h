@@ -42,12 +42,12 @@ namespace Ioss {
     };
 
   private:
-    Cell *      table;       // option table
-    const char *ustring;     // usage message
-    char *      pname;       // program basename
-    Cell *      last;        // last entry in option table
-    int         enroll_done; // finished enrolling
-    char        optmarker;   // option marker
+    Cell *      table{nullptr};   // option table
+    const char *ustring{nullptr}; // usage message
+    char *      pname{nullptr};   // program basename
+    Cell *      last{nullptr};    // last entry in option table
+    int         enroll_done{0};   // finished enrolling
+    char        optmarker;        // option marker
 
   private:
     int setcell(Cell *c, char *valtoken, char *nexttoken, const char *name);

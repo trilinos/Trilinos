@@ -166,6 +166,7 @@ namespace Ioss {
     void     property_erase(const std::string &property_name);
     bool     property_exists(const std::string &property_name) const;
     Property get_property(const std::string &property_name) const;
+    int64_t  get_optional_property(const std::string &property, int64_t optional_value) const;
     int      property_describe(NameList *names) const;
     int      property_describe(Ioss::Property::Origin origin, NameList *names) const;
     size_t   property_count() const;
@@ -332,6 +333,12 @@ inline bool Ioss::GroupingEntity::property_exists(const std::string &property_na
 inline Ioss::Property Ioss::GroupingEntity::get_property(const std::string &property_name) const
 {
   return properties.get(property_name);
+}
+
+inline int64_t Ioss::GroupingEntity::get_optional_property(const std::string &property_name,
+                                                           int64_t            optional_value) const
+{
+  return properties.get_optional(property_name, optional_value);
 }
 
 /** \brief Get the names of all properties in the property manager for this entity.

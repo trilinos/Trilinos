@@ -21,6 +21,7 @@ namespace Ioss {
 
     static void factory();
     ~Hex16() override;
+    Hex16(const Hex16 &) = delete;
 
     ElementShape shape() const override { return ElementShape::HEX; }
     int          spatial_dimension() const override;
@@ -54,8 +55,6 @@ namespace Ioss {
 
   private:
     static Hex16 instance_;
-
-    Hex16(const Hex16 &) = delete;
   };
 } // namespace Ioss
 #endif
