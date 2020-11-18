@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-typedef std::vector<std::pair<std::string, int>> StringIdVector;
-using StringVector = std::vector<std::string>;
+using StringIdVector = std::vector<std::pair<std::string, int>>;
+using StringVector   = std::vector<std::string>;
 
 #endif

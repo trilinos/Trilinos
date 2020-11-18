@@ -16,7 +16,7 @@
 #include <vector>       // for vector
 
 namespace Excn {
-  typedef std::vector<std::pair<std::string, int>> StringIdVector;
+  using StringIdVector = std::vector<std::pair<std::string, int>>;
 
   class SystemInterface
   {
@@ -66,6 +66,8 @@ namespace Excn {
     bool int64() const { return intIs64Bit_; }
     void set_int64() const { intIs64Bit_ = true; }
     int  compress_data() const { return compressData_; }
+    bool zlib() const { return zlib_; }
+    bool szip() const { return szip_; }
     bool subcycle_join() const { return subcycleJoin_; }
     bool output_shared_nodes() const { return outputSharedNodes_; }
     bool is_auto() const { return auto_; }
@@ -128,6 +130,8 @@ namespace Excn {
     int          cycle_{-1};
     int          compressData_{0};
     int          maxOpenFiles_{0};
+    bool         zlib_{true};
+    bool         szip_{false};
     bool         sumSharedNodes_{false};
     bool         addProcessorId_{false};
     bool         mapIds_{true};

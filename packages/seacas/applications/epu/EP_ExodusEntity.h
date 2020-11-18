@@ -128,7 +128,7 @@ namespace Excn {
     }
   };
 
-  typedef std::pair<int64_t, int64_t> Side;
+  using Side = std::pair<int64_t, int64_t>;
   template <typename INT> class SideSet
   {
   public:

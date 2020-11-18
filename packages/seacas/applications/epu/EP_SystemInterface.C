@@ -95,6 +95,14 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("64", GetLongOption::NoValue,
                   "The output database will be written in the 64-bit integer mode", nullptr);
 
+  options_.enroll(
+      "zlib", GetLongOption::NoValue,
+      "Use the Zlib / libz compression method if compression is enabled (default) [exodus only].",
+      nullptr);
+
+  options_.enroll("szip", GetLongOption::NoValue,
+                  "Use SZip compression. [exodus only, enables netcdf-4]", nullptr);
+
   options_.enroll("compress_data", GetLongOption::MandatoryValue,
                   "The output database will be written using compression (netcdf-4 mode only).\n"
                   "\t\tValue ranges from 0 (no compression) to 9 (max compression) inclusive.",
@@ -360,6 +368,16 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("64") != nullptr) {
     intIs64Bit_ = true;
+  }
+
+  if (options_.retrieve("szip") != nullptr) {
+    szip_ = true;
+    zlib_ = false;
+  }
+  zlib_ = (options_.retrieve("zlib") != nullptr);
+
+  if (szip_ && zlib_) {
+    fmt::print(stderr, "ERROR: Only one of 'szip' or 'zlib' can be specified.\n");
   }
 
   {

@@ -10,7 +10,7 @@
 #define _ELB_ELM_CONST_H
 
 /* Define element types */
-typedef enum {
+enum E_Type {
   SPHERE,
   BAR2,
   BAR3,
@@ -52,7 +52,7 @@ typedef enum {
   SHELL2,
   SHELL3,
   NULL_EL
-} E_Type;
+};
 
 extern const char *elem_name_from_enum(const E_Type elem_type);
 

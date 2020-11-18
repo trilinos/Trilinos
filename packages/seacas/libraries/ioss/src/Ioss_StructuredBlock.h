@@ -32,18 +32,16 @@ namespace Ioss {
 
   struct BoundaryCondition
   {
-    BoundaryCondition(const std::string name, const std::string fam_name,
-                      const Ioss::IJK_t range_beg, const Ioss::IJK_t range_end)
-        : m_bcName(std::move(name)), m_famName(std::move(fam_name)),
-          m_rangeBeg(std::move(range_beg)), m_rangeEnd(std::move(range_end))
+    BoundaryCondition(std::string name, std::string fam_name, Ioss::IJK_t range_beg,
+                      Ioss::IJK_t range_end)
+        : m_bcName(std::move(name)), m_famName(std::move(fam_name)), m_rangeBeg(range_beg),
+          m_rangeEnd(range_end)
     {
     }
 
     // Deprecated... Use the constructor above with both name and fam_name
-    BoundaryCondition(const std::string name, const Ioss::IJK_t range_beg,
-                      const Ioss::IJK_t range_end)
-        : m_bcName(name), m_famName(std::move(name)), m_rangeBeg(std::move(range_beg)),
-          m_rangeEnd(std::move(range_end))
+    BoundaryCondition(std::string name, Ioss::IJK_t range_beg, Ioss::IJK_t range_end)
+        : m_bcName(name), m_famName(std::move(name)), m_rangeBeg(range_beg), m_rangeEnd(range_end)
     {
     }
 

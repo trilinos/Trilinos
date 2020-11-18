@@ -23,7 +23,7 @@ namespace IOShell {
     Interface();
     ~Interface();
 
-    bool parse_options(int argc, char **argv);
+    bool parse_options(int argc, char **argv, int my_processor);
 
     //! Dumps representation of data in this class to cerr
 
@@ -87,6 +87,7 @@ namespace IOShell {
     // Testing CGNS - defines zones in reverse order from input file.
     bool reverse{false};
     bool add_processor_id_field{false};
+    bool boundary_sideset{false};
     char fieldSuffixSeparator{'_'};
   };
 } // namespace IOShell
