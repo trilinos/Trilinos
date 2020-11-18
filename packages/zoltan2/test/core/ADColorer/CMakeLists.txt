@@ -9,11 +9,20 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
       FAIL_REGULAR_EXPRESSION "FAIL"
     )
 
+TRIBITS_ADD_TEST(
+      ADColorer
+      NAME ADColorer_simple_nodistrib
+      ARGS "--file=simple --no-distribute"
+      COMM serial mpi
+      PASS_REGULAR_EXPRESSION "PASS"
+      FAIL_REGULAR_EXPRESSION "FAIL"
+    )
+
 IF (${PROJECT_NAME}_ENABLE_Galeri)
 TRIBITS_ADD_TEST(
     ADColorer
     NAME ADColorer_galeri
-    ARGS "--xdim=10 --ydim=8 --zdim=6"
+    ARGS "--xdim=20 --ydim=16 --zdim=10"
     COMM serial mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"

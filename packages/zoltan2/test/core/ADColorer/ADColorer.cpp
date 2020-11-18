@@ -115,6 +115,11 @@ private:
     Teuchos::RCP<matrix_t> J = (useFitted ? JFitted : JNotFitted);
     int me = J->getRowMap()->getComm()->getRank();
 
+    if (me == 0)
+      std::cout << "Running " << testname << " with "
+                << (useFitted ? "fitted maps" : "non-fitted maps")
+                << std::endl;
+
     // Create a colorer
     Zoltan2::TpetraCrsADColorer<matrix_t> colorer(J);
 
@@ -196,6 +201,34 @@ int main(int narg, char **arg)
     coloring_params.set("symmetrize", symmetrize);
 
     testColorer.run("Test One", coloring_params);
+    if (!ok) ierr++;
+  }
+
+  {
+    Teuchos::ParameterList coloring_params;
+    bool symmetric = false;
+    bool symmetrize = true;
+    std::string matrixType = "Jacobian";
+
+    coloring_params.set("MatrixType", matrixType);
+    coloring_params.set("symmetric", symmetric);
+    coloring_params.set("symmetrize", symmetrize);
+
+    testColorer.run("Test Two", coloring_params);
+    if (!ok) ierr++;
+  }
+
+  {
+    Teuchos::ParameterList coloring_params;
+    bool symmetric = true;
+    bool symmetrize = false;
+    std::string matrixType = "Jacobian";
+
+    coloring_params.set("MatrixType", matrixType);
+    coloring_params.set("symmetric", symmetric);
+    coloring_params.set("symmetrize", symmetrize);
+
+    testColorer.run("Test Three", coloring_params);
     if (!ok) ierr++;
   }
 
