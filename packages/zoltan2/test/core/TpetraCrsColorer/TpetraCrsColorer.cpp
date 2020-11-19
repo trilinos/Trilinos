@@ -1,4 +1,6 @@
+
 #include "Tpetra_Core.hpp"
+#include "Kokkos_Random.hpp"
 #include "Zoltan2_TestHelpers.hpp"
 #include "Zoltan2_TpetraCrsColorer.hpp"
 
@@ -9,6 +11,7 @@ public:
   using gno_t = typename map_t::global_ordinal_type;
   using matrix_t = Tpetra::CrsMatrix<zscalar_t>;
   using multivector_t = Tpetra::MultiVector<zscalar_t>;
+  using execution_space_t = typename matrix_t::device_type::execution_space;
 
   ///////////////////////////////////////////////////////////
   // Construct the test:  
@@ -18,6 +21,8 @@ public:
   ColorerTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm,
               int narg, char**arg)
   {
+    int me = comm->getRank();
+
     // Process command line arguments
     bool distributeInput = true;
     std::string filename = "";
@@ -60,9 +65,26 @@ public:
     Teuchos::RCP<const map_t> wMapCyclic =
                  getCyclicMap(JBlock->getGlobalNumRows(), indices, comm);
 
+    // Fill JBlock with random numbers for a better test.
+    JBlock->resumeFill();
+    auto local_matrix = JBlock->getLocalMatrix();
+    auto local_graph = JBlock->getCrsGraph()->getLocalGraph();
+    const size_t num_local_rows = JBlock->getNodeNumRows();
+
+    using IST = typename Kokkos::Details::ArithTraits<zscalar_t>::val_type;
+    using pool_type = 
+          Kokkos::Random_XorShift64_Pool<execution_space_t>;
+    pool_type rand_pool(static_cast<uint64_t>(me));
+
+    Kokkos::fill_random(local_matrix.values, rand_pool, 
+                        static_cast<IST>(1.), static_cast<IST>(9999.));
+    JBlock->fillComplete();
+    JBlock->print(std::cout);
+
     JCyclic = rcp(new matrix_t(*JBlock));
     JCyclic->resumeFill();
     JCyclic->fillComplete(vMapCyclic, wMapCyclic);
+    JBlock->print(std::cout);
   }
 
   ////////////////////////////////////////////////////////////////
@@ -109,7 +131,7 @@ private:
     const bool useBlock
   )
   {
-    bool ok = true;
+    int ierr = 0;
 
     // Pick matrix depending on useBlock flag
     Teuchos::RCP<matrix_t> J = (useBlock ? JBlock : JCyclic);
@@ -127,9 +149,8 @@ private:
 
     // Check coloring
     if (!colorer.checkColoring()) {
-      if (me == 0)
-        std::cout << testname << " FAILED: invalid coloring returned"
-                  << std::endl;
+      std::cout << testname << " FAILED: invalid coloring returned"
+                << std::endl;
       return false;
     }
 
@@ -144,21 +165,35 @@ private:
     colorer.computeSeedMatrix(V);
 
     // To test the result...
-    // Compute compression vector
-
-    multivector_t W(J->getRangeMap(), numColors);  // W is the compressed matrix
+    // Compute the compressed matrix W
+    multivector_t W(J->getRangeMap(), numColors);
   
     J->apply(W, V);
 
     // Reconstruct matrix from compression vector
-    // TODO matrix_t Jp();
-    // TODO colorer.reconstructMatrix(W, Jp);
-    // TODO KDD:  I do not understand the operation here
-  
-    // Check J = Jp somehow
-    // KDD is there a way to do this comparison in Tpetra?
+    Teuchos::RCP<matrix_t> Jp = rcp(new matrix_t(*J));
+    Jp->resumeFill();
+    Jp->setAllToScalar(static_cast<zscalar_t>(-1.));
+    Jp->fillComplete();
 
-    if (!ok) {
+    colorer.reconstructMatrix(W, *Jp);
+
+    // Check that values of J = values of Jp
+    auto J_local_matrix = J->getLocalMatrix();
+    auto Jp_local_matrix = Jp->getLocalMatrix();
+    const size_t num_local_nz = J->getNodeNumEntries();
+
+    Kokkos::parallel_reduce(
+      "TpetraCrsColorer::testReconstructedMatrix()",
+      Kokkos::RangePolicy<execution_space_t>(0, num_local_nz),
+      KOKKOS_LAMBDA(const size_t nz, int &errorcnt) {
+        if (J_local_matrix.values(nz) != Jp_local_matrix.values(nz))
+          errorcnt++;
+      }, 
+      ierr);
+   
+
+    if (ierr > 0) {
       if (me == 0) {
         std::cout << testname << " FAILED with "
                   << (useBlock ? "Block maps" : "Cyclic maps")
@@ -167,7 +202,7 @@ private:
       }
     }
 
-    return ok;
+    return (ierr == 0);
   }
 
   ////////////////////////////////////////////////////////////////
