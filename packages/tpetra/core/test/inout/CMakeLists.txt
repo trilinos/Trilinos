@@ -215,5 +215,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraCore_inout_copy_files
   SOURCE_FILES
     simple.mtx
+    rmat_11.mtx
+    rmat_11_lap.mtx
 )
 
