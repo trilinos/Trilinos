@@ -71,6 +71,8 @@ TrustRegionSPGAlgorithm_B<Real>::TrustRegionSPGAlgorithm_B(ParameterList &list,
   verbosity_    = trlist.sublist("General").get("Output Level",                     0);
   // Algorithm-Specific Parameters
   ROL::ParameterList &lmlist = trlist.sublist("SPG");
+  useNM_     = lmlist.get("Use Nonmonotone Trust Region",                              false);
+  maxNM_     = lmlist.get("Maximum Storage Size",                                      10);
   mu0_       = lmlist.get("Sufficient Decrease Parameter",                             1e-2);
   spexp_     = lmlist.get("Relative Tolerance Exponent",                               1.0);
   spexp_     = std::max(static_cast<Real>(1),std::min(spexp_,static_cast<Real>(2)));
@@ -84,7 +86,7 @@ TrustRegionSPGAlgorithm_B<Real>::TrustRegionSPGAlgorithm_B(ParameterList &list,
   // Spectral projected gradient parameters
   lsmax_     = lmlist.sublist("Solver").get("Model Evaluation Limit",              20);
   lambdaMin_ = lmlist.sublist("Solver").get("Minimum Spectral Step Size",          1e-8); 
-  lambdaMax_ = lmlist.sublist("Solver").get("Maximum Spectral Step Size",          5e2); 
+  lambdaMax_ = lmlist.sublist("Solver").get("Maximum Spectral Step Size",          1e8); 
   sigma1_    = lmlist.sublist("Solver").get("Lower Step Size Safeguard",           0.1);
   sigma2_    = lmlist.sublist("Solver").get("Upper Step Size Safeguard",           0.9);
   rhodec_    = lmlist.sublist("Solver").get("Backtracking Rate",                   0.5);
@@ -151,7 +153,7 @@ std::vector<std::string> TrustRegionSPGAlgorithm_B<Real>::run(Vector<Real>      
                                                               std::ostream          &outStream ) {
   const Real zero(0), one(1);
   Real tol0 = std::sqrt(ROL_EPSILON<Real>());
-  Real ftrial(0), pRed(0), rho(1), q(0);
+  Real ftrial(0), fcheck(0), pRed(0), rho(1), q(0);
   // Initialize trust-region data
   std::vector<std::string> output;
   initialize(x,g,obj,bnd,outStream);
@@ -164,6 +166,8 @@ std::vector<std::string> TrustRegionSPGAlgorithm_B<Real>::run(Vector<Real>      
   output.push_back(print(true));
   if (verbosity_ > 0) outStream << print(true);
 
+  std::deque<Real> fqueue;
+  if (useNM_) fqueue.push_back(state_->value);
   while (status_->check(*state_)) {
     // Build trust-region model
     model_->setData(obj,*state_->iterateVec,*state_->gradientVec);
@@ -192,8 +196,10 @@ std::vector<std::string> TrustRegionSPGAlgorithm_B<Real>::run(Vector<Real>      
     state_->nfval++;
 
     // Compute ratio of acutal and predicted reduction
+    fcheck = useNM_ ? *std::max_element(fqueue.begin(),fqueue.end()) : state_->value;
     TRflag_ = TRUtils::SUCCESS;
-    TRUtils::analyzeRatio<Real>(rho,TRflag_,state_->value,ftrial,pRed,eps_,outStream,verbosity_>1);
+    TRUtils::analyzeRatio<Real>(rho,TRflag_,fcheck,ftrial,pRed,eps_,outStream,verbosity_>1);
+    //TRUtils::analyzeRatio<Real>(rho,TRflag_,state_->value,ftrial,pRed,eps_,outStream,verbosity_>1);
 
     // Update algorithm state
     state_->iter++;
@@ -226,6 +232,10 @@ std::vector<std::string> TrustRegionSPGAlgorithm_B<Real>::run(Vector<Real>      
       // Update secant information in trust-region model
       model_->update(x,*state_->stepVec,*dwa1,*state_->gradientVec,
                      state_->snorm,state_->iter);
+      if (useNM_) {
+        if (static_cast<int>(fqueue.size())==maxNM_) fqueue.pop_front();
+        fqueue.push_back(state_->value);
+      }
     }
 
     // Update Output

@@ -87,6 +87,8 @@ private:
   int maxit_; ///< Maximum number of CG iterations (default: 20)
 
   // ALGORITHM SPECIFIC PARAMETERS
+  bool useNM_;
+  int  maxNM_;
   Real mu0_;       ///< Sufficient decrease parameter (default: 1e-2)
   Real spexp_;     ///< Relative tolerance exponent for subproblem solve (default: 1, range: [1,2])
   int  redlim_;    ///< Maximum number of Cauchy point reduction steps (default: 10)
