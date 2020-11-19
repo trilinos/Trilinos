@@ -815,7 +815,7 @@ namespace BaskerNS
       } //end if btf_tabs_offset != 0
       //else // though offset=0, there may be still BLK factorization
       {
-        if(btf_nblks > 1 && btf_nblks > btf_tabs_offset)
+        if(btf_nblks > 1 && (btf_top_tabs_offset > 0 || btf_nblks > btf_tabs_offset))
         { // if any left over for BLK factorization
           if(Options.btf == BASKER_TRUE)
           {

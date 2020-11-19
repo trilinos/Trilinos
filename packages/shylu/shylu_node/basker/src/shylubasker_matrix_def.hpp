@@ -576,8 +576,6 @@ namespace BaskerNS
                     << std::endl;
           BASKER_ASSERT(0==1, "j-srow NO");
         }
-
-
         row_idx(temp_count) = j-srow;
         val(temp_count) = M.val(i);
         temp_count++;

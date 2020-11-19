@@ -129,6 +129,12 @@ namespace BaskerNS
     const Int U_col = S(lvl)(kid);
     const Int U_row = 0;
     Int ncol = LU(U_col)(U_row).ncol;
+    Int my_leader = find_leader(kid, 0);
+    if(Options.verbose == BASKER_TRUE && kid == my_leader)
+    {
+      printf(" > kid: %ld factoring_col current_chunk: lvl = %ld size=%ld\n",
+            (long)kid, (long)lvl, (long)ncol);
+    }
 
     #ifdef BASKER_TIMER
     Kokkos::Impl::Timer timer;
@@ -161,10 +167,9 @@ namespace BaskerNS
 
     //------Need because extend does not 
     //-------------Barrier--Between Domains-------------
-    Int my_leader = find_leader(kid, 0);
     Int b_size    = pow(2, 1);
     //barrier k = 0 usedl1
-    t_basker_barrier(thread,kid,my_leader,
+    t_basker_barrier(thread, kid, my_leader,
                      b_size, 0, LU(U_col)(U_row).scol, 0);
     for(Int ti = 0; ti < num_threads; ti++) {
       if(thread_array(ti).error_type != BASKER_ERROR_NOERROR) {

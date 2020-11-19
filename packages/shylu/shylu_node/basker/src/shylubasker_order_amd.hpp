@@ -410,6 +410,7 @@ namespace BaskerNS
       MALLOC_INT_1DARRAY(tempp, blk_size+1);
 
       //Fill in temp matrix
+      Int frow = btf_tabs(b);
       Int nnz = 0;
       Int column = 1;
       temp_col(0) = 0;
@@ -417,11 +418,11 @@ namespace BaskerNS
       {
         for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++)
         {
-          if(M.row_idx(i) < btf_tabs(b))
+          if(M.row_idx(i) < frow)
           { continue; }
 
           temp_val(nnz) = M.val(i);
-          temp_row(nnz) = M.row_idx(i) - btf_tabs(b);
+          temp_row(nnz) = M.row_idx(i) - frow;
           nnz++;
         }// end over all row_idx
 
@@ -485,7 +486,8 @@ namespace BaskerNS
 #endif
       else { //if (Options.blk_matching == 1)
         if (flag) {
-          std::cout << " ** BLK_MWM_AMD::ShyLUBasker MWM (blk=" << b << ", " << btf_tabs(b) << ":" << btf_tabs(b+1)-1 << ") ** " << std::endl;
+          std::cout << " ** BLK_MWM_AMD::ShyLUBasker MWM (blk=" << b << ", " << btf_tabs(b) << ":" << btf_tabs(b+1)-1
+                    << ", nnz = " << nnz << ") ** " << std::endl;
           //flag = false;
         }
         Int num = 0;
@@ -497,6 +499,14 @@ namespace BaskerNS
           scale_col_array(btf_tabs(b)+ii) = one;
         }
       }
+      #if 0
+      printf( " > debug: set blk_amd_mwm to identity\n" );
+      for(Int ii = 0; ii < blk_size; ii++) {
+        scale_row_array(btf_tabs(b)+ii) = one;
+        scale_col_array(btf_tabs(b)+ii) = one;
+      }
+      for(Int ii = 0; ii < blk_size; ii++) tempp(ii) = ii;
+      #endif
       /*{
         std::cout << "m1=[" << std::endl;
         for(Int k = 0; k < blk_size; k++)
@@ -653,10 +663,16 @@ namespace BaskerNS
       #endif
       {
         // AMD on diagonal block
-        BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), 
-            &(temp_row(0)),&(tempp(0)), 
-            l_nnz, lu_work);
+        BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), &(temp_row(0)), 
+                                        &(tempp(0)), l_nnz, lu_work);
       }
+      #if 0
+      printf( " >> debug: set amd_blk to identity <<\n" );
+      for(Int ii = 0; ii < blk_size; ii++)
+      {
+        tempp(ii) = ii;
+      }
+      #endif
       if (b < (Int)btf_nnz.extent(0)) {
         btf_nnz(b) = l_nnz;
       }

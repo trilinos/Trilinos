@@ -130,7 +130,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   {return -1;}
 
   #ifdef BASKER_DEBUG_SFACTOR
-  printf("Default Symbolic Called \n");
+  printf("Default Symbolic Called (btf_tabs_offset = %d)\n",btf_tabs_offset);
   #endif     
 
   // flag indicate if some symbolic & allocation are delayed
@@ -149,8 +149,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     printf("----------------------------------\n");
     printf("Total NNZ: %ld \n", (long)global_nnz);
     printf(" > blk_matching = %d\n", (int)Options.blk_matching );
-    printf("----------------------------------\n");
     printf("\n\n");
+    printf("----------------------------------\n");
   }
   //#endif
 
@@ -2153,6 +2153,45 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     //	   btf_nblks-btf_tabs_offset);
     #endif
 
+    Int max_blk_size = 0;
+#if defined(BASKER_SPLIT_A)
+    if (btf_top_nblks > 0) {
+      MALLOC_MATRIX_1DARRAY(L_D, btf_top_nblks);
+      MALLOC_MATRIX_1DARRAY(U_D, btf_top_nblks);
+
+      for(Int i = 0; i < btf_top_nblks; i++)
+      {
+        Int lblk_size = btf_tabs(i+1)-btf_tabs(i);
+
+        if(lblk_size > max_blk_size)
+        {
+          max_blk_size = lblk_size;
+        }
+
+        Int nnz = (btf_blk_nnz(i)+lblk_size)*(BASKER_BTF_NNZ_OVER+Options.user_fill);
+        if ((double)nnz > ((double)lblk_size)*((double)lblk_size)) {
+            nnz = lblk_size*lblk_size;
+        }
+        //printf( " LBTF(%d, nnz = %d)\n",i-btf_tabs_offset, nnz );
+        L_D(i).init_matrix("LBFT",
+          btf_tabs(i),
+          lblk_size,
+          btf_tabs(i),
+          lblk_size,
+          nnz);
+
+        //For pruning
+        L_D(i).init_pend();
+
+        U_D(i).init_matrix("UBFT",
+          btf_tabs(i),
+          lblk_size,
+          btf_tabs(i),
+          lblk_size,
+          nnz);
+      }//over all blks
+    }
+#endif
 
     //Malloc L and U
     #ifdef BASKER_DEBUG_SFACTOR
@@ -2161,63 +2200,56 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     #endif
     
     Int nblks_left = btf_nblks - btf_tabs_offset;
-    if(nblks_left == 0)
-    {
-      return;
+    if(nblks_left > 0) {
+
+      BASKER_ASSERT(nblks_left > 0, "Basker btf_last_dense assert: nblks_left > 0 failed");
+      MALLOC_MATRIX_1DARRAY(LBTF, nblks_left);
+      MALLOC_MATRIX_1DARRAY(UBTF, nblks_left);
+
+      for(Int i = btf_tabs_offset; i < btf_nblks; i++)
+      {
+        Int lblk_size = btf_tabs(i+1)-btf_tabs(i);
+
+        if(lblk_size > max_blk_size)
+        {
+          max_blk_size = lblk_size;
+        }
+
+        Int nnz = (btf_blk_nnz(i)+lblk_size)*(BASKER_BTF_NNZ_OVER+Options.user_fill);
+        if ((double)nnz > ((double)lblk_size)*((double)lblk_size)) {
+          nnz = lblk_size*lblk_size;
+        }
+        //printf( " LBTF(%d, nnz = %d)\n",i-btf_tabs_offset, nnz );
+        LBTF(i-btf_tabs_offset).init_matrix("LBFT",
+          btf_tabs(i),
+          lblk_size,
+          btf_tabs(i),
+          lblk_size,
+          nnz);
+
+        //For pruning
+        //printf( " LBTF(%d).init_pend()\n",i-btf_tabs_offset );
+        LBTF(i-btf_tabs_offset).init_pend();
+
+        //printf( " UBTF(%d, nnz = %d)\n",i-btf_tabs_offset, nnz );
+        UBTF(i-btf_tabs_offset).init_matrix("UBFT",
+          btf_tabs(i),
+          lblk_size,
+          btf_tabs(i),
+          lblk_size,
+          nnz);
+        //(.5*lblk_size*lblk_size)+lblk_size);
+
+        //will have to do the fill in nfactor
+        //MALLOC workspace
+      }//over all blks
     }
 
-    BASKER_ASSERT(nblks_left > 0, "Basker btf_last_dense assert: nblks_left > 0 failed");
-    MALLOC_MATRIX_1DARRAY(LBTF, nblks_left);
-    MALLOC_MATRIX_1DARRAY(UBTF, nblks_left);
-
-    Int max_blk_size = 0;
-
-    for(Int i = btf_tabs_offset; i < btf_nblks; i++)
-    {
-      Int lblk_size = btf_tabs(i+1)-btf_tabs(i);
-
-      if(lblk_size > max_blk_size)
-      {
-        max_blk_size = lblk_size;
-      }
-
-      Int nnz = (btf_blk_nnz(i)+lblk_size)*(BASKER_BTF_NNZ_OVER+Options.user_fill);
-      if ((double)nnz > ((double)lblk_size)*((double)lblk_size)) {
-          nnz = lblk_size*lblk_size;
-      }
-      //printf( " LBTF(%d, nnz = %d)\n",i-btf_tabs_offset, nnz );
-      LBTF(i-btf_tabs_offset).init_matrix("LBFT",
-          btf_tabs(i),
-          lblk_size,
-          btf_tabs(i),
-          lblk_size,
-          nnz);
-
-      //For pruning
-      //printf( " LBTF(%d).init_pend()\n",i-btf_tabs_offset );
-      LBTF(i-btf_tabs_offset).init_pend();
-
-      //printf( " UBTF(%d, nnz = %d)\n",i-btf_tabs_offset, nnz );
-      UBTF(i-btf_tabs_offset).init_matrix("UBFT",
-          btf_tabs(i),
-          lblk_size,
-          btf_tabs(i),
-          lblk_size,
-          nnz);
-      //(.5*lblk_size*lblk_size)+lblk_size);
-
-      //will have to do the fill in nfactor
-
-      //MALLOC workspace
-
-    }//over all blks
-    
-
     //JDB: This needs to be fixed
-    max_blk_size = BTF_C.nrow;
-    
-    // though offset=0, we may still have left-over BLK factorization
+    max_blk_size = BTF_D.nrow + BTF_C.nrow;
+
     if (flag) {
+      // though offset=0, we may still have left-over BLK factorization
       //if(btf_tabs_offset == 0)
       {
         BASKER_ASSERT(num_threads > 0, "Basker btf_last_dense assert: num_threads > 0 failed");
@@ -2229,11 +2261,12 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         thread_array(i).iws_size = max_blk_size;
         thread_array(i).ews_size = max_blk_size;
 
-        BASKER_ASSERT((thread_array(i).iws_size*thread_array(i).iws_mult) > 0, "Basker btf_last_dense assert: sfactor threads iws > 0 failed");
-        MALLOC_INT_1DARRAY(thread_array(i).iws, thread_array(i).iws_size*thread_array(i).iws_mult);
-        BASKER_ASSERT((thread_array(i).ews_size*thread_array(i).ews_mult) > 0, "Basker btf_last_dense assert: sfactor threads ews > 0 failed");
-        MALLOC_ENTRY_1DARRAY(thread_array(i).ews, thread_array(i).ews_size*thread_array(i).ews_mult);
-
+        //BASKER_ASSERT((thread_array(i).iws_size*thread_array(i).iws_mult) > 0, "Basker btf_last_dense assert: sfactor threads iws > 0 failed");
+        //BASKER_ASSERT((thread_array(i).ews_size*thread_array(i).ews_mult) > 0, "Basker btf_last_dense assert: sfactor threads ews > 0 failed");
+        if (max_blk_size > 0) {
+          MALLOC_INT_1DARRAY(thread_array(i).iws, thread_array(i).iws_size*thread_array(i).iws_mult);
+          MALLOC_ENTRY_1DARRAY(thread_array(i).ews, thread_array(i).ews_size*thread_array(i).ews_mult);
+        }
         #ifdef BASKER_DEBUG_SFACTOR
         printf("Malloc Thread: %d iws: %d \n",
             i, (thread_array(i).iws_size*

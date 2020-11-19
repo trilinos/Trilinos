@@ -92,6 +92,8 @@ namespace BaskerNS
     #endif
 
     typedef Kokkos::TeamPolicy<Exe_Space>        TeamPolicy;
+    // --------------------------------------------------------------- //
+    // ----------------------- Big A block --------------------------- //
     if(btf_tabs_offset != 0)
     {
       //Spit into Domain and Sep
@@ -254,7 +256,9 @@ namespace BaskerNS
       #endif
     }
 
-    //-------------------IF BTF-----------------------//
+
+    // ---------------------------------------------------------------------------------------- //
+    // ----------------------- Small blocks in bottom C (and top D) --------------------------- //
     if(info != BASKER_ERROR && Options.btf == BASKER_TRUE)
     {
       Int btf_restart = 0;
@@ -282,8 +286,13 @@ namespace BaskerNS
         INT_1DARRAY thread_start;
         MALLOC_INT_1DARRAY(thread_start, num_threads+1);
         init_value(thread_start, num_threads+1, (Int) BASKER_MAX_IDX);
-        info = nfactor_diag_error(thread_start);
-        //printf( " nfactor_diag: info = %d\n",(int)info );
+
+        INT_1DARRAY thread_start_top;
+        MALLOC_INT_1DARRAY(thread_start_top, num_threads+1);
+        init_value(thread_start_top, num_threads+1, (Int) BASKER_MAX_IDX);
+
+        info = nfactor_diag_error(thread_start_top, thread_start);
+        //printf( " nfactor_diag: info = %d\n\n",(int)info );
         //printf("RETURNED: %d (success=%d, error=%d)\n", info, BASKER_SUCCESS, BASKER_ERROR);
         if((info == BASKER_SUCCESS) || 
            (btf_restart > BASKER_RESTART))
@@ -306,10 +315,11 @@ namespace BaskerNS
             printf("restart \n");
           }
           kokkos_nfactor_diag_remalloc <Int, Entry, Exe_Space>
-            diag_nfactor_remalloc(this, thread_start);
+            diag_nfactor_remalloc(this, thread_start_top, thread_start);
           Kokkos::parallel_for(TeamPolicy(num_threads,1),
             diag_nfactor_remalloc);
           Kokkos::fence();
+          //printf( " diag_nfactor_remalloc done\n\n" );
         }
       }//end while
 

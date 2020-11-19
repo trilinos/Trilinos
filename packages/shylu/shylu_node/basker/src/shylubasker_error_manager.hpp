@@ -462,74 +462,76 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::nfactor_diag_error
   (
-    INT_1DARRAY threads_start
+    INT_1DARRAY thread_start_top,
+    INT_1DARRAY thread_start
   )
   {
+    Entry zero (0.0);
     Int nthread_remalloc = 0;
+    Int btab = btf_tabs_offset;
     for(Int ti = 0; ti < num_threads; ti++)
     {
+      Int c = thread_array(ti).error_blk;
       //Note: jdb we can make this into a switch
       if(thread_array(ti).error_type == BASKER_ERROR_NOERROR)
       {
-        threads_start(ti) = BASKER_MAX_IDX;
+        if (c >= btab) {
+          thread_start(ti) = BASKER_MAX_IDX;
+        } else {
+          thread_start_top(ti) = BASKER_MAX_IDX;
+        }
         continue;
       }//end if NOERROR
 
-      if(thread_array(ti).error_type ==
-          BASKER_ERROR_SINGULAR)
+      if(thread_array(ti).error_type == BASKER_ERROR_SINGULAR)
       {
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << "ERROR_THREAD: " << ti
-            << " DIAGBLK SINGULAR " << thread_array(ti).error_blk
-            << std::endl;
+                    << " DIAGBLK SINGULAR " << c
+                    << std::endl;
         }
         return BASKER_ERROR;
       }//end if SINGULAR
 
-      if(thread_array(ti).error_type ==
-          BASKER_ERROR_NOMALLOC)
+      if(thread_array(ti).error_type == BASKER_ERROR_NOMALLOC)
       {
         std::cout << "ERROR_THREADS: " << ti
-          << " DIAGBLK NOMALLOC blk=" << thread_array(ti).error_blk
-          << std::endl;
+                  << " DIAGBLK NOMALLOC blk=" << c
+                  << std::endl;
         return BASKER_ERROR;
       }//end if NOMALLOC
 
       if(thread_array(ti).error_type == BASKER_ERROR_REMALLOC)
       {
-        BASKER_ASSERT(thread_array(ti).error_blk >= 0, "nfactor_diag_error error_blk");
+        Int liwork = thread_array(ti).iws_size*thread_array(ti).iws_mult;
+        Int lework = thread_array(ti).ews_size*thread_array(ti).ews_mult;
+        BASKER_ASSERT(c >= 0, "nfactor_diag_error error_blk");
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << " > THREADS: " << ti
-            << " DIAGBLK MALLOC blk=" << thread_array(ti).error_blk
+            << " DIAGBLK MALLOC blk=" << c
             << " newsize=" << thread_array(ti).error_info
             << std::endl;
 
           //Clean the workspace
-          std::cout << "test: "
-            << thread_array(ti).iws_size*thread_array(ti).iws_mult
-            << " " << thread_array(ti).ews_size*thread_array(ti).ews_mult
-            << std::endl;
+          std::cout << "clean workspace of size "
+                    << liwork 
+            << ", " << lework
+                    << std::endl;
         }
 
-        for(Int i = 0; 
-            i < thread_array(ti).iws_size*thread_array(ti).iws_mult;
-            i++)
+        for(Int i = 0; i < liwork; i++)
         {
           thread_array(ti).iws(i) = (Int) 0;
         }
-        for(Int i = 0;
-            i < thread_array(ti).ews_size*thread_array(ti).ews_mult;
-            i++)
+        for(Int i = 0; i < lework; i++)
         {
-          thread_array(ti).ews(i) = (Entry) 0;
+          thread_array(ti).ews(i) = zero;
         }
 
-
-
         //Resize L
-        BASKER_MATRIX &L = LBTF(thread_array(ti).error_blk);
+        BASKER_MATRIX &L = (c >= btab ? LBTF(c) : L_D(c));
         L.clear_pend();
         REALLOC_INT_1DARRAY(L.row_idx,
             L.nnz,
@@ -543,14 +545,14 @@ namespace BaskerNS
         {
           L.col_ptr(i) = 0;
         }
-
+        // srow for D & c are global..
         for(Int i = L.srow; i < (L.srow+L.nrow); i++)
         {
           gperm(i) = BASKER_MAX_IDX;
         }
 
         //Resize U
-        BASKER_MATRIX &U = UBTF(thread_array(ti).error_blk);
+        BASKER_MATRIX &U = (c >= btab ? UBTF(c) : U_D(c));
         REALLOC_INT_1DARRAY(U.row_idx,
             U.nnz,
             thread_array(ti).error_info);
@@ -564,16 +566,18 @@ namespace BaskerNS
           U.col_ptr(i) = 0;
         }
 
-
+        // set the thread start (skip the diagonal blocks that have been factored without error)
         if(Options.verbose == BASKER_TRUE)
         {
-          std::cout << "Setting thread start( " << ti
-            << ")  " << thread_array(ti).error_blk
-            << std::endl;
+          std::cout << "Setting thread start(" << ti << ") to be "
+                    << c
+                    << std::endl;
         }
-
-        threads_start(ti) = thread_array(ti).error_blk;
-
+        if (c >= btab) {
+          thread_start(ti) = c;
+        } else {
+          thread_start_top(ti) = c;
+        }
 
         //Reset 
         thread_array(ti).error_type = BASKER_ERROR_NOERROR;

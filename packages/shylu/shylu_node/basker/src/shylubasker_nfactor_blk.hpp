@@ -155,7 +155,9 @@ namespace BaskerNS
     Int       ws_size  = thread_array[kid].iws_size;
 #endif
     //Int          bcol  = L.scol;  //begining col //NOT UD
-    Int          brow  = L.srow;  //begining row //Note: move out in future
+    Int          scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
+    Int          brow_g   = L.srow + scol_top;   // global offset
+
     Int          lval  = 0;
     Int          uval  = 0;
     #ifdef BASKER_DEBUG_NFACTOR_COL
@@ -250,7 +252,7 @@ namespace BaskerNS
 
     // initialize perm vector
     #ifdef BASKER_CHECK_WITH_DIAG_AFTER_PIVOT
-    for(Int k = brow; k < brow+M.ncol; ++k)
+    for(Int k = brow_g; k < brow_g+M.ncol; ++k)
     {
       gperm_array(k) = k;
       gpermi_array(k) = k;
@@ -318,7 +320,7 @@ namespace BaskerNS
           if(color[j] == 0)
           {
             //we want to skip the call if we can
-            if(gperm(j+brow) != BASKER_MAX_IDX)
+            if(gperm(j+brow_g) != BASKER_MAX_IDX)
             {
               //printf("local_reach\n");
               t_local_reach(kid, 0, 0, j, top);
@@ -352,10 +354,9 @@ namespace BaskerNS
       for(i = top; i < ws_size; i++)
       {
         j = pattern[i];
-        t = gperm(j+brow);
+        t = gperm(j+brow_g);
 
         #ifdef BASKER_2DL
-        //value = X[j-brow];
         value = X(j);
         #else
         value = X[j];
@@ -386,11 +387,11 @@ namespace BaskerNS
           }
 
           #ifdef MY_DEBUG_BASKER
-          printf( " thread-%d: check: gperm_array(%d + %d) = %d, germi_array(%d + %d) = %d vs %d+%d\n",kid, j,brow,gperm_array(j+brow), j,brow,gpermi_array(j+brow), k,brow);
+          printf( " thread-%d: check: gperm_array(%d + %d) = %d, germi_array(%d + %d) = %d vs %d+%d\n",kid, j,brow_g,gperm_array(j+brow_g), j,brow_g,gpermi_array(j+brow_g), k,brow_g);
           fflush(stdout);
           #endif
           #ifdef BASKER_CHECK_WITH_DIAG_AFTER_PIVOT
-          if (gpermi_array(j+brow) == k+brow)
+          if (gpermi_array(j+brow_g) == k+brow_g)
           #else
           if (j == k)
           #endif
@@ -465,21 +466,24 @@ namespace BaskerNS
         return BASKER_ERROR;
       }
       // store pivot
-      gperm(maxindex+brow) = k+brow;
-      gpermi(k+brow) = maxindex + brow;
+      gperm(maxindex+brow_g) = k+brow_g;
+      gpermi(k+brow_g) = maxindex + brow_g;
+      //printf( " %d: gperm(%d + %d) = %d\n",kid,maxindex,brow_g,k+brow_g );
+
       // update global perm vector for figuring out diagonal entry
       #ifdef BASKER_CHECK_WITH_DIAG_AFTER_PIVOT
+      Int brow_a   = L.srow;   // offset in A //Note: move out in future
       int pivot_index = gpermi_array(maxindex+L.srow);
-      if (k+brow != pivot_index) {
+      if (k+brow_a != pivot_index) {
         // update global perm vector for figuring out diagonal entry
         //
         // swap perm
-        int pivot_row = gperm_array(k+brow);
-        gperm_array(k+brow) = gperm_array(pivot_index);
+        int pivot_row = gperm_array(k+brow_g);
+        gperm_array(k+brow_g) = gperm_array(pivot_index);
         gperm_array(pivot_index) = pivot_row;
 
         // swap iperm
-        int row1 = gperm_array(k+brow);
+        int row1 = gperm_array(k+brow_g);
         int row2 = gperm_array(pivot_index);
 
         pivot_row = gpermi_array(row1);
@@ -491,7 +495,7 @@ namespace BaskerNS
       }
       #endif
       #ifdef MY_DEBUG_BASKER
-      for (int ii=brow; ii<brow+M.ncol; ii++) {
+      for (int ii=brow_g; ii<brow_g+M.ncol; ii++) {
         if (gperm_array(ii) != ii) printf( " thread-%d: gperm_array(%d) = %d\n",kid,ii,gperm_array(ii) );
       }
       fflush(stdout);
@@ -571,7 +575,7 @@ namespace BaskerNS
       for( i = top; i < ws_size; i++)
       {
         j = pattern[i];
-        t = gperm(j+brow);
+        t = gperm(j+brow_g);
 
         #ifdef BASKER_DEBUG_NFACTOR_BLK
         printf("j: %d t: %d x: %e \n", j, t, X(j));
@@ -588,11 +592,11 @@ namespace BaskerNS
         {
           if(t != BASKER_MAX_IDX)
           {
-            if(t < (k+brow))
+            if(t < (k+brow_g))
             {
               //U.row_idx[unnz] = gperm[j];
               //U.row_idx(unnz) = gperm(j+brow);
-              U.row_idx(unnz) = t-brow;
+              U.row_idx(unnz) = t-brow_g;
               #ifdef BASKER_2DL
               //U.val[unnz] = X[j-brow];
               U.val(unnz) = X(j);
@@ -602,7 +606,7 @@ namespace BaskerNS
 
               #ifdef MY_DEBUG_BASKER
               printf(" thread-%d: U(%d,%d): %e \n",
-                     kid, t-brow, k, X(j));
+                     kid, t-brow_a, k, X(j));
               fflush(stdout);
               #endif
 
@@ -661,9 +665,9 @@ namespace BaskerNS
       U.row_idx(unnz) = k;
       U.val(unnz) = lastU;
       #ifdef MY_DEBUG_BASKER
-      printf(" thread-%d: > U(%d,%d): %e %s\n",
+      printf(" thread-%d: > last U(%d,%d): %e %s\n",
               kid, k, k, U.val(unnz), (digv == EntryOP::approxABS(lastU) ? "(dig)" : 
-                                 (maxv == EntryOP::approxABS(lastU) ? "(piv)" : "(warn)")));
+                                      (maxv == EntryOP::approxABS(lastU) ? "(piv)" : "(warn)")));
       fflush(stdout);
       #endif
       unnz++;
@@ -811,7 +815,9 @@ namespace BaskerNS
    const Int pivotrow 
    )
   {
-    const Int b      = S(lvl)(kid);
+    const Int  scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
+    const Int  b      = S(lvl)(kid);
+
     //const Int wsb    = S(0)(kid);
     BASKER_MATRIX &L = LL(b)(0);
     const Int U_col  = S(lvl)(kid);
@@ -820,6 +826,7 @@ namespace BaskerNS
     {
       //U_row = (lvl==1)?(kid%2):S(l)(kid)%LU_size(U_col);
     }
+
     BASKER_MATRIX &U = LU(U_col)(U_row);
     //const Int brow   = L.srow;
 
@@ -869,7 +876,7 @@ namespace BaskerNS
             while(phead < ptail)
             {
               Int i = L.row_idx(phead);
-              if(gperm(i+L.srow) >= 0)
+              if(gperm(i+L.srow+scol_top) >= 0)
               {
                 //advance top ptr
                 //printf("adv head(%d) %d %d \n",
@@ -926,10 +933,11 @@ namespace BaskerNS
   {
     
     //Setup variables
-    const Int      b   = S(lvl)(kid);
-    const Int     wsb  = S(0)(kid);
-    BASKER_MATRIX  &L  = LL(b)(0);
-    const Int     brow = L.srow;
+    const Int  b        = S(lvl)(kid);
+    const Int  wsb      = S(0)(kid);
+    BASKER_MATRIX  &L   = LL(b)(0);
+    const Int  scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
+    const Int  brow_g   = L.srow + scol_top;   // global offset
 
     INT_1DARRAY    ws  = LL(wsb)(l).iws;
     const Int  ws_size = LL(wsb)(l).iws_size;
@@ -962,7 +970,7 @@ namespace BaskerNS
         #endif
 
        j = stack[head];
-       t = gperm(j+brow);
+       t = gperm(j+brow_g);
         
         #ifdef BASKER_DEBUG_LOCAL_REACH
         printf("--------DFS: %d %d %d -------------\n", j, j+brow, t);
@@ -985,7 +993,7 @@ namespace BaskerNS
             #endif
             //start = L.col_ptr(t+1-L.scol);
             start = 
-              (L.pend(t-L.scol)==BASKER_MAX_IDX)?L.col_ptr(t+1-L.scol):L.pend(t-L.scol); 
+              (L.pend(t-brow_g)==BASKER_MAX_IDX) ? L.col_ptr(t+1-brow_g) : L.pend(t-brow_g); 
           }
         }
         else
@@ -998,7 +1006,7 @@ namespace BaskerNS
         //This little insight can save time
         //end = L.col_ptr(t+1-L.scol);
         //printf("t-L %d \n", t-L.scol);
-        end = L.col_ptr(t-L.scol);
+        end = L.col_ptr(t-brow_g);
         //printf("t: %d start: %d end: %d \n",t, start, end);
         for(i1 = --start; i1 >= end; --i1)
         {
@@ -1015,7 +1023,7 @@ namespace BaskerNS
           else
             //if(ws(i) == 0)
           {
-            if(gperm(i+brow) >= 0)
+            if(gperm(i+brow_g) >= 0)
             {
               //store[j] = i1+1;
               store[j] = i1;
@@ -1075,7 +1083,8 @@ namespace BaskerNS
     Int        ws_size = thread_array[kid].iws_size;
     #endif
 
-    const Int brow   = L.srow;
+    const Int  scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
+    const Int  brow_g   = L.srow + scol_top;   // global offset
 
     Int *color       = &(ws[0]);
     Int *pattern     = &(ws[ws_size]);
@@ -1117,7 +1126,7 @@ namespace BaskerNS
       j = stack[head];
       //j = stack(head);
       //t = gperm[j];
-      t = gperm(j+brow);
+      t = gperm(j+brow_g);
 
       #ifdef BASKER_DEBUG_LOCAL_REACH
       printf("----------DFS: %d %d -------------\n", j, t);
@@ -1168,6 +1177,9 @@ namespace BaskerNS
       //if(t!=L.max_idx)
       if(t!=BASKER_MAX_IDX)
       {
+        // shift into A
+        t -= scol_top;
+
         //We want to go through this backward
         //That way our first search will end fast
         //our later searchs will use our first searchs
@@ -1250,7 +1262,8 @@ namespace BaskerNS
     Int *color   = &(ws[0]);
     Int *pattern = &(color[ws_size]);
     
-    Int brow = L.srow;
+    const Int  scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
+    const Int  brow_g   = L.srow + scol_top;   // global offset
 
     Int top1 = top;
     Int j,t;
@@ -1267,12 +1280,15 @@ namespace BaskerNS
     for(Int pp = 0; pp < xnnz; ++pp)
     {
       j = pattern[top1];
-      t = gperm(j+brow);
+      t = gperm(j+brow_g);
 
       //color[j] = 0;
 
       if(t!=BASKER_MAX_IDX)
       {
+        // shift into A
+        t -= scol_top;
+
         const Int local_offset = L.scol; //L.srow
         const Int pend = L.col_ptr(t+1-local_offset);
         const Entry xj = X(j);

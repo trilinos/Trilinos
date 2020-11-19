@@ -498,7 +498,9 @@ namespace BaskerNS
     const Int ws_size  = LL(X_col)(X_row).iws_size;
     ENTRY_1DARRAY X    = LL(X_col)(X_row).ews;
 
-    const Int brow = U.srow;
+    const Int scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
+    const Int brow_a = U.srow; // offset within A
+    const Int brow_g = U.srow + scol_top; // global offset
     //const Int bcol = U.scol;
 
     Int *color     = &(ws(0));
@@ -608,7 +610,7 @@ namespace BaskerNS
     {
       j = pattern[i];
       //t = gperm[j];
-      t = gperm(j+brow);
+      t = gperm(j+brow_g);
       //if(t == L.max_idx)
       if(t == BASKER_MAX_IDX)
       {
@@ -674,7 +676,7 @@ namespace BaskerNS
     {
       j = pattern[i];
       //t = gperm[j];
-      t = gperm(j+brow);
+      t = gperm(j+brow_g);
 
       #ifdef BASKER_DEBUG_NFACTOR_COL
        #ifdef BASKER_2DL
@@ -718,7 +720,7 @@ namespace BaskerNS
           //U.row_idx[unnz] = gperm[j];
           //printf("kid: %d addU: %d %d \n",
           //     kid, unnz, U.nnz);
-          U.row_idx(unnz) = t-brow;
+          U.row_idx(unnz) = t-brow_a;
           #ifdef BASKER_2DL
           //U.val[unnz] = X[j-brow];
           U.val(unnz) = X(j);
@@ -738,7 +740,7 @@ namespace BaskerNS
         {
           #ifdef BASKER_2DL
           std::cout << "----Error--- kid = " << kid << ": extra L[" << j << "]="
-                    << X[j-brow] << std::endl;
+                    << X[j] << std::endl;
           #endif
         }//lower
       }//end not 0
@@ -1088,11 +1090,13 @@ namespace BaskerNS
     //B.print();
 
 
-    INT_1DARRAY  ws       = LL(X_col)(l+1).iws;
+    INT_1DARRAY   ws      = LL(X_col)(l+1).iws;
     const Int     ws_size = LL(X_col)(l+1).iws_size;
     ENTRY_1DARRAY X       = LL(X_col)(l+1).ews;
 
-    const Int brow  = U.srow;
+    Int   scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
+    const Int brow_a  = U.srow; // offset within A
+    const Int brow_g  = U.srow + scol_top; // global offset
     const Int lval  = L.col_ptr(k);
     const Int uval  = U.col_ptr(k);
     
@@ -1153,6 +1157,9 @@ namespace BaskerNS
  	   k,(int)B.col_ptr(0), (int)B.col_ptr(1));
     #endif
 
+    //printf( "\n >> t_lower_col_factor (%d) <<\n",k );
+    //for(i = B.col_ptr(0); i < B.col_ptr(1); ++i) printf( "%d %d %e\n",B.row_idx(i),k,B.val(i) );
+
     for(i = B.col_ptr(0); i < B.col_ptr(1); ++i)
     {
       j = B.row_idx(i);
@@ -1174,7 +1181,7 @@ namespace BaskerNS
       if(kid>=0)
       {
         printf("i: %ld  j: %ld %ld  val: %g  top: %d \n", 
-            i, j, gperm(j+brow), B.val(i), top);
+            i, j, gperm(j+brow_g), B.val(i), top);
       }
       #ifdef BASKER_2DL
       if(kid>=0)
@@ -1198,7 +1205,7 @@ namespace BaskerNS
         //t_local_reach_selective(kid,lvl,l+1,j, &top);
         //#else
         //t_local_reach(kid,lvl,l+1, j, &top);
-        if(gperm(j+brow) != BASKER_MAX_IDX)
+        if(gperm(j+brow_g) != BASKER_MAX_IDX)
         {
           //printf("COL LOCAL REACH\n");
           t_local_reach(kid,lvl,l+1,j,top);
@@ -1234,7 +1241,8 @@ namespace BaskerNS
     { 
       j = pattern[i];
       //t = gperm[j];
-      t = gperm(j+brow);
+      t = gperm(j+brow_g);
+      //printf( " pattern[%d] = %d , gperm(%d+%d) = %d\n",i,j,brow_g,j,t );
 
       value = X(j);
 
@@ -1293,7 +1301,7 @@ namespace BaskerNS
     {
       if(Options.verbose == BASKER_TRUE)
       {
-        cout << "Error: Col Matrix is singular, col, lvl: " << l <<endl;
+        cout << "Error: Col Matrix is singular, col k = " << k << ", lvl = " << l <<endl;
         cout << "MaxIndex: " << maxindex << " pivot " << pivot << endl;
       }
       thread_array(kid).error_type   = BASKER_ERROR_SINGULAR;
@@ -1304,9 +1312,9 @@ namespace BaskerNS
     }          
   
     //gperm[maxindex] = k;
-    gperm(maxindex+brow) = k+brow; 
+    gperm(maxindex+brow_g) = k+brow_g; 
     //gpermi[k] = maxindex;
-    gpermi(k+brow) = maxindex+brow;
+    gpermi(k+brow_g) = maxindex+brow_g;
    
     if(lnnz + lcnt > llnnz)
     {
@@ -1371,7 +1379,7 @@ namespace BaskerNS
     {
       j = pattern[i];
       //t = gperm[j];
-      t = gperm(j+brow);
+      t = gperm(j+brow_g);
 
 #ifdef BASKER_DEBUG_NFACTOR_COL
       if(k>=0)
@@ -1401,7 +1409,7 @@ namespace BaskerNS
 
          if(t != BASKER_MAX_IDX)
          {
-           if(t < k+brow)
+           if(t < k+brow_a)
            {
 #ifdef BASKER_DEBUG_NFACTOR_COL
              #ifdef BASKER_2DL
@@ -1417,7 +1425,7 @@ namespace BaskerNS
              //U.row_idx[unnz] = gperm[j];
              //can't we reuse, this seems
              //stupid
-             U.row_idx(unnz) = t-brow;
+             U.row_idx(unnz) = t-brow_a;
              #ifdef BASKER_2DL
              U.val(unnz) = X(j);
              #else
@@ -1594,7 +1602,6 @@ namespace BaskerNS
     const Int  ws_size = LL(X_col)(X_row).iws_size;
     ENTRY_1DARRAY    X = LL(X_col)(X_row).ews;
 
-    const Int brow     = U.srow;
     const Int bcol     = U.scol;
 
     pivot = U.tpivot;

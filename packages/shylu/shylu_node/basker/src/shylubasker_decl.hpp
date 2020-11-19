@@ -291,10 +291,16 @@ namespace BaskerNS
     int permute(INT_1DARRAY, INT_1DARRAY, Int);
 
     BASKER_INLINE
-    int permute_with_workspace(INT_1DARRAY&, INT_1DARRAY&, Int);
+    int permute_with_workspace(INT_1DARRAY & vec,
+                               INT_1DARRAY & p,
+                               Int n,
+                               Int istart = 0);
 
     BASKER_INLINE
-    int permute_inv_with_workspace(INT_1DARRAY&, INT_1DARRAY&, Int);
+    int permute_inv_with_workspace(INT_1DARRAY & vec,
+                                   INT_1DARRAY & p,
+                                   Int n,
+                                   Int istart = 0);
 
     BASKER_INLINE
     int permute_with_workspace(ENTRY_1DARRAY&, INT_1DARRAY&, Int);
@@ -327,7 +333,7 @@ namespace BaskerNS
   // end NDE
 
     BASKER_INLINE
-    int permute_col(BASKER_MATRIX &M, INT_1DARRAY col);
+    int permute_col(BASKER_MATRIX &M, INT_1DARRAY col, Int frow = 0);
 
     BASKER_INLINE
     int permute_row(BASKER_MATRIX &M, INT_1DARRAY row);
@@ -618,7 +624,7 @@ namespace BaskerNS
     int nfactor_sep_error(INT_1DARRAY);
 
     BASKER_INLINE
-    int nfactor_diag_error(INT_1DARRAY );
+    int nfactor_diag_error(INT_1DARRAY, INT_1DARRAY);
     
     BASKER_INLINE
     void reset_error();
@@ -1213,13 +1219,23 @@ namespace BaskerNS
     int neg_spmv_perm(BASKER_MATRIX &, ENTRY_1DARRAY &, ENTRY_1DARRAY &);
 
     BASKER_INLINE
-    int lower_tri_solve(BASKER_MATRIX &, ENTRY_1DARRAY &, ENTRY_1DARRAY &);
+    int lower_tri_solve(BASKER_MATRIX &M,
+                        ENTRY_1DARRAY &x,
+                        ENTRY_1DARRAY &y,
+                        Int offset = 0);
 
     BASKER_INLINE
-    int upper_tri_solve(BASKER_MATRIX &, ENTRY_1DARRAY &, ENTRY_1DARRAY &);
+    int upper_tri_solve(BASKER_MATRIX &M,
+                        ENTRY_1DARRAY &x,
+                        ENTRY_1DARRAY &y,
+                        Int offset = 0);
 
     BASKER_INLINE
-    int spmv_BTF(Int, BASKER_MATRIX &, ENTRY_1DARRAY &, ENTRY_1DARRAY &);
+    int spmv_BTF(Int tab,
+                 BASKER_MATRIX &M,
+                 ENTRY_1DARRAY &x, // modified rhs
+                 ENTRY_1DARRAY &y,
+                 bool full = true);
 
     //basker_stats.hpp
     BASKER_INLINE
@@ -1254,8 +1270,8 @@ namespace BaskerNS
     //NEW
     //For BTF Option
     // [BTF_D  BTF_E]
-    // [0 BTF_A BTF_B]
-    // [ 0 0 BTF_C]
+    // [0      BTF_A BTF_B]
+    // [0      0     BTF_C]
 
     //Note: In future, rename AV -> AU
     MATRIX_VIEW_2DARRAY  AV;
@@ -1272,6 +1288,11 @@ namespace BaskerNS
 
 
     //Used for BTF
+#define BASKER_SPLIT_A
+#if defined(BASKER_SPLIT_A)    
+    MATRIX_1DARRAY L_D; //lower blocks for BTF_D; total of btf_top_nblks
+    MATRIX_1DARRAY U_D; //upper blocks for BTF_D
+#endif
     MATRIX_1DARRAY LBTF; //lower blocks for BTF_C; total of btf_nblks - btf_tabs_offset
     MATRIX_1DARRAY UBTF; //upper blocks for BTF_C
     
@@ -1320,10 +1341,16 @@ namespace BaskerNS
     INT_1DARRAY vals_order_csym_array;
 
     // These store the permutation indices of the block vals during ND permute_col and sort calls
+    INT_1DARRAY vals_order_ndbtfd_array;
+    INT_1DARRAY vals_order_ndbtfe_array;
+    //
     INT_1DARRAY vals_order_ndbtfa_array;
     INT_1DARRAY vals_order_ndbtfb_array;
     INT_1DARRAY vals_order_ndbtfc_array;
 
+    INT_1DARRAY inv_vals_order_ndbtfd_array;
+    INT_1DARRAY inv_vals_order_ndbtfe_array;
+    //
     INT_1DARRAY inv_vals_order_ndbtfa_array;
     INT_1DARRAY inv_vals_order_ndbtfb_array;
     INT_1DARRAY inv_vals_order_ndbtfc_array;
@@ -1342,6 +1369,9 @@ namespace BaskerNS
     INT_1DARRAY vals_crs_transpose; //this will store shuffling and sort of vals due to transpose
 
     // To hold the nnz and avoid some compiler errors if BTF_A.nnz undefined, for example
+    Int btfd_nnz; 
+    Int btfe_nnz;
+    //
     Int btfa_nnz; 
     Int btfb_nnz;
     Int btfc_nnz;

@@ -147,8 +147,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
           cmember(j) = i;
         }
       }
-      MALLOC_INT_1DARRAY(order_csym_array, BTF_A.ncol+1);
-      init_value(order_csym_array, BTF_A.ncol+1,(Int) 0);
+      MALLOC_INT_1DARRAY(order_csym_array, BTF_A.ncol);
+      init_value(order_csym_array, BTF_A.ncol, (Int)0);
 
       csymamd_order(BTF_A, order_csym_array, cmember);
 
@@ -210,7 +210,11 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       permute_row(BTF_C, order_c_csym_array);
       sort_matrix(BTF_C);
 
-      if(btf_tabs_offset != 0)
+      if(BTF_E.ncol > 0)
+      {
+        permute_col(BTF_E, order_c_csym_array, BTF_A.ncol);
+      }
+      if(BTF_B.ncol > 0)
       {
         permute_col(BTF_B, order_c_csym_array);
         sort_matrix(BTF_B);
@@ -218,7 +222,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       }
       //printMTX("BTF_C.mtx", BTF_C);
     }
-    
     return 0;
   }//end btf_order
 
@@ -240,6 +243,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
    
     //new for sfactor_copy2 replacement
     //this will store the composition of permutations and sorts due to btf with respect to the full val array
+    btfd_nnz = 0;
+    btfe_nnz = 0;
     btfa_nnz = 0;
     btfb_nnz = 0;
     btfc_nnz = 0;
@@ -316,16 +321,41 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     #endif
 
     //================================================================
+    // allocate mapping into D & E blocks
+    if (btf_top_tabs_offset > 0) {
+      btfd_nnz = BTF_D.nnz;
+      btfe_nnz = BTF_E.nnz;
+
+      if ( BTF_D.nnz > 0 ) {
+        MALLOC_INT_1DARRAY(vals_order_ndbtfd_array, BTF_D.nnz);
+        MALLOC_INT_1DARRAY(inv_vals_order_ndbtfd_array, BTF_D.nnz);
+        for (Int i = 0; i < BTF_D.nnz; ++i) {
+          vals_order_ndbtfd_array(i) = i;
+          inv_vals_order_ndbtfd_array(i) = i;
+        }
+      }
+
+      if ( BTF_E.nnz > 0 ) {
+        MALLOC_INT_1DARRAY(vals_order_ndbtfe_array, BTF_E.nnz);
+        MALLOC_INT_1DARRAY(inv_vals_order_ndbtfe_array, BTF_E.nnz);
+        for (Int i = 0; i < BTF_E.nnz; ++i) {
+          vals_order_ndbtfe_array(i) = i;
+          inv_vals_order_ndbtfe_array(i) = i;
+        }
+      }
+    }
+
+    //================================================================
     //3. ND ordering of the big A block
     if (btf_tabs_offset != 0) // BTF_A exists and is not a btf_nblks > 1
     {
       // allocation perm vectors
       btfa_nnz = BTF_A.nnz;
       btfb_nnz = BTF_B.nnz;
-      MALLOC_INT_1DARRAY(part_tree.permtab, BTF_A.ncol+1);
-      MALLOC_INT_1DARRAY(order_csym_array,  BTF_A.ncol+1);
-      MALLOC_INT_1DARRAY(order_csym_inv,    BTF_A.ncol+1);
-      MALLOC_INT_1DARRAY(order_nd_inv,      BTF_A.ncol+1);
+      MALLOC_INT_1DARRAY(part_tree.permtab, BTF_A.ncol);
+      MALLOC_INT_1DARRAY(order_csym_array,  BTF_A.ncol);
+      MALLOC_INT_1DARRAY(order_csym_inv,    BTF_A.ncol);
+      MALLOC_INT_1DARRAY(order_nd_inv,      BTF_A.ncol);
       if ( BTF_A.nnz > 0 ) {
         MALLOC_INT_1DARRAY(    vals_order_ndbtfa_array, BTF_A.nnz); //track nd perms
         MALLOC_INT_1DARRAY(inv_vals_order_ndbtfa_array, BTF_A.nnz);
@@ -358,10 +388,10 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         vals_order_ndbtfc_array(i) = i;
         inv_vals_order_ndbtfc_array(i) = i;
       }
-      for (Int i = 0; i <= BTF_A.ncol; ++i) {
+      for (Int i = 0; i < BTF_A.ncol; ++i) {
         part_tree.permtab(i) = i;
       }
-      for (Int i = 0; i <= BTF_A.ncol; ++i) {
+      for (Int i = 0; i < BTF_A.ncol; ++i) {
         order_csym_array(i) = i;
       }
 
@@ -378,6 +408,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     #endif
 
     //================================================================
+    // allocate mapping into C block
     btfc_nnz = BTF_C.nnz;
     if(btf_nblks > 1) //else only BTF_A exists, A is assigned directly to it...
     {
@@ -397,7 +428,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
       if(Options.verbose_matrix_out == BASKER_TRUE)
       {
-	printMTX("C_Symbolic.mtx", BTF_C);
+        printMTX("C_Symbolic.mtx", BTF_C);
       }
     }
     #ifdef BASKER_TIMER
@@ -469,8 +500,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
             cmember(j) = i;
           }
         }
-        MALLOC_INT_1DARRAY(order_csym_array, BTF_A.ncol+1);
-        init_value(order_csym_array, BTF_A.ncol+1,(Int) 0);
+        MALLOC_INT_1DARRAY(order_csym_array, BTF_A.ncol);
+        init_value(order_csym_array, BTF_A.ncol, (Int)0);
         csymamd_order(BTF_A, order_csym_array, cmember);
 
         permute_col(BTF_A, order_csym_array);
@@ -489,7 +520,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
       Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
       Kokkos::fence();
-
     }
     else
     {
@@ -629,6 +659,13 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
             long int *iwork   = reinterpret_cast <long int*> (&(WORK(0)));
             num_match = trilinos_btf_l_maxtrans ((long int)A.nrow, (long int)A.ncol, col_ptr, row_idx, maxwork, &work, order, iwork);
           }
+          #if 0
+          printf( " >> debug: set order_match to identity <<\n" );
+          for(Int i = 0; i < A.nrow; i++)
+          {
+            order_match_array(i) = i;
+          }
+          #endif
           FREE_INT_1DARRAY(WORK);
         }
         // apply matching to the rows of A
@@ -715,8 +752,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     for(Int j = 0; j < BTF_A.ncol; j++) {
       printf("%d\n",part_tree.permtab(j) );
     }
-    printf("];\n");
-    printf(" ppT = [\n" );
+    printf("];\n");*/
+    /*printf(" ppT = [\n" );
     for(Int j = 0; j < BTF_A.ncol; j++) {
       for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
         printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
@@ -724,7 +761,10 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     }
     printf("];\n");*/
 
-    //need to do a row perm on BTF_B too
+    //need to do a col perm on BTF_E and a row perm on BTF_B too
+    if (BTF_E.ncol > 0) {
+      permute_col(BTF_E, part_tree.permtab);
+    }
     if(btf_nblks > 1)
     {
       permute_row(BTF_B, part_tree.permtab);
@@ -773,14 +813,14 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         cmember(j) = i;
       }
     }
-    init_value(order_csym_array, BTF_A.ncol+1,(Int) 0);
-
+    init_value(order_csym_array, BTF_A.ncol, (Int)0);
 
     //--------------------------------------------------------------
     // call Constrained symamd on A
     //printf("============CALLING CSYMAMD============\n");
     csymamd_order(BTF_A, order_csym_array, cmember);
     #if 0 // reset to I for debug
+    printf( " >> debug: set order_csym_array to identity <<\n" );
     for (Int i = 0; i < BTF_A.ncol; ++i) {
       order_csym_array(i) = i;
     }
@@ -806,8 +846,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     for(Int j = 0; j < BTF_A.ncol; j++) {
       printf("%d\n",(int)order_csym_array(j) );
     }
-    printf("];\n");
-    printf(" ppT = [\n" );
+    printf("];\n");*/
+    /*printf(" ppT = [\n" );
     for(Int j = 0; j < BTF_A.ncol; j++) {
       for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
         printf("%d %d %e\n", (int)BTF_A.row_idx[k], (int)j, BTF_A.val[k]);
@@ -824,7 +864,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     std::cout << " ++ Basker apply_scotch : sort(A) time              : " << sortA_time << std::endl;
     scotch_timer.reset();
     #endif
-    /*for (Int j = 0; j < BTF_A.nnz; j++) printf( " + vals_ndbtfa(%d) = %d\n",j,vals_order_ndbtfa_array(j) );
+    /*printf( " After sort(A)\n" );
+    for (Int j = 0; j < BTF_A.nnz; j++) printf( " + vals_ndbtfa(%d) = %d\n",j,vals_order_ndbtfa_array(j) );
     printf(" ppT = [\n" );
     for(Int j = 0; j < BTF_A.ncol; j++) {
       for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
@@ -833,8 +874,11 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     }
     printf("];\n");*/
 
-    if(btf_nblks > 1)
-    {
+    if (BTF_E.ncol > 0) {
+      //printf( " BTF_E.ncol = %d, BTF_A.ncol = %d\n",BTF_E.ncol,BTF_A.ncol );
+      permute_col(BTF_E, order_csym_array);
+    }
+    if(btf_nblks > 1) {
       permute_row(BTF_B, order_csym_array);
       //new for sfactor_copy2 replacement
       if ( BTF_B.nnz > 0 ) {
@@ -857,6 +901,12 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
     //new for sfactor_copy2 replacement
     // Steps below necessary for later use in Factor(...) to follow permutation convention used up to this point
+    if (BTF_D.nnz > 0) {
+      permute_inv(inv_vals_order_ndbtfd_array, vals_order_ndbtfd_array, BTF_D.nnz);
+    }
+    if (BTF_E.nnz > 0) {
+      permute_inv(inv_vals_order_ndbtfe_array, vals_order_ndbtfe_array, BTF_E.nnz);
+    }
     if (BTF_A.nnz > 0) {
       permute_inv(inv_vals_order_ndbtfa_array, vals_order_ndbtfa_array, BTF_A.nnz);
     }
@@ -927,7 +977,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       //printf("Scotch Nonsymmetrix\n");
       BASKER_MATRIX MMT;
       AplusAT(M,MMT);
-      std::cout << " part_scotch(nnz(M) = " << M.nnz << " nnz(M+Mt) = " << MMT.nnz << std::endl;
+      ///std::cout << " part_scotch(nnz(M) = " << M.nnz << " nnz(M+Mt) = " << MMT.nnz << std::endl;
       /*printf( " MMT = [\n" );
       for(Int i = 0; i < M.nrow; i++) {
         for(Int k = M.col_ptr(i); k < M.col_ptr(i+1); k++) printf( "%d %d\n",i,M.row_idx(k) );
@@ -1274,18 +1324,19 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
   (
    INT_1DARRAY & vec,
    INT_1DARRAY & p,
-   Int n
+   Int n,
+   Int istart
   )
   {
     //Permute
     for(Int i = 0; i < n; i++)
     {
-      perm_comp_iworkspace_array(i) = vec(p(i));
+      perm_comp_iworkspace_array(i) = vec(istart+p(i));
     }
     //Copy back
     for(Int i = 0; i < n; i++)
     {
-      vec(i) = perm_comp_iworkspace_array(i);
+      vec(istart+i) = perm_comp_iworkspace_array(i);
     }
     return BASKER_SUCCESS;
   }
@@ -1297,18 +1348,19 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
   (
    INT_1DARRAY & vec,
    INT_1DARRAY & p,
-   Int n
+   Int n,
+   Int istart
   )
   {
     //Permute
     for(Int i = 0; i < n; ++i)
     {
-      perm_comp_iworkspace_array(p(i)) = vec(i);
+      perm_comp_iworkspace_array(p(i)) = vec(istart+i);
     }
     //Copy back
     for(Int i = 0; i < n; ++i)
     {
-      vec(i) = perm_comp_iworkspace_array(i);
+      vec(istart+i) = perm_comp_iworkspace_array(i);
     }
 
     return BASKER_SUCCESS;
@@ -1410,26 +1462,44 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     // p5 inv
     if(amd_flag == BASKER_TRUE)
     {
-      if(Options.verbose == BASKER_TRUE)
-      {printf("AMD order in \n");}
       //printVec("amd.txt",order_csym_array, gn);
-      for(Int i = 0; i < BTF_A.ncol; ++i)
-      {
-        perm_comp_iworkspace_array(i) = order_csym_array(i);
+      Int scol_top = btf_tabs[btf_top_tabs_offset];
+      for(Int i = 0; i < scol_top; ++i) {
+        perm_comp_iworkspace_array(i) = i;
+      }
+      for(Int i = 0; i < BTF_A.ncol; ++i) {
+        perm_comp_iworkspace_array(scol_top + i) = scol_top + order_csym_array(i);
+      }
+      if(Options.verbose == BASKER_TRUE) {
+        printf("AMD order in A(scol=%d, ncol=%d) and gn=%d\n",BTF_A.scol,BTF_A.ncol,gn);
+        //for(Int i = 0; i < gn; ++i) {
+        //  printf( " perm[%d] = %d\n",i,perm_comp_iworkspace_array(i));
+        //}
       }
       permute_with_workspace(perm_inv_comp_array, perm_comp_iworkspace_array, gn);
+      //for(Int i = 0; i < gn; i++) if (i != perm_comp_array(i)) printf( " %d, %d\n",i,perm_inv_comp_array(i) );
+      //printf("\n");
     }
     // p4 inv
     if(nd_flag == BASKER_TRUE)
     {
-      if(Options.verbose == BASKER_TRUE)
-      {printf("ND order in \n");}
+      Int scol_top = btf_tabs[btf_top_tabs_offset];
       //printVec("nd.txt", part_tree.permtab, gn);
-      for(Int i = 0; i < BTF_A.ncol; ++i)
-      {
-        perm_comp_iworkspace_array(i) = part_tree.permtab(i);
+      for(Int i = 0; i < scol_top; ++i) {
+        perm_comp_iworkspace_array(i) = i;
+      }
+      for(Int i = 0; i < BTF_A.ncol; ++i) {
+        perm_comp_iworkspace_array(scol_top + i) = scol_top + part_tree.permtab(i);
+      }
+      if(Options.verbose == BASKER_TRUE) {
+        printf("ND order in \n");
+        //for(Int i = 0; i < gn; ++i) {
+        //  printf( " perm[%d] = %d\n",i,perm_comp_iworkspace_array(i));
+        //}
       }
       permute_with_workspace(perm_inv_comp_array, perm_comp_iworkspace_array, gn);
+      //for(Int i = 0; i < gn; i++) if (i != perm_comp_array(i)) printf( " %d, %d\n",i,perm_inv_comp_array(i) );
+      //printf("\n");
     }
     // p2, p3 inv
     if(btf_flag == BASKER_TRUE)
@@ -1487,6 +1557,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     for(Int i = 0; i < gn; i++) // NDE: Move this to a different init function
     {
       perm_comp_array(i) = perm_inv_comp_array(i);
+      //if (i != perm_comp_array(i)) printf( " perm_comp_array(%d) = %d\n",i,perm_comp_array(i) );
     }
     if(match_flag == BASKER_TRUE)
     {
@@ -1494,6 +1565,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       {printf("match order out\n");}
       //printVec("match.txt", order_match_array, gn);
       permute_inv_with_workspace(perm_comp_array, order_match_array, gn);
+      //for(Int i = 0; i < gn; i++) if (i != perm_comp_array(i)) printf( " perm_comp_array(%d) = %d\n",i,perm_comp_array(i) );
     }
     if(btf_flag == BASKER_TRUE)
     {
@@ -1505,6 +1577,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       permute_inv_with_workspace(perm_comp_array, order_blk_mwm_array, gn);
       // finally reapply btf
       permute_with_workspace(perm_comp_array, order_btf_array, gn);
+      //for(Int i = 0; i < gn; i++) if (i != perm_comp_array(i)) printf( " perm_comp_array(%d) = %d\n",i,perm_comp_array(i) );
     }
     #else
     if(amd_flag == BASKER_TRUE)
@@ -1625,14 +1698,28 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
   int Basker<Int, Entry, Exe_Space>::permute_col
   (
    BASKER_MATRIX &M,
-   INT_1DARRAY col
+   INT_1DARRAY col,
+   Int frow
   )
   {
     if((M.ncol == 0)||(M.nnz == 0))
     { return 0; }
 
     Int n = M.ncol;
-    Int nnz = M.nnz;
+    Int num_col = (Int)(col.extent(0));
+    if (n > num_col) {
+      // ** we'll just permute the first col.extent(0) or M.ncol columns **
+      // (e.g., E may have more columns than perm)
+      if(Options.verbose == BASKER_TRUE) {
+        printf( " > note: permute_col only %d columns since perm has only %d columns (M.ncol = %d))\n",num_col,num_col,n);
+      }
+      n = num_col;
+    }
+    Int nnz = M.col_ptr(frow+n) - M.col_ptr(frow);
+    //printf( " ptr(%d) = %d, ptr(%d) = %d -> nnz = %d (M.n = %d, M.nnz = %d)\n",frow,M.col_ptr(frow),frow+n,M.col_ptr(frow+n),nnz,M.ncol,M.nnz );
+    if (nnz == 0) {
+      return 0;
+    }
 
     INT_1DARRAY temp_p;
     MALLOC_INT_1DARRAY(temp_p, n+1);
@@ -1645,7 +1732,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     init_value(temp_v, nnz, (Entry)0.0);
 
     //Determine column ptr of output matrix
-    for(Int j = 0; j < n; j++)
+    for(Int j = frow; j < n; j++)
     {
       Int i = col (j);
       temp_p (i+1) = M.col_ptr (j+1) - M.col_ptr (j);
@@ -1653,12 +1740,12 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //Get ptrs from lengths
     temp_p (0) = 0;
 
-    for(Int j = 0; j < n; j++)
+    for(Int j = frow; j < n; j++)
     {
       temp_p (j+1) = temp_p (j+1) + temp_p (j);
     }
     //copy idxs
-    for(Int ii = 0; ii < n; ii++)
+    for(Int ii = frow; ii < n; ii++)
     {
       Int ko = temp_p (col (ii));
       for(Int k = M.col_ptr (ii); k < M.col_ptr (ii+1); k++)
@@ -1669,11 +1756,11 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       }
     }
     //copy back into A
-    for(Int ii=0; ii < n+1; ii++)
+    for(Int ii = frow; ii < n+1; ii++)
     {
       M.col_ptr (ii) = temp_p (ii);
     }
-    for(Int ii=0; ii < nnz; ii++)
+    for(Int ii = frow; ii < nnz; ii++)
     {
       M.row_idx (ii) = temp_i (ii);
       M.val (ii) = temp_v (ii);
@@ -1699,6 +1786,13 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     if(nnz == 0)
     { return 0; }
 
+#if 1
+    //permute
+    for(Int k = 0; k < nnz; k++)
+    {
+      row_idx[k] = row[row_idx[k]];
+    }
+#else
     // TODO: no need for the workspace?
     INT_1DARRAY temp_i;
     MALLOC_INT_1DARRAY(temp_i, nnz);
@@ -1716,6 +1810,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     }
 
     FREE_INT_1DARRAY(temp_i);
+#endif
 
     return 0;
   }//end permute_row(matrix,int)
@@ -1725,7 +1820,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
   int Basker<Int,Entry, Exe_Space>::permute_row
   (
    BASKER_MATRIX &M,
-	 INT_1DARRAY row
+   INT_1DARRAY row
   )
   {
 #if 1
