@@ -12,6 +12,9 @@
 
 /* 1-d elements */
 
+#ifndef EL_ELM_H
+#define EL_ELM_H
+
 #define BAR2 0
 #define BAR3 1
 #define SHELL2 2
@@ -71,3 +74,4 @@
 extern int elem_info(int info, int ielem_type, int supp);
 
 extern int get_type(const char string[], int nodes, int num_dim);
+#endif

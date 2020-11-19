@@ -20,12 +20,12 @@ namespace Ioss {
     std::string label(int which, char suffix_sep = '_') const override;
     CompositeVariableType(const std::string &my_name, int number_components, bool delete_me);
     CompositeVariableType(const VariableType *base_type, int copies, bool delete_me);
+    CompositeVariableType(const CompositeVariableType &) = delete;
 
     const VariableType *GetBaseType() const;
     int                 GetNumCopies() const;
 
   private:
-    CompositeVariableType(const CompositeVariableType &);
     const VariableType *baseType;
     int                 copies_;
   };

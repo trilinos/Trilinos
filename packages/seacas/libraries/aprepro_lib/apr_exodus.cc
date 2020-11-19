@@ -23,6 +23,34 @@ namespace {
   {
     return strncmp(pre, str, strlen(pre)) == 0;
   }
+
+  std::string entity_type_name(ex_entity_type ent_type)
+  {
+    switch (ent_type) {
+    case EX_ELEM_BLOCK: return "block_";
+    case EX_NODE_SET: return "nodeset_";
+    case EX_SIDE_SET: return "sideset_";
+    default: return "invalid_";
+    }
+  }
+
+  void add_name(int exoid, ex_entity_type ent_type, int64_t id, char *name, std::string &names)
+  {
+    std::string str_name;
+    ex_get_name(exoid, ent_type, id, name);
+    if (name[0] == '\0') {
+      str_name = entity_type_name(ent_type) + std::to_string(id);
+    }
+    else {
+      str_name = name;
+    }
+
+    if (names.length() > 0) {
+      names += ",";
+    }
+    names += str_name;
+  }
+
 } // namespace
 
 namespace SEAMS {
@@ -238,20 +266,11 @@ namespace SEAMS {
         array_block_info->data[idx++] = nnel;
         array_block_info->data[idx++] = natr;
 
-        ex_get_name(exoid, EX_ELEM_BLOCK, ids[i], name);
-        if (name[0] == '\0') {
-          str_name = "block_" + std::to_string(ids[i]);
-        }
-        else {
-          str_name = name;
-        }
-
         if (i > 0) {
           topology += ",";
-          names += ",";
         }
         topology += type;
-        names += str_name;
+        add_name(exoid, EX_ELEM_BLOCK, ids[i], name, names);
       }
 
       topology = LowerCase(topology);
@@ -280,18 +299,7 @@ namespace SEAMS {
         array_set_info->data[idx++] = num_entry;
         array_set_info->data[idx++] = num_dist;
 
-        ex_get_name(exoid, EX_NODE_SET, ids[i], name);
-        if (name[0] == '\0') {
-          str_name = "nodeset_" + std::to_string(ids[i]);
-        }
-        else {
-          str_name = name;
-        }
-
-        if (i > 0) {
-          names += ",";
-        }
-        names += str_name;
+        add_name(exoid, EX_NODE_SET, ids[i], name, names);
       }
 
       aprepro->add_variable("ex_nodeset_names", names);
@@ -318,18 +326,7 @@ namespace SEAMS {
         array_set_info->data[idx++] = num_entry;
         array_set_info->data[idx++] = num_dist;
 
-        ex_get_name(exoid, EX_SIDE_SET, ids[i], name);
-        if (name[0] == '\0') {
-          str_name = "sideset_" + std::to_string(ids[i]);
-        }
-        else {
-          str_name = name;
-        }
-
-        if (i > 0) {
-          names += ",";
-        }
-        names += str_name;
+        add_name(exoid, EX_SIDE_SET, ids[i], name, names);
       }
 
       aprepro->add_variable("ex_sideset_names", names);

@@ -42,7 +42,7 @@ namespace Ioss {
     static Ioss::Field::BasicType get_field_type(int64_t /*dummy*/) { return INT64; }
     static Ioss::Field::BasicType get_field_type(uint64_t /*dummy*/) { return INT64; }
     static Ioss::Field::BasicType get_field_type(Complex /*dummy*/) { return COMPLEX; }
-    static Ioss::Field::BasicType get_field_type(std::string /*dummy*/) { return STRING; }
+    static Ioss::Field::BasicType get_field_type(const std::string & /*dummy*/) { return STRING; }
 
     /* \brief Categorizes the type of information held in the field.
      */

@@ -139,7 +139,12 @@ namespace SEAMS {
   void undefined_error(const SEAMS::Aprepro &apr, const std::string &var)
   {
     if (!apr.inIfdefGetvar) {
-      apr.warning("Undefined variable '" + var + "'");
+      if (apr.ap_options.require_defined) {
+        apr.error("Undefined variable '" + var + "'");
+      }
+      else {
+        apr.warning("Undefined variable '" + var + "'");
+      }
     }
     else {
       apr.inIfdefGetvar = false;

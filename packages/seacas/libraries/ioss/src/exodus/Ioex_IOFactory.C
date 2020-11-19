@@ -98,24 +98,25 @@ namespace Ioex {
       return new Ioex::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
   }
 
-  void IOFactory::show_config() const
+  std::string IOFactory::show_config() const
   {
-    ex_print_config();
+    std::stringstream config;
+    config << ex_config();
 #if !defined(NO_PARMETIS_SUPPORT)
-    fmt::print(Ioss::OUTPUT(),
+    fmt::print(config,
                "\tParMetis Library Version: {}.{}.{} (Parallel Decomposition)\n"
                "\t\tInteger Size is {}, Real Size is {}\n\n",
                PARMETIS_MAJOR_VERSION, PARMETIS_MINOR_VERSION, PARMETIS_SUBMINOR_VERSION,
                IDXTYPEWIDTH, REALTYPEWIDTH);
 #else
-    fmt::print(Ioss::OUTPUT(),
-               "\tParMetis Library is NOT Available for Parallel Decomposition.\n\n");
+    fmt::print(config, "\tParMetis Library is NOT Available for Parallel Decomposition.\n\n");
 #endif
 #if !defined(NO_ZOLTAN_SUPPORT)
-    fmt::print(Ioss::OUTPUT(), "\tZoltan Library is Available for Parallel Decomposition.\n\n");
+    fmt::print(config, "\tZoltan Library is Available for Parallel Decomposition.\n\n");
 #else
-    fmt::print(Ioss::OUTPUT(), "\tZoltan Library is NOT Available for Parallel Decomposition.\n\n");
+    fmt::print(config, "\tZoltan Library is NOT Available for Parallel Decomposition.\n\n");
 #endif
+    return config.str();
   }
 } // namespace Ioex
 

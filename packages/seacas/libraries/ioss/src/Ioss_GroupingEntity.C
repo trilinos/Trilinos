@@ -82,10 +82,7 @@ const Ioss::GroupingEntity *Ioss::GroupingEntity::contained_in() const
 
 std::string Ioss::GroupingEntity::generic_name() const
 {
-  int64_t id = 0;
-  if (property_exists("id")) {
-    id = get_property("id").get_int();
-  }
+  int64_t id = get_optional_property("id", 0);
   return Ioss::Utils::encode_entity_name(short_type_string(), id);
 }
 

@@ -54,10 +54,10 @@ namespace {
       auto mm = std::minmax_element(df.begin(), df.end());
       fmt::print("{}Distribution Factors: ", prefix);
       if (*mm.first == *mm.second) {
-        fmt::print("all values = {}\n", *mm.first);
+        fmt::print("all values = {:#}\n", *mm.first);
       }
       else {
-        fmt::print("minimum value = {}, maximum value = {}\n", *mm.first, *mm.second);
+        fmt::print("minimum value = {:#}, maximum value = {:#}\n", *mm.first, *mm.second);
       }
     }
   }
@@ -69,10 +69,7 @@ namespace {
 
   int64_t id(Ioss::GroupingEntity *entity)
   {
-    int64_t id = -1;
-    if (entity->property_exists("id")) {
-      id = entity->get_property("id").get_int();
-    }
+    int64_t id = entity->get_optional_property("id", -1);
     return id;
   }
 
@@ -97,7 +94,7 @@ namespace {
 
     const Ioss::ElementBlockContainer &ebs = region.get_element_blocks();
     for (auto eb : ebs) {
-      if (eb->get_property("topology_type").get_string() == Ioss::Hex8::name) {
+      if (eb->topology()->name() == Ioss::Hex8::name) {
         hex_volume(eb, coordinates);
       }
     }
@@ -311,7 +308,7 @@ namespace {
     for (auto eb : ebs) {
       int64_t num_elem = eb->entity_count();
 
-      std::string type       = eb->get_property("topology_type").get_string();
+      std::string type       = eb->topology()->name();
       int64_t     num_attrib = eb->get_property("attribute_count").get_int();
       fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14n} elements, {:3d} attributes.", name(eb),
                  id(eb), type, num_elem, num_attrib);
@@ -347,7 +344,7 @@ namespace {
     for (auto eb : ebs) {
       int64_t num_edge = eb->entity_count();
 
-      std::string type       = eb->get_property("topology_type").get_string();
+      std::string type       = eb->topology()->name();
       int64_t     num_attrib = eb->get_property("attribute_count").get_int();
       fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14n} edges, {:3d} attributes.\n", name(eb),
                  id(eb), type, num_edge, num_attrib);
@@ -375,7 +372,7 @@ namespace {
     for (auto eb : ebs) {
       int64_t num_face = eb->entity_count();
 
-      std::string type       = eb->get_property("topology_type").get_string();
+      std::string type       = eb->topology()->name();
       int64_t     num_attrib = eb->get_property("attribute_count").get_int();
       fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14n} faces, {:3d} attributes.\n", name(eb),
                  id(eb), type, num_face, num_attrib);

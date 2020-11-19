@@ -35,6 +35,8 @@ namespace Ioss {
   class EntityBlock : public GroupingEntity
   {
   public:
+    EntityBlock &operator=(const EntityBlock &) = delete;
+
     Property get_implicit_property(const std::string &my_name) const override = 0;
 
     /** \brief Get the topology of the entities in the block.
@@ -91,7 +93,6 @@ namespace Ioss {
                 size_t entity_cnt);
 
     EntityBlock(const EntityBlock &) = default;
-    EntityBlock &operator=(const EntityBlock &) = delete;
 
     ElementTopology *topology_{nullptr};
 

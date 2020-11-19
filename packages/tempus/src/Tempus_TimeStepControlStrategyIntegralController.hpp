@@ -141,6 +141,31 @@ public:
      workingState->setTimeStep(dt);
   }
 
+  /// \name Overridden from Teuchos::Describable
+  //@{
+    std::string description() const override
+    { return "Tempus::TimeStepControlStrategyIntegralController"; }
+
+    void describe(Teuchos::FancyOStream          &out,
+                  const Teuchos::EVerbosityLevel verbLevel) const override
+    {
+      Teuchos::OSTab ostab(out,2,"describe");
+      out << description() << "::describe:" << std::endl
+          << "Name                               = " << tscsPL_->get<std::string>("Name") << std::endl
+          << "Controller Type                    = " << controller_   << std::endl
+          << "KI                                 = " << k1_           << std::endl
+          << "KP                                 = " << k2_           << std::endl
+          << "KD                                 = " << k3_           << std::endl
+          << "errN_                              = " << errN_         << std::endl
+          << "errNm1_                            = " << errNm1_       << std::endl
+          << "errNm2_                            = " << errNm2_       << std::endl
+          << "Safety Factor                      = " << safetyFactor_ << std::endl
+          << "Maximum Safety Factor              = " << facMax_       << std::endl
+          << "Minimum Safety Factor              = " << facMin_       << std::endl
+          << "Safety Factor After Step Rejection = " << tscsPL_->get<Scalar>("Safety Factor After Step Rejection")       << std::endl;
+    }
+  //@}
+
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
   void setParameterList(

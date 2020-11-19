@@ -11,6 +11,6 @@
 #include <string>
 #include <vector>
 
-typedef std::vector<std::pair<std::string, int>> StringIdVector;
+using StringIdVector = std::vector<std::pair<std::string, int>>;
 
 #endif

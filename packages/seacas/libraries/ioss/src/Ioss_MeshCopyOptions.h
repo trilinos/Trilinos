@@ -17,7 +17,8 @@ namespace Ioss {
     bool   verbose{false};
     bool   ints_64_bit{false};
     bool   delete_timesteps{false};
-    bool   reverse{false};     // Used for testing CGNS
-    bool   add_proc_id{false}; // CGNS: Add proc_id field.
+    bool   reverse{false};          // Used for testing CGNS
+    bool   add_proc_id{false};      // CGNS: Add proc_id field.
+    bool   boundary_sideset{false}; // Output a sideset of the boundary faces of the model
   };
 } // namespace Ioss
