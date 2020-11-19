@@ -17,9 +17,7 @@ namespace Ioss {
     std::string label(int which, char suffix_sep = '_') const override;
     ConstructedVariableType(const std::string &my_name, int number_components, bool delete_me);
     explicit ConstructedVariableType(int number_components, bool delete_me);
-
-  private:
-    ConstructedVariableType(const ConstructedVariableType &);
+    ConstructedVariableType(const ConstructedVariableType &) = delete;
   };
 } // namespace Ioss
 #endif

@@ -29,7 +29,7 @@ namespace Ioss {
   public:
     Blob()                  = default; // Used for template typing only
     Blob(const Blob &other) = default;
-    ~Blob()                 = default;
+    ~Blob() override        = default;
 
     Blob(DatabaseIO *io_database, const std::string &my_name, int64_t item_count);
 

@@ -8,6 +8,8 @@
 
 #include <percept/MeshType.hpp>
 #include <percept/PerceptUtils.hpp>
+#include <Kokkos_ArithTraits.hpp>
+
 
 #ifndef get_alpha_0_refmesh_hpp
 #define get_alpha_0_refmesh_hpp
@@ -66,6 +68,8 @@ struct min_scanner {   //finds the min value of a one dimensional view
 
     Double alpha;
 
+    const Double real_max;
+
     std::vector<SGridSizes> block_sizes;
     std::vector<std::array<unsigned int, 3>> loop_orderings;
     SGridSizes block_sizes_iterator;
@@ -73,7 +77,7 @@ struct min_scanner {   //finds the min value of a one dimensional view
 
     unsigned m_noBlocks;
 
-    SGrid_GenericAlgorithm_get_alpha_0(PerceptMesh *eMesh,StructuredGrid::MTSelector *boundarySelector=0): m_eMesh(eMesh), m_boundarySelector(boundarySelector)
+    SGrid_GenericAlgorithm_get_alpha_0(PerceptMesh *eMesh,StructuredGrid::MTSelector *boundarySelector=0): m_eMesh(eMesh), m_boundarySelector(boundarySelector), real_max(std::numeric_limits<Double>::max())
     {
         if (eMesh->get_block_structured_grid()) {
 
@@ -102,11 +106,11 @@ struct min_scanner {   //finds the min value of a one dimensional view
                                         - block_sizes[iBlock].node_min[2]);
                         Kokkos::resize(alpha_candidates[iBlock],total_nodes_this_block);
                     }
-                    alpha=std::numeric_limits<Double>::max();
+                    alpha=real_max;
                 }//if bsg
     }
 
-    void reset_alpha(){alpha=std::numeric_limits<Double>::max();}
+    void reset_alpha(){alpha=real_max;}
 
     void calc_alpha()
     {   //finds minimum(alpha>0)
@@ -161,7 +165,7 @@ struct min_scanner {   //finds the min value of a one dimensional view
       stk::all_reduce( m_eMesh->parallel() , stk::ReduceMin<1>( & alpha ) );
       VERIFY_OP_ON(alpha, > , 0.0, "bad alpha");
 
-      if( alpha==std::numeric_limits<Double>::max() )//if all the fields were fixed
+      if( alpha==real_max )//if all the fields were fixed
           alpha=1.0;
     }
 
@@ -189,7 +193,7 @@ struct min_scanner {   //finds the min value of a one dimensional view
           alpha_candidates_iter(index)=alpha_candidate;
         }
       else
-          alpha_candidates_iter(index)=std::numeric_limits<Double>::max(); //mark fields fixed along boundary as max Double. Only fields in cg_s that have magnitude of zero are fixed fields
+          alpha_candidates_iter(index)=Kokkos::Details::ArithTraits<Double>::max(); //mark fields fixed along boundary as max Double. Only fields in cg_s that have magnitude of zero are fixed fields
     }//operator
   };
 }//percept

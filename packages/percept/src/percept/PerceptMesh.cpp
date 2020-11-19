@@ -951,7 +951,7 @@
     				identifier(element_nodes[(subDimRank == element_rank() ? jnode :
     						(subDimRank == face_rank() ? element_topo_data->side[subDimOrd].node[jnode] :
     								(subDimRank == edge_rank() ? element_topo_data->edge[subDimOrd].node[jnode] :
-    										(subDimRank == node_rank() ? jnode : -1)))) ].entity() ) ;
+                                                                 (subDimRank == node_rank() ? jnode : (unsigned)-1)))) ].entity() ) ;
     		list.push_back(entity);
     	}
 

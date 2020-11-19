@@ -23,9 +23,9 @@
 using IntVector = std::vector<int>;
 using IdMap     = std::vector<int>;
 
-using RealVector = std::vector<double>;
-typedef std::vector<std::pair<std::string, size_t>> StringIdVector;
-using StringVector = std::vector<std::string>;
-using RegionVector = std::vector<Ioss::Region *>;
-using Omissions    = std::vector<StringVector>;
+using RealVector     = std::vector<double>;
+using StringIdVector = std::vector<std::pair<std::string, size_t>>;
+using StringVector   = std::vector<std::string>;
+using RegionVector   = std::vector<Ioss::Region *>;
+using Omissions      = std::vector<StringVector>;
 #endif

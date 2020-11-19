@@ -295,10 +295,10 @@ namespace Ioss {
     BlobContainer              blobs;
     mutable StateTimeContainer stateTimes;
 
-    int         currentState;
-    mutable int stateCount;
-    bool        modelDefined;
-    bool        transientDefined;
+    int         currentState{-1};
+    mutable int stateCount{0};
+    bool        modelDefined{false};
+    bool        transientDefined{false};
   };
 } // namespace Ioss
 

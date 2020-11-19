@@ -168,8 +168,8 @@ namespace percept {
           if (element != root)
             {
               VERIFY_OP_ON(m_eMesh.owner_rank(element), ==, m_eMesh.owner_rank(root), "bad ownership "+msg);
-              m_eMesh.get_bulk_data()->comm_procs(m_eMesh.key(element), procs);
-              m_eMesh.get_bulk_data()->comm_procs(m_eMesh.key(root), root_procs);
+              m_eMesh.get_bulk_data()->comm_procs(element, procs);
+              m_eMesh.get_bulk_data()->comm_procs(root, root_procs);
               std::sort(procs.begin(), procs.end());
               std::sort(root_procs.begin(), root_procs.end());
               VERIFY_OP_ON(procs.size(), ==, root_procs.size(), "bad size "+msg);

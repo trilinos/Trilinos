@@ -36,6 +36,7 @@ namespace Ioss {
   class Invalid_Storage : public VariableType
   {
   public:
+    Invalid_Storage(const Invalid_Storage &) = delete;
     std::string label(int which, char suffix_sep = '_') const override;
     std::string label_name(const std::string &base, int /*which*/, char suffix_sep) const override;
     int         suffix_count() const override { return 0; }
@@ -43,14 +44,12 @@ namespace Ioss {
 
   protected:
     Invalid_Storage();
-
-  private:
-    Invalid_Storage(const Invalid_Storage &);
   };
 
   class Scalar : public VariableType
   {
   public:
+    Scalar(const Scalar &) = delete;
     std::string label(int which, char suffix_sep = '_') const override;
     std::string label_name(const std::string &base, int /*which*/, char suffix_sep) const override;
     int         suffix_count() const override { return 0; }
@@ -58,7 +57,6 @@ namespace Ioss {
 
   protected:
     Scalar();
-    Scalar(const Scalar &) = delete;
   };
 
   MAKE_CLASS(Vector_2D);

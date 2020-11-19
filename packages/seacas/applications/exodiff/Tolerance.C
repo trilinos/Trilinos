@@ -67,7 +67,7 @@ bool Tolerance::use_old_floor = false;
 
 bool Tolerance::Diff(double v1, double v2) const
 {
-  if (type == IGNORE_) {
+  if (type == ToleranceMode::IGNORE_) {
     return false;
   }
 
@@ -82,17 +82,17 @@ bool Tolerance::Diff(double v1, double v2) const
     }
   }
 
-  if (type == RELATIVE_) {
+  if (type == ToleranceMode::RELATIVE_) {
     if (v1 == 0.0 && v2 == 0.0) {
       return false;
     }
     double max = fabs(v1) < fabs(v2) ? fabs(v2) : fabs(v1);
     return fabs(v1 - v2) > value * max;
   }
-  if (type == ABSOLUTE_) {
+  if (type == ToleranceMode::ABSOLUTE_) {
     return fabs(v1 - v2) > value;
   }
-  if (type == COMBINED_) {
+  if (type == ToleranceMode::COMBINED_) {
     // if (Abs(x - y) <= Max(absTol, relTol * Max(Abs(x), Abs(y))))
     // In the current implementation, absTol == relTol;
     // At some point, store both values...
@@ -109,23 +109,23 @@ bool Tolerance::Diff(double v1, double v2) const
     // to do a better check to ensure that ratio of one shape to other
     // is 1 or -1...
   }
-  if (type == ULPS_FLOAT_) {
+  if (type == ToleranceMode::ULPS_FLOAT_) {
     return !AlmostEqualUlpsFloat(v1, v2, static_cast<int>(value));
   }
-  if (type == ULPS_DOUBLE_) {
+  if (type == ToleranceMode::ULPS_DOUBLE_) {
     return !AlmostEqualUlpsDouble(v1, v2, static_cast<int>(value));
   }
-  if (type == EIGEN_REL_) {
+  if (type == ToleranceMode::EIGEN_REL_) {
     if (v1 == 0.0 && v2 == 0.0) {
       return false;
     }
     double max = fabs(v1) < fabs(v2) ? fabs(v2) : fabs(v1);
     return fabs(fabs(v1) - fabs(v2)) > value * max;
   }
-  else if (type == EIGEN_ABS_) {
+  else if (type == ToleranceMode::EIGEN_ABS_) {
     return fabs(fabs(v1) - fabs(v2)) > value;
   }
-  else if (type == EIGEN_COM_) {
+  else if (type == ToleranceMode::EIGEN_COM_) {
     // if (Abs(x - y) <= Max(absTol, relTol * Max(Abs(x), Abs(y))))
     // In the current implementation, absTol == relTol;
     // At some point, store both values...
@@ -143,28 +143,28 @@ bool Tolerance::Diff(double v1, double v2) const
 
 const char *Tolerance::typestr() const
 {
-  if (type == RELATIVE_) {
+  if (type == ToleranceMode::RELATIVE_) {
     return "relative";
   }
-  if (type == ABSOLUTE_) {
+  if (type == ToleranceMode::ABSOLUTE_) {
     return "absolute";
   }
-  if (type == COMBINED_) {
+  if (type == ToleranceMode::COMBINED_) {
     return "combined";
   }
-  if (type == ULPS_FLOAT_) {
+  if (type == ToleranceMode::ULPS_FLOAT_) {
     return "ulps_float";
   }
-  else if (type == ULPS_DOUBLE_) {
+  else if (type == ToleranceMode::ULPS_DOUBLE_) {
     return "ulps_double";
   }
-  else if (type == EIGEN_REL_) {
+  else if (type == ToleranceMode::EIGEN_REL_) {
     return "eigenrel";
   }
-  else if (type == EIGEN_ABS_) {
+  else if (type == ToleranceMode::EIGEN_ABS_) {
     return "eigenabs";
   }
-  else if (type == EIGEN_COM_) {
+  else if (type == ToleranceMode::EIGEN_COM_) {
     return "eigencom";
   }
   else {
@@ -174,28 +174,28 @@ const char *Tolerance::typestr() const
 
 const char *Tolerance::abrstr() const
 {
-  if (type == RELATIVE_) {
+  if (type == ToleranceMode::RELATIVE_) {
     return "rel";
   }
-  if (type == ABSOLUTE_) {
+  if (type == ToleranceMode::ABSOLUTE_) {
     return "abs";
   }
-  if (type == COMBINED_) {
+  if (type == ToleranceMode::COMBINED_) {
     return "com";
   }
-  if (type == ULPS_FLOAT_) {
+  if (type == ToleranceMode::ULPS_FLOAT_) {
     return "upf";
   }
-  else if (type == ULPS_DOUBLE_) {
+  else if (type == ToleranceMode::ULPS_DOUBLE_) {
     return "upd";
   }
-  else if (type == EIGEN_REL_) {
+  else if (type == ToleranceMode::EIGEN_REL_) {
     return "ere";
   }
-  else if (type == EIGEN_ABS_) {
+  else if (type == ToleranceMode::EIGEN_ABS_) {
     return "eab";
   }
-  else if (type == EIGEN_COM_) {
+  else if (type == ToleranceMode::EIGEN_COM_) {
     return "eco";
   }
   else {

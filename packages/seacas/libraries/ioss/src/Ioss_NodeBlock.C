@@ -72,9 +72,8 @@ Ioss::NodeBlock::NodeBlock(Ioss::DatabaseIO *io_database, const std::string &my_
                          node_count));
 }
 
-Ioss::NodeBlock::NodeBlock(const Ioss::NodeBlock &other) : Ioss::EntityBlock(other) {}
-
-Ioss::NodeBlock::~NodeBlock() = default;
+Ioss::NodeBlock::NodeBlock(const Ioss::NodeBlock &other) = default;
+Ioss::NodeBlock::~NodeBlock()                            = default;
 
 Ioss::Property Ioss::NodeBlock::get_implicit_property(const std::string &my_name) const
 {
