@@ -22,6 +22,7 @@ public:
               int narg, char**arg)
   {
     int me = comm->getRank();
+    int np = comm->getSize();
 
     // Process command line arguments
     bool distributeInput = true;
@@ -55,15 +56,17 @@ public:
     }
 
     // Build same matrix with cyclic domain and range maps
+    // To make range and domain maps differ for square matrices,
+    // keep some processors empty in the cyclic maps
 
     size_t nIndices = std::max(JBlock->getGlobalNumCols(),
                                JBlock->getGlobalNumRows());
     Teuchos::Array<gno_t> indices(nIndices);
 
     Teuchos::RCP<const map_t> vMapCyclic = 
-                 getCyclicMap(JBlock->getGlobalNumCols(), indices, comm);
+                 getCyclicMap(JBlock->getGlobalNumCols(), indices, np-1, comm);
     Teuchos::RCP<const map_t> wMapCyclic =
-                 getCyclicMap(JBlock->getGlobalNumRows(), indices, comm);
+                 getCyclicMap(JBlock->getGlobalNumRows(), indices, np-2, comm);
 
     // Fill JBlock with random numbers for a better test.
     JBlock->resumeFill();
@@ -79,12 +82,11 @@ public:
     Kokkos::fill_random(local_matrix.values, rand_pool, 
                         static_cast<IST>(1.), static_cast<IST>(9999.));
     JBlock->fillComplete();
-    JBlock->print(std::cout);
 
+    // Make JCyclic:  same matrix with different Domain and Range maps
     JCyclic = rcp(new matrix_t(*JBlock));
     JCyclic->resumeFill();
     JCyclic->fillComplete(vMapCyclic, wMapCyclic);
-    JBlock->print(std::cout);
   }
 
   ////////////////////////////////////////////////////////////////
@@ -109,11 +111,14 @@ private:
   Teuchos::RCP<const map_t> getCyclicMap(
     size_t nIndices, 
     Teuchos::Array<gno_t> &indices,
+    int mapNumProc, 
     const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   {
     size_t cnt = 0;
     int me = comm->getRank();
     int np = comm->getSize();
+    if (mapNumProc > np) mapNumProc = np; // corner case: bad input
+    if (mapNumProc <= 0) mapNumProc = 1;  // corner case: np is too small
 
     for (size_t i = 0; i < nIndices; i++) 
       if (me == int(i % np)) indices[cnt++] = i;
@@ -164,11 +169,13 @@ private:
     multivector_t V(J->getDomainMap(), numColors);
     colorer.computeSeedMatrix(V);
 
+    Teuchos::FancyOStream foo(Teuchos::rcp(&std::cout,false));
+
     // To test the result...
     // Compute the compressed matrix W
     multivector_t W(J->getRangeMap(), numColors);
   
-    J->apply(W, V);
+    J->apply(V, W);
 
     // Reconstruct matrix from compression vector
     Teuchos::RCP<matrix_t> Jp = rcp(new matrix_t(*J));
@@ -187,8 +194,11 @@ private:
       "TpetraCrsColorer::testReconstructedMatrix()",
       Kokkos::RangePolicy<execution_space_t>(0, num_local_nz),
       KOKKOS_LAMBDA(const size_t nz, int &errorcnt) {
-        if (J_local_matrix.values(nz) != Jp_local_matrix.values(nz))
+        if (J_local_matrix.values(nz) != Jp_local_matrix.values(nz)) {
+          printf("Error in nonzero comparison %zu:  %g != %g", 
+                  nz, J_local_matrix.values(nz), Jp_local_matrix.values(nz));
           errorcnt++;
+        }
       }, 
       ierr);
    
