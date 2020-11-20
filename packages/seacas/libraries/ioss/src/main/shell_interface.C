@@ -296,11 +296,14 @@ void IOShell::Interface::enroll_options()
                   "Do not transfer any timesteps or transient data to the output database",
                   nullptr);
 
+  options_.enroll("boundary_sideset", Ioss::GetLongOption::NoValue,
+                  "Output a sideset for all boundary faces of the model (EXPERIMENTAL)", nullptr);
+
   options_.enroll("copyright", Ioss::GetLongOption::NoValue, "Show copyright and license data.",
                   nullptr);
 }
 
-bool IOShell::Interface::parse_options(int argc, char **argv)
+bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
 {
   // Get options from environment variable also...
   char *options = getenv("IO_SHELL_OPTIONS");
@@ -319,10 +322,12 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("help") != nullptr) {
-    options_.usage(std::cerr);
-    fmt::print(stderr, "\n\tCan also set options via IO_SHELL_OPTIONS environment variable.\n\n");
-    fmt::print(stderr, "\t->->-> Send email to gdsjaar@sandia.gov for {} support.<-<-<-\n",
-               options_.program_name());
+    if (my_processor == 0) {
+      options_.usage(std::cerr);
+      fmt::print(stderr, "\n\tCan also set options via IO_SHELL_OPTIONS environment variable.\n\n");
+      fmt::print(stderr, "\t->->-> Send email to gdsjaar@sandia.gov for {} support.<-<-<-\n",
+                 options_.program_name());
+    }
     exit(EXIT_SUCCESS);
   }
 
@@ -353,7 +358,9 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   zlib = (options_.retrieve("zlib") != nullptr);
 
   if (szip && zlib) {
-    fmt::print(stderr, "ERROR: Only one of 'szip' or 'zlib' can be specified.\n");
+    if (my_processor == 0) {
+      fmt::print(stderr, "ERROR: Only one of 'szip' or 'zlib' can be specified.\n");
+    }
     return false;
   }
 
@@ -452,6 +459,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   lower_case_variable_names = (options_.retrieve("native_variable_names") == nullptr);
   disable_field_recognition = (options_.retrieve("disable_field_recognition") != nullptr);
   retain_empty_blocks       = (options_.retrieve("retain_empty_blocks") != nullptr);
+  boundary_sideset          = (options_.retrieve("boundary_sideset") != nullptr);
 
   {
     const char *temp = options_.retrieve("in_type");
@@ -533,13 +541,15 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
 #endif
 
       if (data_storage_type == 0) {
-        fmt::print(stderr, "ERROR: Option data_storage must be one of\n");
+        if (my_processor == 0) {
+          fmt::print(stderr, "ERROR: Option data_storage must be one of\n");
 #ifdef SEACAS_HAVE_KOKKOS
-        fmt::print(stderr, "       POINTER, STD_VECTOR, KOKKOS_VIEW_1D, KOKKOS_VIEW_2D, or "
-                           "KOKKOS_VIEW_2D_LAYOUTRIGHT_HOSTSPACE\n");
+          fmt::print(stderr, "       POINTER, STD_VECTOR, KOKKOS_VIEW_1D, KOKKOS_VIEW_2D, or "
+                             "KOKKOS_VIEW_2D_LAYOUTRIGHT_HOSTSPACE\n");
 #else
-        fmt::print(stderr, "       POINTER, or STD_VECTOR\n");
+          fmt::print(stderr, "       POINTER, or STD_VECTOR\n");
 #endif
+        }
         return false;
       }
     }
@@ -588,33 +598,36 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("copyright") != nullptr) {
-    fmt::print(stderr, "\n"
-                       "Copyright(C) 1999-2017 National Technology & Engineering Solutions\n"
-                       "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
-                       "NTESS, the U.S. Government retains certain rights in this software.\n\n"
-                       "Redistribution and use in source and binary forms, with or without\n"
-                       "modification, are permitted provided that the following conditions are\n"
-                       "met:\n\n "
-                       "    * Redistributions of source code must retain the above copyright\n"
-                       "      notice, this list of conditions and the following disclaimer.\n\n"
-                       "    * Redistributions in binary form must reproduce the above\n"
-                       "      copyright notice, this list of conditions and the following\n"
-                       "      disclaimer in the documentation and/or other materials provided\n"
-                       "      with the distribution.\n\n"
-                       "    * Neither the name of NTESS nor the names of its\n"
-                       "      contributors may be used to endorse or promote products derived\n"
-                       "      from this software without specific prior written permission.\n\n"
-                       "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-                       "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-                       "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-                       "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-                       "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-                       "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-                       "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-                       "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-                       "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-                       "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-                       "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n");
+    if (my_processor == 0) {
+      fmt::print(stderr,
+                 "\n"
+                 "Copyright(C) 1999-2017 National Technology & Engineering Solutions\n"
+                 "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
+                 "NTESS, the U.S. Government retains certain rights in this software.\n\n"
+                 "Redistribution and use in source and binary forms, with or without\n"
+                 "modification, are permitted provided that the following conditions are\n"
+                 "met:\n\n "
+                 "    * Redistributions of source code must retain the above copyright\n"
+                 "      notice, this list of conditions and the following disclaimer.\n\n"
+                 "    * Redistributions in binary form must reproduce the above\n"
+                 "      copyright notice, this list of conditions and the following\n"
+                 "      disclaimer in the documentation and/or other materials provided\n"
+                 "      with the distribution.\n\n"
+                 "    * Neither the name of NTESS nor the names of its\n"
+                 "      contributors may be used to endorse or promote products derived\n"
+                 "      from this software without specific prior written permission.\n\n"
+                 "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
+                 "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+                 "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
+                 "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
+                 "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
+                 "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
+                 "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
+                 "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
+                 "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
+                 "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
+                 "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n");
+    }
     exit(EXIT_SUCCESS);
   }
 
@@ -626,7 +639,9 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     outputFile = argv[option_index];
   }
   else {
-    fmt::print(stderr, "\nERROR: input and output filename not specified\n\n");
+    if (my_processor == 0) {
+      fmt::print(stderr, "\nERROR: input and output filename not specified\n\n");
+    }
     return false;
   }
 

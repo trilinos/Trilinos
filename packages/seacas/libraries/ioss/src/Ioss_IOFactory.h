@@ -37,9 +37,9 @@ namespace Ioss {
                               DatabaseUsage db_usage, MPI_Comm communicator = MPI_COMM_WORLD,
                               const Ioss::PropertyManager &properties = Ioss::PropertyManager());
 
-    static int  describe(NameList *names);
-    static void clean();
-    static void show_configuration();
+    static int         describe(NameList *names);
+    static void        clean();
+    static std::string show_configuration();
 
   protected:
     explicit IOFactory(const std::string &type);
@@ -48,7 +48,7 @@ namespace Ioss {
                                 MPI_Comm                     communicator,
                                 const Ioss::PropertyManager &properties) const = 0;
 
-    virtual void show_config() const {}
+    virtual std::string show_config() const { return std::string(""); }
 
     static void alias(const std::string &base, const std::string &syn);
 

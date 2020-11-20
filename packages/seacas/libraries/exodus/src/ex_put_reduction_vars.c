@@ -196,6 +196,7 @@ int ex_put_reduction_vars(int exoid, int time_step, ex_entity_type var_type, ex_
   switch (var_type) {
     /* NOTE: Global variables are always reduction variables, so use the ex_put_var function. */
   case EX_GLOBAL:
+    EX_FUNC_UNLOCK();
     return ex_put_var(exoid, time_step, var_type, 1, 1, num_variables, var_vals);
     break;
   case EX_ASSEMBLY:

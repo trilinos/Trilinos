@@ -8,8 +8,8 @@
 
 static char const *qainfo[] = {
     "ejoin",
-    "2019/05/06",
-    "1.5.3",
+    "2020/09/28",
+    "1.5.4",
 };
 
 #endif

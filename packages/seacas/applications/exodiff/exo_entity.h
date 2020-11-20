@@ -16,10 +16,10 @@
 #if EX_API_VERS_NODOT > 467
 using EXOTYPE = ex_entity_type;
 #else
-typedef int EXOTYPE;
+using EXOTYPE = int;
 #endif
 #else
-typedef int EXOTYPE;
+using EXOTYPE = int;
 #endif
 
 template <typename INT> class ExoII_Read;

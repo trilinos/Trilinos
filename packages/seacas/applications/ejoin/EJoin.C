@@ -106,8 +106,8 @@ namespace {
 #endif
   }
 
-  typedef std::set<std::pair<Ioss::EntityType, int64_t>> EntityIdSet;
-  EntityIdSet                                            id_set;
+  using EntityIdSet = std::set<std::pair<Ioss::EntityType, int64_t>>;
+  EntityIdSet id_set;
 
   void set_id(Ioss::GroupingEntity *old_ge, Ioss::GroupingEntity *new_ge)
   {
@@ -287,10 +287,16 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
     properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
   }
 
-  if (interFace.compression_level() > 0) {
+  if (interFace.compression_level() > 0 || interFace.szip()) {
     properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
     properties.add(Ioss::Property("COMPRESSION_LEVEL", interFace.compression_level()));
     properties.add(Ioss::Property("COMPRESSION_SHUFFLE", true));
+    if (interFace.szip()) {
+      properties.add(Ioss::Property("COMPRESSION_METHOD", "szip"));
+    }
+    else if (interFace.zlib()) {
+      properties.add(Ioss::Property("COMPRESSION_METHOD", "zlib"));
+    }
   }
 
   properties.add(Ioss::Property("FLUSH_INTERVAL", 0));
@@ -545,10 +551,7 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
 namespace {
   bool entity_is_omitted(Ioss::GroupingEntity *block)
   {
-    bool omitted = false;
-    if (block->property_exists("omitted")) {
-      omitted = (block->get_property("omitted").get_int() == 1);
-    }
+    bool omitted = block->get_optional_property("omitted", 0) == 1;
     return omitted;
   }
 
@@ -572,7 +575,7 @@ namespace {
         if (debug) {
           fmt::print(stderr, "{}, ", name);
         }
-        std::string type     = eb->get_property("topology_type").get_string();
+        std::string type     = eb->topology()->name();
         size_t      num_elem = eb->entity_count();
         total_elements += num_elem;
 
@@ -623,8 +626,8 @@ namespace {
           if (debug) {
             fmt::print(stderr, "{}, ", fbname);
           }
-          std::string fbtype   = fb->get_property("topology_type").get_string();
-          std::string partype  = fb->get_property("parent_topology_type").get_string();
+          std::string fbtype   = fb->topology()->name();
+          std::string partype  = fb->parent_element_topology()->name();
           size_t      num_side = fb->entity_count();
           total_sides += num_side;
 
@@ -999,7 +1002,7 @@ namespace {
   {
     for (const auto &pm : part_mesh) {
       Ioss::NameList fields;
-      pm->field_describe(Ioss::Field::TRANSIENT, &fields);
+      pm->field_describe(Ioss::Field::REDUCTION, &fields);
       for (const auto &field : fields) {
         std::vector<double> data;
         pm->get_field_data(field, data);
@@ -1286,7 +1289,7 @@ namespace {
     }
     for (const auto &pm : part_mesh) {
       Ioss::NameList fields;
-      pm->field_describe(Ioss::Field::TRANSIENT, &fields);
+      pm->field_describe(Ioss::Field::REDUCTION, &fields);
       for (const auto &field_name : fields) {
         if (valid_variable(field_name, 0, variable_list)) {
           Ioss::Field field = pm->get_field(field_name);

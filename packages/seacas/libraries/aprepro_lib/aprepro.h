@@ -114,6 +114,7 @@ namespace SEAMS {
     bool        end_on_exit{false};
     bool        errors_fatal{false};
     bool        errors_and_warnings_fatal{false};
+    bool        require_defined{false}; // flag to treat undefined vars as errors
     bool        warning_msg{true};
     bool        info_msg{false};
     bool        debugging{false};

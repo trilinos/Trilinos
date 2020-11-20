@@ -638,7 +638,7 @@ namespace {
       if (debug) {
         std::cerr << name << ", ";
       }
-      std::string type     = (*i)->get_property("topology_type").get_string();
+      std::string type     = (*i)->topology()->name();
       int         num_elem = (*i)->entity_count();
       total_elements += num_elem;
 
@@ -679,8 +679,8 @@ namespace {
         if (debug) {
           std::cerr << fbname << ", ";
         }
-        std::string fbtype   = (*j)->get_property("topology_type").get_string();
-        std::string partype  = (*j)->get_property("parent_topology_type").get_string();
+        std::string fbtype   = (*j)->topology()->name();
+        std::string partype  = (*j)->parent_element_topology()->name();
         int         num_side = (*j)->entity_count();
         total_sides += num_side;
 
@@ -894,7 +894,7 @@ namespace {
           std::cerr << name << ", ";
         }
         int         num_elem = (*i)->entity_count();
-        std::string type     = (*i)->get_property("topology_type").get_string();
+        std::string type     = (*i)->topology()->name();
 
         // Should be able to get this from the input mesh element blocks...
         std::string partype = "unknown";

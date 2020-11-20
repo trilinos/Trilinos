@@ -174,7 +174,7 @@ namespace Ioss {
     }
 
     bool match = false;
-    for (auto vtype : registry()) {
+    for (const auto &vtype : registry()) {
       ivt = vtype.second;
       if (ivt->suffix_count() == static_cast<int>(size)) {
         if (ivt->match(suffices)) {

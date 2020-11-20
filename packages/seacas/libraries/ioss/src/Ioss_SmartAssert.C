@@ -82,8 +82,8 @@ namespace SmartAssert {
     }
     out << "\nExpression: '" << context.get_expr() << "'\n";
 
-    typedef assert_context::vals_array ac_vals_array;
-    const ac_vals_array &              aVals = context.get_vals_array();
+    using ac_vals_array        = assert_context::vals_array;
+    const ac_vals_array &aVals = context.get_vals_array();
     if (!aVals.empty()) {
       bool                          bFirstTime = true;
       ac_vals_array::const_iterator first = aVals.begin(), last = aVals.end();

@@ -35,10 +35,12 @@ public:
   bool   use_netcdf4() const { return useNetcdf4_; }
   bool   ignore_element_ids() const { return ignoreElementIds_; }
 
-  int compression_level() const { return compressionLevel_; }
-  int step_min() const { return stepMin_; }
-  int step_max() const { return stepMax_; }
-  int step_interval() const { return stepInterval_; }
+  int  compression_level() const { return compressionLevel_; }
+  bool zlib() const { return zlib_; }
+  bool szip() const { return szip_; }
+  int  step_min() const { return stepMin_; }
+  int  step_max() const { return stepMax_; }
+  int  step_interval() const { return stepInterval_; }
 
   vector3d                offset() const { return offset_; }
   const std::vector<int> &information_record_parts() const { return infoRecordParts_; }
@@ -93,6 +95,8 @@ private:
   bool ints64bit_{false};
   bool useNetcdf4_{false};
   bool ignoreElementIds_{false};
+  bool zlib_{true};
+  bool szip_{false};
 
   std::string blockPrefix_{std::string("p")};
 

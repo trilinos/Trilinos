@@ -27,13 +27,13 @@ namespace Excn {
     size_t count(ObjectType type) const
     {
       switch (type) {
-      case EBLK: return blockCount;
-      case NSET: return nodesetCount;
-      case SSET: return sidesetCount;
-      case NODE: return nodeCount;
-      case ELEM: return elementCount;
-      case TIME: return timestepCount;
-      case DIM: return dimensionality;
+      case ObjectType::EBLK: return blockCount;
+      case ObjectType::NSET: return nodesetCount;
+      case ObjectType::SSET: return sidesetCount;
+      case ObjectType::NODE: return nodeCount;
+      case ObjectType::ELEM: return elementCount;
+      case ObjectType::TIME: return timestepCount;
+      case ObjectType::DIM: return dimensionality;
       default: return 0;
       }
     }
@@ -132,7 +132,7 @@ namespace Excn {
     }
   };
 
-  typedef std::pair<int, int> Side;
+  using Side = std::pair<int, int>;
   template <typename INT> struct SideSet
   {
     SideSet() = default;

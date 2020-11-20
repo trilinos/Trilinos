@@ -31,14 +31,8 @@ namespace {
     if (old_ge != nullptr) {
       std::string        filename = sset->get_database()->get_filename();
       std::ostringstream errmsg;
-      int64_t            id1 = 0;
-      int64_t            id2 = 0;
-      if (side_block->property_exists(id_str())) {
-        id1 = side_block->get_property(id_str()).get_int();
-      }
-      if (old_ge->property_exists(id_str())) {
-        id2 = old_ge->get_property(id_str()).get_int();
-      }
+      int64_t            id1 = side_block->get_optional_property(id_str(), 0);
+      int64_t            id2 = old_ge->get_optional_property(id_str(), 0);
       fmt::print(errmsg,
                  "\nERROR: There are multiple side blocks with the same name "
                  "defined in side set '{}' in the database file '{}'.\n"
@@ -69,7 +63,7 @@ Ioss::SideSet::SideSet(Ioss::DatabaseIO *io_database, const std::string &my_name
 Ioss::SideSet::SideSet(const Ioss::SideSet &other) : Ioss::GroupingEntity(other)
 {
   for (const auto &block : other.sideBlocks) {
-    Ioss::SideBlock *sb = new Ioss::SideBlock(*block);
+    auto *sb = new Ioss::SideBlock(*block);
     add(sb);
   }
 }

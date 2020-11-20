@@ -13,7 +13,7 @@
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_PropertyManager.h>
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
 #include <map>
 #include <string>
 #include <vector>
@@ -633,7 +633,7 @@ namespace Ioss {
     std::vector<INT> exportNodeIndex;
 
     std::vector<INT>
-                     importNodeMap; // Where to put each imported nodes data in the list of all data...
+        importNodeMap; // Where to put each imported nodes data in the list of all data...
     std::vector<INT> importNodeCount;
     std::vector<INT> importNodeIndex;
 
