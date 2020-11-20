@@ -27,8 +27,8 @@ namespace Ioss {
   class Assembly : public GroupingEntity
   {
   public:
-    Assembly()  = default; // Used for template typing only
-    ~Assembly() = default;
+    Assembly()           = default; // Used for template typing only
+    ~Assembly() override = default;
     Assembly(const Assembly &);
 
     Assembly(DatabaseIO *io_database, const std::string &my_name);

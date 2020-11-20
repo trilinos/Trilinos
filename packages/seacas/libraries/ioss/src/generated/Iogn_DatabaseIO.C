@@ -292,7 +292,7 @@ namespace Iogn {
           }
         }
         else {
-          int64_t *connect = static_cast<int64_t *>(data);
+          auto *connect = static_cast<int64_t *>(data);
           m_generatedMesh->connectivity(id, connect);
           if (field.get_name() == "connectivity_raw") {
             map_global_to_local(get_node_map(),
@@ -366,7 +366,7 @@ namespace Iogn {
           }
         }
         else {
-          int64_t *ids = static_cast<int64_t *>(data);
+          auto *ids = static_cast<int64_t *>(data);
           for (size_t i = 0; i < num_to_get; i++) {
             ids[i] = 10 * elem_side[2 * i + 0] + elem_side[2 * i + 1] + 1;
           }
@@ -393,7 +393,7 @@ namespace Iogn {
           }
         }
         else {
-          int64_t *element_side = static_cast<int64_t *>(data);
+          auto *element_side = static_cast<int64_t *>(data);
           for (size_t i = 0; i < num_to_get; i++) {
             element_side[2 * i + 0] = elem_side[2 * i + 0];
             element_side[2 * i + 1] = elem_side[2 * i + 1] + 1;
@@ -454,7 +454,7 @@ namespace Iogn {
 #endif
         }
         else {
-          int64_t *ids = static_cast<int64_t *>(data);
+          auto *ids = static_cast<int64_t *>(data);
           std::copy(nodes.begin(), nodes.end(), ids);
         }
       }
@@ -554,7 +554,7 @@ namespace Iogn {
           }
         }
         else {
-          int64_t *entity_proc = static_cast<int64_t *>(data);
+          auto *entity_proc = static_cast<int64_t *>(data);
 
           size_t j = 0;
           for (size_t i = 0; i < entity_count; i++) {
@@ -784,10 +784,12 @@ namespace Iogn {
 
       std::vector<std::string> touching_blocks = m_generatedMesh->sideset_touching_blocks(ifs + 1);
       if (touching_blocks.size() == 1) {
-        std::string ef_block_name  = name + "_" + face_topo;
-        std::string side_topo_name = face_topo;
-        std::string elem_topo_name = "unknown";
-        int64_t     number_faces   = m_generatedMesh->sideset_side_count_proc(ifs + 1);
+        std::string ef_block_name = name;
+        ef_block_name += "_";
+        ef_block_name += face_topo;
+        const std::string &side_topo_name = face_topo;
+        std::string        elem_topo_name = "unknown";
+        int64_t            number_faces   = m_generatedMesh->sideset_side_count_proc(ifs + 1);
 
         auto ef_block =
             new Ioss::SideBlock(this, ef_block_name, side_topo_name, elem_topo_name, number_faces);
@@ -809,9 +811,9 @@ namespace Iogn {
         for (auto &touching_block : touching_blocks) {
           std::string ef_block_name =
               "surface_" + touching_block + "_edge2_" + std::to_string(ifs + 1);
-          std::string side_topo_name = face_topo;
-          std::string elem_topo_name = "unknown";
-          int64_t     number_faces   = m_generatedMesh->sideset_side_count_proc(ifs + 1);
+          const std::string &side_topo_name = face_topo;
+          std::string        elem_topo_name = "unknown";
+          int64_t            number_faces   = m_generatedMesh->sideset_side_count_proc(ifs + 1);
 
           auto ef_block = new Ioss::SideBlock(this, ef_block_name, side_topo_name, elem_topo_name,
                                               number_faces);
@@ -840,7 +842,7 @@ namespace Iogn {
       size_t my_node_count = m_generatedMesh->communication_node_count_proc();
 
       // Create a single node commset
-      Ioss::CommSet *commset = new Ioss::CommSet(this, "commset_node", "node", my_node_count);
+      auto *commset = new Ioss::CommSet(this, "commset_node", "node", my_node_count);
       commset->property_add(Ioss::Property("id", 1));
       commset->property_add(Ioss::Property("guid", util().generate_guid(1)));
       get_region()->add(commset);

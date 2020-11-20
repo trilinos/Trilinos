@@ -207,8 +207,8 @@ namespace Ioex {
 
     // ID Mapping functions.
     const Ioss::Map &get_map(ex_entity_type type) const;
-    const Ioss::Map &get_map(Ioss::Map &entity_map, int64_t entityCount, ex_entity_type entity_type,
-                             ex_inquiry inquiry_type) const;
+    const Ioss::Map &get_map(Ioss::Map &entity_map, int64_t entity_count,
+                             ex_entity_type entity_type, ex_inquiry inquiry_type) const;
 
     // Internal data handling
     int64_t handle_node_ids(void *ids, int64_t num_to_get) const;

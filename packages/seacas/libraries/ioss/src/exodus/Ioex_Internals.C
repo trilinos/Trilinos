@@ -15,14 +15,14 @@ extern "C" {
 
 #include <cassert> // for assert
 #include <cstddef> // for size_t
-#include <cstdio>  // for nullptr
+#include <cstdio> // for nullptr
 #include <cstdlib> // for exit, EXIT_FAILURE
 #include <cstring> // for strlen
 #include <fmt/format.h>
 #include <netcdf.h> // for NC_NOERR, nc_def_var, etc
-#include <ostream>  // for operator<<, etc
-#include <string>   // for string, operator==, etc
-#include <vector>   // for vector
+#include <ostream> // for operator<<, etc
+#include <string> // for string, operator==, etc
+#include <vector> // for vector
 
 #include "Ioss_Assembly.h"
 #include "Ioss_Blob.h"
@@ -110,12 +110,7 @@ Assembly::Assembly(const Ioss::Assembly &other)
     name = other.name();
   }
 
-  if (other.property_exists("id")) {
-    id = other.get_property("id").get_int();
-  }
-  else {
-    id = 1;
-  }
+  id             = other.get_optional_property("id", 1);
   entityCount    = other.member_count();
   attributeCount = other.get_property("attribute_count").get_int();
   type           = Ioex::map_exodus_type(other.get_member_type());
@@ -146,12 +141,7 @@ Blob::Blob(const Ioss::Blob &other)
     name = other.name();
   }
 
-  if (other.property_exists("id")) {
-    id = other.get_property("id").get_int();
-  }
-  else {
-    id = 1;
-  }
+  id             = other.get_optional_property("id", 1);
   entityCount    = other.entity_count();
   attributeCount = other.get_property("attribute_count").get_int();
 }
@@ -174,21 +164,11 @@ NodeBlock::NodeBlock(const Ioss::NodeBlock &other)
     name = other.name();
   }
 
-  if (other.property_exists("id")) {
-    id = other.get_property("id").get_int();
-  }
-  else {
-    id = 1;
-  }
-  entityCount = other.entity_count();
-  if (other.property_exists("locally_owned_count")) {
-    localOwnedCount = other.get_property("locally_owned_count").get_int();
-  }
-  else {
-    localOwnedCount = entityCount;
-  }
-  attributeCount = other.get_property("attribute_count").get_int();
-  procOffset     = 0;
+  id              = other.get_optional_property("id", 1);
+  entityCount     = other.entity_count();
+  localOwnedCount = other.get_optional_property("locally_owned_count", entityCount);
+  attributeCount  = other.get_property("attribute_count").get_int();
+  procOffset      = 0;
 }
 
 NodeBlock &NodeBlock::operator=(const NodeBlock &other)
@@ -212,10 +192,10 @@ EdgeBlock::EdgeBlock(const Ioss::EdgeBlock &other)
 
   id             = other.get_property("id").get_int();
   entityCount    = other.entity_count();
-  nodesPerEntity = other.get_property("topology_node_count").get_int();
+  nodesPerEntity = other.topology()->number_nodes();
   attributeCount = other.get_property("attribute_count").get_int();
 
-  std::string el_type = other.get_property("topology_type").get_string();
+  std::string el_type = other.topology()->name();
   if (other.property_exists("original_topology_type")) {
     el_type = other.get_property("original_topology_type").get_string();
   }
@@ -254,7 +234,7 @@ FaceBlock::FaceBlock(const Ioss::FaceBlock &other)
 
   id             = other.get_property("id").get_int();
   entityCount    = other.entity_count();
-  nodesPerEntity = other.get_property("topology_node_count").get_int();
+  nodesPerEntity = other.topology()->number_nodes();
   if (other.field_exists("connectivty_edge")) {
     edgesPerEntity = other.get_field("connectivity_edge").raw_storage()->component_count();
   }
@@ -263,7 +243,7 @@ FaceBlock::FaceBlock(const Ioss::FaceBlock &other)
   }
   attributeCount = other.get_property("attribute_count").get_int();
 
-  std::string el_type = other.get_property("topology_type").get_string();
+  std::string el_type = other.topology()->name();
   if (other.property_exists("original_topology_type")) {
     el_type = other.get_property("original_topology_type").get_string();
   }
@@ -303,7 +283,7 @@ ElemBlock::ElemBlock(const Ioss::ElementBlock &other)
 
   id             = other.get_property("id").get_int();
   entityCount    = other.entity_count();
-  nodesPerEntity = other.get_property("topology_node_count").get_int();
+  nodesPerEntity = other.topology()->number_nodes();
 
   if (other.field_exists("connectivity_edge")) {
     edgesPerEntity = other.get_field("connectivity_edge").raw_storage()->component_count();
@@ -321,7 +301,7 @@ ElemBlock::ElemBlock(const Ioss::ElementBlock &other)
 
   attributeCount      = other.get_property("attribute_count").get_int();
   offset_             = other.get_offset();
-  std::string el_type = other.get_property("topology_type").get_string();
+  std::string el_type = other.topology()->name();
   if (other.property_exists("original_topology_type")) {
     el_type = other.get_property("original_topology_type").get_string();
   }
@@ -371,16 +351,11 @@ NodeSet::NodeSet(const Ioss::NodeSet &other)
     name = other.name();
   }
 
-  id          = other.get_property("id").get_int();
-  entityCount = other.entity_count();
-  if (other.property_exists("locally_owned_count")) {
-    localOwnedCount = other.get_property("locally_owned_count").get_int();
-  }
-  else {
-    localOwnedCount = entityCount;
-  }
-  attributeCount = other.get_property("attribute_count").get_int();
-  dfCount        = other.get_property("distribution_factor_count").get_int();
+  id              = other.get_property("id").get_int();
+  entityCount     = other.entity_count();
+  localOwnedCount = other.get_optional_property("locally_owned_count", entityCount);
+  attributeCount  = other.get_property("attribute_count").get_int();
+  dfCount         = other.get_property("distribution_factor_count").get_int();
   if (dfCount > 0 && dfCount != entityCount) {
     dfCount = entityCount;
   }
@@ -934,6 +909,8 @@ int Internals::write_meta_data(Mesh &mesh)
     maximumNameLength = get_max_name_length(mesh.facesets, maximumNameLength);
     maximumNameLength = get_max_name_length(mesh.elemsets, maximumNameLength);
     maximumNameLength = get_max_name_length(mesh.sidesets, maximumNameLength);
+    maximumNameLength = get_max_name_length(mesh.blobs, maximumNameLength);
+    maximumNameLength = get_max_name_length(mesh.assemblies, maximumNameLength);
 
     Redefine the_database(exodusFilePtr);
     // Set the database to NOFILL mode.  Only writes values we want written...
@@ -1325,7 +1302,7 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
   }
   {
     struct ex__file_item *file = ex__find_file_item(exodusFilePtr);
-    if (file) {
+    if (file != nullptr) {
       file->time_varid = varid;
     }
   }
@@ -1838,12 +1815,12 @@ int Internals::put_metadata(const std::vector<Assembly> &assemblies)
     int_type = NC_INT64;
   }
 
-  for (size_t i = 0; i < assemblies.size(); i++) {
-    char *numentryptr = DIM_NUM_ENTITY_ASSEMBLY(assemblies[i].id);
+  for (const auto &assembly : assemblies) {
+    char *numentryptr = DIM_NUM_ENTITY_ASSEMBLY(assembly.id);
 
     /* define dimensions and variables */
     int dimid;
-    status = nc_def_dim(exodusFilePtr, numentryptr, assemblies[i].entityCount, &dimid);
+    status = nc_def_dim(exodusFilePtr, numentryptr, assembly.entityCount, &dimid);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       errmsg = fmt::format("Error: failed to define number of entities in assembly in file id {}",
@@ -1855,8 +1832,8 @@ int Internals::put_metadata(const std::vector<Assembly> &assemblies)
     /* create variable array in which to store the entry lists */
     int entlst_id;
     dims[0] = dimid;
-    if ((status = nc_def_var(exodusFilePtr, VAR_ENTITY_ASSEMBLY(assemblies[i].id), int_type, 1,
-                             dims, &entlst_id)) != NC_NOERR) {
+    if ((status = nc_def_var(exodusFilePtr, VAR_ENTITY_ASSEMBLY(assembly.id), int_type, 1, dims,
+                             &entlst_id)) != NC_NOERR) {
       errmsg = fmt::format("Error: failed to define entity assembly variable in file id {}",
                            exodusFilePtr);
       ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
@@ -1865,11 +1842,11 @@ int Internals::put_metadata(const std::vector<Assembly> &assemblies)
     ex__compress_variable(exodusFilePtr, entlst_id, 1);
 
     if (ex_int64_status(exodusFilePtr) & EX_IDS_INT64_DB) {
-      long long tmp = assemblies[i].id;
+      long long tmp = assembly.id;
       status = nc_put_att_longlong(exodusFilePtr, entlst_id, EX_ATTRIBUTE_ID, NC_INT64, 1, &tmp);
     }
     else {
-      int id = assemblies[i].id;
+      int id = assembly.id;
       status = nc_put_att_int(exodusFilePtr, entlst_id, EX_ATTRIBUTE_ID, NC_INT, 1, &id);
     }
     if (status != NC_NOERR) {
@@ -1880,7 +1857,7 @@ int Internals::put_metadata(const std::vector<Assembly> &assemblies)
       return (EX_FATAL);
     }
 
-    int type = assemblies[i].type;
+    int type = assembly.type;
     status   = nc_put_att_int(exodusFilePtr, entlst_id, EX_ATTRIBUTE_TYPE, NC_INT, 1, &type);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
@@ -1890,8 +1867,8 @@ int Internals::put_metadata(const std::vector<Assembly> &assemblies)
       return (EX_FATAL);
     }
 
-    status = nc_put_att_text(exodusFilePtr, entlst_id, EX_ATTRIBUTE_NAME,
-                             assemblies[i].name.size() + 1, assemblies[i].name.c_str());
+    status = nc_put_att_text(exodusFilePtr, entlst_id, EX_ATTRIBUTE_NAME, assembly.name.size() + 1,
+                             assembly.name.c_str());
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       errmsg = fmt::format("Error: failed to define '{}' attribute to file id {}",
@@ -1901,7 +1878,7 @@ int Internals::put_metadata(const std::vector<Assembly> &assemblies)
     }
 
     {
-      char *contains = ex_name_of_object(assemblies[i].type);
+      char *contains = ex_name_of_object(assembly.type);
       status         = nc_put_att_text(exodusFilePtr, entlst_id, EX_ATTRIBUTE_TYPENAME,
                                strlen(contains) + 1, contains);
       if (status != NC_NOERR) {
@@ -1915,7 +1892,7 @@ int Internals::put_metadata(const std::vector<Assembly> &assemblies)
 
     /* Increment assembly count */
     struct ex__file_item *file = ex__find_file_item(exodusFilePtr);
-    if (file) {
+    if (file != nullptr) {
       file->assembly_count++;
     }
   }
@@ -4008,8 +3985,8 @@ int Internals::put_non_define_data(const std::vector<SideSet> &sidesets)
 namespace {
   template <typename T> size_t get_max_name_length(const std::vector<T> &entities, size_t old_max)
   {
-    for (size_t i = 0; i < entities.size(); i++) {
-      old_max = std::max(old_max, entities[i].name.size());
+    for (const auto &entity : entities) {
+      old_max = std::max(old_max, entity.name.size());
     }
     return (old_max);
   }
@@ -4274,8 +4251,9 @@ namespace {
       return EX_NOERR;
     }
 
-    int         dimid = 0;
-    int         varid = 0;
+    size_t      sixty_four_kb = 64 * 1024;
+    int         dimid         = 0;
+    int         varid         = 0;
     int         dim[2];
     int         namestrdim = 0;
     std::string errmsg;
@@ -4304,10 +4282,13 @@ namespace {
       ex_err_fn(exoid, __func__, errmsg.c_str(), status);
       return (EX_FATAL);
     }
-    ex__set_compact_storage(exoid, varid);
+    if (count * 4 < sixty_four_kb) {
+      ex__set_compact_storage(exoid, varid);
+    }
 
     // id array:
     int ids_type = get_type(exoid, EX_IDS_INT64_DB);
+    int ids_size = ids_type == NC_INT ? 4 : 8;
     status       = nc_def_var(exoid, id_var, ids_type, 1, dim, &varid);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
@@ -4315,7 +4296,9 @@ namespace {
       ex_err_fn(exoid, __func__, errmsg.c_str(), status);
       return (EX_FATAL);
     }
-    ex__set_compact_storage(exoid, varid);
+    if (count * ids_size < sixty_four_kb) {
+      ex__set_compact_storage(exoid, varid);
+    }
 
     // store property name as attribute of property array variable
     status = nc_put_att_text(exoid, varid, ATT_PROP_NAME, 3, "ID");
@@ -4326,7 +4309,6 @@ namespace {
       ex_err_fn(exoid, __func__, errmsg.c_str(), status);
       return (EX_FATAL);
     }
-    ex__set_compact_storage(exoid, varid);
 
     if (name_var != nullptr) {
       dim[0] = dimid;

@@ -114,14 +114,14 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
 
   if (!interFace.quiet_flag) {
     if (out_file_id >= 0) { // The files are to be differenced .. just list names.
-      if (interFace.coord_tol.type != IGNORE_) {
+      if (interFace.coord_tol.type != ToleranceMode::IGNORE_) {
         fmt::print("Coordinates:  tol: {:8g} {}, floor: {:8g}\n", interFace.coord_tol.value,
                    interFace.coord_tol.typestr(), interFace.coord_tol.floor);
       }
       else {
         fmt::print("Locations of nodes will not be considered.\n");
       }
-      if (interFace.time_tol.type != IGNORE_) {
+      if (interFace.time_tol.type != ToleranceMode::IGNORE_) {
         fmt::print("Time step values:  tol: {:8g} {}, floor: {:8g}\n", interFace.time_tol.value,
                    interFace.time_tol.typestr(), interFace.time_tol.floor);
       }
@@ -141,7 +141,7 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
         fmt::print(info, "INFO: Using old definition of floor tolerance. |a-b|<floor.\n\n");
         DIFF_OUT(info, fmt::color::yellow);
       }
-      if (interFace.coord_tol.type != IGNORE_) {
+      if (interFace.coord_tol.type != ToleranceMode::IGNORE_) {
         fmt::print("\nNodal coordinates will be compared .. tol: {:8g} ({}), floor: {:8g}\n",
                    interFace.coord_tol.value, interFace.coord_tol.typestr(),
                    interFace.coord_tol.floor);
@@ -152,7 +152,7 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
         DIFF_OUT(info, fmt::color::yellow);
       }
 
-      if (interFace.time_tol.type != IGNORE_) {
+      if (interFace.time_tol.type != ToleranceMode::IGNORE_) {
         fmt::print("Time step values will be compared  .. tol: {:8g} ({}), floor: {:8g}\n",
                    interFace.time_tol.value, interFace.time_tol.typestr(),
                    interFace.time_tol.floor);
@@ -180,14 +180,14 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
 
       output_compare_names("Sideset", interFace.ss_var_names, interFace.ss_var, file1.Num_SS_Vars(),
                            file2.Num_SS_Vars());
-      if (!interFace.ignore_sideset_df && interFace.ss_df_tol.type != IGNORE_ &&
+      if (!interFace.ignore_sideset_df && interFace.ss_df_tol.type != ToleranceMode::IGNORE_ &&
           file1.Num_Side_Sets() > 0 && file2.Num_Side_Sets() > 0) {
         fmt::print(
             "Sideset Distribution Factors will be compared .. tol: {:8g} ({}), floor: {:8g}\n",
             interFace.ss_df_tol.value, interFace.ss_df_tol.typestr(), interFace.ss_df_tol.floor);
       }
       else {
-        if (interFace.ignore_sideset_df || interFace.ss_df_tol.type == IGNORE_) {
+        if (interFace.ignore_sideset_df || interFace.ss_df_tol.type == ToleranceMode::IGNORE_) {
           std::ostringstream info;
           fmt::print(info, "Sideset Distribution Factors will not be compared.\n");
           DIFF_OUT(info, fmt::color::yellow);
@@ -420,7 +420,7 @@ namespace {
         }
 
         if (set2 == nullptr) {
-          if (interFace.map_flag != PARTIAL) {
+          if (interFace.map_flag != MapType::PARTIAL) {
             *diff_found = true;
             std::ostringstream diff;
             fmt::print(diff,

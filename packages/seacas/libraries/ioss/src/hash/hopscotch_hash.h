@@ -326,7 +326,7 @@ namespace tsl {
       }
 
       template <typename... Args>
-      void set_value_of_empty_bucket(truncated_hash_type my_hash, Args &&... value_type_args)
+      void set_value_of_empty_bucket(truncated_hash_type my_hash, Args &&...value_type_args)
       {
         tsl_hh_assert(empty());
 
@@ -873,29 +873,29 @@ namespace tsl {
         return insert_or_assign(std::move(k), std::forward<M>(obj)).first;
       }
 
-      template <class... Args> std::pair<iterator, bool> emplace(Args &&... args)
+      template <class... Args> std::pair<iterator, bool> emplace(Args &&...args)
       {
         return insert(value_type(std::forward<Args>(args)...));
       }
 
-      template <class... Args> iterator emplace_hint(const_iterator hint, Args &&... args)
+      template <class... Args> iterator emplace_hint(const_iterator hint, Args &&...args)
       {
         return insert(hint, value_type(std::forward<Args>(args)...));
       }
 
       template <class... Args>
-      std::pair<iterator, bool> try_emplace(const key_type &k, Args &&... args)
+      std::pair<iterator, bool> try_emplace(const key_type &k, Args &&...args)
       {
         return try_emplace_impl(k, std::forward<Args>(args)...);
       }
 
-      template <class... Args> std::pair<iterator, bool> try_emplace(key_type &&k, Args &&... args)
+      template <class... Args> std::pair<iterator, bool> try_emplace(key_type &&k, Args &&...args)
       {
         return try_emplace_impl(std::move(k), std::forward<Args>(args)...);
       }
 
       template <class... Args>
-      iterator try_emplace(const_iterator hint, const key_type &k, Args &&... args)
+      iterator try_emplace(const_iterator hint, const key_type &k, Args &&...args)
       {
         if (hint != cend() && compare_keys(KeySelect()(*hint), k)) {
           return mutable_iterator(hint);
@@ -905,7 +905,7 @@ namespace tsl {
       }
 
       template <class... Args>
-      iterator try_emplace(const_iterator hint, key_type &&k, Args &&... args)
+      iterator try_emplace(const_iterator hint, key_type &&k, Args &&...args)
       {
         if (hint != cend() && compare_keys(KeySelect()(*hint), k)) {
           return mutable_iterator(hint);
@@ -1240,9 +1240,9 @@ namespace tsl {
               continue;
             }
 
-            const std::size_t my_hash = use_stored_hash
-                                            ? it_bucket->truncated_bucket_hash()
-                                            : new_map.hash_key(KeySelect()(it_bucket->value()));
+            const std::size_t my_hash          = use_stored_hash
+                                                     ? it_bucket->truncated_bucket_hash()
+                                                     : new_map.hash_key(KeySelect()(it_bucket->value()));
             const std::size_t ibucket_for_hash = new_map.bucket_for_hash(my_hash);
 
             new_map.insert_value(ibucket_for_hash, my_hash, std::move(it_bucket->value()));
@@ -1293,9 +1293,9 @@ namespace tsl {
             continue;
           }
 
-          const std::size_t my_hash = use_stored_hash
-                                          ? bucket.truncated_bucket_hash()
-                                          : new_map.hash_key(KeySelect()(bucket.value()));
+          const std::size_t my_hash          = use_stored_hash
+                                                   ? bucket.truncated_bucket_hash()
+                                                   : new_map.hash_key(KeySelect()(bucket.value()));
           const std::size_t ibucket_for_hash = new_map.bucket_for_hash(my_hash);
 
           new_map.insert_value(ibucket_for_hash, my_hash, bucket.value());
@@ -1375,7 +1375,7 @@ namespace tsl {
       }
 
       template <typename P, class... Args>
-      std::pair<iterator, bool> try_emplace_impl(P &&key, Args &&... args_value)
+      std::pair<iterator, bool> try_emplace_impl(P &&key, Args &&...args_value)
       {
         const std::size_t my_hash          = hash_key(key);
         const std::size_t ibucket_for_hash = bucket_for_hash(my_hash);
@@ -1407,7 +1407,7 @@ namespace tsl {
 
       template <typename... Args>
       std::pair<iterator, bool> insert_value(std::size_t ibucket_for_hash, std::size_t my_hash,
-                                             Args &&... value_type_args)
+                                             Args &&...value_type_args)
       {
         if ((m_nb_elements - m_overflow_elements.size()) >= m_max_load_threshold_rehash) {
           rehash(GrowthPolicy::next_bucket_count());
@@ -1497,7 +1497,7 @@ namespace tsl {
        */
       template <typename... Args>
       iterator_buckets insert_in_bucket(std::size_t ibucket_empty, std::size_t ibucket_for_hash,
-                                        std::size_t my_hash, Args &&... value_type_args)
+                                        std::size_t my_hash, Args &&...value_type_args)
       {
         tsl_hh_assert(ibucket_empty >= ibucket_for_hash);
         tsl_hh_assert(m_buckets[ibucket_empty].empty());
@@ -1513,7 +1513,7 @@ namespace tsl {
 
       template <class... Args, class U = OverflowContainer,
                 typename std::enable_if<!has_key_compare<U>::value>::type * = nullptr>
-      iterator_overflow insert_in_overflow(std::size_t ibucket_for_hash, Args &&... value_type_args)
+      iterator_overflow insert_in_overflow(std::size_t ibucket_for_hash, Args &&...value_type_args)
       {
         auto it = m_overflow_elements.emplace(m_overflow_elements.end(),
                                               std::forward<Args>(value_type_args)...);
@@ -1526,7 +1526,7 @@ namespace tsl {
 
       template <class... Args, class U = OverflowContainer,
                 typename std::enable_if<has_key_compare<U>::value>::type * = nullptr>
-      iterator_overflow insert_in_overflow(std::size_t ibucket_for_hash, Args &&... value_type_args)
+      iterator_overflow insert_in_overflow(std::size_t ibucket_for_hash, Args &&...value_type_args)
       {
         auto it = m_overflow_elements.emplace(std::forward<Args>(value_type_args)...).first;
 
@@ -1830,8 +1830,8 @@ namespace tsl {
 
       /**
        * Min size of the hash table before a rehash can occurs automatically (except if
-       * m_max_load_threshold_rehash os reached). If the neighborhood of a bucket is full before the
-       * min is reacher, the elements are put into m_overflow_elements.
+       * `m_max_load_threshold_rehash` os reached). If the neighborhood of a bucket is full before
+       * the min is reached, the elements are put into `m_overflow_elements`.
        */
       size_type m_min_load_threshold_rehash;
     };

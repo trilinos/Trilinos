@@ -28,10 +28,6 @@
 
 #include "Rythmos_ConvergenceTestHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
-#ifdef _MSC_VER
-#include "winmath.h"
-#endif
-
 namespace Rythmos {
 
 

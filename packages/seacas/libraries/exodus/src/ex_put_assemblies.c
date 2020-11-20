@@ -37,7 +37,8 @@ int ex_put_assemblies(int exoid, size_t count, const struct ex_assembly *assembl
 
   int *entlst_id = (int *)calloc(count, sizeof(int));
 
-  bool in_define = false;
+  int  max_name_len = 0;
+  bool in_define    = false;
   for (size_t i = 0; i < count; i++) {
     /* See if an assembly with this id has already been defined or exists on file... */
     if (nc_inq_varid(exoid, VAR_ENTITY_ASSEMBLY(assemblies[i].id), &entlst_id[i]) != NC_NOERR) {
@@ -132,13 +133,16 @@ int ex_put_assemblies(int exoid, size_t count, const struct ex_assembly *assembl
         goto error_ret; /* exit define mode and return */
       }
 
-      if ((status = nc_put_att_text(exoid, entlst_id[i], EX_ATTRIBUTE_NAME,
-                                    strlen(assemblies[i].name) + 1, assemblies[i].name)) !=
-          NC_NOERR) {
+      size_t length = strlen(assemblies[i].name) + 1;
+      if ((status = nc_put_att_text(exoid, entlst_id[i], EX_ATTRIBUTE_NAME, length,
+                                    assemblies[i].name)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store assembly name %s in file id %d",
                  assemblies[i].name, exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
+      }
+      if (length > max_name_len) {
+        max_name_len = length;
       }
 
       {
@@ -167,6 +171,9 @@ int ex_put_assemblies(int exoid, size_t count, const struct ex_assembly *assembl
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
+
+  /* Update the maximum_name_length attribute on the file. */
+  ex__update_max_name_length(exoid, max_name_len - 1);
 
   /* Assembly are now all defined; see if any set data needs to be output... */
   for (size_t i = 0; i < count; i++) {

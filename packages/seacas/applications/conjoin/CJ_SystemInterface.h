@@ -20,9 +20,11 @@ namespace Excn {
 
     bool parse_options(int argc, char **argv);
 
-    int debug() const { return debugLevel_; }
-    int screen_width() const { return screenWidth_; }
-    int compress_data() const { return compressionLevel_; }
+    int  debug() const { return debugLevel_; }
+    int  screen_width() const { return screenWidth_; }
+    int  compress_data() const { return compressionLevel_; }
+    bool zlib() const { return zlib_; }
+    bool szip() const { return szip_; }
 
     bool omit_nodesets() const { return omitNodesets_; }
     bool omit_sidesets() const { return omitSidesets_; }
@@ -61,6 +63,8 @@ namespace Excn {
     int  debugLevel_{0};
     int  screenWidth_{0};
     int  compressionLevel_{0};
+    bool zlib_{true};
+    bool szip_{false};
     bool omitNodesets_{false};
     bool omitSidesets_{false};
     bool ints64Bit_{false};

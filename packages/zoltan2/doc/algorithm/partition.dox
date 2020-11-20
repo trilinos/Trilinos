@@ -45,6 +45,7 @@ Partitioning functionality that is available now is:
 <li> \ref rcbPage for weighted geometric coordinates.
 <li> \ref scotchPartPage for undirected weighted graphs.
 <li> \ref parmetisPartPage for undirected weighted graphs.
+<li> \ref sphynxPage for undirected weighted graphs.
 </ul>
 These algorithms are all parallel.
 
