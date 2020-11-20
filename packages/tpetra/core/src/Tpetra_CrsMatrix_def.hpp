@@ -1946,18 +1946,14 @@ namespace Tpetra {
     if (! graph.indicesAreAllocated ()) {
       // We only allocate values at most once per process, so it's OK
       // to check TPETRA_VERBOSE here.
-      printf("fdsa00\n");
       using ::Tpetra::Details::Behavior;
       const bool verbose = Behavior::verbose("CrsMatrix");
-      printf("fdsa01\n");
       this->allocateValues (GlobalIndices, GraphNotYetAllocated, verbose);
       // mfh 23 Jul 2017: allocateValues invalidates existing
       // getRowInfo results.  Once we get rid of lazy graph
       // allocation, we'll be able to move the getRowInfo call outside
       // of this method.
-      printf("fdsa02\n");
       rowInfo = graph.getRowInfo (rowInfo.localRow);
-      printf("fdsa03\n");
     }
     printf("fdsa1\n");
     Teuchos::ArrayView<IST> valsView = this->getViewNonConst(rowInfo);

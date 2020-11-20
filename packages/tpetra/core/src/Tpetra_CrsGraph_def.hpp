@@ -1511,7 +1511,6 @@ namespace Tpetra {
   {
     gblInds = nullptr;
     capacity = 0;
-
     if (rowInfo.allocSize != 0 && k_gblInds1D_.extent (0) != 0) {
       if (debug_) {
         if (rowInfo.offset1D + rowInfo.allocSize >
@@ -1834,15 +1833,21 @@ namespace Tpetra {
     const char tfecfFuncName[] = "insertGlobalIndicesImpl: ";
     const LO lclRow = static_cast<LO> (rowInfo.localRow);
 
-    printf("asdf\n");
+    printf("insertGlobalIndices0\n");
     auto numEntries = rowInfo.numEntries;
-    using inp_view_type = View<const GO*, device_type, MemoryUnmanaged>;
+    printf("insertGlobalIndices000\n");
+    using inp_view_type = View<const GO*, Kokkos::HostSpace, MemoryUnmanaged>;
+    printf("insertGlobalIndices001\n");
     inp_view_type inputInds(inputGblColInds, numInputInds);
-    size_t numInserted = Details::insertCrsIndices(lclRow, k_rowPtrs_,
+    printf("insertGlobalIndices002\n");
+    auto rowPtrs = ::Tpetra::Details::getEntriesOnHost(k_rowPtrs_, lclRow, 2);
+    printf("insertGlobalIndices003\n");
+    size_t numInserted = Details::insertCrsIndices(lclRow, rowPtrs,
       this->k_gblInds1D_, numEntries, inputInds, fun);
-
+    printf("insertGlobalIndices004\n");
     const bool insertFailed =
       numInserted == Teuchos::OrdinalTraits<size_t>::invalid();
+    printf("insertGlobalIndices01\n");
     if(insertFailed) {
       constexpr size_t ONE (1);
       const int myRank = this->getComm()->getRank();
@@ -1872,9 +1877,10 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (true, std::runtime_error, os.str());
     }
-
+    printf("insertGlobalIndices02\n");
     this->k_numRowEntries_(lclRow) += numInserted;
     this->setLocallyModified();
+    printf("insertGlobalIndicesImpl1\n");
     return numInserted;
   }
 

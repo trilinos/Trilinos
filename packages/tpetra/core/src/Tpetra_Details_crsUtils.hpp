@@ -397,6 +397,7 @@ insert_crs_indices(
     IndexMap&& map,
     std::function<void(size_t const, size_t const, size_t const)> cb)
 {
+  printf("insert_crs_indices0\n");
   if (new_indices.size() == 0) {
     return 0;
   }
@@ -426,18 +427,28 @@ insert_crs_indices(
     }
 
     if (row_offset == end) {
+      printf("insert_crs_indices0000\n");
       if (num_inserted >= num_avail) { // not enough room
+	printf("insert_crs_indices0001\n");
         return Teuchos::OrdinalTraits<size_t>::invalid();
       }
       // This index is not yet in indices
+      printf("insert_crs_indices0002\n");
       cur_indices[end++] = idx;
+      printf("insert_crs_indices0003\n");
       num_inserted++;
+      printf("insert_crs_indices0004\n");
     }
+
+    printf("insert_crs_indices003\n");
     if (cb) {
       cb(k, start, row_offset - start);
     }
+    printf("insert_crs_indices004\n");
+
   }
   num_assigned += num_inserted;
+  std::cout << "insert_crs_indices1" << std::endl;
   return num_inserted;
 }
 
