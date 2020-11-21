@@ -17,6 +17,7 @@
 
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_StepperSubcycling.hpp"
+#include "Tempus_TimeStepControlStrategyConstant.hpp"
 #include "Tempus_TimeStepControlStrategyBasicVS.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
@@ -115,7 +116,6 @@ TEUCHOS_UNIT_TEST(Subcycling, ConstructingFromDefaults)
   stepper->setSubcyclingMinTimeStep      (0.1);
   stepper->setSubcyclingInitTimeStep     (0.1);
   stepper->setSubcyclingMaxTimeStep      (0.1);
-  stepper->setSubcyclingStepType         ("Constant");
   stepper->setSubcyclingMaxFailures      (10);
   stepper->setSubcyclingMaxConsecFailures(5);
   stepper->setSubcyclingScreenOutputIndexInterval(1);
@@ -123,15 +123,25 @@ TEUCHOS_UNIT_TEST(Subcycling, ConstructingFromDefaults)
     Teuchos::rcp(new Tempus::IntegratorObserverSubcycling<double>()));
   stepper->setSubcyclingPrintDtChanges   (true);
 
+  // Set subcycling strategy.
+  auto subStrategy = rcp(new Tempus::TimeStepControlStrategyConstant<double>(dt));
+  stepper->setSubcyclingTimeStepControlStrategy(subStrategy);
+
   stepper->initialize();
 
   // Setup TimeStepControl ------------------------------------
   auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
-  timeStepControl->setStepType ("Constant");
   timeStepControl->setInitIndex(0);
+  timeStepControl->setFinalIndex(10);
   timeStepControl->setInitTime (0.0);
   timeStepControl->setFinalTime(1.0);
   timeStepControl->setInitTimeStep(dt);
+
+  // Set TimeStepControl strategy.
+  auto strategy = rcp(new Tempus::TimeStepControlStrategyBasicVS<double>());
+  strategy->initialize();
+  timeStepControl->setTimeStepControlStrategy(strategy);
+
   timeStepControl->initialize();
 
   // Setup initial condition SolutionState --------------------
@@ -157,7 +167,7 @@ TEUCHOS_UNIT_TEST(Subcycling, ConstructingFromDefaults)
   integrator->setStepperWStepper(stepper);
   integrator->setTimeStepControl(timeStepControl);
   integrator->setSolutionHistory(solutionHistory);
-  integrator->setScreenOutputIndexInterval(10);
+  integrator->setScreenOutputIndexInterval(1);
   //integrator->setObserver(...);
   integrator->initialize();
 
@@ -229,7 +239,6 @@ TEUCHOS_UNIT_TEST(Subcycling, SinCosAdapt)
     stepper->setSubcyclingMinTimeStep      (dt/10.0);
     stepper->setSubcyclingInitTimeStep     (dt/10.0);
     stepper->setSubcyclingMaxTimeStep      (dt);
-    stepper->setSubcyclingStepType         ("Variable");
     stepper->setSubcyclingMaxFailures      (10);
     stepper->setSubcyclingMaxConsecFailures(5);
     stepper->setSubcyclingScreenOutputIndexInterval(1);
@@ -241,13 +250,13 @@ TEUCHOS_UNIT_TEST(Subcycling, SinCosAdapt)
     auto strategy = rcp(new Tempus::TimeStepControlStrategyBasicVS<double>());
     strategy->setMinEta(0.02);
     strategy->setMaxEta(0.04);
+    strategy->initialize();
     stepper->setSubcyclingTimeStepControlStrategy(strategy);
 
     stepper->initialize();
 
     // Setup TimeStepControl ------------------------------------
     auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
-    timeStepControl->setStepType ("Constant");
     timeStepControl->setInitIndex(0);
     timeStepControl->setInitTime (0.0);
     timeStepControl->setFinalTime(1.0);
@@ -408,11 +417,10 @@ TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
     //  Teuchos::rcp(new Tempus::IntegratorObserverSubcycling<double>()));
     //stepperSC->setSubcyclingPrintDtChanges   (true);
 
-    //stepperSC->setSubcyclingStepType         ("Constant");
-    stepperSC->setSubcyclingStepType         ("Variable");
     auto strategySC = rcp(new Tempus::TimeStepControlStrategyBasicVS<double>());
     strategySC->setMinEta(0.000001);
     strategySC->setMaxEta(0.01);
+    strategySC->initialize();
     stepperSC->setSubcyclingTimeStepControlStrategy(strategySC);
     stepperSC->initialize();
 
@@ -433,16 +441,15 @@ TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
     //timeStepControl->setFinalIndex(2);
     timeStepControl->setFinalTime(2.0);
     timeStepControl->setMinTimeStep (0.000001);
-    timeStepControl->setStepType ("Constant");
     timeStepControl->setInitTimeStep(dt);
     timeStepControl->setMaxTimeStep (dt);
 
-    //timeStepControl->setStepType ("Variable");
     //timeStepControl->setInitTimeStep(dt/2.0);
     //timeStepControl->setMaxTimeStep (dt);
     //auto strategy = rcp(new Tempus::TimeStepControlStrategyBasicVS<double>());
     //strategy->setMinEta(1.0e-6);
     //strategy->setMaxEta(5.0);
+    //strategy->initialize();
     //timeStepControl->getTimeStepControlStrategy()->clearObservers();
     //timeStepControl->getTimeStepControlStrategy()->addStrategy(strategy);
 

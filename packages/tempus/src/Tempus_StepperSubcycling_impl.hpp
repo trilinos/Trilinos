@@ -135,25 +135,6 @@ void StepperSubcycling<Scalar>::setSubcyclingMaxTimeStep(Scalar MaxTimeStep)
 
 
 template<class Scalar>
-void StepperSubcycling<Scalar>::setSubcyclingStepType(std::string stepType)
-{
-  scIntegrator_->getNonConstTimeStepControl()->setStepType(stepType);
-
-  auto tsc = scIntegrator_->getNonConstTimeStepControl();
-  auto tscStrategy = tsc->getTimeStepControlStrategy();
-
-  Teuchos::RCP<TimeStepControlStrategy<Scalar> > strategy =
-    Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>());
-  if (stepType == "Variable")
-    strategy = Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>());
-
-  tsc->setTimeStepControlStrategy(strategy);
-
-  this->isInitialized_ = false;
-}
-
-
-template<class Scalar>
 void StepperSubcycling<Scalar>::setSubcyclingMaxFailures(int MaxFailures)
 {
   scIntegrator_->getNonConstTimeStepControl()->setMaxFailures(MaxFailures);
