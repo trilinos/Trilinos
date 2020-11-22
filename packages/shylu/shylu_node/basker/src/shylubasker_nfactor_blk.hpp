@@ -1516,21 +1516,25 @@ namespace BaskerNS
 
     INT_1DARRAY   ws            = LL(X_col)(X_row).iws;
     ENTRY_1DARRAY X             = LL(X_col)(X_row).ews;
-    //Int         ws_size         = LL(X_col)(X_row).iws_size;
     
     Int nnz = LL(X_col)(X_row).p_size;
-    //const Int    brow           = L.srow;
-    //const Int    bcol           = L.scol;
   
     #ifdef BASKER_DEBUG_NFACTOR_BLK
+    Int         ws_size         = LL(X_col)(X_row).iws_size;
+    const Int    brow           = L.srow;
+    const Int    bcol           = L.scol;
     printf("\n\n");
-    printf("t_back_solve_diag, kid: %d blkcol: %d blkrow: %d \n",
-	   kid, blkcol, blkrow);
-    printf("t_back_solve_diag, kid: %d Xcol: %d Xrow: %d \n",
+    printf("t_back_solve_diag, kid: %d, blkcol: %d blkrow: %d k: %d \n",
+	   kid, blkcol, blkrow, k);
+    printf("t_back_solve_diag, kid: %d, Xcol: %d Xrow: %d \n",
 	   kid, X_col, X_row);
-    printf("t_back_solve_diag, kid: %d ws: %d starting psize: %d \n",
-	   kid,ws_size, nnz);
-    printf("\n\n");
+    printf("t_back_solve_diag, kid: %d, brow = %d bcol = %d\n",
+	   kid, brow, bcol);
+    printf("t_back_solve_diag, kid: %d, ws: %d starting psize: %d \n",
+	   kid, ws_size, nnz);
+    printf("t_back_solve_diag, kid: %d, ALM(%d)(%d): %dx%d\n",kid,blkcol,blkrow,B.nrow,B.ncol );
+    printf("t_back_solve_diag, kid: %d,  LL(%d)(%d): %dx%d\n",kid,blkcol,blkrow,L.nrow,L.ncol );
+    printf("\n\n"); fflush(stdout);
     #endif
     //B.info();
     //B.print();
@@ -1570,59 +1574,26 @@ namespace BaskerNS
     //printf("x_offset: %d \n", x_offset);
     for(Int i = 0; i < x_size; ++i)
     {
-      const Int k = x_idx[i+x_offset];
-      const Entry xj = x(i+x_offset);
-      //printf("kid: %d bcol: %d k: %d \n", kid, bcol, k);
-#ifdef BASKER_DEBUG_NFACTOR_BLK
+      const Int colid = x_idx[i+x_offset];
+      const Entry xj  = x(i+x_offset);
+      //printf("t_back_solve_diag kid = %d: size = %d k = %d \n", kid, x_size, k); fflush(stdout);
+      #ifdef BASKER_DEBUG_NFACTOR_BLK
       printf("t_back_solve_diag, kid: %d  k: %d %g  x_size: %d [%d %d] \n",
-             kid, k, xj, x_size,  L.col_ptr[k], L.col_ptr[k+1]);
-#endif
-      for(Int j = L.col_ptr(k); j < L.col_ptr(k+1); j++)
+             kid, colid, xj, x_size,  L.col_ptr[k], L.col_ptr[k+1]);
+      #endif
+      for(Int j = L.col_ptr(colid); j < L.col_ptr(colid+1); j++)
       {
         const Int jj = L.row_idx(j);
         //printf( " > kid=%d: t_dense_back_solve_offdiag::X(%d) = %e - %e * %e = %e\n",kid,jj,X(jj),L.val(j),xj,X(jj)-L.val(j)*xj );
         X(jj) -= L.val(j)*xj; 
 
-#ifdef BASKER_DEBUG_NFACTOR_BLK
+        #ifdef BASKER_DEBUG_NFACTOR_BLK
         printf("t_b_solve_d, kid: %d j: %d color: %d \n",
                kid, jj, color[jj]);
         printf("t_back_solve_d,id:%d  row_idx: %d b4: %f mult: %f %f\n",
                kid, jj,X[jj], L.val[j], xj);
-#endif 
-
-        //if(color[jj-brow] != 1)
-        //Do not need this in dense
-        /*
-        if(color[jj] != 1)
-        {
-          //color[jj-brow] = 1;
-          color[jj] = 1;
-          #ifdef BASKER_DEBUG_NFACTOR_BLK
-          printf("pattern index: %d kid: %d \n",
-          nnz, kid);
-          #endif
-          pattern[nnz++] = jj;
-          //	printf("t_b_solve_d, id: %d nnz: %d\n",
-          //     kid, nnz);
-          //	printf("-----------PATTERN UPDATE kid: %d L: %d %d pattern(%d) = %d brow: %d \n",
-          //     kid, X_col, X_row, nnz-1, pattern[nnz-1], brow);
-        }
-        */
+        #endif
       }
-
-      /*
-       printf("\n");
-       for(Int i = 0; i < L.nrow; ++i)
-       {
-         Int jj = i;
-        //Int jj = pattern[i];
-        //printf("X[%d] = %f , kid: %d  \n",
-        //     jj, X[jj-brow], kid);
-        printf("k: %d X[%d](%d) = %f , kid: %d  \n",
-          k, jj,jj+B.srow, X[jj], kid);
-      }
-      printf("\n");
-      */
     }//over all nonzero in left
 
     #ifdef BASKER_2DL

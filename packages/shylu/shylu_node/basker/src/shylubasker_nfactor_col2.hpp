@@ -132,8 +132,8 @@ namespace BaskerNS
     Int my_leader = find_leader(kid, 0);
     if(Options.verbose == BASKER_TRUE && kid == my_leader)
     {
-      printf(" > kid: %ld factoring_col current_chunk: lvl = %ld size=%ld\n",
-            (long)kid, (long)lvl, (long)ncol);
+      printf(" > kid = %ld(%ld): factoring_col current_chunk: lvl = %ld size=%ld\n",
+            (long)kid, (long)my_leader, (long)lvl, (long)ncol);
     }
 
     #ifdef BASKER_TIMER
@@ -539,12 +539,6 @@ namespace BaskerNS
     if(kid != team_leader)
     {
       Int endblk = (lower)?(LL_size(my_idx)):(l+2);
-      //Int endblk = l+2;
-      /*
-      printf("l+2: %d endblk: %d \n",
-             l+2, endblk);
-      */
-
       for(Int blk = l+1; blk < endblk; ++blk)
       {
         ENTRY_1DARRAY &XL = LL(leader_idx)(blk).ews;
@@ -559,12 +553,6 @@ namespace BaskerNS
         {
           printf("kid: %d  COPY INDEX %d %d to %d %d \n",
                  kid, my_idx, blk, leader_idx, blk);
-        }
-        #endif
-
-        #ifdef BASKER_DEBUG_NFACTOR_COL2
-        if(lower == BASKER_TRUE)
-        {
           printf("t_b_col_copy, kid: %d wsize: %d \n", 
                  kid, ws_size);
           printf("t_b_col_copy,kid:%d ps: %d XL: %d %d X: %d %d\n",

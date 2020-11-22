@@ -2247,7 +2247,8 @@ namespace BaskerNS
 
     for(Int i = 0; i< n; i++)
     {
-      printf("%ld %g, \n", (long)i, x[i]);
+      //printf("%ld %g, \n", (long)i, x[i]);
+      printf("%ld %.16e\n", (long)i, x[i]);
     }
 
     printf("---END VECTOR: %d ---\n", n);

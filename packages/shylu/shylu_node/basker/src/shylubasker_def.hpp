@@ -1206,10 +1206,6 @@ namespace BaskerNS
           // Apply AMD perm to rows of B
           permute_row(BTF_B, order_nd_mwm);
         }
-        /*if (BTF_E.ncol > 0) {
-          // Apply AMD perm to cols of E
-          permute_col(BTF_E, order_nd_mwm);
-        }*/
         /*printf("After applying MWM\n");
         printf(" pA = [\n" );
         for(Int j = 0; j < BTF_A.ncol; j++) {

@@ -1213,10 +1213,16 @@ namespace BaskerNS
     int spmv(BASKER_MATRIX &, ENTRY_1DARRAY, ENTRY_1DARRAY);
 
     BASKER_INLINE
-    int neg_spmv(BASKER_MATRIX &, ENTRY_1DARRAY, ENTRY_1DARRAY);
+    int neg_spmv(BASKER_MATRIX &M,
+                 ENTRY_1DARRAY x,
+                 ENTRY_1DARRAY y,
+                 Int offset = 0);
 
     BASKER_INLINE
-    int neg_spmv_perm(BASKER_MATRIX &, ENTRY_1DARRAY &, ENTRY_1DARRAY &);
+    int neg_spmv_perm(BASKER_MATRIX &M,
+                      ENTRY_1DARRAY &y,
+                      ENTRY_1DARRAY &x,
+                      Int offset = 0);
 
     BASKER_INLINE
     int lower_tri_solve(BASKER_MATRIX &M,

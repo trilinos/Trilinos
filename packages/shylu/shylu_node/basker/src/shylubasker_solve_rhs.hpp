@@ -457,8 +457,8 @@ namespace BaskerNS
     printf("Done, SPMV BTF_B UPDATE \n");
     printf("\n x \n");
     printVec(x, gn);
-    printf("\n y \n");
-    printVec(y, gn);
+    //printf("\n y \n");
+    //printVec(y, gn);
     printf("\n\n");
     #endif
 
@@ -479,8 +479,8 @@ namespace BaskerNS
     printf("Done, serial_backward \n");
     printf("\n x \n");
     printVec(x, gn);
-    printf("\n y \n");
-    printVec(y, gn);
+    //printf("\n y \n");
+    //printVec(y, gn);
     printf("\n\n");
     #endif
 
@@ -580,7 +580,7 @@ namespace BaskerNS
         #endif
 
         //x = LD*y;
-        neg_spmv_perm(LD, y, x);
+        neg_spmv_perm(LD, y, x, scol_top);
       }
       //printVec(y,gn);
     }
@@ -626,7 +626,7 @@ namespace BaskerNS
 
         //y = UB*x;
         BASKER_MATRIX &UB = LU(b)(bb);
-        neg_spmv(UB,x,y);
+        neg_spmv(UB, x, y, scol_top);
       }
     }//end over all blks
 
@@ -688,23 +688,29 @@ namespace BaskerNS
   (
    BASKER_MATRIX &M,
    ENTRY_1DARRAY x, 
-   ENTRY_1DARRAY y  
+   ENTRY_1DARRAY y,
+   Int offset
   )
   {
     //Add checks
     #ifdef BASKER_DEBUG_SOLVE_RHS
     printf("SPMV. scol: %d ncol: %d \n", M.scol, M.ncol);
     #endif
+    /*printf("M=[\n");
+    for(Int k=0; k < M.ncol; ++k) {
+      for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
+        printf( "%d %d %e\n",M.row_idx(i),k,M.val(i) );
+    }
+    printf("];\n");*/
 
-    const Int bcol = M.scol;
-    const Int msrow = M.srow;
+    const Int bcol  = M.scol + offset;
+    const Int msrow = M.srow + offset;
     //const Int brow = M.srow;
     for(Int k=0; k < M.ncol; ++k)
     {
       const auto xkbcol = x(k+bcol);
       const Int istart = M.col_ptr(k);
       const Int iend = M.col_ptr(k+1);
-      //for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
       for(Int i = istart; i < iend; ++i)
       {
         const Int j = M.row_idx(i) + msrow;
@@ -724,7 +730,8 @@ namespace BaskerNS
   (
    BASKER_MATRIX &M,
    ENTRY_1DARRAY &y, 
-   ENTRY_1DARRAY &x  
+   ENTRY_1DARRAY &x,
+   Int offset
   )
   {
     //Add checks
@@ -732,10 +739,18 @@ namespace BaskerNS
     printf("SPMV. scol: %d ncol: %d, srow: %d nrow: %d \n", M.scol, M.ncol, M.srow, M.nrow);
     #endif
 
-    const Int bcol = M.scol;
-    const Int msrow = M.srow;
+    const Int bcol  = M.scol + offset;
+    const Int msrow = M.srow + offset;
+    /*printf("P=[\n");
+    for(Int k=0; k < M.ncol; ++k) printf("%d\n",gperm(k+msrow));
+    printf("];\n");
+    printf("M=[\n");
+    for(Int k=0; k < M.ncol; ++k) {
+      for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
+        printf( "%d %d %d %e\n",gperm(M.row_idx(i) + msrow)-msrow, M.row_idx(i),k,M.val(i) );
+    }
+    printf("];\n");*/
 
-    //for(Int k=M.scol; k < (M.scol+M.ncol); k++)
     for(Int k=0; k < M.ncol; ++k)
     {
       const Int istart = M.col_ptr(k);
@@ -770,7 +785,6 @@ namespace BaskerNS
     const Int bcol = M.scol + offset;
     const Int brow = M.scol + offset;
 
-    //M.info();
     /*printf( " P = [\n" );
     for (Int k = 0; k < M.ncol; k++) printf( "%d\n",gperm(brow+k) );
     printf("];\n");
@@ -848,7 +862,6 @@ namespace BaskerNS
   {
     const Int bcol = M.scol + offset;
     const Int brow = M.srow + offset;
-
     /*printf( " U = [\n" );
     for(Int k = 0; k < M.ncol; ++k) {
       for (Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++) {
@@ -856,6 +869,7 @@ namespace BaskerNS
       }
     }
     printf("];\n");*/
+
     for(Int k = M.ncol; k >= 1; k--)
     {
       //printf( " -- k = %d --\n",k );

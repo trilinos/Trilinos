@@ -500,7 +500,7 @@ namespace BaskerNS
 
     const Int scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
     const Int brow_a = U.srow; // offset within A
-    const Int brow_g = U.srow + scol_top; // global offset
+    const Int brow_g = brow_a + scol_top; // global offset
     //const Int bcol = U.scol;
 
     Int *color     = &(ws(0));
@@ -609,9 +609,7 @@ namespace BaskerNS
     for(Int i=top; i < ws_size; ++i)
     {
       j = pattern[i];
-      //t = gperm[j];
       t = gperm(j+brow_g);
-      //if(t == L.max_idx)
       if(t == BASKER_MAX_IDX)
       {
         lcnt++;
@@ -675,7 +673,6 @@ namespace BaskerNS
     for(Int i = top; i < ws_size; ++i)
     {
       j = pattern[i];
-      //t = gperm[j];
       t = gperm(j+brow_g);
 
       #ifdef BASKER_DEBUG_NFACTOR_COL
@@ -720,7 +717,7 @@ namespace BaskerNS
           //U.row_idx[unnz] = gperm[j];
           //printf("kid: %d addU: %d %d \n",
           //     kid, unnz, U.nnz);
-          U.row_idx(unnz) = t-brow_a;
+          U.row_idx(unnz) = t-brow_g;
           #ifdef BASKER_2DL
           //U.val[unnz] = X[j-brow];
           U.val(unnz) = X(j);
@@ -901,7 +898,6 @@ namespace BaskerNS
       #endif
 
       const BASKER_BOOL A_option = BASKER_FALSE;
-
 
       //printf("\n\n size: %d \n\n",
       //U.col_ptr(k+1)-U.col_ptr(k));
@@ -1096,7 +1092,7 @@ namespace BaskerNS
 
     Int   scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
     const Int brow_a  = U.srow; // offset within A
-    const Int brow_g  = U.srow + scol_top; // global offset
+    const Int brow_g  = brow_a + scol_top; // global offset
     const Int lval  = L.col_ptr(k);
     const Int uval  = U.col_ptr(k);
     
@@ -1409,7 +1405,7 @@ namespace BaskerNS
 
          if(t != BASKER_MAX_IDX)
          {
-           if(t < k+brow_a)
+           if(t < k+brow_g)
            {
 #ifdef BASKER_DEBUG_NFACTOR_COL
              #ifdef BASKER_2DL
@@ -1425,7 +1421,7 @@ namespace BaskerNS
              //U.row_idx[unnz] = gperm[j];
              //can't we reuse, this seems
              //stupid
-             U.row_idx(unnz) = t-brow_a;
+             U.row_idx(unnz) = t-brow_g;
              #ifdef BASKER_2DL
              U.val(unnz) = X(j);
              #else
@@ -1579,7 +1575,6 @@ namespace BaskerNS
    Entry pivot
   )
   {
-   
     #ifndef BASKER_MULTIPLE_LOWER
     BASKER_ASSERT(0==1,"BASKER_MULTIPLE_LOWER ERROR");
     return 0;
@@ -2680,7 +2675,6 @@ namespace BaskerNS
       for(Int i = B.col_ptr(k); i < B.col_ptr(k+1); ++i)
       {
         Int B_row = B.row_idx(i);
-        //Int j = gperm[B_row];
         Int j = gperm(B_row+B.srow);
 
         //Note: Do we need this anymore?

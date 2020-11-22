@@ -990,6 +990,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     nd_flag = BASKER_TRUE;
     //permute
     permute_row(M, part_tree.permtab);
+    //for(Int i = 0; i < M.nrow; i++) printf("%d %d\n",i,part_tree.permtab(i));
+
     // new sfactor_copy2 replacement changes
     //permute_col(M, part_tree.permtab); //old, try the new below
 
