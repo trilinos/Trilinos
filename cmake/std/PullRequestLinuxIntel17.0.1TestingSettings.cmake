@@ -4,7 +4,7 @@
 # appropriate set of SEMS modules must be loaded and accessible through the
 # SEMS NFS mount. (See the sems/PullRequestGCC*TestingEnv.sh files.)
 
-# Usage: cmake -C PullRequestLinuxIntelTestingSettings.cmake
+# Usage: cmake -C PullRequestLinuxIntel17.0.1TestingSettings.cmake
 
 set (CMAKE_CXX_STANDARD "14" CACHE STRING "Set C++ standard to C++14")
 #Failing tests under C++14
