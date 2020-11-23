@@ -4,9 +4,6 @@
 #
 name: "Close stale issues"
 on:
-  # For debugging: toggle action by starring/unstarring the repo
-  watch:
-    types: [started]
   # Regular scheduling, run daily at 6AM Mountain time (12:00pm UTC)
   # - Note: Mountain Standard Time (MST) is 7 hours behind UTC during the winter.
   # Cron strings: MIN HR DOM MON DOW
