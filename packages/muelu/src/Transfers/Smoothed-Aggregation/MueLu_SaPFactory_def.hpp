@@ -276,12 +276,13 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SatisfyPConstraints(const RCP<Matrix> A, RCP<Matrix>& P) const {
 
+    Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
     LO nPDEs = A->GetFixedBlockSize();
     Teuchos::ArrayRCP<Scalar> ConstraintViolationSum(nPDEs);
     Teuchos::ArrayRCP<Scalar> Rsum(nPDEs);
     Teuchos::ArrayRCP<size_t> nPositive(nPDEs);
-    for (size_t k=0; k < (size_t) nPDEs; k++) ConstraintViolationSum[k] = Teuchos::ScalarTraits<Scalar>::zero(); 
-    for (size_t k=0; k < (size_t) nPDEs; k++) Rsum[k] = Teuchos::ScalarTraits<Scalar>::zero(); 
+    for (size_t k=0; k < (size_t) nPDEs; k++) ConstraintViolationSum[k] = zero;
+    for (size_t k=0; k < (size_t) nPDEs; k++) Rsum[k] = zero;
     for (size_t k=0; k < (size_t) nPDEs; k++) nPositive[k] = 0;
 
 
@@ -305,12 +306,12 @@ namespace MueLu {
     
         for (LO j = 0; j < indices.size(); j++)  {
           Rsum[ j%nPDEs ] += vals[j]; 
-          if (Teuchos::ScalarTraits<SC>::real(vals[j]) < Teuchos::ScalarTraits<SC>::real(Teuchos::ScalarTraits<Scalar>::zero())) { 
+          if (Teuchos::ScalarTraits<SC>::real(vals[j]) < Teuchos::ScalarTraits<SC>::real(zero)) { 
             ConstraintViolationSum[ j%nPDEs ] += vals[j]; 
-            vals[j] = Teuchos::ScalarTraits<Scalar>::zero();
+            vals[j] = zero;
           }
           else {
-            if (Teuchos::ScalarTraits<SC>::real(vals[j]) != Teuchos::ScalarTraits<SC>::real(Teuchos::ScalarTraits<Scalar>::zero()))
+            if (Teuchos::ScalarTraits<SC>::real(vals[j]) != Teuchos::ScalarTraits<SC>::real(zero))
               (nPositive[ j%nPDEs])++;
     
             if (Teuchos::ScalarTraits<SC>::real(vals[j]) > Teuchos::ScalarTraits<SC>::real(1.00001  )) { 
@@ -326,7 +327,7 @@ namespace MueLu {
     
         for (size_t k=0; k < (size_t) nPDEs; k++) {
 
-          if (Teuchos::ScalarTraits<SC>::real(Rsum[ k ]) < Teuchos::ScalarTraits<SC>::magnitude(Teuchos::ScalarTraits<Scalar>::zero())) {
+          if (Teuchos::ScalarTraits<SC>::real(Rsum[ k ]) < Teuchos::ScalarTraits<SC>::magnitude(zero)) {
               ConstraintViolationSum[k] +=  (-Rsum[k]);  // rstumin 
           }
           else if (Teuchos::ScalarTraits<SC>::real(Rsum[ k ]) > Teuchos::ScalarTraits<SC>::magnitude(1.00001)) {
@@ -336,19 +337,19 @@ namespace MueLu {
 
         // check if row need modification 
         for (size_t k=0; k < (size_t) nPDEs; k++) {
-          if (Teuchos::ScalarTraits<SC>::magnitude(ConstraintViolationSum[ k ]) != Teuchos::ScalarTraits<SC>::magnitude(Teuchos::ScalarTraits<Scalar>::zero()))
+          if (Teuchos::ScalarTraits<SC>::magnitude(ConstraintViolationSum[ k ]) != Teuchos::ScalarTraits<SC>::magnitude(zero))
              checkRow = true;
         }
         // modify row
         if (checkRow) {
            for (LO j = 0; j < indices.size(); j++)  {
-             if (Teuchos::ScalarTraits<SC>::real(vals[j]) > Teuchos::ScalarTraits<SC>::real(Teuchos::ScalarTraits<Scalar>::zero())) { 
+             if (Teuchos::ScalarTraits<SC>::real(vals[j]) > Teuchos::ScalarTraits<SC>::real(zero)) { 
                 vals[j] += (ConstraintViolationSum[j%nPDEs]/ (as<Scalar>(nPositive[j%nPDEs])));
              }
            }
-           for (size_t k=0; k < (size_t) nPDEs; k++) ConstraintViolationSum[k] = Teuchos::ScalarTraits<Scalar>::zero(); 
+           for (size_t k=0; k < (size_t) nPDEs; k++) ConstraintViolationSum[k] = zero; 
         }
-        for (size_t k=0; k < (size_t) nPDEs; k++) Rsum[k] = Teuchos::ScalarTraits<Scalar>::zero(); 
+        for (size_t k=0; k < (size_t) nPDEs; k++) Rsum[k] = zero; 
         for (size_t k=0; k < (size_t) nPDEs; k++) nPositive[k] = 0;
       } // while (checkRow) ...
     } // for (size_t i = 0; i < as<size_t>(P->getRowMap()->getNumNodeElements()); i++) ...
