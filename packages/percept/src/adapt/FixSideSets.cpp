@@ -180,11 +180,14 @@ namespace percept {
               stk::topology elem_topo = m_eMesh.topology(element);
               if (m_eMesh.get_spatial_dim() == 3 && m_eMesh.entity_rank(side) == m_eMesh.edge_rank())
                 {
-                  stk::topology elem_edge_topo = elem_topo.edge_topology();
-                  if (side_topo != elem_edge_topo)
+                  bool found_match=false;
+                  for (unsigned iedge=0; iedge<elem_topo.num_edges(); iedge++) {
+                    if (side_topo == elem_topo.edge_topology(iedge))
                     {
-                      continue;
+                      found_match = true;
                     }
+                  }
+                  if (!found_match) continue;
                 }
               else
                 {

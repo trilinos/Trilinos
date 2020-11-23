@@ -42,29 +42,9 @@
 #ifndef _FROSCH_EXTRACTSUBMATRICES_DECL_HPP
 #define _FROSCH_EXTRACTSUBMATRICES_DECL_HPP
 
-#ifndef FROSCH_ASSERT
-#define FROSCH_ASSERT(A,S) TEUCHOS_TEST_FOR_EXCEPTION(!(A),std::logic_error,S);
-#endif
+#include <ShyLU_DDFROSch_config.h>
 
-#ifndef FROSCH_TIMER_START
-#define FROSCH_TIMER_START(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S))));
-#endif
-
-#ifndef FROSCH_TIMER_START_LEVELID
-#define FROSCH_TIMER_START_LEVELID(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S) + " (Level " + std::to_string(this->LevelID_) + std::string(")"))));
-#endif
-
-#ifndef FROSCH_TIMER_STOP
-#define FROSCH_TIMER_STOP(A) A.reset();
-#endif
-
-#ifndef FROSCH_WARNING
-#define FROSCH_WARNING(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cerr << CLASS << " : WARNING: " << OUTPUT << std::endl;
-#endif
-
-#ifndef FROSCH_TEST_OUTPUT
-#define FROSCH_TEST_OUTPUT(COMM,VERBOSE,OUTPUT) COMM->barrier(); COMM->barrier(); COMM->barrier(); if (VERBOSE) std::cout << OUTPUT << std::endl;
-#endif
+#include <FROSch_Timers.h>
 
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>

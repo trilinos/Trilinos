@@ -419,7 +419,7 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
           ip = local_change.begin() ; ip != local_change.end() ; ++ip ) {
       Entity entity      = ip->first ;
       int new_owner = ip->second;
-      mesh.comm_procs( mesh.entity_key(entity) , procs );
+      mesh.comm_procs( entity , procs );
       for ( std::vector<int>::iterator
             j = procs.begin() ; j != procs.end() ; ++j )
       {
@@ -1395,9 +1395,22 @@ stk::mesh::ConnectivityOrdinal get_ordinal_from_side_entity(const std::vector<st
     return stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
 }
 
+bool are_any_parts_ranked(const stk::mesh::MetaData& meta,
+                          const OrdinalVector& partOrdinals)
+{
+  const PartVector& allParts = meta.get_parts();
+  for(Ordinal ord : partOrdinals) {
+    if (allParts[ord]->primary_entity_rank() != InvalidEntityRank) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void filter_out( OrdinalVector & vec ,
                  const OrdinalVector & parts ,
-                 OrdinalVector & removed )
+                 OrdinalVector & removed ,
+                 bool trackRemoved )
 {
   OrdinalVector::iterator i , j ;
   i = j = vec.begin();
@@ -1408,7 +1421,9 @@ void filter_out( OrdinalVector & vec ,
     if      ( *ip < *j ) { ++ip ; }
     else if ( *j < *ip ) { *i = *j ; ++i ; ++j ; }
     else {
-      removed.push_back( *ip );
+      if (trackRemoved) {
+        removed.push_back( *ip );
+      }
       ++j ;
       ++ip ;
     }    
@@ -1518,6 +1533,40 @@ void check_size_of_types()
 #endif
 }
 
+void require_valid_relation(const char action[],
+                            const BulkData& mesh,
+                            const Entity e_from,
+                            const Entity e_to)
+{
+  const bool error_rank      = !(mesh.entity_rank(e_from) > mesh.entity_rank(e_to));
+  const bool error_nil_from  = !mesh.is_valid(e_from);
+  const bool error_nil_to    = !mesh.is_valid(e_to);
+
+  if ( error_rank || error_nil_from || error_nil_to ) {
+    std::ostringstream msg ;
+
+    msg << "Could not " << action << " relation from entity "
+        << mesh.entity_key(e_from) << " to entity " << mesh.entity_key(e_to) << "\n";
+
+    ThrowErrorMsgIf( error_nil_from  || error_nil_to,
+                     msg.str() << ", entity was destroyed");
+    ThrowErrorMsgIf( error_rank, msg.str() <<
+                     "A relation must be from higher to lower ranking entity");
+  }
+}
+
+bool is_good_rank_and_id(const MetaData& meta,
+                         EntityRank rank,
+                         EntityId id)
+{
+  const size_t rank_count = meta.entity_rank_count();
+  const bool ok_id   = EntityKey::is_valid_id(id);
+  const bool ok_rank = rank < rank_count &&
+                 !(rank == stk::topology::FACE_RANK && meta.spatial_dimension() == 2);
+
+  return ok_id && ok_rank;
+}
+
 EntityId get_global_max_id_in_use(const BulkData& mesh,
                                   EntityRank rank,
                                   const std::list<Entity::entity_value_type>& deletedEntitiesCurModCycle)
@@ -1558,30 +1607,40 @@ void check_declare_element_side_inputs(const BulkData & mesh,
           << localSideId << ", No element topology found");
 }
 
-bool connect_edge_to_elements_impl(stk::mesh::BulkData& bulk, stk::mesh::Entity edge)
+bool connect_edge_or_face_to_elements_impl(stk::mesh::BulkData& bulk, stk::mesh::Entity entity)
 {
-  const stk::mesh::Entity* nodes = bulk.begin_nodes(edge);
-  unsigned numNodes = bulk.num_nodes(edge);
+  stk::mesh::EntityRank entityRank = bulk.entity_rank(entity);
+  if (entityRank != stk::topology::EDGE_RANK && entityRank != stk::topology::FACE_RANK) {
+    return false;
+  }
+  const stk::mesh::Entity* nodes = bulk.begin_nodes(entity);
+  unsigned numNodes = bulk.num_nodes(entity);
   stk::mesh::EntityVector elems;
   stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk, stk::topology::ELEM_RANK, numNodes, nodes, elems);
 
-  stk::mesh::EntityVector edgeNodes(bulk.begin_nodes(edge), bulk.end_nodes(edge));
-  stk::topology edgeTopo = bulk.bucket(edge).topology();
+  stk::mesh::EntityVector entityNodes(bulk.begin_nodes(entity), bulk.end_nodes(entity));
+  stk::topology entityTopo = bulk.bucket(entity).topology();
   for(stk::mesh::Entity elem : elems) {
     stk::mesh::OrdinalAndPermutation ordinalAndPerm = stk::mesh::get_ordinal_and_permutation(bulk, elem,
-                                                                                            stk::topology::EDGE_RANK, edgeNodes);
+                                                                                            entityRank, entityNodes);
 
     if(ordinalAndPerm.first == stk::mesh::INVALID_CONNECTIVITY_ORDINAL) { return false; }
     
-    stk::mesh::impl::connect_element_to_entity(bulk, elem, edge, ordinalAndPerm.first, stk::mesh::PartVector{}, edgeTopo);
+    stk::mesh::impl::connect_element_to_entity(bulk, elem, entity, ordinalAndPerm.first, stk::mesh::PartVector{}, entityTopo);
   }
   return true;
 }
 
 void connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge)
 {
-  ThrowRequireMsg(connect_edge_to_elements_impl(bulk, edge),
+  ThrowRequireMsg(connect_edge_or_face_to_elements_impl(bulk, edge),
                   "Edge with id: " << bulk.identifier(edge) << " has no valid connectivity to elements");
+}
+
+void connect_face_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity face)
+{
+  ThrowRequireMsg(connect_edge_or_face_to_elements_impl(bulk, face),
+                  "Face with id: " << bulk.identifier(face) << " has no valid connectivity to elements");
 }
 
 } // namespace impl

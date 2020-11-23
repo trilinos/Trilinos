@@ -1041,7 +1041,7 @@ AllReduceCollected(MPI_Comm mpi_comm, MPI_Op op, U collector)
 
   MPI_Allreduce(local_array_len.data(), global_array_len.data(), num_proc, MPI_INT, MPI_SUM, mpi_comm);
 
-  for(unsigned i = 0; i < num_proc; ++i) {
+  for(int i = 0; i < num_proc; ++i) {
     if(global_array_len[i] != size) {
       throw std::runtime_error("MPI.hpp::AllReduceCollected, not all processors have the same length array");
     }

@@ -60,7 +60,7 @@ template <class SC, class LO, class GO, class NT>
 KokkosSparse::CrsMatrix<
   typename Kokkos::ArithTraits<SC>::val_type,
     LO,
-    typename NT::execution_space,
+    typename NT::device_type,
     void,
     size_t>
 localDeepCopyLocallyIndexedRowMatrix
@@ -154,7 +154,7 @@ localDeepCopyLocallyIndexedRowMatrix
 namespace Details { \
   template KokkosSparse::CrsMatrix< \
     Kokkos::ArithTraits<SC>::val_type, \
-    LO, NT::execution_space, void, size_t> \
+    LO, NT::device_type, void, size_t> \
   localDeepCopyLocallyIndexedRowMatrix<SC, LO, GO, NT> \
     (const RowMatrix<SC, LO, GO, NT>& A, \
      const char label[]); \

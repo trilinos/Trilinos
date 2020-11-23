@@ -64,32 +64,34 @@ namespace FROSch {
 
     protected:
 
-        using CommPtr                   = RCP<const Comm<int> >;
+        using CommPtr                       = RCP<const Comm<int> >;
 
-        using XMap                      = Map<LO,GO,NO>;
-        using XMapPtr                   = RCP<XMap>;
-        using ConstXMapPtr              = RCP<const XMap>;
-        using XMapPtrVecPtr             = ArrayRCP<XMapPtr>;
+        using XMap                          = Map<LO,GO,NO>;
+        using XMapPtr                       = RCP<XMap>;
+        using ConstXMapPtr                  = RCP<const XMap>;
+        using XMapPtrVecPtr                 = ArrayRCP<XMapPtr>;
+        using ConstXMapPtrVecPtr            = ArrayRCP<ConstXMapPtr>;
 
-        using XMultiVector              = MultiVector<SC,LO,GO,NO>;
-        using ConstXMultiVector         = const MultiVector<SC,LO,GO,NO>;
-        using XMultiVectorPtr           = RCP<XMultiVector>;
-        using ConstXMultiVectorPtr      = RCP<ConstXMultiVector>;
-        using XMultiVectorPtrVecPtr     = ArrayRCP<XMultiVectorPtr>;
-        using XMultiVectorPtrVecPtr2D   = ArrayRCP<XMultiVectorPtrVecPtr>;
+        using XMultiVector                  = MultiVector<SC,LO,GO,NO>;
+        using ConstXMultiVector             = const MultiVector<SC,LO,GO,NO>;
+        using XMultiVectorPtr               = RCP<XMultiVector>;
+        using ConstXMultiVectorPtr          = RCP<ConstXMultiVector>;
+        using XMultiVectorPtrVecPtr         = ArrayRCP<XMultiVectorPtr>;
+        using ConstXMultiVectorPtrVecPtr    = ArrayRCP<ConstXMultiVectorPtr>;
+        using XMultiVectorPtrVecPtr2D       = ArrayRCP<XMultiVectorPtrVecPtr>;
 
-        using ParameterListPtr          = RCP<ParameterList>;
+        using ParameterListPtr              = RCP<ParameterList>;
 
-        using CoarseSpacePtr            = RCP<CoarseSpace<SC,LO,GO,NO> >;
+        using CoarseSpacePtr                = RCP<CoarseSpace<SC,LO,GO,NO> >;
 
-        using UN                        = unsigned;
-        using UNVecPtr                  = ArrayRCP<UN>;
+        using UN                            = unsigned;
+        using UNVecPtr                      = ArrayRCP<UN>;
 
-        using LOVecPtr                  = ArrayRCP<LO>;
-        using LOVecPtr2D                = ArrayRCP<LOVecPtr>;
+        using LOVecPtr                      = ArrayRCP<LO>;
+        using LOVecPtr2D                    = ArrayRCP<LOVecPtr>;
 
-        using BoolVecPtr                = ArrayRCP<bool>;
-        using BoolVecPtr2D              = ArrayRCP<BoolVecPtr>;
+        using BoolVecPtr                    = ArrayRCP<bool>;
+        using BoolVecPtr2D                  = ArrayRCP<BoolVecPtr>;
 
     public:
 
@@ -98,13 +100,13 @@ namespace FROSch {
                                    UN dofsPerNode,
                                    ParameterListPtr parameterList,
                                    ConstXMultiVectorPtr nullSpaceBasis = XMultiVectorPtr(),
-                                   XMultiVectorPtrVecPtr partitionOfUnity = XMultiVectorPtrVecPtr(),
-                                   XMapPtrVecPtr partitionOfUnityMaps = XMapPtrVecPtr());
+                                   ConstXMultiVectorPtrVecPtr partitionOfUnity = XMultiVectorPtrVecPtr(),
+                                   ConstXMapPtrVecPtr partitionOfUnityMaps = XMapPtrVecPtr());
 
 //        virtual ~LocalPartitionOfUnityBasis();
 
-        int addPartitionOfUnity(XMultiVectorPtrVecPtr partitionOfUnity,
-                                XMapPtrVecPtr partitionOfUnityMaps);
+        int addPartitionOfUnity(ConstXMultiVectorPtrVecPtr partitionOfUnity,
+                                ConstXMapPtrVecPtr partitionOfUnityMaps);
 
         int addGlobalBasis(ConstXMultiVectorPtr nullSpaceBasis);
 
@@ -127,10 +129,10 @@ namespace FROSch {
 
         CoarseSpacePtr LocalPartitionOfUnitySpace_;
 
-        XMultiVectorPtrVecPtr PartitionOfUnity_;
+        ConstXMultiVectorPtrVecPtr PartitionOfUnity_;
         ConstXMultiVectorPtr NullspaceBasis_;
 
-        XMapPtrVecPtr PartitionOfUnityMaps_;
+        ConstXMapPtrVecPtr PartitionOfUnityMaps_;
 
     };
 

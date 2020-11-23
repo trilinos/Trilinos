@@ -304,7 +304,7 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
-              const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
+              const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -371,7 +371,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
-              const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
+              const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -1308,6 +1308,7 @@ namespace Tpetra {
     /// it only tells us whether boundForAllLocalRows has a meaningful
     /// value on output.  We don't necessarily check whether all
     /// entries of boundPerLocalRow are the same.
+    TPETRA_DEPRECATED
     void
     getNumEntriesPerLocalRowUpperBound (Teuchos::ArrayRCP<const size_t>& boundPerLocalRow,
                                         size_t& boundForAllLocalRows,
@@ -2026,7 +2027,7 @@ namespace Tpetra {
     ///
     /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
-    Kokkos::View<const local_ordinal_type*, execution_space, Kokkos::MemoryUnmanaged>
+    Kokkos::View<const local_ordinal_type*, device_type, Kokkos::MemoryUnmanaged>
     getLocalKokkosRowView (const RowInfo& rowInfo) const;
 
     /// \brief Get a nonconst nonowned view of the local column
@@ -2035,7 +2036,7 @@ namespace Tpetra {
     ///
     /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
-    Kokkos::View<local_ordinal_type*, execution_space, Kokkos::MemoryUnmanaged>
+    Kokkos::View<local_ordinal_type*, device_type, Kokkos::MemoryUnmanaged>
     getLocalKokkosRowViewNonConst (const RowInfo& rowInfo);
 
     /// \brief Get a const nonowned view of the global column indices
@@ -2044,7 +2045,7 @@ namespace Tpetra {
     ///
     /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
-    Kokkos::View<const global_ordinal_type*, execution_space, Kokkos::MemoryUnmanaged>
+    Kokkos::View<const global_ordinal_type*, device_type, Kokkos::MemoryUnmanaged>
     getGlobalKokkosRowView (const RowInfo& rowInfo) const;
 
   protected:
@@ -2181,7 +2182,7 @@ namespace Tpetra {
     /// allocate, rather than doing lazy allocation at first insert.
     /// This will make both k_numAllocPerRow_ and numAllocForAllRows_
     /// obsolete.
-    typename Kokkos::View<const size_t*, execution_space>::HostMirror
+    typename Kokkos::View<const size_t*, device_type>::HostMirror
     k_numAllocPerRow_;
 
     /// \brief The maximum number of entries to allow in each locally owned row.
@@ -2207,7 +2208,7 @@ namespace Tpetra {
     typename local_graph_type::entries_type::non_const_type k_lclInds1D_;
 
     //! Type of the k_gblInds1D_ array of global column indices.
-    typedef Kokkos::View<global_ordinal_type*, execution_space> t_GlobalOrdinal_1D;
+    typedef Kokkos::View<global_ordinal_type*, device_type> t_GlobalOrdinal_1D;
 
     /// \brief Global column indices for all rows.
     ///

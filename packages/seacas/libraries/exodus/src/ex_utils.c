@@ -64,86 +64,95 @@ extern char *ncmpi_inq_libvers();
   \ingroup Utilities
   \undoc
 */
-void ex_print_config(void)
+const char *ex_config(void)
 {
-  fprintf(stderr, "\tExodus Version %s, Released %s\n", EXODUS_VERSION, EXODUS_RELEASE_DATE);
+  static char buffer[2048];
+  int         j =
+      sprintf(buffer, "\tExodus Version %s, Released %s\n", EXODUS_VERSION, EXODUS_RELEASE_DATE);
 #if defined(PARALLEL_AWARE_EXODUS)
-  fprintf(stderr, "\t\tParallel enabled\n");
+  j += sprintf(buffer + j, "\t\tParallel enabled\n");
 #else
-  fprintf(stderr, "\t\tParallel NOT enabled\n");
+  j += sprintf(buffer + j, "\t\tParallel NOT enabled\n");
 #endif
 #if defined(EXODUS_THREADSAFE)
-  fprintf(stderr, "\t\tThread Safe enabled\n");
+  j += sprintf(buffer + j, "\t\tThread Safe enabled\n");
 #else
-  fprintf(stderr, "\t\tThread Safe NOT enabled\n");
+  j += sprintf(buffer + j, "\t\tThread Safe NOT enabled\n");
 #endif
 #if defined(SEACAS_HIDE_DEPRECATED_CODE)
-  fprintf(stderr, "\t\tDeprecated Functions NOT built\n\n");
+  j += sprintf(buffer + j, "\t\tDeprecated Functions NOT built\n\n");
 #else
-  fprintf(stderr, "\t\tDeprecated Functions available\n\n");
+  j += sprintf(buffer + j, "\t\tDeprecated Functions available\n\n");
 #endif
 #if defined(NC_VERSION)
-  fprintf(stderr, "\tNetCDF Version %s\n", NC_VERSION);
+  j += sprintf(buffer + j, "\tNetCDF Version %s\n", NC_VERSION);
 #else
-  fprintf(stderr, "\tNetCDF Version < 4.3.3\n");
+  j += sprintf(buffer + j, "\tNetCDF Version < 4.3.3\n");
 #endif
 #if NC_HAS_CDF5
-  fprintf(stderr, "\t\tCDF5 enabled\n");
+  j += sprintf(buffer + j, "\t\tCDF5 enabled\n");
 #endif
 #ifndef _MSC_VER
 #if NC_HAS_HDF5
   {
     unsigned major, minor, release;
     H5get_libversion(&major, &minor, &release);
-    fprintf(stderr, "\t\tHDF5 enabled (%u.%u.%u)\n", major, minor, release);
+    j += sprintf(buffer + j, "\t\tHDF5 enabled (%u.%u.%u)\n", major, minor, release);
   }
-  fprintf(stderr, "\t\tZlib Compression (read/write) enabled\n");
-#if defined(NC_HAS_SZIP_WRITE) && defined(DISABLED_FOR_NOW)
-  fprintf(stderr, "\t\tSZip Compression (read/write) enabled\n");
+  j += sprintf(buffer + j, "\t\tZlib Compression (read/write) enabled\n");
+#if defined(NC_HAS_SZIP_WRITE)
+  j += sprintf(buffer + j, "\t\tSZip Compression (read/write) enabled\n");
 #endif
 #endif
 #endif
 #if defined(PARALLEL_AWARE_EXODUS)
 #if NC_HAS_PARALLEL
-  fprintf(stderr, "\t\tParallel IO enabled via HDF5 and/or PnetCDF\n");
+  j += sprintf(buffer + j, "\t\tParallel IO enabled via HDF5 and/or PnetCDF\n");
 #else
-  fprintf(stderr,
-          "\t\tParallel IO *NOT* enabled via HDF5 and/or PnetCDF (PROBABLY A BUILD ERROR!)\n");
+  j += sprintf(buffer + j,
+               "\t\tParallel IO *NOT* enabled via HDF5 and/or PnetCDF (PROBABLY A BUILD ERROR!)\n");
 #endif
 #if NC_HAS_PARALLEL4
-  fprintf(stderr, "\t\tParallel IO enabled via HDF5\n");
+  j += sprintf(buffer + j, "\t\tParallel IO enabled via HDF5\n");
 #else
-  fprintf(stderr, "\t\tParallel IO *NOT* enabled via HDF5\n");
+  j += sprintf(buffer + j, "\t\tParallel IO *NOT* enabled via HDF5\n");
 #endif
 #if NC_HAS_PAR_FILTERS
-  fprintf(stderr, "\t\tParallel IO supports filters\n");
+  j += sprintf(buffer + j, "\t\tParallel IO supports filters\n");
 #endif
 #if NC_HAS_PNETCDF
   {
     char *libver = ncmpi_inq_libvers();
-    fprintf(stderr, "\t\tParallel IO enabled via PnetCDF (%s)\n", libver);
+    j += sprintf(buffer + j, "\t\tParallel IO enabled via PnetCDF (%s)\n", libver);
   }
 #else
-  fprintf(stderr, "\t\tParallel IO *NOT* enabled via PnetCDF\n");
+  j += sprintf(buffer + j, "\t\tParallel IO *NOT* enabled via PnetCDF\n");
 #endif
 #endif /* PARALLEL_AWARE_EXODUS */
 
 #if NC_HAS_ERANGE_FILL
-  fprintf(stderr, "\t\tERANGE_FILL support\n");
+  j += sprintf(buffer + j, "\t\tERANGE_FILL support\n");
 #endif
 #if NC_RELAX_COORD_BOUND
-  fprintf(stderr, "\t\tRELAX_COORD_BOUND defined\n");
+  j += sprintf(buffer + j, "\t\tRELAX_COORD_BOUND defined\n");
+#endif
+#if defined(NC_COMPACT)
+  j += sprintf(buffer + j, "\t\tNC_COMPACT defined\n");
 #endif
 #if defined(NC_HAVE_META_H)
-  fprintf(stderr, "\t\tNC_HAVE_META_H defined\n");
+  j += sprintf(buffer + j, "\t\tNC_HAVE_META_H defined\n");
 #endif
 #if defined(NC_HAS_NC2)
-  fprintf(stderr, "\t\tAPI Version 2 support enabled\n");
+  j += sprintf(buffer + j, "\t\tAPI Version 2 support enabled\n");
 #else
-  fprintf(stderr, "\t\tAPI Version 2 support NOT enabled\n");
+  j += sprintf(buffer + j, "\t\tAPI Version 2 support NOT enabled\n");
 #endif
-  fprintf(stderr, "\n");
+  j += sprintf(buffer + j, "\n");
+
+  assert(j < 2048);
+  return buffer;
 }
+void ex_print_config(void) { fprintf(stderr, "%s\n", ex_config()); }
 
 /*!
   \ingroup Utilities
@@ -153,11 +162,11 @@ int ex__check_file_type(const char *path, int *type)
 {
   /* Based on (stolen from?) NC_check_file_type from netcdf sources.
 
-  Type is set to:
-  1 if this is a netcdf classic file,
-  2 if this is a netcdf 64-bit offset file,
-  4 pnetcdf cdf5 file.
-  5 if this is an hdf5 file
+     Type is set to:
+     1 if this is a netcdf classic file,
+     2 if this is a netcdf 64-bit offset file,
+     4 pnetcdf cdf5 file.
+     5 if this is an hdf5 file
   */
 
 #define MAGIC_NUMBER_LEN 4
@@ -1358,6 +1367,7 @@ int ex_get_num_props(int exoid, ex_entity_type obj_type)
     }
     cntr++;
   }
+  EX_FUNC_LEAVE(EX_FATAL);
 }
 
 /*!
@@ -1749,7 +1759,7 @@ void ex__compress_variable(int exoid, int varid, int type)
         }
       }
       else if (file->compression_algorithm == EX_COMPRESS_SZIP) {
-#if defined(NC_HAS_SZIP_WRITE) && defined(DISABLED_FOR_NOW)
+#if defined(NC_HAS_SZIP_WRITE)
         /* See: https://support.hdfgroup.org/doc_resource/SZIP/ and
                 https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSzip
            for details on SZIP library and parameters.
@@ -1757,7 +1767,7 @@ void ex__compress_variable(int exoid, int varid, int type)
 
         /* const int NC_SZIP_EC = 4; */       /* Selects entropy coding method for szip. */
         const int NC_SZIP_NN            = 32; /* Selects nearest neighbor coding method for szip. */
-        const int SZIP_PIXELS_PER_BLOCK = 16; /* Even and <= 32; typical values are 8, 10, 16, 32 */
+        const int SZIP_PIXELS_PER_BLOCK = 32; /* Even and <= 32; valid values are 8, 10, 16, 32 */
         nc_def_var_szip(exoid, varid, NC_SZIP_NN, SZIP_PIXELS_PER_BLOCK);
 #else
         char errmsg[MAX_ERR_LENGTH];
@@ -2128,12 +2138,12 @@ int ex__handle_mode(unsigned int my_mode, int is_parallel, int run_version)
 int ex__populate_header(int exoid, const char *path, int my_mode, int is_parallel, int *comp_ws,
                         int *io_ws)
 {
-  int status;
-  int old_fill;
-  int lio_ws;
-  int filesiz    = 1;
-  int is_hdf5    = 0;
-  int is_pnetcdf = 0;
+  int  status;
+  int  old_fill;
+  int  lio_ws;
+  int  filesiz    = 1;
+  bool is_hdf5    = false;
+  bool is_pnetcdf = false;
 
   float version;
   char  errmsg[MAX_ERR_LENGTH];
@@ -2176,11 +2186,12 @@ int ex__populate_header(int exoid, const char *path, int my_mode, int is_paralle
   nc_inq_format_extended(exoid, &format, &mode);
 
   if (format & NC_FORMAT_PNETCDF) {
-    is_pnetcdf = 1;
+    is_pnetcdf = true;
+    ;
   }
 
   if (format & NC_FORMAT_NC_HDF5) {
-    is_hdf5 = 1;
+    is_hdf5 = true;
   }
 
   if (ex__conv_init(exoid, comp_ws, io_ws, 0, int64_status, is_parallel, is_hdf5, is_pnetcdf,

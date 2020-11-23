@@ -85,6 +85,7 @@
 // TrilinosCouplings includes
 #include "TrilinosCouplings_config.h"
 #include "TrilinosCouplings_Pamgen_Utils.hpp"
+#include "TrilinosCouplings_Statistics.hpp"
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
@@ -119,6 +120,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_Comm.hpp"
 
 // Shards includes
 #include "Shards_CellTopology.hpp"
@@ -147,6 +149,10 @@
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_Matrix.hpp>
 
+#ifdef HAVE_TRILINOSCOUPLINGS_AVATAR
+#  include "MueLu_AvatarInterface.hpp"
+#endif //HAVE_TRILINOSCOUPLINGS_AVATAR
+
 // MueLu
 #include <MueLu_RefMaxwell.hpp>
 #ifdef HAVE_MUELU_EPETRA
@@ -172,6 +178,7 @@
 
 
 #define ABS(x) ((x)>0?(x):-(x))
+#define SQR(x) ((x)*(x))
 
 
 /*** Uncomment if you would like output data for plotting ***/
@@ -195,6 +202,14 @@ struct fecomp{
     return false;
   }
 };
+
+template<class Container>
+double distance(Container &nodeCoord, int i1, int i2) {
+  double dist = 0.0;
+  for(int j=0; j<3; j++) 
+    dist+= SQR( nodeCoord(i1,j) - nodeCoord(i2,j) );
+  return sqrt(dist);
+}
 
 /**********************************************************************************/
 /***************** FUNCTION DECLARATION FOR ML PRECONDITIONER *********************/
@@ -630,6 +645,9 @@ int main(int argc, char *argv[]) {
   im_ne_get_init_global_l(id, &numNodesGlobal, &numElemsGlobal,
                           &numElemBlkGlobal, &numNodeSetsGlobal,
                           &numSideSetsGlobal);
+#ifdef HAVE_XPETRA_EPETRA
+  MachineLearningStatistics_Hex3D<double, int, int, Xpetra::EpetraNode> MLStatistics(numElemsGlobal);
+#endif
 
   long long * block_ids = new long long [numElemBlk];
   error += im_ex_get_elem_blk_ids_l(id, block_ids);
@@ -681,6 +699,7 @@ int main(int argc, char *argv[]) {
   FieldContainer<int> elemToNode(numElems,numNodesPerElem);
   FieldContainer<double> muVal(numElems);
   FieldContainer<double> sigmaVal(numElems);
+
   for(long long b = 0; b < numElemBlk; b++){
     for(long long el = 0; el < elements[b]; el++){
       for (int j=0; j<numNodesPerElem; j++) {
@@ -688,6 +707,7 @@ int main(int argc, char *argv[]) {
       }
       muVal(telct) = mu[b];
       sigmaVal(telct) = sigma[b];
+      
       telct ++;
     }
   }
@@ -1052,6 +1072,11 @@ int main(int argc, char *argv[]) {
     }
   }
 
+#ifdef HAVE_XPETRA_EPETRA
+  // Statistics: Phase 1
+  MLStatistics.Phase1(elemToNode,elemToEdge,edgeToNode,nodeCoord,sigmaVal);
+#endif
+
   /**********************************************************************************/
   /********************************* GET CUBATURE ***********************************/
   /**********************************************************************************/
@@ -1170,19 +1195,20 @@ int main(int argc, char *argv[]) {
 
 
   Epetra_Map globalMapElem(numElemsGlobal, numElems, 0, Comm);
-  if (dump){
-    // Put coordinates in multivector for output
-    Epetra_MultiVector nCoord(globalMapG,3);
 
-    int ownedNode = 0;
-    for (int inode=0; inode<numNodes; inode++) {
-      if (nodeIsOwned[inode]) {
-        nCoord[0][ownedNode]=nodeCoord(inode,0);
-        nCoord[1][ownedNode]=nodeCoord(inode,1);
-        nCoord[2][ownedNode]=nodeCoord(inode,2);
-        ownedNode++;
-      }
+  // Put coordinates in multivector for output
+  Epetra_MultiVector nCoord(globalMapG,3);
+  
+  int ownedNode = 0;
+  for (int inode=0; inode<numNodes; inode++) {
+    if (nodeIsOwned[inode]) {
+      nCoord[0][ownedNode]=nodeCoord(inode,0);
+      nCoord[1][ownedNode]=nodeCoord(inode,1);
+      nCoord[2][ownedNode]=nodeCoord(inode,2);
+      ownedNode++;
     }
+  }
+  if (dump){  
     EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
 
     // Put element to node mapping in multivector for output
@@ -1220,6 +1246,7 @@ int main(int argc, char *argv[]) {
     if(MyPID==0) {Time.ResetStartTime();}
   }
   
+    
   // Define multi-vector for cell edge sign (fill during cell loop)
   Epetra_MultiVector edgeSign(globalMapElem, numEdgesPerElem);
 
@@ -1230,6 +1257,8 @@ int main(int argc, char *argv[]) {
 
   // Edge to node incidence matrix
   Epetra_FECrsMatrix DGrad(Copy, globalMapC, 2);
+
+  // Estimate the global CFL based on minimum edge length and assumed dt=1"
 
   // Grab edge coordinates (for dumping to disk)
   Epetra_Vector EDGE_X(globalMapC);
@@ -1252,11 +1281,66 @@ int main(int argc, char *argv[]) {
     }
   }
 
+
   DGrad.GlobalAssemble(globalMapG,globalMapC);
   DGrad.FillComplete(MassMatrixG.RowMap(),MassMatrixC.RowMap());
 
   if(MyPID==0) {std::cout << "Building incidence matrix                   "
                           << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
+
+  // Local CFL Calculations
+  double DOUBLE_MAX = std::numeric_limits<double>::max();  
+  double l_max_sigma=0.0, l_max_mu = 0.0, l_max_cfl = 0.0, l_max_dx = 0.0, l_max_osm=0.0;
+  double l_min_sigma=DOUBLE_MAX, l_min_mu= DOUBLE_MAX, l_min_cfl = DOUBLE_MAX, l_min_dx = DOUBLE_MAX, l_min_osm=DOUBLE_MAX;
+
+  for(long long b = 0, idx=0; b < numElemBlk; b++){
+    for(long long el = 0; el < elements[b]; el++){
+      l_max_sigma = std::max(l_max_sigma,sigmaVal(idx));
+      l_min_sigma = std::min(l_min_sigma,sigmaVal(idx));
+      l_max_mu    = std::max(l_max_mu,muVal(idx));
+      l_min_mu    = std::min(l_min_mu,muVal(idx));  
+      l_max_osm   = std::max(l_max_osm,1/(sigmaVal(idx)*muVal(idx)));
+      l_min_osm   = std::min(l_min_osm,1/(sigmaVal(idx)*muVal(idx)));
+      
+      // We'll chose "dx" as the max/min edge length over the cell
+      double my_edge_min = DOUBLE_MAX, my_edge_max=0.0;
+      for(int j=0; j<numEdgesPerElem; j++) {
+        int edge = elemToEdge(idx,j);
+        double my_dx = distance(nodeCoord,edgeToNode(edge,0),edgeToNode(edge,1));
+        my_edge_max = std::max(my_edge_max,my_dx);
+        my_edge_min = std::min(my_edge_min,my_dx);
+      }
+
+      l_max_dx = std::max(l_max_dx,my_edge_max);
+      l_min_dx = std::min(l_min_dx,my_edge_min);
+
+      // Note: The max/min's switch here because they're in the denominator
+      double my_max_cfl = 1.0 / (sigmaVal(idx) * muVal(idx) * l_min_dx * l_min_dx);
+      double my_min_cfl = 1.0 / (sigmaVal(idx) * muVal(idx) * l_max_dx * l_max_dx);
+      l_max_cfl = std::max(l_max_cfl,my_max_cfl);
+      l_min_cfl = std::min(l_min_cfl,my_min_cfl);
+      
+      idx++;
+    }
+  }
+
+  // CFL Range Calculations (assuming a timestep dt=1)
+  double g_max_dx, g_min_dx, g_max_mu, g_min_mu, g_max_sigma, g_min_sigma, g_max_cfl, g_min_cfl, g_max_osm, g_min_osm;
+  Comm.MaxAll(&l_max_dx,&g_max_dx,1);       Comm.MinAll(&l_min_dx,&g_min_dx,1);
+  Comm.MaxAll(&l_max_sigma,&g_max_sigma,1); Comm.MinAll(&l_min_sigma,&g_min_sigma,1);
+  Comm.MaxAll(&l_max_mu,&g_max_mu,1);       Comm.MinAll(&l_min_mu,&g_min_mu,1);
+  Comm.MaxAll(&l_max_cfl,&g_max_cfl,1);     Comm.MinAll(&l_min_cfl,&g_min_cfl,1);
+  Comm.MaxAll(&l_max_osm,&g_max_osm,1);     Comm.MinAll(&l_min_osm,&g_min_osm,1);
+
+  if(MyPID==0) {
+    std::cout<<"*** Parameter Ranges ***"<<std::endl;
+    std::cout<<"Edge dx Range      : "<<g_min_dx << " to "<<g_max_dx<<std::endl;
+    std::cout<<"Sigma Range        : "<<g_min_sigma << " to "<<g_max_sigma<<std::endl;
+    std::cout<<"Mu Range           : "<<g_min_mu << " to "<<g_max_mu<<std::endl;
+    std::cout<<"1/(Sigma Mu) Range : "<<g_min_osm << " to "<<g_max_osm<<std::endl;
+    std::cout<<"Diffusive CFL Range: "<<g_min_cfl<< " to "<<g_max_cfl<<std::endl;
+
+  }
 
 
   /**********************************************************************************/
@@ -1534,6 +1618,10 @@ int main(int argc, char *argv[]) {
     if(MyPID==0) {std::cout << "Compute HGRAD Mass Matrix                   "
                             << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
+#ifdef HAVE_XPETRA_EPETRA
+    // Statistics: Phase 2a
+    MLStatistics.Phase2a(worksetJacobDet,cubWeights);
+#endif
 
     /**********************************************************************************/
     /*                          Compute HCURL Mass Matrix                             */
@@ -1812,6 +1900,9 @@ int main(int argc, char *argv[]) {
   MassMatrixC.GlobalAssemble();  MassMatrixC.FillComplete();
   rhsVector.GlobalAssemble();
 
+#ifdef HAVE_XPETRA_EPETRA
+  MLStatistics.Phase2b(Teuchos::rcp(&MassMatrixG.Graph(),false),Teuchos::rcp(&nCoord,false));
+#endif
 
   if(MyPID==0) {std::cout << "Global assembly                             "
                           << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
@@ -1908,6 +1999,15 @@ int main(int argc, char *argv[]) {
   /*********************************** SOLVE ****************************************/
   /**********************************************************************************/
 
+#ifdef HAVE_XPETRA_EPETRA
+  MLStatistics.Phase3();
+  Teuchos::ParameterList problemStatistics = MLStatistics.GetStatistics();
+  if(MyPID==0) {
+    std::cout<<"*** Problem Statistics ***"<<std::endl;
+    std::cout<<problemStatistics<<std::endl;
+  }
+#endif
+
   double TotalErrorResidual=0, TotalErrorExactSol=0;
 
   // Parameter list for ML
@@ -1941,9 +2041,10 @@ int main(int argc, char *argv[]) {
   List11.set("y-coordinates",&Ny[0]);
   List11.set("z-coordinates",&Nz[0]);
 
-
   // Parameter list for MueLu
   Teuchos::ParameterList MueLuList;
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
   if(inputList.isSublist("MueLu")) {
     MueLuList = inputList.sublist("MueLu");
   } else {
@@ -1974,6 +2075,27 @@ int main(int argc, char *argv[]) {
     MueList22.sublist("smoother: params").set("chebyshev: degree",2);
     //MueList22.set("coarse: type","Amesos-KLU");
   }
+
+  
+#if defined(HAVE_TRILINOSCOUPLINGS_AVATAR) && defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_XPETRA_EPETRA)
+  Teuchos::ParameterList &MueList11=MueLuList.sublist("refmaxwell: 11list");
+  Teuchos::ParameterList &MueList22=MueLuList.sublist("refmaxwell: 22list");
+ 
+  std::vector<std::string> AvatarSublists{"Avatar-MueLu-Fine","Avatar-MueLu-11","Avatar-MueLu-22"};
+  std::vector<Teuchos::ParameterList *> MueLuSublists{&MueLuList,&MueList11,&MueList22};
+  for (int i=0; i<(int)AvatarSublists.size(); i++) {
+    if (inputList.isSublist(AvatarSublists[i])) {
+      Teuchos::ParameterList problemFeatures = problemStatistics;
+      Teuchos::ParameterList avatarParams = inputList.sublist(AvatarSublists[i]);
+      std::cout<<"*** Avatar["<<AvatarSublists[i]<<"] Parameters ***\n"<<avatarParams<<std::endl;
+      
+      MueLu::AvatarInterface avatar(comm,avatarParams);
+      std::cout<<"*** Avatar Setup ***"<<std::endl;
+      avatar.Setup();
+      avatar.SetMueLuParameters(problemFeatures,*MueLuSublists[i], true);
+    }
+  }
+#endif
 
   Epetra_FEVector xh(rhsVector);
 
@@ -2261,7 +2383,6 @@ int main(int argc, char *argv[]) {
   }
 
   // Summarize timings
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   Teuchos::TimeMonitor::report (comm.ptr(), std::cout);
 
   return 0;

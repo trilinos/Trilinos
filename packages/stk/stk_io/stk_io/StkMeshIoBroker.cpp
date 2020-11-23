@@ -252,9 +252,7 @@ void StkMeshIoBroker::set_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_
         m_metaData = Teuchos::rcpFromRef(bulk_data().mesh_meta_data());
     }
 
-#ifdef STK_BUILT_IN_SIERRA
     m_communicator = m_bulkData->parallel();
-#endif
     create_sideset_observer();
 }
 
@@ -466,6 +464,7 @@ void StkMeshIoBroker::create_input_mesh()
     process_nodeblocks(*region,    meta_data());
     process_elementblocks(*region, meta_data());
     process_sidesets(*region,      meta_data());
+    process_face_blocks(*region,   meta_data());
     process_edge_blocks(*region,   meta_data());
 
     if(m_autoLoadDistributionFactorPerNodeSet) {
@@ -473,6 +472,9 @@ void StkMeshIoBroker::create_input_mesh()
     } else {
         process_nodesets_without_distribution_factors(*region, meta_data());
     }
+
+    process_assemblies(*region,   meta_data());
+    build_assembly_hierarchies(*region, meta_data());
 
     create_surface_to_block_mapping();
     store_attribute_field_ordering();
@@ -615,25 +617,16 @@ void StkMeshIoBroker::end_output_step(size_t output_file_index)
 template<typename INT>
 void populate_elements_and_nodes(Ioss::Region &region,
                                  stk::mesh::BulkData& bulkData,
-                                 stk::ParallelMachine communicator,
                                  const bool processAllInputNodes)
 {
     if(processAllInputNodes) {
-#ifdef STK_BUILT_IN_SIERRA
         process_nodeblocks<INT>(region,    bulkData);
-#else
-        process_nodeblocks<INT>(region,    bulkData, communicator);
-#endif
     }
 
     process_elementblocks<INT>(region, bulkData);
 
     if(!processAllInputNodes) {
-#ifdef STK_BUILT_IN_SIERRA
         process_node_sharing<INT>(region,    bulkData);
-#else
-        process_node_sharing<INT>(region,    bulkData, communicator);
-#endif
     }
 
     process_nodesets<INT>(region, bulkData);
@@ -662,9 +655,9 @@ bool StkMeshIoBroker::populate_mesh_elements_and_nodes(bool delay_field_data_all
     }
 
     if (ints64bit) {
-        populate_elements_and_nodes<int64_t>(*region, bulk_data(), m_communicator, processAllInputNodes);
+        populate_elements_and_nodes<int64_t>(*region, bulk_data(), processAllInputNodes);
     } else {
-        populate_elements_and_nodes<int>(*region, bulk_data(), m_communicator, processAllInputNodes);
+        populate_elements_and_nodes<int>(*region, bulk_data(), processAllInputNodes);
     }
 
     stk_mesh_resolve_node_sharing();
@@ -685,6 +678,7 @@ void StkMeshIoBroker::populate_mesh_entitysets(bool i_started_modification_cycle
 
     if(m_sidesetFaceCreationBehavior!=STK_IO_SIDE_CREATION_USING_GRAPH_TEST) {
         process_edge_blocks(*region, bulk_data());
+        process_face_blocks(*region, bulk_data());
         process_sidesets(*region, bulk_data(), elemIdMovedToProc, m_sidesetFaceCreationBehavior);
         bool saveOption = bulk_data().use_entity_ids_for_resolving_sharing();
         bulk_data().set_use_entity_ids_for_resolving_sharing(true);
@@ -693,6 +687,7 @@ void StkMeshIoBroker::populate_mesh_entitysets(bool i_started_modification_cycle
     } else {
         bulk_data().initialize_face_adjacent_element_graph();
         process_edge_blocks(*region, bulk_data());
+        process_face_blocks(*region, bulk_data());
         process_sidesets(*region, bulk_data(), elemIdMovedToProc, m_sidesetFaceCreationBehavior);
         stk_mesh_modification_end_after_node_sharing_resolution();
     }

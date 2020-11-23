@@ -649,7 +649,7 @@ struct ScalarTraits<float>
     random();
 #endif
   }
-  static inline float random() { float rnd = (float) std::rand() / RAND_MAX; return (-1.0f + 2.0f * rnd); }
+  static inline float random() { float rnd = (float) std::rand() / static_cast<float>(RAND_MAX); return (-1.0f + 2.0f * rnd); }
   static inline std::string name() { return "float"; }
   static inline float squareroot(float x)
     {

@@ -44,7 +44,6 @@ public:
 
   virtual void setUseEmbedded(bool a) { useEmbedded_ = a; }
   virtual bool getUseEmbedded() const { return useEmbedded_; }
-  virtual bool getUseEmbeddedDefault() const { return false; }
 
   virtual void setAppAction(Teuchos::RCP<StepperRKAppAction<Scalar> > appAction)
   {

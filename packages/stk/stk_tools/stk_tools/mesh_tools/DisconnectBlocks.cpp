@@ -60,12 +60,34 @@ void disconnect_and_reconnect_blocks(stk::mesh::BulkData& bulk, const BlockPairV
   info.reconnectTime = stk::wall_time();
 }
 
+bool has_nodes_in_part(const stk::mesh::BulkData& bulk, const stk::mesh::Part* part)
+{
+  if(part == nullptr) { return false; }
+
+  unsigned localCount = stk::mesh::count_selected_entities(*part, bulk.buckets(stk::topology::NODE_RANK));
+  unsigned globalCount;
+
+  MPI_Allreduce(&localCount, &globalCount, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
+
+  return (globalCount > 0);
+}
+
 void disconnect_user_blocks_locally(stk::mesh::BulkData& bulk, const BlockPairVector& blocksToDisconnect, LinkInfo& info)
 {
-  stk::tools::BlockPairVector blockPairsToReconnect;
-  blockPairsToReconnect = get_local_reconnect_list(bulk, blocksToDisconnect);
+  info.startTime = stk::wall_time();
 
-  disconnect_and_reconnect_blocks(bulk, blocksToDisconnect, blockPairsToReconnect, info);
+  stk::tools::BlockPairVector blockPairsToReconnect;
+  stk::tools::BlockPairVector sortedBlocksToDisconnect;
+
+  for(const BlockPair& blockPair : blocksToDisconnect) {
+    if(!has_nodes_in_part(bulk, blockPair.first) || !has_nodes_in_part(bulk, blockPair.second)) {
+      continue;
+    }
+    stk::tools::impl::insert_block_pair(blockPair.first, blockPair.second, sortedBlocksToDisconnect);
+  }
+  blockPairsToReconnect = get_local_reconnect_list(bulk, sortedBlocksToDisconnect);
+
+  disconnect_and_reconnect_blocks(bulk, sortedBlocksToDisconnect, blockPairsToReconnect, info);
 }
 
 void disconnect_user_blocks_globally(stk::mesh::BulkData& bulk, const BlockPairVector& blocksToDisconnect,
@@ -84,34 +106,18 @@ void disconnect_user_blocks_globally(stk::mesh::BulkData& bulk, const BlockPairV
   disconnect_and_reconnect_blocks(bulk, orderedBlockPairsInMesh, blockPairsToReconnect, info);
 }
 
-void snip_hinges_locally(stk::mesh::BulkData& bulk, impl::HingeNodeVector& preservedHingeNodes, LinkInfo& info)
+void snip_hinges(stk::mesh::BulkData& bulk, impl::HingeNodeVector& preservedHingeNodes, const BlockPairVector& blocksToDisconnect, LinkInfo& info)
 {
-  stk::mesh::EntityVector affectedNodes = extract_nodes(bulk, info);
+  stk::mesh::EntityVector affectedNodes = get_affected_nodes(bulk, blocksToDisconnect);
 
   snip_all_hinges_for_input_nodes(bulk, affectedNodes, preservedHingeNodes);
 
   info.snipTime = stk::wall_time();
 }
 
-void snip_hinges_globally(stk::mesh::BulkData& bulk, LinkInfo& info)
-{
-  snip_all_hinges_between_blocks(bulk);
-
-  info.snipTime = stk::wall_time();
-}
-
 void populate_hinge_node_list(stk::mesh::BulkData& bulk, const BlockPairVector& blocksToDisconnect, impl::HingeNodeVector& preservedHingeNodes)
 {
-  stk::mesh::Selector selector;
-  for(auto blockPair : blocksToDisconnect) {
-    selector |= *blockPair.first & *blockPair.second;
-  }
-
-  selector &= bulk.mesh_meta_data().locally_owned_part();
-
-  stk::mesh::EntityVector commonNodes;
-  stk::mesh::get_selected_entities(selector, bulk.buckets(stk::topology::NODE_RANK), commonNodes);
-
+  stk::mesh::EntityVector commonNodes = get_affected_nodes(bulk, blocksToDisconnect);
   HingeNodeVector commonHingeNodes = impl::get_hinge_nodes(bulk, commonNodes);
 
   for(auto hingeNode : commonHingeNodes) {
@@ -155,38 +161,25 @@ void disconnect_all_blocks(stk::mesh::BulkData & bulk, impl::LinkInfo& info, boo
 }
 
 void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockPairVector& blocksToDisconnect,
-                            DisconnectOption disconnectOption, SnipOption snipOption)
+                            DisconnectBlocksOption options)
 {
   impl::LinkInfo info;
   info.preserveOrphans = true;
 
   impl::HingeNodeVector preservedHingeNodes;
-  if(snipOption == SNIP_LOCAL) {
+  if(options.snipOption == PRESERVE_INITIAL_HINGES) {
     impl::populate_hinge_node_list(bulk, blocksToDisconnect, preservedHingeNodes);
   }
 
-  if(disconnectOption == DISCONNECT_GLOBAL) {
+  if(options.disconnectOption == DISCONNECT_GLOBAL) {
     impl::disconnect_user_blocks_globally(bulk, blocksToDisconnect, info);
   } else {
     impl::disconnect_user_blocks_locally(bulk, blocksToDisconnect, info);
   }
 
-  if(snipOption == SNIP_GLOBAL) {
-    impl::snip_hinges_globally(bulk, info);
-  } else {
-    impl::snip_hinges_locally(bulk, preservedHingeNodes, info);
-  }
+  impl::snip_hinges(bulk, preservedHingeNodes, blocksToDisconnect, info);
 
-  impl::print_timings(bulk, info);
-}
-
-void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockNamePairVector& blockNamesToDisconnect,
-                            DisconnectOption disconnectOption, SnipOption snipOption)
-{
-  BlockPairVector blocksToDisconnect;
-  impl::populate_block_pairs(bulk, blockNamesToDisconnect, blocksToDisconnect);
-
-  disconnect_user_blocks(bulk, blocksToDisconnect, disconnectOption, snipOption);
+  // impl::print_timings(bulk, info);
 }
 
 }

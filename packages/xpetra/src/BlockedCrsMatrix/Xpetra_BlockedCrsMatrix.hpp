@@ -64,6 +64,7 @@
 #include "Xpetra_CrsMatrixFactory.hpp"
 
 #include "Xpetra_MapExtractor.hpp"
+#include "Xpetra_MapExtractorFactory.hpp"
 
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_MatrixFactory.hpp"
@@ -114,15 +115,16 @@ namespace Xpetra {
     /*!
      * \param rangeMaps range maps for all blocks
      * \param domainMaps domain maps for all blocks
-     * \param npr extimated number of entries per row in each block(!)
+     * \param numEntriesPerRow estimated number of entries per row in each block(!)
      */
     BlockedCrsMatrix(const Teuchos::RCP<const BlockedMap>& rangeMaps,
                      const Teuchos::RCP<const BlockedMap>& domainMaps,
-                     size_t npr) {
-      is_diagonal_ = true;
-      domainmaps_ = Teuchos::rcp(new MapExtractor(domainMaps));
-      rangemaps_  = Teuchos::rcp(new MapExtractor(rangeMaps));
-      bRangeThyraMode_  = rangeMaps->getThyraMode();
+                     size_t numEntriesPerRow)
+      : is_diagonal_(true)
+    {
+      domainmaps_ = MapExtractorFactory::Build(domainMaps);
+      rangemaps_ = MapExtractorFactory::Build(rangeMaps);
+      bRangeThyraMode_ = rangeMaps->getThyraMode();
       bDomainThyraMode_ = domainMaps->getThyraMode();
 
       blocks_.reserve(Rows()*Cols());
@@ -130,7 +132,7 @@ namespace Xpetra {
       // add CrsMatrix objects in row,column order
       for (size_t r = 0; r < Rows(); ++r)
         for (size_t c = 0; c < Cols(); ++c)
-          blocks_.push_back(MatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), npr));
+          blocks_.push_back(MatrixFactory::Build(getRangeMap(r, bRangeThyraMode_), numEntriesPerRow));
 
       // Default view
       CreateDefaultView();
@@ -138,26 +140,26 @@ namespace Xpetra {
 
     //! Constructor
     /*!
-     * \param rangeMaps range maps for all blocks
-     * \param domainMaps domain maps for all blocks
-     * \param npr extimated number of entries per row in each block(!)
+     * \param rangeMapExtractor range map extractor for all blocks
+     * \param domainMapExtractor domain map extractor for all blocks
+     * \param numEntriesPerRow estimated number of entries per row in each block(!)
      *
      * \note This constructor will be deprecated. Please use the constructor which takes BlockedMap objects instead.
      */
-    BlockedCrsMatrix(Teuchos::RCP<const MapExtractor>& rangeMaps,
-                     Teuchos::RCP<const MapExtractor>& domainMaps,
-                     size_t npr)
-      : is_diagonal_(true), domainmaps_(domainMaps), rangemaps_(rangeMaps)
+    BlockedCrsMatrix(Teuchos::RCP<const MapExtractor>& rangeMapExtractor,
+                     Teuchos::RCP<const MapExtractor>& domainMapExtractor,
+                     size_t numEntriesPerRow)
+      : is_diagonal_(true), domainmaps_(domainMapExtractor), rangemaps_(rangeMapExtractor)
     {
-      bRangeThyraMode_  = rangeMaps->getThyraMode();
-      bDomainThyraMode_ = domainMaps->getThyraMode();
+      bRangeThyraMode_ = rangeMapExtractor->getThyraMode();
+      bDomainThyraMode_ = domainMapExtractor->getThyraMode();
 
       blocks_.reserve(Rows()*Cols());
 
       // add CrsMatrix objects in row,column order
       for (size_t r = 0; r < Rows(); ++r)
         for (size_t c = 0; c < Cols(); ++c)
-          blocks_.push_back(MatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), npr));
+          blocks_.push_back(MatrixFactory::Build(getRangeMap(r, bRangeThyraMode_), numEntriesPerRow));
 
       // Default view
       CreateDefaultView();
@@ -634,7 +636,7 @@ namespace Xpetra {
     //! Returns the current number of entries in the specified (locally owned) global row.
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
     size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const {
-      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNumEntriesInGlobalRow");      
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNumEntriesInGlobalRow");
       size_t row = getBlockedRangeMap()->getMapIndexForGID(globalRow);
       size_t numEntriesInGlobalRow = 0;
       for (size_t col = 0; col < Cols(); ++col)
@@ -1509,7 +1511,7 @@ namespace Xpetra {
       R.update(STS::one(),B,STS::zero());
       this->apply (X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());
     }
-    
+
   private:
 
     /** \name helper functions */
@@ -1585,16 +1587,16 @@ namespace Xpetra {
     }
 
   private:
-    bool is_diagonal_;   // If we're diagonal a bunch of the extraction stuff should work
-    Teuchos::RCP<const MapExtractor>      domainmaps_;        // full        domain map together with all partial domain maps
-    Teuchos::RCP<const MapExtractor>      rangemaps_;         // full         range map together with all partial domain maps
+    bool is_diagonal_; ///< If we're diagonal, a bunch of the extraction stuff should work
+    Teuchos::RCP<const MapExtractor> domainmaps_; ///< full domain map together with all partial domain maps
+    Teuchos::RCP<const MapExtractor> rangemaps_; ///< full range map together with all partial domain maps
 
-    std::vector<Teuchos::RCP<Matrix> > blocks_;            // row major matrix block storage
+    std::vector<Teuchos::RCP<Matrix> > blocks_; ///< row major matrix block storage
 #ifdef HAVE_XPETRA_THYRA
     Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> > thyraOp_; ///< underlying thyra operator
 #endif
-    bool                                   bRangeThyraMode_;  ///< boolean flag, which is true, if BlockedCrsMatrix has been created using Thyra-style numbering for sub blocks, i.e. all GIDs of submaps are contiguous and start from 0.
-    bool                                   bDomainThyraMode_; ///< boolean flag, which is true, if BlockedCrsMatrix has been created using Thyra-style numbering for sub blocks, i.e. all GIDs of submaps are contiguous and start from 0.
+    bool bRangeThyraMode_; ///< boolean flag, which is true, if BlockedCrsMatrix has been created using Thyra-style numbering for sub blocks, i.e. all GIDs of submaps are contiguous and start from 0.
+    bool bDomainThyraMode_; ///< boolean flag, which is true, if BlockedCrsMatrix has been created using Thyra-style numbering for sub blocks, i.e. all GIDs of submaps are contiguous and start from 0.
 
 };
 

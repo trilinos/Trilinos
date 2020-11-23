@@ -47,7 +47,6 @@
 
 #include "Tpetra_Directory.hpp" // must include for implicit instantiation to work
 #include "Tpetra_Details_Behavior.hpp"
-#include "Tpetra_Details_checkPointer.hpp"
 #include "Tpetra_Details_FixedHashTable.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_printOnce.hpp"
@@ -78,7 +77,6 @@ namespace { // (anonymous)
 
     const bool debug = Behavior::debug("Map");
     if (debug) {
-      using Tpetra::Details::pointerAccessibleFromExecutionSpace;
       using Teuchos::outArg;
       using Teuchos::REDUCE_MIN;
       using Teuchos::reduceAll;
@@ -94,22 +92,6 @@ namespace { // (anonymous)
         if (verbose) {
           lclErrStrm << "Proc " << myRank << ": indexList is null, "
             "but indexListSize=" << indexListSize << " != 0." << endl;
-        }
-      }
-      else {
-        if (indexListSize != 0 && indexList != nullptr &&
-            ! pointerAccessibleFromExecutionSpace (indexList, execSpace)) {
-          lclSuccess = 0;
-          if (verbose) {
-            using ::Tpetra::Details::memorySpaceName;
-            const std::string memSpaceName = memorySpaceName (indexList);
-            const std::string execSpaceName =
-              Teuchos::TypeNameTraits<ExecutionSpace>::name ();
-            lclErrStrm << "Proc " << myRank << ": Input array is not "
-              "accessible from the required execution space " <<
-              execSpaceName << ".  As far as I can tell, array lives "
-              "in memory space " << memSpaceName << "." << endl;
-          }
         }
       }
       int gblSuccess = 0; // output argument
@@ -719,20 +701,12 @@ namespace Tpetra {
                          nonContigGids_host.size ());
         Kokkos::deep_copy (nonContigGids, nonContigGids_host);
 
-        // FixedHashTable currently cannot be built on CudaSpace due to UVM
-        // dependence so copy back to device_type (CudaUVMSpace).
-        // This can go away when FixedHashTable is modified to run on CudaSpace.
-        typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type,
-          local_ordinal_type, device_type> global_to_local_table_device_type;
-        global_to_local_table_device_type glMap(nonContigGids,
-                                                firstContiguousGID_,
-                                                lastContiguousGID_,
-                                                static_cast<LO> (i));
-
-        // Now copy to CudaSpace and also make the host version
-        // Note when memory spaces match these just do trivial assignment
-        glMap_ = global_to_local_table_type(glMap);
-        glMapHost_ = global_to_local_table_host_type(glMap);
+        glMap_ = global_to_local_table_type(nonContigGids,
+                                            firstContiguousGID_,
+                                            lastContiguousGID_,
+                                            static_cast<LO> (i));
+        // Make host version - when memory spaces match these just do trivial assignment
+        glMapHost_ = global_to_local_table_host_type(glMap_);
       }
 
       // FIXME (mfh 10 Oct 2016) When we construct the global-to-local
@@ -1111,22 +1085,12 @@ namespace Tpetra {
            << entryList.extent (0) << " - " << i
            << ".  Please report this bug to the Tpetra developers.");
 
-        // FixedHashTable currently cannot be built on CudaSpace due to UVM
-        // dependence so copy back to device_type (CudaUVMSpace).
-        // This can go away when FixedHashTable is modified to run on CudaSpace.
-        typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type,
-          local_ordinal_type, device_type> global_to_local_table_device_type;
-        auto device_nonContigGids =
-          Kokkos::create_mirror_view_and_copy(device_type(), nonContigGids);
-        global_to_local_table_device_type glMap(device_nonContigGids,
-                                                firstContiguousGID_,
-                                                lastContiguousGID_,
-                                                static_cast<LO> (i));
-
-        // Now copy to CudaSpace and also make the host version
-        // Note when memory spaces match these just do trivial assignment
-        glMap_ = global_to_local_table_type(glMap);
-        glMapHost_ = global_to_local_table_host_type(glMap);
+        glMap_ = global_to_local_table_type(nonContigGids,
+                                            firstContiguousGID_,
+                                            lastContiguousGID_,
+                                            static_cast<LO> (i));
+        // Make host version - when memory spaces match these just do trivial assignment
+        glMapHost_ = global_to_local_table_host_type(glMap_);
       }
 
       // FIXME (mfh 10 Oct 2016) When we construct the global-to-local
@@ -1689,7 +1653,6 @@ namespace Tpetra {
     using std::endl;
     using LO = local_ordinal_type;
     using GO = global_ordinal_type;
-    using DT = device_type;
     using const_lg_view_type = decltype(lgMap_);
     using lg_view_type = typename const_lg_view_type::non_const_type;
     const bool debug = Details::Behavior::debug("Map");

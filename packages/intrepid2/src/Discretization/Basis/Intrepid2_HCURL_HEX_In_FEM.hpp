@@ -50,7 +50,7 @@
 #define __INTREPID2_HCURL_HEX_IN_FEM_HPP__
 
 #include "Intrepid2_Basis.hpp"
-#include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
+#include "Intrepid2_HCURL_QUAD_In_FEM.hpp"
 
 namespace Intrepid2 {
 
@@ -263,10 +263,36 @@ namespace Intrepid2 {
       return true;
     }
 
+    /** \brief returns the basis associated to a subCell.
+
+        The bases of the subCell are the restriction to the subCell of the bases of the parent cell,
+        projected to the subCell plane.
+
+        \param [in] subCellDim - dimension of subCell
+        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+     */
+    BasisPtr<ExecSpaceType,outputValueType,pointValueType>
+      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
+      if(subCellDim == 1) {
+        return Teuchos::rcp(new
+            Basis_HGRAD_LINE_Cn_FEM<ExecSpaceType,outputValueType,pointValueType>
+            (this->basisDegree_-1, POINTTYPE_GAUSS));
+      } else if(subCellDim == 2) {
+        return Teuchos::rcp(new
+            Basis_HCURL_QUAD_In_FEM<ExecSpaceType,outputValueType,pointValueType>
+            (this->basisDegree_, pointType_));
+      }
+      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
+    }
+
   private:
 
     /** \brief inverse of Generalized Vandermonde matrix (isotropic order) */
     Kokkos::DynRankView<typename ScalarViewType::value_type,ExecSpaceType> vinvLine_, vinvBubble_;
+
+    /** \brief type of lattice used for creating the DoF coordinates  */
+    EPointType pointType_;
   };
 
 }// namespace Intrepid2

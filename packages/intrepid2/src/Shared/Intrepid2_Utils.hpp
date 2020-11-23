@@ -54,6 +54,7 @@
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Macros.hpp" // provides some preprocessor values used in definitions of INTREPID2_DEPRECATED, etc.
+#include "Kokkos_Random.hpp"
 
 #ifdef HAVE_INTREPID2_SACADO
 #include "Kokkos_LayoutNatural.hpp"

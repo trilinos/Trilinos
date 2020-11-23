@@ -78,6 +78,8 @@ namespace MueLu {
       External        = 0x01000000, //!< Print external lib objects
       Debug           = 0x02000000, //!< Print additional debugging information
 
+      Developer       = 0x04000000, //!< Print information primarily of interest to developers
+
       Test0           = 0x10000000, //!< Print skeleton for the run, i.e. factory calls and used parameters
 
       // Predefined combinations of MsgType
@@ -95,9 +97,9 @@ namespace MueLu {
       Medium  = Errors | Warnings0 | Runtime0 | Parameters0 | Statistics0 | Statistics1 | Timings0,
       High    = Errors | Warnings  | Runtime  | Parameters  | Statistics0 | Statistics1  | Timings,
 #ifdef HAVE_MUELU_DEBUG
-      Extreme = Errors | Warnings  | Runtime  | Parameters  | Statistics  | Timings | External | Debug,
+      Extreme = Errors | Warnings  | Runtime  | Parameters  | Statistics  | Timings | External | Developer | Debug,
 #else
-      Extreme = Errors | Warnings  | Runtime  | Parameters  | Statistics  | Timings | External,
+      Extreme = Errors | Warnings  | Runtime  | Parameters  | Statistics  | Timings | External | Developer,
 #endif
       Default = High, // This is the default of print() methods. For VerboseObject, another default is set by VerboseObject::globalVerbLevel_ // TODO: move it to the VerboseObject class
 

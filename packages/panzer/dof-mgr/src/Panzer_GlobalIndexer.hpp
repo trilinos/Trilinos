@@ -336,10 +336,12 @@ protected:
      // allocate for the kokkos size
      Kokkos::View<panzer::LocalOrdinal**,Kokkos::LayoutRight,PHX::Device> localIDs_k 
        = Kokkos::View<panzer::LocalOrdinal**,Kokkos::LayoutRight,PHX::Device>("ugi:localIDs_",localIDs.size(),max);
+     auto localIDs_h = Kokkos::create_mirror_view(localIDs_k);
      for(std::size_t i=0;i<localIDs.size();i++) {
        for(std::size_t j=0;j<localIDs[i].size();j++)
-         localIDs_k(i,j) = localIDs[i][j];
+         localIDs_h(i,j) = localIDs[i][j];
      }
+     Kokkos::deep_copy(localIDs_k, localIDs_h);
 
      // store in Kokkos type
      localIDs_k_ = localIDs_k;

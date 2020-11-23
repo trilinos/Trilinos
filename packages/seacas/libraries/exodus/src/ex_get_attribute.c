@@ -60,7 +60,7 @@ static int ex__get_varid(int exoid, ex_entity_type obj_type, ex_entity_id id)
   int varid  = 0;
 
   if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
-    EX_FUNC_LEAVE(EX_FATAL);
+    return (EX_FATAL);
   }
 
   /* First, locate index of this objects id `obj_type` id array */

@@ -79,7 +79,7 @@ public:
     /// Get the stepper
     virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const = 0;
     /// Return a copy of the Tempus ParameterList
-    virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList()	= 0;
+    virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList() = 0;
     virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) = 0;
     /// Returns the SolutionHistory for this Integrator
     virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const = 0;

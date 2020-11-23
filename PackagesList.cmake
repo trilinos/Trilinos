@@ -133,7 +133,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Piro                  packages/piro                     PT
   Panzer                packages/panzer                   PT
   CTrilinos             packages/CTrilinos                ST # Switched to ST to speed up checkin testing
-#  ForTrilinos           packages/ForTrilinos              EX
   PyTrilinos            packages/PyTrilinos               ST
   WebTrilinos           packages/WebTrilinos              EX # Should be ST
   NewPackage            packages/new_package              EX # Should be ST
@@ -164,7 +163,6 @@ TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Avatar)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(MOOCHO)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Sundance)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(CTrilinos)
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(ForTrilinos)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Optika)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Mesquite)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(WebTrilinos)

@@ -138,7 +138,7 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
   char      tmp_title[2048];
 
   if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
-    EX_FUNC_LEAVE(EX_FATAL);
+    return (EX_FATAL);
   }
 
   if (ret_char) {

@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
   Ioss::Init::Initializer io;
 
   if (interFace.show_config()) {
-    Ioss::IOFactory::show_configuration();
+    Ioss::OUTPUT() << "\n" << Ioss::IOFactory::show_configuration();
     exit(EXIT_SUCCESS);
   }
 

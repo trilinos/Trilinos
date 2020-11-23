@@ -47,7 +47,6 @@ SET(ATDM_SE_PACKAGE_DISABLES
   Stokhos
   MOOCHO
   PyTrilinos
-  ForTrilinos
   TrilinosCouplings
   Pike
   )

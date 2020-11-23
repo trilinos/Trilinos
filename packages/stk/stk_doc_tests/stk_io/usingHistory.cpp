@@ -138,7 +138,7 @@ TEST(StkMeshIoBrokerHowTo, writeHistory)
       region.begin_state(2);
       
       Ioss::NameList fields;
-      region.field_describe(Ioss::Field::TRANSIENT, &fields);
+      region.field_describe(Ioss::Field::REDUCTION, &fields);
       EXPECT_EQ(fields.size(), 4u);
       
       std::vector<double> values;

@@ -44,7 +44,6 @@ BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
-  singletons :0 (phase)
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
@@ -93,6 +92,8 @@ Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
@@ -143,7 +144,6 @@ BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
-  singletons :0 (phase)
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
@@ -195,6 +195,8 @@ Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
@@ -245,7 +247,6 @@ BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
-  singletons :0 (phase)
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
@@ -297,6 +298,8 @@ Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0
@@ -347,7 +350,6 @@ BuildAggregates (Phase 1 (main))
 BuildAggregates (Phase 2a (secondary))
 BuildAggregates (Phase 2b (expansion))
 BuildAggregates (Phase 3 (cleanup))
-  singletons :0 (phase)
 aggregation: max agg size = -1   [default]
 aggregation: min agg size = 1   [unused]
 aggregation: max selected neighbors = 0   [unused]
@@ -399,6 +401,8 @@ Computing Ac (MueLu::RAPFactory)
 transpose: use implicit = 0   [default]
 rap: triple product = 0   [default]
 rap: fix zero diagonals = 0   [default]
+rap: fix zero diagonals threshold = 0   [default]
+rap: fix zero diagonals replacement = 1   [default]
 rap: relative diagonal floor = {}   [default]
 CheckMainDiagonal = 0   [default]
 RepairMainDiagonal = 0

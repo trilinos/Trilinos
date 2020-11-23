@@ -1419,16 +1419,16 @@ setStepperValues(
       + stepper->getStepperType() + "').");
     stepper->setStepperType(stepperType);
 
-    stepper->setUseFSAL(
-      stepperPL->get<bool>("Use FSAL", stepper->getUseFSALDefault()));
+    if ( stepperPL->isParameter("Use FSAL") )
+      stepper->setUseFSAL(stepperPL->get<bool>("Use FSAL"));
 
-    stepper->setICConsistency(
-      stepperPL->get<std::string>("Initial Condition Consistency",
-                                  stepper->getICConsistencyDefault()));
+    if ( stepperPL->isParameter("Initial Condition Consistency") )
+      stepper->setICConsistency(
+        stepperPL->get<std::string>("Initial Condition Consistency"));
 
-    stepper->setICConsistencyCheck(
-      stepperPL->get<bool>("Initial Condition Consistency Check",
-                           stepper->getICConsistencyCheckDefault()));
+    if ( stepperPL->isParameter("Initial Condition Consistency Check") )
+      stepper->setICConsistencyCheck(
+        stepperPL->get<bool>("Initial Condition Consistency Check"));
   }
 }
 
@@ -1598,8 +1598,8 @@ setStepperRKValues(
     stepperPL->validateParametersAndSetDefaults(
                                             *stepper->getValidParameters());
     setStepperValues(stepper, stepperPL);
-    stepper->setUseEmbedded(
-      stepperPL->get<bool>("Use Embedded",stepper->getUseEmbeddedDefault()));
+    if ( stepperPL->isParameter("Use Embedded") )
+      stepper->setUseEmbedded(stepperPL->get<bool>("Use Embedded"));
   }
 }
 
@@ -1616,7 +1616,6 @@ setStepperSolverValues(
   auto subPL = sublist(defaultSolverPL, "NOX");
   solver->setParameterList(subPL);
   if (stepperPL != Teuchos::null) {
-    std::cout << "stepperPL = \n" << *stepperPL << "\n" << std::endl;
     std::string solverName = stepperPL->get<std::string>("Solver Name");
     if ( stepperPL->isSublist(solverName) ) {
       auto solverPL = Teuchos::parameterList();
@@ -1646,10 +1645,10 @@ setStepperDIRKValues(
     //stepperPL->validateParametersAndSetDefaults(
     //                                      *stepper->getValidParameters());
     setStepperValues(stepper, stepperPL);
-    stepper->setUseEmbedded(
-      stepperPL->get<bool>("Use Embedded",stepper->getUseEmbeddedDefault()));
-    stepper->setZeroInitialGuess(
-      stepperPL->get<bool>("Zero Initial Guess", false));
+    if ( stepperPL->isParameter("Use Embedded") )
+      stepper->setUseEmbedded(stepperPL->get<bool>("Use Embedded"));
+    if ( stepperPL->isParameter("Zero Initial Guess") )
+      stepper->setZeroInitialGuess(stepperPL->get<bool>("Zero Initial Guess"));
   }
 }
 

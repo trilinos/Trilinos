@@ -13,9 +13,6 @@
 #include "Tempus_StepperRKBase.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  #include "Tempus_StepperRKObserverComposite.hpp"
-#endif
 
 
 namespace Tempus {
@@ -155,13 +152,6 @@ public:
 
   /// \name Basic stepper methods
   //@{
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
-
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperObserver_; }
-#endif
     /// Initialize after construction and changing input parameters.
     virtual void initialize();
 
@@ -233,17 +223,6 @@ protected:
   virtual void setupDefault();
 
   /// Setup for constructor.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  virtual void setup(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& wrapperModel,
-    const Teuchos::RCP<StepperRKObserver<Scalar> >& obs,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    bool useEmbedded,
-    bool zeroInitialGuess);
-#endif
   virtual void setup(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& wrapperModel,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
@@ -258,10 +237,6 @@ protected:
 
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  Teuchos::RCP<StepperRKObserverComposite<Scalar> >      stepperObserver_;
-#endif
 
   bool resetGuess_ = true;
 };

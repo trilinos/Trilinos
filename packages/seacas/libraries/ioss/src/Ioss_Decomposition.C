@@ -180,7 +180,8 @@ namespace Ioss {
       Utils::check_set_bool_property(props, "ENABLE_TRACING", m_showProgress);
     }
 
-    if (props.exists("PARMETIS_COMMON_NODE_COUNT") && props.get("PARMETIS_COMMON_NODE_COUNT").get_int() > 0) {
+    if (props.exists("PARMETIS_COMMON_NODE_COUNT") &&
+        props.get("PARMETIS_COMMON_NODE_COUNT").get_int() > 0) {
       m_commonNodeCount = props.get("PARMETIS_COMMON_NODE_COUNT").get_int();
     }
   }
@@ -714,11 +715,12 @@ namespace Ioss {
                                                     idx_t *element_dist, idx_t *pointer,
                                                     idx_t *adjacency, idx_t *elem_partition)
   {
-    idx_t  wgt_flag     = 0; // No weights
-    idx_t *elm_wgt      = nullptr;
-    idx_t  ncon         = 1;
-    idx_t  num_flag     = 0; // Use C-based numbering
-    idx_t common_nodes = m_commonNodeCount > 0 ? m_commonNodeCount : get_common_node_count(el_blocks, m_comm);
+    idx_t  wgt_flag = 0; // No weights
+    idx_t *elm_wgt  = nullptr;
+    idx_t  ncon     = 1;
+    idx_t  num_flag = 0; // Use C-based numbering
+    idx_t  common_nodes =
+        m_commonNodeCount > 0 ? m_commonNodeCount : get_common_node_count(el_blocks, m_comm);
 
     idx_t               nparts = m_processorCount;
     idx_t               ndims  = m_spatialDimension;
@@ -917,9 +919,9 @@ namespace Ioss {
       }
       std::vector<std::pair<int, int64_t>> export_map;
       export_map.reserve(num_export);
-      int64_t *export_glob = reinterpret_cast<int64_t *>(export_global_ids);
+      auto *export_glob = reinterpret_cast<int64_t *>(export_global_ids);
       for (int i = 0; i < num_export; i++) {
-        export_map.push_back(std::make_pair(export_procs[i], export_glob[i]));
+        export_map.emplace_back(export_procs[i], export_glob[i]);
       }
 
       std::sort(export_map.begin(), export_map.end());
@@ -931,7 +933,7 @@ namespace Ioss {
         exportElementCount[elem_count.first]++;
       }
 
-      int64_t *import_glob = reinterpret_cast<int64_t *>(import_global_ids);
+      auto *import_glob = reinterpret_cast<int64_t *>(import_global_ids);
       for (int i = 0; i < num_import; i++) {
         importElementMap.push_back(import_glob[i]);
         importElementCount[import_procs[i]]++;
@@ -965,7 +967,7 @@ namespace Ioss {
     }
     else {
       assert(global_id_size == 2);
-      int64_t *export_glob = reinterpret_cast<int64_t *>(export_global_ids);
+      auto *export_glob = reinterpret_cast<int64_t *>(export_global_ids);
 
       for (size_t i = 0; i < export_count; i++) {
         // flag all elements to be exported...

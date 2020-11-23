@@ -74,7 +74,6 @@ ENDIF()
 TRIBITS_ADD_LIBRARY(
   stk_util_unit_test_support
   NOINSTALLHEADERS ${HEADERS}
-  DEPLIBS
   SOURCES ${SOURCES}
   )
 

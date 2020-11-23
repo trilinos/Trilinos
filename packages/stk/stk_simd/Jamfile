@@ -63,7 +63,6 @@ local installed-end-user-files =
 local installed-developer-files = 
   stk_simd_unit 
   stk_simd_old_unit 
-  stk_disimd_unit
   stk_simd_docs_tests
   ;
 
@@ -140,7 +139,7 @@ exe stk_simd_unit
   :
     [ glob $(stk_simd-root)/../stk_unit_tests/stk_simd/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    /sierra/stk_math//stk_math_headers
+    /sierra/stk_math//stk_math
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
   ;
@@ -148,73 +147,23 @@ exe stk_simd_unit
 exe stk_simd_old_unit
   :
     [ glob $(stk_simd-root)/../stk_unit_tests/stk_simd_old/*.cpp ]
-    /sierra/stk_math//stk_math_headers
+    /sierra/stk_math//stk_math
     /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/trilinos//kokkoscore
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
-    <target-os>linux,<toolset>gcc,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>gcc,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>clang,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>clang,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>intel,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>intel,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>pgi,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>pgi,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>vacpp,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>vacpp,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>cray,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>cray,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>nvidia,<runtime-link>shared:<linkflags>"-Xlinker --export-dynamic"
-    <target-os>linux,<toolset>nvidia,<runtime-link>shared:<linkflags>"-Xlinker --export-dynamic"
-    <target-os>darwin,<runtime-link>shared:<linkflags>"-Wl,-dynamic"
-  ;
-
-exe stk_disimd_unit
-  :
-    [ glob $(stk_simd-root)/../stk_unit_tests/stk_disimd/*.cpp ]
-    /sierra/stk_math//stk_math_headers
-    /tpl/trilinos//kokkoscore
-    /tpl/gtest//gtest
-  : <tag>@sierra-exec-tag
-    <target-os>linux,<toolset>gcc,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>gcc,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>clang,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>clang,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>intel,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>intel,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>pgi,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>pgi,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>vacpp,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>vacpp,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>cray,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>cray,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>nvidia,<runtime-link>shared:<linkflags>"-Xlinker --export-dynamic"
-    <target-os>linux,<toolset>nvidia,<runtime-link>shared:<linkflags>"-Xlinker --export-dynamic"
-    <target-os>darwin,<runtime-link>shared:<linkflags>"-Wl,-dynamic"
+    $(export-dynamic)
   ;
 
 exe stk_simd_docs_tests
   :
     [ glob $(stk_simd-root)/../stk_doc_tests/stk_simd/*.cpp ]
-    /sierra/stk_math//stk_math_headers
+    /sierra/stk_math//stk_math
+    /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/trilinos//kokkoscore
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
     <include>$(stk_simd-root)/../stk_doc_tests/stk_simd
-    <target-os>linux,<toolset>gcc,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>gcc,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>clang,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>clang,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>intel,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>intel,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>pgi,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>pgi,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>vacpp,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>vacpp,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>cray,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>cray,<runtime-link>shared:<linkflags>-Wl,-E
-    <target-os>linux,<toolset>nvidia,<runtime-link>shared:<linkflags>"-Xlinker --export-dynamic"
-    <target-os>linux,<toolset>nvidia,<runtime-link>shared:<linkflags>"-Xlinker --export-dynamic"
-    <target-os>darwin,<runtime-link>shared:<linkflags>"-Wl,-dynamic"
+    $(export-dynamic)
   ;

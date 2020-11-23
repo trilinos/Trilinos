@@ -104,6 +104,10 @@ postRegistrationSetup(typename Traits::SetupData d,
 					 gatherFieldNormals.extent(0),
 					 gatherFieldNormals.extent(1),
 					 gatherFieldNormals.extent(2));
+
+  const shards::CellTopology & parentCell = *basis->getCellTopology();
+  int sideDim = parentCell.getDimension()-1;
+  Intrepid2::CellTools<PHX::Device>::getSubcellParametrization(sideParam, sideDim, parentCell);
 }
 
 // **********************************************************************
@@ -117,16 +121,18 @@ evaluateFields(typename Traits::EvalData workset)
 
   const shards::CellTopology & parentCell = *basis->getCellTopology();
   int cellDim = parentCell.getDimension();
+  int sideDim = parentCell.getDimension()-1;
   int numFaces = gatherFieldNormals.extent(1);
 
   // allocate space that is sized correctly for AD
-  auto refEdges = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"ref_edges", 2, cellDim);
-  auto phyEdges = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"phy_edges", 2, cellDim);
+  auto refEdges = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"ref_edges", sideDim, cellDim);
+  auto phyEdges = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"phy_edges", sideDim, cellDim);
 
   const WorksetDetails & details = workset;
   const auto worksetJacobians = pointValues.jac.get_view();
 
   // Loop over workset faces and edge points
+  //TODO parallel_for
   for(index_t c=0;c<workset.num_cells;c++) {
     int faceOrts[6] = {};
     orientations->at(details.cell_local_ids[c]).getFaceOrientation(faceOrts, numFaces);
@@ -135,12 +141,11 @@ evaluateFields(typename Traits::EvalData workset)
       auto ortEdgeTan_U = Kokkos::subview(refEdges, 0, Kokkos::ALL());
       auto ortEdgeTan_V = Kokkos::subview(refEdges, 1, Kokkos::ALL());
 
-      // Apply parent cell Jacobian to ref. edge tangent
-      Intrepid2::Orientation::getReferenceFaceTangents(ortEdgeTan_U,
-                                                       ortEdgeTan_V,
-                                                       pt,
-                                                       parentCell,
-                                                       faceOrts[pt]);
+      Intrepid2::Impl::OrientationTools::getRefSubcellTangents(refEdges,
+          sideParam,
+          parentCell.getKey(sideDim,pt),
+          pt,
+          faceOrts[pt]);
 
       auto phyEdgeTan_U = Kokkos::subview(phyEdges, 0, Kokkos::ALL());
       auto phyEdgeTan_V = Kokkos::subview(phyEdges, 1, Kokkos::ALL());

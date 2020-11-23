@@ -51,6 +51,7 @@
 
 #include "Intrepid2_Basis.hpp"
 #include "Intrepid2_HGRAD_TRI_Cn_FEM_ORTH.hpp"
+#include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
 
 #include "Intrepid2_PointTools.hpp"
 #include "Teuchos_LAPACK.hpp"
@@ -84,6 +85,7 @@ namespace Intrepid2 {
        \brief See Intrepid2::Basis_HGRAD_TRI_Cn_FEM
     */
     class Basis_HGRAD_TRI_Cn_FEM {
+
     public:
       typedef struct Triangle<3> cell_topology_type;
       /**
@@ -197,6 +199,9 @@ namespace Intrepid2 {
         coefficients of the nodal basis in terms of phis_ */
     Kokkos::DynRankView<scalarType,ExecSpaceType> vinv_;
 
+    /** \brief type of lattice used for creating the DoF coordinates  */
+    EPointType pointType_;
+
   public:
     /** \brief  Constructor.
      */
@@ -293,6 +298,24 @@ namespace Intrepid2 {
       }
     }
     
+    /** \brief returns the basis associated to a subCell.
+
+        The bases of the subCell are the restriction to the subCell
+        of the bases of the parent cell.
+        \param [in] subCellDim - dimension of subCell
+        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+     */
+    BasisPtr<ExecSpaceType,outputValueType,pointValueType>
+      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
+      if(subCellDim == 1) {
+        return Teuchos::rcp(new
+            Basis_HGRAD_LINE_Cn_FEM<ExecSpaceType,outputValueType,pointValueType>
+            (this->basisDegree_, pointType_));
+      }
+      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
+    }
+
   };
 
 }// namespace Intrepid2

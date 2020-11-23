@@ -20,7 +20,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       structured_unstructured_1dof.xml
     )
 
-  TRIBITS_ADD_TEST(
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
     RegionExampleDriver
     NAME "Structured_Region_Example_Elasticity3D"
     ARGS "--linAlgebra=Tpetra --xml=elasticity_3d.xml --matrixType=Elasticity3D --nx=28 --ny=28 --nz=28 --smootherIts=2"
@@ -28,7 +28,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     NUM_MPI_PROCS 4
     )
 
-  TRIBITS_ADD_TEST(
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
     RegionExampleDriver
     NAME "Structured_Region_Example_Poisson3D_27pt_stencil"
     ARGS "--linAlgebra=Tpetra --xml=poisson_3d.xml --matrixType=Brick3D --nx=28 --ny=28 --nz=28--smootherIts=2"
@@ -36,7 +36,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     NUM_MPI_PROCS 4
     )
 
-  TRIBITS_ADD_TEST(
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
     RegionExampleDriver
     NAME "Structured_Region_Example_Poisson3D_27pt_stencil_AMG"
     ARGS "--linAlgebra=Tpetra --xml=poisson_3d.xml --matrixType=Brick3D --nx=50 --ny=50 --nz=50 --smootherIts=2 --coarseSolverType=amg --coarseAmgXml=amg_1dof.xml"
@@ -44,7 +44,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     NUM_MPI_PROCS 4
     )
 
-  TRIBITS_ADD_TEST(
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
     RegionExampleDriver
     NAME "Structured_Unstructured_Region_Example_Poisson3D_27pt_stencil"
     ARGS "--linAlgebra=Tpetra --xml=structured_unstructured_1dof.xml --matrixType=Brick3D --nx=28 --ny=28 --nz=28 --smootherIts=2 --unstructured={1,2}"

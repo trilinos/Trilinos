@@ -1,12 +1,16 @@
 #include "stk_io/IossBridge.hpp"
 #include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
+#include "stk_mesh/base/Types.hpp"
 #include "stk_tools/mesh_tools/DisconnectBlocks.hpp"
-#include "stk_tools/mesh_tools/ConvexGroup.hpp"
 #include "stk_util/parallel/CommSparse.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
 #include "stk_util/environment/RuntimeWarning.hpp"
 #include <algorithm>
 #include <map>
+
+#include <string>
+#include <sstream>
 
 namespace stk {
 namespace tools {
@@ -19,8 +23,6 @@ public:
   {
     set_block_pairs(disconnectGroup, nodeMapValue, blockPairsToReconnect, info);
     set_parts();
-//    ThrowRequire(groupBlockPairs.empty() == blockPairsToReconnect.empty());
-//    ThrowRequire(groupBlocks.empty() == blockPairsToReconnect.empty());
     set_id();
   }
 
@@ -120,10 +122,10 @@ void create_new_node_map_entry(const stk::mesh::BulkData& bulk, const stk::mesh:
 
   add_to_sharing_lookup(bulk, node, info.sharedInfo);
   if (needToCloneNode && (bulk.state(node) != stk::mesh::Created)) {
-    DisconnectGroup group(bulk, &secondBlock, node);
+    DisconnectGroup group(bulk, blockPair, node);
     info.clonedNodeMap[NodeMapKey(node, group)] = NodeMapValue(bulk, node);
   } else {
-    DisconnectGroup group(bulk, &secondBlock, node);
+    DisconnectGroup group(bulk, blockPair, node);
     info.originalNodeMap[NodeMapKey(node, group)] = NodeMapValue(bulk, node);
   }
 }
@@ -261,44 +263,60 @@ void update_disconnected_entity_relation(stk::mesh::BulkData& bulk, stk::mesh::E
   }
 }
 
+void disconnect_sub_rank(stk::mesh::BulkData& bulk, stk::mesh::EntityRank rank, stk::mesh::Entity newNode,
+                         const stk::mesh::Entity oldNode, stk::mesh::Entity elem)
+{
+  const stk::mesh::Entity* subEntities = bulk.begin(elem, rank);
+  unsigned numSubEntities = bulk.num_connectivity(elem, rank);
+  for(unsigned i = 0; i < numSubEntities; i++) {
+    update_disconnected_entity_relation(bulk, oldNode, newNode, subEntities[i]);
+  }
+}
+
+void disconnect_sub_ranks(stk::mesh::BulkData& bulk, stk::mesh::Entity newNode,
+                          const stk::mesh::Entity oldNode, stk::mesh::Entity elem)
+{
+  disconnect_sub_rank(bulk, bulk.mesh_meta_data().side_rank(), newNode, oldNode, elem);
+
+  if(bulk.mesh_meta_data().side_rank() != stk::topology::EDGE_RANK) {
+    disconnect_sub_rank(bulk, stk::topology::EDGE_RANK, newNode, oldNode, elem);
+  }
+}
+
 void disconnect_elements(stk::mesh::BulkData& bulk, const NodeMapKey& key, NodeMapValue& value, LinkInfo& info)
 {
   const DisconnectGroup& group = key.disconnectedGroup;
+
   if (group.is_active()) {
     const stk::mesh::Entity node = key.parentNode;
+    stk::mesh::EntityId newNodeId = value.newNodeId;
+    stk::mesh::Entity newNode = bulk.declare_node(newNodeId);
+    value.boundaryNode = newNode;
+    bulk.copy_entity_fields(node, newNode);
 
     for (stk::mesh::Entity elem : group.get_entities()) {
-      stk::mesh::EntityId newNodeId = value.newNodeId;
-      stk::mesh::Entity newNode = bulk.declare_node(newNodeId);
-      value.boundaryNode = newNode;
-      bulk.copy_entity_fields(node, newNode);
-
       for (int sharingProc : value.sharingProcs) {
         bulk.add_node_sharing(newNode, sharingProc);
       }
       update_disconnected_entity_relation(bulk, node, newNode, elem);
-      const stk::mesh::Entity* faces = bulk.begin(elem, bulk.mesh_meta_data().side_rank());
-      unsigned numFaces = bulk.num_connectivity(elem, bulk.mesh_meta_data().side_rank());
-      for(unsigned i = 0; i < numFaces; i++) {
-        update_disconnected_entity_relation(bulk, node, newNode, faces[i]);
-      }
+
+      disconnect_sub_ranks(bulk, newNode, node, elem);
+
       if (bulk.num_elements(node) == 0 && !info.preserveOrphans) {
         bulk.destroy_entity(node);
       }
     }
+
     group.set_active(false);
   }
 }
 
 void disconnect_elements(stk::mesh::BulkData & bulk, const BlockPair & blockPair, LinkInfo& info)
 {
-  const stk::mesh::Part & blockToDisconnect = *blockPair.second;
-
   for (auto nodeMapEntryIt = info.clonedNodeMap.begin(); nodeMapEntryIt != info.clonedNodeMap.end(); ++nodeMapEntryIt) {
     const DisconnectGroup& disconnectedGroup = nodeMapEntryIt->first.disconnectedGroup;
-    const stk::mesh::ConstPartVector& parts = disconnectedGroup.get_parts();
 
-    if (parts.size() == 1u && parts[0]->mesh_meta_data_ordinal() == blockToDisconnect.mesh_meta_data_ordinal()) {
+    if (disconnectedGroup.has_block_pair() && disconnectedGroup.get_block_pair() == blockPair) {
       disconnect_elements(bulk, nodeMapEntryIt->first, nodeMapEntryIt->second, info);
     }
   }
@@ -346,6 +364,26 @@ void update_reconnected_entity_relation(stk::mesh::BulkData& bulk, stk::mesh::En
   }
 }
 
+void reconnect_sub_rank(stk::mesh::BulkData& bulk, stk::mesh::EntityRank rank, stk::mesh::Entity newNode,
+                        const stk::mesh::Entity reconnectNode, stk::mesh::Entity elem)
+{
+  const stk::mesh::Entity* subEntities = bulk.begin(elem, rank);
+  unsigned numSubEntities = bulk.num_connectivity(elem, rank);
+  for(unsigned i = 0; i < numSubEntities; i++) {
+    update_reconnected_entity_relation(bulk, newNode, reconnectNode, subEntities[i]);
+  }
+}
+
+void reconnect_sub_ranks(stk::mesh::BulkData& bulk, stk::mesh::Entity newNode,
+                        const stk::mesh::Entity reconnectNode, stk::mesh::Entity elem)
+{
+  reconnect_sub_rank(bulk, bulk.mesh_meta_data().side_rank(), newNode, reconnectNode, elem);
+
+  if(bulk.mesh_meta_data().side_rank() != stk::topology::EDGE_RANK) {
+    reconnect_sub_rank(bulk, stk::topology::EDGE_RANK, newNode, reconnectNode, elem);
+  }
+}
+
 void reconnect_elements(stk::mesh::BulkData& bulk, const BlockPair & blockPair, const NodeMapKey& key, const NodeMapValue& value,
                         LinkInfo& info)
 {
@@ -367,12 +405,7 @@ void reconnect_elements(stk::mesh::BulkData& bulk, const BlockPair & blockPair, 
 
   for (stk::mesh::Entity elem : disconnectedGroup.get_entities()) {
     update_reconnected_entity_relation(bulk, newNode, reconnectNode, elem);
-
-    const stk::mesh::Entity* faces = bulk.begin(elem, bulk.mesh_meta_data().side_rank());
-    unsigned numFaces = bulk.num_connectivity(elem, bulk.mesh_meta_data().side_rank());
-    for(unsigned i = 0; i < numFaces; i++) {
-      update_reconnected_entity_relation(bulk, newNode, reconnectNode, faces[i]);
-    }
+    reconnect_sub_ranks(bulk, newNode, reconnectNode, elem);
   }
 }
 
@@ -430,62 +463,29 @@ bool is_in_node_map(NodeMapType& nodeMap, const DisconnectGroup& group)
   return false;
 }
 
+
 bool can_be_reconnected(const DisconnectGroup& disconnectedGroup, const NodeMapValue& nodeMapValue, const BlockPair& blockPair, LinkInfo& info)
 {
-  stk::mesh::Entity currentEntity = nodeMapValue.boundaryNode;
+  return can_be_reconnected(disconnectedGroup, nodeMapValue, blockPair, nodeMapValue.boundaryNode, info);
+}
+
+bool can_be_reconnected(const DisconnectGroup& disconnectedGroup, const NodeMapValue& nodeMapValue, const BlockPair& blockPair, stk::mesh::Entity currentEntity, LinkInfo& info)
+{
   const stk::mesh::BulkData& bulk = disconnectedGroup.get_bulk();
+
 
   if(!bulk.is_valid(currentEntity)) { return false; }
 
   const stk::mesh::PartVector& blockMembership = nodeMapValue.oldBlockMembership;
-  const stk::mesh::ConstPartVector& parts = disconnectedGroup.get_parts();
   bool isOriginalMember = false;
-  bool isInEitherBlockPair = bulk.bucket(currentEntity).member(*blockPair.first) || bulk.bucket(currentEntity).member(*blockPair.second);
+  bool isInOneOfBlockPair = bulk.bucket(currentEntity).member(*blockPair.first) != bulk.bucket(currentEntity).member(*blockPair.second);
 
-  if (parts.size() == 1u && isInEitherBlockPair) {
+  if (disconnectedGroup.has_block_pair() && isInOneOfBlockPair) {
     isOriginalMember = std::binary_search(blockMembership.begin(), blockMembership.end(), blockPair.first, stk::mesh::PartLess()) &&
                        std::binary_search(blockMembership.begin(), blockMembership.end(), blockPair.second, stk::mesh::PartLess());
   }
+
   return isOriginalMember;
-}
-
-bool should_be_reconnected(const DisconnectGroup& disconnectedGroup, const NodeMapValue& nodeMapValue, const stk::mesh::Part& blockToReconnect,
-                           const stk::mesh::Part& srcBlock, LinkInfo& info)
-{
-  const stk::mesh::PartVector& blockMembership = nodeMapValue.oldBlockMembership;
-  const stk::mesh::ConstPartVector& parts = disconnectedGroup.get_parts();
-  bool isOriginalMember = false;
-
-  if (parts.size() == 1u && parts[0]->mesh_meta_data_ordinal() == blockToReconnect.mesh_meta_data_ordinal()) {
-    isOriginalMember = std::binary_search(blockMembership.begin(), blockMembership.end(), &srcBlock, stk::mesh::PartLess());
-  }
-  return isOriginalMember;
-}
-
-bool should_update_sharing_info(NodeMapType& nodeMap, const DisconnectGroup& group,
-                                const stk::mesh::Part& blockToReconnect, LinkInfo& info)
-{
-  for(auto it = nodeMap.begin(); it != nodeMap.end(); ++it){
-    if(it->first.disconnectedGroup.get_node() == group.get_node()) {
-      const stk::mesh::ConstPartVector& parts = it->first.disconnectedGroup.get_parts();
-      if (parts.size() == 1u && parts[0]->mesh_meta_data_ordinal() != blockToReconnect.mesh_meta_data_ordinal()) {
-        const stk::mesh::Part* block1 = parts[0];
-        const stk::mesh::Part* block2 = &blockToReconnect;
-
-        if(blockToReconnect.mesh_meta_data_ordinal() < parts[0]->mesh_meta_data_ordinal()) {
-          block1 = &blockToReconnect;
-          block2 = parts[0];
-        }
-
-        stk::mesh::Part* blockPart1 = const_cast<stk::mesh::Part*>(block1);
-        stk::mesh::Part* blockPart2 = const_cast<stk::mesh::Part*>(block2);
-        if(can_be_reconnected(it->first.disconnectedGroup, it->second, BlockPair(blockPart1, blockPart2), info)) {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
 }
 
 void sanitize_node_map(NodeMapType& nodeMap, LinkInfo& info)
@@ -537,7 +537,6 @@ void unpack_reconnect_node_information(stk::mesh::BulkData& bulk, stk::CommSpars
       ReconnectMapKey mapKey = std::make_pair(referenceNodeId, groupId);
       auto reconnectMapIter = info.reconnectMap.find(mapKey);
 
-      // if(reconnectMapIter != info.reconnectMap.end()) {continue;}
       ThrowRequire(reconnectMapIter != info.reconnectMap.end());
 
       reconnectMapIter->second.reconnectNodeId = std::min(reconnectMapIter->second.reconnectNodeId, reconnectNodeId);
@@ -627,6 +626,7 @@ void initialize_reconnect_node_id_info_for_node_entry(stk::mesh::BulkData& bulk,
   ReconnectGroup reconnectGroup = get_group_for_reconnect_node(nodeMapEntryIt->first.disconnectedGroup, nodeMapEntryIt->second, blockPairsToReconnect, info);
   unsigned groupId = reconnectGroup.get_id();
   nodeMapEntryIt->second.reconnectGroupId = groupId;
+
   ReconnectMapKey mapKey = std::make_pair(referenceNodeId, groupId);
   auto reconnectMapIter = info.reconnectMap.find(mapKey);
 
@@ -823,22 +823,6 @@ void update_reconnect_node_sharing(stk::mesh::BulkData& bulk, const std::vector<
   }
 }
 
-const DisconnectGroup* get_group_for_block(NodeMapType& nodeMap, const stk::mesh::Part& blockPart, stk::mesh::Entity node)
-{
-  const DisconnectGroup* group = nullptr;
-
-  for (NodeMapType::iterator nodeMapEntryIt = nodeMap.begin(); nodeMapEntryIt != nodeMap.end(); ++nodeMapEntryIt) {
-    const impl::DisconnectGroup& disconnectGroup = nodeMapEntryIt->first.disconnectedGroup;
-    const stk::mesh::ConstPartVector& parts = disconnectGroup.get_parts();
-
-    if (parts.size() == 1u && parts[0]->mesh_meta_data_ordinal() == blockPart.mesh_meta_data_ordinal() &&
-        node == disconnectGroup.get_node()) {
-      group = &disconnectGroup;
-    }
-  }
-  return group;
-}
-
 void reconnect_block_pair(stk::mesh::BulkData& bulk, const BlockPair & blockPair, impl::LinkInfo& info)
 {
   const stk::mesh::Part & srcBlock = *blockPair.first;
@@ -848,7 +832,7 @@ void reconnect_block_pair(stk::mesh::BulkData& bulk, const BlockPair & blockPair
     const impl::DisconnectGroup& disconnectedGroup = nodeMapEntryIt->first.disconnectedGroup;
 
     bool shouldReconnect = can_be_reconnected(disconnectedGroup, nodeMapEntryIt->second, blockPair, info);
-    if(shouldReconnect) {
+    if(shouldReconnect && bulk.is_valid(nodeMapEntryIt->second.boundaryNode)) {
       impl::reconnect_elements(bulk, blockPair, nodeMapEntryIt->first, nodeMapEntryIt->second, info);
     }
   }
@@ -909,15 +893,7 @@ void clean_up_aura(stk::mesh::BulkData& bulk, LinkInfo& info)
 void disconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPair>& blockPairsToDisconnect,
                             LinkInfo& info)
 {
-  if(blockPairsToDisconnect.empty()) {
-    stk::RuntimeWarningP0() << "No block pairs to disconnect" << std::endl;
-  }
-
   bulk.modification_begin();
-
-  if((bulk.parallel_rank() == 0) && (info.debugLevel > 0)) {
-    std::cout << "Adding nodes for disconnect" << std::endl;
-  }
 
   for (size_t i = 0; i < blockPairsToDisconnect.size(); ++i) {
     add_nodes_to_disconnect(bulk, blockPairsToDisconnect[i], info);
@@ -941,8 +917,6 @@ void disconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPa
   }
 
   clean_up_aura(bulk, info);
-
-  info.flush();
 
   bulk.modification_end();
 
@@ -969,6 +943,29 @@ stk::mesh::EntityVector extract_nodes(const stk::mesh::BulkData& bulk, LinkInfo&
   return nodes;
 }
 
+stk::mesh::PartVector get_block_parts(const BlockPairVector& blocksToDisconnect)
+{
+  stk::mesh::PartVector blockParts;
+
+  for(const BlockPair& blockPair : blocksToDisconnect) {
+    stk::util::insert_keep_sorted_and_unique(blockPair.first, blockParts);
+    stk::util::insert_keep_sorted_and_unique(blockPair.second, blockParts);
+  }
+
+  return blockParts;
+}
+
+stk::mesh::EntityVector get_affected_nodes(const stk::mesh::BulkData& bulk, const BlockPairVector& blocksToDisconnect)
+{
+  stk::mesh::EntityVector nodes;
+  stk::mesh::PartVector blockParts = get_block_parts(blocksToDisconnect);
+  stk::mesh::Selector partSelector = stk::mesh::selectUnion(blockParts);
+
+  stk::mesh::get_selected_entities(partSelector, bulk.buckets(stk::topology::NODE_RANK), nodes);
+
+  return nodes;
+}
+
 void reconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPair>& blockPairsToReconnect,
                            LinkInfo& info)
 {
@@ -976,24 +973,15 @@ void reconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPai
 
   sanitize_node_map(info.originalNodeMap, info);
 
-  info.flush();
-
   determine_local_reconnect_node_id(bulk, blockPairsToReconnect, info);
-
-  info.flush();
 
   update_reconnect_node_sharing(bulk, blockPairsToReconnect, info);
 
-  info.flush();
-
   communicate_reconnect_node_information(bulk, info);
-
-  info.flush();
 
   for(const BlockPair & blockPair : blockPairsToReconnect) {
     reconnect_block_pair(bulk, blockPair, info);
   }
-  info.flush();
 
   clean_up_aura(bulk, info);
 

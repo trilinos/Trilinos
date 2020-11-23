@@ -8,8 +8,9 @@ source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
 # Make adjustments for mini build of Trilinos for SPARC
 if atdm_match_buildname_keyword mini ; then
   echo "This is a mini build of Trilinos for SPARC!"
-  export ATDM_CONFIG_CONFIGURE_OPTIONS_FILES=cmake/std/atdm/apps/sparc/SPARC_MiniTrilinos_PACKAGES.cmake,cmake/std/atdm/ATDMDevEnv.cmake
-  # NOTE: Above, we list SPARC_MiniTrilinos_PACKAGES.cmake before
+  export ATDM_CONFIG_CONFIGURE_OPTIONS_FILES=cmake/std/atdm/apps/sparc/SPARCMiniTrilinosPackagesEnables.cmake,cmake/std/atdm/ATDMDevEnv.cmake
+  export Trilinos_PACKAGE_ENABLES_FILE=$WORKSPACE/Trilinos/cmake/std/atdm/apps/sparc/SPARCMiniTrilinosPackagesEnables.cmake
+  # NOTE: Above, we list SPARCMiniTrilinosPackagesEnables.cmake before
   # ATDMDevEnv.cmake so that defaults for cache vars are set there before they
   # get set in ATDMDevEnv.cmake.
 fi

@@ -24,7 +24,7 @@
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "5.18 (2020/08/24)";
+  const char *       version_string = "5.20 (2020/11/05)";
 
   void output_copyright();
 
@@ -76,7 +76,7 @@ namespace SEAMS {
     cleanup_memory();
   }
 
-  std::string Aprepro::version() const { return version_string; }
+  std::string Aprepro::version() { return version_string; }
 
   void Aprepro::clear_results()
   {
@@ -94,7 +94,7 @@ namespace SEAMS {
 
     if (!ap_options.include_file.empty()) {
       stateImmutable = true;
-      echo           = 0;
+      echo           = false;
       scanner->add_include_file(ap_options.include_file, true);
     }
 
@@ -140,7 +140,7 @@ namespace SEAMS {
 
     if (!ap_options.include_file.empty()) {
       stateImmutable = true;
-      echo           = 0;
+      echo           = false;
       stringScanner->add_include_file(ap_options.include_file, true);
     }
 
@@ -425,6 +425,9 @@ namespace SEAMS {
       ap_options.errors_and_warnings_fatal = true;
       ap_options.errors_fatal              = true;
     }
+    else if (option == "--require_defined" || option == "-R") {
+      ap_options.require_defined = true;
+    }
     else if (option == "--trace" || option == "-t") {
       ap_options.trace_parsing = true;
     }
@@ -494,6 +497,7 @@ namespace SEAMS {
              "encountered\n"
           << " --errors_and_warnings_fatal or -F: Exit program with nonzero status if "
              "warnings are encountered\n"
+          << "--require_defined or -R: Tread undefined variable warnings as fatal\n"
           << "--one_based_index or -1: Array indexing is one-based (default = zero-based)\n"
           << "    --interactive or -i: Interactive use, no buffering           \n"
           << "    --include=P or -I=P: Include file or include path            \n"

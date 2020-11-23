@@ -125,6 +125,8 @@ public:
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           little_vec_type;
+  typedef typename little_vec_type::HostMirror
+          little_host_vec_type;
 
   /// \brief "Const block view" of all degrees of freedom at a mesh point.
   ///
@@ -353,7 +355,7 @@ public:
   /// different types to implement little_vec_type.  This gives us a
   /// porting strategy to move from "classic" Tpetra to the Kokkos
   /// refactor version.
-  little_vec_type getLocalBlock (const LO localRowIndex) const;
+  little_host_vec_type getLocalBlock (const LO localRowIndex) const;
   //@}
 };
 

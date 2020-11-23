@@ -1,0 +1,94 @@
+#!/bin/bash
+
+exe() {
+  stdbuf -o0 -e0 echo "% $@" ;
+  eval "$@" ;
+}
+
+sierra_proj=${SIERRA_PROJ:-${PWD}}
+output_dir=${OUTPUT_DIR:-${PWD}/../stk-no-mesh-cmake-testing}
+trilinos_dir=${output_dir}/Trilinos
+build_type=${CMAKE_BUILD_TYPE:-release}
+date_suffix=`date +%F_%H-%M-%S`
+
+if [ -z "${SIERRA_COMPILER}" ] ; then
+  echo "Can't find SIERRA_COMPILER env var. Make sure you have a sierra-devel module loaded.";
+  exit 1;
+fi
+
+if [ ! -d ${output_dir} ] ; then
+  exe mkdir -p ${output_dir};
+fi
+
+if [ ! -d ${trilinos_dir} ] ; then
+  exe git clone -b develop https://github.com/trilinos/Trilinos.git ${trilinos_dir}
+else
+  exe cd ${trilinos_dir}
+  exe git reset --hard develop
+  exe git pull
+fi
+
+trilinos_install_dir=${output_dir}/trilinos_install_${build_type}_${SIERRA_COMPILER}
+exe rm -rf $trilinos_install_dir
+
+stk_build_dir=${output_dir}/stk_build_${build_type}_${SIERRA_COMPILER}
+exe rm -rf $stk_build_dir
+exe mkdir -p $stk_build_dir
+
+stk_cmake_testing=${sierra_proj}/stk/stk_integration_tests/cmake_install_test
+
+printf "\nUsing sierra project: ${sierra_proj}\n";
+printf "Using build-type: ${build_type}\n";
+printf "Using SIERRA_COMPILER: ${SIERRA_COMPILER}\n";
+printf "Putting output and logs here: ${output_dir}\n";
+
+exe cd $sierra_proj
+
+stk_config_log=${output_dir}/stk-no-mesh-config.out.$date_suffix
+stk_make_log=${output_dir}/stk-no-mesh-make.out.$date_suffix
+stk_install_log=${output_dir}/stk-no-mesh-install.out.$date_suffix
+stk_ctest_log=${output_dir}/stk-no-mesh-ctest.out.$date_suffix
+
+if [ -d ${trilinos_dir}/packages/stk ] ; then
+  exe rm -rf ${trilinos_dir}/packages/stk;
+fi
+if [ ! -L ${trilinos_dir}/packages/stk ] ; then
+  exe ln -s ${sierra_proj}/stk ${trilinos_dir}/packages
+fi
+
+exe cp ${stk_cmake_testing}/run_cmake_stk_no_mesh ${stk_build_dir}
+exe cd ${stk_build_dir}
+printf "Configuring trilinos/stk (running cmake)...\n";
+exe 'TRILINOS_DIR=${trilinos_dir} TRILINOS_INSTALL_DIR=${trilinos_install_dir} CMAKE_BUILD_TYPE=${build_type} ./run_cmake_stk_no_mesh >& ${stk_config_log}'
+if [ $? -ne 0 ] ; then
+  echo "!! error in stk/trilinos config, check output in ${stk_config_log} !!";
+  exit 1;
+fi
+
+printf "Now building trilinos/stk using make...\n";
+exe 'make VERBOSE=1 -j8 >& ${stk_make_log}';
+if [ $? -ne 0 ] ; then
+  echo "!! error in make, check output in ${stk_make_log} !!";
+  exit 1;
+fi
+
+exe 'make install >& ${stk_install_log}';
+
+if [ $? -ne 0 ] ; then
+  printf "!! error installing, check output in ${stk_install_log}\n";
+  exit 1;
+fi
+
+#!!! need to test correctness of the install here !!!
+#!!! The test-app in the full-stk build does test install correctness so depend on that for now.
+
+exe 'ctest >& ${stk_ctest_log}';
+
+if [ $? -ne 0 ] ; then
+  printf "!! error running ctest, check output in ${stk_ctest_log}\n";
+  exit 1;
+fi
+
+echo "all done!!";
+exit 0;
+

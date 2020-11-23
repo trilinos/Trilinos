@@ -84,6 +84,16 @@ bool pack_and_send_modified_shared_entity_states(stk::CommSparse& comm,
                                                  const BulkData& bulk,
                                                  const EntityCommListInfoVector& commList);
 
+void pack_entity_keys_to_send(stk::CommSparse &comm,
+                              const std::vector<stk::mesh::EntityKeyProc> &entities_to_send_data);
+
+void unpack_entity_keys_from_procs(stk::CommSparse &comm,
+                                   std::vector<stk::mesh::EntityKey> &receivedEntityKeys);
+
+void unpack_shared_entities(const BulkData& mesh,
+                            stk::CommSparse &comm,
+                            std::vector< std::pair<int, shared_entity_type> > &shared_entities_and_proc);
+
 void filter_out_unneeded_induced_parts(const BulkData& bulkData,
                                        Entity entity,
                                        const OrdinalVector& induced_parts,
@@ -136,6 +146,17 @@ bool is_comm_ordered(const PairIterEntityComm& ec)
     }
   }
   return true;
+}
+
+inline
+PairIterEntityComm get_entity_comm_range(const EntityCommListInfo& entityCommListInfo)
+{
+  if (entityCommListInfo.entity_comm != nullptr) {
+    return PairIterEntityComm(entityCommListInfo.entity_comm->comm_map.begin(),
+                              entityCommListInfo.entity_comm->comm_map.end());
+  }
+
+  return PairIterEntityComm();
 }
 
 } // namespace impl

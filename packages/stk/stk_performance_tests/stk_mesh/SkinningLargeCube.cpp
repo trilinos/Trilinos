@@ -570,9 +570,6 @@ double run_skinning_large_cube_test(bool createEdges, unsigned numRuns, std::vec
     double startTime = stk::wall_time();
     stk::mesh::skin_mesh(fixture.m_bulk_data, add_parts);
     skinningTime += stk::wall_dtime(startTime);
-
-    stk::mesh::BulkData& fem_bulk = fixture.m_bulk_data;
-    stk::io::write_mesh("output.e", fem_bulk);
   }
 
   return skinningTime;
@@ -580,13 +577,11 @@ double run_skinning_large_cube_test(bool createEdges, unsigned numRuns, std::vec
 
 TEST(skinning_large_cube_perf_test, skinning_large_cube)
 {
-  unsigned numRuns = 50;
+  unsigned numRuns = 100;
   std::vector<size_t> dims = {50, 50, 50};
   double edgeTime = run_skinning_large_cube_test(true, numRuns, dims);
-  double noEdgeTime = run_skinning_large_cube_test(false, numRuns, dims);
 
-  double maxTime = stk::get_max_time_across_procs(edgeTime - noEdgeTime, MPI_COMM_WORLD);
-  stk::print_stats_for_performance_compare(std::cout, maxTime, 0, numRuns, MPI_COMM_WORLD);
-
-  std::cout << "Edge time: " << edgeTime << " noEdgeTime: " << noEdgeTime << std::endl;
+  double maxTime = stk::get_max_time_across_procs(edgeTime, MPI_COMM_WORLD);
+  size_t maxHwm = stk::get_max_hwm_across_procs(MPI_COMM_WORLD);
+  stk::print_stats_for_performance_compare(std::cout, maxTime, maxHwm, numRuns, MPI_COMM_WORLD);
 }

@@ -544,9 +544,7 @@ inline const MeshIndex& BulkData::mesh_index(Entity entity) const
 
 inline MeshIndex& BulkData::mesh_index(Entity entity)
 {
-#ifndef NDEBUG
-  entity_setter_debug_check(entity); // setter check due to non-const
-#endif
+  ThrowAssert(entity.local_offset() > 0); // setter check due to non-const
 
   return m_mesh_indexes[entity.local_offset()];
 }
@@ -659,7 +657,7 @@ inline BulkData::FmwkId BulkData::global_id(stk::mesh::Entity entity) const
 inline const RelationVector& BulkData::aux_relations(Entity entity) const
 {
   ThrowAssert(m_add_fmwk_data);
-  entity_setter_debug_check(entity); // setter check due to side effects
+  ThrowAssert(entity.local_offset() > 0);
 
   if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
     m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
@@ -670,7 +668,7 @@ inline const RelationVector& BulkData::aux_relations(Entity entity) const
 inline RelationVector& BulkData::aux_relations(Entity entity)
 {
   ThrowAssert(m_add_fmwk_data);
-  entity_setter_debug_check(entity); // setter check due to side effects
+  ThrowAssert(entity.local_offset() > 0);
 
   if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
     m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
@@ -680,7 +678,7 @@ inline RelationVector& BulkData::aux_relations(Entity entity)
 
 inline void BulkData::set_global_id(stk::mesh::Entity entity, BulkData::FmwkId id)
 {
-  entity_setter_debug_check(entity);
+  ThrowAssert(entity.local_offset() > 0);
 
   m_modSummary.track_set_global_id(entity, id);
 
@@ -721,7 +719,7 @@ inline void BulkData::compress_relation_capacity(Entity entity)
 
 inline void BulkData::set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal )
 {
-  entity_setter_debug_check(entity);
+  ThrowAssert(entity.local_offset() > 0);
 
   if (in_bucket != NULL) {
     ThrowAssertMsg(in_bucket->size() >= ordinal, "Detected bad bucket/ordinal.");
@@ -733,14 +731,14 @@ inline void BulkData::set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::
 
 inline void BulkData::set_entity_key(Entity entity, EntityKey key)
 {
-  entity_setter_debug_check(entity);
+  ThrowAssert(entity.local_offset() > 0);
 
   m_entity_keys[entity.local_offset()] = key;
 }
 
 inline void BulkData::set_state(Entity entity, EntityState entity_state)
 {
-  entity_setter_debug_check(entity);
+  ThrowAssert(entity.local_offset() > 0);
 
   m_meshModification.set_entity_state(entity.local_offset(), entity_state);
   m_mark_entity[entity.local_offset()] = NOT_MARKED;
@@ -748,7 +746,7 @@ inline void BulkData::set_state(Entity entity, EntityState entity_state)
 
 inline void BulkData::set_local_id(Entity entity, unsigned id)
 {
-  entity_setter_debug_check(entity);
+  ThrowAssert(entity.local_offset() > 0);
 
   m_local_ids[entity.local_offset()] = id;
 }

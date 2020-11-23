@@ -202,8 +202,8 @@ MACRO(KOKKOS_SETUP_BUILD_ENVIRONMENT)
     INCLUDE(${KOKKOS_SRC_PATH}/cmake/kokkos_arch.cmake)
     IF (NOT KOKKOS_HAS_TRILINOS)
       SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${Kokkos_SOURCE_DIR}/cmake/Modules/")
-      INCLUDE(${KOKKOS_SRC_PATH}/cmake/kokkos_tpls.cmake)
     ENDIF()
+    INCLUDE(${KOKKOS_SRC_PATH}/cmake/kokkos_tpls.cmake)
     INCLUDE(${KOKKOS_SRC_PATH}/cmake/kokkos_corner_cases.cmake)
   ENDIF()
 ENDMACRO()
@@ -234,12 +234,21 @@ FUNCTION(KOKKOS_SET_LIBRARY_PROPERTIES LIBRARY_NAME)
     ""
     ${ARGN})
 
-  IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13")
-    #great, this works the "right" way
+  IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.18")
+    #I can use link options
+    #check for CXX linkage using the simple 3.18 way
+    TARGET_LINK_OPTIONS(
+      ${LIBRARY_NAME} PUBLIC
+      $<$<LINK_LANGUAGE:CXX>:${KOKKOS_LINK_OPTIONS}>
+    )
+  ELSEIF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13")
+    #I can use link options
+    #just assume CXX linkage
     TARGET_LINK_OPTIONS(
       ${LIBRARY_NAME} PUBLIC ${KOKKOS_LINK_OPTIONS}
     )
   ELSE()
+    #assume CXX linkage, we have no good way to check otherwise
     IF (PARSE_PLAIN_STYLE)
       TARGET_LINK_LIBRARIES(
         ${LIBRARY_NAME} ${KOKKOS_LINK_OPTIONS}
@@ -365,7 +374,11 @@ FUNCTION(KOKKOS_ADD_LIBRARY LIBRARY_NAME)
     ${ARGN}
   )
   IF (KOKKOS_HAS_TRILINOS)
-    # Pull out the headers, we will manually install them
+    # We do not pass headers to trilinos. They would get installed
+    # to the default include folder, but we want headers installed
+    # preserving the directory structure, e.g. impl
+    # If headers got installed in both locations, it breaks some
+    # downstream packages
     TRIBITS_ADD_LIBRARY(${LIBRARY_NAME} ${PARSE_UNPARSED_ARGUMENTS})
     #Stolen from Tribits - it can add prefixes
     SET(TRIBITS_LIBRARY_NAME_PREFIX "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}")

@@ -56,8 +56,8 @@ namespace FROSch {
                                                                         UN dofsPerNode,
                                                                         ParameterListPtr parameterList,
                                                                         ConstXMultiVectorPtr nullSpaceBasis,
-                                                                        XMultiVectorPtrVecPtr partitionOfUnity,
-                                                                        XMapPtrVecPtr partitionOfUnityMaps) :
+                                                                        ConstXMultiVectorPtrVecPtr partitionOfUnity,
+                                                                        ConstXMapPtrVecPtr partitionOfUnityMaps) :
     MpiComm_ (mpiComm),
     SerialComm_ (serialComm),
     DofsPerNode_ (dofsPerNode),
@@ -70,8 +70,8 @@ namespace FROSch {
     }
 
     template<class SC,class LO,class GO,class NO>
-    int LocalPartitionOfUnityBasis<SC,LO,GO,NO>::addPartitionOfUnity(XMultiVectorPtrVecPtr partitionOfUnity,
-                                                                     XMapPtrVecPtr partitionOfUnityMaps)
+    int LocalPartitionOfUnityBasis<SC,LO,GO,NO>::addPartitionOfUnity(ConstXMultiVectorPtrVecPtr partitionOfUnity,
+                                                                     ConstXMapPtrVecPtr partitionOfUnityMaps)
     {
         PartitionOfUnity_ = partitionOfUnity;
         PartitionOfUnityMaps_ = partitionOfUnityMaps;

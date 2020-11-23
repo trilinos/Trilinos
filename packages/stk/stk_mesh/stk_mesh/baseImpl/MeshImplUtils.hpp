@@ -250,9 +250,13 @@ void convert_part_ordinals_to_parts(const stk::mesh::MetaData& meta,
                                     const OrdinalVector& input_ordinals,
                                     stk::mesh::PartVector& output_parts);
 
+bool are_any_parts_ranked(const stk::mesh::MetaData& meta,
+                          const OrdinalVector& partOrdinals);
+
 void filter_out(OrdinalVector& vec,
                 const OrdinalVector& parts,
-                OrdinalVector& removed);
+                OrdinalVector& removed,
+                bool trackRemoved = true);
 
 void merge_in(OrdinalVector& vec, const OrdinalVector& parts);
 
@@ -276,6 +280,15 @@ void fill_part_list_differences(const BulkData &mesh,
 
 void check_size_of_types();
 
+void require_valid_relation(const char action[],
+                            const BulkData& mesh,
+                            const Entity e_from,
+                            const Entity e_to);
+
+bool is_good_rank_and_id(const MetaData& meta,
+                         EntityRank rank,
+                         EntityId id);
+
 EntityId get_global_max_id_in_use(const BulkData& mesh,
                                   EntityRank rank,
                                   const std::list<Entity::entity_value_type>& deletedEntitiesCurModCycle);
@@ -285,6 +298,7 @@ void check_declare_element_side_inputs(const BulkData & mesh,
                                        const unsigned localSideId);
 
 void connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge);
+void connect_face_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity face);
 
 } // namespace impl
 } // namespace mesh

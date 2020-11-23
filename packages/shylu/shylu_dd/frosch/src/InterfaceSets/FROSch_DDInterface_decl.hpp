@@ -55,7 +55,6 @@
 #include <FROSch_ExtractSubmatrices_def.hpp>
 
 
-
 namespace FROSch {
 
     using namespace Teuchos;
@@ -201,7 +200,7 @@ namespace FROSch {
 
         EntitySetPtrConstVecPtr & getEntitySetVector() const;
 
-        GOVec getNumEnt()const;
+        GOVec getNumEnt() const;
         //! This function returns those entities which are to be used to build a connectivity graph on the subdomain
         //! level. They have to identified first using the function identifyConnectivityEntities().
         EntitySetConstPtr & getConnectivityEntities() const;
@@ -212,8 +211,7 @@ namespace FROSch {
     protected:
 
         int communicateLocalComponents(IntVecVecPtr &componentsSubdomains,
-                                       IntVecVec &componentsSubdomainsUnique,
-                                       CommunicationStrategy commStrategy = CommCrsGraph);
+                                       IntVecVec &componentsSubdomainsUnique);
 
         int identifyLocalComponents(IntVecVecPtr &componentsSubdomains,
                                     IntVecVec &componentsSubdomainsUnique);
@@ -239,6 +237,8 @@ namespace FROSch {
 
         ConstXMapPtr NodesMap_;
         ConstXMapPtr UniqueNodesMap_;
+
+        CommunicationStrategy CommStrategy_ = CommCrsGraph;
 
         bool Verbose_ = false;
 

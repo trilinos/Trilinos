@@ -232,7 +232,7 @@ static void gl_char_init(void) /* turn off input echo */
   new_tty.sg_flags |= RAW;
   new_tty.sg_flags &= ~ECHO;
   ioctl(0, TIOCSETN, &new_tty);
-#else                   /* SYSV */
+#else /* SYSV */
   ioctl(0, TCGETA, &old_termio);
   gl_intrc   = old_termio.c_cc[VINTR];
   gl_quitc   = old_termio.c_cc[VQUIT];
@@ -254,7 +254,7 @@ static void gl_char_cleanup(void) /* undo effects of gl_char_init */
   tcsetattr(0, TCSANOW, &old_termios);
 #elif defined(TIOCSETN) /* BSD */
   ioctl(0, TIOCSETN, &old_tty);
-#else                   /* SYSV */
+#else /* SYSV */
   ioctl(0, TCSETA, &old_termio);
 #endif
 #endif /* __unix__ */

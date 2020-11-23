@@ -62,7 +62,7 @@ namespace FROSch {
                                                                       UN levelID) :
     PartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID)
     {
-        FROSCH_TIMER_START_LEVELID(interfacePartitionOfUnityTime,"InterfacePartitionOfUnity::InterfacePartitionOfUnity");
+        FROSCH_DETAILTIMER_START_LEVELID(interfacePartitionOfUnityTime,"InterfacePartitionOfUnity::InterfacePartitionOfUnity");
         CommunicationStrategy communicationStrategy = CreateOneToOneMap;
         if (!this->ParameterList_->get("Interface Communication Strategy","CreateOneToOneMap").compare("CrsMatrix")) {
             communicationStrategy = CommCrsMatrix;

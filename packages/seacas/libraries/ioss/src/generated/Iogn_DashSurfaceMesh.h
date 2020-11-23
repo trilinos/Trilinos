@@ -65,21 +65,21 @@ namespace Iogn {
     std::vector<std::vector<std::string>> sidesetTouchingBlocks;
 
     ExodusData() {}
-    ExodusData(const std::vector<double>           coords,
-               const std::vector<std::vector<int>> elemBlockConnectivity,
-               const std::vector<int>              globalNumOfElemsInBlock,
-               const std::vector<int>              localNumOfElemsInBlock,
-               const std::vector<Topology> blockTopoData, int globalNumNodes,
-               const std::vector<int>                globalIdsOfLocalElems,
-               const std::vector<int>                globalIdsLocalNodes,
+    ExodusData(std::vector<double> coords, std::vector<std::vector<int>> elemBlockConnectivity,
+               std::vector<int> globalNumOfElemsInBlock, std::vector<int> localNumOfElemsInBlock,
+               std::vector<Topology> blockTopoData, int globalNumNodes,
+               std::vector<int> globalIdsOfLocalElems, std::vector<int> globalIdsLocalNodes,
                std::vector<std::vector<int>>         sidesetConn = std::vector<std::vector<int>>(),
                std::vector<std::vector<std::string>> sidesetBlocks =
                    std::vector<std::vector<std::string>>())
-        : coordinates(coords), elementBlockConnectivity(elemBlockConnectivity),
-          globalNumberOfElementsInBlock(globalNumOfElemsInBlock),
-          localNumberOfElementsInBlock(localNumOfElemsInBlock), blockTopologicalData(blockTopoData),
-          globalNumberOfNodes(globalNumNodes), globalIdsOfLocalElements(globalIdsOfLocalElems),
-          globalIdsOfLocalNodes(globalIdsLocalNodes), sidesetConnectivity(std::move(sidesetConn)),
+        : coordinates(std::move(coords)),
+          elementBlockConnectivity(std::move(elemBlockConnectivity)),
+          globalNumberOfElementsInBlock(std::move(globalNumOfElemsInBlock)),
+          localNumberOfElementsInBlock(std::move(localNumOfElemsInBlock)),
+          blockTopologicalData(std::move(blockTopoData)), globalNumberOfNodes(globalNumNodes),
+          globalIdsOfLocalElements(std::move(globalIdsOfLocalElems)),
+          globalIdsOfLocalNodes(std::move(globalIdsLocalNodes)),
+          sidesetConnectivity(std::move(sidesetConn)),
           sidesetTouchingBlocks(std::move(sidesetBlocks))
     {
     }
@@ -102,10 +102,10 @@ namespace Iogn {
 
     std::vector<SharedNode> sharedNodes{};
 
-    DashSurfaceData(const std::vector<double> &coords, const std::vector<int> &connectivity1,
-                    const std::vector<int> &connectivity2)
-        : coordinates(coords), surfaceAConnectivity(connectivity1),
-          surfaceBConnectivity(connectivity2)
+    DashSurfaceData(std::vector<double> coords, std::vector<int> connectivity1,
+                    std::vector<int> connectivity2)
+        : coordinates(std::move(coords)), surfaceAConnectivity(std::move(connectivity1)),
+          surfaceBConnectivity(std::move(connectivity2))
     {
       this->setSerialDefaults();
     }

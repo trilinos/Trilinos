@@ -301,12 +301,10 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_file_per_state_to_exodus
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} --file_per_state ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-link.cgns
      NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS ${NPROCS}
    TEST_1 EXEC io_shell ARGS ${JOIN_ARG} 8-block-link.cgns 8-block-rt.g
      NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS 1
    TEST_2 CMND ${SEACAS_EXODIFF_BINARY} ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-rt.g
-  COMM mpi serial
+  COMM serial
   XHOSTTYPE Windows
   )
 
@@ -509,18 +507,6 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_reordered_zones_fields
      NUM_MPI_PROCS 1-4
      NOEXEPREFIX NOEXESUFFIX
    TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/multiple_zones_fields.cgns multiple_zones_fields-out.cgns
-     NUM_MPI_PROCS 1
-  COMM mpi serial
-  )
-
-TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_bump
-   TEST_0 EXEC io_shell ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/bump_str.cgns tmp.cgns
-     NUM_MPI_PROCS 1-4
-     NOEXEPREFIX NOEXESUFFIX
-   TEST_1 EXEC io_shell ARGS tmp.cgns bump_str_out.cgns
-     NUM_MPI_PROCS 1-4
-     NOEXEPREFIX NOEXESUFFIX
-   TEST_2 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/bump_str.cgns bump_str_out.cgns
      NUM_MPI_PROCS 1
   COMM mpi serial
   )

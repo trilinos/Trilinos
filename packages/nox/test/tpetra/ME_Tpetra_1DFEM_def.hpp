@@ -13,6 +13,7 @@
 
 // Tpetra support
 #include "Thyra_TpetraThyraWrappers.hpp"
+#include "NOX_TpetraTypedefs.hpp"
 
 // Kokkos support
 #include "Kokkos_Core.hpp"
@@ -43,7 +44,12 @@ EvaluatorTpetra1DFEM(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   numGlobalElements_(numGlobalElements),
   zMin_(zMin),
   zMax_(zMax),
-  showGetInvalidArg_(false)
+  Np_(5),
+  Ng_(7),
+  printDebug_(false),
+  showGetInvalidArg_(false),
+  pNames_(Np_),
+  gNames_(Ng_)
 {
   typedef ::Thyra::ModelEvaluatorBase MEB;
   typedef Teuchos::ScalarTraits<scalar_type> ST;
@@ -101,7 +107,7 @@ EvaluatorTpetra1DFEM(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   GO minGID = xOwnedMap_->getMinGlobalIndex();
   Scalar dz = (zMax_ - zMin_)/static_cast<Scalar>(numGlobalElements_);
   nodeCoordinates_ = Teuchos::rcp(new tpetra_vec(xOwnedMap_));
-  nodeCoordinates_->template modify<typename tpetra_vec::execution_space>();
+  nodeCoordinates_->modify_device();
 
   MeshFillFunctor<tpetra_vec> functor(*nodeCoordinates_, zMin_, dz, minGID);
   Kokkos::parallel_for("coords fill", numLocalNodes, functor);
@@ -109,6 +115,7 @@ EvaluatorTpetra1DFEM(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   MEB::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
   inArgs.setSupports(MEB::IN_ARG_x);
+  inArgs.set_Np_Ng(Np_,Ng_);
   prototypeInArgs_ = inArgs;
 
   MEB::OutArgsSetup<Scalar> outArgs;
@@ -116,6 +123,17 @@ EvaluatorTpetra1DFEM(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W_op);
   outArgs.setSupports(MEB::OUT_ARG_W_prec);
+  outArgs.set_Np_Ng(Np_,Ng_);
+  outArgs.setSupports(MEB::OUT_ARG_DfDp,2,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
+  outArgs.setSupports(MEB::OUT_ARG_DgDx,4,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
+  outArgs.setSupports(MEB::OUT_ARG_DgDp,4,2,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
+
+  outArgs.setSupports(MEB::OUT_ARG_DfDp,4,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
+  outArgs.setSupports(MEB::OUT_ARG_DgDx,6,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
+  outArgs.setSupports(MEB::OUT_ARG_DgDp,4,4,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
+  outArgs.setSupports(MEB::OUT_ARG_DgDp,6,2,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
+  outArgs.setSupports(MEB::OUT_ARG_DgDp,6,4,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
+
   prototypeOutArgs_ = outArgs;
 
   nominalValues_ = inArgs;
@@ -123,6 +141,37 @@ EvaluatorTpetra1DFEM(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 
   residTimer_ = Teuchos::TimeMonitor::getNewCounter("Model Evaluator: Residual Evaluation");
   jacTimer_ = Teuchos::TimeMonitor::getNewCounter("Model Evaluator: Jacobian Evaluation");
+
+  // Parameter and response support. There exists one parameter and one response.
+  for (auto& p : pNames_)
+    p = Teuchos::rcp(new Teuchos::Array<std::string>);
+  pNames_[0]->push_back("Dummy p(0)");
+  pNames_[1]->push_back("Dummy p(1)");
+  pNames_[2]->push_back("k");
+  pNames_[3]->push_back("Dummy p(3)");
+  pNames_[4]->push_back("T_left");
+  pMap_ = Teuchos::rcp(new const tpetra_map(1, 0, comm_, Tpetra::LocallyReplicated));
+  pSpace_ = ::Thyra::createVectorSpace<Scalar, LO, GO, Node>(pMap_);
+  p2_ = ::Thyra::createMember(pSpace_);
+  V_S(p2_.ptr(),1.0);
+  nominalValues_.set_p(2,p2_);
+  p4_ = ::Thyra::createMember(pSpace_);
+  V_S(p4_.ptr(),1.0);
+  nominalValues_.set_p(4,p4_);
+
+  for (auto& g : gNames_)
+    g.clear();
+  gNames_[0].push_back("Dummy g(0)");
+  gNames_[1].push_back("Dummy g(1)");
+  gNames_[2].push_back("Dummy g(2)");
+  gNames_[3].push_back("Dummy g(3)");
+  gNames_[4].push_back("Constraint: T_right=2");
+  gNames_[5].push_back("Dummy g(5)");
+  gNames_[6].push_back("Constraint: 2*T_left=T_right");
+  gMap_ = Teuchos::rcp(new const tpetra_map(1, 0, comm_, Tpetra::LocallyReplicated));
+  gSpace_ = ::Thyra::createVectorSpace<Scalar, LO, GO, Node>(gMap_);
+  dgdpMap_ = Teuchos::rcp(new const tpetra_map(1, 0, comm_, Tpetra::LocallyReplicated));
+  dgdpSpace_ = ::Thyra::createVectorSpace<Scalar, LO, GO, Node>(dgdpMap_);
 }
 
 // Initializers/Accessors
@@ -249,12 +298,84 @@ EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::create_W_prec() const
 }
 
 template<class Scalar, class LO, class GO, class Node>
-Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
+int EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::Np() const
+{return Np_;}
+
+template<class Scalar, class LO, class GO, class Node>
+int EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::Ng() const
+{return Ng_;}
+
+template<class Scalar, class LO, class GO, class Node>
+Teuchos::RCP<const ::Thyra::VectorSpaceBase<Scalar> >
+EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::get_p_space(int /* l */) const
+{
+  // All parameters are locally replicated scalars of size 1
+  return pSpace_;
+}
+
+template<class Scalar, class LO, class GO, class Node>
+Teuchos::RCP<const Teuchos::Array<std::string> >
+EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::get_p_names(int l) const
+{
+  return pNames_[l];
+}
+
+template<class Scalar, class LO, class GO, class Node>
+Teuchos::RCP<const ::Thyra::VectorSpaceBase<Scalar> >
+EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::get_g_space(int /* j */) const
+{
+  // All parameters are locally replicated scalars of size 1
+  return gSpace_;
+}
+
+template<class Scalar, class LO, class GO, class Node>
+Teuchos::ArrayView<const std::string>
+EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::get_g_names(int j) const
+{
+  return gNames_[j];
+}
+
+template<class Scalar, class LO, class GO, class Node>
+Teuchos::RCP<::Thyra::LinearOpBase<Scalar>>
+EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::create_DfDp_op(int l) const
+{
+  TEUCHOS_ASSERT( (l == 2) || (l == 4) );
+  return ::Thyra::createMembers(xSpace_,1,"LOCA::DgDx");
+}
+
+template<class Scalar, class LO, class GO, class Node>
+Teuchos::RCP<::Thyra::LinearOpBase<Scalar> >
+EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::create_DgDx_op(int j) const
+{
+  TEUCHOS_ASSERT( (j == 4) || (j == 6) );
+  return ::Thyra::createMembers(xSpace_,1,"LOCA::DgDx");
+}
+
+template<class Scalar, class LO, class GO, class Node>
+Teuchos::RCP<::Thyra::LinearOpBase<Scalar> >
+EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::create_DgDx_dot_op(int j) const
+{
+  TEUCHOS_ASSERT( (j == 4) || (j == 6) );
+  return ::Thyra::createMembers(xSpace_,1,"LOCA::DgDx_dot");
+}
+
+template<class Scalar, class LO, class GO, class Node>
+::Teuchos::RCP<::Thyra::LinearOpBase<Scalar> >
+EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::create_DgDp_op( int j, int l ) const
+{
+  TEUCHOS_ASSERT( (j == 4) || (j == 6) );
+  TEUCHOS_ASSERT( (l == 2) || (l == 4) );
+  // Instead of using a dense serial matrix, we use a locally
+  // replicated multivector since it provides thyra wrappers.
+  return ::Thyra::createMembers(gSpace_,1,"LOCA::DgDp");
+}
+
+template<class Scalar, class LO, class GO, class Node>
+Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<Scalar> >
 EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::get_W_factory() const
 {
   return W_factory_;
 }
-
 
 template<class Scalar, class LO, class GO, class Node>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
@@ -263,138 +384,282 @@ EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::createInArgs() const
   return prototypeInArgs_;
 }
 
-
-// Private functions overridden from ModelEvaulatorDefaultBase
-
-
 template<class Scalar, class LO, class GO, class Node>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
-EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::createOutArgsImpl() const
+EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::createOutArgs() const
 {
   return prototypeOutArgs_;
 }
 
-
 template<class Scalar, class LO, class GO, class Node>
 void EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::
-evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-              const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
+evalModel(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+          const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
   TEUCHOS_ASSERT(nonnull(inArgs.get_x()));
 
   const Teuchos::RCP<thyra_vec> f_out = outArgs.get_f();
   const Teuchos::RCP<thyra_op> W_out = outArgs.get_W_op();
   const Teuchos::RCP<thyra_prec> W_prec_out = outArgs.get_W_prec();
+  const Teuchos::RCP<thyra_vec> g4_out = outArgs.get_g(4);
+  const Teuchos::RCP<thyra_vec> g6_out = outArgs.get_g(6);
+  const Teuchos::RCP<thyra_mvec> Dg4Dx_out = outArgs.get_DgDx(4).getMultiVector();
+  const Teuchos::RCP<thyra_mvec> Dg6Dx_out = outArgs.get_DgDx(6).getMultiVector();
+  const Teuchos::RCP<thyra_mvec> DfDp2_out = outArgs.get_DfDp(2).getMultiVector();
+  const Teuchos::RCP<thyra_mvec> DfDp4_out = outArgs.get_DfDp(4).getMultiVector();
+  const Teuchos::RCP<thyra_mvec> Dg4Dp2_out = outArgs.get_DgDp(4,2).getMultiVector();
+  const Teuchos::RCP<thyra_mvec> Dg4Dp4_out = outArgs.get_DgDp(4,4).getMultiVector();
+  const Teuchos::RCP<thyra_mvec> Dg6Dp2_out = outArgs.get_DgDp(6,2).getMultiVector();
+  const Teuchos::RCP<thyra_mvec> Dg6Dp4_out = outArgs.get_DgDp(6,4).getMultiVector();
 
   const bool fill_f = nonnull(f_out);
   const bool fill_W = nonnull(W_out);
   const bool fill_W_prec = nonnull(W_prec_out);
+  const bool fill_g4 = nonnull(g4_out);
+  const bool fill_g6 = nonnull(g6_out);
+  const bool fill_Dg4Dx = nonnull(Dg4Dx_out);
+  const bool fill_Dg6Dx = nonnull(Dg6Dx_out);
+  const bool fill_DfDp2 = nonnull(DfDp2_out);
+  const bool fill_DfDp4 = nonnull(DfDp4_out);
+  const bool fill_Dg4Dp2 = nonnull(Dg4Dp2_out);
+  const bool fill_Dg4Dp4 = nonnull(Dg4Dp4_out);
+  const bool fill_Dg6Dp2 = nonnull(Dg6Dp2_out);
+  const bool fill_Dg6Dp4 = nonnull(Dg6Dp4_out);
 
-  typedef Tpetra::Operator<Scalar,LO,GO,Node> tpetra_op;
-  typedef ::Thyra::TpetraOperatorVectorExtraction<Scalar,LO,GO,Node> tpetra_extract;
+  if (printDebug_) {
+    std::cout << "DEBUG: In evalModel: f=" << fill_f
+              << ",W=" << fill_W
+              << ",W_prec=" << fill_W_prec
+              << ",g4=" << fill_g4
+              << ",Dg4Dx=" << fill_Dg4Dx
+              << ",Dg6Dx=" << fill_Dg6Dx
+              << ",DfDp2=" << fill_DfDp2
+              << ",DfDp4=" << fill_DfDp4
+              << ",Dg4Dp2=" << fill_Dg4Dp2
+              << ",Dg4Dp4=" << fill_Dg4Dp4
+              << ",Dg6Dp2=" << fill_Dg6Dp2
+              << ",Dg6Dp4=" << fill_Dg6Dp4
+              << std::endl;
+  }
 
-  if ( fill_f || fill_W || fill_W_prec ) {
+  using tpetra_op = Tpetra::Operator<Scalar,LO,GO,Node>;
+  using tpetra_extract = ::Thyra::TpetraOperatorVectorExtraction<Scalar,LO,GO,Node>;
 
-    // Get the underlying tpetra objects
-    Teuchos::RCP<tpetra_vec> f;
-    if (fill_f) {
-      f = tpetra_extract::getTpetraVector(f_out);
-    }
+  // Create ghosted objects
+  if (is_null(uPtr_))
+    uPtr_ = Teuchos::rcp(new tpetra_vec(xGhostedMap_));
 
-    Teuchos::RCP<tpetra_matrix> J;
-    if (fill_W) {
-      Teuchos::RCP<tpetra_op> W_tpetra = tpetra_extract::getTpetraOperator(W_out);
-      J = Teuchos::rcp_dynamic_cast<tpetra_matrix>(W_tpetra);
-      TEUCHOS_ASSERT(nonnull(J));
-      J->resumeFill();
-    }
+  uPtr_->doImport(*(tpetra_extract::getConstTpetraVector(inArgs.get_x())), *importer_, Tpetra::REPLACE);
 
+  if (is_null(xPtr_)) {
+    xPtr_ = Teuchos::rcp(new tpetra_vec(xGhostedMap_));
+    xPtr_->doImport(*nodeCoordinates_, *importer_, Tpetra::INSERT);
+  }
+
+  xPtr_->sync_device();
+  uPtr_->sync_device();
+
+  // Sizes for functors
+  int myRank = comm_->getRank();
+  std::size_t numMyElements = xGhostedMap_->getNodeNumElements()-1;
+
+  // Get parameters, default is from nominal values
+  auto k_tpetra = tpetra_extract::getConstTpetraMultiVector(nominalValues_.get_p(2));
+  if (nonnull(inArgs.get_p(2)))
+    k_tpetra = tpetra_extract::getConstTpetraMultiVector(inArgs.get_p(2));
+  if (k_tpetra->need_sync_host())
+    Teuchos::rcp_const_cast<NOX::TMultiVector>(k_tpetra)->sync_host();
+  Scalar k_val = (k_tpetra->getLocalViewHost())(0,0);
+
+  auto p4_tpetra = tpetra_extract::getConstTpetraMultiVector(nominalValues_.get_p(4));
+  if (nonnull(inArgs.get_p(4)))
+    p4_tpetra = tpetra_extract::getConstTpetraMultiVector(inArgs.get_p(4));
+  if (p4_tpetra->need_sync_host())
+    Teuchos::rcp_const_cast<NOX::TMultiVector>(p4_tpetra)->sync_host();
+  Scalar p4_val = (p4_tpetra->getLocalViewHost())(0,0);
+
+  if (printDebug_) {
+    if (nonnull(inArgs.get_p(2)))
+      std::cout << "*** p2: k (NOT nominal)=" << k_val << std::endl;
+    else
+      std::cout << "*** p2: k (IS nominal)=" << k_val << std::endl;
+    if (nonnull(inArgs.get_p(4)))
+      std::cout << "*** p4: T_left (NOT nominal)=" << p4_val << std::endl;
+    else
+      std::cout << "*** p4: T_left (IS nominal)=" << p4_val << std::endl;
+  }
+
+  // Residual fill
+  if (fill_f) {
+    Teuchos::TimeMonitor timer(*residTimer_);
+    Teuchos::RCP<tpetra_vec> f = tpetra_extract::getTpetraVector(f_out);
+    f->putScalar(0.0);
+    f->sync_device();
+    f->modify_device();
+    ResidualEvaluatorFunctor<tpetra_vec> functor(*f, *xPtr_, *uPtr_, myRank, k_val, p4_val);
+    Kokkos::parallel_for("residual evaluation", numMyElements, functor);
+    NOX::DeviceSpace().fence();
+  }
+
+  // Jacobian fill
+  if (fill_W) {
+    Teuchos::TimeMonitor timer(*jacTimer_);
+    Teuchos::RCP<tpetra_op> W_tpetra = tpetra_extract::getTpetraOperator(W_out);
+    Teuchos::RCP<tpetra_matrix> J = Teuchos::rcp_dynamic_cast<tpetra_matrix>(W_tpetra);
+    TEUCHOS_ASSERT(nonnull(J));
+    J->resumeFill();
+    J->setAllToScalar(0.0);
+    JacobianEvaluatorFunctor<tpetra_vec, tpetra_matrix> functor(*J, *xPtr_, *uPtr_, myRank, k_val);
+    Kokkos::parallel_for("jacobian evaluation", numMyElements, functor);
+    NOX::DeviceSpace().fence();
+    J->fillComplete();
+  }
+
+  // Preconditioner fill
+  if (fill_W_prec) {
     Teuchos::RCP<tpetra_matrix> M_inv;
-    if (fill_W_prec) {
-      Teuchos::RCP<tpetra_op> M_tpetra = tpetra_extract::getTpetraOperator(W_prec_out->getNonconstRightPrecOp());
-      M_inv = Teuchos::rcp_dynamic_cast<tpetra_matrix>(M_tpetra);
-      TEUCHOS_ASSERT(nonnull(M_inv));
-      M_inv->resumeFill();
+    Teuchos::RCP<tpetra_op> M_tpetra = tpetra_extract::getTpetraOperator(W_prec_out->getNonconstRightPrecOp());
+    M_inv = Teuchos::rcp_dynamic_cast<tpetra_matrix>(M_tpetra);
+    TEUCHOS_ASSERT(nonnull(M_inv));
+    M_inv->resumeFill();
+    if (is_null(J_diagonal_))
+      J_diagonal_ = Teuchos::rcp(new tpetra_vec(xOwnedMap_));
 
-      if (is_null(J_diagonal_))
-        J_diagonal_ = Teuchos::rcp(new tpetra_vec(xOwnedMap_));
+    M_inv->setAllToScalar(0.0);
+    J_diagonal_->putScalar(0.0);
+    PreconditionerEvaluatorFunctor<tpetra_vec, tpetra_matrix> functor(*M_inv, *xPtr_, *uPtr_, myRank, k_val);
+    Kokkos::parallel_for("prec evaluation", numMyElements, functor);
+    NOX::DeviceSpace().fence();
+
+    // Invert the Jacobian diagonal for the preconditioner
+    // For some reason the matrix must be fill complete before calling rightScale
+    M_inv->fillComplete();
+    tpetra_vec& diag = *J_diagonal_;
+    M_inv->getLocalDiagCopy(diag);
+    diag.reciprocal(diag);
+    M_inv->rightScale(diag);
+    M_inv->rightScale(diag);
+  }
+
+  // Fill Responses. These are so small, we will do it on host. Don't
+  // waste time with parallel dispatch.
+  auto x = tpetra_extract::getConstTpetraVector(inArgs.get_x())->getLocalViewHost();
+
+  if (fill_g4) {
+    // g4 is locally replicated.
+    auto g4_tpetra = tpetra_extract::getTpetraMultiVector(g4_out);
+    g4_tpetra->sync_host();
+    g4_tpetra->modify_host();
+
+    // g4 = T(Zmax) - 2.0
+    Scalar T_right = x(x.extent(0)-1,0);
+    Teuchos::broadcast(*comm_,comm_->getSize()-1,&T_right);
+    auto g4_host = g4_tpetra->getLocalViewHost();
+    g4_host(0,0) = T_right - 2.0;
+    if (printDebug_)
+      std::cout << "evalModel: g(4)= T_right - 2.0 =" << g4_host(0,0) << " T_right=" << T_right << std::endl;
+  }
+
+  if (fill_g6) {
+    Scalar T_left = x(0,0);
+    Teuchos::broadcast(*comm_,0,&T_left);
+
+    Scalar T_right = x(x.extent(0)-1,0);
+    Teuchos::broadcast(*comm_,comm_->getSize()-1,&T_right);
+
+    // g6 = 2* T(Zmin) - T(Zmax)
+    // g6 is locally replicated.
+    auto g6_tpetra = tpetra_extract::getTpetraMultiVector(g6_out);
+    g6_tpetra->sync_host();
+    g6_tpetra->modify_host();
+    auto g6_host = g6_tpetra->getLocalViewHost();
+    g6_host(0,0) = 2.0 * T_left - T_right;
+    if (printDebug_)
+      std::cout << "evalModel: g(6)= 2 * T_left - T_right =" << g6_host(0,0) << " T_left=" << T_left << " T_right="
+                <<  T_right << std::endl;
+  }
+
+  if (fill_Dg4Dx) {
+    auto Dg4Dx_tpetra = tpetra_extract::getTpetraMultiVector(Dg4Dx_out);
+    Dg4Dx_tpetra->putScalar(0.0);
+    Dg4Dx_tpetra->sync_host();
+    Dg4Dx_tpetra->modify_host();
+
+    // Right most value
+    if (comm_->getRank() == (comm_->getSize()-1)) {
+      auto Dg4Dx_host = Dg4Dx_tpetra->getLocalViewHost();
+      Dg4Dx_host(Dg4Dx_host.extent(0)-1,0) = 1.0;
     }
+  }
 
-    //typedef Kokkos::HostSpace host_space;
-    typedef typename tpetra_vec::execution_space execution_space;
+  if (fill_Dg6Dx) {
+    auto Dg6Dx_tpetra = tpetra_extract::getTpetraMultiVector(Dg6Dx_out);
+    Dg6Dx_tpetra->putScalar(0.0);
+    Dg6Dx_tpetra->sync_host();
+    Dg6Dx_tpetra->modify_host();
 
-    // Create ghosted objects
-    if (is_null(uPtr_))
-      uPtr_ = Teuchos::rcp(new tpetra_vec(xGhostedMap_));
-
-    uPtr_->doImport(*(tpetra_extract::getConstTpetraVector(inArgs.get_x())), *importer_, Tpetra::REPLACE);
-
-    if (is_null(xPtr_)) {
-      xPtr_ = Teuchos::rcp(new tpetra_vec(xGhostedMap_));
-      xPtr_->doImport(*nodeCoordinates_, *importer_, Tpetra::INSERT);
+    // Left most value
+    if (comm_->getRank() == 0) {
+      auto Dg6Dx_host = Dg6Dx_tpetra->getLocalViewHost();
+      Dg6Dx_host(0,0) = 2.0;
     }
-
-    // Zero out the objects that will be filled
-    if (fill_f) {
-      f->putScalar(0.0);
+    // Right most value
+    if (comm_->getRank() == (comm_->getSize()-1)) {
+      auto Dg6Dx_host = Dg6Dx_tpetra->getLocalViewHost();
+      Dg6Dx_host(Dg6Dx_host.extent(0)-1,0) = -1.0;
     }
-    if (fill_W) {
-      J->setAllToScalar(0.0);
+  }
+
+  if (fill_DfDp2) {
+    auto DfDp2_tpetra = tpetra_extract::getTpetraMultiVector(DfDp2_out);
+    DfDp2_tpetra->putScalar(0.0);
+    DfDp2_tpetra->sync_device();
+    DfDp2_tpetra->modify_device();
+
+    DfDp2EvaluatorFunctor<NOX::TMultiVector> functor(*DfDp2_tpetra, *xPtr_, *uPtr_, myRank, k_val);
+    Kokkos::parallel_for("DfDp2 evaluation", numMyElements, functor);
+    NOX::DeviceSpace().fence();
+  }
+
+  if (fill_DfDp4) {
+    auto DfDp4_tpetra = tpetra_extract::getTpetraMultiVector(DfDp4_out);
+    DfDp4_tpetra->putScalar(0.0);
+    DfDp4_tpetra->sync_host();
+    DfDp4_tpetra->modify_host();
+
+    // Dirichlet BC on left is the equation:
+    // f(0) = T_left - p(4)
+    if (comm_->getRank() == 0) {
+      auto DfDp4_host = DfDp4_tpetra->getLocalViewHost();
+      DfDp4_host(0,0) = -1.0;
     }
-    if (fill_W_prec) {
-      M_inv->setAllToScalar(0.0);
-      J_diagonal_->putScalar(0.0);
-    }
+  }
 
-    // Get local Views of data
-    int myRank = comm_->getRank();
-    std::size_t numMyElements = xGhostedMap_->getNodeNumElements()-1;
+  if (fill_Dg4Dp2) {
+    auto Dg4Dp2_tpetra = tpetra_extract::getTpetraMultiVector(Dg4Dp2_out);
+    Dg4Dp2_tpetra->putScalar(0.0);
+  }
 
-    xPtr_->template sync<execution_space>();
-    uPtr_->template sync<execution_space>();
+  if (fill_Dg4Dp4) {
+    auto Dg4Dp4_tpetra = tpetra_extract::getTpetraMultiVector(Dg4Dp4_out);
+    Dg4Dp4_tpetra->putScalar(0.0);
+  }
 
-    // Residual fill
-    if (fill_f) {
-      Teuchos::TimeMonitor timer(*residTimer_);
-      f->template sync<execution_space>();
-      f->template modify<execution_space>();
+  if (fill_Dg6Dp2) {
+    auto Dg6Dp2_tpetra = tpetra_extract::getTpetraMultiVector(Dg6Dp2_out);
+    Dg6Dp2_tpetra->putScalar(0.0);
+  }
 
-      ResidualEvaluatorFunctor<tpetra_vec> functor(*f, *xPtr_, *uPtr_, myRank);
-      Kokkos::parallel_for("residual evaluation", numMyElements, functor);
-      Kokkos::fence();
-    }
-
-    // Jacobian fill
-    if (fill_W) {
-      Teuchos::TimeMonitor timer(*jacTimer_);
-      JacobianEvaluatorFunctor<tpetra_vec, tpetra_matrix> functor(*J, *xPtr_, *uPtr_, myRank);
-      Kokkos::parallel_for("jacobian evaluation", numMyElements, functor);
-      Kokkos::fence();
-    }
-
-    // Preconditioner fill
-    if (fill_W_prec) {
-      PreconditionerEvaluatorFunctor<tpetra_vec, tpetra_matrix> functor(*M_inv, *xPtr_, *uPtr_, myRank);
-      Kokkos::parallel_for("prec evaluation", numMyElements, functor);
-    }
-
-    if (fill_W) {
-      J->fillComplete();
-    }
-
-    if (fill_W_prec) {
-      // Invert the Jacobian diagonal for the preconditioner
-      // For some reason the matrix must be fill complete before calling rightScale
-      M_inv->fillComplete();
-      tpetra_vec& diag = *J_diagonal_;
-      M_inv->getLocalDiagCopy(diag);
-      diag.reciprocal(diag);
-      M_inv->rightScale(diag);
-      M_inv->rightScale(diag);
-    }
-
+  if (fill_Dg6Dp4) {
+    auto Dg6Dp4_tpetra = tpetra_extract::getTpetraMultiVector(Dg6Dp4_out);
+    Dg6Dp4_tpetra->putScalar(0.0);
   }
 
 }
+
+template<class Scalar, class LO, class GO, class Node>
+void EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::
+reportFinalPoint (const ::Thyra::ModelEvaluatorBase::InArgs<Scalar> &finalPoint, const bool wasSolved)
+{}
 
 #endif

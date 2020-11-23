@@ -7,6 +7,7 @@
 #include <stk_util/command_line/CommandLineParserParallel.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>
+#include <stk_util/util/string_utils.hpp>
 #include "ExtractBlocks.hpp"
 
 void print_ids_to_extract(const std::string & idType, const std::vector<int> & ids)
@@ -16,6 +17,30 @@ void print_ids_to_extract(const std::string & idType, const std::vector<int> & i
     std::cout << " " << id;
   }
   std::cout << std::endl;
+}
+
+std::string get_short_example(std::string execPath)
+{
+  std::string execName = stk::tailname(execPath);
+  std::string mpiCmd = "  > mpirun -n <numProcsDecomp> " + execName + " ";
+  std::string quickExample = "Usage\n" + mpiCmd
+                             + " --infile " + stk::angle_it("infile")
+                             + " --outfile " + stk::angle_it("outfile")
+                             + " --extract-blocks " + stk::bracket_it("block IDs")
+                             + " --extract-nodesets " + stk::bracket_it("nodeset IDs") + "\n\n";
+  return quickExample;
+}
+
+std::string get_long_example(std::string execPath)
+{
+  std::string execName = stk::tailname(execPath);
+  std::string mpiCmd = "  > mpirun -n <numProcsDecomp> " + execName + " ";
+  std::string example = "Example\n" + mpiCmd
+                        + " -i infile.exo"
+                        + " -o outfile.exo"
+                        + " -b 1,10:15,20:30:2,100"
+                        + " -n 1,2,100\n\n";
+  return example;
 }
 
 int main(int argc, const char**argv)
@@ -30,8 +55,10 @@ int main(int argc, const char**argv)
                                            "form first:last:stride. (Example: \"1,10:15,20:30:2,100\")"},{});
     commandLine.add_optional<std::string>({"extract-nodesets","n","Comma-separated list of nodeset IDs or ID ranges"},{});
 
-    stk::CommandLineParser::ParseState state = commandLine.parse(argc, argv);
-    ThrowRequireMsg(state == stk::CommandLineParser::ParseComplete, commandLine.get_usage());
+    std::string quickExample = get_short_example(argv[0]);
+    std::string longExample = get_long_example(argv[0]);
+
+    stk::parse_command_line(argc, argv, quickExample, longExample, commandLine, comm);
 
     std::string inFile = commandLine.get_option_value<std::string>("infile");
     std::string outFile = commandLine.get_option_value<std::string>("outfile");

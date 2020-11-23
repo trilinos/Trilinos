@@ -306,6 +306,44 @@ namespace {
     }
   }
 
+  bool validate_symmetric_communications(std::vector<Iocgns::StructuredZoneData *> &zones,
+                                         int                                        proc_count)
+  {
+    std::set<std::pair<std::pair<std::string, int>, std::pair<std::string, int>>> comms;
+    for (const auto &adam_zone : zones) {
+      if (adam_zone->m_parent == nullptr) {
+        // Iterate children (or self) of the adam_zone.
+        for (const auto zone : zones) {
+          if (zone->is_active() && zone->m_adam == adam_zone) {
+            for (auto &zgc : zone->m_zoneConnectivity) {
+              if (zgc.is_active()) {
+                int p1 = zgc.m_ownerProcessor;
+                int p2 = zgc.m_donorProcessor;
+                comms.emplace(std::make_pair(std::make_pair(adam_zone->m_name, p1),
+                                             std::make_pair(zgc.m_donorName, p2)));
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Now iterate map and for each key->value, make sure value->key is in map...
+    bool valid = true;
+    for (const auto &key_value : comms) {
+      const auto &key    = key_value.first;
+      const auto &value  = key_value.second;
+      auto        search = comms.find(std::make_pair(value, key));
+      if (search == comms.end()) {
+        valid = false;
+        fmt::print(stderr, fg(fmt::color::red),
+                   "ERROR: Could not find matching ZGC for {}, proc {} -> {}, proc {}\n", key.first,
+                   key.second, value.first, value.second);
+      }
+    }
+    return valid;
+  }
+
   void output_communications(std::vector<Iocgns::StructuredZoneData *> &zones, int proc_count)
   {
     fmt::print("Communication Map: [] is from decomposition; () is from zone-to-zone; omits "
@@ -318,16 +356,18 @@ namespace {
         for (const auto zone : zones) {
           if (zone->is_active() && zone->m_adam == adam_zone) {
             for (auto &zgc : zone->m_zoneConnectivity) {
-              int p1 = zgc.m_ownerProcessor;
-              int p2 = zgc.m_donorProcessor;
-              if (p1 != p2) {
-                int pmin = std::min(p1, p2);
-                int pmax = std::max(p1, p2);
-                if (zgc.is_from_decomp()) {
-                  comms.emplace_back(pmin, -pmax);
-                }
-                else {
-                  comms.emplace_back(pmin, pmax);
+              if (zgc.is_active()) {
+                int p1 = zgc.m_ownerProcessor;
+                int p2 = zgc.m_donorProcessor;
+                if (p1 != p2) {
+                  int pmin = std::min(p1, p2);
+                  int pmax = std::max(p1, p2);
+                  if (zgc.is_from_decomp()) {
+                    comms.emplace_back(pmin, -pmax);
+                  }
+                  else {
+                    comms.emplace_back(pmin, pmax);
+                  }
                 }
               }
             }
@@ -678,6 +718,13 @@ int main(int argc, char *argv[])
 
   describe_decomposition(zones, orig_zone_count, interFace);
 
+  auto valid = validate_symmetric_communications(zones, interFace.proc_count);
+  if (!valid) {
+    fmt::print(stderr, fg(fmt::color::red),
+               "\nERROR: Zone Grid Communication interfaces are not symmetric.  There is an error "
+               "in the decomposition.\n");
+  }
+
   validate_decomposition(zones, interFace.proc_count);
 
   cleanup(zones);
@@ -685,6 +732,12 @@ int main(int argc, char *argv[])
              "\nTotal Execution time = {:.5} seconds to decompose for {:n} processors. (decomp: "
              "{:.5}, resolve_zgc: {:.5})\n",
              end2 - begin, interFace.proc_count, end1 - begin, end2 - end1);
+  if (valid) {
+    exit(EXIT_SUCCESS);
+  }
+  else {
+    exit(EXIT_FAILURE);
+  }
 }
 
 #if defined(_MSC_VER)

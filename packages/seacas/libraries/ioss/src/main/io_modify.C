@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 
+
 #include <Ionit_Initializer.h>
 #include <Ioss_Assembly.h>
 #include <Ioss_Blob.h>
@@ -38,6 +39,7 @@
 #include <Ioss_Field.h>
 #include <Ioss_FileInfo.h>
 #include <Ioss_Getline.h>
+#include <Ioss_Glob.h>
 #include <Ioss_GroupingEntity.h>
 #include <Ioss_IOFactory.h>
 #include <Ioss_NodeBlock.h>
@@ -74,7 +76,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "0.93 (2020-07-30)";
+  std::string version = "0.94 (2020-10-12)";
 
   std::vector<Ioss::GroupingEntity *> attributes_modified;
 
@@ -178,6 +180,34 @@ namespace {
                    "WARNING: Regular Expression '{}' did not match any {}\n", tokens[3], type);
       }
     }
+    else if (tokens.size() == 4 && Ioss::Utils::substr_equal(tokens[2], "glob")) {
+      //   0       1           2       3
+      // LIST {entity_type} GLOB {glob}
+      auto entity_type = get_entity_type(tokens[1]);
+      if (entity_type == Ioss::INVALID_TYPE) {
+        fmt::print(stderr, fg(fmt::color::yellow), "WARNING: Unrecognized entity type '{}'.\n",
+                   tokens[1]);
+      }
+      glob::glob     glob(tokens[3]);
+      Ioss::NameList names = get_name_list(region, entity_type);
+
+      // Check for match against all names in list...
+      bool matched = false;
+      for (const auto &name : names) {
+        if (glob::glob_match(name, glob)) {
+          const auto *entity = region.get_entity(name, entity_type);
+          const T *   ge     = dynamic_cast<const T *>(entity);
+          if (ge != nullptr) {
+            info_entity(ge, show_property);
+            matched = true;
+          }
+        }
+      }
+      if (!matched) {
+        fmt::print(stderr, fg(fmt::color::yellow),
+                   "WARNING: Glob Expression '{}' did not match any {}\n", tokens[3], type);
+      }
+    }
     else if (tokens.size() == 2 ||
              (tokens.size() == 3 && Ioss::Utils::substr_equal(tokens[2], "list"))) {
       for (const T *ge : entities) {
@@ -201,10 +231,7 @@ namespace {
 
   int64_t id(const Ioss::GroupingEntity *entity)
   {
-    int64_t id = -1;
-    if (entity->property_exists("id")) {
-      id = entity->get_property("id").get_int();
-    }
+    int64_t id = entity->get_optional_property("id", -1);
     return id;
   }
 
@@ -420,7 +447,7 @@ namespace {
   {
     int64_t num_elem = eb->entity_count();
 
-    std::string type       = eb->get_property("topology_type").get_string();
+    std::string type       = eb->topology()->name();
     int64_t     num_attrib = eb->get_property("attribute_count").get_int();
     fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14n} elements, {:3d} attributes.\n", name(eb),
                id(eb), type, num_elem, num_attrib);
@@ -488,7 +515,7 @@ namespace {
   {
     bool all = Ioss::Utils::substr_equal(topic, "help");
     if (all) {
-      fmt::print("\n\tHELP [list | assembly | graph | attribute | regex]\n");
+      fmt::print("\n\tHELP [list | assembly | graph | attribute | regex | glob]\n");
       fmt::print("\n\tEND | EXIT\n");
       fmt::print("\t\tEnd command input and output changed assembly definitions (if any).\n");
       fmt::print("\n\tQUIT\n");
@@ -508,6 +535,8 @@ namespace {
                  "{{names...}}\n");
       fmt::print("\tLIST elementblock|block|structuredblock|assembly|nodeset|sideset|blob "
                  "MATCHES {{regex}}\n");
+      fmt::print("\tLIST elementblock|block|structuredblock|assembly|nodeset|sideset|blob "
+                 "GLOB {{glob}}\n");
     }
     if (all || Ioss::Utils::substr_equal(topic, "assembly")) {
       fmt::print("\n\tFor all commands, if an assembly named `name` does not exist, it will be "
@@ -525,6 +554,9 @@ namespace {
       fmt::print("\n\tASSEMBLY {{name}} TYPE {{type}} MATCHES {{regex}}\n");
       fmt::print("\t\tAdds the entities of the specified type to the assembly.\n"
                  "\t\tAll entities whose name matches the {{regex}} will be added.\n");
+      fmt::print("\n\tASSEMBLY {{name}} TYPE {{type}} GLOB {{glob}}\n");
+      fmt::print("\t\tAdds the entities of the specified type to the assembly.\n"
+                 "\t\tAll entities whose name matches the {{glob}} will be added.\n");
 
       fmt::print("\n\tASSEMBLY {{name}} TYPE {{type}} NAMED {{list of one or more names}}\n");
       fmt::print("\t\tAdds the entities of the specified type to the assembly.\n"
@@ -569,6 +601,9 @@ namespace {
       fmt::print("\tATTRIBUTE {{ent_type}} MATCH {{regex}}\n"
                  "\t\tList attributes for all entities in the specified entity type whose name "
                  "matches the regex.\n");
+      fmt::print("\tATTRIBUTE {{ent_type}} GLOB {{glob}}\n"
+                 "\t\tList attributes for all entities in the specified entity type whose name "
+                 "matches the glob.\n");
     }
     if (all || Ioss::Utils::substr_equal(topic, "regex")) {
       fmt::print("\n\tRegular Expression help (used in ASSEMBLY MATCHES and LIST MATCHES and "
@@ -576,6 +611,18 @@ namespace {
                  "\t\tSupports \"POSIX Extended Regular Expressions\" syntax\n"
                  "\t\tSee https://www.regular-expressions.info/posix.html\n"
                  "\t\tQuickStart: https://www.regular-expressions.info/quickstart.html\n");
+    }
+    if (all || Ioss::Utils::substr_equal(topic, "glob")) {
+      fmt::print(
+          "\n\tGlob help (used in ASSEMBLY GLOB and LIST GLOB and ATTRIBUTE LIST GLOB options)\n"
+          "\t\t?(pattern-list)   Matches zero or one occurrence of the given patterns\n"
+          "\t\t*(pattern-list)   Matches zero or more occurrences of the given patterns\n"
+          "\t\t+(pattern-list)   Matches one or more occurrences of the given patterns\n"
+          "\t\t@(pattern-list)   Matches one of the given patterns\n"
+          "\t\t!(pattern-list)   Matches anything except one of the given patterns\n"
+          "\tGlob Examples\n"
+          "\t\tblock*    : All names that start with 'block'\n"
+          "\t\t[A-Z]*    : All names that start with a capital letter\n");
     }
   }
 
@@ -945,6 +992,11 @@ namespace {
       handle_list(tokens, region, true);
       return false;
     }
+    else if (Ioss::Utils::substr_equal(tokens[2], "glob")) {
+      // ATTRIBUTE {{ent_type}} MATCH {regex}
+      handle_list(tokens, region, true);
+      return false;
+    }
     else {
       fmt::print(stderr, fg(fmt::color::red), "ERROR: Unrecognized attribute command.\n");
       handle_help("attribute");
@@ -963,12 +1015,7 @@ namespace {
       assem = region.get_assembly(tokens[1]);
       if (assem == nullptr) {
         // New assembly...
-        assem = new Ioss::Assembly(region.get_database(), tokens[1]);
-        if (assem == nullptr) {
-          fmt::print(stderr, fg(fmt::color::red),
-                     "ERROR: Unable to create or access assembly '{}'.\n", tokens[1]);
-          return false;
-        }
+        assem      = new Ioss::Assembly(region.get_database(), tokens[1]);
         auto my_id = get_next_assembly_id(region);
         assem->property_add(Ioss::Property("id", my_id));
         assem->property_add(Ioss::Property("created", 1));
@@ -984,7 +1031,6 @@ namespace {
     }
 
     if (assem == nullptr) {
-
       fmt::print(stderr, fg(fmt::color::red), "ERROR: Unable to create or access assembly '{}'.\n",
                  tokens[1]);
       return false;
@@ -1048,6 +1094,25 @@ namespace {
             // Check for match against all names in list...
             for (const auto &name : names) {
               if (std::regex_match(name, reg)) {
+                const auto *entity = region.get_entity(name, type);
+                if (entity != nullptr) {
+                  if (assem->add(entity)) {
+                    changed = true;
+                  }
+                }
+              }
+            }
+          }
+          else if (Ioss::Utils::substr_equal(tokens[4], "glob")) {
+            // regex match on names
+            // Get list of all names for this entity type...
+            Ioss::NameList names = get_name_list(region, type);
+
+            glob::glob glob(tokens[5]);
+
+            // Check for match against all names in list...
+            for (const auto &name : names) {
+              if (glob::glob_match(name, glob)) {
                 const auto *entity = region.get_entity(name, type);
                 if (entity != nullptr) {
                   if (assem->add(entity)) {

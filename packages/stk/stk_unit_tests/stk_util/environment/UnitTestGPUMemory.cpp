@@ -37,55 +37,47 @@
 #include <gtest/gtest.h>
 #include <iostream>
 
-//inline T* kokkos_malloc_on_device(const std::string& debuggingName) 
-//{
-//  return static_cast<T*>(Kokkos::kokkos_malloc<Kokkos::CudaSpace>(debuggingName, sizeof(T)));
-//}
-//
-//inline void kokkos_free_on_device(void* ptr) 
-//{ 
-//  Kokkos::kokkos_free<Kokkos::CudaSpace>(ptr); 
-//}
+#ifdef __CUDACC__
+TEST(GPUMemoryInfo, singleAllocationOnGPU)
+{
+  size_t initialUsed, initialFree, initialTotal;
+  size_t finalUsed, finalFree, finalTotal;
 
+  cudaSetDevice(0);
 
+  stk::get_gpu_memory_info(initialUsed, initialFree);
+  initialTotal = initialUsed + initialFree;
+
+  size_t allocationSize = 8000;
+  void* allocatedMemory = nullptr;
+
+  do {
+    Kokkos::kokkos_free<Kokkos::CudaSpace>(allocatedMemory);
+    allocationSize *= 10;
+    allocatedMemory = Kokkos::kokkos_malloc<Kokkos::CudaSpace>(allocationSize);
+
+    stk::get_gpu_memory_info(finalUsed, finalFree);
+    finalTotal = finalUsed + finalFree;
+  } while (finalUsed - initialUsed == 0u);
+
+  EXPECT_GT(initialUsed, 0u);
+  EXPECT_GT(initialFree, 0u);
+  EXPECT_GT(finalUsed, 0u);
+  EXPECT_GT(finalFree, 0u);
+
+  EXPECT_EQ(initialTotal, finalTotal);
+  EXPECT_EQ(finalUsed - initialUsed, initialFree - finalFree);
+
+  Kokkos::kokkos_free<Kokkos::CudaSpace>(allocatedMemory);
+}
+#else
 TEST(GPUMemoryInfo, alwaysZeroOnCPU)
 {
-#ifndef __CUDACC__
   size_t used;
   size_t free;
 
   stk::get_gpu_memory_info(used, free);
   EXPECT_EQ(used, 0u);
   ASSERT_EQ(free, 0u);
-#endif
 }
-
-TEST(GPUMemoryInfo, singleAllocationOnGPU)
-{
-#ifdef __CUDACC__
-  size_t initialUsed, initialFree, initialTotal;
-  size_t finalUsed, finalFree, finalTotal;
-
-  constexpr size_t allocationSize = sizeof(double) * 100000000;
-
-  cudaSetDevice(0);
-
-  stk::get_gpu_memory_info(initialUsed, initialFree);
-  initialTotal = initialUsed + initialFree;
-  std::cout << "InitialUsed: " << initialUsed << "\tInitialFree: " << initialFree << "\tInitialTotal: " << initialTotal << std::endl;
-
-  double* allocatedMemory = static_cast<double*>(Kokkos::kokkos_malloc<Kokkos::CudaSpace>(allocationSize));
-
-  stk::get_gpu_memory_info(finalUsed, finalFree);
-  finalTotal = finalUsed + finalFree;
-  std::cout << "FinalUsed: " << finalUsed << "\tFinalFree: " << finalFree << "\tFinalTotal: " << finalTotal << std::endl;
-
-  EXPECT_EQ(initialTotal, finalTotal);
-
-  EXPECT_GT(finalUsed - initialUsed, allocationSize);
-  EXPECT_GT(initialFree - finalFree, allocationSize);
-  EXPECT_EQ(finalUsed - initialUsed, initialFree - finalFree);
-
-  Kokkos::kokkos_free<Kokkos::CudaSpace>(allocatedMemory);
 #endif
-}

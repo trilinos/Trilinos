@@ -64,7 +64,6 @@
 
 // MueLu
 #include <MueLu_RefMaxwell.hpp>
-#include <MueLu_TpetraOperator.hpp>
 #include <MueLu_TestHelpers_Common.hpp>
 #include <MueLu_Exceptions.hpp>
 
@@ -81,7 +80,9 @@ using Teuchos::TimeMonitor;
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosSolverFactory.hpp>
+#ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>
+#endif
 #include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
 #endif
 
@@ -293,6 +294,7 @@ bool SetupSolveWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
   std::string            belosSolverType = *static_cast<std::string*>(inputs["belosSolverType"]);
   std::string            precType        = *static_cast<std::string*>(inputs["precType"]);
   int                    numResolves     = *static_cast<int*>(inputs["numResolves"]);
+  bool                   reuse           = *static_cast<bool*>(inputs["reuse"]);
 
   RCP<const Teuchos::Comm<int> > comm    = *static_cast<RCP<const Teuchos::Comm<int> >*>(inputs["comm"]);
   RCP<Teuchos::FancyOStream> out         = *static_cast<RCP<Teuchos::FancyOStream>*>(inputs["out"]);
@@ -372,6 +374,20 @@ bool SetupSolveWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
       else
         *out << "FAILURE! Belos did not converge fast enough." << std::endl;
     }
+
+    if (reuse) {
+      TEUCHOS_ASSERT(precType == "MueLu-RefMaxwell");
+      for (int solveno = 0; solveno<2; solveno++) {
+        Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(preconditioner)->resetMatrix(SM_Matrix);
+        Belos::ReturnType status = solver -> solve();
+        int iters = solver -> getNumIters();
+        success = (iters<50 && status == Belos::Converged);
+        if (success)
+          *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
+        else
+          *out << "FAILURE! Belos did not converge fast enough." << std::endl;
+      }
+    }
   }
 #endif // HAVE_MUELU_BELOS
   comm->barrier();
@@ -409,6 +425,7 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
   std::string            belosSolverType = *static_cast<std::string*>(inputs["belosSolverType"]);
   std::string            precType        = *static_cast<std::string*>(inputs["precType"]);
   int                    numResolves     = *static_cast<int*>(inputs["numResolves"]);
+  bool                   reuse           = *static_cast<bool*>(inputs["reuse"]);
 
   RCP<const Teuchos::Comm<int> > comm    = *static_cast<RCP<const Teuchos::Comm<int> >*>(inputs["comm"]);
   RCP<Teuchos::FancyOStream> out         = *static_cast<RCP<Teuchos::FancyOStream>*>(inputs["out"]);
@@ -491,6 +508,20 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
       else
         *out << "FAILURE! Belos did not converge fast enough." << std::endl;
     }
+
+    if (reuse) {
+      TEUCHOS_ASSERT(precType == "MueLu-RefMaxwell");
+      for (int solveno = 0; solveno<2; solveno++) {
+        Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(preconditioner)->resetMatrix(SM_Matrix);
+        Belos::ReturnType status = solver -> solve();
+        int iters = solver -> getNumIters();
+        success = (iters<50 && status == Belos::Converged);
+        if (success)
+          *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
+        else
+          *out << "FAILURE! Belos did not converge fast enough." << std::endl;
+      }
+    }
   }
 #endif // HAVE_MUELU_BELOS
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
@@ -524,9 +555,13 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
 
     // Build a new "solver factory" according to the previously specified parameter list.
     RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
+    auto precFactory = solverFactory->getPreconditionerFactory();
+    auto prec = precFactory->createPrec();
 
     // Build a Thyra operator corresponding to A^{-1} computed using the Stratimikos solver.
-    Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > thyraInverseA = Thyra::linearOpWithSolve(*solverFactory, thyraA);
+    Thyra::initializePrec<double>(*precFactory, thyraA, prec.ptr());
+    Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > thyraInverseA = solverFactory->createOp();
+    Thyra::initializePreconditionedOp<double>(*solverFactory, thyraA, prec, thyraInverseA.ptr());
 
     comm->barrier();
     tm2 = Teuchos::null;
@@ -535,9 +570,27 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
 
     // Solve Ax = b.
     Thyra::SolveStatus<Scalar> status = Thyra::solve<Scalar>(*thyraInverseA, Thyra::NOTRANS, *thyraB, thyraX.ptr());
+    comm->barrier();
+    tm5 = Teuchos::null;
+
     std::cout << status << std::endl;
 
     success = (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
+
+    if (reuse) {
+      for (int solveno = 0; solveno<2; solveno++) {
+        auto tm6 = TimeMonitor::getNewTimer("Maxwell: 4 - Setup Re");
+        Thyra::initializePrec<double>(*precFactory, thyraA, prec.ptr());
+        comm->barrier();
+        tm6 = Teuchos::null;
+
+        auto tm7 = TimeMonitor::getNewTimer("Maxwell: 5 - Solve Re");
+        status = Thyra::solve<Scalar>(*thyraInverseA, Thyra::NOTRANS, *thyraB, thyraX.ptr());
+        comm->barrier();
+        tm7 = Teuchos::null;
+      }
+    }
+
   } // HAVE_MUELU_STRATIMIKOS && HAVE_MUELU_THYRA
 #endif
   comm->barrier();
@@ -566,6 +619,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   std::string belos_xml         = "Belos.xml";        clp.setOption("belos_xml",             &belos_xml,         "xml file with Belos solver parameters (default: \"Belos.xml\")");
   std::string stratimikos_xml   = "Stratimikos.xml";  clp.setOption("stratimikos_xml",       &stratimikos_xml,   "xml file with Stratimikos solver parameters (default: \"Stratimikos.xml\")");
   int         numResolves       = 0;                  clp.setOption("resolve",               &numResolves,       "#times to redo solve");
+  bool        reuse             = false;              clp.setOption("reuse", "no-reuse",     &reuse,             "test reuse");
   double      tol               = 1e-10;              clp.setOption("tol",                   &tol,               "solver convergence tolerance");
   int         maxIts            = 200;                clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
   bool        use_stacked_timer = false;              clp.setOption("stacked-timer",
@@ -739,6 +793,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   inputs["precType"]        = &precType;
   inputs["belosParams"]     = &belosParams;
   inputs["numResolves"]     = &numResolves;
+  inputs["reuse"]           = &reuse;
 
   inputs["lib"]             = &lib;
   inputs["comm"]            = &comm;

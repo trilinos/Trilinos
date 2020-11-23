@@ -149,10 +149,10 @@ namespace Intrepid2 {
 
     typedef Kokkos::DynRankView<outputValueType,outputProperties...> OutputViewType;
     typedef Kokkos::DynRankView<inputValueType, inputProperties...>  inputViewType; 
-    typedef typename ExecSpace< typename inputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
     
-    using range_policy_type = Kokkos::Experimental::MDRangePolicy
-      < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
+    using range_policy_type = Kokkos::MDRangePolicy
+      < ExecSpaceType, Kokkos::Rank<3>, Kokkos::IndexType<ordinal_type> >;
 
     range_policy_type policy( { 0, 0, 0 },
                               { /*C*/ output.extent(0), /*F*/ output.extent(1), /*P*/ output.extent(2) } );
@@ -197,10 +197,10 @@ namespace Intrepid2 {
 
     typedef Kokkos::DynRankView<outputValueType,outputProperties...> OutputViewType;
     typedef Kokkos::DynRankView<inputValueType, inputProperties...>  inputViewType; 
-    typedef typename ExecSpace< typename inputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
+    typedef typename SpT::execution_space ExecSpaceType;
     
-    using range_policy_type = Kokkos::Experimental::MDRangePolicy
-      < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+    using range_policy_type = Kokkos::MDRangePolicy
+      < ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
     
     range_policy_type policy( { 0, 0 },
                               { /*C*/ output.extent(0), /*P*/ output.extent(1) } );

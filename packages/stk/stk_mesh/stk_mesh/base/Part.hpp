@@ -207,6 +207,25 @@ struct PartLess {
   }
 };
 
+struct PartLessById {
+
+  inline bool operator()( const Part & lhs , const Part & rhs ) const
+    { return lhs.id() < rhs.id(); }
+
+  inline bool operator()( const Part & lhs , const Part * rhs ) const
+    { return lhs.id() < rhs->id(); }
+
+  inline bool operator()( const Part * lhs , const Part & rhs ) const
+    { return lhs->id() < rhs.id(); }
+
+  inline bool operator()( const Part * lhs , const Part * rhs ) const
+    { return lhs->id() < rhs->id(); }
+
+  bool operator()(const stk::mesh::Part *lhs, unsigned rhs) const {
+    return lhs->id() < rhs;
+  }
+};
+
 /** \brief  Insert a part into a properly ordered collection of parts.
  *          Returns true if this is a new insertion.
  */

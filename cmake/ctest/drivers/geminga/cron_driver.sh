@@ -76,7 +76,7 @@ export CTEST_CONFIGURATION="nvcc_wrapper"
 module load sems-env
 module load sems-cmake/3.12.2
 module load sems-gcc/8.3.0
-module load sems-boost/1.63.0/base
+module load sems-boost/1.69.0/base
 module load sems-python/2.7.9
 module load sems-zlib/1.2.8/base
 module load sems-openmpi/4.0.2
@@ -115,7 +115,7 @@ module unload sems-cuda/10.1
 module unload sems-openmpi/4.0.2
 module unload sems-zlib/1.2.8/base
 module unload sems-python/2.7.9
-module unload sems-boost/1.63.0/base
+module unload sems-boost/1.69.0/base
 module unload sems-gcc/8.3.0
 module unload sems-cmake/3.12.2
 module unload sems-env

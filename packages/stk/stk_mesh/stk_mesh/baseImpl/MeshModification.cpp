@@ -37,8 +37,16 @@ bool MeshModification::modification_begin(const std::string description)
     this->set_sync_state_modifiable();
     this->reset_shared_entity_changed_parts();
 
-    for (FieldBase * stkField : m_bulkData.mesh_meta_data().get_fields()) {
+    const stk::mesh::FieldVector allFields = m_bulkData.mesh_meta_data().get_fields();
+    for (FieldBase * stkField : allFields) {
       stkField->sync_to_host();
+#ifdef STK_DEBUG_FIELD_SYNC
+      stk::mesh::NgpFieldBase * ngpField = stkField->get_debug_ngp_field();
+      if (ngpField != nullptr) {
+        ngpField->detect_device_field_modification();
+        stkField->fill_last_mod_location_field_from_device();
+      }
+#endif
     }
 
     this->increment_sync_count();
@@ -100,6 +108,9 @@ bool MeshModification::internal_modification_end(modification_optimization opt)
         if(m_bulkData.is_automatic_aura_on())
         {
             m_bulkData.internal_regenerate_aura();
+        }
+        else if (m_bulkData.m_turningOffAutoAura) {
+            m_bulkData.internal_remove_aura();
         }
 
         m_bulkData.internal_resolve_send_ghost_membership();
@@ -171,6 +182,9 @@ bool MeshModification::internal_modification_end_after_node_sharing_resolution(m
         if(m_bulkData.is_automatic_aura_on())
         {
             m_bulkData.internal_regenerate_aura();
+        }
+        else if (m_bulkData.m_turningOffAutoAura) {
+            m_bulkData.internal_remove_aura();
         }
 
         m_bulkData.internal_resolve_send_ghost_membership();

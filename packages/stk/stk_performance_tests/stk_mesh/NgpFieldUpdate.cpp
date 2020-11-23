@@ -39,6 +39,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetNgpField.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/ExodusTranslator.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/perf_util.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -63,7 +64,7 @@ public:
                                         + std::to_string(numElemPerDim);
     stk::performance_tests::setup_multiple_blocks(get_meta(), numBlocks);
     setup_mesh(meshDesc, auraOption);
-    stk::performance_tests::move_elements_to_other_blocks(get_bulk(), numElemPerDim, numBlocks);
+    stk::performance_tests::move_elements_to_other_blocks(get_bulk(), numElemPerDim);
   }
 
   void setup_fields(unsigned numComponent, unsigned tensorFieldSizePerElem, unsigned vectorFieldSizePerElem)
@@ -78,23 +79,19 @@ public:
     stk::mesh::put_field_on_mesh(*stkIntField, get_meta().universal_part(), numComponent, init.data());
   }
 
-  stk::mesh::Part* get_part_with_block_number(unsigned blockNumber)
-  {
-    std::string blockName = "block_" + std::to_string(blockNumber+1);
-    stk::mesh::Part* part = get_meta().get_part(blockName);
-    ThrowRequire(part != nullptr);
-    return part; 
-  }
-
-  stk::mesh::Selector get_non_contiguous_partial_selector(unsigned numBlocks, unsigned numBlocksToSync)
+  stk::mesh::Selector get_non_contiguous_partial_selector(unsigned numBlocksToSync)
   {
     stk::mesh::PartVector parts;
     unsigned partCount = 0;
 
+    stk::mesh::PartVector elemBlockParts;
+    stk::mesh::fill_element_block_parts(get_meta(), stk::topology::HEX_8, elemBlockParts);
+    const unsigned numBlocks = elemBlockParts.size();
+
     for(unsigned i = 0; i < numBlocks; i++) {
       if(i % 2 == 0) {
         if(partCount == numBlocksToSync) { break; }
-        parts.push_back(get_part_with_block_number(i));
+        parts.push_back(elemBlockParts[i]);
         partCount++;
       }
     }
@@ -102,7 +99,7 @@ public:
     for(unsigned i = 0; i < numBlocks; i++) {
       if(i % 2 == 1) {
         if(partCount == numBlocksToSync) { break; }
-        parts.push_back(get_part_with_block_number(i));
+        parts.push_back(elemBlockParts[i]);
         partCount++;
       }
     }
@@ -114,8 +111,13 @@ public:
   {
     stk::mesh::PartVector parts;
 
+    stk::mesh::PartVector elemBlockParts;
+    stk::mesh::fill_element_block_parts(get_meta(), stk::topology::HEX_8, elemBlockParts);
+    const unsigned numBlocks = elemBlockParts.size();
+    ThrowRequire(numBlocksToSync <= numBlocks);
+
     for(unsigned i = 0; i < numBlocksToSync; i++) {
-      parts.push_back(get_part_with_block_number(i));
+      parts.push_back(elemBlockParts[i]);
     }
 
     return stk::mesh::selectUnion(parts);
@@ -189,7 +191,7 @@ public:
     stk::mesh::put_field_on_mesh(*vectorField, get_meta().universal_part(), vectorFieldSizePerElem, static_cast<double*>(nullptr));
     stk::performance_tests::setup_multiple_blocks(get_meta(), numElemBlocks);
     setup_mesh(meshSpecification, auraOption);
-    stk::performance_tests::move_elements_to_other_blocks(get_bulk(), numElemsPerDim, numElemBlocks);
+    stk::performance_tests::move_elements_to_other_blocks(get_bulk(), numElemsPerDim);
   }
 
   void update_fields()
@@ -227,6 +229,8 @@ public:
   void change_element_part_membership(int cycle)
   {
     get_bulk().modification_begin();
+    const stk::mesh::Part* part = get_part();
+    ThrowRequireMsg(part!=nullptr,"get_part returned nullptr, newPartName="<<newPartName);
     get_bulk().change_entity_parts<stk::mesh::ConstPartVector>(get_element(cycle), {get_part()});
     get_bulk().modification_end();
     get_bulk().get_updated_ngp_mesh();
@@ -393,7 +397,7 @@ TEST_F(NgpFieldSyncTest, PartialSyncTiming)
   if(contiguousBlocks) {
     selector = get_contiguous_partial_selector(numBlocksToSync);
   } else {
-    selector = get_non_contiguous_partial_selector(numBlocks, numBlocksToSync);
+    selector = get_non_contiguous_partial_selector(numBlocksToSync);
   }
 
   for(unsigned i = 0; i < NUM_RUNS; i++) {

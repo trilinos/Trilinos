@@ -193,6 +193,8 @@ bool should_be_reconnected(const DisconnectGroup& disconnectedGroup, const NodeM
 
 bool can_be_reconnected(const DisconnectGroup& disconnectedGroup, const NodeMapValue& nodeMapValue, const BlockPair& blockPair, LinkInfo& info);
 
+bool can_be_reconnected(const DisconnectGroup& disconnectedGroup, const NodeMapValue& nodeMapValue, const BlockPair& blockPair, stk::mesh::Entity currentEntity, LinkInfo& info);
+
 bool is_block(const stk::mesh::BulkData & bulk, stk::mesh::Part & part);
 
 stk::mesh::Part* get_block_part_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element);
@@ -228,6 +230,8 @@ void restore_node_sharing(stk::mesh::BulkData& bulk, const NodeMapValue& value, 
 void sanitize_node_map(NodeMapType& nodeMap, LinkInfo& os);
 
 stk::mesh::EntityVector extract_nodes(const stk::mesh::BulkData& bulk, LinkInfo& info);
+
+stk::mesh::EntityVector get_affected_nodes(const stk::mesh::BulkData& bulk, const BlockPairVector& blocksToDisconnect);
 
 void disconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPair>& blockPairsToDisconnect,
                             LinkInfo& info);

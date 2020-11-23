@@ -176,7 +176,6 @@ namespace { // (anonymous)
          << numKeys << " != vals.extent(0) = " << vals.extent (0)
          << ".");
 
-      const bool testReverse = table.hasKeys ();
       auto keys_h = Kokkos::create_mirror_view (keys);
       Kokkos::deep_copy (keys_h, keys);
       auto vals_h = Kokkos::create_mirror_view (vals);
@@ -199,19 +198,6 @@ namespace { // (anonymous)
               << ", should have been " << expectedVal << endl;
         }
 
-        if (testReverse) {
-          const KeyType returnedKey = table.getKey (expectedVal);
-          if (returnedKey == Teuchos::OrdinalTraits<KeyType>::invalid ()) {
-            curBad = true;
-            out << "getKey(val=" << expectedVal << ") = invalid, should have "
-              "been " << key << endl;
-          }
-          else if (returnedKey != key) {
-            curBad = true;
-            out << "getKey(val=" << expectedVal << ") = " << returnedKey
-                << ", should have been " << key << endl;
-          }
-        }
         if (curBad) {
           ++badCount;
         }
@@ -262,10 +248,9 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av = Kokkos::Compat::getArrayView (keys_h);
     out << "Create table" << endl;
 
-    const bool keepKeys = true;
     using table_ptr_type = std::unique_ptr<table_type>; // macros may not like colons etc.
     table_ptr_type table;
-    TEST_NOTHROW( table = table_ptr_type (new table_type (keys_av, startingValue, keepKeys)) );
+    TEST_NOTHROW( table = table_ptr_type (new table_type (keys_av, startingValue)) );
     if (table.get () == nullptr) {
       out << "table is null!  Its constructor must have thrown.  "
         "No sense in continuing." << endl;
@@ -348,9 +333,8 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
     out << " Create table" << endl;
 
-    const bool keepKeys = true;
     Teuchos::RCP<table_type> table;
-    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
     if (table.is_null ()) {
       return; // stop the test now to prevent dereferencing null
     }
@@ -493,9 +477,8 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
     out << " Create table" << endl;
 
-    const bool keepKeys = true;
     Teuchos::RCP<table_type> table;
-    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
     if (table.is_null ()) {
       return; // stop the test now to prevent dereferencing null
     }
@@ -716,9 +699,8 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
     out << " Create table" << endl;
 
-    const bool keepKeys = true;
     Teuchos::RCP<table_type> table;
-    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
     if (table.is_null ()) {
       return; // stop the test now to prevent dereferencing null
     }
@@ -894,9 +876,8 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
     out << " Create table" << endl;
 
-    const bool keepKeys = true;
     Teuchos::RCP<table_type> table;
-    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
     if (table.is_null ()) {
       return; // fail fast to avoid dereferencing null
     }
@@ -1037,9 +1018,8 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
     out << " Create table" << endl;
 
-    const bool keepKeys = true;
     Teuchos::RCP<table_type> table;
-    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
     if (table.is_null ()) {
       return; // fail fast to avoid dereferencing null
     }

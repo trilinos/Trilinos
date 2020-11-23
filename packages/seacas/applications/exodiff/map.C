@@ -131,9 +131,9 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
 
   // Cannot ignore the comparisons, so make sure the coord_tol_type
   // is not -1 which is "ignore"
-  TOLERANCE_TYPE_enum save_tolerance_type = interFace.coord_tol.type;
-  if (save_tolerance_type == IGNORE_) {
-    interFace.coord_tol.type = ABSOLUTE_;
+  ToleranceMode save_tolerance_type = interFace.coord_tol.type;
+  if (save_tolerance_type == ToleranceMode::IGNORE_) {
+    interFace.coord_tol.type = ToleranceMode::ABSOLUTE_;
   }
 
   // Match elmts in first file to their corresponding elmts in second.
@@ -444,9 +444,9 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
 
   // Cannot ignore the comparisons, so make sure the coord_tol_type
   // is not -1 which is "ignore"
-  TOLERANCE_TYPE_enum save_tolerance_type = interFace.coord_tol.type;
-  if (save_tolerance_type == IGNORE_) {
-    interFace.coord_tol.type = ABSOLUTE_;
+  ToleranceMode save_tolerance_type = interFace.coord_tol.type;
+  if (save_tolerance_type == ToleranceMode::IGNORE_) {
+    interFace.coord_tol.type = ToleranceMode::ABSOLUTE_;
   }
 
   // Match elmts in first file to their corresponding elmts in second.
@@ -788,9 +788,9 @@ namespace {
 
     // Cannot ignore the comparisons, so make sure the coord_tol_type
     // is not -1 which is "ignore"
-    TOLERANCE_TYPE_enum save_tolerance_type = interFace.coord_tol.type;
-    if (save_tolerance_type == IGNORE_) {
-      interFace.coord_tol.type = ABSOLUTE_;
+    ToleranceMode save_tolerance_type = interFace.coord_tol.type;
+    if (save_tolerance_type == ToleranceMode::IGNORE_) {
+      interFace.coord_tol.type = ToleranceMode::ABSOLUTE_;
     }
 
     // Find unmapped nodes in file2; count the unmapped nodes in file_1.
@@ -884,13 +884,15 @@ namespace {
            INT *id, size_t N, int dim, bool ignore_dups)
   {
     SMART_ASSERT(x != nullptr);
-    SMART_ASSERT(N > 0);
+    if (N == 0) {
+      return -1;
+    }
 
     // Cannot ignore the comparisons, so make sure the coord_tol_type
     // is not -1 which is "ignore"
-    TOLERANCE_TYPE_enum save_tolerance_type = interFace.coord_tol.type;
-    if (save_tolerance_type == IGNORE_) {
-      interFace.coord_tol.type = ABSOLUTE_;
+    ToleranceMode save_tolerance_type = interFace.coord_tol.type;
+    if (save_tolerance_type == ToleranceMode::IGNORE_) {
+      interFace.coord_tol.type = ToleranceMode::ABSOLUTE_;
     }
 
     // Find the index such that x0 > x[0,1,...,low-1] and x0 >= x[low]
@@ -1156,20 +1158,23 @@ bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *nod
     if (!interFace.dump_mapping) {
       // There is a map between file1 and file2, but all elements are
       // used in both files.
-      for (size_t i = 0; i < num_elmts1; i++) {
-        if (elem_id_map1[i] != elem_id_map2[elmt_map[i]]) {
-          if (!(elem_id_map2[elmt_map[i]] == 0 &&
-                partial_flag)) { // Don't output diff if non-matched and partial
-            fmt::print(stderr,
-                       "exodiff: WARNING .. The local element {} with global id {} in file1 has "
-                       "the global id "
-                       "{} in file2.\n",
-                       i + 1, elem_id_map1[i], elem_id_map2[elmt_map[i]]);
-            diff = true;
-            warn_count++;
-            if (warn_count >= interFace.max_warnings) {
-              fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
-              break;
+      if (elem_id_map2 != nullptr) {
+        for (size_t i = 0; i < num_elmts1; i++) {
+          if (elem_id_map1[i] != elem_id_map2[elmt_map[i]]) {
+            if (!(elem_id_map2[elmt_map[i]] == 0 &&
+                  partial_flag)) { // Don't output diff if non-matched and partial
+              fmt::print(stderr,
+                         "exodiff: WARNING .. The local element {} with global id {} in file1 has "
+                         "the global id "
+                         "{} in file2.\n",
+                         i + 1, elem_id_map1[i], elem_id_map2[elmt_map[i]]);
+              diff = true;
+              warn_count++;
+              if (warn_count >= interFace.max_warnings) {
+                fmt::print(stderr,
+                           "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
+                break;
+              }
             }
           }
         }
@@ -1178,20 +1183,23 @@ bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *nod
   }
   else {
     // No element mapping between file1 and file2 -- do a straight compare.
-    for (size_t i = 0; i < num_elmts1; i++) {
-      if (elem_id_map1[i] != elem_id_map2[i]) {
-        if (!(elem_id_map2[i] == 0 &&
-              partial_flag)) { // Don't output diff if non-matched and partial
-          fmt::print(stderr,
-                     "exodiff: WARNING .. The local element {} with global id {} in file1 has the "
-                     "global id "
-                     "{} in file2.\n",
-                     i + 1, elem_id_map1[i], elem_id_map2[i]);
-          diff = true;
-          warn_count++;
-          if (warn_count >= interFace.max_warnings) {
-            fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
-            break;
+    if (elem_id_map2 != nullptr) {
+      for (size_t i = 0; i < num_elmts1; i++) {
+        if (elem_id_map1[i] != elem_id_map2[i]) {
+          if (!(elem_id_map2[i] == 0 &&
+                partial_flag)) { // Don't output diff if non-matched and partial
+            fmt::print(
+                stderr,
+                "exodiff: WARNING .. The local element {} with global id {} in file1 has the "
+                "global id "
+                "{} in file2.\n",
+                i + 1, elem_id_map1[i], elem_id_map2[i]);
+            diff = true;
+            warn_count++;
+            if (warn_count >= interFace.max_warnings) {
+              fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
+              break;
+            }
           }
         }
       }

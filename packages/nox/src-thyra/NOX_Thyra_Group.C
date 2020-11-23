@@ -229,6 +229,7 @@ NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
   right_weight_vec_(source.right_weight_vec_),
   inv_right_weight_vec_(source.inv_right_weight_vec_),
   rightScalingFirst_(source.rightScalingFirst_),
+  updatePreconditioner_(source.updatePreconditioner_),
   last_linear_solve_status_(source.last_linear_solve_status_),
   last_linear_solve_num_iters_(source.last_linear_solve_num_iters_),
   last_linear_solve_achieved_tol_(source.last_linear_solve_achieved_tol_)
@@ -338,6 +339,9 @@ NOX::Abstract::Group& NOX::Thyra::Group::operator=(const Group& source)
     if (this->isJacobian())
       shared_jacobian_->getObject(this);
 
+  rightScalingFirst_ = source.rightScalingFirst_;
+  updatePreconditioner_ = source.updatePreconditioner_;
+
   last_linear_solve_status_ = source.last_linear_solve_status_;
   last_linear_solve_num_iters_ = source.last_linear_solve_num_iters_;
   last_linear_solve_achieved_tol_ = source.last_linear_solve_achieved_tol_;
@@ -427,6 +431,15 @@ NOX::Thyra::Group::getPreconditioner() const
   return prec_;
 }
 
+void NOX::Thyra::Group::setJacobianOperator(const Teuchos::RCP<::Thyra::LinearOpBase<double>>& op)
+{
+  lop_ = op;
+}
+
+void NOX::Thyra::Group::setPreconditionerOperator(const Teuchos::RCP<::Thyra::PreconditionerBase<double>>& op)
+{
+  prec_ = op;
+}
 
 void NOX::Thyra::Group::setX(const NOX::Abstract::Vector& y)
 {

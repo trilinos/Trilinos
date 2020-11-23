@@ -70,7 +70,7 @@ Simple serial instructions (enables most packages)
   -DCMAKE_CXX_COMPILER=<path to C++ compiler> \
   -DCMAKE_Fortran_COMPILER=<path to Fortran compiler> \
   -DTrilinos_ENABLE_ALL_PACKAGES=ON \
-  -DCMAKE_INSTALL_PATH=<path to install Trilinos into> \
+  -DCMAKE_INSTALL_PREFIX=<path to install Trilinos into> \
   <path to Trilinos source>
   
   make -j<n> install
@@ -87,7 +87,7 @@ Intermediate MPI instructions (enables a few packages)
   -DTrilinos_ENABLE_Epetra=ON \
   -DTrilinos_ENABLE_AztecOO=ON \
   -DTrilinos_ENABLE_Ifpack=ON \
-  -DCMAKE_INSTALL_PATH=<path to install Trilinos into> \
+  -DCMAKE_INSTALL_PREFIX=<path to install Trilinos into> \
   <path to Trilinos source>
   
   make -j<n> install
@@ -105,7 +105,7 @@ Intermediate MPI instructions (enables a few packages)
   -DTrilinos_ENABLE_Epetra=ON \
   -DTrilinos_ENABLE_AztecOO=ON \
   -DTrilinos_ENABLE_Ifpack=ON \
-  -DCMAKE_INSTALL_PATH=<path to install Trilinos into> \
+  -DCMAKE_INSTALL_PREFIX=<path to install Trilinos into> \
   <path to Trilinos source>
   
   make -j<n> install

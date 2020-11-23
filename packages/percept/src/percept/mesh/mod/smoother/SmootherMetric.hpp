@@ -268,9 +268,9 @@
       {
         int N = get_n();
         VERIFY_OP_ON(Size, >=, m_eMesh->get_spatial_dim()*m_nnodes, " bad dim");
-        double usave[N];
+        double *usave = new double[N];
         stk::mesh::Entity const *nodes = m_eMesh->get_bulk_data()->begin_nodes(m_element);
-        double *coordsAll[m_nnodes];
+        double **coordsAll = new double*[m_nnodes];
         for (unsigned inode=0; inode < m_nnodes; ++inode)
           {
             stk::mesh::Entity node = nodes[inode];
@@ -300,6 +300,8 @@
                 coordsAll[inode][jc] = usave[inode*m_ndof + jc];
               }
           }
+        delete [] coordsAll;
+        delete [] usave;
         return mm;
       }
 
@@ -307,9 +309,9 @@
       {
         int N = get_n();
         VERIFY_OP_ON(Size, >=, m_eMesh->get_spatial_dim()*m_nnodes, " bad dim");
-        double usave[N];
+        double *usave = new double[N];
         stk::mesh::Entity const *nodes = m_eMesh->get_bulk_data()->begin_nodes(m_element);
-        double *coordsAll[m_nnodes];
+        double **coordsAll = new double*[m_nnodes];
         int spatialDim = m_eMesh->get_spatial_dim();
         for (unsigned inode=0; inode < m_nnodes; ++inode)
           {
@@ -341,6 +343,8 @@
               }
             grad[inode*m_ndof + m_ndim] = gradAll[inode][m_ndim];
           }
+        delete [] coordsAll;
+        delete [] usave;
       }
 
 //KOKKOS_INLINE_FUNCTION

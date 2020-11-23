@@ -14,18 +14,20 @@ LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestStkSimdView2d.cpp"
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestStkSimdView3d.cpp")
 
 TRIBITS_ADD_EXECUTABLE(
-    simd_unit_tests
+    simd_old_unit_tests
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     COMM serial mpi
+    NOEXEPREFIX
     )
 
 TRIBITS_ADD_TEST(
-   simd_unit_tests
+   simd_old_unit_tests
    NAME STKSimd_Simd
    ARGS "--gtest_filter=StkSimd.SimdAddSubtractMultDivide"
    COMM serial mpi
    PASS_REGULAR_EXPRESSION "PASS"
    FAIL_REGULAR_EXPRESSION "FAIL"
    NUM_MPI_PROCS 1
+   NOEXEPREFIX
    )

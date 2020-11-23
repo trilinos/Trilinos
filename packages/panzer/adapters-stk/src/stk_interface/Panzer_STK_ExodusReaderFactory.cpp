@@ -52,7 +52,7 @@
 #include <Ionit_Initializer.h>
 #include <Ioss_ElementBlock.h>
 #include <Ioss_Region.h>
-#include <GetBuckets.hpp>
+#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>

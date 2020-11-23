@@ -114,6 +114,7 @@ namespace SEAMS {
     bool        end_on_exit{false};
     bool        errors_fatal{false};
     bool        errors_and_warnings_fatal{false};
+    bool        require_defined{false}; // flag to treat undefined vars as errors
     bool        warning_msg{true};
     bool        info_msg{false};
     bool        debugging{false};
@@ -183,7 +184,7 @@ namespace SEAMS {
     void                      clear_results();
 
     /** Return string representation of current version of aprepro.  */
-    std::string version() const;
+    static std::string version();
 
     /** Invoke the scanner and parser for a stream.
      * @param in        input stream

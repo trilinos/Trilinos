@@ -1,0 +1,102 @@
+#!/bin/bash
+
+trilinos_src_dir=${TRILINOS_DIR:-${PWD}/../Trilinos}
+build_dir=${BUILD_DIR:-${PWD}}
+build_type=${CMAKE_BUILD_TYPE:-release}
+trilinos_install_dir=${TRILINOS_INSTALL_DIR:-${PWD}/../trilinos_install_dir}
+fortran_macro=${FORTRAN_MACRO:-FORTRAN_ONE_UNDERSCORE}
+cmake_cxx_flags=${CMAKE_CXX_FLAGS}
+cmake_exe_linker_flags=${CMAKE_EXE_LINKER_FLAGS}
+cuda_on_or_off=${CUDA:-OFF}
+
+printf "\nTRILINOS_DIR=${trilinos_src_dir}\n";
+printf "BUILD_DIR=${build_dir}\n";
+printf "CMAKE_BUILD_TYPE=${build_type}\n";
+printf "CMAKE_EXE_LINKER_FLAGS=${cmake_exe_linker_flags}\n";
+printf "CMAKE_CXX_FLAGS=${cmake_cxx_flags}\n";
+printf "CUDA=${cuda_on_or_off}\n";
+printf "TRILINOS_INSTALL_DIR=${trilinos_install_dir}\n";
+printf "FORTRAN_MACRO=${fortran_macro}\n";
+printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_cmake_stk_user_facing'\n\n";
+
+if [ $# -ne 1 ] ; then
+  echo "Usage: run_cmake_stk_user_facing tpl_paths_file";
+  exit 1;
+fi
+tpl_paths=$1
+if [ ! -f ${tpl_paths} ] ; then
+  echo "Error, tpl_paths file ${tpl_paths} not found.";
+  exit 1;
+fi
+
+source ${tpl_paths}
+
+mkdir -p $trilinos_install_dir
+mkdir -p $build_dir
+
+cd ${build_dir}
+
+# Cleanup old cache before we configure
+rm -rf CMakeFiles CMakeCache.txt
+
+mpi_base_dir=${MPI_HOME}
+if [ -z "${mpi_base_dir}" ] ; then
+  mpi_base_dir=${MPI_ROOT};
+fi
+if [ -z "${mpi_base_dir}" ] ; then
+  echo "Neither MPI_HOME nor MPI_ROOT is set. Make sure MPI is available."
+  exit 1;
+fi
+
+cmake \
+-DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
+-DTrilinos_ENABLE_CXX11=ON \
+-DCMAKE_BUILD_TYPE=${build_type^^} \
+-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-DTrilinos_ENABLE_TESTS:BOOL=OFF \
+-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
+-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF \
+-DTrilinos_ASSERT_MISSING_PACKAGES=OFF \
+-DTPL_ENABLE_MPI=ON \
+-DMPI_BASE_DIR:PATH=$mpi_base_dir \
+-DTrilinos_ENABLE_Tpetra:BOOL=ON \
+-DTpetraCore_ENABLE_TESTS:BOOL=OFF \
+-DTpetra_ENABLE_DEPRECATED_CODE:BOOL=OFF \
+-DTrilinos_ENABLE_Zoltan2:BOOL=ON \
+-DZoltan2_ENABLE_ParMETIS:BOOL=ON \
+-DTPL_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
+-DKokkos_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
+-DKokkos_ENABLE_CUDA_UVM:BOOL=${cuda_on_or_off} \
+-DKokkos_ENABLE_RELOCATABLE_DEVICE_CODE:BOOL=${cuda_on_or_off} \
+-DKokkos_ARCH_VOLTA70=${cuda_on_or_off} \
+-DTpetra_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
+-DTrilinos_ENABLE_KokkosKernels:BOOL=ON \
+-DTrilinos_ENABLE_Zoltan:BOOL=ON \
+-DTrilinos_ENABLE_Fortran:BOOL=OFF \
+-DCMAKE_CXX_FLAGS:STRING="-DNOT_HAVE_STK_SEACASAPREPRO_LIB -D${fortran_macro} ${cmake_cxx_flags}" \
+-DSTK_ENABLE_TESTS:BOOL=OFF \
+-DTrilinos_ENABLE_STK:BOOL=ON \
+-DTrilinos_ENABLE_Gtest:BOOL=OFF \
+-DTrilinos_ENABLE_SEACASExodus:BOOL=ON \
+-DTrilinos_ENABLE_SEACASIoss:BOOL=ON \
+-DTPL_ENABLE_Netcdf:BOOL=ON \
+-DTPL_Netcdf_Enables_Netcdf4:BOOL=ON \
+-DTPL_Netcdf_Enables_Pnetcdf:BOOL=ON \
+-DTPL_ENABLE_Zlib:BOOL=ON \
+-DTPL_ENABLE_ParMETIS:BOOL=ON \
+-DParMETIS_INCLUDE_DIRS:PATH="${PARMETIS_INC_DIR};${METIS_INC_DIR}" \
+-DParMETIS_LIBRARY_DIRS:PATH="${PARMETIS_LIB_DIR};${METIS_LIB_DIR}" \
+-DTPL_ENABLE_Pnetcdf:BOOL=ON \
+-DNetCDF_INCLUDE_DIRS:PATH=${NETCDF_INC_DIR} \
+-DNetCDF_LIBRARIES="-L${NETCDF_LIB_DIR} -lnetcdf -L${PNETCDF_LIB_DIR} -lpnetcdf -L${HDF_LIB_DIR} -lhdf5_hl -lhdf5 -ldl" \
+-DTPL_ENABLE_HDF5:BOOL=ON \
+-DHDF5_INCLUDE_DIRS:PATH=${HDF_INC_DIR} \
+-DHDF5_LIBRARY_DIRS:PATH=${HDF_LIB_DIR} \
+-DPnetcdf_INCLUDE_DIRS:PATH=${PNETCDF_INC_DIR} \
+-DPnetcdf_LIBRARY_DIRS:PATH=${PNETCDF_LIB_DIR} \
+-DBoost_INCLUDE_DIRS:PATH="$BOOST_INC_DIR" \
+-DTPL_BLAS_LIBRARIES="${BLAS_LIBRARIES}" \
+-DTPL_LAPACK_LIBRARIES="${LAPACK_LIBRARIES}" \
+-DCMAKE_EXE_LINKER_FLAGS="${cmake_exe_linker_flags}" \
+${trilinos_src_dir}/
+
