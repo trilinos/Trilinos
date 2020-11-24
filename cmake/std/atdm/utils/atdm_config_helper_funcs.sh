@@ -73,7 +73,7 @@ function get_loaded_sparc_dev_module_name() {
 function atdm_config_load_sparc_dev_module () {
   sparc_dev_mod_name_in=$1 ; shift
   if [[ "${ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE}" == "1" ]] ; then
-    loaded_sparc_dev_mod=$(get_loaded_sparc_dev_module_name)
+    loaded_sparc_dev_mod=${SPARC_MODULE}
     if [[ "${loaded_sparc_dev_mod}" == "" ]] ; then
       echo
       echo "***"
@@ -94,6 +94,8 @@ function atdm_config_load_sparc_dev_module () {
       echo "***   ${sparc_dev_mod_name_in}"
       echo "***"
       echo "*** !"
+      echo "***"
+      echo "*** Please 'unset ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE' and try again."
       echo "***"
       echo
      return
