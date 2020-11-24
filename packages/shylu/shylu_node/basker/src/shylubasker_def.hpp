@@ -983,6 +983,34 @@ namespace BaskerNS
                                                 range_type (nfirst, ncol));
           permute_row(BTF_C, order_blk_mwm_c);
         }
+
+#ifdef AMD_ON_D
+        // --------------------------------------------
+        // reset the small D blocks
+        if (btf_top_tabs_offset > 0) {
+          Int d_last = btf_top_tabs_offset;
+          Int ncol = btf_tabs(d_last);
+
+          // revert BLK_AMD ordering
+          auto order_blk_amd_d = Kokkos::subview(order_blk_amd_inv,
+                                                 range_type(0, ncol));
+          permute_row(BTF_D, order_blk_amd_d);
+          permute_col(BTF_D, order_blk_amd_d);
+          if (BTF_E.ncol > 0) {
+            // Apply AMD perm to cols
+            permute_row(BTF_E, order_blk_amd_d);
+          }
+
+          // revert BLK_MWM ordering
+          auto order_blk_mwm_d = Kokkos::subview(order_blk_mwm_inv, 
+                                                 range_type (0, ncol));
+          permute_row(BTF_D, order_blk_mwm_d);
+          if (BTF_E.ncol > 0) {
+            // Apply MWM perm to cols
+            permute_row(BTF_E, order_blk_mwm_d);
+          }
+        }
+#endif
         #ifdef BASKER_TIMER
         std::cout<< "Basker Factor: Time to revert all the numerical perm: " << resetperm_timer.seconds() << std::endl;
         #endif
@@ -1141,6 +1169,64 @@ namespace BaskerNS
         numeric_row_iperm_array(i) = i;
         numeric_col_iperm_array(i) = i;
       }
+
+#ifdef AMD_ON_D
+      if (btf_top_tabs_offset > 0) {
+        Kokkos::Timer mwm_amd_perm_timer;
+        Int d_last = btf_top_tabs_offset;
+        Int ncol = btf_tabs(d_last);
+
+        auto order_blk_mwm_d = Kokkos::subview(order_blk_mwm_array,
+                                               range_type(0, ncol));
+        auto order_blk_amd_d = Kokkos::subview(order_blk_amd_array,
+                                               range_type(0, ncol));
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout << " calling MWM on D" << std::endl;
+          std::cout << " btf_blk_mwm: btf_top_tabs(" << btf_top_tabs_offset << ")=" << ncol << std::endl;
+        }
+
+        // ----------------------------------------------------------------------------------------------
+        // recompute MWM and AMD on each block of C
+        INT_1DARRAY blk_nnz;
+        INT_1DARRAY blk_work;
+        btf_blk_mwm_amd(0, d_last, BTF_D,
+                        order_blk_mwm_d, order_blk_amd_d,
+                        blk_nnz, blk_work);
+        #if 0 //debug
+        printf( " >> debug: set order_blk_mwm/amd on D to identity <<\n" );
+        for (Int i = 0; i < (Int)BTF_D.nrow; i++) {
+          order_blk_mwm_d(i) = i;
+          order_blk_amd_d(i) = i;
+        }
+        #endif
+        //for (Int i = 0; i < (Int)BTF_C.nrow; i++) printf( " x mwm_c(%d)=%d amd_c(%d)=%d\n",i,order_blk_mwm_d(i), i,order_blk_amd_d(i));
+
+        // Apply MWM perm to rows
+        permute_row(BTF_D, order_blk_mwm_d);
+
+        /*printf(" pC = [\n" );
+        for(Int j = 0; j < BTF_C.ncol; j++) {
+          for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
+            printf("%d %d %.16e %d\n", BTF_C.row_idx[k], j, BTF_C.val[k],k);
+          }
+        }
+        printf("];\n");*/
+
+        // Apply AMD perm to rows and cols
+        // NOTE: no need to udpate vals_order_blk_amd_array (it will read in A without permutations, and compute perm here)
+        permute_row(BTF_D, order_blk_amd_d);
+        permute_col(BTF_D, order_blk_amd_d);
+        if (BTF_E.ncol > 0) {
+          // Apply AMD perm to cols
+          permute_row(BTF_E, order_blk_amd_d);
+        }
+
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout << std::endl << std::endl;
+          std::cout << "Basker Factor: Time to compute and apply MWM+AMD on diagonal blocks: " << mwm_amd_perm_timer.seconds() << std::endl;
+        }
+      }
+#endif
 
       if (btf_tabs_offset != 0) {
         Kokkos::Timer nd_perm_timer;

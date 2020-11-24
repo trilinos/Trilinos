@@ -130,6 +130,9 @@ namespace BaskerNS
     #else
     using scotch_integral_type = int32_t; //NDE: make this depend on the scotch type
     #endif
+    #if 1//def BASKER_TIMER
+    Kokkos::Impl::Timer timer_scotch;
+    #endif
 
     Int num_levels = num_domains; 
     scotch_graph<scotch_integral_type> sg;
@@ -156,191 +159,345 @@ namespace BaskerNS
       //----------------------INIT Scotch Graph------------//
       sg.Ap = (scotch_integral_type *)malloc((sg.m+1)     *sizeof(scotch_integral_type));
       sg.Ai = (scotch_integral_type *)malloc((M.nnz)      *sizeof(scotch_integral_type));
-    
-      sg.Ap[0] = 0;
-      Int sj;
-      Int sptr = 0;
-      Int self_edge = 0; //If we do not have them, the matrix order will be bad
-      for(Int i = 0; i < sg.m; i++)
-      {
-        sj=0;
-        for(Int k = M.col_ptr(i); k <M.col_ptr(i+1); k++)
-        {
-          if(M.row_idx(k) != i)
-          {
-            ASSERT(sptr < M.nnz);
-            sg.Ai[sptr++] = M.row_idx(k);
-            sj++;
-          }
-          else
-          {
-            self_edge++;
-          }
-        }
-        sg.Ap[i+1] = sg.Ap[i]+sj;
-      }
-      sg.nz = sg.Ap[sg.m];
-      #if 0
-      {
-        // -- testing size of separators using METIS (before/after merge) -- 
-        //idx_t  metis_offset = 74;
-        idx_t  metis_offset = btf_tabs(btf_tabs_offset-1);
+
+      if (1) {
+        //idx_t  metis_offset = btf_tabs(btf_tabs_offset-1);
+        idx_t  metis_offset = 0; // BTF_A now contains one big block
         idx_t  metis_size = M.nrow - metis_offset;
         idx_t  metis_nnz = M.col_ptr(M.nrow);
+
         INT_1DARRAY metis_rowptr;
         INT_1DARRAY metis_colidx;
         INT_1DARRAY metis_part;
-        //MALLOC_INT_1DARRAY(metis_part,   metis_size+1);
-        MALLOC_INT_1DARRAY(metis_part,   M.nrow+1);
+        MALLOC_INT_1DARRAY(metis_part,   M.nrow);
         MALLOC_INT_1DARRAY(metis_rowptr, metis_size+1);
         MALLOC_INT_1DARRAY(metis_colidx, metis_nnz);
 
-        idx_t sepsize = 0;
+        // initial partition
+        Int dom_id = 0;
+        for (Int i = 0; i < M.nrow; i++) {
+          metis_part[i] = dom_id;
+
+          sg.permtab[i] = i;
+          sg.peritab[i] = i;
+        }
+        INT_1DARRAY metis_part_k;
+        INT_1DARRAY metis_permtab;
+        INT_1DARRAY metis_peritab;
+        MALLOC_INT_1DARRAY(metis_part_k,  metis_size);
+        MALLOC_INT_1DARRAY(metis_permtab, metis_size);
+        MALLOC_INT_1DARRAY(metis_peritab, metis_size);
+
+        sg.cblk = 1;
         int info = 0;
+        idx_t sepsize = 0;
         idx_t options[METIS_NOPTIONS];
-        #if 0
-        metis_nnz = 0;
-        metis_rowptr(0) = 0;
-        for(Int i = metis_offset; i < sg.m; i++)
-        {
-          for(Int k = sg.Ap[i]; k < sg.Ap[i+1]; k++)
-          {
-            if(sg.Ai[k] >= metis_offset)
+
+        for (Int level = 0; level < num_levels; level++) {
+
+          Int num_doms = pow(2.0,(double)(level));
+          for (Int dom = 0; dom < num_doms; dom++) {
+            // extract k-th interoior
+            Int metis_size_k = 0;
+            Int nnz_k=0;
+            metis_rowptr[0] = 0;
+            for(Int i = metis_offset; i < sg.m; i++)
             {
-              metis_colidx[metis_nnz] = sg.Ai[k]-metis_offset;
-              metis_nnz++;
+              if (metis_part(i) == dom) {
+                Int col = sg.peritab[i];
+                for(Int k = M.col_ptr(col); k <M.col_ptr(col+1); k++)
+                {
+                  Int j = M.row_idx(k);
+                  Int row = sg.permtab[j];
+                  if(row != col && row >= metis_offset && metis_part(j) == dom)
+                  {
+                    metis_colidx[nnz_k++] = row - metis_offset;
+                  }
+                }
+                metis_rowptr[metis_size_k+1] = nnz_k;
+                metis_size_k ++;
+              }
+            }
+
+            /*printf( " M = [\n" );
+            for(Int i = 0; i < M.nrow; i++) {
+              for(Int k = M.col_ptr(i); k < M.col_ptr(i+1); k++) printf( "%d %d\n",i,M.row_idx(k) );
+            }
+            printf( "];\n" );
+          
+            printf( " metis_size = %d, n = %d\n",metis_size,M.nrow );
+            printf( " Me = [\n" );
+            for(Int i = 0; i < metis_size; i++) {
+              for(Int k = metis_rowptr(i); k < metis_rowptr(i+1); k++) printf( "%d %d\n",i,metis_colidx(k) );
+            }
+            printf( "];\n" );*/
+
+            sepsize = 0;
+            info = 0;
+            if (METIS_OK != METIS_SetDefaultOptions(options)) {
+              std::cout << std::endl << " > METIS_SetDefaultOptions failed < " << std::endl << std::endl;
+            }
+            info = METIS_ComputeVertexSeparator(&metis_size_k,
+                                                &(metis_rowptr(0)),
+                                                &(metis_colidx(0)),
+                                                 nullptr,
+                                                 options,
+                                                &sepsize,
+                                                &(metis_part_k(0)));
+            if (METIS_OK != METIS_SetDefaultOptions(options)) {
+              std::cout << std::endl << " > METIS_ComputeVertexSeparator failed < " << std::endl << std::endl;
+            }
+            std::cout << " METIS_ComputeVertexSeparator: info = " << info << " sepsize = " << sepsize << std::endl;
+
+            Int dom1 = 0;
+            Int dom2 = 0;
+            Int sep  = 0;
+            for(Int i = 0; i < metis_size; i++)
+            {
+              if (metis_part_k[i] == 0) {
+                dom1 ++;
+              } else if (metis_part_k[i] == 1) {
+                dom2 ++;
+              } else {
+                sep ++;
+              }
+            }
+
+            Int dom_id1 = dom_id + 1;
+            Int dom_id2 = dom_id + 2;
+            Int sep_id = (dom_id1)/2;
+            printf( " dom1=(id=%d, size=%d), dom2=(id=%d, size=%d), sep=(id=%d, size=%d)\n",dom_id1,dom1, dom_id2,dom2, sep_id,sep );
+
+            sep = dom1 + dom2;
+            dom2 = dom1;
+            dom1 = 0;
+            for(Int i = 0; i < metis_size; i++)
+            {
+              if (metis_part_k[i] == 0) {
+                sg.permtab[i] = dom1;
+                dom1 ++;
+              } else if (metis_part_k[i] == 1) {
+                sg.permtab[i] = dom2;
+                dom2 ++;
+              } else {
+                sg.permtab[i] = sep;
+                sep ++;
+              }
+            }
+
+            for(Int i = 0; i < sg.m; i++)
+            {
+              sg.peritab[sg.peritab[i]] = i;
+            }
+            sg.treetab[0] = 2;
+            sg.treetab[1] = 2;
+            sg.treetab[2] =-1;
+
+            sg.rangtab[0] = 0;
+            sg.rangtab[1] = dom1;
+            sg.rangtab[2] = dom2;
+            sg.rangtab[3] = sep;
+            sg.cblk += 2;
+          }
+        }
+
+        // convert post-order
+        #if 0
+        INT_1DARRAY metis_queue;
+        MALLOC_INT_1DARRAY(metis_queue, sg.cblk);
+        Int num_doms = 0;
+        Int leaves_id = pow(2.0,(double)(num_levels));
+        metis_queue(num_doms) = 0;
+        num_doms ++;
+        while (num_doms > 0) {
+          if (metis_queue(num_doms) > 
+        }
+        #endif
+      } else {
+        sg.Ap[0] = 0;
+        Int sj;
+        Int sptr = 0;
+        Int self_edge = 0; //If we do not have them, the matrix order will be bad
+        for(Int i = 0; i < sg.m; i++)
+        {
+          sj=0;
+          for(Int k = M.col_ptr(i); k <M.col_ptr(i+1); k++)
+          {
+            if(M.row_idx(k) != i)
+            {
+              ASSERT(sptr < M.nnz);
+              sg.Ai[sptr++] = M.row_idx(k);
+              sj++;
+            }
+            else
+            {
+              self_edge++;
             }
           }
-          metis_rowptr[i-metis_offset+1] = metis_nnz;
+          sg.Ap[i+1] = sg.Ap[i]+sj;
         }
-        /*printf( " M = [\n" );
-        for(Int i = 0; i < M.nrow; i++) {
-          for(Int k = M.col_ptr(i); k < M.col_ptr(i+1); k++) printf( "%d %d\n",i,M.row_idx(k) );
-        }
-        printf( "];\n" );
-        printf( " Me = [\n" );
-        for(Int i = 0; i < metis_size; i++) {
-          for(Int k = metis_rowptr(i); k < metis_rowptr(i+1); k++) printf( "%d %d\n",i,metis_colidx(k) );
-        }
-        printf( "];\n" );*/
+        sg.nz = sg.Ap[sg.m];
+        #if 0
+        {
+          // -- testing size of separators using METIS (before/after merge) -- 
+          //idx_t  metis_offset = 74;
+          idx_t  metis_offset = btf_tabs(btf_tabs_offset-1);
+          idx_t  metis_size = M.nrow - metis_offset;
+          idx_t  metis_nnz = M.col_ptr(M.nrow);
+          INT_1DARRAY metis_rowptr;
+          INT_1DARRAY metis_colidx;
+          INT_1DARRAY metis_part;
+          //MALLOC_INT_1DARRAY(metis_part,   metis_size+1);
+          MALLOC_INT_1DARRAY(metis_part,   M.nrow+1);
+          MALLOC_INT_1DARRAY(metis_rowptr, metis_size+1);
+          MALLOC_INT_1DARRAY(metis_colidx, metis_nnz);
 
-        if (METIS_OK != METIS_SetDefaultOptions(options)) {
-          std::cout << std::endl << " > METIS_SetDefaultOptions failed < " << std::endl << std::endl;
+          idx_t sepsize = 0;
+          int info = 0;
+          idx_t options[METIS_NOPTIONS];
+          #if 0
+          metis_nnz = 0;
+          metis_rowptr(0) = 0;
+          for(Int i = metis_offset; i < sg.m; i++)
+          {
+            for(Int k = sg.Ap[i]; k < sg.Ap[i+1]; k++)
+            {
+              if(sg.Ai[k] >= metis_offset)
+              {
+                metis_colidx[metis_nnz] = sg.Ai[k]-metis_offset;
+                metis_nnz++;
+              }
+            }
+            metis_rowptr[i-metis_offset+1] = metis_nnz;
+          }
+          /*printf( " M = [\n" );
+          for(Int i = 0; i < M.nrow; i++) {
+            for(Int k = M.col_ptr(i); k < M.col_ptr(i+1); k++) printf( "%d %d\n",i,M.row_idx(k) );
+          }
+          printf( "];\n" );
+          printf( " Me = [\n" );
+          for(Int i = 0; i < metis_size; i++) {
+            for(Int k = metis_rowptr(i); k < metis_rowptr(i+1); k++) printf( "%d %d\n",i,metis_colidx(k) );
+          }
+          printf( "];\n" );*/
+
+          if (METIS_OK != METIS_SetDefaultOptions(options)) {
+            std::cout << std::endl << " > METIS_SetDefaultOptions failed < " << std::endl << std::endl;
+          }
+          std::cout << " >> calling METIS_ComputeVertexSeparator on the last big block ( block-offset = " << btf_tabs_offset << " row-offset = " << metis_offset
+                    << " n = " << metis_size << ", nnz = " << metis_nnz << ")" << std::endl;
+          info = METIS_ComputeVertexSeparator(&metis_size,
+                                              &(metis_rowptr(0)),
+                                              &(metis_colidx(0)),
+                                               nullptr,
+                                               options,
+                                              &sepsize,
+                                              &(metis_part(0)));
+          std::cout << " METIS_ComputeVertexSeparator: info = " << info << " sepsize = " << sepsize << std::endl;
+          #endif
+
+          std::cout << " >> calling METIS_ComputeVertexSeparator after merge ( n = " << sg.m << ", nnz = " << sg.Ap[sg.m] << ")" << std::endl;
+          metis_size = sg.m;
+          if (METIS_OK != METIS_SetDefaultOptions(options)) {
+            std::cout << std::endl << " > METIS_SetDefaultOptions failed < " << std::endl << std::endl;
+          }
+          info = METIS_ComputeVertexSeparator(&metis_size,
+                                               sg.Ap,
+                                               sg.Ai,
+                                               nullptr,
+                                               options,
+                                              &sepsize,
+                                              &(metis_part(0)));
+          std::cout << " METIS_ComputeVertexSeparator: info = " << info << " sepsize = " << sepsize << std::endl;
+          /*printf( " P = [\n" );
+          for(Int i = 0; i < M.nrow; i++) printf("%d\n",metis_part(i) );
+          printf( "];\n" );*/
         }
-        std::cout << " >> calling METIS_ComputeVertexSeparator on the last big block ( block-offset = " << btf_tabs_offset << " row-offset = " << metis_offset
-                  << " n = " << metis_size << ", nnz = " << metis_nnz << ")" << std::endl;
-        info = METIS_ComputeVertexSeparator(&metis_size,
-                                            &(metis_rowptr(0)),
-                                            &(metis_colidx(0)),
-                                             nullptr,
-                                             options,
-                                            &sepsize,
-                                            &(metis_part(0)));
-        std::cout << " METIS_ComputeVertexSeparator: info = " << info << " sepsize = " << sepsize << std::endl;
         #endif
 
-        std::cout << " >> calling METIS_ComputeVertexSeparator after merge ( n = " << sg.m << ", nnz = " << sg.Ap[sg.m] << ")" << std::endl;
-        metis_size = sg.m;
-        if (METIS_OK != METIS_SetDefaultOptions(options)) {
-          std::cout << std::endl << " > METIS_SetDefaultOptions failed < " << std::endl << std::endl;
+        //printf("num self_edge: %d sg.m: %d \n",
+        //	   self_edge, sg.m);
+        if(self_edge != (sg.m))
+        {
+          BASKER_ASSERT(self_edge == (sg.m-1), 
+              "ZERO ON DIAGONAL, SCOTCH FAIL\n");
+          //JDB: comeback need to have a better way to exit
+          exit(0);
+          //Need to clean up this 
         }
-        info = METIS_ComputeVertexSeparator(&metis_size,
-                                             sg.Ap,
-                                             sg.Ai,
-                                             nullptr,
-                                             options,
-                                            &sepsize,
-                                            &(metis_part(0)));
-        std::cout << " METIS_ComputeVertexSeparator: info = " << info << " sepsize = " << sepsize << std::endl;
-        /*printf( " P = [\n" );
-        for(Int i = 0; i < M.nrow; i++) printf("%d\n",metis_part(i) );
-        printf( "];\n" );*/
-      }
-      #endif
 
-      //printf("num self_edge: %d sg.m: %d \n",
-      //	   self_edge, sg.m);
-      if(self_edge != (sg.m))
-      {
-        BASKER_ASSERT(self_edge == (sg.m-1), 
-            "ZERO ON DIAGONAL, SCOTCH FAIL\n");
-        //JDB: comeback need to have a better way to exit
-        exit(0);
-        //Need to clean up this 
-      }
+        for(Int i =0; i < sg.m; i++)
+        {
+          sg.permtab[i] = 0;
+          sg.peritab[i] = 0;
+          sg.rangtab[i] = 0;
+          sg.treetab[i] = 0;
+        }
 
-      for(Int i =0; i < sg.m; i++)
-      {
-        sg.permtab[i] = 0;
-        sg.peritab[i] = 0;
-        sg.rangtab[i] = 0;
-        sg.treetab[i] = 0;
-      }
-
-      SCOTCH_Strat strdat;
-      SCOTCH_Graph cgrafptr;
-      int err;
-      scotch_integral_type *vwgts; vwgts = NULL;
+        SCOTCH_Strat strdat;
+        SCOTCH_Graph cgrafptr;
+        int err;
+        scotch_integral_type *vwgts; vwgts = NULL;
     
-      if(SCOTCH_graphInit(&cgrafptr) != 0)
-      {
-        printf("Scotch: error initalizing graph \n");
-        return -1;
-      }
-
-      if( SCOTCH_graphBuild(&cgrafptr, 0, sg.m, sg.Ap, sg.Ap+1, vwgts, NULL,
-                            sg.nz, sg.Ai, NULL) !=0 )
-      {
-        printf("Scotch: failed to build scotch graph \n");
-        return -1;
-      }
-
-      //Need to come back to this so update based on nthreads
-      Int flagval = SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN | SCOTCH_STRATLEAFSIMPLE | SCOTCH_STRATSEPASIMPLE;
-      double balrat = 0.2;
-      SCOTCH_stratInit(&strdat);
-      err = SCOTCH_stratGraphOrderBuild(&strdat, flagval, num_levels, balrat);
-
-      /*
-      err = SCOTCH_stratGraphOrderBuild(&strdat, 
-                                        SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN,
-                                        num_levels, 0.2);
-      */
-
-      if(err != 0)
-      {
-        printf("Scotch: cannot build strategy \n");
-        return -1;
-      }
-
-      #ifdef BASKER_TIMER
-      Kokkos::Impl::Timer timer_scotch;
-      #endif
-      // permtab[i] = dom id
-      if(SCOTCH_graphOrder(&cgrafptr, &strdat, sg.permtab, sg.peritab, 
-                           &sg.cblk, sg.rangtab, sg.treetab) != 0)
-      {
-        printf("Scotch: cannot compute ordering \n");
-        return -1;
-      }
-      #ifdef BASKER_TIMER
-      double time_scotch = timer_scotch.seconds();
-      std::cout << std::endl << " > scotch : time " << time_scotch << std::endl << std::endl;
-      #endif
-
-      if(Options.verbose == BASKER_TRUE) {
-        std::cout << " calling SCOTCH_graphOrder(" << M.nrow << " x " << M.ncol 
-                  << ", num_levels = " << num_domains << ")" << std::endl;
-        for(Int i = 0; i < sg.cblk; i++) {
-          printf( " dom-%d : size = %d\n",(int)i,(int)(sg.rangtab[i+1]-sg.rangtab[i]) );
+        if(SCOTCH_graphInit(&cgrafptr) != 0)
+        {
+          printf("Scotch: error initalizing graph \n");
+          return -1;
         }
-      }
-      free(sg.Ap);
-      free(sg.Ai);
 
-      SCOTCH_stratExit(&strdat);
-      SCOTCH_graphFree(&cgrafptr);
-    } // end of SCOTCH
+        if( SCOTCH_graphBuild(&cgrafptr, 0, sg.m, sg.Ap, sg.Ap+1, vwgts, NULL,
+                              sg.nz, sg.Ai, NULL) !=0 )
+        {
+          printf("Scotch: failed to build scotch graph \n");
+          return -1;
+        }
+
+        //Need to come back to this so update based on nthreads
+        Int flagval = SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN | SCOTCH_STRATLEAFSIMPLE | SCOTCH_STRATSEPASIMPLE;
+        double balrat = 0.2;
+        SCOTCH_stratInit(&strdat);
+        err = SCOTCH_stratGraphOrderBuild(&strdat, flagval, num_levels, balrat);
+
+        /*
+        err = SCOTCH_stratGraphOrderBuild(&strdat, 
+                                          SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN,
+                                          num_levels, 0.2);
+        */
+
+        if(err != 0)
+        {
+          printf("Scotch: cannot build strategy \n");
+          return -1;
+        }
+
+        // permtab[i] = dom id
+        if(SCOTCH_graphOrder(&cgrafptr, &strdat, sg.permtab, sg.peritab, 
+                             &sg.cblk, sg.rangtab, sg.treetab) != 0)
+        {
+          printf("Scotch: cannot compute ordering \n");
+          return -1;
+        }
+
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout << " calling SCOTCH_graphOrder(" << M.nrow << " x " << M.ncol 
+                    << ", num_levels = " << num_domains << ")" << std::endl;
+        }
+        free(sg.Ap);
+        free(sg.Ai);
+
+        SCOTCH_stratExit(&strdat);
+        SCOTCH_graphFree(&cgrafptr);
+      } // end of SCOTCH
+    }
+    #if 1//def BASKER_TIMER
+    double time_scotch = timer_scotch.seconds();
+    std::cout << std::endl << " > Time to compute ND : " << time_scotch << std::endl << std::endl;
+    #endif
+    if(Options.verbose == BASKER_TRUE) {
+      for(Int i = 0; i < sg.cblk; i++) {
+        printf( " dom-%d : size = %d, tab = %d\n",(int)i,(int)(sg.rangtab[i+1]-sg.rangtab[i]),(int)(sg.treetab[i]) );
+      }
+    }
 
     //Scan see how many -1
     Int num_trees = 0;

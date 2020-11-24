@@ -87,7 +87,7 @@ namespace BaskerNS
     //printf("Switch time: %f \n", tza.seconds());
 
 #ifdef BASKER_KOKKOS
-    #ifdef BASKER_TIMER
+    #if 1//def BASKER_TIMER
     Kokkos::Impl::Timer timer;
     #endif
 
@@ -108,6 +108,9 @@ namespace BaskerNS
         //}
         fflush(stdout);
       }
+      #if 1//def BASKER_TIMER
+      timer.reset();
+      #endif
 
       Int domain_restart = 0;
       kokkos_nfactor_domain <Int,Entry,Exe_Space>
@@ -153,7 +156,7 @@ namespace BaskerNS
         }
       }//end while
 
-      #ifdef BASKER_TIMER
+      #if 1//def BASKER_TIMER
       printf("Time DOMAIN: %lf \n", timer.seconds());
       timer.reset();
       #endif
@@ -251,8 +254,9 @@ namespace BaskerNS
         //-------------------------End Sep----------------//
       }// info != BASKER_ERROR
       //printf( " End Sep: info = %d (%d, %d)\n",info,BASKER_SUCCESS,BASKER_ERROR );
-      #ifdef BASKER_TIMER
+      #if 1//def BASKER_TIMER
       printf("Time SEP: %lf \n", timer.seconds());
+      timer.reset();
       #endif
     }
 
@@ -268,10 +272,6 @@ namespace BaskerNS
         printf("Factoring BLKs num_threads: %ld \n",
             (long)num_threads);
       }
-
-      #ifdef BASKER_TIMER
-      Kokkos::Impl::Timer  timer_btf;
-      #endif
 
       //======Call diag factor====
       kokkos_nfactor_diag <Int, Entry, Exe_Space> 
@@ -323,11 +323,9 @@ namespace BaskerNS
         }
       }//end while
 
-      #ifdef BASKER_TIMER
-      printf("Time BTF: %lf \n", 
-          timer_btf.seconds());
+      #if 1//def BASKER_TIMER
+      printf("Time BTF: %lf \n", timer.seconds());
       #endif
-
     }//end btf call
 
     Kokkos::Impl::Timer tzback;
