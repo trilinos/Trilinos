@@ -236,6 +236,9 @@
         
 \cbb{sa: use rowsumabs diagonal scaling}{bool}{false}{Use the row sums of the absolute values of the matrix as the diagonal wherever inverse(D) is required.}
         
+\cbb{sa: enforce constraints}{bool}{false}{Insure that all interpolation entries are between 0 and 1 while trying to maintain the same rowsum as obtained by sa. 
+Only used when tentative: calculate qr is set to false.}
+        
 \cbb{interp: interpolation order}{int}{1}{Interpolation order used to interpolate values from coarse points to fine points. Possible values are 0 for piece-wise constant interpolation and 1 for piece-wise linear interpolation. This parameter is set to 1 by default.}
         
 \cbb{interp: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
