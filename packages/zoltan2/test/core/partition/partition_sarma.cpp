@@ -69,7 +69,7 @@ auto testFromFile(const RCP<const Teuchos::Comm<int> > &comm, int nparts, std::s
     #ifdef HAVE_ZOLTAN2_MPI
     Zoltan2::PartitioningProblem<xCM_tCM_t> problem(&matrixAdapter, &params, comm);
     #else
-    Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
+    Zoltan2::PartitioningProblem<xCM_tCM_t> problem(&matrixAdapter, &params);
     #endif
     if (me == 0) std::cout << "Problem constructed" << std::endl;
 
