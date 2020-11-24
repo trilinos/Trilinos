@@ -63,6 +63,48 @@ function get_sparc_dev_module_name() {
 }
 
 
+# Get the full name of the currently loaded sparc-dev module
+function get_loaded_sparc_dev_module_name() {
+  module list -t 2>&1 | grep sparc-dev
+}
+
+
+# Load the given sparc-dev module or assert that it is already set
+function atdm_config_load_sparc_dev_module () {
+  sparc_dev_mod_name_in=$1 ; shift
+  if [[ "${ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE}" == "1" ]] ; then
+    loaded_sparc_dev_mod=$(get_loaded_sparc_dev_module_name)
+    if [[ "${loaded_sparc_dev_mod}" == "" ]] ; then
+      echo
+      echo "***"
+      echo "*** ERROR: ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE=1 but no sparc-dev"
+      echo "*** module is currently loaded!"
+      echo "***"
+      echo
+      return
+    elif [[ "${loaded_sparc_dev_mod}" != "${sparc_dev_mod_name_in}" ]] ; then
+      echo
+      echo "***"
+      echo "*** ERROR: ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE=1 but loaded module:"
+      echo "***"
+      echo "***   ${loaded_sparc_dev_mod}"
+      echo "***"
+      echo "*** does not equal requested module:"
+      echo "***"
+      echo "***   ${sparc_dev_mod_name_in}"
+      echo "***"
+      echo "*** !"
+      echo "***"
+      echo
+     return
+    fi
+    # If we get here, the desired sparc-dev module is already loaded!
+  else
+    module load ${sparc_dev_mod_name_in}
+  fi
+}
+
+
 # Remove the substrings from the environment variable.
 #
 # Usage:
