@@ -72,6 +72,8 @@ sa: damping factor = 1.33333
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
 sa: use rowsumabs diagonal scaling = 0   [default]
+sa: enforce constraints = 0   [default]
+tentative: calculate qr = 1   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -166,6 +168,8 @@ sa: damping factor = 1.33333
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
 sa: use rowsumabs diagonal scaling = 0   [default]
+sa: enforce constraints = 0   [default]
+tentative: calculate qr = 1   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -260,6 +264,8 @@ sa: damping factor = 1.33333
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
 sa: use rowsumabs diagonal scaling = 0   [default]
+sa: enforce constraints = 0   [default]
+tentative: calculate qr = 1   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -354,6 +360,8 @@ sa: damping factor = 1.33333
 sa: calculate eigenvalue estimate = 0   [default]
 sa: eigenvalue estimate num iterations = 10   [default]
 sa: use rowsumabs diagonal scaling = 0   [default]
+sa: enforce constraints = 0   [default]
+tentative: calculate qr = 1   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
