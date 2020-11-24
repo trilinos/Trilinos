@@ -299,19 +299,21 @@ class DynamicView : public Kokkos::ViewTraits<DataType, P...> {
 
     // *m_chunks[m_chunk_max] stores the current number of chunks being used
     uintptr_t* const pc = reinterpret_cast<uintptr_t*>(m_chunks + m_chunk_max);
-
+    std::string _label =
+        m_track.template get_label<typename traits::memory_space>();
     if (*pc < NC) {
       while (*pc < NC) {
         m_chunks[*pc] = reinterpret_cast<value_pointer_type>(
-            typename traits::memory_space().allocate(sizeof(local_value_type)
-                                                     << m_chunk_shift));
+            typename traits::memory_space().allocate(
+                _label.c_str(), sizeof(local_value_type) << m_chunk_shift));
         ++*pc;
       }
     } else {
       while (NC + 1 <= *pc) {
         --*pc;
         typename traits::memory_space().deallocate(
-            m_chunks[*pc], sizeof(local_value_type) << m_chunk_shift);
+            _label.c_str(), m_chunks[*pc],
+            sizeof(local_value_type) << m_chunk_shift);
         m_chunks[*pc] = nullptr;
       }
     }

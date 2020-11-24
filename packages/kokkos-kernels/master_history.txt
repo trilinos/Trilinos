@@ -10,3 +10,4 @@ tag: 3.0.00     date: 01/31/2020  master: d86db111    release-candidate-3.0: cf2
 tag: 3.1.00     date: 04/14/2020  master: f199f45d    develop: 8d063eae
 tag: 3.1.01     date: 05/04/2020  master: 43773523    release: 6fce7502 
 tag: 3.2.00     date: 08/19/2020  master: 07a60bcc    release: ea3f2b77
+tag: 3.2.01     date: 11/17/2020  master: a952807d    release: 0f06afcc
