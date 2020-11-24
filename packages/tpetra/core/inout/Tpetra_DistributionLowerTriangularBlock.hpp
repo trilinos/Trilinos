@@ -198,7 +198,7 @@ public:
                               : it->first.first);
       gno_t J = (sortByDegree ? permuteIndex[it->first.second]
                               : it->first.second);
-      if (J < I) {// Lower-triangular part 
+      if (J <= I) {// Lower-triangular part 
         nnzPerRow[it->first.first - myFirstRow]++;
 	nnz++;
       }
