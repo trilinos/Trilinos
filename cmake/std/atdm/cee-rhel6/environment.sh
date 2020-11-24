@@ -48,7 +48,11 @@ fi
 export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
 # NOTE: Use as many build processes and there are cores by default.
 
-module purge
+if [[ "${ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE}" != "1" ]] ; then
+  module purge
+else
+  echo "NOTE: ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE=1 is set so using pre-loaded sparc-dev module!"
+fi
 
 # Warning options requested by Gemma team (which should hopefully also take
 # care of warnings required by the other ATDM APPs as well).  See #3178 and
@@ -62,7 +66,9 @@ if [[ "${ATDM_CONFIG_ENABLE_STRONG_WARNINGS}" == "" ]] ; then
 fi
 
 if  [[ "$ATDM_CONFIG_COMPILER" == "CLANG-9.0.1_OPENMPI-4.0.3" ]]; then
-  module load sparc-dev/clang-9.0.1_openmpi-4.0.3
+  if [[ "${ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE}" != "1" ]] ; then
+    module load sparc-dev/clang-9.0.1_openmpi-4.0.3
+  fi
   export OMPI_CXX=`which clang++`
   export OMPI_CC=`which clang`
   export OMPI_FC=`which gfortran`
@@ -75,7 +81,9 @@ if  [[ "$ATDM_CONFIG_COMPILER" == "CLANG-9.0.1_OPENMPI-4.0.3" ]]; then
   export ATDM_CONFIG_MKL_ROOT=${CBLAS_ROOT}
 
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-4.0.3" ]] ; then
-  module load sparc-dev/gcc-7.2.0_openmpi-4.0.3
+  if [[ "${ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE}" != "1" ]] ; then
+    module load sparc-dev/gcc-7.2.0_openmpi-4.0.3
+  fi
   unset OMP_NUM_THREADS  # SPARC module sets these and we must unset!
   unset OMP_PROC_BIND
   unset OMP_PLACES
@@ -94,7 +102,9 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0_OPENMPI-4.0.3" ]] ; then
   export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
 
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.3_INTELMPI-2018.4" ]; then
-  module load sparc-dev/intel-19.0.3_intelmpi-2018.4
+  if [[ "${ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE}" != "1" ]] ; then
+    module load sparc-dev/intel-19.0.3_intelmpi-2018.4
+  fi
   export OMPI_CXX=`which icpc`
   export OMPI_CC=`which icc`
   export OMPI_FC=`which ifort`
@@ -112,7 +122,9 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.3_INTELMPI-2018.4" ]; then
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
 
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.3_MPICH2-3.2" ]; then
-  module load sparc-dev/intel-19.0.3_mpich2-3.2
+  if [[ "${ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE}" != "1" ]] ; then
+    module load sparc-dev/intel-19.0.3_mpich2-3.2
+  fi
   export OMP_NUM_THREADS=3 # Because Si H. requested this
   export OMP_PROC_BIND=false
   unset OMP_PLACES
@@ -139,7 +151,9 @@ elif [ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GCC-7.2.0_OPENMPI-4.0.3" ]; the
   # Using the Unix Makefiles cmake generator works.
   export ATDM_CONFIG_USE_NINJA=OFF
 
-  module load sparc-dev/cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3
+  if [[ "${ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE}" != "1" ]] ; then
+    module load sparc-dev/cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3
+  fi
 
   # OpenMPI Settings
   export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}
