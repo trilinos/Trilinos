@@ -117,7 +117,6 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   using Teuchos::RCP;
   bool observeFinalSolution = true;
   const int num_p = this->num_p();
-  const int num_g = this->num_g();
 
   //For Analysis problems we typically do not want to write the solution at each NOX solver.
   //Instead we write at every "write interval" iterations of optimization solver.
@@ -139,7 +138,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
 
   // Forward all parameters to underlying model
   Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = this->getModel().createInArgs();
-  for (int l = 0; l < this->num_p(); ++l) {
+  for (int l = 0; l < num_p; ++l) {
     modelInArgs.set_p(l, inArgs.get_p(l));
     modelInArgs.set_p_direction(l, inArgs.get_p_direction(l));
   }
