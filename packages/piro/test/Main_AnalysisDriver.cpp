@@ -87,8 +87,6 @@ int main(int argc, char *argv[]) {
     if (doAll) {
       switch (iTest) {
        case 0: inputFile="input_Analysis_Dakota.xml"; break;
-       case 1: inputFile="input_Analysis_ROL.xml"; break;
-       case 2: inputFile="input_Analysis_ROL_AdjointSensitivities.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }

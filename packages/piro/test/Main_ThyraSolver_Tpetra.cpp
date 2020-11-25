@@ -158,10 +158,10 @@ int main(int argc, char *argv[]) {
             ::Thyra::seed_randomize<double>(seed);
             directions.resize(np);
             int n_directions = 2;
-            for (size_t l = 0; l < np; l++) {
+            for (int l = 0; l < np; l++) {
                 auto p_space = piro->getNominalValues().get_p(l)->space();
                 directions[l] = Thyra::createMembers(p_space, n_directions);
-                for (size_t i_direction = 0; i_direction < n_directions; i_direction++) {
+                for (int i_direction = 0; i_direction < n_directions; i_direction++) {
                     ::Thyra::put_scalar(0.0, directions[l]->col(i_direction).ptr());
                     ::Thyra::set_ele(i_direction, 1.0, directions[l]->col(i_direction).ptr());
                 }
@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
 
             if (Teuchos::nonnull(hv)) {
                 double hv_exact[4] = {6., -10./3, -10./3, 4.};
-                for (size_t i_direction = 0; i_direction < n_directions; i_direction++) {
+                for (int i_direction = 0; i_direction < n_directions; i_direction++) {
                     out << "\n hv[" << i_direction << "]\n"
                         << *(hv->col(i_direction)) << std::endl;
 

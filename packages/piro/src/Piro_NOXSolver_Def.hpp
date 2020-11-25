@@ -126,17 +126,6 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   //This relies on the fact that sensitivities are always called by ROL at each iteration to asses whether the solver is converged
   //TODO: when write_interval>1, at the moment there is no guarantee that the final iteration of the optimization (i.e. the converged solution) gets printed
 
-  //When write_interval>0 we print only after computing the sensitivities,
-  //to make sure to print them updated if required.
-  bool solving_sensitivities = false;
-  for (int i=0; i<num_p; i++) {
-    for (int j=0; j<=num_g; j++) {
-      if (!outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, i).none() && !outArgs.get_DgDp(j,i).isEmpty()) {
-        solving_sensitivities = true;
-        break;
-      }
-    }
-  }
   if(appParams->isSublist("Analysis")){
     auto analysisParams = appParams->sublist("Analysis");
     if(analysisParams.isSublist("Optimization Status")){
