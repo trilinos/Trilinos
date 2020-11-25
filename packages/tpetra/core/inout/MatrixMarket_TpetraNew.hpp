@@ -433,7 +433,7 @@ readMatrixMarket(
         if (dist->Mine(i,i)) {
           if (diagset.find(i) == diagset.end()) {
             nzindex_t idx = std::make_pair(i,i);
-            localNZ[idx] = 1;   
+            localNZ[idx] = 0;   
           }
         }
       }
@@ -668,7 +668,7 @@ readBinary(
         if (dist->Mine(i,i)) {
           if (diagset.find(i) == diagset.end()) {
             nzindex_t idx = std::make_pair(i,i);
-            localNZ[idx] = 1;   
+            localNZ[idx] = 0;   
           }
         }
       }
