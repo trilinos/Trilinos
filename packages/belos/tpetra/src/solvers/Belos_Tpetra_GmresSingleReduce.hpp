@@ -79,6 +79,9 @@ private:
                                    dense_matrix_type& H,
                                    dense_matrix_type& WORK) const
   {
+    Teuchos::RCP< Teuchos::Time > orthTimer = Teuchos::TimeMonitor::getNewCounter ("GmresSingleReduce::LowSynch::Ortho");
+    Teuchos::TimeMonitor OrthTimer (*orthTimer);
+
     int rank = 0;
     if (input.orthoType == "CGS") {
       // default, one-synch CGS, optionally with reortho
@@ -105,8 +108,8 @@ private:
     const mag_type eps  = STS::eps ();
     const mag_type tolOrtho = static_cast<mag_type> (10.0) * eps;
 
-    Teuchos::RCP< Teuchos::Time > dotsTimer = Teuchos::TimeMonitor::getNewCounter ("MixedGmres::LowSynch::dot-prod");
-    Teuchos::RCP< Teuchos::Time > projTimer = Teuchos::TimeMonitor::getNewCounter ("MixedGmres::LowSynch::project");
+    Teuchos::RCP< Teuchos::Time > dotsTimer = Teuchos::TimeMonitor::getNewCounter ("GmresSingleReduce::LowSynch::dot-prod");
+    Teuchos::RCP< Teuchos::Time > projTimer = Teuchos::TimeMonitor::getNewCounter ("GmresSingleReduce::LowSynch::project");
 
     int rank = 1;
     // ----------------------------------------------------------
@@ -300,6 +303,7 @@ private:
     return rank;
   }
 
+
   SolverOutput<SC>
   solveOneVec (Teuchos::FancyOStream* outPtr,
                vec_type& X, // in X/out X
@@ -313,6 +317,10 @@ private:
     const SC zero = STS::zero ();
     const SC one  = STS::one ();
     const bool computeRitzValues = input.computeRitzValues;
+
+
+    // timers
+    Teuchos::RCP< Teuchos::Time > spmvTimer = Teuchos::TimeMonitor::getNewCounter ("GmresSingleReduce::Sparse Mat-Vec");
 
     SolverOutput<SC> output {};
     // initialize output parameters
@@ -339,9 +347,17 @@ private:
     dense_vector_type z (restart+1, true);
     std::vector<mag_type> cs (restart);
     std::vector<SC> sn (restart);
+    
+    #ifdef HAVE_TPETRA_DEBUG
+    dense_matrix_type H2 (restart+1, restart,   true);
+    dense_matrix_type H3 (restart+1, restart,   true);
+    #endif
 
     // initial residual (making sure R = B - Ax)
-    A.apply (X, R);
+    {
+      Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+      A.apply (X, R);
+    }
     R.update (one, B, -one);
     b0_norm = R.norm2 (); // initial residual norm, no-preconditioned
     if (input.precoSide == "left") {
@@ -362,6 +378,8 @@ private:
       output.relResid = STM::one ();
       output.converged = true;
       return output;
+    } else if (outPtr != NULL) {
+      *outPtr << "Initial guess' residual norm " << b0_norm << endl;
     }
 
     // compute Ritz values as Newton shifts
@@ -428,19 +446,26 @@ private:
         restart = input.maxNumIters-output.numIters;
       }
       // restart cycle
-      for (; iter < restart && metric > input.tol; ++iter) {
+      for (; iter < restart && (metric > input.tol && !STS::isnaninf (metric)); ++iter) {
         // AP = A*P
         vec_type P  = * (Q.getVectorNonConst (iter));
         vec_type AP = * (Q.getVectorNonConst (iter+1));
         if (input.precoSide == "none") { // no preconditioner
+          Teuchos::TimeMonitor LocalTimer (*spmvTimer);
           A.apply (P, AP);
         }
         else if (input.precoSide == "right") {
           M.apply (P, MP);
-          A.apply (MP, AP);
+          {
+            Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+            A.apply (MP, AP);
+          }
         }
         else {
-          A.apply (P, MP);
+          {
+            Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+            A.apply (P, MP);
+          }
           M.apply (MP, AP);
         }
         // Shift for Newton basis
@@ -453,7 +478,6 @@ private:
 
         // Orthogonalization
         projectAndNormalizeSingleReduce (iter, input, Q, H, T);
-
 
         // Convergence check
         if (!delayed_ortho || iter > 0) {
@@ -470,6 +494,10 @@ private:
             const complex_type theta = output.ritzValues[check % s];
             UpdateNewton<SC, MV>::updateNewtonH (check, H, theta);
           }
+          #ifdef HAVE_TPETRA_DEBUG
+          this->checkNumerics (outPtr, iter, check, A, M, Q, X, B, y,
+                               H, H2, H3, cs, sn, input);
+          #endif
 
           if (H(check+1, check) != zero) {
             // Apply Givens rotations to new column of H and y
@@ -484,6 +512,7 @@ private:
           }
         }
       } // end of restart cycle 
+
       if (delayed_ortho) {
         int check = iter-1;
         // Shift back for Newton basis
@@ -491,6 +520,10 @@ private:
           const complex_type theta = output.ritzValues[check % s];
           UpdateNewton<SC, MV>::updateNewtonH (check, H, theta);
         }
+        #ifdef HAVE_TPETRA_DEBUG
+        this->checkNumerics (outPtr, iter, check, A, M, Q, X, B, y,
+                             H, H2, H3, cs, sn, input);
+        #endif
 
         if (H(check+1, check) != zero) {
           // Apply Givens rotations to new column of H and y
@@ -531,7 +564,10 @@ private:
       }
 
       // Compute explicit residual vector in preparation for restart.
-      A.apply (X, R);
+      {
+        Teuchos::TimeMonitor LocalTimer (*spmvTimer);
+        A.apply (X, R);
+      }
       R.update (one, B, -one);
       r_norm = R.norm2 (); // residual norm
       output.absResid = r_norm;

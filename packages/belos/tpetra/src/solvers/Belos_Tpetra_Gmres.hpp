@@ -252,12 +252,14 @@ private:
   using LO = typename MV::local_ordinal_type;
   using STS = Teuchos::ScalarTraits<SC>;
   using mag_type = typename STS::magnitudeType;
+  using real_type = typename STS::magnitudeType;
   using STM = Teuchos::ScalarTraits<mag_type>;
   using device_type = typename MV::device_type;
 
   using ortho_type = Belos::OrthoManager<SC, MV>;
   using dense_matrix_type = Teuchos::SerialDenseMatrix<LO, SC>;
   using dense_vector_type = Teuchos::SerialDenseVector<LO, SC>;
+  using real_vector_type = Teuchos::SerialDenseVector<LO, real_type>;
 
 public:
   Gmres () = default;
@@ -469,7 +471,7 @@ protected:
     const SC one  = STS::one ();
 
     // timers
-    Teuchos::RCP< Teuchos::Time > spmvTimer = Teuchos::TimeMonitor::getNewCounter ("Gmres::matrix-apply");
+    Teuchos::RCP< Teuchos::Time > spmvTimer = Teuchos::TimeMonitor::getNewCounter ("Gmres::Sparse Mat-Vec");
 
     // initialize output parameters
     SolverOutput<SC> output {};
@@ -529,6 +531,8 @@ protected:
       // return residual norm as B
       Tpetra::deep_copy (B, P);
       return output;
+    } else if (outPtr != NULL) {
+      *outPtr << "Initial guess' residual norm " << b0_norm << endl;
     }
 
     Teuchos::BLAS<LO ,SC> blas;
@@ -539,6 +543,12 @@ protected:
     dense_matrix_type  h (restart+1, 1, true); // for reorthogonalization
     std::vector<mag_type> cs (restart);
     std::vector<SC> sn (restart);
+
+    #define HAVE_TPETRA_DEBUG
+    #ifdef HAVE_TPETRA_DEBUG
+    dense_matrix_type H2 (restart+1, restart,   true);
+    dense_matrix_type H3 (restart+1, restart,   true);
+    #endif
 
     // initialize starting vector
     P.scale (one / b_norm);
@@ -599,6 +609,13 @@ protected:
           (STS::real (H(iter+1, iter)) < STM::zero (), std::runtime_error,
            "At iteration " << iter << ", H(" << iter+1 << ", " << iter << ") = "
            << H(iter+1, iter) << " < 0.");
+
+        #ifdef HAVE_TPETRA_DEBUG
+        // Numeric check
+        this->checkNumerics (outPtr, iter, iter, A, M, Q, X, B, y,
+                             H, H2, H3, cs, sn, input);
+        #endif
+
         // Convergence check
         if (rank == 1 && H(iter+1, iter) != zero) {
           // Apply Givens rotations to new column of H and y
@@ -698,6 +715,198 @@ protected:
       *outPtr << output;
     }
     return output;
+  }
+
+  // ! compute condition number
+  real_type
+  computeNorm(dense_matrix_type &T)
+  {
+    const LO ione = 1;
+
+    LO m = T.numRows ();
+    LO n = T.numCols ();
+    LO minmn = (m < n ? m : n);
+
+    LO INFO, LWORK;
+    SC  U, VT, TEMP;
+    real_type RWORK;
+    real_vector_type S (minmn, true);
+    LWORK = -1;
+    Teuchos::LAPACK<LO ,SC> lapack;
+    lapack.GESVD('N', 'N', m, n, T.values (), T.stride (),
+                 S.values (), &U, ione, &VT, ione,
+                 &TEMP, LWORK, &RWORK, &INFO);
+    LWORK = Teuchos::as<LO> (STS::real (TEMP));
+    dense_vector_type WORK (LWORK, true);
+    lapack.GESVD('N', 'N', m, n, T.values (), T.stride (),
+                 S.values (), &U, ione, &VT, ione,
+                 WORK.values (), LWORK, &RWORK, &INFO);
+
+    return S(0);
+  }
+
+  // ! Check numerics
+  void checkNumerics (Teuchos::FancyOStream* outPtr,
+                      const int iter,
+                      const int check,
+                      const OP& A,
+                      const OP& M,
+                      const MV& Q,
+                      const vec_type& X,
+                      const vec_type& B,
+                      const dense_vector_type& y,
+                      const dense_matrix_type& H,
+                            dense_matrix_type& H2,
+                            dense_matrix_type& H3,
+                            std::vector<mag_type>& cs,
+                            std::vector<SC>& sn,
+                      const SolverInput<SC>& input)
+  {
+    Teuchos::BLAS<LO ,SC> blas;
+    const SC zero = STS::zero ();
+    const SC one  = STS::one ();
+
+    // quick return
+    if (outPtr == nullptr) {
+      return;
+    }
+
+    // save H (before convert it to triangular form)
+    for (int i = 0; i <= check+1; i++) {
+      H2 (i, check) = H (i, check);
+      H3 (i, check) = H (i, check);
+    }
+    // reduce H3 to triangular
+    dense_vector_type y2 (check+2, true); // to save y
+    blas.COPY (check+1, y.values(), 1, y2.values(), 1);
+    this->reduceHessenburgToTriangular (check, H3, cs, sn, y2.values ());
+
+    #if 0
+    printf( " > checkNumeric(iter = %d, check = %d)\n",iter,check );
+    /*printf( " Q = [\n" );
+    for (int i = 0; i < Q_lcl.extent(0); i++) {
+      for (int j = 0; j <= check; j++) printf( "%.16e ",Q_lcl(i,j) );
+      printf("\n" );
+    }
+    printf("];\n" );*/
+
+    printf( " H2 = [\n" );
+    for (int i = 0; i <= check+1; i++) {
+      for (int j = 0; j <= check; j++) {
+        printf( "%e ", H2 (i, j) );
+      }
+      printf( "\n" );
+    }
+    printf( "];\n" );
+    printf( " H3 = [\n" );
+    for (int i = 0; i <= check+1; i++) {
+      for (int j = 0; j <= check; j++) {
+        printf( "%e ", H3 (i, j) );
+      }
+      printf( "\n" );
+    }
+    printf( "];\n" );
+    for (int i = 0; i <= check+1; i++) printf( "%d %e -> %e\n",i,y(i),y2(i) );
+    #endif
+
+    // save X
+    vec_type X2 (X.getMap (), false);    // to save X
+    Tpetra::deep_copy (X2, X);
+
+    // implicit residual norm
+    mag_type r_norm_imp = STS::magnitude (y2 (check+1));
+    y2.resize (check+1);
+
+    // --------------------------------------
+    // compute explicit residual norm
+    // > Update solution, X += Q*y
+    vec_type R  (X.getMap (), false);  // to save X
+    vec_type MP (X.getMap (), false);  // to save X
+    blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
+               Teuchos::NON_UNIT_DIAG, check+1, 1, one,
+               H3.values(), H3.stride(), y2.values (), y2.stride ());
+    Teuchos::Range1D cols(0, check);
+    Teuchos::RCP<const MV> Qj = Q.subView(cols);
+    if (input.precoSide == "right") {
+      MVT::MvTimesMatAddMv (one, *Qj, y2, zero, R);
+      M.apply (R, MP);
+      X2.update (one, MP, one);
+    }
+    else {
+      MVT::MvTimesMatAddMv (one, *Qj, y2, one, X2);
+    }
+    // > Compute explicit residual vector
+    A.apply (X2, R);
+    R.update (one, B, -one);
+    mag_type r_norm = R.norm2 (); // residual norm
+    mag_type b_norm = B.norm2 (); // originial noorm
+
+    // --------------------------------------
+    // compute orthogonality error, norm (Q'*Q-I)
+    mag_type ortho_error (0.0);
+    {
+      Teuchos::Range1D index_prev(0, check+1);
+      Teuchos::RCP<const MV> Q_prev = MVT::CloneView (Q, index_prev);
+      dense_matrix_type T (check+2, check+2, true);
+      MVT::MvTransMv(one, *Q_prev, *Q_prev, T);
+      for (int i = 0; i < check+2; i++) {
+        T (i, i) -= one;
+      }
+      ortho_error = computeNorm(T);
+    }
+
+    // --------------------------------------
+    // compute Arnoldi representation error
+    mag_type repre_error (0.0);
+    {
+      // > compute AQ=A*Q
+      MV AQ (Q.getMap (), check+1);
+      {
+        Teuchos::Range1D index_prev(0, check);
+        Teuchos::RCP<const MV> Q_prev = MVT::CloneView (Q, index_prev);
+        if (input.precoSide == "left") {
+          MV AM (Q.getMap (), check+1);
+          A.apply (*Q_prev, AM);
+          M.apply (AM, AQ);
+        } else if (input.precoSide == "right") {
+          MV AM (Q.getMap (), check+1);
+          M.apply (*Q_prev, AM);
+          A.apply (AM, AQ);
+        } else {
+          A.apply (*Q_prev, AQ);
+        }
+      }
+
+      // > compute AQ = Q*H - AQ
+      {
+        Teuchos::Range1D index_prev(0, check+1);
+        Teuchos::RCP<const MV> Q_prev = MVT::CloneView (Q, index_prev);
+        auto H_new = rcp (new dense_matrix_type (Teuchos::View, H2, check+2, check+1, 0, 0));
+
+        MVT::MvTimesMatAddMv (one, *Q_prev, *H_new, -one, AQ);
+      }
+
+      // > compute norm, sqrt(norm(AQ'*AQ))
+      {
+        dense_matrix_type T (check+1, check+1, true);
+        MVT::MvTransMv(one, AQ, AQ, T);
+        repre_error = STM::squareroot (computeNorm(T));
+      }
+    }
+
+    *outPtr << " > iter = " << iter
+            << ", check = " << check
+            << ", Right-hand side norm: "
+            << b_norm
+            << ", Implicit and explicit residual norms: "
+            << r_norm_imp << ", " << r_norm
+            << " -> "
+            << r_norm_imp/b_norm << ", " << r_norm/b_norm
+            << ", Ortho error: "
+            << ortho_error
+            << ", Arnoldi representation error: "
+            << repre_error
+            << std::endl;
   }
 
 private:
