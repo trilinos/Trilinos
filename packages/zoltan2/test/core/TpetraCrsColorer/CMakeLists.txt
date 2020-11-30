@@ -21,7 +21,6 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
       TpetraCrsColorer
       NAME TpetraCrsColorer_west0067
-      SOURCES TpetraCrsColorer.cpp
       ARGS "--file=west0067"
       COMM serial mpi
       PASS_REGULAR_EXPRESSION "PASS"
