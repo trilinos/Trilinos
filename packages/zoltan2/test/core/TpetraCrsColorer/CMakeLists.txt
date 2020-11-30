@@ -18,7 +18,7 @@ TRIBITS_ADD_TEST(
       FAIL_REGULAR_EXPRESSION "FAIL"
     )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_TEST(
       TpetraCrsColorer
       NAME TpetraCrsColorer_west0067
       SOURCES TpetraCrsColorer.cpp
