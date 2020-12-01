@@ -194,7 +194,7 @@ public:
     MatrixLoad<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
         comm, system.lib,
         binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile,
-        domainMapFile, rangeMapFile, coordFile, nullFile, materialFile,
+        domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile,
         map, system.A,
         coordinates, nullspace, material,
         system.X, system.B, system.numVectors,
@@ -216,6 +216,7 @@ private:
   std::string domainMapFile = "";
   std::string rangeMapFile = "";
   std::string coordFile = "";
+  std::string coordMapFile = "";
   std::string nullFile = "";
   std::string materialFile = "";
 
