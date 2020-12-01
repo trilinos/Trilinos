@@ -105,3 +105,5 @@ ENDIF()
 IF(${PROJECT_NAME}_ENABLE_YouCompleteMe)
   INCLUDE(CodeCompletion)
 ENDIF()
+
+# a simple text change to trigger testing. DO NOT MERGE!
