@@ -10,6 +10,10 @@ TRIBITS_PACKAGE(Adelus)
 # B) Set up package-specific options
 #
 
+IF(${PACKAGE_NAME}_ENABLE_Teuchos)
+  MESSAGE("     Adelus_ENABLE Teuchos is ON")
+ENDIF()
+
 #If no options are specified set ZCPLX as the default
 IF(NOT ${PACKAGE_NAME}_ENABLE_ZCPLX AND
    NOT ${PACKAGE_NAME}_ENABLE_SCPLX AND
