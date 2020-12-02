@@ -1344,7 +1344,10 @@ namespace BaskerNS
         // ----------------------------------------------------------------------------------------------
         // compute & apply ND on a big block A
         Kokkos::Timer nd_nd_timer;
-        apply_scotch_partition();
+        int info_scotch = apply_scotch_partition();
+        if (info_scotch != BASKER_SUCCESS) {
+          return info_scotch;
+        }
         /*printf("After applying ND & cAMD (aka Scotch)\n");
         printf(" ppA = [\n" );
         for(Int j = 0; j < BTF_A.ncol; j++) {

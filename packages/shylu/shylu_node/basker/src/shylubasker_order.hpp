@@ -397,7 +397,10 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
       // compute ND (if no MWM is requested)
       if (Options.blk_matching == 0) {
-        apply_scotch_partition();
+        int info_scotch = apply_scotch_partition();
+        if (info_scotch != BASKER_SUCCESS) {
+          return info_scotch;
+        }
       }
     } //if btf_tabs_offset != 0
 
@@ -741,7 +744,11 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     }
     printf("];\n");*/
 
-    scotch_partition(BTF_A); // tree is prepped; permutation then applied to BTF_A
+    // tree is prepped; permutation then applied to BTF_A
+    int info_scotch = scotch_partition(BTF_A);
+    if (info_scotch != BASKER_SUCCESS) {
+      return info_scotch;
+    }
     #ifdef BASKER_TIMER
     double scotch_time = scotch_timer.seconds();
     std::cout << " ++ Basker apply_scotch : scotch partition time     : " << scotch_time << std::endl;
@@ -964,13 +971,14 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::scotch_partition( BASKER_MATRIX &M )
-  { 
+  {
     nd_flag = BASKER_TRUE;
 
+    int info_scotch = 0;
     if(Options.symmetric == BASKER_TRUE)
     {
       //printf("Scotch Symmetric\n");
-      part_scotch(M, part_tree);
+      info_scotch = part_scotch(M, part_tree);
     }
     else
     {
@@ -983,8 +991,11 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         for(Int k = M.col_ptr(i); k < M.col_ptr(i+1); k++) printf( "%d %d\n",i,M.row_idx(k) );
       }
       printf( "];\n" );*/
-      part_scotch(MMT, part_tree);
+      info_scotch = part_scotch(MMT, part_tree);
       FREE(MMT);
+    }
+    if (info_scotch != BASKER_SUCCESS) {
+      return info_scotch;
     }
 
     nd_flag = BASKER_TRUE;
@@ -1004,7 +1015,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     }
 
     //May need to sort row_idx
-    return 0; 
+    return BASKER_SUCCESS; 
   }//end scotch_partition()
 
 

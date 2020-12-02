@@ -87,9 +87,7 @@ namespace BaskerNS
     //printf("Switch time: %f \n", tza.seconds());
 
 #ifdef BASKER_KOKKOS
-    #if 1//def BASKER_TIMER
     Kokkos::Impl::Timer timer;
-    #endif
 
     typedef Kokkos::TeamPolicy<Exe_Space>        TeamPolicy;
     // --------------------------------------------------------------- //
@@ -107,10 +105,8 @@ namespace BaskerNS
         //  printf( " error[%d] = %d\n",tid,thread_array(tid).error_type );
         //}
         fflush(stdout);
+        timer.reset();
       }
-      #if 1//def BASKER_TIMER
-      timer.reset();
-      #endif
 
       Int domain_restart = 0;
       kokkos_nfactor_domain <Int,Entry,Exe_Space>
@@ -155,11 +151,11 @@ namespace BaskerNS
           Kokkos::fence();
         }
       }//end while
-
-      #if 1//def BASKER_TIMER
-      printf("Time DOMAIN: %lf \n", timer.seconds());
-      timer.reset();
-      #endif
+      if(Options.verbose == BASKER_TRUE)
+      {
+        printf("Time DOMAIN: %lf \n", timer.seconds());
+        timer.reset();
+      }
 
 #else// else basker_kokkos
       #pragma omp parallel
@@ -254,12 +250,12 @@ namespace BaskerNS
         //-------------------------End Sep----------------//
       }// info != BASKER_ERROR
       //printf( " End Sep: info = %d (%d, %d)\n",info,BASKER_SUCCESS,BASKER_ERROR );
-      #if 1//def BASKER_TIMER
-      printf("Time SEP: %lf \n", timer.seconds());
-      timer.reset();
-      #endif
+      if(Options.verbose == BASKER_TRUE)
+      {
+        printf("Time SEP: %lf \n", timer.seconds());
+        timer.reset();
+      }
     }
-
 
     // ---------------------------------------------------------------------------------------- //
     // ----------------------- Small blocks in bottom C (and top D) --------------------------- //
@@ -271,6 +267,7 @@ namespace BaskerNS
       {
         printf("Factoring BLKs num_threads: %ld \n",
             (long)num_threads);
+        timer.reset();
       }
 
       //======Call diag factor====
@@ -323,9 +320,10 @@ namespace BaskerNS
         }
       }//end while
 
-      #if 1//def BASKER_TIMER
-      printf("Time BTF: %lf \n", timer.seconds());
-      #endif
+      if(Options.verbose == BASKER_TRUE)
+      {
+        printf("Time BTF: %lf \n", timer.seconds());
+      }
     }//end btf call
 
     Kokkos::Impl::Timer tzback;

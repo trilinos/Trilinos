@@ -111,8 +111,7 @@ namespace BaskerNS
   )
   {
     Int lvls = round(log(num_threads)/log(2));
-    part_scotch(M, BT, lvls);
-    return 0;
+    return part_scotch(M, BT, lvls);
   }//end part_scotch
 
 
@@ -130,9 +129,7 @@ namespace BaskerNS
     #else
     using scotch_integral_type = int32_t; //NDE: make this depend on the scotch type
     #endif
-    #if 1//def BASKER_TIMER
     Kokkos::Impl::Timer timer_scotch;
-    #endif
 
     Int num_levels = num_domains; 
     scotch_graph<scotch_integral_type> sg;
@@ -173,14 +170,6 @@ namespace BaskerNS
         MALLOC_INT_1DARRAY(metis_rowptr, metis_size+1);
         MALLOC_INT_1DARRAY(metis_colidx, metis_nnz);
 
-        // initial partition
-        Int dom_id = 0;
-        for (Int i = 0; i < M.nrow; i++) {
-          metis_part[i] = dom_id;
-
-          sg.permtab[i] = i;
-          sg.peritab[i] = i;
-        }
         INT_1DARRAY metis_part_k;
         INT_1DARRAY metis_permtab;
         INT_1DARRAY metis_peritab;
@@ -188,30 +177,152 @@ namespace BaskerNS
         MALLOC_INT_1DARRAY(metis_permtab, metis_size);
         MALLOC_INT_1DARRAY(metis_peritab, metis_size);
 
-        sg.cblk = 1;
         int info = 0;
         idx_t sepsize = 0;
         idx_t options[METIS_NOPTIONS];
 
-        for (Int level = 0; level < num_levels; level++) {
+        Int num_doms  = pow(2.0, (double)(num_levels+1)) - 1;
 
-          Int num_doms = pow(2.0,(double)(level));
-          for (Int dom = 0; dom < num_doms; dom++) {
+#define POSTORDER
+#ifdef POSTORDER
+        // --------------------------------------------------- 
+        // compute post-order
+        INT_1DARRAY metis_queue;
+        INT_1DARRAY metis_check;
+        INT_1DARRAY post_order;  // post(i) is the new ith domain id after ND
+        INT_1DARRAY post_iorder; // the original ith domain becomes ipost(i) th domain after ND
+        MALLOC_INT_1DARRAY(metis_queue, num_doms);
+        MALLOC_INT_1DARRAY(metis_check, num_doms);
+        MALLOC_INT_1DARRAY(post_order,  num_doms);
+        MALLOC_INT_1DARRAY(post_iorder, num_doms);
+        for (Int i = 0; i < num_doms; i++) {
+          metis_check(i) = 0;
+        }
+
+        // id of the first leaf node (BF order, post_order maps from BF to ND)
+        Int leaves_id = pow(2.0, (double)(num_levels)) - 1;
+        //printf( " num_levels = %d, num_doms = %d, leves_id = %d\n",num_levels,num_doms,leaves_id );
+
+        // > insert root
+        Int num_queued = 0;
+        metis_queue(num_queued) = 0;
+        num_queued ++;
+
+        num_doms = 0;
+        while (num_queued > 0) {
+          // pop a node from queue
+          Int dom_id = metis_queue(num_queued-1);
+          //printf( " > check (dom_id = %d) = %d\n",dom_id,metis_check(dom_id) );
+          if (dom_id >= leaves_id ||      // leaf
+              metis_check(dom_id) == 2)  // both childrend processed
+          {
+            post_order(num_doms) = dom_id;
+            //printf( " pop queue(%d) = %d -> post(%d) = %d\n\n",num_queued-1,dom_id, num_doms,dom_id );
+            num_doms ++;
+
+            if (dom_id != 0) {
+              // if not root, let the parent node know one of its children has been processed
+              Int parent_id = (dom_id - 1)/2;
+              metis_check(parent_id) ++;
+            }
+
+            num_queued --;
+          } else {
+            // push right child
+            //printf( " push queue(%d) = %d\n",num_queued,2*dom_id+2 );
+            metis_queue(num_queued) = 2*dom_id + 2;
+            num_queued ++;
+            // push left child
+            //printf( " push queue(%d) = %d\n\n",num_queued,2*dom_id+1 );
+            metis_queue(num_queued) = 2*dom_id + 1;
+            num_queued ++;
+          }
+        }
+        for (Int i = 0; i < num_doms; i++) {
+          post_iorder(post_order(i)) = i;
+        }
+        /*for (Int i = 0; i < num_doms; i++) {
+          printf( " post[%d] = %d, ipost[%d]=%d\n",i,post_order(i),i,post_iorder(i) );
+        }*/
+        /*printf( " M = [\n" );
+        for(Int i = 0; i < M.nrow; i++) {
+          for(Int k = M.col_ptr(i); k < M.col_ptr(i+1); k++) printf( "%d %d\n",i,M.row_idx(k) );
+        }
+        printf( "];\n" );*/
+#endif
+
+        // initial partition
+        sg.cblk = 1;
+        for (Int i = 0; i < M.nrow; i++) {
+          metis_part[i] = post_iorder(0);
+          sg.permtab[i] = i;
+          sg.peritab[i] = i;
+        }
+        sg.treetab[post_iorder(0)] =-1;
+        for (Int i = 0; i < num_doms; i++) {
+          sg.rangtab[i] = 0;
+        }
+        sg.rangtab[num_doms] = M.nrow;
+        for (Int level = 0; level < num_levels; level++) {
+          Int num_leaves = pow(2.0, (double)(level));       // number of leaves at this level
+          Int first_sep  = pow(2.0, (double)(level)) - 1;   // id of the first leaf at this level
+          Int first_leaf = pow(2.0, (double)(1+level)) - 1; // id of the first new leaf at the next level
+
+          //printf( "\n ===========================================\n" );
+          for (Int leaf_id = 0; leaf_id < num_leaves; leaf_id++) {
             // extract k-th interoior
+            Int dom_id = 2 * leaf_id + first_leaf;
+            Int dom_id1 = dom_id;     // id of left-child after bisection
+            Int dom_id2 = dom_id + 1; // id of right-child after bisection
+            Int sep_id = (dom_id1)/2; // id of this domain before bisection (becomes separator after bisection)
+            //printf( "\n > level = %d, dom_id = 2*%d + %d = %d, dom_id1 = %d, dom_id2 = %d, sep_id = %d\n",level,leaf_id,first_leaf,dom_id,dom_id1,dom_id2,sep_id );
+
+            // trying to figure out which block comes right before me
+            Int sep_left_sibling = 0;
+            if (sep_id == first_sep) {
+              // this iis the first leaf
+              sep_left_sibling = 0;
+            } else if (leaf_id%2 == 1) {
+              // this is right-child, so assign to left-sibling
+              sep_left_sibling = 1+post_iorder(sep_id - 1);
+            } else {
+              // this is left-child, so assign to left-sibling of its separator
+              sep_left_sibling = 1+(post_iorder(sep_id/2 - 1));
+            }
+            //printf( "  -> level = %d, sep_left_sibling = %d (sep_id = %d, first_sep = %d)\n",level,sep_left_sibling,sep_id,first_sep );
+
+            // post order
+            dom_id1 = post_iorder(dom_id1);
+            dom_id2 = post_iorder(dom_id2);
+            sep_id  = post_iorder(sep_id);
+            //printf( "  -> level = %d, dom_id1 = %d, dom_id2 = %d, sep_id = %d\n",level,dom_id1,dom_id2,sep_id );
+            //printf( "  -> level = %d, rantab[%d] = %d, rangtab[%d] = %d, rangtab[%d] = %d\n",level,dom_id1,sg.rangtab[dom_id1],dom_id2,sg.rangtab[dom_id2],sep_id,sg.rangtab[sep_id] );
+            //printf( "  -> level = %d, dom = %d -> %d (nrow = %d)\n",level,dom_id,sep_id,M.nrow );
+
+            Int frow = sg.rangtab[sep_left_sibling];
+            Int metis_offset_k = frow + metis_offset;
+            //printf( "frow = rangtab[%d] = %d\n",sep_left_sibling,frow );
+            //printf( " -> metis_offset_k = %d + %d\n",frow,metis_offset );
+            /*for(Int i = 0; i < M.nrow; i++) {
+              printf( " %d %d %d %d\n",i, metis_part(i), sg.permtab[i], sg.peritab[i] );
+            }*/
             Int metis_size_k = 0;
             Int nnz_k=0;
             metis_rowptr[0] = 0;
-            for(Int i = metis_offset; i < sg.m; i++)
+            for(Int j = metis_offset; j < M.ncol; j++)
             {
-              if (metis_part(i) == dom) {
-                Int col = sg.peritab[i];
+              Int col = sg.peritab[j]; // j is after ND, col is original
+              if (metis_part(col) == sep_id) {
                 for(Int k = M.col_ptr(col); k <M.col_ptr(col+1); k++)
                 {
-                  Int j = M.row_idx(k);
-                  Int row = sg.permtab[j];
-                  if(row != col && row >= metis_offset && metis_part(j) == dom)
-                  {
-                    metis_colidx[nnz_k++] = row - metis_offset;
+                  Int row = M.row_idx(k);
+                  Int i = sg.permtab[row]; // i is after ND, row is original
+                  if(row != col && row >= metis_offset_k) {
+                    if(metis_part(row) == sep_id)
+                    {
+                      metis_colidx[nnz_k] = i - frow;
+                      nnz_k ++;
+                    }
                   }
                 }
                 metis_rowptr[metis_size_k+1] = nnz_k;
@@ -219,16 +330,22 @@ namespace BaskerNS
               }
             }
 
-            /*printf( " M = [\n" );
-            for(Int i = 0; i < M.nrow; i++) {
-              for(Int k = M.col_ptr(i); k < M.col_ptr(i+1); k++) printf( "%d %d\n",i,M.row_idx(k) );
+            //printf( " metis_size = %d, n = %d\n",metis_size_k,M.nrow );
+            /*printf( " Ke = [\n" );
+            for(Int i = metis_offset; i < M.nrow; i++)
+            {
+              Int col = sg.peritab[i];
+              for(Int k = M.col_ptr(col); k <M.col_ptr(col+1); k++)
+              {
+                Int j = M.row_idx(k);
+                Int row = sg.permtab[j];
+                printf( "%d %d %d %d\n",j,i,row,col );
+              }
             }
-            printf( "];\n" );
-          
-            printf( " metis_size = %d, n = %d\n",metis_size,M.nrow );
-            printf( " Me = [\n" );
-            for(Int i = 0; i < metis_size; i++) {
-              for(Int k = metis_rowptr(i); k < metis_rowptr(i+1); k++) printf( "%d %d\n",i,metis_colidx(k) );
+            printf( "];\n" );*/
+            /*printf( " Me = [\n" );
+            for(Int i = 0; i < metis_size_k; i++) {
+              for(Int k = metis_rowptr(i); k < metis_rowptr(i+1); k++) printf( "%d %d %d\n",i,metis_colidx(k),metis_colidx(k)+frow );
             }
             printf( "];\n" );*/
 
@@ -236,6 +353,7 @@ namespace BaskerNS
             info = 0;
             if (METIS_OK != METIS_SetDefaultOptions(options)) {
               std::cout << std::endl << " > METIS_SetDefaultOptions failed < " << std::endl << std::endl;
+              return BASKER_ERROR; // TODO: what to do here?
             }
             info = METIS_ComputeVertexSeparator(&metis_size_k,
                                                 &(metis_rowptr(0)),
@@ -246,13 +364,13 @@ namespace BaskerNS
                                                 &(metis_part_k(0)));
             if (METIS_OK != METIS_SetDefaultOptions(options)) {
               std::cout << std::endl << " > METIS_ComputeVertexSeparator failed < " << std::endl << std::endl;
+              return BASKER_ERROR; // TODO: what to do here?
             }
-            std::cout << " METIS_ComputeVertexSeparator: info = " << info << " sepsize = " << sepsize << std::endl;
 
             Int dom1 = 0;
             Int dom2 = 0;
             Int sep  = 0;
-            for(Int i = 0; i < metis_size; i++)
+            for(Int i = 0; i < metis_size_k; i++)
             {
               if (metis_part_k[i] == 0) {
                 dom1 ++;
@@ -262,58 +380,84 @@ namespace BaskerNS
                 sep ++;
               }
             }
+            //if (dom1 == 0 || dom2 == 0 || sep == 0) {
+            if (dom1 == 0 || dom2 == 0) {
+              std::cout << std::endl << " > METIS_ComputeVertexSeparator returned an empty domain  "
+                                     << dom1 << " + " << dom2 << " + " << sep << std::endl << std::endl;
+              return BASKER_ERROR; // TODO: what to do here?
+            }
+            if(Options.verbose == BASKER_TRUE) {
+              std::cout << " METIS_ComputeVertexSeparator: info = " << info
+                        << " size = " << metis_size_k << " sepsize = " << sepsize << std::endl;
+              std::cout << " dom1=(id=" << dom_id1 << ", size=" << dom1 << "),"
+                        << " dom2=(id=" << dom_id2 << ", size=" << dom2 << "),"
+                        << "  sep=(id=" << sep_id  << ", size=" << sep  << ")" << std::endl;
+            }
 
-            Int dom_id1 = dom_id + 1;
-            Int dom_id2 = dom_id + 2;
-            Int sep_id = (dom_id1)/2;
-            printf( " dom1=(id=%d, size=%d), dom2=(id=%d, size=%d), sep=(id=%d, size=%d)\n",dom_id1,dom1, dom_id2,dom2, sep_id,sep );
-
-            sep = dom1 + dom2;
-            dom2 = dom1;
-            dom1 = 0;
-            for(Int i = 0; i < metis_size; i++)
+            // update num doms
+            if (dom1 > 0) {
+              sg.cblk ++;
+            }
+            if (dom2 > 0) {
+              sg.cblk ++;
+            }
+            if (sep == 0) {
+              sg.cblk --;
+            }
+            // update permtab, permtab maps original to ND order (permtab[i] is the new row index after nd)
+            sep  = frow + dom1 + dom2;
+            dom2 = frow + dom1;
+            dom1 = frow + 0;
+            for(Int i = 0; i < metis_size_k; i++)
             {
+              // i_g is the original global index before ND
+              Int i_g = sg.peritab[frow + i];
               if (metis_part_k[i] == 0) {
-                sg.permtab[i] = dom1;
+                sg.permtab[i_g] = dom1;
                 dom1 ++;
               } else if (metis_part_k[i] == 1) {
-                sg.permtab[i] = dom2;
+                sg.permtab[i_g] = dom2;
                 dom2 ++;
               } else {
-                sg.permtab[i] = sep;
+                sg.permtab[i_g] = sep;
                 sep ++;
               }
             }
 
+            // update global part
+            for(Int i = 0; i < metis_size_k; i++) {
+              Int i_g = sg.peritab[frow + i];
+              if (metis_part_k[i] == 0) {
+                metis_part[i_g] = dom_id1;
+              } else if (metis_part_k[i] == 1) {
+                metis_part[i_g] = dom_id2;
+              } else {
+                metis_part[i_g] = sep_id;
+              }
+            }
+
+            // update peritab
             for(Int i = 0; i < sg.m; i++)
             {
-              sg.peritab[sg.peritab[i]] = i;
+              sg.peritab[sg.permtab[i]] = i;
             }
-            sg.treetab[0] = 2;
-            sg.treetab[1] = 2;
-            sg.treetab[2] =-1;
 
-            sg.rangtab[0] = 0;
-            sg.rangtab[1] = dom1;
-            sg.rangtab[2] = dom2;
-            sg.rangtab[3] = sep;
-            sg.cblk += 2;
+            // update rangtab
+            sg.rangtab[dom_id1+1] = dom1;
+            sg.rangtab[dom_id2+1] = dom2;
+            sg.rangtab[sep_id+1] = sep;
+
+            sg.treetab[dom_id1] = sep_id;
+            sg.treetab[dom_id2] = sep_id;
+            //printf( " -> rangtab[%d] = %d, rangtab[%d] = %d, rangtab[%d]=%d\n",dom_id1+1,dom1,dom_id2+1,dom2,sep_id+1,sep);
           }
         }
 
-        // convert post-order
-        #if 0
-        INT_1DARRAY metis_queue;
-        MALLOC_INT_1DARRAY(metis_queue, sg.cblk);
-        Int num_doms = 0;
-        Int leaves_id = pow(2.0,(double)(num_levels));
-        metis_queue(num_doms) = 0;
-        num_doms ++;
-        while (num_doms > 0) {
-          if (metis_queue(num_doms) > 
-        }
-        #endif
-      } else {
+        // --------------------------------------------------- 
+        // > compute postorder tree
+        sg.cblk = num_doms;
+      } else 
+      {
         sg.Ap[0] = 0;
         Int sj;
         Int sptr = 0;
@@ -337,83 +481,6 @@ namespace BaskerNS
           sg.Ap[i+1] = sg.Ap[i]+sj;
         }
         sg.nz = sg.Ap[sg.m];
-        #if 0
-        {
-          // -- testing size of separators using METIS (before/after merge) -- 
-          //idx_t  metis_offset = 74;
-          idx_t  metis_offset = btf_tabs(btf_tabs_offset-1);
-          idx_t  metis_size = M.nrow - metis_offset;
-          idx_t  metis_nnz = M.col_ptr(M.nrow);
-          INT_1DARRAY metis_rowptr;
-          INT_1DARRAY metis_colidx;
-          INT_1DARRAY metis_part;
-          //MALLOC_INT_1DARRAY(metis_part,   metis_size+1);
-          MALLOC_INT_1DARRAY(metis_part,   M.nrow+1);
-          MALLOC_INT_1DARRAY(metis_rowptr, metis_size+1);
-          MALLOC_INT_1DARRAY(metis_colidx, metis_nnz);
-
-          idx_t sepsize = 0;
-          int info = 0;
-          idx_t options[METIS_NOPTIONS];
-          #if 0
-          metis_nnz = 0;
-          metis_rowptr(0) = 0;
-          for(Int i = metis_offset; i < sg.m; i++)
-          {
-            for(Int k = sg.Ap[i]; k < sg.Ap[i+1]; k++)
-            {
-              if(sg.Ai[k] >= metis_offset)
-              {
-                metis_colidx[metis_nnz] = sg.Ai[k]-metis_offset;
-                metis_nnz++;
-              }
-            }
-            metis_rowptr[i-metis_offset+1] = metis_nnz;
-          }
-          /*printf( " M = [\n" );
-          for(Int i = 0; i < M.nrow; i++) {
-            for(Int k = M.col_ptr(i); k < M.col_ptr(i+1); k++) printf( "%d %d\n",i,M.row_idx(k) );
-          }
-          printf( "];\n" );
-          printf( " Me = [\n" );
-          for(Int i = 0; i < metis_size; i++) {
-            for(Int k = metis_rowptr(i); k < metis_rowptr(i+1); k++) printf( "%d %d\n",i,metis_colidx(k) );
-          }
-          printf( "];\n" );*/
-
-          if (METIS_OK != METIS_SetDefaultOptions(options)) {
-            std::cout << std::endl << " > METIS_SetDefaultOptions failed < " << std::endl << std::endl;
-          }
-          std::cout << " >> calling METIS_ComputeVertexSeparator on the last big block ( block-offset = " << btf_tabs_offset << " row-offset = " << metis_offset
-                    << " n = " << metis_size << ", nnz = " << metis_nnz << ")" << std::endl;
-          info = METIS_ComputeVertexSeparator(&metis_size,
-                                              &(metis_rowptr(0)),
-                                              &(metis_colidx(0)),
-                                               nullptr,
-                                               options,
-                                              &sepsize,
-                                              &(metis_part(0)));
-          std::cout << " METIS_ComputeVertexSeparator: info = " << info << " sepsize = " << sepsize << std::endl;
-          #endif
-
-          std::cout << " >> calling METIS_ComputeVertexSeparator after merge ( n = " << sg.m << ", nnz = " << sg.Ap[sg.m] << ")" << std::endl;
-          metis_size = sg.m;
-          if (METIS_OK != METIS_SetDefaultOptions(options)) {
-            std::cout << std::endl << " > METIS_SetDefaultOptions failed < " << std::endl << std::endl;
-          }
-          info = METIS_ComputeVertexSeparator(&metis_size,
-                                               sg.Ap,
-                                               sg.Ai,
-                                               nullptr,
-                                               options,
-                                              &sepsize,
-                                              &(metis_part(0)));
-          std::cout << " METIS_ComputeVertexSeparator: info = " << info << " sepsize = " << sepsize << std::endl;
-          /*printf( " P = [\n" );
-          for(Int i = 0; i < M.nrow; i++) printf("%d\n",metis_part(i) );
-          printf( "];\n" );*/
-        }
-        #endif
 
         //printf("num self_edge: %d sg.m: %d \n",
         //	   self_edge, sg.m);
@@ -442,14 +509,14 @@ namespace BaskerNS
         if(SCOTCH_graphInit(&cgrafptr) != 0)
         {
           printf("Scotch: error initalizing graph \n");
-          return -1;
+          return BASKER_ERROR; // TODO: what to do here?
         }
 
         if( SCOTCH_graphBuild(&cgrafptr, 0, sg.m, sg.Ap, sg.Ap+1, vwgts, NULL,
                               sg.nz, sg.Ai, NULL) !=0 )
         {
           printf("Scotch: failed to build scotch graph \n");
-          return -1;
+          return BASKER_ERROR; // TODO: what to do here?
         }
 
         //Need to come back to this so update based on nthreads
@@ -467,7 +534,7 @@ namespace BaskerNS
         if(err != 0)
         {
           printf("Scotch: cannot build strategy \n");
-          return -1;
+          return BASKER_ERROR; // TODO: what to do here?
         }
 
         // permtab[i] = dom id
@@ -475,7 +542,7 @@ namespace BaskerNS
                              &sg.cblk, sg.rangtab, sg.treetab) != 0)
         {
           printf("Scotch: cannot compute ordering \n");
-          return -1;
+          return BASKER_ERROR; // TODO: what to do here?
         }
 
         if(Options.verbose == BASKER_TRUE) {
@@ -489,11 +556,9 @@ namespace BaskerNS
         SCOTCH_graphFree(&cgrafptr);
       } // end of SCOTCH
     }
-    #if 1//def BASKER_TIMER
-    double time_scotch = timer_scotch.seconds();
-    std::cout << std::endl << " > Time to compute ND : " << time_scotch << std::endl << std::endl;
-    #endif
     if(Options.verbose == BASKER_TRUE) {
+      double time_scotch = timer_scotch.seconds();
+      std::cout << std::endl << " > Time to compute ND : " << time_scotch << std::endl << std::endl;
       for(Int i = 0; i < sg.cblk; i++) {
         printf( " dom-%d : size = %d, tab = %d\n",(int)i,(int)(sg.rangtab[i+1]-sg.rangtab[i]),(int)(sg.treetab[i]) );
       }
@@ -511,7 +576,7 @@ namespace BaskerNS
     
     #ifdef BASKER_DEBUG_ORDER_SCOTCH
      printf("FIX SCOTCH PRINT OUT\n");
-     printf("SCOTCH: ASKED: %d  GOT : %d TREES: %d \n",
+     printf("SCOTCH: NUM_LEVELS ASKED = %d,  NUM DOMS GOT = %d, NUM TREES = %d \n",
 	    num_levels, sg.cblk, num_trees);
      printf("\n");
      printf("%d %d should blks: %f \n",
@@ -564,7 +629,7 @@ namespace BaskerNS
        printf("\n");
        #endif
 
-       to_complete_tree( num_levels,iblks, sg.cblk,
+       to_complete_tree( num_levels, iblks, sg.cblk,
            ttabs, ttree );
 
 
@@ -592,10 +657,9 @@ namespace BaskerNS
          sg.rangtab[i] = ttabs(i);
        }
        sg.rangtab[iblks] = ttabs(iblks);
-
      }
      #ifdef BASKER_DEBUG_ORDER_SCOTCH
-     printf("SCOTCH: ASKED: %d  GOT : %d \n",
+     printf("SCOTCH: NUM LEVELS ASKED = %d,  NUM DOMS GOT = %d \n",
              num_levels, sg.cblk);
      #endif
 
@@ -680,7 +744,7 @@ namespace BaskerNS
     {
       BT.permtab[i] = sg.permtab[i];
       BT.ipermtab[i] = sg.peritab[i];
-      //printf( " + permtab[%d] = %d, peritab[%d]=%d\n",i,BT.permtab[i],i,BT.ipermtab[i] );
+      ///printf( " + permtab[%d] = %d, peritab[%d]=%d\n",i,BT.permtab[i],i,BT.ipermtab[i] );
     }
 
     //Used for recursing easier
@@ -696,7 +760,7 @@ namespace BaskerNS
     free(sg.treetab);
     delete [] is_nonleaf;
 
-    return 0;
+    return BASKER_SUCCESS;
   }//end part_scotch()
 
 
@@ -784,23 +848,19 @@ namespace BaskerNS
       }
     }
 
+    Int bdomains = pow(2, lvl+1)-1; // I am hoping for binary tree..
     if(Options.verbose == BASKER_TRUE)
     {
       printf("Domains Found: %ld \n", (long)ndomains);
       printf("Domains Ideal: %ld \n", (long)indomains);
-    }  
+      printf("Domains Binary: %ld \n", (long)ndomains);
+    } 
 
-    if(ndomains != indomains)
+    if(ndomains != indomains || ndomains != bdomains)
     {
-      if(Options.verbose == BASKER_TRUE)
-      {
-        printf("Domains Found: %ld \n", (long)ndomains);
-        printf("Domains Ideal: %ld \n", (long)indomains);
-        printf("ERROR: NOT ENOUGH DOMAINS FOR THREADS\n");
-        printf("REDUCE THREAD COUNT AND TRY AGAIN\n");
-      }
       printf(" ShyLU Basker Error: do_complete_tree routine \n");
-      printf("   num domains != ideal num domains\n");
+      printf(" > ERROR: NOT ENOUGH DOMAINS FOR THREADS\n");
+      printf(" > REDUCE THREAD COUNT AND TRY AGAIN\n\n");
       printf("  This error occurs when the matrix to be solved is too small for given number of threads\n \
           The number of threads must match the number of leaves in the tree\n \
           To resolve this, rerun with fewer threads\n");
