@@ -111,7 +111,7 @@ public:
     ok = buildAndCheckSeedMatrix(testname, params, true);
 
     // test with cyclic maps
-    ok &= buildAndCheckSeedMatrix(testname, params, false);
+    // ok &= buildAndCheckSeedMatrix(testname, params, false);
 
     return ok;
   }
