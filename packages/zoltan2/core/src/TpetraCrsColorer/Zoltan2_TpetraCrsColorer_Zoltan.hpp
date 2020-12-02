@@ -42,7 +42,6 @@ public:
   void
   computeColoring(
     Teuchos::ParameterList &coloring_params, 
-    const std::string &method, 
     int &num_colors,
     list_of_colors_host_t &list_of_colors_host,
     list_of_colors_t &list_of_colors) const;
@@ -187,13 +186,19 @@ template <typename CrsMatrixType>
 void
 ZoltanCrsColorer<CrsMatrixType>::computeColoring(
   Teuchos::ParameterList &coloring_params, 
-  const std::string &method, 
   int &num_colors,
   list_of_colors_host_t &list_of_colors_host,
   list_of_colors_t &list_of_colors
 ) const
 {
-  const bool symmetric  = coloring_params.get<bool>("Symmetric", false);
+  // User can tell us that the matrix is symmetric; 
+  // otherwise, guess based on the matrix type
+  const std::string matrixType = coloring_params.get("matrixType", "Jacobian");
+  const bool symmetric = coloring_params.get("symmetric",
+                                            (matrixType == "Jacobian" ? false
+                                                                      : true));
+
+  // User request to use Zoltan's TRANSPOSE symmetrization, if needed
   const bool symmetrize = coloring_params.get<bool>("Symmetrize", false);
 
   // Get MPI communicator, and throw an exception if our comm isn't MPI
@@ -202,25 +207,31 @@ ZoltanCrsColorer<CrsMatrixType>::computeColoring(
   Teuchos::RCP<const Teuchos::MpiComm<int>> mpi_comm =
       Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm, true);
 
-  Teuchos::RCP<const graph_t> transpose_graph;
-
-  // Compute transpose graph
-  if (!symmetric && !symmetrize)
-  {
-    transpose_graph = Impl::compute_transpose_graph(*(this->matrix));
+  // Create Zoltan for coloring
+  Zoltan *zz = new Zoltan(*(mpi_comm->getRawMpiComm()));
+  if (symmetric || symmetrize) {
+    zz->Set_Param("COLORING_PROBLEM", "DISTANCE-2");
+  }
+  else {
+    zz->Set_Param("COLORING_PROBLEM", "PARTIAL-DISTANCE-2");
   }
 
-  // Create Zoltan for distance-2 coloring
-  Zoltan *zz = new Zoltan(*(mpi_comm->getRawMpiComm()));
-  zz->Set_Param("COLORING_PROBLEM", method.c_str());
-  zz->Set_Param("DEBUG_LEVEL", "0");
   if (!symmetric && symmetrize)
     zz->Set_Param("GRAPH_SYMMETRIZE", "TRANSPOSE");
+
+  zz->Set_Param("DEBUG_LEVEL", "0");
 
   // Set Zoltan params
   Teuchos::ParameterList &zoltan_params = coloring_params.sublist("Zoltan");
   for (auto p : zoltan_params)
     zz->Set_Param(p.first, Teuchos::getValue<std::string>(p.second));
+
+  // Compute transpose graph
+  Teuchos::RCP<const graph_t> transpose_graph;
+  if (!symmetric && !symmetrize)
+  {
+    transpose_graph = Impl::compute_transpose_graph(*(this->matrix));
+  }
 
   // Setup interface functions
   ZoltanData zd;

@@ -20,6 +20,7 @@ public:
 
   ColorerTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm,
               int narg, char**arg)
+  : symmetric(false)
   {
     int me = comm->getRank();
     int np = comm->getSize();
@@ -39,7 +40,9 @@ public:
     cmdp.setOption("zdim", &zdim, 
                    "Number of nodes in z-direction for generated matrix");
     cmdp.setOption("distribute", "no-distribute", &distributeInput, 
-                   "Should Zoltan2 symmetrize the matrix?");
+                   "Should Zoltan2 distribute the matrix as it is read?");
+    cmdp.setOption("symmetric", "non-symmetric", &symmetric,
+                   "Is the matrix symmetric?");
     cmdp.parse(narg, arg);
 
     // Get and store a matrix
@@ -101,6 +104,8 @@ public:
   bool run(const char* testname, Teuchos::ParameterList &params) {
 
     bool ok = true;
+
+    params.set("symmetric", symmetric);
 
     // test with default maps
     ok = buildAndCheckSeedMatrix(testname, params, true);
@@ -224,6 +229,7 @@ private:
 
   ////////////////////////////////////////////////////////////////
   // Input matrix -- built in Constructor
+  bool symmetric;               // User can specify whether matrix is symmetric
   Teuchos::RCP<matrix_t> JBlock;   // has Trilinos default domain and range maps
   Teuchos::RCP<matrix_t> JCyclic;  // has cyclic domain and range maps
 };
@@ -242,12 +248,10 @@ int main(int narg, char **arg)
   // Set parameters and compute coloring
   {
     Teuchos::ParameterList coloring_params;
-    bool symmetric = true;
-    bool symmetrize = true;
     std::string matrixType = "Jacobian";
+    bool symmetrize = true;  // Zoltan's TRANSPOSE symmetrization, if needed
 
     coloring_params.set("MatrixType", matrixType);
-    coloring_params.set("symmetric", symmetric);
     coloring_params.set("symmetrize", symmetrize);
 
     testColorer.run("Test One", coloring_params);
@@ -256,12 +260,10 @@ int main(int narg, char **arg)
 
   {
     Teuchos::ParameterList coloring_params;
-    bool symmetric = false;
-    bool symmetrize = true;
     std::string matrixType = "Jacobian";
+    bool symmetrize = false;  // colorer's BIPARTITE symmetrization, if needed
 
     coloring_params.set("MatrixType", matrixType);
-    coloring_params.set("symmetric", symmetric);
     coloring_params.set("symmetrize", symmetrize);
 
     testColorer.run("Test Two", coloring_params);
@@ -270,13 +272,9 @@ int main(int narg, char **arg)
 
   {
     Teuchos::ParameterList coloring_params;
-    bool symmetric = true;
-    bool symmetrize = false;
     std::string matrixType = "Jacobian";
 
     coloring_params.set("MatrixType", matrixType);
-    coloring_params.set("symmetric", symmetric);
-    coloring_params.set("symmetrize", symmetrize);
 
     testColorer.run("Test Three", coloring_params);
     if (!ok) ierr++;

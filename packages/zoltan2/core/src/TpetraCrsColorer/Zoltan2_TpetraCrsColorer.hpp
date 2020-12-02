@@ -209,40 +209,21 @@ TpetraCrsColorer<CrsMatrixType>::computeColoring(
 )
 {
   const std::string library = coloring_params.get("library", "zoltan");
-  const std::string matrixType = coloring_params.get("matrixType", "Jacobian");
 
-  // TODO:  Check the logic here
-
-  if (matrixType == "Jacobian") {
-    if (library == "zoltan") {
-      // Use Zoltan's partial distance 2 coloring
-      ZoltanCrsColorer<matrix_t> zz(matrix);
-      zz.computeColoring(coloring_params, "PARTIAL-DISTANCE-2", 
-                         num_colors, list_of_colors_host, list_of_colors);
-    }
-    else {
-      // Use Zoltan2's partial distance 2 coloring when it is ready
-      Zoltan2CrsColorer<matrix_t> zz2(matrix);
-      zz2.computeColoring(coloring_params, "PARTIAL-DISTANCE-2", 
-                          num_colors, list_of_colors_host, list_of_colors);
-    }
+  if (library == "zoltan") {
+    // Use Zoltan's coloring
+    ZoltanCrsColorer<matrix_t> zz(matrix);
+    zz.computeColoring(coloring_params, 
+                       num_colors, list_of_colors_host, list_of_colors);
   }
-  else if (matrixType == "Hessian") {
-    // TODO: Figure out whether this is the right thing to do and whether
-    // TODO: the code supports it
-    // Hessian is already symmetric; 
-    // code currently still uses partial distance 2.
-    // Should use Distance2 instead
-    if (library == "zoltan") {
-      ZoltanCrsColorer<matrix_t> zz(matrix);
-      zz.computeColoring(coloring_params, "DISTANCE-2", 
-                         num_colors, list_of_colors_host, list_of_colors);
-    }
-    else {
-      Zoltan2CrsColorer<matrix_t> zz2(matrix);
-      zz2.computeColoring(coloring_params, "DISTANCE-2", 
-                          num_colors, list_of_colors_host, list_of_colors);
-    }
+  else {
+    // Use Zoltan2's coloring when it is ready
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+            "Zoltan2CrsColorer not yet ready; use parameter library = zoltan");
+
+    Zoltan2CrsColorer<matrix_t> zz2(matrix);
+    zz2.computeColoring(coloring_params,
+                        num_colors, list_of_colors_host, list_of_colors);
   }
 }
 

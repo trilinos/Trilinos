@@ -1,9 +1,27 @@
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
       TpetraCrsColorer
-      NAME TpetraCrsColorer_simple
+      NAME TpetraCrsColorer_simple_sym
       SOURCES TpetraCrsColorer.cpp
-      ARGS "--file=simple"
+      ARGS "--file=simple --symmetric"
+      COMM serial mpi
+      PASS_REGULAR_EXPRESSION "PASS"
+      FAIL_REGULAR_EXPRESSION "FAIL"
+    )
+
+TRIBITS_ADD_TEST(
+      TpetraCrsColorer
+      NAME TpetraCrsColorer_simple_nodistrib_sym
+      ARGS "--file=simple --no-distribute --symmetric"
+      COMM serial mpi
+      PASS_REGULAR_EXPRESSION "PASS"
+      FAIL_REGULAR_EXPRESSION "FAIL"
+    )
+
+TRIBITS_ADD_TEST(
+      TpetraCrsColorer
+      NAME TpetraCrsColorer_simple
+      ARGS "--file=simple "
       COMM serial mpi
       PASS_REGULAR_EXPRESSION "PASS"
       FAIL_REGULAR_EXPRESSION "FAIL"
@@ -12,7 +30,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_TEST(
       TpetraCrsColorer
       NAME TpetraCrsColorer_simple_nodistrib
-      ARGS "--file=simple --no-distribute"
+      ARGS "--file=simple --no-distribute "
       COMM serial mpi
       PASS_REGULAR_EXPRESSION "PASS"
       FAIL_REGULAR_EXPRESSION "FAIL"
@@ -37,6 +55,7 @@ TRIBITS_ADD_TEST(
     )
 
 IF (${PROJECT_NAME}_ENABLE_Galeri)
+
 TRIBITS_ADD_TEST(
     TpetraCrsColorer
     NAME TpetraCrsColorer_galeri1
@@ -45,11 +64,34 @@ TRIBITS_ADD_TEST(
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
+
 TRIBITS_ADD_TEST(
     TpetraCrsColorer
     NAME TpetraCrsColorer_galeri2
     ARGS "--xdim=20 --ydim=15 --zdim=10"
     COMM serial mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    TpetraCrsColorer
+    NAME TpetraCrsColorer_galeri2_sym
+    ARGS "--xdim=20 --ydim=15 --zdim=10 --symmetric"
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+# Test that exposes a bug in compute_transpose_graph when 
+# symmetrize and symmetric parameters are false.
+# I think we got lucky with the other galeri test.
+TRIBITS_ADD_TEST(
+    TpetraCrsColorer
+    NAME TpetraCrsColorer_troublecauser
+    ARGS "--xdim=10 --ydim=20 --zdim=30"
+    COMM mpi
+    NUM_MPI_PROCS 4
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )

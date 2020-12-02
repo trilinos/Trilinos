@@ -37,17 +37,21 @@ public:
   void
   computeColoring(
     Teuchos::ParameterList &coloring_params,
-    const std::string &method,
     int &num_colors,
     list_of_colors_host_t &list_of_colors_host,
     list_of_colors_t &list_of_colors)
   {
+    // TODO:  logic for symmetric/Jacobian/Hessian a la ZoltanCrsColorer
+    // User can tell us that the matrix is symmetric; 
+    // otherwise, guess based on the matrix type
+    const std::string matrixType = coloring_params.get("matrixType","Jacobian");
+    const bool symmetric = coloring_params.get("symmetric",
+                                              (matrixType=="Jacobian" ? false
+                                                                      : true));
+
     // TODO:  Until Ian's code is ready...
     // TODO:  Check the logic here:  doing Partial Distance-2 via local
     // TODO:  distance-1 on J^T*J
-    TEUCHOS_TEST_FOR_EXCEPTION(method != "PARTIAL-DISTANCE-2", std::logic_error,
-            "Zoltan2CrsColorer not yet ready for coloring method " << method
-            << std::endl);
 
     // Compute A^T*A where A = jac
     // We have to do this because Zoltan2 can only do distance-1 coloring
