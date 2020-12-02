@@ -84,9 +84,17 @@ public:
     JBlock->fillComplete();
 
     // Make JCyclic:  same matrix with different Domain and Range maps
-    JCyclic = rcp(new matrix_t(*JBlock));
-    JCyclic->resumeFill();
-    JCyclic->fillComplete(vMapCyclic, wMapCyclic);
+    auto lclMatrix = JBlock->getLocalMatrix();
+    JCyclic = rcp(new matrix_t(JBlock->getLocalMatrix(),
+                               JBlock->getRowMap(), JBlock->getColMap(),
+                               vMapCyclic, wMapCyclic));
+
+//    Teuchos::FancyOStream foo(Teuchos::rcp(&std::cout,false));
+//    std::cout << "JBlock: " << std::endl;
+//    JBlock->describe(foo, Teuchos::VERB_EXTREME);
+
+//    std::cout << "JCyclic: " << std::endl;
+//    JCyclic->describe(foo, Teuchos::VERB_EXTREME);
   }
 
   ////////////////////////////////////////////////////////////////
@@ -142,10 +150,9 @@ private:
     Teuchos::RCP<matrix_t> J = (useBlock ? JBlock : JCyclic);
     int me = J->getRowMap()->getComm()->getRank();
 
-    if (me == 0)
-      std::cout << "Running " << testname << " with "
-                << (useBlock ? "Block maps" : "Cyclic maps")
-                << std::endl;
+    std::cout << "Running " << testname << " with "
+              << (useBlock ? "Block maps" : "Cyclic maps")
+              << std::endl;
 
     // Create a colorer
     Zoltan2::TpetraCrsColorer<matrix_t> colorer(J);
@@ -154,7 +161,9 @@ private:
 
     // Check coloring
     if (!colorer.checkColoring()) {
-      std::cout << testname << " FAILED: invalid coloring returned"
+      std::cout << testname << " with "
+                << (useBlock ? "Block maps" : "Cyclic maps")
+                << " FAILED: invalid coloring returned"
                 << std::endl;
       return false;
     }
@@ -169,8 +178,6 @@ private:
     multivector_t V(J->getDomainMap(), numColors);
     colorer.computeSeedMatrix(V);
 
-    Teuchos::FancyOStream foo(Teuchos::rcp(&std::cout,false));
-
     // To test the result...
     // Compute the compressed matrix W
     multivector_t W(J->getRangeMap(), numColors);
@@ -178,7 +185,7 @@ private:
     J->apply(V, W);
 
     // Reconstruct matrix from compression vector
-    Teuchos::RCP<matrix_t> Jp = rcp(new matrix_t(*J));
+    Teuchos::RCP<matrix_t> Jp = rcp(new matrix_t(*J, Teuchos::Copy));
     Jp->resumeFill();
     Jp->setAllToScalar(static_cast<zscalar_t>(-1.));
     Jp->fillComplete();
