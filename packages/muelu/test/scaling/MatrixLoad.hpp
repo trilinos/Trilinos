@@ -77,7 +77,8 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
                 const std::string & colMapFile,
                 const std::string & domainMapFile,
                 const std::string & rangeMapFile,
-                const std::string & coordFile, const std::string &nullFile, const std::string &materialFile,
+                const std::string & coordFile,
+                const std::string & coordMapFile, const std::string &nullFile, const std::string &materialFile,
                 Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >          & map,
                 Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >      & A,
                 Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> > & coordinates,
@@ -189,9 +190,12 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
     comm->barrier();
 
     if (!coordFile.empty()) {
-      // NOTE: currently we only allow reading scalar matrices, thus coordinate
-      // map is same as matrix map
-      coordinates = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,Node>::ReadMultiVector(coordFile, map);
+      RCP<const Map> coordMap;
+      if (!coordMapFile.empty())
+        coordMap = Xpetra::IO<SC,LO,GO,Node>::ReadMap(coordMapFile, lib, comm);
+      else
+        coordMap = map;
+      coordinates = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,Node>::ReadMultiVector(coordFile, coordMap);
     }
 
     if (!nullFile.empty())
