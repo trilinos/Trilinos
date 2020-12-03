@@ -261,21 +261,20 @@ namespace RBGen {
       // then we must compute left singular vectors:
       //             u = Av/sigma
       //
-      int info = 0;
       std::vector<double> tempnrm( numev );
       if (isInner_) {
         basis_ = Teuchos::rcp( new Epetra_MultiVector(ss_->Map(), numev) );
         Epetra_MultiVector AV( ss_->Map(), numev );
         
         /* A*V */   
-        info = AV.Multiply( 'N', 'N', 1.0, *ss_, *evecs, 0.0 );
+        AV.Multiply( 'N', 'N', 1.0, *ss_, *evecs, 0.0 );
         AV.Norm2( &tempnrm[0] );
         
         /* U = A*V(i)/S(i) */
         Epetra_LocalMap localMap2( numev, 0, ss_->Map().Comm() );
         Epetra_MultiVector S( localMap2, numev );
         for( i=0; i<numev; i++ ) { S[i][i] = 1.0/tempnrm[i]; }
-        info = basis_->Multiply( 'N', 'N', 1.0, AV, S, 0.0 );
+        basis_->Multiply( 'N', 'N', 1.0, AV, S, 0.0 );
         
         /* Compute direct residuals : || Av - sigma*u ||
            for (i=0; i<nev; i++) { S[i][i] = sv_[i]; }
@@ -296,14 +295,14 @@ namespace RBGen {
         Epetra_MultiVector V( localMap, numev );      
         
         /* A^T*U */   
-        info = ATU.Multiply( 'T', 'N', 1.0, *ss_, *evecs, 0.0 );
+        ATU.Multiply( 'T', 'N', 1.0, *ss_, *evecs, 0.0 );
         ATU.Norm2( &tempnrm[0] );
         
         /* V = A^T*U(i)/S(i) */
         Epetra_LocalMap localMap2( numev, 0, ss_->Map().Comm() );
         Epetra_MultiVector S( localMap2, numev );
         for( i=0; i<numev; i++ ) { S[i][i] = 1.0/tempnrm[i]; }
-        info = V.Multiply( 'N', 'N', 1.0, ATU, S, 0.0 );
+        V.Multiply( 'N', 'N', 1.0, ATU, S, 0.0 );
         
         /* Compute direct residuals : || (A^T)u - sigma*v ||     
            for (i=0; i<nev; i++) { S[i][i] = sv_[i]; }
