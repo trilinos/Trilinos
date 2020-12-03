@@ -199,7 +199,7 @@ ZoltanCrsColorer<CrsMatrixType>::computeColoring(
                                                                       : true));
 
   // User request to use Zoltan's TRANSPOSE symmetrization, if needed
-  const bool symmetrize = coloring_params.get<bool>("Symmetrize", false);
+  const bool symmetrize = coloring_params.get<bool>("symmetrize", false);
 
   // Get MPI communicator, and throw an exception if our comm isn't MPI
   Teuchos::RCP<const Teuchos::Comm<int>> comm = 
