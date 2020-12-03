@@ -711,7 +711,7 @@ namespace MueLu {
     Kokkos::parallel_for("Utilities_kokkos::ReverseCuthillMcKee",
                          Kokkos::RangePolicy<ordinal_type, execution_space>(0, numRows),
                          KOKKOS_LAMBDA(const ordinal_type rowIdx) {
-                           view1D(numRows - 1 - rcmOrder(rowIdx)) = rowIdx;
+                           view1D(rcmOrder(numRows - 1 - rowIdx)) = rowIdx;
                          });
     return retval;
   }
