@@ -116,32 +116,6 @@ public:
     return ok;
   }
     
-  
-private:
-
-  ////////////////////////////////////////////////////////////////
-  // Return a map that is cyclic (like dealing rows to processors)
-  Teuchos::RCP<const map_t> getCyclicMap(
-    size_t nIndices, 
-    Teuchos::Array<gno_t> &indices,
-    int mapNumProc, 
-    const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
-  {
-    size_t cnt = 0;
-    int me = comm->getRank();
-    int np = comm->getSize();
-    if (mapNumProc > np) mapNumProc = np; // corner case: bad input
-    if (mapNumProc <= 0) mapNumProc = 1;  // corner case: np is too small
-
-    for (size_t i = 0; i < nIndices; i++) 
-      if (me == int(i % np)) indices[cnt++] = i;
-
-    Tpetra::global_size_t dummy =
-            Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-
-    return rcp(new map_t(dummy, indices(0,cnt), 0, comm));
-  }
-
   ///////////////////////////////////////////////////////////////
   bool buildAndCheckSeedMatrix(
     const char *testname,
@@ -225,6 +199,31 @@ private:
     }
 
     return (ierr == 0);
+  }
+  
+private:
+
+  ////////////////////////////////////////////////////////////////
+  // Return a map that is cyclic (like dealing rows to processors)
+  Teuchos::RCP<const map_t> getCyclicMap(
+    size_t nIndices, 
+    Teuchos::Array<gno_t> &indices,
+    int mapNumProc, 
+    const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
+  {
+    size_t cnt = 0;
+    int me = comm->getRank();
+    int np = comm->getSize();
+    if (mapNumProc > np) mapNumProc = np; // corner case: bad input
+    if (mapNumProc <= 0) mapNumProc = 1;  // corner case: np is too small
+
+    for (size_t i = 0; i < nIndices; i++) 
+      if (me == int(i % np)) indices[cnt++] = i;
+
+    Tpetra::global_size_t dummy =
+            Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+
+    return rcp(new map_t(dummy, indices(0,cnt), 0, comm));
   }
 
   ////////////////////////////////////////////////////////////////
