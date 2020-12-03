@@ -207,7 +207,7 @@ ZoltanCrsColorer<CrsMatrixType>::computeColoring(
 #ifdef HAVE_ZOLTAN2_MPI
   Teuchos::RCP<const Teuchos::MpiComm<int>> tmpicomm =
       Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm, true);
-  MPI_Comm mpicomm = tmpicomm->getRawMpiComm();
+  MPI_Comm mpicomm = *tmpicomm->getRawMpiComm();
 #else
   // Zoltan's siMPI will be used here
   {
