@@ -63,13 +63,13 @@ def roundNum(numIn, numDecPlaces):
 
 # Get a copied dict of lists of build stats read from input file
 #
-def getBuildStatusWithComputedForTests(computeStdScaledFields=True):
+def getBuildStatsForTests(computeStdScaledFields=True):
   global g_buildStatsDOL
   if not g_buildStatsDOL:
     g_buildStatsDOL = SBS.readBuildStatsCsvFileIntoDictOfLists(
-      g_testBaseDir+"/build_stats.big.small.csv" )
-    if computeStdScaledFields:
-      SBS.addStdScaledBuildStatsFields(g_buildStatsDOL)
+      g_testBaseDir+"/build_stats.big.small.csv",
+      computeStdScaledFields=computeStdScaledFields,
+      )
   return copy.deepcopy(g_buildStatsDOL)
 
 g_buildStatsDOL = None
@@ -89,7 +89,7 @@ class test_readBuildStatsCsvFileIntoDictOfLists(unittest.TestCase):
 
   def test_build_stats_big_little(self):
     buildStatsDOL = SBS.readBuildStatsCsvFileIntoDictOfLists(
-      g_testBaseDir+"/build_stats.big.small.csv" )
+      g_testBaseDir+"/build_stats.big.small.csv", computeStdScaledFields=False )
     numCols_expected = 4
     numRows_expected = 21
     self.assertEqual(len(buildStatsDOL.keys()), numCols_expected)
@@ -421,7 +421,7 @@ class test_binBuildStatsDictOfListsBySubdirUnderDirs(unittest.TestCase):
 class test_computeBuildStatusSummaryForOneField(unittest.TestCase):
 
   def test_field_1(self):
-    buildStatsDOL = getBuildStatusWithComputedForTests()
+    buildStatsDOL = getBuildStatsForTests()
     buildStatSummary = \
       SBS.computeBuildStatusSummaryForOneField(buildStatsDOL, 'max_resident_size_mb', 2)
     self.assertEqual(buildStatSummary.fieldName, 'max_resident_size_mb')
@@ -442,7 +442,7 @@ class test_computeBuildStatusSummaryForOneField(unittest.TestCase):
 class test_computeStdBuildStatsSummariesSingleDOL(unittest.TestCase):
 
   def test_big_small(self):
-    buildStatsDOL = getBuildStatusWithComputedForTests()
+    buildStatsDOL = getBuildStatsForTests()
     bssl = SBS.computeStdBuildStatsSummariesSingleDOL(buildStatsDOL)
     self.assertEqual(len(bssl), 3)
     self.assertEqual(bssl[0].fieldName, 'max_resident_size_mb')
@@ -476,7 +476,7 @@ class test_computeStdBuildStatsSummariesSingleDOL(unittest.TestCase):
 class test_computeStdBuildStatsSummaries(unittest.TestCase):
 
   def test_big_small(self):
-    buildStatsDOL = getBuildStatusWithComputedForTests()
+    buildStatsDOL = getBuildStatsForTests()
     buildStatsBinnedBySubdirs = SBS.binBuildStatsDictOfListsBySubdirUnderDirs(
       buildStatsDOL, [ "commonTools", "packages" ] )
     #print("\nbuildStatsBinnedBySubdirs.fullBuildStatsDOL:")
@@ -604,7 +604,7 @@ class test_computeStdBuildStatsSummaries(unittest.TestCase):
 class test_createAsciiReportOfBuildStatsSummariesSingleSet(unittest.TestCase):
 
   def test_big_small(self):
-    buildStatsDOL = getBuildStatusWithComputedForTests()
+    buildStatsDOL = getBuildStatsForTests()
     buildStatsSummariesList = SBS.computeStdBuildStatsSummariesSingleDOL(buildStatsDOL)
     buildStatsAsciiReport = SBS.createAsciiReportOfBuildStatsSummariesSingleSet(
       buildStatsSummariesList, "Full Project")
@@ -682,7 +682,7 @@ tpetra: max(file_size_mb) = 0.16 (packages/tpetra/classic/NodeAPI/CMakeFiles/tpe
 class test_createAsciiReportOfBuildStatsSummaries(unittest.TestCase):
 
   def test_big_small(self):
-    buildStatsDOL = getBuildStatusWithComputedForTests()
+    buildStatsDOL = getBuildStatsForTests()
     buildStatsBinnedBySubdirs = SBS.binBuildStatsDictOfListsBySubdirUnderDirs(
       buildStatsDOL, [ "commonTools", "packages" ] )
     buildStatsSummariesBinnedBySubdirs = SBS.computeStdBuildStatsSummaries(

@@ -20,9 +20,14 @@ import CDashQueryAnalyzeReport as CDQAR
 # Returns a dict of lists where each key is the column/field name and the
 # value is an array of data for that field.
 #
-def readBuildStatsCsvFileIntoDictOfLists(buildStatusCsvFileName):
-  return readCsvFileIntoDictOfLists(buildStatusCsvFileName,
+def readBuildStatsCsvFileIntoDictOfLists(buildStatusCsvFileName,
+    computeStdScaledFields=True
+  ):
+  buildStatsDOL = readCsvFileIntoDictOfLists(buildStatusCsvFileName,
     getStdBuildStatsColsAndTypesList() )
+  if computeStdScaledFields:
+    addStdScaledBuildStatsFields(buildStatsDOL)
+  return buildStatsDOL
 
 
 # Standard set of build stats fields we want to read in
