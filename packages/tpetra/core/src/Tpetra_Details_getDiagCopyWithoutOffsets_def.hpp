@@ -114,8 +114,8 @@ public:
                                                         vec_type& diag,
                                                         const row_matrix_type& A) :
     A_ (A),
-    lclRowMap_ (A.getRowMap ()->getLocalMap ()),
-    lclColMap_ (A.getColMap ()->getLocalMap ()),
+    lclRowMap_ (*A.getRowMap ()),
+    lclColMap_ (*A.getColMap ()),
     sorted_ (graphIsSorted (A))
   {
     const LO lclNumRows = static_cast<LO> (diag.getLocalLength ());
@@ -179,8 +179,8 @@ public:
 
 private:
   const row_matrix_type& A_;
-  typename map_type::local_map_type lclRowMap_;
-  typename map_type::local_map_type lclColMap_;
+  map_type lclRowMap_;
+  map_type lclColMap_;
   typename vec_type::dual_view_type::t_host D_lcl_;
   decltype (Kokkos::subview (D_lcl_, Kokkos::ALL (), 0)) D_lcl_1d_;
   const bool sorted_;
