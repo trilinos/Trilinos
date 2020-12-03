@@ -16,15 +16,15 @@
 #include <cassert>
 #include <cgns/Iocgns_ParallelDatabaseIO.h>
 #include <cgns/Iocgns_Utils.h>
+#include <cstddef>
+#include <ctime>
 #include <fmt/ostream.h>
 #include <fstream>
 #include <iostream>
 #include <mpi.h>
 #include <numeric>
-#include <stddef.h>
 #include <string>
 #include <sys/select.h>
-#include <time.h>
 #include <vector>
 
 #include <cgnsconfig.h>
@@ -498,13 +498,13 @@ namespace Iocgns {
       id++; // Really just index into m_sideSets list.
     }
 
-    Ioss::NodeBlock *nblock = new Ioss::NodeBlock(this, "nodeblock_1", nodeCount, 3);
+    auto *nblock = new Ioss::NodeBlock(this, "nodeblock_1", nodeCount, 3);
 
     nblock->property_add(Ioss::Property("base", base));
     get_region()->add(nblock);
 
     // Create a single node commset
-    Ioss::CommSet *commset =
+    auto *commset =
         new Ioss::CommSet(this, "commset_node", "node", decomp->get_commset_node_size());
     commset->property_add(Ioss::Property("id", 1));
     commset->property_add(Ioss::Property("guid", util().generate_guid(1)));
@@ -679,8 +679,8 @@ namespace Iocgns {
       int64_t          top      = min + per_proc;
 
       // NOTE: nodes is sorted...
-      for (size_t i = 0; i < nodes.size(); i++) {
-        while (nodes[i] >= top) {
+      for (auto node : nodes) {
+        while (node >= top) {
           top += per_proc;
           proc++;
         }
@@ -712,12 +712,12 @@ namespace Iocgns {
       // Iterate r_nodes list to find duplicate nodes...
       auto             delta = min + pm.parallel_rank() * per_proc;
       std::vector<int> dup_nodes(per_proc);
-      for (size_t i = 0; i < r_nodes.size(); i++) {
-        auto n = r_nodes[i] - delta;
+      for (auto &r_node : r_nodes) {
+        auto n = r_node - delta;
         assert(n < per_proc);
         dup_nodes[n]++;
         if (dup_nodes[n] > 1) {
-          r_nodes[i] = 0;
+          r_node = 0;
         }
       }
 
@@ -740,9 +740,9 @@ namespace Iocgns {
 
       // This generates the position of each owned node in this zone consistent
       // over all processors that this zone is active on.
-      for (size_t i = 0; i < u_nodes.size(); i++) {
-        if (u_nodes[i] > 0) {
-          u_nodes[i] = ++local_node_offset; // 1-based local node id for all owned nodes.
+      for (auto &u_node : u_nodes) {
+        if (u_node > 0) {
+          u_node = ++local_node_offset; // 1-based local node id for all owned nodes.
         }
       }
 
@@ -776,8 +776,8 @@ namespace Iocgns {
 //
 //
 #ifndef NDEBUG
-      for (size_t i = 0; i < u_nodes.size(); i++) {
-        assert(u_nodes[i] > 0);
+      for (auto u_node : u_nodes) {
+        assert(u_node > 0);
       }
 #endif
       std::swap(connectivity_map, u_nodes);
@@ -1173,7 +1173,7 @@ namespace Iocgns {
         // If parallel, then set the "locally_owned" property on the nodeblocks.
         Ioss::CommSet *css = get_region()->get_commset("commset_node");
         if (int_byte_size_api() == 8) {
-          int64_t *idata = static_cast<int64_t *>(data);
+          auto *idata = static_cast<int64_t *>(data);
           std::fill(idata, idata + nodeCount, myProcessor);
 
           // Cannot call:
@@ -1231,8 +1231,8 @@ namespace Iocgns {
           decomp->get_node_field(get_file_pointer(), step, Utils::index(field) + i,
                                  ioss_tmp.data());
 
-          size_t  index = i;
-          double *rdata = static_cast<double *>(data);
+          size_t index = i;
+          auto * rdata = static_cast<double *>(data);
           for (size_t j = 0; j < num_to_get; j++) {
             rdata[index] = ioss_tmp[j];
             index += comp_count;
@@ -1270,7 +1270,7 @@ namespace Iocgns {
       int solution_index =
           Utils::find_solution_index(get_file_pointer(), base, zone, step, CG_Vertex);
 
-      double *rdata = static_cast<double *>(data);
+      auto *rdata = static_cast<double *>(data);
       assert(num_to_get == sb->get_property("node_count").get_int());
       cgsize_t rmin[3] = {0, 0, 0};
       cgsize_t rmax[3] = {0, 0, 0};
@@ -1426,7 +1426,7 @@ namespace Iocgns {
       }
       else if (field.get_name() == "cell_node_ids") {
         if (field.get_type() == Ioss::Field::INT64) {
-          int64_t *idata = static_cast<int64_t *>(data);
+          auto *idata = static_cast<int64_t *>(data);
           sb->get_cell_node_ids(idata, true);
         }
         else {
@@ -1437,7 +1437,7 @@ namespace Iocgns {
       }
       else if (field.get_name() == "cell_ids") {
         if (field.get_type() == Ioss::Field::INT64) {
-          int64_t *idata = static_cast<int64_t *>(data);
+          auto *idata = static_cast<int64_t *>(data);
           sb->get_cell_ids(idata, true);
         }
         else {
@@ -1548,7 +1548,7 @@ namespace Iocgns {
         // Transfer to 'data' array.
         size_t k = 0;
         assert(field.get_type() == Ioss::Field::REAL);
-        double *rvar = static_cast<double *>(data);
+        auto *rvar = static_cast<double *>(data);
         for (size_t j = i; j < num_entity * comp_count; j += comp_count) {
           rvar[j] = temp[k++];
         }
@@ -1747,7 +1747,7 @@ namespace Iocgns {
                field.get_name() == "mesh_model_coordinates_x" ||
                field.get_name() == "mesh_model_coordinates_y" ||
                field.get_name() == "mesh_model_coordinates_z") {
-        double *rdata = static_cast<double *>(data);
+        auto *rdata = static_cast<double *>(data);
 
         std::vector<int64_t> node_offset = get_processor_zone_node_offset();
 
@@ -1886,10 +1886,10 @@ namespace Iocgns {
             assert(local >= 0 && local < (int64_t)num_to_get);
             blk_data[j] = rdata[local * comp_count + i];
           }
-          std::string var_name = (comp_count > 1) ? var_type->label_name(field.get_name(), i + 1,
+          std::string var_name   = (comp_count > 1) ? var_type->label_name(field.get_name(), i + 1,
                                                                          field_suffix_separator)
-                                                  : field.get_name();
-          int cgns_field = 0;
+                                                    : field.get_name();
+          int         cgns_field = 0;
           CGCHECKM(cgp_field_write(get_file_pointer(), base, zone, m_currentVertexSolutionIndex,
                                    CG_RealDouble, var_name.c_str(), &cgns_field));
 
@@ -1923,12 +1923,12 @@ namespace Iocgns {
 
     Ioss::Field::RoleType role = field.get_role();
     if (role == Ioss::Field::TRANSIENT) {
-      int     base                   = 1;
-      double *rdata                  = static_cast<double *>(data);
-      int     cgns_field             = 0;
-      auto    var_type               = field.transformed_storage();
-      int     comp_count             = var_type->component_count();
-      char    field_suffix_separator = get_field_separator();
+      int   base                   = 1;
+      auto *rdata                  = static_cast<double *>(data);
+      int   cgns_field             = 0;
+      auto  var_type               = field.transformed_storage();
+      int   comp_count             = var_type->component_count();
+      char  field_suffix_separator = get_field_separator();
 
       cgsize_t rmin[3] = {0, 0, 0};
       cgsize_t rmax[3] = {0, 0, 0};
@@ -2184,8 +2184,9 @@ namespace Iocgns {
           CGCHECKM(cgp_field_write_data(get_file_pointer(), base, zone,
                                         m_currentCellCenterSolutionIndex, cgns_field, range_min,
                                         range_max, cgns_data.data()));
-          if (i == 0)
+          if (i == 0) {
             Utils::set_field_index(field, cgns_field, CG_CellCenter);
+          }
         }
       }
     }
@@ -2452,8 +2453,8 @@ namespace Iocgns {
           }
         }
         else {
-          int64_t *idata = reinterpret_cast<int64_t *>(data);
-          size_t   j     = 0;
+          auto * idata = reinterpret_cast<int64_t *>(data);
+          size_t j     = 0;
           for (ssize_t i = 0; i < num_to_get; i++) {
             parent[num_to_get * 0 + i] = elemMap.global_to_local(idata[j++]); // Element
             parent[num_to_get * 2 + i] = idata[j++];

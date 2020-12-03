@@ -114,8 +114,8 @@ bool Ioss::Map::is_sequential(bool check_all) const
   }
 
   IOSS_FUNC_ENTER(m_);
-  Ioss::MapContainer &new_map  = const_cast<Ioss::MapContainer &>(m_map);
-  size_t              map_size = m_map.size();
+  auto & new_map  = const_cast<Ioss::MapContainer &>(m_map);
+  size_t map_size = m_map.size();
   for (int64_t i = 1; i < (int64_t)map_size; i++) {
     if (m_map[i] != i + m_offset) {
       new_map[0] = 1;
@@ -351,7 +351,7 @@ void Ioss::Map::reverse_map_data(void *data, const Ioss::Field &field, size_t co
     reverse_map_data(connect, count);
   }
   else {
-    int64_t *connect = static_cast<int64_t *>(data);
+    auto *connect = static_cast<int64_t *>(data);
     reverse_map_data(connect, count);
   }
 }
@@ -383,7 +383,7 @@ void Ioss::Map::map_data(void *data, const Ioss::Field &field, size_t count) con
     map_data(datum, count);
   }
   else {
-    int64_t *datum = static_cast<int64_t *>(data);
+    auto *datum = static_cast<int64_t *>(data);
     map_data(datum, count);
   }
 }

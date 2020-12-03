@@ -122,6 +122,11 @@ struct ApplyDirichletBoundaryConditionToLocalMatrixRows {
        const local_row_indices_type& lclRowInds,
        const bool runOnHost)
   {
+    // Notes for future refactoring:  This routine seems to have one more layer 
+    // of options than it probably needs.  For instance, if you passed a Kokkos::Serial 
+    // execution_space instance as the first argument you probably wound't need the runOnHost
+    // option and then the code below could be collapsed out removing one of the parallel_for's
+
     using IST = typename crs_matrix_type::impl_scalar_type;
     using KAT = Kokkos::ArithTraits<IST>;
 
@@ -242,16 +247,26 @@ applyDirichletBoundaryConditionToLocalMatrixRows
   using NT = typename CrsMatrixType::node_type;
   using crs_matrix_type = ::Tpetra::CrsMatrix<SC, LO, GO, NT>;
   using execution_space = typename crs_matrix_type::execution_space;
-
-  using local_row_indices_type =
-    Kokkos::View<const LO*, Kokkos::AnonymousSpace>;
-  const local_row_indices_type lclRowInds_a (lclRowInds);
+  using memory_space = typename crs_matrix_type::device_type::memory_space;
 
   using Details::ApplyDirichletBoundaryConditionToLocalMatrixRows;
   using impl_type =
     ApplyDirichletBoundaryConditionToLocalMatrixRows<SC, LO, GO, NT>;
-  const bool runOnHost = true;
-  impl_type::run (execution_space (), A, lclRowInds_a, runOnHost);
+
+  // Only run on host if we can access the data
+  const bool runOnHost = Kokkos::Impl::SpaceAccessibility<Kokkos::Serial,memory_space>::accessible;
+  if(runOnHost) {
+    using local_row_indices_type = Kokkos::View<const LO*, Kokkos::AnonymousSpace>;
+    const local_row_indices_type lclRowInds_a (lclRowInds);
+    impl_type::run (execution_space (), A, lclRowInds_a, true);
+  }
+  else {
+    auto  lclRowInds_a = Kokkos::create_mirror_view_and_copy(execution_space(),lclRowInds);
+    impl_type::run (execution_space (), A, lclRowInds_a, false);
+  }
+
+
+
 }
 
 } // namespace Tpetra

@@ -62,17 +62,16 @@ namespace MueLuTests {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void createRegionMatrix(const Teuchos::ParameterList galeriList,
                         const int numDofsPerNode,
-                        const int maxRegPerProc,
                         const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > nodeMap,
                         const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > dofMap,
                         const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A,
-                        std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& rowMapPerGrp,
-                        std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& colMapPerGrp,
-                        std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& revisedRowMapPerGrp,
-                        std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& revisedColMapPerGrp,
-                        std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >& rowImportPerGrp,
-                        std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >& colImportPerGrp,
-                        std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regionGrpMats,
+                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& rowMap,
+                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& colMap,
+                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& revisedRowMap,
+                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& revisedColMap,
+                        RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rowImport,
+                        RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& colImport,
+                        RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regionMats,
                         Teuchos::ArrayRCP<LocalOrdinal>&  regionMatVecLIDs,
                         Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter) {
 #include <MueLu_UseShortNames.hpp>
@@ -137,61 +136,60 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
   // std::cout << "p=" << myRank << " | interfaceCompositeGIDs" << interfaceCompositeGIDs << std::endl;
   // std::cout << "p=" << myRank << " | interfaceRegionLIDs" << interfaceRegionLIDs() << std::endl;
 
-  rowMapPerGrp[0] = Xpetra::MapFactory<LO,GO,Node>::Build(A->getRowMap()->lib(),
-                                                          Teuchos::OrdinalTraits<GO>::invalid(),
-                                                          quasiRegionGIDs(),
-                                                          A->getRowMap()->getIndexBase(),
-                                                          A->getRowMap()->getComm());
-  colMapPerGrp[0] = rowMapPerGrp[0];
+  rowMap = Xpetra::MapFactory<LO,GO,Node>::Build(A->getRowMap()->lib(),
+      Teuchos::OrdinalTraits<GO>::invalid(),
+      quasiRegionGIDs(),
+      A->getRowMap()->getIndexBase(),
+      A->getRowMap()->getComm());
+  colMap = rowMap;
 
-  revisedRowMapPerGrp[0] = Xpetra::MapFactory<LO,GO,Node>::Build(A->getRowMap()->lib(),
-                                                                 Teuchos::OrdinalTraits<GO>::invalid(),
-                                                                 quasiRegionGIDs.size(),
-                                                                 A->getRowMap()->getIndexBase(),
-                                                                 A->getRowMap()->getComm());
-  revisedColMapPerGrp[0] = revisedRowMapPerGrp[0];
+  revisedRowMap = Xpetra::MapFactory<LO,GO,Node>::Build(A->getRowMap()->lib(),
+      Teuchos::OrdinalTraits<GO>::invalid(),
+      quasiRegionGIDs.size(),
+      A->getRowMap()->getIndexBase(),
+      A->getRowMap()->getComm());
+  revisedColMap = revisedRowMap;
 
-  ExtractListOfInterfaceRegionGIDs(revisedRowMapPerGrp, interfaceRegionLIDs, interfaceRegionGIDs);
+  ExtractListOfInterfaceRegionGIDs(revisedRowMap, interfaceRegionLIDs, interfaceRegionGIDs);
 
-  rowImportPerGrp[0] = ImportFactory::Build(dofMap, rowMapPerGrp[0]);
-  colImportPerGrp[0] = ImportFactory::Build(dofMap, colMapPerGrp[0]);
+  rowImport = ImportFactory::Build(dofMap, rowMap);
+  colImport = ImportFactory::Build(dofMap, colMap);
 
   RCP<Xpetra::MultiVector<LO, LO, GO, NO> > regionsPerGIDWithGhosts;
   RCP<Xpetra::MultiVector<GO, LO, GO, NO> > interfaceGIDsMV;
-  MakeRegionPerGIDWithGhosts(nodeMap, revisedRowMapPerGrp[0], rowImportPerGrp[0],
+  MakeRegionPerGIDWithGhosts(nodeMap, revisedRowMap, rowImport,
                              maxRegPerGID, numDofsPerNode,
                              lNodesPerDir, sendGIDs, sendPIDs, interfaceRegionLIDs,
                              regionsPerGIDWithGhosts, interfaceGIDsMV);
 
-  SetupMatVec(interfaceGIDsMV, regionsPerGIDWithGhosts, revisedRowMapPerGrp, rowImportPerGrp,
+  SetupMatVec(interfaceGIDsMV, regionsPerGIDWithGhosts, revisedRowMap, rowImport,
               regionMatVecLIDs, regionInterfaceImporter);
 
-  std::vector<RCP<Matrix> > quasiRegionGrpMats(maxRegPerProc);
-  MakeQuasiregionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A), maxRegPerProc,
-                          regionsPerGIDWithGhosts, rowMapPerGrp, colMapPerGrp, rowImportPerGrp,
+  RCP<Matrix> quasiRegionGrpMats = Teuchos::null;
+  MakeQuasiregionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A),
+                          regionsPerGIDWithGhosts, rowMap, colMap, rowImport,
                           quasiRegionGrpMats);
 
-  MakeRegionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A), A->getRowMap(), rowMapPerGrp,
-                     revisedRowMapPerGrp, revisedColMapPerGrp,
-                     rowImportPerGrp, maxRegPerProc, quasiRegionGrpMats, regionGrpMats);
+  MakeRegionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A), A->getRowMap(), rowMap,
+                     revisedRowMap, revisedColMap,
+                     rowImport, quasiRegionGrpMats, regionMats);
 
 } // createRegionMatrix
 
 // Helper function that creates almost all the data needed to generate a unit-test
-// maxRegPerProc [in]: maximum number of regions assigned to any processor
 // numDofsPerNode [in]: number of degrees of freedom per grid point
 // galeriParameters [in]: parameters passed to galeri to generate the composite problem
 // comm [in]: the MPI communicator used with distributed objects
 // A [out]: composite matrix
-// regionGrpMats [out]: the region matrix
+// regionMats [out]: the region matrix
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void createProblem(const int maxRegPerProc, const LocalOrdinal numDofsPerNode,
+void createProblem(const LocalOrdinal numDofsPerNode,
                    Galeri::Xpetra::Parameters<GlobalOrdinal>& galeriParameters,
                    RCP<const Teuchos::Comm<int> > comm,
                    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
-                   std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >& regionGrpMats,
-                   std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& revisedRowMapPerGrp,
-                   std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >& rowImportPerGrp,
+                   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regionMats,
+                   RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& revisedRowMap,
+                   RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rowImport,
                    Teuchos::ArrayRCP<LocalOrdinal>& regionMatVecLIDs,
                    RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter) {
 #include <MueLu_UseShortNames.hpp>
@@ -230,12 +228,13 @@ void createProblem(const int maxRegPerProc, const LocalOrdinal numDofsPerNode,
   RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>(coordinatesType, nodeMap, galeriList);
 
   // create the region maps, importer and operator from composite counter parts
-  std::vector<RCP<Map> >    rowMapPerGrp(maxRegPerProc), colMapPerGrp(maxRegPerProc);
-  std::vector<RCP<Map> >    revisedColMapPerGrp(maxRegPerProc);
-  std::vector<RCP<Import> > colImportPerGrp(maxRegPerProc);
-  createRegionMatrix(galeriList, numDofsPerNode, maxRegPerProc, nodeMap, dofMap, A,
-                     rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp, revisedColMapPerGrp,
-                     rowImportPerGrp, colImportPerGrp, regionGrpMats,
+  RCP<Map> rowMap = Teuchos::null;
+  RCP<Map> colMap = Teuchos::null;
+  RCP<Map> revisedColMap = Teuchos::null;
+  RCP<Import> colImport = Teuchos::null;
+  createRegionMatrix(galeriList, numDofsPerNode, nodeMap, dofMap, A,
+                     rowMap, colMap, revisedRowMap, revisedColMap,
+                     rowImport, colImport, regionMats,
                      regionMatVecLIDs, regionInterfaceImporter);
 
   // Debug output
@@ -252,13 +251,12 @@ void createProblem(const int maxRegPerProc, const LocalOrdinal numDofsPerNode,
 // yields the same vector. It also verifies that regionalToComposite(regA) returns
 // the same matrix as composite A. It is a convenience function to perform common tests.
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void test_matrix(const int maxRegPerProc,
-                 RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A,
-                 std::vector<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > regionGrpMats,
-                 std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > rowMapPerGrp,
-                 std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > colMapPerGrp,
-                 std::vector<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > > revisedRowMapPerGrp,
-                 std::vector<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > > rowImportPerGrp,
+void test_matrix(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A,
+                 RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionMats,
+                 RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap,
+                 RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > colMap,
+                 RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,
+                 RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport,
                  Teuchos::FancyOStream& out,
                  bool& success) {
 #include <MueLu_UseShortNames.hpp>
@@ -284,20 +282,22 @@ void test_matrix(const int maxRegPerProc,
   A->apply(*X, *B, Teuchos::NO_TRANS, TST::one(), TST::zero());
 
   // Now build the region X vector
-  Array<RCP<Vector> > quasiRegX(maxRegPerProc), quasiRegB(maxRegPerProc);
-  Array<RCP<Vector> > regX(maxRegPerProc), regB(maxRegPerProc);
+  RCP<Vector> quasiRegX = Teuchos::null;
+  RCP<Vector> quasiRegB = Teuchos::null;
+  RCP<Vector> regX = Teuchos::null;
+  RCP<Vector> regB = Teuchos::null;
   compositeToRegional(X, quasiRegX, regX,
-                      revisedRowMapPerGrp, rowImportPerGrp);
-  regB[0] = VectorFactory::Build(revisedRowMapPerGrp[0], true);
+                      revisedRowMap, rowImport);
+  regB = VectorFactory::Build(revisedRowMap, true);
 
   // Perform regional MatVec
-  regionGrpMats[0]->apply(*regX[0], *regB[0], Teuchos::NO_TRANS, TST::one(), TST::zero());
+  regionMats->apply(*regX, *regB, Teuchos::NO_TRANS, TST::one(), TST::zero());
 
   // Bring the result of the region MatVec
   // to composite format so it can be compared
   // with the original composite B vector.
   RCP<Vector> compB = VectorFactory::Build(A->getRowMap());
-  regionalToComposite(regB, compB, rowImportPerGrp);
+  regionalToComposite(regB, compB, rowImport);
 
   // Extract the data from B and compB to compare it
   ArrayRCP<const SC> dataB     = B->getData(0);
@@ -317,9 +317,9 @@ void test_matrix(const int maxRegPerProc,
   /************************************/
   RCP<Matrix> compositeMatrix = MatrixFactory::Build(A->getRowMap(), 10);
   // Transform region A into composite A.
-  regionalToComposite(regionGrpMats,
-                      rowMapPerGrp, colMapPerGrp,
-                      rowImportPerGrp, Xpetra::INSERT,
+  regionalToComposite(regionMats,
+                      rowMap, colMap,
+                      rowImport, Xpetra::INSERT,
                       compositeMatrix);
 
   // Extract the local data from the original and final matrices to compare them
@@ -408,19 +408,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
   RCP<MultiVector> nullspace = Pr->BuildNullspace();
   RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
 
-  // Create the region version of A called regionGrpMats
-  const int maxRegPerProc = 1;
-  std::vector<RCP<Map> >    rowMapPerGrp(maxRegPerProc), colMapPerGrp(maxRegPerProc);
-  std::vector<RCP<Map> >    revisedRowMapPerGrp(maxRegPerProc), revisedColMapPerGrp(maxRegPerProc);
-  std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc), colImportPerGrp(maxRegPerProc);
-  std::vector<RCP<Matrix> > regionGrpMats(maxRegPerProc);
+  // Create the region version of A called regionMats
+  RCP<Map> rowMap = Teuchos::null;
+  RCP<Map> colMap = Teuchos::null;
+  RCP<Map> revisedRowMap = Teuchos::null;
+  RCP<Map> revisedColMap = Teuchos::null;
+  RCP<Import> rowImport = Teuchos::null;
+  RCP<Import> colImport = Teuchos::null;
+  RCP<Matrix> regionMats = Teuchos::null;
   Teuchos::ArrayRCP<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
-  createRegionMatrix(galeriList, numDofsPerNode, maxRegPerProc, nodeMap, dofMap, A,
-                     rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp, revisedColMapPerGrp,
-                     rowImportPerGrp, colImportPerGrp, regionGrpMats,
+  createRegionMatrix(galeriList, numDofsPerNode, nodeMap, dofMap, A,
+                     rowMap, colMap, revisedRowMap, revisedColMap,
+                     rowImport, colImport, regionMats,
                      regionMatVecLIDs, regionInterfaceImporter);
-  RCP<Matrix> regionMat = regionGrpMats[0];
 
   // Extract the local data from the region matrix
   using local_matrix_type = typename Matrix::local_matrix_type;
@@ -428,7 +429,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
   using entries_type      = typename local_graph_type::entries_type;
   using values_type       = typename local_matrix_type::values_type;
 
-  local_matrix_type myLocalA  = regionMat->getLocalMatrix();  // Local matrix
+  local_matrix_type myLocalA  = regionMats->getLocalMatrix();  // Local matrix
   entries_type      myEntries = myLocalA.graph.entries;       // view of local column indices
   values_type       myValues  = myLocalA.values;              // view of local values
 
@@ -439,11 +440,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
 
   // Now do a bunch of checks regarding the values stored in region A
   if(numRanks == 1) {
-    TEST_EQUALITY(regionMat->getGlobalNumRows(),     25);
-    TEST_EQUALITY(regionMat->getGlobalNumCols(),     25);
-    TEST_EQUALITY(regionMat->getNodeNumRows(),       25);
-    TEST_EQUALITY(regionMat->getGlobalNumEntries(), 105);
-    TEST_EQUALITY(regionMat->getNodeNumEntries(),   105);
+    TEST_EQUALITY(regionMats->getGlobalNumRows(),     25);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(),     25);
+    TEST_EQUALITY(regionMats->getNodeNumRows(),       25);
+    TEST_EQUALITY(regionMats->getGlobalNumEntries(), 105);
+    TEST_EQUALITY(regionMats->getNodeNumEntries(),   105);
 
     // In the serial case we can just compare to the values in A
     entries_type refEntries = A->getLocalMatrix().graph.entries;
@@ -461,11 +462,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
     }
   } else if(numRanks == 4) {
     // All ranks will have the same number of rows/cols/entries
-    TEST_EQUALITY(regionMat->getGlobalNumRows(),     36);
-    TEST_EQUALITY(regionMat->getGlobalNumCols(),     36);
-    TEST_EQUALITY(regionMat->getNodeNumRows(),        9);
-    TEST_EQUALITY(regionMat->getGlobalNumEntries(), 132);
-    TEST_EQUALITY(regionMat->getNodeNumEntries(),    33);
+    TEST_EQUALITY(regionMats->getGlobalNumRows(),     36);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(),     36);
+    TEST_EQUALITY(regionMats->getNodeNumRows(),        9);
+    TEST_EQUALITY(regionMats->getGlobalNumEntries(), 132);
+    TEST_EQUALITY(regionMats->getNodeNumEntries(),    33);
 
     ArrayRCP<LO> refEntries;
     ArrayRCP<SC> refValues;
@@ -586,24 +587,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, RegionToCompositeMatrix, Scalar,
   RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::
     CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
 
-  // From the original composite matrix A, build the region equivalent: regionGrpMats
-  const int maxRegPerProc = 1;
-  std::vector<RCP<Map> >    rowMapPerGrp(maxRegPerProc), colMapPerGrp(maxRegPerProc);
-  std::vector<RCP<Map> >    revisedRowMapPerGrp(maxRegPerProc), revisedColMapPerGrp(maxRegPerProc);
-  std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc), colImportPerGrp(maxRegPerProc);
-  std::vector<RCP<Matrix> > regionGrpMats(maxRegPerProc);
+  // From the original composite matrix A, build the region equivalent: regionMats
+  RCP<Map> rowMap = Teuchos::null;
+  RCP<Map> colMap = Teuchos::null;
+  RCP<Map> revisedRowMap = Teuchos::null;
+  RCP<Map> revisedColMap = Teuchos::null;
+  RCP<Import> rowImport = Teuchos::null;
+  RCP<Import> colImport = Teuchos::null;
+  RCP<Matrix> regionMats = Teuchos::null;
   Teuchos::ArrayRCP<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
-  createRegionMatrix(galeriList, numDofsPerNode, maxRegPerProc, nodeMap, dofMap, A,
-                     rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp, revisedColMapPerGrp,
-                     rowImportPerGrp, colImportPerGrp, regionGrpMats,
+  createRegionMatrix(galeriList, numDofsPerNode, nodeMap, dofMap, A,
+                     rowMap, colMap, revisedRowMap, revisedColMap,
+                     rowImport, colImport, regionMats,
                      regionMatVecLIDs, regionInterfaceImporter);
 
-  // Finally do the revert operation: start with regionGrpMats and bring it to composite format
+  // Finally do the revert operation: start with regionMats and bring it to composite format
   RCP<Matrix> compositeMatrix = MatrixFactory::Build(dofMap, 10);
-  regionalToComposite(regionGrpMats,
-                      rowMapPerGrp, colMapPerGrp,
-                      rowImportPerGrp, Xpetra::INSERT,
+  regionalToComposite(regionMats,
+                      rowMap, colMap,
+                      rowImport, Xpetra::INSERT,
                       compositeMatrix);
 
   // Now simply check that the original matrix A is identical to compositeMatrix.
@@ -694,19 +697,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal
   RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
 
   // create the region maps, importer and operator from composite counter parts
-  const int maxRegPerProc = 1;
-  std::vector<RCP<Map> >    rowMapPerGrp(maxRegPerProc), colMapPerGrp(maxRegPerProc);
-  std::vector<RCP<Map> >    revisedRowMapPerGrp(maxRegPerProc), revisedColMapPerGrp(maxRegPerProc);
-  std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc), colImportPerGrp(maxRegPerProc);
-  std::vector<RCP<Matrix> > regionGrpMats(maxRegPerProc);
+  RCP<Map> rowMap = Teuchos::null;
+  RCP<Map> colMap = Teuchos::null;
+  RCP<Map> revisedRowMap = Teuchos::null;
+  RCP<Map> revisedColMap = Teuchos::null;
+  RCP<Import> rowImport = Teuchos::null;
+  RCP<Import> colImport = Teuchos::null;
+  RCP<Matrix> regionMats = Teuchos::null;
   Teuchos::ArrayRCP<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
-  createRegionMatrix(galeriList, numDofsPerNode, maxRegPerProc, nodeMap, dofMap, A,
-                     rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp, revisedColMapPerGrp,
-                     rowImportPerGrp, colImportPerGrp, regionGrpMats,
+  createRegionMatrix(galeriList, numDofsPerNode, nodeMap, dofMap, A,
+                     rowMap, colMap, revisedRowMap, revisedColMap,
+                     rowImport, colImport, regionMats,
                      regionMatVecLIDs, regionInterfaceImporter);
-
-  RCP<Matrix> regionMat = regionGrpMats[0];
 
   // Create initial vectors in composite format and apply composite A.
   // This will give a reference to compare with.
@@ -721,26 +724,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal
   A->apply(*X, *B, Teuchos::NO_TRANS, TST::one(), TST::zero());
 
   // Create the region vectors and apply region A
-  Array<RCP<Vector> > quasiRegX(maxRegPerProc);
-  Array<RCP<Vector> > quasiRegB(maxRegPerProc);
-  Array<RCP<Vector> > regX(maxRegPerProc);
-  Array<RCP<Vector> > regB(maxRegPerProc);
-  compositeToRegional(X, quasiRegX, regX,
-                      revisedRowMapPerGrp, rowImportPerGrp);
-  regB[0] = VectorFactory::Build(revisedRowMapPerGrp[0], true);
-  regionMat->apply(*regX[0], *regB[0], Teuchos::NO_TRANS, TST::one(), TST::zero());
-  sumInterfaceValues(regB, revisedRowMapPerGrp, rowImportPerGrp);
+  RCP<Vector> quasiRegX = Teuchos::null;
+  RCP<Vector> quasiRegB = Teuchos::null;
+  RCP<Vector> regX = Teuchos::null;
+  RCP<Vector> regB = Teuchos::null;
+  compositeToRegional(X, quasiRegX, regX, revisedRowMap, rowImport);
+  regB = VectorFactory::Build(revisedRowMap, true);
+  regionMats->apply(*regX, *regB, Teuchos::NO_TRANS, TST::one(), TST::zero());
+  sumInterfaceValues(regB, revisedRowMap, rowImport);
 
   // Now create a refRegB vector using B as a starting point
   // and compare the result to regB
-  Array<RCP<Vector> > refRegB(maxRegPerProc);
-  compositeToRegional(B, quasiRegB, refRegB,
-                      revisedRowMapPerGrp, rowImportPerGrp);
+  RCP<Vector> refRegB = Teuchos::null;
+  compositeToRegional(B, quasiRegB, refRegB, revisedRowMap, rowImport);
 
   // Extract the data from B and compB to compare it
-  ArrayRCP<const SC> dataRegB    = regB[0]->getData(0);
-  ArrayRCP<const SC> dataRefRegB = refRegB[0]->getData(0);
-  for(size_t idx = 0; idx < refRegB[0]->getLocalLength(); ++idx) {
+  ArrayRCP<const SC> dataRegB    = regB->getData(0);
+  ArrayRCP<const SC> dataRefRegB = refRegB->getData(0);
+  for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegB[idx]),
                            TST::magnitude(dataRefRegB[idx]),
                            100*TMT::eps());
@@ -750,16 +751,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal
   // to transform data from region to composite and back
   // it should perform faster and allow for easy customization
   // of the local MatVec
-  RCP<Map> regionMap = revisedRowMapPerGrp[0];
+  RCP<Map> regionMap = revisedRowMap;
 
-  Array<RCP<Vector> > regC(maxRegPerProc);
-  regC[0] = VectorFactory::Build(revisedRowMapPerGrp[0], true);
-  ApplyMatVec(TST::one(), regionMat, regX[0], TST::zero(),
+  RCP<Vector> regC = Teuchos::null;
+  regC = VectorFactory::Build(revisedRowMap, true);
+  ApplyMatVec(TST::one(), regionMats, regX, TST::zero(),
               regionInterfaceImporter, regionMatVecLIDs,
-              regC[0], Teuchos::NO_TRANS, true);
+              regC, Teuchos::NO_TRANS, true);
 
-  ArrayRCP<const SC> dataRegC = regC[0]->getData(0);
-  for(size_t idx = 0; idx < refRegB[0]->getLocalLength(); ++idx) {
+  ArrayRCP<const SC> dataRegC = regC->getData(0);
+  for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegC[idx]),
                            TST::magnitude(dataRefRegB[idx]),
                            100*TMT::eps());
@@ -796,21 +797,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdin
   Teuchos::ParameterList galeriList = galeriParameters.GetParameterList();
   std::string   matrixType = galeriParameters.GetMatrixType();
   const LO numDofsPerNode = 1;
-  const int maxRegPerProc = 1;
 
   // create the region maps, importer and operator from composite counter parts
-  std::vector<RCP<Matrix> > regionGrpMats(maxRegPerProc);
+  RCP<Matrix> regionMats = Teuchos::null;
   RCP<Matrix> A;
-  std::vector<RCP<Map> > revisedRowMapPerGrp(maxRegPerProc);
-  std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc);
+  RCP<Map> revisedRowMap = Teuchos::null;
+  RCP<Import> rowImport = Teuchos::null;
   Teuchos::ArrayRCP<LocalOrdinal> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
 
-  createProblem(maxRegPerProc, numDofsPerNode, galeriParameters, comm,
-                A, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp,
+  createProblem(numDofsPerNode, galeriParameters, comm,
+                A, regionMats, revisedRowMap, rowImport,
                 regionMatVecLIDs, regionInterfaceImporter);
-
-  RCP<Matrix> regionMat = regionGrpMats[0];
 
   // Create initial vectors in composite format and apply composite A.
   // This will give a reference to compare with.
@@ -825,26 +823,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdin
   A->apply(*X, *B, Teuchos::NO_TRANS, TST::one(), TST::zero());
 
   // Create the region vectors and apply region A
-  Array<RCP<Vector> > quasiRegX(maxRegPerProc);
-  Array<RCP<Vector> > quasiRegB(maxRegPerProc);
-  Array<RCP<Vector> > regX(maxRegPerProc);
-  Array<RCP<Vector> > regB(maxRegPerProc);
+  RCP<Vector> quasiRegX = Teuchos::null;
+  RCP<Vector> quasiRegB = Teuchos::null;
+  RCP<Vector> regX = Teuchos::null;
+  RCP<Vector> regB = Teuchos::null;
   compositeToRegional(X, quasiRegX, regX,
-                      revisedRowMapPerGrp, rowImportPerGrp);
-  regB[0] = VectorFactory::Build(revisedRowMapPerGrp[0], true);
-  regionMat->apply(*regX[0], *regB[0], Teuchos::NO_TRANS, TST::one(), TST::zero());
-  sumInterfaceValues(regB, revisedRowMapPerGrp, rowImportPerGrp);
+                      revisedRowMap, rowImport);
+  regB = VectorFactory::Build(revisedRowMap, true);
+  regionMats->apply(*regX, *regB, Teuchos::NO_TRANS, TST::one(), TST::zero());
+  sumInterfaceValues(regB, revisedRowMap, rowImport);
 
   // Now create a refRegB vector using B as a starting point
   // and compare the result to regB
-  Array<RCP<Vector> > refRegB(maxRegPerProc);
-  compositeToRegional(B, quasiRegB, refRegB,
-                      revisedRowMapPerGrp, rowImportPerGrp);
+  RCP<Vector> refRegB = Teuchos::null;
+  compositeToRegional(B, quasiRegB, refRegB, revisedRowMap, rowImport);
 
   // Extract the data from B and compB to compare it
-  ArrayRCP<const SC> dataRegB    = regB[0]->getData(0);
-  ArrayRCP<const SC> dataRefRegB = refRegB[0]->getData(0);
-  for(size_t idx = 0; idx < refRegB[0]->getLocalLength(); ++idx) {
+  ArrayRCP<const SC> dataRegB    = regB->getData(0);
+  ArrayRCP<const SC> dataRefRegB = refRegB->getData(0);
+  for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegB[idx]),
                            TST::magnitude(dataRefRegB[idx]),
                            100*TMT::eps());
@@ -854,16 +851,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdin
   // to transform data from region to composite and back
   // it should perform faster and allow for easy customization
   // of the local MatVec
-  RCP<Map> regionMap = revisedRowMapPerGrp[0];
+  RCP<Map> regionMap = revisedRowMap;
 
-  Array<RCP<Vector> > regC(maxRegPerProc);
-  regC[0] = VectorFactory::Build(revisedRowMapPerGrp[0], true);
-  ApplyMatVec(TST::one(), regionMat, regX[0], TST::zero(),
+  RCP<Vector> regC = Teuchos::null;
+  regC = VectorFactory::Build(revisedRowMap, true);
+  ApplyMatVec(TST::one(), regionMats, regX, TST::zero(),
               regionInterfaceImporter, regionMatVecLIDs,
-              regC[0], Teuchos::NO_TRANS, true);
+              regC, Teuchos::NO_TRANS, true);
 
-  ArrayRCP<const SC> dataRegC = regC[0]->getData(0);
-  for(size_t idx = 0; idx < refRegB[0]->getLocalLength(); ++idx) {
+  ArrayRCP<const SC> dataRegC = regC->getData(0);
+  for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegC[idx]),
                            TST::magnitude(dataRefRegB[idx]),
                            100*TMT::eps());
@@ -894,23 +891,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec2D_Elasticity, Scalar,
   // Get MPI parameter
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-  const int maxRegPerProc = 1;
   const LO numDofsPerNode = 2;
   GO nx = 7, ny = 7, nz = 1;
   Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Elasticity2D");
-  std::vector<RCP<Matrix> > regionGrpMats(maxRegPerProc);
+  RCP<Matrix> regionMats = Teuchos::null;
   RCP<Matrix> A;
-  std::vector<RCP<Map> > revisedRowMapPerGrp(maxRegPerProc);
-  std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc);
+  RCP<Map> revisedRowMap = Teuchos::null;
+  RCP<Import> rowImport = Teuchos::null;
   Teuchos::ArrayRCP<LocalOrdinal> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
 
-  createProblem(maxRegPerProc, numDofsPerNode, galeriParameters, comm,
-                A, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp,
+  createProblem(numDofsPerNode, galeriParameters, comm,
+                A, regionMats, revisedRowMap, rowImport,
                 regionMatVecLIDs, regionInterfaceImporter);
-
-  RCP<Matrix> regionMat = regionGrpMats[0];
 
   // Create initial vectors in composite format and apply composite A.
   // This will give a reference to compare with.
@@ -925,26 +919,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec2D_Elasticity, Scalar,
   A->apply(*X, *B, Teuchos::NO_TRANS, TST::one(), TST::zero());
 
   // Create the region vectors and apply region A
-  Array<RCP<Vector> > quasiRegX(maxRegPerProc);
-  Array<RCP<Vector> > quasiRegB(maxRegPerProc);
-  Array<RCP<Vector> > regX(maxRegPerProc);
-  Array<RCP<Vector> > regB(maxRegPerProc);
-  compositeToRegional(X, quasiRegX, regX,
-                      revisedRowMapPerGrp, rowImportPerGrp);
-  regB[0] = VectorFactory::Build(revisedRowMapPerGrp[0], true);
-  regionMat->apply(*regX[0], *regB[0], Teuchos::NO_TRANS, TST::one(), TST::zero());
-  sumInterfaceValues(regB, revisedRowMapPerGrp, rowImportPerGrp);
+  RCP<Vector> quasiRegX = Teuchos::null;
+  RCP<Vector> quasiRegB = Teuchos::null;
+  RCP<Vector> regX = Teuchos::null;
+  RCP<Vector> regB = Teuchos::null;
+  compositeToRegional(X, quasiRegX, regX, revisedRowMap, rowImport);
+  regB = VectorFactory::Build(revisedRowMap, true);
+  regionMats->apply(*regX, *regB, Teuchos::NO_TRANS, TST::one(), TST::zero());
+  sumInterfaceValues(regB, revisedRowMap, rowImport);
 
   // Now create a refRegB vector using B as a starting point
   // and compare the result to regB
-  Array<RCP<Vector> > refRegB(maxRegPerProc);
-  compositeToRegional(B, quasiRegB, refRegB,
-                      revisedRowMapPerGrp, rowImportPerGrp);
+  RCP<Vector> refRegB = Teuchos::null;
+  compositeToRegional(B, quasiRegB, refRegB, revisedRowMap, rowImport);
 
   // Extract the data from B and compB to compare it
-  ArrayRCP<const SC> dataRegB    = regB[0]->getData(0);
-  ArrayRCP<const SC> dataRefRegB = refRegB[0]->getData(0);
-  for(size_t idx = 0; idx < refRegB[0]->getLocalLength(); ++idx) {
+  ArrayRCP<const SC> dataRegB    = regB->getData(0);
+  ArrayRCP<const SC> dataRefRegB = refRegB->getData(0);
+  for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegB[idx]),
                            TST::magnitude(dataRefRegB[idx]),
                            100*TMT::eps());
@@ -954,16 +946,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec2D_Elasticity, Scalar,
   // to transform data from region to composite and back
   // it should perform faster and allow for easy customization
   // of the local MatVec
-  RCP<Map> regionMap = revisedRowMapPerGrp[0];
+  RCP<Map> regionMap = revisedRowMap;
 
-  Array<RCP<Vector> > regC(maxRegPerProc);
-  regC[0] = VectorFactory::Build(revisedRowMapPerGrp[0], true);
-  ApplyMatVec(TST::one(), regionMat, regX[0], TST::zero(),
+  RCP<Vector> regC = Teuchos::null;
+  regC = VectorFactory::Build(revisedRowMap, true);
+  ApplyMatVec(TST::one(), regionMats, regX, TST::zero(),
               regionInterfaceImporter, regionMatVecLIDs,
-              regC[0], Teuchos::NO_TRANS, true);
+              regC, Teuchos::NO_TRANS, true);
 
-  ArrayRCP<const SC> dataRegC = regC[0]->getData(0);
-  for(size_t idx = 0; idx < refRegB[0]->getLocalLength(); ++idx) {
+  ArrayRCP<const SC> dataRegC = regC->getData(0);
+  for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegC[idx]),
                            TST::magnitude(dataRefRegB[idx]),
                            100*TMT::eps());
@@ -994,23 +986,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar,
   // Get MPI parameter
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
-  const int maxRegPerProc = 1;
   const LO numDofsPerNode = 3;
   GO nx = 5, ny = 5, nz = 3;
   Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Elasticity3D");
-  std::vector<RCP<Matrix> > regionGrpMats(maxRegPerProc);
-  RCP<Matrix> A;
-  std::vector<RCP<Map> > revisedRowMapPerGrp(maxRegPerProc);
-  std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc);
+  RCP<Matrix> regionMats = Teuchos::null;
+  RCP<Matrix> A = Teuchos::null;
+  RCP<Map> revisedRowMap = Teuchos::null;
+  RCP<Import> rowImport = Teuchos::null;
   Teuchos::ArrayRCP<LocalOrdinal> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
 
-  createProblem(maxRegPerProc, numDofsPerNode, galeriParameters, comm,
-                A, regionGrpMats, revisedRowMapPerGrp, rowImportPerGrp,
+  createProblem(numDofsPerNode, galeriParameters, comm,
+                A, regionMats, revisedRowMap, rowImport,
                 regionMatVecLIDs, regionInterfaceImporter);
-
-  RCP<Matrix> regionMat = regionGrpMats[0];
 
   // Create initial vectors in composite format and apply composite A.
   // This will give a reference to compare with.
@@ -1025,26 +1014,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar,
   A->apply(*X, *B, Teuchos::NO_TRANS, TST::one(), TST::zero());
 
   // Create the region vectors and apply region A
-  Array<RCP<Vector> > quasiRegX(maxRegPerProc);
-  Array<RCP<Vector> > quasiRegB(maxRegPerProc);
-  Array<RCP<Vector> > regX(maxRegPerProc);
-  Array<RCP<Vector> > regB(maxRegPerProc);
-  compositeToRegional(X, quasiRegX, regX,
-                      revisedRowMapPerGrp, rowImportPerGrp);
-  regB[0] = VectorFactory::Build(revisedRowMapPerGrp[0], true);
-  regionMat->apply(*regX[0], *regB[0], Teuchos::NO_TRANS, TST::one(), TST::zero());
-  sumInterfaceValues(regB, revisedRowMapPerGrp, rowImportPerGrp);
+  RCP<Vector> quasiRegX = Teuchos::null;
+  RCP<Vector> quasiRegB = Teuchos::null;
+  RCP<Vector> regX = Teuchos::null;
+  RCP<Vector> regB = Teuchos::null;
+  compositeToRegional(X, quasiRegX, regX, revisedRowMap, rowImport);
+  regB = VectorFactory::Build(revisedRowMap, true);
+  regionMats->apply(*regX, *regB, Teuchos::NO_TRANS, TST::one(), TST::zero());
+  sumInterfaceValues(regB, revisedRowMap, rowImport);
 
   // Now create a refRegB vector using B as a starting point
   // and compare the result to regB
-  Array<RCP<Vector> > refRegB(maxRegPerProc);
-  compositeToRegional(B, quasiRegB, refRegB,
-                      revisedRowMapPerGrp, rowImportPerGrp);
+  RCP<Vector> refRegB = Teuchos::null;
+  compositeToRegional(B, quasiRegB, refRegB, revisedRowMap, rowImport);
 
   // Extract the data from B and compB to compare it
-  ArrayRCP<const SC> dataRegB    = regB[0]->getData(0);
-  ArrayRCP<const SC> dataRefRegB = refRegB[0]->getData(0);
-  for(size_t idx = 0; idx < refRegB[0]->getLocalLength(); ++idx) {
+  ArrayRCP<const SC> dataRegB    = regB->getData(0);
+  ArrayRCP<const SC> dataRefRegB = refRegB->getData(0);
+  for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegB[idx]),
                            TST::magnitude(dataRefRegB[idx]),
                            100*TMT::eps());
@@ -1054,16 +1041,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar,
   // to transform data from region to composite and back
   // it should perform faster and allow for easy customization
   // of the local MatVec
-  RCP<Map> regionMap = revisedRowMapPerGrp[0];
+  RCP<Map> regionMap = revisedRowMap;
 
-  Array<RCP<Vector> > regC(maxRegPerProc);
-  regC[0] = VectorFactory::Build(revisedRowMapPerGrp[0], true);
-  ApplyMatVec(TST::one(), regionMat, regX[0], TST::zero(),
+  RCP<Vector> regC = Teuchos::null;
+  regC = VectorFactory::Build(revisedRowMap, true);
+  ApplyMatVec(TST::one(), regionMats, regX, TST::zero(),
               regionInterfaceImporter, regionMatVecLIDs,
-              regC[0], Teuchos::NO_TRANS, true);
+              regC, Teuchos::NO_TRANS, true);
 
-  ArrayRCP<const SC> dataRegC = regC[0]->getData(0);
-  for(size_t idx = 0; idx < refRegB[0]->getLocalLength(); ++idx) {
+  ArrayRCP<const SC> dataRegC = regC->getData(0);
+  for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
     TEST_FLOATING_EQUALITY(TST::magnitude(dataRegC[idx]),
                            TST::magnitude(dataRefRegB[idx]),
                            100*TMT::eps());
@@ -1117,22 +1104,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
   RCP<MultiVector> nullspace = Pr->BuildNullspace();
   RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
 
-  const int maxRegPerProc = 1;
-  std::vector<RCP<Map> >    rowMapPerGrp(maxRegPerProc), colMapPerGrp(maxRegPerProc);
-  std::vector<RCP<Map> >    revisedRowMapPerGrp(maxRegPerProc), revisedColMapPerGrp(maxRegPerProc);
-  std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc), colImportPerGrp(maxRegPerProc);
-  std::vector<RCP<Matrix> > regionGrpMats(maxRegPerProc);
+  RCP<Map> rowMap = Teuchos::null;
+  RCP<Map> colMap = Teuchos::null;
+  RCP<Map> revisedRowMap = Teuchos::null;
+  RCP<Map> revisedColMap = Teuchos::null;
+  RCP<Import> rowImport = Teuchos::null;
+  RCP<Import> colImport = Teuchos::null;
+  RCP<Matrix> regionMats = Teuchos::null;
   Teuchos::ArrayRCP<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
-  createRegionMatrix(galeriList, numDofsPerNode, maxRegPerProc, nodeMap, dofMap, A,
-                     rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp, revisedColMapPerGrp,
-                     rowImportPerGrp, colImportPerGrp, regionGrpMats,
+  createRegionMatrix(galeriList, numDofsPerNode, nodeMap, dofMap, A,
+                     rowMap, colMap, revisedRowMap, revisedColMap,
+                     rowImport, colImport, regionMats,
                      regionMatVecLIDs, regionInterfaceImporter);
 
-  test_matrix(maxRegPerProc, A, regionGrpMats,
-              rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp,
+  test_matrix(A, regionMats,
+              rowMap, colMap, revisedRowMap, rowImport,
               out, success);
-  RCP<Matrix> regionMat = regionGrpMats[0];
 
   // Extract the local data from the region matrix
   using local_matrix_type = typename Matrix::local_matrix_type;
@@ -1140,7 +1128,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
   using entries_type      = typename local_graph_type::entries_type;
   using values_type       = typename local_matrix_type::values_type;
 
-  local_matrix_type myLocalA  = regionMat->getLocalMatrix();  // Local matrix
+  local_matrix_type myLocalA  = regionMats->getLocalMatrix();  // Local matrix
   entries_type      myEntries = myLocalA.graph.entries;       // view of local column indices
   values_type       myValues  = myLocalA.values;              // view of local values
 
@@ -1152,11 +1140,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
   const int numRanks = comm->getSize();
   const int myRank   = comm->getRank();
   if(numRanks == 1) {
-    TEST_EQUALITY(regionMat->getGlobalNumRows(),    30);
-    TEST_EQUALITY(regionMat->getGlobalNumCols(),    30);
-    TEST_EQUALITY(regionMat->getNodeNumRows(),      30);
-    TEST_EQUALITY(regionMat->getGlobalNumEntries(), 128);
-    TEST_EQUALITY(regionMat->getNodeNumEntries(),   128);
+    TEST_EQUALITY(regionMats->getGlobalNumRows(),    30);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(),    30);
+    TEST_EQUALITY(regionMats->getNodeNumRows(),      30);
+    TEST_EQUALITY(regionMats->getGlobalNumEntries(), 128);
+    TEST_EQUALITY(regionMats->getNodeNumEntries(),   128);
 
     // In the serial case we can just compare to the values in A
     entries_type refEntries = A->getLocalMatrix().graph.entries;
@@ -1174,14 +1162,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
     }
   } else if(numRanks == 4) {
     // All ranks will have the same number of rows/cols/entries
-    TEST_EQUALITY(regionMat->getGlobalNumRows(),    42);
-    TEST_EQUALITY(regionMat->getGlobalNumCols(),    42);
-    TEST_EQUALITY(regionMat->getGlobalNumEntries(), 158);
+    TEST_EQUALITY(regionMats->getGlobalNumRows(),    42);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(),    42);
+    TEST_EQUALITY(regionMats->getGlobalNumEntries(), 158);
 
     ArrayRCP<SC> refValues;
     if(myRank == 0) {
-      TEST_EQUALITY(regionMat->getNodeNumRows(),      9);
-      TEST_EQUALITY(regionMat->getNodeNumEntries(),   33);
+      TEST_EQUALITY(regionMats->getNodeNumRows(),      9);
+      TEST_EQUALITY(regionMats->getNodeNumEntries(),   33);
       refValues.deepCopy(ArrayView<const SC>({4.0, -1.0, -1.0,
               -1.0, 4.0, -1.0, -1.0,
               -1.0, 2.0, -0.5,
@@ -1193,8 +1181,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
               -0.5, -0.5, 1.0}));
 
     } else if(myRank == 1) {
-      TEST_EQUALITY(regionMat->getNodeNumRows(),      12);
-      TEST_EQUALITY(regionMat->getNodeNumEntries(),   46);
+      TEST_EQUALITY(regionMats->getNodeNumRows(),      12);
+      TEST_EQUALITY(regionMats->getNodeNumEntries(),   46);
       refValues.deepCopy(ArrayView<const SC>({2.0, -1.0, -0.5,
               -1.0, 4.0, -1.0, -1.0,
               -1.0, 4.0, -1.0, -1.0,
@@ -1209,8 +1197,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
               -1.0, -0.5, 2.0}));
 
     } else if(myRank == 2) {
-      TEST_EQUALITY(regionMat->getNodeNumRows(),      9);
-      TEST_EQUALITY(regionMat->getNodeNumEntries(),   33);
+      TEST_EQUALITY(regionMats->getNodeNumRows(),      9);
+      TEST_EQUALITY(regionMats->getNodeNumEntries(),   33);
       refValues.deepCopy(ArrayView<const SC>({2.0, -0.5, -1.0,
               -0.5, 2.0, -0.5, -1.0,
               -0.5, 1.0, -0.5,
@@ -1222,8 +1210,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
               -0.5, -1.0, 2.0}));
 
     } else if(myRank == 3) {
-      TEST_EQUALITY(regionMat->getNodeNumRows(),      12);
-      TEST_EQUALITY(regionMat->getNodeNumEntries(),   46);
+      TEST_EQUALITY(regionMats->getNodeNumRows(),      12);
+      TEST_EQUALITY(regionMats->getNodeNumEntries(),   46);
       refValues.deepCopy(ArrayView<const SC>({1.0, -0.5, -0.5,
               -0.5, 2.0, -0.5, -1.0,
               -0.5, 2.0, -0.5, -1.0,
@@ -1294,22 +1282,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
   RCP<MultiVector> nullspace = Pr->BuildNullspace();
   RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("3D", nodeMap, galeriList);
 
-  const int maxRegPerProc = 1;
-  std::vector<RCP<Map> >    rowMapPerGrp(maxRegPerProc), colMapPerGrp(maxRegPerProc);
-  std::vector<RCP<Map> >    revisedRowMapPerGrp(maxRegPerProc), revisedColMapPerGrp(maxRegPerProc);
-  std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc), colImportPerGrp(maxRegPerProc);
-  std::vector<RCP<Matrix> > regionGrpMats(maxRegPerProc);
+  RCP<Map> rowMap = Teuchos::null;
+  RCP<Map> colMap = Teuchos::null;
+  RCP<Map> revisedRowMap = Teuchos::null;
+  RCP<Map> revisedColMap = Teuchos::null;
+  RCP<Import> rowImport = Teuchos::null;
+  RCP<Import> colImport = Teuchos::null;
+  RCP<Matrix> regionMats = Teuchos::null;
   Teuchos::ArrayRCP<LO> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
-  createRegionMatrix(galeriList, numDofsPerNode, maxRegPerProc, nodeMap, dofMap, A,
-                     rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp, revisedColMapPerGrp,
-                     rowImportPerGrp, colImportPerGrp, regionGrpMats,
+  createRegionMatrix(galeriList, numDofsPerNode, nodeMap, dofMap, A,
+                     rowMap, colMap, revisedRowMap, revisedColMap,
+                     rowImport, colImport, regionMats,
                      regionMatVecLIDs, regionInterfaceImporter);
 
-  test_matrix(maxRegPerProc, A, regionGrpMats,
-              rowMapPerGrp, colMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp,
+  test_matrix(A, regionMats,
+              rowMap, colMap, revisedRowMap, rowImport,
               out, success);
-  RCP<Matrix> regionMat = regionGrpMats[0];
 
   // Extract the local data from the region matrix
   using local_matrix_type = typename Matrix::local_matrix_type;
@@ -1317,7 +1306,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
   using entries_type      = typename local_graph_type::entries_type;
   using values_type       = typename local_matrix_type::values_type;
 
-  local_matrix_type myLocalA  = regionMat->getLocalMatrix();  // Local matrix
+  local_matrix_type myLocalA  = regionMats->getLocalMatrix();  // Local matrix
   entries_type      myEntries = myLocalA.graph.entries;       // view of local column indices
   values_type       myValues  = myLocalA.values;              // view of local values
 
@@ -1329,11 +1318,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
   const int numRanks = comm->getSize();
   const int myRank   = comm->getRank();
   if((numRanks == 1) && (myRank == 0)) {
-    TEST_EQUALITY(regionMat->getGlobalNumRows(),    120);
-    TEST_EQUALITY(regionMat->getGlobalNumCols(),    120);
-    TEST_EQUALITY(regionMat->getNodeNumRows(),      120);
-    TEST_EQUALITY(regionMat->getGlobalNumEntries(), 692);
-    TEST_EQUALITY(regionMat->getNodeNumEntries(),   692);
+    TEST_EQUALITY(regionMats->getGlobalNumRows(),    120);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(),    120);
+    TEST_EQUALITY(regionMats->getNodeNumRows(),      120);
+    TEST_EQUALITY(regionMats->getGlobalNumEntries(), 692);
+    TEST_EQUALITY(regionMats->getNodeNumEntries(),   692);
 
     // In the serial case we can just compare to the values in A
     entries_type refEntries = A->getLocalMatrix().graph.entries;
@@ -1351,14 +1340,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
     }
   } else if(numRanks == 4) {
     // All ranks will have the same number of rows/cols/entries
-    TEST_EQUALITY(regionMat->getGlobalNumRows(),    168);
-    TEST_EQUALITY(regionMat->getGlobalNumCols(),    168);
-    TEST_EQUALITY(regionMat->getGlobalNumEntries(), 884);
+    TEST_EQUALITY(regionMats->getGlobalNumRows(),    168);
+    TEST_EQUALITY(regionMats->getGlobalNumCols(),    168);
+    TEST_EQUALITY(regionMats->getGlobalNumEntries(), 884);
 
     ArrayRCP<SC> refValues;
     if(myRank == 0) {
-      TEST_EQUALITY(regionMat->getNodeNumRows(),     36);
-      TEST_EQUALITY(regionMat->getNodeNumEntries(), 186);
+      TEST_EQUALITY(regionMats->getNodeNumRows(),     36);
+      TEST_EQUALITY(regionMats->getNodeNumEntries(), 186);
       refValues.deepCopy(ArrayView<const SC>({6.0, -1.0, -1.0, -1.0,
               -1.0, 6.0, -1.0, -1.0, -1.0,
               -1.0, 3.0, -0.5, -0.5,
@@ -1404,8 +1393,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
       }
 
     } else if(myRank == 1) {
-      TEST_EQUALITY(regionMat->getNodeNumRows(),     48);
-      TEST_EQUALITY(regionMat->getNodeNumEntries(), 256);
+      TEST_EQUALITY(regionMats->getNodeNumRows(),     48);
+      TEST_EQUALITY(regionMats->getNodeNumEntries(), 256);
       refValues.deepCopy(ArrayView<const SC>({3.0, -1.0, -0.5, -0.5,
               -1.0, 6.0, -1.0, -1.0, -1.0,
               -1.0, 6.0, -1.0, -1.0, -1.0,
@@ -1463,8 +1452,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
       }
 
     } else if(myRank == 2) {
-      TEST_EQUALITY(regionMat->getNodeNumRows(),     36);
-      TEST_EQUALITY(regionMat->getNodeNumEntries(), 186);
+      TEST_EQUALITY(regionMats->getNodeNumRows(),     36);
+      TEST_EQUALITY(regionMats->getNodeNumEntries(), 186);
       refValues.deepCopy(ArrayView<const SC>({3.0, -0.5, -1.0, -0.5,
               -0.5, 2.5, -0.5, -1.0, -0.5,
               -0.5, 1.25, -0.5, -0.25,
@@ -1510,8 +1499,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
       }
 
     } else if(myRank == 3) {
-      TEST_EQUALITY(regionMat->getNodeNumRows(),     48);
-      TEST_EQUALITY(regionMat->getNodeNumEntries(), 256);
+      TEST_EQUALITY(regionMats->getNodeNumRows(),     48);
+      TEST_EQUALITY(regionMats->getNodeNumEntries(), 256);
       refValues.deepCopy(ArrayView<const SC>({1.25, -0.5, -0.5, -0.25,
               -0.5, 2.5, -0.5, -1.0, -0.5,
               -0.5, 2.5, -0.5, -1.0, -0.5,

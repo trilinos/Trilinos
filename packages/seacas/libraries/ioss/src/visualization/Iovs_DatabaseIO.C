@@ -603,7 +603,7 @@ namespace Iovs {
           if (element_count > 0) {
             // Map element connectivity from global node id to local node id.
             // Do it in 'data' ...
-            int element_nodes = eb->get_property("topology_node_count").get_int();
+            int element_nodes = eb->topology()->number_nodes();
             assert(field.transformed_storage()->component_count() == element_nodes);
             nodeMap.reverse_map_data(data, field, num_to_get * element_nodes);
             Ioss::Field::BasicType ioss_type = field.get_type();
@@ -613,7 +613,7 @@ namespace Iovs {
             if (ioss_type == Ioss::Field::INTEGER) {
               if (this->pvcsa != nullptr) {
                 this->pvcsa->CreateElementBlock(
-                    eb->name().c_str(), id, eb->get_property("topology_type").get_string(),
+                    eb->name().c_str(), id, eb->topology()->name(),
                     element_nodes, num_to_get, &this->elemMap.map()[eb_offset + 1],
                     static_cast<int *>(data), this->DBFilename.c_str());
               }
@@ -621,7 +621,7 @@ namespace Iovs {
             else if (ioss_type == Ioss::Field::INT64) {
               if (this->pvcsa != nullptr) {
                 this->pvcsa->CreateElementBlock(
-                    eb->name().c_str(), id, eb->get_property("topology_type").get_string(),
+                    eb->name().c_str(), id, eb->topology()->name(),
                     element_nodes, num_to_get, &this->elemMap.map()[eb_offset + 1],
                     static_cast<int64_t *>(data), this->DBFilename.c_str());
               }

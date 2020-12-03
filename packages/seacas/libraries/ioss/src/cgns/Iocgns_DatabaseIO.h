@@ -99,7 +99,7 @@ namespace Iocgns {
 
     bool   check_valid_file_open(int status) const;
     void   create_structured_block(int base, int zone, size_t &num_node);
-    void   create_structured_block_fpp(int base, int zone, size_t &num_node);
+    void   create_structured_block_fpp(int base, int num_zones, size_t &num_node);
     size_t finalize_structured_blocks();
     void   finalize_database() const override;
     void   get_step_times__() override;
@@ -206,7 +206,7 @@ namespace Iocgns {
 
     mutable std::vector<size_t> m_zoneOffset; // Offset for local zone/block element ids to global.
     mutable std::vector<size_t>
-                                                          m_bcOffset; // The BC Section element offsets in unstructured output.
+        m_bcOffset; // The BC Section element offsets in unstructured output.
     mutable std::vector<double>                           m_timesteps;
     std::vector<CGNSIntVector>                            m_blockLocalNodeMap;
     std::map<std::string, int>                            m_zoneNameMap;

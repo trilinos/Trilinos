@@ -84,8 +84,8 @@
        *  This matrix is the passed matrix with the
        *  specified row and column removed.
        */
-      DenseMatrix( const DenseMatrix<R+1,C+1>& m, unsigned r, unsigned c )
-      { make_minor(m,r,c); }
+      DenseMatrix( const DenseMatrix<R+1,C+1>& other, unsigned r, unsigned c )
+      { make_minor(other,r,c); }
 
       DenseMatrix<R,C>& operator=( double v )                 { set(v); return *this; }
       DenseMatrix<R,C>& operator=( const double* v )          { set(v); return *this; }

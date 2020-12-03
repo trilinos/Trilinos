@@ -88,8 +88,8 @@ static int ex_write_object_params(int exoid, const char *type, const char *dimen
   int  dim[2];
   int  varid;
   int  status;
-  int  int_type;
   char errmsg[MAX_ERR_LENGTH];
+  int  sixty_four_kb = 64 * 1024;
 
   /* Can have nonzero model->num_elem_blk even if model->num_elem == 0 */
   if (count > 0) {
@@ -108,20 +108,27 @@ static int ex_write_object_params(int exoid, const char *type, const char *dimen
       ex_err_fn(exoid, __func__, errmsg, status);
       return (status); /* exit define mode and return */
     }
-    ex__set_compact_storage(exoid, varid);
+    if (4 * count < sixty_four_kb) {
+      ex__set_compact_storage(exoid, varid);
+    }
 
     /* type id array */
-    int_type = NC_INT;
+    int int_type = NC_INT;
+    int int_size = 4;
     if (ex_int64_status(exoid) & EX_IDS_INT64_DB) {
       int_type = NC_INT64;
+      int_size = 8;
     }
+
     if ((status = nc_def_var(exoid, id_array_dim_name, int_type, 1, dim, &varid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define %s id array in file id %d", type,
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       return (status); /* exit define mode and return */
     }
-    ex__set_compact_storage(exoid, varid);
+    if (int_size * count < sixty_four_kb) {
+      ex__set_compact_storage(exoid, varid);
+    }
 
     /*   store property name as attribute of property array variable */
     if ((status = nc_put_att_text(exoid, varid, ATT_PROP_NAME, 3, "ID")) != NC_NOERR) {

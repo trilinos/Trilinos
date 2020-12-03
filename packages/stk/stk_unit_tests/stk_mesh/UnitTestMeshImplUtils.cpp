@@ -678,40 +678,6 @@ TEST(MeshImplUtils, visit_aura_closure_vector_ghost)
     }
 }
 
-//TEST(MeshImplUtils, internal_insert_transitive_ghost_closure)
-//{
-//    MPI_Comm communicator = MPI_COMM_WORLD;
-//    ClosureFixture fix(communicator,1,1); // 1x1x4
-//    const int myRank = fix.prank();
-//    int numProcs = fix.psize();
-//    BulkData & mesh = fix.mesh();
-//    if (numProcs != 4 ) { return; }
-//
-//    EntityVector ev;
-//    if (myRank > 0) {
-//        ev.push_back(mesh.get_entity(stk::topology::NODE_RANK,13));
-//        ev.push_back(mesh.get_entity(stk::topology::NODE_RANK,14));
-//        ev.push_back(mesh.get_entity(stk::topology::NODE_RANK,15));
-//        ev.push_back(mesh.get_entity(stk::topology::NODE_RANK,16));
-//        ev.push_back(mesh.get_entity(stk::topology::ELEMENT_RANK,3));
-//
-//        std::set<EntityKey> work_list;
-//        for (size_t i=0 ; i<ev.size() ; ++i) {
-//            internal_insert_transitive_ghost(mesh,ev[i],mesh.parallel_rank(),work_list);
-//        }
-//
-//        if (myRank == 1) {
-//            EXPECT_EQ( 9u, work_list.size() );
-//        }
-//        else if (myRank == 2) {
-//            EXPECT_EQ( 19u, work_list.size() );
-//        }
-//        else if (myRank == 3) {
-//            EXPECT_EQ( 9u, work_list.size() );
-//        }
-//    }
-//}
-
 TEST(MeshImplUtils, check_for_connected_nodes)
 {
     stk::ParallelMachine communicator = MPI_COMM_WORLD;

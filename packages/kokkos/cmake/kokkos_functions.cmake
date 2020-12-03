@@ -246,6 +246,7 @@ MACRO(kokkos_import_tpl NAME)
     LIST(APPEND KOKKOS_ENABLED_TPLS ${NAME})
   ENDIF()
 ENDMACRO(kokkos_import_tpl)
+ENDIF()
 
 MACRO(kokkos_import_cmake_tpl MODULE_NAME)
   kokkos_import_tpl(${MODULE_NAME} ${ARGN} NO_EXPORT)
@@ -263,7 +264,6 @@ MACRO(kokkos_import_cmake_tpl MODULE_NAME)
     KOKKOS_EXPORT_CMAKE_TPL(${MODULE_NAME})
   ENDIF()
 ENDMACRO()
-ENDIF()
 
 #
 # @MACRO: KOKKOS_CREATE_IMPORTED_TPL()

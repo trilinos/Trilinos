@@ -57,7 +57,6 @@ namespace Tempus {
  *  - Stepper fails
  *  - Maximum Absolute error, \f$e_{abs}^{max}\f$
  *  - Maximum Relative error, \f$e_{rel}^{max}\f$
- *  - Order, \f$p\f$
  *  \f[
  *    \Delta t_n = \left\{
  *      \begin{array}{rll}
@@ -127,7 +126,6 @@ public:
     const Scalar errorAbs = workingState->getErrorAbs();
     const Scalar errorRel = workingState->getErrorRel();
     const int iStep = workingState->getIndex();
-    int order = workingState->getOrder();
     Scalar dt = workingState->getTimeStep();
     bool printDtChanges = tsc.getPrintDtChanges();
 
@@ -186,20 +184,6 @@ public:
           + ").  Decreasing dt.");
         dt *= sigma;
       }
-      else if (order < tsc.getMinOrder()) { // order too low, increase dt
-        if (printDtChanges) *out << changeDT(iStep, dt, dt*rho,
-          "Order is too small ("
-          + std::to_string(order) + " < " + std::to_string(tsc.getMinOrder())
-          + ").  Increasing dt.");
-        dt *= rho;
-      }
-      else if (order > tsc.getMaxOrder()) { // order too high, reduce dt
-        if (printDtChanges) *out << changeDT(iStep, dt, dt*sigma,
-          "Order is too large ("
-          + std::to_string(order) + " > " + std::to_string(tsc.getMaxOrder())
-          + ").  Decreasing dt.");
-        dt *= sigma;
-      }
     }
 
     if (dt < tsc.getMinTimeStep()) { // decreased below minimum dt
@@ -213,10 +197,26 @@ public:
       dt = tsc.getMaxTimeStep();
     }
 
-    workingState->setOrder(order);
     workingState->setTimeStep(dt);
     workingState->setComputeNorms(true);
   }
+
+  /// \name Overridden from Teuchos::Describable
+  //@{
+    std::string description() const override
+    { return "Tempus::TimeStepControlStrategyBasicVS"; }
+
+    void describe(Teuchos::FancyOStream          &out,
+                  const Teuchos::EVerbosityLevel verbLevel) const override
+    {
+      Teuchos::OSTab ostab(out,2,"describe");
+      out << description() << "::describe:" << std::endl
+          << "Amplification Factor              = " << getAmplFactor()   << std::endl
+          << "Reduction Factor                  = " << getReductFactor() << std::endl
+          << "Minimum Value Monitoring Function = " << getMinEta()       << std::endl
+          << "Maximum Value Monitoring Function = " << getMaxEta()       << std::endl;
+    }
+  //@}
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{

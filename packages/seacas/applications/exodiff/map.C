@@ -131,9 +131,9 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
 
   // Cannot ignore the comparisons, so make sure the coord_tol_type
   // is not -1 which is "ignore"
-  TOLERANCE_TYPE_enum save_tolerance_type = interFace.coord_tol.type;
-  if (save_tolerance_type == IGNORE_) {
-    interFace.coord_tol.type = ABSOLUTE_;
+  ToleranceMode save_tolerance_type = interFace.coord_tol.type;
+  if (save_tolerance_type == ToleranceMode::IGNORE_) {
+    interFace.coord_tol.type = ToleranceMode::ABSOLUTE_;
   }
 
   // Match elmts in first file to their corresponding elmts in second.
@@ -444,9 +444,9 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
 
   // Cannot ignore the comparisons, so make sure the coord_tol_type
   // is not -1 which is "ignore"
-  TOLERANCE_TYPE_enum save_tolerance_type = interFace.coord_tol.type;
-  if (save_tolerance_type == IGNORE_) {
-    interFace.coord_tol.type = ABSOLUTE_;
+  ToleranceMode save_tolerance_type = interFace.coord_tol.type;
+  if (save_tolerance_type == ToleranceMode::IGNORE_) {
+    interFace.coord_tol.type = ToleranceMode::ABSOLUTE_;
   }
 
   // Match elmts in first file to their corresponding elmts in second.
@@ -788,9 +788,9 @@ namespace {
 
     // Cannot ignore the comparisons, so make sure the coord_tol_type
     // is not -1 which is "ignore"
-    TOLERANCE_TYPE_enum save_tolerance_type = interFace.coord_tol.type;
-    if (save_tolerance_type == IGNORE_) {
-      interFace.coord_tol.type = ABSOLUTE_;
+    ToleranceMode save_tolerance_type = interFace.coord_tol.type;
+    if (save_tolerance_type == ToleranceMode::IGNORE_) {
+      interFace.coord_tol.type = ToleranceMode::ABSOLUTE_;
     }
 
     // Find unmapped nodes in file2; count the unmapped nodes in file_1.
@@ -890,9 +890,9 @@ namespace {
 
     // Cannot ignore the comparisons, so make sure the coord_tol_type
     // is not -1 which is "ignore"
-    TOLERANCE_TYPE_enum save_tolerance_type = interFace.coord_tol.type;
-    if (save_tolerance_type == IGNORE_) {
-      interFace.coord_tol.type = ABSOLUTE_;
+    ToleranceMode save_tolerance_type = interFace.coord_tol.type;
+    if (save_tolerance_type == ToleranceMode::IGNORE_) {
+      interFace.coord_tol.type = ToleranceMode::ABSOLUTE_;
     }
 
     // Find the index such that x0 > x[0,1,...,low-1] and x0 >= x[low]

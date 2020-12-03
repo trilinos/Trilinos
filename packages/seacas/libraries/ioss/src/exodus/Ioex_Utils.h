@@ -63,8 +63,9 @@ namespace Ioex {
                               const std::string &name);
   void    fix_bad_name(char *name);
 
+  void exodus_error(int exoid, int lineno, const char *function, const char *filename);
   void exodus_error(int exoid, int lineno, const char *function, const char *filename,
-                    const std::string &extra = {});
+                    const std::string &extra);
 
   int add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count,
                      size_t name_length);

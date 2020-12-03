@@ -23,7 +23,7 @@ will be output.
 
 Although writing the element variable truth table is optional, it is
 encouraged because it creates at one time all the necessary
-~~~{.c}{NetCDF} variables in which to hold the exodus element variable
+`NetCDF` variables in which to hold the exodus element variable
 values. This results in significant time savings.
 
 The function ex_put_variable_param() must be called before this

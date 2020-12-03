@@ -12,7 +12,7 @@
 #include <vector>
 
 namespace Excn {
-  enum InOut { IN_ = 1, OUT_ = 2 };
+  enum class InOut { IN_ = 1, OUT_ = 2 };
 
   using IntVector = std::vector<int>;
 
@@ -21,16 +21,17 @@ namespace Excn {
     explicit Variables(ObjectType otype, bool arg_add_status = false)
         : objectType(otype), outputCount(0), addStatus(arg_add_status)
     {
-      SMART_ASSERT(otype == EBLK || otype == NSET || otype == SSET || otype == NODE ||
-                   otype == GLOBAL);
+      SMART_ASSERT(otype == ObjectType::EBLK || otype == ObjectType::NSET ||
+                   otype == ObjectType::SSET || otype == ObjectType::NODE ||
+                   otype == ObjectType::GLOBAL);
     }
 
-    int count(InOut in_out = IN_) const
+    int count(InOut in_out = InOut::IN_) const
     {
       int ret_val = 0;
       switch (in_out) {
-      case IN_: ret_val = index_.size() - (addStatus ? 1 : 0); break;
-      case OUT_: ret_val = outputCount; break;
+      case InOut::IN_: ret_val = index_.size() - (addStatus ? 1 : 0); break;
+      case InOut::OUT_: ret_val = outputCount; break;
       }
       return ret_val;
     }
@@ -38,11 +39,11 @@ namespace Excn {
     const char *label() const
     {
       switch (objectType) {
-      case EBLK: return "element";
-      case NSET: return "nodeset";
-      case GLOBAL: return "global";
-      case NODE: return "nodal";
-      case SSET: return "sideset";
+      case ObjectType::EBLK: return "element";
+      case ObjectType::NSET: return "nodeset";
+      case ObjectType::GLOBAL: return "global";
+      case ObjectType::NODE: return "nodal";
+      case ObjectType::SSET: return "sideset";
       default: return "UNKNOWN";
       }
     }
@@ -50,11 +51,11 @@ namespace Excn {
     ex_entity_type type() const
     {
       switch (objectType) {
-      case EBLK: return EX_ELEM_BLOCK;
-      case NSET: return EX_NODE_SET;
-      case SSET: return EX_SIDE_SET;
-      case NODE: return EX_NODAL;
-      case GLOBAL: return EX_GLOBAL;
+      case ObjectType::EBLK: return EX_ELEM_BLOCK;
+      case ObjectType::NSET: return EX_NODE_SET;
+      case ObjectType::SSET: return EX_SIDE_SET;
+      case ObjectType::NODE: return EX_NODAL;
+      case ObjectType::GLOBAL: return EX_GLOBAL;
       default: return EX_INVALID;
       }
     }

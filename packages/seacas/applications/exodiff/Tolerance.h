@@ -6,7 +6,7 @@
 #ifndef TOLERANCE_H
 #define TOLERANCE_H
 
-#include "map.h" // for MAP_TYPE_enum
+#include "map.h"
 #include <cmath>
 
 // See http://realtimecollisiondetection.net/blog/?p=89 for a
@@ -19,7 +19,7 @@
 //
 // if (Abs(x - y) <= EPSILON * Max(1.0f, Abs(x), Abs(y)) ...
 
-enum TOLERANCE_TYPE_enum {
+enum class ToleranceMode {
   RELATIVE_    = 0,
   ABSOLUTE_    = 1,
   COMBINED_    = 2,
@@ -36,7 +36,7 @@ class Tolerance
 public:
   Tolerance() = default;
 
-  Tolerance(TOLERANCE_TYPE_enum tol_type, double tol_value, double tol_floor)
+  Tolerance(ToleranceMode tol_type, double tol_value, double tol_floor)
       : type(tol_type), value(tol_value), floor(tol_floor)
   {
   }
@@ -50,9 +50,9 @@ public:
   const char *typestr() const;
   const char *abrstr() const;
 
-  TOLERANCE_TYPE_enum type{RELATIVE_};
-  double              value{0.0};
-  double              floor{0.0};
+  ToleranceMode type{ToleranceMode::RELATIVE_};
+  double        value{0.0};
+  double        floor{0.0};
 
   // If true, use the older definition of the floor tolerance which was
   // |a-b| < floor.  The new definition is |a| < floor && |b| < floor
@@ -65,7 +65,7 @@ private:
 
 inline double Tolerance::Delta(double v1, double v2) const
 {
-  if (type == IGNORE_) {
+  if (type == ToleranceMode::IGNORE_) {
     return 0.0;
   }
 
@@ -84,17 +84,17 @@ inline double Tolerance::Delta(double v1, double v2) const
   }
 
   if (diff) {
-    if (type == RELATIVE_) {
+    if (type == ToleranceMode::RELATIVE_) {
       if (v1 == 0.0 && v2 == 0.0) {
         return 0.0;
       }
       double max = fabv1 < fabv2 ? fabv2 : fabv1;
       return std::fabs(v1 - v2) / max;
     }
-    if (type == ABSOLUTE_) {
+    if (type == ToleranceMode::ABSOLUTE_) {
       return std::fabs(v1 - v2);
     }
-    else if (type == COMBINED_) {
+    else if (type == ToleranceMode::COMBINED_) {
       double max = fabv1 < fabv2 ? fabv2 : fabv1;
       if (max > 1.0) {
         return std::fabs(v1 - v2) / max;
@@ -103,23 +103,23 @@ inline double Tolerance::Delta(double v1, double v2) const
         return std::fabs(v1 - v2);
       }
     }
-    else if (type == ULPS_FLOAT_) {
+    else if (type == ToleranceMode::ULPS_FLOAT_) {
       return UlpsDiffFloat(v1, v2);
     }
-    else if (type == ULPS_DOUBLE_) {
+    else if (type == ToleranceMode::ULPS_DOUBLE_) {
       return UlpsDiffDouble(v1, v2);
     }
-    else if (type == EIGEN_REL_) {
+    else if (type == ToleranceMode::EIGEN_REL_) {
       if (v1 == 0.0 && v2 == 0.0) {
         return 0.0;
       }
       double max = fabv1 < fabv2 ? fabv2 : fabv1;
       return std::fabs(fabv1 - fabv2) / max;
     }
-    else if (type == EIGEN_ABS_) {
+    else if (type == ToleranceMode::EIGEN_ABS_) {
       return std::fabs(fabv1 - fabv2);
     }
-    else if (type == EIGEN_COM_) {
+    else if (type == ToleranceMode::EIGEN_COM_) {
       double max = fabv1 < fabv2 ? fabv2 : fabv1;
       if (max > 1.0) {
         return std::fabs(fabv1 - fabv2) / max;

@@ -1616,7 +1616,6 @@ setStepperSolverValues(
   auto subPL = sublist(defaultSolverPL, "NOX");
   solver->setParameterList(subPL);
   if (stepperPL != Teuchos::null) {
-    std::cout << "stepperPL = \n" << *stepperPL << "\n" << std::endl;
     std::string solverName = stepperPL->get<std::string>("Solver Name");
     if ( stepperPL->isSublist(solverName) ) {
       auto solverPL = Teuchos::parameterList();

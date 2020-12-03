@@ -40,6 +40,7 @@ SET(HEADERS ${HEADERS}
   new_design/Sacado_Fad_Exp_SFad.hpp
   new_design/Sacado_Fad_Exp_ViewFad.hpp
   new_design/Sacado_Fad_Exp_DVFad.hpp
+  new_design/Sacado_Fad_Exp_Atomic.hpp
   )
 
 # FAD

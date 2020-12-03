@@ -113,6 +113,7 @@ TEUCHOS_UNIT_TEST(Subcycling, MaxTimeStepDoesNotChangeDuring_takeStep)
   solutionHistory->initWorkingState();
 
   // Test
+  stepper->setSubcyclingInitTimeStep(0.25);
   stepper->setSubcyclingMaxTimeStep(0.5);
   double maxTimeStep_Set = stepper->getSubcyclingMaxTimeStep();
   stepper->takeStep(solutionHistory);

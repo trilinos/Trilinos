@@ -141,11 +141,7 @@ initializeSolutionHistory(Teuchos::RCP<SolutionState<Scalar> > state)
     newState->setTimeStep(timeStepControl_->getInitTimeStep());
     newState->setTolRel  (timeStepControl_->getMaxRelError());
     newState->setTolAbs  (timeStepControl_->getMaxAbsError());
-    int order = timeStepControl_->getInitOrder();
-    if (order == 0) order = stepper_->getOrder();
-    if (order < stepper_->getOrderMin()) order = stepper_->getOrderMin();
-    if (order > stepper_->getOrderMax()) order = stepper_->getOrderMax();
-    newState->setOrder(order);
+    newState->setOrder   (stepper_->getOrder());
     newState->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
 
     solutionHistory_->addState(newState);
@@ -195,11 +191,7 @@ initializeSolutionHistory(Scalar t0,
   newState->setTime    (t0);
   newState->setIndex   (timeStepControl_->getInitIndex());
   newState->setTimeStep(timeStepControl_->getInitTimeStep());
-  int order = timeStepControl_->getInitOrder();
-  if (order == 0) order = stepper_->getOrder();
-  if (order < stepper_->getOrderMin()) order = stepper_->getOrderMin();
-  if (order > stepper_->getOrderMax()) order = stepper_->getOrderMax();
-  newState->setOrder(order);
+  newState->setOrder(stepper_->getOrder());
 
   newState->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
 
@@ -252,11 +244,11 @@ void IntegratorBasic<Scalar>::setTimeStepControl(
         // Construct from Integrator ParameterList
         RCP<ParameterList> tscPL =
           Teuchos::sublist(integratorPL_,"Time Step Control",true);
-        timeStepControl_ = rcp(new TimeStepControl<Scalar>(tscPL));
+        timeStepControl_ = createTimeStepControl<Scalar>(tscPL);
       } else {
         // Construct default TimeStepControl
         timeStepControl_ = rcp(new TimeStepControl<Scalar>());
-        RCP<ParameterList> tscPL = timeStepControl_->getNonconstParameterList();
+        RCP<const ParameterList> tscPL = timeStepControl_->getValidParameters();
         integratorPL_->set("Time Step Control", tscPL->name());
         integratorPL_->set(tscPL->name(), *tscPL);
       }
@@ -264,12 +256,13 @@ void IntegratorBasic<Scalar>::setTimeStepControl(
 
   } else {
     // Make integratorPL_ consistent with new TimeStepControl.
-    RCP<ParameterList> tscPL = tsc->getNonconstParameterList();
+    timeStepControl_ = tsc;
+    RCP<const ParameterList> tscPL = timeStepControl_->getValidParameters();
     integratorPL_->set("Time Step Control", tscPL->name());
     integratorPL_->set(tscPL->name(), *tscPL);
-    timeStepControl_ = tsc;
   }
 
+  timeStepControl_->initialize();
 }
 
 
@@ -313,39 +306,6 @@ void IntegratorBasic<Scalar>::initialize()
 
   // Set initial conditions, make them consistent, and set stepper memory.
   stepper_->setInitialConditions(solutionHistory_);
-
-  // Ensure TimeStepControl orders match the Stepper orders.
-  if (timeStepControl_->getMinOrder() < stepper_->getOrderMin())
-      timeStepControl_->setMinOrder(stepper_->getOrderMin());
-  if (timeStepControl_->getMinOrder() > stepper_->getOrderMax())
-      timeStepControl_->setMinOrder(stepper_->getOrderMax());
-
-  if (timeStepControl_->getMaxOrder() == 0 ||
-      timeStepControl_->getMaxOrder() > stepper_->getOrderMax())
-      timeStepControl_->setMaxOrder(stepper_->getOrderMax());
-  if (timeStepControl_->getMaxOrder() < timeStepControl_->getMinOrder())
-      timeStepControl_->setMaxOrder(timeStepControl_->getMinOrder());
-
-  if (timeStepControl_->getInitOrder() < timeStepControl_->getMinOrder())
-      timeStepControl_->setInitOrder(timeStepControl_->getMinOrder());
-  if (timeStepControl_->getInitOrder() > timeStepControl_->getMaxOrder())
-      timeStepControl_->setInitOrder(timeStepControl_->getMaxOrder());
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    timeStepControl_->getMinOrder() > timeStepControl_->getMaxOrder(),
-    std::out_of_range,
-       "Error - Invalid TimeStepControl min order greater than max order.\n"
-    << "        Min order = " << timeStepControl_->getMinOrder() << "\n"
-    << "        Max order = " << timeStepControl_->getMaxOrder() << "\n");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    timeStepControl_->getInitOrder() < timeStepControl_->getMinOrder() ||
-    timeStepControl_->getInitOrder() > timeStepControl_->getMaxOrder(),
-    std::out_of_range,
-       "Error - Initial TimeStepControl order is out of min/max range.\n"
-    << "        Initial order = " << timeStepControl_->getInitOrder() << "\n"
-    << "        Min order     = " << timeStepControl_->getMinOrder()  << "\n"
-    << "        Max order     = " << timeStepControl_->getMaxOrder()  << "\n");
 
   if (integratorTimer_ == Teuchos::null)
     integratorTimer_ = rcp(new Teuchos::Time("Integrator Timer"));
@@ -426,6 +386,7 @@ void IntegratorBasic<Scalar>::startIntegrator()
               stepper_->getInitTimeStep(solutionHistory_));
   // update initial time step
   timeStepControl_->setInitTimeStep(initDt);
+  timeStepControl_->initialize();
   integratorStatus_ = WORKING;
 }
 

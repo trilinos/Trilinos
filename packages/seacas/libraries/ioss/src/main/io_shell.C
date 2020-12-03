@@ -31,7 +31,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "5.1";
+  std::string version = "5.2";
 
   bool mem_stats = false;
 
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 #endif
 
   IOShell::Interface interFace;
-  bool               success = interFace.parse_options(argc, argv);
+  bool               success = interFace.parse_options(argc, argv, rank);
   if (!success) {
     exit(EXIT_FAILURE);
   }
@@ -197,10 +197,12 @@ namespace {
       Ioss::Region region(dbi, "region_1");
 
       if (region.mesh_type() == Ioss::MeshType::HYBRID) {
-        fmt::print(stderr,
-                   "\nERROR: io_shell does not support '{}' meshes. Only 'Unstructured' or "
-                   "'Structured' mesh is supported at this time.\n",
-                   region.mesh_type_string());
+        if (rank == 0) {
+          fmt::print(stderr,
+                     "\nERROR: io_shell does not support '{}' meshes. Only 'Unstructured' or "
+                     "'Structured' mesh is supported at this time.\n",
+                     region.mesh_type_string());
+        }
         return;
       }
 
@@ -256,12 +258,9 @@ namespace {
       options.delay             = interFace.timestep_delay;
       options.reverse           = interFace.reverse;
       options.add_proc_id       = interFace.add_processor_id_field;
+      options.boundary_sideset  = interFace.boundary_sideset;
 
-      size_t ts_count = 0;
-      if (region.property_exists("state_count") &&
-          region.get_property("state_count").get_int() > 0) {
-        ts_count = region.get_property("state_count").get_int();
-      }
+      size_t ts_count = region.get_optional_property("state_count", 0);
 
       int flush_interval = interFace.flush_interval; // Default is zero -- do not flush until end
       properties.add(Ioss::Property("FLUSH_INTERVAL", flush_interval));
@@ -297,6 +296,7 @@ namespace {
 
         // Do normal copy...
         Ioss::Utils::copy_database(region, output_region, options);
+
         if (mem_stats) {
           dbo->release_memory();
         }
@@ -405,7 +405,7 @@ namespace {
       properties.add(Ioss::Property("MEMORY_WRITE", 1));
     }
 
-    if (interFace.compression_level > 0 || interFace.shuffle) {
+    if (interFace.compression_level > 0 || interFace.shuffle || interFace.szip) {
       properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
       properties.add(Ioss::Property("COMPRESSION_LEVEL", interFace.compression_level));
       properties.add(Ioss::Property("COMPRESSION_SHUFFLE", static_cast<int>(interFace.shuffle)));

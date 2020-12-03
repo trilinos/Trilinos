@@ -50,7 +50,6 @@
 #include "Ifpack2_Partitioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Ifpack2_ContainerFactory.hpp"
-#include "Teuchos_Time.hpp"
 #include "Tpetra_BlockCrsMatrix.hpp"
 #include <type_traits>
 
@@ -373,9 +372,6 @@ private:
 
   //! The sparse matrix to be preconditioned.
   Teuchos::RCP<const row_matrix_type> A_;
-
-  //! Timer
-  Teuchos::RCP<Teuchos::Time> Time_;
 
   //! Contains the (block) diagonal elements of \c Matrix.
   mutable Teuchos::RCP<Container<row_matrix_type> > Container_;

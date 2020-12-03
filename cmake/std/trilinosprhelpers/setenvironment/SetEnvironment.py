@@ -169,17 +169,27 @@ class SetEnvironment(object):
             params = m[1:]
             cmd_status = 0
             print("[module] module {} {}".format(op, " ".join(params)), end="")
-            if   1 == len(params) and op in ["purge"]:
-                cmd_status = max(ModuleHelper.module(op), status)
-            elif 1 == len(params):
-                cmd_status = max(ModuleHelper.module(op, params[0]), status)
-            elif 2 == len(params):
-                cmd_status = max(ModuleHelper.module(op, params[0], params[1]), status)
-            else:
-                print(" ERROR")
-                msg =  "Invalid number of parameters for `module` command.\n"
-                msg += "- Received {} parameters to a `{}` command.".format(len(params), op)
-                raise IndexError(msg)
+            try:
+                if   1 == len(params) and op in ["purge"]:
+                    cmd_status = max(ModuleHelper.module(op), status)
+                elif 1 == len(params):
+                    cmd_status = max(ModuleHelper.module(op, params[0]), status)
+                elif 2 == len(params):
+                    cmd_status = max(ModuleHelper.module(op, params[0], params[1]), status)
+                else:
+                    print(" ERROR")
+                    msg =  "Invalid number of parameters for `module` command.\n"
+                    msg += "- Received {} parameters to a `{}` command.".format(len(params), op)
+                    raise IndexError(msg)
+            except TypeError as err:
+                print(" **INTERNAL ERROR**")
+                print("Debugging Information:")
+                print(":  op               : {}".format(op))
+                print(":  params           : {}".format(params))
+                print(":     len(params)   : {}".format(len(params)))
+                print(":  status           : {}".format(status))
+                sys.stdout.flush()
+                raise(err)
 
             status = max(cmd_status, status)
 

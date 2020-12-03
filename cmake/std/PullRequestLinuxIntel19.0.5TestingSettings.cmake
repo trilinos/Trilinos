@@ -1,10 +1,10 @@
 # This file contains the options needed to both run the pull request testing
-# for Trilinos for the Linux Intel 17 pull request testing builds, and to reproduce
+# for Trilinos for the Linux Intel 19 pull request testing builds, and to reproduce
 # the errors reported by those builds. Prior to using this this file, the
 # appropriate set of SEMS modules must be loaded and accessible through the
 # SEMS NFS mount. (See the sems/PullRequestGCC*TestingEnv.sh files.)
 
-# Usage: cmake -C PullRequestLinuxIntelTestingSettings.cmake
+# Usage: cmake -C PullRequestLinuxIntel19.0.5TestingSettings.cmake
 
 set (CMAKE_CXX_STANDARD "14" CACHE STRING "Set C++ standard to C++14")
 #Failing tests under C++14
@@ -57,6 +57,18 @@ set (ROL_test_step_TrustRegion_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled
 set (ROL_tutorial_BoundAndInequality_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 
 
+# Tests turned off until an issue with Scotch can be resolved
+set (Zoltan2_scotch_example_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set (Zoltan2_Partitioning1_VWeights_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set (Zoltan2_Partitioning1_OneProc_VWeights_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set (Zoltan2_Partitioning1_OneProc_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set (Zoltan2_Partitioning1_OneProc_EWeights_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set (Zoltan2_Partitioning1_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set (Zoltan2_Partitioning1_EWeights_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set (Zoltan2_pamgenMeshAdapterTest_scotch_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set (Phalanx_dynamic_data_layout_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set (Zoltan_ENABLE_Scotch OFF CACHE BOOL "Temporarily disabled in PR testing")
+
 # Misc options typically added by CI testing mode in TriBITS
 
 # Use the below option only when submitting to the dashboard
@@ -69,9 +81,6 @@ set (MueLu_UnitTestsTpetra_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in 
 # (Temporarily) Disable randomly failing ROL test (#3103)
 set (ROL_example_poisson-inversion_example_01_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 
-# Don't allow build-stats to be enabled for now for intel (#7376)
-set(Trilinos_ENABLE_BUILD_STATS OFF CACHE BOOL "Set in PullRequestLinuxIntelTestingSettings.cmake")
-
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 
 set (Tpetra_INST_INT_INT ON CACHE BOOL "INST_INT_INT ON")
@@ -79,7 +88,9 @@ set (Trilinos_ENABLE_STKBalance OFF CACHE BOOL "Hard disabled since Tpetra_INST_
 #STK-TODO: try to remember to come back and remove this when stk-balance
 #is able to tolerate int as a global-index.
 
-set(CMAKE_CXX_FLAGS "-Wall -Warray-bounds -Wchar-subscripts -Wcomment -Wenum-compare -Wformat -Wuninitialized -Wmaybe-uninitialized -Wmain -Wnarrowing -Wnonnull -Wparentheses -Wpointer-sign -Wreorder -Wreturn-type -Wsign-compare -Wsequence-point -Wtrigraphs -Wunused-function -Wunused-but-set-variable -Wunused-variable -Wwrite-strings" CACHE STRING "Warning settings")
+set (TPL_Netcdf_LIBRARIES "-L${Netcdf_LIBRARY_DIRS}/lib;${Netcdf_LIBRARY_DIRS}/libnetcdf.so;${Netcdf_LIBRARY_DIRS}/libpnetcdf.a" CACHE STRING "Set by default for CUDA PR testing")
+
+set(CMAKE_CXX_FLAGS "-fPIC -Wall -Warray-bounds -Wchar-subscripts -Wcomment -Wenum-compare -Wformat -Wuninitialized -Wmaybe-uninitialized -Wmain -Wnarrowing -Wnonnull -Wparentheses -Wpointer-sign -Wreorder -Wreturn-type -Wsign-compare -Wsequence-point -Wtrigraphs -Wunused-function -Wunused-but-set-variable -Wunused-variable -Wwrite-strings" CACHE STRING "enable relocatable code, turn on WError settings")
 
 #set (Anasazi_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror" CACHE STRING "Warnings as errors setting")
 #set (Belos_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror" CACHE STRING "Warnings as errors setting")

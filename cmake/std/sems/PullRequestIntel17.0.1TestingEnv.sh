@@ -2,7 +2,7 @@
 # GCC 4.9.3 Pull Request testing build on a Linux machine that has access to
 # the SEMS NFS mount.
 
-# usage: $ source PullRequestGCC4.9.3TestingEnv.sh
+# usage: $ source PullRequestIntel17.0.1TestingEnv.sh
 
 # After the environment is no longer needed, it can be purged using
 # $ module purge

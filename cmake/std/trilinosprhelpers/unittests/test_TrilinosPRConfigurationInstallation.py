@@ -105,7 +105,7 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
         self._config_file = self.find_config_ini(config_file)
 
         # Set up dummy command line arguments
-        self._args = self. dummy_args()
+        self._args = self.dummy_args()
 
         # Set up some global mock patches
         self.patch_cpu_count = patch('multiprocessing.cpu_count', return_value=64)
@@ -164,14 +164,14 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
         return output
 
 
-    def dummy_args_python2(self):
-        """
-        Extend dummy args to change the pullrequest_build_name to use the
-        Python 2.x test set.
-        """
-        args = copy.deepcopy(self.dummy_args())                         # pragma: no cover
-        args.pullrequest_build_name = "Trilinos_pullrequest_python_2"   # pragma: no cover
-        return args                                                     # pragma: no cover
+#    def dummy_args_python2(self):
+#        """
+#        Extend dummy args to change the pullrequest_build_name to use the
+#        Python 2.x test set.
+#        """
+#        args = copy.deepcopy(self.dummy_args())                         # pragma: no cover
+#        args.pullrequest_build_name = "Trilinos_pullrequest_python_2"   # pragma: no cover
+#        return args                                                     # pragma: no cover
 
 
     def dummy_args_dry_run(self):

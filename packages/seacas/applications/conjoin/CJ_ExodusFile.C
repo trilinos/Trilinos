@@ -184,7 +184,7 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si)
     mode |= EX_ALL_INT64_DB;
   }
 
-  if (si.compress_data() > 0 || si.use_netcdf4()) {
+  if (si.compress_data() > 0 || si.use_netcdf4() || si.szip()) {
     mode |= EX_NETCDF4;
   }
 
@@ -198,6 +198,13 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si)
   if (si.compress_data() > 0) {
     ex_set_option(outputId_, EX_OPT_COMPRESSION_LEVEL, si.compress_data());
     ex_set_option(outputId_, EX_OPT_COMPRESSION_SHUFFLE, 1);
+
+    if (si.szip()) {
+      ex_set_option(outputId_, EX_OPT_COMPRESSION_TYPE, EX_COMPRESS_SZIP);
+    }
+    else if (si.zlib()) {
+      ex_set_option(outputId_, EX_OPT_COMPRESSION_TYPE, EX_COMPRESS_ZLIB);
+    }
   }
 
   fmt::print("IO Word size is {} bytes.\n", ioWordSize_);

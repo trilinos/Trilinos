@@ -53,6 +53,7 @@
 #ifndef MB_SIMPLEX_TEMPLATE_REFINER_HPP
 #define MB_SIMPLEX_TEMPLATE_REFINER_HPP
 
+#include <array>
 #include <vector>
 #include <exception>
 

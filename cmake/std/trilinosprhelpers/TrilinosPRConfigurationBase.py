@@ -407,69 +407,81 @@ class TrilinosPRConfigurationBase(object):
         """
         job_name = self.arg_pr_jenkins_job_name
 
-        #enable_map_entry = self.get_property_from_config("ENABLE_MAP", job_name)
         enable_map_entry = self.get_multi_property_from_config("ENABLE_MAP", job_name, delimeter=" ")
 
-        try:
-            # Generate files using ATDM/TriBiTS Scripts
-            if enable_map_entry is None:
-                cmd = [os.path.join( self.arg_workspace_dir,
-                                    'Trilinos',
-                                    'commonTools',
-                                    'framework',
-                                    'get-changed-trilinos-packages.sh'),
-                       os.path.join('origin', self.args.target_branch_name),
-                       'HEAD',
-                       'packageEnables.cmake',
-                       'package_subproject_list.cmake']
-
-                print("")
-                print("packageEnables Command: \n$ {}\n".format(" \\\n    ".join(cmd)))
-
-                if not dryrun:
-                    subprocess.check_call(cmd)
-                else:
-                    print("")
-                    print("--- SKIPPED DUE TO DRYRUN")
-                    print("")
-            else:
-                # Use the values in the PACKAGE_ENABLES section of the .ini file
-                with open('packageEnables.cmake',  'w') as f_out:
-                    f_out.write(dedent('''\
-                        MACRO(PR_ENABLE_BOOL  VAR_NAME  VAR_VAL)
-                          MESSAGE("-- Setting ${VAR_NAME} = ${VAR_VAL}")
-                          SET(${VAR_NAME} ${VAR_VAL} CACHE BOOL "Set in $CMAKE_PACKAGE_ENABLES_OUT")
-                        ENDMACRO()
-                        '''))
-
-                    for entry in enable_map_entry.split(" "):
-                        f_out.write("PR_ENABLE_BOOL(Trilinos_ENABLE_{} ON)\n".format(entry))
-                    #    '''
-                    #    PR_ENABLE_BOOL(Trilinos_ENABLE_''' + enable_map_entry + ''' ON)
-                    #    '''))
-                with open ('package_subproject_list.cmake', 'w') as f_out:
-                    f_out.write(dedent('''\
-                        set(CTEST_LABELS_FOR_SUBPROJECTS ''' + enable_map_entry + ''')
-                        '''))
+        # Generate files using ATDM/TriBiTS Scripts
+        if enable_map_entry is None:
+            cmd = [os.path.join( self.arg_workspace_dir,
+                                'Trilinos',
+                                'commonTools',
+                                'framework',
+                                'get-changed-trilinos-packages.sh'),
+                   os.path.join('origin', self.args.target_branch_name),
+                   'HEAD',
+                   'packageEnables.cmake',
+                   'package_subproject_list.cmake']
 
             print("")
-            print("Enabled Packages:")
-            cmd = ['cmake', '-P', 'packageEnables.cmake']
-            cmake_rstring=None
+            print("packageEnables Command: \n$ {}\n".format(" \\\n    ".join(cmd)))
+
             if not dryrun:
-                cmake_rstring = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+                try:
+                    sys.stdout.flush()
+                    sys.stderr.flush()
+                    subprocess.check_call(cmd)
+
+                except subprocess.CalledProcessError as cpe:
+                    print("--- There was an issue generating `packageEnables.cmake`.")
+                    print("--- The error code was: {}".format(cpe.returncode))
+                    print("--- Console Output:\n{}".format(cpe.output))
+                    sys.stdout.flush()
+                    sys.stderr.flush()
+                    raise cpe
             else:
                 print("")
                 print("--- SKIPPED DUE TO DRYRUN")
                 print("")
-                cmake_rstring = str.encode("")
-            cmake_rstring = cmake_rstring.decode('utf-8')
-            print(cmake_rstring)
+        else:
+            # Use the values in the PACKAGE_ENABLES section of the .ini file
+            with open('packageEnables.cmake',  'w') as f_out:
+                f_out.write(dedent('''\
+                    MACRO(PR_ENABLE_BOOL  VAR_NAME  VAR_VAL)
+                      MESSAGE("-- Setting ${VAR_NAME} = ${VAR_VAL}")
+                      SET(${VAR_NAME} ${VAR_VAL} CACHE BOOL "Set in $CMAKE_PACKAGE_ENABLES_OUT")
+                    ENDMACRO()
+                    '''))
 
-        except subprocess.CalledProcessError as cpe:
-            print('There was an issue generating packageEnables.cmake. '
-                  'The error code was: {}'.format(cpe.returncode))
-            raise cpe
+                for entry in enable_map_entry.split(" "):
+                    f_out.write("PR_ENABLE_BOOL(Trilinos_ENABLE_{} ON)\n".format(entry))
+                #    '''
+                #    PR_ENABLE_BOOL(Trilinos_ENABLE_''' + enable_map_entry + ''' ON)
+                #    '''))
+            with open ('package_subproject_list.cmake', 'w') as f_out:
+                f_out.write(dedent('''\
+                    set(CTEST_LABELS_FOR_SUBPROJECTS ''' + enable_map_entry + ''')
+                    '''))
+
+        print("")
+        print("Enabled Packages:")
+        cmd = ['cmake', '-P', 'packageEnables.cmake']
+        cmake_rstring=None
+
+        if not dryrun:
+            try:
+                cmake_rstring = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+            except subprocess.CalledProcessError as cpe:
+                print("--- There was an issue generating `packageEnables.cmake`.")
+                print("--- The error code was: {}\n".format(cpe.returncode))
+                print("--- Console Output:\n{}".format(cpe.output))
+                raise cpe
+        else:
+            print("")
+            print("--- SKIPPED DUE TO DRYRUN")
+            print("")
+            cmake_rstring = str.encode("")
+
+        cmake_rstring = cmake_rstring.decode('utf-8')
+        print(cmake_rstring)
 
         return 0
 
@@ -515,9 +527,9 @@ class TrilinosPRConfigurationBase(object):
         # source_branch_name must be master_merge_YYYYMMDD_HHMMSS)
         self.validate_branch_constraints()
 
-        print("+" + "="*78 + "+")
+        print("+" + "-"*78 + "+")
         print("Configuration Parameters")
-        print("+" + "="*78 + "+")
+        print("+" + "-"*78 + "+")
         print("--- arg_filename_packageenables = {}".format(self.arg_filename_packageenables))
         print("--- arg_filename_subprojects    = {}".format(self.arg_filename_subprojects))
         print("--- arg_jenkins_job_number      = {}".format(self.arg_jenkins_job_number))
@@ -541,15 +553,15 @@ class TrilinosPRConfigurationBase(object):
         print("")
 
 
-        print("+" + "="*68 + "+")
+        print("+" + "-"*68 + "+")
         print("|   E N V I R O N M E N T   S E T   U P   S T A R T")
-        print("+" + "="*68 + "+")
+        print("+" + "-"*68 + "+")
         tr_config = setenvironment.SetEnvironment(self.arg_pr_config_file, self.arg_pr_jenkins_job_name)
 
         rval = 0
         if not self.args.dry_run:
             rval = tr_config.apply(throw_on_error=True)
-            print("apply() rval: {}".format(rval))
+            print("--- Environment setup completed ({})".format(rval))
         else:
             tr_config.pretty_print()
             print("")
@@ -580,12 +592,20 @@ class TrilinosPRConfigurationBase(object):
         print("")
         tr_config.pretty_print_envvars(envvar_filter=envvars_to_print)
 
-        print("+" + "="*68 + "+")
+        print("+" + "-"*68 + "+")
         print("|   E N V I R O N M E N T   S E T   U P   C O M P L E T E")
-        print("+" + "="*68 + "+")
+        print("+" + "-"*68 + "+")
 
-        print("--- Create packageEnables.cmake")
+
+        print("+" + "-"*68 + "+")
+        print("|   G e n e r a t e   `packageEnables.cmake`   S T A R T I N G")
+        print("+" + "-"*68 + "+")
+
         self.create_package_enables_file(dryrun=self.args.dry_run)
+
+        print("+" + "-"*68 + "+")
+        print("|   G e n e r a t e   `packageEnables.cmake`   C O M P L E T E D")
+        print("+" + "-"*68 + "+")
         print("")
 
         return 0

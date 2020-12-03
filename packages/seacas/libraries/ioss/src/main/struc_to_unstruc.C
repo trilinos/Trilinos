@@ -173,10 +173,11 @@ namespace {
     output_sidesets(region, output_region);
     output_region.end_mode(Ioss::STATE_MODEL);
 
-    if (region.property_exists("state_count") && region.get_property("state_count").get_int() > 0) {
+    int step_count = region.get_optional_property("state_count", 0);
+    if (step_count > 0) {
       if (rank == 0) {
         fmt::print(stderr, "\n Number of time steps on database     = {:12n}\n\n",
-                   region.get_property("state_count").get_int());
+                   step_count);
       }
 
       output_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
@@ -194,8 +195,6 @@ namespace {
       output_region.begin_mode(Ioss::STATE_TRANSIENT);
       // Get the timesteps from the input database.  Step through them
       // and transfer fields to output database...
-
-      int step_count = region.get_property("state_count").get_int();
 
       for (int istep = 1; istep <= step_count; istep++) {
         double time = region.get_state_time(istep);
@@ -492,8 +491,8 @@ namespace {
       const Ioss::SideBlockContainer &fbs  = ss->get_side_blocks();
       for (auto fb : fbs) {
         const std::string &fbname   = fb->name();
-        std::string        fbtype   = fb->get_property("topology_type").get_string();
-        std::string        partype  = fb->get_property("parent_topology_type").get_string();
+        std::string        fbtype   = fb->topology()->name();
+        std::string        partype  = fb->parent_element_topology()->name();
         size_t             num_side = fb->entity_count();
         total_sides += num_side;
 
