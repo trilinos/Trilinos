@@ -75,7 +75,6 @@ public:
     JBlock->resumeFill();
     auto local_matrix = JBlock->getLocalMatrix();
     auto local_graph = JBlock->getCrsGraph()->getLocalGraph();
-    const size_t num_local_rows = JBlock->getNodeNumRows();
 
     using IST = typename Kokkos::Details::ArithTraits<zscalar_t>::val_type;
     using pool_type = 

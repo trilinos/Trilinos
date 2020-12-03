@@ -44,10 +44,10 @@ public:
     // TODO:  logic for symmetric/Jacobian/Hessian a la ZoltanCrsColorer
     // User can tell us that the matrix is symmetric; 
     // otherwise, guess based on the matrix type
-    const std::string matrixType = coloring_params.get("matrixType","Jacobian");
-    const bool symmetric = coloring_params.get("symmetric",
-                                              (matrixType=="Jacobian" ? false
-                                                                      : true));
+    // const std::string matrixType = coloring_params.get("matrixType","Jacobian");
+    // const bool symmetric = coloring_params.get("symmetric",
+    //                                           (matrixType=="Jacobian" ? false
+    //                                                                   : true));
 
     // TODO:  Until Ian's code is ready...
     // TODO:  Check the logic here:  doing Partial Distance-2 via local

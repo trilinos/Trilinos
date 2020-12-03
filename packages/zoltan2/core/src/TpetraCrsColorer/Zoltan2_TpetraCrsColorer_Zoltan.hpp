@@ -204,11 +204,26 @@ ZoltanCrsColorer<CrsMatrixType>::computeColoring(
   // Get MPI communicator, and throw an exception if our comm isn't MPI
   Teuchos::RCP<const Teuchos::Comm<int>> comm = 
            this->graph->getRowMap()->getComm();
-  Teuchos::RCP<const Teuchos::MpiComm<int>> mpi_comm =
+#ifdef HAVE_ZOLTAN2_MPI
+  Teuchos::RCP<const Teuchos::MpiComm<int>> tmpicomm =
       Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm, true);
+  MPI_Comm mpicomm = tmpicomm->getRawMpiComm();
+#else
+  // Zoltan's siMPI will be used here
+  {
+    int flag;
+    MPI_Initialized(&flag);
+    if (!flag) {
+      int narg = 0;
+      char **argv = NULL;
+      MPI_Init(&narg, &argv);
+    }
+  }
+  MPI_Comm mpicomm = MPI_COMM_WORLD;  // Will get MPI_COMM_WORLD from siMPI
+#endif
 
   // Create Zoltan for coloring
-  Zoltan *zz = new Zoltan(*(mpi_comm->getRawMpiComm()));
+  Zoltan *zz = new Zoltan(mpicomm);
   if (symmetric || symmetrize) {
     zz->Set_Param("COLORING_PROBLEM", "DISTANCE-2");
   }
