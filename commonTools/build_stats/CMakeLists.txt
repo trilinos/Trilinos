@@ -25,6 +25,7 @@ tribits_add_advanced_test( Results
     MESSAGE "Sumarize the build stats from the already created build_stats.csv file"
     CMND "${${PROJECT_NAME}_SOURCE_DIR}/commonTools/build_stats/summarize_build_stats.py"
     ARGS --build-stats-csv-file="${${PROJECT_NAME}_BINARY_DIR}/build_stats.csv"
+      --bin-by-subdirs-under-dirs=commonTools,packages
     ALWAYS_FAIL_ON_NONZERO_RETURN
   ADDED_TEST_NAME_OUT Results_TEST_NAME
   )
