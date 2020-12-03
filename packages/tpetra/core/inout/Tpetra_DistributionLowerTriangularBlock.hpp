@@ -143,8 +143,9 @@ public:
     // decreasing sort by number of entries per row in global matrix.
     // Generate permuteIndex for the sorted rows
 
-    Teuchos::Array<gno_t> permuteIndex;
-
+    Teuchos::Array<gno_t> permuteIndex;  // This is the inverse permutation
+    Teuchos::Array<gno_t> sortedOrder;   // This is the original permutation
+ 
     Teuchos::Array<gno_t> globalRowBuf;
     // TODO Dunno why there isn't a Teuchos::gatherAllv; 
     // TODO for now, compute and broadcast
@@ -165,24 +166,22 @@ public:
                                   0, *comm);
 
       permuteIndex.resize(nrows); // TODO:  Ick!  Need parallel
+      sortedOrder.resize(nrows); // TODO:  Ick!  Need parallel
 
       if (me == 0) {  // TODO:  do on all procs once have allgatherv
 
-        for (size_t i = 0 ; i != nrows; i++) permuteIndex[i] = i;
+        for (size_t i = 0 ; i != nrows; i++) sortedOrder[i] = i;
 
-        std::sort(permuteIndex.begin(), permuteIndex.end(),
+        std::sort(sortedOrder.begin(), sortedOrder.end(),
                   [&](const size_t& a, const size_t& b) {
                       return (globalRowBuf[a] > globalRowBuf[b]);
                   }
         );
 
         // Compute inverse permutation; it is more useful for our needs
-
-        gno_t tmp;
-        for (size_t i = 0, change = 0; i < permuteIndex.size(); i++) {
-          globalRowBuf[permuteIndex[i]] = i;
+        for (size_t i = 0; i < nrows; i++) {
+          permuteIndex[sortedOrder[i]] = i;
         }
-        globalRowBuf.swap(permuteIndex);
       }
 
       Teuchos::broadcast<int,gno_t>(*comm, 0, permuteIndex(0,nrows)); 
@@ -193,13 +192,16 @@ public:
     // nonzeros in the lower triangular matrix.
     // Compute nnzPerRow; distribution is currently 1D 
     nnzPerRow.assign(nMyRows, 0);
+    size_t nnz = 0;
     for (auto it = localNZ.begin(); it != localNZ.end(); it++) {
       gno_t I = (sortByDegree ? permuteIndex[it->first.first] 
                               : it->first.first);
       gno_t J = (sortByDegree ? permuteIndex[it->first.second]
                               : it->first.second);
-      if (J <= I) // Lower-triangular part 
+      if (J <= I) {// Lower-triangular part 
         nnzPerRow[it->first.first - myFirstRow]++;
+	nnz++;
+      }
     }
 
     // TODO Dunno why there isn't a Teuchos::gatherAllv; 
@@ -213,7 +215,7 @@ public:
     Teuchos::Array<int>().swap(rcvcnt);  // no longer needed
     Teuchos::Array<int>().swap(disp);    // no longer needed
 
-    size_t nnz = localNZ.size(), gNnz;
+    size_t gNnz;
     Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &nnz, &gNnz);
 
     chunkCuts.resize(nChunks+1, 0);
@@ -229,10 +231,11 @@ public:
       gno_t I = gno_t(0);
       for (int chunkCnt = 0; chunkCnt < nChunks; chunkCnt++) {
         targetRunningTotal = (target * (chunkCnt+1));
+	currentRunningTotal = 0;
         while (I < nrows) {
-          size_t nextNnz = (sortByDegree ? globalRowBuf[permuteIndex[I]]
+          size_t nextNnz = (sortByDegree ? globalRowBuf[sortedOrder[I]]
                                          : globalRowBuf[I]);
-          if (currentRunningTotal + nextNnz < targetRunningTotal) {
+          if (currentRunningTotal + nextNnz <= targetRunningTotal) {
             currentRunningTotal += nextNnz;
             I++;
           }
