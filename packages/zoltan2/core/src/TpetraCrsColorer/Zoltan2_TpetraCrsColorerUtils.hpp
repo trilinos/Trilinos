@@ -129,9 +129,20 @@ compute_transpose_graph(const Tpetra::CrsGraph<LO, GO, NO> &graph)
 
   // Build (possibly overlapped) transpose graph using original graph's
   // column map as the new row map, and vice versa
+  //
+  // Normally, for a transpose graph, we'd use
+  //     original matrix's RangeMap as the DomainMap, and
+  //     original matrix's DomainMap as the RangeMap.
+  // Moreover, we're not doing SpMV with the transpose graph, so
+  // you might think we wouldn't care about RangeMap and DomainMap.
+  // But we DO care, because exportAndFillCompleteCrsGraph uses the
+  // shared (overlapped) transpose matrix's RangeMap as the RowMap of the
+  // transpose matrix, while the Zoltan callbacks are assuming the
+  // transpose matrix's RowMap is the same as the original matrix's.
+  // So we'll use the original matrix's RowMap as the RangeMap.
   RCP<graph_t> trans_graph_shared = rcp(new graph_t(
                   local_trans_graph, graph.getColMap(), graph.getRowMap(),
-                  graph.getRangeMap(), graph.getDomainMap()));
+                  graph.getRangeMap(), graph.getRowMap()));
 
   RCP<graph_t> trans_graph;
 

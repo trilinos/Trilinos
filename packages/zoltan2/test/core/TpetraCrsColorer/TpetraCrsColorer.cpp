@@ -90,13 +90,6 @@ public:
     JCyclic = rcp(new matrix_t(JBlock->getLocalMatrix(),
                                JBlock->getRowMap(), JBlock->getColMap(),
                                vMapCyclic, wMapCyclic));
-
-//    Teuchos::FancyOStream foo(Teuchos::rcp(&std::cout,false));
-//    std::cout << "JBlock: " << std::endl;
-//    JBlock->describe(foo, Teuchos::VERB_EXTREME);
-
-//    std::cout << "JCyclic: " << std::endl;
-//    JCyclic->describe(foo, Teuchos::VERB_EXTREME);
   }
 
   ////////////////////////////////////////////////////////////////
@@ -110,7 +103,7 @@ public:
     ok = buildAndCheckSeedMatrix(testname, params, true);
 
     // test with cyclic maps
-    // ok &= buildAndCheckSeedMatrix(testname, params, false);
+    ok &= buildAndCheckSeedMatrix(testname, params, false);
 
     return ok;
   }
