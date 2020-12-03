@@ -260,8 +260,8 @@ This will do the following:
 
 * Generate compiler wrappers ``build_stats_<lang>_wrapper.sh`` for C, C++, and
   Fortran in the build tree that will compute statics as a byproduct for every
-  usage of the compiler.  (The compiler wrappers create a file
-  ``<output-file>.timing`` for every object, library and executable
+  usage of each compiler.  (The compiler wrappers create a file
+  ``<output-file>.timing`` for every generated object, library and executable
   ``<output-file>`` file.)
 
 * Define a build target called ``generate-build-stats`` that when run will
@@ -272,16 +272,16 @@ This will do the following:
 
 * Enable the package ``TrilinosBuildStats`` (and when
   ``-DTrilinos_ENABLE_TESTS=ON`` or ``-DTrilinosBuildStats_ENABLE_TESTS=ON``
-  are also set) will define a test ``TrilinosBuildStats_Results`` to summarize
-  and report the build statistics.  When run, this test calls the tool
-  ``summarize_build_stats.py`` in to report summary build stats to STDOUT the
-  test and will also upload the file ``build_stats.csv`` to CDash as using the
-  CTest property ``ATTACHED_FILES`` when submitting test results to CDash.
+  are also set) will define the test ``TrilinosBuildStats_Results`` to
+  summarize and report the build statistics.  When run, this test calls the
+  tool ``summarize_build_stats.py`` in to report summary build stats to STDOUT
+  the test and will also upload the file ``build_stats.csv`` to CDash as using
+  the CTest property ``ATTACHED_FILES`` when submitting test results to CDash.
 
 * Set up to install the generated build-stats compiler wrappers and a helper
   script ``gather_build_stats.sh`` into the ``<prefix>/bin`` directory as part
-  of the default ``install`` target.  (This allows customers can also use
-  these compiler wrappers to generate and gather up build stats for their own
+  of the default ``install`` target.  (This allows customers to also use these
+  compiler wrappers to generate and gather up build stats for their own
   project as well that depends on Trilinos.)
 
 The default for the cache variable ``Trilinos_ENABLE_BUILD_STATS`` is
@@ -300,13 +300,29 @@ determined as follows:
 
 When the test ``TrilinosBuildStats_Results`` is run, it produces summary
 statistics to STDOUT like shown below::
-
+7
   Full Project: sum(max_resident_size_size_mb) = ??? (??? entries)
   Full Project: max(max_resident_size_size_mb) = ??? (<file-name>)
   Full Project: max(elapsed_real_time_sec) = ??? (<file-name>)
   Full Project: sum(elapsed_real_time_sec) = ??? (??? entries)
   Full Project: sum(file_size_mb) = ??? (??? entries)
   Full Project: max(file_size_mb) = ??? (<file-name>)
+
+  <package1>: sum(max_resident_size_mb) = ??? (??? entries)
+  <package1>: max(max_resident_size_mb) = ??? (<file-name>)
+  <package1>: max(elapsed_real_time_sec) = ??? (<file-name>)
+  <package1>: sum(elapsed_real_time_sec) = ??? (??? entries)
+  <package1>: sum(file_size_mb) = ??? (??? entries)
+  <package1>: max(file_size_mb) = ??? (<file-name>)
+
+  ...
+
+  <packagen>: sum(max_resident_size_mb) = ??? (??? entries)
+  <packagen>: max(max_resident_size_mb) = ??? (<file-name>)
+  <packagen>: max(elapsed_real_time_sec) = ??? (<file-name>)
+  <packagen>: sum(elapsed_real_time_sec) = ??? (??? entries)
+  <packagen>: sum(file_size_mb) = ??? (??? entries)
+  <packagen>: max(file_size_mb) = ??? (<file-name>)
 
 where:
 
@@ -316,24 +332,29 @@ where:
   target measured in seconds.
 * ``file_size_mb`` is the produced file size of a given build target
   (i.e. object file, library, or executable) measured in MB.
+* ``Full Project`` are the stats for all of the enabled Trilinos packages.
+* ``<packagei>`` are the build stats for the ``<packagei>`` subdirectory under
+  the base directories ``commonTools`` and ``packages``.  (These map to Trilinos
+  packages is most cases.)
 
-This format makes it easy to query and view these statistics directly on CDash
-using the "Test Output" filter on the ``cdash/queryTests.php`` page.  (This
-allows viewing and comparing these statistics across many different compilers,
-platforms, and build configurations.)
+This output format makes it easy to query and view these statistics directly
+on CDash using the "Test Output" filter on the ``cdash/queryTests.php`` page.
+(This allows viewing and comparing these statistics across many different
+compilers, platforms, and build configurations and even across the same builds
+over days, weeks, and months.)
 
 The generated ``build_stats.csv`` file contains many other types of useful
 build stats as well but the above three are some of the more impact-full build
 statistics.
 
 To avoid situations where a full rebuild does not occur (e.g. any build target
-fails) and an old obsolete ``build_stats.csv`` file is hanging aruond, one can
+fails) and an old obsolete ``build_stats.csv`` file is hanging around, one can
 cause that file to get deleted on every (re)configure by setting::
 
   -D Trilinos_REMOVE_BUILD_STATS_ON_CONFIGURE=ON
 
 This will remove the file ``build_stats.csv`` very early in the configure
-process and therefore will usually rmeove the file even of later configure
+process and therefore will usually remove the file even of later configure
 operations fail.
 
 NOTES:
@@ -345,7 +366,7 @@ NOTES:
 * If a customer wants to use the build stats compiler wrappers, then they can
   just directly set ``CMAKE_<LANG>_COMPILER`` to the path of the installed
   compiler wrappers ``<prefix>/bin/build_stats_<lang>_wrapper.sh`` for each
-  langauge ``<lang>`` = C, CXX, and Fortran and also add
+  language ``<lang>`` = C, CXX, and Fortran and also add
   ``set(ENV{CMAKE_IS_IN_CONFIGURE_MODE} 1)`` to the beginning of their
   project's top-level ``CMakeLists.txt`` file.
 
