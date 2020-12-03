@@ -284,10 +284,14 @@ namespace BaskerNS
               sep_left_sibling = 0;
             } else if (leaf_id%2 == 1) {
               // this is right-child, so assign to left-sibling
+              //printf( " set_left_sibling = 1 + iorder(%d - 1) = 1 + %d\n",sep_id,post_iorder(sep_id - 1) );
               sep_left_sibling = 1+post_iorder(sep_id - 1);
             } else {
               // this is left-child, so assign to left-sibling of its separator
-              sep_left_sibling = 1+(post_iorder(sep_id/2 - 1));
+              //sep_left_sibling = 1+(post_iorder(sep_id/2 - 1));
+              Int last_left_child = pow(2.0, (num_levels - level))*(1+sep_id) - 1;
+              //printf( " set_left_sibling = 1 + iorder(2^(%d-%d) * (1+%d)) - 1)-1 = 1 + iorder(%d)-1 = 1+%d-1\n",num_levels,level,sep_id,last_left_child,post_iorder(last_left_child) );
+              sep_left_sibling = 1+(post_iorder(last_left_child)-1);
             }
             //printf( "  -> level = %d, sep_left_sibling = %d (sep_id = %d, first_sep = %d)\n",level,sep_left_sibling,sep_id,first_sep );
 
@@ -303,9 +307,9 @@ namespace BaskerNS
             Int metis_offset_k = frow + metis_offset;
             //printf( "frow = rangtab[%d] = %d\n",sep_left_sibling,frow );
             //printf( " -> metis_offset_k = %d + %d\n",frow,metis_offset );
-            /*for(Int i = 0; i < M.nrow; i++) {
-              printf( " %d %d %d %d\n",i, metis_part(i), sg.permtab[i], sg.peritab[i] );
-            }*/
+            //for(Int i = 0; i < M.nrow; i++) {
+            //  printf( " %d %d %d %d\n",i, metis_part(i), sg.permtab[i], sg.peritab[i] );
+            //}
             Int metis_size_k = 0;
             Int nnz_k=0;
             metis_rowptr[0] = 0;
@@ -317,7 +321,7 @@ namespace BaskerNS
                 {
                   Int row = M.row_idx(k);
                   Int i = sg.permtab[row]; // i is after ND, row is original
-                  if(row != col && row >= metis_offset_k) {
+                  if(row != col && i >= metis_offset_k) {
                     if(metis_part(row) == sep_id)
                     {
                       metis_colidx[nnz_k] = i - frow;
@@ -345,7 +349,7 @@ namespace BaskerNS
             printf( "];\n" );*/
             /*printf( " Me = [\n" );
             for(Int i = 0; i < metis_size_k; i++) {
-              for(Int k = metis_rowptr(i); k < metis_rowptr(i+1); k++) printf( "%d %d %d\n",i,metis_colidx(k),metis_colidx(k)+frow );
+              for(Int k = metis_rowptr(i); k < metis_rowptr(i+1); k++) printf( "%d %d %d\n",i,metis_colidx(k),k );
             }
             printf( "];\n" );*/
 
@@ -380,7 +384,6 @@ namespace BaskerNS
                 sep ++;
               }
             }
-            //if (dom1 == 0 || dom2 == 0 || sep == 0) {
             if (dom1 == 0 || dom2 == 0) {
               std::cout << std::endl << " > METIS_ComputeVertexSeparator returned an empty domain  "
                                      << dom1 << " + " << dom2 << " + " << sep << std::endl << std::endl;
@@ -447,6 +450,7 @@ namespace BaskerNS
             sg.rangtab[dom_id2+1] = dom2;
             sg.rangtab[sep_id+1] = sep;
 
+            // update postorder tree
             sg.treetab[dom_id1] = sep_id;
             sg.treetab[dom_id2] = sep_id;
             //printf( " -> rangtab[%d] = %d, rangtab[%d] = %d, rangtab[%d]=%d\n",dom_id1+1,dom1,dom_id2+1,dom2,sep_id+1,sep);
@@ -454,10 +458,10 @@ namespace BaskerNS
         }
 
         // --------------------------------------------------- 
-        // > compute postorder tree
+        // done with ND using METIS
         sg.cblk = num_doms;
       } else 
-      {
+      { // using SCOTCH
         sg.Ap[0] = 0;
         Int sj;
         Int sptr = 0;
@@ -560,7 +564,7 @@ namespace BaskerNS
       double time_scotch = timer_scotch.seconds();
       std::cout << std::endl << " > Time to compute ND : " << time_scotch << std::endl << std::endl;
       for(Int i = 0; i < sg.cblk; i++) {
-        printf( " dom-%d : size = %d, tab = %d\n",(int)i,(int)(sg.rangtab[i+1]-sg.rangtab[i]),(int)(sg.treetab[i]) );
+        printf( " dom-%d : size = %d (%d:%d), tab = %d\n",(int)i,(int)(sg.rangtab[i+1]-sg.rangtab[i]),(int)sg.rangtab[i],(int)(sg.rangtab[i+1]-1),(int)(sg.treetab[i]) );
       }
     }
 

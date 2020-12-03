@@ -508,7 +508,7 @@ namespace BaskerNS
         BASKER_ASSERT(nnz > 0, "matrix row nnz 2");
         MALLOC_INT_1DARRAY(row_idx, nnz);
       }
-      else if(nnz ==0)
+      else if(nnz == 0)
       {
         BASKER_ASSERT((nnz+1)>0, "matrix row nnz 3");
         MALLOC_INT_1DARRAY(row_idx, nnz+1);
@@ -545,7 +545,8 @@ namespace BaskerNS
 
     for(Int k = scol; k < scol+ncol; ++k)
     {
-      //note col_ptr[k-scol] contains the starting index
+      //note col_ptr[k-scol] contains the starting index (by find_2D_convert)
+      // i.e., start of the diagonal block for U, or start of the first off-diagonal block for L
       if(col_ptr(k-scol) == BASKER_MAX_IDX)
       {
         col_ptr(k-scol) = temp_count;
@@ -556,9 +557,9 @@ namespace BaskerNS
       for(Int i = col_ptr(k-scol); i < M.col_ptr(k+1); i++)
       {
         Int j = M.row_idx(i);
-        //printf("i: %d j:%d \n", i,j);
         if(j >= srow+nrow)
         {
+          // skip lower-off diagonal blocks for U
           break;
         }
         //printf("writing row_dix: %d i: %d  val: %d nnz: %d srow: %d nrow: %d \n",
@@ -566,15 +567,18 @@ namespace BaskerNS
         //	   srow, nrow);
         //BASKER_ASSERT(temp_count < nnz, "2DConvert, too many values");
 
-        if(j-srow <0)
+        if(j < srow)
         {
           std::cout << "kid: " << kid 
                     << " j: " << j 
                     << " srow: " << srow 
-                    << " k: " << k
+                    << " scol: " << scol 
+                    << " nrow: " << nrow 
+                    << " ncol: " << ncol 
+                    << " with k: " << k
                     << " idx: " << i
                     << std::endl;
-          BASKER_ASSERT(0==1, "j-srow NO");
+          BASKER_ASSERT(0==1, " ERROR: j is less than srow");
         }
         row_idx(temp_count) = j-srow;
         val(temp_count) = M.val(i);

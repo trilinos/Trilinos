@@ -590,7 +590,8 @@ namespace BaskerNS
               ALM(b)(row).ncol);
           #endif
 
-          //printf(" > kid=%d: convert ALM(%d,%d)\n", kid, b, row);
+          //printf(" > kid=%d, lvl=%d: convert ALM(%d, %d) with (%dx%d from %d,%d)\n", kid, lvl, b, row,
+          //       ALM(b)(row).nrow,ALM(b)(row).ncol,ALM(b)(row).srow,ALM(b)(row).scol);
           if(Options.btf == BASKER_FALSE)
           {
             ALM(b)(row).convert2D(A, alloc, kid);
@@ -602,7 +603,6 @@ namespace BaskerNS
             printf("ALM alloc: %d %d kid: %d \n",
                 b, row, kid);
             #endif
-
             ALM(b)(row).convert2D(BTF_A, alloc, kid);
           }
 
@@ -626,6 +626,8 @@ namespace BaskerNS
             AVM(b)(LU_size(b)-1).ncol);
         #endif
 
+        //printf(" > kid=%d, lvl=%d: convert AVM(%d, %d), lower(%dx%d from %d,%d)\n", kid, lvl, b, LU_size(b)-1,
+        //           AVM(b)(LU_size(b)-1).nrow,AVM(b)(LU_size(b)-1).ncol,AVM(b)(LU_size(b)-1).srow,AVM(b)(LU_size(b)-1).scol);
         if(Options.btf == BASKER_FALSE)
         {
           AVM(b)(LU_size(b)-1).convert2D(A, alloc, kid);
@@ -688,6 +690,8 @@ namespace BaskerNS
               AVM(U_col)(U_row).ncol);
           #endif
 
+          //printf(" > kid=%d, lvl=%d: convert AVM(%d, %d), upper(%dx%d from %d,%d)\n", kid, lvl, U_col, U_row,
+          //         AVM(U_col)(U_row).nrow,AVM(U_col)(U_row).ncol,AVM(U_col)(U_row).srow,AVM(U_col)(U_row).scol);
           if(Options.btf == BASKER_FALSE)
           {
             BASKER_ASSERT(0==1, "SHOULD NOTH BE CALL\n");
@@ -699,7 +703,6 @@ namespace BaskerNS
             //printf("2nd convert AVM: %d %d size:%d kid: %d\n",
             //	   U_col, U_row, AVM(U_col)(U_row).nnz, 
             //	   kid);
-
             AVM(U_col)(U_row).convert2D(BTF_A, alloc, kid);
           }
 
