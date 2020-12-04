@@ -823,8 +823,9 @@ namespace Tpetra {
     /// must access the device View directly by calling
     /// getLocalView().  Please see modify(), sync(), and the
     /// discussion of DualView semantics elsewhere in the
-    /// documentation.  You are responsible for calling modify() and
-    /// sync(), if needed; this method doesn't do that.
+    /// documentation.
+    /// This method calls sync_host() before modifying
+    /// host data, and modify_host() afterwards.
     ///
     /// This method does not have an "atomic" option like
     /// sumIntoGlobalValue.  This is deliberate.  Replacement is not
@@ -859,9 +860,9 @@ namespace Tpetra {
     /// and you want to modify the non-host version of the data, you
     /// must access the device View directly by calling getLocalView().
     /// Please see modify(), sync(), and the discussion of DualView
-    /// semantics elsewhere in the documentation.  You are responsible
-    /// for calling modify() and sync(), if needed; this method
-    /// doesn't do that.
+    /// semantics elsewhere in the documentation.
+    /// This method calls sync_host() before modifying
+    /// host data, and modify_host() afterwards.
     ///
     /// This method does not have an "atomic" option like
     /// sumIntoGlobalValue.  This is deliberate.  Replacement is not
@@ -897,8 +898,9 @@ namespace Tpetra {
     /// must access the device View directly by calling
     /// getLocalView().  Please see modify(), sync(), and the
     /// discussion of DualView semantics elsewhere in the
-    /// documentation.  You are responsible for calling modify() and
-    /// sync(), if needed; this method doesn't do that.
+    /// documentation.
+    /// This method calls sync_host() before modifying
+    /// host data, and modify_host() afterwards.
     ///
     /// \param gblRow [in] Global row index of the entry to modify.
     ///   This <i>must</i> be a valid global row index on the calling
@@ -930,8 +932,9 @@ namespace Tpetra {
     /// must access the device View directly by calling
     /// getLocalView().  Please see modify(), sync(), and the
     /// discussion of DualView semantics elsewhere in the
-    /// documentation.  You are responsible for calling modify() and
-    /// sync(), if needed; this method doesn't do that.
+    /// documentation.
+    /// This method calls sync_host() before modifying
+    /// host data, and modify_host() afterwards.
     ///
     /// \param gblRow [in] Global row index of the entry to modify.
     ///   This <i>must</i> be a valid global row index on the calling
@@ -963,8 +966,9 @@ namespace Tpetra {
     /// must access the device View directly by calling
     /// getLocalView().  Please see modify(), sync(), and the
     /// discussion of DualView semantics elsewhere in the
-    /// documentation.  You are responsible for calling modify() and
-    /// sync(), if needed; this method doesn't do that.
+    /// documentation.
+    /// This method calls sync_host() before modifying
+    /// host data, and modify_host() afterwards.
     ///
     /// This method does not have an "atomic" option like
     /// sumIntoLocalValue.  This is deliberate.  Replacement is not
@@ -1000,8 +1004,9 @@ namespace Tpetra {
     /// must access the device View directly by calling
     /// getLocalView().  Please see modify(), sync(), and the
     /// discussion of DualView semantics elsewhere in the
-    /// documentation.  You are responsible for calling modify() and
-    /// sync(), if needed; this method doesn't do that.
+    /// documentation.
+    /// This method calls sync_host() before modifying
+    /// host data, and modify_host() afterwards.
     ///
     /// This method does not have an "atomic" option like
     /// sumIntoLocalValue.  This is deliberate.  Replacement is not
@@ -1037,8 +1042,9 @@ namespace Tpetra {
     /// must access the device View directly by calling
     /// getLocalView().  Please see modify(), sync(), and the
     /// discussion of DualView semantics elsewhere in the
-    /// documentation.  You are responsible for calling modify() and
-    /// sync(), if needed; this method doesn't do that.
+    /// documentation.
+    /// This method calls sync_host() before modifying
+    /// host data, and modify_host() afterwards.
     ///
     /// \param lclRow [in] Local row index of the entry to modify.
     ///   Must be a valid local index in this MultiVector's Map on the
@@ -1070,8 +1076,9 @@ namespace Tpetra {
     /// must access the device View directly by calling
     /// getLocalView().  Please see modify(), sync(), and the
     /// discussion of DualView semantics elsewhere in the
-    /// documentation.  You are responsible for calling modify() and
-    /// sync(), if needed; this method doesn't do that.
+    /// documentation.
+    /// This method calls sync_host() before modifying
+    /// host data, and modify_host() afterwards.
     ///
     /// \param lclRow [in] Local row index of the entry to modify.
     /// \param col [in] Column index of the entry to modify.

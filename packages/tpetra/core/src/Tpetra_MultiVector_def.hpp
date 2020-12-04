@@ -4159,8 +4159,11 @@ namespace Tpetra {
         << " of the multivector is invalid.");
     }
 
+    this->sync_host();
+
     const size_t colInd = isConstantStride () ? col : whichVectors_[col];
     view_.h_view (lclRow, colInd) = ScalarValue;
+    this->modify_host();
   }
 
 
@@ -4189,6 +4192,8 @@ namespace Tpetra {
         << " of the multivector is invalid.");
     }
 
+    this->sync_host();
+
     const size_t colInd = isConstantStride () ? col : whichVectors_[col];
     if (atomic) {
       Kokkos::atomic_add (& (view_.h_view(lclRow, colInd)), value);
@@ -4196,6 +4201,7 @@ namespace Tpetra {
     else {
       view_.h_view (lclRow, colInd) += value;
     }
+    this->modify_host();
   }
 
 
