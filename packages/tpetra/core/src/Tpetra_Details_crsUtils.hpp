@@ -397,6 +397,7 @@ insert_crs_indices(
     IndexMap&& map,
     std::function<void(size_t const, size_t const, size_t const)> cb)
 {
+  static_assert(Kokkos::Impl::SpaceAccessibility<Kokkos::Serial, typename Pointers::memory_space>::accessible);
   printf("insert_crs_indices0\n");
   if (new_indices.size() == 0) {
     return 0;

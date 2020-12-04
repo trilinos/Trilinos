@@ -246,14 +246,18 @@ compare_array_values(V1 const& arr1, V2 const& arr2, size_t const n)
 TEUCHOS_UNIT_TEST( TpetraUtils, insertIndices )
 {
   {
+    //change these to kokkos views on hostspace
     vector<int> row_ptrs{0, 10};
     vector<int> cur_indices{1, 3, 5, 7, -1, -1, -1, -1, -1, -1};
     size_t num_assigned = 4;
     vector<int> new_indices{0, 2, 4, 6, 8, 7, 5, 3, 1, 2, 6, 8, 4, 0};
-    auto num_inserted = insertCrsIndices(0, row_ptrs, cur_indices, num_assigned, new_indices);
+    Kokkos::View<int*, Kokkos::HostSpace> r_ptrs(row_ptrs.data());
+    Kokkos::View<int*, Kokkos::HostSpace> c_indices(cur_indices.data());
+    Kokkos::View<int*, Kokkos::HostSpace> n_indices(new_indices.data());
+    auto num_inserted = insertCrsIndices(0, r_ptrs, c_indices, num_assigned, n_indices);
     TEST_EQUALITY(static_cast<int>(num_inserted), 5);
     vector<int> expected{1, 3, 5, 7, 0, 2, 4, 6, 8};
-    TEST_ASSERT(compare_array_values(cur_indices, expected, expected.size()));
+    TEST_ASSERT(compare_array_values(c_indices, expected, expected.size()));
   }
 
   {
@@ -262,10 +266,13 @@ TEUCHOS_UNIT_TEST( TpetraUtils, insertIndices )
     size_t num_assigned = 4;
     vector<int> new_indices{1, 0, 2};
     vector<int> expected{3, 6, 9, 12, 1, 0, 2, -1};
-    auto num_inserted = insertCrsIndices(0, row_ptrs, cur_indices, num_assigned, new_indices);
+    Kokkos::View<int*, Kokkos::HostSpace> r_ptrs(row_ptrs.data());
+    Kokkos::View<int*, Kokkos::HostSpace> c_indices(cur_indices.data());
+    Kokkos::View<int*, Kokkos::HostSpace> n_indices(new_indices.data());
+    auto num_inserted = insertCrsIndices(0, r_ptrs, c_indices, num_assigned, n_indices);
     TEST_EQUALITY(static_cast<size_t>(num_inserted),
                   static_cast<size_t>(new_indices.size()));
-    TEST_ASSERT(compare_array_values(cur_indices, expected, expected.size()));
+    TEST_ASSERT(compare_array_values(c_indices, expected, expected.size()));
   }
 
   {
@@ -273,7 +280,10 @@ TEUCHOS_UNIT_TEST( TpetraUtils, insertIndices )
     vector<int> cur_indices{3, 6, 9, 12, -1, -1, -1};
     size_t num_assigned = 4;
     vector<int> new_indices{1, 0, 2, 5};
-    auto num_inserted = insertCrsIndices(0, row_ptrs, cur_indices, num_assigned, new_indices);
+    Kokkos::View<int*, Kokkos::HostSpace> r_ptrs(row_ptrs.data());
+    Kokkos::View<int*, Kokkos::HostSpace> c_indices(cur_indices.data());
+    Kokkos::View<int*, Kokkos::HostSpace> n_indices(new_indices.data());
+    auto num_inserted = insertCrsIndices(0, r_ptrs, c_indices, num_assigned, n_indices);
     TEST_EQUALITY(static_cast<int>(num_inserted), -1);
   }
 
@@ -283,9 +293,12 @@ TEUCHOS_UNIT_TEST( TpetraUtils, insertIndices )
     size_t num_assigned = 4;
     vector<int> new_indices{0, 4, 7, 10, 13};
     vector<int> expected{3, 6, 9, 12, 0, 4, 7, 10, 13};
-    auto num_inserted = insertCrsIndices(0, row_ptrs, cur_indices, num_assigned, new_indices);
+    Kokkos::View<int*, Kokkos::HostSpace> r_ptrs(row_ptrs.data());
+    Kokkos::View<int*, Kokkos::HostSpace> c_indices(cur_indices.data());
+    Kokkos::View<int*, Kokkos::HostSpace> n_indices(new_indices.data());
+    auto num_inserted = insertCrsIndices(0, r_ptrs, c_indices, num_assigned, n_indices);
     TEST_EQUALITY(num_inserted, new_indices.size());
-    TEST_ASSERT(compare_array_values(cur_indices, expected, expected.size()));
+    TEST_ASSERT(compare_array_values(c_indices, expected, expected.size()));
   }
 }
 
@@ -300,8 +313,11 @@ TEUCHOS_UNIT_TEST( TpetraUtils, insertIndicesWithCallback )
     vector<int> expected{3, 6, 9, 12, 1, 0, 2};
     vector<int> values(cur_indices.size(), 0);
     vector<int> expected_values{0, 0, 0, 0, 4, 2, 3};
+    Kokkos::View<int*, Kokkos::HostSpace> r_ptrs(row_ptrs.data());
+    Kokkos::View<int*, Kokkos::HostSpace> c_indices(cur_indices.data());
+    Kokkos::View<int*, Kokkos::HostSpace> n_indices(new_indices.data());
     auto num_inserted =
-      insertCrsIndices(0, row_ptrs, cur_indices, num_assigned, new_indices,
+      insertCrsIndices(0, r_ptrs, c_indices, num_assigned, n_indices,
         [&](const size_t k, const size_t start, const size_t offset){
           values[start+offset] += in_values[k];
         });
@@ -310,7 +326,7 @@ TEUCHOS_UNIT_TEST( TpetraUtils, insertIndicesWithCallback )
       std::cout << "[" << k << "] = (" << expected_values[k] << ", " << values[k] << ")\n";
     }
     TEST_EQUALITY(num_inserted, 3);
-    TEST_ASSERT(compare_array_values(cur_indices, expected, expected.size()));
+    TEST_ASSERT(compare_array_values(c_indices, expected, expected.size()));
     TEST_ASSERT(compare_array_values(values, expected_values, expected_values.size()));
   }
 }
