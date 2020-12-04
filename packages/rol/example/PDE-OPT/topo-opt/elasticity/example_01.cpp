@@ -365,8 +365,10 @@ int main(int argc, char *argv[]) {
     }
     else if ( minType == "Volume" )
       prob->addConstraint("Compliance",icon,imul,ibnd);
+
+    bool expLin = parlist->sublist("Problem").get("Project Linear Constraints",true);
     prob->setProjectionAlgorithm(*parlist);
-    prob->finalize(false,true,*outStream);
+    prob->finalize(!expLin,true,*outStream);
 
     // Check derivatives.
     bool derivCheck = parlist->sublist("Problem").get("Check derivatives",false);
