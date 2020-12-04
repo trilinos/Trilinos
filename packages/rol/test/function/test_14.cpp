@@ -122,6 +122,43 @@ int main(int argc, char *argv[]) {
     errorFlag += !bnd->isFeasible(*x);
     errorFlag += (cnorm > tol);
 
+    *outStream << std::endl << "Hock and Schittkowski Problem #41" << std::endl << std::endl;
+    ROL::ZOO::getHS41<RealT> HS41a;
+    obj = HS41a.getObjective();
+    sol = HS41a.getInitialGuess();
+    con = HS41a.getEqualityConstraint();
+    mul = HS41a.getEqualityMultiplier();
+    bnd = HS41a.getBoundConstraint();
+
+    lam = mul->clone(); lam->set(*mul);
+    x   = sol->clone(); x->set(*sol);
+    l   = sol->clone(); l->zero();
+    u   = sol->clone(); u->setScalar(static_cast<RealT>(1));
+    c   = mul->dual().clone();
+
+    list.sublist("General").sublist("Polyhedral Projection").set("Type","Ridders");
+    proj = ROL::PolyhedralProjectionFactory<RealT>(*sol,sol->dual(),bnd,con,*lam,*c,list);
+    proj->project(*x,*outStream);
+
+    con->value(*c,*x,tol);
+    cnorm = c->norm();
+
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
+    *outStream << "  Initial:    x1 = " << data[0] << "  x2 = " << data[1]
+               << "  x3 = " << data[2] << std::endl;
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(x)->getVector();
+    *outStream << "  Result:     x1 = " << data[0] << "  x2 = " << data[1]
+               << "  x3 = " << data[2] << std::endl;
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(lam)->getVector();
+    *outStream << "  Multiplier: l1 = " << data[0] << std::endl;
+
+    *outStream << std::endl;
+    *outStream << "  is equality feasible = " << (cnorm<=tol)        << std::endl
+               << "  are bounds feasible  = " << bnd->isFeasible(*x) << std::endl;
+
+    errorFlag += !bnd->isFeasible(*x);
+    errorFlag += (cnorm > tol);
+
     *outStream << std::endl << "Hock and Schittkowski Problem #53" << std::endl << std::endl;
     ROL::ZOO::getHS53<RealT> HS53;
     obj = HS53.getObjective();

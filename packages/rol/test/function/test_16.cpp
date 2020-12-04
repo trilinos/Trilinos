@@ -96,6 +96,7 @@ int main(int argc, char *argv[]) {
     ROL::ParameterList list;
     list.sublist("General").set("Output Level",2);
     list.sublist("General").sublist("Polyhedral Projection").set("Type","Dai-Fletcher");
+    //list.sublist("General").sublist("Polyhedral Projection").set("Type","Ridders");
     //list.sublist("General").sublist("Polyhedral Projection").set("Type","Dykstra");
     //list.sublist("General").sublist("Polyhedral Projection").set("Type","Semismooth Newton");
 
