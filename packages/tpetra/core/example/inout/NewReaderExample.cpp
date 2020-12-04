@@ -84,6 +84,10 @@ int main(int narg, char *arg[])
   cmdp.setOption("binary", "mtx", &binary,
                  "Reading a binary file instead of a matrix market file");
 
+  int chunkSize = 500;
+  cmdp.setOption("chunksize", &chunkSize,
+		 "Number of edges to be read and broadcasted at once");
+
   if (cmdp.parse(narg,arg)!=Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -95,6 +99,7 @@ int main(int narg, char *arg[])
   params.set("symmetrize", symmetrize);
   params.set("diagonal", diagonal);
   params.set("binary", binary);
+  params.set("chunkSize", (size_t)chunkSize);
 
   // Call readSparseFile to read the file
   using matrix_t = Tpetra::CrsMatrix<double>;
