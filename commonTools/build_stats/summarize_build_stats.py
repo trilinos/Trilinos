@@ -21,12 +21,14 @@ import CDashQueryAnalyzeReport as CDQAR
 # value is an array of data for that field.
 #
 def readBuildStatsCsvFileIntoDictOfLists(buildStatusCsvFileName,
-    computeStdScaledFields=True
+    computeStdScaledFields=True, normalizeFileName=True,
   ):
   buildStatsDOL = readCsvFileIntoDictOfLists(buildStatusCsvFileName,
     getStdBuildStatsColsAndTypesList() )
   if computeStdScaledFields:
     addStdScaledBuildStatsFields(buildStatsDOL)
+  if normalizeFileName:
+    normalizeFileNameField(buildStatsDOL)
   return buildStatsDOL
 
 
@@ -171,6 +173,18 @@ def addNewFieldByScalingExistingField(dictOfLists, existingFieldName,
     newEntry = round(Decimal(scaleFactor*entry), decimalPlaces) 
     newFieldDataList.append(newEntry)
   dictOfLists.update( {newFieldName : newFieldDataList} )
+
+
+# Normize the FileName field to remove beginning './'
+#
+def normalizeFileNameField(dictOfLists):
+  fileNameList = dictOfLists.get('FileName')
+  i = 0
+  while i < len(fileNameList):
+    fileName = fileNameList[i]
+    if (len(fileName) > 1) and (fileName[0:2] == './'):
+      fileNameList[i] = fileName[2:]
+    i += 1
 
 
 # Bin the build stats dict of lists by subdirs under a given list of dirs for
