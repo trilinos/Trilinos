@@ -152,6 +152,7 @@ void testSensitivities(const std::string& inputFile,
   }
 }
 
+#ifdef HAVE_PIRO_STOKHOS
 int testResponses(const Epetra_Vector& g, 
 		  const Teuchos::Array<double> testValues,
 		  double absTol, double relTol,
@@ -181,6 +182,7 @@ int testResponses(const Epetra_Vector& g,
 
   return failures;
 }
+#endif
 
 TEUCHOS_UNIT_TEST( Piro, ForwardSensitivities )
 {
