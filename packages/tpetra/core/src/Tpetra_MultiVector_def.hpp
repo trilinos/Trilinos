@@ -2044,7 +2044,7 @@ namespace Tpetra {
   namespace { // (anonymous)
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot_type
-    multiVectorSingleColumnDot (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x,
+    multiVectorSingleColumnDot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x,
                                 const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y)
     {
       using ::Tpetra::Details::ProfilingRegion;
@@ -2070,14 +2070,9 @@ namespace Tpetra {
         dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
 
         // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
-        if (x.need_sync_device ()) {
-          x.sync_device ();
-        }
-        if (y.need_sync_device ()) {
-          const_cast<MV&>(y).sync_device ();
-        }
+        const_cast<MV&>(x).sync_device ();
+        const_cast<MV&>(y).sync_device ();
 
-        x.modify_device ();
         auto x_2d = x.getLocalViewDevice ();
         auto x_1d = Kokkos::subview (x_2d, rowRng, 0);
         auto y_2d = y.getLocalViewDevice ();
@@ -2139,7 +2134,7 @@ namespace Tpetra {
        numDots << " != this->getNumVectors() = " << numVecs << ".");
 
     if (numVecs == 1 && this->isConstantStride () && A.isConstantStride ()) {
-      const dot_type gblDot = multiVectorSingleColumnDot (const_cast<MV&> (*this), A);
+      const dot_type gblDot = multiVectorSingleColumnDot (*this, A);
       dots[0] = gblDot;
     }
     else {
