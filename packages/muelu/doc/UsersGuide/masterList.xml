@@ -1097,6 +1097,15 @@ Only used when tentative: calculate qr is set to false.</description>
     </parameter>
 
     <parameter>
+      <name>sa: max eigenvalue</name>
+      <type>double</type>
+      <default>-1.0</default>
+      <description>If not -1, use this value for lambdaMax(Dinv A) in prolongator smoothing instead of calculating it.</description>
+      <visible>false</visible>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
       <name>interp: interpolation order</name>
       <type>int</type>
       <default>1</default>
