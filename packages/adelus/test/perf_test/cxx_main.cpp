@@ -83,13 +83,12 @@ int main(int argc, char *argv[])
   int  my_col;
   int  matrix_size;
   int  nprocs_per_row;
-  int  nptile = 1; // number of processors per node
-
+  
   double mflops;
 
   MPI_Comm rowcomm;
 
-  static int buf[4];
+  static int buf[3];
   int numrhs;
 
   int i, m, k;
@@ -124,30 +123,26 @@ int main(int argc, char *argv[])
 
   // Initialize Input buffer
 
-  for(i=0;i<4;i++) buf[i]=-1;
+  for(i=0;i<3;i++) buf[i]=-1;
 
   std::cout << "proc " << rank << " (" << processor_name << ") is alive of " << size << " Processors" << std::endl;
 
   if( rank == 0 ) {
-    // Check for commandline input
-
+    // Check for command-line input
     if (argc > 1) {
       // argv[1] should be size of matrix
       buf[0] = atoi(argv[1]);
       if (argc > 2) {
         // argv[2] should be #procs per row
         buf[1] = atoi(argv[2]);
-        // argv[3] should be #procs per node
-        buf[2] = atoi(argv[3]);
       }
       else {
         // default is 1, but sqrt(p) would be better
-        buf[1] = 1; buf[2] = 1;
+        buf[1] = 1;
       }
     }
     else {
       // Input Data about matrix and distribution
-
       if (buf[0] < 0) {
         std::cout << "Enter size of matrix " << std::endl;
         std::cin >> buf[0];
@@ -155,16 +150,12 @@ int main(int argc, char *argv[])
       if (buf[1] < 0) {
         std::cout << "Enter number of processors to which each row is assigned "  << std::endl;
         std::cin >> buf[1];
-      }
-      if (buf[2] < 0) {
-        std::cout << "Enter number of processors per node "  << std::endl;
-        std::cin >> buf[2];
-      }
+      } 
     }
   }
 
   /* Send the initilization data to each processor    */
-  mlen = 4*sizeof(int);
+  mlen = 3*sizeof(int);
 
   MPI_Bcast(reinterpret_cast<char *>(buf), mlen, MPI_CHAR, 0, MPI_COMM_WORLD);
 
@@ -174,12 +165,9 @@ int main(int argc, char *argv[])
 
   nprocs_per_row = buf[1];
 
-  nptile = buf[2];
-
   if( rank == 0 ) {
     std::cout << " Matrix Size " << matrix_size << std::endl;
     std::cout << " Processors in a row  "  << nprocs_per_row << std::endl;
-    std::cout << " Processors in a node  " << nptile << std::endl;
   }
 
   // Example for 1 RHS
@@ -226,7 +214,7 @@ int main(int argc, char *argv[])
   Kokkos::InitArguments args;
   args.num_threads = 0;
   args.num_numa    = 0;
-  args.device_id   = rank%nptile;
+  args.device_id   = rank%gpu_count;
   std::cout << "   Processor  " << rank << " (" << processor_name << "), GPU: " 
             << args.device_id << "/" << gpu_count << std::endl;
   Kokkos::initialize( args );
