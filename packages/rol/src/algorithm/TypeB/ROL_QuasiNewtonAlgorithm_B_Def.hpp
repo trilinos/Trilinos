@@ -108,14 +108,14 @@ void QuasiNewtonAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   Algorithm_B<Real>::initialize(x,g);
   // Update approximate gradient and approximate objective function.
   Real ftol = std::sqrt(ROL_EPSILON<Real>());
-  proj_->project(x,outStream);
+  proj_->project(x,outStream); state_->nproj++;
   state_->iterateVec->set(x);
   obj.update(x,UPDATE_INITIAL,state_->iter);    
   state_->value = obj.value(x,ftol); state_->nfval++;
   obj.gradient(*state_->gradientVec,x,ftol); state_->ngrad++;
   state_->stepVec->set(x);
   state_->stepVec->axpy(-one,state_->gradientVec->dual());
-  proj_->project(*state_->stepVec,outStream);
+  proj_->project(*state_->stepVec,outStream); state_->nproj++;
   state_->stepVec->axpy(-one,x);
   state_->gnorm = state_->stepVec->norm();
   state_->snorm = ROL_INF<Real>();
@@ -156,7 +156,7 @@ std::vector<std::string> QuasiNewtonAlgorithm_B<Real>::run( Vector<Real>        
   while (status_->check(*state_)) {
     // Compute step
     qobj->setAnchor(x,*state_->gradientVec);
-    xs->set(x); xs->axpy(-one,*gp); proj_->project(*xs,outStream);
+    xs->set(x); xs->axpy(-one,*gp); proj_->project(*xs,outStream); state_->nproj++;
     gtol = std::max(sp_tol_min_,std::min(sp_tol1_,sp_tol2_*state_->gnorm));
     list_.sublist("Status Test").set("Gradient Tolerance",gtol);
     if (algoName_ == "Trust Region")                algo = makePtr<LinMoreAlgorithm_B<Real>>(list_);
@@ -168,6 +168,7 @@ std::vector<std::string> QuasiNewtonAlgorithm_B<Real>::run( Vector<Real>        
     algo->run(*problem,outStream);
     s->set(*xs); s->axpy(-one,x);
     spgIter_ = algo->getState()->iter;
+    state_->nproj += staticPtrCast<const AlgorithmState_B<Real>>(algo->getState())->nproj;
 
     // Perform backtracking line search 
     state_->searchSize = one;
@@ -225,7 +226,7 @@ std::vector<std::string> QuasiNewtonAlgorithm_B<Real>::run( Vector<Real>        
 
     // Compute projected gradient norm
     s->set(x); s->axpy(-one,*gp);
-    proj_->project(*s,outStream);
+    proj_->project(*s,outStream); state_->nproj++;
     s->axpy(-one,x);
     state_->gnorm = s->norm();
 
@@ -255,6 +256,7 @@ std::string QuasiNewtonAlgorithm_B<Real>::printHeader( void ) const {
     hist << "  alpha    - Line search step length" << std::endl;
     hist << "  #fval    - Cumulative number of times the objective function was evaluated" << std::endl;
     hist << "  #grad    - Cumulative number of times the gradient was computed" << std::endl;
+    hist << "  #proj    - Cumulative number of times the projection was computed" << std::endl;
     hist << "  ls_#fval - Number of the times the objective function was evaluated during the line search" << std::endl;
     hist << "  sp_iter  - Number iterations to compute quasi-Newton step" << std::endl;
     hist << std::string(114,'-') << std::endl;
@@ -268,6 +270,7 @@ std::string QuasiNewtonAlgorithm_B<Real>::printHeader( void ) const {
   hist << std::setw(15) << std::left << "alpha";
   hist << std::setw(10) << std::left << "#fval";
   hist << std::setw(10) << std::left << "#grad";
+  hist << std::setw(10) << std::left << "#proj";
   hist << std::setw(10) << std::left << "#ls_fval";
   hist << std::setw(10) << std::left << "sp_iter";
   hist << std::endl;
@@ -300,6 +303,7 @@ std::string QuasiNewtonAlgorithm_B<Real>::print( const bool print_header ) const
     hist << std::setw(15) << std::left << "---";
     hist << std::setw(10) << std::left << state_->nfval;
     hist << std::setw(10) << std::left << state_->ngrad;
+    hist << std::setw(10) << std::left << state_->nproj;
     hist << std::setw(10) << std::left << "---";
     hist << std::setw(10) << std::left << "---";
     hist << std::endl;
@@ -313,6 +317,7 @@ std::string QuasiNewtonAlgorithm_B<Real>::print( const bool print_header ) const
     hist << std::setw(15) << std::left << state_->searchSize;
     hist << std::setw(10) << std::left << state_->nfval;
     hist << std::setw(10) << std::left << state_->ngrad;
+    hist << std::setw(10) << std::left << state_->nproj;
     hist << std::setw(10) << std::left << ls_nfval_;
     hist << std::setw(10) << std::left << spgIter_;
     hist << std::endl;

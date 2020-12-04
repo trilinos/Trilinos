@@ -88,7 +88,7 @@ Real Algorithm_B<Real>::optimalityCriterion(const Vector<Real> &x,
   const Real one(1);
   primal.set(x);
   primal.axpy(-one,g.dual());
-  proj_->project(primal,outStream);
+  proj_->project(primal,outStream); state_->nproj++;
   primal.axpy(-one,x);
   return primal.norm();
 }

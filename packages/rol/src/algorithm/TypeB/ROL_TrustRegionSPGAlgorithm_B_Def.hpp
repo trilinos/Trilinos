@@ -95,6 +95,24 @@ TrustRegionSPGAlgorithm_B<Real>::TrustRegionSPGAlgorithm_B(ParameterList &list,
   maxit_     = lmlist.sublist("Solver").get("Iteration Limit",                     25);
   tol1_      = lmlist.sublist("Solver").get("Absolute Tolerance",                  1e-4);
   tol2_      = lmlist.sublist("Solver").get("Relative Tolerance",                  1e-2);
+  useMin_    = lmlist.sublist("Solver").get("Use Smallest Model Iterate",          true);
+  // Inexactness Information
+  ParameterList &glist = list.sublist("General");
+  useInexact_.clear();
+  useInexact_.push_back(glist.get("Inexact Objective Function",     false));
+  useInexact_.push_back(glist.get("Inexact Gradient",               false));
+  useInexact_.push_back(glist.get("Inexact Hessian-Times-A-Vector", false));
+  // Trust-Region Inexactness Parameters
+  ParameterList &ilist = trlist.sublist("Inexact").sublist("Gradient");
+  scale0_ = ilist.get("Tolerance Scaling",  static_cast<Real>(0.1));
+  scale1_ = ilist.get("Relative Tolerance", static_cast<Real>(2)); 
+  // Inexact Function Evaluation Information
+  ParameterList &vlist = trlist.sublist("Inexact").sublist("Value");
+  scale_       = vlist.get("Tolerance Scaling",                 static_cast<Real>(1.e-1));
+  omega_       = vlist.get("Exponent",                          static_cast<Real>(0.9));
+  force_       = vlist.get("Forcing Sequence Initial Value",    static_cast<Real>(1.0));
+  updateIter_  = vlist.get("Forcing Sequence Update Frequency", static_cast<int>(10));
+  forceFactor_ = vlist.get("Forcing Sequence Reduction Factor", static_cast<Real>(0.1));
   // Output Parameters
   verbosity_   = list.sublist("General").get("Output Level",0);
   printHeader_ = verbosity_ > 2;
@@ -114,29 +132,30 @@ TrustRegionSPGAlgorithm_B<Real>::TrustRegionSPGAlgorithm_B(ParameterList &list,
 template<typename Real>
 void TrustRegionSPGAlgorithm_B<Real>::initialize(Vector<Real>          &x,
                                                  const Vector<Real>    &g,
+                                                 Real                   ftol,
                                                  Objective<Real>       &obj,
                                                  BoundConstraint<Real> &bnd,
                                                  std::ostream &outStream) {
-  const Real one(1);
+  //const Real one(1);
   if (proj_ == nullPtr)
     proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(bnd));
   // Initialize data
   Algorithm_B<Real>::initialize(x,g);
   nhess_ = 0;
   // Update approximate gradient and approximate objective function.
-  Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(); 
-  proj_->project(x,outStream);
+  proj_->project(x,outStream); state_->nproj++;
   state_->iterateVec->set(x);
   obj.update(x,UPDATE_INITIAL,state_->iter);
   state_->value = obj.value(x,ftol); 
   state_->nfval++;
-  obj.gradient(*state_->gradientVec,x,ftol);
+  //obj.gradient(*state_->gradientVec,x,ftol);
+  state_->gnorm = computeGradient(x,*state_->gradientVec,*state_->stepVec,state_->searchSize,obj,outStream);
   state_->ngrad++;
-  state_->stepVec->set(x);
-  state_->stepVec->axpy(-one,state_->gradientVec->dual());
-  proj_->project(*state_->stepVec,outStream);
-  state_->stepVec->axpy(-one,x);
-  state_->gnorm = state_->stepVec->norm();
+  //state_->stepVec->set(x);
+  //state_->stepVec->axpy(-one,state_->gradientVec->dual());
+  //proj_->project(*state_->stepVec,outStream); state_->nproj++;
+  //state_->stepVec->axpy(-one,x);
+  //state_->gnorm = state_->stepVec->norm();
   state_->snorm = ROL_INF<Real>();
   // Normalize initial CP step length
   if (normAlpha_) alpha_ /= state_->gradientVec->norm();
@@ -146,20 +165,73 @@ void TrustRegionSPGAlgorithm_B<Real>::initialize(Vector<Real>          &x,
 }
 
 template<typename Real>
+Real TrustRegionSPGAlgorithm_B<Real>::computeValue(Real inTol,
+                                                   Real &outTol,
+                                                   Real pRed,
+                                                   Real &fold,
+                                                   int iter,
+                                                   const Vector<Real> &x,
+                                                   const Vector<Real> &xold,
+                                                   Objective<Real> &obj) {
+  outTol = std::sqrt(ROL_EPSILON<Real>());
+  if ( useInexact_[0] ) {
+    if (!(iter%updateIter_) && (iter!=0)) force_ *= forceFactor_;
+    const Real one(1);
+    Real eta = static_cast<Real>(0.999)*std::min(eta1_,one-eta2_);
+    outTol   = scale_*std::pow(eta*std::min(pRed,force_),one/omega_);
+    if (inTol > outTol) fold = obj.value(xold,outTol);
+  }
+  // Evaluate objective function at new iterate
+  obj.update(x,UPDATE_TRIAL);
+  Real fval = obj.value(x,outTol);
+  return fval;
+}
+
+template<typename Real>
+Real TrustRegionSPGAlgorithm_B<Real>::computeGradient(const Vector<Real> &x,
+                                                      Vector<Real> &g,
+                                                      Vector<Real> &pwa,
+                                                      Real del,
+                                                      Objective<Real> &obj,
+                                                      std::ostream &outStream) const {
+  Real gnorm(0);
+  if ( useInexact_[1] ) {
+    const Real one(1);
+    Real gtol1 = scale0_*del;
+    Real gtol0 = gtol1 + one;
+    while ( gtol0 > gtol1 ) {
+      obj.gradient(g,x,gtol1);
+      gnorm = Algorithm_B<Real>::optimalityCriterion(x,g,pwa,outStream);
+      gtol0 = gtol1;
+      gtol1 = scale0_*std::min(gnorm,del);
+    }
+  }
+  else {
+    Real gtol = std::sqrt(ROL_EPSILON<Real>());
+    obj.gradient(g,x,gtol);
+    gnorm = Algorithm_B<Real>::optimalityCriterion(x,g,pwa,outStream);
+  }
+  return gnorm;
+}
+
+template<typename Real>
 std::vector<std::string> TrustRegionSPGAlgorithm_B<Real>::run(Vector<Real>          &x,
                                                               const Vector<Real>    &g, 
                                                               Objective<Real>       &obj,
                                                               BoundConstraint<Real> &bnd,
                                                               std::ostream          &outStream ) {
   const Real zero(0), one(1);
-  Real tol0 = std::sqrt(ROL_EPSILON<Real>());
+  //Real tol0 = std::sqrt(ROL_EPSILON<Real>());
+  Real inTol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(), outTol(inTol);
   Real ftrial(0), fcheck(0), pRed(0), rho(1), q(0);
   // Initialize trust-region data
   std::vector<std::string> output;
-  initialize(x,g,obj,bnd,outStream);
+  initialize(x,g,inTol,obj,bnd,outStream);
   Ptr<Vector<Real>> gmod = g.clone();
   Ptr<Vector<Real>> pwa1 = x.clone(), pwa2 = x.clone();
   Ptr<Vector<Real>> pwa3 = x.clone(), pwa4 = x.clone();
+  Ptr<Vector<Real>> pwa5 = x.clone(), pwa6 = x.clone();
+  Ptr<Vector<Real>> pwa7 = x.clone();
   Ptr<Vector<Real>> dwa1 = g.clone(), dwa2 = g.clone();
 
   // Output
@@ -185,14 +257,15 @@ std::vector<std::string> TrustRegionSPGAlgorithm_B<Real>::run(Vector<Real>      
 
     // Apply SPG starting from the Cauchy point
     dpsg(x,q,*gmod,*state_->iterateVec,state_->searchSize,*model_,
-         *pwa1,*pwa2,*pwa3,*pwa4,*dwa1,outStream);
+         *pwa1,*pwa2,*pwa3,*pwa4,*pwa5,*pwa6,*pwa7,*dwa1,outStream);
     pRed = -q;
     state_->stepVec->set(x); state_->stepVec->axpy(-one,*state_->iterateVec);
     state_->snorm = state_->stepVec->norm();
 
     // Compute trial objective value
-    obj.update(x,UPDATE_TRIAL);
-    ftrial = obj.value(x,tol0);
+    ftrial = computeValue(inTol,outTol,pRed,state_->value,state_->iter,x,*state_->iterateVec,obj);
+    //obj.update(x,UPDATE_TRIAL);
+    //ftrial = obj.value(x,tol0);
     state_->nfval++;
 
     // Compute ratio of acutal and predicted reduction
@@ -221,13 +294,15 @@ std::vector<std::string> TrustRegionSPGAlgorithm_B<Real>::run(Vector<Real>      
              || (TRflag_ == TRUtils::POSPREDNEG)) { // Step Accepted
       state_->value = ftrial;
       obj.update(x,UPDATE_ACCEPT,state_->iter);
+      inTol = outTol;
       // Increase trust-region radius
       if (rho >= eta2_) state_->searchSize = std::min(gamma2_*state_->searchSize, delMax_);
       // Compute gradient at new iterate
       dwa1->set(*state_->gradientVec);
-      obj.gradient(*state_->gradientVec,x,tol0);
+      //obj.gradient(*state_->gradientVec,x,tol0);
+      //state_->gnorm = Algorithm_B<Real>::optimalityCriterion(x,*state_->gradientVec,*pwa1,outStream);
+      state_->gnorm = computeGradient(x,*state_->gradientVec,*pwa1,state_->searchSize,obj,outStream);
       state_->ngrad++;
-      state_->gnorm = Algorithm_B<Real>::optimalityCriterion(x,*state_->gradientVec,*pwa1,outStream);
       state_->iterateVec->set(x);
       // Update secant information in trust-region model
       model_->update(x,*state_->stepVec,*dwa1,*state_->gradientVec,
@@ -252,7 +327,7 @@ Real TrustRegionSPGAlgorithm_B<Real>::dgpstep(Vector<Real> &s, const Vector<Real
                                               const Vector<Real> &x, const Real alpha,
                                               std::ostream &outStream) const {
   s.set(x); s.axpy(alpha,w);
-  proj_->project(s,outStream);
+  proj_->project(s,outStream); state_->nproj++;
   s.axpy(static_cast<Real>(-1),x);
   return s.norm();
 }
@@ -353,10 +428,13 @@ void TrustRegionSPGAlgorithm_B<Real>::dpsg(Vector<Real> &y,
                                            const Vector<Real> &x,
                                            Real del,
                                            TrustRegionModel_U<Real> &model,
+                                           Vector<Real> &ymin,
                                            Vector<Real> &pwa,
                                            Vector<Real> &pwa1,
                                            Vector<Real> &pwa2,
                                            Vector<Real> &pwa3,
+                                           Vector<Real> &pwa4,
+                                           Vector<Real> &pwa5,
                                            Vector<Real> &dwa,
                                            std::ostream &outStream) {
   // Use SPG to approximately solve TR subproblem:
@@ -368,26 +446,27 @@ void TrustRegionSPGAlgorithm_B<Real>::dpsg(Vector<Real> &y,
   //       g = Current gradient
   const Real half(0.5), one(1), eps(std::sqrt(ROL_EPSILON<Real>()));
   Real tol(std::sqrt(ROL_EPSILON<Real>()));
-  Real alpha(1), mtrial(0), sHs(0), alphaTmp(1), mmax(0);
+  Real alpha(1), mtrial(0), sHs(0), alphaTmp(1), mmax(0), qmin(0);
   int ls_nfval(0);
   std::deque<Real> mqueue; mqueue.push_back(q);
 
+  if (useMin_) { qmin = q; ymin.set(y); }
+
   // Compute initial projected gradient norm
   pwa1.set(gmod.dual());
-  pwa.set(y);
-  pwa.axpy(-one,pwa1);
-  dproj(pwa,x,del,pwa2,pwa3,outStream);
+  pwa.set(y); pwa.axpy(-one,pwa1);
+  dproj(pwa,x,del,pwa2,pwa3,pwa4,pwa5,outStream);
   pwa.axpy(-one,y);
   Real gnorm = pwa.norm();
   const Real gtol = std::min(tol1_,tol2_*gnorm);
 
   // Compute initial step
   Real lambda = std::max(lambdaMin_,std::min(one/gmod.norm(),lambdaMax_));
-  pwa.set(y); pwa.axpy(-lambda,pwa1);        // pwa = y - lambda gmod.dual()
-  dproj(pwa,x,del,pwa2,pwa3,outStream); // pwa = P(y - lambda gmod.dual())
-  pwa.axpy(-one,y);                          // pwa = P(y - lambda gmod.dual()) - y = step
-  Real gs = gmod.apply(pwa);                 // gs  = <step, model gradient>
-  Real ss = pwa.dot(pwa);                    // Norm squared of step
+  pwa.set(y); pwa.axpy(-lambda,pwa1);             // pwa = y - lambda gmod.dual()
+  dproj(pwa,x,del,pwa2,pwa3,pwa4,pwa5,outStream); // pwa = P(y - lambda gmod.dual())
+  pwa.axpy(-one,y);                               // pwa = P(y - lambda gmod.dual()) - y = step
+  Real gs = gmod.apply(pwa);                      // gs  = <step, model gradient>
+  Real ss = pwa.dot(pwa);                         // Norm squared of step
 
   if (verbosity_ > 1)
     outStream << "  Spectral Projected Gradient"          << std::endl;
@@ -416,31 +495,35 @@ void TrustRegionSPGAlgorithm_B<Real>::dpsg(Vector<Real> &y,
     if (static_cast<int>(mqueue.size())==maxSize_) mqueue.pop_front();
     mqueue.push_back(q);
 
+    if (q <= qmin && useMin_) { qmin = q; ymin.set(y); }
+
     // Compute projected gradient norm
     pwa1.set(gmod.dual());
-    pwa.set(y);
-    pwa.axpy(-one,pwa1);
-    dproj(pwa,x,del,pwa2,pwa3,outStream);
+    pwa.set(y); pwa.axpy(-one,pwa1);
+    dproj(pwa,x,del,pwa2,pwa3,pwa4,pwa5,outStream);
     pwa.axpy(-one,y);
     gnorm = pwa.norm();
 
     if (verbosity_ > 1) {
+      outStream << std::endl;
       outStream << "    Iterate:                          " << SPiter_ << std::endl;
       outStream << "    Spectral step length (lambda):    " << lambda  << std::endl;
       outStream << "    Step length (alpha):              " << alpha   << std::endl;
       outStream << "    Model decrease (pRed):            " << -q      << std::endl;
       outStream << "    Optimality criterion:             " << gnorm   << std::endl;
+      outStream << std::endl;
     }
     if (gnorm < gtol) break;
 
     // Compute new spectral step
     lambda = (sHs<=eps ? lambdaMax_ : std::max(lambdaMin_,std::min(ss/sHs,lambdaMax_)));
     pwa.set(y); pwa.axpy(-lambda,pwa1);
-    dproj(pwa,x,del,pwa2,pwa3,outStream);
+    dproj(pwa,x,del,pwa2,pwa3,pwa4,pwa5,outStream);
     pwa.axpy(-one,y);
     gs = gmod.apply(pwa);
     ss = pwa.dot(pwa);
   }
+  if (useMin_) { q = qmin; y.set(ymin); }
   SPflag_ = (SPiter_==maxit_) ? 1 : 0;
 }
 
@@ -448,48 +531,157 @@ template<typename Real>
 void TrustRegionSPGAlgorithm_B<Real>::dproj(Vector<Real> &x,
                                             const Vector<Real> &x0,
                                             Real del,
-                                            Vector<Real> &y,
-                                            Vector<Real> &p,
+                                            Vector<Real> &y0,
+                                            Vector<Real> &y1,
+                                            Vector<Real> &yc,
+                                            Vector<Real> &pwa,
                                             std::ostream &outStream) const {
-  // Solve ||P(t*x0 + (1-t)*(x-x0))-x0|| = del using Ridder's method
-  const Real half(0.5), one(1), tol(1e-2*std::sqrt(ROL_EPSILON<Real>()));
-  const Real fudge(1.0-1e-6);
-  Real e0(0), e1(0), e2(0), e(0), a0(0), a1(0.5), a2(1), a(0);
-  int cnt(0);
-  y.set(x);
-  proj_->project(y,outStream); cnt++;
-  p.set(y); p.axpy(-one,x0);
-  e2 = p.norm();
-  if (e2 <= del) {
-    x.set(y);
+  // Solve ||P(t*x0 + (1-t)*(x-x0))-x0|| = del using Brent's method
+  const Real zero(0), half(0.5), one(1), two(2), three(3);
+  const Real eps(ROL_EPSILON<Real>()), tol0(1e1*eps), fudge(1.0-1e-2*sqrt(eps));
+  Real f0(0), f1(0), fc(0), t0(0), t1(1), tc(0), d1(1), d2(1), tol(1);
+  Real p(0), q(0), r(0), s(0), m(0);
+  int cnt(state_->nproj);
+  y1.set(x);
+  proj_->project(y1,outStream); state_->nproj++;
+  pwa.set(y1); pwa.axpy(-one,x0);
+  f1 = pwa.norm();
+  if (f1 <= del) {
+    x.set(y1);
     return;
   }
-  while (a2-a0 > tol) {
-    a1 = half*(a0+a2);
-    y.set(x); y.scale(a1); y.axpy(one-a1,x0);
-    proj_->project(y,outStream); cnt++;
-    p.set(y); p.axpy(-one,x0);
-    e1 = p.norm();
-    if (e1 >= fudge*del && e1 <= del) break;
-    a = a1-(a1-a0)*(e1-del)/std::sqrt((e1-del)*(e1-del)-(e0-del)*(e2-del));
-    y.set(x); y.scale(a); y.axpy(one-a,x0);
-    proj_->project(y,outStream); cnt++;
-    p.set(y); p.axpy(-one,x0);
-    e = p.norm();
-    if (e < fudge*del) {
-      if (e1 < fudge*del) { e0 = (a < a1 ? e1 : e); a0 = (a < a1 ? a1 : a); }
-      else                { e0 = e; a0 = a; e2 = e1; a2 = a1; };
+  y0.set(x0);
+  tc = t0; fc = f0; yc.set(y0);
+  d1 = t1-t0; d2 = d1;
+  int code = 0;
+  while (true) {
+    if (std::abs(fc-del) < std::abs(f1-del)) {
+      t0 = t1; t1 = tc; tc = t0;
+      f0 = f1; f1 = fc; fc = f0;
+      y0.set(y1); y1.set(yc); yc.set(y0);
     }
-    else if (e > del) {
-      if (e1 < fudge*del) { e0 = e1; a0 = a1; e2 = e; a2 = a; }
-      else                { e2 = (a < a1 ? e : e1); a2 = (a < a1 ? a : a1); }
+    tol = two*eps*abs(t1) + half*tol0;
+    m   = half*(tc - t1);
+    if (std::abs(m) <= tol) { code = 1; break; }
+    if ((f1 >= fudge*del && f1 <= del)) break;
+    if (std::abs(d1) < tol || std::abs(f0-del) <= std::abs(f1-del)) {
+      d1 = m; d2 = d1;
     }
-    else break; // Exit if (1-1e-6)*del <= snorm <= del
+    else {
+      s = (f1-del)/(f0-del);
+      if (t0 == tc) {
+        p = two*m*s;
+        q = one-s;
+      }
+      else {
+        q = (f0-del)/(fc-del);
+        r = (f1-del)/(fc-del);
+        p = s*(two*m*q*(q-r)-(t1-t0)*(r-one));
+        q = (q-one)*(r-one)*(s-one);
+      }
+      if (p > zero) q = -q;
+      else          p = -p;
+      s  = d1;
+      d1 = d2;
+      if (two*p < three*m*q-std::abs(tol*q) && p < std::abs(half*s*q)) {
+        d2 = p/q;
+      }
+      else {
+        d1 = m; d2 = d1;
+      }
+    }
+    t0 = t1; f0 = f1; y0.set(y1);
+    if (std::abs(d2) > tol) t1 += d2;
+    else if (m > zero)      t1 += tol;
+    else                    t1 -= tol;
+    y1.set(x); y1.scale(t1); y1.axpy(one-t1,x0);
+    proj_->project(y1,outStream); state_->nproj++;
+    pwa.set(y1); pwa.axpy(-one,x0);
+    f1 = pwa.norm();
+    if ((f1 > del && fc > del) || (f1 <= del && fc <= del)) {
+      tc = t0; fc = f0; yc.set(y0);
+      d1 = t1-t0; d2 = d1;
+    }
   }
-  x.set(y);
-  if (verbosity_ > 1)
-    outStream << "    Number of polyhedral projections: " << cnt << std::endl;
+  if (code==1 && f1>del) x.set(yc);
+  else                   x.set(y1);
+  if (verbosity_ > 1) {
+    outStream << std::endl;
+    outStream << "  Trust-Region Subproblem Projection" << std::endl;
+    outStream << "    Number of polyhedral projections: " << state_->nproj-cnt << std::endl;
+    if (code == 1 && f1 > del) {
+      outStream << "    Transformed Multiplier:           " << tc << std::endl;
+      outStream << "    Dual Residual:                    " << fc-del << std::endl;
+    }
+    else {
+      outStream << "    Transformed Multiplier:           " << t1 << std::endl;
+      outStream << "    Dual Residual:                    " << f1-del << std::endl;
+    }
+    outStream << "    Exit Code:                        " << code << std::endl;
+    outStream << std::endl;
+  }
 }
+
+// RIDDERS' METHOD FOR TRUST-REGION PROJECTION
+//template<typename Real>
+//void TrustRegionSPGAlgorithm_B<Real>::dproj(Vector<Real> &x,
+//                                            const Vector<Real> &x0,
+//                                            Real del,
+//                                            Vector<Real> &y,
+//                                            Vector<Real> &y1,
+//                                            Vector<Real> &yc,
+//                                            Vector<Real> &p,
+//                                            std::ostream &outStream) const {
+//  // Solve ||P(t*x0 + (1-t)*(x-x0))-x0|| = del using Ridder's method
+//  const Real half(0.5), one(1), tol(1e1*ROL_EPSILON<Real>());
+//  const Real fudge(1.0-1e-2*std::sqrt(ROL_EPSILON<Real>()));
+//  Real e0(0), e1(0), e2(0), e(0), a0(0), a1(0.5), a2(1), a(0);
+//  int cnt(state_->nproj);
+//  y.set(x);
+//  proj_->project(y,outStream); state_->nproj++;
+//  p.set(y); p.axpy(-one,x0);
+//  e2 = p.norm();
+//  if (e2 <= del) {
+//    x.set(y);
+//    return;
+//  }
+//  bool code = 1;
+//  while (a2-a0 > tol) {
+//    a1 = half*(a0+a2);
+//    y.set(x); y.scale(a1); y.axpy(one-a1,x0);
+//    proj_->project(y,outStream); state_->nproj++;
+//    p.set(y); p.axpy(-one,x0);
+//    e1 = p.norm();
+//    if (e1 >= fudge*del && e1 <= del) break;
+//    a = a1-(a1-a0)*(e1-del)/std::sqrt((e1-del)*(e1-del)-(e0-del)*(e2-del));
+//    y.set(x); y.scale(a); y.axpy(one-a,x0);
+//    proj_->project(y,outStream); state_->nproj++;
+//    p.set(y); p.axpy(-one,x0);
+//    e = p.norm();
+//    if (e < fudge*del) {
+//      if (e1 < fudge*del) { e0 = (a < a1 ? e1 : e); a0 = (a < a1 ? a1 : a); }
+//      else                { e0 = e; a0 = a; e2 = e1; a2 = a1; };
+//    }
+//    else if (e > del) {
+//      if (e1 < fudge*del) { e0 = e1; a0 = a1; e2 = e; a2 = a; }
+//      else                { e2 = (a < a1 ? e : e1); a2 = (a < a1 ? a : a1); }
+//    }
+//    else {
+//      code = 0;
+//      break; // Exit if fudge*del <= snorm <= del
+//    }
+//  }
+//  x.set(y);
+//  if (verbosity_ > 1) {
+//    outStream << std::endl;
+//    outStream << "  Trust-Region Subproblem Projection" << std::endl;
+//    outStream << "    Number of polyhedral projections: " << state_->nproj-cnt << std::endl;
+//    outStream << "    Transformed Multiplier:           " << a1 << std::endl;
+//    outStream << "    Dual Residual:                    " << e1-del << std::endl;
+//    outStream << "    Exit Code:                        " << code << std::endl;
+//    outStream << std::endl;
+//  }
+//}
 
 template<typename Real>
 std::string TrustRegionSPGAlgorithm_B<Real>::printHeader( void ) const {
@@ -505,6 +697,7 @@ std::string TrustRegionSPGAlgorithm_B<Real>::printHeader( void ) const {
     hist << "  #fval   - Number of times the objective function was evaluated" << std::endl;
     hist << "  #grad   - Number of times the gradient was computed" << std::endl;
     hist << "  #hess   - Number of times the Hessian was applied" << std::endl;
+    hist << "  #proj   - Number of times the projection was computed" << std::endl;
     hist << std::endl;
     hist << "  tr_flag - Trust-Region flag" << std::endl;
     for( int flag = TRUtils::SUCCESS; flag != TRUtils::UNDEFINED; ++flag ) {
@@ -527,6 +720,7 @@ std::string TrustRegionSPGAlgorithm_B<Real>::printHeader( void ) const {
   hist << std::setw(10) << std::left << "#fval";
   hist << std::setw(10) << std::left << "#grad";
   hist << std::setw(10) << std::left << "#hess";
+  hist << std::setw(10) << std::left << "#proj";
   hist << std::setw(10) << std::left << "tr_flag";
   hist << std::setw(10) << std::left << "iterSPG";
   hist << std::setw(10) << std::left << "flagSPG";
@@ -561,6 +755,7 @@ std::string TrustRegionSPGAlgorithm_B<Real>::print( const bool print_header ) co
     hist << std::setw(10) << std::left << state_->nfval;
     hist << std::setw(10) << std::left << state_->ngrad;
     hist << std::setw(10) << std::left << nhess_;
+    hist << std::setw(10) << std::left << state_->nproj;
     hist << std::setw(10) << std::left << "---";
     hist << std::setw(10) << std::left << "---";
     hist << std::setw(10) << std::left << "---";
@@ -576,6 +771,7 @@ std::string TrustRegionSPGAlgorithm_B<Real>::print( const bool print_header ) co
     hist << std::setw(10) << std::left << state_->nfval;
     hist << std::setw(10) << std::left << state_->ngrad;
     hist << std::setw(10) << std::left << nhess_;
+    hist << std::setw(10) << std::left << state_->nproj;
     hist << std::setw(10) << std::left << TRflag_;
     hist << std::setw(10) << std::left << SPiter_;
     hist << std::setw(10) << std::left << SPflag_;

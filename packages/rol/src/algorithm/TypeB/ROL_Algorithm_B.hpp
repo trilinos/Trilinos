@@ -62,21 +62,20 @@ struct AlgorithmState_B : public AlgorithmState<Real> {
   Real searchSize;
   Ptr<Vector<Real>> stepVec;
   Ptr<Vector<Real>> gradientVec;
+  int nproj;
 
   AlgorithmState_B(void)
     : searchSize(1),
       stepVec(nullPtr),
-      gradientVec(nullPtr) {}
+      gradientVec(nullPtr),
+      nproj(0) {}
 
   void reset(void) {
     AlgorithmState<Real>::reset();
     searchSize = static_cast<Real>(1);
-    if (stepVec != nullPtr) {
-      stepVec->zero();
-    }
-    if (gradientVec != nullPtr) {
-      gradientVec->zero();
-    }
+    if (stepVec != nullPtr) stepVec->zero();
+    if (gradientVec != nullPtr) gradientVec->zero();
+    nproj = 0;
   }
 };
 

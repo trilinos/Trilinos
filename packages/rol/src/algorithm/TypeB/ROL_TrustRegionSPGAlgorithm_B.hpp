@@ -106,6 +106,17 @@ private:
   Real sigma2_;
   int lsmax_;
   int maxSize_;
+  bool useMin_;
+
+  // Inexactness Parameters
+  std::vector<bool> useInexact_;
+  Real scale0_;
+  Real scale1_;
+  Real scale_;
+  Real omega_;
+  Real force_;
+  int updateIter_;
+  Real forceFactor_;
 
   mutable int nhess_;  ///< Number of Hessian applications
   unsigned verbosity_; ///< Output level (default: 0)
@@ -134,9 +145,26 @@ public:
 private:
   void initialize(Vector<Real>          &x,
                   const Vector<Real>    &g,
+                  Real                   ftol,
                   Objective<Real>       &obj,
                   BoundConstraint<Real> &bnd,
                   std::ostream &outStream = std::cout);
+
+  Real computeValue(Real inTol,
+                    Real &outTol,
+                    Real pRed,
+                    Real &fold,
+                    int iter,
+                    const Vector<Real> &x,
+                    const Vector<Real> &xold,
+                    Objective<Real> &obj);
+
+  Real computeGradient(const Vector<Real> &x,
+                       Vector<Real> &g,
+                       Vector<Real> &pwa,
+                       Real del,
+                       Objective<Real> &obj,
+                       std::ostream &outStream = std::cout) const;
 
   // Compute the projected step s = P(x + alpha*w) - x
   // Returns the norm of the projected step s
@@ -164,15 +192,15 @@ private:
                Vector<Real> &dwa, Vector<Real> &dwa1,
                std::ostream &outStream = std::cout);
 
-  void dpsg(Vector<Real> &y, Real &q, Vector<Real> &gmod,
-            const Vector<Real> &x, Real del, TrustRegionModel_U<Real> &model,
+  void dpsg(Vector<Real> &y, Real &q, Vector<Real> &gmod, const Vector<Real> &x,
+            Real del, TrustRegionModel_U<Real> &model, Vector<Real> &ymin,
             Vector<Real> &pwa, Vector<Real> &pwa1, Vector<Real> &pwa2,
-            Vector<Real> &pwa3, Vector<Real> &dwa,
-            std::ostream &outStream = std::cout);
+            Vector<Real> &pwa3, Vector<Real> &pwa4, Vector<Real> &pwa5,
+            Vector<Real> &dwa, std::ostream &outStream = std::cout);
 
   void dproj(Vector<Real> &x, const Vector<Real> &x0, Real del,
-            Vector<Real> &y, Vector<Real> &p,
-            std::ostream &outStream = std::cout) const;
+            Vector<Real> &y0, Vector<Real> &y1, Vector<Real> &yc,
+            Vector<Real> &pwa, std::ostream &outStream = std::cout) const;
 
 }; // class ROL::TrustRegionSPGAlgorithm_B
 

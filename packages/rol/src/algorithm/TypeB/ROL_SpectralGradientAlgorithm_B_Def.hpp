@@ -82,13 +82,13 @@ void SpectralGradientAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   Algorithm_B<Real>::initialize(x,g);
   // Update approximate gradient and approximate objective function.
   Real ftol = std::sqrt(ROL_EPSILON<Real>());
-  proj_->project(x,outStream);
+  proj_->project(x,outStream); state_->nproj++;
   obj.update(x,UPDATE_INITIAL,state_->iter);
   state_->value = obj.value(x,ftol); state_->nfval++;
   obj.gradient(*state_->gradientVec,x,ftol); state_->ngrad++;
   state_->stepVec->set(x);
   state_->stepVec->axpy(-one,state_->gradientVec->dual());
-  proj_->project(*state_->stepVec,outStream);
+  proj_->project(*state_->stepVec,outStream); state_->nproj++;
   state_->stepVec->axpy(-one,x);
   state_->gnorm = state_->stepVec->norm();
   state_->snorm = ROL_INF<Real>();
@@ -106,11 +106,14 @@ std::vector<std::string> SpectralGradientAlgorithm_B<Real>::run( Vector<Real>   
   // Initialize trust-region data
   std::vector<std::string> output;
   initialize(x,g,obj,bnd,outStream);
-  Ptr<Vector<Real>> s = x.clone(), y = g.clone();
-  Real ftrial(0), fmax(0), gs(0), alpha(1), alphaTmp(1);
+  Ptr<Vector<Real>> s = x.clone(), y = g.clone(), xmin = x.clone();
+  Real ftrial(0), fmax(0), gs(0), alpha(1), alphaTmp(1), fmin(0);
   Real ys(0), ss(0), tol(std::sqrt(ROL_EPSILON<Real>()));
   int ls_nfval = 0;
   std::deque<Real> fqueue; fqueue.push_back(state_->value);
+
+  fmin = state_->value;
+  xmin->set(x);
 
   // Output
   output.push_back(print(true));
@@ -122,7 +125,7 @@ std::vector<std::string> SpectralGradientAlgorithm_B<Real>::run( Vector<Real>   
     // Compute projected spectral step
     state_->iterateVec->set(x);
     state_->iterateVec->axpy(-lambda_,*state_->stepVec);
-    proj_->project(*state_->iterateVec,outStream);
+    proj_->project(*state_->iterateVec,outStream); state_->nproj++;
     s->set(*state_->iterateVec);
     s->axpy(-one,x);
 
@@ -172,6 +175,12 @@ std::vector<std::string> SpectralGradientAlgorithm_B<Real>::run( Vector<Real>   
     x.set(*state_->iterateVec);
     obj.update(x,UPDATE_ACCEPT,state_->iter);
 
+    // Store the best iterate
+    if (state_->value <= fmin) {
+      fmin = state_->value;
+      xmin->set(x);
+    }
+
     // Compute spectral step length
     s->scale(alpha);
     y->set(*state_->gradientVec);
@@ -188,7 +197,7 @@ std::vector<std::string> SpectralGradientAlgorithm_B<Real>::run( Vector<Real>   
 
     // Compute projected gradient norm
     s->set(x); s->axpy(-one,*state_->stepVec);
-    proj_->project(*s,outStream);
+    proj_->project(*s,outStream); state_->nproj++;
     s->axpy(-one,x);
     state_->gnorm = s->norm();
 
@@ -196,6 +205,8 @@ std::vector<std::string> SpectralGradientAlgorithm_B<Real>::run( Vector<Real>   
     output.push_back(print(printHeader_));
     if (verbosity_ > 0) outStream << print(printHeader_);
   }
+  x.set(*xmin);
+  state_->value = fmin;
   output.push_back(Algorithm_B<Real>::printExitStatus());
   if (verbosity_ > 0) outStream << Algorithm_B<Real>::printExitStatus();
   return output;
@@ -216,6 +227,7 @@ std::string SpectralGradientAlgorithm_B<Real>::printHeader( void ) const {
     hist << "  lambda   - Spectral step length" << std::endl;
     hist << "  #fval    - Cumulative number of times the objective function was evaluated" << std::endl;
     hist << "  #grad    - Cumulative number of times the gradient was computed" << std::endl;
+    hist << "  #proj    - Cumulative number of times the projection was computed" << std::endl;
     hist << std::string(109,'-') << std::endl;
   }
 
@@ -228,6 +240,7 @@ std::string SpectralGradientAlgorithm_B<Real>::printHeader( void ) const {
   hist << std::setw(15) << std::left << "lambda";
   hist << std::setw(10) << std::left << "#fval";
   hist << std::setw(10) << std::left << "#grad";
+  hist << std::setw(10) << std::left << "#proj";
   hist << std::endl;
   return hist.str();
 }
@@ -259,6 +272,7 @@ std::string SpectralGradientAlgorithm_B<Real>::print( const bool print_header ) 
     hist << std::setw(15) << std::left << lambda_;
     hist << std::setw(10) << std::left << state_->nfval;
     hist << std::setw(10) << std::left << state_->ngrad;
+    hist << std::setw(10) << std::left << state_->nproj;
     hist << std::endl;
   }
   else {
@@ -271,6 +285,7 @@ std::string SpectralGradientAlgorithm_B<Real>::print( const bool print_header ) 
     hist << std::setw(15) << std::left << lambda_;
     hist << std::setw(10) << std::left << state_->nfval;
     hist << std::setw(10) << std::left << state_->ngrad;
+    hist << std::setw(10) << std::left << state_->nproj;
     hist << std::endl;
   }
   return hist.str();

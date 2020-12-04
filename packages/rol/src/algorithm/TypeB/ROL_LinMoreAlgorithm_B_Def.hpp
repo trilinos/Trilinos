@@ -118,7 +118,7 @@ void LinMoreAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   nhess_ = 0;
   // Update approximate gradient and approximate objective function.
   Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(); 
-  proj_->project(x,outStream);
+  proj_->project(x,outStream); state_->nproj++;
   state_->iterateVec->set(x);
   obj.update(x,UPDATE_INITIAL,state_->iter);
   state_->value = obj.value(x,ftol); 
@@ -127,7 +127,7 @@ void LinMoreAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   state_->ngrad++;
   state_->stepVec->set(x);
   state_->stepVec->axpy(-one,state_->gradientVec->dual());
-  proj_->project(*state_->stepVec,outStream);
+  proj_->project(*state_->stepVec,outStream); state_->nproj++;
   state_->stepVec->axpy(-one,x);
   state_->gnorm = state_->stepVec->norm();
   state_->snorm = ROL_INF<Real>();
@@ -333,7 +333,7 @@ Real LinMoreAlgorithm_B<Real>::dgpstep(Vector<Real> &s, const Vector<Real> &w,
                                  const Vector<Real> &x, const Real alpha,
                                  std::ostream &outStream) const {
   s.set(x); s.axpy(alpha,w);
-  proj_->project(s,outStream);
+  proj_->project(s,outStream); state_->nproj++;
   s.axpy(static_cast<Real>(-1),x);
   return s.norm();
 }
@@ -634,6 +634,7 @@ std::string LinMoreAlgorithm_B<Real>::printHeader( void ) const {
     hist << "  #fval   - Number of times the objective function was evaluated" << std::endl;
     hist << "  #grad   - Number of times the gradient was computed" << std::endl;
     hist << "  #hess   - Number of times the Hessian was applied" << std::endl;
+    hist << "  #proj   - Number of times the projection was applied" << std::endl;
     hist << std::endl;
     hist << "  tr_flag - Trust-Region flag" << std::endl;
     for( int flag = TRUtils::SUCCESS; flag != TRUtils::UNDEFINED; ++flag ) {
@@ -660,6 +661,7 @@ std::string LinMoreAlgorithm_B<Real>::printHeader( void ) const {
   hist << std::setw(10) << std::left << "#fval";
   hist << std::setw(10) << std::left << "#grad";
   hist << std::setw(10) << std::left << "#hess";
+  hist << std::setw(10) << std::left << "#proj";
   hist << std::setw(10) << std::left << "tr_flag";
   if (minit_ > 0) {
     hist << std::setw(10) << std::left << "iterCG";
@@ -696,6 +698,7 @@ std::string LinMoreAlgorithm_B<Real>::print( const bool print_header ) const {
     hist << std::setw(10) << std::left << state_->nfval;
     hist << std::setw(10) << std::left << state_->ngrad;
     hist << std::setw(10) << std::left << nhess_;
+    hist << std::setw(10) << std::left << state_->nproj;
     hist << std::setw(10) << std::left << "---";
     if (minit_ > 0) {
       hist << std::setw(10) << std::left << "---";
@@ -713,6 +716,7 @@ std::string LinMoreAlgorithm_B<Real>::print( const bool print_header ) const {
     hist << std::setw(10) << std::left << state_->nfval;
     hist << std::setw(10) << std::left << state_->ngrad;
     hist << std::setw(10) << std::left << nhess_;
+    hist << std::setw(10) << std::left << state_->nproj;
     hist << std::setw(10) << std::left << TRflag_;
     if (minit_ > 0) {
       hist << std::setw(10) << std::left << SPiter_;
