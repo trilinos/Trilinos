@@ -79,9 +79,9 @@ int main(int argc, char *argv[]) {
     list.sublist("Status Test").set("Constraint Tolerance",1e-8);
     list.sublist("Status Test").set("Step Tolerance",1e-12);
     list.sublist("Status Test").set("Iteration Limit", 250);
-    list.sublist("Step").set("Type","Line Search");
     list.sublist("General").set("Output Level",iprint);
     list.sublist("General").sublist("Polyhedral Projection").set("Type","Semismooth Newton");
+    list.sublist("General").sublist("Polyhedral Projection").set("Iteration Limit",5000);
     list.sublist("General").sublist("Secant").set("Type","Limited-Memory BFGS");
 
     ROL::Ptr<ROL::Vector<RealT>>     sol, mul;
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
     mul = HS53.getEqualityMultiplier();
     bnd = HS53.getBoundConstraint();
 
-    list.sublist("Step").sublist("Spectral Gradient").set("Maximum Spectral Step Size",1e2);
+    list.sublist("Step").sublist("Trust Region").sublist("SPG").sublist("Solver").set("Maximum Spectral Step Size",1e2);
     if (mul->dimension() == 1)
       list.sublist("General").sublist("Polyhedral Projection").set("Type","Dai-Fletcher");
     else
