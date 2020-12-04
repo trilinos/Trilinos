@@ -4140,24 +4140,25 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   replaceLocalValue (const LocalOrdinal lclRow,
                      const size_t col,
-                     const impl_scalar_type& ScalarValue) const
+                     const impl_scalar_type& ScalarValue)
   {
-#ifdef HAVE_TPETRA_DEBUG
-    const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
-    const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      lclRow < minLocalIndex || lclRow > maxLocalIndex,
-      std::runtime_error,
-      "Tpetra::MultiVector::replaceLocalValue: row index " << lclRow
-      << " is invalid.  The range of valid row indices on this process "
-      << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
-      << ", " << maxLocalIndex << "].");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      vectorIndexOutOfRange(col),
-      std::runtime_error,
-      "Tpetra::MultiVector::replaceLocalValue: vector index " << col
-      << " of the multivector is invalid.");
-#endif
+    if (::Tpetra::Details::Behavior::debug()) {
+      const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
+      const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        lclRow < minLocalIndex || lclRow > maxLocalIndex,
+        std::runtime_error,
+        "Tpetra::MultiVector::replaceLocalValue: row index " << lclRow
+        << " is invalid.  The range of valid row indices on this process "
+        << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
+        << ", " << maxLocalIndex << "].");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        vectorIndexOutOfRange(col),
+        std::runtime_error,
+        "Tpetra::MultiVector::replaceLocalValue: vector index " << col
+        << " of the multivector is invalid.");
+    }
+
     const size_t colInd = isConstantStride () ? col : whichVectors_[col];
     view_.h_view (lclRow, colInd) = ScalarValue;
   }
@@ -4169,24 +4170,25 @@ namespace Tpetra {
   sumIntoLocalValue (const LocalOrdinal lclRow,
                      const size_t col,
                      const impl_scalar_type& value,
-                     const bool atomic) const
+                     const bool atomic)
   {
-#ifdef HAVE_TPETRA_DEBUG
-    const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
-    const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      lclRow < minLocalIndex || lclRow > maxLocalIndex,
-      std::runtime_error,
-      "Tpetra::MultiVector::sumIntoLocalValue: row index " << lclRow
-      << " is invalid.  The range of valid row indices on this process "
-      << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
-      << ", " << maxLocalIndex << "].");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      vectorIndexOutOfRange(col),
-      std::runtime_error,
-      "Tpetra::MultiVector::sumIntoLocalValue: vector index " << col
-      << " of the multivector is invalid.");
-#endif
+    if (::Tpetra::Details::Behavior::debug()) {
+      const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
+      const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        lclRow < minLocalIndex || lclRow > maxLocalIndex,
+        std::runtime_error,
+        "Tpetra::MultiVector::sumIntoLocalValue: row index " << lclRow
+        << " is invalid.  The range of valid row indices on this process "
+        << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
+        << ", " << maxLocalIndex << "].");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        vectorIndexOutOfRange(col),
+        std::runtime_error,
+        "Tpetra::MultiVector::sumIntoLocalValue: vector index " << col
+        << " of the multivector is invalid.");
+    }
+
     const size_t colInd = isConstantStride () ? col : whichVectors_[col];
     if (atomic) {
       Kokkos::atomic_add (& (view_.h_view(lclRow, colInd)), value);
@@ -4202,22 +4204,24 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   replaceGlobalValue (const GlobalOrdinal gblRow,
                       const size_t col,
-                      const impl_scalar_type& ScalarValue) const
+                      const impl_scalar_type& ScalarValue)
   {
     // mfh 23 Nov 2015: Use map_ and not getMap(), because the latter
     // touches the RCP's reference count, which isn't thread safe.
     const LocalOrdinal lclRow = this->map_->getLocalElement (gblRow);
-#ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "replaceGlobalValue: ";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (lclRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
-       std::runtime_error,
-       "Global row index " << gblRow << " is not present on this process "
-       << this->getMap ()->getComm ()->getRank () << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->vectorIndexOutOfRange (col), std::runtime_error,
-       "Vector index " << col << " of the MultiVector is invalid.");
-#endif // HAVE_TPETRA_DEBUG
+
+    if (::Tpetra::Details::Behavior::debug()) {
+      const char tfecfFuncName[] = "replaceGlobalValue: ";
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (lclRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
+         std::runtime_error,
+         "Global row index " << gblRow << " is not present on this process "
+         << this->getMap ()->getComm ()->getRank () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->vectorIndexOutOfRange (col), std::runtime_error,
+         "Vector index " << col << " of the MultiVector is invalid.");
+    }
+
     this->replaceLocalValue (lclRow, col, ScalarValue);
   }
 
@@ -4227,24 +4231,26 @@ namespace Tpetra {
   sumIntoGlobalValue (const GlobalOrdinal globalRow,
                       const size_t col,
                       const impl_scalar_type& value,
-                      const bool atomic) const
+                      const bool atomic)
   {
     // mfh 23 Nov 2015: Use map_ and not getMap(), because the latter
     // touches the RCP's reference count, which isn't thread safe.
     const LocalOrdinal lclRow = this->map_->getLocalElement (globalRow);
-#ifdef HAVE_TEUCHOS_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      lclRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
-      std::runtime_error,
-      "Tpetra::MultiVector::sumIntoGlobalValue: Global row index " << globalRow
-      << " is not present on this process "
-      << this->getMap ()->getComm ()->getRank () << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      vectorIndexOutOfRange(col),
-      std::runtime_error,
-      "Tpetra::MultiVector::sumIntoGlobalValue: Vector index " << col
-      << " of the multivector is invalid.");
-#endif
+
+    if (::Tpetra::Details::Behavior::debug()) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          lclRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
+          std::runtime_error,
+          "Tpetra::MultiVector::sumIntoGlobalValue: Global row index " << globalRow
+          << " is not present on this process "
+          << this->getMap ()->getComm ()->getRank () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          vectorIndexOutOfRange(col),
+          std::runtime_error,
+          "Tpetra::MultiVector::sumIntoGlobalValue: Vector index " << col
+          << " of the multivector is invalid.");
+    }
+
     this->sumIntoLocalValue (lclRow, col, value, atomic);
   }
 
