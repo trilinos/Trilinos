@@ -140,7 +140,7 @@ class test_readCsvFileIntoDictOfLists(unittest.TestCase):
           ]
         )
       threwExcept = False
-    except Exception, exceptObj:
+    except Exception as exceptObj:
       errMsg = str(exceptObj)
       subStrIdx = errMsg.find(
         "Error, the CSV file column header 'missing_header' does not exist")
@@ -168,7 +168,7 @@ class test_readCsvFileIntoDictOfLists(unittest.TestCase):
           ]
         )
       threwExcept = False
-    except Exception, exceptObj:
+    except Exception as exceptObj:
       errMsg = str(exceptObj)
       errMsgSubStrExpected = \
         "build_stats.incomplete_row.csv' has 10 column headers but data row 2"+\
@@ -212,7 +212,7 @@ class test_getColNameTypeIdxListGivenColNameAndTypeList(unittest.TestCase):
         [ "aaa", "bbb", "ccc", "ddd", "eee", "fff", "ggg", "hhh" ],
         [ cnat("bbb"), cnat("ccc"), cnat("ffg", "int") ] )
       threwExcept = False
-    except Exception, errMsg:
+    except Exception as errMsg:
       self.assertEqual( str(errMsg),
         "Error, the CSV file column header 'ffg' does not exist in the list"+\
         " of column headers ['aaa', 'bbb', 'ccc', 'ddd', 'eee', 'fff', 'ggg', 'hhh']"+\
@@ -259,7 +259,7 @@ class test_ColNameTypeIdx(unittest.TestCase):
     try:
       colNameTypeIdx = SBS.ColNameTypeIdx(SBS.ColNameAndType("name", "invalid"), 2)
       threwExcept = False
-    except Exception, errMsg:
+    except Exception as errMsg:
       self.assertEqual( str(errMsg),
         "Error, type 'invalid' is not supported!  Supported types include"+\
         " ['string', 'int', 'float']!" )
