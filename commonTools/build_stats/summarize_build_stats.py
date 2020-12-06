@@ -14,6 +14,12 @@ import CDashQueryAnalyzeReport as CDQAR
 #
 
 
+# Round a float to n decimal places
+#
+def roundNum(numIn, numDecPlaces):
+  return float(round(Decimal(numIn), numDecPlaces))
+
+
 # Read a CSV file of build stats into a dict of lists for just the fields we
 # want.
 #
@@ -170,7 +176,7 @@ def addNewFieldByScalingExistingField(dictOfLists, existingFieldName,
   existingFieldDataList = dictOfLists[existingFieldName]
   newFieldDataList = []
   for entry in existingFieldDataList:
-    newEntry = round(Decimal(scaleFactor*entry), decimalPlaces) 
+    newEntry = roundNum(scaleFactor*entry, decimalPlaces)
     newFieldDataList.append(newEntry)
   dictOfLists.update( {newFieldName : newFieldDataList} )
 
@@ -240,7 +246,7 @@ def computeBuildStatusSummaryForOneField(buildStatsDOL, fieldName, decimalPlaces
   # Set easy fields
   buildStatSummary = BuildStatSummary(fieldName)
   buildStatSummary.numValues = len(buildStatList)
-  buildStatSummary.sumValue = round(Decimal(sum(buildStatList)), decimalPlaces)
+  buildStatSummary.sumValue = roundNum(sum(buildStatList), decimalPlaces)
   # Compute max and the corresponding filename
   maxValue = 0
   maxFileName = ""

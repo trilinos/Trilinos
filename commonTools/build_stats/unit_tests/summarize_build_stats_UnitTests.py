@@ -55,12 +55,6 @@ import GeneralScriptSupport as GSS
 g_pp = pprint.PrettyPrinter(indent=2)
 
 
-# Round to n decimal places
-#
-def roundNum(numIn, numDecPlaces):
-  return round(Decimal(numIn), numDecPlaces)
-
-
 # Get a copied dict of lists of build stats read from input file
 #
 def getBuildStatsForTests(computeStdScaledFields=True):
@@ -460,7 +454,7 @@ class test_computeStdBuildStatsSummariesSingleDOL(unittest.TestCase):
     self.assertEqual(bssl[2].fieldName, 'file_size_mb')
     self.assertEqual(bssl[2].numValues, 21)
     self.assertEqual(bssl[2].sumValue, 157.19)
-    self.assertEqual(bssl[2].maxValue, roundNum(45000000/(1024.0*1024.0),2))
+    self.assertEqual(bssl[2].maxValue, SBS.roundNum(45000000/(1024.0*1024.0),2))
     self.assertEqual(bssl[2].maxFileName,
       'packages/panzer/adapters-stk/example/CurlLaplacianExample/CMakeFiles/PanzerAdaptersSTK_CurlLaplacianExample.dir/main.cpp.o' )
   # NOTE: Above is a white-box test and we want to validate the order as that
@@ -503,7 +497,7 @@ class test_computeStdBuildStatsSummaries(unittest.TestCase):
     self.assertEqual(bssl[2].fieldName, 'file_size_mb')
     self.assertEqual(bssl[2].numValues, 21)
     self.assertEqual(bssl[2].sumValue, 157.19)
-    self.assertEqual(bssl[2].maxValue, roundNum(45000000/(1024.0*1024.0),2))
+    self.assertEqual(bssl[2].maxValue, SBS.roundNum(45000000/(1024.0*1024.0),2))
     self.assertEqual(bssl[2].maxFileName,
       'packages/panzer/adapters-stk/example/CurlLaplacianExample/CMakeFiles/PanzerAdaptersSTK_CurlLaplacianExample.dir/main.cpp.o' )
     # Verify number of build stats summaries binned by subdirs
@@ -519,19 +513,19 @@ class test_computeStdBuildStatsSummaries(unittest.TestCase):
     self.assertEqual(len(bssl), 3)
     self.assertEqual(bssl[0].fieldName, 'max_resident_size_mb')
     self.assertEqual(bssl[0].numValues, 4)
-    self.assertEqual(bssl[0].sumValue, roundNum((680000+35000+64000+77000)/1024.0,2))
-    self.assertEqual(bssl[0].maxValue, roundNum(680000/1024.0,2))
+    self.assertEqual(bssl[0].sumValue, SBS.roundNum((680000+35000+64000+77000)/1024.0,2))
+    self.assertEqual(bssl[0].maxValue, SBS.roundNum(680000/1024.0,2))
     self.assertEqual(bssl[0].maxFileName, 'packages/adelus/src/CMakeFiles/zadelus.dir/Adelus_pcomm.cpp.o')
     #print("\nbssl[1]:"); g_pp.pprint(str(bssl[1]))
     self.assertEqual(bssl[1].fieldName, 'elapsed_real_time_sec')
     self.assertEqual(bssl[1].numValues, 4)
-    self.assertEqual(bssl[1].sumValue, roundNum(0.5+0.2+0.3+0.4,2))
+    self.assertEqual(bssl[1].sumValue, SBS.roundNum(0.5+0.2+0.3+0.4,2))
     self.assertEqual(bssl[1].maxValue, 0.5)
     self.assertEqual(bssl[1].maxFileName, 'packages/adelus/src/CMakeFiles/zadelus.dir/Adelus_pcomm.cpp.o')
     self.assertEqual(bssl[2].fieldName, 'file_size_mb')
     self.assertEqual(bssl[2].numValues, 4)
     self.assertEqual(bssl[2].sumValue, 5.73)
-    self.assertEqual(bssl[2].maxValue, roundNum(5200000/(1024.0*1024.0),2))
+    self.assertEqual(bssl[2].maxValue, SBS.roundNum(5200000/(1024.0*1024.0),2))
     self.assertEqual(bssl[2].maxFileName, 'packages/adelus/test/vector_random/Adelus_vector_random.exe')
     # Build stats for 'gtest'
     bssl = buildStatsSummariesBinnedBySubdirs.binnedBuildStatsSummariesList_dict['gtest']
@@ -539,8 +533,8 @@ class test_computeStdBuildStatsSummaries(unittest.TestCase):
     self.assertEqual(len(bssl), 3)
     self.assertEqual(bssl[0].fieldName, 'max_resident_size_mb')
     self.assertEqual(bssl[0].numValues, 1)
-    self.assertEqual(bssl[0].sumValue, roundNum(240000/1024.0,2))
-    self.assertEqual(bssl[0].maxValue, roundNum(240000/1024.0,2))
+    self.assertEqual(bssl[0].sumValue, SBS.roundNum(240000/1024.0,2))
+    self.assertEqual(bssl[0].maxValue, SBS.roundNum(240000/1024.0,2))
     self.assertEqual(bssl[0].maxFileName, 'commonTools/gtest/CMakeFiles/gtest.dir/gtest/gtest-all.cc.o')
     self.assertEqual(bssl[1].fieldName, 'elapsed_real_time_sec')
     self.assertEqual(bssl[1].numValues, 1)
@@ -549,8 +543,8 @@ class test_computeStdBuildStatsSummaries(unittest.TestCase):
     self.assertEqual(bssl[1].maxFileName, 'commonTools/gtest/CMakeFiles/gtest.dir/gtest/gtest-all.cc.o')
     self.assertEqual(bssl[2].fieldName, 'file_size_mb')
     self.assertEqual(bssl[2].numValues, 1)
-    self.assertEqual(bssl[2].sumValue, roundNum(3300000/(1024.0*1024.0),2))
-    self.assertEqual(bssl[2].maxValue, roundNum(3300000/(1024.0*1024.0),2))
+    self.assertEqual(bssl[2].sumValue, SBS.roundNum(3300000/(1024.0*1024.0),2))
+    self.assertEqual(bssl[2].maxValue, SBS.roundNum(3300000/(1024.0*1024.0),2))
     self.assertEqual(bssl[2].maxFileName,  'commonTools/gtest/CMakeFiles/gtest.dir/gtest/gtest-all.cc.o')
     # Build stats for 'panzer' (don't bother checking values, above is good enough)
     bssl = buildStatsSummariesBinnedBySubdirs.binnedBuildStatsSummariesList_dict['panzer']
@@ -705,14 +699,14 @@ class test_summarize_build_stats_py(unittest.TestCase):
     cmnd = thisScriptsDir+"/../summarize_build_stats.py"+\
       " --build-stats-csv-file="+g_testBaseDir+"/build_stats.big.small.csv"
     output = GSS.getCmndOutput(cmnd)
-    self.assertEqual(output, big_small_summary_full_project_ascii+"\n")
+    self.assertEqual(GSS.s(output), GSS.s(big_small_summary_full_project_ascii+"\n"))
 
   def test_big_small_by_subdir(self):
     cmnd = thisScriptsDir+"/../summarize_build_stats.py"+\
       " --build-stats-csv-file="+g_testBaseDir+"/build_stats.big.small.csv"+\
       " --bin-by-subdirs-under-dirs=commonTools,packages"
     output = GSS.getCmndOutput(cmnd)
-    self.assertEqual(output, big_small_summary_ascii+"\n")
+    self.assertEqual(GSS.s(output), GSS.s(big_small_summary_ascii+"\n"))
 
 
 #
