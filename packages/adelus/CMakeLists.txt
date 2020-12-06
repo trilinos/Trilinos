@@ -10,8 +10,11 @@ TRIBITS_PACKAGE(Adelus)
 # B) Set up package-specific options
 #
 
-IF(${PACKAGE_NAME}_ENABLE_Teuchos)
-  MESSAGE("     Adelus_ENABLE Teuchos is ON")
+#If performance tests are enabled
+IF(${PACKAGE_NAME}_ENABLE_Teuchos AND (${PROJECT_NAME}_TEST_CATEGORIES STREQUAL PERFORMANCE))
+  MESSAGE("     Adelus_ENABLE Teuchos is ON AND TEST_CATEGORIES is PERFORMANCE")
+  SET(${PACKAGE_NAME}_ENABLE_TIMING ON CACHE BOOL "Enable timing." FORCE)
+  SET(${PACKAGE_NAME}_ENABLE_PRINTSTATUS ON CACHE BOOL "Enable status print." FORCE)
 ENDIF()
 
 #If no options are specified set ZCPLX as the default
@@ -20,7 +23,7 @@ IF(NOT ${PACKAGE_NAME}_ENABLE_ZCPLX AND
    NOT ${PACKAGE_NAME}_ENABLE_SREAL AND
    NOT ${PACKAGE_NAME}_ENABLE_DREAL)
 
-  SET_CACHE_ON_OFF_EMPTY(${PACKAGE_NAME}_ENABLE_ZCPLX ON "Enable double precision functionality.")
+  SET_CACHE_ON_OFF_EMPTY(${PACKAGE_NAME}_ENABLE_ZCPLX ON "Enable double precision complex functionality.")
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ZCPLX
