@@ -7,6 +7,10 @@ import subprocess # spawning nm
 import re         # re matching
 import os         # line seperator
 
+
+from Python2and3 import b, s
+
+
 class NMParser:
   """Simple NM parser that"""
 
@@ -56,8 +60,8 @@ class NMParser:
 
     nm_counts = dict()
 
-    for line in output.split(os.linesep):
-      m = NMParser.nm_re.match(line)
+    for line in output.split(b(os.linesep)):
+      m = NMParser.nm_re.match(s(line))
       if m:
         nm_counts[m.group('type')] = nm_counts.get(m.group('type'), 0) + 1
     # return what we found
