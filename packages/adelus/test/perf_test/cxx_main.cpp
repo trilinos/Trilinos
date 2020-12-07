@@ -320,15 +320,14 @@ int main(int argc, char *argv[])
   Kokkos::deep_copy( subview(A,Kokkos::ALL(),mycols), subview(h_A,Kokkos::ALL(),mycols) );
 
   // Now Solve the Problem
-  RCP<StackedTimer> timer = rcp(new StackedTimer("Adelus: top level"));
+  RCP<StackedTimer> timer = rcp(new StackedTimer("Adelus: total"));
   TimeMonitor::setStackedTimer(timer);
 
   if( rank == 0 )
     std::cout << " ****   Beginning Matrix Solve   ****" << std::endl;
-  {
-    TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: FactorSolve"));
+
     Adelus::FactorSolve (A, myrows, mycols, &matrix_size, &nprocs_per_row, &numrhs, &secs);
-  }
+
   if( rank == 0) {
     std::cout << " ----  Solution time  ----   " << secs << "  in secs. " << std::endl;
 
@@ -343,8 +342,8 @@ int main(int argc, char *argv[])
   options.output_minmax  = true;
   timer->report(std::cout, comm, options);
 
-  std::string testBaseName = "Adelus: Factor and Solve ";
-  auto xmlOut = timer->reportWatchrXML(testBaseName + std::to_string(size) + " ranks", comm);
+  std::string testBaseName = "Adelus Factor and Solve ";
+  auto xmlOut = timer->reportWatchrXML(testBaseName + std::to_string(size) + " ranks " + std::to_string(nprocs_per_row) + " procs_per_row", comm);
   if(rank == 0)
   {
     if(xmlOut.length())
