@@ -357,6 +357,21 @@ This will remove the file ``build_stats.csv`` very early in the configure
 process and therefore will usually remove the file even of later configure
 operations fail.
 
+Finally, to make rebuilds more robust and to restrict build stats to only new
+targets getting (re)built after an initial configure, configure with::
+
+  -D Trilinos_REMOVE_BUILD_STATS_TIMING_FILES_ON_FRESH_CONFIGURE=ON
+
+The will remove **all** of the ``*.timing`` files under the base build
+directory during a fresh configure (i.e. where the ``CMakeCache.txt`` file
+does not exist).  But this will not remove ``*.timing`` files on reconfigures
+(i..e where a ``CMakeCache.txt`` file is preserved).  Timing stats for targets
+that are already built and don't need to be rebuilt after the last fresh
+configure will not get reported.  (But this can be useful for CI builds where
+one only wants to see build stats for the files updated in the last PR
+iteration.  Also, this will avoid problems with corrupted `<target>.timing`
+files that may already exist in the base repo.)
+
 NOTES:
 
 * The installed ``TrilinosConfig.cmake`` and ``<Package>Config.cmake`` files

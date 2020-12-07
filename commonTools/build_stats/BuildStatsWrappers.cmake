@@ -122,6 +122,34 @@ function(remove_build_stats_file_on_configure)
 endfunction()
 
 
+# Remove the <target>.timing files on a fresh configure if asked to do so.
+#
+function(remove_build_stats_timing_files_on_fresh_configure)
+
+  advanced_set(${PROJECT_NAME}_REMOVE_BUILD_STATS_TIMING_FILES_ON_FRESH_CONFIGURE OFF
+    CACHE BOOL
+    "If set to 'ON', then all <target>.timing files will be removed on a freash configure."
+    )
+
+  if (
+    ${PROJECT_NAME}_REMOVE_BUILD_STATS_TIMING_FILES_ON_FRESH_CONFIGURE
+    AND
+    (NOT "${${PROJECT_NAME}_BUILD_STATS_INIT_CONFIG_WAS_DONE}")
+    )
+
+    message("-- " "Removing all <target>.timing files on fresh configure")
+
+    execute_process(
+      COMMAND "${BUILD_STATS_SRC_DIR}/remove_all_target_timing_files.sh"
+        ${PROJECT_BINARY_DIR} )
+
+    set(${PROJECT_NAME}_BUILD_STATS_INIT_CONFIG_WAS_DONE ON CACHE INTERNAL "")
+
+  endif()
+
+endfunction()
+
+
 # Set up install targets for the build stats scripts
 #
 # This can only be called after these install dirs have been set!
