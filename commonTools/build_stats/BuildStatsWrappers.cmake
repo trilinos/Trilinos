@@ -24,14 +24,12 @@ function(generate_build_stats_wrappers)
     # No default was set, so make it OFF by default
     set(${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT OFF)
   endif()
-  #print_var(${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT)
 
   # Set cache var ${PROJECT_NAME}_ENABLE_BUILD_STATS
   advanced_set(${PROJECT_NAME}_ENABLE_BUILD_STATS
     ${${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT} CACHE BOOL
     "If set to 'ON', then compiler wrappers will be created and used to gather build stats."
     )
-  #print_var(${PROJECT_NAME}_ENABLE_BUILD_STATS)
 
   # Generate the build-stats compiler wrappers
   get_base_build_dir_for_python()
