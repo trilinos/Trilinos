@@ -500,7 +500,7 @@ namespace BaskerNS
         }
       }
       #if 0
-      printf( " > debug: set blk_amd_mwm to identity\n" );
+      printf( " > debug: set blk_mwm to identity\n" );
       for(Int ii = 0; ii < blk_size; ii++) {
         scale_row_array(btf_tabs(b)+ii) = one;
         scale_col_array(btf_tabs(b)+ii) = one;
@@ -666,8 +666,11 @@ namespace BaskerNS
         BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), &(temp_row(0)), 
                                         &(tempp(0)), l_nnz, lu_work);
       }
+      if (Options.verbose) {
+        printf( " blk(%d: size=%d, rows=%d:%d)\n", (int)b, (int)(btf_tabs(b+1)-btf_tabs(b)), (int)btf_tabs(b),(int)btf_tabs(b+1)-1 );
+      }
       #if 0
-      printf( " >> debug: set amd_blk to identity <<\n" );
+      printf( " >> debug: set blk_amd to identity <<\n" );
       for(Int ii = 0; ii < blk_size; ii++)
       {
         tempp(ii) = ii;
@@ -691,11 +694,8 @@ namespace BaskerNS
       //Add to the bigger perm vector
       for(Int ii = 0; ii < blk_size; ii++)
       {
-        //printf( " amd(%d) = %d + %d\n",tempp(ii)+btf_tabs(b),ii,btf_tabs(b) );
+        //printf( " amd(%d + %d = %d) = %d + %d = %d\n",tempp(ii),btf_tabs(b),tempp(ii)+btf_tabs(b), ii,btf_tabs(b),ii+btf_tabs(b) );
         p_amd(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
-      }
-      if (Options.verbose) {
-        printf( " blk(%d: size=%d, rows=%d:%d)\n", (int)b, (int)(btf_tabs(b+1)-btf_tabs(b)), (int)btf_tabs(b),(int)btf_tabs(b+1)-1 );
       }
       /*std::cout << " p_amd = [ " << std::endl;
       for(Int ii = 0; ii < blk_size; ii++)

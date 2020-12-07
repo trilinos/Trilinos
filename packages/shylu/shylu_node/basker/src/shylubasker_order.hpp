@@ -1724,7 +1724,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       // ** we'll just permute the first col.extent(0) or M.ncol columns **
       // (e.g., E may have more columns than perm)
       if(Options.verbose == BASKER_TRUE) {
-        printf( " > note: permute_col only %d columns since perm has only %d columns (M.ncol = %d))\n",num_col,num_col,n);
+        printf( " > note: permute_col only %d columns since perm has only %d columns (%d:%d))\n",num_col,num_col,frow,frow+n-1);
       }
       n = num_col;
     }
@@ -1745,22 +1745,22 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     init_value(temp_v, nnz, (Entry)0.0);
 
     //Determine column ptr of output matrix
-    for(Int j = frow; j < n; j++)
+    for(Int j = frow; j < frow+n; j++)
     {
-      Int i = col (j);
+      Int i = col (j-frow);
       temp_p (i+1) = M.col_ptr (j+1) - M.col_ptr (j);
     }
     //Get ptrs from lengths
     temp_p (0) = 0;
-
-    for(Int j = frow; j < n; j++)
+    for(Int j = 0; j < n; j++)
     {
       temp_p (j+1) = temp_p (j+1) + temp_p (j);
     }
+
     //copy idxs
-    for(Int ii = frow; ii < n; ii++)
+    for(Int ii = frow; ii < frow+n; ii++)
     {
-      Int ko = temp_p (col (ii));
+      Int ko = temp_p (col (ii-frow));
       for(Int k = M.col_ptr (ii); k < M.col_ptr (ii+1); k++)
       {
         temp_i (ko) = M.row_idx (k); // preserves order of indices in row_idx (they may not be ordered, but won't be reshuffled)
@@ -1769,14 +1769,14 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       }
     }
     //copy back into A
-    for(Int ii = frow; ii < n+1; ii++)
+    for(Int ii = frow; ii < frow+n; ii++)
     {
-      M.col_ptr (ii) = temp_p (ii);
+      M.col_ptr (ii+1) = M.col_ptr (frow) + temp_p (ii-frow+1);
     }
-    for(Int ii = frow; ii < nnz; ii++)
+    for(Int ii = 0; ii < nnz; ii++)
     {
-      M.row_idx (ii) = temp_i (ii);
-      M.val (ii) = temp_v (ii);
+      M.row_idx (M.col_ptr (frow) + ii) = temp_i (ii);
+      M.val (M.col_ptr (frow) + ii) = temp_v (ii);
     }
     FREE_INT_1DARRAY(temp_p);
     FREE_INT_1DARRAY(temp_i);

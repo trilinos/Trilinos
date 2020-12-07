@@ -213,6 +213,13 @@ namespace BaskerNS
     timer_order.reset();
     #endif
     btf_blk_mwm_amd(M, order_blk_mwm_array, order_blk_amd_array, btf_blk_nnz, btf_blk_work);
+    #if 0 //debug
+    printf( " >> debug: set order_blk_mwm/amd on global matrix to identity <<\n" );
+    for (Int i = 0; i < (Int)M.nrow; i++) {
+      order_blk_mwm_array(i) = i;
+      order_blk_amd_array(i) = i;
+    }
+    #endif
     #ifdef BASKER_TIMER
     order_time = timer_order.seconds();
     std::cout << " >>> Basker order : Block MWM+AMD time: " << order_time << std::endl;
@@ -725,8 +732,8 @@ namespace BaskerNS
     //	   ((double)BASKER_BTF_IMBALANCE));
     #if 0 // forcing to have the big A bloock for debug
     //Int break_size = 0;
-    //Int break_size = 5;
-    Int break_size = 10;
+    Int break_size = 5;
+    //Int break_size = 10;
     //Int break_size = 100;
     //Int break_size = 500000;
     printf( " > debug: break_size = %d\n",break_size );

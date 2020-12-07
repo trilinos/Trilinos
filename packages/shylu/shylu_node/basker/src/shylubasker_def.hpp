@@ -1275,14 +1275,12 @@ namespace BaskerNS
                         blk_nnz, blk_work);
         #if 0 //debug:
         // reset for debug
-        printf( " >> debug: set order_nd_mwm/amd to identity <<\n" );
+        printf( " >> debug: set order_nd_mwm/amd on BFT_A to identity <<\n" );
         for (Int i = 0; i < (Int)BTF_A.nrow; i++) {
           order_nd_mwm(i) = i;
           order_nd_amd(i) = i;
         }
         #endif
-        // reset tabs
-        btf_tabs(1) = save_tab;
 
         // ---------------------------------------------------------------------------------------------
         // apply MWM on a big block A
@@ -1340,6 +1338,8 @@ namespace BaskerNS
             order_nd_amd(i) += nfirst;
           }
         }
+        // reset tabs
+        btf_tabs(1) = save_tab;
 
         // ----------------------------------------------------------------------------------------------
         // compute & apply ND on a big block A
@@ -1434,10 +1434,10 @@ namespace BaskerNS
                         order_blk_mwm_c, order_blk_amd_c,
                         blk_nnz, blk_work);
         #if 0 //debug
-        printf( " >> debug: set order_blk_mwm/amd to identity <<\n" );
+        printf( " >> debug: set order_blk_mwm/amd on BTF_C to identity <<\n" );
         for (Int i = 0; i < (Int)BTF_C.nrow; i++) {
-          order_blk_mwm_array(i) = i;
-          order_blk_amd_array(i) = i;
+          order_blk_mwm_c(i) = i;
+          order_blk_amd_c(i) = i;
         }
         #endif
         //for (Int i = 0; i < (Int)BTF_C.nrow; i++) printf( " x mwm_c(%d)=%d amd_c(%d)=%d\n",i,order_blk_mwm_c(i), i,order_blk_amd_c(i));

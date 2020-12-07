@@ -132,14 +132,15 @@ namespace BaskerNS
     Kokkos::Impl::Timer timer_scotch;
 
     Int num_levels = num_domains; 
+    Int num_doms   = pow(2.0, (double)(num_levels+1)) - 1;
     scotch_graph<scotch_integral_type> sg;
 
     sg.m = M.nrow;
     sg.cblk = 0;
     sg.permtab = (scotch_integral_type *)malloc((sg.m)  *sizeof(scotch_integral_type));
     sg.peritab = (scotch_integral_type *)malloc((sg.m)  *sizeof(scotch_integral_type));
-    sg.rangtab = (scotch_integral_type *)malloc((sg.m+1)*sizeof(scotch_integral_type));
-    sg.treetab = (scotch_integral_type *)malloc((sg.m)  *sizeof(scotch_integral_type));
+    sg.rangtab = (scotch_integral_type *)malloc((num_doms+1)*sizeof(scotch_integral_type));
+    sg.treetab = (scotch_integral_type *)malloc((num_doms)  *sizeof(scotch_integral_type));
     if (num_levels == 0) {
       for(Int i = 0; i < sg.m; i++)
       {
@@ -180,8 +181,6 @@ namespace BaskerNS
         int info = 0;
         idx_t sepsize = 0;
         idx_t options[METIS_NOPTIONS];
-
-        Int num_doms  = pow(2.0, (double)(num_levels+1)) - 1;
 
 #define POSTORDER
 #ifdef POSTORDER
@@ -258,7 +257,7 @@ namespace BaskerNS
           sg.permtab[i] = i;
           sg.peritab[i] = i;
         }
-        sg.treetab[post_iorder(0)] =-1;
+        sg.treetab[post_iorder(0)] = -1;
         for (Int i = 0; i < num_doms; i++) {
           sg.rangtab[i] = 0;
         }
@@ -386,7 +385,9 @@ namespace BaskerNS
             }
             if (dom1 == 0 || dom2 == 0) {
               std::cout << std::endl << " > METIS_ComputeVertexSeparator returned an empty domain  "
-                                     << dom1 << " + " << dom2 << " + " << sep << std::endl << std::endl;
+                                     << dom1 << " + " << dom2 << " + " << sep
+                                     << " (n = " << M.nrow << ")"
+                                     << std::endl << std::endl;
               return BASKER_ERROR; // TODO: what to do here?
             }
             if(Options.verbose == BASKER_TRUE) {
