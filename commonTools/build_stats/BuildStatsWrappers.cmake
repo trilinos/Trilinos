@@ -105,26 +105,10 @@ endfunction()
 #
 function(remove_build_stats_file_on_configure)
 
-  # Set default for cache var ${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE
-  if (NOT "$ENV{${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE}" STREQUAL "")
-    # Use the default set in the env (overrides any local default set)
-    set(${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE_DEFAULT
-      "$ENV{${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE}")
-  elseif(NOT "${${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE_DEFAULT}" STREQUAL "")
-    # ${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE_DEFAULT was already set, so use it as
-    # the default.
-  else()
-    # No default was set, so make it OFF by default
-    set(${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE_DEFAULT OFF)
-  endif()
-  #print_var(${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE_DEFAULT)
-
-  # Set cache var ${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE
-  advanced_set(${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE
+  advanced_set(${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE OFF
     ${${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE_DEFAULT} CACHE BOOL
-    "If set to 'ON', then compiler wrappers will be created and used to gather build stats."
+    "If set to 'ON', then the build_stats.csv file will be removed on each configure."
     )
-  #print_var(${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE)
 
   if (
       (${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE)
