@@ -75,6 +75,9 @@ namespace MueLu {
     SET_VALID_ENTRY("sa: calculate eigenvalue estimate");
     SET_VALID_ENTRY("sa: eigenvalue estimate num iterations");
     SET_VALID_ENTRY("sa: use rowsumabs diagonal scaling");
+    SET_VALID_ENTRY("sa: enforce constraints");
+    SET_VALID_ENTRY("tentative: calculate qr");
+    SET_VALID_ENTRY("sa: max eigenvalue");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
@@ -156,10 +159,19 @@ namespace MueLu {
     const LO maxEigenIterations = as<LO>(pL.get<int>("sa: eigenvalue estimate num iterations"));
     const bool estimateMaxEigen = pL.get<bool>("sa: calculate eigenvalue estimate");
     const bool useAbsValueRowSum = pL.get<bool>  ("sa: use rowsumabs diagonal scaling");
+    const bool doQRStep         =        pL.get<bool>("tentative: calculate qr");
+    const bool enforceConstraints=       pL.get<bool>("sa: enforce constraints");
+    const SC   userDefinedMaxEigen =  as<SC>(pL.get<double>("sa: max eigenvalue"));
+
+    // Sanity checking
+    TEUCHOS_TEST_FOR_EXCEPTION(doQRStep && enforceConstraints,Exceptions::RuntimeError,
+                               "MueLu::TentativePFactory::MakeTentative: cannot use 'enforce constraints' and 'calculate qr' at the same time");
+
     if (dampingFactor != Teuchos::ScalarTraits<SC>::zero()) {
 
       SC lambdaMax;
       RCP<Vector> invDiag;
+      if (userDefinedMaxEigen == -1.)
       {
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
         lambdaMax = A->GetMaxEigenvalueEstimate();
@@ -176,8 +188,12 @@ namespace MueLu {
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
         }
-        GetOStream(Statistics0) << "Prolongator damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
       }
+      else {
+          lambdaMax = userDefinedMaxEigen;
+          A->SetMaxEigenvalueEstimate(lambdaMax);
+      }
+      GetOStream(Statistics0) << "Prolongator damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
 
       {
         SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);
@@ -195,6 +211,7 @@ namespace MueLu {
           SubFactoryMonitor m3(*this, "Xpetra::IteratorOps::Jacobi", coarseLevel);
           // finalP = Ptent + (I - \omega D^{-1}A) Ptent
           finalP = Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()), APparams);
+        if (enforceConstraints) SatisfyPConstraints( A, finalP);
         }
       }
 
@@ -231,6 +248,123 @@ namespace MueLu {
     }
 
   } //Build()
+
+  // Analyze the grid transfer produced by smoothed aggregation and make
+  // modifications if it does not look right. In particular, if there are
+  // negative entries or entries larger than 1, modify P's rows. 
+  //
+  // Note: this kind of evaluation probably only makes sense if not doing QR
+  // when constructing tentative P.
+  //
+  // For entries that do not satisfy the two constraints (>= 0  or <=1) we set
+  // these entries to the constraint value and modify the rest of the row
+  // so that the row sum remains the same as before by adding an equal
+  // amount to each remaining entry. However, if the original row sum value
+  // violates the constraints, we set the row sum back to 1 (the row sum of 
+  // tentative P). After doing the modification to a row, we need to check 
+  // again the entire row to make sure that the modified row does not violate
+  // the constraints.
+
+template<typename local_matrix_type>
+class constraintKernel {
+public:
+   using Scalar= typename local_matrix_type::non_const_value_type;
+   using SC=Scalar;
+   using LO=typename local_matrix_type::non_const_ordinal_type;
+//   using Device= typename Matrix::local_matrix_type::device_type;
+   using Device= typename local_matrix_type::device_type;
+   Scalar zero=Kokkos::ArithTraits<Scalar>::zero();
+   LO     nPDEs;
+   local_matrix_type localP;
+   Kokkos::View<Scalar*, Device> ConstraintViolationSum;
+   Kokkos::View<Scalar*, Device> Rsum;
+   Kokkos::View<size_t*, Device> nPositive;
+
+   constraintKernel(LO nPDEs_,local_matrix_type localP_):nPDEs(nPDEs_), localP(localP_) {
+   ConstraintViolationSum = Kokkos::View<Scalar*, Device>("ConstraintViolationSum",nPDEs);
+   Rsum = Kokkos::View<Scalar*, Device>("Rsum",nPDEs);
+   nPositive = Kokkos::View<size_t*, Device>("nPositive",nPDEs);
+   }
+   KOKKOS_INLINE_FUNCTION
+   void operator()(const size_t i) const {
+
+      auto row = localP.row(i);
+      
+      bool checkRow = true;
+
+      if (row.length == 0) checkRow = false;
+
+
+      while (checkRow) { 
+
+        // check constraints and compute the row sum
+    
+        for (LO j = 0; j < row.length; j++)  {
+          Rsum( j%nPDEs ) += row.value(j); 
+          if (Kokkos::ArithTraits<SC>::real(row.value(j)) < Kokkos::ArithTraits<SC>::real(zero )) { 
+
+            ConstraintViolationSum( j%nPDEs ) += row.value(j); 
+            SC val = row.value(j); val = zero;
+          }
+          else {
+            if (Kokkos::ArithTraits<SC>::real(row.value(j)) != Kokkos::ArithTraits<SC>::real(zero))
+              (nPositive( j%nPDEs))++;
+    
+            if (Kokkos::ArithTraits<SC>::real(row.value(j)) > Kokkos::ArithTraits<SC>::real(1.00001  )) { 
+              ConstraintViolationSum( j%nPDEs ) += (row.value(j) - 1.0); 
+              SC val = row.value(j); val = Kokkos::ArithTraits<SC>::one();
+            }
+          }
+        }
+    
+        checkRow = false;
+
+        // take into account any row sum that violates the contraints
+    
+        for (size_t k=0; k < (size_t) nPDEs; k++) {
+
+          if (Kokkos::ArithTraits<SC>::real(Rsum( k )) < Kokkos::ArithTraits<SC>::magnitude( zero)) {
+              ConstraintViolationSum(k) +=  (-Rsum(k));  // rstumin 
+          }
+          else if (Kokkos::ArithTraits<SC>::real(Rsum( k )) > Kokkos::ArithTraits<SC>::magnitude(1.00001)) {
+              ConstraintViolationSum(k) += (Kokkos::ArithTraits<Scalar>::one() - Rsum(k));  // rstumin
+          }
+        }
+
+        // check if row need modification 
+        for (size_t k=0; k < (size_t) nPDEs; k++) {
+          if (Kokkos::ArithTraits<SC>::magnitude(ConstraintViolationSum( k )) != Kokkos::ArithTraits<SC>::magnitude(zero))
+             checkRow = true;
+        }
+        // modify row
+        if (checkRow) {
+           for (LO j = 0; j < row.length; j++)  {
+             if (Kokkos::ArithTraits<SC>::real(row.value(j)) > Kokkos::ArithTraits<SC>::real(zero)) { 
+                SC val = row.value(j); val +=  (ConstraintViolationSum(j%nPDEs)/ (Scalar (nPositive(j%nPDEs))));
+             }
+           }
+           for (size_t k=0; k < (size_t) nPDEs; k++) ConstraintViolationSum(k) = zero; 
+        }
+        for (size_t k=0; k < (size_t) nPDEs; k++) Rsum(k) = zero; 
+        for (size_t k=0; k < (size_t) nPDEs; k++) nPositive(k) = 0;
+      } // while (checkRow) ...
+
+   }
+};
+   
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::SatisfyPConstraints(const RCP<Matrix> A, RCP<Matrix>& P) const {
+
+    using Device = typename Matrix::local_matrix_type::device_type;
+    LO nPDEs = A->GetFixedBlockSize();
+
+    using local_mat_type = typename Matrix::local_matrix_type;
+    constraintKernel<local_mat_type> myKernel(nPDEs,P->getLocalMatrix() );
+    Kokkos::parallel_for("enforce constraint",Kokkos::RangePolicy<typename Device::execution_space>(0, P->getRowMap()->getNodeNumElements() ),
+                        myKernel );
+
+  } //SatsifyPConstraints()
 
 } //namespace MueLu
 
