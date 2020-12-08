@@ -327,7 +327,7 @@ int main(int narg, char** arg)
 
     std::cout<<comm->getRank()<<": created adapter, creating PartitioningProblem\n";
     Teuchos::ParameterList zparams;
-    zparams.set("algorithm","pulp");
+    zparams.set("algorithm","parmetis");
     zparams.set("imbalance_tolerance", 1.05);
     zparams.set("partitioning_approach","partition");
     Zoltan2::PartitioningProblem<SparseMatrixAdapter>
