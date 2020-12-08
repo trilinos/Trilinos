@@ -464,15 +464,11 @@ there is no tractability for changes in these settings!
 ## Specific <system_name> directories
 
 The following `<system_name>` sub-directories exist (in alphabetical order):
-
 * `cee-rhel6/`: Contains files to drive builds on CEE LAnL RHEL6 machines with
   a SEMS environment.
 
-* `sems_gcc-7.2.0/`: Contains driver scripts for an on-off GCC 7.2.0 build
-  based on the SEMS system.  This build really does not fit into the system
-  described above but it put in this directory since it is targeted to support
-  ATDM.  It also shows that a given system can have its own driver files if it
-  needs to.
+* `ride/`: Contains the files to drive builds on the SRN test bed machine
+  `ride` which also can be run on the SON machine `white`.
 
 * `serrano/`: Contains files to drive builds on the SRN HPC machine `serrano`.
 
