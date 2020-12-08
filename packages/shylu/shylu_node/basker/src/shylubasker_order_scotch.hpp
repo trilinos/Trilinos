@@ -130,6 +130,8 @@ namespace BaskerNS
     using scotch_integral_type = int32_t; //NDE: make this depend on the scotch type
     #endif
     Kokkos::Impl::Timer timer_scotch;
+    Kokkos::Impl::Timer timer_metis;
+    double time_metis = 0.0;
 
     Int num_levels = num_domains; 
     Int num_doms   = pow(2.0, (double)(num_levels+1)) - 1;
@@ -158,7 +160,7 @@ namespace BaskerNS
       sg.Ap = (scotch_integral_type *)malloc((sg.m+1)     *sizeof(scotch_integral_type));
       sg.Ai = (scotch_integral_type *)malloc((M.nnz)      *sizeof(scotch_integral_type));
 
-      if (1) {
+      if (Options.use_metis == BASKER_TRUE) {
         //idx_t  metis_offset = btf_tabs(btf_tabs_offset-1);
         idx_t  metis_offset = 0; // BTF_A now contains one big block
         idx_t  metis_size = M.nrow - metis_offset;
@@ -182,8 +184,6 @@ namespace BaskerNS
         idx_t sepsize = 0;
         idx_t options[METIS_NOPTIONS];
 
-#define POSTORDER
-#ifdef POSTORDER
         // --------------------------------------------------- 
         // compute post-order
         INT_1DARRAY metis_queue;
@@ -248,7 +248,6 @@ namespace BaskerNS
           for(Int k = M.col_ptr(i); k < M.col_ptr(i+1); k++) printf( "%d %d\n",i,M.row_idx(k) );
         }
         printf( "];\n" );*/
-#endif
 
         // initial partition
         sg.cblk = 1;
@@ -358,6 +357,7 @@ namespace BaskerNS
               std::cout << std::endl << " > METIS_SetDefaultOptions failed < " << std::endl << std::endl;
               return BASKER_ERROR; // TODO: what to do here?
             }
+            timer_metis.reset();
             info = METIS_ComputeVertexSeparator(&metis_size_k,
                                                 &(metis_rowptr(0)),
                                                 &(metis_colidx(0)),
@@ -365,6 +365,7 @@ namespace BaskerNS
                                                  options,
                                                 &sepsize,
                                                 &(metis_part_k(0)));
+            time_metis += timer_metis.seconds();
             if (METIS_OK != METIS_SetDefaultOptions(options)) {
               std::cout << std::endl << " > METIS_ComputeVertexSeparator failed < " << std::endl << std::endl;
               return BASKER_ERROR; // TODO: what to do here?
@@ -461,6 +462,9 @@ namespace BaskerNS
         // --------------------------------------------------- 
         // done with ND using METIS
         sg.cblk = num_doms;
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout << std::endl << " > Time to call METIS : " << time_metis << std::endl;
+        }
       } else 
       { // using SCOTCH
         sg.Ap[0] = 0;
@@ -502,9 +506,13 @@ namespace BaskerNS
         {
           sg.permtab[i] = 0;
           sg.peritab[i] = 0;
+        }
+        for(Int i =0; i < num_doms; i++)
+        {
           sg.rangtab[i] = 0;
           sg.treetab[i] = 0;
         }
+        sg.rangtab[num_doms] = 0;
 
         SCOTCH_Strat strdat;
         SCOTCH_Graph cgrafptr;
@@ -563,7 +571,7 @@ namespace BaskerNS
     }
     if(Options.verbose == BASKER_TRUE) {
       double time_scotch = timer_scotch.seconds();
-      std::cout << std::endl << " > Time to compute ND : " << time_scotch << std::endl << std::endl;
+      std::cout << " > Time to compute ND : " << time_scotch << std::endl << std::endl;
       for(Int i = 0; i < sg.cblk; i++) {
         printf( " dom-%d : size = %d (%d:%d), tab = %d\n",(int)i,(int)(sg.rangtab[i+1]-sg.rangtab[i]),(int)sg.rangtab[i],(int)(sg.rangtab[i+1]-1),(int)(sg.treetab[i]) );
       }

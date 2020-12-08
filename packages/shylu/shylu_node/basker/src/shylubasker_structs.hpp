@@ -766,6 +766,9 @@ namespace BaskerNS
       //  0: no matching, 1: ShyLUBasker::mwm, 2: MC63 if enabled
       blk_matching = 1; // if 0, then ND & AMD are applied in symbolic
 
+      // ND Ordering Options
+      use_metis = false;
+
       //Pivot
       no_pivot   = BASKER_FALSE;
       pivot_tol  = BASKER_PIVOT_TOL; 
@@ -819,7 +822,10 @@ namespace BaskerNS
 
     //AMD Ordering Options
     BASKER_BOOL  amd_dom;
-    
+
+    // ND Ordering Options
+    BASKER_BOOL use_metis;
+
     //Pivot Options
     BASKER_BOOL  no_pivot;
     BASKER_MAGNITUDE pivot_tol;

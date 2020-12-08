@@ -732,8 +732,8 @@ namespace BaskerNS
     //	   ((double)BASKER_BTF_IMBALANCE));
     #if 0 // forcing to have the big A bloock for debug
     //Int break_size = 0;
-    Int break_size = 5;
-    //Int break_size = 10;
+    //Int break_size = 5;
+    Int break_size = 10;
     //Int break_size = 100;
     //Int break_size = 500000;
     printf( " > debug: break_size = %d\n",break_size );
