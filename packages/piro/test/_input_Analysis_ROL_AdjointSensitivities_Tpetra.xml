@@ -1,5 +1,6 @@
 <ParameterList>
   <ParameterList name="Piro">
+    <Parameter name="Sensitivity Method" type="string" value="Adjoint" />
     <Parameter name="Solver Type" type="string" value="NOX" />
     <!--Parameter name="Jacobian Operator" type="string" value="Matrix-Free"/ -->
     <ParameterList name="LOCA">
@@ -76,11 +77,6 @@
                 <ParameterList name="Ifpack2">
                   <Parameter name="Overlap" type="int" value="1" />
                   <Parameter name="Prec Type" type="string" value="RILUK" />
-                  <ParameterList name="Ifpack2 Settings">
-                    <Parameter name="fact: drop tolerance" type="double" value="0" />
-                    <Parameter name="fact: iluk level-of-fill" type="int" value="0" />
-                    <Parameter name="fact: level-of-fill" type="int" value="1" />
-                  </ParameterList>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -155,8 +151,6 @@
         <Parameter name="Error File" type="string" value="dak.err" />
       </ParameterList>
       <ParameterList name="ROL">
-        <Parameter name="Use Old Reduced Space Interface" type="bool" value="true" />
-      
         <Parameter name="Response Vector Index" type="int" value="0" />
         <Parameter name="Parameter Vector Index" type="int" value="0" />
         <Parameter name="Print Output" type="bool" value="true" />

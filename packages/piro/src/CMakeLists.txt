@@ -68,6 +68,7 @@ IF (Piro_ENABLE_NOX)
   APPEND_SET(HEADERS
     Piro_SteadyStateSolver.hpp
     Piro_SteadyStateSolver_Def.hpp
+    Piro_Reduced_Objective_SimOpt.hpp
     Piro_NOXSolver.hpp
     Piro_NOXSolver_Def.hpp
     Piro_LOCASolver.hpp

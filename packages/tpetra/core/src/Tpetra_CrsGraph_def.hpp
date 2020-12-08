@@ -1833,7 +1833,7 @@ namespace Tpetra {
     const LO lclRow = static_cast<LO> (rowInfo.localRow);
 
     auto numEntries = rowInfo.numEntries;
-    using inp_view_type = View<const GO*, device_type, MemoryUnmanaged>;
+    using inp_view_type = View<const GO*, Kokkos::HostSpace, MemoryUnmanaged>;
     inp_view_type inputInds(inputGblColInds, numInputInds);
     size_t numInserted = Details::insertCrsIndices(lclRow, k_rowPtrs_,
       this->k_gblInds1D_, numEntries, inputInds, fun);

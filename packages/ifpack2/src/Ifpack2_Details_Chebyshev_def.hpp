@@ -654,7 +654,7 @@ setParameters (Teuchos::ParameterList& plist)
   minDiagVal_ = minDiagVal;
   numIters_ = numIters;
   eigMaxIters_ = eigMaxIters;
-  eigNormalizationFreq_ = eigNormalizationFreq_;
+  eigNormalizationFreq_ = eigNormalizationFreq;
   zeroStartingSolution_ = zeroStartingSolution;
   assumeMatrixUnchanged_ = assumeMatrixUnchanged;
   textbookAlgorithm_ = textbookAlgorithm;
