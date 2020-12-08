@@ -48,6 +48,11 @@
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
+#ifdef out
+#include "KokkosKernels_Handle.hpp"
+#include "KokkosSparse_spgemm.hpp"
+#include "KokkosSparse_spmv.hpp"
+#endif
 #include "MueLu_SaPFactory_kokkos_decl.hpp"
 
 #include <Xpetra_Matrix.hpp>
@@ -171,7 +176,7 @@ namespace MueLu {
 
       SC lambdaMax;
       RCP<Vector> invDiag;
-      if (userDefinedMaxEigen == -1.)
+      if (Teuchos::ScalarTraits<SC>::real(userDefinedMaxEigen) == Teuchos::ScalarTraits<SC>::real(-1.0))
       {
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
         lambdaMax = A->GetMaxEigenvalueEstimate();
@@ -304,7 +309,7 @@ public:
           if (Kokkos::ArithTraits<SC>::real(row.value(j)) < Kokkos::ArithTraits<SC>::real(zero )) { 
 
             ConstraintViolationSum( j%nPDEs ) += row.value(j); 
-            SC val = row.value(j); val = zero;
+            row.value(j) = zero;
           }
           else {
             if (Kokkos::ArithTraits<SC>::real(row.value(j)) != Kokkos::ArithTraits<SC>::real(zero))
@@ -312,7 +317,7 @@ public:
     
             if (Kokkos::ArithTraits<SC>::real(row.value(j)) > Kokkos::ArithTraits<SC>::real(1.00001  )) { 
               ConstraintViolationSum( j%nPDEs ) += (row.value(j) - 1.0); 
-              SC val = row.value(j); val = Kokkos::ArithTraits<SC>::one();
+              row.value(j) =  Kokkos::ArithTraits<SC>::one();
             }
           }
         }
