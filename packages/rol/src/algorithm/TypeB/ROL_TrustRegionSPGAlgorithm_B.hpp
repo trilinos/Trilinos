@@ -84,7 +84,7 @@ private:
   // TRUNCATED CG INFORMATION
   Real tol1_; ///< Absolute tolerance for truncated CG (default: 1e-4)
   Real tol2_; ///< Relative tolerance for truncated CG (default: 1e-2)
-  int maxit_; ///< Maximum number of CG iterations (default: 20)
+  int maxit_; ///< Maximum number of CG iterations (default: 25)
 
   // ALGORITHM SPECIFIC PARAMETERS
   bool useNM_;
@@ -101,12 +101,9 @@ private:
   Real lambdaMin_;
   Real lambdaMax_;
   Real gamma_;
-  Real rhodec_;
-  Real sigma1_;
-  Real sigma2_;
-  int lsmax_;
   int maxSize_;
   bool useMin_;
+  bool useNMSP_;
 
   // Inexactness Parameters
   std::vector<bool> useInexact_;

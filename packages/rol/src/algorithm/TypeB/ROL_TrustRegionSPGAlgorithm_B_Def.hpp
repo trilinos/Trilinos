@@ -84,18 +84,15 @@ TrustRegionSPGAlgorithm_B<Real>::TrustRegionSPGAlgorithm_B(ParameterList &list,
   extrapf_   = lmlist.sublist("Cauchy Point").get("Expansion Rate",                    10.0);
   qtol_      = lmlist.sublist("Cauchy Point").get("Decrease Tolerance",                1e-8);
   // Spectral projected gradient parameters
-  lsmax_     = lmlist.sublist("Solver").get("Model Evaluation Limit",              20);
-  lambdaMin_ = lmlist.sublist("Solver").get("Minimum Spectral Step Size",          1e-8); 
-  lambdaMax_ = lmlist.sublist("Solver").get("Maximum Spectral Step Size",          1e8); 
-  sigma1_    = lmlist.sublist("Solver").get("Lower Step Size Safeguard",           0.1);
-  sigma2_    = lmlist.sublist("Solver").get("Upper Step Size Safeguard",           0.9);
-  rhodec_    = lmlist.sublist("Solver").get("Backtracking Rate",                   0.5);
+  lambdaMin_ = lmlist.sublist("Solver").get("Minimum Spectral Step Size",          1e-8);
+  lambdaMax_ = lmlist.sublist("Solver").get("Maximum Spectral Step Size",          1e8);
   gamma_     = lmlist.sublist("Solver").get("Sufficient Decrease Tolerance",       1e-4);
   maxSize_   = lmlist.sublist("Solver").get("Maximum Storage Size",                10);
   maxit_     = lmlist.sublist("Solver").get("Iteration Limit",                     25);
   tol1_      = lmlist.sublist("Solver").get("Absolute Tolerance",                  1e-4);
   tol2_      = lmlist.sublist("Solver").get("Relative Tolerance",                  1e-2);
   useMin_    = lmlist.sublist("Solver").get("Use Smallest Model Iterate",          true);
+  useNMSP_   = lmlist.sublist("Solver").get("Use Nonmonotone Search",              false);
   // Inexactness Information
   ParameterList &glist = list.sublist("General");
   useInexact_.clear();
@@ -444,13 +441,12 @@ void TrustRegionSPGAlgorithm_B<Real>::dpsg(Vector<Real> &y,
   //       y = Cauchy step
   //       x = Current iterate
   //       g = Current gradient
-  const Real half(0.5), one(1), eps(std::sqrt(ROL_EPSILON<Real>()));
+  const Real zero(0), half(0.5), one(1), two(2), eps(std::sqrt(ROL_EPSILON<Real>()));
   Real tol(std::sqrt(ROL_EPSILON<Real>()));
   Real alpha(1), mtrial(0), sHs(0), alphaTmp(1), mmax(0), qmin(0);
-  int ls_nfval(0);
   std::deque<Real> mqueue; mqueue.push_back(q);
 
-  if (useMin_) { qmin = q; ymin.set(y); }
+  if (useNMSP_ && useMin_) { qmin = q; ymin.set(y); }
 
   // Compute initial projected gradient norm
   pwa1.set(gmod.dual());
@@ -475,27 +471,31 @@ void TrustRegionSPGAlgorithm_B<Real>::dpsg(Vector<Real> &y,
   while (SPiter_ < maxit_) {
     SPiter_++;
 
-    // Evaluate model
+    // Evaluate model Hessian
     model.hessVec(dwa,pwa,x,tol); nhess_++; // dwa = H step
-    sHs    = dwa.apply(pwa);                // sHs = <step, H step>
-    mtrial = q + gs + half * sHs;           // Current model value
+    sHs = dwa.apply(pwa);                   // sHs = <step, H step>
 
-    // Perform nonmonotone line search
-    ls_nfval = 0;
-    alpha = one;
-    mmax  = *std::max_element(mqueue.begin(),mqueue.end());
-    while (mtrial > mmax + gamma_*alpha*gs && ls_nfval < lsmax_) {
-      alphaTmp = -half*alpha*alpha*gs/(mtrial-q-alpha*gs);
-      alpha    = (sigma1_*alpha <= alphaTmp && alphaTmp <= sigma2_*alpha) ? alphaTmp : rhodec_*alpha;
-      mtrial   = q + alpha * (gs + half * alpha * sHs); ls_nfval++;
+    // Perform line search
+    if (useNMSP_) { // Nonmonotone
+      mmax     = *std::max_element(mqueue.begin(),mqueue.end());
+      alphaTmp = (-(one-gamma_)*gs + std::sqrt(std::pow((one-gamma_)*gs,two)-two*sHs*(q-mmax)))/sHs;
     }
-    y.axpy(alpha,pwa);    // y = y + alpha pwa
-    q = mtrial;           // New model value at y
-    gmod.axpy(alpha,dwa); // New model gradient at y
-    if (static_cast<int>(mqueue.size())==maxSize_) mqueue.pop_front();
-    mqueue.push_back(q);
+    else { // Exact
+      alphaTmp = -gs/sHs;
+    }
+    alpha = (sHs > zero ? std::min(one,std::max(zero,alphaTmp)) : one);
 
-    if (q <= qmin && useMin_) { qmin = q; ymin.set(y); }
+    // Update model quantities
+    q += alpha * (gs + half * alpha * sHs); // Update model value
+    gmod.axpy(alpha,dwa);                   // Update model gradient
+    y.axpy(alpha,pwa);                      // New iterate
+
+    // Update nonmonotone line search information
+    if (useNMSP_) {
+      if (static_cast<int>(mqueue.size())==maxSize_) mqueue.pop_front();
+      mqueue.push_back(q);
+      if (useMin_ && q <= qmin) { qmin = q; ymin.set(y); }
+    }
 
     // Compute projected gradient norm
     pwa1.set(gmod.dual());
@@ -523,7 +523,7 @@ void TrustRegionSPGAlgorithm_B<Real>::dpsg(Vector<Real> &y,
     gs = gmod.apply(pwa);
     ss = pwa.dot(pwa);
   }
-  if (useMin_) { q = qmin; y.set(ymin); }
+  if (useNMSP_ && useMin_) { q = qmin; y.set(ymin); }
   SPflag_ = (SPiter_==maxit_) ? 1 : 0;
 }
 
