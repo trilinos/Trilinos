@@ -13,12 +13,6 @@ set (CMAKE_CXX_STANDARD "14" CACHE STRING "Set C++ standard to C++14")
 # Use the below option only when submitting to the dashboard
 set (CTEST_USE_LAUNCHERS ON CACHE BOOL "Set by default for PR testing")
 
-# Wipe out old possibly corruted <target>.timing files
-set (Trilinos_REMOVE_BUILD_STATS_TIMING_FILES_ON_FRESH_CONFIGURE ON
-  CACHE BOOL "Set by default for this PR build")
-# NOTE: The above was added to handle a corrupted *.timing file that occurred
-# in PR #7508.
-
 # Options necessary for CUDA build
 set (TPL_ENABLE_MPI ON CACHE BOOL "Set by default for CUDA PR testing")
 set (Kokkos_ENABLE_CUDA ON CACHE BOOL "Set by default for CUDA PR testing")

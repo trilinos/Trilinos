@@ -69,9 +69,6 @@ set (MueLu_UnitTestsTpetra_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in 
 # (Temporarily) Disable randomly failing ROL test (#3103)
 set (ROL_example_poisson-inversion_example_01_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 
-# Don't allow build-stats to be enabled for now for intel (#7376)
-set(Trilinos_ENABLE_BUILD_STATS OFF CACHE BOOL "Set in PullRequestLinuxIntelTestingSettings.cmake")
-
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 
 set (Tpetra_INST_INT_INT ON CACHE BOOL "INST_INT_INT ON")
