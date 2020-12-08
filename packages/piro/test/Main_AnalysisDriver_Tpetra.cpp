@@ -99,11 +99,11 @@ int main(int argc, char *argv[]) {
 
     if (doAll) {
       switch (iTest) {
-       case 0: inputFile="input_Analysis_ROL_OldReducedSpace_Tpetra.xml"; break;
+       case 0: inputFile="input_Analysis_ROL_Tpetra.xml"; break;
        case 1: inputFile="input_Analysis_ROL_ReducedSpace_NOXSolver_Tpetra.xml"; break;
        case 2: inputFile="input_Analysis_ROL_ReducedSpace_Tpetra.xml"; break;
        case 3: inputFile="input_Analysis_ROL_FullSpace_Tpetra.xml"; break;
-       case 4: inputFile="input_Analysis_ROL_AdjointSensitivities_OldReducedSpace_Tpetra.xml"; break;
+       case 4: inputFile="input_Analysis_ROL_AdjointSensitivities_Tpetra.xml"; break;
        case 5: inputFile="input_Analysis_ROL_AdjointSensitivities_ReducedSpace_NOXSolver_Tpetra.xml"; break;
        case 6: inputFile="input_Analysis_ROL_AdjointSensitivities_FullSpace_Tpetra.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
