@@ -14,6 +14,7 @@
 #include "Zoltan2_ColoringSolution.hpp"
 #include "Zoltan2_Util.hpp"
 #include "Zoltan2_TPLTraits.hpp"
+#include "Zoltan2_AlltoAll.hpp"
 
 #include "Tpetra_Core.hpp"
 #include "Teuchos_RCP.hpp"
