@@ -157,7 +157,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       double comm_total = 0.0;
       double comm_temp = timer();
 
-      Zoltan2::AlltoAllv<gno_t>(*comm, *env, sendbuf_view, sendcnts_view, recvbuf, recvcnts_view);
+      /*Zoltan2::*/AlltoAllv<gno_t>(*comm, *env, sendbuf_view, sendcnts_view, recvbuf, recvcnts_view);
       comm_total += timer() - comm_temp;
       
       gno_t recvsize = 0;
