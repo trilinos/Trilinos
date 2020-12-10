@@ -8911,7 +8911,7 @@ namespace Tpetra {
       SourcePids.resize (getColMap ()->getNodeNumElements ());
       SourceCol_pids.get1dCopy (SourcePids ());
     }
-    else if (MyImporter.is_null () && bSameDomainMap) {
+    else if (MyImporter.is_null ()) {
       // Matrix has no off-process entries
       SourcePids.resize (getColMap ()->getNodeNumElements ());
       SourcePids.assign (getColMap ()->getNodeNumElements (), MyPID);
