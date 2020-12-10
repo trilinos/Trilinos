@@ -66,6 +66,37 @@ using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 using Teuchos::Array;
 
+/*! \brief Transform composite vector to regional layout
+ *
+ *  Starting from a vector in composite layout, we
+ *  1. import it into an auxiliary vector in the quasiRegional layout
+ *  2. replace the quasiRegional map of the auxiliary vector with the regional map
+ */
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void compositeToRegional(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > compVec, ///< Vector in composite layout [in]
+                         RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& quasiRegVecs, ///< Vector in quasiRegional layout [in/out]
+                         RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regVecs, ///< Vector in regional layout [in/out]
+                         const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap, ///< revised row maps in region layout [in]
+                         const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport ///< row importer in region layout [in]
+                         )
+{
+#include "Xpetra_UseShortNames.hpp"
+
+  // quasiRegional layout
+  // create empty vectors and fill it by extracting data from composite vector
+  quasiRegVecs = VectorFactory::Build(rowImport->getTargetMap(), true);
+  TEUCHOS_ASSERT(!quasiRegVecs.is_null());
+  quasiRegVecs->doImport(*compVec, *(rowImport), Xpetra::INSERT);
+
+  // regional layout
+  // create regVecs vector (copy from quasiRegVecs and swap the map)
+  regVecs = quasiRegVecs; // assignment operator= does deep copy in Xpetra
+  TEUCHOS_ASSERT(!regVecs.is_null());
+  regVecs->replaceMap(revisedRowMap);
+
+  return;
+} // compositeToRegional
+
 
 /*! \brief Transform composite vector to regional layout
  *
@@ -259,6 +290,80 @@ void regionalToComposite(const RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, Glo
   return;
 } // regionalToComposite
 
+/*! \brief Sum region interface values
+ *
+ *  Sum values of interface GIDs using the underlying Export() routines. Technically, we perform the
+ *  exchange/summation of interface data by exporting a regional vector to the composite layout and
+ *  then immediately importing it back to the regional layout. The Export() involved when going to the
+ *  composite layout takes care of the summation of interface values.
+ */
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void sumInterfaceValues(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regVec,
+                        const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >  revisedRowMap,///< revised row maps in region layout [in]
+                        const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >  rowImport ///< row importer in region layout [in])
+                        )
+{
+#include "Xpetra_UseShortNames.hpp"
+  using Teuchos::TimeMonitor;
+
+  // Composite map is the same in every group, so just take the first one.
+  const RCP<const Map> compMap = rowImport->getSourceMap();
+
+  RCP<Vector> compVec = VectorFactory::Build(compMap, true);
+  TEUCHOS_ASSERT(!compVec.is_null());
+
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("sumInterfaceValues: 1 - regionalToComposite")));
+  regionalToComposite(regVec, compVec, rowImport);
+
+  tm = Teuchos::null;
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("sumInterfaceValues: 2 - compositeToRegional")));
+
+  Teuchos::RCP<Vector> quasiRegVec;
+  compositeToRegional(compVec, quasiRegVec, regVec,
+                      revisedRowMap, rowImport);
+
+  tm = Teuchos::null;
+
+  return;
+} // sumInterfaceValues
+
+
+/*! \brief Sum region interface values
+ *
+ *  Sum values of interface GIDs using the underlying Export() routines. Technically, we perform the
+ *  exchange/summation of interface data by exporting a regional vector to the composite layout and
+ *  then immediately importing it back to the regional layout. The Export() involved when going to the
+ *  composite layout takes care of the summation of interface values.
+ */
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void sumInterfaceValues(RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regVec,
+                        const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,///< revised row maps in region layout [in]
+                        const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport ///< row importer in region layout [in])
+                        )
+{
+#include "Xpetra_UseShortNames.hpp"
+  using Teuchos::TimeMonitor;
+
+  // Composite map is the same in every group, so just take the first one.
+  const RCP<const Map> compMap = rowImport->getSourceMap();
+
+  RCP<MultiVector> compVec = MultiVectorFactory::Build(compMap, regVec->getNumVectors(), true);
+  TEUCHOS_ASSERT(!compVec.is_null());
+
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("sumInterfaceValues: 1 - regionalToComposite")));
+  regionalToComposite(regVec, compVec, rowImport);
+
+  tm = Teuchos::null;
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("sumInterfaceValues: 2 - compositeToRegional")));
+
+  Teuchos::RCP<MultiVector> quasiRegVec;
+  compositeToRegional(compVec, quasiRegVec, regVec,
+                      revisedRowMap, rowImport);
+
+  tm = Teuchos::null;
+
+  return;
+} // sumInterfaceValues
 
 /*! \brief Sum region interface values
  *
