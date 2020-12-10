@@ -16,9 +16,9 @@ private:
   using MVT = Belos::MultiVecTraits<SC, MV>;
   using LO = typename MV::local_ordinal_type;
   using STS = Teuchos::ScalarTraits<SC>;
-  using mag_type = typename STS::magnitudeType;
-  using STM = Teuchos::ScalarTraits<mag_type>;
-  using complex_type = std::complex<mag_type>;
+  using real_type = typename STS::magnitudeType;
+  using STM = Teuchos::ScalarTraits<real_type>;
+  using complex_type = std::complex<real_type>;
   using dense_matrix_type = Teuchos::SerialDenseMatrix<LO, SC>;
   using dense_vector_type = Teuchos::SerialDenseVector<LO, SC>;
   using vec_type = typename Krylov<SC, MV, OP>::vec_type;
@@ -71,9 +71,63 @@ protected:
   }
 
 private:
+  //! Cleanup the orthogonalization on the "last" basis vector
+  int
+  projectAndNormalizeSingleReduce_cleanup (Teuchos::FancyOStream* outPtr,
+                                           int n,
+                                           const SolverInput<SC>& input, 
+                                           MV& Q,
+                                           dense_matrix_type& H,
+                                           dense_matrix_type& WORK) const
+  {
+    const real_type eps = STS::eps ();
+    const real_type tolFactor = static_cast<real_type> (0.0);
+    const real_type tolOrtho  = tolFactor * eps;
+    const SC zero = STS::zero ();
+    const SC one  = STS::one ();
+
+    Teuchos::RCP< Teuchos::Time > dotsTimer = Teuchos::TimeMonitor::getNewCounter ("GmresSingleReduce::LowSynch::dot-prod");
+
+    int rank = 1;
+    if (input.orthoType != "CGS") {
+      vec_type Qn  = * (Q.getVectorNonConst (n));
+      if (input.needToReortho) {
+        // compute norm
+        real_type newNorm (0.0);
+        {
+          Teuchos::TimeMonitor LocalTimer (*dotsTimer);
+          newNorm = Qn.norm2 ();
+        }
+
+        // scale
+        SC Tnn = zero;
+        real_type oldNorm (1.0);
+        if (newNorm > oldNorm * tolOrtho) {
+          Tnn = SC {newNorm};
+          MVT::MvScale (Qn, one / Tnn); 
+        } else {
+          if (outPtr != nullptr) {
+            *outPtr << " + newNorm = " << Tnn  << " -> H(" << n+1 << ", " << n << ") = zero"
+                    << std::endl;
+          }
+          Tnn = zero;
+          rank = 0;
+        }
+        // update coefficients after reortho
+        if (n > 0) {
+          H (n, n-1) *= Tnn;
+        }
+      }
+    }
+    return rank;
+  }
+
+
+
   //! Apply the orthogonalization using a single all-reduce
   int
-  projectAndNormalizeSingleReduce (int n,
+  projectAndNormalizeSingleReduce (Teuchos::FancyOStream* outPtr,
+                                   int n,
                                    const SolverInput<SC>& input, 
                                    MV& Q,
                                    dense_matrix_type& H,
@@ -84,11 +138,11 @@ private:
 
     int rank = 0;
     if (input.orthoType == "CGS") {
-      // default, one-synch CGS, optionally with reortho
-      rank = projectAndNormalizeSingleReduce_CGS (n, input, Q, H, WORK);
+      // default, one-synch CGS1, optionally with reortho
+      rank = projectAndNormalizeSingleReduce_CGS1 (outPtr, n, input, Q, H, WORK);
     } else {
       // one-synch MGS or CGS2, optionally with delayed renorm
-      rank = projectAndNormalizeSingleReduce_GS (n, input, Q, H, WORK);
+      rank = projectAndNormalizeSingleReduce_GS (outPtr, n, input, Q, H, WORK);
     }
     return rank;
   }
@@ -96,7 +150,8 @@ private:
 
   //! MGS/CGS2 specialization
   int
-  projectAndNormalizeSingleReduce_GS (int n,
+  projectAndNormalizeSingleReduce_GS (Teuchos::FancyOStream* outPtr,
+                                      int n,
                                       const SolverInput<SC>& input, 
                                       MV& Q,
                                       dense_matrix_type& H,
@@ -105,8 +160,9 @@ private:
     const SC zero = STS::zero ();
     const SC one  = STS::one  ();
     const SC two  = one + one;
-    const mag_type eps  = STS::eps ();
-    const mag_type tolOrtho = static_cast<mag_type> (10.0) * eps;
+    const real_type eps = STS::eps ();
+    const real_type tolFactor = static_cast<real_type> (10.0);
+    const real_type tolOrtho  = tolFactor * eps;
 
     Teuchos::RCP< Teuchos::Time > dotsTimer = Teuchos::TimeMonitor::getNewCounter ("GmresSingleReduce::LowSynch::dot-prod");
     Teuchos::RCP< Teuchos::Time > projTimer = Teuchos::TimeMonitor::getNewCounter ("GmresSingleReduce::LowSynch::project");
@@ -133,27 +189,64 @@ private:
     // ----------------------------------------------------------
     // lagged/delayed re-orthogonalization
     // ----------------------------------------------------------
-    mag_type prevNorm = STS::real (T(n, n));
-    prevNorm = STM::squareroot (prevNorm);
-    T(n, n) = SC {prevNorm};
+    Teuchos::Range1D index_new (n+1, n+1);
+    MV Qnew = * (Q.subView (index_new));
     if (input.needToReortho) {
-      Teuchos::Range1D index_old (n, n);
-      MV Qold = * (Q.subView (index_old));
-      MVT::MvScale (Qold, one / T (n, n)); // normalize
+      // check
+      real_type prevNorm = STS::real (T(n, n));
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (prevNorm < STM::zero (), std::runtime_error, "At iteration "
+         << n << ", T(" << n << ", " << n << ") = " << T(n, n) << " < 0.");
 
-      // update coefficients after reortho
-      T (n, n+1) /= T (n, n);
-      for (int i = 0; i <= n; i++) {
-        T (i, n) /= T (n, n);
+      // lagged-normalize Q(:,n)
+      SC Tnn = zero;
+      real_type oldNorm (0.0);
+      if (prevNorm > oldNorm * tolOrtho) {
+        prevNorm = STM::squareroot (prevNorm);
+        Tnn = SC {prevNorm};
+
+        Teuchos::Range1D index_old (n, n);
+        MV Qold = * (Q.subView (index_old));
+        MVT::MvScale (Qold, one / Tnn); 
+
+        // --------------------------------------
+        // update coefficients after reortho
+        for (int i = 0; i <= n; i++) {
+          T (i, n) /= Tnn;
+        }
+        T(n, n) /= Tnn;
+        T(n, n+1) /= Tnn;
+
+        // --------------------------------------
+        // lagged-normalize Q(:,n+1) := A*Q(:,n)
+        MVT::MvScale (Qnew, one / Tnn);
+
+        // update coefficients after reortho
+        for (int i = 0; i <= n+1; i++) {
+          T (i, n+1) /= Tnn;
+        }
+        T(n+1, n+1) /= Tnn;
+      } else {
+        if (outPtr != nullptr) {
+          *outPtr << " > prevNorm = " << prevNorm << " -> T(" << n << ", " << n << ") = zero"
+                  << ", tol = " << tolOrtho << " x oldNorm = " << oldNorm
+                  << std::endl;
+        }
       }
+      // update coefficients after reortho
       if (n > 0) {
-        H (n, n-1) *= T (n, n);
+        H (n, n-1) *= Tnn;
       }
     }
 
     // ----------------------------------------------------------
     // comopute new coefficients (one-synch MGS/CGS2)
     // ----------------------------------------------------------
+    // expand from triangular to full, conjugate (needed only for CGS2)
+    for (int j = 0; j < n; j++) {
+      T(n, j) = STS::conjugate(T(j, n));
+    }
+
     // extract new coefficients 
     for (int i = 0; i <= n+1; i++) {
       H (i, n) = T (i, n+1);
@@ -164,17 +257,12 @@ private:
     dense_matrix_type Hnew (Teuchos::View, H, n+1, 1, 0, n);
     if (input.orthoType == "MGS") {
       // H := (I+T)^(-T) H, where T is upper-triangular
-      blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,
-                 Teuchos::TRANS, Teuchos::UNIT_DIAG,
+      blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::LOWER_TRI,
+                 Teuchos::NO_TRANS, Teuchos::UNIT_DIAG,
                  n+1, 1,
                  one, T.values(), T.stride(),
                       Hnew.values(), Hnew.stride());
     } else {
-      // expand from triangular to full, conjugate
-      for (int j = 0; j < n; j++) {
-        T(n, j) = STS::conjugate(T(j, n));
-      }
-
       // H := (2*I-L) H, where T is full symmetrix Q'*Q
       dense_matrix_type Told (Teuchos::View, T, n+1, 1, 0, n+1);
       blas.COPY (n+1, Hnew.values(), 1, Told.values(), 1);
@@ -188,9 +276,6 @@ private:
     // ----------------------------------------------------------
     // orthogonalize the new vectors against the previous columns
     // ----------------------------------------------------------
-    Teuchos::Range1D index_new (n+1, n+1);
-    MV Qnew = * (Q.subView (index_new));
-
     Teuchos::Range1D index_prev (0, n);
     Teuchos::RCP< const MV > Qprev = MVT::CloneView (Q, index_prev);
     {
@@ -202,14 +287,37 @@ private:
     // normalize the new vector
     // ----------------------------------------------------------
     // fix the norm
-    mag_type oldNorm = STS::real (H(n+1, n));
+    real_type oldNorm = STS::real (H(n+1, n));
     for (int i = 0; i <= n; ++i) {
       H(n+1, n) -= (H(i, n)*H(i, n));
     }
-    mag_type newNorm = STS::real (H(n+1, n));
 
-    // check
-    if (newNorm > oldNorm * tolOrtho) {
+    real_type newNorm = STS::real (H(n+1, n));
+    if (newNorm <= oldNorm * tolOrtho) {
+      if (input.needToReortho) {
+        // something might have gone wrong, and let re-norm take care of
+        if (outPtr != nullptr) {
+          *outPtr << " > newNorm = " << newNorm << " -> H(" << n+1 << ", " << n << ") = one"
+                  << ", tol = " << tolOrtho << " x oldNorm = " << oldNorm
+                  << std::endl;
+        }
+        H(n+1, n) = STS::one ();
+        rank = 1;
+      } else {
+        if (outPtr != nullptr) {
+          *outPtr << " > newNorm = " << newNorm << " -> H(" << n+1 << ", " << n << ") = zero"
+                  << ", tol = " << tolOrtho << " x oldNorm = " << oldNorm
+                  << std::endl;
+        }
+        H(n+1, n) = zero;
+        rank = 0;
+      }
+    } else {
+      // check
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (newNorm < STM::zero (), std::runtime_error, "At iteration "
+         << n << ", H(" << n+1 << ", " << n << ") = " << newNorm << " < 0.");
+
       // compute norm
       newNorm = STM::squareroot (newNorm);
       H(n+1, n) = SC {newNorm};
@@ -218,11 +326,22 @@ private:
       MVT::MvScale (Qnew, one / H (n+1, n)); // normalize
       rank = 1;
     }
-    else {
-      H(n+1, n) = zero;
-      rank = 0;
+    /*printf( " T = [\n" );
+    for (int i = 0; i <= n; i++) {
+      for (int j = 0; j <= n; j++) {
+        printf( "%e ", T (i, j) );
+      }
+      printf( "\n" );
     }
-
+    printf( "];\n" );*/
+    /* printf( " H = [\n" );
+    for (int i = 0; i <= n+1; i++) {
+      for (int j = 0; j <= n; j++) {
+        printf( "%e ", H (i, j) );
+      }
+      printf( "\n" );
+    }
+    printf( "];\n" );*/
 
     return rank;
   }
@@ -230,16 +349,18 @@ private:
 
   //! CGS1 specialization
   int
-  projectAndNormalizeSingleReduce_CGS (int n,
-                                       const SolverInput<SC>& input, 
-                                       MV& Q,
-                                       dense_matrix_type& H,
-                                       dense_matrix_type& WORK) const
+  projectAndNormalizeSingleReduce_CGS1 (Teuchos::FancyOStream* outPtr,
+                                        int n,
+                                        const SolverInput<SC>& input, 
+                                        MV& Q,
+                                        dense_matrix_type& H,
+                                        dense_matrix_type& WORK) const
   {
     Teuchos::BLAS<LO, SC> blas;
     const SC one = STS::one ();
-    const mag_type eps  = STS::eps ();
-    const mag_type tolOrtho = static_cast<mag_type> (10.0) * eps;
+    const real_type eps = STS::eps ();
+    const real_type tolFactor = static_cast<real_type> (10.0);
+    const real_type tolOrtho  = tolFactor * eps;
 
     int rank = 0;
     Teuchos::Range1D index_all(0, n+1);
@@ -258,7 +379,7 @@ private:
     MVT::MvTimesMatAddMv (-one, Qprev, h_prev, one, AP);
 
     // save the norm before ortho
-    mag_type oldNorm = STS::real (H(n+1, n));
+    real_type oldNorm = STS::real (H(n+1, n));
 
     // reorthogonalize if requested
     if (input.needToReortho) {
@@ -269,6 +390,7 @@ private:
       // orthogonalize (project)
       MVT::MvTimesMatAddMv (-one, Qprev, w_prev, one, AP);
       // recompute the norm
+      oldNorm = STS::real (w_all(n+1, 0));
       for (int i = 0; i <= n; ++i) {
         w_all(n+1, 0) -= (w_prev(i, 0)*w_prev(i, 0));
       }
@@ -289,14 +411,18 @@ private:
     // Check for zero norm.  OK to take real part of H(n+1, n), since
     // this is a magnitude (cosine) anyway and therefore should always
     // be real.
-    const mag_type H_np1_n = STS::real (H(n+1, n));
+    const real_type H_np1_n = STS::real (H(n+1, n));
     if (H_np1_n > oldNorm * tolOrtho) {
-      const mag_type H_np1_n_sqrt = STM::squareroot (H_np1_n);
+      const real_type H_np1_n_sqrt = STM::squareroot (H_np1_n);
       H(n+1, n) = SC {H_np1_n_sqrt};
       MVT::MvScale (AP, STS::one () / H(n+1, n)); // normalize
       rank = 1;
     }
     else {
+      if (outPtr != nullptr) {
+        *outPtr << " > newNorm = " << H_np1_n << " -> H(" << n+1 << ", " << ") = zero"
+                << std::endl;
+      }
       H(n+1, n) = STS::zero ();
       rank = 0;
     }
@@ -328,10 +454,10 @@ private:
     output.numIters = 0;
     output.converged = false;
 
-    mag_type b_norm;  // initial residual norm
-    mag_type b0_norm; // initial residual norm, not left-preconditioned
-    mag_type r_norm;
-    mag_type r_norm_imp;
+    real_type b_norm;  // initial residual norm
+    real_type b0_norm; // initial residual norm, not left-preconditioned
+    real_type r_norm;
+    real_type r_norm_imp;
 
     bool zeroOut = false; 
     MV Q (B.getMap (), restart+1, zeroOut);
@@ -345,7 +471,7 @@ private:
     dense_matrix_type T (restart+1, restart+2, true);
     dense_vector_type y (restart+1, true);
     dense_vector_type z (restart+1, true);
-    std::vector<mag_type> cs (restart);
+    std::vector<real_type> cs (restart);
     std::vector<SC> sn (restart);
     
     #ifdef HAVE_TPETRA_DEBUG
@@ -368,9 +494,9 @@ private:
     }
     b_norm = r_norm;
 
-    mag_type metric = this->getConvergenceMetric (b0_norm, b0_norm, input);
+    real_type metric = this->getConvergenceMetric (b0_norm, b0_norm, input);
     if (metric <= input.tol) {
-      if (outPtr != NULL) {
+      if (outPtr != nullptr) {
         *outPtr << "Initial guess' residual norm " << b0_norm
                 << " meets tolerance " << input.tol << endl;
       }
@@ -378,7 +504,7 @@ private:
       output.relResid = STM::one ();
       output.converged = true;
       return output;
-    } else if (outPtr != NULL) {
+    } else if (outPtr != nullptr) {
       *outPtr << "Initial guess' residual norm " << b0_norm << endl;
     }
 
@@ -477,7 +603,7 @@ private:
         output.numIters++; 
 
         // Orthogonalization
-        projectAndNormalizeSingleReduce (iter, input, Q, H, T);
+        projectAndNormalizeSingleReduce (outPtr, iter, input, Q, H, T);
 
         // Convergence check
         if (!delayed_ortho || iter > 0) {
@@ -497,6 +623,16 @@ private:
           #ifdef HAVE_TPETRA_DEBUG
           this->checkNumerics (outPtr, iter, check, A, M, Q, X, B, y,
                                H, H2, H3, cs, sn, input);
+
+          if (outPtr != nullptr) {
+            dense_matrix_type T2 (check+1, check+1, true);
+            for (int j = 0; j < check+1; j++) {
+              blas.COPY (check+1, &(T(0, j)), 1, &(T2(0, j)), 1);
+              T2 (j, j) -= one;
+            }
+            real_type ortho_error = this->computeNorm(T2);
+            *outPtr << " > norm(T-I) = " << ortho_error << endl;
+          }
           #endif
 
           if (H(check+1, check) != zero) {
@@ -514,6 +650,9 @@ private:
       } // end of restart cycle 
 
       if (delayed_ortho) {
+        // Orthogonalization, cleanup
+        projectAndNormalizeSingleReduce_cleanup (outPtr, iter, input, Q, H, T);
+
         int check = iter-1;
         // Shift back for Newton basis
         if (computeRitzValues) {

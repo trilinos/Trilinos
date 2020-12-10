@@ -22,8 +22,8 @@ namespace { // (anonymous)
 template<class LO, class SC, bool isComplex = Teuchos::ScalarTraits<SC>::isComplex>
 struct ComputeRitzValues {
   using STS = Teuchos::ScalarTraits<SC>;
-  using mag_type = typename STS::magnitudeType;
-  using complex_type = std::complex<mag_type>;
+  using real_type = typename STS::magnitudeType;
+  using complex_type = std::complex<real_type>;
 
   static void
   run (const int iter,
@@ -35,8 +35,8 @@ struct ComputeRitzValues {
 template<class LO, class SC>
 struct ComputeRitzValues<LO, SC, false> {
   using STS = Teuchos::ScalarTraits<SC>;
-  using mag_type = typename STS::magnitudeType;
-  using complex_type = std::complex<mag_type>;
+  using real_type = typename STS::magnitudeType;
+  using complex_type = std::complex<real_type>;
 
   static void
   run (const int iter,
@@ -47,8 +47,8 @@ struct ComputeRitzValues<LO, SC, false> {
       ritzValues.resize (iter);
     }
 
-    std::vector<mag_type> WR (iter);
-    std::vector<mag_type> WI (iter);
+    std::vector<real_type> WR (iter);
+    std::vector<real_type> WI (iter);
     Teuchos::LAPACK<LO, SC> lapack;
     SC TEMP = STS::zero ();
     LO info = 0;
@@ -80,8 +80,8 @@ struct ComputeRitzValues<LO, SC, false> {
 template<class LO, class SC>
 struct ComputeRitzValues<LO, SC, true> {
   using STS = Teuchos::ScalarTraits<SC>;
-  using mag_type = typename STS::magnitudeType;
-  using complex_type = std::complex<mag_type>;
+  using real_type = typename STS::magnitudeType;
+  using complex_type = std::complex<real_type>;
 
   static void
   run (const int iter,
@@ -251,9 +251,8 @@ private:
   using MVT = Belos::MultiVecTraits<SC, MV>;
   using LO = typename MV::local_ordinal_type;
   using STS = Teuchos::ScalarTraits<SC>;
-  using mag_type = typename STS::magnitudeType;
   using real_type = typename STS::magnitudeType;
-  using STM = Teuchos::ScalarTraits<mag_type>;
+  using STM = Teuchos::ScalarTraits<real_type>;
   using device_type = typename MV::device_type;
 
   using ortho_type = Belos::OrthoManager<SC, MV>;
@@ -431,7 +430,7 @@ protected:
   void
   reduceHessenburgToTriangular(const int j,
                                dense_matrix_type& H,
-                               std::vector<mag_type>& cs,
+                               std::vector<real_type>& cs,
                                std::vector<SC>& sn,
                                SC y[]) const
   {
@@ -450,7 +449,7 @@ protected:
   void
   reduceHessenburgToTriangular(const int j,
                                dense_matrix_type& H,
-                               std::vector<mag_type>& cs,
+                               std::vector<real_type>& cs,
                                std::vector<SC>& sn,
                                dense_vector_type& y) const
   {
@@ -490,10 +489,10 @@ protected:
       *outPtr << input;
     }
 
-    mag_type b_norm;  // initial residual norm
-    mag_type b0_norm; // initial residual norm, not left preconditioned
-    mag_type r_norm;
-    mag_type r_norm_imp;
+    real_type b_norm;  // initial residual norm
+    real_type b0_norm; // initial residual norm, not left preconditioned
+    real_type r_norm;
+    real_type r_norm_imp;
 
     bool zeroOut = false; // Kokkos::View:init can take a long time on GPU?
     vec_type R (B.getMap (), zeroOut);
@@ -517,7 +516,7 @@ protected:
       Tpetra::deep_copy (P, R);
       b_norm = b0_norm;
     }
-    mag_type metric = this->getConvergenceMetric (b0_norm, b0_norm, input);
+    real_type metric = this->getConvergenceMetric (b0_norm, b0_norm, input);
 
     if (metric <= input.tol) {
       if (outPtr != nullptr) {
@@ -541,7 +540,7 @@ protected:
     dense_matrix_type  G (restart+1, restart, true); // only for Ritz values
     dense_vector_type  y (restart+1, true);
     dense_matrix_type  h (restart+1, 1, true); // for reorthogonalization
-    std::vector<mag_type> cs (restart);
+    std::vector<real_type> cs (restart);
     std::vector<SC> sn (restart);
 
     #define HAVE_TPETRA_DEBUG
@@ -746,21 +745,22 @@ protected:
   }
 
   // ! Check numerics
-  void checkNumerics (Teuchos::FancyOStream* outPtr,
-                      const int iter,
-                      const int check,
-                      const OP& A,
-                      const OP& M,
-                      const MV& Q,
-                      const vec_type& X,
-                      const vec_type& B,
-                      const dense_vector_type& y,
-                      const dense_matrix_type& H,
-                            dense_matrix_type& H2,
-                            dense_matrix_type& H3,
-                            std::vector<mag_type>& cs,
-                            std::vector<SC>& sn,
-                      const SolverInput<SC>& input)
+  void 
+  checkNumerics (Teuchos::FancyOStream* outPtr,
+                 const int iter,
+                 const int check,
+                 const OP& A,
+                 const OP& M,
+                 const MV& Q,
+                 const vec_type& X,
+                 const vec_type& B,
+                 const dense_vector_type& y,
+                 const dense_matrix_type& H,
+                       dense_matrix_type& H2,
+                       dense_matrix_type& H3,
+                       std::vector<real_type>& cs,
+                       std::vector<SC>& sn,
+                 const SolverInput<SC>& input)
   {
     Teuchos::BLAS<LO ,SC> blas;
     const SC zero = STS::zero ();
@@ -783,9 +783,10 @@ protected:
 
     #if 0
     printf( " > checkNumeric(iter = %d, check = %d)\n",iter,check );
-    /*printf( " Q = [\n" );
-    for (int i = 0; i < Q_lcl.extent(0); i++) {
-      for (int j = 0; j <= check; j++) printf( "%.16e ",Q_lcl(i,j) );
+    /*auto Q_lcl = Q.getLocalViewHost();
+    printf( " Q = [\n" );
+    for (int i = 0; i < (int)Q_lcl.extent(0); i++) {
+      for (int j = 0; j <= check+1; j++) printf( "%.16e ",Q_lcl(i,j) );
       printf("\n" );
     }
     printf("];\n" );*/
@@ -793,20 +794,21 @@ protected:
     printf( " H2 = [\n" );
     for (int i = 0; i <= check+1; i++) {
       for (int j = 0; j <= check; j++) {
-        printf( "%e ", H2 (i, j) );
+        printf( "%.16e ", H2 (i, j) );
       }
       printf( "\n" );
     }
     printf( "];\n" );
-    printf( " H3 = [\n" );
+    /*printf( " H3 = [\n" );
     for (int i = 0; i <= check+1; i++) {
       for (int j = 0; j <= check; j++) {
         printf( "%e ", H3 (i, j) );
       }
       printf( "\n" );
     }
-    printf( "];\n" );
-    for (int i = 0; i <= check+1; i++) printf( "%d %e -> %e\n",i,y(i),y2(i) );
+    printf( "];\n" );*/
+    //for (int i = 0; i <= check+1; i++) printf( "%d %e -> %e\n",i,y(i),y2(i) );
+    fflush(stdout);
     #endif
 
     // save X
@@ -814,7 +816,7 @@ protected:
     Tpetra::deep_copy (X2, X);
 
     // implicit residual norm
-    mag_type r_norm_imp = STS::magnitude (y2 (check+1));
+    real_type r_norm_imp = STS::magnitude (y2 (check+1));
     y2.resize (check+1);
 
     // --------------------------------------
@@ -838,12 +840,12 @@ protected:
     // > Compute explicit residual vector
     A.apply (X2, R);
     R.update (one, B, -one);
-    mag_type r_norm = R.norm2 (); // residual norm
-    mag_type b_norm = B.norm2 (); // originial noorm
+    real_type r_norm = R.norm2 (); // residual norm
+    real_type b_norm = B.norm2 (); // originial noorm
 
     // --------------------------------------
     // compute orthogonality error, norm (Q'*Q-I)
-    mag_type ortho_error (0.0);
+    real_type ortho_error (0.0);
     {
       Teuchos::Range1D index_prev(0, check+1);
       Teuchos::RCP<const MV> Q_prev = MVT::CloneView (Q, index_prev);
@@ -852,12 +854,21 @@ protected:
       for (int i = 0; i < check+2; i++) {
         T (i, i) -= one;
       }
+      /*printf("Y=[\n");
+      for (int i = 0; i < check+2; i++) {
+        for (int j = 0; j < check+2; j++) {
+          printf("%e ",T (i, j));
+        }
+        printf("\n");
+      }
+      printf("];\n");*/
       ortho_error = computeNorm(T);
     }
 
     // --------------------------------------
     // compute Arnoldi representation error
-    mag_type repre_error (0.0);
+    real_type repre_error (0.0);
+    real_type proje_error (0.0);
     {
       // > compute AQ=A*Q
       MV AQ (Q.getMap (), check+1);
@@ -877,17 +888,27 @@ protected:
         }
       }
 
-      // > compute AQ = Q*H - AQ
+      // > compute HH = H - Q'*A*Q and AQ = Q*H - AQ
+      dense_matrix_type HH(check+2, check+1, true);
       {
         Teuchos::Range1D index_prev(0, check+1);
         Teuchos::RCP<const MV> Q_prev = MVT::CloneView (Q, index_prev);
         auto H_new = rcp (new dense_matrix_type (Teuchos::View, H2, check+2, check+1, 0, 0));
 
+        // > compute H - Q'*A*Q
+        MVT::MvTransMv(one, *Q_prev, AQ, HH);
+        for (int j = 0; j < check+1; j++) {
+          blas.AXPY (check+2, -one, &(H2(0, j)), 1, &(HH(0, j)), 1);
+        }
+
+        // > compute AQ = Q*H - AQ
         MVT::MvTimesMatAddMv (one, *Q_prev, *H_new, -one, AQ);
       }
 
-      // > compute norm, sqrt(norm(AQ'*AQ))
+      // > compute norm, norm(HH) and sqrt(norm(AQ'*AQ))
       {
+        proje_error = computeNorm(HH);
+
         dense_matrix_type T (check+1, check+1, true);
         MVT::MvTransMv(one, AQ, AQ, T);
         repre_error = STM::squareroot (computeNorm(T));
@@ -906,6 +927,8 @@ protected:
             << ortho_error
             << ", Arnoldi representation error: "
             << repre_error
+            << ", Projection error: "
+            << proje_error
             << std::endl;
   }
 
