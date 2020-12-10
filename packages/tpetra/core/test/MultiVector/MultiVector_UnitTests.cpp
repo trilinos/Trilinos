@@ -1749,7 +1749,7 @@ namespace {
     mvec2.norm1(norms2());
     std::fill(ans.begin(), ans.end(), M0);
     TEST_COMPARE_FLOATING_ARRAYS(norms1,ans,M0);
-    TEST_COMPARE_FLOATING_ARRAYS(norms1,ans,M0);
+    TEST_COMPARE_FLOATING_ARRAYS(norms2,ans,M0);
     // replace local entries s.t.
     // mvec1 = [1 1]  and  mvec2 = [0 0]
     //         [0 0]               [1 1]
@@ -2705,6 +2705,8 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ScaleAndAssign, LO , GO , Scalar , Node )
   {
+    std::cerr << std::endl;
+
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Vector<Scalar,LO,GO,Node>       V;
@@ -2735,12 +2737,13 @@ namespace {
     // Also, ensure that other vectors aren't changed
 
     out << "Create A, and fill with random numbers" << endl;
-    MV A (map, numVectors, false);
-    A.randomize ();
+    MV A(map, numVectors, false);
+    A.randomize();
+    A.sync_host();
 
     out << "Stash away norms of columns of A" << endl;
     Array<Mag> Anrms(numVectors);
-    A.norm1 (Anrms ());
+    A.norm1(Anrms());
 
     out << "Test B := A*2, using different methods" << endl;
     // set B = A * 2, using different techniques
@@ -2769,8 +2772,8 @@ namespace {
             std::ostringstream os;
             os << ">>> Proc " << comm->getSize ();
             os << ": A.modified_host: " << (A.need_sync_device ()?1:0);
-            os  << ", A.modified_device: " << (A.need_sync_host ()?1:0);
-            os << ": B.modified_host: " << (B.need_sync_device ()?1:0);
+            os << ", A.modified_device: " << (A.need_sync_host ()?1:0);
+            os << ", B.modified_host: " << (B.need_sync_device ()?1:0);
             os << ", B.modified_device: " << (B.need_sync_host ()?1:0);
             os << std::endl;
             std::cerr << os.str ();
