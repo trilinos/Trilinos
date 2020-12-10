@@ -1,9 +1,9 @@
 #!/bin/bash -l
 
-if [ "${Trilinos_CTEST_DO_ALL_AT_ONCE}" == "" ] ; then
-  export Trilinos_CTEST_DO_ALL_AT_ONCE=TRUE
-fi
+set +x
 
-set -x
+if [[ "${Trilinos_ENABLE_BUILD_STATS}" == "" ]] ; then
+  export Trilinos_ENABLE_BUILD_STATS=ON
+fi
 
 $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver.sh
