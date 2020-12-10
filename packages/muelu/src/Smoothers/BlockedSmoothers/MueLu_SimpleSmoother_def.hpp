@@ -250,7 +250,7 @@ namespace MueLu {
         diag[i] = absRowSum;
       }*/
       // TODO this does not work if F_ is nested!
-      diagFVector = Utilities::GetLumpedMatrixDiagonal(F_);
+      diagFVector = Utilities::GetLumpedMatrixDiagonal(*F_);
     }
     diagFinv_ = Utilities::GetInverse(diagFVector);
 

@@ -178,7 +178,7 @@ namespace MueLu {
           Coordinate stopTol = 1e-4;
           if (useAbsValueRowSum) {
             const bool returnReciprocal=true;
-            invDiag = Utilities::GetLumpedMatrixDiagonal(A,returnReciprocal);
+            invDiag = Utilities::GetLumpedMatrixDiagonal(*A,returnReciprocal);
             TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError,
                                        "SaPFactory: eigenvalue estimate: diagonal reciprocal is null.");
             lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
@@ -202,7 +202,7 @@ namespace MueLu {
         else if (invDiag == Teuchos::null) {
           GetOStream(Runtime0) << "Using rowsumabs diagonal" << std::endl;
           const bool returnReciprocal=true;
-          invDiag = Utilities::GetLumpedMatrixDiagonal(A,returnReciprocal);
+          invDiag = Utilities::GetLumpedMatrixDiagonal(*A,returnReciprocal);
           TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError, "SaPFactory: diagonal reciprocal is null.");
         }	
 	
