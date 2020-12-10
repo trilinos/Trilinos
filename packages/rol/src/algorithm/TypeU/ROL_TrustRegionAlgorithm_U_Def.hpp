@@ -275,6 +275,11 @@ std::string TrustRegionAlgorithm_U<Real>::printHeader(void) const {
              << ECGFlagToString(static_cast<ECGFlag>(flag)) << std::endl;
       }            
     }
+    else if( etr_ == TRUSTREGION_U_SPG ) {
+      hist << std::endl;
+      hist << "  iterCG - Number of spectral projected gradient iterations" << std::endl << std::endl;
+      hist << "  flagGC - Trust-Region spectral projected gradient flag" << std::endl;
+    }
     hist << std::string(114,'-') << std::endl;
   }
   hist << "  ";
@@ -289,6 +294,10 @@ std::string TrustRegionAlgorithm_U<Real>::printHeader(void) const {
   if ( etr_ == TRUSTREGION_U_TRUNCATEDCG ) {
     hist << std::setw(10) << std::left << "iterCG";
     hist << std::setw(10) << std::left << "flagCG";
+  }
+  else if (etr_ == TRUSTREGION_U_SPG) {
+    hist << std::setw(10) << std::left << "iterSPG";
+    hist << std::setw(10) << std::left << "flagSPG";
   }
   hist << std::endl;
   return hist.str();
@@ -335,7 +344,7 @@ std::string TrustRegionAlgorithm_U<Real>::print(const bool print_header) const {
     hist << std::setw(10) << std::left << state_->nfval;
     hist << std::setw(10) << std::left << state_->ngrad;
     hist << std::setw(10) << std::left << "---";
-    if ( etr_ == TRUSTREGION_U_TRUNCATEDCG ) {
+    if ( etr_ == TRUSTREGION_U_TRUNCATEDCG || etr_ == TRUSTREGION_U_SPG ) {
       hist << std::setw(10) << std::left << "---";
       hist << std::setw(10) << std::left << "---";
     }
@@ -351,7 +360,7 @@ std::string TrustRegionAlgorithm_U<Real>::print(const bool print_header) const {
     hist << std::setw(10) << std::left << state_->nfval;
     hist << std::setw(10) << std::left << state_->ngrad;
     hist << std::setw(10) << std::left << TRflag_;
-    if ( etr_ == TRUSTREGION_U_TRUNCATEDCG ) {
+    if ( etr_ == TRUSTREGION_U_TRUNCATEDCG || etr_ == TRUSTREGION_U_SPG ) {
       hist << std::setw(10) << std::left << SPiter_;
       hist << std::setw(10) << std::left << SPflag_;
     }

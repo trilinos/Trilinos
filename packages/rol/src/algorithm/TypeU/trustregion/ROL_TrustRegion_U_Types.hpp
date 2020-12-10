@@ -56,12 +56,14 @@ namespace ROL {
 
       \arg    TRUSTREGION_U_CAUCHYPOINT     describe
       \arg    TRUSTREGION_U_TRUNCATEDCG     describe
+      \arg    TRUSTREGION_U_SPG             describe
       \arg    TRUSTREGION_U_DOGLEG          describe
       \arg    TRUSTREGION_U_DOUBLEDOGLEG    describe
    */
   enum ETrustRegionU{
     TRUSTREGION_U_CAUCHYPOINT = 0,
     TRUSTREGION_U_TRUNCATEDCG,
+    TRUSTREGION_U_SPG,
     TRUSTREGION_U_DOGLEG,
     TRUSTREGION_U_DOUBLEDOGLEG,
     TRUSTREGION_U_LAST
@@ -72,6 +74,7 @@ namespace ROL {
     switch(tr) {
       case TRUSTREGION_U_CAUCHYPOINT:   retString = "Cauchy Point";        break;
       case TRUSTREGION_U_TRUNCATEDCG:   retString = "Truncated CG";        break;
+      case TRUSTREGION_U_SPG:           retString = "SPG";                 break;
       case TRUSTREGION_U_DOGLEG:        retString = "Dogleg";              break;
       case TRUSTREGION_U_DOUBLEDOGLEG:  retString = "Double Dogleg";       break;
       case TRUSTREGION_U_LAST:          retString = "Last Type (Dummy)";   break;
@@ -88,6 +91,7 @@ namespace ROL {
   inline int isValidTrustRegionU(ETrustRegionU ls){
     return( (ls == TRUSTREGION_U_CAUCHYPOINT)  ||
             (ls == TRUSTREGION_U_TRUNCATEDCG)  ||
+            (ls == TRUSTREGION_U_SPG)          ||
             (ls == TRUSTREGION_U_DOGLEG)       ||
             (ls == TRUSTREGION_U_DOUBLEDOGLEG)
           );

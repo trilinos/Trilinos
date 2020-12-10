@@ -49,10 +49,12 @@
 #ifndef ROL_TRUSTREGION_U_FACTORY_HPP
 #define ROL_TRUSTREGION_U_FACTORY_HPP
 
+#include "ROL_TrustRegion_U_Types.hpp"
 #include "ROL_CauchyPoint_U.hpp"
 #include "ROL_DogLeg_U.hpp"
 #include "ROL_DoubleDogLeg_U.hpp"
 #include "ROL_TruncatedCG_U.hpp"
+#include "ROL_SPGTrustRegion_U.hpp"
 
 namespace ROL {
   template<typename Real>
@@ -64,7 +66,8 @@ namespace ROL {
       case TRUSTREGION_U_DOGLEG:       return makePtr<DogLeg_U<Real>>();
       case TRUSTREGION_U_DOUBLEDOGLEG: return makePtr<DoubleDogLeg_U<Real>>();
       case TRUSTREGION_U_TRUNCATEDCG:  return makePtr<TruncatedCG_U<Real>>(list);
-      default:                  return nullPtr;
+      case TRUSTREGION_U_SPG:          return makePtr<SPGTrustRegion_U<Real>>(list);
+      default:                         return nullPtr;
     }
   }
 } // ROL

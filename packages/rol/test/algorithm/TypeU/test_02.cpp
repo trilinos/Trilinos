@@ -53,10 +53,12 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
+//#include <fenv.h>
 
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
+//  feenableexcept(FE_INVALID | FE_OVERFLOW);
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -96,6 +98,9 @@ int main(int argc, char *argv[]) {
         // Get Dimension of Problem
         int dim = x0->dimension(); 
         parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
+        parlist->sublist("Step").sublist("Trust Region").sublist("SPG").sublist("Solver").set("Iteration Limit", 50);
+        parlist->sublist("Step").sublist("Trust Region").sublist("SPG").sublist("Solver").set("Maximum Spectral Step Size", 1e12);
+        parlist->sublist("Step").sublist("Trust Region").sublist("SPG").sublist("Solver").set("Minimum Spectral Step Size", 1e-12);
 
         parlist->sublist("Step").set("Type","Trust Region");
         for ( ROL::ETrustRegionU desc = ROL::TRUSTREGION_U_CAUCHYPOINT;
