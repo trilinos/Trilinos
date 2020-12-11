@@ -286,78 +286,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
   TEST_ASSERT( Z1_Z3_equal );
 
   {
-    // Make sure Z4 has a stride greater than its number of rows.
-    const size_t Z4_stride = static_cast<size_t> (lclNumRows + 31);
-    dual_view_type Z4_dv_extra ("Z4", Z4_stride, numCols);
-    auto Z4_dv = Kokkos::subview (Z4_dv_extra,
-                                  pair_type (0, lclNumRows),
-                                  pair_type (0, numCols));
-    TEST_ASSERT( LO (Z4_dv.extent (0) == lclNumRows ) );
-    TEST_ASSERT( LO (Z4_dv.extent (1) == numCols ) );
-    TEST_ASSERT( LO (Z4_dv.d_view.extent (0) == lclNumRows ) );
-    TEST_ASSERT( LO (Z4_dv.d_view.extent (1) == numCols ) );
-    TEST_ASSERT( LO (Z4_dv.h_view.extent (0) == lclNumRows ) );
-    TEST_ASSERT( LO (Z4_dv.h_view.extent (1) == numCols ) );
-    // Kokkos could in theory insert padding in the row dimension.
-    TEST_ASSERT( size_t (Z4_dv.d_view.stride (1)) >= Z4_stride );
-    TEST_ASSERT( size_t (Z4_dv.h_view.stride (1)) >= Z4_stride );
-
-    MV Z4 (lclMap, Z4_dv);
-    TEST_ASSERT( Z4_dv.d_view.data () == Z4.getLocalViewDevice ().data () );
-    TEST_ASSERT( Z4_dv.h_view.data () == Z4.getLocalViewHost ().data () );
-    TEST_ASSERT( Z4.isConstantStride () );
-    if (Z4.isConstantStride ()) {
-      TEST_ASSERT( size_t (Z4_dv.d_view.stride (1)) == Z4.getStride () );
-      TEST_ASSERT( size_t (Z4_dv.h_view.stride (1)) == Z4.getStride () );
-      // Kokkos could in theory insert padding in the row dimension.
-      TEST_ASSERT( Z4.getStride () >= Z4_stride );
-    }
-    for (size_t j = 0; j < numCols; ++j) {
-      out << "Column j=" << j << " of Z4" << endl;
-      Teuchos::OSTab colTab (out);
-
-      auto Z4_dv_j = Kokkos::subview (Z4_dv, Kokkos::ALL (), j);
-
-      auto Z4_j_h = Z4.getVectorNonConst (j);
-      auto Z4_j_h_lcl_2d = Z4_j_h->getLocalViewHost ();
-      auto Z4_j_h_lcl = Kokkos::subview (Z4_j_h_lcl_2d, Kokkos::ALL (), 0);
-
-      TEST_ASSERT( Z4_j_h_lcl.data () == Z4_dv_j.h_view.data () );
-      if (Z4_j_h_lcl.data () != Z4_dv_j.h_view.data ()) {
-        out << "Z4_j_h_lcl.data() = " << Z4_j_h_lcl.data ()
-            << ", Z4_dv_j.h_view.data() = " << Z4_dv_j.h_view.data ()
-            << endl;
-      }
-      TEST_ASSERT( Z4_j_h_lcl.extent (0) == Z4_dv_j.h_view.extent (0) );
-
-      auto Z4_j_d = Z4.getVectorNonConst (j);
-      auto Z4_j_d_lcl_2d = Z4_j_d->getLocalViewDevice ();
-      auto Z4_j_d_lcl = Kokkos::subview (Z4_j_d_lcl_2d, Kokkos::ALL (), 0);
-
-      TEST_ASSERT( Z4_j_d_lcl.data () == Z4_dv_j.d_view.data () );
-      if (Z4_j_d_lcl.data () != Z4_dv_j.d_view.data ()) {
-        out << "Z4_j_d_lcl.data() = " << Z4_j_d_lcl.data ()
-            << ", Z4_dv_j.d_view.data() = " << Z4_dv_j.d_view.data ()
-            << endl;
-      }
-      TEST_ASSERT( Z4_j_d_lcl.extent (0) == Z4_dv_j.d_view.extent (0) );
-
-      if (j == 0) {
-        TEST_ASSERT( Z4_j_h_lcl.data () == Z4_dv.h_view.data () );
-        TEST_ASSERT( Z4_j_d_lcl.data () == Z4_dv.d_view.data () );
-      }
-    }
-
-    Tpetra::deep_copy (Z4, Z0);
-    const bool Z0_Z4_equal_before = multiVectorsEqual (out, Z0, Z4);
-    TEST_ASSERT( Z0_Z4_equal_before );
-
-    Z4.reduce ();
-    const bool Z1_Z4_equal_after_reduce = multiVectorsEqual (out, Z1, Z4);
-    TEST_ASSERT( Z1_Z4_equal_after_reduce );
-  }
-
-  {
     // Make sure Z5 has a stride greater than its number of rows.
     const size_t Z5_stride = Z0.getLocalLength () + lclNumRows;
     dual_view_type Z5_dv_extra ("Z5", Z5_stride, numCols);
@@ -380,36 +308,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
     const bool Z1_Z5_equal_after_reduceMultiVector =
       multiVectorsEqual (out, Z1, Z5);
     TEST_ASSERT( Z1_Z5_equal_after_reduceMultiVector );
-  }
-
-  {
-    // Make sure Z6 has a stride greater than its number of rows.
-    const size_t Z6_stride = Z0.getLocalLength () + lclNumRows;
-    dual_view_type Z6_dv_extra ("Z6", Z6_stride, numCols);
-    auto Z6_dv = Kokkos::subview (Z6_dv_extra,
-                                  pair_type (0, lclNumRows),
-                                  pair_type (0, numCols));
-    TEST_ASSERT( LO (Z6_dv.extent (0) == lclNumRows ) );
-    TEST_ASSERT( LO (Z6_dv.extent (1) == numCols ) );
-    // Kokkos could in theory insert padding in the row dimension.
-    TEST_ASSERT( size_t (Z6_dv.d_view.stride (1)) >= Z6_stride );
-    TEST_ASSERT( size_t (Z6_dv.h_view.stride (1)) >= Z6_stride );
-
-    MV Z6 (lclMap, Z6_dv);
-    Tpetra::deep_copy (Z6, Z0);
-
-    const bool Z0_Z6_equal_before = multiVectorsEqual (out, Z0, Z6);
-    TEST_ASSERT( Z0_Z6_equal_before );
-
-    reduceMultiVector2 (Z6);
-    const bool Z1_Z6_equal_after_reduceMultiVector2 =
-      multiVectorsEqual (out, Z1, Z6);
-    TEST_ASSERT( Z1_Z6_equal_after_reduceMultiVector2 );
-
-    out << endl << "Z1:" << endl;
-    Z1.describe (out, Teuchos::VERB_EXTREME);
-    out << endl << "Z6:" << endl;
-    Z6.describe (out, Teuchos::VERB_EXTREME);
   }
 }
 
