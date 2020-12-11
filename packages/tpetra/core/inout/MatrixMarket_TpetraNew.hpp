@@ -446,6 +446,55 @@ readMatrixMarket(
     timer = Teuchos::null;
 }
 
+//////////////////////////////////////////////////////////////////////////////
+//////////////////  BINARY FILE READER & RESPECTIVE FORMAT ///////////////////
+//        (This format is used by the upcoming readBinary function)         //
+//////////////////////////////////////////////////////////////////////////////
+// 
+// File format:
+//   #vertices #edges src_1 dst_1 src_2 dst_2 ... src_#edges dst_#edges
+// 
+// Types:
+//   #edges:            unsigned long long
+//   everything else:   unsigned int
+//
+// Base of indexing: 
+//   1
+// 
+//////////////////////////////////////////////////////////////////////////////
+//
+// A code example that converts MatrixMarket format into this format:
+//
+//   typedef unsigned int ord_type;
+//   typedef unsigned long long size_type;
+//
+//   std::string line;
+//   std::ifstream in(infilename);
+//   std::ofstream out(outfilename,  std::ios::out | std::ios::binary);
+//
+//  ord_type nv, dummy, edge[2];
+//  size_type ne;
+//
+//   do
+//     std::getline (in, line);
+//   while(line[0] == '%');
+//
+//   std::stringstream ss(line);
+//   ss >> nv >> dummy >> ne;
+//   out.write((char *)&nv, sizeof(ord_type));
+//   out.write((char *)&ne, sizeof(size_type));
+//
+//   while(std::getline(in, line)) {
+//     std::stringstream ss2(line);
+//     ss2 >> edge[0] >> edge[1];
+//     out.write((char *)edge, sizeof(ord_type)*2);
+//
+//    }
+//   in.close();
+//   out.close();
+//
+//////////////////////////////////////////////////////////////////////////////
+  
 static
 void 
 readBinary(  
