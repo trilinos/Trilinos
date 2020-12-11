@@ -346,6 +346,7 @@ public:
            for (LO j = 0; j < row.length; j++)  {
              if (Kokkos::ArithTraits<SC>::real(row.value(j)) > Kokkos::ArithTraits<SC>::real(zero)) { 
                 SC val = row.value(j); val +=  (ConstraintViolationSum(j%nPDEs)/ (Scalar (nPositive(j%nPDEs))));
+                row.value(j) = val;
              }
            }
            for (size_t k=0; k < (size_t) nPDEs; k++) ConstraintViolationSum(k) = zero; 
