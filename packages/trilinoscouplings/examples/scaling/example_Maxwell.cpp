@@ -558,9 +558,12 @@ int main(int argc, char *argv[]) {
   meshInput = inputList.get("meshInput", meshInput);
 
   // Get the solver name from input deck or command line
-  if(solverName == "default" && inputList.isParameter("Preconditioner")) {
-    solverName=inputList.get("Preconditioner",solverName);
-  }   
+  if(solverName == "default") {
+    if(inputList.isParameter("Preconditioner")) 
+      solverName=inputList.get("Preconditioner","MueLu");
+    else
+      solverName="MueLu";
+  }  
 
 
 
