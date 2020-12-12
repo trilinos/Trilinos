@@ -428,7 +428,7 @@ int main(int argc, char *argv[]) {
   ny = 10;
   nz = 10;
   xmlInFileName = "Maxwell.xml";
-  solverName = "MueLu";
+  solverName = "default";
   verbose = false;
   debug = false;
   jiggle = false;
@@ -556,6 +556,14 @@ int main(int argc, char *argv[]) {
     "  end                        \n"
     "end                          \n";
   meshInput = inputList.get("meshInput", meshInput);
+
+  // Get the solver name from input deck or command line
+  if(solverName == "default" && inputList.isParameter("Preconditioner")) {
+    solverName=inputList.get("Preconditioner",solverName);
+  }   
+
+
+
 
 
   /**********************************************************************************/
