@@ -140,6 +140,7 @@ namespace MueLuTests {
     out << "|| B_factory - B_test || = " << norms[0] << std::endl;
     TEST_EQUALITY(norms[0] < 1e-12, true);
   }
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory_kokkos, EnforceConstraints, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"

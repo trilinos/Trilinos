@@ -271,53 +271,56 @@ namespace MueLu {
   // the constraints.
 
 template<typename local_matrix_type>
-class constraintKernel {
-public:
+struct constraintKernel {
+
    using Scalar= typename local_matrix_type::non_const_value_type;
    using SC=Scalar;
    using LO=typename local_matrix_type::non_const_ordinal_type;
-//   using Device= typename Matrix::local_matrix_type::device_type;
    using Device= typename local_matrix_type::device_type;
-   Scalar zero=Kokkos::ArithTraits<Scalar>::zero();
+   const Scalar zero = Kokkos::ArithTraits<SC>::zero();
+   const Scalar one  = Kokkos::ArithTraits<SC>::one();
    LO     nPDEs;
    local_matrix_type localP;
-   Kokkos::View<Scalar*, Device> ConstraintViolationSum;
-   Kokkos::View<Scalar*, Device> Rsum;
-   Kokkos::View<size_t*, Device> nPositive;
+   Kokkos::View<SC**, Device> ConstraintViolationSum;
+   Kokkos::View<SC**, Device> Rsum;
+   Kokkos::View<size_t**, Device> nPositive;
 
-   constraintKernel(LO nPDEs_,local_matrix_type localP_):nPDEs(nPDEs_), localP(localP_) {
-   ConstraintViolationSum = Kokkos::View<Scalar*, Device>("ConstraintViolationSum",nPDEs);
-   Rsum = Kokkos::View<Scalar*, Device>("Rsum",nPDEs);
-   nPositive = Kokkos::View<size_t*, Device>("nPositive",nPDEs);
+  constraintKernel(LO nPDEs_,local_matrix_type localP_) : nPDEs(nPDEs_), localP(localP_)
+   {
+     ConstraintViolationSum = Kokkos::View<SC**, Device>("ConstraintViolationSum", localP_.numRows(), nPDEs);
+     Rsum = Kokkos::View<SC**, Device>("Rsum", localP_.numRows(), nPDEs);
+     nPositive = Kokkos::View<size_t**, Device>("nPositive", localP_.numRows(), nPDEs);
    }
-   KOKKOS_INLINE_FUNCTION
-   void operator()(const size_t i) const {
 
-      auto row = localP.row(i);
-      
+   KOKKOS_INLINE_FUNCTION
+   void operator() (const size_t rowIdx) const {
+
+      auto rowPtr = localP.graph.row_map;
+      auto values = localP.values;
+
       bool checkRow = true;
 
-      if (row.length == 0) checkRow = false;
+      if (rowPtr(rowIdx + 1) == rowPtr(rowIdx)) checkRow = false;
 
 
       while (checkRow) { 
 
         // check constraints and compute the row sum
     
-        for (LO j = 0; j < row.length; j++)  {
-          Rsum( j%nPDEs ) += row.value(j); 
-          if (Kokkos::ArithTraits<SC>::real(row.value(j)) < Kokkos::ArithTraits<SC>::real(zero )) { 
+        for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++)  {
+          Rsum(rowIdx, entryIdx%nPDEs) += values(entryIdx); 
+          if (Kokkos::ArithTraits<SC>::real(values(entryIdx)) < Kokkos::ArithTraits<SC>::real(zero)) { 
 
-            ConstraintViolationSum( j%nPDEs ) += row.value(j); 
-            row.value(j) = zero;
+            ConstraintViolationSum(rowIdx, entryIdx%nPDEs) += values(entryIdx); 
+            values(entryIdx) = zero;
           }
           else {
-            if (Kokkos::ArithTraits<SC>::real(row.value(j)) != Kokkos::ArithTraits<SC>::real(zero))
-              (nPositive( j%nPDEs))++;
+            if (Kokkos::ArithTraits<SC>::real(values(entryIdx)) != Kokkos::ArithTraits<SC>::real(zero))
+              nPositive(rowIdx, entryIdx%nPDEs) = nPositive(rowIdx, entryIdx%nPDEs) + 1;
     
-            if (Kokkos::ArithTraits<SC>::real(row.value(j)) > Kokkos::ArithTraits<SC>::real(1.00001  )) { 
-              ConstraintViolationSum( j%nPDEs ) += (row.value(j) - 1.0); 
-              row.value(j) =  Kokkos::ArithTraits<SC>::one();
+            if (Kokkos::ArithTraits<SC>::real(values(entryIdx)) > Kokkos::ArithTraits<SC>::real(1.00001  )) { 
+              ConstraintViolationSum(rowIdx, entryIdx%nPDEs) += (values(entryIdx) - one); 
+              values(entryIdx) =  one;
             }
           }
         }
@@ -328,31 +331,31 @@ public:
     
         for (size_t k=0; k < (size_t) nPDEs; k++) {
 
-          if (Kokkos::ArithTraits<SC>::real(Rsum( k )) < Kokkos::ArithTraits<SC>::magnitude( zero)) {
-              ConstraintViolationSum(k) +=  (-Rsum(k));  // rstumin 
+          if (Kokkos::ArithTraits<SC>::real(Rsum(rowIdx, k)) < Kokkos::ArithTraits<SC>::magnitude(zero)) {
+              ConstraintViolationSum(rowIdx, k) = ConstraintViolationSum(rowIdx, k) - Rsum(rowIdx, k);  // rstumin 
           }
-          else if (Kokkos::ArithTraits<SC>::real(Rsum( k )) > Kokkos::ArithTraits<SC>::magnitude(1.00001)) {
-              ConstraintViolationSum(k) += (Kokkos::ArithTraits<Scalar>::one() - Rsum(k));  // rstumin
+          else if (Kokkos::ArithTraits<SC>::real(Rsum(rowIdx, k)) > Kokkos::ArithTraits<SC>::magnitude(1.00001)) {
+              ConstraintViolationSum(rowIdx, k) = ConstraintViolationSum(rowIdx, k)+ (one - Rsum(rowIdx, k));  // rstumin
           }
         }
 
         // check if row need modification 
         for (size_t k=0; k < (size_t) nPDEs; k++) {
-          if (Kokkos::ArithTraits<SC>::magnitude(ConstraintViolationSum( k )) != Kokkos::ArithTraits<SC>::magnitude(zero))
+          if (Kokkos::ArithTraits<SC>::magnitude(ConstraintViolationSum(rowIdx, k)) != Kokkos::ArithTraits<SC>::magnitude(zero))
              checkRow = true;
         }
         // modify row
         if (checkRow) {
-           for (LO j = 0; j < row.length; j++)  {
-             if (Kokkos::ArithTraits<SC>::real(row.value(j)) > Kokkos::ArithTraits<SC>::real(zero)) { 
-                SC val = row.value(j); val +=  (ConstraintViolationSum(j%nPDEs)/ (Scalar (nPositive(j%nPDEs))));
-                row.value(j) = val;
+	   for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++)  {
+             if (Kokkos::ArithTraits<SC>::real(values(entryIdx)) > Kokkos::ArithTraits<SC>::real(zero)) { 
+	       values(entryIdx) = values(entryIdx) +
+		 (ConstraintViolationSum(rowIdx, entryIdx%nPDEs)/ (Scalar (nPositive(rowIdx, entryIdx%nPDEs)) != zero ? Scalar (nPositive(rowIdx, entryIdx%nPDEs)) : one));
              }
            }
-           for (size_t k=0; k < (size_t) nPDEs; k++) ConstraintViolationSum(k) = zero; 
+           for (size_t k=0; k < (size_t) nPDEs; k++) ConstraintViolationSum(rowIdx, k) = zero; 
         }
-        for (size_t k=0; k < (size_t) nPDEs; k++) Rsum(k) = zero; 
-        for (size_t k=0; k < (size_t) nPDEs; k++) nPositive(k) = 0;
+        for (size_t k=0; k < (size_t) nPDEs; k++) Rsum(rowIdx, k) = zero; 
+        for (size_t k=0; k < (size_t) nPDEs; k++) nPositive(rowIdx, k) = 0;
       } // while (checkRow) ...
 
    }

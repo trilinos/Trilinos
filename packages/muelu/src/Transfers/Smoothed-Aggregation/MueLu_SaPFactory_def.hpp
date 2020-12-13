@@ -283,7 +283,8 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SatisfyPConstraints(const RCP<Matrix> A, RCP<Matrix>& P) const {
 
-    Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+    const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+    const Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
     LO nPDEs = A->GetFixedBlockSize();
     Teuchos::ArrayRCP<Scalar> ConstraintViolationSum(nPDEs);
     Teuchos::ArrayRCP<Scalar> Rsum(nPDEs);
@@ -322,8 +323,8 @@ namespace MueLu {
               (nPositive[ j%nPDEs])++;
     
             if (Teuchos::ScalarTraits<SC>::real(vals[j]) > Teuchos::ScalarTraits<SC>::real(1.00001  )) { 
-              ConstraintViolationSum[ j%nPDEs ] += (vals[j] - 1.0); 
-              vals[j] = Teuchos::ScalarTraits<Scalar>::one();
+              ConstraintViolationSum[ j%nPDEs ] += (vals[j] - one); 
+              vals[j] = one;
             }
           }
         }
@@ -338,7 +339,7 @@ namespace MueLu {
               ConstraintViolationSum[k] +=  (-Rsum[k]);  // rstumin 
           }
           else if (Teuchos::ScalarTraits<SC>::real(Rsum[ k ]) > Teuchos::ScalarTraits<SC>::magnitude(1.00001)) {
-              ConstraintViolationSum[k] += (Teuchos::ScalarTraits<Scalar>::one() - Rsum[k]);  // rstumin
+              ConstraintViolationSum[k] += (one - Rsum[k]);  // rstumin
           }
         }
 
