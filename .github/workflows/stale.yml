@@ -21,19 +21,20 @@ jobs:
     steps:
     - uses: actions/stale@v3.0.14
       with:
-        debug-only: true
+        debug-only: false
         ascending: true
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         days-before-stale: 365
         days-before-close: 30
         stale-issue-label: 'MARKED_FOR_CLOSURE'
+        close-issue-label: 'CLOSED_DUE_TO_INACTIVITY'
         stale-pr-label: 'MARKED_FOR_CLOSURE'
         close-pr-label: 'CLOSED_DUE_TO_INACTIVITY'
         exempt-issue-labels: 'DO_NOT_AUTOCLOSE'
         # We specifically DO NOT exempt PR's from autoclosing.
         #exempt-pr-labels: ''
         remove-stale-when-updated: true
-        operations-per-run: 30
+        operations-per-run: 50
         stale-issue-message: >
           This issue has had no activity for **365** days and is marked for
           closure. It will be closed after an additional **30** days of inactivity.

@@ -823,8 +823,9 @@ namespace Tpetra {
     /// must access the device View directly by calling
     /// getLocalView().  Please see modify(), sync(), and the
     /// discussion of DualView semantics elsewhere in the
-    /// documentation.  You are responsible for calling modify() and
-    /// sync(), if needed; this method doesn't do that.
+    /// documentation.
+    /// This method calls sync_host() before modifying
+    /// host data, and modify_host() afterwards.
     ///
     /// This method does not have an "atomic" option like
     /// sumIntoGlobalValue.  This is deliberate.  Replacement is not
@@ -842,7 +843,7 @@ namespace Tpetra {
     void
     replaceGlobalValue (const GlobalOrdinal gblRow,
                         const size_t col,
-                        const impl_scalar_type& value) const;
+                        const impl_scalar_type& value);
 
     /// \brief Like the above replaceGlobalValue, but only enabled if
     ///   T differs from impl_scalar_type.
@@ -859,9 +860,9 @@ namespace Tpetra {
     /// and you want to modify the non-host version of the data, you
     /// must access the device View directly by calling getLocalView().
     /// Please see modify(), sync(), and the discussion of DualView
-    /// semantics elsewhere in the documentation.  You are responsible
-    /// for calling modify() and sync(), if needed; this method
-    /// doesn't do that.
+    /// semantics elsewhere in the documentation.
+    /// This method calls sync_host() before modifying
+    /// host data, and modify_host() afterwards.
     ///
     /// This method does not have an "atomic" option like
     /// sumIntoGlobalValue.  This is deliberate.  Replacement is not
@@ -880,7 +881,7 @@ namespace Tpetra {
     typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
     replaceGlobalValue (GlobalOrdinal globalRow,
                         size_t col,
-                        const T& value) const
+                        const T& value)
     {
       replaceGlobalValue (globalRow, col, static_cast<impl_scalar_type> (value));
     }
@@ -897,8 +898,9 @@ namespace Tpetra {
     /// must access the device View directly by calling
     /// getLocalView().  Please see modify(), sync(), and the
     /// discussion of DualView semantics elsewhere in the
-    /// documentation.  You are responsible for calling modify() and
-    /// sync(), if needed; this method doesn't do that.
+    /// documentation.
+    /// This method calls sync_host() before modifying
+    /// host data, and modify_host() afterwards.
     ///
     /// \param gblRow [in] Global row index of the entry to modify.
     ///   This <i>must</i> be a valid global row index on the calling
@@ -912,7 +914,7 @@ namespace Tpetra {
     sumIntoGlobalValue (const GlobalOrdinal gblRow,
                         const size_t col,
                         const impl_scalar_type& value,
-                        const bool atomic = useAtomicUpdatesByDefault) const;
+                        const bool atomic = useAtomicUpdatesByDefault);
 
     /// \brief Like the above sumIntoGlobalValue, but only enabled if
     ///   T differs from impl_scalar_type.
@@ -930,8 +932,9 @@ namespace Tpetra {
     /// must access the device View directly by calling
     /// getLocalView().  Please see modify(), sync(), and the
     /// discussion of DualView semantics elsewhere in the
-    /// documentation.  You are responsible for calling modify() and
-    /// sync(), if needed; this method doesn't do that.
+    /// documentation.
+    /// This method calls sync_host() before modifying
+    /// host data, and modify_host() afterwards.
     ///
     /// \param gblRow [in] Global row index of the entry to modify.
     ///   This <i>must</i> be a valid global row index on the calling
@@ -946,7 +949,7 @@ namespace Tpetra {
     sumIntoGlobalValue (const GlobalOrdinal gblRow,
                         const size_t col,
                         const T& val,
-                        const bool atomic = useAtomicUpdatesByDefault) const
+                        const bool atomic = useAtomicUpdatesByDefault)
     {
       sumIntoGlobalValue (gblRow, col, static_cast<impl_scalar_type> (val), atomic);
     }
@@ -963,8 +966,9 @@ namespace Tpetra {
     /// must access the device View directly by calling
     /// getLocalView().  Please see modify(), sync(), and the
     /// discussion of DualView semantics elsewhere in the
-    /// documentation.  You are responsible for calling modify() and
-    /// sync(), if needed; this method doesn't do that.
+    /// documentation.
+    /// This method calls sync_host() before modifying
+    /// host data, and modify_host() afterwards.
     ///
     /// This method does not have an "atomic" option like
     /// sumIntoLocalValue.  This is deliberate.  Replacement is not
@@ -982,7 +986,7 @@ namespace Tpetra {
     void
     replaceLocalValue (const LocalOrdinal lclRow,
                        const size_t col,
-                       const impl_scalar_type& value) const;
+                       const impl_scalar_type& value);
 
     /// \brief Like the above replaceLocalValue, but only enabled if
     ///   T differs from impl_scalar_type.
@@ -1000,8 +1004,9 @@ namespace Tpetra {
     /// must access the device View directly by calling
     /// getLocalView().  Please see modify(), sync(), and the
     /// discussion of DualView semantics elsewhere in the
-    /// documentation.  You are responsible for calling modify() and
-    /// sync(), if needed; this method doesn't do that.
+    /// documentation.
+    /// This method calls sync_host() before modifying
+    /// host data, and modify_host() afterwards.
     ///
     /// This method does not have an "atomic" option like
     /// sumIntoLocalValue.  This is deliberate.  Replacement is not
@@ -1020,7 +1025,7 @@ namespace Tpetra {
     typename std::enable_if<! std::is_same<T, impl_scalar_type>::value && std::is_convertible<T, impl_scalar_type>::value, void>::type
     replaceLocalValue (const LocalOrdinal lclRow,
                        const size_t col,
-                       const T& val) const
+                       const T& val)
     {
       replaceLocalValue (lclRow, col, static_cast<impl_scalar_type> (val));
     }
@@ -1037,8 +1042,9 @@ namespace Tpetra {
     /// must access the device View directly by calling
     /// getLocalView().  Please see modify(), sync(), and the
     /// discussion of DualView semantics elsewhere in the
-    /// documentation.  You are responsible for calling modify() and
-    /// sync(), if needed; this method doesn't do that.
+    /// documentation.
+    /// This method calls sync_host() before modifying
+    /// host data, and modify_host() afterwards.
     ///
     /// \param lclRow [in] Local row index of the entry to modify.
     ///   Must be a valid local index in this MultiVector's Map on the
@@ -1052,7 +1058,7 @@ namespace Tpetra {
     sumIntoLocalValue (const LocalOrdinal lclRow,
                        const size_t col,
                        const impl_scalar_type& val,
-                       const bool atomic = useAtomicUpdatesByDefault) const;
+                       const bool atomic = useAtomicUpdatesByDefault);
 
     /// \brief Like the above sumIntoLocalValue, but only enabled if
     ///   T differs from impl_scalar_type.
@@ -1070,8 +1076,9 @@ namespace Tpetra {
     /// must access the device View directly by calling
     /// getLocalView().  Please see modify(), sync(), and the
     /// discussion of DualView semantics elsewhere in the
-    /// documentation.  You are responsible for calling modify() and
-    /// sync(), if needed; this method doesn't do that.
+    /// documentation.
+    /// This method calls sync_host() before modifying
+    /// host data, and modify_host() afterwards.
     ///
     /// \param lclRow [in] Local row index of the entry to modify.
     /// \param col [in] Column index of the entry to modify.
@@ -1084,7 +1091,7 @@ namespace Tpetra {
     sumIntoLocalValue (const LocalOrdinal lclRow,
                        const size_t col,
                        const T& val,
-                       const bool atomic = useAtomicUpdatesByDefault) const
+                       const bool atomic = useAtomicUpdatesByDefault)
     {
       sumIntoLocalValue (lclRow, col, static_cast<impl_scalar_type> (val), atomic);
     }

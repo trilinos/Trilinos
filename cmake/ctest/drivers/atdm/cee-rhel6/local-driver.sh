@@ -5,6 +5,13 @@ set +x
 # Need to load env so we define some vars
 source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
 
+if [[ "${Trilinos_ENABLE_BUILD_STATS}" == "" ]] && \
+   [[ ! $JOB_NAME == *"intel"* ]] \
+  ; then
+  export Trilinos_ENABLE_BUILD_STATS=ON
+fi
+echo "Trilinos_ENABLE_BUILD_STATS='${Trilinos_ENABLE_BUILD_STATS}'"
+
 # Make adjustments for mini build of Trilinos for SPARC
 if atdm_match_buildname_keyword mini ; then
   echo "This is a mini build of Trilinos for SPARC!"
