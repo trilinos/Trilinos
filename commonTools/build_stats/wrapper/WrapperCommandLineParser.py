@@ -6,6 +6,8 @@ class WrapperCommandLineParser:
     Commandline parsing find any wrapper args, determine any output names
   """
   def __init__(self, cmdline_args):
+    # base build directory for computing correct relative path
+    self.base_build_dir = ''
     # if we write anything out it goes here
     self.output_stats_file = ''
     # if op generates an output file (-o ...)
@@ -40,13 +42,19 @@ class WrapperCommandLineParser:
 
 
   def parse_cmdline_args(self, cmdline_args):
+    base_build_dir_arg_prefix = '----base-build-dir='
     wrapper_header_arg = '----get_header'
     wrapper_op_arg_prefix = '----op='
     print_csv_header=False
     have_op=False
     # require that any wrapper arg be the first
     try:
-      wrapper_arg = cmdline_args[1]
+      wrapper_arg_idx = 1
+      wrapper_arg = cmdline_args[wrapper_arg_idx]
+      if wrapper_arg.startswith(base_build_dir_arg_prefix):
+        self.base_build_dir = wrapper_arg.split('=', 1)[1]
+        wrapper_arg_idx += 1
+      wrapper_arg = cmdline_args[wrapper_arg_idx]
       if wrapper_arg == wrapper_header_arg:
         self.print_csv_banner=True
       elif wrapper_arg.startswith(wrapper_op_arg_prefix):
@@ -56,29 +64,32 @@ class WrapperCommandLineParser:
         # we name the output as: blah.o.op.timing
         # this will result in blah.ar.timing, blah.mpicc.timing blah.ld.timing...
         short_op = os.path.basename(self.op)
-        self.output_stats_file = short_op + '.timing'
+        output_stats_file_suffix = short_op + '.timing'
         try:
           output_idx = cmdline_args.index('-o')
           self.op_output_file = cmdline_args[output_idx+1]
-          self.output_stats_file = self.op_output_file + '.' + self.output_stats_file
+          self.output_stats_file = self.op_output_file + '.' + output_stats_file_suffix
+          # ToDo: The above needs to be made to work for ar as well!
         except:
           pass
 
       else:
         raise Exception('unparseable arguments')
 
-      # remove the first 2 args (script name + wrapper arg)
-      self.op_args = cmdline_args[2:]
+      # Remove the first wrapper_arg_idx+1 args (script name + wrapper args)
+      self.op_args = cmdline_args[wrapper_arg_idx+1:]
 
     except:
       # any error and we give up
       help_msg = ["Compiler wrapper:",
-                  "  Usage: wrapper ----op=<compiler> [args] | ----get_header",
+                  "  Usage: wrapper [---base-build-dir=<dir>] ----op=<compiler> [args] | ----get_header",
                   "",
+                  "   ----base-build-dir=/path/to/base/build/dir",
+                  "   Absolute path to the base project build directory",
                   "   ----op=/path/to/compiler",
-                  "   path to the compiler we are wrapping",
+                  "   Absolute path to the compiler we are wrapping",
                   "   ----get_header",
-                  "   may not be combined with ----op, prints the csv_header generated",
+                  "   May not be combined with ----op or ----base-build-dir, prints the csv_header generated",
                   "",
                   "  Tool depends on finding a -o <output> option in args",
                   "  statistics will be written to <output>.timing",
