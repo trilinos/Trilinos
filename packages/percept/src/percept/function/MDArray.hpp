@@ -137,7 +137,7 @@
           }
 
       }
-      const int rank() const { return m_rank; }
+      int rank() const { return m_rank; }
 
       void setValues(std::string *data)
       {

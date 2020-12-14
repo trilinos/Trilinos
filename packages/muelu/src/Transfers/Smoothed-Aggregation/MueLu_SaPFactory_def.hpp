@@ -73,6 +73,9 @@ namespace MueLu {
     SET_VALID_ENTRY("sa: calculate eigenvalue estimate");
     SET_VALID_ENTRY("sa: eigenvalue estimate num iterations");
     SET_VALID_ENTRY("sa: use rowsumabs diagonal scaling");
+    SET_VALID_ENTRY("sa: enforce constraints");
+    SET_VALID_ENTRY("tentative: calculate qr");
+    SET_VALID_ENTRY("sa: max eigenvalue");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
@@ -152,11 +155,20 @@ namespace MueLu {
     const SC dampingFactor      = as<SC>(pL.get<double>("sa: damping factor"));
     const LO maxEigenIterations = as<LO>(pL.get<int>   ("sa: eigenvalue estimate num iterations"));
     const bool estimateMaxEigen =        pL.get<bool>  ("sa: calculate eigenvalue estimate");
-    const bool useAbsValueRowSum =       pL.get<bool>  ("sa: use rowsumabs diagonal scaling");
+    const bool useAbsValueRowSum=        pL.get<bool>  ("sa: use rowsumabs diagonal scaling");
+    const bool doQRStep         =        pL.get<bool>("tentative: calculate qr");
+    const bool enforceConstraints=       pL.get<bool>("sa: enforce constraints");
+    const SC   userDefinedMaxEigen =  as<SC>(pL.get<double>("sa: max eigenvalue"));
+
+    // Sanity checking
+    TEUCHOS_TEST_FOR_EXCEPTION(doQRStep && enforceConstraints,Exceptions::RuntimeError,
+                               "MueLu::TentativePFactory::MakeTentative: cannot use 'enforce constraints' and 'calculate qr' at the same time");
+
     if (dampingFactor != Teuchos::ScalarTraits<SC>::zero()) {
 
       Scalar lambdaMax;
       Teuchos::RCP<Vector> invDiag;
+      if (userDefinedMaxEigen == -1.)
       {
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
         lambdaMax = A->GetMaxEigenvalueEstimate();
@@ -166,7 +178,7 @@ namespace MueLu {
           Coordinate stopTol = 1e-4;
           if (useAbsValueRowSum) {
             const bool returnReciprocal=true;
-            invDiag = Utilities::GetLumpedMatrixDiagonal(A,returnReciprocal);
+            invDiag = Utilities::GetLumpedMatrixDiagonal(*A,returnReciprocal);
             TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError,
                                        "SaPFactory: eigenvalue estimate: diagonal reciprocal is null.");
             lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
@@ -176,8 +188,12 @@ namespace MueLu {
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
         }
-        GetOStream(Statistics1) << "Prolongator damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
       }
+      else {
+          lambdaMax = userDefinedMaxEigen;
+          A->SetMaxEigenvalueEstimate(lambdaMax);
+      }
+      GetOStream(Statistics1) << "Prolongator damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
 
       {
         SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);
@@ -186,7 +202,7 @@ namespace MueLu {
         else if (invDiag == Teuchos::null) {
           GetOStream(Runtime0) << "Using rowsumabs diagonal" << std::endl;
           const bool returnReciprocal=true;
-          invDiag = Utilities::GetLumpedMatrixDiagonal(A,returnReciprocal);
+          invDiag = Utilities::GetLumpedMatrixDiagonal(*A,returnReciprocal);
           TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError, "SaPFactory: diagonal reciprocal is null.");
         }	
 	
@@ -196,6 +212,7 @@ namespace MueLu {
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
         finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP,
                     GetOStream(Statistics2), std::string("MueLu::SaP-")+levelIDs, APparams);
+        if (enforceConstraints) SatisfyPConstraints( A, finalP);
       }
 
     } else {
@@ -246,6 +263,104 @@ namespace MueLu {
     }
 
   } //Build()
+
+  // Analyze the grid transfer produced by smoothed aggregation and make
+  // modifications if it does not look right. In particular, if there are
+  // negative entries or entries larger than 1, modify P's rows. 
+  //
+  // Note: this kind of evaluation probably only makes sense if not doing QR
+  // when constructing tentative P.
+  //
+  // For entries that do not satisfy the two constraints (>= 0  or <=1) we set
+  // these entries to the constraint value and modify the rest of the row
+  // so that the row sum remains the same as before by adding an equal
+  // amount to each remaining entry. However, if the original row sum value
+  // violates the constraints, we set the row sum back to 1 (the row sum of 
+  // tentative P). After doing the modification to a row, we need to check 
+  // again the entire row to make sure that the modified row does not violate
+  // the constraints.
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SatisfyPConstraints(const RCP<Matrix> A, RCP<Matrix>& P) const {
+
+    Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+    LO nPDEs = A->GetFixedBlockSize();
+    Teuchos::ArrayRCP<Scalar> ConstraintViolationSum(nPDEs);
+    Teuchos::ArrayRCP<Scalar> Rsum(nPDEs);
+    Teuchos::ArrayRCP<size_t> nPositive(nPDEs);
+    for (size_t k=0; k < (size_t) nPDEs; k++) ConstraintViolationSum[k] = zero;
+    for (size_t k=0; k < (size_t) nPDEs; k++) Rsum[k] = zero;
+    for (size_t k=0; k < (size_t) nPDEs; k++) nPositive[k] = 0;
+
+
+    for (size_t i = 0; i < as<size_t>(P->getRowMap()->getNodeNumElements()); i++) {
+
+      Teuchos::ArrayView<const LocalOrdinal> indices;
+      Teuchos::ArrayView<const Scalar> vals1;
+      Teuchos::ArrayView<      Scalar> vals;
+      P->getLocalRowView((LO) i, indices, vals1);
+      size_t nnz = indices.size();
+      if (nnz == 0) continue;
+
+      vals = ArrayView<Scalar>(const_cast<SC*>(vals1.getRawPtr()), nnz);
+
+
+      bool checkRow = true;
+
+      while (checkRow) { 
+
+        // check constraints and compute the row sum
+    
+        for (LO j = 0; j < indices.size(); j++)  {
+          Rsum[ j%nPDEs ] += vals[j]; 
+          if (Teuchos::ScalarTraits<SC>::real(vals[j]) < Teuchos::ScalarTraits<SC>::real(zero)) { 
+            ConstraintViolationSum[ j%nPDEs ] += vals[j]; 
+            vals[j] = zero;
+          }
+          else {
+            if (Teuchos::ScalarTraits<SC>::real(vals[j]) != Teuchos::ScalarTraits<SC>::real(zero))
+              (nPositive[ j%nPDEs])++;
+    
+            if (Teuchos::ScalarTraits<SC>::real(vals[j]) > Teuchos::ScalarTraits<SC>::real(1.00001  )) { 
+              ConstraintViolationSum[ j%nPDEs ] += (vals[j] - 1.0); 
+              vals[j] = Teuchos::ScalarTraits<Scalar>::one();
+            }
+          }
+        }
+    
+        checkRow = false;
+
+        // take into account any row sum that violates the contraints
+    
+        for (size_t k=0; k < (size_t) nPDEs; k++) {
+
+          if (Teuchos::ScalarTraits<SC>::real(Rsum[ k ]) < Teuchos::ScalarTraits<SC>::magnitude(zero)) {
+              ConstraintViolationSum[k] +=  (-Rsum[k]);  // rstumin 
+          }
+          else if (Teuchos::ScalarTraits<SC>::real(Rsum[ k ]) > Teuchos::ScalarTraits<SC>::magnitude(1.00001)) {
+              ConstraintViolationSum[k] += (Teuchos::ScalarTraits<Scalar>::one() - Rsum[k]);  // rstumin
+          }
+        }
+
+        // check if row need modification 
+        for (size_t k=0; k < (size_t) nPDEs; k++) {
+          if (Teuchos::ScalarTraits<SC>::magnitude(ConstraintViolationSum[ k ]) != Teuchos::ScalarTraits<SC>::magnitude(zero))
+             checkRow = true;
+        }
+        // modify row
+        if (checkRow) {
+           for (LO j = 0; j < indices.size(); j++)  {
+             if (Teuchos::ScalarTraits<SC>::real(vals[j]) > Teuchos::ScalarTraits<SC>::real(zero)) { 
+                vals[j] += (ConstraintViolationSum[j%nPDEs]/ (as<Scalar>(nPositive[j%nPDEs])));
+             }
+           }
+           for (size_t k=0; k < (size_t) nPDEs; k++) ConstraintViolationSum[k] = zero; 
+        }
+        for (size_t k=0; k < (size_t) nPDEs; k++) Rsum[k] = zero; 
+        for (size_t k=0; k < (size_t) nPDEs; k++) nPositive[k] = 0;
+      } // while (checkRow) ...
+    } // for (size_t i = 0; i < as<size_t>(P->getRowMap()->getNumNodeElements()); i++) ...
+  } //SatsifyPConstraints()
 
 } //namespace MueLu
 

@@ -368,14 +368,11 @@ namespace MueLu {
                     const Teuchos::RCP<RealValuedMultiVector> & Coords,
                     Teuchos::ParameterList& List);
 
+    //! Set the fine level smoother
+    void setFineLevelSmoother();
+
     //! apply additive algorithm for 2x2 solve
     void applyInverseAdditive(const MultiVector& RHS, MultiVector& X) const;
-
-    //! apply 1-2-1 algorithm for 2x2 solve
-    void applyInverse121(const MultiVector& RHS, MultiVector& X) const;
-
-    //! apply 2-1-2 algorithm for 2x2 solve
-    void applyInverse212(const MultiVector& RHS, MultiVector& X) const;
 
     //! apply solve to 1-1 block only
     void solveH(const MultiVector& RHS, MultiVector& X) const;
@@ -441,6 +438,7 @@ namespace MueLu {
     //! Importer to coarse (1,1) hierarchy
     Teuchos::RCP<const Import> ImporterH_, Importer22_;
     bool D0_T_R11_colMapsMatch_;
+    bool allBoundary_;
     //! Parameter lists
     Teuchos::ParameterList parameterList_, precList11_, precList22_, smootherList_;
     Teuchos::RCP<Teuchos::ParameterList> AH_AP_reuse_data_, AH_RAP_reuse_data_;

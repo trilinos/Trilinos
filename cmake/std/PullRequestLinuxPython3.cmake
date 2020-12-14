@@ -18,8 +18,9 @@ set (TFW_Python_Testing ON CACHE BOOL "Set by default for PR testing")
 #set(PYTHON_EXECUTABLE /projects/sierra/linux_rh7/install/Python/3.6.10/bin/python CACHE FILEPATH "Set by default for PR testing")
 set(PYTHON_PIP_EXECUTABLE "pip3" CACHE STRING "Set by default for PR testing")
 
+# add this path to PYTHON_EXECUTABLE_SEARCH_PATHS if needed
+#    /projects/sierra/linux_rh7/install/Python/3.6.3
 set(PYTHON_EXECUTABLE_SEARCH_PATHS
-    /projects/sierra/linux_rh7/install/Python/3.6.3
     /projects/sierra/linux_rh7/install/Python/3.6.10
 )
 find_program(PYTHON_EXECUTABLE
@@ -36,14 +37,17 @@ else()
 endif()
 
 
-set (TPL_ENABLE_Boost OFF CACHE BOOL "Set by default for PR testing")
+set (TPL_ENABLE_Boost    OFF CACHE BOOL "Set by default for PR testing")
 set (TPL_ENABLE_BoostLib OFF CACHE BOOL "Set by default for PR testing")
 set (TPL_ENABLE_ParMETIS OFF CACHE BOOL "Set by default for PR testing")
-set (TPL_ENABLE_Zlib OFF CACHE BOOL "Set by default for PR testing")
-set (TPL_ENABLE_HDF5 OFF CACHE BOOL "Set by default for PR testing")
-set (TPL_ENABLE_Netcdf OFF CACHE BOOL "Set by default for PR testing")
-set (TPL_ENABLE_SuperLU OFF CACHE BOOL "Set by default for PR testing")
-set (TPL_ENABLE_Scotch OFF CACHE BOOL "Set by default for PR testing")
+set (TPL_ENABLE_Zlib     OFF CACHE BOOL "Set by default for PR testing")
+set (TPL_ENABLE_HDF5     OFF CACHE BOOL "Set by default for PR testing")
+set (TPL_ENABLE_Netcdf   OFF CACHE BOOL "Set by default for PR testing")
+set (TPL_ENABLE_SuperLU  OFF CACHE BOOL "Set by default for PR testing")
+set (TPL_ENABLE_Scotch   OFF CACHE BOOL "Set by default for PR testing")
+
+# No build stats for Python-only PR (#7376)
+set(Trilinos_ENABLE_BUILD_STATS OFF CACHE BOOL "Set in PullRequestLinuxPython3.cmake")
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 

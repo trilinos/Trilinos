@@ -876,7 +876,7 @@ namespace percept {
     std::vector<UniformRefinerPatternBase *> m_bp;
   public:
     std::vector<UniformRefinerPatternBase *> m_bp_exported;
-    typedef RefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, -1 , QuadTransition > FaceBreaker;
+    typedef RefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, -1, QuadTransition > FaceBreaker;
     FaceBreaker * m_face_breaker;
 
   protected:
@@ -891,7 +891,7 @@ namespace percept {
 
       Elem::StdMeshObjTopologies::bootstrap();
 
-      typedef RefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, -1, QuadTransition > FaceBreaker;
+      //typedef RefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, -1, QuadTransition > FaceBreaker;
       typedef RefinerPattern<shards::Triangle<3>, shards::Triangle<3>, -1, TriHangingNode >  TriFaceBreakerType;
 
       m_bp.resize(6);

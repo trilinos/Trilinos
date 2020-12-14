@@ -22,18 +22,20 @@ FUNCTION(KOKKOS_TPL_OPTION PKG DEFAULT)
   SET(KOKKOS_${PKG}_DIR  ${KOKKOS_${PKG}_DIR} PARENT_SCOPE)
 
   IF (KOKKOS_HAS_TRILINOS
-      AND KOKKOS_ENABLE_${PKG}
-      AND NOT PARSED_TRIBITS)
-      #this TPL was enabled, but it is not valid to use inside of TriBITS
-      MESSAGE(FATAL_ERROR "Enabled TPL ${PKG} inside TriBITS build, "
-              "but this can only be enabled in a standalone build")
+    AND KOKKOS_ENABLE_${PKG}
+    AND NOT PARSED_TRIBITS)
+    #this TPL was enabled, but it is not valid to use inside of TriBITS
+    MESSAGE(FATAL_ERROR "Enabled TPL ${PKG} inside TriBITS build, "
+           "but this can only be enabled in a standalone build")
   ENDIF()
 ENDFUNCTION()
 
 KOKKOS_TPL_OPTION(HWLOC   Off)
 KOKKOS_TPL_OPTION(LIBNUMA Off)
 KOKKOS_TPL_OPTION(MEMKIND Off)
-# Default this to whether the backend is on
+IF(KOKKOS_ENABLE_MEMKIND)
+  SET(KOKKOS_ENABLE_HBWSPACE ON)
+ENDIF()
 KOKKOS_TPL_OPTION(CUDA    ${Kokkos_ENABLE_CUDA} TRIBITS CUDA)
 KOKKOS_TPL_OPTION(LIBRT   Off)
 
@@ -56,7 +58,7 @@ SET(PTHREAD_DEFAULT ON)
 ELSE()
 SET(PTHREAD_DEFAULT OFF)
 ENDIF()
-KOKKOS_TPL_OPTION(PTHREAD ${PTHREAD_DEFAULT})
+KOKKOS_TPL_OPTION(PTHREAD ${PTHREAD_DEFAULT} TRIBITS Pthread)
 
 
 #Make sure we use our local FindKokkosCuda.cmake

@@ -96,22 +96,28 @@ struct rank_dynamic<Val, Args...> {
 #define KOKKOS_IMPL_VIEW_DIMENSION(R)                                       \
   template <size_t V, unsigned>                                             \
   struct ViewDimension##R {                                                 \
-    enum : size_t { ArgN##R = (V != KOKKOS_INVALID_INDEX ? V : 1) };        \
-    enum : size_t { N##R = (V != KOKKOS_INVALID_INDEX ? V : 1) };           \
+    static constexpr size_t ArgN##R = (V != KOKKOS_INVALID_INDEX ? V : 1);  \
+    static constexpr size_t N##R    = (V != KOKKOS_INVALID_INDEX ? V : 1);  \
     KOKKOS_INLINE_FUNCTION explicit ViewDimension##R(size_t) {}             \
     ViewDimension##R()                        = default;                    \
     ViewDimension##R(const ViewDimension##R&) = default;                    \
     ViewDimension##R& operator=(const ViewDimension##R&) = default;         \
   };                                                                        \
+  template <size_t V, unsigned RD>                                          \
+  constexpr size_t ViewDimension##R<V, RD>::ArgN##R;                        \
+  template <size_t V, unsigned RD>                                          \
+  constexpr size_t ViewDimension##R<V, RD>::N##R;                           \
   template <unsigned RD>                                                    \
   struct ViewDimension##R<0u, RD> {                                         \
-    enum : size_t { ArgN##R = 0 };                                          \
+    static constexpr size_t ArgN##R = 0;                                    \
     typename std::conditional<(RD < 3), size_t, unsigned>::type N##R;       \
     ViewDimension##R()                        = default;                    \
     ViewDimension##R(const ViewDimension##R&) = default;                    \
     ViewDimension##R& operator=(const ViewDimension##R&) = default;         \
     KOKKOS_INLINE_FUNCTION explicit ViewDimension##R(size_t V) : N##R(V) {} \
-  };
+  };                                                                        \
+  template <unsigned RD>                                                    \
+  constexpr size_t ViewDimension##R<0u, RD>::ArgN##R;
 
 KOKKOS_IMPL_VIEW_DIMENSION(0)
 KOKKOS_IMPL_VIEW_DIMENSION(1)
@@ -2696,8 +2702,8 @@ struct ViewDataHandle<
 #endif
                 && (!Traits::memory_traits::is_atomic))>::type> {
   using value_type  = typename Traits::value_type;
-  using handle_type = typename Traits::value_type*;
-  using return_type = typename Traits::value_type&;
+  using handle_type = typename Traits::value_type* KOKKOS_RESTRICT;
+  using return_type = typename Traits::value_type& KOKKOS_RESTRICT;
   using track_type  = Kokkos::Impl::SharedAllocationTracker;
 
   KOKKOS_INLINE_FUNCTION
@@ -2725,8 +2731,12 @@ struct ViewDataHandle<
                                    Kokkos::CudaUVMSpace>::value))
 #endif
                 && (!Traits::memory_traits::is_atomic))>::type> {
-  using value_type  = typename Traits::value_type;
-  using handle_type = typename Traits::value_type*;
+  using value_type = typename Traits::value_type;
+  // typedef work-around for intel compilers error #3186: expected typedef
+  // declaration
+  // NOLINTNEXTLINE(modernize-use-using)
+  typedef value_type* KOKKOS_IMPL_ALIGN_PTR(KOKKOS_MEMORY_ALIGNMENT)
+      handle_type;
   using return_type = typename Traits::value_type&;
   using track_type  = Kokkos::Impl::SharedAllocationTracker;
 
@@ -2766,9 +2776,13 @@ struct ViewDataHandle<
                            Kokkos::CudaUVMSpace>::value))
 #endif
         && (!Traits::memory_traits::is_atomic))>::type> {
-  using value_type  = typename Traits::value_type;
-  using handle_type = typename Traits::value_type*;
-  using return_type = typename Traits::value_type&;
+  using value_type = typename Traits::value_type;
+  // typedef work-around for intel compilers error #3186: expected typedef
+  // declaration
+  // NOLINTNEXTLINE(modernize-use-using)
+  typedef value_type* KOKKOS_IMPL_ALIGN_PTR(KOKKOS_MEMORY_ALIGNMENT)
+      handle_type;
+  using return_type = typename Traits::value_type& KOKKOS_RESTRICT;
   using track_type  = Kokkos::Impl::SharedAllocationTracker;
 
   KOKKOS_INLINE_FUNCTION

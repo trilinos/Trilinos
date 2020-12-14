@@ -86,7 +86,7 @@ protected:
     {
         stk::mesh::Selector selector = *part;
         const std::vector<std::string> geometric_decomposition_methods = { "rcb", "rib", "block", "multijagged" };
-        for(const std::string geometric_method : geometric_decomposition_methods)
+        for(const std::string& geometric_method : geometric_decomposition_methods)
           run_decomp_with_method(geometric_method, selector, stk::topology::ELEMENT_RANK);
     }
 

@@ -71,6 +71,23 @@ Ioss::Property Ioss::PropertyManager::get(const std::string &property_name) cons
   return (*iter).second;
 }
 
+/** \brief Get an optional property object from the property manager.
+ *
+ *  \param[in] property_name The name of the property to get.
+ *  \param[in] optional_value The value to return if the property does not exist.
+ *  \returns The property object.
+ */
+int64_t Ioss::PropertyManager::get_optional(const std::string &property_name,
+                                            int64_t            optional_value) const
+{
+  IOSS_FUNC_ENTER(m_);
+  auto iter = m_properties.find(property_name);
+  if (iter == m_properties.end()) {
+    return optional_value;
+  }
+  return (*iter).second.get_int();
+}
+
 /** \brief Remove a property from the property manager.
  *
  *  Assumes that the property with the given name already exists in the property manager.

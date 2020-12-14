@@ -651,6 +651,7 @@ public:
 
   bool is_communicated_with_proc(Entity entity, int proc) const;
   void comm_procs( EntityKey key, std::vector<int> & procs ) const; //shared and ghosted entities
+  void comm_procs(Entity entity, std::vector<int> & procs ) const;
   void comm_procs( const Ghosting & ghost , EntityKey key, std::vector<int> & procs ) const;
   void comm_shared_procs( EntityKey key, std::vector<int> & procs ) const;
   void comm_shared_procs( Entity entity, std::vector<int> & procs ) const;

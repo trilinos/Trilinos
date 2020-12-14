@@ -183,6 +183,14 @@ void SystemInterface::enroll_options()
                   "True if forcing the use of 64-bit integers for the output file", nullptr);
 
   options_.enroll(
+      "zlib", GetLongOption::NoValue,
+      "Use the Zlib / libz compression method if compression is enabled (default) [exodus only].",
+      nullptr);
+
+  options_.enroll("szip", GetLongOption::NoValue,
+                  "Use SZip compression. [exodus only, enables netcdf-4]", nullptr);
+
+  options_.enroll(
       "compress", GetLongOption::MandatoryValue,
       "Specify the hdf5 (netcdf4) compression level [0..9] to be used on the output file.",
       nullptr);
@@ -397,6 +405,16 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("64-bit") != nullptr) {
     ints64bit_ = true;
+  }
+
+  if (options_.retrieve("szip") != nullptr) {
+    szip_ = true;
+    zlib_ = false;
+  }
+  zlib_ = (options_.retrieve("zlib") != nullptr);
+
+  if (szip_ && zlib_) {
+    fmt::print(stderr, "ERROR: Only one of 'szip' or 'zlib' can be specified.\n");
   }
 
   {

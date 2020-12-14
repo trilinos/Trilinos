@@ -428,7 +428,7 @@ int main(int argc, char *argv[]) {
   ny = 10;
   nz = 10;
   xmlInFileName = "Maxwell.xml";
-  solverName = "MueLu";
+  solverName = "default";
   verbose = false;
   debug = false;
   jiggle = false;
@@ -556,6 +556,17 @@ int main(int argc, char *argv[]) {
     "  end                        \n"
     "end                          \n";
   meshInput = inputList.get("meshInput", meshInput);
+
+  // Get the solver name from input deck or command line
+  if(solverName == "default") {
+    if(inputList.isParameter("Preconditioner")) 
+      solverName=inputList.get("Preconditioner","MueLu");
+    else
+      solverName="MueLu";
+  }  
+
+
+
 
 
   /**********************************************************************************/
@@ -699,9 +710,7 @@ int main(int argc, char *argv[]) {
   FieldContainer<int> elemToNode(numElems,numNodesPerElem);
   FieldContainer<double> muVal(numElems);
   FieldContainer<double> sigmaVal(numElems);
-  double l_max_sigma=0.0, l_max_mu = 0.0;
-  double l_min_sigma=std::numeric_limits<double>::max(), l_min_mu=std::numeric_limits<double>::max();
-  
+
   for(long long b = 0; b < numElemBlk; b++){
     for(long long el = 0; el < elements[b]; el++){
       for (int j=0; j<numNodesPerElem; j++) {
@@ -709,10 +718,7 @@ int main(int argc, char *argv[]) {
       }
       muVal(telct) = mu[b];
       sigmaVal(telct) = sigma[b];
-      l_max_sigma = std::max(l_max_sigma,sigma[b]);
-      l_min_sigma = std::min(l_min_sigma,sigma[b]);
-      l_max_mu    = std::max(l_max_mu,mu[b]);
-      l_min_mu    = std::min(l_min_mu,mu[b]);
+      
       telct ++;
     }
   }
@@ -1264,8 +1270,6 @@ int main(int argc, char *argv[]) {
   Epetra_FECrsMatrix DGrad(Copy, globalMapC, 2);
 
   // Estimate the global CFL based on minimum edge length and assumed dt=1"
-  double l_min_dx = std::numeric_limits<double>::max();
-  double l_max_dx = 0.0;
 
   // Grab edge coordinates (for dumping to disk)
   Epetra_Vector EDGE_X(globalMapC);
@@ -1284,9 +1288,6 @@ int main(int argc, char *argv[]) {
       EDGE_X[elid] = (nodeCoordx[edgeToNode(j,0)] + nodeCoordx[edgeToNode(j,1)])/2.0;
       EDGE_Y[elid] = (nodeCoordy[edgeToNode(j,0)] + nodeCoordy[edgeToNode(j,1)])/2.0;
       EDGE_Z[elid] = (nodeCoordz[edgeToNode(j,0)] + nodeCoordz[edgeToNode(j,1)])/2.0;
-      double my_dx = distance(nodeCoord,edgeToNode(j,0),edgeToNode(j,1));
-      l_min_dx = std::min(l_min_dx,my_dx);
-      l_max_dx = std::max(l_max_dx,my_dx);
       elid++;
     }
   }
@@ -1298,20 +1299,58 @@ int main(int argc, char *argv[]) {
   if(MyPID==0) {std::cout << "Building incidence matrix                   "
                           << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
 
+  // Local CFL Calculations
+  double DOUBLE_MAX = std::numeric_limits<double>::max();  
+  double l_max_sigma=0.0, l_max_mu = 0.0, l_max_cfl = 0.0, l_max_dx = 0.0, l_max_osm=0.0;
+  double l_min_sigma=DOUBLE_MAX, l_min_mu= DOUBLE_MAX, l_min_cfl = DOUBLE_MAX, l_min_dx = DOUBLE_MAX, l_min_osm=DOUBLE_MAX;
+
+  for(long long b = 0, idx=0; b < numElemBlk; b++){
+    for(long long el = 0; el < elements[b]; el++){
+      l_max_sigma = std::max(l_max_sigma,sigmaVal(idx));
+      l_min_sigma = std::min(l_min_sigma,sigmaVal(idx));
+      l_max_mu    = std::max(l_max_mu,muVal(idx));
+      l_min_mu    = std::min(l_min_mu,muVal(idx));  
+      l_max_osm   = std::max(l_max_osm,1/(sigmaVal(idx)*muVal(idx)));
+      l_min_osm   = std::min(l_min_osm,1/(sigmaVal(idx)*muVal(idx)));
+      
+      // We'll chose "dx" as the max/min edge length over the cell
+      double my_edge_min = DOUBLE_MAX, my_edge_max=0.0;
+      for(int j=0; j<numEdgesPerElem; j++) {
+        int edge = elemToEdge(idx,j);
+        double my_dx = distance(nodeCoord,edgeToNode(edge,0),edgeToNode(edge,1));
+        my_edge_max = std::max(my_edge_max,my_dx);
+        my_edge_min = std::min(my_edge_min,my_dx);
+      }
+
+      l_max_dx = std::max(l_max_dx,my_edge_max);
+      l_min_dx = std::min(l_min_dx,my_edge_min);
+
+      // Note: The max/min's switch here because they're in the denominator
+      double my_max_cfl = 1.0 / (sigmaVal(idx) * muVal(idx) * l_min_dx * l_min_dx);
+      double my_min_cfl = 1.0 / (sigmaVal(idx) * muVal(idx) * l_max_dx * l_max_dx);
+      l_max_cfl = std::max(l_max_cfl,my_max_cfl);
+      l_min_cfl = std::min(l_min_cfl,my_min_cfl);
+      
+      idx++;
+    }
+  }
 
   // CFL Range Calculations (assuming a timestep dt=1)
-  double g_max_dx, g_min_dx, g_max_mu, g_min_mu, g_max_sigma, g_min_sigma;
+  double g_max_dx, g_min_dx, g_max_mu, g_min_mu, g_max_sigma, g_min_sigma, g_max_cfl, g_min_cfl, g_max_osm, g_min_osm;
   Comm.MaxAll(&l_max_dx,&g_max_dx,1);       Comm.MinAll(&l_min_dx,&g_min_dx,1);
   Comm.MaxAll(&l_max_sigma,&g_max_sigma,1); Comm.MinAll(&l_min_sigma,&g_min_sigma,1);
   Comm.MaxAll(&l_max_mu,&g_max_mu,1);       Comm.MinAll(&l_min_mu,&g_min_mu,1);
+  Comm.MaxAll(&l_max_cfl,&g_max_cfl,1);     Comm.MinAll(&l_min_cfl,&g_min_cfl,1);
+  Comm.MaxAll(&l_max_osm,&g_max_osm,1);     Comm.MinAll(&l_min_osm,&g_min_osm,1);
 
   if(MyPID==0) {
     std::cout<<"*** Parameter Ranges ***"<<std::endl;
     std::cout<<"Edge dx Range      : "<<g_min_dx << " to "<<g_max_dx<<std::endl;
     std::cout<<"Sigma Range        : "<<g_min_sigma << " to "<<g_max_sigma<<std::endl;
     std::cout<<"Mu Range           : "<<g_min_mu << " to "<<g_max_mu<<std::endl;
-    std::cout<<"Diffusive CFL Range: " << 1.0/(g_max_sigma * g_max_mu * g_max_dx * g_max_dx) <<
-      " to "<< 1.0/(g_min_sigma * g_min_mu * g_min_dx * g_min_dx) <<std::endl;
+    std::cout<<"1/(Sigma Mu) Range : "<<g_min_osm << " to "<<g_max_osm<<std::endl;
+    std::cout<<"Diffusive CFL Range: "<<g_min_cfl<< " to "<<g_max_cfl<<std::endl;
+
   }
 
 

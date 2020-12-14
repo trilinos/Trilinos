@@ -640,7 +640,7 @@ void GraphModel<Adapter>::shared_constructor(
 
     // Loop over edges; keep only those that are local (i.e., on-rank)
     eOffsets_[0] = 0;
-    lno_t ecnt = 0;
+    offset_t ecnt = 0;
     for (size_t i = 0; i < nLocalVertices_; i++) {
       vGids_[i] = gno_t(i);
       for (offset_t j = adapterEOffsets[i]; j < adapterEOffsets[i+1]; j++) {
@@ -765,7 +765,7 @@ void GraphModel<Adapter>::shared_constructor(
     }
 
     // Renumber and/or filter the edges and vertices
-    lno_t ecnt = 0;
+    offset_t ecnt = 0;
     int me = comm_->getRank();
     for (size_t i = 0; i < nLocalVertices_; i++) {
 

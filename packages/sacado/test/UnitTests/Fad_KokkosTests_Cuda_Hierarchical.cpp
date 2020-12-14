@@ -35,8 +35,14 @@
 #define SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED 1
 #define SACADO_KOKKOS_USE_MEMORY_POOL 1
 
+#include "Kokkos_Macros.hpp"
+
+#if defined(KOKKOS_ENABLE_CUDA_UVM)
+#define SACADO_TEST_DFAD 1
+#else
+#define SACADO_TEST_DFAD 0
+#endif
 #include "Fad_KokkosTests.hpp"
-#include "Kokkos_Core.hpp"
 
 typedef Kokkos::LayoutContiguous<Kokkos::LayoutLeft,32> LeftContiguous32;
 typedef Kokkos::LayoutContiguous<Kokkos::LayoutRight,32> RightContiguous32;
@@ -51,11 +57,6 @@ typedef Kokkos::LayoutContiguous<Kokkos::LayoutRight,32> RightContiguous32;
   VIEW_FAD_TESTS_SFLD( F, RightContiguous32, D )
 
 // Instantiate tests for Cuda device
-#if defined(KOKKOS_ENABLE_CUDA_UVM)
-#define SACADO_TEST_DFAD 1
-#else
-#define SACADO_TEST_DFAD 0
-#endif
 using Kokkos::Cuda;
 VIEW_FAD_TESTS_D( Cuda )
 

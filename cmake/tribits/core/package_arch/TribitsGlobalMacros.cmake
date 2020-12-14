@@ -482,7 +482,7 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Print out when all of the various files get processed."
     )
 
-  ADVANCED_SET(${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION OFF
+  ADVANCED_SET(${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION ON
     CACHE BOOL
     "Enable explicit template instantiation in all packages that support it"
     )

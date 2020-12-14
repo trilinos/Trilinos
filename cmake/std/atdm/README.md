@@ -126,7 +126,7 @@ configure option for Trilinos and Kokkos.  Some common supported Kokkos
 architectures for the host node include `BDW`, `HSW`, `Power8`, `Power9`, and
 `KNL`.  When a GPU is present, some common Kokkos architecture options include
 `Kepler37`, `Pascal60`, and `Volta70`.  (Note that the `KOKKOS_ARCH` keywords
-are case-insensitive and can be `hsw`, 'volta70`, etc.)  If one selects a
+are case-insensitive and can be `hsw`, `volta70`, etc.)  If one selects a
 `KOKKOS_ARCH` value that is not supported by the current system or selected
 compiler, then the `load-env.sh` script will return an error message listing
 the valid choices for `KOKKOS_ARCH` for each supported compiler.

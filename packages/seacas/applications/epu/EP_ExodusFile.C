@@ -277,7 +277,7 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
   // Did user specify it via -netcdf4 or -large_model argument...
   int mode = 0;
 
-  if (si.compress_data() > 0) {
+  if (si.compress_data() > 0 || si.szip()) {
     // Force netcdf-4 if compression is specified...
     mode |= EX_NETCDF4;
   }
@@ -311,9 +311,16 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
     return false;
   }
 
-  if (si.compress_data() > 0) {
+  if (si.compress_data() > 0 || si.szip()) {
     ex_set_option(outputId_, EX_OPT_COMPRESSION_LEVEL, si.compress_data());
     ex_set_option(outputId_, EX_OPT_COMPRESSION_SHUFFLE, 1);
+
+    if (si.szip()) {
+      ex_set_option(outputId_, EX_OPT_COMPRESSION_TYPE, EX_COMPRESS_SZIP);
+    }
+    else if (si.zlib()) {
+      ex_set_option(outputId_, EX_OPT_COMPRESSION_TYPE, EX_COMPRESS_ZLIB);
+    }
   }
 
   // EPU Can add a name of "processor_id_epu" which is 16 characters long.

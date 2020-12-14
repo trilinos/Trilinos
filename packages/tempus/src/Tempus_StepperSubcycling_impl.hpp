@@ -36,12 +36,9 @@ StepperSubcycling<Scalar>::StepperSubcycling()
 
   this->setAppAction(Teuchos::null);
   scIntegrator_ = Teuchos::rcp(new IntegratorBasic<Scalar>());
-  scIntegrator_->setTimeStepControl();
 
   scIntegrator_->setObserver(
     Teuchos::rcp(new IntegratorObserverNoOp<Scalar>()));
-
-  this->setSubcyclingPrintDtChanges(false);
 
   RCP<ParameterList> tempusPL = scIntegrator_->getTempusParameterList();
 
@@ -74,6 +71,10 @@ StepperSubcycling<Scalar>::StepperSubcycling()
              .sublist("Time Step Control")
                  .set("Initial Time Step", std::numeric_limits<Scalar>::max());
   }
+
+  scIntegrator_->setTimeStepControl();
+  this->setSubcyclingPrintDtChanges(false);
+
 }
 
 
@@ -140,14 +141,13 @@ void StepperSubcycling<Scalar>::setSubcyclingStepType(std::string stepType)
 
   auto tsc = scIntegrator_->getNonConstTimeStepControl();
   auto tscStrategy = tsc->getTimeStepControlStrategy();
-  tscStrategy->clearObservers();
 
   Teuchos::RCP<TimeStepControlStrategy<Scalar> > strategy =
     Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>());
   if (stepType == "Variable")
     strategy = Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>());
 
-  tscStrategy->addStrategy(strategy);
+  tsc->setTimeStepControlStrategy(strategy);
 
   this->isInitialized_ = false;
 }
@@ -193,7 +193,6 @@ void StepperSubcycling<Scalar>::
 setSubcyclingTimeStepControlStrategy(
   Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs)
 {
-  scIntegrator_->getNonConstTimeStepControl()->getTimeStepControlStrategy()->clearObservers();
   scIntegrator_->getNonConstTimeStepControl()->setTimeStepControlStrategy(tscs);
   this->isInitialized_ = false;
 }

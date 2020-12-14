@@ -54,7 +54,7 @@ namespace {
 
 namespace {
   std::string codename;
-  std::string version = "1.1";
+  std::string version = "1.2";
 } // namespace
 
 int main(int argc, char *argv[])
@@ -129,7 +129,7 @@ namespace {
 
         if (type == "all" || type == "global") {
           Ioss::NameList fields;
-          region.field_describe(Ioss::Field::TRANSIENT, &fields);
+          region.field_describe(Ioss::Field::REDUCTION, &fields);
           output_names("Global", fields, &region);
         }
         if (type == "all" || type == "nodal") {
@@ -146,7 +146,7 @@ namespace {
     StringIdVector global_vars = interFace.global_var_names();
     if (!global_vars.empty()) {
       if (global_vars[0].first == "all") {
-        region.field_describe(Ioss::Field::TRANSIENT, &fields);
+        region.field_describe(Ioss::Field::REDUCTION, &fields);
       }
       else if (global_vars[0].first == "none") {
         ; // do nothing.  This will be used when nodal, element, ... supported
@@ -166,7 +166,7 @@ namespace {
       }
     }
     else {
-      region.field_describe(Ioss::Field::TRANSIENT, &fields);
+      region.field_describe(Ioss::Field::REDUCTION, &fields);
     }
 
     if (fields.empty()) {
@@ -200,11 +200,8 @@ namespace {
     fmt::print(out_stream, "];\n");
 
     // Get number of timesteps...
-    int num_steps = 0;
-    if (region.property_exists("state_count") && region.get_property("state_count").get_int() > 0) {
-      num_steps = region.get_property("state_count").get_int();
-    }
-    else {
+    int num_steps = region.get_optional_property("state_count", 0);
+    if (num_steps == 0) {
       fmt::print(out_stream, "GENESIS file -- no time steps written\n");
       return false;
     }
