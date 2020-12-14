@@ -470,8 +470,6 @@ The following `<system_name>` sub-directories exist (in alphabetical order):
 * `ride/`: Contains the files to drive builds on the SRN test bed machine
   `ride` which also can be run on the SON machine `white`.
 
-* `serrano/`: Contains files to drive builds on the SRN HPC machine `serrano`.
-
 * `tlcc2/`: Contains files to drive builds on the SRN HPC TLCC-2 machines
   (e.g. 'chama', 'skybridge', etc.).
 
