@@ -117,7 +117,7 @@ module load sems-env
 module load sems-git/2.10.1
 
 module load sems-cmake/3.19.1
-module load sems-ninja_fortran/1.8.2
+module load sems-ninja_fortran/1.10.0
 
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "CUDA" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
