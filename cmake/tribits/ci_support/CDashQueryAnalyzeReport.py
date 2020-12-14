@@ -54,6 +54,7 @@ import csv
 
 from FindGeneralScriptSupport import *
 from GeneralScriptSupport import *
+from Python2and3 import u, csvReaderNext
 
 import cdash_build_testing_date as CBTD
 
@@ -157,7 +158,7 @@ def checkDictsAreSame(dict_1, dict_1_name, dict_2, dict_2_name):
 def getCompressedFileNameIfTooLong(inputFileName, prefix="", ext=""):
   maxFileNameLength = 255 # ToDo: Figure out for this system?
   if len(inputFileName) > maxFileNameLength:
-    hashObject = hashlib.sha1(inputFileName)
+    hashObject = hashlib.sha1(str(inputFileName).encode('utf-8'))
     hashStr = hashObject.hexdigest()
     newFileName = prefix+hashObject.hexdigest()
     if ext: newFileName += "." + ext
@@ -222,7 +223,7 @@ class NotMatchFunctor(object):
 # because it modifies the input list object's elements in place.
 #
 def foreachTransform(list_inout, transformFunctor):
-  for i in xrange(len(list_inout)):
+  for i in range(len(list_inout)):
     list_inout[i] = transformFunctor(list_inout[i])
   return list_inout
 
@@ -433,7 +434,6 @@ def getDefaultTestDictsSortKeyList() : return ['testname', 'buildName', 'site']
 # we can avoid getting call it in any automated tests.
 #
 def extractCDashApiQueryData(cdashApiQueryUrl):
-  #print sys.version_info
   if sys.version_info < (2,7,5):
     raise Exception("Error: Must be using Python 2.7.5 or newer")
   # NOTE: If we use Python 2.6.6. then the urllib2 function crashes!
@@ -504,7 +504,7 @@ def readCsvFileIntoListOfDicts(csvFileName, requiredColumnHeadersList=[],
 
 def getColumnHeadersFromCsvFileReader(csvFileName, csvReader):
   try:
-    columnHeadersList = csvReader.next()
+    columnHeadersList = csvReaderNext(csvReader)
     stripWhiltespaceFromStrList(columnHeadersList)
     return columnHeadersList
   except StopIteration:
@@ -608,8 +608,9 @@ def writeTestsLODToCsvFile(testsLOD, csvFileName):
 # involves less right-drift and the expense of more vertical space.
 #
 def pprintPythonDataToFile(pythonData, filePath):
-  pp = pprint.PrettyPrinter(stream=open(filePath,'w'), indent=2)
-  pp.pprint(pythonData)
+  with open(filePath,'w') as fileObj:
+    pp = pprint.PrettyPrinter(stream=fileObj, indent=2)
+    pp.pprint(pythonData)
 
 
 # Get data off CDash and cache it or read from previously cached data
@@ -646,11 +647,13 @@ def getAndCacheCDashQueryDataOrReadFromCache(
     if verbose:
       print("  Since the file exists, using cached data from file:\n"+\
         "    "+cdashQueryDataCacheFile )
-    cdashQueryData=eval(open(cdashQueryDataCacheFile, 'r').read())
+    with open(cdashQueryDataCacheFile, 'r') as cacheFile:
+      cdashQueryData=eval(cacheFile.read())
   elif useCachedCDashData:
     if verbose:
       print("  Using cached data from file:\n    "+cdashQueryUrl )
-    cdashQueryData=eval(open(cdashQueryDataCacheFile, 'r').read())
+    with open(cdashQueryDataCacheFile, 'r') as cacheFile:
+      cdashQueryData=eval(cacheFile.read())
   else:
     if verbose:
       print("  Downloading CDash data from:\n    "+cdashQueryUrl )
@@ -997,7 +1000,7 @@ def lookupDictGivenLookupDict(lookupDict, listOfKeys, listOfValues,
     " and listOfValues="+str(listOfValues)+"!")
   currentSubLookupDict = lookupDict
   idx = 0
-  for idx in xrange(len(listOfValues)):
+  for idx in range(len(listOfValues)):
     key = listOfKeys[idx]
     #print("\nkey = '"+key+"'")
     keyValueToFind = listOfValues[idx]
@@ -1103,7 +1106,7 @@ class SearchableListOfDicts(object):
     else:
       keyListToUse = self.__listOfKeys
     keyValuesListToFind = []
-    for idx in xrange(len(keyListToUse)):
+    for idx in range(len(keyListToUse)):
       keyValuesListToFind.append(keyValueDictToFind.get(keyListToUse[idx]))
     lookupRtn = self.lookupDictGivenKeyValuesList(keyValuesListToFind, alsoReturnIdx)
     return lookupRtn
@@ -1788,7 +1791,7 @@ class AddCDashTestingDayFunctor(object):
     self.cdash_testing_day = cdash_testing_day
 
   def __call__(self, testDict):
-    testDict[u'cdash_testing_day'] = unicode(self.cdash_testing_day)
+    testDict[u('cdash_testing_day')] = u(self.cdash_testing_day)
     return testDict
 
 

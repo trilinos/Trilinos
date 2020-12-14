@@ -68,6 +68,7 @@ from CheckinTestConstants import *
 from TribitsDependencies import getProjectDependenciesFromXmlFile
 from TribitsDependencies import getDefaultDepsXmlInFile
 from TribitsPackageFilePathUtils import *
+from Python2and3 import s
 import gitdist
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -2730,7 +2731,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
               # Get then final commit message
               finalCommitEmailBodyStr = lastCommitMessageStr
               finalCommitEmailBodyStr += getAutomatedStatusSummaryHeaderStr()
-              finalCommitEmailBodyStr += shortCommitEmailBodyExtra.encode("utf8")
+              finalCommitEmailBodyStr += shortCommitEmailBodyExtra
               finalCommitEmailBodyStr += localCommitSHA1ListStr
               if forcedCommitPush:
                 finalCommitEmailBodyStr += "WARNING: Forced the push!\n"
@@ -2965,7 +2966,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
       subjectLine += ": %s: %s" % (inOptions.projectName, getHostname())
     
       emailBodyStr = subjectLine + "\n\n"
-      emailBodyStr += getCmndOutput("date", True) + "\n\n"
+      emailBodyStr += s(getCmndOutput("date", True)) + "\n\n"
       emailBodyStr += commitEmailBodyExtra + "\n"
       emailBodyStr += allLocalCommitSummariesStr + "\n"
       emailBodyStr += getSummaryEmailSectionStr(inOptions, buildTestCaseList)
