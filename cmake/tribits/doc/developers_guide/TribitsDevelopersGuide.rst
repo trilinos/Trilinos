@@ -6731,20 +6731,20 @@ included in the tarball.
 
 **NOTE:** The entries in ``CPACK_SOURCE_IGNORE_FILES`` are interpreted as
 **REGULAR EXPRESSIONS** not globs so if you add ``"someFile.*"`` as an
-*exclude, it will exclude every file in the entire source tree that has
-*``"someFile"`` in the name!  This is because, in regex terminology, the
-*trailing ``".*"`` means "match any character zero or more times" and
-*``"someFile"`` can match anywhere in the file name path.  Also, note that if
-*you add in an exclude like ``"*.pyc"`` (i.e. trying to exclude all of the
-*generated Python byte code files) that it will exclude every file that has
-*``"pyc"`` in the name and **not** just those with the file extension
-*``"pyc"``.  For example, the exclude ``".pyc"`` would exclude the files
-*``"puppyc"``, ``"lpycso"``, etc.  If you want to exclude all files with
-*extension ``"pyc"``, you have to add the exclude regex ``".*[.]pyc$"``!
-*One's lack of understanding of this fact will cost someone hours of lost time
-*debugging what happens when random files are missing when one tries to
-*configure what is left.  Somethings, what is left will actually configure and
-*might almost build!
+exclude, it will exclude every file in the entire source tree that has
+``"someFile"`` in the name!  This is because, in regex terminology, the
+trailing ``".*"`` means "match any character zero or more times" and
+``"someFile"`` can match anywhere in the file name path.  Also, note that if
+you add in an exclude like ``"*.pyc"`` (i.e. trying to exclude all of the
+generated Python byte code files) that it will exclude every file that has
+``"pyc"`` in the name and **not** just those with the file extension
+``"pyc"``.  For example, the exclude ``".pyc"`` would exclude the files
+``"puppyc"``, ``"lpycso"``, etc.  If you want to exclude all files with
+extension ``"pyc"``, you have to add the exclude regex ``".*[.]pyc$"``!
+One's lack of understanding of this fact will cost someone hours of lost time
+debugging what happens when random files are missing when one tries to
+configure what is left.  Sometimes, what is left will actually configure and
+might almost build!
 
 **NOTE:** As warned in `TriBITS Package Core Files`_ and `TriBITS Subpackage
 Core Files`_, SE Packages must have directories that are strictly independent

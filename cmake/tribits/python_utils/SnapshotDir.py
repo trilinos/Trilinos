@@ -470,10 +470,10 @@ def snapshotDir(inOptions):
 
 def assertCleanGitDir(dirPath, dirName, explanation):
 
-  changedFiles = s(getCmndOutput(
+  changedFiles = getCmndOutput(
     "git diff --name-status HEAD -- .",
     stripTrailingSpaces = True,
-    workingDir = dirPath ))
+    workingDir = dirPath )
 
   if changedFiles:
     raise Exception(
@@ -505,7 +505,7 @@ def cleanIgnoredFilesFromGitDir(dirPath, dirName):
 
 
 def getCommitSha1(gitDir):
-  return s(getCmndOutput("git log -1 --pretty=format:'%h' -- .", workingDir=gitDir)).strip()
+  return getCmndOutput("git log -1 --pretty=format:'%h' -- .", workingDir=gitDir).strip()
 
 
 def getGitRepoUrl(gitDir):
@@ -515,13 +515,13 @@ def getGitRepoUrl(gitDir):
   remoteRepoUrl = ""
 
   # Get the remote tracking branch
-  trackingBranchStr = s(getCmndOutput(
-     "git rev-parse --abbrev-ref --symbolic-full-name @{u}", workingDir=gitDir))
+  trackingBranchStr = getCmndOutput(
+     "git rev-parse --abbrev-ref --symbolic-full-name @{u}", workingDir=gitDir)
 
   (remoteRepoName, remoteBranch) = trackingBranchStr.strip().split("/")
 
   # Get the list of remote repos
-  remoteReposListStr = s(getCmndOutput("git remote -v", workingDir=gitDir))
+  remoteReposListStr = getCmndOutput("git remote -v", workingDir=gitDir)
   #print("remoteReposListStr = " + remoteReposListStr)
 
   # Loop through looking for remoteRepoName
@@ -558,9 +558,9 @@ def getGitRepoUrl(gitDir):
 
 
 def getLastCommitMsg(gitDir):
-  return s(getCmndOutput(
+  return getCmndOutput(
     "git log " \
     +" --pretty=format:'commit %H%nAuthor:  %an <%ae>%nDate:    %ad%nSummary: %s%n'" \
     +" -1 -- .",
     workingDir=gitDir
-    ))
+    )
