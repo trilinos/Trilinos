@@ -2966,7 +2966,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
       subjectLine += ": %s: %s" % (inOptions.projectName, getHostname())
     
       emailBodyStr = subjectLine + "\n\n"
-      emailBodyStr += s(getCmndOutput("date", True)) + "\n\n"
+      emailBodyStr += getCmndOutput("date", True) + "\n\n"
       emailBodyStr += commitEmailBodyExtra + "\n"
       emailBodyStr += allLocalCommitSummariesStr + "\n"
       emailBodyStr += getSummaryEmailSectionStr(inOptions, buildTestCaseList)
