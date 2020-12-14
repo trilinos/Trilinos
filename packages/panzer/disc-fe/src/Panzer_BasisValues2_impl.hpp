@@ -261,6 +261,8 @@ evaluateValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,
                                   s_vertex_coordinates,
                                   intrepid_basis->getBaseCellTopology());
   }
+
+  PHX::Device().fence();
 }
 
 

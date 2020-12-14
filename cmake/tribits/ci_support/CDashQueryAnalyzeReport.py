@@ -504,13 +504,20 @@ def readCsvFileIntoListOfDicts(csvFileName, requiredColumnHeadersList=[],
 
 def getColumnHeadersFromCsvFileReader(csvFileName, csvReader):
   try:
-    columnHeadersList = csvReader.next()
+    columnHeadersList = csvReaderNext(csvReader)
     stripWhiltespaceFromStrList(columnHeadersList)
     return columnHeadersList
   except StopIteration:
     raise Exception(
       "Error, CSV file '"+csvFileName+"' is empty which is not allowed!"
       )
+
+
+def csvReaderNext(csvReader):
+  if sys.version_info < (3,):
+    return csvReader.next()
+  else:
+    return next(csvReader)
 
 
 def assertExpectedColumnHeadersFromCsvFile(csvFileName, requiredColumnHeadersList,

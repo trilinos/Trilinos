@@ -74,7 +74,10 @@ namespace SLUD {
 
 extern "C" {
 
+#if SUPERLU_DIST_MAJOR_VERSION > 4
+// SuperLU_Dist before major version 5 does not contain the config file
 #include "superlu_dist_config.h" // provides define for size 32 or 64 int_t
+#endif
 
   /// use the same function with name space in the macro
 #define USER_FREE(addr) SLUD::superlu_free_dist(addr)

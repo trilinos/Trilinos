@@ -416,6 +416,7 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, extraEnv=None, \
         child = subprocess.Popen(cmnd, shell=True, stdout=subprocess.PIPE,
           env=fullEnv)
       data = child.stdout.read()
+      child.stdout.close()
       #print("data = '" + str(data) + "'")
       child.wait()
       rtnCode = child.returncode
@@ -427,6 +428,7 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, extraEnv=None, \
         outFileHandle = open(outFile, 'w')
       rtnCode = subprocess.call(cmnd, shell=True, stderr=subprocess.STDOUT,
         stdout=outFileHandle, env=fullEnv)
+      if outFileHandle: outFileHandle.close()
       rtnObject = rtnCode
   finally:
     if pwd: os.chdir(pwd)
