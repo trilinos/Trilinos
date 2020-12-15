@@ -142,7 +142,7 @@ namespace BaskerNS
     sg.permtab = (scotch_integral_type *)malloc((sg.m)  *sizeof(scotch_integral_type));
     sg.peritab = (scotch_integral_type *)malloc((sg.m)  *sizeof(scotch_integral_type));
     sg.rangtab = (scotch_integral_type *)malloc((num_doms+1)*sizeof(scotch_integral_type));
-    sg.treetab = (scotch_integral_type *)malloc((num_doms)  *sizeof(scotch_integral_type));
+    sg.treetab = (scotch_integral_type *)malloc((num_doms+1)*sizeof(scotch_integral_type));
     if (num_levels == 0) {
       for(Int i = 0; i < sg.m; i++)
       {

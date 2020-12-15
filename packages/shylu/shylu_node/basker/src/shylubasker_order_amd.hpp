@@ -12,6 +12,7 @@
 //#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
 //  #define BASKER_SUPERLUDIS_MC64
 //#endif
+#define BASKER_TIMER
 
 namespace BaskerNS
 {
@@ -349,7 +350,13 @@ namespace BaskerNS
 
       return;
     }
- 
+
+    #ifdef BASKER_TIMER
+    Kokkos::Timer timer_order;
+    double mwm_time = 0.0;
+    double amd_time = 0.0;
+    #endif
+
     //p == length(M)
     //Scan over all blks
     //Note, that this needs to be made parallel in the 
@@ -454,6 +461,9 @@ namespace BaskerNS
         }
         std::cout << " ]; " << std::endl;
       }*/
+      #ifdef BASKER_TIMER
+      timer_order.reset();
+      #endif
       if (Options.blk_matching == 0) {
         // no mwm, for debugging
         if (flag) {
@@ -507,20 +517,12 @@ namespace BaskerNS
       }
       for(Int ii = 0; ii < blk_size; ii++) tempp(ii) = ii;
       #endif
-      /*{
-        std::cout << "m1=[" << std::endl;
-        for(Int k = 0; k < blk_size; k++)
-        {
-          for(Int i = temp_col(k); i < temp_col(k+1); i++)
-            printf("%d %d %e\n", temp_row(i), k, temp_val(i));
-        }
-        std::cout << "];" << std::endl;
-      }*/
+      #ifdef BASKER_TIMER
+      mwm_time += timer_order.seconds();
+      #endif
 
       // apply MWM to rows
       permute_row(nnz, &(temp_row(0)), &(tempp(0)));
-      // sort for calling AMD
-      sort_matrix(nnz, blk_size, &(temp_col(0)), &(temp_row(0)), &(temp_val(0)));
 
       //Add to the bigger perm vector
       for(Int ii = 0; ii < blk_size; ii++)
@@ -545,129 +547,153 @@ namespace BaskerNS
 
       // -----------------------------------------------
       // compute AMD of b-th diagonal block
-      double l_nnz = 0;
-      double lu_work = 0;
-      #if 0
-      if (1) {
-        // ND on diagonal block
-        // form Basker Matrix storing the diagonal block
-        BASKER_MATRIX B;
-        B.set_shape(0, blk_size, 0, blk_size);
-        B.col_ptr = temp_col;
-        B.row_idx = temp_row;
-        B.nnz = nnz;
-
-        // compute A'+A
-        BASKER_MATRIX BBT;
-        AplusAT(B,BBT);
-
-        // remove diagonal entries
-        Int nnzi = 0;
-        Int nnz2 = 0;
-        for(Int i = 0; i < blk_size; i++) {
-          for(Int k = nnzi; k <BBT.col_ptr(i+1); k++) {
-            if(BBT.row_idx(k) != i) {
-              BBT.row_idx(nnz2) = BBT.row_idx(k);
-              nnz2++;
-            }
-          }
-          nnzi = BBT.col_ptr(i+1);
-          BBT.col_ptr(i+1) = nnz2;
-        }
-
-        Kokkos::Impl::Timer timer_metis;
-        #if 1
-        // allocate inv-permutation vectors
-        INT_1DARRAY metis_iperm;
-        MALLOC_INT_1DARRAY(metis_iperm, blk_size+1);
-
-        // call METIS
-        if (Options.verbose) {
-          printf( " calling METIS_NodeND(n = %d, nnz = %d) \n",blk_size,nnz );
-        }
-        METIS_NodeND(&blk_size, &(BBT.col_ptr(0)), &(BBT.row_idx(0)), NULL, NULL, &(tempp(0)), &(metis_iperm(0)));
-
-        // use nnz(A+A') as estimate for nnz(L)...
-        l_nnz = nnz;
-        lu_work = nnz;
-
-        FREE_INT_1DARRAY(metis_iperm); 
-        #else
-        SCOTCH_Strat stradat;
-        SCOTCH_stratInit(&stradat);
-
-        SCOTCH_Graph grafdat;
-        Int *vwgts = NULL;
-        if( SCOTCH_graphBuild(&grafdat, 0, blk_size, &(BBT.col_ptr(0)), &(BBT.col_ptr(1)), vwgts, NULL,
-                              nnz2, &(BBT.row_idx(0)), NULL) !=0 ) {
-          printf( "\n ** SCOTCH_graphBuild failed **\n\n" );
-        }
-
-        Int *permtab = (Int *)malloc((blk_size)  *sizeof(Int));
-        Int *peritab = (Int *)malloc((blk_size)  *sizeof(Int));
-        #if 1
-        SCOTCH_Ordering ordedat;
-        if (SCOTCH_graphOrderInit (&grafdat, &ordedat, permtab, peritab,
-                                   NULL, NULL, NULL) != 0) {
-          printf( "\n ** SCOTCH_graphOrderInit failed **\n\n" );
-        }
-
-        if (Options.verbose) {
-          printf( " calling Scotch_graphOrderCompute(n = %d, nnz = %d) \n",blk_size,nnz );
-        }
-        if (SCOTCH_graphOrderCompute (&grafdat, &ordedat, &stradat) != 0) {
-          printf( "\n ** SCOTCH_graphOrderCompute failed **\n\n" );
-        }
-        SCOTCH_graphOrderExit (&grafdat, &ordedat);
-        #else
-        Int num_levels = 0;
-        double balrat = 0.2;
-        Int flagval = SCOTCH_STRATLEAFSIMPLE | SCOTCH_STRATSEPASIMPLE;
-        if (SCOTCH_stratGraphOrderBuild(&stradat, flagval, num_levels, balrat) != 0) {
-          printf( "\n ** SCOTCH_stratGraphOrderBuild failed **\n\n" );
-        }
-
-        Int cblk = 0;
-        Int *rangtab = (Int *)malloc((blk_size+1)*sizeof(Int));
-        Int *treetab = (Int *)malloc((blk_size)  *sizeof(Int));
-        if (Options.verbose) {
-          printf( " calling Scotch_graphOrder(n = %d, nnz = %d) \n",blk_size,nnz );
-        }
-        if (SCOTCH_graphOrder(&grafdat &stradat, permtab, peritab,
-                              &cblk, rangtab, treetab) != 0) {
-          printf( "\n ** SCOTCH_graphOrder failed **\n\n" );
-        }
-        #endif
-
-        SCOTCH_graphExit (&grafdat);
-        SCOTCH_stratExit (&stradat);
-        for(Int i = 0; i < blk_size; i++) tempp(i) = peritab[i];
-        #endif
-        //for(Int i = 0; i < blk_size; i++) tempp(i) = i;
-        if (Options.verbose) {
-          double time_metis = timer_metis.seconds();
-          printf( " calling NodeND took %.2e seconds\n",time_metis );
-        }
-
-        /*printf( " M = [\n" );
-        for(Int i = 0; i < blk_size; i++) {
-          for(Int k = BBT.col_ptr(i); k < BBT.col_ptr(i+1); k++) printf( "%d %d\n",i,BBT.row_idx(k) );
-        }
-        printf( "];\n" );
-        printf( " P = [\n" );
-        for(Int i = 0; i < blk_size; i++) printf("%d\n",tempp(i) );
-        printf( "];\n" );*/
-
-        FREE(BBT);
-      } else
+      #ifdef BASKER_TIMER
+      timer_order.reset();
       #endif
-      {
-        // AMD on diagonal block
-        BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), &(temp_row(0)), 
-                                        &(tempp(0)), l_nnz, lu_work);
+      // use nnz(A+A') as default estimate for nnz(L)...
+      double l_nnz = nnz;
+      double lu_work = nnz;
+      if (!Options.amd_dom) {
+        // skip AMD ordering
+        if (flag) {
+          std::cout << " >> + Basker::NO_AMD_ORDER" << std::endl;
+        }
+        for(Int ii = 0; ii < blk_size; ii++) {
+          tempp(ii) = ii;
+        }
+      } else {
+        #ifdef BASKER_SORT_MATRIX_FOR_AMD
+        // sort for calling AMD
+        if (flag) {
+          std::cout << " >> + Basker::SORT_MATRIX" << std::endl;
+        }
+        sort_matrix(nnz, blk_size, &(temp_col(0)), &(temp_row(0)), &(temp_val(0)));
+        #endif
+
+        #if 0
+        if (1) {
+          // ND on diagonal block
+          // form Basker Matrix storing the diagonal block
+          BASKER_MATRIX B;
+          B.set_shape(0, blk_size, 0, blk_size);
+          B.col_ptr = temp_col;
+          B.row_idx = temp_row;
+          B.nnz = nnz;
+
+          // compute A'+A
+          BASKER_MATRIX BBT;
+          AplusAT(B,BBT);
+
+          // remove diagonal entries
+          Int nnzi = 0;
+          Int nnz2 = 0;
+          for(Int i = 0; i < blk_size; i++) {
+            for(Int k = nnzi; k <BBT.col_ptr(i+1); k++) {
+              if(BBT.row_idx(k) != i) {
+                BBT.row_idx(nnz2) = BBT.row_idx(k);
+                nnz2++;
+              }
+            }
+            nnzi = BBT.col_ptr(i+1);
+            BBT.col_ptr(i+1) = nnz2;
+          }
+
+          Kokkos::Impl::Timer timer_metis;
+          #if 1
+          // allocate inv-permutation vectors
+          INT_1DARRAY metis_iperm;
+          MALLOC_INT_1DARRAY(metis_iperm, blk_size+1);
+
+          // call METIS
+          if (Options.verbose) {
+            printf( " calling METIS_NodeND(n = %d, nnz = %d) \n",blk_size,nnz );
+          }
+          METIS_NodeND(&blk_size, &(BBT.col_ptr(0)), &(BBT.row_idx(0)), NULL, NULL, &(tempp(0)), &(metis_iperm(0)));
+
+          FREE_INT_1DARRAY(metis_iperm); 
+          #else
+          SCOTCH_Strat stradat;
+          SCOTCH_stratInit(&stradat);
+
+          SCOTCH_Graph grafdat;
+          Int *vwgts = NULL;
+          if( SCOTCH_graphBuild(&grafdat, 0, blk_size, &(BBT.col_ptr(0)), &(BBT.col_ptr(1)), vwgts, NULL,
+                                nnz2, &(BBT.row_idx(0)), NULL) !=0 ) {
+            printf( "\n ** SCOTCH_graphBuild failed **\n\n" );
+          }
+
+          Int *permtab = (Int *)malloc((blk_size)  *sizeof(Int));
+          Int *peritab = (Int *)malloc((blk_size)  *sizeof(Int));
+          #if 1
+          SCOTCH_Ordering ordedat;
+          if (SCOTCH_graphOrderInit (&grafdat, &ordedat, permtab, peritab,
+                                     NULL, NULL, NULL) != 0) {
+            printf( "\n ** SCOTCH_graphOrderInit failed **\n\n" );
+          }
+
+          if (Options.verbose) {
+            printf( " calling Scotch_graphOrderCompute(n = %d, nnz = %d) \n",blk_size,nnz );
+          }
+          if (SCOTCH_graphOrderCompute (&grafdat, &ordedat, &stradat) != 0) {
+            printf( "\n ** SCOTCH_graphOrderCompute failed **\n\n" );
+          }
+          SCOTCH_graphOrderExit (&grafdat, &ordedat);
+          #else
+          Int num_levels = 0;
+          double balrat = 0.2;
+          Int flagval = SCOTCH_STRATLEAFSIMPLE | SCOTCH_STRATSEPASIMPLE;
+          if (SCOTCH_stratGraphOrderBuild(&stradat, flagval, num_levels, balrat) != 0) {
+            printf( "\n ** SCOTCH_stratGraphOrderBuild failed **\n\n" );
+          }
+
+          Int cblk = 0;
+          Int *rangtab = (Int *)malloc((blk_size+1)*sizeof(Int));
+          Int *treetab = (Int *)malloc((blk_size)  *sizeof(Int));
+          if (Options.verbose) {
+            printf( " calling Scotch_graphOrder(n = %d, nnz = %d) \n",blk_size,nnz );
+          }
+          if (SCOTCH_graphOrder(&grafdat &stradat, permtab, peritab,
+                                &cblk, rangtab, treetab) != 0) {
+            printf( "\n ** SCOTCH_graphOrder failed **\n\n" );
+          }
+          #endif
+
+          SCOTCH_graphExit (&grafdat);
+          SCOTCH_stratExit (&stradat);
+          for(Int i = 0; i < blk_size; i++) tempp(i) = peritab[i];
+          #endif
+          //for(Int i = 0; i < blk_size; i++) tempp(i) = i;
+          if (Options.verbose) {
+            double time_metis = timer_metis.seconds();
+            printf( " calling NodeND took %.2e seconds\n",time_metis );
+          }
+
+          /*printf( " M = [\n" );
+          for(Int i = 0; i < blk_size; i++) {
+            for(Int k = BBT.col_ptr(i); k < BBT.col_ptr(i+1); k++) printf( "%d %d\n",i,BBT.row_idx(k) );
+          }
+          printf( "];\n" );
+          printf( " P = [\n" );
+          for(Int i = 0; i < blk_size; i++) printf("%d\n",tempp(i) );
+          printf( "];\n" );*/
+
+          FREE(BBT);
+        } else
+        #endif
+        {
+          // AMD on diagonal block
+          if (flag) {
+            std::cout << " >> + Basker::AMD_ORDER" << std::endl;
+          }
+          BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), &(temp_row(0)), 
+                                          &(tempp(0)), l_nnz, lu_work);
+        }
       }
+      #ifdef BASKER_TIMER
+      amd_time += timer_order.seconds();
+      #endif
       if (Options.verbose) {
-        printf( " blk(%d: size=%d, rows=%d:%d)\n", (int)b, (int)(btf_tabs(b+1)-btf_tabs(b)), (int)btf_tabs(b),(int)btf_tabs(b+1)-1 );
+        printf( " + blk(%d: size=%d, rows=%d:%d)\n", (int)b, (int)(btf_tabs(b+1)-btf_tabs(b)), (int)btf_tabs(b),(int)btf_tabs(b+1)-1 );
       }
       #if 0
       printf( " >> debug: set blk_amd to identity <<\n" );
@@ -707,6 +733,10 @@ namespace BaskerNS
       FREE_INT_1DARRAY(tempp);
 
     }//over all blk_tabs
+    #ifdef BASKER_TIMER
+    std::cout << " ++ Basker order : MWM time: " << mwm_time << std::endl;
+    std::cout << " ++ Basker order : AMD time: " << amd_time << std::endl;
+    #endif
 
     #ifdef BASKER_DEBUG_AMD_ORDER
     printf("blk amd final order\n");

@@ -29,6 +29,7 @@ using namespace std;
 #include <omp.h>
 #endif
 
+#define BASKER_TIMER 
 //#define BASKER_DEBUG_SFACTOR
 
 //Functor for Kokkos
@@ -234,6 +235,11 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     //MALLOC_INT_1DARRAY(gSrow, A.nrow);
     //init_value(gSrow, A.nrow, 0);
 
+    #ifdef BASKER_TIMER 
+    Kokkos::Timer timer;
+    timer.reset();
+    #endif
+
     //printf("N-lvls: %d \n", tree.nlvls);
     //printf("p/2: %d \n", num_threads/2);
     Int split_num = num_threads/2;
@@ -270,6 +276,16 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       init_value(gSrow[ii], A.nrow, (Int)0);
     }
 
+    #ifdef BASKER_TIMER 
+    std::cout << " >> symmetric_sfactor::init : " << timer.seconds() << " seconds" << std::endl;
+
+    double time1 = 0.0;
+    double time2 = 0.0;
+    double time3 = 0.0;
+    Kokkos::Timer timer1;
+    timer.reset();
+    #endif
+
     //split_num = num_threads/2;
     //for(Int p =0; p < 1; ++p)
     if(Options.verbose == BASKER_TRUE)
@@ -280,8 +296,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     }
     for(Int p=0; p < num_threads; ++p)
     {
-      //if(p == 1)
-
       Int blk = S(0)(p);
       if(Options.verbose == BASKER_TRUE)
       {
@@ -292,10 +306,16 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       //printf("\n\n STREE SIZE: %d \n", AL[blk][0].ncol);
       //printf("Here 0\n");
       //Find nnz_counts for leafs
+      #ifdef BASKER_TIMER 
+      timer1.reset();
+      #endif
       //e_tree(AL[blk][0], stree, 1);
       e_tree(ALM(blk)(0), stree, 1);
       post_order(ALM(blk)(0), stree);
       col_count(ALM(blk)(0),stree);
+      #ifdef BASKER_TIMER 
+      time1 += timer1.seconds();
+      #endif
 
       //Assign nnz here
       //leaf_assign_nnz(LL[blk][0], stree, 0);
@@ -305,8 +325,14 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         printf( " >> leaf_assign_nnz(LL(%d)(%d))\n",(int)blk,0);
         printf( " >> leaf_assign_nnz(LL(%d)(%d))\n",(int)blk,(int)LU_size(blk)-1);
       }
+      #ifdef BASKER_TIMER 
+      timer1.reset();
+      #endif
       leaf_assign_nnz(LL(blk)(0),              stree, 0);
       leaf_assign_nnz(LU(blk)(LU_size(blk)-1), stree, 0);
+      #ifdef BASKER_TIMER 
+      time2 += timer1.seconds();
+      #endif
 
       //Do off diag
       for(Int l =0; l < tree.nlvls; l++)
@@ -332,8 +358,14 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         Int off_diag = 1;
         //U_blk_sfactor(AV[U_col][U_row], stree,
         //		  gScol[l], gSrow[glvl],0);
+        #ifdef BASKER_TIMER 
+        timer1.reset();
+        #endif
         U_blk_sfactor(AVM(U_col)(U_row), stree,
-            gScol[l], gSrow[glvl], off_diag);
+                      gScol[l], gSrow[glvl], off_diag);
+        #ifdef BASKER_TIMER 
+        time3 += timer1.seconds();
+        #endif
 
         //Determine lower blk nnz
         //Not need to be run in symmetric case
@@ -351,11 +383,24 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           printf( "   ++ leaf_assign_nnz(LU(%d, %d))\n",(int)U_col,(int)U_row);
           printf( "   ++ leaf_assign_nnz(LL(%d, %d))\n",(int)blk,(int)l+1);
         }
+        #ifdef BASKER_TIMER 
+        timer1.reset();
+        #endif
         U_assign_nnz(LU(U_col)(U_row), stree, 0);
         L_assign_nnz(LL(blk)(l+1),     stree, 0);
+        #ifdef BASKER_TIMER 
+        time2 += timer1.seconds();
+        #endif
 
       }//end off diag
     }//over all domains
+    #ifdef BASKER_TIMER 
+    std::cout << " >> symmetric_sfactor::domain : " << timer.seconds() << " seconds" << std::endl;
+    std::cout << "  ++ symmetric_sfactor::domain::postorder : " << time1 << " seconds" << std::endl;
+    std::cout << "  ++ symmetric_sfactor::domain::init      : " << time2 << " seconds" << std::endl;
+    std::cout << "  ++ symmetric_sfactor::domain::sfactor   : " << time3 << " seconds" << std::endl;
+    timer.reset();
+    #endif
 
 
     //do all the sep
@@ -452,6 +497,9 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         }
       }
     } //end for lvl
+    #ifdef BASKER_TIMER 
+    std::cout << " >> symmetric_sfactor::separators : " << timer.seconds() << " seconds" << std::endl;
+    #endif
 
     //free my memory
     for(Int ii = 0 ; ii < split_num; ++ii)
@@ -1256,11 +1304,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     //Set Row-idx offset = 0;
 
 
-    //???Fix??
-    // MV.init_offset(MV.scol,0);
-    //Int brow = MV.srow; //Not used
-    Int bcol = MV.scol;
- 
     #ifdef BASKER_DEBUG_SFACTOR
     printf("\n\n");
     printf("BLK: %d %d \n", brow, bcol);
@@ -1271,6 +1314,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     #endif
 
     //Start Algorithm
+    #ifdef BASKER_TIMER 
+    Kokkos::Timer timer;
+    timer.reset();
+    #endif
     INT_1DARRAY U_col_count;
     BASKER_ASSERT(MV.ncol > 0, "Basker U_blk_sfactor assert: ncol > 0 failed");
     //if(MV.ncol > 0)
@@ -1292,7 +1339,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       MALLOC_INT_1DARRAY(pattern, MV.nrow);
       init_value(pattern, MV.nrow, (Int)0);
     }
-    Int top = 0;
 
     //Waveform if symmetric
     INT_1DARRAY wave;
@@ -1322,6 +1368,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       MALLOC_INT_1DARRAY(first_row, MV.ncol);
       init_value(first_row, MV.ncol, (Int)0);
     }
+    #ifdef BASKER_TIMER 
+    std::cout << " >> U_blk_sfactor::init : " << timer.seconds() << " seconds" << std::endl;
+    timer.reset();
+    #endif
     //Could add first col if not symmetric
 
     // If symmetric  (short cutting for off-diag S)
@@ -1331,18 +1381,28 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       MALLOC_INT_1DARRAY(max_reach, MV.ncol);
       init_value(max_reach, MV.ncol, BASKER_MAX_IDX);
     }
-
     //printf("-------------UBLK DONE ALLOC----");
 
+#if 0
+    #ifdef BASKER_TIMER 
+    Kokkos::Timer timer1;
+    double time1 = 0.0;
+    double time2 = 0.0;
+    #endif
 
+    //???Fix??
+    // MV.init_offset(MV.scol,0);
+    //Int brow = MV.srow; //Not used
+    Int bcol = MV.scol;
+ 
     //Loop of all columns
+    Int top = 0;
     for(Int k = 0; k < MV.ncol; ++k)
     {
       //Add any offdiag reach that might have already been
       if(off_diag == 1)
       {
         //printf("---OFF DIAG U-nnz called ----\n");
-
         Int t = grow(k+bcol);
         if((t != BASKER_MAX_IDX) && (t < MV.nrow))
         {
@@ -1354,14 +1414,16 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
             t = ST.parent(t);
           }
         }
-      } 
+      }
 
       //Loop over rows
+      #ifdef BASKER_TIMER 
+      timer1.reset();
+      #endif
       for(Int j = MV.col_ptr(k); j < MV.col_ptr(k+1); ++j)
       {
         //Climb tree
         //Will want to modify this to ST.post[row_idx(j)];
-        //Int t = MV.row_idx(j)-brow;
         Int t = MV.row_idx(j);
 
         // Processing element t
@@ -1373,10 +1435,13 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           t = ST.parent(t);
         }
       }// end for j
+      #ifdef BASKER_TIMER 
+      time1 += timer1.seconds();
+      timer1.reset();
+      #endif
 
       //clear color
       Int min_pos = max_reach(k);
-
       for(Int ii = 0; ii < top; ii++)
       {
         Int kk = pattern(ii);
@@ -1395,7 +1460,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         }
 
         //Move into waveform
-        if(wave_p(kk) ==BASKER_MAX_IDX)
+        if(wave_p(kk) == BASKER_MAX_IDX)
         {
           wave_p(kk) = k;
         }
@@ -1431,10 +1496,11 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       top = 0;
       max_reach(k) = min_pos;
       min_pos = MV.ncol;
-
+      #ifdef BASKER_TIMER 
+      time2 += timer1.seconds();
+      #endif
     }//all columns
 
-   
     //Copy into global 
     //col
     for(Int i = MV.scol; i < MV.scol+MV.ncol; i++)
@@ -1476,10 +1542,43 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       //temp fix for elbow row
       //ST.L_row_counts[i] += (.4)*U_col_count[i];
     }
+    #ifdef BASKER_TIMER 
+    std::cout << " >> U_blk_sfactor::loop-columns               : " << timer.seconds() << " seconds" << std::endl;
+    std::cout << " >> + U_blk_sfactor::loop-columns:loop-row    : " << time1           << " seconds" << std::endl;
+    std::cout << " >> + U_blk_sfactor::loop-columns:clear-color : " << time2           << " seconds" << std::endl;
+    timer.reset();
+    #endif
+#else
+    // let me just count nnz in L and U
+    // NOTE: a better way to avoid realloc
+    ST.init_U_col_counts(MV.ncol); // contain nnz / col in U
+    ST.init_L_row_counts(MV.ncol); // contain nnz / row in L
+    if(off_diag != 1) {
+      for(Int j = 0; j < MV.ncol; j++)
+      {
+        ST.L_row_counts(j) = 0;
+        ST.U_col_counts(j) = 0;
+        for(Int k = MV.col_ptr(j); k < MV.col_ptr(j+1); ++k) {
+          Int i = MV.row_idx(k);
+          if (i < j) {
+            ST.U_col_counts(j) ++;
+          } else if (i > j) {
+            ST.L_row_counts(i) ++;
+          } else {
+            ST.U_col_counts(j) ++;
+            ST.L_row_counts(i) ++;
+          }
+        }
+      }
+    }
+    #ifdef BASKER_TIMER 
+    std::cout << " >> U_blk_sfactor::loop-columns               : " << timer.seconds() << " seconds" << std::endl;
+    #endif
+#endif
 
     //Temp Patch fix
     //Note Comebaske
-    if(off_diag ==1)
+    if(off_diag == 1)
     {
       for(Int i = 0; i < MV.ncol; i++)
       {
@@ -1487,6 +1586,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         ST.L_row_counts(i) = MV.nrow;
       }
     }
+    #ifdef BASKER_TIMER 
+    std::cout << " >> U_blk_sfactor::copy : " << timer.seconds() << " seconds" << std::endl;
+    timer.reset();
+    #endif
 
     FREE(U_col_count);
     FREE(color);

@@ -16,7 +16,7 @@
 //  #define BASKER_SUPERLUDIS_MC64
 //#endif
 //#undef BASKER_DEBUG_ORDER
-//#define BASKER_TIMER
+#define BASKER_TIMER
 
 
 namespace BaskerNS
@@ -149,7 +149,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       }
       MALLOC_INT_1DARRAY(order_csym_array, BTF_A.ncol);
       init_value(order_csym_array, BTF_A.ncol, (Int)0);
-
       csymamd_order(BTF_A, order_csym_array, cmember);
 
       permute_col(BTF_A, order_csym_array);
@@ -480,8 +479,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     timer_one.reset();
 
     //ND Order (We should always do this for use)
-    if((Options.btf == BASKER_TRUE) &&
-        (btf_tabs_offset != 0))
+    if(Options.btf == BASKER_TRUE && btf_tabs_offset != 0)
     {
       MALLOC_INT_1DARRAY(vals_order_scotch_array, BTF_A.nnz);
       scotch_partition(BTF_A);
@@ -759,8 +757,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     for(Int j = 0; j < BTF_A.ncol; j++) {
       printf("%d\n",part_tree.permtab(j) );
     }
-    printf("];\n");*/
-    /*printf(" ppT = [\n" );
+    printf("];\n");
+    printf(" ppT = [\n" );
     for(Int j = 0; j < BTF_A.ncol; j++) {
       for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
         printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
@@ -810,22 +808,63 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //--------------------------------------------------------------
     //5. Constrained symamd on A
     //Init for Constrained symamd on A
-    INT_1DARRAY cmember;
-    MALLOC_INT_1DARRAY(cmember, BTF_A.ncol+1);
-    init_value(cmember,BTF_A.ncol+1,(Int) 0);
-    for(Int i = 0; i < tree.nblks; ++i)
-    {
-      for(Int j = tree.col_tabs(i); j < tree.col_tabs(i+1); ++j)
-      {
-        cmember(j) = i;
-      }
-    }
-    init_value(order_csym_array, BTF_A.ncol, (Int)0);
+    if (1) {
+      BASKER_MATRIX AAT;
+      AplusAT(BTF_A, AAT);
 
-    //--------------------------------------------------------------
-    // call Constrained symamd on A
-    //printf("============CALLING CSYMAMD============\n");
-    csymamd_order(BTF_A, order_csym_array, cmember);
+      INT_1DARRAY tempp;
+      INT_1DARRAY temp_col;
+      INT_1DARRAY temp_row;
+      ENTRY_1DARRAY temp_val;
+      MALLOC_INT_1DARRAY  (tempp,    AAT.ncol);
+      MALLOC_INT_1DARRAY  (temp_col, AAT.ncol+1);
+      MALLOC_INT_1DARRAY  (temp_row, AAT.nnz);
+      MALLOC_ENTRY_1DARRAY(temp_val, AAT.nnz);
+
+      for(Int b = 0; b < tree.nblks; ++b) {
+        Int frow = tree.col_tabs(b);
+        Int erow = tree.col_tabs(b+1);
+        Int nnz = 0;
+        temp_col(0) = 0;
+        for(Int k = frow; k < erow; k++) {
+          for(Int i = AAT.col_ptr(k); i < AAT.col_ptr(k+1); i++) {
+            if(AAT.row_idx(i) >= frow && AAT.row_idx(i) < erow) {
+              temp_val(nnz) = AAT.val(i);
+              temp_row(nnz) = AAT.row_idx(i) - frow;
+              nnz++;
+            }
+          }
+          temp_col(k-frow+1) = nnz;
+        }
+        Int blk_size = erow - frow;
+        #ifdef BASKER_SORT_MATRIX_FOR_AMD
+        sort_matrix(nnz, blk_size, &(temp_col(0)), &(temp_row(0)), &(temp_val(0)));
+        #endif
+
+        double l_nnz = 0;
+        double lu_work = 0;
+        BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), &(temp_row(0)),
+                                        &(tempp(0)), l_nnz, lu_work);
+        for(Int k = 0; k < blk_size; k++)
+        {
+          order_csym_array(frow+tempp(k)) = frow+k;
+        }
+      }
+    } else
+    {
+      INT_1DARRAY cmember;
+      MALLOC_INT_1DARRAY(cmember, BTF_A.ncol+1);
+      for(Int i = 0; i < tree.nblks; ++i) {
+        for(Int j = tree.col_tabs(i); j < tree.col_tabs(i+1); ++j) {
+          cmember(j) = i;
+        }
+      }
+      //--------------------------------------------------------------
+      // call Constrained symamd on A
+      //printf("============CALLING CSYMAMD============\n");
+      init_value(order_csym_array, BTF_A.ncol, (Int)0);
+      csymamd_order(BTF_A, order_csym_array, cmember);
+    }
     #if 0 // reset to I for debug
     printf( " >> debug: set order_csym_array to identity <<\n" );
     for (Int i = 0; i < BTF_A.ncol; ++i) {
@@ -839,6 +878,12 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     std::cout << " ++ Basker apply_scotch : constrained symm amd time : " << csymamd_time << std::endl;
     scotch_timer.reset();
     #endif
+    /*printf(" After cAMD\n");
+    printf(" p = [\n" );
+    for(Int j = 0; j < BTF_A.ncol; j++) {
+      printf("%d\n",(int)order_csym_array(j) );
+    }
+    printf("];\n");*/
 
     //new for sfactor_copy2 replacement
     permute_col_store_valperms(BTF_A, order_csym_array, vals_order_csym_array); //NDE: Track movement of vals (lin_ind of row,col) here
@@ -848,12 +893,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array);
     permute_row(BTF_A, order_csym_array);
 
-    /*printf(" After cAMD\n");
-    printf(" p = [\n" );
-    for(Int j = 0; j < BTF_A.ncol; j++) {
-      printf("%d\n",(int)order_csym_array(j) );
-    }
-    printf("];\n");*/
     /*printf(" ppT = [\n" );
     for(Int j = 0; j < BTF_A.ncol; j++) {
       for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
@@ -970,7 +1009,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::scotch_partition( BASKER_MATRIX &M )
+  int Basker<Int, Entry, Exe_Space>::scotch_partition( BASKER_MATRIX &M)
   {
     nd_flag = BASKER_TRUE;
 

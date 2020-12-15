@@ -1270,6 +1270,8 @@ namespace BaskerNS
 
         INT_1DARRAY blk_nnz;
         INT_1DARRAY blk_work;
+        BASKER_BOOL  amd_dom = Options.amd_dom;
+        Options.amd_dom = false;
         btf_blk_mwm_amd(0, num_blks_A, BTF_A,
                         order_nd_mwm, order_nd_amd,
                         blk_nnz, blk_work);
@@ -1309,22 +1311,26 @@ namespace BaskerNS
         // ----------------------------------------------------------------------------------------------
         // Apply AMD perm to rows and cols
         // NOTE: no need to udpate vals_order_blk_amd_array (it will read in A without permutations, and compute perm here)
-        #if 0
-        // skip applying AMD since we do ND (might helpful, e.g., one thread)
-        for (Int i = 0; i < (Int)BTF_A.nrow; i++) {
-          order_nd_amd(i) = i;
+          #if 0
+          // skip applying AMD since we do ND (might helpful, e.g., one thread)
+          for (Int i = 0; i < (Int)BTF_A.nrow; i++) {
+            order_nd_amd(i) = i;
+          }
+          #else
+        if (Options.amd_dom) {
+          permute_row(BTF_A, order_nd_amd);
+          permute_col(BTF_A, order_nd_amd);
+          if (btf_tabs_offset < btf_nblks) {
+            // Apply AMD perm to rows and cols
+            permute_row(BTF_B, order_nd_amd);
+          }
+          if (BTF_E.ncol > 0) {
+            // Apply AMD perm to cols
+            permute_col(BTF_E, order_nd_amd);
+          }
         }
-        #else
-        permute_row(BTF_A, order_nd_amd);
-        permute_col(BTF_A, order_nd_amd);
-        if (btf_tabs_offset < btf_nblks) {
-          // Apply AMD perm to rows and cols
-          permute_row(BTF_B, order_nd_amd);
-        }
-        if (BTF_E.ncol > 0) {
-          // Apply AMD perm to cols
-          permute_col(BTF_E, order_nd_amd);
-        }
+        // reset AMD option
+        Options.amd_dom = amd_dom;
         if(Options.verbose == BASKER_TRUE) {
           std::cout<< " > Basker Factor: Time to compute and apply MWM+AMD on a big block A: " << nd_mwm_amd_timer.seconds() << std::endl;
         }

@@ -769,6 +769,9 @@ namespace BaskerNS
       // ND Ordering Options
       use_metis = false;
 
+      // AMD Option
+      amd_dom = true;
+
       //Pivot
       no_pivot   = BASKER_FALSE;
       pivot_tol  = BASKER_PIVOT_TOL; 
