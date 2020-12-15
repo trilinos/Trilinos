@@ -647,6 +647,22 @@ public:
     return rc;
   }
 
+  //---------------------------------------------------
+  // Expert functions; see zoltan.h for details
+
+  int Serialize_Size() {
+    return Zoltan_Serialize_Size( ZZ_Ptr );
+  }
+
+  int Serialize(size_t bufSize, char *buf) {
+    return Zoltan_Serialize( ZZ_Ptr, bufSize, buf);
+  }
+
+  int Deserialize(size_t bufSize, char *buf) {
+    return Zoltan_Deserialize( ZZ_Ptr, bufSize, buf);
+  }
+
+  //---------------------------------------------------
   // Access to the "C" language structure, required for use of
   // Zoltan "C" functions.  (Deprecated "C" functions were not
   // included in the C++ interface.)

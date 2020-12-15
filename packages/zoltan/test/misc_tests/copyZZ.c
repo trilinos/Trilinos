@@ -151,13 +151,13 @@ int main(int narg, char **arg) {
   /* Then allocate and broadcast the buffer */
   char *buf = NULL;
   buf = (char *) malloc(bufSize * sizeof(char));
-  if (me == 0) Zoltan_Serialize(zz, buf, &ierr);
+  if (me == 0) ierr = Zoltan_Serialize(zz, bufSize, buf);
   MPI_Bcast(&buf, bufSize, MPI_CHAR, 0, MPI_COMM_WORLD);
 
   /* All processors unpack the buffer into a new ZZ struct */
 
   struct Zoltan_Struct *newZZ = Zoltan_Create(MPI_COMM_WORLD);
-  Zoltan_Deserialize(newZZ, buf, bufSize, &ierr);
+  ierr = Zoltan_Deserialize(newZZ, bufSize, buf);
 
   free(buf); buf = NULL;
   

@@ -143,13 +143,13 @@ int main(int narg, char **arg) {
   /* Then allocate and broadcast the buffer */
   char *buf = NULL;
   buf = new char[bufSize];
-  if (me == 0) zz.Serialize(buf, ierr);
+  if (me == 0) ierr = zz.Serialize(bufSize, buf);
   MPI_Bcast(&buf, bufSize, MPI_CHAR, 0, MPI_COMM_WORLD);
 
   /* All processors unpack the buffer into a new ZZ struct */
 
   Zoltan newZZ(MPI_COMM_WORLD);
-  newZZ.Deserialize(buf, bufSize, ierr);
+  ierr = newZZ.Deserialize(bufSize, buf);
 
   delete [] buf;
   
