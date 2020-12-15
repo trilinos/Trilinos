@@ -76,15 +76,15 @@ int getMeshDimension(const std::string & meshStr,
 }
 
 STK_ExodusReaderFactory::STK_ExodusReaderFactory()
-  : fileName_(""), restartIndex_(0), isExodus_(true), userMeshScaling_(false), meshScaleFactor_(0.0),
-    levelsOfRefinement_(0)
+  : fileName_(""), restartIndex_(0), isExodus_(true), userMeshScaling_(false), keepPerceptData_(false),
+    keepPerceptParentElements_(false), meshScaleFactor_(0.0), levelsOfRefinement_(0)
 { }
 
 STK_ExodusReaderFactory::STK_ExodusReaderFactory(const std::string & fileName,
                                                  const int restartIndex,
                                                  const bool isExodus)
-  : fileName_(fileName), restartIndex_(restartIndex), isExodus_(isExodus), userMeshScaling_(false), meshScaleFactor_(0.0),
-    levelsOfRefinement_(0)
+  : fileName_(fileName), restartIndex_(restartIndex), isExodus_(isExodus), userMeshScaling_(false), 
+    keepPerceptData_(false), keepPerceptParentElements_(false), meshScaleFactor_(0.0), levelsOfRefinement_(0)
 { }
 
 Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMachine parallelMach) const
@@ -186,7 +186,7 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
    // build mesh bulk data
    meshData->populate_bulk_data();
 
-   const bool deleteParentElements = true;
+   const bool deleteParentElements = !keepPerceptParentElements_;
    if (levelsOfRefinement_ > 0)
      mesh.refineMesh(levelsOfRefinement_,deleteParentElements);
 
@@ -282,6 +282,12 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
    if(!paramList->isParameter("Levels of Uniform Refinement"))
      paramList->set<int>("Levels of Uniform Refinement", 0);
 
+   if(!paramList->isParameter("Keep Percept Data"))
+     paramList->set<bool>("Keep Percept Data", false);
+
+   if(!paramList->isParameter("Keep Percept Parent Elements"))
+     paramList->set<bool>("Keep Percept Parent Elements", false);
+
    paramList->validateParameters(*getValidParameters(),0);
 
    setMyParamList(paramList);
@@ -304,6 +310,10 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
 
    // read in periodic boundary conditions
    parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
+
+   keepPerceptData_ = paramList->get<bool>("Keep Percept Data");
+
+   keepPerceptParentElements_ = paramList->get<bool>("Keep Percept Parent Elements");
 
    levelsOfRefinement_ = paramList->get<int>("Levels of Uniform Refinement");
 }
@@ -335,6 +345,10 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_ExodusReaderFactory::getValidPara
       bcs.set<int>("Count",0); // no default periodic boundary conditions
 
       validParams->set("Levels of Uniform Refinement",0,"Number of levels of inline uniform mesh refinement");
+
+      validParams->set("Keep Percept Data",false,"Keep the Percept mesh after uniform refinement is applied");
+
+      validParams->set("Keep Percept Parent Elements",false,"Keep the parent element information in the Percept data");
    }
 
    return validParams.getConst();

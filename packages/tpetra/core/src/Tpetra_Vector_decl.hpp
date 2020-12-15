@@ -262,7 +262,7 @@ public:
   //! Replace current value at the specified location with specified value.
   /** \pre \c globalRow must be a valid global element on this node, according to the row map.
    */
-  void replaceGlobalValue (const GlobalOrdinal globalRow, const Scalar& value) const;
+  void replaceGlobalValue (const GlobalOrdinal globalRow, const Scalar& value);
 
   /// \brief Add value to existing value, using global (row) index.
   ///
@@ -286,12 +286,12 @@ public:
   void
   sumIntoGlobalValue (const GlobalOrdinal globalRow,
                       const Scalar& value,
-                      const bool atomic = base_type::useAtomicUpdatesByDefault) const;
+                      const bool atomic = base_type::useAtomicUpdatesByDefault);
 
   //! Replace current value at the specified location with specified values.
   /** \pre \c localRow must be a valid local element on this node, according to the row map.
    */
-  void replaceLocalValue (const LocalOrdinal myRow, const Scalar& value) const;
+  void replaceLocalValue (const LocalOrdinal myRow, const Scalar& value);
 
   /// \brief Add \c value to existing value, using local (row) index.
   ///
@@ -313,7 +313,7 @@ public:
   void
   sumIntoLocalValue (const LocalOrdinal myRow,
                      const Scalar& value,
-                     const bool atomic = base_type::useAtomicUpdatesByDefault) const;
+                     const bool atomic = base_type::useAtomicUpdatesByDefault);
 
   //@}
 

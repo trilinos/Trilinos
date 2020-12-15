@@ -592,7 +592,7 @@ namespace Ioss {
   // have to check each face (or group of faces) individually.
   void DatabaseIO::set_common_side_topology() const
   {
-    DatabaseIO *new_this = const_cast<DatabaseIO *>(this);
+    auto *new_this = const_cast<DatabaseIO *>(this);
 
     bool                         first          = true;
     const ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
@@ -723,7 +723,7 @@ namespace Ioss {
       assert(!side_topo.empty());
       assert(sideTopology.empty());
       // Copy into the sideTopology container...
-      DatabaseIO *new_this = const_cast<DatabaseIO *>(this);
+      auto *new_this = const_cast<DatabaseIO *>(this);
       std::copy(side_topo.cbegin(), side_topo.cend(), std::back_inserter(new_this->sideTopology));
     }
     assert(!sideTopology.empty());
@@ -1113,7 +1113,7 @@ namespace Ioss {
       zz     = std::make_pair(*(z.first), *(z.second));
     }
 
-    return AxisAlignedBoundingBox(xx.first, yy.first, zz.first, xx.second, yy.second, zz.second);
+    return {xx.first, yy.first, zz.first, xx.second, yy.second, zz.second};
   }
 } // namespace Ioss
 

@@ -54,22 +54,8 @@
 namespace Teko {
 
 typedef double ST;
-typedef int LO;
-#ifdef HAVE_Teko_USE_LONGLONG_GO
-typedef long long GO;
-#elif defined(HAVE_TPETRA_INST_INT_INT)
-typedef int GO;
-#elif defined(HAVE_TPETRA_INST_INT_LONG)
-typedef long GO;
-#elif defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-typedef long long GO;
-#elif defined(HAVE_TPETRA_INST_INT_UNSIGNED_LONG)
-typedef unsigned long GO;
-#elif defined(HAVE_TPETRA_INST_INT_UNSIGNED)
-typedef unsigned GO;
-#else
-#  error "Teko wants to use a GlobalOrdinal type which Tpetra does not enable.  None of the following types are enabled: int, long, long long, unsigned long, unsigned."
-#endif
+typedef Tpetra::Map<>::global_ordinal_type GO;
+typedef Tpetra::Map<>::local_ordinal_type LO;
 typedef Tpetra::Map<>::node_type NT;
 
 }

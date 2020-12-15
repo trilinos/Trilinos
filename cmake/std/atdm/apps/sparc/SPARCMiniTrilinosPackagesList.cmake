@@ -8,4 +8,7 @@ SET(SPARC_MiniTrilinos_Package_Disables
 SET(SPARC_MiniTrilinos_TPL_Disables
   METIS
   ParMETIS
+  SuperLUDist
+  Boost
+  BoostLib
   )

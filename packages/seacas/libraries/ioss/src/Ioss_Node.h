@@ -20,6 +20,7 @@ namespace Ioss {
     static const char *name;
 
     static void factory();
+    Node(const Node &) = delete;
     ~Node() override;
 
     ElementShape shape() const override { return ElementShape::POINT; }
@@ -48,8 +49,6 @@ namespace Ioss {
 
   private:
     static Node instance_;
-
-    Node(const Node &) = delete;
   };
 } // namespace Ioss
 #endif

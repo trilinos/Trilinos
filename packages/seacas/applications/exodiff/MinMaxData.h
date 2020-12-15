@@ -4,20 +4,21 @@
 //
 // See packages/seacas/LICENSE for details
 #include <cmath>
+
+enum class ToleranceType {
+  mm_unknown = 0,
+  mm_time    = 1, // Only val and step valid.
+  mm_global  = 2, // Only val and step valid.
+  mm_nodal   = 3, // Only val, step, and id valid.
+  mm_element = 4, // All fields valid for the rest.
+  mm_sideset = 5,
+  mm_nodeset = 6,
+  mm_elematt = 7 // step not valid
+};
+
 class DiffData
 {
 public:
-  enum Type {
-    mm_unknown = 0,
-    mm_time    = 1, // Only val and step valid.
-    mm_global  = 2, // Only val and step valid.
-    mm_nodal   = 3, // Only val, step, and id valid.
-    mm_element = 4, // All fields valid for the rest.
-    mm_sideset = 5,
-    mm_nodeset = 6,
-    mm_elematt = 7 // step not valid
-  };
-
   DiffData() {}
 
   void set_max(double d, double val_1, double val_2, size_t id_ = 0, size_t blk_ = 0)
@@ -37,22 +38,12 @@ public:
   size_t id{0};
   size_t blk{0};
 
-  Type type{mm_unknown};
+  ToleranceType type{ToleranceType::mm_unknown};
 };
 
 class MinMaxData
 {
 public:
-  enum Type {
-    mm_unknown = 0,
-    mm_time    = 1, // Only val and step valid.
-    mm_global  = 2, // Only val and step valid.
-    mm_nodal   = 3, // Only val, step, and id valid.
-    mm_element = 4, // All fields valid for the rest.
-    mm_sideset = 5,
-    mm_nodeset = 6,
-    mm_elematt = 7 // step not valid
-  };
   MinMaxData() : min_val(DBL_MAX) {}
 
   void spec_min_max(double val, int step, size_t id = 0, size_t blk = 0)
@@ -82,5 +73,5 @@ public:
   size_t max_id{0};
   size_t max_blk{0};
 
-  Type type{mm_unknown};
+  ToleranceType type{ToleranceType::mm_unknown};
 };

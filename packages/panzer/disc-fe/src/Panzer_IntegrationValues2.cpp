@@ -1253,6 +1253,11 @@ evaluateValuesCV(const PHX::MDField<Scalar, Cell, NODE, Dim>& in_node_coordinate
     template class IntegrationValues2<SCALAR>;
 
 INTEGRATION_VALUES2_INSTANTIATION(panzer::Traits::RealType)
-INTEGRATION_VALUES2_INSTANTIATION(panzer::Traits::FadType)
+
+// Disabled FAD support due to long build times on cuda (in debug mode
+// it takes multiple hours on some platforms). If we need
+// sensitivities wrt coordinates, we can reenable.
+
+// INTEGRATION_VALUES2_INSTANTIATION(panzer::Traits::FadType)
 
 }

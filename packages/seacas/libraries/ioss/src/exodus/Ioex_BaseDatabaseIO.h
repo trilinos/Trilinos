@@ -218,8 +218,7 @@ namespace Ioex {
     void put_info();
 
     template <typename T>
-    void internal_write_results_metadata(ex_entity_type type, std::vector<T *> entities,
-                                         int &glob_index);
+    void internal_write_results_metadata(ex_entity_type type, std::vector<T *> entities);
 
     void generate_sideset_truth_table();
 

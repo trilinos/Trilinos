@@ -27,17 +27,14 @@
 namespace Iogn {
   GeneratedMesh::GeneratedMesh(int64_t num_x, int64_t num_y, int64_t num_z, int proc_count,
                                int my_proc)
-      : numX(num_x), numY(num_y), numZ(num_z), myNumZ(num_z), myStartZ(0),
-        processorCount(proc_count), myProcessor(my_proc), timestepCount(0), offX(0), offY(0),
-        offZ(0), sclX(1), sclY(1), sclZ(1), doRotation(false), createTets(false)
+      : numX(num_x), numY(num_y), numZ(num_z), myNumZ(num_z), processorCount(proc_count),
+        myProcessor(my_proc)
   {
     initialize();
   }
 
   GeneratedMesh::GeneratedMesh(const std::string &parameters, int proc_count, int my_proc)
-      : numX(0), numY(0), numZ(0), myNumZ(0), myStartZ(0), processorCount(proc_count),
-        myProcessor(my_proc), timestepCount(0), offX(0), offY(0), offZ(0), sclX(1), sclY(1),
-        sclZ(1), doRotation(false), createTets(false)
+      : processorCount(proc_count), myProcessor(my_proc)
   {
     // Possible that the 'parameters' has the working directory path
     // prepended to the parameter list.  Strip off everything in front
@@ -66,13 +63,7 @@ namespace Iogn {
     parse_options(groups);
   }
 
-  GeneratedMesh::GeneratedMesh()
-      : numX(0), numY(0), numZ(0), myNumZ(0), myStartZ(0), processorCount(0), myProcessor(0),
-        timestepCount(0), offX(0), offY(0), offZ(0), sclX(1), sclY(1), sclZ(1), doRotation(false),
-        createTets(false)
-  {
-    initialize();
-  }
+  GeneratedMesh::GeneratedMesh() { initialize(); }
 
   GeneratedMesh::~GeneratedMesh() = default;
 

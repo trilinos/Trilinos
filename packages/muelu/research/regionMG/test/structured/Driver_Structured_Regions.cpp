@@ -687,58 +687,79 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<ParameterList> hierarchyData = rcp(new ParameterList());
 
 
+  // Create MueLu Hierarchy Initially...
+  // Read MueLu parameter list form xml file
+  RCP<ParameterList> mueluParams = Teuchos::rcp(new ParameterList());
+  Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, mueluParams.ptr(), *dofMap->getComm());
+
+  // Insert region-specific data into parameter list
+  const std::string userName = "user data";
+  Teuchos::ParameterList& userParamList = mueluParams->sublist(userName);
+  userParamList.set<int>        ("int numDimensions", numDimensions);
+  userParamList.set<Array<LO> > ("Array<LO> lNodesPerDim", regionNodesPerDim);
+  userParamList.set<std::string>("string aggregationRegionType", aggregationRegionType);
+  userParamList.set<Array<LO> > ("Array<LO> nodeOnInterface", interfaceParams->get<Array<LO> >("interfaces: interface nodes"));
+  userParamList.set<Array<LO> > ("Array<LO> interfacesDimensions", interfaceParams->get<Array<LO> >("interfaces: nodes per dimensions"));
+  if(Teuchos::nonnull(regionCoordinates)) {
+    userParamList.set("Coordinates", regionCoordinates);
+  }
+  if(Teuchos::nonnull(regionNullspace)) {
+    userParamList.set("Nullspace", regionNullspace);
+  }
+
+  tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("CreateXpetraPreconditioner: Hierarchy")));
+
+  // A hierarchy
+  RCP<Hierarchy> regHierarchy  = MueLu::CreateXpetraPreconditioner(regionMats, *mueluParams);
+
+  {
+  RCP<MueLu::Level> level0 = regHierarchy->GetLevel(0);
+  level0->Set<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("rowImport",rowImport);
+  level0->Set<ArrayView<LocalOrdinal> > ("compositeToRegionLIDs", compositeToRegionLIDs() );
+  level0->Set<RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > >("interfaceGIDs", interfaceGIDsPerLevel[0]);
+  level0->Set<RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > >("regionsPerGIDWithGhosts", regionsPerGIDWithGhostsPerLevel[0]);
+  level0->Set<Teuchos::ArrayRCP<LocalOrdinal> >("regionMatVecLIDs", regionMatVecLIDsPerLevel[0]);
+  level0->Set<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("regionInterfaceImporter", regionInterfaceImporterPerLevel[0]);
+  level0->print( std::cout, MueLu::Extreme );
+  }
+
+  tmLocal = Teuchos::null;
+
+
   // Create multigrid hierarchy
+  //RCP<MueLu::Hierarchy<SC, LO, GO, NO> > regHierarchy;
   createRegionHierarchy(numDimensions,
                         regionNodesPerDim,
                         aggregationRegionType,
                         interfaceParams,
-                        xmlFileName,
-                        regionNullspace,
-                        regionCoordinates,
-                        regionMats,
-                        dofMap,
-                        rowMap,
-                        colMap,
-                        revisedRowMap,
-                        revisedColMap,
-                        rowImport,
-                        compRowMaps,
-                        compColMaps,
-                        regRowMaps,
-                        regColMaps,
-                        quasiRegRowMaps,
-                        quasiRegColMaps,
-                        regMatrices,
-                        regProlong,
-                        regRowImporters,
-                        regInterfaceScalings,
-                        interfaceGIDsPerLevel,
-                        regionsPerGIDWithGhostsPerLevel,
-                        regionMatVecLIDsPerLevel,
-                        regionInterfaceImporterPerLevel,
                         maxRegPerGID,
-                        compositeToRegionLIDs(),
                         coarseSolverData,
                         smootherParams,
                         hierarchyData,
+                        regHierarchy,
                         keepCoarseCoords);
 
   hierarchyData->print();
+  
 
 
   comm->barrier();
   tm = Teuchos::null;
 
   // Extract the number of levels from the prolongator data structure
-  const int numLevels = regProlong.size();
+  //const int numLevels = regProlong.size();
+  const int numLevels = regHierarchy->GetNumLevels();
 
   // Set data for fast MatVec
   // for (auto levelSmootherParams : smootherParams) {
   for(LO levelIdx = 0; levelIdx < numLevels; ++levelIdx) {
+    RCP<MueLu::Level> level = regHierarchy->GetLevel(levelIdx);
+    RCP<Xpetra::Import<LO, GO, NO> > regionInterfaceImport = level->Get<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("regionInterfaceImporter");
+    Teuchos::ArrayRCP<LO>            regionMatVecLIDs1     = level->Get<Teuchos::ArrayRCP<LO> >("regionMatVecLIDs");
     smootherParams[levelIdx]->set("Fast MatVec: interface LIDs",
-                                  regionMatVecLIDsPerLevel[levelIdx]);
+                                  regionMatVecLIDs1);
     smootherParams[levelIdx]->set("Fast MatVec: interface importer",
-                                  regionInterfaceImporterPerLevel[levelIdx]);
+                                  regionInterfaceImport);
   }
 
   // RCP<Teuchos::FancyOStream> fancy2 = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -849,13 +870,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     {
       const Scalar SC_ZERO = Teuchos::ScalarTraits<SC>::zero();
       regCorrect->putScalar(SC_ZERO);
+    // Get Stuff out of Hierarchy
+    RCP<MueLu::Level> level = regHierarchy->GetLevel(0);
+    RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> > regInterfaceScalings1 = level->Get<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> > >("regInterfaceScalings");
       // check for convergence
       {
         ////////////////////////////////////////////////////////////////////////
         // SWITCH BACK TO NON-LEVEL VARIABLES
         ////////////////////////////////////////////////////////////////////////
         computeResidual(regRes, regX, regB, regionMats, *smootherParams[0]);
-        scaleInterfaceDOFs(regRes, regInterfaceScalings[0], true);
+        scaleInterfaceDOFs(regRes, regInterfaceScalings1, true);
 
         compRes = VectorFactory::Build(dofMap, true);
         regionalToComposite(regRes, compRes, rowImport);
@@ -880,11 +904,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         /////////////////////////////////////////////////////////////////////////
 
         bool zeroInitGuess = true;
-        scaleInterfaceDOFs(regRes, regInterfaceScalings[0], false);
-        vCycle(0, numLevels, cycleType,
-               regCorrect, regRes, regMatrices,
-               regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-               regInterfaceScalings, smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
+        scaleInterfaceDOFs(regRes, regInterfaceScalings1, false);
+        vCycle(0, numLevels, cycleType, regHierarchy,
+               regCorrect, regRes,
+               smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
 
         regX->update(one, *regCorrect, one);
     }

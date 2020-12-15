@@ -35,38 +35,39 @@ namespace Ioad {
     return new DatabaseIO(nullptr, filename, db_usage, communicator, properties);
   }
 
-  void IOFactory::show_config() const
+  std::string IOFactory::show_config() const
   {
-    fmt::print(Ioss::OUTPUT(), "\tADIOS2 Library Version: {}.{}.{}\n", ADIOS2_VERSION_MAJOR,
+    std::stringstream config;
+    fmt::print(config, "\tADIOS2 Library Version: {}.{}.{}\n", ADIOS2_VERSION_MAJOR,
                ADIOS2_VERSION_MINOR, ADIOS2_VERSION_PATCH);
 #if defined(ADIOS2_HAVE_BZIP2)
-    fmt::print(Ioss::OUTPUT(), "\t\tBZip2 (http://www.bzip.org/) compression enabled\n");
+    fmt::print(config, "\t\tBZip2 (http://www.bzip.org/) compression enabled\n");
 #endif
 
 #if defined(ADIOS2_HAVE_ZFP)
-    fmt::print(Ioss::OUTPUT(), "\t\tZFP (https://github.com/LLNL/zfp) compression enabled\n");
+    fmt::print(config, "\t\tZFP (https://github.com/LLNL/zfp) compression enabled\n");
 #endif
 
 #if defined(ADIOS2_HAVE_SZ)
-    fmt::print(Ioss::OUTPUT(), "\t\tSZ compression enabled\n");
+    fmt::print(config, "\t\tSZ compression enabled\n");
 #endif
 
 #if defined(ADIOS2_HAVE_MPI)
-    fmt::print(Ioss::OUTPUT(), "\t\tParallel (MPI) enabled\n");
+    fmt::print(config, "\t\tParallel (MPI) enabled\n");
 #else
-    fmt::print(Ioss::OUTPUT(), "\t\tParallel *NOT* enabled\n");
+    fmt::print(config, "\t\tParallel *NOT* enabled\n");
 #endif
 
 #if defined(ADIOS2_HAVE_SST)
-    fmt::print(Ioss::OUTPUT(), "\t\tStaging engine enabled\n");
+    fmt::print(config, "\t\tStaging engine enabled\n");
 #else
-    fmt::print(Ioss::OUTPUT(), "\t\tStaging engine *NOT* enabled\n");
+    fmt::print(config, "\t\tStaging engine *NOT* enabled\n");
 #endif
 
 #if defined(ADIOS2_HAVE_HDF5)
-    fmt::print(Ioss::OUTPUT(), "\t\tHDF5 (https://www.hdfgroup.org) engine enabled\n\n");
+    fmt::print(config, "\t\tHDF5 (https://www.hdfgroup.org) engine enabled\n\n");
 #else
-    fmt::print(Ioss::OUTPUT(), "\t\tHDF5 engine *NOT* enabled\n\n");
+    fmt::print(config, "\t\tHDF5 engine *NOT* enabled\n\n");
 #endif
 
     /* #if defined(ADIOS2_HAVE_ZEROMQ) */
@@ -77,5 +78,6 @@ namespace Ioad {
     /* #define ADIOS2_HAVE_FORTRAN */
     /* #define ADIOS2_HAVE_SYSVSHMEM */
     /* #undef ADIOS2_HAVE_ENDIAN_REVERSE */
+    return config.str();
   }
 } // namespace Ioad

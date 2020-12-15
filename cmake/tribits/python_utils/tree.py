@@ -40,33 +40,30 @@ def tree(dir, padding, options, depth, top_level=False):
 
   padding = padding + ' '
 
+  raw_listdir = listdir(dir)
   files = []
   if print_files:
-    files = listdir(dir)
+    files = raw_listdir
   else:
-    files = [x for x in listdir(dir) if isdir(dir + sep + x)]
-  count = 0
+    files = [x for x in raw_listdir if isdir(dir + sep + x)]
   files.sort()
   for file in files:
-    count += 1
+    if (file[0] == '.') and (options.hideHiddenFiles):
+      continue
     if not print_compact:
       print(padding + verticalLineChar)
     path = dir + sep + file
     if isdir(path):
-      if count == len(files):
-        tree(path, padding + ' ', options, depth)
+      if (depth == None) or (depth > 0):
+        tree(path, padding + verticalLineChar, options, depth)
       else:
-        if (depth == None) or (depth > 0):
-          tree(path, padding + verticalLineChar, options, depth)
-        else:
-          print(padding + fileDirPrefix + file + "/")
-          
+        print(padding + fileDirPrefix + file + "/")
     else:
       print(padding + fileDirPrefix + file)
 
 
-usageHelp = r""" tree.py [-f] [-c] <PATH>
-Print tree structure of specified <PATH>.
+usageHelp = r""" tree.py [-f] [-c] [-x] [-n] <PATH>
+Print tree structure of specified <PATH> to given depth.
 """
 
 def main():
@@ -88,6 +85,11 @@ def main():
   clp.add_option(
     "-x", dest="noDirectorySep", action="store_true",
     help="Remove the directory seperators and continuation lines.",
+    default=False )
+
+  clp.add_option(
+    "-n", dest="hideHiddenFiles", action="store_true",
+    help="Hide hidden files.",
     default=False )
 
   clp.add_option(

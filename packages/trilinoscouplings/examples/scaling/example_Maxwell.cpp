@@ -428,7 +428,7 @@ int main(int argc, char *argv[]) {
   ny = 10;
   nz = 10;
   xmlInFileName = "Maxwell.xml";
-  solverName = "MueLu";
+  solverName = "default";
   verbose = false;
   debug = false;
   jiggle = false;
@@ -556,6 +556,17 @@ int main(int argc, char *argv[]) {
     "  end                        \n"
     "end                          \n";
   meshInput = inputList.get("meshInput", meshInput);
+
+  // Get the solver name from input deck or command line
+  if(solverName == "default") {
+    if(inputList.isParameter("Preconditioner")) 
+      solverName=inputList.get("Preconditioner","MueLu");
+    else
+      solverName="MueLu";
+  }  
+
+
+
 
 
   /**********************************************************************************/
@@ -2040,6 +2051,11 @@ int main(int argc, char *argv[]) {
   List11.set("x-coordinates",&Nx[0]);
   List11.set("y-coordinates",&Ny[0]);
   List11.set("z-coordinates",&Nz[0]);
+
+  Teuchos::ParameterList &List22=MLList.sublist("refmaxwell: 22list");
+  List22.set("x-coordinates",&Nx[0]);
+  List22.set("y-coordinates",&Ny[0]);
+  List22.set("z-coordinates",&Nz[0]);
 
   // Parameter list for MueLu
   Teuchos::ParameterList MueLuList;

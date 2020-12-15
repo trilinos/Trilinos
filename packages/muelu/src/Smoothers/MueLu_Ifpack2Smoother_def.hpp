@@ -644,7 +644,7 @@ namespace MueLu {
         doScale = paramList.get<bool>("chebyshev: use rowsumabs diagonal scaling");
         paramList.remove("chebyshev: use rowsumabs diagonal scaling");
         if (doScale) {
-          RCP<Vector> lumpedDiagonal = Utilities::GetLumpedMatrixDiagonal(currentLevel.Get<RCP<Matrix> >("A"),true);
+          RCP<Vector> lumpedDiagonal = Utilities::GetLumpedMatrixDiagonal(*(currentLevel.Get<RCP<Matrix> >("A")),true);
           const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(*lumpedDiagonal);
           paramList.set("chebyshev: operator inv diagonal",tmpVec.getTpetra_Vector());
         }

@@ -591,6 +591,12 @@ public:
    Teuchos::RCP<stk::mesh::BulkData> getBulkData() const { return bulkData_; }
    Teuchos::RCP<stk::mesh::MetaData> getMetaData() const { return metaData_; }
 
+#ifdef PANZER_HAVE_PERCEPT
+  //! Get the uniformly refined PerceptMesh object. 
+  Teuchos::RCP<percept::PerceptMesh> getRefinedMesh() const
+  { TEUCHOS_ASSERT(Teuchos::nonnull(refinedMesh_)); return refinedMesh_; }
+#endif
+
    bool isWritable() const;
 
    bool isModifiable() const

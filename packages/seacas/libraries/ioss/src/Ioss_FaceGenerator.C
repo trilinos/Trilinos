@@ -294,7 +294,7 @@ namespace {
 } // namespace
 
 namespace Ioss {
-  Face::Face(std::array<size_t, 4> conn) : connectivity_(std::move(conn))
+  Face::Face(std::array<size_t, 4> conn) : connectivity_(conn)
   {
     for (auto node : connectivity_) {
       hashId_ += Ioss::FaceGenerator::id_hash(node);
