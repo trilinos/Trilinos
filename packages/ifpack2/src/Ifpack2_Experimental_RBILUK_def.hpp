@@ -234,6 +234,7 @@ void RBILUK<MatrixType>::initialize ()
   blockSize_ = A_block_->getBlockSize();
 
   Teuchos::Time timer ("RBILUK::initialize");
+  double startTime = timer.wallTime();
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
 
@@ -266,7 +267,7 @@ void RBILUK<MatrixType>::initialize ()
 
   this->isInitialized_ = true;
   this->numInitialize_ += 1;
-  this->initializeTime_ += timer.totalElapsedTime ();
+  this->initializeTime_ += (timer.wallTime() - startTime);
 }
 
 
@@ -485,6 +486,7 @@ void RBILUK<MatrixType>::compute ()
   D_block_->modify_host ();
 
   Teuchos::Time timer ("RBILUK::compute");
+  double startTime = timer.wallTime();
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
     this->isComputed_ = false;
@@ -772,7 +774,7 @@ void RBILUK<MatrixType>::compute ()
 
   this->isComputed_ = true;
   this->numCompute_ += 1;
-  this->computeTime_ += timer.totalElapsedTime ();
+  this->computeTime_ += (timer.wallTime() - startTime);
 }
 
 
@@ -823,6 +825,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   const scalar_type zero = STM::zero ();
 
   Teuchos::Time timer ("RBILUK::apply");
+  double startTime = timer.wallTime();
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
     if (alpha == one && beta == zero) {
@@ -925,7 +928,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   } // Stop timing
 
   this->numApply_ += 1;
-  this->applyTime_ = timer.totalElapsedTime ();
+  this->applyTime_ += (timer.wallTime() - startTime);
 }
 
 
