@@ -34,7 +34,7 @@ jobs:
         # We specifically DO NOT exempt PR's from autoclosing.
         #exempt-pr-labels: ''
         remove-stale-when-updated: true
-        operations-per-run: 100
+        operations-per-run: 50
         stale-issue-message: >
           This issue has had no activity for **365** days and is marked for
           closure. It will be closed after an additional **30** days of inactivity.

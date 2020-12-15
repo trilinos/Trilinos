@@ -2052,6 +2052,11 @@ int main(int argc, char *argv[]) {
   List11.set("y-coordinates",&Ny[0]);
   List11.set("z-coordinates",&Nz[0]);
 
+  Teuchos::ParameterList &List22=MLList.sublist("refmaxwell: 22list");
+  List22.set("x-coordinates",&Nx[0]);
+  List22.set("y-coordinates",&Ny[0]);
+  List22.set("z-coordinates",&Nz[0]);
+
   // Parameter list for MueLu
   Teuchos::ParameterList MueLuList;
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
