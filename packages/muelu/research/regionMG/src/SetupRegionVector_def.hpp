@@ -97,39 +97,6 @@ void compositeToRegional(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal,
   return;
 } // compositeToRegional
 
-
-/*! \brief Transform composite vector to regional layout
- *
- *  Starting from a vector in composite layout, we
- *  1. import it into an auxiliary vector in the quasiRegional layout
- *  2. replace the quasiRegional map of the auxiliary vector with the regional map
- */
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void compositeToRegional(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > compVec, ///< Vector in composite layout [in]
-                         RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& quasiRegVecs, ///< Vector in quasiRegional layout [in/out]
-                         RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regVecs, ///< Vector in regional layout [in/out]
-                         const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap, ///< revised row maps in region layout [in]
-                         const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport ///< row importer in region layout [in]
-                         )
-{
-#include "Xpetra_UseShortNames.hpp"
-
-  // quasiRegional layout
-  // create empty vectors and fill it by extracting data from composite vector
-  quasiRegVecs = VectorFactory::Build(rowImport->getTargetMap(), true);
-  TEUCHOS_ASSERT(!quasiRegVecs.is_null());
-  quasiRegVecs->doImport(*compVec, *(rowImport), Xpetra::INSERT);
-
-  // regional layout
-  // create regVecs vector (copy from quasiRegVecs and swap the map)
-  regVecs = quasiRegVecs; // assignment operator= does deep copy in Xpetra
-  TEUCHOS_ASSERT(!regVecs.is_null());
-  regVecs->replaceMap(revisedRowMap);
-
-  return;
-} // compositeToRegional
-
-
 /*! \brief Transform composite vector to regional layout
  *
  *  Starting from a vector in composite layout, we
@@ -140,7 +107,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void compositeToRegional(RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > compVec, ///< Vector in composite layout [in]
                          RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& quasiRegVecs, ///< Vector in quasiRegional layout [in/out]
                          RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regVecs, ///< Vector in regional layout [in/out]
-                         const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap, ///< revised row maps in region layout [in]
+                         const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap, ///< revised row maps in region layout [in]
                          const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport ///< row importer in region layout [in]
                          )
 {
