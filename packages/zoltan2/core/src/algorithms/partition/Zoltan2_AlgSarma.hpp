@@ -11,13 +11,6 @@
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_TPLTraits.hpp>
 
-#include <sarma/sarma.hpp>
-#include <map>
-#include <utility>
-#include <vector>
-#include <iostream>
-#include <fstream>
-
 #ifndef HAVE_ZOLTAN2_SARMA
 
 namespace Zoltan2 {
@@ -36,6 +29,13 @@ namespace Zoltan2 {
 }
 
 #else
+
+#include <map>
+#include <utility>
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <sarma/sarma.hpp>
 
 namespace Zoltan2 {
     template<typename Adapter>
