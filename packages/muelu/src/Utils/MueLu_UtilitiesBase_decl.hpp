@@ -184,7 +184,8 @@ namespace MueLu {
     */
     static Teuchos::RCP<Vector> GetLumpedMatrixDiagonal(Matrix const & A, const bool doReciprocal = false,
                                                         Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100,
-                                                        Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero()) {
+                                                        Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero(),
+                                                        const bool replaceSingleEntryRowWithZero = false) {
 
       RCP<Vector> diag = Teuchos::null;
       const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
@@ -200,19 +201,31 @@ namespace MueLu {
         ArrayRCP<Scalar> diagVals = diag->getDataNonConst(0);
         Teuchos::ArrayView<const LocalOrdinal> cols;
         Teuchos::ArrayView<const Scalar> vals;
+
+        std::vector<int> nnzPerRow(rowMap->getNodeNumElements());
+
         for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
+          nnzPerRow[i] = 0;
           rcpA->getLocalRowView(i, cols, vals);
           diagVals[i] = zero;
           for (LocalOrdinal j = 0; j < cols.size(); ++j) {
-            diagVals[i] += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
+            const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowEntry = Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
+            if (rowEntry != zero)
+              nnzPerRow[i]++;
+            diagVals[i] += rowEntry;
           }
         }
         if (doReciprocal) {
           for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
-          if(Teuchos::ScalarTraits<Scalar>::magnitude(diagVals[i]) > tol)
-            diagVals[i] = one / diagVals[i];
-          else
-            diagVals[i] = tolReplacement;
+            if (replaceSingleEntryRowWithZero && nnzPerRow[i] <= static_cast<int>(1))
+              diagVals[i] = zero;
+            else {
+              if(Teuchos::ScalarTraits<Scalar>::magnitude(diagVals[i]) > tol)
+                diagVals[i] = one / diagVals[i];
+              else {
+                diagVals[i] = tolReplacement;
+              }
+            }
           }
         }
       } else {
