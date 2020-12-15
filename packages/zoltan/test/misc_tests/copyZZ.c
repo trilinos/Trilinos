@@ -145,19 +145,19 @@ int main(int narg, char **arg) {
 
   /* First broadcast the buffer size; we make the user own the buffer */
   size_t bufSize;
-  if (me == 0) bufSize = Zoltan_Pack_Buffer_Size(zz);
+  if (me == 0) bufSize = Zoltan_Serialize_Size(zz);
   MPI_Bcast(&bufSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   /* Then allocate and broadcast the buffer */
   char *buf = NULL;
   buf = (char *) malloc(bufSize * sizeof(char));
-  if (me == 0) Zoltan_Pack_Struct(zz, buf, &ierr);
+  if (me == 0) Zoltan_Serialize(zz, buf, &ierr);
   MPI_Bcast(&buf, bufSize, MPI_CHAR, 0, MPI_COMM_WORLD);
 
   /* All processors unpack the buffer into a new ZZ struct */
 
   struct Zoltan_Struct *newZZ = Zoltan_Create(MPI_COMM_WORLD);
-  Zoltan_Unpack_Struct(newZZ, buf, bufSize, &ierr);
+  Zoltan_Deserialize(newZZ, buf, bufSize, &ierr);
 
   free(buf); buf = NULL;
   

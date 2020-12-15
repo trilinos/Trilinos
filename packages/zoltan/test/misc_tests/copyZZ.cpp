@@ -137,19 +137,19 @@ int main(int narg, char **arg) {
 
   /* First broadcast the buffer size; we make the user own the buffer */
   size_t bufSize;
-  if (me == 0) bufSize = zz.Pack_Buffer_Size();
+  if (me == 0) bufSize = zz.Serialize_Size();
   MPI_Bcast(&bufSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   /* Then allocate and broadcast the buffer */
   char *buf = NULL;
   buf = new char[bufSize];
-  if (me == 0) zz.Pack_Struct(buf, ierr);
+  if (me == 0) zz.Serialize(buf, ierr);
   MPI_Bcast(&buf, bufSize, MPI_CHAR, 0, MPI_COMM_WORLD);
 
   /* All processors unpack the buffer into a new ZZ struct */
 
   Zoltan newZZ(MPI_COMM_WORLD);
-  newZZ.Unpack_Struct(buf, bufSize, ierr);
+  newZZ.Deserialize(buf, bufSize, ierr);
 
   delete [] buf;
   
