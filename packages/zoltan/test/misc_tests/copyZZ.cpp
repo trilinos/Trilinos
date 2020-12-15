@@ -1,6 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include "zoltan.h"
+#include "zoltan_cpp.h"
 
 /****************************************************************************/
 /* Test packing and unpacking of ZZ struct for RCB cut-tree communication   */
@@ -13,27 +11,25 @@
  * Store global mesh on each processor.  
  * Each processor reports only a portion of the mesh to Zoltan in callbacks
  *****************************************************************************/
-struct Mesh {
+class Mesh {
+public:
   int nCoords;        // Store global mesh on each proc
   double *x, *y, *z;  // Store global mesh on each proc
   int nMyCoords;      // Number of coordinates reported by this proc
   int myFirstCoord;   // First coordinate reported by this proc
+  Mesh(int me, int np, int n_, double *x_, double *y_, double *z_) : 
+    nCoords(n_), x(x_), y(y_), z(z_) 
+  {
+    int coordsPerProc = nCoords/np;
+    nMyCoords = (me == (np-1) ? nCoords - (np-1)*coordsPerProc 
+                              : coordsPerProc);
+    myFirstCoord = me * coordsPerProc;
+  }
 };
-
-void initMesh(struct Mesh *mesh, int me, int np, 
-              int n_, double *x_, double *y_, double *z_) 
-{
-  mesh->nCoords = n_;
-  mesh->x = x_;  mesh->y = y_;  mesh->z = z_;
-  int coordsPerProc = mesh->nCoords/np;
-  mesh->nMyCoords = (me == (np-1) ? mesh->nCoords - (np-1)*coordsPerProc 
-                                  : coordsPerProc);
-  mesh->myFirstCoord = me * coordsPerProc;
-}
 
 int nObj(void *data, int *ierr) {
   *ierr = ZOLTAN_OK; 
-  return ((struct Mesh *) data)->nMyCoords;
+  return ((Mesh *) data)->nMyCoords;
 }
 
 void objMulti(void *data, int ngid, int nlid, 
@@ -41,7 +37,7 @@ void objMulti(void *data, int ngid, int nlid,
               int *ierr) 
 {
   *ierr = ZOLTAN_OK;
-  struct Mesh *mesh = (struct Mesh *) data;
+  Mesh *mesh = (Mesh *) data;
   for (int i = 0; i < mesh->nMyCoords; i++) {
     lid[i] = i+mesh->myFirstCoord;
     gid[i] = i+mesh->myFirstCoord; 
@@ -54,7 +50,7 @@ void geomMulti(void *data, int ngid, int nlid, int nobj,
                ZOLTAN_ID_PTR gid, ZOLTAN_ID_PTR lid, int ndim,
                double *coords, int *ierr)
 {
-  struct Mesh *mesh = (struct Mesh *) data;
+  Mesh *mesh = (Mesh *) data;
 
   for (int i = 0; i < nobj; i++) {
     coords[i*ndim]   = mesh->x[lid[i]];
@@ -79,7 +75,7 @@ int main(int narg, char **arg) {
 
   MPI_Init(&narg, &arg);
   float ver;
-  Zoltan_Initialize(&narg, &arg, &ver);
+  Zoltan_Initialize(narg, arg, &ver);
   int ierr = ZOLTAN_OK;
 
   int me, np;
@@ -92,8 +88,7 @@ int main(int narg, char **arg) {
   double xOne[nOne] = {0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2};
   double yOne[nOne] = {0,0,0,1,1,1,2,2,2,0,0,0,1,1,1,2,2,2,0,0,0,1,1,1,2,2,2};
   double zOne[nOne] = {0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2};
-  struct Mesh meshOne;
-  initMesh(&meshOne, me, np, nOne, xOne, yOne, zOne);
+  Mesh meshOne(me, np, nOne, xOne, yOne, zOne);
 
   /* Coordinates to use for testing */
   const int nTwo = 8;
@@ -108,21 +103,19 @@ int main(int narg, char **arg) {
                  &subComm);
   
   /* Compute the RCB partition on a subcommunicator subComm */
-  struct Zoltan_Struct *zz = NULL;
+  Zoltan zz(subComm);
 
   if (subComm != MPI_COMM_NULL) {
 
-    zz = Zoltan_Create(subComm);
+    zz.Set_Num_Obj_Fn(nObj, &meshOne);
+    zz.Set_Obj_List_Fn(objMulti, &meshOne);
+    zz.Set_Num_Geom_Fn(nGeom, &meshOne);
+    zz.Set_Geom_Multi_Fn(geomMulti, &meshOne);
 
-    Zoltan_Set_Num_Obj_Fn(zz, nObj, &meshOne);
-    Zoltan_Set_Obj_List_Fn(zz, objMulti, &meshOne);
-    Zoltan_Set_Num_Geom_Fn(zz, nGeom, &meshOne);
-    Zoltan_Set_Geom_Multi_Fn(zz, geomMulti, &meshOne);
-
-    Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
-    Zoltan_Set_Param(zz, "KEEP_CUTS", "1");
-    Zoltan_Set_Param(zz, "RETURN_LISTS", "PART");
-    Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTS", "5");
+    zz.Set_Param("LB_METHOD", "RCB");
+    zz.Set_Param("KEEP_CUTS", "1");
+    zz.Set_Param("RETURN_LISTS", "PART");
+    zz.Set_Param("NUM_GLOBAL_PARTS", "5");
 
     int nChanges;
     int nGid, nLid;
@@ -132,12 +125,11 @@ int main(int narg, char **arg) {
     int *iPart = NULL, *iProc = NULL;
     int *partOne = NULL, *eProc = NULL;
 
-    Zoltan_LB_Partition(zz, nChanges, nGid, nLid,
-                        nImp, iGid, iLid, iProc, iPart,
-                        nExp, eGid, eLid, eProc, partOne);
+    zz.LB_Partition(nChanges, nGid, nLid, nImp, iGid, iLid, iProc, iPart,
+                                          nExp, eGid, eLid, eProc, partOne);
 
-    Zoltan_LB_Free_Part(&iGid, &iLid, &iProc, &iPart);
-    Zoltan_LB_Free_Part(&eGid, &eLid, &eProc, &partOne);
+    zz.LB_Free_Part(&iGid, &iLid, &iProc, &iPart);
+    zz.LB_Free_Part(&eGid, &eLid, &eProc, &partOne);
   }
 
   /* Pack the buffer; broadcast to all procs in MPI_COMM_WORLD. */
@@ -145,21 +137,21 @@ int main(int narg, char **arg) {
 
   /* First broadcast the buffer size; we make the user own the buffer */
   size_t bufSize;
-  if (me == 0) bufSize = Zoltan_Pack_Buffer_Size(zz);
+  if (me == 0) bufSize = zz.Pack_Buffer_Size();
   MPI_Bcast(&bufSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   /* Then allocate and broadcast the buffer */
   char *buf = NULL;
-  buf = (char *) malloc(bufSize * sizeof(char));
-  if (me == 0) Zoltan_Pack_Struct(zz, buf, &ierr);
+  buf = new char[bufSize];
+  if (me == 0) zz.Pack_Struct(buf, ierr);
   MPI_Bcast(&buf, bufSize, MPI_CHAR, 0, MPI_COMM_WORLD);
 
   /* All processors unpack the buffer into a new ZZ struct */
 
-  struct Zoltan_Struct *newZZ = Zoltan_Create(MPI_COMM_WORLD);
-  Zoltan_Unpack_Struct(newZZ, buf, bufSize, &ierr);
+  Zoltan newZZ(MPI_COMM_WORLD);
+  newZZ.Unpack_Struct(buf, bufSize, ierr);
 
-  free(buf); buf = NULL;
+  delete [] buf;
   
   /* Check the results */
   /* Compute and broadcast answer using original struct zz */
@@ -168,8 +160,8 @@ int main(int narg, char **arg) {
   if (me == 0) {
     for (int i = 0; i < nTwo; i++) {
       int ignore;
-      double tmp[3]; tmp[0] = xTwo[i]; tmp[1] = yTwo[i]; tmp[2] = zTwo[i];
-      Zoltan_LB_Point_PP_Assign(zz, tmp, &ignore, &answer[i]);
+      double tmp[3] = {xTwo[i], yTwo[i], zTwo[i]};
+      zz.LB_Point_PP_Assign(tmp, ignore, answer[i]);
       printf("Point (%f %f %f) on part %d\n", 
               xTwo[i], yTwo[i], zTwo[i], answer[i]);
     }
@@ -182,8 +174,8 @@ int main(int narg, char **arg) {
   for (int i = 0; i < nTwo; i++) {
     int ignore;
     int newAnswer;
-    double tmp[3]; tmp[0] = xTwo[i]; tmp[1] = yTwo[i]; tmp[2] = zTwo[i];
-    Zoltan_LB_Point_PP_Assign(zz, tmp, &ignore, &newAnswer);
+    double tmp[3] = {xTwo[i], yTwo[i], zTwo[i]};
+    zz.LB_Point_PP_Assign(tmp, ignore, newAnswer);
     if (newAnswer != answer[i]) {
       errCnt++;
       printf("%d Error (%f %f %f):  part %d != new part %d\n", 
