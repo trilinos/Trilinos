@@ -78,7 +78,7 @@ template <typename gno_t, typename scalar_t>
 class Distribution {
 public:
 
-  Distribution(gno_t nrows_, 
+  Distribution(size_t nrows_, 
                const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, 
                const Teuchos::ParameterList &params) :
                comm(comm_), me(comm_->getRank()), np(comm_->getSize()), 
@@ -122,7 +122,7 @@ protected:
   const Teuchos::RCP<const Teuchos::Comm<int> > comm;
   int me;     // my rank
   int np;     // number of ranks
-  gno_t nrows;  // global number of rows in the input matrix
+  size_t nrows;  // global number of rows in the input matrix
 
   int HashToProc(gno_t i) {
     // TODO  PUT A GOOD HASH FUNCTION HERE!!!

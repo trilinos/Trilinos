@@ -72,7 +72,7 @@ public:
   using Distribution<gno_t,scalar_t>::np;
   using Distribution<gno_t,scalar_t>::nrows;
 
-  DistributionMMFile(gno_t nrows_,
+  DistributionMMFile(size_t nrows_,
                      const Teuchos::RCP<const Teuchos::Comm<int> > &comm_,
                      const Teuchos::ParameterList &params) :
                      Distribution<gno_t,scalar_t>(nrows_, comm_, params)

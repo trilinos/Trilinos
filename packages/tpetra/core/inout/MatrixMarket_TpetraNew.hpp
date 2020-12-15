@@ -328,7 +328,7 @@ readMatrixMarket(
     if (me == 0) {
       char *eof;
       rlen = 0;
-      for (int i = 0; i < nChunk; i++) {
+      for (size_t i = 0; i < nChunk; i++) {
         eof = fgets(&buffer[rlen],maxLineLength,fp);
         if (eof == NULL) {
           std::cout << "Unexpected end of matrix file." << std::endl;
@@ -418,10 +418,10 @@ readMatrixMarket(
       // All diagonal entries should be present in the file; we cannot create
       // them for file-based data distributions.  
       // Do an error check to ensure they are all there.
-      global_ordinal_type localss = diagset.size();
-      global_ordinal_type globalss;
-      Teuchos::reduceAll<int, global_ordinal_type>(*comm, Teuchos::REDUCE_SUM, 1,
-                                     &localss, &globalss);
+      size_t localss = diagset.size();
+      size_t globalss;
+      Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 1,
+                                      &localss, &globalss);
       TEUCHOS_TEST_FOR_EXCEPTION(globalss != nRow, std::logic_error,
         "File-based nonzero distribution requires all diagonal "
          << "entries to be present in the file.  \n" 
@@ -429,7 +429,9 @@ readMatrixMarket(
          << "Number of matrix rows = " << nRow << "\n");
     }
     else {
-      for (global_ordinal_type i = 0; i < nRow; i++) {
+      for (global_ordinal_type i = 0;
+                               i < static_cast<global_ordinal_type>(nRow); i++) 
+      {
         if (dist->Mine(i,i)) {
           if (diagset.find(i) == diagset.end()) {
             nzindex_t idx = std::make_pair(i,i);
@@ -631,7 +633,7 @@ readBinary(
     if (me == 0) {
       size_t ret = 0;
       rlen = 0;
-      for (int i = 0; i < nChunk; i++) {
+      for (size_t i = 0; i < nChunk; i++) {
 	ret = fread(&buffer[rlen], sizeof(unsigned int), 2, fp);
         if (ret == 0) {
           std::cout << "Unexpected end of matrix file." << std::endl;
@@ -702,10 +704,10 @@ readBinary(
       // All diagonal entries should be present in the file; we cannot create
       // them for file-based data distributions.  
       // Do an error check to ensure they are all there.
-      global_ordinal_type localss = diagset.size();
-      global_ordinal_type globalss;
-      Teuchos::reduceAll<int, global_ordinal_type>(*comm, Teuchos::REDUCE_SUM, 1,
-                                     &localss, &globalss);
+      size_t localss = diagset.size();
+      size_t globalss;
+      Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 1,
+                                      &localss, &globalss);
       TEUCHOS_TEST_FOR_EXCEPTION(globalss != nRow, std::logic_error,
         "File-based nonzero distribution requires all diagonal "
          << "entries to be present in the file.  \n" 
@@ -713,7 +715,9 @@ readBinary(
          << "Number of matrix rows = " << nRow << "\n");
     }
     else {
-      for (global_ordinal_type i = 0; i < nRow; i++) {
+      for (global_ordinal_type i = 0;
+                               i < static_cast<global_ordinal_type>(nRow); i++)
+      {
         if (dist->Mine(i,i)) {
           if (diagset.find(i) == diagset.end()) {
             nzindex_t idx = std::make_pair(i,i);
@@ -870,7 +874,7 @@ readSparseFile(
   // Compute prefix sum in offsets array
   offsets.resize(rowIdx.size() + 1);
   offsets[0] = 0;
-  for (size_t row = 0; row < rowIdx.size(); row++)
+  for (size_t row = 0; row < static_cast<size_t>(rowIdx.size()); row++)
     offsets[row+1] = offsets[row] + nnzPerRow[row];
 
   if (useTimers) {
@@ -920,7 +924,8 @@ readSparseFile(
 
     // Build domain map that corresponds to distribution 
     Teuchos::Array<global_ordinal_type> vectorSet;
-    for (global_ordinal_type i = 0; i < nCol; i++) 
+    for (global_ordinal_type i = 0;
+                             i < static_cast<global_ordinal_type>(nCol); i++) 
       if (dist->VecMine(i)) vectorSet.push_back(i);
 
     dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
@@ -930,7 +935,8 @@ readSparseFile(
     Teuchos::Array<global_ordinal_type>().swap(vectorSet);
 
     // Build range map that corresponds to distribution
-    for (global_ordinal_type i = 0; i < nRow; i++) 
+    for (global_ordinal_type i = 0; 
+                             i < static_cast<global_ordinal_type>(nRow); i++) 
       if (dist->VecMine(i)) vectorSet.push_back(i);
   
     dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();

@@ -69,7 +69,7 @@ public:
   using typename Distribution<gno_t,scalar_t>::NZindex_t;
   using typename Distribution<gno_t,scalar_t>::LocalNZmap_t;
 
-  DistributionLowerTriangularBlock(gno_t nrows_, 
+  DistributionLowerTriangularBlock(size_t nrows_, 
                   const Teuchos::RCP<const Teuchos::Comm<int> > &comm_,
                   const Teuchos::ParameterList &params) :
                   Distribution<gno_t,scalar_t>(nrows_, comm_, params),
@@ -232,7 +232,7 @@ public:
       for (int chunkCnt = 0; chunkCnt < nChunks; chunkCnt++) {
         targetRunningTotal = (target * (chunkCnt+1));
 	currentRunningTotal = 0;
-        while (I < nrows) {
+        while (I < static_cast<gno_t>(nrows)) {
           size_t nextNnz = (sortByDegree ? globalRowBuf[sortedOrder[I]]
                                          : globalRowBuf[I]);
           if (currentRunningTotal + nextNnz <= targetRunningTotal) {
@@ -244,7 +244,7 @@ public:
         } 
         chunkCuts[chunkCnt+1] = I;
       }
-      chunkCuts[nChunks] = nrows;
+      chunkCuts[nChunks] = static_cast<gno_t>(nrows);
     }
 
     // Free memory associated with globalRowBuf

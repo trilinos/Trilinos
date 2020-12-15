@@ -67,7 +67,7 @@ public:
   using Distribution<gno_t,scalar_t>::nrows;
   using Distribution<gno_t,scalar_t>::Mine;
 
-  Distribution1D(gno_t nrows_,
+  Distribution1D(size_t nrows_,
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, 
                  const Teuchos::ParameterList &params) :
                  Distribution<gno_t,scalar_t>(nrows_, comm_, params)
@@ -104,7 +104,7 @@ public:
   using Distribution<gno_t,scalar_t>::np;
   using Distribution<gno_t,scalar_t>::nrows;
 
-  Distribution1DLinear(gno_t nrows_,
+  Distribution1DLinear(size_t nrows_,
                        const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, 
                        const Teuchos::ParameterList &params) :
                        Distribution1D<gno_t,scalar_t>(nrows_, comm_, params)
@@ -143,7 +143,7 @@ class Distribution1DRandom : public Distribution1D<gno_t,scalar_t> {
 public:
   using Distribution<gno_t,scalar_t>::me;
 
-  Distribution1DRandom(gno_t nrows_,
+  Distribution1DRandom(size_t nrows_,
                        const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, 
                        const Teuchos::ParameterList &params) :
                        Distribution1D<gno_t,scalar_t>(nrows_, comm_, params) 
@@ -173,7 +173,7 @@ public:
   using Distribution<gno_t,scalar_t>::nrows;
   using Distribution<gno_t,scalar_t>::Mine;
 
-  Distribution1DVec(gno_t nrows_,
+  Distribution1DVec(size_t nrows_,
                     const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, 
                     const Teuchos::ParameterList &params,
                     std::string &distributionfile) :
@@ -200,7 +200,7 @@ public:
     
     gno_t start = 0;
     int cnt = 0;
-    for (gno_t i = 0; i < nrows; i++) {
+    for (size_t i = 0; i < nrows; i++) {
       if (me == 0) fpin >> vecpart[i];
       cnt++;
       if (cnt == bcastsize || i == nrows-1) {
