@@ -1986,12 +1986,10 @@ void STK_Interface::refineMesh(const int numberOfLevels, const bool deleteParent
   refinedMesh_->setCoordinatesField();
 
   percept::UniformRefiner breaker(*refinedMesh_,*breakPattern_);
+  breaker.setRemoveOldElements(deleteParentElements);
 
   for (int i=0; i < numberOfLevels; ++i)
     breaker.doBreak();
-
-  if (deleteParentElements)
-    breaker.deleteParentElements();
 
 #else
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,

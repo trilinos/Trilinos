@@ -476,7 +476,7 @@ void Hypre<MatrixType>::initialize(){
   if (timer.is_null ()) timer = Teuchos::TimeMonitor::getNewCounter (timerName);
 
   if(IsInitialized_) return;  
-
+  double startTime = timer->wallTime();
   {
     Teuchos::TimeMonitor timeMon (*timer);
     
@@ -519,7 +519,7 @@ void Hypre<MatrixType>::initialize(){
     IsInitialized_=true;
     NumInitialize_++;
   }
-  InitializeTime_ = timer->totalElapsedTime ();
+  InitializeTime_ += (timer->wallTime() - startTime);
 } //Initialize()
 
 //==============================================================================
@@ -836,7 +836,7 @@ void Hypre<MatrixType>::compute(){
   const std::string timerName ("Ifpack2::Hypre::compute");
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) timer = Teuchos::TimeMonitor::getNewCounter (timerName);
-
+  double startTime = timer->wallTime();
   // Start timing here.
   {
     Teuchos::TimeMonitor timeMon (*timer);
@@ -856,9 +856,7 @@ void Hypre<MatrixType>::compute(){
     NumCompute_++;
   }
   
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  ComputeTime_ = timer->totalElapsedTime ();
+  ComputeTime_ += (timer->wallTime() - startTime);
 } //Compute()
 
 //==============================================================================
@@ -882,7 +880,7 @@ void Hypre<MatrixType>::apply (const Tpetra::MultiVector<scalar_type,local_ordin
   const std::string timerName ("Ifpack2::Hypre::apply");
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) timer = Teuchos::TimeMonitor::getNewCounter (timerName);
-
+  double startTime = timer->wallTime();
   // Start timing here.
   {
     Teuchos::TimeMonitor timeMon (*timer);
@@ -941,9 +939,7 @@ void Hypre<MatrixType>::apply (const Tpetra::MultiVector<scalar_type,local_ordin
     }
     NumApply_++;
   }
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  ApplyTime_ = timer->totalElapsedTime ();
+  ApplyTime_ += (timer->wallTime() - startTime);
 } //apply()
 
 
