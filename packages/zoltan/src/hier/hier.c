@@ -281,7 +281,7 @@ static int set_hier_part_sizes(HierPartParams *hpp, float *part_sizes) {
   int i;
   char msg[256];
   int part_weight_dim = hpp->origzz->Obj_Weight_Dim;
-
+  
   /* when this is called, hpp->num_parts contains the number of
      parts to be computed at this level, and hpp->part_to_compute
      contains the part id to be computed by this process at this
@@ -629,7 +629,6 @@ static int migrate_to_next_subgroups(HierPartParams *hpp, int num_export,
    * in the new process' next sub group.  For adjproc field, use the rank
    * of the owner in the new sub group.
    */
-
   edim = hpp->edge_wgt_dim;
   nEdge = hpp->xadj[nVtx];
 
@@ -648,6 +647,7 @@ static int migrate_to_next_subgroups(HierPartParams *hpp, int num_export,
     ierr = ZOLTAN_FATAL;
     goto End;
   }
+
 
   value_in = 1;
   for (i=0; i < nEdge; i++){  /* "Find_Add" means if not found, add it */
@@ -755,7 +755,6 @@ static int migrate_to_next_subgroups(HierPartParams *hpp, int num_export,
   ZOLTAN_FREE(&id_map);
   Zoltan_Map_Destroy(zz, &nborMap);
 
-
   newXadj = (int *)ZOLTAN_MALLOC((nNewVtx+1) * sizeof(int));
   if (!newXadj){
     ierr = ZOLTAN_MEMERR;
@@ -843,7 +842,6 @@ static int migrate_to_next_subgroups(HierPartParams *hpp, int num_export,
     ZOLTAN_FREE(&hpp->ewgts);
     hpp->ewgts= newEwgts;
   }
-
 
 End:
 
@@ -1352,6 +1350,7 @@ int Zoltan_Hier(
   hpp.num_parts=0;
   hpp.use_geom=0;
   hpp.use_graph=0;
+  hpp.use_callbacks=0;
   hpp.num_obj=0;
   hpp.obj_wgt_dim=zz->Obj_Weight_Dim;
   hpp.edge_wgt_dim=zz->Edge_Weight_Dim;
@@ -1364,7 +1363,7 @@ int Zoltan_Hier(
   hpp.ndims=0;
   hpp.geom_vec=NULL;
   hpp.spec=NULL;
-  hpp.use_timers=0;
+  hpp.use_timers=0; 
 
   /* Cannot currently do hierarchical balancing for num_parts != num_procs */
   if ((zz->Num_Proc != zz->LB.Num_Global_Parts) ||
@@ -1397,6 +1396,9 @@ int Zoltan_Hier(
     if (zz->Get_Hier_Method == NULL) {
       ZOLTAN_HIER_ERROR(ZOLTAN_FATAL, "Must register ZOLTAN_HIER_METHOD_FN");
     }
+    
+    // No spec set, using callbacks
+    hpp.use_callbacks = 1;
   }
   else{
 
@@ -1528,6 +1530,8 @@ int Zoltan_Hier(
       timeStart = Zoltan_Time(zz->Timer);
     }
 
+    zz->Current_Hier_Level = hpp.level; 
+
     /* determine parts to compute at this level */
     hpp.part_to_compute =
       zz->Get_Hier_Part(zz->Get_Hier_Part_Data, hpp.level, &ierr);
@@ -1551,7 +1555,7 @@ int Zoltan_Hier(
         zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
       printf("HIER: Proc %d computing part %d of %d at level %d\n",
              zz->Proc, hpp.part_to_compute, hpp.num_parts, hpp.level);
-    }
+    } 
 
     /* should make sure we have reasonable parts to compute */
 
@@ -1573,6 +1577,11 @@ int Zoltan_Hier(
       /* construct appropriate ZZ and input arrays */
       /* create a brand new one */
       hpp.hierzz = Zoltan_Create(hpp.hier_comm);
+      hpp.hierzz->Current_Hier_Level = hpp.level; 
+
+      if (hpp.level != 0 && hpp.use_callbacks && strcmp("zoltan2", hpp.hierzz->Hier_Callback_Name) == 0) {
+        hpp.hierzz->Highest_Ancestor_ZZ = zz;
+      }
 
       /* and copy in some specified params from zz where appropriate */
 
@@ -1626,7 +1635,7 @@ int Zoltan_Hier(
                                              Zoltan_Hier_Edge_List_Multi_Fn,
                                              (void *) &hpp);
       }
-
+ 
       /* specify the GIDs (just the global numbering) */
       Zoltan_Set_Param(hpp.hierzz, "NUM_GID_ENTRIES", "1");
       Zoltan_Set_Param(hpp.hierzz, "NUM_LID_ENTRIES", "1");
@@ -1659,7 +1668,6 @@ int Zoltan_Hier(
       }
 
       /* call partitioning method to compute the part at this level */
-
       ierr = Zoltan_LB_Partition(hpp.hierzz, &hier_changes,
                                  &hier_num_gid_entries, &hier_num_lid_entries,
                                  &hier_num_import_objs,
@@ -1676,8 +1684,15 @@ int Zoltan_Hier(
         timeEnd = Zoltan_Time(zz->Timer);
         timePartition += timeEnd - timeStart;
       }
+      if (hpp.hierzz->Group_Count) {
+        ZOLTAN_FREE(&hpp.hierzz->Group_Count);
+      }
+
     }
     else{
+      hpp.hierzz = Zoltan_Create(hpp.hier_comm);
+      hpp.hierzz->Current_Hier_Level = hpp.level;
+      
       hier_changes=0;
       hier_num_gid_entries = 1; hier_num_lid_entries = 0;
       hier_num_import_objs = hier_num_export_objs = 0;
@@ -1704,6 +1719,7 @@ int Zoltan_Hier(
       ierr = migrate_to_next_subgroups(&hpp,
                                        hier_num_export_objs, hier_export_lids,
                                        hier_export_procs, next_comm);
+      
       if (ierr != ZOLTAN_OK)
         goto End;
 
@@ -1931,7 +1947,7 @@ End:
   ZOLTAN_FREE(&hpp.adjproc);
   ZOLTAN_FREE(&hpp.geom_vec);
   if (dd) Zoltan_DD_Destroy(&dd);
-  Zoltan_Destroy(&hpp.hierzz);
+  if (hpp.hierzz != NULL) Zoltan_Destroy(&hpp.hierzz);
   if (hpp.hier_comm != MPI_COMM_NULL) MPI_Comm_free(&hpp.hier_comm);
   if (hpp.spec != NULL) ZOLTAN_FREE(&hpp.spec);
 

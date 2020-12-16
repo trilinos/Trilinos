@@ -60,12 +60,12 @@
 //////////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgZoltan.hpp
 //! \brief interface to the Zoltan package
-//  
-//  This first design templates Zoltan's callback functions on the 
+//
+//  This first design templates Zoltan's callback functions on the
 //  input adapter.  This approach has the advantage of simplicity and
 //  is most similar to current usage of Zoltan (where the callbacks define
 //  the model).
-//  A better approach might template them on a model, 
+//  A better approach might template them on a model,
 //  allowing Zoltan2 greater flexibility in creating models from the input.
 //  Alternatively, different callback implementations could be provided to
 //  represent different models to Zoltan.
@@ -93,7 +93,7 @@ private:
   RCP<Zoltan> zz;
 
   MPI_Comm mpicomm;
-  
+
   void setMPIComm(const RCP<const Comm<int> > &problemComm__) {
 #   ifdef HAVE_ZOLTAN2_MPI
       mpicomm = Teuchos::getRawMpiComm(*problemComm__);
@@ -161,7 +161,7 @@ private:
   void setCallbacksHypergraph(
     const RCP<const MatrixAdapter<user_t,userCoord_t> > &adp)
   {
-    // TODO:  If add parameter list to this function, can register 
+    // TODO:  If add parameter list to this function, can register
     // TODO:  different callbacks depending on the hypergraph model to use
 
     zz->Set_HG_Size_CS_Fn(zoltanHGSizeCS_withMatrixAdapter<Adapter>,
@@ -199,7 +199,7 @@ private:
 
   void setCallbacksHypergraph(const RCP<const MeshAdapter<user_t> > &adp)
   {
-    
+
     const Teuchos::ParameterList &pl = env->getParameters();
 
     const Teuchos::ParameterEntry *pe = pl.getEntryPtr("hypergraph_model_type");
@@ -208,17 +208,17 @@ private:
       model_type = pe->getValue<std::string>(&model_type);
     }
 
-    if (model_type=="ghosting" || 
+    if (model_type=="ghosting" ||
         !adp->areEntityIDsUnique(adp->getPrimaryEntityType())) {
       Zoltan2::modelFlag_t flags;
       HyperGraphModel<Adapter>* mdl = new HyperGraphModel<Adapter>(adp, env,
                                                           problemComm, flags,
                                                           HYPEREDGE_CENTRIC);
       model = rcp(static_cast<const Model<Adapter>* >(mdl),true);
-      
+
       zz->Set_Num_Obj_Fn(zoltanHGNumObj_withModel<Adapter>, (void *) &(*mdl));
       zz->Set_Obj_List_Fn(zoltanHGObjList_withModel<Adapter>, (void *) &(*mdl));
-      
+
       zz->Set_HG_Size_CS_Fn(zoltanHGSizeCS_withModel<Adapter>, (void *) &(*mdl));
       zz->Set_HG_CS_Fn(zoltanHGCS_withModel<Adapter>, (void *) &(*mdl));
     }
@@ -234,7 +234,41 @@ private:
     // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWts_withMeshAdapter<Adapter>,
     //                         (void *) &(*adp));
   }
-  
+
+  //! \brief set callbacks for hierarchical coordinate partitioning (e.g. RCB)
+  void setCallbacksHierTaskMapping(
+      const RCP<const MachineRepresentation<scalar_t, part_t> > &machine)
+  {
+    zz->Set_Hier_Num_Levels_Fn(zoltanHierNumLevels<Adapter>, (void *) &(*machine));
+    zz->Set_Hier_Part_Fn(zoltanHierPart<Adapter>, (void *) &(*machine));
+    zz->Set_Hier_Method_Fn(zoltanHierMethod<Adapter>, (void *) &(*machine));
+  }
+
+
+  //! \brief  set callbacks for hierarchical graph partitioning (e.g. ParMETIS)
+  void setCallbacksHierTaskMapping_withGraphModel(
+      const RCP<const GraphAdapter<user_t,userCoord_t> > &adp,
+      const RCP<const MachineRepresentation<scalar_t, part_t> > &machine)
+  {
+    typedef GraphModel<GraphAdapter<user_t, userCoord_t>>  graphmodel_t;
+
+    Zoltan2::modelFlag_t graphFlags;
+
+    graphFlags.set(GENERATE_CONSECUTIVE_IDS);
+    graphFlags.set(REMOVE_SELF_EDGES);
+
+    graphmodel_t *mdl = new graphmodel_t(adp, env, problemComm, graphFlags);
+
+    // Needed for ParMetis
+    zz->Set_Num_Edges_Multi_Fn(zoltanNumEdgesMulti_withGraphModel<Adapter>, (void *) &(*mdl));
+    zz->Set_Edge_List_Multi_Fn(zoltanEdgeListMulti_withGraphModel<Adapter>, (void *) &(*mdl));
+
+    // Set machine information for hier partitioner
+    zz->Set_Hier_Num_Levels_Fn(zoltanHierNumLevels<Adapter>, (void *) &(*machine));
+    zz->Set_Hier_Part_Fn(zoltanHierPart<Adapter>, (void *) &(*machine));
+    zz->Set_Hier_Method_Fn(zoltanHierMethod<Adapter>, (void *) &(*machine));
+  }
+
   //! \brief  rcb is always binary
   virtual bool isPartitioningTreeBinary() const
   {
@@ -528,10 +562,10 @@ public:
             const RCP<const Comm<int> > &problemComm__,
             const RCP<const IdentifierAdapter<user_t> > &adapter__):
     env(env__), problemComm(problemComm__), adapter(adapter__)
-  { 
+  {
     setMPIComm(problemComm__);
     zoltanInit();
-    zz = rcp(new Zoltan(mpicomm)); 
+    zz = rcp(new Zoltan(mpicomm));
     setCallbacksIDs();
   }
 
@@ -539,10 +573,10 @@ public:
             const RCP<const Comm<int> > &problemComm__,
             const RCP<const VectorAdapter<user_t> > &adapter__) :
     env(env__), problemComm(problemComm__), adapter(adapter__)
-  { 
+  {
     setMPIComm(problemComm__);
     zoltanInit();
-    zz = rcp(new Zoltan(mpicomm)); 
+    zz = rcp(new Zoltan(mpicomm));
     setCallbacksIDs();
     setCallbacksGeom(&(*adapter));
   }
@@ -551,10 +585,10 @@ public:
             const RCP<const Comm<int> > &problemComm__,
             const RCP<const GraphAdapter<user_t,userCoord_t> > &adapter__) :
     env(env__), problemComm(problemComm__), adapter(adapter__)
-  { 
+  {
     setMPIComm(problemComm__);
     zoltanInit();
-    zz = rcp(new Zoltan(mpicomm)); 
+    zz = rcp(new Zoltan(mpicomm));
     setCallbacksIDs();
     setCallbacksGraph(adapter);
     setCallbacksHypergraph(adapter);
@@ -567,10 +601,10 @@ public:
             const RCP<const Comm<int> > &problemComm__,
             const RCP<const MatrixAdapter<user_t,userCoord_t> > &adapter__) :
     env(env__), problemComm(problemComm__), adapter(adapter__)
-  { 
+  {
     setMPIComm(problemComm__);
     zoltanInit();
-    zz = rcp(new Zoltan(mpicomm)); 
+    zz = rcp(new Zoltan(mpicomm));
     setCallbacksIDs();
     setCallbacksGraph(adapter);
     setCallbacksHypergraph(adapter);
@@ -583,10 +617,10 @@ public:
             const RCP<const Comm<int> > &problemComm__,
             const RCP<const MeshAdapter<user_t> > &adapter__) :
     env(env__), problemComm(problemComm__), adapter(adapter__)
-  { 
+  {
     setMPIComm(problemComm__);
     zoltanInit();
-    zz = rcp(new Zoltan(mpicomm)); 
+    zz = rcp(new Zoltan(mpicomm));
     setCallbacksIDs();
     setCallbacksGraph(adapter);
     //TODO:: check parameter list to see if hypergraph is needed. We dont want to build the model
@@ -594,6 +628,118 @@ public:
     //       primary entity is copied
     setCallbacksHypergraph(adapter);
     setCallbacksGeom(&(*adapter));
+  }
+
+
+  // JAE: Not implemented yet
+  AlgZoltan(const RCP<const Environment> &env__,
+            const RCP<const Comm<int> > &problemComm__,
+            const RCP<const IdentifierAdapter<user_t> > &adapter__,
+            const RCP<const MachineRepresentation<scalar_t, part_t> > &machine__) :
+    env(env__), problemComm(problemComm__), adapter(adapter__)
+  {
+
+    if (problemComm__->getRank() == 0)
+      std::cout << "\nEnter AlgZoltan Constructor IDENTIFIER\n" << std::endl;
+
+    setMPIComm(problemComm__);
+    zoltanInit();
+    zz = rcp(new Zoltan(mpicomm));
+    setCallbacksIDs();
+
+    //setCallbacksHierTaskMapping(machine__);
+  }
+
+  AlgZoltan(const RCP<const Environment> &env__,
+            const RCP<const Comm<int> > &problemComm__,
+            const RCP<const VectorAdapter<user_t> > &adapter__,
+            const RCP<const MachineRepresentation<scalar_t, part_t> > &machine__) :
+    env(env__), problemComm(problemComm__), adapter(adapter__)
+  {
+
+    if (problemComm__->getRank() == 0)
+      std::cout << "\nEnter AlgZoltan Constructor VECTOR\n" << std::endl;
+
+    setMPIComm(problemComm__);
+    zoltanInit();
+    zz = rcp(new Zoltan(mpicomm));
+    setCallbacksIDs();
+    setCallbacksGeom(&(*adapter));
+
+    setCallbacksHierTaskMapping(machine__);
+  }
+
+  AlgZoltan(const RCP<const Environment> &env__,
+            const RCP<const Comm<int> > &problemComm__,
+            const RCP<const GraphAdapter<user_t, userCoord_t> > &adapter__,
+            const RCP<const MachineRepresentation<scalar_t, part_t> > &machine__) :
+    env(env__), problemComm(problemComm__), adapter(adapter__)
+  {
+
+    if (problemComm__->getRank() == 0)
+      std::cout << "\nEnter AlgZoltan Constructor GRAPH\n" << std::endl;
+
+    setMPIComm(problemComm__);
+    zoltanInit();
+    zz = rcp(new Zoltan(mpicomm));
+    setCallbacksIDs();
+    setCallbacksGraph(adapter);
+    setCallbacksHypergraph(adapter);
+    if (adapter->coordinatesAvailable()) {
+      setCallbacksGeom(adapter->getCoordinateInput());
+    }
+
+    setCallbacksHierTaskMapping_withGraphModel(adapter, machine__);
+  }
+
+
+  // JAE: Not implemented yet
+  AlgZoltan(const RCP<const Environment> &env__,
+            const RCP<const Comm<int> > &problemComm__,
+            const RCP<const MatrixAdapter<user_t, userCoord_t> > &adapter__,
+            const RCP<const MachineRepresentation<scalar_t, part_t> > &machine__) :
+    env(env__), problemComm(problemComm__), adapter(adapter__)
+  {
+
+    if (problemComm__->getRank() == 0)
+      std::cout << "\nEnter AlgZoltan Constructor MATRIX\n" << std::endl;
+
+    setMPIComm(problemComm__);
+    zoltanInit();
+    zz = rcp(new Zoltan(mpicomm));
+    setCallbacksIDs();
+    setCallbacksGraph(adapter);
+    setCallbacksHypergraph(adapter);
+    if (adapter->coordinatesAvailable()) {
+      setCallbacksGeom(adapter->getCoordinateInput());
+    }
+
+    //setCallbacksHierTaskMapping(machine__);
+  }
+
+  // JAE: Not implemented yet
+  AlgZoltan(const RCP<const Environment> &env__,
+            const RCP<const Comm<int> > &problemComm__,
+            const RCP<const MeshAdapter<user_t> > &adapter__,
+            const RCP<const MachineRepresentation<scalar_t, part_t> > &machine__) :
+    env(env__), problemComm(problemComm__), adapter(adapter__)
+  {
+
+    if (problemComm__->getRank() == 0)
+      std::cout << "\nEnter AlgZoltan Constructor MESH\n" << std::endl;
+
+    setMPIComm(problemComm__);
+    zoltanInit();
+    zz = rcp(new Zoltan(mpicomm));
+    setCallbacksIDs();
+    setCallbacksGraph(adapter);
+    //TODO:: check parameter list to see if hypergraph is needed. We dont want to build the model
+    //       if we don't have to and we shouldn't as it can take a decent amount of time if the
+    //       primary entity is copied
+    setCallbacksHypergraph(adapter);
+    setCallbacksGeom(&(*adapter));
+
+    //setCallbacksHierTaskMapping(machine__);
   }
 
   void partition(const RCP<PartitioningSolution<Adapter> > &solution);
@@ -608,6 +754,9 @@ void AlgZoltan<Adapter>::partition(
 {
   HELLO;
   char paramstr[128];
+
+  if (problemComm->getRank() == 0)
+    std::cout << "\n\nBegin AlgZoltan Partition\n\n" << std::endl;
 
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
@@ -628,7 +777,7 @@ void AlgZoltan<Adapter>::partition(
     sprintf(str, "%f", tolerance);
     zz->Set_Param("IMBALANCE_TOL", str);
   }
-  
+
   pe = pl.getEntryPtr("partitioning_approach");
   if (pe){
     std::string approach;
@@ -682,7 +831,7 @@ void AlgZoltan<Adapter>::partition(
       const std::string &zname = pl.name(iter);
       // Convert the value to a string to pass to Zoltan
       std::string zval = pl.entry(iter).getValue(&zval);
-      zz->Set_Param(zname.c_str(), zval.c_str());      
+      zz->Set_Param(zname.c_str(), zval.c_str());
     }
   }
   catch (std::exception &e) {
@@ -726,11 +875,11 @@ void AlgZoltan<Adapter>::partition(
                               nDummy, dGids, dLids, dProcs, dParts,
                               nObj,   oGids, oLids, oProcs, oParts);
 
-  env->globalInputAssertion(__FILE__, __LINE__, "Zoltan LB_Partition", 
+  env->globalInputAssertion(__FILE__, __LINE__, "Zoltan LB_Partition",
     (ierr==ZOLTAN_OK || ierr==ZOLTAN_WARN), BASIC_ASSERTION, problemComm);
 
   int numObjects=nObj;
-  // The number of objects may be larger than zoltan knows due to copies that 
+  // The number of objects may be larger than zoltan knows due to copies that
   // were removed by the hypergraph model
   if (model!=RCP<const Model<Adapter> >() &&
       dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model)) &&
@@ -745,20 +894,20 @@ void AlgZoltan<Adapter>::partition(
     TPL_Traits<lno_t, ZOLTAN_ID_PTR>::ASSIGN(tmp, &(oLids[i*nLidEnt]));
     partList[tmp] = oParts[i];
   }
-  
+
   if (model!=RCP<const Model<Adapter> >() &&
       dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model)) &&
       !(dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model))->areVertexIDsUnique())) {
-    // Setup the part ids for copied entities removed by ownership in 
+    // Setup the part ids for copied entities removed by ownership in
     // hypergraph model.
-    const HyperGraphModel<Adapter>* mdl = 
+    const HyperGraphModel<Adapter>* mdl =
                     static_cast<const HyperGraphModel<Adapter>* >(&(*model));
-    
+
     typedef typename HyperGraphModel<Adapter>::map_t map_t;
     Teuchos::RCP<const map_t> mapWithCopies;
     Teuchos::RCP<const map_t> oneToOneMap;
     mdl->getVertexMaps(mapWithCopies,oneToOneMap);
-    
+
     typedef Tpetra::Vector<scalar_t, lno_t, gno_t> vector_t;
     vector_t vecWithCopies(mapWithCopies);
     vector_t oneToOneVec(oneToOneMap);
@@ -767,9 +916,9 @@ void AlgZoltan<Adapter>::partition(
     assert(nObj == lno_t(oneToOneMap->getNodeNumElements()));
     for (lno_t i = 0; i < nObj; i++)
       oneToOneVec.replaceLocalValue(i, oParts[i]);
-    
+
     // Now import oneToOneVec's values back to vecWithCopies
-    Teuchos::RCP<const Tpetra::Import<lno_t, gno_t> > importer = 
+    Teuchos::RCP<const Tpetra::Import<lno_t, gno_t> > importer =
       Tpetra::createImport<lno_t, gno_t>(oneToOneMap, mapWithCopies);
     vecWithCopies.doImport(oneToOneVec, *importer, Tpetra::REPLACE);
 
@@ -778,7 +927,7 @@ void AlgZoltan<Adapter>::partition(
     for (lno_t i = 0; i < nlocal; i++)
       partList[i] = vecWithCopies.getData()[i];
   }
-  
+
   solution->setParts(partList);
 
   // Clean up

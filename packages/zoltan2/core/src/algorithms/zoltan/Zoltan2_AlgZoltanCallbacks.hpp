@@ -51,7 +51,10 @@
 #include <Zoltan2_MatrixAdapter.hpp>
 #include <Zoltan2_IdentifierAdapter.hpp>
 
+#include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_HyperGraphModel.hpp>
+
+#include <Zoltan2_MachineRepresentation.hpp>
 
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_TPLTraits.hpp>
@@ -80,9 +83,9 @@ static int zoltanNumObj(void *data, int *ierr) {
 /////////////////////
 // ZOLTAN_OBJ_LIST_FN
 template <typename Adapter>
-static void zoltanObjList(void *data, int nGidEnt, int nLidEnt, 
+static void zoltanObjList(void *data, int nGidEnt, int nLidEnt,
                           ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
-                          int wdim, float *wgts, int *ierr) 
+                          int wdim, float *wgts, int *ierr)
 {
   const Adapter *adp = static_cast<Adapter *>(data);
   typedef typename Adapter::gno_t gno_t;
@@ -108,7 +111,7 @@ static void zoltanObjList(void *data, int nGidEnt, int nLidEnt,
         const typename Adapter::scalar_t *mywgts;
         int mystride;
         adp->getWeightsView(mywgts, mystride, w);
-        for (size_t i = 0; i < mynObj; i++) 
+        for (size_t i = 0; i < mynObj; i++)
           wgts[i*wdim+w] = float(mywgts[i*mystride]);
       }
       else {
@@ -143,7 +146,7 @@ static void zoltanParts(void *data, int /* nGidEnt */, int nLidEnt, int nObj,
 /////////////////////
 // ZOLTAN_NUM_GEOM_FN
 template <typename Adapter>
-static int zoltanNumGeom(void *data, int *ierr) 
+static int zoltanNumGeom(void *data, int *ierr)
 {
   const Adapter *adp = static_cast<Adapter *>(data);
   *ierr = ZOLTAN_OK;
@@ -183,10 +186,10 @@ static void zoltanGeom(void *data, int /* nGidEnt */, int nLidEnt, int nObj,
 ///////////////////////
 // ZOLTAN_HG_SIZE_CS_FN
 template <typename Adapter>
-static void zoltanHGSizeCS_withGraphAdapter(void *data, 
+static void zoltanHGSizeCS_withGraphAdapter(void *data,
                                             int *nLists, int *nPins,
                                             int *format, int *ierr
-) 
+)
 {
   // Assuming one hyperedge per vertex consisting of vertex and its graph nbors.
   const Adapter *adp = static_cast<Adapter *>(data);
@@ -201,8 +204,8 @@ static void zoltanHGSizeCS_withGraphAdapter(void *data,
 //////////////////
 // ZOLTAN_HG_CS_FN
 template <typename Adapter>
-static void zoltanHGCS_withGraphAdapter(void *data, int nGidEnt, int nLists, 
-                                        int /* nPins */, int /* format */, 
+static void zoltanHGCS_withGraphAdapter(void *data, int nGidEnt, int nLists,
+                                        int /* nPins */, int /* format */,
                                         ZOLTAN_ID_PTR listIds, int *listIdx,
                                         ZOLTAN_ID_PTR pinIds, int *ierr
 )
@@ -212,10 +215,10 @@ static void zoltanHGCS_withGraphAdapter(void *data, int nGidEnt, int nLists,
   typedef typename Adapter::offset_t offset_t;
   typedef typename Adapter::user_t user_t;
   typedef typename Adapter::userCoord_t userCoord_t;
-  const GraphAdapter<user_t, userCoord_t>* adp = 
+  const GraphAdapter<user_t, userCoord_t>* adp =
         static_cast<GraphAdapter<user_t, userCoord_t>* >(data);
 
-  *ierr = ZOLTAN_OK;  
+  *ierr = ZOLTAN_OK;
 
   const gno_t *ids;
   const gno_t *adjIds;
@@ -234,7 +237,7 @@ static void zoltanHGCS_withGraphAdapter(void *data, int nGidEnt, int nLists,
     for (int i=0; i < nLists; i++) {
       ZOLTAN_ID_PTR idPtr = &(listIds[i*nGidEnt]);
       TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, ids[i]);
-      listIdx[i] = Teuchos::as<int>(offsets[i]+i);  // adding self pin 
+      listIdx[i] = Teuchos::as<int>(offsets[i]+i);  // adding self pin
     }
     listIdx[nLists] = Teuchos::as<int>(offsets[nLists]);
     int pinCnt = 0;
@@ -255,15 +258,15 @@ static void zoltanHGCS_withGraphAdapter(void *data, int nGidEnt, int nLists,
 // ZOLTAN_HG_SIZE_EDGE_WGTS_FN
 template <typename Adapter>
 static void zoltanHGSizeEdgeWts_withGraphAdapter(
-  void *data, 
+  void *data,
   int *nEdges,
   int *ierr
-) 
+)
 {
   // Assuming one hyperedge per vertex consisting of vertex and its graph nbors.
   typedef typename Adapter::user_t user_t;
   typedef typename Adapter::userCoord_t userCoord_t;
-  const GraphAdapter<user_t, userCoord_t>* adp = 
+  const GraphAdapter<user_t, userCoord_t>* adp =
         static_cast<GraphAdapter<user_t, userCoord_t>* >(data);
   *ierr = ZOLTAN_OK;
   *nEdges = Teuchos::as<int>(adp->getLocalNumVertices()); // one edge per vertex
@@ -273,13 +276,13 @@ static void zoltanHGSizeEdgeWts_withGraphAdapter(
 // ZOLTAN_HG_EDGE_WGTS_FN
 template <typename Adapter>
 static void zoltanHGEdgeWts_withGraphAdapter(
-  void *data, 
-  int nGidEnt, 
-  int nLidEnt, 
-  int nEdges, 
-  int /* eWgtDim */, 
-  ZOLTAN_ID_PTR edgeGids, 
-  ZOLTAN_ID_PTR edgeLids, 
+  void *data,
+  int nGidEnt,
+  int nLidEnt,
+  int nEdges,
+  int /* eWgtDim */,
+  ZOLTAN_ID_PTR edgeGids,
+  ZOLTAN_ID_PTR edgeLids,
   float *edgeWgts,
   int *ierr
 )
@@ -291,7 +294,7 @@ static void zoltanHGEdgeWts_withGraphAdapter(
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::user_t user_t;
   typedef typename Adapter::userCoord_t userCoord_t;
-  const GraphAdapter<user_t, userCoord_t>* adp = 
+  const GraphAdapter<user_t, userCoord_t>* adp =
         static_cast<GraphAdapter<user_t, userCoord_t>* >(data);
 
   *ierr = ZOLTAN_OK;
@@ -335,12 +338,12 @@ static void zoltanHGEdgeWts_withGraphAdapter(
 ///////////////////////
 // ZOLTAN_HG_SIZE_CS_FN
 template <typename Adapter>
-static void zoltanHGSizeCS_withMatrixAdapter(void *data, 
+static void zoltanHGSizeCS_withMatrixAdapter(void *data,
                                              int *nLists, int *nPins,
                                              int *format, int *ierr
-) 
+)
 {
-  *ierr = ZOLTAN_OK;  
+  *ierr = ZOLTAN_OK;
   typedef typename Adapter::user_t user_t;
   const MatrixAdapter<user_t>* madp = static_cast<MatrixAdapter<user_t>* >(data);
 
@@ -365,7 +368,7 @@ static void zoltanHGSizeCS_withMatrixAdapter(void *data,
   }
   else {
     // Need either CRSView or CCSView.
-    // Also, not yet implemented for matrix nonzeros; 
+    // Also, not yet implemented for matrix nonzeros;
     // may need a hypergraph model.
     std::cout << "For hypergraph partitioning, "
               << "CRSView or CCSView is needed in MatrixAdapter" << std::endl;
@@ -376,13 +379,13 @@ static void zoltanHGSizeCS_withMatrixAdapter(void *data,
 //////////////////
 // ZOLTAN_HG_CS_FN
 template <typename Adapter>
-static void zoltanHGCS_withMatrixAdapter(void *data, int nGidEnt, int nLists, 
-                                         int nPins, int format, 
+static void zoltanHGCS_withMatrixAdapter(void *data, int nGidEnt, int nLists,
+                                         int nPins, int format,
                                          ZOLTAN_ID_PTR listIds, int *listIdx,
                                          ZOLTAN_ID_PTR pinIds, int *ierr
 )
 {
-  *ierr = ZOLTAN_OK;  
+  *ierr = ZOLTAN_OK;
   typedef typename Adapter::gno_t gno_t;
   // typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::offset_t offset_t;
@@ -449,9 +452,9 @@ static void zoltanHGCS_withMatrixAdapter(void *data, int nGidEnt, int nLists,
 template <typename Adapter>
 static void zoltanHGSizeCS_withMeshAdapter(void *data, int *nLists, int *nPins,
                                            int *format, int *ierr
-) 
+)
 {
-  *ierr = ZOLTAN_OK;  
+  *ierr = ZOLTAN_OK;
   typedef typename Adapter::user_t user_t;
   const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>* >(data);
   if (madp->availAdjs(madp->getPrimaryEntityType(),
@@ -463,7 +466,7 @@ static void zoltanHGSizeCS_withMeshAdapter(void *data, int *nLists, int *nPins,
     *format = ZOLTAN_COMPRESSED_VERTEX;
   }
   else if (madp->availAdjs(madp->getAdjacencyEntityType(),
-                           madp->getPrimaryEntityType())) 
+                           madp->getPrimaryEntityType()))
   {
     *nLists = madp->getLocalNumOf(madp->getAdjacencyEntityType());
     *nPins = madp->getLocalNumAdjs(madp->getAdjacencyEntityType(),
@@ -486,7 +489,7 @@ static void zoltanHGSizeCS_withMeshAdapter(void *data, int *nLists, int *nPins,
 template <typename Adapter>
 static void zoltanHGCS_withMeshAdapter(
   void *data, int nGidEnt, int nLists, int nPins,
-  int format, ZOLTAN_ID_PTR listIds, 
+  int format, ZOLTAN_ID_PTR listIds,
   int *listIdx, ZOLTAN_ID_PTR pinIds, int *ierr
 )
 {
@@ -512,7 +515,7 @@ static void zoltanHGCS_withMeshAdapter(
   else {
     *ierr = ZOLTAN_FATAL;
   }
-  
+
   if (*ierr == ZOLTAN_OK) {
 
     // get list IDs
@@ -556,7 +559,7 @@ static void zoltanHGCS_withMeshAdapter(
 // ZOLTAN_NUM_OBJ_FN
 template <typename Adapter>
 static int zoltanHGNumObj_withModel(void *data, int *ierr) {
-  const HyperGraphModel<Adapter>* mdl = 
+  const HyperGraphModel<Adapter>* mdl =
                                   static_cast<HyperGraphModel<Adapter>* >(data);
   *ierr = ZOLTAN_OK;
   return int(mdl->getLocalNumOwnedVertices());
@@ -565,11 +568,11 @@ static int zoltanHGNumObj_withModel(void *data, int *ierr) {
 /////////////////////
 // ZOLTAN_OBJ_LIST_FN
 template <typename Adapter>
-static void zoltanHGObjList_withModel(void *data, int nGidEnt, int nLidEnt, 
+static void zoltanHGObjList_withModel(void *data, int nGidEnt, int nLidEnt,
                                       ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
-                                      int wdim, float *wgts, int *ierr) 
+                                      int wdim, float *wgts, int *ierr)
 {
-  const HyperGraphModel<Adapter>* mdl = 
+  const HyperGraphModel<Adapter>* mdl =
                                   static_cast<HyperGraphModel<Adapter>* >(data);
   typedef typename Adapter::gno_t       gno_t;
   typedef typename Adapter::lno_t       lno_t;
@@ -622,10 +625,10 @@ static void zoltanHGObjList_withModel(void *data, int nGidEnt, int nLidEnt,
 template <typename Adapter>
 static void zoltanHGSizeCS_withModel(void *data, int *nEdges, int *nPins,
                                      int *format, int *ierr
-) 
+)
 {
   *ierr = ZOLTAN_OK;
-  const HyperGraphModel<Adapter>* mdl = 
+  const HyperGraphModel<Adapter>* mdl =
                                   static_cast<HyperGraphModel<Adapter>* >(data);
   *nEdges = mdl->getLocalNumHyperEdges();
   *nPins = mdl->getLocalNumPins();
@@ -639,12 +642,12 @@ static void zoltanHGSizeCS_withModel(void *data, int *nEdges, int *nPins,
 // ZOLTAN_HG_CS_FN
 template <typename Adapter>
 static void zoltanHGCS_withModel(void *data, int nGidEnt, int nEdges, int nPins,
-                                 int format, ZOLTAN_ID_PTR edgeIds, 
+                                 int format, ZOLTAN_ID_PTR edgeIds,
                                  int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr
 )
 {
   *ierr = ZOLTAN_OK;
-  const HyperGraphModel<Adapter>* mdl = 
+  const HyperGraphModel<Adapter>* mdl =
                                   static_cast<HyperGraphModel<Adapter>* >(data);
   typedef typename Adapter::gno_t       gno_t;
   typedef typename Adapter::lno_t       lno_t;
@@ -664,14 +667,374 @@ static void zoltanHGCS_withModel(void *data, int nGidEnt, int nEdges, int nPins,
     TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, Ids[i]);
     edgeIdx[i] = Teuchos::as<int>(offsets[i]);
   }
-  
+
   for (int i=0;i<nPins;i++) {
     ZOLTAN_ID_PTR idPtr = &(pinIds[i*nGidEnt]);
     TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, pinIds_[i]);
   }
 }
 
+////////////////////////////
+// ZOLTAN_NUM_EDGES_MULTI_FN
+template <typename Adapter>
+static void zoltanNumEdgesMulti_withGraphModel(void *data,
+                                                 int nGidEnt,
+                                                 int nLidEnt,
+                                                 int nObjs,
+                                                 ZOLTAN_ID_PTR gids,
+                                                 ZOLTAN_ID_PTR lids,
+                                                 int *nEdges,
+                                                 int *ierr)
+{
+
+  typedef typename Adapter::gno_t       gno_t;
+  typedef typename Adapter::lno_t       lno_t;
+  typedef typename Adapter::offset_t    offset_t;
+  typedef typename Adapter::scalar_t    scalar_t;
+  typedef typename Adapter::user_t      user_t;
+  typedef typename Adapter::userCoord_t userCoord_t;
+  typedef StridedData<lno_t, scalar_t>  input_t;
+
+  const GraphModel<GraphAdapter<user_t, userCoord_t> >* graph_model =
+        static_cast<GraphModel<GraphAdapter<user_t, userCoord_t>>* >(data);
+
+  *ierr = ZOLTAN_OK;
+
+  ArrayView<const gno_t>    adjIds;
+  ArrayView<const offset_t> offsets;
+  ArrayView<input_t>        ewgts;
+
+  graph_model->getEdgeList(adjIds, offsets, ewgts);
+
+  int tot_edges = 0;
+
+  for (int i = 0; i < nObjs; ++i) {
+    lno_t lidx;
+    TPL_Traits<lno_t,ZOLTAN_ID_PTR>::ASSIGN(lidx, &(lids[i*nLidEnt]));
+    nEdges[i] = Teuchos::as<int>(offsets[lidx + 1] - offsets[lidx]);
+    tot_edges += nEdges[i];
+  }
 }
 
+////////////////////////////
+// ZOLTAN_EDGE_LIST_MULTI_FN
+template <typename Adapter>
+static void zoltanEdgeListMulti_withGraphModel(void *data,
+                                                 int nGidEnt,
+                                                 int nLidEnt,
+                                                 int nObjs,
+                                                 ZOLTAN_ID_PTR gids,
+                                                 ZOLTAN_ID_PTR lids,
+                                                 int *nEdges,
+                                                 ZOLTAN_ID_PTR nbor_gids,
+                                                 int *nbor_procs,
+                                                 int wdim,
+                                                 float *nbor_ewgts,
+                                                 int *ierr)
+{
+
+  typedef typename Adapter::gno_t       gno_t;
+  typedef typename Adapter::lno_t       lno_t;
+  typedef typename Adapter::offset_t    offset_t;
+  typedef typename Adapter::scalar_t    scalar_t;
+  typedef typename Adapter::user_t      user_t;
+  typedef typename Adapter::userCoord_t userCoord_t;
+
+  typedef StridedData<lno_t, scalar_t>  input_t;
+
+  const GraphModel<GraphAdapter<user_t, userCoord_t> >* graph_model =
+        static_cast<GraphModel<GraphAdapter<user_t, userCoord_t> >* >(data);
+
+  *ierr = ZOLTAN_OK;
+
+  ArrayView<const gno_t> Ids;
+  ArrayView<input_t> vwgts;
+
+  graph_model->getVertexList(Ids, vwgts);
+
+  ArrayView<const gno_t> adjIds;
+  ArrayView<const offset_t> offsets;
+  ArrayView<input_t> ewgts;
+
+  graph_model->getEdgeList(adjIds, offsets, ewgts);
+
+  ArrayView<size_t> vtxdist;
+
+  // vtxdist size: comm->getSize() + 1
+  graph_model->getVertexDist(vtxdist);
+
+  int edge_idx = 0;
+  int proc_idx = 0;
+
+  for (int i = 0; i < nObjs; ++i) {
+    lno_t lidx;
+    TPL_Traits<lno_t,ZOLTAN_ID_PTR>::ASSIGN(lidx, &(lids[i*nLidEnt]));
+
+    for (offset_t j = offsets[lidx];  j < offsets[lidx+1]; ++j) {
+
+      ZOLTAN_ID_PTR idPtr = &(nbor_gids[edge_idx*nGidEnt]);
+      TPL_Traits<ZOLTAN_ID_PTR,gno_t>::ASSIGN(idPtr, adjIds[j]);
+
+      for (Teuchos::ArrayView<size_t>::size_type k = 0; k < vtxdist.size() - 1; ++k) {
+        // TODO:  replace this serial search
+        if (adjIds[j] >= gno_t(vtxdist[k]) && adjIds[j] < gno_t(vtxdist[k+1])) {
+          proc_idx = k;
+        }
+      }
+
+      nbor_procs[edge_idx] = proc_idx;
+
+      edge_idx++;
+    }
+  }
+
+  if (wdim) {
+
+    int mywdim = graph_model->getNumWeightsPerEdge();
+    edge_idx = 0;
+
+    for (int i = 0; i < nObjs; ++i) {
+      lno_t lidx;
+      TPL_Traits<lno_t,ZOLTAN_ID_PTR>::ASSIGN(lidx, &(lids[i*nLidEnt]));
+
+      for (offset_t j = offsets[lidx]; j < offsets[lidx+1]; ++j) {
+        for (int w = 0; w < wdim; ++w) {
+          if (w < mywdim) {
+            nbor_ewgts[edge_idx + w] = Teuchos::as<float>(ewgts[w][j]);
+          }
+          else {
+            nbor_ewgts[edge_idx + w] = 1.;
+
+          }
+        }
+
+        edge_idx += wdim;
+      }
+    }
+  }
+}
+
+////////////////////////////
+// ZOLTAN_HIER_NUM_LEVELS_FN
+template <typename Adapter>
+static int zoltanHierNumLevels(void *data,
+                               //int /* nGidEnt */, int nLidEnt, int nObj,
+                               //ZOLTAN_ID_PTR /* gids */, ZOLTAN_ID_PTR lids,
+                               //int *parts,
+                               int *ierr)
+{
+  // Find the number of hierarchy levels this proc will participate in
+  typedef typename Adapter::scalar_t   pcoord_t;
+  typedef typename Adapter::part_t     part_t;
+
+  const MachineRepresentation<pcoord_t, part_t> *machine
+    = static_cast<MachineRepresentation<pcoord_t, part_t> *>(data);
+  *ierr = ZOLTAN_OK;
+
+  // Group, Subgroup, Rack = 3 for FatTree machines
+  return machine->getNumNonuniformLevels();
+}
+
+//////////////////////
+// ZOLTAN_HIER_PART_FN
+template <typename Adapter>
+static int zoltanHierPart(void *data,
+                           //int /* nGidEnt */, int nLidEnt, int nObj,
+                           //ZOLTAN_ID_PTR /* gids */, ZOLTAN_ID_PTR lids,
+                           int level,
+                           int *ierr)
+{
+  // Determines parts to compute at this level
+  typedef typename Adapter::scalar_t   pcoord_t;
+  typedef typename Adapter::part_t     part_t;
+
+  const MachineRepresentation<pcoord_t, part_t> *machine
+    = static_cast<MachineRepresentation<pcoord_t, part_t> *>(data);
+  *ierr = ZOLTAN_OK;
+
+  int rank = machine->getMyRank();
+
+  part_t num_unique_groups = machine->getNumUniqueGroups();
+
+  std::vector<part_t> group_count;
+  machine->getGroupCountVector(group_count);
+
+  int group_idx;
+  int upper_cdf = 0;
+  int lower_cdf = 0;
+
+  for (int i = 0; i < num_unique_groups; ++i) {
+    lower_cdf = upper_cdf;
+    upper_cdf += int(group_count[i]);
+
+    if (rank < upper_cdf && rank >= lower_cdf) {
+
+      group_idx = i;
+      break;
+    }
+  }
+
+  if (level == 0)
+    return group_idx;
+
+  std::vector<part_t> num_unique_subgroups;
+  std::vector<std::vector<part_t>> subgroup_counts;
+
+  machine->getNumUniqueSubgroups(num_unique_subgroups);
+  machine->getSubgroupCounts(subgroup_counts);
+
+  int subgroup_idx = 0;
+  int group_rank = rank - lower_cdf;
+
+  lower_cdf = 0;
+  upper_cdf = 0;
+
+  for (int i = 0; i < int(num_unique_subgroups[group_idx]); ++i) {
+
+    lower_cdf = upper_cdf;
+    upper_cdf += int(subgroup_counts[group_idx][i]);
+
+    if (group_rank < upper_cdf && group_rank >= lower_cdf) {
+
+      subgroup_idx = i;
+      break;
+    }
+  }
+
+  if (level == 1)
+    return subgroup_idx;
+
+  return group_rank - lower_cdf;
+}
+
+////////////////////////
+// ZOLTAN_HIER_METHOD_FN
+template <typename Adapter>
+static void zoltanHierMethod(void *data,
+                             //int /* nGidEnt */, int nLidEnt, int nObj,
+                             //ZOLTAN_ID_PTR /* gids */, ZOLTAN_ID_PTR lids,
+                             //int *parts,
+                             int level,
+                             struct Zoltan_Struct *zz,
+                             int *ierr)
+{
+
+  // Let the application specify any balancing params for this level
+
+  typedef typename Adapter::scalar_t    pcoord_t;
+  typedef typename Adapter::part_t      part_t;
+
+  const MachineRepresentation<pcoord_t, part_t> *machine
+    = static_cast<MachineRepresentation<pcoord_t, part_t> *>(data);
+  *ierr = ZOLTAN_OK;
+
+  int rank = machine->getMyRank();
+
+  Zoltan_Set_Param(zz, "LB_Approach", "repartition");
+  Zoltan_Set_Param(zz, "HIER_CALLBACK_NAME", "zoltan2");
+  Zoltan_Set_Param(zz, "LB_Method", "RCB");
+
+// Options for ParMETIS partitioning.
+//  Zoltan_Set_Param(zz, "LB_Method", "PARMETIS");
+//  Zoltan_Set_Param(zz, "CHECK_GRAPH", "0");
+//  Zoltan_Set_Param(zz, "GRAPH_BUILD_TYPE", "FAST_NO_DUP");
+
+//  Zoltan_Set_Param(zz, "TFLOPS_SPECIAL", "1");
+//  Zoltan_Set_Param(zz, "", "1");
+
+  part_t num_unique_groups = machine->getNumUniqueGroups();
+  std::vector<part_t> group_count;
+
+  if (level == 0) {
+    Zoltan_Set_Num_Unique_Groups(zz, num_unique_groups);
+    machine->getGroupCountVector(group_count);
+  }
+  else if (level == 1) {
+    std::vector<std::vector<part_t>> subgroup_counts;
+    std::vector<part_t> num_unique_subgroups;
+
+    machine->getGroupCountVector(group_count);
+    machine->getSubgroupCounts(subgroup_counts);
+    machine->getNumUniqueSubgroups(num_unique_subgroups);
+
+    int group_idx = 0;
+    int upper_cdf = 0;
+    int lower_cdf = 0;
+
+    for (int i = 0; i < num_unique_groups; ++i) {
+
+      lower_cdf = upper_cdf;
+      upper_cdf += int(group_count[i]);
+
+      if (rank < upper_cdf && rank >= lower_cdf) {
+        group_idx = i;
+        break;
+      }
+    }
+
+    num_unique_groups = int(num_unique_subgroups[group_idx]);
+    Zoltan_Set_Num_Unique_Groups(zz, num_unique_groups);
+    group_count.resize(num_unique_groups);
+    group_count = subgroup_counts[group_idx];
+  }
+
+  // level > 1
+  else {
+    std::vector<std::vector<part_t>> subgroup_counts;
+    std::vector<part_t> num_unique_subgroups;
+
+    machine->getGroupCountVector(group_count);
+    machine->getSubgroupCounts(subgroup_counts);
+    machine->getNumUniqueSubgroups(num_unique_subgroups);
+
+    int group_idx = 0;
+    int upper_cdf = 0;
+    int lower_cdf = 0;
+
+    for (int i = 0; i < num_unique_groups; ++i) {
+
+      lower_cdf = upper_cdf;
+      upper_cdf += int(group_count[i]);
+
+      if (rank < upper_cdf && rank >= lower_cdf) {
+        group_idx = i;
+        break;
+      }
+    }
+
+    int subgroup_idx = 0;
+    int group_rank = rank - lower_cdf;
+
+    lower_cdf = 0;
+    upper_cdf = 0;
+
+    for (int i = 0; i < int(num_unique_subgroups[group_idx]); ++i) {
+      lower_cdf = upper_cdf;
+      upper_cdf += int(subgroup_counts[group_idx][i]);
+
+      if (group_rank < upper_cdf && group_rank >= lower_cdf) {
+
+        subgroup_idx = i;
+        break;
+      }
+    }
+
+    num_unique_groups = int(subgroup_counts[group_idx][subgroup_idx]);
+    Zoltan_Set_Num_Unique_Groups(zz, num_unique_groups);
+
+    group_count.resize(num_unique_groups);
+
+    for (size_t i = 0; i < group_count.size(); ++i) {
+        group_count[i] = i;
+    }
+  }
+
+  std::vector<int> group_count_ints(group_count.begin(), group_count.end());
+  Zoltan_Set_Group_Count(zz, num_unique_groups, group_count_ints.data());
+
+  return;
+}
+
+}
 
 #endif

@@ -311,7 +311,7 @@ APPEND_SET(SOURCES
 
 IF (${PACKAGE_NAME}_ENABLE_ParMETIS OR ${PACKAGE_NAME}_ENABLE_METIS)
 
-  APPEND_SET(NOINSTALLHEADERS
+  APPEND_SET(NONOINSTALLHEADERS
     tpls/parmetis_interface.h
     )
 
@@ -532,6 +532,7 @@ APPEND_SET(SOURCES
   zz/zz_obj_list.c
   zz/zz_rand.c
   zz/zz_set_fn.c
+  zz/zz_set_machine.c
   zz/zz_sort.c
   zz/zz_struct.c
   zz/zz_back_trace.c
@@ -640,7 +641,7 @@ IF(${PROJECT_NAME}_ENABLE_Fortran AND BUILD_ZOLTAN_F90_INTERFACE)
     fort/set_unpackobjmulti.if
     )
 
-  APPEND_SET(SOURCES 
+  APPEND_SET(SOURCES
     fort/ztypes.f90
     fort/zoltan_user_data.f90
     fort/fwrap.f90
@@ -655,7 +656,7 @@ IF(${PROJECT_NAME}_ENABLE_Fortran AND BUILD_ZOLTAN_F90_INTERFACE)
     ${CMAKE_CURRENT_BINARY_DIR}/zoltan_types.mod
     ${CMAKE_CURRENT_BINARY_DIR}/zoltan_user_data.mod
     )
-    
+
 ENDIF()
 
 

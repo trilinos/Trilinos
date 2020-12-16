@@ -13,6 +13,8 @@
 #include <Zoltan2_MachineTorusRCAForTesting.hpp>
 #include <Zoltan2_MachineDragonflyRCA.hpp>
 #include <Zoltan2_MachineDragonflyRCAForTesting.hpp>
+#include <Zoltan2_MachineFatTree.hpp>
+#include <Zoltan2_MachineFatTreeForTesting.hpp>
 #include <Zoltan2_Environment.hpp>
 
 //#define HAVE_ZOLTAN2_BGQTEST
@@ -30,16 +32,16 @@ public:
 /*
 #if defined(HAVE_ZOLTAN2_LDMS)
   #if defined(ZOLTAN2_MACHINE_TORUS)
-    // TODO: Full LDMS Implementation 
+    // TODO: Full LDMS Implementation
     typedef MachineTorusLDMS<pcoord_t, part_t> machine_t;
-  #else 
+  #else
     typedef MachineForTesting<pcoord_t, part_t> machine_t;
   #endif
 */
-#if defined(HAVE_ZOLTAN2_RCALIB) 
+#if defined(HAVE_ZOLTAN2_RCALIB)
   #if defined(ZOLTAN2_MACHINE_TORUS)
     typedef MachineTorusRCA<pcoord_t, part_t> machine_t;
-  #elif defined(ZOLTAN2_MACHINE_DRAGONFLY)  
+  #elif defined(ZOLTAN2_MACHINE_DRAGONFLY)
     typedef MachineDragonflyRCA<pcoord_t, part_t> machine_t;
   #else
     typedef MachineForTesting<pcoord_t, part_t> machine_t;
@@ -48,24 +50,28 @@ public:
 #elif defined(HAVE_ZOLTAN2_TOPOMANAGER)
   #if defined(ZOLTAN2_MACHINE_TORUS)
     typedef MachineTorusTopoMgr<pcoord_t, part_t> machine_t;
-  #else 
+  #else
     typedef MachineForTesting<pcoord_t, part_t> machine_t;
   #endif
 
 #elif defined(HAVE_ZOLTAN2_BGQTEST)
   #if defined(ZOLTAN2_MACHINE_TORUS)
     typedef MachineTorusBGQTest<pcoord_t, part_t> machine_t;
-  #else 
+  #else
     typedef MachineForTesting<pcoord_t, part_t> machine_t;
   #endif
-    
+
 #else
-  #if defined(ZOLTAN2_MACHINE_TORUS)
+  #if defined(ZOLTAN2_MACHINE_FATTREE)
+    typedef MachineFatTree<pcoord_t, part_t> machine_t;
+//    typedef MachineFatTreeForTesting<pcoord_t, part_t> machine_t;
+  #elif defined(ZOLTAN2_MACHINE_TORUS)
     typedef MachineTorusRCAForTesting<pcoord_t, part_t> machine_t;
   #elif defined(ZOLTAN2_MACHINE_DRAGONFLY)
     typedef MachineDragonflyRCAForTesting<pcoord_t, part_t> machine_t;
-  #else 
+  #else
     typedef MachineForTesting<pcoord_t, part_t> machine_t;
+//    typedef MachineFatTreeForTesting<pcoord_t, part_t> machine_t;
 //    typedef MachineTorusRCAForTesting<pcoord_t, part_t> machine_t;
 //    typedef MachineDragonflyRCAForTesting<pcoord_t, part_t> machine_t;
   #endif
@@ -78,9 +84,9 @@ public:
       machine(new machine_t(comm)) {
     }
 
-    MachineRepresentation(const Teuchos::Comm<int> &comm, 
+    MachineRepresentation(const Teuchos::Comm<int> &comm,
                           const Teuchos::ParameterList &pl) :
-      machine(new machine_t(comm, pl)) { 
+      machine(new machine_t(comm, pl)) {
     }
 
     ~MachineRepresentation() { delete machine; }
@@ -90,27 +96,27 @@ public:
 
     /*! \brief indicates whether or not the machine has coordinates
      */
-    inline bool hasMachineCoordinates() const { 
+    inline bool hasMachineCoordinates() const {
       return machine->hasMachineCoordinates();
     }
 
-    /*! \brief returns the dimension (number of coords per node) in 
+    /*! \brief returns the dimension (number of coords per node) in
      * the machine
      */
     inline int getMachineDim() const { return machine->getMachineDim(); }
 
-    /*! \brief sets the number of unique coordinates in each 
+    /*! \brief sets the number of unique coordinates in each
      * machine dimension
-     *  
+     *
      *  return true if coordinates are available
      */
-    inline bool getMachineExtent(int *nxyz) const { 
+    inline bool getMachineExtent(int *nxyz) const {
       return machine->getMachineExtent(nxyz);
     }
 
-    /*! \brief if the machine has a wrap-around tourus link in 
+    /*! \brief if the machine has a wrap-around tourus link in
      * each dimension.
-     *  
+     *
      *  return true if the information is available
      */
     bool getMachineExtentWrapArounds(bool *wrap_around) const {
@@ -121,7 +127,7 @@ public:
      *  set the machine coordinate xyz of the current process
      *  return true if current process' coordinates are available
      */
-    inline bool getMyMachineCoordinate(pcoord_t *xyz) const { 
+    inline bool getMyMachineCoordinate(pcoord_t *xyz) const {
       return machine->getMyMachineCoordinate(xyz);
     }
 
@@ -144,12 +150,12 @@ public:
     }
 
     /*! \brief getProcDim function
-     *  set the coordinates of all ranks 
+     *  set the coordinates of all ranks
      *  allCoords[i][j], i=0,...,getMachineDim(), j=0,...,getNumRanks(),
      *  is the i-th dimensional coordinate for rank j.
      *  return true if coordinates are available for all ranks
      */
-    inline bool getAllMachineCoordinatesView(pcoord_t **&allCoords) const { 
+    inline bool getAllMachineCoordinatesView(pcoord_t **&allCoords) const {
       return machine->getAllMachineCoordinatesView(allCoords);
     }
 
@@ -157,39 +163,65 @@ public:
      */
     inline int getNumRanks() const { return machine->getNumRanks(); }
 
-    /*! \brief return the hop count between rank1 and rank2 
+    /*! \brief return the current rank.
+     */
+    inline int getMyRank() const { return machine->getMyRank(); }
+
+    /*! \brief return the hop count between rank1 and rank2
      */
     inline bool getHopCount(int rank1, int rank2, pcoord_t &hops) const {
       return machine->getHopCount(rank1, rank2, hops);
     }
 
     /*! \brief getNumUniqueGroups function
-     *  return the number of unique Dragonfly network groups in provided 
+     *  return the number of unique Dragonfly network groups in provided
      *  allocation.
      *
-     *  Equals the length of group_count member data (see accessor 
+     *  Equals the length of group_count member data (see accessor
      *  right below), if available
      */
     inline part_t getNumUniqueGroups() const {
       return machine->getNumUniqueGroups();
     }
 
-    /*! \brief return the number of ranks in each group (RCA X-dim, 
+    /*! \brief return the number of ranks in each group (RCA X-dim,
      *  e.g. first dim)
      *
-     *  Ex, 4 ranks with coord (3, 1, 1) and 8 ranks with coord (5, 2, 4), will 
+     *  Ex, 4 ranks with coord (3, 1, 1) and 8 ranks with coord (5, 2, 4), will
      *  produce
-     *  grp_count = [0, 0, 0, 4, 0, 8, 0, ...] 
+     *  grp_count = [0, 0, 0, 4, 0, 8, 0, ...]
      *  which is trimmed and returned as
      *  grp_count = [4, 8]
-     *  
-     *  (Currently only for Zoltan2_MachineDragonflyRCA, and used for 
-     *  MultiJagged's first cut in "algorithms/partition/Zoltan2_TaskMapper.hpp" 
+     *
+     *  (Currently only for Zoltan2_MachineDragonflyRCA, and used for
+     *  MultiJagged's first cut in "algorithms/partition/Zoltan2_TaskMapper.hpp"
      *  thru
-     *  "problems/Zoltan2_MappingProblem.hpp". 
-     */ 
+     *  "problems/Zoltan2_MappingProblem.hpp".
+     */
     inline bool getGroupCount(part_t *grp_count) const {
-      return machine->getGroupCount(grp_count);
+         return machine->getGroupCount(grp_count);
+    }
+
+    inline bool getGroupCountVector(std::vector<part_t> &grp_count) const {
+      return machine->getGroupCountVector(grp_count);
+    }
+
+
+    inline bool getNumUniqueSubgroups(std::vector<part_t> &num_unique_subgrps) const {
+      return machine->getNumUniqueSubgroups(num_unique_subgrps);
+    }
+
+    inline bool getSubgroupCounts(std::vector<std::vector<part_t>> &subgrp_counts) const {
+      return machine->getSubgroupCounts(subgrp_counts);
+    }
+
+    /*! \brief return the number of nonuniform levels required when
+     * hierarchically partitioning this machine class's coordinates.
+     *
+     *  (e.g. FatTree = 2, Dragonfly = 1)
+     */
+    inline int getNumNonuniformLevels() const {
+      return machine->getNumNonuniformLevels();
     }
 
     /*! \brief Set up validators specific to this Problem
@@ -206,12 +238,12 @@ public:
         Teuchos::rcp( new Teuchos::FileNameValidator(false) );
 
       // bool parameter
-      pl.set("Input_RCA_Machine_Coords", "", 
+      pl.set("Input_RCA_Machine_Coords", "",
              "Input File for input machine coordinates",
              file_not_required_validator);
     }
 
-    // KDD TODO: Add Graph interface and methods supporting full LDMS 
+    // KDD TODO: Add Graph interface and methods supporting full LDMS
     // interface.
 
 private:

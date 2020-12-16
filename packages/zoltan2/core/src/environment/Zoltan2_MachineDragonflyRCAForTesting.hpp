@@ -38,7 +38,7 @@ public:
     actual_procCoords(NULL),
     transformed_machine_extent(NULL),
     actual_machine_extent(NULL), 
-    num_unique_groups(0),
+    num_unique_groups(1),
     group_count(NULL),
     is_transformed(false),
     pl(NULL) {
@@ -67,7 +67,7 @@ public:
           sizeof(pcoord_t) * this->numRanks);
     }
 
-    pcoord_t *xyz = new pcoord_t[transformed_networkDim];
+    pcoord_t *xyz = new pcoord_t[actual_networkDim];
     getMyActualMachineCoordinate(xyz);
     for (int i = 0; i < actual_networkDim; ++i)
       actual_procCoords[i][this->myRank] = xyz[i];
@@ -111,13 +111,6 @@ public:
         this->actual_networkDim, comm);
   }
 
-  // No necessary wrap arounds for dragonfly networks. Groups
-  // have wrap around, but group all-to-all connection makes unneccessary.
-  virtual bool getMachineExtentWrapArounds(bool *wrap_around) const {
-    return false;
-  }
-
-
  /*! \brief Constructor: Dragonfly (e.g. Cori & Trinity) network 
    *  machine description;
    *
@@ -136,7 +129,7 @@ public:
     actual_procCoords(NULL),
     transformed_machine_extent(NULL),
     actual_machine_extent(NULL),
-    num_unique_groups(0),
+    num_unique_groups(1),
     group_count(NULL), 
     is_transformed(false),
     pl(&pl_) { 
@@ -481,11 +474,13 @@ public:
     return false;
 #endif
 */
-    srand(this->myRank);
+//    srand(this->myRank);
 
-    int x = rand() % 11;
-    int y = rand() % 6;
-    int z = rand() % 16;
+    int large_prime = 1117;  
+
+    int x = this->myRank * large_prime % 11;
+    int y = this->myRank * large_prime % 6;
+    int z = this->myRank * large_prime % 16;
 
     xyz[0] = x; 
     xyz[1] = y; 
@@ -542,6 +537,18 @@ public:
     }
 
     return true;
+  }
+
+  // No necessary wrap arounds for dragonfly networks. Groups
+  // have wrap around, but group all-to-all connection makes unneccessary.
+  virtual bool getMachineExtentWrapArounds(bool *wrap_around) const {
+    return false;
+  }
+
+  // Dragonfly machine requires just 1 level of nonuniform partitioning
+  // 1.) Group level    (groups of two-rack pairs)
+  virtual int getNumNonuniformLevels() const override {
+    return 1;
   }
 
   // Return (approx) hop count from rank1 to rank2. Does not account for 

@@ -367,10 +367,10 @@ struct OVIS_parameters ovisParameters;
    *  communicator.
    */
 
-  if (ZOLTAN_PROC_NOT_IN_COMMUNICATOR(zz)) 
+  if (ZOLTAN_PROC_NOT_IN_COMMUNICATOR(zz))
     goto End;
 
-  if (zz->LB.Method == NONE) {
+  if (zz->LB.Method == NONE) {    
     if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS)
       printf("%s Balancing method selected == NONE; no balancing performed\n",
               yo);
@@ -908,7 +908,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
     zz->LB.Single_Proc_Per_Part = 1;
   }
 
-  else {
+  else if (zz->Highest_Ancestor_ZZ == NULL) {
     /* Either NUM_GLOBAL_PARTS is set != num_proc or NUM_LOCAL_PARTS
      * is set.  Build PartDist, distributing parts to processors as 
      * specified. 
@@ -973,7 +973,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
       }
       else {
         /* NUM_LOCAL_PARTS is not set; NUM_GLOBAL_PARTS < num_proc. */
-        /* Even distribution of processors to parts. */
+        /* Even distribution of processors to parts. */ 
         zz->LB.Single_Proc_Per_Part = 0;  /* Parts are spread across procs */
         pdist[0] = 0;
         frac = num_proc / max_global_parts;
@@ -1029,12 +1029,51 @@ MPI_User_function Zoltan_PartDist_MPIOp;
     /* Reset Num_Global_Parts.  */
     zz->LB.Num_Global_Parts = max_global_parts;
 
-    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL && zz->LB.PartDist != NULL) {
-      printf("[%1d] Debug: LB.PartDist = ", zz->Proc);
+    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL || zz->LB.PartDist != NULL) {
+      printf("\n[%1d] Debug: LB.PartDist = ", zz->Proc);
       for (i=0; i<=zz->LB.Num_Global_Parts; i++)
-        printf("%d ", zz->LB.PartDist[i]);
-      
+        printf("%d ", zz->LB.PartDist[i]); 
+    } 
+  }
+
+  /* Hierarchical Partitioning and not at tree-root */ 
+  else if (zz->Current_Hier_Level > -1 && zz->Highest_Ancestor_ZZ != NULL) {
+
+    if (max_global_parts < num_proc) 
+      zz->LB.Single_Proc_Per_Part = 0;
+
+    zz->LB.Num_Global_Parts = max_global_parts;
+    zz->LB.PartDist = (int *) ZOLTAN_MALLOC((max_global_parts+1)*sizeof(int));
+    
+    pdist = zz->LB.PartDist;
+    
+    int *group_count = zz->Group_Count;
+    int num_unique_groups = zz->Num_Unique_Groups;
+
+    if (zz->Current_Hier_Level >= 0) {
+      int cdf = 0;
+      for (int i = 0; i < num_unique_groups; ++i) {
+        pdist[i] = cdf;
+        cdf += group_count[i];
+      }
+
+      pdist[max_global_parts] = cdf;
     }
+
+    printf("[%d] LB_PARTDIST Group Count: %d", zz->Proc, zz->Num_Unique_Groups);
+
+    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL || zz->LB.PartDist != NULL) {
+      printf("\n[%1d] After Debug: LB.PartDist = ", zz->Proc);
+      for (i=0; i < max_global_parts+1; i++)
+        printf("%d ", zz->LB.PartDist[i]);
+      printf("\n"); 
+    }
+  }
+  else {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+      "Error in LB_BALANCE Build_PartDist");
+    ierr = ZOLTAN_FATAL;
+    goto End;
   }
 
 End:

@@ -47,6 +47,19 @@ TRIBITS_ADD_TEST(
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
+IF (${PACKAGE_NAME}_ENABLE_Machine_FatTree)
+  TRIBITS_ADD_TEST(
+    test_driver
+    NAME geometricHierTest
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "./driverinputs/geometricHierTest.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ENDIF()
+
 TRIBITS_ADD_TEST(
     test_driver
     NAME test578

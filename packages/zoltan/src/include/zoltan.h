@@ -3194,6 +3194,42 @@ extern int Zoltan_LB_Free_Data(
 );
 
 /*****************************************************************************/
+/* 
+ * Routine to set the number of parts to partition into during the 
+ * hierarchical level
+ * 
+ * Input:
+ *   zz                   -- pointer to Zoltan structure
+ *   num_groups           -- the number of parts to partition into during
+ *                           this hierarchical level
+ *
+ *  Returned value:       --  Error code
+ */
+
+int Zoltan_Set_Num_Unique_Groups(
+  struct Zoltan_Struct *zz, 
+  int num_groups);
+
+/* 
+ * Routine to set an array containing the nonuniform distribution of
+ * elements to each part in this hierarchical level
+ * 
+ * Input:
+ *   zz                   -- pointer to Zoltan structure
+ *   num_groups           -- the number of parts to partition into during
+ *                           this hierarchical level
+ *   group_count          -- an array containing the nonuniform distribution 
+ *                           of elements to each part in this hierarchical
+ *                           level
+ *
+ *  Returned value:       --  Error code
+ */
+
+int Zoltan_Set_Group_Count(
+  struct Zoltan_Struct *zz, 
+  int num_groups, 
+  int* group_count);
+
 
 /*****************************************************************************/
 /* 

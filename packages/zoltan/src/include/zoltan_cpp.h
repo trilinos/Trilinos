@@ -562,6 +562,19 @@ public:
   }
   ///--------------------------
   ///--------------------------
+
+  int Set_Num_Unique_Groups(int num_groups) 
+  {
+    return Zoltan_Set_Num_Unique_Groups(ZZ_Ptr, num_groups);
+  }
+
+  int Set_Group_Count(int num_groups, int *groupcnt) 
+  {
+    return Zoltan_Set_Group_Count(ZZ_Ptr, num_groups, groupcnt);
+  }
+
+  ///--------------------------
+  ///--------------------------
   int LB_Point_PP_Assign ( double * const coords,
                            int &proc,
                            int &part )
