@@ -123,7 +123,7 @@ private:
   gno_t myLastRow;
 
   inline size_t getNumRow(int p) { 
-    return (nrows / np + (nrows % np > p)); 
+    return (nrows / np + (int(nrows % np) > p)); 
   }
 
   inline gno_t getFirstRow(int p) { 

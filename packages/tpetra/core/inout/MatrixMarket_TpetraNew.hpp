@@ -38,7 +38,6 @@ buildDistribution(
   // Output is a Distribution object.
 
   int me = comm->getRank();
-  int np = comm->getSize();
 
   using basedist_t = Distribution<global_ordinal_type,scalar_type>;
   basedist_t *retval;
@@ -162,7 +161,6 @@ readMatrixMarket(
                     *Teuchos::TimeMonitor::getNewTimer("RMM parameterSetup")));
 
   int me = comm->getRank();
-  int np = comm->getSize();
 
   bool verbose = false;   // Print status as reading
   {
@@ -511,7 +509,6 @@ readBinary(
 {
 
   int me = comm->getRank();
-  int np = comm->getSize();
 
   bool verbose = false;   // Print status as reading
   {
@@ -770,7 +767,6 @@ readSparseFile(
                     *Teuchos::TimeMonitor::getNewTimer("RSF parameterSetup")));
 
   int me = comm->getRank();
-  int np = comm->getSize();
 
   // Check parameters to determine how to process the matrix while reading
   // TODO:  Add validators for the parameters
@@ -895,7 +891,7 @@ readSparseFile(
   if (verbose && me == 0) 
     std::cout << "Inserting global values" << std::endl;
 
-  for (int sum = 0, i = 0; i < rowIdx.size(); i++) {
+  for (int i = 0; i < rowIdx.size(); i++) {
     size_t nnz = nnzPerRow[i];
     size_t off = offsets[i];
     A->insertGlobalValues(rowIdx[i], colIdx(off, nnz), val(off, nnz));

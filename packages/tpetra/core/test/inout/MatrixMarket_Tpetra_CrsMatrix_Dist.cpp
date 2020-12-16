@@ -133,8 +133,7 @@ public:
                               Teuchos::rcp(new map_t(nCol, 0, comm));
     x_baseline = Teuchos::rcp(new vector_t(domainMap));
 
-//    x_baseline->randomize();
-x_baseline->putScalar(2.);
+    x_baseline->randomize();
 
     // Apply baseline matrix to vectors.
     applyAndComputeNorms("baseline", *A_baseline, norm_baseline());
@@ -393,7 +392,7 @@ private:
   {
     const scalar_t epsilon = 0.0000001;
     int ierr = 0;
-    for (size_t i = 0; i < norm_baseline.size(); i++) {
+    for (size_t i = 0; i < static_cast<size_t>(norm_baseline.size()); i++) {
       if (std::abs(norm_baseline[i] - norm_test[i]) > epsilon) {
         ierr++;
         if (comm->getRank() == 0) 
