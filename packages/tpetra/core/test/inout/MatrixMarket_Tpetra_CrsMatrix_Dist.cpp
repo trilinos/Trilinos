@@ -133,7 +133,8 @@ public:
                               Teuchos::rcp(new map_t(nCol, 0, comm));
     x_baseline = Teuchos::rcp(new vector_t(domainMap));
 
-    x_baseline->randomize();
+//    x_baseline->randomize();  KDD:  Need to debug LTB operator for randomize
+x_baseline->putScalar(2.);
 
     // Apply baseline matrix to vectors.
     applyAndComputeNorms("baseline", *A_baseline, norm_baseline());
