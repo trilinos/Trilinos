@@ -94,7 +94,7 @@ std::map<std::string, int> getListOfValidSmootherTypes()
  */
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void computeInverseDiagonal(RCP<Teuchos::ParameterList> params,
-                 const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,
+                 const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,
                  const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionMats,
                  const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport) ///< row importer in region layout [in]
 {
@@ -126,7 +126,7 @@ void jacobiIterate(RCP<Teuchos::ParameterList> smootherParams,
                    RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regX, // left-hand side (or solution)
                    const RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regB, // right-hand side (or residual)
                    const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionMats, // matrices in true region layout
-                   const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap, ///< revised row maps in region layout [in] (actually extracted from regionMats)
+                   const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap, ///< revised row maps in region layout [in] (actually extracted from regionMats)
                    const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport,///< row importer in region layout [in]
 		   bool& zeroInitGuess
     )
@@ -174,7 +174,7 @@ void GSIterate(RCP<Teuchos::ParameterList> smootherParams,
                RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regX, // left-hand side (or solution)
                const RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regB, // right-hand side (or residual)
                const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionMats, // matrices in true region layout
-               const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap, ///< revised row maps in region layout [in] (actually extracted from regionMats)
+               const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap, ///< revised row maps in region layout [in] (actually extracted from regionMats)
                const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport,///< row importer in region layout [in]
                bool& zeroInitGuess,
                bool sgs = false
@@ -307,7 +307,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Scalar
 powerMethod(RCP<Teuchos::ParameterList> params,
             const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionMats,
-            const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,
+            const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,
             const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport,
             const int numIters)
 {
@@ -359,7 +359,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void chebyshevSetup(RCP<Teuchos::ParameterList> params,
                    const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionMats,
                    const RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionInterfaceScaling,
-                   const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,
+                   const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,
                    const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport) {
 #include "Xpetra_UseShortNames.hpp"
   using Teuchos::TimeMonitor;
@@ -384,7 +384,7 @@ void chebyshevIterate(RCP<Teuchos::ParameterList> smootherParams,
                       RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regX, ///< left-hand side (or solution)
                       const RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regB, ///< right-hand side (or residual)
                       const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionMats, ///< matrices in true region layout
-                      const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap, ///< revised row maps in region layout [in] (actually extracted from regionMats)
+                      const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap, ///< revised row maps in region layout [in] (actually extracted from regionMats)
                       const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport,///< row importer in region layout [in]
                       bool& zeroInitGuess ///< Use a zero vector as initial guess?
                       )
@@ -466,7 +466,7 @@ void chebyshevIterate(RCP<Teuchos::ParameterList> smootherParams,
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void smootherSetup(RCP<Teuchos::ParameterList> params,
-                   const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,
+                   const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,
                    const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionMats,
                    const RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionInterfaceScaling,
                    const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport) ///< row importer in region layout [in]
@@ -510,7 +510,7 @@ void smootherApply(RCP<Teuchos::ParameterList> params,
                    RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regX,
                    const RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regB,
                    const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionMats,
-                   const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,
+                   const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,
                    const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport,
                    bool& zeroInitGuess)
 {
