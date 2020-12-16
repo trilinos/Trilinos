@@ -2557,6 +2557,24 @@ void Assembler<Real>::inputTpetraVector(ROL::Ptr<Tpetra::MultiVector<>> &vec,
 }
 
 template<class Real>
+void Assembler<Real>::printDataPDE(const ROL::Ptr<PDE<Real>> &pde,
+                                   const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                   const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                   const ROL::Ptr<const std::vector<Real>> &z_param) const {
+  std::stringstream tag;
+  if (numProcs_==1) tag << "";
+  else              tag << "_" << myRank_ << "_" << numProcs_;
+
+  ROL::Ptr<Intrepid::FieldContainer<Real>> u_coeff;
+  getCoeffFromStateVector(u_coeff,u);
+
+  ROL::Ptr<Intrepid::FieldContainer<Real>> z_coeff;
+  getCoeffFromControlVector(z_coeff,z);
+
+  pde->printData(tag.str(),u_coeff,z_coeff,z_param);
+}
+
+template<class Real>
 void Assembler<Real>::serialPrintStateEdgeField(const ROL::Ptr<const Tpetra::MultiVector<>> &u,
                                                 const ROL::Ptr<FieldHelper<Real>> &fieldHelper,
                                                 const std::string &filename,
@@ -3187,11 +3205,11 @@ void Assembler<Real>::assembleParamMatrix(ROL::Ptr<std::vector<std::vector<Real>
   int size = M->size();
   std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> tmp(size,ROL::nullPtr);
   // Compute local matrix
-  for (int i = 0; i < size; ++i) {
-    for (int j = 0; j < size; ++j) {
-      transformToFieldPattern(val[i][j],dofMgr);
-    }
-  }
+  //for (int i = 0; i < size; ++i) {
+  //  for (int j = 0; j < size; ++j) {
+  //    transformToFieldPattern(val[i][j],dofMgr);
+  //  }
+  //}
   // Assemble PDE Jacobian wrt parametric controls
   int cnt = 0, matSize = static_cast<int>(0.5*static_cast<Real>((size+1)*size));
   std::vector<Real> myMat(matSize,static_cast<Real>(0));

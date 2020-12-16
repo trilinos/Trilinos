@@ -260,6 +260,11 @@ public:
     setFieldPattern(fieldPattern1);
   }
 
+  virtual void printData(std::string tag,
+                         const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                         const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                         const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {}
+
 private:
   Real time_;
   std::vector<Real> param_;
