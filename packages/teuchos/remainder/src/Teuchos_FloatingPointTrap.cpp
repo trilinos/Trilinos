@@ -178,7 +178,7 @@ static void ieee0(bool enableTrap)
 static void ieeeuserhand(unsigned std::exception[5], int val[2])
 {
 	fflush(stdout);
-	fprintf(stderr,"ieee0() aborting because of ");
+	fprintf(stderr,"ieee0() aborting because of this-");
 	if(std::exception[0]==_OVERFL) fprintf(stderr,"overflow\n");
 	else if(std::exception[0]==_UNDERFL) fprintf(stderr,"underflow\n");
 	else if(std::exception[0]==_DIVZERO) fprintf(stderr,"divide by 0\n");

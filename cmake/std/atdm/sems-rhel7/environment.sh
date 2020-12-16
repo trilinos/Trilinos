@@ -217,7 +217,7 @@ else
   return
 fi
 
-module load sems-openmpi/1.10.1
+module load sems-openmpi/4.0.2
 module load sems-netcdf/4.7.3/parallel
 module load sems-hdf5/1.10.6/parallel
 module load sems-zlib/1.2.8/base
