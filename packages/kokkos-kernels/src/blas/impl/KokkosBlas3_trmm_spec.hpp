@@ -74,7 +74,7 @@ struct trmm_eti_spec_avail {
          > { enum : bool { value = true }; };
 
 //
-// This Macros provides the ETI specialization of trmm, currently not available.
+// This Macros provides the ETI specialization of trmm
 //
 #define KOKKOSBLAS3_TRMM_ETI_SPEC_AVAIL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
     KOKKOSBLAS3_TRMM_ETI_SPEC_AVAIL_LAYOUT( SCALAR, LAYOUT, LAYOUT, EXEC_SPACE, MEM_SPACE)

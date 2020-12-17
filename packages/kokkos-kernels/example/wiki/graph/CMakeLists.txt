@@ -8,3 +8,18 @@ KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
   SOURCES KokkosGraph_wiki_coloring.cpp
   )
 
+KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
+  wiki_mis2
+  SOURCES KokkosGraph_wiki_mis2.cpp
+  )
+
+KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
+  wiki_coarsening
+  SOURCES KokkosGraph_wiki_coarsening.cpp
+  )
+
+KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
+  wiki_rcm
+  SOURCES KokkosGraph_wiki_rcm.cpp
+  )
+

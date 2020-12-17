@@ -504,8 +504,6 @@ private:
     return this->cuSPARSEHandle;
   }
 #endif
-    /** \brief Chooses best algorithm based on the execution space. COLORING_EB if cuda, COLORING_VB otherwise.
-   */
   void choose_default_algorithm(){
 #if defined( KOKKOS_ENABLE_SERIAL )
     if (std::is_same< Kokkos::Serial , ExecutionSpace >::value){
@@ -539,6 +537,15 @@ private:
       this->algorithm_type = SPGEMM_CUSPARSE;
 #ifdef VERBOSE
       std::cout << "Cuda Execution Space, Default Algorithm: SPGEMM_CUSPARSE" << std::endl;
+#endif
+    }
+#endif
+
+#if defined( KOKKOS_ENABLE_HIP )
+    if (std::is_same<Kokkos::Experimental::HIP, ExecutionSpace >::value){
+      this->algorithm_type = SPGEMM_KK;
+#ifdef VERBOSE
+      std::cout << "HIP Execution Space, Default Algorithm: SPGEMM_KK" << std::endl;
 #endif
     }
 #endif
@@ -604,67 +611,20 @@ private:
     //suggested_vector_size_=this->suggested_vector_size = 1;
     //return;
     if (this->suggested_team_size && this->suggested_vector_size) {
+      //already set in the handle
       suggested_vector_size_ = this->suggested_vector_size;
       suggested_team_size_ = this->suggested_team_size;
       return;
     }
 
-#if defined( KOKKOS_ENABLE_SERIAL )
-    if (std::is_same< Kokkos::Serial , ExecutionSpace >::value){
-      suggested_vector_size_ = this->suggested_vector_size = 1;
-      suggested_team_size_ = this->suggested_team_size = max_allowed_team_size;
-      return;
-    }
-#endif
-
-#if defined( KOKKOS_ENABLE_THREADS )
-    if (std::is_same< Kokkos::Threads , ExecutionSpace >::value){
-      suggested_vector_size_ = this->suggested_vector_size = 1;
-      suggested_team_size_ = this->suggested_team_size = max_allowed_team_size;
-      return;
-    }
-#endif
-
-#if defined( KOKKOS_ENABLE_OPENMP )
-    if (std::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
-      suggested_vector_size_ = this->suggested_vector_size = 1;
-      suggested_team_size_ = this->suggested_team_size = max_allowed_team_size;
-    }
-#endif
-
-#if defined( KOKKOS_ENABLE_CUDA )
-    if (std::is_same<Kokkos::Cuda, ExecutionSpace >::value){
-
-      this->suggested_vector_size = nnz / double (nr) + 0.5;
-
-      if (this->suggested_vector_size <= 3){
-        this->suggested_vector_size = 2;
-      }
-      else if (this->suggested_vector_size <= 6){
-        this->suggested_vector_size = 4;
-      }
-      else if (this->suggested_vector_size <= 12){
-        this->suggested_vector_size = 8;
-      }
-      else if (this->suggested_vector_size <= 24){
-        this->suggested_vector_size = 16;
-      }
-      else {
-        this->suggested_vector_size = 32;
-      }
-
-      suggested_vector_size_ = this->suggested_vector_size;
-      this->suggested_team_size= suggested_team_size_ = max_allowed_team_size / this->suggested_vector_size;
-    }
-#endif
-
-#if defined( KOKKOS_ENABLE_QTHREAD)
-    if (std::is_same< Kokkos::Qthread, ExecutionSpace >::value){
-      suggested_vector_size_ = this->suggested_vector_size = 1;
-      suggested_team_size_ = this->suggested_team_size = max_allowed_team_size;
-    }
-#endif
-
+    //otherwise, recompute team_size/vector_size based on heuristic and save them in the handle
+    suggested_vector_size_ = KokkosKernels::Impl::kk_get_suggested_vector_size(nr, nnz, KokkosKernels::Impl::kk_get_exec_space_type<ExecutionSpace>());
+    if(KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>())
+      suggested_team_size_ = max_allowed_team_size / suggested_vector_size_;
+    else
+      suggested_team_size = max_allowed_team_size;
+    this->suggested_vector_size = suggested_vector_size_;
+    this->suggested_team_size = suggested_vector_size_;
   }
 
   void set_compression_steps(bool isCompressionSingleStep){

@@ -99,7 +99,7 @@ namespace KokkosBatched {
       if (alpha != one) SerialScaleInternal::invoke(m, alpha, b, bs0);
       if (m <= 0) return 0;
 
-      /// case cuda: team size is large and blocksize (mb,nb) is small
+      /// case GPU: team size is large and blocksize (mb,nb) is small
       InnerTrsmLeftLowerUnitDiag<mbAlgo>    trsm_u(as0, as1, bs0, 0);
       InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, 0);
 

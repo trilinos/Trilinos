@@ -151,7 +151,7 @@ spmv (KokkosKernels::Experimental::Controls controls,
       KokkosBlas::scal(y_i, beta, y_i);
     return;
   }
-  return Impl::SPMV<
+  Impl::SPMV<
     typename AMatrix_Internal::value_type,
     typename AMatrix_Internal::ordinal_type,
     typename AMatrix_Internal::device_type,
