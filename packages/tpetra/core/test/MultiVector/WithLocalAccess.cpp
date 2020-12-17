@@ -324,11 +324,14 @@ namespace { // (anonymous)
          "Result of getNonowningLocalObject for a Vector must be "
          "a rank-1 Kokkos::View");
 #endif // KOKKOS_ENABLE_CUDA
+// Using HipHostPinnedSpace for HIP makes this assertion not hold so we disabel the assert
+#ifndef KOKKOS_ENABLE_HIP
       static_assert
         (std::is_same<
            decltype (X_lcl_1d_wo)::device_type::execution_space,
            vec_type::dual_view_type::t_dev::execution_space>::value,
          "Wrong execution space");
+#endif
       Kokkos::parallel_for (
         "Device kernel for write-only Tpetra::Vector",
         range_type (0, LO (numLocal)),

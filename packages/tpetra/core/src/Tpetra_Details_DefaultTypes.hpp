@@ -87,7 +87,9 @@ namespace DefaultTypes {
 
   /// \typedef execution_space
   /// \brief Default Tpetra execution space.
-#if defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
+#if defined(HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE)
+  using execution_space = ::Kokkos::Experimental::HIP;
+#elif defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
   using execution_space = ::Kokkos::Cuda;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE)
   using execution_space = ::Kokkos::OpenMP;
