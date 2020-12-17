@@ -12,6 +12,7 @@ if atdm_match_any_buildname_keyword \
      intel-19.0.4_mpich-7.7.15 \
      intel-19.0.4 \
      intel-19 \
+     default \
   ; then
   export ATDM_CONFIG_COMPILER=INTEL-19.0.4_MPICH-7.7.15
 else
