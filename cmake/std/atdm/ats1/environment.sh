@@ -5,11 +5,6 @@
 # This source script gets the settings from the ATDM_CONFIG_BUILD_NAME var.
 #
 ################################################################################
-
-if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
-  export ATDM_CONFIG_COMPILER=INTEL-19.0.4_MPICH-7.7.15
-fi
-
 if [ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ] ; then
   export ATDM_CONFIG_KOKKOS_ARCH=HSW
 fi
