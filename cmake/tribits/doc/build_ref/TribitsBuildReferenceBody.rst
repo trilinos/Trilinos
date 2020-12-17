@@ -631,7 +631,7 @@ However, on Linux systems, the observed algorithm appears to be:
 3. Search for the Fortran compiler with names like ``f90``, ``gfortran``,
    etc., but restrict the search to the same directory specified by base path
    to the C compiler given in the variable ``CMAKE_C_COMPILER``.  The first
-   compiler that is found is set to ``CMAKE_CXX_COMPILER``.
+   compiler that is found is set to ``CMAKE_Fortran_COMPILER``.
 
 **WARNING:** While this build-in CMake compiler search algorithm may seems
 reasonable, it fails to find the correct compilers in many cases for a non-MPI
@@ -671,26 +671,29 @@ typically ``"-g -O0"`` while ``CMAKE_CXX_FLAGS_RELEASE`` is typically
 ``-DCMAKE_CXX_FLAGS="-04"``, then this level gets overridden by the flags
 specified in ``CMAKE_<LANG>_FLAGS_BUILD`` or ``CMAKE_<LANG>_FLAGS_RELEASE``.
 
-Note that TriBITS will set defaults for ``CMAKE_<LANG>_FLAGS`` and
+TriBITS will set defaults for ``CMAKE_<LANG>_FLAGS`` and
 ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>``, which may be different that what
 raw CMake would set.  TriBITS provides a means for project and package
 developers and users to set and override these compiler flag variables
 globally and on a package-by-package basis.  Below, the facilities for
 manipulating compiler flags is described.
 
-Also, to see that the full set of compiler flags one has to actually build a
-target with, for example ``make VERBOSE=1`` (see `Building with verbose output
-without reconfiguring`_).  One can not just look at the cache variables for
+To see that the full set of compiler flags one has to actually build a target
+by running, for example, ``make VERBOSE=1 <target_name>`` (see `Building with
+verbose output without reconfiguring`_).  (NOTE: One can also see the exact
+set of flags used for each target in the generated ``build.ninja`` file when
+using the Ninja generator.) One cannot just look at the cache variables for
 ``CMAKE_<LANG>_FLAGS`` and ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>`` in the
-file ``CMakeCache.txt``.  These get overwritten and redefined by TriBITS in
-development as described below (see `Overriding CMAKE_BUILD_TYPE debug/release
-compiler options`_).
+file ``CMakeCache.txt`` and see the full set of flags are actaully being used.
+These varaibles can override the cache varables by TriBITS as project-level
+local non-cache varaibles as described below (see `Overriding CMAKE_BUILD_TYPE
+debug/release compiler options`_).
 
 The <Project> TriBITS CMake build system will set up default compile flags for
 GCC ('GNU') in development mode
 (i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE=ON``) on order to help produce
 portable code.  These flags set up strong warning options and enforce language
-standards.  In release mode (i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE=ON``),
+standards.  In release mode (i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE=OFF``),
 these flags are not set.  These flags get set internally into the variables
 ``CMAKE_<LANG>_FLAGS`` (when processing packages, not at the global cache
 variable level) but the user can append flags that override these as described

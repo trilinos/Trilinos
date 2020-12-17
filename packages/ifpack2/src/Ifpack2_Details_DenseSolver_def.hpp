@@ -225,6 +225,8 @@ void DenseSolver<MatrixType, false>::initialize ()
     timer = TimeMonitor::getNewCounter (timerName);
   }
 
+  double startTime = timer->wallTime();
+
   { // Begin timing here.
     Teuchos::TimeMonitor timeMon (*timer);
 
@@ -268,9 +270,7 @@ void DenseSolver<MatrixType, false>::initialize ()
     ++numInitialize_;
   }
 
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  initializeTime_ = timer->totalElapsedTime ();
+  initializeTime_ += (timer->wallTime() - startTime);
 }
 
 
@@ -289,6 +289,8 @@ void DenseSolver<MatrixType, false>::compute ()
   if (timer.is_null ()) {
     timer = Teuchos::TimeMonitor::getNewCounter (timerName);
   }
+
+  double startTime = timer->wallTime();
 
   // Begin timing here.
   {
@@ -313,9 +315,7 @@ void DenseSolver<MatrixType, false>::compute ()
     isComputed_ = true;
     ++numCompute_;
   }
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  computeTime_ = timer->totalElapsedTime ();
+  computeTime_ += (timer->wallTime() - startTime);
 }
 
 template<class MatrixType>
@@ -436,6 +436,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     timer = Teuchos::TimeMonitor::getNewCounter (timerName);
   }
 
+  double startTime = timer->wallTime();
+
   // Begin timing here.
   {
     Teuchos::TimeMonitor timeMon (*timer);
@@ -482,9 +484,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     ++numApply_; // We've successfully finished the work of apply().
   }
 
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  applyTime_ = timer->totalElapsedTime ();
+  applyTime_ += (timer->wallTime() - startTime);
 }
 
 
