@@ -68,8 +68,6 @@ export ATDM_CONFIG_SBATCH_EXTRA_ARGS="$ATDM_CONFIG_SBATCH_EXTRA_ARGS --exclude=n
 export OMP_NUM_THREADS=2
 
 # Common modules and paths
-module load sparc-cmake/3.18.1
-module load git/2.21.0
 export PATH=/projects/netpub/atdm/ninja-1.8.2/bin:$PATH
 
 # This linker path is needed for cmake's C, CXX, and Ftn compiler tests. This linker path is not shown

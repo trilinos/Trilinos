@@ -35,6 +35,10 @@ testAll() {
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} DEFAULT ${ATDM_CONFIG_COMPILER}
 
+  ATDM_CONFIG_BUILD_NAME=intel
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} INTEL-19.0.4_MPICH-7.7.15 ${ATDM_CONFIG_COMPILER}
+
 }
 
 
