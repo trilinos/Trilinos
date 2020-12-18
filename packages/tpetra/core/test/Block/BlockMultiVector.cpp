@@ -429,16 +429,6 @@ namespace {
     TEST_ASSERT( X_overlap.data () != NULL );
     TEST_EQUALITY_CONST( static_cast<size_t> (X_overlap.extent (0)), static_cast<size_t> (blockSize) );
 
-    // {
-    //   std::ostringstream os;
-    //   os << "Proc " << myRank
-    //      << ": X_overlap.data() = " << X_overlap.data ()
-    //      << ", X_overlap.getBlockSize() = " << X_overlap.getBlockSize ()
-    //      << ", meshMap.getMinGlobalIndex() = " << meshMap.getMinGlobalIndex ()
-    //      << std::endl;
-    //   std::cerr << os.str ();
-    // }
-
     {
       const int lclOk = (X_overlap.data () != NULL &&
                          static_cast<size_t> (X_overlap.extent (0)) == static_cast<size_t> (blockSize)) ? 1 : 0;
@@ -454,9 +444,9 @@ namespace {
     }
 
     { // BlockMultiVector relies on the point multivector infrastructure
-      const auto pointMehsMap = BMV::makePointMap(meshMap, blockSize);
+      const auto pointMeshMap = BMV::makePointMap(meshMap, blockSize);
       const auto pointOverlappingMeshMap = BMV::makePointMap(overlappingMeshMap, blockSize);
-      import_type pointImport (rcpFromRef (pointMehsMap), rcpFromRef (pointOverlappingMeshMap));
+      import_type pointImport (rcpFromRef (pointMeshMap), rcpFromRef (pointOverlappingMeshMap));
       Y.getMultiVectorView().doImport (X.getMultiVectorView(), pointImport, Tpetra::REPLACE);
     }
 
