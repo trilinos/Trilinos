@@ -271,7 +271,7 @@ public:
     // didn't want to have low level changes with this particular refactor
     // TO DO: Add more Tuple constructors and then redo this code to be
     //  Teuchos::tuple<std::string> algorithm_names( "rcb", "multijagged" ... );
-    Array<std::string> algorithm_names(17);
+    Array<std::string> algorithm_names(18);
     algorithm_names[0] = "rcb";
     algorithm_names[1] = "multijagged";
     algorithm_names[2] = "rib";
@@ -286,9 +286,10 @@ public:
     algorithm_names[11] = "ptscotch";
     algorithm_names[12] = "block";
     algorithm_names[13] = "cyclic";
-    algorithm_names[14] = "random";
-    algorithm_names[15] = "zoltan";
-    algorithm_names[16] = "forTestingOnly";
+    algorithm_names[14] = "sarma";
+    algorithm_names[15] = "random";
+    algorithm_names[16] = "zoltan";
+    algorithm_names[17] = "forTestingOnly";
     RCP<Teuchos::StringValidator> algorithm_Validator = Teuchos::rcp(
       new Teuchos::StringValidator( algorithm_names ));
     pl.set("algorithm", "random", "partitioning algorithm",
@@ -595,6 +596,11 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
                                            this->comm_,
                                            this->baseInputAdapter_));
     }
+    else if (algName_ == std::string("sarma")) {
+        this->algorithm_ = rcp(new AlgSarma<Adapter>(this->envConst_,
+                                                     this->comm_,
+                                                     this->baseInputAdapter_));
+    }
     else if (algName_ == std::string("forTestingOnly")) {
       this->algorithm_ = rcp(new AlgForTestingOnly<Adapter>(this->envConst_,
                                            this->comm_,
@@ -828,6 +834,10 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     else if (algorithm == std::string("pulp"))
     {
       algName_ = algorithm;
+    }
+    else if (algorithm == std::string("sarma"))
+    {
+        algName_ = algorithm;
     }
     else if (algorithm == std::string("patoh") ||
              algorithm == std::string("phg"))
