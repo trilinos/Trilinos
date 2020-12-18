@@ -78,6 +78,10 @@
 #include "Thyra_VectorDefaultBase.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_DefaultProductVector.hpp"
+#include "Thyra_DefaultBlockedLinearOp.hpp"
+
+#include <Thyra_TpetraThyraWrappers_decl.hpp>
+#include <MatrixMarket_Tpetra.hpp>
 #endif
 
 
@@ -480,6 +484,27 @@ Piro::PerformROLAnalysis(
       *out << "Checking Accuracy of constraint Hessian" << std::endl;
       constr.checkApplyAdjointHessian(sopt_vec, rol_x_direction1, sopt_vec_direction2, sopt_vec_direction2, true,*out,num_steps,order);
 
+      Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<double>> H = Teuchos::rcp(new Thyra::DefaultBlockedLinearOp<double>());
+      obj.hessian_22(H, rol_x, rol_p);
+
+      int rows = H->productRange()->numBlocks();
+      int cols = H->productDomain()->numBlocks();
+      for (size_t i=0; i<rows; ++i) {
+        auto H_i = H->getBlock(i, i);
+
+        std::ostringstream oss;
+        oss << "H_" << i << "_" << i << ".mm";
+
+        typedef Tpetra::Vector<>::scalar_type Scalar;
+        typedef Tpetra::Vector<>::local_ordinal_type LO;
+        typedef Tpetra::Vector<>::global_ordinal_type GO;
+        typedef Tpetra::Vector<>::node_type Node;
+
+        const std::string& filename = oss.str();
+        const RCP<const Thyra::TpetraLinearOp<Scalar,LO,GO,Node> > tOp = Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<Scalar,LO,GO,Node> >(H_i);
+        const RCP<const Tpetra::CrsMatrix<Scalar,LO,GO,Node> > crsOp = Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<Scalar,LO,GO,Node> >(tOp->getConstTpetraOperator(),true);
+        Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar,LO,GO,Node> >::writeSparseFile(filename,crsOp);
+      }
     }
   }
 
