@@ -263,6 +263,7 @@ namespace {
     //RCP<const map_type> mapPtr = Teuchos::rcpFromRef (map); // nonowning RCP
 
     BMV X (meshMap, blockSize, numVecs);
+    X.sync_host();
 
     typedef typename BMV::mv_type mv_type;
     mv_type X_mv = X.getMultiVectorView ();
@@ -305,6 +306,7 @@ namespace {
       X_5_1(i) = static_cast<Scalar> (i + 1); // all are nonzero
     }
     TEST_ASSERT( ! equal (X_5_1, zeroLittleVector) && ! equal (zeroLittleVector, X_5_1) );
+    X.modify_host();
 
     // Make sure that getLocalBlock() returns a read-and-write view,
     // not a deep copy.  Do this by calling getLocalBlock(5,1) again,
