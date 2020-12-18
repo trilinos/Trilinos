@@ -415,6 +415,8 @@ namespace {
 
     BMV X (meshMap, blockSize, numVecs);
     BMV Y (overlappingMeshMap, blockSize, numVecs);
+    X.sync_host();
+    Y.sync_host();
 
     //
     // Fill X with meaningful things to test Import with REPLACE combine mode.
@@ -442,6 +444,7 @@ namespace {
     for (LO i = 0; i < blockSize; ++i) {
       X_overlap(i) = static_cast<Scalar> (i+1);
     }
+    X.modify_host();
 
     { // BlockMultiVector relies on the point multivector infrastructure
       const auto pointMeshMap = BMV::makePointMap(meshMap, blockSize);
