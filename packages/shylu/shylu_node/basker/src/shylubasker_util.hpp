@@ -573,6 +573,20 @@ namespace BaskerNS
    Int kid, BASKER_BOOL alloc
   )
   {
+    /*printf(" BTF_A_2D = [\n" );
+    for(Int j = 0; j < BTF_A.ncol; j++) {
+      for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+        printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+      }
+    }
+    printf("];\n");
+    printf(" A_2D = [\n" );
+    for(Int j = 0; j < A.ncol; j++) {
+      for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
+        printf("%d %d %e\n", A.row_idx[k], j, A.val[k]);
+      }
+    }
+    printf("];\n");*/
     // extract strictly Lower blockks into ALM
     // (blocks in strictly lower part, diagonal blocks are in AVM)
     for(Int lvl = 0; lvl < tree.nlvls+1; lvl++)
@@ -594,16 +608,24 @@ namespace BaskerNS
           //       ALM(b)(row).nrow,ALM(b)(row).ncol,ALM(b)(row).srow,ALM(b)(row).scol);
           if(Options.btf == BASKER_FALSE)
           {
+            #ifdef BASKER_DEBUG_INIT
+            printf("ALM alloc: b=%d row=%d kid=%d btf=%d\n",
+                    b, row, kid, Options.btf);
+            #endif
             ALM(b)(row).convert2D(A, alloc, kid);
           }
           else
           {
             //printf("Using BTF AL \n");
             #ifdef BASKER_DEBUG_INIT
-            printf("ALM alloc: %d %d kid: %d \n",
-                b, row, kid);
+            printf("ALM alloc: b=%d row=%d kid=%d \n",
+                   b, row, kid);
             #endif
+#if 1//defined(SHYLU_BASKER_SORT_BLOCK_A)
             ALM(b)(row).convert2D(BTF_A, alloc, kid);
+#else
+            ALM(b)(row).convert2D_unsorted(BTF_A, alloc, kid);
+#endif
           }
 
         }//end over all row
@@ -636,7 +658,11 @@ namespace BaskerNS
         {
           //printf("Using BTF AU\n");
           //printf(" > kid=%d: convert AVM(%d,%d)\n", kid, b, LU_size(b)-1);
+#if 1//defined(SHYLU_BASKER_SORT_BLOCK_A)
           AVM(b)(LU_size(b)-1).convert2D(BTF_A, alloc, kid);
+#else
+          AVM(b)(LU_size(b)-1).convert2D_unsorted(BTF_A, alloc, kid);
+#endif
         }
 
         for(Int l = lvl+1; l < tree.nlvls+1; l++)
@@ -703,7 +729,11 @@ namespace BaskerNS
             //printf("2nd convert AVM: %d %d size:%d kid: %d\n",
             //	   U_col, U_row, AVM(U_col)(U_row).nnz, 
             //	   kid);
+#if 1//defined(SHYLU_BASKER_SORT_BLOCK_A)
             AVM(U_col)(U_row).convert2D(BTF_A, alloc, kid);
+#else
+            AVM(U_col)(U_row).convert2D_unsorted(BTF_A, alloc, kid);
+#endif
           }
 
         }//over inner lvls

@@ -1636,7 +1636,8 @@ namespace BaskerNS
     // sfactor_copy2 is now only responsible for the copy from BTF_A to 2D blocks
     Kokkos::Timer timer_sfactorcopy;
     double sfactorcopy_time = 0.0;
-    err = sfactor_copy2();
+    bool copy_BTFA = (Options.blk_matching == 0);
+    err = sfactor_copy2(copy_BTFA);
 
     if(Options.verbose == BASKER_TRUE) {
       sfactorcopy_time += timer_sfactorcopy.seconds();

@@ -420,7 +420,7 @@ namespace BaskerNS
     int sfactor_copy();
 
     BASKER_INLINE
-    int sfactor_copy2();
+    int sfactor_copy2(bool copy_BTFA = true);
 
 
     //old
@@ -1395,6 +1395,9 @@ namespace BaskerNS
 
     BASKER_INLINE
     int sort_matrix_store_valperms( BASKER_MATRIX &M, INT_1DARRAY &order_vals_perms );
+
+    BASKER_INLINE
+    int ndsort_matrix_store_valperms( BASKER_MATRIX &M, INT_1DARRAY &order_vals_perms );
 
     //end NDE
 

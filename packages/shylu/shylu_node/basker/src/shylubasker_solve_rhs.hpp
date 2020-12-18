@@ -396,7 +396,7 @@ namespace BaskerNS
       //---Lower solve
       BASKER_MATRIX &LC = LBTF(b);
     #ifdef BASKER_DEBUG_SOLVE_RHS
-      printf("\n\n btf b: %ld (%d x %d)\n", (long)b, (int)LC.nrow, (int)LC.ncol);
+      printf("\n\n btf b=%ld (%d x %d)\n", (long)b, (int)LC.nrow, (int)LC.ncol);
     #endif
 
       //L(C)\x -> y (x = y at output, with unit diagonal L)
@@ -409,7 +409,7 @@ namespace BaskerNS
       upper_tri_solve(UC,x,y);
 
       #ifdef BASKER_DEBUG_SOLVE_RHS
-      printf("Before spmv\n");
+      printf("Before spmv\n"); fflush(stdout);
       printf("Inner Vector y print\n");
       printVec(y, gn);
       printf("Inner Vector x print\n");
@@ -425,7 +425,7 @@ namespace BaskerNS
       }
 
       #ifdef BASKER_DEBUG_SOLVE_RHS
-      printf("After spmv\n");
+      printf("After spmv\n"); fflush(stdout);
       printf("Inner Vector y print\n");
       printVec(y, gn);
       printf("Inner Vector x print\n");
@@ -438,7 +438,7 @@ namespace BaskerNS
     }
 
     #ifdef BASKER_DEBUG_SOLVE_RHS
-    printf("Done, BTF-C Solve \n");
+    printf("Done, BTF-C Solve \n"); fflush(stdout);
     printf("\n x \n");
     printVec(x, gn);
     printf("\n y \n");
@@ -454,7 +454,7 @@ namespace BaskerNS
     }
 
     #ifdef BASKER_DEBUG_SOLVE_RHS
-    printf("Done, SPMV BTF_B UPDATE \n");
+    printf("Done, SPMV BTF_B UPDATE \n"); fflush(stdout);
     printf("\n x \n");
     printVec(x, gn);
     //printf("\n y \n");
@@ -466,7 +466,7 @@ namespace BaskerNS
     //L\x ->y
     serial_forward_solve(x,y);
     #ifdef BASKER_DEBUG_SOLVE_RHS
-    printf("Done, serial_forward \n");
+    printf("Done, serial_forward \n"); fflush(stdout);
     printf("\n x \n");
     printVec(x, gn);
     printf("\n y \n");
@@ -476,7 +476,7 @@ namespace BaskerNS
     //U\y->x
     serial_backward_solve(y,x);
     #ifdef BASKER_DEBUG_SOLVE_RHS
-    printf("Done, serial_backward \n");
+    printf("Done, serial_backward \n"); fflush(stdout);
     printf("\n x \n");
     printVec(x, gn);
     //printf("\n y \n");
@@ -513,14 +513,14 @@ namespace BaskerNS
         //L(C)\x -> y 
         BASKER_MATRIX &LC = L_D(b);
         lower_tri_solve(LC, x, y);
-        //printf( "\n after L solve\n" );
+        //printf( "\n after L solve (b=%d)\n",b ); fflush(stdout);
         //for (Int i = 0; i < gn; i++) printf( " %e %e\n",x(i),y(i));
         //printf( "\n");
 
         //U(C)\y -> x
         BASKER_MATRIX &UC = U_D(b);
         upper_tri_solve(UC, y, x);
-        //printf( "\n after U solve\n" );
+        //printf( "\n after U solve\n" ); fflush(stdout);
         //for (Int i = 0; i < gn; i++) printf( " %e %e\n",x(i),y(i));
         //printf( "\n");
 
@@ -528,7 +528,7 @@ namespace BaskerNS
           //x = BTF_C*y;
           spmv_BTF(b, BTF_D, x, x, false);
         }
-        //printf( "\n after spmv\n" );
+        //printf( "\n after spmv\n" ); fflush(stdout);
         //for (Int i = 0; i < gn; i++) printf( " %e %e\n",x(i),y(i));
         //printf( "\n");
       }

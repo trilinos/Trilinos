@@ -171,9 +171,11 @@ namespace BaskerNS
   {
     BASKER_ASSERT(ncol >= 0, "INIT_COL, ncol > 0");
     MALLOC_INT_1DARRAY(col_ptr, ncol+1);
+    MALLOC_INT_1DARRAY(col_idx, ncol);
     for(Int i = 0; i < ncol+1; ++i)
     {
       col_ptr(i) = (Int) BASKER_MAX_IDX;
+      col_idx(i) = (Int) BASKER_MAX_IDX;
     }
   }//end init_col()
 
@@ -184,6 +186,7 @@ namespace BaskerNS
     for(Int i = 0; i < ncol+1; ++i)
     {
       col_ptr(i) = (Int) BASKER_MAX_IDX;
+      col_idx(i) = (Int) BASKER_MAX_IDX;
     }
     nnz = 0;
     mnnz = 0;
@@ -328,7 +331,7 @@ namespace BaskerNS
   int BaskerMatrix<Int,Entry,Exe_Space>::copy_values
   (
    Int _m, Int _n, Int _nnz,
-	 Int *_col_ptr, Int *_row_idx, Entry *_val
+   Int *_col_ptr, Int *_row_idx, Entry *_val
   )
   {
     if(nrow!=_m)
@@ -580,6 +583,7 @@ namespace BaskerNS
                     << std::endl;
           BASKER_ASSERT(0==1, " ERROR: j is less than srow");
         }
+        //printf( "%d %d, %d %d, %e\n",i,temp_count,j-srow,k,M.val(i) );
         row_idx(temp_count) = j-srow;
         val(temp_count) = M.val(i);
         temp_count++;
@@ -596,6 +600,98 @@ namespace BaskerNS
     col_ptr(0) = (Int) 0;
 
   }//end convert2d(Matrix)
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int,Entry,Exe_Space>::convert2D_unsorted
+  (
+   BASKER_MATRIX &M,
+   BASKER_BOOL   alloc,
+   Int kid
+  )
+  {
+    if(nnz == 0)
+    {
+      for(Int i = 0; i < ncol+1; i++)
+      {
+        col_ptr(i) = 0;
+      }
+
+      MALLOC_INT_1DARRAY(row_idx, 1);
+      row_idx(0) = (Int) 0;
+      MALLOC_ENTRY_1DARRAY(val, 1);
+      val(0) = (Entry) 0;
+      return;
+    }
+
+    //info();
+    //We could check some flag ??
+    //We assume a pre-scan has already happened
+    if(alloc == BASKER_TRUE)
+    {
+      //printf("ALLOC\n");
+      if(nnz > 0)
+      {
+        BASKER_ASSERT(nnz > 0, "matrix row nnz 2");
+        MALLOC_INT_1DARRAY(row_idx, nnz);
+      }
+      else if(nnz == 0)
+      {
+        BASKER_ASSERT((nnz+1)>0, "matrix row nnz 3");
+        MALLOC_INT_1DARRAY(row_idx, nnz+1);
+      }
+    }
+    //init_value(row_idx, nnz, (Int) 0);
+    //printf("clear row: %d \n", nnz);
+    for(Int i = 0; i < nnz; ++i)
+    {
+      //printf("clear row_idx(%d) \n", i);
+      row_idx(i) = 0;
+    }
+
+    if(alloc == BASKER_TRUE)
+    {
+      if(nnz > 0)
+      {
+        BASKER_ASSERT(nnz > 0, "matrix nnz 4");
+        MALLOC_ENTRY_1DARRAY(val, nnz);
+      }
+      else if(nnz == 0)
+      {
+        BASKER_ASSERT((nnz+1) > 0, "matrix nnz 5");
+        MALLOC_ENTRY_1DARRAY(val, nnz+1);
+      }
+    }
+    //init_value(val, nnz, (Entry) 0);
+    for(Int i = 0; i < nnz; ++i)
+    {
+      val(i) = 0;
+    }
+
+    Int temp_count = 0;
+    for(Int k = scol; k < scol+ncol; ++k)
+    {
+      for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++)
+      {
+        Int j = M.row_idx(i);
+        if(j >= srow && j < srow+nrow) {
+          row_idx(temp_count) = j-srow;
+          val(temp_count) = M.val(i);
+          temp_count++;
+        }
+      }
+      col_ptr(k-scol) = temp_count;
+    }
+
+    //NO!!1
+    //Slide over the col counts
+    for(Int i = ncol; i > 0; i--)
+    {
+      col_ptr(i) = col_ptr(i-1);
+    }
+    col_ptr(0) = (Int) 0;
+
+  }//end convert2d_unsorted(Matrix)
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE

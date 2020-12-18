@@ -904,7 +904,11 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     // ----------------------------------------------
     // sort matrix(BTF_A);
     //for (Int j = 0; j < BTF_A.nnz; j++) printf( " - vals_ndbtfa(%d) = %d\n",j,vals_order_ndbtfa_array(j) );
+#if defined(SHYLU_BASKER_SORT_BLOCK_A)
     sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array); //new for replacement
+#else
+    ndsort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array);
+#endif
     #ifdef BASKER_TIMER
     double sortA_time = scotch_timer.seconds();
     std::cout << " ++ Basker apply_scotch : sort(A) time              : " << sortA_time << std::endl;
@@ -915,7 +919,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     printf(" ppT = [\n" );
     for(Int j = 0; j < BTF_A.ncol; j++) {
       for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-        printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+        printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
       }
     }
     printf("];\n");*/
@@ -928,7 +932,9 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       permute_row(BTF_B, order_csym_array);
       //new for sfactor_copy2 replacement
       if ( BTF_B.nnz > 0 ) {
+        #if 0 // no need ??
         sort_matrix_store_valperms(BTF_B, vals_order_ndbtfb_array);
+        #endif
         #ifdef BASKER_TIMER
         double sortB_time = scotch_timer.seconds();
         std::cout << " ++ Basker apply_scotch : sort(B) time              : " << sortB_time << std::endl;
@@ -936,7 +942,9 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         #endif
       }
       if ( BTF_C.nnz > 0 ) {
+        #if 0 // no need ??
         sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array);
+        #endif
         #ifdef BASKER_TIMER
         double sortC_time = scotch_timer.seconds();
         std::cout << " ++ Basker apply_scotch : sort(C) time              : " << sortC_time << std::endl;
@@ -977,7 +985,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //finds the starting point of A for submatrices
     find_2D_convert(BTF_A);
     //now we can fill submatrices
-    //printf("AFTER CONVERT\n");
+    //printf("AFTER CONVERT\n"); fflush(stdout);
     #ifdef BASKER_KOKKOS
     kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this);
     Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
@@ -2028,12 +2036,12 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       #if defined(USE_WORKSPACE_FOR_SORT)
       for(Int i = 0; i < M.col_ptr[k+1]-start_row; i++)
       {
-//printf( " perm[%d] = %d, row_idx[%d] = %d\n",(int)i,(int)perm(i),(int)perm(i),(int)M.row_idx[perm(i)] );
+          //printf( " perm[%d] = %d, row_idx[%d] = %d\n",(int)i,(int)perm(i),(int)perm(i),(int)M.row_idx[perm(i)] );
           iwork[i] = order_vals_perms(perm(i));
           dwork[i] = M.val[perm(i)];
           perm(i)  = M.row_idx[perm(i)];
       }
-//printf( "\n" );
+      //printf( "\n" );
       for(Int i = 0; i < M.col_ptr[k+1]-start_row; i++)
       {
           Int id = start_row+i;
@@ -2059,6 +2067,91 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     return 0;
   }//end sort_matrix()
 
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int,Entry,Exe_Space>::ndsort_matrix_store_valperms( BASKER_MATRIX &M, INT_1DARRAY &order_vals_perms )
+  {
+    Int nblks = tree.nblks;
+    INT_1DARRAY nd_ptr;
+    INT_1DARRAY nd_map;
+    MALLOC_INT_1DARRAY (nd_ptr, nblks+1);
+    MALLOC_INT_1DARRAY (nd_map, M.nrow);
+
+    INT_1DARRAY perm;
+    INT_1DARRAY iwork;
+    ENTRY_1DARRAY dwork;
+    MALLOC_ENTRY_1DARRAY (dwork, M.nrow);
+    MALLOC_INT_1DARRAY (iwork, M.nrow);
+    MALLOC_INT_1DARRAY (perm,  M.nrow);
+
+    //printf( " nrow = %d, nblks = %d\n",M.nrow,nblks );
+    //for(Int k = 0; k <= nblks; k++) printf( "tree[%d] = %d\n",k,tree.row_tabs[k] );
+    for(Int k = 0; k < nblks; k++)
+    {
+      for (Int i = tree.row_tabs[k]; i < tree.row_tabs[k+1]; i++) {
+        nd_map(i) = k;
+      }
+    }
+
+    for(Int k = 0; k < M.ncol; k++)
+    {
+      // count nnz in each ND interior/separator
+      for (Int i = 0; i <= nblks; i++) {
+        nd_ptr(i) = 0;
+      }
+      Int num_upper = 0; // number of nz in the upper-part of diagonal block (for find_2D_convert, upper part needs to come before lower)
+      Int col_id = nd_map(k);
+      for(Int i = M.col_ptr[k]; i < M.col_ptr[k+1]; i++)
+      {
+        Int row_id = nd_map(M.row_idx[i]);
+        nd_ptr(row_id+1) ++;
+        if (row_id == col_id && M.row_idx[i] <= k) {
+          // count nz in upper part of diagonal block
+          num_upper ++;
+        }
+      }
+      for (Int i = 0; i < nblks; i++) {
+        nd_ptr(i+1) += nd_ptr(i);
+      }
+      Int diag_lower_ptr = nd_ptr(col_id) + num_upper;
+      // sort into workspace
+//if (k == 680673)
+//printf( "\n >> k = %d (col_id = %d, num_upper = %d) <<\n",k,col_id,num_upper );
+      for(Int i = M.col_ptr[k]; i < M.col_ptr[k+1]; i++)
+      {
+        Int row_id = nd_map(M.row_idx[i]);
+        Int idx = nd_ptr(row_id);
+//if (k == 680673)
+//printf( " j = %d, row_id = %d, idx = %d ",M.row_idx[i],row_id,idx );
+        if (row_id == col_id && M.row_idx[i] > k) {
+          // shift for nz in lower part of diagonal block
+          idx = diag_lower_ptr;
+//if (k == 680673)
+//printf( " -> %d",idx );
+          diag_lower_ptr ++;
+        } else {
+          nd_ptr(row_id) ++;
+        }
+//if (k == 680673)
+//printf( "\n" );
+        perm[idx]   = order_vals_perms(i);
+        dwork[idx]  = M.val[i];
+        iwork[idx]  = M.row_idx[i];
+      }
+      // copy from workspace
+      Int start_row = M.col_ptr[k];
+      for(Int i = 0; i < M.col_ptr[k+1] - M.col_ptr[k]; i++)
+      {
+        order_vals_perms(start_row + i) = perm[i];
+        M.val[start_row + i]     = dwork[i];
+        M.row_idx[start_row + i] = iwork[i];
+//if (k == 680673)
+//printf(" %d, %d %d %e\n",start_row+i, iwork[i],k, dwork[i] );
+      }
+    }
+    return 0;
+  }
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE

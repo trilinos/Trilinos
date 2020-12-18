@@ -280,6 +280,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     std::cout << " >> symmetric_sfactor::init : " << timer.seconds() << " seconds" << std::endl;
 
     double time1 = 0.0;
+    double time1_2 = 0.0;
+    double time1_3 = 0.0;
     double time2 = 0.0;
     double time3 = 0.0;
     Kokkos::Timer timer1;
@@ -309,10 +311,17 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       #ifdef BASKER_TIMER 
       timer1.reset();
       #endif
-      //e_tree(AL[blk][0], stree, 1);
-      e_tree(ALM(blk)(0), stree, 1);
+      e_tree    (ALM(blk)(0), stree, 1);
+      #ifdef BASKER_TIMER 
+      time1_2 += timer1.seconds();
+      timer1.reset();
+      #endif
       post_order(ALM(blk)(0), stree);
-      col_count(ALM(blk)(0),stree);
+      #ifdef BASKER_TIMER 
+      time1_3 += timer1.seconds();
+      timer1.reset();
+      #endif
+      col_count (ALM(blk)(0), stree);
       #ifdef BASKER_TIMER 
       time1 += timer1.seconds();
       #endif
@@ -396,7 +405,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     }//over all domains
     #ifdef BASKER_TIMER 
     std::cout << " >> symmetric_sfactor::domain : " << timer.seconds() << " seconds" << std::endl;
-    std::cout << "  ++ symmetric_sfactor::domain::postorder : " << time1 << " seconds" << std::endl;
+    std::cout << "  ++ symmetric_sfactor::domain::postorder : " << time1_2 << " + " << time1_3 << " + " << time1 << " seconds" << std::endl;
     std::cout << "  ++ symmetric_sfactor::domain::init      : " << time2 << " seconds" << std::endl;
     std::cout << "  ++ symmetric_sfactor::domain::sfactor   : " << time3 << " seconds" << std::endl;
     timer.reset();
@@ -1022,9 +1031,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   void Basker<Int,Entry,Exe_Space>::col_count
   ( 
    BASKER_MATRIX_VIEW &MV,
-	 BASKER_SYMBOLIC_TREE &ST
+   BASKER_SYMBOLIC_TREE &ST
   )
   {
+printf( " col_count:: view \n" );
     //Still like to find a way to do this without transpose
     BASKER_MATRIX  Mt;
     matrix_transpose(MV, Mt);
@@ -1034,9 +1044,12 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     INT_1DARRAY ws;
     BASKER_ASSERT(ws_size > 0, "Basker col_count assert1: ws_size > 0 failed");
     MALLOC_INT_1DARRAY(ws, ws_size);
-    init_value(ws, ws_size, (Int)0);
+    //init_value(ws, ws_size, (Int)0);
+    //for(Int k = 0; k < ws_size; k++)
+    //{ ws[k] = BASKER_MAX_IDX; }
+    Kokkos::deep_copy(ws, BASKER_MAX_IDX);
+
     INT_1DARRAY delta;
-    //BASKER_ASSERT(ws_size > 0, "Basker col_count assert2: ws_size > 0 failed");
     BASKER_ASSERT(MV.ncol > 0, "Basker col_count assert2: ncol > 0 failed");
     MALLOC_INT_1DARRAY(delta, MV.ncol);
     init_value(delta, MV.ncol, (Int)0);
@@ -1048,8 +1061,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     pleaf  = &(ws[MV.ncol+MV.ncol]);
     first  = &(ws[MV.ncol+MV.ncol+MV.ncol]);
     
-    for(Int k = 0; k < ws_size; k++)
-    {ws[k] = BASKER_MAX_IDX;}
     
     for(Int k = 0; k < MV.ncol; k++)
     {

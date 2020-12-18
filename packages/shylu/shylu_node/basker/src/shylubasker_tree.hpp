@@ -979,6 +979,14 @@ std::cout << " thread_array = malloc ( " << num_threads << " )" << std::endl;
     Int U_row = 0; //Upper Blk row
     Int c_idx = 0; //Col tab offset; used to iterate through tree.col_tabs
 
+    printf( "\n >> find_2D_convert (%d x %d) <<\n\n",M.nrow,M.ncol );
+    for (Int k = 0; k <= tree.nblks; k++) printf( "  row_tabs[%d] = %d\n",k,tree.row_tabs(k));
+#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
+    INT_1DARRAY L_col_idx;
+    INT_1DARRAY U_col_idx;
+    MALLOC_INT_1DARRAY(L_col_idx, tree.nblks);
+    MALLOC_INT_1DARRAY(U_col_idx, tree.nblks);
+#endif
     for(Int k = 0; k < M.ncol; ++k)
     {
       //Fast-forward to first column tab in this column
@@ -994,37 +1002,116 @@ std::cout << " thread_array = malloc ( " << num_threads << " )" << std::endl;
       U_row = 0;
       Int r_idx = 0; //used to iterate through tree.row_tabs
       BASKER_BOOL start_col = BASKER_TRUE;
+#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
+      // first entry in this column
+      Int min_row = M.row_idx(M.col_ptr(k));
+      #if 0
+      // smallest row_idx in this column
+      for (Int i = M.col_ptr(k)+1; i < M.col_ptr(k+1); ++i) {
+        if (min_row > M.row_idx(i)) min_row = M.row_idx(i);
+      }
+      #else
+      // just take the first entry in row_idx for this column
+      #endif
 
+      // last entry in U
+      Int max_row = 0;
+      for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) {
+        Int j = M.row_idx(i);
+        if (j <= k && M.row_idx(i) > max_row) max_row = M.row_idx(i);
+      }
+
+      U_row = 0;
+      r_idx = 0;
+      while(max_row >= tree.row_tabs(r_idx+1))
+      {
+        if((U_row+1 < LU_size(U_col)) &&
+           (tree.row_tabs(r_idx+1) == AVM(U_col)(U_row+1).srow))
+        {
+          U_row++;
+        }
+        r_idx++;
+      }
+      Int U_row_max = U_row;
+      Int r_idx_max = r_idx;
+
+      Kokkos::deep_copy(L_col_idx, BASKER_MAX_IDX);
+      Kokkos::deep_copy(U_col_idx, BASKER_MAX_IDX);
+#endif
+
+//#define MY_DEBUG
+#ifdef MY_DEBUG
+      printf( "\n >> k = %d <<\n",k );
+#endif
       for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) //offsets to row_idx - will yield range of row values to col k
       {
-
         Int j = M.row_idx(i); //first row id entry in col k
 
         //Get right blk
-        while(j >= tree.row_tabs(r_idx+1))
-        {
-          if(j > k) //lower
+#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
+        if (j == min_row) {
+          start_col = BASKER_TRUE;
+        } else {
+          start_col = BASKER_FALSE;
+        }
+#endif
+        if(j > k) { //lower
+#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
+          L_row = 0;
+          U_row = U_row_max;
+          r_idx = r_idx_max;
+#endif
+          while(j >= tree.row_tabs(r_idx+1))
           {
             if((L_row+1 < LL_size(L_col)) &&
-                (tree.row_tabs(r_idx+1) == ALM(L_col)(L_row+1).srow))
+               (tree.row_tabs(r_idx+1) == ALM(L_col)(L_row+1).srow))
             {
               L_row++;
               BASKER_ASSERT(L_row < LL_size(L_col), " Wrong L in A to 2d");
               start_col = BASKER_TRUE;
             }
+            r_idx++;
           }
-          else if(j <= k) //upper
+        } else if(j <= k) { //upper
+#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
+          L_row = 0;
+          U_row = 0;
+          r_idx = 0;
+#endif
+          while(j >= tree.row_tabs(r_idx+1))
           {
             if((U_row+1 < LU_size(U_col)) &&
-                (tree.row_tabs(r_idx+1) == AVM(U_col)(U_row+1).srow))
+               (tree.row_tabs(r_idx+1) == AVM(U_col)(U_row+1).srow))
             {
               U_row++;
               BASKER_ASSERT(U_row < LU_size(U_col), " Wrong U in A to 2d");
               start_col = BASKER_TRUE;
             }
+            r_idx++;
           }
-          r_idx++;
         }
+#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
+        if (start_col) {
+          if (j >= k) {
+            //start_col = (L_col_idx(L_row) == BASKER_MAX_IDX || L_col_idx(L_row) > j);
+            start_col = (L_col_idx(L_row) == BASKER_MAX_IDX);
+          } else {
+            start_col = (U_col_idx(U_row) == BASKER_MAX_IDX);
+            //start_col = (U_col_idx(U_row) == BASKER_MAX_IDX || U_col_idx(U_row) > j);
+          }
+        }
+#endif
+#ifdef MY_DEBUG
+        std::cout << " > " << (j > k ? " lower" : " upper" ) << " --> "
+                  << "  L(" << L_col << ", " << L_row << ") "
+                  << "  U(" << U_col << ", " << U_row << ") "
+                  << " with j = " << j << " and k = " << k
+                  << ", LU_size( " << U_col << " ) = " << LU_size(U_col)
+                  << " r_idx = " << r_idx
+                  << " start_col = " << start_col
+                  << std::endl;
+#endif
+
 
         //Get Matrix Ref
         BASKER_MATRIX &Ltemp = ALM(L_col)(L_row);
@@ -1032,48 +1119,62 @@ std::cout << " thread_array = malloc ( " << num_threads << " )" << std::endl;
         Int bcol  = Ltemp.scol;
 
         //diag blk
-        if((L_row==0)&&(U_row==LU_size(U_col)-1))
+        if(L_row == 0 &&  U_row == LU_size(U_col)-1)
         {
           if(start_col == BASKER_TRUE)
           {
+#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
+            L_col_idx(L_row) = j;
+#endif
             Ltemp.col_ptr(k-bcol) = i;
+#ifdef MY_DEBUG
+            std::cout << " > L ( " << L_col << ", " << L_row << " ).col_ptr( " << k - bcol << ") = " << i << " with k = " << k << " and j = " << j << std::endl;
+#endif
           }
           Ltemp.nnz = Ltemp.nnz+1;
         }
         else //offdig
         {
-          if(j > k)
+          if (j > k)
           {
             if(start_col == BASKER_TRUE)
             {
+#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
+              L_col_idx(L_row) = j;
+#endif
               Ltemp.col_ptr(k-bcol) = i;
+#ifdef MY_DEBUG
+              std::cout << " + L ( " << L_col << ", " << L_row << " ).col_ptr( " << k - bcol << ") = " << i << std::endl;
+#endif
             }
             Ltemp.nnz = Ltemp.nnz+1;
-          }
-
-          if( j < k)
+          } else if (j < k)
           {
             if(start_col == BASKER_TRUE)
             {
+#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
+              U_col_idx(U_row) = j;
+#endif
               Utemp.col_ptr(k-bcol) = i;
+#ifdef MY_DEBUG
+              std::cout << " + U ( " << U_col << ", " << U_row << " ).col_ptr( " << k - bcol << ") = " << i << std::endl;
+#endif
             }
             Utemp.nnz = Utemp.nnz+1;
-          }
-
-          if(j == k)
+          } else //if(j == k)
           {
             // printf("Error: L: %d %d U: %d %d Usize: %d \n",L_col, L_row, U_col, U_row, LU_size[U_col]);
-            std::cout << "Error: L: " << L_col << " " << L_row
-              << " U: " << U_col << " " << U_row
-              << " Usize: " << LU_size[U_col] 
-              << std::endl;
+            std::cout << std::endl
+                      << "Error: L(" << L_col << ", " << L_row << ") "
+                            << " U(" << U_col << ", " << U_row << ") "
+                      << " with j = " << j << ", k = " << k << ", and " 
+                      << " Usize = " << LU_size[U_col] 
+                      << std::endl << std::endl;
             BASKER_ASSERT(0==1, "A2D offdiag blk with diag element");
           }
         }
         start_col = BASKER_FALSE;
-
       }//over each row	
-
     }//over each colunm
 
   }//end find_2d_convert()
@@ -1211,7 +1312,7 @@ std::cout << " thread_array = malloc ( " << num_threads << " )" << std::endl;
   // NDE: sfactor_copy2 is now only responsible for mapping blocks to 2D blocks
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::sfactor_copy2()
+  int Basker<Int,Entry,Exe_Space>::sfactor_copy2(bool copy_BTFA)
   {
     //Timers
     #ifdef BASKER_TIMER_FINE

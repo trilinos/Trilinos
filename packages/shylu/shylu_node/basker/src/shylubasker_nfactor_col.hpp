@@ -2888,7 +2888,6 @@ namespace BaskerNS
     }
     else
     {
-
       basker_barrier.BarrierDomain(leader_kid,
          my_kid, 
          function_n,
