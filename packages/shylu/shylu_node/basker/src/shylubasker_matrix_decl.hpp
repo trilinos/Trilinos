@@ -73,7 +73,8 @@ namespace BaskerNS
     BASKER_INLINE
     void convert2D(BASKER_MATRIX &M, 
                    BASKER_BOOL alloc, 
-                   Int kid);
+                   Int kid,
+                   bool remove_zeros = false);
     BASKER_INLINE
     void convert2D_unsorted(BASKER_MATRIX &M, 
                             BASKER_BOOL alloc, 

@@ -483,7 +483,8 @@ namespace BaskerNS
   (
    BASKER_MATRIX &M,
    BASKER_BOOL   alloc,
-   Int kid
+   Int kid,
+   bool keep_zeros
   )
   {
     if(nnz == 0)
@@ -544,8 +545,8 @@ namespace BaskerNS
       val(i) = 0;
     }
 
+    const Entry zero(0.0);
     Int temp_count = 0;
-
     for(Int k = scol; k < scol+ncol; ++k)
     {
       //note col_ptr[k-scol] contains the starting index (by find_2D_convert)
@@ -584,9 +585,12 @@ namespace BaskerNS
           BASKER_ASSERT(0==1, " ERROR: j is less than srow");
         }
         //printf( "%d %d, %d %d, %e\n",i,temp_count,j-srow,k,M.val(i) );
-        row_idx(temp_count) = j-srow;
-        val(temp_count) = M.val(i);
-        temp_count++;
+        if (keep_zeros || M.val(i) != zero)
+        {
+          row_idx(temp_count) = j-srow;
+          val(temp_count) = M.val(i);
+          temp_count++;
+        }
       }
       col_ptr(k-scol) = temp_count;
     }

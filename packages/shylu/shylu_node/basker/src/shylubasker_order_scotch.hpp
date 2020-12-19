@@ -42,25 +42,26 @@ namespace BaskerNS
   {
     BASKER_MATRIX T;
     //get matrix transpose
-    matrix_transpose(M,T);
+    matrix_transpose(M, T);
    
     C.set_shape(M.srow, M.nrow, M.scol, M.ncol);
 
-    BASKER_ASSERT((M.ncol+1) > 0, "scotch ncol"); 
-    MALLOC_INT_1DARRAY(C.col_ptr, M.ncol+1);
-    init_value(C.col_ptr, M.ncol+1, (Int) 0);
-    BASKER_ASSERT(M.nnz > 0, "scotch nnz");
-    MALLOC_INT_1DARRAY(C.row_idx, 2*M.nnz);
-    init_value(C.row_idx, 2*M.nnz, (Int) 0);
+    //BASKER_ASSERT((M.ncol+1) > 0, "scotch ncol"); 
+    BASKER_ASSERT(M.nrow > 0, "scotch nrow");
+    BASKER_ASSERT(M.nnz  > 0, "scotch nnz");
 
+    MALLOC_INT_1DARRAY(C.col_ptr, M.ncol+1);
+    MALLOC_INT_1DARRAY(C.row_idx, 2*M.nnz);
+
+    //init_value(C.col_ptr, M.ncol+1, (Int) 0);
+    //init_value(C.row_idx, 2*M.nnz, (Int) 0);
     
     INT_1DARRAY ws;
-    BASKER_ASSERT(M.nrow > 0, "scotch nrow");
     MALLOC_INT_1DARRAY(ws, M.nrow);
     init_value(ws, M.nrow, BASKER_MAX_IDX);
     
-
     Int c_nnz = 0;
+    C.col_ptr(0) = 0;
     for(Int k = 0 ; k <  M.ncol; ++k)
     {
       //scatter M
@@ -92,10 +93,12 @@ namespace BaskerNS
     
     //sort columns??
 
+    #if 0
     //can be remove after debuggin
     BASKER_ASSERT(c_nnz > 0, "C.val scotch");
-    MALLOC_ENTRY_1DARRAY(C.val,c_nnz);
+    MALLOC_ENTRY_1DARRAY(C.val, c_nnz);
     init_value(C.val,c_nnz, (Entry)1.0);
+    #endif
     C.nnz = c_nnz;
 
     FREE(T);

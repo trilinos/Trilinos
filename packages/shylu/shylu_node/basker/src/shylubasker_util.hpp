@@ -40,6 +40,7 @@ namespace BaskerNS
 
     Basker<Int,Entry,Exe_Space>  *basker;
     BASKER_BOOL                  alloc;
+    BASKER_BOOL                  remove_zero;
 
 
     kokkos_order_init_2D()
@@ -51,10 +52,11 @@ namespace BaskerNS
       alloc  = BASKER_TRUE;
     }//end kokkos_order_init_2D()
 
-    kokkos_order_init_2D(Basker<Int,Entry,Exe_Space> *_b, BASKER_BOOL _alloc)
+    kokkos_order_init_2D(Basker<Int,Entry,Exe_Space> *_b, BASKER_BOOL _alloc, BASKER_BOOL _remove_zero)
     {
-      basker = _b;
-      alloc  = _alloc;
+      basker      = _b;
+      alloc       = _alloc;
+      remove_zero = _remove_zero;
     }
       
 
@@ -69,7 +71,7 @@ namespace BaskerNS
       Int kid = (Int)(thread.league_rank()*thread.team_size() + thread.team_rank());
       #endif
       {
-        basker->t_init_2DA(kid, alloc);
+        basker->t_init_2DA(kid, alloc, remove_zero);
       }
     }//end operator()
 
@@ -570,7 +572,7 @@ namespace BaskerNS
   BASKER_INLINE
   void Basker<Int, Entry, Exe_Space>::t_init_2DA
   (
-   Int kid, BASKER_BOOL alloc
+   Int kid, BASKER_BOOL alloc, BASKER_BOOL remove_zero
   )
   {
     /*printf(" BTF_A_2D = [\n" );
@@ -1815,93 +1817,50 @@ namespace BaskerNS
     AT.ncol = M.nrow;
     AT.nnz  = M.nnz;
 
-    BASKER_ASSERT((AT.ncol+1)>0, "util trans ncol");
+    BASKER_ASSERT((AT.ncol+1) > 0, "util trans ncol");
+    BASKER_ASSERT((AT.nnz)    > 0, "util trans nnz");
+
     MALLOC_INT_1DARRAY(AT.col_ptr, AT.ncol+1);
-    init_value(AT.col_ptr, AT.ncol+1, (Int)0);
     MALLOC_INT_1DARRAY(AT.row_idx, AT.nnz);
-    BASKER_ASSERT((AT.nnz)>0, "util trans nnz");
-    init_value(AT.row_idx, AT.nnz, (Int)0);
-    MALLOC_ENTRY_1DARRAY(AT.val    , AT.nnz);
-    init_value(AT.val,     AT.nnz, (Entry)1.0);
+    //MALLOC_ENTRY_1DARRAY(AT.val    , AT.nnz);
+    //init_value(AT.col_ptr, AT.ncol+1, (Int)0);
+    //init_value(AT.row_idx, AT.nnz, (Int)0);
+    ///init_value(AT.val,     AT.nnz, (Entry)1.0);
 
-    //Setup a litte workspace
-    const Int ws_size = M.nrow;
-    INT_1DARRAY ws;
-    BASKER_ASSERT(ws_size > 0, "util trans ws");
-    MALLOC_INT_1DARRAY(ws, ws_size);
-
-    for(Int j = 0; j < ws_size; ++j)
-    {
-      ws(j) = (Int) 0;
-    }
+    Kokkos::deep_copy(AT.col_ptr, 0);
+    //for(Int j = 0; j <= AT.ncol; ++j)
+    //{
+    //  AT.col_ptr(j) = (Int) 0;
+    //}
     
-    //Note could get number of nonzeros here inplace of nnz() for faster
-
+Kokkos::Timer timer;
     //get row counts
-    Int total =0 ;
-    Int maxv  =0;
     for(Int j = M.col_ptr(0); j < M.col_ptr(M.ncol); ++j)
     {
-      if(M.row_idx(j) > maxv)
-      {
-        maxv = M.row_idx(j);
-      }
-      if(M.row_idx(j) > (ws_size-1))
-      {
-        printf("error type 1\n");
-      }
-      ws(M.row_idx(j)) = ws(M.row_idx(j)) + 1;
-
-      total++;
+      AT.col_ptr(1+M.row_idx(j)) ++;
     }
-    //printf("got row counts, total: %d  %d \n", total, M.nnz);
-    //printf("debug 0: %d 1: %d 2: %d 3: %d \n",
-    //	   ws(0), ws(1), ws(2), ws(3));
-    //printf("max idx: %d nrow: %d wssize: %d \n", 
-    //	   maxv, M.nrow, ws_size); 
 
-    //write stupid code!
-    //add them all up
-    total = 0;
-    //Int total2 = 0; //Not used
-    for(Int j = 0; j < ws_size; ++j)
-    {
-      total = total + ws(j);
-      //total2 = total2 + ws_test[j];
-    }
-   
+    // make into offset
     for(Int j = 1; j < M.nrow; ++j)
     {
-      ws(j)  = ws(j) + ws(j-1);
-    }//for-j
+      AT.col_ptr(j) += AT.col_ptr(j-1);
+    }
   
-    //copy over to AT
-    AT.col_ptr(0) = (Int) 0;
-    for(Int j = 1; j <= M.nrow; ++j)
-    {
-      AT.col_ptr(j) = ws(j-1);
-    }
-
-    //set ws
-    for(Int j = 0; j < M.nrow; ++j)
-    {
-      ws(j) = AT.col_ptr(j);
-    }
-
     for(Int k = 0; k < M.ncol; ++k)
     {
       for(Int j = M.col_ptr(k); j < M.col_ptr(k+1); ++j)
       {
-        if(ws(M.row_idx(j)) >= AT.nnz)
-        { 
-          printf("error \n");
-        }
-        AT.row_idx(ws(M.row_idx(j))++) = k; 
-        //starting at zero
+        AT.row_idx(AT.col_ptr(M.row_idx(j))++) = k; 
       }
     }
-    
-    FREE_INT_1DARRAY(ws);
+
+    // recover offset
+    for(Int j = M.nrow; j > 0; --j)
+    {
+      AT.col_ptr(j) = AT.col_ptr(j-1);
+    }//for-j
+    AT.col_ptr(0) = 0;
+std::cout << " matrix_trans: " << timer.seconds() << std::endl;
   }//end matrix_transpose
 
   
@@ -1921,14 +1880,17 @@ namespace BaskerNS
     AT.ncol = MV.ncol;
     AT.nnz  = MV.nnz();
 
-    BASKER_ASSERT((AT.ncol+1)>0, "util trans ncol2");
+printf( " matrix-transpose: view\n" );
+    BASKER_ASSERT((AT.ncol+1) > 0, "util trans ncol2");
+    BASKER_ASSERT(AT.nnz      > 0, "util trans nnz2");
+
     MALLOC_INT_1DARRAY(AT.col_ptr, AT.ncol+1);
-    init_value(AT.col_ptr, AT.ncol+1, (Int)0);
-    BASKER_ASSERT(AT.nnz > 0, "util trans nnz2");
     MALLOC_INT_1DARRAY(AT.row_idx, AT.nnz);
-    init_value(AT.row_idx, AT.nnz, (Int)0);
-    MALLOC_ENTRY_1DARRAY(AT.val    , AT.nnz);
-    init_value(AT.val,     AT.nnz, (Entry)1.0);
+    //MALLOC_ENTRY_1DARRAY(AT.val    , AT.nnz);
+
+    //init_value(AT.col_ptr, AT.ncol+1, (Int)0);
+    //init_value(AT.row_idx, AT.nnz, (Int)0);
+    ///init_value(AT.val,     AT.nnz, (Entry)1.0);
 
     //Setup a litte workspace
     Int ws_size = MV.nrow;

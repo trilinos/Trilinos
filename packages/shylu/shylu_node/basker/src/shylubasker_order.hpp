@@ -799,9 +799,11 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //thread counts
     init_tree_thread();
     #ifdef BASKER_TIMER
+    Kokkos::Timer scotch_amd_timer;
     double tree_time = scotch_timer.seconds();
     std::cout << " ++ Basker apply_scotch : init tree time            : " << tree_time << std::endl;
     scotch_timer.reset();
+    double csymamd_time = 0.0;
     #endif
 
 
@@ -811,15 +813,19 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     if (1) {
       BASKER_MATRIX AAT;
       AplusAT(BTF_A, AAT);
+      #ifdef BASKER_TIMER
+      double apat_time = scotch_timer.seconds();
+      std::cout << " ++ Basker apply_scotch : ++ AplusAT  : " << apat_time << std::endl;
+      #endif
 
       INT_1DARRAY tempp;
       INT_1DARRAY temp_col;
       INT_1DARRAY temp_row;
-      ENTRY_1DARRAY temp_val;
       MALLOC_INT_1DARRAY  (tempp,    AAT.ncol);
       MALLOC_INT_1DARRAY  (temp_col, AAT.ncol+1);
       MALLOC_INT_1DARRAY  (temp_row, AAT.nnz);
-      MALLOC_ENTRY_1DARRAY(temp_val, AAT.nnz);
+      //ENTRY_1DARRAY temp_val;
+      //MALLOC_ENTRY_1DARRAY(temp_val, AAT.nnz);
 
       for(Int b = 0; b < tree.nblks; ++b) {
         Int frow = tree.col_tabs(b);
@@ -829,7 +835,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         for(Int k = frow; k < erow; k++) {
           for(Int i = AAT.col_ptr(k); i < AAT.col_ptr(k+1); i++) {
             if(AAT.row_idx(i) >= frow && AAT.row_idx(i) < erow) {
-              temp_val(nnz) = AAT.val(i);
               temp_row(nnz) = AAT.row_idx(i) - frow;
               nnz++;
             }
@@ -843,8 +848,14 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
         double l_nnz = 0;
         double lu_work = 0;
+        #ifdef BASKER_TIMER
+        scotch_amd_timer.reset();
+        #endif
         BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), &(temp_row(0)),
                                         &(tempp(0)), l_nnz, lu_work);
+        #ifdef BASKER_TIMER
+        csymamd_time += scotch_amd_timer.seconds();
+        #endif
         for(Int k = 0; k < blk_size; k++)
         {
           order_csym_array(frow+tempp(k)) = frow+k;
@@ -863,7 +874,14 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       // call Constrained symamd on A
       //printf("============CALLING CSYMAMD============\n");
       init_value(order_csym_array, BTF_A.ncol, (Int)0);
+
+      #ifdef BASKER_TIMER
+      scotch_amd_timer.reset();
+      #endif
       csymamd_order(BTF_A, order_csym_array, cmember);
+      #ifdef BASKER_TIMER
+      csymamd_time = scotch_amd_timer.seconds();
+      #endif
     }
     #if 0 // reset to I for debug
     printf( " >> debug: set order_csym_array to identity <<\n" );
@@ -874,8 +892,9 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //permute_col(BTF_A, order_csym_array);
     //sort_matrix(BTF_A); // unnecessary?
     #ifdef BASKER_TIMER
-    double csymamd_time = scotch_timer.seconds();
-    std::cout << " ++ Basker apply_scotch : constrained symm amd time : " << csymamd_time << std::endl;
+    double csymamd_tot_time = scotch_timer.seconds();
+    std::cout << " ++ Basker apply_scotch : constrained symm amd time : " << csymamd_tot_time
+              << " (" << csymamd_time << ")" << std::endl;
     scotch_timer.reset();
     #endif
     /*printf(" After cAMD\n");
@@ -903,6 +922,9 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
     // ----------------------------------------------
     // sort matrix(BTF_A);
+    #ifdef BASKER_TIMER
+    Kokkos::Timer scotch_sort_timer;
+    #endif
     //for (Int j = 0; j < BTF_A.nnz; j++) printf( " - vals_ndbtfa(%d) = %d\n",j,vals_order_ndbtfa_array(j) );
 #if defined(SHYLU_BASKER_SORT_BLOCK_A)
     sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array); //new for replacement
@@ -911,7 +933,9 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 #endif
     #ifdef BASKER_TIMER
     double sortA_time = scotch_timer.seconds();
-    std::cout << " ++ Basker apply_scotch : sort(A) time              : " << sortA_time << std::endl;
+    double sortA_time1 = scotch_sort_timer.seconds();
+    std::cout << " ++ Basker apply_scotch : sort(A) time              : " << sortA_time
+              << " ( " << sortA_time1 << " )" << std::endl;
     scotch_timer.reset();
     #endif
     /*printf( " After sort(A)\n" );

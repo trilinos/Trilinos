@@ -1279,7 +1279,7 @@ std::cout << " thread_array = malloc ( " << num_threads << " )" << std::endl;
 
       //Fill 2D structure
       #ifdef BASKER_KOKKOS
-      kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, BASKER_FALSE);
+      kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, BASKER_FALSE, BASKER_FALSE);
       Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
       Kokkos::fence();
       #else
@@ -1326,7 +1326,7 @@ std::cout << " thread_array = malloc ( " << num_threads << " )" << std::endl;
     Kokkos::Timer timer_sort;
     #endif
 
-    if(btf_tabs_offset != 0)
+    if(copy_BTFA && btf_tabs_offset != 0)
     {
       //=====Move into 2D ND-Structure====/
       //Find submatices view shapes
@@ -1346,7 +1346,7 @@ std::cout << " thread_array = malloc ( " << num_threads << " )" << std::endl;
 
       //Fill 2D structure
       #ifdef BASKER_KOKKOS
-      kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, BASKER_FALSE); // t_init_2DA; fill row_idx, vals into ALM, AVM calling convert2D
+      kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, BASKER_FALSE, BASKER_FALSE); // t_init_2DA; fill row_idx, vals into ALM, AVM calling convert2D
       Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
       Kokkos::fence();
       #else

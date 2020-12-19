@@ -140,7 +140,9 @@ namespace BaskerNS
     void t_init_workspace(bool flag, Int kid);
 
     BASKER_INLINE
-    void t_init_2DA(Int kid, BASKER_BOOL _alloc = BASKER_FALSE);
+    void t_init_2DA(Int kid,
+                    BASKER_BOOL _alloc = BASKER_FALSE,
+                    BASKER_BOOL keep_zeros = BASKER_TRUE);
 
     BASKER_INLINE
     #ifdef BASKER_KOKKOS

@@ -876,9 +876,11 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
    BASKER_SYMBOLIC_TREE &ST
    )
   {
+Kokkos::Timer timer;
     //Still like to find a way to do this without transpose
     BASKER_MATRIX  Mt;
     matrix_transpose(MV, Mt);
+std::cout << " col_count_1 : " << timer.seconds() << std::endl; timer.reset(); 
     Int *post   = &(ST.post(0));
     Int *parent = &(ST.parent(0));
    
@@ -886,11 +888,11 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     INT_1DARRAY ws;
     BASKER_ASSERT(ws_size > 0, "Basker col_count assert1: col_count ws_size > 0 failed");
     MALLOC_INT_1DARRAY(ws, ws_size);
-    init_value(ws, ws_size, (Int)0);
     INT_1DARRAY delta;
     BASKER_ASSERT(MV.ncol > 0, "Basker col_count assert2: ncol > 0 failed");
     MALLOC_INT_1DARRAY(delta, MV.ncol);
-    init_value(delta, MV.ncol, (Int)0);
+    //init_value(delta, MV.ncol, (Int)0);
+    //init_value(ws, ws_size, (Int)0);
 
     Int jleaf=0;
     Int *past, *mfirst, *pleaf, *first;
@@ -898,11 +900,11 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     mfirst = &(ws(MV.ncol));
     pleaf  = &(ws(MV.ncol+MV.ncol));
     first  = &(ws(MV.ncol+MV.ncol+MV.ncol));
-    
 
     for(Int k = 0; k < ws_size; k++)
       {ws(k) = BASKER_MAX_IDX;}
-    
+std::cout << " col_count_2 : " << timer.seconds() << std::endl; timer.reset(); 
+   
     for(Int k = 0; k < MV.ncol; k++)
     {
       //Leaving post out
@@ -924,6 +926,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         first[j] = k; // update with parent
       }
     }//initalize the delta counts for overlap
+std::cout << " col_count_3 : " << timer.seconds() << std::endl; timer.reset(); 
 
     // Create a linked list of the cliques
     //Cliques are need for nonsymmtrix A'A case
@@ -958,6 +961,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       // End create a linked list of the cliques
 
     }
+std::cout << " col_count_4 : " << timer.seconds() << std::endl; timer.reset(); 
     // reset past
     for(Int k = 0; k < MV.ncol; k++)
     {past[k] = k;}
@@ -979,8 +983,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       J = (Options.symmetric) ? BASKER_MAX_IDX: next[J])
       */
       for(Int J = ((Options.symmetric) ? j : head[k]);
-          J != BASKER_MAX_IDX;
-          J = ((Options.symmetric) ? BASKER_MAX_IDX:next[J]))
+              J != BASKER_MAX_IDX;
+              J = ((Options.symmetric) ? BASKER_MAX_IDX : next[J]))
       {
         for(Int p = Mt.col_ptr(J); p < Mt.col_ptr(J+1); ++p)
         {
@@ -998,6 +1002,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       if(parent[j] != BASKER_MAX_IDX)
       {past[j] = parent[j];}
     }//over all col/row
+std::cout << " col_count_5 : " << timer.seconds() << std::endl; timer.reset(); 
 
 
     for(Int k = 0; k < MV.ncol; k++)
@@ -1018,6 +1023,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     {
       ST.col_counts[i] = delta[i];
     }
+std::cout << " col_count_6 : " << timer.seconds() << std::endl; timer.reset(); 
    
     // Clean up workspace
     FREE(ws);
