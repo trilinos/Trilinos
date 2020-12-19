@@ -80,6 +80,7 @@ public:
 
   HostMesh(const stk::mesh::BulkData& b) : bulk(&b)
   {
+    require_ngp_mesh_rank_limit(bulk->mesh_meta_data());
   }
 
   ~HostMesh()

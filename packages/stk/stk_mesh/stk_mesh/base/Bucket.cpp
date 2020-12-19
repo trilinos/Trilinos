@@ -248,6 +248,7 @@ Bucket::Bucket(BulkData & arg_mesh,
     m_entity_rank(arg_entity_rank),
     m_topology(),
     m_key(arg_key),
+    m_partOrdsBeginEnd(m_key.data()+1,m_key.data()+m_key[0]),
     m_capacity(arg_capacity),
     m_size(0),
     m_bucket_id(bucket_id),
@@ -390,8 +391,8 @@ void Bucket::change_existing_permutation_for_connected_edge(unsigned bucket_ordi
 
 bool Bucket::member( const Part & part ) const
 {
-  const unsigned * const i_beg = key() + 1 ;
-  const unsigned * const i_end = key() + key()[0] ;
+  const unsigned * const i_beg = m_partOrdsBeginEnd.first;
+  const unsigned * const i_end = m_partOrdsBeginEnd.second;
 
   const unsigned ord = part.mesh_meta_data_ordinal();
   const unsigned * const i = std::lower_bound( i_beg , i_end , ord );
@@ -653,6 +654,33 @@ unsigned Bucket::get_ngp_field_bucket_id(unsigned fieldOrdinal) const
 unsigned Bucket::get_ngp_field_bucket_is_modified(unsigned fieldOrdinal) const
 {
   return m_ngp_field_is_modified[fieldOrdinal];
+}
+
+void Bucket::reset_part_ord_begin_end()
+{
+  m_partOrdsBeginEnd.first = m_key.data()+1;
+  m_partOrdsBeginEnd.second = m_key.data()+m_key[0];
+}
+
+void Bucket::reset_bucket_key(const OrdinalVector& newPartOrdinals)
+{
+  unsigned partitionCount = m_key[m_key.size() - 1];
+  unsigned newPartCount = newPartOrdinals.size();
+
+  m_key.resize(newPartCount + 2);
+  m_key[0] = newPartCount + 1;
+  m_key[newPartCount+1] = partitionCount;
+
+  for(unsigned i = 0; i < newPartCount; i++) {
+    m_key[i+1] = newPartOrdinals[i];
+  }
+}
+
+void Bucket::reset_bucket_parts(const OrdinalVector& newPartOrdinals)
+{
+  reset_bucket_key(newPartOrdinals);
+  reset_part_ord_begin_end();
+  supersets(m_parts);
 }
 
 void Bucket::mark_for_modification()

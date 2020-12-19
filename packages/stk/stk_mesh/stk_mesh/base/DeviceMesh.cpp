@@ -113,6 +113,8 @@ void DeviceMesh::update_mesh()
 {
   if (is_up_to_date()) return;
 
+  require_ngp_mesh_rank_limit(bulk->mesh_meta_data());
+
   const bool anyChanges = fill_buckets(*bulk);
 
   if (anyChanges) {

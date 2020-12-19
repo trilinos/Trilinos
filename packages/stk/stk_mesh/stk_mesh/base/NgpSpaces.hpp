@@ -75,6 +75,12 @@ using UVMMemSpace = Kokkos::OpenMP;
 using UVMMemSpace = Kokkos::HostSpace;
 #endif
 
+#ifdef KOKKOS_ENABLE_CUDA
+using HostPinnedSpace = Kokkos::CudaHostPinnedSpace;
+#else
+using HostPinnedSpace = MemSpace;
+#endif
+
 using ScheduleType = Kokkos::Schedule<Kokkos::Dynamic>;
 
 }

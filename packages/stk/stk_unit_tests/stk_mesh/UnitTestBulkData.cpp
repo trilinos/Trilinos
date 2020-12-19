@@ -72,6 +72,7 @@
 #include "stk_mesh/baseImpl/EntityGhostData.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_unit_test_utils/stk_mesh_fixtures/BoxFixture.hpp"  // for BoxFixture
+#include "stk_unit_test_utils/stk_mesh_fixtures/TestHexFixture.hpp"
 #include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture, etc
 #include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"  // for QuadFixture
 #include "stk_unit_test_utils/stk_mesh_fixtures/RingFixture.hpp"  // for RingFixture
@@ -1985,28 +1986,28 @@ TEST(BulkData, testParallelSideCreationWithoutAura)
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
+class BulkDataWithHexes : public stk::mesh::fixtures::TestHexFixture {};
+
 // Testing of field_data_footprint(.)
-TEST(BulkData, test_total_field_data_footprint )
+TEST_F(BulkDataWithHexes, test_total_field_data_footprint )
 {
     // Test 3x1x1 HexFixture structure
     const unsigned NX = 3;
     const unsigned NY = 1;
     const unsigned NZ = 1;
-    stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
-    hf.m_meta.commit();
-    hf.generate_mesh();
+    setup_mesh(NX, NY, NZ);
 
-    const stk::mesh::BulkData &mesh = hf.m_bulk_data;
+    const stk::mesh::BulkData &mesh = get_bulk();
 
     // Call function we're testing
-    size_t field_data_footprint = stk::mesh::get_total_ngp_field_allocation_bytes(hf.m_coord_field);
+    size_t field_data_footprint = stk::mesh::get_total_ngp_field_allocation_bytes(get_coord_field());
 
     // Alternative computation explicitly gathers buckets.
     size_t node_fields_footprint = 0;
     const stk::mesh::BucketVector &node_buckets = mesh.buckets(stk::topology::NODE_RANK);
     for(size_t i = 0; i < node_buckets.size(); ++i)
     {
-        node_fields_footprint += node_buckets[i]->capacity() * field_bytes_per_entity(hf.m_coord_field, *node_buckets[i]);
+        node_fields_footprint += node_buckets[i]->capacity() * field_bytes_per_entity(get_coord_field(), *node_buckets[i]);
     }
 
     EXPECT_EQ(node_fields_footprint, field_data_footprint);
@@ -2015,17 +2016,15 @@ TEST(BulkData, test_total_field_data_footprint )
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 // Testing of get_buckets and get_entities functions
-TEST(BulkData, test_get_entities )
+TEST_F(BulkDataWithHexes, test_get_entities )
 {
     // Test 3x4x4 HexFixture structure
     const unsigned NX = 3;
     const unsigned NY = 4;
     const unsigned NZ = 40;
-    stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
+    setup_mesh(NX, NY, NZ);
 
-    hf.m_meta.commit();
-    hf.generate_mesh();
-    const stk::mesh::BulkData &mesh = hf.m_bulk_data;
+    const stk::mesh::BulkData &mesh = get_bulk();
 
     Selector select_owned(mesh.mesh_meta_data().locally_owned_part());
     const stk::mesh::BucketVector &bucket_ptrs = mesh.get_buckets(stk::topology::NODE_RANK, select_owned);

@@ -40,7 +40,8 @@ cmake \
 -DMPI_BASE_DIR:PATH=$mpi_base_dir \
 -DSTK_ENABLE_TESTS:BOOL=ON \
 -DTrilinos_ENABLE_STK:BOOL=ON \
--DTrilinos_ENABLE_STKMesh:BOOL=OFF \
+-DTrilinos_ENABLE_STKMesh:BOOL=ON \
+-DTrilinos_ENABLE_STKIO:BOOL=OFF \
 -DTrilinos_ENABLE_STKTransfer:BOOL=ON \
 -DTrilinos_ENABLE_STKUnit_tests:BOOL=ON \
 -DTrilinos_ENABLE_STKDoc_tests:BOOL=ON \

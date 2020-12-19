@@ -167,28 +167,39 @@ Partition *BucketRepository::get_or_create_partition(
   const EntityRank arg_entity_rank ,
   const OrdinalVector &parts)
 {
-  ThrowRequireMsg(m_mesh.mesh_meta_data().check_rank(arg_entity_rank),
-                  "Entity rank " << arg_entity_rank << " is invalid");
-
-  ensure_data_structures_sized();
-
-  std::vector<Partition *> & partitions = m_partitions[ arg_entity_rank ];
-
   const unsigned maxKeyTmpBufferSize = 64;
   PartOrdinal keyTmpBuffer[maxKeyTmpBufferSize];
   OrdinalVector keyTmpVec;
 
+  PartOrdinal* keyPtr = nullptr;
+  PartOrdinal* keyEnd = nullptr;
+
+  fill_key_ptr(parts, &keyPtr, &keyEnd, maxKeyTmpBufferSize, keyTmpBuffer, keyTmpVec);
+
+  std::vector<Partition *>::iterator ik;
+
+  Partition* partition = get_partition(arg_entity_rank, parts, ik, keyPtr, keyEnd);
+
+  if(partition == nullptr) {
+    partition = create_partition(arg_entity_rank, parts, ik, keyPtr, keyEnd);
+  }
+  return partition;
+}
+
+void BucketRepository::fill_key_ptr(const OrdinalVector& parts, PartOrdinal** keyPtr, PartOrdinal** keyEnd,
+                                    const unsigned maxKeyTmpBufferSize, PartOrdinal* keyTmpBuffer, OrdinalVector& keyTmpVec)
+{
   const size_t part_count = parts.size();
 
   const size_t keyLen = 2 + part_count;
 
-  PartOrdinal* keyPtr = &keyTmpBuffer[0];
-  PartOrdinal* keyEnd = keyPtr+keyLen;
+  *keyPtr = &keyTmpBuffer[0];
+  *keyEnd = *keyPtr+keyLen;
 
   if (keyLen >= maxKeyTmpBufferSize) {
     keyTmpVec.resize(keyLen);
-    keyPtr = keyTmpVec.data();
-    keyEnd = keyPtr+keyLen;
+    *keyPtr = keyTmpVec.data();
+    *keyEnd = *keyPtr+keyLen;
   }
 
   //----------------------------------
@@ -198,16 +209,46 @@ Partition *BucketRepository::get_or_create_partition(
   //
   // for upper bound search use the maximum key for a bucket in the partition.
   const unsigned max = static_cast<unsigned>(-1);
-  keyPtr[0] = part_count+1;
-  keyPtr[ keyPtr[0] ] = max ;
+  (*keyPtr)[0] = part_count+1;
+  (*keyPtr)[ (*keyPtr)[0] ] = max ;
 
   {
-    for ( unsigned i = 0 ; i < part_count ; ++i ) { keyPtr[i+1] = parts[i] ; }
+    for ( unsigned i = 0 ; i < part_count ; ++i ) { (*keyPtr)[i+1] = parts[i] ; }
   }
+}
+
+Partition *BucketRepository::get_partition(const EntityRank arg_entity_rank, const OrdinalVector &parts)
+{
+  PartOrdinal* keyPtr = nullptr;
+  PartOrdinal* keyEnd = nullptr;
+  std::vector<impl::Partition*>::iterator ik;
+
+  const unsigned maxKeyTmpBufferSize = 64;
+  PartOrdinal keyTmpBuffer[maxKeyTmpBufferSize];
+  OrdinalVector keyTmpVec;
+
+  fill_key_ptr(parts, &keyPtr, &keyEnd, maxKeyTmpBufferSize, keyTmpBuffer, keyTmpVec);
+
+  return get_partition(arg_entity_rank, parts, ik, keyPtr, keyEnd);
+}
+
+Partition *BucketRepository::get_partition(
+  const EntityRank arg_entity_rank ,
+  const OrdinalVector &parts,
+  std::vector<Partition*>::iterator& ik,
+  PartOrdinal* keyPtr,
+  PartOrdinal* keyEnd)
+{
+  ThrowRequireMsg(m_mesh.mesh_meta_data().check_rank(arg_entity_rank),
+                  "Entity rank " << arg_entity_rank << " is invalid");
+
+  ensure_data_structures_sized();
+
+  std::vector<Partition *> & partitions = m_partitions[ arg_entity_rank ];
 
   // If the partition is found, the iterator will be right after it, thanks to the
   // trickiness above.
-  const std::vector<Partition *>::iterator ik = lower_bound( partitions , keyPtr );
+  ik = lower_bound( partitions , keyPtr );
   const bool partition_exists =
     (ik != partitions.begin()) && raw_part_equal( ik[-1]->key() , keyPtr );
 
@@ -216,15 +257,25 @@ Partition *BucketRepository::get_or_create_partition(
     return ik[-1];
   }
 
+  return nullptr;
+}
+
+Partition* BucketRepository::create_partition(
+  const EntityRank arg_entity_rank,
+  const OrdinalVector& parts,
+  std::vector<Partition*>::iterator& ik,
+  PartOrdinal* keyPtr,
+  PartOrdinal* keyEnd)
+{
   keyPtr[keyPtr[0]] = 0;
 
   Partition *partition = new Partition(m_mesh, this, arg_entity_rank, keyPtr, keyEnd);
   ThrowRequire(partition != NULL);
 
   m_need_sync_from_partitions[arg_entity_rank] = true;
-  partitions.insert( ik , partition );
+  m_partitions[arg_entity_rank].insert( ik , partition );
 
-  return partition ;
+  return partition;
 }
 
 void BucketRepository::internal_modification_end()

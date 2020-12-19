@@ -1,6 +1,6 @@
 #include "Zoltan2ParallelGraph.hpp"
 #include "stk_util/util/ReportHandler.hpp"
-#include <balanceUtils.hpp>
+#include <stk_balance/balanceUtils.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
 #include <stk_balance/internal/StkBalanceUtils.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
@@ -21,7 +21,8 @@ void Zoltan2ParallelGraph::adjust_vertex_weights(const stk::balance::BalanceSett
     else if(balanceSettings.areVertexWeightsProvidedViaFields())
     {
         stk::mesh::EntityVector entitiesToBalance;
-        stk::mesh::get_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(), stkMeshBulkData.buckets(stk::topology::ELEM_RANK), entitiesToBalance);
+        const bool sortById = true;
+        stk::mesh::get_entities(stkMeshBulkData, stk::topology::ELEM_RANK, stkMeshBulkData.mesh_meta_data().locally_owned_part(), entitiesToBalance, sortById);
 
         fillFieldVertexWeights(balanceSettings, stkMeshBulkData, selectors, entitiesToBalance);
     }

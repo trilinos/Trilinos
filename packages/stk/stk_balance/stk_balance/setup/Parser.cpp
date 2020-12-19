@@ -34,6 +34,7 @@
 #include "Parser.hpp"
 #include "stk_balance/search_tolerance_algs/SecondShortestEdgeFaceSearchTolerance.hpp"
 #include "stk_util/environment/Env.hpp"  // for deprecatedOutputDirectory warnings
+#include "stk_util/command_line/CommandLineParserUtils.hpp"
 
 namespace stk {
 namespace balance {

@@ -330,7 +330,7 @@ class DeviceField : public NgpFieldBase
 private:
   typedef Kokkos::View<T***, Kokkos::LayoutRight, MemSpace> FieldDataDeviceViewType;
   typedef Kokkos::View<T***, Kokkos::LayoutRight, MemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> FieldDataDeviceUnmanagedViewType;
-  typedef Kokkos::View<T***, Kokkos::LayoutRight, Kokkos::HostSpace> FieldDataHostViewType;
+  typedef Kokkos::View<T***, Kokkos::LayoutRight, HostPinnedSpace> FieldDataHostViewType;
 #ifdef STK_DEBUG_FIELD_SYNC
   template <typename U> using HostArrayType = Kokkos::View<U*, Kokkos::HostSpace>;
 #endif

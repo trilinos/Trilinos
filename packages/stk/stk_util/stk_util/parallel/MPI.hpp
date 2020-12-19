@@ -35,20 +35,21 @@
 #ifndef STK_UTIL_PARALLEL_MPI_hpp
 #define STK_UTIL_PARALLEL_MPI_hpp
 
-#include <stk_util/stk_config.h>
+#include "stk_util/stk_config.h"           // for STK_HAS_MPI
+
 #if defined ( STK_HAS_MPI )
 
-#include "mpi.h"                        // for MPI_Datatype, etc
-#include <stddef.h>                     // for size_t
-#include <Kokkos_Core.hpp>
-#include <algorithm>                    // for min, max
-#include <complex>                      // for complex
-#include <iterator>                     // for iterator_traits, etc
-#include <stdexcept>                    // for runtime_error
-#include <vector>                       // for vector
-#include <iostream>
-#include <sys/types.h>
-#include <stdint.h>
+#include "Kokkos_Macros.hpp"               // for KOKKOS_DEFAULTED_FUNCTION, KOKKOS_INLINE_FUNCTION
+#include "stk_util/parallel/Parallel.hpp"  // for MPI_Datatype, ompi_datatype_t, MPI_Op, ompi_op_t
+#include <stddef.h>                        // for size_t
+#include <stdint.h>                        // for int64_t, uint64_t
+#include <algorithm>                       // for max, copy
+#include <complex>                         // for complex
+#include <iostream>                        // for operator<<, ostream, basic_ostream, basic_ostr...
+#include <iterator>                        // for iterator_traits, back_insert_iterator
+#include <stdexcept>                       // for runtime_error
+#include <vector>                          // for vector
+
 namespace sierra { namespace MPI { template <typename T> struct Datatype; } }
 
 namespace sierra {

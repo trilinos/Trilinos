@@ -7,8 +7,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include <stk_util/registry/VersionNumber.hpp>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "stk_util/registry/VersionNumber.hpp"
 
 namespace stk
 {

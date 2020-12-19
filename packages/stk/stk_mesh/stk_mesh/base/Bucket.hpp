@@ -181,11 +181,7 @@ public:
   /** Query bucket's supersets' ordinals. */
 
   std::pair<const unsigned *, const unsigned *>
-  superset_part_ordinals() const
-  {
-    return std::pair<const unsigned *, const unsigned *>
-      ( key() + 1 , key() + key()[0] );
-  }
+  superset_part_ordinals() const { return m_partOrdsBeginEnd; }
 
 #ifndef DOXYGEN_COMPILE
   const unsigned * key() const { return m_key.data() ; }
@@ -341,6 +337,12 @@ public:
   unsigned get_ngp_field_bucket_id(unsigned fieldOrdinal) const;
   unsigned get_ngp_field_bucket_is_modified(unsigned fieldOrdinal) const;
 
+  void reset_part_ord_begin_end();
+
+  void reset_bucket_key(const OrdinalVector& newPartOrdinals);
+
+  void reset_bucket_parts(const OrdinalVector& newPartOrdinals);
+
 protected:
   void change_existing_connectivity(unsigned bucket_ordinal, stk::mesh::Entity* new_nodes);
   void change_existing_permutation_for_connected_element(unsigned bucket_ordinal_of_lower_ranked_entity, unsigned elem_connectivity_ordinal, stk::mesh::Permutation permut);
@@ -460,6 +462,7 @@ private:
   const EntityRank       m_entity_rank ; // Type of entities for this bucket
   stk::topology          m_topology ;    // The topology of this bucket
   std::vector<unsigned>  m_key ;         // REFACTOR
+  std::pair<const unsigned*,const unsigned*> m_partOrdsBeginEnd;
   const size_t           m_capacity ;    // Capacity for entities
   size_type              m_size ;        // Number of entities
   unsigned               m_bucket_id;    // Index into its BucketRepository's m_bucket[entity_rank()], these are NOT unique

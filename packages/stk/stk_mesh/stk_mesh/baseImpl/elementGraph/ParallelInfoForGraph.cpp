@@ -38,6 +38,7 @@ void pack_data_for_part_ordinals(stk::CommSparse &comm, const ElemElemGraph& gra
         const stk::mesh::GraphEdge &edge = item.first;
         const stk::mesh::impl::ParallelInfo &pinfo = item.second;
         stk::mesh::Entity local_element = graph.get_entity(edge.elem1());
+        ThrowRequireWithSierraHelpMsg(bulkData.is_valid(local_element));
         stk::mesh::impl::get_element_block_part_ordinals(local_element, bulkData, partOrdinals);
 
         pack_edge(comm, graph, bulkData, edge, pinfo.get_proc_rank_of_neighbor());

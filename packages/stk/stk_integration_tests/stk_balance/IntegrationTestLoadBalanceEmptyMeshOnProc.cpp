@@ -48,8 +48,8 @@ void test_load_balancing_when_one_proc_has_no_mesh(stk::mesh::BulkData& stkMeshB
 void move_elements_from_proc_2_to_proc_0(stk::mesh::BulkData& bulkData)
 {
     stk::mesh::EntityVector local_elements;
-    stk::mesh::get_selected_entities(bulkData.mesh_meta_data().locally_owned_part(),
-            bulkData.buckets(stk::topology::ELEM_RANK), local_elements);
+    stk::mesh::get_entities(bulkData, stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part(),
+            local_elements);
 
     int dest_proc = bulkData.parallel_rank() == 2 ? 0 : bulkData.parallel_rank();
     stk::mesh::EntityProcVec decomp(local_elements.size());

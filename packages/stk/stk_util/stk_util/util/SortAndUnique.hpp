@@ -36,7 +36,7 @@
 
 #include <algorithm>
 #include <functional>
-#include <stk_util/util/ReportHandler.hpp>
+#include "stk_util/util/ReportHandler.hpp"
 
 namespace stk
 {

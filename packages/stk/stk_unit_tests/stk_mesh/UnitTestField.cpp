@@ -172,6 +172,34 @@ TEST(UnitTestField, testFieldMaxSize)
 
 }
 
+TEST(UnitTestField, fieldDataAccess_rankMustMatch)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  stk::mesh::MetaData meta(3);
+  using MyField = stk::mesh::Field<double>;
+  MyField& nodalField = meta.declare_field<MyField>(NODE_RANK, "nodal_field");
+
+  stk::mesh::FieldTraits<MyField>::data_type* initialValue = nullptr;
+  stk::mesh::put_field_on_mesh(nodalField, meta.universal_part(), initialValue);
+
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  stk::io::fill_mesh("generated:2x2x2|sideset:xXyYzZ", bulk);
+
+  stk::mesh::EntityVector nodes;
+  stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, meta.universal_part(), nodes);
+  stk::mesh::EntityVector faces;
+  stk::mesh::get_entities(bulk, stk::topology::FACE_RANK, meta.universal_part(), faces);
+
+  ASSERT_TRUE(!nodes.empty());
+  ASSERT_TRUE(!faces.empty());
+
+  EXPECT_NO_THROW(stk::mesh::field_data(nodalField, nodes[0]));
+#ifndef NDEBUG
+  EXPECT_THROW(stk::mesh::field_data(nodalField, faces[0]), std::logic_error);
+#endif
+}
+
 TEST(UnitTestField, testFieldWithSelector)
 {
   stk::ParallelMachine pm = MPI_COMM_SELF ;

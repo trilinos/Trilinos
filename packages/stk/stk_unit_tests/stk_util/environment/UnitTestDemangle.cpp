@@ -32,11 +32,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/diag/StringUtil.hpp>  // for demangle
-#include <gtest/gtest.h>
-#include <string>                       // for operator==, string, etc
-#include <typeinfo>                     // for type_info
-#include <vector>                       // for vector
+#include "gtest/gtest.h"
+#include "stk_util/diag/StringUtil.hpp"  // for demangle
+#include <string>                        // for operator==, string, basic_string
+#include <typeinfo>                      // for type_info
+#include <vector>                        // for vector
 
 
 bool

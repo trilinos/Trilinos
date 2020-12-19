@@ -32,8 +32,61 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include "gtest/gtest.h"
+#include "stk_util/util/GetEnv.hpp"  // for get_env_var_as_bool, get_env_var_as_int
+#include <cstdlib>                   // for unsetenv, setenv
+#include <string>                    // for string
 
-int unitTestSupportDummyFunction()
+void check_env_var(bool expectedValue, const std::string& varName, const std::string& varVal)
 {
-  return 99;
+  unsetenv(varName.c_str());
+  setenv(varName.c_str(), varVal.c_str(), 1);
+
+  bool boolValue = stk::get_env_var_as_bool(varName, !expectedValue);
+  EXPECT_EQ(expectedValue, boolValue);
+
+  unsetenv(varName.c_str());
 }
+
+void check_env_var(int expectedValue, const std::string& varName, const std::string& varVal,
+                   int defaultValue)
+{
+  unsetenv(varName.c_str());
+  setenv(varName.c_str(), varVal.c_str(), 1);
+
+  int intValue = stk::get_env_var_as_int(varName, defaultValue);
+  EXPECT_EQ(expectedValue, intValue);
+
+  unsetenv(varName.c_str());
+}
+
+TEST(GetEnv, asBool)
+{
+  EXPECT_TRUE(stk::get_env_var_as_bool("VAR_DOESNT_EXIST", true));
+  EXPECT_FALSE(stk::get_env_var_as_bool("VAR_DOESNT_EXIST", false));
+
+  std::string varName("STK_TEST_BOOL");
+
+  check_env_var(true, varName, "true");
+  check_env_var(true, varName, "TRUE");
+  check_env_var(true, varName, "on");
+  check_env_var(true, varName, "On");
+
+  check_env_var(false, varName, "false");
+  check_env_var(false, varName, "FOO");
+  check_env_var(false, varName, "ONLY");
+  check_env_var(false, varName, "truly");
+}
+
+TEST(GetEnv, asInt)
+{
+  int defaultValue = -99;
+  EXPECT_EQ(defaultValue, stk::get_env_var_as_int("VAR_DOESNT_EXIST", defaultValue));
+
+  std::string varName("STK_TEST_INT");
+
+  check_env_var(defaultValue, varName, "X100", defaultValue);
+  check_env_var(defaultValue, varName, "foo", defaultValue);
+  check_env_var(100, varName, "100", defaultValue);
+}
+

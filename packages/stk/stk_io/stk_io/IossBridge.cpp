@@ -109,6 +109,67 @@ namespace stk {
                                        const stk::mesh::EntityRank bucket_rank,
                                        const stk::mesh::Part &part,
                                        const Ioss::Field::RoleType filter_role);
+
+    stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
+                                          const stk::mesh::MetaData &meta)
+    {
+      switch (entity->type()) {
+      case Ioss::NODEBLOCK:
+        return stk::topology::NODE_RANK;
+
+      case Ioss::NODESET:
+        return stk::topology::NODE_RANK;
+
+      case Ioss::ELEMENTBLOCK:
+        return stk::topology::ELEMENT_RANK;
+
+      case Ioss::SUPERELEMENT:
+        return stk::topology::ELEMENT_RANK;
+
+      case Ioss::SIDESET:
+        {
+          const Ioss::SideSet *sset = dynamic_cast<const Ioss::SideSet*>(entity);
+          assert(sset != nullptr);
+          int my_rank = sset->max_parametric_dimension();
+          if (my_rank == 2)
+            return stk::topology::FACE_RANK;
+          if (my_rank == 1)
+            return stk::topology::EDGE_RANK;
+          if (my_rank == 0)
+            return stk::topology::NODE_RANK;
+          else
+            return stk::mesh::InvalidEntityRank;
+        }
+
+      case Ioss::SIDEBLOCK:
+        {
+          const Ioss::SideBlock *sblk = dynamic_cast<const Ioss::SideBlock*>(entity);
+          assert(sblk != nullptr);
+          int rank = sblk->topology()->parametric_dimension();
+          if (sblk->topology()->shape() == Ioss::ElementShape::UNKNOWN) {
+            rank = sblk->owner()->max_parametric_dimension();
+          }
+          if (rank == 2)
+            return stk::topology::FACE_RANK;
+          if (rank == 1)
+            return stk::topology::EDGE_RANK;
+          if (rank == 0)
+            return stk::topology::NODE_RANK;
+          else
+            return stk::mesh::InvalidEntityRank;
+        }
+      
+      case Ioss::FACEBLOCK:
+        return stk::topology::FACE_RANK;
+
+      case Ioss::EDGEBLOCK:
+        return stk::topology::EDGE_RANK;
+
+      default:
+        return stk::mesh::InvalidEntityRank;
+      }
+    }
+
   }
 }
 
@@ -135,63 +196,6 @@ namespace {
   static const std::string matrix_33("matrix_33");
 
   const std::string base_stk_part_name = "_base_stk_part_name";
-
-  stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
-                                        const stk::mesh::MetaData &meta)
-  {
-    switch (entity->type()) {
-    case Ioss::NODEBLOCK:
-      return stk::topology::NODE_RANK;
-
-    case Ioss::NODESET:
-      return stk::topology::NODE_RANK;
-
-    case Ioss::ELEMENTBLOCK:
-      return stk::topology::ELEMENT_RANK;
-
-    case Ioss::SUPERELEMENT:
-      return stk::topology::ELEMENT_RANK;
-
-    case Ioss::SIDESET:
-      {
-        const Ioss::SideSet *sset = dynamic_cast<const Ioss::SideSet*>(entity);
-        assert(sset != nullptr);
-        int my_rank = sset->max_parametric_dimension();
-        if (my_rank == 2)
-          return stk::topology::FACE_RANK;
-        if (my_rank == 1)
-          return stk::topology::EDGE_RANK;
-        if (my_rank == 0)
-          return stk::topology::NODE_RANK;
-        else
-          return stk::mesh::InvalidEntityRank;
-      }
-
-    case Ioss::SIDEBLOCK:
-      {
-        const Ioss::SideBlock *sblk = dynamic_cast<const Ioss::SideBlock*>(entity);
-        assert(sblk != nullptr);
-        int rank = sblk->topology()->parametric_dimension();
-        if (rank == 2)
-          return stk::topology::FACE_RANK;
-        if (rank == 1)
-          return stk::topology::EDGE_RANK;
-        if (rank == 0)
-          return stk::topology::NODE_RANK;
-        else
-          return stk::mesh::InvalidEntityRank;
-      }
-    
-    case Ioss::FACEBLOCK:
-      return stk::topology::FACE_RANK;
-
-    case Ioss::EDGEBLOCK:
-      return stk::topology::EDGE_RANK;
-
-    default:
-      return stk::mesh::InvalidEntityRank;
-    }
-  }
 
   const stk::mesh::FieldBase *declare_stk_field(stk::mesh::MetaData &meta,
                                                 stk::mesh::EntityRank type,
@@ -625,12 +629,12 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         set_ioss_part_attribute<IossOriginalPartId>(part, originalId);
     }
 
-    bool has_original_part_id(stk::mesh::Part& part)
+    bool has_original_part_id(const stk::mesh::Part& part)
     {
         return has_ioss_part_attribute<IossOriginalPartId>(part);
     }
 
-    int64_t get_original_part_id(stk::mesh::Part& part)
+    int64_t get_original_part_id(const stk::mesh::Part& part)
     {
         return get_ioss_part_attribute<IossOriginalPartId>(part);
     }
@@ -1227,6 +1231,15 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       }
     }
 
+    template<typename ENTITY>
+    void set_original_topology_type_from_ioss(const ENTITY* entity, stk::mesh::Part& part)
+    {
+      const std::string origTopoStr("original_topology_type");
+      if (entity->property_exists(origTopoStr)) {
+        set_original_topology_type(part, entity->get_property(origTopoStr).get_string());
+      }
+    }
+
     stk::mesh::Part& declare_stk_part(Ioss::GroupingEntity* entity, stk::mesh::MetaData& meta)
     {
       if (entity->type() == Ioss::ASSEMBLY) {
@@ -1281,10 +1294,14 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
                 << meta.spatial_dimension() << "\n\n";
             throw std::runtime_error( msg.str() );
           }
+
+          set_original_topology_type_from_ioss(entity, *part);
         }
 
         stk::topology stk_topology = map_ioss_topology_to_stk(topology, meta.spatial_dimension());
-        stk::mesh::set_topology(*part, stk_topology);
+        if (stk_topology != stk::topology::INVALID_TOPOLOGY) {
+          stk::mesh::set_topology(*part, stk_topology);
+        }
         stk::io::define_io_fields(entity, Ioss::Field::ATTRIBUTE, *part, type);
       }
     }
@@ -1609,7 +1626,8 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       if(io_entity->type() == Ioss::NODEBLOCK) {
           get_selected_nodes(params, *select, entities);
       } else {
-          get_selected_entities(*select, bulk.buckets(part_type), entities);
+          const bool sortById = true;
+          stk::mesh::get_entities(bulk, part_type, *select, entities, sortById);
       }
     }
 
@@ -2174,6 +2192,19 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
           }
       }
 
+      void set_id_property(stk::io::OutputParams &params,
+                           const stk::mesh::Part &part,
+                           Ioss::GroupingEntity* groupingEntity)
+      {
+        if (has_original_part_id(part)) {
+          int64_t id = get_original_part_id(part);
+          groupingEntity->property_update("id", id);
+        }
+        else if (params.get_use_part_id_for_output() && (part.id() != stk::mesh::Part::INVALID_ID)) {
+          groupingEntity->property_update("id", part.id());
+        }
+      }
+
       void define_assembly(stk::io::OutputParams &params,
                            const stk::mesh::Part &part)
       {
@@ -2181,11 +2212,10 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
         std::string name = getPartName(part);
         Ioss::Assembly *assembly = io_region.get_assembly(name);
-        if(assembly == nullptr)
-        {
-            assembly = new Ioss::Assembly(io_region.get_database() ,
-                                     name);
-            io_region.add(assembly);
+        if (assembly == nullptr) {
+          assembly = new Ioss::Assembly(io_region.get_database(), name);
+          set_id_property(params, part, assembly);
+          io_region.add(assembly);
         }
       }
 
@@ -2196,6 +2226,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         Ioss::Region &io_region = params.io_region();
 
         std::string name = getPartName(part);
+
         Ioss::Assembly *assembly = io_region.get_assembly(name);
         ThrowRequireMsg(assembly != nullptr, "Failed to find assembly "<<name);
 
@@ -2207,16 +2238,20 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
             std::string iossSubAssemblyName = getPartName(*subAssemblyPart);
             const Ioss::Assembly* subAssembly = io_region.get_assembly(iossSubAssemblyName);
             ThrowRequireMsg(subAssembly != nullptr, "Failed to find subAssembly "<<iossSubAssemblyName);
-            assembly->add(subAssembly);
+            if(assembly->get_member(subAssembly->name())==nullptr) {
+                assembly->add(subAssembly);
+            }
           }
         }
         else {
           stk::mesh::PartVector leafParts = get_unique_leaf_parts(meta, part.name());
           for(stk::mesh::Part* leafPart : leafParts) {
+            if(is_in_subsets_of_parts(*leafPart, leafParts)) {continue;}
             std::string iossLeafPartName = getPartName(*leafPart);
             const Ioss::GroupingEntity* leafEntity = io_region.get_entity(iossLeafPartName);
-            ThrowRequireMsg(leafEntity != nullptr, "Failed to find leafEntity "<<iossLeafPartName);
-            assembly->add(leafEntity);
+            if(leafEntity != nullptr && assembly->get_member(leafEntity->name())==nullptr) {
+               assembly->add(leafEntity);
+            }
           }
         }
       }
@@ -2269,12 +2304,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
             }
         }
 
-        if(has_original_part_id(part)) {
-            int64_t id = get_original_part_id(part);
-            fb->property_update("id", id);
-        } else if (params.get_use_part_id_for_output() && (part.id() != stk::mesh::Part::INVALID_ID)) {
-            fb->property_update("id", part.id());
-        }
+        set_id_property(params, part, fb);
 
         delete_selector_property(fb);
         mesh::Selector *select = new mesh::Selector(selector);
@@ -2333,12 +2363,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
             }
         }
 
-        if(has_original_part_id(part)) {
-            int64_t id = get_original_part_id(part);
-            eb->property_update("id", id);
-        } else if (params.get_use_part_id_for_output() && (part.id() != stk::mesh::Part::INVALID_ID)) {
-            eb->property_update("id", part.id());
-        }
+        set_id_property(params, part, eb);
 
         delete_selector_property(eb);
         mesh::Selector *select = new mesh::Selector(selector);
@@ -2358,19 +2383,21 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         const stk::mesh::BulkData &bulk = params.bulk_data();
         Ioss::Region &io_region = params.io_region();
 
-        stk::topology topo = part.topology();
-        if (topo == stk::topology::INVALID_TOPOLOGY) {
-          std::ostringstream msg ;
-          msg << " INTERNAL_ERROR when defining output for region '"<<io_region.name()<<"': Part " << part.name()
-              << " returned INVALID from get_topology(). Please contact sierra-help@sandia.gov";
-          throw std::runtime_error( msg.str() );
-        }
-
         stk::mesh::EntityRank rank = get_output_rank(params);
 
         mesh::Selector selector = meta.locally_owned_part() & part;
         if (params.get_subset_selector()) selector &= *params.get_subset_selector();
         if (params.get_output_selector(rank)) selector &= *params.get_output_selector(rank);
+
+        const size_t num_elems = count_selected_entities( selector, bulk.buckets(rank));
+
+        stk::topology topo = part.topology();
+        if (topo == stk::topology::INVALID_TOPOLOGY) {
+          std::ostringstream msg ;
+          msg << " INTERNAL_ERROR when defining output for region '"<<io_region.name()<<"': Part " << part.name()
+              << " returned INVALID from get_topology(). Please contact sierra-help@sandia.gov";
+          std::cerr << msg.str()<<std::endl;
+        }
 
         std::string topologyName = map_stk_topology_to_ioss(topo);
 
@@ -2384,8 +2411,6 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
             return;
           }
         }
-
-        const size_t num_elems = count_selected_entities( selector, bulk.buckets(rank));
 
         // Defer the counting of attributes until after we define the
         // element block so we can count them as we add them as fields to
@@ -2417,12 +2442,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
             eb->property_update("original_block_order", ordinal);
         }
 
-        if(has_original_part_id(part)) {
-            int64_t id = get_original_part_id(part);
-            eb->property_update("id", id);
-        } else if (params.get_use_part_id_for_output() && (part.id() != stk::mesh::Part::INVALID_ID)) {
-            eb->property_update("id", part.id());
-        }
+        set_id_property(params, part, eb);
 
         delete_selector_property(eb);
         mesh::Selector *select = new mesh::Selector(selector);
@@ -2870,12 +2890,6 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         assert(part != nullptr);
 
         stk::topology topo = part->topology();
-        if (topo == stk::topology::INVALID_TOPOLOGY) {
-          std::ostringstream msg ;
-          msg << " INTERNAL_ERROR: Part " << part->name() << " returned INVALID from get_topology()";
-          throw std::runtime_error( msg.str() );
-        }
-
         if (params.has_skin_mesh_selector() && topo == stk::topology::PARTICLE) {
           return;
         }
@@ -2887,7 +2901,12 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         }
         size_t num_elems = get_entities(params, *part, type, elements, false);
 
-//        size_t nodes_per_elem = topo.num_nodes();
+        if (num_elems >  0 && topo == stk::topology::INVALID_TOPOLOGY) {
+          std::ostringstream msg ;
+          msg << " INTERNAL_ERROR: Part " << part->name() << " returned INVALID from get_topology()";
+          throw std::runtime_error( msg.str() );
+        }
+
         size_t nodes_per_elem = block->get_property("topology_node_count").get_int();
 
         std::vector<INT> elem_ids; elem_ids.reserve(num_elems == 0 ? 1 : num_elems);
@@ -3914,7 +3933,8 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
             ignore_disconnected_nodes = io_region.get_property(stk::io::s_ignore_disconnected_nodes).get_int();
         }
 
-        get_selected_entities(selector, bulk.buckets(stk::topology::NODE_RANK), nodes);
+        const bool sortById = true;
+        stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, selector, nodes, sortById);
         filter_nodes_by_ghosting(params, nodes);
         if(!ignore_disconnected_nodes) {
             return;

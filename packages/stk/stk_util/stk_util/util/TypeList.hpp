@@ -35,8 +35,8 @@
 #ifndef stk_util_util_TypeList_h
 #define stk_util_util_TypeList_h
 
-#include <stk_util/util/TypeUtil.hpp>
-#include <stk_util/util/SameType.hpp>
+#include "stk_util/util/TypeUtil.hpp"
+#include "stk_util/util/SameType.hpp"
 
 namespace stk {
 

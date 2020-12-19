@@ -32,26 +32,22 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <bitset>                       // for bitset, bitset<>::reference
-#include <functional>                   // for less
-#include <list>                         // for list, _List_iterator, etc
-#include <map>                          // for multimap, map, etc
-#include <memory>                       // for
-#include <set>                          // for multiset, set, etc
-#include <sstream>                      // for ostringstream, ostream, etc
-#include <stk_util/diag/WriterExt.hpp>  // for operator<<
-#include <gtest/gtest.h>
-#include <stk_util/util/IndentStreambuf.hpp>  // for indent_streambuf
-#include <stk_util/util/Writer.hpp>     // for Writer, operator<<, dendl, etc
-#include <stk_util/util/WriterManip.hpp>  // for operator<<, setw, etc
-#include <string>                       // for operator==, string, etc
-#include <utility>                      // for pair
-#include <vector>                       // for vector, vector<>::iterator
-#include "stk_util/diag/WriterOStream.hpp"  // for operator<<
-#include "stk_util/util/Writer_fwd.hpp"  // for LogMask::LOG_ALWAYS, etc
-#include <iostream>
+#include "gtest/gtest.h"
+#include "stk_util/diag/WriterExt.hpp"        // for operator<<
+#include "stk_util/diag/WriterOStream.hpp"    // for operator<<
+#include "stk_util/util/IndentStreambuf.hpp"  // for indent_streambuf
+#include "stk_util/util/Writer.hpp"           // for Writer, operator<<, dendl, push, pop, dflush
+#include "stk_util/util/WriterManip.hpp"      // for operator<<, resetiosflags, setw, setfill
+#include "stk_util/util/Writer_fwd.hpp"       // for LOG_ALWAYS, LOG_MEMBERS, LOG_TRACE, LOG_TRA...
+#include <bitset>                             // for bitset, bitset<>::reference
+#include <list>                               // for list, _List_iterator, list<>::iterator
+#include <map>                                // for multimap<>::value_type, multimap, map, _Rb_...
+#include <set>                                // for set
+#include <sstream>                            // for ostringstream, operator<<, ostream, operator&
+#include <string>                             // for operator==, string
+#include <utility>                            // for pair
+#include <vector>                             // for vector, vector<>::iterator
 
-#include <cmath>
 
 
 using namespace stk::diag;

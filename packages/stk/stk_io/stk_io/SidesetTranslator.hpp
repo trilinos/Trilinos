@@ -38,6 +38,7 @@
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Selector.hpp"
 #include "stk_mesh/base/Types.hpp"
+#include "stk_mesh/base/SideSetUtil.hpp"
 #include "stk_mesh/base/FEMHelpers.hpp"
 #include "stk_io/StkIoUtils.hpp"
 #include "stk_io/OutputParams.hpp"
@@ -157,13 +158,12 @@ void fill_element_and_side_ids_from_connectivity(stk::io::OutputParams &params,
 
         bool foundElementWithCorrectPolarity = false;
 
-        for(const stk::mesh::Entity elem : side_elements)
+        for(const stk::mesh::Entity& elem : side_elements)
         {
             const stk::mesh::Bucket &elemBucket = bulk_data.bucket(elem);
-            const bool isSelectingEverything = subset_selector == nullptr;
             bool selectedByBucket = (   subset_selector == nullptr) ? true :    (*subset_selector)(elemBucket);
             bool selectedByOutput = (   output_selector == nullptr) ? true :    (*output_selector)(elemBucket);
-            const bool isElementBeingOutput = (isSelectingEverything || (selectedByBucket && selectedByOutput)) && elemBucket.member(meta_data.locally_owned_part());
+            const bool isElementBeingOutput = (selectedByBucket && selectedByOutput) && elemBucket.member(meta_data.locally_owned_part());
 
             if(isElementBeingOutput)
             {
@@ -229,7 +229,7 @@ void fill_element_and_side_ids(stk::io::OutputParams &params,
                                std::vector<INT>& elem_side_ids)
 {
     const mesh::BulkData &bulk_data = params.bulk_data();
-    const stk::mesh::Part &parentPart = stk::io::get_sideset_parent(*part);
+    const stk::mesh::Part &parentPart = stk::mesh::get_sideset_parent(*part);
 
     if (bulk_data.does_sideset_exist(parentPart))
     {

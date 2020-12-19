@@ -1,10 +1,68 @@
 #include <gtest/gtest.h>
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include "stk_mesh/base/GetEntities.hpp"
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/SideSetUtil.hpp>
 #include "stk_unit_test_utils/ReadWriteSidesetTester.hpp"
 #include "stk_unit_test_utils/FaceTestingUtils.hpp"
+#include "stk_unit_test_utils/MeshFixture.hpp"
+#include "IOMeshFixture.hpp"
+
+class StkIoSubset : public IOMeshFixture
+{
+protected:
+  void test_write_then_read(const std::vector<size_t>& expectedEntityCounts,
+                            stk::mesh::Part* blockToExclude = nullptr)
+  {
+    const std::string fileName("meshSubset.g");
+    stk::mesh::Selector meshSubsetSelector = create_subset_selector(blockToExclude);
+    stk::io::StkMeshIoBroker stkIo;
+    stkIo.set_bulk_data(get_bulk());
+    size_t outputFileIndex = stkIo.create_output_mesh(fileName, stk::io::WRITE_RESULTS);
+    stkIo.set_output_selector(outputFileIndex, stk::topology::ELEM_RANK, meshSubsetSelector);
+    stkIo.write_output_mesh(outputFileIndex);
+
+    stk::mesh::MetaData meta;
+    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+    stk::io::fill_mesh(fileName, bulk);
+
+    std::vector<size_t> entityCounts;
+    stk::mesh::count_entities(meta.locally_owned_part(), bulk, entityCounts);
+
+    ASSERT_TRUE(entityCounts.size() <= expectedEntityCounts.size());
+    for(size_t i=0; i<entityCounts.size(); ++i) {
+       EXPECT_EQ(entityCounts[i], expectedEntityCounts[i]);
+    }
+    unlink(fileName.c_str());
+  }
+};
+
+TEST_F(StkIoSubset, outputOneOfTwoBlocks)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) { return; }
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+
+  const std::vector<std::string> partNames {"block_1", "block_2"};
+  stk::mesh::Part& block1 = create_io_part(partNames[0], 1);
+  stk::mesh::Part& block2 = create_io_part(partNames[1], 2);
+  stk::mesh::Part& surface1 = create_io_part("surface_1", 1, stk::topology::QUAD_4);
+  stk::io::fill_mesh("generated:1x1x2", get_bulk());
+  stk::mesh::EntityId elemId = 1;
+  move_element(elemId, block1, block2);
+  stk::mesh::ConnectivityOrdinal sideOrd = 0;
+  create_side(elemId, sideOrd, surface1);
+  elemId = 2;
+  create_side(elemId, sideOrd, surface1);
+
+  std::vector<size_t> entityCounts(get_meta().entity_rank_count(), 0);
+  entityCounts[stk::topology::NODE_RANK] = 8;
+  entityCounts[stk::topology::FACE_RANK] = 1;
+  entityCounts[stk::topology::ELEM_RANK] = 1;
+
+  test_write_then_read(entityCounts, &block1);
+}
 
 TEST(StkIo, read_write_and_compare_exo_files_with_sidesets)
 {
@@ -109,7 +167,7 @@ void create_new_sideset_and_faces(stk::unit_test_util::sideset::BulkDataTester &
                                   stk::mesh::PartVector &parts,
                                   const stk::unit_test_util::sideset::ElemIdSideVector &newSideSet)
 {
-  stk::mesh::SideSet &sideSet = bulk.create_sideset(stk::io::get_sideset_parent(*parts[0]));
+  stk::mesh::SideSet &sideSet = bulk.create_sideset(stk::mesh::get_sideset_parent(*parts[0]));
 
   for(unsigned i=0; i<newSideSet.size(); ++i)
   {

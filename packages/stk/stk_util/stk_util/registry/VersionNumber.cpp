@@ -7,10 +7,10 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include <stk_util/registry/VersionNumber.hpp>
-#include <stk_util/registry/ProductRegistry.hpp>
-#include <stdexcept>
-#include <string>
+#include "stk_util/registry/VersionNumber.hpp"
+#include "stk_util/registry/ProductRegistry.hpp"  // for ProductRegistry
+#include <stdexcept>                              // for runtime_error
+#include <string>                                 // for string, stoi, operator+
 
 namespace stk
 {

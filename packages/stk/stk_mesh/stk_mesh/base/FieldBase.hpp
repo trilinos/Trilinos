@@ -652,7 +652,7 @@ field_data(const FieldType & f, Entity e)
 {
   const MeshIndex& mi           = f.get_mesh().mesh_index(e);
 
-  ThrowAssert(f.entity_rank() == mi.bucket->entity_rank());
+  ThrowAssertMsg(f.entity_rank() == mi.bucket->entity_rank(), "field_data called with "<<f.entity_rank()<<" field ("<<f.name()<<") and different-rank entity "<<f.get_mesh().entity_key(e)<<". The rank of the field and entity must match.");
   ThrowAssert(&f.get_mesh() == &mi.bucket->mesh());
   const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[mi.bucket->bucket_id()];
   return reinterpret_cast<typename FieldTraits<FieldType>::data_type*>(field_meta_data.m_data + field_meta_data.m_bytes_per_entity * mi.bucket_ordinal);
