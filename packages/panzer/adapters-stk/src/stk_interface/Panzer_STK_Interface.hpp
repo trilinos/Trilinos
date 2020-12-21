@@ -1223,6 +1223,10 @@ public:
    */
   void refineMesh(const int numberOfLevels, const bool deleteParentElements);
 
+  /** Delete the parent elements if there are any in the mesh.
+    */
+  void deleteParentElements();
+
 public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;

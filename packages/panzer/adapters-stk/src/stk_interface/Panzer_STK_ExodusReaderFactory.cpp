@@ -257,6 +257,9 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
    }
    mesh.endModification();
 
+   if(keepPerceptData_)
+     mesh.deleteParentElements();
+
    if (userMeshScaling_) {
      stk::mesh::Field<double,stk::mesh::Cartesian>* coord_field =
        metaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");

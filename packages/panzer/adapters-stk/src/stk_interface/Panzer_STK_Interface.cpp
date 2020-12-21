@@ -2040,5 +2040,18 @@ void STK_Interface::refineMesh(const int numberOfLevels, const bool deleteParent
 #endif
 }
 
+void STK_Interface::deleteParentElements() {
+#ifdef PANZER_HAVE_PERCEPT
+  TEUCHOS_ASSERT(nonnull(refinedMesh_));
+  TEUCHOS_ASSERT(nonnull(breakPattern_));
+  
+  percept::UniformRefiner breaker(*refinedMesh_,*breakPattern_);
+  breaker.deleteParentElements();
+
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                             "ERROR: This requires the Percept package to be enabled in Trilinos!");
+#endif
+}
 
 } // end namespace panzer_stk
