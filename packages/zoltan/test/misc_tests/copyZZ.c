@@ -183,7 +183,7 @@ int main(int narg, char **arg) {
     int ignore;
     int newAnswer;
     double tmp[3]; tmp[0] = xTwo[i]; tmp[1] = yTwo[i]; tmp[2] = zTwo[i];
-    Zoltan_LB_Point_PP_Assign(zz, tmp, &ignore, &newAnswer);
+    Zoltan_LB_Point_PP_Assign(newZZ, tmp, &ignore, &newAnswer);
     if (newAnswer != answer[i]) {
       errCnt++;
       printf("%d Error (%f %f %f):  part %d != new part %d\n", 
