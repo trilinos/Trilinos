@@ -230,6 +230,8 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
 
    mesh.buildSubcells();
    mesh.buildLocalElementIDs();
+   if(keepPerceptData_)
+     mesh.deleteParentElements();
 
    if (userMeshScaling_) {
      stk::mesh::Field<double,stk::mesh::Cartesian>* coord_field =
