@@ -81,6 +81,37 @@ PARAM_LIST **params)				/* parameters structure */
 
     *params = NULL;
 }
+ 
+size_t Zoltan_Serialize_Params_Size(PARAM_LIST const *from) 
+{
+  /* Count the number of parameters */
+  PARAM_LIST const *param = from;
+  int nParam = 0;
+  while (param) {
+    nParam++;
+    param = param->next;
+  }
+
+  /* Request maximum storage for each:  two strings plus one int */
+  return nParam * (MAX_PARAM_STRING_LEN * 2 + sizeof(int));
+}
+
+int Zoltan_Serialize_Params(PARAM_LIST const *from, char **buf)
+{
+  /* Serialize the parameters */
+  char *bufptr = *buf;
+  PARAM_LIST const *param = from;
+  while (param) {
+    strcpy(bufptr, param->name);
+    bufptr += MAX_PARAM_STRING_LEN;
+    strcpy(bufptr, param->new_val);
+    bufptr += MAX_PARAM_STRING_LEN;
+    *((int *)bufptr) = param->index;
+    bufptr += sizeof(int);
+  }
+  *buf = bufptr;
+}
+
 
 int Zoltan_Copy_Params(PARAM_LIST **to, PARAM_LIST const *from)
 {

@@ -199,6 +199,41 @@ int Zoltan_RCB_Copy_Structure(ZZ *toZZ, ZZ const *fromZZ)
   return ZOLTAN_OK;
 }
 
+size_t Zoltan_RCB_Serialize_Size(ZZ const *zz) {
+  size_t size = sizeof(int);
+  size += sizeof(struct rcb_tree) * zz->LB.Num_Global_Parts;
+  size += sizeof(struct rcb_box);
+  size += sizeof(ZZ_Transform);
+  return size;
+}
+
+void Zoltan_RCB_Serialize_Structure(ZZ const *zz, char **buf)
+{
+  char *yo = "Zoltan_RCB_Serialize_Structure";
+  RCB_STRUCT const *zzrcb = (RCB_STRUCT const *) zz->LB.Data_Structure;
+
+  if (!zzrcb)
+    return;
+
+  /* Need only the tree structure for Point_Assign and Box_Assign */
+  char *bufptr = *buf;
+
+  *((int *) bufptr) = zzrcb->Num_Dim;
+  bufptr += sizeof(int);
+
+  size_t copysize = sizeof(struct rcb_tree) * zz->LB.Num_Global_Parts;
+  memcpy(bufptr, (void *)(zzrcb->Tree_Ptr), copysize);
+  bufptr += copysize;
+
+  memcpy(bufptr, (void *)(zzrcb->Box), sizeof(struct rcb_box));
+  bufptr += sizeof(struct rcb_box);
+
+  memcpy(bufptr, (void *) &(zzrcb->Tran), sizeof(ZZ_Transform));
+  bufptr += sizeof(ZZ_Transform);
+
+  *buf = bufptr;
+}
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

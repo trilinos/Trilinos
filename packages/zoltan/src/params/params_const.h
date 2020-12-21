@@ -118,6 +118,7 @@ extern int Zoltan_Check_Param(const char *, const char *, PARAM_VARS *,
     PARAM_UTYPE *, int *);
 extern void Zoltan_Free_Params(PARAM_LIST **);
 extern int Zoltan_Copy_Params(PARAM_LIST **to, PARAM_LIST const *from);
+extern int Zoltan_Serialize_Params(PARAM_LIST const *from, char **);
 
 
 #ifdef __cplusplus

@@ -375,6 +375,147 @@ static void Zoltan_Init(ZZ* zz)
   zz->TPL_Order.needfree = 0;
 }
 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+size_t Zoltan_Serialize_Size(ZZ* zz) 
+{
+  /* Compute size of buffer needed to serialize Zoltan_Struct */
+  size_t bufSize = 0;
+  bufSize += sizeof(ZZ);
+  bufSize += Zoltan_Serialize_Params_Size(zz);
+  if (zz->LB.Serialize_Size != NULL) bufSize += zz->LB.Serialize_Size(zz);
+}
+
+int Zoltan_Serialize(ZZ* zz, size_t bufSize, char *buf)
+{
+  char *bufptr = buf;
+
+  /* Copy all Zoltan_Struct data into buffer */
+  struct Zoltan_Struct *zzptr = (struct Zoltan_Struct *) bufptr;
+  memcpy(zzptr, zz, sizeof(struct Zoltan_Struct));
+  bufptr += sizeof(struct Zoltan_Struct);
+
+  /* Need at least some params to set pointers on receiving side */
+  Zoltan_Serialize_Params(zz->Params, &bufptr);
+
+  /* Serialize the load balancing data; advance bufptr */
+  if (zz->LB.Serialize_Structure != NULL)
+    zz->LB.Serialize_Structure(zz, &bufptr);
+
+  /* Risky to serialize pointers; may not be valid where buffer is used */
+  /* Make them NULL; user will need to re-register them to use received zz */
+  zz->Get_Part_Multi = NULL;
+  zz->Get_Part = NULL;
+  zz->Get_Num_Edges_Multi = NULL;
+  zz->Get_Num_Edges = NULL;
+  zz->Get_Edge_List_Multi = NULL;
+  zz->Get_Edge_List = NULL;
+  zz->Get_HG_Size_CS = NULL;
+  zz->Get_HG_CS = NULL;
+  zz->Get_HG_Size_Edge_Wts = NULL;
+  zz->Get_HG_Edge_Wts = NULL;
+  zz->Get_Num_Geom = NULL;
+  zz->Get_Geom_Multi = NULL;
+  zz->Get_Geom = NULL;
+  zz->Get_Num_Obj = NULL;
+  zz->Get_Obj_List = NULL;
+  zz->Get_First_Obj = NULL;
+  zz->Get_Next_Obj = NULL;
+  zz->Get_Num_Border_Obj = NULL;
+  zz->Get_Border_Obj_List = NULL;
+  zz->Get_First_Border_Obj = NULL;
+  zz->Get_Next_Border_Obj = NULL;
+  zz->Get_Num_Coarse_Obj = NULL;
+  zz->Get_Coarse_Obj_List = NULL;
+  zz->Get_First_Coarse_Obj = NULL;
+  zz->Get_Next_Coarse_Obj = NULL;
+  zz->Get_Num_Child = NULL;
+  zz->Get_Child_List = NULL;
+  zz->Get_Child_Weight = NULL;
+  zz->Get_Num_Fixed_Obj = NULL;
+  zz->Get_Fixed_Obj_List = NULL;
+  zz->Get_Part_Fort = NULL;
+  zz->Get_Num_Edges_Fort = NULL;
+  zz->Get_Edge_List_Fort = NULL;
+  zz->Get_HG_Size_CS_Fort = NULL;
+  zz->Get_HG_CS_Fort = NULL;
+  zz->Get_HG_Size_Edge_Wts_Fort = NULL;
+  zz->Get_HG_Edge_Wts_Fort = NULL;
+  zz->Get_Num_Geom_Fort = NULL;
+  zz->Get_Geom_Multi_Fort = NULL;
+  zz->Get_Geom_Fort = NULL;
+  zz->Get_Num_Obj_Fort = NULL;
+  zz->Get_Obj_List_Fort = NULL;
+  zz->Get_First_Obj_Fort = NULL;
+  zz->Get_Next_Obj_Fort = NULL;
+  zz->Get_Num_Border_Obj_Fort = NULL;
+  zz->Get_Border_Obj_List_Fort = NULL;
+  zz->Get_First_Border_Obj_Fort = NULL;
+  zz->Get_Next_Border_Obj_Fort = NULL;
+  zz->Get_Num_Coarse_Obj_Fort = NULL;
+  zz->Get_Coarse_Obj_List_Fort = NULL;
+  zz->Get_First_Coarse_Obj_Fort = NULL;
+  zz->Get_Next_Coarse_Obj_Fort = NULL;
+  zz->Get_Num_Child_Fort = NULL;
+  zz->Get_Child_List_Fort = NULL;
+  zz->Get_Child_Weight_Fort = NULL;
+  zz->Get_Num_Fixed_Obj_Fort = NULL;
+  zz->Get_Fixed_Obj_List_Fort = NULL;
+
+  zz->Get_Part_Data = NULL;
+  zz->Get_Num_Edges_Data = NULL;
+  zz->Get_Edge_List_Data = NULL;
+  zz->Get_HG_Size_CS_Data = NULL;
+  zz->Get_HG_CS_Data = NULL;
+  zz->Get_HG_Size_Edge_Wts_Data = NULL;
+  zz->Get_HG_Edge_Wts_Data = NULL;
+  zz->Get_Num_Geom_Data = NULL;
+  zz->Get_Geom_Data = NULL;
+  zz->Get_Num_Obj_Data = NULL;
+  zz->Get_Obj_List_Data = NULL;
+  zz->Get_First_Obj_Data = NULL;
+  zz->Get_Next_Obj_Data = NULL;
+  zz->Get_Num_Border_Obj_Data = NULL;
+  zz->Get_Border_Obj_List_Data = NULL;
+  zz->Get_First_Border_Obj_Data = NULL;
+  zz->Get_Next_Border_Obj_Data = NULL;
+  zz->Get_Num_Coarse_Obj_Data = NULL;
+  zz->Get_Coarse_Obj_List_Data = NULL;
+  zz->Get_First_Coarse_Obj_Data = NULL;
+  zz->Get_Next_Coarse_Obj_Data = NULL;
+  zz->Get_Num_Child_Data = NULL;
+  zz->Get_Child_List_Data = NULL;
+  zz->Get_Child_Weight_Data = NULL;
+  zz->Get_Num_Fixed_Obj_Data = NULL;
+  zz->Get_Fixed_Obj_List_Data = NULL;
+
+  zz->Pack_Obj = NULL;
+  zz->Unpack_Obj = NULL;
+  zz->Get_Obj_Size = NULL;
+  zz->Pack_Obj_Multi = NULL;
+  zz->Unpack_Obj_Multi = NULL;
+  zz->Get_Obj_Size_Multi = NULL;
+  
+  zz->Pack_Obj_Fort = NULL;
+  zz->Unpack_Obj_Fort = NULL;
+  zz->Get_Obj_Size_Fort = NULL;
+
+  zz->Pack_Obj_Data = NULL;
+  zz->Unpack_Obj_Data = NULL;
+  zz->Get_Obj_Size_Data = NULL;
+
+  zz->Get_Hier_Num_Levels = NULL;
+  zz->Get_Hier_Part = NULL;
+  zz->Get_Hier_Method = NULL;
+  zz->Get_Hier_Num_Levels_Fort = NULL;
+  zz->Get_Hier_Part_Fort = NULL;
+  zz->Get_Hier_Method_Fort = NULL;
+  zz->Get_Hier_Num_Levels_Data = NULL;
+  zz->Get_Hier_Part_Data = NULL;
+  zz->Get_Hier_Method_Data = NULL;
+}
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
