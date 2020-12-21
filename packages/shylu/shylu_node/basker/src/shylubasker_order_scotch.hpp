@@ -37,12 +37,13 @@ namespace BaskerNS
   int Basker<Int,Entry,Exe_Space>::AplusAT
   (
    BASKER_MATRIX &M,
-   BASKER_MATRIX &C
+   BASKER_MATRIX &C,
+   BASKER_BOOL keep_zeros
   )
   {
     BASKER_MATRIX T;
     //get matrix transpose
-    matrix_transpose(M, T);
+    matrix_transpose(M, T, keep_zeros);
    
     C.set_shape(M.srow, M.nrow, M.scol, M.ncol);
 
@@ -59,7 +60,8 @@ namespace BaskerNS
     INT_1DARRAY ws;
     MALLOC_INT_1DARRAY(ws, M.nrow);
     init_value(ws, M.nrow, BASKER_MAX_IDX);
-    
+
+    const Entry zero (0.0);
     Int c_nnz = 0;
     C.col_ptr(0) = 0;
     for(Int k = 0 ; k <  M.ncol; ++k)
@@ -68,11 +70,13 @@ namespace BaskerNS
       for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
       {
         Int j = M.row_idx(i);
-        if(ws(j) != k)
+        if (ws(j) != k)
         {
-          C.row_idx(c_nnz) = j;
-          c_nnz++;
-          ws(j) = k;
+          if (keep_zeros || M.val(i) != zero) {
+            C.row_idx(c_nnz) = j;
+            c_nnz++;
+            ws(j) = k;
+          }
         }
       }
 

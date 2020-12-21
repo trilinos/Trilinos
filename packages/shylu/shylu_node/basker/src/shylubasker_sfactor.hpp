@@ -520,7 +520,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     FREE(gScol);
     FREE(gSrow);
 
-	  return 0;
+    return 0;
   }//end symmetric_symbolic()
 
 

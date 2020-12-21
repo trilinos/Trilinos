@@ -40,7 +40,7 @@ namespace BaskerNS
 
     Basker<Int,Entry,Exe_Space>  *basker;
     BASKER_BOOL                  alloc;
-    BASKER_BOOL                  remove_zero;
+    BASKER_BOOL                  keep_zeros;
 
 
     kokkos_order_init_2D()
@@ -52,11 +52,11 @@ namespace BaskerNS
       alloc  = BASKER_TRUE;
     }//end kokkos_order_init_2D()
 
-    kokkos_order_init_2D(Basker<Int,Entry,Exe_Space> *_b, BASKER_BOOL _alloc, BASKER_BOOL _remove_zero)
+    kokkos_order_init_2D(Basker<Int,Entry,Exe_Space> *_b, BASKER_BOOL _alloc, BASKER_BOOL _keep_zeros)
     {
       basker      = _b;
       alloc       = _alloc;
-      remove_zero = _remove_zero;
+      keep_zeros  = _keep_zeros;
     }
       
 
@@ -71,7 +71,7 @@ namespace BaskerNS
       Int kid = (Int)(thread.league_rank()*thread.team_size() + thread.team_rank());
       #endif
       {
-        basker->t_init_2DA(kid, alloc, remove_zero);
+        basker->t_init_2DA(kid, alloc, keep_zeros);
       }
     }//end operator()
 
@@ -572,7 +572,7 @@ namespace BaskerNS
   BASKER_INLINE
   void Basker<Int, Entry, Exe_Space>::t_init_2DA
   (
-   Int kid, BASKER_BOOL alloc, BASKER_BOOL remove_zero
+   Int kid, BASKER_BOOL alloc, BASKER_BOOL keep_zeros
   )
   {
     /*printf(" BTF_A_2D = [\n" );
@@ -1805,8 +1805,9 @@ namespace BaskerNS
   BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::matrix_transpose
   (
-   BASKER_MATRIX &M, //BTF_A
-   BASKER_MATRIX &AT //T, blank
+   BASKER_MATRIX &M,  //BTF_A
+   BASKER_MATRIX &AT, //T, blank
+   BASKER_BOOL keep_zeros
   )
   {
     //const Int brow = M.srow; Not used
@@ -1832,12 +1833,15 @@ namespace BaskerNS
     //{
     //  AT.col_ptr(j) = (Int) 0;
     //}
-    
+
+    const Entry zero (0.0);
 Kokkos::Timer timer;
     //get row counts
     for(Int j = M.col_ptr(0); j < M.col_ptr(M.ncol); ++j)
     {
-      AT.col_ptr(1+M.row_idx(j)) ++;
+      if (keep_zeros || M.val(j) != zero) {
+        AT.col_ptr(1+M.row_idx(j)) ++;
+      }
     }
 
     // make into offset
@@ -1850,7 +1854,9 @@ Kokkos::Timer timer;
     {
       for(Int j = M.col_ptr(k); j < M.col_ptr(k+1); ++j)
       {
-        AT.row_idx(AT.col_ptr(M.row_idx(j))++) = k; 
+        if (keep_zeros || M.val(j) != zero) {
+          AT.row_idx(AT.col_ptr(M.row_idx(j))++) = k; 
+        }
       }
     }
 
@@ -1860,6 +1866,7 @@ Kokkos::Timer timer;
       AT.col_ptr(j) = AT.col_ptr(j-1);
     }//for-j
     AT.col_ptr(0) = 0;
+    AT.nnz  = AT.col_ptr(AT.ncol);
 std::cout << " matrix_trans: " << timer.seconds() << std::endl;
   }//end matrix_transpose
 

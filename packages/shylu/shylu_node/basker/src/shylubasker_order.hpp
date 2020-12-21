@@ -718,7 +718,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::apply_scotch_partition()
+  int Basker<Int, Entry, Exe_Space>::apply_scotch_partition(BASKER_BOOL keep_zeros)
   {
     #ifdef BASKER_TIMER
     Kokkos::Timer scotch_timer;
@@ -737,13 +737,50 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     printf(" T = [\n" );
     for(Int j = 0; j < BTF_A.ncol; j++) {
       for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-        printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+        printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
       }
     }
     printf("];\n");*/
 
     // tree is prepped; permutation then applied to BTF_A
-    int info_scotch = scotch_partition(BTF_A);
+    BASKER_MATRIX AAT;
+    int info_scotch = 0;
+    if(Options.symmetric == BASKER_TRUE) {
+      info_scotch = scotch_partition(BTF_A);
+    } else {
+      // compute AAT here
+      AplusAT(BTF_A, AAT, keep_zeros);
+      #ifdef BASKER_TIMER
+      double apat_time = scotch_timer.seconds();
+      std::cout << " ++ Basker apply_scotch : ++ AplusAT  : nnz = " << BTF_A.nnz << " -> " << AAT.nnz
+                << " ( " << keep_zeros << " ) " << apat_time << " seconds" << std::endl;
+      scotch_timer.reset();
+      #endif
+
+      info_scotch = scotch_partition(BTF_A, AAT);
+
+      INT_1DARRAY col_ptr;
+      INT_1DARRAY row_idx;
+      MALLOC_INT_1DARRAY(col_ptr, AAT.ncol+1);
+      MALLOC_INT_1DARRAY(row_idx, AAT.nnz);
+
+      Int nnz = 0;
+      col_ptr[0] = 0;
+      for (Int j = 0; j < AAT.ncol; j++) {
+        Int col = part_tree.ipermtab[j];
+        for (Int k = AAT.col_ptr[col]; k < AAT.col_ptr[col+1]; k++) {
+          row_idx[nnz] = part_tree.permtab[AAT.row_idx[k]];
+          nnz++;
+        }
+        col_ptr[j+1] = nnz;
+      }
+      for (Int j = 0; j <= AAT.ncol; j++) {
+        AAT.col_ptr[j] = col_ptr[j];
+      }
+      for (Int k = 0; k < nnz; k++) {
+        AAT.row_idx[k] = row_idx[k];
+      }
+    }
     if (info_scotch != BASKER_SUCCESS) {
       return info_scotch;
     }
@@ -757,11 +794,18 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     for(Int j = 0; j < BTF_A.ncol; j++) {
       printf("%d\n",part_tree.permtab(j) );
     }
-    printf("];\n");
-    printf(" ppT = [\n" );
+    printf("];\n");*/
+    /*printf(" ppT = [\n" );
     for(Int j = 0; j < BTF_A.ncol; j++) {
       for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-        printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+        printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+      }
+    }
+    printf("];\n");
+    printf(" AAT = [\n" );
+    for(Int j = 0; j < AAT.ncol; j++) {
+      for(Int k = AAT.col_ptr[j]; k < AAT.col_ptr[j+1]; k++) {
+        printf("%d %d\n", AAT.row_idx[k], j);
       }
     }
     printf("];\n");*/
@@ -790,8 +834,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       }
     }
 #endif
-    //For debug
-    //printMTX("A_BTF_PART_AFTER.mtx", BTF_A);
 
     //--------------------------------------------------------------
     //4. Init tree structure
@@ -810,22 +852,13 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //--------------------------------------------------------------
     //5. Constrained symamd on A
     //Init for Constrained symamd on A
-    if (1) {
-      BASKER_MATRIX AAT;
-      AplusAT(BTF_A, AAT);
-      #ifdef BASKER_TIMER
-      double apat_time = scotch_timer.seconds();
-      std::cout << " ++ Basker apply_scotch : ++ AplusAT  : " << apat_time << std::endl;
-      #endif
-
+    if (Options.symmetric != BASKER_TRUE) {
       INT_1DARRAY tempp;
       INT_1DARRAY temp_col;
       INT_1DARRAY temp_row;
       MALLOC_INT_1DARRAY  (tempp,    AAT.ncol);
       MALLOC_INT_1DARRAY  (temp_col, AAT.ncol+1);
       MALLOC_INT_1DARRAY  (temp_row, AAT.nnz);
-      //ENTRY_1DARRAY temp_val;
-      //MALLOC_ENTRY_1DARRAY(temp_val, AAT.nnz);
 
       for(Int b = 0; b < tree.nblks; ++b) {
         Int frow = tree.col_tabs(b);
@@ -861,6 +894,13 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
           order_csym_array(frow+tempp(k)) = frow+k;
         }
       }
+
+      #ifdef BASKER_TIMER
+      double csymamd_tot_time = scotch_timer.seconds();
+      std::cout << " ++ Basker apply_scotch : constrained symm amd time : " << csymamd_tot_time
+                << " (" << csymamd_time << ") using amd" << std::endl;
+      scotch_timer.reset();
+      #endif
     } else
     {
       INT_1DARRAY cmember;
@@ -882,6 +922,13 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       #ifdef BASKER_TIMER
       csymamd_time = scotch_amd_timer.seconds();
       #endif
+
+      #ifdef BASKER_TIMER
+      double csymamd_tot_time = scotch_timer.seconds();
+      std::cout << " ++ Basker apply_scotch : constrained symm amd time : " << csymamd_tot_time
+                << " (" << csymamd_time << ") using csymamd" << std::endl;
+      scotch_timer.reset();
+      #endif
     }
     #if 0 // reset to I for debug
     printf( " >> debug: set order_csym_array to identity <<\n" );
@@ -891,12 +938,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     #endif
     //permute_col(BTF_A, order_csym_array);
     //sort_matrix(BTF_A); // unnecessary?
-    #ifdef BASKER_TIMER
-    double csymamd_tot_time = scotch_timer.seconds();
-    std::cout << " ++ Basker apply_scotch : constrained symm amd time : " << csymamd_tot_time
-              << " (" << csymamd_time << ")" << std::endl;
-    scotch_timer.reset();
-    #endif
     /*printf(" After cAMD\n");
     printf(" p = [\n" );
     for(Int j = 0; j < BTF_A.ncol; j++) {
@@ -1041,30 +1082,27 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::scotch_partition( BASKER_MATRIX &M)
+  int Basker<Int, Entry, Exe_Space>::scotch_partition(BASKER_MATRIX &M)
+  {
+    int info_scotch = 0;
+    if(Options.symmetric == BASKER_TRUE) {
+      info_scotch = scotch_partition(M, M);
+    } else {
+      BASKER_MATRIX MMT;
+      AplusAT(M,MMT);
+      info_scotch = scotch_partition(M, MMT);
+      FREE(MMT);
+    }
+    return info_scotch;
+  }
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int, Entry, Exe_Space>::scotch_partition(BASKER_MATRIX &M, BASKER_MATRIX &MMT)
   {
     nd_flag = BASKER_TRUE;
 
-    int info_scotch = 0;
-    if(Options.symmetric == BASKER_TRUE)
-    {
-      //printf("Scotch Symmetric\n");
-      info_scotch = part_scotch(M, part_tree);
-    }
-    else
-    {
-      //printf("Scotch Nonsymmetrix\n");
-      BASKER_MATRIX MMT;
-      AplusAT(M,MMT);
-      ///std::cout << " part_scotch(nnz(M) = " << M.nnz << " nnz(M+Mt) = " << MMT.nnz << std::endl;
-      /*printf( " MMT = [\n" );
-      for(Int i = 0; i < M.nrow; i++) {
-        for(Int k = M.col_ptr(i); k < M.col_ptr(i+1); k++) printf( "%d %d\n",i,M.row_idx(k) );
-      }
-      printf( "];\n" );*/
-      info_scotch = part_scotch(MMT, part_tree);
-      FREE(MMT);
-    }
+    int info_scotch = part_scotch(MMT, part_tree);
     if (info_scotch != BASKER_SUCCESS) {
       return info_scotch;
     }

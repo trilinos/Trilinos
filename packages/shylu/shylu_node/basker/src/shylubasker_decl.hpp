@@ -262,10 +262,13 @@ namespace BaskerNS
     int match_ordering(int option);
 
     BASKER_INLINE
-    int apply_scotch_partition();
+    int apply_scotch_partition(BASKER_BOOL keep_zeros = true);
 
     BASKER_INLINE
     int scotch_partition(BASKER_MATRIX &M);
+
+    BASKER_INLINE
+    int scotch_partition(BASKER_MATRIX &M, BASKER_MATRIX &MMT);
 
     BASKER_INLINE
     int permute_inv(INT_1DARRAY, INT_1DARRAY, Int);
@@ -365,7 +368,7 @@ namespace BaskerNS
 
     //basker_order_scotch.hpp
     BASKER_INLINE
-    int AplusAT(BASKER_MATRIX &M, BASKER_MATRIX &C);
+    int AplusAT(BASKER_MATRIX &M, BASKER_MATRIX &C, BASKER_BOOL keep_zeros = true);
 
     int part_scotch(BASKER_MATRIX &M, BASKER_TREE &BT);
 
@@ -1156,7 +1159,9 @@ namespace BaskerNS
 
     //Matrix helper
     BASKER_INLINE
-    void matrix_transpose(BASKER_MATRIX &, BASKER_MATRIX &);
+    void matrix_transpose(BASKER_MATRIX &M,
+                          BASKER_MATRIX &MT,
+                          BASKER_BOOL keep_zeros = true);
 
     BASKER_INLINE
     void matrix_transpose(BASKER_MATRIX_VIEW &, BASKER_MATRIX &);

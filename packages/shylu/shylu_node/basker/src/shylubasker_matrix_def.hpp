@@ -520,11 +520,11 @@ namespace BaskerNS
     }
     //init_value(row_idx, nnz, (Int) 0);
     //printf("clear row: %d \n", nnz);
-    for(Int i = 0; i < nnz; ++i)
+    /*for(Int i = 0; i < nnz; ++i)
     {
       //printf("clear row_idx(%d) \n", i);
       row_idx(i) = 0;
-    }
+    }*/
 
     if(alloc == BASKER_TRUE)
     {
@@ -540,10 +540,10 @@ namespace BaskerNS
       }
     }
     //init_value(val, nnz, (Entry) 0);
-    for(Int i = 0; i < nnz; ++i)
+    /*for(Int i = 0; i < nnz; ++i)
     {
       val(i) = 0;
-    }
+    }*/
 
     const Entry zero(0.0);
     Int temp_count = 0;

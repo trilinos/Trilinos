@@ -1350,7 +1350,8 @@ namespace BaskerNS
         // ----------------------------------------------------------------------------------------------
         // compute & apply ND on a big block A
         Kokkos::Timer nd_nd_timer;
-        int info_scotch = apply_scotch_partition();
+        BASKER_BOOL keep_zeros = true;
+        int info_scotch = apply_scotch_partition(keep_zeros);
         if (info_scotch != BASKER_SUCCESS) {
           return info_scotch;
         }
