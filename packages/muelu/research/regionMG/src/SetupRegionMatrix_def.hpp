@@ -166,31 +166,35 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
 
   RCP<CrsMatrixWrap> quasiRegionCrsWrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(quasiRegionMats);
   RCP<CrsMatrix> quasiRegionCrs = quasiRegionCrsWrap->getCrsMatrix();
-  const LO numRows = Teuchos::as<LO>(quasiRegionCrs->getNodeNumRows());
+  const LO numRows    = Teuchos::as<LO>(quasiRegionCrs->getNodeNumRows());
+  const size_t numNNZ = quasiRegionCrs->getNodeNumEntries();
 
+  Teuchos::ArrayRCP<size_t> rowPtr;
+  Teuchos::ArrayRCP<LO> colInds;
+  Teuchos::ArrayRCP<SC> values;
+  quasiRegionCrs->allocateAllValues(numNNZ, rowPtr, colInds, values);
+
+  GO rowGID;
+  LocalOrdinal col;
+  GlobalOrdinal colGID;
+  std::size_t sizeOfCommonRegions;
   for (LO row = 0; row < numRows; ++row) { // loop over local rows of composite matrix
-    GO rowGID = rowMap->getGlobalElement(row);
-    std::size_t numEntries = quasiRegionMats->getNumEntriesInLocalRow(row); // number of entries in this row
-    Teuchos::Array<SC> vals(numEntries); // non-zeros in this row
-    Teuchos::Array<LO> inds(numEntries); // local column indices
-    quasiRegionMats->getLocalRowCopy(row, inds, vals, numEntries);
+    rowGID = rowMap->getGlobalElement(row);
 
-    for (std::size_t c = 0; c < Teuchos::as<std::size_t>(inds.size()); ++c) { // loop over all entries in this row
-      LocalOrdinal col = inds[c];
-      GlobalOrdinal colGID = colMap->getGlobalElement(col);
+    for (std::size_t entryIdx = rowPtr[row]; entryIdx < rowPtr[row + 1]; ++entryIdx) { // loop over all entries in this row
+      col = colInds[entryIdx];
+      colGID = colMap->getGlobalElement(col);
       Array<int> commonRegions;
       if (rowGID != colGID) { // Skip the diagonal entry. It will be processed later.
-        // commonRegions = findCommonRegions(rowGID, colGID, *regionsPerGIDWithGhosts);
         commonRegions = findCommonRegions(rowGID, colGID, regionPerGIDWithGhostsData, regionsPerGIDWithGhosts->getMap());
       }
 
-      std::size_t sizeOfCommonRegions = commonRegions.size();
+      sizeOfCommonRegions = commonRegions.size();
       if (sizeOfCommonRegions > 1) {
-        vals[c] /= Teuchos::as<double>(sizeOfCommonRegions);
+        values[entryIdx] /= Teuchos::as<double>(sizeOfCommonRegions);
       }
     }
 
-    quasiRegionMats->replaceLocalValues(row, inds, vals);
   }
 
   tm = Teuchos::null;
