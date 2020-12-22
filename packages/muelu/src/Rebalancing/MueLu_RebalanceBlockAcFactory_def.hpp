@@ -384,8 +384,12 @@ namespace MueLu {
     RCP<const MapExtractor> rebRangeMapExtractor = MapExtractorFactory::Build(fullRangeMap, subBlockARangeMaps, bThyraRangeGIDs);
     RCP<const MapExtractor> rebDomainMapExtractor = MapExtractorFactory::Build(fullDomainMap, subBlockADomainMaps, bThyraDomainGIDs);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(rangeMapExtractor->NumMaps()  != rebRangeMapExtractor->NumMaps(), Exceptions::BadCast, "MueLu::RebalanceBlockedAc::Build: Rebalanced RangeMapExtractor has " << rebRangeMapExtractor << " sub maps. Original RangeMapExtractor has " << rangeMapExtractor->NumMaps() << ". They must match!");
-    TEUCHOS_TEST_FOR_EXCEPTION(domainMapExtractor->NumMaps() != rebDomainMapExtractor->NumMaps(), Exceptions::BadCast, "MueLu::RebalanceBlockedAc::Build: Rebalanced DomainMapExtractor has " << rebDomainMapExtractor << " sub maps. Original DomainMapExtractor has " << domainMapExtractor->NumMaps() << ". They must match!");
+    TEUCHOS_TEST_FOR_EXCEPTION(rangeMapExtractor->NumMaps() != rebRangeMapExtractor->NumMaps(), Exceptions::RuntimeError,
+        "MueLu::RebalanceBlockedAc::Build: Rebalanced RangeMapExtractor has " << rebRangeMapExtractor->NumMaps()
+        << " sub maps. Original RangeMapExtractor has " << rangeMapExtractor->NumMaps() << ". They must match!");
+    TEUCHOS_TEST_FOR_EXCEPTION(domainMapExtractor->NumMaps() != rebDomainMapExtractor->NumMaps(), Exceptions::RuntimeError,
+        "MueLu::RebalanceBlockedAc::Build: Rebalanced DomainMapExtractor has " << rebDomainMapExtractor->NumMaps()
+        << " sub maps. Original DomainMapExtractor has " << domainMapExtractor->NumMaps() << ". They must match!");
 
     Teuchos::RCP<BlockedCrsMatrix> reb_bA = Teuchos::rcp(new BlockedCrsMatrix(rebRangeMapExtractor,rebDomainMapExtractor,10));
     for(size_t i=0; i<bA->Rows(); i++) {
