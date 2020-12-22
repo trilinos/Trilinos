@@ -52,6 +52,12 @@
 #  define HAVE_ZOLTAN2_PULP
 #endif
 
+/* define if we have the SARMA library*/
+#cmakedefine HAVE_ZOLTAN2CORE_SARMA
+#ifdef HAVE_ZOLTAN2CORE_SARMA
+#  define HAVE_ZOLTAN2_SARMA
+#endif
+
 /* define if we have the ParMA library*/
 #cmakedefine HAVE_ZOLTAN2CORE_PARMA
 #ifdef HAVE_ZOLTAN2CORE_PARMA

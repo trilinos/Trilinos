@@ -207,6 +207,18 @@ TRIBITS_ADD_TEST(
 ENDIF()
 
 
+# Sarma Test
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    sarmaTest
+    SOURCES partition_sarma.cpp
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    ARGS
+    ""
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TaskMappingTest3
   SOURCES TaskMappingTest3.cpp
