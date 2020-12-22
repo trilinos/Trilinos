@@ -71,9 +71,6 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RebalanceBlockAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RebalanceBlockAcFactory() {  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> RebalanceBlockAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
@@ -133,8 +130,8 @@ namespace MueLu {
     subBlockADomainMaps.reserve(bA->Cols());
 
     // store map extractors
-    Teuchos::RCP<const MapExtractorClass> rangeMapExtractor  = bA->getRangeMapExtractor();
-    Teuchos::RCP<const MapExtractorClass> domainMapExtractor = bA->getDomainMapExtractor();
+    RCP<const MapExtractor> rangeMapExtractor = bA->getRangeMapExtractor();
+    RCP<const MapExtractor> domainMapExtractor = bA->getDomainMapExtractor();
 
     // check if GIDs for full maps have to be sorted:
     // For the Thyra mode ordering they do not have to be sorted since the GIDs are
@@ -384,8 +381,8 @@ namespace MueLu {
     }
 
     // build map extractors
-    Teuchos::RCP<const MapExtractorClass> rebRangeMapExtractor  = MapExtractorFactoryClass::Build(fullRangeMap, subBlockARangeMaps, bThyraRangeGIDs);
-    Teuchos::RCP<const MapExtractorClass> rebDomainMapExtractor = MapExtractorFactoryClass::Build(fullDomainMap, subBlockADomainMaps, bThyraDomainGIDs);
+    RCP<const MapExtractor> rebRangeMapExtractor = MapExtractorFactory::Build(fullRangeMap, subBlockARangeMaps, bThyraRangeGIDs);
+    RCP<const MapExtractor> rebDomainMapExtractor = MapExtractorFactory::Build(fullDomainMap, subBlockADomainMaps, bThyraDomainGIDs);
 
     TEUCHOS_TEST_FOR_EXCEPTION(rangeMapExtractor->NumMaps()  != rebRangeMapExtractor->NumMaps(), Exceptions::BadCast, "MueLu::RebalanceBlockedAc::Build: Rebalanced RangeMapExtractor has " << rebRangeMapExtractor << " sub maps. Original RangeMapExtractor has " << rangeMapExtractor->NumMaps() << ". They must match!");
     TEUCHOS_TEST_FOR_EXCEPTION(domainMapExtractor->NumMaps() != rebDomainMapExtractor->NumMaps(), Exceptions::BadCast, "MueLu::RebalanceBlockedAc::Build: Rebalanced DomainMapExtractor has " << rebDomainMapExtractor << " sub maps. Original DomainMapExtractor has " << domainMapExtractor->NumMaps() << ". They must match!");
