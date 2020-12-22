@@ -576,7 +576,10 @@ namespace MueLu {
       Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors());
       D0_Matrix_->apply(*CoordsSC,*Nullspace_);
 
-      if (IsPrint(Statistics2)) {
+      bool normalize = parameterList_.get<bool>("refmaxwell: normalize nullspace", MasterList::getDefault<bool>("refmaxwell: normalize nullspace"));
+      
+      coordinateType minLen, maxLen, meanLen;
+      if (IsPrint(Statistics2) || normalize){
         // compute edge lengths
         ArrayRCP<ArrayRCP<const Scalar> > localNullspace(Nullspace_->getNumVectors());
         for (size_t i = 0; i < Nullspace_->getNumVectors(); i++)
@@ -593,28 +596,25 @@ namespace MueLu {
           localMaxLen = std::max(localMaxLen, len);
           localMeanLen += len;
         }
-        coordinateType minLen, maxLen, meanLen;
+        
         RCP<const Teuchos::Comm<int> > comm = Nullspace_->getMap()->getComm();
         MueLu_minAll(comm, localMinLen,  minLen);
         MueLu_sumAll(comm, localMeanLen, meanLen);
         MueLu_maxAll(comm, localMaxLen,  maxLen);
         meanLen /= Nullspace_->getMap()->getGlobalNumElements();
+      }
+      
+      if (IsPrint(Statistics2)) {
         GetOStream(Statistics0) << "Edge length (min/mean/max): " << minLen << " / " << meanLen << " / " << maxLen << std::endl;
       }
-
-      bool normalize = parameterList_.get<bool>("refmaxwell: normalize nullspace", MasterList::getDefault<bool>("refmaxwell: normalize nullspace"));
+      
       if (normalize) {
         // normalize the nullspace
         GetOStream(Runtime0) << "RefMaxwell::compute(): normalizing nullspace" << std::endl;
 
         const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-        Array<coordinateType> norms(Coords_->getNumVectors());
-        Coords_->normInf(norms);
 
-        // Cast coordinates to Scalar so they can be multiplied against the nullspace
-        Array<Scalar> normsSC(Coords_->getNumVectors());
-        for (size_t i=0; i < Coords_->getNumVectors(); i++)
-          normsSC[i] = one / Teuchos::as<Scalar>(norms[i]);
+        Array<Scalar> normsSC(Coords_->getNumVectors(), one / Teuchos::as<Scalar>(meanLen));
         Nullspace_->scale(normsSC());
       }
     }
