@@ -125,8 +125,8 @@ Teuchos::Array<int> findCommonRegions(const GlobalOrdinal nodeA, ///< GID of fir
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AComp,
                              RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > regionsPerGIDWithGhosts,
-                             RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& rowMap,
-                             RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& colMap,
+                             RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap,
+                             RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > colMap,
                              RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rowImport,
                              RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& quasiRegionMats) {
 #include "Xpetra_UseShortNames.hpp"
@@ -205,9 +205,9 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AComp,
                         const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > mapComp,
-                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& rowMap,
-                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& revisedRowMap,
-                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& revisedColMap,
+                        RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap,
+                        RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,
+                        RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedColMap,
                         RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rowImport,
                         RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& quasiRegionMats,
                         RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regionMats) {
@@ -348,8 +348,8 @@ void MakeRegionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, Gl
  */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void regionalToComposite(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regMat, ///< Matrix in region layout [in]
-                         const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap, ///< row maps in quasiRegion layout [in]
-                         const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > colMap, ///< col maps in quasiRegion layout [in]
+                         const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap, ///< row maps in quasiRegion layout [in]
+                         const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > colMap, ///< col maps in quasiRegion layout [in]
                          const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport, ///< row importer in region layout [in]
                          const Xpetra::CombineMode combineMode, ///< Combine mode for import/export [in]
                          RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& compMat ///< Matrix in composite layout [in/out]
@@ -436,7 +436,7 @@ void regionalToComposite(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOr
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void SetupMatVec(const Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& interfaceGIDsMV,
                  const Teuchos::RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& regionsPerGIDWithGhosts,
-                 const Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& regionRowMap,
+                 const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& regionRowMap,
                  const Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rowImport,
                  Teuchos::ArrayRCP<LocalOrdinal>& regionMatVecLIDs,
                  Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter) {

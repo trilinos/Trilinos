@@ -65,10 +65,10 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
                         const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > nodeMap,
                         const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > dofMap,
                         const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A,
-                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& rowMap,
-                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& colMap,
-                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& revisedRowMap,
-                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& revisedColMap,
+                        RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& rowMap,
+                        RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& colMap,
+                        RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& revisedRowMap,
+                        RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& revisedColMap,
                         RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rowImport,
                         RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& colImport,
                         RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regionMats,
@@ -188,7 +188,7 @@ void createProblem(const LocalOrdinal numDofsPerNode,
                    RCP<const Teuchos::Comm<int> > comm,
                    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
                    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regionMats,
-                   RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& revisedRowMap,
+                   RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& revisedRowMap,
                    RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rowImport,
                    Teuchos::ArrayRCP<LocalOrdinal>& regionMatVecLIDs,
                    RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter) {
@@ -228,9 +228,9 @@ void createProblem(const LocalOrdinal numDofsPerNode,
   RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>(coordinatesType, nodeMap, galeriList);
 
   // create the region maps, importer and operator from composite counter parts
-  RCP<Map> rowMap = Teuchos::null;
-  RCP<Map> colMap = Teuchos::null;
-  RCP<Map> revisedColMap = Teuchos::null;
+  RCP<const Map> rowMap = Teuchos::null;
+  RCP<const Map> colMap = Teuchos::null;
+  RCP<const Map> revisedColMap = Teuchos::null;
   RCP<Import> colImport = Teuchos::null;
   createRegionMatrix(galeriList, numDofsPerNode, nodeMap, dofMap, A,
                      rowMap, colMap, revisedRowMap, revisedColMap,
@@ -253,9 +253,9 @@ void createProblem(const LocalOrdinal numDofsPerNode,
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void test_matrix(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A,
                  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionMats,
-                 RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap,
-                 RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > colMap,
-                 RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,
+                 RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap,
+                 RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > colMap,
+                 RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,
                  RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport,
                  Teuchos::FancyOStream& out,
                  bool& success) {
@@ -409,10 +409,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
   RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
 
   // Create the region version of A called regionMats
-  RCP<Map> rowMap = Teuchos::null;
-  RCP<Map> colMap = Teuchos::null;
-  RCP<Map> revisedRowMap = Teuchos::null;
-  RCP<Map> revisedColMap = Teuchos::null;
+  RCP<const Map> rowMap = Teuchos::null;
+  RCP<const Map> colMap = Teuchos::null;
+  RCP<const Map> revisedRowMap = Teuchos::null;
+  RCP<const Map> revisedColMap = Teuchos::null;
   RCP<Import> rowImport = Teuchos::null;
   RCP<Import> colImport = Teuchos::null;
   RCP<Matrix> regionMats = Teuchos::null;
@@ -588,10 +588,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, RegionToCompositeMatrix, Scalar,
     CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
 
   // From the original composite matrix A, build the region equivalent: regionMats
-  RCP<Map> rowMap = Teuchos::null;
-  RCP<Map> colMap = Teuchos::null;
-  RCP<Map> revisedRowMap = Teuchos::null;
-  RCP<Map> revisedColMap = Teuchos::null;
+  RCP<const Map> rowMap = Teuchos::null;
+  RCP<const Map> colMap = Teuchos::null;
+  RCP<const Map> revisedRowMap = Teuchos::null;
+  RCP<const Map> revisedColMap = Teuchos::null;
   RCP<Import> rowImport = Teuchos::null;
   RCP<Import> colImport = Teuchos::null;
   RCP<Matrix> regionMats = Teuchos::null;
@@ -697,10 +697,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal
   RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
 
   // create the region maps, importer and operator from composite counter parts
-  RCP<Map> rowMap = Teuchos::null;
-  RCP<Map> colMap = Teuchos::null;
-  RCP<Map> revisedRowMap = Teuchos::null;
-  RCP<Map> revisedColMap = Teuchos::null;
+  RCP<const Map> rowMap = Teuchos::null;
+  RCP<const Map> colMap = Teuchos::null;
+  RCP<const Map> revisedRowMap = Teuchos::null;
+  RCP<const Map> revisedColMap = Teuchos::null;
   RCP<Import> rowImport = Teuchos::null;
   RCP<Import> colImport = Teuchos::null;
   RCP<Matrix> regionMats = Teuchos::null;
@@ -751,7 +751,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal
   // to transform data from region to composite and back
   // it should perform faster and allow for easy customization
   // of the local MatVec
-  RCP<Map> regionMap = revisedRowMap;
+  RCP<const Map> regionMap = revisedRowMap;
 
   RCP<Vector> regC = Teuchos::null;
   regC = VectorFactory::Build(revisedRowMap, true);
@@ -801,7 +801,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdin
   // create the region maps, importer and operator from composite counter parts
   RCP<Matrix> regionMats = Teuchos::null;
   RCP<Matrix> A;
-  RCP<Map> revisedRowMap = Teuchos::null;
+  RCP<const Map> revisedRowMap = Teuchos::null;
   RCP<Import> rowImport = Teuchos::null;
   Teuchos::ArrayRCP<LocalOrdinal> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
@@ -851,7 +851,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdin
   // to transform data from region to composite and back
   // it should perform faster and allow for easy customization
   // of the local MatVec
-  RCP<Map> regionMap = revisedRowMap;
+  RCP<const Map> regionMap = revisedRowMap;
 
   RCP<Vector> regC = Teuchos::null;
   regC = VectorFactory::Build(revisedRowMap, true);
@@ -897,7 +897,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec2D_Elasticity, Scalar,
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Elasticity2D");
   RCP<Matrix> regionMats = Teuchos::null;
   RCP<Matrix> A;
-  RCP<Map> revisedRowMap = Teuchos::null;
+  RCP<const Map> revisedRowMap = Teuchos::null;
   RCP<Import> rowImport = Teuchos::null;
   Teuchos::ArrayRCP<LocalOrdinal> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
@@ -946,7 +946,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec2D_Elasticity, Scalar,
   // to transform data from region to composite and back
   // it should perform faster and allow for easy customization
   // of the local MatVec
-  RCP<Map> regionMap = revisedRowMap;
+  RCP<const Map> regionMap = revisedRowMap;
 
   RCP<Vector> regC = Teuchos::null;
   regC = VectorFactory::Build(revisedRowMap, true);
@@ -992,7 +992,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar,
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Elasticity3D");
   RCP<Matrix> regionMats = Teuchos::null;
   RCP<Matrix> A = Teuchos::null;
-  RCP<Map> revisedRowMap = Teuchos::null;
+  RCP<const Map> revisedRowMap = Teuchos::null;
   RCP<Import> rowImport = Teuchos::null;
   Teuchos::ArrayRCP<LocalOrdinal> regionMatVecLIDs;
   RCP<Import> regionInterfaceImporter;
@@ -1041,7 +1041,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar,
   // to transform data from region to composite and back
   // it should perform faster and allow for easy customization
   // of the local MatVec
-  RCP<Map> regionMap = revisedRowMap;
+  RCP<const Map> regionMap = revisedRowMap;
 
   RCP<Vector> regC = Teuchos::null;
   regC = VectorFactory::Build(revisedRowMap, true);
@@ -1104,10 +1104,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
   RCP<MultiVector> nullspace = Pr->BuildNullspace();
   RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
 
-  RCP<Map> rowMap = Teuchos::null;
-  RCP<Map> colMap = Teuchos::null;
-  RCP<Map> revisedRowMap = Teuchos::null;
-  RCP<Map> revisedColMap = Teuchos::null;
+  RCP<const Map> rowMap = Teuchos::null;
+  RCP<const Map> colMap = Teuchos::null;
+  RCP<const Map> revisedRowMap = Teuchos::null;
+  RCP<const Map> revisedColMap = Teuchos::null;
   RCP<Import> rowImport = Teuchos::null;
   RCP<Import> colImport = Teuchos::null;
   RCP<Matrix> regionMats = Teuchos::null;
@@ -1282,10 +1282,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
   RCP<MultiVector> nullspace = Pr->BuildNullspace();
   RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("3D", nodeMap, galeriList);
 
-  RCP<Map> rowMap = Teuchos::null;
-  RCP<Map> colMap = Teuchos::null;
-  RCP<Map> revisedRowMap = Teuchos::null;
-  RCP<Map> revisedColMap = Teuchos::null;
+  RCP<const Map> rowMap = Teuchos::null;
+  RCP<const Map> colMap = Teuchos::null;
+  RCP<const Map> revisedRowMap = Teuchos::null;
+  RCP<const Map> revisedColMap = Teuchos::null;
   RCP<Import> rowImport = Teuchos::null;
   RCP<Import> colImport = Teuchos::null;
   RCP<Matrix> regionMats = Teuchos::null;
