@@ -114,6 +114,10 @@ class MockModelEval_A_Tpetra
   get_W_factory() const;
 
   /** \brief . */
+  Teuchos::RCP<Thyra::LinearOpBase<double>>
+  create_hess_g_pp( int j, int l1, int l2 ) const;
+
+  /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<double>
   createInArgs() const;
 
@@ -166,6 +170,7 @@ class MockModelEval_A_Tpetra
   Teuchos::RCP<const Tpetra_Map> p_map;
   Teuchos::RCP<const Tpetra_Map> g_map;
   Teuchos::RCP<Tpetra_CrsGraph> crs_graph;
+  Teuchos::RCP<Tpetra_CrsGraph> hess_crs_graph;
   Teuchos::RCP<const Teuchos::Comm<int> > comm;
 
   Teuchos::RCP<Tpetra_Vector> p_vec;

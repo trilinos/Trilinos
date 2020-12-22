@@ -63,6 +63,7 @@
 #ifdef HAVE_PIRO_ROL
 #include "ROL_ThyraVector.hpp"
 #include "ROL_ScaledThyraVector.hpp"
+#include "ROL_HessianScaledThyraVector.hpp"
 #include "ROL_Thyra_BoundConstraint.hpp"
 #include "ROL_ThyraME_Objective.hpp"
 #include "ROL_ThyraProductME_Objective.hpp"
@@ -79,11 +80,10 @@
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_DefaultProductVector.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
-
-#include <Thyra_TpetraThyraWrappers_decl.hpp>
-#include <MatrixMarket_Tpetra.hpp>
 #endif
 
+#include "Teko_InverseLibrary.hpp"
+#include "Teko_PreconditionerFactory.hpp"
 
 using std::cout; using std::endl; using std::string;
 using Teuchos::RCP; using Teuchos::rcp; using Teuchos::ParameterList;
@@ -484,27 +484,6 @@ Piro::PerformROLAnalysis(
       *out << "Checking Accuracy of constraint Hessian" << std::endl;
       constr.checkApplyAdjointHessian(sopt_vec, rol_x_direction1, sopt_vec_direction2, sopt_vec_direction2, true,*out,num_steps,order);
 
-      Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<double>> H = Teuchos::rcp(new Thyra::DefaultBlockedLinearOp<double>());
-      obj.hessian_22(H, rol_x, rol_p);
-
-      int rows = H->productRange()->numBlocks();
-      int cols = H->productDomain()->numBlocks();
-      for (size_t i=0; i<rows; ++i) {
-        auto H_i = H->getBlock(i, i);
-
-        std::ostringstream oss;
-        oss << "H_" << i << "_" << i << ".mm";
-
-        typedef Tpetra::Vector<>::scalar_type Scalar;
-        typedef Tpetra::Vector<>::local_ordinal_type LO;
-        typedef Tpetra::Vector<>::global_ordinal_type GO;
-        typedef Tpetra::Vector<>::node_type Node;
-
-        const std::string& filename = oss.str();
-        const RCP<const Thyra::TpetraLinearOp<Scalar,LO,GO,Node> > tOp = Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<Scalar,LO,GO,Node> >(H_i);
-        const RCP<const Tpetra::CrsMatrix<Scalar,LO,GO,Node> > crsOp = Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<Scalar,LO,GO,Node> >(tOp->getConstTpetraOperator(),true);
-        Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar,LO,GO,Node> >::writeSparseFile(filename,crsOp);
-      }
     }
   }
 
@@ -524,15 +503,45 @@ Piro::PerformROLAnalysis(
   ROL::Ptr<ROL::Algorithm<double> > algo;
   algo = ROL::makePtr<ROL::Algorithm<double>>(step, status,false);
 
+  *out << "\nStart the computation of H_pp" << std::endl;
+  Teko::BlockedLinearOp H = Teko::createBlockedOp();
+  obj.hessian_22(H, rol_x, rol_p);
+  *out << "End of the computation of H_pp" << std::endl;
+
+  int numBlocks = H->productRange()->numBlocks();
+
+  Teuchos::ParameterList defaultParamList;
+  defaultParamList.set("Linear Solver Type","Amesos2");
+  string defaultSolverType = "Amesos2";
+
+  Teuchos::ParameterList dHess;
+  if(rolParams.isSublist("Hessian Diagonal Inverse"))
+    dHess = rolParams.sublist("Hessian Diagonal Inverse");
+
+  std::vector<Teko::LinearOp> diag(numBlocks);
+
+  for (int i=0; i<numBlocks; ++i) {
+    string blockName = "Block "+std::to_string(i);
+    string blockSolverType = "Block solver type "+std::to_string(i);
+    Teuchos::ParameterList pl;
+    if(dHess.isSublist(blockName))
+      pl = dHess.sublist(blockName);
+    else
+      pl = defaultParamList;
+    string solverType = dHess.get<string>(blockSolverType, defaultSolverType);
+    diag[i] = Teko::buildInverse(*Teko::invFactoryFromParamList(pl, solverType), Teko::getBlock(i, i, H));
+  }
+
+  Teko::LinearOp invH = Teko::createBlockUpperTriInverseOp(H, diag);
+
   //this is for testing the PrimalScaledThyraVector. At the moment the scaling is set to 1, so it is not changing the dot product
-  Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_p = p->clone_v();
   Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_x = x->clone_v();
-  ::Thyra::put_scalar<double>( 1.0, scaling_vector_p.ptr());
+  Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_p = p->clone_v();
   ::Thyra::put_scalar<double>( 1.0, scaling_vector_x.ptr());
-  //::Thyra::randomize<double>( 0.5, 2.0, scaling_vector_p.ptr());
+  ::Thyra::put_scalar<double>( 1.0, scaling_vector_p.ptr());
   //::Thyra::randomize<double>( 0.5, 2.0, scaling_vector_x.ptr());
   ROL::PrimalScaledThyraVector<double> rol_x_primal(x, scaling_vector_x);
-  ROL::PrimalScaledThyraVector<double> rol_p_primal(p, scaling_vector_p);
+  ROL::PrimalHessianScaledThyraVector<double> rol_p_primal(p, Teko::toLinearOp(H), invH);
 
   // Run Algorithm
   std::vector<std::string> output;
