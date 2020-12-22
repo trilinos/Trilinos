@@ -559,9 +559,9 @@ printf("KDDKDD DESERIALIZE four \n");fflush(stdout);
   zz->Get_Hier_Method_Data = NULL;
 
   if (bufptr - buf > bufSize) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, "Zoltan_Serialize", 
-                       "Buffer provided is too small; Zoltan just overwrote "
-                       "your memory.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, "Zoltan_Deserialize", 
+                       "Buffer provided is too small; Zoltan just copied "
+                       "garbage memory.");
     ierr = ZOLTAN_MEMERR;
   }
 

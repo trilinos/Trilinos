@@ -161,7 +161,7 @@ printf("%d KDD SIZING BCAST\n", me);fflush(stdout);
   MPI_Bcast(&bufSize, 1, MPI_UNSIGNED_LONG_LONG, 0, MPI_COMM_WORLD);
 
   /* Then allocate and broadcast the buffer */
-printf("%d KDD SERIALIZING\n", me);fflush(stdout);
+printf("%d KDD SERIALIZING %lu\n", me, bufSize);fflush(stdout);
   char *buf = NULL;
   buf = (char *) malloc(bufSize * sizeof(char));
   if (me == 0) ierr = Zoltan_Serialize(zz, bufSize, buf);
@@ -169,7 +169,7 @@ printf("%d KDD SERIALIZING\n", me);fflush(stdout);
 
   /* All processors unpack the buffer into a new ZZ struct */
 
-printf("%d KDD DESERIALIZING\n", me);fflush(stdout);
+printf("%d KDD DESERIALIZING %lu \n", me, bufSize);fflush(stdout);
   struct Zoltan_Struct *newZZ = Zoltan_Create(MPI_COMM_WORLD);
   ierr = Zoltan_Deserialize(newZZ, bufSize, buf);
 
@@ -184,6 +184,7 @@ printf("%d KDD GET BASE ANSWER\n", me);fflush(stdout);
     for (int i = 0; i < nTwo; i++) {
       int ignore;
       double tmp[3]; tmp[0] = xTwo[i]; tmp[1] = yTwo[i]; tmp[2] = zTwo[i];
+printf("%d KDD BASE %d %f %f %f\n", me, i, tmp[0], tmp[1], tmp[2]);
       Zoltan_LB_Point_PP_Assign(zz, tmp, &ignore, &answer[i]);
       printf("Point (%f %f %f) on part %d\n", 
               xTwo[i], yTwo[i], zTwo[i], answer[i]);
@@ -201,6 +202,9 @@ printf("%d KDD GET TEST ANSWER\n", me);fflush(stdout);
     int newAnswer;
     double tmp[3]; tmp[0] = xTwo[i]; tmp[1] = yTwo[i]; tmp[2] = zTwo[i];
     Zoltan_LB_Point_PP_Assign(newZZ, tmp, &ignore, &newAnswer);
+    printf("%d Point (%f %f %f) on part %d %d\n", 
+           me, xTwo[i], yTwo[i], zTwo[i], answer[i], newAnswer);
+/* KDD */      fflush(stdout);
     if (newAnswer != answer[i]) {
       errCnt++;
       printf("%d Error (%f %f %f):  part %d != new part %d\n", 
