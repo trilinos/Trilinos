@@ -200,7 +200,7 @@ namespace MueLu {
         RCP<const Map> rowMap = rcpA->getRowMap();
         diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,true);
         ArrayRCP<Scalar> diagVals = diag->getDataNonConst(0);
-        Teuchos::Array<Scalar> regSum(diag->getLength());
+        Teuchos::Array<Scalar> regSum(diag->getLocalLength());
         Teuchos::ArrayView<const LocalOrdinal> cols;
         Teuchos::ArrayView<const Scalar> vals;
 
