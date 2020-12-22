@@ -234,6 +234,41 @@ void Zoltan_RCB_Serialize_Structure(ZZ const *zz, char **buf)
   *buf = bufptr;
 }
 
+void Zoltan_RCB_Deserialize_Structure(ZZ *zz, char **buf)
+{
+  char *yo = "Zoltan_RCB_Serialize_Structure";
+  RCB_STRUCT *zzrcb = (RCB_STRUCT *) ZOLTAN_MALLOC(sizeof(RCB_STRUCT));
+  zz->LB.Data_Structure = zzrcb;
+
+  /* initialize as in Zoltan_RCB_Build_Structure */
+  zzrcb->Global_IDs = NULL;
+  zzrcb->Local_IDs = NULL;
+  memset(&(zzrcb->Dots), 0, sizeof(struct Dot_Struct));
+
+  /* Need only the tree structure for Point_Assign and Box_Assign */
+  char *bufptr = *buf;
+
+  zzrcb->Num_Dim = *((int *) bufptr);
+  bufptr += sizeof(int);
+
+  /* Copy the tree structure */
+  size_t copysize = sizeof(struct rcb_tree) * zz->LB.Num_Global_Parts;
+  zzrcb->Tree_Ptr = (struct rcb_tree *) ZOLTAN_MALLOC(copysize);
+  memcpy((void *)(zzrcb->Tree_Ptr), bufptr, copysize);
+  bufptr += copysize;
+
+  /* Copy the box */
+  zzrcb->Box = (struct rcb_box *) ZOLTAN_MALLOC(sizeof(struct rcb_box));
+  memcpy((void *)(zzrcb->Box), bufptr, sizeof(struct rcb_box));
+  bufptr += sizeof(struct rcb_box);
+
+  /* Copy the transformation */
+  memcpy((void *) &(zzrcb->Tran), bufptr, sizeof(ZZ_Transform));
+  bufptr += sizeof(ZZ_Transform);
+
+  *buf = bufptr;
+}
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

@@ -3381,7 +3381,7 @@ extern int Zoltan_get_global_id_type(char **name);
  */
 
 extern size_t Zoltan_Serialize_Size(
-  struct Zoltan_Struct *zz
+  struct Zoltan_Struct const *zz
 );
 
 /*****************************************************************************/
@@ -3402,7 +3402,7 @@ extern size_t Zoltan_Serialize_Size(
  */
 
 extern int Zoltan_Serialize(
-  struct Zoltan_Struct *zz,
+  struct Zoltan_Struct const *zz,
   size_t bufsize,
   char *buf
 );

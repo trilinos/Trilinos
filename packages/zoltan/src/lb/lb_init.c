@@ -109,6 +109,7 @@ void Zoltan_LB_Init(struct Zoltan_LB_Struct *lb, int num_proc)
   lb->Copy_Structure = Zoltan_RCB_Copy_Structure;
   lb->Serialize_Size = Zoltan_RCB_Serialize_Size;
   lb->Serialize_Structure = Zoltan_RCB_Serialize_Structure;
+  lb->Deserialize_Structure = Zoltan_RCB_Deserialize_Structure;
   lb->Point_Assign = Zoltan_RB_Point_Assign;
   lb->Box_Assign = Zoltan_RB_Box_Assign;
   lb->Imb_Tol_Len = 10;

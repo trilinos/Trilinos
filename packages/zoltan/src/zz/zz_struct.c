@@ -378,17 +378,23 @@ static void Zoltan_Init(ZZ* zz)
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-size_t Zoltan_Serialize_Size(ZZ* zz) 
+size_t Zoltan_Serialize_Size(struct Zoltan_Struct const *zz) 
 {
   /* Compute size of buffer needed to serialize Zoltan_Struct */
   size_t bufSize = 0;
-  bufSize += sizeof(ZZ);
+  bufSize += sizeof(struct Zoltan_Struct);
+printf("KDDKDD SERIALIZE_SIZE one %lu \n", bufSize);fflush(stdout);
   bufSize += Zoltan_Serialize_Params_Size(zz);
+printf("KDDKDD SERIALIZE_SIZE two %lu \n", bufSize);fflush(stdout);
   if (zz->LB.Serialize_Size != NULL) bufSize += zz->LB.Serialize_Size(zz);
+printf("KDDKDD SERIALIZE_SIZE three %lu \n", bufSize);fflush(stdout);
+  return bufSize;
 }
 
-int Zoltan_Serialize(ZZ* zz, size_t bufSize, char *buf)
+/*****************************************************************************/
+int Zoltan_Serialize(ZZ const *zz, size_t bufSize, char *buf)
 {
+  int ierr = ZOLTAN_OK;
   char *bufptr = buf;
 
   /* Copy all Zoltan_Struct data into buffer */
@@ -397,14 +403,51 @@ int Zoltan_Serialize(ZZ* zz, size_t bufSize, char *buf)
   bufptr += sizeof(struct Zoltan_Struct);
 
   /* Need at least some params to set pointers on receiving side */
-  Zoltan_Serialize_Params(zz->Params, &bufptr);
+  Zoltan_Serialize_Params(zz, &bufptr);
 
   /* Serialize the load balancing data; advance bufptr */
   if (zz->LB.Serialize_Structure != NULL)
     zz->LB.Serialize_Structure(zz, &bufptr);
 
-  /* Risky to serialize pointers; may not be valid where buffer is used */
-  /* Make them NULL; user will need to re-register them to use received zz */
+  if (bufptr - buf > bufSize) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, "Zoltan_Serialize", 
+                       "Buffer provided is too small; Zoltan just overwrote "
+                       "your memory.");
+    ierr = ZOLTAN_MEMERR;
+  }
+printf("KDDKDD SERIALIZE\n");fflush(stdout);
+  return ierr;
+}
+
+/*****************************************************************************/
+int Zoltan_Deserialize(struct Zoltan_Struct *zz, size_t bufSize, char *buf)
+{
+  int ierr = ZOLTAN_OK;
+  char *bufptr = buf;
+  
+printf("KDDKDD DESERIALIZE one \n");fflush(stdout);
+  memcpy((void *)zz, bufptr, sizeof(struct Zoltan_Struct));
+  bufptr += sizeof(struct Zoltan_Struct);
+
+  /* Consistent with Zoltan defaults, set default LB_METHOD to RCB; doing so
+   * sets the various function pointers for RCB. 
+   * Method and function pointers will be reset if parameter LB_METHOD has
+   * been provided by user. */
+printf("KDDKDD DESERIALIZE two \n");fflush(stdout);
+  Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
+  Zoltan_Deserialize_Params(zz, &bufptr);
+
+printf("KDDKDD DESERIALIZE three \n");fflush(stdout);
+  /* Deserialize the LB method's specific data. TODO: ordering, migration   */
+  if (zz->LB.Deserialize_Structure != NULL) 
+    zz->LB.Deserialize_Structure(zz, &bufptr);
+
+printf("KDDKDD DESERIALIZE four \n");fflush(stdout);
+  /* Risky to deserialize pointers; pointers in buffer are not useful on 
+   * received processor.
+   * Make them NULL; user will need to re-register them to use received zz
+   * TODO:  don't serialize them in the first place.
+   */
   zz->Get_Part_Multi = NULL;
   zz->Get_Part = NULL;
   zz->Get_Num_Edges_Multi = NULL;
@@ -514,6 +557,17 @@ int Zoltan_Serialize(ZZ* zz, size_t bufSize, char *buf)
   zz->Get_Hier_Num_Levels_Data = NULL;
   zz->Get_Hier_Part_Data = NULL;
   zz->Get_Hier_Method_Data = NULL;
+
+  if (bufptr - buf > bufSize) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, "Zoltan_Serialize", 
+                       "Buffer provided is too small; Zoltan just overwrote "
+                       "your memory.");
+    ierr = ZOLTAN_MEMERR;
+  }
+
+printf("KDDKDD DESERIALIZE five\n"); fflush(stdout);
+
+  return ierr;
 }
 
 #ifdef __cplusplus

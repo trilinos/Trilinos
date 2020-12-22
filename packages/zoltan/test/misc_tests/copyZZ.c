@@ -33,6 +33,7 @@ void initMesh(struct Mesh *mesh, int me, int np,
 
 int nObj(void *data, int *ierr) {
   *ierr = ZOLTAN_OK; 
+printf("KDD nObj %d\n", ((struct Mesh *) data)->nMyCoords); fflush(stdout);
   return ((struct Mesh *) data)->nMyCoords;
 }
 
@@ -43,8 +44,10 @@ void objMulti(void *data, int ngid, int nlid,
   *ierr = ZOLTAN_OK;
   struct Mesh *mesh = (struct Mesh *) data;
   for (int i = 0; i < mesh->nMyCoords; i++) {
-    lid[i] = i+mesh->myFirstCoord;
-    gid[i] = i+mesh->myFirstCoord; 
+    lid[i*nlid] = i+mesh->myFirstCoord;
+    gid[i*ngid] = i+mesh->myFirstCoord; 
+    for (int j = 0; j < wdim; j++) wgt[i*wdim+j] = 1.;
+printf("KDD %d obj %d %d\n", i, lid[i*nlid], gid[i*ngid]); fflush(stdout);
   }
 }
 
@@ -57,9 +60,10 @@ void geomMulti(void *data, int ngid, int nlid, int nobj,
   struct Mesh *mesh = (struct Mesh *) data;
 
   for (int i = 0; i < nobj; i++) {
-    coords[i*ndim]   = mesh->x[lid[i]];
-    coords[i*ndim+1] = mesh->y[lid[i]];
-    coords[i*ndim+2] = mesh->z[lid[i]];
+    coords[i*ndim]   = mesh->x[lid[i*nlid]];
+    coords[i*ndim+1] = mesh->y[lid[i*nlid]];
+    coords[i*ndim+2] = mesh->z[lid[i*nlid]];
+printf("KDD %d coords %f %f %f\n", i, coords[i*ndim], coords[i*ndim+1], coords[i*ndim+2]);fflush(stdout);
   }
   *ierr = ZOLTAN_OK;
 }
@@ -79,14 +83,15 @@ int main(int narg, char **arg) {
 
   MPI_Init(&narg, &arg);
   float ver;
-  Zoltan_Initialize(&narg, &arg, &ver);
+  Zoltan_Initialize(narg, arg, &ver);
   int ierr = ZOLTAN_OK;
 
   int me, np;
   MPI_Comm_size(MPI_COMM_WORLD, &np);
-  MPI_Comm_size(MPI_COMM_WORLD, &me);
+  MPI_Comm_rank(MPI_COMM_WORLD, &me);
   if (np < 3) printf("This test is more useful on three or more processors.\n");
 
+printf("%d KDD INITIALIZING\n", me); fflush(stdout);
   /* Coordinates to be partitioned */
   const int nOne = 27;
   double xOne[nOne] = {0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2};
@@ -103,6 +108,7 @@ int main(int narg, char **arg) {
 
   /* Create a subcommunicator in which to do partitioning. */
   /* For this test, we'll put rank 0 of MPI_COMM_WORLD in subComm */
+printf("%d KDD SPLITTING\n", me); fflush(stdout);
   MPI_Comm subComm;
   MPI_Comm_split(MPI_COMM_WORLD, (me <= np / 2 ? 1 : MPI_UNDEFINED), 0,
                  &subComm);
@@ -112,6 +118,7 @@ int main(int narg, char **arg) {
 
   if (subComm != MPI_COMM_NULL) {
 
+printf("%d KDD PARTITIONING\n", me);fflush(stdout);
     zz = Zoltan_Create(subComm);
 
     Zoltan_Set_Num_Obj_Fn(zz, nObj, &meshOne);
@@ -132,23 +139,29 @@ int main(int narg, char **arg) {
     int *iPart = NULL, *iProc = NULL;
     int *partOne = NULL, *eProc = NULL;
 
-    Zoltan_LB_Partition(zz, nChanges, nGid, nLid,
-                        nImp, iGid, iLid, iProc, iPart,
-                        nExp, eGid, eLid, eProc, partOne);
+printf("%d KDD PARTITIONING CALL\n", me);fflush(stdout);
+    Zoltan_LB_Partition(zz, &nChanges, &nGid, &nLid,
+                        &nImp, &iGid, &iLid, &iProc, &iPart,
+                        &nExp, &eGid, &eLid, &eProc, &partOne);
+printf("%d KDD PARTITIONING DONE\n", me);fflush(stdout);
 
     Zoltan_LB_Free_Part(&iGid, &iLid, &iProc, &iPart);
     Zoltan_LB_Free_Part(&eGid, &eLid, &eProc, &partOne);
+printf("%d KDD FREEING DONE\n", me);fflush(stdout);
   }
 
   /* Pack the buffer; broadcast to all procs in MPI_COMM_WORLD. */
   /* Test assumes that rank 0 of MPI_COMM_WORLD is in subComm.  */
 
   /* First broadcast the buffer size; we make the user own the buffer */
+printf("%d KDD SIZING\n", me);fflush(stdout);
   size_t bufSize;
   if (me == 0) bufSize = Zoltan_Serialize_Size(zz);
-  MPI_Bcast(&bufSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
+printf("%d KDD SIZING BCAST\n", me);fflush(stdout);
+  MPI_Bcast(&bufSize, 1, MPI_UNSIGNED_LONG_LONG, 0, MPI_COMM_WORLD);
 
   /* Then allocate and broadcast the buffer */
+printf("%d KDD SERIALIZING\n", me);fflush(stdout);
   char *buf = NULL;
   buf = (char *) malloc(bufSize * sizeof(char));
   if (me == 0) ierr = Zoltan_Serialize(zz, bufSize, buf);
@@ -156,6 +169,7 @@ int main(int narg, char **arg) {
 
   /* All processors unpack the buffer into a new ZZ struct */
 
+printf("%d KDD DESERIALIZING\n", me);fflush(stdout);
   struct Zoltan_Struct *newZZ = Zoltan_Create(MPI_COMM_WORLD);
   ierr = Zoltan_Deserialize(newZZ, bufSize, buf);
 
@@ -163,6 +177,7 @@ int main(int narg, char **arg) {
   
   /* Check the results */
   /* Compute and broadcast answer using original struct zz */
+printf("%d KDD GET BASE ANSWER\n", me);fflush(stdout);
 
   int answer[nTwo];
   if (me == 0) {
@@ -172,12 +187,14 @@ int main(int narg, char **arg) {
       Zoltan_LB_Point_PP_Assign(zz, tmp, &ignore, &answer[i]);
       printf("Point (%f %f %f) on part %d\n", 
               xTwo[i], yTwo[i], zTwo[i], answer[i]);
+/* KDD */      fflush(stdout);
     }
   }
   MPI_Bcast(answer, nTwo, MPI_INT, 0, MPI_COMM_WORLD);
 
   /* Each processor computes answer using new struct newZZ */
 
+printf("%d KDD GET TEST ANSWER\n", me);fflush(stdout);
   int errCnt = 0;
   for (int i = 0; i < nTwo; i++) {
     int ignore;
@@ -188,8 +205,10 @@ int main(int narg, char **arg) {
       errCnt++;
       printf("%d Error (%f %f %f):  part %d != new part %d\n", 
              me, xTwo[i], yTwo[i], zTwo[i], answer[i], newAnswer);
+/* KDD */      fflush(stdout);
     }
   }
+printf("%d KDD DONE\n", me);fflush(stdout);
 
   /* Gather global test result */
 

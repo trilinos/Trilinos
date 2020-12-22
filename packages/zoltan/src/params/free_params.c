@@ -82,36 +82,67 @@ PARAM_LIST **params)				/* parameters structure */
     *params = NULL;
 }
  
-size_t Zoltan_Serialize_Params_Size(PARAM_LIST const *from) 
+size_t Zoltan_Serialize_Params_Size(struct Zoltan_Struct const *from) 
 {
   /* Count the number of parameters */
-  PARAM_LIST const *param = from;
+  PARAM_LIST const *param = from->Params;
   int nParam = 0;
   while (param) {
     nParam++;
     param = param->next;
   }
 
-  /* Request maximum storage for each:  two strings plus one int */
-  return nParam * (MAX_PARAM_STRING_LEN * 2 + sizeof(int));
+printf("KDD SER NPARAMS %d\n", nParam);
+  return sizeof(int)                          /* to store number of params */
+       + nParam * (MAX_PARAM_STRING_LEN * 2); /* max per param: (name, value) */
 }
 
-int Zoltan_Serialize_Params(PARAM_LIST const *from, char **buf)
+int Zoltan_Serialize_Params(struct Zoltan_Struct const *from, char **buf)
 {
   /* Serialize the parameters */
   char *bufptr = *buf;
-  PARAM_LIST const *param = from;
+  PARAM_LIST const *param = from->Params;
+  size_t paramSize = Zoltan_Serialize_Params_Size(from);
+
+  /* Pack number of parameters */
+  int nParam = paramSize / (MAX_PARAM_STRING_LEN * 2);
+  *((int *) bufptr) = nParam;
+printf("KDD SER %d %d\n", nParam, *((int *) bufptr));
+  bufptr += sizeof(int);
+
+  /* Pack each parameter, using max string length bytes per string */
   while (param) {
     strcpy(bufptr, param->name);
+printf("KDD SER NAME %s\n", bufptr);
     bufptr += MAX_PARAM_STRING_LEN;
     strcpy(bufptr, param->new_val);
+printf("KDD SER VAL %s\n", bufptr);
     bufptr += MAX_PARAM_STRING_LEN;
-    *((int *)bufptr) = param->index;
-    bufptr += sizeof(int);
+    param = param->next;
   }
   *buf = bufptr;
 }
 
+int Zoltan_Deserialize_Params(struct Zoltan_Struct *to, char **buf)
+{
+  /* Serialize the parameters */
+  char *bufptr = *buf;
+
+  /* Unpack number of parameters */
+  int nParam = *((int *) bufptr);
+printf("KDD DESER %d\n", nParam);
+  bufptr += sizeof(int);
+
+  /* Unpack parameters' (name, value) pairs and set them */
+  for (int i = 0; i < nParam; i++) {
+    char *pname = bufptr;
+    char *pval = bufptr + MAX_PARAM_STRING_LEN;
+printf("KDD DESER PARAM %s %s\n", pname, pval);
+    Zoltan_Set_Param(to, pname, pval);
+    bufptr += 2 * MAX_PARAM_STRING_LEN;
+  }
+  *buf = bufptr;
+}
 
 int Zoltan_Copy_Params(PARAM_LIST **to, PARAM_LIST const *from)
 {

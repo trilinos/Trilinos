@@ -77,6 +77,7 @@ typedef int ZOLTAN_LB_COPY_DATA_FN(struct Zoltan_Struct *to, struct Zoltan_Struc
 
 typedef size_t ZOLTAN_LB_SERIALIZE_SIZE_FN(struct Zoltan_Struct const *);
 typedef void ZOLTAN_LB_SERIALIZE_DATA_FN(struct Zoltan_Struct const *, char **);
+typedef void ZOLTAN_LB_DESERIALIZE_DATA_FN(struct Zoltan_Struct *, char **);
 
 typedef int ZOLTAN_LB_POINT_ASSIGN_FN(struct Zoltan_Struct *, double *, int *, 
                                       int *);
@@ -217,6 +218,9 @@ struct Zoltan_LB_Struct {
   ZOLTAN_LB_SERIALIZE_DATA_FN *Serialize_Structure;
                                   /*  Pointer to function that copies LB data
                                       into a buffer to serialize the data    */
+  ZOLTAN_LB_DESERIALIZE_DATA_FN *Deserialize_Structure;
+                                  /*  Pointer to function that copies data from
+                                      a buffer to initialize the LB struct   */
   ZOLTAN_LB_POINT_ASSIGN_FN *Point_Assign;
                                   /*  Pointer to the function that performs
                                       Point_Assign; this ptr is set based on 
@@ -349,6 +353,7 @@ extern ZOLTAN_LB_COPY_DATA_FN Zoltan_PHG_Copy_Structure;
 /* SERIALIZE DATA_STRUCTURE FUNCTIONS */
 extern ZOLTAN_LB_SERIALIZE_SIZE_FN Zoltan_RCB_Serialize_Size;
 extern ZOLTAN_LB_SERIALIZE_DATA_FN Zoltan_RCB_Serialize_Structure;
+extern ZOLTAN_LB_DESERIALIZE_DATA_FN Zoltan_RCB_Deserialize_Structure;
 
 /* POINT_ASSIGN FUNCTIONS */
 extern ZOLTAN_LB_POINT_ASSIGN_FN Zoltan_RB_Point_Assign;
