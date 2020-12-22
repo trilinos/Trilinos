@@ -190,6 +190,7 @@ namespace MueLu {
       RCP<Vector> diag = Teuchos::null;
       const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
       const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      const Scalar two = one + one;
 
       Teuchos::RCP<const Matrix> rcpA = Teuchos::rcpFromRef(A);
 
@@ -199,6 +200,7 @@ namespace MueLu {
         RCP<const Map> rowMap = rcpA->getRowMap();
         diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,true);
         ArrayRCP<Scalar> diagVals = diag->getDataNonConst(0);
+        Teuchos::Array<Scalar> regSum(diag->getLength());
         Teuchos::ArrayView<const LocalOrdinal> cols;
         Teuchos::ArrayView<const Scalar> vals;
 
@@ -209,16 +211,19 @@ namespace MueLu {
           rcpA->getLocalRowView(i, cols, vals);
           diagVals[i] = zero;
           for (LocalOrdinal j = 0; j < cols.size(); ++j) {
-            const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowEntry = Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
-            if (rowEntry != zero)
+            regSum[i] += vals[j];
+            const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowEntryMagn = Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
+            if (rowEntryMagn > zero)
               nnzPerRow[i]++;
-            diagVals[i] += rowEntry;
+            diagVals[i] += rowEntryMagn;
           }
         }
         if (doReciprocal) {
           for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
             if (replaceSingleEntryRowWithZero && nnzPerRow[i] <= static_cast<int>(1))
               diagVals[i] = zero;
+            else if (replaceSingleEntryRowWithZero && diagVals[i] != zero && diagVals[i] < two*regSum[i])
+              diagVals[i] = two*regSum[i];
             else {
               if(Teuchos::ScalarTraits<Scalar>::magnitude(diagVals[i]) > tol)
                 diagVals[i] = one / diagVals[i];
