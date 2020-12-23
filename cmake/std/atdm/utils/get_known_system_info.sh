@@ -73,7 +73,7 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   tlcc2
   sems-rhel7
   sems-rhel6
-  cee-rhel6  # Used for CEE RHEL7 machines as well!
+  cee-rhel7  # Used for CEE RHEL7 machines as well!
   spack-rhel
   )
 
@@ -187,12 +187,10 @@ elif [[ -f $ATDM_CONFIG_SEMS_GET_PLATFORM ]] ; then
   fi
 fi
 
-# CEE RHEL6 (and RHEL7) systems
-if [[ "${SNLSYSTEM}" == "cee" ]] ; then
-  if [[ "${SNLCLUSTER}" == "linux_rh6" ]] || [[ "${SNLCLUSTER}" == "linux_rh7" ]] ; then
-    systemNameTypeMatchedList+=(cee-rhel6)
-    systemNameTypeMatchedListHostNames[cee-rhel6]=cee-rhel6
-  fi
+# CEE RHEL7 systems
+if [[ "${SNLSYSTEM}" == "cee" ]] && [[ "${SNLCLUSTER}" == "linux_rh7" ]] ; then
+  systemNameTypeMatchedList+=(cee-rhel7)
+  systemNameTypeMatchedListHostNames[cee-rhel7]=cee-rhel7
 fi
 
 # If the user puts 'spack-rhel' in the build name, assume that the modules are
