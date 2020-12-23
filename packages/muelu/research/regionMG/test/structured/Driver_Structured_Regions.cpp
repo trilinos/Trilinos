@@ -539,8 +539,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   RCP<TimeMonitor> tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.1 - Build Region Maps")));
 
-  Teuchos::RCP<Xpetra::Map<LO,GO,NO> > rowMap, colMap;
-  Teuchos::RCP<Xpetra::Map<LO,GO,NO> > revisedRowMap, revisedColMap;
+  Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > rowMap, colMap;
+  Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > revisedRowMap, revisedColMap;
   rowMap = Xpetra::MapFactory<LO,GO,Node>::Build(dofMap->lib(),
                                                           Teuchos::OrdinalTraits<GO>::invalid(),
                                                           quasiRegionGIDs(),
