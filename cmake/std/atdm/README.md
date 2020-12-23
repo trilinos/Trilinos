@@ -79,7 +79,7 @@ keywords of the form `XXX-<keyword0>-<keyword1>-...-YYY` (or
 `XXX_<keyword0>_<keyword1>_..._YYY`, either separator is supported).  The
 typical order and format of this string is:
 
-    <system_name>-<use_mpi>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<complex>-<shared_static>-<release_debug>-<pt>
+    <system_name>-<use_mpi>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<asan>-<fpic>-<complex>-<shared_static>-<release_debug>-<pt>
 
 but any order of these keywords is supported.  Also, the keywords are
 case-insensitive All of these keywords, except for `<compiler>` (which can be
@@ -91,7 +91,7 @@ name of a keyword is ignored.) See some examples of build name strings
 Each of these keywords [`<system_name>`](#system_name),
 [`<use_mpi>`](#use_mpi), [`<kokkos_arch>`](#kokkos_arch),
 [`<compiler>`](#compiler), [`<kokkos_thread>`](#kokkos_thread),
-[`<rdc>`](#rdc), [`<fpic>`](#fpic), [`<complex>`](#complex),
+[`<rdc>`](#rdc), [`<asan>`](#asan), [`<fpic>`](#fpic), [`<complex>`](#complex),
 [`<shared_static>`](#shared_static), [`<release_debug>`](#release_debug), and
 [`<pt>`](#pt), are described below.
 
@@ -197,6 +197,17 @@ builds (does nothing in non-CUDA builds):
 
 NOTE: Setting `rdc` also currently adds the `nvcc_wrapper` option
 `--remove-duplicate-link-files` as well.
+
+<a name="asan"/>
+
+**`<asan>`:** The following `<build-name>` keyword will result in compiler and
+linker options to be added to enable Clang Address Sanitizer when using the
+Clang comiler.  (Only applicable if `<compiler>` is `CLANG`.  If `<compiler>`
+is not `CLANG`, then these options are ignored.)
+
+* `asan`: Add Clang Address Sanitizer flags to `CMAKE_CXX_FLAGS`,
+  `CMAKE_EXE_LINKER_FLAGS`, and `Trilinos_EXTRA_LINK_FLAGS`.
+* `no-asan`:  Don't add any compile or link flags.
 
 <a name="fpic"/>
 
