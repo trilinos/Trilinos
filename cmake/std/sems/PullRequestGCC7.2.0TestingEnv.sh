@@ -18,7 +18,7 @@ module load sems-parmetis/4.0.3/parallel
 module load sems-scotch/6.0.3/nopthread_64bit_parallel
 module load sems-superlu/4.3/base
 
-module load sems-cmake/3.10.3
+module load sems-cmake/3.17.1
 module load sems-ninja_fortran/1.8.2
 
 module load sems-git/2.10.1
