@@ -1347,7 +1347,7 @@ std::cout << " thread_array = malloc ( " << num_threads << " )" << std::endl;
 
       //Fill 2D structure
       #ifdef BASKER_KOKKOS
-      BASKER_FALSE keep_zeros = BASKER_FALSE;
+      BASKER_BOOL keep_zeros = BASKER_FALSE;
       kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, BASKER_FALSE, keep_zeros); // t_init_2DA; fill row_idx, vals into ALM, AVM calling convert2D
       Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
       Kokkos::fence();

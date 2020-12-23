@@ -746,6 +746,11 @@ namespace BaskerNS
 
     L.nnz = lnnz;
     U.nnz = unnz;
+    if(Options.verbose == BASKER_TRUE)
+    {
+      printf(" thread-%ld: >  factoring_blk : nnzL = %ld, nnzU = %ld\n",
+          (long)kid, (long)lnnz, (long)unnz); fflush(stdout);
+    }
 
     #ifdef BASKER_TIME
     double time_facto = timer.seconds();
