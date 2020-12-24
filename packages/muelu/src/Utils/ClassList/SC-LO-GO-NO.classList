@@ -57,7 +57,7 @@ MatrixAnalysisFactory
 MergedBlockedMatrixFactory
 MergedSmoother
 MultiVectorTransferFactory
-NotayAggregationFactory
+NotayAggregationFactory - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 NullspaceFactory
 NullspaceFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 NullspacePresmoothFactory
@@ -76,7 +76,7 @@ RebalanceBlockAcFactory
 RebalanceBlockInterpolationFactory
 RebalanceBlockRestrictionFactory
 RebalanceTransferFactory
-RegionRFactory
+RegionRFactory - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 ReorderBlockAFactory
 RepartitionFactory - #ifdef HAVE_MPI
 RepartitionBlockDiagonalFactory - #ifdef HAVE_MPI
