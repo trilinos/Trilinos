@@ -1566,10 +1566,10 @@ configuration script.
 
 A simple example can be seen in:
 
-* [cmake/std/atdm/examples/my-sems-rhel6-config/environment.sh](examples/my-sems-rhel6-config/environment.sh)
+* [cmake/std/atdm/examples/my-sems-rhel7-config/environment.sh](examples/my-sems-rhely-config/environment.sh)
 
-which works on any SEMS RHEL6 machine similarly to the officially defined <a
-href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>.
+which works on any SEMS RHEL7 machine similarly to the officially defined <a
+href="#sems-rhel7-environment">SEMS RHEL7 Environment</a>.
 
 To see how things can be specified look at examples of other `environment.sh`
 scripts in the officially defined configurations under:

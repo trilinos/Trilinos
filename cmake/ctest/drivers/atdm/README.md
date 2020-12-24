@@ -514,7 +514,7 @@ machines map to the system env `ride`).
 However, if adding a new system type that will run on many machines and not
 looking at the `hostname` on the machine, then add a new `if` block to the
 section for the logic.  For an example, see how the system types `tlcc2`,
-`sems-rhel6`, and `cee-rhel7` are handled.
+`sems-rhel7`, and `cee-rhel7` are handled.
 
 The variable `ATDM_HOSTNAME` (set to exported variable
 `ATDM_CONFIG_CDASH_HOSTNAME`) is used for the CDash site name.  This makes it

@@ -154,25 +154,11 @@ function test_tlcc2() {
   assert_system_info_output dummy22 dummy-cluster tlcc2
 }
 
-function test_sems_rhel6_sems_platform() {
-  init_system_info_test_env dummy-rhel6
-  SEMS_PLATFORM=rhel6-x86_64
-  source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info.sh
-  assert_system_info_output dummy-rhel6 sems-rhel6 sems-rhel6
-}
-
 function test_sems_rhel7_sems_platform() {
   init_system_info_test_env dummy-rhel7
   SEMS_PLATFORM=rhel7-x86_64
   source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info.sh
   assert_system_info_output dummy-rhel7 sems-rhel7 sems-rhel7
-}
-
-function test_sems_rhel6_sems_get_platform() {
-  init_system_info_test_env dummy-rhel6
-  ATDM_CONFIG_SEMS_GET_PLATFORM=${ATDM_UNIT_TESTS_DIR}/sems_rhel6_get_platform.sh
-  source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info.sh
-  assert_system_info_output dummy-rhel6 sems-rhel6 sems-rhel6
 }
 
 function test_sems_rhel7_sems_get_platform() {
