@@ -53,6 +53,21 @@ public:
         s->getNextTimeStep(tsc, sh, integratorStatus);
   }
 
+  /// \name Overridden from Teuchos::Describable
+  //@{
+    std::string description() const override
+    { return "Tempus::TimeStepControlComposite"; }
+
+    void describe(Teuchos::FancyOStream          &out,
+                  const Teuchos::EVerbosityLevel verbLevel) const override
+    {
+      Teuchos::OSTab ostab(out,2,"describe");
+      out << description() << "::describe:" << std::endl;
+      for(auto& s : strategies_)
+        s->describe(out, verbLevel);
+    }
+  //@}
+
   /** \brief Append strategy to the composite list.*/
   void addStrategy(const Teuchos::RCP<TimeStepControlStrategy<Scalar> > &strategy){
      if (Teuchos::nonnull(strategy))
@@ -60,7 +75,7 @@ public:
   }
 
   /** \brief Clear the composite list.*/
-  void clearObservers(){
+  void clearStrategies(){
      strategies_.clear();
   }
 

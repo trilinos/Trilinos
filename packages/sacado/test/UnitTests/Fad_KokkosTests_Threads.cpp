@@ -30,12 +30,10 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
+#define SACADO_TEST_DFAD 1
 #include "Fad_KokkosTests.hpp"
 
-#include "Kokkos_Core.hpp"
-
 // Instantiate tests for Threads device
-#define SACADO_TEST_DFAD 1
 using Kokkos::Threads;
 VIEW_FAD_TESTS_D( Threads )
 

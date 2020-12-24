@@ -130,27 +130,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
                    quasiRegionGIDs, quasiRegionCoordGIDs, compositeToRegionLIDs,
                    interfaceGIDs, interfaceLIDsData);
 
-  const int maxRegPerProc = 1;
-  std::vector<RCP<Map> > rowMapPerGrp(maxRegPerProc),        colMapPerGrp(maxRegPerProc);
-  rowMapPerGrp[0] = Xpetra::MapFactory<LO,GO,Node>::Build(A->getRowMap()->lib(),
-                                                          Teuchos::OrdinalTraits<GO>::invalid(),
-                                                          quasiRegionGIDs(),
-                                                          A->getRowMap()->getIndexBase(),
-                                                          A->getRowMap()->getComm());
-  colMapPerGrp[0] = rowMapPerGrp[0];
+  RCP<const Map> rowMap = Teuchos::null;
+  RCP<const Map> colMap = Teuchos::null;
+  rowMap = Xpetra::MapFactory<LO,GO,Node>::Build(A->getRowMap()->lib(),
+      Teuchos::OrdinalTraits<GO>::invalid(),
+      quasiRegionGIDs(),
+      A->getRowMap()->getIndexBase(),
+      A->getRowMap()->getComm());
+  colMap = rowMap;
 
-  std::vector<RCP<Map> > revisedRowMapPerGrp(maxRegPerProc), revisedColMapPerGrp(maxRegPerProc);
-  revisedRowMapPerGrp[0] = Xpetra::MapFactory<LO,GO,Node>::Build(A->getRowMap()->lib(),
-                                                                 Teuchos::OrdinalTraits<GO>::invalid(),
-                                                                 quasiRegionGIDs.size()*numDofsPerNode,
-                                                                 A->getRowMap()->getIndexBase(),
-                                                                 A->getRowMap()->getComm());
-  revisedColMapPerGrp[0] = revisedRowMapPerGrp[0];
+  RCP<const Map> revisedRowMap = Teuchos::null;
+  RCP<const Map> revisedColMap = Teuchos::null;
+  revisedRowMap = Xpetra::MapFactory<LO,GO,Node>::Build(A->getRowMap()->lib(),
+      Teuchos::OrdinalTraits<GO>::invalid(),
+      quasiRegionGIDs.size()*numDofsPerNode,
+      A->getRowMap()->getIndexBase(),
+      A->getRowMap()->getComm());
+  revisedColMap = revisedRowMap;
 
-  std::vector<RCP<Import> > rowImportPerGrp(maxRegPerProc);
-  std::vector<RCP<Import> > colImportPerGrp(maxRegPerProc);
-  rowImportPerGrp[0] = ImportFactory::Build(dofMap, rowMapPerGrp[0]);
-  colImportPerGrp[0] = ImportFactory::Build(dofMap, colMapPerGrp[0]);
+  RCP<Import> rowImport = ImportFactory::Build(dofMap, rowMap);
+  // RCP<Import> colImport = ImportFactory::Build(dofMap, colMap);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   { // test compositeToRegional
@@ -164,16 +163,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
     }
 
     // Create a region vector
-    Array<RCP<Vector> > regVec(maxRegPerProc);
-    Array<Teuchos::RCP<Vector> > quasiRegVec(maxRegPerProc);
+    RCP<Vector> regVec = Teuchos::null;
+    RCP<Vector> quasiRegVec = Teuchos::null;
 
-    compositeToRegional(compVec, quasiRegVec, regVec, revisedRowMapPerGrp, rowImportPerGrp);
+    compositeToRegional(compVec, quasiRegVec, regVec, revisedRowMap, rowImport);
 
     if(numRanks == 1){
-      TEST_EQUALITY(regVec[0]->getLocalLength(),  25);
-      TEST_EQUALITY(regVec[0]->getGlobalLength(), 25);
-      TEST_EQUALITY(quasiRegVec[0]->getLocalLength(),  25);
-      TEST_EQUALITY(quasiRegVec[0]->getGlobalLength(), 25);
+      TEST_EQUALITY(regVec->getLocalLength(),  25);
+      TEST_EQUALITY(regVec->getGlobalLength(), 25);
+      TEST_EQUALITY(quasiRegVec->getLocalLength(),  25);
+      TEST_EQUALITY(quasiRegVec->getGlobalLength(), 25);
       ArrayRCP<SC> refValues;
       Teuchos::ArrayRCP<const SC> myValues;
       refValues.deepCopy(ArrayView<const SC>({0.0, 1, 2, 3, 4,
@@ -181,24 +180,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
                                               10, 11, 12, 13, 14,
                                               15, 16, 17, 18, 19,
                                               20, 21, 22, 23, 24}));
-      for (int j = 0; j < maxRegPerProc; j++) {
-        myValues = regVec[j]->getData(0);
-        for(size_t idx = 0; idx < regVec[j]->getLocalLength(); ++idx) {
-          TEST_FLOATING_EQUALITY(myValues[idx], refValues[idx], 100*TMT::eps());
-        }
-        myValues = quasiRegVec[j]->getData(0);
-        for(size_t idx = 0; idx < quasiRegVec[j]->getLocalLength(); ++idx) {
-          TEST_FLOATING_EQUALITY(myValues[idx], refValues[idx], 100*TMT::eps());
-        }
 
+      myValues = regVec->getData(0);
+      for(size_t idx = 0; idx < regVec->getLocalLength(); ++idx) {
+        TEST_FLOATING_EQUALITY(myValues[idx], refValues[idx], 100*TMT::eps());
+      }
+      myValues = quasiRegVec->getData(0);
+      for(size_t idx = 0; idx < quasiRegVec->getLocalLength(); ++idx) {
+        TEST_FLOATING_EQUALITY(myValues[idx], refValues[idx], 100*TMT::eps());
       }
 
     } else if(numRanks == 4) {
       // All ranks will have the same number of rows/cols/entries
-      TEST_EQUALITY(regVec[0]->getLocalLength(),  9);
-      TEST_EQUALITY(regVec[0]->getGlobalLength(), 36);
-      TEST_EQUALITY(quasiRegVec[0]->getLocalLength(),  9);
-      TEST_EQUALITY(quasiRegVec[0]->getGlobalLength(), 36);
+      TEST_EQUALITY(regVec->getLocalLength(),  9);
+      TEST_EQUALITY(regVec->getGlobalLength(), 36);
+      TEST_EQUALITY(quasiRegVec->getLocalLength(),  9);
+      TEST_EQUALITY(quasiRegVec->getGlobalLength(), 36);
 
       ArrayRCP<SC> refValues;
       Teuchos::ArrayRCP<const SC> myValues;
@@ -215,15 +212,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
         refValues.deepCopy(ArrayView<const SC>({8, 4.1, 5.1, 2.2, 0.3, 1.3, 5.2, 2.3, 3.3}));
       }
       // Loop over region matrix data and compare it to ref data
-      for (int j = 0; j < maxRegPerProc; j++){
-        myValues = regVec[j]->getData(0);
-        for(size_t idx = 0; idx < regVec[j]->getLocalLength(); ++idx) {
-          TEST_FLOATING_EQUALITY(myValues[idx], refValues[idx], 100*TMT::eps());
-        }
-        myValues = quasiRegVec[j]->getData(0);
-        for(size_t idx = 0; idx < quasiRegVec[j]->getLocalLength(); ++idx) {
-          TEST_FLOATING_EQUALITY(myValues[idx], refValues[idx], 100*TMT::eps());
-        }
+      myValues = regVec->getData(0);
+      for(size_t idx = 0; idx < regVec->getLocalLength(); ++idx) {
+        TEST_FLOATING_EQUALITY(myValues[idx], refValues[idx], 100*TMT::eps());
+      }
+      myValues = quasiRegVec->getData(0);
+      for(size_t idx = 0; idx < quasiRegVec->getLocalLength(); ++idx) {
+        TEST_FLOATING_EQUALITY(myValues[idx], refValues[idx], 100*TMT::eps());
       }
     }
 
@@ -231,19 +226,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   {
     // Create a region vector
-    Array<RCP<Vector> > regVec(maxRegPerProc);
-    for (int j = 0; j < maxRegPerProc; j++) {
-      regVec[j] = VectorFactory::Build(revisedRowMapPerGrp[j]);
-      regVec[j]->putScalar( myRank / 10.0 );
-      for (size_t k = 0; k < regVec[j]->getLocalLength(); ++k){
-        regVec[j]->sumIntoLocalValue(k, k);
-      }
+    RCP<Vector> regVec = Teuchos::null;
+    regVec = VectorFactory::Build(revisedRowMap);
+    regVec->putScalar( myRank / 10.0 );
+    for (size_t k = 0; k < regVec->getLocalLength(); ++k){
+      regVec->sumIntoLocalValue(k, k);
     }
+
 
     // Create a composite vector
     RCP<Vector> compVec = VectorFactory::Build(dofMap, true);
 
-    regionalToComposite(regVec, compVec, rowImportPerGrp);
+    regionalToComposite(regVec, compVec, rowImport);
 
     if(numRanks == 1) {
       TEST_EQUALITY(compVec->getLocalLength(),  25);
@@ -303,41 +297,38 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   {
     // initialize region vector with all ones.
-    Array<RCP<Vector> > interfaceScaling(maxRegPerProc);
-    for (int j = 0; j < maxRegPerProc; j++) {
-      interfaceScaling[j] = VectorFactory::Build(revisedRowMapPerGrp[j]);
-      interfaceScaling[j]->putScalar(1.0);
-    }
+    RCP<Vector> interfaceScaling = Teuchos::null;
+    interfaceScaling = VectorFactory::Build(revisedRowMap);
+    interfaceScaling->putScalar(1.0);
+
 
     // transform to composite layout while adding interface values via the Export() combine mode
     RCP<Vector> compInterfaceScalingSum = VectorFactory::Build(dofMap, true);
-    regionalToComposite(interfaceScaling, compInterfaceScalingSum, rowImportPerGrp);
+    regionalToComposite(interfaceScaling, compInterfaceScalingSum, rowImport);
 
     /* transform composite layout back to regional layout. Now, GIDs associated
      * with region interface should carry a scaling factor (!= 1).
      */
-    Array<RCP<Vector> > regVec(maxRegPerProc);
-    Array<RCP<Vector> > quasiRegInterfaceScaling(maxRegPerProc);
+    RCP<Vector> regVec = Teuchos::null;
+    RCP<Vector> quasiRegInterfaceScaling = Teuchos::null;
     compositeToRegional(compInterfaceScalingSum, quasiRegInterfaceScaling,
-                        interfaceScaling, revisedRowMapPerGrp, rowImportPerGrp);
+                        interfaceScaling, revisedRowMap, rowImport);
 
     if(numRanks == 1) {
-      TEST_EQUALITY(interfaceScaling[0]->getLocalLength(),    25);
-      TEST_EQUALITY(interfaceScaling[0]->getGlobalLength(),   25);
+      TEST_EQUALITY(interfaceScaling->getLocalLength(),    25);
+      TEST_EQUALITY(interfaceScaling->getGlobalLength(),   25);
 
       // No scaling on one rank, so all values are 1.0
       Teuchos::ArrayRCP<const SC> myScaling;
-      for (int j = 0; j < maxRegPerProc; j++){
-        myScaling = interfaceScaling[j]->getData(0);
-        for(size_t idx = 0; idx < interfaceScaling[j]->getLocalLength(); ++idx) {
-          TEST_FLOATING_EQUALITY(myScaling[idx], TST::one(), 100*TMT::eps());
-        }
+      myScaling = interfaceScaling->getData(0);
+      for(size_t idx = 0; idx < interfaceScaling->getLocalLength(); ++idx) {
+        TEST_FLOATING_EQUALITY(myScaling[idx], TST::one(), 100*TMT::eps());
       }
 
     } else if(numRanks == 4) {
       // All ranks will have the same number of rows/cols/entries
-      TEST_EQUALITY(interfaceScaling[0]->getLocalLength(),    9);
-      TEST_EQUALITY(interfaceScaling[0]->getGlobalLength(),    36);
+      TEST_EQUALITY(interfaceScaling->getLocalLength(),    9);
+      TEST_EQUALITY(interfaceScaling->getGlobalLength(),    36);
 
       ArrayRCP<SC> refValues;
       Teuchos::ArrayRCP<const SC> myScaling;
@@ -354,12 +345,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
         refValues.deepCopy(ArrayView<const SC>({4, 2, 2, 2, 1, 1, 2, 1, 1}));
       }
       // Loop over region vector data and compare it to reference data
-      for (int j = 0; j < maxRegPerProc; j++){
-        myScaling = interfaceScaling[j]->getData(0);
-        for(size_t idx = 0; idx < interfaceScaling[j]->getLocalLength(); ++idx) {
-          TEST_FLOATING_EQUALITY(myScaling[idx], refValues[idx], 100*TMT::eps());
-        }
+      myScaling = interfaceScaling->getData(0);
+      for(size_t idx = 0; idx < interfaceScaling->getLocalLength(); ++idx) {
+        TEST_FLOATING_EQUALITY(myScaling[idx], refValues[idx], 100*TMT::eps());
       }
+
     }
 
   }

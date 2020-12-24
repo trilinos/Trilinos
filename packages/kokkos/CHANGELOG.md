@@ -1,10 +1,102 @@
 # Change Log
 
-## [3.2.00](https://github.com/kokkos/kokkos/tree/3.2.00) (2020-08-19)
-[Full Changelog](https://github.com/kokkos/kokkos/compare/3.1.01...3.2.00)
-[PR Changelog](is:pr merged:>2020-04-14 closed:<2020-08-07)
+## [3.2.01](https://github.com/kokkos/kokkos/tree/3.2.01) (2020-11-17)
+[Full Changelog](https://github.com/kokkos/kokkos/compare/3.2.00...3.2.01)
+
+**Fixed bugs:**
+- Disallow KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE in shared library builds [\#3332](ihttps://github.com/kokkos/kokkos/pull/3332)
+- Do not install libprinter-tool when testing is enabled [\#3313](https://github.com/kokkos/kokkos/pull/3313)
+- Fix restrict/alignment following refactor [\#3373](https://github.com/kokkos/kokkos/pull/3373)
+- Fix zero-length reductions [#\3364](https://github.com/kokkos/kokkos/pull/3364)
+  - Pthread zero-length reduction fix [\#3452](https://github.com/kokkos/kokkos/pull/3452)
+  - HPX zero-length reduction fix [\#3470](https://github.com/kokkos/kokkos/pull/3470)
+  - cuda/9.2 zero-length reduction fix [\#3580](https://github.com/kokkos/kokkos/pull/3580)
+- Fix multi-stream scratch [#\3269](https://github.com/kokkos/kokkos/pull/3269)
+- Intel fix: workaround compiler issue with using statement [\#3383](https://github.com/kokkos/kokkos/pull/3383)
+- Guard KOKKOS_ALL_COMPILE_OPTIONS if Cuda is not enabled [\#3387](https://github.com/kokkos/kokkos/pull/3387)
+- Do not include link flags for fortran linkage [\#3384](https://github.com/kokkos/kokkos/pull/3384)
+- Fix NVIDIA GPU arch macro with autodetection [\#3473](https://github.com/kokkos/kokkos/pull/3473)
+- Fix libdl/test issues with Trilinos [\#3543](https://github.com/kokkos/kokkos/pull/3543)
+  - Register Pthread as Tribits option to be enabled with Trilinos [\#3558](https://github.com/kokkos/kokkos/pull/3558)
 
 **Implemented enhancements:**
+- Separate Cuda timing-based tests into their own executable [\#3407](https://github.com/kokkos/kokkos/pull/3407)
+
+## [3.2.00](https://github.com/kokkos/kokkos/tree/3.2.00) (2020-08-19)
+[Full Changelog](https://github.com/kokkos/kokkos/compare/3.1.01...3.2.00)
+
+**Implemented enhancements:**
+
+- HIP:Enable stream in HIP [\#3163](https://github.com/kokkos/kokkos/issues/3163)
+- HIP:Add support for shuffle reduction for the HIP backend [\#3154](https://github.com/kokkos/kokkos/issues/3154)
+- HIP:Add implementations of missing HIPHostPinnedSpace methods for LAMMPS [\#3137](https://github.com/kokkos/kokkos/issues/3137)
+- HIP:Require HIP 3.5.0 or higher [\#3099](https://github.com/kokkos/kokkos/issues/3099)
+- HIP:WorkGraphPolicy for HIP [\#3096](https://github.com/kokkos/kokkos/issues/3096)
+- OpenMPTarget: Significant update to the new experimental backend.  Requires C++17, works on Intel GPUs, reference counting fixes. [\#3169](https://github.com/kokkos/kokkos/issues/3169)
+- Windows Cuda support [\#3018](https://github.com/kokkos/kokkos/issues/3018)
+- Pass `-Wext-lambda-captures-this` to NVCC when support for `__host__ __device__` lambda is enabled from CUDA 11 [\#3241](https://github.com/kokkos/kokkos/issues/3241)
+- Use explicit staging buffer for constant memory kernel launches and cleanup host/device synchronization [\#3234](https://github.com/kokkos/kokkos/issues/3234)
+- Various fixup to policies including making TeamPolicy default constructible and making RangePolicy and TeamPolicy assignable 1: [\#3202](https://github.com/kokkos/kokkos/issues/3202)
+- Various fixup to policies including making TeamPolicy default constructible and making RangePolicy and TeamPolicy assignable 2: [\#3203](https://github.com/kokkos/kokkos/issues/3203)
+- Various fixup to policies including making TeamPolicy default constructible and making RangePolicy and TeamPolicy assignable 3: [\#3196](https://github.com/kokkos/kokkos/issues/3196)
+- Annotations for `DefaultExectutionSpace` and `DefaultHostExectutionSpace` to use in static analysis [\#3189](https://github.com/kokkos/kokkos/issues/3189)
+- Add documentation on using Spack to install Kokkos and developing packages that depend on Kokkos [\#3187](https://github.com/kokkos/kokkos/issues/3187)
+- Improve support for nvcc\_wrapper with exotic host compiler [\#3186](https://github.com/kokkos/kokkos/issues/3186)
+- Add OpenMPTarget backend flags for NVC++ compiler [\#3185](https://github.com/kokkos/kokkos/issues/3185)
+- Move deep\_copy/create\_mirror\_view on Experimental::OffsetView into Kokkos:: namespace [\#3166](https://github.com/kokkos/kokkos/issues/3166)
+- Allow for larger block size in HIP [\#3165](https://github.com/kokkos/kokkos/issues/3165)
+- View: Added names of Views to the different View initialize/free kernels [\#3159](https://github.com/kokkos/kokkos/issues/3159)
+- Cuda: Caching cudaFunctorAttributes and whether L1/Shmem prefer was set [\#3151](https://github.com/kokkos/kokkos/issues/3151)
+- BuildSystem: Provide an explicit default CMAKE\_BUILD\_TYPE [\#3131](https://github.com/kokkos/kokkos/issues/3131)
+- Cuda: Update CUDA occupancy calculation [\#3124](https://github.com/kokkos/kokkos/issues/3124)
+- Vector: Adding data() to Vector [\#3123](https://github.com/kokkos/kokkos/issues/3123)
+- BuildSystem: Add CUDA Ampere configuration support [\#3122](https://github.com/kokkos/kokkos/issues/3122)
+- General: Apply [[noreturn]] to Kokkos::abort when applicable [\#3106](https://github.com/kokkos/kokkos/issues/3106)
+- TeamPolicy: Validate storage level argument passed to TeamPolicy::set\_scratch\_size() [\#3098](https://github.com/kokkos/kokkos/issues/3098)
+- nvcc\_wrapper: send --cudart to nvcc instead of host compiler [\#3092](https://github.com/kokkos/kokkos/issues/3092)
+- BuildSystem: Make kokkos\_has\_string() function in Makefile.kokkos case insensitive [\#3091](https://github.com/kokkos/kokkos/issues/3091)
+- Modify KOKKOS\_FUNCTION macro for clang-tidy analysis [\#3087](https://github.com/kokkos/kokkos/issues/3087)
+- Move allocation profiling to allocate/deallocate calls [\#3084](https://github.com/kokkos/kokkos/issues/3084)
+- BuildSystem: FATAL\_ERROR when attempting in-source build [\#3082](https://github.com/kokkos/kokkos/issues/3082)
+- Change enums in ScatterView to types [\#3076](https://github.com/kokkos/kokkos/issues/3076)
+- HIP: Changes for new compiler/runtime [\#3067](https://github.com/kokkos/kokkos/issues/3067)
+- Extract and use get\_gpu [\#3061](https://github.com/kokkos/kokkos/issues/3061)
+- Extract and use get\_gpu [\#3048](https://github.com/kokkos/kokkos/issues/3048)
+- Add is\_allocated to View-like containers [\#3059](https://github.com/kokkos/kokkos/issues/3059)
+- Combined reducers for scalar references [\#3052](https://github.com/kokkos/kokkos/issues/3052)
+- Add configurable capacity for UniqueToken [\#3051](https://github.com/kokkos/kokkos/issues/3051)
+- Add installation testing [\#3034](https://github.com/kokkos/kokkos/issues/3034)
+- BuildSystem: Add -expt-relaxed-constexpr flag to nvcc\_wrapper [\#3021](https://github.com/kokkos/kokkos/issues/3021)
+- HIP: Add UniqueToken [\#3020](https://github.com/kokkos/kokkos/issues/3020)
+- Autodetect number of devices [\#3013](https://github.com/kokkos/kokkos/issues/3013)
+
+
+**Fixed bugs:**
+
+- Check error code from `cudaStreamSynchronize` in CUDA fences [\#3255](https://github.com/kokkos/kokkos/issues/3255)
+- Fix issue with C++ standard flags when using `nvcc\_wrapper` with PGI [\#3254](https://github.com/kokkos/kokkos/issues/3254)
+- Add missing threadfence in lock-based atomics [\#3208](https://github.com/kokkos/kokkos/issues/3208)
+- Fix dedup of linker flags for shared lib on CMake <=3.12 [\#3176](https://github.com/kokkos/kokkos/issues/3176)
+- Fix memory leak with CUDA streams [\#3170](https://github.com/kokkos/kokkos/issues/3170)
+- BuildSystem: Fix OpenMP Target flags for Cray [\#3161](https://github.com/kokkos/kokkos/issues/3161)
+- ScatterView: fix for OpenmpTarget remove inheritance from reducers [\#3162](https://github.com/kokkos/kokkos/issues/3162)
+- BuildSystem: Set OpenMP flags according to host compiler [\#3127](https://github.com/kokkos/kokkos/issues/3127)
+- OpenMP: Fix logic for nested omp in partition\_master bug [\#3101](https://github.com/kokkos/kokkos/issues/3101)
+- BuildSystem: Fixes for Cuda/11 and c++17 [\#3085](https://github.com/kokkos/kokkos/issues/3085)
+- HIP: Fix print\_configuration [\#3080](https://github.com/kokkos/kokkos/issues/3080)
+- Conditionally define get\_gpu [\#3072](https://github.com/kokkos/kokkos/issues/3072)
+- Fix bounds for ranges in random number generator [\#3069](https://github.com/kokkos/kokkos/issues/3069)
+- Fix Cuda minor arch check [\#3035](https://github.com/kokkos/kokkos/issues/3035)
+
+**Incompatibilities:**
+
+- Remove ETI support [\#3157](https://github.com/kokkos/kokkos/issues/3157)
+- Remove KOKKOS\_INTERNAL\_ENABLE\_NON\_CUDA\_BACKEND [\#3147](https://github.com/kokkos/kokkos/issues/3147)
+- Remove core/unit\_test/config [\#3146](https://github.com/kokkos/kokkos/issues/3146)
+- Removed the preprocessor branch for KOKKOS\_ENABLE\_PROFILING [\#3115](https://github.com/kokkos/kokkos/issues/3115)
+- Disable profiling with MSVC [\#3066](https://github.com/kokkos/kokkos/issues/3066)
+
+**Closed issues:**
 
 - Silent error (Validate storage level arg to set_scratch_size) [\#3097](https://github.com/kokkos/kokkos/issues/3097)
 - Remove KOKKKOS\_ENABLE\_PROFILING Option [\#3095](https://github.com/kokkos/kokkos/issues/3095)
@@ -19,8 +111,6 @@
 - Assert blocksize \> 0 [\#2974](https://github.com/kokkos/kokkos/issues/2974)
 - Add ability to assign kokkos profile function from executable  [\#2973](https://github.com/kokkos/kokkos/issues/2973)
 - ScatterView Support for the pre/post increment operator [\#2967](https://github.com/kokkos/kokkos/issues/2967)
-
-**Fixed bugs:**
 
 - Compiler issue: Cuda build with clang 10 has errors with the atomic unit tests [\#3237](https://github.com/kokkos/kokkos/issues/3237)
 - Incompatibility of flags for C++ standard with PGI v20.4 on Power9/NVIDIA V100 system [\#3252](https://github.com/kokkos/kokkos/issues/3252)

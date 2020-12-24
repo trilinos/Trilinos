@@ -212,7 +212,7 @@ namespace MueLu {
     if (pL.get<bool>("lumping") == false) {
       A00_->getLocalDiagCopy(*diagFVector);       // extract diagonal of F
     } else {
-      diagFVector = Utilities::GetLumpedMatrixDiagonal(A00_);
+      diagFVector = Utilities::GetLumpedMatrixDiagonal(*A00_);
     }
     diagFVector->scale(omega);
     D_ = Utilities::GetInverse(diagFVector);

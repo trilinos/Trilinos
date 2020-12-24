@@ -1060,7 +1060,6 @@ Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id 
   require_good_rank_and_id(ent_rank, ent_id);
 
   EntityKey key( ent_rank , ent_id );
-
   std::pair< Entity , bool > result = internal_get_or_create_entity_with_notification( key );
 
   Entity declared_entity = result.first;
@@ -1646,6 +1645,14 @@ void BulkData::comm_procs( EntityKey key, std::vector<int> & procs ) const
   }
 #endif
   impl::fill_sorted_procs(internal_entity_comm_map(key), procs);
+}
+
+void BulkData::comm_procs(Entity entity, std::vector<int> & procs ) const
+{
+  ThrowAssertMsg(is_valid(entity),
+                  "BulkData::comm_procs ERROR, input key "<<entity_key(entity)<<" not a valid entity. Contact sierra-help@sandia.gov");
+
+  impl::fill_sorted_procs(internal_entity_comm_map(entity), procs);
 }
 
 void BulkData::comm_shared_procs(EntityKey key, std::vector<int> & procs ) const
@@ -2310,8 +2317,9 @@ void BulkData::internal_declare_relation( Entity entity ,
       internal_declare_relation( e , entity , n, permut, ordinal_scratch, scratch2, scratch3);
     }
     else {
-      ThrowErrorMsg("Given entities of the same entity rank. entity is " <<
-                    identifier(entity));
+      ThrowErrorMsg("declare_relation given entities of the same entity rank ("<<erank<<"). "
+             <<entity_key(entity)<<"("<<bucket(entity).topology()<<") <--> "
+             <<entity_key(e)<<"("<<bucket(e).topology()<<")");
     }
   }
 }
@@ -2621,35 +2629,6 @@ void BulkData::update_sharing_after_change_entity_owner()
     resolve_entity_ownership_and_part_membership_and_comm_list(modifiedEntities);
 }
 
-struct StoreEntityInSet
-{
-    StoreEntityInSet() : entity_set() {}
-    void operator()(Entity entity) {
-       entity_set.insert(entity);
-    }
-    std::set<Entity> entity_set;
-};
-
-struct StoreEntityProcInSet
-{
-    StoreEntityProcInSet(const BulkData & mesh_in)
-    :mesh(mesh_in)
-    ,entity_proc_set(EntityLess(mesh_in))
-    ,target(-1) {}
-
-    bool operator()(Entity entity) {
-        EntityProc ep(entity,target);
-        if (entity_proc_set.find(ep) == entity_proc_set.end()) {
-            entity_proc_set.insert(ep);
-            return true;
-        }
-        return false;
-    }
-    const BulkData & mesh;
-    std::set<EntityProc,EntityLess> entity_proc_set;
-    int target;
-};
-
 void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg_change,
                                              impl::MeshModification::modification_optimization mod_optimization )
 {
@@ -2689,58 +2668,39 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
   // then that ghost must be deleted.
   // Request that all ghost entities in the closure of the ghost be deleted.
 
-  StoreEntityProcInSet store_entity_proc_in_set(*this);
+  std::set<EntityProc,EntityLess> send_closure(*this);
+  impl::StoreInEntityProcSet store_entity_proc_in_set(*this, send_closure);
 
   // Compute the closure of all the locally changing entities
-  for ( std::vector<EntityProc>::iterator
-        i = local_change.begin() ; i != local_change.end() ; ++i ) {
-      store_entity_proc_in_set.target = i->second;
-      impl::VisitClosureGeneral(*this,i->first,store_entity_proc_in_set,store_entity_proc_in_set);
+  for (const EntityProc& entityProc : local_change) {
+      store_entity_proc_in_set.proc = entityProc.second;
+      impl::VisitClosureGeneral(*this,entityProc.first,store_entity_proc_in_set,store_entity_proc_in_set);
   }
-  std::set<EntityProc,EntityLess> & send_closure = store_entity_proc_in_set.entity_proc_set;
-
 
   // Calculate all the ghosts that are impacted by the set of ownership
   // changes. We look at ghosted, shared, and local changes looking for ghosts
   // that are either in the closure of the changing entity, or have the
   // changing entity in their closure. All modified ghosts will be removed.
   {
-      impl::OnlyVisitGhostsOnce only_visit_ghosts_once(*this);
-      StoreEntityInSet store_entity;
-      for ( std::vector<EntityProc>::const_iterator i = ghosted_change.begin() ; i != ghosted_change.end() ; ++i) {
-          impl::VisitAuraClosureGeneral(*this,i->first,store_entity,only_visit_ghosts_once);
-      }
-      for ( std::vector<EntityProc>::const_iterator i = shared_change.begin() ; i != shared_change.end() ; ++i) {
-          impl::VisitAuraClosureGeneral(*this,i->first,store_entity,only_visit_ghosts_once);
-      }
-      for ( std::set<EntityProc,EntityLess>::const_iterator i = send_closure.begin() ; i != send_closure.end() ; ++i) {
-          impl::VisitAuraClosureGeneral(*this,i->first,store_entity,only_visit_ghosts_once);
-      }
+    impl::OnlyVisitGhostsOnce only_visit_ghosts_once(*this);
+    impl::StoreEntity store_entity(*this);
 
-    std::set<Entity> & modified_ghosts = store_entity.entity_set;
+    impl::VisitAuraClosureGeneral(*this,ghosted_change.begin(),ghosted_change.end(),store_entity,only_visit_ghosts_once);
+    impl::VisitAuraClosureGeneral(*this,shared_change.begin(),shared_change.end(),store_entity,only_visit_ghosts_once);
+    impl::VisitAuraClosureGeneral(*this,send_closure.begin(),send_closure.end(),store_entity,only_visit_ghosts_once);
 
-    std::set<Entity>::iterator iter = modified_ghosts.begin();
+    std::vector<Entity> remove_modified_ghosts;
     std::vector<Entity> keysThatAreBothSharedAndCustomGhosted;
+    store_entity.split_shared(keysThatAreBothSharedAndCustomGhosted, remove_modified_ghosts);
 
-    for (;iter!=modified_ghosts.end();++iter)
-    {
-        if ( in_shared(*iter) )
-        {
-            keysThatAreBothSharedAndCustomGhosted.push_back(*iter);
-        }
-    }
-
-    for(size_t i=0;i<keysThatAreBothSharedAndCustomGhosted.size();++i)
-    {
-        modified_ghosts.erase(keysThatAreBothSharedAndCustomGhosted[i]);
-        entity_comm_map_clear_ghosting(entity_key(keysThatAreBothSharedAndCustomGhosted[i]));
+    for (size_t i=0;i<keysThatAreBothSharedAndCustomGhosted.size();++i) {
+      entity_comm_map_clear_ghosting(entity_key(keysThatAreBothSharedAndCustomGhosted[i]));
     }
 
     // The ghosted change list will become invalid
     ghosted_change.clear();
 
     std::vector<EntityProc> empty_add ;
-    std::vector<Entity>  remove_modified_ghosts( modified_ghosts.begin(), modified_ghosts.end() );
 
     // Skip 'm_ghosting[0]' which is the shared subset.
     for ( std::vector<Ghosting*>::iterator
@@ -2750,13 +2710,10 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
     }
   }
 
-
-
   //------------------------------
   // Consistently change the owner on all processes.
   // 1) The local_change list is giving away ownership.
   // 2) The shared_change may or may not be receiving ownership
-
   {
     ConstPartVector owned;
     owned.push_back(& meta.locally_owned_part());
@@ -5932,9 +5889,11 @@ void BulkData::delete_sides_on_all_procs(const stk::mesh::EntityVector& deletedS
 
 void BulkData::set_shared_owned_parts_and_ownership_on_comm_data(const std::vector<sharing_info>& shared_modified)
 {
-    stk::mesh::OrdinalVector shared_part, owned_part, empty;
+    stk::mesh::OrdinalVector shared_part, owned_part, owned_and_shared, empty;
     shared_part.push_back(m_mesh_meta_data.globally_shared_part().mesh_meta_data_ordinal());
     owned_part.push_back(m_mesh_meta_data.locally_owned_part().mesh_meta_data_ordinal());
+    owned_and_shared.push_back(m_mesh_meta_data.locally_owned_part().mesh_meta_data_ordinal());
+    owned_and_shared.push_back(m_mesh_meta_data.globally_shared_part().mesh_meta_data_ordinal());
 
     stk::mesh::EntityVector modified_entities(shared_modified.size());
     OrdinalVector scratchOrdinalVec, scratchSpace;
@@ -5948,7 +5907,12 @@ void BulkData::set_shared_owned_parts_and_ownership_on_comm_data(const std::vect
         if(old_owner != owning_proc)
         {
             internal_set_owner(entity, owning_proc);
-            internal_change_entity_parts(entity, shared_part /*add*/, owned_part /*remove*/, scratchOrdinalVec, scratchSpace);
+            if (owning_proc == parallel_rank()) {
+              internal_change_entity_parts(entity, owned_and_shared /*add*/, empty /*remove*/, scratchOrdinalVec, scratchSpace);
+            }
+            else {
+              internal_change_entity_parts(entity, shared_part /*add*/, owned_part /*remove*/, scratchOrdinalVec, scratchSpace);
+            }
         }
         else
         {

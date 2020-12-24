@@ -121,7 +121,7 @@ configure option for Trilinos and Kokkos.  Some common supported Kokkos
 architectures for the host node include `BDW`, `HSW`, `Power8`, `Power9`, and
 `KNL`.  When a GPU is present, some common Kokkos architecture options include
 `Kepler37`, `Pascal60`, and `Volta70`.  (Note that the `KOKKOS_ARCH` keywords
-are case-insensitive and can be `hsw`, 'volta70`, etc.)  If one selects a
+are case-insensitive and can be `hsw`, `volta70`, etc.)  If one selects a
 `KOKKOS_ARCH` value that is not supported by the current system or selected
 compiler, then the `load-env.sh` script will return an error message listing
 the valid choices for `KOKKOS_ARCH` for each supported compiler.
@@ -642,12 +642,8 @@ example, skip the configure, skip the build, skip running tests, etc.
 ## Specific instructions for each system
 
 * <a href="#ridewhite">ride/white</a>
-* <a href="#shillerhansen">shiller/hansen</a>
 * <a href="#tlcc-2-and-cts-1">TLCC-2 and CTS-1</a>
-* <a href="#mutrino">mutrino</a>
-* <a href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>
 * <a href="#sems-rhel7-environment">SEMS RHEL7 Environment</a>
-* <a href="#spack-rhel-environment">Spack RHEL Environment</a>
 * <a href="#cee-rhel7-environment">CEE RHEL7 Environment</a>
 * <a href="#ats-2">ATS-2</a>
 * <a href="#astra-vanguard-arm-system">ASTRA (Vanguard ARM System)</a>
@@ -702,49 +698,6 @@ $ bsub -x -I -q rhel7F -n 16 \
 ```
 
 
-### shiller/hansen
-
-Once logged on to 'hansen' (on the SON) or 'shiller' (on the SRN), one can
-directly configure and build on the login node (being careful not to overload
-the node) using the `shiller` env.  But to run the tests, one must run on the
-compute nodes using the `srun` command.  For example, to configure, build and
-run the tests for say `MueLu` on 'hansen', (after cloning Trilinos on the
-`develop` branch) one would do:
-
-
-```
-$ cd <some_build_dir>/
-
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh intel-opt-openmp
-
-$ cmake \
-  -GNinja \
-  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
-  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
-  $TRILINOS_DIR
-
-$ make NP=16
-
-$ srun ctest -j4
-```
-
-**NOTE:** While the above example shows loading the environment, configuring
-and building on the login node, one can also do these on the compute nodes as
-well.  In fact, that is what the CTest -S drivers do in automated testing on
-'hansen' and 'shiller'.
-
-Note that one can also run the same build and tests using the <a
-href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
-
-```
-$ cd <some_build_dir>/
-$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
-$ srun ./checkin-test-atdm.sh intel-opt-openmp \
-  --enable-packages=MueLu \
-  --local-do-all
-```
-
-
 ### TLCC-2 and CTS-1
 
 Once logged on to any TLCC2 machine (e.g. 'chama', 'skybridge') or the CTS-1
@@ -793,90 +746,6 @@ $ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> \
   ./checkin-test-atdm.sh intel-opt-openmp \
   --enable-packages=MueLu --test
 ```
-
-
-### mutrino
-
-The default environment on mutrino is now ats1. Please see 
-<a href="#ats-1">ATS-1</a>.
-Once logged on to 'mutrino', one can directly configure and build on the login
-node (being careful not to overload the node) using the `mutrino` env.  But to
-run the tests, one must run on the compute nodes using the `salloc` command.
-For example, to configure, build and run the tests for say `MueLu` on
-'mutrino', (after cloning Trilinos on the `develop` branch) one would:
-
-
-```
-$ cd <some_build_dir>/
-
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh mutrino-intel-opt-openmp
-
-$ cmake \
-  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
-  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
-  $TRILINOS_DIR
-
-$ make -j16
-
-# to run on the Haswell partition
-$ salloc -N 1 -p standard -J $ATDM_CONFIG_BUILD_NAME ctest -j16
-
-# to run on the KNL partition
-$ salloc -N 1 -p knl -J $ATDM_CONFIG_BUILD_NAME ctest -j16
-```
-
-**NOTE:** Unlike some of the other machines, one must load the environment,
-configure and build on the login node and then run the test suite on a compute
-node on this system.  This is what the CTest -S driver on 'mutrino' does in
-order to drive jobs and submit to CDash.
-
-
-### SEMS RHEL6 Environment
-
-Once logged on to a SNL COE RHEL6 machine with the sems NFS env, one can
-directly configure, build, and run tests using the `sems-rhel6` env.  For
-example, to configure, build and run the tests for `MueLu` one would clone
-Trilinos on the `develop` branch and then do the following:
-
-
-```
-$ cd <some_build_dir>/
-
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh sems-rhel6-intel-opt-openmp
-
-$ cmake \
-  -GNinja \
-  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
-  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
-  $TRILINOS_DIR
-
-$ make NP=16
-
-$ ctest -j8
-```
-
-NOTE:     Above    including     `sems-rhel6`     in     the    build     name
-`sems-rhel6-intel-opt-openmp` is  not necessary but  is recommended when  on a
-CEE LAN RHEL6 machine  to be explicit that the SEMS env is  being used and not
-the <a href="#cee-rhel7-environment">CEE RHEL7 env</a>.
-
-One can also run the same build and tests using the <a
-href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
-
-```
-$ cd <some_build_dir>/
-$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
-$ ./checkin-test-atdm.sh sems-rhel6-intel-opt-openmp \
-  --enable-packages=MueLu \
-  --local-do-all
-```
-
-NOTE: The number of parallel build and test processes in this case are
-determine automatically from the number of cores on the current machine.  But
-this can be overridden by setting the env var
-`ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` before running `source
-cmake/std/atdm/load-env.sh <build_name>`.
-
 
 ### SEMS RHEL7 Environment
 
@@ -937,57 +806,6 @@ $ export SEMS_MODULEFILES_ROOT=/projects/sems/modulefiles
 ```
 
 if that directory exists.
-
-
-### Spack RHEL Environment
-
-The env 'spack-rhel' should work on any Red Hat Enterprise Linux (RHEL) (and
-perhaps many other Linux systems) that have the SNL ATDM Spack modules
-installed on them.  See the [installation
-documentation](https://gitlab.sandia.gov/atdm/atdm-spack-scripts/blob/master/README.md).
-**WARNING:** This Spack env is still under development and may change in the
-future.
-
-Once logged onto a Linux machine with the SNL ATDM Spack modules installed,
-one can directly configure, build, and run tests using the `spack-rhel` env.
-For example, to configure, build and run the tests for `MueLu` one would clone
-Trilinos on the `develop` branch and then do the following:
-
-
-```
-$ cd <some_build_dir>/
-
-$ source <spack-install-base-dir>/setup-env.sh
-
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh spack-rhel-gnu-openmp-opt
-
-$ cmake \
-  -GNinja \
-  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
-  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
-  $TRILINOS_DIR
-
-$ make NP=16
-
-$ ctest -j8
-```
-
-One can also run the same build and tests using the <a
-href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
-
-```
-$ cd <some_build_dir>/
-$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
-$ env ATDM_CHT_DEFAULT_ENV=spack-rhel-default \
-  ./checkin-test-atdm.sh spack-rhel-gnu-openmp-opt \
-  --enable-packages=MueLu \
-  --local-do-all
-```
-
-NOTE: Above one must set `ATDM_CHT_DEFAULT_ENV=spack-rhel-default` in the env
-when passing in `all` in order for it to select the correct set of supported
-builds for the `spack-rhel` env and also to load the correct env to find
-Python, etc.
 
 
 ### CEE RHEL7 Environment
@@ -1669,22 +1487,13 @@ they support are:
 
 * `cee-rhel7/`: CEE LAN RHEL7 systems with a CEE environment
 
-* `mutrino/`: Supports SNL HPC machine 'mutrino'.
-
 * `ride/`: Supports GNU and CUDA builds on both the SRN machine 'ride' and the
   mirror SON machine 'white'.
 
-* `sems-rhel6/`: SNL COE RHEL6 systems with the SEMS NFS environment
-
 * `sems-rhel7/`: SNL COE RHEL7 systems with the SEMS NFS environment
-
-* `spack-rhel/`: RHEL (and likely other Linux) systems with the SNL ATDM Spack modules installed.
 
 * `cts1/`: Supports SNL HPC CTS-1 machines 'serrano', 'eclipse', and
   'ghost'.
-
-* `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
-  'shiller' and the mirror SON machine 'hansen'.
 
 * `tlcc2/`: Supports SNL HPC TLCC-2 machines 'chama', 'skybridge', etc..
 

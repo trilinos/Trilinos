@@ -48,19 +48,19 @@ template <typename INT> bool Check_Global(ExoII_Read<INT> &file1, ExoII_Read<INT
     is_same = false;
   }
   if (file1.Num_Nodes() != file2.Num_Nodes()) {
-    if (interFace.map_flag != PARTIAL) {
+    if (interFace.map_flag != MapType::PARTIAL) {
       Error(".. Number of nodes doesn't agree.\n");
       is_same = false;
     }
   }
   if (file1.Num_Elmts() != file2.Num_Elmts()) {
-    if (interFace.map_flag != PARTIAL) {
+    if (interFace.map_flag != MapType::PARTIAL) {
       Error(".. Number of elements doesn't agree.\n");
       is_same = false;
     }
   }
   if (file1.Num_Elmt_Blocks() != file2.Num_Elmt_Blocks()) {
-    if (interFace.map_flag != PARTIAL) {
+    if (interFace.map_flag != MapType::PARTIAL) {
       Error(".. Number of element blocks doesn't agree.\n");
       is_same = false;
     }
@@ -111,7 +111,7 @@ namespace {
   {
     bool is_same = true;
 
-    if (interFace.coord_tol.type == IGNORE_ || !check_only) {
+    if (interFace.coord_tol.type == ToleranceMode::IGNORE_ || !check_only) {
       return is_same;
     }
 
@@ -192,7 +192,7 @@ namespace {
     for (size_t b = 0; b < file1.Num_Elmt_Blocks(); ++b) {
       Exo_Block<INT> *block1 = file1.Get_Elmt_Block_by_Index(b);
       Exo_Block<INT> *block2 = nullptr;
-      if (interFace.map_flag != DISTANCE && interFace.map_flag != PARTIAL) {
+      if (interFace.map_flag != MapType::DISTANCE && interFace.map_flag != MapType::PARTIAL) {
         if (block1 != nullptr) {
           if (interFace.by_name) {
             block2 = file2.Get_Elmt_Block_by_Name(block1->Name());
@@ -213,7 +213,7 @@ namespace {
             else {
               // Only do this check if Check_Elmt_Block_Params does not fail.
               // TODO(gdsjaar): Pass in node_map and node_id_map...
-              if (!interFace.map_flag) {
+              if (interFace.map_flag == MapType::FILE_ORDER) {
                 if (!Check_Elmt_Block_Connectivity(block1, block2)) {
                   is_same = false;
                 }
@@ -312,7 +312,7 @@ namespace {
     // what is a diff.
     bool is_same = true;
     if (file1.Num_Node_Sets() != file2.Num_Node_Sets()) {
-      if (interFace.map_flag != PARTIAL) {
+      if (interFace.map_flag != MapType::PARTIAL) {
         Error(".. Number of nodesets doesn't agree...\n");
         if (interFace.pedantic) {
           is_same = false;
@@ -398,7 +398,7 @@ namespace {
                 ".. The nodelists for nodeset id {} are not the same in the two files.\n"
                 "\t\tThe first difference is at position {}: Node {} vs. Node {}.\n",
                 set1->Id(), set1->Node_Index(diff) + 1, set1->Node_Id(diff), set2->Node_Id(diff)));
-            if (interFace.map_flag != PARTIAL) {
+            if (interFace.map_flag != MapType::PARTIAL) {
               is_same = false;
             }
             else {
@@ -422,7 +422,7 @@ namespace {
     // what is a diff.
     bool is_same = true;
     if (file1.Num_Side_Sets() != file2.Num_Side_Sets()) {
-      if (interFace.map_flag != PARTIAL) {
+      if (interFace.map_flag != MapType::PARTIAL) {
         Error(".. Number of sidesets doesn't agree...\n");
         if (interFace.pedantic) {
           is_same = false;
@@ -524,7 +524,7 @@ namespace {
                 "\t\tThe first difference is at position {}: Side {}.{} .vs. Side {}.{}.\n",
                 set1->Id(), set1->Side_Index(diff) + 1, set1_id, set1->Side_Id(diff).second,
                 set2->Side_Id(diff).first, set2->Side_Id(diff).second));
-            if (interFace.map_flag != PARTIAL) {
+            if (interFace.map_flag != MapType::PARTIAL) {
               is_same = false;
             }
             else {

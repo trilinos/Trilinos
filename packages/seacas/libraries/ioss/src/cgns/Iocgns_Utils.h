@@ -50,8 +50,8 @@ namespace Iocgns {
 
   struct ZoneBC
   {
-    ZoneBC(const std::string &bc_name, std::array<cgsize_t, 2> &point_range)
-        : name(bc_name), range_beg(point_range[0]), range_end(point_range[1])
+    ZoneBC(std::string bc_name, std::array<cgsize_t, 2> &point_range)
+        : name(std::move(bc_name)), range_beg(point_range[0]), range_end(point_range[1])
     {
     }
 
@@ -302,7 +302,7 @@ namespace Iocgns {
                             double load_balance, int proc_rank, int proc_count, bool verbose);
     static void   assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData *> &zones,
                                         std::vector<size_t> &work_vector, bool verbose);
-    static void   show_config();
+    static std::string show_config();
 
     template <typename INT>
     static void generate_block_faces(Ioss::ElementTopology *topo, size_t num_elem,

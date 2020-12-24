@@ -419,7 +419,7 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
           ip = local_change.begin() ; ip != local_change.end() ; ++ip ) {
       Entity entity      = ip->first ;
       int new_owner = ip->second;
-      mesh.comm_procs( mesh.entity_key(entity) , procs );
+      mesh.comm_procs( entity , procs );
       for ( std::vector<int>::iterator
             j = procs.begin() ; j != procs.end() ; ++j )
       {

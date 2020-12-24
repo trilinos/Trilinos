@@ -11,9 +11,9 @@
 #include <iosfwd>
 #include <string>
 #include <vector>
-using StringVector = std::vector<std::string>;
-using Omissions    = std::vector<StringVector>;
-typedef std::vector<std::pair<std::string, int>> StringIdVector;
+using StringVector   = std::vector<std::string>;
+using Omissions      = std::vector<StringVector>;
+using StringIdVector = std::vector<std::pair<std::string, int>>;
 
 class SystemInterface
 {
@@ -95,6 +95,8 @@ public:
   bool netcdf4_{false};
   bool netcdf5_{false};
   bool disableFieldRecognition_{false};
+  bool szip_{false};
+  bool zlib_{true};
 
 private:
   bool contig_{false};

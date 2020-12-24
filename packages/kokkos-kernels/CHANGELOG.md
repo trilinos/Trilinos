@@ -1,5 +1,12 @@
 # Change Log
 
+## [3.2.01](https://github.com/kokkos/kokkos-kernels/tree/3.2.01) (2020-11-17)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.2.00...3.2.01)
+
+**Fixed bugs:**
+
+- Cpp14 Fixes: [\#790](https://github.com/kokkos/kokkos-kernels/pull/790)
+
 ## [3.2.00](https://github.com/kokkos/kokkos-kernels/tree/3.2.00) (2020-08-19)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.1.01...3.2.00)
 

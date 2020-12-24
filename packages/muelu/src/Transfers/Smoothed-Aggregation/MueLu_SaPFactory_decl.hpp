@@ -137,6 +137,17 @@ template <class Scalar = DefaultScalar,
 
     void BuildP(Level &fineLevel, Level &coarseLevel) const; //Build()
 
+    /*!
+      @brief Enforce constraints on prolongator
+
+      Modifies the prolongator so that all entries lie between 0 and 1. It also 
+      ensures that the row sum is between 0 and 1. This option only makes
+      sense in the SA constext if the tentative prolgonator does not use
+      the QR factorization.
+      */
+    void SatisfyPConstraints(RCP<Matrix> A, RCP<Matrix>& P) const;
+
+
     //@}
 
   }; //class SaPFactory

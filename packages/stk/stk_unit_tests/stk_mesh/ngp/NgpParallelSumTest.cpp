@@ -29,13 +29,12 @@ protected:
     std::vector<int> sharingProcs;
     for (stk::mesh::Bucket * bucket : buckets) {
       for (const stk::mesh::Entity & node : *bucket) {
-        stk::mesh::EntityKey nodeKey = get_bulk().entity_key(node);
         double id = static_cast<double>(get_bulk().identifier(node));
         double * gold = static_cast<double*>(stk::mesh::field_data(goldValues, node));
         *gold = id;
 
         double * user = static_cast<double*>(stk::mesh::field_data(userField, node));
-        get_bulk().comm_procs(nodeKey, sharingProcs);
+        get_bulk().comm_procs(node, sharingProcs);
         const size_t numSharers = sharingProcs.size() + 1;
         *user = id / numSharers;
         if (leaveGoldValuesNotSummed) {

@@ -19,6 +19,9 @@ echo
 echo "ATDM config env vars:"
 set | grep ATDM_CONFIG_
 echo
+echo "OpenMP env vars:"
+set | grep ^OMP_
+echo
 echo "PATH=$PATH"
 
 #

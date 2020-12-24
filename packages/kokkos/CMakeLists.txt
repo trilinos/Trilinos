@@ -112,7 +112,7 @@ ENDIF()
 
 set(Kokkos_VERSION_MAJOR 3)
 set(Kokkos_VERSION_MINOR 2)
-set(Kokkos_VERSION_PATCH 0)
+set(Kokkos_VERSION_PATCH 1)
 set(Kokkos_VERSION "${Kokkos_VERSION_MAJOR}.${Kokkos_VERSION_MINOR}.${Kokkos_VERSION_PATCH}")
 math(EXPR KOKKOS_VERSION "${Kokkos_VERSION_MAJOR} * 10000 + ${Kokkos_VERSION_MINOR} * 100 + ${Kokkos_VERSION_PATCH}")
 
@@ -207,7 +207,9 @@ IF (KOKKOS_HAS_TRILINOS)
   # we have to match the annoying behavior
   STRING(REPLACE ";" " " KOKKOSCORE_COMPILE_OPTIONS "${KOKKOS_COMPILE_OPTIONS}")
   LIST(APPEND KOKKOS_ALL_COMPILE_OPTIONS ${KOKKOS_COMPILE_OPTIONS})
-  LIST(APPEND KOKKOS_ALL_COMPILE_OPTIONS ${KOKKOS_CUDA_OPTIONS})
+  IF (KOKKOS_ENABLE_CUDA)
+    LIST(APPEND KOKKOS_ALL_COMPILE_OPTIONS ${KOKKOS_CUDA_OPTIONS})
+  ENDIF()
   FOREACH(XCOMP_FLAG ${KOKKOS_XCOMPILER_OPTIONS})
     SET(KOKKOSCORE_XCOMPILER_OPTIONS "${KOKKOSCORE_XCOMPILER_OPTIONS} -Xcompiler ${XCOMP_FLAG}")
     LIST(APPEND KOKKOS_ALL_COMPILE_OPTIONS -Xcompiler ${XCOMP_FLAG})
@@ -269,7 +271,7 @@ INCLUDE(${KOKKOS_SRC_PATH}/cmake/kokkos_install.cmake)
 # Kokkos needs nvcc_wrapper in order to build.  Other libraries and
 # executables also need nvcc_wrapper.  Thus, we need to install it.
 # If the argument of DESTINATION is a relative path, CMake computes it
-# as relative to ${CMAKE_INSTALL_PREFIX}.
+# as relative to ${CMAKE_INSTALL_PATH}.
 INSTALL(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/bin/nvcc_wrapper DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 #  Finally - if we are a subproject - make sure the enabled devices are visible

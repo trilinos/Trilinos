@@ -81,7 +81,7 @@ namespace Iocgns {
       return new Iocgns::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
   }
 
-  void IOFactory::show_config() const { Iocgns::Utils::show_config(); }
+  std::string IOFactory::show_config() const { return Iocgns::Utils::show_config(); }
 } // namespace Iocgns
 
 #if defined(SEACAS_HAVE_MPI)
