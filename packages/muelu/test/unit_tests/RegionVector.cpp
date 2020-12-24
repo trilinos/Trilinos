@@ -130,8 +130,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
                    quasiRegionGIDs, quasiRegionCoordGIDs, compositeToRegionLIDs,
                    interfaceGIDs, interfaceLIDsData);
 
-  RCP<Map> rowMap = Teuchos::null;
-  RCP<Map> colMap = Teuchos::null;
+  RCP<const Map> rowMap = Teuchos::null;
+  RCP<const Map> colMap = Teuchos::null;
   rowMap = Xpetra::MapFactory<LO,GO,Node>::Build(A->getRowMap()->lib(),
       Teuchos::OrdinalTraits<GO>::invalid(),
       quasiRegionGIDs(),
@@ -139,8 +139,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionVector, RegionCompositeVector, Scalar, L
       A->getRowMap()->getComm());
   colMap = rowMap;
 
-  RCP<Map> revisedRowMap = Teuchos::null;
-  RCP<Map> revisedColMap = Teuchos::null;
+  RCP<const Map> revisedRowMap = Teuchos::null;
+  RCP<const Map> revisedColMap = Teuchos::null;
   revisedRowMap = Xpetra::MapFactory<LO,GO,Node>::Build(A->getRowMap()->lib(),
       Teuchos::OrdinalTraits<GO>::invalid(),
       quasiRegionGIDs.size()*numDofsPerNode,

@@ -263,6 +263,7 @@ namespace {
     //RCP<const map_type> mapPtr = Teuchos::rcpFromRef (map); // nonowning RCP
 
     BMV X (meshMap, blockSize, numVecs);
+    X.sync_host();
 
     typedef typename BMV::mv_type mv_type;
     mv_type X_mv = X.getMultiVectorView ();
@@ -305,6 +306,7 @@ namespace {
       X_5_1(i) = static_cast<Scalar> (i + 1); // all are nonzero
     }
     TEST_ASSERT( ! equal (X_5_1, zeroLittleVector) && ! equal (zeroLittleVector, X_5_1) );
+    X.modify_host();
 
     // Make sure that getLocalBlock() returns a read-and-write view,
     // not a deep copy.  Do this by calling getLocalBlock(5,1) again,
@@ -413,6 +415,8 @@ namespace {
 
     BMV X (meshMap, blockSize, numVecs);
     BMV Y (overlappingMeshMap, blockSize, numVecs);
+    X.sync_host();
+    Y.sync_host();
 
     //
     // Fill X with meaningful things to test Import with REPLACE combine mode.
@@ -427,16 +431,6 @@ namespace {
     TEST_ASSERT( X_overlap.data () != NULL );
     TEST_EQUALITY_CONST( static_cast<size_t> (X_overlap.extent (0)), static_cast<size_t> (blockSize) );
 
-    // {
-    //   std::ostringstream os;
-    //   os << "Proc " << myRank
-    //      << ": X_overlap.data() = " << X_overlap.data ()
-    //      << ", X_overlap.getBlockSize() = " << X_overlap.getBlockSize ()
-    //      << ", meshMap.getMinGlobalIndex() = " << meshMap.getMinGlobalIndex ()
-    //      << std::endl;
-    //   std::cerr << os.str ();
-    // }
-
     {
       const int lclOk = (X_overlap.data () != NULL &&
                          static_cast<size_t> (X_overlap.extent (0)) == static_cast<size_t> (blockSize)) ? 1 : 0;
@@ -450,11 +444,12 @@ namespace {
     for (LO i = 0; i < blockSize; ++i) {
       X_overlap(i) = static_cast<Scalar> (i+1);
     }
+    X.modify_host();
 
     { // BlockMultiVector relies on the point multivector infrastructure
-      const auto pointMehsMap = BMV::makePointMap(meshMap, blockSize);
+      const auto pointMeshMap = BMV::makePointMap(meshMap, blockSize);
       const auto pointOverlappingMeshMap = BMV::makePointMap(overlappingMeshMap, blockSize);
-      import_type pointImport (rcpFromRef (pointMehsMap), rcpFromRef (pointOverlappingMeshMap));
+      import_type pointImport (rcpFromRef (pointMeshMap), rcpFromRef (pointOverlappingMeshMap));
       Y.getMultiVectorView().doImport (X.getMultiVectorView(), pointImport, Tpetra::REPLACE);
     }
 

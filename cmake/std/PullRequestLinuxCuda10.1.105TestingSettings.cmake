@@ -87,8 +87,7 @@ set (Trilinos_ENABLE_ShyLU_NodeTacho OFF CACHE BOOL
 # Force some tests to run in serial in this PR build (usually to resolve random timeouts that can occur under contention)
 set (Intrepid2_unit-test_Discretization_Basis_HierarchicalBases_Hierarchical_Basis_Tests_MPI_1_SET_RUN_SERIAL ON CACHE BOOL "Run serial for CUDA PR testing")
 
-# Temporary options to clean up build
-set (Teko_ModALPreconditioner_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+# Options used to clean up build
 set (MueLu_ParameterListInterpreterTpetra_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (MueLu_ParameterListInterpreterTpetraHeavy_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (STKUnit_tests_stk_ngp_test_utest_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
@@ -132,5 +131,6 @@ set (EpetraExt_inout_test_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUD
 set (Teko_testdriver_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (Zoltan2_fix4785_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (Intrepid2_unit-test_Discretization_Basis_HierarchicalBases_Hierarchical_Basis_Tests_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")

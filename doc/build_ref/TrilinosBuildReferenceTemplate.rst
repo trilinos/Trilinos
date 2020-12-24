@@ -300,7 +300,7 @@ determined as follows:
 
 When the test ``TrilinosBuildStats_Results`` is run, it produces summary
 statistics to STDOUT like shown below::
-7
+
   Full Project: sum(max_resident_size_size_mb) = ??? (??? entries)
   Full Project: max(max_resident_size_size_mb) = ??? (<file-name>)
   Full Project: max(elapsed_real_time_sec) = ??? (<file-name>)
