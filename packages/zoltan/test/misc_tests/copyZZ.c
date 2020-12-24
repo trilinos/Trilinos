@@ -94,17 +94,17 @@ int main(int narg, char **arg) {
 printf("%d KDD INITIALIZING\n", me); fflush(stdout);
   /* Coordinates to be partitioned */
   const int nOne = 27;
-  double xOne[nOne] = {0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2};
-  double yOne[nOne] = {0,0,0,1,1,1,2,2,2,0,0,0,1,1,1,2,2,2,0,0,0,1,1,1,2,2,2};
-  double zOne[nOne] = {0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2};
+  double xOne[] = {0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2};
+  double yOne[] = {0,0,0,1,1,1,2,2,2,0,0,0,1,1,1,2,2,2,0,0,0,1,1,1,2,2,2};
+  double zOne[] = {0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2};
   struct Mesh meshOne;
   initMesh(&meshOne, me, np, nOne, xOne, yOne, zOne);
 
   /* Coordinates to use for testing */
   const int nTwo = 8;
-  double xTwo[nTwo] = {0.1, 1.1, 2.1, 1.1, 0.1, 0.1, 2.1, 2.1};
-  double yTwo[nTwo] = {0.1, 0.1, 0.1, 1.1, 1.1, 0.1, 1.1, 2.1};
-  double zTwo[nTwo] = {0.1, 0.1, 0.1, 1.1, 1.1, 1.1, 1.1, 2.1};
+  double xTwo[] = {0.1, 1.1, 2.1, 1.1, 0.1, 0.1, 2.1, 2.1};
+  double yTwo[] = {0.1, 0.1, 0.1, 1.1, 1.1, 0.1, 1.1, 2.1};
+  double zTwo[] = {0.1, 0.1, 0.1, 1.1, 1.1, 1.1, 1.1, 2.1};
 
   /* Create a subcommunicator in which to do partitioning. */
   /* For this test, we'll put rank 0 of MPI_COMM_WORLD in subComm */
@@ -165,6 +165,10 @@ printf("%d KDD SERIALIZING %lu\n", me, bufSize);fflush(stdout);
   char *buf = NULL;
   buf = (char *) malloc(bufSize * sizeof(char));
   if (me == 0) ierr = Zoltan_Serialize(zz, bufSize, buf);
+  if (ierr != ZOLTAN_OK) {
+    printf("TEST FAILED:  Error in Zoltan_Serialize\n"); fflush(stdout);
+    MPI_Abort(MPI_COMM_WORLD, -1);
+  }
   MPI_Bcast(&buf, bufSize, MPI_CHAR, 0, MPI_COMM_WORLD);
 
   /* All processors unpack the buffer into a new ZZ struct */
@@ -172,6 +176,10 @@ printf("%d KDD SERIALIZING %lu\n", me, bufSize);fflush(stdout);
 printf("%d KDD DESERIALIZING %lu \n", me, bufSize);fflush(stdout);
   struct Zoltan_Struct *newZZ = Zoltan_Create(MPI_COMM_WORLD);
   ierr = Zoltan_Deserialize(newZZ, bufSize, buf);
+  if (ierr != ZOLTAN_OK) {
+    printf("TEST FAILED:  Error in Zoltan_Deserialize\n"); fflush(stdout);
+    MPI_Abort(MPI_COMM_WORLD, -1);
+  }
 
   free(buf); buf = NULL;
   
@@ -213,6 +221,10 @@ printf("%d KDD GET TEST ANSWER\n", me);fflush(stdout);
     }
   }
 printf("%d KDD DONE\n", me);fflush(stdout);
+
+  if (zz) Zoltan_Destroy(&zz);
+  if (newZZ) Zoltan_Destroy(&newZZ);
+  MPI_Comm_free(&subComm);
 
   /* Gather global test result */
 

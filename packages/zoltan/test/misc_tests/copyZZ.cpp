@@ -85,16 +85,16 @@ int main(int narg, char **arg) {
 
   /* Coordinates to be partitioned */
   const int nOne = 27;
-  double xOne[nOne] = {0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2};
-  double yOne[nOne] = {0,0,0,1,1,1,2,2,2,0,0,0,1,1,1,2,2,2,0,0,0,1,1,1,2,2,2};
-  double zOne[nOne] = {0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2};
+  double xOne[] = {0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2};
+  double yOne[] = {0,0,0,1,1,1,2,2,2,0,0,0,1,1,1,2,2,2,0,0,0,1,1,1,2,2,2};
+  double zOne[] = {0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2};
   Mesh meshOne(me, np, nOne, xOne, yOne, zOne);
 
   /* Coordinates to use for testing */
   const int nTwo = 8;
-  double xTwo[nTwo] = {0.1, 1.1, 2.1, 1.1, 0.1, 0.1, 2.1, 2.1};
-  double yTwo[nTwo] = {0.1, 0.1, 0.1, 1.1, 1.1, 0.1, 1.1, 2.1};
-  double zTwo[nTwo] = {0.1, 0.1, 0.1, 1.1, 1.1, 1.1, 1.1, 2.1};
+  double xTwo[] = {0.1, 1.1, 2.1, 1.1, 0.1, 0.1, 2.1, 2.1};
+  double yTwo[] = {0.1, 0.1, 0.1, 1.1, 1.1, 0.1, 1.1, 2.1};
+  double zTwo[] = {0.1, 0.1, 0.1, 1.1, 1.1, 1.1, 1.1, 2.1};
 
   /* Create a subcommunicator in which to do partitioning. */
   /* For this test, we'll put rank 0 of MPI_COMM_WORLD in subComm */
@@ -144,12 +144,20 @@ int main(int narg, char **arg) {
   char *buf = NULL;
   buf = new char[bufSize];
   if (me == 0) ierr = zz.Serialize(bufSize, buf);
+  if (ierr != ZOLTAN_OK) {
+    printf("TEST FAILED in zz.Serialize\n"); fflush(stdout);
+    MPI_Abort(MPI_COMM_WORLD, -1);
+  }
   MPI_Bcast(&buf, bufSize, MPI_CHAR, 0, MPI_COMM_WORLD);
 
   /* All processors unpack the buffer into a new ZZ struct */
 
   Zoltan newZZ(MPI_COMM_WORLD);
   ierr = newZZ.Deserialize(bufSize, buf);
+  if (ierr != ZOLTAN_OK) {
+    printf("TEST FAILED in newZZ.Deserialize\n"); fflush(stdout);
+    MPI_Abort(MPI_COMM_WORLD, -1);
+  }
 
   delete [] buf;
   

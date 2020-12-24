@@ -428,6 +428,8 @@ int Zoltan_Deserialize(struct Zoltan_Struct *zz, size_t bufSize, char *buf)
 printf("KDDKDD DESERIALIZE one \n");fflush(stdout);
   memcpy((void *)zz, bufptr, sizeof(struct Zoltan_Struct));
   bufptr += sizeof(struct Zoltan_Struct);
+  zz->LB.Data_Structure = NULL;
+  zz->LB.Imbalance_Tol = NULL;
 
   /* Consistent with Zoltan defaults, set default LB_METHOD to RCB; doing so
    * sets the various function pointers for RCB. 
