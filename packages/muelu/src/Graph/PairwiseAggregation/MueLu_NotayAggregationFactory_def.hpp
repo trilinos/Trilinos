@@ -192,9 +192,7 @@ namespace MueLu {
     ordering = O_NATURAL;
     if (orderingStr == "random" ) ordering = O_RANDOM;
     else if(orderingStr == "natural") {}
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
     else if(orderingStr == "cuthill-mckee" || orderingStr == "cm") ordering = O_CUTHILL_MCKEE;
-#endif
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(1,Exceptions::RuntimeError,"Invalid ordering type");
     }
@@ -208,14 +206,12 @@ namespace MueLu {
       orderingVector[i] = i;
     if (ordering == O_RANDOM)
       MueLu::NotayUtils::RandomReorder(orderingVector);
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
     else if (ordering == O_CUTHILL_MCKEE) {
       RCP<Xpetra::Vector<LO,LO,GO,NO> > rcmVector = MueLu::Utilities_kokkos<SC,LO,GO,NO>::CuthillMcKee(*A);
       auto localVector = rcmVector->getData(0);
       for (LO i = 0; i < numRows; i++)
         orderingVector[i] = localVector[i];
     }
-#endif
 
     // Get the party stated
     LO numNonAggregatedNodes = numRows, numDirichletNodes = 0;
@@ -298,15 +294,13 @@ namespace MueLu {
         localOrderingVector[i] = i;
       if (ordering == O_RANDOM)
         MueLu::NotayUtils::RandomReorder(localOrderingVector);
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
       else if (ordering == O_CUTHILL_MCKEE) {
         RCP<Xpetra::Vector<LO,LO,GO,NO> > rcmVector = MueLu::Utilities_kokkos<SC,LO,GO,NO>::CuthillMcKee(*A);
         auto localVector = rcmVector->getData(0);
         for (LO i = 0; i < numRows; i++)
           localOrderingVector[i] = localVector[i];
       }
-#endif
-      
+
       // Compute new aggregates
       numLocalAggregates    = 0;
       numNonAggregatedNodes = static_cast<LO>(coarseLocalA.numRows());

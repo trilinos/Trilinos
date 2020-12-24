@@ -302,7 +302,7 @@ void MakeCoarseLevelMaps(const int maxRegPerGID,
     coarseCompositeToRegionLIDs.resize(countCoarseComposites);
 
     // We are now ready to fill up the outputs
-    RCP<Map> regRowMapCurrent      = Teuchos::rcp_const_cast<Map>(regProlong->getColMap());
+    RCP<const Map> regRowMapCurrent      = regProlong->getColMap();
 
     RCP<Map> quasiRegRowMap =  MapFactory::Build(regProlong->getColMap()->lib(),
                                                  GO_INV,
@@ -356,8 +356,8 @@ void MakeCoarseCompositeOperator(RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdin
                                        // This estimate is very conservative and probably costs us lots of memory...
                                       8*regMatrix->getCrsGraph()->getNodeMaxNumRowEntries());
   regionalToComposite(regMatrix,
-                      Teuchos::rcp_const_cast<Map>(quasiRegRowMap),
-                      Teuchos::rcp_const_cast<Map>(quasiRegColMap),
+                      quasiRegRowMap,
+                      quasiRegColMap,
                       regRowImporter, Xpetra::ADD,
                       coarseCompOp);
 
