@@ -757,7 +757,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const int id) const {
-
       for (Int b = id; b < nblks; b += nleaves) {
         Int frow = col_tabs(b);
         Int erow = col_tabs(b+1);
@@ -2263,11 +2262,162 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
   }//end sort_matrix()
 
 
+  //--------------------------------------------------------------
+  template <class Int, class Entry>
+  struct kokkos_nd_sorter
+  {
+    Int nids;
+    Int nrow;
+    Int nblks;
+    INT_1DARRAY   nd_map;
+    INT_1DARRAY   order_vals_perms;
+
+    INT_1DARRAY   col_ptr;
+    INT_1DARRAY   row_idx;
+    ENTRY_1DARRAY val;
+
+    INT_1DARRAY   nd_ptr_global;
+    INT_1DARRAY   perm_global;
+
+    INT_1DARRAY   iwork_global;
+    ENTRY_1DARRAY dwork_global;
+
+    kokkos_nd_sorter(Int _nids,
+                     Int _nrow,
+                     Int _nblks,
+                     //
+                     INT_1DARRAY   _nd_map,
+                     INT_1DARRAY   _order_vals_perms,
+                     INT_1DARRAY   _col_ptr,
+                     INT_1DARRAY   _row_idx,
+                     ENTRY_1DARRAY _val,
+                     //
+                     INT_1DARRAY   _nd_ptr_global,
+                     INT_1DARRAY   _perm_global,
+                     INT_1DARRAY   _iwork_global,
+                     ENTRY_1DARRAY _dwork_global) :
+    nids(_nids),
+    nrow(_nrow),
+    nblks(_nblks),
+    nd_map(_nd_map),
+    order_vals_perms(_order_vals_perms),
+    col_ptr(_col_ptr),
+    row_idx(_row_idx),
+    val(_val),
+    nd_ptr_global(_nd_ptr_global),
+    perm_global(_perm_global),
+    iwork_global(_iwork_global),
+    dwork_global(_dwork_global)
+    {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const int id) const {
+      //#define BASKER_TIMER_AMD_FUNCTOR
+      #if defined(BASKER_TIMER_AMD_FUNCTOR)
+      Kokkos::Timer timer1;
+      Kokkos::Timer timer_id;
+      double time1 = 0.0;
+      double time2 = 0.0;
+      double time3 = 0.0;
+      #endif
+
+      Int offset = id*(1+nblks);
+      using range_type = Kokkos::pair<int, int>;
+      auto nd_ptr = Kokkos::subview(nd_ptr_global,
+                                    range_type(offset, offset+nblks+1));
+      offset = id*nrow;
+      auto perm  = Kokkos::subview(perm_global,
+                                   range_type(offset, offset+nrow));
+      auto dwork = Kokkos::subview(dwork_global,
+                                   range_type(offset, offset+nrow));
+      auto iwork = Kokkos::subview(iwork_global,
+                                   range_type(offset, offset+nrow));
+
+      Int mloc = (nrow + nids - 1)/nids;
+      Int start_k = id * mloc;
+      Int end_k = start_k + mloc;
+      if (end_k > nrow) {
+        end_k = nrow;
+      }
+      #if defined(BASKER_TIMER_AMD_FUNCTOR)
+      printf( " > sort subview time (%d) : %e seconds\n", id, timer_id.seconds() );
+      timer_id.reset();
+      printf( " %d: sort(k = %d : %d)\n",id,start_k,end_k-1 );
+      #endif
+      for(Int k = start_k; k < end_k; k++)
+      {
+        #if defined(BASKER_TIMER_AMD_FUNCTOR)
+        timer1.reset();
+        #endif
+        // count nnz in each ND interior/separator
+        for (Int i = 0; i <= nblks; i++) {
+          nd_ptr(i) = 0;
+        }
+        // number of nz in the upper-part of diagonal block (for find_2D_convert, upper part needs to come before lower)
+        Int num_upper = 0;
+        Int col_id = nd_map(k);
+        for(Int i = col_ptr[k]; i < col_ptr[k+1]; i++)
+        {
+          Int row_id = nd_map(row_idx[i]);
+          nd_ptr(row_id+1) ++;
+          if (row_id == col_id && row_idx[i] <= k) {
+            // count nz in upper part of diagonal block
+            num_upper ++;
+          }
+        }
+        for (Int i = 0; i < nblks; i++) {
+          nd_ptr(i+1) += nd_ptr(i);
+        }
+        #if defined(BASKER_TIMER_AMD_FUNCTOR)
+        time1 += timer1.seconds();
+        timer1.reset();
+        #endif
+        // sort into workspace
+        Int diag_lower_ptr = nd_ptr(col_id) + num_upper;
+        for(Int i = col_ptr[k]; i < col_ptr[k+1]; i++)
+        {
+          Int row_id = nd_map(row_idx[i]);
+          Int idx = nd_ptr(row_id);
+          if (row_id == col_id && row_idx[i] > k) {
+            // shift for nz in lower part of diagonal block
+            idx = diag_lower_ptr;
+            diag_lower_ptr ++;
+          } else {
+            nd_ptr(row_id) ++;
+          }
+          perm[idx]   = order_vals_perms(i);
+          dwork[idx]  = val[i];
+          iwork[idx]  = row_idx[i];
+        }
+        #if defined(BASKER_TIMER_AMD_FUNCTOR)
+        time2 += timer1.seconds();
+        timer1.reset();
+        #endif
+        // copy from workspace
+        Int start_row = col_ptr[k];
+        for(Int i = 0; i < col_ptr[k+1] - col_ptr[k]; i++)
+        {
+          order_vals_perms(start_row + i) = perm[i];
+          val[start_row + i]     = dwork[i];
+          row_idx[start_row + i] = iwork[i];
+        }
+        #if defined(BASKER_TIMER_AMD_FUNCTOR)
+        time3 += timer1.seconds();
+        #endif
+      }
+      #if defined(BASKER_TIMER_AMD_FUNCTOR)
+      double done_time = timer_id.seconds();
+      printf( " > sort-functor done time (%d) : %e + %e + %e -> %e seconds\n", id, time1,time2,time3,done_time );
+      #endif
+    }
+  };
+  //--------------------------------------------------------------
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::ndsort_matrix_store_valperms( BASKER_MATRIX &M, INT_1DARRAY &order_vals_perms )
   {
-    //#define BASKER_TIMER_AMD
+    #define BASKER_TIMER_AMD
     #ifdef BASKER_TIMER_AMD
     Kokkos::Timer timer_order;
     #endif
@@ -2370,7 +2520,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       // copy from workspace
       Int start_row = M.col_ptr[k];
       Int num_rows = M.col_ptr[k+1] - M.col_ptr[k];
-      #if 0 // seems not enough for each column to parallelize
+      #if 0 // seems not enough work within each column to parallelize
       Kokkos::parallel_for(
         "permute_col", num_rows,
         KOKKOS_LAMBDA(const int i) {
@@ -2410,6 +2560,11 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     MALLOC_INT_1DARRAY   (iwork_global, nids*(M.nrow));
     MALLOC_INT_1DARRAY   (perm_global,  nids*(M.nrow));
 
+    #if 0
+    kokkos_nd_sorter<Int, Entry> sorter_functor(nids, M.nrow, nblks, nd_map, order_vals_perms, M.col_ptr, M.row_idx, M.val,
+                                                nd_ptr_global, perm_global, iwork_global, dwork_global);
+    Kokkos::parallel_for("ND SORTER on A", Kokkos::RangePolicy<Exe_Space>(0, nids), sorter_functor);
+    #else
     using range_type = Kokkos::pair<int, int>;
     Kokkos::parallel_for(
       "ndsort_matrix_store_valperms", nids,
@@ -2433,11 +2588,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
                                      range_type(offset, offset+M.nrow));
         auto iwork = Kokkos::subview(iwork_global,
                                      range_type(offset, offset+M.nrow));
-        #ifdef BASKER_TIMER_AMD_FUNCTOR
-        printf( " > sort subview time (%d) : %e seconds\n", id, timer_id.seconds() );
-        timer_id.reset();
-        printf( " %d: sort(k = %d : %d)\n",id,start_k,end_k-1 );
-        #endif
 
         Int mloc = (M.ncol + nids - 1)/nids;
         Int start_k = id * mloc;
@@ -2445,7 +2595,11 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         if (end_k > M.ncol) {
           end_k = M.ncol;
         }
-        //for(Int k = id; k < M.ncol; k += nids)
+        #ifdef BASKER_TIMER_AMD_FUNCTOR
+        printf( " > sort subview time (%d) : %e seconds\n", id, timer_id.seconds() );
+        timer_id.reset();
+        printf( " %d: sort(k = %d : %d)\n",id,start_k,end_k-1 );
+        #endif
         for(Int k = start_k; k < end_k; k++)
         {
           #ifdef BASKER_TIMER_AMD_FUNCTOR
@@ -2508,16 +2662,18 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
           #endif
         }
         #ifdef BASKER_TIMER_AMD_FUNCTOR
-        printf( " > sort done time (%d) : %e + %e + %e -> %e seconds\n", id, time1,time2,time3,timer_id.seconds() );
+        double done_time = timer_id.seconds();
+        printf( " > sort done time (%d) : %e + %e + %e -> %e seconds\n", id, time1,time2,time3,done_time );
         #endif
       });
+    #endif
+    Kokkos::fence();
     FREE_INT_1DARRAY (nd_ptr_global);
 
     FREE_ENTRY_1DARRAY (dwork_global);
     FREE_INT_1DARRAY   (iwork_global);
     FREE_INT_1DARRAY   (perm_global);
 #endif
-    Kokkos::fence();
     #ifdef BASKER_TIMER_AMD
     std::cout << " > sort time : " << timer_order.seconds() << std::endl;
     #endif

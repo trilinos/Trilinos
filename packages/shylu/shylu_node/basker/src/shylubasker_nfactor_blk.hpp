@@ -1551,7 +1551,6 @@ namespace BaskerNS
       for(Int i = B.col_ptr(k); i < B.col_ptr(k+1); ++i)
       {
         const Int j = B.row_idx(i);
-
         #ifdef BASKER_DEBUG_NFACTOR_BLK
         //Bgood(remove)
         //printf("t_back_solve_diag, kid: %d i: %d g: %d\n",
@@ -1569,14 +1568,14 @@ namespace BaskerNS
 
       }//over all nnz in subview
     }//end if preload
-  
-    //SPMV
     #ifdef BASKER_DEBUG_NFACTOR_BLK
     printf("t_back_solve_d, kid: %d xsize: %ld \n",
 	   kid, x_size);
     #endif
 
+    //SPMV
     //printf("x_offset: %d \n", x_offset);
+    //const Entry zero (0.0);
     for(Int i = 0; i < x_size; ++i)
     {
       const Int colid = x_idx[i+x_offset];
@@ -1586,18 +1585,21 @@ namespace BaskerNS
       printf("t_back_solve_diag, kid: %d  k: %d %g  x_size: %d [%d %d] \n",
              kid, colid, xj, x_size,  L.col_ptr[k], L.col_ptr[k+1]);
       #endif
-      for(Int j = L.col_ptr(colid); j < L.col_ptr(colid+1); j++)
+      //if (xj != zero)
       {
-        const Int jj = L.row_idx(j);
-        //printf( " > kid=%d: t_dense_back_solve_offdiag::X(%d) = %e - %e * %e = %e\n",kid,jj,X(jj),L.val(j),xj,X(jj)-L.val(j)*xj );
-        X(jj) -= L.val(j)*xj; 
+        for(Int j = L.col_ptr(colid); j < L.col_ptr(colid+1); j++)
+        {
+          const Int jj = L.row_idx(j);
+          //printf( " > kid=%d: t_dense_back_solve_offdiag::X(%d) = %e - %e * %e = %e\n",kid,jj,X(jj),L.val(j),xj,X(jj)-L.val(j)*xj );
+          X(jj) -= L.val(j)*xj; 
 
-        #ifdef BASKER_DEBUG_NFACTOR_BLK
-        printf("t_b_solve_d, kid: %d j: %d color: %d \n",
-               kid, jj, color[jj]);
-        printf("t_back_solve_d,id:%d  row_idx: %d b4: %f mult: %f %f\n",
-               kid, jj,X[jj], L.val[j], xj);
-        #endif
+          #ifdef BASKER_DEBUG_NFACTOR_BLK
+          printf("t_b_solve_d, kid: %d j: %d color: %d \n",
+                 kid, jj, color[jj]);
+          printf("t_back_solve_d,id:%d  row_idx: %d b4: %f mult: %f %f\n",
+                 kid, jj,X[jj], L.val[j], xj);
+          #endif
+        }
       }
     }//over all nonzero in left
 

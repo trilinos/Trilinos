@@ -28,7 +28,7 @@
 //#define BASKER_DEBUG_NFACTOR_COL2
 //#define BASKER_DEBUG_TIME
 //#define BASKER_COUNT_OPS
-//#define BASKER_TIMER
+#define BASKER_TIMER
 
 namespace BaskerNS
 {
@@ -578,7 +578,7 @@ namespace BaskerNS
           }
           #endif
 
-          if(X(jj) != (Entry)(0) )
+          //if(X(jj) != (Entry)(0) )
           {
             #ifdef BASKER_DEBUG_NFACTOR_COL2
             if(lower == BASKER_TRUE)
@@ -740,7 +740,7 @@ namespace BaskerNS
       printf("moving, kid: %d  A: %d %d %d %d p_size: %d \n", 
              kid, A_col, A_row, team_leader, bl,p_size);
       #endif
-      
+
       //over all dim(S)
       for(Int jj=0; jj < nrow; ++jj)
       {
@@ -770,7 +770,7 @@ namespace BaskerNS
             #ifdef BASKER_DEBUG_NFACTOR_COL22
             printf("counting [%d] %f kid: %d \n",
                    j+brow, X[j], kid);
-                #endif
+            #endif
             BASKER_ASSERT("1==0", "copy, should never call");
           }
         }//if X(j) != 0

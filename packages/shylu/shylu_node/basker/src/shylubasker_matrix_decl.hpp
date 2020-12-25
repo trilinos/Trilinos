@@ -75,10 +75,6 @@ namespace BaskerNS
                    BASKER_BOOL alloc, 
                    Int kid,
                    bool remove_zeros = false);
-    BASKER_INLINE
-    void convert2D_unsorted(BASKER_MATRIX &M, 
-                            BASKER_BOOL alloc, 
-                            Int kid);
 
     
     //just set shape, do not init

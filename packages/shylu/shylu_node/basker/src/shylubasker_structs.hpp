@@ -367,7 +367,7 @@ namespace BaskerNS
       {
         BASKER_ASSERT(size > 0, "struct post size");
         MALLOC_INT_1DARRAY(post, size);
-        post_flg =size;
+        post_flg = size;
       }
       else if(size > parent_flg)
       {

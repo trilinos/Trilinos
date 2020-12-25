@@ -554,42 +554,46 @@ namespace BaskerNS
     {
 
       j = B.row_idx(i);
-      X(j) = B.val(i);
 
-      #ifdef BASKER_DEBUG_NFACTOR_COL
-      //if(kid>=0)
-      printf("t_upper_col_factor(kid=%d, l=%d, k=%d): X(%d) = %e\n", 
-             kid,l,k, j, B.val(i));
-      #endif
-
-      #ifdef MY_DEBUG_BASKER
-       #ifdef BASKER_2DL
-       if(kid>=0)
-         //printf("kid: %d Nx in Ak %d %g color = %d \n",
-         //   kid, j, X[j-brow],  ws[j-brow] );
-         printf("\n > kid: %d Nx in Ak(%d) = %g color = %d \n",
-                (int)kid, (int)j, X[j], (int)ws[j] );
-       #else
-       if(kid>=0)
-         printf("kid: %d Nx in Ak %d %g color = %d \n",
-             kid, j, X[j], ws[0 + j] );
-       #endif
-      #endif
-
-      #ifdef BASKER_2DL
-      //if(color[j-brow] == 0)
-      if(color[j] == 0)
-      #else
-      if(color[j] == 0)
-      #endif
+      //if (B.val(i) != zero) 
       {
-        #ifdef BASKER_INC_LVL
-        //t_local_reach_selective(kid, l, l, j, &top);
-        #else
-        //t_local_reach(kid, l, l, j, &top); //Note: comeback
-        t_local_reach(kid,l,l,j,top);
+        X(j) = B.val(i);
+
+        #ifdef BASKER_DEBUG_NFACTOR_COL
+        //if(kid>=0)
+        printf("t_upper_col_factor(kid=%d, l=%d, k=%d): X(%d) = %e\n", 
+               kid,l,k, j, B.val(i));
         #endif
-      }//if not colored
+
+        #ifdef MY_DEBUG_BASKER
+         #ifdef BASKER_2DL
+         if(kid>=0)
+           //printf("kid: %d Nx in Ak %d %g color = %d \n",
+           //   kid, j, X[j-brow],  ws[j-brow] );
+           printf("\n > kid: %d Nx in Ak(%d) = %g color = %d \n",
+                  (int)kid, (int)j, X[j], (int)ws[j] );
+         #else
+         if(kid>=0)
+           printf("kid: %d Nx in Ak %d %g color = %d \n",
+                  kid, j, X[j], ws[0 + j] );
+         #endif
+        #endif
+
+        #ifdef BASKER_2DL
+        //if(color[j-brow] == 0)
+        if(color[j] == 0)
+        #else
+        if(color[j] == 0)
+        #endif
+        {
+          #ifdef BASKER_INC_LVL
+          //t_local_reach_selective(kid, l, l, j, &top);
+          #else
+          //t_local_reach(kid, l, l, j, &top); //Note: comeback
+          t_local_reach(kid,l,l,j,top);
+          #endif
+        }//if not colored
+      }// if not zero
     }//end over each nnz in column
     xnnz = ws_size - top;
     
@@ -693,9 +697,9 @@ namespace BaskerNS
 
       #ifdef BASKER_2DL
       //if(X[j-brow] !=0)
-      if(X(j) != zero )
+      if (X(j) != zero)
       #else
-      if(X[j] != zero )
+      if (X[j] != zero)
       //if(X[j] != 0)
       //kkos_nfactor_sep2
       #endif
