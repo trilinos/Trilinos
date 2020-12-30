@@ -1823,7 +1823,9 @@ namespace BaskerNS
     //}
 
     const Entry zero (0.0);
-Kokkos::Timer timer;
+    #ifdef BASKER_TIMER
+    Kokkos::Timer timer;
+    #endif
     //get row counts
     for(Int j = M.col_ptr(0); j < M.col_ptr(M.ncol); ++j)
     {
@@ -1855,7 +1857,9 @@ Kokkos::Timer timer;
     }//for-j
     AT.col_ptr(0) = 0;
     AT.nnz  = AT.col_ptr(AT.ncol);
-std::cout << " matrix_trans: " << timer.seconds() << std::endl;
+    #ifdef BASKER_TIMER
+    std::cout << " matrix_trans: " << timer.seconds() << std::endl;
+    #endif
   }//end matrix_transpose
 
   
@@ -1875,7 +1879,6 @@ std::cout << " matrix_trans: " << timer.seconds() << std::endl;
     AT.ncol = MV.ncol;
     AT.nnz  = MV.nnz();
 
-printf( " matrix-transpose: view\n" );
     BASKER_ASSERT((AT.ncol+1) > 0, "util trans ncol2");
     BASKER_ASSERT(AT.nnz      > 0, "util trans nnz2");
 

@@ -16,7 +16,7 @@
 //  #define BASKER_SUPERLUDIS_MC64
 //#endif
 //#undef BASKER_DEBUG_ORDER
-#define BASKER_TIMER
+//#define BASKER_TIMER
 
 
 namespace BaskerNS
@@ -503,7 +503,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         }
         MALLOC_INT_1DARRAY(order_csym_array, BTF_A.ncol);
         init_value(order_csym_array, BTF_A.ncol, (Int)0);
-        csymamd_order(BTF_A, order_csym_array, cmember);
+        csymamd_order(BTF_A, order_csym_array, cmember, Options.verbose);
 
         permute_col(BTF_A, order_csym_array);
         sort_matrix(BTF_A);
@@ -732,6 +732,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     INT_1DARRAY temp_row;
 
     INT_1DARRAY order_csym_array;
+    BASKER_BOOL verbose;
 
     kokkos_amd_order(Int _nleaves,
                      Int _nblks,
@@ -743,7 +744,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
                      INT_1DARRAY _temp_col,
                      INT_1DARRAY _temp_row,
                      //
-                     INT_1DARRAY _order_csym_array) :
+                     INT_1DARRAY _order_csym_array,
+                     BASKER_BOOL _verbose) :
     nleaves (_nleaves),
     nblks   (_nblks),
     col_tabs(_col_tabs),
@@ -752,7 +754,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     tempp   (_tempp),
     temp_col(_temp_col),
     temp_row(_temp_row),
-    order_csym_array(_order_csym_array)
+    order_csym_array(_order_csym_array),
+    verbose(_verbose)
     {}
 
     KOKKOS_INLINE_FUNCTION
@@ -762,7 +765,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         Int erow = col_tabs(b+1);
         Int fnnz = col_ptr(frow);
         Int blk_size = erow - frow;
-        std::cout << " amd_order_functor ( " << id << " ): block " << b << " size = " << blk_size << std::endl;
+        //std::cout << " amd_order_functor ( " << id << " ): block " << b << " size = " << blk_size << std::endl;
 
         Int nnz = 0;
         temp_col(frow+b) = 0;
@@ -782,7 +785,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         double l_nnz = 0;
         double lu_work = 0;
         BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(frow+b)), &(temp_row(fnnz)),
-                                        &(tempp(frow)), l_nnz, lu_work);
+                                        &(tempp(frow)), l_nnz, lu_work, verbose);
         for(Int k = 0; k < blk_size; k++)
         {
           order_csym_array(frow+tempp(frow + k)) = frow+k;
@@ -834,27 +837,29 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       #endif
 
       info_scotch = scotch_partition(BTF_A, AAT);
+      if (info_scotch == BASKER_SUCCESS) {
+        // apply ND to AAT (scotch_partition applies to BTF_A, only)
+        INT_1DARRAY col_ptr;
+        INT_1DARRAY row_idx;
+        MALLOC_INT_1DARRAY(col_ptr, AAT.ncol+1);
+        MALLOC_INT_1DARRAY(row_idx, AAT.nnz);
 
-      INT_1DARRAY col_ptr;
-      INT_1DARRAY row_idx;
-      MALLOC_INT_1DARRAY(col_ptr, AAT.ncol+1);
-      MALLOC_INT_1DARRAY(row_idx, AAT.nnz);
-
-      Int nnz = 0;
-      col_ptr[0] = 0;
-      for (Int j = 0; j < AAT.ncol; j++) {
-        Int col = part_tree.ipermtab[j];
-        for (Int k = AAT.col_ptr[col]; k < AAT.col_ptr[col+1]; k++) {
-          row_idx[nnz] = part_tree.permtab[AAT.row_idx[k]];
-          nnz++;
+        Int nnz = 0;
+        col_ptr[0] = 0;
+        for (Int j = 0; j < AAT.ncol; j++) {
+          Int col = part_tree.ipermtab[j];
+          for (Int k = AAT.col_ptr[col]; k < AAT.col_ptr[col+1]; k++) {
+            row_idx[nnz] = part_tree.permtab[AAT.row_idx[k]];
+            nnz++;
+          }
+          col_ptr[j+1] = nnz;
         }
-        col_ptr[j+1] = nnz;
-      }
-      for (Int j = 0; j <= AAT.ncol; j++) {
-        AAT.col_ptr[j] = col_ptr[j];
-      }
-      for (Int k = 0; k < nnz; k++) {
-        AAT.row_idx[k] = row_idx[k];
+        for (Int j = 0; j <= AAT.ncol; j++) {
+          AAT.col_ptr[j] = col_ptr[j];
+        }
+        for (Int k = 0; k < nnz; k++) {
+          AAT.row_idx[k] = row_idx[k];
+        }
       }
     }
     if (info_scotch != BASKER_SUCCESS) {
@@ -943,7 +948,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       #endif
 #if 1
     kokkos_amd_order<Int> amd_functor(nleaves, nblks, tree.col_tabs, AAT.col_ptr, AAT.row_idx,
-                                      tempp, temp_col, temp_row, order_csym_array);
+                                      tempp, temp_col, temp_row, order_csym_array, Options.verbose);
     Kokkos::parallel_for("BLK_AMD on A", Kokkos::RangePolicy<Exe_Space>(0, nleaves), amd_functor);
     Kokkos::fence();
 #else
@@ -2417,7 +2422,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::ndsort_matrix_store_valperms( BASKER_MATRIX &M, INT_1DARRAY &order_vals_perms )
   {
-    #define BASKER_TIMER_AMD
+    //#define BASKER_TIMER_AMD
     #ifdef BASKER_TIMER_AMD
     Kokkos::Timer timer_order;
     #endif

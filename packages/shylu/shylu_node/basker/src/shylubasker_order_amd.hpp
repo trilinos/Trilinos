@@ -12,7 +12,7 @@
 //#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
 //  #define BASKER_SUPERLUDIS_MC64
 //#endif
-#define BASKER_TIMER
+//#define BASKER_TIMER
 
 namespace BaskerNS
 {
@@ -280,7 +280,7 @@ namespace BaskerNS
       #endif
 
       BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), 
-          &(temp_row(0)),&(tempp(0)));
+          &(temp_row(0)),&(tempp(0)), Options.verbose);
 
       #ifdef BASKER_DEBUG_ORDER_AMD
       printf("blk: %d order: \n", b);
@@ -686,7 +686,7 @@ namespace BaskerNS
             std::cout << " >> + Basker::AMD_ORDER" << std::endl;
           }
           BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), &(temp_row(0)), 
-                                          &(tempp(0)), l_nnz, lu_work);
+                                          &(tempp(0)), l_nnz, lu_work, Options.verbose);
         }
       }
       #ifdef BASKER_TIMER

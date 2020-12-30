@@ -500,7 +500,6 @@ namespace BaskerNS
       {cout << i << "  " << tree.col_tabs[i+1]-tree.col_tabs[i] << endl;}
     #endif
 
-std::cout << " thread_array = malloc ( " << num_threads << " )" << std::endl;
     BASKER_ASSERT(num_threads > 0, "tree num_threads2");
     MALLOC_THREAD_1DARRAY(thread_array, num_threads);
 
@@ -979,8 +978,11 @@ std::cout << " thread_array = malloc ( " << num_threads << " )" << std::endl;
     Int U_row = 0; //Upper Blk row
     Int c_idx = 0; //Col tab offset; used to iterate through tree.col_tabs
 
+//#define MY_DEBUG
+#ifdef MY_DEBUG
     printf( "\n >> find_2D_convert (%d x %d) <<\n\n",M.nrow,M.ncol );
     for (Int k = 0; k <= tree.nblks; k++) printf( "  row_tabs[%d] = %d\n",k,tree.row_tabs(k));
+#endif
 #if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
     INT_1DARRAY L_col_idx;
     INT_1DARRAY U_col_idx;
@@ -1039,7 +1041,6 @@ std::cout << " thread_array = malloc ( " << num_threads << " )" << std::endl;
       Kokkos::deep_copy(U_col_idx, BASKER_MAX_IDX);
 #endif
 
-//#define MY_DEBUG
 #ifdef MY_DEBUG
       printf( "\n >> k = %d <<\n",k );
 #endif

@@ -983,7 +983,7 @@ namespace BaskerNS
     BTF_B.set_shape(scol_top,    scol-scol_top,  scol, M.ncol-scol);
     BTF_C.set_shape(scol,        M.ncol-scol,    scol, M.ncol-scol);
 
-    #if 1//def BASKER_DEBUG_ORDER_BTF
+    #ifdef BASKER_DEBUG_ORDER_BTF
     printf( " scol_top = %d, scol = %d, ncol = %d\n",scol_top, scol, M.ncol );
     printf("Basker Set Shape BTF_B: %d:%d, %d:%d \n",
         BTF_B.srow, BTF_B.nrow,
@@ -1031,7 +1031,7 @@ namespace BaskerNS
       }//over all nnz in k
     }//over all k
 
-    #if 1///def BASKER_DEBUG_ORDER_BTF
+    #ifdef BASKER_DEBUG_ORDER_BTF
     printf("BTF_B nnz: %d \n", bnnz);
     printf("BTF_C nnz: %d \n", cnnz);
     #endif

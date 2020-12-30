@@ -296,7 +296,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       printf("\n --------------- OVER DOMS ---------------\n");
       printf("\n");
     }
-    //#define SHYLU_BASKER_STREE_LIST
+    #define SHYLU_BASKER_STREE_LIST
     std::vector <BASKER_SYMBOLIC_TREE> stree_list (num_threads);
     #ifdef SHYLU_BASKER_STREE_LIST
     Kokkos::parallel_for(
@@ -966,7 +966,6 @@ Kokkos::Timer timer;
     //Still like to find a way to do this without transpose
     BASKER_MATRIX  Mt;
     matrix_transpose(MV, Mt);
-std::cout << " col_count_1 : " << timer.seconds() << std::endl; timer.reset(); 
     Int *post   = &(ST.post(0));
     Int *parent = &(ST.parent(0));
    
@@ -989,7 +988,6 @@ std::cout << " col_count_1 : " << timer.seconds() << std::endl; timer.reset();
 
     for(Int k = 0; k < ws_size; k++)
       {ws(k) = BASKER_MAX_IDX;}
-std::cout << " col_count_2 : " << timer.seconds() << std::endl; timer.reset(); 
    
     for(Int k = 0; k < MV.ncol; k++)
     {
@@ -1012,7 +1010,6 @@ std::cout << " col_count_2 : " << timer.seconds() << std::endl; timer.reset();
         first[j] = k; // update with parent
       }
     }//initalize the delta counts for overlap
-std::cout << " col_count_3 : " << timer.seconds() << std::endl; timer.reset(); 
 
     // Create a linked list of the cliques
     //Cliques are need for nonsymmtrix A'A case
@@ -1047,7 +1044,6 @@ std::cout << " col_count_3 : " << timer.seconds() << std::endl; timer.reset();
       // End create a linked list of the cliques
 
     }
-std::cout << " col_count_4 : " << timer.seconds() << std::endl; timer.reset(); 
     // reset past
     for(Int k = 0; k < MV.ncol; k++)
     {past[k] = k;}
@@ -1088,7 +1084,6 @@ std::cout << " col_count_4 : " << timer.seconds() << std::endl; timer.reset();
       if(parent[j] != BASKER_MAX_IDX)
       {past[j] = parent[j];}
     }//over all col/row
-std::cout << " col_count_5 : " << timer.seconds() << std::endl; timer.reset(); 
 
 
     for(Int k = 0; k < MV.ncol; k++)
@@ -1109,7 +1104,6 @@ std::cout << " col_count_5 : " << timer.seconds() << std::endl; timer.reset();
     {
       ST.col_counts[i] = delta[i];
     }
-std::cout << " col_count_6 : " << timer.seconds() << std::endl; timer.reset(); 
    
     // Clean up workspace
     FREE(ws);

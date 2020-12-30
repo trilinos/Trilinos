@@ -28,7 +28,7 @@
 //#define BASKER_DEBUG_NFACTOR_COL2
 //#define BASKER_DEBUG_TIME
 //#define BASKER_COUNT_OPS
-#define BASKER_TIMER
+//#define BASKER_TIMER
 
 namespace BaskerNS
 {
