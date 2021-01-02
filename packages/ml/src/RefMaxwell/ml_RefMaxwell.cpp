@@ -19,6 +19,7 @@
 #include "Teuchos_ArrayRCP.hpp"
 
 #include "EpetraExt_RowMatrixOut.h"
+#include "EpetraExt_MatrixMatrix.h"
 #include "ml_ifpack_epetra_wrap.h"
 
 
@@ -423,16 +424,24 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool /* Che
   /* Build the (1,1) Block Operator, if needed */
 #ifdef ENABLE_MS_MATRIX
   if (matrix11 == "M") {
+    if(verbose_ && !Comm_->MyPID()) 
+      printf("Using the 'M' Matrix for (1,1)\n");      
     Operator11_=rcp((Epetra_CrsMatrix*)Ms_Matrix_,false);
   }
   else if(matrix11 == "S") {
-    Epetra_CrsMatrix* S;
-    EpetraExt::MatrixMatrix::Add(*(Epetra_CrsMatrix*)SM_Matrix_,false,1.0,(Epetra_CrsMatrix*)Ms_Matrix_,false,-1.0,S);
+    if(verbose_ && !Comm_->MyPID()) 
+      printf("Using the 'S' Matrix for (1,1)\n");      
+    Epetra_CrsMatrix* S=0;
+    EpetraExt::MatrixMatrix::Add(*(Epetra_CrsMatrix*)SM_Matrix_,false,1.0,*(Epetra_CrsMatrix*)Ms_Matrix_,false,-1.0,S);
+    S->FillComplete();
     Operator11_ = rcp(S);
   }
   else
 #endif
   {
+    if(verbose_ && !Comm_->MyPID()) 
+      printf("Using the 'S+M' Matrix for (1,1)\n");      
+
     if(disable_addon)
       Operator11_=rcp((Epetra_CrsMatrix*)SM_Matrix_,false);
     else

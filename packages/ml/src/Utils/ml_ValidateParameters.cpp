@@ -540,6 +540,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
   setStringToIntegralParameter<int>("refmaxwell: 11solver","edge matrix free","(1,1) Block Solver",tuple<std::string>("edge matrix free","sa"),PL);
   setStringToIntegralParameter<int>("refmaxwell: 22solver","multilevel","(2,2) Block Solver",tuple<std::string>("multilevel"),PL);
   setStringToIntegralParameter<int>("refmaxwell: mode","additive","Mode for RefMaxwell",tuple<std::string>("additive","212","121","none"),PL);
+  setStringToIntegralParameter<int>("refmaxwell: 11matrix","SM","(1,1) Block Matrix",tuple<std::string>("SM","S","M"),PL);
   List11.set("aggregation: aux: user matrix",(Epetra_CrsMatrix*)0);  
   PL->set("edge matrix free: coarse",dummy);
   PL->set("refmaxwell: 11list",List11);
