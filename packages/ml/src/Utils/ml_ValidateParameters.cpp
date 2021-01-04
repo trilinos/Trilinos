@@ -471,6 +471,10 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("aggregation: material: max levels",10,"Unlisted option",PL,intParam);
   PL->set("material coordinates",(double*)0);
 
+  /* EXPERIMENTAL - EdgeMatrixFreePreconditioner */
+  PL->set("edge matrix free: skip first level",true);
+
+
   return PL;
 }
 
