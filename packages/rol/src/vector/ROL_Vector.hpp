@@ -51,9 +51,8 @@
 #include <vector>
 #include <algorithm>
 
-#include "ROL_Elementwise_Function.hpp"
+#include "ROL_Elementwise.hpp"
 
-#include "ROL_Ptr.hpp"
 #include "ROL_Stream.hpp"
 
 /** @ingroup la_group

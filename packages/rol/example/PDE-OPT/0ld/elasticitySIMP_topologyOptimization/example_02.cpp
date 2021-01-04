@@ -63,7 +63,6 @@
 #include "ROL_AugmentedLagrangianStep.hpp"
 #include "ROL_AugmentedLagrangian.hpp"
 #include "ROL_Algorithm.hpp"
-#include "ROL_Elementwise_Reduce.hpp"
 
 #include <iostream>
 #include <algorithm>

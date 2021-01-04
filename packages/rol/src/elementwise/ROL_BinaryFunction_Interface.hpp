@@ -41,21 +41,53 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_KOKKOSVECTOR_HPP
-#define ROL_KOKKOSVECTOR_HPP
+#ifndef ROL_BINARYFUNCTIONS_INTERFACE_H
+#define ROL_BINARYFUNCTIONS_INTERFACE_H
 
-#include "ROL_Vector.hpp"
-#include "Kokkos_Core.hpp"
-#include "Kokkos_DualView.hpp"
+namespace ROL {
 
-#include "ROL_KokkosVector_decl.hpp"
-#include "ROL_Kokkos_BinaryFunctions_decl.hpp"
-#include "ROL_Kokkos_UnaryFunctions_decl.hpp"
-#include "ROL_Kokkos_ReductionOps_decl.hpp"
+namespace Elementwise {
 
-#include "ROL_KokkosVector_def.hpp"
-#include "ROL_Kokkos_BinaryFunctions_def.hpp"
-#include "ROL_Kokkos_UnaryFunctions_def.hpp"
-#include "ROL_Kokkos_ReductionOps_def.hpp"
+// Forward Declarations of BinaryFunction derived types
+template<typename> class Axpy;
+template<typename> class Aypx;
+template<typename> class Divide;
+template<typename> class DivideAndInvert;
+template<typename> class Greater;
+template<typename> class Lesser;
+template<typename> class Max;
+template<typename> class Min;
+template<typename> class Multiply;
+template<typename> class Plus;
+template<typename> class Set;
 
-#endif  // ROL_KOKKOSVECTOR_HPP
+
+// Interface class with function of two arguments
+template<class Real>
+class BinaryFunction {
+public:
+  virtual ~BinaryFunction() {}
+  virtual Real apply( const Real &x, const Real &y ) const = 0;
+
+  struct Visitor {
+    virtual void visit( const Axpy<Real>& ) {}
+    virtual void visit( const Aypx<Real>& ) {}
+    virtual void visit( const Divide<Real>& ) {}
+    virtual void visit( const DivideAndInvert<Real>& ) {}
+    virtual void visit( const Greater<Real>& ) {}
+    virtual void visit( const Lesser<Real>& ) {}
+    virtual void visit( const Max<Real>& ) {}
+    virtual void visit( const Min<Real>& ) {}
+    virtual void visit( const Multiply<Real>& ) {}
+    virtual void visit( const Plus<Real>& ) {}
+    virtual void visit( const Set<Real>& ) {}
+  };
+
+  virtual void accept( BinaryFunction::Visitor& ) const {}
+};
+
+} // namespace Elementwise 
+} // namespace ROL
+
+#endif // ROL_BINARYFUNCTIONS_INTERFACE_HPP
+

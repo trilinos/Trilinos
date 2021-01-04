@@ -58,6 +58,7 @@
     Also ensure that the interface works with both ROL::Vector and std::vector arguments
 */
 
+#include "ROL_Types.hpp"
 #include "ROL_StdLinearOperator.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"

@@ -46,7 +46,7 @@
 #define ROL_RIESZVECTOR_H
 
 #include <ostream>
-
+#include "ROL_Types.hpp"
 #include "ROL_ElementwiseVector.hpp"
 #include "ROL_LinearOperator.hpp"
 

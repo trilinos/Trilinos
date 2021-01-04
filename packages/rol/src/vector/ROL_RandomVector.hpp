@@ -46,7 +46,6 @@
 
 #include "ROL_Vector.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_Elementwise_Function.hpp"
 
 
 namespace ROL {

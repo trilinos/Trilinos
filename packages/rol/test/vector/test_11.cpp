@@ -46,6 +46,7 @@
     \brief Test std::array interface.
 */
 
+#include "ROL_Types.hpp"
 #include "ROL_StdArray.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Stream.hpp"

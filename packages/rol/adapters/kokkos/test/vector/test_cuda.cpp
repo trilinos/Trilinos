@@ -2,8 +2,6 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Kokkos_Core.hpp"
-#include "Kokkos_DualView.hpp"
 
 int main( int argc, char* argv[] ) {
 
@@ -21,7 +19,7 @@ int main( int argc, char* argv[] ) {
     else             os = ROL::makePtrFromRef(bhs);
 
     int errorFlag = 0;
-    auto errtol = ROL::ROL_THRESHOLD<RealT>();
+    auto errtol = std::sqrt( std::numeric_limits<RealT>::epsilon() );
 
     int n = 100;
 
@@ -41,7 +39,7 @@ int main( int argc, char* argv[] ) {
       auto consistency = x.checkVector(y, z, true, *os );
       ROL::StdVector<RealT> checkvec( ROL::makePtrFromRef(consistency) );
   
-      if( checkvec.norm() > std::sqrt(ROL::ROL_EPSILON<RealT>()) ) ++errorFlag;    
+      if( checkvec.norm() > errtol ) ++errorFlag;    
       
       // Basis tests
       // Set to first basis vector

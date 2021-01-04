@@ -41,21 +41,17 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_KOKKOSVECTOR_HPP
-#define ROL_KOKKOSVECTOR_HPP
+#pragma once
+#ifndef ROL_ELEMENTWISE_HPP
+#define ROL_ELEMENTWISE_HPP
 
-#include "ROL_Vector.hpp"
-#include "Kokkos_Core.hpp"
-#include "Kokkos_DualView.hpp"
+#include "ROL_Ptr.hpp"
+#include "ROL_stacktrace.hpp"
+#include "ROL_ScalarTraits.hpp"
+#include "ROL_ReductionOps.hpp"
+#include "ROL_UnaryFunction_Interface.hpp"
+#include "ROL_UnaryFunctions.hpp"
+#include "ROL_BinaryFunction_Interface.hpp"
+#include "ROL_BinaryFunctions.hpp"
 
-#include "ROL_KokkosVector_decl.hpp"
-#include "ROL_Kokkos_BinaryFunctions_decl.hpp"
-#include "ROL_Kokkos_UnaryFunctions_decl.hpp"
-#include "ROL_Kokkos_ReductionOps_decl.hpp"
-
-#include "ROL_KokkosVector_def.hpp"
-#include "ROL_Kokkos_BinaryFunctions_def.hpp"
-#include "ROL_Kokkos_UnaryFunctions_def.hpp"
-#include "ROL_Kokkos_ReductionOps_def.hpp"
-
-#endif  // ROL_KOKKOSVECTOR_HPP
+#endif  // ROL_ELEMENTWISE_HPP

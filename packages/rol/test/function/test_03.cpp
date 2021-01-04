@@ -53,7 +53,6 @@
 #include "ROL_DyadicOperator.hpp"
 #include "ROL_BlockOperator2.hpp"
 #include "ROL_DiagonalOperator.hpp"
-#include "ROL_Elementwise_Function.hpp"
 #include "ROL_PartitionedVector.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Types.hpp"
