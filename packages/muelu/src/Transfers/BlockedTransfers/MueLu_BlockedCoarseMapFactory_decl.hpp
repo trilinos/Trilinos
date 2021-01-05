@@ -106,14 +106,14 @@ public:
   //! @name Input
   //@{
 
-  RCP<const ParameterList> GetValidParameterList() const override;
+  RCP<const ParameterList> GetValidParameterList() const final;
 
   /*! @brief Specifies the data that this class needs, and the factories that generate that data.
 
       If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
       will fall back to the settings in FactoryManager.
    */
-  void DeclareInput(Level &currentLevel) const override;
+  void DeclareInput(Level &currentLevel) const final;
 
   //@}
 
@@ -121,7 +121,7 @@ public:
   //@{
 
   //! Build an object with this factory.
-  void Build(Level &currentLevel) const;
+  void Build(Level &currentLevel) const final;
 
   //@}
 
