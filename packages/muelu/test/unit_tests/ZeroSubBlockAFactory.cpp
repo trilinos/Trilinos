@@ -50,10 +50,6 @@
 #include "MueLu_Version.hpp"
 
 #include <Xpetra_BlockedCrsMatrix.hpp>
-#include <Xpetra_MapExtractorFactory.hpp>
-#include <Xpetra_MapUtils.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_StridedMapFactory.hpp>
 
 #include "MueLu_FactoryManager.hpp"
 #include "MueLu_Utilities.hpp"
@@ -73,65 +69,55 @@ namespace MueLuTests {
     TEST_ASSERT(!subBlockAFactory.is_null());
   }
 
-//   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ZeroSubBlockAFactory, ExtractZeroMainDiagBlock, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-//   {
-// #   include "MueLu_UseShortNames.hpp"
-//     using Teuchos::ArrayView;
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ZeroSubBlockAFactory, ExtractZeroMainDiagonalBlockFrom2x2SaddlePointSystem, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
 
-//     using test_factory = TestHelpers::TestFactory<SC, LO, GO, NO>;
+    using test_factory = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
-//     MUELU_TESTING_SET_OSTREAM;
-//     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
-//     out << "version: " << MueLu::Version() << std::endl;
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
+    out << "version: " << MueLu::Version() << std::endl;
 
-//     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
-//     /* Let's create a 2x2 block matrix A, with
-//     - A(0,0), A(0,1), A(1,0) have some (random) entries
-//     - A(1,1) is a zero block
-//     */
-//     const GO numElements1 = 400;
-//     const GO numElements2 = 100;
-//     const GO numElements = numElements1 + numElements2;
+    // Let's create a 2x2 block matrix A, that represents meshtying of a 2D Poisson problem
+    const GO numEleX = 10;
+    RCP<BlockedCrsMatrix> saddlePointMatrix = test_factory::BuildPoissonSaddlePointMatrix(numEleX);
 
-//     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+    TEST_ASSERT(!saddlePointMatrix.is_null());
 
-//     const GO numEleX = 10;
+    Level myLevel;
+    myLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(saddlePointMatrix));
 
-//     RCP<BlockedCrsMatrix> saddlePointMatrix = test_factory::BuildPoissonSaddlePointMatrix(numEleX);
+    RCP<ZeroSubBlockAFactory> A11Fact = rcp(new ZeroSubBlockAFactory());
+    A11Fact->SetFactory("A", MueLu::NoFactory::getRCP());
+    A11Fact->SetParameter("block row", Teuchos::ParameterEntry(1));
+    A11Fact->SetParameter("block col", Teuchos::ParameterEntry(1));
 
-//     TEST_ASSERT(!saddlePointMatrix.is_null());
+    myLevel.Request("A", A11Fact.get(), MueLu::NoFactory::get());
+    TEST_ASSERT(myLevel.IsRequested("A", A11Fact.get()));
 
-//     Level myLevel;
-//     myLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(saddlePointMatrix));
+    A11Fact->Build(myLevel);
+    TEST_ASSERT(myLevel.IsAvailable("A", A11Fact.get()));
 
-//     RCP<ZeroSubBlockAFactory> A11Fact = rcp(new ZeroSubBlockAFactory());
-//     A11Fact->SetFactory("A", MueLu::NoFactory::getRCP());
-//     A11Fact->SetParameter("block row", Teuchos::ParameterEntry(1));
-//     A11Fact->SetParameter("block col", Teuchos::ParameterEntry(1));
+    RCP<Matrix> A11 = myLevel.Get<RCP<Matrix>>("A", A11Fact.get());
 
-//     myLevel.Request("A", A11Fact.get(), MueLu::NoFactory::get());
-//     TEST_ASSERT(myLevel.IsRequested("A", A11Fact.get()));
+    myLevel.Release("A", A11Fact.get());
+    TEST_ASSERT(!myLevel.IsAvailable("A", A11Fact.get()));
 
-//     A11Fact->Build(myLevel);
-//     TEST_ASSERT(myLevel.IsAvailable("A", A11Fact.get()));
-
-//     RCP<Matrix> A11 = myLevel.Get<RCP<Matrix>>("A", A11Fact.get());
-
-//     myLevel.Release("A", A11Fact.get());
-//     TEST_ASSERT(!myLevel.IsAvailable("A", A11Fact.get()));
-
-//     TEST_ASSERT(A11->getRangeMap()->isSameAs(*saddlePointMatrix->getMatrix(1, 0)->getRangeMap()));
-//     TEST_ASSERT(A11->getDomainMap()->isSameAs(*saddlePointMatrix->getMatrix(0, 1)->getDomainMap()));
-//     TEST_ASSERT(A11->getRowMap()->isSameAs(*saddlePointMatrix->getMatrix(1, 0)->getRowMap()));
-//     TEST_ASSERT(A11->getColMap()->isSameAs(*saddlePointMatrix->getMatrix(0, 1)->getColMap()));
-//     TEST_EQUALITY_CONST(A11->GetFixedBlockSize(), saddlePointMatrix->getMatrix(1, 0)->GetFixedBlockSize());
-//     TEST_EQUALITY_CONST(A11->getGlobalNumEntries(), 0);
-//   }
+    TEST_ASSERT(A11->getRangeMap()->isSameAs(*saddlePointMatrix->getMatrix(1, 0)->getRangeMap()));
+    TEST_ASSERT(A11->getDomainMap()->isSameAs(*saddlePointMatrix->getMatrix(0, 1)->getDomainMap()));
+    TEST_ASSERT(A11->getRowMap()->isSameAs(*saddlePointMatrix->getMatrix(1, 0)->getRowMap()));
+    TEST_ASSERT(A11->getColMap()->isSameAs(*saddlePointMatrix->getMatrix(0, 1)->getColMap()));
+    TEST_EQUALITY_CONST(A11->GetFixedBlockSize(), saddlePointMatrix->getMatrix(1, 0)->GetFixedBlockSize());
+    TEST_EQUALITY_CONST(A11->getGlobalNumEntries(), 0);
+  }
 
 #  define MUELU_ETI_GROUP(SC, LO, GO, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ZeroSubBlockAFactory, ConstructZeroSubBlockAFactory, SC, LO, GO, Node) //\
-      // TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ZeroSubBlockAFactory, ExtractZeroMainDiagBlock, SC, LO, GO, Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ZeroSubBlockAFactory, ConstructZeroSubBlockAFactory, SC, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ZeroSubBlockAFactory, ExtractZeroMainDiagonalBlockFrom2x2SaddlePointSystem, SC, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 }
