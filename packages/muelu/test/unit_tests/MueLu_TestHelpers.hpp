@@ -53,23 +53,24 @@
 #endif
 
 // Teuchos
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_OrdinalTraits.hpp"
-#include "Teuchos_ScalarTraits.hpp"
+#include <Teuchos_Comm.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 #ifdef HAVE_MUELU_EPETRA
-#include "Epetra_config.h"
+#include <Epetra_config.h>
 #endif
 
 // Xpetra
-#include "Xpetra_ConfigDefs.hpp"
-#include "Xpetra_DefaultPlatform.hpp"
-#include "Xpetra_Parameters.hpp"
-#include "Xpetra_Map.hpp"
-#include "Xpetra_MapExtractorFactory.hpp"
-#include "Xpetra_MapFactory.hpp"
-#include "Xpetra_CrsMatrixWrap.hpp"
-#include "Xpetra_CrsGraph.hpp"
+#include <Xpetra_ConfigDefs.hpp>
+#include <Xpetra_DefaultPlatform.hpp>
+#include <Xpetra_Parameters.hpp>
+#include <Xpetra_Map.hpp>
+#include <Xpetra_MapExtractorFactory.hpp>
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_MatrixUtils.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_CrsGraph.hpp>
 
 // MueLu
 #include "MueLu_ConfigDefs.hpp"
@@ -82,8 +83,8 @@
 #include "MueLu_Level.hpp"
 
 // Galeri
-#include "Galeri_XpetraProblemFactory.hpp"
-#include "Galeri_XpetraMatrixTypes.hpp"
+#include <Galeri_XpetraProblemFactory.hpp>
+#include <Galeri_XpetraMatrixTypes.hpp>
 
 namespace Galeri {
   namespace Xpetra {
@@ -747,6 +748,8 @@ namespace MueLuTests {
     {
       using Teuchos::ParameterList;
 
+      const GO GO_ZERO = Teuchos::ScalarTraits<GO>::zero();
+
       // Deal with default arguments
       if (ny == -1) ny = nx;
       if (lib == Xpetra::NotSpecified) lib = TestHelpers::Parameters::getLib();
@@ -796,7 +799,7 @@ namespace MueLuTests {
               myInterfaceNodeGIDs.push_back(nodeGID);
           }
         }
-        slaveNodeMap = MapFactory::Build(lib, allInterfaceNodeGIDs.size(), myInterfaceNodeGIDs, Teuchos::ScalarTraits<GO>::zero(), comm);
+        slaveNodeMap = MapFactory::Build(lib, allInterfaceNodeGIDs.size(), myInterfaceNodeGIDs, GO_ZERO, comm);
         slaveDofMap = MapFactory::Build(slaveNodeMap, numDofsPerNode);
       }
 
@@ -836,7 +839,7 @@ namespace MueLuTests {
           Array<GO> gidsTwo;
           for (LO i = 0; i < mapToReproduce->getNodeNumElements(); ++i)
             gidsTwo.push_back(mapToReproduce->getGlobalElement(i) + dofGidOffset);
-          rangeMapTwo = MapFactory::Build(lib, mapToReproduce->getGlobalNumElements(), gidsTwo(), 0, comm);
+          rangeMapTwo = MapFactory::Build(lib, mapToReproduce->getGlobalNumElements(), gidsTwo(), GO_ZERO, comm);
           TEUCHOS_ASSERT(!rangeMapTwo.is_null());
         }
 
@@ -846,7 +849,7 @@ namespace MueLuTests {
           Array<GO> gidsTwo;
           for (LO i = 0; i < mapToReproduce->getNodeNumElements(); ++i)
             gidsTwo.push_back(mapToReproduce->getGlobalElement(i) + dofGidOffset);
-          domainMapTwo = MapFactory::Build(lib, mapToReproduce->getGlobalNumElements(), gidsTwo(), 0, comm);
+          domainMapTwo = MapFactory::Build(lib, mapToReproduce->getGlobalNumElements(), gidsTwo(), GO_ZERO, comm);
           TEUCHOS_ASSERT(!domainMapTwo.is_null());
         }
 
@@ -913,7 +916,7 @@ namespace MueLuTests {
           if (nodeMapOne->isNodeGlobalElement(primalNodeId))
             ++numLocalDualNodes;
         }
-        RCP<const Map> nodeMapDual = MapFactory::Build(lib, nx, numLocalDualNodes, Teuchos::ScalarTraits<GlobalOrdinal>::zero(), comm);
+        RCP<const Map> nodeMapDual = MapFactory::Build(lib, nx, numLocalDualNodes, GO_ZERO, comm);
         dofMapDual = MapFactory::Build(nodeMapDual, 1, dualDofGIDOffset);
 
         // Create lower left coupling matrix
@@ -955,18 +958,28 @@ namespace MueLuTests {
             C01->insertGlobalValues(gRow, cols(), vals());
           }
         }
-        C01->fillComplete();
+        C01->fillComplete(dofMapDual, dofMapPrimal);
 
         TEUCHOS_ASSERT(C10 != Teuchos::null);
       }
 
+      std::vector<size_t> stridingInfo;
+      stridingInfo.push_back(1); // Poisson has one DOF per node
+
+      RCP<const StridedMap> stridedDofMapPrimal = StridedMapFactory::Build(dofMapPrimal, stridingInfo, -1, GO_ZERO);
+      RCP<const StridedMap> stridedDofMapDual = StridedMapFactory::Build(dofMapDual, stridingInfo, -1, GO_ZERO);
+
       Array<RCP<const Map>> blockMaps;
-      blockMaps.push_back(dofMapPrimal);
-      blockMaps.push_back(dofMapDual);
+      blockMaps.push_back(stridedDofMapPrimal);
+      blockMaps.push_back(stridedDofMapDual);
       RCP<const Map> fullMap = MapUtils::concatenateMaps(blockMaps.toVector());
 
       RCP<const MapExtractor> primalDualMapExtractor = MapExtractorFactory::Build(fullMap, blockMaps.toVector());
       RCP<const BlockedMap> blockMap = rcp(new BlockedMap(fullMap, blockMaps.toVector()));
+
+      MatrixUtils::convertMatrixToStridedMaps(primalBlockMatrix, stridingInfo, stridingInfo);
+      MatrixUtils::convertMatrixToStridedMaps(C01, stridingInfo, stridingInfo);
+      MatrixUtils::convertMatrixToStridedMaps(C10, stridingInfo, stridingInfo);
 
       RCP<BlockedCrsMatrix> blockMatrix = rcp(new BlockedCrsMatrix(blockMap, blockMap, 5));
       blockMatrix->setMatrix(0, 0, primalBlockMatrix);
