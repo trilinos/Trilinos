@@ -653,16 +653,22 @@ public:
                                "Local parts of row and column map do not match!");
   }
 
-  //! Convert matrix to strided range and domain maps
+  /*!
+    \@brief Convert matrix to strided row and column maps
+
+    @param matrix Matrix to be converted
+    @param rangeStridingInfo Striding information for row/range map
+    @param domainStridingInfo Striding information for column/domain map
+  */
   static void convertMatrixToStridedMaps(
       Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> matrix,
       std::vector<size_t>& rangeStridingInfo, std::vector<size_t>& domainStridingInfo)
   {
-    RCP<const StridedMap> stridedRangeMap = StridedMapFactory::Build(matrix->getRowMap(), rangeStridingInfo, -1, 0);
-    RCP<const StridedMap> stridedDomainMap = StridedMapFactory::Build(matrix->getDomainMap(), domainStridingInfo, -1, 0);
+    RCP<const StridedMap> stridedRowMap = StridedMapFactory::Build(matrix->getRowMap(), rangeStridingInfo, -1, 0);
+    RCP<const StridedMap> stridedColMap = StridedMapFactory::Build(matrix->getColMap(), domainStridingInfo, -1, 0);
 
     if (matrix->IsView("stridedMaps") == true) matrix->RemoveView("stridedMaps");
-    matrix->CreateView("stridedMaps", stridedRangeMap, stridedDomainMap);
+    matrix->CreateView("stridedMaps", stridedRowMap, stridedColMap);
   }
 
 };

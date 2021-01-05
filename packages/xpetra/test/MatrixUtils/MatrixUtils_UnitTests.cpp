@@ -138,14 +138,15 @@ namespace {
 
     TEST_ASSERT(!matrix->getRangeMap().is_null());
     TEST_ASSERT(!matrix->getDomainMap().is_null());
+    TEST_ASSERT(!matrix->getRowMap().is_null());
+    TEST_ASSERT(!matrix->getColMap().is_null());
 
     matrix->SwitchToView("stridedMaps");
-    RCP<const StridedMap> stridedRangeMap = rcp_dynamic_cast<const StridedMap>(matrix->getRangeMap());
-    RCP<const StridedMap> stridedDomainMap = rcp_dynamic_cast<const StridedMap>(matrix->getDomainMap());
+    RCP<const StridedMap> stridedRowMap = rcp_dynamic_cast<const StridedMap>(matrix->getRowMap("stridedMaps"));
+    RCP<const StridedMap> stridedColMap = rcp_dynamic_cast<const StridedMap>(matrix->getColMap("stridedMaps"));
 
-    // ToDo (mayrmt) Enable check, if matrix actually provides StridedMap information.
-    // TEST_ASSERT(!stridedRangeMap.is_null());
-    // TEST_ASSERT(!stridedDomainMap.is_null());
+    TEST_ASSERT(!stridedRowMap.is_null());
+    TEST_ASSERT(!stridedColMap.is_null());
   }
 
 //
