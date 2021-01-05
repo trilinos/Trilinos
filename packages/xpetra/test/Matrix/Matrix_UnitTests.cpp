@@ -97,70 +97,68 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( Matrix, ViewSwitching, M, MA, Scalar, LO, GO, Node )
   {
-#ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
     Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
+    M testMap(1,0,comm);
+    Xpetra::UnderlyingLib lib = testMap.lib();
+
     const size_t numLocal = 10;
     const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid(); // TODO: global_size_t instead of size_t
-    //Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > map = Xpetra::useTpetra::createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > map =
-        Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm);
-     {
-       Xpetra::TpetraCrsMatrix<Scalar, LO, GO, Node> t =  Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node>(map, numLocal);
+        Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (lib, INVALID, numLocal, comm);
+    {
+      // Test of constructor
+      CrsMatrixWrap op(map,1);
+      TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
+      TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.SwitchToView(op.GetCurrentViewLabel()));
 
-       // Test of constructor
-       CrsMatrixWrap op(map,1);
-       TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
-       TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.SwitchToView(op.GetCurrentViewLabel()));
+      // Test of CreateView
+      TEST_THROW(op.CreateView(op.GetDefaultViewLabel(),op.getRowMap(),op.getColMap()), Xpetra::Exceptions::RuntimeError); // a
+      op.CreateView("newView",op.getRowMap(),op.getColMap());                                                              // b
+      TEST_THROW(op.CreateView("newView",op.getRowMap(),op.getColMap()), Xpetra::Exceptions::RuntimeError);                // c
 
-       // Test of CreateView
-       TEST_THROW(op.CreateView(op.GetDefaultViewLabel(),op.getRowMap(),op.getColMap()), Xpetra::Exceptions::RuntimeError); // a
-       op.CreateView("newView",op.getRowMap(),op.getColMap());                                                              // b
-       TEST_THROW(op.CreateView("newView",op.getRowMap(),op.getColMap()), Xpetra::Exceptions::RuntimeError);                // c
+      // Test of SwitchToView
+      // a
+      viewLabel_t viewLabel    = op.GetCurrentViewLabel();
+      viewLabel_t oldViewLabel = op.SwitchToView("newView");
+      TEST_EQUALITY_CONST(viewLabel, oldViewLabel);
+      TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), "newView");
+      // b
+      TEST_THROW(op.SwitchToView("notAView"), Xpetra::Exceptions::RuntimeError);
 
-       // Test of SwitchToView
-       // a
-       viewLabel_t viewLabel    = op.GetCurrentViewLabel();
-       viewLabel_t oldViewLabel = op.SwitchToView("newView");
-       TEST_EQUALITY_CONST(viewLabel, oldViewLabel);
-       TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), "newView");
-       // b
-       TEST_THROW(op.SwitchToView("notAView"), Xpetra::Exceptions::RuntimeError);
+      // Test of SwitchToDefaultView()
+      // a
+      viewLabel    = op.GetCurrentViewLabel();
+      oldViewLabel = op.SwitchToDefaultView();
+      TEST_EQUALITY_CONST(viewLabel, oldViewLabel);
+      TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
 
-       // Test of SwitchToDefaultView()
-       // a
-       viewLabel    = op.GetCurrentViewLabel();
-       oldViewLabel = op.SwitchToDefaultView();
-       TEST_EQUALITY_CONST(viewLabel, oldViewLabel);
-       TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
+      // Test of RemoveView()
+      TEST_THROW(op.RemoveView(op.GetDefaultViewLabel()), Xpetra::Exceptions::RuntimeError); // a
+      TEST_THROW(op.RemoveView("notAView"), Xpetra::Exceptions::RuntimeError);               // b
+      op.RemoveView("newView");                                                               // c
+      TEST_THROW(op.RemoveView("newView"), Xpetra::Exceptions::RuntimeError);
 
-       // Test of RemoveView()
-       TEST_THROW(op.RemoveView(op.GetDefaultViewLabel()), Xpetra::Exceptions::RuntimeError); // a
-       TEST_THROW(op.RemoveView("notAView"), Xpetra::Exceptions::RuntimeError);               // b
-       op.RemoveView("newView");                                                               // c
-       TEST_THROW(op.RemoveView("newView"), Xpetra::Exceptions::RuntimeError);
-
-       op.fillComplete();
-     }
-#endif
+      op.fillComplete();
+    }
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( Matrix, StridedMaps_Tpetra, M, MA, Scalar, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( Matrix, StridedMaps, M, MA, Scalar, LO, GO, Node )
   {
+    typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
+
     Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
     const size_t numLocal = 10;
     const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid(); // TODO: global_size_t instead of size_t
 
+    M testMap(1,0,comm);
+    Xpetra::UnderlyingLib lib = testMap.lib();
 
-#ifdef HAVE_XPETRA_TPETRA
-    typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
     Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > map =
-        Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm);
+        Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (lib, INVALID, numLocal, comm);
      {
-       Xpetra::TpetraCrsMatrix<Scalar, LO, GO, Node> t =  Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node>(map, numLocal);
-
        // Test of constructor
        CrsMatrixWrap op(map,1);
        op.fillComplete();
@@ -174,39 +172,7 @@ namespace {
        int blkSize = op.GetFixedBlockSize();
        TEST_EQUALITY_CONST(blkSize, 2);
      }
-#endif
   }
-
-  ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( Matrix, StridedMaps_Epetra, M, MA, Scalar, LO, GO, Node )
-  {
-#ifdef HAVE_XPETRA_EPETRA
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
-    const size_t numLocal = 10;
-    const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
-
-    typedef Xpetra::CrsMatrixWrap<double, int, GO, Xpetra::EpetraNode> EpCrsMatrix;
-
-    Teuchos::RCP<const Xpetra::Map<int,GO,Node> > epmap = Xpetra::MapFactory<int,GO,Node>::createContigMap(Xpetra::UseEpetra, INVALID, numLocal, comm);
-     {
-       Xpetra::EpetraCrsMatrixT<GO,Node> t =  Xpetra::EpetraCrsMatrixT<GO,Node>(epmap, numLocal);
-
-       // Test of constructor
-       EpCrsMatrix op(epmap,1);
-       op.fillComplete();
-
-       TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
-       TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.SwitchToView(op.GetCurrentViewLabel()));
-
-       op.SetFixedBlockSize(2);
-       TEST_EQUALITY(op.IsView("stridedMaps"),true);
-       TEST_EQUALITY(op.IsView("StridedMaps"),false);
-       int blkSize = op.GetFixedBlockSize();
-       TEST_EQUALITY_CONST(blkSize, 2);
-     }
-#endif
-  }
-
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( Matrix, BuildCopy_StridedMaps_Tpetra, M, MA, Scalar, LO, GO, Node )
@@ -228,7 +194,7 @@ namespace {
        s->SetFixedBlockSize(2);
 
        Teuchos::RCP<Xpetra::Matrix<Scalar, LO, GO, Node> > t = Xpetra::MatrixFactory2<Scalar,LO,GO,Node>::BuildCopy(s);
-       
+
        int blkSize = t->GetFixedBlockSize();
        TEST_EQUALITY_CONST(blkSize, 2);
      }
@@ -252,13 +218,13 @@ namespace {
     using MV  = Xpetra::MultiVector<Scalar,LO,GO,Node>;
     typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
     RCP<const Xpetra::Map<LO,GO,Node> > map =
-      Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm);   
+      Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm);
      {
        // create the identity matrix, via three arrays constructor
        ArrayRCP<size_t> rowptr(numLocal+1);
        ArrayRCP<LO>     colind(numLocal); // one unknown per row
        ArrayRCP<Scalar> values(numLocal); // one unknown per row
-       
+
        for(size_t i=0; i<numLocal; i++){
          rowptr[i] = i;
          colind[i] = Teuchos::as<LO>(i);
@@ -270,18 +236,18 @@ namespace {
        TEST_NOTHROW( eye2->expertStaticFillComplete(map,map) );
 
        RCP<const Xpetra::Matrix<Scalar, LO, GO, Node> > eye2x(new CrsMatrixWrap(eye2));
-       
+
        // Just extract & scale; don't test correctness (Tpetra does this)
-       RCP<const MV> diag5c = Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build(map,5);  
+       RCP<const MV> diag5c = Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build(map,5);
        RCP<MV> diag5 = rcp_const_cast<MV>(diag5c);
        diag5->putScalar(SC_one);
 
        Xpetra::MatrixUtils<Scalar, LO, GO, Node>::extractBlockDiagonal(*eye2x,*diag5);
 
        RCP<MV> toScale5 = Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build(map,2); toScale5->putScalar(SC_one);
-       
+
        Xpetra::MatrixUtils<Scalar, LO, GO, Node>::inverseScaleBlockDiagonal(*diag5c,false,*toScale5);
-      
+
 
      }
 #endif
@@ -309,22 +275,19 @@ namespace {
 
 // List of tests which run only with Tpetra
 #define XP_TPETRA_MATRIX_INSTANT(S,LO,GO,N) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, StridedMaps_Tpetra,  M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, BuildCopy_StridedMaps_Tpetra,  M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, ViewSwitching, M##LO##GO##N , MA##S##LO##GO##N , S, LO, GO, N ) 
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, BuildCopy_StridedMaps_Tpetra,  M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
 // Tpetra, but no complex
 #define XP_TPETRA_MATRIX_INSTANT_NO_COMPLEX(S,LO,GO,N) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, BlockDiagonalUtils_Tpetra, M##LO##GO##N , MA##S##LO##GO##N , S, LO, GO, N )
 
-// List of tests which run only with Epetra
-#define XP_EPETRA_MATRIX_INSTANT(S,LO,GO,N) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, StridedMaps_Epetra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
+// // List of tests which run only with Epetra
+// #define XP_EPETRA_MATRIX_INSTANT(S,LO,GO,N) \
 
 // list of all tests which run both with Epetra and Tpetra
-//#define XP_MATRIX_INSTANT(S,LO,GO,N)
-
-
+#define XP_MATRIX_INSTANT(S,LO,GO,N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, StridedMaps,  M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, ViewSwitching, M##LO##GO##N , MA##S##LO##GO##N , S, LO, GO, N )
 
 
 #if defined(HAVE_XPETRA_TPETRA)
@@ -334,7 +297,7 @@ namespace {
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XPETRA_TPETRA_TYPES )
-//TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_MATRIX_INSTANT )
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_MATRIX_INSTANT )
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MATRIX_INSTANT )
 
 #if !defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && !defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
@@ -350,14 +313,14 @@ TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MATRIX_INSTANT_NO_COMPLEX 
 typedef Xpetra::EpetraNode EpetraNode;
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 XPETRA_EPETRA_TYPES(double,int,int,EpetraNode)
-//XP_MATRIX_INSTANT(double,int,int,EpetraNode)
-XP_EPETRA_MATRIX_INSTANT(double,int,int,EpetraNode)
+XP_MATRIX_INSTANT(double,int,int,EpetraNode)
+// XP_EPETRA_MATRIX_INSTANT(double,int,int,EpetraNode)
 #endif
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
 typedef long long LongLong;
 XPETRA_EPETRA_TYPES(double,int,LongLong,EpetraNode)
-//XP_MATRIX_INSTANT(double,int,LongLong,EpetraNode)
-XP_EPETRA_MATRIX_INSTANT(double,int,LongLong,EpetraNode)
+XP_MATRIX_INSTANT(double,int,LongLong,EpetraNode)
+// XP_EPETRA_MATRIX_INSTANT(double,int,LongLong,EpetraNode)
 #endif
 
 #endif
