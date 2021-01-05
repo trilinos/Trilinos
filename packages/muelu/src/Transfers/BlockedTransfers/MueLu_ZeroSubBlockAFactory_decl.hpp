@@ -48,9 +48,6 @@
 #define MUELU_ZEROSUBBLOCKAFACTORY_DECL_HPP_
 
 #include <Xpetra_Map_fwd.hpp>
-// #include <Xpetra_MapExtractor_fwd.hpp>
-// #include <Xpetra_StridedMap_fwd.hpp>
-// #include <Xpetra_StridedMapFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
@@ -65,7 +62,6 @@ namespace MueLu {
 
     This is a very simple class to access a single matrix block in a blocked operator A,
     where the matrix block of interest is an actual zero block (as e.g. in saddle point systems).
-
 
   */
 
