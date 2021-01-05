@@ -134,22 +134,17 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<BlockedCrsMatrix> blockedMatrix =
       Xpetra::MatrixUtils<SC,LO,GO,NO>::SplitMatrix(*mat,rangeMapExtractor, rangeMapExtractor);
   blockedMatrix->fillComplete();
-// blockedMatrix->describe(*out, Teuchos::VERB_EXTREME);
-// Xpetra::IO<SC, LO, GO, NO>::WriteBlockedCrsMatrix("blocked_matrix.mm", *blockedMatrix);
 
   // Read the right-hand side vector from file and transform it into a block vector
   RCP<MultiVector> rhs = Xpetra::IO<SC,LO,GO,NO>::ReadMultiVector(rhsFileName, fullRowMap);
   RCP<BlockedMultiVector> blockedRhs = rcp(new BlockedMultiVector(blockedMap, rhs));
-// blockedRhs->describe(*out, Teuchos::VERB_EXTREME);
 
   // Read the nullspace vector of the (0,0)-block from file
   RCP<MultiVector> nullspace1 = Xpetra::IO<SC,LO,GO,NO>::ReadMultiVector(nullspace1FileName, dofRowMapPrimal);
-// nullspace1->describe(*out, Teuchos::VERB_EXTREME);
 
   // Read the interface slave dof row map from file
   TEUCHOS_ASSERT(!dualInterfaceMapFileName.empty());
   RCP<const Map> primalInterfaceDofMapDofs = Xpetra::IO<SC,LO,GO,NO>::ReadMap(dualInterfaceMapFileName, lib, comm);
-//primalInterfaceDofMapDofs->describe(*out, Teuchos::VERB_EXTREME);
 
   // Distribute interface slave dof row map across all procs
   RCP<const Map> primalInterfaceDofMap = Teuchos::null;
@@ -173,7 +168,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         primalInterfaceDofMapDofsOnCurProc.push_back((GlobalOrdinal) interfaceGlobalDofs[i]);
     }
     primalInterfaceDofMap = MapFactory::Build(lib, primalInterfaceDofMapDofs->getGlobalNumElements(), primalInterfaceDofMapDofsOnCurProc, Teuchos::ScalarTraits<GO>::zero(), comm);
-// primalInterfaceDofMap->describe(*out, Teuchos::VERB_EXTREME);
   }
 
   // Create the default nullspace vector of the (1,1)-block
@@ -186,7 +180,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     for (int j = 0; j < numBlocks; ++j)
       nsValues[j * dimNS + dim] = Teuchos::ScalarTraits<Scalar>::one();
   }
-//  nullspace2->describe(*out, Teuchos::VERB_EXTREME);
 
   RCP<ParameterList> params = Teuchos::getParametersFromXmlFile(xmlFile);
   ParameterListInterpreter mueLuFactory(*params, comm);
@@ -195,25 +188,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   hierarchy->SetDefaultVerbLevel(MueLu::Extreme);
   hierarchy->GetLevel(0)->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(blockedMatrix));
   hierarchy->GetLevel(0)->Set("Nullspace1", nullspace1);
-  // hierarchy->GetLevel(0)->Set("Nullspace2", nullspace22);
   hierarchy->GetLevel(0)->Set("PrimalInterfaceDofRowMap", primalInterfaceDofMap);
 
   mueLuFactory.SetupHierarchy(*hierarchy);
-
-// // debug
-// {
-//   std::cout << "Debug the coarse level content..." << std::endl;
-//   RCP<Level> level = hierarchy->GetLevel(1);
-//   level->print(std::cout, MueLu::Extreme);
-
-//   std::cout << "Block prolongator:" << std::endl;
-//   RCP<Matrix> P = level->Get<RCP<Matrix>>("P");
-//   P->describe(*out, Teuchos::VERB_EXTREME);
-
-//   std::cout << "Coarse operator:" << std::endl;
-//   RCP<Matrix> Ac = level->Get<RCP<Matrix>>("A");
-//   Ac->describe(*out, Teuchos::VERB_EXTREME);
-// }
 
   // Create the preconditioned GMRES solver
   using OP = Belos::OperatorT<MultiVector>;

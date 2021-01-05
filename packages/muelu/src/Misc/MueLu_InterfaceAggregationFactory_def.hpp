@@ -258,12 +258,8 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
 
   // Grab the off-diagonal block (0,1) from the global blocked operator
   RCP<const Matrix> A01 = Get<RCP<Matrix>>(currentLevel, "A");
-// A01->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
   RCP<const Aggregates> primalAggregates = Get<RCP<Aggregates>>(currentLevel, "Aggregates");
-// std::cout << A01->getDomainMap()->getComm()->getRank() << " |  number of global primal aggregates = " << primalAggregates->GetNumGlobalAggregates() << ", number of local primal aggregates = " << primalAggregates->GetNumAggregates() << std::endl;
   ArrayRCP<const LocalOrdinal> primalVertex2AggId = primalAggregates->GetVertex2AggId()->getData(0);
-// std::cout << __LINE__ << __FILE__ << std::endl;
-// primalVertex2AggId->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
 
   auto comm = A01->getRowMap()->getComm();
   const int myRank = comm->getRank();
@@ -277,23 +273,12 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   }
   TEUCHOS_ASSERT(!primalInterfaceDofRowMap.is_null());
 
-// std::cout << __LINE__ << __FILE__ << std::endl;
-// std::cout << "primalInterfaceDofRowMap on level " << currentLevel.GetLevelID() << ":" << std::endl;
-// primalInterfaceDofRowMap->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
-  //std::cout << "A01->ColMap(): " << std::endl;
-  //A01->getColMap()->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
   if (A01->IsView("stridedMaps") && rcp_dynamic_cast<const StridedMap>(A01->getRowMap("stridedMaps")) != Teuchos::null) {
     auto stridedRowMap = rcp_dynamic_cast<const StridedMap>(A01->getRowMap("stridedMaps"));
     auto stridedColMap = rcp_dynamic_cast<const StridedMap>(A01->getColMap("stridedMaps"));
-    //std::cout << "row block size: " << stridedRowMap->getFixedBlockSize() << std::endl;
-    //std::cout << "col block size: " << stridedColMap->getFixedBlockSize() << std::endl;
     numDofsPerPrimalNode = Teuchos::as<LocalOrdinal>(stridedRowMap->getFixedBlockSize());
     numDofsPerDualNode = Teuchos::as<LocalOrdinal>(stridedColMap->getFixedBlockSize());
   }
-  //std::cout << __LINE__ << __FILE__ << std::endl;
-  // Some safety checks on the dual DOF map
-  // TEUCHOS_ASSERT(primalInterfaceDofRowMap->getNodeNumElements()==A01->getColMap()->getNodeNumElements());
-  // TEUCHOS_ASSERT(primalInterfaceDofRowMap->getGlobalNumElements()==A01->getColMap()->getGlobalNumElements());
 
   /* Determine block information for primal block
     *
@@ -328,8 +313,6 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
     << ", block dim = " << dualBlockDim
     << ", gid offset = " << dualDofOffset
     << std::endl;
-// dualDofMap->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
-// std::cout << "gMaxDualNodeId = " << gMaxDualNodeId << ", gMinDualNodeId = " << gMinDualNodeId << std::endl;
 
   GetOStream(Runtime1) << "  [primal / dual] DOFs per node = [" << numDofsPerPrimalNode
       << "/" << numDofsPerDualNode << "]" << std::endl;
@@ -374,17 +357,11 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
     }
   }
 
-// std::cout << myRank << " | InterfaceAggregationFactory -- local_dualNodeId2primalNodeId = " << local_dualNodeId2primalNodeId() << std::endl;
-// std::cout << myRank << " | InterfaceAggregationFactory -- local_dualNodeId2primalAggId = " << local_dualNodeId2primalAggId() << std::endl;
-
   const int dualNodeId2primalNodeIdSize = Teuchos::as<int>(local_dualNodeId2primalNodeId.size());
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, dualNodeId2primalNodeIdSize,
       &local_dualNodeId2primalNodeId[0], &dualNodeId2primalNodeId[0]);
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, dualNodeId2primalNodeIdSize,
       &local_dualNodeId2primalAggId[0], &dualNodeId2primalAggId[0]);
-
-// std::cout << myRank << " | InterfaceAggregationFactory -- dualNodeId2primalNodeId = " << dualNodeId2primalNodeId() << std::endl;
-// std::cout << myRank << " | InterfaceAggregationFactory -- dualNodeId2primalAggId = " << dualNodeId2primalAggId() << std::endl;
 
   // build node map for dual variables
   // generate "artificial nodes" for lagrange multipliers
@@ -406,8 +383,6 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   // define node map for Lagrange multipliers
   Teuchos::RCP<const Map> dualNodeMap = MapFactory::Build(A01->getRowMap()->lib(),
       Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), dualNodes, A01->getRowMap()->getIndexBase(), comm);
-// std::cout << __LINE__ << __FILE__ << std::endl;
-// dualNodeMap->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
 
   // Build aggregates using the lagrange multiplier node map
   Teuchos::RCP<Aggregates> dualAggregates = Teuchos::rcp(new Aggregates(dualNodeMap));
@@ -448,9 +423,6 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
 
   TEUCHOS_ASSERT(A01->isFillComplete());
 
-// std::cout << "InterfaceAggregationFactory -- rowTranslation:" << *rowTranslation() << std::endl;
-// std::cout << "InterfaceAggregationFactory -- colTranslation:" << *colTranslation() << std::endl;
-
   RCP<AmalgamationInfo> dualAmalgamationInfo = rcp(new AmalgamationInfo(rowTranslation, colTranslation,
       A01->getDomainMap(), A01->getDomainMap(), A01->getDomainMap(),
       fullblocksize, offset, blockid, nStridedOffset, stridedblocksize));
@@ -458,15 +430,10 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   dualAggregates->SetNumAggregates(nLocalAggregates);
   dualAggregates->AggregatesCrossProcessors(primalAggregates->AggregatesCrossProcessors());
 
-if (dualAggregates->AggregatesCrossProcessors())
-  GetOStream(Runtime1) << "Interface aggregates cross processor boundaries." << std::endl;
-else
-  GetOStream(Runtime1) << "Interface aggregates do not cross processor boundaries." << std::endl;
-
-// std::cout << A01->getDomainMap()->getComm()->getRank() << " |  number of global dual aggregates = " << dualAggregates->GetNumGlobalAggregates() << ", number of local dual aggregates = " << dualAggregates->GetNumAggregates() << std::endl;
-
-// std::cout << "InterfaceAggregationFactory -- dualAggregates->vertex2AggId:" << std::endl;
-// dualAggregates->GetVertex2AggId()->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+  if (dualAggregates->AggregatesCrossProcessors())
+    GetOStream(Runtime1) << "Interface aggregates cross processor boundaries." << std::endl;
+  else
+    GetOStream(Runtime1) << "Interface aggregates do not cross processor boundaries." << std::endl;
 
   currentLevel.Set("Aggregates", dualAggregates, this);
   currentLevel.Set("UnAmalgamationInfo", dualAmalgamationInfo, this);

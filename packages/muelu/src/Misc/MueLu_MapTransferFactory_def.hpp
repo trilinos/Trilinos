@@ -167,8 +167,6 @@ namespace MueLu {
     {
       const std::string mapFactName = pL.get<std::string>("map: factory");
       RCP<const FactoryBase> mapFact = coarseLevel.GetFactoryManager()->GetFactory(mapFactName);
-      // RCP<const FactoryBase> mapFact = coarseLevel.GetFactoryManager()->GetFactory("MapTransferFactory");
-      // RCP<const FactoryBase> mapFact = coarseLevel.GetFactoryManager()->GetFactory("PrimalInterfaceDofRowMap");
       coarseLevel.Set(mapName, coarseTransferMap, mapFact.get());
     }
     else
@@ -185,7 +183,7 @@ namespace MueLu {
     if (useTheseNspVectors == "all" || useTheseNspVectors == "")
       return -1;
 
-    // ToDo (mayrmt): simplify! Maybe replace by boolean flag "nullspace: exclude rotations"
+    // Simplify? Maybe replace by boolean flag "nullspace: exclude rotations"
     int maxNumProlongCols = -1;
     if (useTheseNspVectors == "translations")
       maxNumProlongCols = 1;
