@@ -465,7 +465,7 @@ namespace BaskerNS
       timer_order.reset();
       #endif
       if (Options.blk_matching == 0) {
-        // no mwm, for debugging
+        // no mwm
         if (flag) {
           std::cout << " ** BLK_MWM_AMD::NO BLK MWM (blk=" << b << ", " << btf_tabs(b) << ":" << btf_tabs(b+1)-1 << ") ** " << std::endl;
           //flag = false;
@@ -528,14 +528,13 @@ namespace BaskerNS
       for(Int ii = 0; ii < blk_size; ii++)
       {
         //printf( " mwm(%d) = %d + %d\n",ii+btf_tabs(b),tempp(ii),btf_tabs(b) );
-        //p_mwm(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
         p_mwm(ii+btf_tabs(b)) = tempp(ii)+btf_tabs(b);
       }
       /*{
-        for(Int k = 0; k < blk_size; k++)
-        {
-          printf( " %d\n",tempp(k) );
-        }
+        //for(Int k = 0; k < blk_size; k++)
+        //{
+        //  printf( " %d\n",tempp(k) );
+        //}
         std::cout << "m2=[" << std::endl;
         for(Int k = 0; k < blk_size; k++)
         {
@@ -723,12 +722,16 @@ namespace BaskerNS
         //printf( " amd(%d + %d = %d) = %d + %d = %d\n",tempp(ii),btf_tabs(b),tempp(ii)+btf_tabs(b), ii,btf_tabs(b),ii+btf_tabs(b) );
         p_amd(tempp(ii)+btf_tabs(b)) = ii+btf_tabs(b);
       }
-      /*std::cout << " p_amd = [ " << std::endl;
+      /*std::cout << " tempp_" << b << " = [ " << std::endl;
       for(Int ii = 0; ii < blk_size; ii++)
       {
         std::cout << tempp(ii) << std::endl;
       }
-      std::cout << " ]; " << std::endl;*/
+      std::cout << " ]; " << std::endl;
+      for(Int ii = 0; ii < blk_size; ii++)
+      {
+        printf( " p_amd(%d + %d = %d) = %d + %d = %d\n",tempp(ii),btf_tabs(b),tempp(ii)+btf_tabs(b), ii,btf_tabs(b),ii+btf_tabs(b) );
+      }*/
 
       FREE_INT_1DARRAY(tempp);
 
@@ -742,7 +745,7 @@ namespace BaskerNS
     printf("blk amd final order\n");
     for(Int ii = 0; ii < M.ncol; ii++)
     {
-      printf("%d, ", p(ii));
+      printf(" > amdP[%d] = %d\n", ii,p_amd(ii));
     }
     printf("\n");
     #endif

@@ -849,8 +849,10 @@ namespace BaskerNS
             (tree.col_tabs[i+1]-tree.col_tabs[i]),
             tree.col_tabs[j], 
             (tree.col_tabs[j+1]-tree.col_tabs[j])
-            );	
-        UMtemp[U_view_count[j]].init_col();
+            );
+        if (tree.col_tabs[i+1] > tree.col_tabs[i]) {
+          UMtemp[U_view_count[j]].init_col();
+        }
 
         //Int LU
         LUtemp[U_view_count[j]].set_shape(
@@ -876,7 +878,9 @@ namespace BaskerNS
             tree.col_tabs[i],
             (tree.col_tabs[i+1] - tree.col_tabs[i])
             );
-        LMtemp[L_view_count[i]].init_col();
+        if (tree.col_tabs[i+1] > tree.col_tabs[i]) {
+          LMtemp[L_view_count[i]].init_col();
+        }
 
         //Init LL
         LLtemp[L_view_count[i]].set_shape(
@@ -982,6 +986,12 @@ namespace BaskerNS
 #ifdef MY_DEBUG
     printf( "\n >> find_2D_convert (%d x %d) <<\n\n",M.nrow,M.ncol );
     for (Int k = 0; k <= tree.nblks; k++) printf( "  row_tabs[%d] = %d\n",k,tree.row_tabs(k));
+    printf( "M = [\n" );
+    for(Int k = 0; k < M.ncol; ++k) {
+      for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++)
+        printf( " %d %d %e\n", M.row_idx(i),k, M.val(i) );
+    }
+    printf("];\n");
 #endif
 #if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
     INT_1DARRAY L_col_idx;

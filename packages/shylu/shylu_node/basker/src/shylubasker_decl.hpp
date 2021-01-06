@@ -262,13 +262,13 @@ namespace BaskerNS
     int match_ordering(int option);
 
     BASKER_INLINE
-    int apply_scotch_partition(BASKER_BOOL keep_zeros = true);
+    int apply_scotch_partition(BASKER_BOOL keep_zeros = true, BASKER_BOOL compute_nd = true, BASKER_BOOL apply_nd = true);
 
     BASKER_INLINE
-    int scotch_partition(BASKER_MATRIX &M);
+    int scotch_partition(BASKER_MATRIX &M, BASKER_BOOL apply_nd = true);
 
     BASKER_INLINE
-    int scotch_partition(BASKER_MATRIX &M, BASKER_MATRIX &MMT);
+    int scotch_partition(BASKER_MATRIX &M, BASKER_MATRIX &MMT, BASKER_BOOL apply_nd = true);
 
     BASKER_INLINE
     int permute_inv(INT_1DARRAY, INT_1DARRAY, Int);
@@ -299,13 +299,15 @@ namespace BaskerNS
     int permute_with_workspace(INT_1DARRAY & vec,
                                INT_1DARRAY & p,
                                Int n,
-                               Int istart = 0);
+                               Int istart = 0,
+                               Int offset = 0);
 
     BASKER_INLINE
     int permute_inv_with_workspace(INT_1DARRAY & vec,
                                    INT_1DARRAY & p,
                                    Int n,
-                                   Int istart = 0);
+                                   Int istart = 0,
+                                   Int offset = 0);
 
     BASKER_INLINE
     int permute_with_workspace(ENTRY_1DARRAY&, INT_1DARRAY&, Int);

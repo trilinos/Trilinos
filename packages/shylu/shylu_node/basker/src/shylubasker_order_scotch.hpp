@@ -399,7 +399,7 @@ namespace BaskerNS
               return BASKER_ERROR; // TODO: what to do here?
             }
             if(Options.verbose == BASKER_TRUE) {
-              std::cout << " METIS_ComputeVertexSeparator: info = " << info
+              std::cout << " METIS_ComputeVertexSeparator: info = " << info << "(okay = " << METIS_OK << ")"
                         << " size = " << metis_size_k << " sepsize = " << sepsize << std::endl;
               std::cout << " dom1=(id=" << dom_id1 << ", size=" << dom1 << "),"
                         << " dom2=(id=" << dom_id2 << ", size=" << dom2 << "),"
@@ -760,11 +760,12 @@ namespace BaskerNS
       BT.treetab[i]  = sg.treetab[i];
     }
 
+    //printf( " + permtab, peritab\n" );
     for(Int i = 0; i < M.nrow; i++)
     {
       BT.permtab[i] = sg.permtab[i];
       BT.ipermtab[i] = sg.peritab[i];
-      ///printf( " + permtab[%d] = %d, peritab[%d]=%d\n",i,BT.permtab[i],i,BT.ipermtab[i] );
+      //printf( " + %d, %d\n",BT.permtab[i],BT.ipermtab[i] );
     }
 
     //Used for recursing easier

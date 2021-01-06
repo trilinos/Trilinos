@@ -211,41 +211,42 @@ namespace BaskerNS
     //printf( "\n -- solve_interface --\n" );
     //for (Int i = 0; i < gn; i++) printf( " input: x(%d) = %e\n",i,_y[i] );
     //printf( "\n" );
-    if (Options.blk_matching != 0) {
-        // apply mwm+amd row scaling from numeric
-        for(Int i = 0; i < gn; i++) {
-            Int row = order_blk_mwm_array(symbolic_row_iperm_array(i));
-            y_view_ptr_scale(i) = scale_row_array(row) * _y[i];
-            //printf( " symbolic_row_iperm(%d) = %d\n",i,symbolic_row_iperm_array(i) );
-            //printf( " scale_row(%d) = %e\n",row,scale_row_array(row) );
-        }
-        //printf( " > after scale:\n" );
-        //for (Int i = 0; i < gn; i++) printf( " > y(%d) = %.16e\n",i,y_view_ptr_scale(i) );
+    if (Options.blk_matching != 0 || Options.static_delayed_pivot != 0) {
+      // apply mwm+amd row scaling from numeric
+      for(Int i = 0; i < gn; i++) {
+        Int row = order_blk_mwm_array(symbolic_row_iperm_array(i));
+        y_view_ptr_scale(i) = scale_row_array(row) * _y[i];
+        //printf( " symbolic_row_iperm(%d) = %d\n",i,symbolic_row_iperm_array(i) );
+        //printf( " scale_row(%d) = %e\n",row,scale_row_array(row) );
+      }
+      //printf( " > after scale:\n" );
+      //for (Int i = 0; i < gn; i++) printf( " > y(%d) = %.16e\n",i,y_view_ptr_scale(i) );
 
-        // apply mwm row-perm from nummeric
-        //for (Int i = 0; i < gn; i++) printf( " > iperm(%d) = %d\n",i,perm_inv_comp_array(i) );
-        permute_inv_and_init_for_solve(&(y_view_ptr_scale(0)), x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array, gn);
-        //printf( " > after symbolic-perm:\n" );
-        //for (Int i = 0; i < gn; i++) printf( " > y(%d) = %.16e, x(%d) = %.16e\n",i,y_view_ptr_scale(i), i,x_view_ptr_copy(i) );
+      // apply mwm row-perm from symbolic
+      //for (Int i = 0; i < gn; i++) printf( " > iperm(%d) = %d\n",i,perm_inv_comp_array(i) );
+      permute_inv_and_init_for_solve(&(y_view_ptr_scale(0)), x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array, gn);
+      //printf( " > after symbolic-perm:\n" );
+      //for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i, x_view_ptr_copy(i),y_view_ptr_copy(i) );
 
-        // apply row-perm from symbolic
-        //for (Int i = 0; i < gn; i++) printf( " > iperm(%d) = %d\n",i,numeric_row_iperm_array(i) );
-        permute_with_workspace(x_view_ptr_copy, numeric_row_iperm_array, gn);
+      // apply row-perm from setup at numeric phase
+      //for (Int i = 0; i < gn; i++) printf( " > iperm(%d) = %d\n",i,numeric_row_iperm_array(i) );
+      permute_with_workspace(x_view_ptr_copy, numeric_row_iperm_array, gn);
     } else {
-        //for (Int i = 0; i < gn; i++) printf( " > iperm(%d) = %d\n",i,perm_inv_comp_array(i) );
-        permute_inv_and_init_for_solve(_y, x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array, gn);
+      //for (Int i = 0; i < gn; i++) printf( " > iperm(%d) = %d\n",i,perm_inv_comp_array(i) );
+      permute_inv_and_init_for_solve(_y, x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array, gn);
     }
     //printf( " > after perm:\n" );
+    //for (Int i = 0; i < gn; i++) printf( " > perm_inv(%d) = %d\n",i, perm_inv_comp_array(i) );
     //for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i, x_view_ptr_copy(i),y_view_ptr_copy(i) );
     //printf( "\n" );
 
     if (Options.no_pivot == BASKER_FALSE) {
-        // apply partial pivoting from numeric
-        //for (Int i = 0; i < gn; i++) printf( " gperm(%d) = %d\n",i,gperm(i) );
-        permute_inv_with_workspace(x_view_ptr_copy, gperm, gn);
-        //printf( " > after partial-pivot:\n" );
-        //for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i, x_view_ptr_copy(i),y_view_ptr_copy(i) );
-        //printf( "\n" );
+      // apply partial pivoting from numeric
+      //for (Int i = 0; i < gn; i++) printf( " gperm(%d) = %d\n",i,gperm(i) );
+      permute_inv_with_workspace(x_view_ptr_copy, gperm, gn);
+      //printf( " > after partial-pivot:\n" );
+      //for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i, x_view_ptr_copy(i),y_view_ptr_copy(i) );
+      //printf( "\n" );
     }
 
     // solve
@@ -257,22 +258,22 @@ namespace BaskerNS
     //for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i,x_view_ptr_copy(i),y_view_ptr_copy(i) );
     //printf( "\n\n" );
 
-    if (Options.blk_matching != 0) {
-        // apply amd col-permutation from numeric
-        permute_and_finalcopy_after_solve(&(y_view_ptr_scale(0)), x_view_ptr_copy, y_view_ptr_copy, numeric_col_iperm_array, gn);
-        //for (Int i = 0; i < gn; i++) printf( " > %d:%d: %.16e %.16e -> %.16e\n",i,numeric_col_iperm_array(i),x_view_ptr_copy(i),y_view_ptr_copy(i), y_view_ptr_scale(i));
+    if (Options.blk_matching != 0 || Options.static_delayed_pivot != 0) {
+      // apply amd col-permutation from numeric
+      permute_and_finalcopy_after_solve(&(y_view_ptr_scale(0)), x_view_ptr_copy, y_view_ptr_copy, numeric_col_iperm_array, gn);
+      //for (Int i = 0; i < gn; i++) printf( " > %d:%d: %.16e %.16e -> %.16e\n",i,numeric_col_iperm_array(i),x_view_ptr_copy(i),y_view_ptr_copy(i), y_view_ptr_scale(i));
 
-        /*const Int scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
-        for (Int i = 0; i < scol_top; i++) {
-            x_view_ptr_copy(i) = y_view_ptr_scale(i);
-        }*/
-        const Int poffset = btf_tabs(btf_tabs_offset);
-        for (Int i = 0; i < poffset; i++) {
-            x_view_ptr_copy(i) = y_view_ptr_scale(i);
-        }
-        for (Int i = poffset; i < gn; i++) {
-            y_view_ptr_copy(i) = y_view_ptr_scale(i);
-        }
+      /*const Int scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
+      for (Int i = 0; i < scol_top; i++) {
+        x_view_ptr_copy(i) = y_view_ptr_scale(i);
+      }*/
+      const Int poffset = btf_tabs(btf_tabs_offset);
+      for (Int i = 0; i < poffset; i++) {
+        x_view_ptr_copy(i) = y_view_ptr_scale(i);
+      }
+      for (Int i = poffset; i < gn; i++) {
+        y_view_ptr_copy(i) = y_view_ptr_scale(i);
+      }
     }
     //printf( " before calling permute_and_finalcopy_after_solve\n" );
     //for (Int i = 0; i < gn; i++) printf( " %d:%d; %e %e\n",i,perm_comp_array(i),x_view_ptr_copy(i),y_view_ptr_copy(i));
@@ -395,9 +396,9 @@ namespace BaskerNS
 
       //---Lower solve
       BASKER_MATRIX &LC = LBTF(b);
-    #ifdef BASKER_DEBUG_SOLVE_RHS
+      #ifdef BASKER_DEBUG_SOLVE_RHS
       printf("\n\n btf b=%ld (%d x %d)\n", (long)b, (int)LC.nrow, (int)LC.ncol);
-    #endif
+      #endif
 
       //L(C)\x -> y (x = y at output, with unit diagonal L)
       lower_tri_solve(LC,x,y);

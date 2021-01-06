@@ -89,6 +89,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
 
   ShyLUbasker = new ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, slu_type, Exe_Space>();
   ShyLUbasker->Options.no_pivot      = BASKER_FALSE;
+  ShyLUbasker->Options.static_delayed_pivot = 0;
   ShyLUbasker->Options.symmetric     = BASKER_FALSE;
   ShyLUbasker->Options.realloc       = BASKER_TRUE;
   ShyLUbasker->Options.verbose       = BASKER_FALSE;
@@ -110,6 +111,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
 
   ShyLUbaskerTr = new ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, slu_type, Exe_Space>();
   ShyLUbaskerTr->Options.no_pivot      = BASKER_FALSE;
+  ShyLUbaskerTr->Options.static_delayed_pivot = 0;
   ShyLUbaskerTr->Options.symmetric     = BASKER_FALSE;
   ShyLUbaskerTr->Options.realloc       = BASKER_TRUE;
   ShyLUbaskerTr->Options.verbose       = BASKER_FALSE;
@@ -565,6 +567,11 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
       ShyLUbasker->Options.no_pivot = (!parameterList->get<bool>("pivot"));
       ShyLUbaskerTr->Options.no_pivot = (!parameterList->get<bool>("pivot"));
     }
+  if(parameterList->isParameter("delayed pivot"))
+    {
+      ShyLUbasker->Options.static_delayed_pivot = (parameterList->get<int>("delayed pivot"));
+      ShyLUbaskerTr->Options.static_delayed_pivot = (parameterList->get<int>("delayed pivot"));
+    }
   if(parameterList->isParameter("pivot_tol"))
     {
       ShyLUbasker->Options.pivot_tol = parameterList->get<double>("pivot_tol");
@@ -659,7 +666,9 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
       pl->set("num_threads", 1, 
 	      "Number of threads");
       pl->set("pivot", false,
-	      "Should  not pivot");
+	      "Should not pivot");
+      pl->set("delayed pivot", 0,
+	      "Apply static delayed pivot on a big block");
       pl->set("pivot_tol", .0001,
 	      "Tolerance before pivot, currently not used");
       pl->set("symmetric", false,

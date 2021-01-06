@@ -775,6 +775,7 @@ namespace BaskerNS
       //Pivot
       no_pivot   = BASKER_FALSE;
       pivot_tol  = BASKER_PIVOT_TOL; 
+      static_delayed_pivot = 0;
 
       //Prune (if not pruned, check for numerical cancelatin)
       prune = BASKER_FALSE;
@@ -820,8 +821,11 @@ namespace BaskerNS
     BASKER_MAGNITUDE btf_large;
     BASKER_BOOL  use_sequential_diag_facto;
     // TODO: remove this (matching during symbolic)
-    int btf_matching; // carbinality matching before BTF (Symbolic)
-    int blk_matching; // max weight matching on each of diagonal blocks (Numeric)
+    int btf_matching; // carbinality matching before BTF (Symbolic):                0 = none, 1 = Basker, or 2 = Trilinos (default) (3 = MC64 if enable)
+    int blk_matching; // max weight matching on each of diagonal blocks (Numeric):  0 = none (default), or 1 = Basker (2 = MC64 if enable)
+
+    // Option to apply MWM at numeric through "delayed" pivot
+    int static_delayed_pivot;
 
     //AMD Ordering Options
     BASKER_BOOL  amd_dom;

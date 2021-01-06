@@ -136,24 +136,22 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
   // flag indicate if some symbolic & allocation are delayed
   //  because MWM & ND are applied to the big A block (in numeric Factor)
-  bool allocate_nd_workspace = (Options.blk_matching == 0);
+  bool allocate_nd_workspace = (Options.blk_matching == 0 && Options.static_delayed_pivot == 0);
   bool setup_flag = (allocate_nd_workspace || btf_tabs_offset == 0);
   if(btf_tabs_offset != 0 && allocate_nd_workspace)
   {
     symmetric_sfactor();
-  }
 
-  //#ifdef BASKER_DEBUG_SFACTOR
-  if(Options.verbose == BASKER_TRUE)
-  {
-    printf("\n\n");
-    printf("----------------------------------\n");
-    printf("Total NNZ: %ld \n", (long)global_nnz);
-    printf(" > blk_matching = %d\n", (int)Options.blk_matching );
-    printf("\n\n");
-    printf("----------------------------------\n");
+    if(Options.verbose == BASKER_TRUE)
+    {
+      printf("\n");
+      printf("----------------------------------\n");
+      printf("Total NNZ: %ld \n", (long)global_nnz);
+      printf(" > blk_matching = %d\n", (int)Options.blk_matching );
+      printf("----------------------------------\n");
+      printf("\n");
+    }
   }
-  //#endif
 
   if(Options.btf == BASKER_TRUE)
   {
