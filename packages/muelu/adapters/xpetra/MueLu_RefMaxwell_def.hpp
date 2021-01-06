@@ -102,6 +102,20 @@
 #include "cuda_profiler_api.h"
 #endif
 
+// Stratimikos
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
+// Thyra includes
+#include <Thyra_VectorBase.hpp>
+#include <Thyra_SolveSupportTypes.hpp>
+// Stratimikos includes
+#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include <Stratimikos_MueLuHelpers.hpp>
+// Ifpack2 includes
+#ifdef HAVE_MUELU_IFPACK2
+#include <Thyra_Ifpack2PreconditionerFactory.hpp>
+#endif
+#endif
+
 
 namespace MueLu {
 
@@ -323,7 +337,10 @@ namespace MueLu {
 
     if(list.isSublist("refmaxwell: 11list"))
       precList11_     =  list.sublist("refmaxwell: 11list");
-    if(!precList11_.isType<std::string>("smoother: type") && !precList11_.isType<std::string>("smoother: pre type") && !precList11_.isType<std::string>("smoother: post type")) {
+    if(!precList11_.isType<std::string>("Preconditioner Type") &&
+       !precList11_.isType<std::string>("smoother: type") &&
+       !precList11_.isType<std::string>("smoother: pre type") &&
+       !precList11_.isType<std::string>("smoother: post type")) {
       precList11_.set("smoother: type", "CHEBYSHEV");
       precList11_.sublist("smoother: params").set("chebyshev: degree",2);
       precList11_.sublist("smoother: params").set("chebyshev: ratio eigenvalue",5.4);
@@ -332,7 +349,10 @@ namespace MueLu {
 
     if(list.isSublist("refmaxwell: 22list"))
       precList22_     =  list.sublist("refmaxwell: 22list");
-    if(!precList22_.isType<std::string>("smoother: type") && !precList22_.isType<std::string>("smoother: pre type") && !precList22_.isType<std::string>("smoother: post type")) {
+    if(!precList22_.isType<std::string>("Preconditioner Type") &&
+       !precList22_.isType<std::string>("smoother: type") &&
+       !precList22_.isType<std::string>("smoother: pre type") &&
+       !precList22_.isType<std::string>("smoother: post type")) {
       precList22_.set("smoother: type", "CHEBYSHEV");
       precList22_.sublist("smoother: params").set("chebyshev: degree",2);
       precList22_.sublist("smoother: params").set("chebyshev: ratio eigenvalue",7.0);
@@ -350,9 +370,13 @@ namespace MueLu {
       smootherList_ = list.sublist("smoother: params");
     }
 
-    if (enable_reuse_ && !precList11_.isParameter("reuse: type"))
+    if (enable_reuse_ &&
+        !precList11_.isType<std::string>("Preconditioner Type") &&
+        !precList11_.isParameter("reuse: type"))
       precList11_.set("reuse: type", "full");
-    if (enable_reuse_ && !precList22_.isParameter("reuse: type"))
+    if (enable_reuse_ &&
+        !precList22_.isType<std::string>("Preconditioner Type") &&
+        !precList22_.isParameter("reuse: type"))
       precList22_.set("reuse: type", "full");
 
 #if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
@@ -904,15 +928,26 @@ namespace MueLu {
           params->set("printCommInfo",          true);
           GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*AH_, "AH", params);
         }
-        if (!reuse) {
-          dumpCoords(*CoordsH_, "coordsH.m");
-          ParameterList& userParamList = precList11_.sublist("user data");
-          userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", CoordsH_);
-          HierarchyH_ = MueLu::CreateXpetraPreconditioner(AH_, precList11_);
+        if (precList11_.isType<std::string>("Preconditioner Type")) {
+          // build a Stratimikos preconditioner
+          if (precList11_.get<std::string>("Preconditioner Type") == "MueLu") {
+            ParameterList& userParamList = precList11_.sublist("Preconditioner Types").sublist("MueLu").sublist("user data");
+            userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", CoordsH_);
+          }
+          thyraPrecH_ = StratimikosWrapper<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(AH_, rcp(&precList11_, false));
         } else {
-          RCP<MueLu::Level> level0 = HierarchyH_->GetLevel(0);
-          level0->Set("A", AH_);
-          HierarchyH_->SetupRe();
+          // build a MueLu hierarchy
+
+          if (!reuse) {
+            dumpCoords(*CoordsH_, "coordsH.m");
+            ParameterList& userParamList = precList11_.sublist("user data");
+            userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", CoordsH_);
+            HierarchyH_ = MueLu::CreateXpetraPreconditioner(AH_, precList11_);
+          } else {
+            RCP<MueLu::Level> level0 = HierarchyH_->GetLevel(0);
+            level0->Set("A", AH_);
+            HierarchyH_->SetupRe();
+          }
         }
         SetProcRankVerbose(oldRank);
       }
@@ -1131,30 +1166,40 @@ namespace MueLu {
           params->set("printCommInfo",          true);
           GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*A22_, "A22", params);
         }
-        if (!reuse) {
-          ParameterList& userParamList = precList22_.sublist("user data");
-          userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords_);
-          // If we detected no boundary conditions, the (2,2) problem is singular.
-          // Therefore, if we want to use a direct coarse solver, we need to fix up the nullspace.
-          std::string coarseType = "";
-          if (precList22_.isParameter("coarse: type")) {
-            coarseType = precList22_.get<std::string>("coarse: type");
-            // Transform string to "Abcde" notation
-            std::transform(coarseType.begin(),   coarseType.end(),   coarseType.begin(), ::tolower);
-            std::transform(coarseType.begin(), ++coarseType.begin(), coarseType.begin(), ::toupper);
+        if (precList22_.isType<std::string>("Preconditioner Type")) {
+          // build a Stratimikos preconditioner
+          if (precList22_.get<std::string>("Preconditioner Type") == "MueLu") {
+            ParameterList& userParamList = precList22_.sublist("Preconditioner Types").sublist("MueLu").sublist("user data");
+            userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords_);
           }
-          if (BCedges_ == 0 &&
-              (coarseType == "" ||
-               coarseType == "Klu" ||
-               coarseType == "Klu2") &&
-              (!precList22_.isSublist("coarse: params") ||
-               !precList22_.sublist("coarse: params").isParameter("fix nullspace")))
-            precList22_.sublist("coarse: params").set("fix nullspace",true);
-          Hierarchy22_ = MueLu::CreateXpetraPreconditioner(A22_, precList22_);
+          thyraPrec22_ = StratimikosWrapper<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(A22_, rcp(&precList22_, false));
         } else {
-          RCP<MueLu::Level> level0 = Hierarchy22_->GetLevel(0);
-          level0->Set("A", A22_);
-          Hierarchy22_->SetupRe();
+          // build a MueLu hierarchy
+          if (!reuse) {
+            ParameterList& userParamList = precList22_.sublist("user data");
+            userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords_);
+            // If we detected no boundary conditions, the (2,2) problem is singular.
+            // Therefore, if we want to use a direct coarse solver, we need to fix up the nullspace.
+            std::string coarseType = "";
+            if (precList22_.isParameter("coarse: type")) {
+              coarseType = precList22_.get<std::string>("coarse: type");
+              // Transform string to "Abcde" notation
+              std::transform(coarseType.begin(),   coarseType.end(),   coarseType.begin(), ::tolower);
+              std::transform(coarseType.begin(), ++coarseType.begin(), coarseType.begin(), ::toupper);
+            }
+            if (BCedges_ == 0 &&
+                (coarseType == "" ||
+                 coarseType == "Klu" ||
+                 coarseType == "Klu2") &&
+                (!precList22_.isSublist("coarse: params") ||
+                 !precList22_.sublist("coarse: params").isParameter("fix nullspace")))
+              precList22_.sublist("coarse: params").set("fix nullspace",true);
+            Hierarchy22_ = MueLu::CreateXpetraPreconditioner(A22_, precList22_);
+          } else {
+            RCP<MueLu::Level> level0 = Hierarchy22_->GetLevel(0);
+            level0->Set("A", A22_);
+            Hierarchy22_->SetupRe();
+          }
         }
         SetProcRankVerbose(oldRank);
       }
@@ -2314,6 +2359,7 @@ namespace MueLu {
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverseAdditive(const MultiVector& RHS, MultiVector& X) const {
 
     Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+    Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
 
     { // compute residual
 
@@ -2389,7 +2435,15 @@ namespace MueLu {
         // Replace maps with maps with a subcommunicator
         P11res_->replaceMap(AH_->getRangeMap());
         P11x_  ->replaceMap(AH_->getDomainMap());
-        HierarchyH_->Iterate(*P11res_, *P11x_, numItersH_, true);
+        if (thyraPrecH_.is_null())
+          HierarchyH_->Iterate(*P11res_, *P11x_, numItersH_, true);
+        else {
+          RCP<Thyra::MultiVectorBase<Scalar> >       thyraP11x   = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(P11x_));
+          RCP<const Thyra::MultiVectorBase<Scalar> > thyraP11res = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(P11res_);
+          thyraPrecH_->getUnspecifiedPrecOp()->apply(Thyra::NOTRANS, *thyraP11res, thyraP11x.ptr(), one, zero);
+          RCP<MultiVector> thyXpP11x = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(thyraP11x, P11x_->getMap()->getComm());
+          *P11x_ = *thyXpP11x;
+        }
         P11x_  ->replaceMap(origXMap);
         P11res_->replaceMap(origRhsMap);
       }
@@ -2404,7 +2458,15 @@ namespace MueLu {
         // Replace maps with maps with a subcommunicator
         D0res_->replaceMap(A22_->getRangeMap());
         D0x_  ->replaceMap(A22_->getDomainMap());
-        Hierarchy22_->Iterate(*D0res_, *D0x_, numIters22_, true);
+        if (thyraPrec22_.is_null())
+          Hierarchy22_->Iterate(*D0res_, *D0x_, numIters22_, true);
+        else {
+          RCP<Thyra::MultiVectorBase<Scalar> >       thyraD0x   = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(D0x_));
+          RCP<const Thyra::MultiVectorBase<Scalar> > thyraD0res = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(D0res_);
+          thyraPrec22_->getUnspecifiedPrecOp()->apply(Thyra::NOTRANS, *thyraD0res, thyraD0x.ptr(), one, zero);
+          RCP<MultiVector> thyXpD0x = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(thyraD0x, D0x_->getMap()->getComm());
+          *D0x_ = *thyXpD0x;
+        }
         D0x_  ->replaceMap(origXMap);
         D0res_->replaceMap(origRhsMap);
       }
@@ -2885,6 +2947,53 @@ namespace MueLu {
 
 
   }
+
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    RCP<Thyra::PreconditionerBase<Scalar> > StratimikosWrapper<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
+                                                                                                                                       RCP<ParameterList> params) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+                               "Stratimikos only supports Scalar=double");
+  }
+
+
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+    RCP<Thyra::PreconditionerBase<double> > StratimikosWrapper<double,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(RCP<Xpetra::Matrix<double,LocalOrdinal,GlobalOrdinal,Node> > A,
+                                                                                                                                       RCP<ParameterList> params) {
+
+    typedef double Scalar;
+
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
+
+    // Build Thyra linear algebra objects
+    RCP<const Thyra::LinearOpBase<Scalar> > thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(A)->getCrsMatrix());
+
+    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+    Stratimikos::enableMueLu<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);
+#ifdef HAVE_MUELU_IFPACK2
+    // Register Ifpack2 as a Stratimikos preconditioner strategy.
+    typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
+    typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
+    linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
+#endif
+
+    linearSolverBuilder.setParameterList(params);
+
+    // Build a new "solver factory" according to the previously specified parameter list.
+    // RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
+
+    auto precFactory = Thyra::createPreconditioningStrategy(linearSolverBuilder);
+    auto prec = precFactory->createPrec();
+
+    precFactory->initializePrec(Thyra::defaultLinearOpSource(thyraA), prec.get(), Thyra::SUPPORT_SOLVE_UNSPECIFIED);
+
+    return prec;
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+                               "Need Thyra & Stratimikos support");
+#endif
+  }
+
 
 } // namespace
 
