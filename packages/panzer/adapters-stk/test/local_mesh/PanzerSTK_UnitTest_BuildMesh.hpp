@@ -20,6 +20,13 @@ buildMesh(const std::vector<int> & N,
           const std::vector<int> & B,
           const std::vector<double> & L);
 
+Teuchos::RCP<panzer_stk::STK_Interface>
+buildParallelMesh(const std::vector<int> & N,
+                  const std::vector<int> & B,
+                  const std::vector<int> & P,
+                  const std::vector<double> & L,
+                  const std::vector<int> & periodic_dims);
+
 }
 
 #endif

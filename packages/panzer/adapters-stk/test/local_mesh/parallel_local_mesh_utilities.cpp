@@ -57,117 +57,643 @@
 #include "Panzer_LocalMeshInfo.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
 
+#include "PanzerSTK_UnitTest_BuildMesh.hpp"
+
 #include <string>
 
 namespace panzer_stk {
+namespace {
 
-Teuchos::RCP<panzer::LocalMeshInfo>
-buildLocalMeshInfo(const std::string & filename,
-                   Teuchos::RCP<const Teuchos::Comm<int> > comm)
+Teuchos::RCP<const panzer::LocalMeshInfo>
+buildParallelLocalMeshInfo(const std::vector<int> & N,   // Cells per dimension
+                           const std::vector<int> & B,   // Blocks per dimension
+                           const std::vector<int> & P,   // Processors per dimension
+                           const std::vector<double> &L) // Domain length per block
 {
-  Teuchos::RCP<const Teuchos::MpiComm<int> > mpi_comm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm,true);
-  MPI_Comm raw_comm = *(mpi_comm->getRawMpiComm());
-  STK_ExodusReaderFactory factory(filename);
-  Teuchos::RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(raw_comm);
-  Teuchos::RCP<panzer::LocalMeshInfo> mesh_info(new panzer::LocalMeshInfo);
-  generateLocalMeshInfo(*mesh,*mesh_info);
-  return mesh_info;
+  std::vector<int> p;
+//  for(unsigned int i=0; i<N.size(); ++i)
+//    p.push_back(i);
+  Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildParallelMesh(N,B,P,L,p);
+  return generateLocalMeshInfo(*mesh);
 }
 
-TEUCHOS_UNIT_TEST(parallelLocalMeshUtilities, basic)
+}
+
+TEUCHOS_UNIT_TEST(parallelLocalMeshUtilities, no_mesh)
+{
+  // Make sure if fails when you pass in a null mesh
+  panzer_stk::STK_Interface mesh;
+  TEST_THROW((generateLocalMeshInfo(mesh)),std::logic_error);
+}
+
+TEUCHOS_UNIT_TEST(parallelLocalMeshUtilities, 1D_mesh)
 {
 
-  // The goal of this test is to make sure that when a mesh is divided on processor boundaries, both chunks of the mesh see the sideset properly
+  int myRank=0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
 
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  auto mesh_info = buildParallelLocalMeshInfo({3},{2},{2},{2.});
 
-  TEST_ASSERT(comm->getSize() == 2);
+  // Make sure there are two blocks (eblock-0, and eblock-1)
+  TEST_EQUALITY(mesh_info->element_blocks.size(), 2);
+  TEST_EQUALITY(mesh_info->sidesets.size(), 2);
 
-  auto mesh_info = buildLocalMeshInfo("test_mesh.exo", comm);
+  TEST_ASSERT(mesh_info->has_connectivity);
 
-  const std::set<std::string> block_names {"left_block", "right_block"};
-  const std::set<std::string> sideset_names {"top", "bottom", "left_wall", "right_wall", "center_wall", "front", "back"};
+  if(myRank == 0){
 
-  // All ranks will see the same names for blocks and sidesets - even if they don't exist locally
-  TEST_EQUALITY(mesh_info->element_blocks.size(), block_names.size());
-  for(const auto & pr : mesh_info->element_blocks){
-    TEST_ASSERT(block_names.find(pr.first) != block_names.end());
-  }
-  TEST_EQUALITY(mesh_info->sidesets.size(), block_names.size());
-  for(const auto & pr : mesh_info->sidesets){
-    TEST_ASSERT(block_names.find(pr.first) != block_names.end());
-    const auto & sidesets = pr.second;
+    {
+      const auto & block = mesh_info->element_blocks.at("eblock-0");
 
-    TEST_EQUALITY(sidesets.size(), sideset_names.size());
-    for(const auto & pr2 : pr.second){
-      TEST_ASSERT(sideset_names.find(pr2.first) != sideset_names.end());
+      out << "Element Block eblock-0" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 1);
+      TEST_EQUALITY(block.num_virtual_cells, 1);
+      TEST_EQUALITY((int) block.global_cells(0), 0);
+      TEST_EQUALITY((int) block.global_cells(1), 1);
+      TEST_EQUALITY((int) block.global_cells(2), 2);
+      TEST_EQUALITY((int) block.global_cells(3), 6);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->element_blocks.at("eblock-1");
+
+      out << "Element Block eblock-1" << std::endl;
+
+      // Block should be empty
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 2);
+      TEST_EQUALITY(block.num_virtual_cells, 0);
+      TEST_EQUALITY((int) block.global_cells(0), 3);
+      TEST_EQUALITY((int) block.global_cells(1), 4);
+      TEST_EQUALITY((int) block.global_cells(2), 5);
+      TEST_EQUALITY((int) block.global_cells(3), 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-0").at("left");
+
+      out << "Sideset eblock-0 left" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 1);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 1);
+      TEST_EQUALITY((int) block.global_cells(0), 0);
+      TEST_EQUALITY((int) block.global_cells(1), 6);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+//    TEUCHOS_ASSERT(mesh_info->sidesets.find("eblock-1") == mesh_info->sidesets.end());
+
+  } else {
+    {
+      const auto & block = mesh_info->element_blocks.at("eblock-0");
+
+      out << "Element Block eblock-0" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 1);
+      TEST_EQUALITY(block.num_ghstd_cells, 2);
+      TEST_EQUALITY(block.num_virtual_cells, 0);
+      TEST_EQUALITY((int) block.global_cells(0), 2);
+      TEST_EQUALITY((int) block.global_cells(1), 3);
+      TEST_EQUALITY((int) block.global_cells(2), 1);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->element_blocks.at("eblock-1");
+
+      out << "Element Block eblock-1" << std::endl;
+
+      // Block should be empty
+      TEST_EQUALITY(block.num_owned_cells, 1);
+      TEST_EQUALITY(block.num_ghstd_cells, 1);
+      TEST_EQUALITY(block.num_virtual_cells, 1);
+      TEST_EQUALITY((int) block.global_cells(0), 5);
+      TEST_EQUALITY((int) block.global_cells(1), 4);
+      TEST_EQUALITY((int) block.global_cells(2), 7);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+//    TEUCHOS_ASSERT(mesh_info->sidesets.find("eblock-0") == mesh_info->sidesets.end());
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-1").at("right");
+
+      out << "Sideset eblock-1 right" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 1);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 1);
+      TEST_EQUALITY((int) block.global_cells(0), 5);
+      TEST_EQUALITY((int) block.global_cells(1), 7);
+      TEST_ASSERT(block.has_connectivity);
     }
   }
 
-#define TEST_BLOCK(BLOCK, NUM_OWNED_CELLS, NUM_GHOST_CELLS, NUM_VIRTUAL_CELLS) \
-    { \
-      const auto & block = mesh_info->element_blocks[BLOCK]; \
-      TEST_EQUALITY(block.num_owned_cells, NUM_OWNED_CELLS); \
-      TEST_EQUALITY(block.num_ghstd_cells, NUM_GHOST_CELLS); \
-      TEST_EQUALITY(block.num_virtual_cells, NUM_VIRTUAL_CELLS); \
+}
+
+TEUCHOS_UNIT_TEST(parallelLocalMeshUtilities, 2D_mesh)
+{
+
+  int myRank=0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+
+  auto mesh_info = buildParallelLocalMeshInfo({2,2},{2,1},{2,1},{2.,2.});
+
+  // Make sure there are two blocks (eblock-0, and eblock-1)
+  TEST_EQUALITY(mesh_info->element_blocks.size(), 2);
+  TEST_EQUALITY(mesh_info->sidesets.size(), 2);
+  TEST_ASSERT(mesh_info->has_connectivity);
+
+  if(myRank == 0){
+
+    {
+      const auto & block = mesh_info->element_blocks.at("eblock-0_0");
+
+      out << "Element Block eblock-0_0" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 2);
+      TEST_EQUALITY(block.num_virtual_cells, 4);
+      TEST_ASSERT(block.has_connectivity);
     }
 
-#define TEST_SIDESET(BLOCK, SIDESET, NUM_OWNED_CELLS, NUM_GHOST_CELLS, NUM_VIRTUAL_CELLS) \
-    { \
-      const auto & block = mesh_info->sidesets[BLOCK][SIDESET]; \
-      TEST_EQUALITY(block.num_owned_cells, NUM_OWNED_CELLS); \
-      TEST_EQUALITY(block.num_ghstd_cells, NUM_GHOST_CELLS); \
-      TEST_EQUALITY(block.num_virtual_cells, NUM_VIRTUAL_CELLS); \
+    {
+      const auto & block = mesh_info->element_blocks.at("eblock-1_0");
+
+      out << "Element Block eblock-1_0" << std::endl;
+
+      // Block should be empty
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 4);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
     }
 
-  if(comm->getRank() == 0){
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-0_0").at("left");
 
-    // Test Blocks
-    TEST_BLOCK("left_block",0,0,0);
-    TEST_BLOCK("right_block",8,4,20);
+      out << "Sideset eblock-0_0 left" << std::endl;
 
-    // Test Sidesets
-    TEST_SIDESET("left_block","top",0,0,0);
-    TEST_SIDESET("left_block","bottom",0,0,0);
-    TEST_SIDESET("left_block","front",0,0,0);
-    TEST_SIDESET("left_block","back",0,0,0);
-    TEST_SIDESET("left_block","left_wall",0,0,0);
-    TEST_SIDESET("left_block","center_wall",0,0,0);
-    TEST_SIDESET("left_block","right_wall",0,0,0);
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
 
-    TEST_SIDESET("right_block","top",4,0,4);
-    TEST_SIDESET("right_block","bottom",4,0,4);
-    TEST_SIDESET("right_block","front",4,0,4);
-    TEST_SIDESET("right_block","back",4,0,4);
-    TEST_SIDESET("right_block","left_wall",0,0,0);
-    TEST_SIDESET("right_block","center_wall",4,4,0);
-    TEST_SIDESET("right_block","right_wall",4,0,4);
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-0_0").at("top");
+
+      out << "Sideset eblock-0_0 top" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 1);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 1);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-0_0").at("bottom");
+
+      out << "Sideset eblock-0_0 bottom" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 1);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 1);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+//    TEUCHOS_ASSERT(mesh_info->sidesets.at("eblock-0_0").find("right") == mesh_info->sidesets.at("eblock-0_0").end());
+
+//    TEUCHOS_ASSERT(mesh_info->sidesets.at("eblock-1_0").find("left") == mesh_info->sidesets.at("eblock-1_0").end());
+
+//    TEUCHOS_ASSERT(mesh_info->sidesets.at("eblock-1_0").find("right") == mesh_info->sidesets.at("eblock-1_0").end());
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-1_0").at("top");
+
+      out << "Sideset eblock-1_0 top" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 1);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 1);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-1_0").at("bottom");
+
+      out << "Sideset eblock-1_0 bottom" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 1);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 1);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
   } else {
 
-    // Test Blocks
-    TEST_BLOCK("left_block",8,4,20);
-    TEST_BLOCK("right_block",0,0,0);
+    {
+      const auto & block = mesh_info->element_blocks.at("eblock-0_0");
 
-    // Test Sidesets
-    TEST_SIDESET("left_block","top",4,0,4);
-    TEST_SIDESET("left_block","bottom",4,0,4);
-    TEST_SIDESET("left_block","front",4,0,4);
-    TEST_SIDESET("left_block","back",4,0,4);
-    TEST_SIDESET("left_block","left_wall",4,0,4);
-    TEST_SIDESET("left_block","center_wall",4,4,0);
-    TEST_SIDESET("left_block","right_wall",0,0,0);
+      out << "Element Block eblock-0_0" << std::endl;
 
-    TEST_SIDESET("right_block","top",0,0,0);
-    TEST_SIDESET("right_block","bottom",0,0,0);
-    TEST_SIDESET("right_block","front",0,0,0);
-    TEST_SIDESET("right_block","back",0,0,0);
-    TEST_SIDESET("right_block","left_wall",0,0,0);
-    TEST_SIDESET("right_block","center_wall",0,0,0);
-    TEST_SIDESET("right_block","right_wall",0,0,0);
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 4);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->element_blocks.at("eblock-1_0");
+
+      out << "Element Block eblock-1_0" << std::endl;
+
+      // Block should be empty
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 2);
+      TEST_EQUALITY(block.num_virtual_cells, 4);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+//    TEUCHOS_ASSERT(mesh_info->sidesets.at("eblock-0_0").find("left") == mesh_info->sidesets.at("eblock-0_0").end());
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-0_0").at("top");
+
+      out << "Sideset eblock-0_0 top" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 1);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 1);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-0_0").at("bottom");
+
+      out << "Sideset eblock-0_0 bottom" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 1);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 1);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+//    TEUCHOS_ASSERT(mesh_info->sidesets.at("eblock-0_0").find("right") == mesh_info->sidesets.at("eblock-0_0").end());
+
+//    TEUCHOS_ASSERT(mesh_info->sidesets.at("eblock-1_0").find("left") == mesh_info->sidesets.at("eblock-1_0").end());
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-1_0").at("right");
+
+      out << "Sideset eblock-1_0 right" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-1_0").at("top");
+
+      out << "Sideset eblock-1_0 top" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 1);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 1);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-1_0").at("bottom");
+
+      out << "Sideset eblock-1_0 bottom" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 1);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 1);
+      TEST_ASSERT(block.has_connectivity);
+    }
   }
 
-#undef TEST_BLOCK
-#undef TEST_SIDESET
+}
+
+
+TEUCHOS_UNIT_TEST(parallelLocalMeshUtilities, 3D_mesh)
+{
+
+  int myRank=0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+
+  auto mesh_info = buildParallelLocalMeshInfo({2,2,2},{2,1,1},{2,1,1},{2.,2.,2.});
+
+  // Make sure there are two blocks (eblock-0, and eblock-1)
+  TEST_EQUALITY(mesh_info->element_blocks.size(), 2);
+  TEST_EQUALITY(mesh_info->sidesets.size(), 2);
+  TEST_ASSERT(mesh_info->has_connectivity);
+
+  if(myRank == 0){
+
+    {
+      const auto & block = mesh_info->element_blocks.at("eblock-0_0_0");
+
+      out << "Element Block eblock-0_0_0" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 4);
+      TEST_EQUALITY(block.num_ghstd_cells, 4);
+      TEST_EQUALITY(block.num_virtual_cells, 12);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->element_blocks.at("eblock-1_0_0");
+
+      out << "Element Block eblock-1_0_0" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 4);
+      TEST_EQUALITY(block.num_ghstd_cells, 8);
+      TEST_EQUALITY(block.num_virtual_cells, 8);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-0_0_0").at("left");
+
+      out << "Sideset eblock-0_0_0 left" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 4);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 4);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-0_0_0").at("top");
+
+      out << "Sideset eblock-0_0_0 top" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-0_0_0").at("bottom");
+
+      out << "Sideset eblock-0_0_0 bottom" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-0_0_0").at("front");
+
+      out << "Sideset eblock-0_0_0 front" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-0_0_0").at("back");
+
+      out << "Sideset eblock-0_0_0 back" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+//    TEUCHOS_ASSERT(mesh_info->sidesets.at("eblock-0_0_0").find("right") == mesh_info->sidesets.at("eblock-0_0_0").end());
+
+//    TEUCHOS_ASSERT(mesh_info->sidesets.at("eblock-1_0_0").find("left") == mesh_info->sidesets.at("eblock-1_0_0").end());
+
+//    TEUCHOS_ASSERT(mesh_info->sidesets.at("eblock-1_0_0").find("right") == mesh_info->sidesets.at("eblock-1_0_0").end());
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-1_0_0").at("top");
+
+      out << "Sideset eblock-1_0_0 top" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-1_0_0").at("bottom");
+
+      out << "Sideset eblock-1_0_0 bottom" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-1_0_0").at("front");
+
+      out << "Sideset eblock-1_0_0 front" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-1_0_0").at("back");
+
+      out << "Sideset eblock-1_0_0 back" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+  } else {
+
+    {
+      const auto & block = mesh_info->element_blocks.at("eblock-0_0_0");
+
+      out << "Element Block eblock-0_0_0" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 4);
+      TEST_EQUALITY(block.num_ghstd_cells, 8);
+      TEST_EQUALITY(block.num_virtual_cells, 8);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->element_blocks.at("eblock-1_0_0");
+
+      out << "Element Block eblock-1_0_0" << std::endl;
+
+      // Block should be empty
+      TEST_EQUALITY(block.num_owned_cells, 4);
+      TEST_EQUALITY(block.num_ghstd_cells, 4);
+      TEST_EQUALITY(block.num_virtual_cells, 12);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+//    TEUCHOS_ASSERT(mesh_info->sidesets.at("eblock-0_0_0").find("left") == mesh_info->sidesets.at("eblock-0_0_0").end());
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-0_0_0").at("top");
+
+      out << "Sideset eblock-0_0_0 top" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-0_0_0").at("bottom");
+
+      out << "Sideset eblock-0_0_0 bottom" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+//    TEUCHOS_ASSERT(mesh_info->sidesets.at("eblock-0_0_0").find("right") == mesh_info->sidesets.at("eblock-0_0_0").end());
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-0_0_0").at("front");
+
+      out << "Sideset eblock-0_0_0 front" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-0_0_0").at("back");
+
+      out << "Sideset eblock-0_0_0 back" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+//    TEUCHOS_ASSERT(mesh_info->sidesets.at("eblock-1_0_0").find("left") == mesh_info->sidesets.at("eblock-1_0_0").end());
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-1_0_0").at("right");
+
+      out << "Sideset eblock-1_0_0 right" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 4);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 4);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-1_0_0").at("top");
+
+      out << "Sideset eblock-1_0_0 top" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-1_0_0").at("bottom");
+
+      out << "Sideset eblock-1_0_0 bottom" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-1_0_0").at("front");
+
+      out << "Sideset eblock-1_0_0 front" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+
+    {
+      const auto & block = mesh_info->sidesets.at("eblock-1_0_0").at("back");
+
+      out << "Sideset eblock-1_0_0 back" << std::endl;
+
+      // Block should have some basic stuff working
+      TEST_EQUALITY(block.num_owned_cells, 2);
+      TEST_EQUALITY(block.num_ghstd_cells, 0);
+      TEST_EQUALITY(block.num_virtual_cells, 2);
+      TEST_ASSERT(block.has_connectivity);
+    }
+  }
 
 }
 
