@@ -15,7 +15,7 @@
 
 namespace Tempus {
 
-// Forward Declaration for recursive includes (this AppAction <--> Stepper)
+// Forward Declaration
 template<class Scalar> class StepperTrapezoidal;
 
 /** \brief Application Action for StepperTrapezoidal.
@@ -29,19 +29,19 @@ template<class Scalar> class StepperTrapezoidal;
 *  Below is the Trapezoidal algorithm and includes the locations where the
 *  application can take actions (in italicized).
 *
-*  \f{algorithm}{                                                                      
-*  \renewcommand{\thealgorithm}{}                                                      
-*  \caption{Trapezoidal stepper with application-action locations indicated.}               
-*  \begin{algorithmic}[1]                                                              
-*    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}             
-*    \State Compute $y \leftarrow x_{n-1} + \frac{\Delta t_{n-1}}{2}f(x_{n-1},t_{n-1})$     
-*    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}           
-*    \State Solve $x - y - \frac{\Delta t_{n-1}}{2}f(x,t_{n}) = 0$ for $x$              
-*    \State {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}            
-*    \State $x_n \leftarrow x$ and $\dot x_n \leftarrow f(x,t_n)$                            
-*    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}               
-*  \end{algorithmic}                                                                   
-*  \f} 
+*  \f{algorithm}{
+*  \renewcommand{\thealgorithm}{}
+*  \caption{Trapezoidal stepper with application-action locations indicated.}
+*  \begin{algorithmic}[1]
+*    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+*    \State Compute $y \leftarrow x_{n-1} + \frac{\Delta t_{n-1}}{2}f(x_{n-1},t_{n-1})$
+*    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
+*    \State Solve $x - y - \frac{\Delta t_{n-1}}{2}f(x,t_{n}) = 0$ for $x$
+*    \State {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
+*    \State $x_n \leftarrow x$ and $\dot x_n \leftarrow f(x,t_n)$
+*    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+*  \end{algorithmic}
+*  \f}
 */
 template<class Scalar>
 class StepperTrapezoidalAppAction

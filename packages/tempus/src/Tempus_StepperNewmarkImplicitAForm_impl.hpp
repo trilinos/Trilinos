@@ -9,19 +9,13 @@
 #ifndef Tempus_StepperNewmarkImplicitAForm_impl_hpp
 #define Tempus_StepperNewmarkImplicitAForm_impl_hpp
 
-#include "Tempus_config.hpp"
-#include "Tempus_StepperFactory.hpp"
 #include "Tempus_StepperNewmarkImplicitAFormModifierDefault.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "NOX_Thyra.H"
+
 
 //#define VERBOSE_DEBUG_OUTPUT
 //#define DEBUG_OUTPUT
 
 namespace Tempus {
-
-// Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
-template<class Scalar> class StepperFactory;
 
 
 template<class Scalar>
@@ -228,7 +222,6 @@ StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm(
   this->setSolver(solver);
 
   if (appModel != Teuchos::null) {
-
     this->setModel(appModel);
     this->initialize();
   }
@@ -243,10 +236,14 @@ void StepperNewmarkImplicitAForm<Scalar>::setModel(
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   validSecondOrderODE_DAE(appModel);
-  auto wrapperModel =
+  this->wrapperModel_ =
     Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(appModel,
                                               "Newmark Implicit a-Form"));
-  this->wrapperModel_ = wrapperModel;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    this->getSolver() == Teuchos::null, std::logic_error,
+    "Error - Solver is not set!\n");
+  this->getSolver()->setModel(this->wrapperModel_);
 
   this->isInitialized_ = false;
 }

@@ -159,6 +159,38 @@ protected:
 
 };
 
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSubcycling<Scalar> >
+createStepperSubcycling(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperSubcycling<Scalar>());
+
+  TEUCHOS_TEST_FOR_EXCEPTION(pl != Teuchos::null, std::logic_error,
+    "Error - Construction of StepperSubcycling with a ParameterList\n"
+    "is not implemented yet!\n");
+
+  if (pl != Teuchos::null) {
+    stepper->setStepperValues(pl);
+    //stepper->setStepperSubcyclingValues(pl);
+  }
+  //else {
+  //  integrator->setTempusParameterList(Teuchos::null);
+  //}
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 } // namespace Tempus
 
 #endif // Tempus_StepperSubcycling_decl_hpp

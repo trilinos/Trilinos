@@ -9,9 +9,10 @@
 #ifndef Tempus_StepperNewmarkExplicitAForm_impl_hpp
 #define Tempus_StepperNewmarkExplicitAForm_impl_hpp
 
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
+
 #include "Tempus_StepperNewmarkExplicitAFormModifierDefault.hpp"
+
 
 //#define DEBUG_OUTPUT
 

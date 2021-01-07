@@ -143,6 +143,27 @@ protected:
 
 };
 
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperLeapfrog<Scalar> >
+createStepperLeapfrog(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperLeapfrog<Scalar>());
+  stepper->setStepperExplicitValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 } // namespace Tempus
 
 #endif // Tempus_StepperLeapfrog_decl_hpp

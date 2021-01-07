@@ -9,15 +9,14 @@
 #ifndef Tempus_StepperSubcycling_impl_hpp
 #define Tempus_StepperSubcycling_impl_hpp
 
-#include "Tempus_StepperFactory.hpp"
+#include "Thyra_VectorStdOps.hpp"
+
+#include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperSubcyclingModifierDefault.hpp"
 #include "Tempus_TimeStepControlStrategyConstant.hpp"
 #include "Tempus_TimeStepControlStrategyBasicVS.hpp"
 #include "Tempus_IntegratorObserverSubcycling.hpp"
 #include "Tempus_IntegratorObserverNoOp.hpp"
-
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Thyra_VectorStdOps.hpp"
 
 
 namespace Tempus {
@@ -49,8 +48,7 @@ StepperSubcycling<Scalar>::StepperSubcycling()
     stepperPL->set("Stepper Type", "Forward Euler");
     tempusPL->set("Default Subcycling Stepper", *stepperPL);
 
-    auto sf = Teuchos::rcp(new Tempus::StepperFactory<Scalar>());
-    auto stepperFE = sf->createStepperForwardEuler(Teuchos::null,Teuchos::null);
+    auto stepperFE = Teuchos::rcp(new StepperForwardEuler<Scalar>());
     setSubcyclingStepper(stepperFE);
   }
 

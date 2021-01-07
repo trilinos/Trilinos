@@ -9,9 +9,10 @@
 #ifndef Tempus_StepperLeapfrog_impl_hpp
 #define Tempus_StepperLeapfrog_impl_hpp
 
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
+
 #include "Tempus_StepperLeapfrogModifierDefault.hpp"
+
 
 namespace Tempus {
 

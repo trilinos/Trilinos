@@ -11,7 +11,6 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperRKBase.hpp"
-#include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorPairPartIMEX_Basic.hpp"
 
@@ -348,6 +347,10 @@ public:
       Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau = Teuchos::null,
       Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau = Teuchos::null);
 
+    virtual void setTableausPartition(
+      Teuchos::RCP<Teuchos::ParameterList> pl,
+      std::string stepperType);
+
     /// Return explicit tableau.
     virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getExplicitTableau() const
     { return explicitTableau_; }
@@ -505,6 +508,29 @@ private:
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xTilde_;
   Scalar                                         s_;      // = 1/(dt*a_ii)
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperIMEX_RK_Partition<Scalar> >
+createStepperIMEX_RK_Partition(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  std::string stepperType,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperIMEX_RK_Partition<Scalar>());
+  stepper->setStepperType(stepperType);
+  stepper->setStepperImplicitValues(pl);
+  stepper->setTableausPartition(pl, stepperType);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 } // namespace Tempus

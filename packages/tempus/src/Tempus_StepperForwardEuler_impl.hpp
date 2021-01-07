@@ -9,9 +9,10 @@
 #ifndef Tempus_StepperForwardEuler_impl_hpp
 #define Tempus_StepperForwardEuler_impl_hpp
 
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
+
 #include "Tempus_StepperForwardEulerModifierDefault.hpp"
+
 
 namespace Tempus {
 

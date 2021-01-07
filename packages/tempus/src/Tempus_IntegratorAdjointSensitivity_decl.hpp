@@ -10,6 +10,7 @@
 #define Tempus_IntegratorAdjointSensitivity_decl_hpp
 
 // Tempus
+#include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_AdjointAuxSensitivityModelEvaluator.hpp"
 

@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperHHTAlpha_decl_hpp
 #define Tempus_StepperHHTAlpha_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorSecondOrder.hpp"
 #include "Tempus_StepperHHTAlphaAppAction.hpp"
@@ -172,6 +173,47 @@ private:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
 
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperHHTAlpha<Scalar> >
+createStepperHHTAlpha(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperHHTAlpha<Scalar>());
+  stepper->setStepperImplicitValues(pl);
+
+  if (pl != Teuchos::null) {
+    if (pl->isSublist("HHT-Alpha Parameters")) {
+      auto hhtalphaPL = pl->sublist("HHT-Alpha Parameters", true);
+      std::string schemeName =
+        hhtalphaPL.get<std::string>("Scheme Name", "Newmark Beta Average Acceleration");
+      stepper->setSchemeName(schemeName);
+      if (schemeName == "Newmark Beta User Defined") {
+        stepper->setBeta (hhtalphaPL.get<double>("Beta",  0.25));
+        stepper->setGamma(hhtalphaPL.get<double>("Gamma", 0.5 ));
+      }
+      stepper->setAlphaF(hhtalphaPL.get<double>("Alpha_f",  0.0));
+      stepper->setAlphaM(hhtalphaPL.get<double>("Alpha_m",  0.0));
+    } else {
+      stepper->setSchemeName("Newmark Beta Average Acceleration");
+      stepper->setAlphaF(0.0);
+      stepper->setAlphaM(0.0);
+    }
+  }
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 } // namespace Tempus
 
 #endif // Tempus_StepperHHTAlpha_decl_hpp

@@ -6,6 +6,9 @@
 // ****************************************************************************
 // @HEADER
 
+#include <fstream>
+#include <vector>
+
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -13,15 +16,10 @@
 
 #include "Thyra_VectorStdOps.hpp"
 
-#include "Tempus_StepperFactory.hpp"
+#include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_UnitTest_Utils.hpp"
-#include "Tempus_StepperHHTAlphaModifierBase.hpp"
-#include "Tempus_StepperHHTAlphaModifierXBase.hpp"
-#include "Tempus_StepperHHTAlphaObserverBase.hpp"
-#include "Tempus_StepperHHTAlphaModifierDefault.hpp"
-#include "Tempus_StepperHHTAlphaModifierXDefault.hpp"
-#include "Tempus_StepperHHTAlphaObserverDefault.hpp"
 
+#include "Tempus_StepperBDF2.hpp"
 #include "Tempus_StepperBDF2ModifierBase.hpp"
 #include "Tempus_StepperBDF2ObserverBase.hpp"
 #include "Tempus_StepperBDF2ModifierXBase.hpp"
@@ -31,8 +29,6 @@
 #include "../TestModels/VanDerPolModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
-#include <fstream>
-#include <vector>
 
 namespace Tempus_Unit_Test {
 
@@ -44,7 +40,6 @@ namespace Tempus_Unit_Test {
   using Teuchos::sublist;
   using Teuchos::getParametersFromXmlFile;
 
-  using Tempus::StepperFactory;
 
   // Comment out any of the following tests to exclude from build/run.
 

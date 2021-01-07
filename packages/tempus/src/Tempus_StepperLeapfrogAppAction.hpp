@@ -11,12 +11,11 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperLeapfrog.hpp"
 
 
 namespace Tempus {
 
-// Forward Declaration for recursive includes (this AppAction <--> Stepper)
+// Forward Declaration
 template<class Scalar> class StepperLeapfrog;
 
 /** \brief Application Action for StepperLeapfrog.
@@ -34,15 +33,15 @@ template<class Scalar> class StepperLeapfrog;
  *  \renewcommand{\thealgorithm}{}
  *  \caption{Leapfrog with the locations of the application actions indicated.}
  *  \begin{algorithmic}[1]
- *    \State \quad {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}                                
- *    \State Compute $\dot{x}_{n+1/2} = \dot{x}_n + 0.5\Delta t \ddot{x}_n$                                      
- *    \State \quad {\it appAction.execute(solutionHistory, stepper, BEFORE\_X\_UPDATE)}                          
- *    \State Compute $x_{n+1} = x_n + \Delta t \dot{x}_{n+1/2}$                                                  
- *    \State \quad {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}                     
- *    \State Evaluate $\ddot{x}_{n+1} = f(x_{n+1},t_{n+1})$                                                      
- *    \State \quad {\it appAction.execute(solutionHistory, stepper, BEFORE\_XDOT\_UPDATE)}                       
- *    \State Compute half-step sync $\dot{x}_{n+1} = \dot{x}_{n+1/2} + 0.5 \Delta t \ddot{x}_{n+1}$ or full step 
-$\dot{x}_{n+3/2} = \dot{x}_{n+1/2} + \Delta t \ddot{x}_{n+1}$    
+ *    \State \quad {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *    \State Compute $\dot{x}_{n+1/2} = \dot{x}_n + 0.5\Delta t \ddot{x}_n$
+ *    \State \quad {\it appAction.execute(solutionHistory, stepper, BEFORE\_X\_UPDATE)}
+ *    \State Compute $x_{n+1} = x_n + \Delta t \dot{x}_{n+1/2}$
+ *    \State \quad {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *    \State Evaluate $\ddot{x}_{n+1} = f(x_{n+1},t_{n+1})$
+ *    \State \quad {\it appAction.execute(solutionHistory, stepper, BEFORE\_XDOT\_UPDATE)}
+ *    \State Compute half-step sync $\dot{x}_{n+1} = \dot{x}_{n+1/2} + 0.5 \Delta t \ddot{x}_{n+1}$ or full step
+$\dot{x}_{n+3/2} = \dot{x}_{n+1/2} + \Delta t \ddot{x}_{n+1}$
  *  \end{algorithmic}
  *  \f}
  */
@@ -53,12 +52,12 @@ public:
 
   /// Indicates the location of application action (see algorithm).
   enum ACTION_LOCATION {
-    BEGIN_STEP,     ///< At the beginning of the step.                                     
-    BEFORE_XDOT_UPDATE_INITIALIZE, // Before updating xDot while initializing xDotDot      
-    BEFORE_X_UPDATE, //  Before updating x                                                 
-    BEFORE_EXPLICIT_EVAL,   /// Before the explicit ME evaluation.                         
-    BEFORE_XDOT_UPDATE, /// Before updating xDot                                           
-    END_STEP        ///< At the end of the step.    
+    BEGIN_STEP,     ///< At the beginning of the step.
+    BEFORE_XDOT_UPDATE_INITIALIZE, // Before updating xDot while initializing xDotDot
+    BEFORE_X_UPDATE, //  Before updating x
+    BEFORE_EXPLICIT_EVAL,   /// Before the explicit ME evaluation.
+    BEFORE_XDOT_UPDATE, /// Before updating xDot
+    END_STEP        ///< At the end of the step.
   };
 
   /// Constructor
