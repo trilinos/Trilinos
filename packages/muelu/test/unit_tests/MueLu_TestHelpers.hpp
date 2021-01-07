@@ -740,11 +740,18 @@ namespace MueLuTests {
     /*!
       @brief Create saddle-point system for meshtying of Poisson problem
 
-      The domain consists of two squares, "1" and "2", stacked on top of each other.
+      The domain consists of two rechtangles, "1" and "2", stacked on top of each other.
       Meshes match at the interface to allow for the trivial implementation of the off-diagonal coupling blocks
       in a 2x2 saddle-point system inspired by surface-coupled meshtying.
+
+      @param[out] blockMatrix Pointer to to-be-created block matrix
+      @param[out] interfaceDofMap Pointer to to-be-created map of slave-sdie interface DOFs
+      @param[in] nx Number of elements in x-direction for each block
+      @param[in] ny Number of elelemts in y-direction for each block
+      @param[in] lib Type of underlying sparse linear algebra
     */
-    static RCP<BlockedCrsMatrix> BuildPoissonSaddlePointMatrix(const GO nx, GO ny = -1, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified)
+    static void BuildPoissonSaddlePointMatrix(RCP<BlockedCrsMatrix>& blockMatrix,
+        RCP<const Map>& interfaceDofMap, const GO nx, GO ny = -1, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified)
     {
       using Teuchos::ParameterList;
 
@@ -981,13 +988,35 @@ namespace MueLuTests {
       MatrixUtils::convertMatrixToStridedMaps(C01, stridingInfo, stridingInfo);
       MatrixUtils::convertMatrixToStridedMaps(C10, stridingInfo, stridingInfo);
 
-      RCP<BlockedCrsMatrix> blockMatrix = rcp(new BlockedCrsMatrix(blockMap, blockMap, 5));
+      blockMatrix = rcp(new BlockedCrsMatrix(blockMap, blockMap, 5));
       blockMatrix->setMatrix(0, 0, primalBlockMatrix);
       blockMatrix->setMatrix(0, 1, C01);
       blockMatrix->setMatrix(1, 0, C10);
       blockMatrix->setMatrix(1, 1, Teuchos::null);
 
       blockMatrix->fillComplete();
+      interfaceDofMap = slaveDofMap;
+    }
+
+    /*!
+      @brief Create saddle-point system for meshtying of Poisson problem
+
+      The domain consists of two rechtangles, "1" and "2", stacked on top of each other.
+      Meshes match at the interface to allow for the trivial implementation of the off-diagonal coupling blocks
+      in a 2x2 saddle-point system inspired by surface-coupled meshtying.
+
+      @param nx Number of elements in x-direction for each block
+      @param ny Number of elelemts in y-direction for each block
+      @param lib Type of underlying sparse linear algebra
+
+      @return 2x2 block matrix of 2D meshtying of two blocks of Poisson equation
+    */
+    static RCP<BlockedCrsMatrix> BuildPoissonSaddlePointMatrix(const GO nx, GO ny = -1, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified)
+    {
+      RCP<BlockedCrsMatrix> blockMatrix = Teuchos::null;
+      RCP<const Map> interfaceDofMap = Teuchos::null;
+
+      BuildPoissonSaddlePointMatrix(blockMatrix, interfaceDofMap, nx, ny, lib);
 
       return blockMatrix;
     }

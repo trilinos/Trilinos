@@ -103,15 +103,13 @@ namespace MueLuTests {
 
     const GO numNodesX = 3;
     const GO numNodesY = 3;
-    RCP<const Matrix> matrix = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildPoissonSaddlePointMatrix(numNodesX, numNodesY);
-    TEST_ASSERT(!matrix.is_null());
+    RCP<const BlockedCrsMatrix> blockedMatrix = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildPoissonSaddlePointMatrix(numNodesX, numNodesY);
+    TEST_ASSERT(!blockedMatrix.is_null())
 
     const size_t numSubDomains = 2;
     const GO numNodesPrimal = numSubDomains * (numNodesX * numNodesY);
     const GO numNodesDual = numNodesX; // Interface is oriented along the global x-axis
 
-    RCP<const BlockedCrsMatrix> blockedMatrix = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(matrix);
-    TEST_ASSERT(!blockedMatrix.is_null())
     TEST_EQUALITY_CONST(blockedMatrix->Rows(), numSubDomains);
     TEST_EQUALITY_CONST(blockedMatrix->Cols(), numSubDomains);
 
@@ -160,9 +158,124 @@ namespace MueLuTests {
     }
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TestFactory, CreatePoisson2DMeshtyingMatrix_Obtain2x2SaddlePointSystemAndInterfaceDofMap, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra);
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
+
+    out << "version: " << MueLu::Version() << std::endl;
+
+    const Scalar SC_zero = Teuchos::ScalarTraits<Scalar>::zero();
+    const Scalar SC_one = Teuchos::ScalarTraits<Scalar>::one();
+
+    const GO numNodesX = 3;
+    const GO numNodesY = 3;
+    RCP<BlockedCrsMatrix> blockedMatrix = Teuchos::null;
+    RCP<const Map> interfaceDofMap = Teuchos::null;
+    TestHelpers::TestFactory<SC, LO, GO, NO>::BuildPoissonSaddlePointMatrix(blockedMatrix, interfaceDofMap, numNodesX, numNodesY);
+    TEST_ASSERT(!blockedMatrix.is_null());
+    TEST_ASSERT(!interfaceDofMap.is_null());
+
+    const size_t numSubDomains = 2;
+    const GO numNodesPrimal = numSubDomains * (numNodesX * numNodesY);
+    const GO numNodesDual = numNodesX; // Interface is oriented along the global x-axis
+
+    // Tests for block matrix
+    {
+      TEST_EQUALITY_CONST(blockedMatrix->Rows(), numSubDomains);
+      TEST_EQUALITY_CONST(blockedMatrix->Cols(), numSubDomains);
+
+      TEST_EQUALITY_CONST(blockedMatrix->getMatrix(0, 0)->getGlobalNumRows(), numNodesPrimal);
+      TEST_EQUALITY_CONST(blockedMatrix->getMatrix(0, 1)->getGlobalNumRows(), numNodesPrimal);
+      TEST_EQUALITY_CONST(blockedMatrix->getMatrix(1, 0)->getGlobalNumRows(), numNodesDual);
+
+      // Saddle-point system needs to have a zero block
+      TEST_ASSERT(blockedMatrix->getMatrix(1, 1).is_null());
+
+      TEST_EQUALITY_CONST(blockedMatrix->getGlobalNumRows(), numNodesPrimal + numNodesDual);
+
+      // Kinematic coupling: rows have entries [1, -1] or [-1, 1]
+      RCP<const Matrix> A10 = blockedMatrix->getMatrix(1, 0);
+      TEST_ASSERT(!A10.is_null());
+      for (LocalOrdinal lDualRow = 0; lDualRow < A10->getNodeNumRows(); ++lDualRow)
+      {
+        ArrayView<const LocalOrdinal> cols;
+        ArrayView<const Scalar> vals;
+        A10->getLocalRowView(lDualRow, cols, vals);
+
+        TEST_EQUALITY_CONST(cols.size(), 2);
+        TEST_EQUALITY_CONST(vals.size(), 2);
+        TEST_INEQUALITY_CONST(vals[0], SC_zero);
+        TEST_INEQUALITY_CONST(vals[1], SC_zero);
+        TEST_EQUALITY_CONST(vals[0] * vals[0], SC_one);
+        TEST_EQUALITY_CONST(vals[1] * vals[1], SC_one);
+        TEST_EQUALITY_CONST(vals[0] + vals[1], SC_zero);
+      }
+
+      // Coupling of fluxes: rows have entries [1] or [-1]
+      RCP<const Matrix> A01 = blockedMatrix->getMatrix(0, 1);
+      TEST_ASSERT(!A01.is_null());
+      for (LocalOrdinal lPrimalRow = 0; lPrimalRow < A01->getNodeNumRows(); ++lPrimalRow)
+      {
+        ArrayView<const LocalOrdinal> cols;
+        ArrayView<const Scalar> vals;
+        A01->getLocalRowView(lPrimalRow, cols, vals);
+
+        if (cols.size() > 0)
+        {
+          TEST_EQUALITY_CONST(cols.size(), 1);
+          TEST_EQUALITY_CONST(vals.size(), 1);
+          TEST_EQUALITY_CONST(vals[0] * vals[0], SC_one);
+        }
+      }
+    }
+
+    // Tests for interface dof map
+    {
+      TEST_EQUALITY_CONST(interfaceDofMap->getGlobalNumElements(), numNodesX);
+
+      const auto comm = interfaceDofMap->getComm();
+      if (comm->getSize() == 1)
+      {
+        Teuchos::Array<GlobalOrdinal> interfaceGIDs;
+        interfaceGIDs.push_back(6);
+        interfaceGIDs.push_back(7);
+        interfaceGIDs.push_back(8);
+        TEST_COMPARE_ARRAYS(interfaceDofMap->getNodeElementList(), interfaceGIDs);
+      }
+      else if (comm->getSize() == 4)
+      {
+        if (comm->getRank() == 0 || comm->getRank() == 1)
+        {
+          TEST_EQUALITY_CONST(interfaceDofMap->getNodeNumElements(), 0);
+        }
+        else if (comm->getRank() == 2)
+        {
+          TEST_EQUALITY_CONST(interfaceDofMap->getNodeNumElements(), 2);
+
+          Teuchos::Array<GlobalOrdinal> myInterfaceGIDs;
+          myInterfaceGIDs.push_back(6);
+          myInterfaceGIDs.push_back(7);
+          TEST_COMPARE_ARRAYS(interfaceDofMap->getNodeElementList(), myInterfaceGIDs);
+        }
+        else if (comm->getRank() == 3)
+        {
+          TEST_EQUALITY_CONST(interfaceDofMap->getNodeNumElements(), 1);
+
+          Teuchos::Array<GlobalOrdinal> myInterfaceGIDs;
+          myInterfaceGIDs.push_back(8);
+          TEST_COMPARE_ARRAYS(interfaceDofMap->getNodeElementList(), myInterfaceGIDs);
+        }
+      }
+    }
+  }
+
 #  define MUELU_ETI_GROUP(SC, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TestFactory, CreatePoisson1DMatrix, SC, LO, GO, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TestFactory, CreatePoisson2DMeshtyingMatrix_Obtain2x2SaddlePointSystem, SC, LO, GO, Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TestFactory, CreatePoisson2DMeshtyingMatrix_Obtain2x2SaddlePointSystem, SC, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TestFactory, CreatePoisson2DMeshtyingMatrix_Obtain2x2SaddlePointSystemAndInterfaceDofMap, SC, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
