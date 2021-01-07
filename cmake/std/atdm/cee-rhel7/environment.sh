@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Set up env on a CEE RHEL6 system for ATMD builds of Trilinos
+# Set up env on a CEE RHEL7 system for ATMD builds of Trilinos
 #
 # This source script gets the settings from the JOB_NAME var.
 #
@@ -16,19 +16,19 @@ fi
 
 if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
   unset ATDM_CONFIG_KOKKOS_ARCH
-  if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GCC-7.2.0_OPENMPI-4.0.3" ]] ; then
+  if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GNU-7.2.0_OPENMPI-4.0.3" ]] ; then
     export ATDM_CONFIG_KOKKOS_ARCH=VOLTA70
   fi
 else
   echo
   echo "***"
-  echo "*** ERROR: Specifying KOKKOS_ARCH is not supported on CEE RHEL6 builds"
+  echo "*** ERROR: Specifying KOKKOS_ARCH is not supported on CEE RHEL7 builds"
   echo "*** remove '$ATDM_CONFIG_KOKKOS_ARCH' from JOB_NAME=$JOB_NAME"
   echo "***"
   return
 fi
 
-echo "Using CEE RHEL6 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
+echo "Using CEE RHEL7 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
 export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
 export ATDM_CONFIG_USE_NINJA=ON
@@ -137,7 +137,7 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.3_MPICH2-3.2" ]; then
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
 
-elif [ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GCC-7.2.0_OPENMPI-4.0.3" ]; then
+elif [ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GNU-7.2.0_OPENMPI-4.0.3" ]; then
   # ninja is running into issues with response files when building shared libraries with CUDA.
   # nvcc reports that no input files were given when generating shared libraries with nvcc.
   # Using the Unix Makefiles cmake generator works.
@@ -230,24 +230,30 @@ atdm_config_add_libs_to_var ATDM_CONFIG_BOOST_LIBS ${BOOST_ROOT}/lib .a \
 
 # HDF5 and Netcdf
 
-# NOTE: HDF5_ROOT and NETCDF_ROOT should already be set in env from above
-# module loads!
-
-# However, set the direct libs for HDF5 and NetCDF in case we use that option
-# for building (see env var ATDM_CONFIG_USE_SPARC_TPL_FIND_SETTINGS).
+# Set the direct libs for HDF5 and NetCDF in case we use that option for
+# building (see env var ATDM_CONFIG_USE_SPARC_TPL_FIND_SETTINGS).
 
 if [[ "${ATDM_CONFIG_USE_MPI}" == "ON" ]] ; then
   USE_HDF5_ROOT="${HDF5_ROOT}"
+  USE_NETCDF_ROOT="${NETCDF_ROOT}"
 else
   USE_HDF5_ROOT="${SPARC_SERIAL_HDF5_ROOT}"
+  USE_NETCDF_ROOT="${SPARC_SERIAL_NETCDF_ROOT}"
+  unset HDF5_ROOT
+  unset NETCDF_ROOT
+  unset CGNS_ROOT
+  # The SPARC TPL installer does not set the above ROOT vars for an non-MPI
+  # (i.e. serial) build.  Therefore, we remove them here so that we can test
+  # that the ATDMDevEnvSettings.cmake file can work correctly without these
+  # set.
 fi
 
 export ATDM_CONFIG_HDF5_LIBS="-L${USE_HDF5_ROOT}/lib;${USE_HDF5_ROOT}/lib/libhdf5_hl.a;${USE_HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 
 if [[ "${PNETCDF_ROOT}" == "" ]] ; then
-  export PNETCDF_ROOT=${NETCDF_ROOT}
+  export PNETCDF_ROOT=${USE_NETCDF_ROOT}
 fi
-export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
+export ATDM_CONFIG_NETCDF_LIBS="-L${USE_NETCDF_ROOT}/lib;${USE_NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
 
 # SuperLUDist
 if [[ "${ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS}" == "" ]] ; then

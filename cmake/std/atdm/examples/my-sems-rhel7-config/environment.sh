@@ -1,7 +1,7 @@
 # Example of how to set up your own custom ATDM Trilinos configuration on some
 # machine.  This example only works on SEMS RHE6 systems.
 
-echo "Using my custom SEMS RHEL6 env for compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
+echo "Using my custom SEMS RHEL7 env for compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
 if [[ "${ATDM_CONFIG_COMPILER}" != "GNU" ]] ; then
   echo "ATDM_CONFIG_COMPILER=${ATDM_CONFIG_COMPILER} not supported!  Only 'gnu' supported currently!"
@@ -13,8 +13,8 @@ module purge
 module load sems-env
 
 module load sems-git/2.10.1
-module load sems-cmake/3.12.2
-module load sems-ninja_fortran/1.8.2
+module load sems-cmake/3.17.1
+module load sems-ninja_fortran/1.10.0
 
 module load sems-gcc/7.2.0
 module load sems-openmpi/1.10.1
