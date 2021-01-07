@@ -80,7 +80,6 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
     // Let's create a 2x2 block matrix A, that represents meshtying of a 2D Poisson problem
     const GO numEleX = 10;

@@ -405,9 +405,9 @@ namespace MueLuTests {
     RCP<const Map> coarsenedMap = coarseLevel.Get<RCP<const Map>>(mapName, MueLu::NoFactory::get());
     TEST_ASSERT(!coarsenedMap.is_null());
 
-    const GO gNumTranslationalDOFs = Teuchos::as<GO>(Ptent->getDomainMap()->getGlobalNumElements() / 2);
-    TEST_EQUALITY(coarsenedMap->getMinGlobalIndex(), Ptent->getDomainMap()->getMinGlobalIndex());
-    TEST_EQUALITY(coarsenedMap->getGlobalNumElements(), gNumTranslationalDOFs);
+    const global_size_t gNumTranslationalDOFs = Ptent->getDomainMap()->getGlobalNumElements() / 2;
+    TEST_EQUALITY_CONST(coarsenedMap->getMinGlobalIndex(), Ptent->getDomainMap()->getMinGlobalIndex());
+    TEST_EQUALITY_CONST(coarsenedMap->getGlobalNumElements(), gNumTranslationalDOFs);
 
     /* Manually extract translational part from domain map of prolongator and compare with coarsenedMap
      * Thereby, we can exploit the fact, that each nodes carries 6 unknowns on the coarse level: 3 translations
@@ -526,9 +526,9 @@ namespace MueLuTests {
     RCP<const Map> coarsenedMap = coarseLevel.Get<RCP<const Map>>(mapName, MueLu::NoFactory::get());
     TEST_ASSERT(!coarsenedMap.is_null());
 
-    const GO gNumTranslationalDOFs = Teuchos::as<GO>(Ptent->getDomainMap()->getGlobalNumElements() * 2 / 3);
-    TEST_EQUALITY(coarsenedMap->getMinGlobalIndex(), Ptent->getDomainMap()->getMinGlobalIndex());
-    TEST_EQUALITY(coarsenedMap->getGlobalNumElements(), gNumTranslationalDOFs);
+    const global_size_t gNumTranslationalDOFs = Ptent->getDomainMap()->getGlobalNumElements() * 2 / 3;
+    TEST_EQUALITY_CONST(coarsenedMap->getMinGlobalIndex(), Ptent->getDomainMap()->getMinGlobalIndex());
+    TEST_EQUALITY_CONST(coarsenedMap->getGlobalNumElements(), gNumTranslationalDOFs);
 
     /* Manually extract translational part from domain map of prolongator and compare with coarsenedMap
      * Thereby, we can exploit the fact, that each nodes carries 6 unknowns on the coarse level: 2 translations
@@ -652,7 +652,7 @@ namespace MueLuTests {
       // Reconstruct coarse map for result checking
       ArrayRCP<const Scalar> coarseVecEntries = fullCoarseVec->getData(0);
       Array<GO> myCoarseGIDs;
-      for (LO lid = 0; lid < coarseVecEntries.size(); ++lid) {
+      for (LO lid = 0; lid < static_cast<LO>(coarseVecEntries.size()); ++lid) {
         if (coarseVecEntries[lid] > Teuchos::ScalarTraits<Scalar>::zero())
           myCoarseGIDs.push_back(Ptent->getDomainMap()->getGlobalElement(lid));
       }
@@ -766,7 +766,7 @@ namespace MueLuTests {
       // Reconstruct coarse map for result checking
       ArrayRCP<const Scalar> coarseVecEntries = fullCoarseVec->getData(0);
       Array<GO> myCoarseGIDs;
-      for (LO lid = 0; lid < coarseVecEntries.size(); ++lid) {
+      for (LO lid = 0; lid < static_cast<LO>(coarseVecEntries.size()); ++lid) {
         if (coarseVecEntries[lid] > Teuchos::ScalarTraits<Scalar>::zero())
           myCoarseGIDs.push_back(Ptent->getDomainMap()->getGlobalElement(lid));
       }

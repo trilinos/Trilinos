@@ -835,7 +835,7 @@ namespace MueLuTests {
         {
           RCP<const Map> mapToReproduce = Aone->getColMap();
           Array<GO> gidsTwo;
-          for (LO i = 0; i < mapToReproduce->getNodeNumElements(); ++i)
+          for (LO i = 0; i < static_cast<LO>(mapToReproduce->getNodeNumElements()); ++i)
             gidsTwo.push_back(mapToReproduce->getGlobalElement(i) + dofGidOffset);
           colMapTwo = MapFactory::Build(lib, mapToReproduce->getGlobalNumElements(), gidsTwo(), 0, comm);
         }
@@ -844,7 +844,7 @@ namespace MueLuTests {
         {
           RCP<const Map> mapToReproduce = Aone->getRangeMap();
           Array<GO> gidsTwo;
-          for (LO i = 0; i < mapToReproduce->getNodeNumElements(); ++i)
+          for (LO i = 0; i < static_cast<LO>(mapToReproduce->getNodeNumElements()); ++i)
             gidsTwo.push_back(mapToReproduce->getGlobalElement(i) + dofGidOffset);
           rangeMapTwo = MapFactory::Build(lib, mapToReproduce->getGlobalNumElements(), gidsTwo(), GO_ZERO, comm);
           TEUCHOS_ASSERT(!rangeMapTwo.is_null());
@@ -854,7 +854,7 @@ namespace MueLuTests {
         {
           RCP<const Map> mapToReproduce = Aone->getDomainMap();
           Array<GO> gidsTwo;
-          for (LO i = 0; i < mapToReproduce->getNodeNumElements(); ++i)
+          for (LO i = 0; i < static_cast<LO>(mapToReproduce->getNodeNumElements()); ++i)
             gidsTwo.push_back(mapToReproduce->getGlobalElement(i) + dofGidOffset);
           domainMapTwo = MapFactory::Build(lib, mapToReproduce->getGlobalNumElements(), gidsTwo(), GO_ZERO, comm);
           TEUCHOS_ASSERT(!domainMapTwo.is_null());
@@ -918,7 +918,7 @@ namespace MueLuTests {
         LocalOrdinal numLocalDualNodes = 0;
         const GlobalOrdinal dualDofGIDOffset = dofMapTwo->getMaxAllGlobalIndex() + 1;
         Array<GlobalOrdinal> dualNodeGIDs;
-        for (GlobalOrdinal primalNodeId = nodeMapOne->getGlobalNumElements() - nx; primalNodeId < nodeMapOne->getGlobalNumElements(); ++primalNodeId)
+        for (GlobalOrdinal primalNodeId = nodeMapOne->getGlobalNumElements() - nx; primalNodeId < static_cast<GlobalOrdinal>(nodeMapOne->getGlobalNumElements()); ++primalNodeId)
         {
           if (nodeMapOne->isNodeGlobalElement(primalNodeId))
             ++numLocalDualNodes;
@@ -928,7 +928,7 @@ namespace MueLuTests {
 
         // Create lower left coupling matrix
         C10 = rcp(new CrsMatrixWrap(dofMapDual, 2));
-        for (LO lRow = 0; lRow < dofMapDual->getNodeNumElements(); ++lRow)
+        for (LO lRow = 0; lRow < static_cast<LO>(dofMapDual->getNodeNumElements()); ++lRow)
         {
           Array<GO> cols;
           cols.push_back(slaveDofMap->getGlobalElement(lRow));
@@ -945,7 +945,7 @@ namespace MueLuTests {
 
         // Create upper right coupling matrix (=transpose of C10)
         C01 = rcp(new CrsMatrixWrap(dofMapPrimal, 2));
-        for (LO lRow = 0; lRow < slaveDofMap->getNodeNumElements(); ++lRow)
+        for (LO lRow = 0; lRow < static_cast<LO>(slaveDofMap->getNodeNumElements()); ++lRow)
         {
           // Slave DOFs
           {

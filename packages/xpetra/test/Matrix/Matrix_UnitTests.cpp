@@ -282,7 +282,7 @@ namespace {
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, BlockDiagonalUtils_Tpetra, M##LO##GO##N , MA##S##LO##GO##N , S, LO, GO, N )
 
 // // List of tests which run only with Epetra
-// #define XP_EPETRA_MATRIX_INSTANT(S,LO,GO,N) \
+// #define XP_EPETRA_MATRIX_INSTANT(S,LO,GO,N)
 
 // list of all tests which run both with Epetra and Tpetra
 #define XP_MATRIX_INSTANT(S,LO,GO,N) \

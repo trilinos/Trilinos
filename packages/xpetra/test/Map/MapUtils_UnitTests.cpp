@@ -76,7 +76,6 @@
 namespace {
 
   bool testMpi = true;
-  double errorTolSlack = 1e+1;
 
   Teuchos::RCP<const Teuchos::Comm<int> > getDefaultComm()
   {
@@ -130,8 +129,8 @@ namespace {
     RCP<const Map> fullMap = MapUtils::concatenateMaps(maps);
 
     TEST_ASSERT(Teuchos::nonnull(fullMap));
-    TEST_EQUALITY_CONST(fullMap->getNodeNumElements(), Teuchos::as<LO>(2 * numLocalElementsPerMap));
-    TEST_EQUALITY_CONST(fullMap->getGlobalNumElements(), Teuchos::as<LO>(2 * numGlobalElementsPerMap));
+    TEST_EQUALITY_CONST(fullMap->getNodeNumElements(), static_cast<size_t>(2 * numLocalElementsPerMap));
+    TEST_EQUALITY_CONST(fullMap->getGlobalNumElements(), 2 * numGlobalElementsPerMap);
 
     // Manually merge both lists of GIDs and check with GIDs in full map
     {

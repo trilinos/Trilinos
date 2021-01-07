@@ -134,7 +134,7 @@ namespace MueLu {
         Teuchos::Array<GlobalOrdinal> arrayVal = Teuchos::fromStringToArray<GlobalOrdinal>(strDomainGIDs);
         domainGidOffsets = Teuchos::createVector(arrayVal);
         if(currentLevel.GetLevelID() < Teuchos::as<int>(domainGidOffsets.size()) ) {
-          TEUCHOS_TEST_FOR_EXCEPTION(!domainGidOffset==GO_ZERO, Exceptions::RuntimeError,
+          TEUCHOS_TEST_FOR_EXCEPTION(domainGidOffset!=GO_ZERO, Exceptions::RuntimeError,
               "While attempting to read this level's Domain GID offset from the list \"Domain GID offsets\", we detected that the domain GID offset has already been set via another mechanism. Use only one mechanism to specify the GID offset!");
           domainGidOffset = domainGidOffsets[currentLevel.GetLevelID()];
         }

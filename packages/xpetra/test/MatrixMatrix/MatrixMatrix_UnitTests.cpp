@@ -483,10 +483,12 @@ namespace {
     Xpetra::UnderlyingLib lib = testMap.lib();
 
     const Scalar SC_one = Teuchos::ScalarTraits<Scalar>::one();
+    const Scalar SC_two = static_cast<Scalar>(2) * Teuchos::ScalarTraits<Scalar>::one();
+    const Scalar SC_four = static_cast<Scalar>(4) * Teuchos::ScalarTraits<Scalar>::one();
 
     // define a map
     const LO nLocalEle = 15;
-    const GO nGlobalEle = nLocalEle * comm->getSize();
+    const Xpetra::global_size_t nGlobalEle = static_cast<Xpetra::global_size_t>(nLocalEle * comm->getSize());
     RCP<const Map> map = MapFactory::Build(lib, nGlobalEle, nLocalEle, 0, comm);
 
     TEST_ASSERT(!map.is_null());
@@ -494,10 +496,10 @@ namespace {
     Array<size_t> numEntriesPerRow(nLocalEle, 3);
     numEntriesPerRow[0] = 2;
     numEntriesPerRow[nLocalEle - 1] = 2;
-    LO localNumEntries = Teuchos::ScalarTraits<LO>::zero();
+    size_t localNumEntries = Teuchos::ScalarTraits<LO>::zero();
     for (const auto& numEntries : numEntriesPerRow)
       localNumEntries += numEntries;
-    const GO globalNumEntries = localNumEntries * comm->getSize();
+    const Xpetra::global_size_t globalNumEntries = static_cast<Xpetra::global_size_t>(localNumEntries * comm->getSize());
 
     RCP<CrsMatrix> crsMatrixOne = CrsMatrixFactory::Build(map, map, 3);
     RCP<Matrix> matrixOne = rcp(new CrsMatrixWrap(crsMatrixOne));
@@ -533,7 +535,7 @@ namespace {
         lCols.push_back(lRow + 1);
 
         vals.push_back(-SC_one);
-        vals.push_back(2 * SC_one);
+        vals.push_back(SC_two);
         vals.push_back(-SC_one);
       }
       matrixOne->insertLocalValues(lRow, lCols(), vals());
@@ -558,7 +560,8 @@ namespace {
       MatrixMatrix::TwoMatrixAdd(*matrixOne, false, 1.0, *matrixTwo, false, 1.0, matrixAfterSummation, out);
 
       // We've added two identical matrices. Hence, entries need to be doubled values.
-      for (LO lRow = 0; lRow < matrixAfterSummation->getNodeNumRows(); ++lRow)
+      const LO lNumRows = static_cast<LO>(matrixAfterSummation->getNodeNumRows());
+      for (LO lRow = 0; lRow < lNumRows; ++lRow)
       {
         ArrayView<const LO> lCols;
         ArrayView<const Scalar> vals;
@@ -566,19 +569,19 @@ namespace {
 
         if (lRow == 0)
         {
-          TEST_EQUALITY_CONST(vals[0], 2 * SC_one);
-          TEST_EQUALITY_CONST(vals[1], -2 * SC_one);
+          TEST_EQUALITY_CONST(vals[0], SC_two);
+          TEST_EQUALITY_CONST(vals[1], -SC_two);
         }
-        else if (lRow == matrixAfterSummation->getNodeNumRows() - 1)
+        else if (lRow == lNumRows - 1)
         {
-          TEST_EQUALITY_CONST(vals[0], -2 * SC_one);
-          TEST_EQUALITY_CONST(vals[1], 2 * SC_one);
+          TEST_EQUALITY_CONST(vals[0], -SC_two);
+          TEST_EQUALITY_CONST(vals[1], SC_two);
         }
         else
         {
-          TEST_EQUALITY_CONST(vals[0], -2 * SC_one);
-          TEST_EQUALITY_CONST(vals[1], 4 * SC_one);
-          TEST_EQUALITY_CONST(vals[2], -2 * SC_one);
+          TEST_EQUALITY_CONST(vals[0], -SC_two);
+          TEST_EQUALITY_CONST(vals[1], SC_four);
+          TEST_EQUALITY_CONST(vals[2], -SC_two);
         }
       }
     }

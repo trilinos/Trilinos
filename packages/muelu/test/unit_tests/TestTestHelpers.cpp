@@ -71,11 +71,11 @@ namespace MueLuTests {
     TEST_EQUALITY_CONST(matrix->getGlobalNumRows(), numNodes);
 
     const size_t numEntriesPerRow = 3;
-    const GO expectedGlobalNumEntries = numEntriesPerRow * numNodes - 2;
+    const global_size_t expectedGlobalNumEntries = numEntriesPerRow * numNodes - 2;
     TEST_EQUALITY_CONST(matrix->getGlobalNumEntries(), expectedGlobalNumEntries);
 
     // Check every single matrix entry
-    for (LocalOrdinal lRow = 0; lRow < matrix->getNodeNumRows(); ++lRow)
+    for (size_t lRow = 0; lRow < matrix->getNodeNumRows(); ++lRow)
     {
       ArrayView<const LocalOrdinal> cols;
       ArrayView<const Scalar> vals;
@@ -125,7 +125,7 @@ namespace MueLuTests {
     // Kinematic coupling: rows have entries [1, -1] or [-1, 1]
     RCP<const Matrix> A10 = blockedMatrix->getMatrix(1, 0);
     TEST_ASSERT(!A10.is_null());
-    for (LocalOrdinal lDualRow = 0; lDualRow < A10->getNodeNumRows(); ++lDualRow)
+    for (LocalOrdinal lDualRow = 0; lDualRow < Teuchos::as<LocalOrdinal>(A10->getNodeNumRows()); ++lDualRow)
     {
       ArrayView<const LocalOrdinal> cols;
       ArrayView<const Scalar> vals;
@@ -143,7 +143,7 @@ namespace MueLuTests {
     // Coupling of fluxes: rows have entries [1] or [-1]
     RCP<const Matrix> A01 = blockedMatrix->getMatrix(0, 1);
     TEST_ASSERT(!A01.is_null());
-    for (LocalOrdinal lPrimalRow = 0; lPrimalRow < A01->getNodeNumRows(); ++lPrimalRow)
+    for (LocalOrdinal lPrimalRow = 0; lPrimalRow < Teuchos::as<LocalOrdinal>(A01->getNodeNumRows()); ++lPrimalRow)
     {
       ArrayView<const LocalOrdinal> cols;
       ArrayView<const Scalar> vals;
@@ -199,7 +199,7 @@ namespace MueLuTests {
       // Kinematic coupling: rows have entries [1, -1] or [-1, 1]
       RCP<const Matrix> A10 = blockedMatrix->getMatrix(1, 0);
       TEST_ASSERT(!A10.is_null());
-      for (LocalOrdinal lDualRow = 0; lDualRow < A10->getNodeNumRows(); ++lDualRow)
+      for (LocalOrdinal lDualRow = 0; lDualRow < static_cast<LocalOrdinal>(A10->getNodeNumRows()); ++lDualRow)
       {
         ArrayView<const LocalOrdinal> cols;
         ArrayView<const Scalar> vals;
@@ -217,7 +217,7 @@ namespace MueLuTests {
       // Coupling of fluxes: rows have entries [1] or [-1]
       RCP<const Matrix> A01 = blockedMatrix->getMatrix(0, 1);
       TEST_ASSERT(!A01.is_null());
-      for (LocalOrdinal lPrimalRow = 0; lPrimalRow < A01->getNodeNumRows(); ++lPrimalRow)
+      for (LocalOrdinal lPrimalRow = 0; lPrimalRow < static_cast<LocalOrdinal>(A01->getNodeNumRows()); ++lPrimalRow)
       {
         ArrayView<const LocalOrdinal> cols;
         ArrayView<const Scalar> vals;
