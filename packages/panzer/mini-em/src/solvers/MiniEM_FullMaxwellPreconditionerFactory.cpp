@@ -400,9 +400,9 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
                           Q_B_prec_pl.get<std::string>("Prec Type"),
                           Q_B_prec_pl.sublist("Prec Types"));
 
-   if (S_E_prec_type_ == "MueLuRefMaxwell-Tpetra" || S_E_prec_type_ == "MueLuRefMaxwell" || S_E_prec_type_ == "ML") { // RefMaxwell based solve
+   dt = params.get<double>("dt");
 
-     dt = params.get<double>("dt");
+   if (S_E_prec_type_ == "MueLuRefMaxwell-Tpetra" || S_E_prec_type_ == "MueLuRefMaxwell" || S_E_prec_type_ == "ML") { // RefMaxwell based solve
 
      // S_E solve
      Teuchos::ParameterList ml_pl = pl.sublist("S_E Solve");
