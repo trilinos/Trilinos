@@ -223,7 +223,11 @@ namespace MueLu {
         bool checkAc             = pL.get<bool>("CheckMainDiagonal")|| pL.get<bool>("rap: fix zero diagonals"); ;
         if (checkAc || repairZeroDiagonals) {
           using magnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
-          magnitudeType threshold = pL.get<magnitudeType>("rap: fix zero diagonals threshold");
+          magnitudeType threshold;
+          if (pL.isType<magnitudeType>("rap: fix zero diagonals threshold"))
+            threshold = pL.get<magnitudeType>("rap: fix zero diagonals threshold");
+          else
+            threshold = Teuchos::as<magnitudeType>(pL.get<double>("rap: fix zero diagonals threshold"));
           Scalar replacement = Teuchos::as<Scalar>(pL.get<double>("rap: fix zero diagonals replacement"));
           Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Ac, repairZeroDiagonals, GetOStream(Warnings1), threshold, replacement);
         }
@@ -296,7 +300,11 @@ namespace MueLu {
         bool checkAc             = pL.get<bool>("CheckMainDiagonal")|| pL.get<bool>("rap: fix zero diagonals"); ;
         if (checkAc || repairZeroDiagonals) {
           using magnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
-          magnitudeType threshold = pL.get<magnitudeType>("rap: fix zero diagonals threshold");
+          magnitudeType threshold;
+          if (pL.isType<magnitudeType>("rap: fix zero diagonals threshold"))
+            threshold = pL.get<magnitudeType>("rap: fix zero diagonals threshold");
+          else
+            threshold = Teuchos::as<magnitudeType>(pL.get<double>("rap: fix zero diagonals threshold"));
           Scalar replacement = Teuchos::as<Scalar>(pL.get<double>("rap: fix zero diagonals replacement"));
           Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Ac, repairZeroDiagonals, GetOStream(Warnings1), threshold, replacement);
         }

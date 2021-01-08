@@ -250,7 +250,7 @@ $ env \
 ```
 
 That can also be handy for specializing the automated builds on specific SEMS
-and CEE RHEL6 machines, for example, that may have more or less hardware
+and CEE RHEL7 machines, for example, that may have more or less hardware
 cores.
 
 
@@ -464,8 +464,9 @@ there is no tractability for changes in these settings!
 ## Specific <system_name> directories
 
 The following `<system_name>` sub-directories exist (in alphabetical order):
-* `cee-rhel6/`: Contains files to drive builds on CEE LAnL RHEL6 machines with
-  a SEMS environment.
+ 
+* `cee-rhel7/`: Contains files to drive builds on CEE LAN RHEL7 machines with
+  the 'sparc-dev' modules.
 
 * `ride/`: Contains the files to drive builds on the SRN test bed machine
   `ride` which also can be run on the SON machine `white`.
@@ -513,7 +514,7 @@ machines map to the system env `ride`).
 However, if adding a new system type that will run on many machines and not
 looking at the `hostname` on the machine, then add a new `if` block to the
 section for the logic.  For an example, see how the system types `tlcc2`,
-`sems-rhel6`, and `cee-rhel6` are handled.
+`sems-rhel7`, and `cee-rhel7` are handled.
 
 The variable `ATDM_HOSTNAME` (set to exported variable
 `ATDM_CONFIG_CDASH_HOSTNAME`) is used for the CDash site name.  This makes it
@@ -567,7 +568,7 @@ This file can be used to put in special logic for special compilers and
 compiler versions and other types of logic.  This file gets sourced before the
 standard logic is executed in the file `atdm/utils/set_build_options.sh`.  (To
 see an example of the usage of this file, see
-`atdm/cee-rhel6/custom_builds.sh` and `atdm/cee-rhel6/environment.sh`.)
+`atdm/cee-rhel7/custom_builds.sh` and `atdm/cee-rhel7/environment.sh`.)
 
 A few of the environment variables that need to be set in the file
 `<new_system_name>/environment.sh` worth specifically discussing are:

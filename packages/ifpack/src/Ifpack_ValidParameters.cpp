@@ -142,14 +142,13 @@ Teuchos::ParameterList Ifpack_GetValidParameters()
   List.set("krylov: zero starting solution",true);
 
   // Ifpack_Hypre.cpp
-  Teuchos::ParameterList dummy;
-  dummy.disableRecursiveValidation();
   List.set("hypre: Solver", "PCG");
   List.set("hypre: Preconditioner", "Euclid");
   List.set("hypre: SolveOrPrecondition", "Solver");
-  List.set("hypre: Solver functions", dummy);
+  List.sublist("hypre: Solver functions").disableRecursiveValidation();
 
-  List.set("hypre: Preconditioner functions", dummy);
+  List.sublist("hypre: Preconditioner functions").disableRecursiveValidation();
+  List.set("hypre: SetPreconditioner", false);
   List.set("hypre: NumFunctions", 0);
 
 

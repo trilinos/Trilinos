@@ -110,8 +110,8 @@ if [ "${ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE}" != "" ] ; then
 
   # Get a unique name for the build that includes the system name, but not the
   # 'Trilinos-atdm-' prefix.  For example, for the build name
-  # 'Trilinos-atdm-cee-rhel6_clang-5.0.1_openmpi-1.10.2_serial_static_opt'
-  # this pulls out 'cee-rhel6_clang-5.0.1_openmpi-1.10.2_serial_static_opt'.
+  # 'Trilinos-atdm-cee-rhel7_clang-5.0.1_openmpi-1.10.2_serial_static_opt'
+  # this pulls out 'cee-rhel7_clang-5.0.1_openmpi-1.10.2_serial_static_opt'.
   # By including the system name in the directory name, this should make the
   # name unique across all platforms allowing a single base directory to be
   # used for builds from many different machines in a mounted drive (for

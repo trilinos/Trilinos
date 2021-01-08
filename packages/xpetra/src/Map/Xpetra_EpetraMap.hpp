@@ -236,7 +236,7 @@ namespace Xpetra {
     UnderlyingLib lib() const { return Xpetra::UseEpetra; }
 
     //! Get the underlying Epetra map
-    //const RCP< const Epetra_Map > & getEpetra_Map() const { return map_; }
+    const RCP< const Epetra_Map > & getEpetra_MapRCP() const { return Teuchos::rcp_static_cast<const Epetra_Map>(map_); }
     const Epetra_BlockMap& getEpetra_BlockMap() const { return *map_; }
     const Epetra_Map& getEpetra_Map() const { return (Epetra_Map &)*map_; } // Ugly, but the same is done in Epetra_CrsMatrix.h to get the map.
 
@@ -687,7 +687,7 @@ namespace Xpetra {
     UnderlyingLib lib() const { return Xpetra::UseEpetra; }
 
     //! Get the underlying Epetra map
-    //const RCP< const Epetra_Map > & getEpetra_Map() const { return map_; }
+    const RCP< const Epetra_Map > getEpetra_MapRCP() const { return Teuchos::rcp_static_cast<const Epetra_Map>(map_); }
     const Epetra_BlockMap& getEpetra_BlockMap() const { return *map_; }
     const Epetra_Map& getEpetra_Map() const { return (Epetra_Map &)*map_; } // Ugly, but the same is done in Epetra_CrsMatrix.h to get the map.
 
@@ -1123,7 +1123,7 @@ namespace Xpetra {
     UnderlyingLib lib() const { return Xpetra::UseEpetra; }
 
     //! Get the underlying Epetra map
-    //const RCP< const Epetra_Map > & getEpetra_Map() const { return map_; }
+    const RCP< const Epetra_Map > & getEpetra_MapRCP() const { return Teuchos::rcp_static_cast<const Epetra_Map>(map_); }
     const Epetra_BlockMap& getEpetra_BlockMap() const { return *map_; }
     const Epetra_Map& getEpetra_Map() const { return (Epetra_Map &)*map_; } // Ugly, but the same is done in Epetra_CrsMatrix.h to get the map.
 
