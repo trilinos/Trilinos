@@ -72,8 +72,7 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   cts1
   tlcc2
   sems-rhel7
-  sems-rhel6
-  cee-rhel6  # Used for CEE RHEL7 machines as well!
+  cee-rhel7  # Used for CEE RHEL7 machines as well!
   spack-rhel
   )
 
@@ -165,11 +164,8 @@ if [[ $SNLSYSTEM == "tlcc2"* ]] ; then
   systemNameTypeMatchedListHostNames[tlcc2]=$SNLCLUSTER
 fi
 
-# SEMS RHEL6 and RHEL7 systems
-if [[ "${SEMS_PLATFORM}" == "rhel6-x86_64" ]] ; then
-  systemNameTypeMatchedList+=(sems-rhel6)
-  systemNameTypeMatchedListHostNames[sems-rhel6]=sems-rhel6
-elif [[ "${SEMS_PLATFORM}" == "rhel7-x86_64" ]] ; then
+# SEMS RHEL7 systems
+if [[ "${SEMS_PLATFORM}" == "rhel7-x86_64" ]] ; then
   systemNameTypeMatchedList+=(sems-rhel7)
   systemNameTypeMatchedListHostNames[sems-rhel7]=sems-rhel7
 elif [[ "${SNLSYSTEM}" == "astra" || \
@@ -178,21 +174,16 @@ elif [[ "${SNLSYSTEM}" == "astra" || \
   # Above logic avoids an 'ERROR: Unrecognized cluster <name>' on these systems
 elif [[ -f $ATDM_CONFIG_SEMS_GET_PLATFORM ]] ; then
   ATDM_SYSTEM_NAME=`source $ATDM_CONFIG_SEMS_GET_PLATFORM`
-  if [[ $ATDM_SYSTEM_NAME == "rhel6-x86_64" ]] ; then
-    systemNameTypeMatchedList+=(sems-rhel6)
-    systemNameTypeMatchedListHostNames[sems-rhel6]=sems-rhel6
-  elif [[ $ATDM_SYSTEM_NAME == "rhel7-x86_64" ]] ; then
+  if [[ $ATDM_SYSTEM_NAME == "rhel7-x86_64" ]] ; then
     systemNameTypeMatchedList+=(sems-rhel7)
     systemNameTypeMatchedListHostNames[sems-rhel7]=sems-rhel7
   fi
 fi
 
-# CEE RHEL6 (and RHEL7) systems
-if [[ "${SNLSYSTEM}" == "cee" ]] ; then
-  if [[ "${SNLCLUSTER}" == "linux_rh6" ]] || [[ "${SNLCLUSTER}" == "linux_rh7" ]] ; then
-    systemNameTypeMatchedList+=(cee-rhel6)
-    systemNameTypeMatchedListHostNames[cee-rhel6]=cee-rhel6
-  fi
+# CEE RHEL7 systems
+if [[ "${SNLSYSTEM}" == "cee" ]] && [[ "${SNLCLUSTER}" == "linux_rh7" ]] ; then
+  systemNameTypeMatchedList+=(cee-rhel7)
+  systemNameTypeMatchedListHostNames[cee-rhel7]=cee-rhel7
 fi
 
 # If the user puts 'spack-rhel' in the build name, assume that the modules are

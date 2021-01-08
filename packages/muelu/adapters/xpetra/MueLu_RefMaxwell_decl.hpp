@@ -93,6 +93,11 @@
 #include "Ifpack2_Hiptmair.hpp"
 #endif
 
+// Stratimikos
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
+#include <Thyra_LinearOpWithSolveBase.hpp>
+#endif
+
 namespace MueLu {
 
   /*!
@@ -420,6 +425,7 @@ namespace MueLu {
     Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > hiptmairPreSmoother_, hiptmairPostSmoother_;
 #endif
     bool useHiptmairSmoothing_;
+    RCP<Thyra::PreconditionerBase<Scalar> > thyraPrecH_, thyraPrec22_;
     //! Various matrices
     Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, D0_T_Matrix_, M0inv_Matrix_, M1_Matrix_, Ms_Matrix_;
     Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, R11_, AH_, A22_, Addon_Matrix_;
@@ -450,6 +456,19 @@ namespace MueLu {
     //! Temporary memory
     mutable Teuchos::RCP<MultiVector> P11res_, P11x_, D0res_, D0x_, residual_, P11resTmp_, P11xTmp_, D0resTmp_, D0xTmp_, D0TR11Tmp_;
   };
+
+  template<typename Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+  struct StratimikosWrapper {
+    static RCP<Thyra::PreconditionerBase<Scalar> > setupStratimikosPreconditioner(RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
+                                                                                     RCP<ParameterList> params);
+  };
+
+  template<class LocalOrdinal,class GlobalOrdinal,class Node>
+  struct StratimikosWrapper<double,LocalOrdinal,GlobalOrdinal,Node> {
+    static RCP<Thyra::PreconditionerBase<double> > setupStratimikosPreconditioner(RCP<Xpetra::Matrix<double,LocalOrdinal,GlobalOrdinal,Node> > A,
+                                                                                     RCP<ParameterList> params);
+  };
+
 
 } // namespace
 

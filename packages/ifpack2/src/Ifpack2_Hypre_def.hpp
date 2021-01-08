@@ -480,41 +480,6 @@ void Hypre<MatrixType>::initialize(){
   {
     Teuchos::TimeMonitor timeMon (*timer);
     
-    // Create the Hypre matrix and copy values.  Note this uses values (which
-    // Initialize() shouldn't do) but it doesn't care what they are (for
-    // instance they can be uninitialized data even).  It should be possible to
-    // set the Hypre structure without copying values, but this is the easiest
-    // way to get the structure.
-    MPI_Comm comm = * (Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(A_->getRowMap()->getComm())->getRawMpiComm());
-    global_ordinal_type ilower = GloballyContiguousRowMap_->getMinGlobalIndex();
-    global_ordinal_type iupper = GloballyContiguousRowMap_->getMaxGlobalIndex();
-    IFPACK2_CHK_ERR(HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_));
-    IFPACK2_CHK_ERR(HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR));
-    IFPACK2_CHK_ERR(HYPRE_IJMatrixInitialize(HypreA_));
-    CopyTpetraToHypre();
-    if(SolveOrPrec_ == Hypre_Is_Solver) {
-      IFPACK2_CHK_ERR(SetSolverType(SolverType_));
-      if (SolverPrecondPtr_ != NULL && UsePreconditioner_) {
-        // both method allows a PC (first condition) and the user wants a PC (second)
-        IFPACK2_CHK_ERR(SetPrecondType(PrecondType_));
-        CallFunctions();
-        IFPACK2_CHK_ERR(SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_));
-      } else {
-        CallFunctions();
-      }
-    } else {
-      IFPACK2_CHK_ERR(SetPrecondType(PrecondType_));
-      CallFunctions();
-    }
-    
-    if (!G_.is_null()) {
-      SetDiscreteGradient(G_);
-    }
-    
-    if (!Coords_.is_null()) {
-      SetCoordinates(Coords_);
-    }
-    
     // set flags
     IsInitialized_=true;
     NumInitialize_++;
@@ -843,6 +808,41 @@ void Hypre<MatrixType>::compute(){
 
     if(isInitialized() == false){
       initialize();
+    }
+
+    // Create the Hypre matrix and copy values.  Note this uses values (which
+    // Initialize() shouldn't do) but it doesn't care what they are (for
+    // instance they can be uninitialized data even).  It should be possible to
+    // set the Hypre structure without copying values, but this is the easiest
+    // way to get the structure.
+    MPI_Comm comm = * (Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(A_->getRowMap()->getComm())->getRawMpiComm());
+    global_ordinal_type ilower = GloballyContiguousRowMap_->getMinGlobalIndex();
+    global_ordinal_type iupper = GloballyContiguousRowMap_->getMaxGlobalIndex();
+    IFPACK2_CHK_ERR(HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_));
+    IFPACK2_CHK_ERR(HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR));
+    IFPACK2_CHK_ERR(HYPRE_IJMatrixInitialize(HypreA_));
+    CopyTpetraToHypre();
+    if(SolveOrPrec_ == Hypre_Is_Solver) {
+      IFPACK2_CHK_ERR(SetSolverType(SolverType_));
+      if (SolverPrecondPtr_ != NULL && UsePreconditioner_) {
+        // both method allows a PC (first condition) and the user wants a PC (second)
+        IFPACK2_CHK_ERR(SetPrecondType(PrecondType_));
+        CallFunctions();
+        IFPACK2_CHK_ERR(SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_));
+      } else {
+        CallFunctions();
+      }
+    } else {
+      IFPACK2_CHK_ERR(SetPrecondType(PrecondType_));
+      CallFunctions();
+    }
+
+    if (!G_.is_null()) {
+      SetDiscreteGradient(G_);
+    }
+
+    if (!Coords_.is_null()) {
+      SetCoordinates(Coords_);
     }
            
     // Hypre Setup must be called after matrix has values

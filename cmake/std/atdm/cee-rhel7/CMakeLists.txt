@@ -1,4 +1,4 @@
-TRIBITS_ADD_ADVANCED_TEST( cee-rhel6_custom_builds_unit_tests
+TRIBITS_ADD_ADVANCED_TEST( cee-rhel7_custom_builds_unit_tests
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
   TEST_0 CMND env

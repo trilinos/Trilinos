@@ -945,7 +945,7 @@ public:
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(map));
         RCP<Xpetra::EpetraMapT<GlobalOrdinal,Node> > xeMap = rcp_dynamic_cast<Xpetra::EpetraMapT<GlobalOrdinal,Node> >(map);
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xeMap));
-        RCP<const Epetra_Map> eMap = Teuchos::rcpFromRef(xeMap->getEpetra_Map());
+        RCP<const Epetra_Map> eMap = xeMap->getEpetra_MapRCP();
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(eMap));
         Teuchos::RCP<const Epetra_MultiVector> epMultVec = Thyra::get_Epetra_MultiVector(*eMap, v);
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epMultVec));
@@ -1200,7 +1200,7 @@ public:
       Teuchos::RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > epetraMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(map);
       if (epetraMap == Teuchos::null)
         throw Exceptions::BadCast("Xpetra::ThyraUtils::toThyra: Cast from Xpetra::Map to Xpetra::EpetraMap failed");
-      RCP<const Thyra::VectorSpaceBase<Scalar> > thyraEpetraMap = Thyra::create_VectorSpace(Teuchos::rcpFromRef(epetraMap->getEpetra_Map()));
+      RCP<const Thyra::VectorSpaceBase<Scalar> > thyraEpetraMap = Thyra::create_VectorSpace(epetraMap->getEpetra_MapRCP());
       thyraMap = thyraEpetraMap;
     }
 #endif
@@ -1660,7 +1660,7 @@ public:
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(map));
         RCP<Xpetra::EpetraMapT<GlobalOrdinal,Node> > xeMap = rcp_dynamic_cast<Xpetra::EpetraMapT<GlobalOrdinal,Node> >(map);
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xeMap));
-        RCP<const Epetra_Map> eMap = Teuchos::rcpFromRef(xeMap->getEpetra_Map());
+        RCP<const Epetra_Map> eMap = xeMap->getEpetra_MapRCP();
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(eMap));
         Teuchos::RCP<const Epetra_MultiVector> epMultVec = Thyra::get_Epetra_MultiVector(*eMap, v);
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epMultVec));
@@ -1916,7 +1916,7 @@ public:
       Teuchos::RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > epetraMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(map);
       if (epetraMap == Teuchos::null)
         throw Exceptions::BadCast("Xpetra::ThyraUtils::toThyra: Cast from Xpetra::Map to Xpetra::EpetraMap failed");
-      RCP<const Thyra::VectorSpaceBase<Scalar> > thyraEpetraMap = Thyra::create_VectorSpace(Teuchos::rcpFromRef(epetraMap->getEpetra_Map()));
+      RCP<const Thyra::VectorSpaceBase<Scalar> > thyraEpetraMap = Thyra::create_VectorSpace(epetraMap->getEpetra_MapRCP());
       thyraMap = thyraEpetraMap;
     }
 #endif
