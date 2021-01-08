@@ -544,6 +544,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     timer = Teuchos::TimeMonitor::getNewCounter (timerName);
   }
 
+  double startTime = timer->wallTime();
   {
     Teuchos::TimeMonitor timeMon (*timer);
     // Special case: alpha == 0.
@@ -605,7 +606,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       }
     }
   }
-  ApplyTime_ += timer->totalElapsedTime ();
+  ApplyTime_ += (timer->wallTime() - startTime);
   ++NumApply_;
 }
 
@@ -645,6 +646,8 @@ void Relaxation<MatrixType>::initialize ()
 
   Teuchos::RCP<Teuchos::Time> timer =
     Teuchos::TimeMonitor::getNewCounter (methodName);
+
+  double startTime = timer->wallTime();
 
   { // Timing of initialize starts here
     Teuchos::TimeMonitor timeMon (*timer);
@@ -724,7 +727,7 @@ void Relaxation<MatrixType>::initialize ()
     }
   } // timing of initialize stops here
 
-  InitializeTime_ += timer->totalElapsedTime ();
+  InitializeTime_ += (timer->wallTime() - startTime);
   ++NumInitialize_;
   isInitialized_ = true;
 }
@@ -810,6 +813,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
   if (timer.is_null ()) {
     timer = Teuchos::TimeMonitor::getNewCounter (timerName);
   }
+  double startTime = timer->wallTime();
   {
     Teuchos::TimeMonitor timeMon (*timer);
 
@@ -928,7 +932,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
 #endif // HAVE_IFPACK2_DEBUG
   } // end TimeMonitor scope
 
-  ComputeTime_ += timer->totalElapsedTime ();
+  ComputeTime_ += (timer->wallTime() - startTime);
   ++NumCompute_;
   IsComputed_ = true;
 }
@@ -985,6 +989,7 @@ void Relaxation<MatrixType>::compute ()
 
   Teuchos::RCP<Teuchos::Time> timer =
     Teuchos::TimeMonitor::getNewCounter (methodName);
+  double startTime = timer->wallTime();
 
   { // Timing of compute starts here.
     Teuchos::TimeMonitor timeMon (*timer);
@@ -1344,7 +1349,7 @@ void Relaxation<MatrixType>::compute ()
     }
   } // end TimeMonitor scope
 
-  ComputeTime_ += timer->totalElapsedTime ();
+  ComputeTime_ += (timer->wallTime() - startTime);
   ++NumCompute_;
   IsComputed_ = true;
 }

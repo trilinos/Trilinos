@@ -190,7 +190,7 @@ namespace { // (anonymous)
 //
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Vector, OffsetViewCtor, ST, LO, GO, NT )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Vector, OffsetViewCtor, ST, LO, GO, NT )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

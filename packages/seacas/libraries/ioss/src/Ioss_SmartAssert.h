@@ -56,7 +56,7 @@ class assert_context
   using string = std::string;
 
 public:
-  assert_context() : line_(0), level_(lvl_debug) {}
+  assert_context() : level_(lvl_debug) {}
 
   // where the assertion failed: file & line
   void set_file_line(const char *file, int line)
@@ -71,8 +71,8 @@ public:
   void          set_expr(const string &str) { expr_ = str; }
   const string &get_expr() const { return expr_; }
 
-  typedef std::pair<string, string> val_and_str;
-  using vals_array = std::vector<val_and_str>;
+  using val_and_str = std::pair<string, string>;
+  using vals_array  = std::vector<val_and_str>;
   // return values array as a vector of pairs:
   // [Value, corresponding string]
   const vals_array &get_vals_array() const { return vals_; }
@@ -98,14 +98,14 @@ public:
 private:
   // where the assertion occurred
   string file_{};
-  int    line_;
+  int    line_{0};
 
   // expression and values
   string     expr_{};
   vals_array vals_{};
 
   // level and message
-  int    level_;
+  int    level_{lvl_debug};
   string msg_{};
 };
 
@@ -277,8 +277,8 @@ private:
   }
 
   // the handler
-  typedef std::map<int, assert_func> handlers_collection;
-  static handlers_collection &       handlers()
+  using handlers_collection = std::map<int, assert_func>;
+  static handlers_collection &handlers()
   {
     static handlers_collection inst;
     return inst;

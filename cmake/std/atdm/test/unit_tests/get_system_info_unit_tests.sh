@@ -154,25 +154,11 @@ function test_tlcc2() {
   assert_system_info_output dummy22 dummy-cluster tlcc2
 }
 
-function test_sems_rhel6_sems_platform() {
-  init_system_info_test_env dummy-rhel6
-  SEMS_PLATFORM=rhel6-x86_64
-  source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info.sh
-  assert_system_info_output dummy-rhel6 sems-rhel6 sems-rhel6
-}
-
 function test_sems_rhel7_sems_platform() {
   init_system_info_test_env dummy-rhel7
   SEMS_PLATFORM=rhel7-x86_64
   source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info.sh
   assert_system_info_output dummy-rhel7 sems-rhel7 sems-rhel7
-}
-
-function test_sems_rhel6_sems_get_platform() {
-  init_system_info_test_env dummy-rhel6
-  ATDM_CONFIG_SEMS_GET_PLATFORM=${ATDM_UNIT_TESTS_DIR}/sems_rhel6_get_platform.sh
-  source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info.sh
-  assert_system_info_output dummy-rhel6 sems-rhel6 sems-rhel6
 }
 
 function test_sems_rhel7_sems_get_platform() {
@@ -182,20 +168,12 @@ function test_sems_rhel7_sems_get_platform() {
   assert_system_info_output dummy-rhel7 sems-rhel7 sems-rhel7
 }
 
-function test_cee_rhel6_linux_rh6() {
-  init_system_info_test_env dummy-rhel6
-  SNLSYSTEM=cee
-  SNLCLUSTER=linux_rh6
-  source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info.sh
-  assert_system_info_output dummy-rhel6 cee-rhel6 cee-rhel6
-}
-
-function test_cee_rhel6_linux_rh7() {
+function test_cee_rhel7_linux_rh7() {
   init_system_info_test_env dummy-rhel7
   SNLSYSTEM=cee
   SNLCLUSTER=linux_rh7
   source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info.sh
-  assert_system_info_output dummy-rhel7 cee-rhel6 cee-rhel6
+  assert_system_info_output dummy-rhel7 cee-rhel7 cee-rhel7
 }
 
 
@@ -204,23 +182,13 @@ function test_cee_rhel6_linux_rh7() {
 # selecting which one
 #
 
-function test_sems_rhel7_cee_rhel6_select_sems_rhel7() {
+function test_sems_rhel7_cee_rhel7_select_sems_rhel7() {
   init_system_info_test_env dummy-rhel7
   SEMS_PLATFORM=rhel7-x86_64
   SNLSYSTEM=cee
   SNLCLUSTER=linux_rh7
   source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info.sh
   assert_system_info_output dummy-rhel7 sems-rhel7 sems-rhel7
-}
-
-function test_sems_rhel7_cee_rhel6_select_cee_rhel6() {
-  init_system_info_test_env dummy-rhel7
-  SEMS_PLATFORM=rhel7-x86_64
-  SNLSYSTEM=cee
-  SNLCLUSTER=linux_rh7
-  ATDM_CONFIG_BUILD_NAME=cee-rhel6-default  # Have to put 'cee-rhel6' in name!
-  source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info.sh
-  assert_system_info_output dummy-rhel7 cee-rhel6 cee-rhel6
 }
 
 function test_cts1_sems_sems_rhel7_select_cts1emprire() {
@@ -331,7 +299,7 @@ function test_no_supported_system_try_ats2() {
 # to try to select a system thta is not supported.  We need to fix this so that
 # this generates an error.  This current test just pins down this (bad) behavior.
 
-function test_sems_rhel7_cee_rhel6_try_ats2_fail() {
+function test_sems_rhel7_cee_rhel7_try_ats2_fail() {
   init_system_info_test_env dummy-rhel7
   SEMS_PLATFORM=rhel7-x86_64
   SNLSYSTEM=cee
@@ -351,7 +319,7 @@ function test_sems_rhel7_cee_rhel6_try_ats2_fail() {
 ***
 **** and does not match one of the supported system types on this machine which includes:
 ***
-***   (sems-rhel7 cee-rhel6)
+***   (sems-rhel7 cee-rhel7)
 ***
 *** To address this, either remove 'ats2' from the build name
 *** or change it to one of the above suppported system types.

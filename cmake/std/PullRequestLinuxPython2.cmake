@@ -44,5 +44,7 @@ set (TPL_ENABLE_Netcdf OFF CACHE BOOL "Set by default for PR testing")
 set (TPL_ENABLE_SuperLU OFF CACHE BOOL "Set by default for PR testing")
 set (TPL_ENABLE_Scotch OFF CACHE BOOL "Set by default for PR testing")
 
-include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
+# No build stats for Python-only PR (#7376)
+set(Trilinos_ENABLE_BUILD_STATS OFF CACHE BOOL "Set in PullRequestLinuxPython2.cmake")
 
+include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")

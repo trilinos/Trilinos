@@ -244,21 +244,24 @@ namespace Iocgns {
       ratio = 1.0 / ratio;
     }
 
-    size_t ord0 = size_t((double)m_ordinal[0] * ratio + 0.5);
-    size_t ord1 = size_t((double)m_ordinal[1] * ratio + 0.5);
-    size_t ord2 = size_t((double)m_ordinal[2] * ratio + 0.5);
+    auto ord0 = llround((double)m_ordinal[0] * ratio);
+    auto ord1 = llround((double)m_ordinal[1] * ratio);
+    auto ord2 = llround((double)m_ordinal[2] * ratio);
 
     size_t work0 = ord0 * m_ordinal[1] * m_ordinal[2];
     size_t work1 = ord1 * m_ordinal[0] * m_ordinal[2];
     size_t work2 = ord2 * m_ordinal[0] * m_ordinal[1];
 
     // Don't decompose along m_lineOrdinal direction and Avoid decompositions 1-cell thick.
-    if (m_lineOrdinal == 0 || m_ordinal[0] == 1 || ord0 == 1 || m_ordinal[0] - ord0 == 1)
+    if (m_lineOrdinal == 0 || m_ordinal[0] == 1 || ord0 == 1 || m_ordinal[0] - ord0 == 1) {
       work0 = 0;
-    if (m_lineOrdinal == 1 || m_ordinal[1] == 1 || ord1 == 1 || m_ordinal[1] - ord1 == 1)
+    }
+    if (m_lineOrdinal == 1 || m_ordinal[1] == 1 || ord1 == 1 || m_ordinal[1] - ord1 == 1) {
       work1 = 0;
-    if (m_lineOrdinal == 2 || m_ordinal[2] == 1 || ord2 == 1 || m_ordinal[2] - ord2 == 1)
+    }
+    if (m_lineOrdinal == 2 || m_ordinal[2] == 1 || ord2 == 1 || m_ordinal[2] - ord2 == 1) {
       work2 = 0;
+    }
 
     bool enforce_1cell_constraint = true;
     if (work0 == 0 && work1 == 0 && work2 == 0) {
@@ -266,12 +269,15 @@ namespace Iocgns {
       work0 = ord0 * m_ordinal[1] * m_ordinal[2];
       work1 = ord1 * m_ordinal[0] * m_ordinal[2];
       work2 = ord2 * m_ordinal[0] * m_ordinal[1];
-      if (m_lineOrdinal == 0 || m_ordinal[0] == 1)
+      if (m_lineOrdinal == 0 || m_ordinal[0] == 1) {
         work0 = 0;
-      if (m_lineOrdinal == 1 || m_ordinal[1] == 1)
+      }
+      if (m_lineOrdinal == 1 || m_ordinal[1] == 1) {
         work1 = 0;
-      if (m_lineOrdinal == 2 || m_ordinal[2] == 1)
+      }
+      if (m_lineOrdinal == 2 || m_ordinal[2] == 1) {
         work2 = 0;
+      }
       enforce_1cell_constraint = false;
     }
 
@@ -308,7 +314,7 @@ namespace Iocgns {
       ordinal = max_ordinal;
     }
 
-    if ((m_ordinal[ordinal] <= enforce_1cell_constraint ? 1 : 0) ||
+    if ((m_ordinal[ordinal] <= (enforce_1cell_constraint ? 1 : 0)) ||
         (work0 == 0 && work1 == 0 && work2 == 0)) {
       return std::make_pair(nullptr, nullptr);
     }
@@ -320,7 +326,7 @@ namespace Iocgns {
 
     m_child1->m_name             = m_name + "_c1";
     m_child1->m_ordinal          = m_ordinal;
-    m_child1->m_ordinal[ordinal] = m_ordinal[ordinal] * ratio + 0.5;
+    m_child1->m_ordinal[ordinal] = llround(m_ordinal[ordinal] * ratio);
     if (m_child1->m_ordinal[ordinal] == 0) {
       m_child1->m_ordinal[ordinal] = 1;
     }

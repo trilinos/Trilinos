@@ -39,6 +39,12 @@ from trilinosprhelpers.setenvironment import SetEnvironment
 #
 #===============================================================================
 
+def mock_module_noreturn(*args):
+    """
+    Mock the module() command that has no return value.
+    """
+    print("\nmock> module({}) ==> NoneType".format(args))
+
 
 def mock_module_pass(*args):
     """
@@ -239,7 +245,7 @@ class SetEnvironmentTest(TestCase):
                 output = os.path.join(dirpath, filename)
                 break
         if output is None:
-            raise FileNotFoundError("Unable to find {} in {}".format(filename, os.getcwd()))
+            raise FileNotFoundError("Unable to find {} in {}".format(filename, os.getcwd()))        # pragma: no cover
         return output
 
 
@@ -327,9 +333,9 @@ class SetEnvironmentTest(TestCase):
         # Verify that TEST_ENVVAR_002 was expanded properly
         expected_test_envvar_002 = "TEST_ENVVAR_002_VALUE/TEST_ENVVAR_001_VALUE"
         actual_test_envvar_002   = os.environ['TEST_ENVVAR_002']
-        print("---")
+        print("")
         print("--- {}".format(actual_test_envvar_002))
-        print("---")
+        print("")
         self.assertEqual(expected_test_envvar_002, actual_test_envvar_002)
 
 
@@ -555,7 +561,132 @@ class SetEnvironmentTest(TestCase):
         del os.environ["SETENVIRONMENT_HIDDEN_ENVVAR_001"]
 
 
-    def _setEnv_test(self, filename, profile, truth=None, module_fail=False):
+    def test_SetEnvironment_module_returns_NoneType(self):
+        """
+        Test handling of errors when the ModuleHelper.module() command has no
+        return value (i.e., it returns a NoneType)
+
+        This mimics the NoneType returned by the lmod based `module()` command
+        which does not return anything. We now handle this through the addition
+        of a wrapper for lmod modules that always returns a value but in case
+        we ever have a module operation that returns NoneType we check the
+        type. This test forces `apply()` to follow that exception branch.
+        """
+        setEnv = SetEnvironment(self._filename, "TEST_PROFILE_001")
+        setEnv.actions = {'setenv': None,
+                          'unsetenv': None,
+                          'module-op': [ ['load','a','b'] ],
+                          'module-list': None
+                          }
+        with self.assertRaises(TypeError):
+            with patch('trilinosprhelpers.setenvironment.ModuleHelper.module', side_effect=mock_module_noreturn):
+                setEnv.apply()
+
+
+    def test_SetEnvironment_cyclebreaking_01(self):
+        """
+        Test that the cycle-breaking logic works properly.
+        - Load [Sec_D] from the test config.ini file.
+        - The `use Sec_C:` entry from Sec_A should be blocked from running.
+        - The envvar Sec_C should be set to '99'
+        """
+        setEnv = SetEnvironment(self._filename, "Sec_D")
+
+        with patch('trilinosprhelpers.setenvironment.ModuleHelper.module', side_effect=mock_module_pass):
+            setEnv.apply()
+
+        assert "SEC_A" in os.environ.keys()
+        assert "SEC_B" in os.environ.keys()
+        assert "SEC_C" in os.environ.keys()
+        assert "SEC_D" in os.environ.keys()
+        print("SEC_A == {}".format(os.environ["SEC_A"]))
+        print("SEC_B == {}".format(os.environ["SEC_B"]))
+        print("SEC_C == {}".format(os.environ["SEC_C"]))
+        print("SEC_D == {}".format(os.environ["SEC_D"]))
+        assert os.environ["SEC_A"] == '1'
+        assert os.environ["SEC_B"] == '1'
+        assert os.environ["SEC_C"] == '99'
+        assert os.environ["SEC_D"] == '1'
+
+
+    def test_SetEnvironment_cyclebreaking_02(self):
+        """
+        Test that the cycle-breaking logic works properly.
+        - Load [Sec_D2] from the test config.ini file.
+        - The second call to `use Sec_A2` in `Sec_D2` should work properly.
+        - The envvar `Sec_A2` should end up being set to 1.
+        """
+        setEnv = SetEnvironment(self._filename, "Sec_D2")
+
+        with patch('trilinosprhelpers.setenvironment.ModuleHelper.module', side_effect=mock_module_pass):
+            setEnv.apply()
+
+        assert "SEC_A2" in os.environ.keys()
+        assert "SEC_B2" in os.environ.keys()
+        assert "SEC_C2" in os.environ.keys()
+        assert "SEC_D2" in os.environ.keys()
+        print("SEC_A2 == {}".format(os.environ["SEC_A2"]))
+        print("SEC_B2 == {}".format(os.environ["SEC_B2"]))
+        print("SEC_C2 == {}".format(os.environ["SEC_C2"]))
+        print("SEC_D2 == {}".format(os.environ["SEC_D2"]))
+        assert os.environ["SEC_A2"] == '1'
+        assert os.environ["SEC_B2"] == '1'
+        assert os.environ["SEC_C2"] == '1'
+        assert os.environ["SEC_D2"] == '1'
+
+
+    def test_SetEnvironment_TEST_MODULE_FAIL(self):
+        """
+        Test loading TEST_MODULE_FAIL
+        - Tests loading a nonexistent module
+        - Module load should fail but we don't throw an exception.
+        - apply() should return a nonzero value.
+        """
+        filename    = self._filename
+        profile     = "TEST_MODULE_FAIL"
+        module_fail = True
+        throw_on_fail = False
+        truth = {
+            'module-list': {'kzzzzzt': True},
+            'module-op': [['load', 'kzzzzzt/16.16.16']],
+            'setenv': [],
+            'unsetenv': []
+            }
+
+        self._setEnv_test(filename,
+                          profile,
+                          truth=truth,
+                          module_fail=module_fail,
+                          throw_on_error=throw_on_fail)
+
+
+    def test_SetEnvironment_TEST_MODULE_FAIL_Throw(self):
+        """
+        Test loading TEST_MODULE_FAIL
+        - Tests loading a nonexistent module
+        - Enables `throw_on_error` which should cause an Exception to be
+          thrown when the module command fails.
+        """
+        filename    = self._filename
+        profile     = "TEST_MODULE_FAIL"
+        module_fail = True
+        throw_on_fail = True
+        truth = {
+            'module-list': {'kzzzzzt': True},
+            'module-op': [['load', 'kzzzzzt/16.16.16']],
+            'setenv': [],
+            'unsetenv': []
+            }
+
+        with self.assertRaises(Exception):
+            self._setEnv_test(filename,
+                              profile,
+                              truth=truth,
+                              module_fail=module_fail,
+                              throw_on_error=throw_on_fail)
+
+
+    def _setEnv_test(self, filename, profile, truth=None, module_fail=False, throw_on_error=False):
         """
         Test the instantiation of a SetEnvironment class. Loads the
         ini file and applyies its settings.
@@ -589,14 +720,14 @@ class SetEnvironmentTest(TestCase):
         if False == module_fail:
             # patch the 'module()' command to 'pass'
             with patch('trilinosprhelpers.setenvironment.ModuleHelper.module', side_effect=mock_module_pass):
-                s = setEnv.apply()
+                s = setEnv.apply(throw_on_error)
             print("STATUS: {}".format(s))
             self.assertEqual(0, s)
         else:
             with patch('trilinosprhelpers.setenvironment.ModuleHelper.module', side_effect=mock_module_fail):
-                s = setEnv.apply()
+                s = setEnv.apply(throw_on_error)
             print("STATUS: {}".format(s))
-            self.assertEqual(1, s)
+            self.assertNotEqual(0, s)
 
 
 

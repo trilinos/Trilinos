@@ -102,6 +102,20 @@
 #include "cuda_profiler_api.h"
 #endif
 
+// Stratimikos
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
+// Thyra includes
+#include <Thyra_VectorBase.hpp>
+#include <Thyra_SolveSupportTypes.hpp>
+// Stratimikos includes
+#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include <Stratimikos_MueLuHelpers.hpp>
+// Ifpack2 includes
+#ifdef HAVE_MUELU_IFPACK2
+#include <Thyra_Ifpack2PreconditionerFactory.hpp>
+#endif
+#endif
+
 
 namespace MueLu {
 
@@ -323,7 +337,10 @@ namespace MueLu {
 
     if(list.isSublist("refmaxwell: 11list"))
       precList11_     =  list.sublist("refmaxwell: 11list");
-    if(!precList11_.isType<std::string>("smoother: type") && !precList11_.isType<std::string>("smoother: pre type") && !precList11_.isType<std::string>("smoother: post type")) {
+    if(!precList11_.isType<std::string>("Preconditioner Type") &&
+       !precList11_.isType<std::string>("smoother: type") &&
+       !precList11_.isType<std::string>("smoother: pre type") &&
+       !precList11_.isType<std::string>("smoother: post type")) {
       precList11_.set("smoother: type", "CHEBYSHEV");
       precList11_.sublist("smoother: params").set("chebyshev: degree",2);
       precList11_.sublist("smoother: params").set("chebyshev: ratio eigenvalue",5.4);
@@ -332,7 +349,10 @@ namespace MueLu {
 
     if(list.isSublist("refmaxwell: 22list"))
       precList22_     =  list.sublist("refmaxwell: 22list");
-    if(!precList22_.isType<std::string>("smoother: type") && !precList22_.isType<std::string>("smoother: pre type") && !precList22_.isType<std::string>("smoother: post type")) {
+    if(!precList22_.isType<std::string>("Preconditioner Type") &&
+       !precList22_.isType<std::string>("smoother: type") &&
+       !precList22_.isType<std::string>("smoother: pre type") &&
+       !precList22_.isType<std::string>("smoother: post type")) {
       precList22_.set("smoother: type", "CHEBYSHEV");
       precList22_.sublist("smoother: params").set("chebyshev: degree",2);
       precList22_.sublist("smoother: params").set("chebyshev: ratio eigenvalue",7.0);
@@ -350,9 +370,13 @@ namespace MueLu {
       smootherList_ = list.sublist("smoother: params");
     }
 
-    if (enable_reuse_ && !precList11_.isParameter("reuse: type"))
+    if (enable_reuse_ &&
+        !precList11_.isType<std::string>("Preconditioner Type") &&
+        !precList11_.isParameter("reuse: type"))
       precList11_.set("reuse: type", "full");
-    if (enable_reuse_ && !precList22_.isParameter("reuse: type"))
+    if (enable_reuse_ &&
+        !precList22_.isType<std::string>("Preconditioner Type") &&
+        !precList22_.isParameter("reuse: type"))
       precList22_.set("reuse: type", "full");
 
 #if !defined(HAVE_MUELU_KOKKOS_REFACTOR)
@@ -436,9 +460,7 @@ namespace MueLu {
       GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCedges_ << " BC rows and " << BCnodes_ << " BC columns." << std::endl;
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<Xpetra::global_size_t>(BCedges_) >= D0_Matrix_->getRangeMap()->getGlobalNumElements(), Exceptions::RuntimeError,
-                               "All edges are detected as boundary edges!");
-
+    allBoundary_ = Teuchos::as<Xpetra::global_size_t>(BCedges_) >= D0_Matrix_->getRangeMap()->getGlobalNumElements();
   }
 
 
@@ -547,7 +569,16 @@ namespace MueLu {
     ////////////////////////////////////////////////////////////////////////////////
     // Detect Dirichlet boundary conditions
     if (!reuse)
-      detectBoundaryConditionsSM();
+       detectBoundaryConditionsSM();
+
+    if (allBoundary_) {
+      // All edges have been detected as boundary edges.
+      // Do not attempt to construct sub-hierarchies, but just set up a single level preconditioner.
+      GetOStream(Warnings0) << "All edges are detected as boundary edges!" << std::endl;
+      mode_ = "none";
+      setFineLevelSmoother();
+      return;
+    }
 
     ////////////////////////////////////////////////////////////////////////////////
     // build nullspace if necessary
@@ -569,7 +600,10 @@ namespace MueLu {
       Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors());
       D0_Matrix_->apply(*CoordsSC,*Nullspace_);
 
-      if (IsPrint(Statistics2)) {
+      bool normalize = parameterList_.get<bool>("refmaxwell: normalize nullspace", MasterList::getDefault<bool>("refmaxwell: normalize nullspace"));
+      
+      coordinateType minLen, maxLen, meanLen;
+      if (IsPrint(Statistics2) || normalize){
         // compute edge lengths
         ArrayRCP<ArrayRCP<const Scalar> > localNullspace(Nullspace_->getNumVectors());
         for (size_t i = 0; i < Nullspace_->getNumVectors(); i++)
@@ -586,28 +620,25 @@ namespace MueLu {
           localMaxLen = std::max(localMaxLen, len);
           localMeanLen += len;
         }
-        coordinateType minLen, maxLen, meanLen;
+        
         RCP<const Teuchos::Comm<int> > comm = Nullspace_->getMap()->getComm();
         MueLu_minAll(comm, localMinLen,  minLen);
         MueLu_sumAll(comm, localMeanLen, meanLen);
         MueLu_maxAll(comm, localMaxLen,  maxLen);
         meanLen /= Nullspace_->getMap()->getGlobalNumElements();
+      }
+      
+      if (IsPrint(Statistics2)) {
         GetOStream(Statistics0) << "Edge length (min/mean/max): " << minLen << " / " << meanLen << " / " << maxLen << std::endl;
       }
-
-      bool normalize = parameterList_.get<bool>("refmaxwell: normalize nullspace", MasterList::getDefault<bool>("refmaxwell: normalize nullspace"));
+      
       if (normalize) {
         // normalize the nullspace
         GetOStream(Runtime0) << "RefMaxwell::compute(): normalizing nullspace" << std::endl;
 
         const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-        Array<coordinateType> norms(Coords_->getNumVectors());
-        Coords_->normInf(norms);
 
-        // Cast coordinates to Scalar so they can be multiplied against the nullspace
-        Array<Scalar> normsSC(Coords_->getNumVectors());
-        for (size_t i=0; i < Coords_->getNumVectors(); i++)
-          normsSC[i] = one / Teuchos::as<Scalar>(norms[i]);
+        Array<Scalar> normsSC(Coords_->getNumVectors(), one / Teuchos::as<Scalar>(meanLen));
         Nullspace_->scale(normsSC());
       }
     }
@@ -897,15 +928,29 @@ namespace MueLu {
           params->set("printCommInfo",          true);
           GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*AH_, "AH", params);
         }
-        if (!reuse) {
-          dumpCoords(*CoordsH_, "coordsH.m");
-          ParameterList& userParamList = precList11_.sublist("user data");
-          userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", CoordsH_);
-          HierarchyH_ = MueLu::CreateXpetraPreconditioner(AH_, precList11_);
-        } else {
-          RCP<MueLu::Level> level0 = HierarchyH_->GetLevel(0);
-          level0->Set("A", AH_);
-          HierarchyH_->SetupRe();
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
+        if (precList11_.isType<std::string>("Preconditioner Type")) {
+          // build a Stratimikos preconditioner
+          if (precList11_.get<std::string>("Preconditioner Type") == "MueLu") {
+            ParameterList& userParamList = precList11_.sublist("Preconditioner Types").sublist("MueLu").sublist("user data");
+            userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", CoordsH_);
+          }
+          thyraPrecH_ = StratimikosWrapper<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(AH_, rcp(&precList11_, false));
+        } else
+#endif
+          {
+          // build a MueLu hierarchy
+
+          if (!reuse) {
+            dumpCoords(*CoordsH_, "coordsH.m");
+            ParameterList& userParamList = precList11_.sublist("user data");
+            userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", CoordsH_);
+            HierarchyH_ = MueLu::CreateXpetraPreconditioner(AH_, precList11_);
+          } else {
+            RCP<MueLu::Level> level0 = HierarchyH_->GetLevel(0);
+            level0->Set("A", AH_);
+            HierarchyH_->SetupRe();
+          }
         }
         SetProcRankVerbose(oldRank);
       }
@@ -1124,30 +1169,43 @@ namespace MueLu {
           params->set("printCommInfo",          true);
           GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*A22_, "A22", params);
         }
-        if (!reuse) {
-          ParameterList& userParamList = precList22_.sublist("user data");
-          userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords_);
-          // If we detected no boundary conditions, the (2,2) problem is singular.
-          // Therefore, if we want to use a direct coarse solver, we need to fix up the nullspace.
-          std::string coarseType = "";
-          if (precList22_.isParameter("coarse: type")) {
-            coarseType = precList22_.get<std::string>("coarse: type");
-            // Transform string to "Abcde" notation
-            std::transform(coarseType.begin(),   coarseType.end(),   coarseType.begin(), ::tolower);
-            std::transform(coarseType.begin(), ++coarseType.begin(), coarseType.begin(), ::toupper);
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
+        if (precList22_.isType<std::string>("Preconditioner Type")) {
+          // build a Stratimikos preconditioner
+          if (precList22_.get<std::string>("Preconditioner Type") == "MueLu") {
+            ParameterList& userParamList = precList22_.sublist("Preconditioner Types").sublist("MueLu").sublist("user data");
+            userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords_);
           }
-          if (BCedges_ == 0 &&
-              (coarseType == "" ||
-               coarseType == "Klu" ||
-               coarseType == "Klu2") &&
-              (!precList22_.isSublist("coarse: params") ||
-               !precList22_.sublist("coarse: params").isParameter("fix nullspace")))
-            precList22_.sublist("coarse: params").set("fix nullspace",true);
-          Hierarchy22_ = MueLu::CreateXpetraPreconditioner(A22_, precList22_);
-        } else {
-          RCP<MueLu::Level> level0 = Hierarchy22_->GetLevel(0);
-          level0->Set("A", A22_);
-          Hierarchy22_->SetupRe();
+          thyraPrec22_ = StratimikosWrapper<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(A22_, rcp(&precList22_, false));
+        } else
+#endif
+          {
+          // build a MueLu hierarchy
+          if (!reuse) {
+            ParameterList& userParamList = precList22_.sublist("user data");
+            userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords_);
+            // If we detected no boundary conditions, the (2,2) problem is singular.
+            // Therefore, if we want to use a direct coarse solver, we need to fix up the nullspace.
+            std::string coarseType = "";
+            if (precList22_.isParameter("coarse: type")) {
+              coarseType = precList22_.get<std::string>("coarse: type");
+              // Transform string to "Abcde" notation
+              std::transform(coarseType.begin(),   coarseType.end(),   coarseType.begin(), ::tolower);
+              std::transform(coarseType.begin(), ++coarseType.begin(), coarseType.begin(), ::toupper);
+            }
+            if (BCedges_ == 0 &&
+                (coarseType == "" ||
+                 coarseType == "Klu" ||
+                 coarseType == "Klu2") &&
+                (!precList22_.isSublist("coarse: params") ||
+                 !precList22_.sublist("coarse: params").isParameter("fix nullspace")))
+              precList22_.sublist("coarse: params").set("fix nullspace",true);
+            Hierarchy22_ = MueLu::CreateXpetraPreconditioner(A22_, precList22_);
+          } else {
+            RCP<MueLu::Level> level0 = Hierarchy22_->GetLevel(0);
+            level0->Set("A", A22_);
+            Hierarchy22_->SetupRe();
+          }
         }
         SetProcRankVerbose(oldRank);
       }
@@ -1177,117 +1235,7 @@ namespace MueLu {
       dump(*D0_Matrix_, "D0_nuked.m");
     }
 
-    {
-      if (parameterList_.isType<std::string>("smoother: type") &&
-          parameterList_.get<std::string>("smoother: type") == "hiptmair" &&
-          SM_Matrix_->getDomainMap()->lib() == Xpetra::UseTpetra &&
-          A22_->getDomainMap()->lib() == Xpetra::UseTpetra &&
-          D0_Matrix_->getDomainMap()->lib() == Xpetra::UseTpetra) {
-#if defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
-        ParameterList hiptmairPreList, hiptmairPostList, smootherPreList, smootherPostList;
-
-        if (smootherList_.isSublist("smoother: pre params"))
-          smootherPreList = smootherList_.sublist("smoother: pre params");
-        else if (smootherList_.isSublist("smoother: params"))
-          smootherPreList = smootherList_.sublist("smoother: params");
-        hiptmairPreList.set("hiptmair: smoother type 1",
-                            smootherPreList.get<std::string>("hiptmair: smoother type 1", "CHEBYSHEV"));
-        hiptmairPreList.set("hiptmair: smoother type 2",
-                            smootherPreList.get<std::string>("hiptmair: smoother type 2", "CHEBYSHEV"));
-        if(smootherPreList.isSublist("hiptmair: smoother list 1"))
-          hiptmairPreList.set("hiptmair: smoother list 1", smootherPreList.sublist("hiptmair: smoother list 1"));
-        if(smootherPreList.isSublist("hiptmair: smoother list 2"))
-          hiptmairPreList.set("hiptmair: smoother list 2", smootherPreList.sublist("hiptmair: smoother list 2"));
-        hiptmairPreList.set("hiptmair: pre or post",
-                            smootherPreList.get<std::string>("hiptmair: pre or post", "pre"));
-        hiptmairPreList.set("hiptmair: zero starting solution",
-                            smootherPreList.get<bool>("hiptmair: zero starting solution", true));
-
-        if (smootherList_.isSublist("smoother: post params"))
-          smootherPostList = smootherList_.sublist("smoother: post params");
-        else if (smootherList_.isSublist("smoother: params"))
-          smootherPostList = smootherList_.sublist("smoother: params");
-        hiptmairPostList.set("hiptmair: smoother type 1",
-                             smootherPostList.get<std::string>("hiptmair: smoother type 1", "CHEBYSHEV"));
-        hiptmairPostList.set("hiptmair: smoother type 2",
-                             smootherPostList.get<std::string>("hiptmair: smoother type 2", "CHEBYSHEV"));
-        if(smootherPostList.isSublist("hiptmair: smoother list 1"))
-          hiptmairPostList.set("hiptmair: smoother list 1", smootherPostList.sublist("hiptmair: smoother list 1"));
-        if(smootherPostList.isSublist("hiptmair: smoother list 2"))
-          hiptmairPostList.set("hiptmair: smoother list 2", smootherPostList.sublist("hiptmair: smoother list 2"));
-        hiptmairPostList.set("hiptmair: pre or post",
-                             smootherPostList.get<std::string>("hiptmair: pre or post", "post"));
-        hiptmairPostList.set("hiptmair: zero starting solution",
-                             smootherPostList.get<bool>("hiptmair: zero starting solution", false));
-
-        typedef Tpetra::RowMatrix<SC, LO, GO, NO> TROW;
-        RCP<const TROW > EdgeMatrix = Utilities::Op2NonConstTpetraRow(SM_Matrix_);
-        RCP<const TROW > NodeMatrix = Utilities::Op2NonConstTpetraRow(A22_);
-        RCP<const TROW > PMatrix = Utilities::Op2NonConstTpetraRow(D0_Matrix_);
-
-        hiptmairPreSmoother_  = rcp( new Ifpack2::Hiptmair<TROW>(EdgeMatrix,NodeMatrix,PMatrix) );
-        hiptmairPreSmoother_ -> setParameters(hiptmairPreList);
-        hiptmairPreSmoother_ -> initialize();
-        hiptmairPreSmoother_ -> compute();
-        hiptmairPostSmoother_ = rcp( new Ifpack2::Hiptmair<TROW>(EdgeMatrix,NodeMatrix,PMatrix) );
-        hiptmairPostSmoother_ -> setParameters(hiptmairPostList);
-        hiptmairPostSmoother_ -> initialize();
-        hiptmairPostSmoother_ -> compute();
-        useHiptmairSmoothing_ = true;
-#else
-        throw(Xpetra::Exceptions::RuntimeError("MueLu must be compiled with Ifpack2 for Hiptmair smoothing."));
-#endif  // defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
-      } else {
-        if (parameterList_.isType<std::string>("smoother: pre type") && parameterList_.isType<std::string>("smoother: post type")) {
-          std::string preSmootherType = parameterList_.get<std::string>("smoother: pre type");
-          std::string postSmootherType = parameterList_.get<std::string>("smoother: post type");
-
-          ParameterList preSmootherList, postSmootherList;
-          if (parameterList_.isSublist("smoother: pre params"))
-            preSmootherList = parameterList_.sublist("smoother: pre params");
-          if (parameterList_.isSublist("smoother: post params"))
-            postSmootherList = parameterList_.sublist("smoother: post params");
-
-          Level level;
-          RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
-          level.SetFactoryManager(factoryHandler);
-          level.SetLevelID(0);
-          level.setObjectLabel("RefMaxwell (1,1)");
-          level.Set("A",SM_Matrix_);
-          level.setlib(SM_Matrix_->getDomainMap()->lib());
-
-          RCP<SmootherPrototype> preSmootherPrototype = rcp(new TrilinosSmoother(preSmootherType, preSmootherList));
-          RCP<SmootherFactory> preSmootherFact = rcp(new SmootherFactory(preSmootherPrototype));
-
-          RCP<SmootherPrototype> postSmootherPrototype = rcp(new TrilinosSmoother(postSmootherType, postSmootherList));
-          RCP<SmootherFactory> postSmootherFact = rcp(new SmootherFactory(postSmootherPrototype));
-
-          level.Request("PreSmoother",preSmootherFact.get());
-          preSmootherFact->Build(level);
-          PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",preSmootherFact.get());
-
-          level.Request("PostSmoother",postSmootherFact.get());
-          postSmootherFact->Build(level);
-          PostSmoother_ = level.Get<RCP<SmootherBase> >("PostSmoother",postSmootherFact.get());
-        } else {
-          std::string smootherType = parameterList_.get<std::string>("smoother: type", "CHEBYSHEV");
-          Level level;
-          RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
-          level.SetFactoryManager(factoryHandler);
-          level.SetLevelID(0);
-          level.setObjectLabel("RefMaxwell (1,1)");
-          level.Set("A",SM_Matrix_);
-          level.setlib(SM_Matrix_->getDomainMap()->lib());
-          RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(smootherType, smootherList_));
-          RCP<SmootherFactory> SmootherFact = rcp(new SmootherFactory(smootherPrototype));
-          level.Request("PreSmoother",SmootherFact.get());
-          SmootherFact->Build(level);
-          PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",SmootherFact.get());
-          PostSmoother_ = PreSmoother_;
-        }
-        useHiptmairSmoothing_ = false;
-      }
-    }
+    setFineLevelSmoother();
 
     if (!reuse) {
       if (!ImporterH_.is_null()) {
@@ -1347,6 +1295,120 @@ namespace MueLu {
 #ifdef HAVE_MUELU_CUDA
     if (parameterList_.get<bool>("refmaxwell: cuda profile setup", false)) cudaProfilerStop();
 #endif
+  }
+
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setFineLevelSmoother() {
+    if (parameterList_.isType<std::string>("smoother: type") &&
+        parameterList_.get<std::string>("smoother: type") == "hiptmair" &&
+        SM_Matrix_->getDomainMap()->lib() == Xpetra::UseTpetra &&
+        A22_->getDomainMap()->lib() == Xpetra::UseTpetra &&
+        D0_Matrix_->getDomainMap()->lib() == Xpetra::UseTpetra) {
+#if defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
+      ParameterList hiptmairPreList, hiptmairPostList, smootherPreList, smootherPostList;
+
+      if (smootherList_.isSublist("smoother: pre params"))
+        smootherPreList = smootherList_.sublist("smoother: pre params");
+      else if (smootherList_.isSublist("smoother: params"))
+        smootherPreList = smootherList_.sublist("smoother: params");
+      hiptmairPreList.set("hiptmair: smoother type 1",
+                          smootherPreList.get<std::string>("hiptmair: smoother type 1", "CHEBYSHEV"));
+      hiptmairPreList.set("hiptmair: smoother type 2",
+                          smootherPreList.get<std::string>("hiptmair: smoother type 2", "CHEBYSHEV"));
+      if(smootherPreList.isSublist("hiptmair: smoother list 1"))
+        hiptmairPreList.set("hiptmair: smoother list 1", smootherPreList.sublist("hiptmair: smoother list 1"));
+      if(smootherPreList.isSublist("hiptmair: smoother list 2"))
+        hiptmairPreList.set("hiptmair: smoother list 2", smootherPreList.sublist("hiptmair: smoother list 2"));
+      hiptmairPreList.set("hiptmair: pre or post",
+                          smootherPreList.get<std::string>("hiptmair: pre or post", "pre"));
+      hiptmairPreList.set("hiptmair: zero starting solution",
+                          smootherPreList.get<bool>("hiptmair: zero starting solution", true));
+
+      if (smootherList_.isSublist("smoother: post params"))
+        smootherPostList = smootherList_.sublist("smoother: post params");
+      else if (smootherList_.isSublist("smoother: params"))
+        smootherPostList = smootherList_.sublist("smoother: params");
+      hiptmairPostList.set("hiptmair: smoother type 1",
+                           smootherPostList.get<std::string>("hiptmair: smoother type 1", "CHEBYSHEV"));
+      hiptmairPostList.set("hiptmair: smoother type 2",
+                           smootherPostList.get<std::string>("hiptmair: smoother type 2", "CHEBYSHEV"));
+      if(smootherPostList.isSublist("hiptmair: smoother list 1"))
+        hiptmairPostList.set("hiptmair: smoother list 1", smootherPostList.sublist("hiptmair: smoother list 1"));
+      if(smootherPostList.isSublist("hiptmair: smoother list 2"))
+        hiptmairPostList.set("hiptmair: smoother list 2", smootherPostList.sublist("hiptmair: smoother list 2"));
+      hiptmairPostList.set("hiptmair: pre or post",
+                           smootherPostList.get<std::string>("hiptmair: pre or post", "post"));
+      hiptmairPostList.set("hiptmair: zero starting solution",
+                           smootherPostList.get<bool>("hiptmair: zero starting solution", false));
+
+      typedef Tpetra::RowMatrix<SC, LO, GO, NO> TROW;
+      RCP<const TROW > EdgeMatrix = Utilities::Op2NonConstTpetraRow(SM_Matrix_);
+      RCP<const TROW > NodeMatrix = Utilities::Op2NonConstTpetraRow(A22_);
+      RCP<const TROW > PMatrix = Utilities::Op2NonConstTpetraRow(D0_Matrix_);
+
+      hiptmairPreSmoother_  = rcp( new Ifpack2::Hiptmair<TROW>(EdgeMatrix,NodeMatrix,PMatrix) );
+      hiptmairPreSmoother_ -> setParameters(hiptmairPreList);
+      hiptmairPreSmoother_ -> initialize();
+      hiptmairPreSmoother_ -> compute();
+      hiptmairPostSmoother_ = rcp( new Ifpack2::Hiptmair<TROW>(EdgeMatrix,NodeMatrix,PMatrix) );
+      hiptmairPostSmoother_ -> setParameters(hiptmairPostList);
+      hiptmairPostSmoother_ -> initialize();
+      hiptmairPostSmoother_ -> compute();
+      useHiptmairSmoothing_ = true;
+#else
+      throw(Xpetra::Exceptions::RuntimeError("MueLu must be compiled with Ifpack2 for Hiptmair smoothing."));
+#endif  // defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
+    } else {
+      if (parameterList_.isType<std::string>("smoother: pre type") && parameterList_.isType<std::string>("smoother: post type")) {
+        std::string preSmootherType = parameterList_.get<std::string>("smoother: pre type");
+        std::string postSmootherType = parameterList_.get<std::string>("smoother: post type");
+
+        ParameterList preSmootherList, postSmootherList;
+        if (parameterList_.isSublist("smoother: pre params"))
+          preSmootherList = parameterList_.sublist("smoother: pre params");
+        if (parameterList_.isSublist("smoother: post params"))
+          postSmootherList = parameterList_.sublist("smoother: post params");
+
+        Level level;
+        RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+        level.SetFactoryManager(factoryHandler);
+        level.SetLevelID(0);
+        level.setObjectLabel("RefMaxwell (1,1)");
+        level.Set("A",SM_Matrix_);
+        level.setlib(SM_Matrix_->getDomainMap()->lib());
+
+        RCP<SmootherPrototype> preSmootherPrototype = rcp(new TrilinosSmoother(preSmootherType, preSmootherList));
+        RCP<SmootherFactory> preSmootherFact = rcp(new SmootherFactory(preSmootherPrototype));
+
+        RCP<SmootherPrototype> postSmootherPrototype = rcp(new TrilinosSmoother(postSmootherType, postSmootherList));
+        RCP<SmootherFactory> postSmootherFact = rcp(new SmootherFactory(postSmootherPrototype));
+
+        level.Request("PreSmoother",preSmootherFact.get());
+        preSmootherFact->Build(level);
+        PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",preSmootherFact.get());
+
+        level.Request("PostSmoother",postSmootherFact.get());
+        postSmootherFact->Build(level);
+        PostSmoother_ = level.Get<RCP<SmootherBase> >("PostSmoother",postSmootherFact.get());
+      } else {
+        std::string smootherType = parameterList_.get<std::string>("smoother: type", "CHEBYSHEV");
+        Level level;
+        RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+        level.SetFactoryManager(factoryHandler);
+        level.SetLevelID(0);
+        level.setObjectLabel("RefMaxwell (1,1)");
+        level.Set("A",SM_Matrix_);
+        level.setlib(SM_Matrix_->getDomainMap()->lib());
+        RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(smootherType, smootherList_));
+        RCP<SmootherFactory> SmootherFact = rcp(new SmootherFactory(smootherPrototype));
+        level.Request("PreSmoother",SmootherFact.get());
+        SmootherFact->Build(level);
+        PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",SmootherFact.get());
+        PostSmoother_ = PreSmoother_;
+      }
+      useHiptmairSmoothing_ = false;
+    }
   }
 
 
@@ -2378,7 +2440,18 @@ namespace MueLu {
         // Replace maps with maps with a subcommunicator
         P11res_->replaceMap(AH_->getRangeMap());
         P11x_  ->replaceMap(AH_->getDomainMap());
-        HierarchyH_->Iterate(*P11res_, *P11x_, numItersH_, true);
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
+        if (!thyraPrecH_.is_null()) {
+          Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+          RCP<Thyra::MultiVectorBase<Scalar> >       thyraP11x   = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(P11x_));
+          RCP<const Thyra::MultiVectorBase<Scalar> > thyraP11res = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(P11res_);
+          thyraPrecH_->getUnspecifiedPrecOp()->apply(Thyra::NOTRANS, *thyraP11res, thyraP11x.ptr(), one, zero);
+          RCP<MultiVector> thyXpP11x = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(thyraP11x, P11x_->getMap()->getComm());
+          *P11x_ = *thyXpP11x;
+        }
+        else
+#endif
+           HierarchyH_->Iterate(*P11res_, *P11x_, numItersH_, true);
         P11x_  ->replaceMap(origXMap);
         P11res_->replaceMap(origRhsMap);
       }
@@ -2393,7 +2466,18 @@ namespace MueLu {
         // Replace maps with maps with a subcommunicator
         D0res_->replaceMap(A22_->getRangeMap());
         D0x_  ->replaceMap(A22_->getDomainMap());
-        Hierarchy22_->Iterate(*D0res_, *D0x_, numIters22_, true);
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
+        if (!thyraPrec22_.is_null()) {
+          Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+          RCP<Thyra::MultiVectorBase<Scalar> >       thyraD0x   = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(D0x_));
+          RCP<const Thyra::MultiVectorBase<Scalar> > thyraD0res = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(D0res_);
+          thyraPrec22_->getUnspecifiedPrecOp()->apply(Thyra::NOTRANS, *thyraD0res, thyraD0x.ptr(), one, zero);
+          RCP<MultiVector> thyXpD0x = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(thyraD0x, D0x_->getMap()->getComm());
+          *D0x_ = *thyXpD0x;
+        }
+        else
+#endif
+          Hierarchy22_->Iterate(*D0res_, *D0x_, numIters22_, true);
         D0x_  ->replaceMap(origXMap);
         D0res_->replaceMap(origRhsMap);
       }
@@ -2436,31 +2520,6 @@ namespace MueLu {
 
   }
 
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse121(const MultiVector& RHS, MultiVector& X) const {
-
-    // precondition (1,1)-block
-    solveH(RHS,X);
-    // precondition (2,2)-block
-    solve22(RHS,X);
-    // precondition (1,1)-block
-    solveH(RHS,X);
-
-  }
-
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse212(const MultiVector& RHS, MultiVector& X) const {
-
-    // precondition (2,2)-block
-    solve22(RHS,X);
-    // precondition (1,1)-block
-    solveH(RHS,X);
-    // precondition (2,2)-block
-    solve22(RHS,X);
-
-  }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::solveH(const MultiVector& RHS, MultiVector& X) const {
@@ -2565,7 +2624,7 @@ namespace MueLu {
     RCP<Teuchos::TimeMonitor> tm = getTimer("MueLu RefMaxwell: solve");
 
     // make sure that we have enough temporary memory
-    if (X.getNumVectors() != P11res_->getNumVectors())
+    if (!allBoundary_ && X.getNumVectors() != P11res_->getNumVectors())
       allocateMemory(X.getNumVectors());
 
     { // apply pre-smoothing
@@ -2586,15 +2645,52 @@ namespace MueLu {
     // do solve for the 2x2 block system
     if(mode_=="additive")
       applyInverseAdditive(RHS,X);
-    else if(mode_=="121")
-      applyInverse121(RHS,X);
-    else if(mode_=="212")
-      applyInverse212(RHS,X);
-    else if(mode_=="1")
+    else if(mode_=="121") {
+      solveH(RHS,X);
+      solve22(RHS,X);
+      solveH(RHS,X);
+    } else if(mode_=="212") {
+      solve22(RHS,X);
+      solveH(RHS,X);
+      solve22(RHS,X);
+    } else if(mode_=="1")
       solveH(RHS,X);
     else if(mode_=="2")
       solve22(RHS,X);
-    else if(mode_=="none") {
+    else if(mode_=="7") {
+      solveH(RHS,X);
+      { // apply pre-smoothing
+
+        RCP<Teuchos::TimeMonitor> tmSm = getTimer("MueLu RefMaxwell: smoothing");
+
+#if defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
+        if (useHiptmairSmoothing_) {
+          Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = Utilities::MV2NonConstTpetraMV(X);
+          Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tRHS = Utilities::MV2TpetraMV(RHS);
+          hiptmairPreSmoother_->apply(tRHS, tX);
+        }
+        else
+#endif
+          PreSmoother_->Apply(X, RHS, false);
+      }
+      solve22(RHS,X);
+      { // apply post-smoothing
+
+        RCP<Teuchos::TimeMonitor> tmSm = getTimer("MueLu RefMaxwell: smoothing");
+
+#if defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
+        if (useHiptmairSmoothing_)
+          {
+            Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = Utilities::MV2NonConstTpetraMV(X);
+            Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tRHS = Utilities::MV2TpetraMV(RHS);
+            hiptmairPostSmoother_->apply(tRHS, tX);
+          }
+        else
+#endif
+          PostSmoother_->Apply(X, RHS, false);
+      }
+      solveH(RHS,X);
+    } else if(mode_=="none") {
       // do nothing
     }
     else
@@ -2862,6 +2958,48 @@ namespace MueLu {
 
 
   }
+
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    RCP<Thyra::PreconditionerBase<Scalar> > StratimikosWrapper<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
+                                                                                                                                       RCP<ParameterList> params) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+                               "Stratimikos only supports Scalar=double");
+  }
+
+
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+    RCP<Thyra::PreconditionerBase<double> > StratimikosWrapper<double,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(RCP<Xpetra::Matrix<double,LocalOrdinal,GlobalOrdinal,Node> > A,
+                                                                                                                                       RCP<ParameterList> params) {
+
+    typedef double Scalar;
+
+    // Build Thyra linear algebra objects
+    RCP<const Thyra::LinearOpBase<Scalar> > thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(A)->getCrsMatrix());
+
+    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+    Stratimikos::enableMueLu<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);
+#ifdef HAVE_MUELU_IFPACK2
+    // Register Ifpack2 as a Stratimikos preconditioner strategy.
+    typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
+    typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
+    linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
+#endif
+
+    linearSolverBuilder.setParameterList(params);
+
+    // Build a new "solver factory" according to the previously specified parameter list.
+    // RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
+
+    auto precFactory = Thyra::createPreconditioningStrategy(linearSolverBuilder);
+    auto prec = precFactory->createPrec();
+
+    precFactory->initializePrec(Thyra::defaultLinearOpSource(thyraA), prec.get(), Thyra::SUPPORT_SOLVE_UNSPECIFIED);
+
+    return prec;
+  }
+#endif
 
 } // namespace
 

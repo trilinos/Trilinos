@@ -119,6 +119,142 @@ namespace panzer {
     TEST_EQUALITY(point_values2.jac_det.fieldTag().name(),"prefix_jac_det");
   }
 
+  TEUCHOS_UNIT_TEST(point_values2, md_field_evaluate_double)
+  {
+    using ScalarType = double;
+    using ArrayType = PHX::MDField<ScalarType>;
+    using ViewFactory = PHX::KokkosViewFactory<ScalarType,typename PHX::DevLayout<ScalarType>::type,PHX::Device>;
+    using size_type = PHX::MDField<double>::size_type;
+
+    Teuchos::RCP<shards::CellTopology> topo =
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
+    const int num_cells = 4;
+    const int base_cell_dimension = 2;
+    const panzer::CellData cell_data(num_cells,topo);
+    int num_points = 3;
+
+    RCP<PointRule> point_rule = rcp(new PointRule("RandomPoints",num_points, cell_data));
+
+    TEST_EQUALITY(point_rule->num_points,num_points);
+
+    const size_type derivative_dim = 4;
+    const std::vector<PHX::index_size_type> ddims(1,derivative_dim);
+    panzer::MDFieldArrayFactory af("prefix_",ddims);
+
+    panzer::PointValues2<ScalarType> point_values2("prefix_",ddims);
+    point_values2.setupArrays(point_rule);
+
+    // Set up node coordinates.  Here we assume the following
+    // ordering.  This needs to be consistent with shards topology,
+    // otherwise we will get negative determinates
+
+    // 3(0,1)---2(1,1)
+    //   |    0  |
+    //   |       |
+    // 0(0,0)---1(1,0)
+
+    const int num_vertices = point_rule->topology->getNodeCount();
+    ArrayType node_coordinates = af.buildArray<ScalarType,Cell,NODE,Dim>("node_coordinates",num_cells, num_vertices, base_cell_dimension);
+    node_coordinates.setFieldData(ViewFactory::buildView(node_coordinates.fieldTag(),ddims));
+    {
+      const size_type x = 0;
+      const size_type y = 1;
+      for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
+        int xleft = cell % 2;
+        int yleft = int(cell/2);
+
+        node_coordinates(cell,0,x) = xleft*0.5;
+        node_coordinates(cell,0,y) = yleft*0.5;
+
+        node_coordinates(cell,1,x) = (xleft+1)*0.5;
+        node_coordinates(cell,1,y) = yleft*0.5;
+
+        node_coordinates(cell,2,x) = (xleft+1)*0.5;
+        node_coordinates(cell,2,y) = (yleft+1)*0.5;
+
+        node_coordinates(cell,3,x) = xleft*0.5;
+        node_coordinates(cell,3,y) = (yleft+1)*0.5;
+
+        out << "Cell " << cell << " = ";
+        for(int i=0;i<4;i++)
+          out << "(" << node_coordinates(cell,i,x) << ", "
+              << node_coordinates(cell,i,y) << ") ";
+        out << std::endl;
+      }
+    }
+
+    // Build the evaluation points
+
+    ArrayType point_coordinates =  af.buildArray<ScalarType,IP,Dim>("points",num_points, base_cell_dimension);
+    point_coordinates.setFieldData(ViewFactory::buildView(point_coordinates.fieldTag(),ddims));
+    point_coordinates(0,0) =  0.0; point_coordinates(0,1) = 0.0; // mid point
+    point_coordinates(1,0) =  0.5; point_coordinates(1,1) = 0.5; // mid point of upper left quadrant
+    point_coordinates(2,0) = -0.5; point_coordinates(2,1) = 0.0; // mid point of line from center to left side
+
+    point_values2.getRefCoordinates().setFieldData(ViewFactory::buildView(point_values2.getRefCoordinates().fieldTag(),ddims));
+    point_values2.getVertexCoordinates().setFieldData(ViewFactory::buildView(point_values2.getVertexCoordinates().fieldTag(),ddims));
+
+    point_values2.point_coords.setFieldData(ViewFactory::buildView(point_values2.point_coords.fieldTag(),ddims));
+    point_values2.jac.setFieldData(ViewFactory::buildView(point_values2.jac.fieldTag(),ddims));
+    point_values2.jac_inv.setFieldData(ViewFactory::buildView(point_values2.jac_inv.fieldTag(),ddims));
+    point_values2.jac_det.setFieldData(ViewFactory::buildView(point_values2.jac_det.fieldTag(),ddims));
+
+    point_values2.evaluateValues(node_coordinates,point_coordinates);
+
+    // check the reference values (ensure copying)
+    for(int p=0;p<num_points;p++)
+       for(size_type d=0;d<static_cast<size_type>(base_cell_dimension);d++)
+          TEST_EQUALITY(point_values2.getRefCoordinates()(p,d),point_coordinates(p,d));
+
+    // check the shifted values (ensure physical mapping)
+    for(int c=0;c<num_cells;c++) {
+       double dx = 0.5;
+       double dy = 0.5;
+       for(int p=0;p<num_points;p++) {
+          double x = dx*(point_coordinates(p,0)+1.0)/2.0 + node_coordinates(c,0,0);
+          double y = dy*(point_coordinates(p,1)+1.0)/2.0 + node_coordinates(c,0,1);
+          TEST_FLOATING_EQUALITY(point_values2.point_coords(c,p,0),x,1e-10);
+          TEST_FLOATING_EQUALITY(point_values2.point_coords(c,p,1),y,1e-10);
+       }
+    }
+
+    // check the jacobian
+    for(int c=0;c<num_cells;c++) {
+       double dx = 0.5;
+       double dy = 0.5;
+       for(int p=0;p<num_points;p++) {
+          TEST_FLOATING_EQUALITY(point_values2.jac(c,p,0,0),dx/2.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_values2.jac(c,p,0,1),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_values2.jac(c,p,1,0),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_values2.jac(c,p,1,1),dy/2.0,1e-10);
+       }
+    }
+    for(int c=0;c<num_cells;c++) {
+       double dx = 0.5;
+       double dy = 0.5;
+       for(int p=0;p<num_points;p++) {
+          TEST_FLOATING_EQUALITY(point_values2.jac_det(c,p),dy*dx/4.0,1e-10);
+       }
+    }
+
+    // check the inverse jacobian
+    for(int c=0;c<num_cells;c++) {
+       double dx = 0.5;
+       double dy = 0.5;
+       for(int p=0;p<num_points;p++) {
+          TEST_FLOATING_EQUALITY(point_values2.jac_inv(c,p,0,0),2.0/dx,1e-10);
+          TEST_FLOATING_EQUALITY(point_values2.jac_inv(c,p,0,1),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_values2.jac_inv(c,p,1,0),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_values2.jac_inv(c,p,1,1),2.0/dy,1e-10);
+       }
+    }
+  }
+
+  // Disabled FAD support due to long build times on cuda (in debug
+  // mode it takes multiple hours on some platforms). If we need
+  // sensitivities wrt coordinates, we can reenable.
+  /*
   TEUCHOS_UNIT_TEST(point_values2, md_field_evaluate)
   {
     typedef panzer::Traits::FadType ScalarType;
@@ -251,4 +387,6 @@ namespace panzer {
        }
     }
   }
+  */
+
 }

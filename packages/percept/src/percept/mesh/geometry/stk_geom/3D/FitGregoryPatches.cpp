@@ -962,7 +962,7 @@ namespace percept {
               {
                 if (m_eMesh.shared(nodes[ii]))
                   {
-                    m_eMesh.get_bulk_data()->comm_procs(m_eMesh.key(nodes[ii]), procs);
+                    m_eMesh.get_bulk_data()->comm_procs(nodes[ii], procs);
                     for (unsigned jj=0; jj < procs.size(); ++jj)
                       {
                         commAll.send_buffer( procs[jj] ).pack< stk::mesh::EntityId > (ID(nodes[ii]));

@@ -32,19 +32,19 @@ namespace Ioss {
     enum MinMax { DO_MAX, DO_MIN, DO_SUM };
 
     /*!
+     * See if any external properties specified via the
+     * IOSS_PROPERTIES environment variable.  If any found, add to
+     * `properties`.
+     */
+    void add_environment_properties(Ioss::PropertyManager &properties);
+
+    /*!
      * Returns 'true' if 'name' is defined in the environment.
      * The value of the environment variable is returned in 'value'.
      * getenv system call is only done on processor 0.
      * If '!sync_parallel', then don't push to other processors.
      */
     bool get_environment(const std::string &name, std::string &value, bool sync_parallel) const;
-
-    /*!
-     * See if any external properties specified via the
-     * IOSS_PROPERTIES environment variable.  If any found, add to
-     * `properties`.
-     */
-    void add_environment_properties(Ioss::PropertyManager &properties);
 
     /*!
      * Returns 'true' if 'name' is defined in the environment.

@@ -243,7 +243,7 @@ ReferenceMeshSmootherConjugateGradientImpl(PerceptMesh *eMesh,
         return;
       }
 
-    double coord_current[spatialDim];
+    double coord_current[3];
     get_field<MeshType>(coord_current, spatialDim, m_eMesh, coord_field_current, node);
 
     double coord_project[3] = {0,0,0};
@@ -631,7 +631,7 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
     void operator()(int64_t& index)
     {
       typename MeshType::MTNode node = nodes[index];
-      double cg_normal[m_eMesh->get_spatial_dim()];
+      double cg_normal[3];
       get_field<MeshType>(cg_normal, m_eMesh->get_spatial_dim(), m_eMesh, cg_normal_field, node);
 
       std::pair<bool,int> fixed = m_rms->get_fixed_flag(node);
@@ -877,7 +877,7 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
       if (fixed || isGhostNode)
         return;
 
-      double cg_s[spatialDim];
+      double cg_s[3];
       get_field<MeshType>(cg_s, spatialDim, m_eMesh, cg_s_field, node);
       Double sn = 0.0;
       for (int idim=0; idim < spatialDim; idim++)
@@ -1232,7 +1232,7 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
 
                   VERIFY_OP_ON(Base::spatialDim, ==, spatialDim, "bad spatialDim");
                   VERIFY_OP_ON(Base::spatialDim, >=, 2, "bad spatialDim");
-                  double cg_g[Base::spatialDim];
+                  double cg_g[3];
                   get_field<MeshType>(cg_g, spatialDim, m_eMesh, cg_g_field, node);
 
                   for (int jdim=0; jdim < spatialDim; jdim++)
@@ -1268,9 +1268,9 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
               edge_length_ave = cg_edge_length[0];
 
               Base::m_rms->m_metric->set_node(node);
-              double coord_current[spatialDim];
+              double coord_current[3];
               get_field<MeshType>(coord_current, spatialDim, Base::m_rms->m_eMesh, coord_field_current, node);
-              double cg_g[spatialDim];
+              double cg_g[3];
               get_field<MeshType>(cg_g, spatialDim, Base::m_rms->m_eMesh, cg_g_field, node);
 
               Double eps1 = sqrt_eps*edge_length_ave;
@@ -1438,7 +1438,7 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
             {
               if (fixed.second == MS_SURFACE)
                 {
-                  double cg_g[spatialDim];
+                  double cg_g[3];
                   get_field<MeshType>(cg_g, spatialDim, m_eMesh, cg_g_field, node);
                   Base::m_rms->project_delta_to_tangent_plane(node, cg_g);
                   set_field<MeshType>(cg_g, spatialDim, m_eMesh, cg_g_field, node);

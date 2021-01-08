@@ -759,7 +759,11 @@ Superlu<Matrix,Vector>::getValidParameters_impl() const
             "Use weighted bipartite matching algorithm",
             "Use the ordering given in perm_r input"),
             tuple<SLU::rowperm_t>(SLU::NOROWPERM,
+#if SUPERLU_MAJOR_VERSION > 5 || (SUPERLU_MAJOR_VERSION == 5 && SUPERLU_MINOR_VERSION > 2) || (SUPERLU_MAJOR_VERSION == 5 && SUPERLU_MINOR_VERSION == 2 && SUPERLU_PATCH_VERSION >= 2)
+            SLU::LargeDiag_MC64,
+#else
             SLU::LargeDiag,
+#endif
             SLU::MY_PERMR),
             pl.getRawPtr());
 

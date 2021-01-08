@@ -142,6 +142,12 @@ private:
   //! Did the user request mesh scaling
   bool userMeshScaling_;
 
+  //! Did the user request to keep the Percept data
+  bool keepPerceptData_;
+
+  //! Did the user request to keep the Percept parent element data
+  bool keepPerceptParentElements_;
+
   //! If requested, scale the input mesh by this factor
   double meshScaleFactor_;
 

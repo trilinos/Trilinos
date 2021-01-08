@@ -7,6 +7,6 @@
 #ifndef IOSS_VERSION_H
 #define IOSS_VERSION_H
 namespace Ioss {
-  inline const char *Version() { return "2020-04-27"; }
+  inline const char *Version() { return "2020-10-19"; }
 } // namespace Ioss
 #endif

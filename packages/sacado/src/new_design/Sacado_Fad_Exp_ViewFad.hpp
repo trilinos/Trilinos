@@ -63,40 +63,8 @@ namespace Sacado {
 
       // Add overload of dereference operator
       SACADO_INLINE_FUNCTION
-      view_fad_type& operator*() { *this; }
+      view_fad_type& operator*() { return *this; }
     };
-
-#if defined(HAVE_SACADO_KOKKOSCORE)
-    // Overload of Kokkos::atomic_add for ViewFad types.
-    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
-    SACADO_INLINE_FUNCTION
-    void atomic_add(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& xx) {
-      using Kokkos::atomic_add;
-
-      const typename Expr<T>::derived_type& x = xx.derived();
-
-      const int xsz = x.size();
-      const int sz = dst->size();
-
-      // We currently cannot handle resizing since that would need to be
-      // done atomically.
-      if (xsz > sz)
-        Kokkos::abort(
-          "Sacado error: Fad resize within atomic_add() not supported!");
-
-      if (xsz != sz && sz > 0 && xsz > 0)
-        Kokkos::abort(
-          "Sacado error: Fad assignment of incompatiable sizes!");
-
-
-      if (sz > 0 && xsz > 0) {
-        SACADO_FAD_DERIV_LOOP(i,sz)
-          atomic_add(&(dst->fastAccessDx(i)), x.fastAccessDx(i));
-      }
-      SACADO_FAD_THREAD_SINGLE
-        atomic_add(&(dst->val()), x.val());
-    }
-#endif
 
   } // namespace Exp
   } // namespace Fad

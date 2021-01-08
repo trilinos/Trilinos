@@ -122,7 +122,10 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetPrecParameters(const Teuchos::ParameterList& list) const {
+    std::string prefix = this->ShortClassName() + ": SetPrecParameters";
+    RCP<TimeMonitor> tM = rcp(new TimeMonitor(*this, prefix, Timings0));
     ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+
     paramList.setParameters(list);
 
     RCP<ParameterList> precList = this->RemoveFactoriesFromList(this->GetParameterList());
@@ -641,7 +644,7 @@ namespace MueLu {
         doScale = paramList.get<bool>("chebyshev: use rowsumabs diagonal scaling");
         paramList.remove("chebyshev: use rowsumabs diagonal scaling");
         if (doScale) {
-          RCP<Vector> lumpedDiagonal = Utilities::GetLumpedMatrixDiagonal(currentLevel.Get<RCP<Matrix> >("A"),true);
+          RCP<Vector> lumpedDiagonal = Utilities::GetLumpedMatrixDiagonal(*(currentLevel.Get<RCP<Matrix> >("A")),true);
           const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(*lumpedDiagonal);
           paramList.set("chebyshev: operator inv diagonal",tmpVec.getTpetra_Vector());
         }
@@ -727,19 +730,46 @@ namespace MueLu {
     // option is supported by current ifpack2 preconditioner
     Teuchos::ParameterList paramList;
     bool supportInitialGuess = false;
+    const Teuchos::ParameterList params = this->GetParameterList();
     if (type_ == "CHEBYSHEV") {
-      paramList.set("chebyshev: zero starting solution", InitialGuessIsZero);
-      SetPrecParameters(paramList);
+      const std::string paramName = "chebyshev: zero starting solution";
+      if (!params.isType<bool>(paramName) ||
+          (params.get<bool>(paramName) != InitialGuessIsZero)) {
+        paramList.set(paramName, InitialGuessIsZero);
+        SetPrecParameters(paramList);
+      }
       supportInitialGuess = true;
 
-    } else if (type_ == "RELAXATION") {
-      paramList.set("relaxation: zero starting solution", InitialGuessIsZero);
-      SetPrecParameters(paramList);
+    } else if (type_ == "RELAXATION"       ||
+               type_ == "BLOCK_RELAXATION" ||
+               type_ == "BLOCK RELAXATION" ||
+               type_ == "BLOCKRELAXATION"  ||
+               // Banded
+               type_ == "BANDED_RELAXATION" ||
+               type_ == "BANDED RELAXATION" ||
+               type_ == "BANDEDRELAXATION"  ||
+               // Tridiagonal
+               type_ == "TRIDI_RELAXATION"       ||
+               type_ == "TRIDI RELAXATION"       ||
+               type_ == "TRIDIRELAXATION"        ||
+               type_ == "TRIDIAGONAL_RELAXATION" ||
+               type_ == "TRIDIAGONAL RELAXATION" ||
+               type_ == "TRIDIAGONALRELAXATION") {
+      const std::string paramName = "relaxation: zero starting solution";
+      if (!params.isType<bool>(paramName) ||
+          (params.get<bool>(paramName) != InitialGuessIsZero)) {
+        paramList.set(paramName, InitialGuessIsZero);
+        SetPrecParameters(paramList);
+      }
       supportInitialGuess = true;
 
     } else if (type_ == "KRYLOV") {
-      paramList.set("krylov: zero starting solution", InitialGuessIsZero);
-      SetPrecParameters(paramList);
+      const std::string paramName = "krylov: zero starting solution";
+      if (!params.isType<bool>(paramName) ||
+          (params.get<bool>(paramName) != InitialGuessIsZero)) {
+        paramList.set(paramName, InitialGuessIsZero);
+        SetPrecParameters(paramList);
+      }
       supportInitialGuess = true;
 
     } else if (type_ == "SCHWARZ") {
@@ -765,7 +795,14 @@ namespace MueLu {
       prec_->apply(tpB, tpX);
     } else {
       typedef Teuchos::ScalarTraits<Scalar> TST;
-      RCP<MultiVector> Residual   = Utilities::Residual(*A_, X, B);
+
+      RCP<MultiVector> Residual;
+      {
+        std::string prefix = this->ShortClassName() + ": Apply: ";
+        RCP<TimeMonitor> tM = rcp(new TimeMonitor(*this, prefix + "residual calculation", Timings0));
+        Residual = Utilities::Residual(*A_, X, B);
+      }
+
       RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
 
       Tpetra::MultiVector<SC,LO,GO,NO>&       tpX = Utilities::MV2NonConstTpetraMV(*Correction);

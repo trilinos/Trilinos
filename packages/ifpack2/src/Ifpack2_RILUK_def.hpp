@@ -472,6 +472,7 @@ void RILUK<MatrixType>::initialize ()
      "range Maps, if appropriate) before calling this method.");
   
   Teuchos::Time timer ("RILUK::initialize");
+  double startTime = timer.wallTime();
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
 
@@ -560,7 +561,7 @@ void RILUK<MatrixType>::initialize ()
 
   isInitialized_ = true;
   ++numInitialize_;
-  initializeTime_ += timer.totalElapsedTime ();
+  initializeTime_ += (timer.wallTime() - startTime);
 }
 
 template<class MatrixType>
@@ -747,6 +748,7 @@ void RILUK<MatrixType>::compute ()
 
   // Start timing
   Teuchos::TimeMonitor timeMon (timer);
+  double startTime = timer.wallTime();
 
   isComputed_ = false;
 
@@ -937,7 +939,7 @@ void RILUK<MatrixType>::compute ()
 
   isComputed_ = true;
   ++numCompute_;
-  computeTime_ += timer.totalElapsedTime ();
+  computeTime_ += (timer.wallTime() - startTime);
 }
 
 
@@ -992,6 +994,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   const scalar_type zero = STS::zero ();
 
   Teuchos::Time timer ("RILUK::apply");
+  double startTime = timer.wallTime();
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
     if (alpha == one && beta == zero) {
@@ -1057,7 +1060,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 #endif // HAVE_IFPACK2_DEBUG
 
   ++numApply_;
-  applyTime_ = timer.totalElapsedTime ();
+  applyTime_ += (timer.wallTime() - startTime);
 }
 
 

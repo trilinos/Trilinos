@@ -76,6 +76,12 @@ cmake \
 -DTrilinos_ENABLE_Zoltan2:BOOL=ON \
 -DZoltan2_ENABLE_ParMETIS:BOOL=ON \
 -DTrilinos_ENABLE_Pamgen:BOOL=ON \
+-DTrilinos_ENABLE_Percept:BOOL=ON \
+-DTrilinos_ENABLE_Panzer:BOOL=ON \
+-DTrilinos_ENABLE_PanzerAdaptersSTK:BOOL=ON \
+-DPanzer_ENABLE_TESTS:BOOL=ON \
+-DPanzer_STK_ENABLE_TESTS:BOOL=ON \
+-DTrilinos_ENABLE_TrilinosCouplings:BOOL=ON \
 -DTPL_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DKokkos_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DKokkos_ENABLE_CUDA_UVM:BOOL=${cuda_on_or_off} \

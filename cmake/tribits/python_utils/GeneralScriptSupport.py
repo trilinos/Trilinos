@@ -46,8 +46,8 @@ Python module containing general support functions for creating scripts
 #
 
 import sys
-if sys.version < '2.6':
-   print("Error, Python version is " + sys.version + " < 2.6!")
+if sys.version_info < (2,7):
+   print("Error, Python version is " + sys.version + " < 2.7!")
    sys.exit(1)
 
 #
@@ -62,35 +62,7 @@ import datetime
 import optparse
 import traceback
 
-#
-# Byte array / string / unicode support across Python 2 & 3
-#
-# Note that the str class in Python 2 is an ASCII string (byte) array and in
-# Python 3 it is a Unicode object. For Python 3 code that is backward compatible
-# with Python 2, we sometimes need version-specific conversion functions to give
-# us the data type we desire. These functions are:
-#
-#     b(x)    return a byte array of str x, much like b'<string const>' in
-#             Python 3
-#     s(x)    return a version-specific str object equivalent to x
-#     u(x)    return a unicode object equivalent to x, much like
-#             u'<string const>' in Python 2
-#
-if sys.version_info < (3,):
-   # Python 2
-   def b(x): return x
-   def s(x): return x
-   def u(x): return unicode(x)
-else:
-   # Python 3
-   import codecs
-   def b(x): return codecs.latin_1_encode(x)[0]
-   def s(x):
-      try:
-         return x.decode("utf-8")
-      except AttributeError:
-         return x
-   def u(x): return x
+from Python2and3 import b, s, u
 
 verboseDebug = False
 
@@ -379,6 +351,15 @@ if cmndInterceptsFile:
 g_dumpAllSysCmnds = "GENERAL_SCRIPT_SUPPORT_DUMD_COMMANDS" in os.environ
 
 
+# Run a command (or the mock of that command) and optionally return the stdout
+#
+# Returns the comamndline exit code or, if 'rtnOutput=True' returns the tuple
+# (rtnCode, cmndOutput).
+#
+# For Python 2, this returns stdout as a standard ASCII byte array for the
+# output.  For Python 3, the stdout output is converted to standard unicode
+# (i.e. 'utf-8')
+#
 def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, extraEnv=None, \
   workingDir="", getStdErr=False \
   ):
@@ -416,10 +397,11 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, extraEnv=None, \
         child = subprocess.Popen(cmnd, shell=True, stdout=subprocess.PIPE,
           env=fullEnv)
       data = child.stdout.read()
-      #print("data = '" + str(data) + "'")
+      if sys.version_info >= (3,):
+        data = data.decode('utf-8')
+      child.stdout.close()
       child.wait()
       rtnCode = child.returncode
-      #print("rtnCode = '" + str(rtnCode) + "'")
       rtnObject = (data, rtnCode)
     else:
       outFileHandle = None
@@ -427,6 +409,7 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, extraEnv=None, \
         outFileHandle = open(outFile, 'w')
       rtnCode = subprocess.call(cmnd, shell=True, stderr=subprocess.STDOUT,
         stdout=outFileHandle, env=fullEnv)
+      if outFileHandle: outFileHandle.close()
       rtnObject = rtnCode
   finally:
     if pwd: os.chdir(pwd)
@@ -487,10 +470,14 @@ def echoRunSysCmnd(cmnd, throwExcept=True, outFile=None, msg=None,
   return rtn
 
 
+# Return a shell command's output and optionally its return code
+#
+# For Python 2, this returns a standard ASCII byte array for the output.  For
+# Python 3, the output is converted to standard unicode (i.e. 'utf-8')
+#
 def getCmndOutput(cmnd, stripTrailingSpaces=False, throwOnError=True, workingDir="", \
   getStdErr=False, rtnCode=False \
   ):
-  """Run a shell command and return its output"""
   (data, errCode) = runSysCmndInterface(cmnd, rtnOutput=True, workingDir=workingDir,
     getStdErr=getStdErr)
   if errCode != 0:
@@ -612,11 +599,13 @@ def removeDirIfExists(dirName, verbose=False):
 
 
 def writeStrToFile(fileName, fileBodyStr):
-  open(fileName, 'w').write(fileBodyStr)
+  with open(fileName, 'w') as fileHandle:
+    fileHandle.write(fileBodyStr)
 
 
 def readStrFromFile(fileName):
-  return open(fileName, 'r').read()
+  with open(fileName, 'r') as fileHandle:
+    return fileHandle.read()
 
 
 def getFileNamesWithFileTag( baseDir, fileTag ):

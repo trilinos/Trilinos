@@ -232,7 +232,8 @@ bool verify_parallel_attributes_for_bucket(const Bucket& bucket,
       error_log <<", custom-recv-ghost="<<mesh.in_receive_custom_ghost(mesh.entity_key(entity));
       error_log << std::endl;
 
-      for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<meta.entity_rank_count(); rank++)
+      stk::mesh::EntityRank numRanks = static_cast<stk::mesh::EntityRank>(meta.entity_rank_count());
+      for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<numRanks; rank++)
       {
           impl::print_connectivity_of_rank(mesh, entity, rank, error_log);
       }

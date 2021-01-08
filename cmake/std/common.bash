@@ -3,6 +3,29 @@
 # Common bash functions that we use in several scripts.
 #
 
+# Set some color codes if we're on a terminal that supports colors
+if test -t 1; then
+    # see if it supports colors...
+    ncolors=$(tput colors)
+    if test -n "$ncolors" && test $ncolors -ge 8; then
+        export bold="$(tput bold)"
+        export underline="$(tput smul)"
+        export standout="$(tput smso)"
+        export standout_end="$(tput rmso)"
+        export normal="$(tput sgr0)"
+        export dim="$(tput dim)"
+        export black="$(tput setaf 0)"
+        export red="$(tput setaf 1)"
+        export green="$(tput setaf 2)"
+        export yellow="$(tput setaf 3)"
+        export blue="$(tput setaf 4)"
+        export magenta="$(tput setaf 5)"
+        export cyan="$(tput setaf 6)"
+        export white="$(tput setaf 7)"
+    fi
+fi
+
+
 
 # message_std
 #
@@ -79,6 +102,39 @@ function print_banner_2lines()
 }
 
 
+# envvar_append_or_create
+#  $1 = envvar name
+#  $2 = string to append
+function envvar_append_or_create() {
+    # envvar $1 is not set
+    if [[ ! -n "${!1+1}" ]]; then
+        export ${1}="${2}"
+    else
+        export ${1}="${!1}:${2}"
+    fi
+}
+
+
+# envvar_prepend_or_create
+#  $1 = envvar name
+#  $2 = string to prepend
+function envvar_prepend_or_create() {
+    # envvar $1 is not set
+    if [[ ! -n "${!1+1}" ]]; then
+        export ${1}="${2}"
+    else
+        export ${1}="${2}:${!1}"
+    fi
+}
+
+
+# envvar_set_or_create
+#  $1 = envvar name
+#  $2 = string to prepend
+function envvar_set_or_create() {
+    export ${1}="${2}"
+}
+
 
 # Gets the current script name (full path + filename)
 function get_scriptname() {
@@ -117,6 +173,7 @@ function get_md5sum() {
 function get_pip() {
     local python_exe=${1:?}
 
+    echo -e "--- get_pip():"
     echo -e "--- Python: ${python_exe:?}"
 
     # fetch get-pip.py
@@ -147,7 +204,6 @@ function get_python_packages() {
     echo -e "--- Pip   : ${pip_exe:?}"
 
     pip_args=(
-        --use-feature=2020-resolver
         configparser
         mock
         pytest

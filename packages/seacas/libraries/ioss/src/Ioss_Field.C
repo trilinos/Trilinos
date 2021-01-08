@@ -64,8 +64,8 @@ Ioss::Field::Field() { rawStorage_ = transStorage_ = Ioss::VariableType::factory
  */
 Ioss::Field::Field(std::string name, const Ioss::Field::BasicType type, const std::string &storage,
                    const Ioss::Field::RoleType role, size_t value_count, size_t index)
-    : name_(std::move(name)), rawCount_(value_count), transCount_(value_count), size_(0),
-      index_(index), type_(type), role_(role)
+    : name_(std::move(name)), rawCount_(value_count), transCount_(value_count), index_(index),
+      type_(type), role_(role)
 {
   rawStorage_ = transStorage_ = Ioss::VariableType::factory(storage);
   size_                       = internal_get_size(type_, rawCount_, rawStorage_);
@@ -154,7 +154,7 @@ void Ioss::Field::check_type(BasicType the_type) const
       // If Ioss created the field by reading the database, it may
       // think the field is a real but it is really an integer.  Make
       // sure that the field type is correct here...
-      Ioss::Field *new_this = const_cast<Ioss::Field *>(this);
+      auto *new_this = const_cast<Ioss::Field *>(this);
       new_this->reset_type(the_type);
     }
     else {
@@ -182,8 +182,8 @@ void Ioss::Field::reset_type(Ioss::Field::BasicType new_type)
 size_t Ioss::Field::get_size() const
 {
   if (size_ == 0) {
-    Ioss::Field *new_this = const_cast<Ioss::Field *>(this);
-    new_this->size_       = internal_get_size(type_, rawCount_, rawStorage_);
+    auto *new_this  = const_cast<Ioss::Field *>(this);
+    new_this->size_ = internal_get_size(type_, rawCount_, rawStorage_);
 
     new_this->transCount_   = rawCount_;
     new_this->transStorage_ = rawStorage_;

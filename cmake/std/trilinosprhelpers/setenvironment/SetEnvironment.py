@@ -162,6 +162,9 @@ class SetEnvironment(object):
             IndexError: Invalid number of parameters for 'module' command
         """
         status = 0
+
+        self.actions["module-op"]
+
         print("Module Operations")
         print("+---------------+")
         for m in self.actions["module-op"]:
@@ -169,17 +172,27 @@ class SetEnvironment(object):
             params = m[1:]
             cmd_status = 0
             print("[module] module {} {}".format(op, " ".join(params)), end="")
-            if   1 == len(params) and op in ["purge"]:
-                cmd_status = max(ModuleHelper.module(op), status)
-            elif 1 == len(params):
-                cmd_status = max(ModuleHelper.module(op, params[0]), status)
-            elif 2 == len(params):
-                cmd_status = max(ModuleHelper.module(op, params[0], params[1]), status)
-            else:
-                print(" ERROR")
-                msg =  "Invalid number of parameters for `module` command.\n"
-                msg += "- Received {} parameters to a `{}` command.".format(len(params), op)
-                raise IndexError(msg)
+            try:
+                if   1 == len(params) and op in ["purge"]:
+                    cmd_status = max(ModuleHelper.module(op), status)
+                elif 1 == len(params):
+                    cmd_status = max(ModuleHelper.module(op, params[0]), status)
+                elif 2 == len(params):
+                    cmd_status = max(ModuleHelper.module(op, params[0], params[1]), status)
+                else:
+                    print(" ERROR")
+                    msg =  "Invalid number of parameters for `module` command.\n"
+                    msg += "- Received {} parameters to a `{}` command.".format(len(params), op)
+                    raise IndexError(msg)
+            except TypeError as err:
+                print(" **INTERNAL ERROR**")
+                print("Debugging Information:")
+                print(":  op               : {}".format(op))
+                print(":  params           : {}".format(params))
+                print(":     len(params)   : {}".format(len(params)))
+                print(":  status           : {}".format(status))
+                sys.stdout.flush()
+                raise(err)
 
             status = max(cmd_status, status)
 
@@ -196,9 +209,10 @@ class SetEnvironment(object):
             k = envvar['key']
             v = envvar['value']
             print("[envvar] export {}={}".format(k,v))
-            v = self._expand_envvars_in_string(v)
-            os.environ[k] = v
-            print("[envvar] export {}={} (actual)".format(k,v))
+            v2 = self._expand_envvars_in_string(v)
+            os.environ[k] = v2
+            if v != v2:
+                print("[envvar] export {}={} (expanded)".format(k,v2))
         for k in self.actions["unsetenv"]:
             del os.environ[k]
             print("[envvar] unset {}".format(k))
@@ -267,7 +281,7 @@ class SetEnvironment(object):
                 elif matched_key:
                     print(" = {}".format(v), end="")
                 print("")
-        print("---")
+        print("")
         return 0
 
 
@@ -278,6 +292,8 @@ class SetEnvironment(object):
         Raises:
             IndexError: Invalid number of parameters for 'module' command
         """
+        self.actions["module-op"]
+
         print("")
         print("Module Operations")
         print("+---------------+")
@@ -350,7 +366,12 @@ class SetEnvironment(object):
                          "module-list": {}     # Keys = modules already set to 'load'
                         }
 
+        print("Processing Configuration .ini")
+        print("+---------------------------+")
+
         self.actions = self._load_configuration_r(self.profile, actions=self.actions)
+
+        print("")
 
         return self.actions
 
@@ -393,15 +414,11 @@ class SetEnvironment(object):
         if processed_secs is None:
             processed_secs = {}
 
-        # Exit if we've already processed this section (recursion breaker)
-        if config_section in processed_secs.keys():
-            print("WARNING: Cyclic dependencies encountered when loading {} ... {}".format(self.profile, config_section))
-            return actions
-
+        print("Section: {}".format(config_section))
         processed_secs[config_section] = True
 
         for op2,value in sec.items():
-            #print("> k=`{}` v=`{}`".format(k,v))
+            #print(": op2=`{}` value=`{}`".format(op2,value))
             value  = str(value.strip('"'))
             oplist = op2.split()
             op1    = str(oplist[0])
@@ -411,7 +428,14 @@ class SetEnvironment(object):
 
             if "use" == op1:
                 new_profile = op2
-                self._load_configuration_r(new_profile, actions, processed_secs)
+
+                # Cycle breaking -- only process new section IF it's not in the list of already
+                # processed sections.
+                if new_profile not in processed_secs.keys():
+                    self._load_configuration_r(new_profile, actions, processed_secs)
+                else:
+                    print("WARNING: Detected a cycle in the section dependencies: " +
+                          "cannot load [{}] from [{}].".format(new_profile, config_section))
 
             elif "module-purge" == op1:
                 actions["module-op"].append(["purge", ''])
@@ -448,10 +472,15 @@ class SetEnvironment(object):
                 actions["module-op"].append(["swap", op2, value])
 
             elif "setenv" == op1:
+                # TODO: Should we force envvars to upper case?
                 actions["setenv"].append( {'key': op2.upper(), 'value': value} )
 
             elif "unsetenv" == op1:
+                # TODO: Should we force envvars to upper case?
                 actions["unsetenv"].append(op2.upper())
+
+        # remove the current section from the 'processed_secs' list.
+        del processed_secs[config_section]
 
         return actions
 

@@ -35,13 +35,13 @@ namespace Ioss {
   class EntitySet : public GroupingEntity
   {
   public:
-    Property get_implicit_property(const std::string &my_name) const override = 0;
+    EntitySet &operator=(const EntitySet &)                                     = delete;
+    Property   get_implicit_property(const std::string &my_name) const override = 0;
 
   protected:
     EntitySet(DatabaseIO *io_database, const std::string &my_name, size_t entity_cnt);
     EntitySet(const EntitySet &) = default;
-    EntitySet &operator=(const EntitySet &) = delete;
-    ~EntitySet() override                   = default;
+    ~EntitySet() override        = default;
 
   protected:
     void count_attributes() const;

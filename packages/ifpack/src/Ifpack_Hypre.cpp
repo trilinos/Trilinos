@@ -445,41 +445,6 @@ void Ifpack_Hypre::Destroy(){
 int Ifpack_Hypre::Initialize(){
   Time_.ResetStartTime();
   if(IsInitialized_) return 0;
-  // Create the Hypre matrix and copy values.  Note this uses values (which
-  // Initialize() shouldn't do) but it doesn't care what they are (for
-  // instance they can be uninitialized data even).  It should be possible to
-  // set the Hypre structure without copying values, but this is the easiest
-  // way to get the structure.
-  MPI_Comm comm = GetMpiComm();
-  int ilower = GloballyContiguousRowMap_->MinMyGID();
-  int iupper = GloballyContiguousRowMap_->MaxMyGID();
-  IFPACK_CHK_ERR(HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_));
-  IFPACK_CHK_ERR(HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR));
-  IFPACK_CHK_ERR(HYPRE_IJMatrixInitialize(HypreA_));
-  CopyEpetraToHypre();
-  if(SolveOrPrec_ == Solver) {
-    IFPACK_CHK_ERR(SetSolverType(SolverType_));
-    if (SolverPrecondPtr_ != NULL && UsePreconditioner_) {
-      // both method allows a PC (first condition) and the user wants a PC (second)
-      IFPACK_CHK_ERR(SetPrecondType(PrecondType_));
-      CallFunctions();
-      IFPACK_CHK_ERR(SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_));
-    } else {
-      CallFunctions();
-    }
-  } else {
-    IFPACK_CHK_ERR(SetPrecondType(PrecondType_));
-    CallFunctions();
-  }
-
-  if (!G_.is_null()) {
-    SetDiscreteGradient(G_);
-  }
-
-  if (!Coords_.is_null()) {
-    SetCoordinates(Coords_);
-  }
-
   // set flags
   IsInitialized_=true;
   NumInitialize_ = NumInitialize_ + 1;
@@ -784,6 +749,41 @@ int Ifpack_Hypre::Compute(){
     IFPACK_CHK_ERR(Initialize());
   }
   Time_.ResetStartTime();
+
+  // Create the Hypre matrix and copy values.  Note this uses values (which
+  // Initialize() shouldn't do) but it doesn't care what they are (for
+  // instance they can be uninitialized data even).  It should be possible to
+  // set the Hypre structure without copying values, but this is the easiest
+  // way to get the structure.
+  MPI_Comm comm = GetMpiComm();
+  int ilower = GloballyContiguousRowMap_->MinMyGID();
+  int iupper = GloballyContiguousRowMap_->MaxMyGID();
+  IFPACK_CHK_ERR(HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_));
+  IFPACK_CHK_ERR(HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR));
+  IFPACK_CHK_ERR(HYPRE_IJMatrixInitialize(HypreA_));
+  CopyEpetraToHypre();
+  if(SolveOrPrec_ == Solver) {
+    IFPACK_CHK_ERR(SetSolverType(SolverType_));
+    if (SolverPrecondPtr_ != NULL && UsePreconditioner_) {
+      // both method allows a PC (first condition) and the user wants a PC (second)
+      IFPACK_CHK_ERR(SetPrecondType(PrecondType_));
+      CallFunctions();
+      IFPACK_CHK_ERR(SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_));
+    } else {
+      CallFunctions();
+    }
+  } else {
+    IFPACK_CHK_ERR(SetPrecondType(PrecondType_));
+    CallFunctions();
+  }
+
+  if (!G_.is_null()) {
+    SetDiscreteGradient(G_);
+  }
+
+  if (!Coords_.is_null()) {
+    SetCoordinates(Coords_);
+  }
 
   // Hypre Setup must be called after matrix has values
   if(SolveOrPrec_ == Solver){

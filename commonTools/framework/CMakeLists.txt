@@ -135,7 +135,7 @@ ENDFUNCTION()
 
 
 set(ALL_TOPLEVEL_PACKAGES_REGEX
-  "TrilinosFrameworkTests TrilinosATDMConfigTests .*Kokkos Teuchos KokkosKernels .*EpetraExt Tpetra .*Domi Thyra .*SEACAS .*Teko Intrepid .*MueLu .*ShyLU_DD ShyLU .*Tempus Stokhos ROL Piro Panzer Adelus TrilinosCouplings Pike")
+  "TrilinosFrameworkTests TrilinosATDMConfigTests .*Kokkos Teuchos KokkosKernels .*EpetraExt Tpetra .*Domi Thyra .*SEACAS .*Teko Intrepid .*MueLu .*ShyLU_DD ShyLU .*Tempus Stokhos ROL Piro Panzer Adelus TrilinosCouplings Pike TrilinosBuildStats")
 
 
 create_get_changed_trilinos_packages_test(ProjectsList_TeuchosCore

@@ -30,11 +30,11 @@ public:
   void Set_Max_Names(int size);
 
   // Program parameters.
-  Tolerance coord_tol{ABSOLUTE_, 1.0e-6, 0.0};
-  Tolerance time_tol{RELATIVE_, 1.0e-6, 1.0e-15};
-  Tolerance final_time_tol{RELATIVE_, 0.0, 0.0};
-  Tolerance default_tol{RELATIVE_, 1.0e-6, 0.0};
-  Tolerance ss_df_tol{RELATIVE_, 1.0e-6, 0.0};
+  Tolerance coord_tol{ToleranceMode::ABSOLUTE_, 1.0e-6, 0.0};
+  Tolerance time_tol{ToleranceMode::RELATIVE_, 1.0e-6, 1.0e-15};
+  Tolerance final_time_tol{ToleranceMode::RELATIVE_, 0.0, 0.0};
+  Tolerance default_tol{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
+  Tolerance ss_df_tol{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
 
   // These should correspond to the values specified during parsing of
   // coordinate tolerance.
@@ -50,27 +50,27 @@ public:
   int    max_warnings{100};
 
   std::vector<std::string> glob_var_names;
-  Tolerance                glob_var_default{RELATIVE_, 1.0e-6, 0.0};
+  Tolerance                glob_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
   std::vector<Tolerance>   glob_var;
 
   std::vector<std::string> node_var_names;
-  Tolerance                node_var_default{RELATIVE_, 1.0e-6, 0.0};
+  Tolerance                node_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
   std::vector<Tolerance>   node_var;
 
   std::vector<std::string> elmt_var_names;
-  Tolerance                elmt_var_default{RELATIVE_, 1.0e-6, 0.0};
+  Tolerance                elmt_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
   std::vector<Tolerance>   elmt_var;
 
   std::vector<std::string> elmt_att_names;
-  Tolerance                elmt_att_default{RELATIVE_, 1.0e-6, 0.0};
+  Tolerance                elmt_att_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
   std::vector<Tolerance>   elmt_att;
 
   std::vector<std::string> ns_var_names;
-  Tolerance                ns_var_default{RELATIVE_, 1.0e-6, 0.0};
+  Tolerance                ns_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
   std::vector<Tolerance>   ns_var;
 
   std::vector<std::string> ss_var_names;
-  Tolerance                ss_var_default{RELATIVE_, 1.0e-6, 0.0};
+  Tolerance                ss_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
   std::vector<Tolerance>   ss_var;
 
   // time step exclusion data
@@ -84,21 +84,22 @@ public:
   bool quiet_flag{false};     // By default, warnings and other info is produced
   bool show_all_diffs{false}; // Be default, show only maximum diff for each variable;
                               // if set, show all diff that exceeds tolerance.
-  TOLERANCE_TYPE_enum output_type{ABSOLUTE_}; // By default, output file diffs are absolute.
-  MAP_TYPE_enum       map_flag{USE_FILE_IDS}; // By default, no searching is done to match
-                                              // nodes & elements.
-  bool nsmap_flag{true};                      // By default, nodeset nodelist match is off
-  bool ssmap_flag{true};                      // By default, sideset elem/side match is off
-  bool short_block_check{true};               // By default, element block compares are
-                                              // case in-sensitive and full.  This switch
-                                              // checks only up to the shortest string length.
-  bool nocase_var_names{true};                // By default, variable name compares are
-                                              // case sensitive and full.  This switch
-                                              // ignores case when comparing.
-  bool summary_flag{false};                   // By default, summary mode is not in effect.
-  bool ignore_maps{false};                    // By default, use the node and element number
-                                              // maps to report node and element ids.
-  bool ignore_nans{false};                    // Don't check for NaNs
+  ToleranceMode output_type{
+      ToleranceMode::ABSOLUTE_};           // By default, output file diffs are absolute.
+  MapType map_flag{MapType::USE_FILE_IDS}; // By default, no searching is done to match
+                                           // nodes & elements.
+  bool nsmap_flag{true};                   // By default, nodeset nodelist match is off
+  bool ssmap_flag{true};                   // By default, sideset elem/side match is off
+  bool short_block_check{true};            // By default, element block compares are
+                                           // case in-sensitive and full.  This switch
+                                           // checks only up to the shortest string length.
+  bool nocase_var_names{true};             // By default, variable name compares are
+                                           // case sensitive and full.  This switch
+                                           // ignores case when comparing.
+  bool summary_flag{false};                // By default, summary mode is not in effect.
+  bool ignore_maps{false};                 // By default, use the node and element number
+                                           // maps to report node and element ids.
+  bool ignore_nans{false};                 // Don't check for NaNs
   bool ignore_dups{false}; // If two elements/nodes in same location in map or partial map
                            // case, just return first match instead of aborting.
   bool ignore_steps{false};

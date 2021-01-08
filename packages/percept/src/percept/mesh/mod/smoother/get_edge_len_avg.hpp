@@ -11,6 +11,7 @@
 
 #include <percept/MeshType.hpp>
 #include <percept/PerceptUtils.hpp>
+#include <Kokkos_ArithTraits.hpp>
 
 namespace percept {
 
@@ -123,7 +124,7 @@ sgrid_nodal_edge_length_ave(Kokkos::Array<unsigned, 3>& ijk, StructuredGrid::MTF
 {
   Double nm=0.0;
 
-  double min=std::numeric_limits<double>::max();
+  double min=Kokkos::Details::ArithTraits<double>::max();
   unsigned node_elems[8][3];//there are up to 8 adjacent elements to each node
   unsigned num_adj_elems=0; //actual number of elems adjacent to node
   sgrid_find_connected_cells(sizes, ijk, node_elems,num_adj_elems);

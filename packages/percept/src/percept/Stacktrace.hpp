@@ -51,7 +51,7 @@ public:
 #endif
   static inline void print_stacktrace(size_t sz=10, const std::string& msg="")
   {
-    void *array[sz];
+    void **array = new void*[sz];
     size_t size;
 
     // get void*'s for all entries on the stack
@@ -61,11 +61,12 @@ public:
     fprintf(stderr, "stacktrace: message= %s:\n", msg.c_str());
     //if (!get_rank())
     backtrace_symbols_fd(array, size, 2);
+    delete [] array;
   }
 
   static inline std::string stacktrace(size_t sz=10, const std::string& msg="")
   {
-    void *array[sz];
+    void **array = new void*[sz];
     size_t size;
 
     // get void*'s for all entries on the stack
@@ -79,6 +80,7 @@ public:
         ret += std::string(syms[i])+"\n";
       }
     free(syms);
+    delete [] array;
     return ret;
   }
 
@@ -111,7 +113,7 @@ public:
 
   static inline std::string demangled_stacktrace(size_t sz=10, bool also_mangled=false, const std::string& msg="")
   {
-    void *array[sz];
+    void **array = new void*[sz];
     size_t size;
 
     // get void*'s for all entries on the stack
@@ -141,6 +143,7 @@ public:
       }
     ret += "\n";
     free(syms);
+    delete [] array;
     return ret;
   }
 

@@ -60,6 +60,10 @@ namespace Ioss {
   public:
     friend class SerializeIO;
 
+    DatabaseIO()                   = delete;
+    DatabaseIO(const DatabaseIO &) = delete;
+    DatabaseIO &operator=(const DatabaseIO &) = delete;
+
     /** \brief Check to see if database state is OK.
      *
      *  \param[in] write_message If true, then output a warning message indicating the problem.
@@ -788,10 +792,6 @@ namespace Ioss {
                                        void * /*data*/, size_t /*data_size*/) const = 0;
     virtual int64_t put_field_internal(const StructuredBlock * /*sb*/, const Field & /*field*/,
                                        void * /*data*/, size_t /*data_size*/) const = 0;
-
-    DatabaseIO()                   = delete;
-    DatabaseIO(const DatabaseIO &) = delete;
-    DatabaseIO &operator=(const DatabaseIO &) = delete;
 
     mutable std::map<std::string, AxisAlignedBoundingBox> elementBlockBoundingBoxes;
 

@@ -46,6 +46,7 @@ INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_BINARY_DIR}/stk_util)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     stk_util_unit_tests
     SOURCES ${SOURCES}
+    TESTONLYLIBS stk_unit_main
     COMM serial mpi
     NUM_MPI_PROCS 1
     NOEXEPREFIX
