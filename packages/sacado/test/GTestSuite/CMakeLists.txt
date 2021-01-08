@@ -30,17 +30,22 @@ SET(${PACKAGE_NAME}_TESTSUITE_SOURCES ${${PACKAGE_NAME}_TESTSUITE_SOURCES}
   TraitsTests.hpp
   TraitsTests.cpp
   LogicalSparseUnitTests.cpp
-  FadBLASUnitTests.hpp
-  RealDFadBLASUnitTests.cpp
-  RealDVFadBLASUnitTests.cpp
-  ComplexDFadBLASUnitTests.cpp
-  ComplexDVFadBLASUnitTests.cpp
-  RealDFadLAPACKUnitTests.cpp
   TayUnitTests.hpp
   TayUnitTests.cpp
   GTestUtils.hpp
   GTestSuite.cpp
   )
+
+IF (Sacado_ENABLE_TeuchosNumerics)
+  SET(${PACKAGE_NAME}_TESTSUITE_SOURCES ${${PACKAGE_NAME}_TESTSUITE_SOURCES}
+     FadBLASUnitTests.hpp
+     RealDFadBLASUnitTests.cpp
+     RealDVFadBLASUnitTests.cpp
+     ComplexDFadBLASUnitTests.cpp
+     ComplexDVFadBLASUnitTests.cpp
+     RealDFadLAPACKUnitTests.cpp
+     )
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   GTestSuite
