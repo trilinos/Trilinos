@@ -233,8 +233,12 @@ namespace Intrepid2 {
         INTREPID2_TEST_ERROR_EXPECTED( rst::inverse(b_2_2, a_2_2) );
         INTREPID2_TEST_ERROR_EXPECTED( rst::inverse(b_3_3, a_3_3) );
         
-        a_2_2(0, 0) = 1.0;
-        a_3_3(0, 0) = 1.0;
+        auto a_2_2_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), a_2_2);
+        a_2_2_host(0, 0) = 1.0;
+        Kokkos::deep_copy(a_2_2,a_2_2_host);
+        auto a_3_3_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), a_3_3);
+        a_3_3_host(0, 0) = 1.0;
+        Kokkos::deep_copy(a_3_3,a_3_3_host);
         INTREPID2_TEST_ERROR_EXPECTED( rst::inverse(b_2_2, a_2_2) );
         INTREPID2_TEST_ERROR_EXPECTED( rst::inverse(b_3_3, a_3_3) );
         
@@ -254,9 +258,13 @@ namespace Intrepid2 {
         INTREPID2_TEST_ERROR_EXPECTED( rst::det(a_9, a_10_2_2) );
         INTREPID2_TEST_ERROR_EXPECTED( rst::det(b_10, a_10_2_3) );
         INTREPID2_TEST_ERROR_EXPECTED( rst::det(b_10_15, a_10_15_4_4) );
-        rst::Serial::det(a_10_15_4_4);
-        rst::Serial::det(a_2_3);
-        rst::Serial::det(a_4_4);
+
+        const auto a_10_15_4_4_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), a_10_15_4_4);
+        const auto a_2_3_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), a_2_3);
+        const auto a_4_4_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), a_4_4);
+        rst::Serial::det(a_10_15_4_4_host);
+        rst::Serial::det(a_2_3_host);
+        rst::Serial::det(a_4_4_host);
         
         *outStream << "-> matrix-vector product with multidimensional arrays:\n";
         
