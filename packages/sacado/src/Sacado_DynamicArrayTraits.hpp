@@ -224,8 +224,8 @@ namespace Sacado {
 #if defined(HAVE_SACADO_KOKKOSCORE)
         if (m == 0)
           Kokkos::abort("Allocation failed.");
-      }
 #endif
+      }
 #endif
       return m;
     }

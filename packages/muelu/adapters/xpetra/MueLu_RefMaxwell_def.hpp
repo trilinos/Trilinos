@@ -928,6 +928,7 @@ namespace MueLu {
           params->set("printCommInfo",          true);
           GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*AH_, "AH", params);
         }
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
         if (precList11_.isType<std::string>("Preconditioner Type")) {
           // build a Stratimikos preconditioner
           if (precList11_.get<std::string>("Preconditioner Type") == "MueLu") {
@@ -935,7 +936,9 @@ namespace MueLu {
             userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", CoordsH_);
           }
           thyraPrecH_ = StratimikosWrapper<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(AH_, rcp(&precList11_, false));
-        } else {
+        } else
+#endif
+          {
           // build a MueLu hierarchy
 
           if (!reuse) {
@@ -1166,6 +1169,7 @@ namespace MueLu {
           params->set("printCommInfo",          true);
           GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*A22_, "A22", params);
         }
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
         if (precList22_.isType<std::string>("Preconditioner Type")) {
           // build a Stratimikos preconditioner
           if (precList22_.get<std::string>("Preconditioner Type") == "MueLu") {
@@ -1173,7 +1177,9 @@ namespace MueLu {
             userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords_);
           }
           thyraPrec22_ = StratimikosWrapper<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(A22_, rcp(&precList22_, false));
-        } else {
+        } else
+#endif
+          {
           // build a MueLu hierarchy
           if (!reuse) {
             ParameterList& userParamList = precList22_.sublist("user data");
@@ -2359,7 +2365,6 @@ namespace MueLu {
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverseAdditive(const MultiVector& RHS, MultiVector& X) const {
 
     Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-    Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
 
     { // compute residual
 
@@ -2435,15 +2440,18 @@ namespace MueLu {
         // Replace maps with maps with a subcommunicator
         P11res_->replaceMap(AH_->getRangeMap());
         P11x_  ->replaceMap(AH_->getDomainMap());
-        if (thyraPrecH_.is_null())
-          HierarchyH_->Iterate(*P11res_, *P11x_, numItersH_, true);
-        else {
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
+        if (!thyraPrecH_.is_null()) {
+          Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
           RCP<Thyra::MultiVectorBase<Scalar> >       thyraP11x   = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(P11x_));
           RCP<const Thyra::MultiVectorBase<Scalar> > thyraP11res = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(P11res_);
           thyraPrecH_->getUnspecifiedPrecOp()->apply(Thyra::NOTRANS, *thyraP11res, thyraP11x.ptr(), one, zero);
           RCP<MultiVector> thyXpP11x = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(thyraP11x, P11x_->getMap()->getComm());
           *P11x_ = *thyXpP11x;
         }
+        else
+#endif
+           HierarchyH_->Iterate(*P11res_, *P11x_, numItersH_, true);
         P11x_  ->replaceMap(origXMap);
         P11res_->replaceMap(origRhsMap);
       }
@@ -2458,15 +2466,18 @@ namespace MueLu {
         // Replace maps with maps with a subcommunicator
         D0res_->replaceMap(A22_->getRangeMap());
         D0x_  ->replaceMap(A22_->getDomainMap());
-        if (thyraPrec22_.is_null())
-          Hierarchy22_->Iterate(*D0res_, *D0x_, numIters22_, true);
-        else {
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
+        if (!thyraPrec22_.is_null()) {
+          Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
           RCP<Thyra::MultiVectorBase<Scalar> >       thyraD0x   = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(D0x_));
           RCP<const Thyra::MultiVectorBase<Scalar> > thyraD0res = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(D0res_);
           thyraPrec22_->getUnspecifiedPrecOp()->apply(Thyra::NOTRANS, *thyraD0res, thyraD0x.ptr(), one, zero);
           RCP<MultiVector> thyXpD0x = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(thyraD0x, D0x_->getMap()->getComm());
           *D0x_ = *thyXpD0x;
         }
+        else
+#endif
+          Hierarchy22_->Iterate(*D0res_, *D0x_, numIters22_, true);
         D0x_  ->replaceMap(origXMap);
         D0res_->replaceMap(origRhsMap);
       }
@@ -2948,6 +2959,7 @@ namespace MueLu {
 
   }
 
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     RCP<Thyra::PreconditionerBase<Scalar> > StratimikosWrapper<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
@@ -2962,8 +2974,6 @@ namespace MueLu {
                                                                                                                                        RCP<ParameterList> params) {
 
     typedef double Scalar;
-
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 
     // Build Thyra linear algebra objects
     RCP<const Thyra::LinearOpBase<Scalar> > thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(A)->getCrsMatrix());
@@ -2988,12 +2998,8 @@ namespace MueLu {
     precFactory->initializePrec(Thyra::defaultLinearOpSource(thyraA), prec.get(), Thyra::SUPPORT_SOLVE_UNSPECIFIED);
 
     return prec;
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-                               "Need Thyra & Stratimikos support");
-#endif
   }
-
+#endif
 
 } // namespace
 
