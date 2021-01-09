@@ -334,7 +334,6 @@ ProjectionTools<SpT>::getL2EvaluationPoints(typename BasisType::ScalarViewType e
     const EvalPointsType ePointType) {
   typedef typename BasisType::scalarType scalarType;
   typedef Kokkos::DynRankView<scalarType,ortProperties...> ScalarViewType;
-  typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
   const auto cellTopo = cellBasis->getBaseCellTopology();
   //const auto cellTopoKey = cellBasis->getBaseCellTopology().getKey();
   ordinal_type dim = cellTopo.getDimension();
@@ -371,7 +370,6 @@ ProjectionTools<SpT>::getL2EvaluationPoints(typename BasisType::ScalarViewType e
 
   for(ordinal_type ie=0; ie<numEdges; ++ie) {
     auto edgePointsRange = ePointsRange(edgeDim, ie);
-    auto edgeRefPointsRange = range_type(0, range_size(edgePointsRange));
     auto edgeEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getEvalPoints(edgeDim,ie,ePointType));
 
     Kokkos::parallel_for
@@ -383,16 +381,14 @@ ProjectionTools<SpT>::getL2EvaluationPoints(typename BasisType::ScalarViewType e
       orts(ic).getEdgeOrientation(eOrt, numEdges);
       ordinal_type ort = eOrt[ie];
 
-      auto orientedEdgeEPoints = Kokkos::subview(workView, ic, edgeRefPointsRange, range_type(0,edgeDim));
-
-      Impl::OrientationTools::mapToModifiedReference(orientedEdgeEPoints,edgeEPoints,refTopologyKey(edgeDim,ie),ort);
-      CellTools<SpT>::mapToReferenceSubcell(Kokkos::subview(ePoints,ic,edgePointsRange,Kokkos::ALL()), orientedEdgeEPoints, subcellParamEdge, edgeDim, ie, dim);
+      const auto topoKey = refTopologyKey(edgeDim,ie);
+      Impl::OrientationTools::mapSubcellCoordsToRefCell(Kokkos::subview(ePoints,ic,edgePointsRange,Kokkos::ALL()),
+          edgeEPoints, subcellParamEdge, topoKey, ie, ort);
     });
   }
 
   for(ordinal_type iface=0; iface<numFaces; ++iface) {
     auto facePointsRange = ePointsRange(faceDim, iface);
-    auto faceRefPointsRange = range_type(0, range_size(facePointsRange));
     auto faceEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getEvalPoints(faceDim,iface,ePointType));
 
     Kokkos::parallel_for
@@ -403,10 +399,9 @@ ProjectionTools<SpT>::getL2EvaluationPoints(typename BasisType::ScalarViewType e
       orts(ic).getFaceOrientation(fOrt, numFaces);
       ordinal_type ort = fOrt[iface];
 
-      auto orientedFaceEPoints = Kokkos::subview(workView, ic, faceRefPointsRange, Kokkos::ALL());
-
-      Impl::OrientationTools::mapToModifiedReference(orientedFaceEPoints,faceEPoints,refTopologyKey(faceDim,iface),ort);
-      CellTools<SpT>::mapToReferenceSubcell(Kokkos::subview(ePoints,  ic, facePointsRange, Kokkos::ALL()), orientedFaceEPoints, subcellParamFace, faceDim, iface, dim);
+      const auto topoKey = refTopologyKey(faceDim,iface);
+      Impl::OrientationTools::mapSubcellCoordsToRefCell(Kokkos::subview(ePoints,  ic, facePointsRange, Kokkos::ALL()),
+          faceEPoints, subcellParamFace, topoKey, iface, ort);
     });
   }
 
