@@ -74,7 +74,10 @@ export PATH=/projects/netpub/atdm/ninja-1.8.2/bin:$PATH
 # anywhere in SPARC's environment but is needed in ATDM's environment. Cmake's compiler tests are
 # ignoring LD_{CRAY,CRAYPAT,}_LIBRARY_PATH for some reason, so we add this path via LDFLAGS via
 # s.t. it is added to CMAKE_EXE_LINKER_FLAGS before trilinos's cmake config invokes PROJECT().
-export LDFLAGS="-L/opt/gcc/8.3.0/snos/lib/gcc/x86_64-suse-linux/8.3.0/ $LDFLAGS"
+export LDFLAGS="-L/opt/gcc/8.3.0/snos/lib/gcc/x86_64-suse-linux/8.3.0/ -lpthread $LDFLAGS"
+
+# 2021-01-09 -- Resolve linker errors in Seacas and Percept
+export LDFLAGS="-L${MPI_ROOT}/lib -lmpich -lrt ${ATP_INSTALL_DIR}/lib/libAtpSigHandler.a ${ATP_INSTALL_DIR}/lib/libbreakpad_client_nostdlib.a $LDFLAGS"
 
 export ATDM_CONFIG_TPL_FIND_SHARED_LIBS=OFF
 export ATDM_CONFIG_Trilinos_LINK_SEARCH_START_STATIC=ON
