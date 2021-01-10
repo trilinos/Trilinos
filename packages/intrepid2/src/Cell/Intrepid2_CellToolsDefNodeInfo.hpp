@@ -178,13 +178,13 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellCenter must have rank 1." );
 
     INTREPID2_TEST_FOR_EXCEPTION( cellCenter.extent(0) < cell.getDimension(), std::invalid_argument,
-                                  ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellCenter must have dimension bigger than Parameters::MaxDimension." );
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellCenter must have dimension at least as large as cell.getDimension()." );
 
     INTREPID2_TEST_FOR_EXCEPTION( cellVertex.rank() != 1, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellVertex must have rank 1." );
 
     INTREPID2_TEST_FOR_EXCEPTION( cellVertex.extent(0) < cell.getDimension(), std::invalid_argument,
-                                  ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellVertex must have dimension bigger than Parameters::MaxDimension." );
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellVertex must have dimension at least as large as cell.getDimension()." );
 #endif
     const ordinal_type vertexCount = cell.getVertexCount();
     const ordinal_type dim = cell.getDimension();
@@ -218,7 +218,7 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNodes must have rank 1." );
 
     INTREPID2_TEST_FOR_EXCEPTION( cellVertex.extent(0) < cell.getDimension(), std::invalid_argument,
-                                  ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNodes must have dimension bigger than Parameters::MaxDimension." );
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNodes must have dimension at least as large as cell.getDimension()." );
 #endif
     getReferenceNode(cellVertex, 
                      cell, 
@@ -280,7 +280,7 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNode must have rank 1." );
 
     INTREPID2_TEST_FOR_EXCEPTION( cellNode.extent(0) < cell.getDimension(), std::invalid_argument,
-                                  ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNode must have dimension bigger than Parameters::MaxDimension." );
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNode must have dimension at least as large as cell.getDimension()." );
 #endif
 
     if (!isReferenceNodeDataSet_) 

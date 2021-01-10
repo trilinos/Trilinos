@@ -69,8 +69,8 @@ namespace Intrepid2 {
     typedef Kokkos::DynRankView<cubWeightValueType,SpT> cubWeightViewType; 
 
     // mirroring and where the data is problematic... when it becomes a problem, then deal with it.
-    cubPointViewType  tmpPoints [Parameters::MaxDimension];
-    cubWeightViewType tmpWeights[Parameters::MaxDimension];
+    cubPointViewType  tmpPoints [Parameters::MaxTensorComponents];
+    cubWeightViewType tmpWeights[Parameters::MaxTensorComponents];
 
     // this temporary allocation can be member of cubature; for now, let's do this way.
     // this is cubature setup on the reference cell and called for tensor elements.
@@ -95,7 +95,7 @@ namespace Intrepid2 {
     // when the input containers are device space, this is better computed on host and copy to devices
     // fill tensor cubature
     {
-      ordinal_type offset[Parameters::MaxDimension+1] = {};
+      ordinal_type offset[Parameters::MaxTensorComponents+1] = {};
       for (auto k=0;k<this->numCubatures_;++k) {
         offset[k+1] = offset[k] + this->cubatures_[k].getDimension();
       }

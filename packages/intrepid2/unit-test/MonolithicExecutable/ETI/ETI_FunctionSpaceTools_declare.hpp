@@ -41,29 +41,29 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   UnitTestMain.cpp
-    \brief  Main for Teuchos unit tests.
+/** \file   ETI_FunctionSpaceTools_declare.hpp
+    \brief  Explicit Template Instantiation declarations for FunctionSpaceTools.  Each declaration here should be paired with a definition in ETI_FunctionSpaceTools_define.cpp.
+    \author Created by N.V. Roberts.
  */
 
-#include "Teuchos_UnitTestRepository.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 
-#include "Teuchos_StackedTimer.hpp"
-#include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_DefaultComm.hpp"
+#include "Intrepid2_ConfigDefs.hpp"
 
-#include "Kokkos_Core.hpp"
+#include <Kokkos_Core.hpp>
 
-#include <fstream>
-
-int main( int argc, char* argv[] )
+namespace Intrepid2
 {
-  // Note that the dtor for GlobalMPISession will call Kokkos::finalize_all() but does not call Kokkos::initialize()...
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Kokkos::initialize(argc,argv);
-  Teuchos::UnitTestRepository::setGloballyReduceTestResult(true);
-  
-  int result = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
-  
-  return result;
+//  extern template class FunctionSpaceTools<Kokkos::DefaultExecutionSpace>;
+//
+//  template<> extern Data<double,Kokkos::DefaultExecutionSpace>
+//  FunctionSpaceTools<Kokkos::DefaultExecutionSpace>::allocateIntegralData<double>(const TransformedVectorData<double,Kokkos::DefaultExecutionSpace> vectorDataLeft,
+//                                                                                  const TensorData<double,Kokkos::DefaultExecutionSpace> cellMeasures,
+//                                                                                  const TransformedVectorData<double,Kokkos::DefaultExecutionSpace> vectorDataRight);
+//
+//  template<> extern void
+//  FunctionSpaceTools<Kokkos::DefaultExecutionSpace>::integrate<double>(Data<double,Kokkos::DefaultExecutionSpace> integrals,
+//                                                                       const TransformedVectorData<double,Kokkos::DefaultExecutionSpace> vectorDataLeft,
+//                                                                       const TensorData<double,Kokkos::DefaultExecutionSpace> cellMeasures,
+//                                                                       const TransformedVectorData<double,Kokkos::DefaultExecutionSpace> vectorDataRight);
 }

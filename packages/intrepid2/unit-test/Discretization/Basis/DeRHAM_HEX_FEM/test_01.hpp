@@ -142,13 +142,10 @@ int DeRHAM_HEX_FEM_Test01(const bool verbose) {
       switch (comp) {
       case 0:
         return std::sin(x)*std::sin(y)*std::sin(z)+2.0*std::cos(x)*std::cos(y)*std::cos(z);
-        break;
       case 1:
         return std::exp(x)*std::exp(y)*std::exp(z);
-        break;
       case 2:
         return std::log(x+2)*std::log(y+2)*std::log(z+2);
-        break;
       default:
         return 0;
       }
