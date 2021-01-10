@@ -151,10 +151,8 @@ int OrientationTri(const bool verbose) {
       switch (comp) {
       case 0:
         return f0 + a*x;
-        break;
       case 1:
         return f1 + a*y;
-        break;
       default:
         return 0;
       }
@@ -172,10 +170,8 @@ int OrientationTri(const bool verbose) {
       switch (comp) {
       case 0:
         return f0 - a2*y;
-        break;
       case 1:
         return f1 + a2*x;
-        break;
       default:
         return 0;
       }

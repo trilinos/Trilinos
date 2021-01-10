@@ -82,6 +82,8 @@
 #include "Intrepid2_HGRAD_WEDGE_C2_FEM.hpp"
 //#include "Intrepid2_HGRAD_WEDGE_I2_FEM.hpp"
 
+#include "Intrepid2_Data.hpp"
+
 namespace Intrepid2 {
 
   //============================================================================================//
@@ -363,20 +365,66 @@ namespace Intrepid2 {
                 or not the points are inside a reference cell.
 
         \param  jacobian          [out] - rank-4 array with dimensions (C,P,D,D) with the Jacobians
-        \param  points            [in]  - rank-2/3 array with dimensions (P,D)/(C,P,D) with the evaluation points
-        \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
-        \param  basis             [in]  - HGrad basis for reference to physical cell mapping
+        \param  points               [in]  - rank-2/3 array with dimensions (P,D)/(C,P,D) with the evaluation points
+        \param  cellWorkset    [in]  - rank-3 container with nominal dimensions (C,N,D) with the nodes of the cell workset
+        \param  basis                 [in]  - HGrad basis for reference to physical cell mapping
+        \param  startCell        [in] - first cell index in cellWorkset for which we should compute the Jacobian; corresponds to the 0 index in Jacobian and/or points container.  Default: 0.
+        \param  endCell            [in] - first cell index in cellWorkset that we do not process; endCell - startCell must equal the extent of the Jacobian container in dimension 0.  Default: -1, a special value that indicates the extent of the cellWorkset should be used.
      */
     template<typename jacobianValueType,    class ...jacobianProperties,
              typename pointValueType,       class ...pointProperties,
-             typename worksetCellValueType, class ...worksetCellProperties,
-             typename HGradBasisPtrType>
+             typename WorksetType,
+             typename HGradBasisType>
     static void
     setJacobian(       Kokkos::DynRankView<jacobianValueType,jacobianProperties...>       jacobian,
                  const Kokkos::DynRankView<pointValueType,pointProperties...>             points,
-                 const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
-                 const HGradBasisPtrType basis );
+                 const WorksetType worksetCell,
+                 const Teuchos::RCP<HGradBasisType> basis,
+                 const int startCell=0, const int endCell=-1);
+    
+    /** \brief  Computes the Jacobian matrix \e DF of the reference-to-physical frame map \e F.
 
+                There are two use cases:
+        \li     Computes Jacobians \f$DF_{c}\f$ of the reference-to-physical map for \b all physical cells
+                in a cell workset on a \b single set of reference points stored in a rank-2 (P,D) array;
+        \li     Computes Jacobians \f$DF_{c}\f$ of the reference-to-physical map for \b all physical cells
+                in a cell workset on \b multiple reference point sets having the same number of points,
+                indexed by cell ordinal, and stored in a rank-3 (C,P,D) array;
+
+                For a single point set in a rank-2 array (P,D) returns a rank-4 (C,P,D,D) array
+                such that
+        \f[
+                \mbox{jacobian}(c,p,i,j) = [DF_{c}(\mbox{points}(p))]_{ij} \quad c=0,\ldots, C
+        \f]
+                For multiple sets of reference points in a rank-3 (C,P,D) array returns
+                rank-4 (C,P,D,D) array such that
+        \f[
+                \mbox{jacobian}(c,p,i,j) = [DF_{c}(\mbox{points}(c,p))]_{ij} \quad c=0,\ldots, C
+        \f]
+
+                Requires pointer to HGrad basis that defines reference to physical cell mapping.
+                See Section \ref sec_cell_topology_ref_map_DF for definition of the Jacobian.
+
+                \warning
+                The points are not required to be in the reference cell associated with the specified
+                cell topology. CellTools provides several inclusion tests methods to check whether
+                or not the points are inside a reference cell.
+
+        \param  jacobian          [out] - rank-4 array with dimensions (C,P,D,D) with the Jacobians
+        \param  cellWorkset    [in]  - rank-3 container with nominal dimensions (C,N,D) with the nodes of the cell workset
+        \param  gradients         [in]  - rank-3/4 array with dimensions (N,P,D)/(C,N,P,D) with the gradients of the physical-to-cell mapping
+        \param  startCell        [in] - first cell index in cellWorkset for which we should compute the Jacobian; corresponds to the 0 index in Jacobian and/or points container.  Default: 0.
+        \param  endCell            [in] - first cell index in cellWorkset that we do not process; endCell - startCell must equal the extent of the Jacobian container in dimension 0.  Default: -1, a special value that indicates the extent of the cellWorkset should be used.
+     */
+    template<typename jacobianValueType,    class ...jacobianProperties,
+             typename BasisGradientsType,
+             typename WorksetType>
+    static void
+    setJacobian(       Kokkos::DynRankView<jacobianValueType,jacobianProperties...> jacobian,
+                 const WorksetType worksetCell,
+                 const BasisGradientsType gradients,
+                 const int startCell=0, const int endCell=-1);
+    
     /** \brief  Computes the Jacobian matrix \e DF of the reference-to-physical frame map \e F.
 
                 There are two use cases:
@@ -458,7 +506,40 @@ namespace Intrepid2 {
     setJacobianDet(       Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...>  jacobianDet,
                     const Kokkos::DynRankView<jacobianValueType,jacobianProperties...>        jacobian );
 
+    /** \brief  Allocates and returns a Data container suitable for storing determinants corresponding to the Jacobians in the Data container provided
 
+        \param  jacobian          [in]  - data with shape (C,P,D,D), as returned by CellGeometry::allocateJacobianData()
+        \return Data container with shape (C,P)
+    */
+    template<class PointScalar>
+    static Data<PointScalar> allocateJacobianDet( const Data<PointScalar> & jacobian );
+
+    /** \brief  Allocates and returns a Data container suitable for storing inverses corresponding to the Jacobians in the Data container provided
+
+        \param  jacobian          [in]  - data with shape (C,P,D,D), as returned by CellGeometry::allocateJacobianData()
+        \return Data container with shape (C,P,D,D)
+    */
+    template<class PointScalar>
+    static Data<PointScalar,ExecSpaceType> allocateJacobianInv( const Data<PointScalar,ExecSpaceType> & jacobian );
+
+    /** \brief  Computes determinants corresponding to the Jacobians in the Data container provided
+
+        \param  jacobianDet   [out]  - data with shape (C,P), as returned by CellTools::allocateJacobianDet()
+        \param  jacobian          [in]    - data with shape (C,P,D,D), as returned by CellGeometry::allocateJacobianData()
+    */
+    template<class PointScalar>
+    static void setJacobianDet( Data<PointScalar,ExecSpaceType> & jacobianDet,
+                               const Data<PointScalar,ExecSpaceType> & jacobian);
+
+    /** \brief  Computes determinants corresponding to the Jacobians in the Data container provided
+
+        \param  jacobianInv   [out]  - data container with shape (C,P,D,D), as returned by CellTools::allocateJacobianInv()
+        \param  jacobian          [in]    - data with shape (C,P,D,D), as returned by CellGeometry::allocateJacobianData()
+    */
+    template<class PointScalar>
+    static void setJacobianInv( Data<PointScalar,ExecSpaceType> & jacobianInv,
+                               const Data<PointScalar,ExecSpaceType> & jacobian);
+    
     //============================================================================================//
     //                                                                                            //
     //                     Node information                                                       //
@@ -992,19 +1073,19 @@ namespace Intrepid2 {
         inclusion tests methods to check whether or not the points are inside a reference cell.
 
         \param  physPoints        [out] - rank-3 array with dimensions (C,P,D) with the images of the ref. points
-        \param  refPoints         [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with points in reference frame
-        \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
-        \param  basis             [in]  - pointer to HGrad basis used in reference-to-physical cell mapping
+        \param  refPoints          [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with points in reference frame
+        \param  cellWorkset      [in]  - rank-3 container with nominal dimensions (C,N,D) with the nodes of the cell workset
+        \param  basis                   [in]  - pointer to HGrad basis used in reference-to-physical cell mapping
 
     */
     template<typename physPointValueType,   class ...physPointProperties,
              typename refPointValueType,    class ...refPointProperties,
-             typename worksetCellValueType, class ...worksetCellProperties,
+             typename WorksetType,
              typename HGradBasisPtrType>
     static void
     mapToPhysicalFrame(       Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
                         const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
-                        const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
+                        const WorksetType worksetCell,
                         const HGradBasisPtrType basis );
 
     /** \brief  Computes \e F, the reference-to-physical frame map.

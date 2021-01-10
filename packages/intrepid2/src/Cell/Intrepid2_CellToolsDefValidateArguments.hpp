@@ -69,7 +69,8 @@ namespace Intrepid2 {
   CellTools_setJacobianArgs( const jacobianViewType     jacobian,
                              const PointViewType        points,
                              const worksetCellViewType  worksetCell,
-                             const shards::CellTopology cellTopo ) {
+                             const shards::CellTopology cellTopo,
+                             const int startCell, const int endCell) {
     // Validate worksetCell array
     INTREPID2_TEST_FOR_EXCEPTION( worksetCell.rank() != 3, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::setJacobian): rank = 3 required for worksetCell array." );
@@ -87,6 +88,13 @@ namespace Intrepid2 {
                                   pointRank != 3, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::setJacobian): points must have rank 2 or 3." );
 
+    const int endCellResolved = (endCell == -1) ? worksetCell.extent_int(0) : endCell;
+    const int numCells = endCellResolved - startCell;
+    
+    INTREPID2_TEST_FOR_EXCEPTION(startCell < 0, std::invalid_argument, "Invalid startCell");
+    INTREPID2_TEST_FOR_EXCEPTION(startCell >= worksetCell.extent_int(0), std::invalid_argument, "startCell is out of bounds in workset.");
+    INTREPID2_TEST_FOR_EXCEPTION(endCellResolved > worksetCell.extent_int(0), std::invalid_argument, "resolved endCell is out of bounds in workset.");
+    
     switch (pointRank) {
     case 2: {
       INTREPID2_TEST_FOR_EXCEPTION( points.extent(1) != cellTopo.getDimension(), std::invalid_argument,
@@ -95,8 +103,8 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( jacobian.rank() != 4, std::invalid_argument, 
                                     ">>> ERROR (Intrepid2::CellTools::setJacobian): rank = 4 required for jacobian array." );
       
-      INTREPID2_TEST_FOR_EXCEPTION( jacobian.extent(0) != worksetCell.extent(0), std::invalid_argument,
-                                    ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 0 (number of cells) of jacobian array must equal dim 0 of worksetCell array." );
+      INTREPID2_TEST_FOR_EXCEPTION( jacobian.extent_int(0) != numCells, std::invalid_argument,
+                                    ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 0 (number of cells) of jacobian array must equal number of cells requested from in the workset." );
       
       INTREPID2_TEST_FOR_EXCEPTION( jacobian.extent(1) != points.extent(0), std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 1 (number of points) of jacobian array must equal dim 0 of points array." );
@@ -112,8 +120,8 @@ namespace Intrepid2 {
       break;
     }
     case 3: {
-      INTREPID2_TEST_FOR_EXCEPTION( points.extent(0) != worksetCell.extent(0), std::invalid_argument,
-                                    ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 0 (number of cells) of points array must equal dim 0 of cellWorkset array");
+      INTREPID2_TEST_FOR_EXCEPTION( points.extent_int(0) != numCells, std::invalid_argument,
+                                    ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 0 (number of cells) of points array must equal number of cells requested from in the workset.");
 
       INTREPID2_TEST_FOR_EXCEPTION( points.extent(2) != cellTopo.getDimension(), std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::setJacobian): dim 2 (spatial dimension) of points array does not match cell dimension");

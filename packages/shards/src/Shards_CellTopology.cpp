@@ -385,7 +385,6 @@ int isPredefinedCell(const CellTopology& cell) {
     case Pentagon<5>::key:
     case Hexagon<6>::key:
       return 1;
-      break;
       
     default:
       return 0;

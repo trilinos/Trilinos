@@ -823,9 +823,8 @@ namespace
     // we use getDofCoords() to perform the mapping.
     using ScalarViewType         = typename DerivedNodalBasisFamily::Basis::ScalarViewType;
     using OrdinalTypeArray1D     = typename DerivedNodalBasisFamily::Basis::OrdinalTypeArray1D;
-    using OrdinalTypeArray1DHost = typename OrdinalTypeArray1D::HostMirror;
-    OrdinalTypeArray1D     dofMapToDerived     = OrdinalTypeArray1D("dofMapToDerived",standardCardinality);
-    OrdinalTypeArray1DHost dofMapToDerivedHost = Kokkos::create_mirror_view(dofMapToDerived);
+    OrdinalTypeArray1D     dofMapToStandard     = OrdinalTypeArray1D("dofMapToStandard",standardCardinality);
+//    OrdinalTypeArray1DHost dofMapToStandardHost = Kokkos::create_mirror_view(dofMapToStandard);
     
     using ValueType    = typename ScalarViewType::value_type;
     using ResultLayout = typename DeduceLayout< ScalarViewType >::result_layout;
@@ -837,7 +836,7 @@ namespace
     standardBasis->getDofCoords(dofCoordsStandard);
     derivedBasis-> getDofCoords(dofCoordsDerived );
     
-    Kokkos::deep_copy(dofMapToDerived, -1);
+    Kokkos::deep_copy(dofMapToStandard, -1);
     
     Kokkos::parallel_for(standardCardinality, KOKKOS_LAMBDA (const int fieldOrdinalStandard)
     {
@@ -857,7 +856,7 @@ namespace
         
         if (matches)
         {
-          dofMapToDerived(fieldOrdinalStandard) = fieldOrdinalDerived;
+          dofMapToStandard(fieldOrdinalDerived) = fieldOrdinalStandard;
           matchFound = true;
           break;
         }
@@ -869,7 +868,7 @@ namespace
       }
     });
     // copy dofMapToDerived to host view
-    Kokkos::deep_copy(dofMapToDerivedHost, dofMapToDerived);
+//    Kokkos::deep_copy(dofMapToStandardHost, dofMapToStandard);
     
     using PointScalar  = typename DerivedNodalBasisFamily::PointValueType;
     using OutputScalar = typename DerivedNodalBasisFamily::OutputValueType;
@@ -883,153 +882,33 @@ namespace
     standardBasis->getValues(standardOutputView, inputPointsView, op);
     derivedBasis->getValues(derivedOutputView, inputPointsView, op);
     
-    ViewType<bool> valuesAreBothSmall;
-    auto smallNumber = Intrepid2::smallNumber<OutputScalar>();
-    ViewType<bool> relativeErrorsMeetTol;
-    if (standardOutputView.rank() == 2)
-    {
-      valuesAreBothSmall    = getView<bool>("valuesAreBothSmall",    standardCardinality, numPoints);
-      relativeErrorsMeetTol = getView<bool>("relativeErrorsMeetTol", standardCardinality, numPoints);
-      
-      using RangePolicy = Kokkos::MDRangePolicy < ExecutionSpace, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
-      RangePolicy policy( { 0, 0 }, { standardCardinality, numPoints} );
-      
-      Kokkos::parallel_for( policy,
-      KOKKOS_LAMBDA (const int &fieldOrdinalStandard, const int &pointOrdinal )
-      {
-        const int & fieldOrdinalDerived = dofMapToDerived(fieldOrdinalStandard);
-        
-        const OutputScalar & standardValue = standardOutputView(fieldOrdinalStandard, pointOrdinal);
-        const OutputScalar & derivedValue  =  derivedOutputView(fieldOrdinalDerived,  pointOrdinal);
+    // derived may be in a different order.  Remap so it's in the same order as standard basis
+    auto derivedOutputViewRemapped = getOutputView<OutputScalar>(fs, op, standardCardinality, numPoints, spaceDim);
+    
+    using ViewIteratorScalar    = Intrepid2::ViewIterator<decltype(derivedOutputView), OutputScalar>;
+    const int entryCount = standardOutputView.size();
 
-        valuesAreBothSmall   (fieldOrdinalStandard, pointOrdinal) = valuesAreSmall(standardValue, derivedValue, tol);
-        relativeErrorsMeetTol(fieldOrdinalStandard, pointOrdinal) = relErrMeetsTol(standardValue, derivedValue, smallNumber, tol);;
-      }
-      );
-    }
-    else
+    Kokkos::RangePolicy < ExecutionSpace > policy(0,entryCount);
+    Kokkos::parallel_for( policy,
+    KOKKOS_LAMBDA (const int &enumerationIndex )
     {
-      const int valuesPerPoint = standardOutputView.extent_int(2);
-      valuesAreBothSmall    = getView<bool>("valuesAreBothSmall",    standardCardinality, numPoints, valuesPerPoint);
-      relativeErrorsMeetTol = getView<bool>("relativeErrorsMeetTol", standardCardinality, numPoints, valuesPerPoint);
+      ViewIteratorScalar vi1(derivedOutputView);
+      vi1.setEnumerationIndex(enumerationIndex);
       
-      using RangePolicy = Kokkos::MDRangePolicy < ExecutionSpace, Kokkos::Rank<3>, Kokkos::IndexType<ordinal_type> >;
-      RangePolicy policy( { 0, 0, 0 }, { standardCardinality, numPoints,  valuesPerPoint} );
+      auto location = vi1.getLocation();
       
-      Kokkos::parallel_for( policy,
-      KOKKOS_LAMBDA (const int &fieldOrdinalStandard, const int &pointOrdinal, const int &valueOrdinal )
-      {
-        const int & fieldOrdinalDerived = dofMapToDerived(fieldOrdinalStandard);
-        
-        const OutputScalar & standardValue = standardOutputView(fieldOrdinalStandard, pointOrdinal, valueOrdinal);
-        const OutputScalar & derivedValue  =  derivedOutputView(fieldOrdinalDerived,  pointOrdinal, valueOrdinal);
-
-        valuesAreBothSmall   (fieldOrdinalStandard, pointOrdinal, valueOrdinal) = valuesAreSmall(standardValue, derivedValue, tol);
-        relativeErrorsMeetTol(fieldOrdinalStandard, pointOrdinal, valueOrdinal) = relErrMeetsTol(standardValue, derivedValue, smallNumber, tol);;
-      }
-      );
+      const int derivedFieldOrdinal = location[0];
+      const int standardFieldOrdinal = dofMapToStandard(derivedFieldOrdinal);
+      
+      location[0] = standardFieldOrdinal;
+      
+      ViewIteratorScalar vi2(derivedOutputViewRemapped);
+      vi2.setLocation(location);
+      vi2.set(vi1.get());
     }
+    );
     
-    auto relativeErrorsMeetTolHost = getHostCopy(relativeErrorsMeetTol);
-    auto valuesAreBothSmallHost    = getHostCopy(valuesAreBothSmall);
-    auto standardOutputViewHost    = getHostCopy(standardOutputView);
-    auto derivedOutputViewHost     = getHostCopy(derivedOutputView);
-    auto inputPointsViewHost       = getHostCopy(inputPointsView);
-    
-    bool scalarValued = (standardOutputView.rank() == 2); // F,P -- if vector-valued, F,P,D or F,P,Dk
-    
-    for (int pointOrdinal=0; pointOrdinal<numPoints; pointOrdinal++)
-    {
-      int pointPassed = true;
-      for (int fieldOrdinalStandard=0; fieldOrdinalStandard<derivedCardinality; fieldOrdinalStandard++)
-      {
-        int fieldOrdinalDerived = dofMapToDerivedHost(fieldOrdinalStandard);
-        if (scalarValued)
-        {
-          bool valuesMatch = true;
-          if (!valuesAreBothSmall(fieldOrdinalStandard,pointOrdinal))
-          {
-            valuesMatch = relativeErrorsMeetTolHost(fieldOrdinalStandard,pointOrdinal);
-          }
-          
-          if (!valuesMatch)
-          {
-            const OutputScalar & standardValue = standardOutputViewHost(fieldOrdinalStandard,pointOrdinal);
-            const OutputScalar & derivedValue  =  derivedOutputViewHost(fieldOrdinalDerived, pointOrdinal);
-            
-            pointPassed = false;
-            if (fs == Intrepid2::FUNCTION_SPACE_HCURL)
-            {
-              // scalar values are the curls
-              out << "curl ";
-            }
-            else if (fs == Intrepid2::FUNCTION_SPACE_HDIV)
-            {
-              // scalar values are the div values
-              out << "div ";
-            }
-            PointScalar x = inputPointsViewHost(pointOrdinal,0);
-            PointScalar y = (spaceDim > 1) ? PointScalar(inputPointsViewHost(pointOrdinal,1)) : PointScalar(-2.0);
-            PointScalar z = (spaceDim > 2) ? PointScalar(inputPointsViewHost(pointOrdinal,2)) : PointScalar(-2.0);
-            
-            if (spaceDim == 1)
-              out << "values for "  << x  << " differ for field ordinal " << fieldOrdinalStandard;
-            else if (spaceDim == 2)
-              out << "values for ("  << x << "," << y << ") differ for field ordinal " << fieldOrdinalStandard;
-            else
-              out << "values for ("  << x << "," << y << "," << z << ") differ for field ordinal " << fieldOrdinalStandard;
-            out << ": expected " << standardValue << "; actual " << derivedValue;
-            out << " (diff: " << standardValue-derivedValue << ")" << std::endl;
-            success = false;
-          }
-        }
-        else // vector-valued
-        {
-          bool valuesMatch = true;
-          int dkcard = standardOutputView.extent_int(2);
-          for (int d=0; d<dkcard; d++)
-          {
-            if (!valuesAreBothSmall(fieldOrdinalStandard,pointOrdinal,d))
-            {
-              valuesMatch = valuesMatch && relativeErrorsMeetTolHost(fieldOrdinalStandard,pointOrdinal,d);
-            }
-          }
-          
-          if (!valuesMatch)
-          {
-            pointPassed = false;
-            PointScalar x = inputPointsViewHost(pointOrdinal,0);
-            PointScalar y = (spaceDim > 1) ? PointScalar(inputPointsViewHost(pointOrdinal,1)) : PointScalar(-2.0);
-            PointScalar z = (spaceDim > 2) ? PointScalar(inputPointsViewHost(pointOrdinal,2)) : PointScalar(-2.0);
-            
-            if (spaceDim == 1)
-              out << "values for "  << x  << " differ for field ordinal " << fieldOrdinalStandard;
-            else if (spaceDim == 2)
-              out << "values for ("  << x << "," << y << ") differ for field ordinal " << fieldOrdinalStandard;
-            else
-              out << "values for ("  << x << "," << y << "," << z << ") differ for field ordinal " << fieldOrdinalStandard;
-            out << ": expected (";
-            for (int d=0; d<dkcard; d++)
-            {
-              out << standardOutputViewHost(fieldOrdinalStandard,pointOrdinal,d);
-              if (d<dkcard-1) out << ",";
-            }
-            out << "); actual was (";
-            for (int d=0; d<dkcard; d++)
-            {
-              out << derivedOutputViewHost(fieldOrdinalStandard,pointOrdinal,d);
-              if (d<dkcard-1) out << ",";
-            }
-            out << ")" << std::endl;
-            success = false;
-          }
-        }
-      }
-      if (!pointPassed)
-      {
-        out << "point " << pointOrdinal << " failed.\n";
-      }
-    }
+    testViewFloatingEquality(standardOutputView, derivedOutputViewRemapped, tol, tol, out, success);
   }
   
   template<class DerivedNodalBasisFamily, class StandardNodalBasisFamily>
@@ -1135,12 +1014,12 @@ namespace
     runNodalBasisComparisonTests<DerivedNodalBasisFamily, StandardNodalBasisFamily>(polyOrder_1D, lineTopo, {FUNCTION_SPACE_HVOL}, {OPERATOR_VALUE}, tol, out, success);
     runNodalBasisComparisonTests<DerivedNodalBasisFamily, StandardNodalBasisFamily>(polyOrder_1D, lineTopo, {FUNCTION_SPACE_HGRAD}, {OPERATOR_VALUE,OPERATOR_GRAD}, tol, out, success);
     runNodalBasisComparisonTests<DerivedNodalBasisFamily, StandardNodalBasisFamily>(polyOrder_1D, lineTopo, {FUNCTION_SPACE_HGRAD}, operators_dk, tol, out, success);
-    
+
     out << "Running 2D nodal quadrilateral basis comparison tests…\n";
     runNodalBasisComparisonTests<DerivedNodalBasisFamily, StandardNodalBasisFamily>(polyOrder_2D, quadTopo, {FUNCTION_SPACE_HVOL}, {OPERATOR_VALUE}, tol, out, success);
     runNodalBasisComparisonTests<DerivedNodalBasisFamily, StandardNodalBasisFamily>(polyOrder_2D, quadTopo, {FUNCTION_SPACE_HGRAD}, {OPERATOR_VALUE,OPERATOR_GRAD}, tol, out, success);
     runNodalBasisComparisonTests<DerivedNodalBasisFamily, StandardNodalBasisFamily>(polyOrder_2D, quadTopo, {FUNCTION_SPACE_HGRAD}, operators_dk, tol, out, success);
-    
+
     out << "Running 3D nodal hexahedron basis comparison tests…\n";
     runNodalBasisComparisonTests<DerivedNodalBasisFamily, StandardNodalBasisFamily>(polyOrder_3D, hexTopo, {FUNCTION_SPACE_HVOL}, {OPERATOR_VALUE}, tol, out, success);
     runNodalBasisComparisonTests<DerivedNodalBasisFamily, StandardNodalBasisFamily>(polyOrder_3D, hexTopo, {FUNCTION_SPACE_HGRAD}, {OPERATOR_VALUE,OPERATOR_GRAD}, tol, out, success);

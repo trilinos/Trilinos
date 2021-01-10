@@ -64,13 +64,12 @@ namespace Intrepid2
   template<class HVOL_LINE>
   class Basis_Derived_HVOL_QUAD
   :
-  public Basis_TensorBasis<HVOL_LINE, HVOL_LINE>
+  public Basis_TensorBasis<typename HVOL_LINE::ExecutionSpace, typename HVOL_LINE::OutputValueType, typename HVOL_LINE::PointValueType>
   {
   protected:
     std::string name_;
     using LineBasis = HVOL_LINE;
-    using TensorBasis = Basis_TensorBasis<LineBasis,LineBasis>;
-
+    using TensorBasis = Basis_TensorBasis<typename HVOL_LINE::ExecutionSpace, typename HVOL_LINE::OutputValueType, typename HVOL_LINE::PointValueType>;
   public:
 
    using ExecutionSpace  = typename HVOL_LINE::ExecutionSpace;
@@ -81,6 +80,7 @@ namespace Intrepid2
     using PointViewType  = typename HVOL_LINE::PointViewType ;
     using ScalarViewType = typename HVOL_LINE::ScalarViewType;
     
+    
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
@@ -88,8 +88,8 @@ namespace Intrepid2
      */
     Basis_Derived_HVOL_QUAD(int polyOrder_x, int polyOrder_y, const EPointType pointType=POINTTYPE_DEFAULT)
     :
-    TensorBasis(LineBasis(polyOrder_x, pointType),
-                LineBasis(polyOrder_y, pointType))
+    TensorBasis(Teuchos::rcp( new LineBasis(polyOrder_x, pointType)),
+                Teuchos::rcp( new LineBasis(polyOrder_y, pointType)))
     {
       this->functionSpace_ = FUNCTION_SPACE_HVOL;
 
@@ -116,8 +116,22 @@ namespace Intrepid2
 
     /** \brief True if orientation is required
     */
-    virtual bool requireOrientation() const {
+    virtual bool requireOrientation() const override {
       return false;
+    }
+    
+    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const override
+    {
+      const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
+      
+      if (operatorType == VALUE)
+      {
+        return OperatorTensorDecomposition(VALUE, VALUE);
+      }
+      else
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
+      }
     }
     
     using TensorBasis::getValues;

@@ -128,18 +128,19 @@ namespace Intrepid2 {
 
   // ------------------------------------------------------------------------------------
 
+
   template<typename SpT>
-  template<typename inMatValueType, class ...inMatProperties>
+  template<class MatrixViewType>
   KOKKOS_INLINE_FUNCTION
-  inMatValueType
+  typename MatrixViewType::value_type
   RealSpaceTools<SpT>::Serial::
-  det( const Kokkos::DynRankView<inMatValueType,inMatProperties...> inMat) {
+  det( const MatrixViewType inMat ) {
 
     typedef typename decltype(inMat)::non_const_value_type value_type;
 #ifdef HAVE_INTREPID2_DEBUG
     {
       bool dbgInfo = false;
-      INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.rank() != 2, dbgInfo,
+      INTREPID2_TEST_FOR_DEBUG_ABORT( getFunctorRank( inMat ) != 2, dbgInfo,
                                       ">>> ERROR (RealSpaceTools::det): Rank of matrix argument must be 2!");
       INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.extent(0) != inMat.extent(1), dbgInfo,
                                       ">>> ERROR (RealSpaceTools::det): Matrix is not square!");
@@ -674,56 +675,73 @@ namespace Intrepid2 {
         }
       }
       
+      template< bool B, class T = void >
+      using enable_if_t = typename std::enable_if<B,T>::type;
+      
+      template<int M=0>
       KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type cl,
-                      const ordinal_type pt) const {
+      enable_if_t<M==0 && supports_rank_4<inMatViewType>::value >
+      operator()(const ordinal_type cl,
+                 const ordinal_type pt) const {
         const auto mat = Kokkos::subview(_inMats,      cl, pt, Kokkos::ALL(), Kokkos::ALL());
         auto       inv = Kokkos::subview(_inverseMats, cl, pt, Kokkos::ALL(), Kokkos::ALL());
 
         apply_inverse( inv, mat );
       }
-
+      
+      template<int M=0>
       KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type pt) const {
+      enable_if_t<M==0 && !supports_rank_4<inMatViewType>::value >
+      operator()(const ordinal_type cl, const ordinal_type pt) const {
+        // empty implementation to allow compilation of parallel_for. (this combination never gets invoked at run-time, but does occur at compile-time.)
+      }
+      
+      template<int M=0>
+      KOKKOS_INLINE_FUNCTION
+      enable_if_t<M==0 && supports_rank_3<inMatViewType>::value >
+      operator()(const ordinal_type pt) const {
         const auto mat = Kokkos::subview(_inMats,      pt, Kokkos::ALL(), Kokkos::ALL());
         auto       inv = Kokkos::subview(_inverseMats, pt, Kokkos::ALL(), Kokkos::ALL());
 
         apply_inverse( inv, mat );
       }
+      
+      template<int M=0>
+      KOKKOS_INLINE_FUNCTION
+      enable_if_t<M==0 && !supports_rank_3<inMatViewType>::value >
+      operator()(const ordinal_type pt) const {
+        // empty implementation to allow compilation of parallel_for. (this combination never gets invoked at run-time, but does occur at compile-time.)
+      }
     };
   }
 
   template<typename SpT>
-  template<typename inverseMatValueType, class ...inverseMatProperties,
-           typename inMatValueType,      class ...inMatProperties>
+  template<class InverseMatrixViewType, class MatrixViewType>
   void
   RealSpaceTools<SpT>::
-  inverse(       Kokkos::DynRankView<inverseMatValueType,inverseMatProperties...> inverseMats,
-           const Kokkos::DynRankView<inMatValueType,     inMatProperties...>      inMats ) {
-
+  inverse( InverseMatrixViewType inverseMats, MatrixViewType inMats ) {
+    const unsigned rank = getFunctorRank(inMats);
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() != inverseMats.rank(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( rank != getFunctorRank(inverseMats), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::inverse): Matrix array arguments do not have identical ranks!");
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 3 || inMats.rank() > 4, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( rank < 3 || rank > 4, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::inverse): Rank of matrix array must be 3, or 4!");
-      for (size_type i=0;i<inMats.rank();++i) {
+      for (size_type i=0;i<rank;++i) {
         INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(i) != inverseMats.extent(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::inverse): Dimensions of matrix arguments do not agree!");
       }
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(inMats.rank()-2) != inMats.extent(inMats.rank()-1), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(rank-2) != inMats.extent(rank-1), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::inverse): Matrices are not square!");
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(inMats.rank()-2) < 1 || inMats.extent(inMats.rank()-2) > 3, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(rank-2) < 1 || inMats.extent(rank-2) > 3, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::inverse): Spatial dimension must be 1, 2, or 3!");
     }
 #endif
 
-    typedef          Kokkos::DynRankView<inverseMatValueType,inverseMatProperties...>      inverseMatViewType;
-    typedef          Kokkos::DynRankView<inMatValueType,     inMatProperties...>           inMatViewType;
-    typedef          FunctorRealSpaceTools::F_inverse<inverseMatViewType,inMatViewType>    FunctorType;
-    typedef typename SpT::execution_space ExecSpaceType;
+    using FunctorType = FunctorRealSpaceTools::F_inverse<InverseMatrixViewType, MatrixViewType>;
+    using ExecSpaceType = typename SpT::execution_space;
 
-    switch (inMats.rank()) {
+    switch (rank) {
     case 3: { // output P,D,D and input P,D,D
       using range_policy_type = Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> >;
       range_policy_type policy(0, inverseMats.extent(0));
@@ -752,7 +770,7 @@ namespace Intrepid2 {
       \brief Functor to compute determinant see Intrepid2::RealSpaceTools for more
     */ 
     template<typename detArrayViewType,
-             typename inMatViewType>
+             typename inMatViewType, int rank>
     struct F_det {
       detArrayViewType _detArray;
       inMatViewType    _inMats;
@@ -762,59 +780,86 @@ namespace Intrepid2 {
              inMatViewType    inMats_ )
         : _detArray(detArray_), _inMats(inMats_) {}
 
+      template< bool B, class T = void >
+      using enable_if_t = typename std::enable_if<B,T>::type;
+      
+      template<int M=rank>
       KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type pt) const {
+      enable_if_t<M==1 && supports_rank_3<inMatViewType>::value >
+      operator()(const ordinal_type pt) const {
         const auto mat = Kokkos::subview(_inMats, pt, Kokkos::ALL(), Kokkos::ALL());
         _detArray(pt) = RealSpaceTools<>::Serial::det(mat);
       }
-
+      
+      template<int M=rank>
       KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type cl, 
-                      const ordinal_type pt) const {
+      enable_if_t<M==1 && !supports_rank_3<inMatViewType>::value >
+      operator()(const ordinal_type pt) const {
+        // empty implementation to allow compilation of parallel_for. (this combination never gets invoked at run-time, but does occur at compile-time.)
+      }
+
+      template<int M=rank>
+      KOKKOS_INLINE_FUNCTION
+      enable_if_t<M==2 && supports_rank_4<inMatViewType>::value >
+      operator()(const ordinal_type cl,
+                 const ordinal_type pt) const {
         const auto mat = Kokkos::subview(_inMats, cl, pt, Kokkos::ALL(), Kokkos::ALL());
         _detArray(cl, pt) = RealSpaceTools<>::Serial::det(mat);
+      }
+      
+      template<int M=rank>
+      KOKKOS_INLINE_FUNCTION
+      enable_if_t<M==2 && !supports_rank_4<inMatViewType>::value >
+      operator()(const ordinal_type cl,
+                 const ordinal_type pt) const {
+        // empty implementation to allow compilation of parallel_for. (this combination never gets invoked at run-time, but does occur at compile-time.)
       }
     };
   }
 
+template<class DeterminantArrayViewType, class MatrixViewType>
+static void
+det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
+
   template<typename SpT>
-  template<typename detArrayValueType, class ...detArrayProperties,
-           typename inMatValueType,    class ...inMatProperties>
+  template<class DeterminantArrayViewType, class MatrixViewType>
   void
   RealSpaceTools<SpT>::
-  det(       Kokkos::DynRankView<detArrayValueType,detArrayProperties...> detArray,
-       const Kokkos::DynRankView<inMatValueType,   inMatProperties...>    inMats ) {
+  det( DeterminantArrayViewType detArray, const MatrixViewType inMats ) {
 
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() != detArray.rank()+2, std::invalid_argument,
+      const unsigned matrixRank = getFunctorRank(inMats);
+      const unsigned detRank    = getFunctorRank(detArray);
+      INTREPID2_TEST_FOR_EXCEPTION( matrixRank != detRank+2, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::det): Determinant and matrix array arguments do not have compatible ranks!");
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 3 || inMats.rank() > 4, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( matrixRank < 3 || matrixRank > 4, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::det): Rank of matrix array must be 3 or 4!");
-      for (size_type i=0;i<inMats.rank()-2;++i) {
+      for (size_type i=0;i<matrixRank-2;++i) {
         INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(i) != detArray.extent(i), std::invalid_argument,
                                        ">>> ERROR (RealSpaceTools::det): Dimensions of determinant and matrix array arguments do not agree!");
       }
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(inMats.rank()-2) != inMats.extent(inMats.rank()-1), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(matrixRank-2) != inMats.extent(matrixRank-1), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::det): Matrices are not square!");
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(inMats.rank()-2) < 1 || inMats.extent(inMats.rank()-2) > 3, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(matrixRank-2) < 1 || inMats.extent(matrixRank-2) > 3, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
     }
 #endif
 
-    typedef          Kokkos::DynRankView<detArrayValueType,detArrayProperties...>          detArrayViewType;
-    typedef          Kokkos::DynRankView<inMatValueType,   inMatProperties...>             inMatViewType;
-    typedef          FunctorRealSpaceTools::F_det<detArrayViewType,inMatViewType>          FunctorType;
     typedef typename SpT::execution_space ExecSpaceType;
 
-    switch (detArray.rank()) {
+    const int detArrayRank = getFunctorRank(detArray);
+    
+    switch (detArrayRank) {
     case 1: { // output P and input P,D,D
+      using FunctorType = FunctorRealSpaceTools::F_det<DeterminantArrayViewType,MatrixViewType,1>;
       using range_policy_type = Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> >;
       range_policy_type policy(0, detArray.extent(0));
       Kokkos::parallel_for( policy, FunctorType(detArray, inMats) );
       break;
     }
     case 2: { // output C,P and input C,P,D,D
+      using FunctorType = FunctorRealSpaceTools::F_det<DeterminantArrayViewType,MatrixViewType,2>;
       using range_policy_type = Kokkos::MDRangePolicy
         < ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
       range_policy_type policy( { 0, 0 },

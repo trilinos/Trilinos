@@ -89,7 +89,7 @@ namespace Intrepid2 {
      */
     virtual
     const char*
-    getName() const {
+    getName() const override {
       return "CubatureDirectLineGauss";
     }
 
