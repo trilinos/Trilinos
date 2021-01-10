@@ -36,8 +36,6 @@ if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW" ]]; then
 elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL" ]]; then
   module load sparc-dev/intel-19.0.4_mpich-7.7.15_knl
   export SLURM_TASKS_PER_NODE=16
-  export OMP_PLACES=threads
-  export OMP_PROC_BIND=spread
   # Ensure that no more than 8 tasks, per srun command, are launched.
   export ATDM_CONFIG_MPI_PRE_FLAGS="--mpi=pmi2;--ntasks-per-node=8"
   # KNL nodes have 272 virtual cores.
@@ -46,6 +44,8 @@ elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL" ]]; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=1
   export ATDM_CONFIG_SBATCH_EXTRA_ARGS="-p knl -C cache --hint=multithread"
   export ATDM_CONFIG_BUILD_COUNT=8
+  unset OMP_PLACES
+  unset OMP_PROC_BIND
 else
   echo
   echo "***"
