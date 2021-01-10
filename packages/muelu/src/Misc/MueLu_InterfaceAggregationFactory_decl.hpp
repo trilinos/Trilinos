@@ -122,7 +122,7 @@ template <class Scalar = DefaultScalar,
 class InterfaceAggregationFactory : public SingleLevelFactoryBase
 {
 #undef MUELU_INTERFACEAGGREGATIONFACTORY_SHORT
-#include "MueLu_UseShortNamesScalar.hpp"
+#include "MueLu_UseShortNames.hpp"
 
 public:
 

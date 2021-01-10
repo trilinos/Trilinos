@@ -54,8 +54,6 @@
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_ConfigDefs.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
-#include <MueLu_UseDefaultTypes.hpp>
-#include <MueLu_UseShortNames.hpp>
 
 // Teuchos
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -71,6 +69,7 @@
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[])
 {
+#include <MueLu_UseShortNames.hpp>
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ParameterList;

@@ -46,8 +46,9 @@
 #ifndef MUELU_INTERFACEAGGREGATIONFACTORY_DEF_HPP_
 #define MUELU_INTERFACEAGGREGATIONFACTORY_DEF_HPP_
 
-#include "MueLu_InterfaceAggregationFactory_decl.hpp"
-
+#include <Xpetra_Map.hpp>
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_StridedMap.hpp>
 
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
@@ -56,9 +57,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
 
-#include <Xpetra_Map.hpp>
-#include <Xpetra_MapFactory.hpp>
-#include <Xpetra_StridedMap.hpp>
+#include "MueLu_InterfaceAggregationFactory_decl.hpp"
 
 namespace MueLu
 {
@@ -66,7 +65,6 @@ namespace MueLu
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const
 {
-#include "Xpetra_UseShortNames.hpp"
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of A (matrix block related to dual DOFs)");
@@ -144,9 +142,6 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOnNodeMapping(const std::string& prefix,
     Level &currentLevel) const
 {
-  using Map = Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
-  using MapFactory = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>;
-  using Aggregates = Aggregates<LocalOrdinal, GlobalOrdinal, Node>;
   using Dual2Primal_type = std::map<LocalOrdinal, LocalOrdinal>;
 
   const ParameterList &pL = GetParameterList();
@@ -247,8 +242,6 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOnPrimalInterfaceDofRowMap(
     const std::string& prefix, Level &currentLevel) const
 {
-#include "MueLu_UseShortNames.hpp"
-
   const GlobalOrdinal GO_ZERO = Teuchos::ScalarTraits<LocalOrdinal>::zero();
   const GlobalOrdinal GO_ONE = Teuchos::ScalarTraits<GlobalOrdinal>::one();
 
