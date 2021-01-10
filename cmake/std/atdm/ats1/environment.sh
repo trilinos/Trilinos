@@ -31,11 +31,9 @@ export ATDM_CONFIG_BUILD_COUNT=32
 
 if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW" ]]; then
   module load sparc-dev/intel-19.0.4_mpich-7.7.15_hsw
-  # HSW nodes have 64 virtual cores.
-  # Allow no more than 4 virtual cores per task.
-  export ATDM_CONFIG_MPI_POST_FLAGS="-c 4"
   # If we have 1 MPI rank per srun command and 1 cpu per task, we can run up to 32 2-threaded tests "in parallel" on virtual cores.
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=1
+  unset OMP_PLACES
 elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL" ]]; then
   module load sparc-dev/intel-19.0.4_mpich-7.7.15_knl
   export SLURM_TASKS_PER_NODE=16
