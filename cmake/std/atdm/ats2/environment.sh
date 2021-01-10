@@ -68,12 +68,16 @@ fi
 
 # Purge then load StdEnv to get back to a fresh env in case previous other
 # modules were loaded.
-module purge --silent
-module load StdEnv
+if [[ "${ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE}" != "1" ]] ; then
+  module purge --silent
+  module load StdEnv
+else
+  echo "NOTE: ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE=1 is set so using pre-loaded sparc-dev module!"
+fi
 
 # Load the sparc-dev/xxx module
 sparc_module_name=$(get_sparc_dev_module_name "$ATDM_CONFIG_COMPILER")
-module load ${sparc_module_name}
+atdm_config_load_sparc_dev_module ${sparc_module_name}
 
 module unload cmake
 module load cmake/3.18.0
