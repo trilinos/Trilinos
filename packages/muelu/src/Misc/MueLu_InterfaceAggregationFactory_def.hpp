@@ -271,7 +271,18 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
     auto stridedColMap = rcp_dynamic_cast<const StridedMap>(A01->getColMap("stridedMaps"));
     numDofsPerPrimalNode = Teuchos::as<LocalOrdinal>(stridedRowMap->getFixedBlockSize());
     numDofsPerDualNode = Teuchos::as<LocalOrdinal>(stridedColMap->getFixedBlockSize());
+
+    if (numDofsPerPrimalNode != numDofsPerDualNode) {
+    GetOStream(Warnings) << "InterfaceAggregation attempts to work with "
+        << numDofsPerPrimalNode << " primal DOFs per node and " << numDofsPerDualNode << " dual DOFs per node."
+        << "Be careful! Algorithm is not well-tested, if number of primal and dual DOFs per node differ." << std::endl;
+    }
   }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(numDofsPerPrimalNode==0, Exceptions::RuntimeError,
+      "InterfaceAggregationFactory could not extract the number of primal DOFs per node from striding information. At least, make sure that StridedMap information has actually been provided.");
+  TEUCHOS_TEST_FOR_EXCEPTION(numDofsPerDualNode==0, Exceptions::RuntimeError,
+      "InterfaceAggregationFactory could not extract the number of dual DOFs per node from striding information. At least, make sure that StridedMap information has actually been provided.");
 
   /* Determine block information for primal block
     *
