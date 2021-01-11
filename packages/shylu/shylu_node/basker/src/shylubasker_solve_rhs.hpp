@@ -513,7 +513,9 @@ namespace BaskerNS
         }
       }
       printf("];\n");
+      #endif
       neg_spmv_perm(BTF_E, x, x);
+      #if 0
       printf( "\n after update\n" );
       for (Int i = 0; i < gn; i++) printf( " %e\n",x(i));
       printf( "\n");
