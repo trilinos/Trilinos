@@ -543,7 +543,7 @@ protected:
     std::vector<real_type> cs (restart);
     std::vector<SC> sn (restart);
 
-    #define HAVE_TPETRA_DEBUG
+    //#define HAVE_TPETRA_DEBUG
     #ifdef HAVE_TPETRA_DEBUG
     dense_matrix_type H2 (restart+1, restart,   true);
     dense_matrix_type H3 (restart+1, restart,   true);
