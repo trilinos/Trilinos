@@ -66,7 +66,7 @@ class MockEvaluator : public panzer::EvaluatorWithBaseImpl<panzer::Traits> {
 
 public:
 
-  void evaluateFields(const panzer::Traits::EvalData workset) override
+  void evaluateFields(panzer::Traits::EvalData workset) override
   {
     // Temporary vars needed by test macros
     auto& out = std::cout;
