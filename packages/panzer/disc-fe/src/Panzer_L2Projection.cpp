@@ -422,8 +422,8 @@ namespace panzer {
 
         // Sources can be any basis
         const auto& sourceBasisValues = workset.getBasisValues(sourceBasisDescriptor,integrationDescriptor_);
-        Kokkos::View<const double***,PHX::Device> sourceUnweightedScalarBasis;
-        Kokkos::View<const double****,PHX::Device> sourceUnweightedVectorBasis;
+        PHX::View<const double***> sourceUnweightedScalarBasis;
+        PHX::View<const double****> sourceUnweightedVectorBasis;
         bool useRankThreeBasis = false; // default to gradient or vector basis
         if ( (sourceBasisDescriptor.getType() == "HGrad") || (sourceBasisDescriptor.getType() == "Const") || (sourceBasisDescriptor.getType() == "HVol") ) {
           if (directionIndex == -1) { // Project dof value
