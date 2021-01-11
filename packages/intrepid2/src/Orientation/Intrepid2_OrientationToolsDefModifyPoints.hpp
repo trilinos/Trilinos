@@ -114,7 +114,8 @@ namespace Intrepid2 {
                              pt1 };
       
 #ifdef HAVE_INTREPID2_DEBUG
-      VT eps = 10.0*std::numeric_limits<VT>::epsilon();
+      // hard-coded epsilon to avoid CUDA issue with calling host code.  Would be nice to have a portable way to define this, but probably not worth the effort at the moment.
+      VT eps = 1e-14; // = 10.0*std::numeric_limits<VT>::epsilon();
       INTREPID2_TEST_FOR_ABORT( !( -eps <= lambda[0] && lambda[0] <= 1.0+eps ),
                                 ">>> ERROR (Intrepid::OrientationTools::getModifiedTrianglePoint): " \
                                 "Computed bicentric coordinate (lamba[0]) is out of range [0, 1].");

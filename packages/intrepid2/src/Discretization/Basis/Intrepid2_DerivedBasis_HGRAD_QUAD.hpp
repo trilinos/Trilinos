@@ -57,7 +57,7 @@ namespace Intrepid2
 {
   template<class HGRAD_LINE>
   class Basis_Derived_HGRAD_QUAD
-  : public Basis_TensorBasis<HGRAD_LINE, HGRAD_LINE>
+  : public Basis_TensorBasis<typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
   {
   protected:
     std::string name_;
@@ -73,7 +73,7 @@ namespace Intrepid2
     using ScalarViewType = typename HGRAD_LINE::ScalarViewType;
     
     using LineBasis = HGRAD_LINE;
-    using TensorBasis = Basis_TensorBasis<LineBasis,LineBasis>;
+    using TensorBasis = Basis_TensorBasis<ExecutionSpace, OutputValueType, PointValueType>;
 
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
@@ -82,8 +82,8 @@ namespace Intrepid2
      */
     Basis_Derived_HGRAD_QUAD(int polyOrder_x, int polyOrder_y, const EPointType pointType=POINTTYPE_DEFAULT)
     :
-    TensorBasis(LineBasis(polyOrder_x, pointType),
-                LineBasis(polyOrder_y, pointType))
+    TensorBasis(Teuchos::rcp( new LineBasis(polyOrder_x, pointType)),
+                Teuchos::rcp( new LineBasis(polyOrder_y, pointType)))
     {
       this->functionSpace_ = FUNCTION_SPACE_HGRAD;
 
@@ -109,8 +109,38 @@ namespace Intrepid2
       return (this->getDofCount(1,0) > 1); //if it has more than 1 DOF per edge, than it needs orientations
     }
     
-    using Basis<ExecutionSpace,OutputValueType,PointValueType>::getValues;
+    /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, and what operator(s) to basis2.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.
+    */
+    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const override
+    {
+      const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
+      const EOperator GRAD  = Intrepid2::OPERATOR_GRAD;
+      
+      if (operatorType == VALUE)
+      {
+        return OperatorTensorDecomposition(Intrepid2::OPERATOR_VALUE,Intrepid2::OPERATOR_VALUE);
+      }
+      else if (operatorType == GRAD)
+      {
+        // to evaluate gradient, we need both OP_VALUE and OP_GRAD (thanks to product rule)
+        // for 1D line x line, we will put derivative * value in first component, and value * derivative in second
+        
+        std::vector< std::vector<EOperator> > ops;
+        ops.push_back(std::vector<EOperator>{GRAD,  VALUE});
+        ops.push_back(std::vector<EOperator>{VALUE, GRAD});
+        
+        std::vector<double> weights(ops.size(), 1.0);
+        
+        return OperatorTensorDecomposition(ops, weights);
+      }
+      else
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
+      }
+    }
     
+    using Basis<ExecutionSpace,OutputValueType,PointValueType>::getValues;
+
     /** \brief  multi-component getValues() method (required/called by TensorBasis)
         \param [out] outputValues - the view into which to place the output values
         \param [in] operatorType - the operator on the basis
@@ -165,6 +195,7 @@ namespace Intrepid2
         INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
       }
     }
+                             
 
     /** \brief  Returns basis name
 
@@ -176,15 +207,15 @@ namespace Intrepid2
       return name_.c_str();
     }
 
-    /** \brief returns the basis associated to a subCell.
+      /** \brief returns the basis associated to a subCell.
 
-        The bases of the subCell are the restriction to the subCell
-        of the bases of the parent cell.
-        TODO: test this method when different orders are used in different directions
-        \param [in] subCellDim - dimension of subCell
-        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
-        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
-     */
+          The bases of the subCell are the restriction to the subCell
+          of the bases of the parent cell.
+          TODO: test this method when different orders are used in different directions
+          \param [in] subCellDim - dimension of subCell
+          \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+          \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+       */
     BasisPtr<ExecutionSpace, OutputValueType, PointValueType>
       getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
       if(subCellDim == 1) {
