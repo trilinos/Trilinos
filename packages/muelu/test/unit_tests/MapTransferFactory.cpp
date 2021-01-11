@@ -563,6 +563,7 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    using MagnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
     using test_factory = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -653,7 +654,7 @@ namespace MueLuTests {
       ArrayRCP<const Scalar> coarseVecEntries = fullCoarseVec->getData(0);
       Array<GO> myCoarseGIDs;
       for (LO lid = 0; lid < static_cast<LO>(coarseVecEntries.size()); ++lid) {
-        if (coarseVecEntries[lid] > Teuchos::ScalarTraits<Scalar>::zero())
+        if (coarseVecEntries[lid] > Teuchos::ScalarTraits<MagnitudeType>::zero())
           myCoarseGIDs.push_back(Ptent->getDomainMap()->getGlobalElement(lid));
       }
       GO gNumCoarseEntries = 0;
@@ -676,6 +677,7 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    using MagnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
     using test_factory = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -767,7 +769,7 @@ namespace MueLuTests {
       ArrayRCP<const Scalar> coarseVecEntries = fullCoarseVec->getData(0);
       Array<GO> myCoarseGIDs;
       for (LO lid = 0; lid < static_cast<LO>(coarseVecEntries.size()); ++lid) {
-        if (coarseVecEntries[lid] > Teuchos::ScalarTraits<Scalar>::zero())
+        if (coarseVecEntries[lid] > Teuchos::ScalarTraits<MagnitudeType>::zero())
           myCoarseGIDs.push_back(Ptent->getDomainMap()->getGlobalElement(lid));
       }
       GO gNumCoarseEntries = 0;
