@@ -47,31 +47,31 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND
     )
 
   TRIBITS_ADD_EXECUTABLE(
-    MeshTyingBlocked_SimpleSmoother_2dof
-    SOURCES MeshTyingBlocked_SimpleSmoother_2dof.cpp
+    MortarSurfaceCoupling_DofBased
+    SOURCES MortarSurfaceCoupling_DofBased.cpp
     COMM serial mpi
     )
 
   TRIBITS_ADD_TEST(
-    MeshTyingBlocked_SimpleSmoother_2dof
+    MortarSurfaceCoupling_DofBased
     NAME "MeshTyingBlocked_SimpleSmoother_2dof_small"
-    ARGS "--linAlgebra=Tpetra --xml=meshtying2D_small_simple.xml --nPrimalDofs=78 --nDualDofs=14 --probName=meshtying2D_small --expectedNumIts=16"
+    ARGS "--linAlgebra=Tpetra --xml=meshtying2D_small_simple.xml --nPrimalDofs=78 --nDualDofs=14 --numPrimalDofsPerNode=2 --numDualDofsPerNode=2 --probName=meshtying2D_small --expectedNumIts=16"
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
 
   TRIBITS_ADD_TEST(
-    MeshTyingBlocked_SimpleSmoother_2dof
+    MortarSurfaceCoupling_DofBased
     NAME "MeshTyingBlocked_SimpleSmoother_2dof_medium"
-    ARGS "--linAlgebra=Tpetra --xml=meshtying2D_medium_simple.xml --nPrimalDofs=530 --nDualDofs=54 --probName=meshtying2D_medium --expectedNumIts=6"
+    ARGS "--linAlgebra=Tpetra --xml=meshtying2D_medium_simple.xml --nPrimalDofs=530 --nDualDofs=54 --numPrimalDofsPerNode=2 --numDualDofsPerNode=2 --probName=meshtying2D_medium --expectedNumIts=6"
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
 
   TRIBITS_ADD_TEST(
-    MeshTyingBlocked_SimpleSmoother_2dof
+    MortarSurfaceCoupling_DofBased
     NAME "MeshTyingBlocked_SimpleSmoother_2dof_medium"
-    ARGS "--linAlgebra=Tpetra --xml=meshtying2D_medium_simple.xml --nPrimalDofs=530 --nDualDofs=54 --probName=meshtying2D_medium --expectedNumIts=11"
+    ARGS "--linAlgebra=Tpetra --xml=meshtying2D_medium_simple.xml --nPrimalDofs=530 --nDualDofs=54 --numPrimalDofsPerNode=2 --numDualDofsPerNode=2 --probName=meshtying2D_medium --expectedNumIts=11"
     COMM serial mpi
     NUM_MPI_PROCS 4
     )

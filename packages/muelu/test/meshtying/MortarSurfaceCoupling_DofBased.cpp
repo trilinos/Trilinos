@@ -84,6 +84,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   GO numGlobalDofsPrimal = -ST::one(); clp.setOption("nPrimalDofs", &numGlobalDofsPrimal, "total number of primal DOFs");
   GO numGlobalDofsDual = -ST::one(); clp.setOption("nDualDofs", &numGlobalDofsDual, "total number of dual DOFs");
+  int numPrimalDofsPerNode = -1; clp.setOption("numPrimalDofsPerNode", &numPrimalDofsPerNode, "number of primal DOFs per mesh node");
+  int numDualDofsPerNode = -1; clp.setOption("numDualDofsPerNode", &numDualDofsPerNode, "number of dual DOFs per interface node");
   std::string probName = ""; clp.setOption("probName", &probName, "short name of the problem to be done. Used to read-in the problem from files.");
   std::string xmlFile = ""; clp.setOption("xml", &xmlFile, "xml-file with MueLu configuration");
   int expectedNumIterations = -1; clp.setOption("expectedNumIts", &expectedNumIterations, "expected number of iterations for this test");
@@ -98,6 +100,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   TEUCHOS_TEST_FOR_EXCEPTION(numGlobalDofsPrimal==-ST::one(), MueLu::Exceptions::InvalidArgument, "Please specify the global number of primal DOFs on the command line.");
   TEUCHOS_TEST_FOR_EXCEPTION(numGlobalDofsDual==-ST::one(), MueLu::Exceptions::InvalidArgument, "Please specify the global number of dual DOFs on the command line.");
+  TEUCHOS_TEST_FOR_EXCEPTION(numPrimalDofsPerNode==-1, MueLu::Exceptions::InvalidArgument, "Please specify the number of primal DOFs per mesh node on the command line.");
+  TEUCHOS_TEST_FOR_EXCEPTION(numDualDofsPerNode==-1, MueLu::Exceptions::InvalidArgument, "Please specify the number of dual DOFs per interface node on the command line.");
   TEUCHOS_TEST_FOR_EXCEPTION(probName=="", MueLu::Exceptions::InvalidArgument, "Please specify a valid problem name.");
   TEUCHOS_TEST_FOR_EXCEPTION(xmlFile=="", MueLu::Exceptions::InvalidArgument, "Please specify a valid xml-file for the MueLu preconditioner.");
 
@@ -105,9 +109,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   const std::string rhsFileName = probName + "_rhs.mm";
   const std::string nullspace1FileName = probName + "_nullspace1.mm";
   const std::string dualInterfaceMapFileName = probName + "_interface_dof_map.mm";
-
-  const int numPrimalDofsPerNode = 2;
-  const int numDualDofsPerNode = 2;
 
   // Create maps for primal DOFs
   std::vector<size_t> stridingInfoPrimal;
@@ -184,6 +185,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   ParameterListInterpreter mueLuFactory(*params, comm);
 
   RCP<Hierarchy> hierarchy = mueLuFactory.CreateHierarchy();
+  hierarchy->IsPreconditioner(true);
   hierarchy->SetDefaultVerbLevel(MueLu::Extreme);
   hierarchy->GetLevel(0)->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(blockedMatrix));
   hierarchy->GetLevel(0)->Set("Nullspace1", nullspace1);
