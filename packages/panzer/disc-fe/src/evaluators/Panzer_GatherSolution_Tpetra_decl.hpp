@@ -139,8 +139,8 @@ private:
   bool has_tangent_fields_;
   std::vector< std::vector< PHX::MDField<const ScalarT,Cell,NODE> > > tangentFields_;
 
-  Kokkos::View<int**,PHX::Device> scratch_lids_;
-  std::vector<Kokkos::View<int*,PHX::Device> > scratch_offsets_;
+  PHX::View<int**> scratch_lids_;
+  std::vector<PHX::View<int*> > scratch_offsets_;
 
   GatherSolution_Tpetra();
 };
@@ -262,14 +262,14 @@ private:
 
   GatherSolution_Tpetra();
 
-  Kokkos::View<int**,PHX::Device> scratch_lids_;
-  std::vector<Kokkos::View<int*,PHX::Device> > scratch_offsets_;
+  PHX::View<int**> scratch_lids_;
+  std::vector<PHX::View<int*> > scratch_offsets_;
 
   // functor data
   struct {
     // input values
-    Kokkos::View<const LO**,PHX::Device> lids;    // local indices for unknowns
-    Kokkos::View<const int*,PHX::Device> offsets; // how to get a particular field
+    PHX::View<const LO**> lids;    // local indices for unknowns
+    PHX::View<const int*> offsets; // how to get a particular field
     Kokkos::View<const double**, Kokkos::LayoutLeft,PHX::Device> x_data;
     double seed_value;                            // AD seed information
     int dos;	                                  // Offset for special interface bc

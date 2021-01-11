@@ -338,7 +338,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device> elemOrts("elemOrts", workset.numOwnedCells());
         Intrepid2::OrientationTools<PHX::Device>::getOrientation(elemOrts, ownedNodesGID, *cellTopology);
 
-        Kokkos::View<LO**,PHX::Device> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+        PHX::View<LO**> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                                 sourceGlobalIndexer->getElementBlockGIDCount(block));
         // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
         const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
@@ -346,7 +346,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
 
         // Create vector to store if LID is owned
         timer->start("Create isOwned view");
-        Kokkos::View<bool**,PHX::Device> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
+        PHX::View<bool**> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
         {
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
@@ -609,14 +609,14 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
       panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
       const auto worksets = worksetContainer->getWorksets(wd);
       for (const auto& workset : *worksets) {
-        Kokkos::View<LO**,PHX::Device> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+        PHX::View<LO**> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                                 targetGlobalIndexer->getElementBlockGIDCount(block));
         const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
         targetGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
         // Create vector to store if LID is owned
         timer->start("Create isOwned view");
-        Kokkos::View<bool**,PHX::Device> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
+        PHX::View<bool**> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
         {
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
@@ -718,14 +718,14 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
       panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
       const auto worksets = worksetContainer->getWorksets(wd);
       for (const auto& workset : *worksets) {
-        Kokkos::View<LO**,PHX::Device> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+        PHX::View<LO**> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                                 targetGlobalIndexer->getElementBlockGIDCount(block));
         const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
         targetGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
         // Create vector to store if LID is owned
         timer->start("Create isOwned view");
-        Kokkos::View<bool**,PHX::Device> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
+        PHX::View<bool**> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
         {
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
@@ -1083,7 +1083,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
       const auto worksets = worksetContainer->getWorksets(wd);
       for (const auto& workset : *worksets) {
 
-        Kokkos::View<LO**,PHX::Device> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+        PHX::View<LO**> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                                 sourceGlobalIndexer->getElementBlockGIDCount(block));
         // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
         const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
@@ -1091,7 +1091,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
 
         // Create vector to store if LID is owned
         timer->start("Create isOwned view");
-        Kokkos::View<bool**,PHX::Device> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
+        PHX::View<bool**> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
         {
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
@@ -1207,14 +1207,14 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
       panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
       const auto worksets = worksetContainer->getWorksets(wd);
       for (const auto& workset : *worksets) {
-        Kokkos::View<LO**,PHX::Device> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+        PHX::View<LO**> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                                 targetGlobalIndexer->getElementBlockGIDCount(block));
         const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
         targetGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
         // Create vector to store if LID is owned
         timer->start("Create isOwned view");
-        Kokkos::View<bool**,PHX::Device> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
+        PHX::View<bool**> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
         {
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
@@ -1299,14 +1299,14 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
       panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
       const auto worksets = worksetContainer->getWorksets(wd);
       for (const auto& workset : *worksets) {
-        Kokkos::View<LO**,PHX::Device> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+        PHX::View<LO**> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                                 targetGlobalIndexer->getElementBlockGIDCount(block));
         const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
         targetGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
         // Create vector to store if LID is owned
         timer->start("Create isOwned view");
-        Kokkos::View<bool**,PHX::Device> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
+        PHX::View<bool**> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
         {
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
