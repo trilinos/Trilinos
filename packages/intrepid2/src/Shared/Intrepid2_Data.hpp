@@ -296,11 +296,11 @@ namespace Intrepid2 {
           blockPlusDiagonalCount++;
           if (blockPlusDiagonalCount == 1) // first dimension thus marked --> active
           {
+            
+#ifdef HAVE_INTREPID2_DEBUG
+            const int numNondiagonalEntries = blockPlusDiagonalNumNondiagonalEntries(blockPlusDiagonalLastNonDiagonal_);
             const int dataExtent = getUnderlyingViewExtent(numActiveDims_); // flat storage of all matrix entries
             const int logicalExtent = extents_[i];
-            
-            const int numNondiagonalEntries = blockPlusDiagonalNumNondiagonalEntries(blockPlusDiagonalLastNonDiagonal_);
-#ifdef HAVE_INTREPID2_DEBUG
             const int numDiagonalEntries    = logicalExtent - (blockPlusDiagonalLastNonDiagonal_ + 1);
             const int expectedDataExtent = numNondiagonalEntries + numDiagonalEntries;
             INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(dataExtent != expectedDataExtent, std::invalid_argument, ("BLOCK_PLUS_DIAGONAL data extent of " + std::to_string(dataExtent) + " does not match expected based on blockPlusDiagonalLastNonDiagonal setting of " + std::to_string(blockPlusDiagonalLastNonDiagonal_)).c_str());
