@@ -654,7 +654,7 @@ namespace MueLuTests {
       ArrayRCP<const Scalar> coarseVecEntries = fullCoarseVec->getData(0);
       Array<GO> myCoarseGIDs;
       for (LO lid = 0; lid < static_cast<LO>(coarseVecEntries.size()); ++lid) {
-        if (coarseVecEntries[lid] > Teuchos::ScalarTraits<MagnitudeType>::zero())
+        if (Teuchos::ScalarTraits<Scalar>::magnitude(coarseVecEntries[lid]) > Teuchos::ScalarTraits<MagnitudeType>::zero())
           myCoarseGIDs.push_back(Ptent->getDomainMap()->getGlobalElement(lid));
       }
       GO gNumCoarseEntries = 0;
@@ -769,7 +769,7 @@ namespace MueLuTests {
       ArrayRCP<const Scalar> coarseVecEntries = fullCoarseVec->getData(0);
       Array<GO> myCoarseGIDs;
       for (LO lid = 0; lid < static_cast<LO>(coarseVecEntries.size()); ++lid) {
-        if (coarseVecEntries[lid] > Teuchos::ScalarTraits<MagnitudeType>::zero())
+        if (Teuchos::ScalarTraits<Scalar>::magnitude(coarseVecEntries[lid]) > Teuchos::ScalarTraits<MagnitudeType>::zero())
           myCoarseGIDs.push_back(Ptent->getDomainMap()->getGlobalElement(lid));
       }
       GO gNumCoarseEntries = 0;
