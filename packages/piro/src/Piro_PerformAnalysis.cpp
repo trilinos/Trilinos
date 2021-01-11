@@ -488,6 +488,7 @@ Piro::PerformROLAnalysis(
   }
 
   bool useFullSpace = rolParams.get("Full Space",false);
+  bool useHessianDotProduct = rolParams.get("Hessian Dot Product",false);
 
   *out << "\nROL options:" << std::endl;
   rolParams.sublist("ROL Options").print(*out);
@@ -503,45 +504,52 @@ Piro::PerformROLAnalysis(
   ROL::Ptr<ROL::Algorithm<double> > algo;
   algo = ROL::makePtr<ROL::Algorithm<double>>(step, status,false);
 
-  *out << "\nStart the computation of H_pp" << std::endl;
-  Teko::BlockedLinearOp H = Teko::createBlockedOp();
-  obj.hessian_22(H, rol_x, rol_p);
-  *out << "End of the computation of H_pp" << std::endl;
+  Teko::LinearOp H, invH;
+  if (useHessianDotProduct) {
+    *out << "\nStart the computation of H_pp" << std::endl;
+    Teko::BlockedLinearOp bH = Teko::createBlockedOp();
+    obj.hessian_22(bH, rol_x, rol_p);
+    *out << "End of the computation of H_pp" << std::endl;
 
-  int numBlocks = H->productRange()->numBlocks();
+    int numBlocks = bH->productRange()->numBlocks();
 
-  Teuchos::ParameterList defaultParamList;
-  defaultParamList.set("Linear Solver Type","Amesos2");
-  string defaultSolverType = "Amesos2";
+    Teuchos::ParameterList defaultParamList;
+    defaultParamList.set("Linear Solver Type","Amesos2");
+    string defaultSolverType = "Amesos2";
 
-  Teuchos::ParameterList dHess;
-  if(rolParams.isSublist("Hessian Diagonal Inverse"))
-    dHess = rolParams.sublist("Hessian Diagonal Inverse");
+    Teuchos::ParameterList dHess;
+    if(rolParams.isSublist("Hessian Diagonal Inverse"))
+      dHess = rolParams.sublist("Hessian Diagonal Inverse");
 
-  std::vector<Teko::LinearOp> diag(numBlocks);
+    std::vector<Teko::LinearOp> diag(numBlocks);
 
-  for (int i=0; i<numBlocks; ++i) {
-    string blockName = "Block "+std::to_string(i);
-    string blockSolverType = "Block solver type "+std::to_string(i);
-    Teuchos::ParameterList pl;
-    if(dHess.isSublist(blockName))
-      pl = dHess.sublist(blockName);
-    else
-      pl = defaultParamList;
-    string solverType = dHess.get<string>(blockSolverType, defaultSolverType);
-    diag[i] = Teko::buildInverse(*Teko::invFactoryFromParamList(pl, solverType), Teko::getBlock(i, i, H));
+    for (int i=0; i<numBlocks; ++i) {
+      string blockName = "Block "+std::to_string(i);
+      string blockSolverType = "Block solver type "+std::to_string(i);
+      Teuchos::ParameterList pl;
+      if(dHess.isSublist(blockName))
+        pl = dHess.sublist(blockName);
+      else
+        pl = defaultParamList;
+      string solverType = dHess.get<string>(blockSolverType, defaultSolverType);
+      diag[i] = Teko::buildInverse(*Teko::invFactoryFromParamList(pl, solverType), Teko::getBlock(i, i, bH));
+    }
+
+    H = Teko::toLinearOp(bH);
+    invH = Teko::createBlockUpperTriInverseOp(bH, diag);
+  }
+  else {
+    H = Teuchos::null;
+    invH = Teuchos::null;
   }
 
-  Teko::LinearOp invH = Teko::createBlockUpperTriInverseOp(H, diag);
 
   //this is for testing the PrimalScaledThyraVector. At the moment the scaling is set to 1, so it is not changing the dot product
   Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_x = x->clone_v();
-  Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_p = p->clone_v();
   ::Thyra::put_scalar<double>( 1.0, scaling_vector_x.ptr());
-  ::Thyra::put_scalar<double>( 1.0, scaling_vector_p.ptr());
   //::Thyra::randomize<double>( 0.5, 2.0, scaling_vector_x.ptr());
   ROL::PrimalScaledThyraVector<double> rol_x_primal(x, scaling_vector_x);
-  ROL::PrimalHessianScaledThyraVector<double> rol_p_primal(p, Teko::toLinearOp(H), invH);
+  ROL::PrimalHessianScaledThyraVector<double> rol_p_primal(p, H, invH);
 
   // Run Algorithm
   std::vector<std::string> output;

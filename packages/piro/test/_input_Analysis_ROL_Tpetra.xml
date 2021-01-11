@@ -181,6 +181,7 @@
 
         <Parameter name="Step Method" type="string" value="Line Search" />
         <Parameter name="Full Space" type="bool" value="false" />
+        <Parameter name="Hessian Dot Product" type="bool" value="true" />
         <Parameter name="Use NOX Solver" type="bool" value="false" />
 
         <!-- =========== BEGIN ROL INPUT PARAMETER SUBLIST =========== -->

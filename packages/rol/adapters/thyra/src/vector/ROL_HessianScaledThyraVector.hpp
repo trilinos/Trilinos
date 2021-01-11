@@ -73,7 +73,10 @@ class PrimalHessianScaledThyraVector : public ThyraVector<Real> {
 
     void applyScaling(const Teuchos::RCP<Thyra::VectorBase<Real> > &out,
                       const Teuchos::RCP<const Thyra::VectorBase<Real> > &in) const {
-        Thyra::apply(*hessian_, Thyra::NOTRANS, *in, out.ptr(), (Real)1, (Real)0);
+        if(Teuchos::is_null(hessian_))
+            Thyra::copy(*in, out.ptr());
+        else
+            Thyra::apply(*hessian_, Thyra::NOTRANS, *in, out.ptr(), (Real)1, (Real)0);
     }
 
    public:
@@ -136,7 +139,10 @@ class DualHessianScaledThyraVector : public ThyraVector<Real> {
 
     void applyScaling(const Teuchos::RCP<Thyra::VectorBase<Real> > &out,
                       const Teuchos::RCP<const Thyra::VectorBase<Real> > &in) const {
-        Thyra::apply(*invHessian_, Thyra::NOTRANS, *in, out.ptr(), (Real)1, (Real)0);
+        if(Teuchos::is_null(invHessian_))
+            Thyra::copy(*in, out.ptr());
+        else
+            Thyra::apply(*invHessian_, Thyra::NOTRANS, *in, out.ptr(), (Real)1, (Real)0);
     }
 
    public:
