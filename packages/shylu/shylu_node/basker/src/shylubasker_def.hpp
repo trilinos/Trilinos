@@ -1500,6 +1500,7 @@ namespace BaskerNS
           // apply delayed pivots to BTF_A
           //BASKER_BOOL compute_nd = false;
           //info_scotch = apply_scotch_partition(keep_zeros, compute_nd);
+          ndsort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array, BASKER_FALSE);
 
           /*printf(" x A = [\n" );
           if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
@@ -1548,14 +1549,14 @@ namespace BaskerNS
           std::cout<< " > Basker Factor: Time for init factors after ND on a big block A: " << nd_setup1_timer.seconds() << std::endl;
         }
 
-        Kokkos::Timer nd_setup2_timer;
+        /*Kokkos::Timer nd_setup2_timer;
         kokkos_sfactor_init_workspace<Int,Entry,Exe_Space>
           iWS(flag, this);
         Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
         Kokkos::fence();
         if(Options.verbose == BASKER_TRUE) {
           std::cout<< " > Basker Factor: Time for workspace allocation after ND on a big block A: " << nd_setup2_timer.seconds() << std::endl;
-        }
+        }*/
         #endif
 
         if(Options.verbose == BASKER_TRUE) {
@@ -1786,10 +1787,31 @@ namespace BaskerNS
     }
     #endif
 
-
     // sfactor_copy2 is now only responsible for the copy from BTF_A to 2D blocks
     Kokkos::Timer timer_sfactorcopy;
     double sfactorcopy_time = 0.0;
+    if (btf_tabs_offset != 0) {
+      bool flag = true;
+      #ifdef BASKER_KOKKOS
+      Kokkos::Timer nd_setup1_timer;
+      /*kokkos_sfactor_init_factor<Int,Entry,Exe_Space>
+        iF(this);
+      Kokkos::parallel_for(TeamPolicy(num_threads,1), iF);
+      Kokkos::fence();
+      if(Options.verbose == BASKER_TRUE) {
+        std::cout<< " > Basker Factor: Time for init factors after ND on a big block A: " << nd_setup1_timer.seconds() << std::endl;
+      }*/
+
+      Kokkos::Timer nd_setup2_timer;
+      kokkos_sfactor_init_workspace<Int,Entry,Exe_Space>
+        iWS(flag, this);
+      Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
+      Kokkos::fence();
+      if(Options.verbose == BASKER_TRUE) {
+        std::cout<< " > Basker Factor: Time for workspace allocation after ND on a big block A: " << nd_setup2_timer.seconds() << std::endl;
+      }
+      #endif
+    }
     bool copy_BTFA = (Options.blk_matching == 0 || Options.static_delayed_pivot != 0);
     err = sfactor_copy2(copy_BTFA);
 

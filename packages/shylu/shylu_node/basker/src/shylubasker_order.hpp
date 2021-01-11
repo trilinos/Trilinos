@@ -1086,14 +1086,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       order_csym_array(i) = i;
     }
     #endif
-    //permute_col(BTF_A, order_csym_array);
     //sort_matrix(BTF_A); // unnecessary?
-    /*printf(" After cAMD\n");
-    printf(" p = [\n" );
-    for(Int j = 0; j < BTF_A.ncol; j++) {
-      printf("%d\n",(int)order_csym_array(j) );
-    }
-    printf("];\n");*/
 
     //new for sfactor_copy2 replacement
     permute_col_store_valperms(BTF_A, order_csym_array, vals_order_csym_array); //NDE: Track movement of vals (lin_ind of row,col) here
@@ -1103,7 +1096,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array);
     permute_row(BTF_A, order_csym_array);
 
-    /*printf(" ppT = [\n" );
+    /*printf(" After cAMD\n");
+    printf(" ppT = [\n" );
     for(Int j = 0; j < BTF_A.ncol; j++) {
       for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
         printf("%d %d %e\n", (int)BTF_A.row_idx[k], (int)j, BTF_A.val[k]);
@@ -1294,23 +1288,23 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
    Int n
   )
   {
-    INT_1DARRAY temp;
-    MALLOC_INT_1DARRAY(temp,n);
-    init_value(temp, n, (Int) 0);
+    if (n > 0) {
+      INT_1DARRAY temp;
+      MALLOC_INT_1DARRAY(temp,n);
 
-    for(Int i = 0; i < n; ++i)
-    {
-      temp(p(i)) = vec(i);
-    }
-    for(Int i = 0; i < n; ++i)
-    {
-      vec(i) = temp(i);
-    }
+      for(Int i = 0; i < n; ++i)
+      {
+        temp(p(i)) = vec(i);
+      }
+      for(Int i = 0; i < n; ++i)
+      {
+        vec(i) = temp(i);
+      }
 
-    FREE_INT_1DARRAY(temp);
+      FREE_INT_1DARRAY(temp);
+    }
 
     return BASKER_SUCCESS;
-
   }//end permute_inv (int,int)
   
   template <class Int, class Entry, class Exe_Space>
@@ -2587,7 +2581,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::ndsort_matrix_store_valperms( BASKER_MATRIX &M, INT_1DARRAY &order_vals_perms )
+  int Basker<Int,Entry,Exe_Space>::ndsort_matrix_store_valperms( BASKER_MATRIX &M, INT_1DARRAY &order_vals_perms, BASKER_BOOL track_perm )
   {
     //#define BASKER_TIMER_AMD
     #ifdef BASKER_TIMER_AMD
@@ -2681,7 +2675,9 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         } else {
           nd_ptr(row_id) ++;
         }
-        perm[idx]   = order_vals_perms(i);
+        if (track_perm) {
+          perm[idx]   = order_vals_perms(i);
+        }
         dwork[idx]  = M.val[i];
         iwork[idx]  = M.row_idx[i];
       }
@@ -2704,7 +2700,9 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       #else
       for(Int i = 0; i < num_rows; i++)
       {
-        order_vals_perms(start_row + i) = perm[i];
+        if (track_perm) {
+          order_vals_perms(start_row + i) = perm[i];
+        }
         M.val[start_row + i]     = dwork[i];
         M.row_idx[start_row + i] = iwork[i];
       }

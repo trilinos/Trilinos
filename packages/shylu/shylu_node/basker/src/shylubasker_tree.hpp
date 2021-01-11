@@ -993,12 +993,6 @@ namespace BaskerNS
     }
     printf("];\n");
 #endif
-#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
-    INT_1DARRAY L_col_idx;
-    INT_1DARRAY U_col_idx;
-    MALLOC_INT_1DARRAY(L_col_idx, tree.nblks);
-    MALLOC_INT_1DARRAY(U_col_idx, tree.nblks);
-#endif
     for(Int k = 0; k < M.ncol; ++k)
     {
       //Fast-forward to first column tab in this column
@@ -1014,42 +1008,6 @@ namespace BaskerNS
       U_row = 0;
       Int r_idx = 0; //used to iterate through tree.row_tabs
       BASKER_BOOL start_col = BASKER_TRUE;
-#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
-      // first entry in this column
-      Int min_row = M.row_idx(M.col_ptr(k));
-      #if 0
-      // smallest row_idx in this column
-      for (Int i = M.col_ptr(k)+1; i < M.col_ptr(k+1); ++i) {
-        if (min_row > M.row_idx(i)) min_row = M.row_idx(i);
-      }
-      #else
-      // just take the first entry in row_idx for this column
-      #endif
-
-      // last entry in U
-      Int max_row = 0;
-      for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) {
-        Int j = M.row_idx(i);
-        if (j <= k && M.row_idx(i) > max_row) max_row = M.row_idx(i);
-      }
-
-      U_row = 0;
-      r_idx = 0;
-      while(max_row >= tree.row_tabs(r_idx+1))
-      {
-        if((U_row+1 < LU_size(U_col)) &&
-           (tree.row_tabs(r_idx+1) == AVM(U_col)(U_row+1).srow))
-        {
-          U_row++;
-        }
-        r_idx++;
-      }
-      Int U_row_max = U_row;
-      Int r_idx_max = r_idx;
-
-      Kokkos::deep_copy(L_col_idx, BASKER_MAX_IDX);
-      Kokkos::deep_copy(U_col_idx, BASKER_MAX_IDX);
-#endif
 
 #ifdef MY_DEBUG
       printf( "\n >> k = %d <<\n",k );
@@ -1059,19 +1017,7 @@ namespace BaskerNS
         Int j = M.row_idx(i); //first row id entry in col k
 
         //Get right blk
-#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
-        if (j == min_row) {
-          start_col = BASKER_TRUE;
-        } else {
-          start_col = BASKER_FALSE;
-        }
-#endif
         if(j > k) { //lower
-#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
-          L_row = 0;
-          U_row = U_row_max;
-          r_idx = r_idx_max;
-#endif
           while(j >= tree.row_tabs(r_idx+1))
           {
             if((L_row+1 < LL_size(L_col)) &&
@@ -1084,11 +1030,6 @@ namespace BaskerNS
             r_idx++;
           }
         } else if(j <= k) { //upper
-#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
-          L_row = 0;
-          U_row = 0;
-          r_idx = 0;
-#endif
           while(j >= tree.row_tabs(r_idx+1))
           {
             if((U_row+1 < LU_size(U_col)) &&
@@ -1101,17 +1042,6 @@ namespace BaskerNS
             r_idx++;
           }
         }
-#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
-        if (start_col) {
-          if (j >= k) {
-            //start_col = (L_col_idx(L_row) == BASKER_MAX_IDX || L_col_idx(L_row) > j);
-            start_col = (L_col_idx(L_row) == BASKER_MAX_IDX);
-          } else {
-            start_col = (U_col_idx(U_row) == BASKER_MAX_IDX);
-            //start_col = (U_col_idx(U_row) == BASKER_MAX_IDX || U_col_idx(U_row) > j);
-          }
-        }
-#endif
 #ifdef MY_DEBUG
         std::cout << " > " << (j > k ? " lower" : " upper" ) << " --> "
                   << "  L(" << L_col << ", " << L_row << ") "
@@ -1134,9 +1064,6 @@ namespace BaskerNS
         {
           if(start_col == BASKER_TRUE)
           {
-#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
-            L_col_idx(L_row) = j;
-#endif
             Ltemp.col_ptr(k-bcol) = i;
 #ifdef MY_DEBUG
             std::cout << " > L ( " << L_col << ", " << L_row << " ).col_ptr( " << k - bcol << ") = " << i << " with k = " << k << " and j = " << j << std::endl;
@@ -1150,9 +1077,6 @@ namespace BaskerNS
           {
             if(start_col == BASKER_TRUE)
             {
-#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
-              L_col_idx(L_row) = j;
-#endif
               Ltemp.col_ptr(k-bcol) = i;
 #ifdef MY_DEBUG
               std::cout << " + L ( " << L_col << ", " << L_row << " ).col_ptr( " << k - bcol << ") = " << i << std::endl;
@@ -1163,9 +1087,6 @@ namespace BaskerNS
           {
             if(start_col == BASKER_TRUE)
             {
-#if 0//!defined(SHYLU_BASKER_SORT_BLOCK_A)
-              U_col_idx(U_row) = j;
-#endif
               Utemp.col_ptr(k-bcol) = i;
 #ifdef MY_DEBUG
               std::cout << " + U ( " << U_col << ", " << U_row << " ).col_ptr( " << k - bcol << ") = " << i << std::endl;

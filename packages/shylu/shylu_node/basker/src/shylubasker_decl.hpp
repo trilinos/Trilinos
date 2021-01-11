@@ -262,13 +262,15 @@ namespace BaskerNS
     int match_ordering(int option);
 
     BASKER_INLINE
-    int apply_scotch_partition(BASKER_BOOL keep_zeros = true, BASKER_BOOL compute_nd = true, BASKER_BOOL apply_nd = true);
+    int apply_scotch_partition(BASKER_BOOL keep_zeros = BASKER_TRUE,
+                               BASKER_BOOL compute_nd = BASKER_TRUE,
+                               BASKER_BOOL apply_nd   = BASKER_TRUE);
 
     BASKER_INLINE
-    int scotch_partition(BASKER_MATRIX &M, BASKER_BOOL apply_nd = true);
+    int scotch_partition(BASKER_MATRIX &M, BASKER_BOOL apply_nd = BASKER_TRUE);
 
     BASKER_INLINE
-    int scotch_partition(BASKER_MATRIX &M, BASKER_MATRIX &MMT, BASKER_BOOL apply_nd = true);
+    int scotch_partition(BASKER_MATRIX &M, BASKER_MATRIX &MMT, BASKER_BOOL apply_nd = BASKER_TRUE);
 
     BASKER_INLINE
     int permute_inv(INT_1DARRAY, INT_1DARRAY, Int);
@@ -370,7 +372,7 @@ namespace BaskerNS
 
     //basker_order_scotch.hpp
     BASKER_INLINE
-    int AplusAT(BASKER_MATRIX &M, BASKER_MATRIX &C, BASKER_BOOL keep_zeros = true);
+    int AplusAT(BASKER_MATRIX &M, BASKER_MATRIX &C, BASKER_BOOL keep_zeros = BASKER_TRUE);
 
     int part_scotch(BASKER_MATRIX &M, BASKER_TREE &BT);
 
@@ -1163,7 +1165,7 @@ namespace BaskerNS
     BASKER_INLINE
     void matrix_transpose(BASKER_MATRIX &M,
                           BASKER_MATRIX &MT,
-                          BASKER_BOOL keep_zeros = true);
+                          BASKER_BOOL keep_zeros = BASKER_TRUE);
 
     BASKER_INLINE
     void matrix_transpose(BASKER_MATRIX_VIEW &, BASKER_MATRIX &);
@@ -1406,7 +1408,9 @@ namespace BaskerNS
     int sort_matrix_store_valperms( BASKER_MATRIX &M, INT_1DARRAY &order_vals_perms );
 
     BASKER_INLINE
-    int ndsort_matrix_store_valperms( BASKER_MATRIX &M, INT_1DARRAY &order_vals_perms );
+    int ndsort_matrix_store_valperms(BASKER_MATRIX &M,
+                                     INT_1DARRAY &order_vals_perms,
+                                     BASKER_BOOL track_perm = BASKER_TRUE);
 
     //end NDE
 

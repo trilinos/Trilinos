@@ -575,20 +575,22 @@ namespace BaskerNS
    Int kid, BASKER_BOOL alloc, BASKER_BOOL keep_zeros
   )
   {
-    /*printf(" BTF_A_2D = [\n" );
-    for(Int j = 0; j < BTF_A.ncol; j++) {
-      for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-        printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+    /*if (kid == 0) {
+      printf(" BTF_A_2D = [\n" );
+      for(Int j = 0; j < BTF_A.ncol; j++) {
+        for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+          printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+        }
       }
-    }
-    printf("];\n");
-    printf(" A_2D = [\n" );
-    for(Int j = 0; j < A.ncol; j++) {
-      for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
-        printf("%d %d %e\n", A.row_idx[k], j, A.val[k]);
+      printf("];\n");
+      printf(" A_2D = [\n" );
+      for(Int j = 0; j < A.ncol; j++) {
+        for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
+          printf("%d %d %e\n", A.row_idx[k], j, A.val[k]);
+        }
       }
-    }
-    printf("];\n");*/
+      printf("];\n");
+    }*/
     // extract strictly Lower blockks into ALM
     // (blocks in strictly lower part, diagonal blocks are in AVM)
     for(Int lvl = 0; lvl < tree.nlvls+1; lvl++)
@@ -606,8 +608,10 @@ namespace BaskerNS
               ALM(b)(row).ncol);
           #endif
 
-          //printf(" > kid=%d, lvl=%d: convert ALM(%d, %d) with (%dx%d from %d,%d)\n", kid, lvl, b, row,
-          //       ALM(b)(row).nrow,ALM(b)(row).ncol,ALM(b)(row).srow,ALM(b)(row).scol);
+          /*if (kid == 0) {
+            printf(" > kid=%d, lvl=%d: convert ALM(%d, %d) with (%dx%d from %d,%d)\n", kid, lvl, b, row,
+                   ALM(b)(row).nrow,ALM(b)(row).ncol,ALM(b)(row).srow,ALM(b)(row).scol);
+          }*/
           if(Options.btf == BASKER_FALSE)
           {
             #ifdef BASKER_DEBUG_INIT
@@ -625,7 +629,14 @@ namespace BaskerNS
             #endif
             ALM(b)(row).convert2D(BTF_A, alloc, kid);
           }
-
+          /*if (kid == 0) {
+            for(Int j = 0; j < ALM(b)(row).ncol; j++) {
+              for(Int k = ALM(b)(row).col_ptr[j]; k < ALM(b)(row).col_ptr[j+1]; k++) {
+                printf("%d %d %e\n", ALM(b)(row).row_idx[k], j, ALM(b)(row).val[k]);
+              }
+            }
+            printf("];\n");
+          }*/
         }//end over all row
       }//end select which thread
     }//end for over all lvl
@@ -646,8 +657,10 @@ namespace BaskerNS
             AVM(b)(LU_size(b)-1).ncol);
         #endif
 
-        //printf(" > kid=%d, lvl=%d: convert AVM(%d, %d), lower(%dx%d from %d,%d)\n", kid, lvl, b, LU_size(b)-1,
-        //           AVM(b)(LU_size(b)-1).nrow,AVM(b)(LU_size(b)-1).ncol,AVM(b)(LU_size(b)-1).srow,AVM(b)(LU_size(b)-1).scol);
+        /*if (kid == 0) {
+          printf(" > kid=%d, lvl=%d: convert AVM(%d, %d), lower(%dx%d from %d,%d)\n", kid, lvl, b, LU_size(b)-1,
+                     AVM(b)(LU_size(b)-1).nrow,AVM(b)(LU_size(b)-1).ncol,AVM(b)(LU_size(b)-1).srow,AVM(b)(LU_size(b)-1).scol);
+        }*/
         if(Options.btf == BASKER_FALSE)
         {
           AVM(b)(LU_size(b)-1).convert2D(A, alloc, kid);
@@ -658,6 +671,14 @@ namespace BaskerNS
           //printf(" > kid=%d: convert AVM(%d,%d)\n", kid, b, LU_size(b)-1);
           AVM(b)(LU_size(b)-1).convert2D(BTF_A, alloc, kid);
         }
+        /*if (kid == 0) {
+          for(Int j = 0; j < AVM(b)(LU_size(b)-1).ncol; j++) {
+            for(Int k = AVM(b)(LU_size(b)-1).col_ptr[j]; k < AVM(b)(LU_size(b)-1).col_ptr[j+1]; k++) {
+              printf("%d %d %e\n", AVM(b)(LU_size(b)-1).row_idx[k], j, AVM(b)(LU_size(b)-1).val[k]);
+            }
+          }
+          printf("];\n");
+        }*/
 
         for(Int l = lvl+1; l < tree.nlvls+1; l++)
         {
