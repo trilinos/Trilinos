@@ -53,6 +53,7 @@
 #include "Intrepid2_ArrayTools.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
 
+#include "Intrepid2_TestUtils.hpp"
 
 namespace Intrepid2 {
 namespace Experimental {
@@ -316,12 +317,11 @@ struct ComputeBasisCoeffsOnCells_HGRAD {
 
 
 template<typename SpT>
-template<typename BasisType,
-typename ortValueType,       class ...ortProperties>
+template<typename BasisType, typename OrientationViewType>
 void
 ProjectionTools<SpT>::getHGradEvaluationPoints(typename BasisType::ScalarViewType ePoints,
     typename BasisType::ScalarViewType gradEPoints,
-    const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
+    const OrientationViewType orts,
     const BasisType* cellBasis,
     ProjectionStruct<SpT, typename BasisType::scalarType> * projStruct,
     const EvalPointsType evalPointType) {
@@ -408,22 +408,22 @@ ProjectionTools<SpT>::getHGradEvaluationPoints(typename BasisType::ScalarViewTyp
   }
 }
 
-
 template<typename SpT>
-template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
-typename funValsValueType, class ...funValsProperties,
-typename BasisType,
-typename ortValueType,class ...ortProperties>
+template<class BasisCoeffsViewType, class TargetValueViewType, class TargetGradViewType, class BasisType, class OrientationViewType>
 void
-ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
-    const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtTargetEPoints,
-    const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetGradAtTargetGradEPoints,
-    const typename BasisType::ScalarViewType targetEPoints,
-    const typename BasisType::ScalarViewType targetGradEPoints,
-    const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
-    const BasisType* cellBasis,
-    ProjectionStruct<SpT, typename BasisType::scalarType> * projStruct){
-
+ProjectionTools<SpT>::getHGradBasisCoeffs(BasisCoeffsViewType basisCoeffs,
+                                          const TargetValueViewType targetAtTargetEPoints,
+                                          const TargetGradViewType targetGradAtTargetGradEPoints,
+                                          const typename BasisType::ScalarViewType targetEPoints,
+                                          const typename BasisType::ScalarViewType targetGradEPoints,
+                                          const OrientationViewType orts,
+                                          const BasisType* cellBasis,
+                                          ProjectionStruct<SpT, typename BasisType::scalarType> * projStruct)
+{
+  using funValsValueType = typename TargetValueViewType::value_type;
+  static_assert(std::is_same<funValsValueType,typename TargetGradViewType::value_type>::value,
+                "targetGradAtTargetGradEPoints and targetAtTargetEPoints must agree on their value type" );
+  
   typedef typename Kokkos::Impl::is_space<SpT>::host_mirror_space::execution_space host_space_type;
   typedef typename BasisType::scalarType scalarType;
   typedef Kokkos::DynRankView<scalarType,SpT> ScalarViewType;
@@ -468,7 +468,9 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
     for(ordinal_type ic=0; ic<numCells; ++ic) {
       cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtTargetEPoints,ic,Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(targetEPoints, ic, Kokkos::ALL(), Kokkos::ALL()));
     }
+//    printView(nonOrientedBasisAtTargetEPoints, std::cout, "nonOrientedBasisAtTargetEPoints");
     OrientationTools<SpT>::modifyBasisByOrientation(basisAtTargetEPoints, nonOrientedBasisAtTargetEPoints, orts, cellBasis);
+//    printView(basisAtTargetEPoints, std::cout, "basisAtTargetEPoints");
   }
 
   ScalarViewType basisGradAtBasisGradEPoints;
@@ -514,6 +516,8 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
   Kokkos::parallel_for(policy, functorType(basisCoeffs, tagToOrdinal, targetEPointsRange,
       targetAtTargetEPoints, basisAtTargetEPoints, numVertices));
 
+//  printView(basisCoeffs, std::cout, "after vertex evaluation, basisCoeffs");
+  
   for(ordinal_type ie=0; ie<numEdges; ++ie)  {
 
     ordinal_type edgeCardinality = cellBasis->getDofCount(edgeDim,ie);

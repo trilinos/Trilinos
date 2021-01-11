@@ -515,7 +515,10 @@ namespace Intrepid2 {
       faceOrt[i] = (_faceOrt & (7 << s)) >> s;
     }
   }
-}
 
+  inline std::string Orientation::to_string() const {
+    return "Orientation{ face: " + std::to_string(_faceOrt) + "; edge: " + std::to_string(_edgeOrt) + " }";
+  }
+}
 
 #endif

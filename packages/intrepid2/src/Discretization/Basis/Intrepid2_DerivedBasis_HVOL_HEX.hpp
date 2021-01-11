@@ -69,8 +69,7 @@ namespace Intrepid2
   template<class HVOL_LINE>
   class Basis_Derived_HVOL_HEX
   :
-  public Basis_TensorBasis<Intrepid2::Basis_Derived_HVOL_QUAD<HVOL_LINE>,
-                           HVOL_LINE>
+  public Basis_TensorBasis<typename HVOL_LINE::ExecutionSpace, typename HVOL_LINE::OutputValueType, typename HVOL_LINE::PointValueType>
   // TODO: make this a subclass of TensorBasis3 instead, following what we've done for H(curl) and H(div)
   {
     std::string name_;
@@ -86,7 +85,7 @@ namespace Intrepid2
     
     using LineBasis = HVOL_LINE;
     using QuadBasis = Intrepid2::Basis_Derived_HVOL_QUAD<HVOL_LINE>;
-    using TensorBasis = Basis_TensorBasis<QuadBasis,LineBasis>;
+    using TensorBasis = Basis_TensorBasis<ExecutionSpace, OutputValueType, PointValueType>;
 
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
@@ -96,8 +95,8 @@ namespace Intrepid2
      */
     Basis_Derived_HVOL_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType=POINTTYPE_DEFAULT)
     :
-    TensorBasis(QuadBasis(polyOrder_x,polyOrder_y,pointType),
-                LineBasis(polyOrder_z,pointType))
+    TensorBasis(Teuchos::rcp(new QuadBasis(polyOrder_x,polyOrder_y,pointType)),
+                Teuchos::rcp(new LineBasis(polyOrder_z,pointType)))
     {
       this->functionSpace_ = FUNCTION_SPACE_HVOL;
 
@@ -124,8 +123,22 @@ namespace Intrepid2
 
     /** \brief True if orientation is required
     */
-    virtual bool requireOrientation() const {
+    virtual bool requireOrientation() const override {
       return false;
+    }
+
+    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const override
+    {
+      const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
+      
+      if (operatorType == VALUE)
+      {
+        return OperatorTensorDecomposition(VALUE, VALUE);
+      }
+      else
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
+      }
     }
     
     using TensorBasis::getValues;

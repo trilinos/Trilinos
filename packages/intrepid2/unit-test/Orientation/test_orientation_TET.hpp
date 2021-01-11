@@ -157,13 +157,10 @@ int OrientationTet(const bool verbose) {
       switch (comp) {
       case 0:
         return f0 + a*x;
-        break;
       case 1:
         return f1 + a*y;
-        break;
       case 2:
         return f2 + a*z;
-        break;
       default:
         return 0;
       }
@@ -184,13 +181,10 @@ int OrientationTet(const bool verbose) {
       switch (comp) {
       case 0:
         return f0 + (a1*z-a2*y);//2*x+y-z + (x+2*(y+z);
-        break;
       case 1:
         return f1 + (a2*x-a0*z);//y+2*(z+x);
-        break;
       case 2:
         return f2 + (a0*y-a1*x);//z+2*(x+y);
-        break;
       default:
         return 0;
       }

@@ -235,7 +235,7 @@ class Basis_HGRAD_TET_Cn_FEM_ORTH
   void
   getValues(       OutputViewType outputValues,
              const PointViewType  inputPoints,
-             const EOperator operatorType = OPERATOR_VALUE ) const {
+             const EOperator operatorType = OPERATOR_VALUE ) const override {
     #ifdef HAVE_INTREPID2_DEBUG
           Intrepid2::getValues_HGRAD_Args(outputValues,
                                           inputPoints,

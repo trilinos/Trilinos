@@ -65,6 +65,8 @@
 #include <Teuchos_LAPACK.hpp>
 #include <Teuchos_BLAS.hpp>
 
+using namespace Intrepid2;
+
 namespace
 {
   //! solve a system Ax=b using LAPACK Cholesky factorization on host
@@ -182,7 +184,7 @@ namespace
     {
       TEUCHOS_TEST_FOR_EXCEPTION(B.extent_int(dim) != C.extent_int(dim), std::invalid_argument, "B and C must agree in all dimensions beyond the first two");
     }
-    using ViewIteratorScalar = Intrepid2::ViewIterator<ViewType<Scalar>, Scalar>;
+    using ViewIteratorScalar = ViewIterator<ViewType<Scalar>, Scalar>;
     Kokkos::parallel_for(N0, KOKKOS_LAMBDA(const int A_row_ordinal)
     {
       ViewIteratorScalar B_viewIterator(B);
@@ -237,10 +239,10 @@ namespace
     using PointScalar = typename Basis1::PointValueType;
     using WeightScalar = typename Basis1::OutputValueType;
     using Scalar = WeightScalar;
-    Intrepid2::DefaultCubatureFactory cub_factory;
+    DefaultCubatureFactory cub_factory;
     auto cellTopoKey = basis1.getBaseCellTopology().getKey();
     auto quadrature = cub_factory.create<ExecutionSpace, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
-    Intrepid2::ordinal_type numRefPoints = quadrature->getNumPoints();
+    ordinal_type numRefPoints = quadrature->getNumPoints();
     const int spaceDim = basis1.getBaseCellTopology().getDimension();
     ViewType<PointScalar> points = ViewType<PointScalar>("quadrature points 1D ref cell", numRefPoints, spaceDim);
     ViewType<WeightScalar> weights = ViewType<WeightScalar>("quadrature weights 1D ref cell", numRefPoints);

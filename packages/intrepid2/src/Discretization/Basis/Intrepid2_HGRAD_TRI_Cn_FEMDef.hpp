@@ -260,7 +260,7 @@ Basis_HGRAD_TRI_Cn_FEM( const ordinal_type order,
   this->basisCoordinates_  = COORDINATES_CARTESIAN;
   this->functionSpace_     = FUNCTION_SPACE_HGRAD;
 
-  pointType_ = pointType;
+  pointType_ = (pointType == POINTTYPE_DEFAULT) ? POINTTYPE_EQUISPACED : pointType;
   const ordinal_type card = this->basisCardinality_;
 
   // points are computed in the host and will be copied
@@ -272,7 +272,7 @@ Basis_HGRAD_TRI_Cn_FEM( const ordinal_type order,
   PointTools::getLattice( dofCoords,
       this->basisCellTopology_,
       order, offset,
-      pointType );
+      pointType_ );
 
   this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
   Kokkos::deep_copy(this->dofCoords_, dofCoords);

@@ -156,13 +156,13 @@ namespace Intrepid2{
     void
     getCubature( PointViewType  cubPoints,
                  weightViewType cubWeights,
-                 PointViewType  cellCoords) const;
+                 PointViewType  cellCoords) const override;
 
     /** \brief Returns the number of cubature points.
      */
     virtual
     ordinal_type
-    getNumPoints() const {
+    getNumPoints() const override {
       return primaryCellTopo_.getEdgeCount();
     }
 
@@ -170,7 +170,7 @@ namespace Intrepid2{
      */
     virtual
     ordinal_type
-    getDimension() const {
+    getDimension() const override {
       return primaryCellTopo_.getDimension();
     }
 
@@ -178,7 +178,7 @@ namespace Intrepid2{
      */
     virtual
     const char*
-    getName() const {
+    getName() const override {
       return "CubatureControlVolumeSide";
     }
 

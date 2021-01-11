@@ -49,8 +49,12 @@
 #ifndef __INTREPID2_FUNCTIONSPACETOOLS_DEF_HPP__
 #define __INTREPID2_FUNCTIONSPACETOOLS_DEF_HPP__
 
-namespace Intrepid2 {
+#include "Intrepid2_FunctorIterator.hpp"
+#include "Intrepid2_TensorArgumentIterator.hpp"
 
+#include "Teuchos_TimeMonitor.hpp"
+
+namespace Intrepid2 {
   // ------------------------------------------------------------------------------------
   template<typename SpT>
   template<typename outputValueType, class ...outputProperties,
@@ -565,12 +569,12 @@ namespace Intrepid2 {
   template<typename SpT>
   template<typename outputValValueType,    class ...outputValProperties,
            typename inputMeasureValueType, class ...inputMeasureProperties,
-           typename inputValValueType,     class ...inputValProperteis>
+           typename inputValValueType,     class ...inputValProperties>
   void
   FunctionSpaceTools<SpT>::
   multiplyMeasure(       Kokkos::DynRankView<outputValValueType,   outputValProperties...>    outputVals,
                    const Kokkos::DynRankView<inputMeasureValueType,inputMeasureProperties...> inputMeasure,
-                   const Kokkos::DynRankView<inputValValueType,    inputValProperteis...>     inputVals ) {
+                   const Kokkos::DynRankView<inputValValueType,    inputValProperties...>     inputVals ) {
     scalarMultiplyDataField( outputVals, 
                              inputMeasure, 
                              inputVals );
