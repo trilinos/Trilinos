@@ -376,7 +376,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   // unmanaged since they are allocated and ref counted separately on
   // host.
   using LocalMatrixType = KokkosSparse::CrsMatrix<double,LO,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>, size_t>;
-  typename Kokkos::View<LocalMatrixType**,PHX::Device>::HostMirror
+  typename PHX::View<LocalMatrixType**>::HostMirror
     hostJacTpetraBlocks("panzer::ScatterResidual_BlockTpetra<Jacobian>::hostJacTpetraBlocks", numFieldBlocks,numFieldBlocks);
 
   PHX::View<int**> blockExistsInJac =   PHX::View<int**>("blockExistsInJac_",numFieldBlocks,numFieldBlocks);

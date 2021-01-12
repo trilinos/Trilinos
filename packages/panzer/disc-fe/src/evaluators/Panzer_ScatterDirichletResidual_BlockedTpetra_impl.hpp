@@ -493,7 +493,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   // unmanaged since they are allocated and ref counted separately on
   // host.
   using LocalMatrixType = KokkosSparse::CrsMatrix<double,LO,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>, size_t>;
-  typename Kokkos::View<LocalMatrixType**,PHX::Device>::HostMirror
+  typename PHX::View<LocalMatrixType**>::HostMirror
     hostJacTpetraBlocks("panzer::ScatterResidual_BlockTpetra<Jacobian>::hostJacTpetraBlocks", numFieldBlocks,numFieldBlocks);
 
   PHX::View<int**> blockExistsInJac =   PHX::View<int**>("blockExistsInJac_",numFieldBlocks,numFieldBlocks);
@@ -541,7 +541,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       }
     }
   }
-  typename Kokkos::View<LocalMatrixType**,PHX::Device>
+  typename PHX::View<LocalMatrixType**>
     jacTpetraBlocks("panzer::ScatterResidual_BlockedTpetra<Jacobian>::jacTpetraBlocks",numFieldBlocks,numFieldBlocks);
   Kokkos::deep_copy(jacTpetraBlocks,hostJacTpetraBlocks);
   Kokkos::deep_copy(blockExistsInJac,hostBlockExistsInJac);
