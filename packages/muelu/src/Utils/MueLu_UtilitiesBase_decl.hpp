@@ -206,14 +206,15 @@ namespace MueLu {
 
         std::vector<int> nnzPerRow(rowMap->getNodeNumElements());
 
+        const Magnitude zeroMagn = Teuchos::ScalarTraits<Scalar>::magnitude(zero);
         for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
           nnzPerRow[i] = 0;
           rcpA->getLocalRowView(i, cols, vals);
           diagVals[i] = zero;
           for (LocalOrdinal j = 0; j < cols.size(); ++j) {
             regSum[i] += vals[j];
-            const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowEntryMagn = Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
-            if (rowEntryMagn > Teuchos::ScalarTraits<Scalar>::zero())
+            const Magnitude rowEntryMagn = Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
+            if (rowEntryMagn > zeroMagn)
               nnzPerRow[i]++;
             diagVals[i] += rowEntryMagn;
           }
