@@ -459,13 +459,13 @@ namespace Intrepid2 {
     */
     template<typename outputValueType, class ...outputProperties,
              typename inputValueType,  class ...inputProperties,
-             typename ortValueType,    class ...ortProperties,
+             typename OrientationViewType,
              typename BasisType>
     inline
     static void
     modifyBasisByOrientation(      Kokkos::DynRankView<outputValueType,outputProperties...> output,
                              const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
-                             const Kokkos::DynRankView<ortValueType,   ortProperties...> orts,
+                             const OrientationViewType orts,
                              const BasisType*  basis);
   };
   

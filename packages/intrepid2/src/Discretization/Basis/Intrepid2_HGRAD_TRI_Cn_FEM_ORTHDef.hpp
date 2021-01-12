@@ -101,7 +101,7 @@ void OrthPolynomialTri<OutputViewType,inputViewType,workViewType,hasDeriv,0>::ge
 
     for (ordinal_type i=0;i<npts;++i) {
       f1[i] = 0.5 * (1.0+2.0*(2.0*z(i,0)-1.0)+(2.0*z(i,1)-1.0));   // \eta_1 * (1 - \eta_2)/2
-      f2[i] = std::pow(z(i,1)-1,2);  //( (1 - \eta_2)/2 )^2
+      f2[i] = pow(z(i,1)-1,2);  //( (1 - \eta_2)/2 )^2
       if(hasDeriv) {
         df1_0 = 2.0;
         df1_1 = 1.0;
