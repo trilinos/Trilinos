@@ -213,7 +213,7 @@ namespace MueLu {
           for (LocalOrdinal j = 0; j < cols.size(); ++j) {
             regSum[i] += vals[j];
             const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowEntryMagn = Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
-            if (rowEntryMagn > zero)
+            if (rowEntryMagn > Teuchos::ScalarTraits<Scalar>::zero())
               nnzPerRow[i]++;
             diagVals[i] += rowEntryMagn;
           }
