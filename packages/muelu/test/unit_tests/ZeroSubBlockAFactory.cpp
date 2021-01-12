@@ -87,24 +87,24 @@ namespace MueLuTests {
 
     TEST_ASSERT(!saddlePointMatrix.is_null());
 
-    Level myLevel;
-    myLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(saddlePointMatrix));
+    RCP<Level> myLevel = rcp(new Level());
+    myLevel->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(saddlePointMatrix));
 
     RCP<ZeroSubBlockAFactory> A11Fact = rcp(new ZeroSubBlockAFactory());
     A11Fact->SetFactory("A", MueLu::NoFactory::getRCP());
     A11Fact->SetParameter("block row", Teuchos::ParameterEntry(1));
     A11Fact->SetParameter("block col", Teuchos::ParameterEntry(1));
 
-    myLevel.Request("A", A11Fact.get(), MueLu::NoFactory::get());
-    TEST_ASSERT(myLevel.IsRequested("A", A11Fact.get()));
+    myLevel->Request("A", A11Fact.get(), MueLu::NoFactory::get());
+    TEST_ASSERT(myLevel->IsRequested("A", A11Fact.get()));
 
-    A11Fact->Build(myLevel);
-    TEST_ASSERT(myLevel.IsAvailable("A", A11Fact.get()));
+    A11Fact->Build(*myLevel);
+    TEST_ASSERT(myLevel->IsAvailable("A", A11Fact.get()));
 
-    RCP<Matrix> A11 = myLevel.Get<RCP<Matrix>>("A", A11Fact.get());
+    RCP<Matrix> A11 = myLevel->Get<RCP<Matrix>>("A", A11Fact.get());
 
-    myLevel.Release("A", A11Fact.get());
-    TEST_ASSERT(!myLevel.IsAvailable("A", A11Fact.get()));
+    myLevel->Release("A", A11Fact.get());
+    TEST_ASSERT(!myLevel->IsAvailable("A", A11Fact.get()));
 
     TEST_ASSERT(A11->getRangeMap()->isSameAs(*saddlePointMatrix->getMatrix(1, 0)->getRangeMap()));
     TEST_ASSERT(A11->getDomainMap()->isSameAs(*saddlePointMatrix->getMatrix(0, 1)->getDomainMap()));

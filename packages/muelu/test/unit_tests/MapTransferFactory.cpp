@@ -93,31 +93,31 @@ namespace MueLuTests {
     out << "Test transfer of a map with the MapTransferFactory" << std::endl;
 
     // Manual setup of a two-level hierarchy
-    Level fineLevel;
-    Level coarseLevel;
-    coarseLevel.SetPreviousLevel(Teuchos::rcpFromRef(fineLevel));
-    fineLevel.SetLevelID(0);
-    coarseLevel.SetLevelID(1);
+    RCP<Level> fineLevel = rcp(new Level());
+    RCP<Level> coarseLevel = rcp(new Level());
+    coarseLevel->SetPreviousLevel(fineLevel);
+    fineLevel->SetLevelID(0);
+    coarseLevel->SetLevelID(1);
 
-    TEST_EQUALITY_CONST(fineLevel.GetLevelID(), 0);
-    TEST_EQUALITY_CONST(coarseLevel.GetLevelID(), 1);
+    TEST_EQUALITY_CONST(fineLevel->GetLevelID(), 0);
+    TEST_EQUALITY_CONST(coarseLevel->GetLevelID(), 1);
 
     // Create a dummy matrix needed to build a prolongator
     const GO nx = 199;
     RCP<Matrix> A = test_factory::Build1DPoisson(nx);
-    fineLevel.Set("A", A);
+    fineLevel->Set("A", A);
 
     const std::string mapName = "Dummy Map";
-    fineLevel.Set(mapName, A->getRowMap());
+    fineLevel->Set(mapName, A->getRowMap());
 
-    TEST_ASSERT(fineLevel.IsAvailable("A", MueLu::NoFactory::get()));
-    TEST_ASSERT(fineLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(fineLevel->IsAvailable("A", MueLu::NoFactory::get()));
+    TEST_ASSERT(fineLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
 
     RCP<FactoryManager> factoryManager = rcp(new FactoryManager());
     factoryManager->SetKokkosRefactor(false);
     factoryManager->SetFactory(mapName, MueLu::NoFactory::getRCP());
-    fineLevel.SetFactoryManager(factoryManager);
-    coarseLevel.SetFactoryManager(factoryManager);
+    fineLevel->SetFactoryManager(factoryManager);
+    coarseLevel->SetFactoryManager(factoryManager);
 
     RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory());
 
@@ -126,21 +126,21 @@ namespace MueLuTests {
     mapTransferFactory->SetParameter("map: name", Teuchos::ParameterEntry(mapName));
     mapTransferFactory->SetFactory("P", tentativePFact);
 
-    coarseLevel.Request(mapName, MueLu::NoFactory::get());
-    coarseLevel.Request("P", tentativePFact.get(), mapTransferFactory.get());
-    coarseLevel.Request(*mapTransferFactory); // This calls DeclareInput() on mapTransferFactory
+    coarseLevel->Request(mapName, MueLu::NoFactory::get());
+    coarseLevel->Request("P", tentativePFact.get(), mapTransferFactory.get());
+    coarseLevel->Request(*mapTransferFactory); // This calls DeclareInput() on mapTransferFactory
 
-    TEST_ASSERT(coarseLevel.IsRequested(mapName, MueLu::NoFactory::get()));
-    TEST_ASSERT(coarseLevel.IsRequested("P", tentativePFact.get()));
+    TEST_ASSERT(coarseLevel->IsRequested(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(coarseLevel->IsRequested("P", tentativePFact.get()));
 
-    RCP<Matrix> Ptent = coarseLevel.Get<RCP<Matrix>>("P", tentativePFact.get());
+    RCP<Matrix> Ptent = coarseLevel->Get<RCP<Matrix>>("P", tentativePFact.get());
     TEST_ASSERT(!Ptent.is_null());
 
-    TEST_ASSERT(!coarseLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
-    mapTransferFactory->Build(fineLevel, coarseLevel);
-    TEST_ASSERT(coarseLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(!coarseLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
+    mapTransferFactory->Build(*fineLevel, *coarseLevel);
+    TEST_ASSERT(coarseLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
 
-    RCP<const Map> coarsenedMap = coarseLevel.Get<RCP<const Map>>(mapName, MueLu::NoFactory::get());
+    RCP<const Map> coarsenedMap = coarseLevel->Get<RCP<const Map>>(mapName, MueLu::NoFactory::get());
     TEST_ASSERT(!coarsenedMap.is_null());
 
     TEST_ASSERT(coarsenedMap->isSameAs(*Ptent->getDomainMap()));
@@ -163,32 +163,32 @@ namespace MueLuTests {
     out << "Test transfer of a map with the MapTransferFactory" << std::endl;
 
     // Manual setup of a two-level hierarchy
-    Level fineLevel;
-    Level coarseLevel;
-    coarseLevel.SetPreviousLevel(Teuchos::rcpFromRef(fineLevel));
-    fineLevel.SetLevelID(0);
-    coarseLevel.SetLevelID(1);
+    RCP<Level> fineLevel = rcp(new Level());
+    RCP<Level> coarseLevel = rcp(new Level());
+    coarseLevel->SetPreviousLevel(fineLevel);
+    fineLevel->SetLevelID(0);
+    coarseLevel->SetLevelID(1);
 
-    TEST_EQUALITY_CONST(fineLevel.GetLevelID(), 0);
-    TEST_EQUALITY_CONST(coarseLevel.GetLevelID(), 1);
+    TEST_EQUALITY_CONST(fineLevel->GetLevelID(), 0);
+    TEST_EQUALITY_CONST(coarseLevel->GetLevelID(), 1);
 
     // Create a dummy matrix needed to build a prolongator
     const GO nx = 19;
     const GO ny = 17;
     RCP<Matrix> A = test_factory::Build2DPoisson(nx, ny);
-    fineLevel.Set("A", A);
+    fineLevel->Set("A", A);
 
     const std::string mapName = "Dummy Map";
-    fineLevel.Set(mapName, A->getRowMap());
+    fineLevel->Set(mapName, A->getRowMap());
 
-    TEST_ASSERT(fineLevel.IsAvailable("A", MueLu::NoFactory::get()));
-    TEST_ASSERT(fineLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(fineLevel->IsAvailable("A", MueLu::NoFactory::get()));
+    TEST_ASSERT(fineLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
 
     RCP<FactoryManager> factoryManager = rcp(new FactoryManager());
     factoryManager->SetKokkosRefactor(false);
     factoryManager->SetFactory(mapName, MueLu::NoFactory::getRCP());
-    fineLevel.SetFactoryManager(factoryManager);
-    coarseLevel.SetFactoryManager(factoryManager);
+    fineLevel->SetFactoryManager(factoryManager);
+    coarseLevel->SetFactoryManager(factoryManager);
 
     RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory());
 
@@ -197,21 +197,21 @@ namespace MueLuTests {
     mapTransferFactory->SetParameter("map: name", Teuchos::ParameterEntry(mapName));
     mapTransferFactory->SetFactory("P", tentativePFact);
 
-    coarseLevel.Request(mapName, MueLu::NoFactory::get());
-    coarseLevel.Request("P", tentativePFact.get(), mapTransferFactory.get());
-    coarseLevel.Request(*mapTransferFactory); // This calls DeclareInput() on mapTransferFactory
+    coarseLevel->Request(mapName, MueLu::NoFactory::get());
+    coarseLevel->Request("P", tentativePFact.get(), mapTransferFactory.get());
+    coarseLevel->Request(*mapTransferFactory); // This calls DeclareInput() on mapTransferFactory
 
-    TEST_ASSERT(coarseLevel.IsRequested(mapName, MueLu::NoFactory::get()));
-    TEST_ASSERT(coarseLevel.IsRequested("P", tentativePFact.get()));
+    TEST_ASSERT(coarseLevel->IsRequested(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(coarseLevel->IsRequested("P", tentativePFact.get()));
 
-    RCP<Matrix> Ptent = coarseLevel.Get<RCP<Matrix>>("P", tentativePFact.get());
+    RCP<Matrix> Ptent = coarseLevel->Get<RCP<Matrix>>("P", tentativePFact.get());
     TEST_ASSERT(!Ptent.is_null());
 
-    TEST_ASSERT(!coarseLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
-    mapTransferFactory->Build(fineLevel, coarseLevel);
-    TEST_ASSERT(coarseLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(!coarseLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
+    mapTransferFactory->Build(*fineLevel, *coarseLevel);
+    TEST_ASSERT(coarseLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
 
-    RCP<const Map> coarsenedMap = coarseLevel.Get<RCP<const Map>>(mapName, MueLu::NoFactory::get());
+    RCP<const Map> coarsenedMap = coarseLevel->Get<RCP<const Map>>(mapName, MueLu::NoFactory::get());
     TEST_ASSERT(!coarsenedMap.is_null());
 
     TEST_ASSERT(coarsenedMap->isSameAs(*Ptent->getDomainMap()));
@@ -236,14 +236,14 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
 
     // Manual setup of a two-level hierarchy
-    Level fineLevel;
-    Level coarseLevel;
-    coarseLevel.SetPreviousLevel(Teuchos::rcpFromRef(fineLevel));
-    fineLevel.SetLevelID(0);
-    coarseLevel.SetLevelID(1);
+    RCP<Level> fineLevel = rcp(new Level());
+    RCP<Level> coarseLevel = rcp(new Level());
+    coarseLevel->SetPreviousLevel(fineLevel);
+    fineLevel->SetLevelID(0);
+    coarseLevel->SetLevelID(1);
 
-    TEST_EQUALITY_CONST(fineLevel.GetLevelID(), 0);
-    TEST_EQUALITY_CONST(coarseLevel.GetLevelID(), 1);
+    TEST_EQUALITY_CONST(fineLevel->GetLevelID(), 0);
+    TEST_EQUALITY_CONST(coarseLevel->GetLevelID(), 1);
 
     // Create a 3D elsasticity matrix needed to build a prolongator
     RCP<Matrix> A = Teuchos::null;
@@ -267,20 +267,20 @@ namespace MueLuTests {
 
       TEST_ASSERT(!A.is_null());
 
-      fineLevel.Set("A", A);
+      fineLevel->Set("A", A);
     }
 
     const std::string mapName = "Dummy Map";
-    fineLevel.Set(mapName, A->getRowMap());
+    fineLevel->Set(mapName, A->getRowMap());
 
-    TEST_ASSERT(fineLevel.IsAvailable("A", MueLu::NoFactory::get()));
-    TEST_ASSERT(fineLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(fineLevel->IsAvailable("A", MueLu::NoFactory::get()));
+    TEST_ASSERT(fineLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
 
     RCP<FactoryManager> factoryManager = rcp(new FactoryManager());
     factoryManager->SetKokkosRefactor(false);
     factoryManager->SetFactory(mapName, MueLu::NoFactory::getRCP());
-    fineLevel.SetFactoryManager(factoryManager);
-    coarseLevel.SetFactoryManager(factoryManager);
+    fineLevel->SetFactoryManager(factoryManager);
+    coarseLevel->SetFactoryManager(factoryManager);
 
     RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory());
 
@@ -289,21 +289,21 @@ namespace MueLuTests {
     mapTransferFactory->SetParameter("map: name", Teuchos::ParameterEntry(mapName));
     mapTransferFactory->SetFactory("P", tentativePFact);
 
-    coarseLevel.Request(mapName, MueLu::NoFactory::get());
-    coarseLevel.Request("P", tentativePFact.get(), mapTransferFactory.get());
-    coarseLevel.Request(*mapTransferFactory); // This calls DeclareInput() on mapTransferFactory
+    coarseLevel->Request(mapName, MueLu::NoFactory::get());
+    coarseLevel->Request("P", tentativePFact.get(), mapTransferFactory.get());
+    coarseLevel->Request(*mapTransferFactory); // This calls DeclareInput() on mapTransferFactory
 
-    TEST_ASSERT(coarseLevel.IsRequested(mapName, MueLu::NoFactory::get()));
-    TEST_ASSERT(coarseLevel.IsRequested("P", tentativePFact.get()));
+    TEST_ASSERT(coarseLevel->IsRequested(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(coarseLevel->IsRequested("P", tentativePFact.get()));
 
-    RCP<Matrix> Ptent = coarseLevel.Get<RCP<Matrix>>("P", tentativePFact.get());
+    RCP<Matrix> Ptent = coarseLevel->Get<RCP<Matrix>>("P", tentativePFact.get());
     TEST_ASSERT(!Ptent.is_null());
 
-    TEST_ASSERT(!coarseLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
-    mapTransferFactory->Build(fineLevel, coarseLevel);
-    TEST_ASSERT(coarseLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(!coarseLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
+    mapTransferFactory->Build(*fineLevel, *coarseLevel);
+    TEST_ASSERT(coarseLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
 
-    RCP<const Map> coarsenedMap = coarseLevel.Get<RCP<const Map>>(mapName, MueLu::NoFactory::get());
+    RCP<const Map> coarsenedMap = coarseLevel->Get<RCP<const Map>>(mapName, MueLu::NoFactory::get());
     TEST_ASSERT(!coarsenedMap.is_null());
 
     TEST_ASSERT(coarsenedMap->isSameAs(*Ptent->getDomainMap()));
@@ -330,14 +330,14 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
     // Manual setup of a two-level hierarchy
-    Level fineLevel;
-    Level coarseLevel;
-    coarseLevel.SetPreviousLevel(Teuchos::rcpFromRef(fineLevel));
-    fineLevel.SetLevelID(0);
-    coarseLevel.SetLevelID(1);
+    RCP<Level> fineLevel = rcp(new Level());
+    RCP<Level> coarseLevel = rcp(new Level());
+    coarseLevel->SetPreviousLevel(fineLevel);
+    fineLevel->SetLevelID(0);
+    coarseLevel->SetLevelID(1);
 
-    TEST_EQUALITY_CONST(fineLevel.GetLevelID(), 0);
-    TEST_EQUALITY_CONST(coarseLevel.GetLevelID(), 1);
+    TEST_EQUALITY_CONST(fineLevel->GetLevelID(), 0);
+    TEST_EQUALITY_CONST(coarseLevel->GetLevelID(), 1);
 
     // Create a 3D elasticity matrix and its nullspace needed to build a prolongator
     RCP<Matrix> A = Teuchos::null;
@@ -363,21 +363,21 @@ namespace MueLuTests {
       TEST_ASSERT(!A.is_null());
       TEST_ASSERT(nullspace->getNumVectors()==6);
 
-      fineLevel.Set("A", A);
-      fineLevel.Set("Nullspace", nullspace);
+      fineLevel->Set("A", A);
+      fineLevel->Set("Nullspace", nullspace);
     }
 
     const std::string mapName = "Dummy Map";
-    fineLevel.Set(mapName, A->getRowMap());
+    fineLevel->Set(mapName, A->getRowMap());
 
-    TEST_ASSERT(fineLevel.IsAvailable("A", MueLu::NoFactory::get()));
-    TEST_ASSERT(fineLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(fineLevel->IsAvailable("A", MueLu::NoFactory::get()));
+    TEST_ASSERT(fineLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
 
     RCP<FactoryManager> factoryManager = rcp(new FactoryManager());
     factoryManager->SetKokkosRefactor(false);
     factoryManager->SetFactory(mapName, MueLu::NoFactory::getRCP());
-    fineLevel.SetFactoryManager(factoryManager);
-    coarseLevel.SetFactoryManager(factoryManager);
+    fineLevel->SetFactoryManager(factoryManager);
+    coarseLevel->SetFactoryManager(factoryManager);
 
     RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory());
     tentativePFact->SetParameter("Nullspace name", Teuchos::ParameterEntry(std::string("Nullspace")));
@@ -388,21 +388,21 @@ namespace MueLuTests {
     mapTransferFactory->SetFactory("P", tentativePFact);
     mapTransferFactory->SetParameter("nullspace vectors: limit to", Teuchos::ParameterEntry(std::string("translations")));
 
-    coarseLevel.Request(mapName, MueLu::NoFactory::get());
-    coarseLevel.Request("P", tentativePFact.get(), mapTransferFactory.get());
-    coarseLevel.Request(*mapTransferFactory); // This calls DeclareInput() on mapTransferFactory
+    coarseLevel->Request(mapName, MueLu::NoFactory::get());
+    coarseLevel->Request("P", tentativePFact.get(), mapTransferFactory.get());
+    coarseLevel->Request(*mapTransferFactory); // This calls DeclareInput() on mapTransferFactory
 
-    TEST_ASSERT(coarseLevel.IsRequested(mapName, MueLu::NoFactory::get()));
-    TEST_ASSERT(coarseLevel.IsRequested("P", tentativePFact.get()));
+    TEST_ASSERT(coarseLevel->IsRequested(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(coarseLevel->IsRequested("P", tentativePFact.get()));
 
-    RCP<Matrix> Ptent = coarseLevel.Get<RCP<Matrix>>("P", tentativePFact.get());
+    RCP<Matrix> Ptent = coarseLevel->Get<RCP<Matrix>>("P", tentativePFact.get());
     TEST_ASSERT(!Ptent.is_null());
 
-    TEST_ASSERT(!coarseLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
-    mapTransferFactory->Build(fineLevel, coarseLevel);
-    TEST_ASSERT(coarseLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(!coarseLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
+    mapTransferFactory->Build(*fineLevel, *coarseLevel);
+    TEST_ASSERT(coarseLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
 
-    RCP<const Map> coarsenedMap = coarseLevel.Get<RCP<const Map>>(mapName, MueLu::NoFactory::get());
+    RCP<const Map> coarsenedMap = coarseLevel->Get<RCP<const Map>>(mapName, MueLu::NoFactory::get());
     TEST_ASSERT(!coarsenedMap.is_null());
 
     const global_size_t gNumTranslationalDOFs = Ptent->getDomainMap()->getGlobalNumElements() / 2;
@@ -453,14 +453,14 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
     // Manual setup of a two-level hierarchy
-    Level fineLevel;
-    Level coarseLevel;
-    coarseLevel.SetPreviousLevel(Teuchos::rcpFromRef(fineLevel));
-    fineLevel.SetLevelID(0);
-    coarseLevel.SetLevelID(1);
+    RCP<Level> fineLevel = rcp(new Level());
+    RCP<Level> coarseLevel = rcp(new Level());
+    coarseLevel->SetPreviousLevel(fineLevel);
+    fineLevel->SetLevelID(0);
+    coarseLevel->SetLevelID(1);
 
-    TEST_EQUALITY_CONST(fineLevel.GetLevelID(), 0);
-    TEST_EQUALITY_CONST(coarseLevel.GetLevelID(), 1);
+    TEST_EQUALITY_CONST(fineLevel->GetLevelID(), 0);
+    TEST_EQUALITY_CONST(coarseLevel->GetLevelID(), 1);
 
     // Create a 3D elasticity matrix and its nullspace needed to build a prolongator
     RCP<Matrix> A = Teuchos::null;
@@ -484,21 +484,21 @@ namespace MueLuTests {
       TEST_ASSERT(!A.is_null());
       TEST_ASSERT(nullspace->getNumVectors()==3);
 
-      fineLevel.Set("A", A);
-      fineLevel.Set("Nullspace", nullspace);
+      fineLevel->Set("A", A);
+      fineLevel->Set("Nullspace", nullspace);
     }
 
     const std::string mapName = "Dummy Map";
-    fineLevel.Set(mapName, A->getRowMap());
+    fineLevel->Set(mapName, A->getRowMap());
 
-    TEST_ASSERT(fineLevel.IsAvailable("A", MueLu::NoFactory::get()));
-    TEST_ASSERT(fineLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(fineLevel->IsAvailable("A", MueLu::NoFactory::get()));
+    TEST_ASSERT(fineLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
 
     RCP<FactoryManager> factoryManager = rcp(new FactoryManager());
     factoryManager->SetKokkosRefactor(false);
     factoryManager->SetFactory(mapName, MueLu::NoFactory::getRCP());
-    fineLevel.SetFactoryManager(factoryManager);
-    coarseLevel.SetFactoryManager(factoryManager);
+    fineLevel->SetFactoryManager(factoryManager);
+    coarseLevel->SetFactoryManager(factoryManager);
 
     RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory());
     tentativePFact->SetParameter("Nullspace name", Teuchos::ParameterEntry(std::string("Nullspace")));
@@ -509,21 +509,21 @@ namespace MueLuTests {
     mapTransferFactory->SetFactory("P", tentativePFact);
     mapTransferFactory->SetParameter("nullspace vectors: limit to", Teuchos::ParameterEntry(std::string("translations")));
 
-    coarseLevel.Request(mapName, MueLu::NoFactory::get());
-    coarseLevel.Request("P", tentativePFact.get(), mapTransferFactory.get());
-    coarseLevel.Request(*mapTransferFactory); // This calls DeclareInput() on mapTransferFactory
+    coarseLevel->Request(mapName, MueLu::NoFactory::get());
+    coarseLevel->Request("P", tentativePFact.get(), mapTransferFactory.get());
+    coarseLevel->Request(*mapTransferFactory); // This calls DeclareInput() on mapTransferFactory
 
-    TEST_ASSERT(coarseLevel.IsRequested(mapName, MueLu::NoFactory::get()));
-    TEST_ASSERT(coarseLevel.IsRequested("P", tentativePFact.get()));
+    TEST_ASSERT(coarseLevel->IsRequested(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(coarseLevel->IsRequested("P", tentativePFact.get()));
 
-    RCP<Matrix> Ptent = coarseLevel.Get<RCP<Matrix>>("P", tentativePFact.get());
+    RCP<Matrix> Ptent = coarseLevel->Get<RCP<Matrix>>("P", tentativePFact.get());
     TEST_ASSERT(!Ptent.is_null());
 
-    TEST_ASSERT(!coarseLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
-    mapTransferFactory->Build(fineLevel, coarseLevel);
-    TEST_ASSERT(coarseLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(!coarseLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
+    mapTransferFactory->Build(*fineLevel, *coarseLevel);
+    TEST_ASSERT(coarseLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
 
-    RCP<const Map> coarsenedMap = coarseLevel.Get<RCP<const Map>>(mapName, MueLu::NoFactory::get());
+    RCP<const Map> coarsenedMap = coarseLevel->Get<RCP<const Map>>(mapName, MueLu::NoFactory::get());
     TEST_ASSERT(!coarsenedMap.is_null());
 
     const global_size_t gNumTranslationalDOFs = Ptent->getDomainMap()->getGlobalNumElements() * 2 / 3;
@@ -572,19 +572,19 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
     // Manual setup of a two-level hierarchy
-    Level fineLevel;
-    Level coarseLevel;
-    coarseLevel.SetPreviousLevel(Teuchos::rcpFromRef(fineLevel));
-    fineLevel.SetLevelID(0);
-    coarseLevel.SetLevelID(1);
+    RCP<Level> fineLevel = rcp(new Level());
+    RCP<Level> coarseLevel = rcp(new Level());
+    coarseLevel->SetPreviousLevel(fineLevel);
+    fineLevel->SetLevelID(0);
+    coarseLevel->SetLevelID(1);
 
-    TEST_EQUALITY_CONST(fineLevel.GetLevelID(), 0);
-    TEST_EQUALITY_CONST(coarseLevel.GetLevelID(), 1);
+    TEST_EQUALITY_CONST(fineLevel->GetLevelID(), 0);
+    TEST_EQUALITY_CONST(coarseLevel->GetLevelID(), 1);
 
     // Create a dummy matrix needed to build a prolongator
     const GO nx = 49;
     RCP<Matrix> A = test_factory::Build1DPoisson(4*nx);
-    fineLevel.Set("A", A);
+    fineLevel->Set("A", A);
 
     // Extract a subset of A->getRowMap()'s GIDs to create the map to be transferred
     ArrayView<const GO> allRowGIDs = A->getRowMap()->getNodeElementList();
@@ -598,16 +598,16 @@ namespace MueLuTests {
     RCP<const Map> mapWithHoles = MapFactory::Build(TestHelpers::Parameters::getLib(), gNumFineEntries, myMapGIDs(), Teuchos::ScalarTraits<GO>::zero(), comm);
 
     const std::string mapName = "Dummy Map";
-    fineLevel.Set(mapName, mapWithHoles);
+    fineLevel->Set(mapName, mapWithHoles);
 
-    TEST_ASSERT(fineLevel.IsAvailable("A", MueLu::NoFactory::get()));
-    TEST_ASSERT(fineLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(fineLevel->IsAvailable("A", MueLu::NoFactory::get()));
+    TEST_ASSERT(fineLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
 
     RCP<FactoryManager> factoryManager = rcp(new FactoryManager());
     factoryManager->SetKokkosRefactor(false);
     factoryManager->SetFactory(mapName, MueLu::NoFactory::getRCP());
-    fineLevel.SetFactoryManager(factoryManager);
-    coarseLevel.SetFactoryManager(factoryManager);
+    fineLevel->SetFactoryManager(factoryManager);
+    coarseLevel->SetFactoryManager(factoryManager);
 
     RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory());
 
@@ -616,21 +616,21 @@ namespace MueLuTests {
     mapTransferFactory->SetParameter("map: name", Teuchos::ParameterEntry(mapName));
     mapTransferFactory->SetFactory("P", tentativePFact);
 
-    coarseLevel.Request(mapName, MueLu::NoFactory::get());
-    coarseLevel.Request("P", tentativePFact.get(), mapTransferFactory.get());
-    coarseLevel.Request(*mapTransferFactory); // This calls DeclareInput() on mapTransferFactory
+    coarseLevel->Request(mapName, MueLu::NoFactory::get());
+    coarseLevel->Request("P", tentativePFact.get(), mapTransferFactory.get());
+    coarseLevel->Request(*mapTransferFactory); // This calls DeclareInput() on mapTransferFactory
 
-    TEST_ASSERT(coarseLevel.IsRequested(mapName, MueLu::NoFactory::get()));
-    TEST_ASSERT(coarseLevel.IsRequested("P", tentativePFact.get()));
+    TEST_ASSERT(coarseLevel->IsRequested(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(coarseLevel->IsRequested("P", tentativePFact.get()));
 
-    RCP<Matrix> Ptent = coarseLevel.Get<RCP<Matrix>>("P", tentativePFact.get());
+    RCP<Matrix> Ptent = coarseLevel->Get<RCP<Matrix>>("P", tentativePFact.get());
     TEST_ASSERT(!Ptent.is_null());
 
-    TEST_ASSERT(!coarseLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
-    mapTransferFactory->Build(fineLevel, coarseLevel);
-    TEST_ASSERT(coarseLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(!coarseLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
+    mapTransferFactory->Build(*fineLevel, *coarseLevel);
+    TEST_ASSERT(coarseLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
 
-    RCP<const Map> coarsenedMap = coarseLevel.Get<RCP<const Map>>(mapName, MueLu::NoFactory::get());
+    RCP<const Map> coarsenedMap = coarseLevel->Get<RCP<const Map>>(mapName, MueLu::NoFactory::get());
     TEST_ASSERT(!coarsenedMap.is_null());
 
     /* Manually construct a coarse version of the mapWithHoles by
@@ -686,19 +686,19 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
     // Manual setup of a two-level hierarchy
-    Level fineLevel;
-    Level coarseLevel;
-    coarseLevel.SetPreviousLevel(Teuchos::rcpFromRef(fineLevel));
-    fineLevel.SetLevelID(0);
-    coarseLevel.SetLevelID(1);
+    RCP<Level> fineLevel = rcp(new Level());
+    RCP<Level> coarseLevel = rcp(new Level());
+    coarseLevel->SetPreviousLevel(fineLevel);
+    fineLevel->SetLevelID(0);
+    coarseLevel->SetLevelID(1);
 
-    TEST_EQUALITY_CONST(fineLevel.GetLevelID(), 0);
-    TEST_EQUALITY_CONST(coarseLevel.GetLevelID(), 1);
+    TEST_EQUALITY_CONST(fineLevel->GetLevelID(), 0);
+    TEST_EQUALITY_CONST(coarseLevel->GetLevelID(), 1);
 
     // Create a dummy matrix needed to build a prolongator
     const GO nx = 49;
     RCP<Matrix> A = test_factory::Build2DPoisson(4*nx);
-    fineLevel.Set("A", A);
+    fineLevel->Set("A", A);
 
     // Extract a subset of A->getRowMap()'s GIDs to create the map to be transferred
     ArrayView<const GO> allRowGIDs = A->getRowMap()->getNodeElementList();
@@ -713,16 +713,16 @@ namespace MueLuTests {
     RCP<const Map> mapWithHoles = MapFactory::Build(TestHelpers::Parameters::getLib(), gNumFineEntries, myMapGIDs(), Teuchos::ScalarTraits<GO>::zero(), comm);
 
     const std::string mapName = "Dummy Map";
-    fineLevel.Set(mapName, mapWithHoles);
+    fineLevel->Set(mapName, mapWithHoles);
 
-    TEST_ASSERT(fineLevel.IsAvailable("A", MueLu::NoFactory::get()));
-    TEST_ASSERT(fineLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(fineLevel->IsAvailable("A", MueLu::NoFactory::get()));
+    TEST_ASSERT(fineLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
 
     RCP<FactoryManager> factoryManager = rcp(new FactoryManager());
     factoryManager->SetKokkosRefactor(false);
     factoryManager->SetFactory(mapName, MueLu::NoFactory::getRCP());
-    fineLevel.SetFactoryManager(factoryManager);
-    coarseLevel.SetFactoryManager(factoryManager);
+    fineLevel->SetFactoryManager(factoryManager);
+    coarseLevel->SetFactoryManager(factoryManager);
 
     RCP<TentativePFactory> tentativePFact = rcp(new TentativePFactory());
 
@@ -731,21 +731,21 @@ namespace MueLuTests {
     mapTransferFactory->SetParameter("map: name", Teuchos::ParameterEntry(mapName));
     mapTransferFactory->SetFactory("P", tentativePFact);
 
-    coarseLevel.Request(mapName, MueLu::NoFactory::get());
-    coarseLevel.Request("P", tentativePFact.get(), mapTransferFactory.get());
-    coarseLevel.Request(*mapTransferFactory); // This calls DeclareInput() on mapTransferFactory
+    coarseLevel->Request(mapName, MueLu::NoFactory::get());
+    coarseLevel->Request("P", tentativePFact.get(), mapTransferFactory.get());
+    coarseLevel->Request(*mapTransferFactory); // This calls DeclareInput() on mapTransferFactory
 
-    TEST_ASSERT(coarseLevel.IsRequested(mapName, MueLu::NoFactory::get()));
-    TEST_ASSERT(coarseLevel.IsRequested("P", tentativePFact.get()));
+    TEST_ASSERT(coarseLevel->IsRequested(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(coarseLevel->IsRequested("P", tentativePFact.get()));
 
-    RCP<Matrix> Ptent = coarseLevel.Get<RCP<Matrix>>("P", tentativePFact.get());
+    RCP<Matrix> Ptent = coarseLevel->Get<RCP<Matrix>>("P", tentativePFact.get());
     TEST_ASSERT(!Ptent.is_null());
 
-    TEST_ASSERT(!coarseLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
-    mapTransferFactory->Build(fineLevel, coarseLevel);
-    TEST_ASSERT(coarseLevel.IsAvailable(mapName, MueLu::NoFactory::get()));
+    TEST_ASSERT(!coarseLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
+    mapTransferFactory->Build(*fineLevel, *coarseLevel);
+    TEST_ASSERT(coarseLevel->IsAvailable(mapName, MueLu::NoFactory::get()));
 
-    RCP<const Map> coarsenedMap = coarseLevel.Get<RCP<const Map>>(mapName, MueLu::NoFactory::get());
+    RCP<const Map> coarsenedMap = coarseLevel->Get<RCP<const Map>>(mapName, MueLu::NoFactory::get());
     TEST_ASSERT(!coarsenedMap.is_null());
 
     /* Manually construct a coarse version of the mapWithHoles by

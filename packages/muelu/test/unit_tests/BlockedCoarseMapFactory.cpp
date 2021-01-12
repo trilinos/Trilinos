@@ -79,20 +79,20 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
-    Level fineLevel;
-    Level coarseLevel;
-    TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
-    fineLevel.SetFactoryManager(Teuchos::null);
-    coarseLevel.SetFactoryManager(Teuchos::null);
+    RCP<Level> fineLevel = rcp(new Level());
+    RCP<Level> coarseLevel = rcp(new Level());
+    TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(*fineLevel, *coarseLevel);
+    fineLevel->SetFactoryManager(Teuchos::null);
+    coarseLevel->SetFactoryManager(Teuchos::null);
 
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(29);
     A->SetFixedBlockSize(1);
-    fineLevel.Set("A", A);
+    fineLevel->Set("A", A);
 
     LO NSdim = 2;
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(), NSdim);
     nullSpace->randomize();
-    fineLevel.Set("Nullspace", nullSpace);
+    fineLevel->Set("Nullspace", nullSpace);
 
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
@@ -114,15 +114,15 @@ namespace MueLuTests {
     blockedCoarseMapFact->SetFactory("CoarseMap", coarseMapFact);
 
     // request input for BlockedCoarseMapFactory by hand
-    fineLevel.Request("Aggregates", UncoupledAggFact.get());
-    fineLevel.Request("CoarseMap", coarseMapFact.get());
-    fineLevel.Request("CoarseMap", blockedCoarseMapFact.get());
-    blockedCoarseMapFact->Build(fineLevel);
-    RCP<const Map> map1 = fineLevel.Get<RCP<const Map>>("CoarseMap", coarseMapFact.get());
-    RCP<const Map> map2 = fineLevel.Get<RCP<const Map>>("CoarseMap", blockedCoarseMapFact.get());
+    fineLevel->Request("Aggregates", UncoupledAggFact.get());
+    fineLevel->Request("CoarseMap", coarseMapFact.get());
+    fineLevel->Request("CoarseMap", blockedCoarseMapFact.get());
+    blockedCoarseMapFact->Build(*fineLevel);
+    RCP<const Map> map1 = fineLevel->Get<RCP<const Map>>("CoarseMap", coarseMapFact.get());
+    RCP<const Map> map2 = fineLevel->Get<RCP<const Map>>("CoarseMap", blockedCoarseMapFact.get());
 
     // access aggregates
-    RCP<Aggregates> aggregates = fineLevel.Get<RCP<Aggregates>>("Aggregates", UncoupledAggFact.get());
+    RCP<Aggregates> aggregates = fineLevel->Get<RCP<Aggregates>>("Aggregates", UncoupledAggFact.get());
     GO numAggs = aggregates->GetNumAggregates();
     GO numGlobalAggs = 0;
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
