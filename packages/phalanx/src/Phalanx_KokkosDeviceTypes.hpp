@@ -67,7 +67,7 @@ namespace PHX {
   template <typename T> 
   struct remove_all_pointers<T*>{using type = typename PHX::remove_all_pointers<T>::type;};
 
-  using DefaultDevLayout = Kokkos::LayoutLeft;
+  using DefaultDevLayout = PHX::exec_space::array_layout;
 
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) || defined(SACADO_VIEW_CUDA_HIERARCHICAL)
 
