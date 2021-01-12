@@ -223,7 +223,7 @@ namespace MueLu {
             if (replaceSingleEntryRowWithZero && nnzPerRow[i] <= static_cast<int>(1))
               diagVals[i] = zero;
             else if (replaceSingleEntryRowWithZero && diagVals[i] != zero && diagVals[i] < two*regSum[i])
-              diagVals[i] = two*regSum[i];
+              diagVals[i] = one / (two*regSum[i]);
             else {
               if(Teuchos::ScalarTraits<Scalar>::magnitude(diagVals[i]) > tol)
                 diagVals[i] = one / diagVals[i];
@@ -253,7 +253,6 @@ namespace MueLu {
 
       }
 
-      // we should never get here...
       return diag;
     }
 
