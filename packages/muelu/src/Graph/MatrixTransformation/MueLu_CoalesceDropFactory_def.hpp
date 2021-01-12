@@ -120,8 +120,8 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: drop scheme");
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-      validParamList->getEntry("aggregation: drop scheme").setValidator(
-        rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian"), "aggregation: drop scheme")));
+      validParamList->getEntry("aggregation: drop scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian","block diagonal"), "aggregation: drop scheme")));
+                                                                        
     }
     SET_VALID_ENTRY("aggregation: distance laplacian algo");
     SET_VALID_ENTRY("aggregation: classical algo");
@@ -170,6 +170,13 @@ namespace MueLu {
     bool doExperimentalWrap = pL.get<bool>("lightweight wrap");
 
     GetOStream(Parameters0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
+    std::string algo = pL.get<std::string>("aggregation: drop scheme");
+
+    if(algo == "block diagonal")  {
+      BlockDiagonalize(currentLevel,*A);
+      return;
+    }
+
 
     // decide wether to use the fast-track code path for standard maps or the somewhat slower
     // code path for non-standard maps
@@ -183,8 +190,6 @@ namespace MueLu {
     }*/
 
     if (doExperimentalWrap) {
-      std::string algo = pL.get<std::string>("aggregation: drop scheme");
-
       TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null   && algo != "classical", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
       TEUCHOS_TEST_FOR_EXCEPTION(algo != "classical" && algo != "distance laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (classical|distance laplacian)");
 
@@ -1423,6 +1428,76 @@ namespace MueLu {
 
     return;
   }
+
+
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockDiagonalize(Level & currentLevel,const Matrix& A) const {
+    typedef Teuchos::ScalarTraits<SC> STS;
+
+    //    LO blocksize = A.GetFixedBlockSize();
+    LO blocksize = 3;
+    GetOStream(Statistics1) << "Using BlockDiagonal Graph (dropping connections between "<<blocksize<<" equations)"<<std::endl;
+    const ParameterList  & pL = GetParameterList();
+    const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
+    
+    // allocate space for the local graph
+    ArrayRCP<LO> rows   (A.getNodeNumRows()+1);
+    ArrayRCP<LO> columns(A.getNodeNumEntries());
+    LO realnnz = 0;
+    GO numDropped = 0, numTotal = 0;
+    for (LO row = 0; row < Teuchos::as<LO>(A.getRowMap()->getNodeNumElements()); ++row) {
+      LO row_block = row % blocksize;
+      size_t nnz = A.getNumEntriesInLocalRow(row);
+      ArrayView<const LO> indices;
+      ArrayView<const SC> vals;
+      A.getLocalRowView(row, indices, vals);
+
+      LO rownnz = 0;
+      for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
+        LO col = indices[colID];
+        LO col_block = col % blocksize;
+        
+        if(row_block == col_block) {
+          columns[realnnz++] = col;
+          rownnz++;
+        } else
+          numDropped++;
+      }
+      rows[row+1] = realnnz;
+    }
+    
+    ArrayRCP<const bool> boundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(A, dirichletThreshold);
+    
+    columns.resize(realnnz);
+    numTotal = A.getNodeNumEntries();
+    RCP<GraphBase> graph =  rcp(new LWGraph(rows, columns, A.getRowMap(), A.getColMap(), "block-diagonalized graph of A"));
+    graph->SetBoundaryNodeMap(boundaryNodes);
+
+    if (GetVerbLevel() & Statistics1) {
+      GO numLocalBoundaryNodes  = 0;
+      GO numGlobalBoundaryNodes = 0;
+      for (LO i = 0; i < boundaryNodes.size(); ++i)
+        if (boundaryNodes[i])
+          numLocalBoundaryNodes++;
+      RCP<const Teuchos::Comm<int> > comm = A.getRowMap()->getComm();
+      MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+      GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+
+      GO numGlobalTotal, numGlobalDropped;
+      MueLu_sumAll(comm, numTotal,   numGlobalTotal);
+      MueLu_sumAll(comm, numDropped, numGlobalDropped);
+      GetOStream(Statistics1) << "Number of dropped entries in block-diagonalized matrix graph: " << numGlobalDropped << "/" << numGlobalTotal;
+      if (numGlobalTotal != 0)
+        GetOStream(Statistics1) << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)";
+      GetOStream(Statistics1) << std::endl;
+    }
+
+    Set(currentLevel, "Filtering", true);    
+    Set(currentLevel, "Graph",       graph);
+    Set(currentLevel, "DofsPerNode", 1);
+  }
+
 } //namespace MueLu
 
 #endif // MUELU_COALESCEDROPFACTORY_DEF_HPP
