@@ -187,9 +187,11 @@ namespace MueLu {
                                                         Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero(),
                                                         const bool replaceSingleEntryRowWithZero = false) {
 
+      typedef Teuchos::ScalarTraits<Scalar> TST;
+
       RCP<Vector> diag = Teuchos::null;
-      const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      const Scalar zero = TST::zero();
+      const Scalar one = TST::one();
       const Scalar two = one + one;
 
       Teuchos::RCP<const Matrix> rcpA = Teuchos::rcpFromRef(A);
@@ -206,14 +208,14 @@ namespace MueLu {
 
         std::vector<int> nnzPerRow(rowMap->getNodeNumElements());
 
-        const Magnitude zeroMagn = Teuchos::ScalarTraits<Scalar>::magnitude(zero);
+        const Magnitude zeroMagn = TST::magnitude(zero);
         for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
           nnzPerRow[i] = 0;
           rcpA->getLocalRowView(i, cols, vals);
           diagVals[i] = zero;
           for (LocalOrdinal j = 0; j < cols.size(); ++j) {
             regSum[i] += vals[j];
-            const Magnitude rowEntryMagn = Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
+            const Magnitude rowEntryMagn = TST::magnitude(vals[j]);
             if (rowEntryMagn > zeroMagn)
               nnzPerRow[i]++;
             diagVals[i] += rowEntryMagn;
@@ -223,10 +225,10 @@ namespace MueLu {
           for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
             if (replaceSingleEntryRowWithZero && nnzPerRow[i] <= static_cast<int>(1))
               diagVals[i] = zero;
-            else if (replaceSingleEntryRowWithZero && diagVals[i] != zero && diagVals[i] < two*regSum[i])
+            else if (replaceSingleEntryRowWithZero && diagVals[i] != zero && TST::magnitude(diagVals[i]) < TST::magnitude(two*regSum[i]))
               diagVals[i] = one / (two*regSum[i]);
             else {
-              if(Teuchos::ScalarTraits<Scalar>::magnitude(diagVals[i]) > tol)
+              if(TST::magnitude(diagVals[i]) > tol)
                 diagVals[i] = one / diagVals[i];
               else {
                 diagVals[i] = tolReplacement;
