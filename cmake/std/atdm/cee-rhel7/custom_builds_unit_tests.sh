@@ -17,11 +17,11 @@ ATDM_CONFIG_SYSTEM_DIR=${ATDM_CONFIG_SCRIPT_DIR}/cee-rhel7
 #
 
 testCuda() {
-  ATDM_CONFIG_BUILD_NAME=before_cuda-10.1.243-gcc-7.2.0_openmpi-4.0.3-after
+  ATDM_CONFIG_BUILD_NAME=before_cuda-10.1.243-gnu-7.2.0_openmpi-4.0.3-after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} CUDA-10.1.243_GNU-7.2.0_OPENMPI-4.0.3 ${ATDM_CONFIG_COMPILER}
 
-  ATDM_CONFIG_BUILD_NAME=before_cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3-after
+  ATDM_CONFIG_BUILD_NAME=before_cuda-10.1.243_gnu-7.2.0_openmpi-4.0.3-after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} CUDA-10.1.243_GNU-7.2.0_OPENMPI-4.0.3 ${ATDM_CONFIG_COMPILER}
 
