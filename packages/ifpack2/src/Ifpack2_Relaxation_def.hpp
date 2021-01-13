@@ -1798,11 +1798,11 @@ ApplyInverseGS_CrsMatrix (const crs_matrix_type& A,
   const Tpetra::ESweepDirection direction =
     DoBackwardGS_ ? Tpetra::Backward : Tpetra::Forward;
   if (localSmoothingIndices_.is_null ()) {
-    A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction,
+    CRS_gaussSeidelCopy (&A, Y, X, *Diagonal_, DampingFactor_, direction,
                        NumSweeps_, ZeroStartingSolution_);
   }
   else {
-    A.reorderedGaussSeidelCopy (Y, X, *Diagonal_, localSmoothingIndices_ (),
+    CRS_reorderedGaussSeidelCopy (&A, Y, X, *Diagonal_, localSmoothingIndices_ (),
                                 DampingFactor_, direction,
                                 NumSweeps_, ZeroStartingSolution_);
   }
@@ -1841,10 +1841,6 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     local_ordinal_type, global_ordinal_type, node_type>;
   using MV = Tpetra::MultiVector<scalar_type,
     local_ordinal_type, global_ordinal_type, node_type>;
-  using map_type = Tpetra::Map<local_ordinal_type,
-    global_ordinal_type, node_type>;
-  using import_type = Tpetra::Import<local_ordinal_type,
-    global_ordinal_type, node_type>;
 
   //FIXME: (tcf) 8/21/2014 -- may be problematic for multiple right hand sides
   //
@@ -1972,14 +1968,11 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   }
 
   typedef typename Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
-  typedef typename crs_matrix_type::import_type import_type;
-  typedef typename crs_matrix_type::export_type export_type;
   typedef typename crs_matrix_type::map_type map_type;
 
   RCP<const import_type> importer = crsMat->getGraph ()->getImporter ();
-  RCP<const export_type> exporter = crsMat->getGraph ()->getExporter ();
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ! exporter.is_null (), std::runtime_error,
+    ! crsMat->getGraph ()->getExporter ().is_null (), std::runtime_error,
     "This method's implementation currently requires that the matrix's row, "
     "domain, and range Maps be the same.  This cannot be the case, because "
     "the matrix has a nontrivial Export object.");
@@ -2508,11 +2501,11 @@ ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
   using Teuchos::as;
   const Tpetra::ESweepDirection direction = Tpetra::Symmetric;
   if (localSmoothingIndices_.is_null ()) {
-    A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction,
+    CRS_gaussSeidelCopy (&A, Y, X, *Diagonal_, DampingFactor_, direction,
                        NumSweeps_, ZeroStartingSolution_);
   }
   else {
-    A.reorderedGaussSeidelCopy (Y, X, *Diagonal_, localSmoothingIndices_ (),
+    CRS_reorderedGaussSeidelCopy (&A, Y, X, *Diagonal_, localSmoothingIndices_ (),
                                 DampingFactor_, direction,
                                 NumSweeps_, ZeroStartingSolution_);
   }
@@ -2554,10 +2547,6 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     local_ordinal_type, global_ordinal_type, node_type>;
   using MV = Tpetra::MultiVector<scalar_type,
     local_ordinal_type, global_ordinal_type, node_type>;
-  using map_type = Tpetra::Map<local_ordinal_type,
-    global_ordinal_type, node_type>;
-  using import_type = Tpetra::Import<local_ordinal_type,
-    global_ordinal_type, node_type>;
 
   //FIXME: (tcf) 8/21/2014 -- may be problematic for multiple right hand sides
   //
@@ -2806,6 +2795,7 @@ describe (Teuchos::FancyOStream &out,
     }
   }
 }
+
 
 } // namespace Ifpack2
 
