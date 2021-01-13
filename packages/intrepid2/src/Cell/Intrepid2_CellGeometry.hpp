@@ -137,7 +137,6 @@ namespace Intrepid2
     CellGeometryType    cellGeometryType_;
     SubdivisionStrategy subdivisionStrategy_ = NO_SUBDIVISION;
     bool affine_; // if true, each cell has constant Jacobian across the cell
-    shards::CellTopology cellTopo_;
     Data<Orientation, ExecSpaceType> orientations_; // for grid types, this could have either a single entry or one matching numCellsPerGridCell().  For other types, it has as many entries as there are cells.
     
     // uniform grid data -- used for UNIFORM_GRID type
@@ -153,7 +152,6 @@ namespace Intrepid2
     ScalarView<int,ExecSpaceType>         cellToNodes_; // (C,N) -- N is the number of nodes per cell; values are global node ordinals
     ScalarView<PointScalar,ExecSpaceType> nodes_;       // (GN,D) or (C,N,D) -- GN is the number of global nodes; (C,N,D) used only if cellToNodes_ is empty.
     using BasisPtr = Teuchos::RCP< Basis<ExecSpaceType,PointScalar,PointScalar> >;
-    BasisPtr basisForNodes_; // basis used to define the cellToNodes_ map.
     
     unsigned numCells_        = 0;
     unsigned numNodesPerCell_ = 0;
@@ -191,6 +189,15 @@ namespace Intrepid2
     CellGeometry(Teuchos::RCP<Intrepid2::Basis<ExecSpaceType,PointScalar,PointScalar> > basisForNodes,
                  ScalarView<PointScalar,ExecSpaceType> cellNodes);
     
+    /** \brief  Copy constructor.
+        \param [in] cellGeometry - the object being copied.
+     */
+    KOKKOS_INLINE_FUNCTION CellGeometry(const CellGeometry &cellGeometry);
+    
+    /** \brief  Destructor.
+    */
+    KOKKOS_INLINE_FUNCTION ~CellGeometry();
+    
     //! Returns true if Jacobian is constant within each cell
     KOKKOS_INLINE_FUNCTION
     bool affine() const;
@@ -213,7 +220,7 @@ namespace Intrepid2
     BasisPtr basisForNodes() const;
     
     //! The shards CellTopology for each cell within the CellGeometry object.  Note that this is always a lowest-order CellTopology, even for higher-order curvilinear geometry.  Higher-order geometry for CellGeometry is expressed in terms of the basis returned by basisForNodes().
-    shards::CellTopology cellTopology() const;
+    const shards::CellTopology & cellTopology() const;
     
     //! Indicates the type of geometric variation from one cell to the next.  If all cells are known to have the same geometry, returns CONSTANT.
     //! Returns CONSTANT for uniform grids with no subdivisions, MODULAR for uniform grids with subdivisions, GENERAL for all others.
