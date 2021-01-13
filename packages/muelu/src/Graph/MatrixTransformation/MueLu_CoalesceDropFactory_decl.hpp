@@ -175,7 +175,7 @@ namespace MueLu {
 
 
     // When we want to decouple a block diagonal system
-    void BlockDiagonalize(Level & currentLevel,const Matrix & A) const;
+    void BlockDiagonalize(Level & currentLevel,const Matrix & A, bool generate_matrix, RCP<Matrix> & outMatrix) const;
 
   }; //class CoalesceDropFactory
 
