@@ -6,12 +6,12 @@ HOSTNAME=$(hostname)
 
 if [[ "${HOSTNAME}" == "ascicgpu"* ]] ; then
   export ATDM_CONFIG_ALL_SUPPORTED_BUILDS=(
-    cee-rhel7_cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3_shared_opt # SPARC Nightly build
-    cee-rhel7_cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3_shared_dbg # SPARC Nightly build
+    cee-rhel7_cuda-10.1.243_gnu-7.2.0_openmpi-4.0.3_shared_opt # SPARC Nightly build
+    cee-rhel7_cuda-10.1.243_gnu-7.2.0_openmpi-4.0.3_shared_dbg # SPARC Nightly build
     ### SPARC MINI BUILDS ####
-    cee-rhel7_mini_cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3_static_opt
-    cee-rhel7_mini_cuda-10.1.243_gcc-7.2.0_openmpi-4.0.3_static_dbg
-    cee-rhel7_mini-no-mpi_cuda-10.1.243_gcc-7.2.0_static_opt
+    cee-rhel7_mini_cuda-10.1.243_gnu-7.2.0_openmpi-4.0.3_static_opt
+    cee-rhel7_mini_cuda-10.1.243_gnu-7.2.0_openmpi-4.0.3_static_dbg
+    cee-rhel7_mini-no-mpi_cuda-10.1.243_gnu-7.2.0_static_opt
     )
 else
   export ATDM_CONFIG_ALL_SUPPORTED_BUILDS=(

@@ -13,7 +13,8 @@ namespace Tacho {
   template<typename VT, typename ST>
   Solver<VT,ST>
   ::Solver()
-    : _m(0), _nnz(0),
+    : _transpose(0), _mode(0), _order_connected_graph_separately(0),
+      _m(0), _nnz(0),
       _ap(), _h_ap(), _aj(), _h_aj(),
       _perm(), _h_perm(), _peri(), _h_peri(),
       _m_graph(0), _nnz_graph(0),
