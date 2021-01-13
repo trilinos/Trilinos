@@ -136,7 +136,7 @@ private:
 
   bool accelerate_jacobian_enabled;
   bool accelerate_jacobian;
-  Kokkos::View<int*,PHX::Device> offsets_array;
+  PHX::View<int*> offsets_array;
   std::string sensitivities_name; // This sets which gather operations have sensitivities
                                   // and thus which DOF operations can use accelerated jacobians
 

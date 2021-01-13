@@ -394,12 +394,12 @@ namespace panzer {
       mesh.num_ghstd_cells = 0;
       mesh.num_virtual_cells = 0;
       mesh.cell_topology = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
-      mesh.local_cells = Kokkos::View<panzer::LocalOrdinal*>("local_cells",2);
+      mesh.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",2);
       mesh.local_cells(0) = 0;
       mesh.local_cells(1) = 1;
-      mesh.cell_vertices = Kokkos::View<double***,PHX::Device>("cell_vertices",2,4,2);
+      mesh.cell_vertices = PHX::View<double***>("cell_vertices",2,4,2);
 
-      Kokkos::View<double**> coordinates("coordinates",6,2);
+      PHX::View<double**> coordinates("coordinates",6,2);
       coordinates(0,0) = 1.; coordinates(0,1) = 3.;
       coordinates(1,0) = 3.; coordinates(1,1) = 3.;
       coordinates(2,0) = 5.; coordinates(2,1) = 3.;
@@ -418,7 +418,7 @@ namespace panzer {
       SET_NC(1,3, 2);
 #undef SET_NC
 
-      mesh.face_to_cells = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_cells",6);
+      mesh.face_to_cells = PHX::View<panzer::LocalOrdinal*[2]>("face_to_cells",6);
       mesh.face_to_cells(0,0) = 0; mesh.face_to_cells(0,1) =  1;
       mesh.face_to_cells(1,0) = 0; mesh.face_to_cells(1,1) = -1;
       mesh.face_to_cells(2,0) = 0; mesh.face_to_cells(2,1) =  1;
@@ -426,7 +426,7 @@ namespace panzer {
       mesh.face_to_cells(4,0) = 1; mesh.face_to_cells(4,1) = -1;
       mesh.face_to_cells(5,0) = 1; mesh.face_to_cells(5,1) = -1;
 
-      mesh.face_to_lidx = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_lidx",6);
+      mesh.face_to_lidx = PHX::View<panzer::LocalOrdinal*[2]>("face_to_lidx",6);
       mesh.face_to_lidx(0,0) = 0; mesh.face_to_lidx(0,1) =  2;
       mesh.face_to_lidx(1,0) = 1; mesh.face_to_lidx(1,1) = -1;
       mesh.face_to_lidx(2,0) = 2; mesh.face_to_lidx(2,1) =  0;
@@ -434,7 +434,7 @@ namespace panzer {
       mesh.face_to_lidx(4,0) = 1; mesh.face_to_lidx(4,1) = -1;
       mesh.face_to_lidx(5,0) = 3; mesh.face_to_lidx(5,1) = -1;
 
-      mesh.cell_to_faces = Kokkos::View<panzer::LocalOrdinal**>("cell_to_faces",2,4);
+      mesh.cell_to_faces = PHX::View<panzer::LocalOrdinal**>("cell_to_faces",2,4);
       mesh.cell_to_faces(0,0) = 0; mesh.cell_to_faces(0,1) = 1; mesh.cell_to_faces(0,2) = 2; mesh.cell_to_faces(0,3) = 3;
       mesh.cell_to_faces(1,0) = 2; mesh.cell_to_faces(1,1) = 4; mesh.cell_to_faces(1,2) = 0; mesh.cell_to_faces(1,3) = 5;
       

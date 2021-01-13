@@ -74,7 +74,7 @@ WorksetDetails::setup(const panzer::LocalMeshPartition & partition,
   subcell_index = -1;
   block_id = partition.element_block_name;
 
-  Kokkos::View<int*, PHX::Device> cell_ids = Kokkos::View<int*, PHX::Device>("cell_ids",num_cells);
+  PHX::View<int*> cell_ids = PHX::View<int*>("cell_ids",num_cells);
   Kokkos::deep_copy(cell_ids, partition.local_cells);
   cell_local_ids_k = cell_ids;
 
@@ -92,7 +92,7 @@ WorksetDetails::setup(const panzer::LocalMeshPartition & partition,
 }
 
 void WorksetDetails::setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_topology,
-                                const Kokkos::View<double***,PHX::Device> & cell_vertices,
+                                const PHX::View<double***> & cell_vertices,
                                 const panzer::WorksetNeeds & needs)
 {
   const size_t num_cells = cell_vertices.extent(0);
