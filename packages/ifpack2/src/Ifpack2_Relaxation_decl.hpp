@@ -51,7 +51,7 @@
 #include <type_traits>
 #include <KokkosKernels_Handle.hpp>
 #include "KokkosSparse_sor_sequential_impl.hpp"
-
+#include "Tpetra_BlockView.hpp"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Ifpack2 {
@@ -261,6 +261,9 @@ public:
 
   //! The node_type type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
+
+  //! The Kokkos device type used by the input MatrixType.
+  typedef typename MatrixType::node_type::device_type device_type;
 
   //! The type of the magnitude (absolute value) of a matrix entry.
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
@@ -592,6 +595,8 @@ private:
   /// implementation of various relaxation kernels.
   typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> crs_matrix_type;
+  typedef Tpetra::CrsGraph<local_ordinal_type,
+                            global_ordinal_type, node_type> crs_graph_type;
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> multivector_type;
   typedef Tpetra::BlockCrsMatrix<scalar_type, local_ordinal_type,
@@ -1581,6 +1586,111 @@ private:
       }
     }
   }
+
+  void BlockCRS_localGaussSeidel (
+      const block_crs_matrix_type* A,
+      const block_multivector_type& B,
+      block_multivector_type& X,
+      const Kokkos::View<impl_scalar_type***, device_type, Kokkos::MemoryUnmanaged>& D_inv,
+      const scalar_type& omega,
+      const Tpetra::ESweepDirection direction) const
+  {
+    using Kokkos::ALL;
+    using little_host_vec_type = typename block_crs_matrix_type::little_host_vec_type;
+    using const_little_block_type = typename block_crs_matrix_type::const_little_block_type;
+    const impl_scalar_type zero =
+      Kokkos::Details::ArithTraits<impl_scalar_type>::zero ();
+    const impl_scalar_type one =
+      Kokkos::Details::ArithTraits<impl_scalar_type>::one ();
+    const local_ordinal_type numLocalMeshRows = A->getNodeNumRows();
+    const local_ordinal_type numVecs = X.getNumVectors ();
+
+    const local_ordinal_type blockSize = A->getBlockSize ();
+    const size_t bs2 = blockSize * blockSize;
+    Teuchos::Array<impl_scalar_type> localMem (blockSize);
+    //X_lcl is scratch for computing the row-vec product in GS
+    little_host_vec_type X_lcl (localMem.getRawPtr (), blockSize);
+
+    if (direction == Tpetra::Symmetric) {
+      BlockCRS_localGaussSeidel (A, B, X, D_inv, omega, Tpetra::Forward);
+      BlockCRS_localGaussSeidel (A, B, X, D_inv, omega, Tpetra::Backward);
+      return;
+    }
+
+    bool forward = direction == Tpetra::Forward;
+
+    const scalar_type one_minus_omega = Teuchos::ScalarTraits<scalar_type>::one()-omega;
+    const scalar_type minus_omega = -omega;
+
+    Kokkos::fence();
+
+    const crs_graph_type& graph = A->getCrsGraph();
+    auto localGraph = graph.getLocalGraph();
+    const_cast<block_crs_matrix_type*>(A)->sync_host();
+    auto rowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), localGraph.row_map);
+    auto entries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), localGraph.entries);
+    auto values = A->getValuesHost();
+
+    if (numVecs == 1) {
+      for (local_ordinal_type i = 0; i < numLocalMeshRows; i++) {
+        const local_ordinal_type actlRow = forward ? i : numLocalMeshRows - i - 1;
+
+        little_host_vec_type B_cur = B.getLocalBlock (actlRow, 0);
+        Tpetra::COPY (B_cur, X_lcl);
+        Tpetra::SCAL (static_cast<impl_scalar_type> (omega), X_lcl);
+
+        const size_t meshBeg = rowmap[actlRow];
+        const size_t meshEnd = rowmap[actlRow+1];
+        for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
+          const local_ordinal_type meshCol = entries[absBlkOff];
+          const_little_block_type A_cur(values.data() + bs2 * absBlkOff, blockSize, blockSize);
+          little_host_vec_type X_cur = X.getLocalBlock (meshCol, 0);
+
+          // X_lcl += alpha*A_cur*X_cur
+          const scalar_type alpha = meshCol == actlRow ? one_minus_omega : minus_omega;
+          //X_lcl.matvecUpdate (alpha, A_cur, X_cur);
+          Tpetra::GEMV (static_cast<impl_scalar_type> (alpha), A_cur, X_cur, X_lcl);
+        } // for each entry in the current local row of the matrix
+
+        // NOTE (mfh 20 Jan 2016) The two input Views here are
+        // unmanaged already, so we don't have to take unmanaged
+        // subviews first.
+        auto D_lcl = Kokkos::subview (blockDiag_, actlRow, ALL (), ALL ());
+        little_host_vec_type X_update = X.getLocalBlock (actlRow, 0);
+        Tpetra::FILL (X_update, zero);
+        Tpetra::GEMV (one, D_lcl, X_lcl, X_update); // overwrite X_update
+      } // for each local row of the matrix
+    }
+    else {
+      for (local_ordinal_type i = 0; i < numLocalMeshRows; i++) {
+        const local_ordinal_type actlRow = forward ? i : numLocalMeshRows - i - 1;
+        for (local_ordinal_type j = 0; j < numVecs; ++j) {
+
+          little_host_vec_type B_cur = B.getLocalBlock (actlRow, j);
+          Tpetra::COPY (B_cur, X_lcl);
+          Tpetra::SCAL (static_cast<impl_scalar_type> (omega), X_lcl);
+
+          const size_t meshBeg = rowmap[actlRow];
+          const size_t meshEnd = rowmap[actlRow+1];
+          for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
+            const local_ordinal_type meshCol = entries[absBlkOff];
+            const_little_block_type A_cur(values.data() + bs2 * absBlkOff, blockSize, blockSize);
+            little_host_vec_type X_cur = X.getLocalBlock (meshCol, j);
+
+            // X_lcl += alpha*A_cur*X_cur
+            const scalar_type alpha = meshCol == actlRow ? one_minus_omega : minus_omega;
+            Tpetra::GEMV (static_cast<impl_scalar_type> (alpha), A_cur, X_cur, X_lcl);
+          } // for each entry in the current local row of the matrx
+
+          auto D_lcl = Kokkos::subview (blockDiag_, actlRow, ALL (), ALL ());
+          auto X_update = X.getLocalBlock (actlRow, j);
+          Tpetra::FILL (X_update, zero);
+          Tpetra::GEMV (one, D_lcl, X_lcl, X_update); // overwrite X_update
+        } // for each entry in the current local row of the matrix
+      } // for each local row of the matrix
+    }
+  }
+
 
 }; //class Relaxation
 

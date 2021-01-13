@@ -197,7 +197,6 @@ setMatrix(const Teuchos::RCP<const row_matrix_type>& A)
     Diagonal_ = Teuchos::null; // ??? what if this comes from the user???
     isInitialized_ = false;
     IsComputed_ = false;
-    using device_type = typename node_type::device_type;
     diagOffsets_ = Kokkos::View<size_t*, device_type>();
     savedDiagOffsets_ = false;
     hasBlockCrsMatrix_ = false;
@@ -804,7 +803,6 @@ void Relaxation<MatrixType>::computeBlockCrs ()
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::reduceAll;
   typedef local_ordinal_type LO;
-  typedef typename node_type::device_type device_type;
 
   const std::string timerName ("Ifpack2::Relaxation::computeBlockCrs");
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
@@ -953,7 +951,6 @@ void Relaxation<MatrixType>::compute ()
   using LO = local_ordinal_type;
   using vector_type = Tpetra::Vector<scalar_type, local_ordinal_type,
                                      global_ordinal_type, node_type>;
-  using device_type = typename vector_type::device_type;
   using IST = typename vector_type::impl_scalar_type;
   using KAT = Kokkos::ArithTraits<IST>;
 
@@ -1805,10 +1802,6 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  using BMV = Tpetra::BlockMultiVector<scalar_type,
-    local_ordinal_type, global_ordinal_type, node_type>;
-  using MV = Tpetra::MultiVector<scalar_type,
-    local_ordinal_type, global_ordinal_type, node_type>;
 
   //FIXME: (tcf) 8/21/2014 -- may be problematic for multiple right hand sides
   //
@@ -1817,11 +1810,11 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
   // does not have constant stride.  We should check for that case
   // here, in case it doesn't work in localGaussSeidel (which is
   // entirely possible).
-  BMV yBlock(Y, *(A.getGraph ()->getDomainMap()), A.getBlockSize());
-  const BMV xBlock(X, *(A.getColMap ()), A.getBlockSize());
+  block_multivector_type yBlock(Y, *(A.getGraph ()->getDomainMap()), A.getBlockSize());
+  const block_multivector_type xBlock(X, *(A.getColMap ()), A.getBlockSize());
 
   bool performImport = false;
-  RCP<BMV> yBlockCol;
+  RCP<block_multivector_type> yBlockCol;
   if (Importer_.is_null()) {
     yBlockCol = rcpFromRef(yBlock);
   }
@@ -1830,7 +1823,7 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
         yBlockColumnPointMap_->getNumVectors() != yBlock.getNumVectors() ||
         yBlockColumnPointMap_->getBlockSize() != yBlock.getBlockSize()) {
       yBlockColumnPointMap_ =
-        rcp(new BMV(*(A.getColMap()), A.getBlockSize(),
+        rcp(new block_multivector_type(*(A.getColMap()), A.getBlockSize(),
                     static_cast<local_ordinal_type>(yBlock.getNumVectors())));
     }
     yBlockCol = yBlockColumnPointMap_;
@@ -1842,9 +1835,9 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     performImport = true;
   }
 
-  MV yBlock_mv;
-  MV yBlockCol_mv;
-  RCP<const MV> yBlockColPointDomain;
+  multivector_type yBlock_mv;
+  multivector_type yBlockCol_mv;
+  RCP<const multivector_type> yBlockColPointDomain;
   if (performImport) { // create views (shallow copies)
     yBlock_mv = yBlock.getMultiVectorView();
     yBlockCol_mv = yBlockCol->getMultiVectorView();
@@ -1856,7 +1849,7 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     yBlockCol->putScalar(STS::zero ());
   }
   else if (performImport) {
-    yBlockCol_mv.doImport(yBlock_mv, *pointImporter_, INSERT);
+    yBlockCol_mv.doImport(yBlock_mv, *pointImporter_, Tpetra::INSERT);
   }
 
   const Tpetra::ESweepDirection direction =
@@ -1864,10 +1857,9 @@ ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
 
   for (int sweep = 0; sweep < NumSweeps_; ++sweep) {
     if (performImport && sweep > 0) {
-      yBlockCol_mv.doImport(yBlock_mv, *pointImporter_, INSERT);
+      yBlockCol_mv.doImport(yBlock_mv, *pointImporter_, Tpetra::INSERT);
     }
-    A.localGaussSeidel(xBlock, *yBlockCol, blockDiag_,
-                       DampingFactor_, direction);
+    BlockCRS_localGaussSeidel(&A, xBlock, *yBlockCol, blockDiag_, DampingFactor_, direction);
     if (performImport) {
       Tpetra::deep_copy(Y, *yBlockColPointDomain);
     }
@@ -1889,9 +1881,6 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   using Teuchos::as;
 
   typedef scalar_type Scalar;
-  typedef local_ordinal_type LocalOrdinal;
-  typedef global_ordinal_type GlobalOrdinal;
-  typedef node_type Node;
 
   const char prefix[] = "Ifpack2::Relaxation::(reordered)MTGaussSeidel: ";
   const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
@@ -1934,9 +1923,6 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   if (NumSweeps_ == 0) {
     return;
   }
-
-  typedef typename Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
-  typedef typename crs_matrix_type::map_type map_type;
 
   RCP<const import_type> importer = crsMat->getGraph ()->getImporter ();
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1990,8 +1976,8 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   // the same, and that each process owns all of its own diagonal
   // entries of the matrix.
 
-  RCP<MV> X_colMap;
-  RCP<MV> X_domainMap;
+  RCP<multivector_type> X_colMap;
+  RCP<multivector_type> X_domainMap;
   bool copyBackOutput = false;
   if (importer.is_null ()) {
     if (X.isConstantStride ()) {
@@ -2108,7 +2094,7 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   // The Gauss-Seidel / SOR kernel expects multivectors of constant
   // stride.  X_colMap is by construction, but B might not be.  If
   // it's not, we have to make a copy.
-  RCP<const MV> B_in;
+  RCP<const multivector_type> B_in;
   if (B.isConstantStride ()) {
     B_in = rcpFromRef (B);
   }
@@ -2116,8 +2102,7 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
     // Range Map and row Map are the same in this case, so we can
     // use the cached row Map multivector to store a constant stride
     // copy of B.
-    //RCP<MV> B_in_nonconst = crsMat->getRowMapMultiVector (B, true);
-    RCP<MV> B_in_nonconst = rcp (new MV (rowMap, B.getNumVectors()));
+    RCP<multivector_type> B_in_nonconst = rcp (new multivector_type(rowMap, B.getNumVectors()));
     try {
       deep_copy (*B_in_nonconst, B);
     } catch (std::exception& e) {
@@ -2127,7 +2112,7 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
          << e.what () << ".";
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, e.what ());
     }
-    B_in = rcp_const_cast<const MV> (B_in_nonconst);
+    B_in = rcp_const_cast<const multivector_type> (B_in_nonconst);
 
     /*
     TPETRA_EFFICIENCY_WARNING(
@@ -2275,8 +2260,6 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  using MV = Tpetra::MultiVector<scalar_type, local_ordinal_type,
-                                 global_ordinal_type, node_type>;
 
   // Tpetra's GS implementation for CrsMatrix handles zeroing out the
   // starting multivector itself.  The generic RowMatrix version here
@@ -2301,7 +2284,7 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
   }
 
 
-  RCP<MV> Y2;
+  RCP<multivector_type> Y2;
   if (IsParallel_) {
     if (Importer_.is_null ()) { // domain and column Maps are the same.
       updateCachedMultiVector (Y.getMap (), NumVectors);
@@ -2511,10 +2494,6 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
-  using BMV = Tpetra::BlockMultiVector<scalar_type,
-    local_ordinal_type, global_ordinal_type, node_type>;
-  using MV = Tpetra::MultiVector<scalar_type,
-    local_ordinal_type, global_ordinal_type, node_type>;
 
   //FIXME: (tcf) 8/21/2014 -- may be problematic for multiple right hand sides
   //
@@ -2523,11 +2502,11 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
   // does not have constant stride.  We should check for that case
   // here, in case it doesn't work in localGaussSeidel (which is
   // entirely possible).
-  BMV yBlock (Y, * (A.getGraph ()->getDomainMap ()), A.getBlockSize ());
-  const BMV xBlock (X, * (A.getColMap ()), A.getBlockSize ());
+  block_multivector_type yBlock (Y, * (A.getGraph ()->getDomainMap ()), A.getBlockSize ());
+  const block_multivector_type xBlock (X, * (A.getColMap ()), A.getBlockSize ());
 
   bool performImport = false;
-  RCP<BMV> yBlockCol;
+  RCP<block_multivector_type> yBlockCol;
   if (Importer_.is_null ()) {
     yBlockCol = Teuchos::rcpFromRef (yBlock);
   }
@@ -2536,7 +2515,7 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
         yBlockColumnPointMap_->getNumVectors () != yBlock.getNumVectors () ||
         yBlockColumnPointMap_->getBlockSize () != yBlock.getBlockSize ()) {
       yBlockColumnPointMap_ =
-        rcp (new BMV (* (A.getColMap ()), A.getBlockSize (),
+        rcp (new block_multivector_type(* (A.getColMap ()), A.getBlockSize (),
                       static_cast<local_ordinal_type> (yBlock.getNumVectors ())));
     }
     yBlockCol = yBlockColumnPointMap_;
@@ -2548,9 +2527,9 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     performImport = true;
   }
 
-  MV yBlock_mv;
-  MV yBlockCol_mv;
-  RCP<const MV> yBlockColPointDomain;
+  multivector_type yBlock_mv;
+  multivector_type yBlockCol_mv;
+  RCP<const multivector_type> yBlockColPointDomain;
   if (performImport) { // create views (shallow copies)
     yBlock_mv = yBlock.getMultiVectorView();
     yBlockCol_mv = yBlockCol->getMultiVectorView();
@@ -2572,7 +2551,7 @@ ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     if (performImport && sweep > 0) {
       yBlockCol_mv.doImport(yBlock_mv, *pointImporter_, INSERT);
     }
-    A.localGaussSeidel(xBlock, *yBlockCol, blockDiag_,
+    BlockCRS_localGaussSeidel(&A, xBlock, *yBlockCol, blockDiag_,
                        DampingFactor_, direction);
     if (performImport) {
       Tpetra::deep_copy(yBlock_mv, *yBlockColPointDomain);
