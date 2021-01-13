@@ -397,7 +397,7 @@ namespace BaskerNS
       //---Lower solve
       BASKER_MATRIX &LC = LBTF(b);
       #ifdef BASKER_DEBUG_SOLVE_RHS
-      printf("\n\n btf b=%ld (%d x %d)\n", (long)b, (int)LC.nrow, (int)LC.ncol);
+      printf("\n\n btf b=%ld (%d x %d), LBTF(%d)\n", (long)b, (int)LC.nrow, (int)LC.ncol, (int)b);
       #endif
 
       //L(C)\x -> y (x = y at output, with unit diagonal L)
@@ -805,10 +805,11 @@ namespace BaskerNS
     const Int brow = M.scol + offset;
 
     /*printf( " P = [\n" );
-    for (Int k = 0; k < M.ncol; k++) printf( "%d\n",gperm(brow+k) );
+    for (Int k = 0; k < M.ncol; k++) printf( "%d %d\n",brow+k,gperm(brow+k) );
     printf("];\n");
     printf( " L = [\n" );
     for(Int k = 0; k < M.ncol; ++k) {
+      printf( " prt(%d) = %d:%d\n",k,M.col_ptr(k),M.col_ptr(k+1)-1 );
       for (Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++) {
         printf( "%d %d %e\n",M.row_idx(i),k,M.val(i) );
       }

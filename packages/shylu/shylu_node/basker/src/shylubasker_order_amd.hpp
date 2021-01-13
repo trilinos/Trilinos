@@ -552,7 +552,7 @@ namespace BaskerNS
       // use nnz(A+A') as default estimate for nnz(L)...
       double l_nnz = nnz;
       double lu_work = nnz;
-      if (!Options.amd_dom) {
+      if (!Options.amd_dom || Options.static_delayed_pivot != 0) {
         // skip AMD ordering
         if (flag) {
           std::cout << " >> + Basker::NO_AMD_ORDER" << std::endl;

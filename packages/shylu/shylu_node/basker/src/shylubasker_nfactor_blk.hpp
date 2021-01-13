@@ -239,15 +239,15 @@ namespace BaskerNS
           (long)kid, (int)b, (long)M.ncol); fflush(stdout);
     }
     #ifdef MY_DEBUG_BASKER
-    if (kid == 0) {
+    if (kid == 1) {
       printf( " t_nfactor_blk(kid = %d, %dx%d): wsize=%d\n",kid,M.nrow,M.ncol,ws_size );
-      /*printf( " D = [\n" );
+      printf( " D = [\n" );
       for(Int k = 0; k < M.ncol; ++k) {
         for( i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) {
           printf( "%d %d %d %.16e\n", i, M.row_idx(i), k, M.val(i));
         }
       }
-      printf( "];\n" );*/
+      printf( "];\n" );
     }
     #endif
 
@@ -316,7 +316,11 @@ namespace BaskerNS
           #else
           X[j] = M.val[i];
           #endif
-          //printf( " > original: X(%d) = %e (color = %d)\n",j, X(j), color[j] );
+          #ifdef MY_DEBUG_BASKER
+          if (kid == 1) {
+            printf( " > original: X(%d) = %e (color = %d)\n",j, X(j), color[j] );
+          }
+          #endif
 
           //NOTE:  Need a quick skip of dfs if 
           //j i not pivotal (KLU)	      
@@ -367,9 +371,10 @@ namespace BaskerNS
 
         //#define MY_DEBUG_BASKER
         #ifdef MY_DEBUG_BASKER
+        if (kid == 1)
         {
           printf("\n thread-%d: k=%d consider: j=%d t=%d value=%e maxv=%e pivot=%e\n",
-                 kid,k, j+brow, t, value, maxv, pivot); fflush(stdout);
+                 kid,k, j+brow_g, t, value, maxv, pivot); fflush(stdout);
         }
         #endif
 
@@ -385,13 +390,17 @@ namespace BaskerNS
             pivot    = value;
             maxindex = j;
             #ifdef MY_DEBUG_BASKER
-            printf( " thread-%d: -> new pivot %e\n",kid, absv ); fflush(stdout);
+            if (kid == 1) {
+              printf( " thread-%d: -> new pivot %e\n",kid, absv ); fflush(stdout);
+            }
             #endif
           }
 
           #ifdef MY_DEBUG_BASKER
-          printf( " thread-%d: check: gperm_array(%d + %d) = %d, germi_array(%d + %d) = %d vs %d+%d\n",kid, j,brow_g,gperm_array(j+brow_g), j,brow_g,gpermi_array(j+brow_g), k,brow_g);
-          fflush(stdout);
+          if (kid == 1) {
+            printf( " thread-%d: check: gperm_array(%d + %d) = %d, germi_array(%d + %d) = %d vs %d+%d\n",kid, j,brow_g,gperm_array(j+brow_g), j,brow_g,gpermi_array(j+brow_g), k,brow_g);
+            fflush(stdout);
+          }
           #endif
           #ifdef BASKER_CHECK_WITH_DIAG_AFTER_PIVOT
           if (gpermi_array(j+brow_g) == k+brow_g)
@@ -402,14 +411,18 @@ namespace BaskerNS
             digv = absv;
             digj = j;
             #ifdef MY_DEBUG_BASKER
-            printf( " thread-%d -> diag %e\n",kid,absv ); fflush(stdout);
+            if (kid == 1) {
+              printf( " thread-%d -> diag %e\n",kid,absv ); fflush(stdout);
+            }
             #endif
           }
         }
       }//for (i = top; i < ws_size)
       #ifdef MY_DEBUG_BASKER
-      printf( " thread-%d > k=%d maxindex=%d pivot=%e maxv=%e, diag=%e diagj=%d tol=%e (nopivot=%d)\n", kid, k, maxindex, pivot, maxv, digv,digj, Options.pivot_tol,Options.no_pivot);
-      fflush(stdout);
+      if (kid == 1) {
+        printf( " thread-%d > k=%d maxindex=%d pivot=%e maxv=%e, diag=%e diagj=%d tol=%e (nopivot=%d)\n", kid, k, maxindex, pivot, maxv, digv,digj, Options.pivot_tol,Options.no_pivot);
+        fflush(stdout);
+      }
       #endif
 
       //Need a BIAS towards the diagonl
@@ -520,8 +533,8 @@ namespace BaskerNS
 
         if (Options.verbose == BASKER_TRUE)
         {
-          printf("kid = %d, b = %ld: Reallocing L oldsize: %ld current: %ld count: %ld newsize: %ld \n",
-                 (int)kid, (long)b, (long)llnnz, (long)lnnz, (long)lcnt, (long)newsize);
+          printf("kid = %d, b = %ld: Reallocing L oldsize: %ld current: %ld count: %ld (new size = %d*1.1 = 2*%d =  %ld)\n",
+                 (int)kid, (long)b, (long)llnnz, (long)lnnz, (long)lcnt, (int)lnnz, (int)M.nrow, (long)newsize);
         }
 
         thread_array(kid).error_blk = b;
@@ -545,8 +558,8 @@ namespace BaskerNS
 
         if (Options.verbose == BASKER_TRUE)
         {
-          printf("kid = %d, b = %ld: Reallocing U oldsize: %ld newsize: %ld  k: %ld \n",
-                 (int)kid, (long)b, (long)uunnz, (long)unnz+ucnt, (long)k);
+          printf("kid = %d, b = %ld: Reallocing U oldsize: %ld newsize: %ld  k: %ld (new size = %d*1.1 + 2*%d = %d)\n",
+                 (int)kid, (long)b, (long)uunnz, (long)unnz+ucnt, (long)k, (int)uunnz, (int)M.nrow, (int)newsize);
         }
 
         thread_array(kid).error_blk = b;

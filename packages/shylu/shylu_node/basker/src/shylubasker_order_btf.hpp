@@ -739,10 +739,9 @@ namespace BaskerNS
           ((double)1/num_threads) + 
           ((double)BASKER_BTF_IMBALANCE)));
     #endif
-
-    #ifdef BASKER_DEBUG_ORDER_BTF
-    printf("Basker: Break size: %d \n", break_size);
-    #endif
+    if(Options.verbose == BASKER_TRUE) {
+      printf("Basker: Break size for workspace: %d \n", break_size);
+    }
 
     Int t_size            = 0;      //total size of cols from 'small' blocks in BTF_C: matrix ncols - t_size = BTF_A ncols
     Int scol_top          = 0;      // starting column of the BTF_A bloc

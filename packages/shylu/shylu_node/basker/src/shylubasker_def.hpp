@@ -756,7 +756,47 @@ namespace BaskerNS
       fclose(fp);
       printf("];\n");
     }*/
-    /*printf(" EE = [\n" );
+    /*printf(" AA = [\n" );
+    if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
+      for(Int j = 0; j < BTF_A.ncol; j++) {
+        for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+          printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+        }
+      }
+    }
+    printf("];\n");
+
+    printf(" BB = [\n" );
+    if (BTF_B.nrow > 0 && BTF_B.ncol > 0) {
+      for(Int j = 0; j < BTF_B.ncol; j++) {
+        for(Int k = BTF_B.col_ptr[j]; k < BTF_B.col_ptr[j+1]; k++) {
+          printf("%d %d %e\n", BTF_B.row_idx[k], j, BTF_B.val[k]);
+        }
+      }
+    }
+    printf("];\n");
+
+    printf(" CC = [\n" );
+    if (BTF_C.nrow > 0 && BTF_C.ncol > 0) {
+      for(Int j = 0; j < BTF_C.ncol; j++) {
+        for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
+          printf("%d %d %e\n", BTF_C.row_idx[k], j, BTF_C.val[k]);
+        }
+      }
+    }
+    printf("];\n");
+
+    printf(" DD = [\n" );
+    if (BTF_D.nrow > 0 && BTF_D.ncol > 0) {
+      for(Int j = 0; j < BTF_D.ncol; j++) {
+        for(Int k = BTF_D.col_ptr[j]; k < BTF_D.col_ptr[j+1]; k++) {
+          printf("%d %d %e\n", BTF_D.row_idx[k], j, BTF_D.val[k]);
+        }
+      }
+    }
+    printf("];\n");
+
+    printf(" EE = [\n" );
     if (BTF_E.nrow > 0 && BTF_E.ncol > 0) {
       for(Int j = 0; j < BTF_E.ncol; j++) {
         for(Int k = BTF_E.col_ptr[j]; k < BTF_E.col_ptr[j+1]; k++) {
@@ -767,6 +807,7 @@ namespace BaskerNS
     printf("];\n");*/
 
     using range_type = Kokkos::pair<int, int>;
+    //if (Options.static_delayed_pivot != 0 || Options.blk_matching != 0) {
     if (Options.blk_matching != 0) {
         #ifdef BASKER_TIMER
         Kokkos::Timer resetperm_timer;
@@ -796,66 +837,66 @@ namespace BaskerNS
           Int a_first = btf_top_tabs_offset;
           Int a_nfirst = btf_tabs(a_first);
           Int a_nlast  = a_nfirst + BTF_A.ncol;
-          #if 1
-          // revert the sort matrix for ND
-          permute_with_workspace(BTF_A.row_idx, inv_vals_order_ndbtfa_array, BTF_A.nnz);
-          permute_with_workspace(BTF_B.row_idx, inv_vals_order_ndbtfb_array, BTF_B.nnz);
-          permute_with_workspace(BTF_C.row_idx, inv_vals_order_ndbtfc_array, BTF_C.nnz);
+          if (Options.blk_matching != 0) {
+            // revert the sort matrix for ND
+            permute_with_workspace(BTF_A.row_idx, inv_vals_order_ndbtfa_array, BTF_A.nnz);
+            permute_with_workspace(BTF_B.row_idx, inv_vals_order_ndbtfb_array, BTF_B.nnz);
+            permute_with_workspace(BTF_C.row_idx, inv_vals_order_ndbtfc_array, BTF_C.nnz);
 
-          // --------------------------------------------
-          // reinitialize ordering vector to track matrix sort
-          for (Int i = 0; i < BTF_A.nnz; ++i) {
-            vals_order_ndbtfa_array(i) = i;
-            inv_vals_order_ndbtfa_array(i) = i;
-          }
-          for (Int i = 0; i < BTF_B.nnz; ++i) {
-            vals_order_ndbtfb_array(i) = i;
-            inv_vals_order_ndbtfb_array(i) = i;
-          }
-          for (Int i = 0; i < BTF_C.nnz; ++i) {
-            vals_order_ndbtfc_array(i) = i;
-            inv_vals_order_ndbtfc_array(i) = i;
-          }
-          #endif
-          #if 1
-          // revert camd & nd ordering
-          // > revert camd
-          if (order_csym_array.extent(0) > 0) {
-            for (Int k = 0; k < (Int)BTF_A.ncol; k++) order_csym_inv(k) = k;
-            permute_inv(order_csym_inv, order_csym_array, BTF_A.ncol);
+            // --------------------------------------------
+            // reinitialize ordering vector to track matrix sort
+            for (Int i = 0; i < BTF_A.nnz; ++i) {
+              vals_order_ndbtfa_array(i) = i;
+              inv_vals_order_ndbtfa_array(i) = i;
+            }
+            for (Int i = 0; i < BTF_B.nnz; ++i) {
+              vals_order_ndbtfb_array(i) = i;
+              inv_vals_order_ndbtfb_array(i) = i;
+            }
+            for (Int i = 0; i < BTF_C.nnz; ++i) {
+              vals_order_ndbtfc_array(i) = i;
+              inv_vals_order_ndbtfc_array(i) = i;
+            }
+            #if 1
+            // revert camd & nd ordering
+            // > revert camd
+            if (order_csym_array.extent(0) > 0) {
+              for (Int k = 0; k < (Int)BTF_A.ncol; k++) order_csym_inv(k) = k;
+              permute_inv(order_csym_inv, order_csym_array, BTF_A.ncol);
 
-            // Revert camd ordering to A
-            permute_row(BTF_A, order_csym_inv);
-            permute_col(BTF_A, order_csym_inv);
-            if (BTF_E.ncol > 0) {
-              // Revert CAMD perm to cols of E
-              permute_col(BTF_E, order_csym_inv);
+              // Revert camd ordering to A
+              permute_row(BTF_A, order_csym_inv);
+              permute_col(BTF_A, order_csym_inv);
+              if (BTF_E.ncol > 0) {
+                // Revert CAMD perm to cols of E
+                permute_col(BTF_E, order_csym_inv);
+              }
+              if (btf_tabs_offset < btf_nblks) {
+                // Revert ND perm to rows of B
+                permute_row(BTF_B, order_csym_inv);
+              }
             }
-            if (btf_tabs_offset < btf_nblks) {
-              // Revert ND perm to rows of B
-              permute_row(BTF_B, order_csym_inv);
-            }
-          }
 
-          // > revert nd
-          if (part_tree.permtab.extent(0) > 0) {
-            for (Int k = 0; k < (Int)BTF_A.ncol; k++) order_nd_inv(k) = k;
-            permute_inv(order_nd_inv, part_tree.permtab, BTF_A.ncol); 
-            //for (Int k = 0; k < (Int)BTF_A.ncol; k++) printf( " > nd(%d)=%d\n",k,part_tree.permtab(k) );
+            // > revert nd
+            if (part_tree.permtab.extent(0) > 0) {
+              for (Int k = 0; k < (Int)BTF_A.ncol; k++) order_nd_inv(k) = k;
+              permute_inv(order_nd_inv, part_tree.permtab, BTF_A.ncol); 
+              //for (Int k = 0; k < (Int)BTF_A.ncol; k++) printf( " > nd(%d)=%d\n",k,part_tree.permtab(k) );
 
-            // Revert ND ordering to A
-            permute_row(BTF_A, order_nd_inv);
-            permute_col(BTF_A, order_nd_inv);
-            if (BTF_E.ncol > 0) {
-              // Revert ND perm to cols of E
-              permute_col(BTF_E, order_nd_inv);
+              // Revert ND ordering to A
+              permute_row(BTF_A, order_nd_inv);
+              permute_col(BTF_A, order_nd_inv);
+              if (BTF_E.ncol > 0) {
+                // Revert ND perm to cols of E
+                permute_col(BTF_E, order_nd_inv);
+              }
+              if (btf_tabs_offset < btf_nblks) {
+                // Revert ND perm to rows of B
+                permute_row(BTF_B, order_nd_inv);
+              }
             }
-            if (btf_tabs_offset < btf_nblks) {
-              // Revert ND perm to rows of B
-              permute_row(BTF_B, order_nd_inv);
-            }
+            #endif
           }
-          #endif
 
           // revert AMD perm to rows of A
           auto order_nd_amd = Kokkos::subview(order_blk_amd_inv,
@@ -877,23 +918,20 @@ namespace BaskerNS
             order_nd_amd(i) += a_nfirst;
           }
 
-          // revert MWM perm to rows of A
-          auto order_nd_mwm = Kokkos::subview(order_blk_mwm_inv, 
-                                              range_type(a_nfirst, a_nlast));
-          for (Int i = 0; i < (Int)BTF_A.ncol; i++) {
-            order_nd_mwm(i) -= a_nfirst;
-          }
-          permute_row(BTF_A, order_nd_mwm);
-          //if (BTF_E.ncol > 0) {
-          //  // Revert ND perm to cols of E
-          //  permute_col(BTF_E, order_nd_mwm);
-          //}
-          if (btf_tabs_offset < btf_nblks) {
-            // revert AMD perm to rows of B
-            permute_row(BTF_B, order_nd_mwm);
-          }
-          for (Int i = 0; i < (Int)BTF_A.ncol; i++) {
-            order_nd_mwm(i) += a_nfirst;
+          if (Options.blk_matching != 0) {
+            // revert MWM perm to rows of A
+            auto order_nd_mwm = Kokkos::subview(order_blk_mwm_inv, 
+                                                range_type(a_nfirst, a_nlast));
+            for (Int i = 0; i < (Int)BTF_A.ncol; i++) {
+              order_nd_mwm(i) -= a_nfirst;
+            }
+            permute_row(BTF_A, order_nd_mwm);
+            if (btf_tabs_offset < btf_nblks) {
+              permute_row(BTF_B, order_nd_mwm);
+            }
+            for (Int i = 0; i < (Int)BTF_A.ncol; i++) {
+              order_nd_mwm(i) += a_nfirst;
+            }
           }
         }
 
@@ -901,11 +939,11 @@ namespace BaskerNS
         // reset the small C blocks
         if (btf_nblks > btf_tabs_offset) {
           // revert BLK_AMD ordering
-          for (Int i = 0; i < (Int)BTF_C.ncol; i++) {
-            order_blk_amd_inv(i+nfirst) -= nfirst;
-          }
           auto order_blk_amd_c = Kokkos::subview(order_blk_amd_inv,
                                                  range_type(nfirst, ncol));
+          for (Int i = 0; i < (Int)BTF_C.ncol; i++) {
+            order_blk_amd_c(i) -= nfirst;
+          }
           permute_row(BTF_C, order_blk_amd_c);
           permute_col(BTF_C, order_blk_amd_c);
           if (BTF_E.ncol > 0) {
@@ -916,14 +954,22 @@ namespace BaskerNS
             // Apply AMD perm to cols
             permute_col(BTF_B, order_blk_amd_c);
           }
-
-          // revert BLK_MWM ordering
           for (Int i = 0; i < (Int)BTF_C.ncol; i++) {
-            order_blk_mwm_inv(i+nfirst) -= nfirst;
+            order_blk_amd_c(i) += nfirst;
           }
-          auto order_blk_mwm_c = Kokkos::subview(order_blk_mwm_inv, 
-                                                range_type (nfirst, ncol));
-          permute_row(BTF_C, order_blk_mwm_c);
+
+          if (Options.blk_matching != 0) {
+            // revert BLK_MWM ordering
+            auto order_blk_mwm_c = Kokkos::subview(order_blk_mwm_inv, 
+                                                   range_type (nfirst, ncol));
+            for (Int i = 0; i < (Int)BTF_C.ncol; i++) {
+              order_blk_mwm_c(i) -= nfirst;
+            }
+            permute_row(BTF_C, order_blk_mwm_c);
+            for (Int i = 0; i < (Int)BTF_C.ncol; i++) {
+              order_blk_mwm_c(i) += nfirst;
+            }
+          }
         }
 
 #ifdef AMD_ON_D
@@ -1039,7 +1085,6 @@ namespace BaskerNS
     }
     printf("];\n");
 
-    printf( "A(%dx%d, nnz=%d)\n",BTF_A.nrow,BTF_A.ncol,BTF_A.nnz);
     printf(" A_ = [\n" );
     if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
       for(Int j = 0; j < BTF_A.ncol; j++) {
@@ -1050,7 +1095,6 @@ namespace BaskerNS
     }
     printf("];\n");
 
-    printf( "B(%dx%d, nnz=%d)\n",BTF_B.nrow,BTF_B.ncol,BTF_B.nnz);
     printf(" B_ = [\n" );
     if (BTF_B.nrow > 0 && BTF_B.ncol > 0) {
       for(Int j = 0; j < BTF_B.ncol; j++) {
@@ -1833,6 +1877,7 @@ namespace BaskerNS
     {
       err = factor_inc_lvl(0);
     }
+
 
     if(Options.verbose == BASKER_TRUE) {
       fnotoken_time += timer_factornotoken.seconds();

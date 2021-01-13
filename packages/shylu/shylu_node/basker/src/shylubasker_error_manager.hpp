@@ -87,10 +87,6 @@ namespace BaskerNS
         {
           BASKER_ASSERT(thread_array(ti).error_info > 0, "L) newsize not big enough");
           resize_L = thread_array(ti).error_info;
-          if(Options.verbose == BASKER_TRUE)
-          {
-            std::cout << "L(" << ti << ")  resize: " << resize_L << std::endl;
-          }
 
           //if L is already bigger and U, 
           //We will want re size U as, well
@@ -110,15 +106,15 @@ namespace BaskerNS
         if(thread_array(ti).error_subblk == -1)
         {  
           resize_U = thread_array(ti).error_info;
-          if(Options.verbose == BASKER_TRUE)
-          {
-            std::cout << "resize U: " << resize_U << std::endl;
-          }
         }
 
         //Resize L
         if(resize_L > BASKER_MAX_IDX)
         {
+          if(Options.verbose == BASKER_TRUE)
+          {
+            std::cout << " ++ resize L( tid = " << ti << " ): new size = " << resize_L << std::endl;
+          }
           BASKER_MATRIX &L =
             LL(thread_array(ti).error_blk)(thread_array(ti).error_subblk);
           REALLOC_INT_1DARRAY(L.row_idx,
@@ -133,7 +129,6 @@ namespace BaskerNS
             REALLOC_INT_1DARRAY(L.inc_lvl,
                 L.nnz,
                 resize_L);
-
           }
           L.mnnz = resize_L;
           L.nnz = resize_L;
@@ -142,6 +137,10 @@ namespace BaskerNS
         //Resize U
         if(resize_U > BASKER_MAX_IDX)
         {
+          if(Options.verbose == BASKER_TRUE)
+          {
+            std::cout << " ++ resize U( tid = " << ti << " ): new size = " << resize_U << std::endl;
+          }
           BASKER_MATRIX &U = 
             LU(thread_array(ti).error_blk)(0);
           REALLOC_INT_1DARRAY(U.row_idx,
@@ -156,7 +155,6 @@ namespace BaskerNS
           BASKER_MATRIX &L = 
             LL(thread_array(ti).error_blk)(0);
           L.clear_pend();
-
         }
 
         //clean up workspace
@@ -185,8 +183,8 @@ namespace BaskerNS
             if(sb == 0)
             {
               //Clear perm
-              for(Int i = SL.srow; 
-                  i < SL.srow+SL.nrow; ++i)
+              Int scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
+              for(Int i = scol_top+SL.srow; i < scol_top+SL.srow+SL.nrow; ++i)
               {
                 gperm(i) = BASKER_MAX_IDX;
               }
@@ -194,8 +192,7 @@ namespace BaskerNS
               //Clear incomplete ws
               if(Options.incomplete == BASKER_TRUE)
               {
-                for(Int i = SL.srow;
-                    i < SL.srow+SL.nrow; ++i)
+                for(Int i = SL.srow; i < SL.srow+SL.nrow; ++i)
                 {
                   INC_LVL_TEMP(i) = BASKER_MAX_IDX;
                 }
@@ -300,7 +297,7 @@ namespace BaskerNS
           resize_L = thread_array(ti).error_info;    
           if(Options.verbose == BASKER_TRUE)
           {
-            std::cout << "L size: " << resize_L << std::endl;
+            std::cout << " ++ L size: " << resize_L << std::endl;
           }
         }
         //We don't care about the other way since,
@@ -310,7 +307,7 @@ namespace BaskerNS
           resize_U = thread_array(ti).error_info;
           if(Options.verbose == BASKER_TRUE)
           {
-            std::cout << "U size: " << resize_U << std::endl;
+            std::cout << " ++ U size: " << resize_U << std::endl;
           }
         }
 
@@ -405,7 +402,8 @@ namespace BaskerNS
         BASKER_MATRIX &SL = 
           LL(thread_array(ti).error_blk)(0);
 
-        for(Int i = SL.srow; i < (SL.srow+SL.nrow);
+        Int scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
+        for(Int i = scol_top + SL.srow; i < scol_top + (SL.srow+SL.nrow);
             i++)
         {
           gperm(i) = BASKER_MAX_IDX;
@@ -512,6 +510,7 @@ namespace BaskerNS
           std::cout << " > THREADS: " << ti
             << " DIAGBLK MALLOC blk=" << c
             << " newsize=" << thread_array(ti).error_info
+            << " for both L( " << c << " ) and U( " << c << " )"
             << std::endl;
 
           //Clean the workspace

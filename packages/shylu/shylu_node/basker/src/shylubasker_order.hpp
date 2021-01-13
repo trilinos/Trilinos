@@ -984,108 +984,110 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //--------------------------------------------------------------
     //5. Constrained symamd on A
     //Init for Constrained symamd on A
-    if (Options.symmetric != BASKER_TRUE) {
-      // flag for permute_composition_for_solve
-      amd_flag = BASKER_TRUE;
+    if (Options.amd_dom && Options.static_delayed_pivot == 0) {
+      if (Options.symmetric != BASKER_TRUE) {
+        // flag for permute_composition_for_solve
+        amd_flag = BASKER_TRUE;
 
-      #if 0
-      Int nleaves = 1;
-      printf( " * debug nleaves = 1 *\n" );
-      #else
-      Int nleaves = num_threads;
-      #endif
-      Int nblks = tree.nblks;
-      INT_1DARRAY tempp;
-      INT_1DARRAY temp_col;
-      INT_1DARRAY temp_row;
-      MALLOC_INT_1DARRAY  (tempp,    AAT.ncol);
-      MALLOC_INT_1DARRAY  (temp_col, AAT.ncol+nblks);
-      MALLOC_INT_1DARRAY  (temp_row, AAT.nnz);
-
-      #ifdef BASKER_TIMER
-      scotch_amd_timer.reset();
-      #endif
-#if 1
-    kokkos_amd_order<Int> amd_functor(nleaves, nblks, tree.col_tabs, AAT.col_ptr, AAT.row_idx,
-                                      tempp, temp_col, temp_row, order_csym_array, Options.verbose);
-    Kokkos::parallel_for("BLK_AMD on A", Kokkos::RangePolicy<Exe_Space>(0, nleaves), amd_functor);
-    Kokkos::fence();
-#else
-      for(Int b = 0; b < tree.nblks; ++b) {
-        Int frow = tree.col_tabs(b);
-        Int erow = tree.col_tabs(b+1);
-        Int fnnz = AAT.col_ptr(frow);
-
-        Int nnz = 0;
-        temp_col(frow+b) = 0;
-        for(Int k = frow; k < erow; k++) {
-          for(Int i = AAT.col_ptr(k); i < AAT.col_ptr(k+1); i++) {
-            if(AAT.row_idx(i) >= frow && AAT.row_idx(i) < erow) {
-              temp_row(fnnz + nnz) = AAT.row_idx(i) - frow;
-              nnz++;
-            }
-          }
-          temp_col(b+k+1) = nnz;
-        }
-        Int blk_size = erow - frow;
-        #ifdef BASKER_SORT_MATRIX_FOR_AMD
-        sort_matrix(nnz, blk_size, &(temp_col(frow+b)), &(temp_row(fnnz)), &(temp_val(fnnz)));
+        #if 0
+        Int nleaves = 1;
+        printf( " * debug nleaves = 1 *\n" );
+        #else
+        Int nleaves = num_threads;
         #endif
+        Int nblks = tree.nblks;
+        INT_1DARRAY tempp;
+        INT_1DARRAY temp_col;
+        INT_1DARRAY temp_row;
+        MALLOC_INT_1DARRAY  (tempp,    AAT.ncol);
+        MALLOC_INT_1DARRAY  (temp_col, AAT.ncol+nblks);
+        MALLOC_INT_1DARRAY  (temp_row, AAT.nnz);
 
-        double l_nnz = 0;
-        double lu_work = 0;
-        BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(frow+b)), &(temp_row(fnnz)),
-                                        &(tempp(frow)), l_nnz, lu_work);
-        for(Int k = 0; k < blk_size; k++)
-        {
-          order_csym_array(frow+tempp(frow + k)) = frow+k;
-        }
         #ifdef BASKER_TIMER
-        std::cout << " AMD ( " << b << " ) : " << scotch_amd_timer.seconds() << " seconds " << std::endl;
+        scotch_amd_timer.reset();
+        #endif
+#if 1
+        kokkos_amd_order<Int> amd_functor(nleaves, nblks, tree.col_tabs, AAT.col_ptr, AAT.row_idx,
+                                          tempp, temp_col, temp_row, order_csym_array, Options.verbose);
+        Kokkos::parallel_for("BLK_AMD on A", Kokkos::RangePolicy<Exe_Space>(0, nleaves), amd_functor);
+        Kokkos::fence();
+#else
+        for(Int b = 0; b < tree.nblks; ++b) {
+          Int frow = tree.col_tabs(b);
+          Int erow = tree.col_tabs(b+1);
+          Int fnnz = AAT.col_ptr(frow);
+
+          Int nnz = 0;
+          temp_col(frow+b) = 0;
+          for(Int k = frow; k < erow; k++) {
+            for(Int i = AAT.col_ptr(k); i < AAT.col_ptr(k+1); i++) {
+              if(AAT.row_idx(i) >= frow && AAT.row_idx(i) < erow) {
+                temp_row(fnnz + nnz) = AAT.row_idx(i) - frow;
+                nnz++;
+              }
+            }
+            temp_col(b+k+1) = nnz;
+          }
+          Int blk_size = erow - frow;
+          #ifdef BASKER_SORT_MATRIX_FOR_AMD
+          sort_matrix(nnz, blk_size, &(temp_col(frow+b)), &(temp_row(fnnz)), &(temp_val(fnnz)));
+          #endif
+
+          double l_nnz = 0;
+          double lu_work = 0;
+          BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(frow+b)), &(temp_row(fnnz)),
+                                          &(tempp(frow)), l_nnz, lu_work);
+          for(Int k = 0; k < blk_size; k++)
+          {
+            order_csym_array(frow+tempp(frow + k)) = frow+k;
+          }
+          #ifdef BASKER_TIMER
+          std::cout << " AMD ( " << b << " ) : " << scotch_amd_timer.seconds() << " seconds " << std::endl;
+          #endif
+        }
+#endif
+        #ifdef BASKER_TIMER
+        csymamd_time += scotch_amd_timer.seconds();
+        std::cout << " ++ Basker apply_scotch : constrained symm amd time : " << csymamd_time
+                  << " using amd" << std::endl;
+        scotch_timer.reset();
+        #endif
+      } else
+      {
+        INT_1DARRAY cmember;
+        MALLOC_INT_1DARRAY(cmember, BTF_A.ncol+1);
+        for(Int i = 0; i < tree.nblks; ++i) {
+          for(Int j = tree.col_tabs(i); j < tree.col_tabs(i+1); ++j) {
+            cmember(j) = i;
+          }
+        }
+        //--------------------------------------------------------------
+        // call Constrained symamd on A
+        //printf("============CALLING CSYMAMD============\n");
+        init_value(order_csym_array, BTF_A.ncol, (Int)0);
+
+        #ifdef BASKER_TIMER
+        scotch_amd_timer.reset();
+        #endif
+        csymamd_order(BTF_A, order_csym_array, cmember);
+        #ifdef BASKER_TIMER
+        csymamd_time = scotch_amd_timer.seconds();
+        #endif
+
+        #ifdef BASKER_TIMER
+        double csymamd_tot_time = scotch_timer.seconds();
+        std::cout << " ++ Basker apply_scotch : constrained symm amd time : " << csymamd_tot_time
+                  << " (" << csymamd_time << ") using csymamd" << std::endl;
+        scotch_timer.reset();
         #endif
       }
-#endif
-      #ifdef BASKER_TIMER
-      csymamd_time += scotch_amd_timer.seconds();
-      std::cout << " ++ Basker apply_scotch : constrained symm amd time : " << csymamd_time
-                << " using amd" << std::endl;
-      scotch_timer.reset();
-      #endif
-    } else
-    {
-      INT_1DARRAY cmember;
-      MALLOC_INT_1DARRAY(cmember, BTF_A.ncol+1);
-      for(Int i = 0; i < tree.nblks; ++i) {
-        for(Int j = tree.col_tabs(i); j < tree.col_tabs(i+1); ++j) {
-          cmember(j) = i;
-        }
+      #if 0 // reset to I for debug
+      printf( " >> debug: set order_csym_array to identity <<\n" );
+      for (Int i = 0; i < BTF_A.ncol; ++i) {
+        order_csym_array(i) = i;
       }
-      //--------------------------------------------------------------
-      // call Constrained symamd on A
-      //printf("============CALLING CSYMAMD============\n");
-      init_value(order_csym_array, BTF_A.ncol, (Int)0);
-
-      #ifdef BASKER_TIMER
-      scotch_amd_timer.reset();
-      #endif
-      csymamd_order(BTF_A, order_csym_array, cmember);
-      #ifdef BASKER_TIMER
-      csymamd_time = scotch_amd_timer.seconds();
-      #endif
-
-      #ifdef BASKER_TIMER
-      double csymamd_tot_time = scotch_timer.seconds();
-      std::cout << " ++ Basker apply_scotch : constrained symm amd time : " << csymamd_tot_time
-                << " (" << csymamd_time << ") using csymamd" << std::endl;
-      scotch_timer.reset();
       #endif
     }
-    #if 0 // reset to I for debug
-    printf( " >> debug: set order_csym_array to identity <<\n" );
-    for (Int i = 0; i < BTF_A.ncol; ++i) {
-      order_csym_array(i) = i;
-    }
-    #endif
     //sort_matrix(BTF_A); // unnecessary?
 
     //new for sfactor_copy2 replacement
