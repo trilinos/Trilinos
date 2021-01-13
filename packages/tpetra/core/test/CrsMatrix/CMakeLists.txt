@@ -198,17 +198,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_gaussSeidel
-  SOURCES
-    CrsMatrix_gaussSeidel
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  ARGS
-  COMM serial mpi
-  NUM_MPI_PROCS 1-4
-  STANDARD_PASS_OUTPUT
-  )
-
 # This test only makes sense for exactly 2 MPI processes.
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_Bug5978

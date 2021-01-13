@@ -50,6 +50,7 @@
 #include "Tpetra_BlockCrsMatrix.hpp"
 #include <type_traits>
 #include <KokkosKernels_Handle.hpp>
+#include "KokkosSparse_sor_sequential_impl.hpp"
 
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -107,7 +108,7 @@ pp. 2864-2887.
 
 Richardson and Jacobi will always use your matrix's native sparse matrix-vector
 multiply kernel.  This should give good performance, since we have
-spent a lot of effort tuning Tpetra's kernels.  Depending on the Node
+spent a lot of effort tuning Tpetra's kernels.  Depending on the node_type
 type of your Tpetra matrix, it may also exploit threads for additional
 parallelism within each MPI process.  In contrast, Gauss-Seidel and
 symmetric Gauss-Seidel are intrinsically sequential methods within an
@@ -115,7 +116,7 @@ MPI process.  This prevents us from exposing more parallelism via
 threads.  The difference should become more apparent as your code
 moves away from a "one MPI process per core" model, to a "one MPI
 process per socket or node" model, assuming that you are using a
-thread-parallel Node type.
+thread-parallel node_type type.
 
 Relaxation works with any Tpetra::RowMatrix input.  If your
 Tpetra::RowMatrix happens to be a Tpetra::CrsMatrix, the Gauss-Seidel
@@ -258,7 +259,7 @@ public:
   //! The type of global indices in the input MatrixType.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
-  //! The Node type used by the input MatrixType.
+  //! The node_type type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
   //! The type of the magnitude (absolute value) of a matrix entry.
@@ -583,16 +584,23 @@ private:
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
+    typedef typename Kokkos::ArithTraits<scalar_type>::val_type impl_scalar_type;
+
   /// \brief Tpetra::CrsMatrix specialization used by this class.
   ///
   /// We use this for dynamic casts to dispatch to the most efficient
   /// implementation of various relaxation kernels.
   typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> crs_matrix_type;
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> multivector_type;
   typedef Tpetra::BlockCrsMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> block_crs_matrix_type;
   typedef Tpetra::BlockMultiVector<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> block_multivector_type;
+
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+  typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
 
 
   //@}
@@ -728,9 +736,9 @@ private:
   Teuchos::RCP<const row_matrix_type> A_;
   //! Time object to track timing (setup).
   //! Importer for parallel Gauss-Seidel and symmetric Gauss-Seidel.
-  Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > Importer_;
+  Teuchos::RCP<const import_type> Importer_;
   //! Importer for block multivector versions of GS and SGS
-  Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > pointImporter_;
+  Teuchos::RCP<const import_type> pointImporter_;
   //! Contains the diagonal elements of \c A_.
   Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Diagonal_;
   //! MultiVector for caching purposes (so apply doesn't need to allocate one on each call)
@@ -853,6 +861,727 @@ private:
   Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices_;
 
   //@}
+  
+  static Teuchos::RCP<multivector_type> getRowMapMultiVector(const crs_matrix_type* A, const multivector_type& U_rangeMap, bool force)
+  {
+    const size_t numVecs = U_rangeMap.getNumVectors ();
+    auto exporter = A->getGraph ()->getExporter ();
+    Teuchos::RCP<const map_type> rowMap = A->getRowMap ();
+    Teuchos::RCP<multivector_type> U_rowMap; // null by default
+    if (! exporter.is_null () || force) {
+      U_rowMap = rcp (new multivector_type(rowMap, numVecs));
+    }
+    return U_rowMap;
+  }
+
+  static Teuchos::RCP<multivector_type> getColumnMapMultiVector(const crs_matrix_type* A, const multivector_type& U_domainMap, bool force)
+  {
+    const size_t numVecs = U_domainMap.getNumVectors ();
+    auto importer = A->getGraph ()->getImporter();
+    Teuchos::RCP<const map_type> colMap = A->getColMap();
+    Teuchos::RCP<multivector_type> U_colMap; // null by default
+    if (! importer.is_null () || force) {
+      U_colMap = rcp (new multivector_type(colMap, numVecs));
+    }
+    return U_colMap;
+  }
+
+  void CRS_localGaussSeidel (
+      const crs_matrix_type* A,
+      const multivector_type &B,
+      multivector_type &X,
+      const multivector_type &D,
+      const scalar_type& dampingFactor,
+      const Tpetra::ESweepDirection direction) const
+  {
+    typedef typename node_type::device_type::memory_space dev_mem_space;
+    typedef typename multivector_type::dual_view_type::t_host::device_type host_mem_space;
+    typedef typename crs_matrix_type::crs_graph_type::local_graph_type k_local_graph_type;
+    typedef typename k_local_graph_type::size_type offset_type;
+    const char prefix[] = "Tpetra::CrsMatrix::localGaussSeidel: ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! A->isFillComplete (), std::runtime_error,
+       prefix << "The matrix is not fill complete.");
+    const size_t lclNumRows = A->getNodeNumRows ();
+    const size_t numVecs = B.getNumVectors ();
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (X.getNumVectors () != numVecs, std::invalid_argument,
+       prefix << "B.getNumVectors() = " << numVecs << " != "
+       "X.getNumVectors() = " << X.getNumVectors () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (B.getLocalLength () != lclNumRows, std::invalid_argument,
+       prefix << "B.getLocalLength() = " << B.getLocalLength ()
+       << " != this->getNodeNumRows() = " << lclNumRows << ".");
+
+    // mfh 28 Aug 2017: The current local Gauss-Seidel kernel only
+    // runs on host.  (See comments below.)  Thus, we need to access
+    // the host versions of these data.
+    const_cast<multivector_type&> (B).sync_host ();
+    X.sync_host ();
+    X.modify_host ();
+    const_cast<multivector_type&> (D).sync_host ();
+
+    auto B_lcl = B.template getLocalView<host_mem_space> ();
+    auto X_lcl = X.template getLocalView<host_mem_space> ();
+    auto D_lcl = D.template getLocalView<host_mem_space> ();
+
+    offset_type B_stride[8], X_stride[8], D_stride[8];
+    B_lcl.stride (B_stride);
+    X_lcl.stride (X_stride);
+    D_lcl.stride (D_stride);
+
+    local_matrix_type lclMatrix = A->getLocalMatrix ();
+    k_local_graph_type lclGraph = lclMatrix.graph;
+    typename local_matrix_type::row_map_type ptr = lclGraph.row_map;
+    typename local_matrix_type::index_type ind = lclGraph.entries;
+    typename local_matrix_type::values_type val = lclMatrix.values;
+    const offset_type* const ptrRaw = ptr.data ();
+    const local_ordinal_type* const indRaw = ind.data ();
+    const impl_scalar_type* const valRaw = val.data ();
+
+    const std::string dir ((direction == Tpetra::Forward) ? "F" : "B");
+    // NOTE (mfh 28 Aug 2017) This assumes UVM.  We can't get around
+    // that on GPUs without using a GPU-based sparse triangular
+    // solve to implement Gauss-Seidel.  This exists in cuSPARSE,
+    // but we would need to implement a wrapper with a fall-back
+    // algorithm for unsupported Scalar and LO types.
+    KokkosSparse::Impl::Sequential::gaussSeidel<local_ordinal_type, offset_type, impl_scalar_type, impl_scalar_type, impl_scalar_type>(
+        lclNumRows,
+        numVecs,
+        ptrRaw, indRaw, valRaw,
+        B_lcl.data (), B_stride[1],
+        X_lcl.data (), X_stride[1],
+        D_lcl.data (),
+        static_cast<impl_scalar_type> (dampingFactor),
+        dir.c_str ());
+    const_cast<multivector_type&> (B).template sync<dev_mem_space> ();
+    X.template sync<dev_mem_space> ();
+    const_cast<multivector_type&> (D).template sync<dev_mem_space> ();
+  }
+
+  void CRS_reorderedLocalGaussSeidel (
+      const crs_matrix_type* A,
+      const multivector_type& B,
+      multivector_type& X,
+      const multivector_type& D,
+      const Teuchos::ArrayView<local_ordinal_type>& rowIndices,
+      const scalar_type& dampingFactor,
+      const Tpetra::ESweepDirection direction) const
+  {
+    typedef typename node_type::device_type::memory_space dev_mem_space;
+    typedef typename multivector_type::dual_view_type::t_host::device_type host_mem_space;
+    typedef typename crs_matrix_type::crs_graph_type::local_graph_type k_local_graph_type;
+    typedef typename k_local_graph_type::size_type offset_type;
+    const char prefix[] = "Tpetra::CrsMatrix::reorderedLocalGaussSeidel: ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! A->isFillComplete (), std::runtime_error,
+       prefix << "The matrix is not fill complete.");
+    const size_t lclNumRows = A->getNodeNumRows ();
+    const size_t numVecs = B.getNumVectors ();
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (X.getNumVectors () != numVecs, std::invalid_argument,
+       prefix << "B.getNumVectors() = " << numVecs << " != "
+       "X.getNumVectors() = " << X.getNumVectors () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (B.getLocalLength () != lclNumRows, std::invalid_argument,
+       prefix << "B.getLocalLength() = " << B.getLocalLength ()
+       << " != this->getNodeNumRows() = " << lclNumRows << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (static_cast<size_t> (rowIndices.size ()) < lclNumRows,
+       std::invalid_argument, prefix << "rowIndices.size() = "
+       << rowIndices.size () << " < this->getNodeNumRows() = "
+       << lclNumRows << ".");
+
+    // mfh 28 Aug 2017: The current local Gauss-Seidel kernel only
+    // runs on host.  (See comments below.)  Thus, we need to access
+    // the host versions of these data.
+    const_cast<multivector_type&> (B).sync_host ();
+    X.sync_host ();
+    X.modify_host ();
+    const_cast<multivector_type&> (D).sync_host ();
+
+    auto B_lcl = B.template getLocalView<host_mem_space> ();
+    auto X_lcl = X.template getLocalView<host_mem_space> ();
+    auto D_lcl = D.template getLocalView<host_mem_space> ();
+
+    offset_type B_stride[8], X_stride[8], D_stride[8];
+    B_lcl.stride (B_stride);
+    X_lcl.stride (X_stride);
+    D_lcl.stride (D_stride);
+
+    local_matrix_type lclMatrix = A->getLocalMatrix ();
+    auto lclGraph = lclMatrix.graph;
+    typename local_matrix_type::index_type ind = lclGraph.entries;
+    typename local_matrix_type::row_map_type ptr = lclGraph.row_map;
+    typename local_matrix_type::values_type val = lclMatrix.values;
+    const offset_type* const ptrRaw = ptr.data ();
+    const local_ordinal_type* const indRaw = ind.data ();
+    const impl_scalar_type* const valRaw = val.data ();
+
+    const std::string dir = (direction == Tpetra::Forward) ? "F" : "B";
+    // NOTE (mfh 28 Aug 2017) This assumes UVM.  We can't get around
+    // that on GPUs without using a GPU-based sparse triangular
+    // solve to implement Gauss-Seidel, and also handling the
+    // permutations correctly.
+    KokkosSparse::Impl::Sequential::reorderedGaussSeidel<local_ordinal_type, offset_type, impl_scalar_type, impl_scalar_type, impl_scalar_type>(
+      lclNumRows,
+      numVecs,
+      ptrRaw, indRaw, valRaw,
+      B_lcl.data (),
+      B_stride[1],
+      X_lcl.data (),
+      X_stride[1],
+      D_lcl.data (),
+      rowIndices.getRawPtr (),
+      lclNumRows,
+      static_cast<impl_scalar_type> (dampingFactor),
+      dir.c_str ());
+    const_cast<multivector_type&> (B).template sync<dev_mem_space> ();
+    X.template sync<dev_mem_space> ();
+    const_cast<multivector_type&> (D).template sync<dev_mem_space> ();
+  }
+
+  void CRS_gaussSeidel(
+      const crs_matrix_type* A,
+      const multivector_type& B,
+      multivector_type& X,
+      const multivector_type& D,
+      const scalar_type& dampingFactor,
+      const Tpetra::ESweepDirection direction,
+      const int numSweeps) const
+  {
+    CRS_reorderedGaussSeidel (A, B, X, D, Teuchos::null, dampingFactor, direction, numSweeps);
+  }
+
+  void CRS_reorderedGaussSeidel (
+      const crs_matrix_type* A,
+      const multivector_type& B,
+      multivector_type& X,
+      const multivector_type& D,
+      const Teuchos::ArrayView<local_ordinal_type>& rowIndices,
+      const scalar_type& dampingFactor,
+      const Tpetra::ESweepDirection direction,
+      const int numSweeps) const
+  {
+    using Teuchos::null;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::rcp_const_cast;
+    using Teuchos::rcpFromRef;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      A->isFillComplete() == false, std::runtime_error,
+      "Tpetra::CrsMatrix::gaussSeidel: cannot call this method until "
+      "fillComplete() has been called.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numSweeps < 0,
+      std::invalid_argument,
+      "Tpetra::CrsMatrix::gaussSeidel: The number of sweeps must be , "
+      "nonnegative but you provided numSweeps = " << numSweeps << " < 0.");
+
+    // Translate from global to local sweep direction.
+    // While doing this, validate the input.
+    Tpetra::ESweepDirection localDirection;
+    if (direction == Tpetra::Forward) {
+      localDirection = Tpetra::Forward;
+    }
+    else if (direction == Tpetra::Backward) {
+      localDirection = Tpetra::Backward;
+    }
+    else if (direction == Tpetra::Symmetric) {
+      // We'll control local sweep direction manually.
+      localDirection = Tpetra::Forward;
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        "Tpetra::CrsMatrix::gaussSeidel: The 'direction' enum does not have "
+        "any of its valid values: Forward, Backward, or Symmetric.");
+    }
+
+    if (numSweeps == 0) {
+      return; // Nothing to do.
+    }
+
+    // We don't need the Export object because this method assumes
+    // that the row, domain, and range Maps are the same.  We do need
+    // the Import object, if there is one, though.
+    RCP<const import_type> importer = A->getGraph()->getImporter();
+
+    RCP<const map_type> domainMap = A->getDomainMap ();
+    RCP<const map_type> rangeMap = A->getRangeMap ();
+    RCP<const map_type> rowMap = A->getGraph ()->getRowMap ();
+    RCP<const map_type> colMap = A->getGraph ()->getColMap ();
+
+    {
+      // The relation 'isSameAs' is transitive.  It's also a
+      // collective, so we don't have to do a "shared" test for
+      // exception (i.e., a global reduction on the test value).
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! X.getMap ()->isSameAs (*domainMap),
+        std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidel requires that the input "
+        "multivector X be in the domain Map of the matrix.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! B.getMap ()->isSameAs (*rangeMap),
+        std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidel requires that the input "
+        "B be in the range Map of the matrix.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! D.getMap ()->isSameAs (*rowMap),
+        std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidel requires that the input "
+        "D be in the row Map of the matrix.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! rowMap->isSameAs (*rangeMap),
+        std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidel requires that the row Map and the "
+        "range Map be the same (in the sense of Tpetra::Map::isSameAs).");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! domainMap->isSameAs (*rangeMap),
+        std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidel requires that the domain Map and "
+        "the range Map of the matrix be the same.");
+    }
+
+    // If B is not constant stride, copy it into a constant stride
+    // multivector.  We'l handle the right-hand side B first and deal
+    // with X right before the sweeps, to improve locality of the
+    // first sweep.  (If the problem is small enough, then that will
+    // hopefully keep more of the entries of X in cache.  This
+    // optimizes for the typical case of a small number of sweeps.)
+    RCP<const multivector_type> B_in;
+    if (B.isConstantStride()) {
+      B_in = Teuchos::rcpFromRef (B);
+    }
+    else {
+      // The range Map and row Map are the same in this case, so we
+      // can use the (possibly cached) row Map multivector to store a
+      // constant stride copy of B.  We don't have to copy back, since
+      // Gauss-Seidel won't modify B.
+      RCP<multivector_type> B_in_nonconst = getRowMapMultiVector (A, B, true);
+      deep_copy (*B_in_nonconst, B); // Copy from B into B_in(_nonconst).
+      B_in = rcp_const_cast<const multivector_type> (B_in_nonconst);
+
+      TPETRA_EFFICIENCY_WARNING(
+        ! B.isConstantStride (),
+        std::runtime_error,
+        "gaussSeidel: The current implementation of the Gauss-Seidel kernel "
+        "requires that X and B both have constant stride.  Since B does not "
+        "have constant stride, we had to make a copy.  This is a limitation of "
+        "the current implementation and not your fault, but we still report it "
+        "as an efficiency warning for your information.");
+    }
+
+    // If X is not constant stride, copy it into a constant stride
+    // multivector.  Also, make the column Map multivector X_colMap,
+    // and its domain Map view X_domainMap.  (X actually must be a
+    // domain Map view of a column Map multivector; exploit this, if X
+    // has constant stride.)
+
+    RCP<multivector_type> X_domainMap;
+    RCP<multivector_type> X_colMap;
+    bool copiedInput = false;
+
+    if (importer.is_null ()) { // Domain and column Maps are the same.
+      if (X.isConstantStride ()) {
+        X_domainMap = Teuchos::rcpFromRef (X);
+        X_colMap = X_domainMap;
+        copiedInput = false;
+      }
+      else {
+        // Get a temporary column Map multivector, make a domain Map
+        // view of it, and copy X into the domain Map view.  We have
+        // to copy here because we won't be doing Import operations.
+        X_colMap = getColumnMapMultiVector (A, X, true);
+        X_domainMap = X_colMap; // Domain and column Maps are the same.
+        deep_copy (*X_domainMap, X); // Copy X into the domain Map view.
+        copiedInput = true;
+        TPETRA_EFFICIENCY_WARNING(
+          ! X.isConstantStride (), std::runtime_error,
+          "Tpetra::CrsMatrix::gaussSeidel: The current implementation of the "
+          "Gauss-Seidel kernel requires that X and B both have constant "
+          "stride.  Since X does not have constant stride, we had to make a "
+          "copy.  This is a limitation of the current implementation and not "
+          "your fault, but we still report it as an efficiency warning for "
+          "your information.");
+      }
+    }
+    else { // We will be doing Import operations in the sweeps.
+      if (X.isConstantStride ()) {
+        X_domainMap = Teuchos::rcpFromRef (X);
+        // This kernel assumes that X is a domain Map view of a column
+        // Map multivector.  We will only check if this is valid if
+        // the CMake configure Teuchos_ENABLE_DEBUG is ON.
+        X_colMap = X_domainMap->offsetViewNonConst (colMap, 0);
+
+        // FIXME (mfh 19 Mar 2013) Do we need to fill the remote
+        // entries of X_colMap with zeros?  Do we need to fill all of
+        // X_domainMap initially with zeros?  Ifpack
+        // (Ifpack_PointRelaxation.cpp, line 906) creates an entirely
+        // new MultiVector each time.
+
+        // Do the first Import for the first sweep.  This simplifies
+        // the logic in the sweeps.
+        X_colMap->doImport (X, *importer, Tpetra::INSERT);
+        copiedInput = false;
+      }
+      else {
+        // Get a temporary column Map multivector X_colMap, and make a
+        // domain Map view X_domainMap of it.  Instead of copying, we
+        // do an Import from X into X_domainMap.  This saves us a
+        // copy, since the Import has to copy the data anyway.
+        X_colMap = getColumnMapMultiVector (A, X, true);
+        X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
+        X_colMap->doImport (X, *importer, Tpetra::INSERT);
+        copiedInput = true;
+        TPETRA_EFFICIENCY_WARNING(
+          ! X.isConstantStride (), std::runtime_error,
+          "Tpetra::CrsMatrix::gaussSeidel: The current implementation of the "
+          "Gauss-Seidel kernel requires that X and B both have constant stride.  "
+          "Since X does not have constant stride, we had to make a copy.  "
+          "This is a limitation of the current implementation and not your fault, "
+          "but we still report it as an efficiency warning for your information.");
+      }
+    }
+
+    for (int sweep = 0; sweep < numSweeps; ++sweep) {
+      if (! importer.is_null () && sweep > 0) {
+        // We already did the first Import for the zeroth sweep.
+        X_colMap->doImport (*X_domainMap, *importer, Tpetra::INSERT);
+      }
+
+      // Do local Gauss-Seidel.
+      if (direction != Tpetra::Symmetric) {
+        if (rowIndices.is_null ()) {
+          CRS_localGaussSeidel(A, *B_in, *X_colMap, D, dampingFactor, localDirection);
+        }
+        else {
+          CRS_reorderedLocalGaussSeidel(A, *B_in, *X_colMap, D, rowIndices, dampingFactor, localDirection);
+        }
+      }
+      else { // direction == Symmetric
+        const bool doImportBetweenDirections = false;
+        if (rowIndices.is_null ()) {
+          CRS_localGaussSeidel(A, *B_in, *X_colMap, D, dampingFactor, Tpetra::Forward);
+          // mfh 18 Mar 2013: Aztec's implementation of "symmetric
+          // Gauss-Seidel" does _not_ do an Import between the forward
+          // and backward sweeps.  This makes sense, because Aztec
+          // considers "symmetric Gauss-Seidel" a subdomain solver.
+          if (doImportBetweenDirections) {
+            // Communicate again before the Backward sweep.
+            if (! importer.is_null ()) {
+              X_colMap->doImport (*X_domainMap, *importer, Tpetra::INSERT);
+            }
+          }
+          CRS_localGaussSeidel(A, *B_in, *X_colMap, D, dampingFactor, Tpetra::Backward);
+        }
+        else {
+          CRS_reorderedLocalGaussSeidel(A, *B_in, *X_colMap, D, rowIndices, dampingFactor, Tpetra::Forward);
+          if (doImportBetweenDirections) {
+            // Communicate again before the Backward sweep.
+            if (! importer.is_null ()) {
+              X_colMap->doImport (*X_domainMap, *importer, Tpetra::INSERT);
+            }
+          }
+          CRS_reorderedLocalGaussSeidel(A, *B_in, *X_colMap, D, rowIndices, dampingFactor, Tpetra::Backward);
+        }
+      }
+    }
+
+    if (copiedInput) {
+      deep_copy (X, *X_domainMap); // Copy back from X_domainMap to X.
+    }
+  }
+
+  void CRS_gaussSeidelCopy (
+      const crs_matrix_type* A,
+      multivector_type& X,
+      const multivector_type& B,
+      const multivector_type& D,
+      const scalar_type& dampingFactor,
+      const Tpetra::ESweepDirection direction,
+      const int numSweeps,
+      const bool zeroInitialGuess) const
+  {
+    CRS_reorderedGaussSeidelCopy (A, X, B, D, Teuchos::null, dampingFactor, direction,
+                              numSweeps, zeroInitialGuess);
+  }
+
+  void CRS_reorderedGaussSeidelCopy (
+      const crs_matrix_type* A,
+      multivector_type& X,
+      const multivector_type& B,
+      const multivector_type& D,
+      const Teuchos::ArrayView<local_ordinal_type>& rowIndices,
+      const scalar_type& dampingFactor,
+      const Tpetra::ESweepDirection direction,
+      const int numSweeps,
+      const bool zeroInitialGuess) const
+  {
+    using Teuchos::null;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::rcpFromRef;
+    using Teuchos::rcp_const_cast;
+    typedef scalar_type Scalar;
+    const char prefix[] = "Tpetra::CrsMatrix::(reordered)gaussSeidelCopy: ";
+    const scalar_type ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! A->isFillComplete (), std::runtime_error,
+      prefix << "The matrix is not fill complete.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numSweeps < 0, std::invalid_argument,
+      prefix << "The number of sweeps must be nonnegative, "
+      "but you provided numSweeps = " << numSweeps << " < 0.");
+
+    // Translate from global to local sweep direction.
+    // While doing this, validate the input.
+    Tpetra::ESweepDirection localDirection;
+    if (direction == Tpetra::Forward) {
+      localDirection = Tpetra::Forward;
+    }
+    else if (direction == Tpetra::Backward) {
+      localDirection = Tpetra::Backward;
+    }
+    else if (direction == Tpetra::Symmetric) {
+      // We'll control local sweep direction manually.
+      localDirection = Tpetra::Forward;
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::invalid_argument,
+        prefix << "The 'direction' enum does not have any of its valid "
+        "values: Forward, Backward, or Symmetric.");
+    }
+
+    if (numSweeps == 0) {
+      return;
+    }
+
+    RCP<const import_type> importer = A->getGraph ()->getImporter ();
+
+    RCP<const map_type> domainMap = A->getDomainMap ();
+    RCP<const map_type> rangeMap = A->getRangeMap ();
+    RCP<const map_type> rowMap = A->getGraph ()->getRowMap ();
+    RCP<const map_type> colMap = A->getGraph ()->getColMap ();
+
+    {
+      // The relation 'isSameAs' is transitive.  It's also a
+      // collective, so we don't have to do a "shared" test for
+      // exception (i.e., a global reduction on the test value).
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! X.getMap ()->isSameAs (*domainMap), std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidelCopy requires that the input "
+        "multivector X be in the domain Map of the matrix.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! B.getMap ()->isSameAs (*rangeMap), std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidelCopy requires that the input "
+        "B be in the range Map of the matrix.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! D.getMap ()->isSameAs (*rowMap), std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidelCopy requires that the input "
+        "D be in the row Map of the matrix.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! rowMap->isSameAs (*rangeMap), std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidelCopy requires that the row Map and the "
+        "range Map be the same (in the sense of Tpetra::Map::isSameAs).");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! domainMap->isSameAs (*rangeMap), std::runtime_error,
+        "Tpetra::CrsMatrix::gaussSeidelCopy requires that the domain Map and "
+        "the range Map of the matrix be the same.");
+    }
+
+    // Fetch a (possibly cached) temporary column Map multivector
+    // X_colMap, and a domain Map view X_domainMap of it.  Both have
+    // constant stride by construction.  We know that the domain Map
+    // must include the column Map, because our Gauss-Seidel kernel
+    // requires that the row Map, domain Map, and range Map are all
+    // the same, and that each process owns all of its own diagonal
+    // entries of the matrix.
+
+    RCP<multivector_type> X_colMap;
+    RCP<multivector_type> X_domainMap;
+    bool copyBackOutput = false;
+    if (importer.is_null ()) {
+      if (X.isConstantStride ()) {
+        X_colMap = Teuchos::rcpFromRef (X);
+        X_domainMap = Teuchos::rcpFromRef (X);
+        // Column Map and domain Map are the same, so there are no
+        // remote entries.  Thus, if we are not setting the initial
+        // guess to zero, we don't have to worry about setting remote
+        // entries to zero, even though we are not doing an Import in
+        // this case.
+        if (zeroInitialGuess) {
+          X_colMap->putScalar (ZERO);
+        }
+        // No need to copy back to X at end.
+      }
+      else { // We must copy X into a constant stride multivector.
+        // Just use the cached column Map multivector for that.
+        // force=true means fill with zeros, so no need to fill
+        // remote entries (not in domain Map) with zeros.
+        X_colMap = getColumnMapMultiVector (A, X, true);
+        // X_domainMap is always a domain Map view of the column Map
+        // multivector.  In this case, the domain and column Maps are
+        // the same, so X_domainMap _is_ X_colMap.
+        X_domainMap = X_colMap;
+        if (! zeroInitialGuess) { // Don't copy if zero initial guess
+          try {
+            deep_copy (*X_domainMap , X); // Copy X into constant stride MV
+          } catch (std::exception& e) {
+            std::ostringstream os;
+            os << "Tpetra::CrsMatrix::reorderedGaussSeidelCopy: "
+              "deep_copy(*X_domainMap, X) threw an exception: "
+               << e.what () << ".";
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, e.what ());
+          }
+        }
+        copyBackOutput = true; // Don't forget to copy back at end.
+        TPETRA_EFFICIENCY_WARNING(
+          ! X.isConstantStride (),
+          std::runtime_error,
+          "gaussSeidelCopy: The current implementation of the Gauss-Seidel "
+          "kernel requires that X and B both have constant stride.  Since X "
+          "does not have constant stride, we had to make a copy.  This is a "
+          "limitation of the current implementation and not your fault, but we "
+          "still report it as an efficiency warning for your information.");
+      }
+    }
+    else { // Column Map and domain Map are _not_ the same.
+      X_colMap = getColumnMapMultiVector (A, X, true);
+      X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
+
+#ifdef HAVE_TPETRA_DEBUG
+      auto X_colMap_host_view = X_colMap->getLocalViewHost ();
+      auto X_domainMap_host_view = X_domainMap->getLocalViewHost ();
+
+      if (X_colMap->getLocalLength () != 0 && X_domainMap->getLocalLength ()) {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (X_colMap_host_view.data () != X_domainMap_host_view.data (),
+           std::logic_error, "Tpetra::CrsMatrix::gaussSeidelCopy: Pointer to "
+           "start of column Map view of X is not equal to pointer to start of "
+           "(domain Map view of) X.  This may mean that Tpetra::MultiVector::"
+           "offsetViewNonConst is broken.  "
+           "Please report this bug to the Tpetra developers.");
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        X_colMap_host_view.extent (0) < X_domainMap_host_view.extent (0) ||
+        X_colMap->getLocalLength () < X_domainMap->getLocalLength (),
+        std::logic_error, "Tpetra::CrsMatrix::gaussSeidelCopy: "
+        "X_colMap has fewer local rows than X_domainMap.  "
+        "X_colMap_host_view.extent(0) = " << X_colMap_host_view.extent (0)
+        << ", X_domainMap_host_view.extent(0) = "
+        << X_domainMap_host_view.extent (0)
+        << ", X_colMap->getLocalLength() = " << X_colMap->getLocalLength ()
+        << ", and X_domainMap->getLocalLength() = "
+        << X_domainMap->getLocalLength ()
+        << ".  This means that Tpetra::MultiVector::offsetViewNonConst "
+        "is broken.  Please report this bug to the Tpetra developers.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        X_colMap->getNumVectors () != X_domainMap->getNumVectors (),
+        std::logic_error, "Tpetra::CrsMatrix::gaussSeidelCopy: "
+        "X_colMap has a different number of columns than X_domainMap.  "
+        "X_colMap->getNumVectors() = " << X_colMap->getNumVectors ()
+        << " != X_domainMap->getNumVectors() = "
+        << X_domainMap->getNumVectors ()
+        << ".  This means that Tpetra::MultiVector::offsetViewNonConst "
+        "is broken.  Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
+      if (zeroInitialGuess) {
+        // No need for an Import, since we're filling with zeros.
+        X_colMap->putScalar (ZERO);
+      } else {
+        // We could just copy X into X_domainMap.  However, that
+        // wastes a copy, because the Import also does a copy (plus
+        // communication).  Since the typical use case for
+        // Gauss-Seidel is a small number of sweeps (2 is typical), we
+        // don't want to waste that copy.  Thus, we do the Import
+        // here, and skip the first Import in the first sweep.
+        // Importing directly from X effects the copy into X_domainMap
+        // (which is a view of X_colMap).
+        X_colMap->doImport (X, *importer, Tpetra::INSERT);
+      }
+      copyBackOutput = true; // Don't forget to copy back at end.
+    } // if column and domain Maps are (not) the same
+
+    // The Gauss-Seidel / SOR kernel expects multivectors of constant
+    // stride.  X_colMap is by construction, but B might not be.  If
+    // it's not, we have to make a copy.
+    RCP<const multivector_type> B_in;
+    if (B.isConstantStride ()) {
+      B_in = Teuchos::rcpFromRef (B);
+    }
+    else {
+      // Range Map and row Map are the same in this case, so we can
+      // use the cached row Map multivector to store a constant stride
+      // copy of B.
+      RCP<multivector_type> B_in_nonconst = getRowMapMultiVector (A, B, true);
+      try {
+        deep_copy (*B_in_nonconst, B);
+      } catch (std::exception& e) {
+        std::ostringstream os;
+        os << "Tpetra::CrsMatrix::reorderedGaussSeidelCopy: "
+          "deep_copy(*B_in_nonconst, B) threw an exception: "
+           << e.what () << ".";
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, e.what ());
+      }
+      B_in = Teuchos::rcp_const_cast<const multivector_type> (B_in_nonconst);
+
+      TPETRA_EFFICIENCY_WARNING(
+        ! B.isConstantStride (),
+        std::runtime_error,
+        "gaussSeidelCopy: The current implementation requires that B have "
+        "constant stride.  Since B does not have constant stride, we had to "
+        "copy it into a separate constant-stride multivector.  This is a "
+        "limitation of the current implementation and not your fault, but we "
+        "still report it as an efficiency warning for your information.");
+    }
+
+    for (int sweep = 0; sweep < numSweeps; ++sweep) {
+      if (! importer.is_null () && sweep > 0) {
+        // We already did the first Import for the zeroth sweep above,
+        // if it was necessary.
+        X_colMap->doImport (*X_domainMap, *importer, Tpetra::INSERT);
+      }
+
+      // Do local Gauss-Seidel.
+      if (direction != Tpetra::Symmetric) {
+        if (rowIndices.is_null ()) {
+          CRS_localGaussSeidel(A, *B_in, *X_colMap, D, dampingFactor, localDirection);
+        }
+        else {
+          CRS_reorderedLocalGaussSeidel(A, *B_in, *X_colMap, D, rowIndices, dampingFactor, localDirection);
+        }
+      }
+      else { // direction == Tpetra::Symmetric
+        if (rowIndices.is_null ()) {
+          CRS_localGaussSeidel(A, *B_in, *X_colMap, D, dampingFactor, Tpetra::Forward);
+          CRS_localGaussSeidel(A, *B_in, *X_colMap, D, dampingFactor, Tpetra::Backward);
+        }
+        else {
+          CRS_reorderedLocalGaussSeidel(A, *B_in, *X_colMap, D, rowIndices, dampingFactor, Tpetra::Forward);
+          CRS_reorderedLocalGaussSeidel(A, *B_in, *X_colMap, D, rowIndices, dampingFactor, Tpetra::Backward);
+        }
+      }
+    }
+
+    if (copyBackOutput) {
+      try {
+        deep_copy (X , *X_domainMap); // Copy result back into X.
+      } catch (std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::runtime_error, prefix << "deep_copy(X, *X_domainMap) "
+          "threw an exception: " << e.what ());
+      }
+    }
+  }
+
 }; //class Relaxation
 
 }//namespace Ifpack2
