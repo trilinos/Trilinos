@@ -75,6 +75,8 @@ namespace MueLuTests {
 
     using test_factory = TestHelpers::TestFactory<SC, LO, GO, NO>;
 
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
+
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
     out << "version: " << MueLu::Version() << std::endl;
