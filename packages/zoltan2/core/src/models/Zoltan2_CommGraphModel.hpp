@@ -314,7 +314,6 @@ CommGraphModel<Adapter>::CommGraphModel(
         eWeights_(),
         vtxDist_()
 {
-  int me = comm_->getRank();
   int commSize = comm_->getSize();
 
   // Get XpetraCrsGraphAdapter from GraphAdapter 
@@ -327,7 +326,7 @@ CommGraphModel<Adapter>::CommGraphModel(
   Z2_FORWARD_EXCEPTIONS;
 
   // Get the graph from the input adapter
-  auto inGraph = ia->getUserGraph();
+  auto inGraph = ia->getXpetraGraph();
 
   // Get the importer of the graph
   auto imp = inGraph->getImporter();
@@ -470,7 +469,7 @@ void CommGraphModel<Adapter>::migrateGraph()
     Teuchos::waitAll<int>(*comm_, Teuchos::arrayView(requests, myVertexShare)); 
     
     // Prefix sum over the offsets
-    for(int i = 1; i <= myVertexShare; i++)
+    for(size_t i = 1; i <= myVertexShare; i++)
       eOffsets_[i] += eOffsets_[i-1];
 
     // Recompute the number of local edges
