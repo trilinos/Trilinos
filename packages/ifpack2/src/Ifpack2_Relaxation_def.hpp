@@ -1753,7 +1753,8 @@ ApplyInverseSerialGS_CrsMatrix(const crs_matrix_type& A,
     // No need to copy back to X at end.
   }
   else { // Column Map and domain Map are _not_ the same.
-    X_colMap = getColumnMapMultiVector (&A, X, true);
+    updateCachedMultiVector(colMap, X.getNumVectors());
+    X_colMap = cachedMV_;
     X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
 
 #ifdef HAVE_TPETRA_DEBUG
