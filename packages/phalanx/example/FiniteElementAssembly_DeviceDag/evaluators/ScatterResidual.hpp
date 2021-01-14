@@ -76,18 +76,18 @@ class ScatterResidual<PHX::MyTraits::Residual,Traits>
   typedef typename PHX::MyTraits::Residual::ScalarT ScalarT;
   Teuchos::RCP<PHX::FieldTag> scatter_tag;
   PHX::MDField<const ScalarT,CELL,BASIS> residual_contribution;
-  Kokkos::View<const int**,PHX::Device> gids;
+  Kokkos::View<const int**,PHX::MemSpace> gids;
   const int equation_index;
   const int num_equations;
 
 public:  
   struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
     PHX::View<const ScalarT**> residual_contribution;
-    Kokkos::View<const int**,PHX::Device> gids;
+    Kokkos::View<const int**,PHX::MemSpace> gids;
     const int equation_index;
     const int num_equations;
     KOKKOS_FUNCTION MyDevEval(const PHX::View<const ScalarT**>& in_residual_contribution,
-                              const Kokkos::View<const int**,PHX::Device>& in_gids,
+                              const Kokkos::View<const int**,PHX::MemSpace>& in_gids,
                               const int in_equation_index,
                               const int in_num_equations) :
       residual_contribution(in_residual_contribution),gids(in_gids),
@@ -102,7 +102,7 @@ public:
                   const Teuchos::RCP<PHX::DataLayout>& residual_layout,
                   const int& in_equation_index,
                   const int& in_num_equations,
-                  const Kokkos::View<const int**,PHX::Device>& in_gids);
+                  const Kokkos::View<const int**,PHX::MemSpace>& in_gids);
   PHX::DeviceEvaluator<Traits>* createDeviceEvaluator() const override;
   void evaluateFields(typename Traits::EvalData d) override;
 };
@@ -118,18 +118,18 @@ class ScatterResidual<PHX::MyTraits::Jacobian,Traits>
   typedef typename PHX::MyTraits::Jacobian::ScalarT ScalarT;
   Teuchos::RCP<PHX::FieldTag> scatter_tag;
   PHX::MDField<const ScalarT,CELL,BASIS> residual_contribution;
-  Kokkos::View<const int**,PHX::Device> gids;
+  Kokkos::View<const int**,PHX::MemSpace> gids;
   const int equation_index;
   const int num_equations;
 
 public:  
   struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
     PHX::View<const ScalarT**> residual_contribution;
-    Kokkos::View<const int**,PHX::Device> gids;
+    Kokkos::View<const int**,PHX::MemSpace> gids;
     const int equation_index;
     const int num_equations;
     KOKKOS_FUNCTION MyDevEval(const PHX::View<const ScalarT**>& in_residual_contribution,
-                              const Kokkos::View<const int**,PHX::Device>& in_gids,
+                              const Kokkos::View<const int**,PHX::MemSpace>& in_gids,
                               const int in_equation_index,
                               const int in_num_equations) :
       residual_contribution(in_residual_contribution),gids(in_gids),equation_index(in_equation_index),
@@ -144,7 +144,7 @@ public:
                   const Teuchos::RCP<PHX::DataLayout>& residual_layout,
                   const int& in_equation_index,
                   const int& in_num_equations,
-                  const Kokkos::View<const int**,PHX::Device>& in_gids);
+                  const Kokkos::View<const int**,PHX::MemSpace>& in_gids);
   PHX::DeviceEvaluator<Traits>* createDeviceEvaluator() const override;
   void evaluateFields(typename Traits::EvalData d) override;
 };

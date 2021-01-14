@@ -109,8 +109,8 @@ private:
   // Jacobian evaluation
   PHX::MDField<double,Cell,QuadPoint,Dim> dummy;
  
-  Kokkos::View<double**,PHX::Device> phi;
-  Kokkos::View<double***,PHX::Device> grad_phi;
+  Kokkos::View<double**,PHX::MemSpace> phi;
+  Kokkos::View<double***,PHX::MemSpace> grad_phi;
 
 };
 

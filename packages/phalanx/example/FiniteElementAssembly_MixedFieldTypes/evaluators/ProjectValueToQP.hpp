@@ -57,7 +57,7 @@ class ProjectValueToQP : public PHX::EvaluatorWithBaseImpl<Traits>,
   using ScalarT = typename EvalT::ScalarT;
   PHX::MDField<const ScalarT,CELL,BASIS> field_at_basis;
   PHX::MDField<ScalarT,CELL,QP> field_at_qp;
-  Kokkos::View<double**,PHX::Device> basis_view;
+  Kokkos::View<double**,PHX::MemSpace> basis_view;
   
 public:
   ProjectValueToQP(const std::string& field_name,

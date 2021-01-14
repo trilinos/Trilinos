@@ -54,16 +54,16 @@ class IntegrateSourceTerm : public PHX::EvaluatorWithBaseImpl<Traits>,
 
   using ScalarT = typename EvalT::ScalarT;
   // Non-optimal layout to test user maually picking layout (see README.txt for this example)
-  Kokkos::View<const ScalarT**,Kokkos::LayoutLeft,PHX::Device> source;
+  Kokkos::View<const ScalarT**,Kokkos::LayoutLeft,PHX::MemSpace> source;
 #ifdef PHX_ENABLE_KOKKOS_AMT
   // Make residual atomic so that AMT mode can sum diffusion and source terms at same time
-  Kokkos::View<ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device,Kokkos::MemoryTraits<Kokkos::Atomic>> residual;
+  Kokkos::View<ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace,Kokkos::MemoryTraits<Kokkos::Atomic>> residual;
 #else
   PHX::View<ScalarT**> residual;
 #endif
-  Kokkos::View<const double**,PHX::Device> basis_view;
-  Kokkos::View<const double*,PHX::Device> weights;
-  Kokkos::View<const double**,PHX::Device> cell_measure;
+  Kokkos::View<const double**,PHX::MemSpace> basis_view;
+  Kokkos::View<const double*,PHX::MemSpace> weights;
+  Kokkos::View<const double**,PHX::MemSpace> cell_measure;
   
 public:
   IntegrateSourceTerm(const std::string& source_name,

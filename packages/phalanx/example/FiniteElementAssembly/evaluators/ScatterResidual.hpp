@@ -78,9 +78,9 @@ class ScatterResidual<PHX::MyTraits::Residual,Traits>
   Teuchos::RCP<PHX::FieldTag> scatter_tag;
   PHX::MDField<const ScalarT,CELL,BASIS> residual_contribution;
   Kokkos::View<double*,
-               PHX::Device,
+               PHX::MemSpace,
                Kokkos::MemoryTraits<Kokkos::Atomic>> global_residual_atomic;
-  Kokkos::View<const int**,PHX::Device> gids;
+  Kokkos::View<const int**,PHX::MemSpace> gids;
   const int equation_index;
   const int num_equations;
   int cell_global_offset_index;
@@ -92,7 +92,7 @@ public:
                   const Teuchos::RCP<PHX::DataLayout>& residual_layout,
                   const int& in_euqation_index,
                   const int& in_num_equations,
-                  const Kokkos::View<double*,PHX::Device>& global_residual);  
+                  const Kokkos::View<double*,PHX::MemSpace>& global_residual);  
 
   void evaluateFields(typename Traits::EvalData d);
 
@@ -112,10 +112,10 @@ class ScatterResidual<PHX::MyTraits::Jacobian,Traits>
   Teuchos::RCP<PHX::FieldTag> scatter_tag;
   PHX::MDField<const ScalarT,CELL,BASIS> residual_contribution;
   Kokkos::View<double*,
-               PHX::Device,
+               PHX::MemSpace,
                Kokkos::MemoryTraits<Kokkos::Atomic>> global_residual_atomic;
-  KokkosSparse::CrsMatrix<double,int,PHX::Device> global_jacobian;
-  Kokkos::View<const int**,PHX::Device> gids;
+  KokkosSparse::CrsMatrix<double,int,PHX::MemSpace> global_jacobian;
+  Kokkos::View<const int**,PHX::MemSpace> gids;
   const int equation_index;
   const int num_equations;
   int cell_global_offset_index;
@@ -126,8 +126,8 @@ public:
                   const Teuchos::RCP<PHX::DataLayout>& residual_layout,
                   const int& in_equation_index,
                   const int& in_num_equations,
-                  const Kokkos::View<double*,PHX::Device>& global_residual,
-                  const KokkosSparse::CrsMatrix<double,int,PHX::Device>& global_jacobian);
+                  const Kokkos::View<double*,PHX::MemSpace>& global_residual,
+                  const KokkosSparse::CrsMatrix<double,int,PHX::MemSpace>& global_jacobian);
   
   void evaluateFields(typename Traits::EvalData d);
 

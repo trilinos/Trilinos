@@ -132,7 +132,7 @@ TEUCHOS_UNIT_TEST(DynamicLayout, basic)
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   // dimensions()
   {
-    std::vector<PHX::Device::size_type> dims;
+    std::vector<PHX::MemSpace::size_type> dims;
     n_mat.dimensions(dims);
     TEST_EQUALITY(dims[0],100);
     TEST_EQUALITY(dims[1],4);

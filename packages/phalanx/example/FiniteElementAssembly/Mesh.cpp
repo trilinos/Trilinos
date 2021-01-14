@@ -311,43 +311,43 @@ int Mesh::getNumNodes() const
 { return (nex_+1)*(ney_+1)*(nez_+1); }
 
 //**********************************************************************
-const Kokkos::View<int**,PHX::Device>& Mesh::getGlobalIndices() const
+const Kokkos::View<int**,PHX::MemSpace>& Mesh::getGlobalIndices() const
 { return gids_; }
 
 //**********************************************************************
-const Kokkos::View<double***,PHX::Device>& Mesh::getCoordinates() const
+const Kokkos::View<double***,PHX::MemSpace>& Mesh::getCoordinates() const
 { return coords_; }
 
 //**********************************************************************
-const Kokkos::View<double***,PHX::Device>& Mesh::getQPCoordinates() const
+const Kokkos::View<double***,PHX::MemSpace>& Mesh::getQPCoordinates() const
 { return qp_coords_; }
 
 //**********************************************************************
-const Kokkos::View<double*,PHX::Device> Mesh::getWeights() const
+const Kokkos::View<double*,PHX::MemSpace> Mesh::getWeights() const
 {return weights_;}
 
   //**********************************************************************
-const Kokkos::View<double**,PHX::Device> Mesh::getBasis() const
+const Kokkos::View<double**,PHX::MemSpace> Mesh::getBasis() const
 {return basis_;}
 
 //**********************************************************************
-const Kokkos::View<double***,PHX::Device> Mesh::getGradBasisRef() const
+const Kokkos::View<double***,PHX::MemSpace> Mesh::getGradBasisRef() const
 {return grad_basis_ref_; }
   
 //**********************************************************************
-const Kokkos::View<double****,PHX::Device> Mesh::getJac() const
+const Kokkos::View<double****,PHX::MemSpace> Mesh::getJac() const
 { return jac_; }
   
 //**********************************************************************
-const Kokkos::View<double****,PHX::Device> Mesh::getInvJac() const
+const Kokkos::View<double****,PHX::MemSpace> Mesh::getInvJac() const
 { return inv_jac_; }
 
 //**********************************************************************
-const Kokkos::View<double**,PHX::Device> Mesh::getDetJac() const
+const Kokkos::View<double**,PHX::MemSpace> Mesh::getDetJac() const
 { return det_jac_; }
 
 //**********************************************************************
-  const Kokkos::View<double****,PHX::Device> Mesh::getGradBasisReal() const
+  const Kokkos::View<double****,PHX::MemSpace> Mesh::getGradBasisReal() const
 { return grad_basis_real_; }
 
 //**********************************************************************

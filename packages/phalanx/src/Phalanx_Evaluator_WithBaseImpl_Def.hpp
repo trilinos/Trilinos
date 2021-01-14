@@ -82,7 +82,7 @@ namespace PHX {
       // correctly cast the any object to the Kokkos::View, need to
       // pull the const off the scalar type if this MDField has a
       // const scalar type.
-      using non_const_view = Kokkos::View<typename FieldType::non_const_data_type,typename FieldType::array_layout,PHX::Device>;
+      using non_const_view = Kokkos::View<typename FieldType::non_const_data_type,typename FieldType::array_layout,PHX::MemSpace>;
       try {
         non_const_view tmp = PHX::any_cast<non_const_view>(f);
         *ptr_ = tmp;

@@ -131,7 +131,7 @@ template<typename Traits>
 template<typename EvalT, typename DataT, typename Layout>
 inline
 void PHX::FieldManager<Traits>::
-getFieldData(const PHX::FieldTag& ft, Kokkos::View<DataT,Layout,PHX::Device>& f)
+getFieldData(const PHX::FieldTag& ft, Kokkos::View<DataT,Layout,PHX::MemSpace>& f)
 {
   PHX::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(ft);
@@ -140,7 +140,7 @@ getFieldData(const PHX::FieldTag& ft, Kokkos::View<DataT,Layout,PHX::Device>& f)
   // correctly cast the any object to the Kokkos::View, need to
   // pull the const off the scalar type if this MDField has a
   // const scalar type.
-  typedef PHX::View<typename Kokkos::View<DataT,Layout,PHX::Device>::non_const_data_type> non_const_view;
+  typedef PHX::View<typename Kokkos::View<DataT,Layout,PHX::MemSpace>::non_const_data_type> non_const_view;
   try {
     non_const_view tmp = PHX::any_cast<non_const_view>(a);
     f = tmp;
@@ -182,14 +182,14 @@ template<typename Traits>
 template<typename EvalT, typename DataT, typename Layout>
 inline
 void PHX::FieldManager<Traits>::
-setUnmanagedField(const PHX::FieldTag& ft, Kokkos::View<DataT,Layout,PHX::Device>& f,
+setUnmanagedField(const PHX::FieldTag& ft, Kokkos::View<DataT,Layout,PHX::MemSpace>& f,
                   const bool cleanup_output)
 {
   // Make sure field data type is not const. We always store static
   // non-const views so that we know how to cast back from an any
   // object.
-  typedef typename Kokkos::View<DataT,Layout,PHX::Device>::value_type value_type;
-  typedef typename Kokkos::View<DataT,Layout,PHX::Device>::non_const_value_type non_const_value_type;
+  typedef typename Kokkos::View<DataT,Layout,PHX::MemSpace>::value_type value_type;
+  typedef typename Kokkos::View<DataT,Layout,PHX::MemSpace>::non_const_value_type non_const_value_type;
   static_assert(std::is_same<value_type,non_const_value_type>::value, "FieldManager::setUnmanagedField(FieldTag, View) - DataT must be non-const!");
 
   PHX::any any_f(f);

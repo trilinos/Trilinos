@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
     }
     
     // Gather DOFs
-    Kokkos::View<double*,PHX::Device> x = lof.createSolutionVector("x"); // solution
+    Kokkos::View<double*,PHX::MemSpace> x = lof.createSolutionVector("x"); // solution
     for (int eq=0; eq < num_equations; ++eq) {
       std::stringstream s;
       s << "equation_" << eq;
@@ -266,8 +266,8 @@ int main(int argc, char *argv[])
     fm.printEvaluatorStartStopMessage<Residual>(Teuchos::rcpFromRef(std::cout));
 
     // Create targets to fill (residual and Jacobian)
-    Kokkos::View<double*,PHX::Device> f = lof.createSolutionVector("global_residual"); // residual
-    KokkosSparse::CrsMatrix<double,int,PHX::Device> J = lof.createJacobianMatrix("global_jacobian"); // Jacobian
+    Kokkos::View<double*,PHX::MemSpace> f = lof.createSolutionVector("global_residual"); // residual
+    KokkosSparse::CrsMatrix<double,int,PHX::MemSpace> J = lof.createJacobianMatrix("global_jacobian"); // Jacobian
     for (auto& w : worksets) {
       w.global_solution_ = x;
       w.global_residual_atomic_ = f;

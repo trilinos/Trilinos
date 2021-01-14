@@ -57,7 +57,7 @@ class ProjectGradientToQP : public PHX::EvaluatorWithBaseImpl<Traits>,
   using ScalarT = typename EvalT::ScalarT;
   PHX::MDField<const ScalarT,CELL,BASIS> field_at_basis;
   PHX::MDField<ScalarT,CELL,QP,DIM> grad_field_at_qp;
-  Kokkos::View<double****,PHX::Device> grad_basis_view;
+  Kokkos::View<double****,PHX::MemSpace> grad_basis_view;
   
 public:
   ProjectGradientToQP(const std::string& field_name,

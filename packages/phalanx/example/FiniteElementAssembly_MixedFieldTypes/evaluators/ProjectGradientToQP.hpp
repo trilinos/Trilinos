@@ -57,7 +57,7 @@ class ProjectGradientToQP : public PHX::EvaluatorWithBaseImpl<Traits>,
   PHX::Field<const ScalarT,2> field_at_basis;
   // Non-optimal layout to test user maually picking layout (see README.txt for this example)
   PHX::Field<ScalarT,3,Kokkos::LayoutLeft> grad_field_at_qp;
-  Kokkos::View<double****,PHX::Device> grad_basis_view;
+  Kokkos::View<double****,PHX::MemSpace> grad_basis_view;
   
 public:
   ProjectGradientToQP(const std::string& field_name,

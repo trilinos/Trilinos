@@ -340,12 +340,12 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     out << "Testing setFieldData()...";
     const size_type derivative_dim = 8;
     const std::vector<PHX::index_size_type> ddims(1,derivative_dim);
-    PHX::any a_mem = PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(a.fieldTag());
-    PHX::any b_mem = PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(b.fieldTag());
-    PHX::any c_mem = PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(c.fieldTag(),ddims);
-    PHX::any d_mem = PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(d.fieldTag(),ddims);
-    PHX::any e_mem = PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(e.fieldTag());
-    PHX::any f_mem = PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f.fieldTag(),ddims);
+    PHX::any a_mem = PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::MemSpace>::buildView(a.fieldTag());
+    PHX::any b_mem = PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::MemSpace>::buildView(b.fieldTag());
+    PHX::any c_mem = PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::MemSpace>::buildView(c.fieldTag(),ddims);
+    PHX::any d_mem = PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::MemSpace>::buildView(d.fieldTag(),ddims);
+    PHX::any e_mem = PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::MemSpace>::buildView(e.fieldTag());
+    PHX::any f_mem = PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::MemSpace>::buildView(f.fieldTag(),ddims);
 
     a.setFieldData(a_mem);
     b.setFieldData(b_mem);
@@ -435,9 +435,9 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
       (f1,f2,f3,f4,f5,f6,f7,cf1,cf2,cf3,cf4,cf5,cf6,cf7);
 
     Kokkos::parallel_for("TestAssignmentFunctor",
-    			 Kokkos::RangePolicy<PHX::Device>(0,f7.extent(0)),
+    			 Kokkos::RangePolicy<PHX::ExecSpace>(0,f7.extent(0)),
     			 func);
-    PHX::Device().fence();
+    PHX::ExecSpace().fence();
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // check for const mdfield assignment from non-const factory
@@ -453,13 +453,13 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
       MDField<const double> c_f7("CONST Test7",d7);
 
       // Note that the factory never uses a const scalar type
-      c_f1.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(c_f1.fieldTag()));
-      c_f2.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(c_f2.fieldTag()));
-      c_f3.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(c_f3.fieldTag()));
-      c_f4.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(c_f4.fieldTag()));
-      c_f5.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(c_f5.fieldTag()));
-      c_f6.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(c_f6.fieldTag()));
-      c_f7.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(c_f7.fieldTag()));
+      c_f1.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::MemSpace>::buildView(c_f1.fieldTag()));
+      c_f2.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::MemSpace>::buildView(c_f2.fieldTag()));
+      c_f3.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::MemSpace>::buildView(c_f3.fieldTag()));
+      c_f4.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::MemSpace>::buildView(c_f4.fieldTag()));
+      c_f5.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::MemSpace>::buildView(c_f5.fieldTag()));
+      c_f6.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::MemSpace>::buildView(c_f6.fieldTag()));
+      c_f7.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::MemSpace>::buildView(c_f7.fieldTag()));
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -472,13 +472,13 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     MDField<MyTraits::FadType> f6_fad("FTest6",d6);
     MDField<MyTraits::FadType> f7_fad("FTest7",d7);
 
-    f1_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f1.fieldTag(), ddims));
-    f2_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f2.fieldTag(), ddims));
-    f3_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f3.fieldTag(), ddims));
-    f4_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f4.fieldTag(), ddims));
-    f5_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f5.fieldTag(), ddims));
-    f6_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f6.fieldTag(), ddims));
-    f7_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f7.fieldTag(), ddims));
+    f1_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::MemSpace>::buildView(f1.fieldTag(), ddims));
+    f2_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::MemSpace>::buildView(f2.fieldTag(), ddims));
+    f3_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::MemSpace>::buildView(f3.fieldTag(), ddims));
+    f4_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::MemSpace>::buildView(f4.fieldTag(), ddims));
+    f5_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::MemSpace>::buildView(f5.fieldTag(), ddims));
+    f6_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::MemSpace>::buildView(f6.fieldTag(), ddims));
+    f7_fad.setFieldData(PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::MemSpace>::buildView(f7.fieldTag(), ddims));
 
     // Test const/ non-const versions
     const MDField<MyTraits::FadType>& cf1_fad = f1_fad;
@@ -494,9 +494,9 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
        cf1_fad,cf2_fad,cf3_fad,cf4_fad,cf5_fad,cf6_fad,cf7_fad);
 
     Kokkos::parallel_for("TestAssignmentFunctor",
-    			 Kokkos::RangePolicy<PHX::Device>(0,f7_fad.extent(0)),
+    			 Kokkos::RangePolicy<PHX::ExecSpace>(0,f7_fad.extent(0)),
     			 func_fad);
-    PHX::Device().fence();
+    PHX::ExecSpace().fence();
 
     out << "passed!" << endl;
 
@@ -514,35 +514,35 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     // verify that this capability works. We can remove the tests
     // below once the bracket op is no longer needed in our stack.
 
-    Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentTest<MDField<double>,double>(f1,f2,f3,f4,f5,f6));
+    Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecSpace>(0,1),BracketAssignmentTest<MDField<double>,double>(f1,f2,f3,f4,f5,f6));
 
     int num_failed = 0;
-    Kokkos::parallel_reduce("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentCheck<MDField<double>,double>(f1,f2,f3,f4,f5,f6,cf1,cf2,cf3,cf4,cf5,cf6),num_failed);
+    Kokkos::parallel_reduce("t1",Kokkos::RangePolicy<PHX::ExecSpace>(0,1),BracketAssignmentCheck<MDField<double>,double>(f1,f2,f3,f4,f5,f6,cf1,cf2,cf3,cf4,cf5,cf6),num_failed);
     TEST_EQUALITY(num_failed,0);
 
     // fad checking
-    Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentTest<MDField<MyTraits::FadType>,MyTraits::FadType>(f1_fad,f2_fad,f3_fad,f4_fad,f5_fad,f6_fad));
+    Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecSpace>(0,1),BracketAssignmentTest<MDField<MyTraits::FadType>,MyTraits::FadType>(f1_fad,f2_fad,f3_fad,f4_fad,f5_fad,f6_fad));
 
     out << "passed!" << endl;
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Do NOT check for array rank enforcement. DynRank MDField sets
     // the rank at runtime and we allow it to be changed!
-    //TEST_THROW(f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag())),PHX::bad_any_cast);
+    //TEST_THROW(f1.setFieldData(PHX::KokkosViewFactory<double,PHX::MemSpace>::buildView(f2.fieldTag())),PHX::bad_any_cast);
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // kokkos view accessors
     {
       // non-const view
       auto kva = a.get_view();
-      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){kva(0,0) = 1.0;});
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecSpace>(0,1),KOKKOS_LAMBDA(const int ){kva(0,0) = 1.0;});
       auto kvc = c.get_view();
-      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){kvc(0,0) = MyTraits::FadType(1.0);});
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecSpace>(0,1),KOKKOS_LAMBDA(const int ){kvc(0,0) = MyTraits::FadType(1.0);});
       // const view (view const, not const data)
       const auto const_kva = a.get_view();
-      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kva(0,0) = 1.0;});
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecSpace>(0,1),KOKKOS_LAMBDA(const int ){const_kva(0,0) = 1.0;});
       const auto const_kvc = c.get_view();
-      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kvc(0,0) = MyTraits::FadType(1.0);});
+      Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::ExecSpace>(0,1),KOKKOS_LAMBDA(const int ){const_kvc(0,0) = MyTraits::FadType(1.0);});
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

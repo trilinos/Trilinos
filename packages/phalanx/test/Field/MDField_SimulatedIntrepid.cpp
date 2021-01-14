@@ -79,7 +79,7 @@ namespace phalanx_test {
   void simulated_intrepid_integrate(VectorType v)
   {
     parallel_for("simulated intrepid rank-3",
-		 RangePolicy<PHX::Device>(0,10),
+		 RangePolicy<PHX::ExecSpace>(0,10),
 		 KOKKOS_LAMBDA (const int i)
     {
       if (v.rank() == 3) {

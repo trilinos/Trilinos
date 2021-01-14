@@ -55,8 +55,8 @@ GatherSolution(const std::string& field_name,
                const Teuchos::RCP<PHX::DataLayout>& layout,
                const int& in_num_equations,
                const int& in_field_index,
-               const Kokkos::View<double*,PHX::Device>& in_x,
-               const Kokkos::View<const int**,PHX::Device>& in_gids) :
+               const Kokkos::View<double*,PHX::MemSpace>& in_x,
+               const Kokkos::View<const int**,PHX::MemSpace>& in_gids) :
   num_equations(in_num_equations),
   field_index(in_field_index),
   x(in_x),
@@ -115,8 +115,8 @@ GatherSolution(const std::string& field_name,
                const Teuchos::RCP<PHX::DataLayout>& layout,
                const int& in_num_equations,
                const int& in_field_index,
-               const Kokkos::View<double*,PHX::Device>& in_x,
-               const Kokkos::View<const int**,PHX::Device>& in_gids) :
+               const Kokkos::View<double*,PHX::MemSpace>& in_x,
+               const Kokkos::View<const int**,PHX::MemSpace>& in_gids) :
   num_equations(in_num_equations),
   field_index(in_field_index),
   x(in_x),
@@ -176,7 +176,7 @@ GatherSolution<PHX::MyTraits::Jv, Traits>::
 GatherSolution(const std::string& field_name,
                const Teuchos::RCP<PHX::DataLayout>& layout,
                const int& in_field_index,
-               const Kokkos::View<double*,PHX::Device>& in_x)
+               const Kokkos::View<double*,PHX::MemSpace>& in_x)
 {
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Solution Names"));

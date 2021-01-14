@@ -77,11 +77,11 @@ namespace PHX {
         using LT = PHX::DataLayout::KokkosLayoutType;
         const auto layout = tag_.dataLayout().kokkosLayout();
         if (layout == LT::Default)
-          size_ = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(tag_,extended_dimensions_);
+          size_ = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(tag_,extended_dimensions_);
         else if (layout == LT::Left)
-          size_ = PHX::getAllocationSize<ScalarT,Kokkos::LayoutLeft,PHX::Device>(tag_,extended_dimensions_);
+          size_ = PHX::getAllocationSize<ScalarT,Kokkos::LayoutLeft,PHX::MemSpace>(tag_,extended_dimensions_);
         else
-          size_ = PHX::getAllocationSize<ScalarT,Kokkos::LayoutRight,PHX::Device>(tag_,extended_dimensions_);
+          size_ = PHX::getAllocationSize<ScalarT,Kokkos::LayoutRight,PHX::MemSpace>(tag_,extended_dimensions_);
       }
     }
   };
@@ -114,19 +114,19 @@ namespace PHX {
         using LT = PHX::DataLayout::KokkosLayoutType;
         const auto layout = tag_.dataLayout().kokkosLayout();
         if (layout == LT::Default) {
-          // PHX::KokkosViewFactory<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> factory;
+          // PHX::KokkosViewFactory<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace> factory;
           // field_ = factory.buildView(tag_,extended_dimensions_);
-          field_ = PHX::createView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(mode_,tag_,extended_dimensions_,tracker_);
+          field_ = PHX::createView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(mode_,tag_,extended_dimensions_,tracker_);
         }
         else if (layout == LT::Left) {
-          // PHX::KokkosViewFactory<ScalarT,Kokkos::LayoutLeft,PHX::Device> factory;
+          // PHX::KokkosViewFactory<ScalarT,Kokkos::LayoutLeft,PHX::MemSpace> factory;
           // field_ = factory.buildView(tag_,extended_dimensions_);
-          field_ = PHX::createView<ScalarT,Kokkos::LayoutLeft,PHX::Device>(mode_,tag_,extended_dimensions_,tracker_);
+          field_ = PHX::createView<ScalarT,Kokkos::LayoutLeft,PHX::MemSpace>(mode_,tag_,extended_dimensions_,tracker_);
         }
         else {
-          // PHX::KokkosViewFactory<ScalarT,Kokkos::LayoutRight,PHX::Device> factory;
+          // PHX::KokkosViewFactory<ScalarT,Kokkos::LayoutRight,PHX::MemSpace> factory;
           // field_ = factory.buildView(tag_,extended_dimensions_);
-          field_ = PHX::createView<ScalarT,Kokkos::LayoutRight,PHX::Device>(mode_,tag_,extended_dimensions_,tracker_);
+          field_ = PHX::createView<ScalarT,Kokkos::LayoutRight,PHX::MemSpace>(mode_,tag_,extended_dimensions_,tracker_);
         }
       }
     }

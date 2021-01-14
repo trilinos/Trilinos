@@ -64,37 +64,37 @@ class Mesh {
   const double lz_;
   
   // Cell global indices <cell,node>
-  Kokkos::View<int**,PHX::Device> gids_;
+  Kokkos::View<int**,PHX::MemSpace> gids_;
 
   // Coordinates <cell,node,dimension>
-  Kokkos::View<double***,PHX::Device> coords_;
+  Kokkos::View<double***,PHX::MemSpace> coords_;
 
   // Coordinates <cell,qp,dimension>
-  Kokkos::View<double***,PHX::Device> qp_coords_;
+  Kokkos::View<double***,PHX::MemSpace> qp_coords_;
 
   // Quad points <qp,dimension> in local basis cocordinates
-  Kokkos::View<double**,PHX::Device> qp_;
+  Kokkos::View<double**,PHX::MemSpace> qp_;
 
   // Weights for integration rule <qp>
-  Kokkos::View<double*,PHX::Device> weights_;
+  Kokkos::View<double*,PHX::MemSpace> weights_;
   
   // Basis <qp,basis>
-  Kokkos::View<double**,PHX::Device> basis_;
+  Kokkos::View<double**,PHX::MemSpace> basis_;
 
   // Gradient of Basis on reference element <qp,basis,dimension>
-  Kokkos::View<double***,PHX::Device> grad_basis_ref_;
+  Kokkos::View<double***,PHX::MemSpace> grad_basis_ref_;
   
   // Jacobian transform <cell,qp,dim,dim>
-  Kokkos::View<double****,PHX::Device> jac_;
+  Kokkos::View<double****,PHX::MemSpace> jac_;
   
   // Inverse Jacobian Transform <cell,qp,dim,dim>
-  Kokkos::View<double****,PHX::Device> inv_jac_;
+  Kokkos::View<double****,PHX::MemSpace> inv_jac_;
 
   // Determinant of Jacobian <cell,qp>
-  Kokkos::View<double**,PHX::Device> det_jac_;  
+  Kokkos::View<double**,PHX::MemSpace> det_jac_;  
 
   // Gradient of basis in real space <cell,qp,basis,dim>
-  Kokkos::View<double****,PHX::Device> grad_basis_real_;
+  Kokkos::View<double****,PHX::MemSpace> grad_basis_real_;
 
 public:
   
@@ -126,16 +126,16 @@ public:
 
   int getNumElements() const;
   int getNumNodes() const; 
-  const Kokkos::View<int**,PHX::Device>& getGlobalIndices() const;
-  const Kokkos::View<double***,PHX::Device>& getCoordinates() const;
-  const Kokkos::View<double***,PHX::Device>& getQPCoordinates() const;
-  const Kokkos::View<double*,PHX::Device> getWeights() const;
-  const Kokkos::View<double**,PHX::Device> getBasis() const;
-  const Kokkos::View<double***,PHX::Device> getGradBasisRef() const;
-  const Kokkos::View<double****,PHX::Device> getJac() const;
-  const Kokkos::View<double****,PHX::Device> getInvJac() const;
-  const Kokkos::View<double**,PHX::Device> getDetJac() const;
-  const Kokkos::View<double****,PHX::Device> getGradBasisReal() const;
+  const Kokkos::View<int**,PHX::MemSpace>& getGlobalIndices() const;
+  const Kokkos::View<double***,PHX::MemSpace>& getCoordinates() const;
+  const Kokkos::View<double***,PHX::MemSpace>& getQPCoordinates() const;
+  const Kokkos::View<double*,PHX::MemSpace> getWeights() const;
+  const Kokkos::View<double**,PHX::MemSpace> getBasis() const;
+  const Kokkos::View<double***,PHX::MemSpace> getGradBasisRef() const;
+  const Kokkos::View<double****,PHX::MemSpace> getJac() const;
+  const Kokkos::View<double****,PHX::MemSpace> getInvJac() const;
+  const Kokkos::View<double**,PHX::MemSpace> getDetJac() const;
+  const Kokkos::View<double****,PHX::MemSpace> getGradBasisReal() const;
   
   void print(std::ostream& os) const;
 };

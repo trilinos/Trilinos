@@ -78,7 +78,7 @@ namespace phalanx_test {
     std::vector<PHX::index_size_type> derivative_dims;
     derivative_dims.push_back(10);
     
-    using mem = PHX::KokkosViewFactory<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>;
+    using mem = PHX::KokkosViewFactory<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>;
     std::size_t alloc_size = 0;
     
     PHX::MDField<ScalarT,D> a1("a1",d1); // static rank
@@ -96,19 +96,19 @@ namespace phalanx_test {
     a5.setFieldData(mem::buildView(a5.fieldTag(),derivative_dims));
     a6.setFieldData(mem::buildView(a6.fieldTag(),derivative_dims));
     a7.setFieldData(mem::buildView(a7.fieldTag(),derivative_dims));
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(a1.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(a1.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,a1.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(a2.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(a2.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,a2.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(a3.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(a3.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,a3.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(a4.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(a4.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,a4.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(a5.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(a5.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,a5.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(a6.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(a6.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,a6.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(a7.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(a7.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,a7.span());
     
     PHX::MDField<ScalarT> b1("b",d1); // dynamic rank
@@ -125,19 +125,19 @@ namespace phalanx_test {
     b5.setFieldData(mem::buildView(b5.fieldTag(),derivative_dims));
     b6.setFieldData(mem::buildView(b6.fieldTag(),derivative_dims));
     b7.setFieldData(mem::buildView(b7.fieldTag(),derivative_dims));
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(b1.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(b1.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,b1.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(b2.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(b2.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,b2.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(b3.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(b3.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,b3.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(b4.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(b4.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,b4.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(b5.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(b5.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,b5.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(b6.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(b6.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,b6.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(b7.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(b7.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,b7.span());
     
     PHX::Field<ScalarT,1> c1("c1",d1);
@@ -154,19 +154,19 @@ namespace phalanx_test {
     c5.setFieldData(mem::buildView(c5.fieldTag(),derivative_dims));
     c6.setFieldData(mem::buildView(c6.fieldTag(),derivative_dims));
     c7.setFieldData(mem::buildView(c7.fieldTag(),derivative_dims));
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(c1.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(c1.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,c1.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(c2.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(c2.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,c2.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(c3.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(c3.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,c3.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(c4.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(c4.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,c4.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(c5.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(c5.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,c5.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(c6.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(c6.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,c6.span());
-    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>(c7.fieldTag(),derivative_dims);
+    alloc_size = PHX::getAllocationSize<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::MemSpace>(c7.fieldTag(),derivative_dims);
     TEST_EQUALITY(alloc_size,c7.span());
   }
   

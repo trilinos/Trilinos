@@ -35,7 +35,7 @@ template<> struct is_extent<D> : std::true_type {};
 // Devices
 // ****************************
 template<typename T> struct is_device : std::false_type {};
-template<> struct is_device<PHX::Device> : std::true_type {};
+template<> struct is_device<PHX::MemSpace> : std::true_type {};
 
 // ****************************
 // Rank count
@@ -125,7 +125,7 @@ struct FieldTraits {
   static constexpr int rank = RankCount<Props...>::value;
   // This sets defaults if not specified
   using layout = typename std::conditional< !std::is_same<typename prop::layout, void>::value,typename prop::layout, typename PHX::DevLayout<Scalar>::type>::type;
-  using device = typename std::conditional< !std::is_same<typename prop::device, void>::value,typename prop::device, PHX::Device>::type;
+  using device = typename std::conditional< !std::is_same<typename prop::device, void>::value,typename prop::device, PHX::MemSpace>::type;
   using data_type = typename ArrayType<Scalar,rank,layout,device>::data_type;
   using array_type = typename ArrayType<Scalar,rank,layout,device>::array_type;
 };
@@ -173,7 +173,7 @@ private:
 template<typename Scalar>
 using DefaultLayout = typename PHX::DevLayout<Scalar>::type;
 
-using DefaultDevice = PHX::Device;
+using DefaultDevice = PHX::MemSpace;
 
 // ****************************
 // ****************************
@@ -192,12 +192,12 @@ TEUCHOS_UNIT_TEST(exp_mdfield_refactor,basic)
   static_assert(is_extent<D>::value,"D extent broken!");
 
   // Device
-  static_assert(is_device<PHX::Device>::value,"Device broken!");
+  static_assert(is_device<PHX::MemSpace>::value,"Device broken!");
 
   // RankCount
   static_assert(RankCount<C,P,D>::value == 3,"RankCount is broken!");
-  static_assert(RankCount<C,P,D,PHX::Device>::value == 3,"RankCount is broken!");
-  static_assert(RankCount<C,PHX::Device,P,D>::value == 3,"RankCount is broken!");
+  static_assert(RankCount<C,P,D,PHX::MemSpace>::value == 3,"RankCount is broken!");
+  static_assert(RankCount<C,PHX::MemSpace,P,D>::value == 3,"RankCount is broken!");
 
   // Test add_pointer
   static_assert(std::is_same<double*,typename add_pointer<double,1>::type>::value,"add_pointer is broken");
@@ -224,19 +224,19 @@ TEUCHOS_UNIT_TEST(exp_mdfield_refactor,basic)
 
   // default layout, explicit device
   {
-    using ft = FieldTraits<double,C,P,PHX::Device>;
+    using ft = FieldTraits<double,C,P,PHX::MemSpace>;
     static_assert(ft::rank == 2,"rank is broken!");
     static_assert(std::is_same<typename ft::layout,DefaultLayout<double>>::value,"default layout is broken!");
-    static_assert(std::is_same<typename ft::device,PHX::Device>::value,"explicit device is broken!");
+    static_assert(std::is_same<typename ft::device,PHX::MemSpace>::value,"explicit device is broken!");
   }
 
   // explicit layout, explicit device
   {
-    using ft = FieldTraits<double,C,P,Kokkos::LayoutRight,PHX::Device>;
+    using ft = FieldTraits<double,C,P,Kokkos::LayoutRight,PHX::MemSpace>;
     static_assert(ft::rank == 2,"rank is broken!");
     static_assert(std::is_same<typename ft::layout,Kokkos::LayoutRight>::value,"explicit layout is broken!");
-    static_assert(std::is_same<typename ft::device,PHX::Device>::value,"explicit device is broken!");
-    using gold_view = Kokkos::View<double**,Kokkos::LayoutRight,PHX::Device>;
+    static_assert(std::is_same<typename ft::device,PHX::MemSpace>::value,"explicit device is broken!");
+    using gold_view = Kokkos::View<double**,Kokkos::LayoutRight,PHX::MemSpace>;
     static_assert(std::is_same<gold_view,typename ft::array_type>::value,"ArrayType is broken!");
   }
 

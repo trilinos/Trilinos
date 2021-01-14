@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
       cout << "\nStarting MultiDimensionalArray EnergyFlux Example!" << endl;
 
       // Assume we have 102 cells on processor and can fit 20 cells in cache
-      typedef PHX::Device::size_type size_type;
+      typedef PHX::MemSpace::size_type size_type;
       const size_type num_local_cells = 102;
       const size_type workset_size = 20;
       // const size_type num_local_cells = 80000;

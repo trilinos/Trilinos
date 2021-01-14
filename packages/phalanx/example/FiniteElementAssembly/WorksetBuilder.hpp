@@ -11,10 +11,10 @@ struct WorksetBuilder {
   struct CopyWorksetDetJac_Tag{};
   struct CopyWorksetGradBasisReal_Tag{};
 
-  Kokkos::View<double**,PHX::Device> mesh_det_jac;
-  Kokkos::View<double****,PHX::Device> mesh_grad_basis_real;
-  Kokkos::View<double**,PHX::Device> workset_det_jac;
-  Kokkos::View<double****,PHX::Device> workset_grad_basis_real;
+  Kokkos::View<double**,PHX::MemSpace> mesh_det_jac;
+  Kokkos::View<double****,PHX::MemSpace> mesh_grad_basis_real;
+  Kokkos::View<double**,PHX::MemSpace> workset_det_jac;
+  Kokkos::View<double****,PHX::MemSpace> workset_grad_basis_real;
   int first_cell_global_index;
   
   KOKKOS_INLINE_FUNCTION
@@ -72,11 +72,11 @@ struct WorksetBuilder {
       mesh_grad_basis_real = mesh.getGradBasisReal();
       first_cell_global_index = worksets[w].first_cell_global_index_;
       
-      worksets[w].det_jac_ = Kokkos::View<double**,PHX::Device>("workset_det_jac",
+      worksets[w].det_jac_ = Kokkos::View<double**,PHX::MemSpace>("workset_det_jac",
                                                                 worksets[w].num_cells_,
                                                                 mesh_det_jac.extent(1));
       
-      worksets[w].grad_basis_real_ = Kokkos::View<double****,PHX::Device>("workset_grad_basis_real",
+      worksets[w].grad_basis_real_ = Kokkos::View<double****,PHX::MemSpace>("workset_grad_basis_real",
                                                                           worksets[w].num_cells_,
                                                                           mesh_grad_basis_real.extent(1),
                                                                           mesh_grad_basis_real.extent(2),
