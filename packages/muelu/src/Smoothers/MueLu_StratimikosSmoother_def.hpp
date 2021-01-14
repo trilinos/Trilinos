@@ -128,20 +128,21 @@ namespace MueLu {
     // Apply
     if (InitialGuessIsZero) {
       X.putScalar(0.0);
-      RCP<      Thyra::VectorBase<Scalar> >thyraX = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraVector(X.getVectorNonConst(0)));
-      RCP<const Thyra::VectorBase<Scalar> >thyraB = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraVector(B.getVector(0));
+      RCP<      Thyra::MultiVectorBase<Scalar> > thyraX = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(rcpFromRef(X)));
+      RCP<const Thyra::MultiVectorBase<Scalar> > thyraB = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(rcpFromRef(B));
       Thyra::SolveStatus<Scalar> status = Thyra::solve<Scalar>(*solver_, Thyra::NOTRANS, *thyraB, thyraX.ptr());
+      RCP<MultiVector> thyXpX = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(thyraX, X.getMap()->getComm());
+      X = *thyXpX;
 
     } else {
       typedef Teuchos::ScalarTraits<Scalar> TST;
       RCP<MultiVector> Residual   = Utilities::Residual(*A_, X, B);
-      RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
 
-      RCP<      Thyra::VectorBase<Scalar> >thyraX = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraVector(Correction->getVectorNonConst(0)));
-      RCP<const Thyra::VectorBase<Scalar> >thyraB = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraVector(Residual->getVector(0));
-      Thyra::SolveStatus<Scalar> status = Thyra::solve<Scalar>(*solver_, Thyra::NOTRANS, *thyraB, thyraX.ptr());
-
-      X.update(TST::one(), *Correction, TST::one());
+      RCP<      Thyra::MultiVectorBase<Scalar> > thyraCor = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(rcpFromRef(X)));
+      RCP<const Thyra::MultiVectorBase<Scalar> > thyraRes = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(Residual);
+      Thyra::SolveStatus<Scalar> status = Thyra::solve<Scalar>(*solver_, Thyra::NOTRANS, *thyraRes, thyraCor.ptr());
+      RCP<MultiVector> thyXpCor = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(thyraCor, X.getMap()->getComm());
+      X.update(TST::one(), *thyXpCor, TST::one());
     }
 
   }

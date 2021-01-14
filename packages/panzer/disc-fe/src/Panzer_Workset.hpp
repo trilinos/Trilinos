@@ -90,10 +90,10 @@ namespace panzer {
     void setup(const panzer::LocalMeshPartition & partition, const panzer::WorksetNeeds & needs);
 
     void setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_topology,
-                    const Kokkos::View<double***,PHX::Device> & cell_vertices,
+                    const PHX::View<double***> & cell_vertices,
                     const panzer::WorksetNeeds & needs);
 
-    Kokkos::View<const int*,PHX::Device> cell_local_ids_k;
+    PHX::View<const int*> cell_local_ids_k;
     std::vector<GO> cell_local_ids;
     CellCoordArray cell_vertex_coordinates;
     std::string block_id;
