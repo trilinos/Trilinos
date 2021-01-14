@@ -45,7 +45,7 @@
     \brief Test SROMvector interface.
 */
 
-
+#include "ROL_Types.hpp"
 #include "ROL_SROMVector.hpp"
 #include "ROL_TeuchosBatchManager.hpp"
 
