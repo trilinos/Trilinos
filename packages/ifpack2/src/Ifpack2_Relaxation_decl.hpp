@@ -685,9 +685,10 @@ private:
 
   //! Apply Gauss-Seidel for a Tpetra::CrsMatrix specialization.
   void
-  ApplyInverseGS_CrsMatrix (const crs_matrix_type& A,
-                            const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+  ApplyInverseSerialGS_CrsMatrix (const crs_matrix_type& A,
+                            const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& B,
+                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                            Tpetra::ESweepDirection direction) const;
 
   //! Apply Gauss-Seidel for a Tpetra::BlockCrsMatrix specialization.
   void
@@ -714,12 +715,6 @@ private:
   void ApplyInverseSGS_RowMatrix(
         const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
-
-  //! Apply symmetric Gauss-Seidel for a Tpetra::CrsMatrix specialization.
-  void
-  ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
-                             const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   //! Apply symmetric Gauss-Seidel for a Tpetra::BlockCrsMatrix specialization.
   void
@@ -898,27 +893,6 @@ private:
     }
     return U_colMap;
   }
-
-  void CRS_gaussSeidelCopy (
-      const crs_matrix_type* A,
-      multivector_type& X,
-      const multivector_type& B,
-      const multivector_type& D,
-      const scalar_type& dampingFactor,
-      const Tpetra::ESweepDirection direction,
-      const int numSweeps,
-      const bool zeroInitialGuess) const;
-
-  void CRS_reorderedGaussSeidelCopy (
-      const crs_matrix_type* A,
-      multivector_type& X,
-      const multivector_type& B,
-      const multivector_type& D,
-      const Teuchos::ArrayView<local_ordinal_type>& rowIndices,
-      const scalar_type& dampingFactor,
-      const Tpetra::ESweepDirection direction,
-      const int numSweeps,
-      const bool zeroInitialGuess) const;
 
   void BlockCRS_localGaussSeidel (
       const block_crs_matrix_type* A,
