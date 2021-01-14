@@ -47,7 +47,7 @@
 
 #include<iostream>
 #include<iomanip>
-
+#include "ROL_Types.hpp"
 #include "ROL_StdVector.hpp"
 
 namespace details {
