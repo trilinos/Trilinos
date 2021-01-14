@@ -64,7 +64,7 @@ Sum(
   TEUCHOS_ASSERT(static_cast<int>(value_names->size()) < MAX_VALUES);
 
   // check if the user wants to scale each term independently
-  auto local_scalars = Kokkos::View<double *,typename PHX::DevLayout<double>::type,PHX::Device>("scalars",value_names->size());
+  auto local_scalars = PHX::View<double *>("scalars",value_names->size());
   if(p.isType<Teuchos::RCP<const std::vector<double> > >("Scalars")) {
     auto scalars_v = *p.get<Teuchos::RCP<const std::vector<double> > >("Scalars");
 
@@ -279,8 +279,7 @@ SumStatic(const Teuchos::ParameterList& p)
     TEUCHOS_ASSERT(scalar_values->size()==value_names->size());
     useScalars = true;
 
-    Kokkos::View<double*,typename PHX::DevLayout<double>::type,PHX::Device> scalars_nc
-      = Kokkos::View<double*,typename PHX::DevLayout<double>::type,PHX::Device>("scalars",scalar_values->size());
+    PHX::View<double*> scalars_nc = PHX::View<double*>("scalars",scalar_values->size());
 
     for(std::size_t i=0;i<scalar_values->size();i++)
       scalars_nc(i) = (*scalar_values)[i];
@@ -327,8 +326,7 @@ SumStatic(const std::vector<PHX::Tag<typename EvalT::ScalarT>> & inputs,
   else {
     useScalars = true;
 
-    Kokkos::View<double*,typename PHX::DevLayout<double>::type,PHX::Device> scalars_nc
-      = Kokkos::View<double*,typename PHX::DevLayout<double>::type,PHX::Device>("scalars",scalar_values.size());
+    PHX::View<double*> scalars_nc = PHX::View<double*>("scalars",scalar_values.size());
 
     for(std::size_t i=0;i<scalar_values.size();i++)
       scalars_nc(i) = scalar_values[i];

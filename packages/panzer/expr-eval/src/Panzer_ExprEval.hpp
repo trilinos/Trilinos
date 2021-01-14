@@ -85,7 +85,7 @@ enum class BinaryOpCode {
 
 /**
  * \brief Base class for panzer::Expr::Eval, does everything that is independent
- *        of the Kokkos::View template parameter.
+ *        of the PHX::View template parameter.
  */
 class EvalBase : public Teuchos::Reader {
  public:
@@ -161,10 +161,10 @@ class EvalBase : public Teuchos::Reader {
   /** @} */
 };
 
-/// Rebinds a Kokkos::View data type to use a new scalar type
+/// Rebinds a PHX::View data type to use a new scalar type
 template <typename DataType, typename NewScalarType>
 struct RebindDataType {
-  /// The new data type, suitable as the first template argument to Kokkos::View
+  /// The new data type, suitable as the first template argument to PHX::View
   using type = NewScalarType;
 };
 
@@ -183,19 +183,19 @@ struct RebindDataType<NestedDataType[N], NewScalarType> {
   using type = typename RebindDataType<NestedDataType, NewScalarType>::type [N];
 };
 
-/// Builds on RebindDataType, but acts directly on a Kokkos::View type
+/// Builds on RebindDataType, but acts directly on a PHX::View type
 template <typename ViewType, typename NewScalarType>
 struct RebindViewType;
 
 template <typename DT, typename NewScalarType, typename ... VP>
-struct RebindViewType<Kokkos::View<DT, VP ...>, NewScalarType> {
-  /// The new Kokkos::View type, whose scalar type is now NewScalarType
-  using type = Kokkos::View<typename RebindDataType<DT, NewScalarType>::type, VP ...>;
+struct RebindViewType<PHX::View<DT, VP ...>, NewScalarType> {
+  /// The new PHX::View type, whose scalar type is now NewScalarType
+  using type = PHX::View<typename RebindDataType<DT, NewScalarType>::type, VP ...>;
 };
 
 /**
  * \brief Interprets mathematical expressions in a string and evaluates them
- *        using Kokkos::View objects as values and Kokkos::parallel_for
+ *        using PHX::View objects as values and Kokkos::parallel_for
  *        for the operators.
  * This class is mean to support Kokkos-parallel execution of user-provided
  * mathematical expressions.
@@ -205,14 +205,14 @@ struct RebindViewType<Kokkos::View<DT, VP ...>, NewScalarType> {
  * from Teuchos::Reader) is only meant to be called once for a given set of
  * evaluation points.
  * Variables should be predefined with point-dependent values all stored in a
- * single Kokkos::View.
- * For example, X coordinates for all points could be stored in a Kokkos::View<double*>,
+ * single PHX::View.
+ * For example, X coordinates for all points could be stored in a PHX::View<double*>,
  * whose extent is the number of points.
  * Values which are the same for all points are still supported, for example the current time.
  * Then if the expression is for example "x^t", this class launches a single parallel_for
  * to raise the coordinate of all points at once to the "t" power.
  *
- * \note This class currently supports rank-1 and rank-2 Kokkos::Views.
+ * \note This class currently supports rank-1 and rank-2 PHX::Views.
  *       It should support all scalar types which support the native binary operators
  *       ('+', '-', '*', '/'), and also pow(x, y).
  *
@@ -228,8 +228,8 @@ struct RebindViewType<Kokkos::View<DT, VP ...>, NewScalarType> {
 template <typename DT, typename ... VP>
 class Eval : public EvalBase {
  public:
-  /// The corresponding Kokkos::View type, using the same template arguments are were given to Eval
-  using original_view_type = Kokkos::View<DT, VP ...>;
+  /// The corresponding PHX::View type, using the same template arguments are were given to Eval
+  using original_view_type = PHX::View<DT, VP ...>;
   /// The data type, including dimension information
   using view_data_type = DT;
   /**
@@ -246,27 +246,27 @@ class Eval : public EvalBase {
    *  This means it is a read-only view.
    *  and will most likely be the type that is returned from read_string().
    */
-  using const_view_type = Kokkos::View<typename RebindDataType<view_data_type, scalar_type const>::type, VP ...>;
+  using const_view_type = PHX::View<typename RebindDataType<view_data_type, scalar_type const>::type, VP ...>;
   /**
    *  \brief One boolean for each evaluation point, read-only
    */
-  using const_bool_view_type = Kokkos::View<typename RebindDataType<view_data_type, bool const>::type, VP ...>;
+  using const_bool_view_type = PHX::View<typename RebindDataType<view_data_type, bool const>::type, VP ...>;
   /**
    *  \brief One scalar (same for all evaluation points)
    */
-  using single_view_type = Kokkos::View<scalar_type, VP ...>;
+  using single_view_type = PHX::View<scalar_type, VP ...>;
   /**
    *  \brief One scalar (same for all evaluation points), read-only
    */
-  using const_single_view_type = Kokkos::View<scalar_type const, VP ...>;
+  using const_single_view_type = PHX::View<scalar_type const, VP ...>;
   /**
    *  \brief One boolean (same for all evaluation points)
    */
-  using single_bool_view_type = Kokkos::View<bool, VP ...>;
+  using single_bool_view_type = PHX::View<bool, VP ...>;
   /**
    *  \brief One boolean (same for all evaluation points), read-only
    */
-  using const_single_bool_view_type = Kokkos::View<bool const, VP ...>;
+  using const_single_bool_view_type = PHX::View<bool const, VP ...>;
 
   Eval();
 

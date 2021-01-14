@@ -53,8 +53,7 @@ namespace Intrepid2 {
   {
     const int myNominalExtent    = myData.nominalExtent;
 #ifdef HAVE_INTREPID2_DEBUG
-    const int otherNominalExtent = otherData.nominalExtent;
-    INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(myNominalExtent != otherNominalExtent, std::invalid_argument, "both Data objects must match in their nominal extent in the specified dimension");
+    INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(myNominalExtent != otherData.nominalExtent, std::invalid_argument, "both Data objects must match in their nominal extent in the specified dimension");
 #endif
     const DataVariationType & myVariation    = myData.variationType;
     const DataVariationType & otherVariation = otherData.variationType;
@@ -246,7 +245,7 @@ namespace Intrepid2 {
       // check that rank is compatible with the claimed extents:
       for (int d=rank_; d<7; d++)
       {
-        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(extents_[d] > 1, std::invalid_argument, "Nominal extents may not be > 1 in dimensions beyond the rank of the container");
+        INTREPID2_TEST_FOR_EXCEPTION(extents_[d] > 1, std::invalid_argument, "Nominal extents may not be > 1 in dimensions beyond the rank of the container");
       }
       
       // by default, this should initialize with zero -- no need to deep_copy a 0 into it
@@ -279,7 +278,7 @@ namespace Intrepid2 {
             const int logicalExtent = extents_[i];
             const int modulus = dataExtent;
             
-            INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE( dataExtent * (logicalExtent / dataExtent) != logicalExtent, std::invalid_argument, "data extent must evenly divide logical extent");
+            INTREPID2_TEST_FOR_EXCEPTION( dataExtent * (logicalExtent / dataExtent) != logicalExtent, std::invalid_argument, "data extent must evenly divide logical extent");
             
             variationModulus_[i] = modulus;
           }
@@ -303,17 +302,17 @@ namespace Intrepid2 {
             const int logicalExtent = extents_[i];
             const int numDiagonalEntries    = logicalExtent - (blockPlusDiagonalLastNonDiagonal_ + 1);
             const int expectedDataExtent = numNondiagonalEntries + numDiagonalEntries;
-            INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(dataExtent != expectedDataExtent, std::invalid_argument, ("BLOCK_PLUS_DIAGONAL data extent of " + std::to_string(dataExtent) + " does not match expected based on blockPlusDiagonalLastNonDiagonal setting of " + std::to_string(blockPlusDiagonalLastNonDiagonal_)).c_str());
+            INTREPID2_TEST_FOR_EXCEPTION(dataExtent != expectedDataExtent, std::invalid_argument, ("BLOCK_PLUS_DIAGONAL data extent of " + std::to_string(dataExtent) + " does not match expected based on blockPlusDiagonalLastNonDiagonal setting of " + std::to_string(blockPlusDiagonalLastNonDiagonal_)).c_str());
 #endif
             
             activeDims_[numActiveDims_] = i;
             numActiveDims_++;
           }
           variationModulus_[i] = getUnderlyingViewExtent(numActiveDims_);
-          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(variationType_[i+1] != BLOCK_PLUS_DIAGONAL, std::invalid_argument, "BLOCK_PLUS_DIAGONAL ranks must be contiguous");
+          INTREPID2_TEST_FOR_EXCEPTION(variationType_[i+1] != BLOCK_PLUS_DIAGONAL, std::invalid_argument, "BLOCK_PLUS_DIAGONAL ranks must be contiguous");
           i++; // skip over the next BLOCK_PLUS_DIAGONAL
           variationModulus_[i] = 1; // trivial modulus (should not ever be used)
-          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(blockPlusDiagonalCount > 1, std::invalid_argument, "BLOCK_PLUS_DIAGONAL can only apply to two ranks");
+          INTREPID2_TEST_FOR_EXCEPTION(blockPlusDiagonalCount > 1, std::invalid_argument, "BLOCK_PLUS_DIAGONAL can only apply to two ranks");
         }
         else // CONSTANT
         {
@@ -338,7 +337,7 @@ namespace Intrepid2 {
       }
       for (int d=0; d<7; d++)
       {
-        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(variationModulus_[d] == 0, std::logic_error, "variationModulus should not ever be 0");
+        INTREPID2_TEST_FOR_EXCEPTION(variationModulus_[d] == 0, std::logic_error, "variationModulus should not ever be 0");
       }
     }
     

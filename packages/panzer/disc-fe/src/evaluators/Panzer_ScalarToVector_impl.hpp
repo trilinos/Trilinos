@@ -113,8 +113,8 @@ postRegistrationSetup(
   typename Traits::SetupData  /* worksets */,
   PHX::FieldManager<Traits>&  fm)
 {
-  // Convert std::vector to Kokkos::View for use on device
-  internal_scalar_fields = Kokkos::View<KokkosScalarFields_t*>("ScalarToVector::internal_scalar_fields", scalar_fields.size());
+  // Convert std::vector to PHX::View for use on device
+  internal_scalar_fields = PHX::View<KokkosScalarFields_t*>("ScalarToVector::internal_scalar_fields", scalar_fields.size());
   for (std::size_t i=0; i < scalar_fields.size(); ++i)
     internal_scalar_fields(i) = scalar_fields[i].get_static_view();
 }
