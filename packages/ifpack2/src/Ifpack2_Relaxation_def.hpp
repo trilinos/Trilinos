@@ -1740,49 +1740,17 @@ ApplyInverseSerialGS_CrsMatrix(const crs_matrix_type& A,
   RCP<multivector_type> X_domainMap;
   bool copyBackOutput = false;
   if (importer.is_null ()) {
-    if (X.isConstantStride ()) {
-      X_colMap = Teuchos::rcpFromRef (X);
-      X_domainMap = Teuchos::rcpFromRef (X);
-      // Column Map and domain Map are the same, so there are no
-      // remote entries.  Thus, if we are not setting the initial
-      // guess to zero, we don't have to worry about setting remote
-      // entries to zero, even though we are not doing an Import in
-      // this case.
-      if (ZeroStartingSolution_) {
-        X_colMap->putScalar (ZERO);
-      }
-      // No need to copy back to X at end.
+    X_colMap = Teuchos::rcpFromRef (X);
+    X_domainMap = Teuchos::rcpFromRef (X);
+    // Column Map and domain Map are the same, so there are no
+    // remote entries.  Thus, if we are not setting the initial
+    // guess to zero, we don't have to worry about setting remote
+    // entries to zero, even though we are not doing an Import in
+    // this case.
+    if (ZeroStartingSolution_) {
+      X_colMap->putScalar (ZERO);
     }
-    else { // We must copy X into a constant stride multivector.
-      // Just use the cached column Map multivector for that.
-      // force=true means fill with zeros, so no need to fill
-      // remote entries (not in domain Map) with zeros.
-      X_colMap = getColumnMapMultiVector (&A, X, true);
-      // X_domainMap is always a domain Map view of the column Map
-      // multivector.  In this case, the domain and column Maps are
-      // the same, so X_domainMap _is_ X_colMap.
-      X_domainMap = X_colMap;
-      if (! ZeroStartingSolution_) { // Don't copy if zero initial guess
-        try {
-          deep_copy (*X_domainMap , X); // Copy X into constant stride MV
-        } catch (std::exception& e) {
-          std::ostringstream os;
-          os << "Tpetra::CrsMatrix::reorderedGaussSeidelCopy: "
-            "deep_copy(*X_domainMap, X) threw an exception: "
-            << e.what () << ".";
-          TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, e.what ());
-        }
-      }
-      copyBackOutput = true; // Don't forget to copy back at end.
-      TPETRA_EFFICIENCY_WARNING(
-          ! X.isConstantStride (),
-          std::runtime_error,
-          "gaussSeidelCopy: The current implementation of the Gauss-Seidel "
-          "kernel requires that X and B both have constant stride.  Since X "
-          "does not have constant stride, we had to make a copy.  This is a "
-          "limitation of the current implementation and not your fault, but we "
-          "still report it as an efficiency warning for your information.");
-    }
+    // No need to copy back to X at end.
   }
   else { // Column Map and domain Map are _not_ the same.
     X_colMap = getColumnMapMultiVector (&A, X, true);
@@ -1844,40 +1812,7 @@ ApplyInverseSerialGS_CrsMatrix(const crs_matrix_type& A,
     copyBackOutput = true; // Don't forget to copy back at end.
   } // if column and domain Maps are (not) the same
 
-  // The Gauss-Seidel / SOR kernel expects multivectors of constant
-  // stride.  X_colMap is by construction, but B might not be.  If
-  // it's not, we have to make a copy.
-  RCP<const multivector_type> B_in;
-  if (B.isConstantStride ()) {
-    B_in = Teuchos::rcpFromRef (B);
-  }
-  else {
-    // Range Map and row Map are the same in this case, so we can
-    // use the cached row Map multivector to store a constant stride
-    // copy of B.
-    RCP<multivector_type> B_in_nonconst = getRowMapMultiVector (&A, B, true);
-    try {
-      deep_copy (*B_in_nonconst, B);
-    } catch (std::exception& e) {
-      std::ostringstream os;
-      os << "Tpetra::CrsMatrix::reorderedGaussSeidelCopy: "
-        "deep_copy(*B_in_nonconst, B) threw an exception: "
-        << e.what () << ".";
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, e.what ());
-    }
-    B_in = Teuchos::rcp_const_cast<const multivector_type> (B_in_nonconst);
-
-    TPETRA_EFFICIENCY_WARNING(
-        ! B.isConstantStride (),
-        std::runtime_error,
-        "gaussSeidelCopy: The current implementation requires that B have "
-        "constant stride.  Since B does not have constant stride, we had to "
-        "copy it into a separate constant-stride multivector.  This is a "
-        "limitation of the current implementation and not your fault, but we "
-        "still report it as an efficiency warning for your information.");
-  }
-
-  const_cast<multivector_type*>(B_in.get())->sync_host();
+  const_cast<multivector_type&>(B).sync_host();
   for (int sweep = 0; sweep < NumSweeps_; ++sweep) {
     if (! importer.is_null () && sweep > 0) {
       // We already did the first Import for the zeroth sweep above,
@@ -1886,7 +1821,7 @@ ApplyInverseSerialGS_CrsMatrix(const crs_matrix_type& A,
     }
     X_colMap->sync_host ();
     // Do local Gauss-Seidel (forward, backward or symmetric)
-    serialGaussSeidel_->apply(*X_colMap, *B_in, direction);
+    serialGaussSeidel_->apply(*X_colMap, B, direction);
     X_colMap->modify_host ();
   }
 
