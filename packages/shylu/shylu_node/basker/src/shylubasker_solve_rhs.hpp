@@ -591,6 +591,13 @@ namespace BaskerNS
       {
         BASKER_MATRIX &LD = LL(b)(bb);
         //x = LD*y;
+        /*printf( "[\n" );
+        for (Int j = 0; j < LD.ncol; j++) {
+          for (Int k = LD.col_ptr(j); k < LD.col_ptr(j+1); k++) {
+            printf( "%d %d %e\n",LD.row_idx(k),j,LD.val(k));
+          }
+        }
+        printf( "];\n" );*/
         neg_spmv_perm(LD, y, x, scol_top);
         #ifdef BASKER_DEBUG_SOLVE_RHS
         printf("Lower Solver Update blk = (%d %d): size=(%dx%d) srow=%d, scol=%d \n",

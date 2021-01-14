@@ -37,15 +37,11 @@ namespace BaskerNS
     for(Int ti = 0; ti < num_threads; ti++)
     {
       //Note: jdb we can make this into a switch
-      if(thread_array(ti).error_type ==
-          BASKER_ERROR_NOERROR)
+      if(thread_array(ti).error_type == BASKER_ERROR_NOERROR)
       {
         threads_start(ti) = BASKER_MAX_IDX;
         continue;
-      }//end if NOERROR
-
-      if(thread_array(ti).error_type ==
-          BASKER_ERROR_SINGULAR)
+      } else if(thread_array(ti).error_type == BASKER_ERROR_SINGULAR)
       {
         if(Options.verbose == BASKER_TRUE)
         {
@@ -54,10 +50,7 @@ namespace BaskerNS
             << std::endl;
         }
         return BASKER_ERROR;
-      }//end if SINGULAR
-
-      if(thread_array(ti).error_type ==
-          BASKER_ERROR_NOMALLOC)
+      } else if(thread_array(ti).error_type == BASKER_ERROR_NOMALLOC)
       {
         if(Options.verbose == BASKER_TRUE)
         {
@@ -66,9 +59,7 @@ namespace BaskerNS
             << std::endl;
         }
         return BASKER_ERROR;
-      }//end if NOMALLOC
-
-      if(thread_array(ti).error_type == BASKER_ERROR_REMALLOC)
+      } else if(thread_array(ti).error_type == BASKER_ERROR_REMALLOC)
       {
         BASKER_ASSERT(thread_array(ti).error_blk >= 0, "nfactor_dom_error error_blk");
         if(Options.verbose == BASKER_TRUE)
