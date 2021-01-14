@@ -194,9 +194,9 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase & parent_info,
   const int num_dims = parent_info.cell_vertices.extent(2);
 
   // Fill owned, ghstd, and virtual cells: global indexes, local indexes and vertices
-  sub_info.global_cells = Kokkos::View<GO*>("global_cells", num_total_cells);
-  sub_info.local_cells = Kokkos::View<LO*>("local_cells", num_total_cells);
-  sub_info.cell_vertices = Kokkos::View<double***, PHX::Device>("cell_vertices", num_total_cells, num_vertices_per_cell, num_dims);
+  sub_info.global_cells = PHX::View<GO*>("global_cells", num_total_cells);
+  sub_info.local_cells = PHX::View<LO*>("local_cells", num_total_cells);
+  sub_info.cell_vertices = PHX::View<double***>("cell_vertices", num_total_cells, num_vertices_per_cell, num_dims);
   for(int cell=0;cell<num_total_cells;++cell){
     const LO parent_cell = all_parent_cells[cell].first;
     sub_info.global_cells(cell) = parent_info.global_cells(parent_cell);
@@ -292,9 +292,9 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase & parent_info,
 
   const int num_faces = faces.size();
 
-  sub_info.face_to_cells = Kokkos::View<LO*[2]>("face_to_cells", num_faces);
-  sub_info.face_to_lidx = Kokkos::View<LO*[2]>("face_to_lidx", num_faces);
-  sub_info.cell_to_faces = Kokkos::View<LO**>("cell_to_faces", num_total_cells, num_faces_per_cell);
+  sub_info.face_to_cells = PHX::View<LO*[2]>("face_to_cells", num_faces);
+  sub_info.face_to_lidx = PHX::View<LO*[2]>("face_to_lidx", num_faces);
+  sub_info.cell_to_faces = PHX::View<LO**>("cell_to_faces", num_total_cells, num_faces_per_cell);
 
   // Default the system with invalid cell index
   Kokkos::deep_copy(sub_info.cell_to_faces, -1);

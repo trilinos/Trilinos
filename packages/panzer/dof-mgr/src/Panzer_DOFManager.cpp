@@ -389,7 +389,7 @@ DOFManager::getGIDFieldOffsets(const std::string & blockID, int fieldNum) const
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-const Kokkos::View<const int*,PHX::Device>
+const PHX::View<const int*>
 DOFManager::getGIDFieldOffsetsKokkos(const std::string & blockID, int fieldNum) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error, "DOFManager::getGIDFieldOffsets: cannot be called before "
@@ -401,7 +401,7 @@ DOFManager::getGIDFieldOffsetsKokkos(const std::string & blockID, int fieldNum) 
   if(fa_fps_[bid]!=Teuchos::null)
     return fa_fps_[bid]->localOffsetsKokkos(fieldNum);
 
-  static const Kokkos::View<int*,PHX::Device> empty("panzer::DOFManager::getGIDFieldOffsetsKokkos() empty",0);
+  static const PHX::View<int*> empty("panzer::DOFManager::getGIDFieldOffsetsKokkos() empty",0);
   return empty;
 }
 
