@@ -855,31 +855,6 @@ private:
   Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices_;
 
   //@}
-  
-  static Teuchos::RCP<multivector_type> getRowMapMultiVector(const crs_matrix_type* A, const multivector_type& U_rangeMap, bool force)
-  {
-    const size_t numVecs = U_rangeMap.getNumVectors ();
-    auto exporter = A->getGraph ()->getExporter ();
-    Teuchos::RCP<const map_type> rowMap = A->getRowMap ();
-    Teuchos::RCP<multivector_type> U_rowMap; // null by default
-    if (! exporter.is_null () || force) {
-      U_rowMap = rcp (new multivector_type(rowMap, numVecs));
-    }
-    return U_rowMap;
-  }
-
-  static Teuchos::RCP<multivector_type> getColumnMapMultiVector(const crs_matrix_type* A, const multivector_type& U_domainMap, bool force)
-  {
-    const size_t numVecs = U_domainMap.getNumVectors ();
-    auto importer = A->getGraph ()->getImporter();
-    Teuchos::RCP<const map_type> colMap = A->getColMap();
-    Teuchos::RCP<multivector_type> U_colMap; // null by default
-    if (! importer.is_null () || force) {
-      U_colMap = rcp (new multivector_type(colMap, numVecs));
-    }
-    return U_colMap;
-  }
-
 }; //class Relaxation
 
 }//namespace Ifpack2
