@@ -54,6 +54,7 @@ namespace Details
     using local_matrix_type = typename crs_matrix_type::local_matrix_type;
     using vector_type = Tpetra::Vector<Scalar, LO, GO, NT>;
     using multivector_type = Tpetra::MultiVector<Scalar, LO, GO, NT>;
+    using block_multivector_type = Tpetra::BlockMultiVector<Scalar, LO, GO, NT>;
     using mem_space_t = typename local_matrix_type::memory_space;
     using rowmap_t = typename local_matrix_type::row_map_type::HostMirror;
     using entries_t = typename local_matrix_type::index_type::HostMirror;
@@ -210,8 +211,14 @@ namespace Details
       }
     }
 
-    void applyBlockImpl(multivector_type& x, const multivector_type& b, Tpetra::ESweepDirection direction)
+    void applyBlock(block_multivector_type& x, const block_multivector_type& b, Tpetra::ESweepDirection direction)
     {
+      if(direction == Tpetra::Symmetric)
+      {
+        applyBlock(x, b, Tpetra::Forward);
+        applyBlock(x, b, Tpetra::Backward);
+        return;
+      }
       //Number of scalars in Avalues per block entry.
       Offset bs2 = blockSize * blockSize;
       LO numVecs = x.getNumVectors();
@@ -219,8 +226,6 @@ namespace Details
           Kokkos::ViewAllocateWithoutInitializing("BlockGaussSeidel Accumulator"), blockSize, numVecs);
       Kokkos::View<IST**, Kokkos::LayoutLeft, Kokkos::HostSpace> dinv_accum(
           Kokkos::ViewAllocateWithoutInitializing("BlockGaussSeidel A_ii^-1*Accumulator"), blockSize, numVecs);
-      auto xlcl = x.get2dViewNonConst();
-      auto blcl = b.get2dView();
       bool useApplyRows = !applyRows.is_null();
       bool forward = direction == Tpetra::Forward;
       LO numApplyRows = useApplyRows ? applyRows.size() : numRows;
@@ -231,11 +236,12 @@ namespace Details
           row = useApplyRows ? applyRows[i] : i;
         else
           row = useApplyRows ? applyRows[numApplyRows - 1 - i] : numApplyRows - 1 - i;
-        for(LO j = 0; j < numVecs; j++)
+        for(LO v = 0; v < numVecs; v++)
         {
+          auto bRow = b.getLocalBlock (row, v);
           for(LO k = 0; k < blockSize; k++)
           {
-            accum(k, j) = blcl[j][row * blockSize + k];
+            accum(k, v) = bRow(k);
           }
         }
         Offset rowBegin = Arowmap(row);
@@ -244,14 +250,15 @@ namespace Details
         {
           LO col = Aentries(j);
           IST* blk = &Avalues(j * bs2);
-          for(LO k = 0; k < numVecs; k++)
+          for(LO v = 0; v < numVecs; v++)
           {
+            auto xCol = x.getLocalBlock (col, v);
             for(LO br = 0; br < blockSize; br++)
             {
               for(LO bc = 0; bc < blockSize; bc++)
               {
                 IST Aval = blk[br * blockSize + bc];
-                accum(br, k) -= Aval * IST(xlcl[k][col * blockSize + bc]);
+                accum(br, v) -= Aval * xCol(bc);
               }
             }
           }
@@ -259,21 +266,23 @@ namespace Details
         //Update x: term is omega * Aii^-1 * accum, where omega is scalar, Aii^-1 is bs*bs, and accum is bs*nv
         auto invBlock = Kokkos::subview(inverseBlockDiag, row, Kokkos::ALL(), Kokkos::ALL());
         Kokkos::deep_copy(dinv_accum, KAT::zero());
-        for(LO j = 0; j < numVecs; j++)
+        for(LO v = 0; v < numVecs; v++)
         {
           for(LO br = 0; br < blockSize; br++)
           {
             for(LO bc = 0; bc < blockSize; bc++)
             {
-              dinv_accum(br, j) += invBlock(br, bc) * accum(bc, j);
+              dinv_accum(br, v) += invBlock(br, bc) * accum(bc, v);
             }
           }
         }
-        for(LO j = 0; j < numVecs; j++)
+        //Update x
+        for(LO v = 0; v < numVecs; v++)
         {
+          auto xRow = x.getLocalBlock (row, v);
           for(LO k = 0; k < blockSize; k++)
           {
-            xlcl[j][row * blockSize + k] += Scalar(omega * dinv_accum(k, j));
+            xRow(k) += omega * dinv_accum(k, v);
           }
         }
       }
@@ -286,10 +295,6 @@ namespace Details
         apply(x, b, Tpetra::Forward);
         apply(x, b, Tpetra::Backward);
         return;
-      }
-      if(blockSize > 1)
-      {
-        applyBlockImpl(x, b, direction);
       }
       else if(applyRows.is_null())
       {
