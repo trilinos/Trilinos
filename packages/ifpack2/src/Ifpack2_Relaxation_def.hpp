@@ -1599,6 +1599,7 @@ ApplyInverseSerialGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordi
     Y2 = rcpFromRef (Y);
   }
 
+  const_cast<multivector_type&>(X).sync_host();
   for (int j = 0; j < NumSweeps_; ++j) {
     // data exchange is here, once per sweep
     if (IsParallel_) {
@@ -1611,8 +1612,9 @@ ApplyInverseSerialGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordi
         Y2->doImport (Y, *Importer_, Tpetra::INSERT);
       }
     }
-
+    Y2->sync_host();
     serialGaussSeidel_->apply(*Y2, X, direction);
+    Y2->modify_host();
 
     // FIXME (mfh 02 Jan 2013) This is only correct if row Map == range Map.
     if (IsParallel_) {
@@ -1843,6 +1845,7 @@ ApplyInverseSerialGS_CrsMatrix(const crs_matrix_type& A,
         "still report it as an efficiency warning for your information.");
   }
 
+  const_cast<multivector_type*>(B_in.get())->sync_host();
   for (int sweep = 0; sweep < NumSweeps_; ++sweep) {
     if (! importer.is_null () && sweep > 0) {
       // We already did the first Import for the zeroth sweep above,
@@ -1946,11 +1949,14 @@ ApplyInverseSerialGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     yBlockCol_mv.doImport(yBlock_mv, *pointImporter_, Tpetra::INSERT);
   }
 
+  const_cast<block_multivector_type&>(xBlock).sync_host();
   for (int sweep = 0; sweep < NumSweeps_; ++sweep) {
     if (performImport && sweep > 0) {
       yBlockCol_mv.doImport(yBlock_mv, *pointImporter_, Tpetra::INSERT);
     }
+    yBlockCol->sync_host();
     serialGaussSeidel_->applyBlock(*yBlockCol, xBlock, direction);
+    yBlockCol->modify_host();
     if (performImport) {
       Tpetra::deep_copy(Y, *yBlockColPointDomain);
     }
