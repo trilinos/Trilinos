@@ -77,9 +77,16 @@ namespace panzer {
   }
   void HP::overrideSizes(const int& in_team_size,
 			 const int& in_vector_size,
-			 const int& in_fad_vector_size)
+			 const int& in_fad_vector_size,
+                         const bool force_override)
   {
     use_auto_team_size_ = false;
+    if ( force_override ) {
+      team_size_=in_team_size;
+      vector_size_=in_vector_size;
+      fad_vector_size_=in_fad_vector_size;
+      return;
+    }
 
     Kokkos::TeamPolicy<PHX::Device> policy(1, Kokkos::AUTO);
     auto blank_functor = KOKKOS_LAMBDA ( const Kokkos::TeamPolicy<PHX::exec_space>::member_type) {};
