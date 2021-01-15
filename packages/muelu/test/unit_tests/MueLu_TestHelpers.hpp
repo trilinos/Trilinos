@@ -53,24 +53,22 @@
 #endif
 
 // Teuchos
-#include <Teuchos_Comm.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 #ifdef HAVE_MUELU_EPETRA
-#include <Epetra_config.h>
+#include "Epetra_config.h"
 #endif
 
 // Xpetra
-#include <Xpetra_ConfigDefs.hpp>
-#include <Xpetra_DefaultPlatform.hpp>
-#include <Xpetra_Parameters.hpp>
-#include <Xpetra_Map.hpp>
-#include <Xpetra_MapExtractorFactory.hpp>
-#include <Xpetra_MapFactory.hpp>
-#include <Xpetra_MatrixUtils.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_CrsGraph.hpp>
+#include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_DefaultPlatform.hpp"
+#include "Xpetra_Parameters.hpp"
+#include "Xpetra_Map.hpp"
+#include "Xpetra_MapFactory.hpp"
+#include "Xpetra_CrsMatrixWrap.hpp"
+#include "Xpetra_CrsGraph.hpp"
 
 // MueLu
 #include "MueLu_ConfigDefs.hpp"
@@ -83,8 +81,8 @@
 #include "MueLu_Level.hpp"
 
 // Galeri
-#include <Galeri_XpetraProblemFactory.hpp>
-#include <Galeri_XpetraMatrixTypes.hpp>
+#include "Galeri_XpetraProblemFactory.hpp"
+#include "Galeri_XpetraMatrixTypes.hpp"
 
 namespace Galeri {
   namespace Xpetra {
@@ -736,290 +734,6 @@ namespace MueLuTests {
         bop->fillComplete();
         return bop;
       }
-
-    /*!
-      @brief Create saddle-point system for meshtying of Poisson problem
-
-      The domain consists of two rechtangles, "1" and "2", stacked on top of each other.
-      Meshes match at the interface to allow for the trivial implementation of the off-diagonal coupling blocks
-      in a 2x2 saddle-point system inspired by surface-coupled meshtying.
-
-      @param[out] blockMatrix Pointer to to-be-created block matrix
-      @param[out] interfaceDofMap Pointer to to-be-created map of slave-sdie interface DOFs
-      @param[in] nx Number of elements in x-direction for each block
-      @param[in] ny Number of elelemts in y-direction for each block
-      @param[in] lib Type of underlying sparse linear algebra
-    */
-    static void BuildPoissonSaddlePointMatrix(RCP<BlockedCrsMatrix>& blockMatrix,
-        RCP<const Map>& interfaceDofMap, const GO nx, GO ny = -1, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified)
-    {
-      using Teuchos::ParameterList;
-
-      const GO GO_ZERO = Teuchos::ScalarTraits<GO>::zero();
-
-      // Deal with default arguments
-      if (ny == -1) ny = nx;
-      if (lib == Xpetra::NotSpecified) lib = TestHelpers::Parameters::getLib();
-
-      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-
-      const int numDofsPerNode = 1;
-
-      RCP<const Map> nodeMapOne = Teuchos::null;
-      RCP<const Map> dofMapOne = Teuchos::null;
-      RCP<const Map> dofMapTwo = Teuchos::null;
-      RCP<const Map> dofMapDual = Teuchos::null;
-      RCP<const Map> slaveNodeMap = Teuchos::null;
-      RCP<const Map> slaveDofMap = Teuchos::null;
-      RCP<Matrix> Aone = Teuchos::null;
-      RCP<Matrix> Atwo = Teuchos::null;
-
-      // Setup matrix of subdomain 1
-      {
-        ParameterList galeriList;
-        galeriList.set("nx", nx);
-        galeriList.set("ny", ny);
-        galeriList.set("matrixType", "Laplace2D");
-        galeriList.set("left boundary", "Neumann");
-        galeriList.set("right boundary", "Neumann");
-        galeriList.set("top boundary", "Neumann");
-        galeriList.set("bottom boundary", "Dirichlet");
-
-        nodeMapOne = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
-        dofMapOne = MapFactory::Build(nodeMapOne, numDofsPerNode);
-        RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-          Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D", dofMapOne, galeriList);
-
-        Aone = Pr->BuildMatrix();
-
-        // Get interface node GIDs
-        Array<GO> allInterfaceNodeGIDs;
-        const GO firstInterfaceNodeGID = nx * (ny - 1);
-        for (GO i = 0; i < nx; ++i)
-          allInterfaceNodeGIDs.push_back(firstInterfaceNodeGID + i);
-
-        ArrayView<const GO> myNodeGIDs = nodeMapOne->getNodeElementList ();
-        Array<GO> myInterfaceNodeGIDs;
-        for (const auto& interfaceNodeGID : allInterfaceNodeGIDs) {
-          for (const auto& nodeGID : myNodeGIDs) {
-            if (nodeGID == interfaceNodeGID)
-              myInterfaceNodeGIDs.push_back(nodeGID);
-          }
-        }
-        slaveNodeMap = MapFactory::Build(lib, allInterfaceNodeGIDs.size(), myInterfaceNodeGIDs, GO_ZERO, comm);
-        slaveDofMap = MapFactory::Build(slaveNodeMap, numDofsPerNode);
-      }
-
-      const GO dofGidOffset = dofMapOne->getMaxAllGlobalIndex() + 1;
-
-      // Setup matrix of subdomain 2
-      {
-        ParameterList galeriList;
-        galeriList.set("nx", nx);
-        galeriList.set("ny", ny);
-        galeriList.set("matrixType", "Laplace2D");
-        galeriList.set("left boundary", "Neumann");
-        galeriList.set("right boundary", "Neumann");
-        galeriList.set("top boundary", "Neumann");
-        galeriList.set("bottom boundary", "Neumann");
-
-        RCP<const Map> nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
-        RCP<const Map> dofMapNoOffset = MapFactory::Build(nodeMap, numDofsPerNode);
-        dofMapTwo = MapFactory::Build(nodeMap, numDofsPerNode, dofGidOffset);
-        RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-          Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D", dofMapNoOffset, galeriList);
-
-        RCP<Matrix> Atemp = Pr->BuildMatrix();
-
-        RCP<const Map> colMapTwo = Teuchos::null;
-        {
-          RCP<const Map> mapToReproduce = Aone->getColMap();
-          Array<GO> gidsTwo;
-          for (LO i = 0; i < static_cast<LO>(mapToReproduce->getNodeNumElements()); ++i)
-            gidsTwo.push_back(mapToReproduce->getGlobalElement(i) + dofGidOffset);
-          colMapTwo = MapFactory::Build(lib, mapToReproduce->getGlobalNumElements(), gidsTwo(), 0, comm);
-        }
-
-        RCP<const Map> rangeMapTwo = Teuchos::null;
-        {
-          RCP<const Map> mapToReproduce = Aone->getRangeMap();
-          Array<GO> gidsTwo;
-          for (LO i = 0; i < static_cast<LO>(mapToReproduce->getNodeNumElements()); ++i)
-            gidsTwo.push_back(mapToReproduce->getGlobalElement(i) + dofGidOffset);
-          rangeMapTwo = MapFactory::Build(lib, mapToReproduce->getGlobalNumElements(), gidsTwo(), GO_ZERO, comm);
-          TEUCHOS_ASSERT(!rangeMapTwo.is_null());
-        }
-
-        RCP<const Map> domainMapTwo = Teuchos::null;
-        {
-          RCP<const Map> mapToReproduce = Aone->getDomainMap();
-          Array<GO> gidsTwo;
-          for (LO i = 0; i < static_cast<LO>(mapToReproduce->getNodeNumElements()); ++i)
-            gidsTwo.push_back(mapToReproduce->getGlobalElement(i) + dofGidOffset);
-          domainMapTwo = MapFactory::Build(lib, mapToReproduce->getGlobalNumElements(), gidsTwo(), GO_ZERO, comm);
-          TEUCHOS_ASSERT(!domainMapTwo.is_null());
-        }
-
-        // Copy values into new map with proper maps
-        {
-          RCP<Matrix> A = rcp(new CrsMatrixWrap(dofMapTwo, colMapTwo, Atemp->getGlobalMaxNumRowEntries()));
-          RCP<CrsMatrix> AtwoCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true)->getCrsMatrix();
-          TEUCHOS_ASSERT(!AtwoCrsMat.is_null());
-
-          // Pull out the data from the matrix
-          ArrayRCP<const size_t> rowptrOld;
-          ArrayRCP<const LocalOrdinal> colindOld;
-          ArrayRCP<const Scalar> valuesOld;
-          Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Atemp)->getCrsMatrix()->getAllValues(rowptrOld, colindOld, valuesOld);
-
-          // Do a deep copy of values
-          ArrayRCP<size_t> rowptrNew(rowptrOld.size());
-          ArrayRCP<LocalOrdinal> colindNew(colindOld.size());
-          ArrayRCP<Scalar> valuesNew(valuesOld.size());
-
-          AtwoCrsMat->allocateAllValues(valuesNew.size(), rowptrNew, colindNew, valuesNew);
-
-          for(LocalOrdinal idx = 0; idx < static_cast<LocalOrdinal>(rowptrNew.size()); ++idx) {
-            rowptrNew[idx] = rowptrOld[idx];
-          }
-
-          for(LocalOrdinal idx = 0; idx < static_cast<LocalOrdinal>(colindNew.size()); ++idx) {
-            colindNew[idx] = colindOld[idx];
-            valuesNew[idx] = valuesOld[idx];
-          }
-
-          // Set and fillComplete the new CrsMatrix
-          AtwoCrsMat->setAllValues(rowptrNew, colindNew, valuesNew);
-          AtwoCrsMat->expertStaticFillComplete(domainMapTwo, rangeMapTwo);
-          TEUCHOS_ASSERT(!AtwoCrsMat.is_null());
-
-          Atwo = A;
-        }
-      }
-
-      TEUCHOS_ASSERT(!Aone.is_null());
-      TEUCHOS_ASSERT(!Atwo.is_null());
-
-      Array<RCP<const Map>> primalMaps;
-      primalMaps.push_back(dofMapOne);
-      primalMaps.push_back(dofMapTwo);
-      RCP<const Map> dofMapPrimal = MapUtils::concatenateMaps(primalMaps.toVector());
-
-      RCP<const MapExtractor> primalMapExtractor = MapExtractorFactory::Build(dofMapPrimal, primalMaps.toVector());
-      RCP<BlockedCrsMatrix> primalBlockMatrix = rcp(new BlockedCrsMatrix(primalMapExtractor, primalMapExtractor, 5));
-      primalBlockMatrix->setMatrix(0, 0, Aone);
-      primalBlockMatrix->setMatrix(1, 1, Atwo);
-      primalBlockMatrix->fillComplete();
-
-      // Setup coupling blocks
-      RCP<Matrix> C10 = Teuchos::null;
-      RCP<Matrix> C01 = Teuchos::null;
-      {
-        LocalOrdinal numLocalDualNodes = 0;
-        const GlobalOrdinal dualDofGIDOffset = dofMapTwo->getMaxAllGlobalIndex() + 1;
-        Array<GlobalOrdinal> dualNodeGIDs;
-        for (GlobalOrdinal primalNodeId = nodeMapOne->getGlobalNumElements() - nx; primalNodeId < static_cast<GlobalOrdinal>(nodeMapOne->getGlobalNumElements()); ++primalNodeId)
-        {
-          if (nodeMapOne->isNodeGlobalElement(primalNodeId))
-            ++numLocalDualNodes;
-        }
-        RCP<const Map> nodeMapDual = MapFactory::Build(lib, nx, numLocalDualNodes, GO_ZERO, comm);
-        dofMapDual = MapFactory::Build(nodeMapDual, 1, dualDofGIDOffset);
-
-        // Create lower left coupling matrix
-        C10 = rcp(new CrsMatrixWrap(dofMapDual, 2));
-        for (LO lRow = 0; lRow < static_cast<LO>(dofMapDual->getNodeNumElements()); ++lRow)
-        {
-          Array<GO> cols;
-          cols.push_back(slaveDofMap->getGlobalElement(lRow));
-          cols.push_back(dofMapTwo->getGlobalElement(lRow));
-
-          Array<Scalar> vals;
-          vals.push_back(Teuchos::ScalarTraits<Scalar>::one());
-          vals.push_back(-Teuchos::ScalarTraits<Scalar>::one());
-
-          const GO gRow = dofMapDual->getGlobalElement(lRow);
-          C10->insertGlobalValues(gRow, cols(), vals());
-        }
-        C10->fillComplete();
-
-        // Create upper right coupling matrix (=transpose of C10)
-        C01 = rcp(new CrsMatrixWrap(dofMapPrimal, 2));
-        for (LO lRow = 0; lRow < static_cast<LO>(slaveDofMap->getNodeNumElements()); ++lRow)
-        {
-          // Slave DOFs
-          {
-            Array<GO> cols;
-            cols.push_back(dofMapDual->getGlobalElement(lRow));
-            Array<Scalar> vals(1, Teuchos::ScalarTraits<Scalar>::one());
-            const GO gRow = slaveDofMap->getGlobalElement(lRow);
-            C01->insertGlobalValues(gRow, cols(), vals());
-          }
-
-          // Master DOFs
-          {
-            Array<GO> cols;
-            cols.push_back(dofMapDual->getGlobalElement(lRow));
-            Array<Scalar> vals(1, -Teuchos::ScalarTraits<Scalar>::one());
-            const GO gRow = dofMapTwo->getGlobalElement(lRow);
-            C01->insertGlobalValues(gRow, cols(), vals());
-          }
-        }
-        C01->fillComplete(dofMapDual, dofMapPrimal);
-
-        TEUCHOS_ASSERT(C10 != Teuchos::null);
-      }
-
-      std::vector<size_t> stridingInfo;
-      stridingInfo.push_back(1); // Poisson has one DOF per node
-
-      RCP<const StridedMap> stridedDofMapPrimal = StridedMapFactory::Build(dofMapPrimal, stridingInfo, -1, GO_ZERO);
-      RCP<const StridedMap> stridedDofMapDual = StridedMapFactory::Build(dofMapDual, stridingInfo, -1, GO_ZERO);
-
-      Array<RCP<const Map>> blockMaps;
-      blockMaps.push_back(stridedDofMapPrimal);
-      blockMaps.push_back(stridedDofMapDual);
-      RCP<const Map> fullMap = MapUtils::concatenateMaps(blockMaps.toVector());
-
-      RCP<const MapExtractor> primalDualMapExtractor = MapExtractorFactory::Build(fullMap, blockMaps.toVector());
-      RCP<const BlockedMap> blockMap = rcp(new BlockedMap(fullMap, blockMaps.toVector()));
-
-      MatrixUtils::convertMatrixToStridedMaps(primalBlockMatrix, stridingInfo, stridingInfo);
-      MatrixUtils::convertMatrixToStridedMaps(C01, stridingInfo, stridingInfo);
-      MatrixUtils::convertMatrixToStridedMaps(C10, stridingInfo, stridingInfo);
-
-      blockMatrix = rcp(new BlockedCrsMatrix(blockMap, blockMap, 5));
-      blockMatrix->setMatrix(0, 0, primalBlockMatrix);
-      blockMatrix->setMatrix(0, 1, C01);
-      blockMatrix->setMatrix(1, 0, C10);
-      blockMatrix->setMatrix(1, 1, Teuchos::null);
-
-      blockMatrix->fillComplete();
-      interfaceDofMap = slaveDofMap;
-    }
-
-    /*!
-      @brief Create saddle-point system for meshtying of Poisson problem
-
-      The domain consists of two rechtangles, "1" and "2", stacked on top of each other.
-      Meshes match at the interface to allow for the trivial implementation of the off-diagonal coupling blocks
-      in a 2x2 saddle-point system inspired by surface-coupled meshtying.
-
-      @param nx Number of elements in x-direction for each block
-      @param ny Number of elelemts in y-direction for each block
-      @param lib Type of underlying sparse linear algebra
-
-      @return 2x2 block matrix of 2D meshtying of two blocks of Poisson equation
-    */
-    static RCP<BlockedCrsMatrix> BuildPoissonSaddlePointMatrix(const GO nx, GO ny = -1, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified)
-    {
-      RCP<BlockedCrsMatrix> blockMatrix = Teuchos::null;
-      RCP<const Map> interfaceDofMap = Teuchos::null;
-
-      BuildPoissonSaddlePointMatrix(blockMatrix, interfaceDofMap, nx, ny, lib);
-
-      return blockMatrix;
-    }
 
      // Create a matrix as specified by parameter list options
      /*static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) {
