@@ -63,7 +63,14 @@ namespace panzer {
     /// Return singleton instance of this class.
     static HP& inst();
 
-    /// Allows the user to override default sizes.
+    /** Allows the user to override the Kokkos default team and vector
+        sizes for kernel dispatch. The values will be capped by
+        hardware limits and rounded down to the nearest power of two.
+
+        @param team_size Team size requested for hierarchic kernel
+        @param vector_size Vector size requested for hierarchic kernel for non-FAD scalar types
+        @param fad_vector_size Vector size requested for hierarchic kernel for FAD scalar types
+    */
     void overrideSizes(const int& team_size,
 		       const int& vector_size,
 		       const int& fad_vector_size);
