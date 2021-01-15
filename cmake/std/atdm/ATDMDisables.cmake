@@ -57,6 +57,7 @@ IF (NOT ATDM_ENABLE_SPARC_SETTINGS)
     ${ATDM_SE_PACKAGE_DISABLES}
     ShyLU_Node
     ROL
+    Tempus
     )
   # NOTE: For now, we will disable these packages not being used by EMPIRE for
   # now so that we don't introduce any new failing tests in the existing ATDM

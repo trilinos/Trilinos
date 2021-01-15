@@ -6,6 +6,9 @@
 
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/utils/ATDMDevEnvUtils.cmake")
 
+# Ensure that LDFLAGS is picked up by the CMake compiler checks
+SET(CMAKE_EXE_LINKER_FLAGS "$ENV{LDFLAGS} ${CMAKE_EXE_LINKER_FLAGS}")
+
 #
 # A) Assert the right env vars are set, read in env vars, and set local
 # defaults
