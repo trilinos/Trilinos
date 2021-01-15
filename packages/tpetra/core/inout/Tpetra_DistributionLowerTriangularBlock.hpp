@@ -58,8 +58,74 @@ namespace Tpetra
 template <typename gno_t, typename scalar_t>
 class DistributionLowerTriangularBlock : public Distribution<gno_t,scalar_t> {
 // Seher Acer's lower-triangular block decomposition for triangle counting
-// First distribute lower-triangular entries only via 1D linear distribution
-// Then redistribute according to chunk-based algorithm
+// See also:  LowerTriangularBlockOperator below that allows this distribution
+// to be used in Tpetra SpMV.
+// 
+// Requirements:
+//    Matrix must be square (undirected graph)
+//    Number of processors np = q(q+1)/2 for some q.
+// 
+// Only the lower triangular portion of the matrix is stored.
+// Processors are arranged logically as follows:
+//    0
+//    1  2
+//    3  4  5
+//    ...
+//
+// The lower triangular part of the matrix is stored in a 2D distribution.
+// For example, the dense 7x7 lower triangular matrix below would be assigned
+// to processors according to numbers shown as follows:
+//    0 |   |
+//    00|   |
+//    ---------
+//    11|2  |
+//    11|22 |
+//    11|222|
+//    ---------
+//    33|444|5
+//    33|444|55
+//    ...
+// (Note that we expect the matrix to be sparse.  For dense matrices,
+// CrsMatrix is the wrong tool.)
+//    
+// Matrix rows are assigned to processor rows greedily to roughly balance 
+//   (# nonzeros in processor row / # processors in processor row)
+// across processor rows.
+// The same cuts are used to divide rows and columns among processors
+// (that is, all processors have a square block).
+// 
+// The lower triangular algorithm:
+// 1. distribute all matrix entries via 1D linear distribution
+//    (this initial distribution is needed to avoid storing the entire 
+//    matrix on one processor, while providing info about the nonzeros per row
+//    needed in step 2.
+// 2. sort rows in decreasing order wrt the number of nonzeros per row
+// 3. find "chunk cuts":  divisions in row assignments such that 
+//    (# nonzeros in processor row / # processors in processor row) is 
+//    roughly equal for all processor rows
+// 4. send nonzeros to their new processor assignment
+// 
+// Known issues:  (TODO)
+// - The sorting in Step 2 and computation of chunk cuts in step 3 are 
+//   currently done in serial and requires O(number of rows) storage each 
+//   processor.  More effort could parallelize this computation, but parallel
+//   load balancing algorithms are more appropriate in Zoltan2 than Tpetra.
+// - The sorting renumbers the rows (assigns new Global Ordinals to the rows) 
+//   to make them contiguous, as needed in Acer's triangle counting algorithm.  
+//   (Acer's algorithm relies on local indexing from the chunk boundaries to
+//   find neighbors needed for communication.)
+//   The software currently does not enable a user to map back to the original
+//   global ordinal from the reindexed global ordinal.
+//
+// Before addressing these issues, we will decide (TODO)
+// -  Is this Distribution general enough to be in Tpetra? 
+// -  Should we, instead, have a separate package for distributions (that could
+//    use Zoltan2 and Tpetra without circular dependence)? 
+// -  Or should we allow users (such as the triangle counting algorithm) to 
+//    provide their own distributions (e.g., LowerTriangularBlock) that 
+//    inherit from Tpetra's Distribution class?
+// For now, we will push this Distribution into Tpetra, but we will revisit 
+// this decision.
 
 public:
   using Distribution<gno_t,scalar_t>::me;
