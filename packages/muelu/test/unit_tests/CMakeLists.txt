@@ -53,6 +53,7 @@ APPEND_SET(SOURCES
   StructuredAggregationFactory.cpp
   StructuredLineDetection.cpp
   TentativePFactory.cpp
+  TestsForTestHelpers.cpp
   ThresholdAFilterFactory.cpp
   TransPFactory.cpp
   UnsmooshFactory.cpp
