@@ -129,7 +129,7 @@ namespace {
     RCP<const Map> fullMap = MapUtils::concatenateMaps(maps);
 
     TEST_ASSERT(Teuchos::nonnull(fullMap));
-    TEST_EQUALITY_CONST(fullMap->getNodeNumElements(), static_cast<size_t>(2 * numLocalElementsPerMap));
+    TEST_EQUALITY_CONST(fullMap->getLocalNumElements(), static_cast<size_t>(2 * numLocalElementsPerMap));
     TEST_EQUALITY_CONST(fullMap->getGlobalNumElements(), 2 * numGlobalElementsPerMap);
 
     // Manually merge both lists of GIDs and check with GIDs in full map
@@ -138,7 +138,7 @@ namespace {
       for (const auto& gid : gidsForMapOne) expectedListOfGids.push_back(gid);
       for (const auto& gid : gidsForMapTwo) expectedListOfGids.push_back(gid);
 
-      ArrayView<const GO> gidsInFullMap = fullMap->getNodeElementList();
+      ArrayView<const GO> gidsInFullMap = fullMap->getLocalElementList();
 
       TEST_COMPARE_ARRAYS(gidsInFullMap(), expectedListOfGids());
     }

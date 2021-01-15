@@ -630,7 +630,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
       @return sum in B.
 
-      Note that B does not have to be fill-completed.
+      \note Matrix B must not be fill-completed.
       */
     static void TwoMatrixAdd(const Matrix& A, bool transposeA, SC alpha, Matrix& B, SC beta) {
       if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
