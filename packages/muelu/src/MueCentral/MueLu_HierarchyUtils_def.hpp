@@ -94,7 +94,7 @@ namespace MueLu {
           const std::string& name = levelListEntry->first;
           TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" && name != "K"  && name != "M" && name != "Mdiag" &&
                                      name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" &&
-                                     name != "Node Comm" && name != "DualNodeID2PrimalNodeID" && name != "PrimalInterfaceDofRowMap" &&
+                                     name != "Node Comm" && name != "DualNodeID2PrimalNodeID" && name != "Primal interface DOF map" &&
                                      !IsParamMuemexVariable(name), Exceptions::InvalidArgument,
                                      std::string("MueLu::Utils::AddNonSerializableDataToHierarchy: parameter list contains unknown data type(") + name + ")");
 
@@ -136,7 +136,7 @@ namespace MueLu {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<std::map<LO, LO>>>(levelListEntry->second), NoFactory::get());
           }
-          else if(name == "PrimalInterfaceDofRowMap")
+          else if(name == "Primal interface DOF map")
           {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<const Map>>(levelListEntry->second), NoFactory::get());
@@ -196,7 +196,7 @@ namespace MueLu {
           const std::string& name = userListEntry->first;
           TEUCHOS_TEST_FOR_EXCEPTION(name != "P" && name != "R"  && name != "K"  && name != "M" && name != "Mdiag" &&
                                      name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" &&
-                                     name != "Node Comm" && name != "DualNodeID2PrimalNodeID" && name != "PrimalInterfaceDofRowMap" &&
+                                     name != "Node Comm" && name != "DualNodeID2PrimalNodeID" && name != "Primal interface DOF map" &&
                                      name != "output stream" &&
                                      !IsParamValidVariable(name), Exceptions::InvalidArgument,
                                      std::string("MueLu::Utils::AddNonSerializableDataToHierarchy: user data parameter list contains unknown data type (") + name + ")");
@@ -225,7 +225,7 @@ namespace MueLu {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<std::map<LO, LO>>>(userListEntry->second), NoFactory::get());
           }
-          else if(name == "PrimalInterfaceDofRowMap")
+          else if(name == "Primal interface DOF map")
           {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<const Map>>(userListEntry->second), NoFactory::get());

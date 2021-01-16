@@ -78,7 +78,7 @@ RCP<const ParameterList> InterfaceAggregationFactory<Scalar, LocalOrdinal, Globa
   validParamList->set<LocalOrdinal>("number of DOFs per dual node", -Teuchos::ScalarTraits<LocalOrdinal>::one(),
       "Number of DOFs per dual node");
 
-  validParamList->set<RCP<const FactoryBase>>("PrimalInterfaceDofRowMap", Teuchos::null,
+  validParamList->set<RCP<const FactoryBase>>("Primal interface DOF map", Teuchos::null,
       "Generating factory of the primal DOF row map of slave side of the coupling surface");
 
   return validParamList;
@@ -110,9 +110,9 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Dec
   else if (pL.get<std::string>("Dual/primal mapping strategy") == "dof-based")
   {
     if (currentLevel.GetLevelID() == 0)
-      currentLevel.DeclareInput("PrimalInterfaceDofRowMap", NoFactory::get(), this);
+      currentLevel.DeclareInput("Primal interface DOF map", NoFactory::get(), this);
     else
-      Input(currentLevel, "PrimalInterfaceDofRowMap");
+      Input(currentLevel, "Primal interface DOF map");
   }
   else
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::InvalidArgument, "Unknown strategy for dual/primal mapping.")
@@ -132,7 +132,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   if (pL.get<std::string>(parameterName) == "node-based")
     BuildBasedOnNodeMapping(prefix, currentLevel);
   else if (pL.get<std::string>(parameterName) == "dof-based")
-    BuildBasedOnPrimalInterfaceDofRowMap(prefix, currentLevel);
+    BuildBasedOnPrimalInterfaceDofMap(prefix, currentLevel);
   else
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::InvalidArgument,
         "MueLu::InterfaceAggregationFactory::Builld(): Unknown strategy for dual/primal mapping. Set a valid value for the parameter \"" << parameterName << "\".")
@@ -239,7 +239,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
 } // BuildBasedOnNodeMapping
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOnPrimalInterfaceDofRowMap(
+void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildBasedOnPrimalInterfaceDofMap(
     const std::string& prefix, Level &currentLevel) const
 {
   const GlobalOrdinal GO_ZERO = Teuchos::ScalarTraits<LocalOrdinal>::zero();
@@ -260,9 +260,9 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   RCP<const Map> primalInterfaceDofRowMap = Teuchos::null;
   if (currentLevel.GetLevelID() == 0) {
     // Use NoFactory, since the fine level asks for user data
-    primalInterfaceDofRowMap = currentLevel.Get<RCP<const Map>>("PrimalInterfaceDofRowMap", NoFactory::get());
+    primalInterfaceDofRowMap = currentLevel.Get<RCP<const Map>>("Primal interface DOF map", NoFactory::get());
   } else {
-    primalInterfaceDofRowMap = Get<RCP<const Map>>(currentLevel, "PrimalInterfaceDofRowMap");
+    primalInterfaceDofRowMap = Get<RCP<const Map>>(currentLevel, "Primal interface DOF map");
   }
   TEUCHOS_ASSERT(!primalInterfaceDofRowMap.is_null());
 
@@ -442,7 +442,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   currentLevel.Set("Aggregates", dualAggregates, this);
   currentLevel.Set("UnAmalgamationInfo", dualAmalgamationInfo, this);
 
-} // BuildBasedOnPrimalInterfaceDofRowMap
+} // BuildBasedOnPrimalInterfaceDofMap
 
 } // namespace MueLu
 

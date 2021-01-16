@@ -63,8 +63,8 @@
 
     <ParameterList name="myInterfaceMapTransFact">
       <Parameter name="factory" type="string" value="MapTransferFactory"/>
-      <Parameter name="map: factory" type="string" value="PrimalInterfaceDofRowMap"/>
-      <Parameter name="map: name" type="string" value="PrimalInterfaceDofRowMap"/>
+      <Parameter name="map: factory" type="string" value="Primal interface DOF map"/>
+      <Parameter name="map: name" type="string" value="Primal interface DOF map"/>
       <Parameter name="P" type="string" value="myTentativePFact1"/>
       <Parameter name="nullspace vectors: limit to" type="string" value="translations"/>
     </ParameterList>
@@ -74,7 +74,7 @@
       <Parameter name="A" type="string" value="mySubBlockAFactoryOffDiagonal"/>
       <Parameter name="Aggregates" type="string" value="myAggFact1"/>
       <Parameter name="Dual/primal mapping strategy" type="string" value="dof-based"/>
-      <Parameter name="PrimalInterfaceDofRowMap" type="string" value="myInterfaceMapTransFact"/>
+      <Parameter name="Primal interface DOF map" type="string" value="myInterfaceMapTransFact"/>
     </ParameterList>
 
     <ParameterList name="myTentativePFact2">
@@ -115,7 +115,7 @@
       <Parameter name="Aggregates" type="string" value="myInterfaceAggs2"/>
       <Parameter name="Nullspace" type="string" value="myNspFact2"/>
       <Parameter name="CoarseMap" type="string" value="myCoarseMap2"/>
-      <Parameter name="PrimalInterfaceDofRowMap" type="string" value="myInterfaceMapTransFact"/>
+      <Parameter name="Primal interface DOF map" type="string" value="myInterfaceMapTransFact"/>
     </ParameterList>
 
     <!-- BLOCK TRANSFER operators -->

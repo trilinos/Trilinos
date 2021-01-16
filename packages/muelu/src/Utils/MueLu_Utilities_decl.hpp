@@ -924,7 +924,7 @@ namespace MueLu {
   - Coordinate information "Coordinates"
   - "Node Comm"
   - Primal-to-dual node mapping "DualNodeID2PrimalNodeID"
-  - "PrimalInterfaceDofRowMap"
+  - "Primal interface DOF map"
   - "pcoarsen: element to node map
 
   @param[in] inList List with all input parameters/data as provided by the user

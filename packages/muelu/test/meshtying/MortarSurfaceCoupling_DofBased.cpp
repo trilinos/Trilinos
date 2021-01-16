@@ -189,7 +189,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   hierarchy->SetDefaultVerbLevel(MueLu::Extreme);
   hierarchy->GetLevel(0)->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(blockedMatrix));
   hierarchy->GetLevel(0)->Set("Nullspace1", nullspace1);
-  hierarchy->GetLevel(0)->Set("PrimalInterfaceDofRowMap", primalInterfaceDofMap);
+  hierarchy->GetLevel(0)->Set("Primal interface DOF map", primalInterfaceDofMap);
 
   mueLuFactory.SetupHierarchy(*hierarchy);
 

@@ -93,7 +93,7 @@ namespace MueLu
   Aggregates                   | Factory | null  |   | * | * | Generating factory of the aggregates (of type "Aggregates" produced, e.g., by the UncoupledAggregationFactory)
   Dual/primal mapping strategy | string  | vague |   | * | * | Chosen strategy and type of input data to generate dual/primal mappings
   DualNodeID2PrimalNodeID      | Factory | null  |   | * | * | Generating factory of the fine dual-to-primal node mapping
-  PrimalInterfaceDofRowMap     | Factory | null  |   | * | * | Generating factory of the fine row map of primal interface degrees of freedom
+  Primal interface DOF map     | Factory | null  |   | * | * | Generating factory of the fine row map of primal interface degrees of freedom
 
   The * in the @c master.xml column denotes that the parameter is defined in the @c master.xml file.<br>
   The * in the @c validated column means that the parameter is declared in the list of valid input parameters (see @c GetValidParameters() ).<br>
@@ -165,7 +165,7 @@ private:
    * @param[in] prefix Prefix for screen output
    * @param[in/out] currentLevel Level on which the aggregation needs to be performed
    */
-  void BuildBasedOnPrimalInterfaceDofRowMap(const std::string& prefix, Level& currentLevel) const;
+  void BuildBasedOnPrimalInterfaceDofMap(const std::string& prefix, Level& currentLevel) const;
 
 };
 
