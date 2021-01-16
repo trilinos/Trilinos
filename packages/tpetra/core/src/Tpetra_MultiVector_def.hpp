@@ -447,6 +447,7 @@ namespace Tpetra {
     const size_t lclNumRows = this->getLocalLength ();
     view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (lclNumRows, numVecs, zeroOut);
     origView_ = view_;
+    owningView_ = view_;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -456,6 +457,7 @@ namespace Tpetra {
     base_type (source),
     view_ (source.view_),
     origView_ (source.origView_),
+    owningView_ (source.owningView_),
     whichVectors_ (source.whichVectors_)
   {
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
@@ -470,6 +472,7 @@ namespace Tpetra {
       MV cpy = createCopy (source);
       this->view_ = cpy.view_;
       this->origView_ = cpy.origView_;
+      this->owningView_ = cpy.owningView_;
       this->whichVectors_ = cpy.whichVectors_;
     }
     else if (copyOrView == Teuchos::View) {
@@ -489,7 +492,8 @@ namespace Tpetra {
                const dual_view_type& view) :
     base_type (map),
     view_ (view),
-    origView_ (view)
+    origView_ (view),
+    owningView_ (view)
   {
     const char tfecfFuncName[] = "MultiVector(Map,DualView): ";
     const size_t lclNumRows_map = map.is_null () ? size_t (0) :
@@ -561,6 +565,7 @@ namespace Tpetra {
     // That way, the next sync will synchronize it with the host view.
     this->modify_device ();
     origView_ = view_;
+    owningView_ = view_;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -570,7 +575,8 @@ namespace Tpetra {
                const dual_view_type& origView) :
     base_type (map),
     view_ (view),
-    origView_ (origView)
+    origView_ (origView),
+    owningView_ (origView)
   {
     const char tfecfFuncName[] = "MultiVector(map,view,origView): ";
 
@@ -611,6 +617,7 @@ namespace Tpetra {
     base_type (map),
     view_ (view),
     origView_ (view),
+    owningView_ (view),
     whichVectors_ (whichVectors.begin (), whichVectors.end ())
   {
     using Kokkos::ALL;
@@ -679,10 +686,12 @@ namespace Tpetra {
       // origView_ just to view that one column, not all of the
       // original columns.  This ensures that the use of origView_ in
       // offsetView works correctly.
+      //
+      // However, owningView_ is not a subview.
       const std::pair<size_t, size_t> colRng (whichVectors[0],
                                               whichVectors[0] + 1);
+      origView_ = view_;
       view_ = takeSubview (view_, ALL (), colRng);
-      origView_ = takeSubview (origView_, ALL (), colRng);
       // whichVectors_.size() == 0 means "constant stride."
       whichVectors_.clear ();
     }
@@ -697,6 +706,7 @@ namespace Tpetra {
     base_type (map),
     view_ (view),
     origView_ (origView),
+    owningView_ (origView),
     whichVectors_ (whichVectors.begin (), whichVectors.end ())
   {
     using Kokkos::ALL;
@@ -814,6 +824,7 @@ namespace Tpetra {
     this->modify_device ();
     auto X_out = this->getLocalViewDevice ();
     origView_ = view_;
+    owningView_ = view_;
 
     // Make an unmanaged host Kokkos::View of the input data.  First
     // create a View (X_in_orig) with the original stride.  Then,
@@ -899,6 +910,7 @@ namespace Tpetra {
       Kokkos::deep_copy (X_j_out, X_j_in);
     }
     origView_ = view_;
+    owningView_ = view_;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -3216,6 +3228,8 @@ namespace Tpetra {
       MV (subMap, newView, newOrigView) :
       MV (subMap, newView, newOrigView, X.whichVectors_ ());
 
+    subViewMV.owningView_ = X.owningView_;
+
     if (debug) {
       const LO lclNumRowsRet = static_cast<LO> (subViewMV.getLocalLength ());
       const LO numColsRet = static_cast<LO> (subViewMV.getNumVectors ());
@@ -3488,6 +3502,7 @@ namespace Tpetra {
       static_cast<size_t> (X.whichVectors_[j]);
     this->view_ = takeSubview (X.view_, Kokkos::ALL (), range_type (jj, jj+1));
     this->origView_ = X.origView_;
+    this->owningView_ = X.owningView_;
 
     // mfh 31 Jul 2017: It would be unwise to execute concurrent
     // Export or Import operations with different subviews of a
@@ -3752,6 +3767,52 @@ namespace Tpetra {
       views[j] = Teuchos::arcp_reinterpret_cast<Scalar> (X_lcl_j_arcp);
     }
     return views;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host 
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalViewHostNonConst ()
+  {
+    if(owningView_.d_view.use_count() > owningView_.h_view.use_count())
+      throw std::runtime_error("Tpetra::MultiVector: Cannot access data on host while a device view is alive");
+    owningView_.sync_host();
+    owningView_.modify_host();
+    return view_.h_view;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host::const_type
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalViewHostConst () const
+  {
+    if(owningView_.d_view.use_count() > owningView_.h_view.use_count())
+      throw std::runtime_error("Tpetra::MultiVector: Cannot access data on host while a device view is alive");
+    owningView_.sync_host();
+    return view_.h_view;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalViewDeviceNonConst ()
+  {
+    if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
+      throw std::runtime_error("Tpetra::MultiVector: Cannot access data on device while a host view is alive");
+    owningView_.sync_device();
+    owningView_.modify_device();
+    return view_.d_view;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev::const_type 
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalViewDeviceConst () const
+  {
+    if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
+      throw std::runtime_error("Tpetra::MultiVector: Cannot access data on device while a host view is alive");
+    owningView_.sync_device();
+    return view_.d_view;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4281,66 +4342,57 @@ namespace Tpetra {
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   clear_sync_state () {
-    view_.clear_sync_state ();
+    owningView_.clear_sync_state ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   sync_host () {
-    view_.sync_host ();
-
-    // This fence was motivated by the following specific situation:
-    // For transform Y to X:
-    //  Y.putScalar()    // acts on device
-    //  Y.sync_host()    // now need_sync_host() and need_sync_device() are false
-    //  transform (on device)
-    //  Y.sync_host()    // no modifications so no fence - this usually will be a fence
-    //  read Y           // crashes
-    // The expectation is that Tpetra developers would not normally be using sync_host
-    // so this fence should not be an issue for internal performance.
-    execution_space ().fence ();
+    owningView_.sync_host ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   sync_device () {
-    view_.sync_device ();
+    owningView_.sync_device ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   need_sync_host () const {
-    return view_.need_sync_host ();
+    return owningView_.need_sync_host ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   need_sync_device () const {
-    return view_.need_sync_device ();
+    return owningView_.need_sync_device ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   modify_device () {
-    view_.modify_device ();
+    owningView_.modify_device ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   modify_host () {
-    view_.modify_host ();
+    owningView_.modify_host ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalViewDevice () const {
+    if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
+      throw std::runtime_error("Tpetra::MultiVector: Cannot access data on device while a host view is alive");
     return view_.view_device ();
   }
 
@@ -4348,6 +4400,8 @@ namespace Tpetra {
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalViewHost () const {
+    if(owningView_.d_view.use_count() > owningView_.h_view.use_count())
+      throw std::runtime_error("Tpetra::MultiVector: Cannot access data on host while a device view is alive");
     return view_.view_host ();
   }
 

@@ -5199,6 +5199,37 @@ namespace {
 
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DualViewRefcountCheck, LO , GO , Scalar , Node ) {
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::MultiVector<Scalar,LO, GO, Node> MV;
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+    RCP<const map_type> map = rcp (new map_type (100, 0, comm));
+    MV x(map, 1);
+
+    const void* devicePtr = x.getLocalViewDeviceConst().data();
+    const void* hostPtr = x.getLocalViewHostConst().data();
+
+    if(devicePtr != hostPtr)
+    {
+      //Host and device views are not the same.
+      //Make sure that (assuming the 'device' space is not host accessible) checking out
+      //host and device views at the same time is not allowed.
+      bool threw = false;
+      try
+      {
+        auto xDevice = x.getLocalViewDeviceConst().data();
+        //this shouldn't be allowed, since xDevice holds a reference to device view.
+        auto xHost = x.getLocalViewHostConst().data();
+      }
+      catch(...)
+      {
+        threw = true;
+      }
+      TEST_EQUALITY(threw, true);
+    }
+  }
+
 //
 // INSTANTIATIONS
 //
@@ -5240,7 +5271,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, SubViewSomeZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithSomeZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithAllZeroRows, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewRefcountCheck, LO, GO, SCALAR, NODE )
 
   #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
     UNIT_TEST_GROUP_BASE( SCALAR, LO, GO, NODE )

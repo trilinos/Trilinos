@@ -1412,6 +1412,25 @@ namespace Tpetra {
     //! Return non-const persisting pointers to values.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst ();
 
+    /// \brief Return a non-const, up-to-date view of this MultiVector's local data on host. This function means you intend to modify the data, so the DualView is marked modified on host.
+    ///
+    /// This function requires that there are no live device-space views.
+    typename dual_view_type::t_host getLocalViewHostNonConst ();
+
+    /// \brief Return a const, up-to-date view of this MultiVector's local data on host.
+    ///
+    /// This function requires that there are no live device-space views.
+    typename dual_view_type::t_host::const_type getLocalViewHostConst () const;
+
+    /// \brief Return a non-const, up-to-date view of this MultiVector's local data on host. This function means you intend to modify the data, so the DualView is marked modified on host.
+    ///
+    /// This function requires that there are no live device-space views.
+    typename dual_view_type::t_dev getLocalViewDeviceNonConst ();
+
+    /// \brief Return a const, up-to-date view of this MultiVector's local data on host.
+    ///
+    /// This function requires that there are no live device-space views.
+    typename dual_view_type::t_dev::const_type getLocalViewDeviceConst () const;
 
     //! Clear "modified" flags on both host and device sides.
     void clear_sync_state ();
@@ -1473,7 +1492,9 @@ namespace Tpetra {
     //! Mark data as modified on the host side.
     void modify_host ();
 
-    /// \brief Return a view of the local data on a specific device.
+    /// \brief Return a view of the local data on a specific device. This is a
+    ///   generalization of getLocalViewHost() and getLocalViewDevice().
+    ///
     /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
     ///
     /// Please don't be afraid of the if_c expression in the return
@@ -1512,13 +1533,26 @@ namespace Tpetra {
       typename dual_view_type::t_dev,
       typename dual_view_type::t_host>::type
     getLocalView () const {
-      return view_.template view<TargetDeviceType> ();
+      constexpr bool useDev = std::is_same<typename TargetDeviceType::memory_space, typename dual_view_type::t_dev::memory_space>::value;
+      constexpr bool useHost = std::is_same<typename TargetDeviceType::memory_space, typename dual_view_type::t_host::memory_space>::value;
+      static_assert(useDev || useHost, "MultiVector::getLocalView(): TargetDeviceType's memory space must match either DualView's device or host memory space.");
+      if(useDev)
+      {
+        if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
+          throw std::runtime_error("Tpetra::MultiVector: Cannot access data on device while a host view is alive");
+      }
+      else
+      {
+        if(owningView_.d_view.use_count() > owningView_.h_view.use_count())
+          throw std::runtime_error("Tpetra::MultiVector: Cannot access data on host while a device view is alive");
+      }
+      return view_.template view<TargetDeviceType>();
     }
 
-    //! A local Kokkos::View of host memory
+    //! A local Kokkos::View of host memory. This is a low-level expert function - it requires you to call sync_host() and modify_host() on this MultiVector as needed.
     typename dual_view_type::t_host getLocalViewHost () const;
 
-    //! A local Kokkos::View of device memory
+    //! A local Kokkos::View of device memory. This is a low-level expert function - it requires you to call sync_device() and modify_device() on this MultiVector as needed.
     typename dual_view_type::t_dev getLocalViewDevice () const;
 
     //@}
@@ -2233,6 +2267,10 @@ namespace Tpetra {
     /// MultiVector has constant stride.  This special case does not
     /// affect correctness of offsetView and related methods.
     mutable dual_view_type origView_;
+
+    /// \brief The true original DualView - it owns the memory of this
+    ///  MultiVector, and was not constructed as a subview of any other DualView.
+    mutable dual_view_type owningView_;
 
     /// \brief Indices of columns this multivector is viewing.
     ///
