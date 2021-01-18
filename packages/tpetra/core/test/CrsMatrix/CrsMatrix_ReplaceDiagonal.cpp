@@ -126,7 +126,8 @@ namespace { // (anonymous)
 
     if (myProc == 0) {
       cerr << "The matrix is now a FEM-type tri-diagonal mass matrix. "
-           << "Let's replace all diagonal entries by the global ID of the owning proc." << endl;
+           << "Replace all diagonal entries by the rank of the owning proc." 
+           << endl;
     }
     comm->barrier ();
     {
@@ -145,7 +146,8 @@ namespace { // (anonymous)
       newDiag->putScalar(rankAsScalar);
 
       // Replace the diagonal
-      LO numReplacedDiagEntries = ::Tpetra::replaceDiagonalCrsMatrix<Scalar,LO,GO,Node>(*matrix, *newDiag);
+      LO numReplacedDiagEntries = 
+         Tpetra::replaceDiagonalCrsMatrix<Scalar,LO,GO,Node>(*matrix, *newDiag);
 
       // Tests
       {
@@ -274,13 +276,13 @@ namespace { // (anonymous)
       GO myFirstRow = myProcRow * nRowPerProc;
       GO myLastRow = myFirstRow + nRowPerProc - 1;
       GO myFirstCol = myProcCol * (nCols / nProcCol);
-      GO myLastCol = (myProc < nProc-1 ? (myProcCol+1) * (nCols / nProcCol) 
-                                       : nRows-1);
- 
+      GO myLastCol = (myProcCol < nProcCol-1 ? (myProcCol+1)*(nCols/nProcCol) 
+                                             : nRows) - 1;
+
       const int maxNZPerRow = 3;
-      Teuchos::Array<GO> myRows(nRowPerProc);
       Teuchos::Array<int> nNZPerRow(nRowPerProc, 0);
-      Teuchos::Array<GO> myJ(nRowPerProc * maxNZPerRow);
+      Teuchos::Array<GO> myRows;
+      Teuchos::Array<GO> myJ;
 
       // Build tridiagonal matrix using 2D processor layout
       for (int i = 0; i < nRows; i++) {
@@ -356,7 +358,7 @@ namespace { // (anonymous)
 
       // Replace the diagonal
       LO numReplacedDiagEntries = 
-         ::Tpetra::replaceDiagonalCrsMatrix<Scalar,LO,GO,Node>(*matrix,*newDiag);
+         Tpetra::replaceDiagonalCrsMatrix<Scalar,LO,GO,Node>(*matrix, *newDiag);
 
       // Tests
       {
@@ -364,30 +366,11 @@ namespace { // (anonymous)
         TEST_EQUALITY_CONST(numReplacedDiagEntries, nMyDiags);
 
         /* Test for successful replacement
-         *
-         * 1. Extract diagonal copy
-         * 2. Test if diagonal element matches rank ID that we intended to set
-         */
-
-        vec_type diagCopy (matrix->getRowMap());
-        matrix->getLocalDiagCopy(diagCopy);
-	diagCopy.sync_host();
-	auto diagCopyData = diagCopy.getLocalViewHost();
-
-	using impl_scalar_type = typename vec_type::impl_scalar_type;
-	// If Scalar is std::complex<T>, impl_scalar_type is
-	// Kokkos::complex<T>.  Otherwise, Scalar and impl_scalar_type
-	// are the same.
-        for (size_t i = 0; i < diagCopy.getLocalLength(); ++i) {
-	  const impl_scalar_type expected = 
-  	    static_cast<impl_scalar_type> 
-                       (diagCopy.getMap()->getGlobalElement(i));
-          TEST_EQUALITY_CONST(diagCopyData(i,0), expected);
-	}
-   
-        /* Test that no other matrix values were changed
+         * Diagonal entries should be global ID of row
+         * Non-diagonal entries should stil be SC_MONE.
          */
         
+	using impl_scalar_type = typename crs_matrix_type::impl_scalar_type;
         for (size_t i = 0; i < matrix->getRowMap()->getNodeNumElements(); i++) {
           Teuchos::ArrayView<const LO> lcols;
           Teuchos::ArrayView<const Scalar> lvals;
