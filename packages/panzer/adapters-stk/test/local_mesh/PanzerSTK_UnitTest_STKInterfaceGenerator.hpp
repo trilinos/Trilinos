@@ -25,8 +25,7 @@ class STK_Interface;
  * \return A mesh
  */
 Teuchos::RCP<panzer_stk::STK_Interface>
-generateMesh(Teuchos::RCP<const Teuchos::Comm<int> > comm,
-              const Teuchos::ParameterList & parameter_list);
+generateMesh(const Teuchos::ParameterList & parameter_list);
 
 }
 

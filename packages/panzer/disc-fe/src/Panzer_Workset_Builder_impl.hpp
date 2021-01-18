@@ -93,7 +93,7 @@ panzer::buildWorksets(const WorksetNeeds & needs,
       
      worksets.resize(1);
      std::vector<panzer::Workset>::iterator i = worksets.begin();
-     i->num_cells = 0;
+     i->setNumberOfCells(0,0,0);
      i->block_id = elementBlock;
      i->ir_degrees = ir_degrees;
      i->basis_names = basis_names;
@@ -139,10 +139,10 @@ panzer::buildWorksets(const WorksetNeeds & needs,
     worksets.resize(num_worksets);
     std::vector<panzer::Workset>::iterator i;
     for (i = worksets.begin(); i != worksets.end(); ++i)
-      i->num_cells = workset_size;
+      i->setNumberOfCells(workset_size,0,0);
 	 
     if (!last_set_is_full) {
-      worksets.back().num_cells = last_workset_size;
+      worksets.back().setNumberOfCells(last_workset_size,0,0);
     }
   }
 
@@ -596,7 +596,7 @@ panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
       workset_size = remaining_cells;
 
     // this is the true number of cells in this workset
-    wkst->num_cells = workset_size;
+    wkst->setNumberOfCells(workset_size,0,0);
     wkst->details(0).cell_local_ids.resize(workset_size);
     wkst->details(1).cell_local_ids.resize(workset_size);
 
