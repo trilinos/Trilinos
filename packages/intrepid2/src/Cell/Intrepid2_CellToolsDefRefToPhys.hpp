@@ -88,7 +88,6 @@ namespace Intrepid2 {
                            _physPoints.extent(1),
                            iter );
               auto phys = Kokkos::subdynrankview( _physPoints, cell, pt, Kokkos::ALL());
-        const auto dofs = Kokkos::subdynrankview( _worksetCells, cell, Kokkos::ALL(), Kokkos::ALL());
 
         const auto valRank = _basisVals.rank();
         const auto val = ( valRank == 2 ? Kokkos::subdynrankview( _basisVals,       Kokkos::ALL(), pt) :
@@ -100,7 +99,7 @@ namespace Intrepid2 {
         for (ordinal_type i=0;i<dim;++i) {
           phys(i) = 0;
           for (ordinal_type bf=0;bf<cardinality;++bf)
-            phys(i) += dofs(bf, i)*val(bf);
+            phys(i) += _worksetCells(cell, bf, i)*val(bf);
         }
       }
     };
@@ -129,14 +128,14 @@ namespace Intrepid2 {
   template<typename SpT>
   template<typename physPointValueType,   class ...physPointProperties,
            typename refPointValueType,    class ...refPointProperties,
-           typename worksetCellValueType, class ...worksetCellProperties,
+           typename WorksetType,
            typename HGradBasisPtrType>
   void
   CellTools<SpT>::
-  mapToPhysicalFrame(       Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
-                      const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
-                      const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
-                      const HGradBasisPtrType basis ) {
+  mapToPhysicalFrame(      Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
+                     const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
+                     const WorksetType worksetCell,
+                     const HGradBasisPtrType basis ) {
 #ifdef HAVE_INTREPID2_DEBUG
     CellTools_mapToPhysicalFrameArgs( physPoints, refPoints, worksetCell, basis->getBaseCellTopology() );
 #endif
@@ -174,10 +173,9 @@ namespace Intrepid2 {
       break;
     }
     }
-
-    typedef Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCellViewType;
-    typedef FunctorCellTools::F_mapToPhysicalFrame<physPointViewType,worksetCellViewType,valViewType> FunctorType;
-    typedef typename ExecSpace<typename worksetCellViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    
+    using FunctorType   = FunctorCellTools::F_mapToPhysicalFrame<physPointViewType,WorksetType,valViewType>;
+    using ExecSpaceType = typename Kokkos::DynRankView<physPointValueType,physPointProperties...>::execution_space;
 
     const auto loopSize = physPoints.extent(0)*physPoints.extent(1);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);

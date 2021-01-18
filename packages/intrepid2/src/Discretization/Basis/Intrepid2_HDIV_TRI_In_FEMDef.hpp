@@ -187,6 +187,7 @@ template<typename SpT, typename OT, typename PT>
 Basis_HDIV_TRI_In_FEM<SpT,OT,PT>::
 Basis_HDIV_TRI_In_FEM( const ordinal_type order,
     const EPointType   pointType ) {
+  INTREPID2_TEST_FOR_EXCEPTION(order > Parameters::MaxOrder, std::invalid_argument, "Unsupported polynomial order");
 
   constexpr ordinal_type spaceDim = 2;
   this->basisCardinality_  = CardinalityHDivTri(order);

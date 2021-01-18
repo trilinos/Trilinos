@@ -54,7 +54,9 @@
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
 
+#include "Intrepid2_BasisValues.hpp"
 #include "Intrepid2_CellTopologyTags.hpp"
+#include "Intrepid2_TensorPoints.hpp"
 #include "Kokkos_Vector.hpp"
 #include "Shards_CellTopology.hpp"
 #include <Teuchos_RCPDecl.hpp>
@@ -346,6 +348,130 @@ using BasisPtr = Teuchos::RCP<Basis<ExecSpaceType,OutputType,PointType> >;
     */
     using ScalarViewType = Kokkos::DynRankView<scalarType,Kokkos::LayoutStride,ExecSpaceType>;
     
+    /** \brief Allocate a View container suitable for passing to the getValues() variant that accepts Kokkos DynRankViews as arguments (as opposed to the Intrepid2 BasisValues and PointValues containers).
+     
+        Note that only the basic exact-sequence operators are supported at the moment: VALUE, GRAD, DIV, CURL.
+     */
+    Kokkos::DynRankView<OutputValueType,ExecSpaceType> allocateOutputView( const int numPoints, const EOperator operatorType = OPERATOR_VALUE) const
+    {
+      const bool operatorSupported = (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_GRAD) || (operatorType == OPERATOR_CURL) || (operatorType == OPERATOR_DIV);
+      INTREPID2_TEST_FOR_EXCEPTION(!operatorSupported, std::invalid_argument, "operator is not supported by allocateOutputView()");
+      
+      const int numFields = this->getCardinality();
+      const int spaceDim  = basisCellTopology_.getDimension();
+      
+      using OutputViewAllocatable = Kokkos::DynRankView<outputValueType,ExecSpaceType>;
+      
+      switch (functionSpace_)
+      {
+        case FUNCTION_SPACE_HGRAD:
+          if (operatorType == OPERATOR_VALUE)
+          {
+            // scalar-valued container
+            OutputViewAllocatable dataView("BasisValues HGRAD VALUE data", numFields, numPoints);
+            return dataView;
+          }
+          else if (operatorType == OPERATOR_GRAD)
+          {
+            OutputViewAllocatable dataView("BasisValues HGRAD GRAD data", numFields, numPoints, spaceDim);
+            return dataView;
+          }
+          else
+          {
+            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "operator/space combination not supported by allocateOutputView()");
+          }
+        case FUNCTION_SPACE_HDIV:
+          if (operatorType == OPERATOR_VALUE)
+          {
+            // vector-valued container
+            OutputViewAllocatable dataView("BasisValues HDIV VALUE data", numFields, numPoints, spaceDim);
+            return dataView;
+          }
+          else if (operatorType == OPERATOR_DIV)
+          {
+            // scalar-valued curl
+            OutputViewAllocatable dataView("BasisValues HDIV DIV data", numFields, numPoints);
+            return dataView;
+          }
+          else
+          {
+            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "operator/space combination not supported by allocateOutputView()");
+          }
+        case FUNCTION_SPACE_HCURL:
+          if (operatorType == OPERATOR_VALUE)
+          {
+            OutputViewAllocatable dataView("BasisValues HCURL VALUE data", numFields, numPoints, spaceDim);
+            return dataView;
+          }
+          else if (operatorType == OPERATOR_CURL)
+          {
+            if (spaceDim != 2)
+            {
+              // vector-valued curl
+              OutputViewAllocatable dataView("BasisValues HCURL CURL data", numFields, numPoints, spaceDim);
+              return dataView;
+            }
+            else
+            {
+              // scalar-valued curl
+              OutputViewAllocatable dataView("BasisValues HCURL CURL data (scalar)", numFields, numPoints);
+              return dataView;
+            }
+          }
+          else
+          {
+            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "operator/space combination not supported by allocateOutputView()");
+          }
+        case FUNCTION_SPACE_HVOL:
+          if (operatorType == OPERATOR_VALUE)
+          {
+            // vector-valued container
+            OutputViewAllocatable dataView("BasisValues HVOL VALUE data", numFields, numPoints);
+            return dataView;
+          }
+          else
+          {
+            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "operator/space combination not supported by allocateOutputView()");
+          }
+        default:
+          INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "operator/space combination not supported by allocateOutputView()");
+      }
+    }
+    
+    /** \brief Allocate BasisValues container suitable for passing to the getValues() variant that takes a TensorPoints container as argument.
+     
+        The default implementation employs a trivial tensor-product structure, for compatibility across all bases.  Subclasses that have tensor-product structure
+        should override.  Note that only the basic exact-sequence operators are supported at the moment: VALUE, GRAD, DIV, CURL.
+     */
+    virtual BasisValues<OutputValueType,ExecSpaceType> allocateBasisValues( TensorPoints<PointValueType,ExecSpaceType> points, const EOperator operatorType = OPERATOR_VALUE) const
+    {
+      const bool operatorSupported = (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_GRAD) || (operatorType == OPERATOR_CURL) || (operatorType == OPERATOR_DIV);
+      INTREPID2_TEST_FOR_EXCEPTION(!operatorSupported, std::invalid_argument, "operator is not supported by allocateBasisValues");
+      
+//      // this default implementation employs a trivial tensor-product structure; make sure that points also have a trivial tensor product structure:
+//      INTREPID2_TEST_FOR_EXCEPTION(points.numTensorComponents() != 1, std::invalid_argument, "default implementation of allocateBasisValues() only supports a trivial tensor product structure (one tensor component)");
+      
+      const int numPoints = points.extent_int(0);
+      
+      using Scalar = OutputValueType;
+      
+      auto dataView = allocateOutputView(numPoints, operatorType);
+      Data<Scalar,ExecSpaceType> data(dataView);
+      
+      bool useVectorData = (dataView.rank() == 3);
+      
+      if (useVectorData)
+      {
+        VectorData<Scalar,ExecSpaceType> vectorData(data);
+        return BasisValues<Scalar,ExecSpaceType>(vectorData);
+      }
+      else
+      {
+        TensorData<Scalar,ExecSpaceType> tensorData(data);
+        return BasisValues<Scalar,ExecSpaceType>(tensorData);
+      }
+    }
+    
     /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>.
 
         Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
@@ -371,6 +497,42 @@ using BasisPtr = Teuchos::RCP<Basis<ExecSpaceType,OutputType,PointType> >;
                const EOperator /* operatorType */ = OPERATOR_VALUE ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getValues): this method (FEM) is not supported or should be overridden accordingly by derived classes.");
+    }
+    
+    /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>, using point and output value containers that allow preservation of tensor-product structure.
+
+        Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
+        points in the <strong>reference cell</strong> for which the basis is defined.
+
+        \param  outputValues      [out] - variable rank array with the basis values.  Should be allocated using Basis::allocateBasisValues().
+        \param  inputPoints       [in]  - rank-2 array (P,D) with the evaluation points.  This should be allocated using Cubature::allocateCubaturePoints() and filled using Cubature::getCubature().
+        \param  operatorType      [in]  - the operator acting on the basis function
+     
+        The default implementation does not take advantage of any tensor-product structure; subclasses with tensor-product support must override allocateBasisValues() and this getValues() method.
+    */
+    virtual
+    void
+    getValues(       BasisValues<OutputValueType,ExecSpaceType> outputValues,
+               const TensorPoints<PointValueType,ExecSpaceType>  inputPoints,
+               const EOperator operatorType = OPERATOR_VALUE ) const {
+      // note the extra allocation/copy here (this is one reason, among several, to override this method):
+      auto rawExpandedPoints = inputPoints.allocateAndFillExpandedRawPointView();
+      
+      OutputViewType rawOutputView;
+      Data<OutputValueType,ExecSpaceType> outputData;
+      if (outputValues.numTensorDataFamilies() > 0)
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(outputValues.tensorData(0).numTensorComponents() != 1, std::invalid_argument, "default implementation of getValues() only supports outputValues with trivial tensor-product structure");
+        outputData = outputValues.tensorData().getTensorComponent(0);
+      }
+      else if (outputValues.vectorData().isValid())
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(outputValues.vectorData().numComponents() != 1, std::invalid_argument, "default implementation of getValues() only supports outputValues with trivial tensor-product structure");
+        INTREPID2_TEST_FOR_EXCEPTION(outputValues.vectorData().getComponent(0).numTensorComponents() != 1, std::invalid_argument, "default implementation of getValues() only supports outputValues with trivial tensor-product structure");
+        outputData = outputValues.vectorData().getComponent(0).getTensorComponent(0);
+      }
+      
+      this->getValues(outputData.getUnderlyingView(), rawExpandedPoints, operatorType);
     }
 
     /** \brief  Evaluation of an FVD basis evaluation on a <strong>physical cell</strong>.

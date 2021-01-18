@@ -3,8 +3,6 @@
 import sys
 import os
 import subprocess
-import commands
-
 
 from optparse import OptionParser
 

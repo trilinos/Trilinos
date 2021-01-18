@@ -101,7 +101,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool /*
   MaxLevels = List_.get("max levels",10);
   print_hierarchy= List_.get("print hierarchy",false);
   num_cycles  = List_.get("cycle applications",1);
-
+  bool skip_first_level = List_.get("edge matrix free: skip first level",true);  
 
 
   /* Sanity Checking*/
@@ -126,34 +126,60 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool /*
 
 
   if(MaxLevels > 0) {
-    /* Build the Nullspace */
-    Epetra_MultiVector *nullspace=ML_Epetra::Build_Edge_Nullspace(*D0_Clean_Matrix_,BCedges_,List_,verbose_);
-    dim = nullspace->NumVectors();
+    if(skip_first_level) {
+      /*** Normal RefMaxwell, skipping the first level ***/
+      if(verbose_ && !Comm_->MyPID()) printf("Skipping first level of edge hierarchy\n");
 
-    if(!nullspace) ML_CHK_ERR(-1);
-    if(print_hierarchy) EpetraExt::MultiVectorToMatrixMarketFile("nullspace.dat",*nullspace,0,0,false);
+      /* Build the Nullspace */
+      Epetra_MultiVector *nullspace=ML_Epetra::Build_Edge_Nullspace(*D0_Clean_Matrix_,BCedges_,List_,verbose_);
+      dim = nullspace->NumVectors();
+      
+      if(!nullspace) ML_CHK_ERR(-1);
+      if(print_hierarchy) EpetraExt::MultiVectorToMatrixMarketFile("nullspace.dat",*nullspace,0,0,false);
+      
+      /* Build the prolongator */
+      ML_CHK_ERR(BuildProlongator(*nullspace));
+   
+      /* Clean Up */
+      delete nullspace;
+      
+    }
+    else {
+      /*** Generate the Pi^T A Pi matrix explicitly ***/
+      
+      /* Build the Pi Matrix*/
+      Prolongator_ = ML_Epetra::Build_Pi_Matrix(*D0_Clean_Matrix_,BCedges_,List_,verbose_);
+      CoarseMap_ = (Epetra_Map*)&Prolongator_->DomainMap();
 
-    /* Build the prolongator */
-    ML_CHK_ERR(BuildProlongator(*nullspace));
-     
+      /* Set coordinates on ListCoarse */
+      double * xcoord=List_.get("x-coordinates",(double*)0);
+      double * ycoord=List_.get("y-coordinates",(double*)0);
+      double * zcoord=List_.get("z-coordinates",(double*)0);
+      double * mcoord=List_.get("material coordinates",(double*)0);
+
+      Teuchos::ParameterList & ListCoarse=List_.sublist("edge matrix free: coarse");
+      if(xcoord) ListCoarse.set("x-coordinates",xcoord);
+      if(ycoord) ListCoarse.set("y-coordinates",ycoord);
+      if(zcoord) ListCoarse.set("z-coordinates",zcoord);
+      if(mcoord) ListCoarse.set("material coordinates",mcoord);
+    }
+    
     /* DEBUG: Output matrices */
     if(print_hierarchy)
       EpetraExt::RowMatrixToMatlabFile("prolongator.dat",*Prolongator_);
-
+    
     /* Form the coarse matrix */
     ML_CHK_ERR(FormCoarseMatrix());
-
+    
     /* DEBUG: Output matrices */
     if(print_hierarchy) EpetraExt::RowMatrixToMatlabFile("coarsemat.dat",*CoarseMatrix);
-
+    
     /* Setup Preconditioner on Coarse Matrix */
     ListCoarse=List_.get("edge matrix free: coarse",dummy);
     CoarsePC = new MultiLevelPreconditioner(*CoarseMatrix,ListCoarse);
-
+    
     if(!CoarsePC) ML_CHK_ERR(-2);
 
-    /* Clean Up */
-    delete nullspace;
   }/*end if*/
 
   return 0;
@@ -452,6 +478,7 @@ void ML_Epetra::EdgeMatrixFreePreconditioner::Complexities(double &complexity, d
 // ================================================ ====== ==== ==== == =
 // Destroys all structures allocated in \c ComputePreconditioner() if the preconditioner has been computed.
 int ML_Epetra::EdgeMatrixFreePreconditioner::DestroyPreconditioner(){
+  bool skip_first_level = List_.get("edge matrix free: skip first level",true);  
   if (ml_comm_) { ML_Comm_Destroy(&ml_comm_); ml_comm_ = 0; }// will need this
   if (Prolongator_) {delete Prolongator_; Prolongator_=0;}
   if (InvDiagonal_) {delete InvDiagonal_; InvDiagonal_=0;}
@@ -459,7 +486,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::DestroyPreconditioner(){
   if (CoarseMatrix) {delete CoarseMatrix; CoarseMatrix=0;}
   if (CoarseNullspace_) {delete [] CoarseNullspace_; CoarseNullspace_=0;}
   if (CoarseMat_ML) {ML_Operator_Destroy(&CoarseMat_ML);CoarseMat_ML=0;}
-  if (CoarseMap_) {delete CoarseMap_; CoarseMap_=0;}
+  if (skip_first_level && CoarseMap_) {delete CoarseMap_; CoarseMap_=0;}
 #ifdef HAVE_ML_IFPACK
   if (Smoother_){delete Smoother_; Smoother_=0;}
 #endif

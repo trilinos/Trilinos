@@ -45,16 +45,16 @@ protected:
   std::vector<std::vector<GlobalOrdinal>> elem_to_face_;
 
   /// Element to face mapping, dimension is element x face
-  Kokkos::View<GlobalOrdinal*[2]> face_to_elem_;
+  PHX::View<GlobalOrdinal*[2]> face_to_elem_;
 
   /// Face to node mappings
-  Kokkos::View<GlobalOrdinal**> face_to_node_;
+  PHX::View<GlobalOrdinal**> face_to_node_;
 
   /// inward facing Face normals(cell, face, dim)
-  Kokkos::View<double***> face_normal_;
+  PHX::View<double***> face_normal_;
 
   /// Face centroid (cell, face, dim)
-  Kokkos::View<double***> face_centroid_;
+  PHX::View<double***> face_centroid_;
 
 
 

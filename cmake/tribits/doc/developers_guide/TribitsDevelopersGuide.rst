@@ -6401,11 +6401,11 @@ after all is the whole goal of CMake).
 While the TriBITS Core functionality to configure, build, test, and install
 software is written using only raw CMake, the more sophisticated development
 tools needed to implement the full TriBITS development environment require
-Python 2.4 (or higher, but not Python 3.x) (see `Python Support`_).  Python is
-needed for tools like `checkin-test.py`_ and `gitdist`_.  In addition, these
-python tools are used in `TRIBITS_CTEST_DRIVER()`_ to drive automated testing
-and submits to CDash.  Also note that ``git`` is the chosen version control
-tool for the TriBITS software development tools and all the VC-related
+Python 2.7 (or higher including Python 3.x) (see `Python Support`_).  Python
+is needed for tools like `checkin-test.py`_ and `gitdist`_.  In addition,
+these python tools are used in `TRIBITS_CTEST_DRIVER()`_ to drive automated
+testing and submits to CDash.  Also note that ``git`` is the chosen version
+control tool for the TriBITS software development tools and all the VC-related
 functionality in TriBITS.  But none of this is required for doing the most
 basic building, testing, or installation of a project using TriBITS Core.
 
@@ -6415,13 +6415,13 @@ Python Support
 
 TriBITS Core does not require anything other than raw CMake.  However, Python
 Utils, TriBITS CI Support, and other extended TriBITS components require
-Python.  These extra TriBITS tools only require Python 2.4+.  By default, when
-a TriBITS project starts to configure using CMake, it will try to find Python
-2.4+ on the system (see `Full Processing of TriBITS Project Files`_).  If
-Python is found, it will set the global cache variable ``PYTHON_EXECUTABLE``.
-If it is not found, then it will print a warning and ``PYTHON_EXECUTABLE``
-will be empty.  With this default behavior, if Python is found, then the
-TriBITS project can use it.  Otherwise, it can do without it.
+Python.  These extra TriBITS tools only require Python 2.7+ (and 3.x).  By
+default, when a TriBITS project starts to configure using CMake, it will try
+to find Python 2.7+ on the system (see `Full Processing of TriBITS Project
+Files`_).  If Python is found, it will set the global cache variable
+``PYTHON_EXECUTABLE``.  If it is not found, then it will print a warning and
+``PYTHON_EXECUTABLE`` will be empty.  With this default behavior, if Python is
+found, then the TriBITS project can use it.  Otherwise, it can do without it.
 
 While the default behavior for finding Python described above is useful for
 many TriBITS project (such as Trilinos), some TriBITS projects need different
@@ -6435,11 +6435,11 @@ behavior such as:
    can't be found.  In this case, the TriBITS project would set
    `${PROJECT_NAME}_REQUIRES_PYTHON`_ to ``TRUE``.
 
-3. Some TriBITS projects may require a version of Python more recent than 2.4.
+3. Some TriBITS projects may require a version of Python more recent than 2.7.
    In this case, the TriBITS project would set `PythonInterp_FIND_VERSION`_ to
-   some value higher than ``2.4``.  For example, may newer systems have Python
-   2.6.6 or higher versions installed by default and projects developed on
-   such a system typically requires this version or higher.
+   some value higher than ``2.7``.  For example, may newer systems have only
+   Python 3.5.2 or higher versions installed by default and projects developed
+   on such a system typically requires this version or higher.
 
 
 Project-Specific Build Reference
@@ -6736,14 +6736,14 @@ exclude, it will exclude every file in the entire source tree that has
 trailing ``".*"`` means "match any character zero or more times" and
 ``"someFile"`` can match anywhere in the file name path.  Also, note that if
 you add in an exclude like ``"*.pyc"`` (i.e. trying to exclude all of the
-generated Python bite code files) that it will exclude every file that has
+generated Python byte code files) that it will exclude every file that has
 ``"pyc"`` in the name and **not** just those with the file extension
 ``"pyc"``.  For example, the exclude ``".pyc"`` would exclude the files
 ``"puppyc"``, ``"lpycso"``, etc.  If you want to exclude all files with
-extension ``"pyc"``, you have to add the exclude regex ``".*[.]pyc$"``!  One's
-lack of understanding of this fact will cost someone hours of lost time
+extension ``"pyc"``, you have to add the exclude regex ``".*[.]pyc$"``!
+One's lack of understanding of this fact will cost someone hours of lost time
 debugging what happens when random files are missing when one tries to
-configure what is left.  Somethings, what is left will actually configure and
+configure what is left.  Sometimes, what is left will actually configure and
 might almost build!
 
 **NOTE:** As warned in `TriBITS Package Core Files`_ and `TriBITS Subpackage
@@ -8930,16 +8930,16 @@ These options are described below.
 **PythonInterp_FIND_VERSION**
 
   Determines the version of Python that is looked for.  TriBITS requires at
-  least version "2.4".  A particular TriBITS project can require a higher
+  least version "2.7".  A particular TriBITS project can require a higher
   version of TriBITS and this is set using, for example:
 
-    SET(PythonInterp_FIND_VERSION_DEFAULT "2.6.6")
+    SET(PythonInterp_FIND_VERSION_DEFAULT "3.5.2")
 
   in the `<projectDir>/ProjectName.cmake`_ file (See `Python Support`_).  The
-  default is version "2.4".  The user can force a more recent version of
+  default is version "2.7".  The user can force a more recent version of
   Python by configuring with, for example::
 
-    -D PythonInterp_FIND_VERSION="2.7.3"
+    -D PythonInterp_FIND_VERSION="3.6.2"
 
 
 TriBITS Macros and Functions

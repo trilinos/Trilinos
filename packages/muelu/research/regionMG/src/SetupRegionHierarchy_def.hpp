@@ -155,12 +155,12 @@ void MakeCoarseLevelMaps(const int maxRegPerGID,
   for(int currentLevel = 1; currentLevel < numLevels; ++currentLevel) {
     RCP<Level> level        = regHierarchy->GetLevel(currentLevel);
     RCP<Matrix> regProlong  = level->Get<RCP<Matrix> >("P");
-    RCP<Map> regRowMap      = Teuchos::rcp_const_cast<Map>(regProlong->getColMap());
+    RCP<const Map> regRowMap      = regProlong->getColMap();
 
     RCP<Level> levelFine    = regHierarchy->GetLevel(currentLevel-1);
     RCP<Import> regRowImportFine   = levelFine->Get<RCP<Import> >("rowImport");
     RCP<Matrix> regMatFine         = levelFine->Get<RCP<Matrix> >("A");
-    RCP<Map> regRowMapFine         = Teuchos::rcp_const_cast<Map>(regMatFine->getRowMap());
+    RCP<const Map> regRowMapFine         = regMatFine->getRowMap();
 
     // Extracting some basic information about local mesh in composite/region format
     const size_t numFineRegionNodes    = regProlong->getNodeNumRows();
@@ -302,7 +302,7 @@ void MakeCoarseLevelMaps(const int maxRegPerGID,
     coarseCompositeToRegionLIDs.resize(countCoarseComposites);
 
     // We are now ready to fill up the outputs
-    RCP<Map> regRowMapCurrent = Teuchos::rcp_const_cast<Map>(regProlong->getColMap());
+    RCP<const Map> regRowMapCurrent      = regProlong->getColMap();
 
     RCP<Map> quasiRegRowMap =  MapFactory::Build(regProlong->getColMap()->lib(),
                                                  GO_INV,
@@ -340,9 +340,9 @@ void MakeCoarseLevelMaps(const int maxRegPerGID,
 
 // Form the composite coarse level operator
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void MakeCoarseCompositeOperator(RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& compRowMap,
-                                 RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& quasiRegRowMap,
-                                 RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& quasiRegColMap,
+void MakeCoarseCompositeOperator(RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& compRowMap,
+                                 RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& quasiRegRowMap,
+                                 RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& quasiRegColMap,
                                  RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regRowImporter,
                                  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regMatrix,
                                  RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> >& regCoarseCoordinates,
@@ -356,7 +356,8 @@ void MakeCoarseCompositeOperator(RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, No
                                        // This estimate is very conservative and probably costs us lots of memory...
                                       8*regMatrix->getCrsGraph()->getNodeMaxNumRowEntries());
   regionalToComposite(regMatrix,
-                      quasiRegRowMap, quasiRegColMap,
+                      quasiRegRowMap,
+                      quasiRegColMap,
                       regRowImporter, Xpetra::ADD,
                       coarseCompOp);
 
@@ -369,7 +370,7 @@ void MakeCoarseCompositeOperator(RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, No
     const int check       = regMatrix->getRowMap()->getNodeNumElements() % regCoarseCoordinates->getMap()->getNodeNumElements();
     TEUCHOS_ASSERT(check == 0);
 
-    RCP<Map> compCoordMap;
+    RCP<const Map> compCoordMap;
     RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > regCoordImporter;
     if(dofsPerNode == 1) {
       compCoordMap = compRowMap;
@@ -711,7 +712,7 @@ void MakeInterfaceScalingFactors(const int numLevels,
   for (int l = 0; l < numLevels; l++) {
     RCP<Level> level        = regHierarchy->GetLevel(l);
     RCP<Matrix> regMat      = level->Get<RCP<Matrix> >("A");
-    RCP<Map> regRowMap      = Teuchos::rcp_const_cast<Map>(regMat->getRowMap());
+    RCP<const Map> regRowMap      = regMat->getRowMap();
     RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > regRowImporters = level->Get<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("rowImport");
     // initialize region vector with all ones.
     RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> > regInterfaceScalings = VectorFactory::Build(regRowMap);
@@ -774,9 +775,8 @@ void createRegionHierarchy(const int numDimensions,
   }
 
   RCP<Level> level0 = regHierarchy->GetLevel(0);
-  RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > regRowImporters = level0->Get<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("rowImport");
   RCP<Matrix> regMat       = level0->Get<RCP<Matrix> >("A");
-  RCP<Map> revisedRowMap  = Teuchos::rcp_const_cast<Map>(regMat->getRowMap());
+  RCP<const Map> revisedRowMap  = regMat->getRowMap();
   /* Get coarse level matrices and prolongators from MueLu hierarchy
    * Note: fine level has been dealt with previously, so we start at level 1 here.
    */
@@ -827,7 +827,7 @@ void createRegionHierarchy(const int numDimensions,
   for(int levelIdx = 0; levelIdx < numLevels - 1; ++levelIdx) {
     RCP<Level> level = regHierarchy->GetLevel(levelIdx);
     RCP<Matrix> regMatrix = level->Get<RCP<Matrix> >("A", MueLu::NoFactory::get());
-    RCP<Map>    regRowMap = Teuchos::rcp_const_cast<Map>(regMatrix->getRowMap());
+    RCP<const Map>    regRowMap = regMatrix->getRowMap();
     RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > regRowImporter = level->Get<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("rowImport");
     RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> > regInterfaceScalings = level->Get<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> > >("regInterfaceScalings");
 
@@ -845,9 +845,10 @@ void createRegionHierarchy(const int numDimensions,
   if (coarseSolverType == "smoother") {
     RCP<Level> level = regHierarchy->GetLevel(numLevels - 1);
     RCP<Matrix> regMatrix = level->Get<RCP<Matrix> >("A", MueLu::NoFactory::get());
-    RCP<Map> regRowMap = Teuchos::rcp_const_cast<Map>(regMatrix->getRowMap());
-    RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > regRowImporter = level->Get<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("rowImport");
-    RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> > regInterfaceScalings = level->Get<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> > >("regInterfaceScalings");
+    RCP<const Map> regRowMap = regMatrix->getRowMap();
+    RCP<Import> regRowImporter       = level->Get<RCP<Import> >("rowImport");
+    RCP<Vector> regInterfaceScalings = level->Get<RCP<Vector> >("regInterfaceScalings");
+
     // Set the smoother on the coarsest level.
     const std::string smootherXMLFileName = coarseSolverData->get<std::string>("smoother xml file");
     RCP<ParameterList> coarseSmootherParams = smootherParams[numLevels - 1];
@@ -866,11 +867,10 @@ void createRegionHierarchy(const int numDimensions,
 
     RCP<Level> level = regHierarchy->GetLevel(numLevels - 1);
     RCP<Matrix>  regMatrix      = level->Get<RCP<Matrix> >("A", MueLu::NoFactory::get());
-    RCP<Map> regRowMap          = Teuchos::rcp_const_cast<Map>(regMatrix->getRowMap());
-    RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > regRowImporter = level->Get<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("rowImport");
-    RCP<Map> compRowMap         = Teuchos::rcp_const_cast<Map>(regRowImporter->getSourceMap());
-    RCP<Map> quasiRegRowMap     = Teuchos::rcp_const_cast<Map>(regRowImporter->getTargetMap());
-    RCP<Map> quasiRegColMap     = Teuchos::rcp_const_cast<Map>(regRowImporter->getTargetMap());// col map same as row map.
+    RCP<Import> regRowImporter  = level->Get<RCP<Import> >("rowImport");
+    RCP<const Map> compRowMap         = regRowImporter->getSourceMap();
+    RCP<const Map> quasiRegRowMap     = regRowImporter->getTargetMap();
+    RCP<const Map> quasiRegColMap     = regRowImporter->getTargetMap();// col map same as row map.
 
     RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > coarseCompOp;
     RCP<realvaluedmultivector_type> compCoarseCoordinates;
@@ -950,12 +950,9 @@ void vCycle(const int l, ///< ID of current level
   const Scalar SC_ONE = Teuchos::ScalarTraits<Scalar>::one();
 
   RCP<Level> level = regHierarchy->GetLevel(l);
-  RCP<Matrix>                                             regMatrix      = level->Get<RCP<Matrix> >("A", MueLu::NoFactory::get());
+  RCP<Matrix>    regMatrix      = level->Get<RCP<Matrix> >("A", MueLu::NoFactory::get());
+  RCP<const Map> regRowMap      = regMatrix->getRowMap();
   RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > regRowImporter = level->Get<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("rowImport");
-  RCP<Map> regRowMap          = Teuchos::rcp_const_cast<Map>(regMatrix->getRowMap());
-  RCP<Map> compRowMap         = Teuchos::rcp_const_cast<Map>(regRowImporter->getSourceMap());
-  RCP<Map> quasiRegRowMap     = Teuchos::rcp_const_cast<Map>(regRowImporter->getTargetMap());
-  RCP<Map> quasiRegColMap     = Teuchos::rcp_const_cast<Map>(regRowImporter->getTargetMap()); // col map samle as row map
   RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> > regInterfaceScalings = level->Get<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> > >("regInterfaceScalings");
 
   int cycleCount = 1;
@@ -1008,7 +1005,7 @@ void vCycle(const int l, ///< ID of current level
 
       {
         RCP<Level> levelCoarse = regHierarchy->GetLevel(l+1);
-        RCP<Matrix>                                             regProlongCoarse     = levelCoarse->Get<RCP<Matrix> >("P", MueLu::NoFactory::get());
+        RCP<Matrix> regProlongCoarse = levelCoarse->Get<RCP<Matrix> >("P", MueLu::NoFactory::get());
         RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > regRowMapCoarse = regProlongCoarse->getColMap();
         // Get pre-communicated communication patterns for the fast MatVec
         const ArrayRCP<LocalOrdinal> regionInterfaceLIDs = smootherParams[l+1]->get<ArrayRCP<LO>>("Fast MatVec: interface LIDs");

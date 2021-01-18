@@ -53,6 +53,8 @@
 #pragma clang system_header
 #endif
 
+#include "Intrepid2_Orientation.hpp"
+
 namespace Intrepid2 {
 
   template<typename SpT>
@@ -222,13 +224,13 @@ namespace Intrepid2 {
   template<typename SpT>
   template<typename outputValueType, class ...outputProperties,
            typename inputValueType,  class ...inputProperties,
-           typename ortValueType,    class ...ortProperties,
+           typename OrientationViewType,
            typename BasisType>
   void
   OrientationTools<SpT>::
   modifyBasisByOrientation(      Kokkos::DynRankView<outputValueType,outputProperties...> output,
                            const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
-                           const Kokkos::DynRankView<ortValueType,   ortProperties...>    orts,
+                           const OrientationViewType orts,
                            const BasisType* basis ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {

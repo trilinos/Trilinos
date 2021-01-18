@@ -117,16 +117,18 @@ replaceDiagonalCrsMatrix (CrsMatrix<SC, LO, GO, NT>& matrix,
     const SC vals[] = {static_cast<SC>(newDiagData[lclRowInd])};
     const LO cols[] = {lclColInd};
 
-    // Do the actual replacement of the diagonal element
-    numReplacedEntriesPerRow = matrix.replaceLocalValues(lclRowInd, oneLO, vals, cols);
+    // Do the actual replacement of the diagonal element, if on this proc
+    numReplacedEntriesPerRow = matrix.replaceLocalValues(lclRowInd, oneLO,
+                                                         vals, cols);
 
-    // Check for success of replacement
+    // Check for success of replacement. 
+    // numReplacedEntriesPerRow is one if the diagonal was replaced.
+    // numReplacedEntriesPerRow is zero if the diagonal is not on 
+    // this processor.  For example, in a 2D matrix distribution, gblInd may
+    // be in both the row and column map, but the diagonal may not be on 
+    // this processor.
     if (numReplacedEntriesPerRow == oneLO) {
       ++numReplacedDiagEntries;
-    } else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-        "Number of replaced entries in this row is not equal to one.  "
-        "It has to be exactly one, since we want to replace the diagonal element.");
     }
   }
 

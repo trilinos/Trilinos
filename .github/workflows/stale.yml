@@ -8,7 +8,8 @@ on:
   # - Note: Mountain Standard Time (MST) is 7 hours behind UTC during the winter.
   # Cron strings: MIN HR DOM MON DOW
   schedule:
-  - cron: "0 12 * * *"
+  - cron: "0 12 * * 0,3,6"
+  #- cron: "0 12 * * *"
 
 
 # See https://github.com/actions/stale/blob/master/action.yml for information on actions

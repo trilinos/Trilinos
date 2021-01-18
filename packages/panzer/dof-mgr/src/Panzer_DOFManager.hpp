@@ -211,7 +211,7 @@ public:
   /** gets the field pattern so you can find a particular
     * field in the GIDs array.
     */
-  const Kokkos::View<const int*,PHX::Device> getGIDFieldOffsetsKokkos(const std::string & blockID, int fieldNum) const;
+  const PHX::View<const int*> getGIDFieldOffsetsKokkos(const std::string & blockID, int fieldNum) const;
 
   //! get associated GIDs for a given local element
   void getElementGIDs(panzer::LocalOrdinal localElementID, std::vector<panzer::GlobalOrdinal> & gids, const std::string & blockIdHint="") const;

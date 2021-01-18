@@ -240,6 +240,8 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     timer = Teuchos::TimeMonitor::getNewCounter (timerName);
   }
 
+  double startTime = timer->wallTime();
+
   // Start timing here.
   {
     Teuchos::TimeMonitor timeMon (*timer);
@@ -258,10 +260,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     applyImpl (X, Y, mode, alpha, beta);
   }
   ++NumApply_;
-
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  ApplyTime_ = timer->totalElapsedTime ();
+  ApplyTime_ += (timer->wallTime() - startTime);
 }
 
 
@@ -310,6 +309,8 @@ void Chebyshev<MatrixType>::compute ()
     timer = Teuchos::TimeMonitor::getNewCounter (timerName);
   }
 
+  double startTime = timer->wallTime();
+
   // Start timing here.
   {
     Teuchos::TimeMonitor timeMon (*timer);
@@ -322,9 +323,7 @@ void Chebyshev<MatrixType>::compute ()
   IsComputed_ = true;
   ++NumCompute_;
 
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  ComputeTime_ = timer->totalElapsedTime ();
+  ComputeTime_ += (timer->wallTime() - startTime);
 }
 
 

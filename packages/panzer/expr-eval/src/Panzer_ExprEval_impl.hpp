@@ -256,7 +256,7 @@ struct BinaryFunctor<Op, Result, Left, Right, 0> {
   BinaryFunctor(std::string const& name, Teuchos::any& result, Teuchos::any& left, Teuchos::any& right) {
     left_ = Teuchos::any_cast<Left>(left);
     right_ = Teuchos::any_cast<Right>(right);
-    result_ = NonConstResult(Kokkos::ViewAllocateWithoutInitializing(name));
+    result_ = NonConstResult(PHX::ViewAllocateWithoutInitializing(name));
     Kokkos::parallel_for(name, Kokkos::RangePolicy<execution_space>(0, 1), *this);
     result = Result(result_);
   }
@@ -280,7 +280,7 @@ struct BinaryFunctor<Op, Result, Left, Right, 1> {
     left_ = Teuchos::any_cast<Left>(left);
     right_ = Teuchos::any_cast<Right>(right);
     auto extent_0 = std::max(left_.extent(0), right_.extent(0));
-    result_ = NonConstResult(Kokkos::ViewAllocateWithoutInitializing(name), extent_0);
+    result_ = NonConstResult(PHX::ViewAllocateWithoutInitializing(name), extent_0);
     Kokkos::parallel_for(name, Kokkos::RangePolicy<execution_space>(0, extent_0), *this);
     result = Result{result_};
   }
@@ -305,7 +305,7 @@ struct BinaryFunctor<Op, Result, Left, Right, 2> {
     right_ = Teuchos::any_cast<Right>(right);
     auto extent_0 = std::max(left_.extent(0), right_.extent(0));
     auto extent_1 = std::max(left_.extent(1), right_.extent(1));
-    result_ = NonConstResult(Kokkos::ViewAllocateWithoutInitializing(name), extent_0, extent_1);
+    result_ = NonConstResult(PHX::ViewAllocateWithoutInitializing(name), extent_0, extent_1);
     using policy_type = Kokkos::MDRangePolicy<execution_space, Kokkos::Rank<2>>;
     Kokkos::parallel_for(name, policy_type({0, 0}, {extent_0, extent_1}), *this);
     result = Result{result_};
@@ -338,7 +338,7 @@ struct TernaryFunctor<Cond, Left, Right, 1> {
     auto extent_0 =
       std::max(cond_.extent(0),
         std::max(left_.extent(0), right_.extent(0)));
-    result_ = NonConstResult(Kokkos::ViewAllocateWithoutInitializing(name), extent_0);
+    result_ = NonConstResult(PHX::ViewAllocateWithoutInitializing(name), extent_0);
     Kokkos::parallel_for(name, Kokkos::RangePolicy<execution_space>(0, extent_0), *this);
     result = Result{result_};
   }
@@ -370,7 +370,7 @@ struct TernaryFunctor<Cond, Left, Right, 2> {
     auto extent_1 =
       std::max(cond_.extent(1),
         std::max(left_.extent(1), right_.extent(1)));
-    result_ = NonConstResult(Kokkos::ViewAllocateWithoutInitializing(name), extent_0, extent_1);
+    result_ = NonConstResult(PHX::ViewAllocateWithoutInitializing(name), extent_0, extent_1);
     using policy_type = Kokkos::MDRangePolicy<execution_space, Kokkos::Rank<2>>;
     Kokkos::parallel_for(name, policy_type({0, 0}, {extent_0, extent_1}), *this);
     result = Result{result_};
@@ -385,7 +385,7 @@ Eval<DT, VP ...>::Eval()
 
 template <typename DT, typename ... VP>
 void Eval<DT, VP ...>::set(std::string const& name, bool value) {
-  single_bool_view_type view{Kokkos::ViewAllocateWithoutInitializing{name}};
+  single_bool_view_type view{PHX::ViewAllocateWithoutInitializing{name}};
   auto host_view = Kokkos::create_mirror_view(view);
   host_view() = value;
   Kokkos::deep_copy(view, host_view);
@@ -394,7 +394,7 @@ void Eval<DT, VP ...>::set(std::string const& name, bool value) {
 
 template <typename DT, typename ... VP>
 void Eval<DT, VP ...>::set(std::string const& name, scalar_type const& value) {
-  single_view_type view{Kokkos::ViewAllocateWithoutInitializing{name}};
+  single_view_type view{PHX::ViewAllocateWithoutInitializing{name}};
   auto host_view = Kokkos::create_mirror_view(view);
   host_view() = value;
   Kokkos::deep_copy(view, host_view);
@@ -410,7 +410,7 @@ void Eval<DT, VP ...>::set(std::string const& name, const_view_type const& value
 
 template <typename DT, typename ... VP>
 void Eval<DT, VP ...>::make_constant(Teuchos::any& result, double const& value) {
-  single_view_type view{Kokkos::ViewAllocateWithoutInitializing{"constant"}};
+  single_view_type view{PHX::ViewAllocateWithoutInitializing{"constant"}};
   auto host_view = Kokkos::create_mirror_view(view);
   host_view() = value;
   Kokkos::deep_copy(view, host_view);
@@ -569,7 +569,7 @@ struct UnaryFunctor<Op, Result, 0> {
   }
   UnaryFunctor(std::string const& name, Teuchos::any& result, Teuchos::any& right) {
     right_ = Teuchos::any_cast<Result>(right);
-    result_ = NonConstResult(Kokkos::ViewAllocateWithoutInitializing(name));
+    result_ = NonConstResult(PHX::ViewAllocateWithoutInitializing(name));
     Kokkos::parallel_for(name, Kokkos::RangePolicy<execution_space>(0, 1), *this);
     result = Result(result_);
   }
@@ -588,7 +588,7 @@ struct UnaryFunctor<Op, Result, 1> {
   UnaryFunctor(std::string const& name, Teuchos::any& result, Teuchos::any& right) {
     right_ = Teuchos::any_cast<Result>(right);
     auto extent_0 = right_.extent(0);
-    result_ = NonConstResult(Kokkos::ViewAllocateWithoutInitializing(name), extent_0);
+    result_ = NonConstResult(PHX::ViewAllocateWithoutInitializing(name), extent_0);
     Kokkos::parallel_for(name, Kokkos::RangePolicy<execution_space>(0, extent_0), *this);
     result = Result(result_);
   }
@@ -608,7 +608,7 @@ struct UnaryFunctor<Op, Result, 2> {
     right_ = Teuchos::any_cast<Result>(right);
     auto extent_0 = right_.extent(0);
     auto extent_1 = right_.extent(1);
-    result_ = NonConstResult(Kokkos::ViewAllocateWithoutInitializing(name), extent_0, extent_1);
+    result_ = NonConstResult(PHX::ViewAllocateWithoutInitializing(name), extent_0, extent_1);
     using policy_type = Kokkos::MDRangePolicy<execution_space, Kokkos::Rank<2>>;
     Kokkos::parallel_for(name, policy_type({0, 0}, {extent_0, extent_1}), *this);
     result = Result(result_);

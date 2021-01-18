@@ -132,8 +132,8 @@ private:
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const TpetraLinearObjContainer<double,LO,GO,NodeT> > tpetraContainer_;
 
-  Kokkos::View<int**,PHX::Device> scratch_lids_;
-  std::vector<Kokkos::View<int*,PHX::Device> > scratch_offsets_;
+  PHX::View<int**> scratch_lids_;
+  std::vector<PHX::View<int*> > scratch_offsets_;
 
   ScatterResidual_Tpetra();
 };
@@ -244,8 +244,8 @@ private:
 
   ScatterResidual_Tpetra();
 
-  Kokkos::View<int**,PHX::Device> scratch_lids_;
-  std::vector<Kokkos::View<int*,PHX::Device> > scratch_offsets_;
+  PHX::View<int**> scratch_lids_;
+  std::vector<PHX::View<int*> > scratch_offsets_;
 
   int my_derivative_size_;
   int other_derivative_size_;

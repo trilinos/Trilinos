@@ -61,18 +61,18 @@ namespace panzer
     panzer::LocalOrdinal num_virtual_cells;
 
     // Global cell indexes -> [owned] then [ghosted] then [virtual]
-    Kokkos::View<panzer::GlobalOrdinal*> global_cells;
+    PHX::View<panzer::GlobalOrdinal*> global_cells;
 
     // These are the cell indexes in the LocalMeshInfo class
-    Kokkos::View<panzer::LocalOrdinal*> local_cells;
+    PHX::View<panzer::LocalOrdinal*> local_cells;
 
     // Vertices
-    Kokkos::View<double***,PHX::Device> cell_vertices;
+    PHX::View<double***> cell_vertices;
 
     // Face to neighbors
-    Kokkos::View<panzer::LocalOrdinal*[2]> face_to_cells;
-    Kokkos::View<panzer::LocalOrdinal*[2]> face_to_lidx;
-    Kokkos::View<panzer::LocalOrdinal**> cell_to_faces;
+    PHX::View<panzer::LocalOrdinal*[2]> face_to_cells;
+    PHX::View<panzer::LocalOrdinal*[2]> face_to_lidx;
+    PHX::View<panzer::LocalOrdinal**> cell_to_faces;
   };
 
   /** Partition of LocalMeshInfo, used for generating worksets */

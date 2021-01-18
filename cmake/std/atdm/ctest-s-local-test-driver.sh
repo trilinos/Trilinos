@@ -66,9 +66,9 @@ To select the default env to load instead of 'default', use:
   env ATDM_CTEST_S_DEFAULT_ENV=<system_name>-default \\
   ./ctest-s-local-test-driver.sh <build-name-1> >build-name-2> ...
 
-(For example, one must set ATDM_CTEST_S_DEFAULT_ENV=cee-rhel6-default to run
-the 'cee-rhel6' builds on CEE RHEL6 and RHE7 machines. Otherwise the
-'sems-rhel6' env will be selected which is the default env on those machines.)
+(For example, one must set ATDM_CTEST_S_DEFAULT_ENV=cee-rhel7-default to run
+the 'cee-rhel7' builds on CEE RHE7 machines. Otherwise the 'sems-rhel7' env
+will be selected which is the default env on those machines.)
 
 To control the list of packages tested, to build from scratch (default is to
 rebuild), and not submit to CDash, use, for example:

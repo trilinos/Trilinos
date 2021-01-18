@@ -79,7 +79,7 @@ keywords of the form `XXX-<keyword0>-<keyword1>-...-YYY` (or
 `XXX_<keyword0>_<keyword1>_..._YYY`, either separator is supported).  The
 typical order and format of this string is:
 
-    <system_name>-<use_mpi>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<complex>-<shared_static>-<release_debug>-<pt>
+    <system_name>-<use_mpi>-<kokkos_arch>-<compiler>-<kokkos_thread>-<rdc>-<asan>-<fpic>-<complex>-<shared_static>-<release_debug>-<pt>
 
 but any order of these keywords is supported.  Also, the keywords are
 case-insensitive All of these keywords, except for `<compiler>` (which can be
@@ -91,7 +91,7 @@ name of a keyword is ignored.) See some examples of build name strings
 Each of these keywords [`<system_name>`](#system_name),
 [`<use_mpi>`](#use_mpi), [`<kokkos_arch>`](#kokkos_arch),
 [`<compiler>`](#compiler), [`<kokkos_thread>`](#kokkos_thread),
-[`<rdc>`](#rdc), [`<fpic>`](#fpic), [`<complex>`](#complex),
+[`<rdc>`](#rdc), [`<asan>`](#asan), [`<fpic>`](#fpic), [`<complex>`](#complex),
 [`<shared_static>`](#shared_static), [`<release_debug>`](#release_debug), and
 [`<pt>`](#pt), are described below.
 
@@ -102,19 +102,14 @@ examining the `hostname`, standard system env vars, or other files on the
 machine and matching to a known supported system.  Therefore, it is typically
 not necessary to specify `<system_name>` in the `<build-name>` keys string.
 But there are some cases where more then one `<system_name>` env are supported
-on the same machine.  For example, on CEE LAN RHEL6 machines, both the <a
-href="#sems-rhel6-environment">sems-rhel6</a> and <a
-href="#cee-rhel6-and-rhel7-environment">cee-rhel6</a> environments are
-supported.  On these CEE LAN RHEL6 machines, when `cee-rhel6` is included in
-`<build-name>`, then the `cee-rhel6` env will be selected.  But if
-`sems-rhel6` is included in the build name (or no system name is listed in the
-build name), then the `sems-rhel6` env will be selected by default on such
-machines.  The same is true for CEE LAN RHEL7 machines with the <a
-href="#sems-rhel6-environment">sems-rhel7</a> and <a
-href="#cee-rhel6-and-rhel7-environment">cee-rhel6</a> environments.  And if
-`spack-rhel` is included in `<build-name>`, then the <a
-href="#spack-rhel-environment">spack-rhel</a> will attempted to be loaded.
-(In that case, one must ensure that the ATDM Spack modules have been defined.)
+on the same machine.  For example, on CEE LAN RHEL7 machines, both the <a
+href="#sems-rhel7-environment">sems-rhel7</a> and <a
+href="#cee-rhel7-environment">cee-rhel7</a> environments are
+supported.  On these CEE LAN RHEL7 machines, when `cee-rhel7` is included in
+`<build-name>`, then the `cee-rhel7` env will be selected.  But if
+`sems-rhel7` is included in the build name (or no system name is listed in the
+build name), then the `sems-rhel7` env will be selected by default on such
+machines.
 
 <a name="kokkos_arch"/>
 
@@ -203,6 +198,17 @@ builds (does nothing in non-CUDA builds):
 NOTE: Setting `rdc` also currently adds the `nvcc_wrapper` option
 `--remove-duplicate-link-files` as well.
 
+<a name="asan"/>
+
+**`<asan>`:** The following `<build-name>` keyword will result in compiler and
+linker options to be added to enable Clang Address Sanitizer when using the
+Clang comiler.  (Only applicable if `<compiler>` is `CLANG`.  If `<compiler>`
+is not `CLANG`, then these options are ignored.)
+
+* `asan`: Add Clang Address Sanitizer flags to `CMAKE_CXX_FLAGS`,
+  `CMAKE_EXE_LINKER_FLAGS`, and `Trilinos_EXTRA_LINK_FLAGS`.
+* `no-asan`:  Don't add any compile or link flags.
+
 <a name="fpic"/>
 
 **`<fpic>`:** The following `<build-name>` keyword will result in `-fPIC`
@@ -283,11 +289,11 @@ various platforms include:
 * `gnu-openmp-opt`
 * `intel-openmp-debug`
 * `intel-openmp-opt`
-* `sems-rhel6-gnu-openmp-debug`
-* `cee-rhel6-gnu-openmp-debug`
-* `sems-rhel6-intel-openmp-opt`
-* `cee-rhel6-intel-openmp-opt`
-* `cee-rhel6-gnu-7.2.0-openmpi-1.10.2-debug-openmp`
+* `sems-rhel7-gnu-openmp-debug`
+* `cee-rhel7-gnu-openmp-debug`
+* `sems-rhel7-intel-openmp-opt`
+* `cee-rhel7-intel-openmp-opt`
+* `cee-rhel7-gnu-7.2.0-openmpi-1.10.2-debug-openmp`
 * `intel-debug-openmp-KNL`
 * `intel-opt-openmp-HSW`
 * `cuda-debug` (`<NODE_TYPE>` is implicitly `CUDA`)
@@ -457,7 +463,7 @@ The parallel level for building and running tests are determined by the env
 vars `ATDM_CONFIG_BUILD_COUNT` and `ATDM_CONFIG_CTEST_PARALLEL_LEVEL`,
 respectfully, as set by default for the given system by the `atdm/load-env.sh`
 script for the given machine.  (On most machines, these are fixed but on
-generic systems like <a href="#sems-rhel6-environment">sems-rhel6</a>, they
+generic systems like <a href="#sems-rhel7-environment">sems-rhel7</a>, they
 are computed from the number of cores on that machine).  These values can be
 overridden by setting the env vars `ATDM_CONFIG_BUILD_COUNT_OVERRIDE` and
 `ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERIDE`, respectfully as, for example:
@@ -636,13 +642,9 @@ example, skip the configure, skip the build, skip running tests, etc.
 ## Specific instructions for each system
 
 * <a href="#ridewhite">ride/white</a>
-* <a href="#shillerhansen">shiller/hansen</a>
 * <a href="#tlcc-2-and-cts-1">TLCC-2 and CTS-1</a>
-* <a href="#mutrino">mutrino</a>
-* <a href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>
 * <a href="#sems-rhel7-environment">SEMS RHEL7 Environment</a>
-* <a href="#spack-rhel-environment">Spack RHEL Environment</a>
-* <a href="#cee-rhel6-and-rhel7-environment">CEE RHEL6 and RHEL7 Environment</a>
+* <a href="#cee-rhel7-environment">CEE RHEL7 Environment</a>
 * <a href="#ats-2">ATS-2</a>
 * <a href="#astra-vanguard-arm-system">ASTRA (Vanguard ARM System)</a>
 * <a href="#ats-1">ATS-1</a>
@@ -696,49 +698,6 @@ $ bsub -x -I -q rhel7F -n 16 \
 ```
 
 
-### shiller/hansen
-
-Once logged on to 'hansen' (on the SON) or 'shiller' (on the SRN), one can
-directly configure and build on the login node (being careful not to overload
-the node) using the `shiller` env.  But to run the tests, one must run on the
-compute nodes using the `srun` command.  For example, to configure, build and
-run the tests for say `MueLu` on 'hansen', (after cloning Trilinos on the
-`develop` branch) one would do:
-
-
-```
-$ cd <some_build_dir>/
-
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh intel-opt-openmp
-
-$ cmake \
-  -GNinja \
-  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
-  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
-  $TRILINOS_DIR
-
-$ make NP=16
-
-$ srun ctest -j4
-```
-
-**NOTE:** While the above example shows loading the environment, configuring
-and building on the login node, one can also do these on the compute nodes as
-well.  In fact, that is what the CTest -S drivers do in automated testing on
-'hansen' and 'shiller'.
-
-Note that one can also run the same build and tests using the <a
-href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
-
-```
-$ cd <some_build_dir>/
-$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
-$ srun ./checkin-test-atdm.sh intel-opt-openmp \
-  --enable-packages=MueLu \
-  --local-do-all
-```
-
-
 ### TLCC-2 and CTS-1
 
 Once logged on to any TLCC2 machine (e.g. 'chama', 'skybridge') or the CTS-1
@@ -787,90 +746,6 @@ $ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> \
   ./checkin-test-atdm.sh intel-opt-openmp \
   --enable-packages=MueLu --test
 ```
-
-
-### mutrino
-
-The default environment on mutrino is now ats1. Please see 
-<a href="#ats-1">ATS-1</a>.
-Once logged on to 'mutrino', one can directly configure and build on the login
-node (being careful not to overload the node) using the `mutrino` env.  But to
-run the tests, one must run on the compute nodes using the `salloc` command.
-For example, to configure, build and run the tests for say `MueLu` on
-'mutrino', (after cloning Trilinos on the `develop` branch) one would:
-
-
-```
-$ cd <some_build_dir>/
-
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh mutrino-intel-opt-openmp
-
-$ cmake \
-  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
-  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
-  $TRILINOS_DIR
-
-$ make -j16
-
-# to run on the Haswell partition
-$ salloc -N 1 -p standard -J $ATDM_CONFIG_BUILD_NAME ctest -j16
-
-# to run on the KNL partition
-$ salloc -N 1 -p knl -J $ATDM_CONFIG_BUILD_NAME ctest -j16
-```
-
-**NOTE:** Unlike some of the other machines, one must load the environment,
-configure and build on the login node and then run the test suite on a compute
-node on this system.  This is what the CTest -S driver on 'mutrino' does in
-order to drive jobs and submit to CDash.
-
-
-### SEMS RHEL6 Environment
-
-Once logged on to a SNL COE RHEL6 machine with the sems NFS env, one can
-directly configure, build, and run tests using the `sems-rhel6` env.  For
-example, to configure, build and run the tests for `MueLu` one would clone
-Trilinos on the `develop` branch and then do the following:
-
-
-```
-$ cd <some_build_dir>/
-
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh sems-rhel6-intel-opt-openmp
-
-$ cmake \
-  -GNinja \
-  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
-  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
-  $TRILINOS_DIR
-
-$ make NP=16
-
-$ ctest -j8
-```
-
-NOTE:     Above    including     `sems-rhel6`     in     the    build     name
-`sems-rhel6-intel-opt-openmp` is  not necessary but  is recommended when  on a
-CEE LAN RHEL6 machine  to be explicit that the SEMS env is  being used and not
-the <a href="#cee-rhel6-and-rhel7-environment">CEE RHEL6 env</a>.
-
-One can also run the same build and tests using the <a
-href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
-
-```
-$ cd <some_build_dir>/
-$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
-$ ./checkin-test-atdm.sh sems-rhel6-intel-opt-openmp \
-  --enable-packages=MueLu \
-  --local-do-all
-```
-
-NOTE: The number of parallel build and test processes in this case are
-determine automatically from the number of cores on the current machine.  But
-this can be overridden by setting the env var
-`ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` before running `source
-cmake/std/atdm/load-env.sh <build_name>`.
-
 
 ### SEMS RHEL7 Environment
 
@@ -933,69 +808,18 @@ $ export SEMS_MODULEFILES_ROOT=/projects/sems/modulefiles
 if that directory exists.
 
 
-### Spack RHEL Environment
+### CEE RHEL7 Environment
 
-The env 'spack-rhel' should work on any Red Hat Enterprise Linux (RHEL) (and
-perhaps many other Linux systems) that have the SNL ATDM Spack modules
-installed on them.  See the [installation
-documentation](https://gitlab.sandia.gov/atdm/atdm-spack-scripts/blob/master/README.md).
-**WARNING:** This Spack env is still under development and may change in the
-future.
-
-Once logged onto a Linux machine with the SNL ATDM Spack modules installed,
-one can directly configure, build, and run tests using the `spack-rhel` env.
-For example, to configure, build and run the tests for `MueLu` one would clone
-Trilinos on the `develop` branch and then do the following:
-
-
-```
-$ cd <some_build_dir>/
-
-$ source <spack-install-base-dir>/setup-env.sh
-
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh spack-rhel-gnu-openmp-opt
-
-$ cmake \
-  -GNinja \
-  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
-  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
-  $TRILINOS_DIR
-
-$ make NP=16
-
-$ ctest -j8
-```
-
-One can also run the same build and tests using the <a
-href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
-
-```
-$ cd <some_build_dir>/
-$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
-$ env ATDM_CHT_DEFAULT_ENV=spack-rhel-default \
-  ./checkin-test-atdm.sh spack-rhel-gnu-openmp-opt \
-  --enable-packages=MueLu \
-  --local-do-all
-```
-
-NOTE: Above one must set `ATDM_CHT_DEFAULT_ENV=spack-rhel-default` in the env
-when passing in `all` in order for it to select the correct set of supported
-builds for the `spack-rhel` env and also to load the correct env to find
-Python, etc.
-
-
-### CEE RHEL6 and RHEL7 Environment
-
-Once logged into any CEE LAN RHEL6 or RHEL7 SRN machine, one can configure,
-build, and run tests for any ATDM Trilinos package using the `cee-rhel6` env.
-For example, to configure, build and run the tests for the
-`cee-rhel6-clang-opt-openmp` build for say `MueLu` on a CEE LAN machine,
+Once logged into any CEE LAN RHEL7 SRN machine, one can configure, build, and
+run tests for any ATDM Trilinos package using the `cee-rhel7` env.  For
+example, to configure, build and run the tests for the
+`cee-rhel7-clang-opt-openmp` build for say `MueLu` on a CEE LAN machine,
 (after cloning Trilinos on the `develop` branch) one would do:
 
 ```
 $ cd <some_build_dir>/
 
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cee-rhel6-clang-opt-openmp
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cee-rhel7-clang-opt-openmp
 
 $ cmake \
   -GNinja \
@@ -1008,9 +832,9 @@ $ make NP=16
 $ ctest -j16
 ```
 
-NOTE: Above one must include `cee-rhel6` in the build name
-`cee-rhel6-clang-opt-openmp` in order to select the `cee-rhel6` env on a CEE
-LAN RHEL6 machine or the <a href="#sems-rhel6-environment">sems-rhel6</a> env
+NOTE: Above one must include `cee-rhel7` in the build name
+`cee-rhel7-clang-opt-openmp` in order to select the `cee-rhel7` env on a CEE
+LAN RHEL7 machine or the <a href="#sems-rhel7-environment">sems-rhel7</a> env
 will be used by default.
 
 One can also run the same build and tests using the <a
@@ -1019,15 +843,15 @@ href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 ```
 $ cd <some_build_dir>/
 $ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
-$ env ATDM_CHT_DEFAULT_ENV=cee-rhel6-default \
-  ./checkin-test-atdm.sh cee-rhel6-clang-opt-openmp \
+$ env ATDM_CHT_DEFAULT_ENV=cee-rhel7-default \
+  ./checkin-test-atdm.sh cee-rhel7-clang-opt-openmp \
   --enable-packages=MueLu \
   --local-do-all
 ```
 
-NOTE: Above one must set `ATDM_CHT_DEFAULT_ENV=cee-rhel6-default` in the env
+NOTE: Above one must set `ATDM_CHT_DEFAULT_ENV=cee-rhel7-default` in the env
 when passing in `all` in order for it to select the correct set of supported
-builds for the `cee-rhel6` env.
+builds for the `cee-rhel7` env.
 
 NOTE: The number of parallel build and test processes in this case are
 determine automatically from the number of cores on the current machine.  But
@@ -1417,8 +1241,8 @@ builds that submit to CDash.
 
 The optional file `<system-name>/custom_builds.sh` contains specialized logic
 for compiler versions and other specialized keywords and versions.  (For an
-example, see `atdm/cee-rhel6/custom-builds.sh` and
-`atdm/cee-rhel6/environment.sh`.)
+example, see `atdm/cee-rhel7/custom-builds.sh` and
+`atdm/cee-rhel7/environment.sh`.)
 
 <a name="ATDM_TWEAKS_FILES"/>
 
@@ -1661,24 +1485,15 @@ after the test was fixed.)
 The specific `cmake/std/atdm/<system-name>/` sub-directories and the systems
 they support are:
 
-* `cee-rhel6/`: CEE LAN RHEL6 systems with a CEE environment
-
-* `mutrino/`: Supports SNL HPC machine 'mutrino'.
+* `cee-rhel7/`: CEE LAN RHEL7 systems with a CEE environment
 
 * `ride/`: Supports GNU and CUDA builds on both the SRN machine 'ride' and the
   mirror SON machine 'white'.
 
-* `sems-rhel6/`: SNL COE RHEL6 systems with the SEMS NFS environment
-
 * `sems-rhel7/`: SNL COE RHEL7 systems with the SEMS NFS environment
-
-* `spack-rhel/`: RHEL (and likely other Linux) systems with the SNL ATDM Spack modules installed.
 
 * `cts1/`: Supports SNL HPC CTS-1 machines 'serrano', 'eclipse', and
   'ghost'.
-
-* `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
-  'shiller' and the mirror SON machine 'hansen'.
 
 * `tlcc2/`: Supports SNL HPC TLCC-2 machines 'chama', 'skybridge', etc..
 
@@ -1751,10 +1566,10 @@ configuration script.
 
 A simple example can be seen in:
 
-* [cmake/std/atdm/examples/my-sems-rhel6-config/environment.sh](examples/my-sems-rhel6-config/environment.sh)
+* [cmake/std/atdm/examples/my-sems-rhel7-config/environment.sh](examples/my-sems-rhely-config/environment.sh)
 
-which works on any SEMS RHEL6 machine similarly to the officially defined <a
-href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>.
+which works on any SEMS RHEL7 machine similarly to the officially defined <a
+href="#sems-rhel7-environment">SEMS RHEL7 Environment</a>.
 
 To see how things can be specified look at examples of other `environment.sh`
 scripts in the officially defined configurations under:
