@@ -135,12 +135,16 @@ public:
   using typename Distribution<gno_t,scalar_t>::NZindex_t;
   using typename Distribution<gno_t,scalar_t>::LocalNZmap_t;
 
+  using map_t = Tpetra::Map<>;
+  using matrix_t = Tpetra::CrsMatrix<scalar_t>;
+
   DistributionLowerTriangularBlock(size_t nrows_, 
                   const Teuchos::RCP<const Teuchos::Comm<int> > &comm_,
                   const Teuchos::ParameterList &params) :
                   Distribution<gno_t,scalar_t>(nrows_, comm_, params),
                   initialDist(nrows_, comm_, params),
-                  sortByDegree(false), redistributed(false), nChunks(0)
+                  sortByDegree(false), permMatrix(Teuchos::null),
+                  redistributed(false), nChunks(0)
   {
     int npnp = 2 * np;
     nChunks = int(std::sqrt(float(npnp)));
@@ -252,6 +256,35 @@ public:
 
       Teuchos::broadcast<int,gno_t>(*comm, 0, permuteIndex(0,nrows)); 
                                    // Ick!  Use a directory  TODO
+
+      // Sorting is changing the global IDs associated
+      // with rows/columns.  To make this distribution applicable beyond
+      // triangle counting (e.g., in a Tpetra operator), we need a way 
+      // to map from the original global IDs and back again.  
+      // Create a permutation matrix for use in the operator; use
+      // default Tpetra layout.
+      Teuchos::Array<gno_t> myRows;
+      for (size_t i = 0; i < nrows; i++) {
+        if (VecMine(i)) myRows.push_back(i);
+      }
+
+      Tpetra::global_size_t dummy = 
+              Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+      Teuchos::RCP<const map_t> permMap = 
+                                rcp(new map_t(dummy, myRows(), 0, comm));
+
+      permMatrix = rcp(new matrix_t(permMap, 1)); // one nz / row in permMatrix
+
+      Teuchos::Array<gno_t> cols(1);
+      Teuchos::Array<scalar_t> vals(1); vals[0] = 1.;
+
+      for (size_t i = 0; i < permMap->getNodeNumElements(); i++) {
+        gno_t gid = permMap->getGlobalElement(i);
+        cols[0] = gid;
+        permMatrix->insertGlobalValues(permuteIndex[gid], cols(), vals());
+      }
+
+      permMatrix->fillComplete(permMap, permMap);
     }
 
     // Now, to determine the chunks, we care only about the number of 
@@ -374,6 +407,8 @@ public:
     redistributed = true;
   }
 
+  Teuchos::RCP<matrix_t> getPermutationMatrix() const { return permMatrix; } 
+
 private:
   // Initially distribute nonzeros with a 1D linear distribution
   Distribution1DLinear<gno_t,scalar_t> initialDist;  
@@ -381,6 +416,9 @@ private:
   // Flag indicating whether matrix should be reordered and renumbered 
   // in decreasing sort order of number of nonzeros per row in full matrix
   bool sortByDegree;
+
+  // Permutation matrix built only when sortByDegree = true;
+  Teuchos::RCP<matrix_t> permMatrix;
 
   // Flag whether redistribution has occurred yet
   bool redistributed;  
@@ -424,10 +462,13 @@ public:
   using vector_t = Tpetra::Vector<scalar_t>;
   using mvector_t = Tpetra::MultiVector<scalar_t>;
   using matrix_t = Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, Node>;
+  using dist_t = Tpetra::DistributionLowerTriangularBlock<gno_t, scalar_t>;
 
   LowerTriangularBlockOperator(
-    const Teuchos::RCP<const matrix_t> &lowerTriangularMatrix_) 
-  : lowerTriangularMatrix(lowerTriangularMatrix_)
+    const Teuchos::RCP<const matrix_t> &lowerTriangularMatrix_,
+    const dist_t &dist)
+  : lowerTriangularMatrix(lowerTriangularMatrix_),
+    permMatrix(dist.getPermutationMatrix())
   {
     // Extract diagonals
 
@@ -450,14 +491,35 @@ public:
       return;
     }
 
-    // Multiply lower triangular
-    lowerTriangularMatrix->apply(x, y, Teuchos::NO_TRANS, alpha, beta);
+    if (permMatrix == Teuchos::null) {
 
-    // Multiply upper triangular
-    lowerTriangularMatrix->apply(x, y, Teuchos::TRANS, alpha, ONE);
+      // Multiply lower triangular
+      lowerTriangularMatrix->apply(x, y, Teuchos::NO_TRANS, alpha, beta);
 
-    // Subtract out duplicate diagonal terms
-    y.elementWiseMultiply(-ONE, *diag, x, ONE);
+      // Multiply upper triangular
+      lowerTriangularMatrix->apply(x, y, Teuchos::TRANS, alpha, ONE);
+
+      // Subtract out duplicate diagonal terms
+      y.elementWiseMultiply(-ONE, *diag, x, ONE);
+    }
+    else {
+      vector_t xtmp(x.getMap(), x.getNumVectors());
+      vector_t ytmp(y.getMap(), y.getNumVectors());
+
+      permMatrix->apply(x, xtmp, Teuchos::NO_TRANS);
+      permMatrix->apply(y, ytmp, Teuchos::NO_TRANS);
+
+      // Multiply lower triangular
+      lowerTriangularMatrix->apply(xtmp, ytmp, Teuchos::NO_TRANS, alpha, beta);
+
+      // Multiply upper triangular
+      lowerTriangularMatrix->apply(xtmp, ytmp, Teuchos::TRANS, alpha, ONE);
+
+      // Subtract out duplicate diagonal terms
+      ytmp.elementWiseMultiply(-ONE, *diag, xtmp, ONE);
+
+      permMatrix->apply(ytmp, y, Teuchos::TRANS);
+    }
   }
 
   Teuchos::RCP<const map_t> getDomainMap() const {
@@ -472,6 +534,7 @@ public:
 
 private:
   const Teuchos::RCP<const matrix_t > lowerTriangularMatrix;
+  const Teuchos::RCP<const matrix_t > permMatrix;
   Teuchos::RCP<vector_t> diag;
 };
 

@@ -133,8 +133,13 @@ public:
                               Teuchos::rcp(new map_t(nCol, 0, comm));
     x_baseline = Teuchos::rcp(new vector_t(domainMap));
 
-//    x_baseline->randomize();  KDD:  Need to debug LTB operator for randomize
-x_baseline->putScalar(2.);
+// KDD TODO    x_baseline->randomize();
+    auto tmp = x_baseline->getLocalViewHost();
+    x_baseline->sync_host();
+    x_baseline->modify_host();
+    for (size_t i = 0; i < x_baseline->getLocalLength(); i++) {
+      tmp(i,0) = x_baseline->getMap()->getGlobalElement(i)+1;
+    }
 
     // Apply baseline matrix to vectors.
     applyAndComputeNorms("baseline", *A_baseline, norm_baseline());
@@ -331,7 +336,8 @@ private:
   // Distribute the matrix as specified by the parameters
   Teuchos::RCP<matrix_t> readFile(
     const std::string &testname,
-    const Teuchos::ParameterList &params
+    const Teuchos::ParameterList &params,
+    Teuchos::RCP<Tpetra::Distribution<gno_t, scalar_t> > &dist
   )
   {
     Teuchos::RCP<matrix_t> Amat;
@@ -339,7 +345,7 @@ private:
       std::string tname = std::string("Read:  ") + testname;
       auto timer = Teuchos::TimeMonitor::getNewTimer(tname);
       Teuchos::TimeMonitor tt(*timer);
-      Amat = reader_t::readSparseFile(filename, comm, params);
+      Amat = reader_t::readSparseFile(filename, comm, params, dist);
     }
     catch (std::exception &e) {
       if (comm->getRank() == 0) {
@@ -396,11 +402,16 @@ private:
     for (size_t i = 0; i < static_cast<size_t>(norm_baseline.size()); i++) {
       if (std::abs(norm_baseline[i] - norm_test[i]) > epsilon) {
         ierr++;
-        if (comm->getRank() == 0) 
+        if (comm->getRank() == 0) {
           std::cout << "FAIL in test " << testname << ":  norm " << i << ": "
                     << std::abs(norm_baseline[i] - norm_test[i]) 
                     << " > " << epsilon
                     << std::endl;
+          std::cout << "FAIL in test " << testname 
+                    << ": baseline " << norm_baseline[i]
+                    << ": test " << norm_test[i]
+                    << std::endl;
+        }
       }
     }
     return ierr;
@@ -419,9 +430,14 @@ private:
     params.set("verbose", true);
     params.set("callFillComplete", true);
 
-    Teuchos::RCP<matrix_t> Amat = readFile(testname, params);
+    using dist_t = Tpetra::Distribution<gno_t, scalar_t>;
+    Teuchos::RCP<dist_t> dist;
 
-    Tpetra::LowerTriangularBlockOperator<scalar_t> lto(Amat);
+    Teuchos::RCP<matrix_t> Amat = readFile(testname, params, dist);
+
+    using distltb_t = Tpetra::DistributionLowerTriangularBlock<gno_t, scalar_t>;
+    Tpetra::LowerTriangularBlockOperator<scalar_t> lto(Amat, 
+                               dynamic_cast<distltb_t&>(*dist));
 
     Teuchos::Array<scalar_t> norm(3);
     applyAndComputeNorms(testname, lto, norm());
@@ -442,7 +458,8 @@ private:
     params.set("verbose", true);
     params.set("callFillComplete", true);
 
-    Teuchos::RCP<matrix_t> Amat = readFile(testname, params);
+    Teuchos::RCP<Tpetra::Distribution<gno_t, scalar_t> > dist;  // Not used
+    Teuchos::RCP<matrix_t> Amat = readFile(testname, params, dist);
 
     Teuchos::Array<scalar_t> norm(3);
     applyAndComputeNorms(testname, *Amat, norm());
