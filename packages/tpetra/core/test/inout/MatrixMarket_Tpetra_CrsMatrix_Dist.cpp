@@ -133,13 +133,7 @@ public:
                               Teuchos::rcp(new map_t(nCol, 0, comm));
     x_baseline = Teuchos::rcp(new vector_t(domainMap));
 
-// KDD TODO    x_baseline->randomize();
-    auto tmp = x_baseline->getLocalViewHost();
-    x_baseline->sync_host();
-    x_baseline->modify_host();
-    for (size_t i = 0; i < x_baseline->getLocalLength(); i++) {
-      tmp(i,0) = x_baseline->getMap()->getGlobalElement(i)+1;
-    }
+    x_baseline->randomize();
 
     // Apply baseline matrix to vectors.
     applyAndComputeNorms("baseline", *A_baseline, norm_baseline());
