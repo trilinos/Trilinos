@@ -99,7 +99,8 @@ class DistributionLowerTriangularBlock : public Distribution<gno_t,scalar_t> {
 //    (this initial distribution is needed to avoid storing the entire 
 //    matrix on one processor, while providing info about the nonzeros per row
 //    needed in step 2.
-// 2. sort rows in decreasing order wrt the number of nonzeros per row
+// 2. (optional) sort rows in decreasing order wrt the number of nonzeros 
+//    per row
 // 3. find "chunk cuts":  divisions in row assignments such that 
 //    (# nonzeros in processor row / # processors in processor row) is 
 //    roughly equal for all processor rows
@@ -110,12 +111,21 @@ class DistributionLowerTriangularBlock : public Distribution<gno_t,scalar_t> {
 //   currently done in serial and requires O(number of rows) storage each 
 //   processor.  More effort could parallelize this computation, but parallel
 //   load balancing algorithms are more appropriate in Zoltan2 than Tpetra.
-// - The sorting renumbers the rows (assigns new Global Ordinals to the rows) 
-//   to make them contiguous, as needed in Acer's triangle counting algorithm.  
+// - The sorting in Step 2 renumbers the rows (assigns new Global Ordinals to 
+//   the rows) to make them contiguous, as needed in Acer's triangle counting 
+//   algorithm.  
 //   (Acer's algorithm relies on local indexing from the chunk boundaries to
 //   find neighbors needed for communication.)
-//   The software currently does not enable a user to map back to the original
-//   global ordinal from the reindexed global ordinal.
+//   The class currently provides a permutation matrix P describing the 
+//   reordering.  Thus, the matrix stored in the lower triangular block
+//   distribution is actually P A P -- the row and column permutation of 
+//   matrix A in the Matrix Market file.
+//   The fact that a permuted matrix is stored complicates use of the matrix
+//   in algorithms other than Acer's triangle counting.  For SpMV with the
+//   vector numbered according to the MatrixMarket numbering, for example,
+//   P must be applied to the vector before SpMV, and P^T must be applied to
+//   the result of SpMV.  See LowerTriangularBlockOperator to see how this
+//   permutation matrix is used.
 //
 // Before addressing these issues, we will decide (TODO)
 // -  Is this Distribution general enough to be in Tpetra? 
