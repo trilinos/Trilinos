@@ -65,14 +65,38 @@ namespace panzer {
     return hp;
   }
 
+  namespace {
+    int roundDownToPowerOfTwo(int in) {
+      int out=1;
+      while (in > 1) {
+        out *= 2;
+        in /= 2;
+      }
+      return out;
+    }
+  }
   void HP::overrideSizes(const int& in_team_size,
 			 const int& in_vector_size,
-			 const int& in_fad_vector_size)
+			 const int& in_fad_vector_size,
+                         const bool force_override)
   {
     use_auto_team_size_ = false;
-    team_size_ = in_team_size;
-    vector_size_ = in_vector_size;
-    fad_vector_size_ = in_fad_vector_size;
+    if ( force_override ) {
+      team_size_=in_team_size;
+      vector_size_=in_vector_size;
+      fad_vector_size_=in_fad_vector_size;
+      return;
+    }
+
+    Kokkos::TeamPolicy<PHX::Device> policy(1, Kokkos::AUTO);
+    auto blank_functor = KOKKOS_LAMBDA ( const Kokkos::TeamPolicy<PHX::exec_space>::member_type) {};
+
+    int team_size_max = std::min(in_team_size, policy.team_size_max(blank_functor, Kokkos::ParallelForTag()));
+    team_size_=roundDownToPowerOfTwo(team_size_max);
+
+    int vec_size_max = policy.vector_length_max();
+    vector_size_ = roundDownToPowerOfTwo(std::min(vec_size_max, in_vector_size));
+    fad_vector_size_ = roundDownToPowerOfTwo(std::min(vec_size_max, in_fad_vector_size));
   }
 
   void HP::setUseSharedMemory(const bool& in_use_shared_memory,
