@@ -266,6 +266,14 @@ readMatrixMarket(
 
   nRow = dim[0];
   nCol = dim[1];
+
+  TEUCHOS_TEST_FOR_EXCEPTION(nRow != nCol, std::logic_error,
+        "This overload of readSparseFile requires nRow == nCol " 
+         << "(nRow = " << nRow << ", nCol = " << nCol << "); "
+         << "For now, use a different overload of readSparseFile until this "
+         << "overload is fixed to read rectangular matrices. "
+         << "See Trilinos github issues #7045 and #8472.");
+  
   size_t nNz = dim[2];
   bool patternInput = mm_is_pattern(mmcode);
   bool symmetricInput = mm_is_symmetric(mmcode);
@@ -795,9 +803,6 @@ readSparseFile(
   using localNZmap_t = 
         typename Distribution<global_ordinal_type,scalar_type>::LocalNZmap_t;
   localNZmap_t localNZ;
-
-
-
 
   bool binary = false;   // should we read a binary file?
   {
