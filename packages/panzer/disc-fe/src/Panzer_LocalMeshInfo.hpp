@@ -60,6 +60,10 @@ namespace panzer
     panzer::LocalOrdinal num_ghstd_cells;
     panzer::LocalOrdinal num_virtual_cells;
 
+    // For side support
+    int subcell_index;
+    int subcell_dimension;
+
     // Global cell indexes -> [owned] then [ghosted] then [virtual]
     PHX::View<panzer::GlobalOrdinal*> global_cells;
 
@@ -70,6 +74,7 @@ namespace panzer
     PHX::View<double***> cell_vertices;
 
     // Face to neighbors
+    bool has_connectivity;
     PHX::View<panzer::LocalOrdinal*[2]> face_to_cells;
     PHX::View<panzer::LocalOrdinal*[2]> face_to_lidx;
     PHX::View<panzer::LocalOrdinal**> cell_to_faces;

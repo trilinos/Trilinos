@@ -757,9 +757,8 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
 
 } // namespace
 
-void
-generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
-                      panzer::LocalMeshInfo & mesh_info)
+Teuchos::RCP<panzer::LocalMeshInfo>
+generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -769,6 +768,9 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   typedef Tpetra::Import<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> import_type;
   //typedef Tpetra::MultiVector<double,panzer::LocalOrdinal,panzer::GlobalOrdinal> mvec_type;
   //typedef Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal> ordmvec_type;
+
+  auto mesh_info_rcp = Teuchos::rcp(new panzer::LocalMeshInfo);
+  auto & mesh_info = *mesh_info_rcp;
 
   // Make sure the STK interface is valid
   TEUCHOS_ASSERT(mesh.isInitialized());
@@ -1005,6 +1007,9 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
     mesh_info.cell_to_faces           = cell_to_face;
     mesh_info.face_to_cells           = face_to_cells;      // faces
     mesh_info.face_to_lidx            = face_to_localidx;
+    mesh_info.subcell_dimension       = space_dim;
+    mesh_info.subcell_index           = -1;
+    mesh_info.has_connectivity        = true;
 
     mesh_info.num_owned_cells = owned_cells.extent(0);
     mesh_info.num_ghstd_cells = ghstd_cells.extent(0);
@@ -1085,15 +1090,23 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
     PANZER_FUNC_TIME_MONITOR_DIFF("Set up setupLocalMeshBlockInfo",SetupLocalMeshBlockInfo);
     panzer::LocalMeshBlockInfo & block_info = mesh_info.element_blocks[element_block_name];
     setupLocalMeshBlockInfo(mesh, conn, mesh_info, element_block_name, block_info);
+    block_info.subcell_dimension = space_dim;
+    block_info.subcell_index = -1;
+    block_info.has_connectivity = true;
 
     // Setup sidesets
     for(const std::string & sideset_name : sideset_names){
       PANZER_FUNC_TIME_MONITOR_DIFF("Setup LocalMeshSidesetInfo",SetupLocalMeshSidesetInfo);
       panzer::LocalMeshSidesetInfo & sideset_info = mesh_info.sidesets[element_block_name][sideset_name];
       setupLocalMeshSidesetInfo(mesh, conn, mesh_info, element_block_name, sideset_name, sideset_info);
+      sideset_info.subcell_dimension = space_dim;
+      sideset_info.subcell_index = -1;
+      sideset_info.has_connectivity = true;
     }
 
   }
+
+  return mesh_info_rcp;
 
 }
 

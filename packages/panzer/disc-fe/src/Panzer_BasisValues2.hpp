@@ -182,6 +182,9 @@ namespace panzer {
     std::string prefix;
     std::vector<PHX::index_size_type> ddims_;
 
+    void evaluateBasisCoordinates(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
+                                  const int in_num_cells = -1);
+
   protected:
 
 
@@ -213,11 +216,8 @@ namespace panzer {
                              const PHX::MDField<Scalar,Cell,IP> & jac_det,
                              const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                              const int in_num_cells);
- 
-  private:
 
-    void evaluateBasisCoordinates(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
-                                  const int in_num_cells = -1);
+  private:
 
     /** Evaluate the reference values for the basis functions needed
       *
