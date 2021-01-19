@@ -489,6 +489,7 @@ Piro::PerformROLAnalysis(
 
   bool useFullSpace = rolParams.get("Full Space",false);
   bool useHessianDotProduct = rolParams.get("Hessian Dot Product",false);
+  bool removeMeanOfTheRHS = rolParams.get("Remove Mean Of The Right-hand Side",false);
 
   *out << "\nROL options:" << std::endl;
   rolParams.sublist("ROL Options").print(*out);
@@ -514,8 +515,17 @@ Piro::PerformROLAnalysis(
     int numBlocks = bH->productRange()->numBlocks();
 
     Teuchos::ParameterList defaultParamList;
-    defaultParamList.set("Linear Solver Type","Amesos2");
-    string defaultSolverType = "Amesos2";
+    string defaultSolverType = "Belos";
+    defaultParamList.set("Linear Solver Type", "Belos");
+    Teuchos::ParameterList& belosList = defaultParamList.sublist("Linear Solver Types").sublist("Belos");
+    belosList.set("Solver Type", "Pseudo Block CG");
+    belosList.sublist("Solver Types").sublist("Pseudo Block CG").set<int>("Maximum Iterations", 1000);
+    belosList.sublist("Solver Types").sublist("Pseudo Block CG").set<double>("Convergence Tolerance", 1e-4);
+    belosList.sublist("Solver Types").sublist("Pseudo Block CG").set<int>("Num Blocks", 1000);
+    belosList.sublist("Solver Types").sublist("Pseudo Block CG").set("Verbosity", 0x7f);
+    belosList.sublist("Solver Types").sublist("Pseudo Block CG").set("Output Frequency", 100);
+    belosList.sublist("VerboseObject").set("Verbosity Level", "medium");
+    defaultParamList.set("Preconditioner Type", "None");
 
     Teuchos::ParameterList dHess;
     if(rolParams.isSublist("Hessian Diagonal Inverse"))
@@ -549,7 +559,7 @@ Piro::PerformROLAnalysis(
   ::Thyra::put_scalar<double>( 1.0, scaling_vector_x.ptr());
   //::Thyra::randomize<double>( 0.5, 2.0, scaling_vector_x.ptr());
   ROL::PrimalScaledThyraVector<double> rol_x_primal(x, scaling_vector_x);
-  ROL::PrimalHessianScaledThyraVector<double> rol_p_primal(p, H, invH);
+  ROL::PrimalHessianScaledThyraVector<double> rol_p_primal(p, H, invH, removeMeanOfTheRHS);
 
   // Run Algorithm
   std::vector<std::string> output;
