@@ -50,34 +50,9 @@
 #include "cusparse.h"
 #include "KokkosKernels_SparseUtils_cusparse.hpp"
 #include "KokkosKernels_Controls.hpp"
-#include "KokkosSparse_spmv_impl.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
-
-  template <class AMatrix, class XVector, class YVector>
-  void spmv_native(const KokkosKernels::Experimental::Controls& controls,
-		   const char mode[],
-		   typename YVector::non_const_value_type const & alpha,
-		   const AMatrix& A,
-		   const XVector& x,
-		   typename YVector::non_const_value_type const & beta,
-		   const YVector& y) {
-    using KAT = Kokkos::Details::ArithTraits<typename YVector::non_const_value_type>;
-
-    if (beta == KAT::zero ()) {
-      KokkosSparse::Impl::spmv_beta<AMatrix, XVector, YVector, 0> (controls, mode, alpha, A, x, beta, y);
-    }
-    else if (beta == KAT::one ()) {
-      KokkosSparse::Impl::spmv_beta<AMatrix, XVector, YVector, 1> (controls, mode, alpha, A, x, beta, y);
-    }
-    else if (beta == -KAT::one ()) {
-      KokkosSparse::Impl::spmv_beta<AMatrix, XVector, YVector, -1> (controls, mode, alpha, A, x, beta, y);
-    }
-    else {
-      KokkosSparse::Impl::spmv_beta<AMatrix, XVector, YVector, 2> (controls, mode, alpha, A, x, beta, y);
-    }
-  }
 
   template <class AMatrix, class XVector, class YVector>
   void spmv_cusparse(const KokkosKernels::Experimental::Controls& controls,
@@ -265,18 +240,10 @@ namespace Impl {
 		      const XVector& x,					\
 		      const coefficient_type& beta,			\
 		      const YVector& y) {				\
-      bool fallback = *mode == 'C' || ((*mode == 'T' || *mode == 'H') && 9000 <= CUDA_VERSION && CUDA_VERSION < 10000); \
-      if((controls.isParameter("algorithm") && controls.getParameter("algorithm") == "native") || fallback) { \
-	std::string label = "KokkosSparse::spmv[NATIVE," + Kokkos::ArithTraits<SCALAR>::name() + "]"; \
-	Kokkos::Profiling::pushRegion(label);				\
-	spmv_native(controls, mode, alpha, A, x, beta, y);		\
-	Kokkos::Profiling::popRegion();					\
-      } else {								\
-	std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]"; \
-	Kokkos::Profiling::pushRegion(label);				\
-	spmv_cusparse(controls, mode, alpha, A, x, beta, y);		\
-	Kokkos::Profiling::popRegion();					\
-      }									\
+      std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]"; \
+      Kokkos::Profiling::pushRegion(label);				\
+      spmv_cusparse(controls, mode, alpha, A, x, beta, y);		\
+      Kokkos::Profiling::popRegion();					\
     }									\
   }; 
 

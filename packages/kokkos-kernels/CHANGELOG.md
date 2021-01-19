@@ -1,5 +1,11 @@
 # Change Log
 
+## [3.3.01](https://github.com/kokkos/kokkos-kernels/tree/3.3.01) (2021-01-18)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.3.00...3.3.01)
+
+**Fixed Bugs:**
+- With CuSparse enabled too many variants of SPMV were instantiated even if not requested. Up to 1GB executable size increase.
+
 ## [3.3.00](https://github.com/kokkos/kokkos-kernels/tree/3.3.00) (2020-12-16)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.2.01...3.3.00)
 
