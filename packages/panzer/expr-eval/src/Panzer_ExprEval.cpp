@@ -204,7 +204,7 @@ void EvalBase::ternary_op(Teuchos::any& result, Teuchos::any& cond, Teuchos::any
   TEUCHOS_TEST_FOR_EXCEPTION(is_bool[0], Teuchos::ParserFail,
       "Boolean values in ternary operator not yet supported");
   if (!cond_is_many) {
-    auto cond_value = Teuchos::any_cast<PHX::View<bool const>>(cond);
+    auto cond_value = Teuchos::any_cast<Kokkos::View<bool const>>(cond);
     auto host_cond_value = Kokkos::create_mirror_view(cond_value);
     Kokkos::deep_copy(host_cond_value, cond_value);
     if (host_cond_value()) {
