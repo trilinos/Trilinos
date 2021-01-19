@@ -80,6 +80,9 @@ namespace panzer {
 		       const int& fad_vector_size, 
                        const bool force_override_safety=false);
 
+    /// \brief Reset the sizes to default
+    void resetSizes() { use_auto_team_size_=true;}
+
     /** \brief Returns the vector size. Specialized for AD scalar types.
 
 	NOTE: For hierarchic parallelism, if we use the same code for
