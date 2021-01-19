@@ -5,6 +5,8 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "Tpetra_Core.hpp"
+
 #include "Panzer_STK_Interface.hpp"
 
 #include "PanzerAdaptersSTK_config.hpp"
@@ -21,9 +23,10 @@ namespace panzer_stk
 {
 
 Teuchos::RCP<panzer_stk::STK_Interface>
-generateMesh(Teuchos::RCP<const Teuchos::Comm<int> > comm,
-              const Teuchos::ParameterList & parameter_list_in)
+generateMesh(const Teuchos::ParameterList & parameter_list_in)
 {
+
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   // Setup mesh
   Teuchos::RCP<panzer_stk::STK_Interface> mesh;
