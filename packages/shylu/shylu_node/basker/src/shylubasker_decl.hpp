@@ -429,7 +429,7 @@ namespace BaskerNS
     int sfactor_copy();
 
     BASKER_INLINE
-    int sfactor_copy2(bool copy_BTFA = true);
+    int sfactor_copy2(bool alloc_BTFA = false, bool copy_BTFA = true);
 
 
     //old

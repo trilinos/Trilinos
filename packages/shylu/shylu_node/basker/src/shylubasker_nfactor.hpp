@@ -142,7 +142,7 @@ namespace BaskerNS
           domain_restart++;
           if(Options.verbose == BASKER_TRUE)
           {
-            printf("restart \n");
+            printf("\n restart factorization\n");
           }
           kokkos_nfactor_domain_remalloc <Int, Entry, Exe_Space>
             diag_nfactor_remalloc(this, thread_start);
@@ -207,7 +207,7 @@ namespace BaskerNS
             init_value(thread_start, num_threads+1, (Int) BASKER_MAX_IDX);
 
             info = nfactor_sep_error(thread_start);
-            //printf( "\n nfactor_separator: info = %d\n",(int)info );
+            //printf( "\n ***** nfactor_separator: info = %d *****\n",(int)info );
             if((info == BASKER_SUCCESS) ||
                (sep_restart > BASKER_RESTART))
             {
@@ -227,9 +227,10 @@ namespace BaskerNS
               sep_restart++;
               if (Options.verbose == BASKER_TRUE)
               {
-                printf("restart \n");
+                printf("\n restart facttorization\n");
               }
               Kokkos::parallel_for(TeamPolicy(lnteams,lthreads), sep_nfactor);
+              //printf( "\n ***** done sep_nfactor *****\n\n" ); fflush(stdout);
               Kokkos::fence();
             }
           }//end while-true
@@ -309,7 +310,7 @@ namespace BaskerNS
           btf_restart++;
           if (Options.verbose == BASKER_TRUE)
           {
-            printf("restart \n");
+            printf("\n restart factorization\n");
           }
           kokkos_nfactor_diag_remalloc <Int, Entry, Exe_Space>
             diag_nfactor_remalloc(this, thread_start_top, thread_start);

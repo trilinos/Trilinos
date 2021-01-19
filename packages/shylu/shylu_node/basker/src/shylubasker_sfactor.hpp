@@ -162,6 +162,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   }
 
   //Allocate Factorspace
+  //printf(" >> kokkos_sfactor_init_factor( btf_tabs_offset = %d, allocate_nd_workspace = %d ) <<\n",
+  //       btf_tabs_offset,allocate_nd_workspace);
   if(btf_tabs_offset != 0 && allocate_nd_workspace)
   {
   #ifdef BASKER_KOKKOS
@@ -400,6 +402,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         #endif
 
         Int off_diag = 1;
+        //printf( " U_blk_sfactor(AVM(%d,%d))\n",U_col,U_row );
         //U_blk_sfactor(AV[U_col][U_row], stree,
         //		  gScol[l], gSrow[glvl],0);
         #ifdef BASKER_TIMER 
@@ -435,6 +438,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         #ifdef BASKER_TIMER 
         timer1.reset();
         #endif
+        //printf( " U_assign_nnz(LU(%d,%d))\n",U_col,U_row );
         #ifdef SHYLU_BASKER_STREE_LIST
         U_assign_nnz(LU(U_col)(U_row), stree_p, 0);
         L_assign_nnz(LL(blk)(l+1),     stree_p, 0);
@@ -499,7 +503,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         //S_blk_sfactor(AL[U_col][U_row], stree,
         //gScol[lvl], gSrow[pp]);
 
-        //printf( " >>> S_blk_sfactor( ALM(%d)(%d) ) <<<\n",U_col,U_row );
+        //printf( " >>> S_blk_sfactor( ALM(%d)(%d) with %dx%d and nnz=%d) <<<\n",U_col,U_row, ALM(U_col)(U_row).nrow,ALM(U_col)(U_row).ncol,ALM(U_col)(U_row).nnz );
         #ifdef SHYLU_BASKER_STREE_LIST
         auto stree_p = stree_list[pp];
         S_blk_sfactor(ALM(U_col)(U_row), stree_p,
@@ -508,6 +512,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         S_blk_sfactor(ALM(U_col)(U_row), stree,
             gScol(lvl), gSrow(pp));
         #endif
+        //printf( " >>> -> nnz = %d\n",ALM(U_col)(U_row).nnz );
 
         //S_assign_nnz(LL[U_col][U_row], stree, 0);
         //printf( " >>>  S_assign_nnz( LL(%d,%d) )\n",U_col,U_row );
@@ -664,6 +669,12 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     }
   
     ST.init_parent(MV->ncol+1);
+
+    // quick return
+    if (MV->ncol <= 0) {
+      return;
+    }
+
     //Int brow = MV->srow; //Not used
     //Int bcol = MV->scol; //Not used
     INT_1DARRAY ws;
@@ -813,7 +824,11 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
    BASKER_SYMBOLIC_TREE &ST
   )
   {
-    const   Int n = MV.ncol;
+    const Int n = MV.ncol;
+    if (n <= 0) {
+      return;
+    }
+
     INT_1DARRAY post;
     BASKER_ASSERT(n > 0, "Basker post_order assert: sfactor post_order n > 0 failed");
     MALLOC_INT_1DARRAY(post,n);
@@ -960,7 +975,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
    BASKER_SYMBOLIC_TREE &ST
    )
   {
-Kokkos::Timer timer;
+    if (MV.ncol == 0) {
+      return;
+    }
+
     //Still like to find a way to do this without transpose
     BASKER_MATRIX  Mt;
     matrix_transpose(MV, Mt);
@@ -1376,11 +1394,6 @@ printf( " col_count:: view \n" );
    Int off_diag
   )
   {
-    if(MV.ncol <= 0 || MV.nrow <= 0)
-    {
-      return;
-    }
-
     //printf("-----------UBLDSFACTO-------------\n");
     //Algorithm
     //Goal Reuse as much of LU etree as possible
@@ -1413,23 +1426,23 @@ printf( " col_count:: view \n" );
     Kokkos::Timer timer;
     timer.reset();
     #endif
+    //BASKER_ASSERT(MV.ncol > 0, "Basker U_blk_sfactor assert: ncol > 0 failed");
     INT_1DARRAY U_col_count;
-    BASKER_ASSERT(MV.ncol > 0, "Basker U_blk_sfactor assert: ncol > 0 failed");
-    //if(MV.ncol > 0)
+    if(MV.ncol > 0)
     {
       MALLOC_INT_1DARRAY(U_col_count, MV.ncol);
       init_value(U_col_count, MV.ncol, (Int)0);
     }
     //May want to change color to bool
+    //BASKER_ASSERT(MV.nrow > 0, "Basker U_blk_sfactor assert: nrow > 0 failed");
     INT_1DARRAY color;
-    BASKER_ASSERT(MV.nrow > 0, "Basker U_blk_sfactor assert: nrow > 0 failed");
-    //if(MV.nrow > 0)
+    if(MV.nrow > 0)
     {
       MALLOC_INT_1DARRAY(color, MV.nrow);
       init_value(color, MV.nrow, (Int)0);
     }
     INT_1DARRAY pattern;
-    //if(MV.nrow > 0)
+    if(MV.nrow > 0)
     {
       MALLOC_INT_1DARRAY(pattern, MV.nrow);
       init_value(pattern, MV.nrow, (Int)0);
@@ -1437,13 +1450,13 @@ printf( " col_count:: view \n" );
 
     //Waveform if symmetric
     INT_1DARRAY wave;
-    //if(MV.nrow > 0)
+    if(MV.nrow > 0)
     {
       MALLOC_INT_1DARRAY(wave, MV.nrow);
       init_value(wave, MV.nrow, BASKER_MAX_IDX);
     }
     INT_1DARRAY wave_p;
-    //if(MV.nrow > 0)
+    if(MV.nrow > 0)
     {
       MALLOC_INT_1DARRAY(wave_p, MV.nrow);
       init_value(wave_p, MV.nrow, BASKER_MAX_IDX);
@@ -1452,13 +1465,13 @@ printf( " col_count:: view \n" );
     //If symmetric (short cutting for S)
     //First row of S
     INT_1DARRAY first_color;
-    //if(MV.nrow > 0)
+    if(MV.nrow > 0)
     {
       MALLOC_INT_1DARRAY(first_color, MV.nrow);
       init_value(first_color, MV.nrow, (Int)0);
     }
     INT_1DARRAY first_row;
-    //if(MV.ncol > 0)
+    if(MV.ncol > 0)
     {
       MALLOC_INT_1DARRAY(first_row, MV.ncol);
       init_value(first_row, MV.ncol, (Int)0);

@@ -158,25 +158,19 @@ namespace BaskerNS
     }//over all columns / domains / old sublevel 0
 
     #ifdef BASKER_TIMER
-    printf("Time Upper-Col1(%d): %lf \n", (int)kid, timer.seconds());
+    printf("Time Upper-Col1(%d): %lf \n", (int)kid, timer.seconds()); fflush(stdout);
     timer.reset();
     #endif
-    #ifdef BASKER_DEBUG_NFACTOR_COL2
-    printf("\n\n\n done with UPPER, kid: %d \n\n\n", kid);
-    #endif
-
     //------Need because extend does not 
     //-------------Barrier--Between Domains-------------
     Int b_size    = pow(2, 1);
     //barrier k = 0 usedl1
     t_basker_barrier(thread, kid, my_leader,
                      b_size, 0, LU(U_col)(U_row).scol, 0);
-    for(Int ti = 0; ti < num_threads; ti++) {
-      if(thread_array(ti).error_type != BASKER_ERROR_NOERROR) {
-        //printf( " > %d: thread_array(%d).error_type = %d\n",kid,ti,thread_array(ti).error_type );
-        return BASKER_ERROR;
-      }
-    }
+    #ifdef BASKER_DEBUG_NFACTOR_COL2
+    printf("\n done with 1st UPPER, kid: %d \n\n", kid); fflush(stdout);
+    #endif
+
 
     //----------------Sep level upper tri-------------
     for(Int l = 1; l < (lvl) && info == BASKER_SUCCESS; ++l)
@@ -184,7 +178,7 @@ namespace BaskerNS
       for(Int k = 0; k < ncol; ++k)
       {
         #ifdef BASKER_DEBUG_NFACTOR_COL2
-        printf("\n\nSep, upper update, kid: %d k=%d \n\n",
+        printf("\nSep, upper update, kid: %d k=%d \n",
                kid, k+LU(U_col)(U_row).scol);
         #endif
 
@@ -200,7 +194,7 @@ namespace BaskerNS
           b_size    = pow(2,l+1);
 
           #ifdef BASKER_DEBUG_NFACTOR_COL2
-          printf("\n\n\n SEP UPPER, kid: %d \n\n",
+          printf("\n SEP UPPER, kid: %d \n",
                  kid);
           #endif
 
@@ -228,17 +222,15 @@ namespace BaskerNS
     
     //printf("\n\n");
     //printf("lower team size: %d \n", thread.team_size());
-    //thread.team_barrier();
     my_leader = find_leader(kid, lvl-1);
-    b_size    = pow(2,lvl);
+    b_size    = pow(2, lvl);
     // printf("[3] barrier test, kid: %d leader: %d b_size: %d lvl: %d \n",
     //        kid,  my_leader, b_size, lvl);
     t_basker_barrier(thread, kid, my_leader,
                      b_size, 3, LU(U_col)(U_row).scol, 0);
-    for(Int ti = 0; ti < num_threads; ti++) {
-      //printf( " + %d: thread_array(%d).error_type = %d\n",kid,ti,thread_array(ti).error_type );
-      if(thread_array(ti).error_type != BASKER_ERROR_NOERROR) return BASKER_ERROR;
-    }
+    #ifdef BASKER_DEBUG_NFACTOR_COL2
+    printf("\n done with UPPER, kid: %d \n\n", kid);
+    #endif
 
     //printf("\n\n======= LOWER, KID: %d ======= \n\n", kid);
     //return;
@@ -263,14 +255,19 @@ namespace BaskerNS
         timer_extend.reset();
         #endif
         #ifdef BASKER_DEBUG_NFACTOR_COL2
-        printf("lower_update, kid: %d k: %d \n",
-               kid, k);
+        printf( " kid=%d: calling t_add_extend(k=%d/%d)\n",kid,k,ncol ); fflush(stdout);
         #endif
-        t_add_extend(thread, kid,lvl,lvl-1, k,
-                     LU(U_col)(U_row).scol,
-                     BASKER_TRUE);
+        //if (info == BASKER_SUCCESS)
+        {
+          t_add_extend(thread, kid,lvl,lvl-1, k,
+                       LU(U_col)(U_row).scol,
+                       BASKER_TRUE);
+        }
         #ifdef BASKER_TIMER
         time_extend += timer_extend.seconds();
+        #endif
+        #ifdef BASKER_DEBUG_NFACTOR_COL2
+        printf( " kid=%d: done calling t_add_extend(k=%d/%d)\n",kid,k,ncol ); fflush(stdout);
         #endif
 
         // ------------------------------------------------------- //
@@ -282,18 +279,27 @@ namespace BaskerNS
         if((kid%(Int)(pow(2,lvl))) == 0)
         {
           #ifdef BASKER_DEBUG_NFACTOR_COL2
-          printf("lower factor, kid: %d k: %d \n",
-                 kid, k);
+          printf(" > calling lower factor, kid: %d k: %d \n", kid, k); fflush(stdout);
           #endif
-          // factor the kth column of LU(U_col)(U_row)
-          info = t_lower_col_factor(kid, team_leader, 
-                                    lvl, lvl-1, 
-                                    k, pivot);
+          if (info == BASKER_SUCCESS) {
+            // factor the kth column of LU(U_col)(U_row)
+            info = t_lower_col_factor(kid, team_leader, 
+                                      lvl, lvl-1, 
+                                      k, pivot);
+          }
+          #ifdef BASKER_DEBUG_NFACTOR_COL2
+          printf(" > done calling lower factor, kid: %d k: %d \n", kid, k); fflush(stdout);
+          #endif
         }
+        #ifdef BASKER_DEBUG_NFACTOR_COL2
+        else {
+          printf(" + skipping lower factor, kid: %d k: %d \n", kid, k); fflush(stdout);
+        }
+        #endif
         //need barrier if multiple thread uppdate
         //thread.team_barrier();
         my_leader = find_leader(kid, lvl-1);
-        b_size    = pow(2,lvl);
+        b_size    = pow(2, lvl);
         //printf("barrier test, leader 4: %d b_size: %d lvl: %d \n",
         //       my_leader, b_size, lvl);
         t_basker_barrier(thread, kid, my_leader,
@@ -301,24 +307,27 @@ namespace BaskerNS
         #ifdef BASKER_TIMER
         time_faccol += timer_faccol.seconds();
         #endif
-        for(Int ti = 0; ti < num_threads; ti++) {
-          //printf( " - %d: thread_array(%d).error_type = %d\n",kid,ti,thread_array(ti).error_type );
-          if(thread_array(ti).error_type != BASKER_ERROR_NOERROR) return BASKER_ERROR;
-        }
 
         // ------------------------------------------------------- //
         // > factor the k-th column of the off-diagonal blocks
-        #ifdef BASKER_TIMER
-        timer_facoff.reset();
-        #endif
-        #ifdef BASKER_DEBUG_NFACTOR_COL2
-        printf("lower diag factor, kid: %d k: %d \n",
-               kid, k);
-        #endif
-        t_lower_col_factor_offdiag2(kid, lvl, lvl-1, k, pivot);
+        if (info == BASKER_SUCCESS) {
+          #ifdef BASKER_TIMER
+          timer_facoff.reset();
+          #endif
+          #ifdef BASKER_DEBUG_NFACTOR_COL2
+          printf(" calling lower diag factor, kid: %d k: %d \n",
+                 kid, k); fflush(stdout);
+          #endif
+          t_lower_col_factor_offdiag2(kid, lvl, lvl-1, k, pivot);
+          #ifdef BASKER_DEBUG_NFACTOR_COL2
+          printf(" done lower diag factor, kid: %d k: %d \n",
+                 kid, k); fflush(stdout);
+          #endif
+        }
+
         //thread.team_barrier();
         my_leader = find_leader(kid, lvl-1);
-        b_size    = pow(2,lvl);
+        b_size    = pow(2, lvl);
         //printf("barrier test 5, leader: %d b_size: %d lvl: %d \n",
         //       my_leader, b_size, lvl);
         t_basker_barrier(thread, kid, my_leader,
@@ -348,7 +357,8 @@ namespace BaskerNS
       #endif
     }
 
-    return BASKER_SUCCESS;
+    //printf( " >> kid=%d: returning with t_nfactor_sep2 with info = %d\n",kid,info );
+    return info;
   }//end t_nfactor_sep2
 
   template <class Int, class Entry, class Exe_Space>
@@ -384,20 +394,18 @@ namespace BaskerNS
       #endif
 
       //This will do the correct spmv
-      t_upper_col_factor_offdiag2(kid, lvl, sl,l, k, lower);
-
+      if(thread_array(kid).error_type == BASKER_ERROR_NOERROR) {
+        t_upper_col_factor_offdiag2(kid, lvl, sl,l, k, lower);
+      }
       //Barrier--Start
       my_leader = find_leader(kid,sl);
       b_size    = pow(2,sl+1);
-      //printf("[1] Barrier test, kid: %d leader: %d k: %d sl: %d \n",
-      //       kid, my_leader, k, sl);
-
       t_basker_barrier(thread, kid, my_leader,
                        b_size, 1, k+k_offset, sl);
       //Barrier--End
 
-      if(kid%((Int)pow(2,sl))==0)
-      {
+      if(kid%((Int)pow(2,sl)) == 0 &&
+         thread_array(kid).error_type == BASKER_ERROR_NOERROR) {
         t_dense_blk_col_copy_atomic2(kid, my_leader,
                                      lvl, sl, l, k, lower);
       }
@@ -405,13 +413,13 @@ namespace BaskerNS
       //Barrier--Start
       //printf("[2] Barrier test, kid: %d leader: %d k: %d sl: %d \n",
       //     kid, my_leader, k, sl);
-
       t_basker_barrier(thread, kid, my_leader,
                        b_size, 2, k+k_offset, sl);
     }//over all sublevels
 
-    t_dense_copy_update_matrix2(kid, my_leader, lvl, l, k);
-
+    if(thread_array(kid).error_type == BASKER_ERROR_NOERROR) {
+      t_dense_copy_update_matrix2(kid, my_leader, lvl, l, k);
+    }
   }//end t_add_add
 
   //uses local idx for local blks X

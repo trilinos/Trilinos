@@ -521,8 +521,9 @@ namespace BaskerNS
     Int ucnt = 0; 
     
     #ifdef MY_DEBUG_BASKER
-    if(kid >= 0)
-    printf("kid: %d col_start Unnz: %d %d \n", kid, unnz, uunnz);
+    if(kid == 0) {
+      printf("kid: %d col_start Unnz: %d %d \n", kid, unnz, uunnz);
+    }
     #endif
 
 
@@ -567,14 +568,12 @@ namespace BaskerNS
 
         #ifdef MY_DEBUG_BASKER
          #ifdef BASKER_2DL
-         if(kid>=0)
-           //printf("kid: %d Nx in Ak %d %g color = %d \n",
-           //   kid, j, X[j-brow],  ws[j-brow] );
-           printf("\n > kid: %d Nx in Ak(%d) = %g color = %d \n",
+         if(kid == 0)
+           printf(" > kid=%d: X(%d) = %g color = %d \n",
                   (int)kid, (int)j, X[j], (int)ws[j] );
          #else
-         if(kid>=0)
-           printf("kid: %d Nx in Ak %d %g color = %d \n",
+         if(kid == 0)
+           printf(" > kid=%d: X(%d) = %g color = %d \n",
                   kid, j, X[j], ws[0 + j] );
          #endif
         #endif
@@ -598,7 +597,7 @@ namespace BaskerNS
     xnnz = ws_size - top;
     
     #ifdef BASKER_DEBUG_NFACTOR_COL
-    if(kid>=0)
+    if(kid == 0)
       printf("xnnz: %d ws_size: %d top: %d , kid: %d\n",
           xnnz, ws_size, top, kid);
     #endif
@@ -680,19 +679,11 @@ namespace BaskerNS
       t = gperm(j+brow_g);
 
       #ifdef BASKER_DEBUG_NFACTOR_COL
-       #ifdef BASKER_2DL
-       if(kid == 0)
-       {
-         //printf("considering j: %d t:%d val: %e, kid: %d \n",
-         //	  j, t, X[j-brow], kid);
-         printf("considering j: %d t:%d val: %e, kid: %d \n",
-             j, t, X[j], kid);
-       }
-       #else
-       if(kid == 0)
+      if(kid == 0)
+      {
         printf("considering j: %d t:%d val: %e, kid: %d \n",
-            j, t, X[j], kid);
-       #endif
+               j, t, X[j], kid);
+      }
       #endif
 
       #ifdef BASKER_2DL
@@ -700,7 +691,6 @@ namespace BaskerNS
       if (X(j) != zero)
       #else
       if (X[j] != zero)
-      //if(X[j] != 0)
       //kkos_nfactor_sep2
       #endif
       {
@@ -715,7 +705,7 @@ namespace BaskerNS
         {
           #ifdef BASKER_DEBUG_NFACTOR_COL
           if(kid == 0)
-            printf("kid: %d adding x[%d] to U\n", kid, j); 
+            printf("kid: %d adding x[%d] to U(row=%d, val=%e)\n", kid, j, t, X(j)); 
           #endif
 
           //U.row_idx[unnz] = gperm[j];
@@ -723,7 +713,6 @@ namespace BaskerNS
           //     kid, unnz, U.nnz);
           U.row_idx(unnz) = t-brow_g;
           #ifdef BASKER_2DL
-          //U.val[unnz] = X[j-brow];
           U.val(unnz) = X(j);
           #else
           U.val[unnz] = X[j];
@@ -742,6 +731,7 @@ namespace BaskerNS
           #ifdef BASKER_2DL
           std::cout << "----Error--- kid = " << kid << ": extra L[" << j << "]="
                     << X[j] << std::endl;
+          BASKER_ASSERT(t != BASKER_MAX_IDX, "lower entry in U");
           #endif
         }//lower
       }//end not 0
@@ -1323,7 +1313,8 @@ namespace BaskerNS
       if (Options.verbose == BASKER_TRUE)
       {
         cout << "Lower Col Reallocing L oldsize: " << llnnz 
-             << " newsize: " << newsize << endl;
+             << " newsize: " << newsize << " kid = " << kid
+             << endl;
         //cout << " > k = " << k << " lnnz = " << lnnz << " lcnt = " << lcnt << endl;
         //cout << " > L_col = " << L_col << " L_row = " << L_row << endl;
       }
@@ -1349,7 +1340,8 @@ namespace BaskerNS
       if (Options.verbose == BASKER_TRUE)
       {
         cout << "Lower Col Reallocing U oldsize: " << uunnz 
-             << " newsize " << newsize << endl;
+             << " newsize " << newsize << " kid = " << kid
+             << endl;
       }
 
       thread_array(kid).error_blk    = U_col;
@@ -1357,6 +1349,7 @@ namespace BaskerNS
       if(Options.realloc == BASKER_FALSE)
       {
         thread_array(kid).error_type = BASKER_ERROR_NOMALLOC;
+        return BASKER_ERROR;
       }
       else
       {
@@ -2885,6 +2878,7 @@ namespace BaskerNS
     //__itt_pause();
     #endif
 
+    //printf( " t_basker_barrier(size = %d, thread.team_size = %d\n",size,thread.team_size() );
     //if(size < 0)
     if(size <= thread.team_size())
     {

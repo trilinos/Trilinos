@@ -1254,30 +1254,6 @@ namespace BaskerNS
             std::cout << std::endl;
           }
           Options.blk_matching = Options.static_delayed_pivot;
-          // apply ND
-          /*for(Int j = 0; j < BTF_A.ncol; j++) printf( "%d %d %d\n",j,part_tree.permtab[j],part_tree.ipermtab[j]);
-          printf(" - A = [\n" );
-          if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
-            for(Int j = 0; j < BTF_A.ncol; j++) {
-              for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-                printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
-              }
-            }
-          }
-          printf("];\n");*/
-          #if 0
-          permute_row(BTF_A, part_tree.permtab);
-          permute_col(BTF_A, part_tree.permtab);
-          #endif
-          /*printf(" > A = [\n" );
-          if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
-            for(Int j = 0; j < BTF_A.ncol; j++) {
-              for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-                printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
-              }
-            }
-          }
-          printf("];\n");*/
         }
         INT_1DARRAY blk_nnz;
         INT_1DARRAY blk_work;
@@ -1367,21 +1343,6 @@ namespace BaskerNS
           MALLOC_INT_1DARRAY (nd_map,   BTF_A.nrow);
           MALLOC_INT_1DARRAY (nd_sizes, nblks+1);
 
-          #if 0
-          // revert ND
-          permute_row(BTF_A, part_tree.ipermtab);
-          permute_col(BTF_A, part_tree.ipermtab);
-          printf(" + A = [\n" );
-          if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
-            for(Int j = 0; j < BTF_A.ncol; j++) {
-              for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-                printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
-              }
-            }
-          }
-          printf( "];\n" );
-          #endif
-
           // original domain sizes
           //for (Int k = 0; k <= nblks; k++) {
           //  printf( " + row_tabs(%d) = %d\n",k,part_tree.row_tabs[k] );
@@ -1464,6 +1425,9 @@ namespace BaskerNS
           for (Int k = nblks; k > 0; k--) {
             part_tree.row_tabs(k) = nd_sizes(k-1);
             part_tree.col_tabs(k) = nd_sizes(k-1);
+
+            tree.row_tabs(k) = nd_sizes(k-1);
+            tree.col_tabs(k) = nd_sizes(k-1);
           }
           part_tree.row_tabs(0) = 0;
           part_tree.col_tabs(0) = 0;
@@ -1555,6 +1519,12 @@ namespace BaskerNS
             }
           }
           printf("];\n");*/
+
+          // ----------------------------------------------------------------------------------------------
+          // Allocate & Initialize blocks
+          #ifdef BASKER_KOKKOS
+          matrix_to_views_2D(BTF_A);
+          #endif
         } else {
           // ----------------------------------------------------------------------------------------------
           // compute & apply ND on a big block A
@@ -1566,6 +1536,25 @@ namespace BaskerNS
         if(Options.verbose == BASKER_TRUE) {
           std::cout<< " > Basker Factor: Time to compute and apply ND on a big block A: " << nd_nd_timer.seconds() << std::endl;
         }
+
+        nd_nd_timer.reset();
+        #ifdef BASKER_KOKKOS
+        // ----------------------------------------------------------------------------------------------
+        // Allocate & Initialize blocks
+        kokkos_sfactor_init_factor<Int,Entry,Exe_Space>
+          iF(this);
+        Kokkos::parallel_for(TeamPolicy(num_threads,1), iF);
+        Kokkos::fence();
+
+        /*kokkos_sfactor_init_workspace<Int,Entry,Exe_Space>
+          iWS(flag, this);
+        Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
+        Kokkos::fence();*/
+        #endif
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout<< " > Basker Factor: Time for init factors after ND on a big block A: " << nd_nd_timer.seconds() << std::endl;
+        }
+
 
         // ----------------------------------------------------------------------------------------------
         // do symbolic & workspace allocation
@@ -1581,27 +1570,6 @@ namespace BaskerNS
         if(Options.verbose == BASKER_TRUE) {
           std::cout<< " > Basker Factor: Time for last-dense after ND on a big block A: " << nd_last_dense_timer.seconds() << std::endl;
         }
-
-
-        #ifdef BASKER_KOKKOS
-        Kokkos::Timer nd_setup1_timer;
-        kokkos_sfactor_init_factor<Int,Entry,Exe_Space>
-          iF(this);
-        Kokkos::parallel_for(TeamPolicy(num_threads,1), iF);
-        Kokkos::fence();
-        if(Options.verbose == BASKER_TRUE) {
-          std::cout<< " > Basker Factor: Time for init factors after ND on a big block A: " << nd_setup1_timer.seconds() << std::endl;
-        }
-
-        /*Kokkos::Timer nd_setup2_timer;
-        kokkos_sfactor_init_workspace<Int,Entry,Exe_Space>
-          iWS(flag, this);
-        Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
-        Kokkos::fence();
-        if(Options.verbose == BASKER_TRUE) {
-          std::cout<< " > Basker Factor: Time for workspace allocation after ND on a big block A: " << nd_setup2_timer.seconds() << std::endl;
-        }*/
-        #endif
 
         if(Options.verbose == BASKER_TRUE) {
           std::cout<< "Basker Factor: Time to compute ND and setup: " << nd_perm_timer.seconds() << std::endl << std::endl;
@@ -1857,7 +1825,8 @@ namespace BaskerNS
       #endif
     }
     bool copy_BTFA = (Options.blk_matching == 0 || Options.static_delayed_pivot != 0);
-    err = sfactor_copy2(copy_BTFA);
+    bool alloc_BTFA = (Options.static_delayed_pivot != 0);
+    err = sfactor_copy2(alloc_BTFA, copy_BTFA);
 
     if(Options.verbose == BASKER_TRUE) {
       sfactorcopy_time += timer_sfactorcopy.seconds();

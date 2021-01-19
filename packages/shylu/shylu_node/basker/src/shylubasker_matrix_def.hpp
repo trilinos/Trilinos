@@ -169,9 +169,10 @@ namespace BaskerNS
   BASKER_INLINE
   void BaskerMatrix<Int, Entry, Exe_Space>::init_col()
   {
+    //printf( " init_col(n=%d)\n",ncol );
     BASKER_ASSERT(ncol >= 0, "INIT_COL, ncol > 0");
     MALLOC_INT_1DARRAY(col_ptr, ncol+1);
-    MALLOC_INT_1DARRAY(col_idx, ncol);
+    MALLOC_INT_1DARRAY(col_idx, ncol+1);
     for(Int i = 0; i < ncol+1; ++i)
     {
       col_ptr(i) = (Int) BASKER_MAX_IDX;
@@ -183,6 +184,7 @@ namespace BaskerNS
   BASKER_INLINE
   void BaskerMatrix<Int,Entry,Exe_Space>::clean_col()
   {
+    //printf( " clean_col(ncol = %d)\n",ncol );
     for(Int i = 0; i < ncol+1; ++i)
     {
       col_ptr(i) = (Int) BASKER_MAX_IDX;
@@ -409,6 +411,7 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   void BaskerMatrix<Int,Entry,Exe_Space>::init_pend()
   {
+    //printf( " > init_pend(ncol = %d)\n",ncol );
     if(ncol > 0)
     {
       BASKER_ASSERT((ncol+1)>0, "matrix init_pend")
@@ -544,6 +547,7 @@ namespace BaskerNS
     {
       val(i) = 0;
     }*/
+    //printf( " convert2D(%dx%d, nnz = %d, alloc = %d)\n",M.nrow,M.ncol,M.nnz,alloc );
 
     const Entry zero(0.0);
     Int temp_count = 0;
@@ -554,16 +558,27 @@ namespace BaskerNS
       if(col_ptr(k-scol) == BASKER_MAX_IDX)
       {
         col_ptr(k-scol) = temp_count;
-        //printf("continue called, k: %d  \n", k);
+        /*if (kid == 1) {
+          printf("continue called, k: %d  \n", k);
+        }*/
         continue;
       }
 
+      /*if (kid == 1) {
+        printf(" col_ptr(%d-%d) = %d, M.col_ptr(%d) = %d\n", k,scol,col_ptr(k-scol), k+1,M.col_ptr(k+1));
+      }*/
       for(Int i = col_ptr(k-scol); i < M.col_ptr(k+1); i++)
       {
         Int j = M.row_idx(i);
+        /*if (kid == 1) {
+          printf( " > row_idx[%d] = %d, val[%d] = %e (%d + %d) with k = %d+%d\n",i,j, i,M.val(i), srow,nrow, scol,k );
+        }*/
         if(j >= srow+nrow)
         {
           // skip lower-off diagonal blocks for U
+          /*if (kid == 1) {
+            printf("break called, k: %d  \n", k);
+          }*/
           break;
         }
         //printf("writing row_dix: %d i: %d  val: %d nnz: %d srow: %d nrow: %d \n",
@@ -584,7 +599,10 @@ namespace BaskerNS
                     << std::endl;
           BASKER_ASSERT(0==1, " ERROR: j is less than srow");
         }
-        //printf( "%d %d, %d %d, %e\n",i,temp_count,j-srow,k,M.val(i) );
+        /*if (kid == 1) 
+        {
+          printf( " %d:%d:%d: %d %d, %e\n",kid,i,temp_count,j-srow,k,M.val(i) );
+        }*/
         if (keep_zeros || M.val(i) != zero)
         {
           row_idx(temp_count) = j-srow;

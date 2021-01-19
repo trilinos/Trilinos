@@ -844,13 +844,14 @@ namespace BaskerNS
             (tree.col_tabs[j+1]-tree.col_tabs[j])
             );
 
+        ///printf( " AVM(%d)(%d).set_shape(%dx%d)\n",j,U_view_count[j], tree.col_tabs[i+1]-tree.col_tabs[i],tree.col_tabs[j+1]-tree.col_tabs[j] );
         UMtemp[U_view_count[j]].set_shape(
             tree.col_tabs[i], 
             (tree.col_tabs[i+1]-tree.col_tabs[i]),
             tree.col_tabs[j], 
             (tree.col_tabs[j+1]-tree.col_tabs[j])
             );
-        if (tree.col_tabs[i+1] > tree.col_tabs[i]) {
+        if (tree.col_tabs[i+1] >= tree.col_tabs[i]) {
           UMtemp[U_view_count[j]].init_col();
         }
 
@@ -872,13 +873,14 @@ namespace BaskerNS
             (tree.col_tabs[i+1] - tree.col_tabs[i])
             );
 
+        //printf( " ALM(%d)(%d).set_shape(%dx%d)\n",i,L_view_count[i], tree.col_tabs[j+1]-tree.col_tabs[j],tree.col_tabs[i+1]-tree.col_tabs[i] );
         LMtemp[L_view_count[i]].set_shape(
             tree.col_tabs[j],
             (tree.col_tabs[j+1]-tree.col_tabs[j]),
             tree.col_tabs[i],
             (tree.col_tabs[i+1] - tree.col_tabs[i])
             );
-        if (tree.col_tabs[i+1] > tree.col_tabs[i]) {
+        if (tree.col_tabs[i+1] >= tree.col_tabs[i]) {
           LMtemp[L_view_count[i]].init_col();
         }
 
@@ -986,6 +988,7 @@ namespace BaskerNS
 #ifdef MY_DEBUG
     printf( "\n >> find_2D_convert (%d x %d) <<\n\n",M.nrow,M.ncol );
     for (Int k = 0; k <= tree.nblks; k++) printf( "  row_tabs[%d] = %d\n",k,tree.row_tabs(k));
+    for (Int k = 0; k <  tree.nblks; k++) printf( "   LU_size[%d] = %d\n",k,LU_size(k));
     printf( "M = [\n" );
     for(Int k = 0; k < M.ncol; ++k) {
       for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++)
@@ -995,52 +998,68 @@ namespace BaskerNS
 #endif
     for(Int k = 0; k < M.ncol; ++k)
     {
+      // rest row indexes
+      L_row = 0;
+      U_row = 0;
+      Int r_idx = 0; //used to iterate through tree.row_tabs
+
       //Fast-forward to first column tab in this column
-      while(k >= tree.col_tabs(c_idx+1))
+      while((k >= tree.col_tabs(c_idx+1)) ||
+            (c_idx < tree.nblks && tree.row_tabs(c_idx+1) == tree.row_tabs(c_idx))) // skip empty blocks
       {
         c_idx++;
         L_col++;
         U_col++;
+
+        //r_idx++;
+        //L_row++;
+        //U_row++;
       }
 
       //Get the first blks
-      L_row = 0;
-      U_row = 0;
-      Int r_idx = 0; //used to iterate through tree.row_tabs
       BASKER_BOOL start_col = BASKER_TRUE;
 
 #ifdef MY_DEBUG
-      printf( "\n >> k = %d <<\n",k );
+      printf( "\n >> k = %d, (c_idx=%d, L_col=%d, U_col=%d) <<\n",k,c_idx,L_col,U_col );
 #endif
       for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) //offsets to row_idx - will yield range of row values to col k
       {
         Int j = M.row_idx(i); //first row id entry in col k
+#ifdef MY_DEBUG
+        printf( "   + row_idx(%d) = %d vs. row_tabs(%d) = %d <<\n", i,j, r_idx+1,tree.row_tabs(r_idx+1) );
+#endif
 
         //Get right blk
         if(j > k) { //lower
-          while(j >= tree.row_tabs(r_idx+1))
+          while((j >= tree.row_tabs(r_idx+1)) ||
+                (r_idx < tree.nblks && tree.row_tabs(r_idx+1) == tree.row_tabs(r_idx))) // skip empty blocks
           {
             if((L_row+1 < LL_size(L_col)) &&
                (tree.row_tabs(r_idx+1) == ALM(L_col)(L_row+1).srow))
             {
+              //printf( " > ALM(%d)(%d).srow = %d, row_tab(%d) = %d\n",L_col,L_row+1,ALM(L_col)(L_row+1).srow, r_idx+1,tree.row_tabs(r_idx+1) );
               L_row++;
               BASKER_ASSERT(L_row < LL_size(L_col), " Wrong L in A to 2d");
               start_col = BASKER_TRUE;
             }
             r_idx++;
           }
+          //printf( "   -> lower(r_idx=%d)\n",r_idx );
         } else if(j <= k) { //upper
-          while(j >= tree.row_tabs(r_idx+1))
+          while((j >= tree.row_tabs(r_idx+1)) ||
+                (r_idx < tree.nblks && tree.row_tabs(r_idx+1) == tree.row_tabs(r_idx))) // skip empty blocks
           {
             if((U_row+1 < LU_size(U_col)) &&
                (tree.row_tabs(r_idx+1) == AVM(U_col)(U_row+1).srow))
             {
+              //printf( " + AVM(%d)(%d).srow = %d, row_tab(%d) = %d\n",U_col,U_row+1,AVM(U_col)(U_row+1).srow, r_idx+1,tree.row_tabs(r_idx+1) );
               U_row++;
               BASKER_ASSERT(U_row < LU_size(U_col), " Wrong U in A to 2d");
               start_col = BASKER_TRUE;
             }
             r_idx++;
           }
+          //printf( "   -> upper (r_idx=%d)\n",r_idx );
         }
 #ifdef MY_DEBUG
         std::cout << " > " << (j > k ? " lower" : " upper" ) << " --> "
@@ -1060,7 +1079,7 @@ namespace BaskerNS
         Int bcol  = Ltemp.scol;
 
         //diag blk
-        if(L_row == 0 &&  U_row == LU_size(U_col)-1)
+        if(L_row == 0 && U_row == LU_size(U_col)-1)
         {
           if(start_col == BASKER_TRUE)
           {
@@ -1121,6 +1140,7 @@ namespace BaskerNS
     {
       for(Int sb = 0; sb < LL_size(b); ++sb)
       {
+        //printf( " ALM(%d)(%d).clean_col()\n",b,sb );
         ALM(b)(sb).clean_col();
       }
       for(Int sb = 0; sb < LU_size(b); ++sb)
@@ -1245,7 +1265,7 @@ namespace BaskerNS
   // NDE: sfactor_copy2 is now only responsible for mapping blocks to 2D blocks
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::sfactor_copy2(bool copy_BTFA)
+  int Basker<Int,Entry,Exe_Space>::sfactor_copy2(bool alloc_BTFA, bool copy_BTFA)
   {
     //Timers
     #ifdef BASKER_TIMER_FINE
@@ -1280,7 +1300,8 @@ namespace BaskerNS
       //Fill 2D structure
       #ifdef BASKER_KOKKOS
       BASKER_BOOL keep_zeros = BASKER_FALSE;
-      kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, BASKER_FALSE, keep_zeros); // t_init_2DA; fill row_idx, vals into ALM, AVM calling convert2D
+      BASKER_BOOL alloc      = alloc_BTFA; //BASKER_FALSE;
+      kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, alloc, keep_zeros); // t_init_2DA; fill row_idx, vals into ALM, AVM calling convert2D
       Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
       Kokkos::fence();
       #else

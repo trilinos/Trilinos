@@ -422,6 +422,7 @@ namespace BaskerNS
     Kokkos::Timer timer_fill_matrixL;
     timer_initL.reset();
     #endif
+    //printf( " > t_init_factor( tid = %d ) <\n",kid );
     for(Int lvl = 0; lvl < tree.nlvls+1; lvl++)
     {
       if(kid%((Int)pow(2,lvl)) == 0)
@@ -462,6 +463,7 @@ namespace BaskerNS
           #ifdef BASKER_TIMER
           fill_matrixL_time += timer_fill_matrixL.seconds();
           #endif
+          //printf( " LL(%d)(%d).init_pend(ncol = %d)\n",b,row,LL(b)(row).ncol );
           LL(b)(row).init_pend();
 
         }//end over all row
@@ -575,7 +577,7 @@ namespace BaskerNS
    Int kid, BASKER_BOOL alloc, BASKER_BOOL keep_zeros
   )
   {
-    /*if (kid == 0) {
+    /*if (kid == 1) {
       printf(" BTF_A_2D = [\n" );
       for(Int j = 0; j < BTF_A.ncol; j++) {
         for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
@@ -608,9 +610,10 @@ namespace BaskerNS
               ALM(b)(row).ncol);
           #endif
 
-          /*if (kid == 0) {
-            printf(" > kid=%d, lvl=%d: convert ALM(%d, %d) with (%dx%d from %d,%d)\n", kid, lvl, b, row,
-                   ALM(b)(row).nrow,ALM(b)(row).ncol,ALM(b)(row).srow,ALM(b)(row).scol);
+          /*if (kid == 1)
+          {
+            printf(" > kid=%d, lvl=%d: convert2D ALM(%d, %d) with (%dx%d and nnz=%d from %d,%d)\n", kid, lvl, b, row,
+                   ALM(b)(row).nrow,ALM(b)(row).ncol, ALM(b)(row).nnz, ALM(b)(row).srow,ALM(b)(row).scol);
           }*/
           if(Options.btf == BASKER_FALSE)
           {
@@ -657,9 +660,9 @@ namespace BaskerNS
             AVM(b)(LU_size(b)-1).ncol);
         #endif
 
-        /*if (kid == 0) {
-          printf(" > kid=%d, lvl=%d: convert AVM(%d, %d), lower(%dx%d from %d,%d)\n", kid, lvl, b, LU_size(b)-1,
-                     AVM(b)(LU_size(b)-1).nrow,AVM(b)(LU_size(b)-1).ncol,AVM(b)(LU_size(b)-1).srow,AVM(b)(LU_size(b)-1).scol);
+        /*if (kid == 1) {
+          printf(" > kid=%d, lvl=%d: convert2D AVM(%d, %d), lower(%dx%d and nnz=%d from %d,%d)\n", kid, lvl, b, LU_size(b)-1,
+                     AVM(b)(LU_size(b)-1).nrow,AVM(b)(LU_size(b)-1).ncol,AVM(b)(LU_size(b)-1).nnz, AVM(b)(LU_size(b)-1).srow,AVM(b)(LU_size(b)-1).scol);
         }*/
         if(Options.btf == BASKER_FALSE)
         {
@@ -668,7 +671,7 @@ namespace BaskerNS
         else
         {
           //printf("Using BTF AU\n");
-          //printf(" > kid=%d: convert AVM(%d,%d)\n", kid, b, LU_size(b)-1);
+          //printf(" > kid=%d: convert2D AVM(%d,%d)\n", kid, b, LU_size(b)-1);
           AVM(b)(LU_size(b)-1).convert2D(BTF_A, alloc, kid);
         }
         /*if (kid == 0) {
@@ -731,11 +734,13 @@ namespace BaskerNS
               AVM(U_col)(U_row).ncol);
           #endif
 
-          //printf(" > kid=%d, lvl=%d: convert AVM(%d, %d), upper(%dx%d from %d,%d)\n", kid, lvl, U_col, U_row,
-          //         AVM(U_col)(U_row).nrow,AVM(U_col)(U_row).ncol,AVM(U_col)(U_row).srow,AVM(U_col)(U_row).scol);
+          /*if (kid == 1) {
+             printf(" > kid=%d, lvl=%d: convert2D AVM(%d, %d), upper(%dx%d and nnz=%d from %d,%d)\n", kid, lvl, U_col, U_row,
+                     AVM(U_col)(U_row).nrow,AVM(U_col)(U_row).ncol,AVM(U_col)(U_row).nnz, AVM(U_col)(U_row).srow,AVM(U_col)(U_row).scol);
+          }*/
           if(Options.btf == BASKER_FALSE)
           {
-            BASKER_ASSERT(0==1, "SHOULD NOTH BE CALL\n");
+            BASKER_ASSERT(0==1, "SHOULD NOT BE CALL\n");
             //AVM(U_col)(U_row).convert2D(A);
           }
           else
@@ -812,25 +817,26 @@ namespace BaskerNS
 
           BASKER_ASSERT((iws_size*iws_mult)>0, "util iws");
           MALLOC_INT_1DARRAY(LL(b)(l).iws, iws_size*iws_mult);
-
-          //TEST
-          INT_1DARRAY att = LL(b)(l).iws; 
-          if(ews_size == 0)
-          {
-            ews_size = 1;
-          }
-
-          BASKER_ASSERT((ews_size*ews_mult)>0, "util ews");
-          MALLOC_ENTRY_1DARRAY(LL(b)(l).ews, ews_size*ews_mult);
-
           for(Int i=0; i<iws_mult*iws_size; i++)
           {
             LL(b)(l).iws(i) = 0;
           }
 
-          for(Int i=0; i<ews_mult*ews_size; i++)
+
+          //TEST
+          //INT_1DARRAY att = LL(b)(l).iws; 
+          /*if(ews_size == 0)
           {
-            LL(b)(l).ews(i) = 0;
+            ews_size = 1;
+          }*/
+          if (ews_size*ews_mult > 0) {
+            BASKER_ASSERT((ews_size*ews_mult)>0, "util ews");
+            MALLOC_ENTRY_1DARRAY(LL(b)(l).ews, ews_size*ews_mult);
+
+            for(Int i=0; i<ews_mult*ews_size; i++)
+            {
+              LL(b)(l).ews(i) = 0;
+            }
           }
 
           //printf( " LL(%d, %d).fill\n",b,l );
@@ -1828,10 +1834,12 @@ namespace BaskerNS
     AT.nnz  = M.nnz;
 
     BASKER_ASSERT((AT.ncol+1) > 0, "util trans ncol");
-    BASKER_ASSERT((AT.nnz)    > 0, "util trans nnz");
-
     MALLOC_INT_1DARRAY(AT.col_ptr, AT.ncol+1);
-    MALLOC_INT_1DARRAY(AT.row_idx, AT.nnz);
+
+    if (AT.nnz > 0) {
+      BASKER_ASSERT((AT.nnz)    > 0, "util trans nnz");
+      MALLOC_INT_1DARRAY(AT.row_idx, AT.nnz);
+    }
     //MALLOC_ENTRY_1DARRAY(AT.val    , AT.nnz);
     //init_value(AT.col_ptr, AT.ncol+1, (Int)0);
     //init_value(AT.row_idx, AT.nnz, (Int)0);

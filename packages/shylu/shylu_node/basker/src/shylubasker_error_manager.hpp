@@ -266,7 +266,6 @@ namespace BaskerNS
         }
       }
 
-
       if(thread_array(ti).error_type == BASKER_ERROR_REMALLOC)
       {
         BASKER_ASSERT(thread_array(ti).error_blk >= 0, "nfactor_SEP_error error_blk");
@@ -371,19 +370,20 @@ namespace BaskerNS
           }//if ws is filled
         }//for-other all threads
 
-
         //Clear perm
+        Int scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
         for(Int p = 0; p < num_threads; p++)
         {
           Int blk = S(error_sep_lvl)(p);
           //if(LL(blk)(0).w_fill == BASKER_TRUE)
           {
             BASKER_MATRIX &TM = LL(blk)(0);
-            for(Int i = TM.scol; i < TM.scol+TM.ncol; i++)
+            //printf( " > p=%d: scol_top = %d, scol = %d, ncol = %d\n",p,scol_top,TM.scol,TM.ncol );
+            for(Int i = scol_top + TM.scol; i < scol_top + (TM.scol+TM.ncol); i++)
             {
+              //printf( "  > gperm(%d) = %d\n",i,BASKER_MAX_IDX );
               gperm(i) = BASKER_MAX_IDX;
             }
-
           }//if ws is filled
         }//for-other all threads
 
@@ -392,14 +392,12 @@ namespace BaskerNS
         //Clear permuation
         BASKER_MATRIX &SL = 
           LL(thread_array(ti).error_blk)(0);
-
-        Int scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
-        for(Int i = scol_top + SL.srow; i < scol_top + (SL.srow+SL.nrow);
-            i++)
+        //printf( " + scol_top = %d, srow = %d, nrowl = %d\n",scol_top,SL.srow,SL.nrow );
+        for(Int i = scol_top + SL.srow; i < scol_top + (SL.srow+SL.nrow); i++)
         {
+          //printf( "  + gperm(%d) = %d\n",i,BASKER_MAX_IDX );
           gperm(i) = BASKER_MAX_IDX;
         }//for--to clear perm
-
 
         thread_start(ti) = thread_array(ti).error_blk;
 
