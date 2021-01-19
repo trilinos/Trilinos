@@ -405,6 +405,7 @@ generateLocalMeshPartitions(const panzer::LocalMeshInfo & mesh_info,
       partition.sideset_name = sideset_name;
       partition.element_block_name = element_block_name;
       partition.cell_topology = sideset_info.cell_topology;
+      partition.has_connectivity = true;
     }
 
   } else {
@@ -430,6 +431,7 @@ generateLocalMeshPartitions(const panzer::LocalMeshInfo & mesh_info,
     for(auto & partition : partitions){
       partition.element_block_name = element_block_name;
       partition.cell_topology = block_info.cell_topology;
+      partition.has_connectivity = true;
     }
   }
 

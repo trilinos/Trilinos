@@ -40,26 +40,43 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_STK_LOCAL_MESH_UTILITIES_HPP
-#define PANZER_STK_LOCAL_MESH_UTILITIES_HPP
+#ifndef PANZER_ORIENTATIONS_INTERFACE_HPP
+#define PANZER_ORIENTATIONS_INTERFACE_HPP
 
-namespace panzer
+#include "Teuchos_RCP.hpp"
+#include "Intrepid2_Orientation.hpp"
+
+namespace panzer {
+
+class GlobalIndexer;
+
+class OrientationsInterface
 {
-  struct LocalMeshInfo;
-}
+public:
 
-namespace panzer_stk
-{
-  class STK_Interface;
+  /// Block default constructor
+  OrientationsInterface() = delete;
 
-  /** Create a structure containing information about the local portion of a given element block
+  /**
+   * \brief Build the orientations from a global indexer
    *
-   * \param[in] mesh Reference to STK mesh interface
-   *
-   * \returns Structure containing local mesh information
+   * \param[in] indexer Indexer containing connectivity information
    */
-  Teuchos::RCP<panzer::LocalMeshInfo>
-  generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh);
+  OrientationsInterface(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer);
+  
+  /**
+   * Get the orientations associated with this interface
+   */
+  Teuchos::RCP<const std::vector<Intrepid2::Orientation> >
+  getOrientations() const;
+
+protected:
+
+  /// Orientations
+  Teuchos::RCP<const std::vector<Intrepid2::Orientation>> orientations_;
+
+};
+
 }
 
 #endif
