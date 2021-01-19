@@ -482,7 +482,8 @@ namespace BaskerNS
       gperm(maxindex+brow_g) = k+brow_g;
       gpermi(k+brow_g) = maxindex + brow_g;
       #ifdef MY_DEBUG_BASKER
-      if (kid == 0) {
+      //if (kid == 0)
+      {
         printf( " %d: gperm(%d + %d) = %d\n",kid,maxindex,brow_g,k+brow_g );
       }
       #endif

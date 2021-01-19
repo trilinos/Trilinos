@@ -2220,6 +2220,11 @@ printf( " col_count:: view \n" );
       } else {
         M.nnz = t_nnz;
       }
+      #if 0
+      printf( " debug: set leaf.nnz = 0 to force realloc\n" );
+      M.nnz = 0;
+      t_nnz = 0;
+      #endif
 
       if (global_nnz + t_nnz > global_nnz) {
         // let's just hope it is enough, if overflow
@@ -2267,6 +2272,11 @@ printf( " col_count:: view \n" );
         // let's just hope it is enough, if overflow
         global_nnz += t_nnz;
       }
+      #if 0
+      printf( " debug: set U.nnz = 0 to force realloc\n" );
+      M.nnz = 0;
+      t_nnz = 0;
+      #endif
       if(Options.verbose == BASKER_TRUE)
       {
         printf("U_assing with elbow global_nnz = %ld, t_nnz = %ld (fill_factor = %f + %f = %f), M.nnz = %ld (%ld x %ld)\n",
@@ -2309,6 +2319,11 @@ printf( " col_count:: view \n" );
       } else {
         M.nnz = t_nnz;
       }
+      #if 0
+      printf( " debug: set L.nnz = 0 to force realloc\n" );
+      M.nnz = 0;
+      t_nnz = 0;
+      #endif
       if (global_nnz + t_nnz > global_nnz) {
         // let's just hope it is enough, if overflow
         global_nnz += t_nnz;
@@ -2316,7 +2331,7 @@ printf( " col_count:: view \n" );
       if(Options.verbose == BASKER_TRUE)
       {
         printf("L_assign with elbow global_nnz = %ld, t_nnz = %ld (fill_factor = %e + %e = %e), M.nnz = %ld -> %ld (%ld x %ld)\n",
-               (long)global_nnz,(long)t_nnz,BASKER_DOM_NNZ_OVER,Options.user_fill,fill_factor,(long)M.nnz,(long)old_nnz,(long)M.nrow,(long)M.ncol);
+               (long)global_nnz,(long)t_nnz, BASKER_DOM_NNZ_OVER,Options.user_fill, fill_factor, (long)old_nnz,(long)M.nnz, (long)M.nrow,(long)M.ncol);
       }
     }
   }//end assign_lower_nnz

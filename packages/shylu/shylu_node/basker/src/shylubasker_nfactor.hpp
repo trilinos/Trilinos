@@ -123,17 +123,26 @@ namespace BaskerNS
         init_value(thread_start, num_threads+1, (Int) BASKER_MAX_IDX);
 
         info = nfactor_domain_error(thread_start);
-        //printf( " nfactor_domain: info = %d\n",(int)info );
-        if((info == BASKER_SUCCESS) ||
-           (domain_restart > BASKER_RESTART))
+        if(Options.verbose == BASKER_TRUE) {
+          printf( " nfactor_domain: info = %d\n",(int)info );
+        }
+        if(info == BASKER_SUCCESS)
         {
+          break;
+        }
+        else if(domain_restart > BASKER_RESTART)
+        {
+          if(Options.verbose == BASKER_TRUE)
+          {
+            printf(" nfactor_domain_error reports info=%d and max restartt reached (%d)\n",info,domain_restart);
+          }
           break;
         }
         else if (info == BASKER_ERROR)
         {
           if(Options.verbose == BASKER_TRUE)
           {
-            printf("%s: nfactor_domain_error reports BASKER_ERROR - numeric factorization failed\n",__FILE__);
+            printf(" nfactor_domain_error reports BASKER_ERROR - numeric factorization failed\n");
           }
           break;
         }
@@ -170,7 +179,7 @@ namespace BaskerNS
 
       // -------------------------------------------------------- //
       // ---------------------------Sep-------------------------- //
-      if(info != BASKER_ERROR) {
+      if(info == BASKER_SUCCESS) {
 #ifdef BASKER_KOKKOS
         #ifdef BASKER_NO_LAMBDA
         for(Int l=1; l <= tree.nlvls; l++)
@@ -208,10 +217,17 @@ namespace BaskerNS
 
             info = nfactor_sep_error(thread_start);
             //printf( "\n ***** nfactor_separator: info = %d *****\n",(int)info );
-            if((info == BASKER_SUCCESS) ||
-               (sep_restart > BASKER_RESTART))
+            if(info == BASKER_SUCCESS)
             {
               FREE_INT_1DARRAY(thread_start);
+              break;
+            }
+            else if (sep_restart > BASKER_RESTART)
+            {
+              if(Options.verbose == BASKER_TRUE)
+              {
+                printf("%s: nfactor_separator_error reports info=%d and max restartt reached (%d)\n",__FILE__,info,sep_restart);
+              }
               break;
             }
             else if (info == BASKER_ERROR)
@@ -260,7 +276,7 @@ namespace BaskerNS
 
     // ---------------------------------------------------------------------------------------- //
     // ----------------------- Small blocks in bottom C (and top D) --------------------------- //
-    if(info != BASKER_ERROR && Options.btf == BASKER_TRUE)
+    if(info == BASKER_SUCCESS && Options.btf == BASKER_TRUE)
     {
       Int btf_restart = 0;
 
@@ -292,9 +308,16 @@ namespace BaskerNS
         info = nfactor_diag_error(thread_start_top, thread_start);
         //printf( " nfactor_diag: info = %d\n\n",(int)info );
         //printf("RETURNED: %d (success=%d, error=%d)\n", info, BASKER_SUCCESS, BASKER_ERROR);
-        if((info == BASKER_SUCCESS) || 
-           (btf_restart > BASKER_RESTART))
+        if(info == BASKER_SUCCESS)
         {
+          break;
+        }
+        else if (btf_restart > BASKER_RESTART)
+        {
+          if(Options.verbose == BASKER_TRUE)
+          {
+            printf("%s: nfactor_diagonal_error reports info=%d and max restartt reached (%d)\n",__FILE__,info,btf_restart);
+          }
           break;
         }
         else if (info == BASKER_ERROR)

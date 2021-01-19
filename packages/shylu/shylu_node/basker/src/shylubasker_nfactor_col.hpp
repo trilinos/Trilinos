@@ -681,8 +681,8 @@ namespace BaskerNS
       #ifdef BASKER_DEBUG_NFACTOR_COL
       if(kid == 0)
       {
-        printf("considering j: %d t:%d val: %e, kid: %d \n",
-               j, t, X[j], kid);
+        printf( " %d: gperm(%d+%d = %d) = %d\n",kid,j,brow_g,j+brow_g,t );
+        printf( " %d: considering j: %d t:%d val: %e\n",kid,j, t, X[j]);
       }
       #endif
 
@@ -730,7 +730,8 @@ namespace BaskerNS
         {
           #ifdef BASKER_2DL
           std::cout << "----Error--- kid = " << kid << ": extra L[" << j << "]="
-                    << X[j] << std::endl;
+                    << X[j] << " with gperm( " << brow_g << " + " << j << " ) = " << t
+                    << std::endl;
           BASKER_ASSERT(t != BASKER_MAX_IDX, "lower entry in U");
           #endif
         }//lower

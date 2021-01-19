@@ -1362,10 +1362,13 @@ namespace BaskerNS
               }
             });
           Kokkos::fence();
-          //for (Int k = 0; k <= nblks; k++) {
-          //  printf( " + nd_sizes(%d) = %d\n",k,nd_sizes(k) );
-          //}
-          //printf( "\n" );
+          if(Options.verbose == BASKER_TRUE) {
+            printf( " > Initial ND block sizes:\n" );
+            for (Int k = 0; k <= nblks; k++) {
+              printf( " + nd_sizes(%d) = %d\n",k,nd_sizes(k) );
+            }
+            printf( "\n" );
+          }
 
           // look for invalid MWM swaps
           INT_1DARRAY order_nd_mwm2;
@@ -1389,10 +1392,13 @@ namespace BaskerNS
               order_nd_mwm2(k) = id2;
             }
           }
-          //for (Int k = 0; k <= nblks; k++) {
-          //  printf( " - nd_sizes(%d) = %d\n",k,nd_sizes(k) );
-          //}
-          //printf( "\n" );
+          if(Options.verbose == BASKER_TRUE) {
+            printf( " > ND block sizes after MWM and fixes:\n" );
+            for (Int k = 0; k <= nblks; k++) {
+              printf( " - nd_sizes(%d) = %d\n",k,nd_sizes(k) );
+            }
+            printf( "\n" );
+          }
 
           // convert to offset
           for (Int k = 0; k < nblks; k++) {
@@ -1538,6 +1544,22 @@ namespace BaskerNS
         }
 
         nd_nd_timer.reset();
+        // ----------------------------------------------------------------------------------------------
+        // do symbolic & workspace allocation
+        Kokkos::Timer nd_symbolic_timer;
+        symmetric_sfactor();
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout<< " > Basker Factor: Time for symbolic after ND on a big block A: " << nd_symbolic_timer.seconds() << std::endl;
+        }
+
+        Kokkos::Timer nd_last_dense_timer;
+        bool flag = true;
+        btf_last_dense(flag);
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout<< " > Basker Factor: Time for last-dense after ND on a big block A: " << nd_last_dense_timer.seconds() << std::endl;
+        }
+
+
         #ifdef BASKER_KOKKOS
         // ----------------------------------------------------------------------------------------------
         // Allocate & Initialize blocks
@@ -1553,22 +1575,6 @@ namespace BaskerNS
         #endif
         if(Options.verbose == BASKER_TRUE) {
           std::cout<< " > Basker Factor: Time for init factors after ND on a big block A: " << nd_nd_timer.seconds() << std::endl;
-        }
-
-
-        // ----------------------------------------------------------------------------------------------
-        // do symbolic & workspace allocation
-        Kokkos::Timer nd_symbolic_timer;
-        symmetric_sfactor();
-        if(Options.verbose == BASKER_TRUE) {
-          std::cout<< " > Basker Factor: Time for symbolic after ND on a big block A: " << nd_symbolic_timer.seconds() << std::endl;
-        }
-
-        Kokkos::Timer nd_last_dense_timer;
-        bool flag = true;
-        btf_last_dense(flag);
-        if(Options.verbose == BASKER_TRUE) {
-          std::cout<< " > Basker Factor: Time for last-dense after ND on a big block A: " << nd_last_dense_timer.seconds() << std::endl;
         }
 
         if(Options.verbose == BASKER_TRUE) {
@@ -1854,8 +1860,8 @@ namespace BaskerNS
     }
 
     if(err == BASKER_ERROR)
-    { 
-      printf("ShyLUBasker factor_notoken/inc_lvl error returned\n");
+    {
+      printf("ShyLUBasker factor_notoken/inc_lvl error returned (err=%d)\n",err);
       return BASKER_ERROR; 
     }
 

@@ -159,15 +159,11 @@ namespace BaskerNS
           {
             BASKER_MATRIX &SL = 
               LL(thread_array(ti).error_blk)(sb);
-            for(Int i = 0; 
-                i < SL.iws_size*SL.iws_mult; 
-                ++i)
+            for(Int i = 0; i < SL.iws_size*SL.iws_mult; ++i)
             {
               SL.iws(i) = (Int) 0;
             }
-            for(Int i = 0;
-                i < SL.ews_size*SL.ews_mult; 
-                ++i)
+            for(Int i = 0; i < SL.ews_size*SL.ews_mult; ++i)
             {
               SL.ews(i) = (Entry) 0;
             }
@@ -177,6 +173,7 @@ namespace BaskerNS
               Int scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
               for(Int i = scol_top+SL.srow; i < scol_top+SL.srow+SL.nrow; ++i)
               {
+                //printf( " x gperm(%d) = %d\n",i,BASKER_MAX_IDX );
                 gperm(i) = BASKER_MAX_IDX;
               }
 
@@ -229,9 +226,8 @@ namespace BaskerNS
       {
         thread_start(ti) = BASKER_MAX_IDX;
         continue;
-      }//end if NOERROR
-
-      if(thread_array(ti).error_type == BASKER_ERROR_SINGULAR)
+      }
+      else if(thread_array(ti).error_type == BASKER_ERROR_SINGULAR)
       {
         if(Options.verbose == BASKER_TRUE)
         {
@@ -240,9 +236,7 @@ namespace BaskerNS
             << std::endl;
         }
         return BASKER_ERROR;
-      }//end if SINGULAR
-
-      if(thread_array(ti).error_type == BASKER_ERROR_NOMALLOC)
+      } else if(thread_array(ti).error_type == BASKER_ERROR_NOMALLOC)
       {
         if(Options.verbose == BASKER_TRUE)
         {
@@ -253,13 +247,11 @@ namespace BaskerNS
         return BASKER_ERROR;
       }//end if NOMALLOC
 
-
       //Find lvl in sep error happend
       Int error_sep_lvl = BASKER_MAX_IDX;
       for(Int l = 1; l < tree.nlvls+1; l++)
       {
-        if(thread_array(ti).error_blk == 
-            S(l)(ti))
+        if(thread_array(ti).error_blk ==  S(l)(ti))
         {
           error_sep_lvl = l;
           break;
@@ -349,20 +341,14 @@ namespace BaskerNS
           //if(LL(blk)(0).w_fill == BASKER_TRUE)
           {
             //Clear workspace, whole column
-            for(Int sb = 0; 
-                sb < LL_size(blk);
-                sb++)
+            for(Int sb = 0; sb < LL_size(blk); sb++)
             {
               BASKER_MATRIX &SL =  LL(blk)(sb);
-              for(Int i = 0; 
-                  i < SL.iws_size*SL.iws_mult; 
-                  ++i)
+              for(Int i = 0; i < SL.iws_size*SL.iws_mult; ++i)
               {
                 SL.iws(i) = (Int) 0;
               }
-              for(Int i = 0;
-                  i < SL.ews_size*SL.ews_mult; 
-                  ++i)
+              for(Int i = 0; i < SL.ews_size*SL.ews_mult; ++i)
               {
                 SL.ews(i) = (Entry) 0;
               }
@@ -424,8 +410,6 @@ namespace BaskerNS
           INC_LVL_TEMP(i) = BASKER_MAX_IDX;
         }
       }
-
-
     }//for all threads
 
     if(nthread_remalloc == 0)
