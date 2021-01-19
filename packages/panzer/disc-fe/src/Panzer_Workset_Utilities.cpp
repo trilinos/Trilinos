@@ -93,7 +93,7 @@ namespace panzer {
     return std::distance(wda(workset).basis_names->begin(), basis);
   }
 
-  std::vector<std::string>::size_type
+  std::vector<int>::size_type
   getIntegrationRuleIndex(int ir_degree, const panzer::Workset& workset, WorksetDetailsAccessor& wda)
   {
     std::vector<int>::iterator ir;

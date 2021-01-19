@@ -1,11 +1,9 @@
 #!/bin/bash -l
 
+set +x
+
 if [ "${BSUB_CTEST_TIME_LIMIT}" == "" ] ; then
   export BSUB_CTEST_TIME_LIMIT=12:00
-fi
-
-if [ "${Trilinos_CTEST_DO_ALL_AT_ONCE}" == "" ] ; then
-  export Trilinos_CTEST_DO_ALL_AT_ONCE=TRUE
 fi
 
 if [ "${EXCLUDE_NODES_FROM_BSUB}" == "" ] ; then
@@ -13,6 +11,11 @@ if [ "${EXCLUDE_NODES_FROM_BSUB}" == "" ] ; then
     EXCLUDE_NODES_FROM_BSUB="-R hname!=white26&&hname!=white27"
   fi
 fi
+
+if [[ "${Trilinos_ENABLE_BUILD_STATS}" == "" ]] ; then
+  export Trilinos_ENABLE_BUILD_STATS=ON
+fi
+echo "Trilinos_ENABLE_BUILD_STATS='${Trilinos_ENABLE_BUILD_STATS}'"
 
 source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
 

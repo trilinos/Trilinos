@@ -644,7 +644,7 @@ namespace MueLu {
         doScale = paramList.get<bool>("chebyshev: use rowsumabs diagonal scaling");
         paramList.remove("chebyshev: use rowsumabs diagonal scaling");
         if (doScale) {
-          RCP<Vector> lumpedDiagonal = Utilities::GetLumpedMatrixDiagonal(currentLevel.Get<RCP<Matrix> >("A"),true);
+          RCP<Vector> lumpedDiagonal = Utilities::GetLumpedMatrixDiagonal(*(currentLevel.Get<RCP<Matrix> >("A")),true);
           const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(*lumpedDiagonal);
           paramList.set("chebyshev: operator inv diagonal",tmpVec.getTpetra_Vector());
         }
@@ -730,9 +730,14 @@ namespace MueLu {
     // option is supported by current ifpack2 preconditioner
     Teuchos::ParameterList paramList;
     bool supportInitialGuess = false;
+    const Teuchos::ParameterList params = this->GetParameterList();
     if (type_ == "CHEBYSHEV") {
-      paramList.set("chebyshev: zero starting solution", InitialGuessIsZero);
-      SetPrecParameters(paramList);
+      const std::string paramName = "chebyshev: zero starting solution";
+      if (!params.isType<bool>(paramName) ||
+          (params.get<bool>(paramName) != InitialGuessIsZero)) {
+        paramList.set(paramName, InitialGuessIsZero);
+        SetPrecParameters(paramList);
+      }
       supportInitialGuess = true;
 
     } else if (type_ == "RELAXATION"       ||
@@ -750,13 +755,21 @@ namespace MueLu {
                type_ == "TRIDIAGONAL_RELAXATION" ||
                type_ == "TRIDIAGONAL RELAXATION" ||
                type_ == "TRIDIAGONALRELAXATION") {
-      paramList.set("relaxation: zero starting solution", InitialGuessIsZero);
-      SetPrecParameters(paramList);
+      const std::string paramName = "relaxation: zero starting solution";
+      if (!params.isType<bool>(paramName) ||
+          (params.get<bool>(paramName) != InitialGuessIsZero)) {
+        paramList.set(paramName, InitialGuessIsZero);
+        SetPrecParameters(paramList);
+      }
       supportInitialGuess = true;
 
     } else if (type_ == "KRYLOV") {
-      paramList.set("krylov: zero starting solution", InitialGuessIsZero);
-      SetPrecParameters(paramList);
+      const std::string paramName = "krylov: zero starting solution";
+      if (!params.isType<bool>(paramName) ||
+          (params.get<bool>(paramName) != InitialGuessIsZero)) {
+        paramList.set(paramName, InitialGuessIsZero);
+        SetPrecParameters(paramList);
+      }
       supportInitialGuess = true;
 
     } else if (type_ == "SCHWARZ") {

@@ -289,6 +289,8 @@ void Amesos2Wrapper<MatrixType>::initialize ()
     timer = TimeMonitor::getNewCounter (timerName);
   }
 
+  double startTime = timer->wallTime();
+
   { // Start timing here.
     TimeMonitor timeMon (*timer);
 
@@ -372,9 +374,7 @@ void Amesos2Wrapper<MatrixType>::initialize ()
   IsInitialized_ = true;
   ++NumInitialize_;
 
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  InitializeTime_ = timer->totalElapsedTime ();
+  InitializeTime_ += (timer->wallTime() - startTime);
 }
 
 template<class MatrixType>
@@ -395,6 +395,8 @@ void Amesos2Wrapper<MatrixType>::compute ()
     timer = TimeMonitor::getNewCounter (timerName);
   }
 
+  double startTime = timer->wallTime();
+
   { // Start timing here.
     TimeMonitor timeMon (*timer);
     solver_->numeric ();
@@ -403,9 +405,7 @@ void Amesos2Wrapper<MatrixType>::compute ()
   IsComputed_ = true;
   ++NumCompute_;
 
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  ComputeTime_ = timer->totalElapsedTime ();
+  ComputeTime_ += (timer->wallTime() - startTime);
 }
 
 
@@ -432,6 +432,8 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
   if (timer.is_null ()) {
     timer = TimeMonitor::getNewCounter (timerName);
   }
+
+  double startTime = timer->wallTime();
 
   { // Start timing here.
     TimeMonitor timeMon (*timer);
@@ -506,9 +508,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
 
   ++NumApply_;
 
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  ApplyTime_ = timer->totalElapsedTime ();
+  ApplyTime_ += (timer->wallTime() - startTime);
 }
 
 

@@ -296,7 +296,7 @@ void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
   // Apply the operator
 
   tpetraOperator_->apply(*tX, *tY, tTransp, alpha, beta);
-
+  Kokkos::fence();
 }
 
 // Protected member functions overridden from ScaledLinearOpBase
@@ -330,6 +330,7 @@ scaleLeftImpl(const VectorBase<Scalar> &row_scaling_in)
     Teuchos::rcp_dynamic_cast<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tpetraOperator_.getNonconstObj(),true);
 
   rowMatrix->leftScale(*row_scaling);
+  Kokkos::fence();
 }
 
 
@@ -347,6 +348,7 @@ scaleRightImpl(const VectorBase<Scalar> &col_scaling_in)
     Teuchos::rcp_dynamic_cast<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tpetraOperator_.getNonconstObj(),true);
 
   rowMatrix->rightScale(*col_scaling);
+  Kokkos::fence();
 }
 
 // Protected member functions overridden from RowStatLinearOpBase
@@ -442,6 +444,7 @@ void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getRowStatImpl(
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                                "Error - Thyra::TpetraLinearOp::getRowStatImpl() - Column sum support not implemented!");
   }
+  Kokkos::fence();
 }
 
 

@@ -54,7 +54,7 @@ namespace panzer {
   createDynRankView(const InputArray& a, const std::string& name, const DimensionPack... dims)
   {
     using return_type = Kokkos::DynRankView<typename InputArray::value_type,PHX::Device>;
-    return Kokkos::ViewFactory<InputArray>::template create_view<return_type>(a,name,dims...);
+    return PHX::ViewFactory<InputArray>::template create_view<return_type>(a,name,dims...);
   }
 
 }

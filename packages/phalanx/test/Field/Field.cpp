@@ -376,7 +376,7 @@ TEUCHOS_UNIT_TEST(field, all)
       auto kvc = c.get_view();
       Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){kvc(0,0) = MyTraits::FadType(1.0);});
       // const view (view const, not const data)
-      const Kokkos::DynRankView<double,PHX::Device> const_kva = a.get_view();
+      const Kokkos::DynRankView<double,typename PHX::DevLayout<double>::type,PHX::Device> const_kva = a.get_view();
       Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kva(0,0) = 1.0;});
       const auto const_kvc = c.get_view();
       Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kvc(0,0) = MyTraits::FadType(1.0);});

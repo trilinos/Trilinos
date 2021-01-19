@@ -207,6 +207,18 @@ TRIBITS_ADD_TEST(
 ENDIF()
 
 
+# Sarma Test
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    sarmaTest
+    SOURCES partition_sarma.cpp
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    ARGS
+    ""
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TaskMappingTest3
   SOURCES TaskMappingTest3.cpp
@@ -545,6 +557,17 @@ TRIBITS_ADD_TEST(
   COMM serial mpi
   ARGS
    "--inputFile=simple --no-distribute --edgeWeights=2 --method=parmetis"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_Quotient
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple --method=quotient --nparts=2"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )

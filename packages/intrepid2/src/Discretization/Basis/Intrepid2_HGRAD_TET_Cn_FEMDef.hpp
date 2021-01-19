@@ -233,7 +233,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
   this->basisType_         = BASIS_FEM_LAGRANGIAN;
   this->basisCoordinates_  = COORDINATES_CARTESIAN;
   this->functionSpace_     = FUNCTION_SPACE_HGRAD;
-  pointType_ = pointType;
+  pointType_ = (pointType == POINTTYPE_DEFAULT) ? POINTTYPE_EQUISPACED : pointType;
 
   const ordinal_type card = this->basisCardinality_;
 
@@ -281,17 +281,17 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
   PointTools::getLattice( vertexes,
       this->basisCellTopology_ ,
       1, 0,
-      pointType );
+      this->pointType_ );
 
   PointTools::getLattice( linePts,
       edgeTop,
       order, offset,
-      pointType );
+      this->pointType_ );
 
   PointTools::getLattice( triPts,
       faceTop,
       order, offset,
-      pointType );
+      this->pointType_ );
 
   // holds the image of the line points
   Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> edgePts("Hcurl::Tet::In::edgePts", numPtsPerEdge , spaceDim );
@@ -368,7 +368,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
         this->basisCellTopology_ ,
         order,
         1 ,
-        pointType );
+        this->pointType_ );
 
     // copy values into right positions of V2
     for (ordinal_type j=0;j<numPtsPerCell;j++) {

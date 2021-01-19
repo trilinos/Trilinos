@@ -360,6 +360,7 @@ template<class MatrixType>
 void ILUT<MatrixType>::initialize ()
 {
   Teuchos::Time timer ("ILUT::initialize");
+  double startTime = timer.wallTime();
   {
     Teuchos::TimeMonitor timeMon (timer);
 
@@ -381,7 +382,7 @@ void ILUT<MatrixType>::initialize ()
     IsInitialized_ = true;
     ++NumInitialize_;
   }
-  InitializeTime_ += timer.totalElapsedTime ();
+  InitializeTime_ += (timer.wallTime() - startTime);
 }
 
 
@@ -432,6 +433,7 @@ void ILUT<MatrixType>::compute ()
   }
 
   Teuchos::Time timer ("ILUT::compute");
+  double startTime = timer.wallTime();
   { // Timer scope for timing compute()
     Teuchos::TimeMonitor timeMon (timer, true);
     const scalar_type zero = STS::zero ();
@@ -744,7 +746,7 @@ void ILUT<MatrixType>::compute ()
     U_solver_->initialize ();
     U_solver_->compute ();
   }
-  ComputeTime_ += timer.totalElapsedTime ();
+  ComputeTime_ += (timer.wallTime() - startTime);
   IsComputed_ = true;
   ++NumCompute_;
 }
@@ -778,6 +780,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
   const scalar_type zero = STS::zero ();
 
   Teuchos::Time timer ("ILUT::apply");
+  double startTime = timer.wallTime();
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer, true);
 
@@ -817,7 +820,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
   }//end timing
 
   ++NumApply_;
-  ApplyTime_ += timer.totalElapsedTime ();
+  ApplyTime_ += (timer.wallTime() - startTime);
 }
 
 

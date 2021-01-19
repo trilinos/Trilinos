@@ -54,13 +54,13 @@ else:
   debugDump = False
 
 if debugDump:
-  print "NOTE: TRIBITS_CHECKIN_TEST_DEBUG_DUMP=ON set in env, doing debug dump ..."
+  print("NOTE: TRIBITS_CHECKIN_TEST_DEBUG_DUMP=ON set in env, doing debug dump ...")
 
 thisFilePath = __file__
-if debugDump: print "\nthisFilePath =", thisFilePath
+if debugDump: print("\nthisFilePath =", thisFilePath)
 
 thisFileRealAbsBasePath = os.path.dirname(os.path.abspath(os.path.realpath(thisFilePath)))
-if debugDump: print "\nthisFileRealAbsBasePath = '"+thisFileRealAbsBasePath+"'"
+if debugDump: print("\nthisFileRealAbsBasePath = '"+thisFileRealAbsBasePath+"'")
 
 from CheckinTest import *
 from GeneralScriptSupport import *
@@ -1146,115 +1146,115 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   # Echo the command-line
   #
 
-  print ""
-  print "**************************************************************************"
-  print "Script: checkin-test.py \\"
+  print("")
+  print("**************************************************************************")
+  print("Script: checkin-test.py \\")
 
-  print "  --src-dir='" + options.srcDir+"' \\"
-  print "  --default-builds='" + options.defaultBuilds + "' \\"
-  print "  --extra-repos-file='"+options.extraReposFile+"' \\"
-  print "  --extra-repos-type='"+options.extraReposType+"' \\"
-  print "  --extra-repos='"+options.extraRepos+"' \\"
+  print("  --src-dir='" + options.srcDir+"' \\")
+  print("  --default-builds='" + options.defaultBuilds + "' \\")
+  print("  --extra-repos-file='"+options.extraReposFile+"' \\")
+  print("  --extra-repos-type='"+options.extraReposType+"' \\")
+  print("  --extra-repos='"+options.extraRepos+"' \\")
   if options.ignoreMissingExtraRepos:
-    print "  --ignore-missing-extra-repos \\"
+    print("  --ignore-missing-extra-repos \\")
   else:
-    print "  --require-extra-repos-exist \\"
+    print("  --require-extra-repos-exist \\")
   if options.skipDepsUpdate:
-    print "  --skip-deps-update \\"
-  print "  --enable-packages='"+options.enablePackages+"' \\"
-  print "  --enable-extra-packages='"+options.enableExtraPackages+"' \\"
-  print "  --disable-packages='"+options.disablePackages+"' \\"
-  print "  --enable-all-packages='"+options.enableAllPackages+"'\\"
+    print("  --skip-deps-update \\")
+  print("  --enable-packages='"+options.enablePackages+"' \\")
+  print("  --enable-extra-packages='"+options.enableExtraPackages+"' \\")
+  print("  --disable-packages='"+options.disablePackages+"' \\")
+  print("  --enable-all-packages='"+options.enableAllPackages+"'\\")
   if options.enableFwdPackages:
-    print "  --enable-fwd-packages \\"
+    print("  --enable-fwd-packages \\")
   else:
-    print "  --no-enable-fwd-packages \\"
+    print("  --no-enable-fwd-packages \\")
   if options.abortGracefullyIfNoChangesPulled:
-    print "  --abort-gracefully-if-no-changes-pulled \\"
+    print("  --abort-gracefully-if-no-changes-pulled \\")
   else:
-    print "  --continue-if-no-updates \\"
+    print("  --continue-if-no-updates \\")
   if options.abortGracefullyIfNoChangesToPush:
-    print "  --abort-gracefully-if-no-changes-to-push \\"
+    print("  --abort-gracefully-if-no-changes-to-push \\")
   else:
-    print "  --continue-if-no-changes-to-push \\"
+    print("  --continue-if-no-changes-to-push \\")
   if options.abortGracefullyIfNoEnables:
-    print "  --abort-gracefully-if-no-enables \\"
+    print("  --abort-gracefully-if-no-enables \\")
   else:
-    print "  --continue-if-no-enables \\"
-  print "  --extra-cmake-options='"+options.extraCmakeOptions+"' \\"
-  print "  --test-categories='"+options.testCategories+"' \\"
+    print("  --continue-if-no-enables \\")
+  print("  --extra-cmake-options='"+options.extraCmakeOptions+"' \\")
+  print("  --test-categories='"+options.testCategories+"' \\")
   if options.overallNumProcs:
-    print "  -j"+options.overallNumProcs+" \\"
+    print("  -j"+options.overallNumProcs+" \\")
   if options.useNinja:
-    print "  --use-ninja \\"
+    print("  --use-ninja \\")
   else:
-    print "  --use-makefiles \\"
-  print "  --make-options='"+options.makeOptions+"' \\"
-  print "  --ctest-options='"+options.ctestOptions+"' \\"
-  print "  --ctest-timeout="+str(options.ctestTimeOut)+" \\"
+    print("  --use-makefiles \\")
+  print("  --make-options='"+options.makeOptions+"' \\")
+  print("  --ctest-options='"+options.ctestOptions+"' \\")
+  print("  --ctest-timeout="+str(options.ctestTimeOut)+" \\")
   if options.showAllTests:
-    print "  --show-all-tests \\"
+    print("  --show-all-tests \\")
   else:
-    print "  --no-show-all-tests \\"
+    print("  --no-show-all-tests \\")
   if options.withoutDefaultBuilds:
-    print "  --without-default-builds \\"
-  print "  --st-extra-builds='"+options.stExtraBuilds+"' \\"
-  print "  --extra-builds='"+options.extraBuilds+"' \\"
-  print "  --log-file='"+options.logFile+"' \\"
-  print "  --send-email-to='"+options.sendEmailTo+"' \\"
+    print("  --without-default-builds \\")
+  print("  --st-extra-builds='"+options.stExtraBuilds+"' \\")
+  print("  --extra-builds='"+options.extraBuilds+"' \\")
+  print("  --log-file='"+options.logFile+"' \\")
+  print("  --send-email-to='"+options.sendEmailTo+"' \\")
   if options.skipCaseSendEmail:
-    print "  --skip-case-send-email \\"
+    print("  --skip-case-send-email \\")
   else:
-    print "  --skip-case-no-email \\"
-  print "  --send-build-case-email="+str(options.sendBuildCaseEmail)+" \\"
+    print("  --skip-case-no-email \\")
+  print("  --send-build-case-email="+str(options.sendBuildCaseEmail)+" \\")
   if not options.sendEmailOnlyOnFailure:
-    print "  --send-email-for-all \\"
+    print("  --send-email-for-all \\")
   else:
-    print "  --send-email-only-on-failure \\ "
-  print "  --send-email-to-on-push='"+options.sendEmailToOnPush+"' \\"
+    print("  --send-email-only-on-failure \\ ")
+  print("  --send-email-to-on-push='"+options.sendEmailToOnPush+"' \\")
   if options.forcePush:
-    print "  --force-push \\"
+    print("  --force-push \\")
   else:
-    print "  --no-force-push \\"
+    print("  --no-force-push \\")
   if options.doPushReadinessCheck:
-    print "  --do-push-readiness-check \\"
+    print("  --do-push-readiness-check \\")
   else:
-    print "  --skip-push-readiness-check \\"
+    print("  --skip-push-readiness-check \\")
   if options.rebase:
-    print "  --rebase \\"
+    print("  --rebase \\")
   else:
-    print "  --no-rebase \\"
+    print("  --no-rebase \\")
   if options.appendTestResults:
-    print "  --append-test-results \\"
+    print("  --append-test-results \\")
   else:
-    print "  --no-append-test-results \\"
+    print("  --no-append-test-results \\")
   if options.extraPullFrom:
-    print "  --extra-pull-from='"+options.extraPullFrom+"' \\"
+    print("  --extra-pull-from='"+options.extraPullFrom+"' \\")
   if options.allowNoPull:
-    print "  --allow-no-pull \\"
+    print("  --allow-no-pull \\")
   if options.wipeClean:
-    print "  --wipe-clean \\"
+    print("  --wipe-clean \\")
   if options.doPull:
-    print "  --pull \\"
+    print("  --pull \\")
   if options.doConfigure:
-    print "  --configure \\"
+    print("  --configure \\")
   if options.doBuild:
-    print "  --build \\"
+    print("  --build \\")
   if options.doTest:
-    print "  --test \\"
+    print("  --test \\")
   if options.localDoAll:
-    print "  --local-do-all \\"
+    print("  --local-do-all \\")
   if options.doAll:
-    print "  --do-all \\"
+    print("  --do-all \\")
   if options.doPush:
-    print "  --push \\"
+    print("  --push \\")
   if options.executeOnReadyToPush:
-    print "  --execute-on-ready-to-push=("+options.executeOnReadyToPush+") \\"
+    print("  --execute-on-ready-to-push=("+options.executeOnReadyToPush+") \\")
   if options.ssExtraBuilds:
-    print "  --ss-extra-builds='"+options.ssExtraBuilds+"' \\"
-    print "\nWARNING: --ss-extra-builds is deprecated!  Use --st-extra-builds instead!"
+    print("  --ss-extra-builds='"+options.ssExtraBuilds+"' \\")
+    print("\nWARNING: --ss-extra-builds is deprecated!  Use --st-extra-builds instead!")
     if options.stExtraBuilds:
-      print "ERROR: Can't set deprecated --ss-extra-builds and --st-extra-builds together!"
+      print("ERROR: Can't set deprecated --ss-extra-builds and --st-extra-builds together!")
       sys.exit(3)
     options.stExtraBuilds = options.ssExtraBuilds
 
@@ -1267,12 +1267,12 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     options.srcDir = os.path.abspath(options.srcDir)
 
   if options.doAll and options.localDoAll:
-    print "\nError, you can not use --do-all and --local-do-all together!  Use on or the other!"
+    print("\nError, you can not use --do-all and --local-do-all together!  Use on or the other!")
     sys.exit(1)
 
   if options.doAll and options.allowNoPull:
-    print "\nError, you can not use --do-all and --allow-no-pull together! (see the" \
-      " documentation for the --do-all, --local-do-all, and --allow-no-pull arguments.)"
+    print("\nError, you can not use --do-all and --allow-no-pull together! (see the" \
+      " documentation for the --do-all, --local-do-all, and --allow-no-pull arguments.)")
     sys.exit(2)
 
   if options.extraPullFrom:
@@ -1289,27 +1289,27 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
   if not options.showDefaults:
 
-    print "\nStarting time:", getCmndOutput("date",True)
+    print("\nStarting time:", getCmndOutput("date",True))
 
     tribitsDir = os.path.abspath(getCompleteFileDirname(__file__)+"/..") # TriBITS dir!
 
     t1 = time.time()
     success = checkinTest(tribitsDir, options, configuration)
     t2 = time.time()
-    print "\nTotal time for checkin-test.py =", formatMinutesStr((t2-t1)/60.0)
+    print("\nTotal time for checkin-test.py =", formatMinutesStr((t2-t1)/60.0))
 
-    print "\nFinal time:", getCmndOutput("date",True)
+    print("\nFinal time:", getCmndOutput("date",True))
 
     if options.ssExtraBuilds:
-      print "\n***"
-      print "*** FINAL WARNING: stop using deprecated --ss-extra-builds!  Use --st-extra-builds instead!"
-      print "***"
+      print("\n***")
+      print("*** FINAL WARNING: stop using deprecated --ss-extra-builds!  Use --st-extra-builds instead!")
+      print("***")
 
     if success:
-      print "\nREQUESTED ACTIONS: PASSED\n"
+      print("\nREQUESTED ACTIONS: PASSED\n")
       return True
     else:
-      print "\nREQUESTED ACTIONS: FAILED\n"
+      print("\nREQUESTED ACTIONS: FAILED\n")
       return False
   else:
     return True
@@ -1347,20 +1347,20 @@ def loadConfigurationFile(filepath):
       sys.path = [modulePath] + sys_path_old
       try:
         if debugDump:
-          print "\nLoading project configuration from %s..." % filepath
-          print "\nsys.path =", sys.path
+          print("\nLoading project configuration from %s..." % filepath)
+          print("\nsys.path =", sys.path)
         configuration = __import__(moduleName).configuration
         if debugDump:
-          print "\nSetting the default --src-dir='"+modulePath+"'"
+          print("\nSetting the default --src-dir='"+modulePath+"'")
         configuration.get("defaults").update({"--src-dir" : modulePath})
         return configuration
-      except Exception, e:
-        print e
+      except Exception as e:
+        print(e)
         raise e
     finally:
       sys.path = sys_path_old
       if debugDump:
-        print "\nsys.path =", sys.path
+        print("\nsys.path =", sys.path)
   else:
     raise Exception('The file %s does not exist.' % filepath)
 
@@ -1370,19 +1370,18 @@ def getLocalCmndLineArgs():
   checkinTestDir = os.getcwd()
   localProjectDefaultsBaseName = "local-checkin-test-defaults"
   localProjectDefaultsFile = checkinTestDir+"/"+localProjectDefaultsBaseName+".py"
-  #print "localProjectDefaultsFile = '"+localProjectDefaultsFile+"'"
   if os.path.exists(localProjectDefaultsFile):
     sys_path_old = sys.path
     try:
       sys.path = [checkinTestDir] + sys_path_old
       if debugDump:
-        print "\nLoading local default command-line args from "+localProjectDefaultsFile+"..."
-        print "\nsys.path =", sys.path
+        print("\nLoading local default command-line args from "+localProjectDefaultsFile+"...")
+        print("\nsys.path =", sys.path)
       localDefaults = __import__(localProjectDefaultsBaseName).defaults
     finally:
       sys.path = sys_path_old
       if debugDump:
-        print "\nsys.path =", sys.path
+        print("\nsys.path =", sys.path)
   return localDefaults
 
 
@@ -1395,7 +1394,7 @@ def locateAndLoadConfiguration(path_hints = []):
   """
   for path in path_hints:
     candidate = os.path.join(path, "project-checkin-test-config.py")
-    if debugDump: print "\nLooking for candidate configuration file '%s'" % candidate
+    if debugDump: print("\nLooking for candidate configuration file '%s'" % candidate)
     if os.path.exists(candidate):
       return loadConfigurationFile(candidate)
   return {}
@@ -1421,14 +1420,14 @@ def main(cmndLineArgs):
       cmndLineSplit = cmndLineArg.split("=")
       if cmndLineSplit[0].strip() == "--log-file":
         logFileName = cmndLineSplit[1].strip()
-    logFile = open(logFileName, "w", buffering=0) # 0 == no buffering
-    # NOTE: Above, we need to set biffering=0 to make sure that each line that
+    logFile = open(logFileName, "w", buffering=1) # 1 == line-by-line buffering
+    # NOTE: Above, we need to set biffering=1 to make sure that each line that
     # gets written is written out the file.  The is critical so that the user
     # can to a `tail -f <log-file>` to see what is going one.
   else:
     logFile = None
 
-  # There are a lot of print statements in the implementation. It's
+  # There are a lot of print(statements in the implementation. It's
   # easier to reset sys.stdout and sys.stderr to a TeeOutput object
   # than to replace them.
   teeOutput = TeeOutput(logFile)
@@ -1442,7 +1441,7 @@ def main(cmndLineArgs):
       configuration = None
       for arg in cmndLineArgs:
         if arg.startswith('--project-configuration='):
-          print "Found configuration override %s..." % arg
+          print("Found configuration override %s..." % arg)
           configuration = loadConfigurationFile(arg.split('=')[1])
         elif not configuration and arg.startswith('--src-dir='):
           configuration = locateAndLoadConfiguration([arg.split('=')[1]])
@@ -1451,20 +1450,20 @@ def main(cmndLineArgs):
       localCmndLineArgs = getLocalCmndLineArgs()
       if localCmndLineArgs:
         if debugDump:
-          print "\ncmndLineArgs =", cmndLineArgs
-          print "\nlocalCmndLineArgs =", localCmndLineArgs
+          print("\ncmndLineArgs =", cmndLineArgs)
+          print("\nlocalCmndLineArgs =", localCmndLineArgs)
         cmndLineArgs = localCmndLineArgs + cmndLineArgs
         if debugDump:
-          print "\ncmndLineArgs =", cmndLineArgs
+          print("\ncmndLineArgs =", cmndLineArgs)
       if debugDump:
-        print "\nConfiguration loaded from configuration file =", configuration
+        print("\nConfiguration loaded from configuration file =", configuration)
       success = runProjectTestsWithCommandLineArgs(cmndLineArgs, configuration)
-    except SystemExit, e:
+    except SystemExit as e:
       # In Python 2.6, SystemExit inherits Exception, but for proper exit
       # behavior the SystemExit exception must propagate all the way to the top
       # of the call stack. It cannot get handled by the catch Exception below.
       raise e
-    except Exception, e:
+    except Exception as e:
       success = False
       traceback.print_exc(file=teeOutput)
   finally:

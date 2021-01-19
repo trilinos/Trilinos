@@ -136,7 +136,9 @@ namespace Intrepid2 {
     /// Maximum number of Newton iterations used internally in methods such as computing the action of the inverse reference to physical cell map.
     static constexpr ordinal_type MaxNewton            = 15;      
     /// Maximum order of derivatives allowed in intrepid.
-    static constexpr ordinal_type MaxDerivative        = 10;     
+    static constexpr ordinal_type MaxDerivative        = 10;
+    /// Maximum number of tensor/Cartesian products that can be taken: this allows hypercube basis in 7D to be formed by 7 line basis components.
+    static constexpr ordinal_type MaxTensorComponents  = 7;
 
     // we do not want to use hard-wired epsilon, threshold and tolerence. 
     // static constexpr double Epsilon   = 1.0e-16; 

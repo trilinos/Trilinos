@@ -86,7 +86,7 @@ namespace Sacado {
   }
 #endif
 
-#if defined(HAVE_SACADO_KOKKOSCORE) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(KOKKOS_ENABLE_CUDA) && defined(__CUDACC__)
+#if defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(KOKKOS_ENABLE_CUDA) && defined(__CUDACC__)
 
   namespace Impl {
 
@@ -224,8 +224,8 @@ namespace Sacado {
 #if defined(HAVE_SACADO_KOKKOSCORE)
         if (m == 0)
           Kokkos::abort("Allocation failed.");
-      }
 #endif
+      }
 #endif
       return m;
     }

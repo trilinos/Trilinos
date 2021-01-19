@@ -713,7 +713,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // nodal mass matrix
     RCP<Matrix> M0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M0_file, node_map);
     // build lumped mass matrix inverse (M0inv_Matrix)
-    RCP<Vector> diag = Utilities::GetLumpedMatrixDiagonal(M0_Matrix);
+    RCP<Vector> diag = Utilities::GetLumpedMatrixDiagonal(*M0_Matrix);
     RCP<CrsMatrixWrap> M0inv_MatrixWrap = rcp(new CrsMatrixWrap(node_map, node_map, 0));
     RCP<CrsMatrix> M0inv_CrsMatrix = M0inv_MatrixWrap->getCrsMatrix();
     Teuchos::ArrayRCP<size_t> rowPtr;

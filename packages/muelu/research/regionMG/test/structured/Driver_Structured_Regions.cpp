@@ -539,8 +539,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   RCP<TimeMonitor> tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.1 - Build Region Maps")));
 
-  Teuchos::RCP<Xpetra::Map<LO,GO,NO> > rowMap, colMap;
-  Teuchos::RCP<Xpetra::Map<LO,GO,NO> > revisedRowMap, revisedColMap;
+  Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > rowMap, colMap;
+  Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > revisedRowMap, revisedColMap;
   rowMap = Xpetra::MapFactory<LO,GO,Node>::Build(dofMap->lib(),
                                                           Teuchos::OrdinalTraits<GO>::invalid(),
                                                           quasiRegionGIDs(),
@@ -714,11 +714,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   {
   RCP<MueLu::Level> level0 = regHierarchy->GetLevel(0);
-  level0->Set<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >("compRowMap", dofMap);
-  level0->Set<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >("rowMap", rowMap);
-  level0->Set<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >("colMap", colMap);
-  level0->Set<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >("regRowMap", revisedRowMap);
-  level0->Set<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >("regColMap", revisedColMap);
   level0->Set<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("rowImport",rowImport);
   level0->Set<ArrayView<LocalOrdinal> > ("compositeToRegionLIDs", compositeToRegionLIDs() );
   level0->Set<RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > >("interfaceGIDs", interfaceGIDsPerLevel[0]);

@@ -144,8 +144,15 @@ namespace Intrepid2 {
 
     KOKKOS_INLINE_FUNCTION
     void getFaceOrientation(ordinal_type *faceOrt, const ordinal_type numFace) const;
+    
+    inline std::string to_string() const;
   };
+}
 
+inline std::ostream& operator<<(std::ostream& os, const ::Intrepid2::Orientation& orientation)
+{
+  os << orientation.to_string();
+  return os;
 }
 
 // include templated function definitions

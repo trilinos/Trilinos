@@ -125,11 +125,11 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
     const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldIds_[fd]);
-    scratch_offsets_[fd] = Kokkos::View<int*,PHX::Device>("offsets",offsets.size());
+    scratch_offsets_[fd] = PHX::View<int*>("offsets",offsets.size());
     for(std::size_t i=0;i<offsets.size();i++)
       scratch_offsets_[fd](i) = offsets[i];
   }
-  scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",scatterFields_[0].extent(0),
+  scratch_lids_ = PHX::View<LO**>("lids",scatterFields_[0].extent(0),
                                                  globalIndexer_->getElementBlockGIDCount(blockId));
 
 }
@@ -335,7 +335,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 
     int fieldNum = fieldIds_[fd];
     const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-    scratch_offsets_[fd] = Kokkos::View<int*,PHX::Device>("offsets",offsets.size());
+    scratch_offsets_[fd] = PHX::View<int*>("offsets",offsets.size());
     for(std::size_t i=0;i<offsets.size();i++)
       scratch_offsets_[fd](i) = offsets[i];
   }
@@ -345,7 +345,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     auto otherBlockId = workset_0.other->block_id;
     other_derivative_size_ = globalIndexer_->getElementBlockGIDCount(otherBlockId);
   }
-  scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",scatterFields_[0].extent(0),
+  scratch_lids_ = PHX::View<LO**>("lids",scatterFields_[0].extent(0),
                                                  my_derivative_size_ + other_derivative_size_);
 }
 
@@ -381,8 +381,8 @@ public:
   Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> r_data;
   LocalMatrixT jac; // Kokkos jacobian type
 
-  Kokkos::View<const LO**,PHX::Device> lids;    // local indices for unknowns
-  Kokkos::View<const int*,PHX::Device> offsets; // how to get a particular field
+  PHX::View<const LO**> lids;    // local indices for unknowns
+  PHX::View<const int*> offsets; // how to get a particular field
   FieldType field;
 
 
@@ -424,8 +424,8 @@ public:
 
   Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> r_data;
 
-  Kokkos::View<const LO**,PHX::Device> lids;    // local indices for unknowns
-  Kokkos::View<const int*,PHX::Device> offsets; // how to get a particular field
+  PHX::View<const LO**> lids;    // local indices for unknowns
+  PHX::View<const int*> offsets; // how to get a particular field
   FieldType field;
 
 

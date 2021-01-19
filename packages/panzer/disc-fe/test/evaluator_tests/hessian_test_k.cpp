@@ -118,11 +118,11 @@ TEUCHOS_UNIT_TEST(hessian_test_k,correctness)
   double dx_val = 2.0;
   double dy_val = 3.0;
 
-  Kokkos::View<ScalarT*> x("x",5);
-  Kokkos::View<ScalarT*> y("y",5);
-  Kokkos::View<ScalarT*> dx("dx",5);
-  Kokkos::View<ScalarT*> dy("dy",5);
-  Kokkos::View<ScalarT*> result("result",5);
+  PHX::View<ScalarT*> x("x",5);
+  PHX::View<ScalarT*> y("y",5);
+  PHX::View<ScalarT*> dx("dx",5);
+  PHX::View<ScalarT*> dy("dy",5);
+  PHX::View<ScalarT*> result("result",5);
 
   for(int i=0;i<5;++i) {
     dx(i) = ScalarT(dx_val);

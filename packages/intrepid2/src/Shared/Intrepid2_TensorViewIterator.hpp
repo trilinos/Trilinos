@@ -148,16 +148,22 @@ namespace Intrepid2
         }
         else
         {
-          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(contracting, std::invalid_argument, "encountered a non-contraction rank combination after a contraction; contractions can only go at the end");
-          expected_rank++;
-          if (rank_combination_types[d] == TENSOR_PRODUCT)
+          if (!contracting)
           {
-            INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(tensor_view.extent_int(d) != view1.extent_int(d) * view2.extent_int(d), std::invalid_argument, "For TENSOR_PRODUCT rank combination, the tensor View must have length in that dimension equal to the product of the two component views in that dimension");
+            expected_rank++;
+            if (rank_combination_types[d] == TENSOR_PRODUCT)
+            {
+              INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(tensor_view.extent_int(d) != view1.extent_int(d) * view2.extent_int(d), std::invalid_argument, "For TENSOR_PRODUCT rank combination, the tensor View must have length in that dimension equal to the product of the two component views in that dimension");
+            }
+            else // matching
+            {
+              INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(view1.extent_int(d) != view2.extent_int(d), std::invalid_argument, "For DIMENSION_MATCH rank combination, all three views must have length equal to each other in that rank");
+              INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(tensor_view.extent_int(d) != view1.extent_int(d), std::invalid_argument, "For DIMENSION_MATCH rank combination, all three views must have length equal to each other in that rank");
+            }
           }
-          else // matching
+          else
           {
-            INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(view1.extent_int(d) != view2.extent_int(d), std::invalid_argument, "For DIMENSION_MATCH rank combination, all three views must have length equal to each other in that rank");
-            INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(tensor_view.extent_int(d) != view1.extent_int(d), std::invalid_argument, "For DIMENSION_MATCH rank combination, all three views must have length equal to each other in that rank");
+            INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(contracting, std::invalid_argument, "encountered a non-contraction rank combination after a contraction; contractions can only go at the end");
           }
         }
       }
