@@ -250,27 +250,27 @@ std::vector<std::string> AugmentedLagrangianAlgorithm_G<Real>::run( Vector<Real>
     state_->ncval += alobj.getNumberConstraintEvaluations();
 
     // Update multipliers
-    minPenaltyReciprocal_ = std::min(one/state_->searchSize,minPenaltyLowerBound_);
-    if ( cscale_*state_->cnorm < feasTolerance_ ) {
-      emul.axpy(state_->searchSize*cscale_,state_->constraintVec->dual());
-      if ( algo->getState()->statusFlag == EXITSTATUS_CONVERGED ) {
-        optTolerance_  = std::max(oem2*outerOptTolerance_,
-                         optTolerance_*std::pow(minPenaltyReciprocal_,optIncreaseExponent_));
-      }
-      feasTolerance_ = std::max(oem2*outerFeasTolerance_,
-                       feasTolerance_*std::pow(minPenaltyReciprocal_,feasIncreaseExponent_));
-      // Update Algorithm State
-      state_->snorm += state_->searchSize*cscale_*state_->cnorm;
-      state_->lagmultVec->set(emul);
+    if ( algo->getState()->statusFlag == EXITSTATUS_CONVERGED ) {
+     minPenaltyReciprocal_ = std::min(one/state_->searchSize,minPenaltyLowerBound_);
+     if ( cscale_*state_->cnorm < feasTolerance_ ) {
+       emul.axpy(state_->searchSize*cscale_,state_->constraintVec->dual());
+       optTolerance_  = std::max(oem2*outerOptTolerance_,
+                        optTolerance_*std::pow(minPenaltyReciprocal_,optIncreaseExponent_));
+       feasTolerance_ = std::max(oem2*outerFeasTolerance_,
+                        feasTolerance_*std::pow(minPenaltyReciprocal_,feasIncreaseExponent_));
+       // Update Algorithm State
+       state_->snorm += state_->searchSize*cscale_*state_->cnorm;
+       state_->lagmultVec->set(emul);
+     }
+     else {
+       state_->searchSize = std::min(penaltyUpdate_*state_->searchSize,maxPenaltyParam_);
+       optTolerance_      = std::max(oem2*outerOptTolerance_,
+                            optToleranceInitial_*std::pow(minPenaltyReciprocal_,optDecreaseExponent_));
+       feasTolerance_     = std::max(oem2*outerFeasTolerance_,
+                            feasToleranceInitial_*std::pow(minPenaltyReciprocal_,feasDecreaseExponent_));
+     }
+     alobj.reset(emul,state_->searchSize);
     }
-    else {
-      state_->searchSize = std::min(penaltyUpdate_*state_->searchSize,maxPenaltyParam_);
-      optTolerance_      = std::max(oem2*outerOptTolerance_,
-                           optToleranceInitial_*std::pow(minPenaltyReciprocal_,optDecreaseExponent_));
-      feasTolerance_     = std::max(oem2*outerFeasTolerance_,
-                           feasToleranceInitial_*std::pow(minPenaltyReciprocal_,feasDecreaseExponent_));
-    }
-    alobj.reset(emul,state_->searchSize);
 
     // Update Output
     output.push_back(print(printHeader_));
