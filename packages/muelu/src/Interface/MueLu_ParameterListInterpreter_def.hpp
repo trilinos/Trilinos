@@ -568,11 +568,11 @@ namespace MueLu {
     if (paramList.isParameter("P") && !paramList.get<RCP<Matrix> >("P").is_null())
       have_userP  = true;
 
-    // == Smoothers ==
-    UpdateFactoryManager_Smoothers(paramList, defaultList, manager, levelID, keeps);
-
     // === Coarse solver ===
     UpdateFactoryManager_CoarseSolvers(paramList, defaultList, manager, levelID, keeps);
+
+    // == Smoothers ==
+    UpdateFactoryManager_Smoothers(paramList, defaultList, manager, levelID, keeps);
 
     // === Aggregation ===
     UpdateFactoryManager_Aggregation_TentativeP(paramList, defaultList, manager, levelID, keeps);
