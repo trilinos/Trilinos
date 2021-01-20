@@ -256,14 +256,25 @@ namespace MueLu {
 
       const typename InputAdapterType::part_t * parts = problem->getSolution().getPartListView();
 
-      // For blkSize > 1, ignore solution for every row but the first ones in a block.
-      for (GO i = 0; i < numElements/blkSize; i++) {
-        int partNum = parts[i*blkSize];
-
-        for (LO j = 0; j < blkSize; j++)
-          decompEntries[i*blkSize + j] = partNum;
+      if(algo == "quotient") {
+	// Quotient algorithm outputs a partition vector of size #MPIranks,
+	// where each rank gets a single entry locally, i.e., parts[0]. This entry 
+	// denotes which MPI rank in the coarse system that the current MPI rank
+	// should migrate to as a whole.
+	int partNum = parts[0];
+	for (GO i = 0; i < numElements; i++) {
+	  decompEntries[i] = partNum;
+	}
       }
+      else {
+	// For blkSize > 1, ignore solution for every row but the first ones in a block.
+	for (GO i = 0; i < numElements/blkSize; i++) {
+	  int partNum = parts[i*blkSize];
 
+	  for (LO j = 0; j < blkSize; j++)
+	    decompEntries[i*blkSize + j] = partNum;
+	}
+      }
       Set(level, "Partition", decomposition);
     }
   }

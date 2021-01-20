@@ -106,7 +106,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, Responses_g4_p2)
 
   outArgs.set_g(4,::Thyra::ModelEvaluatorBase::Evaluation<::Thyra::VectorBase<Scalar>>(g_thyra));
   outArgs.set_DfDp(2,::Thyra::ModelEvaluatorBase::Derivative<Scalar>(DfDp_thyra));
-  outArgs.set_DgDx(4,::Thyra::ModelEvaluatorBase::Derivative<Scalar>(DgDx_thyra));
+  outArgs.set_DgDx(4,::Thyra::ModelEvaluatorBase::Derivative<Scalar>(DgDx_thyra,Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM));
   outArgs.set_DgDp(4,2,::Thyra::ModelEvaluatorBase::Derivative<Scalar>(Dg4Dp2_thyra));
   outArgs.set_DgDp(4,4,::Thyra::ModelEvaluatorBase::Derivative<Scalar>(Dg4Dp4_thyra));
 
@@ -206,7 +206,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, Responses_g6_p4)
 
   outArgs.set_g(6,::Thyra::ModelEvaluatorBase::Evaluation<::Thyra::VectorBase<Scalar>>(g_thyra));
   outArgs.set_DfDp(4,::Thyra::ModelEvaluatorBase::Derivative<Scalar>(DfDp4_thyra));
-  outArgs.set_DgDx(6,::Thyra::ModelEvaluatorBase::Derivative<Scalar>(DgDx_thyra));
+  outArgs.set_DgDx(6,::Thyra::ModelEvaluatorBase::Derivative<Scalar>(DgDx_thyra,Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM));
   outArgs.set_DgDp(6,2,::Thyra::ModelEvaluatorBase::Derivative<Scalar>(Dg6Dp2_thyra));
   outArgs.set_DgDp(6,4,::Thyra::ModelEvaluatorBase::Derivative<Scalar>(Dg6Dp4_thyra));
 
