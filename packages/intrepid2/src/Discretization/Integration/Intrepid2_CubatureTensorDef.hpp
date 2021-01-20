@@ -133,7 +133,7 @@ namespace Intrepid2 {
         break;
       }
       default: {
-        INTREPID2_TEST_FOR_EXCEPTION( this->numCubatures_ != 2 || this->numCubatures_ != 3, std::runtime_error,
+        INTREPID2_TEST_FOR_EXCEPTION( !(this->numCubatures_ == 2 || this->numCubatures_ == 3), std::runtime_error,
                                       ">>> ERROR (CubatureTensor::getCubature): CubatureTensor supports only 2 or 3 component direct cubatures.");
       }
       }
