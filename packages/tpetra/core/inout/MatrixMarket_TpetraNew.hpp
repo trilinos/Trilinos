@@ -779,7 +779,6 @@ readPerProcessBinary(
 {
 
   int me = comm->getRank();
-  int np = comm->getSize();
 
   bool verbose = false;   // Print status as reading
   {
@@ -978,7 +977,6 @@ readSparseFile(
     for (size_t it = 0; it < nNz; it++){
       global_ordinal_type I = buffer[2*it]-1;
       global_ordinal_type J = buffer[2*it+1]-1;
-      scalar_type V = 1.0;
       if (prevI != I) {
 	prevI = I;
 	rowIdx.push_back(I);
