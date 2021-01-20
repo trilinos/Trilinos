@@ -755,7 +755,7 @@ readBinary(
 // 
 // 
 // TYPES:
-//  #localNumNnzs:     unsigned long long
+//  localNumNnzs:      unsigned long long
 //  everything else:   unsigned int
 //
 //
