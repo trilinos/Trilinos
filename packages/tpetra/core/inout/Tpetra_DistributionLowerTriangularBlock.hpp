@@ -427,7 +427,7 @@ private:
   // in decreasing sort order of number of nonzeros per row in full matrix
   bool sortByDegree;
 
-  // Permutation matrix built only when sortByDegree = true;
+  // Column permutation matrix built only when sortByDegree = true;
   Teuchos::RCP<matrix_t> permMatrix;
 
   // Flag whether redistribution has occurred yet
@@ -510,20 +510,20 @@ public:
       lowerTriangularMatrix->apply(x, y, Teuchos::TRANS, alpha, ONE);
 
       // Subtract out duplicate diagonal terms
-      y.elementWiseMultiply(-ONE, *diag, x, ONE);
+      y.elementWiseMultiply(-alpha, *diag, x, ONE);
     }
     else {
 
-      // With sorting, the LowerTriangularBlock distribution stores (P A P)
+      // With sorting, the LowerTriangularBlock distribution stores (P^T A P)
       // in the CrsMatrix, for permutation matrix P. 
       // Thus, apply must compute
-      // y = P^T (beta (P y) + alpha (P A P) (P^T x))
+      // y = P (beta (P^T y) + alpha (P^T A P) (P^T x))
 
       vector_t xtmp(x.getMap(), x.getNumVectors());
       vector_t ytmp(y.getMap(), y.getNumVectors());
 
       permMatrix->apply(x, xtmp, Teuchos::TRANS);
-      permMatrix->apply(y, ytmp, Teuchos::NO_TRANS);
+      if (beta != ZERO) permMatrix->apply(y, ytmp, Teuchos::TRANS);
 
       // Multiply lower triangular
       lowerTriangularMatrix->apply(xtmp, ytmp, Teuchos::NO_TRANS, alpha, beta);
@@ -532,9 +532,9 @@ public:
       lowerTriangularMatrix->apply(xtmp, ytmp, Teuchos::TRANS, alpha, ONE);
 
       // Subtract out duplicate diagonal terms
-      ytmp.elementWiseMultiply(-ONE, *diag, xtmp, ONE);
+      ytmp.elementWiseMultiply(-alpha, *diag, xtmp, ONE);
 
-      permMatrix->apply(ytmp, y, Teuchos::TRANS);
+      permMatrix->apply(ytmp, y, Teuchos::NO_TRANS);
     }
   }
 
