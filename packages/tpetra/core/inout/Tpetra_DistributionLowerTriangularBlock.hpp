@@ -290,8 +290,8 @@ public:
 
       for (size_t i = 0; i < permMap->getNodeNumElements(); i++) {
         gno_t gid = permMap->getGlobalElement(i);
-        cols[0] = gid;
-        permMatrix->insertGlobalValues(permuteIndex[gid], cols(), vals());
+        cols[0] = permuteIndex[gid];
+        permMatrix->insertGlobalValues(gid, cols(), vals());
       }
 
       permMatrix->fillComplete(permMap, permMap);
@@ -516,7 +516,7 @@ public:
       vector_t xtmp(x.getMap(), x.getNumVectors());
       vector_t ytmp(y.getMap(), y.getNumVectors());
 
-      permMatrix->apply(x, xtmp, Teuchos::NO_TRANS);
+      permMatrix->apply(x, xtmp, Teuchos::TRANS);
       permMatrix->apply(y, ytmp, Teuchos::NO_TRANS);
 
       // Multiply lower triangular
