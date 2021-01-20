@@ -215,7 +215,7 @@ readMatrixMarket(
   }
 
   if (verbose && me == 0)
-    std::cout << "Reading matrix market file ... " << filename << std::endl;
+    std::cout << "Reading matrix market file... " << filename << std::endl;
 
   FILE *fp = NULL;
   size_t dim[3] = {0,0,0};  // nRow, nCol, nNz as read from MatrixMarket
@@ -745,7 +745,7 @@ readBinary(
 // 
 // FILE FORMAT:
 //     globalNumRows globalNumCols localNumNnzs row_1 col_1 ... row_n col_n, 
-//  where n = localNumEdges
+//  where n = localNunNnzs
 // 
 //
 // ASSUMPTIONS:
