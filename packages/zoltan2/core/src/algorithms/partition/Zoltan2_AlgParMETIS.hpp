@@ -61,13 +61,13 @@
 // but Zoltan2 not built with ParMETIS.
 
 namespace Zoltan2 {
-template <typename Adapter>
+template <typename Adapter, typename Model=GraphModel<typename Adapter::base_adapter_t>>
 class AlgParMETIS : public Algorithm<Adapter>
 {
 public:
   AlgParMETIS(const RCP<const Environment> &/* env */,
               const RCP<const Comm<int> > &/* problemComm */,
-              const RCP<GraphModel<typename Adapter::base_adapter_t> > &/* model */
+              const RCP<Model> &/* model */
   )
   {
     throw std::runtime_error(
@@ -108,7 +108,7 @@ extern "C" {
 
 namespace Zoltan2 {
 
-template <typename Adapter>
+template <typename Adapter, typename Model=GraphModel<typename Adapter::base_adapter_t>>
 class AlgParMETIS : public Algorithm<Adapter>
 {
 public:
@@ -135,7 +135,7 @@ public:
    */
   AlgParMETIS(const RCP<const Environment> &env__,
               const RCP<const Comm<int> > &problemComm__,
-              const RCP<graphModel_t> &model__) :
+              const RCP<Model> &model__) :
     env(env__), problemComm(problemComm__), 
     model(model__)
   { }
@@ -146,7 +146,7 @@ private:
 
   const RCP<const Environment> env;
   const RCP<const Comm<int> > problemComm;
-  const RCP<GraphModel<typename Adapter::base_adapter_t> > model;
+  const RCP<Model> model;
 
   void scale_weights(size_t n, ArrayView<StridedData<lno_t, scalar_t> > &fwgts,
                      pm_idx_t *iwgts);
@@ -154,8 +154,8 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-template <typename Adapter>
-void AlgParMETIS<Adapter>::partition(
+  template <typename Adapter, typename Model>
+  void AlgParMETIS<Adapter, Model>::partition(
   const RCP<PartitioningSolution<Adapter> > &solution
 )
 {
@@ -392,8 +392,8 @@ void AlgParMETIS<Adapter>::partition(
 // rounding to zero weights.
 // Based on Zoltan's scale_round_weights, mode 1
 
-template <typename Adapter>
-void AlgParMETIS<Adapter>::scale_weights(
+  template <typename Adapter, typename Model>
+  void AlgParMETIS<Adapter, Model>::scale_weights(
   size_t n, 
   ArrayView<StridedData<typename Adapter::lno_t,
                         typename Adapter::scalar_t> > &fwgts,

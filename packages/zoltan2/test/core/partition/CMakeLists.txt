@@ -561,6 +561,17 @@ TRIBITS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_Quotient
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple --method=quotient --nparts=2"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
 IF (Tpetra_INST_DOUBLE)
   # Double needed for file I/O.
   TRIBITS_ADD_EXECUTABLE(

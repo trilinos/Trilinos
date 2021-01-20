@@ -125,11 +125,11 @@ EvaluatorTpetra1DFEM(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   outArgs.setSupports(MEB::OUT_ARG_W_prec);
   outArgs.set_Np_Ng(Np_,Ng_);
   outArgs.setSupports(MEB::OUT_ARG_DfDp,2,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
-  outArgs.setSupports(MEB::OUT_ARG_DgDx,4,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
+  outArgs.setSupports(MEB::OUT_ARG_DgDx,4,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
   outArgs.setSupports(MEB::OUT_ARG_DgDp,4,2,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
 
   outArgs.setSupports(MEB::OUT_ARG_DfDp,4,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
-  outArgs.setSupports(MEB::OUT_ARG_DgDx,6,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
+  outArgs.setSupports(MEB::OUT_ARG_DgDx,6,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
   outArgs.setSupports(MEB::OUT_ARG_DgDp,4,4,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
   outArgs.setSupports(MEB::OUT_ARG_DgDp,6,2,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
   outArgs.setSupports(MEB::OUT_ARG_DgDp,6,4,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
