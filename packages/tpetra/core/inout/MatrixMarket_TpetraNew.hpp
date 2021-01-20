@@ -745,7 +745,7 @@ readBinary(
 // 
 // FILE FORMAT:
 //     globalNumRows globalNumCols localNumNnzs row_1 col_1 ... row_n col_n, 
-//  where n = localNunNnzs
+//  where n = localNumNnzs
 // 
 //
 // ASSUMPTIONS:
@@ -755,11 +755,12 @@ readBinary(
 // 
 // 
 // TYPES:
-//   #localNumNnzs:     unsigned long long
-//   everything else:   unsigned int
+//  #localNumNnzs:     unsigned long long
+//  everything else:   unsigned int
 //
-// Base of indexing: 
-//   1
+//
+// BASE OF INDEXING: 1
+//
 // 
 //////////////////////////////////////////////////////////////////////////////
 static
