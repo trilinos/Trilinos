@@ -1483,6 +1483,7 @@ printf( " col_count:: view \n" );
     //Could add first col if not symmetric
 
     // If symmetric  (short cutting for off-diag S)
+#if 0
     INT_1DARRAY max_reach;
     //if(MV.ncol > 0)
     {
@@ -1491,7 +1492,6 @@ printf( " col_count:: view \n" );
     }
     //printf("-------------UBLK DONE ALLOC----");
 
-#if 0
     #ifdef BASKER_TIMER 
     Kokkos::Timer timer1;
     double time1 = 0.0;
@@ -1659,8 +1659,8 @@ printf( " col_count:: view \n" );
 #else
     // let me just count nnz in L and U
     // NOTE: a better way to avoid realloc
-    ST.init_U_col_counts(MV.ncol); // contain nnz / col in U
-    ST.init_L_row_counts(MV.ncol); // contain nnz / row in L
+    ST.init_U_col_counts(MV.ncol, Options.verbose); // contain nnz / col in U
+    ST.init_L_row_counts(MV.ncol, Options.verbose); // contain nnz / row in L
     if(off_diag != 1) {
       for(Int j = 0; j < MV.ncol; j++)
       {

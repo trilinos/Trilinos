@@ -392,11 +392,13 @@ namespace BaskerNS
               }
             }
             if (dom1 == 0 || dom2 == 0) {
-              std::cout << std::endl << " > METIS_ComputeVertexSeparator returned an empty domain  "
-                                     << dom1 << " + " << dom2 << " + " << sep
-                                     << " (n = " << M.nrow << ")"
-                                     << std::endl << std::endl;
-              return BASKER_ERROR; // TODO: what to do here?
+              if(Options.verbose == BASKER_TRUE) {
+                std::cout << std::endl << " > METIS_ComputeVertexSeparator returned an empty domain  "
+                                       << dom1 << " + " << dom2 << " + " << sep
+                                       << " (n = " << M.nrow << ")"
+                                       << std::endl << std::endl;
+              }
+              //return BASKER_ERROR; // TODO: what to do here?
             }
             if(Options.verbose == BASKER_TRUE) {
               std::cout << " METIS_ComputeVertexSeparator: info = " << info << "(okay = " << METIS_OK << ")"
@@ -649,8 +651,11 @@ namespace BaskerNS
        printf("\n");
        #endif
 
+       if(Options.verbose == BASKER_TRUE) {
+         printf(" > calling to_complete_tree (cblk = %d) <\n",sg.cblk );
+       }
        to_complete_tree( num_levels, iblks, sg.cblk,
-           ttabs, ttree );
+                         ttabs, ttree );
 
 
        #ifdef BASKER_DEBUG_ORDER_SCOTCH

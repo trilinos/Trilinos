@@ -554,11 +554,13 @@ namespace BaskerNS
 
 
     BASKER_INLINE
-    void init_L_row_counts(Int size)
+    void init_L_row_counts(Int size, BASKER_BOOL verbose)
     {
       if(size <=0)
       {
-        std::cout << " init_L_row_counts: size <= 0 no alloc " << std::endl;
+        if (verbose) {
+          std::cout << " init_L_row_counts: size <= 0 no alloc " << std::endl;
+        }
         return;  //NDE - info of failure to allocate should be returned...
       }
       if(L_row_counts_flg == 0)
@@ -578,11 +580,13 @@ namespace BaskerNS
     }//end init_L_row_counts
 
     BASKER_INLINE
-    void init_L_col_counts(Int size)
+    void init_L_col_counts(Int size, BASKER_BOOL verbose)
     {
       if(size <=0)
       {
-        std::cout << " init_L_col_counts: size <= 0 no alloc " << std::endl;
+        if (verbose) {
+          std::cout << " init_L_col_counts: size <= 0 no alloc " << std::endl;
+        }
         return;  //NDE - info of failure to allocate should be returned...
       }
       if(L_col_counts_flg == 0)
@@ -626,11 +630,13 @@ namespace BaskerNS
     }//end init_U_row_counts
 
     BASKER_INLINE
-    void init_U_col_counts(Int size)
+    void init_U_col_counts(Int size, BASKER_BOOL verbose)
     {
       if(size <=0)
       {
-        std::cout << " init_U_col_counts: size <= 0 no alloc " << std::endl;
+        if (verbose) {
+          std::cout << " init_U_col_counts: size <= 0 no alloc " << std::endl;
+        }
         return;  //NDE - info of failure to allocate should be returned...
       }
       if(U_col_counts_flg == 0)
@@ -650,11 +656,13 @@ namespace BaskerNS
     }//end init_U_col_counts
 
     BASKER_INLINE
-    void init_S_row_counts(Int size)
+    void init_S_row_counts(Int size, BASKER_BOOL verbose)
     {
       if(size <=0)
       {
-        std::cout << " init_S_row_counts: size <= 0 no alloc " << std::endl;
+        if (verbose) {
+          std::cout << " init_S_row_counts: size <= 0 no alloc " << std::endl;
+        }
         return;  //NDE - info of failure to allocate should be returned...
       }
       if(S_row_counts_flg == 0)

@@ -373,8 +373,8 @@ namespace BaskerNS
     //printf("Done with btf_blk_mwm_amd malloc \n");
     //printf("blks: %d \n" , btf_nblks);
 
-    //const int blk_size_threshold = 1; // was 3
-    const int blk_size_threshold = 3; // was 3
+    const int blk_size_threshold = 1; // was 3
+    //const int blk_size_threshold = 3; // was 3
     bool flag = Options.verbose;
     Entry one = (Entry)1.0;
     //MALLOC_ENTRY_1DARRAY (scale_row_array, A.nrow);
