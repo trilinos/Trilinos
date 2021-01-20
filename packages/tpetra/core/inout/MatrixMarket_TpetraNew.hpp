@@ -215,7 +215,7 @@ readMatrixMarket(
   }
 
   if (verbose && me == 0)
-    std::cout << "Reading matrix market file... " << filename << std::endl;
+    std::cout << "Reading matrix market file ... " << filename << std::endl;
 
   FILE *fp = NULL;
   size_t dim[3] = {0,0,0};  // nRow, nCol, nNz as read from MatrixMarket
@@ -737,6 +737,111 @@ readBinary(
 
 }
 
+//////////////////////////////////////////////////////////////////////////////
+//////////// PER-PROCESS BINARY FILE READER & RESPECTIVE FORMAT //////////////
+//   (This format is used by the upcoming readPerProcessBinary function)    //
+//////////////////////////////////////////////////////////////////////////////
+// 
+// 
+// FILE FORMAT:
+//     globalNumRows globalNumCols localNumNnzs row_1 col_1 ... row_n col_n, 
+//  where n = localNumEdges
+// 
+//
+// ASSUMPTIONS:
+//  - The nonzeros should be sorted by their row indices within each file.
+//  - Nonzeros have global row and column indices.
+//  - The user specifies the base <filename>, where rank i reads <filename>.i.cooBin.  
+// 
+// 
+// TYPES:
+//   #localNumNnzs:     unsigned long long
+//   everything else:   unsigned int
+//
+// Base of indexing: 
+//   1
+// 
+//////////////////////////////////////////////////////////////////////////////
+static
+void 
+readPerProcessBinary(
+  const std::string &filename,
+  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,  
+  const Teuchos::ParameterList &params,
+  size_t &nRow,
+  size_t &nCol,
+  typename Distribution<global_ordinal_type,scalar_type>::LocalNZmap_t &localNZ,
+  Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > &dist,
+  unsigned int* &buffer,
+  size_t &nNz
+)
+{
+
+  int me = comm->getRank();
+  int np = comm->getSize();
+
+  bool verbose = false;   // Print status as reading
+  {
+  const Teuchos::ParameterEntry *pe = params.getEntryPtr("verbose");
+  if (pe != NULL) 
+    verbose = pe->getValue<bool>(&verbose);
+  }
+
+  std::string distribution = "1D";  // Default distribution is 1D row-based
+  {
+  const Teuchos::ParameterEntry *pe = params.getEntryPtr("distribution");
+  if (pe != NULL) 
+    distribution = pe->getValue<std::string>(&distribution);
+  }
+
+  if (verbose && me == 0)
+    std::cout << "Reading per-process binary files... " << filename << std::endl;
+
+
+  std::string rankFileName = filename + "." + std::to_string(me) + ".cooBin";
+  FILE *fp = NULL;
+
+  fp = fopen(rankFileName.c_str(), "rb");
+  if (fp == NULL) {
+    std::cout << "Error:  cannot open file " << filename << std::endl;
+    throw std::runtime_error("Error:  non-existing input file: " + rankFileName);
+  }
+ 
+  // The header in each per-process file:  globalNumRows globalNumCols localNumNonzeros
+  unsigned int globalNumRows = 0, globalNumCols = 0;
+  unsigned long long localNumNonzeros = 0;
+  fread(&globalNumRows, sizeof(unsigned int), 1, fp);
+  fread(&globalNumCols, sizeof(unsigned int), 1, fp);
+  fread(&localNumNonzeros, sizeof(unsigned long long), 1, fp);
+ 
+  nRow = static_cast<size_t>(globalNumRows);
+  nCol = static_cast<size_t>(globalNumCols);
+  nNz = static_cast<size_t>(localNumNonzeros);
+
+  // Fill the simple buffer array instead of a std::map
+  // S. Acer: With large graphs, we can't afford std::map
+  buffer = new unsigned int[nNz*2];
+
+  size_t ret = fread(buffer, sizeof(unsigned int), 2*nNz, fp);
+  if (ret == 0) {
+    std::cout << "Unexpected end of matrix file: " << rankFileName << std::endl;
+    std::cout.flush();
+    delete [] buffer;
+    exit(-1);
+  }
+  if (fp != NULL) fclose(fp);
+
+  // This barrier is not necessary but useful for debugging
+  comm->barrier();
+  if(verbose && me == 0)
+    std::cout << "All ranks finished reading their nonzeros from their individual files\n";
+
+  // Create distribution based on nRow, nCol, npRow, npCol
+  dist = buildDistribution<global_ordinal_type,scalar_type>(distribution,
+							    nRow, nCol, params,
+							    comm);
+}
+
 public:
 
 // This is the default interface.
@@ -811,6 +916,13 @@ readSparseFile(
     binary = pe->getValue<bool>(&binary);
   }
 
+  bool readPerProcess = false;   // should we read a separate file per process?
+  {
+  const Teuchos::ParameterEntry *pe = params.getEntryPtr("readPerProcess");
+  if (pe != NULL) 
+    readPerProcess = pe->getValue<bool>(&readPerProcess);
+  }
+
   if (useTimers) {
     const char *timername = (binary?"RSF readBinary":"RSF readMatrixMarket");
     timer = Teuchos::null;
@@ -818,23 +930,30 @@ readSparseFile(
                    *Teuchos::TimeMonitor::getNewTimer(timername)));
   }
   
-  // read nonzeros from the given file
+  // Read nonzeros from the given file(s)
   size_t nRow = 0, nCol = 0;
-  if(binary)
-    readBinary(filename, comm, params, nRow, nCol, localNZ, dist);
+  unsigned int *buffer; size_t nNz = 0;
+  if(binary){
+    if(readPerProcess)
+      readPerProcessBinary(filename, comm, params, nRow, nCol, localNZ, dist, buffer, nNz);
+    else 
+      readBinary(filename, comm, params, nRow, nCol, localNZ, dist);
+  }
   else
     readMatrixMarket(filename, comm, params, nRow, nCol, localNZ, dist);
 
-  // Redistribute nonzeros as needed to satisfy the Distribution
-  // For most Distributions, this is a no-op
+  if(readPerProcess == false){
 
-  if (useTimers) {
-    timer = Teuchos::null;
-    timer = rcp(new Teuchos::TimeMonitor(
+    // Redistribute nonzeros as needed to satisfy the Distribution
+    // For most Distributions, this is a no-op    
+    if (useTimers) {
+      timer = Teuchos::null;
+      timer = rcp(new Teuchos::TimeMonitor(
                    *Teuchos::TimeMonitor::getNewTimer("RSF redistribute")));
+    }
+  
+    dist->Redistribute(localNZ);
   }
-
-  dist->Redistribute(localNZ);
 
   if (useTimers) {
     timer = Teuchos::null;
@@ -853,24 +972,42 @@ readSparseFile(
   Teuchos::Array<scalar_type> val;
   Teuchos::Array<size_t> offsets;
 
-  // Exploit fact that map has entries sorted by I, then J
-  global_ordinal_type prevI = std::numeric_limits<global_ordinal_type>::max();
-  for (auto it = localNZ.begin(); it != localNZ.end(); it++) {
-    global_ordinal_type I = it->first.first;
-    global_ordinal_type J = it->first.second;
-    scalar_type V = it->second;
-    if (prevI != I) {
-      prevI = I;
-      rowIdx.push_back(I);
-      nnzPerRow.push_back(0);
+  if(readPerProcess) {
+    global_ordinal_type prevI = std::numeric_limits<global_ordinal_type>::max();
+    for (size_t it = 0; it < nNz; it++){
+      global_ordinal_type I = buffer[2*it]-1;
+      global_ordinal_type J = buffer[2*it+1]-1;
+      scalar_type V = 1.0;
+      if (prevI != I) {
+	prevI = I;
+	rowIdx.push_back(I);
+	nnzPerRow.push_back(0);
+      }
+      nnzPerRow.back()++;
+      colIdx.push_back(J);
     }
-    nnzPerRow.back()++;
-    colIdx.push_back(J);
-    val.push_back(V);
+    delete [] buffer;      
   }
+  else {
+    // Exploit fact that map has entries sorted by I, then J
+    global_ordinal_type prevI = std::numeric_limits<global_ordinal_type>::max();
+    for (auto it = localNZ.begin(); it != localNZ.end(); it++) {
+      global_ordinal_type I = it->first.first;
+      global_ordinal_type J = it->first.second;
+      scalar_type V = it->second;
+      if (prevI != I) {
+	prevI = I;
+	rowIdx.push_back(I);
+	nnzPerRow.push_back(0);
+      }
+      nnzPerRow.back()++;
+      colIdx.push_back(J);
+      val.push_back(V);
+    }
 
-  // Done with localNZ map; free it.
-  localNZmap_t().swap(localNZ);
+    // Done with localNZ map; free it.
+    localNZmap_t().swap(localNZ);
+  }
 
   // Compute prefix sum in offsets array
   offsets.resize(rowIdx.size() + 1);
@@ -896,10 +1033,22 @@ readSparseFile(
   if (verbose && me == 0) 
     std::cout << "Inserting global values" << std::endl;
 
-  for (int i = 0; i < rowIdx.size(); i++) {
-    size_t nnz = nnzPerRow[i];
-    size_t off = offsets[i];
-    A->insertGlobalValues(rowIdx[i], colIdx(off, nnz), val(off, nnz));
+  if(readPerProcess){
+    for (int i = 0; i < rowIdx.size(); i++) {
+      size_t nnz = nnzPerRow[i];
+      size_t off = offsets[i];
+      val.resize(nnz);
+      // ReadPerProcess routine does not read any numeric values from the file,
+      // So we insert dummy values here. 
+      A->insertGlobalValues(rowIdx[i], colIdx(off, nnz), val());
+    }
+  }
+  else {
+    for (int i = 0; i < rowIdx.size(); i++) {
+      size_t nnz = nnzPerRow[i];
+      size_t off = offsets[i];
+      A->insertGlobalValues(rowIdx[i], colIdx(off, nnz), val(off, nnz));
+    }
   }
 
   // free memory that is no longer needed
