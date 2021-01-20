@@ -123,7 +123,7 @@ class DistributionLowerTriangularBlock : public Distribution<gno_t,scalar_t> {
 //   The fact that a permuted matrix is stored complicates use of the matrix
 //   in algorithms other than Acer's triangle counting.  For SpMV with the
 //   vector numbered according to the MatrixMarket numbering, for example,
-//   P must be applied to the vector before SpMV, and P^T must be applied to
+//   P^T must be applied to the vector before SpMV, and P^T must be applied to
 //   the result of SpMV.  See LowerTriangularBlockOperator to see how this
 //   permutation matrix is used.
 //
@@ -513,6 +513,12 @@ public:
       y.elementWiseMultiply(-ONE, *diag, x, ONE);
     }
     else {
+
+      // With sorting, the LowerTriangularBlock distribution stores (P A P)
+      // in the CrsMatrix, for permutation matrix P. 
+      // Thus, apply must compute
+      // y = P^T (beta (P y) + alpha (P A P) (P^T x))
+
       vector_t xtmp(x.getMap(), x.getNumVectors());
       vector_t ytmp(y.getMap(), y.getNumVectors());
 
