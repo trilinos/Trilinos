@@ -2594,8 +2594,8 @@ void TestMueLuMultiLevelPreconditioner_Maxwell(char ProblemType[],
   Teuchos::RCP<Matrix> M1Op = Teuchos::rcp_dynamic_cast<Matrix>(m1Op);
 
   Teuchos::RCP<CrsMatrix> msMat = Teuchos::rcp(new EpetraCrsMatrix(Teuchos::rcpFromRef(Ms)));
-  Teuchos::RCP<CrsMatrixWrap> msOp = Teuchos::rcp(new CrsMatrixWrap(m1Mat));
-  Teuchos::RCP<Matrix> MsOp = Teuchos::rcp_dynamic_cast<Matrix>(m1Op);
+  Teuchos::RCP<CrsMatrixWrap> msOp = Teuchos::rcp(new CrsMatrixWrap(msMat));
+  Teuchos::RCP<Matrix> MsOp = Teuchos::rcp_dynamic_cast<Matrix>(msOp);
 
   Teuchos::RCP<MultiVector> xxh = Teuchos::rcp(new EpetraMultiVector(Teuchos::rcpFromRef(xh)));
   Teuchos::RCP<MultiVector> xb  = Teuchos::rcp(new EpetraMultiVector(Teuchos::rcpFromRef(b)));
