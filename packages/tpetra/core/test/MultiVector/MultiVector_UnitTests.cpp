@@ -1955,8 +1955,8 @@ namespace {
       {
         ArrayRCP<const Scalar> view;
         Array<Scalar> copy(numLocal*numVectors);
+        TEST_NOTHROW( A.get1dCopy(copy,numLocal) );
         TEST_NOTHROW( view = A.get1dView() );
-        TEST_NOTHROW( A.get1dCopy(copy(),numLocal) );
         TEST_COMPARE_FLOATING_ARRAYS(view,copy,M0);
       }
 
@@ -1964,8 +1964,8 @@ namespace {
       {
         ArrayRCP<Scalar> view;
         Array<Scalar> copy(numLocal*numVectors);
+        TEST_NOTHROW( A.get1dCopy(copy,numLocal) );
         TEST_NOTHROW( view = A.get1dViewNonConst() );
-        TEST_NOTHROW( A.get1dCopy(copy(),numLocal) );
         TEST_COMPARE_FLOATING_ARRAYS(view,copy,M0);
         // clear view, ensure that A is zero
         std::fill(view.begin(), view.end(), S0);
@@ -1974,7 +1974,8 @@ namespace {
         A.norm1(norms());
         TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
       }
-
+    }
+    {
       A.randomize();
 
       out << "Check that get2dView and get2dCopy have the same values" << endl;
@@ -1985,8 +1986,8 @@ namespace {
         for (size_t j=0; j < numVectors; ++j) {
           copies[j] = copyspace(numLocal*j,numLocal);
         }
+        TEST_NOTHROW( A.get2dCopy(copies) );
         TEST_NOTHROW( views = A.get2dView() );
-        TEST_NOTHROW( A.get2dCopy(copies()) );
         for (size_t j=0; j < numVectors; ++j) {
           TEST_COMPARE_FLOATING_ARRAYS(views[j],copies[j],M0);
         }
@@ -2000,8 +2001,8 @@ namespace {
         for (size_t j=0; j < numVectors; ++j) {
           copies[j] = copyspace(numLocal*j,numLocal);
         }
-        TEST_NOTHROW( views = A.get2dViewNonConst() );
         TEST_NOTHROW( A.get2dCopy(copies()) );
+        TEST_NOTHROW( views = A.get2dViewNonConst() );
         for (size_t j=0; j < numVectors; ++j) {
           TEST_COMPARE_FLOATING_ARRAYS(views[j],copies[j],M0);
         }
