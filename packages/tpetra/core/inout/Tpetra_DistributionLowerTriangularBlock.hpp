@@ -123,7 +123,7 @@ class DistributionLowerTriangularBlock : public Distribution<gno_t,scalar_t> {
 //   The fact that a permuted matrix is stored complicates use of the matrix
 //   in algorithms other than Acer's triangle counting.  For SpMV with the
 //   vector numbered according to the MatrixMarket numbering, for example,
-//   P must be applied to the vector before SpMV, and P^T must be applied to
+//   P^T must be applied to the vector before SpMV, and P^T must be applied to
 //   the result of SpMV.  See LowerTriangularBlockOperator to see how this
 //   permutation matrix is used.
 //
@@ -290,8 +290,8 @@ public:
 
       for (size_t i = 0; i < permMap->getNodeNumElements(); i++) {
         gno_t gid = permMap->getGlobalElement(i);
-        cols[0] = gid;
-        permMatrix->insertGlobalValues(permuteIndex[gid], cols(), vals());
+        cols[0] = permuteIndex[gid];
+        permMatrix->insertGlobalValues(gid, cols(), vals());
       }
 
       permMatrix->fillComplete(permMap, permMap);
@@ -427,7 +427,7 @@ private:
   // in decreasing sort order of number of nonzeros per row in full matrix
   bool sortByDegree;
 
-  // Permutation matrix built only when sortByDegree = true;
+  // Column permutation matrix built only when sortByDegree = true;
   Teuchos::RCP<matrix_t> permMatrix;
 
   // Flag whether redistribution has occurred yet
@@ -510,14 +510,20 @@ public:
       lowerTriangularMatrix->apply(x, y, Teuchos::TRANS, alpha, ONE);
 
       // Subtract out duplicate diagonal terms
-      y.elementWiseMultiply(-ONE, *diag, x, ONE);
+      y.elementWiseMultiply(-alpha, *diag, x, ONE);
     }
     else {
+
+      // With sorting, the LowerTriangularBlock distribution stores (P^T A P)
+      // in the CrsMatrix, for permutation matrix P. 
+      // Thus, apply must compute
+      // y = P (beta (P^T y) + alpha (P^T A P) (P^T x))
+
       vector_t xtmp(x.getMap(), x.getNumVectors());
       vector_t ytmp(y.getMap(), y.getNumVectors());
 
-      permMatrix->apply(x, xtmp, Teuchos::NO_TRANS);
-      permMatrix->apply(y, ytmp, Teuchos::NO_TRANS);
+      permMatrix->apply(x, xtmp, Teuchos::TRANS);
+      if (beta != ZERO) permMatrix->apply(y, ytmp, Teuchos::TRANS);
 
       // Multiply lower triangular
       lowerTriangularMatrix->apply(xtmp, ytmp, Teuchos::NO_TRANS, alpha, beta);
@@ -526,9 +532,9 @@ public:
       lowerTriangularMatrix->apply(xtmp, ytmp, Teuchos::TRANS, alpha, ONE);
 
       // Subtract out duplicate diagonal terms
-      ytmp.elementWiseMultiply(-ONE, *diag, xtmp, ONE);
+      ytmp.elementWiseMultiply(-alpha, *diag, xtmp, ONE);
 
-      permMatrix->apply(ytmp, y, Teuchos::TRANS);
+      permMatrix->apply(ytmp, y, Teuchos::NO_TRANS);
     }
   }
 

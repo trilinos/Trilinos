@@ -126,17 +126,20 @@ public:
          + 1;  // Since Trilinos' reader converts one-based to zero-based
     nNz = A_baseline->getGlobalNumEntries();
 
-    // Create input vector; use Trilinos default domain map
-    // This vector does not optimize communication for all distributions
-
     Teuchos::RCP<const map_t> domainMap =
                               Teuchos::rcp(new map_t(nCol, 0, comm));
-    x_baseline = Teuchos::rcp(new vector_t(domainMap));
-
+    x_baseline = Teuchos::rcp(new vector_t(A_baseline->getDomainMap()));
     x_baseline->randomize();
 
+    yin_baseline = Teuchos::rcp(new vector_t(A_baseline->getRangeMap()));
+    yin_baseline->randomize();
+
     // Apply baseline matrix to vectors.
-    applyAndComputeNorms("baseline", *A_baseline, norm_baseline());
+    
+    yout_baseline = applyMatrix("baseline", *A_baseline);
+    norm_baseline[0] = yout_baseline->normInf();
+    norm_baseline[1]=  yout_baseline->norm1();
+    norm_baseline[2] = yout_baseline->norm2();
   }
 
 
@@ -356,18 +359,21 @@ private:
   //////////////////////////////
   // Apply a matrix to a vector; 
   // compute three norms of product vector
-  void applyAndComputeNorms(
+  Teuchos::RCP<vector_t> applyMatrix(
     const std::string testname,
-    const Tpetra::Operator<scalar_t> &matrix,
-    Teuchos::ArrayView<scalar_t> norm)
+    const Tpetra::Operator<scalar_t> &matrix)
   {
     // Create xvec and yvec using domain and range map of matrix
     vector_t yvec(matrix.getRangeMap());
     vector_t xvec(matrix.getDomainMap());
 
     // Set xvec to have same values as x_baseline
-    Tpetra::Export<> exporter(x_baseline->getMap(), xvec.getMap());
-    xvec.doExport(*x_baseline, exporter, Tpetra::INSERT);
+    Tpetra::Export<> exporterX(x_baseline->getMap(), xvec.getMap());
+    xvec.doExport(*x_baseline, exporterX, Tpetra::INSERT);
+
+    // Set yvec to have same values as yin_baseline
+    Tpetra::Export<> exporterY(yin_baseline->getMap(), yvec.getMap());
+    yvec.doExport(*yin_baseline, exporterY, Tpetra::INSERT);
 
     // Do matvecs with the matrix; do several so we can time them
     const int nMatvecs = 1;
@@ -375,24 +381,36 @@ private:
     auto timer = Teuchos::TimeMonitor::getNewTimer(tname);
     for (int n = 0; n < nMatvecs; n++) {
       Teuchos::TimeMonitor tt(*timer);
-      matrix.apply(xvec, yvec);
+      matrix.apply(xvec, yvec, Teuchos::NO_TRANS, 3., 2.);
     }
 
-    // Compute norms of the product
-    norm[0] = yvec.normInf();
-    norm[1]=  yvec.norm1();
-    norm[2] = yvec.norm2();
+    // Import result to a vector with default Tpetra map for easy comparisons
+    Teuchos::RCP<map_t> defMap = 
+             rcp(new map_t(yvec.getGlobalLength(),0,yvec.getMap()->getComm()));
+    Teuchos::RCP<vector_t> ydef = 
+             rcp(new vector_t(defMap, yvec.getNumVectors()));
+    Tpetra::Export<> exportDef(yvec.getMap(), defMap);
+    ydef->doExport(yvec, exportDef, Tpetra::INSERT);
+
+    return ydef;
   }
   
   //////////////////////////////
   //  Compare computed norms to the baseline norms
   int compareToBaseline(
     const std::string testname, 
-    Teuchos::ArrayView<scalar_t> norm_test
+    const Teuchos::RCP<vector_t> &y_test
   )
   {
     const scalar_t epsilon = 0.0000001;
     int ierr = 0;
+
+    // First compare the norms of the result vector to the baseline
+    Teuchos::Array<scalar_t> norm_test(3);
+    norm_test[0] = y_test->normInf();
+    norm_test[1]=  y_test->norm1();
+    norm_test[2] = y_test->norm2();
+
     for (size_t i = 0; i < static_cast<size_t>(norm_baseline.size()); i++) {
       if (std::abs(norm_baseline[i] - norm_test[i]) > epsilon) {
         ierr++;
@@ -408,7 +426,27 @@ private:
         }
       }
     }
-    return ierr;
+
+    // If norms match, make sure the vector entries match, too 
+    // (Norms are indifferent to errors in permutation)
+    if (ierr == 0) {
+      y_test->sync_host();
+      yout_baseline->sync_host();
+      auto ytestData = y_test->getLocalViewHost();
+      auto ybaseData = yout_baseline->getLocalViewHost();
+      for (size_t i = 0; i < y_test->getLocalLength(); i++) {
+        if (std::abs(ytestData(i,0) - ybaseData(i,0)) > epsilon) ierr++;
+      }
+      if (ierr > 0) {
+        std::cout << "FAIL in test " << testname << ": " 
+                  << ierr << " vector entries differ on rank "
+                  << comm->getRank() << std::endl;
+      }
+    }
+
+    int gerr = 0;
+    Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
+    return gerr;
   }
 
   //////////////////////////////
@@ -433,10 +471,9 @@ private:
     Tpetra::LowerTriangularBlockOperator<scalar_t> lto(Amat, 
                                dynamic_cast<distltb_t&>(*dist));
 
-    Teuchos::Array<scalar_t> norm(3);
-    applyAndComputeNorms(testname, lto, norm());
+    Teuchos::RCP<vector_t> yvec = applyMatrix(testname, lto);
 
-    return compareToBaseline(testname, norm());
+    return compareToBaseline(testname, yvec);
   }
 
   //////////////////////////////
@@ -455,10 +492,9 @@ private:
     Teuchos::RCP<Tpetra::Distribution<gno_t, scalar_t> > dist;  // Not used
     Teuchos::RCP<matrix_t> Amat = readFile(testname, params, dist);
 
-    Teuchos::Array<scalar_t> norm(3);
-    applyAndComputeNorms(testname, *Amat, norm());
+    Teuchos::RCP<vector_t> yvec = applyMatrix(testname, *Amat);
 
-    return compareToBaseline(testname, norm());
+    return compareToBaseline(testname, yvec);
   }
   
 private:
@@ -467,7 +503,9 @@ private:
   const Teuchos::RCP<const Teuchos::Comm<int> > comm;
 
   size_t nRow, nCol, nNz;                  // dimensions of baseline matrix
-  Teuchos::RCP<vector_t> x_baseline;       // SpMV input vector y = Ax
+  Teuchos::RCP<vector_t> x_baseline;       // SpMV input vector y = by + aAx
+  Teuchos::RCP<vector_t> yin_baseline;     // SpMV input vector y = by + aAx
+  Teuchos::RCP<vector_t> yout_baseline;    // SpMV output vector y = by + aAx
   Teuchos::Array<scalar_t> norm_baseline;  // Norm of y for baseline matrix
 };
 
