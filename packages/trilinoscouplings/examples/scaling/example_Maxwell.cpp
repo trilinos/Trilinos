@@ -2593,6 +2593,10 @@ void TestMueLuMultiLevelPreconditioner_Maxwell(char ProblemType[],
   Teuchos::RCP<CrsMatrixWrap> m1Op = Teuchos::rcp(new CrsMatrixWrap(m1Mat));
   Teuchos::RCP<Matrix> M1Op = Teuchos::rcp_dynamic_cast<Matrix>(m1Op);
 
+  Teuchos::RCP<CrsMatrix> msMat = Teuchos::rcp(new EpetraCrsMatrix(Teuchos::rcpFromRef(Ms)));
+  Teuchos::RCP<CrsMatrixWrap> msOp = Teuchos::rcp(new CrsMatrixWrap(m1Mat));
+  Teuchos::RCP<Matrix> MsOp = Teuchos::rcp_dynamic_cast<Matrix>(m1Op);
+
   Teuchos::RCP<MultiVector> xxh = Teuchos::rcp(new EpetraMultiVector(Teuchos::rcpFromRef(xh)));
   Teuchos::RCP<MultiVector> xb  = Teuchos::rcp(new EpetraMultiVector(Teuchos::rcpFromRef(b)));
 
@@ -2602,7 +2606,7 @@ void TestMueLuMultiLevelPreconditioner_Maxwell(char ProblemType[],
 
   // construct preconditioner
   Teuchos::RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
-    = Teuchos::rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(curlcurlOp,d0cOp,M0invOp,
+  = Teuchos::rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(curlcurlOp,d0cOp,MsOp,M0invOp,
                                                        M1Op,Teuchos::null,xcoords,MLList) );
 
   MueLu::AztecEpetraOperator prec(preconditioner);
@@ -2653,7 +2657,7 @@ void TestMultiLevelPreconditioner_Maxwell(char ProblemType[],
 
   Epetra_Time SetupTime(CurlCurl.Comm());
 
-  ML_Epetra::RefMaxwellPreconditioner RMP(CurlCurl,D0clean,M1,M0inv,M1,MLList);
+  ML_Epetra::RefMaxwellPreconditioner RMP(CurlCurl,D0clean,Ms,M0inv,M1,MLList);
 
   if(CurlCurl.Comm().MyPID()==0) {std::cout << "Setup time: " << SetupTime.ElapsedTime()
                                             << " sec \n"; SetupTime.ResetStartTime();}
@@ -2708,9 +2712,7 @@ void TestMultiLevelPreconditioner_Stratimikos(char ProblemType[],
   MLList.set("D0",rcp((const Epetra_CrsMatrix*) &D0clean,false));
   MLList.set("M0inv",rcp((const Epetra_CrsMatrix*) &M0inv,false));
   MLList.set("M1",rcp((const Epetra_CrsMatrix*) &M1,false));
-
-  // Double up with Ms = M1
-  MLList.set("Ms",rcp((const Epetra_CrsMatrix*) &M1,false));
+  MLList.set("Ms",rcp((const Epetra_CrsMatrix*) &Ms,false));
 
 
   /* Build the rest of the Stratimikos list */
@@ -2802,6 +2804,7 @@ void TestMueLuMultiLevelPreconditioner_Stratimikos(char ProblemType[],
   SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("D0",rcp((Epetra_CrsMatrix*) &D0clean,false));
   SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("M0inv",rcp((Epetra_CrsMatrix*) &M0inv,false));
   SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("M1",rcp((Epetra_CrsMatrix*) &M1,false));
+  SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("Ms",rcp((Epetra_CrsMatrix*) &Ms,false));
   SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("Coordinates",rcp((Epetra_MultiVector*) &coords,false));
 
 
