@@ -4292,17 +4292,19 @@ namespace {
     dual_view_type X_lcl ("X_lcl", numLclRows, numVecs);
 
     // Modify the Kokkos::DualView's data on the host.
-    auto X_lcl_h = X_lcl.view_host ();
-    X_lcl.modify_host ();
-    Kokkos::deep_copy (X_lcl_h, ONE);
-    X_lcl.template sync<device_type> ();
+    {
+      auto X_lcl_h = X_lcl.view_host ();
+      X_lcl.modify_host ();
+      Kokkos::deep_copy (X_lcl_h, ONE);
+      X_lcl.template sync<device_type> ();
+    }
 
     // Make sure that the DualView actually sync'd.
     //
     // mfh 01 Mar 2015: DualView doesn't actually reset the modified
     // flags if the host and device memory spaces are the same.  I
     // don't like that, but I don't want to mess with DualView.
-
+    
     const bool hostAndDeviceSpacesSame = std::is_same<
       typename dual_view_type::t_dev::memory_space,
       typename dual_view_type::t_host::memory_space>::value;
@@ -4338,10 +4340,12 @@ namespace {
 
     // Now change the values in X_lcl.  X_gbl should see them.  Just
     // for variety, we do this on the device, not on the host.
-    auto X_lcl_d = X_lcl.template view<device_type> ();
-    X_lcl.template modify<device_type> ();
-    Kokkos::deep_copy (X_lcl_d, TWO);
-    X_lcl.sync_host ();
+    {
+      auto X_lcl_d = X_lcl.template view<device_type> ();
+      X_lcl.template modify<device_type> ();
+      Kokkos::deep_copy (X_lcl_d, TWO);
+      X_lcl.sync_host ();
+    }
 
     // Make sure that the DualView actually sync'd.
     //
