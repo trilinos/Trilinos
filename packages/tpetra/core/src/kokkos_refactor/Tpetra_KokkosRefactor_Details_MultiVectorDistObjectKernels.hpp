@@ -434,7 +434,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
 
         TEUCHOS_TEST_FOR_EXCEPTION
           (errorCount != badIndices.size (), std::logic_error,
-           "PackArraySingleColumnWithBoundsCheck: errorCount = " << errorCount
+           "PackArrayMultiColumnWithBoundsCheck: errorCount = " << errorCount
            << " != badIndices.size() = " << badIndices.size () << ".  This sho"
            "uld never happen.  Please report this to the Tpetra developers.");
 

@@ -1510,7 +1510,7 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
         if (packOnHost) {
-          auto src_host = getLocalViewHostConst();
+          auto src_host = sourceMV.getLocalViewHostConst();
           pack_array_single_column (exports.view_host (),
                                     src_host,
                                     exportLIDs.view_host (),
@@ -1518,7 +1518,7 @@ namespace Tpetra {
                                     debugCheckIndices);
         }
         else { // pack on device
-          auto src_dev = getLocalViewDeviceConst();
+          auto src_dev = sourceMV.getLocalViewDeviceConst();
           pack_array_single_column (exports.view_device (),
                                     src_dev,
                                     exportLIDs.view_device (),
@@ -1534,7 +1534,7 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
         if (packOnHost) {
-          auto src_host = getLocalViewHostConst();
+          auto src_host = sourceMV.getLocalViewHostConst();
           pack_array_single_column (exports.view_host (),
                                     src_host,
                                     exportLIDs.view_host (),
@@ -1542,7 +1542,7 @@ namespace Tpetra {
                                     debugCheckIndices);
         }
         else { // pack on device
-          auto src_dev = getLocalViewDeviceConst();
+          auto src_dev = sourceMV.getLocalViewDeviceConst();
           pack_array_single_column (exports.view_device (),
                                     src_dev,
                                     exportLIDs.view_device (),
@@ -1560,7 +1560,7 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
         if (packOnHost) {
-          auto src_host = getLocalViewHostConst();
+          auto src_host = sourceMV.getLocalViewHostConst();
           pack_array_multi_column (exports.view_host (),
                                    src_host,
                                    exportLIDs.view_host (),
@@ -1568,7 +1568,7 @@ namespace Tpetra {
                                    debugCheckIndices);
         }
         else { // pack on device
-          auto src_dev = getLocalViewDeviceConst();
+          auto src_dev = sourceMV.getLocalViewDeviceConst();
           pack_array_multi_column (exports.view_device (),
                                    src_dev,
                                    exportLIDs.view_device (),
@@ -1593,7 +1593,7 @@ namespace Tpetra {
         using DES = typename DV::t_dev::execution_space;
         Teuchos::ArrayView<const size_t> whichVecs = sourceMV.whichVectors_ ();
         if (packOnHost) {
-          auto src_host = getLocalViewHostConst();
+          auto src_host = sourceMV.getLocalViewHostConst();
           pack_array_multi_column_variable_stride
             (exports.view_host (),
              src_host,
@@ -1603,7 +1603,7 @@ namespace Tpetra {
              debugCheckIndices);
         }
         else { // pack on device
-          auto src_dev = getLocalViewDeviceConst();
+          auto src_dev = sourceMV.getLocalViewDeviceConst();
           pack_array_multi_column_variable_stride
             (exports.view_device (),
              src_dev,
