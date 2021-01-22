@@ -1,0 +1,15 @@
+name: Move assigned issues into In Progress
+
+on:
+  issues:
+    types: [assigned]
+
+jobs:
+  automate-project-columns:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: alex-page/github-project-automation-plus@v0.3.0
+        with:
+          project: Build Triage
+          column: In Progress
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
