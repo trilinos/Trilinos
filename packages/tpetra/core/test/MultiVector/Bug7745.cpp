@@ -101,7 +101,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, DefaultToDefault, Scalar,LO,GO,Node)
   defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
   // Check result; all vector entries should be tgtScalar + srcScalar
-  auto data = defaultVecTgt.getLocalViewHost();
+  auto data = defaultVecTgt.getLocalViewHostConst();
+
   for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++)
     if (data(i,0) != tgtScalar + srcScalar) ierr++;
   if (ierr > 0) 
@@ -180,7 +181,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, CyclicToDefault, Scalar,LO,GO,Node)
 
   // Check result
 
-  auto data = defaultVecTgt.getLocalViewHost();
+  auto data = defaultVecTgt.getLocalViewHostConst();
+
   for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++)
     if (data(i,0) != tgtScalar + srcScalar) ierr++;
   if (ierr > 0) 
@@ -350,7 +352,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, OddEvenToSerial, Scalar,LO,GO,Node)
 
   // Check result
 
-  auto data = serialVecTgt.getLocalViewHost();
+  auto data = serialVecTgt.getLocalViewHostConst();
+
   for (size_t i = 0; i < serialVecTgt.getLocalLength(); i++) {
     Scalar nCopies = Scalar(((np+1) / 2) - ((i % 2 == 1) && (np % 2 == 1)));
     if (data(i,0) != tgtScalar + srcScalar * nCopies)
