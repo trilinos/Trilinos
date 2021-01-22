@@ -2791,6 +2791,7 @@ namespace {
               bjview[i] *= as<Scalar>(2);
             }
           }
+          
           lclSuccess = success ? 1 : 0;
           gblSuccess = 0; // output argument
           reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -2863,6 +2864,15 @@ namespace {
           }
           break;
       }
+      /// each vector shares the dual view sync flag
+      /// for this testing, we need to add modify flag for all B
+      B.modify_host();
+      /// KJ: biran, it looks like that get view interface has a logic problem.
+      ///     after I elect the modify host flag, the next vector should not be 
+      ///     synced as this test workflow does not touch the device. 
+      ///     somehow if I do not explicitly sync to device, the work vector is 
+      ///     overwritten again and again.
+      B.sync_device();
     }
 
     lclSuccess = success ? 1 : 0;
@@ -2886,7 +2896,6 @@ namespace {
     {
       MV C (map, numVectors, false);
       C.scale (as<Scalar> (2), A);
-
       C.update (-1.0,B,1.0);
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
       C.norm1(Cnorms());
@@ -2900,8 +2909,8 @@ namespace {
       C.scale(as<Scalar>(2));
       C.update(-1.0,B,1.0);
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
-      C.norm1(Cnorms());
-      TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
+      C.norm1(Cnorms);
+      TEST_COMPARE_FLOATING_ARRAYS(Cnorms,zeros,tol);
     }
 
     out << "Check that C := A, C.scale(tuple(2)) == B" << endl;
