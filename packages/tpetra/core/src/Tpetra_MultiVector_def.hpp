@@ -1459,8 +1459,6 @@ namespace Tpetra {
        std::logic_error, "Input MultiVector needs sync to both host "
        "and device.");
     const bool packOnHost = runKernelOnHost(sourceMV);
-    auto src_dev = sourceMV.getLocalViewHost ();
-    auto src_host = sourceMV.getLocalViewDevice ();
     if (printDebugOutput) {
       std::ostringstream os;
       os << *prefix << "packOnHost=" << (packOnHost ? "true" : "false") << endl;
@@ -1512,15 +1510,17 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
         if (packOnHost) {
+          auto src_host = getLocalViewHostConst();
           pack_array_single_column (exports.view_host (),
-                                    create_const_view (src_host),
+                                    src_host,
                                     exportLIDs.view_host (),
                                     0,
                                     debugCheckIndices);
         }
         else { // pack on device
+          auto src_dev = getLocalViewDeviceConst();
           pack_array_single_column (exports.view_device (),
-                                    create_const_view (src_dev),
+                                    src_dev,
                                     exportLIDs.view_device (),
                                     0,
                                     debugCheckIndices);
@@ -1534,15 +1534,17 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
         if (packOnHost) {
+          auto src_host = getLocalViewHostConst();
           pack_array_single_column (exports.view_host (),
-                                    create_const_view (src_host),
+                                    src_host,
                                     exportLIDs.view_host (),
                                     sourceMV.whichVectors_[0],
                                     debugCheckIndices);
         }
         else { // pack on device
+          auto src_dev = getLocalViewDeviceConst();
           pack_array_single_column (exports.view_device (),
-                                    create_const_view (src_dev),
+                                    src_dev,
                                     exportLIDs.view_device (),
                                     sourceMV.whichVectors_[0],
                                     debugCheckIndices);
@@ -1558,15 +1560,17 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
         if (packOnHost) {
+          auto src_host = getLocalViewHostConst();
           pack_array_multi_column (exports.view_host (),
-                                   create_const_view (src_host),
+                                   src_host,
                                    exportLIDs.view_host (),
                                    numCols,
                                    debugCheckIndices);
         }
         else { // pack on device
+          auto src_dev = getLocalViewDeviceConst();
           pack_array_multi_column (exports.view_device (),
-                                   create_const_view (src_dev),
+                                   src_dev,
                                    exportLIDs.view_device (),
                                    numCols,
                                    debugCheckIndices);
@@ -1589,18 +1593,20 @@ namespace Tpetra {
         using DES = typename DV::t_dev::execution_space;
         Teuchos::ArrayView<const size_t> whichVecs = sourceMV.whichVectors_ ();
         if (packOnHost) {
+          auto src_host = getLocalViewHostConst();
           pack_array_multi_column_variable_stride
             (exports.view_host (),
-             create_const_view (src_host),
+             src_host,
              exportLIDs.view_host (),
              getKokkosViewDeepCopy<HES> (whichVecs),
              numCols,
              debugCheckIndices);
         }
         else { // pack on device
+          auto src_dev = getLocalViewDeviceConst();
           pack_array_multi_column_variable_stride
             (exports.view_device (),
-             create_const_view (src_dev),
+             src_dev,
              exportLIDs.view_device (),
              getKokkosViewDeepCopy<DES> (whichVecs),
              numCols,
@@ -1713,8 +1719,6 @@ namespace Tpetra {
       this->sync_device ();
       this->modify_device ();
     }
-    auto X_d = this->getLocalViewDevice ();
-    auto X_h = this->getLocalViewHost ();
     auto imports_d = imports.view_device ();
     auto imports_h = imports.view_host ();
     auto importLIDs_d = importLIDs.view_device ();
@@ -1768,6 +1772,7 @@ namespace Tpetra {
         using op_type = KokkosRefactor::Details::InsertOp;
         if (isConstantStride ()) {
           if (unpackOnHost) {
+            auto X_h = this->getLocalViewHostNonConst ();
             unpack_array_multi_column (host_exec_space (),
                                        X_h, imports_h, importLIDs_h,
                                        op_type (), numVecs,
@@ -1776,6 +1781,7 @@ namespace Tpetra {
 
           }
           else { // unpack on device
+            auto X_d = this->getLocalViewDeviceNonConst ();
             unpack_array_multi_column (dev_exec_space (),
                                        X_d, imports_d, importLIDs_d,
                                        op_type (), numVecs,
@@ -1785,6 +1791,7 @@ namespace Tpetra {
         }
         else { // not constant stride
           if (unpackOnHost) {
+            auto X_h = this->getLocalViewHostNonConst ();
             unpack_array_multi_column_variable_stride (host_exec_space (),
                                                        X_h, imports_h,
                                                        importLIDs_h,
@@ -1795,6 +1802,7 @@ namespace Tpetra {
                                                        debugCheckIndices);
           }
           else { // unpack on device
+            auto X_d = this->getLocalViewDeviceNonConst ();
             unpack_array_multi_column_variable_stride (dev_exec_space (),
                                                        X_d, imports_d,
                                                        importLIDs_d,
@@ -1810,6 +1818,7 @@ namespace Tpetra {
         using op_type = KokkosRefactor::Details::AddOp;
         if (isConstantStride ()) {
           if (unpackOnHost) {
+            auto X_h = this->getLocalViewHostNonConst ();
             unpack_array_multi_column (host_exec_space (),
                                        X_h, imports_h, importLIDs_h,
                                        op_type (), numVecs,
@@ -1817,6 +1826,7 @@ namespace Tpetra {
                                        debugCheckIndices);
           }
           else { // unpack on device
+            auto X_d = this->getLocalViewDeviceNonConst ();
             unpack_array_multi_column (dev_exec_space (),
                                        X_d, imports_d, importLIDs_d,
                                        op_type (), numVecs,
@@ -1826,6 +1836,7 @@ namespace Tpetra {
         }
         else { // not constant stride
           if (unpackOnHost) {
+            auto X_h = this->getLocalViewHostNonConst ();
             unpack_array_multi_column_variable_stride (host_exec_space (),
                                                        X_h, imports_h,
                                                        importLIDs_h,
@@ -1836,6 +1847,7 @@ namespace Tpetra {
                                                        debugCheckIndices);
           }
           else { // unpack on device
+            auto X_d = this->getLocalViewDeviceNonConst ();
             unpack_array_multi_column_variable_stride (dev_exec_space (),
                                                        X_d, imports_d,
                                                        importLIDs_d,
@@ -1851,6 +1863,7 @@ namespace Tpetra {
         using op_type = KokkosRefactor::Details::AbsMaxOp;
         if (isConstantStride ()) {
           if (unpackOnHost) {
+            auto X_h = this->getLocalViewHostNonConst ();
             unpack_array_multi_column (host_exec_space (),
                                        X_h, imports_h, importLIDs_h,
                                        op_type (), numVecs,
@@ -1858,6 +1871,7 @@ namespace Tpetra {
                                        debugCheckIndices);
           }
           else { // unpack on device
+            auto X_d = this->getLocalViewDeviceNonConst ();
             unpack_array_multi_column (dev_exec_space (),
                                        X_d, imports_d, importLIDs_d,
                                        op_type (), numVecs,
@@ -1867,6 +1881,7 @@ namespace Tpetra {
         }
         else {
           if (unpackOnHost) {
+            auto X_h = this->getLocalViewHostNonConst ();
             unpack_array_multi_column_variable_stride (host_exec_space (),
                                                        X_h, imports_h,
                                                        importLIDs_h,
@@ -1877,6 +1892,7 @@ namespace Tpetra {
                                                        debugCheckIndices);
           }
           else { // unpack on device
+            auto X_d = this->getLocalViewDeviceNonConst ();
             unpack_array_multi_column_variable_stride (dev_exec_space (),
                                                        X_d, imports_d,
                                                        importLIDs_d,
