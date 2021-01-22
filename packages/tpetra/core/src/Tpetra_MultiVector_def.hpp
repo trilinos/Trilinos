@@ -4727,6 +4727,7 @@ namespace Tpetra {
     std::swap(mv.map_, this->map_);
     std::swap(mv.view_, this->view_);
     std::swap(mv.origView_, this->origView_);
+    std::swap(mv.owningView_, this->owningView_);
     std::swap(mv.whichVectors_, this->whichVectors_);
   }
 
