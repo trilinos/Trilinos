@@ -1493,15 +1493,12 @@ namespace Tpetra {
     void modify_host ();
 
     /// \brief Return a view of the local data on a specific device. This is a
-    ///   generalization of getLocalViewHost() and getLocalViewDevice().
+    ///   generalization of getLocalViewHost() and getLocalViewDevice(). The
+    ///   returned view has type dual_view_type::t_dev or dual_view_type::t_host,
+    ///   depending on which one has a device, memory space or execution space
+    ///   matching that of TargetDeviceType.
     ///
     /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
-    ///
-    /// Please don't be afraid of the if_c expression in the return
-    /// value's type.  That just tells the method what the return type
-    /// should be: dual_view_type::t_dev if the \c TargetDeviceType
-    /// template parameter matches this Tpetra object's device type,
-    /// else dual_view_type::t_host.
     ///
     /// For example, suppose you create a Tpetra::MultiVector for the
     /// Kokkos::Cuda device, like this:
@@ -1526,23 +1523,19 @@ namespace Tpetra {
     /// host_view_type hostView = DV.getLocalView<host_execution_space> ();
     /// \endcode
     template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<
-      std::is_same<
-        typename device_type::memory_space,
-        typename TargetDeviceType::memory_space>::value,
-      typename dual_view_type::t_dev,
-      typename dual_view_type::t_host>::type
-    getLocalView () const {
-      constexpr bool useDev = std::is_same<typename TargetDeviceType::memory_space, typename dual_view_type::t_dev::memory_space>::value;
-      constexpr bool useHost = std::is_same<typename TargetDeviceType::memory_space, typename dual_view_type::t_host::memory_space>::value;
-      static_assert(useDev || useHost, "MultiVector::getLocalView(): TargetDeviceType's memory space must match either DualView's device or host memory space.");
-      if(useDev)
+    typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
+    getLocalView () const
+    {
+      using ReturnedViewType = typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type;
+      //getting v increments the reference count, so compare against that minus one
+      if(std::is_same<ReturnedViewType, typename dual_view_type::t_dev>::value)
       {
         if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
           throw std::runtime_error("Tpetra::MultiVector: Cannot access data on device while a host view is alive");
       }
       else
       {
+        //v is dual_view_type::t_host
         if(owningView_.d_view.use_count() > owningView_.h_view.use_count())
           throw std::runtime_error("Tpetra::MultiVector: Cannot access data on host while a device view is alive");
       }
