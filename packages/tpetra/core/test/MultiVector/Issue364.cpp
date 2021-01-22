@@ -242,9 +242,9 @@ namespace { // (anonymous)
           continue;
         }
 
-        auto X_sub_j = X_sub->getVector (k);
+        auto X_sub_j = X_sub->getVectorNonConst (k);
         auto X_sub_lcl_j_2d =
-          X_sub_j->getLocalViewHost ();
+          X_sub_j->getLocalViewHostNonConst ();
         auto X_sub_lcl_j_1d =
           Kokkos::subview (X_sub_lcl_j_2d, Kokkos::ALL (), 0);
 
@@ -279,7 +279,7 @@ namespace { // (anonymous)
           continue;
         }
         auto X_sub_lcl_j_2d =
-          X_sub_j->getLocalViewHost ();
+          X_sub_j->getLocalViewHostConst ();
         auto X_sub_lcl_j_1d =
           Kokkos::subview (X_sub_lcl_j_2d, Kokkos::ALL (), 0);
 
@@ -297,7 +297,7 @@ namespace { // (anonymous)
           continue;
         }
         auto X_copy_lcl_j_2d =
-          X_copy_j->getLocalViewHost ();
+          X_copy_j->getLocalViewHostConst ();
         auto X_copy_lcl_j_1d =
           Kokkos::subview (X_copy_lcl_j_2d, Kokkos::ALL (), 0);
 
@@ -446,7 +446,7 @@ namespace { // (anonymous)
       {
         X.sync_host ();
         X.modify_host ();
-        auto X_lcl = X.getLocalViewHost ();
+        auto X_lcl = X.getLocalViewHostNonConst ();
 
         TEST_EQUALITY( static_cast<LO> (X_lcl.extent (0)), lclNumRows );
         TEST_EQUALITY( static_cast<LO> (X_lcl.extent (1)), numVecs );
@@ -504,8 +504,8 @@ namespace { // (anonymous)
               k >= static_cast<LO> (Y->getNumVectors ())) {
             continue;
           }
-          auto Y_j = Y->getVector (k);
-          auto Y_lcl_j_2d = Y_j->getLocalViewHost ();
+          auto Y_j = Y->getVectorNonConst (k);
+          auto Y_lcl_j_2d = Y_j->getLocalViewHostNonConst ();
           auto Y_lcl_j_1d = Kokkos::subview (Y_lcl_j_2d, Kokkos::ALL (), 0);
           TEST_EQUALITY( static_cast<LO> (Y_lcl_j_1d.extent (0)), lclNumRows );
           if (! success) {
@@ -530,8 +530,8 @@ namespace { // (anonymous)
               k >= static_cast<LO> (Z->getNumVectors ())) {
             continue;
           }
-          auto Z_j = Z->getVector (k);
-          auto Z_lcl_j_2d = Z_j->getLocalViewDevice ();
+          auto Z_j = Z->getVectorNonConst (k);
+          auto Z_lcl_j_2d = Z_j->getLocalViewDeviceNonConst ();
           auto Z_lcl_j_1d = Kokkos::subview (Z_lcl_j_2d, Kokkos::ALL (), 0);
           TEST_EQUALITY( static_cast<LO> (Z_lcl_j_1d.extent (0)), lclNumRows );
           if (! success) {
@@ -549,9 +549,11 @@ namespace { // (anonymous)
       // MultiVector's dual view semantics are implemented correctly, we
       // should see that Y(:,k) == 2*X_copy(:,j), where j = Y_cols[k].
 
+    
+
       {
         // We don't need to sync Y here; it's already sync'd to host.
-
+        out<<"Checkpoint #1"<<std::endl;
         for (LO k = 0; k < static_cast<LO> (Y_cols.size ()); ++k) {
           const LO j = Y_cols[k];
           TEST_ASSERT( j < static_cast<LO> (X.getNumVectors ()) );
@@ -561,22 +563,24 @@ namespace { // (anonymous)
               k >= static_cast<LO> (Y->getNumVectors ())) {
             continue;
           }
-
+          out<<"Checkpoint #2"<<std::endl;
           auto X_j = X.getVector (k);
           TEST_ASSERT( ! X_j.is_null () );
           if (X_j.is_null ()) {
             continue;
           }
-          auto X_lcl_j_2d = X_j->getLocalViewHost ();
+          out<<"Checkpoint #3"<<std::endl;
+          auto X_lcl_j_2d = X_j->getLocalViewHostConst ();
           auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), 0);
           TEST_EQUALITY( static_cast<LO> (X_lcl_j_1d.extent (0)),
                          lclNumRows );
 
+          out<<"Checkpoint #4"<<std::endl;
           auto X_copy_j = X_copy.getVector (k);
           if (X_copy_j.is_null ()) {
             continue;
           }
-          auto X_copy_lcl_j_2d = X_copy_j->getLocalViewHost ();
+          auto X_copy_lcl_j_2d = X_copy_j->getLocalViewHostConst ();
           auto X_copy_lcl_j_1d = Kokkos::subview (X_copy_lcl_j_2d, Kokkos::ALL (), 0);
           TEST_EQUALITY( static_cast<LO> (X_copy_lcl_j_1d.extent (0)),
                          lclNumRows );
@@ -585,14 +589,15 @@ namespace { // (anonymous)
           if (Y_j.is_null ()) {
             continue;
           }
-          auto Y_lcl_j_2d = Y_j->getLocalViewHost ();
+          out<<"Checkpoint #5"<<std::endl;
+          auto Y_lcl_j_2d = Y_j->getLocalViewHostConst ();
           auto Y_lcl_j_1d = Kokkos::subview (Y_lcl_j_2d, Kokkos::ALL (), 0);
           TEST_EQUALITY( static_cast<LO> (Y_lcl_j_1d.extent (0)),
                          lclNumRows );
           if (! success) {
             return;
           }
-
+          out<<"Checkpoint #6"<<std::endl;
           for (LO i = 0; i < lclNumRows; ++i) {
             TEST_EQUALITY( Y_lcl_j_1d(i), X_lcl_j_1d(i) );
             TEST_EQUALITY( Y_lcl_j_1d(i), TWO * X_copy_lcl_j_1d(i) );
