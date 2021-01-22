@@ -303,12 +303,9 @@ namespace MueLu {
     Scalar omega = pL.get<Scalar>("Damping factor");
 
 
-    // Clear solution from previos V cycle if still stored
-    Scalar normX = rcpX->getVector(0)->norm2();
-    if(InitialGuessIsZero==true && normX > 0){
+    // Clear solution from previos V cycles in case it is still stored
+    if( InitialGuessIsZero==true )
       rcpX->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
-      // Is there a better way to do this?
-    }
 
 
     // outer Richardson loop
