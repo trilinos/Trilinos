@@ -315,4 +315,12 @@ IF (ATDM_NODE_TYPE STREQUAL "CUDA")
     "--gtest_filter=-cuda.debug_pin_um_to_host:cuda.debug_serial_execution"
     CACHE STRING )
 
+  # Ensure these Kokkos tests run in serial to other Trilinos tests.
+  # #6840 resulted in ctest spreading tests across multiple GPUs. By ensuring
+  # that this Kokkos inter operability test runs in serial, we ensure that the
+  # GPU ID is not swapped upon initialize resulting in an invalid Cuda stream.
+  # See #8544.
+  ATDM_SET_ENABLE(KokkosCore_UnitTest_CudaInterOpStreams_MPI_1_SET_RUN_SERIAL ON)
+  # See #8543.
+  ATDM_SET_ENABLE(KokkosCore_UnitTest_CudaInterOpInit_MPI_1_SET_RUN_SERIAL ON)
 ENDIF()
