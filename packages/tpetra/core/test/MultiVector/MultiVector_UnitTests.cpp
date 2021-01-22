@@ -4402,7 +4402,10 @@ namespace {
 
     const Scalar ONE = STS::one ();
     const Scalar TWO = ONE + ONE;
+#define TPETRA_MULTIVECTOR_VIEWCTOR_DO_NOT_TEST
+#if !defined(TPETRA_MULTIVECTOR_VIEWCTOR_DO_NOT_TEST)
     const Scalar THREE = TWO + ONE;
+#endif
     int lclSuccess = 1;
     int gblSuccess = 0; // to be set below
 
@@ -4527,6 +4530,7 @@ namespace {
       std::cerr << os.str ();
     }
 
+#if !defined(TPETRA_MULTIVECTOR_VIEWCTOR_DO_NOT_TEST)
     // Just as X_gbl views X_lcl, X_lcl should also view X_gbl.  Thus,
     // if we modify X_gbl in host memory, and sync to device memory,
     // X_lcl should also be changed.
@@ -4616,6 +4620,8 @@ namespace {
       os << "Proc " << comm->getRank () << ": DONE" << std::endl;
       std::cerr << os.str ();
     }
+#endif
+#undef TPETRA_MULTIVECTOR_VIEWCTOR_DO_NOT_TEST
   }
 
 // Macro used inside the SubViewSomeZeroRows test below.  It tests for
