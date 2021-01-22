@@ -40,6 +40,34 @@ class WrapperCommandLineParser:
                   op=self.op,
                   print_csv_banner=self.print_csv_banner)
 
+  def parse_cmdline_arg_helper(self, cmdline_args):
+    
+    # we want to do something different for ar, ranlib, or ld.*
+    # these commands do not necessarily have a good 'output' arg denoted by -o
+    # first try to find -o, if that passes then use it.
+    # if not, then do something special based on ar/ranlib/ld.*
+
+    # find the output arg (will raise an exception if not found)
+    # we use -o blah.o or -o /path/to/blah.o or none at all
+    try:
+      output_idx = cmdline_args.index('-o')
+      self.op_output_file = cmdline_args[output_idx+1]
+      self.output_stats_file = self.op_output_file + '.' + self.output_stats_file
+  
+      return
+
+    except:
+      pass
+
+    # we failed -o, so try op specific stuff
+    if self.short_op.endswith('ar') or self.short_op.endswith('ranlib'):
+      for arg in cmdline_args:
+        if arg.endswith('.a'):
+          self.output_stats_file = arg + '.' + self.output_stats_file
+          return
+      # we hit this if we can't find a .a
+      return
+
 
   def parse_cmdline_args(self, cmdline_args):
     base_build_dir_arg_prefix = '----base-build-dir='
@@ -59,19 +87,13 @@ class WrapperCommandLineParser:
         self.print_csv_banner=True
       elif wrapper_arg.startswith(wrapper_op_arg_prefix):
         self.op = wrapper_arg.split('=', 1)[1]
-        # find the output arg (will raise an exception if not found)
-        # we use -o blah.o or -o /path/to/blah.o or none at all
+
         # we name the output as: blah.o.op.timing
         # this will result in blah.ar.timing, blah.mpicc.timing blah.ld.timing...
-        short_op = os.path.basename(self.op)
-        output_stats_file_suffix = short_op + '.timing'
-        try:
-          output_idx = cmdline_args.index('-o')
-          self.op_output_file = cmdline_args[output_idx+1]
-          self.output_stats_file = self.op_output_file + '.' + output_stats_file_suffix
-          # ToDo: The above needs to be made to work for ar as well!
-        except:
-          pass
+        self.short_op = os.path.basename(self.op)
+        self.output_stats_file = short_op + '.timing'
+
+        self.parse_cmdline_arg_helper(cmdline_args)
 
       else:
         raise Exception('unparseable arguments')
