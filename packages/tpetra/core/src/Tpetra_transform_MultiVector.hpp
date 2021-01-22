@@ -286,11 +286,12 @@ namespace Tpetra {
       sameObject (const ::Tpetra::MultiVector<SC, LO, GO, NT>& input,
                   const ::Tpetra::MultiVector<SC, LO, GO, NT>& output)
       {
-        return &input == &output ||
-          input.getLocalViewHost ().data () ==
-          output.getLocalViewHost ().data () ||
-          input.getLocalViewDevice ().data () ==
-          output.getLocalViewDevice ().data ();
+        bool sameMemory = (&input == &output);
+        bool sameHostViewData = (input.getLocalViewHost().data() ==
+                                 output.getLocalViewHost().data());
+        bool sameDeviceViewData = (input.getLocalViewDevice().data() ==
+                                   output.getLocalViewDevice().data());
+        return sameMemory || sameHostViewData || sameDeviceViewData;
       }
 
       template<class UnaryFunctionType>
