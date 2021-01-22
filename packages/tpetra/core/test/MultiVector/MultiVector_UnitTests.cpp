@@ -455,22 +455,30 @@ namespace {
       RCP<      MV> mvView1 = mvOrig1.subViewNonConst(inView1);
       TEST_ASSERT( ! mvView1.is_null() );
       if (! mvView1.is_null() ) {
-        auto mvView1_d = mvView1->getLocalViewDevice();
-        auto mvOrig1_d = mvOrig1.getLocalViewDevice();
-        TEST_ASSERT( mvView1_d.data() == mvOrig1_d.data() );
-        auto mvView1_h = mvView1->getLocalViewHost();
-        auto mvOrig1_h = mvOrig1.getLocalViewHost();
-        TEST_ASSERT( mvView1_h.data() == mvOrig1_h.data() );
+        {
+          auto mvView1_d = mvView1->getLocalViewDevice();
+          auto mvOrig1_d = mvOrig1.getLocalViewDevice();
+          TEST_ASSERT( mvView1_d.data() == mvOrig1_d.data() );
+        }
+        {
+          auto mvView1_h = mvView1->getLocalViewHost();
+          auto mvOrig1_h = mvOrig1.getLocalViewHost();
+          TEST_ASSERT( mvView1_h.data() == mvOrig1_h.data() );
+        }
       }
       RCP<const MV> mvView2 = mvOrig2.subView(inView2);
       TEST_ASSERT( ! mvView2.is_null() );
       if (! mvView2.is_null() ) {
-        auto mvView2_lcl = mvView2->getLocalViewDevice();
-        auto mvOrig2_lcl = mvOrig2.getLocalViewDevice();
-        TEST_ASSERT( mvView2_lcl.data() == mvOrig2_lcl.data() );
-        auto mvView2_h = mvView2->getLocalViewHost();
-        auto mvOrig2_h = mvOrig2.getLocalViewHost();
-        TEST_ASSERT( mvView2_h.data() == mvOrig2_h.data() );
+        {
+          auto mvView2_lcl = mvView2->getLocalViewDevice();
+          auto mvOrig2_lcl = mvOrig2.getLocalViewDevice();
+          TEST_ASSERT( mvView2_lcl.data() == mvOrig2_lcl.data() );
+        }
+        {
+          auto mvView2_h = mvView2->getLocalViewHost();
+          auto mvOrig2_h = mvOrig2.getLocalViewHost();
+          TEST_ASSERT( mvView2_h.data() == mvOrig2_h.data() );
+        }
       }
       Array<Mag> nView2(numView), nView1(numView), nViewI(numView);
       Array<Scalar> meansView(numView), dotsView(numView);
