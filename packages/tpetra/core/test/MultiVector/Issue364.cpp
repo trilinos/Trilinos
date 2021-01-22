@@ -519,6 +519,8 @@ namespace { // (anonymous)
 
       out << "Modify Z on device, and sync it to host." << endl;
       {
+        /// with multi non-contiguous memory space, syncing Z 
+        /// would sync Y part (actually it sync the entire view of X).
         Z->sync_device ();
         Z->modify_device ();
 
@@ -549,8 +551,6 @@ namespace { // (anonymous)
       // MultiVector's dual view semantics are implemented correctly, we
       // should see that Y(:,k) == 2*X_copy(:,j), where j = Y_cols[k].
 
-    
-
       {
         // We don't need to sync Y here; it's already sync'd to host.
         out<<"Checkpoint #1"<<std::endl;
@@ -564,7 +564,7 @@ namespace { // (anonymous)
             continue;
           }
           out<<"Checkpoint #2"<<std::endl;
-          auto X_j = X.getVector (k);
+          auto X_j = X.getVector (j);
           TEST_ASSERT( ! X_j.is_null () );
           if (X_j.is_null ()) {
             continue;
@@ -576,7 +576,7 @@ namespace { // (anonymous)
                          lclNumRows );
 
           out<<"Checkpoint #4"<<std::endl;
-          auto X_copy_j = X_copy.getVector (k);
+          auto X_copy_j = X_copy.getVector (j);
           if (X_copy_j.is_null ()) {
             continue;
           }
