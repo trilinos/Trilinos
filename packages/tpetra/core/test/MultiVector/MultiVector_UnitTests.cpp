@@ -4232,21 +4232,24 @@ namespace {
     // Modify the data through the host View, by setting all of its
     // entries to a different number than before.  (ONE and TWO differ
     // even in the finite field Z_2.)
-    auto X_lcl_h = X->getLocalViewHost ();
-    X->modify_host ();
-    Kokkos::deep_copy (X_lcl_h, ONE);
-    X->template sync<device_type> ();
-
+    {
+      auto X_lcl_h = X->getLocalViewHost ();
+      X->modify_host ();
+      Kokkos::deep_copy (X_lcl_h, ONE);
+      X->template sync<device_type> ();
+    }
     // Now compute the inf-norms of the columns of X.  (We want a
     // separate mechanism from methods that return Kokkos::DualView or
     // Kokkos::View.)  All inf-norms should be ONE, not TWO.
-    typedef typename MV::mag_type mag_type;
-    Kokkos::DualView<mag_type*, device_type> norms ("norms", numVecs);
-    norms.template modify<device_type> ();
-    X->normInf (norms.template view<device_type> ());
-    norms.sync_host ();
-    for (size_t k = 0; k < numVecs; ++k) {
-      TEST_EQUALITY_CONST( norms.h_view(k), ONE );
+    {
+      typedef typename MV::mag_type mag_type;
+      Kokkos::DualView<mag_type*, device_type> norms ("norms", numVecs);
+      norms.template modify<device_type> ();
+      X->normInf (norms.template view<device_type> ());
+      norms.sync_host ();
+      for (size_t k = 0; k < numVecs; ++k) {
+        TEST_EQUALITY_CONST( norms.h_view(k), ONE );
+      }
     }
   }
 
