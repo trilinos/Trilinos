@@ -4412,6 +4412,12 @@ namespace {
     // Create the Kokkos::View X_lcl.
     const size_t numLclRows = 10;
     const size_t numVecs = 3;
+
+    /// KJ : release local object, this workflow is problematic. 
+    ///      a user create a device view and hand it to tpetra. 
+    ///      tpetra now has unmatched referecne count for host and device view
+    ///      as the local device view is alive. this is the case that we do not want 
+    ///      to encourage users.
     typename dual_view_type::t_dev X_lcl ("X_lcl", numLclRows, numVecs);
 
     // Modify the Kokkos::View's data.
@@ -4435,8 +4441,14 @@ namespace {
     const GO indexBase = 0;
     RCP<const map_type> map =
       rcp (new map_type (INVALID, numLclRows, indexBase, comm));
-    MV X_gbl (map, X_lcl);
 
+    /// KJ : release local object, this workflow is problematic. 
+    ///      a user create a device view and hand it to tpetra. 
+    ///      tpetra now has unmatched referecne count for host and device view
+    ///      as the local device view is alive. this is the case that we do not want 
+    ///      to encourage users.
+    MV X_gbl (map, X_lcl);
+    
     {
       lclSuccess = success ? 1 : 0;
       gblSuccess = 0; // output argument
@@ -4522,10 +4534,9 @@ namespace {
     // We modified on device above, and we're about to modify on host
     // now, so we need to sync to host first.
     X_gbl.sync_host ();
-
     auto X_host = X_gbl.getLocalViewHost ();
     X_gbl.modify_host ();
-
+    
     {
       lclSuccess = success ? 1 : 0;
       gblSuccess = 0; // output argument
@@ -4538,10 +4549,9 @@ namespace {
       os << "Proc " << comm->getRank () << ": checkpoint 5" << std::endl;
       std::cerr << os.str ();
     }
-
+    
     Kokkos::deep_copy (X_host, THREE);
     X_gbl.sync_device ();
-
     {
       lclSuccess = success ? 1 : 0;
       gblSuccess = 0; // output argument
@@ -5246,9 +5256,9 @@ namespace {
       bool threw = false;
       try
       {
-        auto xDevice = x.getLocalViewDeviceConst().data();
+        auto xDevice = x.getLocalViewDeviceConst();
         //this shouldn't be allowed, since xDevice holds a reference to device view.
-        auto xHost = x.getLocalViewHostConst().data();
+        auto xHost = x.getLocalViewHostConst();
       }
       catch(...)
       {
