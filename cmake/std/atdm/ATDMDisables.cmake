@@ -250,6 +250,9 @@ ATDM_SET_ENABLE(Piro_AnalysisDriverTpetra_MPI_4_DISABLE ON)
 ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManagerInterface_EXE_DISABLE ON)
 ATDM_SET_ENABLE(ROL_adapters_tpetra_test_vector_SimulatedVectorTpetraBatchManagerInterface_MPI_4_DISABLE ON)
 
+# Disable Kokkos timing based test. See #8545.
+ATDM_SET_ENABLE(KokkosCore_UnitTest_CudaTimingBased_MPI_1_DISABLE ON)
+
 IF (ATDM_NODE_TYPE STREQUAL "OPENMP")
 
   # Disable ctest DISABLED test (otherwise, this shows up on CDash as "NotRun")
@@ -312,4 +315,12 @@ IF (ATDM_NODE_TYPE STREQUAL "CUDA")
     "--gtest_filter=-cuda.debug_pin_um_to_host:cuda.debug_serial_execution"
     CACHE STRING )
 
+  # Ensure these Kokkos tests run in serial to other Trilinos tests.
+  # #6840 resulted in ctest spreading tests across multiple GPUs. By ensuring
+  # that this Kokkos inter operability test runs in serial, we ensure that the
+  # GPU ID is not swapped upon initialize resulting in an invalid Cuda stream.
+  # See #8544.
+  ATDM_SET_ENABLE(KokkosCore_UnitTest_CudaInterOpStreams_MPI_1_SET_RUN_SERIAL ON)
+  # See #8543.
+  ATDM_SET_ENABLE(KokkosCore_UnitTest_CudaInterOpInit_MPI_1_SET_RUN_SERIAL ON)
 ENDIF()
