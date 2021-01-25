@@ -192,9 +192,7 @@ namespace { // (anonymous)
 
     out << "Fill the master MultiVector X" << endl;
     {
-      X.sync_host ();
-      X.modify_host ();
-      auto X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHostNonConst ();
 
       TEST_EQUALITY( static_cast<LO> (X_lcl.extent (0)), lclNumRows );
       TEST_EQUALITY( static_cast<LO> (X_lcl.extent (1)), numVecs );
@@ -288,7 +286,7 @@ namespace { // (anonymous)
         if (X_j.is_null ()) {
           continue;
         }
-        auto X_lcl_j_2d = X_j->getLocalViewHost ();
+        auto X_lcl_j_2d = X_j->getLocalViewHostConst ();
         auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), 0);
 
         auto X_copy_j = X_copy.getVector (j);
@@ -325,12 +323,12 @@ namespace { // (anonymous)
         auto iter = std::find (cols.begin (), cols.end (), j);
         if (iter == cols.end ()) { // not in the sequence
           auto X_j = X.getVector (j);
-          auto X_lcl_j_2d = X_j->getLocalViewHost ();
+          auto X_lcl_j_2d = X_j->getLocalViewHostConst ();
           auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), 0);
 
           auto X_copy_j = X_copy.getVector (j);
           auto X_copy_lcl_j_2d =
-            X_copy_j->getLocalViewHost ();
+            X_copy_j->getLocalViewHostConst ();
           auto X_copy_lcl_j_1d =
             Kokkos::subview (X_copy_lcl_j_2d, Kokkos::ALL (), 0);
 
@@ -351,11 +349,11 @@ namespace { // (anonymous)
       for (LO k = 0; k < static_cast<LO> (cols.size ()); ++k) {
         const LO j = cols[k];
         auto X_sub_j = X_sub->getVector (k);
-        auto X_sub_lcl_j_2d = X_sub_j->getLocalViewDevice ();
+        auto X_sub_lcl_j_2d = X_sub_j->getLocalViewDeviceConst ();
         auto X_sub_lcl_j_1d = Kokkos::subview (X_sub_lcl_j_2d, Kokkos::ALL (), 0);
 
         auto X_j = X.getVector (j);
-        auto X_lcl_j_2d = X_j->getLocalViewDevice ();
+        auto X_lcl_j_2d = X_j->getLocalViewDeviceConst ();
         auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), 0);
 
         // auto X_copy_j = X_copy.getVector (j);
@@ -375,11 +373,11 @@ namespace { // (anonymous)
         auto iter = std::find (cols.begin (), cols.end (), j);
         if (iter == cols.end ()) { // not in the sequence
           auto X_j = X.getVector (j);
-          auto X_lcl_j_2d = X_j->getLocalViewDevice ();
+          auto X_lcl_j_2d = X_j->getLocalViewDeviceConst ();
           auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), 0);
 
           auto X_copy_j = X_copy.getVector (j);
-          auto X_copy_lcl_j_2d = X_copy_j->getLocalViewDevice ();
+          auto X_copy_lcl_j_2d = X_copy_j->getLocalViewDeviceConst ();
           auto X_copy_lcl_j_1d = Kokkos::subview (X_copy_lcl_j_2d, Kokkos::ALL (), 0);
 
           const bool eq = vectorsEqual (X_lcl_j_1d, X_copy_lcl_j_1d);

@@ -112,8 +112,7 @@ namespace { // (anonymous)
     transform ("-1 -> (666+1=667)", Y, X,
                KOKKOS_LAMBDA (const double& X_ij) { return X_ij + 1.0; });
     {
-      X.sync_host ();
-      auto X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHostConst ();
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << endl;
         bool ok = true;
@@ -143,11 +142,7 @@ namespace { // (anonymous)
     transform ("418 -> 419", Kokkos::DefaultHostExecutionSpace (), Y, X,
                KOKKOS_LAMBDA (const double& X_ij) { return X_ij + 1.0; });
     {
-      // no promise that Y was actually sync'd to host, merely that Y
-      // could be accessed from the host execution space
-      Y.sync_host ();
-
-      auto Y_lcl = Y.getLocalViewHost ();
+      auto Y_lcl = Y.getLocalViewHostConst ();
       for (LO j = 0; j < LO (Y.getNumVectors ()); ++j) {
         out << "Column " << j << endl;
         bool ok = true;
@@ -162,9 +157,7 @@ namespace { // (anonymous)
         TEST_ASSERT( ok );
       }
 
-      //X.sync_host (); // should not be needed here
-
-      auto X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHostConst ();
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << endl;
         bool ok = true;
@@ -192,8 +185,7 @@ namespace { // (anonymous)
     transform ("419 -> 777", device_execution_space (), Y, X,
                KOKKOS_LAMBDA (const double& X_ij) { return X_ij + 359.0; });
     {
-      Y.sync_host ();
-      auto Y_lcl = Y.getLocalViewHost ();
+      auto Y_lcl = Y.getLocalViewHostConst ();
       for (LO j = 0; j < LO (Y.getNumVectors ()); ++j) {
         out << "Column " << j << endl;
         bool ok = true;
@@ -208,8 +200,7 @@ namespace { // (anonymous)
         TEST_ASSERT( ok );
       }
 
-      X.sync_host ();
-      auto X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHostConst ();
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << endl;
         bool ok = true;
@@ -275,8 +266,7 @@ namespace { // (anonymous)
     transform ("-1 -> (666+1=667)", Y, X,
                KOKKOS_LAMBDA (const double& X_i) { return X_i + 1.0; });
     {
-      X.sync_host ();
-      auto X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHostConst ();
       bool ok = true;
       for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
         const double expectedVal = 667.0;
@@ -303,11 +293,7 @@ namespace { // (anonymous)
     transform ("418 -> 419", Kokkos::DefaultHostExecutionSpace (), Y, X,
                KOKKOS_LAMBDA (const double& X_i) { return X_i + 1.0; });
     {
-      // no promise that Y was actually sync'd to host, merely that Y
-      // could be accessed from the host execution space
-      Y.sync_host ();
-
-      auto Y_lcl = Y.getLocalViewHost ();
+      auto Y_lcl = Y.getLocalViewHostConst ();
       bool ok = true;
       for (LO i = 0; i < LO (Y.getLocalLength ()); ++i) {
         const double expectedVal = 418.0;
@@ -319,9 +305,7 @@ namespace { // (anonymous)
       }
       TEST_ASSERT( ok );
 
-      //X.sync_host (); // should not be needed here
-
-      auto X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHostConst ();
       ok = true;
       for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
         const double expectedVal = 419.0;
@@ -346,8 +330,7 @@ namespace { // (anonymous)
     transform ("419 -> 777", device_execution_space (), Y, X,
                KOKKOS_LAMBDA (const double& X_i) { return X_i + 359.0; });
     {
-      Y.sync_host ();
-      auto Y_lcl = Y.getLocalViewHost ();
+      auto Y_lcl = Y.getLocalViewHostConst ();
 
       bool ok = true;
       for (LO i = 0; i < LO (Y.getLocalLength ()); ++i) {
@@ -360,8 +343,7 @@ namespace { // (anonymous)
       }
       TEST_ASSERT( ok );
 
-      X.sync_host ();
-      auto X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHostConst ();
       ok = true;
       for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
         const double expectedVal = 777.0;
@@ -432,8 +414,7 @@ namespace { // (anonymous)
                KOKKOS_LAMBDA (const double& Y_ij,
                               const double& Z_ij) { return Y_ij + Z_ij; });
     {
-      X.sync_host ();
-      auto X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHostConst ();
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << endl;
         bool ok = true;
@@ -473,8 +454,7 @@ namespace { // (anonymous)
                KOKKOS_LAMBDA (const double& Y_ij,
                               const double& Z_ij) { return Y_ij + Z_ij; });
     {
-      X.sync_host ();
-      auto X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHostConst ();
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << endl;
         bool ok = true;
@@ -544,8 +524,7 @@ namespace { // (anonymous)
                KOKKOS_LAMBDA (const double Y_i,
                               const double Z_i) { return Y_i + Z_i; });
     {
-      X.sync_host ();
-      auto X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHostConst ();
 
       bool ok = true;
       for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
@@ -580,8 +559,7 @@ namespace { // (anonymous)
                KOKKOS_LAMBDA (const double Y_i,
                               const double Z_i) { return Y_i + Z_i; });
     {
-      X.sync_host ();
-      auto X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHostConst ();
 
       bool ok = true;
       for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {

@@ -109,8 +109,7 @@ namespace { // (anonymous)
         X_ij = 418.0;
       });
     {
-      X.sync_host ();
-      auto X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHostConst ();
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << std::endl;
         bool ok = true;
@@ -141,8 +140,7 @@ namespace { // (anonymous)
                 X_ij = 777.0;
               });
     {
-      //X.sync_host ();
-      auto X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHostConst ();
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << std::endl;
         bool ok = true;
@@ -172,8 +170,7 @@ namespace { // (anonymous)
         X_ij = 666.0;
       });
     {
-      X.sync_host ();
-      auto X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHostConst ();
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << std::endl;
         bool ok = true;
@@ -204,8 +201,7 @@ namespace { // (anonymous)
                 X_ij = 44.0;
               });
     {
-      //X.sync_host (); // Doesn't help with CUDA_LAUNCH_BLOCKING unset
-      auto X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHostConst ();
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << std::endl;
         bool ok = true;
@@ -236,8 +232,7 @@ namespace { // (anonymous)
         X_ij = 31.0;
       });
     {
-      X.sync_host ();
-      auto X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHostConst ();
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << std::endl;
         bool ok = true;
@@ -267,8 +262,7 @@ namespace { // (anonymous)
         X_ij = 93.0;
       });
     {
-      X.sync_host ();
-      auto X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHostConst ();
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << std::endl;
         bool ok = true;
@@ -300,8 +294,7 @@ namespace { // (anonymous)
     for_each ("X_i=418 (Vec)", vec,
               KOKKOS_LAMBDA (double& X_i) { X_i = 418.0; });
     {
-      vec.sync_host ();
-      auto X_lcl_2d = vec.getLocalViewHost ();
+      auto X_lcl_2d = vec.getLocalViewHostConst ();
       auto X_lcl_1d = Kokkos::subview (X_lcl_2d, Kokkos::ALL (), 0);
       bool ok = true;
       for (LO i = 0; i < LO (vec.getLocalLength ()); ++i) {
@@ -328,8 +321,7 @@ namespace { // (anonymous)
     for_each ("X_i=666 (Vec)", Kokkos::DefaultHostExecutionSpace (), vec,
               KOKKOS_LAMBDA (double& X_i) { X_i = 666.0; });
     {
-      //vec.sync_host ();
-      auto X_lcl_2d = vec.getLocalViewHost ();
+      auto X_lcl_2d = vec.getLocalViewHostConst ();
       auto X_lcl_1d = Kokkos::subview (X_lcl_2d, Kokkos::ALL (), 0);
       bool ok = true;
       for (LO i = 0; i < LO (vec.getLocalLength ()); ++i) {

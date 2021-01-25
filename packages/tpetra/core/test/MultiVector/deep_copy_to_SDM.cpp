@@ -123,7 +123,7 @@ namespace { // (anonymous)
     if (X.need_sync_host ()) { // X was changed on device
       if (X.isConstantStride ()) {
         // Don't actually sync X; we don't want to change its state here.
-        auto X_lcl_d = X.getLocalViewDevice ();
+        auto X_lcl_d = X.getLocalViewDeviceConst ();
         auto X_lcl_h = Kokkos::create_mirror_view (X_lcl_d);
         Kokkos::deep_copy (X_lcl_h, X_lcl_d);
         return view2dSame (X_lcl_h, Y_view);
@@ -131,7 +131,7 @@ namespace { // (anonymous)
       else {
         for (size_t col = 0; col < X.getNumVectors (); ++col) {
           auto X_col = X.getVector (col);
-          auto X_col_lcl_d_2d = X_col->getLocalViewDevice ();
+          auto X_col_lcl_d_2d = X_col->getLocalViewDeviceConst ();
           auto X_col_lcl_d = Kokkos::subview (X_col_lcl_d_2d, Kokkos::ALL (), 0);
           // Don't actually sync X; we don't want to change its state here.
           auto X_col_lcl_h = Kokkos::create_mirror_view (X_col_lcl_d);
@@ -146,13 +146,13 @@ namespace { // (anonymous)
     }
     else { // X is current on host
       if (X.isConstantStride ()) {
-        auto X_lcl_h = X.getLocalViewHost ();
+        auto X_lcl_h = X.getLocalViewHostConst ();
         return view2dSame (X_lcl_h, Y_view);
       }
       else {
         for (size_t col = 0; col < X.getNumVectors (); ++col) {
           auto X_col = X.getVector (col);
-          auto X_col_lcl_h_2d = X_col->getLocalViewHost ();
+          auto X_col_lcl_h_2d = X_col->getLocalViewHostConst ();
           auto X_col_lcl_h = Kokkos::subview (X_col_lcl_h_2d, Kokkos::ALL (), 0);
           auto Y_col = Kokkos::subview (Y_view, Kokkos::ALL (), col);
           if (! view1dSame (X_col_lcl_h, Y_col)) {
@@ -223,13 +223,13 @@ namespace { // (anonymous)
     if (X.need_sync_device ()) { // modify on host
       X.modify_host ();
       if (X.isConstantStride ()) {
-        view2dIota (X.getLocalViewHost (), startValueIST);
+        view2dIota (X.getLocalViewHostNonConst (), startValueIST);
       }
       else {
         const size_t numCols = X.getNumVectors ();
         for (size_t col = 0; col < numCols; ++col) {
           auto X_col = X.getVectorNonConst (col);
-          auto X_col_lcl_h_2d = X_col->getLocalViewHost ();
+          auto X_col_lcl_h_2d = X_col->getLocalViewHostNonConst ();
           auto X_col_lcl_h =
             Kokkos::subview (X_col_lcl_h_2d, Kokkos::ALL (), 0);
           view1dIota (X_col_lcl_h, startValueIST +
@@ -240,13 +240,13 @@ namespace { // (anonymous)
     else { // modify on device
       X.modify_device ();
       if (X.isConstantStride ()) {
-        view2dIota (X.getLocalViewDevice (), startValueIST);
+        view2dIota (X.getLocalViewDeviceNonConst (), startValueIST);
       }
       else {
         const size_t numCols = X.getNumVectors ();
         for (size_t col = 0; col < numCols; ++col) {
           auto X_col = X.getVectorNonConst (col);
-          auto X_col_lcl_d_2d = X_col->getLocalViewDevice ();
+          auto X_col_lcl_d_2d = X_col->getLocalViewDeviceNonConst ();
           auto X_col_lcl_d =
             Kokkos::subview (X_col_lcl_d_2d, Kokkos::ALL (), 0);
           view1dIota (X_col_lcl_d, startValueIST +
@@ -325,10 +325,10 @@ namespace { // (anonymous)
 
         if (modify_MV_on_host) {
           X.sync_host ();
-          Kokkos::deep_copy (X.getLocalViewHost (), flagValue);
+          Kokkos::deep_copy (X.getLocalViewHostNonConst (), flagValue);
         }
         else {
-          Kokkos::deep_copy (X.getLocalViewDevice (), flagValue);
+          Kokkos::deep_copy (X.getLocalViewDeviceNonConst (), flagValue);
         }
 
         multiVectorIota (*X_sub, startValue, modify_MV_on_host);
