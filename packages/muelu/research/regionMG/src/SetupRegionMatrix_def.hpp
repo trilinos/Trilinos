@@ -134,11 +134,6 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
 
-  std::cout << "Hello from MakeQuasiregionMatrices" << std::endl;
-
-  RCP<Teuchos::FancyOStream> myOut = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  myOut->setShowAllFrontMatter(false).setShowProcRank(true);
-
   Array<ArrayRCP<const LO> > regionPerGIDWithGhostsData(regionsPerGIDWithGhosts->getNumVectors());
   for(size_t vecIdx = 0; vecIdx < regionsPerGIDWithGhosts->getNumVectors(); ++vecIdx) {
     regionPerGIDWithGhostsData[vecIdx] = regionsPerGIDWithGhosts->getData(vecIdx);
@@ -167,41 +162,29 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
                             *(rowImport),
                             Xpetra::INSERT);
 
-  quasiRegionMats->fillComplete();
-
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MakeQuasiregionMatrices: 3 - Scale interface entries")));
 
   RCP<CrsMatrixWrap> quasiRegionCrsWrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(quasiRegionMats);
   RCP<CrsMatrix> quasiRegionCrs = quasiRegionCrsWrap->getCrsMatrix();
-  const LO numRows    = Teuchos::as<LO>(quasiRegionCrs->getNodeNumRows());
-  // const size_t numNNZ = quasiRegionCrs->getNodeNumEntries();
 
-  ArrayRCP<const size_t> rowPtrCopy;
-  ArrayRCP<const LO> colIndsCopy;
-  ArrayRCP<const SC> valuesCopy;
-  quasiRegionCrs->getAllValues(rowPtrCopy, colIndsCopy, valuesCopy);
-
-  *myOut << "Just extracted quasi region matrix data, numEntries="
-         << valuesCopy.size() << ", last entry ID: " << rowPtrCopy[numRows]
-         << ", colIndsCopy.size()=" << colIndsCopy.size()
-         << ", valuesCopy.size()=" << valuesCopy.size() << std::endl;
-
-  ArrayRCP<size_t> rowPtr(rowPtrCopy.size());
-  ArrayRCP<LO> colInds(colIndsCopy.size());
-  ArrayRCP<SC> values(valuesCopy.size());
-  rowPtr.deepCopy(rowPtrCopy.view(0, rowPtrCopy.size()));
-  colInds.deepCopy(colIndsCopy.view(0, colIndsCopy.size()));
-  values.deepCopy(valuesCopy.view(0, valuesCopy.size()));
+  Array<LO> tmp(regionMatVecLIDs());
+  std::sort(tmp.begin(), tmp.end());
+  auto vecEnd = std::unique(tmp.begin(), tmp.end());
+  auto vecStart = tmp.begin();
 
   GO rowGID;
   LocalOrdinal col;
   GlobalOrdinal colGID;
   std::size_t sizeOfCommonRegions;
-  for (LO row = 0; row < numRows; ++row) { // loop over local rows of composite matrix
-    rowGID = rowMap->getGlobalElement(row);
+  for(auto row = vecStart; row < vecEnd; ++row) {
+    rowGID = rowMap->getGlobalElement(*row);
+    std::size_t numEntries = quasiRegionMats->getNumEntriesInLocalRow(*row); // number of entries in this row
+    Array<SC> values(numEntries); // non-zeros in this row
+    Array<LO> colInds(numEntries); // local column indices
+    quasiRegionMats->getLocalRowCopy(*row, colInds, values, numEntries);
 
-    for (std::size_t entryIdx = rowPtr[row]; entryIdx < rowPtr[row + 1]; ++entryIdx) { // loop over all entries in this row
+    for (std::size_t entryIdx = 0; entryIdx < numEntries; ++entryIdx) { // loop over all entries in this row
       col = colInds[entryIdx];
       colGID = colMap->getGlobalElement(col);
       Array<int> commonRegions;
@@ -211,23 +194,16 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
 
       sizeOfCommonRegions = commonRegions.size();
       if (1 < sizeOfCommonRegions) {
-        // *myOut << "col= " << col << ", sizeOfCommonRegions= " << sizeOfCommonRegions << std::endl;
         values[entryIdx] /= Teuchos::as<double>(sizeOfCommonRegions);
       }
     }
-
-    if(1 < sizeOfCommonRegions) {
-      *myOut << "row= " << row << std::endl;
-    }
-
+    quasiRegionMats->replaceLocalValues(*row, colInds, values);
   }
 
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MakeQuasiregionMatrices: 4 - fillComplete")));
 
-  // quasiRegionMats->fillComplete();
-
-  std::cout << "Bye from MakeQuasiregionMatrices" << std::endl;
+  quasiRegionMats->fillComplete();
 
   tm = Teuchos::null;
 } // MakeQuasiregionMatrices
