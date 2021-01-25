@@ -6,14 +6,16 @@
 #include <cmath>
 
 enum class ToleranceType {
-  mm_unknown = 0,
-  mm_time    = 1, // Only val and step valid.
-  mm_global  = 2, // Only val and step valid.
-  mm_nodal   = 3, // Only val, step, and id valid.
-  mm_element = 4, // All fields valid for the rest.
-  mm_sideset = 5,
-  mm_nodeset = 6,
-  mm_elematt = 7 // step not valid
+  mm_unknown   = 0,
+  mm_time      = 1, // Only val and step valid.
+  mm_global    = 2, // Only val and step valid.
+  mm_nodal     = 3, // Only val, step, and id valid.
+  mm_element   = 4, // All fields valid for the rest.
+  mm_sideset   = 5,
+  mm_nodeset   = 6,
+  mm_edgeblock = 7,
+  mm_faceblock = 8,
+  mm_elematt   = 9 // step not valid
 };
 
 class DiffData

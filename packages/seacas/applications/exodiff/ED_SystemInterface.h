@@ -73,6 +73,14 @@ public:
   Tolerance                ss_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
   std::vector<Tolerance>   ss_var;
 
+  std::vector<std::string> eb_var_names;
+  Tolerance                eb_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
+  std::vector<Tolerance>   eb_var;
+
+  std::vector<std::string> fb_var_names;
+  Tolerance                fb_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
+  std::vector<Tolerance>   fb_var;
+
   // time step exclusion data
   std::vector<int> exclude_steps;
 
@@ -127,6 +135,8 @@ public:
   bool elmt_att_do_all_flag{false};
   bool ns_var_do_all_flag{false};
   bool ss_var_do_all_flag{false};
+  bool eb_var_do_all_flag{false};
+  bool fb_var_do_all_flag{false};
 
 private:
   void          enroll_options();

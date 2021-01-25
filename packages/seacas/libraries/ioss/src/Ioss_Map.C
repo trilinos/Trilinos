@@ -9,7 +9,6 @@
 #include <Ioss_SmartAssert.h>
 #include <Ioss_Sort.h>
 #include <Ioss_Utils.h> // for IOSS_ERROR
-#include <algorithm>    // for adjacent_find, lower_bound, etc
 #include <cstddef>      // for size_t
 #include <fmt/ostream.h>
 #include <iterator> // for insert_iterator, inserter
@@ -17,7 +16,6 @@
 #include <sstream>
 #include <string>
 #include <sys/types.h> // for ssize_t
-#include <utility>     // for pair, make_pair
 #include <vector>      // for vector, vector<>::iterator, etc
 
 namespace {
@@ -33,50 +31,6 @@ namespace {
     }
     return one2one;
   }
-
-  // map global to local ids
-
-  // Class to support storing global/local element id map in sorted vector...
-  class IdPairCompare
-  {
-  public:
-    IdPairCompare() = default;
-    bool operator()(const Ioss::IdPair &lhs, const Ioss::IdPair &rhs) const
-    {
-      return key_less(lhs.first, rhs.first);
-    }
-    bool operator()(const Ioss::IdPair &lhs, const Ioss::IdPair::first_type &k) const
-    {
-      return key_less(lhs.first, k);
-    }
-    // Assignment operator
-    // Copy constructor
-  private:
-    bool key_less(const Ioss::IdPair::first_type &k1, const Ioss::IdPair::first_type &k2) const
-    {
-      return k1 < k2;
-    }
-  };
-
-  class IdPairEqual
-  {
-  public:
-    IdPairEqual() = default;
-    bool operator()(const Ioss::IdPair &lhs, const Ioss::IdPair &rhs) const
-    {
-      return key_equal(lhs.first, rhs.first);
-    }
-    // Assignment operator
-    // Copy constructor
-  private:
-    bool key_equal(const Ioss::IdPair::first_type &k1, const Ioss::IdPair::first_type &k2) const
-    {
-      return k1 == k2;
-    }
-  };
-
-  using RMapI = std::vector<Ioss::IdPair>::const_iterator;
-
 } // namespace
 
 void Ioss::Map::release_memory()
@@ -145,38 +99,46 @@ void Ioss::Map::build_reverse_map(int64_t num_to_get, int64_t offset)
 
 void Ioss::Map::build_reverse_map__(int64_t num_to_get, int64_t offset)
 {
-  // Stored as a sorted vector of <global_id, local_id> pairs...
-  // To build incrementally:
-  // 0. PRE: reverseElementMap is sorted, size >= 0.
-  // 1. Build vector of current ids. -- new_ids
-  // 2. Sort that vector.
-  // 3. Copy reverseElementMap to old_ids, empty reverseElementMap.
-  // 4. Merge old_ids and new_ids to reverseElementMap.
-  // 5. Check for duplicate global_ids...
-
-  // Build a vector containing the current ids...
+  // Stored as an unordered map -- key:global_id, value:local_id
   if (is_sequential()) {
     return;
   }
 
-  ReverseMapContainer new_ids;
   if (m_reverse.empty()) {
     // This is first time that the m_reverse map is being built..
     // m_map is no longer  1-to-1.
     // Just iterate m_map and add all values that are non-zero
-    new_ids.reserve(m_map.size() - 1);
-
+    m_reverse.reserve(m_map.size());
     for (size_t i = 1; i < m_map.size(); i++) {
       if (m_map[i] != 0) {
-        new_ids.emplace_back(m_map[i], i);
+        bool ok = m_reverse.insert({m_map[i], i}).second;
+        if (!ok) {
+          std::ostringstream errmsg;
+          fmt::print(errmsg,
+                     "\nERROR: Duplicate {0} global id detected on processor {1}, filename '{2}'.\n"
+                     "       Global id {3} assigned to local {0}s {4} and {5}.\n",
+                     m_entityType, m_myProcessor, m_filename, m_map[i], i, m_reverse[m_map[i]]);
+          IOSS_ERROR(errmsg);
+        }
       }
     }
   }
   else {
-    new_ids.reserve(num_to_get);
+    m_reverse.reserve(m_reverse.size() + num_to_get);
     for (int64_t i = 0; i < num_to_get; i++) {
       int64_t local_id = offset + i + 1;
-      new_ids.emplace_back(m_map[local_id], local_id);
+      bool    ok       = m_reverse.insert({m_map[local_id], local_id}).second;
+      if (!ok) {
+        if (local_id != m_reverse[m_map[local_id]]) {
+          std::ostringstream errmsg;
+          fmt::print(errmsg,
+                     "\nERROR: Duplicate {0} global id detected on processor {1}, filename '{2}'.\n"
+                     "       Global id {3} assigned to local {0}s {4} and {5}.\n",
+                     m_entityType, m_myProcessor, m_filename, m_map[local_id], local_id,
+                     m_reverse[m_map[local_id]]);
+          IOSS_ERROR(errmsg);
+        }
+      }
 
       if (m_map[local_id] <= 0) {
         std::ostringstream errmsg;
@@ -187,52 +149,6 @@ void Ioss::Map::build_reverse_map__(int64_t num_to_get, int64_t offset)
         IOSS_ERROR(errmsg);
       }
     }
-  }
-
-  // new_ids is a vector of pairs <global_id, local_id>
-  Ioss::qsort(new_ids);
-
-  int64_t new_id_min = new_ids.empty() ? 0 : new_ids.front().first;
-  int64_t old_id_max = m_reverse.empty() ? 0 : m_reverse.back().first;
-  if (new_ids.size() + 1 == m_map.size()) {
-    SMART_ASSERT(m_reverse.empty() || m_reverse.size() + 1 == m_map.size());
-    new_ids.swap(m_reverse);
-  }
-  else if (new_id_min > old_id_max) {
-    m_reverse.insert(m_reverse.end(), new_ids.begin(), new_ids.end());
-  }
-  else {
-    // Copy reverseElementMap to old_ids, empty reverseElementMap.
-    ReverseMapContainer old_ids;
-    old_ids.swap(m_reverse);
-    SMART_ASSERT(m_reverse.empty());
-
-    // Merge old_ids and new_ids to reverseElementMap.
-    m_reverse.reserve(old_ids.size() + new_ids.size());
-    std::merge(old_ids.begin(), old_ids.end(), new_ids.begin(), new_ids.end(),
-               std::inserter(m_reverse, m_reverse.begin()), IdPairCompare());
-  }
-
-// Check for duplicate ids...
-#ifndef NDEBUG
-  verify_no_duplicate_ids(m_reverse);
-#endif
-}
-
-void Ioss::Map::verify_no_duplicate_ids(std::vector<Ioss::IdPair> &reverse_map)
-{
-  // Check for duplicate ids...
-  auto dup = std::adjacent_find(reverse_map.begin(), reverse_map.end(), IdPairEqual());
-
-  if (dup != reverse_map.end()) {
-    auto               other = dup + 1;
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
-               "\nERROR: Duplicate {0} global id detected on processor {1}, filename '{2}'.\n"
-               "       Global id {3} assigned to local {0}s {4} and {5}.\n",
-               m_entityType, m_myProcessor, m_filename, (*dup).first, (*dup).second,
-               (*other).second);
-    IOSS_ERROR(errmsg);
   }
 }
 
@@ -299,6 +215,9 @@ bool Ioss::Map::set_map(INT *ids, size_t count, size_t offset, bool in_define_mo
   }
 
   if (in_define_mode) {
+    if (changed) {
+      m_reverse.clear();
+    }
     build_reverse_map__(count, offset);
   }
   else if (changed) {
@@ -544,8 +463,8 @@ int64_t Ioss::Map::global_to_local__(int64_t global, bool must_exist) const
     // reverseMap is empty (which implied one-to-one) if the ORIGINAL mapping defined
     // during dbState == STATE_MODEL was one-to-one, but there is a
     // reordering which is due to new id ordering defined after STATE_MODEL...
-    auto iter = std::lower_bound(m_reverse.begin(), m_reverse.end(), global, IdPairCompare());
-    if (iter != m_reverse.end() && iter->first == global) {
+    auto iter = m_reverse.find(global);
+    if (iter != m_reverse.end()) {
       local = iter->second;
     }
     else {
@@ -563,9 +482,9 @@ int64_t Ioss::Map::global_to_local__(int64_t global, bool must_exist) const
     fmt::print(errmsg,
                "ERROR: Ioss Mapping routines detected {0} with global id equal to {1} returns a "
                "local id of {2} which is\n"
-               "larger than the local {0} count on processor {3}, filename '{4}'.\n"
+               "larger than the local {0} count {5} on processor {3}, filename '{4}'.\n"
                "This should not happen, please report.\n",
-               m_entityType, global, local, m_myProcessor, m_filename);
+               m_entityType, global, local, m_myProcessor, m_filename, m_map.size() - 1);
     IOSS_ERROR(errmsg);
   }
   else if (local <= 0 && must_exist) {
