@@ -261,7 +261,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, OverlapToDefault, Scalar,LO,GO,Node)
     std::cout << me << " OVERLAP TO DEFAULT " << std::endl;
     defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
-    auto data = defaultVecTgt.getLocalViewHost();
+    auto data = defaultVecTgt.getLocalViewHostConst();
     for (size_t i = 0; i < defaultVecTgt.getLocalLength()/2; i++) {
       // overlapped; initial target values were overwritten
       if (data(i,0) != tgtScalar + srcScalar + srcScalar) ierr++;  
@@ -437,7 +437,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, SupersetToDefault, Scalar,LO,GO,Node)
     std::cout << me << " SUPERSET TO DEFAULT " << std::endl;
     defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
-    auto data = defaultVecTgt.getLocalViewHost();
+    auto data = defaultVecTgt.getLocalViewHostConst();
     for (size_t i = 0; i < defaultVecTgt.getLocalLength()/2; i++)
       if (data(i,0) != tgtScalar + srcScalar + srcScalar) ierr++;  // overlapped
     for (size_t i = defaultVecTgt.getLocalLength()/2;
@@ -516,9 +516,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7745, NoSamesToDefault, Scalar,LO,GO,Node)
     std::cout << me << " NOSAMES TO DEFAULT " << std::endl;
     defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
-    auto data = defaultVecTgt.getLocalViewHost();
-    for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++)
+    auto data = defaultVecTgt.getLocalViewHostConst();
+    for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++) {
       if (data(i,0) != tgtScalar + srcScalar) ierr++;  
+    }
     if (ierr > 0) 
       std::cout << "TEST FAILED:  NOSAMES-TO-DEFAULT TEST HAD " << ierr 
                 << " FAILURES ON RANK " << me << std::endl;
