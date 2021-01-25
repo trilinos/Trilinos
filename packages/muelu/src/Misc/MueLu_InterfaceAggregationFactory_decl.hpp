@@ -154,10 +154,10 @@ private:
    */
   void BuildBasedOnNodeMapping(const std::string& prefix, Level& currentLevel) const;
 
-  /*! @brief Build dual aggregates based one given interface row maps of the primal and dual problem
+  /*! @brief Build dual aggregates based on a given interface row map of the primal and dual problem
    *
    * The row map of the interface portion of the primal problem corresponds to the row map of the dual problem.
-   * This correspondence is expoited to form the dual aggregates based on available primal aggregates.
+   * This correspondence is exploited to form the dual aggregates based on available primal aggregates.
    *
    * @note In the context of mortar methods, the two maps correspond to the range and domain map of the slave-sided
    * mortar operator \f$D\f$, which connects primal interface unknowns and dual unknowns.
