@@ -145,12 +145,13 @@ class WrapperOpTimer:
       print(f"WARNING: File {output_stats_file} exists and will be overwritten")
       print(op)
       print(op_args)
+      print(op_output_file)
 
     cmd = [
             '/usr/bin/time',
             # '--append',
             '--output=' + output_stats_file,
-            field_arg,
+            WrapperOpTimer.field_arg,
            op ] + op_args
 
     # print(' '.join(cmd))
@@ -178,6 +179,9 @@ class WrapperOpTimer:
 
     # FileSize
     csv_row['FileSize'] = WrapperOpTimer.get_file_size(op_output_file)
+
+    # add a field with the short op
+    csv_row['op'] = os.path.basename(op)
 
     # FileName
     if base_build_dir:
