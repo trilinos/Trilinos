@@ -4,6 +4,7 @@ base_build_dir="@BASE_BUILD_DIR_FOR_PYTHON@"
 if [ "${CMAKE_IS_IN_CONFIGURE_MODE}" == "1" ]; then
   ${cmd} "$@"
 else
-  "@BUILD_STATS_SRC_DIR@/wrapper/magic_wrapper.py" \
+  "@PYTHON_EXECUTABLE@" \
+    "@BUILD_STATS_SRC_DIR@/wrapper/magic_wrapper.py" \
     "----base-build-dir=${base_build_dir}" "----op=${cmd}" "$@"
 fi
