@@ -218,19 +218,24 @@ void Zoltan_RCB_Serialize_Structure(ZZ const *zz, char **buf)
   /* Need only the tree structure for Point_Assign and Box_Assign */
   char *bufptr = *buf;
 
+printf("KDDKDD RCBSER ONE %lu\n", bufptr - *buf);fflush(stdout);
   *((int *) bufptr) = zzrcb->Num_Dim;
   bufptr += sizeof(int);
 
+printf("KDDKDD RCBSER TWO %lu\n", bufptr - *buf);fflush(stdout);
   size_t copysize = sizeof(struct rcb_tree) * zz->LB.Num_Global_Parts;
   memcpy(bufptr, (void *)(zzrcb->Tree_Ptr), copysize);
   bufptr += copysize;
+printf("KDDKDD RCBSER THREE %lu %lu %d\n", bufptr - *buf, copysize, zz->LB.Num_Global_Parts);fflush(stdout);
 
   memcpy(bufptr, (void *)(zzrcb->Box), sizeof(struct rcb_box));
   bufptr += sizeof(struct rcb_box);
 
+printf("KDDKDD RCBSER FOUR %lu\n", bufptr - *buf);fflush(stdout);
   memcpy(bufptr, (void *) &(zzrcb->Tran), sizeof(ZZ_Transform));
   bufptr += sizeof(ZZ_Transform);
 
+printf("KDDKDD RCBSER FIVE %lu\n", bufptr - *buf);fflush(stdout);
   *buf = bufptr;
 }
 
@@ -248,24 +253,30 @@ void Zoltan_RCB_Deserialize_Structure(ZZ *zz, char **buf)
   /* Need only the tree structure for Point_Assign and Box_Assign */
   char *bufptr = *buf;
 
+printf("KDDKDD RCBDESER ONE %lu\n", bufptr - *buf);fflush(stdout);
   zzrcb->Num_Dim = *((int *) bufptr);
   bufptr += sizeof(int);
 
+printf("KDDKDD RCBDESER TWO %lu\n", bufptr - *buf);fflush(stdout);
   /* Copy the tree structure */
   size_t copysize = sizeof(struct rcb_tree) * zz->LB.Num_Global_Parts;
   zzrcb->Tree_Ptr = (struct rcb_tree *) ZOLTAN_MALLOC(copysize);
   memcpy((void *)(zzrcb->Tree_Ptr), bufptr, copysize);
   bufptr += copysize;
 
+printf("KDDKDD RCBDESER THREE %lu %lu %d\n", bufptr - *buf, copysize, zz->LB.Num_Global_Parts);fflush(stdout);
+
   /* Copy the box */
   zzrcb->Box = (struct rcb_box *) ZOLTAN_MALLOC(sizeof(struct rcb_box));
   memcpy((void *)(zzrcb->Box), bufptr, sizeof(struct rcb_box));
   bufptr += sizeof(struct rcb_box);
+printf("KDDKDD RCBDESER FOUR %lu\n", bufptr - *buf);fflush(stdout);
 
   /* Copy the transformation */
   memcpy((void *) &(zzrcb->Tran), bufptr, sizeof(ZZ_Transform));
   bufptr += sizeof(ZZ_Transform);
 
+printf("KDDKDD RCBDESER FIVE %lu\n", bufptr - *buf);fflush(stdout);
   *buf = bufptr;
 }
 

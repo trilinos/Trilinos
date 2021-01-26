@@ -93,7 +93,7 @@ char *yo = "Zoltan_Create";
 ZZ *zz;
 int proc;
 
-    MPI_Comm_rank(communicator, &proc);
+  MPI_Comm_rank(communicator, &proc);
 
   /*
    * Allocate storage for the Zoltan structure.
@@ -382,11 +382,13 @@ size_t Zoltan_Serialize_Size(struct Zoltan_Struct const *zz)
 {
   /* Compute size of buffer needed to serialize Zoltan_Struct */
   size_t bufSize = 0;
-  bufSize += sizeof(struct Zoltan_Struct);
+printf("KDDKDD SERIALIZE_SIZE zero %lu \n", bufSize);fflush(stdout);
+  /* Copy 11 integers from Zoltan_Struct */
+  bufSize += sizeof(int) * 11;
 printf("KDDKDD SERIALIZE_SIZE one %lu \n", bufSize);fflush(stdout);
   bufSize += Zoltan_Serialize_Params_Size(zz);
 printf("KDDKDD SERIALIZE_SIZE two %lu \n", bufSize);fflush(stdout);
-  if (zz->LB.Serialize_Size != NULL) bufSize += zz->LB.Serialize_Size(zz);
+  bufSize += Zoltan_LB_Serialize_Size(zz);
 printf("KDDKDD SERIALIZE_SIZE three %lu \n", bufSize);fflush(stdout);
   return bufSize;
 }
@@ -397,17 +399,33 @@ int Zoltan_Serialize(ZZ const *zz, size_t bufSize, char *buf)
   int ierr = ZOLTAN_OK;
   char *bufptr = buf;
 
-  /* Copy all Zoltan_Struct data into buffer */
-  struct Zoltan_Struct *zzptr = (struct Zoltan_Struct *) bufptr;
-  memcpy(zzptr, zz, sizeof(struct Zoltan_Struct));
-  bufptr += sizeof(struct Zoltan_Struct);
+printf("KDDKDD SERIALIZE zero %lu\n", bufptr - buf);fflush(stdout);
+  /* Copy 11 integers; if add more, update Zoltan_Serialize_Size */
+  int *intptr = (int *) bufptr;
+  *intptr = zz->Num_GID; intptr++;
+  *intptr = zz->Num_LID; intptr++;
+  *intptr = zz->Debug_Level; intptr++;
+  *intptr = zz->Debug_Proc; intptr++;
+  *intptr = zz->Fortran; intptr++;
+  *intptr = zz->Tflops_Special; intptr++;
+  *intptr = *((int*) &(zz->Seed)); intptr++;
+  *intptr = zz->Deterministic; intptr++;
+  *intptr = zz->Obj_Weight_Dim; intptr++;
+  *intptr = zz->Edge_Weight_Dim; intptr++;
+  *intptr = zz->Timer; intptr++;
+  bufptr = (char *) intptr;
 
-  /* Need at least some params to set pointers on receiving side */
+printf("KDDKDD SERIALIZE one %lu\n", bufptr - buf);fflush(stdout);
+
+  /* Need some params to set pointers on receiving side; advance bufptr */
   Zoltan_Serialize_Params(zz, &bufptr);
 
-  /* Serialize the load balancing data; advance bufptr */
-  if (zz->LB.Serialize_Structure != NULL)
-    zz->LB.Serialize_Structure(zz, &bufptr);
+printf("KDDKDD SERIALIZE two %lu\n", bufptr - buf);fflush(stdout);
+
+  /* Serialize LB information; advance bufptr */
+  Zoltan_LB_Serialize(zz, &bufptr);
+
+printf("KDDKDD SERIALIZE three %lu\n", bufptr - buf);fflush(stdout);
 
   if (bufptr - buf > bufSize) {
     ZOLTAN_PRINT_ERROR(zz->Proc, "Zoltan_Serialize", 
@@ -415,7 +433,6 @@ int Zoltan_Serialize(ZZ const *zz, size_t bufSize, char *buf)
                        "your memory.");
     ierr = ZOLTAN_MEMERR;
   }
-printf("KDDKDD SERIALIZE\n");fflush(stdout);
   return ierr;
 }
 
@@ -425,140 +442,36 @@ int Zoltan_Deserialize(struct Zoltan_Struct *zz, size_t bufSize, char *buf)
   int ierr = ZOLTAN_OK;
   char *bufptr = buf;
   
-printf("KDDKDD DESERIALIZE one \n");fflush(stdout);
-  memcpy((void *)zz, bufptr, sizeof(struct Zoltan_Struct));
-  bufptr += sizeof(struct Zoltan_Struct);
-  zz->LB.Data_Structure = NULL;
-  zz->LB.Imbalance_Tol = NULL;
+printf("%d KDDKDD DESERIALIZE zero %lu %x \n", zz->Proc, bufptr - buf, buf);fflush(stdout);
+  /* Copy 11 integers */
+  int *intptr = (int *) bufptr;
+  zz->Num_GID = *intptr; intptr++;
+  zz->Num_LID = *intptr; intptr++;
+  zz->Debug_Level = *intptr; intptr++;
+  zz->Debug_Proc = *intptr; intptr++;
+  zz->Fortran = *intptr; intptr++;
+  zz->Tflops_Special = *intptr; intptr++;
+  zz->Seed = *((unsigned int *)(intptr)); intptr++;
+  zz->Deterministic = *intptr; intptr++;
+  zz->Obj_Weight_Dim = *intptr; intptr++;
+  zz->Edge_Weight_Dim = *intptr; intptr++;
+  zz->Timer = *intptr; intptr++;
+  bufptr = (char *) intptr;
 
+printf("%d KDDKDD DESERIALIZE one %lu \n", zz->Proc, bufptr - buf);fflush(stdout);
+  
   /* Consistent with Zoltan defaults, set default LB_METHOD to RCB; doing so
    * sets the various function pointers for RCB. 
    * Method and function pointers will be reset if parameter LB_METHOD has
    * been provided by user. */
-printf("KDDKDD DESERIALIZE two \n");fflush(stdout);
   Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
   Zoltan_Deserialize_Params(zz, &bufptr);
 
-printf("KDDKDD DESERIALIZE three \n");fflush(stdout);
-  /* Deserialize the LB method's specific data. TODO: ordering, migration   */
-  if (zz->LB.Deserialize_Structure != NULL) 
-    zz->LB.Deserialize_Structure(zz, &bufptr);
+printf("%d KDDKDD DESERIALIZE two %lu \n", zz->Proc, bufptr - buf);fflush(stdout);
+  /* Deserialize LB information; advance bufptr */
+  Zoltan_LB_Deserialize(zz, &bufptr);
 
-printf("KDDKDD DESERIALIZE four \n");fflush(stdout);
-  /* Risky to deserialize pointers; pointers in buffer are not useful on 
-   * received processor.
-   * Make them NULL; user will need to re-register them to use received zz
-   * TODO:  don't serialize them in the first place.
-   */
-  zz->Get_Part_Multi = NULL;
-  zz->Get_Part = NULL;
-  zz->Get_Num_Edges_Multi = NULL;
-  zz->Get_Num_Edges = NULL;
-  zz->Get_Edge_List_Multi = NULL;
-  zz->Get_Edge_List = NULL;
-  zz->Get_HG_Size_CS = NULL;
-  zz->Get_HG_CS = NULL;
-  zz->Get_HG_Size_Edge_Wts = NULL;
-  zz->Get_HG_Edge_Wts = NULL;
-  zz->Get_Num_Geom = NULL;
-  zz->Get_Geom_Multi = NULL;
-  zz->Get_Geom = NULL;
-  zz->Get_Num_Obj = NULL;
-  zz->Get_Obj_List = NULL;
-  zz->Get_First_Obj = NULL;
-  zz->Get_Next_Obj = NULL;
-  zz->Get_Num_Border_Obj = NULL;
-  zz->Get_Border_Obj_List = NULL;
-  zz->Get_First_Border_Obj = NULL;
-  zz->Get_Next_Border_Obj = NULL;
-  zz->Get_Num_Coarse_Obj = NULL;
-  zz->Get_Coarse_Obj_List = NULL;
-  zz->Get_First_Coarse_Obj = NULL;
-  zz->Get_Next_Coarse_Obj = NULL;
-  zz->Get_Num_Child = NULL;
-  zz->Get_Child_List = NULL;
-  zz->Get_Child_Weight = NULL;
-  zz->Get_Num_Fixed_Obj = NULL;
-  zz->Get_Fixed_Obj_List = NULL;
-  zz->Get_Part_Fort = NULL;
-  zz->Get_Num_Edges_Fort = NULL;
-  zz->Get_Edge_List_Fort = NULL;
-  zz->Get_HG_Size_CS_Fort = NULL;
-  zz->Get_HG_CS_Fort = NULL;
-  zz->Get_HG_Size_Edge_Wts_Fort = NULL;
-  zz->Get_HG_Edge_Wts_Fort = NULL;
-  zz->Get_Num_Geom_Fort = NULL;
-  zz->Get_Geom_Multi_Fort = NULL;
-  zz->Get_Geom_Fort = NULL;
-  zz->Get_Num_Obj_Fort = NULL;
-  zz->Get_Obj_List_Fort = NULL;
-  zz->Get_First_Obj_Fort = NULL;
-  zz->Get_Next_Obj_Fort = NULL;
-  zz->Get_Num_Border_Obj_Fort = NULL;
-  zz->Get_Border_Obj_List_Fort = NULL;
-  zz->Get_First_Border_Obj_Fort = NULL;
-  zz->Get_Next_Border_Obj_Fort = NULL;
-  zz->Get_Num_Coarse_Obj_Fort = NULL;
-  zz->Get_Coarse_Obj_List_Fort = NULL;
-  zz->Get_First_Coarse_Obj_Fort = NULL;
-  zz->Get_Next_Coarse_Obj_Fort = NULL;
-  zz->Get_Num_Child_Fort = NULL;
-  zz->Get_Child_List_Fort = NULL;
-  zz->Get_Child_Weight_Fort = NULL;
-  zz->Get_Num_Fixed_Obj_Fort = NULL;
-  zz->Get_Fixed_Obj_List_Fort = NULL;
-
-  zz->Get_Part_Data = NULL;
-  zz->Get_Num_Edges_Data = NULL;
-  zz->Get_Edge_List_Data = NULL;
-  zz->Get_HG_Size_CS_Data = NULL;
-  zz->Get_HG_CS_Data = NULL;
-  zz->Get_HG_Size_Edge_Wts_Data = NULL;
-  zz->Get_HG_Edge_Wts_Data = NULL;
-  zz->Get_Num_Geom_Data = NULL;
-  zz->Get_Geom_Data = NULL;
-  zz->Get_Num_Obj_Data = NULL;
-  zz->Get_Obj_List_Data = NULL;
-  zz->Get_First_Obj_Data = NULL;
-  zz->Get_Next_Obj_Data = NULL;
-  zz->Get_Num_Border_Obj_Data = NULL;
-  zz->Get_Border_Obj_List_Data = NULL;
-  zz->Get_First_Border_Obj_Data = NULL;
-  zz->Get_Next_Border_Obj_Data = NULL;
-  zz->Get_Num_Coarse_Obj_Data = NULL;
-  zz->Get_Coarse_Obj_List_Data = NULL;
-  zz->Get_First_Coarse_Obj_Data = NULL;
-  zz->Get_Next_Coarse_Obj_Data = NULL;
-  zz->Get_Num_Child_Data = NULL;
-  zz->Get_Child_List_Data = NULL;
-  zz->Get_Child_Weight_Data = NULL;
-  zz->Get_Num_Fixed_Obj_Data = NULL;
-  zz->Get_Fixed_Obj_List_Data = NULL;
-
-  zz->Pack_Obj = NULL;
-  zz->Unpack_Obj = NULL;
-  zz->Get_Obj_Size = NULL;
-  zz->Pack_Obj_Multi = NULL;
-  zz->Unpack_Obj_Multi = NULL;
-  zz->Get_Obj_Size_Multi = NULL;
-  
-  zz->Pack_Obj_Fort = NULL;
-  zz->Unpack_Obj_Fort = NULL;
-  zz->Get_Obj_Size_Fort = NULL;
-
-  zz->Pack_Obj_Data = NULL;
-  zz->Unpack_Obj_Data = NULL;
-  zz->Get_Obj_Size_Data = NULL;
-
-  zz->Get_Hier_Num_Levels = NULL;
-  zz->Get_Hier_Part = NULL;
-  zz->Get_Hier_Method = NULL;
-  zz->Get_Hier_Num_Levels_Fort = NULL;
-  zz->Get_Hier_Part_Fort = NULL;
-  zz->Get_Hier_Method_Fort = NULL;
-  zz->Get_Hier_Num_Levels_Data = NULL;
-  zz->Get_Hier_Part_Data = NULL;
-  zz->Get_Hier_Method_Data = NULL;
+printf("%d KDDKDD DESERIALIZE three %lu\n", zz->Proc, bufptr - buf);fflush(stdout);
 
   if (bufptr - buf > bufSize) {
     ZOLTAN_PRINT_ERROR(zz->Proc, "Zoltan_Deserialize", 
@@ -566,8 +479,6 @@ printf("KDDKDD DESERIALIZE four \n");fflush(stdout);
                        "garbage memory.");
     ierr = ZOLTAN_MEMERR;
   }
-
-printf("KDDKDD DESERIALIZE five\n"); fflush(stdout);
 
   return ierr;
 }

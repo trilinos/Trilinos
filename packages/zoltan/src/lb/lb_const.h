@@ -310,6 +310,10 @@ extern int Zoltan_LB_Build_PartDist(struct Zoltan_Struct *);
 extern int Zoltan_LB_Remap(struct Zoltan_Struct *, int *, int, int *, int *,
   int *, int);
 
+extern size_t Zoltan_LB_Serialize_Size(struct Zoltan_Struct *);
+extern void Zoltan_LB_Serialize(struct Zoltan_Struct *, char **);
+extern void Zoltan_LB_Deserialize(struct Zoltan_Struct *, char **);
+
 extern int Zoltan_LB_Copy_Struct(struct Zoltan_Struct *to, 
                                struct Zoltan_Struct const *from);
 extern int Zoltan_LB_Special_Free_Part(struct Zoltan_Struct *,

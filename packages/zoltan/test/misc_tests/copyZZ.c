@@ -109,7 +109,7 @@ printf("%d KDD INITIALIZING\n", me); fflush(stdout);
   /* Create a subcommunicator in which to do partitioning. */
   /* For this test, we'll put rank 0 of MPI_COMM_WORLD in subComm */
 printf("%d KDD SPLITTING\n", me); fflush(stdout);
-  MPI_Comm subComm;
+  MPI_Comm subComm = MPI_COMM_NULL;
   MPI_Comm_split(MPI_COMM_WORLD, (me <= np / 2 ? 1 : MPI_UNDEFINED), 0,
                  &subComm);
   
@@ -157,22 +157,27 @@ printf("%d KDD FREEING DONE\n", me);fflush(stdout);
 printf("%d KDD SIZING\n", me);fflush(stdout);
   size_t bufSize;
   if (me == 0) bufSize = Zoltan_Serialize_Size(zz);
-printf("%d KDD SIZING BCAST\n", me);fflush(stdout);
+
   MPI_Bcast(&bufSize, 1, MPI_UNSIGNED_LONG_LONG, 0, MPI_COMM_WORLD);
 
   /* Then allocate and broadcast the buffer */
 printf("%d KDD SERIALIZING %lu\n", me, bufSize);fflush(stdout);
   char *buf = NULL;
   buf = (char *) malloc(bufSize * sizeof(char));
+
+printf("%d KDD ME %d\n", me, me);
+
   if (me == 0) ierr = Zoltan_Serialize(zz, bufSize, buf);
   if (ierr != ZOLTAN_OK) {
     printf("TEST FAILED:  Error in Zoltan_Serialize\n"); fflush(stdout);
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
-  MPI_Bcast(&buf, bufSize, MPI_CHAR, 0, MPI_COMM_WORLD);
+
+  MPI_Bcast(buf, bufSize, MPI_CHAR, 0, MPI_COMM_WORLD);
 
   /* All processors unpack the buffer into a new ZZ struct */
 
+printf("%d KDD ME TOO %d\n", me, me);
 printf("%d KDD DESERIALIZING %lu \n", me, bufSize);fflush(stdout);
   struct Zoltan_Struct *newZZ = Zoltan_Create(MPI_COMM_WORLD);
   ierr = Zoltan_Deserialize(newZZ, bufSize, buf);
@@ -190,10 +195,9 @@ printf("%d KDD GET BASE ANSWER\n", me);fflush(stdout);
   int answer[nTwo];
   if (me == 0) {
     for (int i = 0; i < nTwo; i++) {
-      int ignore;
       double tmp[3]; tmp[0] = xTwo[i]; tmp[1] = yTwo[i]; tmp[2] = zTwo[i];
 printf("%d KDD BASE %d %f %f %f\n", me, i, tmp[0], tmp[1], tmp[2]);
-      Zoltan_LB_Point_PP_Assign(zz, tmp, &ignore, &answer[i]);
+      Zoltan_LB_Point_PP_Assign(zz, tmp, NULL, &answer[i]);
       printf("Point (%f %f %f) on part %d\n", 
               xTwo[i], yTwo[i], zTwo[i], answer[i]);
 /* KDD */      fflush(stdout);
@@ -206,10 +210,9 @@ printf("%d KDD BASE %d %f %f %f\n", me, i, tmp[0], tmp[1], tmp[2]);
 printf("%d KDD GET TEST ANSWER\n", me);fflush(stdout);
   int errCnt = 0;
   for (int i = 0; i < nTwo; i++) {
-    int ignore;
     int newAnswer;
     double tmp[3]; tmp[0] = xTwo[i]; tmp[1] = yTwo[i]; tmp[2] = zTwo[i];
-    Zoltan_LB_Point_PP_Assign(newZZ, tmp, &ignore, &newAnswer);
+    Zoltan_LB_Point_PP_Assign(newZZ, tmp, NULL, &newAnswer);
     printf("%d Point (%f %f %f) on part %d %d\n", 
            me, xTwo[i], yTwo[i], zTwo[i], answer[i], newAnswer);
 /* KDD */      fflush(stdout);
@@ -224,7 +227,7 @@ printf("%d KDD DONE\n", me);fflush(stdout);
 
   if (zz) Zoltan_Destroy(&zz);
   if (newZZ) Zoltan_Destroy(&newZZ);
-  MPI_Comm_free(&subComm);
+  if (subComm != MPI_COMM_NULL) MPI_Comm_free(&subComm);
 
   /* Gather global test result */
 
@@ -233,5 +236,6 @@ printf("%d KDD DONE\n", me);fflush(stdout);
   if (me == 0) 
     printf("TEST %s: gErrCnt=%d\n", (gErrCnt ? "FAILED" : "PASSED"), gErrCnt);
 
+  MPI_Finalize();
   return gErrCnt;
 }

@@ -88,9 +88,11 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
    *  But first free any left-over data from the previous method.
    */
 
+printf("KDDKDD LBMETHOD BEFORE \n");fflush(stdout);
   if (zz->LB.Free_Structure != NULL)
     zz->LB.Free_Structure(zz);
 
+printf("KDDKDD LBMETHOD AFTER \n");fflush(stdout);
   /*
    *  Convert method_name to all upper case.
    *  Do not change the original string.
@@ -103,6 +105,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     goto End;
   }
 
+printf("KDDKDD LBMETHOD CLEAN \n");fflush(stdout);
   if (strcmp(method_upper, "BLOCK") == 0) {
     zz->LB.Method = BLOCK;
     zz->LB.LB_Fn = Zoltan_Block;
@@ -131,6 +134,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Deserialize_Structure = NULL;
   }
   else if (strcmp(method_upper, "RCB") == 0) {
+printf("KDDKDD LBMETHOD YO \n");fflush(stdout);
     zz->LB.Method = RCB;
     zz->LB.LB_Fn = Zoltan_RCB;
     zz->LB.Free_Structure = Zoltan_RCB_Free_Structure;

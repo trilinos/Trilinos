@@ -107,16 +107,16 @@ int Zoltan_Serialize_Params(struct Zoltan_Struct const *from, char **buf)
   /* Pack number of parameters */
   int nParam = paramSize / (MAX_PARAM_STRING_LEN * 2);
   *((int *) bufptr) = nParam;
-printf("KDD SER %d %d\n", nParam, *((int *) bufptr));
+printf("KDD SER %d %d\n", nParam, *((int *) bufptr));fflush(stdout);
   bufptr += sizeof(int);
 
   /* Pack each parameter, using max string length bytes per string */
   while (param) {
     strcpy(bufptr, param->name);
-printf("KDD SER NAME %s\n", bufptr);
+printf("KDD SER NAME %s\n", bufptr);fflush(stdout);
     bufptr += MAX_PARAM_STRING_LEN;
     strcpy(bufptr, param->new_val);
-printf("KDD SER VAL %s\n", bufptr);
+printf("KDD SER VAL %s\n", bufptr);fflush(stdout);
     bufptr += MAX_PARAM_STRING_LEN;
     param = param->next;
   }
@@ -127,17 +127,19 @@ int Zoltan_Deserialize_Params(struct Zoltan_Struct *to, char **buf)
 {
   /* Serialize the parameters */
   char *bufptr = *buf;
+printf("KDD DESER PARAMS %d\n", *((int*)bufptr));fflush(stdout);
 
   /* Unpack number of parameters */
-  int nParam = *((int *) bufptr);
-printf("KDD DESER %d\n", nParam);
+printf("KDD DESER HEY %lu\n", bufptr - *buf);fflush(stdout);
+  int nParam = *((int *)bufptr);
+printf("KDD DESER %d\n", nParam);fflush(stdout);
   bufptr += sizeof(int);
 
   /* Unpack parameters' (name, value) pairs and set them */
   for (int i = 0; i < nParam; i++) {
     char *pname = bufptr;
     char *pval = bufptr + MAX_PARAM_STRING_LEN;
-printf("KDD DESER PARAM %s %s\n", pname, pval);
+printf("KDD DESER PARAM %s %s\n", pname, pval);fflush(stdout);
     Zoltan_Set_Param(to, pname, pval);
     bufptr += 2 * MAX_PARAM_STRING_LEN;
   }

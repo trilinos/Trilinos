@@ -77,10 +77,11 @@ int main(int narg, char **arg) {
   float ver;
   Zoltan_Initialize(narg, arg, &ver);
   int ierr = ZOLTAN_OK;
+  int gErrCnt = 0;
 
   int me, np;
+  MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_size(MPI_COMM_WORLD, &np);
-  MPI_Comm_size(MPI_COMM_WORLD, &me);
   if (np < 3) printf("This test is more useful on three or more processors.\n");
 
   /* Coordinates to be partitioned */
@@ -98,14 +99,17 @@ int main(int narg, char **arg) {
 
   /* Create a subcommunicator in which to do partitioning. */
   /* For this test, we'll put rank 0 of MPI_COMM_WORLD in subComm */
-  MPI_Comm subComm;
+  MPI_Comm subComm = MPI_COMM_NULL;
   MPI_Comm_split(MPI_COMM_WORLD, (me <= np / 2 ? 1 : MPI_UNDEFINED), 0,
                  &subComm);
   
+  {
   /* Compute the RCB partition on a subcommunicator subComm */
-  Zoltan zz(subComm);
+  Zoltan zz;
 
   if (subComm != MPI_COMM_NULL) {
+
+    zz = Zoltan(subComm);
 
     zz.Set_Num_Obj_Fn(nObj, &meshOne);
     zz.Set_Obj_List_Fn(objMulti, &meshOne);
@@ -148,11 +152,12 @@ int main(int narg, char **arg) {
     printf("TEST FAILED in zz.Serialize\n"); fflush(stdout);
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
-  MPI_Bcast(&buf, bufSize, MPI_CHAR, 0, MPI_COMM_WORLD);
+  MPI_Bcast(buf, bufSize, MPI_CHAR, 0, MPI_COMM_WORLD);
 
   /* All processors unpack the buffer into a new ZZ struct */
 
   Zoltan newZZ(MPI_COMM_WORLD);
+
   ierr = newZZ.Deserialize(bufSize, buf);
   if (ierr != ZOLTAN_OK) {
     printf("TEST FAILED in newZZ.Deserialize\n"); fflush(stdout);
@@ -167,9 +172,8 @@ int main(int narg, char **arg) {
   int answer[nTwo];
   if (me == 0) {
     for (int i = 0; i < nTwo; i++) {
-      int ignore;
       double tmp[3] = {xTwo[i], yTwo[i], zTwo[i]};
-      zz.LB_Point_PP_Assign(tmp, ignore, answer[i]);
+      zz.LB_Point_PP_Assign(tmp, answer[i]);
       printf("Point (%f %f %f) on part %d\n", 
               xTwo[i], yTwo[i], zTwo[i], answer[i]);
     }
@@ -180,10 +184,11 @@ int main(int narg, char **arg) {
 
   int errCnt = 0;
   for (int i = 0; i < nTwo; i++) {
-    int ignore;
     int newAnswer;
     double tmp[3] = {xTwo[i], yTwo[i], zTwo[i]};
-    zz.LB_Point_PP_Assign(tmp, ignore, newAnswer);
+    newZZ.LB_Point_PP_Assign(tmp, newAnswer);
+    printf("%d Point (%f %f %f) on part %d %d\n",
+           me, xTwo[i], yTwo[i], zTwo[i], answer[i], newAnswer);
     if (newAnswer != answer[i]) {
       errCnt++;
       printf("%d Error (%f %f %f):  part %d != new part %d\n", 
@@ -192,11 +197,14 @@ int main(int narg, char **arg) {
   }
 
   /* Gather global test result */
-
-  int gErrCnt = 0;
   MPI_Allreduce(&errCnt, &gErrCnt, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   if (me == 0) 
     printf("TEST %s: gErrCnt=%d\n", (gErrCnt ? "FAILED" : "PASSED"), gErrCnt);
 
+  }  /* End of test scope; should be OK to clean up MPI now */
+
+  if (subComm != MPI_COMM_NULL) MPI_Comm_free(&subComm);
+
+  MPI_Finalize();
   return gErrCnt;
 }
