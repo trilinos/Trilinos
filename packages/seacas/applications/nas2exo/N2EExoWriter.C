@@ -229,7 +229,7 @@ namespace ExoModules {
 
       for (const elementType &elem : thisBlock) {
 
-        N2EGridPtList &pts{get<3>(elem)};
+        const N2EGridPtList &pts{get<3>(elem)};
         std::copy(pts.v, pts.v + nodes_per_elem, elemCon.data() + numNodesCopied);
         numNodesCopied += nodes_per_elem;
       }
