@@ -99,6 +99,8 @@ sa: use rowsumabs diagonal scaling = 0   [default]
 sa: enforce constraints = 0   [default]
 tentative: calculate qr = 1   [default]
 sa: max eigenvalue = -1   [default]
+sa: rowsumabs diagonal replacement tolerance = -1   [default]
+sa: rowsumabs diagonal replacement value = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -268,6 +270,8 @@ sa: use rowsumabs diagonal scaling = 0   [default]
 sa: enforce constraints = 0   [default]
 tentative: calculate qr = 1   [default]
 sa: max eigenvalue = -1   [default]
+sa: rowsumabs diagonal replacement tolerance = -1   [default]
+sa: rowsumabs diagonal replacement value = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -461,6 +465,8 @@ sa: use rowsumabs diagonal scaling = 0   [default]
 sa: enforce constraints = 0   [default]
 tentative: calculate qr = 1   [default]
 sa: max eigenvalue = -1   [default]
+sa: rowsumabs diagonal replacement tolerance = -1   [default]
+sa: rowsumabs diagonal replacement value = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -630,6 +636,8 @@ sa: use rowsumabs diagonal scaling = 0   [default]
 sa: enforce constraints = 0   [default]
 tentative: calculate qr = 1   [default]
 sa: max eigenvalue = -1   [default]
+sa: rowsumabs diagonal replacement tolerance = -1   [default]
+sa: rowsumabs diagonal replacement value = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -750,6 +758,8 @@ sa: use rowsumabs diagonal scaling = 0   [default]
 sa: enforce constraints = 0   [default]
 tentative: calculate qr = 1   [default]
 sa: max eigenvalue = -1   [default]
+sa: rowsumabs diagonal replacement tolerance = -1   [default]
+sa: rowsumabs diagonal replacement value = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
