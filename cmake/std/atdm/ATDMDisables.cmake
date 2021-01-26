@@ -323,4 +323,7 @@ IF (ATDM_NODE_TYPE STREQUAL "CUDA")
   ATDM_SET_ENABLE(KokkosCore_UnitTest_CudaInterOpStreams_MPI_1_SET_RUN_SERIAL ON)
   # See #8543.
   ATDM_SET_ENABLE(KokkosCore_UnitTest_CudaInterOpInit_MPI_1_SET_RUN_SERIAL ON)
+
+  # See #8516.
+  ATDM_SET_ENABLE(Intrepid2_unit-test_MonolithicExecutable_Intrepid2_Tests_MPI_1_SET_RUN_SERIAL ON)
 ENDIF()
