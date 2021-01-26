@@ -173,6 +173,7 @@ int index			/* index of vector parameter; -1 if scalar */
         ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
 	ZOLTAN_FREE(&name);
     	ZOLTAN_FREE(&val);
+printf("%d KDDKDD ADD PARAM NOT FOUND %s %s\n", zz->Proc, name, val);
     }
     else if (status == 2) {
 	sprintf(msg, "Invalid value `%s' for parameter `%s'; default "
@@ -180,6 +181,7 @@ int index			/* index of vector parameter; -1 if scalar */
         ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
 	ZOLTAN_FREE(&name);
     	ZOLTAN_FREE(&val);
+printf("%d KDDKDD ADD PARAM INVALID %s %s\n", zz->Proc, name, val);
        
     }
     else {
@@ -188,11 +190,14 @@ int index			/* index of vector parameter; -1 if scalar */
             status = 0; 		/* "DEFAULT" is always valid */
     	    ZOLTAN_FREE(&name);
     	    ZOLTAN_FREE(&val);
+printf("%d KDDKDD ADD PARAM DEFAULT %s %s\n", zz->Proc, name, val);
         }
         else if (status == 0){		/* Parameter OK */
+printf("%d KDDKDD ADD PARAM ADD %s %s\n", zz->Proc, name, val);
     	    add_param(zz, &name, &val, index); 	/* Add parameter to list */
         }
         else { 				/* Parameter not OK. Don't add.  */
+printf("%d KDDKDD ADD PARAM HUH %s %s\n", zz->Proc, name, val);
     	    ZOLTAN_FREE(&name);             /* (It may be used to set values */
     	    ZOLTAN_FREE(&val);              /* directly in zz rather than in */
                                         /* the parameter list.)          */

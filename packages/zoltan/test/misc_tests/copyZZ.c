@@ -78,14 +78,15 @@ printf("KDD %d coords %f %f %f\n", i, coords[i*ndim], coords[i*ndim+1], coords[i
  * All procs compare LB_Point_Assign results using the new Zoltan struct 
  * to baselines using the original.
  **************************************************************************/
-
-int main(int narg, char **arg) {
-
-  MPI_Init(&narg, &arg);
-  float ver;
-  Zoltan_Initialize(narg, arg, &ver);
+int run_test(       /* Test options relevant to serialization, such as... */
+  int nparts,       /*      NUM_GLOBAL_PARTS                              */
+  int ngid,         /*      NUM_GID_ENTRIES                               */
+  int nlid,         /*      NUM_LID_ENTRIES                               */
+  int usePartSizes, /*      Part_Info array                               */
+  int useRemap      /*      Remap array                                   */
+) 
+{
   int ierr = ZOLTAN_OK;
-
   int me, np;
   MPI_Comm_size(MPI_COMM_WORLD, &np);
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
@@ -128,8 +129,31 @@ printf("%d KDD PARTITIONING\n", me);fflush(stdout);
 
     Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
     Zoltan_Set_Param(zz, "KEEP_CUTS", "1");
+    Zoltan_Set_Param(zz, "IMBALANCE_TOL", "1.02");
     Zoltan_Set_Param(zz, "RETURN_LISTS", "PART");
-    Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTS", "5");
+    (useRemap ? Zoltan_Set_Param(zz, "REMAP", "1")
+              : Zoltan_Set_Param(zz, "REMAP", "0"));
+
+    char msg[22];
+    sprintf(msg, "%d", nparts);
+    Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTS", msg);
+    sprintf(msg, "%d", ngid);
+    Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", msg);
+    sprintf(msg, "%d", nlid);
+    Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", msg);
+
+    if (usePartSizes) {
+      int *parts = (int *) malloc(sizeof(int) * nparts);
+      float *sizes = (float *) malloc(sizeof(float) * nparts);
+      int i;
+      for (i = 0; i < nparts; i++) {
+        parts[i] = i;
+        sizes[i] = i+1;
+      }
+      Zoltan_LB_Set_Part_Sizes(zz, 1, nparts, parts, NULL, sizes);
+      free(parts);
+      free(sizes);
+    }
 
     int nChanges;
     int nGid, nLid;
@@ -236,6 +260,26 @@ printf("%d KDD DONE\n", me);fflush(stdout);
   if (me == 0) 
     printf("TEST %s: gErrCnt=%d\n", (gErrCnt ? "FAILED" : "PASSED"), gErrCnt);
 
-  MPI_Finalize();
   return gErrCnt;
+}
+
+/**************************************************************************/
+int main(int narg, char **arg) {
+
+  MPI_Init(&narg, &arg);
+  float ver;
+  Zoltan_Initialize(narg, arg, &ver);
+  int ierr = ZOLTAN_OK;
+  int np;
+  MPI_Comm_size(MPI_COMM_WORLD, &np);
+
+  ierr += run_test(5, 1, 1, 1, 1);
+  ierr += run_test(np+4, 1, 2, 0, 1);
+  ierr += run_test((np-2>0 ? np-2 : np), 2, 3, 1, 0);
+  ierr += run_test(np, 3, 1, 0, 1);
+  ierr += run_test(np, 3, 1, 1, 0);
+  ierr += run_test(np, 3, 1, 1, 1);
+
+  MPI_Finalize();
+  return ierr;
 }

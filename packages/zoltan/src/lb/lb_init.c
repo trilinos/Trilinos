@@ -238,6 +238,7 @@ void Zoltan_LB_Deserialize(struct Zoltan_Struct *zz, char **buf)
 {
   char *bufptr = *buf;
   struct Zoltan_LB_Struct *lb = &(zz->LB);
+  int orig_Imb_Tol_Len = lb->Imb_Tol_Len;
 
 printf("KDDKDD LB_DESERIALIZE ZERO %lu\n", bufptr-*buf);fflush(stdout);
 
@@ -260,15 +261,25 @@ printf("KDDKDD LB_DESERIALIZE ZERO %lu\n", bufptr-*buf);fflush(stdout);
 printf("KDDKDD LB_DESERIALIZE ONE %lu\n", bufptr-*buf);fflush(stdout);
 
   /* Copy Part_Info */
-  size_t tmpSize = lb->Part_Info_Len * sizeof(struct Zoltan_part_info);
-  memcpy((char *)(lb->Part_Info), bufptr, tmpSize);
-  bufptr += tmpSize;
+  if (lb->Part_Info_Len) {
+    size_t tmpSize = lb->Part_Info_Len * sizeof(struct Zoltan_part_info);
+    lb->Part_Info = (struct Zoltan_part_info *) ZOLTAN_MALLOC(tmpSize);
+    memcpy((char *)(lb->Part_Info), bufptr, tmpSize);
+    bufptr += tmpSize;
+  }
 
 printf("KDDKDD LB_DESERIALIZE TWO %lu\n", bufptr-*buf);fflush(stdout);
   /* Copy Imbalance_Tol */
-  tmpSize = lb->Imb_Tol_Len * sizeof(float);
-  memcpy((char *)(lb->Imbalance_Tol), bufptr, tmpSize);
-  bufptr += tmpSize;
+  if (lb->Imb_Tol_Len) {
+    size_t tmpSize = lb->Imb_Tol_Len * sizeof(float);
+    if (lb->Imb_Tol_Len > orig_Imb_Tol_Len) {
+      if (lb->Imbalance_Tol != NULL) ZOLTAN_FREE(&(lb->Imbalance_Tol));
+      lb->Imbalance_Tol = (float *) ZOLTAN_MALLOC(tmpSize);
+    }
+    memcpy((char *)(lb->Imbalance_Tol), bufptr, tmpSize);
+    bufptr += tmpSize;
+  }
+printf("KDDKDD LB_DESERIALIZE IMB_TOL %f %f\n", lb->Imbalance_Tol[0], lb->Imbalance_Tol[1]);
 
 printf("KDDKDD LB_DESERIALIZE THREE %lu\n", bufptr-*buf);fflush(stdout);
   /* Copy lb->Approach */
