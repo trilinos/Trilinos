@@ -14,6 +14,7 @@ class WrapperCommandLineParser:
     self.op_output_file = ''
     # if we perform an operation this is it
     self.op = ''
+    self.short_op = ''
     # whether to gather and print a csv_banner
     self.print_csv_banner = False
     # whatever the op's args should be
@@ -63,6 +64,7 @@ class WrapperCommandLineParser:
     if self.short_op.endswith('ar') or self.short_op.endswith('ranlib'):
       for arg in cmdline_args:
         if arg.endswith('.a'):
+          self.op_output_file = arg
           self.output_stats_file = arg + '.' + self.output_stats_file
           return
       # we hit this if we can't find a .a
@@ -91,7 +93,7 @@ class WrapperCommandLineParser:
         # we name the output as: blah.o.op.timing
         # this will result in blah.ar.timing, blah.mpicc.timing blah.ld.timing...
         self.short_op = os.path.basename(self.op)
-        self.output_stats_file = short_op + '.timing'
+        self.output_stats_file = self.short_op + '.timing'
 
         self.parse_cmdline_arg_helper(cmdline_args)
 
@@ -101,7 +103,9 @@ class WrapperCommandLineParser:
       # Remove the first wrapper_arg_idx+1 args (script name + wrapper args)
       self.op_args = cmdline_args[wrapper_arg_idx+1:]
 
-    except:
+    except Exception as e:
+      print("Got an error parsing the command line in the compiler wrapper python script")
+      print(e)
       # any error and we give up
       help_msg = ["Compiler wrapper:",
                   "  Usage: wrapper [---base-build-dir=<dir>] ----op=<compiler> [args] | ----get_header",
@@ -117,5 +121,6 @@ class WrapperCommandLineParser:
                   "  statistics will be written to <output>.timing",
                   ]
       print('\n'.join(help_msg))
+      #raise
       sys.exit(0)
 
