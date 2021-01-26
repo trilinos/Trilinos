@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef MOCKMODELEVAL_A_TPETRA_H
-#define MOCKMODELEVAL_A_TPETRA_H
+#ifndef MOCKMODELEVAL_B_TPETRA_H
+#define MOCKMODELEVAL_B_TPETRA_H
 
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_RCP.hpp"
@@ -67,15 +67,14 @@ typedef Thyra::TpetraOperatorVectorExtraction<
  * Concrete model evaluator for the solution of the following PDE-Constrained problem:
  *
  * find (p_0,p_1) that minimizes
- * g = 0.5*(Sum(x)-Sum(p)-12)^2 + 0.5*(p0-1)^2
+ * g = 0.5*(p0-6)^2 + 0.5*c*(p1-4)^2 + 0.5*(p0+p1-10)^2
  * subject to:
- * f_0 = (x_0)^3 - p_0 = 0
- * f_i = x_i * (1 + x_0 - p_0^(1/3)) - (i+p_1) - 0.5*(x_0 - p_0),  (for i != 0)
+ * f_i = x_i = 0
  *
- * solution is p = (1,3).
+ * solution is p = (6,4).
  */
 
-class MockModelEval_A_Tpetra
+class MockModelEval_B_Tpetra
     : public Thyra::ModelEvaluatorDefaultBase<double>
 {
   public:
@@ -84,11 +83,11 @@ class MockModelEval_A_Tpetra
   //@{
 
   /** \brief Takes the number of elements in the discretization . */
-  MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm);
+  MockModelEval_B_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm);
 
   //@}
 
-  ~MockModelEval_A_Tpetra();
+  ~MockModelEval_B_Tpetra();
 
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */
@@ -139,7 +138,7 @@ class MockModelEval_A_Tpetra
   Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
   /** \brief . */
   Teuchos::ArrayView<const std::string> get_g_names(int j) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "not impl'ed");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "not implemented");
   }
   //@}
 
