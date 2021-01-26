@@ -186,7 +186,6 @@ namespace ExoModules {
       int64_t             block = (int)get<0>(sect);
 
       int64_t                nodes_per_elem{0};
-      std::unique_ptr<int[]> elemCon;
       int                    retvalue{0};
 
       for (elementType elem : this->elementList) {
@@ -224,19 +223,19 @@ namespace ExoModules {
       // Statement below is supported C++ 14 and up.
       // elemCon = std::make_unique<int[]>(nodes_per_elem*thisBlock.size());
       // C++ 11 support
-      elemCon.reset(new int[nodes_per_elem * thisBlock.size()]());
+      std::vector<int> elemCon(nodes_per_elem * thisBlock.size());
 
       int64_t numNodesCopied{0};
 
-      for (elementType elem : thisBlock) {
+      for (const elementType &elem : thisBlock) {
 
-        N2EGridPtList pts{get<3>(elem)};
-        std::copy(pts.v, pts.v + nodes_per_elem, elemCon.get() + numNodesCopied);
+        N2EGridPtList &pts{get<3>(elem)};
+        std::copy(pts.v, pts.v + nodes_per_elem, elemCon.data() + numNodesCopied);
         numNodesCopied += nodes_per_elem;
       }
 
       retvalue =
-          ex_put_conn(this->exoFileID, thisElType.elementType, block, elemCon.get(), NULL, NULL);
+          ex_put_conn(this->exoFileID, thisElType.elementType, block, elemCon.data(), NULL, NULL);
 
       switch (thisElType.numNodesPerElem) {
 
