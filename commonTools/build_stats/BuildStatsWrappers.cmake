@@ -40,9 +40,9 @@ function(generate_build_stats_wrappers)
       generate_build_stats_wrapper_for_lang(Fortran)
     endif()
 
-    generate_build_stats_wrapper_for_op(LD)
-    generate_build_stats_wrapper_for_op(AR)
-    generate_build_stats_wrapper_for_op(RANLIB)
+    generate_build_stats_wrapper_for_op(LD "CMAKE_LD")
+    generate_build_stats_wrapper_for_op(AR "CMAKE_AR")
+    generate_build_stats_wrapper_for_op(RANLIB "CMAKE_RANLIB")
 
     set(gather_build_status "${${PROJECT_NAME}_BINARY_DIR}/gather_build_stats.sh")
     configure_file("${BUILD_STATS_SRC_DIR}/gather_build_stats.sh"
@@ -53,30 +53,34 @@ endfunction()
 
 # Generate the build stats compiler wrapper for a ar/ld/ranlib
 #
-function(generate_build_stats_wrapper_for_op op_name)
+# the only difference between this and lang, is setting the proper
+# Cmake variable name, e.g., CMAKE_LANG_COMPILER  vs CMAKE_OP
+# we can resolve this by taking in name of the variable to set
+function(generate_build_stats_wrapper_for_op op_name variable_to_set)
 
   string(TOLOWER "${op_name}" op_lc)
   set(compiler_wrapper
     "${${PROJECT_NAME}_BINARY_DIR}/build_stat_${op_lc}_wrapper.sh")
 
   # Override the compiler with the wrapper but remember the original compiler
-  if ("${CMAKE_${op_name}_ORIG}" STREQUAL "")
-    set(CMAKE_${op_name}_ORIG "${op_lc}"
+  if ("${${variable_to_set}_ORIG}" STREQUAL "")
+    set(${variable_to_set}_ORIG "${op_lc}"
       CACHE FILEPATH "Original non-wrappeed ${op_name}" FORCE )
-    set(CMAKE_${op_name} "${compiler_wrapper}"
+    set(${variable_to_set} "${compiler_wrapper}"
       CACHE FILEPATH "Overwritten build stats ${op_name} compiler wrapper" FORCE )
   endif()
 
   message("-- " "Generate build stats compiler wrapper for ${op_name}")
-  set(BUILD_STAT_COMPILER_WRAPPER_INNER_COMPILER "${CMAKE_${op_name}_ORIG}")
+  set(BUILD_STAT_COMPILER_WRAPPER_INNER_COMPILER "${${variable_to_set}_ORIG}")
   configure_file("${BUILD_STATS_SRC_DIR}/build_stat_lang_wrapper.sh.in"
     "${compiler_wrapper}" @ONLY)
-  print_var(CMAKE_${op_name})
+  print_var(${variable_to_set})
 
   # Use the orginal compiler for the installed <XXX>Config.cmake files
-  set(CMAKE_${op_name}_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR
-    "${CMAKE_${op_name}_ORIG}" CACHE INTERNAL "")
-  print_var(CMAKE_${op_name}_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR)
+  # doubt this works w/AR/LD/RANLIB
+  set(${variable_to_set}_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR
+    "${${variable_to_set}_ORIG}" CACHE INTERNAL "")
+  print_var(${variable_to_set}_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR)
 
 endfunction()
 
@@ -89,6 +93,7 @@ macro(get_base_build_dir_for_python)
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     OUTPUT_VARIABLE BASE_BUILD_DIR_FOR_PYTHON
     OUTPUT_STRIP_TRAILING_WHITESPACE)
+  print_var(BASE_BUILD_DIR_FOR_PYTHON)
 endmacro()
 # NOTE: We need this function to get the value of os.getcwd() from Python so
 # that it matches the value returned inside of magic_wapper.py.  The issue is
