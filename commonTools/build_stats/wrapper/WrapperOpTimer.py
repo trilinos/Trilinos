@@ -141,11 +141,11 @@ class WrapperOpTimer:
     """
       evaluate 'op' with 'op_args', and gather stats into output_stats_file
     """
-    if os.path.exists(output_stats_file) and os.path.getsize(output_stats_file) > 0:
-      print("WARNING: File '"+output_stats_file+"' exists and will be overwritten")
-      print("op='"+op+"'")
-      print("op_args='"+str(op_args)+"'")
-      print("op_output_file='"+op_output_file+"'")
+#    if os.path.exists(output_stats_file) and os.path.getsize(output_stats_file) > 0:
+#      print("WARNING: File '"+output_stats_file+"' exists and will be overwritten")
+#      print("op='"+op+"'")
+#      print("op_args='"+str(op_args)+"'")
+#      print("op_output_file='"+op_output_file+"'")
 
     cmd = [
             '/usr/bin/time',
