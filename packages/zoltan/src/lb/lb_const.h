@@ -91,7 +91,7 @@ typedef int ZOLTAN_LB_BOX_ASSIGN_FN(struct Zoltan_Struct *,
  *  Define the possible load balancing methods allowed.
  */
 typedef enum Zoltan_LB_Method {
-  NONE,
+  NONE = -1,
   BLOCK, 
   CYCLIC, 
   RANDOM, 
