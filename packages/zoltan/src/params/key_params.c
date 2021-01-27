@@ -109,7 +109,6 @@ int  idx 			/* index of vector param, -1 if scalar */
     int tmp;
     int export, import;
 
-printf("KDDKDD SETKEYPARAM %s %s\n", name, val);
     status = Zoltan_Check_Param(name, val, Key_params, &result, &index);
 
     if (status == 0) {

@@ -104,6 +104,7 @@ printf("KDDKDD LBMETHOD AFTER \n");fflush(stdout);
       "Error returned from Zoltan_Clean_String; No method set.");
     goto End;
   }
+  strcpy(zz->LB.Method_Name, method_upper);
 
 printf("KDDKDD LBMETHOD CLEAN \n");fflush(stdout);
   if (strcmp(method_upper, "BLOCK") == 0) {
@@ -158,9 +159,9 @@ printf("KDDKDD LBMETHOD YO \n");fflush(stdout);
     /* Next two are useful only when using PHG */
     zz->LB.Free_Structure = Zoltan_PHG_Free_Structure;
     zz->LB.Copy_Structure = Zoltan_PHG_Copy_Structure;
-    zz->LB.Serialize_Size = NULL;                        /* KDD TODO */
-    zz->LB.Serialize_Structure = NULL;                   /* KDD TODO */
-    zz->LB.Deserialize_Structure = NULL;                 /* KDD TODO */
+    zz->LB.Serialize_Size = Zoltan_Serialize_Size_Not_Implemented;    /* TODO */
+    zz->LB.Serialize_Structure = Zoltan_Serialize_Not_Implemented;    /* TODO */
+    zz->LB.Deserialize_Structure = Zoltan_Deserialize_Not_Implemented;/* TODO */
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
   }
@@ -203,9 +204,9 @@ printf("KDDKDD LBMETHOD YO \n");fflush(stdout);
     zz->LB.LB_Fn = Zoltan_RIB;
     zz->LB.Free_Structure = Zoltan_RIB_Free_Structure;
     zz->LB.Copy_Structure = Zoltan_RIB_Copy_Structure;
-    zz->LB.Serialize_Size = NULL;                        /* KDD TODO */
-    zz->LB.Serialize_Structure = NULL;                   /* KDD TODO */
-    zz->LB.Deserialize_Structure = NULL;                 /* KDD TODO */
+    zz->LB.Serialize_Size = Zoltan_Serialize_Size_Not_Implemented;    /* TODO */
+    zz->LB.Serialize_Structure = Zoltan_Serialize_Not_Implemented;    /* TODO */
+    zz->LB.Deserialize_Structure = Zoltan_Deserialize_Not_Implemented;/* TODO */
     zz->LB.Point_Assign = Zoltan_RB_Point_Assign;
     zz->LB.Box_Assign = Zoltan_RB_Box_Assign;
   }
@@ -214,9 +215,9 @@ printf("KDDKDD LBMETHOD YO \n");fflush(stdout);
     zz->LB.LB_Fn = Zoltan_HSFC;
     zz->LB.Free_Structure = Zoltan_HSFC_Free_Structure;
     zz->LB.Copy_Structure = Zoltan_HSFC_Copy_Structure;
-    zz->LB.Serialize_Size = NULL;                        /* KDD TODO */
-    zz->LB.Serialize_Structure = NULL;                   /* KDD TODO */
-    zz->LB.Deserialize_Structure = NULL;                 /* KDD TODO */
+    zz->LB.Serialize_Size = Zoltan_Serialize_Size_Not_Implemented;    /* TODO */
+    zz->LB.Serialize_Structure = Zoltan_Serialize_Not_Implemented;    /* TODO */
+    zz->LB.Deserialize_Structure = Zoltan_Deserialize_Not_Implemented;/* TODO */
     zz->LB.Point_Assign = Zoltan_HSFC_Point_Assign;
     zz->LB.Box_Assign = Zoltan_HSFC_Box_Assign;
   }
@@ -229,9 +230,9 @@ printf("KDDKDD LBMETHOD YO \n");fflush(stdout);
     zz->LB.LB_Fn = Zoltan_PHG;
     zz->LB.Free_Structure = Zoltan_PHG_Free_Structure;
     zz->LB.Copy_Structure = Zoltan_PHG_Copy_Structure;
-    zz->LB.Serialize_Size = NULL;                        /* KDD TODO */
-    zz->LB.Serialize_Structure = NULL;                   /* KDD TODO */
-    zz->LB.Deserialize_Structure = NULL;                 /* KDD TODO */
+    zz->LB.Serialize_Size = Zoltan_Serialize_Size_Not_Implemented;    /* TODO */
+    zz->LB.Serialize_Structure = Zoltan_Serialize_Not_Implemented;    /* TODO */
+    zz->LB.Deserialize_Structure = Zoltan_Deserialize_Not_Implemented;/* TODO */
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
   }
@@ -240,9 +241,9 @@ printf("KDDKDD LBMETHOD YO \n");fflush(stdout);
     zz->LB.LB_Fn = Zoltan_Hier;
     zz->LB.Free_Structure = Zoltan_Hier_Free_Structure;
     zz->LB.Copy_Structure = Zoltan_Hier_Copy_Structure;
-    zz->LB.Serialize_Size = NULL;                        /* KDD TODO */
-    zz->LB.Serialize_Structure = NULL;                   /* KDD TODO */
-    zz->LB.Deserialize_Structure = NULL;                 /* KDD TODO */
+    zz->LB.Serialize_Size = Zoltan_Serialize_Size_Not_Implemented;    /* TODO */
+    zz->LB.Serialize_Structure = Zoltan_Serialize_Not_Implemented;    /* TODO */
+    zz->LB.Deserialize_Structure = Zoltan_Deserialize_Not_Implemented;/* TODO */
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
   }

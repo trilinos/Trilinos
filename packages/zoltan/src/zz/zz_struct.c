@@ -382,14 +382,10 @@ size_t Zoltan_Serialize_Size(struct Zoltan_Struct const *zz)
 {
   /* Compute size of buffer needed to serialize Zoltan_Struct */
   size_t bufSize = 0;
-printf("KDDKDD SERIALIZE_SIZE zero %lu \n", bufSize);fflush(stdout);
   /* Copy 11 integers from Zoltan_Struct */
   bufSize += sizeof(int) * 11;
-printf("KDDKDD SERIALIZE_SIZE one %lu \n", bufSize);fflush(stdout);
   bufSize += Zoltan_Serialize_Params_Size(zz);
-printf("KDDKDD SERIALIZE_SIZE two %lu \n", bufSize);fflush(stdout);
   bufSize += Zoltan_LB_Serialize_Size(zz);
-printf("KDDKDD SERIALIZE_SIZE three %lu \n", bufSize);fflush(stdout);
   return bufSize;
 }
 
@@ -399,7 +395,6 @@ int Zoltan_Serialize(ZZ const *zz, size_t bufSize, char *buf)
   int ierr = ZOLTAN_OK;
   char *bufptr = buf;
 
-printf("KDDKDD SERIALIZE zero %lu\n", bufptr - buf);fflush(stdout);
   /* Copy 11 integers; if add more, update Zoltan_Serialize_Size */
   int *intptr = (int *) bufptr;
   *intptr = zz->Num_GID; intptr++;
@@ -415,17 +410,11 @@ printf("KDDKDD SERIALIZE zero %lu\n", bufptr - buf);fflush(stdout);
   *intptr = zz->Timer; intptr++;
   bufptr = (char *) intptr;
 
-printf("KDDKDD SERIALIZE one %lu\n", bufptr - buf);fflush(stdout);
-
   /* Need some params to set pointers on receiving side; advance bufptr */
   Zoltan_Serialize_Params(zz, &bufptr);
 
-printf("KDDKDD SERIALIZE two %lu\n", bufptr - buf);fflush(stdout);
-
   /* Serialize LB information; advance bufptr */
   Zoltan_LB_Serialize(zz, &bufptr);
-
-printf("KDDKDD SERIALIZE three %lu\n", bufptr - buf);fflush(stdout);
 
   if (bufptr - buf > bufSize) {
     ZOLTAN_PRINT_ERROR(zz->Proc, "Zoltan_Serialize", 
@@ -442,7 +431,6 @@ int Zoltan_Deserialize(struct Zoltan_Struct *zz, size_t bufSize, char *buf)
   int ierr = ZOLTAN_OK;
   char *bufptr = buf;
   
-printf("%d KDDKDD DESERIALIZE zero %lu %x \n", zz->Proc, bufptr - buf, buf);fflush(stdout);
   /* Copy 11 integers */
   int *intptr = (int *) bufptr;
   zz->Num_GID = *intptr; intptr++;
@@ -458,8 +446,6 @@ printf("%d KDDKDD DESERIALIZE zero %lu %x \n", zz->Proc, bufptr - buf, buf);fflu
   zz->Timer = *intptr; intptr++;
   bufptr = (char *) intptr;
 
-printf("%d KDDKDD DESERIALIZE one %lu \n", zz->Proc, bufptr - buf);fflush(stdout);
-  
   /* Consistent with Zoltan defaults, set default LB_METHOD to RCB; doing so
    * sets the various function pointers for RCB. 
    * Method and function pointers will be reset if parameter LB_METHOD has
@@ -467,11 +453,8 @@ printf("%d KDDKDD DESERIALIZE one %lu \n", zz->Proc, bufptr - buf);fflush(stdout
   Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
   Zoltan_Deserialize_Params(zz, &bufptr);
 
-printf("%d KDDKDD DESERIALIZE two %lu \n", zz->Proc, bufptr - buf);fflush(stdout);
   /* Deserialize LB information; advance bufptr */
   Zoltan_LB_Deserialize(zz, &bufptr);
-
-printf("%d KDDKDD DESERIALIZE three %lu\n", zz->Proc, bufptr - buf);fflush(stdout);
 
   if (bufptr - buf > bufSize) {
     ZOLTAN_PRINT_ERROR(zz->Proc, "Zoltan_Deserialize", 

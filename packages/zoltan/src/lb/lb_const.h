@@ -90,9 +90,8 @@ typedef int ZOLTAN_LB_BOX_ASSIGN_FN(struct Zoltan_Struct *,
 /*
  *  Define the possible load balancing methods allowed.
  */
-
 typedef enum Zoltan_LB_Method {
-  NONE = -1,
+  NONE,
   BLOCK, 
   CYCLIC, 
   RANDOM, 
@@ -192,6 +191,8 @@ struct Zoltan_LB_Struct {
                                       ProcDist[i] has the lowest part
                                       number of parts on processor i.  */
   ZOLTAN_LB_METHOD Method;        /*  Method to be used for load balancing.  */ 
+  char Method_Name[MAX_PARAM_STRING_LEN];   
+                                  /*  String for method to be used.  */ 
   ZOLTAN_LB_FN *LB_Fn;            /*  Pointer to the function that performs
                                       the load balancing; this ptr is set
                                       based on the method used.              */

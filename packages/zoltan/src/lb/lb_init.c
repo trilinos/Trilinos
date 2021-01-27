@@ -127,35 +127,28 @@ size_t Zoltan_LB_Serialize_Size(struct Zoltan_Struct *zz)
   size_t bufSize = 0;
   struct Zoltan_LB_Struct *lb = &(zz->LB);
 
-printf("KDDKDD LB_SERIALIZE_SIZE ZERO %lu\n", bufSize);fflush(stdout);
   /* Copy 12 integers from zz->LB */
   bufSize += 12 * sizeof(int);
 
-printf("KDDKDD LB_SERIALIZE_SIZE ONE %lu\n", bufSize);fflush(stdout);
+  /* LB_Method_Name */
+  bufSize += MAX_PARAM_STRING_LEN;
 
   /* Part_Info array */
   bufSize += lb->Part_Info_Len * sizeof(struct Zoltan_part_info);
 
-printf("KDDKDD LB_SERIALIZE_SIZE TWO %lu\n", bufSize);fflush(stdout);
   /* Imbalance_Tol array */
   bufSize += lb->Imb_Tol_Len * sizeof(float);
 
-printf("KDDKDD LB_SERIALIZE_SIZE THREE %lu\n", bufSize);fflush(stdout);
   /* lb->Approach */
   bufSize += MAX_PARAM_STRING_LEN;
 
-printf("KDDKDD LB_SERIALIZE_SIZE FOUR %lu\n", bufSize);fflush(stdout);
   /* Remap array */
   bufSize += sizeof(int);
   if (lb->Remap != NULL)
     bufSize += lb->Num_Global_Parts * sizeof(int);
 
-printf("KDDKDD LB_SERIALIZE_SIZE FIVE %lu\n", bufSize);fflush(stdout);
-
   /* Method specific data */
   if (lb->Serialize_Size != NULL) bufSize += lb->Serialize_Size(zz);
-
-printf("KDDKDD LB_SERIALIZE_SIZE SIX %lu\n", bufSize);fflush(stdout);
 
   return bufSize;
 }
@@ -165,8 +158,6 @@ void Zoltan_LB_Serialize(struct Zoltan_Struct *zz, char **buf)
 {
   char *bufptr = *buf;
   struct Zoltan_LB_Struct *lb = &(zz->LB);
-
-printf("KDDKDD LB_SERIALIZE ZERO %lu\n", bufptr-*buf);fflush(stdout);
 
   /* Copy 12 integers; if add more, update Zoltan_LB_Serialize_Size */
   int *intptr = (int *) bufptr;
@@ -183,9 +174,11 @@ printf("KDDKDD LB_SERIALIZE ZERO %lu\n", bufptr-*buf);fflush(stdout);
   *intptr = lb->Uniform_Parts; intptr++;
   *intptr = lb->Imb_Tol_Len; intptr++;
   bufptr = (char *) intptr;
-   
-printf("KDDKDD LB_SERIALIZE ONE %lu\n", bufptr-*buf);fflush(stdout);
 
+  /* Copy LB_Method name */
+  strcpy(bufptr, lb->Method_Name);
+  bufptr += MAX_PARAM_STRING_LEN;
+   
   /* Copy Part_Info */
   if (lb->Part_Info_Len) {
     size_t tmpSize = lb->Part_Info_Len * sizeof(struct Zoltan_part_info);
@@ -193,7 +186,6 @@ printf("KDDKDD LB_SERIALIZE ONE %lu\n", bufptr-*buf);fflush(stdout);
     bufptr += tmpSize;
   }
 
-printf("KDDKDD LB_SERIALIZE TWO %lu\n", bufptr-*buf);fflush(stdout);
   /* Copy Imbalance_Tol */
   if (lb->Imb_Tol_Len) {
     size_t tmpSize = lb->Imb_Tol_Len * sizeof(float);
@@ -201,12 +193,10 @@ printf("KDDKDD LB_SERIALIZE TWO %lu\n", bufptr-*buf);fflush(stdout);
     bufptr += tmpSize;
   }
 
-printf("KDDKDD LB_SERIALIZE THREE %lu\n", bufptr-*buf);fflush(stdout);
   /* Copy lb->Approach */
   strcpy(bufptr, lb->Approach);
   bufptr += MAX_PARAM_STRING_LEN;
  
-printf("KDDKDD LB_SERIALIZE FOUR %lu\n", bufptr-*buf);fflush(stdout);
   /* Copy Remap array; needed by Point_Assign  */
   if (lb->Remap != NULL) {
     int *intptr = (int *)bufptr;
@@ -222,13 +212,9 @@ printf("KDDKDD LB_SERIALIZE FOUR %lu\n", bufptr-*buf);fflush(stdout);
     bufptr += sizeof(int);
   }
 
-printf("KDDKDD LB_SERIALIZE FIVE %lu\n", bufptr-*buf);fflush(stdout);
-
   /* Serialize the method-specific load balancing data; advance bufptr */
   if (lb->Serialize_Structure != NULL)
     lb->Serialize_Structure(zz, &bufptr);
-
-printf("KDDKDD LB_SERIALIZE SIX %lu\n", bufptr-*buf);fflush(stdout);
 
   *buf = bufptr;
 }
@@ -239,8 +225,6 @@ void Zoltan_LB_Deserialize(struct Zoltan_Struct *zz, char **buf)
   char *bufptr = *buf;
   struct Zoltan_LB_Struct *lb = &(zz->LB);
   int orig_Imb_Tol_Len = lb->Imb_Tol_Len;
-
-printf("KDDKDD LB_DESERIALIZE ZERO %lu\n", bufptr-*buf);fflush(stdout);
 
   /* Copy 12 integers into zz->LB */
   int *intptr = (int *) bufptr;
@@ -258,7 +242,10 @@ printf("KDDKDD LB_DESERIALIZE ZERO %lu\n", bufptr-*buf);fflush(stdout);
   lb->Imb_Tol_Len = *intptr; intptr++;
   bufptr = (char *) intptr;
 
-printf("KDDKDD LB_DESERIALIZE ONE %lu\n", bufptr-*buf);fflush(stdout);
+  /* Reset the functions (Point_Assign, etc.) associated with the LB_Method */
+  strcpy(lb->Method_Name, bufptr);
+  bufptr += MAX_PARAM_STRING_LEN;
+  Zoltan_Set_Param(zz, "LB_METHOD", lb->Method_Name);
 
   /* Copy Part_Info */
   if (lb->Part_Info_Len) {
@@ -268,7 +255,6 @@ printf("KDDKDD LB_DESERIALIZE ONE %lu\n", bufptr-*buf);fflush(stdout);
     bufptr += tmpSize;
   }
 
-printf("KDDKDD LB_DESERIALIZE TWO %lu\n", bufptr-*buf);fflush(stdout);
   /* Copy Imbalance_Tol */
   if (lb->Imb_Tol_Len) {
     size_t tmpSize = lb->Imb_Tol_Len * sizeof(float);
@@ -279,14 +265,11 @@ printf("KDDKDD LB_DESERIALIZE TWO %lu\n", bufptr-*buf);fflush(stdout);
     memcpy((char *)(lb->Imbalance_Tol), bufptr, tmpSize);
     bufptr += tmpSize;
   }
-printf("KDDKDD LB_DESERIALIZE IMB_TOL %f %f\n", lb->Imbalance_Tol[0], lb->Imbalance_Tol[1]);
 
-printf("KDDKDD LB_DESERIALIZE THREE %lu\n", bufptr-*buf);fflush(stdout);
   /* Copy lb->Approach */
   strcpy(lb->Approach, bufptr);
   bufptr += MAX_PARAM_STRING_LEN;
  
-printf("KDDKDD LB_DESERIALIZE FOUR %lu\n", bufptr-*buf);fflush(stdout);
   /* Copy Remap array; needed by Point_Assign  */
   int nbytes = lb->Num_Global_Parts * sizeof(int);
   intptr = (int *) bufptr;
@@ -300,13 +283,9 @@ printf("KDDKDD LB_DESERIALIZE FOUR %lu\n", bufptr-*buf);fflush(stdout);
     lb->Remap = NULL;
   }
 
-printf("KDDKDD LB_DESERIALIZE FIVE %lu\n", bufptr-*buf);fflush(stdout);
-
   /* Deserialize the method-specific load balancing data; advance bufptr */
   if (lb->Deserialize_Structure != NULL)
     lb->Deserialize_Structure(zz, &bufptr);
-
-printf("KDDKDD LB_DESERIALIZE SIX %lu\n", bufptr-*buf);fflush(stdout);
 
   *buf = bufptr;
 }
