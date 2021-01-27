@@ -248,14 +248,26 @@ int main(int narg, char **arg) {
   float ver;
   Zoltan_Initialize(narg, arg, &ver);
   int ierr = ZOLTAN_OK;
-  int np;
+  int me, np;
+  MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_size(MPI_COMM_WORLD, &np);
 
+  if (me == 0) {printf("TEST ONE\n"); fflush(stdout); }
   ierr += run_test(5, 1, 1, 1, 1);
+
+  if (me == 0) {printf("TEST TWO\n"); fflush(stdout); }
   ierr += run_test(np+4, 1, 2, 0, 1);
+
+  if (me == 0) {printf("TEST THREE\n"); fflush(stdout); }
   ierr += run_test((np-2>0 ? np-2 : np), 2, 3, 1, 0);
+
+  if (me == 0) {printf("TEST FOUR\n"); fflush(stdout); }
   ierr += run_test(np, 3, 1, 0, 1);
+
+  if (me == 0) {printf("TEST FIVE\n"); fflush(stdout); }
   ierr += run_test(np, 3, 1, 1, 0);
+
+  if (me == 0) {printf("TEST SIX\n"); fflush(stdout); }
   ierr += run_test(np, 3, 1, 1, 1);
 
   MPI_Finalize();

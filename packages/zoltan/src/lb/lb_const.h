@@ -75,7 +75,7 @@ typedef void ZOLTAN_LB_FREE_DATA_FN(struct Zoltan_Struct *);
 
 typedef int ZOLTAN_LB_COPY_DATA_FN(struct Zoltan_Struct *to, struct Zoltan_Struct const *from);
 
-typedef size_t ZOLTAN_LB_SERIALIZE_SIZE_FN(struct Zoltan_Struct const *);
+typedef size_t ZOLTAN_LB_SERIALIZE_DATA_SIZE_FN(struct Zoltan_Struct const *);
 typedef void ZOLTAN_LB_SERIALIZE_DATA_FN(struct Zoltan_Struct const *, char **);
 typedef void ZOLTAN_LB_DESERIALIZE_DATA_FN(struct Zoltan_Struct *, char **);
 
@@ -213,7 +213,7 @@ struct Zoltan_LB_Struct {
   ZOLTAN_LB_COPY_DATA_FN *Copy_Structure;
                                   /*  Pointer to function that copies the
                                       Data_Structure                         */
-  ZOLTAN_LB_SERIALIZE_SIZE_FN *Serialize_Size;
+  ZOLTAN_LB_SERIALIZE_DATA_SIZE_FN *Serialize_Structure_Size;
                                   /*  Pointer to function that returns the 
                                       buffer size to serialize the LB data   */
   ZOLTAN_LB_SERIALIZE_DATA_FN *Serialize_Structure;
@@ -356,9 +356,14 @@ extern ZOLTAN_LB_COPY_DATA_FN Zoltan_Hier_Copy_Structure;
 extern ZOLTAN_LB_COPY_DATA_FN Zoltan_PHG_Copy_Structure;
 
 /* SERIALIZE DATA_STRUCTURE FUNCTIONS */
-extern ZOLTAN_LB_SERIALIZE_SIZE_FN Zoltan_RCB_Serialize_Size;
+extern ZOLTAN_LB_SERIALIZE_DATA_SIZE_FN Zoltan_RCB_Serialize_Structure_Size;
 extern ZOLTAN_LB_SERIALIZE_DATA_FN Zoltan_RCB_Serialize_Structure;
 extern ZOLTAN_LB_DESERIALIZE_DATA_FN Zoltan_RCB_Deserialize_Structure;
+
+extern ZOLTAN_LB_SERIALIZE_DATA_SIZE_FN
+       Zoltan_Serialize_Structure_Size_Not_Implemented;
+extern ZOLTAN_LB_SERIALIZE_DATA_FN Zoltan_Serialize_Structure_Not_Implemented;
+extern ZOLTAN_LB_DESERIALIZE_DATA_FN Zoltan_Deserialize_Structure_Not_Implemented;
 
 /* POINT_ASSIGN FUNCTIONS */
 extern ZOLTAN_LB_POINT_ASSIGN_FN Zoltan_RB_Point_Assign;

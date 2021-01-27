@@ -107,7 +107,7 @@ void Zoltan_LB_Init(struct Zoltan_LB_Struct *lb, int num_proc)
   lb->Data_Structure = NULL;
   lb->Free_Structure = Zoltan_RCB_Free_Structure;
   lb->Copy_Structure = Zoltan_RCB_Copy_Structure;
-  lb->Serialize_Size = Zoltan_RCB_Serialize_Size;
+  lb->Serialize_Structure_Size = Zoltan_RCB_Serialize_Structure_Size;
   lb->Serialize_Structure = Zoltan_RCB_Serialize_Structure;
   lb->Deserialize_Structure = Zoltan_RCB_Deserialize_Structure;
   lb->Point_Assign = Zoltan_RB_Point_Assign;
@@ -148,7 +148,8 @@ size_t Zoltan_LB_Serialize_Size(struct Zoltan_Struct *zz)
     bufSize += lb->Num_Global_Parts * sizeof(int);
 
   /* Method specific data */
-  if (lb->Serialize_Size != NULL) bufSize += lb->Serialize_Size(zz);
+  if (lb->Serialize_Structure_Size != NULL) 
+    bufSize += lb->Serialize_Structure_Size(zz);
 
   return bufSize;
 }
@@ -288,6 +289,37 @@ void Zoltan_LB_Deserialize(struct Zoltan_Struct *zz, char **buf)
     lb->Deserialize_Structure(zz, &bufptr);
 
   *buf = bufptr;
+}
+
+/****************************************************************************/
+/* Functions for serializations that are not yet implemented.
+ * These are placeholders until someone requests them.
+ */
+size_t Zoltan_Serialize_Structure_Size_Not_Implemented(ZZ const *zz)
+{
+  return 0;
+}
+
+void Zoltan_Serialize_Structure_Not_Implemented(ZZ const *zz, char **buf)
+{
+  char msg[1024];
+  sprintf(msg, "Zoltan_Serialize_Structure not implemented for method %s; "
+               "no data will be copied.\n"
+               "Contact Zoltan developers to request serialization of this "
+               "method", zz->LB.Method_Name);
+  ZOLTAN_PRINT_WARN(zz->Proc,
+                    "Zoltan_Serialize_Structure_Not_Implemented", msg);
+}
+
+void Zoltan_Deserialize_Structure_Not_Implemented(ZZ *zz, char **buf)
+{
+  char msg[1024];
+  sprintf(msg, "Zoltan_Deserialize_Structure not implemented for method %s; "
+               "no data will be copied.\n"
+               "Contact Zoltan developers to request serialization of this "
+               "method", zz->LB.Method_Name);
+  ZOLTAN_PRINT_WARN(zz->Proc, 
+                   "Zoltan_Deserialize_Structure_Not_Implemented", msg);
 }
 
 #ifdef __cplusplus

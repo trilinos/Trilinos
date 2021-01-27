@@ -2245,7 +2245,7 @@ int i;
     }
 
     /* Test part-only interface */
-    status zz.LB_Point_PP_Assign(x, one_part_only);
+    status = zz.LB_Point_PP_Assign(x, one_part_only);
     if (status != ZOLTAN_OK) 
       fprintf(fp, "error returned from part-only version of "
                   "Zoltan_LB_Point_PP_Assign()\n");
