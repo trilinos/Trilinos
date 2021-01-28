@@ -449,6 +449,5 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraCore_inout_copy_files
     simple.mtx
     rmat_11.mtx
     rmat_11_lap.mtx
-    rmat_11_lap.bin
 )
 
