@@ -297,51 +297,6 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-#TRIBITS_ADD_TEST(
-#  MatrixMarket_Tpetra_CrsMatrix_Dist
-#  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_rmatbin
-#  ARGS "--file=rmat_11_lap.bin"
-#  COMM mpi
-#  NUM_MPI_PROCS 1
-#  STANDARD_PASS_OUTPUT
-#  )
-#
-#TRIBITS_ADD_TEST(
-#  MatrixMarket_Tpetra_CrsMatrix_Dist
-#  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_rmatbin
-#  ARGS "--file=rmat_11_lap.bin"
-#  COMM mpi
-#  NUM_MPI_PROCS 3
-#  STANDARD_PASS_OUTPUT
-#  )
-#
-#TRIBITS_ADD_TEST(
-#  MatrixMarket_Tpetra_CrsMatrix_Dist
-#  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_rmatbin
-#  ARGS "--file=rmat_11_lap.bin"
-#  COMM mpi
-#  NUM_MPI_PROCS 4
-#  STANDARD_PASS_OUTPUT
-#  )
-#
-#TRIBITS_ADD_TEST(
-#  MatrixMarket_Tpetra_CrsMatrix_Dist
-#  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_rmatbin
-#  ARGS "--file=rmat_11_lap.bin"
-#  COMM mpi
-#  NUM_MPI_PROCS 6
-#  STANDARD_PASS_OUTPUT
-#  )
-#
-#TRIBITS_ADD_TEST(
-#  MatrixMarket_Tpetra_CrsMatrix_Dist
-#  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_rmatbin
-#  ARGS "--file=rmat_11_lap.bin"
-#  COMM mpi
-#  NUM_MPI_PROCS 10 
-#  STANDARD_PASS_OUTPUT
-#  )
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMarket_Tpetra_CrsGraph_InOutTest
   SOURCES
