@@ -74,6 +74,10 @@ namespace Teuchos {
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 #endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
 
+
+// NOTE: This is for developer use only.
+#define DISABLE_OLD_GETLOCALVIEW_FUNCTIONS
+
 namespace Tpetra {
 
 
@@ -1542,11 +1546,18 @@ namespace Tpetra {
       return view_.template view<TargetDeviceType>();
     }
 
+#ifdef DISABLE_OLD_GETLOCALVIEW_FUNCTIONS
+  protected:
+    typename dual_view_type::t_host getLocalViewHostUnsafe () const;
+    typename dual_view_type::t_dev getLocalViewDeviceUnsafe () const;
+  public:
+#else
     //! A local Kokkos::View of host memory. This is a low-level expert function - it requires you to call sync_host() and modify_host() on this MultiVector as needed.
     typename dual_view_type::t_host getLocalViewHost () const;
 
     //! A local Kokkos::View of device memory. This is a low-level expert function - it requires you to call sync_device() and modify_device() on this MultiVector as needed.
     typename dual_view_type::t_dev getLocalViewDevice () const;
+#endif
 
     //@}
     //! @name Mathematical methods
