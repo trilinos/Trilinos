@@ -1547,10 +1547,10 @@ namespace Tpetra {
     }
 
 #ifdef DISABLE_OLD_GETLOCALVIEW_FUNCTIONS
-  protected:
+
     typename dual_view_type::t_host getLocalViewHostUnsafe () const;
     typename dual_view_type::t_dev getLocalViewDeviceUnsafe () const;
-  public:
+
 #else
     //! A local Kokkos::View of host memory. This is a low-level expert function - it requires you to call sync_host() and modify_host() on this MultiVector as needed.
     typename dual_view_type::t_host getLocalViewHost () const;

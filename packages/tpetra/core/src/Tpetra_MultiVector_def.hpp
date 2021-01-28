@@ -3606,29 +3606,6 @@ namespace Tpetra {
     }
   }
 
-  namespace { // (anonymous)
-    template <class SC, class LO, class GO, class NT>
-    typename MultiVector<SC, LO, GO, NT>::dual_view_type::t_host
-    syncMVToHostIfNeededAndGetHostView (MultiVector<SC, LO, GO, NT>& X,
-                                        const bool markModified)
-    {
-      // synchronization points, since <= 2012.  We retain this
-      // behavior for backwards compatibility.
-      if (X.need_sync_host ()) {
-        X.sync_host ();
-      }
-      if (markModified) {
-        X.modify_host ();
-
-      }
-#ifdef DISABLE_OLD_GETLOCALVIEW_FUNCTIONS
-      return X.getLocalViewHostUnsafe ();
-#else 
-      return X.getLocalViewHost();
-#endif
-    }
-  } // namespace (anonymous)
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<const Scalar>
@@ -3647,10 +3624,8 @@ namespace Tpetra {
       // Since get1dView() is and was always marked const, I have to
       // cast away const here in order not to break backwards
       // compatibility.
-      constexpr bool markModified = false;
       using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-      auto X_lcl = syncMVToHostIfNeededAndGetHostView (const_cast<MV&> (*this),
-                                                       markModified);
+      auto X_lcl = getLocalViewHostConst();
       Teuchos::ArrayRCP<const impl_scalar_type> dataAsArcp =
         Kokkos::Compat::persistingView (X_lcl);
       return Teuchos::arcp_reinterpret_cast<const Scalar> (dataAsArcp);
@@ -3672,8 +3647,7 @@ namespace Tpetra {
          "so it is not possible to view its data as a single array.  You may "
          "check whether a MultiVector has constant stride by calling "
          "isConstantStride().");
-      constexpr bool markModified = true;
-      auto X_lcl = syncMVToHostIfNeededAndGetHostView (*this, markModified);
+      auto X_lcl = getLocalViewHostNonConst();
       Teuchos::ArrayRCP<impl_scalar_type> dataAsArcp =
         Kokkos::Compat::persistingView (X_lcl);
       return Teuchos::arcp_reinterpret_cast<Scalar> (dataAsArcp);
@@ -3685,8 +3659,7 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   get2dViewNonConst ()
   {
-    constexpr bool markModified = true;
-    auto X_lcl = syncMVToHostIfNeededAndGetHostView (*this, markModified);
+    auto X_lcl = getLocalViewHostNonConst();
 
     // Don't use the row range here on the outside, in order to avoid
     // a strided return type (in case Kokkos::subview is conservative
@@ -3761,10 +3734,9 @@ namespace Tpetra {
     // Since get2dView() is and was always marked const, I have to
     // cast away const here in order not to break backwards
     // compatibility.
-    constexpr bool markModified = false;
     using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    auto X_lcl = syncMVToHostIfNeededAndGetHostView (const_cast<MV&> (*this),
-                                                     markModified);
+    auto X_lcl = getLocalViewHostConst();
+
     // Don't use the row range here on the outside, in order to avoid
     // a strided return type (in case Kokkos::subview is conservative
     // about that).  Instead, use the row range for the column views
@@ -4302,6 +4274,7 @@ namespace Tpetra {
   modify_host () {
     owningView_.modify_host ();
   }
+
 
 #ifdef DISABLE_OLD_GETLOCALVIEW_FUNCTIONS
  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
