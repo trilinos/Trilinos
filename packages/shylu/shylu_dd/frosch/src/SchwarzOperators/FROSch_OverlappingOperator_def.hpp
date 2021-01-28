@@ -127,6 +127,22 @@ namespace FROSch {
         ConstXMapPtr yMap = y.getMap();
         ConstXMapPtr yOverlapMap = YOverlap_->getMap();
         if (Combine_ == Restricted) {
+#if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+            auto yLocalMap = yMap->getLocalMap();
+            auto yLocalOverlapMap = yOverlapMap->getLocalMap();
+            for (UN i=0; i<y.getNumVectors(); i++) {
+                auto yOverlapData_i = YOverlap_->getData(i);
+                auto xLocalData_i = XTmp_->getDataNonConst(i);
+                Kokkos::parallel_for(
+                  "FROSch_OverlappingOperator::getOverlapData", yMap->getNodeNumElements(),
+                  KOKKOS_LAMBDA(const int j) {
+                    GO gID = yLocalMap.getGlobalElement(j);
+                    LO lID = yLocalOverlapMap.getLocalElement(gID);
+                    xLocalData_i[j] = yOverlapData_i[lID];
+                  });
+            }
+            Kokkos::fence();
+#else
             GO globID = 0;
             LO localID = 0;
             for (UN i=0; i<y.getNumVectors(); i++) {
@@ -137,6 +153,7 @@ namespace FROSch {
                     XTmp_->getDataNonConst(i)[j] = yOverlapData_i[localID];
                 }
             }
+#endif
         } else {
             XTmp_->doExport(*YOverlap_,*Scatter_,ADD);
         }
