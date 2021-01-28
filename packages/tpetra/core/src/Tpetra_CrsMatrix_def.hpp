@@ -4044,8 +4044,7 @@ namespace Tpetra {
     // For now, we fill the Vector on the host and sync to device.
     // Later, we may write a parallel kernel that works entirely on
     // device.
-    diag.modify_host ();
-    auto lclVecHost = diag.getLocalViewHost ();
+    auto lclVecHost = diag.getLocalViewHostNonConst ();
     // 1-D subview of the first (and only) column of lclVecHost.
     auto lclVecHost1d = Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
 
@@ -5386,8 +5385,8 @@ namespace Tpetra {
     using Teuchos::NO_TRANS;
     ProfilingRegion regionLocalApply ("Tpetra::CrsMatrix::localApply");
 
-    auto X_lcl = X.getLocalViewDevice ();
-    auto Y_lcl = Y.getLocalViewDevice ();
+    auto X_lcl = X.getLocalViewDeviceConst ();
+    auto Y_lcl = Y.getLocalViewDeviceNonConst ();
     // TODO (24 Jul 2019) uncomment later; this line of code wasn't
     // here before, so we need to test it separately before pushing.
     //
@@ -5950,8 +5949,8 @@ namespace Tpetra {
       X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
 
 #ifdef HAVE_TPETRA_DEBUG
-      auto X_colMap_host_view = X_colMap->getLocalViewHost ();
-      auto X_domainMap_host_view = X_domainMap->getLocalViewHost ();
+      auto X_colMap_host_view = X_colMap->getLocalViewHostConst ();
+      auto X_domainMap_host_view = X_domainMap->getLocalViewHostConst ();
 
       if (X_colMap->getLocalLength () != 0 && X_domainMap->getLocalLength ()) {
         TEUCHOS_TEST_FOR_EXCEPTION

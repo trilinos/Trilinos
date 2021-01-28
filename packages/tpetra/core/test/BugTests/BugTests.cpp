@@ -313,15 +313,13 @@ namespace {
     owned->putScalar(1.0);
     shared->doImport(*owned, *importer, Tpetra::REPLACE);
 
-    shared->sync_host(); // sync device to host
-    auto host_shared = shared->getLocalViewHost();
+    auto host_shared = shared->getLocalViewHostConst();
     const double tol = Teuchos::ScalarTraits<double>::eps() * 100.0;
     if (rank > 0) {
       TEST_FLOATING_EQUALITY(host_shared(0,0),1.0,tol);
     }
 
-    owned->sync_host();
-    auto host_owned_and_shared = owned_and_shared->getLocalViewHost();
+    auto host_owned_and_shared = owned_and_shared->getLocalViewHostConst();
     TEST_FLOATING_EQUALITY(host_owned_and_shared(0,0),1.0,tol);
     TEST_FLOATING_EQUALITY(host_owned_and_shared(1,0),1.0,tol);
     if (rank > 0) {
@@ -331,8 +329,7 @@ namespace {
     // now test the export
     owned->doExport(*shared, *exporter, Tpetra::ADD);
 
-    owned->sync_host(); // sync device to host
-    auto host_owned = owned->getLocalViewHost();
+    auto host_owned = owned->getLocalViewHostConst();
     TEST_FLOATING_EQUALITY(host_owned(0,0),1.0,tol);
     TEST_FLOATING_EQUALITY(host_owned_and_shared(0,0),1.0,tol); // check owned entries only
     if (rank != size-1) {

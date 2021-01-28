@@ -748,7 +748,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
 					    Arowptr, Acolind, Avals, false,
 					    Browptr, Bcolind, Bvals, false,
 					    row_mapC, entriesC, valuesC,
-					    omega, Dinv.getLocalViewDevice());
+					    omega, Dinv.getLocalViewDeviceConst());
   kh.destroy_spgemm_handle();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS

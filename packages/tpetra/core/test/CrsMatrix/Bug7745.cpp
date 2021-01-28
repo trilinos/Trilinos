@@ -195,7 +195,7 @@ private:
   {
     Teuchos::RCP<vector_t> vec = rcp(new vector_t(map));
 
-    auto data = vec->getLocalViewHost();
+    auto data = vec->getLocalViewHostNonConst();
     for (size_t i = 0; i < vec->getLocalLength(); i++) {
       gno_t gid = map->getGlobalElement(i);
       data(i, 0) = scalar_t(gid);
@@ -221,7 +221,7 @@ private:
     int ierr = 0;
 
     vec->sync_host();
-    auto data = vec->getLocalViewHost();
+    auto data = vec->getLocalViewHostConst();
 
     for (size_t i = 0; i < vec->getLocalLength(); i++) {
       gno_t gid = vec->getMap()->getGlobalElement(i);
@@ -247,7 +247,7 @@ private:
     int ierr = 0;
 
     vec->sync_host();
-    auto data = vec->getLocalViewHost();
+    auto data = vec->getLocalViewHostConst();
 
     for (size_t i = 0; i < vec->getLocalLength(); i++) {
       ssize_t gid = ssize_t(vec->getMap()->getGlobalElement(i));
@@ -287,7 +287,7 @@ private:
 
     for (size_t v = 0; v < vec.size(); v++) {
       vec[v]->sync_host();
-      auto data = vec[v]->getLocalViewHost();
+      auto data = vec[v]->getLocalViewHostConst();
 
       for (size_t i = 0; i < vec[v]->getLocalLength(); i++) {
         gno_t gid = vec[v]->getMap()->getGlobalElement(i);

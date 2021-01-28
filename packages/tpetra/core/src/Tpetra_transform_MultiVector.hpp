@@ -287,10 +287,10 @@ namespace Tpetra {
                   const ::Tpetra::MultiVector<SC, LO, GO, NT>& output)
       {
         bool sameMemory = (&input == &output);
-        bool sameHostViewData = (input.getLocalViewHost().data() ==
-                                 output.getLocalViewHost().data());
-        bool sameDeviceViewData = (input.getLocalViewDevice().data() ==
-                                   output.getLocalViewDevice().data());
+        bool sameHostViewData = (input.getLocalViewHostConst().data() ==
+                                 output.getLocalViewHostConst().data());
+        bool sameDeviceViewData = (input.getLocalViewDeviceConst().data() ==
+                                   output.getLocalViewDeviceConst().data());
         return sameMemory || sameHostViewData || sameDeviceViewData;
       }
 

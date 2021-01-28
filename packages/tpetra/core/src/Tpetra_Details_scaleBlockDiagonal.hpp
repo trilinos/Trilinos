@@ -68,6 +68,7 @@ template<class MultiVectorType>
 void inverseScaleBlockDiagonal(const MultiVectorType & blockDiagonal, bool doTranspose, MultiVectorType & multiVectorToBeScaled) {
   using LO             = typename MultiVectorType::local_ordinal_type;
   using local_mv_type  = typename MultiVectorType::dual_view_type::t_dev;
+  using local_mv_type_um  = typename MultiVectorType::dual_view_type::t_dev_um;
   using range_type     = Kokkos::RangePolicy<typename MultiVectorType::node_type::execution_space, LO>;
   using namespace KokkosBatched;
   typename MultiVectorType::impl_scalar_type SC_one = Teuchos::ScalarTraits<typename MultiVectorType::impl_scalar_type>::one();
@@ -83,14 +84,19 @@ void inverseScaleBlockDiagonal(const MultiVectorType & blockDiagonal, bool doTra
   LO numblocks = numrows / blocksize;
 
   // Get Kokkos versions of objects
-  local_mv_type blockDiag = blockDiagonal.getLocalViewDevice();
-  local_mv_type toScale   = multiVectorToBeScaled.getLocalViewDevice();
+
+  auto blockDiag = blockDiagonal.getLocalViewDeviceConst();
+  auto toScale   = multiVectorToBeScaled.getLocalViewDeviceNonConst();
   
   typedef Algo::Level3::Unblocked algo_type;
   Kokkos::parallel_for("scaleBlockDiagonal",range_type(0,numblocks),KOKKOS_LAMBDA(const LO i){
       Kokkos::pair<LO,LO> row_range(i*blocksize,(i+1)*blocksize);
-      auto A = Kokkos::subview(blockDiag,row_range, Kokkos::ALL());
+      auto Aconst = Kokkos::subview(blockDiag,row_range, Kokkos::ALL());
       auto B = Kokkos::subview(toScale,  row_range, Kokkos::ALL());
+
+      // FIXME: Hack to work around SerialLU not wanting const objects
+      local_mv_type_um A(const_cast<typename MultiVectorType::impl_scalar_type*>(Aconst.data()),Aconst.extent(0),Aconst.extent(1));
+
 
       // Factor
       SerialLU<algo_type>::invoke(A);

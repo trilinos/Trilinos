@@ -142,9 +142,9 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
   ProfilingRegion regionLocalApply ("Tpetra::CrsMatrix::localResidual");
 
   auto A_lcl = A.getLocalMatrix (); 
-  auto X_lcl = X.getLocalViewDevice ();
-  auto B_lcl = B.getLocalViewDevice ();
-  auto R_lcl = R.getLocalViewDevice ();
+  auto X_lcl = X.getLocalViewDeviceConst ();
+  auto B_lcl = B.getLocalViewDeviceConst ();
+  auto R_lcl = R.getLocalViewDeviceNonConst ();
   auto lclMatrix_ = A.getLocalMatrix ();
 
   const bool debug = ::Tpetra::Details::Behavior::debug ();
