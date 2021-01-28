@@ -77,7 +77,7 @@ public:
   virtual ~TrustRegion() = default;
 
   virtual void initialize( const Vector<Real>& x, 
-                           const Vector<Real>& g) {}
+                           const Vector<Real>& g ) {}
 
   virtual void solve( Vector<Real>&           s,          // Step (to be computed)
                       Real&                   snorm,      // Step norm (to be computed)
@@ -134,4 +134,4 @@ public:
 } // namespace TypeU
 } // namespace ROL2
 
-#endif // ROL2_TYPEU_TRUSTREGION_DECL_H
+ROL2_TypeU_TrustRegion_Decl.hpp#endif // ROL2_TYPEU_TRUSTREGION_DECL_H
