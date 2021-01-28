@@ -1425,6 +1425,9 @@ namespace BaskerNS
     BASKER_TREE   tree;
     BASKER_SYMBOLIC_TREE stree;
     //std::vector<BASKER_SYMBOLIC_TREE> stree_list;
+    BASKER_BOOL   part_tree_saved;
+    BASKER_TREE   part_tree_orig;
+    
 
     BASKER_STATS stats;
     

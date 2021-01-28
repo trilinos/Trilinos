@@ -527,7 +527,7 @@ namespace BaskerNS
       //Add to the bigger perm vector
       for(Int ii = 0; ii < blk_size; ii++)
       {
-        //printf( " mwm(%d) = %d + %d\n",ii+btf_tabs(b),tempp(ii),btf_tabs(b) );
+        //printf( " mwm(%d+%d) = %d + %d\n",btf_tabs(b),ii,tempp(ii),btf_tabs(b) );
         p_mwm(ii+btf_tabs(b)) = tempp(ii)+btf_tabs(b);
       }
       /*{

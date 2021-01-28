@@ -54,6 +54,9 @@ namespace BaskerNS
     amd_flag          = BASKER_FALSE;
     same_pattern_flag = BASKER_FALSE;
 
+    // for delayed pivot
+    part_tree_saved   = BASKER_FALSE;
+
     //Default number of threads
     num_threads = 1;
     global_nnz  = 0;
@@ -435,23 +438,23 @@ namespace BaskerNS
       }*/
       #endif
     }
-          /*FILE *fp = fopen("symbolic.dat","w");
-          printf( " start symbolic with\n original A = [\n" );
-          for(Int j = 0; j < A.ncol; j++) {
-            for(Int k = col_ptr[j]; k < col_ptr[j+1]; k++) {
-              fprintf(fp, " %d %d %e\n", row_idx[k],j,val[k]);
-            }
-          }
-          fclose(fp);
-          printf("];\n");*/
+    /*FILE *fp = fopen("symbolic.dat","w");
+    printf( " start symbolic with\n original A = [\n" );
+    for(Int j = 0; j < A.ncol; j++) {
+      for(Int k = col_ptr[j]; k < col_ptr[j+1]; k++) {
+        fprintf(fp, " %d %d %e\n", row_idx[k],j,val[k]);
+      }
+    }
+    fclose(fp);
+    printf("];\n");*/
 
-          /*printf( " start symbolic with\n A = [\n" );
-          for(Int j = 0; j < A.ncol; j++) {
-            for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
-              printf( " %d %d %e\n", A.row_idx[k],j,A.val[k]);
-            }
-          }
-          printf("];\n");*/
+    /*printf( " start symbolic with\n A = [\n" );
+    for(Int j = 0; j < A.ncol; j++) {
+      for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
+        printf( " %d %d %e\n", A.row_idx[k],j,A.val[k]);
+      }
+    }
+    printf("];\n");*/
 
     //Init Ordering
     //Always will do btf_ordering
@@ -764,9 +767,9 @@ namespace BaskerNS
         }
       }
     }
-    printf("];\n");
+    printf("];\n");*/
 
-    printf(" BB = [\n" );
+    /*printf(" BB = [\n" );
     if (BTF_B.nrow > 0 && BTF_B.ncol > 0) {
       for(Int j = 0; j < BTF_B.ncol; j++) {
         for(Int k = BTF_B.col_ptr[j]; k < BTF_B.col_ptr[j+1]; k++) {
@@ -807,8 +810,7 @@ namespace BaskerNS
     printf("];\n");*/
 
     using range_type = Kokkos::pair<int, int>;
-    //if (Options.static_delayed_pivot != 0 || Options.blk_matching != 0) {
-    if (Options.blk_matching != 0) {
+    if (Options.static_delayed_pivot != 0 || Options.blk_matching != 0) {
         #ifdef BASKER_TIMER
         Kokkos::Timer resetperm_timer;
         #endif
@@ -831,13 +833,15 @@ namespace BaskerNS
           }
         }
         printf("];\n");*/
+
         // --------------------------------------------
         // reset the large A block
         if (btf_tabs_offset != 0) {
           Int a_first = btf_top_tabs_offset;
           Int a_nfirst = btf_tabs(a_first);
           Int a_nlast  = a_nfirst + BTF_A.ncol;
-          if (Options.blk_matching != 0) {
+
+          if (Options.blk_matching != 0 && Options.static_delayed_pivot == 0) {
             // revert the sort matrix for ND
             permute_with_workspace(BTF_A.row_idx, inv_vals_order_ndbtfa_array, BTF_A.nnz);
             permute_with_workspace(BTF_B.row_idx, inv_vals_order_ndbtfb_array, BTF_B.nnz);
@@ -897,6 +901,31 @@ namespace BaskerNS
             }
             #endif
           }
+          if (Options.static_delayed_pivot != 0 && part_tree_saved == BASKER_TRUE) {
+            // revert sort after ND fix
+            permute_inv_with_workspace(BTF_A.row_idx, vals_order_ndbtfa_array, BTF_A.nnz);
+            /*printf("\n after reverting sort\n" );
+            printf(" A = [\n" );
+            for(Int j = 0; j < BTF_A.ncol; j++) {
+              for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+               printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+              }
+            }
+            printf("];\n");*/
+
+            // reload original ND
+            for (Int j = 0; j < (Int)BTF_A.ncol; j++) {
+              part_tree.permtab[j] = part_tree_orig.permtab[j];
+              part_tree.ipermtab[j] = part_tree_orig.ipermtab[j];
+            }
+            for (Int k = 0; k <= part_tree.nblks; k++) {
+              part_tree.row_tabs(k) = part_tree_orig.row_tabs(k);
+              part_tree.col_tabs(k) = part_tree_orig.col_tabs(k);
+
+              tree.row_tabs(k) = part_tree_orig.row_tabs(k);
+              tree.col_tabs(k) = part_tree_orig.col_tabs(k);
+            }
+          }
 
           // revert AMD perm to rows of A
           auto order_nd_amd = Kokkos::subview(order_blk_amd_inv,
@@ -917,8 +946,16 @@ namespace BaskerNS
           for (Int i = 0; i < (Int)BTF_A.ncol; i++) {
             order_nd_amd(i) += a_nfirst;
           }
+          /*printf("\n after reverting AMD\n" );
+          printf(" A = [\n" );
+          for(Int j = 0; j < BTF_A.ncol; j++) {
+            for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+             printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+            }
+          }
+          printf("];\n");*/
 
-          if (Options.blk_matching != 0) {
+          if (Options.static_delayed_pivot != 0 || Options.blk_matching != 0) {
             // revert MWM perm to rows of A
             auto order_nd_mwm = Kokkos::subview(order_blk_mwm_inv, 
                                                 range_type(a_nfirst, a_nlast));
@@ -933,6 +970,14 @@ namespace BaskerNS
               order_nd_mwm(i) += a_nfirst;
             }
           }
+          /*printf("\n after reverting MWM\n" );
+          printf(" A = [\n" );
+          for(Int j = 0; j < BTF_A.ncol; j++) {
+            for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+             printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+            }
+          }
+          printf("];\n");*/
         }
 
         // --------------------------------------------
@@ -1083,9 +1128,9 @@ namespace BaskerNS
         printf("%d %d %e\n", row_idx[k], j, val[k]);
       }
     }
-    printf("];\n");
+    printf("];\n");*/
 
-    printf(" A_ = [\n" );
+    /*printf(" A_ = [\n" );
     if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
       for(Int j = 0; j < BTF_A.ncol; j++) {
         for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
@@ -1093,9 +1138,9 @@ namespace BaskerNS
         }
       }
     }
-    printf("];\n");
+    printf("];\n");*/
 
-    printf(" B_ = [\n" );
+    /*printf(" B_ = [\n" );
     if (BTF_B.nrow > 0 && BTF_B.ncol > 0) {
       for(Int j = 0; j < BTF_B.ncol; j++) {
         for(Int k = BTF_B.col_ptr[j]; k < BTF_B.col_ptr[j+1]; k++) {
@@ -1370,26 +1415,58 @@ namespace BaskerNS
             printf( "\n" );
           }
 
-          // look for invalid MWM swaps
-          INT_1DARRAY order_nd_mwm2;
-          MALLOC_INT_1DARRAY (order_nd_mwm2, BTF_A.nrow);
-          for (Int j = 0; j < (Int)BTF_A.ncol; j++) {
-            order_nd_mwm2(j) = j;
-          }
+          // compute perm invert
+          INT_1DARRAY iorder_nd_mwm;
+          MALLOC_INT_1DARRAY (iorder_nd_mwm, BTF_A.nrow);
           for (Int id = 0; id < (Int)BTF_A.ncol; id++) {
-            Int j = part_tree.permtab[id];
-            Int k = order_nd_mwm(j);
+            iorder_nd_mwm(order_nd_mwm(id)) = id;
+          }
+          //for (Int j = 0; j < BTF_A.nrow; j++) printf( " order_mwm(%d) = %d, iorder_mwm(%d) = %d\n",j, order_nd_mwm(j), j,iorder_nd_mwm(j));
 
+          // look for invalid MWM swaps
+          for (Int id = 0; id < (Int)BTF_A.ncol; id++) {
+            Int j = id; //part_tree.permtab[id];
+#define USE_IORDER
+#ifdef USE_IORDER
+            Int k = iorder_nd_mwm(j);
+#else
+            Int k = order_nd_mwm(j);
+#endif
+
+            //printf( " j = %d (dom=%d), k = %d (dom=%d)\n",j,nd_map(j),k,nd_map(k) );
+            // moving from dom1 (lower in ND tree) to dom2 (higher in ND tree)
+            #if 0
+            Int id1  = (nd_map(j) > nd_map(k) ? k : j);
+            Int id2  = (nd_map(j) > nd_map(k) ? j : k);
+            Int dom1 = (nd_map(j) > nd_map(k) ? nd_map(k) : nd_map(j));
+            Int dom2 = (nd_map(j) > nd_map(k) ? nd_map(j) : nd_map(k));
+            if (dom1 != dom2) 
+            #else
             Int dom1 = nd_map(j);
             Int dom2 = nd_map(k);
-            if (dom1 != dom2) {
-              nd_map(j) = dom2;
+            if (dom2 > dom1) 
+            #endif
+            {
               nd_sizes(dom1+1) --;
               nd_sizes(dom2+1) ++;
 
-              Int id2 = order_nd_mwm2(j);
-              order_nd_mwm2(j) = order_nd_mwm2(k);
-              order_nd_mwm2(k) = id2;
+              // update map (TODO: do it better)
+              #if 0
+#ifdef USE_IORDER
+              Int offset = 0;
+              for (Int id = 0; id < nblks; id++) {
+                  for (Int count = 0; count < nd_sizes(id+1); count++) {
+                      nd_map(offset) = id;
+                      offset++;
+                  }
+              }
+#else
+              //nd_map(id1) = dom2;
+              //printf( " -> map(%d) = %d (size(%d) = %d, size(%d) = %d)\n",id1,dom2, dom1+1,nd_sizes(dom1+1), dom2+1,nd_sizes(dom2+1) );
+              nd_map(id2) = dom1;
+              printf( " -> map(%d) = %d (size(%d) = %d, size(%d) = %d)\n",id2,dom1, dom1+1,nd_sizes(dom1+1), dom2+1,nd_sizes(dom2+1) );
+#endif
+              #endif
             }
           }
           if(Options.verbose == BASKER_TRUE) {
@@ -1405,21 +1482,48 @@ namespace BaskerNS
             nd_sizes(k+1) += nd_sizes(k);
           }
 
-          // update map
-          for (Int k = 0; k < nblks; k++) {
-            for (Int j = nd_sizes(k); j < nd_sizes(k+1); j++) {
-              nd_map(j) = k;
+          INT_1DARRAY order_nd_mwm2;
+          MALLOC_INT_1DARRAY (order_nd_mwm2, BTF_A.nrow);
+          for (Int id = 0; id < (Int)BTF_A.ncol; id++) {
+            Int j = id; //part_tree.permtab[id];
+#ifdef USE_IORDER
+            Int k = iorder_nd_mwm(j);
+#else
+            Int k = order_nd_mwm(j);
+#endif
+
+            // moving into dom at higher level in ND tree
+            Int dom = (nd_map(j) > nd_map(k) ? nd_map(j) : nd_map(k));
+            order_nd_mwm2(nd_sizes(dom)) = j;
+            nd_sizes(dom) ++;
+          }
+
+          // save original ND
+          if (part_tree_saved == BASKER_FALSE) {
+            MALLOC_INT_1DARRAY(part_tree_orig.permtab,  BTF_A.ncol);
+            MALLOC_INT_1DARRAY(part_tree_orig.ipermtab, BTF_A.ncol);
+            for (Int j = 0; j < (Int)BTF_A.ncol; j++) {
+              part_tree_orig.permtab[j] = part_tree.permtab[j];
+              part_tree_orig.ipermtab[j] = part_tree.ipermtab[j];
             }
+
+            MALLOC_INT_1DARRAY(part_tree_orig.row_tabs, 1+nblks);
+            MALLOC_INT_1DARRAY(part_tree_orig.col_tabs, 1+nblks);
+            for (Int k = 0; k <= nblks; k++) {
+              part_tree_orig.row_tabs(k) = part_tree.row_tabs(k);
+              part_tree_orig.col_tabs(k) = part_tree.col_tabs(k);
+            }
+            part_tree_saved = BASKER_TRUE;
           }
 
           // update permtab
+          INT_1DARRAY order_nd_permtab;
+          MALLOC_INT_1DARRAY (order_nd_permtab, BTF_A.nrow);
           for (Int id = 0; id < (Int)BTF_A.ncol; id++) {
-            Int j = part_tree.permtab[id];
-            Int k = order_nd_mwm2(j);
-            Int dom = nd_map(k);
-
-            part_tree.permtab[id] = nd_sizes(dom);
-            nd_sizes(dom)++;
+            order_nd_permtab[id] = part_tree.permtab(order_nd_mwm2(id));
+          }
+          for (Int id = 0; id < (Int)BTF_A.ncol; id++) {
+            part_tree.permtab[id] = order_nd_permtab(id);
           }
 
           // update ipermtab
@@ -1438,7 +1542,7 @@ namespace BaskerNS
           part_tree.row_tabs(0) = 0;
           part_tree.col_tabs(0) = 0;
           //printf( "order_nd_mwm\n");
-          //for (Int j = 0; j < BTF_A.nrow; j++) printf( " %d %d\n",j, order_nd_mwm(j));
+          //for (Int j = 0; j < BTF_A.nrow; j++) printf( " mwm (%d) = %d\n",j, order_nd_mwm(j));
           //for (Int j = 0; j < BTF_A.nrow; j++) printf( " mwm2(%d) = %d\n",j, order_nd_mwm2(j));
           //for (Int j = 0; j < BTF_A.nrow; j++) printf( "permtab(%d) = %d, ipermtab(%d) = %d\n",j,part_tree.permtab[j], j,part_tree.ipermtab[j]);
           //for (Int k = 0; k <= nblks; k ++) {
@@ -1458,14 +1562,14 @@ namespace BaskerNS
           printf("];\n");*/
 
           // ---------------------------------------------------------------------------------------------
-          // apply MWM on a big block A
-          //for (int i=0; i<BTF_A.ncol; i++) printf( " - mxm_a(%d)=%d\n",i,order_nd_mwm(i));
+          // apply MWM on a big block A (may break ND)
           permute_row(BTF_A, order_nd_mwm);
           if (BTF_B.nrow > 0) {
             // Apply AMD perm to rows of B
             permute_row(BTF_B, order_nd_mwm);
           }
-          /*printf(" * A = [\n" );
+          /*for (int i=0; i<BTF_A.ncol; i++) printf( " - mxm_a(%d)=%d\n",i,order_nd_mwm(i));
+          printf(" * A = [\n" );
           if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
             for(Int j = 0; j < BTF_A.ncol; j++) {
               for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
@@ -1480,11 +1584,11 @@ namespace BaskerNS
           INT_1DARRAY order_nd_amd2;
           MALLOC_INT_1DARRAY (order_nd_amd2, BTF_A.nrow);
           for (Int j = 0; j < (Int)BTF_A.ncol; j++) {
-            Int k = order_nd_amd(j);
-            order_nd_amd2(j) = order_nd_mwm2(k);
+            order_nd_amd2(j) = order_nd_amd(order_nd_mwm2(j));
           }
           for (Int j = 0; j < (Int)BTF_A.ncol; j++) {
-            order_nd_amd(j) = order_nd_amd2(j);
+            //order_nd_amd(j) = order_nd_amd2(j);
+            order_nd_amd(order_nd_amd2(j)) = j;
           }
 
           if (Options.amd_dom) {
@@ -1499,6 +1603,16 @@ namespace BaskerNS
               permute_col(BTF_E, order_nd_amd);
             }
           }
+          /*for (int i=0; i<BTF_A.ncol; i++) printf( " - amd_a(%d)=%d\n",i,order_nd_amd(i));
+          printf(" * A = [\n" );
+          if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
+            for(Int j = 0; j < BTF_A.ncol; j++) {
+              for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+                printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+              }
+            }
+          }
+          printf("];\n");*/
 
           // ----------------------------------------------------------------------------------------------
           // shift
@@ -1511,10 +1625,12 @@ namespace BaskerNS
           }
 
 	  // ----------------------------------------------------------------------------------------------
-          // apply delayed pivots to BTF_A
-          //BASKER_BOOL compute_nd = false;
-          //info_scotch = apply_scotch_partition(keep_zeros, compute_nd);
-          ndsort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array, BASKER_FALSE);
+          // 'sort' rows of BTF_A into ND structure
+          for (Int i = 0; i < BTF_A.nnz; ++i) {
+            vals_order_ndbtfa_array(i) = i;
+          }
+          BASKER_BOOL track_perm = BASKER_TRUE;
+          ndsort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array, track_perm);
 
           /*printf(" x A = [\n" );
           if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {

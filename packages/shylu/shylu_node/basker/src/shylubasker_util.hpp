@@ -614,6 +614,13 @@ namespace BaskerNS
           {
             printf(" > kid=%d, lvl=%d: convert2D ALM(%d, %d) with (%dx%d and nnz=%d from %d,%d)\n", kid, lvl, b, row,
                    ALM(b)(row).nrow,ALM(b)(row).ncol, ALM(b)(row).nnz, ALM(b)(row).srow,ALM(b)(row).scol);
+            printf("[\n");
+            for(Int j = 0; j < BTF_A.ncol; j++) {
+              for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+                printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+              }
+            }
+            printf("];\n");
           }*/
           if(Options.btf == BASKER_FALSE)
           {
@@ -734,10 +741,12 @@ namespace BaskerNS
               AVM(U_col)(U_row).ncol);
           #endif
 
-          /*if (kid == 1) {
+          #if 0
+          if (kid == 1) {
              printf(" > kid=%d, lvl=%d: convert2D AVM(%d, %d), upper(%dx%d and nnz=%d from %d,%d)\n", kid, lvl, U_col, U_row,
                      AVM(U_col)(U_row).nrow,AVM(U_col)(U_row).ncol,AVM(U_col)(U_row).nnz, AVM(U_col)(U_row).srow,AVM(U_col)(U_row).scol);
-          }*/
+          }
+          #endif
           if(Options.btf == BASKER_FALSE)
           {
             BASKER_ASSERT(0==1, "SHOULD NOT BE CALL\n");

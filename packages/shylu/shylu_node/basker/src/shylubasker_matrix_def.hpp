@@ -547,7 +547,7 @@ namespace BaskerNS
     {
       val(i) = 0;
     }*/
-    //printf( " convert2D(%dx%d, nnz = %d, alloc = %d)\n",M.nrow,M.ncol,M.nnz,alloc );
+    //printf( " kid=%d: convert2D(%dx%d, nnz = %d, alloc = %d, scol = %d, ncol = %d)\n",kid,M.nrow,M.ncol,M.nnz,alloc, scol,ncol );
 
     const Entry zero(0.0);
     Int temp_count = 0;
@@ -564,19 +564,22 @@ namespace BaskerNS
         continue;
       }
 
-      /*if (kid == 1) {
-        printf(" col_ptr(%d-%d) = %d, M.col_ptr(%d) = %d\n", k,scol,col_ptr(k-scol), k+1,M.col_ptr(k+1));
+      /*if (kid == 1)
+      {
+        printf(" kid=%d: col_ptr(%d-%d) = %d, M.col_ptr(%d) = %d\n", kid,k,scol,col_ptr(k-scol), k+1,M.col_ptr(k+1));
       }*/
       for(Int i = col_ptr(k-scol); i < M.col_ptr(k+1); i++)
       {
         Int j = M.row_idx(i);
-        /*if (kid == 1) {
+        /*if (kid == 1)
+        {
           printf( " > row_idx[%d] = %d, val[%d] = %e (%d + %d) with k = %d+%d\n",i,j, i,M.val(i), srow,nrow, scol,k );
         }*/
         if(j >= srow+nrow)
         {
           // skip lower-off diagonal blocks for U
-          /*if (kid == 1) {
+          /*if (kid == 1)
+          {
             printf("break called, k: %d  \n", k);
           }*/
           break;
@@ -610,6 +613,10 @@ namespace BaskerNS
           temp_count++;
         }
       }
+      /*if (kid == 1) 
+      {
+        printf( " %d: col_ptr(%d) = %d\n",kid,k-scol,temp_count );
+      }*/
       col_ptr(k-scol) = temp_count;
     }
 
