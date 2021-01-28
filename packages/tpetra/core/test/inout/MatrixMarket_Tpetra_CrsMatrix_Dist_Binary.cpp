@@ -376,6 +376,28 @@ private:
       
   }
 
+  void cleanBinary(
+    const std::string &binfilename,
+    const bool perProcess
+  )
+  {
+    if(perProcess) {
+    }
+    else {
+      // make sure none of the ranks is currently reading the file
+      comm->barrier();
+      if(comm->getRank() == 0) {
+	try { std::remove(binfilename.c_str()); }
+	catch (std::exception &e) {
+	  std::cout << "Could not delete file: " << binfilename << std::endl;
+	  std::cout << e.what() << std::endl;
+	  throw e;
+	}	
+      }
+    }
+      
+  }
+
   //////////////////////////////
   // Read matrix from a MatrixMarket file
   // Distribute the matrix as specified by the parameters
@@ -601,8 +623,8 @@ private:
     Teuchos::RCP<dist_t> distTest;
     Teuchos::RCP<matrix_t> AmatTest = readFile(binfilename, testname, params, distTest);
    
-    // // // Clean-up the binary file(s)
-    // // cleanBinary(testname, perProcess);
+    // Clean-up the binary file(s)
+    cleanBinary(binfilename, perProcess);
 
     Tpetra::LowerTriangularBlockOperator<scalar_t> lto_test(AmatTest, 
                                dynamic_cast<distltb_t&>(*distTest));
@@ -645,8 +667,8 @@ private:
     Teuchos::RCP<Tpetra::Distribution<gno_t, scalar_t> > distTest;  // Not used
     Teuchos::RCP<matrix_t> AmatTest = readFile(binfilename, testname, params, distTest);
 
-    // // Clean-up the binary file(s)
-    // cleanBinary(testname, perProcess);
+    // Clean-up the binary file(s)
+    cleanBinary(binfilename, perProcess);
 
     // Apply and compare
     Teuchos::RCP<vector_t> yvec = applyMatrix(testname, *AmatTest);
