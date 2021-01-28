@@ -182,7 +182,7 @@ function get_pip() {
 
     get_pip_args=(
         --user
-        --proxy="http://wwwproxy.sandia.gov:80"
+        --proxy="http://user:nopass@wwwproxy.sandia.gov:80"
         --no-setuptools
         --no-wheel
     )
