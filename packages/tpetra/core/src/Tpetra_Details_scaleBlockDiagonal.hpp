@@ -65,7 +65,7 @@ namespace Details {
 
 
 template<class MultiVectorType>        
-void inverseScaleBlockDiagonal(const MultiVectorType & blockDiagonal, bool doTranspose, MultiVectorType & multiVectorToBeScaled) {
+void inverseScaleBlockDiagonal(MultiVectorType & blockDiagonal, bool doTranspose, MultiVectorType & multiVectorToBeScaled) {
   using LO             = typename MultiVectorType::local_ordinal_type;
   using local_mv_type  = typename MultiVectorType::dual_view_type::t_dev;
   using local_mv_type_um  = typename MultiVectorType::dual_view_type::t_dev_um;
@@ -85,18 +85,14 @@ void inverseScaleBlockDiagonal(const MultiVectorType & blockDiagonal, bool doTra
 
   // Get Kokkos versions of objects
 
-  auto blockDiag = blockDiagonal.getLocalViewDeviceConst();
+  auto blockDiag = blockDiagonal.getLocalViewDeviceNonConst();
   auto toScale   = multiVectorToBeScaled.getLocalViewDeviceNonConst();
   
   typedef Algo::Level3::Unblocked algo_type;
   Kokkos::parallel_for("scaleBlockDiagonal",range_type(0,numblocks),KOKKOS_LAMBDA(const LO i){
       Kokkos::pair<LO,LO> row_range(i*blocksize,(i+1)*blocksize);
-      auto Aconst = Kokkos::subview(blockDiag,row_range, Kokkos::ALL());
+      auto A = Kokkos::subview(blockDiag,row_range, Kokkos::ALL());
       auto B = Kokkos::subview(toScale,  row_range, Kokkos::ALL());
-
-      // FIXME: Hack to work around SerialLU not wanting const objects
-      local_mv_type_um A(const_cast<typename MultiVectorType::impl_scalar_type*>(Aconst.data()),Aconst.extent(0),Aconst.extent(1));
-
 
       // Factor
       SerialLU<algo_type>::invoke(A);
