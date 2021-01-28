@@ -1035,10 +1035,11 @@ readSparseFile(
     std::cout << "Inserting global values" << std::endl;
 
   if(readPerProcess){
+    const scalar_type ONE = Teuchos::ScalarTraits<scalar_type>::one();
     for (int i = 0; i < rowIdx.size(); i++) {
       size_t nnz = nnzPerRow[i];
       size_t off = offsets[i];
-      val.resize(nnz);
+      val.assign(nnz, ONE);
       // ReadPerProcess routine does not read any numeric values from the file,
       // So we insert dummy values here. 
       A->insertGlobalValues(rowIdx[i], colIdx(off, nnz), val());

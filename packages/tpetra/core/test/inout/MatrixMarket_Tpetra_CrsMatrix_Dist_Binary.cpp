@@ -311,10 +311,10 @@ private:
     std::string &binfilename
   )
   {
-    // if(perProcess)
-    //   writeBinaryPerProcess(testname, AmatWrite);
-    // else 
-    writeBinaryGlobal(testname, AmatWrite, binfilename);
+    if(perProcess)
+      writeBinaryPerProcess(testname, AmatWrite, binfilename);
+    else 
+      writeBinaryGlobal(testname, AmatWrite, binfilename);
   }
 
   //////////////////////////////
@@ -376,12 +376,70 @@ private:
       
   }
 
+  //////////////////////////////
+  // Write per-process binary files: each rank writes their local nonzeros to a separate file 
+  // The path for the written files should be unique for each test
+  void writeBinaryPerProcess(
+    const std::string &testname,
+    const Teuchos::RCP<matrix_t> &AmatWrite,
+    std::string &binbasefilename
+  )
+  {
+    // Open the file
+    binbasefilename = filename + "_" + std::to_string(comm->getSize()) + "_" + testname; 
+    std::string binrankfilename = binbasefilename + "." + std::to_string(comm->getRank()) + ".cooBin";
+    std::ofstream out(binrankfilename, std::ios::out | std::ios::binary);
+
+    // Write the header
+    unsigned int nRows = static_cast<unsigned int>(AmatWrite->getRowMap()->getMaxAllGlobalIndex()) + 1;
+    unsigned long long  nNzs = static_cast<unsigned long long>(AmatWrite->getNodeNumEntries());
+    out.write((char *)& nRows, sizeof(unsigned int));
+    out.write((char *)& nRows, sizeof(unsigned int));
+    out.write((char *)& nNzs, sizeof(unsigned long long));
+
+    // Get the CrsGraph because we do not need the values
+    auto graph = AmatWrite->getCrsGraph();	
+    auto rowMap = graph->getRowMap();
+    Teuchos::Array<gno_t> gblColInds;
+    size_t numEntries = 0;
+
+    // Write the nonzeros
+    unsigned int entry[2];
+    for(size_t r = 0; r < graph->getNodeNumRows(); r++) {
+
+      // Get the global index for row r
+      auto gblRow = rowMap->getGlobalElement(static_cast<gno_t>(r));
+      entry[0] = static_cast<unsigned int>(gblRow) + 1;
+      
+      // Get the copy of the row with global column indices
+      numEntries = graph->getNumEntriesInGlobalRow(gblRow);
+      gblColInds.resize(numEntries);
+      graph->getGlobalRowCopy(gblRow, gblColInds(), numEntries);
+      
+      // Write the entries in the row in COO format (i.e., in "rowId colId" pairs)
+      for(size_t c = 0; c < numEntries; c++) {
+	entry[1] = static_cast<unsigned int>(gblColInds[c]) + 1;
+	out.write((char *)entry, sizeof(unsigned int)*2);
+      }
+    }
+
+    out.close();
+    
+  }
+
   void cleanBinary(
     const std::string &binfilename,
     const bool perProcess
   )
   {
     if(perProcess) {
+      std::string binrankfilename = binfilename + "." + std::to_string(comm->getRank()) + ".cooBin";
+      try { std::remove(binfilename.c_str()); }
+      catch (std::exception &e) {
+	std::cout << "Could not delete file: " << binfilename << std::endl;
+	std::cout << e.what() << std::endl;
+	throw e;
+      }	
     }
     else {
       // make sure none of the ranks is currently reading the file
@@ -620,6 +678,7 @@ private:
 
     // Read the binary file(s)
     params.set("binary", true);
+    if(perProcess) params.set("readPerProcess", true);
     Teuchos::RCP<dist_t> distTest;
     Teuchos::RCP<matrix_t> AmatTest = readFile(binfilename, testname, params, distTest);
    
@@ -664,6 +723,7 @@ private:
 
     // Read the binary file(s)
     params.set("binary", true);
+    if(perProcess) params.set("readPerProcess", true);
     Teuchos::RCP<Tpetra::Distribution<gno_t, scalar_t> > distTest;  // Not used
     Teuchos::RCP<matrix_t> AmatTest = readFile(binfilename, testname, params, distTest);
 
