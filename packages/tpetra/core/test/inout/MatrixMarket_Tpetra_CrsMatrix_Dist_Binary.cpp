@@ -39,27 +39,29 @@
 // @HEADER
 */
 
-// This program tests matrix creation and matrix apply using matrices with
-// arbitrarily distributed nonzeros (not necessarily row-based distribution).
-//
-// Create global matrix nonzeros randomly; store all global nonzeros on 
-// each proc in a std::map.
-// Create distributed vectors with randomized entries using Trilinos' default
-// maps 
-// For each test (linear row-wise distribution, linear column-wise distribution,
-//                random distribution of nonzeros (2D) to processors)
-//    distribute matrix nonzeros (each proc selects subset of global nonzeros)
-//    create distributed CrsMatrix
-//    perform SpMV (nMatvec SpMVs)
-//    return result of SpMV
-// Compare norms of results of SpMV from all distributions; they should be the
-// same.
-//
-// NOTE:  timings are also reported but should be interpreted carefully.
-// This test does not attempt to optimize the distribution of the vectors to
-// minimize communication costs.  Moreover, 2D random distribution of nonzeros
-// can lead to high communication volume; a better 2D approach would be a 
-// block-based approach that better aligns vector entries with matrix entries.
+// This program tests binary readers with the following distributions: 1D,
+// 1DRandom, 2D, 2DRandom, 2D_npRow, 2D_npCol, 2D_npCol_npRow, LowerTriangularBlock. 
+// This program is very similar to the one in MatrixMarket_Tpetra_CrsMatrix_Dist.cpp
+// The constructor reads the matrix from a matrix market (mtx) file using the 
+// standard MatrixMarket reader and creates A_baseline. With a randomly created
+// input vector, x_baseline, SpMV is performed on A_baseline and the output 
+// vector is stored in y_baseline for future comparisons.
+
+// For each tested distribution, we read the input matrix (mtx) file again 
+// and create a matrix called AmatWriter with the desired distribution. We use
+// AmatWriter to write the nonzeros in a global binary file or multiple per-process
+// binary files. Then we read the binary file(s) and create AmatTest with the same
+// distribution as AmatWriter. We perfom SpMV on AmatTest with x_baseline and 
+// compare the output vector with y_baseline. 
+
+// IMPORTANT:
+// 1) Since the current binary formats do not support any numeric values,
+//    the binary readers set all numeric values to one. Therefore, we also set 
+//    all numeric values to one in this program.
+// 2) Since LowerTriangularBlock distribution drops the nonzeros in the upper
+//    triangular part, its SpMV output would be different than y_baseline (which
+//    considers all nonzeros in the given mtx file). Therefore, we compare the 
+//    SpMV outputs of AmatWriter and AmatTest for LowerTriangularBlock distribution.
 
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
@@ -350,7 +352,8 @@ private:
 	auto rowMap = graph->getRowMap();
 	Teuchos::Array<gno_t> gblColInds;
 	size_t numEntries = 0;
-	
+
+	// Write the nonzeros
 	unsigned int entry[2];
 	for(size_t r = 0; r < graph->getNodeNumRows(); r++) {
 
@@ -377,7 +380,7 @@ private:
   }
 
   //////////////////////////////
-  // Write per-process binary files: each rank writes their local nonzeros to a separate file 
+  // Write per-process binary files: each rank writes its own nonzeros to a separate file 
   // The path for the written files should be unique for each test
   void writeBinaryPerProcess(
     const std::string &testname,
@@ -427,12 +430,15 @@ private:
     
   }
 
+  //////////////////////////////
+  // Remove the binary file(s) with the given path
   void cleanBinary(
     const std::string &binfilename,
     const bool perProcess
   )
   {
     if(perProcess) {
+      // There exists a binary file for each process, so each process removes its own file.  
       std::string binrankfilename = binfilename + "." + std::to_string(comm->getRank()) + ".cooBin";
       try { std::remove(binfilename.c_str()); }
       catch (std::exception &e) {
@@ -442,8 +448,10 @@ private:
       }	
     }
     else {
-      // make sure none of the ranks is currently reading the file
+      // Make sure none of the processes is currently reading the file
       comm->barrier();
+
+      // There exists one global binary file, only rank 0 attempts do remove it.
       if(comm->getRank() == 0) {
 	try { std::remove(binfilename.c_str()); }
 	catch (std::exception &e) {
@@ -639,67 +647,7 @@ private:
   }
 
   //////////////////////////////
-  // Each test reads, applies, and compares
-  // This test should not compare the current results with baseline's results,
-  // because the LTB distribution only keeps the lower triangular entries.
-  // Therefore, this test compares the current results with AmatWriter's results.
-  int runTestLTB(
-    const std::string &testname,
-    Teuchos::ParameterList &params,
-    const bool perProcess
-  )
-  {
-    if (comm->getRank() == 0) 
-      std::cout << "\n\nBEGIN " << testname << "\n" << std::endl;
-
-    params.set("verbose", true);
-    params.set("callFillComplete", true);
-    params.set("useTimers", true);
-
-    // Create AmatWriter by reading the input mtx file with the required distribution
-    using dist_t = Tpetra::Distribution<gno_t, scalar_t>;
-    Teuchos::RCP<dist_t> distWriter;
-    Teuchos::RCP<matrix_t> AmatWriter = readFile(filename, testname, params, distWriter);
-
-    // Set the values in Amat_writer to one
-    const scalar_t ONE = Teuchos::ScalarTraits<scalar_t>::one();
-    AmatWriter->resumeFill();
-    AmatWriter->setAllToScalar(ONE);
-    AmatWriter->fillComplete(AmatWriter->getDomainMap(), AmatWriter->getRangeMap());
-
-    // Get the LTB operator from both matrices
-    using distltb_t = Tpetra::DistributionLowerTriangularBlock<gno_t, scalar_t>;
-    Tpetra::LowerTriangularBlockOperator<scalar_t> lto_writer(AmatWriter, 
-                               dynamic_cast<distltb_t&>(*distWriter));
-
-    // Write the binary file(s) using AmatWriter 
-    std::string binfilename;
-    writeBinary(testname, AmatWriter, perProcess, binfilename);
-
-    // Read the binary file(s)
-    params.set("binary", true);
-    if(perProcess) params.set("readPerProcess", true);
-    Teuchos::RCP<dist_t> distTest;
-    Teuchos::RCP<matrix_t> AmatTest = readFile(binfilename, testname, params, distTest);
-   
-    // Clean-up the binary file(s)
-    cleanBinary(binfilename, perProcess);
-
-    Tpetra::LowerTriangularBlockOperator<scalar_t> lto_test(AmatTest, 
-                               dynamic_cast<distltb_t&>(*distTest));
-
-    // Apply with AmatWriter
-    Teuchos::RCP<vector_t> yout_writer = applyMatrix("AmatWriter", lto_writer);
-
-    // Apply with AmatTest
-    Teuchos::RCP<vector_t> yout_test = applyMatrix(testname, lto_test);
-
-    // Compare
-    return compareTwoVectors(testname, yout_writer, yout_test);
-  }
-
-  //////////////////////////////
-  // Each test reads, applies, and compares
+  // Each test reads, writes binary file(s), reads the binary file(s), applies, and compares
   int runTest(
     const std::string &testname,
     Teuchos::ParameterList &params,
@@ -733,6 +681,65 @@ private:
     // Apply and compare
     Teuchos::RCP<vector_t> yvec = applyMatrix(testname, *AmatTest);
     return compareToBaseline(testname, yvec);
+  }
+
+  //////////////////////////////
+  // Each test reads, writes binary file(s), reads the binary file(s), applies, and compares
+  // This test should not compare the current results with baseline's results,
+  // because the LTB distribution only keeps the lower triangular entries.
+  // Therefore, this test compares the current results with AmatWriter's results.
+  int runTestLTB(
+    const std::string &testname,
+    Teuchos::ParameterList &params,
+    const bool perProcess
+  )
+  {
+    if (comm->getRank() == 0) 
+      std::cout << "\n\nBEGIN " << testname << "\n" << std::endl;
+
+    params.set("verbose", true);
+    params.set("callFillComplete", true);
+    params.set("useTimers", true);
+
+    // Create AmatWriter by reading the input mtx file with the required distribution
+    using dist_t = Tpetra::Distribution<gno_t, scalar_t>;
+    Teuchos::RCP<dist_t> distWriter;
+    Teuchos::RCP<matrix_t> AmatWriter = readFile(filename, testname, params, distWriter);
+
+    // Set the values in Amat_writer to one
+    const scalar_t ONE = Teuchos::ScalarTraits<scalar_t>::one();
+    AmatWriter->resumeFill();
+    AmatWriter->setAllToScalar(ONE);
+    AmatWriter->fillComplete(AmatWriter->getDomainMap(), AmatWriter->getRangeMap());
+
+    // Write the binary file(s) using AmatWriter 
+    std::string binfilename;
+    writeBinary(testname, AmatWriter, perProcess, binfilename);
+
+    // Read the binary file(s)
+    params.set("binary", true);
+    if(perProcess) params.set("readPerProcess", true);
+    Teuchos::RCP<dist_t> distTest;
+    Teuchos::RCP<matrix_t> AmatTest = readFile(binfilename, testname, params, distTest);
+   
+    // Clean-up the binary file(s)
+    cleanBinary(binfilename, perProcess);
+
+    // Get the LTB operator from both matrices
+    using distltb_t = Tpetra::DistributionLowerTriangularBlock<gno_t, scalar_t>;
+    Tpetra::LowerTriangularBlockOperator<scalar_t> lto_writer(AmatWriter, 
+                               dynamic_cast<distltb_t&>(*distWriter));
+    Tpetra::LowerTriangularBlockOperator<scalar_t> lto_test(AmatTest, 
+                               dynamic_cast<distltb_t&>(*distTest));
+
+    // Apply with AmatWriter
+    Teuchos::RCP<vector_t> yout_writer = applyMatrix("AmatWriter", lto_writer);
+
+    // Apply with AmatTest
+    Teuchos::RCP<vector_t> yout_test = applyMatrix(testname, lto_test);
+
+    // Compare
+    return compareTwoVectors(testname, yout_writer, yout_test);
   }
   
 private:
