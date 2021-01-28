@@ -28,7 +28,9 @@ pip_exe=${2:?}
 message_std "--- " "python: ${python_exe:?}"
 message_std "--- " "pip   : ${pip_exe:?}"
 
-get_pip ${python_exe:?}
+# Remove get_pip usage -- we only really needed this for python2 since
+# the SEMS python3 distros come with pip3 installed.
+# get_pip ${python_exe:?}
 get_python_packages ${pip_exe:?}
 
 message_std "" ""
