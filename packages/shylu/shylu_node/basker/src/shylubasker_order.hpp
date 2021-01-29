@@ -985,7 +985,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //5. Constrained symamd on A
     //Init for Constrained symamd on A
     if (Options.amd_dom && Options.static_delayed_pivot == 0) {
-      if (Options.symmetric != BASKER_TRUE) {
+      if (Options.symmetric != BASKER_TRUE) { // TODO: replace with parameter, e.g., use_csymamd
         // flag for permute_composition_for_solve
         amd_flag = BASKER_TRUE;
 

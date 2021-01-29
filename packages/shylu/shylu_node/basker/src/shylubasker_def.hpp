@@ -1322,10 +1322,10 @@ namespace BaskerNS
 
         if (Options.static_delayed_pivot != 0) {
           // ----------------------------------------------------------------------------------------------
-          // skip applying AMD
-          for (Int i = 0; i < (Int)BTF_A.nrow; i++) {
-            order_nd_amd(i) = i;
-          }
+          // skip applying AMD: btf_blk_mwm_amd does not do AMD with delayed pivots
+          //for (Int i = 0; i < (Int)BTF_A.nrow; i++) {
+          //  order_nd_amd(i) = i;
+          //}
         } else {
           // ---------------------------------------------------------------------------------------------
           // apply MWM on a big block A
@@ -1426,47 +1426,16 @@ namespace BaskerNS
           // look for invalid MWM swaps
           for (Int id = 0; id < (Int)BTF_A.ncol; id++) {
             Int j = id; //part_tree.permtab[id];
-#define USE_IORDER
-#ifdef USE_IORDER
             Int k = iorder_nd_mwm(j);
-#else
-            Int k = order_nd_mwm(j);
-#endif
 
             //printf( " j = %d (dom=%d), k = %d (dom=%d)\n",j,nd_map(j),k,nd_map(k) );
             // moving from dom1 (lower in ND tree) to dom2 (higher in ND tree)
-            #if 0
-            Int id1  = (nd_map(j) > nd_map(k) ? k : j);
-            Int id2  = (nd_map(j) > nd_map(k) ? j : k);
-            Int dom1 = (nd_map(j) > nd_map(k) ? nd_map(k) : nd_map(j));
-            Int dom2 = (nd_map(j) > nd_map(k) ? nd_map(j) : nd_map(k));
-            if (dom1 != dom2) 
-            #else
             Int dom1 = nd_map(j);
             Int dom2 = nd_map(k);
             if (dom2 > dom1) 
-            #endif
             {
               nd_sizes(dom1+1) --;
               nd_sizes(dom2+1) ++;
-
-              // update map (TODO: do it better)
-              #if 0
-#ifdef USE_IORDER
-              Int offset = 0;
-              for (Int id = 0; id < nblks; id++) {
-                  for (Int count = 0; count < nd_sizes(id+1); count++) {
-                      nd_map(offset) = id;
-                      offset++;
-                  }
-              }
-#else
-              //nd_map(id1) = dom2;
-              //printf( " -> map(%d) = %d (size(%d) = %d, size(%d) = %d)\n",id1,dom2, dom1+1,nd_sizes(dom1+1), dom2+1,nd_sizes(dom2+1) );
-              nd_map(id2) = dom1;
-              printf( " -> map(%d) = %d (size(%d) = %d, size(%d) = %d)\n",id2,dom1, dom1+1,nd_sizes(dom1+1), dom2+1,nd_sizes(dom2+1) );
-#endif
-              #endif
             }
           }
           if(Options.verbose == BASKER_TRUE) {
@@ -1486,11 +1455,7 @@ namespace BaskerNS
           MALLOC_INT_1DARRAY (order_nd_mwm2, BTF_A.nrow);
           for (Int id = 0; id < (Int)BTF_A.ncol; id++) {
             Int j = id; //part_tree.permtab[id];
-#ifdef USE_IORDER
             Int k = iorder_nd_mwm(j);
-#else
-            Int k = order_nd_mwm(j);
-#endif
 
             // moving into dom at higher level in ND tree
             Int dom = (nd_map(j) > nd_map(k) ? nd_map(j) : nd_map(k));
@@ -1580,29 +1545,76 @@ namespace BaskerNS
           printf("];\n");*/
 
           // ----------------------------------------------------------------------------------------------
-          // combined the nd-fix into amd
+          // apply nd-fix 
           INT_1DARRAY order_nd_amd2;
           MALLOC_INT_1DARRAY (order_nd_amd2, BTF_A.nrow);
           for (Int j = 0; j < (Int)BTF_A.ncol; j++) {
-            order_nd_amd2(j) = order_nd_amd(order_nd_mwm2(j));
-          }
-          for (Int j = 0; j < (Int)BTF_A.ncol; j++) {
-            //order_nd_amd(j) = order_nd_amd2(j);
-            order_nd_amd(order_nd_amd2(j)) = j;
+            order_nd_amd2(order_nd_mwm2(j)) = order_nd_amd(j);
           }
 
-          if (Options.amd_dom) {
-            permute_row(BTF_A, order_nd_amd);
-            permute_col(BTF_A, order_nd_amd);
-            if (btf_tabs_offset < btf_nblks) {
-              // Apply AMD perm to rows and cols
-              permute_row(BTF_B, order_nd_amd);
-            }
-            if (BTF_E.ncol > 0) {
-              // Apply AMD perm to cols
-              permute_col(BTF_E, order_nd_amd);
+          // Apply fix to A
+          permute_row(BTF_A, order_nd_amd2);
+          permute_col(BTF_A, order_nd_amd2);
+          if (btf_tabs_offset < btf_nblks) {
+            // Apply fix to rows of B
+            permute_row(BTF_B, order_nd_amd2);
+          }
+          if (BTF_E.ncol > 0) {
+            // Apply fix to cols of E
+            permute_col(BTF_E, order_nd_amd2);
+          }
+          /*printf(" > A = [\n" );
+          if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
+            for(Int j = 0; j < BTF_A.ncol; j++) {
+              for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+                printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+              }
             }
           }
+          printf("];\n");*/
+
+          #if 1
+          Kokkos::Timer nd_amd_timer;
+          // compute & apply csymamd on fixed ND
+          INT_1DARRAY cmember;
+          MALLOC_INT_1DARRAY(cmember, BTF_A.ncol+1);
+          for(Int i = 0; i < tree.nblks; ++i) {
+            for(Int j = tree.col_tabs(i); j < tree.col_tabs(i+1); ++j) {
+              cmember(j) = i;
+            }
+          }
+          init_value(order_nd_amd, BTF_A.ncol, (Int)0);
+          csymamd_order(BTF_A, order_nd_amd, cmember);
+          //for (int i=0; i<BTF_A.ncol; i++) printf( " - csymamd_a(%d)=%d\n",i,order_nd_amd(i));
+
+          permute_row(BTF_A, order_nd_amd);
+          permute_col(BTF_A, order_nd_amd);
+          if (btf_tabs_offset < btf_nblks) {
+            // Apply AMD perm to rows
+            permute_row(BTF_B, order_nd_amd);
+          }
+          if (BTF_E.ncol > 0) {
+            // Apply AMD perm to cols
+            permute_col(BTF_E, order_nd_amd);
+          }
+
+          // combine csymamd into fix
+          INT_1DARRAY order_nd_amd3;
+          MALLOC_INT_1DARRAY (order_nd_amd3, BTF_A.nrow);
+          for (Int j = 0; j < (Int)BTF_A.ncol; j++) {
+            order_nd_amd3(j) = order_nd_amd(order_nd_amd2(j));
+          }
+          for (Int j = 0; j < (Int)BTF_A.ncol; j++) {
+            order_nd_amd(j) = order_nd_amd3(j);
+          }
+          if(Options.verbose == BASKER_TRUE) {
+            std::cout<< " > Basker Factor: Time to compute and apply AMD on a big block A: " << nd_amd_timer.seconds() << std::endl;
+          }
+          #else
+          for (Int j = 0; j < (Int)BTF_A.ncol; j++) {
+            order_nd_amd(j) = order_nd_amd2(j);
+          }
+          #endif
           /*for (int i=0; i<BTF_A.ncol; i++) printf( " - amd_a(%d)=%d\n",i,order_nd_amd(i));
           printf(" * A = [\n" );
           if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
