@@ -833,13 +833,19 @@ namespace MueLu {
               }
 
               LO nnz = indices.size();
+              bool haveAddedToDiag = false;
               for (LO colID = 0; colID < nnz; colID++) {
                 const LO col = indices[colID];
 
                 if (row != col) {
                   localLaplDiagData[row] += STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
+                  haveAddedToDiag = true;
                 }
               }
+              // Deal with the situation where boundary conditions have only been enforced on rows, but not on columns.
+              // We enforce dropping of these entries by assigning a very large number to the diagonal entries corresponding to BCs.
+              if (!haveAddedToDiag)
+                localLaplDiagData[row] = STS::rmax();
             }
             } //subtimer
             {
@@ -859,8 +865,10 @@ namespace MueLu {
           ArrayRCP<LO> rows    = ArrayRCP<LO>(numRows+1);
           ArrayRCP<LO> columns = ArrayRCP<LO>(A->getNodeNumEntries());
 
+#ifdef HAVE_MUELU_DEBUG
 	  // DEBUGGING
 	  for(LO i=0; i<(LO)columns.size(); i++) columns[i]=-666;
+#endif
 
 	  // Extra array for if we're allowing symmetrization with cutting
 	  ArrayRCP<LO> rows_stop;

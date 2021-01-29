@@ -343,7 +343,7 @@ namespace MueLu {
       description_ = "";
     }
 
-    void AllocateLevelMultiVectors(int numvecs);
+    void AllocateLevelMultiVectors(int numvecs, bool forceMapCheck=false);
     void DeleteLevelMultiVectors();
 
   protected:
