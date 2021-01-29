@@ -43,25 +43,30 @@
 // 1DRandom, 2D, 2DRandom, 2D_npRow, 2D_npCol, 2D_npCol_npRow, LowerTriangularBlock. 
 // This program is very similar to the one in MatrixMarket_Tpetra_CrsMatrix_Dist.cpp
 // The constructor reads the matrix from a matrix market (mtx) file using the 
-// standard MatrixMarket reader and creates A_baseline. With a randomly created
-// input vector, x_baseline, SpMV is performed on A_baseline and the output 
-// vector is stored in y_baseline for future comparisons.
+// standard MatrixMarket reader and creates A_baseline. With random input vector 
+//  x_baseline, SpMV is performed on A_baseline and yin_baseline, and the output 
+// vector is stored in yout_baseline for future comparisons. If global binary reader 
+// is being tested, the constructor also makes rank 0 write a global binary file,
+// in which the order of the nonzeros is the same as the mtx file. The destructor 
+// at rank 0 removes the global binary file.
+
+// Testing the global reader:
+// For each tested distribution, we read the global binary file and create a 
+// matrix called AmatTest with the desired distribution. We perform SpMV on AmatTest
+// with x_baseline and yin_baseline and compare the output vector with yout_baseline.  
 
 // For each tested distribution, we read the input matrix (mtx) file again 
 // and create a matrix called AmatWriter with the desired distribution. We use
 // AmatWriter to write the nonzeros in a global binary file or multiple per-process
 // binary files. Then we read the binary file(s) and create AmatTest with the same
-// distribution as AmatWriter. We perfom SpMV on AmatTest with x_baseline and 
-// compare the output vector with y_baseline. 
+// distribution as AmatWriter. We perfom SpMV on AmatTest with x_baseline and
+// yin_baseline and compare the output vector with yout_baseline. 
 
 // IMPORTANT:
-// 1) Since the current binary formats do not support any numeric values,
+//    Since the current binary formats do not support any numeric values,
 //    the binary readers set all numeric values to one. Therefore, we also set 
 //    all numeric values to one in this program.
-// 2) Since LowerTriangularBlock distribution drops the nonzeros in the upper
-//    triangular part, its SpMV output would be different than y_baseline (which
-//    considers all nonzeros in the given mtx file). Therefore, we compare the 
-//    SpMV outputs of AmatWriter and AmatTest for LowerTriangularBlock distribution.
+
 
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
@@ -99,8 +104,9 @@ public:
   // Constructor
   TestReader(
     const std::string filename_, 
+    const bool perProcess_,
     const Teuchos::RCP<const Teuchos::Comm<int> > &comm_
-  ) : filename(filename_), comm(comm_), norm_baseline(3)
+  ) : filename(filename_), perProcess(perProcess_), comm(comm_), norm_baseline(3)
   {
     // Compute baseline for testing
     // Use standard MatrixMarket reader from Tpetra to get baseline matrix
@@ -149,12 +155,27 @@ public:
     norm_baseline[0] = yout_baseline->normInf();
     norm_baseline[1]=  yout_baseline->norm1();
     norm_baseline[2] = yout_baseline->norm2();
+
+    // Write the global binary file if perProcess==false 
+    if(!perProcess)
+      writeBinaryGlobal();
   }
 
+  // Destructor deletes the global binary file if it exists
+  ~TestReader() {
+    if(!perProcess && comm->getRank() == 0) {
+      try { std::remove(binfilename.c_str()); }
+      catch (std::exception &e) {
+	std::cout << "Could not delete file: " << binfilename << std::endl;
+	std::cout << e.what() << std::endl;
+	throw e;
+      }	      
+    }
+  }
 
   //////////////////////////////
   // Various combinations to be run for each file
-  int run(const bool perProcess) {
+  int run() {
 
     int ierr = 0;
     int np = comm->getSize();
@@ -165,7 +186,7 @@ public:
       const std::string testname = "1D";
       params.set("distribution", "1D");
       params.set("randomize", false);
-      ierr += runTest(testname, params, perProcess);
+      ierr += runTest(testname, params);
     }
 
     // 1D Random
@@ -174,7 +195,7 @@ public:
       const std::string testname = "1DRandom";
       params.set("distribution", "1D");
       params.set("randomize", true);
-      ierr += runTest(testname, params, perProcess);
+      ierr += runTest(testname, params);
     }
 
     // 2D block decomposition
@@ -183,7 +204,7 @@ public:
       const std::string testname = "2D";
       params.set("distribution", "2D");
       params.set("randomize", false);
-      ierr += runTest(testname, params, perProcess);
+      ierr += runTest(testname, params);
     }
 
     // 2D Random
@@ -192,7 +213,7 @@ public:
       const std::string testname = "2DRandom";
       params.set("distribution", "2D");
       params.set("randomize", true);
-      ierr += runTest(testname, params, perProcess);
+      ierr += runTest(testname, params);
     }
 
     // 2D parameter testing:  user-specified npRow
@@ -204,7 +225,7 @@ public:
       params.set("randomize", false);
       params.set("nProcessorRows", npRow);
       try {
-    	ierr += runTest(testname, params, perProcess);
+    	ierr += runTest(testname, params);
       }
       catch (std::exception &e) {
         if (np % npRow) {
@@ -229,7 +250,7 @@ public:
       params.set("randomize", false);
       params.set("nProcessorCols", npCol);
       try {
-    	ierr += runTest(testname, params, perProcess);
+    	ierr += runTest(testname, params);
       }
       catch (std::exception &e) {
         if (np % npCol) {
@@ -256,7 +277,7 @@ public:
       params.set("nProcessorCols", npCol);
       params.set("nProcessorRows", npRow);
       try {
-    	ierr += runTest(testname, params, perProcess);
+    	ierr += runTest(testname, params);
       }
       catch (std::exception &e) {
         if (npRow * npCol != np) {
@@ -278,7 +299,32 @@ public:
       const std::string testname = "LowerTriangularBlock";
       params.set("distribution", "LowerTriangularBlock");
       try {
-    	ierr += runTestLTB(testname, params, perProcess);
+    	ierr += runTestLTB(testname, params);
+      }
+      catch (std::exception &e) {
+        int q = int(std::sqrt(float(2 * np)));
+        if (q * (q + 1) != 2 * np) {
+          // runTest should fail with this processor count; ignore
+          // the throw in this case
+          if (comm->getRank() == 0) 
+            std::cout << "Correctly caught error in " << testname << std::endl;
+        }
+        else {
+          // Test should have passed; this error is real
+          throw e;
+        }
+      }
+    }
+
+    // LowerTriangularBlock partition with rows sorted by degree
+    if(!perProcess)
+    {
+      Teuchos::ParameterList params;
+      const std::string testname = "LowerTriangularBlockSorted";
+      params.set("distribution", "LowerTriangularBlock");
+      params.set("sortByDegree", true);
+      try {
+        ierr += runTestLTB(testname, params);
       }
       catch (std::exception &e) {
         int q = int(std::sqrt(float(2 * np)));
@@ -305,76 +351,57 @@ public:
 private:
 
   //////////////////////////////
-  // Write one or more binary files depending on the value of perProcess
-  void writeBinary(
-    const std::string &testname,
-    const Teuchos::RCP<matrix_t> &AmatWrite,
-    const bool perProcess,
-    std::string &binfilename
-  )
+  // Write a single global binary file, which will be used for all tests (1D, 2D, etc) 
+  void writeBinaryGlobal()
   {
-    if(perProcess)
-      writeBinaryPerProcess(testname, AmatWrite, binfilename);
-    else 
-      writeBinaryGlobal(testname, AmatWrite, binfilename);
-  }
+    binfilename = filename + "_" + std::to_string(comm->getSize()) + ".cooBin"; 
+   
+    int err = 0;
 
-  //////////////////////////////
-  // Write a single binary file 
-  // The path for the written files should be unique for each test
-  void writeBinaryGlobal(
-    const std::string &testname,
-    const Teuchos::RCP<matrix_t> &AmatWrite,
-    std::string &binfilename
-  )
-  {
-    binfilename = filename + "_" + std::to_string(comm->getSize())
-                           + "_" + testname + ".cooBin"; 
-    std::ofstream out;
+    // Only rank 0 will read the mtx file and write the corresponding binary file
+    // Other ranks will wait for rank 0 to finish
+    if(comm->getRank() == 0) {
 
-    // Processes will take turns to write the nonzeros they own
-    for(int i = 0; i < comm->getSize(); i++){
-      if(i == comm->getRank()) {
+      unsigned int nRows, nCols, entry[2];
+      unsigned long long nNzs;
+      std::string line;
+      
+      // Open the input file and skip the header
+      // NOTE: symmetric keyword is ignored too.
+      std::ifstream in(filename, std::ios::in);
+      do
+	std::getline (in, line);
+      while(line[0] == '%');
+      
+      std::stringstream sstream(line);
+      sstream >> nRows >> nCols >> nNzs;
+      if(nRows != nCols)
+	err = 1;
 
-	// Open the file and write the header if rank 0
-	if(i == 0) {
-	  out.open(binfilename, std::ios::out | std::ios::binary);
-	  unsigned int nRows = static_cast<unsigned int>(AmatWrite->getRowMap()->getMaxAllGlobalIndex()) + 1;
-	  unsigned long long  nNzs = static_cast<unsigned long long>(AmatWrite->getGlobalNumEntries());
-	  out.write((char *)& nRows, sizeof(unsigned int));
-	  out.write((char *)& nNzs, sizeof(unsigned long long));
-	}
-	else 
-	  out.open(binfilename, std::ios::out | std::ios::binary | std::ios::app);
+      // Proceed with the binary file only if the input mtx is square
+      if(err == 0) {
 	
-	// Get the CrsGraph because we do not need the values
-	auto graph = AmatWrite->getCrsGraph();	
-	auto rowMap = graph->getRowMap();
-	Teuchos::Array<gno_t> gblColInds;
-	size_t numEntries = 0;
-
-	// Write the nonzeros
-	unsigned int entry[2];
-	for(size_t r = 0; r < graph->getNodeNumRows(); r++) {
-
-	  // Get the global index for row r
-	  auto gblRow = rowMap->getGlobalElement(static_cast<gno_t>(r));
-	  entry[0] = static_cast<unsigned int>(gblRow) + 1;
-	  
-	  // Get the copy of the row with global column indices
-	  numEntries = graph->getNumEntriesInGlobalRow(gblRow);
-	  gblColInds.resize(numEntries);
-	  graph->getGlobalRowCopy(gblRow, gblColInds(), numEntries);
-
-	  // Write the entries in the row in COO format (i.e., in "rowId colId" pairs)
-	  for(size_t c = 0; c < numEntries; c++) {
-	    entry[1] = static_cast<unsigned int>(gblColInds[c]) + 1;
-	    out.write((char *)entry, sizeof(unsigned int)*2);
-	  }
+	// Open the output file and write the header
+	std::ofstream out(binfilename, std::ios::out | std::ios::binary);
+	out.write((char *)&nRows, sizeof(unsigned int));
+	out.write((char *)&nNzs, sizeof(unsigned long long));
+	
+	// Write nonzeros
+	while(std::getline(in, line)) {
+	  std::stringstream sstream2(line);
+	  sstream2 >> entry[0] >> entry[1];
+	  out.write((char *)entry, sizeof(unsigned int)*2);	
 	}
 	out.close();
       }
-      comm->barrier();
+
+      in.close();
+    }
+
+    Teuchos::broadcast(*comm, 0, 1, &err);
+
+    if(err == 1) {
+      throw std::runtime_error( "Input matrix " + filename +  " is not square.");
     }
       
   }
@@ -384,13 +411,12 @@ private:
   // The path for the written files should be unique for each test
   void writeBinaryPerProcess(
     const std::string &testname,
-    const Teuchos::RCP<matrix_t> &AmatWrite,
-    std::string &binbasefilename
+    const Teuchos::RCP<matrix_t> &AmatWrite
   )
   {
     // Open the file
-    binbasefilename = filename + "_" + std::to_string(comm->getSize()) + "_" + testname; 
-    std::string binrankfilename = binbasefilename + "." + std::to_string(comm->getRank()) + ".cooBin";
+    binfilename = filename + "_" + std::to_string(comm->getSize()) + "_" + testname; 
+    std::string binrankfilename = binfilename + "." + std::to_string(comm->getRank()) + ".cooBin";
     std::ofstream out(binrankfilename, std::ios::out | std::ios::binary);
 
     // Write the header
@@ -432,36 +458,17 @@ private:
 
   //////////////////////////////
   // Remove the binary file(s) with the given path
-  void cleanBinary(
-    const std::string &binfilename,
-    const bool perProcess
+  void cleanBinaryPerProcess(
   )
   {
-    if(perProcess) {
-      // There exists a binary file for each process, so each process removes its own file.  
-      std::string binrankfilename = binfilename + "." + std::to_string(comm->getRank()) + ".cooBin";
-      try { std::remove(binfilename.c_str()); }
-      catch (std::exception &e) {
-	std::cout << "Could not delete file: " << binfilename << std::endl;
-	std::cout << e.what() << std::endl;
-	throw e;
-      }	
-    }
-    else {
-      // Make sure none of the processes is currently reading the file
-      comm->barrier();
-
-      // There exists one global binary file, only rank 0 attempts do remove it.
-      if(comm->getRank() == 0) {
-	try { std::remove(binfilename.c_str()); }
-	catch (std::exception &e) {
-	  std::cout << "Could not delete file: " << binfilename << std::endl;
-	  std::cout << e.what() << std::endl;
-	  throw e;
-	}	
-      }
-    }
-      
+    // There exists a binary file for each process, so each process removes its own file.  
+    std::string binrankfilename = binfilename + "." + std::to_string(comm->getRank()) + ".cooBin";
+    try { std::remove(binrankfilename.c_str()); }
+    catch (std::exception &e) {
+      std::cout << "Could not delete file: " << binrankfilename << std::endl;
+      std::cout << e.what() << std::endl;
+      throw e;
+    }	
   }
 
   //////////////////////////////
@@ -588,95 +595,69 @@ private:
   }
 
   //////////////////////////////
-  //  Compare computed norms of two given vectors 
-  int compareTwoVectors(
-    const std::string testname, 
-    const Teuchos::RCP<vector_t> &y1,
-    const Teuchos::RCP<vector_t> &y2
-  )
-  {
-    const scalar_t epsilon = 0.0000001;
-    int ierr = 0;
-
-    // First compare the norms of the vectors
-    Teuchos::Array<scalar_t> norm1(3);
-    norm1[0] = y1->normInf();
-    norm1[1]=  y1->norm1(); 
-    norm1[2] = y1->norm2();
-    Teuchos::Array<scalar_t> norm2(3);
-    norm2[0] = y2->normInf();
-    norm2[1]=  y2->norm1(); 
-    norm2[2] = y2->norm2();
-
-    for (size_t i = 0; i < static_cast<size_t>(norm1.size()); i++) {
-      if (std::abs(norm1[i] - norm2[i]) > epsilon) {
-        ierr++;
-        if (comm->getRank() == 0) {
-          std::cout << "FAIL in test " << testname << ":  norm " << i << ": "
-                    << std::abs(norm1[i] - norm2[i]) 
-                    << " > " << epsilon
-                    << std::endl;
-          std::cout << "FAIL in test " << testname 
-                    << ": vec1 " << norm1[i]
-                    << ": vec2 " << norm2[i]
-                    << std::endl;
-        }
-      }
-    }
-
-    // If norms match, make sure the vector entries match, too 
-    // (Norms are indifferent to errors in permutation)
-    if (ierr == 0) {
-      y1->sync_host();
-      y2->sync_host();
-      auto y1Data = y1->getLocalViewHost();
-      auto y2Data = y2->getLocalViewHost();
-      for (size_t i = 0; i < y1->getLocalLength(); i++) {
-        if (std::abs(y1Data(i,0) - y2Data(i,0)) > epsilon) ierr++;
-      }
-      if (ierr > 0) {
-        std::cout << "FAIL in test " << testname << ": " 
-                  << ierr << " vector entries differ on rank "
-                  << comm->getRank() << std::endl;
-      }
-    }
-
-    int gerr = 0;
-    Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
-    return gerr;
-  }
-
-  //////////////////////////////
-  // Each test reads, writes binary file(s), reads the binary file(s), applies, and compares
+  // Run the per-process reader test or the global reader test 
   int runTest(
     const std::string &testname,
-    Teuchos::ParameterList &params,
-    const bool perProcess
+    Teuchos::ParameterList &params
   )
   {
-    if (comm->getRank() == 0) 
-      std::cout << "\n\nBEGIN " << testname << "\n" << std::endl;
-
     params.set("verbose", true);
     params.set("callFillComplete", true);
     params.set("useTimers", true);
+
+    if(perProcess)
+      runTestPerProcess(testname, params);
+    else
+      runTestGlobal(testname, params);
+  }
+
+  //////////////////////////////
+  // Each test reads the binary file, applies, and compares
+  int runTestGlobal(
+    const std::string &testname,
+    Teuchos::ParameterList &params
+  )
+  {
+    if (comm->getRank() == 0) 
+      std::cout << "\n\nBEGIN GLOBAL TEST " << testname << "\n" << std::endl;
+
+    // Read the binary file
+    params.set("binary", true);  // This invokes the binary reader
+    Teuchos::RCP<Tpetra::Distribution<gno_t, scalar_t> > distTest;  // Not used
+    Teuchos::RCP<matrix_t> AmatTest = readFile(binfilename, testname, params, distTest);
+
+    // Apply and compare
+    Teuchos::RCP<vector_t> yvec = applyMatrix(testname, *AmatTest);
+    return compareToBaseline(testname, yvec);
+  }
+
+  //////////////////////////////
+  // Each test reads the mtx file, creates a distributed matrix AmatWriter,
+  //  writes the per-process binary files using AmatWriter, reads the per-process
+  //  files, applies, and compares
+  int runTestPerProcess(
+    const std::string &testname,
+    Teuchos::ParameterList &params
+  )
+  {
+    if (comm->getRank() == 0) 
+      std::cout << "\n\nBEGIN PER-PROCESS TEST " << testname << "\n" << std::endl;
 
     // Create AmatWriter by reading the input mtx file with the required distribution
     Teuchos::RCP<Tpetra::Distribution<gno_t, scalar_t> > distWriter;  // Not used
     Teuchos::RCP<matrix_t> AmatWriter = readFile(filename, testname, params, distWriter);
 
-    // Write the binary file(s) using AmatWriter
-    std::string binfilename;
-    writeBinary(testname, AmatWriter, perProcess, binfilename);
+    // Write the binary files using AmatWriter
+    writeBinaryPerProcess(testname, AmatWriter);
 
-    // Read the binary file(s)
-    params.set("binary", true);
-    if(perProcess) params.set("readPerProcess", true);
+    // Read the binary files
+    params.set("binary", true);  // This invokes binary readers.
+    params.set("readPerProcess", true);
     Teuchos::RCP<Tpetra::Distribution<gno_t, scalar_t> > distTest;  // Not used
     Teuchos::RCP<matrix_t> AmatTest = readFile(binfilename, testname, params, distTest);
 
-    // Clean-up the binary file(s)
-    cleanBinary(binfilename, perProcess);
+    // Clean-up the per-process binary files
+    cleanBinaryPerProcess();
 
     // Apply and compare
     Teuchos::RCP<vector_t> yvec = applyMatrix(testname, *AmatTest);
@@ -690,61 +671,88 @@ private:
   // Therefore, this test compares the current results with AmatWriter's results.
   int runTestLTB(
     const std::string &testname,
-    Teuchos::ParameterList &params,
-    const bool perProcess
+    Teuchos::ParameterList &params
   )
   {
-    if (comm->getRank() == 0) 
-      std::cout << "\n\nBEGIN " << testname << "\n" << std::endl;
-
     params.set("verbose", true);
     params.set("callFillComplete", true);
     params.set("useTimers", true);
 
-    // Create AmatWriter by reading the input mtx file with the required distribution
-    using dist_t = Tpetra::Distribution<gno_t, scalar_t>;
-    Teuchos::RCP<dist_t> distWriter;
-    Teuchos::RCP<matrix_t> AmatWriter = readFile(filename, testname, params, distWriter);
+    if(perProcess)
+      runTestLTBPerProcess(testname, params);
+    else
+      runTestLTBGlobal(testname, params);
+  }
 
-    // Set the values in Amat_writer to one
-    const scalar_t ONE = Teuchos::ScalarTraits<scalar_t>::one();
-    AmatWriter->resumeFill();
-    AmatWriter->setAllToScalar(ONE);
-    AmatWriter->fillComplete(AmatWriter->getDomainMap(), AmatWriter->getRangeMap());
+  //////////////////////////////
+  // Each test reads the binary file, applies, and compares
+  int runTestLTBGlobal(
+    const std::string &testname,
+    Teuchos::ParameterList &params
+  )
+  {
+    if (comm->getRank() == 0) 
+      std::cout << "\n\nBEGIN GLOBAL TEST " << testname << "\n" << std::endl;
 
-    // Write the binary file(s) using AmatWriter 
-    std::string binfilename;
-    writeBinary(testname, AmatWriter, perProcess, binfilename);
-
-    // Read the binary file(s)
-    params.set("binary", true);
-    if(perProcess) params.set("readPerProcess", true);
-    Teuchos::RCP<dist_t> distTest;
+    // Read the binary file
+    params.set("binary", true);   // This invokes the binary reader 
+    Teuchos::RCP<Tpetra::Distribution<gno_t, scalar_t> > distTest;  // Not used
     Teuchos::RCP<matrix_t> AmatTest = readFile(binfilename, testname, params, distTest);
-   
-    // Clean-up the binary file(s)
-    cleanBinary(binfilename, perProcess);
 
-    // Get the LTB operator from both matrices
+    // Get the LTB operator from the test matrix
     using distltb_t = Tpetra::DistributionLowerTriangularBlock<gno_t, scalar_t>;
-    Tpetra::LowerTriangularBlockOperator<scalar_t> lto_writer(AmatWriter, 
-                               dynamic_cast<distltb_t&>(*distWriter));
     Tpetra::LowerTriangularBlockOperator<scalar_t> lto_test(AmatTest, 
                                dynamic_cast<distltb_t&>(*distTest));
 
-    // Apply with AmatWriter
-    Teuchos::RCP<vector_t> yout_writer = applyMatrix("AmatWriter", lto_writer);
-
-    // Apply with AmatTest
-    Teuchos::RCP<vector_t> yout_test = applyMatrix(testname, lto_test);
-
-    // Compare
-    return compareTwoVectors(testname, yout_writer, yout_test);
+    // Apply and compare
+    Teuchos::RCP<vector_t> yvec = applyMatrix(testname, lto_test);
+    return compareToBaseline(testname, yvec);
   }
+
+  //////////////////////////////
+  // Each test reads the mtx file, creates a distributed matrix AmatWriter,
+  //  writes the per-process binary files using AmatWriter, reads the per-process
+  //  files, applies, and compares
+  int runTestLTBPerProcess(
+    const std::string &testname,
+    Teuchos::ParameterList &params
+  )
+  {
+    if (comm->getRank() == 0) 
+      std::cout << "\n\nBEGIN PER-PROCESS TEST " << testname << "\n" << std::endl;
+
+    // Create AmatWriter by reading the input mtx file with the required distribution
+    Teuchos::RCP<Tpetra::Distribution<gno_t, scalar_t> > distWriter;  // Not used
+    Teuchos::RCP<matrix_t> AmatWriter = readFile(filename, testname, params, distWriter);
+
+    // Write the binary files using AmatWriter
+    writeBinaryPerProcess(testname, AmatWriter);
+
+    // Read the binary files
+    params.set("binary", true);  // This invokes binary readers.
+    params.set("readPerProcess", true);
+    Teuchos::RCP<Tpetra::Distribution<gno_t, scalar_t> > distTest;  // Not used
+    Teuchos::RCP<matrix_t> AmatTest = readFile(binfilename, testname, params, distTest);
+
+    // Clean-up the per-process binary files
+    cleanBinaryPerProcess();
+
+    // Get the LTB operator from the test matrix
+    using distltb_t = Tpetra::DistributionLowerTriangularBlock<gno_t, scalar_t>;
+    Tpetra::LowerTriangularBlockOperator<scalar_t> lto_test(AmatTest, 
+                               dynamic_cast<distltb_t&>(*distTest));
+
+    // Apply and compare
+    Teuchos::RCP<vector_t> yvec = applyMatrix(testname, lto_test);
+    return compareToBaseline(testname, yvec);
+  }
+
   
 private:
 
   const std::string filename;    // MatrixMarket filename
+  const bool perProcess;         // Test the per-process reader instead of global
+  std::string binfilename;       // Binary (global) filename
   const Teuchos::RCP<const Teuchos::Comm<int> > comm;
 
   size_t nRow, nCol, nNz;                  // dimensions of baseline matrix
@@ -782,8 +790,8 @@ int main(int narg, char *arg[])
     return -1;
   }
 
-  TestReader test(filename, comm);
-  ierr += test.run(perProcess);
+  TestReader test(filename, perProcess, comm);
+  ierr += test.run();
 
   // Output timing info
   stackedTimer->stop("main");
