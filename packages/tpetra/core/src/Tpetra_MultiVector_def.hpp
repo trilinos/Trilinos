@@ -3533,37 +3533,47 @@ namespace Tpetra {
                                  LDA, numCols);
     auto A_view = Kokkos::subview (A_view_orig, rowRange, colRange);
 
-    // Use the most recently updated version of this MultiVector's
-    // data.  This avoids sync'ing, which could violate users'
-    // expectations.
-    //
-    // If we need sync to device, then host has the most recent version.
-    const bool useHostVersion = this->need_sync_device ();
-
-    if (this->isConstantStride ()) {
-      if (useHostVersion) {
-        auto srcView_host = this->getLocalViewHostConst ();
-        Kokkos::deep_copy (A_view, srcView_host);
+    /// problematic example
+    ///   - a host view is checked out by users ; this increase ref count on host view
+    ///   - when the view is const view, it does not raise modify_host() flag
+    ///   - when we use useHostVersion logic (this->need_sync_device()) to figure out
+    ///     more recent version, the flag is false as the user checked out a const view
+    ///   - as a result, it attempts to use device view and it volate ref count rule
+    ///   - the other case of using device view is also problematic
+    /// solution
+    ///   - any non const view is alive outside, we cannot give a copy
+    ///   - if a user takes a const view, we use the same host/device view not to violate
+    ///     ref count rule.
+    if (this->need_sync_host() && this->need_sync_device()) {
+      /// there is non-const host or device view outside, we cannot give a copy as a user
+      /// can change the local data and we do not know which one the user want as a copy
+      throw std::runtime_error("Tpetra::MultiVector: A non-const view is alive outside and we cannot give a copy where host or device view can be modified outside");
+    } 
+    else { 
+      const bool useHostView = owningView_.h_view.use_count() >= owningView_.d_view.use_count();
+      if (this->isConstantStride ()) {
+        if (useHostView) {
+          auto srcView_host = this->getLocalViewHostConst ();
+          Kokkos::deep_copy (A_view, srcView_host);
+        } else {
+          auto srcView_device = this->getLocalViewDeviceConst ();
+          Kokkos::deep_copy (A_view, srcView_device);
+        }
       }
       else {
-        auto srcView_dev = this->getLocalViewDeviceConst ();
-        Kokkos::deep_copy (A_view, srcView_dev);
-      }
-    }
-    else {
-      for (size_t j = 0; j < numCols; ++j) {
-        const size_t srcCol = this->whichVectors_[j];
-        auto dstColView = Kokkos::subview (A_view, rowRange, j);
-
-        if (useHostVersion) {
-          auto srcView_host = this->getLocalViewHostConst ();
-          auto srcColView_host = Kokkos::subview (srcView_host, rowRange, srcCol);
-          Kokkos::deep_copy (dstColView, srcColView_host);
-        }
-        else {
-          auto srcView_dev = this->getLocalViewDeviceConst ();
-          auto srcColView_dev = Kokkos::subview (srcView_dev, rowRange, srcCol);
-          Kokkos::deep_copy (dstColView, srcColView_dev);
+        for (size_t j = 0; j < numCols; ++j) {
+          const size_t srcCol = this->whichVectors_[j];
+          auto dstColView = Kokkos::subview (A_view, rowRange, j);
+          
+          if (useHostView) {
+            auto srcView_host = this->getLocalViewHostConst ();
+            auto srcColView_host = Kokkos::subview (srcView_host, rowRange, srcCol);
+            Kokkos::deep_copy (dstColView, srcColView_host);
+          } else {
+            auto srcView_device = this->getLocalViewDeviceConst ();
+            auto srcColView_device = Kokkos::subview (srcView_device, rowRange, srcCol);
+            Kokkos::deep_copy (dstColView, srcColView_device);
+          }
         }
       }
     }

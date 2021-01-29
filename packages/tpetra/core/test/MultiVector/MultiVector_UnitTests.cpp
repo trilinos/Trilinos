@@ -1962,7 +1962,17 @@ namespace {
     {
       A.randomize();
 
-      out << "Check that get1dView and get1dCopy have the same values" << endl;
+      out << "Check that get1dView and get1dCopy have the same values (type 1)" << endl;
+      {
+        ArrayRCP<const Scalar> view;
+        Array<Scalar> copy(numLocal*numVectors);
+        TEST_NOTHROW( view = A.get1dView() );
+        TEST_NOTHROW( A.get1dCopy(copy,numLocal) );
+        TEST_COMPARE_FLOATING_ARRAYS(view,copy,M0);
+      }
+
+      A.randomize();
+      out << "Check that get1dView and get1dCopy have the same values (type 2)" << endl;
       {
         ArrayRCP<const Scalar> view;
         Array<Scalar> copy(numLocal*numVectors);
