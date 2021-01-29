@@ -112,7 +112,7 @@ namespace { // (anonymous)
     transform ("-1 -> (666+1=667)", Y, X,
                KOKKOS_LAMBDA (const double& X_ij) { return X_ij + 1.0; });
     {
-      auto X_lcl = X.getLocalViewHostConst ();
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly());
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << endl;
         bool ok = true;
@@ -142,7 +142,7 @@ namespace { // (anonymous)
     transform ("418 -> 419", Kokkos::DefaultHostExecutionSpace (), Y, X,
                KOKKOS_LAMBDA (const double& X_ij) { return X_ij + 1.0; });
     {
-      auto Y_lcl = Y.getLocalViewHostConst ();
+      auto Y_lcl = Y.getLocalViewHost(Tpetra::Access::ReadOnly());
       for (LO j = 0; j < LO (Y.getNumVectors ()); ++j) {
         out << "Column " << j << endl;
         bool ok = true;
@@ -157,7 +157,7 @@ namespace { // (anonymous)
         TEST_ASSERT( ok );
       }
 
-      auto X_lcl = X.getLocalViewHostConst ();
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly());
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << endl;
         bool ok = true;
@@ -185,7 +185,7 @@ namespace { // (anonymous)
     transform ("419 -> 777", device_execution_space (), Y, X,
                KOKKOS_LAMBDA (const double& X_ij) { return X_ij + 359.0; });
     {
-      auto Y_lcl = Y.getLocalViewHostConst ();
+      auto Y_lcl = Y.getLocalViewHost(Tpetra::Access::ReadOnly());
       for (LO j = 0; j < LO (Y.getNumVectors ()); ++j) {
         out << "Column " << j << endl;
         bool ok = true;
@@ -200,7 +200,7 @@ namespace { // (anonymous)
         TEST_ASSERT( ok );
       }
 
-      auto X_lcl = X.getLocalViewHostConst ();
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly());
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << endl;
         bool ok = true;
@@ -266,7 +266,7 @@ namespace { // (anonymous)
     transform ("-1 -> (666+1=667)", Y, X,
                KOKKOS_LAMBDA (const double& X_i) { return X_i + 1.0; });
     {
-      auto X_lcl = X.getLocalViewHostConst ();
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly());
       bool ok = true;
       for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
         const double expectedVal = 667.0;
@@ -293,7 +293,7 @@ namespace { // (anonymous)
     transform ("418 -> 419", Kokkos::DefaultHostExecutionSpace (), Y, X,
                KOKKOS_LAMBDA (const double& X_i) { return X_i + 1.0; });
     {
-      auto Y_lcl = Y.getLocalViewHostConst ();
+      auto Y_lcl = Y.getLocalViewHost(Tpetra::Access::ReadOnly());
       bool ok = true;
       for (LO i = 0; i < LO (Y.getLocalLength ()); ++i) {
         const double expectedVal = 418.0;
@@ -305,7 +305,7 @@ namespace { // (anonymous)
       }
       TEST_ASSERT( ok );
 
-      auto X_lcl = X.getLocalViewHostConst ();
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly());
       ok = true;
       for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
         const double expectedVal = 419.0;
@@ -330,7 +330,7 @@ namespace { // (anonymous)
     transform ("419 -> 777", device_execution_space (), Y, X,
                KOKKOS_LAMBDA (const double& X_i) { return X_i + 359.0; });
     {
-      auto Y_lcl = Y.getLocalViewHostConst ();
+      auto Y_lcl = Y.getLocalViewHost(Tpetra::Access::ReadOnly());
 
       bool ok = true;
       for (LO i = 0; i < LO (Y.getLocalLength ()); ++i) {
@@ -343,7 +343,7 @@ namespace { // (anonymous)
       }
       TEST_ASSERT( ok );
 
-      auto X_lcl = X.getLocalViewHostConst ();
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly());
       ok = true;
       for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
         const double expectedVal = 777.0;
@@ -414,7 +414,7 @@ namespace { // (anonymous)
                KOKKOS_LAMBDA (const double& Y_ij,
                               const double& Z_ij) { return Y_ij + Z_ij; });
     {
-      auto X_lcl = X.getLocalViewHostConst ();
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly());
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << endl;
         bool ok = true;
@@ -454,7 +454,7 @@ namespace { // (anonymous)
                KOKKOS_LAMBDA (const double& Y_ij,
                               const double& Z_ij) { return Y_ij + Z_ij; });
     {
-      auto X_lcl = X.getLocalViewHostConst ();
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly());
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << endl;
         bool ok = true;
@@ -524,7 +524,7 @@ namespace { // (anonymous)
                KOKKOS_LAMBDA (const double Y_i,
                               const double Z_i) { return Y_i + Z_i; });
     {
-      auto X_lcl = X.getLocalViewHostConst ();
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly());
 
       bool ok = true;
       for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
@@ -559,7 +559,7 @@ namespace { // (anonymous)
                KOKKOS_LAMBDA (const double Y_i,
                               const double Z_i) { return Y_i + Z_i; });
     {
-      auto X_lcl = X.getLocalViewHostConst ();
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly());
 
       bool ok = true;
       for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {

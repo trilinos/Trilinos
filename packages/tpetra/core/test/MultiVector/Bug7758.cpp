@@ -102,7 +102,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, DefaultToDefault, Scalar,LO,GO,Node)
   defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
   // Check result; all vector entries should be srcScalar
-  auto data = defaultVecTgt.getLocalViewHostConst();
+  auto data = defaultVecTgt.getLocalViewHost(Tpetra::Access::ReadOnly());
 
   for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++)
     if (data(i,0) != srcScalar) ierr++;
@@ -183,7 +183,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, CyclicToDefault, Scalar,LO,GO,Node)
   // Check result
 
   auto invalid = Teuchos::OrdinalTraits<LO>::invalid();
-  auto data = defaultVecTgt.getLocalViewHostConst();
+  auto data = defaultVecTgt.getLocalViewHost(Tpetra::Access::ReadOnly());
   for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++)
     if (cyclicMap->getLocalElement(defaultMap->getGlobalElement(i)) != invalid){
       // element is in both cyclic (source) and default (target) map;
@@ -271,7 +271,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OverlapToDefault, Scalar,LO,GO,Node)
     std::cout << me << " OVERLAP TO DEFAULT " << std::endl;
     defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
-    auto data = defaultVecTgt.getLocalViewHostConst();
+    auto data = defaultVecTgt.getLocalViewHost(Tpetra::Access::ReadOnly());
     for (size_t i = 0; i < defaultVecTgt.getLocalLength()/2; i++) {
       // overlapped; initial target values were overwritten
       if (data(i,0) != srcScalar + srcScalar) ierr++;  
@@ -362,7 +362,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OddEvenToSerial, Scalar,LO,GO,Node)
 
   // Check result
 
-  auto data = serialVecTgt.getLocalViewHostConst();
+  auto data = serialVecTgt.getLocalViewHost(Tpetra::Access::ReadOnly());
   for (size_t i = 0; i < serialVecTgt.getLocalLength(); i++) {
     Scalar nCopies = Scalar(((np+1) / 2) - ((i % 2 == 1) && (np % 2 == 1)));
     if (data(i,0) != (i%2 ? tgtScalar : Scalar(0)) + srcScalar * nCopies)
@@ -445,7 +445,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, SupersetToDefault, Scalar,LO,GO,Node)
     std::cout << me << " SUPERSET TO DEFAULT " << std::endl;
     defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
-    auto data = defaultVecTgt.getLocalViewHostConst();
+    auto data = defaultVecTgt.getLocalViewHost(Tpetra::Access::ReadOnly());
     for (size_t i = 0; i < defaultVecTgt.getLocalLength()/2; i++)
       if (data(i,0) != srcScalar+srcScalar) ierr++;  // overlapped
     for (size_t i = defaultVecTgt.getLocalLength()/2;
@@ -524,7 +524,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, NoSamesToDefault, Scalar,LO,GO,Node)
     std::cout << me << " NOSAMES TO DEFAULT " << std::endl;
     defaultVecTgt.describe(foo, Teuchos::VERB_EXTREME);
 
-    auto data = defaultVecTgt.getLocalViewHostConst();
+    auto data = defaultVecTgt.getLocalViewHost(Tpetra::Access::ReadOnly());
     for (size_t i = 0; i < defaultVecTgt.getLocalLength(); i++)
       if (data(i,0) != tgtScalar + srcScalar) ierr++;  
     if (ierr > 0) 
