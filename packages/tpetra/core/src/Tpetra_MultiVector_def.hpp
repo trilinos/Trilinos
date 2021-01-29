@@ -4389,67 +4389,60 @@ namespace Tpetra {
       }
 
       if (vl > Teuchos::VERB_HIGH && lclNumRows > 0) {
-        // VERB_EXTREME prints values.  Get a host View of the
-        // Vector's local data, so we can print it.  (Don't assume
-        // that we can access device data directly in host code.)
-        typename dual_view_type::t_host X_host;
-        // NOTE: This is an occasion where we do *not* want the auto-sync stuff
-        // to trigger (since this function is conceptually const
-        if (need_sync_host ()) {
-          // Device memory has the latest version.  Don't actually
-          // sync to host; that changes the Vector's state, and may
-          // change future computations (that use the data's current
-          // place to decide where to compute).  Instead, create a
-          // temporary host copy and print that.
-#ifdef DISABLE_OLD_GETLOCALVIEW_FUNCTIONS
-          auto X_dev = getLocalViewDeviceUnsafe ();
-#else
-          auto X_dev = view_.view_device();
-#endif
-          auto X_host_copy = Kokkos::create_mirror_view (X_dev);
-          Kokkos::deep_copy (X_host_copy, X_dev);
-          X_host = X_host_copy;
-        }
-        else {
-          // Either host and device are in sync, or host has the
-          // latest version of the Vector's data.  Thus, we can use
-          // the host version directly.
-#ifdef DISABLE_OLD_GETLOCALVIEW_FUNCTIONS
-          X_host = getLocalViewHostUnsafe ();          
-#else
-          X_host = view_.view_host();
-#endif
-        }
-        // The square braces [] and their contents are in Matlab
-        // format, so users may copy and paste directly into Matlab.
-        out << "Values: " << endl
-            << "[";
-        const LO numCols = static_cast<LO> (this->getNumVectors ());
-        if (numCols == 1) {
-          for (LO i = 0; i < lclNumRows; ++i) {
-            out << X_host(i,0);
-            if (i + 1 < lclNumRows) {
-              out << "; ";
-            }
-          }
-        }
-        else {
-          for (LO i = 0; i < lclNumRows; ++i) {
-            for (LO j = 0; j < numCols; ++j) {
-              out << X_host(i,j);
-              if (j + 1 < numCols) {
-                out << ", ";
+        // VERB_EXTREME prints values.  If we're not doing univied memory, we'll
+        /// want to print both the host and device views, *without chaging state*,
+        // so we can't use our regular accessor functins
+
+        auto print_vector = [](Teuchos::FancyOStream & out, const char* prefix, typename dual_view_type::t_host & v) {
+          // The square braces [] and their contents are in Matlab
+          // format, so users may copy and paste directly into Matlab.
+          out << "Values("<<prefix<<"): " << std::endl
+              << "[";
+          const size_t numRows = v.extent(0);
+          const size_t numCols = v.extent(1);
+          if (numCols == 1) {
+            for (size_t i = 0; i < numRows; ++i) {
+              out << v(i,0);
+              if (i + 1 < numRows) {
+                out << "; ";
               }
             }
-            if (i + 1 < lclNumRows) {
-              out << "; ";
+          }
+          else {
+            for (size_t i = 0; i < numRows; ++i) {
+              for (size_t j = 0; j < numCols; ++j) {
+                out << v(i,j);
+                if (j + 1 < numCols) {
+                  out << ", ";
+                }
+              }
+              if (i + 1 < numRows) {
+                out << "; ";
+              }
             }
           }
-        }
-        out << "]" << endl;
-      }
-    }
+          out << "]" << endl;
+        };//end function
 
+
+        // NOTE: This is an occasion where we do *not* want the auto-sync stuff
+        // to trigger (since this function is conceptually const)                
+        auto X_dev  = view_.view_device();
+        auto X_host = view_.view_host();
+
+        if(X_dev.data() == X_host.data()) {
+          // One single allocation
+          print_vector(out,"unified",X_host);
+        }
+        else {          
+          auto X_dev_on_host = Kokkos::create_mirror_view (X_dev);
+          Kokkos::deep_copy (X_dev_on_host, X_dev);
+          print_vector(out,"host",X_host);
+          print_vector(out,"dev",X_dev_on_host);
+        }
+
+      }
+    }    
     out.flush (); // make sure the ostringstream got everything
     return outStringP->str ();
   }
