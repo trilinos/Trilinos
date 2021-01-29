@@ -141,7 +141,7 @@ namespace Intrepid2 {
     virtual
     void
     getCubature( const TensorPointDataType & tensorCubPoints,
-                       const TensorWeightDataType & tensorCubWeights) const override {
+                 const TensorWeightDataType & tensorCubWeights) const override {
       for (ordinal_type i=0;i<numCubatures_;++i)
       {
         cubatures_[i].getCubature(tensorCubPoints.getTensorComponent(i), tensorCubWeights.getTensorComponent(i).getUnderlyingView());
@@ -242,6 +242,20 @@ namespace Intrepid2 {
       cubatures_[2] = cubature2;
     }
 
+    /** \brief Constructor for extending an existing CubatureTensor object with an additional direct cubature rule.
+
+        \param cubatureTensor    [in] - Existing CubatureTensor object.
+        \param cubatureExtension [in] - The direct cubature rule to use to extend in the new dimension.
+    */
+    template<typename DirectCubature>
+    CubatureTensor( const CubatureTensor cubatureTensor,
+                    const DirectCubature cubatureExtension )
+      : numCubatures_(cubatureTensor.getNumCubatures()+1),
+        dimension_(cubatureTensor.getDimension()+cubatureExtension.getDimension()) {
+      for (ordinal_type i=0;i<cubatureTensor.getNumCubatures();++i)
+        cubatures_[i] = cubatureTensor.cubatures_[i];
+      cubatures_[cubatureTensor.getNumCubatures()] = cubatureExtension;
+    }
   };
 
 
