@@ -43,7 +43,6 @@
 
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_BlockView.hpp"
-#include "Tpetra_Vector.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
@@ -111,11 +110,10 @@ namespace {
   {
     using Teuchos::Array;
     typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
-    typedef typename Tpetra::Vector<ST, LO>::device_type device_type;
     typedef Teuchos::LAPACK<LO, ST> lapack_type;
-    typedef Kokkos::View<IST**, Kokkos::LayoutLeft, device_type> block_type;
-    typedef Kokkos::View<LO*, device_type> int_vec_type;
-    typedef Kokkos::View<IST*, device_type> scalar_vec_type;
+    typedef Kokkos::View<IST**, Kokkos::LayoutLeft, Kokkos::HostSpace> block_type;
+    typedef Kokkos::View<LO*, Kokkos::HostSpace> int_vec_type;
+    typedef Kokkos::View<IST*, Kokkos::HostSpace> scalar_vec_type;
 
     const auto tol = 10.0 * Kokkos::Details::ArithTraits<IST>::eps ();
 
@@ -209,11 +207,10 @@ namespace {
   {
     using Teuchos::Array;
     typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
-    typedef typename Tpetra::Vector<ST, LO>::device_type device_type;
     typedef Teuchos::LAPACK<LO, ST> lapack_type;
-    typedef Kokkos::View<IST**, Kokkos::LayoutLeft, device_type> block_type;
-    typedef Kokkos::View<LO*, device_type> int_vec_type;
-    typedef Kokkos::View<IST*, device_type> scalar_vec_type;
+    typedef Kokkos::View<IST**, Kokkos::LayoutLeft, Kokkos::HostSpace> block_type;
+    typedef Kokkos::View<LO*, Kokkos::HostSpace> int_vec_type;
+    typedef Kokkos::View<IST*, Kokkos::HostSpace> scalar_vec_type;
 
     const auto tol = 10.0 * Kokkos::Details::ArithTraits<IST>::eps ();
 
