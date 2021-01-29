@@ -55,6 +55,7 @@
 // matrix called AmatTest with the desired distribution. We perform SpMV on AmatTest
 // with x_baseline and yin_baseline and compare the output vector with yout_baseline.  
 
+// Testing the per-process reader:
 // For each tested distribution, we read the input matrix (mtx) file again 
 // and create a matrix called AmatWriter with the desired distribution. We use
 // AmatWriter to write the nonzeros in a global binary file or multiple per-process
