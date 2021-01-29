@@ -122,6 +122,7 @@ namespace MueLu {
     - Coordinate information "Coordinates"
     - "Node Comm"
     - Primal-to-dual node mapping "DualNodeID2PrimalNodeID"
+    - "Primal interface DOF map"
     - "pcoarsen: element to node map
 
     This routine is used by the CreateXpetraPreconditioner() routine.

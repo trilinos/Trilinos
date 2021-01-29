@@ -1,35 +1,30 @@
 <!-- Define MueLu preconditioner -->
-<!-- Note: if you use Tpetra you may have to change it to MueLu-Tpetra -->
-<!--       here and above where you set the preconditioner -->
 <ParameterList name="MueLu">
+
+  <ParameterList name="Matrix">
+    <Parameter name="PDE equations" type="int" value="2"/>
+  </ParameterList>
 
   <!-- Factory collection -->
   <ParameterList name="Factories">
-
-    <!-- Note that ParameterLists must be defined prior to being used -->
-
     <!-- sub block factories -->
 
-    <!-- BLOCK 1 (for submatrix A_{00}) 3 DOFs per node -->
+    <!-- BLOCK 1 (for submatrix A_{00}) w/ 2 primal DOFs per node -->
     <ParameterList name="mySubBlockAFactory1">
       <Parameter name="factory" type="string" value="SubBlockAFactory"/>
-      <Parameter name="block row"                 type="int"     value="0"/>
-      <Parameter name="block col"                 type="int"     value="0"/>
-      <Parameter name="Range map: Striding info"  type="string"  value="{ 3 }"/>
-      <Parameter name="Domain map: Striding info" type="string"  value="{ 3 }"/>
+      <Parameter name="block row" type="int" value="0"/>
+      <Parameter name="block col" type="int" value="0"/>
     </ParameterList>
 
-    <!-- tell the tenative prolongator that we have 3 DOFs per node on the coarse levels -->
     <ParameterList name="myCoarseMap1">
       <Parameter name="factory" type="string" value="CoarseMapFactory"/>
-      <Parameter name="Striding info" type="string" value="{ 3 }"/>
-      <Parameter name="Strided block id" type="int" value="-1"/>
     </ParameterList>
 
     <ParameterList name="myAggFact1">
       <Parameter name="factory" type="string" value="UncoupledAggregationFactory"/>
-      <Parameter name="aggregation: min agg size" type="int" value="5"/>
-      <Parameter name="aggregation: max selected neighbors" type="int" value="1"/>
+      <Parameter name="aggregation: ordering" type="string" value="natural"/>
+      <Parameter name="aggregation: min agg size" type="int" value="3"/>
+      <Parameter name="aggregation: max selected neighbors" type="int" value="2"/>
     </ParameterList>
 
     <ParameterList name="myTentativePFact1">
@@ -37,53 +32,49 @@
       <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
       <Parameter name="Aggregates" type="string" value="myAggFact1"/>
       <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
+      <Parameter name="tentative: calculate qr" type="bool" value="true"/>
+      <Parameter name="tentative: build coarse coordinates" type="bool" value="false"/>
     </ParameterList>
 
-    <ParameterList name="myRFact1">
-      <Parameter name="factory" type="string" value="TransPFactory"/>
-      <Parameter name="P" type="string" value="myTentativePFact1"/>
-    </ParameterList>
-
-    <!-- We have to use Nullspace1 here. If "Nullspace1" is not set the
-         Factory creates the default null space containing of constant
-         vectors -->
     <ParameterList name="myNspFact1">
       <Parameter name="factory" type="string" value="NullspaceFactory"/>
       <Parameter name="Fine level nullspace" type="string" value="Nullspace1"/>
       <Parameter name="Nullspace1" type="string" value="myTentativePFact1"/>
     </ParameterList>
 
-    <!-- BLOCK 2 (for submatrix A_{11}) -->
+    <!-- BLOCK 2 (for submatrix A_{11}) w/ 2 dual DOFs per node -->
     <ParameterList name="mySubBlockAFactory2">
+      <Parameter name="factory" type="string" value="ZeroSubBlockAFactory"/>
+      <Parameter name="block row" type="int" value="1"/>
+      <Parameter name="block col" type="int" value="1"/>
+    </ParameterList>
+
+    <!-- for submatrix A_{01}) -->
+    <ParameterList name="mySubBlockAFactoryOffDiagonal">
       <Parameter name="factory" type="string" value="SubBlockAFactory"/>
-      <Parameter name="block row"                 type="int"     value="1"/>
-      <Parameter name="block col"                 type="int"     value="1"/>
-      <Parameter name="Range map: Striding info"  type="string"  value="{ 1 }"/>
-      <Parameter name="Domain map: Striding info" type="string"  value="{ 1 }"/>
+      <Parameter name="block row" type="int" value="0"/>
+      <Parameter name="block col" type="int" value="1"/>
     </ParameterList>
 
-    <!-- tell the tenative prolongator that we have 1 DOF per node on the coarse levels -->
     <ParameterList name="myCoarseMap2">
-      <Parameter name="factory" type="string" value="CoarseMapFactory"/>
-      <Parameter name="Striding info" type="string" value="{ 3 }"/>
-      <Parameter name="Strided block id" type="int" value="-1"/>
+      <Parameter name="factory" type="string" value="BlockedCoarseMapFactory"/>
+      <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
     </ParameterList>
 
-    <ParameterList name="myInterfaceMappingFact">
-      <Parameter name="factory"                             type="string" value="InterfaceMappingTransferFactory"/>
+    <ParameterList name="myInterfaceMapTransFact">
+      <Parameter name="factory" type="string" value="MapTransferFactory"/>
+      <Parameter name="map: factory" type="string" value="Primal interface DOF map"/>
+      <Parameter name="map: name" type="string" value="Primal interface DOF map"/>
+      <Parameter name="P" type="string" value="myTentativePFact1"/>
+      <Parameter name="nullspace vectors: limit to" type="string" value="translations"/>
     </ParameterList>
 
     <ParameterList name="myInterfaceAggs2">
       <Parameter name="factory" type="string" value="InterfaceAggregationFactory"/>
-      <Parameter name="Aggregates" type="string" value="myAggFact1"/> <!-- use aggregates from primal block! -->
-      <Parameter name="number of DOFs per dual node" type="int" value="1"/>
-      <Parameter name="Dual/primal mapping strategy" type="string" value="node-based"/>
-      <Parameter name="DualNodeID2PrimalNodeID" type="string" value="myInterfaceMappingFact" />
-    </ParameterList>
-
-    <ParameterList name="myInterfaceMappingFactDeps" >
-      <Parameter name="dependency for" type="string" value="myInterfaceMappingFact" />
-      <Parameter name="CoarseDualNodeID2PrimalNodeID" type="string" value="myInterfaceAggs2" />
+      <Parameter name="A" type="string" value="mySubBlockAFactoryOffDiagonal"/>
+      <Parameter name="Aggregates" type="string" value="myAggFact1"/>
+      <Parameter name="Dual/primal mapping strategy" type="string" value="dof-based"/>
+      <Parameter name="Primal interface DOF map" type="string" value="myInterfaceMapTransFact"/>
     </ParameterList>
 
     <ParameterList name="myTentativePFact2">
@@ -91,11 +82,11 @@
       <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
       <Parameter name="Aggregates" type="string" value="myInterfaceAggs2"/>
       <Parameter name="CoarseMap" type="string" value="myCoarseMap2"/>
+      <Parameter name="tentative: calculate qr" type="bool" value="true"/>
+      <Parameter name="tentative: build coarse coordinates" type="bool" value="false"/>
+      <Parameter name="UnAmalgamationInfo" type="string" value="myInterfaceAggs2"/>
     </ParameterList>
 
-    <!-- We have to use Nullspace2 here. If "Nullspace2" is not set the
-         Factory creates the default null space containing of constant
-         vectors (here only one constant vector) -->
     <ParameterList name="myNspFact2">
       <Parameter name="factory" type="string" value="NullspaceFactory"/>
       <Parameter name="Fine level nullspace" type="string" value="Nullspace2"/>
@@ -107,10 +98,9 @@
     <!-- Multigrid setup for primal block (A_{00}) -->
     <ParameterList name="myFirstGroup">
       <Parameter name="group" type="string" value="FactoryManager"/>
-      <Parameter name="use kokkos refactor" type="bool"     value="false"/>
+      <Parameter name="use kokkos refactor" type="bool" value="false"/>
       <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
       <Parameter name="P" type="string" value="myTentativePFact1"/>
-      <Parameter name="R" type="string" value="myRFact1"/>
       <Parameter name="Aggregates" type="string" value="myAggFact1"/>
       <Parameter name="Nullspace" type="string" value="myNspFact1"/>
       <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
@@ -119,12 +109,13 @@
     <!-- Multigrid setup for dual block (A_{11}) -->
     <ParameterList name="mySecondGroup">
       <Parameter name="group" type="string" value="FactoryManager"/>
-      <Parameter name="use kokkos refactor" type="bool"     value="false"/>
+      <Parameter name="use kokkos refactor" type="bool" value="false"/>
       <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
       <Parameter name="P" type="string" value="myTentativePFact2"/>
       <Parameter name="Aggregates" type="string" value="myInterfaceAggs2"/>
       <Parameter name="Nullspace" type="string" value="myNspFact2"/>
       <Parameter name="CoarseMap" type="string" value="myCoarseMap2"/>
+      <Parameter name="Primal interface DOF map" type="string" value="myInterfaceMapTransFact"/>
     </ParameterList>
 
     <!-- BLOCK TRANSFER operators -->
@@ -152,9 +143,6 @@
       <Parameter name="factory" type="string" value="BlockedRAPFactory"/>
       <Parameter name="P" type="string" value="myBlockedPFact"/>
       <Parameter name="R" type="string" value="myBlockedRFact"/>
-      <ParameterList name="TransferFactories">
-        <Parameter name="DoTransferSpecialMappingForAggregates"     type="string" value="myInterfaceMappingFact"/>
-      </ParameterList>
     </ParameterList>
 
     <!-- BLOCK SMOOTHERS -->
@@ -162,16 +150,16 @@
       <Parameter name="factory" type="string" value="TrilinosSmoother"/>
       <Parameter name="type" type="string" value="RELAXATION"/>
       <ParameterList name="ParameterList">
-        <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
-        <Parameter name="relaxation: sweeps" type="int"    value="5"/>
-        <Parameter name="relaxation: damping factor" type="double" value="0.9"/>
+        <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps" type="int" value="1"/>
+        <Parameter name="relaxation: damping factor" type="double" value="0.4"/>
       </ParameterList>
     </ParameterList>
 
     <!-- Build Schur Complement factory (for being used in SIMPLE type block smoother)-->
     <ParameterList name="mySchurCompFact">
       <Parameter name="factory" type="string" value="SchurComplementFactory"/>
-      <Parameter name="omega" type="double" value="1.0"/>
+      <Parameter name="omega" type="double" value="0.6"/> <!-- should be the same as the Simple damping factor-->
       <Parameter name="lumping" type="bool" value="true"/>
     </ParameterList>
 
@@ -180,19 +168,17 @@
       <Parameter name="factory" type="string" value="TrilinosSmoother"/>
       <Parameter name="type" type="string" value="RELAXATION"/>
       <ParameterList name="ParameterList">
-        <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
-        <Parameter name="relaxation: sweeps" type="int"    value="5"/>
-        <Parameter name="relaxation: damping factor" type="double" value="0.9"/>
+        <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps" type="int" value="3"/>
+        <Parameter name="relaxation: damping factor" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
 
     <!-- Use SIMPLE: -->
-    <!-- User has to define two blocks with each containing a smoother for
-         the corresponding sub-block matrix (see above) -->
     <ParameterList name="myBlockSmoother">
       <Parameter name="factory" type="string" value="SimpleSmoother"/>
-      <Parameter name="Sweeps" type="int" value="2"/>
-      <Parameter name="Damping factor" type="double" value="0.9"/>
+      <Parameter name="Sweeps" type="int" value="3"/>
+      <Parameter name="Damping factor" type="double" value="0.6"/>
       <Parameter name="UseSIMPLEC" type="bool" value="false"/>
       <!-- factory manager for block 1 -->
       <ParameterList name="block1">
@@ -224,7 +210,7 @@
     <ParameterList name="AllLevel">
       <Parameter name="startLevel"        type="int"      value="0"/>
       <Parameter name="Smoother"          type="string"   value="myBlockSmoother"/>
-      <Parameter name="CoarseSolver"      type="string"   value="myBlockDirectSolver"/>
+      <Parameter name="CoarseSolver"      type="string"   value="myBlockSmoother"/>
       <Parameter name="P"                 type="string"   value="myBlockedPFact"/>
       <Parameter name="R"                 type="string"   value="myBlockedRFact"/>
       <Parameter name="A"                 type="string"   value="myBlockedRAPFact"/>
