@@ -1,6 +1,7 @@
 import subprocess
 import csv
 import os
+from WrapperCommandLineParser import WrapperCommandLineParser
 
 def get_full_header(fields_list,full_header_map):
   return ','.join([ full_header_map[f] for f in fields_list ])
@@ -133,38 +134,38 @@ class WrapperOpTimer:
   field_arg = '--format=' + field_header_full + '\n' + ','.join([ '%{}'.format(f) for f in default_fields] )
 
   @staticmethod
-  def time_op(op,
-              op_output_file,
-              output_stats_file,
-              op_args,
-              base_build_dir=None):
-    """
-      evaluate 'op' with 'op_args', and gather stats into output_stats_file
-    """
-#    if os.path.exists(output_stats_file) and os.path.getsize(output_stats_file) > 0:
-#      print("WARNING: File '"+output_stats_file+"' exists and will be overwritten")
-#      print("op='"+op+"'")
-#      print("op_args='"+str(op_args)+"'")
-#      print("op_output_file='"+op_output_file+"'")
-
-    cmd = [
-            '/usr/bin/time',
-            # '--append',
-            '--output=' + output_stats_file,
-            WrapperOpTimer.field_arg,
-           op ] + op_args
-
-    # print(' '.join(cmd))
+  def run_cmd(cmd):
     p = subprocess.Popen(cmd)
     p.communicate()
     returncode = p.returncode
+    return returncode
+
+  @staticmethod
+  def time_op(wcp):
+    """
+      evaluate 'op' with 'op_args', and gather stats into output_stats_file
+    """
+    # if os.path.exists(output_stats_file) and os.path.getsize(output_stats_file) > 0:
+    #   print("WARNING: File '"+output_stats_file+"' exists and will be overwritten")
+    #   print("op='"+op+"'")
+    #   print("op_args='"+str(op_args)+"'")
+    #   print("op_output_file='"+op_output_file+"'")
 
     # initializing the titles and rows list
     fields = []
     csv_row = {}
 
+    cmd = [
+            '/usr/bin/time',
+            # '--append',
+            '--output=' + wcp.output_stats_file,
+            WrapperOpTimer.field_arg,
+            wcp.op ] + wcp.op_args
+
+    returncode = WrapperOpTimer.run_cmd(cmd)
+
     # reading csv file
-    with open(output_stats_file, 'r') as csvfile:
+    with open(wcp.output_stats_file, 'r') as csvfile:
       # creating a csv reader object
       csvreader = csv.reader(csvfile)
 
@@ -178,25 +179,25 @@ class WrapperOpTimer:
         csv_row = dict(zip(fields, row))
 
     # FileSize
-    csv_row['FileSize'] = WrapperOpTimer.get_file_size(op_output_file)
+    csv_row['FileSize'] = WrapperOpTimer.get_file_size(wcp.op_output_file)
 
     # add a field with the short op
-    csv_row['op'] = os.path.basename(op)
+    csv_row['op'] = os.path.basename(wcp.op)
 
     # FileName
-    if base_build_dir:
-      abs_base_build_dir = os.path.abspath(base_build_dir)
+    if wcp.base_build_dir:
+      abs_base_build_dir = os.path.abspath(wcp.base_build_dir)
       current_working_dir = os.path.abspath(os.getcwd())
       rel_path_to_base_build_dir = os.path.relpath(
         current_working_dir, start=abs_base_build_dir)
-      rel_op_output_file = os.path.join(rel_path_to_base_build_dir, op_output_file)
+      rel_op_output_file = os.path.join(rel_path_to_base_build_dir, wcp.op_output_file)
     else:
-      rel_op_output_file = op_output_file
+      rel_op_output_file = wcp.op_output_file
     csv_row['FileName'] = rel_op_output_file
 
     # Remove the build stats output file if the build failed
-    if returncode != 0 and os.path.exists(output_stats_file):
-      os.remove(output_stats_file)
+    if returncode != 0 and os.path.exists(wcp.output_stats_file):
+      os.remove(wcp.output_stats_file)
 
     return (csv_row, returncode)
 

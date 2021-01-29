@@ -19,6 +19,8 @@ class WrapperCommandLineParser:
     self.print_csv_banner = False
     # whatever the op's args should be
     self.op_args = []
+    # whether we have the output arg
+    self.have_output_arg = False
     self.parse_cmdline_args(cmdline_args)
 
   def __repr__(self):
@@ -26,6 +28,9 @@ class WrapperCommandLineParser:
 
   def __str__(self):
     return self.lcl_print()
+
+  def generate_stats(self):
+    return self.have_output_arg
 
   def lcl_print(self):
     fmt_string = [
@@ -42,7 +47,8 @@ class WrapperCommandLineParser:
                   print_csv_banner=self.print_csv_banner)
 
   def parse_cmdline_arg_helper(self, cmdline_args):
-    
+
+    self.have_output_arg = False
     # we want to do something different for ar, ranlib, or ld.*
     # these commands do not necessarily have a good 'output' arg denoted by -o
     # first try to find -o, if that passes then use it.
@@ -54,7 +60,8 @@ class WrapperCommandLineParser:
       output_idx = cmdline_args.index('-o')
       self.op_output_file = cmdline_args[output_idx+1]
       self.output_stats_file = self.op_output_file + '.' + self.output_stats_file
-  
+ 
+      self.have_output_arg = True 
       return
 
     except:
@@ -66,6 +73,7 @@ class WrapperCommandLineParser:
         if arg.endswith('.a'):
           self.op_output_file = arg
           self.output_stats_file = arg + '.' + self.output_stats_file
+          self.have_output_arg = True
           return
       # we hit this if we can't find a .a
       return

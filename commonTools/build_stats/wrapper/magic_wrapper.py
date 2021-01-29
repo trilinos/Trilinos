@@ -38,13 +38,18 @@ def main(cmdline_args):
   # keep a dict of field : value
   # first do the operation
   # this must be first, as it generates the output file
-  (csv_map, returncode) = \
-     WrapperOpTimer.time_op(
-       base_build_dir=wcp.base_build_dir,
-       op=wcp.op,
-       op_output_file=wcp.op_output_file,
-       output_stats_file=wcp.output_stats_file,
-       op_args=wcp.op_args)
+  #
+  # WARNING: Be very careful with stdout before these commands.  If the wrapped command
+  # has shell redirection it can slurp up Python's output... best to require all messages
+  # go after the compiler commnand has completed.
+  if wcp.generate_stats():
+    (csv_map, returncode) = WrapperOpTimer.time_op(wcp)
+    #print("======> Gathering stats...", file=sys.stdout)
+  else:
+    # only run the command and return the return code
+    returncode = WrapperOpTimer.run_cmd([wcp.op] + wcp.op_args)
+    #print("##======> NO stats {}".format(wcp.op_output_file), file=sys.stdout)
+    return returncode
 
   if returncode == 0:
     # test nm
