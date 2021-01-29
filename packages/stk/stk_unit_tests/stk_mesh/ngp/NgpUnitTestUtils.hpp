@@ -8,6 +8,7 @@
 #include <stk_mesh/base/NgpMesh.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
 
@@ -90,7 +91,7 @@ inline void check_bucket_layout(const stk::mesh::BulkData& bulk, const std::vect
   }
   Kokkos::deep_copy(bucketPartOrdinals, hostBucketPartOrdinals);
 
-  stk::mesh::NgpMesh & ngpMesh = bulk.get_updated_ngp_mesh();
+  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(size_t /*index*/) {
                          NGP_ASSERT_EQ(ngpMesh.num_buckets(stk::topology::ELEM_RANK), numBuckets);
                          for (unsigned i = 0; i < numBuckets; ++i) {

@@ -38,6 +38,7 @@
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <string>                       // for string
+#include <cstdlib>                   // for unsetenv, setenv
 
 #include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Comm, etc
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
@@ -221,6 +222,7 @@ class TestChangePartsWithSelector : public stk::unit_test_util::MeshFixture
 public:
   TestChangePartsWithSelector() : stk::unit_test_util::MeshFixture(3)
   {
+    setenv("STK_MESH_RUN_CONSISTENCY_CHECK", "ON", 1);
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   }
 
@@ -682,6 +684,54 @@ TEST_F(TestChangePartsWithSelector, element_in_ranked_part_move_to_unranked_part
 
   const stk::mesh::BucketVector& buckets = get_bulk().buckets(stk::topology::ELEM_RANK);
   test_partitions_equality(stk::topology::ELEM_RANK, buckets[0], buckets[1]);
+}
+
+TEST_F(TestChangePartsWithSelector, two_procs_with_different_selectors)
+{
+  if(get_bulk().parallel_size() != 2) { return; }
+
+  unsigned numBlockParts = 2;
+  unsigned numElem = 2;
+  stk::mesh::PartVector parts;
+  setup_n_ranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+
+  insert_into_add_part(block2Part);
+  insert_into_remove_part(block1Part);
+
+  stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
+
+  if(get_bulk().parallel_rank() == 0) {
+    EXPECT_ANY_THROW(get_bulk().batch_change_entity_parts(stk::mesh::Selector(*block1Part), rank, addParts, removeParts));
+  } else {
+    EXPECT_ANY_THROW(get_bulk().batch_change_entity_parts(stk::mesh::Selector(*block2Part), rank, addParts, removeParts));
+  }
+}
+
+TEST_F(TestChangePartsWithSelector, two_procs_with_different_parts)
+{
+  if(get_bulk().parallel_size() != 2) { return; }
+
+  unsigned numBlockParts = 3;
+  unsigned numElem = 2;
+  stk::mesh::PartVector parts;
+  setup_n_ranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+  stk::mesh::Part* block3Part = parts[2];
+
+  insert_into_remove_part(block1Part);
+  if(get_bulk().parallel_rank() == 0) {
+    insert_into_add_part(block2Part);
+  } else {
+    insert_into_add_part(block3Part);
+  }
+
+  stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
+  EXPECT_ANY_THROW(get_bulk().batch_change_entity_parts(stk::mesh::Selector(*block1Part), rank, addParts, removeParts));
 }
 
 }

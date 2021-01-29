@@ -177,11 +177,13 @@ private:
 struct RelationUpdate
 {
   RelationUpdate(const Entity face_, const Entity element_, const ConnectivityOrdinal ordinal_)
-  : face(face_), element(element_), ordinal(ordinal_) { }
+  : face(face_), element(element_), ordinal(ordinal_), removed(false) { }
+  RelationUpdate() : face(), element(), ordinal(INVALID_CONNECTIVITY_ORDINAL), removed(false) {}
 
   Entity face;
   Entity element;
   ConnectivityOrdinal ordinal;
+  bool removed;
 
   inline bool operator==( const RelationUpdate & rhs ) const
   {
@@ -253,6 +255,9 @@ class IncrementalSidesetUpdater : public SidesetUpdater
 public:
     IncrementalSidesetUpdater(BulkData &bulk, Selector& activeSelector)
     : SidesetUpdater(bulk, activeSelector)
+    , m_relationUpdatesAreSorted(true)
+    , m_relationUpdatesRemoved(false)
+    , m_elemChangedRankedParts(false)
     {
     }
 
@@ -276,8 +281,11 @@ private:
     std::vector<SideSet*> m_sidesets;
     std::map<const Part*, Selector> m_cachedSidesetSelectors;
     std::vector<RelationUpdate> m_relationUpdates;
+    bool m_relationUpdatesAreSorted;
+    bool m_relationUpdatesRemoved;
     ConstPartVector m_surfacesTouchingBlocks;
     std::vector<BlockToSurfaceMapping> m_cachedBlockToSurfaceMapping;
+    bool m_elemChangedRankedParts;
 
     const Selector& get_cached_sideset_selector(const Part* part);
     const ConstPartVector& get_cached_surfaces_touching_block(const Part& part);

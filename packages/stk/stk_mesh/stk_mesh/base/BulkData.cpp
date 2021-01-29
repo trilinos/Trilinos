@@ -43,8 +43,6 @@
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityRank, etc
 #include "stk_mesh/base/ForEachEntity.hpp"
-#include <stk_mesh/base/HostMeshManager.hpp>
-#include <stk_mesh/base/DeviceMeshManager.hpp>
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
 #include "stk_mesh/baseImpl/Visitors.hpp"
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
@@ -69,7 +67,7 @@
 #include <iterator>                     // for back_insert_iterator, etc
 #include <set>                          // for set, set<>::iterator, etc
 #include <sstream>
-#include <stddef.h>                     // for size_t, NULL
+#include <stddef.h>                     // for size_t
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket, BucketIdComparator, etc
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FaceCreator.hpp>
@@ -77,6 +75,9 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include <stk_mesh/base/SideSetHelper.hpp>
+#include <stk_mesh/base/NgpMeshBase.hpp>
+#include <stk_mesh/base/NgpUtils.hpp>
+#include "stk_mesh/base/GetNgpMesh.hpp"
 #include <stk_mesh/baseImpl/ElementTopologyDeletions.hpp>
 #include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
 #include <stk_mesh/baseImpl/check_comm_list.hpp>
@@ -190,7 +191,7 @@ void BulkData::mark_shared_sides_and_fill_list_of_sides_not_on_boundary(std::vec
 
         stk::mesh::impl::find_locally_owned_elements_these_nodes_have_in_common(*this, nodes.size(), nodes.data(), common_elements);
 
-        if (only_consider_second_element_from_this_selector != NULL)
+        if (only_consider_second_element_from_this_selector != nullptr)
         {
             removeEntitiesNotSelected(*this, *only_consider_second_element_from_this_selector, common_elements);
         }
@@ -369,7 +370,7 @@ BulkData::BulkData(MetaData & mesh_meta_data,
     m_local_ids(),
     m_default_field_data_manager(mesh_meta_data.entity_rank_count()),
     m_field_data_manager(field_data_manager),
-    m_selector_to_buckets_map(),
+    m_selector_to_buckets_maps(stk::topology::NUM_RANKS),
     m_bucket_repository(
         *this,
         mesh_meta_data.entity_rank_count(),
@@ -378,7 +379,7 @@ BulkData::BulkData(MetaData & mesh_meta_data,
     m_modSummary(*this),
     m_meshDiagnosticObserver(std::make_shared<stk::mesh::MeshDiagnosticObserver>(*this)),
     m_sideSetData(*this),
-    m_ngpMeshManager(nullptr),
+    m_ngpMeshBase(nullptr),
     m_isDeviceMeshRegistered(false),
     m_ngpFieldSyncBufferModCount(0),
     m_runConsistencyCheck(false),
@@ -395,7 +396,7 @@ BulkData::BulkData(MetaData & mesh_meta_data,
 
   m_entity_comm_map.setCommMapChangeListener(&m_comm_list_updater);
 
-  if (m_field_data_manager == NULL)
+  if (m_field_data_manager == nullptr)
   {
       m_field_data_manager = &m_default_field_data_manager;
   }
@@ -436,35 +437,27 @@ BulkData::~BulkData()
     m_ghosting.pop_back();
   }
 
-  mesh_meta_data().set_mesh_bulk_data(NULL);
+  mesh_meta_data().set_mesh_bulk_data(nullptr);
 
   delete m_elemElemGraph;
   delete m_entity_repo;
 
-  delete m_ngpMeshManager;
+  delete m_ngpMeshBase;
 }
 
-NgpMesh &
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after February 2021
+STK_DEPRECATED NgpMesh &
 BulkData::get_updated_ngp_mesh() const
 {
-  update_ngp_mesh();
-
-  return m_ngpMeshManager->get_mesh();
+  return stk::mesh::get_updated_ngp_mesh(*this);
 }
 
-void
+STK_DEPRECATED void
 BulkData::update_ngp_mesh() const
 {
-  if (m_ngpMeshManager == nullptr) {
-#ifdef STK_USE_DEVICE_MESH
-    m_ngpMeshManager = new DeviceMeshManager(*this);
-#else
-    m_ngpMeshManager = new HostMeshManager(*this);
-#endif
-  }
-
-  m_ngpMeshManager->update_mesh();
+  stk::mesh::get_updated_ngp_mesh(*this);
 }
+#endif
 
 void
 BulkData::register_device_mesh() const
@@ -555,7 +548,7 @@ void BulkData::require_ok_to_modify() const
 void BulkData::require_entity_owner( const Entity entity ,
                                      int owner ) const
 {
-  if (parallel_size() > 1 && bucket_ptr(entity) != NULL) {
+  if (parallel_size() > 1 && bucket_ptr(entity) != nullptr) {
     const bool error_not_owner = owner != parallel_owner_rank(entity) ;
 
     ThrowRequireMsg( !error_not_owner,
@@ -659,7 +652,7 @@ Entity BulkData::generate_new_entity(unsigned preferred_offset)
     m_deleted_entities.pop_front();
   }
 
-  MeshIndex mesh_index = {NULL, 0};
+  MeshIndex mesh_index = {nullptr, 0};
   EntityKey invalid_key;
 
   if (new_local_offset == m_mesh_indexes.size()) {
@@ -674,7 +667,7 @@ Entity BulkData::generate_new_entity(unsigned preferred_offset)
 
 #ifdef SIERRA_MIGRATION
     if (m_add_fmwk_data) {
-      m_fmwk_aux_relations.push_back(NULL);
+      m_fmwk_aux_relations.push_back(nullptr);
       m_fmwk_global_ids.push_back(0);
     }
 #endif
@@ -695,7 +688,7 @@ Entity BulkData::generate_new_entity(unsigned preferred_offset)
     if (m_add_fmwk_data) {
       //bulk-data allocated aux-relation vector, so delete it here.
       delete m_fmwk_aux_relations[new_local_offset];
-      m_fmwk_aux_relations[new_local_offset] = NULL;
+      m_fmwk_aux_relations[new_local_offset] = nullptr;
       m_fmwk_global_ids[new_local_offset] = 0;
     }
 #endif
@@ -709,7 +702,7 @@ void BulkData::initialize_arrays()
   ThrowRequireMsg((m_mesh_indexes.size() == 0) && (m_entity_keys.size() == 0),
                    "BulkData::initialize_arrays() called by something other than constructor");
 
-  MeshIndex mesh_index = {NULL, 0};
+  MeshIndex mesh_index = {nullptr, 0};
   m_mesh_indexes.push_back(mesh_index);
 
   EntityKey invalid_key;
@@ -723,7 +716,7 @@ void BulkData::initialize_arrays()
 
 #ifdef SIERRA_MIGRATION
   if (m_add_fmwk_data) {
-    m_fmwk_aux_relations.push_back(NULL);
+    m_fmwk_aux_relations.push_back(nullptr);
     m_fmwk_global_ids.push_back(0);
   }
 #endif
@@ -1841,12 +1834,12 @@ void BulkData::unregister_observer(std::shared_ptr<ModificationObserver> observe
 void BulkData::new_bucket_caching(EntityRank rank, Bucket* new_bucket)
 {
     // update selector map
-    if (new_bucket != NULL) {
-      for (SelectorBucketMap::iterator itr = m_selector_to_buckets_map.begin(), end = m_selector_to_buckets_map.end();
+    if (new_bucket != nullptr) {
+      SelectorBucketMap& selectorBucketMap = m_selector_to_buckets_maps[rank];
+      for (SelectorBucketMap::iterator itr = selectorBucketMap.begin(), end = selectorBucketMap.end();
            itr != end; ++itr) {
-        Selector const& sel = itr->first.second;
-        const EntityRank map_rank = itr->first.first;
-        if (map_rank == rank && sel(*new_bucket)) {
+        Selector const& sel = itr->first;
+        if (sel(*new_bucket)) {
           BucketVector & cached_buckets = itr->second;
           BucketVector::iterator lb_itr = std::lower_bound(cached_buckets.begin(), cached_buckets.end(), new_bucket, BucketIdComparator());
           cached_buckets.insert(lb_itr, new_bucket);
@@ -1857,14 +1850,13 @@ void BulkData::new_bucket_caching(EntityRank rank, Bucket* new_bucket)
 
 void BulkData::remove_bucket_caching(EntityRank rank, const Selector selector)
 {
-  for(SelectorBucketMap::iterator iter = m_selector_to_buckets_map.begin(), end = m_selector_to_buckets_map.end();
+  SelectorBucketMap& selectorBucketMap = m_selector_to_buckets_maps[rank];
+  for(SelectorBucketMap::iterator iter = selectorBucketMap.begin(), end = selectorBucketMap.end();
       iter != end; ++iter) {
 
-    Selector const& sel = iter->first.second;
-    const EntityRank map_rank = iter->first.first;
-
-    if (map_rank == rank && sel == selector) {
-      m_selector_to_buckets_map.erase(iter);
+    Selector const& sel = iter->first;
+    if (sel == selector) {
+      selectorBucketMap.erase(iter);
     }
   }
 }
@@ -1977,11 +1969,11 @@ void BulkData::destroy_bucket_callback(EntityRank rank, Bucket const& dying_buck
   const unsigned bucket_id = dying_bucket.bucket_id();
 
   if (!m_bucket_repository.being_destroyed()) {
-    for (SelectorBucketMap::iterator itr = m_selector_to_buckets_map.begin(), end = m_selector_to_buckets_map.end();
+    SelectorBucketMap& selectorBucketMap = m_selector_to_buckets_maps[rank];
+    for (SelectorBucketMap::iterator itr = selectorBucketMap.begin(), end = selectorBucketMap.end();
          itr != end; ++itr) {
-      Selector const& sel = itr->first.second;
-      const EntityRank map_rank = itr->first.first;
-      if (map_rank == rank && !itr->second.empty() && sel(dying_bucket)) {
+      Selector const& sel = itr->first;
+      if (!itr->second.empty() && sel(dying_bucket)) {
         BucketVector & cached_buckets = itr->second;
         BucketVector::iterator lb_itr = std::lower_bound(cached_buckets.begin(), cached_buckets.end(), bucket_id, BucketIdComparator());
         ThrowAssertMsg(lb_itr != cached_buckets.end() && (*lb_itr)->bucket_id() == bucket_id,
@@ -2004,7 +1996,7 @@ void BulkData::update_field_data_states(FieldBase* field)
   const int numStates = field->number_of_states();
   if (numStates > 1) {
 #ifdef STK_DEBUG_FIELD_SYNC
-    ThrowRequireMsg(!field->has_device_field_debug_data(), "Field state rotation currently unsupported for Field sync debugging");
+    ThrowRequireMsg(!field->has_ngp_field(), "Field state rotation currently unsupported for Field sync debugging");
 #endif
 
     field->rotate_multistate_data();
@@ -2055,7 +2047,8 @@ Entity BulkData::get_entity( const EntityKey key ) const
 
 void BulkData::reorder_buckets_callback(EntityRank rank, const std::vector<unsigned>& reorderedBucketIds)
 {
-  for (SelectorBucketMap::iterator itr = m_selector_to_buckets_map.begin(), end = m_selector_to_buckets_map.end();
+  SelectorBucketMap& selectorBucketMap = m_selector_to_buckets_maps[rank];
+  for (SelectorBucketMap::iterator itr = selectorBucketMap.begin(), end = selectorBucketMap.end();
        itr != end; ++itr) {
     BucketVector& cached_buckets = itr->second;
     std::sort(cached_buckets.begin(), cached_buckets.end(), BucketIdComparator());
@@ -2130,17 +2123,24 @@ void BulkData::erase_and_clear_if_empty(Entity entity, RelationIterator rel_itr)
 
 BucketVector const& BulkData::get_buckets(EntityRank rank, Selector const& selector) const
 {
-  std::pair<EntityRank, Selector> search_item = std::make_pair(rank, selector);
+  if (rank == stk::topology::INVALID_RANK) {
+    static BucketVector empty;
+    return empty;
+  }
+
+  ThrowAssertMsg(static_cast<size_t>(rank) < m_selector_to_buckets_maps.size(), "BulkData::get_buckets, EntityRank ("<<rank<<") out of range.");
+
+  SelectorBucketMap& selectorBucketMap = m_selector_to_buckets_maps[rank];
   SelectorBucketMap::iterator fitr =
-    m_selector_to_buckets_map.find(search_item);
-  if (fitr != m_selector_to_buckets_map.end()) {
+    selectorBucketMap.find(selector);
+  if (fitr != selectorBucketMap.end()) {
     BucketVector const& rv = fitr->second;
     return rv;
   }
   else {
     BucketVector const& all_buckets_for_rank = buckets(rank); // lots of potential side effects! Need to happen before map insertion
     std::pair<SelectorBucketMap::iterator, bool> insert_rv =
-      m_selector_to_buckets_map.emplace(search_item, BucketVector() );
+      selectorBucketMap.emplace(selector, BucketVector() );
     ThrowAssertMsg(insert_rv.second, "Should not have already been in map");
     BucketVector& map_buckets = insert_rv.first->second;
     for (size_t i = 0, e = all_buckets_for_rank.size(); i < e; ++i) {
@@ -2401,7 +2401,7 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
 
   //------------------------------
   // When removing a relationship may need to
-  // remove part membership and set field relation pointer to NULL
+  // remove part membership and set field relation pointer to nullptr
 
   m_check_invalid_rels = false; // OK to have gaps when deleting
   OrdinalVector scratchOrdinalVec, scratchSpace;
@@ -2421,8 +2421,8 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
     // For all relations that are *not* being deleted, add induced parts for
     // these relations to the 'keep' vector
     {
-      Entity const* rel_entities = NULL;
-      ConnectivityOrdinal const* rel_ordinals = NULL;
+      Entity const* rel_entities = nullptr;
+      ConnectivityOrdinal const* rel_ordinals = nullptr;
       int num_rels = 0;
       for (EntityRank irank = static_cast<EntityRank>(e_to_entity_rank + 1); irank < end_rank; ++irank) {
         num_rels     = num_connectivity(e_to, irank);
@@ -3041,14 +3041,14 @@ void BulkData::destroy_all_ghosting()
       if(entity_is_not_shared)
       {
         i->key = EntityKey();
-        i->entity_comm = NULL;
+        i->entity_comm = nullptr;
       }
     }
     else {
       entity_comm_map_clear_ghosting(i->key);
       if ( internal_entity_comm_map(i->key).empty() ) {
         i->key = EntityKey();
-        i->entity_comm = NULL;
+        i->entity_comm = nullptr;
       }
     }
   }
@@ -4494,7 +4494,7 @@ void BulkData::update_comm_list_based_on_changes_in_comm_map()
 {
   bool changed = false ;
   for (EntityCommListInfo& entityCommInfo : m_entity_comm_list) {
-      if (entityCommInfo.entity_comm == NULL) {
+      if (entityCommInfo.entity_comm == nullptr) {
           entityCommInfo.key = EntityKey();
           changed = true;
       }
@@ -4554,11 +4554,13 @@ bool BulkData::internal_modification_end_for_change_parts(ModEndOptimizationFlag
 
     m_bucket_repository.internal_modification_end();
 
-    for (SelectorBucketMap::iterator itr = m_selector_to_buckets_map.begin(), end = m_selector_to_buckets_map.end(); itr != end; ++itr) {
-      if (itr->second.empty()) {
-        itr = m_selector_to_buckets_map.erase(itr);
-        if (itr == end) {
-          break;
+    for (SelectorBucketMap& selectorBucketMap : m_selector_to_buckets_maps) {
+      for (SelectorBucketMap::iterator itr = selectorBucketMap.begin(), end = selectorBucketMap.end(); itr != end; ++itr) {
+        if (itr->second.empty()) {
+          itr = selectorBucketMap.erase(itr);
+          if (itr == end) {
+            break;
+          }
         }
       }
     }
@@ -4792,21 +4794,19 @@ void BulkData::internal_finish_modification_end(ModEndOptimizationFlag opt)
 
     internal_update_all_sharing_procs();
 
-#ifdef STK_DEBUG_FIELD_SYNC
     for (FieldBase * stkField : mesh_meta_data().get_fields()) {
-      if (stkField->has_device_field_debug_data()) {
-        stkField->reset_debug_state();
-        stkField->get_debug_ngp_field()->update_debug_storage(synchronized_count());
-        stkField->fill_last_mod_location_view_from_host();
+      if (stkField->has_ngp_field()) {
+        impl::get_ngp_field(*stkField)->debug_modification_end(synchronized_count());
       }
     }
-#endif
 
-    for (SelectorBucketMap::iterator itr = m_selector_to_buckets_map.begin(), end = m_selector_to_buckets_map.end(); itr != end; ++itr) {
-      if (itr->second.empty()) {
-        itr = m_selector_to_buckets_map.erase(itr);
-        if (itr == end) {
-          break;
+    for(SelectorBucketMap& selectorBucketMap : m_selector_to_buckets_maps) {
+      for (SelectorBucketMap::iterator itr = selectorBucketMap.begin(), end = selectorBucketMap.end(); itr != end; ++itr) {
+        if (itr->second.empty()) {
+          itr = selectorBucketMap.erase(itr);
+          if (itr == end) {
+            break;
+          }
         }
       }
     }
@@ -5348,6 +5348,10 @@ void BulkData::batch_change_entity_parts(const Selector& selector,
                                          const PartVector& remove_parts,
                                          ModEndOptimizationFlag opt)
 {
+    if(m_runConsistencyCheck) {
+      impl::check_matching_selectors_and_parts_across_procs(selector, add_parts, remove_parts, parallel());
+    }
+
     bool stkMeshRunningUnderFramework = m_add_fmwk_data;
     if(!stkMeshRunningUnderFramework)
     {
@@ -5472,7 +5476,7 @@ void BulkData::internal_change_entity_parts(
     require_ok_to_modify();
 
     Bucket * const bucket_old = bucket_ptr(entity);
-    bool needToChangeParts = bucket_old == NULL
+    bool needToChangeParts = bucket_old == nullptr
             || !bucket_old->member_all(add_parts)
             || bucket_old->member_any(remove_parts);
     if(needToChangeParts)
@@ -5516,7 +5520,9 @@ void BulkData::internal_change_entity_parts(
     }
   }
 
-  m_selector_to_buckets_map.clear();
+  for(SelectorBucketMap& selectorBucketMap : m_selector_to_buckets_maps) {
+    selectorBucketMap.clear();
+  }
 }
 
 void BulkData::internal_move_entity_to_new_bucket(stk::mesh::Entity entity, const OrdinalVector &newBucketPartList, OrdinalVector& /*scratchSpace*/)
@@ -5568,7 +5574,7 @@ void BulkData::internal_fill_new_part_list_and_removed_part_list(stk::mesh::Buck
     newBucketPartList.clear();
     ranked_parts_removed.clear();
 
-    if(bucket_old != NULL)
+    if(bucket_old != nullptr)
     {
         const std::pair<const unsigned *, const unsigned*> oldEntityPartMembership =
                 bucket_old->superset_part_ordinals();

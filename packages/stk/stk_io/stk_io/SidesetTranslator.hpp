@@ -64,13 +64,14 @@ void fill_element_and_side_ids_from_sideset(const stk::mesh::SideSet& sset,
 
   stk::mesh::Selector selector = *part & construct_sideset_selector(params);
   stk::mesh::Selector parentElementSelector =  (parentElementBlock == nullptr) ? stk::mesh::Selector() : *parentElementBlock;
+  const stk::mesh::EntityRank sideRank = part->primary_entity_rank();
 
   for(size_t i=0;i<sset.size();++i)
   {
     stk::mesh::Entity element = sset[i].element;
     stk::mesh::EntityId elemId = bulk_data.identifier(element);
     int zero_based_side_ord = sset[i].side;
-    stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulk_data, element, zero_based_side_ord);
+    stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair_of_rank(bulk_data, element, zero_based_side_ord, sideRank);
     if(bulk_data.is_valid(side))
     {
       if(selector(bulk_data.bucket(side)))

@@ -212,6 +212,8 @@ public:
         return m_parallelInfoForGraphEdges;
     }
 
+    unsigned mod_cycle_when_graph_modified() const { return m_modCycleWhenGraphModified; }
+
     const Graph& get_graph() const
     {
         return m_graph;
@@ -316,6 +318,7 @@ protected:
     stk::mesh::BulkData &m_bulk_data;
     Graph m_graph;
     ParallelInfoForGraphEdges m_parallelInfoForGraphEdges;
+    unsigned m_modCycleWhenGraphModified;
     std::vector<impl::LocalId> m_deleted_element_local_id_pool;
     std::vector<stk::topology> m_element_topologies;
     bool m_any_shell_elements_exist;

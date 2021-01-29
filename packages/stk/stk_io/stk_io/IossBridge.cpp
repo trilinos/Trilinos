@@ -302,25 +302,28 @@ namespace {
                                    std::vector<stk::mesh::Entity> &entities,
                                    Ioss::GroupingEntity *io_entity)
   {
-    size_t field_component_count = io_field.transformed_storage()->component_count();
+    size_t iossFieldLength = io_field.transformed_storage()->component_count();
     size_t entity_count = entities.size();
 
-    std::vector<T> io_field_data(entity_count*field_component_count);
+    std::vector<T> io_field_data(entity_count*iossFieldLength);
 
     field->sync_to_host();
     for (size_t i=0; i < entity_count; ++i) {
       if (mesh.is_valid(entities[i]) && mesh.entity_rank(entities[i]) == field->entity_rank()) {
         const T *fld_data = static_cast<T*>(stk::mesh::field_data(*field, entities[i]));
         if (fld_data != nullptr) {
-          for(size_t j=0; j<field_component_count; ++j) {
-            io_field_data[i*field_component_count+j] = fld_data[j];
+          size_t stkFieldLength = stk::mesh::field_scalars_per_entity(*field, entities[i]);
+          ThrowRequireMsg((iossFieldLength >= stkFieldLength), "Field "<<field->name()<<" scalars-per-entity="<<stkFieldLength<<" doesn't match Ioss iossFieldLength(="<<iossFieldLength<<") for io_entity "<<io_entity->name());
+          size_t length = std::min(iossFieldLength, stkFieldLength);
+          for(size_t j=0; j<length; ++j) {
+            io_field_data[i*iossFieldLength+j] = fld_data[j];
           }
         }
       }
     }
 
     size_t io_entity_count = io_entity->put_field_data(io_field.get_name(), io_field_data);
-    assert(io_field_data.size() == entities.size() * field_component_count);
+    assert(io_field_data.size() == entities.size() * iossFieldLength);
 
     if (io_entity_count != entity_count) {
       std::ostringstream errmsg;
@@ -1392,6 +1395,21 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         }
     }
 
+    bool field_should_be_added(const std::string& fieldDbName,
+                               unsigned numScalarsPerEntity,
+                               Ioss::GroupingEntity* iossEntity)
+    {
+      if (!iossEntity->field_exists(fieldDbName)) {
+        return true;
+      }
+      Ioss::Field iossField = iossEntity->get_field(fieldDbName);
+      size_t fieldComponentCount = iossField.transformed_storage()->component_count();
+      if (fieldComponentCount < numScalarsPerEntity) {
+        return true;
+      }
+      return false;
+    }
+
     void ioss_add_fields_for_subpart(const stk::mesh::Part &part,
                                      const stk::mesh::EntityRank part_type,
                                      Ioss::GroupingEntity *entity,
@@ -1409,19 +1427,32 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
             if (validSubsetPartField) {
                 const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, part_type, side_block_part);
-                if (part_rank == stk::topology::NODE_RANK) {
+                if (part_rank < stk::topology::ELEM_RANK) {
                     Ioss::Region* region = entity->get_database()->get_region();
                     if (nullptr != region) {
                         Ioss::GroupingEntity* tempEntity = region->get_entity(side_block_part.name());
-                        if ((nullptr != tempEntity) &&
-                                (tempEntity->type() == Ioss::NODESET || tempEntity->type() == Ioss::NODEBLOCK)) {
+                        if (nullptr != tempEntity) {
+                          const bool isEntityNodeRankOrSideSetBlock =
+                            (tempEntity->type() == Ioss::NODESET ||
+                             tempEntity->type() == Ioss::NODEBLOCK ||
+                             (tempEntity->type() == Ioss::SIDEBLOCK && entity->type() == Ioss::SIDESET));
+                          if (isEntityNodeRankOrSideSetBlock) {
                             subEntity = tempEntity;
+                          }
                         }
                     }
                 }
 
                 bool validIossField = namedField.is_nodeset_variable() ? (subEntity->type() == Ioss::NODESET) : true;
                 if((subEntity != nullptr) && validIossField) {
+                    if (subEntity != entity && subEntity->type() == Ioss::SIDEBLOCK) {
+                      const bool shouldAddFieldToParent =
+                          field_should_be_added(namedField.db_name(),
+                                    res.num_scalars_per_entity(), entity);
+                      if (shouldAddFieldToParent) {
+                        ioss_add_field_to_entity(f, res, entity, namedField, filter_role);
+                      }
+                    }
                     ioss_add_field_to_entity(f, res, subEntity, namedField, filter_role);
                 }
             }
@@ -1440,7 +1471,6 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
                                part_rank == stk::topology::EDGE_RANK ||
                                part_rank == stk::topology::FACE_RANK) &&
                               (blocks.size() > 0);
-
         for (size_t i=0; i<namedFields.size(); i++) {
             const stk::mesh::FieldBase *f = namedFields[i].field();
 
@@ -2604,6 +2634,50 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       }
     };
 
+    bool has_io_subset_but_no_non_assembly_io_superset(const stk::mesh::Part& part)
+    {
+      for(const stk::mesh::Part* superset : part.supersets()) {
+        if (stk::io::is_part_io_part(*superset) &&
+           !stk::io::is_part_assembly_io_part(*superset)) {
+          return false;
+        }
+      }
+      for(const stk::mesh::Part* subset : part.subsets()) {
+        if (stk::io::is_part_io_part(*subset)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    bool is_edge_rank_sideset_part(const stk::mesh::Part& part)
+    {
+      if (!stk::io::is_part_edge_block_io_part(part)) {
+        const unsigned spatialDim = part.mesh_meta_data().spatial_dimension();
+        if (part.primary_entity_rank() == stk::topology::EDGE_RANK) {
+          if (spatialDim == 2) {
+            return true;
+          }
+          if (spatialDim == 3 && has_io_subset_but_no_non_assembly_io_superset(part)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    bool is_face_rank_sideset_part(const stk::mesh::Part& part)
+    {
+      return part.primary_entity_rank() == stk::topology::FACE_RANK
+          && part.mesh_meta_data().spatial_dimension() == 3
+          && !is_part_face_block_io_part(part);
+    }
+
+    bool is_sideset_part(const stk::mesh::Part& part)
+    {
+      return is_face_rank_sideset_part(part) || is_edge_rank_sideset_part(part);
+    }
+
     void define_output_db_within_state_define(stk::io::OutputParams &params,
                                               const std::vector<std::vector<int>> &attributeOrdering,
                                               const Ioss::Region *input_region = nullptr)
@@ -2633,15 +2707,12 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
        const int spatialDim = meta_data.spatial_dimension();
 
        for (stk::mesh::Part* const part : *parts) {
-         stk::mesh::EntityRank rank = part->primary_entity_rank();
-         bool isIoPart = stk::io::is_part_io_part(*part);
-         bool isAssemblyIoPart = stk::io::is_part_assembly_io_part(*part);
-         bool isFaceBlockIoPart = stk::io::is_part_face_block_io_part(*part);
-         bool isEdgeBlockIoPart = stk::io::is_part_edge_block_io_part(*part);
-         bool isValidForOutput = is_valid_for_output(*part, params.get_output_selector(rank));
+         const stk::mesh::EntityRank rank = part->primary_entity_rank();
 
-         if (isIoPart) {
-           if (isAssemblyIoPart) {
+         if (is_part_io_part(*part)) {
+           bool isValidForOutput = is_valid_for_output(*part, params.get_output_selector(rank));
+
+           if (is_part_assembly_io_part(*part)) {
              define_assembly(params, *part);
            }
            else if (rank == mesh::InvalidEntityRank) {
@@ -2653,14 +2724,13 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
            else if ((rank == stk::topology::ELEMENT_RANK) && isValidForOutput) {
              define_element_block(params, *part, attributeOrdering, order_blocks_by_creation_order);
            }
-           else if ((rank == stk::topology::FACE_RANK) && isFaceBlockIoPart) {
+           else if (is_part_face_block_io_part(*part)) {
              define_face_block(params, *part);
            }
-           else if ((rank == stk::topology::EDGE_RANK) && isEdgeBlockIoPart) {
+           else if (is_part_edge_block_io_part(*part)) {
              define_edge_block(params, *part);
            }
-           else if ((rank == stk::topology::FACE_RANK) ||
-                    (rank == stk::topology::EDGE_RANK && spatialDim==2)) {
+           else if (is_sideset_part(*part)) {
              define_side_set(params, *part);
            }
            else if ((rank == stk::topology::EDGE_RANK) && spatialDim == 3 &&
@@ -2671,8 +2741,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
        }
 
        for (const stk::mesh::Part* part : *parts) {
-         bool isAssemblyIoPart = stk::io::is_part_assembly_io_part(*part);
-         if (isAssemblyIoPart) {
+         if (is_part_assembly_io_part(*part)) {
            define_assembly_hierarchy(params, *part);
          }
        }

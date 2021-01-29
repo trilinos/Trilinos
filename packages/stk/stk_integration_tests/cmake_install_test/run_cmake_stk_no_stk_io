@@ -4,10 +4,12 @@ trilinos_src_dir=${TRILINOS_DIR:-${PWD}/../Trilinos}
 build_dir=${BUILD_DIR:-${PWD}}
 build_type=${CMAKE_BUILD_TYPE:-release}
 trilinos_install_dir=${TRILINOS_INSTALL_DIR:-${PWD}/../trilinos_install_dir}
+cuda_on_or_off=${CUDA:-OFF}
 
 printf "\nTRILINOS_DIR=${trilinos_src_dir}\n";
 printf "BUILD_DIR=${build_dir}\n";
 printf "CMAKE_BUILD_TYPE=${build_type}\n";
+printf "CUDA=${cuda_on_or_off}\n";
 printf "TRILINOS_INSTALL_DIR=${trilinos_install_dir}\n";
 printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_cmake_stk'\n\n";
 
@@ -38,6 +40,12 @@ cmake \
 -DTrilinos_ASSERT_MISSING_PACKAGES=OFF \
 -DTPL_ENABLE_MPI=ON \
 -DMPI_BASE_DIR:PATH=$mpi_base_dir \
+-DTPL_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
+-DKokkos_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
+-DKokkos_ENABLE_CUDA_UVM:BOOL=${cuda_on_or_off} \
+-DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE:BOOL=OFF \
+-DKokkos_ARCH_VOLTA70=${cuda_on_or_off} \
+-DTpetra_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DSTK_ENABLE_TESTS:BOOL=ON \
 -DTrilinos_ENABLE_STK:BOOL=ON \
 -DTrilinos_ENABLE_STKMesh:BOOL=ON \

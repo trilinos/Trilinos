@@ -435,12 +435,17 @@ void StkMeshIoBroker::create_surface_to_block_mapping()
 {
     IossBlockMembership blockMemberships = get_block_memberships(*this);
     for(IossBlockMembership::iterator iter = blockMemberships.begin(); iter != blockMemberships.end(); iter++) {
-        stk::mesh::Part* sidesetPart = meta_data().get_part(iter->first);
-        if(sidesetPart != nullptr && sidesetPart->primary_entity_rank() == meta_data().side_rank()) {
-            std::vector<const stk::mesh::Part*> blocks;
-            fill_block_parts_given_names(iter->second, meta_data(), blocks);
-            meta_data().set_surface_to_block_mapping(sidesetPart, blocks);
+      stk::mesh::Part* sidesetPart = meta_data().get_part(iter->first);
+      if (sidesetPart != nullptr) {
+        const stk::mesh::EntityRank sidesetPartRank = sidesetPart->primary_entity_rank();
+        if (sidesetPartRank == meta_data().side_rank() ||
+            (sidesetPartRank == stk::topology::EDGE_RANK && meta_data().spatial_dimension()==3))
+        {
+          std::vector<const stk::mesh::Part*> blocks;
+          fill_block_parts_given_names(iter->second, meta_data(), blocks);
+          meta_data().set_surface_to_block_mapping(sidesetPart, blocks);
         }
+      }
     }
 }
 

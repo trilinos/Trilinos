@@ -855,8 +855,8 @@ struct Max
  */
 struct MinLoc
 {
-  template <typename T>
-  inline MinLoc(Loc<T> * dest, const Loc<T> *source) {
+  template <typename T, typename V>
+  inline MinLoc(Loc<T, V> * dest, const Loc<T, V> *source) {
     if (source->m_value < dest->m_value) {
       dest->m_value = source->m_value;
       dest->m_loc = source->m_loc;
@@ -871,8 +871,8 @@ struct MinLoc
  */
 struct MaxLoc
 {
-  template <typename T>
-  inline MaxLoc(Loc<T> * dest, const Loc<T> *source) {
+  template <typename T, typename V>
+  inline MaxLoc(Loc<T, V> * dest, const Loc<T, V> *source) {
     if (source->m_value > dest->m_value) {
       dest->m_value = source->m_value;
       dest->m_loc = source->m_loc;

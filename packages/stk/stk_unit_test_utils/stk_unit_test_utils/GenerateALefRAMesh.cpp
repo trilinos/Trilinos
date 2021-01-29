@@ -343,12 +343,16 @@ stk::mesh::Part* create_AB_mesh_with_sideset_and_distribution_factors(stk::mesh:
     stk::mesh::Part* sidePart = parts[0];
     ThrowRequire(nullptr != sidePart);
     const unsigned numberOfStates = 1;
-    stk::mesh::Field<double> & ssField = meta.declare_field<stk::mesh::Field<double>>(stk::topology::FACE_RANK, fieldName, numberOfStates);
+    stk::mesh::Field<double,shards::ArrayDimension> & ssField = meta.declare_field<stk::mesh::Field<double,shards::ArrayDimension>>(stk::topology::FACE_RANK, fieldName, numberOfStates);
     for (stk::mesh::Part* part : parts)
     {
       stk::io::set_distribution_factor_field(*part, ssField);
     }
-    stk::mesh::put_field_on_mesh(ssField, *sidePart, &initValue);
+    stk::topology sideTopo = sidePart->topology();
+    ThrowRequireMsg(sideTopo != stk::topology::INVALID_TOPOLOGY, "sidePart "<<sidePart->name()<<" has invalid topology.");
+    unsigned numNodes = sideTopo.num_nodes();
+    std::vector<double> initValVec(numNodes, initValue);
+    stk::mesh::put_field_on_mesh(ssField, *sidePart, numNodes, initValVec.data());
 
     create_AB_mesh(bulk, elemOrdering);
 

@@ -2,9 +2,11 @@
 #include <stk_mesh/base/ModificationObserver.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_topology/topology.hpp>    // for topology, etc
+#include <stk_util/util/SortAndUnique.hpp>
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowRequire
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/Env.hpp>
+#include <algorithm>
 #include <vector>                       // for allocator, vector
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
@@ -417,6 +419,18 @@ void IncrementalSidesetUpdater::resolve_relation_updates()
 {
   SideSetSelectorVector sidesets;
 
+  if (m_relationUpdatesRemoved) {
+    m_relationUpdates.erase(std::remove_if(m_relationUpdates.begin(), m_relationUpdates.end(),
+                           [](const RelationUpdate& relUpdate){return relUpdate.removed;}),
+                           m_relationUpdates.end());
+    m_relationUpdatesRemoved = false;
+  }
+
+  if (!m_relationUpdatesAreSorted) {
+    stk::util::sort_and_unique(m_relationUpdates);
+    m_relationUpdatesAreSorted = true;
+  }
+
   for(const RelationUpdate& update : m_relationUpdates) {
     const PartVector& parts = m_bulkData.bucket(update.face).supersets();
     fill_sidesets_and_selectors_from_parts(parts, sidesets);
@@ -438,7 +452,8 @@ void IncrementalSidesetUpdater::started_modification_end_notification()
 
 void IncrementalSidesetUpdater::modification_begin_notification()
 {
-  m_helper.reset_internal_sideset_detection();
+  m_helper.reset_internal_sideset_detection(m_elemChangedRankedParts);
+  m_elemChangedRankedParts = false;
 }
 
 void IncrementalSidesetUpdater::finished_modification_end_notification()
@@ -464,20 +479,22 @@ void IncrementalSidesetUpdater::remove_relation(Entity element, Entity face, Con
 {
   RelationUpdate relation(face, element, ordinal);
 
+  if (!m_relationUpdatesAreSorted) {
+    stk::util::sort_and_unique(m_relationUpdates);
+    m_relationUpdatesAreSorted = true;
+  }
+
   auto iter = std::lower_bound(m_relationUpdates.begin(), m_relationUpdates.end(), relation);
   if(iter != m_relationUpdates.end() && *iter == relation) {
-    m_relationUpdates.erase(iter);
+    iter->removed = true;
+    m_relationUpdatesRemoved = true;
   }
 }
 
 void IncrementalSidesetUpdater::add_relation(Entity element, Entity face, ConnectivityOrdinal ordinal)
 {
-  RelationUpdate relation(face, element, ordinal);
-
-  auto iter = std::lower_bound(m_relationUpdates.begin(), m_relationUpdates.end(), relation);
-  if(iter == m_relationUpdates.end() || *iter != relation) {
-    m_relationUpdates.insert(iter, relation);
-  }
+  m_relationUpdates.emplace_back(face, element, ordinal);
+  m_relationUpdatesAreSorted = false;
 }
 
 void IncrementalSidesetUpdater::entity_deleted(Entity entity)
@@ -626,12 +643,26 @@ void IncrementalSidesetUpdater::fill_sidesets_from_parts(const PartVector& parts
   add_sidesets_from_parts(parts, sidesets);
 }
 
+bool contains_ranked_part(const MetaData& meta, const OrdinalVector& parts)
+{
+  for (unsigned ord : parts) {
+    if (meta.get_part(ord).primary_entity_rank() != stk::topology::INVALID_RANK) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void IncrementalSidesetUpdater::entity_parts_removed(Entity entity, const OrdinalVector& parts)
 {
   if(m_bulkData.entity_rank(entity) == m_metaData.side_rank()) {
     std::vector<SideSet*> sidesets;
     fill_sidesets_from_part_ordinals(parts, sidesets);
     m_helper.remove_side_entries_from_sidesets(sidesets, entity, nullptr);
+  }
+
+  if (m_bulkData.entity_rank(entity) == stk::topology::ELEM_RANK) {
+    m_elemChangedRankedParts = m_elemChangedRankedParts || contains_ranked_part(m_metaData, parts);
   }
 }
 
@@ -673,10 +704,13 @@ void IncrementalSidesetUpdater::entity_parts_added(Entity entity, const OrdinalV
   }
 
   if(m_bulkData.entity_rank(entity) == stk::topology::ELEM_RANK) {
-    SideSetSelectorVector sidesetsAndSelectors;
-    fill_sidesets_and_selectors_from_blocks_touching_surfaces(parts, sidesetsAndSelectors);
+    if (m_bulkData.bucket_ptr(entity) != nullptr && m_bulkData.num_sides(entity) > 0) {
+      SideSetSelectorVector sidesetsAndSelectors;
+      fill_sidesets_and_selectors_from_blocks_touching_surfaces(parts, sidesetsAndSelectors);
 
-    m_helper.add_sideset_entry_for_element_selected_by_sidesets(entity, sidesetsAndSelectors);
+      m_helper.add_sideset_entry_for_element_selected_by_sidesets(entity, sidesetsAndSelectors);
+    }
+    m_elemChangedRankedParts = m_elemChangedRankedParts || contains_ranked_part(m_metaData, parts);
   }
 }
 

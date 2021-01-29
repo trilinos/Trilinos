@@ -170,7 +170,14 @@ class TwoBlockInteriorBlockBoundaryTester : public InteriorBlockBoundaryTester
 protected:
     virtual stk::mesh::Selector get_things_to_skin(const stk::mesh::BulkData& bulkData)
     {
-        return *bulkData.mesh_meta_data().get_part("block_1") | *bulkData.mesh_meta_data().get_part("block_2");
+        stk::mesh::Selector selector;
+        if (bulkData.mesh_meta_data().get_part("block_1") != nullptr) {
+          selector = *bulkData.mesh_meta_data().get_part("block_1");
+        }
+        if (bulkData.mesh_meta_data().get_part("block_2") != nullptr) {
+          selector |= *bulkData.mesh_meta_data().get_part("block_2");
+        }
+        return selector;
     }
 };
 

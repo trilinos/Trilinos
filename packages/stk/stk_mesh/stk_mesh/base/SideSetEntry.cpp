@@ -56,21 +56,6 @@ namespace mesh
         return modified;
     }
 
-    bool SideSet::contains(const SideSetEntry& entry) const
-    {
-        std::vector<SideSetEntry>::const_iterator beginIter = begin();
-        std::vector<SideSetEntry>::const_iterator endIter = end();
-
-        std::vector<SideSetEntry>::const_iterator lowerBound = std::lower_bound(beginIter, endIter, entry);
-        std::vector<SideSetEntry>::const_iterator upperBound = std::upper_bound(beginIter, endIter, entry);
-        return (lowerBound != upperBound && lowerBound != endIter);
-    }
-
-    bool SideSet::contains(Entity elem, ConnectivityOrdinal side) const
-    {
-        return contains(SideSetEntry{elem, side});
-    }
-
     SideSetEntry SideSet::operator[](unsigned index) const
     {
         return m_data[index];
@@ -94,26 +79,6 @@ namespace mesh
     {
       m_isModified = true;
       return m_data.erase(begin, end);
-    }
-
-    std::vector<SideSetEntry>::iterator SideSet::begin()
-    {
-        return m_data.begin();
-    }
-
-    std::vector<SideSetEntry>::iterator SideSet::end()
-    {
-        return m_data.end();
-    }
-
-    std::vector<SideSetEntry>::const_iterator SideSet::begin() const
-    {
-        return m_data.begin();
-    }
-
-    std::vector<SideSetEntry>::const_iterator SideSet::end() const
-    {
-       return m_data.end();
     }
 
     void SideSet::clear()

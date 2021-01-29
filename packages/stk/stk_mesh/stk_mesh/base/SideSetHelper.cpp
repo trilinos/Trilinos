@@ -486,7 +486,7 @@ void SideSetHelper::add_sideset_entry_for_element_selected_by_sidesets(Entity en
 {
   if(mesh.bucket_ptr(entity) == nullptr) { return; }
 
-  unsigned numSides = mesh.num_connectivity(entity, mesh.mesh_meta_data().side_rank());
+  const unsigned numSides = mesh.num_sides(entity);
 
   if(sidesetsAndSelectors.size() > 0 && mesh.entity_rank(entity) == stk::topology::ELEM_RANK && numSides > 0) {
     const stk::mesh::ConnectivityOrdinal* ordinals = mesh.begin_ordinals(entity, mesh.mesh_meta_data().side_rank());
@@ -552,14 +552,19 @@ void SideSetHelper::warn_about_internal_sidesets()
   }
 }
 
-void SideSetHelper::reset_internal_sideset_detection()
+void SideSetHelper::reset_internal_sideset_detection(bool rankedPartsChangedOnElems)
 {
   internalSidesetOrdinals.clear();
-  parallelPartInfo.clear();
 
-  if(mesh.has_face_adjacent_element_graph()) {
+  if(mesh.parallel_size() > 1 && mesh.has_face_adjacent_element_graph()) {
     const ElemElemGraph &graph = mesh.get_face_adjacent_element_graph();
-    impl::populate_part_ordinals_for_remote_edges(mesh, graph, parallelPartInfo);
+    bool needToUpdateParallelPartInfo = (graph.mod_cycle_when_graph_modified() > m_modCycleWhenParallelPartInfoUpdated);
+    if (needToUpdateParallelPartInfo || stk::is_true_on_any_proc(mesh.parallel(), rankedPartsChangedOnElems)) {
+      parallelPartInfo.clear();
+
+      impl::populate_part_ordinals_for_remote_edges(mesh, graph, parallelPartInfo);
+      m_modCycleWhenParallelPartInfoUpdated = mesh.synchronized_count();
+    }
   }
 }
 
@@ -568,7 +573,6 @@ void SideSetHelper::warn_internal_sideset_detection()
   warn_about_internal_sidesets();
 
   internalSidesetOrdinals.clear();
-  parallelPartInfo.clear();
 }
 
 void SideSetHelper::set_warn_about_internal_sideset(bool flag)

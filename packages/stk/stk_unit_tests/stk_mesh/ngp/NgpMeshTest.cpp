@@ -58,6 +58,7 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
 #include "stk_mesh/base/FieldParallel.hpp"
+#include "stk_mesh/base/GetNgpMesh.hpp"
 
 #include <limits>
 
@@ -70,7 +71,7 @@ public:
 
     stk::NgpVector<double> numNodesVec("numNodes", 1);
 
-    stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     Kokkos::parallel_for(1,
                          KOKKOS_LAMBDA(const int i)
                          {
@@ -94,7 +95,7 @@ TEST_F(NgpMeshRankLimit, tooManyRanksThrowWithMessage)
   setup_mesh(1,1,1, {"NODE","EDGE","FACE","ELEM","CONSTRAINT","JULIA"});
 
   try {
-    get_bulk().get_updated_ngp_mesh();
+    stk::mesh::get_updated_ngp_mesh(get_bulk());
     FAIL()<< "expected throw but didn't throw";
   }
   catch(std::exception& e) {
@@ -177,7 +178,7 @@ NGP_TEST_F(NgpMeshTest, volatileFastSharedCommMap)
 
   setup_mesh(1, 1, 4);
 
-  stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
   std::vector<int> comm_procs = get_bulk().all_sharing_procs(stk::topology::NODE_RANK);
 
   for (int proc : comm_procs) {

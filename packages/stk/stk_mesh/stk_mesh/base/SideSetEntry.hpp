@@ -101,8 +101,12 @@ public:
     bool add(Entity element, ConnectivityOrdinal side);
     bool add(const std::vector<SideSetEntry>& entries);
 
-    bool contains(const SideSetEntry& entry) const;
-    bool contains(Entity elem, ConnectivityOrdinal side) const;
+    bool contains(const SideSetEntry& entry) const {return std::binary_search(begin(), end(), entry);}
+
+    bool contains(Entity elem, ConnectivityOrdinal side) const
+    {
+        return contains(SideSetEntry{elem, side});
+    }
 
     SideSetEntry operator[](unsigned index) const;
     SideSet& operator=(const SideSet &rhs);
@@ -110,11 +114,11 @@ public:
     std::vector<SideSetEntry>::iterator erase(std::vector<SideSetEntry>::iterator iter);
     std::vector<SideSetEntry>::iterator erase(std::vector<SideSetEntry>::iterator begin, std::vector<SideSetEntry>::iterator end);
 
-    std::vector<SideSetEntry>::iterator begin();
-    std::vector<SideSetEntry>::iterator end();
+    std::vector<SideSetEntry>::iterator begin() {return m_data.begin();}
+    std::vector<SideSetEntry>::iterator end() {return m_data.end();}
 
-    std::vector<SideSetEntry>::const_iterator begin() const;
-    std::vector<SideSetEntry>::const_iterator end() const;
+    std::vector<SideSetEntry>::const_iterator begin() const {return m_data.begin();}
+    std::vector<SideSetEntry>::const_iterator end() const {return m_data.end();}
 
     void clear();
 

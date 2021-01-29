@@ -41,6 +41,7 @@ cmake \
 -DSTK_ENABLE_TESTS:BOOL=ON \
 -DTrilinos_ENABLE_STK:BOOL=ON \
 -DTrilinos_ENABLE_STKMesh:BOOL=OFF \
+-DTrilinos_ENABLE_STKCoupling:BOOL=ON \
 -DTrilinos_ENABLE_STKTransfer:BOOL=ON \
 -DTrilinos_ENABLE_STKSearch:BOOL=ON \
 -DTrilinos_ENABLE_STKUtil:BOOL=ON \

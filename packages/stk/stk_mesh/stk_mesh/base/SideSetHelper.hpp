@@ -58,6 +58,7 @@ struct SideSetHelper
   : mesh(mesh_)
   , activeSelector(activeSelector_)
   , outputStream(outputStream_)
+  , m_modCycleWhenParallelPartInfoUpdated(0)
   { }
 
   void set_output_stream(std::ostream& ostrm) {
@@ -90,7 +91,7 @@ struct SideSetHelper
   bool element_side_has_coincidence_using_connectivity(const Entity side, const Entity element, const ConnectivityOrdinal ordinal);
   bool element_side_has_coincidence_using_elem_elem_graph(const Entity side, const Entity element, const ConnectivityOrdinal ordinal);
 
-  void reset_internal_sideset_detection();
+  void reset_internal_sideset_detection(bool elemRankedPartsChanged);
   void warn_internal_sideset_detection();
 
   void set_warn_about_internal_sideset(bool flag);
@@ -102,6 +103,7 @@ private:
 
   bool internalSidesetWarningHasBeenIssued = false;
   stk::mesh::impl::ParallelPartInfo parallelPartInfo;
+  unsigned m_modCycleWhenParallelPartInfoUpdated;
   std::set<unsigned> internalSidesetOrdinals;
   bool warnAboutInternalSidesets = false;
 

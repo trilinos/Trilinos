@@ -13,6 +13,7 @@ namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { struct Entity; } }
+namespace stk { namespace mesh { struct SideSet; } }
 
 namespace stk {
 namespace mesh {
@@ -34,7 +35,9 @@ const stk::mesh::Part& get_sideset_parent(const stk::mesh::Part& sidesetPart);
 std::pair<bool,bool> is_positive_sideset_polarity(const stk::mesh::BulkData &bulk,
                                                   const stk::mesh::Part& sideSetPart,
                                                   stk::mesh::Entity face,
-                                                  const stk::mesh::Part* activePart = nullptr);
+                                                  const stk::mesh::Part* activePart = nullptr,
+                                                  const stk::mesh::SideSet* inputSidesetPtr = nullptr);
+
 std::pair<bool,bool> is_positive_sideset_face_polarity(const stk::mesh::BulkData &bulk, stk::mesh::Entity face,
                                                        const stk::mesh::Part* activePart = nullptr);
 

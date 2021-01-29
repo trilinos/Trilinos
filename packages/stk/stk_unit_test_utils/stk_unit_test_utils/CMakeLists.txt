@@ -7,6 +7,7 @@ INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_BINARY_DIR}/stk_util)
 
 SET(HEADERS_NEED_IO
   ElemGraphMultipleSharedSidesUtils.hpp
+  BulkDataTester.hpp
   FaceCreationTestUtils.hpp
   GeneratedMeshToFile.hpp
   ReadWriteSidesetTester.hpp
@@ -14,6 +15,7 @@ SET(HEADERS_NEED_IO
   ioUtils.hpp
   )
 SET(SOURCES_NEED_IO
+  BulkDataTester.cpp
   ConstructedMesh.cpp
   FaceTestingUtils.cpp
   GenerateALefRAMesh.cpp
@@ -26,7 +28,6 @@ SET(SOURCES_NEED_IO
 
 SET(HEADERS_NEED_MESH_BUT_NOT_IO
   BucketTester.hpp
-  BulkDataTester.hpp
   MeshFixture.hpp
   MeshFileFixture.hpp
   ParticleUtils.hpp
@@ -34,7 +35,6 @@ SET(HEADERS_NEED_MESH_BUT_NOT_IO
   unittestMeshUtils.hpp
   )
 SET(SOURCES_NEED_MESH_BUT_NOT_IO
-  BulkDataTester.cpp
   ParticleUtils.cpp
   WriteSelectedEntities.cpp
   unittestMeshUtils.cpp

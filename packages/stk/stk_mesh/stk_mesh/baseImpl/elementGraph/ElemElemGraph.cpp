@@ -108,6 +108,7 @@ void SharedSidesCommunication::communicate_element_sides()
 ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData) :
         m_bulk_data(bulkData),
         m_parallelInfoForGraphEdges(bulkData.parallel_rank()),
+        m_modCycleWhenGraphModified(0),
         m_any_shell_elements_exist(false),
         m_idMapper()
 {
@@ -139,6 +140,7 @@ void ElemElemGraph::fill_from_mesh()
     remove_graph_edges_blocked_by_shell(graphInfo);
 
     update_number_of_parallel_edges();
+    m_modCycleWhenGraphModified = m_bulk_data.synchronized_count();
 }
 
 void ElemElemGraph::update_number_of_parallel_edges()
@@ -262,6 +264,7 @@ void ElemElemGraph::clear_data_members()
     m_any_shell_elements_exist = false;
     m_num_parallel_edges = 0;
     m_parallelInfoForGraphEdges.clear();
+    m_modCycleWhenGraphModified = m_bulk_data.synchronized_count();
     m_deleted_element_local_id_pool.clear();
     m_deleted_elem_pool.clear();
     m_coincidentGraph.clear();
@@ -1239,6 +1242,7 @@ void ElemElemGraph::reconnect_volume_elements_across_deleted_shells(std::vector<
 
     SideNodeToReceivedElementDataMap elementSidesReceived = communicate_shared_sides(shellNeighborsToReconnect);
     fill_parallel_graph(shellNeighborsToReconnect, elementSidesReceived);
+    m_modCycleWhenGraphModified = m_bulk_data.synchronized_count();
 }
 
 stk::mesh::impl::DeletedElementInfoVector ElemElemGraph::filter_delete_elements_argument(const stk::mesh::impl::DeletedElementInfoVector& elements_to_delete_argument) const
@@ -1281,6 +1285,7 @@ void ElemElemGraph::delete_elements(const stk::mesh::impl::DeletedElementInfoVec
     }
 
     update_number_of_parallel_edges();
+    m_modCycleWhenGraphModified = m_bulk_data.synchronized_count();
 }
 
 template <typename GraphType>
@@ -1433,11 +1438,12 @@ void ElemElemGraph::add_elements(const stk::mesh::EntityVector &allUnfilteredEle
                 comm.communicate();
             }
         }
-    
+
         unpack_remote_edge_across_shell(comm);
     }
 
     update_number_of_parallel_edges();
+    m_modCycleWhenGraphModified = m_bulk_data.synchronized_count();
 }
 
 void ElemElemGraph::break_remote_shell_connectivity_and_pack(stk::CommSparse &comm, impl::LocalId leftId, impl::LocalId rightId, int phase)
