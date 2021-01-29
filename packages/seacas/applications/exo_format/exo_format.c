@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
   }
 
   if (argv[1][0] == '-') {
-    if (argv[1][1] == 'c') {
+    if (argv[1][1] == 'c' || (argv[1][1] == '-' && argv[1][2] == 'c')) {
       fprintf(stderr, "\nExodus Configuration Information:\n");
       ex_print_config();
     }

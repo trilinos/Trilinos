@@ -99,9 +99,9 @@ void find_first_last(INT val, size_t vecsize, INT *vector, INT *first, INT *last
 template <typename INT>
 ssize_t find_int(INT value1, INT value2, size_t start, size_t stop, INT *vector1, INT *vector2);
 
-template <typename INT> ssize_t in_list(INT value, size_t count, INT *vector);
+template <typename INT> ssize_t in_list(INT value, size_t count, const INT *vector);
 
-template <typename INT> ssize_t in_list(INT value, std::vector<INT> vector);
+template <typename INT> ssize_t in_list(INT value, const std::vector<INT> &vector);
 
 extern int roundfloat(float value /* the value to be rounded */
 );

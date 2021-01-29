@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -747,7 +747,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
   std::vector<T> output_global_values(global_vars.count(Excn::InOut::OUT_));
 
   // Determine maximum number of entities on any part
-  int max_ent = find_max_entity_count(part_count, local_mesh, global, blocks, nodesets, sidesets);
+  auto max_ent = find_max_entity_count(part_count, local_mesh, global, blocks, nodesets, sidesets);
   std::vector<T> values(max_ent);
 
   // Stage II.  Extracting transient variable data.

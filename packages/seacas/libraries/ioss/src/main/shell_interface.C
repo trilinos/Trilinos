@@ -10,6 +10,8 @@
 #include "Ioss_GetLongOpt.h" // for GetLongOption, etc
 #include "Ioss_Utils.h"      // for Utils
 #include "shell_interface.h"
+#include "tokenize.h"
+
 #include <cctype>  // for tolower
 #include <cstddef> // for nullptr
 #include <cstdlib> // for exit, strtod, EXIT_SUCCESS, etc
@@ -37,7 +39,10 @@ namespace {
   }
 } // namespace
 
-IOShell::Interface::Interface() { enroll_options(); }
+IOShell::Interface::Interface(const std::string &app_version) : version(app_version)
+{
+  enroll_options();
+}
 
 IOShell::Interface::~Interface() = default;
 
@@ -107,7 +112,8 @@ void IOShell::Interface::enroll_options()
                   nullptr);
 
   options_.enroll("compress", Ioss::GetLongOption::MandatoryValue,
-                  "Specify the hdf5 compression level [0..9] to be used on the output file.",
+                  "Specify the hdf5 zlib compression level [0..9] or szip [even, 4..32] to be used "
+                  "on the output file.",
                   nullptr);
 
   options_.enroll(
@@ -192,12 +198,6 @@ void IOShell::Interface::enroll_options()
                   nullptr);
 #endif
 
-  options_.enroll("file_per_state", Ioss::GetLongOption::NoValue,
-                  "put transient data for each timestep in separate file (EXPERIMENTAL)", nullptr);
-
-  options_.enroll("reverse", Ioss::GetLongOption::NoValue,
-                  "define CGNS zones in reverse order. Used for testing (TEST)", nullptr);
-
   options_.enroll(
       "split_times", Ioss::GetLongOption::MandatoryValue,
       "If non-zero, then put <$val> timesteps in each file. Then close file and start new file.",
@@ -226,6 +226,14 @@ void IOShell::Interface::enroll_options()
 
   options_.enroll("Minimum_Time", Ioss::GetLongOption::MandatoryValue,
                   "Minimum time on input database to transfer to output database", nullptr);
+
+  options_.enroll("select_times", Ioss::GetLongOption::MandatoryValue,
+                  "comma-separated list of times that should be transferred to output database",
+                  nullptr);
+
+  options_.enroll("delete_timesteps", Ioss::GetLongOption::NoValue,
+                  "Do not transfer any timesteps or transient data to the output database",
+                  nullptr);
 
   options_.enroll("append_after_time", Ioss::GetLongOption::MandatoryValue,
                   "add steps on input database after specified time on output database", nullptr);
@@ -261,7 +269,7 @@ void IOShell::Interface::enroll_options()
 
   options_.enroll("retain_empty_blocks", Ioss::GetLongOption::NoValue,
                   "If any empty element blocks on input file, keep them and write to output file.\n"
-                  "\t\tDefault is to ignore empty blocks. based on basename and suffix.",
+                  "\t\tDefault is to ignore empty blocks.",
                   nullptr);
 
 #ifdef SEACAS_HAVE_KOKKOS
@@ -277,6 +285,14 @@ void IOShell::Interface::enroll_options()
                   "POINTER");
 #endif
 
+  options_.enroll("native_variable_names", Ioss::GetLongOption::NoValue,
+                  "Do not lowercase variable names and replace spaces with underscores.\n"
+                  "\t\tVariable names are left as they appear in the input mesh file",
+                  nullptr);
+
+  options_.enroll("boundary_sideset", Ioss::GetLongOption::NoValue,
+                  "Output a sideset for all boundary faces of the model", nullptr);
+
   options_.enroll(
       "memory_read", Ioss::GetLongOption::NoValue,
       "EXPERIMENTAL: file read into memory by netcdf library; ioss accesses memory version",
@@ -287,17 +303,11 @@ void IOShell::Interface::enroll_options()
       "EXPERIMENTAL: file written to memory, netcdf library streams to disk at file close",
       nullptr);
 
-  options_.enroll("native_variable_names", Ioss::GetLongOption::NoValue,
-                  "Do not lowercase variable names and replace spaces with underscores.\n"
-                  "\t\tVariable names are left as they appear in the input mesh file",
-                  nullptr);
+  options_.enroll("file_per_state", Ioss::GetLongOption::NoValue,
+                  "put transient data for each timestep in separate file (EXPERIMENTAL)", nullptr);
 
-  options_.enroll("delete_timesteps", Ioss::GetLongOption::NoValue,
-                  "Do not transfer any timesteps or transient data to the output database",
-                  nullptr);
-
-  options_.enroll("boundary_sideset", Ioss::GetLongOption::NoValue,
-                  "Output a sideset for all boundary faces of the model (EXPERIMENTAL)", nullptr);
+  options_.enroll("reverse", Ioss::GetLongOption::NoValue,
+                  "define CGNS zones in reverse order. Used for testing (TEST)", nullptr);
 
   options_.enroll("copyright", Ioss::GetLongOption::NoValue, "Show copyright and license data.",
                   nullptr);
@@ -332,7 +342,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
   }
 
   if (options_.retrieve("version") != nullptr) {
-    // Version is printed up front, just exit...
+    fmt::print(stderr, "Version: {}\n", version);
     exit(0);
   }
 
@@ -368,6 +378,38 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
     const char *temp = options_.retrieve("compress");
     if (temp != nullptr) {
       compression_level = std::strtol(temp, nullptr, 10);
+
+      if (zlib) {
+        if (compression_level < 0 || compression_level > 9) {
+          if (my_processor == 0) {
+            fmt::print(stderr,
+                       "ERROR: Bad compression level {}, valid value is between 0 and 9 inclusive "
+                       "for gzip compression.\n",
+                       compression_level);
+          }
+          return false;
+        }
+      }
+      else if (szip) {
+        if (compression_level % 2 != 0) {
+          if (my_processor == 0) {
+            fmt::print(
+                stderr,
+                "ERROR: Bad compression level {}. Must be an even value for szip compression.\n",
+                compression_level);
+          }
+          return false;
+        }
+        if (compression_level < 4 || compression_level > 32) {
+          if (my_processor == 0) {
+            fmt::print(stderr,
+                       "ERROR: Bad compression level {}, valid value is between 4 and 32 inclusive "
+                       "for szip compression.\n",
+                       compression_level);
+          }
+          return false;
+        }
+      }
     }
   }
 
@@ -566,6 +608,18 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
     const char *temp = options_.retrieve("Minimum_Time");
     if (temp != nullptr) {
       minimum_time = std::strtod(temp, nullptr);
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("select_times");
+    if (temp != nullptr) {
+      auto time_str = Ioss::tokenize(std::string(temp), ",");
+      for (const auto &str : time_str) {
+        auto time = std::stod(str);
+        selected_times.push_back(time);
+      }
+      std::sort(selected_times.begin(), selected_times.end());
     }
   }
 

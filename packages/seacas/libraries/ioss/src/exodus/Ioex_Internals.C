@@ -15,14 +15,14 @@ extern "C" {
 
 #include <cassert> // for assert
 #include <cstddef> // for size_t
-#include <cstdio> // for nullptr
+#include <cstdio>  // for nullptr
 #include <cstdlib> // for exit, EXIT_FAILURE
 #include <cstring> // for strlen
 #include <fmt/format.h>
 #include <netcdf.h> // for NC_NOERR, nc_def_var, etc
-#include <ostream> // for operator<<, etc
-#include <string> // for string, operator==, etc
-#include <vector> // for vector
+#include <ostream>  // for operator<<, etc
+#include <string>   // for string, operator==, etc
+#include <vector>   // for vector
 
 #include "Ioss_Assembly.h"
 #include "Ioss_Blob.h"
@@ -500,7 +500,7 @@ int Internals::initialize_state_file(Mesh &mesh, const ex_var_params &var_params
 {
   // Determine global counts...
   if (!mesh.file_per_processor) {
-    get_global_counts(mesh);
+    mesh.get_global_counts();
   }
 
   int         ierr = 0;
@@ -888,6 +888,133 @@ void Mesh::populate(Ioss::Region *region)
       sidesets.push_back(T);
     }
   }
+
+  // Determine global counts...
+  if (!file_per_processor) {
+    get_global_counts();
+  }
+}
+
+void Mesh::get_global_counts()
+{
+#if defined(SEACAS_HAVE_MPI)
+  std::vector<int64_t> counts;
+  std::vector<int64_t> global_counts;
+
+  for (auto &nodeblock : nodeblocks) {
+    counts.push_back(nodeblock.localOwnedCount);
+  }
+  for (auto &edgeblock : edgeblocks) {
+    counts.push_back(edgeblock.entityCount);
+  }
+  for (auto &faceblock : faceblocks) {
+    counts.push_back(faceblock.entityCount);
+  }
+  for (auto &elemblock : elemblocks) {
+    counts.push_back(elemblock.entityCount);
+  }
+  for (auto &nodeset : nodesets) {
+    counts.push_back(nodeset.localOwnedCount);
+    counts.push_back(nodeset.dfCount);
+  }
+  for (auto &edgeset : edgesets) {
+    counts.push_back(edgeset.entityCount);
+    counts.push_back(edgeset.dfCount);
+  }
+  for (auto &faceset : facesets) {
+    counts.push_back(faceset.entityCount);
+    counts.push_back(faceset.dfCount);
+  }
+  for (auto &elemset : elemsets) {
+    counts.push_back(elemset.entityCount);
+    counts.push_back(elemset.dfCount);
+  }
+  for (auto &sideset : sidesets) {
+    counts.push_back(sideset.entityCount);
+    counts.push_back(sideset.dfCount);
+  }
+  for (auto &blob : blobs) {
+    counts.push_back(blob.entityCount);
+  }
+
+  // Now gather this information on each processor so
+  // they can determine the offsets and totals...
+  global_counts.resize(counts.size() * parallelUtil.parallel_size());
+
+  MPI_Allgather(&counts[0], counts.size(), MPI_LONG_LONG_INT, &global_counts[0], counts.size(),
+                MPI_LONG_LONG_INT, parallelUtil.communicator());
+
+  std::vector<int64_t> offsets(counts.size());
+
+  size_t my_proc    = parallelUtil.parallel_rank();
+  size_t proc_count = parallelUtil.parallel_size();
+
+  // Calculate offsets for each entity on each processor
+  for (size_t j = 0; j < offsets.size(); j++) {
+    for (size_t i = 0; i < my_proc; i++) {
+      offsets[j] += global_counts[i * offsets.size() + j];
+    }
+  }
+
+  // Now calculate the total count of entities over all processors
+  for (size_t j = 0; j < offsets.size(); j++) {
+    for (size_t i = 1; i < proc_count; i++) {
+      global_counts[j] += global_counts[i * offsets.size() + j];
+    }
+  }
+
+  size_t j = 0;
+  for (auto &nodeblock : nodeblocks) {
+    nodeblock.procOffset  = offsets[j];
+    nodeblock.entityCount = global_counts[j++];
+  }
+  for (auto &edgeblock : edgeblocks) {
+    edgeblock.procOffset  = offsets[j];
+    edgeblock.entityCount = global_counts[j++];
+  }
+  for (auto &faceblock : faceblocks) {
+    faceblock.procOffset  = offsets[j];
+    faceblock.entityCount = global_counts[j++];
+  }
+  for (auto &elemblock : elemblocks) {
+    elemblock.procOffset  = offsets[j];
+    elemblock.entityCount = global_counts[j++];
+  }
+  for (auto &nodeset : nodesets) {
+    nodeset.procOffset  = offsets[j];
+    nodeset.entityCount = global_counts[j++];
+    nodeset.dfCount     = global_counts[j++];
+    if (nodeset.dfCount != 0) {
+      // Need to adjust for locally-owned only in the auto-join output.
+      nodeset.dfCount = nodeset.entityCount;
+    }
+  }
+  for (auto &edgeset : edgesets) {
+    edgeset.procOffset  = offsets[j];
+    edgeset.entityCount = global_counts[j++];
+    edgeset.dfCount     = global_counts[j++];
+  }
+  for (auto &faceset : facesets) {
+    faceset.procOffset  = offsets[j];
+    faceset.entityCount = global_counts[j++];
+    faceset.dfCount     = global_counts[j++];
+  }
+  for (auto &elemset : elemsets) {
+    elemset.procOffset  = offsets[j];
+    elemset.entityCount = global_counts[j++];
+    elemset.dfCount     = global_counts[j++];
+  }
+  for (auto &sideset : sidesets) {
+    sideset.procOffset   = offsets[j];
+    sideset.entityCount  = global_counts[j++];
+    sideset.dfProcOffset = offsets[j];
+    sideset.dfCount      = global_counts[j++];
+  }
+  for (auto &blob : blobs) {
+    blob.procOffset  = offsets[j];
+    blob.entityCount = global_counts[j++];
+  }
+#endif
 }
 
 int Internals::write_meta_data(Mesh &mesh)
@@ -895,11 +1022,6 @@ int Internals::write_meta_data(Mesh &mesh)
   EX_FUNC_ENTER();
   int ierr;
   {
-    // Determine global counts...
-    if (!mesh.file_per_processor) {
-      get_global_counts(mesh);
-    }
-
     // Determine length of longest name... Reduces calls to put_att
     maximumNameLength = get_max_name_length(mesh.edgeblocks, maximumNameLength);
     maximumNameLength = get_max_name_length(mesh.faceblocks, maximumNameLength);
@@ -1044,129 +1166,6 @@ void Internals::update_assembly_data(int exoid, std::vector<Assembly> &assemblie
   if (stage == 0 || stage == 2) {
     internal.put_non_define_data(assemblies);
   }
-}
-
-void Internals::get_global_counts(Mesh &mesh)
-{
-  PAR_UNUSED(mesh);
-#if defined(SEACAS_HAVE_MPI)
-  std::vector<int64_t> counts;
-  std::vector<int64_t> global_counts;
-
-  for (auto &nodeblock : mesh.nodeblocks) {
-    counts.push_back(nodeblock.localOwnedCount);
-  }
-  for (auto &edgeblock : mesh.edgeblocks) {
-    counts.push_back(edgeblock.entityCount);
-  }
-  for (auto &faceblock : mesh.faceblocks) {
-    counts.push_back(faceblock.entityCount);
-  }
-  for (auto &elemblock : mesh.elemblocks) {
-    counts.push_back(elemblock.entityCount);
-  }
-  for (auto &nodeset : mesh.nodesets) {
-    counts.push_back(nodeset.localOwnedCount);
-    counts.push_back(nodeset.dfCount);
-  }
-  for (auto &edgeset : mesh.edgesets) {
-    counts.push_back(edgeset.entityCount);
-    counts.push_back(edgeset.dfCount);
-  }
-  for (auto &faceset : mesh.facesets) {
-    counts.push_back(faceset.entityCount);
-    counts.push_back(faceset.dfCount);
-  }
-  for (auto &elemset : mesh.elemsets) {
-    counts.push_back(elemset.entityCount);
-    counts.push_back(elemset.dfCount);
-  }
-  for (auto &sideset : mesh.sidesets) {
-    counts.push_back(sideset.entityCount);
-    counts.push_back(sideset.dfCount);
-  }
-  for (auto &blob : mesh.blobs) {
-    counts.push_back(blob.entityCount);
-  }
-
-  // Now gather this information on each processor so
-  // they can determine the offsets and totals...
-  global_counts.resize(counts.size() * parallelUtil.parallel_size());
-
-  MPI_Allgather(&counts[0], counts.size(), MPI_LONG_LONG_INT, &global_counts[0], counts.size(),
-                MPI_LONG_LONG_INT, parallelUtil.communicator());
-
-  std::vector<int64_t> offsets(counts.size());
-
-  size_t my_proc    = parallelUtil.parallel_rank();
-  size_t proc_count = parallelUtil.parallel_size();
-
-  // Calculate offsets for each entity on each processor
-  for (size_t j = 0; j < offsets.size(); j++) {
-    for (size_t i = 0; i < my_proc; i++) {
-      offsets[j] += global_counts[i * offsets.size() + j];
-    }
-  }
-
-  // Now calculate the total count of entities over all processors
-  for (size_t j = 0; j < offsets.size(); j++) {
-    for (size_t i = 1; i < proc_count; i++) {
-      global_counts[j] += global_counts[i * offsets.size() + j];
-    }
-  }
-
-  size_t j = 0;
-  for (auto &nodeblock : mesh.nodeblocks) {
-    nodeblock.procOffset  = offsets[j];
-    nodeblock.entityCount = global_counts[j++];
-  }
-  for (auto &edgeblock : mesh.edgeblocks) {
-    edgeblock.procOffset  = offsets[j];
-    edgeblock.entityCount = global_counts[j++];
-  }
-  for (auto &faceblock : mesh.faceblocks) {
-    faceblock.procOffset  = offsets[j];
-    faceblock.entityCount = global_counts[j++];
-  }
-  for (auto &elemblock : mesh.elemblocks) {
-    elemblock.procOffset  = offsets[j];
-    elemblock.entityCount = global_counts[j++];
-  }
-  for (auto &nodeset : mesh.nodesets) {
-    nodeset.procOffset  = offsets[j];
-    nodeset.entityCount = global_counts[j++];
-    nodeset.dfCount     = global_counts[j++];
-    if (nodeset.dfCount != 0) {
-      // Need to adjust for locally-owned only in the auto-join output.
-      nodeset.dfCount = nodeset.entityCount;
-    }
-  }
-  for (auto &edgeset : mesh.edgesets) {
-    edgeset.procOffset  = offsets[j];
-    edgeset.entityCount = global_counts[j++];
-    edgeset.dfCount     = global_counts[j++];
-  }
-  for (auto &faceset : mesh.facesets) {
-    faceset.procOffset  = offsets[j];
-    faceset.entityCount = global_counts[j++];
-    faceset.dfCount     = global_counts[j++];
-  }
-  for (auto &elemset : mesh.elemsets) {
-    elemset.procOffset  = offsets[j];
-    elemset.entityCount = global_counts[j++];
-    elemset.dfCount     = global_counts[j++];
-  }
-  for (auto &sideset : mesh.sidesets) {
-    sideset.procOffset   = offsets[j];
-    sideset.entityCount  = global_counts[j++];
-    sideset.dfProcOffset = offsets[j];
-    sideset.dfCount      = global_counts[j++];
-  }
-  for (auto &blob : mesh.blobs) {
-    blob.procOffset  = offsets[j];
-    blob.entityCount = global_counts[j++];
-  }
-#endif
 }
 
 int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
@@ -2737,7 +2736,9 @@ int Internals::put_non_define_data(const std::vector<Blob> &blobs)
   int status;
   int entlst_id;
 
+  size_t name_length = 0;
   for (const auto &blob : blobs) {
+    name_length = std::max(name_length, blob.name.length());
     if ((status = nc_inq_varid(exodusFilePtr, VAR_ENTITY_BLOB(blob.id), &entlst_id)) != NC_NOERR) {
       std::string errmsg =
           fmt::format("Error: failed to locate entity list array for blob {} in file id {}",
@@ -2754,13 +2755,17 @@ int Internals::put_non_define_data(const std::vector<Blob> &blobs)
       return (EX_FATAL);
     }
   }
+  ex__update_max_name_length(exodusFilePtr, name_length);
   return EX_NOERR;
 }
 
 int Internals::put_non_define_data(const std::vector<Assembly> &assemblies)
 {
+  size_t name_length = 0;
   for (const auto &assembly : assemblies) {
-    int status = EX_NOERR;
+    int status  = EX_NOERR;
+    name_length = std::max(name_length, assembly.name.length());
+
     if (!assembly.memberIdList.empty()) {
       int entlst_id = 0;
       if ((status = nc_inq_varid(exodusFilePtr, VAR_ENTITY_ASSEMBLY(assembly.id), &entlst_id)) !=
@@ -2782,6 +2787,7 @@ int Internals::put_non_define_data(const std::vector<Assembly> &assemblies)
       }
     }
   }
+  ex__update_max_name_length(exodusFilePtr, name_length);
   return EX_NOERR;
 }
 

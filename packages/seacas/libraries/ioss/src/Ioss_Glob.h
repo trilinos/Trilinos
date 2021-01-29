@@ -309,7 +309,7 @@ namespace glob {
   template <class charT> class SetItem
   {
   public:
-    SetItem() = default;
+    SetItem()          = default;
     virtual ~SetItem() = default;
 
     virtual bool Check(charT c) const = 0;

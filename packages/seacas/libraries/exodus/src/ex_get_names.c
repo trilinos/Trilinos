@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -45,12 +45,37 @@ int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
 
   switch (obj_type) {
     /* ======== ASSEMBLY ========= */
-  case EX_ASSEMBLY:
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: Assembly names are read using `ex_get_assembly()` function");
-    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
-    EX_FUNC_LEAVE(EX_FATAL);
-    break;
+  case EX_ASSEMBLY: {
+    /* Determine number of assemblies on database */
+    int num_assembly = ex_inquire_int(exoid, EX_INQ_ASSEMBLY);
+    if (num_assembly < 0) {
+      char errmsg[MAX_ERR_LENGTH];
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to inquire ASSEMBLY count in file id %d",
+               exoid);
+      ex_err_fn(exoid, __func__, errmsg, num_assembly);
+      return (EX_FATAL);
+    }
+
+    if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
+      int64_t *ids = calloc(num_assembly, sizeof(int64_t));
+      ex_get_ids(exoid, EX_ASSEMBLY, ids);
+      for (int i = 0; i < num_assembly; i++) {
+        ex_assembly assembly = {ids[i], names[i]};
+        ex_get_assembly(exoid, &assembly);
+      }
+      free(ids);
+    }
+    else {
+      int *ids = calloc(num_assembly, sizeof(int));
+      ex_get_ids(exoid, EX_ASSEMBLY, ids);
+      for (int i = 0; i < num_assembly; i++) {
+        ex_assembly assembly = {ids[i], names[i]};
+        ex_get_assembly(exoid, &assembly);
+      }
+      free(ids);
+    }
+    EX_FUNC_LEAVE(EX_NOERR);
+  }
   /*  ======== BLOCKS ========= */
   case EX_EDGE_BLOCK:
     ex__get_dimension(exoid, DIM_NUM_ED_BLK, "edge block", &num_entity, &temp, __func__);

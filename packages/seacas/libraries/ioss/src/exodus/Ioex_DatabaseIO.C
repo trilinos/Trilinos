@@ -382,14 +382,6 @@ namespace Ioex {
       ex_set_max_name_length(m_exodusFilePtr, maximumNameLength);
 
       // Check properties handled post-create/open...
-      if (properties.exists("COMPRESSION_LEVEL")) {
-        int comp_level = properties.get("COMPRESSION_LEVEL").get_int();
-        ex_set_option(m_exodusFilePtr, EX_OPT_COMPRESSION_LEVEL, comp_level);
-      }
-      if (properties.exists("COMPRESSION_SHUFFLE")) {
-        int shuffle = properties.get("COMPRESSION_SHUFFLE").get_int();
-        ex_set_option(m_exodusFilePtr, EX_OPT_COMPRESSION_SHUFFLE, shuffle);
-      }
       if (properties.exists("COMPRESSION_METHOD")) {
         auto method                    = properties.get("COMPRESSION_METHOD").get_string();
         method                         = Ioss::Utils::lowercase(method);
@@ -398,7 +390,10 @@ namespace Ioex {
           exo_method = EX_COMPRESS_ZLIB;
         }
         else if (method == "szip") {
-#if defined(NC_HAS_SZIP_WRITE)
+#if !defined(NC_HAS_SZIP_WRITE)
+#define NC_HAS_SZIP_WRITE 0
+#endif
+#if NC_HAS_SZIP_WRITE
           exo_method = EX_COMPRESS_SZIP;
 #else
           fmt::print(Ioss::WARNING(), "The NetCDF library does not have SZip compression enabled."
@@ -412,6 +407,16 @@ namespace Ioex {
                      method);
         }
         ex_set_option(m_exodusFilePtr, EX_OPT_COMPRESSION_TYPE, exo_method);
+      }
+
+      if (properties.exists("COMPRESSION_LEVEL")) {
+        int comp_level = properties.get("COMPRESSION_LEVEL").get_int();
+        ex_set_option(m_exodusFilePtr, EX_OPT_COMPRESSION_LEVEL, comp_level);
+      }
+
+      if (properties.exists("COMPRESSION_SHUFFLE")) {
+        int shuffle = properties.get("COMPRESSION_SHUFFLE").get_int();
+        ex_set_option(m_exodusFilePtr, EX_OPT_COMPRESSION_SHUFFLE, shuffle);
       }
     }
     ex_opts(app_opt_val); // Reset back to what it was.
@@ -461,6 +466,18 @@ namespace Ioex {
         get_step_times__();
         add_region_fields();
       }
+      return;
+    }
+
+    // APPENDING:
+    // There is an assumption that the writing process (mesh, vars) is
+    // the same for the original run that created this database and
+    // for this run which is appending to the database so the defining
+    // of the output database should be the same except we don't write
+    // anything since it is already there.  We do need the number of
+    // steps though...
+    if (open_create_behavior() == Ioss::DB_APPEND) {
+      get_step_times__();
       return;
     }
 
@@ -5184,9 +5201,17 @@ int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
           Ioss::IntVector side(num_to_get);
           int *           el_side = reinterpret_cast<int *>(data);
 
-          for (size_t i = 0; i < num_to_get; i++) {
-            element[i] = elemMap.global_to_local(el_side[index++]);
-            side[i]    = el_side[index++] + side_offset;
+          try {
+            for (size_t i = 0; i < num_to_get; i++) {
+              element[i] = elemMap.global_to_local(el_side[index++]);
+              side[i]    = el_side[index++] + side_offset;
+            }
+          }
+          catch (const std::runtime_error &x) {
+            std::ostringstream errmsg;
+            fmt::print(errmsg, "{}On SideBlock `{}` while outputting field `elem_side`\n", x.what(),
+                       fb->name());
+            IOSS_ERROR(errmsg);
           }
 
           int ierr = ex_put_partial_set(get_file_pointer(), EX_SIDE_SET, id, offset + 1,
@@ -5200,9 +5225,17 @@ int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
           Ioss::Int64Vector side(num_to_get);
           auto *            el_side = reinterpret_cast<int64_t *>(data);
 
-          for (size_t i = 0; i < num_to_get; i++) {
-            element[i] = elemMap.global_to_local(el_side[index++]);
-            side[i]    = el_side[index++] + side_offset;
+          try {
+            for (size_t i = 0; i < num_to_get; i++) {
+              element[i] = elemMap.global_to_local(el_side[index++]);
+              side[i]    = el_side[index++] + side_offset;
+            }
+          }
+          catch (const std::runtime_error &x) {
+            std::ostringstream errmsg;
+            fmt::print(errmsg, "{}On SideBlock `{}` while outputting field `elem_side`\n", x.what(),
+                       fb->name());
+            IOSS_ERROR(errmsg);
           }
 
           int ierr = ex_put_partial_set(get_file_pointer(), EX_SIDE_SET, id, offset + 1,
@@ -5293,7 +5326,7 @@ int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
   return num_to_get;
 }
 
-void DatabaseIO::write_meta_data()
+void DatabaseIO::write_meta_data(bool appending)
 {
   Ioss::Region *region = get_region();
   common_write_meta_data();
@@ -5310,28 +5343,29 @@ void DatabaseIO::write_meta_data()
   }
 
   bool       file_per_processor = true;
-  Ioex::Mesh mesh(spatialDimension, the_title, file_per_processor);
+  Ioex::Mesh mesh(spatialDimension, the_title, util(), file_per_processor);
   {
     Ioss::SerializeIO serializeIO__(this);
-    if (!properties.exists("OMIT_QA_RECORDS")) {
-      put_qa();
-    }
-    if (!properties.exists("OMIT_INFO_RECORDS")) {
-      put_info();
-    }
-
     mesh.populate(region);
     gather_communication_metadata(&mesh.comm);
 
-    // Write the metadata to the exodus file...
-    Ioex::Internals data(get_file_pointer(), maximumNameLength, util());
-    int             ierr = data.write_meta_data(mesh);
+    if (!appending) {
+      if (!properties.exists("OMIT_QA_RECORDS")) {
+        put_qa();
+      }
+      if (!properties.exists("OMIT_INFO_RECORDS")) {
+        put_info();
+      }
 
-    if (ierr < 0) {
-      Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
+      // Write the metadata to the exodus file...
+      Ioex::Internals data(get_file_pointer(), maximumNameLength, util());
+      int             ierr = data.write_meta_data(mesh);
+
+      if (ierr < 0) {
+        Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
+      }
+      output_other_meta_data();
     }
-
-    output_other_meta_data();
   }
 }
 

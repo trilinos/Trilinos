@@ -1015,7 +1015,7 @@ int           loop_lvl = 0;
 std::fstream *tmp_file;
 const char *  temp_f;
 
-#if defined           __NVCC__
+#if defined __NVCC__
 #pragma diag_suppress code_is_unreachable
 #endif
 
@@ -3203,13 +3203,13 @@ namespace SEAMS {
     }
 
     if (aprepro.ap_options.interactive && yyin == &std::cin && isatty(0) != 0 && isatty(1) != 0) {
-      char *line = getline_int(nullptr);
+      char *line = ap_getline_int(nullptr);
 
       if (strlen(line) == 0) {
         return 0;
       }
 
-      gl_histadd(line);
+      ap_gl_histadd(line);
 
       if (strlen(line) > (size_t)max_size - 2) {
         yyerror("input line is too long");

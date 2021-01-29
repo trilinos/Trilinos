@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -529,7 +529,7 @@ int64_t Ioss::GroupingEntity::get_field_data(const std::string &         field_n
   Ioss::Field field = get_field(field_name);
 
   // Resize the view
-  int new_view_size = field.raw_count() * field.raw_storage()->component_count();
+  auto new_view_size = field.raw_count() * field.raw_storage()->component_count();
   Kokkos::resize(data, new_view_size);
   size_t data_size = new_view_size * sizeof(T);
 
