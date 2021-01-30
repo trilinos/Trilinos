@@ -24,6 +24,7 @@ int main(int narg, char** arg)
   using gno_t = typename map_t::global_ordinal_type;
   using lno_t = typename map_t::local_ordinal_type;
   using matrix_t = Tpetra::CrsMatrix<gno_t>;
+  using vector_t = Tpetra::Vector<gno_t>;
 
   Tpetra::global_size_t dummy = 
           Teuchos::OrdinalTraits<Tpetra::global_size_t>:: invalid();
@@ -61,7 +62,24 @@ int main(int narg, char** arg)
   // Same matrix across np-1 processors:  
   // insert nonzeros on np processors; 
   // let fillComplete migrate according to mapNpM1
-  Teuchos::RCP<matrix_t> Rmat = rcp(new matrix_t(mapNpM1, 5));
+
+  // Get exact nnz per row
+  vector_t countNp(mapNp);
+  auto dataNp = countNp.getDataNonConst();
+  for (size_t i = 0; i < mapNp->getNodeNumElements(); i++) {
+    dataNp[i] = Amat->getNumEntriesInLocalRow(i);
+  }
+  vector_t countNpM1(mapNpM1);
+  Tpetra::Import<lno_t, gno_t> importer(mapNp, mapNpM1);
+  countNpM1.doImport(countNp, importer, Tpetra::INSERT);
+
+  Teuchos::Array<size_t> nnzNpM1(mapNpM1->getNodeNumElements());
+  auto dataNpM1 = countNpM1.getData();
+  for (size_t i = 0; i < mapNpM1->getNodeNumElements(); i++) 
+    nnzNpM1[i] = dataNpM1[i];
+  
+  // Create Redistributed matrix
+  Teuchos::RCP<matrix_t> Rmat = rcp(new matrix_t(mapNpM1, nnzNpM1()));
 
   for (int i = 0; i < myRowsNp; i++) {
     gno_t gid = mapNp->getGlobalElement(i);
