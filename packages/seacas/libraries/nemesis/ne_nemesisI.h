@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-#ifndef EXODUS_II_HDR
+#ifndef EXODUSII_H
 #include <stdint.h>
 /** Specifies that this argument is the id of an entity: element block, nodeset, sideset, ... */
 typedef int64_t ex_entity_id;

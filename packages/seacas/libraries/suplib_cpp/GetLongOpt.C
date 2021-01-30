@@ -3,9 +3,7 @@
 #include <cstring>
 #include <sstream>
 
-GetLongOption::GetLongOption(const char optmark)
-    : table(nullptr), ustring(nullptr), pname(nullptr), last(nullptr), enroll_done(0),
-      optmarker(optmark)
+GetLongOption::GetLongOption(const char optmark) : optmarker(optmark)
 {
   ustring = "[valid options and arguments]";
 }

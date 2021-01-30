@@ -266,7 +266,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
 
   if (Debug_Flag >= 4) {
     fmt::print("Putting init Nemesis info in file id: {}\n", mesh_exoid);
-    fmt::print("\tNumber of Proccesor for: {}\n", num_proc_for);
+    fmt::print("\tNumber of Processor for: {}\n", num_proc_for);
   }
 
   if (ex_put_init_info(mesh_exoid, num_proc_for, 1, (char *)"p") < 0) {

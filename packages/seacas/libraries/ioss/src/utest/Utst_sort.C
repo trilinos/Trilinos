@@ -11,7 +11,7 @@
 #include <random>
 
 namespace {
-  template <typename INT> bool verify_sorted(std::vector<INT> v)
+  template <typename INT> bool verify_sorted(const std::vector<INT> &v)
   {
     auto it = std::adjacent_find(v.begin(), v.end(), std::greater<INT>());
     if (it != v.end()) {

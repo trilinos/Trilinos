@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -21,10 +21,12 @@
 #include "MinMaxData.h"
 #include "Norm.h"
 #include "Tolerance.h"
+#include "edge_block.h"
 #include "exoII_read.h"
 #include "exo_block.h"
 #include "exodiff.h"
 #include "exodusII.h"
+#include "face_block.h"
 #include "map.h"
 #include "node_set.h"
 #include "side_set.h"
@@ -129,7 +131,8 @@ template <typename INT>
 void do_diffs(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int time_step1, const TimeInterp &t2,
               int out_file_id, std::vector<MinMaxData> &mm_glob, std::vector<MinMaxData> &mm_node,
               std::vector<MinMaxData> &mm_elmt, std::vector<MinMaxData> &mm_ns,
-              std::vector<MinMaxData> &mm_ss, INT *node_map, const INT *node_id_map, INT *elmt_map,
+              std::vector<MinMaxData> &mm_ss, std::vector<MinMaxData> &mm_eb,
+              std::vector<MinMaxData> &mm_fb, INT *node_map, const INT *node_id_map, INT *elmt_map,
               const INT *elem_id_map, Exo_Block<INT> **blocks2, double *var_vals, bool *diff_flag);
 
 template <typename INT>
@@ -163,6 +166,7 @@ template <typename INT>
 void output_summary(ExoII_Read<INT> &file1, MinMaxData &mm_time, std::vector<MinMaxData> &mm_glob,
                     std::vector<MinMaxData> &mm_node, std::vector<MinMaxData> &mm_elmt,
                     std::vector<MinMaxData> &mm_ns, std::vector<MinMaxData> &mm_ss,
+                    std::vector<MinMaxData> &mm_eb, std::vector<MinMaxData> &mm_fb,
                     const INT *node_id_map, const INT *elem_id_map);
 
 #include <csignal>
@@ -267,13 +271,14 @@ namespace {
     fmt::print("{0}  FILE {15}: {1}\n"
                "{0}   Title: {2}\n"
                "{0}          Dim = {3}, Blocks = {4}, Nodes = {5}, Elements = {6}, Nodesets = {7}, "
-               "Sidesets = {8}\n"
-               "{0}          Vars: Global = {9}, Nodal = {10}, Element = {11}, Nodeset = {12}, "
-               "Sideset = {13}, Times = {14}\n\n",
+               "Sidesets = {8}, Edge Blocks = {9}, Face Blocks = {10}\n"
+               "{0}          Vars: Global = {11}, Nodal = {12}, Element = {13}, Nodeset = {14}, "
+               "Sideset = {15}, Times = {16}\n\n",
                prefix, fi.realpath(), file.Title(), file.Dimension(), file.Num_Elmt_Blocks(),
                file.Num_Nodes(), file.Num_Elmts(), file.Num_Node_Sets(), file.Num_Side_Sets(),
-               file.Num_Global_Vars(), file.Num_Nodal_Vars(), file.Num_Elmt_Vars(),
-               file.Num_NS_Vars(), file.Num_SS_Vars(), file.Num_Times(), count);
+               file.Num_EB_Vars(), file.Num_FB_Vars(), file.Num_Global_Vars(),
+               file.Num_Nodal_Vars(), file.Num_Elmt_Vars(), file.Num_NS_Vars(), file.Num_SS_Vars(),
+               file.Num_Times(), count);
   }
 
   std::string buf;
@@ -325,6 +330,8 @@ int main(int argc, char *argv[])
     interFace.elmt_att_do_all_flag = true;
     interFace.ns_var_do_all_flag   = true;
     interFace.ss_var_do_all_flag   = true;
+    interFace.eb_var_do_all_flag   = true;
+    interFace.fb_var_do_all_flag   = true;
     interFace.map_flag             = MapType::FILE_ORDER;
     interFace.quiet_flag           = false;
   }
@@ -403,6 +410,8 @@ namespace {
         file1.Num_Nodal_Vars() > interFace.max_number_of_names ||
         file1.Num_NS_Vars() > interFace.max_number_of_names ||
         file1.Num_SS_Vars() > interFace.max_number_of_names ||
+        file1.Num_EB_Vars() > interFace.max_number_of_names ||
+        file1.Num_FB_Vars() > interFace.max_number_of_names ||
         file1.Num_Elmt_Vars() > interFace.max_number_of_names) {
       size_t max = file1.Num_Global_Vars();
       if (file1.Num_Nodal_Vars() > max) {
@@ -413,6 +422,12 @@ namespace {
       }
       if (file1.Num_SS_Vars() > max) {
         max = file1.Num_SS_Vars();
+      }
+      if (file1.Num_EB_Vars() > max) {
+        max = file1.Num_EB_Vars();
+      }
+      if (file1.Num_FB_Vars() > max) {
+        max = file1.Num_FB_Vars();
       }
       if (file1.Num_Elmt_Vars() > max) {
         max = file1.Num_Elmt_Vars();
@@ -432,6 +447,8 @@ namespace {
           file2.Num_Nodal_Vars() > interFace.max_number_of_names ||
           file2.Num_NS_Vars() > interFace.max_number_of_names ||
           file2.Num_SS_Vars() > interFace.max_number_of_names ||
+          file1.Num_EB_Vars() > interFace.max_number_of_names ||
+          file1.Num_FB_Vars() > interFace.max_number_of_names ||
           file2.Num_Elmt_Vars() > interFace.max_number_of_names) {
         size_t max = file2.Num_Global_Vars();
         if (file2.Num_Nodal_Vars() > max) {
@@ -442,6 +459,12 @@ namespace {
         }
         if (file2.Num_SS_Vars() > max) {
           max = file2.Num_SS_Vars();
+        }
+        if (file2.Num_EB_Vars() > max) {
+          max = file2.Num_EB_Vars();
+        }
+        if (file2.Num_FB_Vars() > max) {
+          max = file2.Num_FB_Vars();
         }
         if (file2.Num_Elmt_Vars() > max) {
           max = file2.Num_Elmt_Vars();
@@ -635,6 +658,8 @@ namespace {
     std::vector<MinMaxData> mm_eatt;
     std::vector<MinMaxData> mm_ns;
     std::vector<MinMaxData> mm_ss;
+    std::vector<MinMaxData> mm_eb;
+    std::vector<MinMaxData> mm_fb;
 
     if (interFace.summary_flag) {
       int n;
@@ -672,6 +697,18 @@ namespace {
         mm_ss.resize(n);
         for (int i = 0; i < n; i++) {
           mm_ss[i].type = ToleranceType::mm_sideset;
+        }
+      }
+      if ((n = interFace.eb_var_names.size()) > 0) {
+        mm_eb.resize(n);
+        for (int i = 0; i < n; i++) {
+          mm_eb[i].type = ToleranceType::mm_edgeblock;
+        }
+      }
+      if ((n = interFace.fb_var_names.size()) > 0) {
+        mm_fb.resize(n);
+        for (int i = 0; i < n; i++) {
+          mm_fb[i].type = ToleranceType::mm_faceblock;
         }
       }
     }
@@ -718,8 +755,8 @@ namespace {
         }
       }
 
-      do_diffs(file1, file2, ts1, t2, out_file_id, mm_glob, mm_node, mm_elmt, mm_ns, mm_ss,
-               node_map, node_id_map, elmt_map, elem_id_map, blocks2, var_vals, &diff_flag);
+      do_diffs(file1, file2, ts1, t2, out_file_id, mm_glob, mm_node, mm_elmt, mm_ns, mm_ss, mm_eb,
+               mm_fb, node_map, node_id_map, elmt_map, elem_id_map, blocks2, var_vals, &diff_flag);
     }
     else {
 
@@ -910,7 +947,8 @@ namespace {
         }
 
         do_diffs(file1, file2, time_step1, t2, out_file_id, mm_glob, mm_node, mm_elmt, mm_ns, mm_ss,
-                 node_map, node_id_map, elmt_map, elem_id_map, blocks2, var_vals, &diff_flag);
+                 mm_eb, mm_fb, node_map, node_id_map, elmt_map, elem_id_map, blocks2, var_vals,
+                 &diff_flag);
 
       } // End of time step loop.
 
@@ -920,7 +958,8 @@ namespace {
             (min_num_times > 0 && interFace.time_tol.type == ToleranceMode::IGNORE_ &&
              interFace.glob_var_names.empty() && interFace.node_var_names.empty() &&
              interFace.elmt_var_names.empty() && interFace.elmt_att_names.empty() &&
-             interFace.ns_var_names.empty() && interFace.ss_var_names.empty())) {
+             interFace.ns_var_names.empty() && interFace.ss_var_names.empty() &&
+             interFace.eb_var_names.empty() && interFace.fb_var_names.empty())) {
           DIFF_OUT("\nWARNING: No comparisons were performed during this execution.");
           diff_flag = true;
         }
@@ -928,8 +967,8 @@ namespace {
     }
 
     if (interFace.summary_flag) {
-      output_summary(file1, mm_time, mm_glob, mm_node, mm_elmt, mm_ns, mm_ss, node_id_map,
-                     elem_id_map);
+      output_summary(file1, mm_time, mm_glob, mm_node, mm_elmt, mm_ns, mm_ss, mm_eb, mm_fb,
+                     node_id_map, elem_id_map);
     }
     else if (out_file_id >= 0) {
       ex_close(out_file_id);
@@ -1147,7 +1186,8 @@ template <typename INT>
 void do_diffs(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int time_step1, const TimeInterp &t2,
               int out_file_id, std::vector<MinMaxData> &mm_glob, std::vector<MinMaxData> &mm_node,
               std::vector<MinMaxData> &mm_elmt, std::vector<MinMaxData> &mm_ns,
-              std::vector<MinMaxData> &mm_ss, INT *node_map, const INT *node_id_map, INT *elmt_map,
+              std::vector<MinMaxData> &mm_ss, std::vector<MinMaxData> &mm_eb,
+              std::vector<MinMaxData> &mm_fb, INT *node_map, const INT *node_id_map, INT *elmt_map,
               const INT *elem_id_map, Exo_Block<INT> **blocks2, double *var_vals, bool *diff_flag)
 {
   if (diff_globals(file1, file2, time_step1, t2, out_file_id, mm_glob, var_vals)) {
@@ -1176,10 +1216,21 @@ void do_diffs(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int time_step1, co
     if (diff_sideset(file1, file2, time_step1, t2, out_file_id, elem_id_map, mm_ss, var_vals)) {
       *diff_flag = true;
     }
+
+    // Edge Block variables.
+    if (diff_edgeblock(file1, file2, time_step1, t2, out_file_id, elem_id_map, mm_eb, var_vals)) {
+      *diff_flag = true;
+    }
+
+    // Face Block variables.
+    if (diff_faceblock(file1, file2, time_step1, t2, out_file_id, elem_id_map, mm_fb, var_vals)) {
+      *diff_flag = true;
+    }
   }
   else {
-    if (!interFace.ns_var_names.empty() || !interFace.ss_var_names.empty()) {
-      fmt::print("WARNING: nodeset and sideset variables not (yet) "
+    if (!interFace.ns_var_names.empty() || !interFace.ss_var_names.empty() ||
+        !interFace.eb_var_names.empty() || !interFace.fb_var_names.empty()) {
+      fmt::print("WARNING: nodeset, sideset, edge block and face block variables not (yet) "
                  "compared for partial map\n");
     }
   }
@@ -2179,6 +2230,363 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
 }
 
 template <typename INT>
+bool diff_edgeblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, const TimeInterp &t2,
+                    int out_file_id, const INT *id_map, std::vector<MinMaxData> &mm_eb,
+                    double *vals)
+{
+  bool diff_flag = false;
+
+  if (out_file_id >= 0) {
+    SMART_ASSERT(vals != nullptr);
+  }
+
+  int name_length = max_string_length(file1.EB_Var_Names()) + 1;
+
+  if (out_file_id < 0 && !interFace.quiet_flag && !interFace.summary_flag &&
+      !interFace.eb_var_names.empty()) {
+    fmt::print("Edge Block variables:\n");
+  }
+
+  for (unsigned e_idx = 0; e_idx < interFace.eb_var_names.size(); ++e_idx) {
+    const std::string &name  = (interFace.eb_var_names)[e_idx];
+    int                vidx1 = find_string(file1.EB_Var_Names(), name, interFace.nocase_var_names);
+    int                vidx2 = 0;
+    if (!interFace.summary_flag) {
+      vidx2 = find_string(file2.EB_Var_Names(), name, interFace.nocase_var_names);
+    }
+    if (vidx1 < 0 || vidx2 < 0) {
+      Error(fmt::format("Unable to find edgeblock variable named '{}' on database.\n", name));
+      exit(1);
+    }
+
+    DiffData max_diff;
+    Norm     norm;
+
+    for (size_t b = 0; b < file1.Num_Edge_Blocks(); ++b) {
+      Edge_Block<INT> *eblock1 = file1.Get_Edge_Block_by_Index(b);
+      SMART_ASSERT(eblock1 != nullptr);
+      if (eblock1->Size() == 0) {
+        std::cout << "eblock1->Size() == 0...continuing..." << std::endl;
+        continue;
+      }
+      if (!eblock1->is_valid_var(vidx1)) {
+        continue;
+      }
+
+      Edge_Block<INT> *eblock2 = nullptr;
+      if (!interFace.summary_flag) {
+        if (interFace.by_name) {
+          eblock2 = file2.Get_Edge_Block_by_Name(eblock1->Name());
+        }
+        else {
+          eblock2 = file2.Get_Edge_Block_by_Id(eblock1->Id());
+        }
+        if (eblock2 == nullptr || !eblock2->is_valid_var(vidx2)) {
+          continue;
+        }
+      }
+
+      eblock1->Load_Results(step1, vidx1);
+      const double *vals1 = eblock1->Get_Results(vidx1);
+
+      if (vals1 == nullptr) {
+        Error(fmt::format("Could not find variable '{}' in edgeblock {}, file 1.\n", name,
+                          eblock1->Id()));
+        diff_flag = true;
+        continue;
+      }
+
+      if (Invalid_Values(vals1, eblock1->Size())) {
+        Error(fmt::format("NaN found for edgeblock variable '{}' in edgeblock {}, file 1.\n", name,
+                          eblock1->Id()));
+        diff_flag = true;
+      }
+
+      double        v2    = 0;
+      const double *vals2 = nullptr;
+      if (!interFace.summary_flag) {
+        eblock2->Load_Results(t2.step1, t2.step2, t2.proportion, vidx2);
+        vals2 = eblock2->Get_Results(vidx2);
+
+        if (vals2 == nullptr) {
+          Error(fmt::format("Could not find variable '{}' in edgeblock {}, file 2.\n", name,
+                            eblock2->Id()));
+          diff_flag = true;
+          continue;
+        }
+
+        if (Invalid_Values(vals2, eblock2->Size())) {
+          Error(fmt::format("NaN found for edgeblock variable '{}' in edgeblock {}, file 2.\n",
+                            name, eblock2->Id()));
+          diff_flag = true;
+        }
+      }
+
+      size_t ecount = eblock1->Size();
+      if (interFace.summary_flag || eblock2->Size() == ecount) {
+        for (size_t e = 0; e < ecount; ++e) {
+          size_t ind1 = eblock1->Edge_Index(e);
+          size_t ind2 = 0;
+          if (out_file_id >= 0) {
+            vals[ind1] = 0.;
+          }
+          if (!interFace.summary_flag) {
+            ind2 = eblock2->Edge_Index(e);
+            v2   = vals2[ind2];
+          }
+
+          if (interFace.summary_flag) {
+            mm_eb[e_idx].spec_min_max(vals1[ind1], step1, e, eblock1->Id());
+          }
+          else if (out_file_id >= 0) {
+            vals[ind1] = FileDiff(vals1[ind1], v2, interFace.output_type);
+          }
+          else if (interFace.show_all_diffs) {
+            double d = interFace.eb_var[e_idx].Delta(vals1[ind1], v2);
+            if (d > interFace.eb_var[e_idx].value) {
+              diff_flag = true;
+              buf       = fmt::format(
+                  "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (block {}, edge {})", name,
+                  name_length, interFace.eb_var[e_idx].abrstr(), vals1[ind1], v2, d, eblock1->Id(),
+                  id_map[eblock1->Edge_Index(e)]);
+              DIFF_OUT(buf);
+            }
+          }
+          else {
+            double d = interFace.eb_var[e_idx].Delta(vals1[ind1], v2);
+            max_diff.set_max(d, vals1[ind1], v2, e, eblock1->Id());
+          }
+          norm.add_value(vals1[ind1], v2);
+        }
+        if (out_file_id >= 0) {
+          ex_put_var(out_file_id, t2.step1, EX_EDGE_BLOCK, e_idx + 1, eblock1->Id(),
+                     eblock1->Size(), vals);
+        }
+      }
+      else {
+        buf = fmt::format("   {:<{}}     diff: edgeblock edge counts differ for edgeblock {}", name,
+                          name_length, eblock1->Id());
+        DIFF_OUT(buf);
+        diff_flag = true;
+      }
+
+      eblock1->Free_Results();
+      if (!interFace.summary_flag) {
+        eblock2->Free_Results();
+      }
+    } // End of edgeblock loop.
+
+    if (!interFace.summary_flag && max_diff.diff > interFace.eb_var[e_idx].value) {
+      diff_flag = true;
+
+      if (interFace.doL1Norm && norm.diff(1) > 0.0) {
+        buf = fmt::format("   {:<{}} L1 norm of diff={:14.7e} ({:11.5e} ~ {:11.5e}) rel={:14.7e}",
+                          name, name_length, norm.diff(1), norm.left(1), norm.right(1),
+                          norm.relative(1));
+        DIFF_OUT(buf, fmt::color::green);
+      }
+      if (interFace.doL2Norm && norm.diff(2) > 0.0) {
+        buf = fmt::format("   {:<{}} L2 norm of diff={:14.7e} ({:11.5e} ~ {:11.5e}) rel={:14.7e}",
+                          name, name_length, norm.diff(2), norm.left(2), norm.right(2),
+                          norm.relative(2));
+        DIFF_OUT(buf, fmt::color::green);
+      }
+
+      if (!interFace.quiet_flag) {
+        Edge_Block<INT> *eblock = file1.Get_Edge_Block_by_Id(max_diff.blk);
+        buf = fmt::format("   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (block {}, edge {})",
+                          name, name_length, interFace.eb_var[e_idx].abrstr(), max_diff.val1,
+                          max_diff.val2, max_diff.diff, max_diff.blk,
+                          id_map[eblock->Edge_Index(max_diff.id)]);
+        DIFF_OUT(buf);
+      }
+      else {
+        Die_TS(step1);
+      }
+    }
+
+  } // End of edgeblock variable loop.
+  return diff_flag;
+}
+
+template <typename INT>
+bool diff_faceblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, const TimeInterp &t2,
+                    int out_file_id, const INT *id_map, std::vector<MinMaxData> &mm_fb,
+                    double *vals)
+{
+  bool diff_flag = false;
+
+  if (out_file_id >= 0) {
+    SMART_ASSERT(vals != nullptr);
+  }
+
+  int name_length = max_string_length(file1.FB_Var_Names()) + 1;
+
+  if (out_file_id < 0 && !interFace.quiet_flag && !interFace.summary_flag &&
+      !interFace.fb_var_names.empty()) {
+    fmt::print("Face Block variables:\n");
+  }
+
+  for (unsigned f_idx = 0; f_idx < interFace.fb_var_names.size(); ++f_idx) {
+    const std::string &name  = (interFace.fb_var_names)[f_idx];
+    int                vidx1 = find_string(file1.FB_Var_Names(), name, interFace.nocase_var_names);
+    int                vidx2 = 0;
+    if (!interFace.summary_flag) {
+      vidx2 = find_string(file2.FB_Var_Names(), name, interFace.nocase_var_names);
+    }
+    if (vidx1 < 0 || vidx2 < 0) {
+      Error(fmt::format("Unable to find faceblock variable named '{}' on database.\n", name));
+      exit(1);
+    }
+
+    DiffData max_diff;
+    Norm     norm;
+
+    for (size_t b = 0; b < file1.Num_Face_Blocks(); ++b) {
+      Face_Block<INT> *fblock1 = file1.Get_Face_Block_by_Index(b);
+      SMART_ASSERT(fblock1 != nullptr);
+      if (fblock1->Size() == 0) {
+        continue;
+      }
+      if (!fblock1->is_valid_var(vidx1)) {
+        continue;
+      }
+
+      Face_Block<INT> *fblock2 = nullptr;
+      if (!interFace.summary_flag) {
+        if (interFace.by_name) {
+          fblock2 = file2.Get_Face_Block_by_Name(fblock1->Name());
+        }
+        else {
+          fblock2 = file2.Get_Face_Block_by_Id(fblock1->Id());
+        }
+        if (fblock2 == nullptr || !fblock2->is_valid_var(vidx2)) {
+          continue;
+        }
+      }
+
+      fblock1->Load_Results(step1, vidx1);
+      const double *vals1 = fblock1->Get_Results(vidx1);
+
+      if (vals1 == nullptr) {
+        Error(fmt::format("Could not find variable '{}' in faceblock {}, file 1.\n", name,
+                          fblock1->Id()));
+        diff_flag = true;
+        continue;
+      }
+
+      if (Invalid_Values(vals1, fblock1->Size())) {
+        Error(fmt::format("NaN found for faceblock variable '{}' in faceblock {}, file 1.\n", name,
+                          fblock1->Id()));
+        diff_flag = true;
+      }
+
+      double        v2    = 0;
+      const double *vals2 = nullptr;
+      if (!interFace.summary_flag) {
+        fblock2->Load_Results(t2.step1, t2.step2, t2.proportion, vidx2);
+        vals2 = fblock2->Get_Results(vidx2);
+
+        if (vals2 == nullptr) {
+          Error(fmt::format("Could not find variable '{}' in faceblock {}, file 2.\n", name,
+                            fblock2->Id()));
+          diff_flag = true;
+          continue;
+        }
+
+        if (Invalid_Values(vals2, fblock2->Size())) {
+          Error(fmt::format("NaN found for faceblock variable '{}' in faceblock {}, file 2.\n",
+                            name, fblock2->Id()));
+          diff_flag = true;
+        }
+      }
+
+      size_t fcount = fblock1->Size();
+      if (interFace.summary_flag || fblock2->Size() == fcount) {
+        for (size_t f = 0; f < fcount; ++f) {
+          size_t ind1 = fblock1->Face_Index(f);
+          size_t ind2 = 0;
+          if (out_file_id >= 0) {
+            vals[ind1] = 0.;
+          }
+          if (!interFace.summary_flag) {
+            ind2 = fblock2->Face_Index(f);
+            v2   = vals2[ind2];
+          }
+
+          if (interFace.summary_flag) {
+            mm_fb[f_idx].spec_min_max(vals1[ind1], step1, f, fblock1->Id());
+          }
+          else if (out_file_id >= 0) {
+            vals[ind1] = FileDiff(vals1[ind1], v2, interFace.output_type);
+          }
+          else if (interFace.show_all_diffs) {
+            double d = interFace.fb_var[f_idx].Delta(vals1[ind1], v2);
+            if (d > interFace.fb_var[f_idx].value) {
+              diff_flag = true;
+              buf       = fmt::format(
+                  "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (block {}, face {})", name,
+                  name_length, interFace.fb_var[f_idx].abrstr(), vals1[ind1], v2, d, fblock1->Id(),
+                  id_map[fblock1->Face_Index(f)]);
+              DIFF_OUT(buf);
+            }
+          }
+          else {
+            double d = interFace.fb_var[f_idx].Delta(vals1[ind1], v2);
+            max_diff.set_max(d, vals1[ind1], v2, f, fblock1->Id());
+          }
+          norm.add_value(vals1[ind1], v2);
+        }
+        if (out_file_id >= 0) {
+          ex_put_var(out_file_id, t2.step1, EX_FACE_BLOCK, f_idx + 1, fblock1->Id(),
+                     fblock1->Size(), vals);
+        }
+      }
+      else {
+        buf = fmt::format("   {:<{}}     diff: faceblock face counts differ for faceblock {}", name,
+                          name_length, fblock1->Id());
+        DIFF_OUT(buf);
+        diff_flag = true;
+      }
+
+      fblock1->Free_Results();
+      if (!interFace.summary_flag) {
+        fblock2->Free_Results();
+      }
+    } // End of faceblock loop.
+
+    if (!interFace.summary_flag && max_diff.diff > interFace.fb_var[f_idx].value) {
+      diff_flag = true;
+
+      if (interFace.doL1Norm && norm.diff(1) > 0.0) {
+        buf = fmt::format("   {:<{}} L1 norm of diff={:14.7e} ({:11.5e} ~ {:11.5e}) rel={:14.7e}",
+                          name, name_length, norm.diff(1), norm.left(1), norm.right(1),
+                          norm.relative(1));
+        DIFF_OUT(buf, fmt::color::green);
+      }
+      if (interFace.doL2Norm && norm.diff(2) > 0.0) {
+        buf = fmt::format("   {:<{}} L2 norm of diff={:14.7e} ({:11.5e} ~ {:11.5e}) rel={:14.7e}",
+                          name, name_length, norm.diff(2), norm.left(2), norm.right(2),
+                          norm.relative(2));
+        DIFF_OUT(buf, fmt::color::green);
+      }
+
+      if (!interFace.quiet_flag) {
+        buf = fmt::format("   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (block {}, face {})",
+                          name, name_length, interFace.fb_var[f_idx].abrstr(), max_diff.val1,
+                          max_diff.val2, max_diff.diff, max_diff.blk, id_map[max_diff.id]);
+        DIFF_OUT(buf);
+      }
+      else {
+        Die_TS(step1);
+      }
+    }
+
+  } // End of faceblock variable loop.
+  return diff_flag;
+}
+
+template <typename INT>
 bool diff_element_attributes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, INT * /*elmt_map*/,
                              const INT *id_map, Exo_Block<INT> ** /*blocks2*/)
 {
@@ -2329,6 +2737,7 @@ template <typename INT>
 void output_summary(ExoII_Read<INT> &file1, MinMaxData &mm_time, std::vector<MinMaxData> &mm_glob,
                     std::vector<MinMaxData> &mm_node, std::vector<MinMaxData> &mm_elmt,
                     std::vector<MinMaxData> &mm_ns, std::vector<MinMaxData> &mm_ss,
+                    std::vector<MinMaxData> &mm_eb, std::vector<MinMaxData> &mm_fb,
                     const INT *node_id_map, const INT *elem_id_map)
 {
   int name_length = 0;
@@ -2441,6 +2850,38 @@ void output_summary(ExoII_Read<INT> &file1, MinMaxData &mm_time, std::vector<Min
   }
   else {
     fmt::print("\n# No SIDESET VARIABLES\n");
+  }
+
+  n = interFace.eb_var_names.size();
+  if (n > 0) {
+    fmt::print("\nEDGE BLOCK VARIABLES relative 1.e-6 floor 0.0\n");
+    name_length = max_string_length(interFace.eb_var_names);
+    for (i = 0; i < n; ++i) {
+      fmt::print("\t{:<{}}  # min: {:15.8g} @ t{},b{},e{}\tmax: {:15.8g} @ t{},b{}"
+                 ",e{}\n",
+                 ((interFace.eb_var_names)[i]), name_length, mm_eb[i].min_val, mm_eb[i].min_step,
+                 mm_eb[i].min_blk, elem_id_map[mm_eb[i].min_id], mm_eb[i].max_val,
+                 mm_eb[i].max_step, mm_eb[i].max_blk, elem_id_map[mm_eb[i].max_id]);
+    }
+  }
+  else {
+    fmt::print("\n# No EDGE BLOCK VARIABLES\n");
+  }
+
+  n = interFace.fb_var_names.size();
+  if (n > 0) {
+    fmt::print("\nFACE BLOCK VARIABLES relative 1.e-6 floor 0.0\n");
+    name_length = max_string_length(interFace.fb_var_names);
+    for (i = 0; i < n; ++i) {
+      fmt::print("\t{:<{}}  # min: {:15.8g} @ t{},b{},e{}\tmax: {:15.8g} @ t{},b{}"
+                 ",e{}\n",
+                 ((interFace.fb_var_names)[i]), name_length, mm_fb[i].min_val, mm_fb[i].min_step,
+                 mm_fb[i].min_blk, elem_id_map[mm_fb[i].min_id], mm_fb[i].max_val,
+                 mm_fb[i].max_step, mm_fb[i].max_blk, elem_id_map[mm_fb[i].max_id]);
+    }
+  }
+  else {
+    fmt::print("\n# No FACE BLOCK VARIABLES\n");
   }
   fmt::print("\n");
 }

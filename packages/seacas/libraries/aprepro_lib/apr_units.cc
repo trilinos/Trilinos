@@ -591,5 +591,5 @@ void load_conversion(var_init *base, svar_init *label)
   define_var("arcsec", 2.0 * PI * rad / 360.0 / 60.0 / 60.0, Aout);
   define_var("grade",  2.0 * PI * rad / 360.0 * 0.9, Aout);
 }
-}
+}  // namespace
 }  // namespace SEAMS

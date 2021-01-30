@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -23,6 +23,7 @@ namespace Ioss {
   class ParallelUtils
   {
   public:
+    ParallelUtils() = default;
     explicit ParallelUtils(MPI_Comm the_communicator);
     ~ParallelUtils() = default;
 
@@ -119,18 +120,19 @@ namespace Ioss {
     void progress(const std::string &output) const;
 
   private:
-    MPI_Comm communicator_;
+    MPI_Comm communicator_{MPI_COMM_WORLD};
   };
 
 #ifdef SEACAS_HAVE_MPI
   inline MPI_Datatype mpi_type(double /*dummy*/) { return MPI_DOUBLE; }
   inline MPI_Datatype mpi_type(float /*dummy*/) { return MPI_FLOAT; }
   inline MPI_Datatype mpi_type(int /*dummy*/) { return MPI_INT; }
-  inline MPI_Datatype mpi_type(char /*dummy*/) { return MPI_CHAR; }
   inline MPI_Datatype mpi_type(long int /*dummy*/) { return MPI_LONG_LONG_INT; }
   inline MPI_Datatype mpi_type(long long int /*dummy*/) { return MPI_LONG_LONG_INT; }
   inline MPI_Datatype mpi_type(unsigned int /*dummy*/) { return MPI_UNSIGNED; }
   inline MPI_Datatype mpi_type(unsigned long int /*dummy*/) { return MPI_UNSIGNED_LONG; }
+  inline MPI_Datatype mpi_type(unsigned long long int /*dummy*/) { return MPI_UNSIGNED_LONG_LONG; }
+  inline MPI_Datatype mpi_type(char /*dummy*/) { return MPI_CHAR; }
 
   template <typename T>
   int MY_Alltoallv64(const std::vector<T> &sendbuf, const std::vector<int64_t> &sendcounts,

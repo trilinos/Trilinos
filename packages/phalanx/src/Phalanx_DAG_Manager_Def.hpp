@@ -1053,6 +1053,21 @@ PHX::DagManager<Traits>::getRequiredFields() const
 {
   return required_fields_;
 }
+//=======================================================================
+template<typename Traits>
+const std::unordered_map<std::string,int>&
+PHX::DagManager<Traits>::queryRegisteredFields() const
+{
+  return field_to_node_index_;
+}
+
+//=======================================================================
+template<typename Traits>
+const std::vector<PHX::DagNode<Traits>>&
+PHX::DagManager<Traits>::queryRegisteredEvaluators() const
+{
+  return nodes_;
+}
 
 //=======================================================================
 template<typename Traits>

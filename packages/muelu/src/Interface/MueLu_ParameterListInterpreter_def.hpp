@@ -568,11 +568,11 @@ namespace MueLu {
     if (paramList.isParameter("P") && !paramList.get<RCP<Matrix> >("P").is_null())
       have_userP  = true;
 
-    // == Smoothers ==
-    UpdateFactoryManager_Smoothers(paramList, defaultList, manager, levelID, keeps);
-
     // === Coarse solver ===
     UpdateFactoryManager_CoarseSolvers(paramList, defaultList, manager, levelID, keeps);
+
+    // == Smoothers ==
+    UpdateFactoryManager_Smoothers(paramList, defaultList, manager, levelID, keeps);
 
     // === Aggregation ===
     UpdateFactoryManager_Aggregation_TentativeP(paramList, defaultList, manager, levelID, keeps);
@@ -963,6 +963,7 @@ namespace MueLu {
       dropFactory =   rcp(new MueLu::SmooVecCoalesceDropFactory<SC,LO,GO,NO>());
       ParameterList dropParams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",             std::string, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: block diagonal: interleaved blocksize", std::string, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: number of random vectors", int, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: number of times to pre or post smooth", int, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: penalty parameters", Teuchos::Array<double>, dropParams);
