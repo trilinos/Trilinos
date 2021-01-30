@@ -61,7 +61,7 @@ namespace Tpetra {
     ///
     /// This is not for users; it's an implementation detail of
     /// functions readOnly, writeOnly, and readWrite (see below).
-    enum class EAccess {
+    enum class WLAccessEnum {
       ReadOnly,
       WriteOnly,
       ReadWrite
@@ -73,23 +73,23 @@ namespace Tpetra {
     /// can have a parameter pack.  You can't mix class types and
     /// constexpr values in a parameter pack.  Compare to
     /// Kokkos::MemoryTraits or Kokkos::Schedule.
-    template<const EAccess accessMode>
-    class Access {
+    template<const WLAccessEnum accessMode>
+    class WLAccessTag {
       /// \brief Type alias to help identifying the tag class.
       ///
       /// We follow Kokkos in identifying a tag class by checking
       /// whether a type alias inside it has the same type as the tag
       /// class itself.
-      using access_mode = Access<accessMode>;
+      using access_mode = WLAccessTag<accessMode>;
     };
 
     template<class T> struct is_access_mode : public std::false_type {};
-    template<EAccess am>
-    struct is_access_mode<Access<am>> : public std::true_type {};
+    template<WLAccessEnum am>
+    struct is_access_mode<WLAccessTag<am>> : public std::true_type {};
 
-    using read_only = Access<EAccess::ReadOnly>;
-    using write_only = Access<EAccess::WriteOnly>;
-    using read_write = Access<EAccess::ReadWrite>;
+    using read_only = WLAccessTag<WLAccessEnum::ReadOnly>;
+    using write_only = WLAccessTag<WLAccessEnum::WriteOnly>;
+    using read_write = WLAccessTag<WLAccessEnum::ReadWrite>;
 
     /// \brief Given a global object, get its default memory space
     ///   (both the type and the default instance thereof).

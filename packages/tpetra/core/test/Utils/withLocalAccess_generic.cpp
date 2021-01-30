@@ -92,7 +92,7 @@ template<class AccessMode>
 struct StubGlobalObjectLocalObjectImpl {};
 
 template<>
-struct StubGlobalObjectLocalObjectImpl<Access<EAccess::ReadOnly> >
+struct StubGlobalObjectLocalObjectImpl<WLAccessTag<WLAccessEnum::ReadOnly> >
 {
   // In practice, prefer things that behave like std::unique_ptr,
   // since you don't actually need to share state.
@@ -117,7 +117,7 @@ struct StubGlobalObjectLocalObjectImpl<Access<EAccess::ReadOnly> >
 
 // Example of the "copy-back" model.
 template<>
-struct StubGlobalObjectLocalObjectImpl<Access<EAccess::WriteOnly> >
+struct StubGlobalObjectLocalObjectImpl<WLAccessTag<WLAccessEnum::WriteOnly> >
 {
 private:
   struct Deleter {
@@ -160,7 +160,7 @@ public:
 };
 
 template<>
-struct StubGlobalObjectLocalObjectImpl<Access<EAccess::ReadWrite> >
+struct StubGlobalObjectLocalObjectImpl<WLAccessTag<WLAccessEnum::ReadWrite> >
 {
   // In practice, prefer things that behave like std::unique_ptr,
   // since you don't actually need to share state.
