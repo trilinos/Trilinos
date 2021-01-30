@@ -174,6 +174,9 @@ namespace MueLu {
     void MergeRowsWithDropping(const Matrix& A, const LO row, const ArrayRCP<const SC>& ghostedDiagVals, SC threshold, Array<LO>& cols, const Array<LO>& translation) const;
 
 
+    // When we want to decouple a block diagonal system
+    void BlockDiagonalize(Level & currentLevel,const Matrix & A, bool generate_matrix, RCP<Matrix> & outMatrix) const;
+
   }; //class CoalesceDropFactory
 
 } //namespace MueLu
