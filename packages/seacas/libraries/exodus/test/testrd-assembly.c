@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -164,9 +164,14 @@ int main(int argc, char **argv)
     ex_get_ids(exoid, EX_ASSEMBLY, assembly_ids);
 
     char *assembly_names[10];
+    char *assembly_name2[10];
     for (i = 0; i < num_assembly; i++) {
       assembly_names[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
+      assembly_name2[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
     }
+
+    /* Verify that we can get the names via the `ex_get_names` function... */
+    EXCHECK(ex_get_names(exoid, EX_ASSEMBLY, assembly_name2));
 
     ex_assembly assemblies[10];
     int64_t     entity[10];
@@ -184,6 +189,9 @@ int main(int argc, char **argv)
       for (int j = 0; j < assemblies[i].entity_count; j++) {
         printf("%" PRId64 ", ", entity[j]);
       }
+      if (strcmp(assembly_name2[i], assemblies[i].name) != 0) {
+        printf("error in ex_get_names for EX_ASSEMBLY\n");
+      }
       printf("\n");
     }
 
@@ -200,6 +208,9 @@ int main(int argc, char **argv)
       printf("Assembly named '%s' has id %" PRId64 ". It contains %d entities of type '%s'\n",
              assmbly[i].name, assmbly[i].id, assmbly[i].entity_count,
              ex_name_of_object(assmbly[i].type));
+      if (strcmp(assembly_name2[i], assemblies[i].name) != 0) {
+        printf("error in ex_get_names for EX_ASSEMBLY\n");
+      }
     }
 
     /* Read attributes... */

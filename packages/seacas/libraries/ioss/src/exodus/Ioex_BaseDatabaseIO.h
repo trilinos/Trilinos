@@ -192,8 +192,8 @@ namespace Ioex {
     int64_t put_field_internal(const Ioss::Blob *blob, const Ioss::Field &field, void *data,
                                size_t data_size) const override             = 0;
 
-    virtual void write_meta_data() = 0;
-    void         write_results_metadata(bool gather_data = true);
+    virtual void write_meta_data(bool appending) = 0;
+    void         write_results_metadata(bool gather_data, bool appending);
 
     void openDatabase__() const override { get_file_pointer(); }
 

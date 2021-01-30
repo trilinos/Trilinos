@@ -100,8 +100,10 @@ const char *ex_config(void)
     j += sprintf(buffer + j, "\t\tHDF5 enabled (%u.%u.%u)\n", major, minor, release);
   }
   j += sprintf(buffer + j, "\t\tZlib Compression (read/write) enabled\n");
-#if defined(NC_HAS_SZIP_WRITE)
+#if NC_HAS_SZIP_WRITE == 1
   j += sprintf(buffer + j, "\t\tSZip Compression (read/write) enabled\n");
+#else
+  j += sprintf(buffer + j, "\t\tSZip Compression (read/write) NOT enabled\n");
 #endif
 #endif
 #endif
@@ -142,7 +144,7 @@ const char *ex_config(void)
 #if defined(NC_HAVE_META_H)
   j += sprintf(buffer + j, "\t\tNC_HAVE_META_H defined\n");
 #endif
-#if defined(NC_HAS_NC2)
+#if NC_HAS_NC2
   j += sprintf(buffer + j, "\t\tAPI Version 2 support enabled\n");
 #else
   j += sprintf(buffer + j, "\t\tAPI Version 2 support NOT enabled\n");
@@ -171,7 +173,7 @@ int ex__check_file_type(const char *path, int *type)
 
 #define MAGIC_NUMBER_LEN 4
 
-  char magic[MAGIC_NUMBER_LEN];
+  char magic[MAGIC_NUMBER_LEN+1];
   EX_FUNC_ENTER();
 
   *type = 0;
@@ -188,7 +190,8 @@ int ex__check_file_type(const char *path, int *type)
       ex_err(__func__, errmsg, EX_WRONGFILETYPE);
       EX_FUNC_LEAVE(EX_FATAL);
     }
-    i = fread(magic, MAGIC_NUMBER_LEN, 1, fp);
+    i                       = fread(magic, MAGIC_NUMBER_LEN, 1, fp);
+    magic[MAGIC_NUMBER_LEN] = '\0';
     fclose(fp);
     if (i != 1) {
       char errmsg[MAX_ERR_LENGTH];
@@ -1759,15 +1762,17 @@ void ex__compress_variable(int exoid, int varid, int type)
         }
       }
       else if (file->compression_algorithm == EX_COMPRESS_SZIP) {
-#if defined(NC_HAS_SZIP_WRITE)
+#if NC_HAS_SZIP_WRITE == 1
         /* See: https://support.hdfgroup.org/doc_resource/SZIP/ and
                 https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSzip
            for details on SZIP library and parameters.
         */
 
-        /* const int NC_SZIP_EC = 4; */       /* Selects entropy coding method for szip. */
-        const int NC_SZIP_NN            = 32; /* Selects nearest neighbor coding method for szip. */
-        const int SZIP_PIXELS_PER_BLOCK = 32; /* Even and <= 32; valid values are 8, 10, 16, 32 */
+        /* const int NC_SZIP_EC = 4; */ /* Selects entropy coding method for szip. */
+        const int NC_SZIP_NN = 32;      /* Selects nearest neighbor coding method for szip. */
+        /* Even and between 4 and 32; typical values are 8, 10, 16, 32 */
+        const int SZIP_PIXELS_PER_BLOCK =
+            file->compression_level == 0 ? 32 : file->compression_level;
         nc_def_var_szip(exoid, varid, NC_SZIP_NN, SZIP_PIXELS_PER_BLOCK);
 #else
         char errmsg[MAX_ERR_LENGTH];

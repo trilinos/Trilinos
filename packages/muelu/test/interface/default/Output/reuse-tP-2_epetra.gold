@@ -23,6 +23,7 @@ algorithm = "classical" classical algorithm = "default": threshold = 0.02, block
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: block diagonal: interleaved blocksize = 3   [default]
 aggregation: distance laplacian algo = default   [default]
 aggregation: classical algo = default   [default]
 lightweight wrap = 1
@@ -182,6 +183,7 @@ algorithm = "classical" classical algorithm = "default": threshold = 0.02, block
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: block diagonal: interleaved blocksize = 3   [default]
 aggregation: distance laplacian algo = default   [default]
 aggregation: classical algo = default   [default]
 lightweight wrap = 1
@@ -370,6 +372,7 @@ algorithm = "classical" classical algorithm = "default": threshold = 0.02, block
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: block diagonal: interleaved blocksize = 3   [default]
 aggregation: distance laplacian algo = default   [default]
 aggregation: classical algo = default   [default]
 lightweight wrap = 1
@@ -470,6 +473,7 @@ algorithm = "classical" classical algorithm = "default": threshold = 0.02, block
 aggregation: drop tol = 0.02
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = classical   [default]
+aggregation: block diagonal: interleaved blocksize = 3   [default]
 aggregation: distance laplacian algo = default   [default]
 aggregation: classical algo = default   [default]
 lightweight wrap = 1

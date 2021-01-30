@@ -503,6 +503,8 @@ void SystemInterface::Set_Max_Names(int size)
   elmt_att.resize(max_number_of_names, default_tol);
   ns_var.resize(max_number_of_names, default_tol);
   ss_var.resize(max_number_of_names, default_tol);
+  eb_var.resize(max_number_of_names, default_tol);
+  fb_var.resize(max_number_of_names, default_tol);
 }
 
 bool SystemInterface::parse_options(int argc, char **argv)
@@ -881,6 +883,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
     elmt_att_default = default_tol;
     ns_var_default   = default_tol;
     ss_var_default   = default_tol;
+    eb_var_default   = default_tol;
+    fb_var_default   = default_tol;
 
     const char *temp = options_.retrieve("file");
     if (temp != nullptr) {
@@ -912,6 +916,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
         elmt_att_do_all_flag = true;
         ns_var_do_all_flag   = true;
         ss_var_do_all_flag   = true;
+        eb_var_do_all_flag   = true;
+        fb_var_do_all_flag   = true;
       }
     }
   }
@@ -1404,6 +1410,36 @@ void SystemInterface::Parse_Command_File()
             ss_df_tol.floor = To_Double(tok2);
           }
         }
+      }
+      else if (abbreviation(tok1, "edgeblock", 4) && abbreviation(tok2, "variables", 3)) {
+        eb_var_default = default_tol;
+        xline = Parse_Variables(xline, cmd_file, eb_var_do_all_flag, eb_var_default, eb_var_names,
+                                eb_var, max_number_of_names);
+
+        Check_Parsed_Names(eb_var_names, eb_var_do_all_flag);
+
+        if (!xline.empty()) {
+          copy_string(line, xline);
+        }
+        else {
+          copy_string(line, "");
+        }
+        continue;
+      }
+      else if (abbreviation(tok1, "faceblock", 4) && abbreviation(tok2, "variables", 3)) {
+        fb_var_default = default_tol;
+        xline = Parse_Variables(xline, cmd_file, fb_var_do_all_flag, fb_var_default, fb_var_names,
+                                fb_var, max_number_of_names);
+
+        Check_Parsed_Names(fb_var_names, fb_var_do_all_flag);
+
+        if (!xline.empty()) {
+          copy_string(line, xline);
+        }
+        else {
+          copy_string(line, "");
+        }
+        continue;
       }
       else if (abbreviation(tok1, "element", 4) && abbreviation(tok2, "attributes", 3)) {
         elmt_att_default = default_tol;

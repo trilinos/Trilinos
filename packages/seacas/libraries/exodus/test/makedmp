@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2021 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 # 
@@ -227,7 +227,7 @@ echo "begin test-empty" >> test.output
 ${PREFIX} ${BINDIR}/test-empty${SUFFIX} | grep -v version | grep -v _FillValue > ${SRCDIR}/test-empty.dmp
 echo "end test-empty" >> test.output
 
-if [ "$THREAD_SAFE" == "ON" ]; then
+if [ "$THREAD_SAFE" == "YES" ]; then
 
 echo "test_ts_nvar - each thread writes data for a single nodal variable..."
 echo "begin test_ts_nvar" >> test.output

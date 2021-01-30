@@ -12,8 +12,8 @@
  *
  */
 
-#ifndef EXODUS_II_INT_HDR
-#define EXODUS_II_INT_HDR
+#ifndef EXODUSII_INT_H
+#define EXODUSII_INT_H
 
 #include <stdbool.h>
 
@@ -688,9 +688,9 @@ struct ex__file_item
   unsigned int assembly_count;
   unsigned int blob_count;
   unsigned int
-      compression_algorithm : 2; /**< GZIP/ZLIB, SZIP, more may be supported by NetCDF soon */
-  unsigned int
-      compression_level : 4; /**< 0 (disabled) to 9 (maximum) compression level; NetCDF-4 only */
+      compression_algorithm : 2;      /**< GZIP/ZLIB, SZIP, more may be supported by NetCDF soon */
+  unsigned int compression_level : 6; /**< 0 (disabled) to 9 (maximum) compression level for
+                                         gzip, 4..32 and even for szip; NetCDF-4 only */
   unsigned int user_compute_wordsize : 1; /**< 0 for 4 byte or 1 for 8 byte reals */
   unsigned int shuffle : 1;               /**< 1 true, 0 false */
   unsigned int
@@ -746,31 +746,37 @@ struct ex__obj_stats
   struct ex__obj_stats *next;
 };
 
-void ex__iqsort(int v[], int iv[], int N);
-void ex__iqsort64(int64_t v[], int64_t iv[], int64_t N);
+#ifndef EXODUS_EXPORT
+#define EXODUS_EXPORT extern
+#endif /* EXODUS_EXPORT */
 
-char *ex__catstr(const char * /*string*/, int /*num*/);
-char *ex__catstr2(const char * /*string1*/, int /*num1*/, const char * /*string2*/, int /*num2*/);
-char *ex__dim_num_entries_in_object(ex_entity_type /*obj_type*/, int /*idx*/);
-char *ex__dim_num_objects(ex_entity_type obj_type);
-char *ex__name_var_of_object(ex_entity_type /*obj_type*/, int /*i*/, int /*j*/);
-char *ex__name_red_var_of_object(ex_entity_type /*obj_type*/, int /*indx*/);
-char *ex__name_of_map(ex_entity_type /*map_type*/, int /*map_index*/);
+EXODUS_EXPORT void ex__iqsort(int v[], int iv[], int N);
+EXODUS_EXPORT void ex__iqsort64(int64_t v[], int64_t iv[], int64_t N);
 
-int ex__conv_init(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsize,
-                  int int64_status, bool is_parallel, bool is_hdf5, bool is_pnetcdf, bool is_write);
+EXODUS_EXPORT char *ex__catstr(const char * /*string*/, int /*num*/);
+EXODUS_EXPORT char *ex__catstr2(const char * /*string1*/, int /*num1*/, const char * /*string2*/,
+                                int /*num2*/);
+EXODUS_EXPORT char *ex__dim_num_entries_in_object(ex_entity_type /*obj_type*/, int /*idx*/);
+EXODUS_EXPORT char *ex__dim_num_objects(ex_entity_type obj_type);
+EXODUS_EXPORT char *ex__name_var_of_object(ex_entity_type /*obj_type*/, int /*i*/, int /*j*/);
+EXODUS_EXPORT char *ex__name_red_var_of_object(ex_entity_type /*obj_type*/, int /*indx*/);
+EXODUS_EXPORT char *ex__name_of_map(ex_entity_type /*map_type*/, int /*map_index*/);
 
-void ex__conv_exit(int exoid);
+EXODUS_EXPORT int ex__conv_init(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsize,
+                                int int64_status, bool is_parallel, bool is_hdf5, bool is_pnetcdf,
+                                bool is_write);
 
-nc_type nc_flt_code(int exoid);
-int     ex__comp_ws(int exoid);
-int     ex__get_cpu_ws(void);
-int     ex__is_parallel(int exoid);
+EXODUS_EXPORT void ex__conv_exit(int exoid);
 
-struct ex__list_item **ex__get_counter_list(ex_entity_type obj_type);
-int                    ex__get_file_item(int /*exoid*/, struct ex__list_item ** /*list_ptr*/);
-int                    ex__inc_file_item(int /*exoid*/, struct ex__list_item ** /*list_ptr*/);
-void                   ex__rm_file_item(int /*exoid*/, struct ex__list_item ** /*list_ptr*/);
+EXODUS_EXPORT nc_type nc_flt_code(int exoid);
+EXODUS_EXPORT int     ex__comp_ws(int exoid);
+EXODUS_EXPORT int     ex__get_cpu_ws(void);
+EXODUS_EXPORT int     ex__is_parallel(int exoid);
+
+EXODUS_EXPORT struct ex__list_item **ex__get_counter_list(ex_entity_type obj_type);
+EXODUS_EXPORT int  ex__get_file_item(int /*exoid*/, struct ex__list_item ** /*list_ptr*/);
+EXODUS_EXPORT int  ex__inc_file_item(int /*exoid*/, struct ex__list_item ** /*list_ptr*/);
+EXODUS_EXPORT void ex__rm_file_item(int /*exoid*/, struct ex__list_item ** /*list_ptr*/);
 
 extern struct ex__obj_stats *exoII_eb;
 extern struct ex__obj_stats *exoII_ed;
@@ -789,71 +795,75 @@ struct ex__file_item *ex__find_file_item(int exoid);
 struct ex__file_item *ex__add_file_item(int exoid);
 struct ex__obj_stats *ex__get_stat_ptr(int exoid, struct ex__obj_stats **obj_ptr);
 
-void ex__rm_stat_ptr(int exoid, struct ex__obj_stats **obj_ptr);
+EXODUS_EXPORT void ex__rm_stat_ptr(int exoid, struct ex__obj_stats **obj_ptr);
 
-void ex__set_compact_storage(int exoid, int varid);
-void ex__compress_variable(int exoid, int varid, int type);
-int  ex__id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num);
-int  ex__check_valid_file_id(
+EXODUS_EXPORT void ex__set_compact_storage(int exoid, int varid);
+EXODUS_EXPORT void ex__compress_variable(int exoid, int varid, int type);
+EXODUS_EXPORT int  ex__id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num);
+EXODUS_EXPORT int  ex__check_valid_file_id(
      int exoid, const char *func); /** Return fatal error if exoid does not refer to valid file */
-int ex__check_multiple_open(const char *path, int mode, const char *func);
-int ex__check_file_type(const char *path, int *type);
-int ex__get_dimension(int exoid, const char *DIMENSION, const char *label, size_t *count,
-                      int *dimid, const char *routine);
+EXODUS_EXPORT int ex__check_multiple_open(const char *path, int mode, const char *func);
+EXODUS_EXPORT int ex__check_file_type(const char *path, int *type);
+EXODUS_EXPORT int ex__get_dimension(int exoid, const char *DIMENSION, const char *label,
+                                    size_t *count, int *dimid, const char *routine);
 
-int ex__get_nodal_var(int exoid, int time_step, int nodal_var_index, int64_t num_nodes,
-                      void *nodal_var_vals);
+EXODUS_EXPORT int ex__get_nodal_var(int exoid, int time_step, int nodal_var_index,
+                                    int64_t num_nodes, void *nodal_var_vals);
 
-int ex__put_nodal_var(int exoid, int time_step, int nodal_var_index, int64_t num_nodes,
-                      const void *nodal_var_vals);
+EXODUS_EXPORT int ex__put_nodal_var(int exoid, int time_step, int nodal_var_index,
+                                    int64_t num_nodes, const void *nodal_var_vals);
 
-int ex__get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number, int beg_time_step,
-                           int end_time_step, void *nodal_var_vals);
+EXODUS_EXPORT int ex__get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number,
+                                         int beg_time_step, int end_time_step,
+                                         void *nodal_var_vals);
 
-int ex__get_partial_nodal_var(int exoid, int time_step, int nodal_var_index, int64_t start_node,
-                              int64_t num_nodes, void *var_vals);
+EXODUS_EXPORT int ex__get_partial_nodal_var(int exoid, int time_step, int nodal_var_index,
+                                            int64_t start_node, int64_t num_nodes, void *var_vals);
 
-int ex__put_partial_nodal_var(int exoid, int time_step, int nodal_var_index, int64_t start_node,
-                              int64_t num_nodes, const void *nodal_var_vals);
-int ex__get_glob_vars(int exoid, int time_step, int num_glob_vars, void *glob_var_vals);
+EXODUS_EXPORT int ex__put_partial_nodal_var(int exoid, int time_step, int nodal_var_index,
+                                            int64_t start_node, int64_t num_nodes,
+                                            const void *nodal_var_vals);
+EXODUS_EXPORT int ex__get_glob_vars(int exoid, int time_step, int num_glob_vars,
+                                    void *glob_var_vals);
 
-int ex__get_glob_var_time(int exoid, int glob_var_index, int beg_time_step, int end_time_step,
-                          void *glob_var_vals);
+EXODUS_EXPORT int ex__get_glob_var_time(int exoid, int glob_var_index, int beg_time_step,
+                                        int end_time_step, void *glob_var_vals);
 
-int  ex__get_name(int exoid, int varid, size_t index, char *name, int name_size,
-                  ex_entity_type obj_type, const char *routine);
-int  ex__get_names(int exoid, int varid, size_t num_entity, char **names, ex_entity_type obj_type,
-                   const char *routine);
-int  ex__put_name(int exoid, int varid, size_t index, const char *name, ex_entity_type obj_type,
-                  const char *subtype, const char *routine);
-int  ex__put_names(int exoid, int varid, size_t num_entity, char **names, ex_entity_type obj_type,
-                   const char *subtype, const char *routine);
-void ex__trim(char *name);
-void ex__update_max_name_length(int exoid, int length);
-int  ex__leavedef(int         exoid,    /* NemesisI file ID         */
-                  const char *call_rout /* Name of calling function */
+EXODUS_EXPORT int  ex__get_name(int exoid, int varid, size_t index, char *name, int name_size,
+                                ex_entity_type obj_type, const char *routine);
+EXODUS_EXPORT int  ex__get_names(int exoid, int varid, size_t num_entity, char **names,
+                                 ex_entity_type obj_type, const char *routine);
+EXODUS_EXPORT int  ex__put_name(int exoid, int varid, size_t index, const char *name,
+                                ex_entity_type obj_type, const char *subtype, const char *routine);
+EXODUS_EXPORT int  ex__put_names(int exoid, int varid, size_t num_entity, char **names,
+                                 ex_entity_type obj_type, const char *subtype, const char *routine);
+EXODUS_EXPORT void ex__trim(char *name);
+EXODUS_EXPORT void ex__update_max_name_length(int exoid, int length);
+EXODUS_EXPORT int  ex__leavedef(int         exoid,    /* NemesisI file ID         */
+                                const char *call_rout /* Name of calling function */
  );
 
-int ex__check_version(int run_version);
-int ex__handle_mode(unsigned int my_mode, int is_parallel, int run_version);
-int ex__populate_header(int exoid, const char *path, int my_mode, int is_parallel, int *comp_ws,
-                        int *io_ws);
+EXODUS_EXPORT int ex__check_version(int run_version);
+EXODUS_EXPORT int ex__handle_mode(unsigned int my_mode, int is_parallel, int run_version);
+EXODUS_EXPORT int ex__populate_header(int exoid, const char *path, int my_mode, int is_parallel,
+                                      int *comp_ws, int *io_ws);
 
-int ex__get_block_param(int exoid, ex_entity_id id, int ndim,
-                        struct ex__elem_blk_parm *elem_blk_parm);
+EXODUS_EXPORT int ex__get_block_param(int exoid, ex_entity_id id, int ndim,
+                                      struct ex__elem_blk_parm *elem_blk_parm);
 
-int ex__get_file_type(int exoid, char *ftype);
+EXODUS_EXPORT int ex__get_file_type(int exoid, char *ftype);
 
-int ex__put_nemesis_version(int exoid);
+EXODUS_EXPORT int ex__put_nemesis_version(int exoid);
 
-int ex__put_homogenous_block_params(int exoid, size_t block_count, const struct ex_block *blocks);
+EXODUS_EXPORT int ex__put_homogenous_block_params(int exoid, size_t block_count,
+                                                  const struct ex_block *blocks);
 
-int ne__check_file_version(int exoid);
+EXODUS_EXPORT int ne__check_file_version(int exoid);
 
-int ne__id_lkup(int          exoid,       /* NetCDF/Exodus file ID */
-                const char * ne_var_name, /* Nemesis variable name */
-                int64_t *    idx,         /* index variable for variable, length 2 */
-                ex_entity_id ne_var_id    /* NetCDF variable ID */
+EXODUS_EXPORT int ne__id_lkup(int          exoid,       /* NetCDF/Exodus file ID */
+                              const char * ne_var_name, /* Nemesis variable name */
+                              int64_t *    idx,         /* index variable for variable, length 2 */
+                              ex_entity_id ne_var_id    /* NetCDF variable ID */
 );
 
 /**
@@ -875,7 +885,7 @@ int ne__id_lkup(int          exoid,       /* NetCDF/Exodus file ID */
  * Note that this is a global setting for all databases. If you are
  * accessing multiple databases, they will all use the same value.
  */
-extern int ex__default_max_name_length;
+EXODUS_EXPORT int ex__default_max_name_length;
 /*! @} */
 
 #ifdef __cplusplus

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -48,7 +48,7 @@ bool no_case_equals(const std::string &s1, const std::string &s2)
 std::string &chop_whitespace(std::string &s)
 {
   if (!s.empty()) {
-    int i = s.size() - 1;
+    int i = (int)s.size() - 1;
     for (; i >= 0; --i) {
       if (isspace(static_cast<int>(s[i])) == 0) {
         break;
@@ -66,7 +66,7 @@ std::string extract_token(std::string &s, const char *delimiters)
     SMART_ASSERT(delimiters != nullptr && !std::string(delimiters).empty());
 
     // Move through initial delimiters.
-    unsigned p = s.find_first_not_of(delimiters);
+    auto p = s.find_first_not_of(delimiters);
 
     if (p >= s.size()) {
       // no tokens
@@ -82,14 +82,14 @@ std::string extract_token(std::string &s, const char *delimiters)
       // action outside of this block of code.
 
       // Find the closing quote
-      unsigned cq = s.find_first_of("\"", p + 1);
+      auto cq = s.find_first_of("\"", p + 1);
 
       // No closing quote found. Error out.
       SMART_ASSERT(cq < s.size());
 
       std::string tok = s.substr(p + 1, cq - (p + 1));
 
-      unsigned r = s.find_first_not_of(delimiters, cq + 1);
+      auto r = s.find_first_not_of(delimiters, cq + 1);
 
       if (r >= s.size()) {
         s = "";
@@ -101,7 +101,7 @@ std::string extract_token(std::string &s, const char *delimiters)
     }
 
     // move to end of first token
-    unsigned q = s.find_first_of(delimiters, p);
+    auto q = s.find_first_of(delimiters, p);
 
     if (q >= s.size()) {
       // no more delimiters
@@ -114,7 +114,7 @@ std::string extract_token(std::string &s, const char *delimiters)
     std::string tok = s.substr(p, q - p);
 
     // move to start of the second token
-    unsigned r = s.find_first_not_of(delimiters, q);
+    auto r = s.find_first_not_of(delimiters, q);
 
     if (r >= s.size()) {
       // no second token
@@ -156,8 +156,8 @@ int max_string_length(const std::vector<std::string> &names)
   if (names.empty()) {
     return 0;
   }
-  unsigned len = names[0].size();
-  for (unsigned i = 1; i < names.size(); i++) {
+  auto len = names[0].size();
+  for (size_t i = 1; i < names.size(); i++) {
     if (names[i].size() > len) {
       len = names[i].size();
     }
@@ -168,7 +168,7 @@ int max_string_length(const std::vector<std::string> &names)
 void to_lower(std::string &s)
 {
   for (auto &elem : s) {
-    elem = tolower(elem);
+    elem = (char)tolower(elem);
   }
 }
 

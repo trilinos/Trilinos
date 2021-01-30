@@ -147,6 +147,7 @@
 #include "MueLu_UserPFactory.hpp"
 #include "MueLu_UzawaSmoother.hpp"
 #include "MueLu_VariableDofLaplacianFactory.hpp"
+#include "MueLu_ZeroSubBlockAFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 #include "MueLu_NodePartitionInterface.hpp"
@@ -294,6 +295,7 @@ namespace MueLu {
       if (factoryName == "UserAggregationFactory")                return Build2<UserAggregationFactory>                (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UserPFactory")                          return Build2<UserPFactory>                          (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "VariableDofLaplacianFactory")           return Build2<VariableDofLaplacianFactory>           (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "ZeroSubBlockAFactory")                  return Build2<ZeroSubBlockAFactory>                  (paramList, factoryMapIn, factoryManagersIn);
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (factoryName == "AmalgamationFactory_kokkos")            return Build2<AmalgamationFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoalesceDropFactory_kokkos")            return Build2<CoalesceDropFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
