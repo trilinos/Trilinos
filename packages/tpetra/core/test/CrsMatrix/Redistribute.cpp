@@ -12,7 +12,7 @@ int main(int narg, char** arg)
   
   // This test requires at least two processors
   if (np == 1) {
-    std::cout << "PASSED" << std::endl;
+    std::cout << "TEST PASSED" << std::endl;
     return 0;
   }
 
@@ -82,15 +82,17 @@ int main(int narg, char** arg)
   Teuchos::RCP<matrix_t> Rmat = rcp(new matrix_t(mapNpM1, nnzNpM1()));
 
   for (int i = 0; i < myRowsNp; i++) {
+
     gno_t gid = mapNp->getGlobalElement(i);
-    for (int j = 0; j < 5; j++) vals[j] = gid;
-    int nz = 0;
-    cols[nz++] = gid;
-    if (gid+1 < nrows) cols[nz++] = gid+1;
-    if (gid+2 < nrows) cols[nz++] = gid+2;
-    if (gid-1 >= 0) cols[nz++] = gid-1;
-    if (gid-2 >= 0) cols[nz++] = gid-2;
-    Rmat->insertGlobalValues(gid, cols(0,nz), vals(0,nz));
+
+    Teuchos::ArrayView<const lno_t> acols;
+    Teuchos::ArrayView<const gno_t> avals;
+    Amat->getLocalRowView(i, acols, avals);
+
+    for (int j = 0; j < acols.size(); j++)
+      cols[j] = Amat->getColMap()->getGlobalElement(acols[j]);
+
+    Rmat->insertGlobalValues(gid, cols(0,acols.size()), avals);
   }
   Rmat->fillComplete();
   std::cout << me << " RMAT" << std::endl;
@@ -129,8 +131,8 @@ int main(int narg, char** arg)
 
   int gerr;
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
-  if (gerr) std::cout << "FAILED with " << gerr << " errors" << std::endl;
-  else std::cout << "PASSED" << std::endl;
+  if (gerr) std::cout << "TEST FAILED with " << gerr << " errors" << std::endl;
+  else std::cout << "TEST PASSED" << std::endl;
 
   return gerr;
 }
