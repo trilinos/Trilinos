@@ -172,7 +172,7 @@ int run_test(       /* Test options relevant to serialization, such as... */
   size_t bufSize;
   if (me == 0) bufSize = Zoltan_Serialize_Size(zz);
 
-  MPI_Bcast(&bufSize, 1, MPI_UNSIGNED_LONG_LONG, 0, MPI_COMM_WORLD);
+  MPI_Bcast((char *) &bufSize, sizeof(bufSize), MPI_CHAR, 0, MPI_COMM_WORLD);
 
   /* Then allocate and broadcast the buffer */
   char *buf = NULL;

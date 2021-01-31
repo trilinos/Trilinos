@@ -142,7 +142,7 @@ int main(int narg, char **arg) {
   /* First broadcast the buffer size; we make the user own the buffer */
   size_t bufSize;
   if (me == 0) bufSize = zz.Serialize_Size();
-  MPI_Bcast(&bufSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast((char *)&bufSize, sizeof(bufSize), MPI_CHAR, 0, MPI_COMM_WORLD);
 
   /* Then allocate and broadcast the buffer */
   char *buf = NULL;
