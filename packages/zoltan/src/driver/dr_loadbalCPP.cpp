@@ -2253,7 +2253,7 @@ int i;
       if (one_part_only != one_part) {
         fprintf(fp, "%d Error:  inconsistent results from part-only (%d) and "
                     " part+proc (%d) versions of Zoltan_LB_Box_PP_Assign\n",
-                    one_part_only, one_part);
+                    Proc, one_part_only, one_part);
       }
     }
   }
