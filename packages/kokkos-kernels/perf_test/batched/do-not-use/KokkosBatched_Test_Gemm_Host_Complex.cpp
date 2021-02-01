@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
   
   Kokkos::initialize(argc, argv);
 
-#if !defined(__CUDA_ARCH__)
+#if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
   const int ntest = 1;
   //const int N[6] = { 256, 512, 768, 1024, 1280, 1536 };
   int N[1] = { 128*128 };

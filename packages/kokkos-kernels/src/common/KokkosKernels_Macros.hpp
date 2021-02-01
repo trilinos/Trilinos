@@ -46,10 +46,10 @@
 #define _KOKKOSKERNELS_MACROUTILS_HPP_
 
 // If KOKKOSKERNELS_ENABLE_OMP_SIMD is defined, it's legal to place
-// "#pragma omp simd" before a for loop. It's never defined if CUDA is enabled,
+// "#pragma omp simd" before a for loop. It's never defined if a GPU-type device is enabled,
 // since in that case, Kokkos::ThreadVectorRange should be used instead for SIMD parallel loops.
 
-#if !defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOS_ENABLE_OPENMP)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && defined(KOKKOS_ENABLE_OPENMP)
   #if defined(KOKKOS_COMPILER_GNU)
     // GCC 4.8.5 and older do not support #pragma omp simd
     #if (KOKKOS_COMPILER_GNU > 485 )

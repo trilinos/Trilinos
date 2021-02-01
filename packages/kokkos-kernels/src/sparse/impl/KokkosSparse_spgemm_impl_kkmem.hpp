@@ -221,19 +221,11 @@ struct KokkosSPGEMM
 #endif
 #if defined( KOKKOS_ENABLE_OPENMP )
     case KokkosKernels::Impl::Exec_OMP:
-  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      return Kokkos::OpenMP::hardware_thread_id();
-  #else
       return Kokkos::OpenMP::impl_hardware_thread_id();
-  #endif
 #endif
 #if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
-  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      return Kokkos::Threads::hardware_thread_id();
-  #else
       return Kokkos::Threads::impl_hardware_thread_id();
-  #endif
 #endif
 #if defined( KOKKOS_ENABLE_QTHREAD)
     case KokkosKernels::Impl::Exec_QTHREADS:
@@ -241,6 +233,10 @@ struct KokkosSPGEMM
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
+      return row_index;
+#endif
+#if defined( KOKKOS_ENABLE_HIP )
+    case KokkosKernels::Impl::Exec_HIP:
       return row_index;
 #endif
     }
@@ -662,7 +658,7 @@ struct KokkosSPGEMM
       if (c_row_size > max_first_level_hash_size){
     	  {
     		  while (tmp == NULL){
-    			  Kokkos::single(Kokkos::PerTeam(teamMember),[=] (volatile nnz_lno_t * &memptr) {
+    			  Kokkos::single(Kokkos::PerTeam(teamMember),[&] (volatile nnz_lno_t * &memptr) {
     				  memptr = (volatile nnz_lno_t * )( memory_space.allocate_chunk(row_index));
     			  }, tmp);
     		  }
@@ -1252,7 +1248,7 @@ void
 
   //choose parameters
   if (this->spgemm_algorithm == SPGEMM_KK || SPGEMM_KK_LP == this->spgemm_algorithm){
-	  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+	  if (KokkosKernels::Impl::kk_is_gpu_exec_space<typename HandleType::HandleExecSpace>()) {
 		  //then chose the best method and parameters.
 		  size_type average_row_nnz = overall_nnz / this->a_row_cnt;
 		  size_t average_row_flops = original_overall_flops / this->a_row_cnt;
@@ -1382,7 +1378,7 @@ void
 
 
   //required memory for L2
-  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  if (KokkosKernels::Impl::kk_is_gpu_exec_space<typename HandleType::HandleExecSpace>()) {
 
 	  if (algorithm_to_run == SPGEMM_KK_MEMORY_SPREADTEAM){
 		  tmp_max_nnz = 1;
@@ -1425,29 +1421,9 @@ void
 	  chunksize += min_hash_size ; //this is for the hash begins
 	  chunksize += max_nnz; //this is for hash nexts
   }
-  int num_chunks = concurrency / suggested_vector_size;
 
-#if defined( KOKKOS_ENABLE_CUDA )
-  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
-
-    size_t free_byte ;
-    size_t total_byte ;
-    cudaMemGetInfo( &free_byte, &total_byte ) ;
-    size_t required_size = size_t (num_chunks) * chunksize * sizeof(nnz_lno_t);
-    if (KOKKOSKERNELS_VERBOSE)
-      std::cout << "\tmempool required size:" << required_size << " free_byte:" << free_byte << " total_byte:" << total_byte << std::endl;
-    if (required_size + num_chunks > free_byte){
-      num_chunks = ((((free_byte - num_chunks)* 0.5) /8 ) * 8) / sizeof(nnz_lno_t) / chunksize;
-    }
-    {
-      nnz_lno_t min_chunk_size = 1;
-      while (min_chunk_size * 2 <= num_chunks) {
-        min_chunk_size *= 2;
-      }
-      num_chunks = min_chunk_size;
-    }
-  }
-#endif
+  nnz_lno_t num_chunks = this->template compute_num_pool_chunks<pool_memory_space>
+    (chunksize * sizeof(nnz_lno_t), concurrency / suggested_vector_size);
 
   // END SIZE CALCULATIONS FOR MEMORYPOOL
 
@@ -1463,7 +1439,7 @@ void
   KokkosKernels::Impl::PoolType my_pool_type =
       KokkosKernels::Impl::OneThread2OneChunk;
 
-  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
     my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
   }
 
@@ -1513,7 +1489,7 @@ void
   }
   timer1.reset();
 
-  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
 	  if (algorithm_to_run == SPGEMM_KK_MEMORY_SPREADTEAM){
                   if (thread_shmem_key_size <= 0) {
                     std::cout << "KokkosSPGEMM_numeric_hash SPGEMM_KK_MEMORY_SPREADTEAM: Insufficient shmem available for key for hash map accumulator - Terminating" << std::endl;
@@ -1625,7 +1601,7 @@ void
 
   KokkosKernels::Impl::PoolType my_pool_type =
       KokkosKernels::Impl::OneThread2OneChunk;
-  if (my_exec_space_ == KokkosKernels::Impl::Exec_CUDA){
+  if (KokkosKernels::Impl::kk_is_gpu_exec_space<my_exec_space>()) {
     my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
   }
 
@@ -1675,7 +1651,7 @@ void
   }
   timer1.reset();
 
-  if (my_exec_space_ == KokkosKernels::Impl::Exec_CUDA){
+  if (KokkosKernels::Impl::kk_is_gpu_exec_space<my_exec_space>()) {
     Kokkos::parallel_for("KOKKOSPARSE::SPGEMM::SPGEMM_KK_MEMORY2",  gpu_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
     MyExecSpace().fence();
   }

@@ -49,12 +49,3 @@
  * KokkosGraph_Distance1Color.hpp to be more consistent with file naming
  * used in other places within Kokkos-Kernels.
  */
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-#include "KokkosGraph_Distance1ColorHandle.hpp"
-
-// This interface should be deprecated in version 3.0
-#pragma message("DEPRECATION WARNING: The KokkosGraph_GraphColorHandle.hpp header is replaced by KokkosGraph_Distance1ColorHandle.hpp")
-
-#endif
-
-

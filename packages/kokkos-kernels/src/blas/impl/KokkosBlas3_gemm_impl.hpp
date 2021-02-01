@@ -64,13 +64,20 @@ namespace Impl {
 // On GPUs it is more important to not jump around in global memory, i.e. have coallesced loads
 template<class ExecSpace, class LayoutA, class LayoutAScratch>
 struct impl_gemm_choose_copy_layout {
-  typedef LayoutAScratch type;
+  using type = LayoutAScratch;
 };
 
 #ifdef KOKKOS_ENABLE_CUDA
 template<class LayoutA, class LayoutAScratch>
 struct impl_gemm_choose_copy_layout<Kokkos::Cuda,LayoutA,LayoutAScratch> {
-  typedef LayoutA type;
+  using type = LayoutA;
+};
+#endif
+
+#ifdef KOKKOS_ENABLE_HIP
+template<class LayoutA, class LayoutAScratch>
+struct impl_gemm_choose_copy_layout<Kokkos::Experimental::HIP,LayoutA,LayoutAScratch> {
+  using type = LayoutA;
 };
 #endif
 
@@ -392,7 +399,7 @@ KOKKOS_INLINE_FUNCTION
 void impl_team_gemm_block(const TeamHandle& team, const ViewTypeC& C, const ViewTypeA& A, const ViewTypeB& B) {
   typedef typename ViewTypeC::non_const_value_type ScalarC;
 // GNU COMPILER BUG WORKAROUND
-#if defined(KOKKOS_COMPILER_GNU) || !defined(__CUDA_ARCH__)
+#if defined(KOKKOS_COMPILER_GNU) && (!defined(__CUDA_ARCH__) || !defined(__HIP_DEVICE_COMPILE__))
   int blockA0 = A.extent_int(0);
   int blockA1 = A.extent_int(1);
   int blockB1 = B.extent_int(1);
@@ -510,7 +517,17 @@ struct GEMMImpl {
       ViewTypeBScratch::shmem_size() +
       ViewTypeCScratch::shmem_size();
 
+#if defined(KOKKOS_ENABLE_HIP)
+    // Note lbv, 10/29/20: The LaunchBounds<384,2> leads
+    // to an error with HIP as the heuristics on that platform
+    // yield an optimal_num_blocks=0 which means no ressources
+    // are allocated... Switching to LaunchBounds<384,2> fixes
+    // that problem but I'm not sure if that it a good perf
+    // parameter or why it is set to 2 for Cuda?
+    Kokkos::TeamPolicy<ExecSpace,Kokkos::LaunchBounds<384,0>> policy(num_blocks_0*num_blocks_1,team_size,vector_length);
+#else
     Kokkos::TeamPolicy<ExecSpace,Kokkos::LaunchBounds<384,2>> policy(num_blocks_0*num_blocks_1,team_size,vector_length);
+#endif
 
     Kokkos::parallel_for(impl_gemm_label<TransposeA,TransposeB>::label,policy.set_scratch_size(scratch_level,Kokkos::PerTeam(scratch_memory_size)),*this);
   }

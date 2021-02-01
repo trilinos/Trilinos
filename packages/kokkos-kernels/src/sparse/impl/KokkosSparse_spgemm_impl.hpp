@@ -787,8 +787,34 @@ private:
 				    typename c_scalar_nnz_view_t::const_value_type omega, dinv_view_t dinv,
 				    KokkosKernels::Impl::ExecSpaceType my_exec_space);
 
+  //Utility to compute the number of pool chunks for L2 hashmap accumulators.
+  //Uses free memory query for accelerators/GPUs but assumes infinite available host memory.
+  //
+  //chunk_bytes: bytes in each chunk
+  //ideal_num_chunks: number of chunks that would give each thread/team its own chunk (no contention)
+  template<typename Pool>
+  size_t compute_num_pool_chunks(size_t chunk_bytes, size_t ideal_num_chunks)
+  {
+    if(!KokkosKernels::Impl::kk_is_gpu_exec_space<typename Pool::execution_space>())
+      return ideal_num_chunks;
+    size_t free_byte, total_byte;
+    KokkosKernels::Impl::kk_get_free_total_memory<typename Pool::memory_space>(free_byte, total_byte);
+    size_t required_size = ideal_num_chunks * chunk_bytes;
+    if (KOKKOSKERNELS_VERBOSE)
+      std::cout << "\tmempool required size:" << required_size << " free_byte:" << free_byte << " total_byte:" << total_byte << std::endl;
+    size_t num_chunks = ideal_num_chunks;
+    //If there is not enough memory to safely allocate ideal_num_chunks, use half the free memory, rounded down
+    if (required_size > free_byte / 2) {
+      num_chunks = (free_byte / 2) / chunk_bytes;
+    }
+    //then take the largest power of 2 smaller than that
+    size_t po2_num_chunks = 1;
+    while (po2_num_chunks * 2 < num_chunks) {
+      po2_num_chunks *= 2;
+    }
+    return po2_num_chunks;
+  }
 };
-
 
 }
 }
