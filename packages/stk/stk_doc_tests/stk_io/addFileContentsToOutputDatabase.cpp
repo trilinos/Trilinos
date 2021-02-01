@@ -124,11 +124,8 @@ TEST(StkMeshIoBrokerHowTo, addFileContentsToOutputDatabase)
       // 80 characters, so it wraps (4+1) Next line is the
       // "additional_info_record" added above (1)
       // Last records are the IOSS configuration summary (35).
-      size_t expected_info_record_count = 2 + 35 + (4+1)  + 1 + 1;
-      size_t cgns_info_records = 8; //the build may or may not have CGNS enabled.
-      size_t nocgns_expected_info_record_count = expected_info_record_count - cgns_info_records;
-      EXPECT_TRUE(expected_info_record_count == info_records.size() ||
-                  nocgns_expected_info_record_count == info_records.size());
+      size_t expected_min_info_record_count = 2 + (4+1) + 1 + 1;
+      EXPECT_TRUE(expected_min_info_record_count <= info_records.size());
 
       EXPECT_STREQ(input_file.c_str(), info_records[2].c_str());
 

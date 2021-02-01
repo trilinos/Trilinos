@@ -593,7 +593,9 @@ public:
                          });
   }
 
-  void modify_element_part_membership(const std::vector<std::tuple<stk::mesh::EntityId, std::string, std::string>> & elemAddRemoveParts)
+  using VectorIdNameName = std::vector<std::tuple<stk::mesh::EntityId, std::string, std::string>>;
+
+  void modify_element_part_membership(const VectorIdNameName& elemAddRemoveParts)
   {
     get_bulk().modification_begin();
     for (const auto & elemAddRemovePart : elemAddRemoveParts) {
@@ -3182,7 +3184,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
                                                                                                    {1, "Part2"}});
 
   testing::internal::CaptureStdout();
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.modify_on_host();
@@ -3241,7 +3243,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
                                                                                                    {1, "Part2"}});
 
   testing::internal::CaptureStdout();
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.modify_on_host();
@@ -3620,7 +3622,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   read_scalar_field_on_device(stkField);
 
@@ -3674,7 +3676,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingBucketIdAndOrdinal_MeshModification_C
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
   write_scalar_field_on_host_using_bucket_id_and_ordinal(stkField, 3.14);
   read_scalar_field_on_device(stkField);
 
@@ -3728,7 +3730,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.clear_sync_state();
   read_scalar_field_on_device(stkField);
@@ -4042,7 +4044,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
   stk::mesh::NgpField<double, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   // The device Field is currently out-of-date, so our debugging code on the host side needs to not
   // mysteriously seg-fault before the user does the read on the Device side, where they will get
@@ -4178,7 +4180,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ModifyBucket_
   stk::mesh::NgpField<double, NgpDebugger> ngpFieldCopy = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   // The device Field is currently out-of-date, so our debugging code on the host side needs to not
   // mysteriously seg-fault before the user does the read on the Device side, where they will get
@@ -4253,7 +4255,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ModifyBucket_
   stk::mesh::NgpField<double, NgpDebugger> ngpFieldCopy = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   // The device Field is currently out-of-date, so our debugging code on the host side needs to not
   // mysteriously seg-fault before the user does the read on the Device side, where they will get
@@ -4405,7 +4407,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
   stkField.modify_on_device();
   stkField.sync_to_host();
 
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   read_scalar_field_on_host_using_entity(stkField);
 
@@ -4467,7 +4469,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
   stkField.modify_on_device();
   stkField.clear_sync_state();
 
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   read_scalar_field_on_host_using_entity(stkField);
 
@@ -4751,7 +4753,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
   testing::internal::CaptureStdout();
 
   write_scalar_field_on_device(stkField, 3.14);
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
@@ -4804,7 +4806,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
   testing::internal::CaptureStdout();
 
   write_scalar_field_on_device(stkField, 3.14);
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
   stkField.clear_sync_state();
   read_scalar_field_on_host_using_entity(stkField);
 
@@ -5057,8 +5059,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership({{3, "Part2", "Part1"}});
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.modify_on_host();
@@ -5120,8 +5122,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership({{3, "Part2", "Part1"}});
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.modify_on_host();
@@ -5244,8 +5246,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership({{3, "Part2", "Part1"}});
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   write_scalar_field_on_host_using_entity(stkField, 3.14);
 
@@ -5305,8 +5307,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership({{3, "Part2", "Part1"}});
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.clear_sync_state();
@@ -5423,8 +5425,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership({{3, "Part2", "Part1"}});
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   write_scalar_field_on_host_using_entity(stkField, 3.14);
 
@@ -5549,8 +5551,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
   stkField.modify_on_device();
   stkField.sync_to_host();
 
-  modify_element_part_membership({{3, "Part2", "Part1"}});
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   read_scalar_field_on_host_using_entity(stkField);
 
@@ -5614,8 +5616,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
   stkField.modify_on_device();
   stkField.clear_sync_state();
 
-  modify_element_part_membership({{3, "Part2", "Part1"}});
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   read_scalar_field_on_host_using_entity(stkField);
 
@@ -5737,8 +5739,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
 
   write_scalar_field_on_device(stkField, 3.14);
 
-  modify_element_part_membership({{3, "Part2", "Part1"}});
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   read_scalar_field_on_host_using_entity(stkField);
 
@@ -5800,8 +5802,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
   write_scalar_field_on_device(stkField, 3.14);
   stkField.clear_sync_state();
 
-  modify_element_part_membership({{3, "Part2", "Part1"}});
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   read_scalar_field_on_host_using_entity(stkField);
 
@@ -5917,13 +5919,13 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.modify_on_host();
   stkField.sync_to_device();
   read_scalar_field_on_device(stkField);
 
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 2.18);
   stkField.modify_on_host();
   stkField.sync_to_device();
@@ -5991,13 +5993,13 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.modify_on_host();
   stkField.clear_sync_state();
   read_scalar_field_on_device(stkField);
 
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 2.18);
   stkField.modify_on_host();
   stkField.clear_sync_state();
@@ -6135,11 +6137,11 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   read_scalar_field_on_device(stkField);
 
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 2.18);
   read_scalar_field_on_device(stkField);
 
@@ -6204,12 +6206,12 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.clear_sync_state();
   read_scalar_field_on_device(stkField);
 
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 2.18);
   stkField.clear_sync_state();
   read_scalar_field_on_device(stkField);
@@ -6339,11 +6341,11 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   read_old_scalar_field_on_device(stkField, ngpField);
 
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 2.18);
   read_old_scalar_field_on_device(stkField, ngpField);
 
@@ -6475,13 +6477,13 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
   write_scalar_field_on_device(stkField, 3.14);
   stkField.modify_on_device();
   stkField.sync_to_host();
-  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   write_scalar_field_on_device(stkField, 2.18);
   stkField.modify_on_device();
   stkField.sync_to_host();
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
@@ -6549,13 +6551,13 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
   write_scalar_field_on_device(stkField, 3.14);
   stkField.modify_on_device();
   stkField.clear_sync_state();
-  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   write_scalar_field_on_device(stkField, 2.18);
   stkField.modify_on_device();
   stkField.clear_sync_state();
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
@@ -6690,11 +6692,11 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
   testing::internal::CaptureStdout();
 
   write_scalar_field_on_device(stkField, 3.14);
-  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   write_scalar_field_on_device(stkField, 2.18);
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
@@ -6756,12 +6758,12 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
 
   write_scalar_field_on_device(stkField, 3.14);
   stkField.clear_sync_state();
-  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   write_scalar_field_on_device(stkField, 2.18);
   stkField.clear_sync_state();
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
@@ -6924,7 +6926,7 @@ TEST_F(NgpDebugFieldSync, DefaultDebugger_ScalarAccessUsingEntity_MeshModificati
                                                                                                                     {1, "Part2"}});
 
   testing::internal::CaptureStdout();
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   write_scalar_field_on_host_using_entity_default_debugger(stkField, 3.14);
   stkField.modify_on_host();
@@ -6948,7 +6950,7 @@ TEST_F(NgpDebugFieldSync, DefaultDebugger_ScalarAccessUsingEntity_MeshModificati
   stkField.modify_on_device();
   stkField.sync_to_host();
 
-  modify_element_part_membership({{2, "Part2", "Part1"}});
+  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
 
   read_scalar_field_on_host_using_entity_default_debugger(stkField);
 
