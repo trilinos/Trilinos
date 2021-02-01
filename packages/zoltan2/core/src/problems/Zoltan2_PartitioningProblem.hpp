@@ -575,8 +575,8 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     else if (algName_ == std::string("quotient")) {
       this->algorithm_ = rcp(new AlgQuotient<Adapter>(this->envConst_,
 					   this->comm_, 
-					   this->commGraphModel_,
-					   "parmetis")); // The default alg. to use inside Quotient 
+					   this->baseInputAdapter_));
+			     //"parmetis")); // The default alg. to use inside Quotient 
     }                                                    // is ParMETIS for now.
     else if (algName_ == std::string("pulp")) {
       this->algorithm_ = rcp(new AlgPuLP<Adapter>(this->envConst_,
@@ -1145,12 +1145,12 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
             this->identifierModel_);
     }
 
-    if(modelAvail_[CommGraphModelType]==true)
-    {
-      this->env_->debug(DETAILED_STATUS, "    building communication graph model");
-      this->commGraphModel_ = rcp(new CommGraphModel<base_adapter_t>(
-	    this->baseInputAdapter_, this->envConst_, this->comm_));
-    }
+    // if(modelAvail_[CommGraphModelType]==true)
+    // {
+    //   this->env_->debug(DETAILED_STATUS, "    building communication graph model");
+    //   this->commGraphModel_ = rcp(new CommGraphModel<base_adapter_t>(
+    // 	    this->baseInputAdapter_, this->envConst_, this->comm_));
+    // }
 
     this->env_->memory("After creating Model");
     this->env_->debug(DETAILED_STATUS, "createPartitioningProblem done");
