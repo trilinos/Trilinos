@@ -43,7 +43,6 @@
 
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_BlockView.hpp"
-#include "Tpetra_Vector.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
