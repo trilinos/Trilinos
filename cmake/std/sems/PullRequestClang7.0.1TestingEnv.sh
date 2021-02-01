@@ -29,7 +29,7 @@ module load sems-superlu/4.3/base
 # - One of the SEMS modules will load CMake 3.4.x also,
 #   so this will pull in the SEMS cmake 3.10.3 version
 #   for Trilinos compatibility.
-module load sems-cmake/3.12.2
+module load sems-cmake/3.17.1
 
 # Using CMake and Ninja modules from the ATDM project space.
 # SEMS does not yet supply a recent enough version of CMake

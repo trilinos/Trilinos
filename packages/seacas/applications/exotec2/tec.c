@@ -45,7 +45,7 @@ void tec(int exoid, const char *filename)
   }
 
   /*
-   * Determine max name size used in databsae...
+   * Determine max name size used in database...
    */
   name_size = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
   ex_set_max_name_length(exoid, name_size);

@@ -395,10 +395,10 @@ ssize_t find_int(INT value1, INT value2, size_t start, size_t stop, INT *vector1
  * found in the vector then it's index in that vector is returned, otherwise
  * the function returns -1;
  *****************************************************************************/
-template ssize_t in_list(int value, size_t count, int *vector);
-template ssize_t in_list(int64_t value, size_t count, int64_t *vector);
+template ssize_t in_list(int value, size_t count, const int *vector);
+template ssize_t in_list(int64_t value, size_t count, const int64_t *vector);
 
-template <typename INT> ssize_t in_list(INT value, size_t count, INT *vector)
+template <typename INT> ssize_t in_list(INT value, size_t count, const INT *vector)
 {
   for (size_t i = 0; i < count; i++) {
     if (vector[i] == value) {
@@ -408,10 +408,10 @@ template <typename INT> ssize_t in_list(INT value, size_t count, INT *vector)
   return -1;
 }
 
-template ssize_t in_list(int value, std::vector<int> vector);
-template ssize_t in_list(int64_t value, std::vector<int64_t> vector);
+template ssize_t in_list(int value, const std::vector<int> &vector);
+template ssize_t in_list(int64_t value, const std::vector<int64_t> &vector);
 
-template <typename INT> ssize_t in_list(INT value, std::vector<INT> vector)
+template <typename INT> ssize_t in_list(INT value, const std::vector<INT> &vector)
 {
   size_t count = vector.size();
   for (size_t i = 0; i < count; i++) {

@@ -82,14 +82,10 @@ void Excn::SystemInterface::enroll_options()
                   "nodes/elements",
                   nullptr);
 
-  options_.enroll("large_model", GetLongOption::NoValue,
-                  "Create output database using the HDF5-based netcdf which allows for up to 2.1 "
-                  "GB nodes/elements (deprecated; use netcdf4 instead)",
-                  nullptr);
-
-  options_.enroll("append", GetLongOption::NoValue,
-                  "Append to database instead of opening a new database.\n"
-                  "\t\tTimestep transfer will start after last timestep on database",
+  options_.enroll("netcdf5", GetLongOption::NoValue,
+                  "Create output database using the PnetCDF-based "
+                  "netcdf 5 format which allows for up to 2.1 GB "
+                  "nodes/elements",
                   nullptr);
 
   options_.enroll("64", GetLongOption::NoValue,
@@ -105,7 +101,12 @@ void Excn::SystemInterface::enroll_options()
 
   options_.enroll("compress_data", GetLongOption::MandatoryValue,
                   "The output database will be written using compression (netcdf-4 mode only).\n"
-                  "\t\tValue ranges from 0 (no compression) to 9 (max compression) inclusive.",
+                  "\t\tValue ranges from 0..9 for zlib/gzip or even values 4..32 for szip.",
+                  nullptr);
+
+  options_.enroll("append", GetLongOption::NoValue,
+                  "Append to database instead of opening a new database.\n"
+                  "\t\tTimestep transfer will start after last timestep on database",
                   nullptr);
 
   options_.enroll("steps", GetLongOption::MandatoryValue,
@@ -181,6 +182,10 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("max_open_files", GetLongOption::MandatoryValue,
                   "For testing auto subcycle only.  Sets file limit that triggers auto subcycling.",
                   "0");
+
+  options_.enroll("large_model", GetLongOption::NoValue,
+                  "(deprecated; use netcdf4 instead)",
+                  nullptr);
 
   options_.enroll("debug", GetLongOption::MandatoryValue,
                   "debug level (values are or'd)\n"
@@ -360,6 +365,10 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("netcdf4") != nullptr) {
     useNetcdf4_ = true;
+  }
+
+  if (options_.retrieve("netcdf5") != nullptr) {
+    useNetcdf5_ = true;
   }
 
   if (options_.retrieve("append") != nullptr) {

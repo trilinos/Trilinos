@@ -528,6 +528,13 @@ void STK_Interface::addEntityToEdgeBlock(stk::mesh::Entity entity,stk::mesh::Par
 
    bulkData_->change_entity_parts(entity,edgeblockV);
 }
+void STK_Interface::addEntitiesToEdgeBlock(std::vector<stk::mesh::Entity> entities,stk::mesh::Part * edgeblock)
+{
+   std::vector<stk::mesh::Part*> edgeblockV;
+   edgeblockV.push_back(edgeblock);
+
+   bulkData_->change_entity_parts(entities,edgeblockV);
+}
 
 void STK_Interface::addEntityToFaceBlock(stk::mesh::Entity entity,stk::mesh::Part * faceblock)
 {
@@ -535,6 +542,13 @@ void STK_Interface::addEntityToFaceBlock(stk::mesh::Entity entity,stk::mesh::Par
    faceblockV.push_back(faceblock);
 
    bulkData_->change_entity_parts(entity,faceblockV);
+}
+void STK_Interface::addEntitiesToFaceBlock(std::vector<stk::mesh::Entity> entities,stk::mesh::Part * faceblock)
+{
+   std::vector<stk::mesh::Part*> faceblockV;
+   faceblockV.push_back(faceblock);
+
+   bulkData_->change_entity_parts(entities,faceblockV);
 }
 
 void STK_Interface::addElement(const Teuchos::RCP<ElementDescriptor> & ed,stk::mesh::Part * block)

@@ -404,9 +404,22 @@
       <name>aggregation: drop scheme</name>
       <type>string</type>
       <default>"classical"</default>
-      <description>Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian", "unsupported vector smoothing".</description>
+      <description>Connectivity dropping scheme for a graph used in
+      aggregation. Possible values: "classical", "distance laplacian",
+      "unsupported vector smoothing"</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
+
+    <parameter>
+      <name>aggregation: block diagonal: interleaved blocksize</name>
+      <type>int</type>
+      <default>3</default>
+      <description>Effective block size to use for
+      block-diagonalization.  This assumes the PDE is interleaved</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
 
     <parameter>
       <name>aggregation: number of random vectors</name>
