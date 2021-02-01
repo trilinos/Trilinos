@@ -114,7 +114,7 @@ namespace { // (anonymous)
       {
         using local_access_type =
           LocalAccess<multivec_type, dev_mem_space,
-                      Tpetra::Details::read_only>;
+                      Tpetra::Access::ReadOnly>;
 
         using mv_mlo = GetMasterLocalObject<local_access_type>::
           master_local_object_type;
@@ -291,7 +291,7 @@ namespace { // (anonymous)
 
       using local_access_type = decltype (lclAccess);
       static_assert(std::is_same<local_access_type::access_mode,
-        Tpetra::Details::write_only>::value, "Incorrect AccessMode");
+        Tpetra::Access::WriteOnly>::value, "Incorrect AccessMode");
       static_assert
         (std::is_same<local_access_type::global_object_type, vec_type>::value,
          "Incorrect global_object_type");

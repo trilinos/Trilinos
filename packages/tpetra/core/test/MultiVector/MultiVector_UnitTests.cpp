@@ -456,13 +456,13 @@ namespace {
       TEST_ASSERT( ! mvView1.is_null() );
       if (! mvView1.is_null() ) {
         {
-          auto mvView1_d = mvView1->getLocalViewDeviceConst();
-          auto mvOrig1_d = mvOrig1.getLocalViewDeviceConst();
+          auto mvView1_d = mvView1->getLocalViewDevice(Tpetra::Access::ReadOnly());
+          auto mvOrig1_d = mvOrig1.getLocalViewDevice(Tpetra::Access::ReadOnly());
           TEST_ASSERT( mvView1_d.data() == mvOrig1_d.data() );
         }
         {
-          auto mvView1_h = mvView1->getLocalViewHostConst();
-          auto mvOrig1_h = mvOrig1.getLocalViewHostConst();
+          auto mvView1_h = mvView1->getLocalViewHost(Tpetra::Access::ReadOnly());
+          auto mvOrig1_h = mvOrig1.getLocalViewHost(Tpetra::Access::ReadOnly());
           TEST_ASSERT( mvView1_h.data() == mvOrig1_h.data() );
         }
       }
@@ -470,13 +470,13 @@ namespace {
       TEST_ASSERT( ! mvView2.is_null() );
       if (! mvView2.is_null() ) {
         {
-          auto mvView2_lcl = mvView2->getLocalViewDeviceConst();
-          auto mvOrig2_lcl = mvOrig2.getLocalViewDeviceConst();
+          auto mvView2_lcl = mvView2->getLocalViewDevice(Tpetra::Access::ReadOnly());
+          auto mvOrig2_lcl = mvOrig2.getLocalViewDevice(Tpetra::Access::ReadOnly());
           TEST_ASSERT( mvView2_lcl.data() == mvOrig2_lcl.data() );
         }
         {
-          auto mvView2_h = mvView2->getLocalViewHostConst();
-          auto mvOrig2_h = mvOrig2.getLocalViewHostConst();
+          auto mvView2_h = mvView2->getLocalViewHost(Tpetra::Access::ReadOnly());
+          auto mvOrig2_h = mvOrig2.getLocalViewHost(Tpetra::Access::ReadOnly());
           TEST_ASSERT( mvView2_h.data() == mvOrig2_h.data() );
         }
       }
@@ -1962,7 +1962,17 @@ namespace {
     {
       A.randomize();
 
-      out << "Check that get1dView and get1dCopy have the same values" << endl;
+      out << "Check that get1dView and get1dCopy have the same values (type 1)" << endl;
+      {
+        ArrayRCP<const Scalar> view;
+        Array<Scalar> copy(numLocal*numVectors);
+        TEST_NOTHROW( view = A.get1dView() );
+        TEST_NOTHROW( A.get1dCopy(copy,numLocal) );
+        TEST_COMPARE_FLOATING_ARRAYS(view,copy,M0);
+      }
+
+      A.randomize();
+      out << "Check that get1dView and get1dCopy have the same values (type 2)" << endl;
       {
         ArrayRCP<const Scalar> view;
         Array<Scalar> copy(numLocal*numVectors);
@@ -2417,9 +2427,9 @@ namespace {
       // MV allocation favors host space for initial allocations and
       // defers device allocations.
 
-      auto X_local = X->getLocalViewHostConst ();
-      auto X1_local = X1->getLocalViewHostConst ();
-      auto X2_local = X2->getLocalViewHostConst ();
+      auto X_local = X->getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto X1_local = X1->getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto X2_local = X2->getLocalViewHost(Tpetra::Access::ReadOnly());
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X2_local points, as long as it has zero rows.
@@ -2470,9 +2480,9 @@ namespace {
       // MV allocation favors host space for initial allocations and
       // defers device allocations.
 
-      auto X_local = X->getLocalViewHostConst();
-      auto X1_local = X1_nonconst->getLocalViewHostConst();
-      auto X2_local = X2_nonconst->getLocalViewHostConst();
+      auto X_local = X->getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto X1_local = X1_nonconst->getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto X2_local = X2_nonconst->getLocalViewHost(Tpetra::Access::ReadOnly());
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X2_local points, as long as it has zero rows.
@@ -2525,9 +2535,9 @@ namespace {
       // MV allocation favors host space for initial allocations and
       // defers device allocations.
 
-      auto X_local = X->getLocalViewHostConst();
-      auto X1_local = X1->getLocalViewHostConst();
-      auto X2_local = X2->getLocalViewHostConst();
+      auto X_local = X->getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto X1_local = X1->getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto X2_local = X2->getLocalViewHost(Tpetra::Access::ReadOnly());
       // Make sure the pointers match.  It doesn't really matter to
       // what X1_local points, as long as it has zero rows.
       TEST_EQUALITY( X2_local.data (), X_local.data () );
@@ -2577,9 +2587,9 @@ namespace {
       // MV allocation favors host space for initial allocations and
       // defers device allocations.
 
-      auto X_local = X->getLocalViewHostConst();
-      auto X1_local = X1_nonconst->getLocalViewHostConst();
-      auto X2_local = X2_nonconst->getLocalViewHostConst();
+      auto X_local = X->getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto X1_local = X1_nonconst->getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto X2_local = X2_nonconst->getLocalViewHost(Tpetra::Access::ReadOnly());
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X1_local points, as long as it has zero rows.
@@ -4233,7 +4243,7 @@ namespace {
     // entries to a different number than before.  (ONE and TWO differ
     // even in the finite field Z_2.)
     {
-      auto X_lcl_h = X->getLocalViewHostNonConst ();
+      auto X_lcl_h = X->getLocalViewHost(Tpetra::Access::WriteOnly());
       Kokkos::deep_copy (X_lcl_h, ONE);
       X->template sync<device_type> ();
     }
@@ -4537,7 +4547,7 @@ namespace {
     // We modified on device above, and we're about to modify on host
     // now, so we need to sync to host first.
     X_gbl.sync_host ();
-    auto X_host = X_gbl.getLocalViewHostNonConst ();
+    auto X_host = X_gbl.getLocalViewHost(Tpetra::Access::ReadWrite());
     
     {
       lclSuccess = success ? 1 : 0;
@@ -5249,8 +5259,8 @@ namespace {
     RCP<const map_type> map = rcp (new map_type (100, 0, comm));
     MV x(map, 1);
 
-    const void* devicePtr = x.getLocalViewDeviceConst().data();
-    const void* hostPtr = x.getLocalViewHostConst().data();
+    const void* devicePtr = x.getLocalViewDevice(Tpetra::Access::ReadOnly()).data();
+    const void* hostPtr = x.getLocalViewHost(Tpetra::Access::ReadOnly()).data();
 
     if(devicePtr != hostPtr)
     {
@@ -5260,9 +5270,9 @@ namespace {
       bool threw = false;
       try
       {
-        auto xDevice = x.getLocalViewDeviceConst();
+        auto xDevice = x.getLocalViewDevice(Tpetra::Access::ReadOnly());
         //this shouldn't be allowed, since xDevice holds a reference to device view.
-        auto xHost = x.getLocalViewHostConst();
+        auto xHost = x.getLocalViewHost(Tpetra::Access::ReadOnly());
       }
       catch(...)
       {

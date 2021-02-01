@@ -192,7 +192,7 @@ namespace { // (anonymous)
 
     out << "Fill the master MultiVector X" << endl;
     {
-      auto X_lcl = X.getLocalViewHostNonConst ();
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadWrite());
 
       TEST_EQUALITY( static_cast<LO> (X_lcl.extent (0)), lclNumRows );
       TEST_EQUALITY( static_cast<LO> (X_lcl.extent (1)), numVecs );
@@ -242,7 +242,7 @@ namespace { // (anonymous)
 
         auto X_sub_j = X_sub->getVectorNonConst (k);
         auto X_sub_lcl_j_2d =
-          X_sub_j->getLocalViewHostNonConst ();
+          X_sub_j->getLocalViewHost(Tpetra::Access::ReadWrite());
         auto X_sub_lcl_j_1d =
           Kokkos::subview (X_sub_lcl_j_2d, Kokkos::ALL (), 0);
 
@@ -277,7 +277,7 @@ namespace { // (anonymous)
           continue;
         }
         auto X_sub_lcl_j_2d =
-          X_sub_j->getLocalViewHostConst ();
+          X_sub_j->getLocalViewHost(Tpetra::Access::ReadOnly());
         auto X_sub_lcl_j_1d =
           Kokkos::subview (X_sub_lcl_j_2d, Kokkos::ALL (), 0);
 
@@ -286,7 +286,7 @@ namespace { // (anonymous)
         if (X_j.is_null ()) {
           continue;
         }
-        auto X_lcl_j_2d = X_j->getLocalViewHostConst ();
+        auto X_lcl_j_2d = X_j->getLocalViewHost(Tpetra::Access::ReadOnly());
         auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), 0);
 
         auto X_copy_j = X_copy.getVector (j);
@@ -295,7 +295,7 @@ namespace { // (anonymous)
           continue;
         }
         auto X_copy_lcl_j_2d =
-          X_copy_j->getLocalViewHostConst ();
+          X_copy_j->getLocalViewHost(Tpetra::Access::ReadOnly());
         auto X_copy_lcl_j_1d =
           Kokkos::subview (X_copy_lcl_j_2d, Kokkos::ALL (), 0);
 
@@ -323,12 +323,12 @@ namespace { // (anonymous)
         auto iter = std::find (cols.begin (), cols.end (), j);
         if (iter == cols.end ()) { // not in the sequence
           auto X_j = X.getVector (j);
-          auto X_lcl_j_2d = X_j->getLocalViewHostConst ();
+          auto X_lcl_j_2d = X_j->getLocalViewHost(Tpetra::Access::ReadOnly());
           auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), 0);
 
           auto X_copy_j = X_copy.getVector (j);
           auto X_copy_lcl_j_2d =
-            X_copy_j->getLocalViewHostConst ();
+            X_copy_j->getLocalViewHost(Tpetra::Access::ReadOnly());
           auto X_copy_lcl_j_1d =
             Kokkos::subview (X_copy_lcl_j_2d, Kokkos::ALL (), 0);
 
@@ -349,11 +349,11 @@ namespace { // (anonymous)
       for (LO k = 0; k < static_cast<LO> (cols.size ()); ++k) {
         const LO j = cols[k];
         auto X_sub_j = X_sub->getVector (k);
-        auto X_sub_lcl_j_2d = X_sub_j->getLocalViewDeviceConst ();
+        auto X_sub_lcl_j_2d = X_sub_j->getLocalViewDevice(Tpetra::Access::ReadOnly());
         auto X_sub_lcl_j_1d = Kokkos::subview (X_sub_lcl_j_2d, Kokkos::ALL (), 0);
 
         auto X_j = X.getVector (j);
-        auto X_lcl_j_2d = X_j->getLocalViewDeviceConst ();
+        auto X_lcl_j_2d = X_j->getLocalViewDevice(Tpetra::Access::ReadOnly());
         auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), 0);
 
         // auto X_copy_j = X_copy.getVector (j);
@@ -373,11 +373,11 @@ namespace { // (anonymous)
         auto iter = std::find (cols.begin (), cols.end (), j);
         if (iter == cols.end ()) { // not in the sequence
           auto X_j = X.getVector (j);
-          auto X_lcl_j_2d = X_j->getLocalViewDeviceConst ();
+          auto X_lcl_j_2d = X_j->getLocalViewDevice(Tpetra::Access::ReadOnly());
           auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), 0);
 
           auto X_copy_j = X_copy.getVector (j);
-          auto X_copy_lcl_j_2d = X_copy_j->getLocalViewDeviceConst ();
+          auto X_copy_lcl_j_2d = X_copy_j->getLocalViewDevice(Tpetra::Access::ReadOnly());
           auto X_copy_lcl_j_1d = Kokkos::subview (X_copy_lcl_j_2d, Kokkos::ALL (), 0);
 
           const bool eq = vectorsEqual (X_lcl_j_1d, X_copy_lcl_j_1d);
@@ -444,7 +444,7 @@ namespace { // (anonymous)
       {
         X.sync_host ();
         X.modify_host ();
-        auto X_lcl = X.getLocalViewHostNonConst ();
+        auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadWrite());
 
         TEST_EQUALITY( static_cast<LO> (X_lcl.extent (0)), lclNumRows );
         TEST_EQUALITY( static_cast<LO> (X_lcl.extent (1)), numVecs );
@@ -503,7 +503,7 @@ namespace { // (anonymous)
             continue;
           }
           auto Y_j = Y->getVectorNonConst (k);
-          auto Y_lcl_j_2d = Y_j->getLocalViewHostNonConst ();
+          auto Y_lcl_j_2d = Y_j->getLocalViewHost(Tpetra::Access::ReadWrite());
           auto Y_lcl_j_1d = Kokkos::subview (Y_lcl_j_2d, Kokkos::ALL (), 0);
           TEST_EQUALITY( static_cast<LO> (Y_lcl_j_1d.extent (0)), lclNumRows );
           if (! success) {
@@ -531,7 +531,7 @@ namespace { // (anonymous)
             continue;
           }
           auto Z_j = Z->getVectorNonConst (k);
-          auto Z_lcl_j_2d = Z_j->getLocalViewDeviceNonConst ();
+          auto Z_lcl_j_2d = Z_j->getLocalViewDevice(Tpetra::Access::ReadWrite());
           auto Z_lcl_j_1d = Kokkos::subview (Z_lcl_j_2d, Kokkos::ALL (), 0);
           TEST_EQUALITY( static_cast<LO> (Z_lcl_j_1d.extent (0)), lclNumRows );
           if (! success) {
@@ -568,7 +568,7 @@ namespace { // (anonymous)
             continue;
           }
           out<<"Checkpoint #3"<<std::endl;
-          auto X_lcl_j_2d = X_j->getLocalViewHostConst ();
+          auto X_lcl_j_2d = X_j->getLocalViewHost(Tpetra::Access::ReadOnly());
           auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), 0);
           TEST_EQUALITY( static_cast<LO> (X_lcl_j_1d.extent (0)),
                          lclNumRows );
@@ -578,7 +578,7 @@ namespace { // (anonymous)
           if (X_copy_j.is_null ()) {
             continue;
           }
-          auto X_copy_lcl_j_2d = X_copy_j->getLocalViewHostConst ();
+          auto X_copy_lcl_j_2d = X_copy_j->getLocalViewHost(Tpetra::Access::ReadOnly());
           auto X_copy_lcl_j_1d = Kokkos::subview (X_copy_lcl_j_2d, Kokkos::ALL (), 0);
           TEST_EQUALITY( static_cast<LO> (X_copy_lcl_j_1d.extent (0)),
                          lclNumRows );
@@ -588,7 +588,7 @@ namespace { // (anonymous)
             continue;
           }
           out<<"Checkpoint #5"<<std::endl;
-          auto Y_lcl_j_2d = Y_j->getLocalViewHostConst ();
+          auto Y_lcl_j_2d = Y_j->getLocalViewHost(Tpetra::Access::ReadOnly());
           auto Y_lcl_j_1d = Kokkos::subview (Y_lcl_j_2d, Kokkos::ALL (), 0);
           TEST_EQUALITY( static_cast<LO> (Y_lcl_j_1d.extent (0)),
                          lclNumRows );

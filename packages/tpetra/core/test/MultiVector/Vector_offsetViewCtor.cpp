@@ -64,7 +64,7 @@ namespace { // (anonymous)
     using LO = typename vector_type::local_ordinal_type;
 
     x.modify_device ();
-    auto x_lcl_d_2d = x.getLocalViewDevice ();
+    auto x_lcl_d_2d = x.getLocalViewDevice(Tpetra::Access::ReadWrite());
     auto x_lcl_d = Kokkos::subview (x_lcl_d_2d, Kokkos::ALL (), 0);
 
     using execution_space = typename vector_type::execution_space;
@@ -90,7 +90,7 @@ namespace { // (anonymous)
 
     TEST_ASSERT( ! x_offset.need_sync_host () );
 
-    auto x_lcl_h_2d = x_offset.getLocalViewHost ();
+    auto x_lcl_h_2d = x_offset.getLocalViewHost(Tpetra::Access::ReadWrite());
     auto x_lcl_h = Kokkos::subview (x_lcl_h_2d, Kokkos::ALL (), 0);
 
     const LO newLclNumRows = static_cast<LO> (x_offset.getLocalLength ());
@@ -165,7 +165,7 @@ namespace { // (anonymous)
       {
         x.putScalar (Teuchos::ScalarTraits<ST>::one ());
         x.sync_host ();
-        auto x_offset_lcl_h_2d = x_offset.getLocalViewDevice ();
+        auto x_offset_lcl_h_2d = x_offset.getLocalViewDevice(Tpetra::Access::ReadWrite());
         auto x_offset_lcl_h =
           Kokkos::subview (x_offset_lcl_h_2d, Kokkos::ALL (), 0);
         for (LO newLclRow = 0; newLclRow < newLclNumRows; ++newLclRow) {
