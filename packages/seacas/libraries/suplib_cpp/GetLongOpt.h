@@ -13,28 +13,24 @@ public:
 private:
   struct Cell
   {
-    const char *option;      // option name
-    OptType     type;        // option type
-    const char *description; // a description of option
-    const char *value;       // value of option (string)
-    const char *opt_value;   // If optional value and value not entered, assign opt_value to value
-    Cell *      next;        // pointer to the next cell
+    const char *option{nullptr};      // option name
+    OptType     type{NoValue};        // option type
+    const char *description{nullptr}; // a description of option
+    const char *value{nullptr};       // value of option (string)
+    const char *opt_value{
+        nullptr};        // If optional value and value not entered, assign opt_value to value
+    Cell *next{nullptr}; // pointer to the next cell
 
-    Cell()
-    {
-      option = description = value = opt_value = nullptr;
-      next                                     = nullptr;
-      type                                     = NoValue;
-    }
+    Cell() = default;
   };
 
 private:
-  Cell *      table;       // option table
-  const char *ustring;     // usage message
-  char *      pname;       // program basename
-  Cell *      last;        // last entry in option table
-  int         enroll_done; // finished enrolling
-  char        optmarker;   // option marker
+  Cell *      table{nullptr};   // option table
+  const char *ustring{nullptr}; // usage message
+  char *      pname{nullptr};   // program basename
+  Cell *      last{nullptr};    // last entry in option table
+  int         enroll_done{0};   // finished enrolling
+  char        optmarker;        // option marker
 
 private:
   int setcell(Cell *c, char *valtoken, char *nexttoken, const char *name);

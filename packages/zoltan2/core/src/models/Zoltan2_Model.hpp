@@ -61,6 +61,7 @@ enum ModelType
 {
   HypergraphModelType,
   GraphModelType,
+  CommGraphModelType,
   CoordinateModelType,
   IdentifierModelType,
   MAX_NUM_MODEL_TYPES

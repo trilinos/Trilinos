@@ -553,8 +553,8 @@ namespace MueLu {
     levelManagers_.resize(levelID);
 
     int sizeOfVecs = sizeOfAllocatedLevelMultiVectors_;
-    DeleteLevelMultiVectors();
-    AllocateLevelMultiVectors(sizeOfVecs);
+
+    AllocateLevelMultiVectors(sizeOfVecs, true);
 
     // since the # of levels, etc. may have changed, force re-determination of description during next call to description()
     ResetDescription();
@@ -1526,9 +1526,9 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AllocateLevelMultiVectors(int numvecs) {
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AllocateLevelMultiVectors(int numvecs, bool forceMapCheck) {
     int N = Levels_.size();
-    if( (sizeOfAllocatedLevelMultiVectors_ == numvecs && residual_.size() == N) || numvecs<=0 ) return;
+    if( ( (sizeOfAllocatedLevelMultiVectors_ == numvecs && residual_.size() == N) || numvecs<=0 ) && !forceMapCheck) return;
 
     // If, somehow, we changed the number of levels, delete everything first
     if(residual_.size() != N) {
@@ -1553,31 +1553,49 @@ namespace MueLu {
           Adm = A_as_blocked->getFullDomainMap();
         }
 
-        // This is zero'd by default since it is filled via an operator apply
-        residual_[i] = MultiVectorFactory::Build(Arm, numvecs, true);
-        correction_[i] = MultiVectorFactory::Build(Adm, numvecs, false);
+        if (residual_[i].is_null() || !residual_[i]->getMap()->isSameAs(*Arm))
+          // This is zero'd by default since it is filled via an operator apply
+          residual_[i] = MultiVectorFactory::Build(Arm, numvecs, true);
+        if (correction_[i].is_null() || !correction_[i]->getMap()->isSameAs(*Adm))
+          correction_[i] = MultiVectorFactory::Build(Adm, numvecs, false);
       }
 
       if(i+1<N) {
         // This is zero'd by default since it is filled via an operator apply
         if(implicitTranspose_) {
           RCP<Operator> P = Levels_[i+1]->template Get< RCP<Operator> >("P");
-          if(!P.is_null()) coarseRhs_[i] = MultiVectorFactory::Build(P->getDomainMap(),numvecs,true);
+          if(!P.is_null()) {
+            RCP<const Map> map = P->getDomainMap();
+            if (coarseRhs_[i].is_null() || !coarseRhs_[i]->getMap()->isSameAs(*map))
+              coarseRhs_[i] = MultiVectorFactory::Build(map, numvecs, true);
+          }
         } else {
           RCP<Operator> R = Levels_[i+1]->template Get< RCP<Operator> >("R");
-          if(!R.is_null()) coarseRhs_[i] = MultiVectorFactory::Build(R->getRangeMap(),numvecs,true);
+          if (!R.is_null()) {
+            RCP<const Map> map = R->getRangeMap();
+            if (coarseRhs_[i].is_null() || !coarseRhs_[i]->getMap()->isSameAs(*map))
+              coarseRhs_[i] = MultiVectorFactory::Build(map, numvecs, true);
+          }
         }
 
 
         RCP<const Import> importer;
         if(Levels_[i+1]->IsAvailable("Importer"))
           importer = Levels_[i+1]->template Get< RCP<const Import> >("Importer");
-        if (doPRrebalance_ || importer.is_null())
-          coarseX_[i] = MultiVectorFactory::Build(coarseRhs_[i]->getMap(),numvecs,true);
-        else {
-          coarseImport_[i] = MultiVectorFactory::Build(importer->getTargetMap(), numvecs,false);
-          coarseExport_[i] = MultiVectorFactory::Build(importer->getSourceMap(), numvecs,false);
-          coarseX_[i] = MultiVectorFactory::Build(importer->getTargetMap(),numvecs,false);
+        if (doPRrebalance_ || importer.is_null()) {
+          RCP<const Map> map = coarseRhs_[i]->getMap();
+          if (coarseX_[i].is_null() || !coarseX_[i]->getMap()->isSameAs(*map))
+            coarseX_[i] = MultiVectorFactory::Build(map, numvecs, true);
+        } else {
+          RCP<const Map> map;
+          map = importer->getTargetMap();
+          if (coarseImport_[i].is_null() || !coarseImport_[i]->getMap()->isSameAs(*map)) {
+            coarseImport_[i] = MultiVectorFactory::Build(map, numvecs,false);
+            coarseX_[i] = MultiVectorFactory::Build(map,numvecs,false);
+          }
+          map = importer->getSourceMap();
+          if (coarseExport_[i].is_null() || !coarseExport_[i]->getMap()->isSameAs(*map))
+            coarseExport_[i] = MultiVectorFactory::Build(map, numvecs,false);
         }
       }
     }

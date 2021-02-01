@@ -452,6 +452,8 @@ namespace {
     case EX_ELEM_BLOCK: inquiry = EX_INQ_ELEM_BLK; break;
     case EX_NODE_SET: inquiry = EX_INQ_NODE_SETS; break;
     case EX_SIDE_SET: inquiry = EX_INQ_SIDE_SETS; break;
+    case EX_EDGE_BLOCK: inquiry = EX_INQ_EDGE_BLK; break;
+    case EX_FACE_BLOCK: inquiry = EX_INQ_FACE_BLK; break;
     default: Error("Invalid entity type in get_num_entities\n"); exit(1);
     }
     SMART_ASSERT(inquiry != EX_INQ_INVALID);

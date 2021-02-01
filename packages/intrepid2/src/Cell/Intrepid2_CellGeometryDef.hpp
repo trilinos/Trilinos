@@ -52,6 +52,89 @@
 
 namespace Intrepid2
 {
+
+  namespace Impl
+  {
+    /** \brief Store host-only "members" of CellGeometry using a static map indexed on the CellGeometry pointer.  This allows us to avoid issues related to non-CUDA-aware members with a lambda capture of a CellGeometry object.
+     */
+    template<class PointScalar, int spaceDim, typename ExecSpaceType>
+    class CellGeometryHostMembers
+    {
+      using BasisPtr = Teuchos::RCP<Intrepid2::Basis<ExecSpaceType,PointScalar,PointScalar> >;
+      using CellGeometryType = CellGeometry<PointScalar,spaceDim,ExecSpaceType>;
+    public:
+      // conceptually, these should be private members, but for the definition of these, we need them to be externally accessible.
+      static std::map<const CellGeometryType *, shards::CellTopology> cellTopology_;
+      static std::map<const CellGeometryType *, BasisPtr> basisForNodes_;
+      
+    public:
+      static void constructorCalled(const CellGeometryType *cellGeometry, const shards::CellTopology &cellTopo, BasisPtr basisForNodes)
+      {
+        cellTopology_[cellGeometry]  = cellTopo;
+        basisForNodes_[cellGeometry] = basisForNodes;
+      }
+      
+      static void destructorCalled(const CellGeometryType *cellGeometry)
+      {
+        cellTopology_.erase(cellGeometry);
+        basisForNodes_.erase(cellGeometry);
+      }
+      
+      static BasisPtr getBasis(const CellGeometryType *cellGeometry)
+      {
+        return basisForNodes_[cellGeometry];
+      }
+      
+      static const shards::CellTopology & getCellTopology(const CellGeometryType *cellGeometry)
+      {
+        return cellTopology_[cellGeometry];
+      }
+    };
+  
+    // member lookup map definitions for CellGeometryHostMembers:
+    template< class PointScalar, int spaceDim, typename ExecSpaceType > typename std::map<const CellGeometry<PointScalar,spaceDim,ExecSpaceType> *, shards::CellTopology> CellGeometryHostMembers< PointScalar,spaceDim,ExecSpaceType>::cellTopology_;
+  
+    template< class PointScalar, int spaceDim, typename ExecSpaceType > typename std::map<const CellGeometry<PointScalar,spaceDim,ExecSpaceType> *, Teuchos::RCP<Intrepid2::Basis<ExecSpaceType,PointScalar,PointScalar> >> CellGeometryHostMembers< PointScalar,spaceDim,ExecSpaceType>::basisForNodes_;
+  }
+
+  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  KOKKOS_INLINE_FUNCTION
+  CellGeometry<PointScalar,spaceDim,ExecSpaceType>::CellGeometry(const CellGeometry<PointScalar,spaceDim,ExecSpaceType> &cellGeometry)
+:
+  nodeOrdering_(cellGeometry.nodeOrdering_),
+  cellGeometryType_(cellGeometry.cellGeometryType_),
+  subdivisionStrategy_(cellGeometry.subdivisionStrategy_),
+  affine_(cellGeometry.affine_),
+  orientations_(cellGeometry.orientations_),
+  origin_(cellGeometry.origin_),
+  domainExtents_(cellGeometry.domainExtents_),
+  gridCellCounts_(cellGeometry.gridCellCounts_),
+  tensorVertices_(cellGeometry.tensorVertices_),
+  cellToNodes_(cellGeometry.cellToNodes_),
+  nodes_(cellGeometry.nodes_),
+  numCells_(cellGeometry.numCells_),
+  numNodesPerCell_(cellGeometry.numNodesPerCell_)
+  {
+    // host-only registration with HostMemberLookup:
+#ifndef __CUDA_ARCH__
+    shards::CellTopology cellTopo = cellGeometry.cellTopology();
+    BasisPtr basisForNodes = cellGeometry.basisForNodes();
+    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, ExecSpaceType>;
+    HostMemberLookup::constructorCalled(this, cellTopo, basisForNodes);
+#endif
+  }
+
+  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  KOKKOS_INLINE_FUNCTION
+  CellGeometry<PointScalar,spaceDim,ExecSpaceType>::~CellGeometry()
+  {
+    // host-only deregistration with HostMemberLookup:
+#ifndef __CUDA_ARCH__
+    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, ExecSpaceType>;
+    HostMemberLookup::destructorCalled(this);
+#endif
+  }
+
   template<class PointScalar, int spaceDim, typename ExecSpaceType>
   KOKKOS_INLINE_FUNCTION
   int CellGeometry<PointScalar,spaceDim,ExecSpaceType>::numCellsPerGridCell(SubdivisionStrategy subdivisionStrategy) const
@@ -248,6 +331,7 @@ namespace Intrepid2
       else
       {
         using CellTools = Intrepid2::CellTools<Kokkos::DefaultExecutionSpace>;
+        auto basisForNodes = this->basisForNodes();
         
         if (affine_)
         {
@@ -261,7 +345,7 @@ namespace Intrepid2
           
           Kokkos::deep_copy(testPointView, 0.0);
           
-          CellTools::setJacobian(tempData, testPointView, *this, basisForNodes_, startCell, endCell);
+          CellTools::setJacobian(tempData, testPointView, *this, basisForNodes, startCell, endCell);
           
           auto tempDataSubview = Kokkos::subview(tempData, Kokkos::ALL(), 0, Kokkos::ALL(), Kokkos::ALL());
           Kokkos::deep_copy(dataView3, tempDataSubview);
@@ -273,14 +357,14 @@ namespace Intrepid2
           // it would be nice if we could avoid allocating and computing this reference space data every time a Jacobian is required.
           // Once we have data IDs set up, we could verify that the point set matches the point set we previously computed at.
           // At that point, we could make basisGradients a member variable, lazily filled during setJacobian().
-          auto basisGradients = basisForNodes_->allocateBasisValues(points, OPERATOR_GRAD);
-          basisForNodes_->getValues(basisGradients, points, OPERATOR_GRAD);
+          auto basisGradients = basisForNodes->allocateBasisValues(points, OPERATOR_GRAD);
+          basisForNodes->getValues(basisGradients, points, OPERATOR_GRAD);
           
           // as an optimization here, we allocate a Kokkos View to store explicit, full gradients at each point.
           // this worthwhile (if it in fact is) mainly due to operator() in BasisView being more expensive than that in DynRankView, and also
           // due to the fact that tensor-product bases are stored unmultiplied, so accesses cascade, and end up involving extra multiplies.
           int numPoints = points.extent_int(0);
-          int numFields = basisForNodes_->getCardinality();
+          int numFields = basisForNodes->getCardinality();
           auto basisGradientsView = getMatchingViewWithLabel(dataView, "CellGeometryProvider: temporary basisGradients", numFields, numPoints, spaceDim);
           
           auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<3>>({0,0,0},{numFields,numPoints,spaceDim});
@@ -325,6 +409,7 @@ namespace Intrepid2
     }
     numCells_ *= numCellsPerGridCell(subdivisionStrategy_);
     
+    shards::CellTopology cellTopo; // will register with HostMemberLookup below
     if (subdivisionStrategy_ == NO_SUBDIVISION)
     {
       // hypercube
@@ -332,19 +417,19 @@ namespace Intrepid2
       
       if (spaceDim == 1)
       {
-        cellTopo_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<> >());
+        cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Line<> >());
       }
       else if (spaceDim == 2)
       {
-        cellTopo_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<> >());
+        cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<> >());
       }
       else if (spaceDim == 3)
       {
-        cellTopo_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<> >());
+        cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<> >());
       }
       else
       {
-        // TODO: Once shards supports higher-dimensional hypercubes, initialize cellTopo_ accordingly
+        // TODO: Once shards supports higher-dimensional hypercubes, initialize cellTopo accordingly
       }
     }
     else
@@ -353,11 +438,11 @@ namespace Intrepid2
       numNodesPerCell_ = spaceDim + 1; // D+1 vertices in a D-dimensional simplex
       if (spaceDim == 2)
       {
-        cellTopo_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<> >());
+        cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<> >());
       }
       else if (spaceDim == 3)
       {
-        cellTopo_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<> >());
+        cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<> >());
       }
       else
       {
@@ -367,21 +452,24 @@ namespace Intrepid2
     
     using BasisFamily = DerivedNodalBasisFamily<ExecSpaceType,PointScalar,PointScalar>;
     const int linearPolyOrder = 1;
-    basisForNodes_ = getBasis<BasisFamily>(cellTopo_, FUNCTION_SPACE_HGRAD, linearPolyOrder);
+    BasisPtr basisForNodes = getBasis<BasisFamily>(cellTopo, FUNCTION_SPACE_HGRAD, linearPolyOrder);
     
     if (nodeOrdering_ == HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS)
     {
       // override basisForNodes for quad, hexahedron.  Apparently the lowest-order bases below are *not* in the same order as their
       // arbitrary-polynomial-order counterparts; the latter do not match the order of the shards::CellTopology nodes.
-      if (cellTopo_.getKey() == shards::Quadrilateral<>::key)
+      if (cellTopo.getKey() == shards::Quadrilateral<>::key)
       {
-        basisForNodes_ = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<ExecSpaceType,PointScalar,PointScalar>() );
+        basisForNodes = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<ExecSpaceType,PointScalar,PointScalar>() );
       }
-      else if (cellTopo_.getKey() == shards::Hexahedron<>::key)
+      else if (cellTopo.getKey() == shards::Hexahedron<>::key)
       {
-        basisForNodes_ = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<ExecSpaceType,PointScalar,PointScalar>() );
+        basisForNodes = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<ExecSpaceType,PointScalar,PointScalar>() );
       }
     }
+    
+    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, ExecSpaceType>;
+    HostMemberLookup::constructorCalled(this, cellTopo, basisForNodes);
   }
     
   // Node-based constructor for straight-edged cell geometry.
@@ -396,7 +484,6 @@ namespace Intrepid2
   :
   nodeOrdering_(nodeOrdering),
   cellGeometryType_(FIRST_ORDER),
-  cellTopo_(cellTopo),
   cellToNodes_(cellToNodes),
   nodes_(nodes)
   {
@@ -417,21 +504,24 @@ namespace Intrepid2
     
     using BasisFamily = DerivedNodalBasisFamily<ExecSpaceType,PointScalar,PointScalar>;
     const int linearPolyOrder = 1;
-    basisForNodes_ = getBasis<BasisFamily>(cellTopo_, FUNCTION_SPACE_HGRAD, linearPolyOrder);
+    BasisPtr basisForNodes = getBasis<BasisFamily>(cellTopo, FUNCTION_SPACE_HGRAD, linearPolyOrder);
     
     if (nodeOrdering_ == HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS)
     {
       // override basisForNodes for quad, hexahedron.  Apparently the lowest-order bases below are *not* in the same order as their
       // arbitrary-polynomial-order counterparts; the latter do not match the order of the shards::CellTopology nodes.
-      if (cellTopo_.getKey() == shards::Quadrilateral<>::key)
+      if (cellTopo.getKey() == shards::Quadrilateral<>::key)
       {
-        basisForNodes_ = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<ExecSpaceType,PointScalar,PointScalar>() );
+        basisForNodes = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<ExecSpaceType,PointScalar,PointScalar>() );
       }
-      else if (cellTopo_.getKey() == shards::Hexahedron<>::key)
+      else if (cellTopo.getKey() == shards::Hexahedron<>::key)
       {
-        basisForNodes_ = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<ExecSpaceType,PointScalar,PointScalar>() );
+        basisForNodes = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<ExecSpaceType,PointScalar,PointScalar>() );
       }
     }
+    
+    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, ExecSpaceType>;
+    HostMemberLookup::constructorCalled(this, cellTopo, basisForNodes);
   }
 
   // Constructor for higher-order geometry
@@ -441,9 +531,7 @@ namespace Intrepid2
   :
   nodeOrdering_(HYPERCUBE_NODE_ORDER_TENSOR),
   cellGeometryType_(HIGHER_ORDER),
-  cellTopo_(basisForNodes->getBaseCellTopology()),
-  nodes_(cellNodes),
-  basisForNodes_(basisForNodes)
+  nodes_(cellNodes)
   {
     numCells_ = cellNodes.extent_int(0);
     numNodesPerCell_ = cellNodes.extent_int(1);
@@ -452,7 +540,9 @@ namespace Intrepid2
     const bool firstOrderGeometry = (basisForNodes->getDegree() == 1);
     cellGeometryType_ = firstOrderGeometry ? FIRST_ORDER : HIGHER_ORDER;
     
-    if (firstOrderGeometry && (cellTopo_.getNodeCount() == spaceDim + 1)) // lowest-order and simplicial
+    shards::CellTopology cellTopo = basisForNodes->getBaseCellTopology();
+    
+    if (firstOrderGeometry && (cellTopo.getNodeCount() == spaceDim + 1)) // lowest-order and simplicial
     {
       affine_ = true;
     }
@@ -460,6 +550,8 @@ namespace Intrepid2
     {
       affine_ = false;
     }
+    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, ExecSpaceType>;
+    HostMemberLookup::constructorCalled(this, cellTopo, basisForNodes);
   }
     
   template<class PointScalar, int spaceDim, typename ExecSpaceType>
@@ -598,13 +690,15 @@ namespace Intrepid2
   typename CellGeometry<PointScalar,spaceDim,ExecSpaceType>::BasisPtr
   CellGeometry<PointScalar,spaceDim,ExecSpaceType>::basisForNodes() const
   {
-    return basisForNodes_;
+    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, ExecSpaceType>;
+    return HostMemberLookup::getBasis(this);
   }
   
   template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  shards::CellTopology CellGeometry<PointScalar,spaceDim,ExecSpaceType>::cellTopology() const
+  const shards::CellTopology & CellGeometry<PointScalar,spaceDim,ExecSpaceType>::cellTopology() const
   {
-    return cellTopo_;
+    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, ExecSpaceType>;
+    return HostMemberLookup::getCellTopology(this);
   }
   
   template<class PointScalar, int spaceDim, typename ExecSpaceType>
@@ -696,7 +790,7 @@ namespace Intrepid2
       auto cellToNodesHost = Kokkos::create_mirror_view_and_copy(typename HostExecSpace::memory_space(), cellToNodes_);
     }
     
-    OrientationTools<HostExecSpace>::getOrientation(orientationsHost,cellNodesHost,cellTopo_);
+    OrientationTools<HostExecSpace>::getOrientation(orientationsHost,cellNodesHost,this->cellTopology());
     Kokkos::deep_copy(orientationsView,orientationsHost);
     
     const int orientationsRank = 1; // shape (C)

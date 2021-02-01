@@ -261,8 +261,8 @@ public:
    /** Access the local IDs for an element. The local ordering is according to
      * the <code>getOwnedAndGhostedIndices</code> method. Note
      */
-   void getElementLIDs(Kokkos::View<const int*,PHX::Device> cellIds,
-                       Kokkos::View<panzer::LocalOrdinal**,PHX::Device> lids) const
+   void getElementLIDs(PHX::View<const int*> cellIds,
+                       PHX::View<panzer::LocalOrdinal**> lids) const
    { 
      CopyCellLIDsFunctor functor;
      functor.cellIds = cellIds;
@@ -287,9 +287,9 @@ public:
    public:
      typedef typename PHX::Device execution_space;
 
-     Kokkos::View<const int*,PHX::Device> cellIds;
+     PHX::View<const int*> cellIds;
      Kokkos::View<const panzer::LocalOrdinal**,Kokkos::LayoutRight,PHX::Device> global_lids;
-     Kokkos::View<panzer::LocalOrdinal**,PHX::Device> local_lids;
+     PHX::View<panzer::LocalOrdinal**> local_lids;
 
      KOKKOS_INLINE_FUNCTION
      void operator()(const int cell) const

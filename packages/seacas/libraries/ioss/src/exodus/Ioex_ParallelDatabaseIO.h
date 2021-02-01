@@ -194,7 +194,7 @@ namespace Ioex {
     void write_entity_transient_field(ex_entity_type type, const Ioss::Field &field,
                                       const Ioss::GroupingEntity *ge, int64_t count,
                                       void *variables) const;
-    void write_meta_data() override;
+    void write_meta_data(bool appending) override;
 
     // Read related metadata and store it in the region...
     void read_region();
@@ -255,6 +255,8 @@ namespace Ioex {
     mutable std::map<const Ioss::GroupingEntity *, Ioss::Int64Vector> nodesetOwnedNodes;
 
     mutable bool metaDataWritten{false};
+    mutable bool nodeGlobalImplicitMapDefined{false};
+    mutable bool elemGlobalImplicitMapDefined{false};
   };
 } // namespace Ioex
 #endif

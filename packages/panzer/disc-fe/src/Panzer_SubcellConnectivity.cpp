@@ -58,11 +58,11 @@ setup(const panzer::LocalMeshPartition & partition)
   _num_subcells = num_faces;
   _num_cells = num_cells;
 
-  _subcell_to_cells_adj = Kokkos::View<int*>("subcell_to_cells_adj", num_faces+1);
-  _subcell_to_cells = Kokkos::View<int*>("subcell_to_cells", num_faces*num_cells_per_face);
-  _subcell_to_local_subcells = Kokkos::View<int*>("subcell_to_local_subcells", num_faces*num_cells_per_face);
-  _cell_to_subcells_adj = Kokkos::View<int*>("cell_to_subcells_adj", num_cells+1);
-  _cell_to_subcells = Kokkos::View<int*>("cell_to_subcells", num_cells*num_faces_per_cell);
+  _subcell_to_cells_adj = PHX::View<int*>("subcell_to_cells_adj", num_faces+1);
+  _subcell_to_cells = PHX::View<int*>("subcell_to_cells", num_faces*num_cells_per_face);
+  _subcell_to_local_subcells = PHX::View<int*>("subcell_to_local_subcells", num_faces*num_cells_per_face);
+  _cell_to_subcells_adj = PHX::View<int*>("cell_to_subcells_adj", num_cells+1);
+  _cell_to_subcells = PHX::View<int*>("cell_to_subcells", num_cells*num_faces_per_cell);
 
   _subcell_to_cells_adj(0)=0;
   for(int face=0;face<num_faces;++face){

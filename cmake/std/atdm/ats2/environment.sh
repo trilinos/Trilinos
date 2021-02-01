@@ -75,6 +75,9 @@ module load StdEnv
 sparc_module_name=$(get_sparc_dev_module_name "$ATDM_CONFIG_COMPILER")
 module load ${sparc_module_name}
 
+module unload cmake
+module load cmake/3.18.0
+
 # Set up stuff related the the host compiler
 
 if [[ "$ATDM_CONFIG_COMPILER" == *"GNU"* ]]; then
@@ -88,12 +91,6 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"GNU"* ]]; then
   export CPATH=${BINUTILS_ROOT}/include:${CPATH}
 
   export ATDM_CONFIG_USE_NINJA=ON
-
-  # Prepend path to updated and patched CMake 3.17.2
-  # Only use updated cmake version for gnu builds. XL compiler tests fail
-  # with this newer cmake version.
-  module unload cmake
-  export PATH=/projects/atdm_devops/vortex/cmake-3.17.2/bin:$PATH
 
 elif [[ "$ATDM_CONFIG_COMPILER" == *"XL"* ]]; then
 

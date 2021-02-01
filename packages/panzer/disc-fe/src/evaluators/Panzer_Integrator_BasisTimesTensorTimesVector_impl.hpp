@@ -75,7 +75,7 @@ namespace panzer
     useDescriptors_(false),
     basisName_(basis.name())
   {
-    using Kokkos::View;
+    using PHX::View;
     using panzer::BASIS;
     using panzer::Cell;
     using panzer::EvaluatorStyle;
@@ -148,7 +148,7 @@ namespace panzer
     bd_(bd),
     id_(id)
   {
-    using Kokkos::View;
+    using PHX::View;
     using panzer::BASIS;
     using panzer::Cell;
     using panzer::EvaluatorStyle;
@@ -234,7 +234,7 @@ namespace panzer
     using panzer::getBasisIndex;
     using std::size_t;
 
-    // Get the Kokkos::View of the tensor.
+    // Get the PHX::View of the tensor.
     kokkosTensor_ = tensor_.get_static_view();
 
     // Determine the number of quadrature points and the dimensionality of the

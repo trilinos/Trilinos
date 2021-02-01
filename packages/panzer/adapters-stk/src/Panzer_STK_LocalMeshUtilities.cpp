@@ -84,7 +84,7 @@ namespace
   */
 void
 buildCellGlobalIDs(panzer::ConnManager & conn,
-                   Kokkos::View<panzer::GlobalOrdinal*> & globals)
+                   PHX::View<panzer::GlobalOrdinal*> & globals)
 {
   // extract topologies, and build global connectivity...currently assuming only one topology
   std::vector<shards::CellTopology> elementBlockTopologies;
@@ -118,7 +118,7 @@ buildCellGlobalIDs(panzer::ConnManager & conn,
     const std::vector<int> & localIDs = conn.getElementBlock(block_ids[which_blk]);
     totalSize += localIDs.size();
   }
-  globals = Kokkos::View<panzer::GlobalOrdinal*>("global_cells",totalSize);
+  globals = PHX::View<panzer::GlobalOrdinal*>("global_cells",totalSize);
 
   for (std::size_t id=0;id<totalSize; ++id) {
     // sanity check
@@ -136,7 +136,7 @@ buildCellGlobalIDs(panzer::ConnManager & conn,
   * Note that these are 'vertex nodes' and not 'basis nodes', 'quad nodes', or 'dof nodes'
   */
 void
-buildCellToNodes(panzer::ConnManager & conn, Kokkos::View<panzer::GlobalOrdinal**> & globals)
+buildCellToNodes(panzer::ConnManager & conn, PHX::View<panzer::GlobalOrdinal**> & globals)
 {
   // extract topologies, and build global connectivity...currently assuming only one topology
   std::vector<shards::CellTopology> elementBlockTopologies;
@@ -167,7 +167,7 @@ buildCellToNodes(panzer::ConnManager & conn, Kokkos::View<panzer::GlobalOrdinal*
     totalCells += localIDs.size();
     maxNodes = maxNodes<Teuchos::as<std::size_t>(thisSize) ? Teuchos::as<std::size_t>(thisSize) : maxNodes;
   }
-  globals = Kokkos::View<panzer::GlobalOrdinal**>("cell_to_node",totalCells,maxNodes);
+  globals = PHX::View<panzer::GlobalOrdinal**>("cell_to_node",totalCells,maxNodes);
 
   // build connectivity array
   for (std::size_t id=0;id<totalCells; ++id) {
@@ -183,7 +183,7 @@ buildCellToNodes(panzer::ConnManager & conn, Kokkos::View<panzer::GlobalOrdinal*
 
 Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
 buildNodeMap(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                    Kokkos::View<const panzer::GlobalOrdinal**> cells_to_nodes)
+                    PHX::View<const panzer::GlobalOrdinal**> cells_to_nodes)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -209,7 +209,7 @@ buildNodeMap(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
       global_nodes.insert(cells_to_nodes(i,j));
 
   // build local vector contribution
-  Kokkos::View<panzer::GlobalOrdinal*> node_ids("global_nodes",global_nodes.size());
+  PHX::View<panzer::GlobalOrdinal*> node_ids("global_nodes",global_nodes.size());
   int i = 0;
   for(auto itr=global_nodes.begin();itr!=global_nodes.end();++itr,++i)
     node_ids(i) = *itr;
@@ -225,8 +225,8 @@ buildNodeMap(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   */
 Teuchos::RCP<Tpetra::CrsMatrix<panzer::LocalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
 buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                      Kokkos::View<const panzer::GlobalOrdinal*> owned_cells,
-                      Kokkos::View<const panzer::GlobalOrdinal**> owned_cells_to_nodes)
+                      PHX::View<const panzer::GlobalOrdinal*> owned_cells,
+                      PHX::View<const panzer::GlobalOrdinal**> owned_cells_to_nodes)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -318,10 +318,10 @@ buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
 /** Build ghstd cell one ring based on shared nodes
   */
-Kokkos::View<const panzer::GlobalOrdinal*>
+PHX::View<const panzer::GlobalOrdinal*>
 buildGhostedCellOneRing(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                        Kokkos::View<const panzer::GlobalOrdinal*> cells,
-                        Kokkos::View<const panzer::GlobalOrdinal**> cells_to_nodes)
+                        PHX::View<const panzer::GlobalOrdinal*> cells,
+                        PHX::View<const panzer::GlobalOrdinal**> cells_to_nodes)
 {
 
   PANZER_FUNC_TIME_MONITOR_DIFF("panzer_stk::buildGhostedCellOneRing",BGCOR);
@@ -394,7 +394,7 @@ buildGhostedCellOneRing(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
   // build an array containing only the ghstd cells
   int indx = 0;
-  Kokkos::View<panzer::GlobalOrdinal*> ghstd_cells("ghstd_cells",ghstd_cells_set.size());
+  PHX::View<panzer::GlobalOrdinal*> ghstd_cells("ghstd_cells",ghstd_cells_set.size());
   for(auto global_cell_index : ghstd_cells_set) {
     ghstd_cells(indx) = global_cell_index;
     indx++;
@@ -693,9 +693,9 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
 
   // Copy local indexes, global indexes, and cell vertices to sideset info
   {
-    sideset_info.global_cells = Kokkos::View<panzer::GlobalOrdinal*>("global_cells", num_total_cells);
-    sideset_info.local_cells = Kokkos::View<LocalOrdinal*>("local_cells", num_total_cells);
-    sideset_info.cell_vertices = Kokkos::View<double***,PHX::Device>("cell_vertices", num_total_cells, num_vertices_per_cell, num_dims);
+    sideset_info.global_cells = PHX::View<panzer::GlobalOrdinal*>("global_cells", num_total_cells);
+    sideset_info.local_cells = PHX::View<LocalOrdinal*>("local_cells", num_total_cells);
+    sideset_info.cell_vertices = PHX::View<double***>("cell_vertices", num_total_cells, num_vertices_per_cell, num_dims);
     Kokkos::deep_copy(sideset_info.cell_vertices,0.);
 
     for(LocalOrdinal i=0; i<num_total_cells; ++i){
@@ -713,9 +713,9 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
   const LocalOrdinal num_faces = faces.size();
   const LocalOrdinal num_faces_per_cell = mesh_info.cell_to_faces.extent(1);
 
-  sideset_info.face_to_cells = Kokkos::View<LocalOrdinal*[2]>("face_to_cells", num_faces);
-  sideset_info.face_to_lidx = Kokkos::View<LocalOrdinal*[2]>("face_to_lidx", num_faces);
-  sideset_info.cell_to_faces = Kokkos::View<LocalOrdinal**>("cell_to_faces", num_total_cells, num_faces_per_cell);
+  sideset_info.face_to_cells = PHX::View<LocalOrdinal*[2]>("face_to_cells", num_faces);
+  sideset_info.face_to_lidx = PHX::View<LocalOrdinal*[2]>("face_to_lidx", num_faces);
+  sideset_info.cell_to_faces = PHX::View<LocalOrdinal**>("cell_to_faces", num_total_cells, num_faces_per_cell);
 
   // Default the system with invalid cell index - this will be most of the entries
   Kokkos::deep_copy(sideset_info.cell_to_faces, -1);
@@ -757,9 +757,8 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
 
 } // namespace
 
-void
-generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
-                      panzer::LocalMeshInfo & mesh_info)
+Teuchos::RCP<panzer::LocalMeshInfo>
+generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -769,6 +768,9 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   typedef Tpetra::Import<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> import_type;
   //typedef Tpetra::MultiVector<double,panzer::LocalOrdinal,panzer::GlobalOrdinal> mvec_type;
   //typedef Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal> ordmvec_type;
+
+  auto mesh_info_rcp = Teuchos::rcp(new panzer::LocalMeshInfo);
+  auto & mesh_info = *mesh_info_rcp;
 
   // Make sure the STK interface is valid
   TEUCHOS_ASSERT(mesh.isInitialized());
@@ -789,17 +791,17 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   panzer::ConnManager & conn = *conn_rcp;
 
   // build cell to node map
-  Kokkos::View<panzer::GlobalOrdinal**> owned_cell_to_nodes;
+  PHX::View<panzer::GlobalOrdinal**> owned_cell_to_nodes;
   buildCellToNodes(conn, owned_cell_to_nodes);
 
   // build the local to global cell ID map
   ///////////////////////////////////////////////////////////
-  Kokkos::View<panzer::GlobalOrdinal*> owned_cells;
+  PHX::View<panzer::GlobalOrdinal*> owned_cells;
   buildCellGlobalIDs(conn, owned_cells);
 
   // get neighboring cells
   ///////////////////////////////////////////////////////////
-  Kokkos::View<const panzer::GlobalOrdinal*> ghstd_cells = buildGhostedCellOneRing(comm,owned_cells,owned_cell_to_nodes);
+  PHX::View<const panzer::GlobalOrdinal*> ghstd_cells = buildGhostedCellOneRing(comm,owned_cells,owned_cell_to_nodes);
 
   // build cell maps
   /////////////////////////////////////////////////////////////////////
@@ -827,7 +829,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   const int vertices_per_cell = cell_topology.getVertexCount();
   const int faces_per_cell = cell_topology.getSubcellCount(space_dim-1);
 
-  // Kokkos::View<double***> owned_vertices("owned_vertices",localCells.size(),vertices_per_cell,space_dim);
+  // PHX::View<double***> owned_vertices("owned_vertices",localCells.size(),vertices_per_cell,space_dim);
   Kokkos::DynRankView<double,PHX::Device> owned_vertices("owned_vertices",localCells.size(),vertices_per_cell,space_dim);
   mesh.getElementVerticesNoResize(localCells,owned_vertices);
 
@@ -880,7 +882,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
 
   // Create some global indexes associated with the virtual cells
   // Note: We are assuming that virtual cells belong to ranks and are not 'shared' - this will change later on
-  Kokkos::View<panzer::GlobalOrdinal*> virtual_cells = Kokkos::View<panzer::GlobalOrdinal*>("virtual_cells",num_virtual_cells);
+  PHX::View<panzer::GlobalOrdinal*> virtual_cells = PHX::View<panzer::GlobalOrdinal*>("virtual_cells",num_virtual_cells);
   {
     PANZER_FUNC_TIME_MONITOR_DIFF("Initial global index creation",InitialGlobalIndexCreation);
 
@@ -920,13 +922,13 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   }
 
   // Lookup cells connected to a face
-  Kokkos::View<panzer::LocalOrdinal*[2]> face_to_cells = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_cells",num_total_faces);
+  PHX::View<panzer::LocalOrdinal*[2]> face_to_cells = PHX::View<panzer::LocalOrdinal*[2]>("face_to_cells",num_total_faces);
 
   // Lookup local face indexes given cell and left/right state (0/1)
-  Kokkos::View<panzer::LocalOrdinal*[2]> face_to_localidx = Kokkos::View<panzer::LocalOrdinal*[2]>("face_to_localidx",num_total_faces);
+  PHX::View<panzer::LocalOrdinal*[2]> face_to_localidx = PHX::View<panzer::LocalOrdinal*[2]>("face_to_localidx",num_total_faces);
 
   // Lookup face index given a cell and local face index
-  Kokkos::View<panzer::LocalOrdinal**> cell_to_face = Kokkos::View<panzer::LocalOrdinal**>("cell_to_face",num_total_cells,faces_per_cell);
+  PHX::View<panzer::LocalOrdinal**> cell_to_face = PHX::View<panzer::LocalOrdinal**>("cell_to_face",num_total_cells,faces_per_cell);
 
   // initialize with negative one cells that are not associated with a face
   Kokkos::deep_copy(cell_to_face,-1);
@@ -1005,13 +1007,16 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
     mesh_info.cell_to_faces           = cell_to_face;
     mesh_info.face_to_cells           = face_to_cells;      // faces
     mesh_info.face_to_lidx            = face_to_localidx;
+    mesh_info.subcell_dimension       = space_dim;
+    mesh_info.subcell_index           = -1;
+    mesh_info.has_connectivity        = true;
 
     mesh_info.num_owned_cells = owned_cells.extent(0);
     mesh_info.num_ghstd_cells = ghstd_cells.extent(0);
     mesh_info.num_virtual_cells = virtual_cells.extent(0);
 
-    mesh_info.global_cells = Kokkos::View<panzer::GlobalOrdinal*>("global_cell_indices",num_total_cells);
-    mesh_info.local_cells = Kokkos::View<panzer::LocalOrdinal*>("local_cell_indices",num_total_cells);
+    mesh_info.global_cells = PHX::View<panzer::GlobalOrdinal*>("global_cell_indices",num_total_cells);
+    mesh_info.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cell_indices",num_total_cells);
 
     for(int i=0;i<num_owned_cells;++i){
       mesh_info.global_cells(i) = owned_cells(i);
@@ -1028,7 +1033,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
       mesh_info.local_cells(i+num_real_cells) = i+num_real_cells;
     }
 
-    mesh_info.cell_vertices = Kokkos::View<double***, PHX::Device>("cell_vertices",num_total_cells,vertices_per_cell,space_dim);
+    mesh_info.cell_vertices = PHX::View<double***>("cell_vertices",num_total_cells,vertices_per_cell,space_dim);
 
     // Initialize coordinates to zero
     Kokkos::deep_copy(mesh_info.cell_vertices, 0.);
@@ -1085,15 +1090,23 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
     PANZER_FUNC_TIME_MONITOR_DIFF("Set up setupLocalMeshBlockInfo",SetupLocalMeshBlockInfo);
     panzer::LocalMeshBlockInfo & block_info = mesh_info.element_blocks[element_block_name];
     setupLocalMeshBlockInfo(mesh, conn, mesh_info, element_block_name, block_info);
+    block_info.subcell_dimension = space_dim;
+    block_info.subcell_index = -1;
+    block_info.has_connectivity = true;
 
     // Setup sidesets
     for(const std::string & sideset_name : sideset_names){
       PANZER_FUNC_TIME_MONITOR_DIFF("Setup LocalMeshSidesetInfo",SetupLocalMeshSidesetInfo);
       panzer::LocalMeshSidesetInfo & sideset_info = mesh_info.sidesets[element_block_name][sideset_name];
       setupLocalMeshSidesetInfo(mesh, conn, mesh_info, element_block_name, sideset_name, sideset_info);
+      sideset_info.subcell_dimension = space_dim;
+      sideset_info.subcell_index = -1;
+      sideset_info.has_connectivity = true;
     }
 
   }
+
+  return mesh_info_rcp;
 
 }
 

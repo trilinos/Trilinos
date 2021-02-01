@@ -171,15 +171,23 @@ void CubeHexMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Para
    }
 
    mesh.buildLocalElementIDs();
-   mesh.buildLocalEdgeIDs();
-   mesh.buildLocalFaceIDs();
+   if(buildSubcells_) {
+      mesh.buildLocalEdgeIDs();
+      mesh.buildLocalFaceIDs();
+   }
+   
+   mesh.beginModification();
 
    // now that edges are built, side and node sets can be added
    addSideSets(mesh);
    addNodeSets(mesh);
-   addEdgeBlocks(mesh);
-   addFaceBlocks(mesh);
+   if(buildSubcells_) {
+      addEdgeBlocks(mesh);
+      addFaceBlocks(mesh);
+   }
    
+   mesh.endModification();
+
    // calls Stk_MeshFactory::rebalance
    this->rebalance(mesh);
 }
@@ -321,8 +329,10 @@ void CubeHexMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, 
    // add nodesets
    mesh.addNodeset("origin");
 
-   mesh.addEdgeBlock(panzer_stk::STK_Interface::edgeBlockString, edge_ctd);
-   mesh.addFaceBlock(panzer_stk::STK_Interface::faceBlockString, face_ctd);
+   if(buildSubcells_) {
+      mesh.addEdgeBlock(panzer_stk::STK_Interface::edgeBlockString, edge_ctd);
+      mesh.addFaceBlock(panzer_stk::STK_Interface::faceBlockString, face_ctd);
+   }
 }
 
 void CubeHexMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const
@@ -543,9 +553,10 @@ void CubeHexMeshFactory::addSides(STK_Interface & mesh) const
    mesh.endModification();
 }
 
+// Pre-Condition: call beginModification() before entry
+// Post-Condition: call endModification() after exit
 void CubeHexMeshFactory::addSideSets(STK_Interface & mesh) const
 {
-   mesh.beginModification();
    const stk::mesh::EntityRank side_rank = mesh.getSideRank();
 
    std::size_t totalXElems = nXElems_*xBlocks_;
@@ -692,14 +703,12 @@ void CubeHexMeshFactory::addSideSets(STK_Interface & mesh) const
 	 }
       }
    }
-
-   mesh.endModification();
 }
 
+// Pre-Condition: call beginModification() before entry
+// Post-Condition: call endModification() after exit
 void CubeHexMeshFactory::addNodeSets(STK_Interface & mesh) const
 {
-   mesh.beginModification();
-
    // get all part vectors
    stk::mesh::Part * origin = mesh.getNodeset("origin");
 
@@ -710,14 +719,12 @@ void CubeHexMeshFactory::addNodeSets(STK_Interface & mesh) const
       stk::mesh::Entity node = bulkData->get_entity(mesh.getNodeRank(),1);
       mesh.addEntityToNodeset(node,origin);
    }
-
-   mesh.endModification();
 }
 
+// Pre-Condition: call beginModification() before entry
+// Post-Condition: call endModification() after exit
 void CubeHexMeshFactory::addEdgeBlocks(STK_Interface & mesh) const
 {
-   mesh.beginModification();
-
    stk::mesh::Part * edge_block = mesh.getEdgeBlock(panzer_stk::STK_Interface::edgeBlockString);
 
    Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
@@ -725,17 +732,13 @@ void CubeHexMeshFactory::addEdgeBlocks(STK_Interface & mesh) const
 
    std::vector<stk::mesh::Entity> edges;
    bulkData->get_entities(mesh.getEdgeRank(),metaData->locally_owned_part(),edges);
-   for(auto edge : edges) {
-      mesh.addEntityToEdgeBlock(edge, edge_block);
-   }
-
-   mesh.endModification();
+   mesh.addEntitiesToEdgeBlock(edges, edge_block);
 }
 
+// Pre-Condition: call beginModification() before entry
+// Post-Condition: call endModification() after exit
 void CubeHexMeshFactory::addFaceBlocks(STK_Interface & mesh) const
 {
-   mesh.beginModification();
-
    stk::mesh::Part * face_block = mesh.getFaceBlock(panzer_stk::STK_Interface::faceBlockString);
 
    Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
@@ -743,11 +746,7 @@ void CubeHexMeshFactory::addFaceBlocks(STK_Interface & mesh) const
 
    std::vector<stk::mesh::Entity> faces;
    bulkData->get_entities(mesh.getFaceRank(),metaData->locally_owned_part(),faces);
-   for(auto face : faces) {
-      mesh.addEntityToFaceBlock(face, face_block);
-   }
-
-   mesh.endModification();
+   mesh.addEntitiesToFaceBlock(faces, face_block);
 }
 
 //! Convert processor rank to a tuple

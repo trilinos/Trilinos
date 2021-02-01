@@ -332,13 +332,12 @@ namespace Ioss {
 
     if (iodatabase->usage() != Ioss::WRITE_HEARTBEAT &&
         (is_input_or_appending_output(iodatabase))) {
-      // Read metadata -- populates GroupingEntity lists and transient data
       Region::begin_mode(STATE_DEFINE_MODEL);
       iodatabase->read_meta_data();
-      modelDefined     = true;
-      transientDefined = true;
       Region::end_mode(STATE_DEFINE_MODEL);
       if (iodatabase->open_create_behavior() != Ioss::DB_APPEND) {
+        modelDefined     = true;
+        transientDefined = true;
         Region::begin_mode(STATE_READONLY);
       }
     }

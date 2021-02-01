@@ -88,12 +88,26 @@ MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos:
 
     //set up jacobian graph
     crs_graph = rcp(new Tpetra_CrsGraph(x_map, vecLength));
-    std::vector<typename Tpetra_CrsGraph::global_ordinal_type> indices(vecLength);
-    for (int i=0; i<vecLength; i++) indices[i]=i;
-    const int nodeNumElements = x_map->getNodeNumElements();
-    for (int i=0; i<nodeNumElements; i++)
-      crs_graph->insertGlobalIndices(x_map->getGlobalElement(i), vecLength, &indices[0]);
+    {
+      std::vector<typename Tpetra_CrsGraph::global_ordinal_type> indices(vecLength);
+      for (int i=0; i<vecLength; i++) indices[i]=i;
+      const int nodeNumElements = x_map->getNodeNumElements();
+      for (int i=0; i<nodeNumElements; i++)
+        crs_graph->insertGlobalIndices(x_map->getGlobalElement(i), vecLength, &indices[0]);
+    }
     crs_graph->fillComplete();
+
+    //set up hessian graph
+    hess_crs_graph = rcp(new Tpetra_CrsGraph(p_map, numParameters));
+    if (comm->getRank() == 0)
+    {
+      std::vector<typename Tpetra_CrsGraph::global_ordinal_type> indices(numParameters);
+      for (int i=0; i<numParameters; i++) indices[i]=i;
+      const int nodeNumElements = p_map->getNodeNumElements();
+      for (int i=0; i<nodeNumElements; i++)
+        hess_crs_graph->insertGlobalIndices(p_map->getGlobalElement(i), numParameters, &indices[0]);
+    }
+    hess_crs_graph->fillComplete();
 
     // Setup nominal values, lower and upper bounds
     nominalValues = this->createInArgsImpl();
@@ -194,6 +208,14 @@ Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double>>
 MockModelEval_A_Tpetra::get_W_factory() const
 {
   return Teuchos::null;
+}
+
+Teuchos::RCP<Thyra::LinearOpBase<double>>
+MockModelEval_A_Tpetra::create_hess_g_pp( int j, int l1, int l2 ) const
+{
+  const Teuchos::RCP<Tpetra_Operator> H =
+      Teuchos::rcp(new Tpetra_CrsMatrix(hess_crs_graph));
+  return Thyra::createLinearOp(H);
 }
 
 Thyra::ModelEvaluatorBase::InArgs<double>
@@ -439,6 +461,27 @@ void MockModelEval_A_Tpetra::evalModelImpl(
     }
     if(!Teuchos::nonnull(x_dot_in))
       W_out_crs->fillComplete();
+  }
+
+  const Teuchos::RCP<Tpetra_Operator> H_pp_out =
+      Teuchos::nonnull(outArgs.get_hess_g_pp(0,0,0)) ?
+          ConverterT::getTpetraOperator(outArgs.get_hess_g_pp(0,0,0)) :
+          Teuchos::null;
+
+  if (H_pp_out != Teuchos::null) {
+    Teuchos::RCP<Tpetra_CrsMatrix> H_pp_out_crs =
+      Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(H_pp_out, true);
+    H_pp_out_crs->resumeFill();
+    H_pp_out_crs->setAllToScalar(0.0);
+
+    if (comm->getRank() == 0) {
+      std::vector<double> vals = {2, 1};
+      std::vector<typename Tpetra_CrsGraph::global_ordinal_type> indices = {0, 1};
+      H_pp_out_crs->replaceGlobalValues(0, 2, &vals[0], &indices[0]);
+      vals[0] = 1;
+      H_pp_out_crs->replaceGlobalValues(1, 2, &vals[0], &indices[0]);
+    }
+    H_pp_out_crs->fillComplete();
   }
 
   if (Teuchos::nonnull(dfdp_out)) {

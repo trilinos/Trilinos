@@ -166,7 +166,7 @@ public:
      *                  field. For the Intrepid2FieldPattern this will correspond to the 
      *                  required order of the basis functions
      */
-   const Kokkos::View<const int*,PHX::Device> localOffsetsKokkos(int fieldId) const;
+   const PHX::View<const int*> localOffsetsKokkos(int fieldId) const;
      
    /** Returns a pair of vectors. The first is the offsets into the global ID 
      * array for the field and subcell specified. This will be the
@@ -254,7 +254,7 @@ protected:
    mutable std::map<int, std::vector<int> > fieldOffsets_;
 
    //! Stores the Field offsets for the fieldId key. Note that the key is the fieldId, not the index into the patterns_.
-   mutable std::map<int, Kokkos::View<int*,PHX::Device> > fieldOffsetsKokkos_;
+   mutable std::map<int, PHX::View<int*> > fieldOffsetsKokkos_;
 
    struct LessThan  
    { bool operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const; };
