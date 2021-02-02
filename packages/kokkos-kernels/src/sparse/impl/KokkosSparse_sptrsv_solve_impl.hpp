@@ -1028,7 +1028,7 @@ struct UpperTriTranSupernodalFunctor
   using scalar_t = typename ValuesType::non_const_value_type;
 
   using integer_view_t = Kokkos::View<int*, memory_space>;
-  using work_view_t = typename Kokkos::View<scalar_t*, memory_space>;
+  using work_view_t = typename Kokkos::View<scalar_t*, Kokkos::Device<execution_space, memory_space>>;
 
   using range_type =  Kokkos::pair<int, int>;
 
