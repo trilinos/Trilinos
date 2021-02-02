@@ -1094,7 +1094,6 @@ init (const keys_type& keys,
 
   // Allocate the array of (key,value) pairs.  Don't fill it with
   // zeros, because we will fill it with actual data below.
-  using Kokkos::ViewAllocateWithoutInitializing;
   typedef typename val_type::non_const_type nonconst_val_type;
   nonconst_val_type val (ViewAllocateWithoutInitializing ("Tpetra::FixedHashTable::pairs"),
                          theNumKeys);
