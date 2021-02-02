@@ -193,7 +193,7 @@ fi
 
 # Use updated Ninja and CMake
 module load sems-env
-module load sems-cmake/3.12.2
+module load sems-cmake/3.17.1
 module load sems-ninja_fortran/1.8.2
 
 export ATDM_CONFIG_USE_HWLOC=OFF
