@@ -55,20 +55,6 @@ namespace KokkosSparse {
 namespace Impl {
 
   template <class AMatrix, class XVector, class YVector>
-  void spmv_native(const KokkosKernels::Experimental::Controls& controls,
-		   const char mode[],
-		   typename YVector::non_const_value_type const & alpha,
-		   const AMatrix& A,
-		   const XVector& x,
-		   typename YVector::non_const_value_type const & beta,
-		   const YVector& y) {
-    using KAT = Kokkos::Details::ArithTraits<typename YVector::non_const_value_type>;
-
-    std::cout << "It is currently not possible to use the native SpMV implementation"
-      " when cuSPARSE is enabled" << std::endl;
-  }
-
-  template <class AMatrix, class XVector, class YVector>
   void spmv_cusparse(const KokkosKernels::Experimental::Controls& controls,
 		     const char mode[],
 		     typename YVector::non_const_value_type const & alpha,
@@ -84,9 +70,24 @@ namespace Impl {
     cusparseHandle_t cusparseHandle = controls.getCusparseHandle();
 
     /* Set the operation mode */
-    cusparseOperation_t myCusparseOperation = CUSPARSE_OPERATION_NON_TRANSPOSE;
-    if(mode[0] == Transpose[0]) {myCusparseOperation = CUSPARSE_OPERATION_TRANSPOSE;}
-    else if(mode[0] == ConjugateTranspose[0]) {myCusparseOperation = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;}
+    cusparseOperation_t myCusparseOperation;
+    switch(toupper(mode[0]))
+    {
+      case 'N':
+        myCusparseOperation = CUSPARSE_OPERATION_NON_TRANSPOSE;
+        break;
+      case 'T':
+        myCusparseOperation = CUSPARSE_OPERATION_TRANSPOSE;
+        break;
+      case 'H':
+        myCusparseOperation = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
+        break;
+      default:
+      {
+        std::cerr << "Mode " << mode << " invalid for cuSPARSE SpMV.\n";
+        throw std::invalid_argument("Invalid mode");
+      }
+    }
 
 #if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
 
@@ -239,19 +240,17 @@ namespace Impl {
 		      const XVector& x,					\
 		      const coefficient_type& beta,			\
 		      const YVector& y) {				\
-      if(controls.isParameter("algorithm") && controls.getParameter("algorithm") == "native") {		\
-	std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]"; \
-	Kokkos::Profiling::pushRegion(label);				\
-	spmv_native(controls, mode, alpha, A, x, beta, y);		\
-	Kokkos::Profiling::popRegion();					\
-      } else {								\
-	std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]"; \
-	Kokkos::Profiling::pushRegion(label);				\
-	spmv_cusparse(controls, mode, alpha, A, x, beta, y);		\
-	Kokkos::Profiling::popRegion();					\
-      }									\
+      std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]"; \
+      Kokkos::Profiling::pushRegion(label);				\
+      spmv_cusparse(controls, mode, alpha, A, x, beta, y);		\
+      Kokkos::Profiling::popRegion();					\
     }									\
   }; 
+
+//BMK: cuSPARSE that comes with CUDA 9 does not support tranpose or conjugate transpose modes.
+//No version of cuSPARSE supports mode C (conjugate, non transpose).
+//In those cases, fall back to KokkosKernels native spmv.
+
 #if (9000 <= CUDA_VERSION)
   KOKKOSSPARSE_SPMV_CUSPARSE(double, int, int, Kokkos::LayoutLeft,  Kokkos::CudaSpace, true)
   KOKKOSSPARSE_SPMV_CUSPARSE(double, int, int, Kokkos::LayoutRight, Kokkos::CudaSpace, true)

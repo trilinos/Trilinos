@@ -52,7 +52,7 @@ void print_options(){
 
   std::cerr << "\t[Required] INPUT MATRIX: '--amtx [left_hand_side.mtx]' -- for C=AxA" << std::endl;
 
-  std::cerr << "\t[Optional] BACKEND: '--threads [numThreads]' | '--openmp [numThreads]' | '--cuda [cudaDeviceIndex]' --> if none are specified, Serial is used (if enabled)" << std::endl;
+  std::cerr << "\t[Optional] BACKEND: '--threads [numThreads]' | '--openmp [numThreads]' | '--cuda [cudaDeviceIndex]' | '--hip [hipDeviceIndex]' --> if none are specified, Serial is used (if enabled)" << std::endl;
   std::cerr << "\t[Optional] '--algorithm [DEFAULT=KKDEFAULT=KKSPGEMM|KKMEM|KKDENSE|MKL|CUSPARSE|CUSP|VIENNA|MKL2]' --> to choose algorithm. KKMEM is outdated, use KKSPGEMM instead." << std::endl;
   std::cerr << "\t[Optional] --bmtx [righ_hand_side.mtx]' for C = AxB" << std::endl;
   std::cerr << "\t[Optional] OUTPUT MATRICES: '--cmtx [output_matrix.mtx]' --> to write output C=AxB"  << std::endl;
@@ -83,6 +83,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     }
     else if ( 0 == strcasecmp( argv[i] , "--cuda" ) ) {
       params.use_cuda = atoi(getNextArg(i, argc, argv)) + 1;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "--hip" ) ) {
+      params.use_hip = atoi(getNextArg(i, argc, argv)) + 1;
     }
     else if ( 0 == strcasecmp( argv[i] , "--repeat" ) ) {
       params.repeat = atoi(getNextArg(i, argc, argv));
@@ -297,7 +300,7 @@ int main (int argc, char ** argv){
   }
 
   const int num_threads = std::max(params.use_openmp, params.use_threads);
-  const int device_id = params.use_cuda - 1;
+  const int device_id = params.use_cuda ? params.use_cuda - 1 : params.use_hip - 1;
 
   Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
   Kokkos::print_configuration(std::cout);
@@ -333,6 +336,16 @@ int main (int argc, char ** argv){
         );
 
 #endif
+  }
+#endif
+
+#if defined( KOKKOS_ENABLE_HIP )
+  if (params.use_hip) {
+    KokkosKernels::Experiment::run_multi_mem_spgemm
+    <size_type, lno_t, scalar_t, Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace, Kokkos::Experimental::HIPSpace>(
+        params
+        );
+
   }
 #endif
 

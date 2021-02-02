@@ -371,7 +371,7 @@ public:
       return this->team_work_size;
     }
     else {
-      if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+      if (my_exec_space == KokkosKernels::Impl::Exec_CUDA || my_exec_space == KokkosKernels::Impl::Exec_HIP) {
         return team_size;
       }
       else {
@@ -609,10 +609,10 @@ public:
     }
   }
 
-  void create_gs_handle(KokkosSparse::ClusteringAlgorithm clusterAlgo, nnz_lno_t verts_per_cluster) {
+  void create_gs_handle(KokkosSparse::ClusteringAlgorithm clusterAlgo, nnz_lno_t hint_verts_per_cluster) {
     this->destroy_gs_handle();
     this->is_owner_of_the_gs_handle = true;
-    this->gsHandle = new ClusterGaussSeidelHandleType(clusterAlgo, verts_per_cluster);
+    this->gsHandle = new ClusterGaussSeidelHandleType(clusterAlgo, hint_verts_per_cluster);
   }
   void destroy_gs_handle(){
     if (is_owner_of_the_gs_handle && this->gsHandle != NULL){

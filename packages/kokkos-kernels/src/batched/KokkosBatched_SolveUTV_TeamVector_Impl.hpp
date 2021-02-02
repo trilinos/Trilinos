@@ -36,7 +36,7 @@ namespace KokkosBatched {
 	TeamVectorSolveUTV_Internal::
 	  invoke(member,
 		 matrix_rank,
-		 T.extent(0),
+		 T.extent(0), V.extent(0),
 		 U.data(), U.stride(0), U.stride(1),
 		 T.data(), T.stride(0), T.stride(1),
 		 V.data(), V.stride(0), V.stride(1),
@@ -48,7 +48,7 @@ namespace KokkosBatched {
 	TeamVectorSolveUTV_Internal::
 	  invoke(member,
 		 matrix_rank, 
-		 T.extent(0), B.extent(1),
+		 T.extent(0), V.extent(0), B.extent(1),
 		 U.data(), U.stride(0), U.stride(1),
 		 T.data(), T.stride(0), T.stride(1),
 		 V.data(), V.stride(0), V.stride(1),
