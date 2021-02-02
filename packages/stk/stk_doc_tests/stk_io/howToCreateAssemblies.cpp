@@ -61,6 +61,7 @@ TEST(Assemblies, createAssemblyWithElementBlocks)
   EXPECT_FALSE(stk::io::is_part_io_part(assemblyPart));
 
   stk::io::put_assembly_io_part_attribute(assemblyPart);
+  meta.set_part_id(assemblyPart, 100);
 
   EXPECT_TRUE(stk::io::is_part_assembly_io_part(assemblyPart));
   EXPECT_TRUE(stk::io::is_part_io_part(assemblyPart));

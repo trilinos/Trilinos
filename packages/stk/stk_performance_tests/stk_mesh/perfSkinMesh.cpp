@@ -31,8 +31,7 @@ public:
     {
         const stk::mesh::MetaData& meta = bulkData.mesh_meta_data();
         stk::mesh::EntityVector elems;
-        stk::mesh::get_selected_entities(meta.locally_owned_part(),
-                                         bulkData.buckets(stk::topology::ELEM_RANK), elems);
+        stk::mesh::get_entities(bulkData, stk::topology::ELEM_RANK, meta.locally_owned_part(), elems);
         bulkData.modification_begin();
 
         for(stk::mesh::Entity elem : elems)
@@ -47,8 +46,7 @@ public:
         }
 
         stk::mesh::EntityVector sides;
-        stk::mesh::get_selected_entities(meta.locally_owned_part(),
-                                         bulkData.buckets(meta.side_rank()), sides);
+        stk::mesh::get_entities(bulkData, meta.side_rank(), meta.locally_owned_part(), sides);
         for(stk::mesh::Entity side : sides)
         {
             bulkData.destroy_entity(side);

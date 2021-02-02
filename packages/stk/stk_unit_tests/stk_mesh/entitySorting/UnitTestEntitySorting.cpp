@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "mpi.h"
+#include <stk_mesh/base/EntitySorterBase.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -95,9 +96,10 @@ protected:
         stk::mesh::for_each_entity_run(get_bulk(), stk::topology::NODE_RANK,
             [&entityLessCoords](const stk::mesh::BulkData& bulk, const stk::mesh::MeshIndex& meshIndex)
             {
-                 if(meshIndex.bucket_ordinal > 0)
+                if(meshIndex.bucket_ordinal > 0) {
                      EXPECT_TRUE(entityLessCoords((*meshIndex.bucket)[meshIndex.bucket_ordinal-1],
                                                   (*meshIndex.bucket)[meshIndex.bucket_ordinal]));
+                }
             }
         );
     }

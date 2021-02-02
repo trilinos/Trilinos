@@ -32,14 +32,15 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/CommSparse.hpp>  // for comm_recv_sizes
-#include <stk_util/parallel/MPI.hpp>
-#include <gtest/gtest.h>
-#include <vector>                       // for vector
-#include <stk_util/stk_config.h>
-#include <limits>
+#include "gtest/gtest.h"
+#include "stk_util/parallel/CommSparse.hpp"    // for CommSparse, comm_recv_msg_sizes, comm_recv...
+#include "stk_util/parallel/Parallel.hpp"      // for parallel_machine_rank, parallel_machine_size
+#include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
+#include "stk_util/stk_config.h"               // for STK_HAS_MPI
+#include "stk_util/util/ReportHandler.hpp"     // for ThrowRequireMsg
+#include <memory>                              // for allocator_traits<>::value_type
+#include <ostream>                             // for basic_ostream::operator<<, operator<<, bas...
+#include <vector>                              // for vector
 
 #if defined ( STK_HAS_MPI )
 

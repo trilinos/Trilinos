@@ -31,15 +31,16 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-#include <stk_util/parallel/ParallelComm.hpp>
+#include "stk_util/parallel/ParallelComm.hpp"
+#include "stk_util/parallel/ParallelReduce.hpp"  // for Reduce, ReduceEnd, ReduceMax, ReduceBitOr
+#include "stk_util/util/SimpleArrayOps.hpp"      // for Max, BitOr, Min
+#include <cstdlib>                               // for free, malloc
+#include <iostream>                              // for operator<<, basic_ostream::operator<<
+#include <new>                                   // for operator new
+#include <stdexcept>                             // for runtime_error
+#include <vector>                                // for vector
 
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-#include <stdlib.h>
-#include <vector>
 
-#include <stk_util/parallel/ParallelReduce.hpp>
 
 namespace stk {
 

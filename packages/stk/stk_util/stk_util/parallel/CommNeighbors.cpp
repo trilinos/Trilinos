@@ -32,18 +32,16 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stdlib.h>
-#include <stdexcept>
-#include <sstream>
-#include <iostream>
-#include <cstring>
-#include <vector>
-#include <algorithm>
+#include "stk_util/parallel/CommNeighbors.hpp"
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssertMsg
+#include "stk_util/util/SortAndUnique.hpp"  // for sort_and_unique
+#include <cstddef>                          // for size_t
+#include <cstring>                          // for memcpy
+#include <iostream>                         // for operator<<, basic_ostream::operator<<, basic_...
+#include <memory>                           // for allocator_traits<>::value_type
+#include <stdexcept>                        // for range_error
+#include <vector>                           // for vector
 
-#include <stk_util/util/SortAndUnique.hpp>
-#include <stk_util/environment/CPUTime.hpp>
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/CommNeighbors.hpp>
 
 namespace stk {
 

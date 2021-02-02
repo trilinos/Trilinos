@@ -229,7 +229,7 @@ lib stk_mesh_tools_lib
 lib stk_pmesh_lib
   : 
     [ ifdevbuild
-        $(stk_tools-root)/stk_tools/pmesh_lib/makeparfiles.C
+        $(stk_tools-root)/stk_tools/pmesh_lib/makeparfiles.cpp
     ]
     /sierra/stk_io//stk_io
     /sierra/stk_io//stk_io_util
@@ -269,7 +269,7 @@ lib stk_transfer_utils_lib
 exe stk_tools_pmesh_unit_tester
   :
     [ glob
-      $(stk_tools-root)/stk_tools/pmesh_lib/UnitTest/*.C
+      $(stk_tools-root)/stk_tools/pmesh_lib/UnitTest/*.cpp
     ]
     stk_pmesh_lib
     /tpl/gtest//gtest

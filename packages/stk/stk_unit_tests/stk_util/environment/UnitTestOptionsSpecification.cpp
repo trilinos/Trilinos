@@ -1,5 +1,8 @@
-#include <gtest/gtest.h>
-#include <stk_util/environment/OptionsSpecification.hpp>
+#include "gtest/gtest.h"
+#include "stk_util/environment/OptionsSpecification.hpp"  // for OptionsSpecification, operator<<
+#include <ostream>                                        // for operator<<, endl, ostringstream
+#include <string>                                         // for char_traits, string, basic_string
+#include <vector>                                         // for vector
 
 namespace {
 

@@ -32,12 +32,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include "gtest/gtest.h"
+#include "stk_util/environment/OutputLog.hpp"
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
-#include <stk_util/environment/OutputLog.hpp>
 
-#include <gtest/gtest.h>
 
 TEST(UnitTestOutputLog, UnitTest)
 {

@@ -215,7 +215,7 @@ void calculate_nodal_volume_entity_loop(stk::mesh::BulkData& mesh,
   const stk::mesh::FieldBase& coords = *mesh.mesh_meta_data().coordinate_field();
   stk::mesh::NgpField<double>& ngpCoords = stk::mesh::get_updated_ngp_field<double>(coords);
   stk::mesh::NgpField<double>& ngpNodalVolume = stk::mesh::get_updated_ngp_field<double>(nodalVolumeField);
-  stk::mesh::NgpMesh & ngpMesh = mesh.get_updated_ngp_mesh();
+  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(mesh);
   double middle = stk::wall_time();
 
   for(int n=0; n<numRepeat; ++n)
@@ -236,7 +236,7 @@ void repeat_for_each_entity_loop_for_algorithm(stk::mesh::BulkData& mesh,
 {
   stk::mesh::NgpField<double>& staticNodalVolume = stk::mesh::get_updated_ngp_field<double>(nodalVolumeField);
   stk::mesh::NgpField<double>& staticElemVolume = stk::mesh::get_updated_ngp_field<double>(elemVolumePerNodeField);
-  stk::mesh::NgpMesh & ngpMesh = mesh.get_updated_ngp_mesh();
+  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(mesh);
 
   for(int n=0; n<numRepeat; ++n)
     algorithm(ngpMesh, staticElemVolume, staticNodalVolume);

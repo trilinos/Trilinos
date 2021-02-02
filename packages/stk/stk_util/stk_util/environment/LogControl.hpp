@@ -35,11 +35,11 @@
 #ifndef STK_UTIL_ENVIRONMENT_LOGCONTROL_HPP
 #define STK_UTIL_ENVIRONMENT_LOGCONTROL_HPP
 
-#include <map>                          // for _Rb_tree_iterator, etc
-#include <sstream>                      // for ostream, ostringstream, etc
-#include <stk_util/util/string_case_compare.hpp>  // for LessCase
-#include <string>                       // for string
-#include <utility>                      // for pair
+#include "stk_util/util/string_case_compare.hpp"  // for LessCase
+#include <map>                                    // for _Rb_tree_iterator, map<>::iterator, map
+#include <sstream>                                // for ostream, ostringstream, streambuf
+#include <string>                                 // for string
+#include <utility>                                // for pair
 
 
 namespace stk {

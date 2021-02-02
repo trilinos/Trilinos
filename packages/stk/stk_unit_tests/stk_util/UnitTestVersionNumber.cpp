@@ -7,8 +7,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include <stk_util/registry/VersionNumber.hpp>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "stk_util/registry/VersionNumber.hpp"
 
 namespace stk
 {
@@ -43,6 +43,8 @@ TEST(VersionNumber, SetCurrentFromString)
   EXPECT_EQ(stk::util::VersionNumber(4, 47), stk::util::VersionNumber::current_version());
   stk::util::VersionNumber::set_current_version("3.49.5-216-g400c8f6b-modified");
   EXPECT_EQ(stk::util::VersionNumber(3, 49), stk::util::VersionNumber::current_version());
+  stk::util::VersionNumber::set_current_version("badstring");
+  EXPECT_EQ(stk::util::VersionNumber(-1, -1), stk::util::VersionNumber::current_version());
 }
 }
 }

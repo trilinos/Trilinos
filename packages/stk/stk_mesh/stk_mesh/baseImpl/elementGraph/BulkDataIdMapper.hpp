@@ -133,7 +133,6 @@ public:
     {
         entityToLocalId[elem.local_offset()] = INVALID_LOCAL_ID;
     }
-
 private:
     std::vector<LocalIDType> entityToLocalId;
 };
@@ -220,6 +219,11 @@ public:
     {
         localIdToElement[entity_to_local(elem)] = stk::mesh::Entity::InvalidEntity;
         elementToLocalIdMapper.clear_local_id_for_elem(elem);
+    }
+
+    size_t size() const
+    {
+      return localIdToElement.size();
     }
 private:
     stk::mesh::EntityVector localIdToElement;

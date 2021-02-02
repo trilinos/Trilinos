@@ -32,11 +32,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <stk_util/diag/String.hpp>
-#include <stk_util/diag/StringUtil.hpp>
-#include <string>
-#include <cstdlib>
+#include "gtest/gtest.h"
+#include "stk_util/diag/String.hpp"      // for String, operator==, StringBase
+#include "stk_util/diag/StringUtil.hpp"  // for case_strcmp
+#include <string>                        // for string
 
 TEST(StkString, case_insensitivity)
 {

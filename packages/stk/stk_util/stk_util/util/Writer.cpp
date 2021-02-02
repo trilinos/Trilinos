@@ -32,11 +32,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/util/Writer.hpp>
-#include <stk_util/util/IndentStreambuf.hpp>  // for pop, push
-#include <string>                       // for string
-#include "stk_util/util/Writer_fwd.hpp"  // for PrintMask
-
+#include "stk_util/util/Writer.hpp"
+#include "stk_util/util/IndentStreambuf.hpp"  // for pop, push
+#include "stk_util/util/Writer_fwd.hpp"       // for PrintMask
+#include <string>                             // for string
 
 namespace stk {
 namespace diag {

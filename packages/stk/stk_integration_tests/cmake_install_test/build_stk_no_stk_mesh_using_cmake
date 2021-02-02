@@ -6,7 +6,7 @@ exe() {
 }
 
 sierra_proj=${SIERRA_PROJ:-${PWD}}
-output_dir=${OUTPUT_DIR:-${PWD}/../stk-no-mesh-cmake-testing}
+output_dir=${OUTPUT_DIR:-${PWD}/../stk-no-stk-mesh-cmake-testing}
 trilinos_dir=${output_dir}/Trilinos
 build_type=${CMAKE_BUILD_TYPE:-release}
 date_suffix=`date +%F_%H-%M-%S`
@@ -44,10 +44,10 @@ printf "Putting output and logs here: ${output_dir}\n";
 
 exe cd $sierra_proj
 
-stk_config_log=${output_dir}/stk-no-mesh-config.out.$date_suffix
-stk_make_log=${output_dir}/stk-no-mesh-make.out.$date_suffix
-stk_install_log=${output_dir}/stk-no-mesh-install.out.$date_suffix
-stk_ctest_log=${output_dir}/stk-no-mesh-ctest.out.$date_suffix
+stk_config_log=${output_dir}/stk-no-stk-mesh-config.out.$date_suffix
+stk_make_log=${output_dir}/stk-no-stk-mesh-make.out.$date_suffix
+stk_install_log=${output_dir}/stk-no-stk-mesh-install.out.$date_suffix
+stk_ctest_log=${output_dir}/stk-no-stk-mesh-ctest.out.$date_suffix
 
 if [ -d ${trilinos_dir}/packages/stk ] ; then
   exe rm -rf ${trilinos_dir}/packages/stk;
@@ -56,10 +56,10 @@ if [ ! -L ${trilinos_dir}/packages/stk ] ; then
   exe ln -s ${sierra_proj}/stk ${trilinos_dir}/packages
 fi
 
-exe cp ${stk_cmake_testing}/run_cmake_stk_no_mesh ${stk_build_dir}
+exe cp ${stk_cmake_testing}/run_cmake_stk_no_stk_mesh ${stk_build_dir}
 exe cd ${stk_build_dir}
 printf "Configuring trilinos/stk (running cmake)...\n";
-exe 'TRILINOS_DIR=${trilinos_dir} TRILINOS_INSTALL_DIR=${trilinos_install_dir} CMAKE_BUILD_TYPE=${build_type} ./run_cmake_stk_no_mesh >& ${stk_config_log}'
+exe 'TRILINOS_DIR=${trilinos_dir} TRILINOS_INSTALL_DIR=${trilinos_install_dir} CMAKE_BUILD_TYPE=${build_type} ./run_cmake_stk_no_stk_mesh >& ${stk_config_log}'
 if [ $? -ne 0 ] ; then
   echo "!! error in stk/trilinos config, check output in ${stk_config_log} !!";
   exit 1;

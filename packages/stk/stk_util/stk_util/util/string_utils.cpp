@@ -32,9 +32,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/util/string_utils.hpp>
-#include <string>
-#include <iostream>
+#include "stk_util/util/string_utils.hpp"
+#include <cstddef>  // for size_t
+#include <string>   // for string, operator+, allocator, char_traits
 
 namespace stk {
 

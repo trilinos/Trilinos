@@ -41,6 +41,7 @@
 #include <string>                                         // for string, etc
 #include <vector>                                         // for vector
 #include "stk_mesh/base/Types.hpp"                        // for EntityRank, etc
+#include "stk_mesh/base/SideSetUtil.hpp"
 #include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
 #include "stk_io/OutputParams.hpp"
 #include "stk_util/util/ParameterList.hpp"
@@ -79,26 +80,15 @@ typedef std::map<std::string, std::vector<std::string>> IossBlockMembership;
 
 IossBlockMembership get_block_memberships(stk::io::StkMeshIoBroker& stkIo);
 
-const stk::mesh::Part* getElementBlockSelectorForElement(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element);
-
 void fill_block_parts_given_names(const std::vector<std::string>& side_block_names,
                                               stk::mesh::MetaData& meta,
                                               std::vector<const stk::mesh::Part*>& blocks);
 
-void reconstruct_sideset(stk::mesh::BulkData& bulkData, const stk::mesh::Part& surfacePart);
-
-void fill_sideset(const stk::mesh::Part& sidesetPart, stk::mesh::BulkData& bulkData, const stk::mesh::Selector& elementSelector);
-
-void create_bulkdata_sidesets(stk::mesh::BulkData& bulkData);
-
-bool should_reconstruct_sideset(const stk::mesh::BulkData& bulkData, const stk::mesh::Part& surfacePart);
-
-bool isSidesetSupported(const stk::mesh::BulkData &bulk, const stk::mesh::EntityVector &sides, const stk::mesh::impl::ParallelPartInfo &parallelPartInfo);
+void throw_if_any_elem_block_has_invalid_topology(const stk::mesh::MetaData& meta,
+                                                  const std::string& msgRegionName);
 
 stk::mesh::FieldVector get_transient_fields(const stk::mesh::MetaData &meta);
 stk::mesh::FieldVector get_transient_fields(const stk::mesh::MetaData &meta, const stk::mesh::EntityRank rank);
-
-const stk::mesh::Part& get_sideset_parent(const stk::mesh::Part& sidesetPart);
 
 template<typename DATA_TYPE>
 void write_global_to_stk_io(stk::io::StkMeshIoBroker& stkIo, size_t dbIndex,
@@ -118,15 +108,6 @@ get_parameter_type_from_field_representation(const std::string &storage,
 std::pair<size_t, Ioss::Field::BasicType>
 get_io_parameter_size_and_type(const stk::util::ParameterType::Type type,
                                const boost::any &value);
-
-std::pair<bool,bool> is_positive_sideset_polarity(const stk::mesh::BulkData &bulk,
-                                                  const stk::mesh::Part& sideSetPart,
-                                                  stk::mesh::Entity face,
-                                                  const stk::mesh::Part* activePart = nullptr);
-std::pair<bool,bool> is_positive_sideset_face_polarity(const stk::mesh::BulkData &bulk, stk::mesh::Entity face,
-                                                       const stk::mesh::Part* activePart = nullptr);
-
-std::vector<const stk::mesh::Part*> get_sideset_io_parts(const stk::mesh::BulkData& bulkData, stk::mesh::Entity face);
 
 void superset_mesh_parts(const stk::mesh::Part& part, stk::mesh::PartVector& supersetParts);
 

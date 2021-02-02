@@ -7,15 +7,15 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "stk_util/environment/Env.hpp"
+#include "stk_util/environment/RuntimeDoomed.hpp"
+#include "stk_util/registry/DeprecationWarning.hpp"
+#include "stk_util/registry/VersionNumber.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 #include <ostream>
 #include <sstream>
-#include <stk_util/util/ReportHandler.hpp>
-#include <stk_util/environment/RuntimeDoomed.hpp>
 #include <string>
-#include <stk_util/registry/DeprecationWarning.hpp>
-#include <stk_util/registry/VersionNumber.hpp>
-#include <stk_util/environment/Env.hpp>
 
 namespace tftk
 {

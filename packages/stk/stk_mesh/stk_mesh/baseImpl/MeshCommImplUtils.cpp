@@ -38,7 +38,6 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/util/SameType.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_util/util/StaticAssert.hpp>
@@ -57,11 +56,11 @@ bool shared_with_proc(const EntityCommListInfo& info, int proc) {
     if(info.entity_comm != nullptr)
     {    
         const EntityCommInfoVector& comm_vec = info.entity_comm->comm_map;
-        for(size_t i=0; i<comm_vec.size(); ++i) {
-            if (comm_vec[i].ghost_id!=BulkData::SHARED) {
+        for(const EntityCommInfo& item : comm_vec) {
+            if (item.ghost_id!=BulkData::SHARED) {
                 return false;
             }
-            if (comm_vec[i].proc == proc) {
+            if (item.proc == proc) {
                 return true;
             }
         }
@@ -74,31 +73,34 @@ void pack_induced_memberships_for_entities_less_than_element_rank(
          stk::CommSparse& comm,
          const EntityCommListInfoVector & entityCommListInfoVec )
 {
+    const int thisProc = comm.parallel_rank();
     OrdinalVector induced;
-    for(size_t i = 0; i < entityCommListInfoVec.size(); ++i) 
+    for(const EntityCommListInfo& info : entityCommListInfoVec) 
     {
-        stk::mesh::Entity entity = entityCommListInfoVec[i].entity;
+        stk::mesh::Entity entity = info.entity;
         const int owner = bulk_data.parallel_owner_rank(entity);
+        if (owner == thisProc) {
+          continue;
+        }
 
-        if (bulk_data.entity_rank(entity) < stk::topology::ELEM_RANK && shared_with_proc(entityCommListInfoVec[i], owner) )
+        if (bulk_data.entity_rank(entity) < stk::topology::ELEM_RANK && shared_with_proc(info, owner) )
         {
             const EntityState state = bulk_data.state(entity);
             if(state == stk::mesh::Modified || state == stk::mesh::Created)
             {
                 induced.clear();
 
-                induced_part_membership(bulk_data, entityCommListInfoVec[i].entity, induced);
+                induced_part_membership(bulk_data, info.entity, induced);
 
                 CommBuffer & buf = comm.send_buffer(owner);
 
                 unsigned tmp = induced.size();
 
-                buf.pack<stk::mesh::EntityKey>(entityCommListInfoVec[i].key);
+                buf.pack<stk::mesh::EntityKey>(info.key);
                 buf.pack<unsigned>(tmp);
 
-                for(size_t j = 0; j < induced.size(); ++j) 
-                {
-                    buf.pack<unsigned>(induced[j]);
+                for(unsigned ord : induced) {
+                    buf.pack<unsigned>(ord);
                 }    
             }    
         }    

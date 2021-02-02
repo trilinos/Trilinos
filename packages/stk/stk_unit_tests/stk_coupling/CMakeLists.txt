@@ -32,50 +32,19 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-
-#
-# A) Package-specific configuration options
-#
-
-#
-# B) Define the header and source files (and directories)
-#
-
-#
-# src
-#
-
-SET(HEADERS "")
-SET(SOURCES "")
-
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-
-#
-# Core headers
-#
-
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-APPEND_SET(HEADERS
-GeneratedMesh.hpp
+FILE(GLOB SOURCES
+   *.cpp
 )
 
-APPEND_SET(SOURCES
-GeneratedMesh.cpp
-  )
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    stk_coupling_utest
+    SOURCES ${SOURCES}
+    TESTONLYLIBS stk_unit_main
+    ARGS ""
+    COMM serial mpi
+    NUM_MPI_PROCS 1-4
+    NOEXEPREFIX
+    )
 
-IF (TPL_ENABLE_MPI)
-ENDIF()
-
-#
-# C) Define the targets for package's library(s)
-#
-
-TRIBITS_ADD_LIBRARY(
-  stk_util_unit_test_support
-  NOINSTALLHEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  )
-
-INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_util/unit_test_support/)

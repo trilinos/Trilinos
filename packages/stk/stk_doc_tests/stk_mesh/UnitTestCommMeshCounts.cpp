@@ -42,7 +42,6 @@
 #include <vector>                       // for vector
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include <stk_unit_test_utils/BulkDataTester.hpp>
 
 
 namespace

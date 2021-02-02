@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include "stk_mesh/base/GetEntities.hpp"
-#include "stk_util/parallel/ParallelReduceBool.hpp"
 #include <stk_mesh/base/MeshDiagnostics.hpp>
+#include <stk_util/parallel/ParallelReduceBool.hpp>
 
 namespace
 {

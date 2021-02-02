@@ -32,8 +32,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <stk_util/util/string_utils.hpp>
+#include "gtest/gtest.h"
+#include "stk_util/util/string_utils.hpp"  // for make_vector_of_strings
+#include <string>                          // for string
+#include <vector>                          // for vector
 
 
 TEST( UnitTestStringUtils, makeVectorOfStrings_1shortString)
