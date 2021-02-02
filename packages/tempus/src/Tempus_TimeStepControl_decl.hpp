@@ -205,9 +205,11 @@ protected:
 
 
 /// Nonmember constructor from ParameterList.
+// ------------------------------------------------------------------------
 template<class Scalar>
 Teuchos::RCP<TimeStepControl<Scalar> > createTimeStepControl(
-  Teuchos::RCP<Teuchos::ParameterList> const& pList);
+  Teuchos::RCP<Teuchos::ParameterList> const& pList,
+  bool runInitialize = true);
 
 /// Nonmember function to return ParameterList with default values.
 template<class Scalar>
@@ -216,7 +218,6 @@ Teuchos::RCP<Teuchos::ParameterList> getTimeStepControlPL()
   auto tsc = rcp(new Tempus::TimeStepControl<Scalar>());
   return Teuchos::rcp_const_cast<Teuchos::ParameterList> (tsc->getValidParameters());
 }
-
 
 
 } // namespace Tempus

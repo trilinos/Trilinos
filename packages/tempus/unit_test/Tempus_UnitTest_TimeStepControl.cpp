@@ -707,7 +707,9 @@ TEUCHOS_UNIT_TEST(TimeStepControl, Setting_Strategies_PLs)
     auto pl = Tempus::getTimeStepControlPL<double>();
     pl->remove("Time Step Control Strategy");
 
-    auto tsc = Tempus::createTimeStepControl<double>(pl);
+    auto tsc = Tempus::createTimeStepControl<double>(pl,false);
+    TEUCHOS_TEST_FOR_EXCEPT(tsc->isInitialized());
+    tsc->initialize();
     TEUCHOS_TEST_FOR_EXCEPT(!tsc->isInitialized());
 
     // Default strategy is "Constant"

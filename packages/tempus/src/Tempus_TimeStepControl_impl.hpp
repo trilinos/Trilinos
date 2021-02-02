@@ -595,7 +595,7 @@ TimeStepControl<Scalar>::getValidParameters() const
 // ------------------------------------------------------------------------
 template <class Scalar>
 Teuchos::RCP<TimeStepControl<Scalar> > createTimeStepControl(
-  Teuchos::RCP<Teuchos::ParameterList> const& pList)
+  Teuchos::RCP<Teuchos::ParameterList> const& pList, bool runInitialize)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -709,7 +709,7 @@ Teuchos::RCP<TimeStepControl<Scalar> > createTimeStepControl(
     }
   }
 
-  tsc->initialize();
+  if (runInitialize) tsc->initialize();
   return tsc;
 }
 
