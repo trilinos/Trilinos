@@ -63,6 +63,12 @@ template<typename Real>
 class TrustRegionModel : public Objective<Real> {
 public:
 
+  enum class Type : std::int16_t {
+  
+  };
+
+
+
   virtual ~TrustRegionModel() = default;
 
   TrustRegionModel( ParameterList&           list,
@@ -125,6 +131,11 @@ public:
     applyPrecond(Pv,v,tol);
   }
 
+  void setGradient(  const Ptr<Vector<Real>>&    g )      { g_ = g;           }
+  void setIterate(   const Ptr<Vector<Real>>&    x )      { x_ = x;           }
+  void setObjective( const Ptr<Objective<Real>>& obj )    { obj_ = obj;       }
+  void setSecant(    const Ptr<Secant<Real>>&    secant ) { secant_ = secant; }
+
   const Vector<Real>&    getGradient()  const { return g_;      }
   const Vector<Real>&    getIterate()   const { return x_;      }
   const Objective<Real>& getObjective() const { return obj_;    }
@@ -147,9 +158,7 @@ protected:
 
   void applyPrecond(       Vector<Real>& Pv, 
                      const Vector<Real>& v, 
-                           Real& tol );
-  }
-
+                           Real&         tol );
 private:
 
   Ptr<Objective<Real>> obj_;

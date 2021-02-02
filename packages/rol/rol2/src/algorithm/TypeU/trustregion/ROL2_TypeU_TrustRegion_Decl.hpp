@@ -74,6 +74,9 @@ public:
     Undefined
   };
 
+  static EnumMap<Type> type_dict;
+  static EnumMap<Flag> flag_dict;
+
   virtual ~TrustRegion() = default;
 
   virtual void initialize( const Vector<Real>& x, 
@@ -88,10 +91,6 @@ public:
                       TrustRegionModel<Real>& model) = 0; // Trust-region model
 
   static bool isValidType( Type tr ) { return type < Type::Last; }
-
-  static std::string flagToString( Flag f );
-
-  static std::string typeToString( Type tr );
 
   static Type stringToType( std::string s );
  
@@ -130,6 +129,15 @@ public:
                                        bool          print = false);
 
 }; // TrustRegion
+
+template<class Real>
+EnumMap<TrustRegion<Real>::Type> 
+TrustRegion<Real>::type_dict = { "Cauchy Point",
+                                 "Truncated CG",
+                                 "SPG",
+                                 "Dogleg",
+                                 "Double Dogleg" };
+
 
 } // namespace TypeU
 } // namespace ROL2

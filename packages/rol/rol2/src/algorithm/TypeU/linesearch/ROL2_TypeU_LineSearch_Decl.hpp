@@ -4,7 +4,7 @@
 //               Rapid Optimization Library (ROL) Package
 //                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+ROL2_TypeU_LineSearch_Decl.hpp// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -52,7 +52,7 @@
 namespace ROL2 {
 namespace TypeU {
 
-template<typename Real>
+template<class Real>
 class LineSearch {
 public:
 
@@ -68,16 +68,6 @@ public:
      Last  
   };
 
-  enum class DescentType : std::int16_t {
-   Steepest = 0,
-    NonlinearCG,
-    Secant,
-    Newton,
-    NewtonKrylov,
-    UserDefined,
-    Last
-  };
-
   enum class CurvatureCond : std::int16_t {
     Wolfe = 0,
     StrongWolfe,
@@ -87,6 +77,9 @@ public:
     Null,
     Last  
   };
+
+  static EnumMap<Type>          type_dict;
+  static EnumMap<CurvatureCond> curvature_dict;
 
   LineSearch() = default;
   virtual ~LineSearch() = default;
@@ -111,33 +104,6 @@ public:
                              Real& fnew, 
                        const Real& fold );
 
-  static EnumMap<Type>          type_dict;
-  static EnumMap<DescentType>   descent_dict;
-  static EnumMap<CurvatureCond> curvature_dict;
-
-  inline static std::string typeToString( Type t ) { 
-    return type_dict[e]; 
-  }
-
-  inline static std::string descentTypeToString( DescentType e ) { 
-    return descent_dict[e]; 
-  }
-
-  inline static std::string curvatureCondToString( CurvatureCond e ) { 
-    return curvature_dict[e]; 
-  }
-
-  inline static Type stringToType( std::string s ) {
-    return type_dict[s];
-  
-
-  inline static DescentType stringToDescentType( std::string s ) {
-    return descent_dict[s];
-  } 
-
-  inline static CurvatureCond stringToCurvatureCond( std::string ) {
-    return curvature_dict[s];
-  }
 
 protected:
   virtual bool status( const Type             type, 
@@ -163,9 +129,7 @@ protected:
   bool useLocalMinimizer();
   bool takeNoStep();
 
-
 private:
-
 
   Real dirDeriv( const Vector<Real>&    x,      // current iterate
                  const Vector<Real>&    s,      // current trial step
@@ -192,9 +156,30 @@ private:
   bool itcond_;       // true if maximum function evaluations reached
   bool FDdirDeriv_;
 
-}; 
+};
 
-template<typename Real>
+template<class Real>
+inline std::string enumToString( LineSearch<Real>::Type e ) { 
+  return LineSearch<Real>::type_dict[e]; 
+}
+
+template<class Real>
+inline std::string enumToString( CurvatureCond e ) { 
+  return LineSearch<Real>::curvature_dict[e]; 
+}
+
+//template<class Real>
+//inline std::string stringToEnum( std::string s, const LineSearch<Real>& ) {
+//  return LineSearch<Real>::type_dict[s];
+//}
+//
+//template<class Real>
+//inline CurvatureCond stringToEnum( std::string, LineSearch<Real>::CurvatureCond ) {
+//  return curvature_dict[s];
+//}
+
+
+template<class Real>
 EnumMap<LineSearch<Real>::Type>
 LineSearch<Real>::type_dict = { "Iteration Scaling",
                                 "Path-Based Target Level",
@@ -204,16 +189,7 @@ LineSearch<Real>::type_dict = { "Iteration Scaling",
                                 "Cubic Interpolation",
                                 "Brent's",    
                                 "User Defined" };
-template<typename Real>
-EnumMap<LineSearch<Real>::DescentType>
-LineSearch<Real>::descent_dict = { "Steepest Descent",
-                                   "Nonlinear CG",   
-                                   "Quasi-Newton Method",
-                                   "Newton's Method",
-                                   "Newton-Krylov",    
-                                   "User Defined" };      
-
-template<typename Real>
+template<class Real>
 EnumMap<LineSearch<Real>::DescentType>
 LineSearch<Real>::curvature_dict = { "Wolfe Conditions",
                                      "Strong Wolfe Conditions",

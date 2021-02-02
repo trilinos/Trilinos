@@ -42,6 +42,20 @@ private:
   std::map<std::string,EType> s2e;
 };
 
+template<typename object_type>
+inline
+enable_if_has_enum_Type_t<object_type,member_Type_t<object_type>>
+stringToEnum( std::string s, const object_type& ) {
+  return object_type::type_dict[s];
+}
+
+template<typename object_type>
+inline
+enable_if_has_enum_Flag_t<object_type,member_Flag_t<object_type>>
+stringToEnum( std::string s, const object_type& ) {
+  return object_type::flag_dict[s];
+}
+
 } // namespace ROL2
 #endif // ROL2_ENUMMAP_HPP
 

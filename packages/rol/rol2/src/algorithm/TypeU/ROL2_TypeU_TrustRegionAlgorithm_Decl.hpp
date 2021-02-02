@@ -71,11 +71,11 @@ public:
 
   void writeName( std::ostream& = std::cout ) const override;
   
-  void writeOutputs( std::ostream& = std::cout, print_header = false ) const override;
+  void writeOutput( std::ostream& = std::cout, print_header = false ) const override;
 
-  const void setModel(  const TrustRegionModel<Real>& model  );
-  const void setSecant( const Secant<Real>&           secant );
-  const void setSolver( const TrustRegion<Real>&      solver );
+  const void setModel(  const Ptr<TrustRegionModel<Real>>& );
+  const void setSecant( const Ptr<Secant<Real>>&           );
+  const void setSolver( const Ptr<TrustRegion<Real>>&      );
    
   const TrustRegionModel<Real>& getModel()  const;
   const Secant<Real>&           getSecant() const;
@@ -91,7 +91,7 @@ private:
   // TRUST REGION INFORMATION
   Ptr<TrustRegion<Real>>      solver_; ///< Container for trust-region solver object.
   Ptr<TrustRegionModel<Real>> model_;  ///< Container for trust-region model.
-  ETrustRegionU               etr_;    ///< Trust-region subproblem solver type.
+  TrustRegion<Real>::Type     etr_;    ///< Trust-region subproblem solver type.
   Real                        delMax_; ///< Maximum trust-region radius.
   Real                        eta0_;   ///< Step acceptance threshold.
   Real                        eta1_;   ///< Radius decrease threshold.

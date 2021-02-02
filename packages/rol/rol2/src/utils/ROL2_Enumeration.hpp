@@ -13,6 +13,49 @@ using enable_if_enum_t = std::enable_if_t<is_enum_v<ENumType>,ReturnType>;
 template<class ENumType>
 constexpr auto enum_size_v = static_cast<std::underlying_type_t<ENumType>>(ENumType::Last);
 
+template<typename T>
+using member_Type_t = typename T::Type;
+
+template<typename T>
+using member_Flag_t = typename T::Flag;
+
+
+namespace detail {
+
+// Detect if T has a member type called Type that is an enum
+template<typename T, typename=void>
+struct has_enum_Type : std::false_type {};
+
+template<typename T>
+struct has_enum_Type<T,void_t<member_Type_t<T>> {
+  static constexpr auto value = is_enum_v<member_Type_t<T>>;
+};
+
+// Detect if T has a member type called Flag that is an enum
+template<typename T, typename=void>
+struct has_enum_Flag : std::false_type {};
+
+template<typename T>
+struct has_enum_Flag<T,void_t<member_Flag_t<T>>> {
+  static constexpr auto value = is_enum_v<member_Flag_t<T>>;
+};
+
+} // namespace detail
+
+template<typename T>
+constexpr bool has_enum_Type_v = detail::has_enum_Type<T>::value;
+
+
+template<typename T>
+constexpr bool has_enum_Flag_v = detail::has_enum_Type<T>::value;
+
+template<typename object_type, typename return_type>
+using enable_if_has_enum_Type_t = std::enable_if_t<has_enum_Type_v<object_type>,return_type>;
+
+template<typename object_type, typename return_type>
+using enable_if_has_enum_Flag_t = std::enable_if_t<has_enum_Type_v<object_type>,return_type>;
+
+
 /** \brief Universal valid value function for all ROL2 enums
            All enums in ROL2 follow the same design
 

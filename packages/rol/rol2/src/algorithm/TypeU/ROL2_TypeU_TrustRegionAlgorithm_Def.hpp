@@ -401,6 +401,50 @@ void TrustRegionAlgorithm<Real>::writeOutput( std::ostream& os, bool print_heade
   }
 }
 
-} // namespace ROL
+//-----------------------------------------------------------------------------
+// Set/Get component methods
 
-#endif
+template<class Real>
+void TrustRegionAlgorithm<Real>::setModel( const Ptr<TrustRegionModel<Real>>& model ) {
+  model_ = model;
+}
+
+template<class Real>
+void TrustRegionAlgorithm<Real>::setSecant( const Ptr<Secant<Real>>& secant ) {
+  secant_ = secant;
+}
+
+template<class Real>
+void TrustRegionAlgorithm<Real>::setSolver( const Ptr<TrustRegion>& solver ) {
+  solver_ = solver;
+}
+
+template<class Real>
+TrustRegionModel<Real>& TrustRegionAlgorithm<Real>::getModel() { return *model_; }
+
+template<class Real>
+const TrustRegionModel<Real>& TrustRegionAlgorithm<Real>::getModel() const { return *model_; }
+
+template<class Real>
+Secant<Real>& TrustRegionAlgorithm<Real>::getSecant() { return *secant_; }
+
+template<class Real>
+const Secant<Real>& TrustRegionAlgorithm<Real>::getSecant() const { return *secant_; }
+
+template<class Real>
+TrustRegion<Real>& TrustRegionAlgorithm<Real>::getSolver() { return *solver_; }
+
+template<class Real>
+const TrustRegion<Real>& TrustRegionAlgorithm<Real>::getSolver() const { return *solver; }
+
+
+
+
+
+
+
+} // namespace TypeU
+} // namespace ROL2
+
+#endif // ROL2_TYPEU_TRUSTREGIONALGORITHM_DEF_H
+

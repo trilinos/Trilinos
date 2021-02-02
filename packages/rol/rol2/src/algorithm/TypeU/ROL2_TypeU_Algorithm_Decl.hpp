@@ -17,6 +17,15 @@ public:
 
   using ROL2::Algorithm<Real>::ExitStatus;
 
+  enum class Type : std::int16_t {
+    Bundle = 0,
+    LineSearch,
+    TrustRegion,
+    Last
+  };
+
+  ENumMap<Type> type_dict;
+
   /** \class ROL2::Algorithm_U::State 
       \brief Common container for quantities used by unconstrained algorithms.
   */
@@ -129,6 +138,24 @@ private:
   const Ptr<CombinedStatusTest<Real>> status_;
 
 }; 
+
+template<class Real> 
+inline std::string enumToString( Algorithm<Real>::Type e ) {
+  return Algorithm<Real>::type_dict[e];
+}
+
+template<class Real> 
+inline Algorithm<Real>::Type typeToString( std::string s, const Algorithm<Real>& ) {
+  return Algorithm<Real>::type_dict[s];
+}
+
+template<class Real> 
+ENumMap<Algorithm<Real>::Type>
+Algorithm<Real>::type_dict = { "Bundle",
+                               "Line Search",
+                               "Trust Region" };
+
+
 
 } // namespace TypeU
 } // namespace ROL2

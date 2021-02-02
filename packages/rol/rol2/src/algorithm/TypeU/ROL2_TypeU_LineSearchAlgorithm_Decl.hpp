@@ -95,6 +95,7 @@ namespace TypeU {
 template <class Real>
 class LineSearchAlgorithm : public Algorithm<Real> {
 public:
+
   /** \brief Constructor.
 
       Standard constructor to build a LineSearchStep object.  Algorithmic 
@@ -126,20 +127,25 @@ public:
 
   writeOutput( std::ostream& = std::cout, bool print_header = false ) const override;
 
+  const DescentDirection<Real>& getDescentDirection() const
+
+
 private:
 
   Ptr<DescentDirection<Real>> desc_;       ///< Unglobalized step object
   Ptr<LineSearch<Real>>       lineSearch_; ///< Line-search object
 
-  LineSearch<Real>::DescentType   edesc_; ///< enum determines type of descent direction
-  LineSearch<Real>::Type          els_;   ///< enum determines type of line search
-  LineSearch<Real>::CurvatureCond econd_; ///< enum determines type of curvature condition
+  LineSearch<Real>::Type          els_   = LineSearch<Real>::Type::UserDefined;        
+  DescentDirection<Real>::Type    edesc_ = DescentDirection<Real>::Type::UserDefined; 
+  LineSearch<Real>::CurvatureCond econd_ = LineSearch<Real>::CurvatureCond::Wolfe;     
+
   std::string lineSearchName_, descentName_;
 
   int verbosity_;
   int ls_nfval_, ls_ngrad_;
   int SPflag_, SPiter_;
   bool printHeader_;
+
   bool acceptLastAlpha_;  ///< For backwards compatibility. When max function evaluations are reached take last step
 
   bool usePreviousAlpha_; ///< If true, use the previously accepted step length (if any) as the new initial step length
@@ -152,5 +158,4 @@ private:
 } // namespace ROL2
 
 #endif // ROL2_TYPEU_LINESEARCHALGORITHM_DECL_H
-
 
