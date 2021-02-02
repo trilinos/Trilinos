@@ -617,7 +617,7 @@ struct SparseTriSupernodalSpMVFunctor
 
   using scalar_t = typename LHSType::non_const_value_type;
 
-  using work_view_t = typename Kokkos::View<scalar_t*, memory_space>;
+  using work_view_t = typename Kokkos::View<scalar_t*, Kokkos::Device<execution_space, memory_space>>;
 
   int flag;
   long node_count;
@@ -698,7 +698,7 @@ struct LowerTriSupernodalFunctor
   using scalar_t = typename ValuesType::non_const_value_type;
 
   using integer_view_t = Kokkos::View<int*, memory_space>;
-  using work_view_t = typename Kokkos::View<scalar_t*, memory_space>;
+  using work_view_t = typename Kokkos::View<scalar_t*, Kokkos::Device<execution_space, memory_space>>;
 
   using range_type = Kokkos::pair<int, int>;
 
@@ -875,7 +875,7 @@ struct UpperTriSupernodalFunctor
   using scalar_t = typename ValuesType::non_const_value_type;
 
   using integer_view_t = Kokkos::View<int*, memory_space>;
-  using work_view_t = typename Kokkos::View<scalar_t*, memory_space>;
+  using work_view_t = typename Kokkos::View<scalar_t*, Kokkos::Device<execution_space, memory_space>>;
 
   using SupernodeView = typename Kokkos::View<scalar_t**, Kokkos::LayoutLeft,
                                               memory_space, Kokkos::MemoryUnmanaged>;
