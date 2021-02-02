@@ -50,37 +50,21 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/NgpFieldSyncDebugger.hpp>
 #include <stk_util/stk_config.h>
+#include "NgpDebugFieldSync_Fixtures.hpp"
 #include <string>
 #include <sstream>
 #include <vector>
 #include <numeric>
-#include <tuple>
 
 namespace {
 
-template <typename T> using NgpDebugger = stk::mesh::NgpFieldSyncDebugger<T>;
-template <typename T> using StkDebugger = typename NgpDebugger<T>::StkFieldSyncDebuggerType;
-
-template <typename T>
-STK_INLINE_FUNCTION
-bool dummy_check(T value)
-{
-  return (value == 0);
-}
-
-class NgpDebugFieldSync : public stk::unit_test_util::MeshFixture
+class NgpDebugFieldSync : public NgpDebugFieldSyncFixture
 {
 public:
   template <typename T>
   void initialize_ngp_field_default_debugger(stk::mesh::Field<T> & stkField)
   {
     stk::mesh::get_updated_ngp_field<T>(stkField);
-  }
-
-  template <typename T>
-  void initialize_ngp_field(stk::mesh::Field<T> & stkField)
-  {
-    stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
   }
 
   void set_initial_part_membership(const std::vector<std::pair<unsigned, std::string>> & numElemsInEachPart)
@@ -122,36 +106,6 @@ public:
   }
 
   template <typename T>
-  void write_scalar_field_on_host_using_entity(stk::mesh::Field<T> & stkField, T value)
-  {
-    const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
-    for (stk::mesh::Bucket * bucket : buckets) {
-      for (const stk::mesh::Entity & entity : *bucket) {
-        T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, entity);
-        fieldData[0] = value;
-      }
-    }
-  }
-
-  template <typename T>
-  stk::mesh::EntityVector write_scalar_field_on_host_using_bucket_id_and_ordinal(stk::mesh::Field<T> & stkField, T value)
-  {
-    stk::mesh::EntityVector entities;
-    const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
-    for (stk::mesh::Bucket * bucket : buckets) {
-      for (const stk::mesh::Entity & entity : *bucket) {
-        entities.push_back(entity);
-        const stk::mesh::MeshIndex & meshIndex = get_bulk().mesh_index(entity);
-        const unsigned bucketId = meshIndex.bucket->bucket_id();
-        const stk::mesh::Bucket::size_type bucketOrd = meshIndex.bucket_ordinal;
-        T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, bucketId, bucketOrd);
-        fieldData[0] = value;
-      }
-    }
-    return entities;
-  }
-
-  template <typename T>
   void write_scalar_field_on_host_using_entity_vector(stk::mesh::Field<T> & stkField, stk::mesh::EntityVector entities, T value)
   {
     for (const stk::mesh::Entity & entity : entities) {
@@ -160,22 +114,6 @@ public:
         const unsigned bucketId = meshIndex.bucket->bucket_id();
         const stk::mesh::Bucket::size_type bucketOrd = meshIndex.bucket_ordinal;
         T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, bucketId, bucketOrd);
-        fieldData[0] = value;
-      }
-    }
-  }
-
-  template <typename T>
-  void write_scalar_field_on_host_using_bucket_id_and_ordinal_and_size(stk::mesh::Field<T> & stkField, T value)
-  {
-    const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
-    for (stk::mesh::Bucket * bucket : buckets) {
-      for (const stk::mesh::Entity & entity : *bucket) {
-        const stk::mesh::MeshIndex & meshIndex = get_bulk().mesh_index(entity);
-        const unsigned bucketId = meshIndex.bucket->bucket_id();
-        const stk::mesh::Bucket::size_type bucketOrd = meshIndex.bucket_ordinal;
-        const unsigned numBytesPerEntity = stk::mesh::field_bytes_per_entity(stkField, *bucket);
-        T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, bucketId, bucketOrd, numBytesPerEntity);
         fieldData[0] = value;
       }
     }
@@ -225,31 +163,6 @@ public:
   }
 
   template <typename T>
-  void write_scalar_field_on_host_using_bucket(stk::mesh::Field<T> & stkField, T value)
-  {
-    const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
-    for (stk::mesh::Bucket * bucket : buckets) {
-      T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, *bucket);
-      for(size_t iEntity = 0; iEntity < bucket->size(); ++iEntity) {
-        fieldData[iEntity] = value;
-      }
-    }
-  }
-
-  template <typename T>
-  void write_scalar_field_on_host_using_bucket_id(stk::mesh::Field<T> & stkField, T value)
-  {
-    const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
-    for (stk::mesh::Bucket * bucket : buckets) {
-      const unsigned bucketId = bucket->bucket_id();
-      T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, bucketId);
-      for(size_t iEntity = 0; iEntity < bucket->size(); ++iEntity) {
-        fieldData[iEntity] = value;
-      }
-    }
-  }
-
-  template <typename T>
   void write_vector_field_on_host_using_bucket(stk::mesh::Field<T> & stkField, T value)
   {
     const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
@@ -283,7 +196,7 @@ public:
     for (stk::mesh::Bucket * bucket : buckets) {
       for (const stk::mesh::Entity & entity : *bucket) {
         const T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>>(stkField, entity);
-        dummy_check(fieldData[0]);
+        access_for_memory_checking_tool(fieldData);
       }
     }
   }
@@ -295,7 +208,7 @@ public:
     for (stk::mesh::Bucket * bucket : buckets) {
       for (const stk::mesh::Entity & entity : *bucket) {
         const T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, entity);
-        dummy_check(fieldData[0]);
+        access_for_memory_checking_tool(fieldData);
       }
     }
   }
@@ -306,9 +219,7 @@ public:
     const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
     for (stk::mesh::Bucket * bucket : buckets) {
       const T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, *bucket);
-      for(size_t iEntity = 0; iEntity < bucket->size(); ++iEntity) {
-        dummy_check(fieldData[iEntity]);
-      }
+      access_for_memory_checking_tool(fieldData, bucket->size());
     }
   }
 
@@ -319,9 +230,7 @@ public:
     for (stk::mesh::Bucket * bucket : buckets) {
       for (const stk::mesh::Entity & entity : *bucket) {
         const T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, entity);
-        for (unsigned component = 0; component < 3; ++component) {
-          dummy_check(fieldData[component]);
-        }
+        access_for_memory_checking_tool(fieldData, 3);
       }
     }
   }
@@ -332,11 +241,7 @@ public:
     const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
     for (stk::mesh::Bucket * bucket : buckets) {
       const T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, *bucket);
-      for(size_t iEntity = 0; iEntity < bucket->size(); ++iEntity) {
-        for (unsigned component = 0; component < 3; ++component) {
-          dummy_check(fieldData[iEntity*3 + component]);
-        }
-      }
+      access_for_memory_checking_tool(fieldData, bucket->size()*3);
     }
   }
 
@@ -451,34 +356,9 @@ public:
                              for (unsigned j = 0; j < bucket.size(); ++j) {
                                stk::mesh::FastMeshIndex index = ngpMesh.fast_mesh_index(bucket[j]);
 #if defined(DEVICE_USE_LOCATION_BUILTINS)
-                               dummy_check(ngpField(index, component));
+                               access_for_memory_checking_tool(&ngpField(index, component));
 #else
-                               dummy_check(ngpField(index, component, __FILE__, __LINE__));
-#endif
-                             }
-                           }
-                         });
-  }
-
-  template <typename T>
-  void read_scalar_field_on_device(stk::mesh::Field<T> & stkField)
-  {
-    const int component = 0;
-    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    const stk::mesh::MetaData & meta = get_bulk().mesh_meta_data();
-    stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
-    stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stkField.entity_rank(), meta.locally_owned_part());
-    stk::mesh::EntityRank rank = ngpField.get_rank();
-
-    Kokkos::parallel_for(1, KOKKOS_LAMBDA(unsigned ) {
-                           for (unsigned i = 0; i < bucketIds.size(); ++i) {
-                             const stk::mesh::NgpMesh::BucketType & bucket = ngpMesh.get_bucket(rank, bucketIds.device_get(i));
-                             for (unsigned j = 0; j < bucket.size(); ++j) {
-                               stk::mesh::FastMeshIndex index = ngpMesh.fast_mesh_index(bucket[j]);
-#if defined(DEVICE_USE_LOCATION_BUILTINS)
-                               dummy_check(ngpField(index, component));
-#else
-                               dummy_check(ngpField(index, component, __FILE__, __LINE__));
+                               access_for_memory_checking_tool(&ngpField(index, component, __FILE__, __LINE__));
 #endif
                              }
                            }
@@ -504,9 +384,9 @@ public:
                                const stk::mesh::EntityId elemId = ngpMesh.identifier(elem);
                                if (elemId <= maxIdToRead) {
 #if defined(DEVICE_USE_LOCATION_BUILTINS)
-                                 dummy_check(ngpField(index, component));
+                                 access_for_memory_checking_tool(&ngpField(index, component));
 #else
-                                 dummy_check(ngpField(index, component, __FILE__, __LINE__));
+                                 access_for_memory_checking_tool(&ngpField(index, component, __FILE__, __LINE__));
 #endif
                                }
                              }
@@ -530,9 +410,9 @@ public:
                                stk::mesh::FastMeshIndex index = ngpMesh.fast_mesh_index(bucket[j]);
                                for (int component = 0; component < 3; ++component) {
 #if defined(DEVICE_USE_LOCATION_BUILTINS)
-                                 dummy_check(ngpField(index, component));
+                                 access_for_memory_checking_tool(&ngpField(index, component));
 #else
-                                 dummy_check(ngpField(index, component, __FILE__, __LINE__));
+                                 access_for_memory_checking_tool(&ngpField(index, component, __FILE__, __LINE__));
 #endif
                                }
                              }
@@ -540,68 +420,19 @@ public:
                          });
   }
 
-  template <typename T>
-  void read_vector_field_on_device_using_mesh_index(stk::mesh::Field<T> & stkField)
-  {
-    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    const stk::mesh::MetaData & meta = get_bulk().mesh_meta_data();
-    stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
-    stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stkField.entity_rank(), meta.locally_owned_part());
-    stk::mesh::EntityRank rank = ngpField.get_rank();
+  struct EntityIdAddRemovePart {
+    stk::mesh::EntityId id;
+    std::string addPart;
+    std::string removePart;
+  };
 
-    Kokkos::parallel_for(1, KOKKOS_LAMBDA(unsigned ) {
-                           for (unsigned i = 0; i < bucketIds.size(); ++i) {
-                             const stk::mesh::NgpMesh::BucketType & bucket = ngpMesh.get_bucket(rank, bucketIds.device_get(i));
-                             for (unsigned j = 0; j < bucket.size(); ++j) {
-                               stk::mesh::NgpMesh::MeshIndex index{&bucket, static_cast<unsigned>(j)};
-                               for (int component = 0; component < 3; ++component) {
-#if defined(DEVICE_USE_LOCATION_BUILTINS)
-                                 dummy_check(ngpField(index, component));
-#else
-                                 dummy_check(ngpField(index, component, __FILE__, __LINE__));
-#endif
-                               }
-                             }
-                           }
-                         });
-  }
-
-  template <typename T>
-  void read_vector_field_on_device_using_entity_field_data(stk::mesh::Field<T> & stkField)
-  {
-    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    const stk::mesh::MetaData & meta = get_bulk().mesh_meta_data();
-    stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
-    stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stkField.entity_rank(), meta.locally_owned_part());
-    stk::mesh::EntityRank rank = ngpField.get_rank();
-
-    Kokkos::parallel_for(1, KOKKOS_LAMBDA(unsigned ) {
-                           for (unsigned bucketId = 0; bucketId < bucketIds.size(); ++bucketId) {
-                             const stk::mesh::NgpMesh::BucketType & bucket = ngpMesh.get_bucket(rank, bucketIds.device_get(bucketId));
-                             for (unsigned offset = 0; offset < bucket.size(); ++offset) {
-                               stk::mesh::FastMeshIndex index = ngpMesh.fast_mesh_index(bucket[offset]);
-#if defined(DEVICE_USE_LOCATION_BUILTINS)
-                               stk::mesh::EntityFieldData<double> vals = ngpField(index);
-#else
-                               stk::mesh::EntityFieldData<double> vals = ngpField(index, __FILE__, __LINE__);
-#endif
-                               for (unsigned i = 0; i < vals.size(); ++i) {
-                                 dummy_check(vals[i]);
-                               }
-                             }
-                           }
-                         });
-  }
-
-  using VectorIdNameName = std::vector<std::tuple<stk::mesh::EntityId, std::string, std::string>>;
-
-  void modify_element_part_membership(const VectorIdNameName& elemAddRemoveParts)
+  void modify_element_part_membership(const std::vector<EntityIdAddRemovePart>& elemAddRemoveParts)
   {
     get_bulk().modification_begin();
     for (const auto & elemAddRemovePart : elemAddRemoveParts) {
-      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, std::get<0>(elemAddRemovePart))};
-      stk::mesh::PartVector addParts {get_meta().get_part(std::get<1>(elemAddRemovePart))};
-      stk::mesh::PartVector removeParts {get_meta().get_part(std::get<2>(elemAddRemovePart))};
+      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, elemAddRemovePart.id)};
+      stk::mesh::PartVector addParts {get_meta().get_part(elemAddRemovePart.addPart)};
+      stk::mesh::PartVector removeParts {get_meta().get_part(elemAddRemovePart.removePart)};
       get_bulk().change_entity_parts(elemsToChange, addParts, removeParts);
     }
     get_bulk().modification_end();
@@ -641,7 +472,7 @@ public:
 
   template <typename T>
   void modify_element_part_membership_with_scalar_field_write_using_entity(
-           const std::vector<std::tuple<stk::mesh::EntityId, std::string, std::string>> & elemAddRemoveParts,
+           const std::vector<EntityIdAddRemovePart> & elemAddRemoveParts,
            stk::mesh::Field<T> & stkField, T value)
   {
     get_bulk().modification_begin();
@@ -649,9 +480,9 @@ public:
     write_scalar_field_on_host_using_entity(stkField, value);
 
     for (const auto & elemAddRemovePart : elemAddRemoveParts) {
-      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, std::get<0>(elemAddRemovePart))};
-      stk::mesh::PartVector addParts {get_meta().get_part(std::get<1>(elemAddRemovePart))};
-      stk::mesh::PartVector removeParts {get_meta().get_part(std::get<2>(elemAddRemovePart))};
+      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, elemAddRemovePart.id)};
+      stk::mesh::PartVector addParts {get_meta().get_part(elemAddRemovePart.addPart)};
+      stk::mesh::PartVector removeParts {get_meta().get_part(elemAddRemovePart.removePart)};
       get_bulk().change_entity_parts(elemsToChange, addParts, removeParts);
     }
 
@@ -660,7 +491,7 @@ public:
 
   template <typename T>
   void modify_element_part_membership_with_scalar_field_write_using_bucket_id_and_ordinal(
-           const std::vector<std::tuple<stk::mesh::EntityId, std::string, std::string>> & elemAddRemoveParts,
+           const std::vector<EntityIdAddRemovePart> & elemAddRemoveParts,
            stk::mesh::Field<T> & stkField, T value)
   {
     get_bulk().modification_begin();
@@ -668,9 +499,9 @@ public:
     stk::mesh::EntityVector processedEntities = write_scalar_field_on_host_using_bucket_id_and_ordinal(stkField, value);
 
     for (const auto & elemAddRemovePart : elemAddRemoveParts) {
-      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, std::get<0>(elemAddRemovePart))};
-      stk::mesh::PartVector addParts {get_meta().get_part(std::get<1>(elemAddRemovePart))};
-      stk::mesh::PartVector removeParts {get_meta().get_part(std::get<2>(elemAddRemovePart))};
+      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, elemAddRemovePart.id)};
+      stk::mesh::PartVector addParts {get_meta().get_part(elemAddRemovePart.addPart)};
+      stk::mesh::PartVector removeParts {get_meta().get_part(elemAddRemovePart.removePart)};
       get_bulk().change_entity_parts(elemsToChange, addParts, removeParts);
     }
 
@@ -775,7 +606,7 @@ public:
 
   template <typename T>
   void modify_element_part_membership_with_vector_field_write_using_entity(
-           const std::vector<std::tuple<stk::mesh::EntityId, std::string, std::string>> & elemAddRemoveParts,
+           const std::vector<EntityIdAddRemovePart> & elemAddRemoveParts,
            stk::mesh::Field<T> & stkField, T value)
   {
     get_bulk().modification_begin();
@@ -783,9 +614,9 @@ public:
     write_vector_field_on_host_using_entity(stkField, value);
 
     for (const auto & elemAddRemovePart : elemAddRemoveParts) {
-      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, std::get<0>(elemAddRemovePart))};
-      stk::mesh::PartVector addParts {get_meta().get_part(std::get<1>(elemAddRemovePart))};
-      stk::mesh::PartVector removeParts {get_meta().get_part(std::get<2>(elemAddRemovePart))};
+      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, elemAddRemovePart.id)};
+      stk::mesh::PartVector addParts {get_meta().get_part(elemAddRemovePart.addPart)};
+      stk::mesh::PartVector removeParts {get_meta().get_part(elemAddRemovePart.removePart)};
       get_bulk().change_entity_parts(elemsToChange, addParts, removeParts);
     }
 
@@ -838,7 +669,7 @@ public:
 
   template <typename T>
   void modify_element_part_membership_with_scalar_field_write_using_bucket(
-           const std::vector<std::tuple<stk::mesh::EntityId, std::string, std::string>> & elemAddRemoveParts,
+           const std::vector<EntityIdAddRemovePart> & elemAddRemoveParts,
            stk::mesh::Field<T> & stkField, T value)
   {
     get_bulk().modification_begin();
@@ -846,9 +677,9 @@ public:
     write_scalar_field_on_host_using_bucket(stkField, value);
 
     for (const auto & elemAddRemovePart : elemAddRemoveParts) {
-      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, std::get<0>(elemAddRemovePart))};
-      stk::mesh::PartVector addParts {get_meta().get_part(std::get<1>(elemAddRemovePart))};
-      stk::mesh::PartVector removeParts {get_meta().get_part(std::get<2>(elemAddRemovePart))};
+      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, elemAddRemovePart.id)};
+      stk::mesh::PartVector addParts {get_meta().get_part(elemAddRemovePart.addPart)};
+      stk::mesh::PartVector removeParts {get_meta().get_part(elemAddRemovePart.removePart)};
       get_bulk().change_entity_parts(elemsToChange, addParts, removeParts);
     }
 
@@ -857,7 +688,7 @@ public:
 
   template <typename T>
   void modify_element_part_membership_with_scalar_field_write_using_bucket_id(
-           const std::vector<std::tuple<stk::mesh::EntityId, std::string, std::string>> & elemAddRemoveParts,
+           const std::vector<EntityIdAddRemovePart> & elemAddRemoveParts,
            stk::mesh::Field<T> & stkField, T value)
   {
     get_bulk().modification_begin();
@@ -865,9 +696,9 @@ public:
     write_scalar_field_on_host_using_bucket_id(stkField, value);
 
     for (const auto & elemAddRemovePart : elemAddRemoveParts) {
-      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, std::get<0>(elemAddRemovePart))};
-      stk::mesh::PartVector addParts {get_meta().get_part(std::get<1>(elemAddRemovePart))};
-      stk::mesh::PartVector removeParts {get_meta().get_part(std::get<2>(elemAddRemovePart))};
+      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, elemAddRemovePart.id)};
+      stk::mesh::PartVector addParts {get_meta().get_part(elemAddRemovePart.addPart)};
+      stk::mesh::PartVector removeParts {get_meta().get_part(elemAddRemovePart.removePart)};
       get_bulk().change_entity_parts(elemsToChange, addParts, removeParts);
     }
 
@@ -972,7 +803,7 @@ public:
 
   template <typename T>
   void modify_element_part_membership_with_vector_field_write_using_bucket(
-           const std::vector<std::tuple<stk::mesh::EntityId, std::string, std::string>> & elemAddRemoveParts,
+           const std::vector<EntityIdAddRemovePart> & elemAddRemoveParts,
            stk::mesh::Field<T> & stkField, T value)
   {
     get_bulk().modification_begin();
@@ -980,9 +811,9 @@ public:
     write_vector_field_on_host_using_bucket(stkField, value);
 
     for (const auto & elemAddRemovePart : elemAddRemoveParts) {
-      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, std::get<0>(elemAddRemovePart))};
-      stk::mesh::PartVector addParts {get_meta().get_part(std::get<1>(elemAddRemovePart))};
-      stk::mesh::PartVector removeParts {get_meta().get_part(std::get<2>(elemAddRemovePart))};
+      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, elemAddRemovePart.id)};
+      stk::mesh::PartVector addParts {get_meta().get_part(elemAddRemovePart.addPart)};
+      stk::mesh::PartVector removeParts {get_meta().get_part(elemAddRemovePart.removePart)};
       get_bulk().change_entity_parts(elemsToChange, addParts, removeParts);
     }
 
@@ -1040,15 +871,15 @@ public:
 
   template <typename T>
   void modify_element_part_membership_with_scalar_field_read_using_entity(
-           const std::vector<std::tuple<stk::mesh::EntityId, std::string, std::string>> & elemAddRemoveParts,
+           const std::vector<EntityIdAddRemovePart> & elemAddRemoveParts,
            stk::mesh::Field<T> & stkField)
   {
     get_bulk().modification_begin();
 
     for (const auto & elemAddRemovePart : elemAddRemoveParts) {
-      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, std::get<0>(elemAddRemovePart))};
-      stk::mesh::PartVector addParts {get_meta().get_part(std::get<1>(elemAddRemovePart))};
-      stk::mesh::PartVector removeParts {get_meta().get_part(std::get<2>(elemAddRemovePart))};
+      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, elemAddRemovePart.id)};
+      stk::mesh::PartVector addParts {get_meta().get_part(elemAddRemovePart.addPart)};
+      stk::mesh::PartVector removeParts {get_meta().get_part(elemAddRemovePart.removePart)};
       get_bulk().change_entity_parts(elemsToChange, addParts, removeParts);
     }
 
@@ -1101,15 +932,15 @@ public:
 
   template <typename T>
   void modify_element_part_membership_with_vector_field_read_using_entity(
-           const std::vector<std::tuple<stk::mesh::EntityId, std::string, std::string>> & elemAddRemoveParts,
+           const std::vector<EntityIdAddRemovePart> & elemAddRemoveParts,
            stk::mesh::Field<T> & stkField)
   {
     get_bulk().modification_begin();
 
     for (const auto & elemAddRemovePart : elemAddRemoveParts) {
-      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, std::get<0>(elemAddRemovePart))};
-      stk::mesh::PartVector addParts {get_meta().get_part(std::get<1>(elemAddRemovePart))};
-      stk::mesh::PartVector removeParts {get_meta().get_part(std::get<2>(elemAddRemovePart))};
+      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, elemAddRemovePart.id)};
+      stk::mesh::PartVector addParts {get_meta().get_part(elemAddRemovePart.addPart)};
+      stk::mesh::PartVector removeParts {get_meta().get_part(elemAddRemovePart.removePart)};
       get_bulk().change_entity_parts(elemsToChange, addParts, removeParts);
     }
 
@@ -1162,15 +993,15 @@ public:
 
   template <typename T>
   void modify_element_part_membership_with_scalar_field_read_using_bucket(
-           const std::vector<std::tuple<stk::mesh::EntityId, std::string, std::string>> & elemAddRemoveParts,
+           const std::vector<EntityIdAddRemovePart> & elemAddRemoveParts,
            stk::mesh::Field<T> & stkField)
   {
     get_bulk().modification_begin();
 
     for (const auto & elemAddRemovePart : elemAddRemoveParts) {
-      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, std::get<0>(elemAddRemovePart))};
-      stk::mesh::PartVector addParts {get_meta().get_part(std::get<1>(elemAddRemovePart))};
-      stk::mesh::PartVector removeParts {get_meta().get_part(std::get<2>(elemAddRemovePart))};
+      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, elemAddRemovePart.id)};
+      stk::mesh::PartVector addParts {get_meta().get_part(elemAddRemovePart.addPart)};
+      stk::mesh::PartVector removeParts {get_meta().get_part(elemAddRemovePart.removePart)};
       get_bulk().change_entity_parts(elemsToChange, addParts, removeParts);
     }
 
@@ -1223,15 +1054,15 @@ public:
 
   template <typename T>
   void modify_element_part_membership_with_vector_field_read_using_bucket(
-           const std::vector<std::tuple<stk::mesh::EntityId, std::string, std::string>> & elemAddRemoveParts,
+           const std::vector<EntityIdAddRemovePart> & elemAddRemoveParts,
            stk::mesh::Field<T> & stkField)
   {
     get_bulk().modification_begin();
 
     for (const auto & elemAddRemovePart : elemAddRemoveParts) {
-      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, std::get<0>(elemAddRemovePart))};
-      stk::mesh::PartVector addParts {get_meta().get_part(std::get<1>(elemAddRemovePart))};
-      stk::mesh::PartVector removeParts {get_meta().get_part(std::get<2>(elemAddRemovePart))};
+      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, elemAddRemovePart.id)};
+      stk::mesh::PartVector addParts {get_meta().get_part(elemAddRemovePart.addPart)};
+      stk::mesh::PartVector removeParts {get_meta().get_part(elemAddRemovePart.removePart)};
       get_bulk().change_entity_parts(elemsToChange, addParts, removeParts);
     }
 
@@ -1313,22 +1144,6 @@ public:
     return field;
   }
 
-  template <typename T>
-  void fill_initial_field(stk::mesh::Field<T> & stkField)
-  {
-    const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
-    for (stk::mesh::Bucket * bucket : buckets) {
-      for (const stk::mesh::Entity & entity : *bucket) {
-        const stk::mesh::EntityId id = get_bulk().identifier(entity);
-        T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, stk::mesh::EmptyStkFieldSyncDebugger>(stkField, entity);
-        const unsigned numComponents = stk::mesh::field_scalars_per_entity(stkField, *bucket);
-        for (unsigned component = 0; component < numComponents; ++component) {
-          fieldData[component] = 10*id + component;
-        }
-      }
-    }
-  }
-
   void
   create_parts(const std::vector<std::pair<unsigned, std::string>> & numElemsInEachPart)
   {
@@ -1369,6 +1184,7 @@ public:
     for (const auto & elemCountAndPart : numElemsInEachPart) {
       numElems += elemCountAndPart.first;
     }
+
     setup_mesh("generated:1x1x" + std::to_string(numElems), stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
 
     set_initial_part_membership(numElemsInEachPart);
@@ -1420,79 +1236,6 @@ public:
 };
 
 
-template <typename Out>
-void split_lines(const std::string &s, Out result) {
-    std::istringstream iss(s);
-    std::string item;
-    while (std::getline(iss, item)) {
-        *result++ = item;
-    }
-}
-
-std::vector<std::string> split_lines(const std::string &s) {
-    std::vector<std::string> elems;
-    split_lines(s, std::back_inserter(elems));
-    return elems;
-}
-
-void extract_warning(std::string & stdoutString, int numExpectedOccurrences, const std::string & warningString)
-{
-  std::vector<std::string> warningLines = split_lines(stdoutString);
-  std::string newStdoutString;
-  int numFound = 0;
-
-  for (const std::string & line : warningLines) {
-    const size_t loc = line.find(warningString);
-    if (loc != std::string::npos) {
-      ++numFound;
-    }
-    else {
-      newStdoutString += line + "\n";
-    }
-  }
-
-#if defined(STK_USE_DEVICE_MESH)
-  if (numFound != numExpectedOccurrences) {
-  std::cout << "Warning string found " << numFound << " times when expecting " << numExpectedOccurrences << " occurrences: \""
-            << warningString << "\"" << std::endl;
-    ADD_FAILURE();
-  }
-#endif
-
-  stdoutString = newStdoutString;
-}
-
-void check_no_warnings(const std::string & stdoutString)
-{
-  std::vector<std::string> warningLines = split_lines(stdoutString);
-
-  for (const std::string & line : warningLines) {
-    if (!line.empty()) {
-      std::cout << "Found unexpected warning: \"" << line << "\"" << std::endl;
-      ADD_FAILURE();
-    }
-  }
-}
-
-void check_contains_file_name(const std::string & stdoutString, const std::string & fileName)
-{
-#if defined(STK_USE_DEVICE_MESH) && defined(HOST_USE_LOCATION_BUILTINS)
-  const size_t fileNameLoc = stdoutString.find(fileName);
-  EXPECT_NE(fileNameLoc, std::string::npos);
-#endif
-}
-
-void check_contains_a_line_number(const std::string & stdoutString)
-{
-#if defined(STK_USE_DEVICE_MESH) && defined(HOST_USE_LOCATION_BUILTINS)
-  const size_t colonLoc = stdoutString.find(":");
-  ASSERT_NE(colonLoc, std::string::npos);
-  const size_t lineNumberLoc = colonLoc + 1;
-  int lineNumber = std::stoi(stdoutString.data()+lineNumberLoc);
-  EXPECT_GT(lineNumber, 0);
-#endif
-}
-
 
 TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_ProperlySyncToDevice_NoWarning)
 {
@@ -1521,7 +1264,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MissingAllModifySyncCallsToDev
   read_scalar_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  check_contains_file_name(stdoutString, "NgpDebugFieldSyncTest.cpp");
+  check_contains_file_name(stdoutString, "NgpDebugFieldSync_Fixtures.hpp");
   check_contains_a_line_number(stdoutString);
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
   check_no_warnings(stdoutString);
@@ -1590,7 +1333,7 @@ TEST_F(NgpDebugFieldSync, VectorAccessUsingEntity_MissingAllModifySyncCallsToDev
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync, DeviceEntityFieldDataAccess_ProperlySyncToDevice_NoWarning)
+TEST_F(NgpDebugFieldSync, VectorAccessUsingEntityFieldData_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   stk::mesh::Field<double> & stkField = build_mesh_with_vector_field<double>("doubleVectorField", {{2, "Part1"}});
@@ -1600,13 +1343,13 @@ TEST_F(NgpDebugFieldSync, DeviceEntityFieldDataAccess_ProperlySyncToDevice_NoWar
   stkField.modify_on_host();
   stkField.sync_to_device();
 
-  read_vector_field_on_device_using_entity_field_data(stkField);
+  read_field_on_device_using_entity_field_data(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync, DeviceEntityFieldDataAccess_MissingAllModifySyncCallsToDevice_Warning)
+TEST_F(NgpDebugFieldSync, VectorAccessUsingEntityFieldData_MissingAllModifySyncCallsToDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   stk::mesh::Field<double> & stkField = build_mesh_with_vector_field<double>("doubleVectorField", {{2, "Part1"}});
@@ -1614,14 +1357,14 @@ TEST_F(NgpDebugFieldSync, DeviceEntityFieldDataAccess_MissingAllModifySyncCallsT
   testing::internal::CaptureStdout();
   write_vector_field_on_host_using_entity(stkField, 3.14);
 
-  read_vector_field_on_device_using_entity_field_data(stkField);
+  read_field_on_device_using_entity_field_data(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[1]=11.000000");
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync, DeviceMeshIndexAccess_ProperlySyncToDevice_NoWarning)
+TEST_F(NgpDebugFieldSync, VectorAccessUsingMeshIndex_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   stk::mesh::Field<double> & stkField = build_mesh_with_vector_field<double>("doubleVectorField", {{2, "Part1"}});
@@ -1631,13 +1374,13 @@ TEST_F(NgpDebugFieldSync, DeviceMeshIndexAccess_ProperlySyncToDevice_NoWarning)
   stkField.modify_on_host();
   stkField.sync_to_device();
 
-  read_vector_field_on_device_using_mesh_index(stkField);
+  read_field_on_device_using_mesh_index(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync, DeviceMeshIndexAccess_MissingAllModifySyncCallsToDevice_Warning)
+TEST_F(NgpDebugFieldSync, VectorAccessUsingMeshIndex_MissingAllModifySyncCallsToDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   stk::mesh::Field<double> & stkField = build_mesh_with_vector_field<double>("doubleVectorField", {{2, "Part1"}});
@@ -1645,7 +1388,7 @@ TEST_F(NgpDebugFieldSync, DeviceMeshIndexAccess_MissingAllModifySyncCallsToDevic
   testing::internal::CaptureStdout();
   write_vector_field_on_host_using_entity(stkField, 3.14);
 
-  read_vector_field_on_device_using_mesh_index(stkField);
+  read_field_on_device_using_mesh_index(stkField);
   std::string stdoutString = testing::internal::GetCapturedStdout();
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[1]=11.000000");
   check_no_warnings(stdoutString);
@@ -1713,136 +1456,6 @@ TEST_F(NgpDebugFieldSync, VectorIntAccessUsingEntity_MissingAllModifySyncCallsTo
   check_no_warnings(stdoutString);
 }
 
-
-TEST_F(NgpDebugFieldSync, ScalarAccessUsingBucketIdAndOrdinal_ProperlySyncToDevice_NoWarning)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
-                                                                                                   {1, "Part2"}});
-
-  testing::internal::CaptureStdout();
-  write_scalar_field_on_host_using_bucket_id_and_ordinal(stkField, 3.14);
-  stkField.modify_on_host();
-  stkField.sync_to_device();
-
-  read_scalar_field_on_device(stkField);
-
-  std::string stdoutString = testing::internal::GetCapturedStdout();
-  check_no_warnings(stdoutString);
-}
-
-TEST_F(NgpDebugFieldSync, ScalarAccessUsingBucketIdAndOrdinal_MissingAllModifySyncCallsToDevice_Warning)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
-                                                                                                   {1, "Part2"}});
-
-  testing::internal::CaptureStdout();
-  write_scalar_field_on_host_using_bucket_id_and_ordinal(stkField, 3.14);
-
-  read_scalar_field_on_device(stkField);
-
-  std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
-  check_no_warnings(stdoutString);
-}
-
-TEST_F(NgpDebugFieldSync, VectorAccessUsingBucketIdAndOrdinal_ProperlySyncToDevice_NoWarning)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-  stk::mesh::Field<double> & stkField = build_mesh_with_vector_field<double>("doubleScalarField", {{1, "Part1"},
-                                                                                                   {1, "Part2"}});
-
-  testing::internal::CaptureStdout();
-  write_vector_field_on_host_using_bucket_id_and_ordinal(stkField, 3.14);
-  stkField.modify_on_host();
-  stkField.sync_to_device();
-
-  read_vector_field_on_device(stkField);
-  std::string stdoutString = testing::internal::GetCapturedStdout();
-  check_no_warnings(stdoutString);
-}
-
-TEST_F(NgpDebugFieldSync, VectorAccessUsingBucketIdAndOrdinal_MissingAllModifySyncCallsToDevice_Warning)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-  stk::mesh::Field<double> & stkField = build_mesh_with_vector_field<double>("doubleVectorField", {{1, "Part1"},
-                                                                                                   {1, "Part2"}});
-
-  testing::internal::CaptureStdout();
-  write_vector_field_on_host_using_bucket_id_and_ordinal(stkField, 3.14);
-
-  read_vector_field_on_device(stkField);
-
-  std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[1]=11.000000");
-  check_no_warnings(stdoutString);
-}
-
-TEST_F(NgpDebugFieldSync, ScalarAccessUsingBucketIdAndOrdinalAndSize_ProperlySyncToDevice_NoWarning)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
-                                                                                                   {1, "Part2"}});
-
-  testing::internal::CaptureStdout();
-  write_scalar_field_on_host_using_bucket_id_and_ordinal_and_size(stkField, 3.14);
-  stkField.modify_on_host();
-  stkField.sync_to_device();
-
-  read_scalar_field_on_device(stkField);
-
-  std::string stdoutString = testing::internal::GetCapturedStdout();
-  check_no_warnings(stdoutString);
-}
-
-TEST_F(NgpDebugFieldSync, ScalarAccessUsingBucketIdAndOrdinalAndSize_MissingAllModifySyncCallsToDevice_Warning)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
-                                                                                                   {1, "Part2"}});
-
-  testing::internal::CaptureStdout();
-  write_scalar_field_on_host_using_bucket_id_and_ordinal_and_size(stkField, 3.14);
-
-  read_scalar_field_on_device(stkField);
-
-  std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
-  check_no_warnings(stdoutString);
-}
-
-TEST_F(NgpDebugFieldSync, VectorAccessUsingBucketIdAndOrdinalAndSize_ProperlySyncToDevice_NoWarning)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-  stk::mesh::Field<double> & stkField = build_mesh_with_vector_field<double>("doubleScalarField", {{1, "Part1"},
-                                                                                                   {1, "Part2"}});
-
-  testing::internal::CaptureStdout();
-  write_vector_field_on_host_using_bucket_id_and_ordinal_and_size(stkField, 3.14);
-  stkField.modify_on_host();
-  stkField.sync_to_device();
-
-  read_vector_field_on_device(stkField);
-  std::string stdoutString = testing::internal::GetCapturedStdout();
-  check_no_warnings(stdoutString);
-}
-
-TEST_F(NgpDebugFieldSync, VectorAccessUsingBucketIdAndOrdinalAndSize_MissingAllModifySyncCallsToDevice_Warning)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-  stk::mesh::Field<double> & stkField = build_mesh_with_vector_field<double>("doubleVectorField", {{1, "Part1"},
-                                                                                                   {1, "Part2"}});
-
-  testing::internal::CaptureStdout();
-  write_vector_field_on_host_using_bucket_id_and_ordinal_and_size(stkField, 3.14);
-
-  read_vector_field_on_device(stkField);
-
-  std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[1]=11.000000");
-  check_no_warnings(stdoutString);
-}
 
 TEST_F(NgpDebugFieldSync, ScalarAccessUsingBucket_ProperlySyncToDevice_NoWarning)
 {
@@ -2006,6 +1619,136 @@ TEST_F(NgpDebugFieldSync, VectorIntAccessUsingBucket_MissingAllModifySyncCallsTo
   check_no_warnings(stdoutString);
 }
 
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingBucketIdAndOrdinal_ProperlySyncToDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_host_using_bucket_id_and_ordinal(stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.sync_to_device();
+
+  read_scalar_field_on_device(stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingBucketIdAndOrdinal_MissingAllModifySyncCallsToDevice_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_host_using_bucket_id_and_ordinal(stkField, 3.14);
+
+  read_scalar_field_on_device(stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, VectorAccessUsingBucketIdAndOrdinal_ProperlySyncToDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_vector_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+  write_vector_field_on_host_using_bucket_id_and_ordinal(stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.sync_to_device();
+
+  read_vector_field_on_device(stkField);
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, VectorAccessUsingBucketIdAndOrdinal_MissingAllModifySyncCallsToDevice_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_vector_field<double>("doubleVectorField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+  write_vector_field_on_host_using_bucket_id_and_ordinal(stkField, 3.14);
+
+  read_vector_field_on_device(stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[1]=11.000000");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingBucketIdAndOrdinalAndSize_ProperlySyncToDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_host_using_bucket_id_and_ordinal_and_size(stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.sync_to_device();
+
+  read_scalar_field_on_device(stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, ScalarAccessUsingBucketIdAndOrdinalAndSize_MissingAllModifySyncCallsToDevice_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_scalar_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_host_using_bucket_id_and_ordinal_and_size(stkField, 3.14);
+
+  read_scalar_field_on_device(stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, VectorAccessUsingBucketIdAndOrdinalAndSize_ProperlySyncToDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_vector_field<double>("doubleScalarField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+  write_vector_field_on_host_using_bucket_id_and_ordinal_and_size(stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.sync_to_device();
+
+  read_vector_field_on_device(stkField);
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync, VectorAccessUsingBucketIdAndOrdinalAndSize_MissingAllModifySyncCallsToDevice_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  stk::mesh::Field<double> & stkField = build_mesh_with_vector_field<double>("doubleVectorField", {{1, "Part1"},
+                                                                                                   {1, "Part2"}});
+
+  testing::internal::CaptureStdout();
+  write_vector_field_on_host_using_bucket_id_and_ordinal_and_size(stkField, 3.14);
+
+  read_vector_field_on_device(stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[1]=11.000000");
+  check_no_warnings(stdoutString);
+}
+
 
 TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_ProperlySyncToHost_NoWarning)
 {
@@ -2034,7 +1777,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MissingAllModifySyncCallsToHos
   read_scalar_field_on_host_using_entity(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  check_contains_file_name(stdoutString, "NgpDebugFieldSyncTest.cpp");
+  check_contains_file_name(stdoutString, "UnitTestNgpDebugFieldSync.cpp");
   check_contains_a_line_number(stdoutString);
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleScalarField[0]=10");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleScalarField[0]=20");
@@ -3184,7 +2927,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
                                                                                                    {1, "Part2"}});
 
   testing::internal::CaptureStdout();
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.modify_on_host();
@@ -3243,7 +2986,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
                                                                                                    {1, "Part2"}});
 
   testing::internal::CaptureStdout();
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.modify_on_host();
@@ -3622,7 +3365,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   read_scalar_field_on_device(stkField);
 
@@ -3676,7 +3419,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingBucketIdAndOrdinal_MeshModification_C
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
   write_scalar_field_on_host_using_bucket_id_and_ordinal(stkField, 3.14);
   read_scalar_field_on_device(stkField);
 
@@ -3730,7 +3473,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.clear_sync_state();
   read_scalar_field_on_device(stkField);
@@ -4044,7 +3787,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
   stk::mesh::NgpField<double, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   // The device Field is currently out-of-date, so our debugging code on the host side needs to not
   // mysteriously seg-fault before the user does the read on the Device side, where they will get
@@ -4180,7 +3923,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ModifyBucket_
   stk::mesh::NgpField<double, NgpDebugger> ngpFieldCopy = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   // The device Field is currently out-of-date, so our debugging code on the host side needs to not
   // mysteriously seg-fault before the user does the read on the Device side, where they will get
@@ -4255,7 +3998,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ModifyBucket_
   stk::mesh::NgpField<double, NgpDebugger> ngpFieldCopy = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
 
   testing::internal::CaptureStdout();
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   // The device Field is currently out-of-date, so our debugging code on the host side needs to not
   // mysteriously seg-fault before the user does the read on the Device side, where they will get
@@ -4407,7 +4150,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
   stkField.modify_on_device();
   stkField.sync_to_host();
 
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   read_scalar_field_on_host_using_entity(stkField);
 
@@ -4469,7 +4212,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
   stkField.modify_on_device();
   stkField.clear_sync_state();
 
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   read_scalar_field_on_host_using_entity(stkField);
 
@@ -4753,7 +4496,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
   testing::internal::CaptureStdout();
 
   write_scalar_field_on_device(stkField, 3.14);
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
@@ -4806,7 +4549,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
   testing::internal::CaptureStdout();
 
   write_scalar_field_on_device(stkField, 3.14);
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
   stkField.clear_sync_state();
   read_scalar_field_on_host_using_entity(stkField);
 
@@ -5059,8 +4802,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.modify_on_host();
@@ -5122,8 +4865,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.modify_on_host();
@@ -5246,8 +4989,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   write_scalar_field_on_host_using_entity(stkField, 3.14);
 
@@ -5307,8 +5050,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.clear_sync_state();
@@ -5425,8 +5168,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   write_scalar_field_on_host_using_entity(stkField, 3.14);
 
@@ -5551,8 +5294,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
   stkField.modify_on_device();
   stkField.sync_to_host();
 
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   read_scalar_field_on_host_using_entity(stkField);
 
@@ -5616,8 +5359,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
   stkField.modify_on_device();
   stkField.clear_sync_state();
 
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   read_scalar_field_on_host_using_entity(stkField);
 
@@ -5739,8 +5482,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
 
   write_scalar_field_on_device(stkField, 3.14);
 
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   read_scalar_field_on_host_using_entity(stkField);
 
@@ -5802,8 +5545,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoConsecutiveMeshModification
   write_scalar_field_on_device(stkField, 3.14);
   stkField.clear_sync_state();
 
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   read_scalar_field_on_host_using_entity(stkField);
 
@@ -5919,13 +5662,13 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.modify_on_host();
   stkField.sync_to_device();
   read_scalar_field_on_device(stkField);
 
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 2.18);
   stkField.modify_on_host();
   stkField.sync_to_device();
@@ -5993,13 +5736,13 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.modify_on_host();
   stkField.clear_sync_state();
   read_scalar_field_on_device(stkField);
 
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 2.18);
   stkField.modify_on_host();
   stkField.clear_sync_state();
@@ -6137,11 +5880,11 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   read_scalar_field_on_device(stkField);
 
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 2.18);
   read_scalar_field_on_device(stkField);
 
@@ -6206,12 +5949,12 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   stkField.clear_sync_state();
   read_scalar_field_on_device(stkField);
 
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 2.18);
   stkField.clear_sync_state();
   read_scalar_field_on_device(stkField);
@@ -6341,11 +6084,11 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
 
   testing::internal::CaptureStdout();
 
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 3.14);
   read_old_scalar_field_on_device(stkField, ngpField);
 
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
   write_scalar_field_on_host_using_entity(stkField, 2.18);
   read_old_scalar_field_on_device(stkField, ngpField);
 
@@ -6477,13 +6220,13 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
   write_scalar_field_on_device(stkField, 3.14);
   stkField.modify_on_device();
   stkField.sync_to_host();
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   write_scalar_field_on_device(stkField, 2.18);
   stkField.modify_on_device();
   stkField.sync_to_host();
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
@@ -6551,13 +6294,13 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
   write_scalar_field_on_device(stkField, 3.14);
   stkField.modify_on_device();
   stkField.clear_sync_state();
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   write_scalar_field_on_device(stkField, 2.18);
   stkField.modify_on_device();
   stkField.clear_sync_state();
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
@@ -6692,11 +6435,11 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
   testing::internal::CaptureStdout();
 
   write_scalar_field_on_device(stkField, 3.14);
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   write_scalar_field_on_device(stkField, 2.18);
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
@@ -6758,12 +6501,12 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_TwoMeshModifications_ChangeBuc
 
   write_scalar_field_on_device(stkField, 3.14);
   stkField.clear_sync_state();
-  modify_element_part_membership(VectorIdNameName{{3, "Part2", "Part1"}});
+  modify_element_part_membership({{3, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   write_scalar_field_on_device(stkField, 2.18);
   stkField.clear_sync_state();
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
   read_scalar_field_on_host_using_entity(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
@@ -6926,7 +6669,7 @@ TEST_F(NgpDebugFieldSync, DefaultDebugger_ScalarAccessUsingEntity_MeshModificati
                                                                                                                     {1, "Part2"}});
 
   testing::internal::CaptureStdout();
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   write_scalar_field_on_host_using_entity_default_debugger(stkField, 3.14);
   stkField.modify_on_host();
@@ -6950,7 +6693,7 @@ TEST_F(NgpDebugFieldSync, DefaultDebugger_ScalarAccessUsingEntity_MeshModificati
   stkField.modify_on_device();
   stkField.sync_to_host();
 
-  modify_element_part_membership(VectorIdNameName{{2, "Part2", "Part1"}});
+  modify_element_part_membership({{2, "Part2", "Part1"}});
 
   read_scalar_field_on_host_using_entity_default_debugger(stkField);
 

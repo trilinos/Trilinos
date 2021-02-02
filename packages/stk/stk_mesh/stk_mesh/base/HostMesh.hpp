@@ -41,6 +41,7 @@
 #include "stk_mesh/baseImpl/BucketRepository.hpp"
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_mesh/base/Types.hpp"
+#include "stk_mesh/base/NgpTypes.hpp"
 #include "stk_topology/topology.hpp"
 #include <Kokkos_Core.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -54,8 +55,6 @@
 
 namespace stk {
 namespace mesh {
-
-using DeviceCommMapIndices = Kokkos::View<stk::mesh::FastMeshIndex*, stk::mesh::MemSpace>;
 
 struct HostMeshIndex
 {

@@ -4,6 +4,7 @@
 #include "stk_util/stk_config.h"
 #include "stk_mesh/base/Selector.hpp"
 #include "stk_mesh/base/NgpSpaces.hpp"
+#include "stk_mesh/base/NgpTypes.hpp"
 #include <stddef.h>
 
 namespace stk {
@@ -38,18 +39,6 @@ public:
   virtual void debug_detect_device_field_modification() = 0;
   virtual unsigned debug_get_bucket_offset(unsigned bucketOrdinal) const = 0;
 };
-
-#ifdef KOKKOS_ENABLE_CUDA
-#define ORDER_INDICES(i,j) j,i
-#else
-#define ORDER_INDICES(i,j) i,j
-#endif
-
-template <typename T>
-using FieldDataDeviceViewType = Kokkos::View<T***, Kokkos::LayoutRight, MemSpace>;
-
-template <typename T>
-using FieldDataHostViewType = Kokkos::View<T***, Kokkos::LayoutRight, HostPinnedSpace>;
 
 }
 }

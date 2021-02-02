@@ -11,7 +11,7 @@
 
 std::string app_name()
 {
-  return "Mock-Salinas";
+  return "Mock-Fuego";
 }
 
 int main(int argc, char** argv)
@@ -44,11 +44,6 @@ int main(int argc, char** argv)
 
   myInfo.set_value(stk::coupling::AppName, app_name());
 
-  myInfo.set_value(stk::coupling::InitialTime, 0.0);
-  myInfo.set_value("current time", 0.0);
-  myInfo.set_value(stk::coupling::TimeStep, 0.0);
-  myInfo.set_value(stk::coupling::FinalTime, 0.0);
-
   const stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
 
   {
@@ -57,22 +52,30 @@ int main(int argc, char** argv)
     if(myWorldRank == rootRanks.first) std::cout << os.str() << std::endl;
   }
 
-  double currentTime = 0.0;
-  double finalTime = 1.0;
-  while (currentTime < finalTime) {
+
+  constexpr int numberOfSteps = 10;
+
+  double initialTime = 0.0;
+  double timeStep = 0.005;
+  double finalTime = numberOfSteps * timeStep;
+  for(int step = 0; step <= numberOfSteps; ++step) {
+    double currentTime = initialTime + step*timeStep;
+
+    myInfo.set_value("step", step);
+    myInfo.set_value("current time", currentTime);
+    myInfo.set_value(stk::coupling::FinalTime, finalTime);
 
     const stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
 
-    currentTime = otherInfo.get_value<double>("current time");
-    finalTime = otherInfo.get_value<double>(stk::coupling::FinalTime);
-
     std::ostringstream os;
-    os << app_name() << ": current time: " << currentTime << ", final time: " << finalTime;
+    os << app_name() << ": current time: " << currentTime;
     if(myWorldRank == rootRanks.first) std::cout << os.str() << std::endl;
-    if(otherInfo.has_value<std::string>("time step status") && otherInfo.get_value<std::string>("time step status") == "end") {
-      if(myWorldRank == rootRanks.first) std::cout << app_name() << " ending because other app ending" << std::endl;
-      break;
-    }
+  }
+  
+  {
+    std::ostringstream os;
+    os << app_name() << " finished, final time: " << finalTime << std::endl;
+    if(myWorldRank == rootRanks.first) std::cout << os.str();
   }
 
   stk::parallel_machine_finalize();

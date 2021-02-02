@@ -7,25 +7,29 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef STK_COUPLING_COMM_SPLITTING_HPP
-#define STK_COUPLING_COMM_SPLITTING_HPP
+#ifndef STK_COUPLING_CONSTANTS_HPP
+#define STK_COUPLING_CONSTANTS_HPP
 
-#include <stk_util/parallel/Parallel.hpp>
 #include <string>
-#include <utility>
 
 namespace stk
 {
 namespace coupling
 {
 
-std::pair<int, int> calc_my_root_and_other_root_ranks(MPI_Comm global, MPI_Comm local);
+enum SyncMode {
+  Minimum = 0,
+  Receive,
+  Send
+};
 
-bool has_split_comm(MPI_Comm global, MPI_Comm local);
-
-MPI_Comm split_comm(MPI_Comm parentCommunicator, int color);
+static const std::string AppName = "Application Name";
+static const std::string TimeSyncMode = "Time Sync Mode";
+static const std::string InitialTime = "Initial Time";
+static const std::string TimeStep = "Time Step";
+static const std::string FinalTime = "Final Time";
 
 }
 }
 
-#endif /* STK_COUPLING_COMM_SPLITTING_HPP */
+#endif /* STK_COUPLING_CONSTANTS_HPP */

@@ -6,31 +6,29 @@
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
-#ifndef MOCK_CONFIGURATION_INFO_HPP
-#define MOCK_CONFIGURATION_INFO_HPP
 
-#include <map>
+#ifndef STK_COUPLING_UTILS_HPP
+#define STK_COUPLING_UTILS_HPP
+
+#include <stk_coupling/Constants.hpp>
 #include <string>
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/parallel/ParallelComm.hpp> // for CommBuffer
+#include <iostream>
+#include <utility>
 
-namespace mock_coupling
+namespace stk
+{
+namespace coupling
 {
 
-class ConfigurationInfo
-{
-public:
-  std::map<std::string, double> dvals;
-  std::map<std::string, int> ivals;
-  std::map<std::string, std::string> svals;
+SyncMode get_time_sync_mode(int argc, char** argv, const std::string& argName);
 
-  ConfigurationInfo exchange(stk::ParallelMachine global, stk::ParallelMachine local);
+int string_to_color(const std::string& appString);
 
-private:
-  void pack(stk::CommBuffer & b) const;
-  void unpack(stk::CommBuffer & b);
-};
+SyncMode string_to_sync_mode(const std::string& syncModeString);
+
+std::ostream& operator<<(std::ostream& os, const SyncMode & mode);
 
 }
+}
 
-#endif /* MOCK_CONFIGURATION_INFO_HPP */
+#endif /* STK_COUPLING_UTILS_HPP */

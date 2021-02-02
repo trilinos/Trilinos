@@ -181,6 +181,12 @@ StkFieldSyncDebugger::set_lost_device_field_data_view(const ScalarUvmType<bool>&
 }
 
 void
+StkFieldSyncDebugger::set_bucket_offset_view(const UnsignedViewType::HostMirror & hostSelectedBucketOffset) const
+{
+  m_hostSelectedBucketOffset = hostSelectedBucketOffset;
+}
+
+void
 StkFieldSyncDebugger::mark_data_initialized() const
 {
   m_isDataInitialized = true;
@@ -261,7 +267,8 @@ StkFieldSyncDebugger::set_last_modification(const Entity & entity, unsigned comp
   }
   else {
     const MeshIndex & index = bulk.mesh_index(entity);
-    m_debugFieldLastModification(index.bucket->bucket_id(), ORDER_INDICES(index.bucket_ordinal, component)) = location;
+    m_debugFieldLastModification(m_hostSelectedBucketOffset(index.bucket->bucket_id()),
+                                 ORDER_INDICES(index.bucket_ordinal, component)) = location;
   }
 }
 
@@ -358,7 +365,7 @@ StkFieldSyncDebugger::data_is_stale_on_host(const Entity& entity, unsigned compo
   }
   else {
     const MeshIndex & index = bulk.mesh_index(entity);
-    return !(m_debugFieldLastModification(index.bucket->bucket_id(),
+    return !(m_debugFieldLastModification(m_hostSelectedBucketOffset(index.bucket->bucket_id()),
                                           ORDER_INDICES(index.bucket_ordinal, component)) & LastModLocation::HOST);
   }
 }

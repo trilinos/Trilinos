@@ -61,6 +61,7 @@ local installed-developer-files =
   stk_integration_tests
   mock_aria
   mock_salinas
+  mock_fuego
   mock_sparc
   ;
 
@@ -141,7 +142,6 @@ exe mock_sparc
   :
     [ glob 
         $(stk_integration_tests-root)/mock_apps/mock_sparc.cpp 
-        $(stk_integration_tests-root)/mock_apps/ConfigurationInfo.cpp 
     ]
     /sierra/stk_coupling//stk_coupling
     /sierra/stk_util//stk_util_parallel
@@ -152,7 +152,6 @@ exe mock_aria
   :
     [ glob 
         $(stk_integration_tests-root)/mock_apps/mock_aria.cpp 
-        $(stk_integration_tests-root)/mock_apps/ConfigurationInfo.cpp 
     ]
     /sierra/stk_coupling//stk_coupling
     /sierra/stk_util//stk_util_parallel
@@ -163,7 +162,16 @@ exe mock_salinas
   :
     [ glob 
         $(stk_integration_tests-root)/mock_apps/mock_salinas.cpp 
-        $(stk_integration_tests-root)/mock_apps/ConfigurationInfo.cpp 
+    ]
+    /sierra/stk_coupling//stk_coupling
+    /sierra/stk_util//stk_util_parallel
+  : <tag>@sierra-exec-tag
+  ;
+
+exe mock_fuego
+  :
+    [ glob 
+        $(stk_integration_tests-root)/mock_apps/mock_fuego.cpp 
     ]
     /sierra/stk_coupling//stk_coupling
     /sierra/stk_util//stk_util_parallel

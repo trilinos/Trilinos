@@ -40,6 +40,7 @@
 #include "stk_mesh/base/Bucket.hpp"
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_mesh/base/Types.hpp"
+#include "stk_mesh/base/NgpTypes.hpp"
 #include "stk_topology/topology.hpp"
 #include <Kokkos_Core.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -53,21 +54,6 @@
 
 namespace stk {
 namespace mesh {
-
-using DeviceCommMapIndices = Kokkos::View<stk::mesh::FastMeshIndex*, stk::mesh::MemSpace>;
-
-using EntityKeyViewType         = Kokkos::View<stk::mesh::EntityKey*, MemSpace>;
-using EntityViewType            = Kokkos::View<stk::mesh::Entity*, MemSpace>;
-using BucketConnectivityType    = Kokkos::View<stk::mesh::Entity**, MemSpace>;
-using UnsignedViewType          = Kokkos::View<unsigned*, MemSpace>;
-using BoolViewType              = Kokkos::View<bool*, MemSpace>;
-using OrdinalViewType           = Kokkos::View<stk::mesh::ConnectivityOrdinal*, MemSpace>;
-using PartOrdinalViewType       = Kokkos::View<stk::mesh::PartOrdinal*, MemSpace>;
-using PermutationViewType       = Kokkos::View<stk::mesh::Permutation*, MemSpace>;
-using FastSharedCommMapViewType = Kokkos::View<stk::mesh::FastMeshIndex*, MemSpace>;
-using HostMeshIndexType         = Kokkos::View<stk::mesh::FastMeshIndex*>::HostMirror;
-using MeshIndexType             = Kokkos::View<const stk::mesh::FastMeshIndex*, MemSpace,
-                                               Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
 
 class DeviceMesh;
 

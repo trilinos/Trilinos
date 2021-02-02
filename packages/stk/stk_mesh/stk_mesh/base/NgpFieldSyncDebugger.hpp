@@ -147,9 +147,6 @@ public:
     lostDeviceFieldData() = false;
     anyPotentialDeviceFieldModification() = false;
 
-    debugHostSelectedBucketOffset = ngpField->newHostSelectedBucketOffset;
-    debugDeviceSelectedBucketOffset = ngpField->newDeviceSelectedBucketOffset;
-
     Kokkos::deep_copy(lastFieldValue, ngpField->deviceData);
 
     reset_last_modification_state(LastModLocation::HOST_OR_DEVICE);
@@ -369,8 +366,6 @@ public:
     ngpField->construct_new_index_view(allBuckets);
     construct_debug_views(ngpField, allBuckets, buckets, numPerEntity);
 
-    debugHostSelectedBucketOffset = ngpField->newHostSelectedBucketOffset;
-    debugDeviceSelectedBucketOffset = ngpField->newDeviceSelectedBucketOffset;
     isFieldLayoutConsistent = false;
   }
 
@@ -382,22 +377,13 @@ public:
 private:
   template <typename NgpField>
   void construct_debug_views(NgpField* ngpField, const BucketVector & allBuckets, const BucketVector & buckets, unsigned numPerEntity) {
-    if (buckets.size() != allBuckets.size()) {
-      ThrowErrorMsg("Field Sync Debugging is not supported with partial Field allocations.");
-    }
-
     const stk::mesh::FieldBase & stkField = *ngpField->hostField;
 
     if (buckets.size() != 0) {
-      FieldDataDeviceViewType<T> tempLastFieldValue = FieldDataDeviceViewType<T>(stkField.name()+"_lastValue", buckets.size(),
-                                                                                 ORDER_INDICES(ngpField->bucketCapacity, numPerEntity));
-      LastFieldModLocationType tempLastFieldModLocation = LastFieldModLocationType(stkField.name()+"_lastModLocation", buckets.size(),
-                                                                                   ORDER_INDICES(ngpField->bucketCapacity, numPerEntity));
-      HostArrayType<unsigned> tempLastMeshModBucketId = HostArrayType<unsigned>("lastMeshModBucketId", allBuckets.size());
-
-      lastFieldValue = tempLastFieldValue;
-      lastFieldModLocation = tempLastFieldModLocation;
-      lastMeshModBucketId = tempLastMeshModBucketId;
+      lastFieldValue = FieldDataDeviceViewType<T>(stkField.name()+"_lastValue", buckets.size(),
+                                                  ORDER_INDICES(ngpField->bucketCapacity, numPerEntity));
+      lastFieldModLocation = LastFieldModLocationType(stkField.name()+"_lastModLocation", buckets.size(),
+                                                      ORDER_INDICES(ngpField->bucketCapacity, numPerEntity));
     }
 
     if (fieldName.extent(0) == 0u) {
@@ -407,8 +393,12 @@ private:
       anyPotentialDeviceFieldModification = ScalarUvmType<bool>(stkField.name()+"_anyPotentialDeviceFieldMod");
     }
 
+    debugHostSelectedBucketOffset = ngpField->newHostSelectedBucketOffset;
+    debugDeviceSelectedBucketOffset = ngpField->newDeviceSelectedBucketOffset;
+
     m_stkFieldSyncDebugger->set_last_modification_view(lastFieldModLocation);
     m_stkFieldSyncDebugger->set_lost_device_field_data_view(lostDeviceFieldData);
+    m_stkFieldSyncDebugger->set_bucket_offset_view(debugHostSelectedBucketOffset);
     m_stkFieldSyncDebugger->mark_data_initialized();
   }
 
@@ -433,20 +423,18 @@ private:
 
   STK_INLINE_FUNCTION
   bool data_is_stale_on_device(const stk::mesh::FastMeshIndex & index, int component) const {
-    return !(lastFieldModLocation(index.bucket_id, ORDER_INDICES(index.bucket_ord, component)) &
-             LastModLocation::DEVICE);
+    return data_is_stale_on_device(index.bucket_id, index.bucket_ord, component);
   }
 
   STK_INLINE_FUNCTION
   bool data_is_stale_on_device(const stk::mesh::DeviceMesh::MeshIndex & index, int component) const {
-    return !(lastFieldModLocation(index.bucket->bucket_id(), ORDER_INDICES(index.bucketOrd, component)) &
-             LastModLocation::DEVICE);
+    return data_is_stale_on_device(index.bucket->bucket_id(), index.bucketOrd, component);
   }
 
   STK_INLINE_FUNCTION
   bool data_is_stale_on_device(int bucketId, int bucketOrdinal, int component) const {
-    return !(lastFieldModLocation(bucketId, ORDER_INDICES(bucketOrdinal, component)) &
-             LastModLocation::DEVICE);
+    return !(lastFieldModLocation(debugDeviceSelectedBucketOffset(bucketId),
+                                  ORDER_INDICES(bucketOrdinal, component)) & LastModLocation::DEVICE);
   }
 
   STK_INLINE_FUNCTION
@@ -466,15 +454,15 @@ private:
   void print_stale_data_warning(NgpField* ngpField, unsigned bucketId, unsigned bucketOrdinal, int component,
                                 const char * fileName, int lineNumber) const
   {
+    const double currentValue = ngpField->deviceData(debugDeviceSelectedBucketOffset(bucketId),
+                                                     ORDER_INDICES(bucketOrdinal, component));
     if (lineNumber == -1) {
       printf("*** WARNING: Accessing stale data on Device for Field %s[%i]=%f\n",
-             fieldName.data(), component,
-             static_cast<double>(ngpField->deviceData(bucketId, ORDER_INDICES(bucketOrdinal, component))));
+             fieldName.data(), component, currentValue);
     }
     else {
       printf("%s:%i *** WARNING: Accessing stale data on Device for Field %s[%i]=%f\n",
-             fileName, lineNumber, fieldName.data(), component,
-             static_cast<double>(ngpField->deviceData(bucketId, ORDER_INDICES(bucketOrdinal, component))));
+             fileName, lineNumber, fieldName.data(), component, currentValue);
     }
   }
 
@@ -501,7 +489,6 @@ private:
   ScalarUvmType<size_t> hostSynchronizedCount;
   ScalarUvmType<bool> lostDeviceFieldData;
   ScalarUvmType<bool> anyPotentialDeviceFieldModification;
-  HostArrayType<unsigned> lastMeshModBucketId;
   LastFieldModLocationType lastFieldModLocation;
   FieldDataDeviceViewType<T> lastFieldValue;
   typename UnsignedViewType::HostMirror debugHostSelectedBucketOffset;

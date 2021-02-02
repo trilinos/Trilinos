@@ -34,6 +34,7 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, ASSERT_TRUE, etc
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_coupling/Utils.hpp>
 #include <stk_coupling/CommSplitting.hpp>
 #include <stdexcept>
 
@@ -51,94 +52,26 @@ TEST(UnitTestSplitComm, has_split_comm_true_when_different)
   EXPECT_TRUE(stk::coupling::has_split_comm(MPI_COMM_WORLD, MPI_COMM_SELF));
 }
 
-struct Args
+
+TEST(UnitTestSplitComm, string_to_color_empty_string_throw)
 {
-  Args(const std::vector<std::string>& strArgs = std::vector<std::string>())
-   : stringArgs(strArgs),
-     argc(stringArgs.size()),
-     argv(strArgs.empty() ? nullptr : new char*[argc])
-  {
-     for(int i=0; i<argc; ++i) {
-       argv[i] = const_cast<char*>(stringArgs[i].c_str());
-     }
-  }
-
-  ~Args()
-  {
-    delete [] argv;
-  }
-
-  const std::vector<std::string> stringArgs;
-  int argc;
-  char** argv;
-};
-
-TEST(UnitTestSplitComm, get_app_color_null)
-{
-  Args args;
-  std::pair<bool,int> expectedResult(false,0);
-  std::pair<bool,int> result = stk::coupling::get_app_color(args.argc, args.argv);
-  EXPECT_EQ(expectedResult, result);
+  std::string empty;
+  EXPECT_THROW(stk::coupling::string_to_color(empty), std::logic_error);
 }
 
-TEST(UnitTestSplitComm, get_app_color_bad_arg)
+TEST(UnitTestSplitComm, string_to_color_is_not_random)
 {
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
-
-  int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  Args args({"exe", "--garbage-color", std::to_string(myRank)});
-
-  std::pair<bool,int> expectedResult(false,0);
-  testing::internal::CaptureStderr();
-  std::pair<bool,int> result = stk::coupling::get_app_color(args.argc, args.argv);
-  testing::internal::GetCapturedStderr();
-  EXPECT_EQ(expectedResult, result);
+  std::string str("arbitraryString");
+  int firstColor = stk::coupling::string_to_color(str);
+  EXPECT_EQ(firstColor, stk::coupling::string_to_color(str));
 }
 
-TEST(UnitTestSplitComm, get_app_color_no_value)
+TEST(UnitTestSplitComm, string_to_color_nominal)
 {
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
-
-  Args args({"exe", "--app-color"});
-
-  testing::internal::CaptureStderr();
-  EXPECT_THROW(stk::coupling::get_app_color(args.argc, args.argv),std::runtime_error);
-  testing::internal::GetCapturedStderr();
-}
-
-TEST(UnitTestSplitComm, get_app_color_non_int_value)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
-
-  Args args({"exe", "--app-color", "foo"});
-
-  EXPECT_THROW(stk::coupling::get_app_color(args.argc, args.argv),std::logic_error);
-}
-
-TEST(UnitTestSplitComm, get_app_color_default_arg_name)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
-
-  int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  Args args({"exe", "--app-color", std::to_string(myRank)});
-
-  int expectedColor = myRank;
-  std::pair<bool,int> expectedResult(true,expectedColor);
-  std::pair<bool,int> result = stk::coupling::get_app_color(args.argc, args.argv);
-  EXPECT_EQ(expectedResult, result);
-}
-
-TEST(UnitTestSplitComm, get_app_color_specified_arg_name)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
-
-  int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  Args args({"exe", "--my-color", std::to_string(myRank)});
-
-  int expectedColor = myRank;
-  std::pair<bool,int> expectedResult(true,expectedColor);
-  std::pair<bool,int> result = stk::coupling::get_app_color(args.argc, args.argv, "my-color");
-  EXPECT_EQ(expectedResult, result);
+  std::string appString1("myApp"), appString2("myOtherApp");
+  EXPECT_NE(stk::coupling::string_to_color(appString1), stk::coupling::string_to_color(appString2));
+  EXPECT_TRUE(0 <= stk::coupling::string_to_color(appString1));
+  EXPECT_TRUE(0 <= stk::coupling::string_to_color(appString2));
 }
 
 TEST(UnitTestSplitComm, split_comm_np1)

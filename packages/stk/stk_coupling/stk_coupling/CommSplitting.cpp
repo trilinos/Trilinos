@@ -15,28 +15,14 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <functional>
+#include <limits>
 #include <cctype>
 
 namespace stk
 {
 namespace coupling
 {
-
-std::pair<bool,int> get_app_color(int argc, char** argv, const std::string& argName)
-{
-  CommandLineParser parser;
-  int color = 0;
-  parser.add_optional<int>(argName, "Color for MPMD coupling", color);
-  CommandLineParser::ParseState parseResult = parser.parse(argc, const_cast<const char**>(argv));
-  if (parseResult == CommandLineParser::ParseComplete && parser.is_option_parsed(argName)) {
-    return std::make_pair<bool,int>(true, parser.get_option_value<int>(argName));
-  }
-  if (parseResult == CommandLineParser::ParseError) {
-    ThrowErrorMsg("Failed to parse for --"<<argName);
-  }
-  std::pair<bool,int> result(false, 0);
-  return result;
-}
 
 MPI_Comm split_comm(MPI_Comm parentCommunicator, int color)
 {

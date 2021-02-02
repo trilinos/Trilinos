@@ -38,6 +38,7 @@
 #include "FieldSyncDebugging.hpp"
 #include "Entity.hpp"
 #include "Bucket.hpp"
+#include "NgpTypes.hpp"
 #include <cstddef>
 #include <vector>
 
@@ -76,8 +77,9 @@ public:
   void fill_last_mod_location_view_from_host();
   void fill_last_mod_location_field_from_device();
 
-  void set_last_modification_view(const LastFieldModLocationType& lastModView) const;
-  void set_lost_device_field_data_view(const ScalarUvmType<bool>& lostDeviceFieldDataView) const;
+  void set_last_modification_view(const LastFieldModLocationType & lastModView) const;
+  void set_lost_device_field_data_view(const ScalarUvmType<bool> & lostDeviceFieldDataView) const;
+  void set_bucket_offset_view(const UnsignedViewType::HostMirror & hostSelectedBucketOffset) const;
   void mark_data_initialized() const;
 
 private:
@@ -93,15 +95,16 @@ private:
   void store_last_entity_access_location(const Entity& entity) const;
   void store_last_bucket_access_location(const Bucket& bucket) const;
 
-  mutable const FieldBase*                m_stkField;
-  mutable LastFieldModLocationType        m_debugFieldLastModification;
-  mutable ScalarUvmType<bool>             m_lostDeviceFieldData;
-  mutable Entity                          m_lastFieldEntity = stk::mesh::Entity();
-  mutable std::vector<uint8_t>            m_lastFieldValue;
-  mutable std::vector<Entity>             m_lastFieldBucketEntities;
-  mutable std::vector<uint8_t>            m_lastFieldBucketValues;
-  mutable FieldBase*                      m_lastModLocationField = nullptr;
-  mutable bool                            m_isDataInitialized;
+  mutable const FieldBase*             m_stkField;
+  mutable LastFieldModLocationType     m_debugFieldLastModification;
+  mutable ScalarUvmType<bool>          m_lostDeviceFieldData;
+  mutable UnsignedViewType::HostMirror m_hostSelectedBucketOffset;
+  mutable Entity                       m_lastFieldEntity = stk::mesh::Entity();
+  mutable std::vector<uint8_t>         m_lastFieldValue;
+  mutable std::vector<Entity>          m_lastFieldBucketEntities;
+  mutable std::vector<uint8_t>         m_lastFieldBucketValues;
+  mutable FieldBase*                   m_lastModLocationField = nullptr;
+  mutable bool                         m_isDataInitialized;
 };
 
 }
