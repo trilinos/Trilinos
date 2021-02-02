@@ -125,9 +125,9 @@ namespace ExoModules {
 
     // Now we write the nodes
     unsigned num_nodes = this->gridList.size();
-    double * x         = new double[num_nodes]{0.0};
-    double * y         = new double[num_nodes]{0.0};
-    double * z         = new double[num_nodes]{0.0};
+    double * x         = new double[num_nodes];
+    double * y         = new double[num_nodes];
+    double * z         = new double[num_nodes];
     for (unsigned i = 0; i < num_nodes; i++) {
 
       N2EPoint3D crd = get<1>(this->gridList[i]);
