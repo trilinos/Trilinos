@@ -500,6 +500,15 @@ public:
   : lowerTriangularMatrix(lowerTriangularMatrix_),
     permMatrix(dist.getPermutationMatrix())
   {
+    // LowerTriangularBlockOperator requires the range map and domain map 
+    // to be the same.  Check it here.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      !lowerTriangularMatrix->getRangeMap()->isSameAs(
+                                        lowerTriangularMatrix->getDomainMap()), 
+       std::logic_error,
+       "The Domain and Range maps of the LowerTriangularBlock matrix "
+       "must be the same");
+    
     // Extract diagonals
 
     vector_t diagByRowMap(lowerTriangularMatrix->getRowMap());
