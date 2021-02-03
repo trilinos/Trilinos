@@ -92,9 +92,8 @@ set (TPL_Netcdf_LIBRARIES "-L${Netcdf_LIBRARY_DIRS}/lib;${Netcdf_LIBRARY_DIRS}/l
 
 set(CMAKE_CXX_FLAGS "-fPIC -Wall -Warray-bounds -Wchar-subscripts -Wcomment -Wenum-compare -Wformat -Wuninitialized -Wmaybe-uninitialized -Wmain -Wnarrowing -Wnonnull -Wparentheses -Wpointer-sign -Wreorder -Wreturn-type -Wsign-compare -Wsequence-point -Wtrigraphs -Wunused-function -Wunused-but-set-variable -Wunused-variable -Wwrite-strings" CACHE STRING "enable relocatable code, turn on WError settings")
 
-# -lifcore might be needed for CMake > 3.10.x builds. We failed on the Intel 17.x build with CMake 3.17 and
-# greater.
-# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lifcore" CACHE STRING "updated by Pull Request")
+# -lifcore is needed for CMake > 3.10.x builds.
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lifcore" CACHE STRING "updated by Pull Request")
 
 #set (Anasazi_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror" CACHE STRING "Warnings as errors setting")
 #set (Belos_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror" CACHE STRING "Warnings as errors setting")

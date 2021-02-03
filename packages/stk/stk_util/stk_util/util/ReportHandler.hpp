@@ -35,10 +35,11 @@
 #ifndef STK_UTIL_ENVIRONMENT_REPORTHANDLER_HPP
 #define STK_UTIL_ENVIRONMENT_REPORTHANDLER_HPP
 
-#include <sstream>                      // for ostringstream
-#include <string>                       // for string
-#include <Kokkos_Core.hpp>
-#include "stk_util/stk_kokkos_macros.h"
+#include "Kokkos_Core.hpp"
+#include "stk_util/stk_kokkos_macros.h"  // for STK_INLINE_FUNCTION
+#include <sstream>                       // for ostringstream
+#include <stdexcept>                     // for logic_error, runtime_error
+#include <string>                        // for operator+, allocator, string, char_traits
 
 namespace stk {
 

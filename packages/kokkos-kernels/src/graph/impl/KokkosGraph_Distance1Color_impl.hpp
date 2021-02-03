@@ -124,7 +124,13 @@ public:
       const_lno_nnz_view_t entries,
       HandleType *coloring_handle):
         nv (nv_), ne(ne_),xadj(row_map), adj (entries),
-        kok_src(), kok_dst(), cp(coloring_handle){}
+        kok_src(), kok_dst(), cp(coloring_handle)
+  {
+    static_assert(std::is_same<size_type, typename const_lno_row_view_t::non_const_value_type>::value,
+        "Row map element type does not match handle's size_type.");
+    static_assert(std::is_same<nnz_lno_t, typename const_lno_nnz_view_t::non_const_value_type>::value,
+        "Entries element type does not match handle's nnz_lno_t.");
+  }
 
   /** \brief GraphColor destructor.
    */

@@ -96,6 +96,7 @@ namespace KokkosBatched {
 				    A, as0, as1,
 				    A, as0, as1,
 				    norm, 1);
+	member.team_barrier();
 
       const bool finish_when_rank_found = (matrix_rank == -1);
       
@@ -158,7 +159,7 @@ namespace KokkosBatched {
 	  if (m_atl == 0) max_diag = ats::abs(A[0]);
 	  const value_type
 	    val_diag = ats::abs(A_part3x3.A11[0]),
-	    threshold(max_diag*ats::epsilon());
+	    threshold(10*max_diag*ats::epsilon());
 	  if (val_diag < threshold) {
 	    matrix_rank = m_atl;
 	    if (finish_when_rank_found)
@@ -171,6 +172,7 @@ namespace KokkosBatched {
 						    n_A22,
 						    A_part3x3.A12, as1,
 						    norm_part1x3.A2, 1);
+    member.team_barrier();
 	/// -----------------------------------------------------
         A_part2x2.mergeToATL  (A_part3x3);
         t_part2x1.mergeToAT   (t_part3x1);

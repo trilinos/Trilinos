@@ -34,7 +34,7 @@ TEST(StkIoHowTo, WriteRestartWithEdges)
         stk::mesh::create_edges(bulk, meta.universal_part(), part);
 
         stk::mesh::EntityVector edges;
-        stk::mesh::get_selected_entities(meta.universal_part(), bulk.buckets(stk::topology::EDGE_RANK), edges);
+        stk::mesh::get_entities(bulk, stk::topology::EDGE_RANK, meta.universal_part(), edges);
 
         for(auto edge : edges) {
           double* data = reinterpret_cast<double*>(stk::mesh::field_data(edgeField, edge));

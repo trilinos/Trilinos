@@ -36,17 +36,13 @@
 #ifndef STK_UTIL_PARALLEL_MPI_FILEBUF_HPP
 #define STK_UTIL_PARALLEL_MPI_FILEBUF_HPP
 
-#include <stk_util/stk_config.h>
+#include "stk_util/parallel/Parallel.hpp"  // for MPI_Comm, ompi_communicator_t
+#include <cstdio>                          // for size_t, EOF, FILE
+#include <ios>                             // for basic_streambuf<>::char_type, ios_base, ios_ba...
+#include <streambuf>
+#include <string>                          // for string
 
-#if defined( STK_HAS_MPI )
-#include "mpi.h"                        // for MPI_Comm, etc
-#endif
-#include <stddef.h>                     // for size_t
-#include <cstdio>                       // for NULL, EOF, FILE
-#include <ios>                          // for streambuf, ios_base, etc
-#include <string>                       // for string, streamsize
-
-namespace SEAMS{ class Aprepro; }
+namespace SEAMS { class Aprepro; }
 
 //: Specialize the ANSI Standard C++ streambuf class
 //: for a parallel file buffer.  The actual file is
@@ -113,6 +109,10 @@ public:
 
   //: Return number of aprepro parse errors detected
   int aprepro_parse_error_count() const {return aprepro_parsing_error_count;}
+  int aprepro_parse_warning_count() const {return aprepro_parsing_warning_count;}
+  const std::string& aprepro_parse_errors() const {return aprepro_errors;}
+  const std::string& aprepro_parse_warnings() const {return aprepro_warnings;}
+  const std::string& aprepro_parse_info() const {return aprepro_info;}
 protected:
 
   //: Called to refill the input buffer
@@ -139,10 +139,16 @@ private:
 
   bool    use_aprepro;        // If true, process through aprepro (input only)
   char *  aprepro_buffer;     // Buffer holding results of aprepro processing input file (root only)
+  std::string aprepro_warnings;  // (root only)
+  std::string aprepro_errors; // (root only)
+  std::string aprepro_info; // (root only)
   size_t  aprepro_buffer_len; // Length of aprepro buffer.
   size_t  aprepro_buffer_ptr; // Pointer to current location of data returned from aprepro_buffer.
-  int     aprepro_parsing_error_count; // Number of errors during parsing.
+  int     aprepro_parsing_error_count; 
+  int     aprepro_parsing_warning_count; 
   const std::string aprepro_defines;
+
+
 };
 
 /*--------------------------------------------------------------------*/

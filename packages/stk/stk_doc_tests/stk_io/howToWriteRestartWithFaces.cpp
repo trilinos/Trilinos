@@ -35,7 +35,7 @@ TEST(StkIoHowTo, WriteRestartWithFaceBlock)
         stk::mesh::create_all_sides(bulk, meta.universal_part(), {part}, connectFacesToEdges);
 
         stk::mesh::EntityVector faces;
-        stk::mesh::get_selected_entities(meta.universal_part(), bulk.buckets(stk::topology::FACE_RANK), faces);
+        stk::mesh::get_entities(bulk, stk::topology::FACE_RANK, meta.universal_part(), faces);
 
         for(auto face : faces) {
           double* data = reinterpret_cast<double*>(stk::mesh::field_data(faceField, face));

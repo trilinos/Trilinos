@@ -35,8 +35,10 @@
 #ifndef SIDESETENTRY_HPP_
 #define SIDESETENTRY_HPP_
 
-#include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/Part.hpp>
+#include <stk_mesh/base/Selector.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 
 namespace stk
@@ -48,13 +50,17 @@ class BulkData;
 
 struct SideSetEntry
 {
-  SideSetEntry() : element(stk::mesh::Entity()), side(stk::mesh::INVALID_CONNECTIVITY_ORDINAL){};
-  SideSetEntry(stk::mesh::Entity in_element, stk::mesh::ConnectivityOrdinal in_side)
-    : element(in_element),
-      side(in_side)
+  SideSetEntry()
+    : element(Entity()), side(INVALID_CONNECTIVITY_ORDINAL)
+  {  };
+  SideSetEntry(Entity in_element)
+    : element(in_element), side(INVALID_CONNECTIVITY_ORDINAL)
   {  }
-  SideSetEntry(stk::mesh::Entity in_element, int in_side)
-    : SideSetEntry(in_element, static_cast<stk::mesh::ConnectivityOrdinal>(in_side))
+  SideSetEntry(Entity in_element, ConnectivityOrdinal in_side)
+    : element(in_element), side(in_side)
+  {  }
+  SideSetEntry(Entity in_element, int in_side)
+    : SideSetEntry(in_element, static_cast<ConnectivityOrdinal>(in_side))
   {  }
 
   bool operator==(const SideSetEntry &rhs) const
@@ -76,8 +82,8 @@ struct SideSetEntry
       else return false;
   }
 
-  stk::mesh::Entity element;
-  stk::mesh::ConnectivityOrdinal side;
+  Entity element;
+  ConnectivityOrdinal side;
 };
 
 class SideSet
@@ -89,12 +95,18 @@ public:
     SideSet(const BulkData& bulk, const std::vector<SideSetEntry>& data, bool fromInput = false);
 
     bool is_from_input() const;
-    void add(const SideSetEntry& entry);
-    void add(stk::mesh::Entity element, stk::mesh::ConnectivityOrdinal side);
-    void add(const std::vector<SideSetEntry>& entries);
+    void set_from_input(bool fromInput = false);
 
-    bool contains(const SideSetEntry& entry) const;
-    bool contains(stk::mesh::Entity elem, stk::mesh::ConnectivityOrdinal side) const;
+    bool add(const SideSetEntry& entry);
+    bool add(Entity element, ConnectivityOrdinal side);
+    bool add(const std::vector<SideSetEntry>& entries);
+
+    bool contains(const SideSetEntry& entry) const {return std::binary_search(begin(), end(), entry);}
+
+    bool contains(Entity elem, ConnectivityOrdinal side) const
+    {
+        return contains(SideSetEntry{elem, side});
+    }
 
     SideSetEntry operator[](unsigned index) const;
     SideSet& operator=(const SideSet &rhs);
@@ -102,11 +114,11 @@ public:
     std::vector<SideSetEntry>::iterator erase(std::vector<SideSetEntry>::iterator iter);
     std::vector<SideSetEntry>::iterator erase(std::vector<SideSetEntry>::iterator begin, std::vector<SideSetEntry>::iterator end);
 
-    std::vector<SideSetEntry>::iterator begin();
-    std::vector<SideSetEntry>::iterator end();
+    std::vector<SideSetEntry>::iterator begin() {return m_data.begin();}
+    std::vector<SideSetEntry>::iterator end() {return m_data.end();}
 
-    std::vector<SideSetEntry>::const_iterator begin() const;
-    std::vector<SideSetEntry>::const_iterator end() const;
+    std::vector<SideSetEntry>::const_iterator begin() const {return m_data.begin();}
+    std::vector<SideSetEntry>::const_iterator end() const {return m_data.end();}
 
     void clear();
 
@@ -115,22 +127,79 @@ public:
 
     const std::string& get_name() const;
     void set_name(const std::string& name);
-    void set_part(const stk::mesh::Part* part);
-    const stk::mesh::Part* get_part() const;
+    void set_part(const Part* part);
+    const Part* get_part() const;
     size_t capacity() const { return m_data.capacity(); }
 
+    void set_accept_all_internal_non_coincident_entries(bool flag) {m_acceptAllInternalNonCoincidentEntries = flag;}
+    bool get_accept_all_internal_non_coincident_entries() const {return m_acceptAllInternalNonCoincidentEntries;}
+
+    bool is_modified() const {return m_isModified;}
+    void clear_modification_flag() {m_isModified = false;}
+
+    bool is_automatically_updated() const {return m_isAutomaticallyUpdated;}
+    void set_automatic_update(bool flag) {m_isAutomaticallyUpdated = flag;}
 
 private:
     const BulkData& m_bulk;
     bool m_fromInput;
     std::vector<SideSetEntry> m_data;
     std::string m_name;
-    const stk::mesh::Part * m_part = nullptr;
+    const Part * m_part = nullptr;
+    bool m_acceptAllInternalNonCoincidentEntries = true;
+    bool m_isModified = true;
+    bool m_isAutomaticallyUpdated = true;
 };
 
-typedef std::vector<SideSet*> SideSetVector;
 
-void remove_element_entries_from_sidesets(BulkData& mesh, const Entity entity, std::set<const stk::mesh::Part*> *touchedSidesetParts = nullptr);
+class SideSetSelector
+{
+public:
+  SideSetSelector(const Part& part, SideSet* sideset, const Selector* selector)
+  : m_part(&part)
+  , m_sideset(sideset)
+  , m_selector(selector)
+  { }
+
+  SideSetSelector(const SideSetSelector& rhs)
+  : m_part(rhs.m_part)
+  , m_sideset(rhs.m_sideset)
+  , m_selector(rhs.m_selector)
+  { }
+
+  inline bool operator<(const stk::mesh::SideSetSelector& rhs) const
+  {
+    if(m_sideset->get_part()->mesh_meta_data_ordinal() < rhs.m_sideset->get_part()->mesh_meta_data_ordinal()) {
+      return true;
+    }
+    return false;
+  }
+
+  inline bool operator!=( const stk::mesh::SideSetSelector& rhs ) const
+  {
+    return m_sideset->get_part()->mesh_meta_data_ordinal() != rhs.m_sideset->get_part()->mesh_meta_data_ordinal();
+  }
+
+  inline bool operator==( const stk::mesh::SideSetSelector& rhs ) const
+  {
+    return m_sideset->get_part()->mesh_meta_data_ordinal() == rhs.m_sideset->get_part()->mesh_meta_data_ordinal();
+  }
+
+  inline const Part&     part()     const {return *m_part;}
+  inline const SideSet*  sideset()  const {return  m_sideset;}
+  inline       SideSet*  sideset()        {return  m_sideset;}
+  inline const Selector* selector() const {return  m_selector;}
+
+private:
+  const Part* m_part = nullptr;
+  SideSet* m_sideset = nullptr;
+  const Selector* m_selector = nullptr;
+
+  SideSetSelector();
+};
+
+using SideSetVector = std::vector<SideSet*>;
+using SideSetSelectorVector = std::vector<SideSetSelector>;
 
 }
 }

@@ -1,0 +1,134 @@
+#---------------------------------------------------------------
+# Copyright (c) 2006--2017, National Technology & Engineering Solutions
+# of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+# NTESS, the U.S. Government retains certain rights in this software.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of NTESS nor the names of its contributors may
+#       be used to endorse or promote products derived from this
+#       software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#---------------------------------------------------------------
+
+#
+# The signature for Boost.build rules is described here:
+#
+# http://www.boost.org/build/doc/html/bbv2/overview/targets.html
+#
+#function-name main-target-name
+#    : sources
+#    : requirements
+#    : default-build
+#    : usage-requirements
+#    ;
+#
+#    * "main-target-name" is the name used to request the target
+#            on command line and to use it from other main targets.
+#            Main target name may contain alphanumeric characters and symbols '-' and '_';
+#    * "sources" is the list of source files and other main targets that must be combined.
+#    * "requirements" is the list of properties that must always be present
+#            when this main target is built.
+#    * "default-build" is the list of properties that will be used unless
+#            some other value of the same feature is already specified.
+#    * "usage-requirements" is the list of properties that will be propagated
+#            to all main targets that use this one, i.e. to all dependedents.
+#
+#
+# SECTION 1: Project definition
+#
+
+import set ;
+import path ;
+
+import os ;
+
+local stk_emend-root-inc ;
+stk_emend-root-inc = [ ifuserbuild $(sierra-root)/stk/stk_emend/include ]
+                     [ ifdevbuild $(stk_emend-root)/independent_set_lib ] ;
+
+project votd
+  : requirements
+    $(sierra-warnings)
+    <include>$(stk_emend-root-inc)
+    <address-model>64:<define>Build64
+  : usage-requirements
+    <include>$(stk_emend-root-inc)
+    <address-model>64:<define>Build64
+  : build-dir $(stk_emend-builddir)
+  ;
+
+explicit install-targets ;
+alias install-targets : ;
+
+explicit install-serial-targets ;
+alias install-serial-targets : ;
+
+explicit install-user-env ;
+alias install-user-env : install-user-jamfile
+                         install-user-include ;
+
+explicit install-user-jamfile ;
+install install-user-jamfile
+  : [ glob $(stk_emend-root)/Jamfile ]
+  : <location>$(install-root)/stk/stk_emend
+    <install-source-root>$(stk_emend-root)
+  ;
+
+explicit install-user-include ;
+install install-user-include
+  : [ path.glob-tree $(stk_emend-root)/independent_set_lib : *.h *.hpp ]
+  : <location>$(install-root)/stk/stk_emend/include
+  ;
+
+#this was copied from the Salinas Jamfile
+rule bjam-features-rule ( properties * )
+{
+  local toolset ;
+  local toolset_version ;
+  local variant ;
+
+  # ECHO "in bjam-features-rule" ;
+  for local p in $(properties)
+  {
+    # ECHO " $(p)" ;
+    local toolset_match = [ MATCH "<toolset>(.*)" : $(p) ] ;
+    if $(toolset_match) { toolset += $(toolset_match) ; }
+    else
+     { local toolset_version_match = [ MATCH "<toolset.*:version>(.*)" : $(p) ] ;
+       if $(toolset_version_match) { toolset_version += $(toolset_version_match) ; }
+       else
+       { local variant_match = [ MATCH "<variant>(.*)" : $(p) ] ;
+         if $(variant_match) { variant += $(variant_match) ; }
+       }
+     }
+  }
+  toolset_version ?= UNKNOWN ;
+  variant ?= UNKNOWN ;
+  local result = "<define>MORPH_BUILD_COMPILER=\"\\\"$(toolset)-$(toolset_version)-$(variant)\\\"\"" ;
+  # ECHO " $(result) " ;
+  return  $(result) ;
+}
+
+alias independent_set_lib
+  : # No sources defined for header-only libraries
+  : # No build requirements
+  : # No default build
+  :
+    <include>$(stk_emend-root-inc)
+  ;

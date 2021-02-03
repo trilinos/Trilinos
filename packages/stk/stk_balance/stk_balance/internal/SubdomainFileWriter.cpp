@@ -47,9 +47,8 @@ void write_subdomain_files(stk::mesh::BulkData &bulk, int numTarget, int mySubdo
     stk::balance::internal::SubdomainCreator subdomainCreator(bulk, numTarget);
     subdomainCreator.declare_all_subdomain_parts();
     stk::mesh::EntityVector elements;
-    stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(),
-                                     bulk.buckets(stk::topology::ELEM_RANK),
-                                     elements);
+    stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK,
+                           bulk.mesh_meta_data().locally_owned_part(), elements);
     bulk.modification_begin();
     if(mySubdomain >= 0)
         subdomainCreator.move_entities_into_subdomain_part(mySubdomain, elements);

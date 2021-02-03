@@ -1,6 +1,6 @@
 #include "Vertices.hpp"
 #include "privateDeclarations.hpp"
-#include "balanceUtils.hpp"
+#include "stk_balance/balanceUtils.hpp"
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>

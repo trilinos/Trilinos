@@ -36,7 +36,9 @@
 #include <stdexcept>                    // for runtime_error
 #include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io
 #include <stk_unit_test_utils/TextMesh.hpp>
+#include <stk_unit_test_utils/MeshFixture.hpp>
 #include <string>                       // for string
+#include <cstdlib>                   // for unsetenv, setenv
 
 #include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Comm, etc
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
@@ -46,6 +48,7 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Selector.hpp"
 #include "stk_mesh/base/Types.hpp"      // for PartVector
+#include "stk_mesh/baseImpl/Partition.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 
 namespace
@@ -212,6 +215,523 @@ TEST(UnitTestChangeParts, test_superset_and_subset_part_change)
         double* nodeData = (double*) stk::mesh::field_data(field, node);
         EXPECT_TRUE(nodeData == nullptr);
     }
+}
+
+class TestChangePartsWithSelector : public stk::unit_test_util::MeshFixture
+{
+public:
+  TestChangePartsWithSelector() : stk::unit_test_util::MeshFixture(3)
+  {
+    setenv("STK_MESH_RUN_CONSISTENCY_CHECK", "ON", 1);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  }
+
+  void setup_n_unranked_parts_n_elements(unsigned numBlockParts, unsigned numElem, stk::mesh::PartVector& parts)
+  {
+    std::string meshSpec = "generated:1x1x" + std::to_string(numElem);
+
+    for(unsigned i = 1; i < numBlockParts; i++) {
+      std::string partName = "block_" + std::to_string(i+1);
+      parts.push_back(&get_meta().declare_part(partName));
+    }
+    stk::io::fill_mesh(meshSpec, get_bulk());
+    parts.insert(parts.begin(), get_meta().get_part("block_1"));
+  }
+
+  void setup_n_ranked_parts_n_elements(unsigned numBlockParts, unsigned numElem, stk::mesh::PartVector& parts, std::string opt = "")
+  {
+    std::string meshSpec = "generated:1x1x" + std::to_string(numElem) + opt;
+
+    for(unsigned i = 1; i < numBlockParts; i++) {
+      std::string partName = "block_" + std::to_string(i+1);
+      parts.push_back(&get_meta().declare_part(partName, stk::topology::ELEM_RANK));
+    }
+    stk::io::fill_mesh(meshSpec, get_bulk());
+    parts.insert(parts.begin(), get_meta().get_part("block_1"));
+  }
+
+  void setup_n_ranked_parts_n_elements_with_faces(unsigned numBlockParts, unsigned numElem, stk::mesh::PartVector& parts)
+  {
+    setup_n_ranked_parts_n_elements(numBlockParts, numElem, parts, "|sideset:XxYyZz");
+  }
+
+  void insert_into_add_part(stk::mesh::Part* part)
+  {
+    addParts.push_back(part);
+  }
+
+  void insert_into_remove_part(stk::mesh::Part* part)
+  {
+    removeParts.push_back(part);
+  }
+
+  void clear_mod_part_vectors()
+  {
+    addParts.clear();
+    removeParts.clear();
+  }
+
+  void change_entity_parts(stk::mesh::Entity entity)
+  {
+    get_bulk().modification_begin();
+    EXPECT_NO_THROW(get_bulk().change_entity_parts(entity, addParts, removeParts));
+    get_bulk().modification_end();
+
+    clear_mod_part_vectors();
+  }
+
+  void change_entity_parts_with_selector(stk::mesh::Selector selector, stk::mesh::EntityRank rank)
+  {
+    EXPECT_NO_THROW(get_bulk().batch_change_entity_parts(selector, rank, addParts, removeParts));
+    clear_mod_part_vectors();
+  }
+
+  void test_entity_counts_in_parts(stk::mesh::Part* part, stk::mesh::EntityRank rank, unsigned expectedCountInPart)
+  {
+    unsigned entityCount = stk::mesh::count_entities(get_bulk(), rank, stk::mesh::Selector(*part));
+    EXPECT_EQ(expectedCountInPart, entityCount) << " unexpected entity count in " << part->name() << " " << rank << std::endl;
+  }
+
+  void test_bucket_count(stk::mesh::EntityRank, unsigned expectedBucketCount)
+  {
+    unsigned bucketCount = get_bulk().get_buckets(stk::topology::ELEM_RANK, get_meta().universal_part()).size();
+    EXPECT_EQ(expectedBucketCount, bucketCount);
+  }
+
+  void test_partitions_equality(stk::mesh::EntityRank rank, stk::mesh::Bucket const* bucket1, stk::mesh::Bucket const* bucket2)
+  {
+    stk::mesh::impl::Partition* partition1 = bucket1->getPartition();
+    stk::mesh::impl::Partition* partition2 = bucket2->getPartition();
+
+    EXPECT_EQ(partition1->size(), partition2->size());
+    EXPECT_EQ(partition1->num_buckets(), partition2->num_buckets());
+
+    const unsigned* key1 = partition1->key();
+    const unsigned* key2 = partition2->key();
+
+    EXPECT_EQ(key1[0], key2[0]);
+
+    if(key1[0] == key2[0]) {
+      for(unsigned i = 0; i < key1[0]; i++) {
+        EXPECT_EQ(key1[i], key2[i]);
+      }
+    }
+
+    for(auto it1 = partition1->begin(), it2 = partition2->begin();
+        it1 != partition1->end(); ++it1, ++it2) {
+
+      EXPECT_EQ((*it1)->bucket_id(), (*it2)->bucket_id());
+    }
+  }
+
+  stk::mesh::PartVector addParts, removeParts;
+};
+
+TEST_F(TestChangePartsWithSelector, element_in_ranked_part_remove_initial_part)
+{
+  if(get_bulk().parallel_size() > 1) { return; }
+
+  unsigned numBlockParts = 1;
+  unsigned numElem = 1;
+  stk::mesh::PartVector parts;
+  setup_n_unranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+
+  insert_into_remove_part(block1Part);
+  change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+
+  test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 0);
+  test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 0);
+}
+
+TEST_F(TestChangePartsWithSelector, element_in_ranked_part_to_new_unranked_part)
+{
+  if(get_bulk().parallel_size() > 1) { return; }
+
+  unsigned numBlockParts = 2;
+  unsigned numElem = 1;
+  stk::mesh::PartVector parts;
+  setup_n_unranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+
+  insert_into_add_part(block2Part);
+  insert_into_remove_part(block1Part);
+  change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+
+  test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 0);
+  test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 0);
+
+  test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 1);
+  test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 0);
+}
+
+TEST_F(TestChangePartsWithSelector, element_in_ranked_part_to_new_unranked_part_in_two_procs)
+{
+  if(get_bulk().parallel_size() != 2) { return; }
+
+  unsigned numBlockParts = 2;
+  unsigned numElem = 2;
+  stk::mesh::PartVector parts;
+  setup_n_unranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+
+  insert_into_add_part(block2Part);
+  insert_into_remove_part(block1Part);
+  change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+
+  test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 0);
+  test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 0);
+
+  test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 1);
+  test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 0);
+}
+
+TEST_F(TestChangePartsWithSelector, element_in_ranked_part_to_new_ranked_part_in_two_procs)
+{
+  if(get_bulk().parallel_size() != 2) { return; }
+
+  unsigned numBlockParts = 2;
+  unsigned numElem = 2;
+  stk::mesh::PartVector parts;
+  setup_n_ranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+
+  insert_into_add_part(block2Part);
+  insert_into_remove_part(block1Part);
+  change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+
+  test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 0);
+  test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 0);
+
+  test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 1);
+  test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 8);
+}
+
+TEST_F(TestChangePartsWithSelector, element_in_ranked_part_add_new_unranked_part)
+{
+  if(get_bulk().parallel_size() > 1) { return; }
+
+  unsigned numBlockParts = 2;
+  unsigned numElem = 1;
+  stk::mesh::PartVector parts;
+  setup_n_unranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+
+  insert_into_add_part(block2Part);
+  change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+
+  test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 1);
+  test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 8);
+
+  test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 1);
+  test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 0);
+}
+
+TEST_F(TestChangePartsWithSelector, element_in_ranked_part_remove_unranked_part)
+{
+  if(get_bulk().parallel_size() > 1) { return; }
+
+  unsigned numBlockParts = 2;
+  unsigned numElem = 1;
+  stk::mesh::PartVector parts;
+  setup_n_unranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+
+  {
+    insert_into_add_part(block2Part);
+
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, elements);
+    change_entity_parts(elements[0]);
+
+    test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 1);
+    test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 8);
+
+    test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 1);
+    test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 0);
+  }
+
+  insert_into_remove_part(block2Part);
+  change_entity_parts_with_selector(stk::mesh::selectUnion(stk::mesh::PartVector{block1Part, block2Part}), stk::topology::ELEM_RANK);
+
+  test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 1);
+  test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 8);
+
+  test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 0);
+  test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 0);
+}
+
+TEST_F(TestChangePartsWithSelector, element_in_ranked_part_add_new_ranked_part)
+{
+  if(get_bulk().parallel_size() > 1) { return; }
+
+  unsigned numBlockParts = 2;
+  unsigned numElem = 1;
+  stk::mesh::PartVector parts;
+  setup_n_ranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+
+  insert_into_add_part(block2Part);
+
+  change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+
+  test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 1);
+  test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 8);
+
+  test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 1);
+  test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 8);
+}
+
+TEST_F(TestChangePartsWithSelector, element_in_with_faces_ranked_part_add_new_ranked_part_remove_ranked_part)
+{
+  if(get_bulk().parallel_size() > 1) { return; }
+
+  unsigned numBlockParts = 2;
+  unsigned numElem = 2;
+  stk::mesh::PartVector parts;
+  setup_n_ranked_parts_n_elements_with_faces(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+
+  insert_into_add_part(block2Part);
+  insert_into_remove_part(block1Part);
+
+  change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+
+  test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 0);
+  test_entity_counts_in_parts(block1Part, stk::topology::FACE_RANK, 0);
+  test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 0);
+
+  test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 2);
+  test_entity_counts_in_parts(block2Part, stk::topology::FACE_RANK, 10);
+  test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 12);
+}
+
+TEST_F(TestChangePartsWithSelector, element_in_ranked_part_remove_ranked_part)
+{
+  if(get_bulk().parallel_size() > 1) { return; }
+
+  unsigned numBlockParts = 2;
+  unsigned numElem = 1;
+  stk::mesh::PartVector parts;
+  setup_n_ranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+
+  {
+    insert_into_add_part(block2Part);
+
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, elements);
+    change_entity_parts(elements[0]);
+
+    test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 1);
+    test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 8);
+
+    test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 1);
+    test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 8);
+  }
+
+  insert_into_remove_part(block1Part);
+  change_entity_parts_with_selector(stk::mesh::selectUnion(stk::mesh::PartVector{block1Part, block2Part}), stk::topology::ELEM_RANK);
+
+  test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 0);
+  test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 0);
+
+  test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 1);
+  test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 8);
+}
+
+TEST_F(TestChangePartsWithSelector, elements_in_different_ranked_parts_but_shared_nodes)
+{
+  if(get_bulk().parallel_size() > 1) { return; }
+
+  unsigned numBlockParts = 2;
+  unsigned numElem = 2;
+  stk::mesh::PartVector parts;
+  setup_n_ranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+
+  {
+    stk::mesh::Entity elemToMove = get_bulk().get_entity(stk::topology::ELEM_RANK, 2u);
+    EXPECT_TRUE(get_bulk().is_valid(elemToMove));
+    insert_into_add_part(block2Part);
+    insert_into_remove_part(block1Part);
+    change_entity_parts(elemToMove);
+
+    test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 1);
+    test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 8);
+
+    test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 1);
+    test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 8);
+
+    const stk::mesh::BucketVector& nodeBucketsUnion = get_bulk().get_buckets(stk::topology::NODE_RANK, stk::mesh::selectUnion(parts));
+    EXPECT_EQ(3u, nodeBucketsUnion.size());
+
+    const stk::mesh::BucketVector& nodeBucketsIntersection = get_bulk().get_buckets(stk::topology::NODE_RANK, stk::mesh::selectIntersection(parts));
+    EXPECT_EQ(1u, nodeBucketsIntersection.size());
+  }
+
+  insert_into_add_part(block2Part);
+  insert_into_remove_part(block1Part);
+  change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+
+  test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 0);
+  test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 0);
+
+  test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 2);
+  test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 12);
+}
+
+TEST_F(TestChangePartsWithSelector, element_in_ranked_part_add_new_to_ranked_part_no_conflicting_partitions)
+{
+  if(get_bulk().parallel_size() > 1) { return; }
+
+  unsigned numBlockParts = 2;
+  unsigned numElem = 2;
+  stk::mesh::PartVector parts;
+  setup_n_ranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+
+  {
+    insert_into_add_part(block2Part);
+    insert_into_remove_part(block1Part);
+
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, elements);
+    change_entity_parts(elements[1]);
+
+    test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 1);
+    test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 8);
+
+    test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 1);
+    test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 8);
+
+    test_bucket_count(stk::topology::ELEM_RANK, 2u);
+  }
+
+  insert_into_add_part(block2Part);
+  change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+
+  test_bucket_count(stk::topology::ELEM_RANK, 2u);
+
+  test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 1);
+  test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 8);
+
+  test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 2);
+  test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 12);
+}
+
+TEST_F(TestChangePartsWithSelector, element_in_ranked_part_move_to_unranked_part_conflicting_partitions)
+{
+  if(get_bulk().parallel_size() > 1) { return; }
+
+  unsigned numBlockParts = 2;
+  unsigned numElem = 2;
+  stk::mesh::PartVector parts;
+  setup_n_unranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+
+  {
+    insert_into_add_part(block2Part);
+    insert_into_remove_part(block1Part);
+
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, elements);
+    change_entity_parts(elements[1]);
+
+    test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 1);
+    test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 8);
+
+    test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 1);
+    test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 0);
+
+    test_bucket_count(stk::topology::ELEM_RANK, 2u);
+  }
+
+  insert_into_add_part(block2Part);
+  insert_into_remove_part(block1Part);
+  change_entity_parts_with_selector(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK);
+
+  test_entity_counts_in_parts(block1Part, stk::topology::ELEM_RANK, 0);
+  test_entity_counts_in_parts(block1Part, stk::topology::NODE_RANK, 0);
+
+  test_entity_counts_in_parts(block2Part, stk::topology::ELEM_RANK, 2);
+  test_entity_counts_in_parts(block2Part, stk::topology::NODE_RANK, 0);
+
+  test_bucket_count(stk::topology::ELEM_RANK, 2u);
+
+  const stk::mesh::BucketVector& buckets = get_bulk().buckets(stk::topology::ELEM_RANK);
+  test_partitions_equality(stk::topology::ELEM_RANK, buckets[0], buckets[1]);
+}
+
+TEST_F(TestChangePartsWithSelector, two_procs_with_different_selectors)
+{
+  if(get_bulk().parallel_size() != 2) { return; }
+
+  unsigned numBlockParts = 2;
+  unsigned numElem = 2;
+  stk::mesh::PartVector parts;
+  setup_n_ranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+
+  insert_into_add_part(block2Part);
+  insert_into_remove_part(block1Part);
+
+  stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
+
+  if(get_bulk().parallel_rank() == 0) {
+    EXPECT_ANY_THROW(get_bulk().batch_change_entity_parts(stk::mesh::Selector(*block1Part), rank, addParts, removeParts));
+  } else {
+    EXPECT_ANY_THROW(get_bulk().batch_change_entity_parts(stk::mesh::Selector(*block2Part), rank, addParts, removeParts));
+  }
+}
+
+TEST_F(TestChangePartsWithSelector, two_procs_with_different_parts)
+{
+  if(get_bulk().parallel_size() != 2) { return; }
+
+  unsigned numBlockParts = 3;
+  unsigned numElem = 2;
+  stk::mesh::PartVector parts;
+  setup_n_ranked_parts_n_elements(numBlockParts, numElem, parts);
+
+  stk::mesh::Part* block1Part = parts[0];
+  stk::mesh::Part* block2Part = parts[1];
+  stk::mesh::Part* block3Part = parts[2];
+
+  insert_into_remove_part(block1Part);
+  if(get_bulk().parallel_rank() == 0) {
+    insert_into_add_part(block2Part);
+  } else {
+    insert_into_add_part(block3Part);
+  }
+
+  stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
+  EXPECT_ANY_THROW(get_bulk().batch_change_entity_parts(stk::mesh::Selector(*block1Part), rank, addParts, removeParts));
 }
 
 }

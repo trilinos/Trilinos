@@ -33,8 +33,9 @@
 //
 
 #include "stk_util/util/GraphCycleDetector.hpp"
-#include "stk_util/util/SortAndUnique.hpp"
-#include "stk_util/util/ReportHandler.hpp"
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
+#include "stk_util/util/SortAndUnique.hpp"  // for insert_keep_sorted_and_unique
+#include <memory>                           // for allocator_traits<>::value_type
 
 namespace stk {
 namespace tools {

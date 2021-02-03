@@ -202,19 +202,11 @@ struct KokkosSPGEMM
 #endif
 #if defined( KOKKOS_ENABLE_OPENMP )
     case KokkosKernels::Impl::Exec_OMP:
-  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      return Kokkos::OpenMP::hardware_thread_id();
-  #else
       return Kokkos::OpenMP::impl_hardware_thread_id();
-  #endif
 #endif
 #if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
-  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      return Kokkos::Threads::hardware_thread_id();
-  #else
       return Kokkos::Threads::impl_hardware_thread_id();
-  #endif
 #endif
 #if defined( KOKKOS_ENABLE_QTHREAD)
     case KokkosKernels::Impl::Exec_QTHREADS:
@@ -222,6 +214,10 @@ struct KokkosSPGEMM
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
+      return row_index;
+#endif
+#if defined( KOKKOS_ENABLE_HIP )
+    case KokkosKernels::Impl::Exec_HIP:
       return row_index;
 #endif
     }
@@ -900,12 +896,13 @@ void KokkosSPGEMM
   const int num_left_side_nnz_per_row = 2;
   const nnz_lno_t * min_result_row_for_each_row = this->handle->get_spgemm_handle()->get_min_col_of_row().data();
   nnz_lno_t max_row_size = this->handle->get_spgemm_handle()->get_max_result_nnz();
+  constexpr bool exec_gpu = KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>();
 
   typedef KokkosKernels::Impl::UniformMemoryPool< MyTempMemorySpace, nnz_lno_t> pool_memory_space;
   int suggested_vector_size = this->handle->get_suggested_vector_size(this->b_row_cnt, bnnz);
 
   //this kernel does not really work well if the vector size is less than 4.
-  if (suggested_vector_size < 4 && MyEnumExecSpace == KokkosKernels::Impl::Exec_CUDA){
+  if (suggested_vector_size < 4 && exec_gpu) {
     if (KOKKOSKERNELS_VERBOSE) std::cout << "\tVecSize:" << suggested_vector_size << " Setting it to 4" << std::endl;
     suggested_vector_size = 4;
   }
@@ -966,31 +963,13 @@ void KokkosSPGEMM
     pool_init_val = 0;
   }
 
-  nnz_lno_t num_chunks = concurrency / suggested_vector_size;
   KokkosKernels::Impl::PoolType my_pool_type = KokkosKernels::Impl::OneThread2OneChunk;
-  if (MyEnumExecSpace == KokkosKernels::Impl::Exec_CUDA) {
+  if (exec_gpu) {
     my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
   }
+  nnz_lno_t num_chunks = this->template compute_num_pool_chunks<pool_memory_space>
+    (accumulator_chunksize * sizeof(nnz_lno_t), concurrency / suggested_vector_size);
 
-
-#if defined( KOKKOS_ENABLE_CUDA )
-  size_t free_byte ;
-  size_t total_byte ;
-  cudaMemGetInfo( &free_byte, &total_byte ) ;
-  size_t required_size = size_t (num_chunks) * accumulator_chunksize * sizeof(nnz_lno_t);
-  if (KOKKOSKERNELS_VERBOSE)
-    std::cout << "\tmempool required size:" << required_size << " free_byte:" << free_byte << " total_byte:" << total_byte << std::endl;
-  if (required_size + num_chunks > free_byte){
-    num_chunks = ((((free_byte - num_chunks)* 0.5) /8 ) * 8) / sizeof(nnz_lno_t) / accumulator_chunksize;
-  }
-  {
-    nnz_lno_t min_chunk_size = 1;
-    while (min_chunk_size * 2 < num_chunks) {
-      min_chunk_size *= 2;
-    }
-    num_chunks = min_chunk_size;
-  }
-#endif
   if (KOKKOSKERNELS_VERBOSE){
     std::cout <<  "\tPool Size (MB):" << (num_chunks * accumulator_chunksize * sizeof(nnz_lno_t)) / 1024. / 1024. <<
         " num_chunks:" << num_chunks <<
@@ -1040,9 +1019,7 @@ void KokkosSPGEMM
 
   timer1.reset();
 
-  //nnz_lno_t runcuda = atoi(getenv("runcuda"));
-
-  if (/*runcuda ||*/ MyEnumExecSpace == KokkosKernels::Impl::Exec_CUDA) {
+  if (exec_gpu) {
     Kokkos::parallel_for( gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
   }
   else {

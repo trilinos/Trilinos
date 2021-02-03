@@ -69,7 +69,7 @@ private:
 
 };
 
-// non-member constructor
+// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<InterpolatorLagrange<Scalar> > lagrangeInterpolator()
 {

@@ -32,15 +32,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/stk_config.h>
-#include <stk_util/environment/EnvData.hpp>
-#include <stk_util/parallel/Parallel.hpp>
-#include <time.h>                       // for time
-#include <iostream>                     // for cout, cerr
-#include <stk_util/environment/OutputLog.hpp>  // for register_ostream, etc
-#include <stk_util/environment/ProgramOptions.hpp>
-#include <stk_util/util/IndentStreambuf.hpp>  // for indent_streambuf
-#include "stk_util/util/Null_Streambuf.hpp"  // for null_streambuf
+#include "stk_util/environment/EnvData.hpp"
+#include "stk_util/environment/OutputLog.hpp"       // for register_ostream, unregister_ostream
+#include "stk_util/environment/ProgramOptions.hpp"  // for get_parsed_options
+#include "stk_util/parallel/Parallel.hpp"           // for MPI_COMM_NULL, MPI_Comm, ompi_communi...
+#include "stk_util/util/IndentStreambuf.hpp"        // for indent_streambuf
+#include "stk_util/util/Null_Streambuf.hpp"         // for null_streambuf
+#include <time.h>                                   // for time
+#include <iostream>                                 // for cout, cerr
 
 
 namespace stk {

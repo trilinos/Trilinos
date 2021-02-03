@@ -37,7 +37,7 @@
 
 //----------------------------------------------------------------------
 
-#include <stddef.h>                     // for size_t, NULL
+#include <stddef.h>                     // for size_t
 #include <stdint.h>                     // for uint16_t
 #include <algorithm>                    // for max
 #include <functional>                   // for less, equal_to
@@ -83,10 +83,13 @@ namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
 namespace stk { namespace mesh { class FaceCreator; } }
 namespace stk { namespace mesh { class ElemElemGraph; } }
 namespace stk { namespace mesh { class ElemElemGraphUpdater; } }
+namespace stk { namespace mesh { class NgpMeshBase; } }
 namespace stk { class CommSparse; }
 namespace stk { namespace mesh { class ModificationObserver; } }
 namespace stk { namespace io { class StkMeshIoBroker; } }
 namespace stk { namespace mesh { namespace impl { struct RelationEntityToNode; } } }
+namespace stk { namespace mesh { namespace impl { NgpMeshBase* get_ngp_mesh(const BulkData & bulk); } } }
+namespace stk { namespace mesh { namespace impl { void set_ngp_mesh(const BulkData & bulk, NgpMeshBase * ngpMesh); } } }
 
 #include "EntityCommListInfo.hpp"
 #include "EntityLess.hpp"
@@ -96,7 +99,6 @@ namespace stk { namespace mesh { namespace impl { struct RelationEntityToNode; }
 
 namespace stk {
 namespace mesh {
-class NgpMeshManager;
 struct PartStorage;
 struct SideSharingData;
 enum class FaceCreationBehavior;
@@ -105,6 +107,8 @@ enum class FaceCreationBehavior;
 namespace stk {
 namespace mesh {
 
+using ModEndOptimizationFlag = impl::MeshModification::modification_optimization;
+
 void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
 void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
 void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
@@ -112,12 +116,12 @@ void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector co
 void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
 void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
 bool process_killed_elements(stk::mesh::BulkData& bulkData,
-                             ElemElemGraph& elementGraph,
                              const stk::mesh::EntityVector& killedElements,
                              stk::mesh::Part& active,
                              stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
                              const stk::mesh::PartVector& parts_for_creating_side,
-                             const stk::mesh::PartVector& boundary_mesh_parts);
+                             const stk::mesh::PartVector& boundary_mesh_parts,
+                             ModEndOptimizationFlag deathModEndOpt);
 stk::mesh::Entity clone_element_side(stk::mesh::BulkData &bulk,
                                      stk::mesh::EntityId id,
                                      stk::mesh::Entity elem,
@@ -159,7 +163,6 @@ public:
   enum GhostingId { SHARED = 0, AURA = 1 };
   enum EntitySharing : char { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2, NOT_SHARED };
   enum AutomaticAuraOption { NO_AUTO_AURA, AUTO_AURA };
-  using ModEndOptimization = impl::MeshModification::modification_optimization;
 
   /** \brief  Construct mesh bulk data manager conformal to the given
    *          \ref stk::mesh::MetaData "meta data manager" and will
@@ -174,7 +177,7 @@ public:
 #ifdef SIERRA_MIGRATION
             , bool add_fmwk_data = false
 #endif
-            , FieldDataManager *field_dataManager = NULL
+            , FieldDataManager *field_dataManager = nullptr
             , unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity
             );
 
@@ -185,16 +188,13 @@ public:
   const MetaData & mesh_meta_data() const { return m_mesh_meta_data ; }
         MetaData & mesh_meta_data()       { return m_mesh_meta_data ; }
 
-  /** \brief  Acquire a reference to an NgpMesh that is targeted to build configuration.
-   *          Calling this method will automatically update the NgpMesh for you.
-   *          Do not store a persistent pointer or reference unless you are willing
-   *          to manually call update_ngp_mesh() when appropriate.
-   */
-  NgpMesh & get_updated_ngp_mesh() const;
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after February 2021
+  // Call stk::mesh::get_updated_ngp_mesh() instead from GetNgpMesh.hpp
+  STK_DEPRECATED NgpMesh & get_updated_ngp_mesh() const;
 
-  /** \brief  Perform manual update of a persistent NgpMesh instance.
-   */
-  void update_ngp_mesh() const;
+  // Call stk::mesh::get_updated_ngp_mesh() instead from GetNgpMesh.hpp and don't store return value
+  STK_DEPRECATED void update_ngp_mesh() const;
+#endif
 
   /** \brief  The parallel machine */
   ParallelMachine parallel() const { return m_parallel.parallel() ; }
@@ -247,6 +247,9 @@ public:
   bool modification_begin(const std::string description = std::string("UNSPECIFIED"))
   {
       ProfilingBlock block("mod begin:" + description);
+      if(m_meshModification.in_modifiable_state()) {
+        return false;
+      }
       notifier.notify_modification_begin();
       m_lastModificationDescription = description;
       return m_meshModification.modification_begin(description);
@@ -270,7 +273,7 @@ public:
    *              a parallel-consistent exception will be thrown.
    */
 
-  bool modification_end(ModEndOptimization modEndOpt = ModEndOptimization::MOD_END_SORT)
+  bool modification_end(ModEndOptimizationFlag modEndOpt = ModEndOptimizationFlag::MOD_END_SORT)
   {
       bool endStatus = false;
       {
@@ -446,11 +449,19 @@ public:
    */
   void batch_change_entity_parts( const stk::mesh::EntityVector& entities, // Mod Mark
                             const std::vector<PartVector>& add_parts,
-                            const std::vector<PartVector>& remove_parts);
+                            const std::vector<PartVector>& remove_parts,
+                            ModEndOptimizationFlag opt = ModEndOptimizationFlag::MOD_END_SORT);
 
   void batch_change_entity_parts( const stk::mesh::EntityVector& entities, // Mod Mark
                             const PartVector& add_parts,
-                            const PartVector& remove_parts);
+                            const PartVector& remove_parts,
+                            ModEndOptimizationFlag opt = ModEndOptimizationFlag::MOD_END_SORT);
+
+  void batch_change_entity_parts( const Selector& selector, // Mod Mark
+                            EntityRank rank,
+                            const PartVector& add_parts,
+                            const PartVector& remove_parts,
+                            ModEndOptimizationFlag opt = ModEndOptimizationFlag::MOD_END_SORT);
 
   /** \brief  Request the destruction an entity on the local process.
    *
@@ -797,7 +808,7 @@ public:
   // memoized version
   BucketVector const& get_buckets(EntityRank rank, Selector const& selector) const;
 
-#ifndef STK_HID_DEPRECATED_CODE // Delete after November 2020
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after November 2020
   // non-memoized version.
 STK_DEPRECATED  void get_buckets(EntityRank rank, Selector const& selector, BucketVector & output_buckets) const;
 
@@ -897,15 +908,16 @@ protected: //functions
                                                          const stk::mesh::EntityVector& deletedSides,
                                                          stk::mesh::ElemElemGraph &elementGraph,
                                                          const stk::mesh::EntityVector &killedElements,
-                                                         stk::mesh::Part &activePart);
+                                                         stk::mesh::Part &activePart,
+                                                         ModEndOptimizationFlag opt);
 
   void make_mesh_parallel_consistent_after_skinning(const std::vector<sharing_info>& sharedModified);
 
   bool modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector,
-                                             stk::mesh::impl::MeshModification::modification_optimization opt = stk::mesh::impl::MeshModification::MOD_END_SORT); // Mod Mark
+                                             ModEndOptimizationFlag opt = ModEndOptimizationFlag::MOD_END_SORT); // Mod Mark
 
   bool internal_modification_end_for_skin_mesh( EntityRank entity_rank,
-                                                stk::mesh::impl::MeshModification::modification_optimization opt,
+                                                ModEndOptimizationFlag opt,
                                                 stk::mesh::Selector selectedToSkin,
                                                 const stk::mesh::Selector * only_consider_second_element_from_this_selector); // Mod Mark
 
@@ -1004,12 +1016,22 @@ protected: //functions
   inline void log_created_parallel_copy(Entity entity);
 
   void internal_change_entity_owner( const std::vector<EntityProc> & arg_change,
-                                     stk::mesh::impl::MeshModification::modification_optimization mod_optimization = stk::mesh::impl::MeshModification::MOD_END_SORT );  // Mod Mark
+                                     ModEndOptimizationFlag mod_optimization = ModEndOptimizationFlag::MOD_END_SORT );  // Mod Mark
 
-  void internal_change_entity_parts_without_propogating_to_downward_connected_entities(Entity entity, const OrdinalVector& add_parts, const OrdinalVector& remove_parts, OrdinalVector& parts_removed, OrdinalVector& newBucketPartList, OrdinalVector& scratchSpace);
+  void internal_change_entity_parts_without_propagating_to_downward_connected_entities(Entity entity, const OrdinalVector& add_parts, const OrdinalVector& remove_parts, OrdinalVector& parts_removed, OrdinalVector& newBucketPartList, OrdinalVector& scratchSpace);
+  void internal_change_bucket_parts_without_propagating_to_downward_connected_entities(Bucket* bucket, EntityRank rank, const OrdinalVector& add_parts, const OrdinalVector& remove_parts, OrdinalVector& ranked_parts_removed, OrdinalVector& newBucketPartList);
+  void internal_change_entity_parts_without_propagating_to_downward_connected_entities_with_notification(Entity entity, const OrdinalVector& add_parts, const OrdinalVector& remove_parts, OrdinalVector& parts_removed, OrdinalVector& newBucketPartList, OrdinalVector& scratchSpace);
   void internal_determine_inducible_parts(Entity entity, const OrdinalVector& add_parts, const OrdinalVector& parts_removed, OrdinalVector& inducible_parts_added, OrdinalVector& inducible_parts_removed);
+  void internal_determine_inducible_parts(EntityRank e_rank, const OrdinalVector& add_parts, const OrdinalVector& parts_removed, OrdinalVector& inducible_parts_added, OrdinalVector& inducible_parts_removed);
   void internal_determine_inducible_parts_and_propagate_to_downward_connected_entities(
                                                         Entity entity,
+                                                        const OrdinalVector& add_parts,
+                                                        const OrdinalVector& parts_removed,
+                                                        OrdinalVector & scratchOrdinalVec,
+                                                        OrdinalVector & scratchSpace );
+
+  void internal_determine_inducible_parts_and_propagate_to_downward_connected_entities(
+                                                        Bucket* bucket,
                                                         const OrdinalVector& add_parts,
                                                         const OrdinalVector& parts_removed,
                                                         OrdinalVector & scratchOrdinalVec,
@@ -1021,6 +1043,12 @@ protected: //functions
    *                  => update via field relation
    */
   void internal_change_entity_parts( Entity ,
+                                     const OrdinalVector& add_parts ,
+                                     const OrdinalVector& remove_parts,
+                                     OrdinalVector& scratchOrdinalVec, OrdinalVector& scratchSpace); // Mod Mark
+
+  void internal_change_entity_parts( const Selector& selector,
+                                     const EntityRank rank,
                                      const OrdinalVector& add_parts ,
                                      const OrdinalVector& remove_parts,
                                      OrdinalVector& scratchOrdinalVec, OrdinalVector& scratchSpace); // Mod Mark
@@ -1051,14 +1079,22 @@ protected: //functions
                                                 const PARTVECTOR & add_parts ,
                                                 const PARTVECTOR & remove_parts);
 
+  template<typename PARTVECTOR>
+  void internal_verify_and_change_entity_parts( const Selector& selector,
+                                                const EntityRank rank,
+                                                const PARTVECTOR & add_parts ,
+                                                const PARTVECTOR & remove_parts);
+
+
   void internal_insert_all_parts_induced_from_higher_rank_entities_to_vector(stk::mesh::Entity entity,
                                                                                stk::mesh::Entity e_to,
                                                                                OrdinalVector &to_add);
 
-  bool internal_modification_end_for_change_entity_owner( stk::mesh::impl::MeshModification::modification_optimization opt ); // Mod Mark
-  bool internal_modification_end_for_change_parts(); // Mod Mark
-  void internal_modification_end_for_change_ghosting(); // Mod Mark
+  bool internal_modification_end_for_change_entity_owner(ModEndOptimizationFlag opt );
+  bool internal_modification_end_for_change_parts(ModEndOptimizationFlag opt = ModEndOptimizationFlag::MOD_END_SORT);
+  void internal_modification_end_for_change_ghosting();
 
+  void mark_bucket_entities_and_upward_related_entities_as_modified(Bucket* bucket);
   void mark_entity_and_upward_related_entities_as_modified(Entity entity);
 
   void set_common_entity_key_and_fix_ordering_of_nodes_and_update_comm_map(std::vector<shared_entity_type> & shared_entity_map);
@@ -1220,7 +1256,7 @@ protected: //functions
 
   void resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin, bool connectFacesToPreexistingGhosts);
 
-  void internal_finish_modification_end(impl::MeshModification::modification_optimization opt); // Mod Mark
+  void internal_finish_modification_end(ModEndOptimizationFlag opt); // Mod Mark
 
   void internal_set_owner(Entity entity, int new_owner);
 
@@ -1245,7 +1281,6 @@ protected: //functions
   void use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities);
   void use_nodes_to_resolve_sharing(stk::mesh::EntityRank rank, std::vector<Entity>& shared_new, bool onlyConsiderSoloSides = false);
   void change_connectivity_for_edge_or_face(stk::mesh::Entity side, const std::vector<stk::mesh::EntityKey>& node_keys);
-  void update_side_elem_permutations(Entity side);
   void resolve_parallel_side_connections(std::vector<SideSharingData>& sideSharingDataToSend,
                                          std::vector<SideSharingData>& sideSharingDataReceived);
   void add_comm_map_for_sharing(const std::vector<SideSharingData>& sidesSharingData, stk::mesh::EntityVector& shared_entities);
@@ -1253,6 +1288,9 @@ protected: //functions
 private:
   void register_device_mesh() const;
   void unregister_device_mesh() const;
+
+  void set_ngp_mesh(NgpMeshBase * ngpMesh) const { m_ngpMeshBase = ngpMesh; }
+  NgpMeshBase * get_ngp_mesh() const { return m_ngpMeshBase; }
 
   uint8_t * get_ngp_field_sync_buffer() const;
 
@@ -1357,13 +1395,14 @@ private:
 
   void new_bucket_callback(EntityRank rank, const PartVector& superset_parts, size_t capacity, Bucket* new_bucket);
   void new_bucket_caching(EntityRank rank, Bucket* new_bucket);
+  void remove_bucket_caching(EntityRank rank, const Selector selector);
 
   //
   //  "fields" is an optional argument, if present copy only the listed fields.
   //
   void copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
                                    unsigned src_bucket_id, Bucket::size_type src_bucket_ord,
-                                   const std::vector<FieldBase*>* fields =NULL);
+                                   const std::vector<FieldBase*>* fields = nullptr);
 
 
   void destroy_bucket_callback(EntityRank rank, Bucket const& dying_bucket, unsigned capacity);
@@ -1399,6 +1438,13 @@ private:
                                                         OrdinalVector & scratchOrdinalVec,
                                                         OrdinalVector & scratchSpace );
 
+  void internal_propagate_induced_part_changes_to_downward_connected_entities(
+                                                        Bucket* bucket,
+                                                        const OrdinalVector & addParts,
+                                                        const OrdinalVector & removeParts,
+                                                        OrdinalVector& scratchOrdinalPartsRemoved,
+                                                        OrdinalVector& scratchOrdinalVec);
+
   Ghosting & internal_create_ghosting( const std::string & name );
   void internal_verify_inputs_and_change_ghosting(
                                     Ghosting & ghosts ,
@@ -1407,7 +1453,7 @@ private:
 
 
   bool internal_modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector,
-                                                      impl::MeshModification::modification_optimization opt ); // Mod Mark
+                                                      ModEndOptimizationFlag opt ); // Mod Mark
 
 
   void internal_establish_new_owner(stk::mesh::Entity entity);
@@ -1419,11 +1465,24 @@ private:
                                      const OrdinalVector & add_parts,
                                      const OrdinalVector & remove_parts); // Mod Mark
 
+  void internal_adjust_closure_count(Bucket* bucket,
+                                     const OrdinalVector & add_parts,
+                                     const OrdinalVector & remove_parts); // Mod Mark
+
+
   void internal_fill_new_part_list_and_removed_part_list(stk::mesh::Entity entity,
                                                            const OrdinalVector & add_parts,
                                                            const OrdinalVector & remove_parts,
                                                            OrdinalVector &newBucketPartList,
                                                            OrdinalVector &parts_removed);
+
+  void internal_fill_new_part_list_and_removed_part_list(stk::mesh::Bucket* bucket_old,
+                                                           const OrdinalVector & add_parts,
+                                                           const OrdinalVector & remove_parts,
+                                                           OrdinalVector &newBucketPartList,
+                                                           OrdinalVector &parts_removed);
+
+  void internal_modify_bucket_parts(Bucket* bucket, const OrdinalVector& addParts, const OrdinalVector& removeParts);
   void internal_move_entity_to_new_bucket(stk::mesh::Entity entity, const OrdinalVector &newBucketPartList,
                                           OrdinalVector& scratchSpace); // Mod Mark
 
@@ -1440,7 +1499,8 @@ private:
   friend class ::stk::mesh::EntityLess;
   friend class ::stk::io::StkMeshIoBroker;
   friend class stk::mesh::DeviceMesh;
-  template <typename T> friend class stk::mesh::DeviceField;
+  friend class stk::mesh::StkFieldSyncDebugger;
+  template <typename T, template <typename> class NgpDebugger> friend class stk::mesh::DeviceField;
 
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
@@ -1450,12 +1510,12 @@ private:
   friend void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
   friend void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
   friend bool process_killed_elements(stk::mesh::BulkData& bulkData,
-                                        ElemElemGraph& elementGraph,
                                         const stk::mesh::EntityVector& killedElements,
                                         stk::mesh::Part& active,
                                         stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
                                         const stk::mesh::PartVector& parts_for_creating_side,
-                                        const stk::mesh::PartVector* boundary_mesh_parts);
+                                        const stk::mesh::PartVector* boundary_mesh_parts,
+                                        ModEndOptimizationFlag deathModEndOpt);
   friend stk::mesh::Entity clone_element_side(stk::mesh::BulkData &bulk,
                                                 stk::mesh::EntityId id,
                                                 stk::mesh::Entity elem,
@@ -1465,6 +1525,8 @@ private:
   friend stk::mesh::Entity impl::connect_side_to_element(stk::mesh::BulkData& bulkData, stk::mesh::Entity element,
                                                    stk::mesh::EntityId side_global_id, stk::mesh::ConnectivityOrdinal side_ordinal,
                                                    stk::mesh::Permutation side_permutation, const stk::mesh::PartVector& parts);
+  friend NgpMeshBase * impl::get_ngp_mesh(const BulkData & bulk);
+  friend void impl::set_ngp_mesh(const BulkData & bulk, NgpMeshBase * ngpMesh);
 
   bool verify_parallel_attributes( std::ostream & error_log );
 
@@ -1492,6 +1554,7 @@ private:
 
   stk::mesh::EntityId select_side_id(Entity elem, unsigned sideOrdinal);
   void entity_comm_list_insert(Entity node);
+  void init_mesh_consistency_check_mode();
 
 public: // data
   mutable bool m_check_invalid_rels; // TODO REMOVE
@@ -1553,7 +1616,7 @@ private: // data
   //  ContiguousFieldDataManager m_default_field_data_manager;
   DefaultFieldDataManager m_default_field_data_manager;
   FieldDataManager *m_field_data_manager;
-  mutable SelectorBucketMap m_selector_to_buckets_map;
+  mutable std::vector<SelectorBucketMap> m_selector_to_buckets_maps;
   impl::BucketRepository m_bucket_repository; // needs to be destructed first!
   bool m_use_identifiers_for_resolving_sharing;
   std::string m_lastModificationDescription;
@@ -1564,10 +1627,11 @@ private: // data
   stk::mesh::ElemElemGraph* m_elemElemGraph = nullptr;
   std::shared_ptr<stk::mesh::ElemElemGraphUpdater> m_elemElemGraphUpdater;
   stk::mesh::impl::SideSetImpl<unsigned> m_sideSetData;
-  mutable stk::mesh::NgpMeshManager* m_ngpMeshManager;
+  mutable stk::mesh::NgpMeshBase* m_ngpMeshBase;
   mutable bool m_isDeviceMeshRegistered;
   mutable Kokkos::View<uint8_t*, MemSpace> m_ngpFieldSyncBuffer;
   mutable size_t m_ngpFieldSyncBufferModCount;
+  bool m_runConsistencyCheck;
 
 protected:
   stk::mesh::impl::SoloSideIdGenerator m_soloSideIdGenerator;
@@ -1575,6 +1639,16 @@ protected:
 };
 
 void dump_mesh_info(const stk::mesh::BulkData& mesh, std::ostream&out, EntityVector ev);
+
+namespace impl {
+inline NgpMeshBase * get_ngp_mesh(const BulkData & bulk) {
+  return bulk.get_ngp_mesh();
+}
+
+inline void set_ngp_mesh(const BulkData & bulk, NgpMeshBase * ngpMesh) {
+  bulk.set_ngp_mesh(ngpMesh);
+}
+}
 
 } // namespace mesh
 } // namespace stk

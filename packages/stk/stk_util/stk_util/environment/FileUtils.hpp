@@ -35,7 +35,7 @@
 #ifndef STK_util_FILEUTILS_h
 #define STK_util_FILEUTILS_h
 
-#include <string>
+#include <string>  // for string
 
 namespace stk {
   namespace util {

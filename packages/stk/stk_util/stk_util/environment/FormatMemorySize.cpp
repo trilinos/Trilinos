@@ -32,10 +32,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/environment/FormatMemorySize.hpp>
-#include <iomanip>
-#include <string>
-#include <sstream>
+#include "stk_util/environment/FormatMemorySize.hpp"
+#include <iomanip>  // for operator<<, setprecision, setw
+#include <sstream>  // for basic_ostream, operator<<, basic_ostream<>::__ostream_type, stringstream
+#include <string>   // for string
 
 namespace stk {
 

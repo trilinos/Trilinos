@@ -54,7 +54,7 @@
 
 void print_options(){
   std::cerr << "Options\n" << std::endl;
-  std::cerr << "Choose BackEnd                     : --openmp [numthreads] | --cuda" << std::endl;
+  std::cerr << "Choose BackEnd                     : --openmp [numthreads] | --cuda | --hip" << std::endl;
   std::cerr << "Input Matrix                       : --amtx [path_to_input_matrix]" << std::endl;
   std::cerr << "\tInput Matrix format can be multiple formats. If it ends with:" << std::endl;
   std::cerr << "\t\t.mtx: it will read matrix market format." << std::endl;
@@ -95,6 +95,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     }
     else if ( 0 == strcasecmp( argv[i] , "--cuda" ) ) {
       params.use_cuda = 1;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "--hip" ) ) {
+      params.use_hip = 1;
     }
     else if ( 0 == strcasecmp( argv[i] , "--repeat" ) ) {
       params.repeat = atoi( argv[++i] );
@@ -292,7 +295,6 @@ int main (int argc, char ** argv){
   const int device_id = 0;
   Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
 
-#if !defined (KOKKOS_ENABLE_CUDA)
 #if defined( KOKKOS_ENABLE_OPENMP )
 
   if (params.use_openmp) {
@@ -311,10 +313,9 @@ int main (int argc, char ** argv){
   }
 
 #endif
-#endif
 
 
-#if defined( KOKKOS_ENABLE_CUDA1 )
+#if defined( KOKKOS_ENABLE_CUDA )
   if (params.use_cuda) {
     Kokkos::Cuda::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
@@ -331,6 +332,16 @@ int main (int argc, char ** argv){
   }
 
 #endif
+
+#if defined( KOKKOS_ENABLE_HIP )
+  if (params.use_hip) {
+    Kokkos::Experimental::HIP::print_configuration(std::cout);
+    KokkosKernels::Experiment::run_multi_mem_triangle
+    <size_type, idx, Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace, Kokkos::Experimental::HIPSpace>(
+        params
+        );
+  }
+#endif 
 
   Kokkos::finalize();
 

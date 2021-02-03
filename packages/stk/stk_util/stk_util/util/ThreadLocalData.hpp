@@ -47,7 +47,6 @@
 #include <iostream>
 #include <vector>
 #include <limits>
-//#include <Kokkos_Core.hpp>
 
 #ifdef _OPENMP
 #include <omp.h>

@@ -33,12 +33,12 @@
 // 
 
 //BEGINFilenameSubstitution
-#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <stk_util/environment/EnvData.hpp>  // for EnvData
-#include <stk_util/environment/FileUtils.hpp>
-#include <stk_util/environment/ProgramOptions.hpp>
-#include <string>                       // for string, allocator, etc
-#include <utility>                      // for make_pair
+#include "gtest/gtest.h"
+#include "stk_util/environment/EnvData.hpp"         // for EnvData
+#include "stk_util/environment/FileUtils.hpp"       // for filename_substitution
+#include "stk_util/environment/ParsedOptions.hpp"   // for ParsedOptions
+#include "stk_util/environment/ProgramOptions.hpp"  // for get_parsed_options
+#include <string>                                   // for allocator, operator+, string, char_tr...
 
 namespace
 {

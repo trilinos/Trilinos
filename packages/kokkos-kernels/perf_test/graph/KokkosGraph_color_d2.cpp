@@ -81,6 +81,7 @@ struct D2Parameters
   int use_threads;
   int use_openmp;
   int use_cuda;
+  int use_hip;
   int use_serial;
   const char* mtx_file;
   ColoringMode d2_color_type;
@@ -93,6 +94,7 @@ struct D2Parameters
     use_threads = 0;
     use_openmp = 0;
     use_cuda = 0;
+    use_hip = 0;
     use_serial = 0;
     mtx_file = NULL;
     d2_color_type = MODE_D2_SYMMETRIC;
@@ -148,6 +150,9 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
 #ifdef KOKKOS_ENABLE_CUDA
        << spaces << "          --cuda <device id>  Use given CUDA device" << std::endl
 #endif
+#ifdef KOKKOS_ENABLE_HIP
+       << spaces << "          --hip <device id>  Use given HIP device" << std::endl
+#endif
        << std::endl
        << spaces << "  Coloring modes:" << std::endl
        << spaces << "      --symmetric_d2  (default): distance-2 on undirected/symmmetric graph" << std::endl
@@ -198,6 +203,10 @@ int parse_inputs(D2Parameters &params, int argc, char **argv)
         else if(0 == strcasecmp(argv[i], "--cuda"))
         {
             params.use_cuda = 1 + atoi(getNextArg(i, argc, argv));
+        }
+        else if(0 == strcasecmp(argv[i], "--hip"))
+        {
+            params.use_hip = 1 + atoi(getNextArg(i, argc, argv));
         }
         else if(0 == strcasecmp(argv[i], "--repeat"))
         {
@@ -273,7 +282,7 @@ int parse_inputs(D2Parameters &params, int argc, char **argv)
         print_options(std::cout, argv[0]);
         return 1;
     }
-    if(!params.use_serial && !params.use_threads && !params.use_openmp && !params.use_cuda)
+    if(!params.use_serial && !params.use_threads && !params.use_openmp && !params.use_cuda && !params.use_hip)
     {
         print_options(std::cout, argv[0]);
         return 1;
@@ -603,6 +612,8 @@ int main(int argc, char *argv[])
     int device_id = 0;
     if(params.use_cuda)
       device_id = params.use_cuda - 1;
+    else if(params.use_hip)
+      device_id = params.use_hip - 1;
     Kokkos::initialize(Kokkos::InitArguments(num_threads, -1, device_id));
 
     // Print out verbose information about the configuration of the run.
@@ -641,6 +652,16 @@ int main(int argc, char *argv[])
         if(!use_multi_mem)
         {
             KokkosKernels::Experiment::experiment_driver<kk_size_type, kk_lno_t, Kokkos::Cuda, Kokkos::Cuda::memory_space>(params);
+        }
+    }
+    #endif
+
+    #if defined(KOKKOS_ENABLE_HIP)
+    if(params.use_hip)
+    {
+        if(!use_multi_mem)
+        {
+            KokkosKernels::Experiment::experiment_driver<kk_size_type, kk_lno_t, Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>(params);
         }
     }
     #endif

@@ -35,9 +35,8 @@
 #ifndef stk_util_string_utils_hpp
 #define stk_util_string_utils_hpp
 
-#include <stk_util/stk_config.h>
-#include <string>
-#include <vector>
+#include <string>  // for string
+#include <vector>  // for vector
 
 namespace stk {
 

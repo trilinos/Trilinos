@@ -34,7 +34,6 @@
 
 #include <stk_util/util/ci_string.hpp>
 
-#include <iostream>
 
 std::ostream &
 operator<<(

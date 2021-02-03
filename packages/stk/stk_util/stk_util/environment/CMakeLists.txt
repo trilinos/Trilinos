@@ -52,10 +52,10 @@ SET(SOURCES "")
 # Core headers
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
 FILE(GLOB HEADERS *.hpp *.h)
 FILE(GLOB SOURCES *.cpp)
+
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
 
 #
 # C) Define the targets for package's library(s)

@@ -32,18 +32,18 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stddef.h>                     // for size_t
-#include <iostream>                     // for operator<<, basic_ostream, etc
-#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include <stk_util/parallel/ParallelReduce.hpp>  // for all_write_string
-#include <stk_util/parallel/ParallelVectorConcat.hpp>
-#include <stk_util/parallel/mpi_filebuf.hpp>
+#include "gtest/gtest.h"                         // for Test, AssertionResult, SuiteApiResolver
+#include "stk_util/parallel/Parallel.hpp"        // for MPI_COMM_WORLD, parallel_machine_rank
+#include "stk_util/parallel/ParallelReduce.hpp"  // for all_write_string
+#include "stk_util/parallel/mpi_filebuf.hpp"     // for add_aprepro_defines
+#include <cstddef>                               // for size_t
+#include <iostream>                              // for ostringstream, operator<<, flush, basic_...
+#include <string>                                // for string
+
 #if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
-#include <aprepro.h>  // for Aprepro
+#include "aprepro.h"                             // for Aprepro
 #endif
-#include <gtest/gtest.h>
-#include <string>                       // for string
- 
+
 TEST(UnitTestParallel, testUnit)
 {
   int mpi_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);

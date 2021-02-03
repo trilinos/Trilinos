@@ -255,7 +255,7 @@ protected:
 void set_vertex_weights(const stk::mesh::BulkData& bulk, stk::mesh::Selector selector, stk::mesh::Field<double>& weightField)
 {
     stk::mesh::EntityVector elements;
-    stk::mesh::get_selected_entities(selector, bulk.buckets(stk::topology::ELEM_RANK), elements);
+    stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, selector, elements);
     for(stk::mesh::Entity element : elements)
     {
         if(bulk.bucket(element).owned())
@@ -320,7 +320,7 @@ protected:
 void put_elements_in_different_parts(stk::mesh::BulkData &bulk, stk::mesh::Part &part1, stk::mesh::Part &part2)
 {
     stk::mesh::EntityVector elements;
-    stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), elements);
+    stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, bulk.mesh_meta_data().locally_owned_part(), elements);
     bulk.modification_begin();
     for(stk::mesh::Entity element : elements)
     {
@@ -413,7 +413,7 @@ protected:
 void verify_mesh_balanced_wrt_fields(const stk::mesh::BulkData& bulk, const std::vector<stk::mesh::Field<double>*> &critFields)
 {
     stk::mesh::EntityVector elements;
-    stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), elements);
+    stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, bulk.mesh_meta_data().locally_owned_part(), elements);
 
     std::vector<double> sums(critFields.size(),0);
 
@@ -439,7 +439,7 @@ void verify_mesh_balanced_wrt_fields(const stk::mesh::BulkData& bulk, const std:
 void set_vertex_weights_checkerboard(stk::mesh::BulkData& bulk, stk::mesh::Selector selector, stk::mesh::Field<double> &weightField1, stk::mesh::Field<double> &weightField2)
 {
     stk::mesh::EntityVector elements;
-    stk::mesh::get_selected_entities(selector, bulk.buckets(stk::topology::ELEM_RANK), elements);
+    stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, selector, elements);
     for(stk::mesh::Entity element : elements)
     {
         double *data1 = stk::mesh::field_data(weightField1, element);
