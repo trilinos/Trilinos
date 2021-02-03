@@ -55,7 +55,6 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_EvaluatePartition.hpp>
 #include <Zoltan2_GraphModel.hpp>
-#include <Zoltan2_CommGraphModel.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_IntegerRangeList.hpp>
 #include <Zoltan2_MachineRepresentation.hpp>
@@ -837,10 +836,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
     else if (algorithm == std::string("quotient"))
     {
-      modelAvail_[CommGraphModelType] = true;
       algName_ = algorithm;
-      removeSelfEdges = true;
-      needConsecutiveGlobalIds = true;
     }
     else if (algorithm == std::string("scotch") ||
              algorithm == std::string("ptscotch")) // BDD: Don't construct graph for scotch here
@@ -1019,7 +1015,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
   this->env_->debug(DETAILED_STATUS, "    models");
   //  if (modelType_ == GraphModelType)
-  if (modelAvail_[GraphModelType]==true || modelAvail_[CommGraphModelType]==true)
+  if (modelAvail_[GraphModelType]==true)
   {
 
     // Any parameters in the graph sublist?
@@ -1144,13 +1140,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
             this->identifierModel_);
     }
-
-    // if(modelAvail_[CommGraphModelType]==true)
-    // {
-    //   this->env_->debug(DETAILED_STATUS, "    building communication graph model");
-    //   this->commGraphModel_ = rcp(new CommGraphModel<base_adapter_t>(
-    // 	    this->baseInputAdapter_, this->envConst_, this->comm_));
-    // }
 
     this->env_->memory("After creating Model");
     this->env_->debug(DETAILED_STATUS, "createPartitioningProblem done");
