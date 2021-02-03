@@ -262,5 +262,8 @@ if [[ "${ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS}" == "" ]] ; then
   export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a
 fi
 
+# Point CMake 3.19 compiler checks to missing symbols
+export LDFLAGS="$LDFLAGS -lifcore"
+
 # Finished!
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE

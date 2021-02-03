@@ -23,6 +23,7 @@ module purge
 module load sems-env
 module load sems-ninja_fortran/1.8.2
 module load sems-git/2.10.1
+module load sems-cmake/3.19.1
 
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
@@ -32,7 +33,6 @@ else
 fi
 
 sparc_tpl_base=${ATDM_CONFIG_SPARC_TPL_BASE}
-module load cmake/3.12.2
 
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_OPENMPI-4.0.1" ]; then
     module load intel/18.0.2.199
@@ -94,5 +94,8 @@ export F90=mpif90
 
 # Define function atdm_run_script_on_compute_node
 source $ATDM_SCRIPT_DIR/common/define_run_on_slurm_compute_node_func.sh
+
+# Point CMake 3.18 compiler checks to missing symbols
+export LDFLAGS="$LDFLAGS -lifcore"
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE

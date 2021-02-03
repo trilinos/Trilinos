@@ -115,7 +115,7 @@ fi
 
 # Common modules for all builds
 module load ninja
-module load cmake/3.12.2
+module load cmake/3.17.1
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 export HWLOC_LIBS=
