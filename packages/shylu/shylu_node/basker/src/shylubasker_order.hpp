@@ -21,7 +21,6 @@
 
 namespace BaskerNS
 {
-#define BASKER_USE_QSORT
 #ifdef BASKER_USE_QSORT
 typedef struct basker_sort_pair_str {
   int perm;
