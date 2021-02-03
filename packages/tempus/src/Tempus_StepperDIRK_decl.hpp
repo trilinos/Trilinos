@@ -194,8 +194,8 @@ public:
     virtual std::string getDescription() const = 0;
   //@}
 
-  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageXDot() {return stageXDot_;};
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >& getXTilde() {return xTilde_;};
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageXDot() {return stageXDot_;}
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >& getXTilde() {return xTilde_;}
 
   /// Return alpha = d(xDot)/dx.
   virtual Scalar getAlpha(const Scalar dt) const

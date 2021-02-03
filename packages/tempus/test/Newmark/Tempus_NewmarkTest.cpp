@@ -400,7 +400,6 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, ConstructingFromDefaults)
       Teuchos::rcp(new Tempus::TimeStepControl<double>());
     ParameterList tscPL = pl->sublist("Default Integrator")
                              .sublist("Time Step Control");
-    timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
     timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
     timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
     timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));
@@ -501,7 +500,6 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitDForm, Constructing_From_Defaults)
     Teuchos::rcp(new Tempus::TimeStepControl<double>());
   ParameterList tscPL = pl->sublist("Default Integrator")
                            .sublist("Time Step Control");
-  timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
   timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
   timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
   timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));

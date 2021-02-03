@@ -108,7 +108,8 @@ protected:
   Thyra::ModelEvaluatorBase::InArgs<Scalar>          inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar>         outArgs_;
 
- };
+};
+
 
 } // namespace Tempus
 #endif // Tempus_StepperExplicit_decl_hpp

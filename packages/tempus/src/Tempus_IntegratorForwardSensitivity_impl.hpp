@@ -324,7 +324,7 @@ createSensitivityModelAndStepper(
   }
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
 integratorForwardSensitivity(
@@ -336,7 +336,7 @@ integratorForwardSensitivity(
   return(integrator);
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
 integratorForwardSensitivity(
@@ -348,7 +348,7 @@ integratorForwardSensitivity(
   return(integrator);
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
 integratorForwardSensitivity()

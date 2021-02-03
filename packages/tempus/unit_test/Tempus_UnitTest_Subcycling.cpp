@@ -194,7 +194,6 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Modifier)
   stepper->setSubcyclingMinTimeStep      (15);
   stepper->setSubcyclingInitTimeStep     (15.0);
   stepper->setSubcyclingMaxTimeStep      (15.0);
-  stepper->setSubcyclingStepType         ("Constant");
   stepper->setSubcyclingMaxFailures      (10);
   stepper->setSubcyclingMaxConsecFailures(5);
   stepper->setSubcyclingScreenOutputIndexInterval(1);
@@ -203,7 +202,6 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Modifier)
 
   // Setup TimeStepControl ------------------------------------
   auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
-  timeStepControl->setStepType ("Constant");
   timeStepControl->setInitIndex(0);
   timeStepControl->setInitTime (0.0);
   timeStepControl->setFinalTime(1.0);
@@ -316,7 +314,6 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Observer)
   stepper->setSubcyclingMinTimeStep      (15);
   stepper->setSubcyclingInitTimeStep     (15.0);
   stepper->setSubcyclingMaxTimeStep      (15.0);
-  stepper->setSubcyclingStepType         ("Constant");
   stepper->setSubcyclingMaxFailures      (10);
   stepper->setSubcyclingMaxConsecFailures(5);
   stepper->setSubcyclingScreenOutputIndexInterval(1);
@@ -325,7 +322,6 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Observer)
 
   // Setup TimeStepControl ------------------------------------
   auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
-  timeStepControl->setStepType ("Constant");
   timeStepControl->setInitIndex(0);
   timeStepControl->setInitTime (0.0);
   timeStepControl->setFinalTime(1.0);
@@ -437,7 +433,6 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_ModifierX)
   stepper->setSubcyclingMinTimeStep      (15);
   stepper->setSubcyclingInitTimeStep     (15.0);
   stepper->setSubcyclingMaxTimeStep      (15.0);
-  stepper->setSubcyclingStepType         ("Constant");
   stepper->setSubcyclingMaxFailures      (10);
   stepper->setSubcyclingMaxConsecFailures(5);
   stepper->setSubcyclingScreenOutputIndexInterval(1);
@@ -446,7 +441,6 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_ModifierX)
 
   // Setup TimeStepControl ------------------------------------
   auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
-  timeStepControl->setStepType ("Constant");
   timeStepControl->setInitIndex(0);
   timeStepControl->setInitTime (0.0);
   timeStepControl->setFinalTime(1.0);
