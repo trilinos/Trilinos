@@ -23,6 +23,7 @@ module purge
 module load sems-env
 module load sems-ninja_fortran/1.8.2
 module load sems-git/2.10.1
+module load sems-cmake/3.19.1
 
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
@@ -32,7 +33,6 @@ else
 fi
 
 sparc_tpl_base=${ATDM_CONFIG_SPARC_TPL_BASE}
-module load sparc-cmake/3.18.1
 
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_OPENMPI-4.0.1" ]; then
     module load intel/18.0.2.199
