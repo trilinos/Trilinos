@@ -504,7 +504,7 @@ public:
     // to be the same.  Check it here.
     TEUCHOS_TEST_FOR_EXCEPTION(
       !lowerTriangularMatrix->getRangeMap()->isSameAs(
-                                        lowerTriangularMatrix->getDomainMap()), 
+                             *lowerTriangularMatrix->getDomainMap()), 
        std::logic_error,
        "The Domain and Range maps of the LowerTriangularBlock matrix "
        "must be the same");
