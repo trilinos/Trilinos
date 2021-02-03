@@ -168,9 +168,6 @@ export ATMD_CONFIG_MPI_USE_COMPILER_WRAPPERS=ON
 
 export ATDM_CONFIG_WCID_ACCOUNT_DEFAULT=fy150090
 
-# Point CMake 3.17 compiler checks to missing symbols
-export LDFLAGS="$LDFLAGS -lifcore"
-
 #
 # Done
 #
