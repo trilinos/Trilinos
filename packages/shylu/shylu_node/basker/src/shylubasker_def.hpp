@@ -811,9 +811,7 @@ namespace BaskerNS
 
     using range_type = Kokkos::pair<int, int>;
     if (Options.static_delayed_pivot != 0 || Options.blk_matching != 0) {
-        #ifdef BASKER_TIMER
         Kokkos::Timer resetperm_timer;
-        #endif
 
         //Int b_first = btf_tabs_offset;
         Int nfirst = btf_tabs(btf_tabs_offset);
@@ -1044,14 +1042,12 @@ namespace BaskerNS
           }
         }
 #endif
-        #ifdef BASKER_TIMER
-        std::cout<< "Basker Factor: Time to revert all the numerical perm: " << resetperm_timer.seconds() << std::endl;
-        #endif
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout<< "Basker Factor: Time to revert all the numerical perm: " << resetperm_timer.seconds() << std::endl;
+        }
     } // end of if(Options.blk_matching != 0)
 
-    #ifdef BASKER_TIMER
     Kokkos::Timer copyperm_timer;
-    #endif
     //printf( " A.nnz= %d vs (%d, %d) nblks=%d, btfa_nnz=%d, btfb_nnz=%d, btfc_nnz=%d\n",(int)nnz, (int)A.nnz,(int)A.val.extent(0),
     //        btf_nblks,btfa_nnz,btfb_nnz,btfc_nnz );
     if ( btf_nblks > 1 ) { //non-single block case
@@ -1116,9 +1112,9 @@ namespace BaskerNS
         //A.val(i) = val[ i ]; // may need to apply matching or nd order permutation...
       return BASKER_ERROR;
     }
-    #ifdef BASKER_TIMER
-    std::cout<< "Basker Factor: Time to permute and copy from input vals to new vals and blocks: " << copyperm_timer.seconds() << std::endl;
-    #endif
+    if(Options.verbose == BASKER_TRUE) {
+      std::cout<< "Basker Factor: Time to permute and copy from input vals to new vals and blocks: " << copyperm_timer.seconds() << std::endl;
+    }
     //end sfactor_copy2 replacement stuff
 
 
@@ -1283,11 +1279,11 @@ namespace BaskerNS
         int save_tab = btf_tabs(1);
         #endif
 
-        // save MWM option
-        Int blk_matching_A = Options.blk_matching;
         // save AMD option
         BASKER_BOOL amd_dom = Options.amd_dom;
         Options.amd_dom = false; // since we do ND ?
+        // save MWM option
+        Int blk_matching_A = Options.blk_matching;
         if (Options.static_delayed_pivot != 0) {
           if(Options.verbose == BASKER_TRUE) {
             std::cout << "  -> switching MWM option from " << Options.blk_matching
@@ -1296,7 +1292,6 @@ namespace BaskerNS
             if (!Options.amd_dom) {
               std::cout << "  -> turning off AMD option for ND block" << std::endl;
             }
-            std::cout << std::endl;
           }
           Options.blk_matching = Options.static_delayed_pivot;
         }
@@ -1326,6 +1321,9 @@ namespace BaskerNS
           //for (Int i = 0; i < (Int)BTF_A.nrow; i++) {
           //  order_nd_amd(i) = i;
           //}
+          if(Options.verbose == BASKER_TRUE) {
+            std::cout<< " > Basker Factor: Time to compute MWM on a big block A: " << nd_mwm_amd_timer.seconds() << std::endl;
+          }
         } else {
           // ---------------------------------------------------------------------------------------------
           // apply MWM on a big block A
@@ -1366,13 +1364,12 @@ namespace BaskerNS
               //printf( " nd_mwm(%d) = %d, nd_amd(%d) = %d\n",i,order_nd_mwm(i), i,order_nd_amd(i) );
             }
           }
+          if(Options.verbose == BASKER_TRUE) {
+            std::cout<< " > Basker Factor: Time to compute and apply MWM+AMD on a big block A: " << nd_mwm_amd_timer.seconds() << std::endl;
+          }
         }
         // reset AMD option
         Options.amd_dom = amd_dom;
-        if(Options.verbose == BASKER_TRUE) {
-          std::cout<< " > Basker Factor: Time to compute and apply MWM+AMD on a big block A: " << nd_mwm_amd_timer.seconds() << std::endl;
-        }
-
         // reset tabs
         btf_tabs(1) = save_tab;
 
@@ -1380,6 +1377,8 @@ namespace BaskerNS
         BASKER_BOOL keep_zeros = true;
         Kokkos::Timer nd_nd_timer;
         if (Options.static_delayed_pivot != 0) {
+          nd_mwm_amd_timer.reset();
+
           // instead of pivoting from higher separator in ND tree, we push the row to the separator
           // > also update sg.rangtab
           Int nblks = part_tree.nblks;
@@ -1572,21 +1571,81 @@ namespace BaskerNS
             }
           }
           printf("];\n");*/
-
-          #if 1
-          Kokkos::Timer nd_amd_timer;
-          // compute & apply csymamd on fixed ND
-          INT_1DARRAY cmember;
-          MALLOC_INT_1DARRAY(cmember, BTF_A.ncol+1);
-          for(Int i = 0; i < tree.nblks; ++i) {
-            for(Int j = tree.col_tabs(i); j < tree.col_tabs(i+1); ++j) {
-              cmember(j) = i;
-            }
+          if(Options.verbose == BASKER_TRUE) {
+            std::cout<< "   + Basker Factor: Time to fix ND on a big block A: " << nd_mwm_amd_timer.seconds() << std::endl;
+            nd_mwm_amd_timer.reset();
           }
-          init_value(order_nd_amd, BTF_A.ncol, (Int)0);
-          csymamd_order(BTF_A, order_nd_amd, cmember);
-          //for (int i=0; i<BTF_A.ncol; i++) printf( " - csymamd_a(%d)=%d\n",i,order_nd_amd(i));
 
+          #if 0 // commented out (rely on csyamd in symbolic)
+          // compute csymamd on fixed ND
+          if (1) {
+            BASKER_MATRIX AAT;
+            AplusAT(BTF_A, AAT);
+
+            Int nblks = tree.nblks;
+            INT_1DARRAY tempp;
+            INT_1DARRAY temp_col;
+            INT_1DARRAY temp_row;
+            MALLOC_INT_1DARRAY  (tempp,    AAT.ncol);
+            MALLOC_INT_1DARRAY  (temp_col, AAT.ncol+nblks);
+            MALLOC_INT_1DARRAY  (temp_row, AAT.nnz);
+            if(Options.verbose == BASKER_TRUE) {
+              std::cout<< "   + Basker Factor: Time to compute A+A^T: " << nd_mwm_amd_timer.seconds() << std::endl;
+              nd_mwm_amd_timer.reset();
+            }
+
+            #if 1
+            Int nleaves = num_threads;
+            kokkos_amd_order<Int> amd_functor(nleaves, nblks, tree.col_tabs, AAT.col_ptr, AAT.row_idx,
+                                              tempp, temp_col, temp_row, order_nd_amd, Options.verbose);
+            Kokkos::parallel_for("BLK_AMD on A", Kokkos::RangePolicy<Exe_Space>(0, nleaves), amd_functor);
+            Kokkos::fence();
+            #else
+            for(Int b = 0; b < tree.nblks; ++b) {
+              Int frow = tree.col_tabs(b);
+              Int erow = tree.col_tabs(b+1);
+              Int fnnz = AAT.col_ptr(frow);
+
+              Int nnz = 0;
+              temp_col(frow+b) = 0;
+              for(Int k = frow; k < erow; k++) {
+                for(Int i = AAT.col_ptr(k); i < AAT.col_ptr(k+1); i++) {
+                  if(AAT.row_idx(i) >= frow && AAT.row_idx(i) < erow) {
+                    temp_row(fnnz + nnz) = AAT.row_idx(i) - frow;
+                    nnz++;
+                  }
+                }
+                temp_col(b+k+1) = nnz;
+              }
+              Int blk_size = erow - frow;
+              double l_nnz = 0;
+              double lu_work = 0;
+              BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(frow+b)), &(temp_row(fnnz)),
+                                              &(tempp(frow)), l_nnz, lu_work, Options.verbose);
+              for(Int k = 0; k < blk_size; k++)
+              {
+                order_nd_amd(frow+tempp(frow + k)) = frow+k;
+              }
+            }
+            #endif
+          } else {
+            INT_1DARRAY cmember;
+            MALLOC_INT_1DARRAY(cmember, BTF_A.ncol+1);
+            for(Int i = 0; i < tree.nblks; ++i) {
+              for(Int j = tree.col_tabs(i); j < tree.col_tabs(i+1); ++j) {
+                cmember(j) = i;
+              }
+            }
+            init_value(order_nd_amd, BTF_A.ncol, (Int)0);
+            csymamd_order(BTF_A, order_nd_amd, cmember);
+          }
+          //for (int i=0; i<BTF_A.ncol; i++) printf( " - csymamd_a(%d)=%d\n",i,order_nd_amd(i));
+          if(Options.verbose == BASKER_TRUE) {
+            std::cout<< "   + Basker Factor: Time to compute AMD on a big block A: " << nd_mwm_amd_timer.seconds() << std::endl;
+            nd_mwm_amd_timer.reset();
+          }
+
+          // apply csymamd
           permute_row(BTF_A, order_nd_amd);
           permute_col(BTF_A, order_nd_amd);
           if (btf_tabs_offset < btf_nblks) {
@@ -1608,15 +1667,16 @@ namespace BaskerNS
             order_nd_amd(j) = order_nd_amd3(j);
           }
           if(Options.verbose == BASKER_TRUE) {
-            std::cout<< " > Basker Factor: Time to compute and apply AMD on a big block A: " << nd_amd_timer.seconds() << std::endl;
+            std::cout<< "   + Basker Factor: Time to apply AMD on a big block A: " << nd_mwm_amd_timer.seconds() << std::endl;
+            nd_mwm_amd_timer.reset();
           }
           #else
           for (Int j = 0; j < (Int)BTF_A.ncol; j++) {
             order_nd_amd(j) = order_nd_amd2(j);
           }
           #endif
-          /*for (int i=0; i<BTF_A.ncol; i++) printf( " - amd_a(%d)=%d\n",i,order_nd_amd(i));
-          printf(" * A = [\n" );
+          //for (int i=0; i<BTF_A.ncol; i++) printf( " - amd_a(%d)=%d\n",i,order_nd_amd(i));
+          /*printf(" * A = [\n" );
           if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
             for(Int j = 0; j < BTF_A.ncol; j++) {
               for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
@@ -1629,20 +1689,41 @@ namespace BaskerNS
           // ----------------------------------------------------------------------------------------------
           // shift
           if(nfirst > 0) {
+            #if 0
             for (Int i = 0; i < (Int)BTF_A.nrow; i++) {
               order_nd_mwm(i) += nfirst;
               order_nd_amd(i) += nfirst;
-              //printf( " nd_mwm(%d) = %d, nd_amd(%d) = %d\n",i,order_nd_mwm(i), i,order_nd_amd(i) );
             }
+            #else
+            Kokkos::parallel_for(
+              "reset ndbtfa", BTF_A.nrow,
+              KOKKOS_LAMBDA(const int i) {
+                order_nd_mwm(i) += nfirst;
+                order_nd_amd(i) += nfirst;
+              });
+            #endif
           }
 
 	  // ----------------------------------------------------------------------------------------------
           // 'sort' rows of BTF_A into ND structure
+          #if 0
           for (Int i = 0; i < BTF_A.nnz; ++i) {
             vals_order_ndbtfa_array(i) = i;
           }
+          #else
+          Kokkos::parallel_for(
+            "reset ndbtfa", BTF_A.nnz,
+            KOKKOS_LAMBDA(const int i) {
+              vals_order_ndbtfa_array(i) = i;
+            });
+          Kokkos::fence();
+          #endif
           BASKER_BOOL track_perm = BASKER_TRUE;
           ndsort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array, track_perm);
+          if(Options.verbose == BASKER_TRUE) {
+            std::cout<< "   + Basker Factor: Time to sort into ND blocks on a big block A: " << nd_mwm_amd_timer.seconds() << std::endl;
+            nd_mwm_amd_timer.reset();
+          }
 
           /*printf(" x A = [\n" );
           if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
@@ -1659,6 +1740,9 @@ namespace BaskerNS
           #ifdef BASKER_KOKKOS
           matrix_to_views_2D(BTF_A);
           #endif
+          if(Options.verbose == BASKER_TRUE) {
+            std::cout<< "   + Basker Factor: Time to convert a big block A into views: " << nd_mwm_amd_timer.seconds() << std::endl;
+          }
         } else {
           // ----------------------------------------------------------------------------------------------
           // compute & apply ND on a big block A
@@ -1710,9 +1794,23 @@ namespace BaskerNS
         }
       } // end of ND & setups
 
-      if (Options.blk_matching != 0 && btf_nblks > btf_tabs_offset) {
+      if ((Options.static_delayed_pivot != 0 || Options.blk_matching != 0) && btf_nblks > btf_tabs_offset) {
         Kokkos::Timer mwm_amd_perm_timer;
 
+        // save MWM option
+        Int blk_matching_A = Options.blk_matching;
+        if (Options.static_delayed_pivot != 0) {
+          if(Options.verbose == BASKER_TRUE) {
+            std::cout << "  -> switching MWM option from " << Options.blk_matching
+                      << " to " << Options.static_delayed_pivot
+                      << " for delayed pivots " << std::endl;
+            if (!Options.amd_dom) {
+              std::cout << "  -> turning off AMD option for ND block" << std::endl;
+            }
+            std::cout << std::endl;
+          }
+          Options.blk_matching = Options.static_delayed_pivot;
+        }
         Int b_first = btf_tabs_offset;
         Int nfirst = btf_tabs(b_first);
         auto order_blk_mwm_c = Kokkos::subview(order_blk_mwm_array,
@@ -1735,6 +1833,10 @@ namespace BaskerNS
         btf_blk_mwm_amd(b_first, btf_nblks-b_first, BTF_C,
                         order_blk_mwm_c, order_blk_amd_c,
                         blk_nnz, blk_work);
+        if (Options.static_delayed_pivot != 0) {
+          // revert MWM option
+          Options.blk_matching = blk_matching_A;
+        }
         #if 0 //debug
         printf( " >> debug: set order_blk_mwm/amd on BTF_C to identity <<\n" );
         for (Int i = 0; i < (Int)BTF_C.nrow; i++) {

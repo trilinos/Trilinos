@@ -117,10 +117,9 @@ namespace BaskerNS
    INT_1DARRAY p,
    INT_1DARRAY cmember
   )
-  {    
+  {
     amd_flag = BASKER_TRUE;
 
-    //Debug,
     #ifdef BASKER_DEBUG_ORDER_AMD
     printf("cmember: \n");
     for(Int i = 0; i < M.ncol; ++i)

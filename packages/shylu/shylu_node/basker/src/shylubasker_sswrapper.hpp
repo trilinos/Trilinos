@@ -36,7 +36,7 @@ namespace BaskerNS
     inline
     int amd_order
     (
-     Int          n,
+     Int        n,
      Int       *col_ptr,
      Int       *row_ptr,
      Int       *p
@@ -45,11 +45,11 @@ namespace BaskerNS
       return -1;
     }
 
-     static
+    static
     inline
     int amd_order
     (
-     Int          n,
+     Int        n,
      Int       *col_ptr,
      Int       *row_ptr,
      Int       *p,

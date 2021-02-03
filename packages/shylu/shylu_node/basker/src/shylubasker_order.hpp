@@ -984,17 +984,13 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //--------------------------------------------------------------
     //5. Constrained symamd on A
     //Init for Constrained symamd on A
-    if (Options.amd_dom && Options.static_delayed_pivot == 0) {
+    //if (Options.amd_dom && Options.static_delayed_pivot == 0)
+    if (Options.amd_dom) // still compute csymamd in symbolic for delayed pivot (to reduce cost of setup in numeric)
+    {
       if (Options.symmetric != BASKER_TRUE) { // TODO: replace with parameter, e.g., use_csymamd
         // flag for permute_composition_for_solve
         amd_flag = BASKER_TRUE;
 
-        #if 0
-        Int nleaves = 1;
-        printf( " * debug nleaves = 1 *\n" );
-        #else
-        Int nleaves = num_threads;
-        #endif
         Int nblks = tree.nblks;
         INT_1DARRAY tempp;
         INT_1DARRAY temp_col;
@@ -1007,6 +1003,12 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         scotch_amd_timer.reset();
         #endif
 #if 1
+        #if 0
+        Int nleaves = 1;
+        printf( " * debug nleaves = 1 *\n" );
+        #else
+        Int nleaves = num_threads;
+        #endif
         kokkos_amd_order<Int> amd_functor(nleaves, nblks, tree.col_tabs, AAT.col_ptr, AAT.row_idx,
                                           tempp, temp_col, temp_row, order_csym_array, Options.verbose);
         Kokkos::parallel_for("BLK_AMD on A", Kokkos::RangePolicy<Exe_Space>(0, nleaves), amd_functor);
@@ -2678,7 +2680,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
           nd_ptr(row_id) ++;
         }
         if (track_perm) {
-          perm[idx]   = order_vals_perms(i);
+          perm[idx]  = order_vals_perms(i);
         }
         dwork[idx]  = M.val[i];
         iwork[idx]  = M.row_idx[i];
