@@ -230,8 +230,6 @@ public:
   // Migration-related functions.
   ////////////////////////////////////////////////////
 
-  bool getMigrated() const { return migrated_; }
-
   int getNumActiveRanks() const { return nActiveRanks_; }
 
   int getDestinationRank() const { return destRank_; }
@@ -249,9 +247,6 @@ private:
   const RCP<const Comm<int> > comm_;
 
   int threshold_;        // threshold on #vertices each rank stores post-migration 
-  bool migrated_;        // Flag indicating whether this graph is 
-                         // has been migrated into a smaller set of 
-                         // MPI ranks: 0, 1, ... , nActiveRanks
   int nActiveRanks_ ;    // # ranks for the small graph to be partitioned on
   int destRank_, startRank_, endRank_;
                        
@@ -300,7 +295,6 @@ CommGraphModel<Adapter>::CommGraphModel(
   const RCP<const Comm<int> > &comm):
         env_(env),
         comm_(comm),
-        migrated_(false),
         nLocalVertices_(0),
         nGlobalVertices_(0),
         vGids_(),
@@ -408,8 +402,6 @@ CommGraphModel<Adapter>::CommGraphModel(
 
   // Migrate the quotient graph into smaller number of MPI ranks
   migrateGraph();
-  migrated_ = true;
-
 }
 
 template <typename Adapter>
