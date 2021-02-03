@@ -115,7 +115,7 @@ fi
 
 # Common modules for all builds
 module load ninja
-module load cmake/3.12.2
+module load cmake/3.17.1
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 export HWLOC_LIBS=
@@ -167,6 +167,9 @@ export ATDM_CONFIG_MPI_EXEC="mpirun"
 export ATMD_CONFIG_MPI_USE_COMPILER_WRAPPERS=ON
 
 export ATDM_CONFIG_WCID_ACCOUNT_DEFAULT=fy150090
+
+# Point CMake 3.17 compiler checks to missing symbols
+export LDFLAGS="$LDFLAGS -lifcore"
 
 #
 # Done
