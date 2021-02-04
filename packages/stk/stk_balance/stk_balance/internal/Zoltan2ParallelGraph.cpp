@@ -11,38 +11,56 @@ void Zoltan2ParallelGraph::adjust_vertex_weights(const stk::balance::BalanceSett
                            const std::vector<stk::mesh::Selector>& selectors,
                            const stk::mesh::impl::LocalIdMapper& localIds)
 {
-    if(balanceSettings.areVertexWeightsProvidedInAVector())
-    {
-        size_t previousSize = mVertexWeights.size();
-        mVertexWeights = balanceSettings.getVertexWeightsViaVector();
-        size_t newSize = mVertexWeights.size();
-        ThrowRequireWithSierraHelpMsg(newSize == previousSize);
-    }
-    else if(balanceSettings.areVertexWeightsProvidedViaFields())
-    {
-        stk::mesh::EntityVector entitiesToBalance;
-        const bool sortById = true;
-        stk::mesh::get_entities(stkMeshBulkData, stk::topology::ELEM_RANK, stkMeshBulkData.mesh_meta_data().locally_owned_part(), entitiesToBalance, sortById);
+  if (balanceSettings.areVertexWeightsProvidedInAVector())
+  {
+    size_t previousSize = mVertexWeights.size();
+    mVertexWeights = balanceSettings.getVertexWeightsViaVector();
+    size_t newSize = mVertexWeights.size();
+    ThrowRequireWithSierraHelpMsg(newSize == previousSize);
+  }
+  else if (balanceSettings.areVertexWeightsProvidedViaFields())
+  {
+    stk::mesh::EntityVector entitiesToBalance;
+    const bool sortById = true;
+    stk::mesh::get_entities(stkMeshBulkData, stk::topology::ELEM_RANK,
+                            stkMeshBulkData.mesh_meta_data().locally_owned_part(), entitiesToBalance, sortById);
 
-        fillFieldVertexWeights(balanceSettings, stkMeshBulkData, selectors, entitiesToBalance);
-    }
-    else if ( !stk::balance::internal::is_geometric_method(balanceSettings.getDecompMethod()) && balanceSettings.setVertexWeightsBasedOnNumberAdjacencies() )
+    fillFieldVertexWeights(balanceSettings, stkMeshBulkData, selectors, entitiesToBalance);
+  }
+  else if (!stk::balance::internal::is_geometric_method(balanceSettings.getDecompMethod()) &&
+           balanceSettings.setVertexWeightsBasedOnNumberAdjacencies())
+  {
+    const stk::mesh::BucketVector &buckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
+    for (size_t i = 0; i < buckets.size(); i++)
     {
-        const stk::mesh::BucketVector &buckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
-        for(size_t i = 0; i < buckets.size(); i++)
+      const stk::mesh::Bucket &bucket = *buckets[i];
+      if (bucket.owned() && bucket.topology() == stk::topology::PARTICLE)
+      {
+        for (size_t j = 0; j < bucket.size(); j++)
         {
-            const stk::mesh::Bucket &bucket = *buckets[i];
-            if(bucket.owned() && bucket.topology() == stk::topology::PARTICLE)
-            {
-                for(size_t j = 0; j < bucket.size(); j++)
-                {
-                    unsigned localId = stk::balance::internal::get_local_id(localIds, bucket[j]);
-                    unsigned numAdjElements = mOffsets[localId+1] - mOffsets[localId];
-                    mVertexWeights[localId] = 0.5*numAdjElements;
-                }
-            }
+          unsigned localId = stk::balance::internal::get_local_id(localIds, bucket[j]);
+          unsigned numAdjElements = mOffsets[localId+1] - mOffsets[localId];
+          mVertexWeights[localId] = 0.5*numAdjElements;
         }
+      }
     }
+  }
+
+  for (const auto & blockWeightMultiplier : balanceSettings.getVertexWeightBlockMultipliers()) {
+    const std::string & blockName = blockWeightMultiplier.first;
+    const double weightMultiplier = blockWeightMultiplier.second;
+
+    const stk::mesh::Part * block = stkMeshBulkData.mesh_meta_data().get_part(blockName);
+    ThrowRequireMsg(block != nullptr, "Mesh does not contain a block named '" + blockName + "'");
+
+    const stk::mesh::BucketVector & buckets = stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK, *block);
+    for (const stk::mesh::Bucket * bucket : buckets) {
+      for (const stk::mesh::Entity & entity : *bucket) {
+        const unsigned localId = stk::balance::internal::get_local_id(localIds, entity);
+        mVertexWeights[localId] *= weightMultiplier;
+      }
+    }
+  }
 }
 
 void Zoltan2ParallelGraph::adjust_weights_for_small_meshes()
