@@ -70,14 +70,9 @@ class AlgQuotient : public Algorithm<Adapter>
 {
 public:
   typedef typename Adapter::base_adapter_t base_adapter_t;
-  typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::offset_t offset_t;
-  typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::user_t user_t;
   typedef typename Adapter::userCoord_t userCoord_t;
-
   typedef CommGraphModel<typename Adapter::base_adapter_t> graphModel_t;
 
 
