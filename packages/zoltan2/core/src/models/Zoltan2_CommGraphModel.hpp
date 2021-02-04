@@ -49,14 +49,12 @@ in the given communicator, then this model contains n vertices so that each vert
 represents an MPI rank. If rank i sends a message to rank j (during the mat-vec on 
 the matrix corresponding to the given adapter), then there is a directed edge 
 from vertex i to vertex j in the graph. The size of the edge is the number of 
-nonzeros that cause that message. The Weight of vertex i is the number of nonzeros
+nonzeros that cause that message. The weight of vertex i is the number of nonzeros
 currently residing at rank i. 
     
 Since the above mentioned graph is too small, we migrate it into a subset of ranks, 
 which we call activeRanks. nActiveRanks_ denotes the number of active ranks and 
-is computed as n/threshold_. For now, this migration is mandatory but we can make it 
-optional (by setting a parameter and migrated_ flag). The threshold_ value can also 
-be parameterized.
+is computed as n/threshold_.
 */
 
 #ifndef _ZOLTAN2_COMMGRAPHMODEL_HPP_
@@ -400,7 +398,7 @@ CommGraphModel<Adapter>::CommGraphModel(
   for (int i = 0; i < commSize; i++)
     vtxDist_[i+1] += vtxDist_[i];
 
-  // Migrate the quotient graph into smaller number of MPI ranks
+  // Migrate the quotient graph into smaller number of MPI ranks (active ranks)
   migrateGraph();
 }
 

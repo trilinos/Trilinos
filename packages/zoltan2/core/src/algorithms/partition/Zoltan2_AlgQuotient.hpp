@@ -159,8 +159,8 @@ private:
   const RCP<const base_adapter_t> adapter;
   RCP<graphModel_t> model;
 
-  RCP<Algorithm<Adapter>> innerAlgorithm;            // algorithm to partition the quotient graph
-  RCP<PartitioningSolution<Adapter>> quotientSolution;     // the solution stored on active ranks
+  RCP<Algorithm<Adapter>> innerAlgorithm;               // algorithm to partition the quotient graph
+  RCP<PartitioningSolution<Adapter>> quotientSolution;  // the solution stored on the active ranks
 
 };
 
@@ -205,10 +205,11 @@ void AlgQuotient<Adapter>::partition(
 
 // Pre-condition: 
 //   The partitioning solution in quotientSolution is only stored on active MPI ranks,
-//   which is a single rank if commGraphModel has less than 1024 vertices. 
+//   which is a single rank if commGraphModel has less than 'threshold_' vertices. 
 // Post-condition:
-//   The partitioning solution in output parameter solution is distributed to all MPI ranks, 
-//   so that each rank has a single entry of the solution.
+//   The partitioning solution in output parameter 'solution' is distributed to all MPI ranks, 
+//   so that each rank gets a partitioning vector with the size of the number of local vertices,
+//   and each entry in a goven rank should have the same part value. 
 template <typename Adapter>
 void AlgQuotient<Adapter>::migrateBack(
   const RCP<PartitioningSolution<Adapter> > &solution
@@ -218,12 +219,10 @@ void AlgQuotient<Adapter>::migrateBack(
     int nActiveRanks = model->getNumActiveRanks();
     int dRank = model->getDestinationRank();
 
-    Teuchos::ArrayRCP<part_t> parts(1); // Each rank has a single vertex for now.
-    RCP<CommRequest<int>> *requests = new RCP<CommRequest<int>>[1];
-
-    
+    // Receive the (single entry) partitioning solution for this MPI rank 
+    Teuchos::ArrayRCP<part_t> parts(1); 
+    RCP<CommRequest<int>> *requests = new RCP<CommRequest<int>>[1];    
     requests[0] = Teuchos::ireceive<int, part_t>(*problemComm, parts, dRank);
-
     if(me < nActiveRanks){
 
       const part_t *qtntSlnView = quotientSolution->getPartListView();
@@ -235,12 +234,17 @@ void AlgQuotient<Adapter>::migrateBack(
       model->getVertexDist(vtxdist);
       for(int i = sRank; i < eRank; i++)
 	Teuchos::send<int, part_t>(*problemComm, 1, &qtntSlnView[i-sRank], i);
-
     }
-    
     Teuchos::waitAll<int>(*problemComm, Teuchos::arrayView(requests, 1)); 
-    
-    solution->setParts(parts);
+
+    // Extend the single-entry solution for all local vertices  
+    size_t numLocalVertices = adapter->getLocalNumIDs();
+    Teuchos::ArrayRCP<part_t> extendedParts(numLocalVertices); 
+    for(size_t i = 0; i < numLocalVertices; i++)
+      extendedParts[i] = parts[0];
+
+    // Set the extended partitioning solution
+    solution->setParts(extendedParts);
   
 }
 
