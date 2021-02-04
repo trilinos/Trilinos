@@ -114,6 +114,8 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.3_INTELMPI-2018.4" ]; then
   export ATDM_CONFIG_OPENMP_FORTRAN_FLAGS=-fopenmp
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
+  # Point CMake 3.19 compiler checks to missing symbols
+  export LDFLAGS="$LDFLAGS -lifcore"
 
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.3_MPICH2-3.2" ]; then
   atdm_config_load_sparc_dev_module sparc-dev/intel-19.0.3_mpich2-3.2
@@ -136,6 +138,8 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.3_MPICH2-3.2" ]; then
   export ATDM_CONFIG_OPENMP_FORTRAN_FLAGS=-fopenmp
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
+  # Point CMake 3.19 compiler checks to missing symbols
+  export LDFLAGS="$LDFLAGS -lifcore"
 
 elif [ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GNU-7.2.0_OPENMPI-4.0.3" ]; then
   # ninja is running into issues with response files when building shared libraries with CUDA.
@@ -261,9 +265,6 @@ if [[ "${ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS}" == "" ]] ; then
   export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
   export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a
 fi
-
-# Point CMake 3.19 compiler checks to missing symbols
-export LDFLAGS="$LDFLAGS -lifcore"
 
 # Finished!
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
