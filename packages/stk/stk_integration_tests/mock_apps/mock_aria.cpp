@@ -54,7 +54,7 @@ int main(int argc, char** argv)
   myInfo.set_value(stk::coupling::TimeSyncMode, syncMode);
 
   if(myWorldRank == rootRanks.first) std::cout << "Exchanging Info" << std::endl;
-  const stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
+  stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
 
   check_sync_mode_consistency(myInfo, otherInfo);
 
@@ -81,7 +81,7 @@ int main(int argc, char** argv)
   for(int step = 0; step < numberOfSteps; ++step) {
     // Update State and Do Transfer Using stk_transfer
     myInfo.set_value("time step status", (step == numberOfSteps-2) ? "end" : "proceed");
-    const stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
+    otherInfo = myInfo.exchange(commWorld, commApp);
     currentTime = stk::coupling::choose_value(myInfo, otherInfo, "current time", syncMode);
 
     std::ostringstream os;

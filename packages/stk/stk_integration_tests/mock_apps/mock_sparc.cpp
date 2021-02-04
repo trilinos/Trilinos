@@ -50,7 +50,7 @@ int main(int argc, char** argv)
   myInfo.set_value(stk::coupling::TimeStep, 0.1);
   myInfo.set_value(stk::coupling::FinalTime, numberOfSteps * myInfo.get_value<double>(stk::coupling::TimeStep));
 
-  const stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
+  stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
 
   {
     std::ostringstream os;
@@ -83,7 +83,7 @@ int main(int argc, char** argv)
 
     std::cout<<app_name()<<" setting current time to "<<currentTime<<std::endl;
 
-    const stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
+    otherInfo = myInfo.exchange(commWorld, commApp);
     currentTime = stk::coupling::choose_value(myInfo, otherInfo, "current time", stk::coupling::Send);
 
     std::ostringstream os;

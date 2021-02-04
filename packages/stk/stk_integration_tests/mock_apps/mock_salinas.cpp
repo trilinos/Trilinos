@@ -49,7 +49,7 @@ int main(int argc, char** argv)
   myInfo.set_value(stk::coupling::TimeStep, 0.0);
   myInfo.set_value(stk::coupling::FinalTime, 0.0);
 
-  const stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
+  stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
 
   {
     std::ostringstream os;
@@ -61,7 +61,7 @@ int main(int argc, char** argv)
   double finalTime = 1.0;
   while (currentTime < finalTime) {
 
-    const stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
+    otherInfo = myInfo.exchange(commWorld, commApp);
 
     currentTime = otherInfo.get_value<double>("current time");
     finalTime = otherInfo.get_value<double>(stk::coupling::FinalTime);
