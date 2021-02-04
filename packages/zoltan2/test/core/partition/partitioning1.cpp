@@ -161,6 +161,14 @@ int main(int narg, char** arg)
                 "mesh used to generate matrix.");
   cmdp.setOption("matrix", &matrixType,
                 "Matrix type: Laplace1D, Laplace2D, or Laplace3D");
+
+  //////////////////////////////////
+  // Quotient-specific parameters
+  int quotientThreshold = -1;
+  cmdp.setOption("qthreshold", &quotientThreshold,
+                "Threshold on the number of vertices for active MPI ranks to hold"
+		"after the migrating the communication graph to the active ranks.");  
+
   //////////////////////////////////
 
   cmdp.parse(narg, arg);
@@ -214,6 +222,11 @@ int main(int narg, char** arg)
     params.set("num_global_parts", nParts);
     if(nParts != comm->getSize())
       distributeInput= false;
+  }
+
+  ////// Set the threshold for the quotient algorithm if specified
+  if(method == "quotient" && quotientThreshold > 0) {
+    params.set("quotient_threshold", quotientThreshold);    
   }
 
   ////// Create an input adapter for the graph of the Tpetra matrix.

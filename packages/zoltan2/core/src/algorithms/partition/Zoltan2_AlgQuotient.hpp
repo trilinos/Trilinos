@@ -139,6 +139,14 @@ public:
 								      model));
   }  
 
+  /*! \brief Set up validators specific to this algorithm
+  */
+  static void getValidParameters(ParameterList & pl)
+  {
+    pl.set("quotient_threshold", 1, "threshold for the number of vertices on the active ranks",
+	   Environment::getAnyIntValidator());
+  }
+
   void partition(const RCP<PartitioningSolution<Adapter> > &solution);
   void migrateBack(const RCP<PartitioningSolution<Adapter> > &solution);
 

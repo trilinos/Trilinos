@@ -262,6 +262,7 @@ public:
   {
     Zoltan2_AlgMJ<Adapter>::getValidParameters(pl);
     AlgPuLP<Adapter>::getValidParameters(pl);
+    AlgQuotient<Adapter>::getValidParameters(pl);
     AlgPTScotch<Adapter>::getValidParameters(pl);
     AlgSerialGreedy<Adapter>::getValidParameters(pl);
     AlgForTestingOnly<Adapter>::getValidParameters(pl);

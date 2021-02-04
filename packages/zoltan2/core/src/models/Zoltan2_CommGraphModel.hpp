@@ -407,9 +407,15 @@ CommGraphModel<Adapter>::CommGraphModel(
 template <typename Adapter>
 void CommGraphModel<Adapter>::migrateGraph()
 {
+
   // Set default threshold for migration
-  // We may want to get this from the parameter list
   threshold_ = 1024;  
+
+  // Check if the user set the threshold value 
+  const ParameterList &pl = env_->getParameters();
+  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("quotient_threshold");
+  if (pe)
+    threshold_ = pe->getValue<int>(&threshold_);
 
   // Compute the sizes of/in the new distribution
   nActiveRanks_ = std::ceil((double) nGlobalVertices_ / threshold_);
