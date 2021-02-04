@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 
   myInfo.set_value(stk::coupling::AppName, app_name());
 
-  const stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
+  stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
 
   {
     std::ostringstream os;
@@ -65,7 +65,7 @@ int main(int argc, char** argv)
     myInfo.set_value("current time", currentTime);
     myInfo.set_value(stk::coupling::FinalTime, finalTime);
 
-    const stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
+    otherInfo = myInfo.exchange(commWorld, commApp);
 
     std::ostringstream os;
     os << app_name() << ": current time: " << currentTime;

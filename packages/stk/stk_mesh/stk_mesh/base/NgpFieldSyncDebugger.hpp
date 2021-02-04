@@ -111,7 +111,6 @@ public:
   void device_stale_access_check(NgpField *, const stk::mesh::FastMeshIndex &, const char *, int) const {}
 
   template <typename NgpField>
-  KOKKOS_INLINE_FUNCTION
   void device_stale_access_check(NgpField *, const char *, int) const {}
 };
 
@@ -277,7 +276,6 @@ public:
   }
 
   template <typename NgpField>
-  KOKKOS_FUNCTION
   void device_stale_access_check(NgpField* ngpField,
                                  const char* fileName, int lineNumber) const
   {
@@ -291,7 +289,7 @@ public:
     for (size_t i = 0; i < lastFieldModLocation.extent(0); ++i) {
       for (size_t j = 0; j < lastFieldModLocation.extent(1); ++j) {
         for (size_t k = 0; k < lastFieldModLocation.extent(2); ++k) {
-          if (data_is_stale_on_device(i, ORDER_INDICES(j, k))) {
+          if (data_is_stale_on_device_from_host(i, ORDER_INDICES(j, k))) {
             print_stale_data_warning_without_field_values(i, ORDER_INDICES(j, k), fileName, lineNumber);
           }
         }
@@ -434,6 +432,11 @@ private:
   STK_INLINE_FUNCTION
   bool data_is_stale_on_device(int bucketId, int bucketOrdinal, int component) const {
     return !(lastFieldModLocation(debugDeviceSelectedBucketOffset(bucketId),
+                                  ORDER_INDICES(bucketOrdinal, component)) & LastModLocation::DEVICE);
+  }
+
+  bool data_is_stale_on_device_from_host(int bucketId, int bucketOrdinal, int component) const {
+    return !(lastFieldModLocation(debugHostSelectedBucketOffset(bucketId),
                                   ORDER_INDICES(bucketOrdinal, component)) & LastModLocation::DEVICE);
   }
 
