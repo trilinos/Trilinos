@@ -247,7 +247,7 @@ Piro::PerformROLAnalysis(
   RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
   int g_index = rolParams.get<int>("Response Vector Index", 0);
 
-  int num_parameters = rolParams.get<int>("Number of Parameters", 1);
+  int num_parameters = rolParams.get<int>("Number Of Parameters", 1);
   std::vector<int> p_indices(num_parameters);
   std::vector<std::string> p_names;
 
