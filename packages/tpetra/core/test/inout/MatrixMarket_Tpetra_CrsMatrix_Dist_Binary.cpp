@@ -169,7 +169,6 @@ public:
       catch (std::exception &e) {
     	std::cout << "Could not delete file: " << binfilename << std::endl;
     	std::cout << e.what() << std::endl;
-    	throw e;
       }	      
     }
   }
