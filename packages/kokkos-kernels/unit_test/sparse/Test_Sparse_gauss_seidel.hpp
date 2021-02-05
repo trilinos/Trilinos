@@ -81,8 +81,8 @@ int run_gauss_seidel(
     bool is_symmetric_graph,
     int apply_type = 0, // 0 for symmetric, 1 for forward, 2 for backward.
     int cluster_size = 1,
-    ClusteringAlgorithm cluster_algorithm = CLUSTER_DEFAULT,
-    bool classic = false) // only with two-stage, true for sptrsv instead of richardson
+    bool classic = false, // only with two-stage, true for sptrsv instead of richardson
+    ClusteringAlgorithm clusterAlgo = CLUSTER_DEFAULT) 
 {
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type lno_view_t;
@@ -101,7 +101,7 @@ int run_gauss_seidel(
   kh.set_team_work_size(16);
   kh.set_dynamic_scheduling(true);
   if(gs_algorithm == GS_CLUSTER)
-    kh.create_gs_handle(cluster_algorithm, cluster_size);
+    kh.create_gs_handle(clusterAlgo, cluster_size);
   else if(gs_algorithm == GS_TWOSTAGE) {
     // test for two-stage/classical gs
     kh.create_gs_handle(gs_algorithm);
@@ -282,9 +282,10 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   }
   //*** Cluster-coloring version ****
   int clusterSizes[3] = {2, 5, 34};
+  std::vector<ClusteringAlgorithm> clusteringAlgos = {CLUSTER_MIS2, CLUSTER_BALLOON};
   for(int csize = 0; csize < 3; csize++)
   {
-    for(int algo = 0; algo < (int) NUM_CLUSTERING_ALGORITHMS; algo++)
+    for(auto clusterAlgo : clusteringAlgos)
     {
       for(int apply_type = 0; apply_type < apply_count; ++apply_type)
       {
@@ -292,7 +293,7 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
         //Zero out X before solving
         Kokkos::deep_copy(x_vector, zero);
         run_gauss_seidel<crsMat_t, scalar_view_t, device>(
-            input_mat, GS_CLUSTER, x_vector, y_vector, symmetric, apply_type, clusterSizes[csize], (ClusteringAlgorithm) algo);
+            input_mat, GS_CLUSTER, x_vector, y_vector, symmetric, apply_type, clusterSizes[csize], false, clusterAlgo);
         KokkosBlas::axpby(one, solution_x, -one, x_vector);
         mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
         EXPECT_LT(result_norm_res, initial_norm_res);
@@ -312,10 +313,9 @@ void test_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   //*** Two-stage version (classic) ****
   for (int apply_type = 0; apply_type < apply_count; ++apply_type)
   {
-    ClusteringAlgorithm cluster_algo = (ClusteringAlgorithm)0;
     Kokkos::deep_copy(x_vector, zero);
     run_gauss_seidel<crsMat_t, scalar_view_t, device>
-      (input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type, 0, cluster_algo, true);
+      (input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type, 0, true);
     KokkosBlas::axpby(one, solution_x, -one, x_vector);
     mag_t result_norm_res = KokkosBlas::nrm2(x_vector);
     EXPECT_LT(result_norm_res, initial_norm_res);
@@ -435,10 +435,9 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
   for(int apply_type = 0; apply_type < apply_count; ++apply_type)
   {
     //Zero out X before solving
-    ClusteringAlgorithm cluster_algo = (ClusteringAlgorithm)0;
     Kokkos::deep_copy(x_vector, zero);
     run_gauss_seidel<crsMat_t, scalar_view2d_t, device>
-      (input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type, 0, cluster_algo, true);
+      (input_mat, GS_TWOSTAGE, x_vector, y_vector, symmetric, apply_type, 0, true);
     Kokkos::deep_copy(x_host, x_vector);
     for(lno_t i = 0; i < numVecs; i++)
     {
@@ -452,43 +451,6 @@ void test_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth, lno_
           Kokkos::Details::ArithTraits<scalar_t>::abs(diffDot));
       EXPECT_LT(res, initial_norms[i]);
     }
-  }
-}
-
-template <typename scalar_t, typename lno_t, typename size_type, typename device>
-void test_rcm(lno_t numRows, size_type nnzPerRow, lno_t bandwidth)
-{
-  using namespace Test;
-  typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
-  typedef typename crsMat_t::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::non_const_type lno_row_view_t;
-  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-  typedef KokkosKernelsHandle
-      <size_type, lno_t, scalar_t,
-      typename device::execution_space, typename device::memory_space,typename device::memory_space> KernelHandle;
-  srand(245);
-  size_type nnzTotal = nnzPerRow * numRows;
-  lno_t nnzVariance = nnzPerRow / 4;
-  crsMat_t A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows, numRows, nnzTotal, nnzVariance, bandwidth);
-  lno_row_view_t symRowmap;
-  lno_nnz_view_t symEntries;
-  KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap
-    <typename graph_t::row_map_type, typename graph_t::entries_type, lno_row_view_t, lno_nnz_view_t, typename device::execution_space>
-    (numRows, A.graph.row_map, A.graph.entries, symRowmap, symEntries);
-  typedef KokkosSparse::Impl::RCM<KernelHandle, typename graph_t::row_map_type::non_const_type, typename graph_t::entries_type::non_const_type> rcm_t;
-  rcm_t rcm(numRows, symRowmap, symEntries);
-  lno_nnz_view_t rcmOrder = rcm.rcm();
-  //perm(i) = the node with timestamp i
-  //make sure that perm is in fact a permutation matrix (contains each row exactly once)
-  Kokkos::View<lno_t*, Kokkos::HostSpace> rcmHost("RCM row ordering", numRows);
-  Kokkos::deep_copy(rcmHost, rcmOrder);
-  std::set<lno_t> rowSet;
-  for(lno_t i = 0; i < numRows; i++)
-    rowSet.insert(rcmHost(i));
-  if((lno_t) rowSet.size() != numRows)
-  {
-    std::cerr << "Only got back " << rowSet.size() << " unique row IDs!\n";
-    return;
   }
 }
 
@@ -658,9 +620,6 @@ TEST_F( TestCategory, sparse ## _ ## gauss_seidel_symmetric_rank2 ## _ ## SCALAR
 } \
 TEST_F( TestCategory, sparse ## _ ## gauss_seidel_zero_rows ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_sgs_zero_rows<SCALAR,ORDINAL,OFFSET,DEVICE>(); \
-} \
-TEST_F( TestCategory, sparse ## _ ## rcm ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_rcm<SCALAR,ORDINAL,OFFSET,DEVICE>(10000, 50, 2000); \
 } \
 TEST_F( TestCategory, sparse ## _ ## balloon_clustering ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_balloon_clustering<SCALAR,ORDINAL,OFFSET,DEVICE>(5000, 100, 2000); \

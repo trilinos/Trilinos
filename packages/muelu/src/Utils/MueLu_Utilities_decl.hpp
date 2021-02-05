@@ -208,8 +208,8 @@ namespace MueLu {
     static RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >          Crs2Op(RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Op) { return UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Crs2Op(Op); }
     static Teuchos::ArrayRCP<Scalar>                                             GetMatrixDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetMatrixDiagonal(A); }
     static RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >          GetMatrixDiagonalInverse(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetMatrixDiagonalInverse(A,tol); }
-    static Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > GetLumpedMatrixDiagonal(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> const &A, const bool doReciprocal=false, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero())
-    { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetLumpedMatrixDiagonal(A, doReciprocal, tol, tolReplacement); }
+    static Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > GetLumpedMatrixDiagonal(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> const &A, const bool doReciprocal=false, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero(), const bool replaceSingleEntryRowWithZero = false)
+    { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetLumpedMatrixDiagonal(A, doReciprocal, tol, tolReplacement, replaceSingleEntryRowWithZero); }
     static RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >          GetMatrixOverlappedDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetMatrixOverlappedDiagonal(A); }
     static Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > GetInverse(Teuchos::RCP<const Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > v, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero()) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetInverse(v,tol,tolReplacement); }
     static Teuchos::Array<Magnitude>                                             ResidualNorm(const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ResidualNorm(Op,X,RHS); }
@@ -583,8 +583,8 @@ namespace MueLu {
     static RCP<Matrix>                                                           Crs2Op(RCP<CrsMatrix> Op) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Crs2Op(Op); }
     static Teuchos::ArrayRCP<Scalar>                                             GetMatrixDiagonal(const Matrix& A) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetMatrixDiagonal(A); }
     static RCP<Vector>                                                           GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetMatrixDiagonalInverse(A,tol); }
-    static Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > GetLumpedMatrixDiagonal(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> const &A, const bool doReciprocal=false, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero())
-    { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetLumpedMatrixDiagonal(A, doReciprocal, tol, tolReplacement); }
+    static Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > GetLumpedMatrixDiagonal(Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> const &A, const bool doReciprocal=false, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero(), const bool replaceSingleEntryRowWithZero = false)
+    { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetLumpedMatrixDiagonal(A, doReciprocal, tol, tolReplacement, replaceSingleEntryRowWithZero); }
     static RCP<Vector>                                                           GetMatrixOverlappedDiagonal(const Matrix& A) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetMatrixOverlappedDiagonal(A); }
     static RCP<Vector>                                                           GetInverse(Teuchos::RCP<const Vector> v, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero()) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetInverse(v,tol,tolReplacement); }
     static Teuchos::Array<Magnitude>                                             ResidualNorm(const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ResidualNorm(Op,X,RHS); }
@@ -924,6 +924,7 @@ namespace MueLu {
   - Coordinate information "Coordinates"
   - "Node Comm"
   - Primal-to-dual node mapping "DualNodeID2PrimalNodeID"
+  - "Primal interface DOF map"
   - "pcoarsen: element to node map
 
   @param[in] inList List with all input parameters/data as provided by the user

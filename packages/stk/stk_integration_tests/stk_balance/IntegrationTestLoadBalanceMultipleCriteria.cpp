@@ -44,7 +44,7 @@ public:
     void put_decomposition_on_mesh(stk::mesh::Field<double>& procId)
     {
         stk::mesh::EntityVector elements;
-        stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK), elements);
+        stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part(), elements);
         for(stk::mesh::Entity element : elements)
         {
             double* data = stk::mesh::field_data(procId, element);
@@ -76,7 +76,7 @@ public:
 
             std::ostringstream os;
             stk::mesh::EntityVector elements;
-            stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK), elements);
+            stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part(), elements);
             size_t weight1 = 0;
             size_t weight2 = 0;
 
@@ -94,7 +94,7 @@ public:
             os << "decomp method: " << graphSettings.getDecompMethod() << std::endl;
             stk::balance::balanceStkMesh(graphSettings, get_bulk());
 
-            stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK), elements);
+            stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part(), elements);
 
             weight1 = 0;
             weight2 = 0;

@@ -20,6 +20,7 @@ algorithm = "distance laplacian" distance laplacian algorithm = "default": thres
 aggregation: drop tol = 0.05
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
+aggregation: block diagonal: interleaved blocksize = 3   [default]
 aggregation: distance laplacian algo = default   [default]
 aggregation: classical algo = default   [default]
 lightweight wrap = 1
@@ -84,6 +85,8 @@ sa: use rowsumabs diagonal scaling = 0   [default]
 sa: enforce constraints = 0   [default]
 tentative: calculate qr = 1   [default]
 sa: max eigenvalue = -1   [default]
+sa: rowsumabs diagonal replacement tolerance = -1   [default]
+sa: rowsumabs diagonal replacement value = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 
@@ -134,6 +137,7 @@ algorithm = "distance laplacian" distance laplacian algorithm = "default": thres
 aggregation: drop tol = 0.05
 aggregation: Dirichlet threshold = 0   [default]
 aggregation: drop scheme = distance laplacian
+aggregation: block diagonal: interleaved blocksize = 3   [default]
 aggregation: distance laplacian algo = default   [default]
 aggregation: classical algo = default   [default]
 lightweight wrap = 1
@@ -198,6 +202,8 @@ sa: use rowsumabs diagonal scaling = 0   [default]
 sa: enforce constraints = 0   [default]
 tentative: calculate qr = 1   [default]
 sa: max eigenvalue = -1   [default]
+sa: rowsumabs diagonal replacement tolerance = -1   [default]
+sa: rowsumabs diagonal replacement value = 0   [default]
 matrixmatrix: kernel params -> 
  [empty list]
 

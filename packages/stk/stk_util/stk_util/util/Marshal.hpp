@@ -35,7 +35,7 @@
 #ifndef STK_UTIL_UTIL_MARSHAL_HPP
 #define STK_UTIL_UTIL_MARSHAL_HPP
 
-#include <stk_util/stk_config.h>
+#include "stk_util/stk_config.h"
 #ifdef STK_HAS_MPI
 
 #include <stddef.h>                     // for size_t

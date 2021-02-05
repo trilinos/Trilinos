@@ -32,13 +32,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <vector>                       // for vector
-#include <stk_util/stk_config.h>
-#include <stk_util/environment/WallTime.hpp> 
-#include <stk_util/parallel/CommBufferV.hpp>
-#include <limits>
-#include <iostream>
+#include "gtest/gtest.h"
+#include "stk_util/environment/WallTime.hpp"  // for wall_time
+#include "stk_util/parallel/CommBufferV.hpp"  // for CommBufferV
+#include <cstddef>                            // for size_t
+#include <iostream>                           // for operator<<, endl, basic_ostream, basic_ostr...
+#include <vector>                             // for vector
 
 
 TEST(Parallel, comm_buffer_exp_double)

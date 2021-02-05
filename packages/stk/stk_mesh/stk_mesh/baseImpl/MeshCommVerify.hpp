@@ -107,6 +107,18 @@ bool unpack_not_owned_verify(const BulkData& mesh,
                       const std::function<PairIterEntityComm(Entity)>& getEntityComm,
                              CommSparse& commSparse,
                              std::ostream& error_log);
+
+void check_matching_parts_count(unsigned partsCount, int rank, int commSize, MPI_Comm comm);
+
+void check_matching_parts(const PartVector& parts, unsigned partsCount, int rank, int commSize, MPI_Comm comm);
+
+void check_matching_parts_across_procs(const PartVector& parts, MPI_Comm comm);
+
+void check_matching_selectors_and_parts_across_procs(const Selector& selector,
+                                                     const PartVector& add_parts,
+                                                     const PartVector& remove_parts,
+                                                     MPI_Comm comm);
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

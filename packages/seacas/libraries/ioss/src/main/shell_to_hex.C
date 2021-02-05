@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -289,8 +289,8 @@ namespace {
       if (debug) {
         std::cerr << name << ", ";
       }
-      int num_nodes = (*i)->entity_count();
-      int degree    = (*i)->get_property("component_degree").get_int();
+      auto num_nodes = (*i)->entity_count();
+      int  degree    = (*i)->get_property("component_degree").get_int();
       if (!debug) {
         std::cerr << " Number of coordinates per node       =" << std::setw(9) << degree << "\n";
         std::cerr << " Number of nodes                      =" << std::setw(9) << num_nodes << "\n";
@@ -309,7 +309,7 @@ namespace {
   {
     const Ioss::ElementBlockContainer &         ebs            = region.get_element_blocks();
     Ioss::ElementBlockContainer::const_iterator i              = ebs.begin();
-    int                                         total_elements = 0;
+    size_t                                      total_elements = 0;
     while (i != ebs.end()) {
       const std::string &name = (*i)->name();
       if (debug) {
@@ -362,7 +362,7 @@ namespace {
     Ioss::NodeBlock *nbo = (*output_region.get_node_blocks().begin());
 
     // Get the nodal coordinates...
-    int num_nodes = nb->entity_count();
+    auto num_nodes = nb->entity_count();
 
     {
       std::vector<int> ids(2 * num_nodes);
@@ -394,8 +394,8 @@ namespace {
       Ioss::ElementBlock *out_eb = *out_ib;
       ++out_ib;
 
-      int num_elem          = eb->entity_count();
-      int num_node_per_elem = eb->topology()->number_nodes();
+      auto num_elem          = eb->entity_count();
+      auto num_node_per_elem = eb->topology()->number_nodes();
 
       // Get the connectivity array...
       conn.resize(num_elem * num_node_per_elem);
@@ -408,7 +408,7 @@ namespace {
       eb->get_field_data("connectivity", conn);
 
       // Connectivity is in global id space; change to local...
-      for (int i = 0; i < num_elem * num_node_per_elem; i++) {
+      for (int64_t i = 0; i < num_elem * num_node_per_elem; i++) {
         int local = region.node_global_to_local(conn[i]);
         conn[i]   = local - 1;
       }

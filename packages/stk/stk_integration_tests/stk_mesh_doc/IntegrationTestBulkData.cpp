@@ -68,7 +68,6 @@
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <string>                       // for string, basic_string, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc

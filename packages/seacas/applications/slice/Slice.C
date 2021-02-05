@@ -1224,6 +1224,9 @@ namespace {
                 connectivity[p].push_back(glob_conn[el++]);
               }
             }
+	    else {
+	      el += element_nodes;
+	    }
           }
           offset += count;
         }
@@ -1239,6 +1242,9 @@ namespace {
               connectivity[p].push_back(glob_conn[el++]);
             }
           }
+	  else {
+	    el += element_nodes;
+	  }
         }
         offset += element_count;
       }

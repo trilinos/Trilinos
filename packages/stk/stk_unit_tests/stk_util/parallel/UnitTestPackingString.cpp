@@ -32,12 +32,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include <gtest/gtest.h>
-#include <stk_util/parallel/CommSparse.hpp>
-#include <stk_util/parallel/MPI.hpp>
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/stk_config.h>
+#include "gtest/gtest.h"
+#include "stk_util/parallel/Parallel.hpp"      // for parallel_machine_size, MPI_COMM_WORLD, Par...
+#include "stk_util/parallel/ParallelComm.hpp"  // for CommBroadcast, CommBuffer
+#include <cstdlib>                             // for rand, RAND_MAX
+#include <functional>                          // for function
+#include <map>                                 // for map
+#include <string>                              // for string, basic_string
+#include <vector>                              // for vector
 
 namespace
 {

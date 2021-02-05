@@ -469,10 +469,10 @@ namespace KokkosBatched {
     if (k <= 0) return 0;
 
     ValueType
-      a_0p, b_p0, c_00 = 0, c_01 = 0, c_02 = 0, c_03 = 0,
-      a_1p, b_p1, c_10 = 0, c_11 = 0, c_12 = 0, c_13 = 0,
-      a_2p, b_p2, c_20 = 0, c_21 = 0, c_22 = 0, c_23 = 0,
-      a_3p, b_p3, c_30 = 0, c_31 = 0, c_32 = 0, c_33 = 0;
+      a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0), c_02 = ValueType(0), c_03 = ValueType(0),
+      a_1p, b_p1, c_10 = ValueType(0), c_11 = ValueType(0), c_12 = ValueType(0), c_13 = ValueType(0),
+      a_2p, b_p2, c_20 = ValueType(0), c_21 = ValueType(0), c_22 = ValueType(0), c_23 = ValueType(0),
+      a_3p, b_p3, c_30 = ValueType(0), c_31 = ValueType(0), c_32 = ValueType(0), c_33 = ValueType(0);
 
     const int
       i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0,
@@ -516,10 +516,10 @@ namespace KokkosBatched {
     if (k <= 0) return 0;
 
     ValueType
-      a_0p, b_p0, c_00 = 0, c_01 = 0, c_02 = 0,
-      a_1p, b_p1, c_10 = 0, c_11 = 0, c_12 = 0,
-      a_2p, b_p2, c_20 = 0, c_21 = 0, c_22 = 0,
-      a_3p,       c_30 = 0, c_31 = 0, c_32 = 0;
+      a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0), c_02 = ValueType(0),
+      a_1p, b_p1, c_10 = ValueType(0), c_11 = ValueType(0), c_12 = ValueType(0),
+      a_2p, b_p2, c_20 = ValueType(0), c_21 = ValueType(0), c_22 = ValueType(0),
+      a_3p,       c_30 = ValueType(0), c_31 = ValueType(0), c_32 = ValueType(0);
 
     const int
       i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0,
@@ -563,10 +563,10 @@ namespace KokkosBatched {
     if (k <= 0) return 0;
 
     ValueType
-      a_0p, b_p0, c_00 = 0, c_01 = 0, 
-      a_1p, b_p1, c_10 = 0, c_11 = 0, 
-      a_2p,       c_20 = 0, c_21 = 0, 
-      a_3p,       c_30 = 0, c_31 = 0;
+      a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0), 
+      a_1p, b_p1, c_10 = ValueType(0), c_11 = ValueType(0), 
+      a_2p,       c_20 = ValueType(0), c_21 = ValueType(0), 
+      a_3p,       c_30 = ValueType(0), c_31 = ValueType(0);
 
     const int
       i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0,
@@ -610,10 +610,10 @@ namespace KokkosBatched {
     if (k <= 0) return 0;
 
     ValueType
-      a_0p, b_p0, c_00 = 0,
-      a_1p,       c_10 = 0,
-      a_2p,       c_20 = 0,
-      a_3p,       c_30 = 0;
+      a_0p, b_p0, c_00 = ValueType(0),
+      a_1p,       c_10 = ValueType(0),
+      a_2p,       c_20 = ValueType(0),
+      a_3p,       c_30 = ValueType(0);
 
     const int
       i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0, i3 = 3*_as0,
@@ -657,9 +657,9 @@ namespace KokkosBatched {
     if (k <= 0) return 0;
 
     ValueType
-      a_0p, b_p0, c_00 = 0, c_01 = 0, c_02 = 0, c_03 = 0,
-      a_1p, b_p1, c_10 = 0, c_11 = 0, c_12 = 0, c_13 = 0,
-      a_2p, b_p2, c_20 = 0, c_21 = 0, c_22 = 0, c_23 = 0,
+      a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0), c_02 = ValueType(0), c_03 = ValueType(0),
+      a_1p, b_p1, c_10 = ValueType(0), c_11 = ValueType(0), c_12 = ValueType(0), c_13 = ValueType(0),
+      a_2p, b_p2, c_20 = ValueType(0), c_21 = ValueType(0), c_22 = ValueType(0), c_23 = ValueType(0),
       /**/  b_p3;
 
     const int
@@ -702,8 +702,8 @@ namespace KokkosBatched {
     if (k <= 0) return 0;
 
     ValueType
-      a_0p, b_p0, c_00 = 0, c_01 = 0, c_02 = 0, c_03 = 0,
-      a_1p, b_p1, c_10 = 0, c_11 = 0, c_12 = 0, c_13 = 0,
+      a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0), c_02 = ValueType(0), c_03 = ValueType(0),
+      a_1p, b_p1, c_10 = ValueType(0), c_11 = ValueType(0), c_12 = ValueType(0), c_13 = ValueType(0),
       /**/  b_p2, 
       /**/  b_p3;
 
@@ -745,7 +745,7 @@ namespace KokkosBatched {
     if (k <= 0) return 0;
 
     ValueType
-      a_0p, b_p0, c_00 = 0, c_01 = 0, c_02 = 0, c_03 = 0,
+      a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0), c_02 = ValueType(0), c_03 = ValueType(0),
       /**/  b_p1, 
       /**/  b_p2, 
       /**/  b_p3; 
@@ -790,9 +790,9 @@ namespace KokkosBatched {
     if (k <= 0) return 0;
 
     ValueType
-      a_0p, b_p0, c_00 = 0, c_01 = 0, c_02 = 0,
-      a_1p, b_p1, c_10 = 0, c_11 = 0, c_12 = 0,
-      a_2p, b_p2, c_20 = 0, c_21 = 0, c_22 = 0;
+      a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0), c_02 = ValueType(0),
+      a_1p, b_p1, c_10 = ValueType(0), c_11 = ValueType(0), c_12 = ValueType(0),
+      a_2p, b_p2, c_20 = ValueType(0), c_21 = ValueType(0), c_22 = ValueType(0);
 
     const int
       i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0,
@@ -833,9 +833,9 @@ namespace KokkosBatched {
     if (k <= 0) return 0;
 
     ValueType
-      a_0p, b_p0, c_00 = 0, c_01 = 0, 
-      a_1p, b_p1, c_10 = 0, c_11 = 0, 
-      a_2p,       c_20 = 0, c_21 = 0;
+      a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0), 
+      a_1p, b_p1, c_10 = ValueType(0), c_11 = ValueType(0), 
+      a_2p,       c_20 = ValueType(0), c_21 = ValueType(0);
 
     const int
       i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0,
@@ -876,9 +876,9 @@ namespace KokkosBatched {
     if (k <= 0) return 0;
 
     ValueType
-      a_0p, b_p0, c_00 = 0, 
-      a_1p,       c_10 = 0, 
-      a_2p,       c_20 = 0;
+      a_0p, b_p0, c_00 = ValueType(0), 
+      a_1p,       c_10 = ValueType(0), 
+      a_2p,       c_20 = ValueType(0);
 
     const int
       i0 = 0*_as0, i1 = 1*_as0, i2 = 2*_as0,
@@ -919,8 +919,8 @@ namespace KokkosBatched {
     if (k <= 0) return 0;
 
     ValueType
-      a_0p, b_p0, c_00 = 0, c_01 = 0, c_02 = 0,
-      a_1p, b_p1, c_10 = 0, c_11 = 0, c_12 = 0,
+      a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0), c_02 = ValueType(0),
+      a_1p, b_p1, c_10 = ValueType(0), c_11 = ValueType(0), c_12 = ValueType(0),
       /**/  b_p2;
 
     const int
@@ -959,7 +959,7 @@ namespace KokkosBatched {
     if (k <= 0) return 0;
 
     ValueType
-      a_0p, b_p0, c_00 = 0, c_01 = 0, c_02 = 0,
+      a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0), c_02 = ValueType(0),
       /**/  b_p1, 
       /**/  b_p2; 
 
@@ -1002,8 +1002,8 @@ namespace KokkosBatched {
     if (k <= 0) return 0;
 
     ValueType
-      a_0p, b_p0, c_00 = 0, c_01 = 0,
-      a_1p, b_p1, c_10 = 0, c_11 = 0;
+      a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0),
+      a_1p, b_p1, c_10 = ValueType(0), c_11 = ValueType(0);
 
     const int
       i0 = 0*_as0, i1 = 1*_as0,
@@ -1041,8 +1041,8 @@ namespace KokkosBatched {
     if (k <= 0) return 0;
 
     ValueType
-      a_0p, b_p0, c_00 = 0,
-      a_1p,       c_10 = 0;
+      a_0p, b_p0, c_00 = ValueType(0),
+      a_1p,       c_10 = ValueType(0);
 
     const int
       i0 = 0*_as0, i1 = 1*_as0,
@@ -1080,7 +1080,7 @@ namespace KokkosBatched {
     if (k <= 0) return 0;
 
     ValueType
-      a_0p, b_p0, c_00 = 0, c_01 = 0,
+      a_0p, b_p0, c_00 = ValueType(0), c_01 = ValueType(0),
       /**/  b_p1;
     const int
       i0 = 0*_as0, 
@@ -1120,7 +1120,7 @@ namespace KokkosBatched {
     if (k <= 0) return 0;
 
     ValueType
-      a_0p, b_p0, c_00 = 0;
+      a_0p, b_p0, c_00 = ValueType(0);
 
     const int
       i0 = 0*_as0,

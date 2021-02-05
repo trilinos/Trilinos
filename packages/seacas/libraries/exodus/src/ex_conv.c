@@ -433,13 +433,27 @@ int ex_set_option(int exoid, ex_option_type option, int option_value)
     /* Check whether file type supports compression... */
     if (file->is_hdf5) {
       int value = option_value;
-      if (value > 9) {
-        value = 9;
+      if (file->compression_algorithm == EX_COMPRESS_ZLIB) {
+        if (value > 9) {
+          value = 9;
+        }
+        if (value < 0) {
+          value = 0;
+        }
       }
-      if (value < 0) {
-        value = 0;
+      else if (file->compression_algorithm == EX_COMPRESS_SZIP) {
+        if (value % 2 != 0 || value < 4 || value > 32) {
+          char errmsg[MAX_ERR_LENGTH];
+          snprintf(errmsg, MAX_ERR_LENGTH,
+                   "ERROR: invalid value %d for SZIP Compression.  Must be even and 4 <= value <= "
+                   "32. Ignoring.",
+                   value);
+          ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+          EX_FUNC_LEAVE(EX_FATAL);
+        }
       }
       file->compression_level = value;
+      assert(value == file->compression_level);
     }
     else {
       file->compression_level = 0;

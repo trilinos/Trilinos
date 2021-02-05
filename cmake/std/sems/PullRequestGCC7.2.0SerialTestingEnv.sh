@@ -16,7 +16,7 @@ module load sems-netcdf/4.7.3/base
 module load sems-metis/5.1.0/base
 module load sems-superlu/4.3/base
 
-module load sems-cmake/3.12.2
+module load sems-cmake/3.17.1
 module load sems-ninja_fortran/1.8.2
 
 # Boost loads sems-python/2.7.x as a side effect.

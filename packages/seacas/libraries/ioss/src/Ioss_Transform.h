@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -22,7 +22,7 @@ namespace Ioss {
   public:
     virtual ~Transform();
     virtual const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const = 0;
-    virtual int                       output_count(int in) const                         = 0;
+    virtual size_t                    output_count(size_t in) const                      = 0;
 
     bool execute(const Ioss::Field &field, void *data);
 

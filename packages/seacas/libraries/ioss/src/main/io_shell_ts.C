@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
   Kokkos::ScopeGuard kokkos(argc, argv);
 #endif
 
-  IOShell::Interface interFace;
+  IOShell::Interface interFace(version);
   bool               success = interFace.parse_options(argc, argv, rank);
   if (!success) {
     exit(EXIT_FAILURE);
@@ -179,8 +179,8 @@ int main(int argc, char *argv[])
   if (mem_stats) {
     int64_t MiB = 1024 * 1024;
 #ifdef SEACAS_HAVE_MPI
-    int64_t min, max, avg;
-    int64_t hwmin, hwmax, hwavg;
+    int64_t             min, max, avg;
+    int64_t             hwmin, hwmax, hwavg;
     Ioss::ParallelUtils parallel(MPI_COMM_WORLD);
     parallel.memory_stats(min, max, avg);
     parallel.hwm_memory_stats(hwmin, hwmax, hwavg);

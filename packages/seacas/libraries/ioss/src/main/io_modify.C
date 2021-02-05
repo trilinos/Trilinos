@@ -311,12 +311,12 @@ int main(int argc, char *argv[])
     std::string input;
     if (from_term) {
       fmt::print(fg(fmt::terminal_color::magenta), "\n");
-      const char *cinput = getline_int("COMMAND> ");
+      const char *cinput = io_getline_int("COMMAND> ");
       if (cinput && cinput[0] == '\0') {
         break;
       }
       if (cinput) {
-        gl_histadd(cinput);
+        io_gl_histadd(cinput);
       }
       input = cinput;
     }

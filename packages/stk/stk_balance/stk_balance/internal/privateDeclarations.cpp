@@ -687,7 +687,7 @@ void fill_spider_connectivity_count_fields(stk::mesh::BulkData & bulk, const Bal
     stk::mesh::Selector selectBeamNodes(meta.locally_owned_part() &
                                         meta.get_topology_root_part(stk::topology::BEAM_2));
     stk::mesh::EntityVector nodes;
-    mesh::get_selected_entities(selectBeamNodes, bulk.buckets(stk::topology::NODE_RANK), nodes);
+    mesh::get_entities(bulk, stk::topology::NODE_RANK, selectBeamNodes, nodes);
     for(stk::mesh::Entity node : nodes) {
       int * beamConnectivityCount = stk::mesh::field_data(*beamConnectivityCountField, node);
       *beamConnectivityCount = num_beams_connected_to_node(bulk, node);
@@ -697,7 +697,7 @@ void fill_spider_connectivity_count_fields(stk::mesh::BulkData & bulk, const Bal
     stk::mesh::Selector selectBeamElements(meta.locally_owned_part() &
                                            meta.get_topology_root_part(stk::topology::BEAM_2));
     stk::mesh::EntityVector beams;
-    mesh::get_selected_entities(selectBeamElements, bulk.buckets(stk::topology::ELEM_RANK), beams);
+    mesh::get_entities(bulk, stk::topology::ELEM_RANK, selectBeamElements, beams);
     for(stk::mesh::Entity beam : beams) {
       int * volumeConnectivityCount = stk::mesh::field_data(*volumeConnectivityCountField, beam);
       *volumeConnectivityCount = num_volume_elements_connected_to_beam(bulk, beam);
@@ -737,9 +737,10 @@ void fill_zoltan2_graph(const BalanceSettings& balanceSettings,
 
 stk::mesh::EntityVector get_entities_to_balance(stk::mesh::Selector selector, stk::mesh::EntityRank primaryRank, const stk::mesh::BulkData& bulkData)
 {
+    const bool sortById = true;
     stk::mesh::EntityVector entitiesToBalance;
     selector = selector & bulkData.mesh_meta_data().locally_owned_part();
-    stk::mesh::get_selected_entities(selector, bulkData.buckets(primaryRank), entitiesToBalance);
+    stk::mesh::get_entities(bulkData, primaryRank, selector, entitiesToBalance, sortById);
     return entitiesToBalance;
 }
 
@@ -827,7 +828,7 @@ void get_multicriteria_parmetis_decomp(const stk::mesh::BulkData &mesh, const Ba
 #endif
 
     stk::mesh::EntityVector elements;
-    stk::mesh::get_selected_entities(mesh.mesh_meta_data().locally_owned_part() & selector, mesh.buckets(stk::topology::ELEM_RANK), elements);
+    stk::mesh::get_entities(mesh, stk::topology::ELEM_RANK, mesh.mesh_meta_data().locally_owned_part() & selector, elements);
 
     // local entity j is on which processor
     const StkMeshZoltanAdapter::part_t *processorOntoWhichEntityBelongs = problem.getSolution().getPartListView();
@@ -1019,7 +1020,7 @@ void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::Bul
 
   stk::mesh::EntityVector beams;
   stk::mesh::Part & beamPart = meta.get_topology_root_part(stk::topology::BEAM_2);
-  stk::mesh::get_selected_entities(beamPart & meta.locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), beams);
+  stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, beamPart & meta.locally_owned_part(), beams);
 
   stk::mesh::EntityVector particles;
   stk::mesh::EntityProcMap newSpiderEntityOwners;

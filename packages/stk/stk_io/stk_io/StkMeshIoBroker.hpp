@@ -62,7 +62,7 @@ namespace Ioss { class Property; }
 namespace Ioss { class Region; }
 namespace boost { class any; }
 namespace stk { namespace io { class InputFile; } }
-namespace stk { namespace io { class SidesetUpdater; } }
+namespace stk { namespace mesh { class SidesetUpdater; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }

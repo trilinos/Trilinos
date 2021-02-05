@@ -32,11 +32,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <stk_util/diag/Platform.hpp>
+#include "gtest/gtest.h"
+#include "stk_util/diag/Platform.hpp"  // for domainname, hostname
+#include <stdio.h>                     // for sprintf
+#include <cstdlib>                     // for getenv, putenv, NULL
+#include <string>                      // for string, operator==, basic_string
 
-#include <string>
-#include <cstdlib>
 
 TEST(StkEnv, getenv)
 {

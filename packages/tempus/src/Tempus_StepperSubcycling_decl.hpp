@@ -123,7 +123,6 @@ public:
     virtual void setSubcyclingMinTimeStep(Scalar MinTimeStep);
     virtual void setSubcyclingInitTimeStep(Scalar InitTimeStep);
     virtual void setSubcyclingMaxTimeStep(Scalar MaxTimeStep);
-    virtual void setSubcyclingStepType(std::string StepType);
     virtual void setSubcyclingMaxFailures(int MaxFailures);
     virtual void setSubcyclingMaxConsecFailures(int MaxConsecFailures);
     virtual void setSubcyclingScreenOutputIndexInterval(int i);

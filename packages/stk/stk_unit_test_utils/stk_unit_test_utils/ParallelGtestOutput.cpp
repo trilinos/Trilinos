@@ -5,7 +5,7 @@
 #include <gtest/gtest-message.h>
 #include <stdarg.h>                 // for va_end, va_list, va_start
 #include <stdio.h>                  // for printf, vprintf, fflush, NULL, etc
-#include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelVectorConcat.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 #include <string>                   // for string
@@ -112,22 +112,19 @@ private:
     virtual void OnTestPartResult(
             const ::testing::TestPartResult& test_part_result)
     {
-//        if(mProcId == 0)
-        {
-            printf("%s on proc %d in %s:%d\n%s\n",
-                    test_part_result.failed() ? "*** Failure" : "*** Success",
-                    mProcId,
-                    test_part_result.file_name(),
-                    test_part_result.line_number(),
-                    test_part_result.summary());
-        }
+        printf("%s on proc %d in %s:%d\n%s\n",
+                test_part_result.failed() ? "*** Failure" : "*** Success",
+                mProcId,
+                test_part_result.file_name(),
+                test_part_result.line_number(),
+                test_part_result.summary());
     }
 
     // Called after a test ends.
     virtual void OnTestEnd(const ::testing::TestInfo& test_info)
     {
         int numFailuresThisProc = 0;
-        if(!test_info.result()->Passed())
+        if(test_info.result() != nullptr && !test_info.result()->Passed())
         {
             numFailuresThisProc = 1;
         }
@@ -149,8 +146,12 @@ private:
             printf("%s.%s", test_info.test_case_name(), test_info.name());
             if ( should_print_time() )
             {
-                printf(" (%s ms)\n", ::testing::internal::StreamableToString(
-                     test_info.result()->elapsed_time()).c_str());
+#ifdef STK_BUILT_IN_SIERRA
+                size_t millis = test_info.result() != nullptr ? test_info.result()->elapsed_time() : 0;
+#else
+                size_t millis = 0;
+#endif
+                printf(" (%s ms)\n", ::testing::internal::StreamableToString(millis).c_str());
             }
             else
             {

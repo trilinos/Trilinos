@@ -32,16 +32,16 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stdlib.h>
-#include <stdexcept>
-#include <sstream>
-#include <iostream>
-#include <vector>
+#include "stk_util/parallel/CommSparse.hpp"
+#include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer, CommBufferAlign
+#include "stk_util/stk_config.h"               // for STK_HAS_MPI
+#include <algorithm>                           // for copy, max
+#include <iostream>                            // for operator<<, basic_ostream, ostringstream
+#include <memory>                              // for allocator_traits<>::value_type
+#include <stdexcept>                           // for runtime_error, logic_error, range_error
+#include <string>                              // for char_traits, string
+#include <vector>                              // for vector
 
-#include <stk_util/environment/CPUTime.hpp>
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/CommSparse.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
 
 namespace stk {
 

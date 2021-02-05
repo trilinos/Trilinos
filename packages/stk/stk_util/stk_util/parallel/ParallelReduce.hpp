@@ -35,16 +35,15 @@
 #ifndef stk_util_parallel_ParallelReduce_hpp
 #define stk_util_parallel_ParallelReduce_hpp
 
-#include <stk_util/stk_config.h>
-#include <stdint.h>                     // for int64_t
-#include <cstddef>                      // for size_t
-#include <iosfwd>                       // for ostream
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/util/SimpleArrayOps.hpp>  // for BitAnd, BitOr, Copy, etc
-#include <string>                       // for string
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/MPI.hpp>
-#include "stk_util/util/ReportHandler.hpp"
+#include "stk_util/parallel/MPI.hpp"         // for Datatype, get_mpi_loc_op, Loc
+#include "stk_util/parallel/Parallel.hpp"    // for ParallelMachine, ompi_communicator_t, MPI_Op
+#include "stk_util/stk_config.h"             // for STK_HAS_MPI
+#include "stk_util/util/ReportHandler.hpp"   // for ThrowRequire
+#include "stk_util/util/SimpleArrayOps.hpp"  // for BitAnd, BitOr, Copy, Max, Min, Prod, Sum
+#include <cstddef>                           // for size_t
+#include <functional>                        // for greater, less
+#include <iosfwd>                            // for ostream
+#include <string>                            // for string
 
 //------------------------------------------------------------------------
 
@@ -104,24 +103,34 @@ all_reduce_loc_impl(ParallelMachine comm,
     unsigned n,
     MPI_Op mpiOp)
 {
-    using MpiLocType = sierra::MPI::Loc<T, IdType>;
-
-    if ( n < 1 ) return;
-    MpiLocType * const vin  = new MpiLocType[n] ;
-    MpiLocType * const vout = new MpiLocType[n] ;
-    for (unsigned i = 0 ; i < n ; ++i ) {
-      vin[i].m_value = local_extrema[i] ;
-      vin[i].m_loc = local_loc[i] ;
+    int numProcs = 0;
+    MPI_Comm_size(comm, &numProcs);
+    if (numProcs > 1) {
+      using MpiLocType = sierra::MPI::Loc<T, IdType>;
+  
+      if ( n < 1 ) return;
+      MpiLocType * const vin  = new MpiLocType[n] ;
+      MpiLocType * const vout = new MpiLocType[n] ;
+      for (unsigned i = 0 ; i < n ; ++i ) {
+        vin[i].m_value = local_extrema[i] ;
+        vin[i].m_loc = local_loc[i] ;
+      }
+  
+      ThrowRequire( MPI_SUCCESS == MPI_Allreduce( vin, vout, (int) n, sierra::MPI::Datatype< MpiLocType >::type(), mpiOp, comm ) );
+  
+      for (unsigned i = 0 ; i < n ; ++i ) {
+        global_extrema[i] = vout[i].m_value ;
+        global_loc[i] = vout[i].m_loc ;
+      }
+      delete[] vin ;
+      delete[] vout ;
     }
-
-    ThrowRequire( MPI_SUCCESS == MPI_Allreduce( vin, vout, (int) n, sierra::MPI::Datatype< MpiLocType >::type(), mpiOp, comm ) );
-
-    for (unsigned i = 0 ; i < n ; ++i ) {
-      global_extrema[i] = vout[i].m_value ;
-      global_loc[i] = vout[i].m_loc ;
+    else {
+      for (unsigned i = 0 ; i < n ; ++i ) {
+        global_extrema[i] = local_extrema[i];
+        global_loc[i] = local_loc[i];
+      }
     }
-    delete[] vin ;
-    delete[] vout ;
 }
 
 template<typename T, typename IdType>

@@ -34,8 +34,8 @@
 #ifndef STK_UTIL_COMMANDLINE_PARSEDOPTIONS_HPP
 #define STK_UTIL_COMMANDLINE_PARSEDOPTIONS_HPP
 
-#include <stk_util/stk_config.h>
-#include <stk_util/util/ReportHandler.hpp>
+#include "stk_util/stk_config.h"
+#include "stk_util/util/ReportHandler.hpp"
 #include <sstream>
 #include <string>
 #include <map>

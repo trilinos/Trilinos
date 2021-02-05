@@ -37,7 +37,6 @@
 
 #include <vector>
 #include <string>
-#include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 #include <test_utils/NemesisInfo.hpp>
 

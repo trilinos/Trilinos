@@ -34,21 +34,20 @@
 // 
  */
 
-#include <cstdlib>
-#include <cstring>
-#include <fstream>
-#include <iostream>
-#include <assert.h>
-
-#include <stk_util/stk_config.h>
+#include "stk_util/parallel/mpi_filebuf.hpp"
+#include "stk_util/stk_config.h"  // for STK_HAS_MPI
+#include <cassert>                // for assert
+#include <fstream>                // for fstream
+#include <cstddef>                // for size_t
+#include <cstdlib>                // for free, malloc, realloc
+#include <cstring>                // for memcpy
+#include <iostream>               // for operator<<, basic_ostream, cerr, endl, basic_istream
+#include <vector>                 // for vector
 
 #if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
-#include <aprepro.h>
-#include <apr_tokenize.h>
+#include "apr_tokenize.h"         // for tokenize
+#include "aprepro.h"              // for Aprepro, aprepro_options
 #endif
-
-#include <stk_util/parallel/mpi_filebuf.hpp>
-#include <stk_util/environment/Env.hpp>
 
 enum { buffer_default_length = 4096 };
 enum { buffer_putback_length =   16 };
@@ -81,6 +80,7 @@ mpi_filebuf::mpi_filebuf(bool useAprepro, const std::string &apreproDefines)
     aprepro_buffer_len(0),
     aprepro_buffer_ptr(0),
     aprepro_parsing_error_count(0),
+    aprepro_parsing_warning_count(0),
     aprepro_defines(apreproDefines)
 {}
 
@@ -183,6 +183,11 @@ mpi_filebuf * mpi_filebuf::open(
   // If input and use_aprepro, parse the file and store parsed results
   // into buffer on root_processor.
   if (use_aprepro && !comm_output) {
+
+    std::stringstream errStream;
+    std::stringstream warnStream;
+    std::stringstream infoStream;
+
     if (root_processor == rank) {
       // Note that file is double-opened.  Aprepro uses an std::fstream
       std::fstream infile(file_name, std::fstream::in);
@@ -194,11 +199,15 @@ mpi_filebuf * mpi_filebuf::open(
       }
 
       SEAMS::Aprepro aprepro;
-      aprepro.set_error_streams(&sierra::Env::output(), &sierra::Env::output(), &sierra::Env::output());
+
+      aprepro.set_error_streams(&errStream, &warnStream, &infoStream);
 
       stk::add_aprepro_defines(aprepro, aprepro_defines);
+      aprepro.ap_options.require_defined=true;
+
 
       bool result = aprepro.parse_stream(infile);
+
       if (result) {
 	// Get size of buffer needed to store the parsed data...
 	std::string tmp = aprepro.parsing_results().str();
@@ -209,8 +218,20 @@ mpi_filebuf * mpi_filebuf::open(
 	std::memcpy(aprepro_buffer, tmp.data(), aprepro_buffer_len);
       }
       aprepro_parsing_error_count = aprepro.get_error_count();
+      aprepro_parsing_warning_count = aprepro.get_warning_count();
     }
     err = MPI_Bcast(&aprepro_parsing_error_count, 1, MPI_INT, root_processor, communicator );
+    err = MPI_Bcast(&aprepro_parsing_warning_count, 1, MPI_INT, root_processor, communicator );
+
+    aprepro_warnings = warnStream.str();
+    aprepro_errors   = errStream.str();
+    aprepro_info     = infoStream.str();     
+
+    if(aprepro_parsing_error_count > 0 && aprepro_errors.empty()) {
+        aprepro_errors = "Fatal aprepro errors encountered";
+    }
+
+
     if (err != MPI_SUCCESS)
       MPI_Abort(communicator,err);
   }
@@ -267,6 +288,8 @@ mpi_filebuf * mpi_filebuf::open(
     SEAMS::Aprepro aprepro;
 
     stk::add_aprepro_defines(aprepro, aprepro_defines);
+
+    aprepro.ap_options.require_defined=true;
 
     bool result = aprepro.parse_stream(infile);
     if (result) {

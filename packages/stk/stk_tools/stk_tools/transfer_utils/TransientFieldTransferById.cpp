@@ -49,7 +49,8 @@ void TransientTransferByIdForRank::do_transfer()
 stk::transfer::TransferCopyByIdStkMeshAdapter *TransientTransferByIdForRank::create_transfer_mesh(stk::mesh::MetaData &meta)
 {
     stk::mesh::EntityVector entities;
-    stk::mesh::get_selected_entities(meta.locally_owned_part(), meta.mesh_bulk_data().buckets(mRank), entities);
+    const bool sortById = true;
+    stk::mesh::get_entities(meta.mesh_bulk_data(), mRank, meta.locally_owned_part(), entities, sortById);
 
     stk::mesh::FieldVector fields = stk::io::get_transient_fields(meta, mRank);
     return new stk::transfer::TransferCopyByIdStkMeshAdapter(meta.mesh_bulk_data(), entities, fields);

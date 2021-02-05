@@ -174,18 +174,15 @@ void Piro::TempusSolver<Scalar>::initialize(
       timeStepControlPL->set<Scalar>("Maximum Time Step", dt_max); 
       timeStepControlPL->set<int>("Initial Time Index", 0); 
       timeStepControlPL->set<int>("Final Time Index", 1.0e6);
-      timeStepControlPL->set<std::string>("Integrator Step Type", "Variable"); 
       RCP<Teuchos::ParameterList> timeStepControlStrategyPL = sublist(timeStepControlPL, "Time Step Control Strategy"); 
-      timeStepControlStrategyPL->set<std::string>("Time Step Control Strategy List", "basic_vs"); 
-      RCP<Teuchos::ParameterList> basic_vs_PL = sublist(timeStepControlStrategyPL, "basic_vs"); 
-      basic_vs_PL->set<std::string>("Name", "Basic VS"); 
-      basic_vs_PL->set<Scalar>("Reduction Factor", reduc_factor); 
-      basic_vs_PL->set<Scalar>("Amplification Factor", ampl_factor); 
+      timeStepControlStrategyPL->set<std::string>("Strategy Type", "Basic VS"); 
+      timeStepControlStrategyPL->set<Scalar>("Reduction Factor", reduc_factor); 
+      timeStepControlStrategyPL->set<Scalar>("Amplification Factor", ampl_factor); 
       //The following options are such that dt is reduced if solve fails,
       //and amplified if solve is successful, to be consistent with what is done in Albany
       //for quasistatics, and for Schwarz. 
-      basic_vs_PL->set<Scalar>("Minimum Value Monitoring Function", 1.0e20); 
-      basic_vs_PL->set<Scalar>("Maximum Value Monitoring Function", 1.0e20); 
+      timeStepControlStrategyPL->set<Scalar>("Minimum Value Monitoring Function", 1.0e20); 
+      timeStepControlStrategyPL->set<Scalar>("Maximum Value Monitoring Function", 1.0e20); 
     }
     else { 
       *out_ << "\n    Using Tempus 'Time Step Control'.\n";

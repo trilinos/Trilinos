@@ -222,10 +222,10 @@ void writeHistoryFile(const std::string& historyFilename, stk::mesh::BulkData& b
     outStkIo.write_output_mesh(outputFileIndex);
 
     stk::mesh::EntityVector elementEntities;
-    stk::mesh::get_selected_entities(elementHistoryPart & bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), elementEntities);
+    stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, elementHistoryPart & bulk.mesh_meta_data().locally_owned_part(), elementEntities);
 
     stk::mesh::EntityVector nodeEntities;
-    stk::mesh::get_selected_entities(nodeHistoryPart & bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::NODE_RANK), nodeEntities);
+    stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodeHistoryPart & bulk.mesh_meta_data().locally_owned_part(), nodeEntities);
 
     for(int step = 1; step < 10; step++)
     {
@@ -251,7 +251,7 @@ void writeHistoryFile(const std::string& historyFilename, stk::mesh::BulkData& b
 void verify_data(stk::mesh::BulkData& bulk, stk::mesh::Field<double>& field, stk::mesh::EntityRank rank, int stepNum)
 {
     stk::mesh::EntityVector entities;
-    stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(rank), entities);
+    stk::mesh::get_entities(bulk, rank, bulk.mesh_meta_data().locally_owned_part(), entities);
 
     for(stk::mesh::Entity entity : entities)
     {

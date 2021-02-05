@@ -3,7 +3,6 @@
 #include "stk_util/parallel/DistributedIndex.hpp"
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
-#include "stk_util/parallel/ParallelReduce.hpp"
 #include "stk_mesh/base/FEMHelpers.hpp"
 #include "stk_mesh/base/MeshDiagnostics.hpp"
 

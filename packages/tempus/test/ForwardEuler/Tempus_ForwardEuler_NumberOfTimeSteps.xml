@@ -24,7 +24,6 @@
         <Parameter name="Final Time"             type="double" value="3.0"/>
         <Parameter name="Number of Time Steps"   type="int"    value="5"/>
         <Parameter name="Initial Time Step"      type="double" value="0"/>
-        <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
       </ParameterList>
     </ParameterList>
 

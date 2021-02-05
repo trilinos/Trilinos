@@ -561,6 +561,72 @@ TRIBITS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_Quotient
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple --method=quotient --nparts=2"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_Quotient_OneProc
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple --method=quotient --nparts=2 --no-distribute"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_Quotient_Threshold1
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple --method=quotient --nparts=2 --qthreshold=1"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_Quotient_Threshold2
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple --method=quotient --nparts=2 --qthreshold=2"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_Quotient_OneProc_Threshold1
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple --method=quotient --nparts=2 --no-distribute --qthreshold=1"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_Quotient_OneProc_Threshold2
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+   "--inputFile=simple --method=quotient --nparts=2 --no-distribute --qthreshold=2"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
 IF (Tpetra_INST_DOUBLE)
   # Double needed for file I/O.
   TRIBITS_ADD_EXECUTABLE(

@@ -587,7 +587,13 @@ class TrilinosPRConfigurationBase(object):
             "PROXY",
             "PATH",
             "OMP_",
-            "WORKSPACE"
+            "WORKSPACE",
+            "CC",
+            "CXX",
+            "F77",
+            "F90",
+            "FC",
+            "MODULESHOME"
             ]
         print("")
         tr_config.pretty_print_envvars(envvar_filter=envvars_to_print)

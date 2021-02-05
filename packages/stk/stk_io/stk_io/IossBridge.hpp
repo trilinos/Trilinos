@@ -50,6 +50,7 @@
 #include "stk_mesh/base/FieldState.hpp"  // for FieldState
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldState
 #include "stk_mesh/base/Part.hpp"        // for Part
+#include "stk_mesh/base/SideSetUtil.hpp"
 #include "Ioss_GroupingEntity.h"                     // for GroupingEntity
 #include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
 #include "SidesetTranslator.hpp"
@@ -92,6 +93,9 @@ namespace stk {
  * control over the mesh reading and results/restart writing.
  */
 namespace io {
+
+stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
+                                      const stk::mesh::MetaData &meta);
 
 struct GlobalAnyVariable {
   GlobalAnyVariable(const std::string &name, const boost::any *value, stk::util::ParameterType::Type type)
@@ -173,13 +177,6 @@ void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaDat
     T* entity = entities[i];
     internal_part_processing(entity, meta);
   }
-}
-
-//! \deprecated
-template <typename T>
-void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta, const stk::mesh::EntityRank)
-{
-  default_part_processing (entities, meta);
 }
 
 /** Given the newly created Ioss::Region 'io_region', define the
@@ -484,8 +481,8 @@ std::string get_topology_type(stk::mesh::Part& part);
 bool has_topology_type(stk::mesh::Part& part);
 
 void set_original_part_id(stk::mesh::Part& part, const int64_t originalId);
-int64_t get_original_part_id(stk::mesh::Part& part);
-bool has_original_part_id(stk::mesh::Part& part);
+int64_t get_original_part_id(const stk::mesh::Part& part);
+bool has_original_part_id(const stk::mesh::Part& part);
 
 void set_original_block_order(stk::mesh::Part& part, const int64_t originalBlockOrder);
 int64_t get_original_block_order(stk::mesh::Part& part);

@@ -32,8 +32,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include <stk_util/parallel/MPI.hpp>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "stk_util/parallel/MPI.hpp"  // for Loc, create_Loc, operator==
+#include <cstdint>                    // for int64_t
+#include <utility>                    // for move
 
 namespace sierra
 {

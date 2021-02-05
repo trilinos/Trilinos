@@ -32,7 +32,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/parallel/ParallelIndexGapFinder.hpp>
+#include "stk_util/parallel/ParallelIndexGapFinder.hpp"
+#include <cmath>      // for ceil
+#include <algorithm>  // for sort, lower_bound, min, upper_bound
+#include <cassert>    // for assert
+#include <cstdint>    // for uint64_t
+#include <stdexcept>  // for runtime_error
+#include <utility>    // for pair
 
 namespace stk {
 

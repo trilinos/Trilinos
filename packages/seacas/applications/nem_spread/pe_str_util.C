@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-, 20212021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -31,7 +31,7 @@ int token_compare(char *token, const char *key)
 
   for (size_t i1 = 0; i1 < strlen(token); i1++) {
     if (isupper(token[i1]) != 0) {
-      token[i1] = tolower(token[i1]);
+      token[i1] = (char)tolower(token[i1]);
     }
 
     if (token[i1] != ' ') {
@@ -61,14 +61,12 @@ int token_compare(char *token, const char *key)
 /*****************************************************************************/
 void strip_string(char inp_str[], const char *tokens)
 {
-  int i;
   int j;
   int itok;
-  int ntokes;
   int bval;
 
-  i      = 0;
-  ntokes = strlen(tokens);
+  int i      = 0;
+  int ntokes = (int)strlen(tokens);
 
   while (inp_str[i] != '\0') {
     bval = 0;
@@ -116,18 +114,14 @@ void strip_string(char inp_str[], const char *tokens)
 /*****************************************************************************/
 void clean_string(char inp_str[], const char *tokens)
 {
-  int i;
   int j;
   int itok;
-  int ntokes;
-  int bval;
-  int inplen;
 
-  ntokes = strlen(tokens);
-  inplen = strlen(inp_str);
+  int ntokes = (int)strlen(tokens);
+  int inplen = (int)strlen(inp_str);
 
-  i    = 0;
-  bval = 0;
+  int i    = 0;
+  int bval = 0;
   while (inp_str[i] != '\0') {
     for (itok = 0; itok < ntokes; itok++) {
       if (inp_str[i] == tokens[itok]) {
@@ -165,11 +159,8 @@ void clean_string(char inp_str[], const char *tokens)
 /*****************************************************************************/
 void string_to_lower(char in_string[], const char cval)
 {
-  int len;
-  int cnt;
-
-  len = strlen(in_string);
-  for (cnt = 0; cnt < len; cnt++) {
+  int len = (int)strlen(in_string);
+  for (int cnt = 0; cnt < len; cnt++) {
     if (in_string[cnt] == cval) {
       return;
     }

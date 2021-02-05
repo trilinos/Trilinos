@@ -52,27 +52,10 @@
 #endif
 
 #ifdef USE_STK_SIMD_NONE
-#define native native_junk
-#define native_simd native_simd_junk
+#define SIMD_FORCE_SCALAR
 #endif
 
 #include "kokkos_simd/simd.hpp"
-
-#ifdef USE_STK_SIMD_NONE
-#undef native
-#undef native_simd
-
-namespace SIMD_NAMESPACE {
-
-namespace simd_abi {
-using native = scalar;
-}
-
-template <class T>
-using native_simd = simd<T, simd_abi::native>;
-
-}
-#endif
 
 namespace stk {
 namespace simd {

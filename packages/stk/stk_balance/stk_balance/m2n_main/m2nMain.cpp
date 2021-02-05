@@ -14,7 +14,6 @@
 #include <stk_util/command_line/CommandLineParserParallel.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/environment/FileUtils.hpp>
-#include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/util/string_utils.hpp>
 
 #include <string>

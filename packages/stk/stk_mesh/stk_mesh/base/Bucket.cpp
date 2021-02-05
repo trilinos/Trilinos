@@ -57,6 +57,7 @@ namespace mesh {
 
 namespace {
 
+#ifndef NDEBUG
 struct CheckSizeFunctor
 {
   template <EntityRank Rank, ConnectivityType OtherType, typename Connectivity>
@@ -65,6 +66,7 @@ struct CheckSizeFunctor
 
   bool is_modifying() const { return false; }
 };
+#endif
 
 struct AddEntityFunctor
 {
@@ -248,6 +250,7 @@ Bucket::Bucket(BulkData & arg_mesh,
     m_entity_rank(arg_entity_rank),
     m_topology(),
     m_key(arg_key),
+    m_partOrdsBeginEnd(m_key.data()+1,m_key.data()+m_key[0]),
     m_capacity(arg_capacity),
     m_size(0),
     m_bucket_id(bucket_id),
@@ -307,12 +310,6 @@ size_t Bucket::memory_size_in_bytes() const
   bytes += m_dynamic_element_connectivity.heap_memory_in_bytes();
   bytes += m_dynamic_other_connectivity.heap_memory_in_bytes();
   return bytes;
-}
-
-bool Bucket::member(stk::mesh::PartOrdinal partOrdinal) const {
-  const stk::mesh::MetaData& meta = mesh().mesh_meta_data();
-  const stk::mesh::Part* part = meta.get_parts()[partOrdinal];
-  return member(*part);
 }
 
 void Bucket::change_existing_connectivity(unsigned bucket_ordinal, stk::mesh::Entity* new_nodes)
@@ -388,22 +385,8 @@ void Bucket::change_existing_permutation_for_connected_edge(unsigned bucket_ordi
     }
 }
 
-bool Bucket::member( const Part & part ) const
-{
-  const unsigned * const i_beg = key() + 1 ;
-  const unsigned * const i_end = key() + key()[0] ;
-
-  const unsigned ord = part.mesh_meta_data_ordinal();
-  const unsigned * const i = std::lower_bound( i_beg , i_end , ord );
-
-  return i_end != i && ord == *i ;
-}
-
 bool Bucket::member_all( const PartVector & parts ) const
 {
-  const unsigned * const i_beg = key() + 1 ;
-  const unsigned * const i_end = key() + key()[0] ;
-
   const PartVector::const_iterator ip_end = parts.end();
         PartVector::const_iterator ip     = parts.begin() ;
 
@@ -411,17 +394,13 @@ bool Bucket::member_all( const PartVector & parts ) const
 
   for ( ; result_all && ip_end != ip ; ++ip ) {
     const unsigned ord = (*ip)->mesh_meta_data_ordinal();
-    const unsigned * const i = std::lower_bound( i_beg , i_end , ord );
-    result_all = i_end != i && ord == *i ;
+    result_all = member(ord);
   }
   return result_all ;
 }
 
 bool Bucket::member_any( const PartVector & parts ) const
 {
-  const unsigned * const i_beg = key() + 1 ;
-  const unsigned * const i_end = key() + key()[0] ;
-
   const PartVector::const_iterator ip_end = parts.end();
         PartVector::const_iterator ip     = parts.begin() ;
 
@@ -429,17 +408,13 @@ bool Bucket::member_any( const PartVector & parts ) const
 
   for ( ; result_none && ip_end != ip ; ++ip ) {
     const unsigned ord = (*ip)->mesh_meta_data_ordinal();
-    const unsigned * const i = std::lower_bound( i_beg , i_end , ord );
-    result_none = i_end == i || ord != *i ;
+    result_none = !member(ord);
   }
   return ! result_none ;
 }
 
 bool Bucket::member_any( const OrdinalVector & parts ) const
 {
-  const unsigned * const i_beg = key() + 1 ;
-  const unsigned * const i_end = key() + key()[0] ;
-
   const OrdinalVector::const_iterator ip_end = parts.end();
         OrdinalVector::const_iterator ip     = parts.begin() ;
 
@@ -447,8 +422,7 @@ bool Bucket::member_any( const OrdinalVector & parts ) const
 
   for ( ; result_none && ip_end != ip ; ++ip ) {
     const unsigned ord = *ip;
-    const unsigned * const i = std::lower_bound( i_beg , i_end , ord );
-    result_none = i_end == i || ord != *i ;
+    result_none = !member(ord);
   }
   return ! result_none ;
 }
@@ -655,10 +629,31 @@ unsigned Bucket::get_ngp_field_bucket_is_modified(unsigned fieldOrdinal) const
   return m_ngp_field_is_modified[fieldOrdinal];
 }
 
-void Bucket::mark_for_modification()
+void Bucket::reset_part_ord_begin_end()
 {
-  m_is_modified = true;
-  std::fill(m_ngp_field_is_modified.begin(), m_ngp_field_is_modified.end(), true);
+  m_partOrdsBeginEnd.first = m_key.data()+1;
+  m_partOrdsBeginEnd.second = m_key.data()+m_key[0];
+}
+
+void Bucket::reset_bucket_key(const OrdinalVector& newPartOrdinals)
+{
+  unsigned partitionCount = m_key[m_key.size() - 1];
+  unsigned newPartCount = newPartOrdinals.size();
+
+  m_key.resize(newPartCount + 2);
+  m_key[0] = newPartCount + 1;
+  m_key[newPartCount+1] = partitionCount;
+
+  for(unsigned i = 0; i < newPartCount; i++) {
+    m_key[i+1] = newPartOrdinals[i];
+  }
+}
+
+void Bucket::reset_bucket_parts(const OrdinalVector& newPartOrdinals)
+{
+  reset_bucket_key(newPartOrdinals);
+  reset_part_ord_begin_end();
+  supersets(m_parts);
 }
 
 void Bucket::initialize_slot(size_type ordinal, Entity entity)

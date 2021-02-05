@@ -170,26 +170,26 @@ function get_md5sum() {
 #
 # Get pip
 # - @param1 python_exe - the python executable to install PIP for
-function get_pip() {
-    local python_exe=${1:?}
-
-    echo -e "--- get_pip():"
-    echo -e "--- Python: ${python_exe:?}"
-
-    # fetch get-pip.py
-    echo -e "--- curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
-    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-
-    get_pip_args=(
-        --user
-        --proxy="http://wwwproxy.sandia.gov:80"
-        --no-setuptools
-        --no-wheel
-    )
-    echo -e ""
-    echo -e "--- ${python_exe:?} ./get-pip.py ${get_pip_args[@]}"
-    ${python_exe:?} ./get-pip.py ${get_pip_args[@]}
-}
+#function get_pip() {
+#    local python_exe=${1:?}
+#
+#    echo -e "--- get_pip():"
+#    echo -e "--- Python: ${python_exe:?}"
+#
+#    # fetch get-pip.py
+#    echo -e "--- curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py"
+#    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+#
+#    get_pip_args=(
+#        --user
+#        --proxy="http://user:nopass@wwwproxy.sandia.gov:80"
+#        --no-setuptools
+#        --no-wheel
+#    )
+#    echo -e ""
+#    echo -e "--- ${python_exe:?} ./get-pip.py ${get_pip_args[@]}"
+#    ${python_exe:?} ./get-pip.py ${get_pip_args[@]}
+#}
 
 
 

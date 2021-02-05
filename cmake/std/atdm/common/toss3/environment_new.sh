@@ -24,7 +24,7 @@ module load sems-env
 module load sems-git/2.10.1
 
 # Common paths and modules for both intel-1{8,9}
-module load cmake/3.12.2
+module load sems-cmake/3.19.1
 
 module load sparc-dev/intel-19.0.4_openmpi-4.0.3
 

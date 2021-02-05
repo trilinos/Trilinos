@@ -35,11 +35,11 @@
 #ifndef STK_MEMORY_UTIL_H
 #define STK_MEMORY_UTIL_H
 
-#include <vector>
-#include <string>
+#include "stk_util/parallel/Parallel.hpp"        // for MPI_Comm, parallel_machine_size, ompi_co...
+#include "stk_util/parallel/ParallelReduce.hpp"  // for all_reduce_max, all_reduce_min, all_redu...
+#include <cstddef>                               // for size_t
+#include <vector>                                // for vector
 
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
 
 namespace stk {
 

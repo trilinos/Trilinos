@@ -35,11 +35,11 @@
 #ifndef STK_UTIL_STK_UTIL_UTIL_PAGE_ALIGNED_ALLOCATOR_HPP
 #define STK_UTIL_STK_UTIL_UTIL_PAGE_ALIGNED_ALLOCATOR_HPP
 
-#include <type_traits>                  // for is_same
-#include <cstddef>                      // for size_t, ptrdiff_t
-#include <cstdlib>                      // for malloc, free
-#include <limits>                       // for numeric_limits
-#include <new>                          // for operator new
+#include <cstddef>      // for size_t, ptrdiff_t
+#include <cstdlib>      // for malloc, free
+#include <limits>       // for numeric_limits
+#include <new>          // for operator new
+#include <type_traits>  // for is_same
 
 namespace stk {
 

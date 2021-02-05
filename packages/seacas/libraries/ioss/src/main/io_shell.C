@@ -31,7 +31,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "5.2";
+  std::string version = "5.3";
 
   bool mem_stats = false;
 
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
   Kokkos::ScopeGuard kokkos(argc, argv);
 #endif
 
-  IOShell::Interface interFace;
+  IOShell::Interface interFace(version);
   bool               success = interFace.parse_options(argc, argv, rank);
   if (!success) {
     exit(EXIT_FAILURE);
@@ -247,6 +247,7 @@ namespace {
       }
 
       Ioss::MeshCopyOptions options{};
+      options.selected_times    = interFace.selected_times;
       options.verbose           = !interFace.quiet;
       options.memory_statistics = interFace.memory_statistics;
       options.debug             = interFace.debug;

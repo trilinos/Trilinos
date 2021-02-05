@@ -163,6 +163,8 @@ public:
   /** \brief . */
   RCP<const LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
   /** \brief . */
+  RCP<LinearOpBase<Scalar> > create_hess_g_pp( int j, int l1, int l2 ) const;
+  /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
   void reportFinalPoint(
@@ -515,6 +517,14 @@ RCP<const LinearOpWithSolveFactoryBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::get_W_factory() const
 {
   return getUnderlyingModel()->get_W_factory();
+}
+
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorDelegatorBase<Scalar>::create_hess_g_pp( int j, int l1, int l2 ) const
+{
+  return getUnderlyingModel()->create_hess_g_pp(j, l1, l2);
 }
 
 

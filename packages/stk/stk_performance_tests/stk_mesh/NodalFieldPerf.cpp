@@ -41,6 +41,7 @@
 #include <stk_mesh/base/FieldDataManager.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/GetNgpField.hpp>
+#include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_topology/topology.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
@@ -120,10 +121,10 @@ public:
     stk::mesh::NgpField<double> & ngpVelField   = stk::mesh::get_updated_ngp_field<double>(*velField);
     stk::mesh::NgpField<double> & ngpAccField   = stk::mesh::get_updated_ngp_field<double>(*accField);
     stk::mesh::NgpField<double> & ngpForceField = stk::mesh::get_updated_ngp_field<double>(*forceField);
-    stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     const int spatialDimension = static_cast<int>(get_meta().spatial_dimension());
 
-    const int numRuns = 5000;
+    const int numRuns = 500000;
 
     timer.start_timing();
     for (int run = 0; run < numRuns; ++run) {
@@ -141,6 +142,64 @@ public:
     timer.print_timing(numRuns);
 
     ngpForceField.modify_on_device();
+  }
+
+  void testHostVectorFieldSum()
+  {
+    stk::mesh::get_updated_ngp_field<double>(*dispField);
+    stk::mesh::get_updated_ngp_field<double>(*velField);
+    stk::mesh::get_updated_ngp_field<double>(*accField);
+    stk::mesh::get_updated_ngp_field<double>(*forceField);
+    const int spatialDimension = static_cast<int>(get_meta().spatial_dimension());
+
+    const int numRuns = 5000;
+
+    timer.start_timing();
+    for (int run = 0; run < numRuns; ++run) {
+      const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().locally_owned_part());
+      for (const stk::mesh::Bucket * bucket : buckets) {
+        for (const stk::mesh::Entity & entity : *bucket) {
+          const double * dispFieldData = stk::mesh::field_data(*dispField, entity);
+          const double *  velFieldData = stk::mesh::field_data(*velField, entity);
+          const double *  accFieldData = stk::mesh::field_data(*accField, entity);
+          double * forceFieldData = stk::mesh::field_data(*forceField, entity);
+          for (int component = 0; component < spatialDimension; ++component) {
+            forceFieldData[component] = alpha * dispFieldData[component] +
+                                        beta *   velFieldData[component] +
+                                        gamma *  accFieldData[component];
+          }
+        }
+      }
+    }
+    timer.update_timing();
+    timer.print_timing(numRuns);
+  }
+
+  void testPureHostVectorFieldSum()
+  {
+    const int spatialDimension = static_cast<int>(get_meta().spatial_dimension());
+
+    const int numRuns = 5000;
+
+    timer.start_timing();
+    for (int run = 0; run < numRuns; ++run) {
+      const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().locally_owned_part());
+      for (const stk::mesh::Bucket * bucket : buckets) {
+        for (const stk::mesh::Entity & entity : *bucket) {
+          const double * dispFieldData = stk::mesh::field_data(*dispField, entity);
+          const double *  velFieldData = stk::mesh::field_data(*velField, entity);
+          const double *  accFieldData = stk::mesh::field_data(*accField, entity);
+          double * forceFieldData = stk::mesh::field_data(*forceField, entity);
+          for (int component = 0; component < spatialDimension; ++component) {
+            forceFieldData[component] = alpha * dispFieldData[component] +
+                                        beta *   velFieldData[component] +
+                                        gamma *  accFieldData[component];
+          }
+        }
+      }
+    }
+    timer.update_timing();
+    timer.print_timing(numRuns);
   }
 
   void checkResult()
@@ -165,6 +224,26 @@ public:
     }
   }
 
+  void checkHostResult()
+  {
+    const int spatialDimension = static_cast<int>(get_meta().spatial_dimension());
+
+    std::vector<double> expectedValues(spatialDimension);
+    for (int i = 0; i < spatialDimension; ++i) {
+      expectedValues[i] = alpha * initial_value[i] + beta * initial_value[i] + gamma * initial_value[i];
+    }
+
+    const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().locally_owned_part());
+    for (const stk::mesh::Bucket * bucket : buckets) {
+      for (const stk::mesh::Entity & entity : *bucket) {
+        const double * forceFieldData = stk::mesh::field_data(*forceField, entity);
+        for (int component = 0; component < spatialDimension; ++component) {
+          EXPECT_DOUBLE_EQ(forceFieldData[component], expectedValues[component]);
+        }
+      }
+    }
+  }
+
   static constexpr double alpha = -1.4;
   static constexpr double beta = 0.3333333;
   static constexpr double gamma = 3.14159;
@@ -178,6 +257,37 @@ public:
   DoubleVecField * forceField;
 };
 
+TEST_F(NgpFieldAccessPerformance, pureHost_vectorSum_DefaultFieldDataManager)
+{
+  if (get_parallel_size() != 1) return;
+
+  unsigned numElemsPerDim = 100;
+  const int weKnowThereAreFiveRanks = 5;
+  m_fieldDataManager = new stk::mesh::DefaultFieldDataManager(weKnowThereAreFiveRanks);
+
+  createNodalVectorFields();
+  setup_mesh_with_field_data_manager(stk::unit_test_util::get_mesh_spec(numElemsPerDim),
+                                     stk::mesh::BulkData::NO_AUTO_AURA, *m_fieldDataManager);
+
+  testPureHostVectorFieldSum();
+  checkHostResult();
+}
+
+TEST_F(NgpFieldAccessPerformance, host_vectorSum_DefaultFieldDataManager)
+{
+  if (get_parallel_size() != 1) return;
+
+  unsigned numElemsPerDim = 100;
+  const int weKnowThereAreFiveRanks = 5;
+  m_fieldDataManager = new stk::mesh::DefaultFieldDataManager(weKnowThereAreFiveRanks);
+
+  createNodalVectorFields();
+  setup_mesh_with_field_data_manager(stk::unit_test_util::get_mesh_spec(numElemsPerDim),
+                                     stk::mesh::BulkData::NO_AUTO_AURA, *m_fieldDataManager);
+
+  testHostVectorFieldSum();
+  checkHostResult();
+}
 
 TEST_F(NgpFieldAccessPerformance, vectorSum_DefaultFieldDataManager)
 {
