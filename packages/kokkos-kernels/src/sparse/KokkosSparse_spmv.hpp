@@ -151,23 +151,63 @@ spmv (KokkosKernels::Experimental::Controls controls,
       KokkosBlas::scal(y_i, beta, y_i);
     return;
   }
-  return Impl::SPMV<
-    typename AMatrix_Internal::value_type,
-    typename AMatrix_Internal::ordinal_type,
-    typename AMatrix_Internal::device_type,
-    typename AMatrix_Internal::memory_traits,
-    typename AMatrix_Internal::size_type,
-    typename XVector_Internal::value_type*,
-    typename XVector_Internal::array_layout,
-    typename XVector_Internal::device_type,
-    typename XVector_Internal::memory_traits,
-    typename YVector_Internal::value_type*,
-    typename YVector_Internal::array_layout,
-    typename YVector_Internal::device_type,
-    typename YVector_Internal::memory_traits>
-      ::spmv (controls, mode, alpha, A_i, x_i, beta, y_i);
-}
 
+  //Whether to call KokkosKernel's native implementation, even if a TPL impl is available
+  bool useFallback = controls.isParameter("algorithm") && controls.getParameter("algorithm") == "native";
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+  //cuSPARSE does not support the conjugate mode (C), and cuSPARSE 9 only supports the normal (N) mode.
+#if (9000 <= CUDA_VERSION)
+  useFallback = useFallback || (mode[0] != NoTranspose[0]);
+#endif
+#if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
+  useFallback = useFallback || (mode[0] == Conjugate[0]);
+#endif
+#endif
+
+  if(useFallback)
+  {
+    //Explicitly call the non-TPL SPMV implementation
+    std::string label = "KokkosSparse::spmv[NATIVE," + Kokkos::ArithTraits<typename AMatrix_Internal::non_const_value_type>::name() + "]";
+    Kokkos::Profiling::pushRegion(label);
+    Impl::SPMV<
+      typename AMatrix_Internal::value_type,
+      typename AMatrix_Internal::ordinal_type,
+      typename AMatrix_Internal::device_type,
+      typename AMatrix_Internal::memory_traits,
+      typename AMatrix_Internal::size_type,
+      typename XVector_Internal::value_type*,
+      typename XVector_Internal::array_layout,
+      typename XVector_Internal::device_type,
+      typename XVector_Internal::memory_traits,
+      typename YVector_Internal::value_type*,
+      typename YVector_Internal::array_layout,
+      typename YVector_Internal::device_type,
+      typename YVector_Internal::memory_traits,
+      false>
+        ::spmv (controls, mode, alpha, A_i, x_i, beta, y_i);
+    Kokkos::Profiling::popRegion();
+  }
+  else
+  {
+    //note: the cuSPARSE spmv wrapper defines a profiling region, so one is not needed here.
+    Impl::SPMV<
+      typename AMatrix_Internal::value_type,
+      typename AMatrix_Internal::ordinal_type,
+      typename AMatrix_Internal::device_type,
+      typename AMatrix_Internal::memory_traits,
+      typename AMatrix_Internal::size_type,
+      typename XVector_Internal::value_type*,
+      typename XVector_Internal::array_layout,
+      typename XVector_Internal::device_type,
+      typename XVector_Internal::memory_traits,
+      typename YVector_Internal::value_type*,
+      typename YVector_Internal::array_layout,
+      typename YVector_Internal::device_type,
+      typename YVector_Internal::memory_traits>
+        ::spmv (controls, mode, alpha, A_i, x_i, beta, y_i);
+  }
+}
 
 template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector ,
          class XLayout = typename XVector::array_layout>

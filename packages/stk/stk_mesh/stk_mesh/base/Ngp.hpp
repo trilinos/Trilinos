@@ -37,20 +37,41 @@
 #include "Kokkos_Core.hpp"
 #include "stk_util/stk_kokkos_macros.h"
 
+#if defined(STK_DEBUG_FIELD_SYNC) && !defined(STK_USE_DEVICE_MESH)
+static_assert(false, "The STK field sync debugger does nothing unless you also have enabled the DeviceMesh/DeviceField."
+                     " To enable these, pass -DSTK_USE_DEVICE_MESH on the configure line.");
+#endif
+
 namespace stk {
 namespace mesh {
 
 class HostMesh;
 class DeviceMesh;
-template<typename T> class HostField;
-template<typename T> class DeviceField;
+
+class StkFieldSyncDebugger;
+class EmptyStkFieldSyncDebugger;
+template <typename T> class NgpFieldSyncDebugger;
+template <typename T> class EmptyNgpFieldSyncDebugger;
+
+#ifdef STK_DEBUG_FIELD_SYNC
+  using DefaultStkFieldSyncDebugger = StkFieldSyncDebugger;
+  template <typename T> using DefaultNgpFieldSyncDebugger = NgpFieldSyncDebugger<T>;
+#else
+  using DefaultStkFieldSyncDebugger = EmptyStkFieldSyncDebugger;
+  template <typename T> using DefaultNgpFieldSyncDebugger = EmptyNgpFieldSyncDebugger<T>;
+#endif
+
+template<typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger> class HostField;
+template<typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger> class DeviceField;
 
 #ifdef STK_USE_DEVICE_MESH
-using NgpMesh = stk::mesh::DeviceMesh;
-template <typename T> using NgpField = stk::mesh::DeviceField<T>;
+  using NgpMesh = stk::mesh::DeviceMesh;
+  template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
+    using NgpField = stk::mesh::DeviceField<T, NgpDebugger>;
 #else
-using NgpMesh = stk::mesh::HostMesh;
-template <typename T> using NgpField = stk::mesh::HostField<T>;
+  using NgpMesh = stk::mesh::HostMesh;
+  template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
+    using NgpField = stk::mesh::HostField<T, NgpDebugger>;
 #endif
 
 }

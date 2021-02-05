@@ -91,46 +91,41 @@ void setup_sidesets_between_blocks(stk::mesh::MetaData& meta)
   }
 }
 
-void move_elements_to_other_blocks(stk::mesh::BulkData& bulk, unsigned numElemsPerDim)
+void move_elements_to_other_blocks(stk::mesh::BulkData& bulk, unsigned numElemsInDimX)
 {
   stk::mesh::MetaData& meta = bulk.mesh_meta_data();
   stk::mesh::PartVector elemBlocks;
   stk::mesh::fill_element_block_parts(meta, stk::topology::HEX_8, elemBlocks);
   const unsigned numBlocks = elemBlocks.size();
 
-  ThrowRequireMsg(numBlocks <= numElemsPerDim,
-                  "Number of blocks (" << numBlocks << ") cannot be greater than numElemsPerDim (" << numElemsPerDim << ")");
+  ThrowRequireMsg(((numElemsInDimX % numBlocks) == 0),
+                  "Number of blocks (" << numBlocks << ") must divide evenly into numElemsInDimX (" << numElemsInDimX << ")");
 
   stk::mesh::EntityVector elems;
   stk::mesh::Selector ownedHexes = meta.get_topology_root_part(stk::topology::HEX_8) &
                                    meta.locally_owned_part();
   stk::mesh::get_selected_entities(ownedHexes, bulk.buckets(stk::topology::ELEMENT_RANK), elems);
-  unsigned numElemsPerBlock = elems.size() / numBlocks;
-
   const stk::mesh::Part* block1Part = elemBlocks[0];
 
-  stk::mesh::EntityVector elemsToMove;
+  std::vector<stk::mesh::EntityVector> elemsToMove(elemBlocks.size());
+
+  unsigned blockIdx = 0;
+  for(stk::mesh::Entity elem : elems) {
+    elemsToMove[blockIdx].push_back(elem);
+    ++blockIdx;
+    if (blockIdx == numBlocks) {
+      blockIdx = 0;
+    }
+  }
 
   bulk.modification_begin();
 
-  unsigned startingIndex = numElemsPerBlock;
   for(unsigned i = 1; i < numBlocks; i++) {
     stk::mesh::Part* newBlock = elemBlocks[i];
 
-    elemsToMove.clear();
-
-    unsigned endIndex = std::min(static_cast<size_t>(startingIndex+numElemsPerBlock), elems.size());
-    if (i == numBlocks-1) {
-      endIndex = elems.size();
-    }
-
-    for(unsigned j = startingIndex; j < endIndex; j++) {
-      elemsToMove.push_back(elems[j]);
-    }
-    startingIndex = endIndex;
-
-    bulk.change_entity_parts(elemsToMove, stk::mesh::ConstPartVector{newBlock}, stk::mesh::ConstPartVector{block1Part});
+    bulk.change_entity_parts(elemsToMove[i], stk::mesh::ConstPartVector{newBlock}, stk::mesh::ConstPartVector{block1Part});
   }
+
   bulk.modification_end();
 }
 

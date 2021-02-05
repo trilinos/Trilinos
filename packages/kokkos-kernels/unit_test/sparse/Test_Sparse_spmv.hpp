@@ -42,7 +42,7 @@ struct fSPMV {
 
     if(error > eps) {
       err++;
-      printf("expected_y(%d)=%f, y(%d)=%f\n", i, AT::abs(expected_y(i)), i, AT::abs(y(i)));
+      //printf("expected_y(%d)=%f, y(%d)=%f\n", i, AT::abs(expected_y(i)), i, AT::abs(y(i)));
     }
   }
 };
@@ -51,7 +51,8 @@ struct fSPMV {
 template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
 void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
                      typename y_vector_type::non_const_value_type alpha,
-                     typename y_vector_type::non_const_value_type beta){
+                     typename y_vector_type::non_const_value_type beta,
+                     char mode = 'N'){
 
   using graph_t          = typename crsMat_t::StaticCrsGraphType;
   using size_type_view_t = typename graph_t::row_map_type;
@@ -61,7 +62,9 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   using size_type = typename size_type_view_t::non_const_value_type;
   using lno_t     = typename lno_view_t::non_const_value_type;
   using scalar_t  = typename scalar_view_t::non_const_value_type;
+  using KAT       = Kokkos::ArithTraits<scalar_t>;
 
+  mode = toupper(mode);
 
   typename scalar_view_t::HostMirror h_values = Kokkos::create_mirror_view(input_mat.values);
   Kokkos::deep_copy(h_values,input_mat.values);
@@ -84,15 +87,24 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
 
   lno_t nr = input_mat.numRows();
 
-  for (lno_t i = 0; i < nr; ++i){
-    scalar_t result = 0;
-    for (size_type j = h_rowmap(i); j < h_rowmap(i+1); ++j){
+  //first, scale y by beta
+  for(size_t i = 0; i < h_y.extent(0); i++)
+    h_y(i) *= beta;
+
+  //then go through the matrix and accumulate the matrix-vector product
+  for (lno_t row = 0; row < nr; ++row) {
+    for (size_type j = h_rowmap(row); j < h_rowmap(row+1); ++j) {
       lno_t col = h_entries(j);
       scalar_t val = h_values(j);
-      scalar_t vector_val = h_x(col);
-      result += val * vector_val;
+      if(mode == 'N')
+        h_y(row) += alpha * val * h_x(col);
+      else if(mode == 'C')
+        h_y(row) += alpha * KAT::conj(val) * h_x(col);
+      else if(mode == 'T')
+        h_y(col) += alpha * val * h_x(row);
+      else if(mode == 'H')
+        h_y(col) += alpha * KAT::conj(val) * h_x(row);
     }
-    h_y(i) = beta * h_y(i) + alpha * result;
   }
   KokkosKernels::Impl::safe_host_to_device_deep_copy (y.extent(0),  h_y, y);
   Kokkos::fence();
@@ -102,7 +114,7 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
 template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
 void check_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
                 typename y_vector_type::non_const_value_type alpha,
-                typename y_vector_type::non_const_value_type beta) {
+                typename y_vector_type::non_const_value_type beta, char mode) {
   //typedef typename crsMat_t::StaticCrsGraphType graph_t;
   using ExecSpace = typename crsMat_t::execution_space;
   using my_exec_space    = Kokkos::RangePolicy<ExecSpace>;
@@ -114,15 +126,25 @@ void check_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   // so let us use y_value_type to determine
   // the appropriate tolerance precision.
   const y_value_mag_type eps = std::is_same<y_value_mag_type, float>::value ? 2*1e-3 : 1e-7;
-  const size_t nr = input_mat.numRows();
-  y_vector_type expected_y("expected", nr);
+  bool transposed = (mode == 'T') || (mode == 'H');
+  y_vector_type expected_y("expected", transposed ? input_mat.numCols() : input_mat.numRows());
   Kokkos::deep_copy(expected_y, y);
   Kokkos::fence();
 
-  sequential_spmv(input_mat, x, expected_y, alpha, beta);
-  //KokkosKernels::Impl::print_1Dview(expected_y);
-  KokkosSparse::spmv("N", alpha, input_mat, x, beta, y);
-  //KokkosKernels::Impl::print_1Dview(y);
+  sequential_spmv(input_mat, x, expected_y, alpha, beta, mode);
+  bool threw = false;
+  std::string msg;
+  try
+  {
+    KokkosSparse::spmv(&mode, alpha, input_mat, x, beta, y);
+    Kokkos::fence();
+  }
+  catch(std::exception& e)
+  {
+    threw = true;
+    msg = e.what();
+  }
+  ASSERT_FALSE(threw) << "KokkosSparse::Test::spmv 1D, mode " << mode << ": threw exception:\n" << msg << '\n';
   int num_errors = 0;
   Kokkos::parallel_reduce("KokkosSparse::Test::spmv",
                           my_exec_space(0, y.extent(0)),
@@ -137,7 +159,7 @@ void check_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
 template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
 void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vector_type expected_y,
                    typename y_vector_type::non_const_value_type alpha,
-                   typename y_vector_type::non_const_value_type beta, int numMV) {
+                   typename y_vector_type::non_const_value_type beta, int numMV, char mode) {
   using ExecSpace = typename crsMat_t::execution_space;
   using my_exec_space = Kokkos::RangePolicy<ExecSpace>;
   using y_value_type     = typename y_vector_type::non_const_value_type;
@@ -153,8 +175,19 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
 
   Kokkos::fence();
 
-  KokkosSparse::spmv("N", alpha, input_mat, x, beta, y);
-
+  bool threw = false;
+  std::string msg;
+  try
+  {
+    KokkosSparse::spmv(&mode, alpha, input_mat, x, beta, y);
+    Kokkos::fence();
+  }
+  catch(std::exception& e)
+  {
+    threw = true;
+    msg = e.what();
+  }
+  ASSERT_FALSE(threw) << "KokkosSparse::Test::spmv 2D, mode " << mode << ": threw exception:\n" << msg << '\n';
 
   for (int i = 0; i < numMV; ++i){
     auto x_i = Kokkos::subview (x, Kokkos::ALL (), i);
@@ -162,7 +195,7 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
     auto y_i = Kokkos::subview (expected_y, Kokkos::ALL (), i);
     Kokkos::fence();
 
-    sequential_spmv(input_mat, x_i, y_i, alpha, beta);
+    sequential_spmv(input_mat, x_i, y_i, alpha, beta, mode);
 
     auto y_spmv = Kokkos::subview (y, Kokkos::ALL (), i);
     int num_errors = 0;
@@ -170,8 +203,9 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
                             my_exec_space(0,y_i.extent(0)),
                             fSPMV<decltype(y_i), decltype(y_spmv)>(y_i, y_spmv, eps),
                             num_errors);
-    if(num_errors>0) printf("KokkosSparse::Test::spmv_mv: %i errors of %i for mv %i\n",
-                            num_errors, y_i.extent_int(0), i);
+    if(num_errors>0)
+      std::cout << "KokkosSparse::Test::spmv_mv: " << num_errors << " errors of " << y_i.extent_int(0)
+        << " for mv " << i << " (alpha=" << alpha << ", beta=" << beta << ", mode = " << mode << ")\n";
     EXPECT_TRUE(num_errors==0);
   }
 }
@@ -306,6 +340,23 @@ void check_spmv_controls(KokkosKernels::Experimental::Controls controls,
 
 } // namespace Test
 
+template <typename scalar_t>
+scalar_t randomUpperBound(int mag)
+{
+  return (scalar_t) mag;
+}
+
+template <>
+Kokkos::complex<double> randomUpperBound<Kokkos::complex<double>>(int mag)
+{
+  return Kokkos::complex<double>(mag, mag);
+}
+
+template <>
+Kokkos::complex<float> randomUpperBound<Kokkos::complex<float>>(int mag)
+{
+  return Kokkos::complex<float>(mag, mag);
+}
 
 template <typename scalar_t, typename lno_t, typename size_type, class Device>
 void test_spmv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_variance){
@@ -326,18 +377,33 @@ void test_spmv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_vari
 
   x_vector_type input_x ("x", nc);
   y_vector_type output_y ("y", nr);
+  x_vector_type input_xt ("x", nr);
+  y_vector_type output_yt ("y", nc);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
   typedef typename x_vector_type::value_type ScalarX;
   typedef typename y_vector_type::value_type ScalarY;
 
-  Kokkos::fill_random(input_x,rand_pool,ScalarX(10));
-  Kokkos::fill_random(output_y,rand_pool,ScalarY(10));
+  Kokkos::fill_random(input_x,rand_pool,randomUpperBound<ScalarX>(10));
+  Kokkos::fill_random(output_y,rand_pool,randomUpperBound<ScalarY>(10));
+  Kokkos::fill_random(input_xt,rand_pool,randomUpperBound<ScalarX>(10));
+  Kokkos::fill_random(output_yt,rand_pool,randomUpperBound<ScalarY>(10));
 
-  Test::check_spmv(input_mat, input_x, output_y, 1.0, 0.0);
-  Test::check_spmv(input_mat, input_x, output_y, 0.0, 1.0);
-  Test::check_spmv(input_mat, input_x, output_y, 1.0, 1.0);
+  std::vector<char> nonTransModes = {'N', 'C'};
+  std::vector<char> transModes = {'T', 'H'};
+  for(auto mode : nonTransModes)
+  {
+    Test::check_spmv(input_mat, input_x, output_y, 1.0, 0.0, mode);
+    Test::check_spmv(input_mat, input_x, output_y, 0.0, 1.0, mode);
+    Test::check_spmv(input_mat, input_x, output_y, 1.0, 1.0, mode);
+  }
+  for(auto mode : transModes)
+  {
+    Test::check_spmv(input_mat, input_xt, output_yt, 1.0, 0.0, mode);
+    Test::check_spmv(input_mat, input_xt, output_yt, 0.0, 1.0, mode);
+    Test::check_spmv(input_mat, input_xt, output_yt, 1.0, 1.0, mode);
+  }
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename layout, class Device>
@@ -353,21 +419,66 @@ void test_spmv_mv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_v
   ViewTypeY b_y("B",numCols,numMV);
   ViewTypeY b_y_copy("B",numCols,numMV);
 
+  ViewTypeX b_xt("A",numCols,numMV);
+  ViewTypeY b_yt("B",numRows,numMV);
+  ViewTypeY b_yt_copy("B",numRows,numMV);
+
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
-  Kokkos::fill_random(b_x,rand_pool,scalar_t(10));
-  Kokkos::fill_random(b_y,rand_pool,scalar_t(10));
+  Kokkos::fill_random(b_x,rand_pool,randomUpperBound<scalar_t>(10));
+  Kokkos::fill_random(b_y,rand_pool,randomUpperBound<scalar_t>(10));
+  Kokkos::fill_random(b_xt,rand_pool,randomUpperBound<scalar_t>(10));
+  Kokkos::fill_random(b_yt,rand_pool,randomUpperBound<scalar_t>(10));
 
 
   crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows,numCols,nnz,row_size_variance, bandwidth);
 
   Kokkos::deep_copy(b_y_copy, b_y);
+  Kokkos::deep_copy(b_yt_copy, b_yt);
 
+  std::vector<char> nonTransModes = {'N', 'C'};
+  std::vector<char> transModes = {'T', 'H'};
+  for(auto mode : nonTransModes)
+  {
+    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 0.0, numMV, mode);
+    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 0.0, 1.0, numMV, mode);
+    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 1.0, numMV, mode);
+  }
+  for(auto mode : transModes)
+  {
+    Test::check_spmv_mv(input_mat, b_xt, b_yt, b_yt_copy, 1.0, 0.0, numMV, mode);
+    Test::check_spmv_mv(input_mat, b_xt, b_yt, b_yt_copy, 0.0, 1.0, numMV, mode);
+    Test::check_spmv_mv(input_mat, b_xt, b_yt, b_yt_copy, 1.0, 1.0, numMV, mode);
+  }
+}
 
-  Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 0.0, numMV);
-  Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 0.0, 1.0, numMV);
-  Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 1.0, numMV);
+template <typename scalar_t, typename lno_t, typename size_type, typename layout, class Device>
+void test_spmv_mv_heavy(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_variance, int numMV){
 
+  typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type> crsMat_t;
 
+  typedef Kokkos::View<scalar_t**, layout, Device> ViewTypeX;
+  typedef Kokkos::View<scalar_t**, layout, Device> ViewTypeY;
+
+  crsMat_t input_mat = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows,numRows,nnz,row_size_variance, bandwidth);
+  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
+
+  for(int nv = 1; nv <= numMV; nv++) {
+    ViewTypeX b_x("A",numRows,nv);
+    ViewTypeY b_y("B",numRows,nv);
+    ViewTypeY b_y_copy("B",numRows,nv);
+
+    Kokkos::fill_random(b_x,rand_pool,scalar_t(10));
+    Kokkos::fill_random(b_y,rand_pool,scalar_t(10));
+
+    Kokkos::deep_copy(b_y_copy, b_y);
+
+    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 0.0, nv, 'N');
+    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 0.0, 1.0, nv, 'N');
+    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 1.0, nv, 'N');
+    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 0.0, nv, 'T');
+    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 0.0, 1.0, nv, 'T');
+    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 1.0, nv, 'T');
+  }
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, class Device>
@@ -736,6 +847,7 @@ TEST_F( TestCategory,sparse ## _ ## spmv_mv ## _ ## SCALAR ## _ ## ORDINAL ## _ 
   test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (50000, 50000 * 30, 100, 10, 5); \
   test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (50000, 50000 * 30, 200, 10, 1); \
   test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (10000, 10000 * 20, 100, 5, 10); \
+  test_spmv_mv_heavy<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (200, 200 * 10, 60, 4, 30); \
 }
 
 #define EXECUTE_TEST_STRUCT(SCALAR, ORDINAL, OFFSET, DEVICE) \

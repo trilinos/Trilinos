@@ -35,18 +35,19 @@
 #ifndef STK_UTIL_DIAG_StringUtil_h
 #define STK_UTIL_DIAG_StringUtil_h
 
-#include <stddef.h>                     // for size_t
-#include <algorithm>                    // for transform
-#include <cctype>                       // for tolower, isspace, toupper
-#include <functional>                   // for binary_function
-#include <limits>                       // for numeric_limits, etc
-#include <sstream>                      // for operator<<, ostream, etc
-#include <stdexcept>                    // for runtime_error
-#include <stk_util/diag/String.hpp>     // for String, operator<<
-#include <stk_util/util/FeatureTest.hpp>
-#include <string>                       // for string, char_traits, etc
-#include <typeinfo>                     // for type_info
-#include <vector>                       // for vector
+#include "stk_util/diag/String.hpp"       // for String, operator<<
+#include "stk_util/util/FeatureTest.hpp"  // for SIERRA_USE_PLATFORM_DEMANGLER
+#include <cstddef>                        // for size_t
+#include <algorithm>                      // for transform, max
+#include <cctype>                         // for tolower, isspace, toupper
+#include <functional>                     // for binary_function
+#include <iterator>                       // for distance
+#include <limits>                         // for numeric_limits, numeric_limits<>::digits
+#include <sstream>                        // for operator<<, ostringstream, ostream, basic_ostream
+#include <stdexcept>                      // for runtime_error
+#include <string>                         // for string, char_traits, basic_string
+#include <typeinfo>                       // for type_info
+#include <vector>                         // for vector
 
 
 namespace sierra {

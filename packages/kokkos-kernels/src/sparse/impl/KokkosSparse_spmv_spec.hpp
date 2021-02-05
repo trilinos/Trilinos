@@ -257,8 +257,6 @@ struct SPMV < AT, AO, AD, AM, AS,
   {
     typedef Kokkos::Details::ArithTraits<coefficient_type> KAT;
 
-    typedef Kokkos::Details::ArithTraits<coefficient_type> KAT;
-
     if (alpha == KAT::zero ()) {
       if (beta != KAT::one ()) {
         KokkosBlas::scal (y, beta, y);

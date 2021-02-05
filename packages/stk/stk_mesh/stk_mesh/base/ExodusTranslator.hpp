@@ -62,23 +62,25 @@ inline bool is_node_set(const stk::mesh::Part &part)
 
 inline bool has_super_set_face_part(const stk::mesh::Part &part)
 {
-    size_t numSuperSets = part.supersets().size();
-    for(size_t i = 0; i < numSuperSets; i++)
+  const PartVector& supersets = part.supersets();
+  for(const Part* superset : supersets) {
+    if(!stk::mesh::is_auto_declared_part(*superset) &&
+       (superset->primary_entity_rank() == stk::topology::FACE_RANK ||
+        superset->primary_entity_rank() == stk::topology::EDGE_RANK))
     {
-        if(     !stk::mesh::is_auto_declared_part(*part.supersets()[i]) &&
-                (part.supersets()[i]->primary_entity_rank() == stk::topology::FACE_RANK ||
-                 part.supersets()[i]->primary_entity_rank() == stk::topology::EDGE_RANK))
-        {
-            return true;
-        }
+      return true;
     }
-    return false;
+  }
+  return false;
 }
 inline bool is_side_set(const stk::mesh::Part &part)
 {
+  if (part.id() > 0) {
     bool isFacePart = part.primary_entity_rank() == stk::topology::FACE_RANK
             || part.primary_entity_rank() == stk::topology::EDGE_RANK;
-    return isFacePart && !has_super_set_face_part(part) && part.id() > 0;
+    return isFacePart && !has_super_set_face_part(part);
+  }
+  return false;
 }
 
 inline void fill_element_block_parts(const MetaData& meta, stk::topology elemTopo,

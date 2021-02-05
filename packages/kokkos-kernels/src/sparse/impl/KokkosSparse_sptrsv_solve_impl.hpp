@@ -2464,6 +2464,23 @@ struct ReturnRangePolicyType<Kokkos::Cuda> {
   }
 };
 #endif
+#ifdef KOKKOS_ENABLE_HIP
+template <>
+struct ReturnRangePolicyType<Kokkos::Experimental::HIP> {
+  using PolicyType = Kokkos::RangePolicy<Kokkos::Experimental::HIP>;
+
+  static inline
+  PolicyType get_policy(int nt, int ts) {
+    return PolicyType(nt,ts);
+  }
+
+  template <class ExecInstanceType>
+  static inline
+  PolicyType get_policy(int nt, int ts, ExecInstanceType stream) {
+    return PolicyType(stream,nt,ts);
+  }
+};
+#endif
 
 template < class TriSolveHandle, class RowMapType, class EntriesType, class ValuesType, class RHSType, class LHSType >
 void lower_tri_solve_cg( TriSolveHandle & thandle, const RowMapType row_map, const EntriesType entries, const ValuesType values, const RHSType & rhs, LHSType &lhs) {

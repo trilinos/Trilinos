@@ -32,11 +32,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/util/CSet.hpp>
-#include <assert.h>                     // for assert
-#include <stddef.h>                     // for size_t
-#include <algorithm>                    // for lower_bound
-#include <iterator>                     // for advance
+#include "stk_util/util/CSet.hpp"
+#include <cstddef>    // for size_t
+#include <algorithm>  // for lower_bound
+#include <cassert>    // for assert
+#include <iterator>   // for advance
+#include <memory>     // for allocator_traits<>::value_type
 
 
 namespace stk {

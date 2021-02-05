@@ -34,8 +34,8 @@
 #ifndef PACKAGES_STK_STK_UTIL_STK_UTIL_UTIL_STKVECTOR_HPP_
 #define PACKAGES_STK_STK_UTIL_STK_UTIL_UTIL_STKVECTOR_HPP_
 
-#include <Kokkos_Core.hpp>
-#include <stk_util/stk_kokkos_macros.h>
+#include "Kokkos_Core.hpp"
+#include "stk_util/stk_kokkos_macros.h"
 
 namespace stk
 {

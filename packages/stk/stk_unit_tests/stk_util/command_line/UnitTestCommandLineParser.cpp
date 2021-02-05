@@ -1,7 +1,90 @@
-#include <gtest/gtest.h>
-#include <stk_util/command_line/CommandLineParser.hpp>
+#include "gtest/gtest.h"
+#include "stk_util/command_line/CommandLineParser.hpp"  // for CommandLineParser, CommandLinePar...
+#include "stk_util/command_line/CommandLineParserUtils.hpp"
+#include <exception>                                    // for exception
+#include <string>                                       // for string
+#include <vector>                                       // for vector
 
 namespace {
+
+struct Args
+{
+  Args(const std::vector<std::string>& strArgs = std::vector<std::string>())
+   : stringArgs(strArgs),
+     argc(stringArgs.size()),
+     argv(strArgs.empty() ? nullptr : new char*[argc])
+  {
+     for(int i=0; i<argc; ++i) {
+       argv[i] = const_cast<char*>(stringArgs[i].c_str());
+     }
+  }
+
+  ~Args()
+  {
+    delete [] argv;
+  }
+
+  const std::vector<std::string> stringArgs;
+  int argc;
+  char** argv;
+};
+
+TEST(UnitTestGetOption, get_command_line_option_null)
+{
+  Args args;
+  int defaultValue = -1;
+  int result = stk::get_command_line_option(args.argc, args.argv, "foo", defaultValue);
+  EXPECT_EQ(defaultValue, result);
+}
+
+TEST(UnitTestGetOption, get_command_line_option_bad_arg)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
+
+  int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  Args args({"exe", "--garbage-color", std::to_string(myRank)});
+
+  int defaultValue = 0;
+  testing::internal::CaptureStderr();
+  int result = stk::get_command_line_option(args.argc, args.argv, "app-color", defaultValue);
+  testing::internal::GetCapturedStderr();
+  EXPECT_EQ(defaultValue, result);
+}
+
+TEST(UnitTestGetOption, get_command_line_option_no_value)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
+
+  Args args({"exe", "--app-color"});
+
+  int defaultValue = -1;
+  testing::internal::CaptureStderr();
+  EXPECT_THROW(stk::get_command_line_option(args.argc, args.argv, "app-color", defaultValue),std::runtime_error);
+  testing::internal::GetCapturedStderr();
+}
+
+TEST(UnitTestGetOption, get_command_line_option_non_int_value)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
+
+  Args args({"exe", "--app-color", "foo"});
+
+  int defaultValue = -1;
+  EXPECT_THROW(stk::get_command_line_option(args.argc, args.argv, "app-color", defaultValue),std::logic_error);
+}
+
+TEST(UnitTestGetOption, get_command_line_option)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
+
+  int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  Args args({"exe", "--my-color", std::to_string(myRank)});
+
+  int defaultColor = -1;
+  int expectedResult = myRank;
+  int result = stk::get_command_line_option(args.argc, args.argv, "my-color", defaultColor);
+  EXPECT_EQ(expectedResult, result);
+}
 
 class EmptyCommandLine : public ::testing::Test
 {

@@ -16,19 +16,19 @@ namespace Tempus {
 
   TEMPUS_INSTANTIATE_TEMPLATE_CLASS(IntegratorPseudoTransientForwardSensitivity)
 
-  // non-member ctor
+  // Nonmember ctor
   template Teuchos::RCP<IntegratorPseudoTransientForwardSensitivity<double> >
   integratorPseudoTransientForwardSensitivity(
     Teuchos::RCP<Teuchos::ParameterList>        parameterList,
     const Teuchos::RCP<Thyra::ModelEvaluator<double> >& model);
 
-  // non-member ctor
+  // Nonmember ctor
   template Teuchos::RCP<IntegratorPseudoTransientForwardSensitivity<double> >
   integratorPseudoTransientForwardSensitivity(
     const Teuchos::RCP<Thyra::ModelEvaluator<double> >& model,
     std::string stepperType);
 
-  // non-member ctor
+  // Nonmember ctor
   template Teuchos::RCP<IntegratorPseudoTransientForwardSensitivity<double> >
   integratorPseudoTransientForwardSensitivity();
 

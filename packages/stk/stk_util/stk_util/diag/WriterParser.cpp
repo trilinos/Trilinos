@@ -32,15 +32,16 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include "stk_util/diag/WriterParser.hpp"
+#include "stk_util/environment/Trace.hpp"  // for Trace
+#include "stk_util/util/Writer_fwd.hpp"    // for LOG_MEMBERS, LOG_TRACE, LOG_TRACE_SUB_CALLS
+#include <iomanip>                         // for operator>>, resetiosflags
+#include <iostream>                        // for basic_istream, basic_istream<>::__istream_type
 #include <sstream>
-#include <iomanip>
-#include <map>
+#include <map>                             // for _Rb_tree_const_iterator, map<>::const_iterator
+#include <stdexcept>                       // for runtime_error
+#include <utility>                         // for pair
 
-#include <iostream>
-#include <stdexcept>
-#include <stk_util/diag/WriterParser.hpp>
-#include <stk_util/environment/Trace.hpp>
-#include <stk_util/util/Writer_fwd.hpp>
 
 
 namespace stk {

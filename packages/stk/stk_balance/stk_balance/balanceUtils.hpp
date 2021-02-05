@@ -50,8 +50,9 @@ namespace balance
 
 class FaceSearchTolerance;
 
-typedef std::vector<int> ElementDecomposition;
-typedef stk::mesh::Field<double> DoubleFieldType;
+using ElementDecomposition = std::vector<int>;
+using DoubleFieldType =  stk::mesh::Field<double>;
+using BlockWeightMultipliers =  std::map<std::string, double>;
 
 class DecompositionChangeList
 {
@@ -109,6 +110,9 @@ public:
     virtual double getGraphEdgeWeightForSearch() const;
     virtual bool getEdgesForParticlesUsingSearch() const;
     virtual double getVertexWeightMultiplierForVertexInSearch() const;
+
+    virtual void setVertexWeightBlockMultiplier(const std::string & blockName, double multiplier);
+    virtual const BlockWeightMultipliers & getVertexWeightBlockMultipliers() const;
 
     virtual bool isIncrementalRebalance() const;
     virtual bool isMultiCriteriaRebalance() const;
@@ -171,6 +175,7 @@ private:
     std::string m_initialDecompMethod;
     std::string m_inputFilename;
     std::string m_outputFilename;
+    BlockWeightMultipliers m_vertexWeightBlockMultipliers;
 };
 
 class BasicGeometricSettings : public BalanceSettings

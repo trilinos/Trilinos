@@ -2,26 +2,10 @@
 #include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 
 namespace stk {
 namespace mesh {
-
-bool has_upward_connectivity(const stk::mesh::BulkData &bulk, stk::mesh::Entity entity)
-{
-    if(!bulk.is_valid(entity))
-        return false;
-
-    const stk::mesh::Bucket &bucket = bulk.bucket(entity);
-
-    for(stk::mesh::EntityRank conRank = static_cast<stk::mesh::EntityRank>(bucket.entity_rank() + 1); conRank <= stk::topology::CONSTRAINT_RANK; ++conRank)
-    {
-        unsigned numConnected = bulk.num_connectivity(entity, conRank);
-        if(numConnected > 0)
-            return true;
-    }
-
-    return false;
-}
 
 void destroy_upward_connected_aura_entities(stk::mesh::BulkData &bulk, stk::mesh::Entity connectedEntity, stk::mesh::EntityRank conRank)
 {
@@ -62,7 +46,7 @@ void destroy_elements_no_mod_cycle(stk::mesh::BulkData &bulk, stk::mesh::EntityV
         if(!bulk.is_valid(element))
             continue;
 
-        ThrowRequireMsg(!has_upward_connectivity(bulk, element), "Element to be destroyed cannot have upward connectivity");
+        ThrowRequireMsg(!impl::has_upward_connectivity(bulk, element), "Element to be destroyed cannot have upward connectivity");
         ThrowRequireMsg(bulk.entity_rank(element) == stk::topology::ELEM_RANK, "Entity to be destroyed must be an element");
 
         for(stk::mesh::EntityRank conRank = stk::topology::NODE_RANK; conRank < stk::topology::ELEM_RANK; ++conRank) {
@@ -86,7 +70,7 @@ void destroy_elements_no_mod_cycle(stk::mesh::BulkData &bulk, stk::mesh::EntityV
             if(orphansToDelete(bulk.bucket(connectedEntity)))
             {
                 destroy_upward_connected_aura_entities(bulk, connectedEntity, conRank);
-                if(!has_upward_connectivity(bulk, connectedEntity))
+                if(!impl::has_upward_connectivity(bulk, connectedEntity))
                     bulk.destroy_entity(connectedEntity);
             }
         }

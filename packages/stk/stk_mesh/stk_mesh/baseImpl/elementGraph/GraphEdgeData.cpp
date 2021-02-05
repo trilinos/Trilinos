@@ -131,7 +131,7 @@ std::string get_par_info_description(const impl::ParallelInfo &parInfo)
     return s.str();
 }
 
-void ParallelInfoForGraphEdges::insert_parallel_info_for_graph_edge(const GraphEdge& graphEdge, const impl::ParallelInfo &parInfo)
+bool ParallelInfoForGraphEdges::insert_parallel_info_for_graph_edge(const GraphEdge& graphEdge, const impl::ParallelInfo &parInfo)
 {
     std::pair<impl::ParallelGraphInfo::iterator, bool> inserted = m_parallel_graph_info.emplace(graphEdge, parInfo);
     if (!inserted.second)
@@ -148,6 +148,8 @@ void ParallelInfoForGraphEdges::insert_parallel_info_for_graph_edge(const GraphE
                             << get_par_info_description(parInfo));
         }
     }
+
+    return inserted.second;
 }
 
 impl::LocalId ParallelInfoForGraphEdges::convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const

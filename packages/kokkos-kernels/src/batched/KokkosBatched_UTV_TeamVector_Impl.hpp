@@ -31,7 +31,7 @@ namespace KokkosBatched {
 	   int &matrix_rank) {
       return TeamVectorUTV_Internal::
         invoke(member,
-               A.extent(0), //A.extent(1), 
+               A.extent(0), A.extent(1), 
                A.data(), A.stride(0), A.stride(1),
 	       p.data(), p.stride(0),
 	       U.data(), U.stride(0), U.stride(1),

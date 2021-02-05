@@ -34,3 +34,6 @@ module load sems-python/3.5.2
 
 # add the OpenMP environment variable we need
 export OMP_NUM_THREADS=2
+
+# required for cmake > 3.10 during configure compiler testing.
+setenv LDFLAGS=-lifcore

@@ -13,6 +13,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/GetNgpField.hpp>
+#include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/NgpForEachEntity.hpp>
 #include <stk_util/stk_config.h>
@@ -148,7 +149,7 @@ public:
     }
     ngpElements.copy_host_to_device();
 
-    stk::mesh::NgpMesh& ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
 
     Kokkos::parallel_for(numElems,
       KOKKOS_LAMBDA(const int& elemIdx) {
@@ -196,8 +197,6 @@ public:
   template<typename T>
   void check_mismatched_field_data_on_device(stk::mesh::NgpField<T>& ngpField, stk::mesh::Field<T>& stkField, stk::mesh::Selector& syncSelector)
   {
-    using FieldData = Kokkos::View<T**, Kokkos::LayoutRight, stk::mesh::MemSpace>;
-
     stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
     stk::mesh::Selector fieldSelector(stkField);
     fieldSelector &= syncSelector;
@@ -213,8 +212,6 @@ public:
   template<typename T>
   void check_field_data_on_device(stk::mesh::NgpField<T>& ngpField, stk::mesh::Field<T>& stkField, stk::mesh::Selector& syncSelector)
   {
-    using FieldData = Kokkos::View<T**, Kokkos::LayoutRight, stk::mesh::MemSpace>;
-
     stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
     stk::mesh::Selector fieldSelector(stkField);
     fieldSelector &= syncSelector;
@@ -230,8 +227,6 @@ public:
   template<typename T>
   void check_field_data_on_device(stk::mesh::NgpField<T>& ngpField, stk::mesh::Field<T>& stkField)
   {
-    using FieldData = Kokkos::View<T**, Kokkos::LayoutRight, stk::mesh::MemSpace>;
-
     stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
     stk::mesh::EntityVector elements;
     stk::mesh::get_entities(get_bulk(), rank, elements);
@@ -960,14 +955,14 @@ public:
 
     setup_3hex_3block_mesh_with_field(bucketCapacity, stkIntField);
     {
-      get_bulk().get_updated_ngp_mesh();
+      stk::mesh::get_updated_ngp_mesh(get_bulk());
       stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
 
       modify_and_test_add_element(stkIntField, ngpIntField, bucketCapacity);
     }
 
     {
-      stk::mesh::NgpMesh& ngpMesh = get_bulk().get_updated_ngp_mesh();
+      stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
       stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
 
       check_field_data_on_host<int>(stkIntField, 10u);
@@ -1078,7 +1073,7 @@ public:
 
   void modify_mesh_add_and_delete_bucket(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
-    stk::mesh::NgpMesh& ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
@@ -1139,7 +1134,7 @@ public:
   void modify_host_bucket_value_with_selector(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField,
                                               stk::mesh::Selector selector, int newMultiplier)
   {
-    stk::mesh::NgpMesh& ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     check_field_data_on_device<int>(ngpIntField, stkIntField, selector);
     set_element_field_data(stkIntField, selector, newMultiplier);
     ngpMesh.update_mesh();
@@ -1148,7 +1143,7 @@ public:
   void modify_device_bucket_value_with_selector(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField,
                                                 stk::mesh::Selector selector, int newMultiplier)
   {
-    stk::mesh::NgpMesh& ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     check_field_data_on_device<int>(ngpIntField, stkIntField, selector);
     set_element_field_data_on_device(ngpMesh, stkIntField, selector, newMultiplier);
     // ngpMesh.update_mesh();
@@ -1156,7 +1151,7 @@ public:
 
   void modify_mesh_add_and_delete_bucket3(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
-    stk::mesh::NgpMesh& ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
@@ -1168,7 +1163,7 @@ public:
 
   void modify_mesh_add_and_delete_bucket2(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
-    stk::mesh::NgpMesh& ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
@@ -1185,7 +1180,7 @@ public:
 
   void modify_mesh_delete_bucket_in_middle(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
-    stk::mesh::NgpMesh& ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}, {"block_3", {3}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
@@ -1199,7 +1194,7 @@ public:
 
   void modify_mesh_add_bucket_in_middle(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
-    stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}, {"block_3", {3}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
@@ -1213,7 +1208,7 @@ public:
 
   void modify_mesh_add_element(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField, unsigned bucketCapacity)
   {
-    stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}, {"block_3", {3}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
 
@@ -1235,7 +1230,7 @@ public:
 
   void modify_mesh_change_bucket_content(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
-    stk::mesh::NgpMesh& ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     ngp_unit_test_utils::check_bucket_layout(get_bulk(), { {"block_1", {1, 2}}, {"block_3", {3}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
@@ -1283,7 +1278,7 @@ void test_field_values_on_device(stk::mesh::BulkData& bulk,
   stk::mesh::Selector selection = bulk.mesh_meta_data().locally_owned_part() & part;
   const stk::mesh::BucketVector& buckets = bulk.get_buckets(stkField.entity_rank(), selection);
   const unsigned numScalarsPerEntity = stk::mesh::field_scalars_per_entity(stkField, *buckets[0]);
-  stk::mesh::NgpMesh& ngpMesh = bulk.get_updated_ngp_mesh();
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selection,
                                  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
                                    for (unsigned component=0; component<numScalarsPerEntity; component++) {
@@ -1368,7 +1363,7 @@ void sync_field_to_device(stk::mesh::Field<T> & field)
 template <typename T>
 void modify_field_on_device(stk::mesh::BulkData & bulk, stk::mesh::Field<T> & stkField, int multiplier)
 {
-  stk::mesh::NgpMesh & ngpMesh = bulk.get_updated_ngp_mesh();
+  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   stk::mesh::NgpField<T> & ngpField = stk::mesh::get_updated_ngp_field<T>(stkField);
   ngpField.sync_to_device();
@@ -1386,7 +1381,7 @@ void modify_field_on_device(stk::mesh::BulkData & bulk, stk::mesh::Field<T> & st
 template <typename T>
 void modify_field_on_device(stk::mesh::BulkData& bulk, stk::mesh::Field<T>& stkField, stk::mesh::Part& part, int value)
 {
-  stk::mesh::NgpMesh & ngpMesh = bulk.get_updated_ngp_mesh();
+  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   stk::mesh::NgpField<T> & ngpField = stk::mesh::get_updated_ngp_field<T>(stkField);
   ngpField.sync_to_device();
@@ -1449,8 +1444,29 @@ void check_expected_num_elements(const stk::mesh::BulkData & bulk, unsigned numE
   ASSERT_EQ(counts[stk::topology::ELEM_RANK], numElements);
 }
 
+class NumScalarsPerEntity
+{
+public:
+  NumScalarsPerEntity() = default;
+
+  KOKKOS_INLINE_FUNCTION
+  unsigned& operator[](unsigned entityIndex)
+  {
+    return m_numScalars[entityIndex];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  const unsigned& operator[](const unsigned entityIndex) const
+  {
+    return m_numScalars[entityIndex];
+  }
+
+private:
+  unsigned m_numScalars[2];
+};
+
 void fill_gold_num_scalars_per_entity(const stk::mesh::BulkData & bulk, const stk::mesh::FieldBase & variableLengthField,
-                                      unsigned numElements, unsigned goldNumScalarsPerEntity[])
+                                      unsigned numElements, NumScalarsPerEntity& goldNumScalarsPerEntity)
 {
   stk::mesh::EntityVector elements;
   stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), elements);
@@ -1466,10 +1482,10 @@ void test_num_scalars_per_entity(stk::mesh::BulkData & bulk, const stk::mesh::Fi
   const unsigned numElements = 2;
   check_expected_num_elements(bulk, numElements);
 
-  unsigned goldNumScalarsPerEntity[numElements];
+  NumScalarsPerEntity goldNumScalarsPerEntity;
   fill_gold_num_scalars_per_entity(bulk, variableLengthField, numElements, goldNumScalarsPerEntity);
 
-  stk::mesh::NgpMesh & ngpMesh = bulk.get_updated_ngp_mesh();
+  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   stk::mesh::NgpField<int> ngpVariableLengthField = stk::mesh::get_updated_ngp_field<int>(variableLengthField);
 
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, bulk.mesh_meta_data().locally_owned_part(),
@@ -1502,7 +1518,7 @@ TEST_F(NgpFieldFixture, TestAriaAlgorithm)
 
   setup_mesh("generated:1x1x1", stk::mesh::BulkData::AUTO_AURA);
 
-  stk::mesh::NgpMesh ngpMesh = get_bulk().get_updated_ngp_mesh();
+  stk::mesh::NgpMesh ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
 
   int multiplier = 2;
   modify_field_on_device(get_bulk(), f1, multiplier);

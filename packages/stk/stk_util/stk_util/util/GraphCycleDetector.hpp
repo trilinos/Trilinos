@@ -35,7 +35,7 @@
 #ifndef GRAPH_CYCLE_DETECTOR_IMPL_HPP
 #define GRAPH_CYCLE_DETECTOR_IMPL_HPP
 
-#include <vector>
+#include <vector>  // for vector
 
 namespace stk {
 namespace tools {

@@ -21,7 +21,7 @@ protected:
       m_outputDirOptionName("--output-directory")
   {
     setup_mesh("generated:1x1x4|sideset:x", stk::mesh::BulkData::NO_AUTO_AURA);
-    stk::mesh::get_selected_entities(get_meta().universal_part(), get_bulk().buckets(stk::topology::FACE_RANK), m_faces);
+    stk::mesh::get_entities(get_bulk(), stk::topology::FACE_RANK, get_meta().universal_part(), m_faces);
     ThrowRequire(m_faces.size() > 0);
   }
 
@@ -89,6 +89,20 @@ protected:
     EXPECT_DOUBLE_EQ(get_absolute_tolerance_for_unit_mesh(balanceSettings), tolerance);
   }
 
+  void check_vertex_weight_block_multiplier(const stk::balance::BalanceSettings& balanceSettings,
+                                            const std::vector<std::pair<std::string, double>> & expectedMultipliers)
+  {
+    const std::map<std::string, double> & blockMultipliers = balanceSettings.getVertexWeightBlockMultipliers();
+    EXPECT_EQ(blockMultipliers.size(), expectedMultipliers.size()) << "Unexpected number of block multipliers";
+    for (const auto & expectedMultiplier : expectedMultipliers) {
+      const auto foundMultiplier = blockMultipliers.find(expectedMultiplier.first);
+      ASSERT_TRUE(foundMultiplier != blockMultipliers.end()) << "No multiplier found for block " << expectedMultiplier.first;
+      EXPECT_DOUBLE_EQ(foundMultiplier->second, expectedMultiplier.second)
+        << "Multiplier for block " << expectedMultiplier.first << " (" << foundMultiplier->second
+        << ") doesn't match expected (" << expectedMultiplier.second << ")";
+    }
+  }
+
   std::string infile;
 
 private:
@@ -116,6 +130,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_default)
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
   check_absolute_tolerance_for_face_search(balanceSettings, 0.0001);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, createBalanceSettings_outputDirectory)
@@ -133,6 +148,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_outputDirectory)
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
   check_absolute_tolerance_for_face_search(balanceSettings, 0.0001);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, createBalanceSettings_outputDirectory_fullOptions)
@@ -151,6 +167,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_outputDirectory_fullOptions)
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
   check_absolute_tolerance_for_face_search(balanceSettings, 0.0001);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults)
@@ -163,6 +180,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults)
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 3.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 10.0);
   check_relative_tolerance_for_face_search(balanceSettings, 0.15);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults)
@@ -175,6 +193,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults)
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
   check_absolute_tolerance_for_face_search(balanceSettings, 0.0001);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, createBalanceSettings_bothDefaults)
@@ -193,6 +212,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_defaultAbsoluteTolerance)
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
   check_absolute_tolerance_for_face_search(balanceSettings, 0.0001);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, createBalanceSettings_defaultRelativeTolerance)
@@ -205,6 +225,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_defaultRelativeTolerance)
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
   check_relative_tolerance_for_face_search(balanceSettings, 0.15);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, createBalanceSettings_bothTolerances)
@@ -223,6 +244,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_faceSearchAbsoluteTolerance)
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
   check_absolute_tolerance_for_face_search(balanceSettings, 0.001);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, createBalanceSettings_faceSearchRelativeTolerance)
@@ -235,6 +257,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_faceSearchRelativeTolerance)
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
   check_relative_tolerance_for_face_search(balanceSettings, 0.123);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 
@@ -248,6 +271,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults_defaultAbsoluteToler
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 3.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 10.0);
   check_absolute_tolerance_for_face_search(balanceSettings, 0.0001);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults_defaultRelativeTolerance)
@@ -260,6 +284,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults_defaultRelativeToler
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 3.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 10.0);
   check_relative_tolerance_for_face_search(balanceSettings, 0.15);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults_faceSearchAbsoluteTolerance)
@@ -272,6 +297,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults_faceSearchAbsoluteTo
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 3.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 10.0);
   check_absolute_tolerance_for_face_search(balanceSettings, 0.005);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults_faceSearchRelativeTolerance)
@@ -284,6 +310,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_smDefaults_faceSearchRelativeTo
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 3.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 10.0);
   check_relative_tolerance_for_face_search(balanceSettings, 0.123);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 
@@ -297,6 +324,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults_defaultAbsoluteToler
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
   check_absolute_tolerance_for_face_search(balanceSettings, 0.0001);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults_defaultRelativeTolerance)
@@ -309,6 +337,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults_defaultRelativeToler
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
   check_relative_tolerance_for_face_search(balanceSettings, 0.15);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults_faceSearchAbsoluteTolerance)
@@ -321,6 +350,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults_faceSearchAbsoluteTo
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
   check_absolute_tolerance_for_face_search(balanceSettings, 0.0005);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults_faceSearchRelativeTolerance)
@@ -333,6 +363,7 @@ TEST_F(BalanceCommandLine, createBalanceSettings_sdDefaults_faceSearchRelativeTo
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
   check_relative_tolerance_for_face_search(balanceSettings, 0.123);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 
@@ -367,6 +398,7 @@ TEST_F(BalanceCommandLine, disableSearch_default_caseInsensitive)
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
   check_absolute_tolerance_for_face_search(balanceSettings, 0.0001);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, disableSearch_smDefaults)
@@ -379,6 +411,7 @@ TEST_F(BalanceCommandLine, disableSearch_smDefaults)
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 3.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 10.0);
   check_relative_tolerance_for_face_search(balanceSettings, 0.15);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, disableSearch_sdDefaults)
@@ -391,6 +424,7 @@ TEST_F(BalanceCommandLine, disableSearch_sdDefaults)
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
   check_absolute_tolerance_for_face_search(balanceSettings, 0.0001);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 
@@ -404,6 +438,7 @@ TEST_F(BalanceCommandLine, enableSearch_default_caseInsensitive)
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
   check_absolute_tolerance_for_face_search(balanceSettings, 0.0001);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, enableSearch_whenDisabledByDefault)
@@ -424,6 +459,7 @@ TEST_F(BalanceCommandLine, enableSearch_smDefaults)
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 3.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 10.0);
   check_relative_tolerance_for_face_search(balanceSettings, 0.15);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 TEST_F(BalanceCommandLine, enableSearch_sdDefaults)
@@ -436,6 +472,7 @@ TEST_F(BalanceCommandLine, enableSearch_sdDefaults)
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
   check_absolute_tolerance_for_face_search(balanceSettings, 0.0001);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
 
 
@@ -470,4 +507,63 @@ TEST_F(BalanceCommandLine, decompMethodParmetis)
   EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
   check_absolute_tolerance_for_face_search(balanceSettings, 0.0001);
+  check_vertex_weight_block_multiplier(balanceSettings, {});
 }
+
+TEST_F(BalanceCommandLine, userSpecifiedBlockMultiplier_default)
+{
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings(
+                                                         {"--block-weights=block_1:2.0"});
+
+  EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
+  EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
+  EXPECT_FALSE(balanceSettings.shouldFixSpiders());
+  EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
+  EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
+  check_absolute_tolerance_for_face_search(balanceSettings, 0.0001);
+  check_vertex_weight_block_multiplier(balanceSettings, {{"block_1", 2.0}});
+}
+
+TEST_F(BalanceCommandLine, userSpecifiedBlockMultiplier_smDefaults)
+{
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--sm",
+                                                         {"--block-weights=block_2:10,block_5:2.5"}});
+
+  EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
+  EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
+  EXPECT_FALSE(balanceSettings.shouldFixSpiders());
+  EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 3.0);
+  EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 10.0);
+  check_relative_tolerance_for_face_search(balanceSettings, 0.15);
+  check_vertex_weight_block_multiplier(balanceSettings, {{"block_2", 10.0}, {"block_5", 2.5}});
+}
+
+TEST_F(BalanceCommandLine, userSpecifiedWeights_sdDefaults)
+{
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--sd",
+                                                         {"--block-weights=block_1:1.5,block_2:5"}});
+
+  EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
+  EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
+  EXPECT_TRUE(balanceSettings.shouldFixSpiders());
+  EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
+  EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
+  check_absolute_tolerance_for_face_search(balanceSettings, 0.0001);
+  check_vertex_weight_block_multiplier(balanceSettings, {{"block_1", 1.5}, {"block_2", 5.0}});
+}
+
+TEST_F(BalanceCommandLine, userSpecifiedBlockMultiplier_badFormatting)
+{
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings(
+                                                         {"--block-weights= block_1:1.5 ,block_2 : 3 , block_3:1.1 "});
+
+  EXPECT_EQ(balanceSettings.getDecompMethod(), "parmetis");
+  EXPECT_TRUE(balanceSettings.includeSearchResultsInGraph());
+  EXPECT_FALSE(balanceSettings.shouldFixSpiders());
+  EXPECT_DOUBLE_EQ(balanceSettings.getGraphEdgeWeightForSearch(), 15.0);
+  EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), 5.0);
+  check_absolute_tolerance_for_face_search(balanceSettings, 0.0001);
+  check_vertex_weight_block_multiplier(balanceSettings, {{"block_1", 1.5}, {"block_2", 3.0}, {"block_3", 1.1}});
+}
+
+

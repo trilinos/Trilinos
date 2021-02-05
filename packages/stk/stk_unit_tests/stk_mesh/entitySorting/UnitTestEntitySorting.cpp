@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "mpi.h"
+#include <stk_mesh/base/EntitySorterBase.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -8,6 +9,7 @@
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_mesh/base/ForEachEntity.hpp>
+#include <cmath>
 
 namespace {
 
@@ -49,7 +51,7 @@ public:
 
     bool equal(const double& val1, const double& val2) const
     {
-        return (abs(val1 - val2) < tolerance);
+        return (std::fabs(val1 - val2) < tolerance);
     }
 
     bool less_than(const double& val1, const double& val2) const
@@ -57,11 +59,6 @@ public:
         if (equal(val1, val2))
             return false;
         return (val1 < val2);
-    }
-
-    void set_tolerance(double toleranceIn)
-    {
-        tolerance = toleranceIn;
     }
 
 private:
@@ -95,9 +92,10 @@ protected:
         stk::mesh::for_each_entity_run(get_bulk(), stk::topology::NODE_RANK,
             [&entityLessCoords](const stk::mesh::BulkData& bulk, const stk::mesh::MeshIndex& meshIndex)
             {
-                 if(meshIndex.bucket_ordinal > 0)
+                if(meshIndex.bucket_ordinal > 0) {
                      EXPECT_TRUE(entityLessCoords((*meshIndex.bucket)[meshIndex.bucket_ordinal-1],
                                                   (*meshIndex.bucket)[meshIndex.bucket_ordinal]));
+                }
             }
         );
     }

@@ -80,8 +80,9 @@ stk::mesh::EntityVector SubdomainCreator::get_nodes_shared_between_subdomains(in
 {
     stk::mesh::Selector selected_nodes = *get_subdomain_part(this_subdomain_index) &
                                          *get_subdomain_part(other_subdomain_index);
+    const bool sortById = true;
     stk::mesh::EntityVector nodes;
-    stk::mesh::get_selected_entities(selected_nodes, mBulk.buckets(stk::topology::NODE_RANK), nodes);
+    stk::mesh::get_entities(mBulk, stk::topology::NODE_RANK, selected_nodes, nodes, sortById);
     return nodes;
 }
 

@@ -35,10 +35,10 @@
 #ifndef stk_util_parallel_CommSparse_hpp
 #define stk_util_parallel_CommSparse_hpp
 
-#include <cstddef>                      // for size_t, ptrdiff_t
-#include <vector>
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer etc
+#include "stk_util/parallel/Parallel.hpp"      // for ParallelMachine, parallel_machine_null
+#include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
+#include <cstddef>                             // for size_t
+#include <vector>                              // for vector
 
 //------------------------------------------------------------------------
 

@@ -34,13 +34,30 @@
 #ifndef STK_STK_UTIL_STK_UTIL_COMMAND_LINE_COMMANDLINEPARSERUTILS_HPP_
 #define STK_STK_UTIL_STK_UTIL_COMMAND_LINE_COMMANDLINEPARSERUTILS_HPP_
 
-#include <stk_util/stk_config.h>
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/command_line/CommandLineParser.hpp>
 #include <string>
+
+namespace stk { class CommandLineParserParallel; }
 
 namespace stk {
 
-class CommandLineParserParallel;
+template<typename ValueType>
+ValueType get_command_line_option(int argc, char** argv,
+                                  const std::string& optionName,
+                                  const ValueType& defaultValue)
+{
+  CommandLineParser parser;
+  parser.add_optional<ValueType>(optionName, "", defaultValue);
+  CommandLineParser::ParseState parseResult = parser.parse(argc, const_cast<const char**>(argv));
+  if (parseResult == CommandLineParser::ParseComplete && parser.is_option_parsed(optionName)) {
+    return parser.get_option_value<ValueType>(optionName);
+  }
+  if (parseResult == CommandLineParser::ParseError) {
+    ThrowErrorMsg("Failed to parse for --"<<optionName);
+  }
+  return defaultValue;
+}
 
 std::string get_quick_error(const std::string &execName, const std::string &quickExample);
 
@@ -53,7 +70,6 @@ void parse_command_line(int argc,
 namespace parallel {
 void print_and_exit(const std::string &msg, MPI_Comm comm);
 }
-
 
 }
 

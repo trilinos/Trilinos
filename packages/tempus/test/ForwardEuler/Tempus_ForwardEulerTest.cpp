@@ -131,7 +131,6 @@ TEUCHOS_UNIT_TEST(ForwardEuler, ConstructingFromDefaults)
     auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
     ParameterList tscPL = pl->sublist("Demo Integrator")
                              .sublist("Time Step Control");
-    timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
     timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
     timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
     timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));
@@ -437,10 +436,6 @@ TEUCHOS_UNIT_TEST(ForwardEuler, NumberTimeSteps)
     const int numTimeSteps = pl->sublist("Demo Integrator")
                                 .sublist("Time Step Control")
                                 .get<int>("Number of Time Steps");
-    const std::string integratorStepperType =
-      pl->sublist("Demo Integrator")
-         .sublist("Time Step Control")
-         .get<std::string>("Integrator Step Type");
 
     RCP<Tempus::IntegratorBasic<double> > integrator =
       Tempus::integratorBasic<double>(pl, model);
@@ -476,20 +471,16 @@ TEUCHOS_UNIT_TEST(ForwardEuler, Variable_TimeSteps)
 
   pl->sublist("Demo Integrator")
      .sublist("Time Step Control")
-     .sublist("Time Step Control Strategy")
-     .sublist("basic_vs").set("Reduction Factor", 0.9);
+     .sublist("Time Step Control Strategy").set("Reduction Factor", 0.9);
   pl->sublist("Demo Integrator")
      .sublist("Time Step Control")
-     .sublist("Time Step Control Strategy")
-     .sublist("basic_vs").set("Amplification Factor", 1.15);
+     .sublist("Time Step Control Strategy").set("Amplification Factor", 1.15);
   pl->sublist("Demo Integrator")
      .sublist("Time Step Control")
-     .sublist("Time Step Control Strategy")
-     .sublist("basic_vs").set("Minimum Value Monitoring Function", 0.05);
+     .sublist("Time Step Control Strategy").set("Minimum Value Monitoring Function", 0.05);
   pl->sublist("Demo Integrator")
      .sublist("Time Step Control")
-     .sublist("Time Step Control Strategy")
-     .sublist("basic_vs").set("Maximum Value Monitoring Function", 0.1);
+     .sublist("Time Step Control Strategy").set("Maximum Value Monitoring Function", 0.1);
 
   pl->sublist("Demo Integrator")
      .sublist("Solution History").set("Storage Type", "Static");

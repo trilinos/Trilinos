@@ -25,7 +25,7 @@ namespace KokkosBatched {
     static int
     invoke(const MemberType &member, 
 	   const int matrix_rank,
-           const int m,
+           const int m, const int n,
            const ValueType * U, const int us0, const int us1,
 	   const ValueType * T, const int ts0, const int ts1,
 	   const ValueType * V, const int vs0, const int vs1,
@@ -104,7 +104,7 @@ namespace KokkosBatched {
     static int
     invoke(const MemberType &member, 
 	   const int matrix_rank,
-           const int m, const int nrhs,
+           const int m, const int n, const int nrhs,
            const ValueType * U, const int us0, const int us1,
 	   const ValueType * T, const int ts0, const int ts1,
 	   const ValueType * V, const int vs0, const int vs1,
@@ -120,10 +120,10 @@ namespace KokkosBatched {
       value_type * W = w; /// m x nrhs
       const int ws0 = xs0 < xs1 ? 1 : nrhs, ws1 = xs0 < xs1 ? m : 1;
 
-      if (matrix_rank < m) {
+      if (matrix_rank < n) {
 	/// U is m x matrix_rank
 	/// T is matrix_rank x matrix_rank
-	/// V is matrix_rank m
+	/// V is matrix_rank x n
 	/// W = U^T B
 	TeamVectorGemmInternal<Algo::Gemm::Unblocked>
 	  ::invoke(member,
@@ -133,6 +133,7 @@ namespace KokkosBatched {
 		   B, bs0, bs1,
 		   zero,
 		   W, ws0, ws1);
+	member.team_barrier();
 
 	/// W = T^{-1} W
 	TeamVectorTrsmInternalLeftLower<Algo::Trsm::Unblocked>
@@ -142,26 +143,31 @@ namespace KokkosBatched {
 		   one,
 		   T, ts0, ts1,
 		   W, ws0, ws1);
+	member.team_barrier();
 	
 	/// X = V^T W
 	TeamVectorGemmInternal<Algo::Gemm::Unblocked>
 	  ::invoke(member,
-		   m, nrhs, matrix_rank, 
+		   n, nrhs, matrix_rank, 
 		   one,
 		   V, vs1, vs0,
 		   W, ws0, ws1,
 		   zero,
 		   X, xs0, xs1);
+	member.team_barrier();
       } else {
+	/// W = U^T B
 	TeamVectorGemmInternal<Algo::Gemm::Unblocked>
 	  ::invoke(member,
-		   m, nrhs, matrix_rank, 
+		   matrix_rank, nrhs, m, 
 		   one,
 		   U, us1, us0,
 		   B, bs0, bs1,
 		   zero,
 		   X, xs0, xs1);
+    member.team_barrier();
 
+	/// X = T^{-1} X
 	TeamVectorTrsmInternalLeftUpper<Algo::Trsm::Unblocked>
 	  ::invoke(member,
 		   false,
@@ -169,12 +175,13 @@ namespace KokkosBatched {
 		   one,
 		   T, ts0, ts1,
 		   X, xs0, xs1);		
+	member.team_barrier();
       }
       
       /// X = P^T X
       TeamVectorApplyPivotMatrixBackwardInternal
       	::invoke(member,
-      		 nrhs, m,
+      		 nrhs, n,
       		 p, ps0,
       		 X, xs0, xs1);
 

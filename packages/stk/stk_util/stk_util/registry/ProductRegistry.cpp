@@ -32,12 +32,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/registry/product_registry.h>
-#include <stk_util/registry/ProductRegistry.hpp>
-#include <stk_util/environment/EnvData.hpp>
-#include <iostream>
+#include "stk_util/registry/ProductRegistry.hpp"
+#include "stk_util/environment/EnvData.hpp"      // for EnvData
+#include "stk_util/registry/product_registry.h"  // for product_registry_add, product_registry_a...
+#include <utility>                               // for pair, make_pair
+
 #ifdef STK_BUILT_IN_SIERRA
-#include <stk_util/registry/stk_version.hpp>
+#include "stk_util/registry/stk_version.hpp"
 #else
 #define STK_VERSION "0.2a"
 #endif

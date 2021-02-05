@@ -244,7 +244,8 @@ private:
     stk::mesh::EntityVector get_elements_from_selector(stk::mesh::BulkData & stkMeshBulkData, stk::mesh::Selector selector) const
     {
         stk::mesh::EntityVector elements;
-        stk::mesh::get_selected_entities( selector, stkMeshBulkData.buckets(stk::topology::ELEM_RANK), elements);
+        const bool sortById = true;
+        stk::mesh::get_entities(stkMeshBulkData, stk::topology::ELEM_RANK, selector, elements, sortById);
         return elements;
     }
 
@@ -502,7 +503,8 @@ protected:
     {
         stk::mesh::EntityVector parentElements;
         stk::mesh::Selector parentElementSelector = (*m_parentPart) & get_meta().locally_owned_part();
-        stk::mesh::get_selected_entities(parentElementSelector, get_bulk().buckets(stk::topology::ELEM_RANK), parentElements);
+        const bool sortById = true;
+        stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, parentElementSelector, parentElements, sortById);
 
         set_parent_element_weights(parentElements, parentChildManager);
     }
@@ -553,7 +555,7 @@ protected:
     {
         stk::mesh::EntityVector parentElements;
         stk::mesh::Selector parentSelector = (*m_parentPart) & get_meta().locally_owned_part();
-        stk::mesh::get_selected_entities(parentSelector, get_bulk().buckets(stk::topology::ELEM_RANK), parentElements);
+        stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, parentSelector, parentElements);
         return get_total_weight_for_these_elements(parentElements);
     }
 
@@ -698,7 +700,7 @@ protected:
     {
         stk::mesh::EntityVector parentElements;
         stk::mesh::Selector parentSelector = (*m_parentPart) & get_meta().locally_owned_part();
-        stk::mesh::get_selected_entities(parentSelector, get_bulk().buckets(stk::topology::ELEM_RANK), parentElements);
+        stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, parentSelector, parentElements);
         verify_parent_child_connectivity(parentElements, parentChildManager);
     }
 

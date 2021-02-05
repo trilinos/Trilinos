@@ -455,7 +455,7 @@ buildSolutionHistory()
   }
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<Scalar> >
 integratorPseudoTransientAdjointSensitivity(
@@ -467,7 +467,7 @@ integratorPseudoTransientAdjointSensitivity(
   return(integrator);
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<Scalar> >
 integratorPseudoTransientAdjointSensitivity(
@@ -479,7 +479,7 @@ integratorPseudoTransientAdjointSensitivity(
   return(integrator);
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<Scalar> >
 integratorPseudoTransientAdjointSensitivity()

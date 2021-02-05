@@ -133,7 +133,6 @@ TEUCHOS_UNIT_TEST(BDF2, ConstructingFromDefaults)
     auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
     ParameterList tscPL = pl->sublist("Default Integrator")
                              .sublist("Time Step Control");
-    timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
     timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
     timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
     timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));
@@ -378,7 +377,6 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
     pl->sublist("Default Integrator")
        .sublist("Time Step Control")
        .sublist("Time Step Control Strategy")
-       .sublist("basic_vs")
        .set("Minimum Value Monitoring Function", dt*0.99);
     integrator = Tempus::integratorBasic<double>(pl, model);
 
@@ -466,8 +464,8 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
                     solutions,    xErrorNorm,    xSlope,
                     solutionsDot, xDotErrorNorm, xDotSlope);
 
-    TEST_FLOATING_EQUALITY( xSlope,               1.96126, 0.01 );
-    TEST_FLOATING_EQUALITY( xDotSlope,            1.96126, 0.01 );
+    TEST_FLOATING_EQUALITY( xSlope,                 1.932, 0.01 );
+    TEST_FLOATING_EQUALITY( xDotSlope,              1.932, 0.01 );
     TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.000192591, 1.0e-4 );
     TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 0.000192591, 1.0e-4 );
   }
