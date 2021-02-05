@@ -121,7 +121,7 @@ namespace Tpetra {
         }
       }
       else {
-        auto X_view = X.getLocalViewHostNonConst(Tpetra::Access::ReadWrite());
+        auto X_view = X.getLocalViewHost(Tpetra::Access::ReadWrite());
         X_ptr = reinterpret_cast<scalar_type*>(X_view.data());
         X_stride = static_cast<ordinal_type>(X_view.stride(1));
         if(X_stride == 0) {
