@@ -703,6 +703,7 @@ namespace Tpetra {
       using export_type = Export<LocalOrdinal, GlobalOrdinal, Node>;
       using import_type = Import<LocalOrdinal, GlobalOrdinal, Node>;
       using STS = Teuchos::ScalarTraits<Scalar>;
+      typedef typename MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>:: dual_view_type::t_dev nonconst_view_type;
 
       const size_t numVectors = X_in.getNumVectors();
       // because of Views, it is difficult to determine if X and Y point to the same data.
@@ -755,13 +756,13 @@ namespace Tpetra {
         X = exportMV_; // multiply out of exportMV_
       }
 
-      auto X_lcl = X->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto X_lcl = X->getLocalViewDevice(Tpetra::Access::ReadOnly());
 
       // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
       // We will compute solution into the to-be-exported MV; get a view
       if (importer != null) {
         // Beta is zero here, so we clobber Y_lcl
-        auto Y_lcl = importMV_->getLocalViewDevice(Tpetra::Access::WriteOnly);
+        auto Y_lcl = importMV_->getLocalViewDevice(Tpetra::Access::WriteOnly());
 
         localMultiply_.apply (X_lcl, Y_lcl, mode, alpha, STS::zero ());
         if (Y_is_overwritten) {
@@ -778,13 +779,17 @@ namespace Tpetra {
         if (! Y_in.isConstantStride () || X.getRawPtr () == &Y_in) {
           // generate a strided copy of Y
           MV Y (Y_in, Teuchos::Copy);
-          auto Y_lcl = Y.getLocalViewDevice(Y_is_overwritten ? Tpetra::Access::WriteOnly : Tpetra::Access::ReadWrite);
+          nonconst_view_type Y_lcl;
+          if(Y_is_overwritten) Y_lcl = Y.getLocalViewDevice(Tpetra::Access::WriteOnly());
+          else                 Y_lcl = Y.getLocalViewDevice(Tpetra::Access::ReadWrite()); 
 
           localMultiply_.apply (X_lcl, Y_lcl, mode, alpha, beta);
           Tpetra::deep_copy (Y_in, Y);
         }
         else {
-          auto Y_lcl = Y_in.getLocalViewDevice(Y_is_overwritten ? Tpetra::Access::WriteOnly : Tpetra::Access::ReadWrite);
+          nonconst_view_type Y_lcl;
+          if(Y_is_overwritten) Y_lcl = Y_in.getLocalViewDevice(Tpetra::Access::WriteOnly());
+          else                 Y_lcl = Y_in.getLocalViewDevice(Tpetra::Access::ReadWrite()); 
 
           localMultiply_.apply (X_lcl, Y_lcl, mode, alpha, beta);
         }
@@ -811,6 +816,7 @@ namespace Tpetra {
       typedef Export<LocalOrdinal,GlobalOrdinal,Node> export_type;
       typedef Import<LocalOrdinal,GlobalOrdinal,Node> import_type;
       typedef Teuchos::ScalarTraits<Scalar> STS;
+      typedef typename MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>:: dual_view_type::t_dev nonconst_view_type;
 
       if (alpha == STS::zero ()) {
         if (beta == STS::zero ()) {
@@ -895,8 +901,8 @@ namespace Tpetra {
       // is null if we don't need the temporary MV, that is, if the
       // Export is trivial (null).
       RCP<MV> Y_rowMap = getRowMapMultiVector (Y_in);
-
-      auto X_lcl = X_colMap->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      
+      auto X_lcl = X_colMap->getLocalViewDevice(Tpetra::Access::ReadOnly());
 
       // If we have a nontrivial Export object, we must perform an
       // Export.  In that case, the local multiply result will go into
@@ -904,7 +910,7 @@ namespace Tpetra {
       // constant-stride version of Y_in in this case, because we had to
       // make a constant stride Y_rowMap MV and do an Export anyway.
       if (! exporter.is_null ()) {
-        auto Y_lcl = Y_rowMap->getLocalViewDevice(Tpetra::Access::WriteOnly);
+        auto Y_lcl = Y_rowMap->getLocalViewDevice(Tpetra::Access::WriteOnly());
 
         localMultiply_.apply (X_lcl, Y_lcl, NO_TRANS,
                               alpha, STS::zero ());
@@ -949,14 +955,17 @@ namespace Tpetra {
           if (beta != STS::zero ()) {
             Tpetra::deep_copy (*Y_rowMap, Y_in);
           }
-
-          auto Y_lcl = Y_rowMap->getLocalViewDevice(Y_is_overwritten ? Tpetra::Access::WriteOnly : Tpetra::Access::ReadWrite);
+          nonconst_view_type Y_lcl;
+          if(Y_is_overwritten) Y_lcl = Y_rowMap->getLocalViewDevice(Tpetra::Access::WriteOnly());
+          else                 Y_lcl = Y_rowMap->getLocalViewDevice(Tpetra::Access::ReadWrite()); 
 
           localMultiply_.apply (X_lcl, Y_lcl, NO_TRANS, alpha, beta);
           Tpetra::deep_copy (Y_in, *Y_rowMap);
         }
         else {
-          auto Y_lcl = Y_in.getLocalViewDevice(Y_is_overwritten ? Tpetra::Access::WriteOnly : Tpetra::Access::ReadWrite);
+          nonconst_view_type Y_lcl;
+          if(Y_is_overwritten) Y_lcl = Y_in.getLocalViewDevice(Tpetra::Access::WriteOnly());
+          else                 Y_lcl = Y_in.getLocalViewDevice(Tpetra::Access::ReadWrite()); 
 
           localMultiply_.apply (X_lcl, Y_lcl, NO_TRANS, alpha, beta);
         }
