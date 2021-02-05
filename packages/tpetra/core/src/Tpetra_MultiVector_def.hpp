@@ -461,8 +461,6 @@ namespace Tpetra {
 
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV 2-arg \"copy\" ctor");
 
-std::cout << "KDDKDD in MV Constructor source " << source.need_sync_host() << " " << source.need_sync_device() << std::endl;
-
     if (copyOrView == Teuchos::Copy) {
       // Reuse the conveniently already existing function that creates
       // a deep copy.
@@ -3705,9 +3703,6 @@ std::cout << "KDDKDD in MV Constructor source " << source.need_sync_host() << " 
       throw std::runtime_error("Tpetra::MultiVector: Cannot access data on "
                                " host while a device view is alive");
     owningView_.sync_host();
-
-std::cout << "KDDKDD getLocalViewHost READONLY " << this->need_sync_host() << " " << this->need_sync_device() << std::endl;
-
     return view_.view_host();
   }
 
@@ -3722,9 +3717,6 @@ std::cout << "KDDKDD getLocalViewHost READONLY " << this->need_sync_host() << " 
                                "host while a device view is alive");
     owningView_.sync_host();
     owningView_.modify_host();
-
-std::cout << "KDDKDD getLocalViewHost READWRITE " << this->need_sync_host() << " " << this->need_sync_device() << std::endl;
-
     return view_.view_host();
   }
 
@@ -3739,9 +3731,6 @@ std::cout << "KDDKDD getLocalViewHost READWRITE " << this->need_sync_host() << "
                                "host while a device view is alive");
     owningView_.clear_sync_state();
     owningView_.modify_host();
-
-std::cout << "KDDKDD getLocalViewHost WRITEONLY " << this->need_sync_host() << " " << this->need_sync_device() << std::endl;
-
     return view_.view_host();
   }
 
@@ -3754,11 +3743,7 @@ std::cout << "KDDKDD getLocalViewHost WRITEONLY " << this->need_sync_host() << "
     if (owningView_.h_view.use_count() > owningView_.d_view.use_count())
       throw std::runtime_error("Tpetra::MultiVector: Cannot access data on "
                                "device while a host view is alive");
-
     owningView_.sync_device();
-
-std::cout << "KDDKDD getLocalViewDevice READONLY " << this->need_sync_host() << " " << this->need_sync_device() << std::endl;
-
     return view_.view_device();
   }
 
@@ -3768,15 +3753,11 @@ std::cout << "KDDKDD getLocalViewDevice READONLY " << this->need_sync_host() << 
   getLocalViewDevice(Tpetra::Access::ReadWrite)
   {
     //returning dual_view_type::t_dev::type
-
     if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
       throw std::runtime_error("Tpetra::MultiVector: Cannot access data on "
                                "device while a host view is alive");
-
     owningView_.sync_device();
     owningView_.modify_device();
-
-std::cout << "KDDKDD getLocalViewDevice READWRITE " << this->need_sync_host() << " " << this->need_sync_device() << std::endl;
     return view_.view_device();
   }
 
@@ -3789,12 +3770,8 @@ std::cout << "KDDKDD getLocalViewDevice READWRITE " << this->need_sync_host() <<
     if (owningView_.h_view.use_count() > owningView_.d_view.use_count())
       throw std::runtime_error("Tpetra::MultiVector: Cannot access data on "
                                "device while a host view is alive");
-
     owningView_.clear_sync_state();
     owningView_.modify_device();
-
-std::cout << "KDDKDD getLocalViewDevice WRITEONLY " << this->need_sync_host() << " " << this->need_sync_device() << std::endl;
-
     return view_.view_device();
   }
 
@@ -4641,8 +4618,6 @@ std::cout << "KDDKDD getLocalViewDevice WRITEONLY " << this->need_sync_host() <<
     // If need sync to device, then host has most recent version.
     const bool src_last_updated_on_host = src.need_sync_device ();
 
-std::cout << "KDDKDD BEFORE COPYING TO DEVICE " << src.need_sync_host() << " " << this->need_sync_host() << " " << src.need_sync_device() << " " << this->need_sync_device() << std::endl;
-
     if (src_last_updated_on_host) {
       localDeepCopy (this->getLocalViewDevice(Access::ReadWrite()),
                      src.getLocalViewHost(Access::ReadOnly()),
@@ -4650,7 +4625,6 @@ std::cout << "KDDKDD BEFORE COPYING TO DEVICE " << src.need_sync_host() << " " <
                      src.isConstantStride (),
                      this->whichVectors_ (),
                      src.whichVectors_ ());
-std::cout << "KDDKDD COPYING FROM HOST TO DEVICE " << src.need_sync_host() << " " << this->need_sync_host() << " " << src.need_sync_device() << " " << this->need_sync_device() << std::endl;
     }
     else {
       localDeepCopy (this->getLocalViewDevice(Access::ReadWrite()),
@@ -4659,7 +4633,6 @@ std::cout << "KDDKDD COPYING FROM HOST TO DEVICE " << src.need_sync_host() << " 
                      src.isConstantStride (),
                      this->whichVectors_ (),
                      src.whichVectors_ ());
-std::cout << "KDDKDD COPYING FROM DEVICE TO DEVICE " << src.need_sync_host() << " " << this->need_sync_host() << " " << src.need_sync_device() << " " << this->need_sync_device() << std::endl;
     }
   }
 
@@ -4809,9 +4782,7 @@ std::cout << "KDDKDD COPYING FROM DEVICE TO DEVICE " << src.need_sync_host() << 
   {
     typedef MultiVector<ST, LO, GO, NT> MV;
     MV cpy (src.getMap (), src.getNumVectors (), false);
-std::cout << "KDDKDD CREATECOPY BEFORE ASSIGN " << " " << src.need_sync_host() << " " << cpy.need_sync_host() << " " << src.need_sync_device() << " " <<  cpy.need_sync_device() << std::endl;
     cpy.assign (src);
-std::cout << "KDDKDD CREATECOPY AFTER ASSIGN " << " " << src.need_sync_host() << " " << cpy.need_sync_host() << " " << src.need_sync_device() << " " <<  cpy.need_sync_device() << std::endl;
     return cpy;
   }
 

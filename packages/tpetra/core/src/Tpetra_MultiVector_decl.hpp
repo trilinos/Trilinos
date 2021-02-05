@@ -1535,9 +1535,12 @@ namespace Tpetra {
     {
       //This type is only used to see what the DualView::view<TargetDeviceType>() will return.
       //That logic inside DualView is too complicated to replicate here.
-      using ReturnedViewType = typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type;
-      //getting v increments the reference count, so compare against that minus one
-      if(std::is_same<ReturnedViewType, typename dual_view_type::t_dev>::value)
+      bool returnDevice = true;
+      {
+        auto tmp = view_.template view<TargetDeviceType>();
+        if (tmp == this->view_.view_host()) returnDevice = false;
+      }
+      if (returnDevice)
       {
         //returning dual_view_type::t_dev::const_type
         if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
@@ -1558,11 +1561,14 @@ namespace Tpetra {
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
     getLocalView (Tpetra::Access::ReadWrite)
     {
-      using ReturnedViewType = typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type;
-      //getting v increments the reference count, so compare against that minus one
-      if(std::is_same<ReturnedViewType, typename dual_view_type::t_dev>::value)
+      bool returnDevice = true;
       {
-        //returning dual_view_type::t_dev::const_type
+        auto tmp = view_.template view<TargetDeviceType>();
+        if (tmp == this->view_.view_host()) returnDevice = false;
+      }
+      if (returnDevice) 
+      {
+        //returning dual_view_type::t_dev::type
         if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
           throw std::runtime_error("Tpetra::MultiVector: Cannot access data on device while a host view is alive");
         owningView_.sync_device();
@@ -1570,7 +1576,7 @@ namespace Tpetra {
       }
       else
       {
-        //returning dual_view_type::t_host::const_type
+        //returning dual_view_type::t_host::type
         if(owningView_.d_view.use_count() > owningView_.h_view.use_count())
           throw std::runtime_error("Tpetra::MultiVector: Cannot access data on host while a device view is alive");
         owningView_.sync_host();
@@ -1583,11 +1589,14 @@ namespace Tpetra {
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
     getLocalView (Tpetra::Access::WriteOnly)
     {
-      using ReturnedViewType = typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type;
-      //getting v increments the reference count, so compare against that minus one
-      if(std::is_same<ReturnedViewType, typename dual_view_type::t_dev>::value)
+      bool returnDevice = true;
       {
-        //returning dual_view_type::t_dev::const_type
+        auto tmp = view_.template view<TargetDeviceType>();
+        if (tmp == this->view_.view_host()) returnDevice = false;
+      }
+      if (returnDevice)
+      {
+        //returning dual_view_type::t_dev::type
         if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
           throw std::runtime_error("Tpetra::MultiVector: Cannot access data on device while a host view is alive");
         owningView_.clear_sync_state();
@@ -1595,7 +1604,7 @@ namespace Tpetra {
       }
       else
       {
-        //returning dual_view_type::t_host::const_type
+        //returning dual_view_type::t_host::type
         if(owningView_.d_view.use_count() > owningView_.h_view.use_count())
           throw std::runtime_error("Tpetra::MultiVector: Cannot access data on host while a device view is alive");
         owningView_.clear_sync_state();
@@ -1640,9 +1649,12 @@ namespace Tpetra {
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
     getLocalView () const
     {
-      using ReturnedViewType = typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type;
-      //getting v increments the reference count, so compare against that minus one
-      if(std::is_same<ReturnedViewType, typename dual_view_type::t_dev>::value)
+      bool returnDevice = true;
+      {
+        auto tmp = view_.template view<TargetDeviceType>();
+        if (tmp == this->view_.view_host()) returnDevice = false;
+      }
+      if (returnDevice)
       {
         if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
           throw std::runtime_error("Tpetra::MultiVector: Cannot access data on device while a host view is alive");
@@ -2574,12 +2586,14 @@ namespace Tpetra {
 
     if (src.isConstantStride () && dst.isConstantStride ()) {
       if (srcMostUpToDateOnDevice) {
-        Details::localDeepCopyConstStride (dst.getLocalViewDevice (),
-                                           src.getLocalViewDevice ());
+        Details::localDeepCopyConstStride (
+                 dst.getLocalViewDevice (Access::WriteOnly()),
+                 src.getLocalViewDevice (Access::ReadOnly()));
       }
       else {
-        Details::localDeepCopyConstStride (dst.getLocalViewDevice (),
-                                           src.getLocalViewHost ());
+        Details::localDeepCopyConstStride (
+                 dst.getLocalViewDevice (Access::WriteOnly()),
+                 src.getLocalViewHost (Access::ReadOnly()));
       }
     }
     else {
@@ -2587,16 +2601,16 @@ namespace Tpetra {
       auto srcWhichVecs = getMultiVectorWhichVectors (src);
 
       if (srcMostUpToDateOnDevice) {
-        Details::localDeepCopy (dst.getLocalViewDevice (),
-                                src.getLocalViewDevice (),
+        Details::localDeepCopy (dst.getLocalViewDevice (Access::WriteOnly()),
+                                src.getLocalViewDevice (Access::ReadOnly()),
                                 dst.isConstantStride (),
                                 src.isConstantStride (),
                                 dstWhichVecs,
                                 srcWhichVecs);
       }
       else {
-        Details::localDeepCopy (dst.getLocalViewDevice (),
-                                src.getLocalViewHost (),
+        Details::localDeepCopy (dst.getLocalViewDevice (Access::WriteOnly()),
+                                src.getLocalViewHost (Access::ReadOnly()),
                                 dst.isConstantStride (),
                                 src.isConstantStride (),
                                 dstWhichVecs,
