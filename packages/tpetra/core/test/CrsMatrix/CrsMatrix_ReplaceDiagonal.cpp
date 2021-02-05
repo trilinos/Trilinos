@@ -166,7 +166,7 @@ namespace { // (anonymous)
 
         vec_type diagCopy (matrix->getRowMap ());
         matrix->getLocalDiagCopy (diagCopy);
-	auto diagCopyData = diagCopy.getLocalViewHostNonConst ();
+	auto diagCopyData = diagCopy.getLocalViewHost(Tpetra::Access::ReadOnly());
 
 	using impl_scalar_type = typename vec_type::impl_scalar_type;
 	// If Scalar is std::complex<T>, impl_scalar_type is
