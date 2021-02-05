@@ -75,7 +75,7 @@
             <ParameterList name="EQ 1">
                 <Parameter name="Type" type="string" value="Energy"/> 
                 <Parameter name="Basis Type" type="string" value="HGrad"/> 
-                <Parameter name="Basis Order" type="int" value="1"/>
+                <Parameter name="Basis Order" type="int" value="2"/>
                 <Parameter name="Integration Order" type="int" value="2"/> 
                 <Parameter name="Model ID" type="string" value="fluid model test"/> 
                 <Parameter name="Prefix" type="string" value="TEST_"/>
@@ -168,7 +168,7 @@
 
         <ParameterList>
             <Parameter name="Type" type="string" value="Dirichlet"/> 
-            <Parameter name="Sideset ID" type="string" value="bottom"/> 
+            <Parameter name="Sideset ID" type="string" value="left"/> 
             <Parameter name="Element Block ID" type="string" value="eblock-0_0"/> 
             <Parameter name="Equation Set Name" type="string" value="TEST_TEMPERATURE"/> 
             <Parameter name="Strategy" type="string" value="Constant"/>
@@ -179,7 +179,7 @@
 
         <ParameterList>
             <Parameter name="Type" type="string" value="Dirichlet"/> 
-            <Parameter name="Sideset ID" type="string" value="top"/> 
+            <Parameter name="Sideset ID" type="string" value="right"/> 
             <Parameter name="Element Block ID" type="string" value="eblock-0_0"/> 
             <Parameter name="Equation Set Name" type="string" value="TEST_TEMPERATURE"/> 
             <Parameter name="Strategy" type="string" value="Constant"/>
@@ -191,12 +191,12 @@
     </ParameterList>
 
     <ParameterList name="Output">
-        <Parameter name="File Name" type="string" value="energy-ss-blocked.exo"/>
+        <Parameter name="File Name" type="string" value="energy-ss-blocked-tp.exo"/>
     </ParameterList>
 
     <ParameterList name="Options">
         <Parameter name="Write Volume Assembly Graphs" type="bool" value="false"/>
-        <Parameter name="Volume Assembly Graph Prefix" type="string" value="energy-ss"/> 
+        <Parameter name="Volume Assembly Graph Prefix" type="string" value="energy-ss-blocked-tp"/> 
     </ParameterList>
 
     <ParameterList name="Active Parameters">
@@ -275,7 +275,8 @@
                   </ParameterList>
                 </ParameterList>
                 <ParameterList name="VerboseObject">
-                  <Parameter name="Verbosity Level" type="string" value="extreme"/>
+                  <Parameter name="Verbosity Level" type="string" value="medium"/>
+                  <!--<Parameter name="Verbosity Level" type="string" value="extreme"/>-->
                 </ParameterList>
               </ParameterList>
             </ParameterList>
