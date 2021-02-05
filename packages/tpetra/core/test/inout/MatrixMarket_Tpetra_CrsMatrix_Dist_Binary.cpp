@@ -164,14 +164,14 @@ public:
 
   // Destructor deletes the global binary file if it exists
   ~TestReader() {
-    // if(!perProcess && comm->getRank() == 0) {
-    //   try { std::remove(binfilename.c_str()); }
-    //   catch (std::exception &e) {
-    // 	std::cout << "Could not delete file: " << binfilename << std::endl;
-    // 	std::cout << e.what() << std::endl;
-    // 	throw e;
-    //   }	      
-    // }
+    if(!perProcess && comm->getRank() == 0) {
+      try { std::remove(binfilename.c_str()); }
+      catch (std::exception &e) {
+    	std::cout << "Could not delete file: " << binfilename << std::endl;
+    	std::cout << e.what() << std::endl;
+    	throw e;
+      }	      
+    }
   }
 
   //////////////////////////////
@@ -607,9 +607,9 @@ private:
     params.set("useTimers", true);
 
     if(perProcess)
-      runTestPerProcess(testname, params);
+      return runTestPerProcess(testname, params);
     else
-      runTestGlobal(testname, params);
+      return runTestGlobal(testname, params);
   }
 
   //////////////////////////////
@@ -658,7 +658,7 @@ private:
     Teuchos::RCP<matrix_t> AmatTest = readFile(binfilename, testname, params, distTest);
 
     // Clean-up the per-process binary files
-    // cleanBinaryPerProcess();
+    cleanBinaryPerProcess();
 
     // Apply and compare
     Teuchos::RCP<vector_t> yvec = applyMatrix(testname, *AmatTest);
@@ -680,9 +680,9 @@ private:
     params.set("useTimers", true);
 
     if(perProcess)
-      runTestLTBPerProcess(testname, params);
+      return runTestLTBPerProcess(testname, params);
     else
-      runTestLTBGlobal(testname, params);
+      return runTestLTBGlobal(testname, params);
   }
 
   //////////////////////////////
@@ -736,7 +736,7 @@ private:
     Teuchos::RCP<matrix_t> AmatTest = readFile(binfilename, testname, params, distTest);
 
     // Clean-up the per-process binary files
-    // cleanBinaryPerProcess();
+    cleanBinaryPerProcess();
 
     // Get the LTB operator from the test matrix
     using distltb_t = Tpetra::DistributionLowerTriangularBlock<gno_t, scalar_t>;
