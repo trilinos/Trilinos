@@ -110,50 +110,192 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-#TRIBITS_ADD_TEST(
-#  MatrixMarket_Tpetra_CrsMatrix_Dist
-#  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_rmatbin
-#  ARGS "--file=rmat_11_lap.bin"
-#  COMM mpi
-#  NUM_MPI_PROCS 1
-#  STANDARD_PASS_OUTPUT
-#  )
-#
-#TRIBITS_ADD_TEST(
-#  MatrixMarket_Tpetra_CrsMatrix_Dist
-#  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_rmatbin
-#  ARGS "--file=rmat_11_lap.bin"
-#  COMM mpi
-#  NUM_MPI_PROCS 3
-#  STANDARD_PASS_OUTPUT
-#  )
-#
-#TRIBITS_ADD_TEST(
-#  MatrixMarket_Tpetra_CrsMatrix_Dist
-#  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_rmatbin
-#  ARGS "--file=rmat_11_lap.bin"
-#  COMM mpi
-#  NUM_MPI_PROCS 4
-#  STANDARD_PASS_OUTPUT
-#  )
-#
-#TRIBITS_ADD_TEST(
-#  MatrixMarket_Tpetra_CrsMatrix_Dist
-#  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_rmatbin
-#  ARGS "--file=rmat_11_lap.bin"
-#  COMM mpi
-#  NUM_MPI_PROCS 6
-#  STANDARD_PASS_OUTPUT
-#  )
-#
-#TRIBITS_ADD_TEST(
-#  MatrixMarket_Tpetra_CrsMatrix_Dist
-#  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_rmatbin
-#  ARGS "--file=rmat_11_lap.bin"
-#  COMM mpi
-#  NUM_MPI_PROCS 10 
-#  STANDARD_PASS_OUTPUT
-#  )
+TRIBITS_ADD_EXECUTABLE(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  SOURCES
+    MatrixMarket_Tpetra_CrsMatrix_Dist_Binary.cpp
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_Binary_simple
+  ARGS "--file=simple.mtx"
+  COMM mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_Binary_simple
+  ARGS "--file=simple.mtx"
+  COMM mpi
+  NUM_MPI_PROCS 3
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_Binary_simple
+  ARGS "--file=simple.mtx"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_Binary_simple
+  ARGS "--file=simple.mtx"
+  COMM mpi
+  NUM_MPI_PROCS 6
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_Binary_simple
+  ARGS "--file=simple.mtx"
+  COMM mpi
+  NUM_MPI_PROCS 10
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_Binary_rmat
+  ARGS "--file=rmat_11_lap.mtx"
+  COMM mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_Binary_rmat
+  ARGS "--file=rmat_11_lap.mtx"
+  COMM mpi
+  NUM_MPI_PROCS 3
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_Binary_rmat
+  ARGS "--file=rmat_11_lap.mtx"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_Binary_rmat
+  ARGS "--file=rmat_11_lap.mtx"
+  COMM mpi
+  NUM_MPI_PROCS 6
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_Binary_rmat
+  ARGS "--file=rmat_11_lap.mtx"
+  COMM mpi
+  NUM_MPI_PROCS 10
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_BinaryPerProcess_simple
+  ARGS "--file=simple.mtx --per-process"
+  COMM mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_BinaryPerProcess_simple
+  ARGS "--file=simple.mtx --per-process"
+  COMM mpi
+  NUM_MPI_PROCS 3
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_BinaryPerProcess_simple
+  ARGS "--file=simple.mtx --per-process"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_BinaryPerProcess_simple
+  ARGS "--file=simple.mtx --per-process"
+  COMM mpi
+  NUM_MPI_PROCS 6
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_BinaryPerProcess_simple
+  ARGS "--file=simple.mtx --per-process"
+  COMM mpi
+  NUM_MPI_PROCS 10
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_BinaryPerProcess_rmat
+  ARGS "--file=rmat_11_lap.mtx --per-process"
+  COMM mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_BinaryPerProcess_rmat
+  ARGS "--file=rmat_11_lap.mtx --per-process"
+  COMM mpi
+  NUM_MPI_PROCS 3
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_BinaryPerProcess_rmat
+  ARGS "--file=rmat_11_lap.mtx --per-process"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_BinaryPerProcess_rmat
+  ARGS "--file=rmat_11_lap.mtx --per-process"
+  COMM mpi
+  NUM_MPI_PROCS 6
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_BinaryPerProcess_rmat
+  ARGS "--file=rmat_11_lap.mtx --per-process"
+  COMM mpi
+  NUM_MPI_PROCS 10
+  STANDARD_PASS_OUTPUT
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMarket_Tpetra_CrsGraph_InOutTest
@@ -307,6 +449,5 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraCore_inout_copy_files
     simple.mtx
     rmat_11.mtx
     rmat_11_lap.mtx
-    rmat_11_lap.bin
 )
 

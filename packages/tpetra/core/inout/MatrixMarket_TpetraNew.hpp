@@ -628,6 +628,8 @@ readBinary(
   size_t nMillion = 0;
   size_t nRead = 0;
   size_t rlen;
+  const scalar_type ONE = Teuchos::ScalarTraits<scalar_type>::one();
+
 
   // Read chunks until the entire file is read
   while (nRead < nNz) {
@@ -660,7 +662,6 @@ readBinary(
 
       global_ordinal_type I = buffer[2*rlen]-1;
       global_ordinal_type J = buffer[2*rlen+1]-1;
-      scalar_type V = -1.;
       
       // Special processing of nonzero
       if ((I == J) && ignoreDiagonal) continue;
@@ -670,20 +671,21 @@ readBinary(
       // Add nonzero (I,J) to the map if it should be on this processor
       // Some file-based distributions have processor assignment stored as 
       // the non-zero's value, so pass the value to Mine.
-      if (dist->Mine(I,J,int(V))) {
+      if (dist->Mine(I,J,ONE)) {
         nzindex_t idx = std::make_pair(I,J);
-        localNZ[idx] = V;   
+        localNZ[idx] = ONE;  // For now, the input binary format does not 
+	                     // support numeric values, so we insert one.  
         if (requireDiagonal && (I == J)) diagset.insert(I);
       }
 
       // If symmetrizing, add (J,I) to the map if it should be on this processor
       // Some file-based distributions have processor assignment stored as 
       // the non-zero's value, so pass the value to Mine.
-      if (symmetrize && (I != J) && dist->Mine(J,I,int(V))) {
+      if (symmetrize && (I != J) && dist->Mine(J,I,ONE)) {
         //  Add entry (J, I) if need to symmetrize
         //  This processor keeps this non-zero.
         nzindex_t idx = std::make_pair(J,I);
-        localNZ[idx] = V;   
+        localNZ[idx] = ONE;   
       }
     }
 
@@ -1033,10 +1035,11 @@ readSparseFile(
     std::cout << "Inserting global values" << std::endl;
 
   if(readPerProcess){
+    const scalar_type ONE = Teuchos::ScalarTraits<scalar_type>::one();
     for (int i = 0; i < rowIdx.size(); i++) {
       size_t nnz = nnzPerRow[i];
       size_t off = offsets[i];
-      val.resize(nnz);
+      val.assign(nnz, ONE);
       // ReadPerProcess routine does not read any numeric values from the file,
       // So we insert dummy values here. 
       A->insertGlobalValues(rowIdx[i], colIdx(off, nnz), val());
