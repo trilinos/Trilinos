@@ -158,7 +158,7 @@ namespace { // (anonymous)
     fillSourceVector (srcVector);
     tgtVector.doExport (srcVector, exporter, Tpetra::ABSMAX);
 
-    auto X_lcl_2d_h = tgtVector.getLocalViewHostConst ();
+    auto X_lcl_2d_h = tgtVector.getLocalViewHost(Tpetra::Access::ReadOnly());
     auto X_lcl_1d_h = Kokkos::subview (X_lcl_2d_h, Kokkos::ALL (), 0);
 
     auto comm = tgtVector.getMap ()->getComm ();
