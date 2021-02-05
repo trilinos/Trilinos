@@ -166,7 +166,7 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // semantics.  This is really only relevant for architectures with
     // two memory spaces.
 
-    auto x_2d = x.getLocalViewHostConst ();
+    auto x_2d = x.getLocalViewHost(Tpetra::Access::ReadOnly());
     // getLocalView returns a 2-D View by default.  We want a 1-D
     // View, so we take a subview.
     auto x_1d = Kokkos::subview (x_2d, Kokkos::ALL (), 0);
@@ -214,7 +214,7 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // away.  If you create two nonconst persisting views of the same
     // Vector, and modify the entries of one view during the lifetime
     // of the other view, the entries of the other view are undefined.
-    auto x_2d = x.getLocalViewHostNonConst ();
+    auto x_2d = x.getLocalViewHost(Tpetra::Access::ReadWrite());
     auto x_1d = Kokkos::subview (x_2d, Kokkos::ALL (), 0);
 
 
