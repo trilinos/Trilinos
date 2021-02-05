@@ -466,7 +466,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     if(Options.verbose == BASKER_TRUE)
     {
       printf("\n");
-      printf("\n --------------- OVER SEPS (nlvls=%d) ---------------\n",tree.nlvls);
+      printf("\n --------------- OVER SEPS (nlvls=%d) ---------------\n", (int)tree.nlvls);
       printf("\n");
     }
     for(Int lvl=0; lvl < tree.nlvls; lvl++)

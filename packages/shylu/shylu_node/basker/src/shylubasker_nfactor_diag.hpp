@@ -259,7 +259,7 @@ namespace BaskerNS
     Int bcol = M.scol;
 
     if (Options.verbose == BASKER_TRUE) {
-      printf( " t_single_nfactor(c=%d)\n",c );
+      printf( " t_single_nfactor(c=%d)\n", (int)c );
     }
     //Int j = M.col_ptr(k+1-bcol)-1; // was assuming the column is sorted in the ascending order of row indexes
     Entry pivot = zero;

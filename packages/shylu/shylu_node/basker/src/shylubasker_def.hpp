@@ -1409,7 +1409,7 @@ namespace BaskerNS
           if(Options.verbose == BASKER_TRUE) {
             printf( " > Initial ND block sizes:\n" );
             for (Int k = 0; k <= nblks; k++) {
-              printf( " + nd_sizes(%d) = %d\n",k,nd_sizes(k) );
+              printf( " + nd_sizes(%d) = %d\n", (int)k, (int)nd_sizes(k) );
             }
             printf( "\n" );
           }
@@ -1440,7 +1440,7 @@ namespace BaskerNS
           if(Options.verbose == BASKER_TRUE) {
             printf( " > ND block sizes after MWM and fixes:\n" );
             for (Int k = 0; k <= nblks; k++) {
-              printf( " - nd_sizes(%d) = %d\n",k,nd_sizes(k) );
+              printf( " - nd_sizes(%d) = %d\n", (int)k, (int)nd_sizes(k) );
             }
             printf( "\n" );
           }

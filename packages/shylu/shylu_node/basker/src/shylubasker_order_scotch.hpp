@@ -3,6 +3,9 @@
 
 #include "shylubasker_types.hpp"
 #include "scotch.h"
+#if 1 // TODO: should we make metis optional and protect this with TPL?
+ #include "metis.h"
+#endif
 
 //#define BASKER_DEBUG_ORDER_SCOTCH
 //#define BASKER_TIMER
@@ -167,25 +170,21 @@ namespace BaskerNS
       sg.Ap = (scotch_integral_type *)malloc((sg.m+1)     *sizeof(scotch_integral_type));
       sg.Ai = (scotch_integral_type *)malloc((M.nnz)      *sizeof(scotch_integral_type));
 
+      #if 1 // TODO: Should METIS be optional and be protect with METIS TPL?
       if (Options.use_metis == BASKER_TRUE) {
         //idx_t  metis_offset = btf_tabs(btf_tabs_offset-1);
         idx_t  metis_offset = 0; // BTF_A now contains one big block
         idx_t  metis_size = M.nrow - metis_offset;
         idx_t  metis_nnz = M.col_ptr(M.nrow);
 
-        INT_1DARRAY metis_rowptr;
-        INT_1DARRAY metis_colidx;
-        INT_1DARRAY metis_part;
-        MALLOC_INT_1DARRAY(metis_part,   M.nrow);
-        MALLOC_INT_1DARRAY(metis_rowptr, metis_size+1);
-        MALLOC_INT_1DARRAY(metis_colidx, metis_nnz);
+        using METIS_1DARRAY = Kokkos::View<idx_t*, BASKER_EXE_SPACE>;
+        METIS_1DARRAY metis_part   (KOKKOS_NOINIT("metis_part"),   metis_size);
+        METIS_1DARRAY metis_rowptr (KOKKOS_NOINIT("metis_rowptr"), metis_size+1);
+        METIS_1DARRAY metis_colidx (KOKKOS_NOINIT("metis_colidx"), metis_nnz);
 
-        INT_1DARRAY metis_part_k;
-        INT_1DARRAY metis_permtab;
-        INT_1DARRAY metis_peritab;
-        MALLOC_INT_1DARRAY(metis_part_k,  metis_size);
-        MALLOC_INT_1DARRAY(metis_permtab, metis_size);
-        MALLOC_INT_1DARRAY(metis_peritab, metis_size);
+        METIS_1DARRAY metis_part_k  (KOKKOS_NOINIT("metis_part_k"),  metis_size);
+        METIS_1DARRAY metis_permtab (KOKKOS_NOINIT("metis_permtab"), metis_size);
+        METIS_1DARRAY metis_peritab (KOKKOS_NOINIT("metis_peritab"), metis_size);
 
         int info = 0;
         idx_t sepsize = 0;
@@ -315,14 +314,14 @@ namespace BaskerNS
             //for(Int i = 0; i < M.nrow; i++) {
             //  printf( " %d %d %d %d\n",i, metis_part(i), sg.permtab[i], sg.peritab[i] );
             //}
-            Int metis_size_k = 0;
-            Int nnz_k=0;
+            idx_t metis_size_k = 0;
+            idx_t nnz_k=0;
             metis_rowptr[0] = 0;
             for(Int j = metis_offset; j < M.ncol; j++)
             {
               Int col = sg.peritab[j]; // j is after ND, col is original
               if (metis_part(col) == sep_id) {
-                for(Int k = M.col_ptr(col); k <M.col_ptr(col+1); k++)
+                for(Int k = M.col_ptr(col); k < M.col_ptr(col+1); k++)
                 {
                   Int row = M.row_idx(k);
                   Int i = sg.permtab[row]; // i is after ND, row is original
@@ -474,7 +473,8 @@ namespace BaskerNS
         if(Options.verbose == BASKER_TRUE) {
           std::cout << std::endl << " > Time to call METIS : " << time_metis << std::endl;
         }
-      } else 
+      } else
+      #endif
       { // using SCOTCH
         sg.Ap[0] = 0;
         Int sj;

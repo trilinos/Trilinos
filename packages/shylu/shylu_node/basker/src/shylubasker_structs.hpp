@@ -774,8 +774,8 @@ namespace BaskerNS
       //  0: no matching, 1: ShyLUBasker::mwm, 2: MC63 if enabled
       blk_matching = 1; // if 0, then ND & AMD are applied in symbolic
 
-      // ND Ordering Options
-      use_metis = false;
+      // ND Ordering Options (Should METIS optional?)
+      use_metis = true;
 
       // AMD Option
       amd_dom = true;

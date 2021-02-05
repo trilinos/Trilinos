@@ -740,7 +740,7 @@ namespace BaskerNS
           ((double)BASKER_BTF_IMBALANCE)));
     #endif
     if(Options.verbose == BASKER_TRUE) {
-      printf("Basker: Break size for workspace: %d \n", break_size);
+      printf("Basker: Break size for workspace: %d \n", (int)break_size);
     }
 
     Int t_size            = 0;      //total size of cols from 'small' blocks in BTF_C: matrix ncols - t_size = BTF_A ncols
@@ -918,8 +918,8 @@ namespace BaskerNS
       BTF_A.set_shape(0, scol-scol_top, 0, scol-scol_top);
       BTF_A.nnz = annz;
       if(Options.verbose == BASKER_TRUE) {
-        printf( " + scol = %d, scol_top = %d, btf_tabs = %d, btf_top_tabs = %d, annz = %d\n",scol,scol_top,btf_tabs_offset,btf_top_tabs_offset,annz );
-        printf( " +  BTF_A.srow = %d, BTF_A.scol = %d, BTF_A.nrow = %d, BTF_A.ncol = %d\n",(int)BTF_A.srow,(int)BTF_A.scol,(int)BTF_A.nrow,(int)BTF_A.ncol );
+        printf( " + scol = %d, scol_top = %d, btf_tabs = %d, btf_top_tabs = %d, annz = %d\n", (int)scol, (int)scol_top, (int)btf_tabs_offset, (int)btf_top_tabs_offset, (int)annz );
+        printf( " +  BTF_A.srow = %d, BTF_A.scol = %d, BTF_A.nrow = %d, BTF_A.ncol = %d\n", (int)BTF_A.srow, (int)BTF_A.scol, (int)BTF_A.nrow, (int)BTF_A.ncol );
       }
 
     #ifdef BASKER_DEBUG_ORDER_BTF
@@ -964,10 +964,10 @@ namespace BaskerNS
     }//no A
 
     if(Options.verbose == BASKER_TRUE) {
-      printf( "\n > btf_tabs_offset = %d, btf_top_tabs_offset = %d\n", btf_tabs_offset,btf_top_tabs_offset );
-      for (blk_idx = 0; blk_idx < btf_top_tabs_offset; blk_idx++) printf( " x %d: %d\n",blk_idx,btf_tabs[blk_idx+1]-btf_tabs[blk_idx] );
-      for (blk_idx = btf_top_tabs_offset; blk_idx < btf_tabs_offset; blk_idx++) printf( " + %d: %d\n",blk_idx,btf_tabs[blk_idx+1]-btf_tabs[blk_idx] );
-      for (blk_idx = btf_tabs_offset; blk_idx < nblks; blk_idx++) printf( " - %d: %d\n",blk_idx,btf_tabs[blk_idx+1]-btf_tabs[blk_idx] );
+      printf( "\n > btf_tabs_offset = %d, btf_top_tabs_offset = %d\n", (int)btf_tabs_offset, (int)btf_top_tabs_offset );
+      for (blk_idx = 0; blk_idx < btf_top_tabs_offset; blk_idx++) printf( " x %d: %d\n", (int)blk_idx, (int)(btf_tabs[blk_idx+1]-btf_tabs[blk_idx]) );
+      for (blk_idx = btf_top_tabs_offset; blk_idx < btf_tabs_offset; blk_idx++) printf( " + %d: %d\n", (int)blk_idx, (int)(btf_tabs[blk_idx+1]-btf_tabs[blk_idx]) );
+      for (blk_idx = btf_tabs_offset; blk_idx < nblks; blk_idx++) printf( " - %d: %d\n", (int)blk_idx, (int)(btf_tabs[blk_idx+1]-btf_tabs[blk_idx]) );
       printf( "\n" );
     }
 

@@ -134,7 +134,7 @@ namespace BaskerNS
         {
           if(Options.verbose == BASKER_TRUE)
           {
-            printf(" nfactor_domain_error reports info=%d and max restartt reached (%d)\n",info,domain_restart);
+            printf(" nfactor_domain_error reports info=%d and max restartt reached (%d)\n", (int)info, (int)domain_restart);
           }
           break;
         }
@@ -226,7 +226,7 @@ namespace BaskerNS
             {
               if(Options.verbose == BASKER_TRUE)
               {
-                printf("%s: nfactor_separator_error reports info=%d and max restartt reached (%d)\n",__FILE__,info,sep_restart);
+                printf("%s: nfactor_separator_error reports info=%d and max restartt reached (%d)\n",__FILE__, info, (int)sep_restart);
               }
               break;
             }
@@ -316,7 +316,7 @@ namespace BaskerNS
         {
           if(Options.verbose == BASKER_TRUE)
           {
-            printf("%s: nfactor_diagonal_error reports info=%d and max restartt reached (%d)\n",__FILE__,info,btf_restart);
+            printf("%s: nfactor_diagonal_error reports info=%d and max restartt reached (%d)\n",__FILE__, info, (int)btf_restart);
           }
           break;
         }

@@ -97,7 +97,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker->Options.btf_matching  = 2; // use cardinary matching from Trilinos, globally
   ShyLUbasker->Options.blk_matching  = 1; // use max-weight matching from Basker on each diagonal block
   ShyLUbasker->Options.amd_dom       = BASKER_TRUE;  // use block-wise AMD
-  ShyLUbasker->Options.use_metis     = BASKER_FALSE; // use scotch/metis for ND
+  ShyLUbasker->Options.use_metis     = BASKER_TRUE;  // use scotch/metis for ND (TODO: should METIS optional?)
   ShyLUbasker->Options.transpose     = BASKER_FALSE;
   ShyLUbasker->Options.verbose_matrix_out = BASKER_FALSE;
 
@@ -119,7 +119,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbaskerTr->Options.btf_matching  = 2; // use cardinary matching from Trilinos, globally
   ShyLUbaskerTr->Options.blk_matching  = 1; // use max-weight matching from Basker on each diagonal block
   ShyLUbaskerTr->Options.amd_dom       = BASKER_TRUE;  // use block-wise AMD
-  ShyLUbaskerTr->Options.use_metis     = BASKER_FALSE; // use scotch/metis for ND
+  ShyLUbaskerTr->Options.use_metis     = BASKER_TRUE;  // use scotch/metis for ND (TODO: should METIS optional?)
   ShyLUbaskerTr->Options.transpose     = BASKER_TRUE;
   ShyLUbaskerTr->Options.verbose_matrix_out = BASKER_FALSE;
 
@@ -687,7 +687,7 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
              "Matching option for BTF: 0 = none, 1 = Basker, 2 = Trilinos (default), (3 = MC64 if enabled)");
       pl->set("blk_matching", 0, 
              "Matching optioon for block: 0 = none (default), 1 or anything else = Basker (2 = MC64 if enabled)");
-      pl->set("use_metis", false,
+      pl->set("use_metis", true,  // TODO: should METIS optional?
 	      "Use METIS for ND");
       pl->set("transpose", false,
 	      "Solve the transpose A");

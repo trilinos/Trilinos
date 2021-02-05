@@ -1760,7 +1760,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       //if(Options.static_delayed_pivot == 0)
       {
         if(Options.verbose == BASKER_TRUE) {
-          printf(" > CSYM AMD order in A(scol=%d, ncol=%d) and gn=%d\n",BTF_A.scol,BTF_A.ncol,gn);
+          printf(" > CSYM AMD order in A(scol=%d, ncol=%d) and gn=%d\n", (int)BTF_A.scol, (int)BTF_A.ncol, (int)gn);
         }
         permute_with_workspace(perm_inv_comp_array, perm_comp_iworkspace_array, gn, 0, offset_amd);
         //for(Int i = 0; i < gn; i++) printf( " %d, %d\n",i,perm_inv_comp_array(i) );
@@ -2004,7 +2004,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       // ** we'll just permute the first col.extent(0) or M.ncol columns **
       // (e.g., E may have more columns than perm)
       if(Options.verbose == BASKER_TRUE) {
-        printf( " > note: permute_col only %d columns since perm has only %d columns (%d:%d))\n",num_col,num_col, 0,n);
+        printf( " > note: permute_col only %d columns since perm has only %d columns (%d:%d))\n", (int)num_col, (int)num_col, 0, (int)n);
       }
       n = num_col;
     }
@@ -2132,7 +2132,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       // ** we'll just permute the first col.extent(0) or M.ncol columns **
       // (e.g., E may have more columns than perm)
       if(Options.verbose == BASKER_TRUE) {
-        printf( " > note: permute_col only %d columns since perm has only %d columns (%d:%d))\n",num_col,num_col,frow,frow+n-1);
+        printf( " > note: permute_col only %d columns since perm has only %d columns (%d:%d))\n", (int)num_col, (int)num_col, (int)frow, (int)(frow+n-1));
       }
       n = num_col;
     }
