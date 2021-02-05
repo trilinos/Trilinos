@@ -145,8 +145,8 @@ namespace {
         X2_map->isSameAs (* (X.getMap ()));
       TEST_ASSERT( maps_ok );
 
-      auto X_mv_h = X.getMultiVectorView ().getLocalViewHostConst ();
-      auto X2_mv_h = X2.getMultiVectorView ().getLocalViewHostConst ();
+      auto X_mv_h = X.getMultiVectorView ().getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto X2_mv_h = X2.getMultiVectorView ().getLocalViewHost(Tpetra::Access::ReadOnly);
       TEST_ASSERT( X_mv_h.extent (0) == X2_mv_h.extent (0) &&
                    X_mv_h.extent (1) == X2_mv_h.extent (1) &&
                    X_mv_h.data () != X2_mv_h.data () );
@@ -160,8 +160,8 @@ namespace {
         X2_map->isSameAs (* (X.getMap ()));
       TEST_ASSERT( maps_ok );
 
-      auto X_mv_h = X.getMultiVectorView ().getLocalViewHostConst ();
-      auto X2_mv_h = X2.getMultiVectorView ().getLocalViewHostConst ();
+      auto X_mv_h = X.getMultiVectorView ().getLocalViewHostConst (Tpetra::Access::ReadOnly);
+      auto X2_mv_h = X2.getMultiVectorView ().getLocalViewHostConst (Tpetra::Access::ReadOnly);
       TEST_ASSERT( X_mv_h.extent (0) == X2_mv_h.extent (0) &&
                    X_mv_h.extent (1) == X2_mv_h.extent (1) &&
                    X_mv_h.data () == X2_mv_h.data () );
@@ -201,10 +201,10 @@ namespace {
     Teuchos::RCP<const vec_type> V1 = X_mv.getVector (0);
     BV V (*V1, meshMap, blockSize);
     vec_type V2 = V.getVectorView ();
-    TEST_EQUALITY( V1->getLocalViewHostConst ().data (),
-                   V2.getLocalViewHostConst ().data () );
-    TEST_EQUALITY( V1->getLocalViewDeviceConst ().data (),
-                   V2.getLocalViewDeviceConst ().data () );
+    TEST_EQUALITY( V1->getLocalViewHost(Tpetra::Access::ReadOnly).data (),
+                   V2.getLocalViewHost(Tpetra::Access::ReadOnly).data () );
+    TEST_EQUALITY( V1->getLocalViewDevice(Tpetra::Access::ReadOnly).data (),
+                   V2.getLocalViewDevice(Tpetra::Access::ReadOnly).data () );
 
     // Test BlockVector's two-argument "copy constructor" that can
     // make either a deep or a shallow copy.
@@ -216,8 +216,8 @@ namespace {
         V_a_map->isSameAs (* (V.getMap ()));
       TEST_ASSERT( maps_ok );
 
-      auto V_v_h = V.getVectorView ().getLocalViewHostConst ();
-      auto V_a_v_h = V_a.getVectorView ().getLocalViewHostConst ();
+      auto V_v_h = V.getVectorView ().getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto V_a_v_h = V_a.getVectorView ().getLocalViewHost(Tpetra::Access::ReadOnly);
       TEST_ASSERT( V_v_h.extent (0) == V_a_v_h.extent (0) &&
                    V_v_h.extent (1) == V_a_v_h.extent (1) &&
                    V_v_h.data () != V_a_v_h.data () );
@@ -231,8 +231,8 @@ namespace {
         V_a_map->isSameAs (* (V.getMap ()));
       TEST_ASSERT( maps_ok );
 
-      auto V_v_h = V.getVectorView ().getLocalViewHostConst ();
-      auto V_a_v_h = V_a.getVectorView ().getLocalViewHostConst ();
+      auto V_v_h = V.getVectorView ().getLocalViewHostt(Tpetra::Access::ReadOnly);
+      auto V_a_v_h = V_a.getVectorView ().getLocalViewHost(Tpetra::Access::ReadOnly);
       TEST_ASSERT( V_v_h.extent (0) == V_a_v_h.extent (0) &&
                    V_v_h.extent (1) == V_a_v_h.extent (1) &&
                    V_v_h.data () == V_a_v_h.data () );
