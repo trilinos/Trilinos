@@ -329,5 +329,30 @@ StepperBDF2<Scalar>::getValidParameters() const
 }
 
 
+// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperBDF2<Scalar> >
+createStepperBDF2(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperBDF2<Scalar>());
+  stepper->setStepperImplicitValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+
+    std::string startUpStepperName = "DIRK 1 Stage Theta Method";
+    if (pl != Teuchos::null) startUpStepperName =
+      pl->get<std::string>("Start Up Stepper Type", startUpStepperName);
+    stepper->setStartUpStepper(startUpStepperName);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 } // namespace Tempus
 #endif // Tempus_StepperBDF2_impl_hpp

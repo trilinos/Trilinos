@@ -594,5 +594,40 @@ StepperNewmarkImplicitAForm<Scalar>::getValidParameters() const
 }
 
 
+// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperNewmarkImplicitAForm<Scalar> >
+createStepperNewmarkImplicitAForm(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperNewmarkImplicitAForm<Scalar>());
+  stepper->setStepperImplicitValues(pl);
+
+  if (pl != Teuchos::null) {
+    if (pl->isSublist("Newmark Parameters")) {
+      auto newmarkPL = pl->sublist("Newmark Parameters", true);
+      std::string schemeName =
+        newmarkPL.get<std::string>("Scheme Name", "Average Acceleration");
+      stepper->setSchemeName(schemeName);
+      if (schemeName == "User Defined") {
+        stepper->setBeta (newmarkPL.get<double>("Beta",  0.25));
+        stepper->setGamma(newmarkPL.get<double>("Gamma", 0.5 ));
+      }
+    } else {
+      stepper->setSchemeName("Average Acceleration");
+    }
+  }
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 } // namespace Tempus
 #endif // Tempus_StepperNewmarkImplicitAForm_impl_hpp

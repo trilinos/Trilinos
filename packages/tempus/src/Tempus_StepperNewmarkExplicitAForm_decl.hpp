@@ -196,24 +196,7 @@ template<class Scalar>
 Teuchos::RCP<StepperNewmarkExplicitAForm<Scalar> >
 createStepperNewmarkExplicitAForm(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-  Teuchos::RCP<Teuchos::ParameterList> pl)
-{
-  auto stepper = Teuchos::rcp(new StepperNewmarkExplicitAForm<Scalar>());
-  stepper->setStepperExplicitValues(pl);
-
-  if (pl != Teuchos::null) {
-    Scalar gamma = pl->sublist("Newmark Explicit Parameters")
-                                 .template get<double>("Gamma", 0.5);
-    stepper->setGamma(gamma);
-  }
-
-  if (model != Teuchos::null) {
-    stepper->setModel(model);
-    stepper->initialize();
-  }
-
-  return stepper;
-}
+  Teuchos::RCP<Teuchos::ParameterList> pl);
 
 
 } // namespace Tempus

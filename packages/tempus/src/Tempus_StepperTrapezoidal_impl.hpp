@@ -231,5 +231,25 @@ StepperTrapezoidal<Scalar>::getValidParameters() const
 }
 
 
+// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperTrapezoidal<Scalar> >
+createStepperTrapezoidal(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperTrapezoidal<Scalar>());
+  stepper->setStepperImplicitValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 } // namespace Tempus
 #endif // Tempus_StepperTrapezoidal_impl_hpp

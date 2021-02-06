@@ -134,18 +134,7 @@ template<class Scalar>
 Teuchos::RCP<StepperForwardEuler<Scalar> >
 createStepperForwardEuler(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-  Teuchos::RCP<Teuchos::ParameterList> pl)
-{
-  auto stepper = Teuchos::rcp(new StepperForwardEuler<Scalar>());
-  stepper->setStepperExplicitValues(pl);
-
-  if (model != Teuchos::null) {
-    stepper->setModel(model);
-    stepper->initialize();
-  }
-
-  return stepper;
-}
+  Teuchos::RCP<Teuchos::ParameterList> pl);
 
 
 } // namespace Tempus

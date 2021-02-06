@@ -243,25 +243,7 @@ template<class Scalar>
 Teuchos::RCP<StepperBackwardEuler<Scalar> >
 createStepperBackwardEuler(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-  Teuchos::RCP<Teuchos::ParameterList> pl)
-{
-  auto stepper = Teuchos::rcp(new StepperBackwardEuler<Scalar>());
-
-  stepper->setStepperImplicitValues(pl);
-
-  if (model != Teuchos::null) {
-    stepper->setModel(model);
-
-    if (pl != Teuchos::null) {
-      std::string predictorName =
-        pl->get<std::string>("Predictor Stepper Type", "None");
-      stepper->setPredictor(predictorName);
-    }
-    stepper->initialize();
-  }
-
-  return stepper;
-}
+  Teuchos::RCP<Teuchos::ParameterList> pl);
 
 
 } // namespace Tempus

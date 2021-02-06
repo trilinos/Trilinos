@@ -485,20 +485,7 @@ Teuchos::RCP<StepperIMEX_RK<Scalar> >
 createStepperIMEX_RK(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
   std::string stepperType,
-  Teuchos::RCP<Teuchos::ParameterList> pl)
-{
-  auto stepper = Teuchos::rcp(new StepperIMEX_RK<Scalar>());
-  stepper->setStepperType(stepperType);
-  stepper->setStepperImplicitValues(pl);
-  stepper->setTableaus(pl, stepperType);
-
-  if (model != Teuchos::null) {
-    stepper->setModel(model);
-    stepper->initialize();
-  }
-
-  return stepper;
-}
+  Teuchos::RCP<Teuchos::ParameterList> pl);
 
 
 } // namespace Tempus

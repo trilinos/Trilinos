@@ -832,5 +832,28 @@ StepperIMEX_RK_Partition<Scalar>::getValidParameters() const
 }
 
 
+// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperIMEX_RK_Partition<Scalar> >
+createStepperIMEX_RK_Partition(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  std::string stepperType,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperIMEX_RK_Partition<Scalar>());
+  stepper->setStepperType(stepperType);
+  stepper->setStepperImplicitValues(pl);
+  stepper->setTableausPartition(pl, stepperType);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 } // namespace Tempus
 #endif // Tempus_StepperIMEX_RK_Partition_impl_hpp

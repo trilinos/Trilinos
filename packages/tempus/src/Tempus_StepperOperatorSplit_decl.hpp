@@ -200,24 +200,7 @@ template<class Scalar>
 Teuchos::RCP<StepperOperatorSplit<Scalar> >
 createStepperOperatorSplit(
   std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels,
-  Teuchos::RCP<Teuchos::ParameterList> pl)
-{
-  auto stepper = Teuchos::rcp(new StepperOperatorSplit<Scalar>());
-
-  if (pl != Teuchos::null) {
-    stepper->setStepperValues(pl);
-    stepper->setOrderMin(pl->get<int>("Minimum Order", 1));
-    stepper->setOrder   (pl->get<int>("Order", 1));
-    stepper->setOrderMax(pl->get<int>("Maximum Order", 1));
-  }
-
-  if ( !(appModels.empty()) ) {
-    stepper->createSubSteppers(appModels, pl);
-    stepper->initialize();
-  }
-
-  return stepper;
-}
+  Teuchos::RCP<Teuchos::ParameterList> pl);
 
 
 } // namespace Tempus

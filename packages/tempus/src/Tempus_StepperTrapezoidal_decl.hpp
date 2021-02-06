@@ -199,18 +199,7 @@ template<class Scalar>
 Teuchos::RCP<StepperTrapezoidal<Scalar> >
 createStepperTrapezoidal(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-  Teuchos::RCP<Teuchos::ParameterList> pl)
-{
-  auto stepper = Teuchos::rcp(new StepperTrapezoidal<Scalar>());
-  stepper->setStepperImplicitValues(pl);
-
-  if (model != Teuchos::null) {
-    stepper->setModel(model);
-    stepper->initialize();
-  }
-
-  return stepper;
-}
+  Teuchos::RCP<Teuchos::ParameterList> pl);
 
 
 } // namespace Tempus
