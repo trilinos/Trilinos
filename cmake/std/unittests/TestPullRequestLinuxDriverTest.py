@@ -816,12 +816,87 @@ class Test_setEnviron(unittest.TestCase):
                        'CUDA_LAUNCH_BLOCKING': '1',
                        'CUDA_MANAGED_FORCE_DEVICE_ALLOC': '1',
                        'PATH': [os.path.join(os.path.sep,
+                                            'home',
+                                            'atdm-devops-admin',
+                                            'tools',
+                                            'ride',
+                                            'cmake-3.17.2',
+                                            'bin'),
+                               os.path.join(os.path.sep,
                                             'ascldap',
                                             'users',
                                             'rabartl',
                                             'install',
                                             'white-ride',
-                                            'cmake-3.11.2',
+                                            'ninja-1.8.2',
+                                            'bin'),
+                                '/fake/path']}
+
+        self.buildEnv_passes(PR_name, expected_list, test_ENV=expected_env)
+
+
+
+    def test_buildEnv_passes_with_cuda_101105(self):
+        """Find the function"""
+        PR_name = 'Trilinos_pullrequest_cuda_10.1.105'
+        expected_list = [mock.call('load', 'git/2.10.1'),
+                         mock.call('load', 'devpack/20190404/openmpi/4.0.1/gcc/7.2.0/cuda/10.1.105'),
+                         mock.call('swap', 'openblas/0.3.4/gcc/7.4.0', 'netlib/3.8.0/gcc/7.2.0'),]
+        expected_env = {'OMPI_CXX':
+                       os.path.join(self.jenkins_workspace,
+                                    'Trilinos',
+                                    'packages',
+                                    'kokkos',
+                                    'bin',
+                                    'nvcc_wrapper'),
+                       'OMPI_CC': '/fake/gcc/path/bin/gcc',
+                       'OMPI_FC': '/fake/gcc/path/bin/gfortran',
+                       'CUDA_LAUNCH_BLOCKING': '1',
+                       'CUDA_MANAGED_FORCE_DEVICE_ALLOC': '1',
+                       'PATH': [os.path.join(os.path.sep,
+                                            'home',
+                                            'atdm-devops-admin',
+                                            'tools',
+                                            'ride',
+                                            'cmake-3.17.2',
+                                            'bin'),
+                               os.path.join(os.path.sep,
+                                            'ascldap',
+                                            'users',
+                                            'rabartl',
+                                            'install',
+                                            'white-ride',
+                                            'ninja-1.8.2',
+                                            'bin'),
+                                '/fake/path']}
+
+        self.buildEnv_passes(PR_name, expected_list, test_ENV=expected_env)
+
+
+
+    def test_buildEnv_passes_with_cuda_101105_uvm(self):
+        """Find the function"""
+        PR_name = 'Trilinos_pullrequest_cuda_10.1.105_uvm'
+        expected_list = [mock.call('load', 'git/2.10.1'),
+                         mock.call('load', 'devpack/20190404/openmpi/4.0.1/gcc/7.2.0/cuda/10.1.105'),
+                         mock.call('swap', 'openblas/0.3.4/gcc/7.4.0', 'netlib/3.8.0/gcc/7.2.0'),]
+        expected_env = {'OMPI_CXX':
+                       os.path.join(self.jenkins_workspace,
+                                    'Trilinos',
+                                    'packages',
+                                    'kokkos',
+                                    'bin',
+                                    'nvcc_wrapper'),
+                       'OMPI_CC': '/fake/gcc/path/bin/gcc',
+                       'OMPI_FC': '/fake/gcc/path/bin/gfortran',
+                       'CUDA_LAUNCH_BLOCKING': '1',
+                       'CUDA_MANAGED_FORCE_DEVICE_ALLOC': '1',
+                       'PATH': [os.path.join(os.path.sep,
+                                            'home',
+                                            'atdm-devops-admin',
+                                            'tools',
+                                            'ride',
+                                            'cmake-3.17.2',
                                             'bin'),
                                os.path.join(os.path.sep,
                                             'ascldap',
