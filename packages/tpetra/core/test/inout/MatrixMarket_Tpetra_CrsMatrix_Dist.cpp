@@ -549,7 +549,6 @@ int main(int narg, char *arg[])
   // Get the filename (set up tests with general, pattern, symmetric, etc.)
   std::string filename = "";
   std::string diagonal = "";
-  bool symmetrize;
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("file", &filename,
