@@ -824,12 +824,14 @@ readPerProcessBinary(
   // S. Acer: With large graphs, we can't afford std::map
   buffer = new unsigned int[nNz*2];
 
-  size_t ret = fread(buffer, sizeof(unsigned int), 2*nNz, fp);
-  if (ret == 0) {
-    std::cout << "Unexpected end of matrix file: " << rankFileName << std::endl;
-    std::cout.flush();
-    delete [] buffer;
-    exit(-1);
+  if(nNz > 0) {
+    size_t ret = fread(buffer, sizeof(unsigned int), 2*nNz, fp);
+    if (ret == 0) {
+      std::cout << "Unexpected end of matrix file: " << rankFileName << std::endl;
+      std::cout.flush();
+      delete [] buffer;
+      exit(-1);
+    }
   }
   if (fp != NULL) fclose(fp);
 
