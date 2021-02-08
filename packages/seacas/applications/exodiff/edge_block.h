@@ -25,8 +25,8 @@ public:
   int Check_State() const;
 
 private:
-  Edge_Block(const Edge_Block &);                  // Not written.
-  const Edge_Block &operator=(const Edge_Block &); // Not written.
+  Edge_Block(const Edge_Block &) = delete;                  // Not written.
+  const Edge_Block &operator=(const Edge_Block &) = delete; // Not written.
 
   void load_edges(const INT *elmt_map = nullptr) const;
   void entity_load_params() override;
