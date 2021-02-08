@@ -154,7 +154,7 @@ leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
     if (rowScalingFactors.template need_sync<dev_memory_space> ()) {
       const_cast<vec_type&> (rowScalingFactors).template sync<dev_memory_space> ();
     }
-    auto row_lcl_2d = rowScalingFactors.template getLocalView<dev_memory_space> ();
+    auto row_lcl_2d = rowScalingFactors.template getLocalView<dev_memory_space> (Access::ReadOnly());
     row_lcl = Kokkos::subview (row_lcl_2d, Kokkos::ALL (), 0);
   }
   if (rightScale) {
@@ -168,7 +168,7 @@ leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
     if (colScalingFactors.template need_sync<dev_memory_space> ()) {
       const_cast<vec_type&> (colScalingFactors).template sync<dev_memory_space> ();
     }
-    auto col_lcl_2d = colScalingFactors.template getLocalView<dev_memory_space> ();
+    auto col_lcl_2d = colScalingFactors.template getLocalView<dev_memory_space> (Access::ReadOnly());
     col_lcl = Kokkos::subview (col_lcl_2d, Kokkos::ALL (), 0);
   }
 

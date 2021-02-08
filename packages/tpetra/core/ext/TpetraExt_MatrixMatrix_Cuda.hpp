@@ -534,7 +534,8 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
   }
 
   // Jacobi-specific inner stuff
-  auto Dvals = Dinv.template getLocalView<scalar_memory_space>();
+  auto Dvals =
+       Dinv.template getLocalView<scalar_memory_space>(Access::ReadOnly());
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM2 = Teuchos::null; MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse CudaCore - Compare"))));

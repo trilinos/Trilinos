@@ -111,18 +111,18 @@ void idotLocal(const ResultView& localResult,
   if(useMVDot)
   {
     //Get local X (we know it doesn't need a sync to memory_space)
-    auto X_lcl = X.template getLocalView<memory_space>();
+    auto X_lcl = X.template getLocalView<memory_space>(Access::ReadOnly());
     //Get local Y, and make a copy if it needs sync. Y is const so we can't just sync to memory_space.
     decltype (X_lcl) Y_lcl;
     if (copyY) {
-      auto Y_lcl_other = Y.template getLocalView<other_memory_space>();
+      auto Y_lcl_other = Y.template getLocalView<other_memory_space>(Access::ReadOnly());
       typename decltype (Y_lcl)::non_const_type
         Y_lcl_nc (Kokkos::ViewAllocateWithoutInitializing("Y_lcl"), Y_lcl_other.extent(0), Y_numVecs);
       Kokkos::deep_copy (Y_lcl_nc, Y_lcl_other);
       Y_lcl = Y_lcl_nc;
     }
     else { // Y already sync'd to dev; just use its dev view
-      Y_lcl = Y.template getLocalView<memory_space>();
+      Y_lcl = Y.template getLocalView<memory_space>(Access::ReadOnly());
     }
     if (numVecs == size_t (1)) {
       auto X_lcl_1d = Kokkos::subview (X_lcl, rowRange, 0);
@@ -151,18 +151,18 @@ void idotLocal(const ResultView& localResult,
       size_t Yvec = (numVecs == Y_numVecs) ? vec : size_t(0);
       auto Xcol = X.getVector(Xvec);
       auto Ycol = Y.getVector(Yvec);
-      auto XLocalCol = Kokkos::subview(Xcol->template getLocalView<memory_space>(), rowRange, 0);
+      auto XLocalCol = Kokkos::subview(Xcol->template getLocalView<memory_space>(Access::ReadOnly()), rowRange, 0);
       decltype(XLocalCol) YLocalCol;
       if(copyY) {
         //Get a copy of Y's column if needed. If X has k columns but Y has 1, only copy to YLocalCol_nc once.
         if(vec == 0 || Y_numVecs > 1) {
-          auto YLocalCol_other_space = Kokkos::subview(Ycol->template getLocalView<other_memory_space>(), rowRange, 0);
+          auto YLocalCol_other_space = Kokkos::subview(Ycol->template getLocalView<other_memory_space>(Access::ReadOnly()), rowRange, 0);
           Kokkos::deep_copy(YLocalCol_nc, YLocalCol_other_space);
         }
         YLocalCol = YLocalCol_nc;
       }
       else {
-        YLocalCol = Kokkos::subview(Ycol->template getLocalView<memory_space>(), rowRange, 0);
+        YLocalCol = Kokkos::subview(Ycol->template getLocalView<memory_space>(Access::ReadOnly()), rowRange, 0);
       }
       //Compute the rank-1 dot product, and place the result in an element of localResult
       KokkosBlas::dot(Kokkos::subview(localResult, vec), XLocalCol, YLocalCol);

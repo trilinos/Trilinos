@@ -2848,9 +2848,9 @@ namespace Tpetra {
       X.modify_host ();
       const_cast<MMV&> (D).sync_host ();
 
-      auto B_lcl = B.template getLocalView<host_mem_space> ();
-      auto X_lcl = X.template getLocalView<host_mem_space> ();
-      auto D_lcl = D.template getLocalView<host_mem_space> ();
+      auto B_lcl = B.template getLocalView<host_mem_space>(Access::ReadOnly());
+      auto X_lcl = X.template getLocalView<host_mem_space>(Access::ReadWrite());
+      auto D_lcl = D.template getLocalView<host_mem_space>(Access::ReadOnly());
 
       offset_type B_stride[8], X_stride[8], D_stride[8];
       B_lcl.stride (B_stride);
@@ -2957,9 +2957,9 @@ namespace Tpetra {
       X.modify_host ();
       const_cast<MMV&> (D).sync_host ();
 
-      auto B_lcl = B.template getLocalView<host_mem_space> ();
-      auto X_lcl = X.template getLocalView<host_mem_space> ();
-      auto D_lcl = D.template getLocalView<host_mem_space> ();
+      auto B_lcl = B.template getLocalView<host_mem_space>(Access::ReadOnly());
+      auto X_lcl = X.template getLocalView<host_mem_space>(Access::ReadWrite());
+      auto D_lcl = D.template getLocalView<host_mem_space>(Access::ReadOnly());
 
       offset_type B_stride[8], X_stride[8], D_stride[8];
       B_lcl.stride (B_stride);
