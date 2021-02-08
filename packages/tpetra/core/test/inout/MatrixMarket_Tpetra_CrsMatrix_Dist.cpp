@@ -97,8 +97,9 @@ public:
   // Constructor
   TestReader(
     const std::string filename_, 
+    const std::string diagonal_,
     const Teuchos::RCP<const Teuchos::Comm<int> > &comm_
-  ) : filename(filename_), comm(comm_), norm_baseline(3)
+  ) : filename(filename_), diagonal(diagonal_), comm(comm_), norm_baseline(3)
   {
     // Compute baseline for testing
     // Use standard MatrixMarket reader from Tpetra to get baseline matrix
@@ -118,6 +119,18 @@ public:
         std::cout << e.what() << std::endl;
       }
       throw e;
+    }
+
+    if (diagonal == "exclude") {
+      A_baseline->resumeFill();
+      auto rowMap = A_baseline->getRowMap();
+      size_t nMyRows = rowMap->getNodeNumElements();
+      for (size_t i = 0; i < nMyRows; i++) {
+        gno_t gid = rowMap->getGlobalElement(i);
+        scalar_t val = Teuchos::ScalarTraits<scalar_t>::zero();
+        A_baseline->replaceGlobalValues(gid, 1, &val, &gid);
+      }
+      A_baseline->fillComplete();
     }
 
     nRow = A_baseline->getRowMap()->getMaxAllGlobalIndex() 
@@ -154,6 +167,7 @@ public:
     {
       Teuchos::ParameterList params;
       const std::string testname = "1D";
+      params.set("diagonal", diagonal);
       params.set("distribution", "1D");
       params.set("randomize", false);
       params.set("useTimers", true);
@@ -164,6 +178,7 @@ public:
     {
       Teuchos::ParameterList params;
       const std::string testname = "1DRandom";
+      params.set("diagonal", diagonal);
       params.set("distribution", "1D");
       params.set("randomize", true);
       params.set("useTimers", true);
@@ -174,6 +189,7 @@ public:
     {
       Teuchos::ParameterList params;
       const std::string testname = "2D";
+      params.set("diagonal", diagonal);
       params.set("distribution", "2D");
       params.set("randomize", false);
       params.set("useTimers", true);
@@ -184,6 +200,7 @@ public:
     {
       Teuchos::ParameterList params;
       const std::string testname = "2DRandom";
+      params.set("diagonal", diagonal);
       params.set("distribution", "2D");
       params.set("randomize", true);
       params.set("useTimers", true);
@@ -195,6 +212,7 @@ public:
       Teuchos::ParameterList params;
       const std::string testname = "2D_npRow";
       int npRow = 3;
+      params.set("diagonal", diagonal);
       params.set("distribution", "2D");
       params.set("randomize", false);
       params.set("nProcessorRows", npRow);
@@ -221,6 +239,7 @@ public:
       Teuchos::ParameterList params;
       const std::string testname = "2D_npCol";
       int npCol = 3;
+      params.set("diagonal", diagonal);
       params.set("distribution", "2D");
       params.set("randomize", false);
       params.set("nProcessorCols", npCol);
@@ -248,6 +267,7 @@ public:
       const std::string testname = "2D_npCol_npRow";
       int npCol = 3;
       int npRow = 2;
+      params.set("diagonal", diagonal);
       params.set("distribution", "2D");
       params.set("randomize", false);
       params.set("nProcessorCols", npCol);
@@ -274,6 +294,7 @@ public:
     {
       Teuchos::ParameterList params;
       const std::string testname = "LowerTriangularBlock";
+      params.set("diagonal", diagonal);
       params.set("distribution", "LowerTriangularBlock");
       params.set("useTimers", true);
       try {
@@ -298,6 +319,7 @@ public:
     {
       Teuchos::ParameterList params;
       const std::string testname = "LowerTriangularBlockSorted";
+      params.set("diagonal", diagonal);
       params.set("distribution", "LowerTriangularBlock");
       params.set("sortByDegree", true);
       params.set("useTimers", true);
@@ -500,6 +522,8 @@ private:
 private:
 
   const std::string filename;    // MatrixMarket filename
+  const std::string diagonal;    // Special handling of the matrix diagonal:  
+                                 // require or exclude?
   const Teuchos::RCP<const Teuchos::Comm<int> > comm;
 
   size_t nRow, nCol, nNz;                  // dimensions of baseline matrix
@@ -524,15 +548,19 @@ int main(int narg, char *arg[])
 
   // Get the filename (set up tests with general, pattern, symmetric, etc.)
   std::string filename = "";
+  std::string diagonal = "";
+  bool symmetrize;
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("file", &filename,
                  "Path and filename of the matrix to be read.");
+  cmdp.setOption("diagonal", &diagonal,
+                 "Options are exclude or require.");
   if (cmdp.parse(narg,arg)!=Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
 
-  TestReader test(filename, comm);
+  TestReader test(filename, diagonal, comm);
   ierr += test.run();
 
   // Output timing info
