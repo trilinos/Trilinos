@@ -324,8 +324,8 @@ applyOrientations(const std::string & eBlock, std::vector<Workset> & worksets) c
             if(layout->getBasis()->requiresOrientations()) {
               // apply orientations for this basis
               auto & bv = *details.bases[basis_index];
-//              if(not bv.orientationsApplied())
-              bv.applyOrientations(ortsPerBlock,(int) worksets[i].num_cells);
+              if(not bv.orientationsApplied())
+                bv.applyOrientations(ortsPerBlock,(int) worksets[i].num_cells);
             }
           }
         }
@@ -437,8 +437,8 @@ applyOrientations(const WorksetDescriptor & desc,std::map<unsigned,Workset> & wo
             if(layout->getBasis()->requiresOrientations()) {
               // apply orientations for this basis
               auto & bv = *details.bases[basis_index];
-//              if(not bv.orientationsApplied())
-              bv.applyOrientations(ortsPerBlock,(int) itr->second.num_cells);
+              if(not bv.orientationsApplied())
+                bv.applyOrientations(ortsPerBlock,(int) itr->second.num_cells);
             }
           }
         }
