@@ -373,6 +373,18 @@ set (TpetraCore_MatrixMarket_Tpetra_CrsMatrix_Dist_simple_MPI_3_DISABLE ON CACHE
 set (TpetraCore_MatrixMarket_Tpetra_CrsMatrix_Dist_simple_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 set (TpetraCore_MatrixMarket_Tpetra_CrsMatrix_Dist_rmat_MPI_3_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 set (TpetraCore_MatrixMarket_Tpetra_CrsMatrix_Dist_rmat_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (TpetraCore_MatrixMarket_Tpetra_CrsMatrix_Dist_Binary_rmat_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (TpetraCore_MatrixMarket_Tpetra_CrsMatrix_Dist_Binary_rmat_MPI_3_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (TpetraCore_MatrixMarket_Tpetra_CrsMatrix_Dist_Binary_rmat_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (TpetraCore_MatrixMarket_Tpetra_CrsMatrix_Dist_Binary_simple_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (TpetraCore_MatrixMarket_Tpetra_CrsMatrix_Dist_Binary_simple_MPI_3_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (TpetraCore_MatrixMarket_Tpetra_CrsMatrix_Dist_Binary_simple_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (TpetraCore_MatrixMarket_Tpetra_CrsMatrix_Dist_BinaryPerProcess_rmat_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (TpetraCore_MatrixMarket_Tpetra_CrsMatrix_Dist_BinaryPerProcess_rmat_MPI_3_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (TpetraCore_MatrixMarket_Tpetra_CrsMatrix_Dist_BinaryPerProcess_rmat_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (TpetraCore_MatrixMarket_Tpetra_CrsMatrix_Dist_BinaryPerProcess_simple_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (TpetraCore_MatrixMarket_Tpetra_CrsMatrix_Dist_BinaryPerProcess_simple_MPI_3_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (TpetraCore_MatrixMarket_Tpetra_CrsMatrix_Dist_BinaryPerProcess_simple_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 # Zoltan2 UVM = OFF tests
 set (Zoltan2_coffeyMJ_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 set (Zoltan2_rectilinearRCB_left_MPI_2_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
@@ -508,6 +520,11 @@ set (Zoltan2_mjTest_geomgen_noholes_uvmOff_MPI_3_DISABLE ON CACHE BOOL "Turn off
 set (Zoltan2_mjTest_geomgen_nomjparts_uvmOff_MPI_3_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 set (Zoltan2_mjTest_geomgen_nomjparts_odd_uvmOff_MPI_3_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 set (Zoltan2_Partitioning1_Quotient_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (Zoltan2_Partitioning1_Quotient_OneProc_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (Zoltan2_Partitioning1_Quotient_OneProc_Threshold1_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (Zoltan2_Partitioning1_Quotient_OneProc_Threshold2_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (Zoltan2_Partitioning1_Quotient_Threshold1_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (Zoltan2_Partitioning1_Quotient_Threshold2_MPI_4
 # MueLu UVM = OFF tests
 set (MueLu_FixedMatrixPattern-Tpetra_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 set (MueLu_ReuseSequenceTpetra_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
@@ -587,6 +604,9 @@ set (MueLu_Structured_Elasticity3D_Tpetra_MPI_1_DISABLE ON CACHE BOOL "Turn off 
 set (MueLu_DriverEnforceConstaints_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 set (MueLu_LevelWrap-Tpetra_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 set (MueLu_UnitTestsIntrepid2Tpetra_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (MeshTyingBlocked_SimpleSmoother_2dof_medium_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (MueLu_MeshTyingBlocked_SimpleSmoother_2dof_medium_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (MueLu_MeshTyingBlocked_SimpleSmoother_2dof_small_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 # ShyLU_DD UVM = OFF tests
 set (ShyLU_DDFROSch_test_thyra_xpetra_laplace_one_rank_TLP_IPOU_DIM3_TPETRA_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 set (ShyLU_DDFROSch_test_thyra_xpetra_laplace_one_rank_TLP_GDSW_DIM2_TPETRA_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
@@ -912,6 +932,7 @@ set (Xpetra_MultiVector_UnitTestsThyraSpecific_MPI_4_DISABLE ON CACHE BOOL "Turn
 set (Xpetra_CrsMatrixUtils_UnitTests_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 set (Xpetra_MapFactory_UnitTests_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 set (Xpetra_MapExtractorFactory_UnitTests_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
+set (Xpetra_MatrixUtils_UnitTests_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 # ROL UVM = OFF tests
 set (ROL_example_PDE-OPT_helmholtz_example_02_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 set (ROL_example_PDE-OPT_0ld_elasticity_example_01_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
