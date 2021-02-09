@@ -110,6 +110,51 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_rmat_nodiag
+  ARGS "--file=rmat_11_lap.mtx --diagonal=exclude"
+  COMM mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_rmat_nodiag
+  ARGS "--file=rmat_11_lap.mtx --diagonal=exclude"
+  COMM mpi
+  NUM_MPI_PROCS 3
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_rmat_nodiag
+  ARGS "--file=rmat_11_lap.mtx --diagonal=exclude"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_rmat_nodiag
+  ARGS "--file=rmat_11_lap.mtx --diagonal=exclude"
+  COMM mpi
+  NUM_MPI_PROCS 6
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_Dist
+  NAME MatrixMarket_Tpetra_CrsMatrix_Dist_rmat_nodiag
+  ARGS "--file=rmat_11_lap.mtx --diagonal=exclude"
+  COMM mpi
+  NUM_MPI_PROCS 10 
+  STANDARD_PASS_OUTPUT
+  )
+
 TRIBITS_ADD_EXECUTABLE(
   MatrixMarket_Tpetra_CrsMatrix_Dist_Binary
   SOURCES

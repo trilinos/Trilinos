@@ -198,7 +198,7 @@ readMatrixMarket(
   if (pe != NULL) 
     diagonal = pe->getValue<std::string>(&diagonal);
   }
-  bool ignoreDiagonal = (diagonal == "ignore");
+  bool ignoreDiagonal = (diagonal == "exclude");
   bool requireDiagonal = (diagonal == "require");
 
   std::string distribution = "1D";  // Default distribution is 1D row-based
@@ -554,7 +554,7 @@ readBinary(
   if (pe != NULL) 
     diagonal = pe->getValue<std::string>(&diagonal);
   }
-  bool ignoreDiagonal = (diagonal == "ignore");
+  bool ignoreDiagonal = (diagonal == "exclude");
   bool requireDiagonal = (diagonal == "require");
 
   std::string distribution = "1D";  // Default distribution is 1D row-based
