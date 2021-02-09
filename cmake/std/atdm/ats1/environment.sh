@@ -59,6 +59,11 @@ else
   return
 fi
 
+if [[ "${SPARC_MODULE}" == "" ]] ; then
+  echo "No SPARC_MODULE loaded so existing!"
+  return
+fi
+
 echo "Using ats1 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE and KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH"
 
 # Exclude bad nodes.
