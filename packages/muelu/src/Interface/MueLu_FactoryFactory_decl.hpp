@@ -98,9 +98,11 @@
 #include "MueLu_GeometricInterpolationPFactory.hpp"
 #include "MueLu_InterfaceAggregationFactory.hpp"
 #include "MueLu_InterfaceMappingTransferFactory.hpp"
+#include "MueLu_InitialBlockNumberFactory.hpp"
 #include "MueLu_IndefBlockedDiagonalSmoother.hpp"
 #include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
+#include "MueLu_LocalOrdinalTransferFactory.hpp"
 #include "MueLu_RepartitionInterface.hpp"
 #include "MueLu_RepartitionBlockDiagonalFactory.hpp"
 #include "MueLu_MapTransferFactory.hpp"
@@ -256,7 +258,10 @@ namespace MueLu {
       if (factoryName == "HybridAggregationFactory")              return Build2<HybridAggregationFactory>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "InterfaceAggregationFactory")           return Build2<InterfaceAggregationFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "InterfaceMappingTransferFactory")       return Build2<InterfaceMappingTransferFactory>       (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "InitialBlockNumberFactory")              return Build2<InitialBlockNumberFactory>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "LineDetectionFactory")                  return Build2<LineDetectionFactory>                  (paramList, factoryMapIn, factoryManagersIn);
+      // LocalOrdinalTransferFactory is a utility factory that can be used for multiple things, so there is no default
+      //      if (factoryName == "LocalOrdinalTransferFactory")           return Build2<LocalOrdinalTransferFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MapTransferFactory")                    return Build2<MapTransferFactory>                    (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MatrixAnalysisFactory")                 return Build2<MatrixAnalysisFactory>                 (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MultiVectorTransferFactory")            return Build2<MultiVectorTransferFactory>            (paramList, factoryMapIn, factoryManagersIn);

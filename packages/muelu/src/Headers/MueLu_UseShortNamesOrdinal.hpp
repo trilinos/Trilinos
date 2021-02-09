@@ -98,6 +98,9 @@ typedef MueLu::LocalAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> LocalA
 #ifdef MUELU_LOCALLEXICOGRAPHICINDEXMANAGER_SHORT
 typedef MueLu::LocalLexicographicIndexManager<LocalOrdinal,GlobalOrdinal,Node> LocalLexicographicIndexManager;
 #endif
+#ifdef MUELU_LOCALORDINALTRANSFERFACTORY_SHORT
+typedef MueLu::LocalOrdinalTransferFactory<LocalOrdinal,GlobalOrdinal,Node> LocalOrdinalTransferFactory;
+#endif
 #ifdef MUELU_ONEPTAGGREGATIONALGORITHM_SHORT
 typedef MueLu::OnePtAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> OnePtAggregationAlgorithm;
 #endif
