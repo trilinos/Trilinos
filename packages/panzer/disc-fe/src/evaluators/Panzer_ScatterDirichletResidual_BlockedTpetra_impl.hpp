@@ -585,7 +585,8 @@ evaluateFields(typename TRAITS::EvalData workset)
       typename Sacado::ScalarType<ScalarT>::type vals[maxDerivativeArraySize_];
 
       for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
-        const int rowLID = worksetLIDs(cell,fieldOffsets(basis));
+        const int block_row_offset = blockOffsets(blockRowIndex);
+        const int rowLID = worksetLIDs(cell,block_row_offset+fieldOffsets(basis));
 
         if (rowLID < 0) // not on this processor!
           continue;

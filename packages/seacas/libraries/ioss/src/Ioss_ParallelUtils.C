@@ -25,7 +25,7 @@
 #endif
 
 namespace {
-  auto initial_time = std::chrono::high_resolution_clock::now();
+  auto initial_time = std::chrono::steady_clock::now();
 
 #ifdef SEACAS_HAVE_MPI
   MPI_Op which_reduction(Ioss::ParallelUtils::MinMax which)

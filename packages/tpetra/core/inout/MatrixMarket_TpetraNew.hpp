@@ -198,7 +198,7 @@ readMatrixMarket(
   if (pe != NULL) 
     diagonal = pe->getValue<std::string>(&diagonal);
   }
-  bool ignoreDiagonal = (diagonal == "ignore");
+  bool ignoreDiagonal = (diagonal == "exclude");
   bool requireDiagonal = (diagonal == "require");
 
   std::string distribution = "1D";  // Default distribution is 1D row-based
@@ -554,7 +554,7 @@ readBinary(
   if (pe != NULL) 
     diagonal = pe->getValue<std::string>(&diagonal);
   }
-  bool ignoreDiagonal = (diagonal == "ignore");
+  bool ignoreDiagonal = (diagonal == "exclude");
   bool requireDiagonal = (diagonal == "require");
 
   std::string distribution = "1D";  // Default distribution is 1D row-based
@@ -824,12 +824,14 @@ readPerProcessBinary(
   // S. Acer: With large graphs, we can't afford std::map
   buffer = new unsigned int[nNz*2];
 
-  size_t ret = fread(buffer, sizeof(unsigned int), 2*nNz, fp);
-  if (ret == 0) {
-    std::cout << "Unexpected end of matrix file: " << rankFileName << std::endl;
-    std::cout.flush();
-    delete [] buffer;
-    exit(-1);
+  if(nNz > 0) {
+    size_t ret = fread(buffer, sizeof(unsigned int), 2*nNz, fp);
+    if (ret == 0) {
+      std::cout << "Unexpected end of matrix file: " << rankFileName << std::endl;
+      std::cout.flush();
+      delete [] buffer;
+      exit(-1);
+    }
   }
   if (fp != NULL) fclose(fp);
 

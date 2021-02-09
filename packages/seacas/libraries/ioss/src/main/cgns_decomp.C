@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -88,12 +88,50 @@ namespace {
       {
         const char *temp = options_.retrieve("ordinal");
         if (temp != nullptr) {
-          ordinal = std::stoi(temp);
-          if (ordinal < 0 || ordinal > 2) {
-            fmt::print(stderr, "\nERROR: Invalid ordinal specified ({}). Must be 0, 1, or 2.\n",
-                       ordinal);
-            exit(EXIT_FAILURE);
-          }
+	  // See if ordinal contains digits or letters...
+	  std::string stemp{temp};
+	  bool all_dig = stemp.find_first_not_of("0123456789") == std::string::npos;
+	  if (all_dig) {
+	    ordinal = std::stoi(stemp);
+	    switch (ordinal) {
+	    case 0: // i
+	      ordinal = Iocgns::Ordinal::I; break;
+	    case 1: // j
+	      ordinal = Iocgns::Ordinal::J; break;
+	    case 2: // k
+	      ordinal = Iocgns::Ordinal::K; break;
+	    case 3: // ij
+	      ordinal = Iocgns::Ordinal::I | Iocgns::Ordinal::J; break;
+	    case 4: // ik
+	      ordinal = Iocgns::Ordinal::I | Iocgns::Ordinal::K; break;
+	    case 5: // jk
+	      ordinal = Iocgns::Ordinal::J | Iocgns::Ordinal::K; break;
+	    default:
+	      fmt::print(stderr,
+			 "\nERROR: Invalid ordinal ('{}') specified.  Must be between 0 and 5.\n", stemp);
+	      options_.usage(std::cerr);
+	      exit(EXIT_FAILURE);
+	    }
+	  }	  
+	  else {
+	    for (size_t i = 0; i < stemp.size(); i++) {
+	      if (stemp[i] == 'i' || stemp[i] == 'I') {
+		ordinal |= Iocgns::Ordinal::I;
+	      }
+	      else if (stemp[i] == 'j' || stemp[i] == 'J') {
+		ordinal |= Iocgns::Ordinal::J;
+	      }
+	      else if (stemp[i] == 'k' || stemp[i] == 'K') {
+		ordinal |= Iocgns::Ordinal::K;
+	      }
+	      else {
+		fmt::print(stderr,
+			   "\nERROR: Invalid ordinal ('{}') specified.  Must be 'i', 'j', or 'k'.\n", stemp[i]);
+		options_.usage(std::cerr);
+		exit(EXIT_FAILURE);
+	      }
+	    }
+	  }
         }
       }
 
@@ -137,7 +175,7 @@ namespace {
       options_.enroll("processors", Ioss::GetLongOption::MandatoryValue, "Number of processors.",
                       nullptr);
       options_.enroll("ordinal", Ioss::GetLongOption::MandatoryValue,
-                      "Ordinal not to split (0,1,2).", nullptr);
+		      "Ordinal not to split 0(i), 1(j), 2(k), 3(ij), 4(ik), or 5(jk).", nullptr);
       options_.enroll("line_decomposition", Ioss::GetLongOption::MandatoryValue,
                       "list of 1 or more BC (Family) names.\n"
                       "\t\tFor all structured zones which this BC touches, the ordinal of the face "
@@ -158,7 +196,7 @@ namespace {
     }
     Ioss::GetLongOption options_;
     int                 proc_count{0};
-    int                 ordinal{-1};
+    int                 ordinal{0};
     double              load_balance{1.4};
     std::string         filename{};
     std::string         filetype{"cgns"};
@@ -685,6 +723,7 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
+  unsigned int line_ordinal = interFace.ordinal;
   std::vector<Iocgns::StructuredZoneData *> zones;
   for (auto iblock : blocks) {
     size_t ni   = iblock->get_property("ni").get_int();
@@ -693,8 +732,8 @@ int main(int argc, char *argv[])
     size_t zone = iblock->get_property("zone").get_int();
 
     zones.push_back(new Iocgns::StructuredZoneData(iblock->name(), zone, ni, nj, nk));
-    if (interFace.ordinal >= 0) {
-      zones.back()->m_lineOrdinal = interFace.ordinal;
+    if (line_ordinal > 0) {
+      zones.back()->m_lineOrdinal = line_ordinal;
     }
     zones.back()->m_zoneConnectivity = iblock->m_zoneConnectivity;
   }
