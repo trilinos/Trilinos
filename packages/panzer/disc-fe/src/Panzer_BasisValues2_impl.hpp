@@ -1198,6 +1198,12 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
   if (!intrepid_basis->requireOrientation())
     return;
 
+  // FIXME: Currently EMPIRE-EM requires orientations to be applied multiple times
+  // We only allow the orientations to be applied once - throw error?
+//  if(orientations_applied_)
+//    return;
+//  TEUCHOS_ASSERT(not orientations_applied_);
+
   typedef Intrepid2::OrientationTools<PHX::Device> ots;
   const PureBasis::EElementSpace elmtspace = getElementSpace();
 
@@ -1480,6 +1486,8 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
       }
     }
   }
+
+  orientations_applied_ = true;
 }
 
 // method for applying orientations

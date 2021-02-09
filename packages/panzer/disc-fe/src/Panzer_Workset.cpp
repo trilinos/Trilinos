@@ -196,6 +196,7 @@ setup(const panzer::LocalMeshPartition & partition,
   num_owned_cells_ = partition.num_owned_cells;
   num_ghost_cells_ = partition.num_ghstd_cells;
   num_virtual_cells_ = partition.num_virtual_cells;
+  options_ = options;
 
   TEUCHOS_ASSERT(num_cells == num_owned_cells_ + num_ghost_cells_ + num_virtual_cells_);
 
