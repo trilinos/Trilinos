@@ -643,6 +643,9 @@ private:
                                                  b_norm, input);
           }
           else {
+            if (outPtr != nullptr) {
+              *outPtr << " > warning: H(" << check+1 << ", " << check << ") = zero" << endl;
+            }
             H(check+1, check) = zero;
             metric = STM::zero ();
           }
@@ -725,6 +728,10 @@ private:
         // Otherwise continue the inner-iteration.
         if (iter >= restart || H(iter,iter-1) == zero) { // done with restart cycyle, or probably lost ortho
           // Initialize starting vector for restart
+          if (outPtr != nullptr && H(iter,iter-1) == zero) {
+            *outPtr << " > restarting with explicit residual vector"
+                    << " since H(" << iter << ", " << iter-1 << ") = zero" << endl;
+          }
           iter = 0;
           P = * (Q.getVectorNonConst (0));
           if (input.precoSide == "left") {
