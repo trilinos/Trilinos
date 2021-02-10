@@ -1096,6 +1096,39 @@ TEUCHOS_UNIT_TEST( ParameterList, attachValidatorRecursively ) {
 // TODO: test printing of modifiers
 // valid_pl.print(std::cout, ParameterList::PrintOptions().showDoc(true).indent(2).showTypes(true));
 
+TEUCHOS_UNIT_TEST( ParameterList, print ) {
+  ParameterList valid_pl("valid_pl");
+  valid_pl.set("a", 0.);
+
+  {
+    ParameterList pl("pl");
+    pl.set("a", 1.);
+    pl.validateParametersAndSetDefaults(valid_pl);
+    ParameterList::PrintOptions printOptions;
+    printOptions.showDefault(false);
+    std::ostringstream ss;
+    pl.print(ss, printOptions);
+    std::cout << ss.str();
+    TEST_ASSERT(ss.str().size() > 0);
+  }
+
+  {
+    ParameterList pl("pl");
+    pl.validateParametersAndSetDefaults(valid_pl);
+    ParameterList::PrintOptions printOptions;
+    std::ostringstream ss;
+    pl.print(ss, printOptions);
+    std::cout << ss.str();
+    TEST_ASSERT(ss.str().size() > 0);
+
+    ss.str("");
+    printOptions.showDefault(false);
+    pl.print(ss, printOptions);
+    std::cout << ss.str();
+    TEST_ASSERT(ss.str().size() == 0);
+  }
+}
+
 } // namespace Teuchos
 
 

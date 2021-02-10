@@ -43,6 +43,7 @@
 #define TPETRA_WITHLOCALACCESS_HPP
 
 #include "TpetraCore_config.h"
+#include "Tpetra_Access.hpp"
 #include <functional>
 #include <type_traits>
 
@@ -57,39 +58,10 @@ namespace Tpetra {
   ////////////////////////////////////////////////////////////
 
   namespace Details {
-    /// \brief Enum for declaring access intent.
-    ///
-    /// This is not for users; it's an implementation detail of
-    /// functions readOnly, writeOnly, and readWrite (see below).
-    enum class EAccess {
-      ReadOnly,
-      WriteOnly,
-      ReadWrite
-    };
-
-    /// \brief Tag class for declaring access intent.
-    ///
-    /// This is a class, not an enum, so that LocalAccess (see below)
-    /// can have a parameter pack.  You can't mix class types and
-    /// constexpr values in a parameter pack.  Compare to
-    /// Kokkos::MemoryTraits or Kokkos::Schedule.
-    template<const EAccess accessMode>
-    class Access {
-      /// \brief Type alias to help identifying the tag class.
-      ///
-      /// We follow Kokkos in identifying a tag class by checking
-      /// whether a type alias inside it has the same type as the tag
-      /// class itself.
-      using access_mode = Access<accessMode>;
-    };
-
     template<class T> struct is_access_mode : public std::false_type {};
-    template<EAccess am>
-    struct is_access_mode<Access<am>> : public std::true_type {};
-
-    using read_only = Access<EAccess::ReadOnly>;
-    using write_only = Access<EAccess::WriteOnly>;
-    using read_write = Access<EAccess::ReadWrite>;
+    template<> struct is_access_mode<Access::ReadOnly> : public std::true_type {};
+    template<> struct is_access_mode<Access::ReadWrite> : public std::true_type {};
+    template<> struct is_access_mode<Access::WriteOnly> : public std::true_type {};
 
     /// \brief Given a global object, get its default memory space
     ///   (both the type and the default instance thereof).
@@ -257,7 +229,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    Details::read_only>
+    Access::ReadOnly>
   readOnly (GlobalObjectType&);
 
   /// \brief Declare that you want to access the given global object's
@@ -266,7 +238,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    Details::read_only>
+    Access::ReadOnly>
   readOnly (const GlobalObjectType&);
 
   /// \brief Declare that you want to access the given global object's
@@ -274,7 +246,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    Details::write_only>
+    Access::WriteOnly>
   writeOnly (GlobalObjectType&);
 
   /// \brief Declare that you want to access the given global object's
@@ -282,7 +254,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    Details::read_write>
+    Access::ReadWrite>
   readWrite (GlobalObjectType&);
 
   ////////////////////////////////////////////////////////////
@@ -681,7 +653,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    Details::read_only>
+    Access::ReadOnly>
   readOnly (GlobalObjectType& G)
   {
     return {G};
@@ -690,7 +662,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    Details::read_only>
+    Access::ReadOnly>
   readOnly (const GlobalObjectType& G)
   {
     GlobalObjectType& G_nc = const_cast<GlobalObjectType&> (G);
@@ -700,7 +672,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    Details::write_only>
+    Access::WriteOnly>
   writeOnly (GlobalObjectType& G)
   {
     return {G};
@@ -709,7 +681,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    Details::read_write>
+    Access::ReadWrite>
   readWrite (GlobalObjectType& G)
   {
     return {G};
