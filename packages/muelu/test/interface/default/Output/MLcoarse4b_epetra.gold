@@ -446,14 +446,14 @@ level  rows  nnz    nnz/row  c ratio  procs
   3  371   1111   2.99     2.99         1  
   4  124   370    2.98     2.99         1  
 
-Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
+Smoother (level 0) both : IFPACK (Local SGS, sweeps=2, damping=1)
 
-Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
+Smoother (level 1) both : IFPACK (Local SGS, sweeps=2, damping=1)
 
-Smoother (level 2) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
+Smoother (level 2) both : IFPACK (Local SGS, sweeps=2, damping=1)
 
-Smoother (level 3) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
+Smoother (level 3) both : IFPACK (Local SGS, sweeps=2, damping=1)
 
-Smoother (level 4) pre  : MueLu::IfpackSmoother{type = point relaxation stand-alone}
+Smoother (level 4) pre  : IFPACK (Local GS, sweeps=25, damping=0.6)
 Smoother (level 4) post : no smoother
 

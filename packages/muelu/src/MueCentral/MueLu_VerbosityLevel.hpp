@@ -80,7 +80,9 @@ namespace MueLu {
 
       Developer       = 0x04000000, //!< Print information primarily of interest to developers
 
-      Test0           = 0x10000000, //!< Print skeleton for the run, i.e. factory calls and used parameters
+      // Print skeleton for the run
+      Test0           = 0x10000000, //!< Print factory calls
+      Test1           = 0x20000000, //!< Print used parameters
 
       // Predefined combinations of MsgType
       // Can be used in user code or examples. Do not used as input parameters of IsPrint() or GetOStream().
@@ -89,7 +91,8 @@ namespace MueLu {
       Parameters      = Parameters0 | Parameters1,                         //!< Print parameters
       Statistics      = Statistics0 | Statistics1 | Statistics2,           //!< Print all statistics
       Timings         = Timings0 | Timings1 | TimingsByLevel,              //!< Print all timing information
-      Test            = Test0 | Runtime0,
+      Test            = Test0 | Test1 | Runtime0,
+      InterfaceTest   = Test0 | Runtime0,
 
       //
       None    = 0,
