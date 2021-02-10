@@ -3,7 +3,7 @@
 #include <stk_coupling/Constants.hpp>
 #include <stk_coupling/Utils.hpp>
 #include <stk_coupling/CommSplitting.hpp>
-#include <stk_coupling/ConfigurationInfo.hpp>
+#include <stk_coupling/SyncInfo.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <iostream>
@@ -40,11 +40,11 @@ int main(int argc, char** argv)
     std::cout << os.str() << std::endl;
   }
 
-  stk::coupling::ConfigurationInfo myInfo;
+  stk::coupling::SyncInfo myInfo;
 
   myInfo.set_value(stk::coupling::AppName, app_name());
 
-  stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
+  stk::coupling::SyncInfo otherInfo = myInfo.exchange(commWorld, commApp);
 
   {
     std::ostringstream os;

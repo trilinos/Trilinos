@@ -3,7 +3,7 @@
 #include <stk_coupling/Constants.hpp>
 #include <stk_coupling/Utils.hpp>
 #include <stk_coupling/CommSplitting.hpp>
-#include <stk_coupling/ConfigurationInfo.hpp>
+#include <stk_coupling/SyncInfo.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <iostream>
@@ -40,7 +40,7 @@ int main(int argc, char** argv)
     std::cout << os.str() << std::endl;
   }
 
-  stk::coupling::ConfigurationInfo myInfo;
+  stk::coupling::SyncInfo myInfo;
 
   myInfo.set_value(stk::coupling::AppName, app_name());
   myInfo.set_value(stk::coupling::TimeSyncMode, stk::coupling::Send);
@@ -50,7 +50,7 @@ int main(int argc, char** argv)
   myInfo.set_value(stk::coupling::TimeStep, 0.1);
   myInfo.set_value(stk::coupling::FinalTime, numberOfSteps * myInfo.get_value<double>(stk::coupling::TimeStep));
 
-  stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
+  stk::coupling::SyncInfo otherInfo = myInfo.exchange(commWorld, commApp);
 
   {
     std::ostringstream os;
@@ -75,10 +75,12 @@ int main(int argc, char** argv)
   
   double currentTime = myInfo.get_value<double>("current time");
   double timeStep = myInfo.get_value<double>(stk::coupling::TimeStep);
+  std::string timeStepStatus = "proceed";
   for(int step = 0; step < numberOfSteps; ++step) {
     // Update State and Do Transfer Using stk_transfer
     currentTime += timeStep;
-    myInfo.set_value("time step status", (step == numberOfSteps-1) ? "end" : "proceed");
+    if (step == numberOfSteps-1) timeStepStatus = "end";
+    myInfo.set_value("time step status", timeStepStatus);
     myInfo.set_value("current time", currentTime);
 
     std::cout<<app_name()<<" setting current time to "<<currentTime<<std::endl;

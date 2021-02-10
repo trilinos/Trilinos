@@ -108,23 +108,51 @@ private:
         }
     }
 
+    std::string test_result_string(const ::testing::TestPartResult & test_part_result) const
+    {
+        if (test_part_result.skipped())
+        {
+            return "*** Skipped";
+        }
+        else if(test_part_result.failed())
+        {
+          return  "*** Failure";
+        }
+        else return "*** Success";
+    }
+
     // Called after a failed assertion or a SUCCEED() invocation.
     virtual void OnTestPartResult(
             const ::testing::TestPartResult& test_part_result)
     {
         printf("%s on proc %d in %s:%d\n%s\n",
-                test_part_result.failed() ? "*** Failure" : "*** Success",
+                test_result_string(test_part_result).c_str(),
                 mProcId,
                 test_part_result.file_name(),
                 test_part_result.line_number(),
                 test_part_result.summary());
     }
 
+    bool test_has_failed(const ::testing::TestInfo & test_info)
+    {
+        if (test_info.result() == nullptr) 
+        {
+            return true;
+        }
+
+        if (test_info.result()->Skipped() || test_info.result()->Passed())
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     // Called after a test ends.
     virtual void OnTestEnd(const ::testing::TestInfo& test_info)
     {
         int numFailuresThisProc = 0;
-        if(test_info.result() != nullptr && !test_info.result()->Passed())
+        if(test_has_failed(test_info))
         {
             numFailuresThisProc = 1;
         }
