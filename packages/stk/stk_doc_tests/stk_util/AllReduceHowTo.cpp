@@ -32,53 +32,45 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef stk_mesh_FieldState_hpp
-#define stk_mesh_FieldState_hpp
+#include "gtest/gtest.h"
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 
-#include <cstdint>
+//BEGINAllReduce
+TEST(AllReduce, combinedOps)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(comm) != 2) { return; }
 
-namespace stk {
-namespace mesh {
+    int myRank = stk::parallel_machine_rank(comm);
 
-  /** \addtogroup stk_mesh_module
- *  \{
- */
+    constexpr int NumMin = 2;
+    constexpr int NumMax = 3;
+    constexpr int NumSum = 4;
 
-/** \brief  Enumeration of states for multi-state
- *          \ref stk::mesh::Field "fields".
- *
- *  A field may be declared to have field data for multiple states.
- *  -  Field states <b>StateNone</b>, <b>StateNew</b>, or <b>StateNP1</b>
- *     refer to the current or newest of a field.
- *  -  Field states <b>StateOld</b> or <b>StateN</b> refer to
- *     the previous state of a field with two or more states.
- *   - The remaining field states <b>StateNM1</b>, <b>StateNM2</b>,
- *     <b>StateNM3</b>, <b>StateNM4</b> refer to prior states
- *     N-1, N-2, N-3, and N-4 accordingly.
- *
- * See Field.hpp for more.
- */
-enum FieldState : uint8_t {
-  StateNone    = 0,  ///< \brief State of a field with one state
-  StateNew     = 0,  ///< \brief Newest state of a field with two or more states
-  StateNP1     = 0,  ///< \brief Newest state of a field with two or more states
-  StateOld     = 1,  ///< \brief Previous state of a field with two states
-  StateN       = 1,  ///< \brief Previous state of a field with three+ states
-  StateNM1     = 2,  ///< \brief Previous-1 state of a field with three+ states
-  StateNM2     = 3,  ///< \brief Previous-2 state of a field with four+ states
-  StateNM3     = 4,  ///< \brief Previous-3 state of a field with five+ states
-  StateNM4     = 5,  ///< \brief Previous-4 state of a field with six states
-  StateInvalid = 6
-};
+    std::vector<int> ints(NumMin, myRank);
+    std::vector<float> floats(NumMax, 1.0*myRank);
+    std::vector<float> doubles(NumSum, 1.0*(myRank+1));
 
-/** \brief Maximum number of states that a \ref stk::mesh::Field "field"
- *         can have.
- */
-enum { MaximumFieldStates = 6 };
+    stk::all_reduce(comm, stk::ReduceMin<NumMin>(ints.data())
+                        & stk::ReduceMax<NumMax>(floats.data())
+                        & stk::ReduceSum<NumSum>(doubles.data()));
 
-/** \} */
+    const int expectedMin = 0;
+    const float expectedMax = 1.0;
+    const double expectedSum = 3.0;
 
-} //namespace mesh
-} //namespace stk
+    for(int thisInt : ints) {
+      EXPECT_EQ(expectedMin, thisInt);
+    }
 
-#endif //stk_mesh_FieldState_hpp
+    for(float thisFloat : floats) {
+      EXPECT_EQ(expectedMax, thisFloat);
+    }
+
+    for(double thisDouble : doubles) {
+      EXPECT_EQ(expectedSum, thisDouble);
+    }
+}
+//ENDAllReduce
+
