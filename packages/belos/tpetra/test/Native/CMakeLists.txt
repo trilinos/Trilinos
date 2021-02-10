@@ -99,6 +99,14 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   Tpetra_Native_solvers_nonsymm_matrix
+  NAME Tpetra_Native_GMRES_SINGLE_REDUCE_nonsymm_matrix_cgs_newton
+  ARGS "--solver=\"TPETRA GMRES SINGLE REDUCE\" --restartLength=10 --ortho=CGS"
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  Tpetra_Native_solvers_nonsymm_matrix
   NAME Tpetra_Native_GMRES_SINGLE_REDUCE_nonsymm_matrix_cgs
   ARGS "--solver=\"TPETRA GMRES SINGLE REDUCE\" --restartLength=10 --ortho=CGS --noRitzValues"
   COMM serial mpi
