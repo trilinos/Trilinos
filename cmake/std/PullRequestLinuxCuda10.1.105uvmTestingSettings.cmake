@@ -1013,10 +1013,6 @@ set (Adelus_vector_random_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM bu
 set (ThyraTpetraAdapters_Simple2DTpetraModelEvaluatorUnitTests_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 set (ThyraTpetraAdapters_TpetraThyraWrappersUnitTests_serial_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 set (ThyraTpetraAdapters_TpetraThyraWrappersUnitTests_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
-# Teuchos UVM = OFF tests
-set (TeuchosComm_stacked_timer_MPI_2_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
-set (TeuchosComm_stacked_timer4_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
-set (TeuchosKokkosCompat_linkTest_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 # Piro UVM = OFF tests
 set (Piro_AnalysisDriverTpetra_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 set (Piro_ThyraSolverTpetra_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
