@@ -63,6 +63,10 @@ set (PanzerAdaptersSTK_PoissonInterfaceExample_2d_diffsideids_MPI_1_DISABLE ON C
 # Disable long-failing Anazazi test until it can be fixed (#3585)
 set (Anasazi_Epetra_OrthoManagerGenTester_0_MPI_4_DISABLE ON CACHE BOOL "Set by default for PR testing")
 
+# Disable Random_XorShift64 and Random_XorShift1024 due to random failures. See #3282.
+set (KokkosAlgorithms_UnitTest_MPI_1_EXTRA_ARGS
+  "--gtest_filter=-*Random_XorShift64:-*Random_XorShift1024" CACHE STRING "Set by default for PR testing")
+
 # Options from SEMSDevEnv.cmake
 
 SET(CMAKE_C_COMPILER "$ENV{MPICC}" CACHE FILEPATH "Set by default for PR testing")
