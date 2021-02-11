@@ -15,6 +15,7 @@
 
 #include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_StepperFactory.hpp"
+#include "Tempus_StepperExplicitRK.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestModels/VanDerPolModel.hpp"

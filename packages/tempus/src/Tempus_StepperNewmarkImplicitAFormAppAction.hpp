@@ -15,7 +15,7 @@
 
 namespace Tempus {
 
-// Forward Declaration for recursive includes (this AppAction <--> Stepper)
+// Forward Declaration
 template<class Scalar> class StepperNewmarkImplicitAForm;
 
 /** \brief Application Action for StepperNewmarkImplicitAForm.

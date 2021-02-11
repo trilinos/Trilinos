@@ -13,7 +13,15 @@
 #include "Tempus_StepperBDF2_impl.hpp"
 
 namespace Tempus {
+
   TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperBDF2)
+
+  // Nonmember constructor
+  template Teuchos::RCP<StepperBDF2<double> >
+  createStepperBDF2(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<double> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> pl);
+
 }
 
 #endif

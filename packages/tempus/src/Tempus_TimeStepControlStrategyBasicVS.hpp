@@ -9,14 +9,14 @@
 #ifndef Tempus_TimeStepControlStrategy_BasicVS_hpp
 #define Tempus_TimeStepControlStrategy_BasicVS_hpp
 
-#include "Tempus_TimeStepControl.hpp"
+#include "Thyra_VectorStdOps.hpp"
+
+#include "Tempus_config.hpp"
 #include "Tempus_TimeStepControlStrategy.hpp"
 #include "Tempus_SolutionState.hpp"
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperState.hpp"
 
-//Thyra
-#include "Thyra_VectorStdOps.hpp"
 
 namespace Tempus {
 

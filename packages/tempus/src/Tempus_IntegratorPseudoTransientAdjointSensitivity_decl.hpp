@@ -9,9 +9,10 @@
 #ifndef Tempus_IntegratorPseudoTransientAdjointSensitivity_decl_hpp
 #define Tempus_IntegratorPseudoTransientAdjointSensitivity_decl_hpp
 
-// Tempus
+#include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_AdjointSensitivityModelEvaluator.hpp"
+
 
 namespace Tempus {
 

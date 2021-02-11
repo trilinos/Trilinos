@@ -13,6 +13,7 @@
 #include "Teuchos_Describable.hpp"
 #include <string>
 
+#include "Tempus_config.hpp"
 
 namespace Tempus {
 

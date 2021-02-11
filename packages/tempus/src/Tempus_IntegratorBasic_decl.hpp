@@ -9,22 +9,15 @@
 #ifndef Tempus_IntegratorBasic_decl_hpp
 #define Tempus_IntegratorBasic_decl_hpp
 
-// Teuchos
-#include "Teuchos_VerboseObject.hpp"
-#include "Teuchos_Describable.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_Time.hpp"
-// Thyra
 #include "Thyra_ModelEvaluator.hpp"
-#include "Thyra_NonlinearSolverBase.hpp"
-// Tempus
+
+#include "Tempus_config.hpp"
 #include "Tempus_Stepper.hpp"
 #include "Tempus_Integrator.hpp"
 #include "Tempus_TimeStepControl.hpp"
 #include "Tempus_IntegratorObserverBasic.hpp"
 #include "Tempus_IntegratorObserverComposite.hpp"
 
-#include <string>
 
 namespace Tempus {
 
