@@ -3,7 +3,7 @@
 #include <stk_coupling/Constants.hpp>
 #include <stk_coupling/Utils.hpp>
 #include <stk_coupling/CommSplitting.hpp>
-#include <stk_coupling/ConfigurationInfo.hpp>
+#include <stk_coupling/SyncInfo.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <iostream>
@@ -40,7 +40,7 @@ int main(int argc, char** argv)
     std::cout << os.str() << std::endl;
   }
 
-  stk::coupling::ConfigurationInfo myInfo;
+  stk::coupling::SyncInfo myInfo;
 
   myInfo.set_value(stk::coupling::AppName, app_name());
 
@@ -49,7 +49,7 @@ int main(int argc, char** argv)
   myInfo.set_value(stk::coupling::TimeStep, 0.0);
   myInfo.set_value(stk::coupling::FinalTime, 0.0);
 
-  const stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
+  stk::coupling::SyncInfo otherInfo = myInfo.exchange(commWorld, commApp);
 
   {
     std::ostringstream os;
@@ -61,7 +61,7 @@ int main(int argc, char** argv)
   double finalTime = 1.0;
   while (currentTime < finalTime) {
 
-    const stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
+    otherInfo = myInfo.exchange(commWorld, commApp);
 
     currentTime = otherInfo.get_value<double>("current time");
     finalTime = otherInfo.get_value<double>(stk::coupling::FinalTime);

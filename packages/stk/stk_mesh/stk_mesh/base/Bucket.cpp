@@ -57,6 +57,7 @@ namespace mesh {
 
 namespace {
 
+#ifndef NDEBUG
 struct CheckSizeFunctor
 {
   template <EntityRank Rank, ConnectivityType OtherType, typename Connectivity>
@@ -65,6 +66,7 @@ struct CheckSizeFunctor
 
   bool is_modifying() const { return false; }
 };
+#endif
 
 struct AddEntityFunctor
 {

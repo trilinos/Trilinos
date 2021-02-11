@@ -51,8 +51,8 @@
 
 namespace Intrepid2 {
 
-  template <typename SpT, typename PT, typename WT>
-  CubatureControlVolume<SpT,PT,WT>::
+  template <typename DT, typename PT, typename WT>
+  CubatureControlVolume<DT,PT,WT>::
   CubatureControlVolume(const shards::CellTopology cellTopology) {
 
     // define primary cell topology with given one
@@ -73,23 +73,23 @@ namespace Intrepid2 {
 
     // create subcell cubature points and weights and cache them
     const ordinal_type subcvDegree = 2;
-    auto subcvCubature = DefaultCubatureFactory::create<SpT,PT,WT>(subcvCellTopo_, subcvDegree);
+    auto subcvCubature = DefaultCubatureFactory::create<DT,PT,WT>(subcvCellTopo_, subcvDegree);
 
     const ordinal_type numSubcvPoints = subcvCubature->getNumPoints();
     const ordinal_type subcvDim       = subcvCubature->getDimension();
 
-    subcvCubaturePoints_  = Kokkos::DynRankView<PT,SpT>("CubatureControlVolume::subcvCubaturePoints_",
+    subcvCubaturePoints_  = Kokkos::DynRankView<PT,DT>("CubatureControlVolume::subcvCubaturePoints_",
                                                         numSubcvPoints, subcvDim);
-    subcvCubatureWeights_ = Kokkos::DynRankView<WT,SpT>("CubatureControlVolume::subcvCubatureWeights_",
+    subcvCubatureWeights_ = Kokkos::DynRankView<WT,DT>("CubatureControlVolume::subcvCubatureWeights_",
                                                         numSubcvPoints);
     
     subcvCubature->getCubature(subcvCubaturePoints_,
                                subcvCubatureWeights_);
   }
   
-  template <typename SpT, typename PT, typename WT>
+  template <typename DT, typename PT, typename WT>
   void
-  CubatureControlVolume<SpT,PT,WT>::
+  CubatureControlVolume<DT,PT,WT>::
   getCubature( PointViewType  cubPoints,
                weightViewType cubWeights,
                PointViewType  cellCoords ) const {
@@ -113,7 +113,7 @@ namespace Intrepid2 {
                                   static_cast<ordinal_type>(cubPoints.extent(2)) != getDimension(), std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolume): cubPoints, cellCoords, this->getDimension() are not consistent, spaceDim.");
 #endif
-    typedef Kokkos::DynRankView<PT,SpT> tempPointViewType;
+    typedef Kokkos::DynRankView<PT,DT> tempPointViewType;
 
     // get array dimensions
     const ordinal_type numCells = cellCoords.extent(0);
@@ -123,7 +123,7 @@ namespace Intrepid2 {
     const ordinal_type numNodesPerSubcv = subcvCellTopo_.getNodeCount();
     tempPointViewType subcvCoords("CubatureControlVolume::subcvCoords_",
                                   numCells, numNodesPerCell, numNodesPerSubcv, spaceDim);
-    CellTools<SpT>::getSubcvCoords(subcvCoords,
+    CellTools<DT>::getSubcvCoords(subcvCoords,
                                    cellCoords,
                                    primaryCellTopo_);
 
@@ -140,16 +140,16 @@ namespace Intrepid2 {
       auto subcvCoordsNode      = Kokkos::subdynrankview(subcvCoords,      Kokkos::ALL(), node, Kokkos::ALL(), Kokkos::ALL());
       auto subcvJacobianDetNode = Kokkos::subdynrankview(subcvJacobianDet, Kokkos::ALL(), node, Kokkos::ALL());
       
-      CellTools<SpT>::setJacobian(subcvJacobianNode,    // C, P, D, D
+      CellTools<DT>::setJacobian(subcvJacobianNode,    // C, P, D, D
                                   subcvCubaturePoints_, //    P, D
                                   subcvCoordsNode,      // C, N, D
                                   subcvCellTopo_);
 
-      CellTools<SpT>::setJacobianDet(subcvJacobianDetNode,  // C, P
+      CellTools<DT>::setJacobianDet(subcvJacobianDetNode,  // C, P
                                      subcvJacobianNode);    // C, P, D, D
     }
     
-    typedef typename ExecSpace<typename PointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    typedef typename ExecSpace<typename PointViewType::execution_space,DT>::ExecSpaceType ExecSpaceType;
     
     const auto loopSize = numCells;
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);

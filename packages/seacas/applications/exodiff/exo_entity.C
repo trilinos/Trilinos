@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -27,23 +27,14 @@ namespace {
 #endif
 } // namespace
 
-Exo_Entity::Exo_Entity()
-    : fileId(-1), id_(EX_INVALID_ID), index_(0), numEntity(0), truth_(nullptr), currentStep(0),
-      numVars(0), results_(nullptr), numAttr(0)
-{
-}
-
-Exo_Entity::Exo_Entity(int file_id, size_t id)
-    : fileId(file_id), id_(id), index_(0), numEntity(0), truth_(nullptr), currentStep(0),
-      numVars(0), results_(nullptr), numAttr(0)
+Exo_Entity::Exo_Entity(int file_id, size_t id) : fileId(file_id), id_(id)
 {
   SMART_ASSERT(file_id > 0);
   SMART_ASSERT((int)id > EX_INVALID_ID);
 }
 
 Exo_Entity::Exo_Entity(int file_id, size_t id, size_t nnodes)
-    : fileId(file_id), id_(id), index_(0), numEntity(nnodes), truth_(nullptr), currentStep(0),
-      numVars(0), results_(nullptr), numAttr(0)
+    : fileId(file_id), id_(id), numEntity(nnodes)
 {
   SMART_ASSERT(file_id > 0);
   SMART_ASSERT((int)id > EX_INVALID_ID);

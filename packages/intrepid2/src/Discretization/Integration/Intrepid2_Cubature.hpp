@@ -118,14 +118,16 @@ namespace Intrepid2 {
       For quad, hex, and triprism cells cubature templates are tensor products of CubatureDirect
       templates. The tensor-product cubatures are defined in the derived class CubatureTensor.
   */
-  template<typename ExecSpaceType = void,
+  template<typename DeviceType = void,
            typename pointValueType = double,
            typename weightValueType = double>
   class Cubature {
   public:
+    using ExecSpaceType = typename DeviceType::execution_space;
+    using PointViewType             = Kokkos::DynRankView<pointValueType,Kokkos::LayoutStride,DeviceType>;
+    using weightViewType            = Kokkos::DynRankView<weightValueType,Kokkos::LayoutStride,DeviceType>;
 
-    using PointViewType             = Kokkos::DynRankView<pointValueType,Kokkos::LayoutStride,ExecSpaceType>;
-    using weightViewType            = Kokkos::DynRankView<weightValueType,Kokkos::LayoutStride,ExecSpaceType>;
+    /// KK: the following needs to be updated with device type after nate's tensor work is updated.
     using PointViewTypeAllocatable  = Kokkos::DynRankView<pointValueType,ExecSpaceType>;  // uses default layout; allows us to allocate (in contrast to LayoutStride)
     using WeightViewTypeAllocatable = Kokkos::DynRankView<weightValueType,ExecSpaceType>; // uses default layout; allows us to allocate (in contrast to LayoutStride)
     using TensorPointDataType       = TensorPoints<pointValueType,ExecSpaceType>;
@@ -151,6 +153,7 @@ namespace Intrepid2 {
     virtual TensorWeightDataType allocateCubatureWeights() const
     {
       // default implementation has trivial tensor structure
+      /// KK: this also needs to be updated with nate's tensor
       using WeightDataType = Data<weightValueType,ExecSpaceType>;
       WeightViewTypeAllocatable allWeightData("cubature weights",this->getNumPoints());
       Kokkos::Array< WeightDataType, 1> cubatureWeightComponents;

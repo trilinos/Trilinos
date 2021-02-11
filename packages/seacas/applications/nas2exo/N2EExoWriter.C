@@ -8,41 +8,28 @@
 #include "N2EExoWriter.h"
 
 #include <algorithm>
+#include <cstring>
 #include <iostream>
+#include <tuple>
 
 namespace ExoModules {
 
-  N2EExoWriter::N2EExoWriter()
-  {
-
-    this->exoFileID = -10;
-
-    this->writtenBlocks = 0;
-    this->writtenNodes  = 0;
-    this->writtenTets   = 0;
-    this->writtenHexes  = 0;
-  }
-
   N2EExoWriter::~N2EExoWriter()
   {
-
     if (this->exoFileID > 0) {
       ex_close(this->exoFileID);
-      this->exoFileID = -10;
+      this->exoFileID = 0;
     }
   }
 
-  bool N2EExoWriter::createDB(string name)
+  bool N2EExoWriter::createDB(const std::string &name)
   {
-
     this->exoFileID = ex_create(name.c_str(), EX_CLOBBER, &this->CPU_ws, &this->IO_ws);
-
     return this->exoFileID > 0;
   }
 
-  bool N2EExoWriter::setNodes(vector<gridType> gridpts)
+  bool N2EExoWriter::setNodes(const std::vector<gridType> &gridpts)
   {
-
     try {
       this->gridList.reserve(gridpts.capacity());
       this->gridList = gridpts;
@@ -54,11 +41,9 @@ namespace ExoModules {
     return true;
   }
 
-  bool N2EExoWriter::setElements(vector<elementType> elist)
+  bool N2EExoWriter::setElements(const std::vector<elementType> &elist)
   {
-
     try {
-
       this->elementList.reserve(elist.capacity());
       this->elementList = elist;
     }
@@ -69,11 +54,9 @@ namespace ExoModules {
     return true;
   }
 
-  bool N2EExoWriter::setSections(vector<sectionType> sList)
+  bool N2EExoWriter::setSections(const std::vector<sectionType> &sList)
   {
-
     try {
-
       this->sections.reserve(sList.capacity());
       this->sections = sList;
     }
@@ -85,14 +68,12 @@ namespace ExoModules {
     return true;
   }
 
-  void N2EExoWriter::setModelTitle(string title)
+  void N2EExoWriter::setModelTitle(const std::string &title)
   {
-
-    string tmp = title;
+    std::string tmp = title;
     if (title.length() >= MAX_LINE_LENGTH - 1) {
       tmp = title.substr(0, MAX_LINE_LENGTH - 1);
     }
-
     strncat(this->modelTitle, tmp.c_str(), MAX_LINE_LENGTH - 1);
   }
 
@@ -120,17 +101,16 @@ namespace ExoModules {
 
   bool N2EExoWriter::writeCoords()
   {
-
     bool result{true};
 
     // Now we write the nodes
-    unsigned num_nodes = this->gridList.size();
-    double * x         = new double[num_nodes]{0.0};
-    double * y         = new double[num_nodes]{0.0};
-    double * z         = new double[num_nodes]{0.0};
-    for (unsigned i = 0; i < num_nodes; i++) {
+    size_t num_nodes = this->gridList.size();
+    double * x         = new double[num_nodes];
+    double * y         = new double[num_nodes];
+    double * z         = new double[num_nodes];
+    for (size_t i = 0; i < num_nodes; i++) {
 
-      N2EPoint3D crd = get<1>(this->gridList[i]);
+      N2EPoint3D crd = std::get<1>(this->gridList[i]);
       x[i]           = crd.x[0];
       y[i]           = crd.x[1];
       z[i]           = crd.x[2];
@@ -138,10 +118,12 @@ namespace ExoModules {
 
     int ret = ex_put_coord(this->exoFileID, x, y, z);
 
+    delete[] x;
+    delete[] y;
+    delete[] z;
+
     if (ret != 0) {
-      std::cerr << "Problem writing node coordinates ";
-      std::cerr << "in N2EExoWriter::writeFile().";
-      std::cerr << "punching out";
+      std::cerr << "Problem writing node coordinates in N2EExoWriter::writeFile(). punching out.\n";
       result = false;
     }
     else {
@@ -154,7 +136,6 @@ namespace ExoModules {
 
   bool N2EExoWriter::writeFileParams()
   {
-
     bool result{true};
 
     int ret = ex_put_init(this->exoFileID, this->modelTitle, 3 /* 3D models only*/,
@@ -162,13 +143,10 @@ namespace ExoModules {
                           0); // Make your fancy pants nodes and side sets elsewherem, laddy.
 
     if (ret != 0) {
-      std::cerr << "Problem initializing model params ";
-      std::cerr << "in N2EExoWriter::writeFile().";
-      std::cerr << "punching out";
+      std::cerr << "Problem initializing model params in N2EExoWriter::writeFile(). punching out\n";
       result = false;
     }
     else {
-
       result = true;
     }
 
@@ -177,59 +155,45 @@ namespace ExoModules {
 
   bool N2EExoWriter::writeElements()
   {
-
     bool result{true};
 
-    for (sectionType sect : this->sections) {
+    for (const sectionType &sect : this->sections) {
 
-      vector<elementType> thisBlock;
-      int64_t             block = (int)get<0>(sect);
+      std::vector<elementType> thisBlock;
+      int64_t                  block = (int)std::get<0>(sect);
 
-      int64_t                nodes_per_elem{0};
       int                    retvalue{0};
 
-      for (elementType elem : this->elementList) {
+      for (const elementType &elem : this->elementList) {
 
-        if ((int)get<1>(elem) == block) {
+        if ((int)std::get<1>(elem) == block) {
           thisBlock.emplace_back(elem);
         }
       }
 
-      nodes_per_elem = (int)get<2>(thisBlock[0]);
+      int64_t nodes_per_elem = (int)std::get<2>(thisBlock[0]);
 
       int n = nodes_per_elem == 4 ? 0 : 1;
 
       // This easy until we support 3 types of elements
       supportedElements thisElType = ExoElTypes[n];
 
-      try {
-        retvalue = ex_put_block(this->exoFileID, thisElType.elementType, block, thisElType.elemDesc,
-                                thisBlock.size(), thisElType.numNodesPerElem,
-                                thisElType.numEdgesPerElem, thisElType.numFacesPerElem, 1);
-      }
-      catch (...) {
-
-        std::cerr << "ERROR!: In the block: " << block << std::endl;
-        std::cerr << "Could not be configured.";
-        return false;
-      }
+      retvalue = ex_put_block(this->exoFileID, thisElType.elementType, block, thisElType.elemDesc,
+                              thisBlock.size(), thisElType.numNodesPerElem,
+                              thisElType.numEdgesPerElem, thisElType.numFacesPerElem, 1);
       if (retvalue != 0) {
 
-        std::cerr << "WARNING:The block: " << block << std::endl;
-        std::cerr << "May not be configured correctly.";
+        std::cerr << "WARNING:The block: " << block << "\nMay not be configured correctly.\n";
       }
       this->writtenBlocks++;
 
-      // Statement below is supported C++ 14 and up.
-      // elemCon = std::make_unique<int[]>(nodes_per_elem*thisBlock.size());
-      // C++ 11 support
       std::vector<int> elemCon(nodes_per_elem * thisBlock.size());
 
       int64_t numNodesCopied{0};
 
       for (const elementType &elem : thisBlock) {
 
-        const N2EGridPtList &pts{get<3>(elem)};
+	const N2EModules::N2EGridPtList  &pts{std::get<3>(elem)};
         std::copy(pts.v, pts.v + nodes_per_elem, elemCon.data() + numNodesCopied);
         numNodesCopied += nodes_per_elem;
       }
@@ -245,7 +209,7 @@ namespace ExoModules {
       }
 
       if (retvalue != 0) {
-        result &= false;
+        result = false;
       }
     }
 

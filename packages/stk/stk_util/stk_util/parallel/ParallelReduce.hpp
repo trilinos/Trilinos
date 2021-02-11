@@ -274,6 +274,16 @@ struct ReduceEnd {
   static void op( WorkType & , WorkType & ) {}
 };
 
+inline
+void dummy_reference_ReduceEnd_to_avoid_compiler_warnings()
+{
+  ReduceEnd reduceEnd;
+  ReduceEnd::WorkType w;
+  reduceEnd.copyin(w);
+  ReduceEnd::op(w,w);
+  reduceEnd.copyout(w);
+}
+
 // Workhorse class for aggregating reduction operations.
 
 template <class Op, typename T, class Next>
@@ -383,15 +393,17 @@ namespace {
 template < class ReduceOp >
 void all_reduce_driver( ParallelMachine comm , const ReduceOp & op )
 {
-  typedef typename ReduceOp::WorkType WorkType ;
+  if (comm != parallel_machine_null()) {
+    typedef typename ReduceOp::WorkType WorkType ;
 
-  WorkType inbuf , outbuf ;
+    WorkType inbuf , outbuf ;
 
-  ParallelReduceOp f =
-    reinterpret_cast<ParallelReduceOp>( & ReduceOp::void_op );
-  op.copyin( inbuf );
-  all_reduce( comm , f , & inbuf, & outbuf, sizeof(WorkType) );
-  op.copyout( outbuf );
+    ParallelReduceOp f =
+      reinterpret_cast<ParallelReduceOp>( & ReduceOp::void_op );
+    op.copyin( inbuf );
+    all_reduce( comm , f , & inbuf, & outbuf, sizeof(WorkType) );
+    op.copyout( outbuf );
+  }
 }
 
 }

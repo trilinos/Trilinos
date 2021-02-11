@@ -50,13 +50,17 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_Util.hpp>
 
+
 /////////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgQuotient.hpp
 //  
-// This algorithm partitions the CommGraphModel (communication graph model)
-//   and transfers the solution (which is only stored on active ranks of 
-//   CommGraphModel) to all MPI ranks. Please see model/Zoltan2_CommGraphModel.hpp
-//   for more details.
+// This algorithm 
+//   - creates a CommGraphModel (communication graph model)
+//   - partitions the CommGraphModel using ParMETIS, and
+//   - transfers the solution (which is only stored on active ranks of 
+//   CommGraphModel) to all MPI ranks. 
+//
+// Please see model/Zoltan2_CommGraphModel.hpp for more details.
 /////////////////////////////////////////////////////////////////////////////
 
 namespace Zoltan2 {
@@ -65,31 +69,77 @@ template <typename Adapter>
 class AlgQuotient : public Algorithm<Adapter>
 {
 public:
-
-  typedef CommGraphModel<typename Adapter::base_adapter_t> graphModel_t;
+  typedef typename Adapter::base_adapter_t base_adapter_t;
   typedef typename Adapter::part_t part_t;
+  typedef typename Adapter::user_t user_t;
+  typedef typename Adapter::userCoord_t userCoord_t;
+  typedef CommGraphModel<typename Adapter::base_adapter_t> graphModel_t;
 
-  /*! AlgQuotient constructor
-   *  \param env  parameters for the problem and library configuration
+
+  /*! AlgQuotient constructors
+   *  \param env          parameters for the problem and library configuration
    *  \param problemComm  the communicator for the problem
-   *  \param model a graph
-   *  \param algName the (inner) algorithm to partition the quotient graph
+   *  \param adapter      the user's input adapter
+   *
+   *  The algorithm works only on a XpetraCrsGraphAdpater for now.
    */
   AlgQuotient(const RCP<const Environment> &env__,
-              const RCP<const Comm<int> > &problemComm__,
-              const RCP<graphModel_t> &model__,
-	      const std::string algName__) :
-    env(env__), problemComm(problemComm__), 
-    model(model__)
+          const RCP<const Comm<int> > &problemComm__,
+          const RCP<const IdentifierAdapter<user_t> > &adapter__) :
+    env(env__), problemComm(problemComm__), adapter(adapter__)
+  { 
+    std::string errStr = "cannot build CommGraphModel from IdentifierAdapter, ";
+    errStr            += "AlgQuotient requires Graph Adapter";
+    throw std::runtime_error(errStr);
+  }  
+
+  AlgQuotient(const RCP<const Environment> &env__,
+          const RCP<const Comm<int> > &problemComm__,
+          const RCP<const VectorAdapter<user_t> > &adapter__) :
+    env(env__), problemComm(problemComm__), adapter(adapter__)
+  { 
+    std::string errStr = "cannot build CommGraphModel from VectorAdapter, ";
+    errStr            += "AlgQuotient requires Graph Adapter";
+    throw std::runtime_error(errStr);
+  }   
+
+  AlgQuotient(const RCP<const Environment> &env__,
+          const RCP<const Comm<int> > &problemComm__,
+          const RCP<const MatrixAdapter<user_t,userCoord_t> > &adapter__) :
+    env(env__), problemComm(problemComm__), adapter(adapter__)
+  {   
+    std::string errStr = "cannot build CommGraphModel from MatrixAdapter, ";
+    errStr            += "AlgQuotient has not been implemented for Matrix Adapter yet.";
+    throw std::runtime_error(errStr);
+  }
+
+  AlgQuotient(const RCP<const Environment> &env__,
+          const RCP<const Comm<int> > &problemComm__,
+          const RCP<const MeshAdapter<user_t> > &adapter__) :
+    env(env__), problemComm(problemComm__), adapter(adapter__)
+  { 
+    std::string errStr = "cannot build CommGraphModel from MeshAdapter, ";
+    errStr            += "AlgQuotient has not been implemented for Mesh Adapter yet.";
+    throw std::runtime_error(errStr);
+  }
+
+  AlgQuotient(const RCP<const Environment> &env__,
+          const RCP<const Comm<int> > &problemComm__,
+          const RCP<const GraphAdapter<user_t,userCoord_t> > &adapter__) :
+    env(env__), problemComm(problemComm__), adapter(adapter__)
+  { 
+    buildModel();
+    this->innerAlgorithm = rcp(new AlgParMETIS<Adapter, graphModel_t>(env,
+								      problemComm,
+								      model));
+  }  
+
+  /*! \brief Set up validators specific to this algorithm
+  */
+  static void getValidParameters(ParameterList & pl)
   {
-    
-    if(algName__ == "parmetis")
-      this->innerAlgorithm = rcp(new AlgParMETIS<Adapter, graphModel_t>(env,
-									problemComm,
-									model));
-    else
-      throw std::logic_error(algName__ + " is not implemented in AlgQuotient yet\n");
-    
+    pl.set("quotient_threshold", 1, "threshold for the number of vertices on the active ranks",
+	   Environment::getAnyIntValidator());
   }
 
   void partition(const RCP<PartitioningSolution<Adapter> > &solution);
@@ -97,55 +147,64 @@ public:
 
 private:
 
+  void buildModel();
+
   const RCP<const Environment> env;
   const RCP<const Comm<int> > problemComm;
-  const RCP<graphModel_t > model;
+  const RCP<const base_adapter_t> adapter;
+  RCP<graphModel_t> model;
 
-  RCP<Algorithm<Adapter>> innerAlgorithm;            // algorithm to partition the quotient graph
-  RCP<PartitioningSolution<Adapter>> quotientSolution;     // the solution stored on active ranks
+  RCP<Algorithm<Adapter>> innerAlgorithm;               // algorithm to partition the quotient graph
+  RCP<PartitioningSolution<Adapter>> quotientSolution;  // the solution stored on the active ranks
+
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
+void AlgQuotient<Adapter>::buildModel()
+{   
+  this->env->debug(DETAILED_STATUS, "    building communication graph model");
+  this->model = rcp(new CommGraphModel<base_adapter_t>(
+	this->adapter, this->env, this->problemComm));
+  this->env->debug(DETAILED_STATUS, "    communication graph model built");
+}
+
+
+template <typename Adapter>
 void AlgQuotient<Adapter>::partition(
   const RCP<PartitioningSolution<Adapter> > &solution
 )
 {
-  if(model->getMigrated()){
-
-    // Create a different object for pre-migration solution 
-    PartitioningSolution<Adapter> *soln = NULL;
-    try{
-      soln = new PartitioningSolution<Adapter>(env, problemComm, 1);
-    }
-    Z2_FORWARD_EXCEPTIONS;
-    quotientSolution = rcp(soln);
-
-    try {
-      this->innerAlgorithm->partition(quotientSolution);
-    }
-    Z2_FORWARD_EXCEPTIONS;
-
-    // Migrate the solution 
-    migrateBack(solution); 
+  HELLO;
+ 
+  // Create a different object for pre-migration solution 
+  PartitioningSolution<Adapter> *soln = NULL;
+  try{
+    soln = new PartitioningSolution<Adapter>(env, problemComm, 1);
   }
-  else{
-
-    try {
-      this->innerAlgorithm->partition(solution);
-    }
-    Z2_FORWARD_EXCEPTIONS;
+  Z2_FORWARD_EXCEPTIONS;
+  quotientSolution = rcp(soln);
+  
+  try {
+    this->innerAlgorithm->partition(quotientSolution);
   }
+  Z2_FORWARD_EXCEPTIONS;
+  
+  // Migrate the solution 
+  migrateBack(solution); 
+
+  env->memory("Zoltan2-Quotient: After creating solution");
 
 }
 
 // Pre-condition: 
 //   The partitioning solution in quotientSolution is only stored on active MPI ranks,
-//   which is a single rank if commGraphModel has less than 1024 vertices. 
+//   which is a single rank if commGraphModel has less than 'threshold_' vertices. 
 // Post-condition:
-//   The partitioning solution in output parameter solution is distributed to all MPI ranks, 
-//   so that each rank has a single entry of the solution.
+//   The partitioning solution in output parameter 'solution' is distributed to all MPI ranks, 
+//   so that each rank gets a partitioning vector with the size of the number of local vertices,
+//   and each entry in a goven rank should have the same part value. 
 template <typename Adapter>
 void AlgQuotient<Adapter>::migrateBack(
   const RCP<PartitioningSolution<Adapter> > &solution
@@ -155,12 +214,10 @@ void AlgQuotient<Adapter>::migrateBack(
     int nActiveRanks = model->getNumActiveRanks();
     int dRank = model->getDestinationRank();
 
-    Teuchos::ArrayRCP<part_t> parts(1); // Each rank has a single vertex for now.
-    RCP<CommRequest<int>> *requests = new RCP<CommRequest<int>>[1];
-
-    
+    // Receive the (single entry) partitioning solution for this MPI rank 
+    Teuchos::ArrayRCP<part_t> parts(1); 
+    RCP<CommRequest<int>> *requests = new RCP<CommRequest<int>>[1];    
     requests[0] = Teuchos::ireceive<int, part_t>(*problemComm, parts, dRank);
-
     if(me < nActiveRanks){
 
       const part_t *qtntSlnView = quotientSolution->getPartListView();
@@ -172,15 +229,25 @@ void AlgQuotient<Adapter>::migrateBack(
       model->getVertexDist(vtxdist);
       for(int i = sRank; i < eRank; i++)
 	Teuchos::send<int, part_t>(*problemComm, 1, &qtntSlnView[i-sRank], i);
-
     }
-    
     Teuchos::waitAll<int>(*problemComm, Teuchos::arrayView(requests, 1)); 
-    
-    solution->setParts(parts);
+
+    // Extend the single-entry solution for all local vertices  
+    size_t numLocalVertices = adapter->getLocalNumIDs();
+    Teuchos::ArrayRCP<part_t> extendedParts(numLocalVertices); 
+    for(size_t i = 0; i < numLocalVertices; i++)
+      extendedParts[i] = parts[0];
+
+    // Set the extended partitioning solution
+    solution->setParts(extendedParts);
   
 }
 
+
 } // namespace Zoltan2
 
+////////////////////////////////////////////////////////////////////////
+
+
 #endif
+

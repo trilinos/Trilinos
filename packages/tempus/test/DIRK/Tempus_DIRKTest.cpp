@@ -212,7 +212,6 @@ TEUCHOS_UNIT_TEST(DIRK, ConstructingFromDefaults)
     auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
     ParameterList tscPL = pl->sublist("Default Integrator")
                              .sublist("Time Step Control");
-    timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
     timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
     timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
     timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));
@@ -307,7 +306,6 @@ TEUCHOS_UNIT_TEST(DIRK, useFSAL_false)
 
     // Setup TimeStepControl ------------------------------------
     auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
-    timeStepControl->setStepType ("Constant");
     timeStepControl->setInitTime (0.0);
     timeStepControl->setFinalTime(1.0);
     timeStepControl->setInitTimeStep(dt);
@@ -356,8 +354,8 @@ TEUCHOS_UNIT_TEST(DIRK, useFSAL_false)
     Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
 
     // Check the order and intercept
-     std::cout << "  Stepper = " << stepper->description()
-               << "\n            with " << "useFSAL=false" << std::endl;
+    std::cout << "  Stepper = " << stepper->description()
+              << "\n            with " << "useFSAL=false" << std::endl;
     std::cout << "  =========================" << std::endl;
     std::cout << "  Exact solution   : " << get_ele(*(x_exact), 0) << "   "
                                          << get_ele(*(x_exact), 1) << std::endl;

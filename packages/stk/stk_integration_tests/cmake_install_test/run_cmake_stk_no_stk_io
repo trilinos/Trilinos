@@ -4,11 +4,15 @@ trilinos_src_dir=${TRILINOS_DIR:-${PWD}/../Trilinos}
 build_dir=${BUILD_DIR:-${PWD}}
 build_type=${CMAKE_BUILD_TYPE:-release}
 trilinos_install_dir=${TRILINOS_INSTALL_DIR:-${PWD}/../trilinos_install_dir}
+cmake_cxx_flags=${CMAKE_CXX_FLAGS}
+cmake_exe_linker_flags=${CMAKE_EXE_LINKER_FLAGS}
 cuda_on_or_off=${CUDA:-OFF}
 
 printf "\nTRILINOS_DIR=${trilinos_src_dir}\n";
 printf "BUILD_DIR=${build_dir}\n";
 printf "CMAKE_BUILD_TYPE=${build_type}\n";
+printf "CMAKE_EXE_LINKER_FLAGS=${cmake_exe_linker_flags}\n";
+printf "CMAKE_CXX_FLAGS=${cmake_cxx_flags}\n";
 printf "CUDA=${cuda_on_or_off}\n";
 printf "TRILINOS_INSTALL_DIR=${trilinos_install_dir}\n";
 printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_cmake_stk'\n\n";
@@ -31,10 +35,11 @@ fi
 
 cmake \
 -DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
--DTrilinos_ENABLE_CXX11=ON \
+-DCMAKE_CXX_STANDARD="14" \
 -DCMAKE_BUILD_TYPE=${build_type^^} \
+-DCMAKE_CXX_FLAGS:STRING="${cmake_cxx_flags}" \
 -DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
--DTrilinos_ENABLE_TESTS:BOOL=ON \
+-DTrilinos_ENABLE_TESTS:BOOL=OFF \
 -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
 -DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF \
 -DTrilinos_ASSERT_MISSING_PACKAGES=OFF \
@@ -54,5 +59,6 @@ cmake \
 -DTrilinos_ENABLE_STKUnit_tests:BOOL=ON \
 -DTrilinos_ENABLE_STKDoc_tests:BOOL=ON \
 -DTrilinos_ENABLE_Gtest:BOOL=ON \
+-DCMAKE_EXE_LINKER_FLAGS="${cmake_exe_linker_flags}" \
 ${trilinos_src_dir}/
 
