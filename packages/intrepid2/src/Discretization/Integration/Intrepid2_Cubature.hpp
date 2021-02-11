@@ -123,9 +123,9 @@ namespace Intrepid2 {
            typename weightValueType = double>
   class Cubature {
   public:
-    using ExecSpaceType = typename DeviceType::execution_space;
-    using PointViewType             = Kokkos::DynRankView<pointValueType,Kokkos::LayoutStride,DeviceType>;
-    using weightViewType            = Kokkos::DynRankView<weightValueType,Kokkos::LayoutStride,DeviceType>;
+    using ExecSpaceType  = typename DeviceType::execution_space;
+    using PointViewType  = Kokkos::DynRankView<pointValueType,Kokkos::LayoutStride,DeviceType>;
+    using weightViewType = Kokkos::DynRankView<weightValueType,Kokkos::LayoutStride,DeviceType>;
 
     /// KK: the following needs to be updated with device type after nate's tensor work is updated.
     using PointViewTypeAllocatable  = Kokkos::DynRankView<pointValueType,ExecSpaceType>;  // uses default layout; allows us to allocate (in contrast to LayoutStride)

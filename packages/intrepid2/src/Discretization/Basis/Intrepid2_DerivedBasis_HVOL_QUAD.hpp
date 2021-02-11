@@ -64,12 +64,12 @@ namespace Intrepid2
   template<class HVOL_LINE>
   class Basis_Derived_HVOL_QUAD
   :
-  public Basis_TensorBasis<typename HVOL_LINE::ExecutionSpace, typename HVOL_LINE::OutputValueType, typename HVOL_LINE::PointValueType>
+  public Basis_TensorBasis<typename HVOL_LINE::DeviceType, typename HVOL_LINE::OutputValueType, typename HVOL_LINE::PointValueType>
   {
   protected:
     std::string name_;
     using LineBasis = HVOL_LINE;
-    using TensorBasis = Basis_TensorBasis<typename HVOL_LINE::ExecutionSpace, typename HVOL_LINE::OutputValueType, typename HVOL_LINE::PointValueType>;
+    using TensorBasis = Basis_TensorBasis<typename HVOL_LINE::DeviceType, typename HVOL_LINE::OutputValueType, typename HVOL_LINE::PointValueType>;
   public:
 
    using ExecutionSpace  = typename HVOL_LINE::ExecutionSpace;

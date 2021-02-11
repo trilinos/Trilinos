@@ -69,12 +69,13 @@ namespace Intrepid2
   template<class HVOL_LINE>
   class Basis_Derived_HVOL_HEX
   :
-  public Basis_TensorBasis<typename HVOL_LINE::ExecutionSpace, typename HVOL_LINE::OutputValueType, typename HVOL_LINE::PointValueType>
+  public Basis_TensorBasis<typename HVOL_LINE::DeviceType, typename HVOL_LINE::OutputValueType, typename HVOL_LINE::PointValueType>
   // TODO: make this a subclass of TensorBasis3 instead, following what we've done for H(curl) and H(div)
   {
     std::string name_;
 
   public:
+    using DeviceType      = typename HVOL_LINE::DeviceType;
     using ExecutionSpace  = typename HVOL_LINE::ExecutionSpace;
     using OutputValueType = typename HVOL_LINE::OutputValueType;
     using PointValueType  = typename HVOL_LINE::PointValueType;
@@ -85,7 +86,7 @@ namespace Intrepid2
     
     using LineBasis = HVOL_LINE;
     using QuadBasis = Intrepid2::Basis_Derived_HVOL_QUAD<HVOL_LINE>;
-    using TensorBasis = Basis_TensorBasis<ExecutionSpace, OutputValueType, PointValueType>;
+    using TensorBasis = Basis_TensorBasis<DeviceType, OutputValueType, PointValueType>;
 
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.

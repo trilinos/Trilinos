@@ -111,14 +111,18 @@ using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
       \todo  restore test for inclusion of reference points in their resective reference cells in
              getValues_HGRAD_Args, getValues_CURL_Args, getValues_DIV_Args
   */
-  template<typename DeviceType,
+  template<typename Device,
            typename outputValueType,
            typename pointValueType>
   class Basis {
   public:
+    /**  \brief (Kokkos) Device type for basis.
+     */
+    using DeviceType = Device;
+    
     /**  \brief (Kokkos) Execution space for basis.
      */
-    using ExecutionSpace  = typename DeviceType::execution_space;
+    using ExecutionSpace = typename DeviceType::execution_space;
     
     /**  \brief Output value type for basis; default is double.
      */

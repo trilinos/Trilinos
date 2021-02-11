@@ -57,13 +57,14 @@ namespace Intrepid2
 {
   template<class HGRAD_LINE>
   class Basis_Derived_HGRAD_QUAD
-  : public Basis_TensorBasis<typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
+  : public Basis_TensorBasis<typename HGRAD_LINE::DeviceType, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
   {
   protected:
     std::string name_;
     ordinal_type order_x_, order_y_;
     EPointType pointType_;
   public:
+    using DeviceType      = typename HGRAD_LINE::DeviceType;
     using ExecutionSpace  = typename HGRAD_LINE::ExecutionSpace;
     using OutputValueType = typename HGRAD_LINE::OutputValueType;
     using PointValueType  = typename HGRAD_LINE::PointValueType;
@@ -73,7 +74,7 @@ namespace Intrepid2
     using ScalarViewType = typename HGRAD_LINE::ScalarViewType;
     
     using LineBasis = HGRAD_LINE;
-    using TensorBasis = Basis_TensorBasis<ExecutionSpace, OutputValueType, PointValueType>;
+    using TensorBasis = Basis_TensorBasis<DeviceType, OutputValueType, PointValueType>;
 
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.

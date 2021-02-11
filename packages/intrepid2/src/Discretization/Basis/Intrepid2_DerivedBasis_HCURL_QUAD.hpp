@@ -66,9 +66,10 @@ namespace Intrepid2
 {
   template<class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HCURL_Family1_QUAD
-  : public Basis_TensorBasis<typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
+  : public Basis_TensorBasis<typename HGRAD_LINE::DeviceType, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
   {
   public:
+    using DeviceType      = typename HGRAD_LINE::DeviceType;
     using ExecutionSpace  = typename HGRAD_LINE::ExecutionSpace;
     using OutputValueType = typename HGRAD_LINE::OutputValueType;
     using PointValueType  = typename HGRAD_LINE::PointValueType;
@@ -80,7 +81,7 @@ namespace Intrepid2
     using LineGradBasis = HGRAD_LINE;
     using LineHVolBasis = HVOL_LINE;
     
-    using TensorBasis = Basis_TensorBasis<ExecutionSpace, OutputValueType, PointValueType>;
+    using TensorBasis = Basis_TensorBasis<DeviceType, OutputValueType, PointValueType>;
   public:
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
@@ -191,10 +192,11 @@ namespace Intrepid2
 
   template<class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HCURL_Family2_QUAD
-  : public Basis_TensorBasis<typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
+  : public Basis_TensorBasis<typename HGRAD_LINE::DeviceType, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
   {
 
   public:
+    using DeviceType      = typename HGRAD_LINE::DeviceType;
     using ExecutionSpace  = typename HGRAD_LINE::ExecutionSpace;
     using OutputValueType = typename HGRAD_LINE::OutputValueType;
     using PointValueType  = typename HGRAD_LINE::PointValueType;
@@ -206,7 +208,7 @@ namespace Intrepid2
     using LineGradBasis = HGRAD_LINE;
     using LineHVolBasis = HVOL_LINE;
     
-    using TensorBasis = Basis_TensorBasis<ExecutionSpace, OutputValueType, PointValueType>;
+    using TensorBasis = Basis_TensorBasis<DeviceType, OutputValueType, PointValueType>;
 
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
