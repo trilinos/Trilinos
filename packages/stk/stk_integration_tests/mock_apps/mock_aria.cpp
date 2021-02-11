@@ -3,7 +3,7 @@
 #include <stk_coupling/Constants.hpp>
 #include <stk_coupling/Utils.hpp>
 #include <stk_coupling/CommSplitting.hpp>
-#include <stk_coupling/ConfigurationInfo.hpp>
+#include <stk_coupling/SyncInfo.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <iostream>
@@ -12,6 +12,11 @@
 std::string app_name()
 {
   return "Mock-Aria";
+}
+
+double calculate_time_step()
+{
+  return 0.1;
 }
 
 int main(int argc, char** argv)
@@ -44,17 +49,18 @@ int main(int argc, char** argv)
     std::cout << os.str() << std::endl;
   }
 
-  stk::coupling::ConfigurationInfo myInfo;
+  stk::coupling::SyncInfo myInfo;
 
   myInfo.set_value(stk::coupling::AppName, app_name());
   myInfo.set_value(stk::coupling::InitialTime, 0.);
-  myInfo.set_value(stk::coupling::TimeStep, 0.1);
+  double timeStep = calculate_time_step();
+  myInfo.set_value(stk::coupling::TimeStep, timeStep);
   constexpr int numberOfSteps = 5;
   myInfo.set_value(stk::coupling::FinalTime, numberOfSteps * myInfo.get_value<double>(stk::coupling::TimeStep));
   myInfo.set_value(stk::coupling::TimeSyncMode, syncMode);
 
   if(myWorldRank == rootRanks.first) std::cout << "Exchanging Info" << std::endl;
-  stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
+  stk::coupling::SyncInfo otherInfo = myInfo.exchange(commWorld, commApp);
 
   check_sync_mode_consistency(myInfo, otherInfo);
 
@@ -77,10 +83,15 @@ int main(int argc, char** argv)
   stk::coupling::copy_value<double>(myInfo, stk::coupling::InitialTime, myInfo, "current time");
   
   double currentTime = 0.0;
-  double timeStep = myInfo.get_value<double>(stk::coupling::TimeStep);
+  std::string timeStepStatus = "proceed";
   for(int step = 0; step < numberOfSteps; ++step) {
     // Update State and Do Transfer Using stk_transfer
-    myInfo.set_value("time step status", (step == numberOfSteps-2) ? "end" : "proceed");
+    timeStep = calculate_time_step();
+    if (step == numberOfSteps-2) timeStepStatus = "end";
+
+    myInfo.set_value(stk::coupling::TimeStep, timeStep); 
+    myInfo.set_value("current time", currentTime); 
+    myInfo.set_value("time step status", timeStepStatus);
     otherInfo = myInfo.exchange(commWorld, commApp);
     currentTime = stk::coupling::choose_value(myInfo, otherInfo, "current time", syncMode);
 
@@ -90,6 +101,8 @@ int main(int argc, char** argv)
 
     if(myInfo.get_value<std::string>("time step status") == "end") break;
     if(otherInfo.has_value<std::string>("time step status") && otherInfo.get_value<std::string>("time step status") == "end") break;
+
+    currentTime += timeStep;
   }
   
 

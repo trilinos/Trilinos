@@ -7,7 +7,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include <stk_coupling/ConfigurationInfo.hpp>
+#include <stk_coupling/SyncInfo.hpp>
 #include <stk_coupling/CommSplitting.hpp>
 #include <stk_coupling/Utils.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
@@ -17,24 +17,26 @@ namespace stk
 namespace coupling
 {
 
-void ConfigurationInfo::pack(stk::CommBuffer & b) const
+void SyncInfo::pack(stk::CommBuffer & b) const
 {
   // pack and unpack calls must be in the same order
-  b.pack(svals);
-  b.pack(dvals);
+  b.pack(bvals);
   b.pack(ivals);
+  b.pack(dvals);
+  b.pack(svals);
 }
 
-void ConfigurationInfo::unpack(stk::CommBuffer & b)
+void SyncInfo::unpack(stk::CommBuffer & b)
 {
   // pack and unpack calls must be in the same order
-  b.unpack(svals);
-  b.unpack(dvals);
+  b.unpack(bvals);
   b.unpack(ivals);
+  b.unpack(dvals);
+  b.unpack(svals);
 }
 
-ConfigurationInfo
-ConfigurationInfo::exchange(stk::ParallelMachine global, stk::ParallelMachine local)
+SyncInfo
+SyncInfo::exchange(stk::ParallelMachine global, stk::ParallelMachine local)
 {
 
   int globalRank = -1;
@@ -52,7 +54,7 @@ ConfigurationInfo::exchange(stk::ParallelMachine global, stk::ParallelMachine lo
     ThrowRequireMsg(localRank == 0, "Local rank on the root proc is not zero");
   }
 
-  ConfigurationInfo recvInfo;
+  SyncInfo recvInfo;
 
   { // First exchange between rootA <-> rootB
     stk::CommSparse comm(global);
@@ -96,8 +98,8 @@ ConfigurationInfo::exchange(stk::ParallelMachine global, stk::ParallelMachine lo
   return recvInfo;
 }
 
-void check_sync_mode_consistency(const ConfigurationInfo & myInfo,
-                                 const ConfigurationInfo & otherInfo)
+void check_sync_mode_consistency(const SyncInfo & myInfo,
+                                 const SyncInfo & otherInfo)
 {
   ThrowRequireMsg(myInfo.has_value<int>(stk::coupling::TimeSyncMode), "myInfo doesn't contain value for '"<<stk::coupling::TimeSyncMode);   
   stk::coupling::SyncMode myMode = static_cast<stk::coupling::SyncMode>(myInfo.get_value<int>(stk::coupling::TimeSyncMode));
@@ -118,8 +120,8 @@ void check_sync_mode_consistency(const ConfigurationInfo & myInfo,
   }
 }
 
-double choose_value(const ConfigurationInfo & myInfo,
-                    const ConfigurationInfo & otherInfo,
+double choose_value(const SyncInfo & myInfo,
+                    const SyncInfo & otherInfo,
                     const std::string & parameterName,
                     stk::coupling::SyncMode syncMode)
 {
