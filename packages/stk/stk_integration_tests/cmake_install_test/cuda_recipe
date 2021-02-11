@@ -5,13 +5,14 @@ sierra_code=/scratch/$USER/code
 
 #depending on the system, you may need sierra-devel or sierra-devel/nvidia
 module load sierra-devel/nvidia
+module swap sierra-cmake/3.12.2 cde/cmake/3.17.1
 
 #now the magic currently necessary for CUDA:
 
 export mpicxx_path=`type -p mpicxx`
 export MPI_ROOT=$(dirname ${mpicxx_path})
 export LLNL_USE_OMPI_VARS=y
-export OMPI_CXX=${sierra_code}/TPLs_src/Trilinos/packages/kokkos/bin/nvcc_wrapper
+export OMPI_CXX=${sierra_code}/TPLs_src/trilinos/packages/kokkos/bin/nvcc_wrapper
 
 cd ${sierra_code}
 

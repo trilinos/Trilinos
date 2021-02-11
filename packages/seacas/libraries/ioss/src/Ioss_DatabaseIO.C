@@ -48,10 +48,10 @@ extern "C" {
 #endif
 
 namespace {
-  auto initial_time = std::chrono::high_resolution_clock::now();
+  auto initial_time = std::chrono::steady_clock::now();
 
-  void log_time(std::chrono::time_point<std::chrono::high_resolution_clock> &start,
-                std::chrono::time_point<std::chrono::high_resolution_clock> &finish,
+  void log_time(std::chrono::time_point<std::chrono::steady_clock> &start,
+                std::chrono::time_point<std::chrono::steady_clock> &finish,
                 int current_state, double state_time, bool is_input, bool single_proc_only,
                 const Ioss::ParallelUtils &util);
 
@@ -347,7 +347,7 @@ namespace Ioss {
         int complete = 0, pending = 0, deferred = 0, failed = 0;
         dw_query_file_stage(get_dwname().c_str(), &complete, &pending, &deferred, &failed);
 #if IOSS_DEBUG_OUTPUT
-        auto initial = std::chrono::high_resolution_clock::now();
+        auto initial = std::chrono::steady_clock::now();
         fmt::print(Ioss::DEBUG(), "Query: {}, {}, {}, {}\n", complete, pending, deferred, failed);
 #endif
         if (pending > 0) {
@@ -372,7 +372,7 @@ namespace Ioss {
             dw_stage_file_out(get_dwname().c_str(), get_pfsname().c_str(), DW_STAGE_IMMEDIATE);
 
 #if IOSS_DEBUG_OUTPUT
-        auto                          time_now = std::chrono::high_resolution_clock::now();
+        auto                          time_now = std::chrono::steady_clock::now();
         std::chrono::duration<double> diff     = time_now - initial;
         fmt::print(Ioss::DEBUG(), "\nDW: END dw_stage_file_out({})\n", diff.count());
 #endif
@@ -445,7 +445,7 @@ namespace Ioss {
   {
     IOSS_FUNC_ENTER(m_);
     if (m_timeStateInOut) {
-      m_stateStart = std::chrono::high_resolution_clock::now();
+      m_stateStart = std::chrono::steady_clock::now();
     }
     return begin_state__(state, time);
   }
@@ -454,7 +454,7 @@ namespace Ioss {
     IOSS_FUNC_ENTER(m_);
     bool res = end_state__(state, time);
     if (m_timeStateInOut) {
-      auto finish = std::chrono::high_resolution_clock::now();
+      auto finish = std::chrono::steady_clock::now();
       log_time(m_stateStart, finish, state, time, is_input(), singleProcOnly, util_);
     }
     return res;
@@ -1118,8 +1118,8 @@ namespace Ioss {
 } // namespace Ioss
 
 namespace {
-  void log_time(std::chrono::time_point<std::chrono::high_resolution_clock> &start,
-                std::chrono::time_point<std::chrono::high_resolution_clock> &finish,
+  void log_time(std::chrono::time_point<std::chrono::steady_clock> &start,
+                std::chrono::time_point<std::chrono::steady_clock> &finish,
                 int current_state, double state_time, bool is_input, bool single_proc_only,
                 const Ioss::ParallelUtils &util)
   {
@@ -1179,7 +1179,7 @@ namespace {
       if (util.parallel_rank() == 0 || single_proc_only) {
         const std::string &           name = entity->name();
         std::ostringstream            strm;
-        auto                          now  = std::chrono::high_resolution_clock::now();
+        auto                          now  = std::chrono::steady_clock::now();
         std::chrono::duration<double> diff = now - initial_time;
         fmt::print(strm, "{} [{:.3f}]\t", symbol, diff.count());
 
@@ -1210,7 +1210,7 @@ namespace {
         util.barrier();
       }
       if (util.parallel_rank() == 0 || single_proc_only) {
-        auto                          time_now = std::chrono::high_resolution_clock::now();
+        auto                          time_now = std::chrono::steady_clock::now();
         std::chrono::duration<double> diff     = time_now - initial_time;
         fmt::print("{} [{:.3f}]\n", symbol, diff.count());
       }

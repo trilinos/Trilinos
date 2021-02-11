@@ -45,12 +45,13 @@
 #define ROL_THYRAPRODUCTME_OBJECTIVE_SIMOPT
 
 #include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_Types.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
 
-using namespace ROL;
+namespace ROL {
 
 template <class Real>
 class ThyraProductME_Objective_SimOpt : public Objective_SimOpt<Real> {
@@ -58,7 +59,7 @@ class ThyraProductME_Objective_SimOpt : public Objective_SimOpt<Real> {
 public:
 
 
-  ThyraProductME_Objective_SimOpt(Thyra::ModelEvaluatorDefaultBase<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_,
+  ThyraProductME_Objective_SimOpt(const Thyra::ModelEvaluator<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_,
       Teuchos::RCP<Teuchos::ParameterList> params_ = Teuchos::null, Teuchos::EVerbosityLevel verbLevel= Teuchos::VERB_HIGH) :
         thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_), params(params_),
         out(Teuchos::VerboseObjectBase::getDefaultOStream()),
@@ -259,6 +260,53 @@ public:
     computeGradient2 = false;
   }
 
+  void hessian_22(const Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> H,
+                  const Vector<Real> &u,
+                  const Vector<Real> &z) {
+    if(verbosityLevel >= Teuchos::VERB_MEDIUM)
+      *out << "ROL::ThyraProductME_Objective_SimOpt::hessian_22" << std::endl;
+
+    Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
+    bool supports_deriv = true;
+    for(std::size_t i=0; i<p_indices.size(); ++i)
+      supports_deriv = supports_deriv &&  outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_g_pp, g_index, p_indices[i], p_indices[i]);
+
+    if(supports_deriv) { //use derivatives computed by model evaluator
+      const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(z);
+      Ptr<Vector<Real>> unew = u.clone();
+      unew->set(u);
+      const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(*unew);
+
+      Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
+
+      Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model.createInArgs();
+
+      H->beginBlockFill(p_indices.size(), p_indices.size());
+
+      for(std::size_t i=0; i<p_indices.size(); ++i) {
+        inArgs.set_p(p_indices[i], thyra_prodvec_p->getVectorBlock(i));
+      }
+      inArgs.set_x(thyra_x.getVector());
+
+      Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model.get_g_multiplier_space(g_index));
+      Thyra::put_scalar(1.0, multiplier_g.ptr());
+      inArgs.set_g_multiplier(g_index, multiplier_g);
+
+      Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
+
+      for(std::size_t i=0; i<p_indices.size(); ++i) {
+        bool supports_deriv = outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_g_pp, g_index, p_indices[i], p_indices[i]);
+        ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "ROL::ThyraProductME_Objective_SimOpt: H_pp is not supported");
+
+        Teuchos::RCP<Thyra::LinearOpBase<Real>> hess_g_pp = thyra_model.create_hess_g_pp(g_index, p_indices[i], p_indices[i]);
+        outArgs.set_hess_g_pp(g_index, p_indices[i], p_indices[i], hess_g_pp);
+        H->setBlock(p_indices[i], p_indices[i], hess_g_pp);
+      }
+      H->endBlockFill();
+
+      thyra_model.evalModel(inArgs, outArgs);
+    }
+  }
 
   void hessVec_11( Vector<Real> &hv, const Vector<Real> &v,
       const Vector<Real> &u,  const Vector<Real> &z, Real &/*tol*/ ) {
@@ -652,7 +700,7 @@ public:
   bool computeValue, computeGradient1, computeGradient2;
 
 private:
-  Thyra::ModelEvaluatorDefaultBase<Real>& thyra_model;
+  const Thyra::ModelEvaluator<Real>& thyra_model;
   const int g_index;
   const std::vector<int> p_indices;
   Real value_;
@@ -666,5 +714,5 @@ private:
 
 };
 
-
+}
 #endif

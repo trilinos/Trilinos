@@ -32,10 +32,15 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include <gtest/gtest.h>
-#include <stk_util/parallel/BroadcastArg.hpp>
-#include <stk_util/parallel/MPI.hpp>
-#include <stk_util/stk_config.h>
+#include "gtest/gtest.h"
+#include "stk_util/parallel/BroadcastArg.hpp"  // for BroadcastArg
+#include "stk_util/parallel/Parallel.hpp"      // for MPI_Comm_rank, MPI_COMM_WORLD
+#include "stk_util/stk_config.h"               // for STK_HAS_MPI
+#include <algorithm>                           // for copy
+#include <iostream>                            // for operator<<, basic_ostream::operator<<, bas...
+#include <memory>                              // for allocator_traits<>::value_type
+#include <string>                              // for string, basic_string, char_traits
+#include <vector>                              // for vector
 
 
 #if defined(STK_HAS_MPI)  // means that MPI is available

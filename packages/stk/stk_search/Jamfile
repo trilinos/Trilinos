@@ -167,7 +167,6 @@ exe stk_search_integration_tester
       glob $(stk_search-root)/integrationtest/*.[cC] ]
     /sierra/stk_search//stk_search
     /sierra/stk_unit_test_utils//stk_unit_main
-    /sierra/stk_util//stk_util_unit_test_support
     /sierra/stk_math//stk_math
   : <tag>@sierra-exec-tag
   ;

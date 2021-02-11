@@ -472,6 +472,7 @@ void RILUK<MatrixType>::initialize ()
      "range Maps, if appropriate) before calling this method.");
   
   Teuchos::Time timer ("RILUK::initialize");
+  double startTime = timer.wallTime();
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
 
@@ -535,12 +536,6 @@ void RILUK<MatrixType>::initialize ()
       }
       Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type,kk_handle_type> (A_local_crs->getCrsGraph (),
                                                                            LevelOfFill_, 0, Overalloc_));
-
-      if (this->isKokkosKernelsSpiluk_) {
-        A_local_rowmap_  = A_local_crs->getLocalMatrix().graph.row_map;
-        A_local_entries_ = A_local_crs->getLocalMatrix().graph.entries;
-        A_local_values_  = A_local_crs->getLocalValuesView();
-      }
     }
 
     if (this->isKokkosKernelsSpiluk_) Graph_->initialize (KernelHandle_);
@@ -560,7 +555,7 @@ void RILUK<MatrixType>::initialize ()
 
   isInitialized_ = true;
   ++numInitialize_;
-  initializeTime_ += timer.totalElapsedTime ();
+  initializeTime_ += (timer.wallTime() - startTime);
 }
 
 template<class MatrixType>
@@ -723,7 +718,10 @@ void RILUK<MatrixType>::compute ()
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
   const char prefix[] = "Ifpack2::RILUK::compute: ";
 
   // initialize() checks this too, but it's easier for users if the
@@ -747,6 +745,7 @@ void RILUK<MatrixType>::compute ()
 
   // Start timing
   Teuchos::TimeMonitor timeMon (timer);
+  double startTime = timer.wallTime();
 
   isComputed_ = false;
 
@@ -896,6 +895,37 @@ void RILUK<MatrixType>::compute ()
     U_solver_->compute ();
   }
   else {
+    {//Make sure values in A is picked up even in case of pattern reuse
+      RCP<const crs_matrix_type> A_local_crs =
+        rcp_dynamic_cast<const crs_matrix_type> (A_local_);
+      if (A_local_crs.is_null ()) {
+        local_ordinal_type numRows = A_local_->getNodeNumRows();
+        Array<size_t> entriesPerRow(numRows);
+        for(local_ordinal_type i = 0; i < numRows; i++) {
+          entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
+        }
+        RCP<crs_matrix_type> A_local_crs_nc =
+          rcp (new crs_matrix_type (A_local_->getRowMap (),
+                                    A_local_->getColMap (),
+                                    entriesPerRow()));
+        // copy entries into A_local_crs
+        Teuchos::Array<local_ordinal_type> indices(A_local_->getNodeMaxNumRowEntries());
+        Teuchos::Array<scalar_type> values(A_local_->getNodeMaxNumRowEntries());
+        for(local_ordinal_type i = 0; i < numRows; i++) {
+          size_t numEntries = 0;
+          A_local_->getLocalRowCopy(i, indices(), values(), numEntries);
+          ArrayView<const local_ordinal_type> indicesInsert(indices.data(), numEntries);
+          ArrayView<const scalar_type> valuesInsert(values.data(), numEntries);
+          A_local_crs_nc->insertLocalValues(i, indicesInsert, valuesInsert);
+        }
+        A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
+        A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+      }
+      A_local_rowmap_  = A_local_crs->getLocalMatrix().graph.row_map;
+      A_local_entries_ = A_local_crs->getLocalMatrix().graph.entries;
+      A_local_values_  = A_local_crs->getLocalValuesView();
+    }
+
     L_->resumeFill ();
     U_->resumeFill ();
 
@@ -937,7 +967,7 @@ void RILUK<MatrixType>::compute ()
 
   isComputed_ = true;
   ++numCompute_;
-  computeTime_ += timer.totalElapsedTime ();
+  computeTime_ += (timer.wallTime() - startTime);
 }
 
 
@@ -992,6 +1022,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   const scalar_type zero = STS::zero ();
 
   Teuchos::Time timer ("RILUK::apply");
+  double startTime = timer.wallTime();
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
     if (alpha == one && beta == zero) {
@@ -1057,7 +1088,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 #endif // HAVE_IFPACK2_DEBUG
 
   ++numApply_;
-  applyTime_ = timer.totalElapsedTime ();
+  applyTime_ += (timer.wallTime() - startTime);
 }
 
 

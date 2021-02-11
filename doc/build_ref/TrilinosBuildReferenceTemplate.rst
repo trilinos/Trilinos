@@ -186,6 +186,33 @@ To see more documentation for each of these options, run a configure with
 (as raw text or using the CMake QT GUI or ``ccmake``).
 
 
+Setting the C++ language standard for Trilinos
+----------------------------------------------
+
+Trilinos currently supports building with the C++14 language standard as
+supported by a wide range of C++ compilers.  In addition, the library targets
+imported from the installed ``<Package>Config.cmake`` files (also pulled in
+through ``TrilinosConfig.cmake``) will automatically require downstream CMake
+projects turn on C++14 or later standard support in the compiler options
+(using the CMake ``INTERFACE_COMPILE_FEATURES`` properties of the Trilinos
+library targets).  Building Trilinos with C++11 or lower C++ language
+standards is not supported.
+
+However, to try building Trilinos with a higher C++ language standard (with a
+supporting compiler), set the CMake cache variable ``CMAKE_CXX_STANDARD`` to
+an appropriate value.  For example, to try building Trilinos with C++17 turned
+on, configure with::
+
+  -D CMAKE_CXX_STANDARD:STRING=17
+
+As mentioned above, that will also result in all downstream C++ software built
+CMake to be built with C++17 compiler options turned on as well.
+
+However, Trilinos is currently only rigorously tested with C++14 compiler
+options so trying to build and use with a higher language standard may not
+give satisfactory results.
+
+
 Addressing problems with large builds of Trilinos
 -------------------------------------------------
 
@@ -244,3 +271,155 @@ to do dependency analysis have been reported to determine if a single target
 needs to be rebuilt).  The solution is to switch from the default ``Unix
 Makefiles`` generator to the ``Ninja`` generator (see `Enabling support for
 Ninja`_).
+
+Enabling and viewing build statistics
+-------------------------------------
+
+The Trilinos project has portable built-in support for generating and
+reporting build statistics such the high-watermark for RAM, the wall clock
+time, and many other statistics used to build each and every object file,
+library, and executable target.  To enable support for this, configure with::
+
+  -D Trilinos_ENABLE_BUILD_STATS=ON \
+
+This will do the following:
+
+* Generate compiler wrappers ``build_stats_<lang>_wrapper.sh`` for C, C++, and
+  Fortran in the build tree that will compute statics as a byproduct for every
+  usage of each compiler.  (The compiler wrappers create a file
+  ``<output-file>.timing`` for every generated object, library and executable
+  ``<output-file>`` file.)
+
+* Define a build target called ``generate-build-stats`` that when run will
+  gather up all of the generated build statistics into a single CSV file
+  ``build_stats.csv`` in the base build directory.  (This target also runs at
+  the end of the ``ALL`` target so a raw ``make`` will automatically create an
+  up-to-date ``build_stats.csv`` file.)
+
+* Enable the package ``TrilinosBuildStats`` (and when
+  ``-DTrilinos_ENABLE_TESTS=ON`` or ``-DTrilinosBuildStats_ENABLE_TESTS=ON``
+  are also set) will define the test ``TrilinosBuildStats_Results`` to
+  summarize and report the build statistics.  When run, this test calls the
+  tool ``summarize_build_stats.py`` in to report summary build stats to STDOUT
+  the test and will also upload the file ``build_stats.csv`` to CDash as using
+  the CTest property ``ATTACHED_FILES`` when submitting test results to CDash.
+
+* Set up to install the generated build-stats compiler wrappers and a helper
+  script ``gather_build_stats.sh`` into the ``<prefix>/bin`` directory as part
+  of the default ``install`` target.  (This allows customers to also use these
+  compiler wrappers to generate and gather up build stats for their own
+  project as well that depends on Trilinos.)
+
+The default for the cache variable ``Trilinos_ENABLE_BUILD_STATS`` is
+determined as follows:
+
+* If the variable ``Trilinos_ENABLE_BUILD_STATS`` is set in the environment
+  (e.g. with ``export Trilinos_ENABLE_BUILD_STATS=ON``), then it will be used
+  as the default value.
+
+* Else if the CMake variable ``Trilinos_ENABLE_BUILD_STATS_DEFAULT`` is set in
+  a ``*.cmake`` file included using
+  ``-DTrilinos_CONFIGURE_OPTIONS_FILE=<config_file>.cmake``, then it will be
+  used as the default value.
+
+* Else, the default value is set to ``OFF``.
+
+When the test ``TrilinosBuildStats_Results`` is run, it produces summary
+statistics to STDOUT like shown below::
+
+  Full Project: sum(max_resident_size_size_mb) = ??? (??? entries)
+  Full Project: max(max_resident_size_size_mb) = ??? (<file-name>)
+  Full Project: max(elapsed_real_time_sec) = ??? (<file-name>)
+  Full Project: sum(elapsed_real_time_sec) = ??? (??? entries)
+  Full Project: sum(file_size_mb) = ??? (??? entries)
+  Full Project: max(file_size_mb) = ??? (<file-name>)
+
+  <package1>: sum(max_resident_size_mb) = ??? (??? entries)
+  <package1>: max(max_resident_size_mb) = ??? (<file-name>)
+  <package1>: max(elapsed_real_time_sec) = ??? (<file-name>)
+  <package1>: sum(elapsed_real_time_sec) = ??? (??? entries)
+  <package1>: sum(file_size_mb) = ??? (??? entries)
+  <package1>: max(file_size_mb) = ??? (<file-name>)
+
+  ...
+
+  <packagen>: sum(max_resident_size_mb) = ??? (??? entries)
+  <packagen>: max(max_resident_size_mb) = ??? (<file-name>)
+  <packagen>: max(elapsed_real_time_sec) = ??? (<file-name>)
+  <packagen>: sum(elapsed_real_time_sec) = ??? (??? entries)
+  <packagen>: sum(file_size_mb) = ??? (??? entries)
+  <packagen>: max(file_size_mb) = ??? (<file-name>)
+
+where:
+
+* ``max_resident_size_size_mb`` is the high watermark for RAM usage to build a
+  given target measured in MB.
+* ``elapsed_real_time_sec`` is the wall clock time used to build a given
+  target measured in seconds.
+* ``file_size_mb`` is the produced file size of a given build target
+  (i.e. object file, library, or executable) measured in MB.
+* ``Full Project`` are the stats for all of the enabled Trilinos packages.
+* ``<packagei>`` are the build stats for the ``<packagei>`` subdirectory under
+  the base directories ``commonTools`` and ``packages``.  (These map to Trilinos
+  packages is most cases.)
+
+This output format makes it easy to query and view these statistics directly
+on CDash using the "Test Output" filter on the ``cdash/queryTests.php`` page.
+(This allows viewing and comparing these statistics across many different
+compilers, platforms, and build configurations and even across the same builds
+over days, weeks, and months.)
+
+The generated ``build_stats.csv`` file contains many other types of useful
+build stats as well but the above three are some of the more impact-full build
+statistics.
+
+To avoid situations where a full rebuild does not occur (e.g. any build target
+fails) and an old obsolete ``build_stats.csv`` file is hanging around, one can
+cause that file to get deleted on every (re)configure by setting::
+
+  -D Trilinos_REMOVE_BUILD_STATS_ON_CONFIGURE=ON
+
+This will remove the file ``build_stats.csv`` very early in the configure
+process and therefore will usually remove the file even of later configure
+operations fail.
+
+Finally, to make rebuilds more robust and to restrict build stats to only new
+targets getting (re)built after an initial configure, configure with::
+
+  -D Trilinos_REMOVE_BUILD_STATS_TIMING_FILES_ON_FRESH_CONFIGURE=ON
+
+The will remove **all** of the ``*.timing`` files under the base build
+directory during a fresh configure (i.e. where the ``CMakeCache.txt`` file
+does not exist).  But this will not remove ``*.timing`` files on reconfigures
+(i..e where a ``CMakeCache.txt`` file is preserved).  Timing stats for targets
+that are already built and don't need to be rebuilt after the last fresh
+configure will not get reported.  (But this can be useful for CI builds where
+one only wants to see build stats for the files updated in the last PR
+iteration.  Also, this will avoid problems with corrupted `<target>.timing`
+files that may already exist in the base repo.)
+
+NOTES:
+
+* The installed ``TrilinosConfig.cmake`` and ``<Package>Config.cmake`` files
+  list the original underlying C, C++, and Fortran compilers, **not** the
+  build stats compiler wrappers.
+
+* If a customer wants to use the build stats compiler wrappers, then they can
+  just directly set ``CMAKE_<LANG>_COMPILER`` to the path of the installed
+  compiler wrappers ``<prefix>/bin/build_stats_<lang>_wrapper.sh`` for each
+  language ``<lang>`` = C, CXX, and Fortran and also add
+  ``set(ENV{CMAKE_IS_IN_CONFIGURE_MODE} 1)`` to the beginning of their
+  project's top-level ``CMakeLists.txt`` file.
+
+* The ``generate-build-stats`` target has dependencies on every object,
+  library, and executable build target in the project so it will always only
+  run after all of those targets are up to date.
+
+* The file ``build_stats.csv`` can be downloaded off of CDash from the
+  ``TrilinosBuildStats_Results`` test results summary page.  (The file is
+  downloaded as a compressed ``build_stats.csv.tgz`` file which will then need
+  to be uncompressed using ``tar -xzvf build_stats.csv.tgz`` before being
+  viewed.)
+
+* Any ``build_stats.csv`` file can be viewed and queried by uploading it to
+  the site ``https://jjellio.github.io/build_stats/index.html``.

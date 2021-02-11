@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -11,9 +11,9 @@
  *
  * entry conditions -
  *   input parameters:
- *       int     exoid          exodus file id
- *       const char *type       entity type - M, E, S
- *       int     entity_id      id of entity name to read
+ *       int            exoid      exodus file id
+ *       ex_entity_type obj_type   object type -- EX_ELEM_BLOCK, ...
+ *       int            entity_id  id of entity name to read
  *
  * exit conditions -
  *       char*   name           ptr to name
@@ -43,12 +43,10 @@ int ex_get_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, char
   }
 
   switch (obj_type) {
-  case EX_ASSEMBLY:
-    snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: Assembly name is read using `ex_get_assembly()` function");
-    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
-    EX_FUNC_LEAVE(EX_FATAL);
-    break;
+  case EX_ASSEMBLY: {
+    ex_assembly assembly = {entity_id, name};
+    return ex_get_assembly(exoid, &assembly);
+  }
   case EX_ELEM_BLOCK: vobj = VAR_NAME_EL_BLK; break;
   case EX_EDGE_BLOCK: vobj = VAR_NAME_ED_BLK; break;
   case EX_FACE_BLOCK: vobj = VAR_NAME_FA_BLK; break;

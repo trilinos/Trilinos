@@ -19,6 +19,17 @@ printf "TRILINOS_INSTALL_DIR=${trilinos_install_dir}\n";
 printf "FORTRAN_MACRO=${fortran_macro}\n";
 printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_cmake_stk'\n\n";
 
+if [ "${CUDA}" != "OFF" ] && [ "${CUDA}" != "ON" ]; then
+  echo "CUDA must be set to 'ON' or 'OFF'"
+  exit 1;
+fi
+
+not_cuda=ON
+if [ "${CUDA}" == "ON" ] ; then
+  not_cuda=OFF
+fi
+printf "not_cuda: ${not_cuda}\n";
+
 if [ $# -ne 1 ] ; then
   echo "Usage: run_cmake_stk tpl_paths_file";
   exit 1;
@@ -77,21 +88,21 @@ cmake \
 -DZoltan2_ENABLE_ParMETIS:BOOL=ON \
 -DTrilinos_ENABLE_Pamgen:BOOL=ON \
 -DTrilinos_ENABLE_Percept:BOOL=ON \
--DTrilinos_ENABLE_Panzer:BOOL=ON \
--DTrilinos_ENABLE_PanzerAdaptersSTK:BOOL=ON \
--DPanzer_ENABLE_TESTS:BOOL=ON \
--DPanzer_STK_ENABLE_TESTS:BOOL=ON \
--DTrilinos_ENABLE_TrilinosCouplings:BOOL=ON \
+-DTrilinos_ENABLE_Panzer:BOOL=${not_cuda} \
+-DTrilinos_ENABLE_PanzerAdaptersSTK:BOOL=${not_cuda} \
+-DPanzer_ENABLE_TESTS:BOOL=${not_cuda} \
+-DPanzer_STK_ENABLE_TESTS:BOOL=${not_cuda} \
+-DTrilinos_ENABLE_TrilinosCouplings:BOOL=${not_cuda} \
 -DTPL_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DKokkos_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DKokkos_ENABLE_CUDA_UVM:BOOL=${cuda_on_or_off} \
--DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE:BOOL=${cuda_on_or_off} \
+-DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE:BOOL=OFF \
 -DKokkos_ARCH_VOLTA70=${cuda_on_or_off} \
 -DTpetra_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DTrilinos_ENABLE_KokkosKernels:BOOL=ON \
 -DTrilinos_ENABLE_Zoltan:BOOL=ON \
 -DTrilinos_ENABLE_Fortran:BOOL=OFF \
--DCMAKE_CXX_FLAGS:STRING="-DNOT_HAVE_STK_SEACASAPREPRO_LIB -D${fortran_macro} ${cmake_cxx_flags}" \
+-DCMAKE_CXX_FLAGS:STRING="-DNOT_HAVE_STK_SEACASAPREPRO_LIB -D${fortran_macro} ${cmake_cxx_flags} -Werror=dangling-else" \
 -DSTK_ENABLE_TESTS:BOOL=ON \
 -DTrilinos_ENABLE_STK:BOOL=ON \
 -DTrilinos_ENABLE_Gtest:BOOL=ON \

@@ -66,7 +66,6 @@ using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 using Teuchos::Array;
 
-
 /*! \brief Transform composite vector to regional layout
  *
  *  Starting from a vector in composite layout, we
@@ -77,7 +76,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void compositeToRegional(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > compVec, ///< Vector in composite layout [in]
                          RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& quasiRegVecs, ///< Vector in quasiRegional layout [in/out]
                          RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regVecs, ///< Vector in regional layout [in/out]
-                         const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap, ///< revised row maps in region layout [in]
+                         const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap, ///< revised row maps in region layout [in]
                          const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport ///< row importer in region layout [in]
                          )
 {
@@ -98,7 +97,6 @@ void compositeToRegional(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal,
   return;
 } // compositeToRegional
 
-
 /*! \brief Transform composite vector to regional layout
  *
  *  Starting from a vector in composite layout, we
@@ -109,7 +107,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void compositeToRegional(RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > compVec, ///< Vector in composite layout [in]
                          RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& quasiRegVecs, ///< Vector in quasiRegional layout [in/out]
                          RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regVecs, ///< Vector in regional layout [in/out]
-                         const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap, ///< revised row maps in region layout [in]
+                         const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap, ///< revised row maps in region layout [in]
                          const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport ///< row importer in region layout [in]
                          )
 {
@@ -259,7 +257,6 @@ void regionalToComposite(const RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, Glo
   return;
 } // regionalToComposite
 
-
 /*! \brief Sum region interface values
  *
  *  Sum values of interface GIDs using the underlying Export() routines. Technically, we perform the
@@ -269,7 +266,7 @@ void regionalToComposite(const RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, Glo
  */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void sumInterfaceValues(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regVec,
-                        const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >  revisedRowMap,///< revised row maps in region layout [in]
+                        const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >  revisedRowMap,///< revised row maps in region layout [in]
                         const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >  rowImport ///< row importer in region layout [in])
                         )
 {
@@ -307,7 +304,7 @@ void sumInterfaceValues(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, 
  */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void sumInterfaceValues(RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regVec,
-                        const RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,///< revised row maps in region layout [in]
+                        const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > revisedRowMap,///< revised row maps in region layout [in]
                         const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > rowImport ///< row importer in region layout [in])
                         )
 {

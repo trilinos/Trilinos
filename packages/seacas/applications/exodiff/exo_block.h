@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -50,9 +50,9 @@ private:
   const char *short_label() const override { return "block"; }
 
   std::string elmt_type;
-  int         num_nodes_per_elmt;
+  int         num_nodes_per_elmt{-1};
 
-  INT *conn; // Array; holds a matrix, num_elmts by num_nodes_per_elmt.
+  INT *conn{nullptr}; // Array; holds a matrix, num_elmts by num_nodes_per_elmt.
 
   friend class ExoII_Read<INT>;
 };

@@ -263,8 +263,8 @@ getCoeffMatrix_HCURL(OutputViewType &output,
   // Basis evaluation on the reference points
   //
 
-  typename CellTools<ExecutionSpace>::subcellParamViewType subcellParam;
-  CellTools<ExecutionSpace>::getSubcellParametrization(subcellParam, subcellDim, cellTopo);
+  typename Intrepid2::CellTools<ExecutionSpace>::subcellParamViewType subcellParam;
+  Intrepid2::CellTools<ExecutionSpace>::getSubcellParametrization(subcellParam, subcellDim, cellTopo);
 
   // refPtsCell = F_s (\eta_o (refPtsSubcell))
   PointViewType refPtsCell("refPtsCell", ndofSubcell, cellDim);

@@ -55,7 +55,7 @@
 #include "KokkosBatched_Trmm_Serial_Impl.hpp"
 #include "KokkosBatched_Util.hpp"
 
-//#define TRMM_PERF_TEST_DEBUG
+//#define PERF_TEST_DEBUG
 
 // Forward declarations
 void do_trmm_serial_blas(options_t options);
@@ -67,13 +67,6 @@ void do_trmm_parallel_batched(options_t options);
 void (*do_trmm_invoke[LOOP_N][TEST_N])(options_t) = {
     {do_trmm_serial_blas, do_trmm_serial_batched},
     {do_trmm_parallel_blas, do_trmm_parallel_batched}};
-
-/*************************** Print macros **************************/
-#ifdef TRMM_PERF_TEST_DEBUG
-#define STATUS printf("STATUS: %s:%d.\n", __func__, __LINE__);
-#else
-#define STATUS
-#endif  // TRMM_PERF_TEST_DEBUG
 
 /*************************** Test types and defaults **************************/
 #define DEFAULT_TRMM_ARGS "LUNU"
@@ -106,7 +99,7 @@ static void __trmm_output_csv_row(options_t options, trmm_args_t trmm_args,
 }
 
 static void __print_trmm_perf_test_options(options_t options) {
-#ifdef TRMM_PERF_TEST_DEBUG
+#ifdef PERF_TEST_DEBUG
   printf("options.test      = %s\n", test_e_str[options.test].c_str());
   printf("options.loop      = %s\n", loop_e_str[options.loop].c_str());
   printf("options.start     = %dx%d,%dx%d\n", options.start.a.m,
@@ -123,7 +116,7 @@ static void __print_trmm_perf_test_options(options_t options) {
     printf("options.alpha     = %lf\n", options.blas_args.trmm.alpha);
   else if (std::is_same<float, default_scalar>::value)
     printf("options.alpha     = %f\n", options.blas_args.trmm.alpha);
-#endif  // TRMM_PERF_TEST_DEBUG
+#endif  // PERF_TEST_DEBUG
   return;
 }
 
@@ -146,6 +139,7 @@ void __do_trmm_serial_blas(options_t options, trmm_args_t trmm_args) {
                      &trmm_args.diag, trmm_args.alpha, A, B);
   }
 
+  Kokkos::fence();
   timer.reset();
   for (uint32_t i = 0; i < n; ++i) {
     auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
@@ -292,7 +286,7 @@ void __do_trmm_serial_batched(options_t options, trmm_args_t trmm_args) {
   return;
 }
 
-#if !defined(KOKKOS_ENABLE_CUDA)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
 template <class ExecutionSpace>
 struct parallel_blas_trmm {
   trmm_args_t trmm_args_;
@@ -312,7 +306,7 @@ struct parallel_blas_trmm {
 
 template <class scalar_type, class vta, class vtb, class device_type>
 void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args) {
-#if !defined(KOKKOS_ENABLE_CUDA)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -335,7 +329,9 @@ void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args) {
   __trmm_output_csv_row(options, trmm_args, timer.seconds());
 #else
   std::cerr << std::string(__func__)
-            << " disabled since KOKKOS_ENABLE_CUDA is defined." << std::endl;
+            << " disabled since KOKKOS_ENABLE_CUDA and/or KOKKOS_ENABLE_HIP is "
+               "defined."
+            << std::endl;
   __trmm_output_csv_row(options, trmm_args, -1);
 #endif  // !KOKKOS_ENABLE_CUDA
   return;

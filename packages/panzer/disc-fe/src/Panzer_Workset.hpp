@@ -68,6 +68,34 @@ namespace panzer {
 
   class SubcellConnectivity;
 
+  class OrientationsInterface;
+
+  /**
+   * \class WorksetOptions
+   *
+   * \brief Used to define options for lazy evaluation of BasisValues and IntegrationValues objects
+   */
+  struct
+  WorksetOptions
+  {
+    /// Default constructor
+    WorksetOptions():
+      side_assembly_(false),
+      align_side_points_(false)
+    {
+
+    }
+
+    /// Build integration values for sides
+    bool side_assembly_;
+
+    /// If workset side integration values must align with another workset, there must be a unique order assigned
+    bool align_side_points_;
+
+    /// Must be set to apply orientations - if it is set, then orientations will be applied to basis values
+    Teuchos::RCP<const OrientationsInterface> orientations_;
+  };
+
   /** This is used within the workset to make edge based (DG like) assembly
     * an easier task. This basically allows separation of the workset abstraction
     * from how it is accessed.
@@ -76,28 +104,33 @@ namespace panzer {
   public:
     typedef PHX::MDField<double,Cell,NODE,Dim> CellCoordArray;
 
-    typedef std::size_t GO;
-    typedef int LO;
-
     //! Default constructor
-    WorksetDetails()
-      : _num_owned_cells(-1)
-      , _num_ghost_cells(-1)
-      , _num_virtual_cells(-1)
-    { }
+    WorksetDetails();
 
     //! Constructs the workset details from a given chunk of the mesh
-    void setup(const panzer::LocalMeshPartition & partition, const panzer::WorksetNeeds & needs);
+    void
+    setup(const LocalMeshPartition & partition,
+          const WorksetOptions & options);
 
-    void setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_topology,
-                    const Kokkos::View<double***,PHX::Device> & cell_vertices,
-                    const panzer::WorksetNeeds & needs);
+    /// DEPRECATED - use: numCells()
+    int num_cells;
 
-    Kokkos::View<const int*,PHX::Device> cell_local_ids_k;
-    std::vector<GO> cell_local_ids;
+    /// DEPRECATED - use: getSubcellDimension()
+    int subcell_dim;
+
+    // DEPRECATED - use: getLocalCellIDs()
+    PHX::View<const int*> cell_local_ids_k;
+
+    // DEPRECATED - use: getLocalCellIDs()
+    std::vector<size_t> cell_local_ids;
+
+    /// DEPRECATED - use: getCellVertices()
     CellCoordArray cell_vertex_coordinates;
+
+    /// DEPRECATED - use: getElementBlock()
     std::string block_id;
 
+    /// DEPRECATED - use: getSubcellIndex()
     int subcell_index; //! If workset corresponds to a sub cell, what is the index?
 
     //! Value correspondes to integration order.  Use the offest for indexing.
@@ -115,66 +148,198 @@ namespace panzer {
     //TEUCHOS_DEPRECATED
     std::vector<Teuchos::RCP< panzer::BasisValues2<double> > > bases;
 
-    /// Grab the face connectivity for this workset
+    /** Grab the face connectivity for this workset
+     * DEPRECATED - use: workset.getSubcellConnectivity(workset.numDimensions()-1)
+     */
     const panzer::SubcellConnectivity & getFaceConnectivity() const;
 
-    /// Grab the integration values for a given integration description (throws error if integration doesn't exist)
-    const panzer::IntegrationValues2<double> & getIntegrationValues(const panzer::IntegrationDescriptor & description) const;
-
-    /// Grab the integration rule (contains data layouts) for a given integration description (throws error if integration doesn't exist)
+    /// Grab the integration rule for a given integration description (throws error if integration doesn't exist)
     const panzer::IntegrationRule & getIntegrationRule(const panzer::IntegrationDescriptor & description) const;
-
-    /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
-    panzer::BasisValues2<double> & getBasisValues(const panzer::BasisDescriptor & basis_description, 
-                                                  const panzer::IntegrationDescriptor & integration_description);
-
-    /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
-    const panzer::BasisValues2<double> & getBasisValues(const panzer::BasisDescriptor & basis_description, 
-                                                        const panzer::IntegrationDescriptor & integration_description) const;
-
-    /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
-    const panzer::BasisValues2<double> & getBasisValues(const panzer::BasisDescriptor & basis_description, 
-                                                        const panzer::PointDescriptor & point_description) const;
-
-    /// Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
-    const panzer::PointValues2<double> & getPointValues(const panzer::PointDescriptor & point_description) const;
 
     /// Grab the pure basis (contains data layouts) for a given basis description (throws error if integration doesn't exist)
     const panzer::PureBasis & getBasis(const panzer::BasisDescriptor & description) const;
 
+    /// Get the element block id
+    const std::string &
+    getElementBlock() const
+    {return block_id;}
+
+    /// Get the sideset id (returns "" if not a sideset)
+    const std::string &
+    getSideset() const
+    {return sideset_;}
+
+    /// Get the cell dimension for the mesh
+    unsigned int
+    numDimensions() const
+    {return num_dimensions_;}
+
+    /// Get the subcell index (returns -1 if not a subcell)
+    int
+    getSubcellIndex() const
+    {return subcell_index;}
+
+    /// Get the subcell dimension
+    int
+    getSubcellDimension() const
+    {return subcell_dim;}
+
+    /// Get the vertices for the cells
+    CellCoordArray
+    getCellVertices() const
+    {return cell_vertex_coordinates;}
+
+    /// Get the local cell IDs for the workset
+    Kokkos::View<const int*,PHX::Device>
+    getLocalCellIDs() const
+    {return cell_local_ids_k;}
+
+    /**
+     * \brief Get the subcell connectivity for the workset topology
+     *
+     * Subcells are node/edge/face in association with dimension of mesh.
+     *
+     * For example:
+     *     | Subcell Name | Subcell Dimension
+     * ---------------------------------------
+     * 1D: | Node         | 0
+     *     | Edge         | 1
+     * ---------------------------------------
+     * 2D: | Node         | 0
+     *     | Edge         | 1
+     *     | Face         | 2
+     * ---------------------------------------
+     * 3D: | Node         | 0
+     *     | Edge         | 1
+     *     | Face         | 2
+     *     | Cell         | 3
+     * ---------------------------------------
+     *
+     * \throws If setup has not been called
+     * \throws If requested subcell dimension larger than 'numDimensions()'
+     *
+     * \param[in] subcell_dimension Requested subcell_dimension
+     *
+     * \return SubcellConnectivity object containing connectivity information for subcell dimension
+     *
+     */
+    const SubcellConnectivity &
+    getSubcellConnectivity(const unsigned int subcell_dimension) const;
+
+    /// Check if subcell connectivity exists for a given dimension
+    bool
+    hasSubcellConnectivity(const unsigned int subcell_dimension) const;
+
+    /**
+     * \brief Get the integration values for a given integration description
+     *
+     * \throws If setup has not been called
+     *
+     * \param[in] description Descriptor for integration scheme
+     *
+     * \return Object containing integration values
+     */
+    const panzer::IntegrationValues2<double> &
+    getIntegrationValues(const panzer::IntegrationDescriptor & description) const;
+
+    /*
+     * \brief Grab the basis values for a given basis description
+     *
+     * \note An arbitrary integration order is used - only use for getting basis coordinates
+     *
+     * \throws If setup has not been called
+     *
+     * \param[in] basis_description Description of requested basis
+     *
+     * \return Object containing basis values
+     */
+    const panzer::BasisValues2<double> &
+    getBasisValues(const panzer::BasisDescriptor & basis_description) const;
+
+    /*
+     * \brief Grab the basis values for a given basis description
+     *
+     * \throws If setup has not been called
+     *
+     * \todo This needs to be const, but one path for workset construction requires non-const
+     *
+     * \param[in] basis_description Description of requested basis
+     * \param[in] integration_description Descriptor for integration scheme
+     *
+     * \return Object containing basis values
+     */
+    panzer::BasisValues2<double> &
+    getBasisValues(const panzer::BasisDescriptor & basis_description,
+                   const panzer::IntegrationDescriptor & integration_description) const;
+
+    /*
+     * \brief Grab the basis values for a given basis description
+     *
+     * \throws If setup has not been called
+     * \throws if point_descriptor has not been registered
+     *
+     * \param[in] basis_description Description of requested basis
+     * \param[in] point_description Descriptor for points
+     *
+     * \return Object containing basis values
+     */
+    const panzer::BasisValues2<double> &
+    getBasisValues(const panzer::BasisDescriptor & basis_description,
+                   const panzer::PointDescriptor & point_description) const;
+
+    /**
+     * \brief Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
+     *
+     * \todo This needs to be const, but one path for workset construction requires non-const
+     */
+    panzer::PointValues2<double> &
+    getPointValues(const panzer::PointDescriptor & point_description) const;
+
+    /// Number of total cells in workset (owned, ghost, and virtual)
+    int numCells() const {return num_cells;}
+
     /// Number of cells owned by this workset
-    int numOwnedCells() const {return _num_owned_cells;}
+    int numOwnedCells() const {return num_owned_cells_;}
 
     /// Number of cells owned by a different workset
-    int numGhostCells() const {return _num_ghost_cells;}
+    int numGhostCells() const {return num_ghost_cells_;}
 
     /// Number of cells not owned by any workset - these are used for boundary conditions
-    int numVirtualCells() const {return _num_virtual_cells;}
+    int numVirtualCells() const {return num_virtual_cells_;}
 
     /// Provides access to set numbers of cells (required for backwards compatibility)
-    void setNumberOfCells(int o_cells,int g_cells,int v_cells)
-    {
-      _num_owned_cells = o_cells;
-      _num_ghost_cells = g_cells;
-      _num_virtual_cells = v_cells;
-    }
+    void setNumberOfCells(const int owned_cells,
+                          const int ghost_cells,
+                          const int virtual_cells);
 
   protected:
 
-    int _num_owned_cells;
-    int _num_ghost_cells;
-    int _num_virtual_cells;
+    bool setup_;
 
-    std::map<size_t,Teuchos::RCP<const panzer::IntegrationRule > > _integration_rule_map;
-    std::map<size_t,Teuchos::RCP<const panzer::IntegrationValues2<double> > > _integrator_map;
+    int num_owned_cells_;
+    int num_ghost_cells_;
+    int num_virtual_cells_;
 
-    std::map<size_t,Teuchos::RCP<const panzer::PureBasis > > _pure_basis_map;
-    std::map<size_t,std::map<size_t,Teuchos::RCP<panzer::BasisValues2<double> > > > _basis_map;
+    int num_dimensions_;
 
-    std::map<size_t,Teuchos::RCP<const panzer::PointRule > > _point_rule_map;
-    std::map<size_t,Teuchos::RCP<const panzer::PointValues2<double> > > _point_map;
+    std::string sideset_;
 
-    Teuchos::RCP<panzer::SubcellConnectivity> _face_connectivity;
+    WorksetOptions options_;
+
+    Teuchos::RCP<const shards::CellTopology> cell_topology_;
+
+    // TODO: Const vs non-const is complicated here due to how point values are generated and orientations are applied
+    // Unifying the construction method for worksets will help reduce the clutter here, but point values will almost always be non-const
+    mutable std::map<size_t,Teuchos::RCP<const panzer::PureBasis > > _pure_basis_map;
+    mutable std::map<size_t,Teuchos::RCP<const panzer::IntegrationRule > > _integration_rule_map;
+    mutable std::map<size_t,Teuchos::RCP<const panzer::PointRule > > _point_rule_map;
+
+    mutable std::map<size_t,Teuchos::RCP<const panzer::IntegrationValues2<double> > > integration_values_map_;
+    mutable std::map<size_t,Teuchos::RCP<panzer::PointValues2<double> > > point_values_map_;
+    mutable std::map<size_t,std::map<size_t,Teuchos::RCP<panzer::BasisValues2<double> > > > basis_integration_values_map_;
+    mutable std::map<size_t,std::map<size_t,Teuchos::RCP<panzer::BasisValues2<double> > > > basis_point_values_map_;
+
+    Teuchos::RCP<panzer::SubcellConnectivity> face_connectivity_;
 
   };
 
@@ -196,9 +361,6 @@ namespace panzer {
     //! Get the unique identifier for this workset, this is not an index!
     std::size_t getIdentifier() const { return identifier_; }
 
-    index_t num_cells;
-    int subcell_dim; //! If workset corresponds to a sub cell, what is the dimension?
-    
     double alpha;
     double beta;
     double time;

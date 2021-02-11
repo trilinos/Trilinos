@@ -20,7 +20,7 @@ namespace IOShell {
   class Interface
   {
   public:
-    Interface();
+    Interface(const std::string &app_version);
     ~Interface();
 
     bool parse_options(int argc, char **argv, int my_processor);
@@ -32,6 +32,7 @@ namespace IOShell {
     Ioss::GetLongOption options_;
 
     std::vector<std::string> inputFile;
+    std::string              version{};
     std::string              outputFile;
     std::string              inFiletype{"unknown"};
     std::string              outFiletype{"unknown"};
@@ -48,6 +49,9 @@ namespace IOShell {
     int                      compression_level{0};
     int                      serialize_io_size{0};
     int                      flush_interval{0};
+
+    //! If non-empty, then it is a list of times that should be transferred to the output file.
+    std::vector<double> selected_times{};
 
     //! If non-zero, then put `split_times` timesteps in each file. Then close file and start new
     //! file.

@@ -74,7 +74,8 @@ namespace panzer {
 
     BasisValues2(const std::string & pre="",bool allocArrays=false,bool buildWeighted=false) 
         : build_weighted(buildWeighted), alloc_arrays(allocArrays), prefix(pre)
-        , ddims_(1,0), references_evaluated(false) {}
+        , ddims_(1,0), references_evaluated(false)
+        , orientations_applied_(false){}
  
     //! Sizes/allocates memory for arrays
     void setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& basis,
@@ -182,6 +183,12 @@ namespace panzer {
     std::string prefix;
     std::vector<PHX::index_size_type> ddims_;
 
+    bool orientationsApplied() const
+    {return orientations_applied_;}
+
+    void evaluateBasisCoordinates(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
+                                  const int in_num_cells = -1);
+
   protected:
 
 
@@ -213,11 +220,8 @@ namespace panzer {
                              const PHX::MDField<Scalar,Cell,IP> & jac_det,
                              const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                              const int in_num_cells);
- 
-  private:
 
-    void evaluateBasisCoordinates(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
-                                  const int in_num_cells = -1);
+  private:
 
     /** Evaluate the reference values for the basis functions needed
       *
@@ -226,6 +230,9 @@ namespace panzer {
     void evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool compute_derivatives,bool use_vertex_coordinates);
 
     bool references_evaluated;
+
+    // Have orientations been applied
+    bool orientations_applied_;
   };
 
 } // namespace panzer

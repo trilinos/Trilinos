@@ -487,6 +487,8 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     timer = Teuchos::TimeMonitor::getNewCounter (timerName);
   }
 
+  double startTime = timer->wallTime();
+
   {
     Teuchos::TimeMonitor timeMon (*timer);
 
@@ -534,7 +536,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     }
   }
 
-  ApplyTime_ += timer->totalElapsedTime();
+  ApplyTime_ += (timer->wallTime() - startTime);
   ++NumApply_;
 }
 
@@ -570,6 +572,7 @@ initialize ()
 
   Teuchos::RCP<Teuchos::Time> timer =
     Teuchos::TimeMonitor::getNewCounter ("Ifpack2::BlockRelaxation::initialize");
+  double startTime = timer->wallTime();
 
   { // Timing of initialize starts here
     Teuchos::TimeMonitor timeMon (*timer);
@@ -661,7 +664,7 @@ initialize ()
     }
   } // timing of initialize stops here
 
-  InitializeTime_ += timer->totalElapsedTime ();
+  InitializeTime_ += (timer->wallTime() - startTime);
   ++NumInitialize_;
   IsInitialized_ = true;
 }
@@ -686,6 +689,8 @@ compute ()
   Teuchos::RCP<Teuchos::Time> timer =
     Teuchos::TimeMonitor::getNewCounter ("Ifpack2::BlockRelaxation::compute");
 
+  double startTime = timer->wallTime();
+
   {
     Teuchos::TimeMonitor timeMon (*timer);
 
@@ -695,7 +700,7 @@ compute ()
     Container_->compute();   // compute each block matrix
   }
 
-  ComputeTime_ += timer->totalElapsedTime();
+  ComputeTime_ += (timer->wallTime() - startTime);
   ++NumCompute_;
   IsComputed_ = true;
 }

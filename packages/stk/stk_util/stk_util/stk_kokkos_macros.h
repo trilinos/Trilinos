@@ -1,7 +1,7 @@
 #ifndef STK_KOKKOS_MACROS_H
 #define STK_KOKKOS_MACROS_H
 
-#include <Kokkos_Macros.hpp>
+#include "Kokkos_Macros.hpp"
 
 // This should eventually need to be supplemented with checks for ROCM and
 // other accelerator platforms

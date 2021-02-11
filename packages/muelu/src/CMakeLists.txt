@@ -68,6 +68,9 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Intrepid2)
   INCLUDE_DIRECTORIES(${DIR}/Transfers/PCoarsen)
 ENDIF()
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  INCLUDE_DIRECTORIES(${DIR}/../research/regionMG/src)
+ENDIF()
 
 # Function to generate ETI (explicit template instantiation) files
 # from a template and list of class names
@@ -446,6 +449,7 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

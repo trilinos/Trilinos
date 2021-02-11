@@ -183,7 +183,7 @@ namespace Ioex {
     void write_entity_transient_field(ex_entity_type type, const Ioss::Field &field,
                                       const Ioss::GroupingEntity *ge, int64_t count,
                                       void *variables) const;
-    void write_meta_data() override;
+    void write_meta_data(bool appending) override;
     void gather_communication_metadata(Ioex::CommunicationMetaData *meta);
 
     // Read related metadata and store it in the region...

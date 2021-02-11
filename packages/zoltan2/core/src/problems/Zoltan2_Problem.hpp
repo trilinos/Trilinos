@@ -175,6 +175,7 @@ public:
     // these sublists are used for parameters which do not get validated
     pl.sublist("zoltan_parameters");
     pl.sublist("parma_parameters");
+    pl.sublist("sarma_parameters");
   }
 
   /*! \brief Get the current Environment.
@@ -198,7 +199,7 @@ protected:
   RCP<const Adapter> inputAdapter_;
   RCP<const base_adapter_t> baseInputAdapter_;
 
-  RCP<GraphModel<base_adapter_t> > graphModel_;  
+  RCP<GraphModel<base_adapter_t> > graphModel_;
   RCP<IdentifierModel<base_adapter_t> > identifierModel_;  
   RCP<CoordinateModel<base_adapter_t> > coordinateModel_;  
 

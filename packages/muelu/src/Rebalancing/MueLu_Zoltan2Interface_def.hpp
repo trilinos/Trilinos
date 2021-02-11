@@ -258,10 +258,10 @@ namespace MueLu {
 
       // For blkSize > 1, ignore solution for every row but the first ones in a block.
       for (GO i = 0; i < numElements/blkSize; i++) {
-        int partNum = parts[i*blkSize];
-
-        for (LO j = 0; j < blkSize; j++)
-          decompEntries[i*blkSize + j] = partNum;
+	int partNum = parts[i*blkSize];
+	
+	for (LO j = 0; j < blkSize; j++)
+	  decompEntries[i*blkSize + j] = partNum;
       }
 
       Set(level, "Partition", decomposition);

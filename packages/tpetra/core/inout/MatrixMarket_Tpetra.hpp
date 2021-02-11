@@ -66,6 +66,13 @@
 #include "Teuchos_MatrixMarket_Banner.hpp"
 #include "Teuchos_MatrixMarket_CoordDataReader.hpp"
 #include "Teuchos_SetScientific.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+
+extern "C" {
+#include "mmio_Tpetra.h"
+}
+#include "Tpetra_Distribution.hpp"
+
 
 #include <algorithm>
 #include <fstream>
@@ -1985,6 +1992,8 @@ namespace Tpetra {
         }
         return graph;
       }
+
+#include "MatrixMarket_TpetraNew.hpp"
 
       /// \brief Read sparse matrix from the given Matrix Market file.
       ///

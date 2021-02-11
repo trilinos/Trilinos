@@ -77,7 +77,7 @@ namespace KokkosBatched {
     return r_val;
   }
     
-#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)  
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
   KOKKOS_FORCEINLINE_FUNCTION 
   static
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float,2)
@@ -298,7 +298,7 @@ namespace KokkosBatched {
     return r_val;
   }
 
-#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)  
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
   KOKKOS_FORCEINLINE_FUNCTION
   static 
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float,2)
@@ -568,7 +568,7 @@ namespace KokkosBatched {
     return r_val;
   }
 
-#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)  
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
   KOKKOS_FORCEINLINE_FUNCTION
   static 
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float,2)
@@ -858,7 +858,7 @@ namespace KokkosBatched {
     return r_val;
   }
 
-#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)  
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
   KOKKOS_FORCEINLINE_FUNCTION
   static 
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float,2)

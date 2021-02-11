@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,7 +6,7 @@
 #ifndef ED_Version_h
 #define ED_Version_h
 
-static std::string version("3.07");
-static std::string verdate("2020-10-30");
+static std::string version("3.10");
+static std::string verdate("2021-02-02");
 
 #endif // ED_Version_h

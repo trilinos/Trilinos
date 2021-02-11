@@ -34,11 +34,11 @@
 // 
  */
 
-#include <stk_util/util/Signal.hpp>
-#include <signal.h>                     // for SIGBUS, SIGILL, SIGSEGV, etc
-#include <stk_util/util/Callback.hpp>   // for Callback
-#include <stk_util/util/FeatureTest.hpp>  // for SIERRA_MPI_ABORT_SIGNAL, etc
-#include <stk_util/util/SignalHandler.hpp>  // for SignalHandler
+#include "stk_util/util/Signal.hpp"
+#include "stk_util/util/Callback.hpp"       // for Callback
+#include "stk_util/util/FeatureTest.hpp"    // for SIERRA_MPI_ABORT_SIGNAL, SIERRA_USER_SHUTDOWN...
+#include "stk_util/util/SignalHandler.hpp"  // for SignalHandler
+#include <csignal>                          // for SIGBUS, SIGILL, SIGSEGV, raise, SIGTERM
 
 
 

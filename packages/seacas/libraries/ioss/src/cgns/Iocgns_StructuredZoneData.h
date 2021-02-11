@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -15,6 +15,12 @@
 #include <utility>
 
 namespace Iocgns {
+  enum Ordinal {
+    I = 1,
+    J = 2,
+    K = 4,
+  };
+
   class StructuredZoneData
   {
   public:
@@ -38,7 +44,7 @@ namespace Iocgns {
     Ioss::IJK_t m_offset{{0, 0, 0}};
 
     // If value is 0, 1, or 2, then do not split along that ordinal
-    int m_lineOrdinal{-1};
+    unsigned int m_lineOrdinal{0};
 
     int m_zone{0};
 

@@ -402,7 +402,6 @@ in_hexahedron(
 // \return index to closest point
 //
 template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
 typename std::vector<Vector<T, N>>::size_type
 closest_point(Vector<T, N> const & p, std::vector<Vector<T, N>> const & n)
 {

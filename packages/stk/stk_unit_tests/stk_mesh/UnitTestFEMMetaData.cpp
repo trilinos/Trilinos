@@ -414,6 +414,26 @@ TEST( UnitTestMetaData, topology_test_5c )
   ASSERT_THROW( fem_meta.declare_part_subset(A, B), std::runtime_error );
 }
 
+TEST(UnitTestMetaData, subsetRankRequirements)
+{
+  stk::mesh::MetaData meta(3);
+  stk::mesh::Part& elemPart = meta.declare_part("elemPart", stk::topology::ELEM_RANK);
+  stk::mesh::Part& facePart = meta.declare_part("facePart", stk::topology::FACE_RANK);
+
+  meta.declare_part_subset(elemPart, facePart);
+  ASSERT_THROW(meta.declare_part_subset(facePart, elemPart), std::runtime_error);
+}
+
+TEST(UnitTestMetaData, subsetRankTopologyRequirements)
+{
+  stk::mesh::MetaData meta(3);
+  stk::mesh::Part& elemPart = meta.declare_part("elemPart", stk::topology::ELEM_RANK);
+  stk::mesh::Part& quadPart = meta.declare_part_with_topology("quadPart", stk::topology::QUAD_4);
+
+  meta.declare_part_subset(elemPart, quadPart);
+  ASSERT_THROW(meta.declare_part_subset(quadPart, elemPart), std::runtime_error);
+}
+
 TEST( MetaData, register_topology_duplicate )
 {
   stk::mesh::MetaData fem_meta;

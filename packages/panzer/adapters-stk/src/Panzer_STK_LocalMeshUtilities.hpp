@@ -58,9 +58,8 @@ namespace panzer_stk
    *
    * \returns Structure containing local mesh information
    */
-  void
-  generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
-                        panzer::LocalMeshInfo & mesh_info);
+  Teuchos::RCP<panzer::LocalMeshInfo>
+  generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh);
 }
 
 #endif

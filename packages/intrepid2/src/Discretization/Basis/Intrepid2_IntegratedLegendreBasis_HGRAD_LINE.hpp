@@ -239,9 +239,9 @@ namespace Intrepid2
     using OrdinalTypeArray1DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OrdinalTypeArray1DHost;
     using OrdinalTypeArray2DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OrdinalTypeArray2DHost;
     
-    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OutputViewType OutputViewType;
-    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::PointViewType  PointViewType;
-    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::ScalarViewType ScalarViewType;
+    using OutputViewType = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OutputViewType;
+    using PointViewType  = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::PointViewType ;
+    using ScalarViewType = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::ScalarViewType;
   protected:
     int polyOrder_; // the maximum order of the polynomial
     bool defineVertexFunctions_; // if true, first and second basis functions are x and 1-x.  Otherwise, they are 1 and x.

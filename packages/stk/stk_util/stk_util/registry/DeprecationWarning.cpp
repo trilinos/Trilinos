@@ -7,12 +7,12 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include <exception>
-#include <iostream>
-#include <stk_util/environment/RuntimeDoomed.hpp>
-#include <stk_util/environment/RuntimeWarning.hpp>
-#include <stk_util/environment/Env.hpp>
-#include <stk_util/registry/DeprecationWarning.hpp>
+#include "stk_util/registry/DeprecationWarning.hpp"
+#include "stk_util/environment/Env.hpp"             // for parallel_rank
+#include "stk_util/environment/RuntimeDoomed.hpp"   // for RuntimeDoomed
+#include "stk_util/environment/RuntimeWarning.hpp"  // for RuntimeWarning
+#include <iostream>                                 // for cerr
+#include <string>                                   // for operator<<
 
 namespace stk
 {

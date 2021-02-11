@@ -1,9 +1,13 @@
 #!/bin/bash -l
 
-if [ "${Trilinos_CTEST_DO_ALL_AT_ONCE}" == "" ] ; then
-  export Trilinos_CTEST_DO_ALL_AT_ONCE=TRUE
+set +x
+
+if [[ "${Trilinos_ENABLE_BUILD_STATS}" == "" ]] ; then
+  export Trilinos_ENABLE_BUILD_STATS=ON
 fi
 
-set -x
+if [[ "${Trilinos_REPOSITORY_LOCATION}" == "" ]] ; then
+  export Trilinos_REPOSITORY_LOCATION=git@github.com:trilinos/Trilinos.git
+fi
 
 $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver.sh

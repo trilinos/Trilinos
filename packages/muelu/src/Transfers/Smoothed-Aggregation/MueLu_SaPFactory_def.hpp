@@ -75,6 +75,9 @@ namespace MueLu {
     SET_VALID_ENTRY("sa: use rowsumabs diagonal scaling");
     SET_VALID_ENTRY("sa: enforce constraints");
     SET_VALID_ENTRY("tentative: calculate qr");
+    SET_VALID_ENTRY("sa: max eigenvalue");
+    SET_VALID_ENTRY("sa: rowsumabs diagonal replacement tolerance");
+    SET_VALID_ENTRY("sa: rowsumabs diagonal replacement value");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
@@ -157,6 +160,11 @@ namespace MueLu {
     const bool useAbsValueRowSum=        pL.get<bool>  ("sa: use rowsumabs diagonal scaling");
     const bool doQRStep         =        pL.get<bool>("tentative: calculate qr");
     const bool enforceConstraints=       pL.get<bool>("sa: enforce constraints");
+    const SC   userDefinedMaxEigen =  as<SC>(pL.get<double>("sa: max eigenvalue"));
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
+    double dTol = pL.get<double>("sa: rowsumabs diagonal replacement tolerance");
+    const Magnitude diagonalReplacementTolerance = (dTol == as<double>(-1) ? Teuchos::ScalarTraits<Scalar>::eps()*100 : as<Magnitude>(pL.get<double>("sa: rowsumabs diagonal replacement tolerance")));
+    const SC diagonalReplacementValue =  as<SC>(pL.get<double>("sa: rowsumabs diagonal replacement value"));
 
     // Sanity checking
     TEUCHOS_TEST_FOR_EXCEPTION(doQRStep && enforceConstraints,Exceptions::RuntimeError,
@@ -166,6 +174,7 @@ namespace MueLu {
 
       Scalar lambdaMax;
       Teuchos::RCP<Vector> invDiag;
+      if (userDefinedMaxEigen == -1.)
       {
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
         lambdaMax = A->GetMaxEigenvalueEstimate();
@@ -175,7 +184,11 @@ namespace MueLu {
           Coordinate stopTol = 1e-4;
           if (useAbsValueRowSum) {
             const bool returnReciprocal=true;
-            invDiag = Utilities::GetLumpedMatrixDiagonal(A,returnReciprocal);
+            const bool replaceSingleEntryRowWithZero=true;
+            invDiag = Utilities::GetLumpedMatrixDiagonal(*A,returnReciprocal,
+                                                        diagonalReplacementTolerance,
+                                                        diagonalReplacementValue,
+                                                        replaceSingleEntryRowWithZero);
             TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError,
                                        "SaPFactory: eigenvalue estimate: diagonal reciprocal is null.");
             lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
@@ -185,8 +198,12 @@ namespace MueLu {
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
         }
-        GetOStream(Statistics1) << "Prolongator damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
       }
+      else {
+          lambdaMax = userDefinedMaxEigen;
+          A->SetMaxEigenvalueEstimate(lambdaMax);
+      }
+      GetOStream(Statistics1) << "Prolongator damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
 
       {
         SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);
@@ -195,7 +212,11 @@ namespace MueLu {
         else if (invDiag == Teuchos::null) {
           GetOStream(Runtime0) << "Using rowsumabs diagonal" << std::endl;
           const bool returnReciprocal=true;
-          invDiag = Utilities::GetLumpedMatrixDiagonal(A,returnReciprocal);
+          const bool replaceSingleEntryRowWithZero=true;
+          invDiag = Utilities::GetLumpedMatrixDiagonal(*A,returnReciprocal,
+                                                        diagonalReplacementTolerance,
+                                                        diagonalReplacementValue,
+                                                        replaceSingleEntryRowWithZero);
           TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError, "SaPFactory: diagonal reciprocal is null.");
         }	
 	
@@ -276,7 +297,8 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SatisfyPConstraints(const RCP<Matrix> A, RCP<Matrix>& P) const {
 
-    Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+    const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+    const Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
     LO nPDEs = A->GetFixedBlockSize();
     Teuchos::ArrayRCP<Scalar> ConstraintViolationSum(nPDEs);
     Teuchos::ArrayRCP<Scalar> Rsum(nPDEs);
@@ -315,8 +337,8 @@ namespace MueLu {
               (nPositive[ j%nPDEs])++;
     
             if (Teuchos::ScalarTraits<SC>::real(vals[j]) > Teuchos::ScalarTraits<SC>::real(1.00001  )) { 
-              ConstraintViolationSum[ j%nPDEs ] += (vals[j] - 1.0); 
-              vals[j] = Teuchos::ScalarTraits<Scalar>::one();
+              ConstraintViolationSum[ j%nPDEs ] += (vals[j] - one); 
+              vals[j] = one;
             }
           }
         }
@@ -331,7 +353,7 @@ namespace MueLu {
               ConstraintViolationSum[k] +=  (-Rsum[k]);  // rstumin 
           }
           else if (Teuchos::ScalarTraits<SC>::real(Rsum[ k ]) > Teuchos::ScalarTraits<SC>::magnitude(1.00001)) {
-              ConstraintViolationSum[k] += (Teuchos::ScalarTraits<Scalar>::one() - Rsum[k]);  // rstumin
+              ConstraintViolationSum[k] += (one - Rsum[k]);  // rstumin
           }
         }
 

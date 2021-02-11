@@ -32,34 +32,17 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <math.h>
-#include <sstream>
-#include <iomanip>
-#include <algorithm>
-#include <functional>
-#include <stdexcept>
-#include <limits>
-
-#include <sys/times.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-
-#ifdef __JVN
-#include <sys/wait.h>
-#endif
-
-#include <stk_util/util/FeatureTest.hpp>
-
-#include <memory>
-
-#include <stk_util/util/Writer.hpp>
-#include <stk_util/diag/Timer.hpp>
-#include <stk_util/diag/PrintTable.hpp>
-#include <stk_util/parallel/MPI.hpp>
-
-#include <stk_util/util/string_case_compare.hpp>
-
-#include <stk_util/diag/WriterExt.hpp>
+#include "stk_util/diag/Timer.hpp"
+#include "stk_util/diag/WriterExt.hpp"            // for operator<<
+#include "stk_util/stk_config.h"                  // for STK_HAS_MPI
+#include "stk_util/util/Writer.hpp"               // for operator<<, Writer, dendl, pop, push
+#include "stk_util/util/string_case_compare.hpp"  // for equal_case
+#include <algorithm>                              // for find_if
+#include <exception>                              // for exception
+#include <functional>                             // for unary_function
+#include <memory>                                 // for shared_ptr, __shared_ptr_access
+#include <stdexcept>                              // for runtime_error
+#include <vector>                                 // for vector
 
 namespace stk {
 namespace diag {

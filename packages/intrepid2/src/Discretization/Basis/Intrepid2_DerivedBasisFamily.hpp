@@ -271,7 +271,7 @@ namespace Intrepid2
    be updated so that it also supports other element types.
      */
   template<class BasisFamily>
-  static typename BasisFamily::BasisPtr getBasis(shards::CellTopology &cellTopo, Intrepid2::EFunctionSpace fs, int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT)
+  static typename BasisFamily::BasisPtr getBasis(const shards::CellTopology &cellTopo, Intrepid2::EFunctionSpace fs, int polyOrder, const EPointType pointType = POINTTYPE_DEFAULT)
   {
     using Teuchos::rcp;
     switch (cellTopo.getBaseKey())

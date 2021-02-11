@@ -123,6 +123,11 @@ class SteadyStateSolver
   void evalConvergedModelResponsesAndSensitivities(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
+
+  /** \brief . */
+  void evalReducedHessian(
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
   //@}
 
   private:

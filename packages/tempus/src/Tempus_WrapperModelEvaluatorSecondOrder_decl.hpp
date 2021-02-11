@@ -122,7 +122,7 @@ public:
       *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
       return appModel_->get_p_space(p);
-    };
+    }
 
     Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int p) const
     {
@@ -186,7 +186,7 @@ public:
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
   //@}
 
-    enum SCHEME_TYPE {NEWMARK_IMPLICIT_AFORM, NEWMARK_IMPLICIT_DFORM};
+  enum SCHEME_TYPE {NEWMARK_IMPLICIT_AFORM, NEWMARK_IMPLICIT_DFORM};
 
 private:
 

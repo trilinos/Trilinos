@@ -4,54 +4,54 @@
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef GETLINE_H
-#define GETLINE_H
+#ifndef APREPRO_GETLINE_H
+#define APREPRO_GETLINE_H
 
 /* unix systems can #define POSIX to use termios, otherwise
  * the bsd or sysv interface will be used
  */
 
-#define GL_BUF_SIZE 1024
+#define AP_GL_BUF_SIZE 1024
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef size_t (*gl_strwidth_proc)(char *);
-typedef int (*gl_in_hook_proc)(char *);
-typedef int (*gl_out_hook_proc)(char *);
-typedef int (*gl_tab_hook_proc)(char *, int, int *, size_t);
-typedef size_t (*gl_strlen_proc)(const char *);
-typedef char *(*gl_tab_completion_proc)(const char *, int);
+typedef size_t (*ap_gl_strwidth_proc)(char *);
+typedef int (*ap_gl_in_hook_proc)(char *);
+typedef int (*ap_gl_out_hook_proc)(char *);
+typedef int (*ap_gl_tab_hook_proc)(char *, int, int *, size_t);
+typedef size_t (*ap_gl_strlen_proc)(const char *);
+typedef char *(*ap_gl_tab_completion_proc)(const char *, int);
 
-char *getline_int(char *);           /* read a line of input */
-void  gl_setwidth(int);              /* specify width of screen */
-void  gl_histadd(char *);            /* adds entries to hist */
-void  gl_strwidth(gl_strwidth_proc); /* to bind gl_strlen */
-void  gl_tab_completion(gl_tab_completion_proc);
-char *gl_local_filename_completion_proc(const char *, int);
-void  gl_set_home_dir(const char *homedir);
-void  gl_histsavefile(const char *const path);
-void  gl_histloadfile(const char *const path);
-char *gl_win_getpass(const char *const prompt, char *const pass, int dsize);
+char *ap_getline_int(char *);              /* read a line of input */
+void  ap_gl_setwidth(int);                 /* specify width of screen */
+void  ap_gl_histadd(char *);               /* adds entries to hist */
+void  ap_gl_strwidth(ap_gl_strwidth_proc); /* to bind ap_gl_strlen */
+void  ap_gl_tab_completion(ap_gl_tab_completion_proc);
+char *ap_gl_local_filename_completion_proc(const char *, int);
+void  ap_gl_set_home_dir(const char *homedir);
+void  ap_gl_histsavefile(const char *const path);
+void  ap_gl_histloadfile(const char *const path);
+char *ap_gl_win_getpass(const char *const prompt, char *const pass, int dsize);
 
-#ifndef _getline_c_
+#ifndef _ap_getline_c_
 
-extern gl_in_hook_proc        gl_in_hook;
-extern gl_out_hook_proc       gl_out_hook;
-extern gl_tab_hook_proc       gl_tab_hook;
-extern gl_strlen_proc         gl_strlen;
-extern gl_tab_completion_proc gl_completion_proc;
-extern int                    gl_filename_quoting_desired;
-extern const char *           gl_filename_quote_characters;
-extern int                    gl_ellipses_during_completion;
-extern int                    gl_completion_exact_match_extra_char;
-extern char                   gl_buf[GL_BUF_SIZE];
+extern ap_gl_in_hook_proc        ap_gl_in_hook;
+extern ap_gl_out_hook_proc       ap_gl_out_hook;
+extern ap_gl_tab_hook_proc       ap_gl_tab_hook;
+extern ap_gl_strlen_proc         ap_gl_strlen;
+extern ap_gl_tab_completion_proc ap_gl_completion_proc;
+extern int                       ap_gl_filename_quoting_desired;
+extern const char *              ap_gl_filename_quote_characters;
+extern int                       ap_gl_ellipses_during_completion;
+extern int                       ap_gl_completion_exact_match_extra_char;
+extern char                      ap_gl_buf[AP_GL_BUF_SIZE];
 
-#endif /* ! _getline_c_ */
+#endif /* ! _ap_getline_c_ */
 
 #ifdef __cplusplus
 } /* close brackets on extern "C" declaration */
 #endif
 
-#endif /* GETLINE_H */
+#endif /* APREPRO_GETLINE_H */

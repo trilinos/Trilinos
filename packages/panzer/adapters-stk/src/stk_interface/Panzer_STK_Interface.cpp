@@ -528,6 +528,13 @@ void STK_Interface::addEntityToEdgeBlock(stk::mesh::Entity entity,stk::mesh::Par
 
    bulkData_->change_entity_parts(entity,edgeblockV);
 }
+void STK_Interface::addEntitiesToEdgeBlock(std::vector<stk::mesh::Entity> entities,stk::mesh::Part * edgeblock)
+{
+   std::vector<stk::mesh::Part*> edgeblockV;
+   edgeblockV.push_back(edgeblock);
+
+   bulkData_->change_entity_parts(entities,edgeblockV);
+}
 
 void STK_Interface::addEntityToFaceBlock(stk::mesh::Entity entity,stk::mesh::Part * faceblock)
 {
@@ -535,6 +542,13 @@ void STK_Interface::addEntityToFaceBlock(stk::mesh::Entity entity,stk::mesh::Par
    faceblockV.push_back(faceblock);
 
    bulkData_->change_entity_parts(entity,faceblockV);
+}
+void STK_Interface::addEntitiesToFaceBlock(std::vector<stk::mesh::Entity> entities,stk::mesh::Part * faceblock)
+{
+   std::vector<stk::mesh::Part*> faceblockV;
+   faceblockV.push_back(faceblock);
+
+   bulkData_->change_entity_parts(entities,faceblockV);
 }
 
 void STK_Interface::addElement(const Teuchos::RCP<ElementDescriptor> & ed,stk::mesh::Part * block)
@@ -1986,12 +2000,10 @@ void STK_Interface::refineMesh(const int numberOfLevels, const bool deleteParent
   refinedMesh_->setCoordinatesField();
 
   percept::UniformRefiner breaker(*refinedMesh_,*breakPattern_);
+  breaker.setRemoveOldElements(deleteParentElements);
 
   for (int i=0; i < numberOfLevels; ++i)
     breaker.doBreak();
-
-  if (deleteParentElements)
-    breaker.deleteParentElements();
 
 #else
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,

@@ -43,12 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_SimpleSmoother_def.hpp
- *
- *  Created on: 19.03.2013
- *      Author: wiesner
- */
 
 #ifndef MUELU_SIMPLESMOOTHER_DEF_HPP_
 #define MUELU_SIMPLESMOOTHER_DEF_HPP_
@@ -83,54 +77,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SimpleSmoother()
-    : type_("SIMPLE"), A_(Teuchos::null)
-  {
-    //Factory::SetParameter("Sweeps", Teuchos::ParameterEntry(sweeps));
-    //Factory::SetParameter("Damping factor",Teuchos::ParameterEntry(omega));
-    //Factory::SetParameter("UseSIMPLEC", Teuchos::ParameterEntry(SIMPLEC));
-
-#if 0
-    // when declaring default factories without overwriting them leads to a multipleCallCheck exception
-    // TODO: debug into this
-    // workaround: always define your factory managers outside either using the C++ API or the XML files
-    RCP<SchurComplementFactory> SchurFact = Teuchos::rcp(new SchurComplementFactory());
-    SchurFact->SetParameter("omega",Teuchos::ParameterEntry(omega));
-    SchurFact->SetParameter("lumping",Teuchos::ParameterEntry(SIMPLEC));
-    SchurFact->SetFactory("A", this->GetFactory("A"));
-
-    // define smoother/solver for SchurComplement equation
-    Teuchos::ParameterList SCparams;
-    std::string SCtype;
-    RCP<SmootherPrototype> smoProtoSC     = rcp( new DirectSolver(SCtype,SCparams) );
-    smoProtoSC->SetFactory("A", SchurFact);
-
-    RCP<SmootherFactory> SmooSCFact = rcp( new SmootherFactory(smoProtoSC) );
-
-    RCP<FactoryManager> schurFactManager = rcp(new FactoryManager());
-    schurFactManager->SetFactory("A", SchurFact);
-    schurFactManager->SetFactory("Smoother", SmooSCFact);
-    schurFactManager->SetIgnoreUserData(true);
-
-    // define smoother/solver for velocity prediction
-    RCP<SubBlockAFactory> A00Fact = Teuchos::rcp(new SubBlockAFactory(/*this->GetFactory("A"), 0, 0*/));
-    A00Fact->SetFactory("A",this->GetFactory("A"));
-    A00Fact->SetParameter("block row",ParameterEntry(0));
-    A00Fact->SetParameter("block col",ParameterEntry(0));
-    Teuchos::ParameterList velpredictParams;
-    std::string velpredictType;
-    RCP<SmootherPrototype> smoProtoPredict     = rcp( new DirectSolver(velpredictType,velpredictParams) );
-    smoProtoPredict->SetFactory("A", A00Fact);
-    RCP<SmootherFactory> SmooPredictFact = rcp( new SmootherFactory(smoProtoPredict) );
-
-    RCP<FactoryManager> velpredictFactManager = rcp(new FactoryManager());
-    velpredictFactManager->SetFactory("A", A00Fact);
-    velpredictFactManager->SetFactory("Smoother", SmooPredictFact);
-    velpredictFactManager->SetIgnoreUserData(true);
-
-    AddFactoryManager(velpredictFactManager, 0);
-    AddFactoryManager(schurFactManager, 1);
-#endif
-  }
+    : type_("SIMPLE"), A_(Teuchos::null) {}
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~SimpleSmoother() {}
@@ -139,10 +86,10 @@ namespace MueLu {
   RCP<const ParameterList> SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
-    validParamList->set< Scalar >                ("Damping factor",     1.0, "Damping/Scaling factor in SIMPLE");
-    validParamList->set< LocalOrdinal >          ("Sweeps",             1, "Number of SIMPLE sweeps (default = 1)");
-    validParamList->set< bool >                  ("UseSIMPLEC",         false, "Use SIMPLEC instead of SIMPLE (default = false)");
+    validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A");
+    validParamList->set<Scalar>("Damping factor", 1.0, "Damping/Scaling factor in SIMPLE");
+    validParamList->set<LocalOrdinal>("Sweeps", 1, "Number of SIMPLE sweeps (default = 1)");
+    validParamList->set<bool>("UseSIMPLEC", false, "Use SIMPLEC instead of SIMPLE (default = false)");
 
     return validParamList;
   }
@@ -199,12 +146,6 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level &currentLevel) {
-    //*********************************************
-    // Setup routine can be summarized in 4 steps:
-    // - Set the map extractors
-    // - Set the blocks
-    // - Create and set the inverse of the diagonal of F
-    // - Set the smoother for the Schur Complement
 
     FactoryMonitor m(*this, "Setup blocked SIMPLE Smoother", currentLevel);
 
@@ -250,7 +191,7 @@ namespace MueLu {
         diag[i] = absRowSum;
       }*/
       // TODO this does not work if F_ is nested!
-      diagFVector = Utilities::GetLumpedMatrixDiagonal(F_);
+      diagFVector = Utilities::GetLumpedMatrixDiagonal(*F_);
     }
     diagFinv_ = Utilities::GetInverse(diagFVector);
 
@@ -280,7 +221,8 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::SimpleSmoother::Apply(): Setup() has not been called");
+    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError,
+        "MueLu::SimpleSmoother::Apply(): Setup() has not been called");
 #if 0
     // TODO simplify this debug check
     RCP<MultiVector> rcpDebugX = Teuchos::rcpFromRef(X);
@@ -299,9 +241,8 @@ namespace MueLu {
     }
 #endif
 
-    Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
-
-    SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
+    const SC zero = Teuchos::ScalarTraits<SC>::zero();
+    const SC one = Teuchos::ScalarTraits<SC>::one();
 
     // extract parameters from internal parameter list
     const ParameterList & pL = Factory::GetParameterList();
@@ -309,19 +250,20 @@ namespace MueLu {
     Scalar omega = pL.get<Scalar>("Damping factor");
 
     // The boolean flags check whether we use Thyra or Xpetra style GIDs
-    bool bRangeThyraMode  = rangeMapExtractor_->getThyraMode(); //  && (Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(F_) == Teuchos::null);
+    bool bRangeThyraMode = rangeMapExtractor_->getThyraMode(); //  && (Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(F_) == Teuchos::null);
     bool bDomainThyraMode = domainMapExtractor_->getThyraMode(); // && (Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(F_) == Teuchos::null);
 
     //RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
     // wrap current solution vector in RCP
-    RCP<MultiVector>       rcpX = Teuchos::rcpFromRef(X);
+    RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
     RCP<const MultiVector> rcpB = Teuchos::rcpFromRef(B);
 
     // make sure that both rcpX and rcpB are BlockedMultiVector objects
     bool bCopyResultX = false;
     RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A_);
-    MUELU_TEST_FOR_EXCEPTION(bA.is_null() == true, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): A_ must be a BlockedCrsMatrix");
+    MUELU_TEST_FOR_EXCEPTION(bA.is_null() == true, Exceptions::RuntimeError,
+        "MueLu::BlockedGaussSeidelSmoother::Apply(): A_ must be a BlockedCrsMatrix");
     RCP<BlockedMultiVector> bX = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(rcpX);
     RCP<const BlockedMultiVector> bB = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpB);
 
@@ -341,22 +283,21 @@ namespace MueLu {
     bB = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpB);
 
     // check the type of operator
-    RCP<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rbA = Teuchos::rcp_dynamic_cast<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(bA);
+    RCP<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rbA =
+        Teuchos::rcp_dynamic_cast<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(bA);
     if(rbA.is_null() == false) {
       // A is a ReorderedBlockedCrsMatrix
       Teuchos::RCP<const Xpetra::BlockReorderManager > brm = rbA->getBlockReorderManager();
 
-      // check type of X vector
+      // check vector types
       if(bX->getBlockedMap()->getNumMaps() != bA->getDomainMapExtractor()->NumMaps()) {
         // X is a blocked multi vector but incompatible to the reordered blocked operator A
-        Teuchos::RCP<MultiVector> test =
-            buildReorderedBlockedMultiVector(brm, bX);
+        Teuchos::RCP<MultiVector> test = buildReorderedBlockedMultiVector(brm, bX);
         rcpX.swap(test);
       }
       if(bB->getBlockedMap()->getNumMaps() != bA->getRangeMapExtractor()->NumMaps()) {
         // B is a blocked multi vector but incompatible to the reordered blocked operator A
-        Teuchos::RCP<const MultiVector> test =
-            buildReorderedBlockedMultiVector(brm, bB);
+        Teuchos::RCP<const MultiVector> test = buildReorderedBlockedMultiVector(brm, bB);
         rcpB.swap(test);
       }
     }
@@ -367,26 +308,26 @@ namespace MueLu {
     // contains current residual of current solution X with rhs B
     RCP<MultiVector> residual = MultiVectorFactory::Build(rcpB->getMap(), rcpB->getNumVectors());
     RCP<BlockedMultiVector> bresidual = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(residual);
-    Teuchos::RCP<MultiVector> r1 = bresidual->getMultiVector(0,bRangeThyraMode);
-    Teuchos::RCP<MultiVector> r2 = bresidual->getMultiVector(1,bRangeThyraMode);
+    RCP<MultiVector> r1 = bresidual->getMultiVector(0,bRangeThyraMode);
+    RCP<MultiVector> r2 = bresidual->getMultiVector(1,bRangeThyraMode);
 
     // helper vector 1
-    RCP<MultiVector> xtilde     = MultiVectorFactory::Build(rcpX->getMap(), rcpX->getNumVectors());
+    RCP<MultiVector> xtilde = MultiVectorFactory::Build(rcpX->getMap(), rcpX->getNumVectors());
     RCP<BlockedMultiVector> bxtilde = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(xtilde);
-    RCP<MultiVector> xtilde1 = bxtilde->getMultiVector(0,bDomainThyraMode);
-    RCP<MultiVector> xtilde2 = bxtilde->getMultiVector(1,bDomainThyraMode);
+    RCP<MultiVector> xtilde1 = bxtilde->getMultiVector(0, bDomainThyraMode);
+    RCP<MultiVector> xtilde2 = bxtilde->getMultiVector(1, bDomainThyraMode);
 
     // helper vector 2
-    RCP<MultiVector> xhat     = MultiVectorFactory::Build(rcpX->getMap(), rcpX->getNumVectors());
+    RCP<MultiVector> xhat = MultiVectorFactory::Build(rcpX->getMap(), rcpX->getNumVectors());
     RCP<BlockedMultiVector> bxhat = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(xhat);
-    RCP<MultiVector> xhat1 = bxhat->getMultiVector(0,bDomainThyraMode);
-    RCP<MultiVector> xhat2 = bxhat->getMultiVector(1,bDomainThyraMode);
+    RCP<MultiVector> xhat1 = bxhat->getMultiVector(0, bDomainThyraMode);
+    RCP<MultiVector> xhat2 = bxhat->getMultiVector(1, bDomainThyraMode);
 
 
     // incrementally improve solution vector X
     for (LocalOrdinal run = 0; run < nSweeps; ++run) {
       // 1) calculate current residual
-      residual->update(one,*rcpB,zero); // residual = B
+      residual->update(one, *rcpB, zero); // residual = B
       if(InitialGuessIsZero == false || run > 0)
         A_->apply(*rcpX, *residual, Teuchos::NO_TRANS, -one, one);
 
@@ -394,35 +335,35 @@ namespace MueLu {
       //    start with zero guess \Delta \tilde{x}_1
       xtilde1->putScalar(zero);
       xtilde2->putScalar(zero);
-      velPredictSmoo_->Apply(*xtilde1,*r1);
+      velPredictSmoo_->Apply(*xtilde1, *r1);
 
       // 3) calculate rhs for SchurComp equation
       //    r_2 - D \Delta \tilde{x}_1
       RCP<MultiVector> schurCompRHS = rangeMapExtractor_->getVector(1, rcpB->getNumVectors(), bRangeThyraMode);
-      D_->apply(*xtilde1,*schurCompRHS);
+      D_->apply(*xtilde1, *schurCompRHS);
 
-      schurCompRHS->update(one,*r2,-one);
+      schurCompRHS->update(one, *r2, -one);
 
       // 4) solve SchurComp equation
       //    start with zero guess \Delta \tilde{x}_2
-      schurCompSmoo_->Apply(*xtilde2,*schurCompRHS);
+      schurCompSmoo_->Apply(*xtilde2, *schurCompRHS);
 
       // 5) scale xtilde2 with omega
       //    store this in xhat2
-      xhat2->update(omega,*xtilde2,zero);
+      xhat2->update(omega, *xtilde2, zero);
 
       // 6) calculate xhat1
       RCP<MultiVector> xhat1_temp = domainMapExtractor_->getVector(0, rcpX->getNumVectors(), bDomainThyraMode);
-      G_->apply(*xhat2,*xhat1_temp); // store result temporarely in xtilde1_temp
+      G_->apply(*xhat2, *xhat1_temp); // store result temporarely in xtilde1_temp
 
-      xhat1->elementWiseMultiply(one/*/omega*/,*diagFinv_,*xhat1_temp,zero);
-      xhat1->update(one,*xtilde1,-one);
+      xhat1->elementWiseMultiply(one/*/omega*/, *diagFinv_, *xhat1_temp, zero);
+      xhat1->update(one, *xtilde1, -one);
 
-      rcpX->update(one,*bxhat,one);
+      rcpX->update(one, *bxhat, one);
     }
 
     if (bCopyResultX == true) {
-      RCP<MultiVector> Xmerged = bX->Merge();
+      RCP<const MultiVector> Xmerged = bX->Merge();
       X.update(one, *Xmerged, zero);
     }
 
@@ -460,7 +401,7 @@ namespace MueLu {
     // FIXME: This is a placeholder
     return Teuchos::OrdinalTraits<size_t>::invalid();
   }
-  
+
 
 } // namespace MueLu
 

@@ -6,7 +6,6 @@
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphUpdater.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 
 namespace

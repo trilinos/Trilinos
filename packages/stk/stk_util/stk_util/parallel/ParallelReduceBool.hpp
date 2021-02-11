@@ -35,7 +35,7 @@
 #ifndef stk_util_parallel_ParallelReduceBool_hpp
 #define stk_util_parallel_ParallelReduceBool_hpp
 
-#include <stk_util/parallel/ParallelReduce.hpp>  // for ParallelMachine, etc
+#include "stk_util/parallel/ParallelReduce.hpp"  // for ParallelMachine, etc
 
 //------------------------------------------------------------------------
 

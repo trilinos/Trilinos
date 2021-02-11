@@ -185,7 +185,7 @@ namespace Intrepid2 {
     virtual
     void
     getCubature( PointViewType  cubPoints,
-                 weightViewType cubWeights ) const {
+                 weightViewType cubWeights ) const override {
       this->getCubatureFromData(cubPoints, cubWeights, this->cubatureData_);
     }
 
@@ -193,7 +193,7 @@ namespace Intrepid2 {
      */
     virtual
     ordinal_type
-    getNumPoints() const {
+    getNumPoints() const override {
       return cubatureData_.numPoints_;
     }
 
@@ -201,7 +201,7 @@ namespace Intrepid2 {
      */
     virtual
     ordinal_type
-    getDimension() const {
+    getDimension() const override {
       return dimension_;
     }
 
@@ -209,7 +209,7 @@ namespace Intrepid2 {
      */
     virtual
     const char*
-    getName() const {
+    getName() const override {
       return "CubatureDirect";
     }
 
@@ -218,7 +218,7 @@ namespace Intrepid2 {
     */
     virtual
     ordinal_type 
-    getAccuracy() const {
+    getAccuracy() const override {
       return degree_;
     }
 

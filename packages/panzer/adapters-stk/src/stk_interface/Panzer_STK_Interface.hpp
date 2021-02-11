@@ -238,10 +238,16 @@ public:
    /** Adds an entity to a specified edge block.
      */
    void addEntityToEdgeBlock(stk::mesh::Entity entity,stk::mesh::Part * edgeblock);
+   /** Adds a vector of entities to a specified edge block.
+     */
+   void addEntitiesToEdgeBlock(std::vector<stk::mesh::Entity> entities,stk::mesh::Part * edgeblock);
 
    /** Adds an entity to a specified face block.
      */
    void addEntityToFaceBlock(stk::mesh::Entity entity,stk::mesh::Part * faceblock);
+   /** Adds a vector of entities to a specified face block.
+     */
+   void addEntitiesToFaceBlock(std::vector<stk::mesh::Entity> entities,stk::mesh::Part * faceblock);
 
    // Methods to interrogate the mesh topology and structure
    //////////////////////////////////////////
@@ -590,6 +596,12 @@ public:
 
    Teuchos::RCP<stk::mesh::BulkData> getBulkData() const { return bulkData_; }
    Teuchos::RCP<stk::mesh::MetaData> getMetaData() const { return metaData_; }
+
+#ifdef PANZER_HAVE_PERCEPT
+  //! Get the uniformly refined PerceptMesh object. 
+  Teuchos::RCP<percept::PerceptMesh> getRefinedMesh() const
+  { TEUCHOS_ASSERT(Teuchos::nonnull(refinedMesh_)); return refinedMesh_; }
+#endif
 
    bool isWritable() const;
 

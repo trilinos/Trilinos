@@ -32,12 +32,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/environment/FormatTime.hpp>
-
+#include "stk_util/environment/FormatTime.hpp"
+#include <cmath>     // for fmod
+#include <iomanip>   // for operator<<, setfill, setw, setprecision
+#include <iostream>  // for basic_ostream, basic_ostream::operator<<, operator<<, stringstream
 #include <sstream>
-#include <iomanip>
-#include <cmath>
-#include <iostream>
 
 namespace stk {
 
@@ -62,7 +61,9 @@ formatTime(
   else if ((time_format & TIMEFORMAT_STYLE_MASK) == TIMEFORMAT_HMS) {
     int int_time = static_cast<int>(time);
 
-    if (time >= 3600.0)
+    if(int_time < 0){
+      oss << "inf.";
+    } else if (time >= 3600.0)
       oss << (int_time)/3600 << ':'
              << std::setw(2) << std::setfill('0') << (int_time/60)%60 << ':'
              << std::setw(2) << std::setfill('0') << int_time%60;

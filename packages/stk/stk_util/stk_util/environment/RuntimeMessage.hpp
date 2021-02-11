@@ -35,12 +35,11 @@
 #ifndef STK_UTIL_ENVIRONMENT_RUNTIMEMESSAGE_HPP
 #define STK_UTIL_ENVIRONMENT_RUNTIMEMESSAGE_HPP
 
-#include <iosfwd>
-#include <vector>
-#include <cstddef>
+#include "stk_util/parallel/Parallel.hpp"  // for MPI_Comm
+#include <cstddef>                         // for size_t, ptrdiff_t
+#include <iosfwd>                          // for ostream
+#include <string>                          // for string
 
-#include <stk_util/stk_config.h>
-#include <stk_util/parallel/Parallel.hpp>
 
 namespace stk {
 

@@ -95,7 +95,7 @@ protected:
     size_t calculate_migrated_elements()
     {
         stk::mesh::EntityVector elements;
-        stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK), elements);
+        stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part(), elements);
 
         size_t num_elements_migrated = 0;
         for(const stk::mesh::Entity& element : elements )
@@ -112,7 +112,7 @@ protected:
     void set_proc_owner_on_field()
     {
         stk::mesh::EntityVector elements;
-        stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK), elements);
+        stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part(), elements);
 
         for(const stk::mesh::Entity &element : elements )
         {
@@ -124,7 +124,7 @@ protected:
     void set_weights_on_elements(float weight = 9.0)
     {
         stk::mesh::EntityVector elements;
-        stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK), elements);
+        stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part(), elements);
 
         for(const stk::mesh::Entity &element : elements )
         {
@@ -136,7 +136,7 @@ protected:
     void set_weights_on_elements(const std::vector<stk::mesh::EntityId>& ids, float newWeight)
     {
         stk::mesh::EntityVector elements;
-        stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK), elements);
+        stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part(), elements);
 
         for(stk::mesh::EntityId id : ids )
         {
@@ -152,7 +152,7 @@ protected:
     void change_weights_on_elements()
     {
         stk::mesh::EntityVector elements;
-        stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK), elements);
+        stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part(), elements);
 
         double* data = stk::mesh::field_data(*weight_field, elements[0]);
         *data = 1;
@@ -172,9 +172,7 @@ protected:
     {
         if(numGlobalElements == 0)
         {
-            stk::mesh::EntityVector elements;
-            stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK), elements);
-            size_t num_local_elements = elements.size();
+            size_t num_local_elements = stk::mesh::count_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part());
             stk::all_reduce_sum(get_comm(), &num_local_elements, &numGlobalElements, 1);
         }
         return numGlobalElements;
@@ -187,7 +185,7 @@ protected:
         const stk::mesh::FieldBase * coord = get_meta().get_field(stk::topology::NODE_RANK, coordinate_field_name);
 
         stk::mesh::EntityVector nodes;
-        stk::mesh::get_selected_entities(get_meta().locally_owned_part() | get_meta().globally_shared_part(), get_bulk().buckets(stk::topology::NODE_RANK), nodes);
+        stk::mesh::get_entities(get_bulk(), stk::topology::NODE_RANK, get_meta().locally_owned_part() | get_meta().globally_shared_part(), nodes);
 
         double rotation = 15 * M_PI / 180.0;
         double dx = 3;
@@ -209,7 +207,7 @@ protected:
     void print_locally_owned_elements(std::ostream& out)
     {
         stk::mesh::EntityVector elements;
-        stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK), elements);
+        stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part(), elements);
 
         out << "P" << get_bulk().parallel_rank() << " locally owned elements = ";
         for(const stk::mesh::Entity &element : elements )
@@ -363,9 +361,7 @@ protected:
     size_t count_global_non_particle_elements()
     {
         size_t numGlobalElements;
-        stk::mesh::EntityVector elements;
-        stk::mesh::get_selected_entities(get_meta().locally_owned_part() & !get_meta().get_topology_root_part(stk::topology::PARTICLE), get_bulk().buckets(stk::topology::ELEM_RANK), elements);
-        size_t num_local_elements = elements.size();
+        size_t num_local_elements = stk::mesh::count_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part() & !get_meta().get_topology_root_part(stk::topology::PARTICLE));
         stk::all_reduce_sum(get_comm(), &num_local_elements, &numGlobalElements, 1);
         return numGlobalElements;
     }
@@ -387,15 +383,13 @@ protected:
 
     size_t count_local_elements()
     {
-        stk::mesh::EntityVector elements;
-        stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK), elements);
-        return elements.size();
+        return stk::mesh::count_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part());
     }
 
     stk::mesh::EntityVector get_non_particle_elements_inside_sphere(double* center, double radius)
     {
         stk::mesh::EntityVector elements;
-        stk::mesh::get_selected_entities(get_meta().locally_owned_part() & !get_meta().get_topology_root_part(stk::topology::PARTICLE), get_bulk().buckets(stk::topology::ELEM_RANK), elements);
+        stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part() & !get_meta().get_topology_root_part(stk::topology::PARTICLE), elements);
         stk::mesh::EntityVector selectedElements;
         for(size_t i=0 ; i<elements.size() ; ++i)
         {

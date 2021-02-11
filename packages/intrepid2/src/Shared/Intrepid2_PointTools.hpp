@@ -232,7 +232,7 @@ public:
 
         \param  points      [out] - Output array of point coords
         \param  cellType    [in]  - type of reference cell (currently only supports the simplex)
-        \param  order       [in]  - number of points per side, plus 1
+        \param  order       [in]  - number of points per edge, minus 1
         \param  offset      [in]  - Number of points on boundary to skip
         \param  pointType   [in]  - flag for point distribution.  Currently equispaced and
         warp/blend points are supported
@@ -254,7 +254,7 @@ public:
         \endcode
 
         \param  points      [out] - Output array of point coords
-        \param  order       [in]  - number of points per side, plus 1
+        \param  order       [in]  - number of points per edge, minus 1
         \param  offset      [in]  - Number of points on boundary to skip
         \param  pointType   [in]  - flag for point distribution.  Currently equispaced and
         warp/blend points are supported
@@ -275,7 +275,7 @@ public:
         \endcode
 
         \param  points      [out] - Output array of point coords
-        \param  order       [in]  - number of points per side, plus 1
+        \param  order       [in]  - number of points per edge, minus 1
         \param  offset      [in]  - Number of points on boundary to skip
         \param  pointType   [in]  - flag for point distribution.  Currently equispaced and
         warp/blend points are supported
@@ -296,7 +296,7 @@ public:
         \endcode
 
         \param  points      [out] - Output array of point coords
-        \param  order       [in]  - number of points per side, plus 1
+        \param  order       [in]  - number of points per edge, minus 1
         \param  offset      [in]  - Number of points on boundary to skip
         \param  pointType   [in]  - flag for point distribution.  Currently equispaced and
         warp/blend points are supported

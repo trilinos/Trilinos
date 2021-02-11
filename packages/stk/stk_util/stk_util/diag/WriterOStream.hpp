@@ -35,7 +35,7 @@
 #ifndef STK_UTIL_DIAG_WRITEROSTREAM_HPP
 #define STK_UTIL_DIAG_WRITEROSTREAM_HPP
 
-#include <stk_util/util/Writer.hpp>
+#include "stk_util/util/Writer.hpp"
 
 namespace stk {
 namespace diag {

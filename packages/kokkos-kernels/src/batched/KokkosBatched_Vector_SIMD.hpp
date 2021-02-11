@@ -6,7 +6,7 @@
 #include <Kokkos_Complex.hpp>
 #include <KokkosBatched_Vector.hpp>
 
-#if defined(__CUDA_ARCH__) 
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
 #undef  __KOKKOSBATCHED_ENABLE_AVX__
 #else
 // compiler bug with AVX in some architectures
@@ -129,7 +129,7 @@ namespace KokkosBatched {
 }
 
 
-#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
 namespace KokkosBatched {
 
   template<>
@@ -143,7 +143,7 @@ namespace KokkosBatched {
     typedef float2 data_type;
 
     KOKKOS_INLINE_FUNCTION
-    static const char* label() { return "CudaFloat2"; }
+    static const char* label() { return "GpuFloat2"; }
 
     template<typename,int>
     friend class Vector;
@@ -224,7 +224,7 @@ namespace KokkosBatched {
     typedef double2 data_type;
 
     KOKKOS_INLINE_FUNCTION
-    static const char* label() { return "CudaDouble2"; }
+    static const char* label() { return "GpuDouble2"; }
 
     template<typename,int>
     friend class Vector;
@@ -305,7 +305,7 @@ namespace KokkosBatched {
     typedef float4 data_type;
 
     KOKKOS_INLINE_FUNCTION
-    static const char* label() { return "CudaFloat4"; }
+    static const char* label() { return "GpuFloat4"; }
 
     template<typename,int>
     friend class Vector;
@@ -400,7 +400,7 @@ namespace KokkosBatched {
     typedef double4 data_type;
 
     KOKKOS_INLINE_FUNCTION
-    static const char* label() { return "CudaDouble4"; }
+    static const char* label() { return "GpuDouble4"; }
 
     template<typename,int>
     friend class Vector;

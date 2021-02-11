@@ -140,6 +140,17 @@ namespace MueLu {
 
     if (verbLevel & Statistics1)
       out0 << "Global number of aggregates: " << GetNumGlobalAggregates() << std::endl;
+
+    if(verbLevel == Teuchos::VERB_EXTREME) {
+      for(size_t j=0; j <vertex2AggId_->getNumVectors(); j++) {
+        auto data = vertex2AggId_->getData(j);
+        for(size_t i=0; i<vertex2AggId_->getLocalLength(); i++) {
+          out<<i<<" : "<< data[i] <<std::endl;
+        }
+        out<<std::endl;
+      }
+    }
+    
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

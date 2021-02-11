@@ -409,8 +409,8 @@ namespace SEAMS {
 
     add_variable("_C_", comment, false, true);
 
-    std::string my_version = SEAMS::Aprepro::version();
-    auto        tokens  = tokenize(my_version, " ");
+    std::string version = SEAMS::Aprepro::version();
+    auto        tokens  = tokenize(version, " ");
     double      ver     = std::stod(tokens[0]);
     add_variable("_VERSION_", ver, true, true);
   }

@@ -27,6 +27,13 @@
 #include <zoltan_cpp.h>
 #endif
 
+#define DC_USE_HOPSCOTCH
+#if defined DC_USE_HOPSCOTCH
+#include <hopscotch_map.h>
+#elif defined DC_USE_ROBIN
+#include <robin_map.h>
+#endif
+
 namespace Ioss {
   const std::vector<std::string> &valid_decomp_methods();
 
@@ -155,7 +162,7 @@ namespace Ioss {
     bool i_own_elem(size_t global_index) const
     {
       // global_index is 1-based index into global list of elements [1..global_element_count]
-      return elemGTL.count(global_index) != 0;
+      return elemGTL.find(global_index) != elemGTL.end();
     }
 
     size_t node_global_to_local(size_t global_index) const
@@ -176,7 +183,7 @@ namespace Ioss {
       // global_index is 1-based index into global list of elements [1..global_node_count]
       // return value is 1-based index into local list of elements on this
       // processor (ioss-decomposition)
-      typename std::map<INT, INT>::const_iterator I = elemGTL.find(global_index);
+      auto I = elemGTL.find(global_index);
       assert(I != elemGTL.end());
       return I->second;
     }
@@ -603,11 +610,11 @@ namespace Ioss {
     // export_element_map[i]', then 'comm_send[i] = file[ind]' for i =
     // 0..#exported_elements
     //
-    // local_element_map.size() + import_element_map.size() == #
-    // ioss elements on this processor.
+    // local_element_map.size() + import_element_map.size() ==
+    // #ioss elements on this processor.
     //
-    // local_element_map.size() + export_element_map.size() == #
-    // file elements on this processor.
+    // local_element_map.size() + export_element_map.size() ==
+    // #file elements on this processor.
     //
     // export_element_map and import_element_map are sorted.
     // The primary key is processor order followed by global id.
@@ -643,8 +650,16 @@ namespace Ioss {
     std::vector<INT> m_nodeDist;
 
     // Note that nodeGTL is a sorted vector.
-    std::vector<INT>   nodeGTL; // Convert from global index to local index (1-based)
+    std::vector<INT> nodeGTL; // Convert from global index to local index (1-based)
+
+#if defined DC_USE_HOPSCOTCH
+    tsl::hopscotch_pg_map<INT, INT> elemGTL; // Convert from global index to local index (1-based)
+#elif defined DC_USE_ROBIN
+    tsl::robin_pg_map<INT, INT> elemGTL; // Convert from global index to local index (1-based)
+#else
+    // This is the original method that was used in IOSS prior to using hopscotch or robin map.
     std::map<INT, INT> elemGTL; // Convert from global index to local index (1-based)
+#endif
   };
 } // namespace Ioss
 #endif

@@ -627,7 +627,7 @@ namespace Ioss {
     mutable int overlayCount{0};
 
     /*! Scale the time read/written from/to the file by the specified
-      scaleFactor.  If the datbase times are 0.1, 0.2, 0.3 and the
+      scaleFactor.  If the database times are 0.1, 0.2, 0.3 and the
       scaleFactor is 20, then the application will think that the
       times read are 20, 40, 60.
 
@@ -824,7 +824,7 @@ namespace Ioss {
 
     bool m_timeStateInOut{false};
     bool m_enableTracing{false};
-    std::chrono::time_point<std::chrono::high_resolution_clock>
+    std::chrono::time_point<std::chrono::steady_clock>
         m_stateStart; // Used for optional output step timing.
   };
 } // namespace Ioss

@@ -270,13 +270,13 @@ FAD_UNARYOP_MACRO(atanh,
                                                  expr.val()*expr.val()))
 FAD_UNARYOP_MACRO(abs,
                   AbsOp,
-                  using std::abs;,
+                  using std::abs; using Sacado::if_then_else;,
                   abs(expr.val()),
                   if_then_else( expr.val() >= 0, expr.dx(i), value_type(-expr.dx(i)) ),
                   if_then_else( expr.val() >= 0, expr.fastAccessDx(i), value_type(-expr.fastAccessDx(i)) ) )
 FAD_UNARYOP_MACRO(fabs,
                   FAbsOp,
-                  using std::fabs;,
+                  using std::fabs; using Sacado::if_then_else;,
                   fabs(expr.val()),
                   if_then_else( expr.val() >= 0, expr.dx(i), value_type(-expr.dx(i)) ),
                   if_then_else( expr.val() >= 0, expr.fastAccessDx(i), value_type(-expr.fastAccessDx(i)) ) )
@@ -331,7 +331,7 @@ namespace Sacado {
 
       SACADO_INLINE_FUNCTION
       value_type dx(int i) const {
-        using std::sqrt;
+        using std::sqrt; using Sacado::if_then_else;
         return if_then_else(
           expr.val() == value_type(0.0), value_type(0.0),
           value_type(expr.dx(i)/(value_type(2)*sqrt(expr.val()))));
@@ -339,7 +339,7 @@ namespace Sacado {
 
       SACADO_INLINE_FUNCTION
       value_type fastAccessDx(int i) const {
-        using std::sqrt;
+        using std::sqrt; using Sacado::if_then_else;
         return if_then_else(
           expr.val() == value_type(0.0), value_type(0.0),
           value_type(expr.fastAccessDx(i)/(value_type(2)*sqrt(expr.val()))));
@@ -824,7 +824,7 @@ FAD_BINARYOP_MACRO(atan2,
                    (c*expr1.fastAccessDx(i))/ (expr1.val()*expr1.val() + c*c))
 // FAD_BINARYOP_MACRO(pow,
 //                    PowerOp,
-//                    using std::pow; using std::log;,
+//                    using std::pow; using std::log; using Sacado::if_then_else;,
 //                    pow(expr1.val(), expr2.val()),
 //                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val())) ),
 //                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(expr1.val())*pow(expr1.val(),expr2.val())) ),
@@ -838,7 +838,7 @@ FAD_BINARYOP_MACRO(atan2,
 //                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c))) )
 FAD_BINARYOP_MACRO(max,
                    MaxOp,
-                   ;,
+                   using Sacado::if_then_else;,
                    if_then_else( expr1.val() >= expr2.val(),  expr1.val(), expr2.val() ),
                    if_then_else( expr1.val() >= expr2.val(), expr1.dx(i), expr2.dx(i) ),
                    if_then_else( expr1.val() >= expr2.val(), value_type(0.0), expr2.dx(i) ),
@@ -852,7 +852,7 @@ FAD_BINARYOP_MACRO(max,
                    if_then_else( expr1.val() >= c, expr1.fastAccessDx(i), value_type(0.0) ) )
 FAD_BINARYOP_MACRO(min,
                    MinOp,
-                   ;,
+                   using Sacado::if_then_else;,
                    if_then_else( expr1.val() <= expr2.val(), expr1.val(), expr2.val() ),
                    if_then_else( expr1.val() <= expr2.val(), expr1.dx(i), expr2.dx(i) ),
                    if_then_else( expr1.val() <= expr2.val(), value_type(0.0), expr2.dx(i) ),
@@ -926,7 +926,7 @@ namespace Sacado {
 
       SACADO_INLINE_FUNCTION
       value_type dx(int i) const {
-        using std::pow; using std::log;
+        using std::pow; using std::log; using Sacado::if_then_else;
         const int sz1 = expr1.size(), sz2 = expr2.size();
         if (sz1 > 0 && sz2 > 0)
           return if_then_else( expr1.val() == scalar_type(0.0), value_type(0.0), value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val())) );
@@ -940,7 +940,7 @@ namespace Sacado {
 
       SACADO_INLINE_FUNCTION
       value_type fastAccessDx(int i) const {
-        using std::pow; using std::log;
+        using std::pow; using std::log; using Sacado::if_then_else;
         return if_then_else( expr1.val() == scalar_type(0.0), value_type(0.0), value_type((expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val())));
       }
 
@@ -987,7 +987,7 @@ namespace Sacado {
 
       SACADO_INLINE_FUNCTION
       value_type dx(int i) const {
-        using std::pow;
+        using std::pow; using Sacado::if_then_else;
         // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
         // It seems less accurate and caused convergence problems in some codes
         return if_then_else( c == scalar_type(1.0), expr1.dx(i), if_then_else( expr1.val() == scalar_type(0.0), value_type(0.0), value_type(c*expr1.dx(i)/expr1.val()*pow(expr1.val(),c)) ));
@@ -995,7 +995,7 @@ namespace Sacado {
 
       SACADO_INLINE_FUNCTION
       value_type fastAccessDx(int i) const {
-        using std::pow;
+        using std::pow; using Sacado::if_then_else;
         // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
         // It seems less accurate and caused convergence problems in some codes
         return if_then_else( c == scalar_type(1.0), expr1.fastAccessDx(i), if_then_else( expr1.val() == scalar_type(0.0), value_type(0.0), value_type(c*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c)) ));
@@ -1043,13 +1043,13 @@ namespace Sacado {
 
       SACADO_INLINE_FUNCTION
       value_type dx(int i) const {
-        using std::pow; using std::log;
+        using std::pow; using std::log; using Sacado::if_then_else;
         return if_then_else( c == scalar_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(c)*pow(c,expr2.val())) );
       }
 
       SACADO_INLINE_FUNCTION
       value_type fastAccessDx(int i) const {
-        using std::pow; using std::log;
+        using std::pow; using std::log; using Sacado::if_then_else;
         return if_then_else( c == scalar_type(0.0), value_type(0.0), value_type(expr2.fastAccessDx(i)*log(c)*pow(c,expr2.val())) );
       }
 
@@ -1465,7 +1465,7 @@ namespace Sacado {
 
       SACADO_INLINE_FUNCTION
       value_type dx(int i) const {
-        using std::pow; using std::log;
+        using std::pow; using std::log; using Sacado::if_then_else;
         const int sz1 = expr1.size(), sz2 = expr2.size();
         if (sz1 > 0 && sz2 > 0)
           return (expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val());
@@ -1477,7 +1477,7 @@ namespace Sacado {
 
       SACADO_INLINE_FUNCTION
       value_type fastAccessDx(int i) const {
-        using std::pow; using std::log;
+        using std::pow; using std::log; using Sacado::if_then_else;
         return (expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val());
       }
 
@@ -1524,13 +1524,13 @@ namespace Sacado {
 
       SACADO_INLINE_FUNCTION
       value_type dx(int i) const {
-        using std::pow;
+        using std::pow; using Sacado::if_then_else;
         return if_then_else( c == scalar_type(0.0), value_type(0.0), value_type(c*expr1.dx(i)*pow(expr1.val(),c-scalar_type(1.0))));
       }
 
       SACADO_INLINE_FUNCTION
       value_type fastAccessDx(int i) const {
-        using std::pow;
+        using std::pow; using Sacado::if_then_else;
         return if_then_else( c == scalar_type(0.0), value_type(0.0), value_type(c*expr1.fastAccessDx(i)*pow(expr1.val(),c-scalar_type(1.0))));
       }
 
@@ -1755,16 +1755,19 @@ namespace Sacado {
 
       SACADO_INLINE_FUNCTION
       value_type val() const {
+        using Sacado::if_then_else;
         return if_then_else( cond, expr1.val(), expr2.val() );
       }
 
       SACADO_INLINE_FUNCTION
       value_type dx(int i) const {
+        using Sacado::if_then_else;
         return if_then_else( cond, expr1.dx(i), expr2.dx(i) );
       }
 
       SACADO_INLINE_FUNCTION
       value_type fastAccessDx(int i) const {
+        using Sacado::if_then_else;
         return if_then_else( cond, expr1.fastAccessDx(i), expr2.fastAccessDx(i) );
       }
 
@@ -1805,16 +1808,19 @@ namespace Sacado {
 
       SACADO_INLINE_FUNCTION
       value_type val() const {
+        using Sacado::if_then_else;
         return if_then_else( cond, expr1.val(), c );
       }
 
       SACADO_INLINE_FUNCTION
       value_type dx(int i) const {
+        using Sacado::if_then_else;
         return if_then_else( cond, expr1.dx(i), value_type(0.0) );
       }
 
       SACADO_INLINE_FUNCTION
       value_type fastAccessDx(int i) const {
+        using Sacado::if_then_else;
         return if_then_else( cond, expr1.fastAccessDx(i), value_type(0.0) );
       }
 
@@ -1854,16 +1860,19 @@ namespace Sacado {
 
       SACADO_INLINE_FUNCTION
       value_type val() const {
+        using Sacado::if_then_else;
         return if_then_else( cond, c, expr2.val() );
       }
 
       SACADO_INLINE_FUNCTION
       value_type dx(int i) const {
+        using Sacado::if_then_else;
         return if_then_else( cond, value_type(0.0), expr2.dx(i) );
       }
 
       SACADO_INLINE_FUNCTION
       value_type fastAccessDx(int i) const {
+        using Sacado::if_then_else;
         return if_then_else( cond, value_type(0.0), expr2.fastAccessDx(i) );
       }
 

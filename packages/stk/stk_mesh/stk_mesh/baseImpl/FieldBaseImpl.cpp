@@ -45,7 +45,7 @@
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/FieldRestriction.hpp"
 #include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
-#include "stk_mesh/base/NgpField.hpp"
+#include "stk_mesh/base/NgpFieldBase.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
 #include "stk_util/util/SortAndUnique.hpp"
 

@@ -63,6 +63,7 @@
 #include "Intrepid2_Polynomials.hpp"
 
 #include "Intrepid2_DirectSumBasis.hpp"
+#include "Intrepid2_Sacado.hpp"
 #include "Intrepid2_TensorBasis.hpp"
 
 namespace Intrepid2
@@ -88,13 +89,45 @@ namespace Intrepid2
         \param [in] polyOrder_z - the polynomial order in the z dimension.
         \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HDIV_Family1_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType)
+    Basis_Derived_HDIV_Family1_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType = POINTTYPE_DEFAULT)
     :
-    TensorBasis3(LineGradBasis(polyOrder_x,pointType),
-                 LineHVolBasis(polyOrder_y-1,pointType),
-                 LineHVolBasis(polyOrder_z-1,pointType))
+    TensorBasis3(Teuchos::rcp( new LineGradBasis(polyOrder_x,pointType)),
+                 Teuchos::rcp( new LineHVolBasis(polyOrder_y-1,pointType)),
+                 Teuchos::rcp( new LineHVolBasis(polyOrder_z-1,pointType)))
     {
       this->functionSpace_ = FUNCTION_SPACE_HDIV;
+    }
+    
+    /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, basis2, and basis3.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.
+    */
+    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const override
+    {
+      const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
+      const EOperator GRAD  = Intrepid2::OPERATOR_GRAD;
+      const EOperator DIV   = Intrepid2::OPERATOR_DIV;
+      
+      const double weight = 1.0;
+      if (operatorType == VALUE)
+      {
+        std::vector< std::vector<EOperator> > ops(3);
+        ops[0] = std::vector<EOperator>{VALUE,VALUE,VALUE};
+        ops[1] = std::vector<EOperator>{};
+        ops[2] = std::vector<EOperator>{};
+        std::vector<double> weights {weight,0.0,0.0};
+        return OperatorTensorDecomposition(ops, weights);
+      }
+      else if (operatorType == DIV)
+      {
+        // family 1 is nonzero in the x component, so the div is (GRAD,VALUE,VALUE)
+        std::vector< std::vector<EOperator> > ops(1); // scalar value
+        ops[0] = std::vector<EOperator>{GRAD,VALUE,VALUE};
+        std::vector<double> weights {weight};
+        return OperatorTensorDecomposition(ops,weights);
+      }
+      else
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported operator type");
+      }
     }
     
     using TensorBasis3::getValues;
@@ -109,7 +142,7 @@ namespace Intrepid2
      */
     virtual void getValues(OutputViewType outputValues, const EOperator operatorType,
                            const PointViewType  inputPoints1, const PointViewType inputPoints2, const PointViewType inputPoints3,
-                           bool tensorPoints) const
+                           bool tensorPoints) const override
     {
       Intrepid2::EOperator op1, op2, op3;
       if (operatorType == Intrepid2::OPERATOR_VALUE)
@@ -161,7 +194,7 @@ namespace Intrepid2
      where \phi_i are the basis and \delta_ij the Kronecker delta.
      Note that getDofCoeffs() is supported only for Lagrangian bases.
      */
-    virtual void getDofCoeffs( ScalarViewType dofCoeffs ) const {
+    virtual void getDofCoeffs( ScalarViewType dofCoeffs ) const override {
       auto dofCoeffs1 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),0);
       auto dofCoeffs23 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),std::make_pair(1,3));
       this->TensorBasis3::getDofCoeffs(dofCoeffs1);
@@ -190,13 +223,45 @@ namespace Intrepid2
         \param [in] polyOrder_z - the polynomial order in the z dimension.
         \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HDIV_Family2_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType)
+    Basis_Derived_HDIV_Family2_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType = POINTTYPE_DEFAULT)
     :
-    TensorBasis3(LineHVolBasis(polyOrder_x-1,pointType),
-                 LineGradBasis(polyOrder_y,pointType),
-                 LineHVolBasis(polyOrder_z-1,pointType))
+    TensorBasis3(Teuchos::rcp( new LineHVolBasis(polyOrder_x-1,pointType) ),
+                 Teuchos::rcp( new LineGradBasis(polyOrder_y,pointType) ),
+                 Teuchos::rcp( new LineHVolBasis(polyOrder_z-1,pointType) ))
     {
       this->functionSpace_ = FUNCTION_SPACE_HDIV;
+    }
+    
+    /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, basis2, and basis3.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.
+    */
+    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const override
+    {
+      const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
+      const EOperator GRAD  = Intrepid2::OPERATOR_GRAD;
+      const EOperator DIV   = Intrepid2::OPERATOR_DIV;
+      
+      const double weight = 1.0;
+      if (operatorType == VALUE)
+      {
+        std::vector< std::vector<EOperator> > ops(3);
+        ops[0] = std::vector<EOperator>{};
+        ops[1] = std::vector<EOperator>{VALUE,VALUE,VALUE};
+        ops[2] = std::vector<EOperator>{};
+        std::vector<double> weights {0.0,weight,0.0};
+        return OperatorTensorDecomposition(ops, weights);
+      }
+      else if (operatorType == DIV)
+      {
+        // family 2 is nonzero in the y component, so the div is (VALUE,GRAD,VALUE)
+        std::vector< std::vector<EOperator> > ops(1); // scalar value
+        ops[0] = std::vector<EOperator>{VALUE,GRAD,VALUE};
+        std::vector<double> weights {weight};
+        return OperatorTensorDecomposition(ops,weights);
+      }
+      else
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported operator type");
+      }
     }
     
     using TensorBasis3::getValues;
@@ -211,7 +276,7 @@ namespace Intrepid2
      */
     virtual void getValues(OutputViewType outputValues, const EOperator operatorType,
                            const PointViewType  inputPoints1, const PointViewType inputPoints2, const PointViewType inputPoints3,
-                           bool tensorPoints) const
+                           bool tensorPoints) const override
     {
       Intrepid2::EOperator op1, op2, op3;
       if (operatorType == Intrepid2::OPERATOR_VALUE)
@@ -240,9 +305,6 @@ namespace Intrepid2
       else if (operatorType == Intrepid2::OPERATOR_DIV)
       {
         // family 2 is nonzero in the y component, so the div is d/dy of the second component
-        // ESEAS has -1 weight here; we follow that, to simplify verification
-        // outputValues is scalar, so no need to take subviews
-        
         op1 = Intrepid2::OPERATOR_VALUE;
         op2 = Intrepid2::OPERATOR_GRAD;  // d/dy
         op3 = Intrepid2::OPERATOR_VALUE;
@@ -270,7 +332,7 @@ namespace Intrepid2
      where \phi_i are the basis and \delta_ij the Kronecker delta.
      Note that getDofCoeffs() is supported only for Lagrangian bases.
      */
-    virtual void getDofCoeffs( ScalarViewType dofCoeffs ) const {
+    virtual void getDofCoeffs( ScalarViewType dofCoeffs ) const override {
       auto dofCoeffs1 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),0);
       auto dofCoeffs2 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),1);
       auto dofCoeffs3 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),2);
@@ -300,13 +362,45 @@ namespace Intrepid2
         \param [in] polyOrder_z - the polynomial order in the z dimension.
         \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HDIV_Family3_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType)
+    Basis_Derived_HDIV_Family3_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType = POINTTYPE_DEFAULT)
     :
-    TensorBasis3(LineHVolBasis(polyOrder_x-1,pointType),
-                 LineHVolBasis(polyOrder_y-1,pointType),
-                 LineGradBasis(polyOrder_z,pointType))
+    TensorBasis3(Teuchos::rcp( new LineHVolBasis(polyOrder_x-1,pointType) ),
+                 Teuchos::rcp( new LineHVolBasis(polyOrder_y-1,pointType) ),
+                 Teuchos::rcp( new LineGradBasis(polyOrder_z,pointType) ))
     {
       this->functionSpace_ = FUNCTION_SPACE_HDIV;
+    }
+    
+    /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, basis2, and basis3.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.
+    */
+    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const override
+    {
+      const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
+      const EOperator GRAD  = Intrepid2::OPERATOR_GRAD;
+      const EOperator DIV   = Intrepid2::OPERATOR_DIV;
+      
+      const double weight = 1.0;
+      if (operatorType == VALUE)
+      {
+        std::vector< std::vector<EOperator> > ops(3);
+        ops[0] = std::vector<EOperator>{};
+        ops[1] = std::vector<EOperator>{};
+        ops[2] = std::vector<EOperator>{VALUE,VALUE,VALUE};
+        std::vector<double> weights {0.0,0.0,weight};
+        return OperatorTensorDecomposition(ops, weights);
+      }
+      else if (operatorType == DIV)
+      {
+        // family 3 is nonzero in the z component, so the div is (VALUE,VALUE,GRAD)
+        std::vector< std::vector<EOperator> > ops(1); // scalar value
+        ops[0] = std::vector<EOperator>{VALUE,VALUE,GRAD};
+        std::vector<double> weights {weight};
+        return OperatorTensorDecomposition(ops,weights);
+      }
+      else
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported operator type");
+      }
     }
     
     using TensorBasis3::getValues;
@@ -321,7 +415,7 @@ namespace Intrepid2
      */
     virtual void getValues(OutputViewType outputValues, const EOperator operatorType,
                            const PointViewType  inputPoints1, const PointViewType inputPoints2, const PointViewType inputPoints3,
-                           bool tensorPoints) const
+                           bool tensorPoints) const override
     {
       Intrepid2::EOperator op1, op2, op3;
       if (operatorType == Intrepid2::OPERATOR_VALUE)
@@ -375,7 +469,7 @@ namespace Intrepid2
      where \phi_i are the basis and \delta_ij the Kronecker delta.
      Note that getDofCoeffs() is supported only for Lagrangian bases.
      */
-    virtual void getDofCoeffs( ScalarViewType dofCoeffs ) const {
+    virtual void getDofCoeffs( ScalarViewType dofCoeffs ) const override {
       auto dofCoeffs12 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),std::make_pair(0,2));
       auto dofCoeffs3 = Kokkos::subview(dofCoeffs,Kokkos::ALL(),2);
       Kokkos::deep_copy(dofCoeffs12,0.0);
@@ -389,12 +483,11 @@ namespace Intrepid2
   // which is to say that we go 3,1,2.
   template<class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HDIV_Family3_Family1_HEX
-  : public Basis_DirectSumBasis<Basis_Derived_HDIV_Family3_HEX<HGRAD_LINE, HVOL_LINE>,
-                                Basis_Derived_HDIV_Family1_HEX<HGRAD_LINE, HVOL_LINE>>
+  : public Basis_DirectSumBasis <typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
   {
     using Family3 = Basis_Derived_HDIV_Family3_HEX<HGRAD_LINE, HVOL_LINE>;
     using Family1 = Basis_Derived_HDIV_Family1_HEX<HGRAD_LINE, HVOL_LINE>;
-    using DirectSumBasis = Basis_DirectSumBasis<Family3,Family1>;
+    using DirectSumBasis = Basis_DirectSumBasis<typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>;
   public:
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
@@ -404,20 +497,19 @@ namespace Intrepid2
      */
     Basis_Derived_HDIV_Family3_Family1_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType)
     :
-    DirectSumBasis(Family3(polyOrder_x, polyOrder_y, polyOrder_z, pointType),
-                   Family1(polyOrder_x, polyOrder_y, polyOrder_z, pointType)) {
+    DirectSumBasis(Teuchos::rcp( new Family3(polyOrder_x, polyOrder_y, polyOrder_z, pointType)),
+                   Teuchos::rcp( new Family1(polyOrder_x, polyOrder_y, polyOrder_z, pointType))) {
       this->functionSpace_ = FUNCTION_SPACE_HDIV;
     }
   };
   
   template<class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HDIV_HEX
-  : public Basis_DirectSumBasis<Basis_Derived_HDIV_Family3_Family1_HEX<HGRAD_LINE, HVOL_LINE>,
-                                Basis_Derived_HDIV_Family2_HEX<HGRAD_LINE, HVOL_LINE> >
+  : public Basis_DirectSumBasis <typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
   {
     using Family31 = Basis_Derived_HDIV_Family3_Family1_HEX<HGRAD_LINE, HVOL_LINE>;
     using Family2  = Basis_Derived_HDIV_Family2_HEX        <HGRAD_LINE, HVOL_LINE>;
-    using DirectSumBasis = Basis_DirectSumBasis<Family31,Family2>;
+    using DirectSumBasis = Basis_DirectSumBasis<typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>;
 
     std::string name_;
     ordinal_type order_x_;
@@ -438,8 +530,8 @@ namespace Intrepid2
      */
     Basis_Derived_HDIV_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType=POINTTYPE_DEFAULT)
     :
-    DirectSumBasis(Family31(polyOrder_x, polyOrder_y, polyOrder_z, pointType),
-                   Family2 (polyOrder_x, polyOrder_y, polyOrder_z, pointType)) {
+    DirectSumBasis(Teuchos::rcp(new Family31(polyOrder_x, polyOrder_y, polyOrder_z, pointType)),
+                   Teuchos::rcp(new Family2 (polyOrder_x, polyOrder_y, polyOrder_z, pointType))) {
       this->functionSpace_ = FUNCTION_SPACE_HDIV;
 
       std::ostringstream basisName;
@@ -459,7 +551,7 @@ namespace Intrepid2
 
     /** \brief True if orientation is required
     */
-    virtual bool requireOrientation() const {
+    virtual bool requireOrientation() const override {
       return (this->getDofCount(2,0) > 0); //if it has side DOFs, than it needs orientations
     }
 

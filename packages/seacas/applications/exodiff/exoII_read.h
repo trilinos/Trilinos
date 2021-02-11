@@ -29,6 +29,9 @@ template <typename INT> class Exo_Block;
 template <typename INT> class Node_Set;
 template <typename INT> class Side_Set;
 
+template <typename INT> class Edge_Block;
+template <typename INT> class Face_Block;
+
 template <typename INT> class ExoII_Read
 {
 public:
@@ -36,6 +39,7 @@ public:
   explicit ExoII_Read(const std::string &fname);
   virtual ~ExoII_Read();
   const ExoII_Read &operator=(const ExoII_Read &) = delete;
+  ExoII_Read(const ExoII_Read &)                  = delete;
 
   // File operations:
 
@@ -55,6 +59,8 @@ public:
   size_t             Num_Elmts() const { return num_elmts; }
   size_t             Num_Node_Sets() const { return num_node_sets; }
   size_t             Num_Side_Sets() const { return num_side_sets; }
+  size_t             Num_Edge_Blocks() const { return num_edge_blocks; }
+  size_t             Num_Face_Blocks() const { return num_face_blocks; }
 
   // Times:
 
@@ -69,18 +75,25 @@ public:
   size_t                          Num_Elmt_Atts() const { return elmt_atts.size(); }
   size_t                          Num_NS_Vars() const { return ns_vars.size(); }
   size_t                          Num_SS_Vars() const { return ss_vars.size(); }
+  size_t                          Num_EB_Vars() const { return eb_vars.size(); }
+  size_t                          Num_FB_Vars() const { return fb_vars.size(); }
   const std::vector<std::string> &Global_Var_Names() const { return global_vars; }
   const std::vector<std::string> &Nodal_Var_Names() const { return nodal_vars; }
   const std::vector<std::string> &Elmt_Var_Names() const { return elmt_vars; }
   const std::vector<std::string> &Elmt_Att_Names() const { return elmt_atts; }
   const std::vector<std::string> &NS_Var_Names() const { return ns_vars; }
   const std::vector<std::string> &SS_Var_Names() const { return ss_vars; }
-  const std::string &             Global_Var_Name(int index) const;
-  const std::string &             Nodal_Var_Name(int index) const;
-  const std::string &             Elmt_Var_Name(int index) const;
-  const std::string &             Elmt_Att_Name(int index) const;
-  const std::string &             NS_Var_Name(int index) const;
-  const std::string &             SS_Var_Name(int index) const;
+  const std::vector<std::string> &EB_Var_Names() const { return eb_vars; }
+  const std::vector<std::string> &FB_Var_Names() const { return fb_vars; }
+
+  const std::string &Global_Var_Name(int index) const;
+  const std::string &Nodal_Var_Name(int index) const;
+  const std::string &Elmt_Var_Name(int index) const;
+  const std::string &Elmt_Att_Name(int index) const;
+  const std::string &NS_Var_Name(int index) const;
+  const std::string &SS_Var_Name(int index) const;
+  const std::string &EB_Var_Name(int index) const;
+  const std::string &FB_Var_Name(int index) const;
 
   // Element blocks:
   size_t Num_Elmt_Blocks() const { return num_elmt_blocks; }
@@ -159,6 +172,14 @@ public:
   Node_Set<INT> *Get_Node_Set_by_Index(size_t set_index) const;
   Node_Set<INT> *Get_Node_Set_by_Name(const std::string &name) const;
 
+  Edge_Block<INT> *Get_Edge_Block_by_Id(size_t block_id) const;
+  Edge_Block<INT> *Get_Edge_Block_by_Index(size_t set_index) const;
+  Edge_Block<INT> *Get_Edge_Block_by_Name(const std::string &name) const;
+
+  Face_Block<INT> *Get_Face_Block_by_Id(size_t block_id) const;
+  Face_Block<INT> *Get_Face_Block_by_Index(size_t set_index) const;
+  Face_Block<INT> *Get_Face_Block_by_Name(const std::string &name) const;
+
   // Misc functions:
 
   virtual int Check_State() const;                           // Checks state of obj (not the file).
@@ -181,13 +202,17 @@ protected:
   size_t                   num_elmt_blocks{0};
   size_t                   num_node_sets{0};
   size_t                   num_side_sets{0};
+  size_t                   num_edge_blocks{0};
+  size_t                   num_face_blocks{0};
   float                    db_version{0.0};
   float                    api_version{0.0};
   int                      io_word_size{0}; // Note: The "compute word size" is always 8.
 
-  Exo_Block<INT> *eblocks{nullptr}; // Array.
-  Node_Set<INT> * nsets{nullptr};   // Array.
-  Side_Set<INT> * ssets{nullptr};   // Array.
+  Exo_Block<INT> * eblocks{nullptr};     // Array.
+  Node_Set<INT> *  nsets{nullptr};       // Array.
+  Side_Set<INT> *  ssets{nullptr};       // Array.
+  Edge_Block<INT> *edge_blocks{nullptr}; // Array.
+  Face_Block<INT> *face_blocks{nullptr}; // Array.
 
   double *nodes{nullptr}; // Matrix;  dimension by num_nodes (row major form).
                           //          I.e., all x's then all y's, etc.
@@ -204,6 +229,8 @@ protected:
   std::vector<std::string> elmt_atts;
   std::vector<std::string> ns_vars;
   std::vector<std::string> ss_vars;
+  std::vector<std::string> eb_vars;
+  std::vector<std::string> fb_vars;
 
   int     num_times{0};
   double *times{nullptr};
@@ -217,9 +244,6 @@ protected:
   // Internal methods:
 
   void Get_Init_Data(); // Gets bunch of initial data.
-
-private:
-  ExoII_Read(const ExoII_Read &) = delete;
 };
 
 template <typename INT> inline INT ExoII_Read<INT>::Node_Map(size_t node_num) const

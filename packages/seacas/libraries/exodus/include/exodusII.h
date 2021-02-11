@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,8 +12,8 @@
  *
  *****************************************************************************/
 
-#ifndef EXODUS_II_HDR
-#define EXODUS_II_HDR
+#ifndef EXODUSII_H
+#define EXODUSII_H
 
 #include "exodus_config.h"
 
@@ -21,6 +21,15 @@
 
 #if defined(NC_HAVE_META_H)
 #include "netcdf_meta.h"
+
+/* Bug in some versions of NetCDF where the netcdf_meta.h define of NC_HAS_SZIP_WRITE is bad */
+#if !defined(NC_HAS_SZIP_WRITE)
+#define NC_HAS_SZIP_WRITE 0
+#elif ~(~NC_HAS_SZIP_WRITE + 0) == 0 && ~(~NC_HAS_SZIP_WRITE + 1) == 1
+#undef NC_HAS_SZIP_WRITE
+#define NC_HAS_SZIP_WRITE 0
+#endif
+
 #if NC_HAS_PARALLEL
 #ifndef PARALLEL_AWARE_EXODUS
 #define PARALLEL_AWARE_EXODUS
@@ -45,12 +54,12 @@
 #endif
 
 /* EXODUS version number */
-#define EXODUS_VERSION "8.08"
+#define EXODUS_VERSION "8.09"
 #define EXODUS_VERSION_MAJOR 8
-#define EXODUS_VERSION_MINOR 8
+#define EXODUS_VERSION_MINOR 9
 #define EXODUS_RELEASE_DATE "September 2, 2020"
 
-#define EX_API_VERS 8.08f
+#define EX_API_VERS 8.09f
 #define EX_API_VERS_NODOT (100 * EXODUS_VERSION_MAJOR + EXODUS_VERSION_MINOR)
 #define EX_VERS EX_API_VERS
 
@@ -85,27 +94,27 @@ extern "C" {
  */
 /* Modes for ex_open */
 #define EX_WRITE 0x0001 /**< ex_open(): open existing file for appending. */
-#define EX_READ 0x0002 /**< ex_open(): open file for reading (default) */
+#define EX_READ 0x0002  /**< ex_open(): open file for reading (default) */
 
-#define EX_NOCLOBBER 0x0004 /**< Don't overwrite existing database, default */
-#define EX_CLOBBER 0x0008 /**< Overwrite existing database if it exists */
-#define EX_NORMAL_MODEL 0x0010 /**< disable mods that permit storage of larger models */
-#define EX_64BIT_OFFSET 0x0020 /**< enable mods that permit storage of larger models */
+#define EX_NOCLOBBER 0x0004            /**< Don't overwrite existing database, default */
+#define EX_CLOBBER 0x0008              /**< Overwrite existing database if it exists */
+#define EX_NORMAL_MODEL 0x0010         /**< disable mods that permit storage of larger models */
+#define EX_64BIT_OFFSET 0x0020         /**< enable mods that permit storage of larger models */
 #define EX_LARGE_MODEL EX_64BIT_OFFSET /**< enable mods that permit storage of larger models */
 #define EX_64BIT_DATA 0x400000 /**< CDF-5 format: classic model but 64 bit dimensions and sizes */
-#define EX_NETCDF4 0x0040 /**< use the hdf5-based netcdf4 output */
-#define EX_NOSHARE 0x0080 /**< Do not open netcdf file in "share" mode */
-#define EX_SHARE 0x0100 /**< Do open netcdf file in "share" mode */
-#define EX_NOCLASSIC 0x0200 /**< Do not force netcdf to classic mode in netcdf4 mode */
+#define EX_NETCDF4 0x0040      /**< use the hdf5-based netcdf4 output */
+#define EX_NOSHARE 0x0080      /**< Do not open netcdf file in "share" mode */
+#define EX_SHARE 0x0100        /**< Do open netcdf file in "share" mode */
+#define EX_NOCLASSIC 0x0200    /**< Do not force netcdf to classic mode in netcdf4 mode */
 
 #define EX_DISKLESS 0x100000 /**< Experimental */
-#define EX_MMAP 0x200000 /**< Experimental */
+#define EX_MMAP 0x200000     /**< Experimental */
 
 /* Need to distinguish between storage on database (DB in name) and
    passed through the API functions (API in name).
 */
 #define EX_MAPS_INT64_DB 0x0400 /**< All maps (id, order, ...) store int64_t values */
-#define EX_IDS_INT64_DB 0x0800 /**< All entity ids (sets, blocks, maps) are int64_t values */
+#define EX_IDS_INT64_DB 0x0800  /**< All entity ids (sets, blocks, maps) are int64_t values */
 #define EX_BULK_INT64_DB                                                                           \
   0x1000 /**< All integer bulk data (local indices, counts, maps); not ids                         \
           */
@@ -113,7 +122,7 @@ extern "C" {
   (EX_MAPS_INT64_DB | EX_IDS_INT64_DB | EX_BULK_INT64_DB) /**< All of the above... */
 
 #define EX_MAPS_INT64_API 0x2000 /**< All maps (id, order, ...) store int64_t values */
-#define EX_IDS_INT64_API 0x4000 /**< All entity ids (sets, blocks, maps) are int64_t values */
+#define EX_IDS_INT64_API 0x4000  /**< All entity ids (sets, blocks, maps) are int64_t values */
 #define EX_BULK_INT64_API                                                                          \
   0x8000 /**< All integer bulk data (local indices, counts, maps); not ids */
 #define EX_INQ_INT64_API 0x10000 /**< Integers passed to/from ex_inquire() are int64_t */
@@ -1765,26 +1774,26 @@ EXODUS_EXPORT int ex_get_idx(int         exoid,       /**< NetCDF/Exodus file ID
  * \defgroup ErrorReturnCodes Error return codes - #exerrval return values
  * @{
  */
-#define EX_MEMFAIL 1000 /**< memory allocation failure flag def       */
-#define EX_BADFILEMODE 1001 /**< bad file mode def                        */
-#define EX_BADFILEID 1002 /**< bad file id def                          */
+#define EX_MEMFAIL 1000       /**< memory allocation failure flag def       */
+#define EX_BADFILEMODE 1001   /**< bad file mode def                        */
+#define EX_BADFILEID 1002     /**< bad file id def                          */
 #define EX_WRONGFILETYPE 1003 /**< wrong file type for function             */
-#define EX_LOOKUPFAIL 1004 /**< id table lookup failed                   */
-#define EX_BADPARAM 1005 /**< bad parameter passed                     */
-#define EX_INTERNAL 1006 /**< internal logic error                     */
-#define EX_DUPLICATEID 1007 /**< duplicate id found                       */
+#define EX_LOOKUPFAIL 1004    /**< id table lookup failed                   */
+#define EX_BADPARAM 1005      /**< bad parameter passed                     */
+#define EX_INTERNAL 1006      /**< internal logic error                     */
+#define EX_DUPLICATEID 1007   /**< duplicate id found                       */
 #define EX_DUPLICATEOPEN 1008 /**< duplicate open                           */
-#define EX_MSG -1000 /**< message print code - no error implied    */
-#define EX_PRTLASTMSG -1001 /**< print last error message msg code        */
-#define EX_NOTROOTID -1002 /**< file id is not the root id; it is a subgroup id */
-#define EX_LASTERR -1003 /**< in ex_err, use existing err_num value */
-#define EX_NULLENTITY -1006 /**< null entity found                        */
-#define EX_NOENTITY -1007 /**< no entities of that type on database    */
-#define EX_NOTFOUND -1008 /**< could not find requested variable on database */
+#define EX_MSG -1000          /**< message print code - no error implied    */
+#define EX_PRTLASTMSG -1001   /**< print last error message msg code        */
+#define EX_NOTROOTID -1002    /**< file id is not the root id; it is a subgroup id */
+#define EX_LASTERR -1003      /**< in ex_err, use existing err_num value */
+#define EX_NULLENTITY -1006   /**< null entity found                        */
+#define EX_NOENTITY -1007     /**< no entities of that type on database    */
+#define EX_NOTFOUND -1008     /**< could not find requested variable on database */
 
 #define EX_FATAL -1 /**< fatal error flag def                     */
-#define EX_NOERR 0 /**< no error flag def                        */
-#define EX_WARN 1 /**< warning flag def                         */
+#define EX_NOERR 0  /**< no error flag def                        */
+#define EX_WARN 1   /**< warning flag def                         */
 /** @} */
 
 #ifdef __cplusplus

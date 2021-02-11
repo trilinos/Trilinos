@@ -206,19 +206,11 @@ struct KokkosSPGEMM
 #endif
 #if defined( KOKKOS_ENABLE_OPENMP )
     case KokkosKernels::Impl::Exec_OMP:
-  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      return Kokkos::OpenMP::hardware_thread_id();
-  #else
       return Kokkos::OpenMP::impl_hardware_thread_id();
-  #endif
 #endif
 #if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
-  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      return Kokkos::Threads::hardware_thread_id();
-  #else
       return Kokkos::Threads::impl_hardware_thread_id();
-  #endif
 #endif
 #if defined( KOKKOS_ENABLE_QTHREAD)
     case KokkosKernels::Impl::Exec_QTHREADS:
@@ -226,6 +218,10 @@ struct KokkosSPGEMM
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
+      return row_index;
+#endif
+#if defined( KOKKOS_ENABLE_HIP )
+    case KokkosKernels::Impl::Exec_HIP:
       return row_index;
 #endif
     }
@@ -769,6 +765,7 @@ bool KokkosSPGEMM
 {
   //get the execution space type.
   KokkosKernels::Impl::ExecSpaceType lcl_my_exec_space = this->handle->get_handle_exec_space();
+  constexpr bool exec_gpu = KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>();
   //get the suggested vectorlane size based on the execution space, and average number of nnzs per row.
   int suggested_vector_size = this->handle->get_suggested_vector_size(n, nnz);
   //get the suggested team size.
@@ -799,7 +796,7 @@ bool KokkosSPGEMM
   out_nnz_view_t set_nexts_;
   out_nnz_view_t set_begins_;
 #ifdef KOKKOSKERNELSMOREMEM
-  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  if (exec_gpu) {
     set_nexts_ = out_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("set_nexts_"), nnz);
     set_begins_ = out_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("set_begins_"), nnz);
     Kokkos::deep_copy (set_begins_, -1);
@@ -812,8 +809,9 @@ bool KokkosSPGEMM
   }
 
   //if compressing in single step, allocate the memory as upperbound.
-  //TODO: two step is not there for cuda.
-  if (compress_in_single_step || lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  //TODO: two step is not there for GPU.
+
+  if (compress_in_single_step || exec_gpu) {
     out_nnz_indices = out_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("set_entries_"), nnz);
     out_nnz_sets = out_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("set_indices_"), nnz);
   }
@@ -842,7 +840,8 @@ bool KokkosSPGEMM
 
   timer1.reset();
   //bool compression_applied = false;
-  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  if (KokkosKernels::Impl::kk_is_gpu_exec_space<typename HandleType::HandleExecSpace>()) {
+
 
 #ifndef KOKKOSKERNELSMOREMEM
     size_type max_row_nnz = 0;
@@ -861,30 +860,9 @@ bool KokkosSPGEMM
     sszm_compressMatrix.pow2_hash_size = min_hash_size;
     sszm_compressMatrix.pow2_hash_func = min_hash_size - 1;
 
-    size_t num_chunks = concurrency / suggested_vector_size;
+    nnz_lno_t num_chunks = this->template compute_num_pool_chunks<pool_memory_space>
+      (chunksize * sizeof(nnz_lno_t), concurrency / suggested_vector_size);
 
-
-#if defined( KOKKOS_ENABLE_CUDA )
-	if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
-
-		size_t free_byte ;
-		size_t total_byte ;
-		cudaMemGetInfo( &free_byte, &total_byte ) ;
-		size_t required_size = size_t (num_chunks) * chunksize * sizeof(nnz_lno_t);
-		if (KOKKOSKERNELS_VERBOSE)
-			std::cout << "\tmempool required size:" << required_size << " free_byte:" << free_byte << " total_byte:" << total_byte << std::endl;
-		if (required_size + num_chunks*sizeof(int) > free_byte){
-			num_chunks = ((((free_byte - num_chunks)* 0.5) /8 ) * 8) / sizeof(nnz_lno_t) / chunksize;
-		}
-		{
-			size_t min_chunk_size = 1;
-			while (min_chunk_size * 2 <= num_chunks) {
-				min_chunk_size *= 2;
-			}
-			num_chunks = min_chunk_size;
-		}
-	}
-#endif
     if (KOKKOSKERNELS_VERBOSE){
 
       std::cout << "\t\tPOOL chunksize:" << chunksize << " num_chunks:"

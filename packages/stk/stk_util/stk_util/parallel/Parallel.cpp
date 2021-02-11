@@ -32,8 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include "stk_util/stk_config.h"
-#include <stk_util/parallel/Parallel.hpp>
+#include "stk_util/parallel/Parallel.hpp"
 
 /*--------------------------------------------------------------------*/
 /* Parallel operations */

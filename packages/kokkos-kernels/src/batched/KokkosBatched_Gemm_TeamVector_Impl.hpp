@@ -138,7 +138,7 @@ namespace KokkosBatched {
            const CViewType &C) {
       // C = beta C + alpha A B
       // C (m x n), A(m x k), B(k x n)
-      return TeamGemmInternal<Algo::Gemm::Unblocked>::
+      return TeamVectorGemmInternal<Algo::Gemm::Unblocked>::
         invoke(member,
                C.extent(0), C.extent(1), A.extent(0),
                alpha, 

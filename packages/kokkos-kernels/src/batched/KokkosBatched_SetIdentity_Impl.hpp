@@ -19,7 +19,7 @@ namespace KokkosBatched {
   SerialSetIdentity::
   invoke(const AViewType &A) {
     return SerialSetIdentityInternal::
-      invoke(A.extent(0), 
+      invoke(A.extent(0), A.extent(1),
              A.data(), A.stride_0(), A.stride_1());
   }
 
@@ -36,7 +36,7 @@ namespace KokkosBatched {
          const AViewType &A) {
     return TeamSetIdentityInternal::
       invoke(member, 
-             A.extent(0), 
+             A.extent(0), A.extent(1),
              A.data(), A.stride_0(), A.stride_1());
   }
  
