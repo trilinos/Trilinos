@@ -350,7 +350,7 @@ public:
       etr_(TRUSTREGION_DOGLEG), TRmodel_(TRUSTREGION_MODEL_KELLEYSACHS),
       delMax_(1e8), TRflag_(TRUSTREGION_FLAG_SUCCESS),
       SPflag_(0), SPiter_(0), bndActive_(false),
-      secant_(nullPtr), esec_(SECANT_LBFGS),
+      secant_(secant), esec_(SECANT_USERDEFINED),
       useSecantHessVec_(false), useSecantPrecond_(false),
       scaleEps_(1), useProjectedGrad_(false),
       alpha_init_(1), max_fval_(20), mu_(0.9999), beta_(0.01),
@@ -367,6 +367,7 @@ public:
       ROL::ParameterList Slist;
       Slist.sublist("General").sublist("Secant").set("Type","Limited-Memory BFGS");
       Slist.sublist("General").sublist("Secant").set("Maximum Storage",10);
+      esec_ = SECANT_LBFGS;
       secant_ = SecantFactory<Real>(Slist);
     }
   }
