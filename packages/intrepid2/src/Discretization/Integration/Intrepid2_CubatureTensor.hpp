@@ -58,18 +58,18 @@ namespace Intrepid2 {
   /** \class Intrepid2::CubatureTensor
       \brief Defines tensor-product cubature (integration) rules in Intrepid.
   */
-  template<typename ExecSpaceType = void,
+  template<typename DeviceType = void,
            typename pointValueType = double,
            typename weightValueType = double>
   class CubatureTensor
-    : public Cubature<ExecSpaceType,pointValueType,weightValueType> {
+    : public Cubature<DeviceType,pointValueType,weightValueType> {
   private:
 
     /** \brief Array of cubature rules.
      */
     ordinal_type numCubatures_;
 
-    CubatureDirect<ExecSpaceType,pointValueType,weightValueType> cubatures_[Parameters::MaxTensorComponents];
+    CubatureDirect<DeviceType,pointValueType,weightValueType> cubatures_[Parameters::MaxTensorComponents];
 
     /** \brief Dimension of integration domain.
      */
@@ -83,14 +83,16 @@ namespace Intrepid2 {
     getCubatureImpl( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
                      Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const;
 
-    using PointViewType             = typename Cubature<ExecSpaceType,pointValueType,weightValueType>::PointViewType;
-    using weightViewType            = typename Cubature<ExecSpaceType,pointValueType,weightValueType>::weightViewType;
-    using PointViewTypeAllocatable  = typename Cubature<ExecSpaceType,pointValueType,weightValueType>::PointViewTypeAllocatable;
-    using WeightViewTypeAllocatable = typename Cubature<ExecSpaceType,pointValueType,weightValueType>::WeightViewTypeAllocatable;
-    using TensorPointDataType       = typename Cubature<ExecSpaceType,pointValueType,weightValueType>::TensorPointDataType;
-    using TensorWeightDataType      = typename Cubature<ExecSpaceType,pointValueType,weightValueType>::TensorWeightDataType;
+    using PointViewType             = typename Cubature<DeviceType,pointValueType,weightValueType>::PointViewType;
+    using weightViewType            = typename Cubature<DeviceType,pointValueType,weightValueType>::weightViewType;
 
-    using Cubature<ExecSpaceType,pointValueType,weightValueType>::getCubature;
+    /// KK: following should be updated with nate's tensor work
+    using PointViewTypeAllocatable  = typename Cubature<DeviceType,pointValueType,weightValueType>::PointViewTypeAllocatable;
+    using WeightViewTypeAllocatable = typename Cubature<DeviceType,pointValueType,weightValueType>::WeightViewTypeAllocatable;
+    using TensorPointDataType       = typename Cubature<DeviceType,pointValueType,weightValueType>::TensorPointDataType;
+    using TensorWeightDataType      = typename Cubature<DeviceType,pointValueType,weightValueType>::TensorWeightDataType;
+
+    using Cubature<DeviceType,pointValueType,weightValueType>::getCubature;
 
     virtual
     void
@@ -122,7 +124,8 @@ namespace Intrepid2 {
     */
     virtual TensorWeightDataType allocateCubatureWeights() const override
     {
-      using WeightDataType = Data<weightValueType,ExecSpaceType>;
+      /// KK: this needs to be updated with nate tensor work      
+      using WeightDataType = Data<weightValueType,typename DeviceType::execution_space>;
       
       std::vector< WeightDataType > cubatureWeightComponents(numCubatures_);
       for (ordinal_type i=0;i<numCubatures_;++i)
