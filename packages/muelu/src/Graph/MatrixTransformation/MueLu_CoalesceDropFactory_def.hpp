@@ -152,7 +152,7 @@ namespace MueLu {
       if (algo == "distance laplacian" || algo == "block diagonal distance laplacian") {
         Input(currentLevel, "Coordinates");    
       }
-      else if (algo == "block diagonal classical" || algo == "block diagonal distance laplacian" || algo == "block diagonal")  {
+      if (algo == "block diagonal classical" || algo == "block diagonal distance laplacian" || algo == "block diagonal")  {
         Input(currentLevel, "BlockNumber");
       }
     }     
