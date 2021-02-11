@@ -13,7 +13,7 @@
 namespace Tempus {
 
 
-void getValidParametersBasic(
+inline void getValidParametersBasic(
   Teuchos::RCP<Teuchos::ParameterList> pl, std::string stepperType)
 {
   pl->setName("Default Stepper - " + stepperType);
@@ -75,7 +75,7 @@ void getValidParametersBasic(
 }
 
 
-Teuchos::RCP<Teuchos::ParameterList> defaultSolverParameters()
+inline Teuchos::RCP<Teuchos::ParameterList> defaultSolverParameters()
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
