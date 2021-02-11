@@ -255,7 +255,7 @@ ATDM_SET_ENABLE(KokkosCore_UnitTest_CudaTimingBased_MPI_1_DISABLE ON)
 
 # Disable serial.Random_XorShift64 due to random failures. See #3282.
 ATDM_SET_CACHE(KokkosAlgorithms_UnitTest_MPI_1_EXTRA_ARGS
-  "--gtest_filter=-*Random_XorShift64" CACHE STRING)
+  "--gtest_filter=-*Random_XorShift64:-*Random_XorShift1024" CACHE STRING)
 
 IF (ATDM_NODE_TYPE STREQUAL "OPENMP")
 
