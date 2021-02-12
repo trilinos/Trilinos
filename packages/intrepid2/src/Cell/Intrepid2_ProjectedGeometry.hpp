@@ -66,6 +66,7 @@ namespace Intrepid2
   template<int spaceDim, typename PointScalar, typename DeviceType>
   class ProjectedGeometry
   {
+    static_assert(Kokkos::is_device<DeviceType>::value, "Third template argument to ProjectedGeometry must be a Kokkos::Device");
   public:
     using ViewType      = ScalarView<      PointScalar, DeviceType>;
     using ConstViewType = ScalarView<const PointScalar, DeviceType>;

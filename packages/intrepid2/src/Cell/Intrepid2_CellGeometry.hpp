@@ -79,6 +79,7 @@ namespace Intrepid2
   template<class PointScalar, int spaceDim, typename DeviceType = Kokkos::DefaultExecutionSpace::device_type>
   class CellGeometry
   {
+    static_assert(Kokkos::is_device<DeviceType>::value, "Third template argument to CellGeometry must be a Kokkos::Device");
     public:
     /*! Supported types for CellGeometry */
     enum CellGeometryType {

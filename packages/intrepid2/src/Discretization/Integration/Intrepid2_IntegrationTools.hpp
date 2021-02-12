@@ -76,6 +76,7 @@ namespace Intrepid2 {
   */
   template<typename DeviceType>
   class IntegrationTools {
+    static_assert(Kokkos::is_device<DeviceType>::value, "Template argument to IntegrationTools must be a Kokkos::Device");
   public:
     /** \brief   Allocates storage for the contraction of \a <b>vectorDataLeft</b> and \a <b>vectorDataRight</b> containers on
                  point and space dimensions, weighting each point according to <b>cellMeasures</b>.

@@ -66,6 +66,7 @@ namespace Intrepid2
   CellGeometry<PointScalar, spaceDim, DeviceType> getNodalCellGeometry(CellGeometry<PointScalar, spaceDim, DeviceType> &anyCellGeometry,
                                                                        const bool &copyAffineness)
   {
+    static_assert(Kokkos::is_device<DeviceType>::value, "Third template argument to getNodalCellGeometry() must be a Kokkos::Device");
     // copy the nodes from CellGeometry into a raw View
     const int numCells = anyCellGeometry.extent_int(0);
     const int numNodes = anyCellGeometry.extent_int(1);
@@ -110,6 +111,8 @@ namespace Intrepid2
   inline CellGeometry<PointScalar,spaceDim,DeviceType> uniformCartesianMesh(const Kokkos::Array<PointScalar,spaceDim> &domainExtents,
                                                                             const Kokkos::Array<int,spaceDim> &gridCellCounts)
   {
+    static_assert(Kokkos::is_device<DeviceType>::value, "Third template argument to uniformCartesianMesh() must be a Kokkos::Device");
+    
     Kokkos::Array<PointScalar,spaceDim> origin;
     for (int d=0; d<spaceDim; d++)
     {
@@ -131,6 +134,7 @@ namespace Intrepid2
   template<class PointScalar, int spaceDim, typename DeviceType = Kokkos::DefaultExecutionSpace::device_type>
   inline CellGeometry<PointScalar,spaceDim,DeviceType> uniformCartesianMesh(const PointScalar &domainExtent, const int &meshWidth)
   {
+    static_assert(Kokkos::is_device<DeviceType>::value, "Third template argument to uniformCartesianMesh() must be a Kokkos::Device");
     Kokkos::Array<PointScalar,spaceDim> origin;
     Kokkos::Array<PointScalar,spaceDim> domainExtents;
     Kokkos::Array<int,spaceDim> gridCellCounts;

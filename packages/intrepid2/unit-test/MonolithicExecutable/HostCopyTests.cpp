@@ -72,30 +72,30 @@ namespace
   {
     // first, construct a BasisValues object with scalar tensor data
     
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = typename Kokkos::DefaultExecutionSpace::device_type;
     using Scalar = double;
     const double value = 3.0;
-    Data<Scalar,ExecutionSpace> data(value, Kokkos::Array<int,2>{1,1}); // (F,P)
+    Data<Scalar,DeviceType> data(value, Kokkos::Array<int,2>{1,1}); // (F,P)
     
-    std::vector< Data<Scalar,ExecutionSpace> > tensorComponents {data, data};
-    TensorData<Scalar,ExecutionSpace> tensorData(tensorComponents);
+    std::vector< Data<Scalar,DeviceType> > tensorComponents {data, data};
+    TensorData<Scalar,DeviceType> tensorData(tensorComponents);
     
-    BasisValues<Scalar,ExecutionSpace> basisValues(tensorData);
+    BasisValues<Scalar,DeviceType> basisValues(tensorData);
     
-    using HostExecSpace = Kokkos::HostSpace::execution_space;
-    BasisValues<Scalar,HostExecSpace> basisValuesHost(basisValues);
+    using HostDeviceType = typename Kokkos::HostSpace::device_type;
+    BasisValues<Scalar,HostDeviceType> basisValuesHost(basisValues);
     
     TEST_EQUALITY(value*value, basisValuesHost(0,0));
     
     // now, construct BasisValues with vector data
-    TensorData<Scalar,ExecutionSpace> emptyTensorData; // represents 0 in the vector
-    std::vector< TensorData<Scalar,ExecutionSpace> > vectorComponents { emptyTensorData, tensorData };
-    std::vector< std::vector< TensorData<Scalar,ExecutionSpace> > > families { vectorComponents };
+    TensorData<Scalar,DeviceType> emptyTensorData; // represents 0 in the vector
+    std::vector< TensorData<Scalar,DeviceType> > vectorComponents { emptyTensorData, tensorData };
+    std::vector< std::vector< TensorData<Scalar,DeviceType> > > families { vectorComponents };
     
-    VectorData<Scalar,ExecutionSpace> vectorData(families);
+    VectorData<Scalar,DeviceType> vectorData(families);
     
-    basisValues      = BasisValues<Scalar,ExecutionSpace>(vectorData);
-    basisValuesHost  = BasisValues<Scalar,HostExecSpace>(basisValues);
+    basisValues      = BasisValues<Scalar,DeviceType>(vectorData);
+    basisValuesHost  = BasisValues<Scalar,HostDeviceType>(basisValues);
     
     TEST_EQUALITY(0.0,           basisValuesHost(0,0,0) ); // zero first component
     TEST_EQUALITY(value * value, basisValuesHost(0,0,1) ); // second component is data * data
@@ -103,41 +103,41 @@ namespace
 
   TEUCHOS_UNIT_TEST(HostCopy, Data)
   {
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = typename Kokkos::DefaultExecutionSpace::device_type;
     using Scalar = double;
     const double value = 3.0;
-    Data<Scalar,ExecutionSpace> data(value, Kokkos::Array<int,1>{1});
+    Data<Scalar,DeviceType> data(value, Kokkos::Array<int,1>{1});
     
-    using HostExecSpace = Kokkos::HostSpace::execution_space;
-    Data<Scalar,HostExecSpace> dataHost(data);
+    using HostDeviceType = typename Kokkos::HostSpace::execution_space::device_type;
+    Data<Scalar,HostDeviceType> dataHost(data);
     
     TEST_EQUALITY(value, dataHost(0));
     
     // now, test that the host-copy of an invalid data object is invalid, too
-    data = Data<Scalar,ExecutionSpace>(); // empty/invalid Data
-    dataHost = Data<Scalar,HostExecSpace>(data);
+    data = Data<Scalar,DeviceType>(); // empty/invalid Data
+    dataHost = Data<Scalar,HostDeviceType>(data);
 
     TEST_EQUALITY(data.isValid(), dataHost.isValid());
   }
 
   TEUCHOS_UNIT_TEST(HostCopy, TensorData)
   {
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = typename Kokkos::DefaultExecutionSpace::device_type;
     using Scalar = double;
     const double value = 3.0;
-    Data<Scalar,ExecutionSpace> data(value, Kokkos::Array<int,1>{1});
+    Data<Scalar,DeviceType> data(value, Kokkos::Array<int,1>{1});
     
-    std::vector< Data<Scalar,ExecutionSpace> > tensorComponents {data, data};
-    TensorData<Scalar,ExecutionSpace> tensorData(tensorComponents);
+    std::vector< Data<Scalar,DeviceType> > tensorComponents {data, data};
+    TensorData<Scalar,DeviceType> tensorData(tensorComponents);
     
-    using HostExecSpace = Kokkos::HostSpace::execution_space;
-    TensorData<Scalar,HostExecSpace> tensorDataHost(tensorData);
+    using HostDeviceType = typename Kokkos::HostSpace::execution_space::device_type;
+    TensorData<Scalar,HostDeviceType> tensorDataHost(tensorData);
     
     TEST_EQUALITY(value*value, tensorDataHost(0));
 
     // now, test that the host-copy of an invalid TensorData object is invalid, too
-    tensorData = TensorData<Scalar,ExecutionSpace>(); // empty/invalid TensorData
-    tensorDataHost = TensorData<Scalar,HostExecSpace>(tensorData);
+    tensorData = TensorData<Scalar,DeviceType>(); // empty/invalid TensorData
+    tensorDataHost = TensorData<Scalar,HostDeviceType>(tensorData);
 
     TEST_EQUALITY(tensorData.isValid(), tensorDataHost.isValid());
   }
@@ -191,20 +191,22 @@ namespace
 
   TEUCHOS_UNIT_TEST(HostCopy, TransformedVectorData)
   {
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType     = typename Kokkos::DefaultExecutionSpace::device_type;
+    using HostDeviceType = typename Kokkos::DefaultHostExecutionSpace::device_type;
+    
     using Scalar = double;
     const double value = 3.0;
-    Data<Scalar,ExecutionSpace> data(value, Kokkos::Array<int,2>{1,1}); // F,P (but just 1 for each, here)
+    Data<Scalar,DeviceType> data(value, Kokkos::Array<int,2>{1,1}); // F,P (but just 1 for each, here)
     
-    std::vector< Data<Scalar,ExecutionSpace> > tensorComponents {data, data};
-    TensorData<Scalar,ExecutionSpace> tensorData(tensorComponents);
+    std::vector< Data<Scalar,DeviceType> > tensorComponents {data, data};
+    TensorData<Scalar,DeviceType> tensorData(tensorComponents);
 
     // one family with vector entries of form (0, value*value)
-    TensorData<Scalar,ExecutionSpace> emptyTensorData; // represents 0 in the vector
-    std::vector< TensorData<Scalar,ExecutionSpace> > vectorComponents { emptyTensorData, tensorData };
-    std::vector< std::vector< TensorData<Scalar,ExecutionSpace> > > families { vectorComponents };
+    TensorData<Scalar,DeviceType> emptyTensorData; // represents 0 in the vector
+    std::vector< TensorData<Scalar,DeviceType> > vectorComponents { emptyTensorData, tensorData };
+    std::vector< std::vector< TensorData<Scalar,DeviceType> > > families { vectorComponents };
     
-    VectorData<Scalar,ExecutionSpace> vectorData(families);
+    VectorData<Scalar,DeviceType> vectorData(families);
 
     // set up a simple diagonal scaling
     const double scaling = 0.1;
@@ -215,12 +217,11 @@ namespace
     Kokkos::Array<int,7> extents {1,1,spaceDim,spaceDim,1,1,1};
     Kokkos::Array<DataVariationType,7> variationTypes {CONSTANT,CONSTANT,BLOCK_PLUS_DIAGONAL,BLOCK_PLUS_DIAGONAL,CONSTANT,CONSTANT,CONSTANT};
     const int blockPlusDiagonalLastNonDiagonal = -1; // only diagonal
-    Data<Scalar,ExecutionSpace> transform(scalingView,rank,extents,variationTypes,blockPlusDiagonalLastNonDiagonal);
+    Data<Scalar,DeviceType> transform(scalingView,rank,extents,variationTypes,blockPlusDiagonalLastNonDiagonal);
     
-    TransformedVectorData<Scalar,ExecutionSpace> transformedVectorData(transform,vectorData);
+    TransformedVectorData<Scalar,DeviceType> transformedVectorData(transform,vectorData);
     
-    using HostExecSpace = Kokkos::HostSpace::execution_space;
-    TransformedVectorData<Scalar,HostExecSpace> transformedVectorDataHost(transformedVectorData);
+    TransformedVectorData<Scalar,HostDeviceType> transformedVectorDataHost(transformedVectorData);
 
     TEST_EQUALITY(transformedVectorData.rank(), transformedVectorDataHost.rank());
     TEST_EQUALITY(transformedVectorData.extent_int(0), transformedVectorDataHost.extent_int(0));
@@ -235,22 +236,22 @@ namespace
 
   TEUCHOS_UNIT_TEST(HostCopy, VectorData)
   {
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType     = typename Kokkos::DefaultExecutionSpace::device_type;
+    using HostDeviceType = typename Kokkos::DefaultHostExecutionSpace::device_type;
+    
     using Scalar = double;
     const double value = 3.0;
-    Data<Scalar,ExecutionSpace> data(value, Kokkos::Array<int,2>{1,1}); // F,P (but just 1 for each, here)
+    Data<Scalar,DeviceType> data(value, Kokkos::Array<int,2>{1,1}); // F,P (but just 1 for each, here)
     
-    std::vector< Data<Scalar,ExecutionSpace> > tensorComponents {data, data};
-    TensorData<Scalar,ExecutionSpace> tensorData(tensorComponents);
+    std::vector< Data<Scalar,DeviceType> > tensorComponents {data, data};
+    TensorData<Scalar,DeviceType> tensorData(tensorComponents);
     
-    TensorData<Scalar,ExecutionSpace> emptyTensorData; // represents 0 in the vector
-    std::vector< TensorData<Scalar,ExecutionSpace> > vectorComponents { emptyTensorData, tensorData };
-    std::vector< std::vector< TensorData<Scalar,ExecutionSpace> > > families { vectorComponents };
+    TensorData<Scalar,DeviceType> emptyTensorData; // represents 0 in the vector
+    std::vector< TensorData<Scalar,DeviceType> > vectorComponents { emptyTensorData, tensorData };
+    std::vector< std::vector< TensorData<Scalar,DeviceType> > > families { vectorComponents };
     
-    VectorData<Scalar,ExecutionSpace> vectorData(families);
-    
-    using HostExecSpace = Kokkos::HostSpace::execution_space;
-    VectorData<Scalar,HostExecSpace> vectorDataHost(vectorData);
+    VectorData<Scalar,DeviceType>     vectorData    (families);
+    VectorData<Scalar,HostDeviceType> vectorDataHost(vectorData);
     
     TEST_EQUALITY(0.0,           vectorDataHost(0,0,0) ); // zero first component
     TEST_EQUALITY(value * value, vectorDataHost(0,0,1) ); // second component is data * data

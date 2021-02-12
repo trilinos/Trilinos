@@ -178,7 +178,7 @@ namespace
     ScalarView<Scalar,DeviceType> transformedWeightedGradValues("transformed weighted grad values", numCells, numFields, numPoints, spaceDim);
     
     using Kokkos::DefaultExecutionSpace;
-    auto cubature = Intrepid2::DefaultCubatureFactory::create<DefaultExecutionSpace>(cellTopo,polyOrder*2);
+    auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellTopo,polyOrder*2);
     TEST_EQUALITY( numPoints, cubature->getNumPoints());
     ScalarView<PointScalar,DeviceType> cubaturePoints("cubature points",numPoints,spaceDim);
     ScalarView<double,DeviceType> cubatureWeights("cubature weights", numPoints);

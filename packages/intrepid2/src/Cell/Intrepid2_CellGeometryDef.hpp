@@ -567,7 +567,7 @@ namespace Intrepid2
   template<class PointScalar, int spaceDim, typename DeviceType>
   TensorData<PointScalar,DeviceType>
   CellGeometry<PointScalar,spaceDim,DeviceType>::allocateCellMeasure( const Data<PointScalar,DeviceType> & jacobianDet,
-                                                                        const TensorData<PointScalar,DeviceType> & cubatureWeights ) const
+                                                                      const TensorData<PointScalar,DeviceType> & cubatureWeights ) const
   {
     // Output possibilities for a cubatureWeights with N components:
     // 1. For AFFINE elements (jacobianDet cell-wise constant), returns a container with N+1 tensorial components; the first component corresponds to cells
@@ -626,8 +626,8 @@ namespace Intrepid2
     
   template<class PointScalar, int spaceDim, typename DeviceType>
   void CellGeometry<PointScalar,spaceDim,DeviceType>::computeCellMeasure( TensorData<PointScalar,DeviceType> &cellMeasure,
-                                                                            const Data<PointScalar,DeviceType> & jacobianDet,
-                                                                            const TensorData<PointScalar,DeviceType> & cubatureWeights ) const
+                                                                          const Data<PointScalar,DeviceType> & jacobianDet,
+                                                                          const TensorData<PointScalar,DeviceType> & cubatureWeights ) const
   {
     // Output possibilities for a cubatureWeights with N components:
     // 1. For AFFINE elements (jacobianDet constant on each cell), returns a container with N+1 tensorial components; the first component corresponds to cells

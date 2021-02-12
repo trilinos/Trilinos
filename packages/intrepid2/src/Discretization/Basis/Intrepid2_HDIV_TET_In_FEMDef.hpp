@@ -248,7 +248,7 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
 
   // now I need to integrate { (x,y,z) phi } against the big basis
   // first, get a cubature rule.
-  CubatureDirectTetDefault<Kokkos::HostSpace::execution_space,scalarType,scalarType> myCub( 2 * order );
+  CubatureDirectTetDefault<Kokkos::HostSpace::device_type,scalarType,scalarType> myCub( 2 * order );
   Kokkos::DynRankView<scalarType,typename ExecutionSpace::array_layout,Kokkos::HostSpace> cubPoints("Hdiv::Tet::In::cubPoints", myCub.getNumPoints() , spaceDim );
   Kokkos::DynRankView<scalarType,typename ExecutionSpace::array_layout,Kokkos::HostSpace> cubWeights("Hdiv::Tet::In::cubWeights", myCub.getNumPoints() );
   myCub.getCubature( cubPoints , cubWeights );

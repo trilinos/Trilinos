@@ -235,13 +235,13 @@ namespace
     
     // get quadrature points for integrating up to 2*polyOrder
     const int quadratureDegree = 2*basis1.getDegree();
-    using ExecutionSpace = typename Basis1::ExecutionSpace;
+    using DeviceType = typename Basis1::DeviceType;
     using PointScalar = typename Basis1::PointValueType;
     using WeightScalar = typename Basis1::OutputValueType;
     using Scalar = WeightScalar;
     DefaultCubatureFactory cub_factory;
     auto cellTopoKey = basis1.getBaseCellTopology().getKey();
-    auto quadrature = cub_factory.create<ExecutionSpace, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
+    auto quadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
     ordinal_type numRefPoints = quadrature->getNumPoints();
     const int spaceDim = basis1.getBaseCellTopology().getDimension();
     ViewType<PointScalar> points = ViewType<PointScalar>("quadrature points 1D ref cell", numRefPoints, spaceDim);

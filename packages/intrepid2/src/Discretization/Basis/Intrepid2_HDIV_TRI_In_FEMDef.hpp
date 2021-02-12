@@ -245,7 +245,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
 
   // now I need to integrate { (x,y) phi } against the big basis
   // first, get a cubature rule.
-  CubatureDirectTriDefault<Kokkos::HostSpace::execution_space,scalarType,scalarType> myCub( 2 * order );
+  CubatureDirectTriDefault<Kokkos::HostSpace::device_type,scalarType,scalarType> myCub( 2 * order );
   Kokkos::DynRankView<scalarType,typename ExecutionSpace::array_layout,Kokkos::HostSpace> cubPoints("Hdiv::Tri::In::cubPoints", myCub.getNumPoints() , spaceDim );
   Kokkos::DynRankView<scalarType,typename ExecutionSpace::array_layout,Kokkos::HostSpace> cubWeights("Hdiv::Tri::In::cubWeights", myCub.getNumPoints() );
   myCub.getCubature( cubPoints , cubWeights );

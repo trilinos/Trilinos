@@ -246,7 +246,7 @@ namespace Intrepid2 {
 
     // now I need to integrate { (x,y) \times phi } against the big basis
     // first, get a cubature rule.
-    CubatureDirectTriDefault<Kokkos::HostSpace::execution_space,scalarType,scalarType> myCub( 2 * order );
+    CubatureDirectTriDefault<typename Kokkos::HostSpace::device_type,scalarType,scalarType> myCub( 2 * order );
     Kokkos::DynRankView<scalarType,typename ExecutionSpace::array_layout,Kokkos::HostSpace> cubPoints("Hcurl::Tri::In::cubPoints", myCub.getNumPoints() , spaceDim );
     Kokkos::DynRankView<scalarType,typename ExecutionSpace::array_layout,Kokkos::HostSpace> cubWeights("Hcurl::Tri::In::cubWeights", myCub.getNumPoints() );
     myCub.getCubature( cubPoints , cubWeights );

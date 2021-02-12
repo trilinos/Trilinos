@@ -62,6 +62,8 @@ namespace Intrepid2
   */
   template<class Scalar, typename DeviceType = typename Kokkos::DefaultExecutionSpace::device_type>
   class TensorData {
+    // TODO: re-enable this assert once all Basis subclasses have been converted to use DeviceType
+//    static_assert(Kokkos::is_device<DeviceType>::value, "Second template argument to TensorData must be a Kokkos::Device");
   protected:
     Kokkos::Array< Data<Scalar,DeviceType>, Parameters::MaxTensorComponents> tensorComponents_;
     Kokkos::Array<ordinal_type, 7> extents_;

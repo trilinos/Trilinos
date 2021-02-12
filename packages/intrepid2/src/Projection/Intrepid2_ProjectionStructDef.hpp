@@ -131,7 +131,7 @@ void ProjectionStruct<SpT,ValueType>::createL2ProjectionStruct(const BasisPtrTyp
   for(ordinal_type ie=0; ie<numEdges; ++ie) {
     ordinal_type cub_degree = 2*edgeBasisCubDegree;
     subCellTopologyKey(edgeDim,ie) = cellBasis->getBaseCellTopology().getKey(edgeDim, ie);
-    auto edgeBasisCub = cub_factory.create<host_space_type, ValueType, ValueType>(cellBasis->getBaseCellTopology().getKey(edgeDim, ie), cub_degree);
+    auto edgeBasisCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(cellBasis->getBaseCellTopology().getKey(edgeDim, ie), cub_degree);
     basisPointsRange(edgeDim,ie) = range_type(numBasisEvalPoints, numBasisEvalPoints+edgeBasisCub->getNumPoints());
     numBasisEvalPoints +=  edgeBasisCub->getNumPoints();
     maxNumBasisEvalPoints = std::max(maxNumBasisEvalPoints, edgeBasisCub->getNumPoints());
@@ -140,7 +140,7 @@ void ProjectionStruct<SpT,ValueType>::createL2ProjectionStruct(const BasisPtrTyp
     edgeBasisCub->getCubature(basisCubPoints[edgeDim][ie], basisCubWeights[edgeDim][ie]);
 
     cub_degree = edgeBasisCubDegree + targetCubDegree;
-    auto edgeTargetCub = cub_factory.create<host_space_type, ValueType, ValueType>(cellBasis->getBaseCellTopology().getKey(edgeDim, ie), cub_degree);
+    auto edgeTargetCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(cellBasis->getBaseCellTopology().getKey(edgeDim, ie), cub_degree);
     targetPointsRange(edgeDim,ie) = range_type(numTargetEvalPoints, numTargetEvalPoints+edgeTargetCub->getNumPoints());
     numTargetEvalPoints +=  edgeTargetCub->getNumPoints();
     maxNumTargetEvalPoints = std::max(maxNumTargetEvalPoints, edgeTargetCub->getNumPoints());
@@ -152,7 +152,7 @@ void ProjectionStruct<SpT,ValueType>::createL2ProjectionStruct(const BasisPtrTyp
   for(ordinal_type iface=0; iface<numFaces; ++iface) {
     ordinal_type cub_degree = 2*faceBasisCubDegree;
     subCellTopologyKey(faceDim,iface) = cellBasis->getBaseCellTopology().getKey(faceDim, iface);
-    auto faceBasisCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(faceDim,iface), cub_degree);
+    auto faceBasisCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(faceDim,iface), cub_degree);
     basisPointsRange(faceDim,iface) = range_type(numBasisEvalPoints, numBasisEvalPoints+faceBasisCub->getNumPoints());
     numBasisEvalPoints +=  faceBasisCub->getNumPoints();
     maxNumBasisEvalPoints = std::max(maxNumBasisEvalPoints, faceBasisCub->getNumPoints());
@@ -161,7 +161,7 @@ void ProjectionStruct<SpT,ValueType>::createL2ProjectionStruct(const BasisPtrTyp
     faceBasisCub->getCubature(basisCubPoints[faceDim][iface], basisCubWeights[faceDim][iface]);
 
     cub_degree = faceBasisCubDegree + targetCubDegree;
-    auto faceTargetCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(faceDim,iface), cub_degree);
+    auto faceTargetCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(faceDim,iface), cub_degree);
     targetPointsRange(faceDim,iface) = range_type(numTargetEvalPoints, numTargetEvalPoints+faceTargetCub->getNumPoints());
     numTargetEvalPoints +=  faceTargetCub->getNumPoints();
     maxNumTargetEvalPoints = std::max(maxNumTargetEvalPoints, faceTargetCub->getNumPoints());
@@ -172,7 +172,7 @@ void ProjectionStruct<SpT,ValueType>::createL2ProjectionStruct(const BasisPtrTyp
   subCellTopologyKey(dim,0) = cellBasis->getBaseCellTopology().getBaseKey();
   if(hasCellDofs) {
     ordinal_type cub_degree = 2*basisCubDegree;
-    auto elemBasisCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
+    auto elemBasisCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
     basisPointsRange(dim,0) = range_type(numBasisEvalPoints, numBasisEvalPoints+elemBasisCub->getNumPoints());
     numBasisEvalPoints +=  elemBasisCub->getNumPoints();
     maxNumBasisEvalPoints = std::max(maxNumBasisEvalPoints, elemBasisCub->getNumPoints());
@@ -181,7 +181,7 @@ void ProjectionStruct<SpT,ValueType>::createL2ProjectionStruct(const BasisPtrTyp
     elemBasisCub->getCubature(basisCubPoints[dim][0], basisCubWeights[dim][0]);
 
     cub_degree = basisCubDegree + targetCubDegree;
-    auto elemTargetCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
+    auto elemTargetCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
     targetPointsRange(dim,0) = range_type(numTargetEvalPoints, numTargetEvalPoints+elemTargetCub->getNumPoints());
     numTargetEvalPoints +=  elemTargetCub->getNumPoints();
     maxNumTargetEvalPoints = std::max(maxNumTargetEvalPoints, elemTargetCub->getNumPoints());
@@ -248,7 +248,7 @@ void ProjectionStruct<SpT,ValueType>::createHGradProjectionStruct(const BasisPtr
   for(ordinal_type ie=0; ie<numEdges; ++ie) {
     ordinal_type cub_degree = 2*edgeBasisCubDegree;
     subCellTopologyKey(edgeDim,ie) = cellBasis->getBaseCellTopology().getKey(edgeDim, ie);
-    auto edgeBasisCub = cub_factory.create<host_space_type, ValueType, ValueType>(cellBasis->getBaseCellTopology().getKey(edgeDim, ie), cub_degree);
+    auto edgeBasisCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(cellBasis->getBaseCellTopology().getKey(edgeDim, ie), cub_degree);
     basisDerivPointsRange(edgeDim,ie) = range_type(numBasisDerivEvalPoints, numBasisDerivEvalPoints+edgeBasisCub->getNumPoints());
     numBasisDerivEvalPoints +=  edgeBasisCub->getNumPoints();
     maxNumBasisDerivEvalPoints = std::max(maxNumBasisDerivEvalPoints, edgeBasisCub->getNumPoints());
@@ -257,7 +257,7 @@ void ProjectionStruct<SpT,ValueType>::createHGradProjectionStruct(const BasisPtr
     edgeBasisCub->getCubature(basisDerivCubPoints[edgeDim][ie], basisDerivCubWeights[edgeDim][ie]);
 
     cub_degree = edgeBasisCubDegree + targetGradCubDegree;
-    auto edgeTargetCub = cub_factory.create<host_space_type, ValueType, ValueType>(cellBasis->getBaseCellTopology().getKey(edgeDim, ie), cub_degree);
+    auto edgeTargetCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(cellBasis->getBaseCellTopology().getKey(edgeDim, ie), cub_degree);
     targetDerivPointsRange(edgeDim,ie) = range_type(numTargetDerivEvalPoints, numTargetDerivEvalPoints+edgeTargetCub->getNumPoints());
     numTargetDerivEvalPoints +=  edgeTargetCub->getNumPoints();
     maxNumTargetDerivEvalPoints = std::max(maxNumTargetDerivEvalPoints, edgeTargetCub->getNumPoints());
@@ -269,7 +269,7 @@ void ProjectionStruct<SpT,ValueType>::createHGradProjectionStruct(const BasisPtr
   for(ordinal_type iface=0; iface<numFaces; ++iface) {
     ordinal_type cub_degree = 2*faceBasisCubDegree;
     subCellTopologyKey(faceDim,iface) = cellBasis->getBaseCellTopology().getKey(faceDim, iface);
-    auto faceBasisGradCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(faceDim,iface), cub_degree);
+    auto faceBasisGradCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(faceDim,iface), cub_degree);
     basisDerivPointsRange(faceDim,iface) = range_type(numBasisDerivEvalPoints, numBasisDerivEvalPoints+faceBasisGradCub->getNumPoints());
     numBasisDerivEvalPoints +=  faceBasisGradCub->getNumPoints();
     maxNumBasisDerivEvalPoints = std::max(maxNumBasisDerivEvalPoints, faceBasisGradCub->getNumPoints());
@@ -278,7 +278,7 @@ void ProjectionStruct<SpT,ValueType>::createHGradProjectionStruct(const BasisPtr
     faceBasisGradCub->getCubature(basisDerivCubPoints[faceDim][iface], basisDerivCubWeights[faceDim][iface]);
 
     cub_degree = faceBasisCubDegree + targetGradCubDegree;
-    auto faceTargetDerivCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(faceDim,iface), cub_degree);
+    auto faceTargetDerivCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(faceDim,iface), cub_degree);
     targetDerivPointsRange(faceDim,iface) = range_type(numTargetDerivEvalPoints, numTargetDerivEvalPoints+faceTargetDerivCub->getNumPoints());
     numTargetDerivEvalPoints +=  faceTargetDerivCub->getNumPoints();
     maxNumTargetDerivEvalPoints = std::max(maxNumTargetDerivEvalPoints, faceTargetDerivCub->getNumPoints());
@@ -289,7 +289,7 @@ void ProjectionStruct<SpT,ValueType>::createHGradProjectionStruct(const BasisPtr
   subCellTopologyKey(dim,0) = cellBasis->getBaseCellTopology().getBaseKey();
   if(hasCellDofs) {
     ordinal_type cub_degree = 2*basisCubDegree;
-    auto elemBasisGradCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
+    auto elemBasisGradCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
     basisDerivPointsRange(dim,0) = range_type(numBasisDerivEvalPoints, numBasisDerivEvalPoints+elemBasisGradCub->getNumPoints());
     numBasisDerivEvalPoints +=  elemBasisGradCub->getNumPoints();
     maxNumBasisDerivEvalPoints = std::max(maxNumBasisDerivEvalPoints, elemBasisGradCub->getNumPoints());
@@ -298,7 +298,7 @@ void ProjectionStruct<SpT,ValueType>::createHGradProjectionStruct(const BasisPtr
     elemBasisGradCub->getCubature(basisDerivCubPoints[dim][0], basisDerivCubWeights[dim][0]);
 
     cub_degree = basisCubDegree + targetGradCubDegree;
-    auto elemTargetGradCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
+    auto elemTargetGradCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
     targetDerivPointsRange(dim,0) = range_type(numTargetDerivEvalPoints, numTargetDerivEvalPoints+elemTargetGradCub->getNumPoints());
     numTargetDerivEvalPoints +=  elemTargetGradCub->getNumPoints();
     maxNumTargetDerivEvalPoints = std::max(maxNumTargetDerivEvalPoints, elemTargetGradCub->getNumPoints());
@@ -343,7 +343,7 @@ void ProjectionStruct<SpT,ValueType>::createHCurlProjectionStruct(const BasisPtr
   for(ordinal_type ie=0; ie<numEdges; ++ie) {
     ordinal_type cub_degree = 2*edgeBasisCubDegree;
     subCellTopologyKey(edgeDim,ie) = cellBasis->getBaseCellTopology().getKey(edgeDim, ie);
-    auto edgeBasisCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(edgeDim,ie), cub_degree);
+    auto edgeBasisCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(edgeDim,ie), cub_degree);
     basisPointsRange(edgeDim,ie) = range_type(numBasisEvalPoints, numBasisEvalPoints+edgeBasisCub->getNumPoints());
     numBasisEvalPoints +=  edgeBasisCub->getNumPoints();
     maxNumBasisEvalPoints = std::max(maxNumBasisEvalPoints, edgeBasisCub->getNumPoints());
@@ -352,7 +352,7 @@ void ProjectionStruct<SpT,ValueType>::createHCurlProjectionStruct(const BasisPtr
     edgeBasisCub->getCubature(basisCubPoints[edgeDim][ie], basisCubWeights[edgeDim][ie]);
 
     cub_degree = edgeBasisCubDegree + targetCubDegree;
-    auto edgeTargetCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(edgeDim,ie), cub_degree);
+    auto edgeTargetCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(edgeDim,ie), cub_degree);
     targetPointsRange(edgeDim,ie) = range_type(numTargetEvalPoints, numTargetEvalPoints+edgeTargetCub->getNumPoints());
     numTargetEvalPoints +=  edgeTargetCub->getNumPoints();
     maxNumTargetEvalPoints = std::max(maxNumTargetEvalPoints, edgeTargetCub->getNumPoints());
@@ -364,7 +364,7 @@ void ProjectionStruct<SpT,ValueType>::createHCurlProjectionStruct(const BasisPtr
   for(ordinal_type iface=0; iface<numFaces; ++iface) {
     ordinal_type cub_degree = 2*faceBasisCubDegree;
     subCellTopologyKey(faceDim,iface) = cellBasis->getBaseCellTopology().getKey(faceDim, iface);
-    auto faceBasisCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(faceDim,iface), cub_degree);
+    auto faceBasisCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(faceDim,iface), cub_degree);
     basisPointsRange(faceDim,iface) = range_type(numBasisEvalPoints, numBasisEvalPoints+faceBasisCub->getNumPoints());
     numBasisEvalPoints +=  faceBasisCub->getNumPoints();
     maxNumBasisEvalPoints = std::max(maxNumBasisEvalPoints, faceBasisCub->getNumPoints());
@@ -372,7 +372,7 @@ void ProjectionStruct<SpT,ValueType>::createHCurlProjectionStruct(const BasisPtr
     basisCubWeights[faceDim][iface] = view_type("basisCubWeights",faceBasisCub->getNumPoints());
     faceBasisCub->getCubature(basisCubPoints[faceDim][iface], basisCubWeights[faceDim][iface]);
 
-    auto faceBasisDerivCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(faceDim,iface), cub_degree);
+    auto faceBasisDerivCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(faceDim,iface), cub_degree);
     basisDerivPointsRange(faceDim,iface) = range_type(numBasisDerivEvalPoints, numBasisDerivEvalPoints+faceBasisCub->getNumPoints());
     numBasisDerivEvalPoints +=  faceBasisCub->getNumPoints();
     maxNumBasisDerivEvalPoints = std::max(maxNumBasisDerivEvalPoints, faceBasisCub->getNumPoints());
@@ -381,7 +381,7 @@ void ProjectionStruct<SpT,ValueType>::createHCurlProjectionStruct(const BasisPtr
     faceBasisCub->getCubature(basisDerivCubPoints[faceDim][iface], basisDerivCubWeights[faceDim][iface]);
 
     cub_degree = faceBasisCubDegree + targetCubDegree;
-    auto faceTargetCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(faceDim,iface), cub_degree);
+    auto faceTargetCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(faceDim,iface), cub_degree);
     targetPointsRange(faceDim,iface) = range_type(numTargetEvalPoints, numTargetEvalPoints+faceTargetCub->getNumPoints());
     numTargetEvalPoints +=  faceTargetCub->getNumPoints();
     maxNumTargetEvalPoints = std::max(maxNumTargetEvalPoints, faceTargetCub->getNumPoints());
@@ -390,7 +390,7 @@ void ProjectionStruct<SpT,ValueType>::createHCurlProjectionStruct(const BasisPtr
     faceTargetCub->getCubature(targetCubPoints[faceDim][iface], targetCubWeights[faceDim][iface]);
 
     cub_degree = faceBasisCubDegree + targetCurlCubDegre;
-    auto faceTargetDerivCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(faceDim,iface), cub_degree);
+    auto faceTargetDerivCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(faceDim,iface), cub_degree);
     targetDerivPointsRange(faceDim,iface) = range_type(numTargetDerivEvalPoints, numTargetDerivEvalPoints+faceTargetDerivCub->getNumPoints());
     numTargetDerivEvalPoints +=  faceTargetDerivCub->getNumPoints();
     maxNumTargetDerivEvalPoints = std::max(maxNumTargetDerivEvalPoints, faceTargetDerivCub->getNumPoints());
@@ -402,7 +402,7 @@ void ProjectionStruct<SpT,ValueType>::createHCurlProjectionStruct(const BasisPtr
   subCellTopologyKey(dim,0) = cellBasis->getBaseCellTopology().getBaseKey();
   if(hasCellDofs) {
     ordinal_type cub_degree = 2*basisCubDegree;
-    auto elemBasisCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
+    auto elemBasisCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
     basisPointsRange(dim,0) = range_type(numBasisEvalPoints, numBasisEvalPoints+elemBasisCub->getNumPoints());
     numBasisEvalPoints +=  elemBasisCub->getNumPoints();
     maxNumBasisEvalPoints = std::max(maxNumBasisEvalPoints, elemBasisCub->getNumPoints());
@@ -418,7 +418,7 @@ void ProjectionStruct<SpT,ValueType>::createHCurlProjectionStruct(const BasisPtr
     elemBasisCub->getCubature(basisDerivCubPoints[dim][0], basisDerivCubWeights[dim][0]);
 
     cub_degree = basisCubDegree + targetCubDegree;
-    auto elemTargetCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
+    auto elemTargetCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
     targetPointsRange(dim,0) = range_type(numTargetEvalPoints, numTargetEvalPoints+elemTargetCub->getNumPoints());
     numTargetEvalPoints +=  elemTargetCub->getNumPoints();
     maxNumTargetEvalPoints = std::max(maxNumTargetEvalPoints, elemTargetCub->getNumPoints());
@@ -427,7 +427,7 @@ void ProjectionStruct<SpT,ValueType>::createHCurlProjectionStruct(const BasisPtr
     elemTargetCub->getCubature(targetCubPoints[dim][0], targetCubWeights[dim][0]);
 
     cub_degree = basisCubDegree + targetCurlCubDegre;
-    auto elemTargetCurlCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
+    auto elemTargetCurlCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
     targetDerivPointsRange(dim,0) = range_type(numTargetDerivEvalPoints, numTargetDerivEvalPoints+elemTargetCurlCub->getNumPoints());
     numTargetDerivEvalPoints +=  elemTargetCurlCub->getNumPoints();
     maxNumTargetDerivEvalPoints = std::max(maxNumTargetDerivEvalPoints, elemTargetCurlCub->getNumPoints());
@@ -468,15 +468,15 @@ void ProjectionStruct<SpT,ValueType>::createHDivProjectionStruct(const BasisPtrT
   targetDerivPointsRange = range_tag("targetDerivPointsRange", numberSubCellDims,maxSubCellsCount);
   subCellTopologyKey = key_tag("subCellTopologyKey",numberSubCellDims,maxSubCellsCount);
 
-  Basis<host_space_type,ValueType,ValueType> *hcurlBasis = NULL;
+  Basis<HostDeviceType,ValueType,ValueType> *hcurlBasis = NULL;
   if(cellTopo.getKey() == shards::getCellTopologyData<shards::Hexahedron<8> >()->key)
-    hcurlBasis = new Basis_HCURL_HEX_In_FEM<host_space_type,ValueType,ValueType>(cellBasis->getDegree());
+    hcurlBasis = new Basis_HCURL_HEX_In_FEM<HostDeviceType,ValueType,ValueType>(cellBasis->getDegree());
   else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Tetrahedron<4> >()->key)
-    hcurlBasis = new Basis_HCURL_TET_In_FEM<host_space_type,ValueType,ValueType>(cellBasis->getDegree());
+    hcurlBasis = new Basis_HCURL_TET_In_FEM<HostDeviceType,ValueType,ValueType>(cellBasis->getDegree());
   else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Quadrilateral<4> >()->key)
-    hcurlBasis = new Basis_HGRAD_QUAD_Cn_FEM<host_space_type,ValueType,ValueType>(cellBasis->getDegree());
+    hcurlBasis = new Basis_HGRAD_QUAD_Cn_FEM<HostDeviceType,ValueType,ValueType>(cellBasis->getDegree());
   else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Triangle<3> >()->key)
-    hcurlBasis = new Basis_HGRAD_TRI_Cn_FEM<host_space_type,ValueType,ValueType>(cellBasis->getDegree());
+    hcurlBasis = new Basis_HGRAD_TRI_Cn_FEM<HostDeviceType,ValueType,ValueType>(cellBasis->getDegree());
   else  {
     std::stringstream ss;
     ss << ">>> ERROR (Intrepid2::ProjectionTools::createHDivProjectionStruct): "
@@ -492,7 +492,7 @@ void ProjectionStruct<SpT,ValueType>::createHDivProjectionStruct(const BasisPtrT
   for(ordinal_type is=0; is<numSides; ++is) {
     ordinal_type cub_degree = 2*sideBasisCubDegree;
     subCellTopologyKey(sideDim,is) = cellBasis->getBaseCellTopology().getKey(sideDim, is);
-    auto sideBasisCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(sideDim,is), cub_degree);
+    auto sideBasisCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(sideDim,is), cub_degree);
     basisPointsRange(sideDim,is) = range_type(numBasisEvalPoints, numBasisEvalPoints+sideBasisCub->getNumPoints());
     numBasisEvalPoints +=  sideBasisCub->getNumPoints();
     basisCubPoints[sideDim][is] = view_type("basisCubPoints",sideBasisCub->getNumPoints(),sideDim);
@@ -501,7 +501,7 @@ void ProjectionStruct<SpT,ValueType>::createHDivProjectionStruct(const BasisPtrT
     maxNumBasisEvalPoints = std::max(maxNumBasisEvalPoints, sideBasisCub->getNumPoints());
 
     cub_degree = sideBasisCubDegree + targetCubDegree;
-    auto sideTargetCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(sideDim,is), cub_degree);
+    auto sideTargetCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(sideDim,is), cub_degree);
     targetPointsRange(sideDim,is) = range_type(numTargetEvalPoints, numTargetEvalPoints+sideTargetCub->getNumPoints());
     numTargetEvalPoints +=  sideTargetCub->getNumPoints();
     targetCubPoints[sideDim][is] = view_type("targetCubPoints",sideTargetCub->getNumPoints(),sideDim);
@@ -513,7 +513,7 @@ void ProjectionStruct<SpT,ValueType>::createHDivProjectionStruct(const BasisPtrT
   subCellTopologyKey(dim,0) = cellBasis->getBaseCellTopology().getBaseKey();
   if(hasCellDofs) {
     ordinal_type cub_degree = 2*basisCubDegree - 1;
-    auto elemBasisDivCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
+    auto elemBasisDivCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
     basisDerivPointsRange(dim,0) = range_type(numBasisDerivEvalPoints, numBasisDerivEvalPoints+elemBasisDivCub->getNumPoints());
     numBasisDerivEvalPoints +=  elemBasisDivCub->getNumPoints();
     basisDerivCubPoints[dim][0] = view_type("basisDerivCubPoints",elemBasisDivCub->getNumPoints(),dim);
@@ -522,7 +522,7 @@ void ProjectionStruct<SpT,ValueType>::createHDivProjectionStruct(const BasisPtrT
     maxNumBasisDerivEvalPoints = std::max(maxNumBasisDerivEvalPoints, elemBasisDivCub->getNumPoints());
 
     cub_degree = basisCubDegree - 1 + targetDivCubDegre;
-    auto elemTargetDivCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
+    auto elemTargetDivCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
     targetDerivPointsRange(dim,0) = range_type(numTargetDerivEvalPoints, numTargetDerivEvalPoints+elemTargetDivCub->getNumPoints());
     numTargetDerivEvalPoints +=  elemTargetDivCub->getNumPoints();
     targetDerivCubPoints[dim][0] = view_type("targetDerivCubPoints",elemTargetDivCub->getNumPoints(),dim);
@@ -533,7 +533,7 @@ void ProjectionStruct<SpT,ValueType>::createHDivProjectionStruct(const BasisPtrT
     if(haveHCurlConstraint)
     {
       cub_degree = 2*basisCubDegree;
-      auto elemBasisCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
+      auto elemBasisCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
       basisPointsRange(dim,0) = range_type(numBasisEvalPoints, numBasisEvalPoints + elemBasisCub->getNumPoints());
       numBasisEvalPoints +=  elemBasisCub->getNumPoints();
       basisCubPoints[dim][0] = view_type("basisCubPoints",elemBasisCub->getNumPoints(),dim);
@@ -542,7 +542,7 @@ void ProjectionStruct<SpT,ValueType>::createHDivProjectionStruct(const BasisPtrT
       maxNumBasisEvalPoints = std::max(maxNumBasisEvalPoints, elemBasisCub->getNumPoints());
 
       cub_degree = basisCubDegree + targetCubDegree;
-      auto elemTargetCub = cub_factory.create<host_space_type, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
+      auto elemTargetCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(subCellTopologyKey(dim,0), cub_degree);
       targetPointsRange(dim,0) = range_type(numTargetEvalPoints, numTargetEvalPoints + elemTargetCub->getNumPoints());
       numTargetEvalPoints +=  elemTargetCub->getNumPoints();
       targetCubPoints[dim][0] = view_type("targetCubPoints",elemTargetCub->getNumPoints(),dim);
@@ -577,7 +577,7 @@ void ProjectionStruct<SpT,ValueType>::createHVolProjectionStruct(const BasisPtrT
   maxNumBasisEvalPoints = 0; maxNumTargetEvalPoints =0;
 
   ordinal_type cub_degree = 2*basisCubDegree;
-  auto elemBasisCub = cub_factory.create<host_space_type, ValueType, ValueType>(cellTopo.getBaseKey(), cub_degree);
+  auto elemBasisCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(cellTopo.getBaseKey(), cub_degree);
   basisPointsRange(dim,0) = range_type(0, elemBasisCub->getNumPoints());
   numBasisEvalPoints +=  elemBasisCub->getNumPoints();
   maxNumBasisEvalPoints = elemBasisCub->getNumPoints();
@@ -586,7 +586,7 @@ void ProjectionStruct<SpT,ValueType>::createHVolProjectionStruct(const BasisPtrT
   elemBasisCub->getCubature(basisCubPoints[dim][0], basisCubWeights[dim][0]);
 
   cub_degree = basisCubDegree + targetCubDegree;
-  auto elemTargetCub = cub_factory.create<host_space_type, ValueType, ValueType>(cellTopo.getBaseKey(), cub_degree);
+  auto elemTargetCub = cub_factory.create<HostDeviceType, ValueType, ValueType>(cellTopo.getBaseKey(), cub_degree);
   targetPointsRange(dim,0) = range_type(0, elemTargetCub->getNumPoints());
   numTargetEvalPoints +=  elemTargetCub->getNumPoints();
   maxNumTargetEvalPoints = elemTargetCub->getNumPoints();

@@ -58,6 +58,8 @@ namespace Intrepid2 {
 */
   template<class PointScalar, typename Device = Kokkos::DefaultExecutionSpace::device_type>
   class TensorPoints {
+    // TODO: re-enable this assert once all Basis subclasses have been converted to use DeviceType
+//    static_assert(Kokkos::is_device<Device>::value, "Second template argument to TensorPoints must be a Kokkos::Device");
   public:
     using DeviceType = Device;
   protected:

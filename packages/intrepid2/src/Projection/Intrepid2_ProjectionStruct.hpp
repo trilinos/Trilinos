@@ -91,6 +91,7 @@ public:
 
   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
   typedef typename Kokkos::Impl::is_space<SpT>::host_mirror_space::execution_space host_space_type;
+  using HostDeviceType = typename host_space_type::device_type;
   typedef Kokkos::DynRankView<ValueType,host_space_type> view_type;
   typedef Kokkos::View<range_type**,host_space_type> range_tag;
   static constexpr int numberSubCellDims = 4; //{0 for vertex, 1 for edges, 2 for faces, 3 for volumes}

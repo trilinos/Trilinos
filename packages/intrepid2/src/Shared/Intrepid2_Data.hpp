@@ -170,6 +170,8 @@ namespace Intrepid2 {
   */
   template<class DataScalar,typename DeviceType = typename Kokkos::DefaultExecutionSpace::device_type>
   class Data {
+    // TODO: re-enable this assert once all Basis subclasses have been converted to use DeviceType
+//    static_assert(Kokkos::is_device<DeviceType>::value, "Second template argument to Data must be a Kokkos::Device");
   public:
     using value_type      = DataScalar;
     using execution_space = typename DeviceType::execution_space;
