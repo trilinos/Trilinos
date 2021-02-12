@@ -197,9 +197,9 @@ namespace Intrepid2 {
                                       this->getCardinality() );
 #endif
       Impl::Basis_HGRAD_QUAD_C1_FEM::
-        getValues<ExecutionSpace>( outputValues,
-                                   inputPoints,
-                                   operatorType );
+        getValues<DeviceType>( outputValues,
+                               inputPoints,
+                               operatorType );
     }
 
     virtual
