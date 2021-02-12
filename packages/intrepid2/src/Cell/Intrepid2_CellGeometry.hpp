@@ -76,7 +76,7 @@ namespace Intrepid2
       
    \note Conceptually, it would make sense to use class inheritance and have different member data for each type of geometry supported.  We instead glom all the options together into one multi-modal class; this is basically to avoid certain difficulties with vtables under CUDA.
    */
-  template<class PointScalar, int spaceDim, typename ExecSpaceType = Kokkos::DefaultExecutionSpace>
+  template<class PointScalar, int spaceDim, typename DeviceType = Kokkos::DefaultExecutionSpace::device_type>
   class CellGeometry
   {
     public:
@@ -122,7 +122,7 @@ namespace Intrepid2
        \param [in] endCell - the first cell ordinal for which the Jacobian will not be evaluated (used to define worksets smaller than the whole CellGeometry); use -1 to indicate that all cells from startCell on should be evaluated.
        \return a Data object appropriately sized to accomodate the specified Jacobian values.
     */
-    Data<PointScalar,ExecSpaceType> allocateJacobianDataPrivate(const TensorPoints<PointScalar,ExecSpaceType> &points, const int &pointsPerCell, const int startCell, const int endCell) const;
+    Data<PointScalar,DeviceType> allocateJacobianDataPrivate(const TensorPoints<PointScalar,DeviceType> &points, const int &pointsPerCell, const int startCell, const int endCell) const;
     
     /** \brief  Notionally-private method that provides a common interface for multiple public-facing setJacobianData() methods.  (Marked as public due to compiler constraints.)
        \param [out] jacobianData - a container, allocated by allocateJacobianData(), into which the evaluated Jacobians will be placed.
@@ -131,13 +131,13 @@ namespace Intrepid2
        \param [in] startCell - the first cell ordinal for which the Jacobian will be evaluated (used to define worksets smaller than the whole CellGeometry).
        \param [in] endCell - the first cell ordinal for which the Jacobian will not be evaluated (used to define worksets smaller than the whole CellGeometry); use -1 to indicate that all cells from startCell on should be evaluated.
     */
-    void setJacobianDataPrivate(Data<PointScalar,ExecSpaceType> &jacobianData, const TensorPoints<PointScalar,ExecSpaceType> &points, const int &pointsPerCell, const int startCell, const int endCell) const;
+    void setJacobianDataPrivate(Data<PointScalar,DeviceType> &jacobianData, const TensorPoints<PointScalar,DeviceType> &points, const int &pointsPerCell, const int startCell, const int endCell) const;
   protected:
     HypercubeNodeOrdering nodeOrdering_;
     CellGeometryType    cellGeometryType_;
     SubdivisionStrategy subdivisionStrategy_ = NO_SUBDIVISION;
     bool affine_; // if true, each cell has constant Jacobian across the cell
-    Data<Orientation, ExecSpaceType> orientations_; // for grid types, this could have either a single entry or one matching numCellsPerGridCell().  For other types, it has as many entries as there are cells.
+    Data<Orientation, DeviceType> orientations_; // for grid types, this could have either a single entry or one matching numCellsPerGridCell().  For other types, it has as many entries as there are cells.
     
     // uniform grid data -- used for UNIFORM_GRID type
     Kokkos::Array<PointScalar,spaceDim> origin_;         // point specifying a corner of the mesh
@@ -145,13 +145,13 @@ namespace Intrepid2
     Kokkos::Array<int,spaceDim>         gridCellCounts_; // how many grid cells wide the mesh is in each dimension
     
     // tensor grid data -- only used for TENSOR_GRID type
-    TensorPoints<PointScalar, ExecSpaceType> tensorVertices_;
+    TensorPoints<PointScalar, DeviceType> tensorVertices_;
     
     // arbitrary cell node data, used for both higher-order and first-order
     // (here, nodes are understood as geometry degrees of freedom)
-    ScalarView<int,ExecSpaceType>         cellToNodes_; // (C,N) -- N is the number of nodes per cell; values are global node ordinals
-    ScalarView<PointScalar,ExecSpaceType> nodes_;       // (GN,D) or (C,N,D) -- GN is the number of global nodes; (C,N,D) used only if cellToNodes_ is empty.
-    using BasisPtr = Teuchos::RCP< Basis<ExecSpaceType,PointScalar,PointScalar> >;
+    ScalarView<int,DeviceType>         cellToNodes_; // (C,N) -- N is the number of nodes per cell; values are global node ordinals
+    ScalarView<PointScalar,DeviceType> nodes_;       // (GN,D) or (C,N,D) -- GN is the number of global nodes; (C,N,D) used only if cellToNodes_ is empty.
+    using BasisPtr = Teuchos::RCP< Basis<DeviceType,PointScalar,PointScalar> >;
     
     unsigned numCells_        = 0;
     unsigned numNodesPerCell_ = 0;
@@ -177,8 +177,8 @@ namespace Intrepid2
         \param [in] nodeOrdering - applicable for hypercube cell topologies; specifies whether to use the order used by Shards (and lowest-order Intrepid2 bases), or the one used by higher-order Intrepid2 bases.
     */
     CellGeometry(const shards::CellTopology &cellTopo,
-                 ScalarView<int,ExecSpaceType> cellToNodes,
-                 ScalarView<PointScalar,ExecSpaceType> nodes,
+                 ScalarView<int,DeviceType> cellToNodes,
+                 ScalarView<PointScalar,DeviceType> nodes,
                  const bool claimAffine = false,
                  const HypercubeNodeOrdering nodeOrdering = HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS);
 
@@ -186,8 +186,8 @@ namespace Intrepid2
         \param [in] basisForNodes - the basis in terms of which the reference-to-physical transformation is expressed.
         \param [in] cellNodes - (C,F,D) container specifying the coordinate weight of the node; F is the (local) field ordinal for the basis in terms of which the reference-to-physical transformation is expressed.
      */
-    CellGeometry(Teuchos::RCP<Intrepid2::Basis<ExecSpaceType,PointScalar,PointScalar> > basisForNodes,
-                 ScalarView<PointScalar,ExecSpaceType> cellNodes);
+    CellGeometry(Teuchos::RCP<Intrepid2::Basis<DeviceType,PointScalar,PointScalar> > basisForNodes,
+                 ScalarView<PointScalar,DeviceType> cellNodes);
     
     /** \brief  Copy constructor.
         \param [in] cellGeometry - the object being copied.
@@ -207,14 +207,14 @@ namespace Intrepid2
        \param [in] cubatureWeights - a container approriately sized to store the quadrature weights.
        \return TensorData object sized to accept the result of computeCellMeasure() when called with the provided jacobianDet and cubatureWeights arguments.
     */
-    TensorData<PointScalar,ExecSpaceType> allocateCellMeasure( const Data<PointScalar,ExecSpaceType> & jacobianDet, const TensorData<PointScalar,ExecSpaceType> & cubatureWeights ) const;
+    TensorData<PointScalar,DeviceType> allocateCellMeasure( const Data<PointScalar,DeviceType> & jacobianDet, const TensorData<PointScalar,DeviceType> & cubatureWeights ) const;
     
     /** \brief  Compute cell measures that correspond to provided Jacobian determinants and
        \param [out] cellMeasure - a container, usually provided by allocateCellMeasure(), to store the cell measures.
        \param [in] jacobianDet -  the determinants of the Jacobians of the reference-to-physical mapping.
        \param [in] cubatureWeights - the quadrature weights.
     */
-    void computeCellMeasure( TensorData<PointScalar,ExecSpaceType> &cellMeasure, const Data<PointScalar,ExecSpaceType> & jacobianDet, const TensorData<PointScalar,ExecSpaceType> & cubatureWeights ) const;
+    void computeCellMeasure( TensorData<PointScalar,DeviceType> &cellMeasure, const Data<PointScalar,DeviceType> & jacobianDet, const TensorData<PointScalar,DeviceType> & cubatureWeights ) const;
     
     //! H^1 Basis used in the reference-to-physical transformation.  Linear for straight-edged geometry; higher-order for curvilinear.
     BasisPtr basisForNodes() const;
@@ -265,7 +265,7 @@ namespace Intrepid2
     Orientation getOrientation(int &cellNumber) const;
     
     //! Returns the orientations for all cells.  Calls initializeOrientations() if it has not previously been called.
-    Data<Orientation,ExecSpaceType> getOrientations();
+    Data<Orientation,DeviceType> getOrientations();
     
     //! returns coordinate in dimension dim of the indicated node in the indicated grid cell
     KOKKOS_INLINE_FUNCTION
@@ -300,7 +300,7 @@ namespace Intrepid2
        \param [in] endCell - the first cell ordinal for which the Jacobian will not be evaluated (used to define worksets smaller than the whole CellGeometry); use -1 to indicate that all cells from startCell on should be evaluated.
        \return a Data object appropriately sized to accomodate the specified Jacobian values.
     */
-    Data<PointScalar,ExecSpaceType> allocateJacobianData(const TensorPoints<PointScalar,ExecSpaceType> &points, const int startCell=0, const int endCell=-1) const;
+    Data<PointScalar,DeviceType> allocateJacobianData(const TensorPoints<PointScalar,DeviceType> &points, const int startCell=0, const int endCell=-1) const;
     
     /** \brief  Allocate a container into which Jacobians of the reference-to-physical mapping can be placed.
        \param [in] points - the points at which the Jacobian will be evaluated.
@@ -308,7 +308,7 @@ namespace Intrepid2
        \param [in] endCell - the first cell ordinal for which the Jacobian will not be evaluated (used to define worksets smaller than the whole CellGeometry); use -1 to indicate that all cells from startCell on should be evaluated.
        \return a Data object appropriately sized to accomodate the specified Jacobian values.
     */
-    Data<PointScalar,ExecSpaceType> allocateJacobianData(const ScalarView<PointScalar,ExecSpaceType> &points, const int startCell=0, const int endCell=-1) const;
+    Data<PointScalar,DeviceType> allocateJacobianData(const ScalarView<PointScalar,DeviceType> &points, const int startCell=0, const int endCell=-1) const;
     
     /** \brief  Allocate a container into which Jacobians of the reference-to-physical mapping can be placed (variant for affine geometry).
        \param [in] numPoints - the number of points at which the Jacobian will be defined.
@@ -316,7 +316,7 @@ namespace Intrepid2
        \param [in] endCell - the first cell ordinal for which the Jacobian will not be evaluated (used to define worksets smaller than the whole CellGeometry); use -1 to indicate that all cells from startCell on should be evaluated.
        \return a Data object appropriately sized to accomodate the specified Jacobian values.
     */
-    Data<PointScalar,ExecSpaceType> allocateJacobianData(const int &numPoints, const int startCell=0, const int endCell=-1) const;
+    Data<PointScalar,DeviceType> allocateJacobianData(const int &numPoints, const int startCell=0, const int endCell=-1) const;
     
     /** \brief Compute Jacobian values for the reference-to-physical transformation, and place them in the provided container.
        \param [out] jacobianData - a container, allocated by allocateJacobianData(), into which the evaluated Jacobians will be placed.
@@ -324,7 +324,7 @@ namespace Intrepid2
        \param [in] startCell - the first cell ordinal for which the Jacobian will be evaluated (used to define worksets smaller than the whole CellGeometry).
        \param [in] endCell - the first cell ordinal for which the Jacobian will not be evaluated (used to define worksets smaller than the whole CellGeometry); use -1 to indicate that all cells from startCell on should be evaluated.
     */
-    void setJacobian(Data<PointScalar,ExecSpaceType> &jacobianData, const TensorPoints<PointScalar,ExecSpaceType> &points, const int startCell=0, const int endCell=-1) const;
+    void setJacobian(Data<PointScalar,DeviceType> &jacobianData, const TensorPoints<PointScalar,DeviceType> &points, const int startCell=0, const int endCell=-1) const;
     
     /** \brief Compute Jacobian values for the reference-to-physical transformation, and place them in the provided container.
        \param [out] jacobianData - a container, allocated by allocateJacobianData(), into which the evaluated Jacobians will be placed.
@@ -332,7 +332,7 @@ namespace Intrepid2
        \param [in] startCell - the first cell ordinal for which the Jacobian will be evaluated (used to define worksets smaller than the whole CellGeometry).
        \param [in] endCell - the first cell ordinal for which the Jacobian will not be evaluated (used to define worksets smaller than the whole CellGeometry); use -1 to indicate that all cells from startCell on should be evaluated.
     */
-    void setJacobian(Data<PointScalar,ExecSpaceType> &jacobianData, const ScalarView<PointScalar,ExecSpaceType> &points, const int startCell=0, const int endCell=-1) const;
+    void setJacobian(Data<PointScalar,DeviceType> &jacobianData, const ScalarView<PointScalar,DeviceType> &points, const int startCell=0, const int endCell=-1) const;
     
     /** \brief Compute Jacobian values for the reference-to-physical transformation, and place them in the provided container (variant for affine geometry).
        \param [out] jacobianData - a container, allocated by allocateJacobianData(), into which the evaluated Jacobians will be placed.
@@ -340,7 +340,7 @@ namespace Intrepid2
        \param [in] startCell - the first cell ordinal for which the Jacobian will be evaluated (used to define worksets smaller than the whole CellGeometry).
        \param [in] endCell - the first cell ordinal for which the Jacobian will not be evaluated (used to define worksets smaller than the whole CellGeometry); use -1 to indicate that all cells from startCell on should be evaluated.
     */
-    void setJacobian(Data<PointScalar,ExecSpaceType> &jacobianData, const int &numPoints, const int startCell=0, const int endCell=-1) const;
+    void setJacobian(Data<PointScalar,DeviceType> &jacobianData, const int &numPoints, const int startCell=0, const int endCell=-1) const;
   };
 } // namespace Intrepid2
 

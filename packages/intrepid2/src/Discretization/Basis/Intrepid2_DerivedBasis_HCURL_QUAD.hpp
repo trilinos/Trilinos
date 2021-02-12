@@ -319,11 +319,11 @@ namespace Intrepid2
   
   template<class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HCURL_QUAD
-  : public Basis_DirectSumBasis <typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
+  : public Basis_DirectSumBasis <typename HGRAD_LINE::DeviceType, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
   {
     using Family1 = Basis_Derived_HCURL_Family1_QUAD<HGRAD_LINE, HVOL_LINE>;
     using Family2 = Basis_Derived_HCURL_Family2_QUAD<HGRAD_LINE, HVOL_LINE>;
-    using DirectSumBasis = Basis_DirectSumBasis <typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>;
+    using DirectSumBasis = Basis_DirectSumBasis <typename HGRAD_LINE::DeviceType, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>;
 
   protected:
     std::string name_;
@@ -332,6 +332,7 @@ namespace Intrepid2
     EPointType pointType_;
 
   public:
+    using DeviceType      = typename HGRAD_LINE::DeviceType;
     using ExecutionSpace  = typename HGRAD_LINE::ExecutionSpace;
     using OutputValueType = typename HGRAD_LINE::OutputValueType;
     using PointValueType  = typename HGRAD_LINE::PointValueType;
@@ -390,7 +391,7 @@ namespace Intrepid2
         \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
         \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
      */
-    BasisPtr<ExecutionSpace, OutputValueType, PointValueType>
+    BasisPtr<DeviceType, OutputValueType, PointValueType>
       getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
       if(subCellDim == 1) {
         switch(subCellOrd) {

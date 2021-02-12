@@ -660,8 +660,8 @@ namespace Intrepid2 {
   }
   // -------------------------------------------------------------------------------------
 
-  template<typename SpT, typename OT, typename PT>
-  Basis_HGRAD_WEDGE_C2_FEM<SpT,OT,PT>::
+  template<typename DT, typename OT, typename PT>
+  Basis_HGRAD_WEDGE_C2_FEM<DT,OT,PT>::
   Basis_HGRAD_WEDGE_C2_FEM() {
     this->basisCardinality_  = 18;
     this->basisDegree_       = 2;
@@ -716,7 +716,7 @@ namespace Intrepid2 {
     }
 
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename ExecutionSpace::array_layout,Kokkos::HostSpace>
       dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
 
     dofCoords(0,0) =  0.0;  dofCoords(0,1) =  0.0;  dofCoords(0,2) = -1.0;
@@ -740,7 +740,7 @@ namespace Intrepid2 {
     dofCoords(16,0)=  0.5;  dofCoords(16,1)=  0.5;  dofCoords(16,2)=  0.0;
     dofCoords(17,0)=  0.0;  dofCoords(17,1)=  0.5;  dofCoords(17,2)=  0.0;
 
-    this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
+    this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
   }
 

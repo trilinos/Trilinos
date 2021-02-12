@@ -80,6 +80,7 @@ namespace Intrepid2 {
   */
   template<typename ExecSpaceType = void>
   class FunctionSpaceTools {
+    using DeviceType = typename ExecSpaceType::device_type;
   public:
     /** \brief Transformation of a gradient field in the H-grad space, defined at points on a
           reference cell, stored in the user-provided container <var><b>inputVals</b></var>
@@ -125,9 +126,9 @@ namespace Intrepid2 {
      \return TransformedVectorData object defined on (C,F,P,D) indices; transformation is computed on access.
       */
     template<class Scalar>
-    static TransformedVectorData<Scalar,ExecSpaceType> getHGRADtransformGRAD(const Data<Scalar,ExecSpaceType> &jacobianInverse, const VectorData<Scalar,ExecSpaceType> &refBasisGradValues)
+    static TransformedVectorData<Scalar,DeviceType> getHGRADtransformGRAD(const Data<Scalar,DeviceType> &jacobianInverse, const VectorData<Scalar,DeviceType> &refBasisGradValues)
     {
-      return TransformedVectorData<Scalar,ExecSpaceType>(jacobianInverse,refBasisGradValues);
+      return TransformedVectorData<Scalar,DeviceType>(jacobianInverse,refBasisGradValues);
     }
     
     /** \brief Transformation of a (scalar) value field in the H-grad space, defined at points on a

@@ -227,21 +227,25 @@ namespace Intrepid2
                is true, then the first basis function will instead be 1.0-x, and the basis will be suitable for
                continuous discretizations.
   */
-  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType = typename Kokkos::DefaultExecutionSpace::device_type,
            typename OutputScalar = double,
            typename PointScalar  = double,
            bool defineVertexFunctions = true,            // if defineVertexFunctions is true, first and second basis functions are x and 1-x.  Otherwise, they are 1 and x.
            bool useMinusOneToOneReferenceElement = true> // if useMinusOneToOneReferenceElement is true, basis is define on [-1,1].  Otherwise, [0,1].
   class IntegratedLegendreBasis_HGRAD_LINE
-  : public Basis<ExecutionSpace,OutputScalar,PointScalar>
+  : public Basis<DeviceType,OutputScalar,PointScalar>
   {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray1DHost = typename Basis<DeviceType,OutputScalar,PointScalar>::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename Basis<DeviceType,OutputScalar,PointScalar>::OrdinalTypeArray2DHost;
     
-    using OutputViewType = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OutputViewType;
-    using PointViewType  = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::PointViewType ;
-    using ScalarViewType = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::ScalarViewType;
+    using ExecutionSpace = typename Basis<DeviceType,OutputScalar,PointScalar>::ExecutionSpace;
+    using OutputValueType = typename Basis<DeviceType,OutputScalar,PointScalar>::OutputValueType;
+    using PointValueType = typename Basis<DeviceType,OutputScalar,PointScalar>::PointValueType;
+    
+    using OutputViewType = typename Basis<DeviceType,OutputScalar,PointScalar>::OutputViewType;
+    using PointViewType  = typename Basis<DeviceType,OutputScalar,PointScalar>::PointViewType ;
+    using ScalarViewType = typename Basis<DeviceType,OutputScalar,PointScalar>::ScalarViewType;
   protected:
     int polyOrder_; // the maximum order of the polynomial
     bool defineVertexFunctions_; // if true, first and second basis functions are x and 1-x.  Otherwise, they are 1 and x.
@@ -357,7 +361,7 @@ namespace Intrepid2
     // since the getValues() below only overrides the FEM variant, we specify that
     // we use the base class's getValues(), which implements the FVD variant by throwing an exception.
     // (It's an error to use the FVD variant on this basis.)
-    using Basis<ExecutionSpace,OutputScalar,PointScalar>::getValues;
+    using Basis<DeviceType,OutputScalar,PointScalar>::getValues;
     
     /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>.
 
@@ -382,6 +386,7 @@ namespace Intrepid2
     {
       auto numPoints = inputPoints.extent_int(0);
       
+      using ExecutionSpace = typename DeviceType::execution_space;
       using FunctorType = Hierarchical_HGRAD_LINE_Functor<ExecutionSpace, OutputScalar, PointScalar, OutputViewType, PointViewType>;
       
       FunctorType functor(operatorType, outputValues, inputPoints, polyOrder_, defineVertexFunctions);

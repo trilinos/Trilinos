@@ -483,11 +483,11 @@ namespace Intrepid2
   // which is to say that we go 3,1,2.
   template<class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HDIV_Family3_Family1_HEX
-  : public Basis_DirectSumBasis <typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
+  : public Basis_DirectSumBasis <typename HGRAD_LINE::DeviceType, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
   {
     using Family3 = Basis_Derived_HDIV_Family3_HEX<HGRAD_LINE, HVOL_LINE>;
     using Family1 = Basis_Derived_HDIV_Family1_HEX<HGRAD_LINE, HVOL_LINE>;
-    using DirectSumBasis = Basis_DirectSumBasis<typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>;
+    using DirectSumBasis = Basis_DirectSumBasis<typename HGRAD_LINE::DeviceType, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>;
   public:
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
@@ -505,11 +505,11 @@ namespace Intrepid2
   
   template<class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HDIV_HEX
-  : public Basis_DirectSumBasis <typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
+  : public Basis_DirectSumBasis <typename HGRAD_LINE::DeviceType, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
   {
     using Family31 = Basis_Derived_HDIV_Family3_Family1_HEX<HGRAD_LINE, HVOL_LINE>;
     using Family2  = Basis_Derived_HDIV_Family2_HEX        <HGRAD_LINE, HVOL_LINE>;
-    using DirectSumBasis = Basis_DirectSumBasis<typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>;
+    using DirectSumBasis = Basis_DirectSumBasis<typename HGRAD_LINE::DeviceType, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>;
 
     std::string name_;
     ordinal_type order_x_;
@@ -518,6 +518,7 @@ namespace Intrepid2
     EPointType pointType_;
 
   public:
+    using DeviceType      = typename HGRAD_LINE::DeviceType;
     using ExecutionSpace  = typename HGRAD_LINE::ExecutionSpace;
     using OutputValueType = typename HGRAD_LINE::OutputValueType;
     using PointValueType  = typename HGRAD_LINE::PointValueType;
@@ -575,7 +576,7 @@ namespace Intrepid2
         \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
         \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
      */
-    BasisPtr<ExecutionSpace, OutputValueType, PointValueType>
+    BasisPtr<DeviceType, OutputValueType, PointValueType>
       getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
 
       using QuadBasis = Basis_Derived_HVOL_QUAD<HVOL_LINE>;

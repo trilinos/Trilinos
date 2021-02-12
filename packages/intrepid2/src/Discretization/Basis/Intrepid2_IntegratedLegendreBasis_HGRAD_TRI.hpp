@@ -357,20 +357,28 @@ namespace Intrepid2
                is true, then the first basis function will instead be 1.0-x-y, and the basis will be suitable for
                continuous discretizations.
   */
-  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+  template<typename Device=typename Kokkos::DefaultExecutionSpace::device_type,
            typename OutputScalar = double,
            typename PointScalar  = double,
            bool defineVertexFunctions = true>            // if defineVertexFunctions is true, first three basis functions are 1-x-y, x, and y.  Otherwise, they are 1, x, and y.
   class IntegratedLegendreBasis_HGRAD_TRI
-  : public Basis<ExecutionSpace,OutputScalar,PointScalar>
+  : public Basis<Device,OutputScalar,PointScalar>
   {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OrdinalTypeArray2DHost;
+    using BasisSuper = Basis<Device,OutputScalar,PointScalar>;
     
-    using OutputViewType = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OutputViewType;
-    using PointViewType  = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::PointViewType;
-    using ScalarViewType = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::ScalarViewType;
+    using OrdinalTypeArray1DHost = typename BasisSuper::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename BasisSuper::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray3DHost = typename BasisSuper::OrdinalTypeArray3DHost;
+
+    using DeviceType      = typename BasisSuper::DeviceType;
+    using ExecutionSpace  = typename BasisSuper::ExecutionSpace;
+    using OutputValueType = typename BasisSuper::OutputValueType;
+    using PointValueType  = typename BasisSuper::PointValueType;
+
+    using OutputViewType = typename BasisSuper::OutputViewType;
+    using PointViewType  = typename BasisSuper::PointViewType;
+    using ScalarViewType = typename BasisSuper::ScalarViewType;
   protected:
     int polyOrder_; // the maximum order of the polynomial
   public:
@@ -532,7 +540,7 @@ namespace Intrepid2
     // since the getValues() below only overrides the FEM variant, we specify that
     // we use the base class's getValues(), which implements the FVD variant by throwing an exception.
     // (It's an error to use the FVD variant on this basis.)
-    using Basis<ExecutionSpace,OutputScalar,PointScalar>::getValues;
+    using Basis<DeviceType,OutputScalar,PointScalar>::getValues;
     
     /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>.
 
@@ -578,11 +586,11 @@ namespace Intrepid2
         \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
         \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
      */
-    BasisPtr<ExecutionSpace,OutputScalar,PointScalar>
+    BasisPtr<DeviceType,OutputScalar,PointScalar>
       getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
       if(subCellDim == 1) {
         return Teuchos::rcp(new
-            IntegratedLegendreBasis_HGRAD_LINE<ExecutionSpace,OutputScalar,PointScalar>
+            IntegratedLegendreBasis_HGRAD_LINE<DeviceType,OutputScalar,PointScalar>
                     (this->basisDegree_));
       }
       INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");

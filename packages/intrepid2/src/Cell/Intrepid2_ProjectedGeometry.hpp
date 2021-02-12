@@ -63,13 +63,13 @@ namespace Intrepid2
 /** \class Intrepid2::ProjectedGeometry
     \brief Allows generation of geometry degrees of freedom based on a provided map from straight-edged mesh domain to curvilinear mesh domain.
 */
-  template<int spaceDim, typename PointScalar, typename ExecSpaceType>
+  template<int spaceDim, typename PointScalar, typename DeviceType>
   class ProjectedGeometry
   {
   public:
-    using ViewType      = ScalarView<      PointScalar, ExecSpaceType>;
-    using ConstViewType = ScalarView<const PointScalar, ExecSpaceType>;
-    using BasisPtr      = Teuchos::RCP< Basis<ExecSpaceType,PointScalar,PointScalar> >;
+    using ViewType      = ScalarView<      PointScalar, DeviceType>;
+    using ConstViewType = ScalarView<const PointScalar, DeviceType>;
+    using BasisPtr      = Teuchos::RCP< Basis<DeviceType,PointScalar,PointScalar> >;
     
     /** \brief Generate geometry degrees of freedom based on a provided map from straight-edged mesh domain to curvilinear mesh domain.
        \param [out] projectedBasisNodes - the projected geometry degrees of freedom
@@ -81,7 +81,7 @@ namespace Intrepid2
      \see Intrepid2_ProjectedGeometryExamples.hpp for sample implementations of exactGeometry and exactGeometryGradient.
     */
     template<class ExactGeometry, class ExactGeometryGradient>
-    static void projectOntoHGRADBasis(ViewType projectedBasisNodes, BasisPtr targetHGradBasis, CellGeometry<PointScalar,spaceDim,ExecSpaceType> flatCellGeometry,
+    static void projectOntoHGRADBasis(ViewType projectedBasisNodes, BasisPtr targetHGradBasis, CellGeometry<PointScalar,spaceDim,DeviceType> flatCellGeometry,
                                       const ExactGeometry &exactGeometry, const ExactGeometryGradient &exactGeometryGradient)
     {
       const ordinal_type numCells = flatCellGeometry.extent_int(0); // (C,N,D)
@@ -92,6 +92,7 @@ namespace Intrepid2
       INTREPID2_TEST_FOR_EXCEPTION(projectedBasisNodes.extent_int(1) != targetHGradBasis->getCardinality(), std::invalid_argument, "projectedBasisNodes must have shape (C,F,D)");
       INTREPID2_TEST_FOR_EXCEPTION(projectedBasisNodes.extent_int(2) != spaceDim, std::invalid_argument, "projectedBasisNodes must have shape (C,F,D)");
       
+      using ExecSpaceType = typename DeviceType::execution_space;
       using ProjectionTools  = Experimental::ProjectionTools<ExecSpaceType>;
       using ProjectionStruct = Experimental::ProjectionStruct<ExecSpaceType,PointScalar>;
       
@@ -166,8 +167,8 @@ namespace Intrepid2
         });
         
         // apply Jacobian
-        Data<PointScalar,ExecSpaceType> gradientData(evaluationGradients);
-        auto transformedGradientData = Data<PointScalar,ExecSpaceType>::allocateMatVecResult(gradPointsJacobians,gradientData);
+        Data<PointScalar,DeviceType> gradientData(evaluationGradients);
+        auto transformedGradientData = Data<PointScalar,DeviceType>::allocateMatVecResult(gradPointsJacobians,gradientData);
         
         transformedGradientData.storeMatVec(gradPointsJacobians,gradientData);
         

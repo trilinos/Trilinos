@@ -95,7 +95,7 @@ namespace Intrepid2 {
       }
     }
 
-    template<typename DT,
+    template<typename SpT,
              typename outputValueValueType, class ...outputValueProperties,
              typename inputPointValueType,  class ...inputPointProperties>
     void
@@ -105,7 +105,7 @@ namespace Intrepid2 {
                const EOperator operatorType ) {
       typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
       typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
-      typedef typename ExecSpace<typename inputPointViewType::execution_space,typename DT::execution_space>::ExecSpaceType ExecSpaceType;
+      typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
       // Number of evaluation points = dim 0 of inputPoints
       const auto loopSize = inputPoints.extent(0);
@@ -148,7 +148,7 @@ namespace Intrepid2 {
 
 
 
-  }
+  } // namespace Impl
 
   // -------------------------------------------------------------------------------------
 

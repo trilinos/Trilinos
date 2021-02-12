@@ -62,11 +62,13 @@ namespace
   bool testSubBasis(shards::CellTopology cellTopo, Intrepid2::EFunctionSpace fs, const double tol, Teuchos::FancyOStream &out, bool &success,
                     int polyOrder_x, int polyOrder_y=-1, int polyOrder_z = -1, bool defineVertexFunctions = true)
   {
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = typename Kokkos::DefaultExecutionSpace::device_type;
     using OutputScalar = double;
     using PointScalar  = double;
     using namespace Intrepid2;
-    using Basis = Basis<ExecSpace,OutputScalar,PointScalar>;
+    using Basis = Basis<DeviceType,OutputScalar,PointScalar>;
+    
+    static_assert(!Kokkos::is_execution_space<DeviceType>::value, "Kokkos default Device is also an execution space.  Can't use this static_assert in Basis!");
     
     auto vectorsMatch = [](std::vector<int> lhs,std::vector<int> rhs)
     {

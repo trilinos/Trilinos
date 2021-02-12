@@ -192,8 +192,8 @@ namespace Intrepid2 {
   }
 
   // -------------------------------------------------------------------------------------
-  template<typename SpT, typename OT, typename PT>
-  Basis_HGRAD_LINE_Cn_FEM<SpT,OT,PT>::
+  template<typename DT, typename OT, typename PT>
+  Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT>::
   Basis_HGRAD_LINE_Cn_FEM( const ordinal_type order,
                            const EPointType   pointType ) {
     this->basisCardinality_  = order+1;
@@ -206,7 +206,7 @@ namespace Intrepid2 {
     const ordinal_type card = this->basisCardinality_;
     
     // points are computed in the host and will be copied 
-    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename ExecutionSpace::array_layout,Kokkos::HostSpace>
       dofCoords("Hgrad::Line::Cn::dofCoords", card, 1);
 
     //Default is Equispaced
@@ -255,7 +255,7 @@ namespace Intrepid2 {
     }
     }
 
-    this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
+    this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
     
     // form Vandermonde matrix; actually, this is the transpose of the VDM,
@@ -294,14 +294,14 @@ namespace Intrepid2 {
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM) lapack.GETRI returns nonzero info." );
     
     // create host mirror 
-    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename ExecutionSpace::array_layout,Kokkos::HostSpace>
       vinv("Hgrad::Line::Cn::vinv", card, card);
 
     for (ordinal_type i=0;i<card;++i) 
       for (ordinal_type j=0;j<card;++j) 
         vinv(i,j) = vmat(j,i);
 
-    this->vinv_ = Kokkos::create_mirror_view(typename SpT::memory_space(), vinv);
+    this->vinv_ = Kokkos::create_mirror_view(typename DT::memory_space(), vinv);
     Kokkos::deep_copy(this->vinv_ , vinv);
 
     // initialize tags

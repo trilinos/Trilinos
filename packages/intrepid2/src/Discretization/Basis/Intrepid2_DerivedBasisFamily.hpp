@@ -82,11 +82,12 @@ namespace Intrepid2
   class DerivedBasisFamily
   {
   public:
+    using DeviceType      = typename LineBasisHGRAD::DeviceType;
     using ExecutionSpace  = typename LineBasisHGRAD::ExecutionSpace;
     using OutputValueType = typename LineBasisHGRAD::OutputValueType;
     using PointValueType  = typename LineBasisHGRAD::PointValueType;
     
-    using Basis    = ::Intrepid2::Basis<ExecutionSpace,OutputValueType,PointValueType>;
+    using Basis    = ::Intrepid2::Basis<DeviceType,OutputValueType,PointValueType>;
     using BasisPtr = Teuchos::RCP<Basis>;
     
     // line bases

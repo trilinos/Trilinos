@@ -159,24 +159,31 @@ namespace Intrepid2 {
 
     };
   }
-  template<typename DeviceType = void,
+  template<typename Device = void,
            typename outputValueType = double,
            typename pointValueType = double>
-  class Basis_HGRAD_WEDGE_C1_FEM : public Basis<DeviceType,outputValueType,pointValueType> {
+  class Basis_HGRAD_WEDGE_C1_FEM : public Basis<Device,outputValueType,pointValueType> {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
+    using BasisSuper = Basis<Device,outputValueType,pointValueType>;
+    
+    using OrdinalTypeArray1DHost = typename BasisSuper::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename BasisSuper::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray3DHost = typename BasisSuper::OrdinalTypeArray3DHost;
+
+    using DeviceType      = typename BasisSuper::DeviceType;
+    using ExecutionSpace  = typename BasisSuper::ExecutionSpace;
+    using OutputValueType = typename BasisSuper::OutputValueType;
+    using PointValueType  = typename BasisSuper::PointValueType;
+
+    using OutputViewType = typename BasisSuper::OutputViewType;
+    using PointViewType  = typename BasisSuper::PointViewType;
+    using ScalarViewType = typename BasisSuper::ScalarViewType;
+    
+    using BasisSuper::getValues;
 
     /** \brief  Constructor.
      */
     Basis_HGRAD_WEDGE_C1_FEM();
-
-    using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
-
-    using Basis<DeviceType,outputValueType,pointValueType>::getValues;
 
     virtual
     void
@@ -192,9 +199,9 @@ namespace Intrepid2 {
                                       this->getCardinality() );
 #endif
       Impl::Basis_HGRAD_WEDGE_C1_FEM::
-        getValues<DeviceType>( outputValues,
-                                  inputPoints,
-                                  operatorType );
+        getValues<ExecutionSpace>( outputValues,
+                                   inputPoints,
+                                   operatorType );
     }
 
     virtual

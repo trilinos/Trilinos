@@ -104,6 +104,7 @@ namespace Intrepid2 {
 
   template<typename ExecSpaceType>
   class CellTools {
+    using DeviceType = typename ExecSpaceType::device_type;
   public:
 
     /** \brief  Checks if a cell topology has reference cell
@@ -165,28 +166,28 @@ namespace Intrepid2 {
      */
     template<typename outputValueType, 
              typename pointValueType>
-    static Teuchos::RCP<Basis<ExecSpaceType,outputValueType,pointValueType> >
+    static Teuchos::RCP<Basis<DeviceType,outputValueType,pointValueType> >
     createHGradBasis( const shards::CellTopology cellTopo ) {
-      Teuchos::RCP<Basis<ExecSpaceType,outputValueType,pointValueType> > r_val;
+      Teuchos::RCP<Basis<DeviceType,outputValueType,pointValueType> > r_val;
 
       switch (cellTopo.getKey()) {
-      case shards::Line<2>::key:          r_val = Teuchos::rcp(new Basis_HGRAD_LINE_C1_FEM   <ExecSpaceType,outputValueType,pointValueType>()); break;
-      case shards::Triangle<3>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C1_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
-      case shards::Quadrilateral<4>::key: r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C1_FEM   <ExecSpaceType,outputValueType,pointValueType>()); break;
-      case shards::Tetrahedron<4>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_TET_C1_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
-      case shards::Hexahedron<8>::key:    r_val = Teuchos::rcp(new Basis_HGRAD_HEX_C1_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
-      case shards::Wedge<6>::key:         r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_C1_FEM  <ExecSpaceType,outputValueType,pointValueType>()); break;
-      case shards::Pyramid<5>::key:       r_val = Teuchos::rcp(new Basis_HGRAD_PYR_C1_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
+      case shards::Line<2>::key:          r_val = Teuchos::rcp(new Basis_HGRAD_LINE_C1_FEM   <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Triangle<3>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Quadrilateral<4>::key: r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C1_FEM   <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Tetrahedron<4>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_TET_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Hexahedron<8>::key:    r_val = Teuchos::rcp(new Basis_HGRAD_HEX_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Wedge<6>::key:         r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_C1_FEM  <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Pyramid<5>::key:       r_val = Teuchos::rcp(new Basis_HGRAD_PYR_C1_FEM    <DeviceType,outputValueType,pointValueType>()); break;
 
-      case shards::Triangle<6>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C2_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
-      case shards::Quadrilateral<9>::key: r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C2_FEM   <ExecSpaceType,outputValueType,pointValueType>()); break;
-      case shards::Tetrahedron<10>::key:  r_val = Teuchos::rcp(new Basis_HGRAD_TET_C2_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
-      case shards::Tetrahedron<11>::key:  r_val = Teuchos::rcp(new Basis_HGRAD_TET_COMP12_FEM<ExecSpaceType,outputValueType,pointValueType>()); break;
-        //case shards::Hexahedron<20>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_HEX_I2_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
-      case shards::Hexahedron<27>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_HEX_C2_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
-        //case shards::Wedge<15>::key:        r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_I2_FEM  <ExecSpaceType,outputValueType,pointValueType>()); break;
-      case shards::Wedge<18>::key:        r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_C2_FEM  <ExecSpaceType,outputValueType,pointValueType>()); break;
-        //case shards::Pyramid<13>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_PYR_I2_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
+      case shards::Triangle<6>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Quadrilateral<9>::key: r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C2_FEM   <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Tetrahedron<10>::key:  r_val = Teuchos::rcp(new Basis_HGRAD_TET_C2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Tetrahedron<11>::key:  r_val = Teuchos::rcp(new Basis_HGRAD_TET_COMP12_FEM<DeviceType,outputValueType,pointValueType>()); break;
+        //case shards::Hexahedron<20>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_HEX_I2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Hexahedron<27>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_HEX_C2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
+        //case shards::Wedge<15>::key:        r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_I2_FEM  <DeviceType,outputValueType,pointValueType>()); break;
+      case shards::Wedge<18>::key:        r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_C2_FEM  <DeviceType,outputValueType,pointValueType>()); break;
+        //case shards::Pyramid<13>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_PYR_I2_FEM    <DeviceType,outputValueType,pointValueType>()); break;
 
       case shards::Quadrilateral<8>::key: 
       case shards::Line<3>::key:
@@ -512,7 +513,7 @@ namespace Intrepid2 {
         \return Data container with shape (C,P)
     */
     template<class PointScalar>
-    static Data<PointScalar> allocateJacobianDet( const Data<PointScalar> & jacobian );
+    static Data<PointScalar,DeviceType> allocateJacobianDet( const Data<PointScalar,DeviceType> & jacobian );
 
     /** \brief  Allocates and returns a Data container suitable for storing inverses corresponding to the Jacobians in the Data container provided
 
@@ -520,7 +521,7 @@ namespace Intrepid2 {
         \return Data container with shape (C,P,D,D)
     */
     template<class PointScalar>
-    static Data<PointScalar,ExecSpaceType> allocateJacobianInv( const Data<PointScalar,ExecSpaceType> & jacobian );
+    static Data<PointScalar,DeviceType> allocateJacobianInv( const Data<PointScalar,DeviceType> & jacobian );
 
     /** \brief  Computes determinants corresponding to the Jacobians in the Data container provided
 
@@ -528,8 +529,8 @@ namespace Intrepid2 {
         \param  jacobian          [in]    - data with shape (C,P,D,D), as returned by CellGeometry::allocateJacobianData()
     */
     template<class PointScalar>
-    static void setJacobianDet( Data<PointScalar,ExecSpaceType> & jacobianDet,
-                               const Data<PointScalar,ExecSpaceType> & jacobian);
+    static void setJacobianDet( Data<PointScalar,DeviceType> & jacobianDet,
+                               const Data<PointScalar,DeviceType> & jacobian);
 
     /** \brief  Computes determinants corresponding to the Jacobians in the Data container provided
 
@@ -537,8 +538,8 @@ namespace Intrepid2 {
         \param  jacobian          [in]    - data with shape (C,P,D,D), as returned by CellGeometry::allocateJacobianData()
     */
     template<class PointScalar>
-    static void setJacobianInv( Data<PointScalar,ExecSpaceType> & jacobianInv,
-                               const Data<PointScalar,ExecSpaceType> & jacobian);
+    static void setJacobianInv(      Data<PointScalar,DeviceType> & jacobianInv,
+                               const Data<PointScalar,DeviceType> & jacobian);
     
     //============================================================================================//
     //                                                                                            //

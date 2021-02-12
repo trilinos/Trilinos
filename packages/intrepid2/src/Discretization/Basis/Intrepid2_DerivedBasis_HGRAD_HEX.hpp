@@ -156,7 +156,7 @@ namespace Intrepid2
       }
     }
 
-    using Basis<ExecutionSpace,OutputValueType,PointValueType>::getValues;
+    using Basis<DeviceType,OutputValueType,PointValueType>::getValues;
     
     /** \brief  multi-component getValues() method (required/called by TensorBasis)
         \param [out] outputValues - the view into which to place the output values
@@ -232,7 +232,7 @@ namespace Intrepid2
         \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
         \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
      */
-    BasisPtr<ExecutionSpace, OutputValueType, PointValueType>
+    BasisPtr<DeviceType, OutputValueType, PointValueType>
       getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
       if(subCellDim == 1) {
         switch(subCellOrd) {

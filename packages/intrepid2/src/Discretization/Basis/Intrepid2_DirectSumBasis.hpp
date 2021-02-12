@@ -64,15 +64,16 @@ namespace Intrepid2
    
    The two bases must agree in their BasisType (the return value of getBasisType()).
    */
-  template<typename ExecSpaceType = void,
+  template<typename Device = void,
            typename outputValueType = double,
            typename pointValueType = double>
-  class Basis_DirectSumBasis : public Basis<ExecSpaceType,outputValueType,pointValueType>
+  class Basis_DirectSumBasis : public Basis<Device,outputValueType,pointValueType>
   {
   public:
-    using BasisSuper = ::Intrepid2::Basis<ExecSpaceType,outputValueType,pointValueType>;
+    using BasisSuper = ::Intrepid2::Basis<Device,outputValueType,pointValueType>;
     using BasisPtr   = Teuchos::RCP<BasisSuper>;
     
+    using DeviceType      = typename BasisSuper::DeviceType;
     using ExecutionSpace  = typename BasisSuper::ExecutionSpace;
     using OutputValueType = typename BasisSuper::OutputValueType;
     using PointValueType  = typename BasisSuper::PointValueType;
@@ -208,10 +209,10 @@ namespace Intrepid2
         The default implementation employs a trivial tensor-product structure, for compatibility across all bases.  Subclasses that have tensor-product structure
         should override.  Note that only the basic exact-sequence operators are supported at the moment: VALUE, GRAD, DIV, CURL.
      */
-    virtual BasisValues<OutputValueType,ExecSpaceType> allocateBasisValues( TensorPoints<PointValueType,ExecSpaceType> points, const EOperator operatorType = OPERATOR_VALUE) const override
+    virtual BasisValues<OutputValueType,DeviceType> allocateBasisValues( TensorPoints<PointValueType,DeviceType> points, const EOperator operatorType = OPERATOR_VALUE) const override
     {
-      BasisValues<OutputValueType,ExecSpaceType> basisValues1 = basis1_->allocateBasisValues(points, operatorType);
-      BasisValues<OutputValueType,ExecSpaceType> basisValues2 = basis2_->allocateBasisValues(points, operatorType);
+      BasisValues<OutputValueType,DeviceType> basisValues1 = basis1_->allocateBasisValues(points, operatorType);
+      BasisValues<OutputValueType,DeviceType> basisValues2 = basis2_->allocateBasisValues(points, operatorType);
       
       const int numScalarFamilies1 = basisValues1.numTensorDataFamilies();
       if (numScalarFamilies1 > 0)
@@ -219,7 +220,7 @@ namespace Intrepid2
         // then both basis1 and basis2 should be scalar-valued; check that for basis2:
         const int numScalarFamilies2 = basisValues2.numTensorDataFamilies();
         INTREPID2_TEST_FOR_EXCEPTION(basisValues2.numTensorDataFamilies() <=0, std::invalid_argument, "When basis1 has scalar value, basis2 must also");
-        std::vector< TensorData<OutputValueType,ExecSpaceType> > scalarFamilies(numScalarFamilies1 + numScalarFamilies2);
+        std::vector< TensorData<OutputValueType,DeviceType> > scalarFamilies(numScalarFamilies1 + numScalarFamilies2);
         for (int i=0; i<numScalarFamilies1; i++)
         {
           scalarFamilies[i] = basisValues1.tensorData(i);
@@ -228,7 +229,7 @@ namespace Intrepid2
         {
           scalarFamilies[i+numScalarFamilies1] = basisValues2.tensorData(i);
         }
-        return BasisValues<OutputValueType,ExecSpaceType>(scalarFamilies);
+        return BasisValues<OutputValueType,DeviceType>(scalarFamilies);
       }
       else
       {
@@ -245,7 +246,7 @@ namespace Intrepid2
         const int numFamilies2 = vectorData2.numFamilies();
         
         const int numFamilies = numFamilies1 + numFamilies2;
-        std::vector< std::vector<TensorData<OutputValueType,ExecSpaceType> > > vectorComponents(numFamilies, std::vector<TensorData<OutputValueType,ExecSpaceType> >(numComponents));
+        std::vector< std::vector<TensorData<OutputValueType,DeviceType> > > vectorComponents(numFamilies, std::vector<TensorData<OutputValueType,DeviceType> >(numComponents));
         
         for (int i=0; i<numFamilies1; i++)
         {
@@ -261,8 +262,8 @@ namespace Intrepid2
             vectorComponents[i+numFamilies1][j] = vectorData2.getComponent(i,j);
           }
         }
-        VectorData<OutputValueType,ExecSpaceType> vectorData(vectorComponents);
-        return BasisValues<OutputValueType,ExecSpaceType>(vectorData);
+        VectorData<OutputValueType,DeviceType> vectorData(vectorComponents);
+        return BasisValues<OutputValueType,DeviceType>(vectorData);
       }
     }
     
@@ -338,8 +339,8 @@ namespace Intrepid2
     */
     virtual
     void
-    getValues(       BasisValues<OutputValueType,ExecSpaceType> outputValues,
-               const TensorPoints<PointValueType,ExecSpaceType>  inputPoints,
+    getValues(       BasisValues<OutputValueType,DeviceType> outputValues,
+               const TensorPoints<PointValueType,DeviceType>  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const override
     {
       const int fieldStartOrdinal1 = 0;

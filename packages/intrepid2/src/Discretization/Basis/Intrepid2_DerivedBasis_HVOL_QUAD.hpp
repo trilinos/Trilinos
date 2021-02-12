@@ -71,10 +71,10 @@ namespace Intrepid2
     using LineBasis = HVOL_LINE;
     using TensorBasis = Basis_TensorBasis<typename HVOL_LINE::DeviceType, typename HVOL_LINE::OutputValueType, typename HVOL_LINE::PointValueType>;
   public:
-
-   using ExecutionSpace  = typename HVOL_LINE::ExecutionSpace;
-   using OutputValueType = typename HVOL_LINE::OutputValueType;
-   using PointValueType  = typename HVOL_LINE::PointValueType;
+    using DeviceType      = typename HVOL_LINE::DeviceType;
+    using ExecutionSpace  = typename HVOL_LINE::ExecutionSpace;
+    using OutputValueType = typename HVOL_LINE::OutputValueType;
+    using PointValueType  = typename HVOL_LINE::PointValueType;
 
     using OutputViewType = typename HVOL_LINE::OutputViewType;
     using PointViewType  = typename HVOL_LINE::PointViewType ;

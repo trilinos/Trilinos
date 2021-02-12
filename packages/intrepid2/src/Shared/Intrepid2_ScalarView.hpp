@@ -13,9 +13,9 @@
 
 namespace Intrepid2
 {
-  //! Intrepid2::ScalarView template requires execution space argument, in contrast to Kokkos::DynRankView, which defaults to the default execution space.  (We allow users to set the execution space for many of our classes; by using this template we can avoid accidentally using the default in members of those classes.
-  template<typename Scalar, typename ExecSpaceType>
-  using ScalarView = Kokkos::DynRankView<Scalar, ExecSpaceType>;
+  //! Intrepid2::ScalarView template requires execution space or device type argument, in contrast to Kokkos::DynRankView, which defaults to the default execution space.  (We allow users to set the execution space for many of our classes; by using this template we can avoid accidentally using the default in members of those classes.
+  template<typename Scalar, typename ExecSpaceOrDeviceType>
+  using ScalarView = Kokkos::DynRankView<Scalar, ExecSpaceOrDeviceType>;
 } // end namespace Intrepid2
 
 #endif /* Intrepid2_ScalarView_h */

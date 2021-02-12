@@ -85,9 +85,9 @@ std::string to_string(AlgorithmChoice choice)
 
 using namespace Intrepid2;
 
-template< typename PointScalar, int spaceDim, typename ExecutionSpace >
+template< typename PointScalar, int spaceDim, typename DeviceType >
 inline
-CellGeometry<PointScalar, spaceDim, ExecutionSpace> getMesh(AlgorithmChoice algorithmChoice, const int &meshWidth)
+CellGeometry<PointScalar, spaceDim, DeviceType> getMesh(AlgorithmChoice algorithmChoice, const int &meshWidth)
 {
   Kokkos::Array<PointScalar,spaceDim> domainExtents;
   Kokkos::Array<int,spaceDim> gridCellCounts;
@@ -96,7 +96,7 @@ CellGeometry<PointScalar, spaceDim, ExecutionSpace> getMesh(AlgorithmChoice algo
     domainExtents[d]  = 0.0;
     gridCellCounts[d] = meshWidth;
   }
-  auto uniformTensorGeometry = uniformCartesianMesh<PointScalar,spaceDim,ExecutionSpace>(domainExtents, gridCellCounts);
+  auto uniformTensorGeometry = uniformCartesianMesh<PointScalar,spaceDim,DeviceType>(domainExtents, gridCellCounts);
   
   switch (algorithmChoice)
   {
@@ -211,8 +211,8 @@ double flopsPerJacobianInverse(const int &spaceDim, const int &numPoints)
 }
 
 //! version that uses the classic, generic Intrepid2 paths
-template<class Scalar, class PointScalar, int spaceDim, typename ExecSpaceType>
-ScalarView<Scalar,ExecSpaceType> performStandardQuadratureHypercubeGRADGRAD(CellGeometry<PointScalar, spaceDim, ExecSpaceType> &geometry,
+template<class Scalar, class PointScalar, int spaceDim, typename DeviceType>
+ScalarView<Scalar,DeviceType> performStandardQuadratureHypercubeGRADGRAD(CellGeometry<PointScalar, spaceDim, DeviceType> &geometry,
                                                                             const int &polyOrder, int worksetSize,
                                                                             double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
 {
@@ -244,13 +244,13 @@ ScalarView<Scalar,ExecSpaceType> performStandardQuadratureHypercubeGRADGRAD(Cell
   if (worksetSize > numCells) worksetSize = numCells;
   
   // local stiffness matrices:
-  ScalarView<Scalar,ExecSpaceType> cellStiffness("cell stiffness matrices",numCells,numFields,numFields);
+  ScalarView<Scalar,DeviceType> cellStiffness("cell stiffness matrices",numCells,numFields,numFields);
   
   using Kokkos::DefaultExecutionSpace;
-  auto cubature = Intrepid2::DefaultCubatureFactory::create<ExecSpaceType>(cellTopo,polyOrder*2);
+  auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellTopo,polyOrder*2);
   int numPoints = cubature->getNumPoints();
-  ScalarView<PointScalar,ExecSpaceType> cubaturePoints("cubature points",numPoints,spaceDim);
-  ScalarView<double,ExecSpaceType> cubatureWeights("cubature weights", numPoints);
+  ScalarView<PointScalar,DeviceType> cubaturePoints("cubature points",numPoints,spaceDim);
+  ScalarView<double,DeviceType> cubatureWeights("cubature weights", numPoints);
   
   cubature->getCubature(cubaturePoints, cubatureWeights);
   
@@ -259,17 +259,17 @@ ScalarView<Scalar,ExecSpaceType> performStandardQuadratureHypercubeGRADGRAD(Cell
   const double flopsPerJacobianInvPerCell = flopsPerJacobianInverse(spaceDim, numPoints);
   
   // Allocate some intermediate containers
-  ScalarView<Scalar,ExecSpaceType> basisValues    ("basis values", numFields, numPoints );
-  ScalarView<Scalar,ExecSpaceType> basisGradValues("basis grad values", numFields, numPoints, spaceDim);
+  ScalarView<Scalar,DeviceType> basisValues    ("basis values", numFields, numPoints );
+  ScalarView<Scalar,DeviceType> basisGradValues("basis grad values", numFields, numPoints, spaceDim);
 
-  ScalarView<Scalar,ExecSpaceType> transformedGradValues("transformed grad values", worksetSize, numFields, numPoints, spaceDim);
-  ScalarView<Scalar,ExecSpaceType> transformedWeightedGradValues("transformed weighted grad values", worksetSize, numFields, numPoints, spaceDim);
+  ScalarView<Scalar,DeviceType> transformedGradValues("transformed grad values", worksetSize, numFields, numPoints, spaceDim);
+  ScalarView<Scalar,DeviceType> transformedWeightedGradValues("transformed weighted grad values", worksetSize, numFields, numPoints, spaceDim);
   
   basis->getValues(basisValues,     cubaturePoints, Intrepid2::OPERATOR_VALUE );
   basis->getValues(basisGradValues, cubaturePoints, Intrepid2::OPERATOR_GRAD  );
   
   const int numNodesPerCell = geometry.numNodesPerCell();
-  ScalarView<PointScalar,ExecSpaceType> expandedCellNodes("expanded cell nodes",numCells,numNodesPerCell,spaceDim);
+  ScalarView<PointScalar,DeviceType> expandedCellNodes("expanded cell nodes",numCells,numNodesPerCell,spaceDim);
   for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
   {
     for (int nodeOrdinal=0; nodeOrdinal<numNodesPerCell; nodeOrdinal++)
@@ -281,10 +281,10 @@ ScalarView<Scalar,ExecSpaceType> performStandardQuadratureHypercubeGRADGRAD(Cell
     }
   }
   
-  ScalarView<Scalar,ExecSpaceType> cellMeasures("cell measures", worksetSize, numPoints);
-  ScalarView<Scalar,ExecSpaceType> jacobianDeterminant("jacobian determinant", worksetSize, numPoints);
-  ScalarView<Scalar,ExecSpaceType> jacobian("jacobian", worksetSize, numPoints, spaceDim, spaceDim);
-  ScalarView<Scalar,ExecSpaceType> jacobianInverse("jacobian inverse", worksetSize, numPoints, spaceDim, spaceDim);
+  ScalarView<Scalar,DeviceType> cellMeasures("cell measures", worksetSize, numPoints);
+  ScalarView<Scalar,DeviceType> jacobianDeterminant("jacobian determinant", worksetSize, numPoints);
+  ScalarView<Scalar,DeviceType> jacobian("jacobian", worksetSize, numPoints, spaceDim, spaceDim);
+  ScalarView<Scalar,DeviceType> jacobianInverse("jacobian inverse", worksetSize, numPoints, spaceDim, spaceDim);
 
   initialSetupTimer->stop();
   
@@ -318,6 +318,7 @@ ScalarView<Scalar,ExecSpaceType> performStandardQuadratureHypercubeGRADGRAD(Cell
     CellTools::setJacobianDet(jacobianDeterminant, jacobian);
     
     FunctionSpaceTools::computeCellMeasure(cellMeasures, jacobianDeterminant, cubatureWeights);
+    using ExecSpaceType = typename DeviceType::execution_space;
     ExecSpaceType().fence();
     jacobianAndCellMeasureTimer->stop();
     
@@ -343,8 +344,8 @@ ScalarView<Scalar,ExecSpaceType> performStandardQuadratureHypercubeGRADGRAD(Cell
 }
 
 //! returns an estimated count of the floating point operations performed.
-template<class Scalar, class PointScalar, int spaceDim, typename ExecSpaceType>
-void performStructuredQuadratureHypercubeGRADGRAD(CellGeometry<PointScalar, spaceDim, ExecSpaceType> &geometry, const int &polyOrder, const int &worksetSize,
+template<class Scalar, class PointScalar, int spaceDim, typename DeviceType>
+void performStructuredQuadratureHypercubeGRADGRAD(CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
                                                   double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
 {
   int numVertices = 1;
@@ -356,8 +357,9 @@ void performStructuredQuadratureHypercubeGRADGRAD(CellGeometry<PointScalar, spac
   auto initialSetupTimer = Teuchos::TimeMonitor::getNewTimer("Initial Setup");
   initialSetupTimer->start();
   using namespace std;
-  using FunctionSpaceTools = Intrepid2::FunctionSpaceTools<ExecSpaceType>;
-  using IntegrationTools   = Intrepid2::IntegrationTools<ExecSpaceType>;
+  using ExecSpaceType = typename DeviceType::execution_space;
+  using FunctionSpaceTools = Intrepid2::FunctionSpaceTools<ExecSpaceType>; // TODO: once FunctionSpaceTools uses DeviceType, replace <ExecSpaceType> with <DeviceType>, here and elsewhere
+  using IntegrationTools   = Intrepid2::IntegrationTools<DeviceType>;
   // dimensions of the returned view are (C,F,F)
   auto fs = Intrepid2::FUNCTION_SPACE_HGRAD;
   
@@ -369,16 +371,16 @@ void performStructuredQuadratureHypercubeGRADGRAD(CellGeometry<PointScalar, spac
   int numCells = geometry.numCells();
     
   // local stiffness matrix:
-  ScalarView<Scalar,ExecSpaceType> cellStiffness("cell stiffness matrices",numCells,numFields,numFields);
+  ScalarView<Scalar,DeviceType> cellStiffness("cell stiffness matrices",numCells,numFields,numFields);
   
-  auto cubature = Intrepid2::DefaultCubatureFactory::create<ExecSpaceType>(cellTopo,polyOrder*2);
+  auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellTopo,polyOrder*2);
   auto tensorCubatureWeights = cubature->allocateCubatureWeights();
-  TensorPoints<PointScalar,ExecSpaceType> tensorCubaturePoints  = cubature->allocateCubaturePoints();
+  TensorPoints<PointScalar,DeviceType> tensorCubaturePoints  = cubature->allocateCubaturePoints();
   
   cubature->getCubature(tensorCubaturePoints, tensorCubatureWeights);
   
   EOperator op = OPERATOR_GRAD;
-  BasisValues<Scalar,ExecSpaceType> gradientValues = basis->allocateBasisValues(tensorCubaturePoints, op);
+  BasisValues<Scalar,DeviceType> gradientValues = basis->allocateBasisValues(tensorCubaturePoints, op);
   basis->getValues(gradientValues, tensorCubaturePoints, op);
   
   // goal here is to do a weighted Poisson; i.e. (f grad u, grad v) on each cell
@@ -388,10 +390,10 @@ void performStructuredQuadratureHypercubeGRADGRAD(CellGeometry<PointScalar, spac
   auto jacobianAndCellMeasureTimer = Teuchos::TimeMonitor::getNewTimer("Jacobians");
   auto fstIntegrateCall = Teuchos::TimeMonitor::getNewTimer("transform + integrate()");
   
-  Data<PointScalar,ExecSpaceType> jacobian = geometry.allocateJacobianData(tensorCubaturePoints, 0, worksetSize);
-  Data<PointScalar,ExecSpaceType> jacobianDet = CellTools<ExecSpaceType>::allocateJacobianDet(jacobian);
-  Data<PointScalar,ExecSpaceType> jacobianInv = CellTools<ExecSpaceType>::allocateJacobianInv(jacobian);
-  TensorData<PointScalar,ExecSpaceType> cellMeasures = geometry.allocateCellMeasure(jacobianDet, tensorCubatureWeights);
+  Data<PointScalar,DeviceType> jacobian = geometry.allocateJacobianData(tensorCubaturePoints, 0, worksetSize);
+  Data<PointScalar,DeviceType> jacobianDet = CellTools<ExecSpaceType>::allocateJacobianDet(jacobian); // TODO: once CellTools uses DeviceType, replace here and elsewhere
+  Data<PointScalar,DeviceType> jacobianInv = CellTools<ExecSpaceType>::allocateJacobianInv(jacobian);
+  TensorData<PointScalar,DeviceType> cellMeasures = geometry.allocateCellMeasure(jacobianDet, tensorCubatureWeights);
   
   // lazily-evaluated transformed gradient values (temporary to allow integralData allocation)
   auto transformedGradientValuesTemp = FunctionSpaceTools::getHGRADtransformGRAD(jacobianInv, gradientValues.vectorData());
@@ -585,7 +587,8 @@ int main( int argc, char* argv[] )
     }
     
     using Scalar = double;
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType     = typename Kokkos::DefaultExecutionSpace::device_type;
+    using ExecutionSpace = typename DeviceType::execution_space;
     
     using std::vector;
     using std::map;
@@ -826,7 +829,7 @@ int main( int argc, char* argv[] )
       for (auto algorithmChoice : algorithmChoices)
       {
         int worksetSize = worksetSizeMap[algorithmChoice];
-        auto geometry = getMesh<Scalar, spaceDim, ExecutionSpace>(algorithmChoice, meshWidth);
+        auto geometry = getMesh<Scalar, spaceDim, DeviceType>(algorithmChoice, meshWidth);
         
         // timers recorded in performStructuredQuadratureHypercubeGRADGRAD, performStandardQuadratureHypercubeGRADGRAD
         auto jacobianAndCellMeasureTimer = Teuchos::TimeMonitor::getNewTimer("Jacobians");
@@ -846,7 +849,7 @@ int main( int argc, char* argv[] )
           // each cell needs on the order of polyOrder^N quadrature points, each of which has a Jacobian of size N * N.
           auto timer = Teuchos::TimeMonitor::getNewTimer("Standard Integration");
           timer->start();
-          performStandardQuadratureHypercubeGRADGRAD<Scalar,Scalar,spaceDim,ExecutionSpace>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+          performStandardQuadratureHypercubeGRADGRAD<Scalar,Scalar,spaceDim,DeviceType>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
           timer->stop();
           elapsedTimeSeconds = timer->totalElapsedTime();
           

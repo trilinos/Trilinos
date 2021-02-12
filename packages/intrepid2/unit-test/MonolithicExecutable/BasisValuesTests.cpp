@@ -79,11 +79,12 @@ namespace
     // get quadrature points for integrating up to polyOrder
     const int quadratureDegree = 2*basis.getDegree();
     using ExecutionSpace = typename Basis::ExecutionSpace;
+    using DeviceType     = typename Basis::DeviceType;
     using PointScalar = typename Basis::PointValueType;
     using WeightScalar = typename Basis::OutputValueType;
     DefaultCubatureFactory cub_factory;
     auto cellTopoKey = basis.getBaseCellTopology().getKey();
-    auto quadrature = cub_factory.create<ExecutionSpace, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
+    auto quadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
     ordinal_type numRefPoints = quadrature->getNumPoints();
     const int spaceDim = basis.getBaseCellTopology().getDimension();
     ViewType<PointScalar> points = ViewType<PointScalar>("quadrature points ref cell", numRefPoints, spaceDim);
@@ -93,7 +94,7 @@ namespace
     TensorPoints<PointScalar> tensorPoints;
     TensorData<WeightScalar>  tensorWeights;
     
-    using CubatureTensorType = CubatureTensor<ExecutionSpace,PointScalar,WeightScalar>;
+    using CubatureTensorType = CubatureTensor<DeviceType,PointScalar,WeightScalar>;
     CubatureTensorType* tensorQuadrature = dynamic_cast<CubatureTensorType*>(quadrature.get());
 
     if (tensorQuadrature)

@@ -763,7 +763,7 @@ struct OperatorTensorDecomposition
      
         Note that only the basic exact-sequence operators are supported at the moment: VALUE, GRAD, DIV, CURL.
      */
-    virtual BasisValues<OutputValueType,ExecutionSpace> allocateBasisValues( TensorPoints<PointValueType,ExecutionSpace> points, const EOperator operatorType = OPERATOR_VALUE) const override
+    virtual BasisValues<OutputValueType,DeviceType> allocateBasisValues( TensorPoints<PointValueType,DeviceType> points, const EOperator operatorType = OPERATOR_VALUE) const override
     {
       const bool operatorSupported = (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_GRAD) || (operatorType == OPERATOR_CURL) || (operatorType == OPERATOR_DIV);
       INTREPID2_TEST_FOR_EXCEPTION(!operatorSupported, std::invalid_argument, "operator is not supported by allocateBasisValues");
@@ -777,31 +777,31 @@ struct OperatorTensorDecomposition
       if (useVectorData)
       {
         const int numFamilies = 1;
-        std::vector< std::vector<TensorData<OutputValueType,ExecutionSpace> > > vectorComponents(numFamilies, std::vector<TensorData<OutputValueType,ExecutionSpace> >(numVectorComponents));
+        std::vector< std::vector<TensorData<OutputValueType,DeviceType> > > vectorComponents(numFamilies, std::vector<TensorData<OutputValueType,DeviceType> >(numVectorComponents));
         
         const int familyOrdinal = 0;
         for (ordinal_type vectorComponentOrdinal=0; vectorComponentOrdinal<numVectorComponents; vectorComponentOrdinal++)
         {
           if (!opDecomposition.identicallyZeroComponent(vectorComponentOrdinal))
           {
-            std::vector< Data<OutputValueType,ExecutionSpace> > componentData;
+            std::vector< Data<OutputValueType,DeviceType> > componentData;
             for (ordinal_type r=0; r<numBasisComponents; r++)
             {
               const int numComponentPoints = points.componentPointCount(r);
               const EOperator op = opDecomposition.op(vectorComponentOrdinal, r);
               auto componentView = tensorComponents_[r]->allocateOutputView(numComponentPoints, op);
-              componentData.push_back(Data<OutputValueType,ExecutionSpace>(componentView));
+              componentData.push_back(Data<OutputValueType,DeviceType>(componentView));
             }
-            vectorComponents[familyOrdinal][vectorComponentOrdinal] = TensorData<OutputValueType,ExecutionSpace>(componentData);
+            vectorComponents[familyOrdinal][vectorComponentOrdinal] = TensorData<OutputValueType,DeviceType>(componentData);
           }
         }
-        VectorData<OutputValueType,ExecutionSpace> vectorData(vectorComponents);
-        return BasisValues<OutputValueType,ExecutionSpace>(vectorData);
+        VectorData<OutputValueType,DeviceType> vectorData(vectorComponents);
+        return BasisValues<OutputValueType,DeviceType>(vectorData);
       }
       else
       {
         // TensorData: single tensor product
-        std::vector< Data<OutputValueType,ExecutionSpace> > componentData;
+        std::vector< Data<OutputValueType,DeviceType> > componentData;
         
         const ordinal_type vectorComponentOrdinal = 0;
         for (ordinal_type r=0; r<numBasisComponents; r++)
@@ -815,13 +815,13 @@ struct OperatorTensorDecomposition
           //  we want Data to insulate us from that fact)
           const Kokkos::Array<int,7> extents {componentView.extent_int(0), componentView.extent_int(1), 1,1,1,1,1};
           Kokkos::Array<DataVariationType,7> variationType {GENERAL, GENERAL, CONSTANT, CONSTANT, CONSTANT, CONSTANT, CONSTANT };
-          componentData.push_back(Data<OutputValueType,ExecutionSpace>(componentView, rank, extents, variationType));
+          componentData.push_back(Data<OutputValueType,DeviceType>(componentView, rank, extents, variationType));
         }
         
-        TensorData<OutputValueType,ExecutionSpace> tensorData(componentData);
+        TensorData<OutputValueType,DeviceType> tensorData(componentData);
         
-        std::vector< TensorData<OutputValueType,ExecutionSpace> > tensorDataEntries {tensorData};
-        return BasisValues<OutputValueType,ExecutionSpace>(tensorDataEntries);
+        std::vector< TensorData<OutputValueType,DeviceType> > tensorDataEntries {tensorData};
+        return BasisValues<OutputValueType,DeviceType>(tensorDataEntries);
       }
     }
     
@@ -1039,8 +1039,8 @@ struct OperatorTensorDecomposition
     */
     virtual
     void
-    getValues(       BasisValues<OutputValueType,ExecutionSpace> outputValues,
-               const TensorPoints<PointValueType,ExecutionSpace>  inputPoints,
+    getValues(       BasisValues<OutputValueType,DeviceType> outputValues,
+               const TensorPoints<PointValueType,DeviceType>  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const override
     {
       OperatorTensorDecomposition operatorDecomposition = getOperatorDecomposition(operatorType);
@@ -1065,7 +1065,7 @@ struct OperatorTensorDecomposition
             PointViewType  pointView      = inputPoints.getTensorComponent(basisOrdinal);
             
             // Data stores things in fixed-rank Kokkos::View, but Basis requires DynRankView.  We allocate a temporary DynRankView, then copy back to Data.
-            const Data<OutputValueType,ExecutionSpace> & outputData = tensorData.getTensorComponent(basisOrdinal);
+            const Data<OutputValueType,DeviceType> & outputData = tensorData.getTensorComponent(basisOrdinal);
             
             auto basisValueView = outputData.getUnderlyingView();
             tensorComponents_[basisOrdinal]->getValues(basisValueView, pointView, op);
@@ -1604,23 +1604,25 @@ struct OperatorTensorDecomposition
   
   
   template<typename Basis1, typename Basis2, typename Basis3,
-  typename ExecutionSpace = typename Basis1::ExecutionSpace,
-  typename OutputScalar   = typename Basis1::OutputValueType,
-  typename PointScalar    = typename Basis1::PointValueType>
+           typename Device       = typename Basis1::DeviceType,
+           typename OutputScalar = typename Basis1::OutputValueType,
+           typename PointScalar  = typename Basis1::PointValueType>
   class Basis_TensorBasis3
-  : public Basis_TensorBasis<ExecutionSpace, OutputScalar, PointScalar>
+  : public Basis_TensorBasis<Device, OutputScalar, PointScalar>
   {
-    using TensorBasis = Basis_TensorBasis<ExecutionSpace, OutputScalar, PointScalar>;
+    using TensorBasis = Basis_TensorBasis<Device, OutputScalar, PointScalar>;
     
   public:
+    using DeviceType     = typename TensorBasis::DeviceType;
     using OutputViewType = typename TensorBasis::OutputViewType;
     using PointViewType  = typename TensorBasis::PointViewType;
     using ScalarViewType = typename TensorBasis::ScalarViewType;
     
+    using ExecutionSpace  = typename TensorBasis::ExecutionSpace;
     using OutputValueType = typename TensorBasis::OutputValueType;
     using PointValueType  = typename TensorBasis::PointValueType;
     
-    using BasisSuper = ::Intrepid2::Basis<ExecutionSpace,OutputScalar,PointScalar>;
+    using BasisSuper = ::Intrepid2::Basis<DeviceType,OutputScalar,PointScalar>;
     using BasisPtr   = Teuchos::RCP<BasisSuper>;
   protected:
     BasisPtr basis1_;

@@ -128,10 +128,10 @@ namespace Intrepid2 {
     using weightViewType = Kokkos::DynRankView<weightValueType,Kokkos::LayoutStride,DeviceType>;
 
     /// KK: the following needs to be updated with device type after nate's tensor work is updated.
-    using PointViewTypeAllocatable  = Kokkos::DynRankView<pointValueType,ExecSpaceType>;  // uses default layout; allows us to allocate (in contrast to LayoutStride)
-    using WeightViewTypeAllocatable = Kokkos::DynRankView<weightValueType,ExecSpaceType>; // uses default layout; allows us to allocate (in contrast to LayoutStride)
-    using TensorPointDataType       = TensorPoints<pointValueType,ExecSpaceType>;
-    using TensorWeightDataType      = TensorData<weightValueType,ExecSpaceType>;
+    using PointViewTypeAllocatable  = Kokkos::DynRankView<pointValueType,DeviceType>;  // uses default layout; allows us to allocate (in contrast to LayoutStride)
+    using WeightViewTypeAllocatable = Kokkos::DynRankView<weightValueType,DeviceType>; // uses default layout; allows us to allocate (in contrast to LayoutStride)
+    using TensorPointDataType       = TensorPoints<pointValueType,DeviceType>;
+    using TensorWeightDataType      = TensorData<weightValueType,DeviceType>;
     
     /** \brief Returns a points container appropriate for passing to getCubature().
 
@@ -154,7 +154,7 @@ namespace Intrepid2 {
     {
       // default implementation has trivial tensor structure
       /// KK: this also needs to be updated with nate's tensor
-      using WeightDataType = Data<weightValueType,ExecSpaceType>;
+      using WeightDataType = Data<weightValueType,DeviceType>;
       WeightViewTypeAllocatable allWeightData("cubature weights",this->getNumPoints());
       Kokkos::Array< WeightDataType, 1> cubatureWeightComponents;
       cubatureWeightComponents[0] = WeightDataType(allWeightData);

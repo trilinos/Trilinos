@@ -183,6 +183,7 @@ getCoeffMatrix_HCURL(OutputViewType &output,
 #endif
 
   using ScalarType = typename cellBasisType::scalarType;
+  using DeviceType = typename cellBasisType::DeviceType;
   using ExecutionSpace = typename cellBasisType::ExecutionSpace;
   using HostExecutionSpace =
       typename Kokkos::Impl::is_space<ExecutionSpace>::host_mirror_space::execution_space;
@@ -212,15 +213,15 @@ getCoeffMatrix_HCURL(OutputViewType &output,
   // Tangents t_j
   ScalarViewType subcellTangents("subcellTangents", numSubcellBasis, subcellDim);
   auto degree = subcellBasis.getDegree();
-  BasisPtr<ExecutionSpace, ScalarType, ScalarType> basisPtr;
+  BasisPtr<DeviceType, ScalarType, ScalarType> basisPtr;
   if(subcellBaseKey == shards::Line<>::key) {
-    basisPtr = Teuchos::rcp(new Intrepid2::Basis_HVOL_LINE_Cn_FEM<ExecutionSpace, ScalarType, ScalarType>(degree));
+    basisPtr = Teuchos::rcp(new Intrepid2::Basis_HVOL_LINE_Cn_FEM<DeviceType, ScalarType, ScalarType>(degree));
     basisPtr->getDofCoeffs(Kokkos::subview(subcellTangents, Kokkos::ALL(),0));
   } else if (subcellBaseKey == shards::Triangle<>::key) {
-    basisPtr = Teuchos::rcp(new Intrepid2::Basis_HCURL_TRI_In_FEM<ExecutionSpace, ScalarType, ScalarType>(degree));
+    basisPtr = Teuchos::rcp(new Intrepid2::Basis_HCURL_TRI_In_FEM<DeviceType, ScalarType, ScalarType>(degree));
     basisPtr->getDofCoeffs(subcellTangents);
   } else if (subcellBaseKey == shards::Quadrilateral<>::key) {
-    basisPtr =  Teuchos::rcp(new Intrepid2::Basis_HCURL_QUAD_In_FEM<ExecutionSpace, ScalarType, ScalarType>(degree));
+    basisPtr =  Teuchos::rcp(new Intrepid2::Basis_HCURL_QUAD_In_FEM<DeviceType, ScalarType, ScalarType>(degree));
     basisPtr->getDofCoeffs(subcellTangents);
   }
 

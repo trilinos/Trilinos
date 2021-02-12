@@ -193,29 +193,34 @@ public:
 };
 }
 
-template<typename ExecSpaceType = void,
+template<typename Device = void,
     typename outputValueType = double,
     typename pointValueType = double>
 class Basis_HDIV_TET_In_FEM
-    : public Basis<ExecSpaceType,outputValueType,pointValueType> {
-    public:
-  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost OrdinalTypeArray1DHost;
-  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost OrdinalTypeArray2DHost;
-  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost OrdinalTypeArray3DHost;
+    : public Basis<Device,outputValueType,pointValueType> {
+public:
+  using BasisSuper = Basis<Device,outputValueType,pointValueType>;
+  
+  using OrdinalTypeArray1DHost = typename BasisSuper::OrdinalTypeArray1DHost;
+  using OrdinalTypeArray2DHost = typename BasisSuper::OrdinalTypeArray2DHost;
+  using OrdinalTypeArray3DHost = typename BasisSuper::OrdinalTypeArray3DHost;
+
+  using DeviceType      = typename BasisSuper::DeviceType;
+  using ExecutionSpace  = typename BasisSuper::ExecutionSpace;
+  using OutputValueType = typename BasisSuper::OutputValueType;
+  using PointValueType  = typename BasisSuper::PointValueType;
+
+  using OutputViewType = typename BasisSuper::OutputViewType;
+  using PointViewType  = typename BasisSuper::PointViewType;
+  using ScalarViewType = typename BasisSuper::ScalarViewType;
+  
+  using BasisSuper::getValues;
+  using scalarType = typename BasisSuper::scalarType;
 
   /** \brief  Constructor.
    */
   Basis_HDIV_TET_In_FEM(const ordinal_type order,
       const EPointType   pointType = POINTTYPE_EQUISPACED);
-
-
-  using OutputViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OutputViewType;
-  using PointViewType  = typename Basis<ExecSpaceType,outputValueType,pointValueType>::PointViewType;
-  using ScalarViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::ScalarViewType;
-
-  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarType  scalarType;
-
-  using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
 
   virtual
   void
@@ -229,12 +234,12 @@ class Basis_HDIV_TET_In_FEM
         this->getBaseCellTopology(),
         this->getCardinality() );
 #endif
-constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
-Impl::Basis_HDIV_TET_In_FEM::
-getValues<ExecSpaceType,numPtsPerEval>( outputValues,
-    inputPoints,
-    this->coeffs_,
-    operatorType);
+    constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
+    Impl::Basis_HDIV_TET_In_FEM::
+    getValues<ExecutionSpace,numPtsPerEval>( outputValues,
+                                             inputPoints,
+                                             this->coeffs_,
+                                             operatorType);
   }
 
   virtual
@@ -298,12 +303,12 @@ getValues<ExecSpaceType,numPtsPerEval>( outputValues,
       \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
       \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
    */
-  BasisPtr<ExecSpaceType,outputValueType,pointValueType>
+  BasisPtr<DeviceType,outputValueType,pointValueType>
     getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
 
     if(subCellDim == 2) {
       return Teuchos::rcp(new
-          Basis_HVOL_TRI_Cn_FEM<ExecSpaceType,outputValueType,pointValueType>
+          Basis_HVOL_TRI_Cn_FEM<DeviceType,outputValueType,pointValueType>
           (this->basisDegree_-1, pointType_));
     }
     INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
@@ -313,7 +318,7 @@ getValues<ExecSpaceType,numPtsPerEval>( outputValues,
 
   /** \brief expansion coefficients of the nodal basis in terms of the
         orthgonal one */
-  Kokkos::DynRankView<scalarType,ExecSpaceType> coeffs_;
+  Kokkos::DynRankView<scalarType,DeviceType> coeffs_;
 
   /** \brief type of lattice used for creating the DoF coordinates  */
   EPointType pointType_;

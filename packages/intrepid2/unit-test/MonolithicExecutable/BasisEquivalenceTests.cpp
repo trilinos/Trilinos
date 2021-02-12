@@ -447,8 +447,9 @@ namespace
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, LineNodalCnVersusNodalC1_HGRAD )
   {
-    using CnBasis = Intrepid2::Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultExecutionSpace>;
-    using C1Basis = Intrepid2::Basis_HGRAD_LINE_C1_FEM<Kokkos::DefaultExecutionSpace>;
+    using DeviceType = typename Kokkos::DefaultExecutionSpace::device_type;
+    using CnBasis = Intrepid2::Basis_HGRAD_LINE_Cn_FEM<DeviceType>;
+    using C1Basis = Intrepid2::Basis_HGRAD_LINE_C1_FEM<DeviceType>;
     
     std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     
@@ -562,9 +563,10 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisEquivalence, HexahedronNodalCnVersusNodalC1_HGRAD )
   {
-    using CnBasis = Intrepid2::Basis_HGRAD_HEX_Cn_FEM<Kokkos::DefaultExecutionSpace>;
-    using C1Basis = Intrepid2::Basis_HGRAD_HEX_C1_FEM<Kokkos::DefaultExecutionSpace>;
-
+    using DeviceType = typename Kokkos::DefaultExecutionSpace::device_type;
+    using CnBasis = Intrepid2::Basis_HGRAD_HEX_Cn_FEM<DeviceType>;
+    using C1Basis = Intrepid2::Basis_HGRAD_HEX_C1_FEM<DeviceType>;
+    
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
     const double relTol=1e-13; // ____ is sharp on development setup for polyOrder=1; relaxing for potential architectural differences
@@ -579,8 +581,9 @@ namespace
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, HexahedronNodalCnVersusNodalC2_HGRAD )
   {
-    using CnBasis = Intrepid2::Basis_HGRAD_HEX_Cn_FEM<Kokkos::DefaultExecutionSpace>;
-    using C2Basis = Intrepid2::Basis_HGRAD_HEX_C2_FEM<Kokkos::DefaultExecutionSpace>;
+    using DeviceType = typename Kokkos::DefaultExecutionSpace::device_type;
+    using CnBasis = Intrepid2::Basis_HGRAD_HEX_Cn_FEM<DeviceType>;
+    using C2Basis = Intrepid2::Basis_HGRAD_HEX_C2_FEM<DeviceType>;
 
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
@@ -598,8 +601,9 @@ namespace
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronNodalCnVersusNodalC2_HGRAD )
   {
-    using CnBasis = Intrepid2::Basis_HGRAD_TET_Cn_FEM<Kokkos::DefaultExecutionSpace>;
-    using C2Basis = Intrepid2::Basis_HGRAD_TET_C2_FEM<Kokkos::DefaultExecutionSpace>;
+    using DeviceType = typename Kokkos::DefaultExecutionSpace::device_type;
+    using CnBasis = Intrepid2::Basis_HGRAD_TET_Cn_FEM<DeviceType>;
+    using C2Basis = Intrepid2::Basis_HGRAD_TET_C2_FEM<DeviceType>;
     
     // OPERATOR_D2 and above are not supported by either the nodal or the hierarchical basis at present...
     std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};

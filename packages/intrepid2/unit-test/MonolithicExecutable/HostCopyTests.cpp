@@ -144,25 +144,25 @@ namespace
 
   TEUCHOS_UNIT_TEST(HostCopy, TensorPoints)
   {
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
-    using HostExecSpace = Kokkos::HostSpace::execution_space;
+    using DeviceType     = typename Kokkos::DefaultExecutionSpace::device_type;
+    using HostDeviceType = typename Kokkos::DefaultHostExecutionSpace::device_type;
     using PointScalar = double;
     using WeightScalar = double;
     DefaultCubatureFactory cub_factory;
     shards::CellTopology cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<> >());
     auto cellTopoKey = cellTopo.getKey();
     const int quadratureDegree = 3;
-    auto quadrature = cub_factory.create<ExecutionSpace, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
+    auto quadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
     ordinal_type numRefPoints = quadrature->getNumPoints();
     const int spaceDim = cellTopo.getDimension();
     ViewType<PointScalar> points = ViewType<PointScalar>("quadrature points ref cell", numRefPoints, spaceDim);
     ViewType<WeightScalar> weights = ViewType<WeightScalar>("quadrature weights ref cell", numRefPoints);
     quadrature->getCubature(points, weights);
     
-    TensorPoints<PointScalar,ExecutionSpace> tensorPoints;
-    TensorData<WeightScalar,ExecutionSpace>  tensorWeights;
+    TensorPoints<PointScalar,DeviceType> tensorPoints;
+    TensorData<WeightScalar,DeviceType>  tensorWeights;
     
-    using CubatureTensorType = CubatureTensor<ExecutionSpace,PointScalar,WeightScalar>;
+    using CubatureTensorType = CubatureTensor<DeviceType,PointScalar,WeightScalar>;
     CubatureTensorType* tensorQuadrature = dynamic_cast<CubatureTensorType*>(quadrature.get());
 
     TEST_ASSERT(tensorQuadrature != NULL);
@@ -175,10 +175,10 @@ namespace
     }
     
     // copy everything to host
-    auto pointsHost = Kokkos::create_mirror_view_and_copy(HostExecSpace::memory_space(), points);
+    auto pointsHost = Kokkos::create_mirror_view_and_copy(HostDeviceType::memory_space(), points);
     
     // this copy[-like] constructor is the one that's actually under test:
-    TensorPoints<PointScalar,HostExecSpace> tensorPointsHost(tensorPoints);
+    TensorPoints<PointScalar,HostDeviceType> tensorPointsHost(tensorPoints);
     
     for (int pointOrdinal=0; pointOrdinal<numRefPoints; pointOrdinal++)
     {

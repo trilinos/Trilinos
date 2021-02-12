@@ -67,13 +67,13 @@ namespace
     Basis basis(1,1,1);
     
     int quadratureDegree = 1;
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType  = typename Kokkos::DefaultExecutionSpace::device_type;
     using PointScalar = double;
     using WeightScalar = double;
     DefaultCubatureFactory cub_factory;
     auto cellTopo = basis.getBaseCellTopology();
     auto cellTopoKey = cellTopo.getKey();
-    auto quadrature = cub_factory.create<ExecutionSpace, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
+    auto quadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
     
     ordinal_type numRefPoints = quadrature->getNumPoints();
     const int spaceDim = cellTopo.getDimension();
@@ -84,7 +84,7 @@ namespace
     TensorPoints<PointScalar> tensorPoints;
     TensorData<WeightScalar>  tensorWeights;
     
-    using CubatureTensorType = CubatureTensor<ExecutionSpace,PointScalar,WeightScalar>;
+    using CubatureTensorType = CubatureTensor<DeviceType,PointScalar,WeightScalar>;
     CubatureTensorType* tensorQuadrature = dynamic_cast<CubatureTensorType*>(quadrature.get());
 
     if (tensorQuadrature)
@@ -93,6 +93,8 @@ namespace
       tensorWeights = tensorQuadrature->allocateCubatureWeights();
       tensorQuadrature->getCubature(tensorPoints, tensorWeights);
     }
+    
+    static_assert(std::is_same<DeviceType, Basis::DeviceType>::value,"DeviceType (default) and the device type for Basis don't match!");
     
     // test OPERATOR_DIV
     auto basisValues = basis.allocateBasisValues(tensorPoints, OPERATOR_DIV);

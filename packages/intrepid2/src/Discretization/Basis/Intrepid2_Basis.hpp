@@ -115,6 +115,11 @@ using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
            typename outputValueType,
            typename pointValueType>
   class Basis {
+    // once we have converted all Basis subclasses, we should enable the assert below.
+    // (for backward compatibility, we may want to have the first argument be *either* an ExecutionSpace *or* a Device;
+    //  if it's an ExecutionSpace: Device = FirstArg::device_type, ExecutionSpace = FirstArg
+    //  if it's a Device:          Device = FirstArg,              ExecutionSpace = FirstArg::execution_space
+//    static_assert(Kokkos::is_device<Device>::value, "First template argument to Basis must be a Kokkos::Device");
   public:
     /**  \brief (Kokkos) Device type for basis.
      */
@@ -448,7 +453,7 @@ using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
         The default implementation employs a trivial tensor-product structure, for compatibility across all bases.  Subclasses that have tensor-product structure
         should override.  Note that only the basic exact-sequence operators are supported at the moment: VALUE, GRAD, DIV, CURL.
      */
-    virtual BasisValues<OutputValueType,ExecutionSpace> allocateBasisValues( TensorPoints<PointValueType,ExecutionSpace> points, const EOperator operatorType = OPERATOR_VALUE) const
+    virtual BasisValues<OutputValueType,DeviceType> allocateBasisValues( TensorPoints<PointValueType,DeviceType> points, const EOperator operatorType = OPERATOR_VALUE) const
     {
       const bool operatorSupported = (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_GRAD) || (operatorType == OPERATOR_CURL) || (operatorType == OPERATOR_DIV);
       INTREPID2_TEST_FOR_EXCEPTION(!operatorSupported, std::invalid_argument, "operator is not supported by allocateBasisValues");
@@ -461,19 +466,19 @@ using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
       using Scalar = OutputValueType;
       
       auto dataView = allocateOutputView(numPoints, operatorType);
-      Data<Scalar,ExecutionSpace> data(dataView);
+      Data<Scalar,DeviceType> data(dataView);
       
       bool useVectorData = (dataView.rank() == 3);
       
       if (useVectorData)
       {
-        VectorData<Scalar,ExecutionSpace> vectorData(data);
-        return BasisValues<Scalar,ExecutionSpace>(vectorData);
+        VectorData<Scalar,DeviceType> vectorData(data);
+        return BasisValues<Scalar,DeviceType>(vectorData);
       }
       else
       {
-        TensorData<Scalar,ExecutionSpace> tensorData(data);
-        return BasisValues<Scalar,ExecutionSpace>(tensorData);
+        TensorData<Scalar,DeviceType> tensorData(data);
+        return BasisValues<Scalar,DeviceType>(tensorData);
       }
     }
 
@@ -517,14 +522,14 @@ using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
     */
     virtual
     void
-    getValues(       BasisValues<OutputValueType,ExecutionSpace> outputValues,
-               const TensorPoints<PointValueType,ExecutionSpace>  inputPoints,
+    getValues(       BasisValues<OutputValueType,DeviceType> outputValues,
+               const TensorPoints<PointValueType,DeviceType>  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const {
       // note the extra allocation/copy here (this is one reason, among several, to override this method):
       auto rawExpandedPoints = inputPoints.allocateAndFillExpandedRawPointView();
       
       OutputViewType rawOutputView;
-      Data<OutputValueType,ExecutionSpace> outputData;
+      Data<OutputValueType,DeviceType> outputData;
       if (outputValues.numTensorDataFamilies() > 0)
       {
         INTREPID2_TEST_FOR_EXCEPTION(outputValues.tensorData(0).numTensorComponents() != 1, std::invalid_argument, "default implementation of getValues() only supports outputValues with trivial tensor-product structure");

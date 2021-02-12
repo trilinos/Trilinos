@@ -77,31 +77,31 @@
 namespace Intrepid2 {
 
   // the following defines a family of nodal basis functions for the reference Triangle
-  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType=typename Kokkos::DefaultExecutionSpace::device_type,
            typename OutputScalar = double,
            typename PointScalar  = double,
            bool defineVertexFunctions = true>
   class NodalTriangleBasisFamily
   {
   public:
-    using HGRAD = Basis_HGRAD_TRI_Cn_FEM<ExecutionSpace,OutputScalar,PointScalar>;
-    using HCURL = Basis_HCURL_TRI_In_FEM<ExecutionSpace,OutputScalar,PointScalar>;
-    using HDIV  = Basis_HDIV_TRI_In_FEM<ExecutionSpace,OutputScalar,PointScalar>;
-    using HVOL  = Basis_HVOL_TRI_Cn_FEM<ExecutionSpace,OutputScalar,PointScalar>;
+    using HGRAD = Basis_HGRAD_TRI_Cn_FEM<DeviceType,OutputScalar,PointScalar>;
+    using HCURL = Basis_HCURL_TRI_In_FEM<DeviceType,OutputScalar,PointScalar>;
+    using HDIV  = Basis_HDIV_TRI_In_FEM <DeviceType,OutputScalar,PointScalar>;
+    using HVOL  = Basis_HVOL_TRI_Cn_FEM <DeviceType,OutputScalar,PointScalar>;
   };
 
   // the following defines a family of nodal basis functions for the reference Tetrahedron
-  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
-  typename OutputScalar = double,
-  typename PointScalar  = double,
-  bool defineVertexFunctions = true>
+  template<typename DeviceType=typename Kokkos::DefaultExecutionSpace::device_type,
+           typename OutputScalar = double,
+           typename PointScalar  = double,
+           bool defineVertexFunctions = true>
   class NodalTetrahedronBasisFamily
   {
   public:
-    using HGRAD = Basis_HGRAD_TET_Cn_FEM<ExecutionSpace,OutputScalar,PointScalar>;
-    using HCURL = Basis_HCURL_TET_In_FEM<ExecutionSpace,OutputScalar,PointScalar>;
-    using HDIV  = Basis_HDIV_TET_In_FEM<ExecutionSpace,OutputScalar,PointScalar>;
-    using HVOL  = Basis_HVOL_TET_Cn_FEM<ExecutionSpace,OutputScalar,PointScalar>;
+    using HGRAD = Basis_HGRAD_TET_Cn_FEM<DeviceType,OutputScalar,PointScalar>;
+    using HCURL = Basis_HCURL_TET_In_FEM<DeviceType,OutputScalar,PointScalar>;
+    using HDIV  = Basis_HDIV_TET_In_FEM <DeviceType,OutputScalar,PointScalar>;
+    using HVOL  = Basis_HVOL_TET_Cn_FEM <DeviceType,OutputScalar,PointScalar>;
   };
 
 
@@ -116,59 +116,59 @@ namespace Intrepid2 {
    
    At present, only hypercube topologies (line, quadrilateral, hexahedron) are supported, but other topologies will be supported in the future.
   */
-  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType = typename Kokkos::DefaultExecutionSpace::device_type,
            typename OutputScalar = double,
            typename PointScalar  = double>
-  using DerivedNodalBasisFamily = DerivedBasisFamily< Basis_HGRAD_LINE_Cn_FEM<ExecutionSpace,OutputScalar,PointScalar>,
-                                                      Basis_HVOL_LINE_Cn_FEM<ExecutionSpace,OutputScalar,PointScalar>,
-                                                      NodalTriangleBasisFamily<ExecutionSpace,OutputScalar,PointScalar>,
-                                                      NodalTetrahedronBasisFamily<ExecutionSpace,OutputScalar,PointScalar> >;
+  using DerivedNodalBasisFamily = DerivedBasisFamily< Basis_HGRAD_LINE_Cn_FEM<DeviceType,OutputScalar,PointScalar>,
+                                                      Basis_HVOL_LINE_Cn_FEM<DeviceType,OutputScalar,PointScalar>,
+                                                      NodalTriangleBasisFamily<DeviceType,OutputScalar,PointScalar>,
+                                                      NodalTetrahedronBasisFamily<DeviceType,OutputScalar,PointScalar> >;
   
   /** \class Intrepid2::NodalBasisFamily
       \brief A family of nodal basis functions representing the higher-order Lagrangian basis family that Intrepid2 has historically supported.
    
    This family is defined with reference to the higher-order implementations (the "Cn" and "In" bases).
   */
-  template<typename ExecSpace=Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType = typename Kokkos::DefaultExecutionSpace::device_type,
            typename OutputScalar = double,
            typename PointScalar  = double>
   class NodalBasisFamily
   {
   public:
-    using ExecutionSpace  = ExecSpace;
+    using ExecutionSpace  = typename DeviceType::execution_space;
     using OutputValueType = OutputScalar;
     using PointValueType  = PointScalar;
     
-    using BasisType = Basis<ExecSpace,OutputScalar,PointScalar>;
+    using BasisType = Basis<DeviceType,OutputScalar,PointScalar>;
     using BasisPtr  = Teuchos::RCP<BasisType>;
     
     // line bases
-    using HGRAD_LINE = Basis_HGRAD_LINE_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>;
-    using HVOL_LINE  = Basis_HVOL_LINE_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>;
+    using HGRAD_LINE = Basis_HGRAD_LINE_Cn_FEM<DeviceType,OutputValueType,PointValueType>;
+    using HVOL_LINE  = Basis_HVOL_LINE_Cn_FEM<DeviceType,OutputValueType,PointValueType>;
     
     // quadrilateral bases
-    using HGRAD_QUAD = Basis_HGRAD_QUAD_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>;
-    using HCURL_QUAD = Basis_HCURL_QUAD_In_FEM<ExecutionSpace,OutputValueType,PointValueType>;
-    using HDIV_QUAD  = Basis_HDIV_QUAD_In_FEM<ExecutionSpace,OutputValueType,PointValueType>;
-    using HVOL_QUAD  = Basis_HVOL_QUAD_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>;
+    using HGRAD_QUAD = Basis_HGRAD_QUAD_Cn_FEM<DeviceType,OutputValueType,PointValueType>;
+    using HCURL_QUAD = Basis_HCURL_QUAD_In_FEM<DeviceType,OutputValueType,PointValueType>;
+    using HDIV_QUAD  = Basis_HDIV_QUAD_In_FEM<DeviceType,OutputValueType,PointValueType>;
+    using HVOL_QUAD  = Basis_HVOL_QUAD_Cn_FEM<DeviceType,OutputValueType,PointValueType>;
     
     // triangle bases
-    using HGRAD_TRI = Basis_HGRAD_TRI_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>;
-    using HCURL_TRI = Basis_HCURL_TRI_In_FEM<ExecutionSpace,OutputValueType,PointValueType>;
-    using HDIV_TRI  = Basis_HDIV_TRI_In_FEM<ExecutionSpace,OutputValueType,PointValueType>;
-    using HVOL_TRI  = Basis_HVOL_TRI_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>;
+    using HGRAD_TRI = Basis_HGRAD_TRI_Cn_FEM<DeviceType,OutputValueType,PointValueType>;
+    using HCURL_TRI = Basis_HCURL_TRI_In_FEM<DeviceType,OutputValueType,PointValueType>;
+    using HDIV_TRI  = Basis_HDIV_TRI_In_FEM<DeviceType,OutputValueType,PointValueType>;
+    using HVOL_TRI  = Basis_HVOL_TRI_Cn_FEM<DeviceType,OutputValueType,PointValueType>;
     
     // hexahedron bases
-    using HGRAD_HEX = Basis_HGRAD_HEX_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>;
-    using HCURL_HEX = Basis_HCURL_HEX_In_FEM<ExecutionSpace,OutputValueType,PointValueType>;
-    using HDIV_HEX  = Basis_HDIV_HEX_In_FEM<ExecutionSpace,OutputValueType,PointValueType>;
-    using HVOL_HEX  = Basis_HVOL_HEX_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>;
+    using HGRAD_HEX = Basis_HGRAD_HEX_Cn_FEM<DeviceType,OutputValueType,PointValueType>;
+    using HCURL_HEX = Basis_HCURL_HEX_In_FEM<DeviceType,OutputValueType,PointValueType>;
+    using HDIV_HEX  = Basis_HDIV_HEX_In_FEM<DeviceType,OutputValueType,PointValueType>;
+    using HVOL_HEX  = Basis_HVOL_HEX_Cn_FEM<DeviceType,OutputValueType,PointValueType>;
     
     // tetrahedron bases
-    using HGRAD_TET = Basis_HGRAD_TET_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>;
-    using HCURL_TET = Basis_HCURL_TET_In_FEM<ExecutionSpace,OutputValueType,PointValueType>;
-    using HDIV_TET  = Basis_HDIV_TET_In_FEM<ExecutionSpace,OutputValueType,PointValueType>;
-    using HVOL_TET  = Basis_HVOL_TET_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>;
+    using HGRAD_TET = Basis_HGRAD_TET_Cn_FEM<DeviceType,OutputValueType,PointValueType>;
+    using HCURL_TET = Basis_HCURL_TET_In_FEM<DeviceType,OutputValueType,PointValueType>;
+    using HDIV_TET  = Basis_HDIV_TET_In_FEM<DeviceType,OutputValueType,PointValueType>;
+    using HVOL_TET  = Basis_HVOL_TET_Cn_FEM<DeviceType,OutputValueType,PointValueType>;
     
   };
 }

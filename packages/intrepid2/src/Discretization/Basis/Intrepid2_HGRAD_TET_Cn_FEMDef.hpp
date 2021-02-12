@@ -218,11 +218,11 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   }
   }
 }
-}
+} // namespace Impl
 
 // -------------------------------------------------------------------------------------
-template<typename SpT, typename OT, typename PT>
-Basis_HGRAD_TET_Cn_FEM<SpT,OT,PT>::
+template<typename DT, typename OT, typename PT>
+Basis_HGRAD_TET_Cn_FEM<DT,OT,PT>::
 Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
     const EPointType   pointType ) {
   constexpr ordinal_type spaceDim = 3;
@@ -238,7 +238,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
   const ordinal_type card = this->basisCardinality_;
 
   // points are computed in the host and will be copied
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+  Kokkos::DynRankView<scalarType,typename ExecutionSpace::array_layout,Kokkos::HostSpace>
   dofCoords("Hgrad::Tet::Cn::dofCoords", card, spaceDim);
 
   // Basis-dependent initializations
@@ -270,9 +270,9 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
       order ,
       1 );
 
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> vertexes("Hcurl::Tet::In::vertexes", numVertexes , spaceDim );
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> linePts("Hcurl::Tet::In::linePts", numPtsPerEdge , 1 );
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> triPts("Hcurl::Tet::In::triPts", numPtsPerFace , 2 );
+  Kokkos::DynRankView<scalarType,typename ExecutionSpace::array_layout,Kokkos::HostSpace> vertexes("Hcurl::Tet::In::vertexes", numVertexes , spaceDim );
+  Kokkos::DynRankView<scalarType,typename ExecutionSpace::array_layout,Kokkos::HostSpace> linePts("Hcurl::Tet::In::linePts", numPtsPerEdge , 1 );
+  Kokkos::DynRankView<scalarType,typename ExecutionSpace::array_layout,Kokkos::HostSpace> triPts("Hcurl::Tet::In::triPts", numPtsPerFace , 2 );
 
   // construct lattice
   const ordinal_type offset = 1;
@@ -294,8 +294,8 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
       this->pointType_ );
 
   // holds the image of the line points
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> edgePts("Hcurl::Tet::In::edgePts", numPtsPerEdge , spaceDim );
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> facePts("Hcurl::Tet::In::facePts", numPtsPerFace , spaceDim );
+  Kokkos::DynRankView<scalarType,typename ExecutionSpace::array_layout,Kokkos::HostSpace> edgePts("Hcurl::Tet::In::edgePts", numPtsPerEdge , spaceDim );
+  Kokkos::DynRankView<scalarType,typename ExecutionSpace::array_layout,Kokkos::HostSpace> facePts("Hcurl::Tet::In::facePts", numPtsPerFace , spaceDim );
 
   for (ordinal_type i=0;i<numVertexes;i++) {
     auto i_card=i;
@@ -362,7 +362,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
 
   // internal dof, if needed
   if (numPtsPerCell > 0) {
-    Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<scalarType,typename ExecutionSpace::array_layout,Kokkos::HostSpace>
     cellPoints( "Hcurl::Tet::In::cellPoints", numPtsPerCell , spaceDim );
     PointTools::getLattice( cellPoints ,
         this->basisCellTopology_ ,
@@ -386,7 +386,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
     }
   }
 
-  this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
+  this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
   Kokkos::deep_copy(this->dofCoords_, dofCoords);
 
   // form Vandermonde matrix.  Actually, this is the transpose of the VDM,
@@ -422,14 +422,14 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
       ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_Cn_FEM) lapack.GETRI returns nonzero info." );
 
   // create host mirror
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+  Kokkos::DynRankView<scalarType,typename ExecutionSpace::array_layout,Kokkos::HostSpace>
   vinv("Hgrad::Line::Cn::vinv", card, card);
 
   for (ordinal_type i=0;i<card;++i)
     for (ordinal_type j=0;j<card;++j)
       vinv(i,j) = vmat(j,i);
 
-  this->vinv_ = Kokkos::create_mirror_view(typename SpT::memory_space(), vinv);
+  this->vinv_ = Kokkos::create_mirror_view(typename DT::memory_space(), vinv);
   Kokkos::deep_copy(this->vinv_ , vinv);
 
   // initialize tags

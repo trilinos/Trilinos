@@ -183,29 +183,34 @@ namespace Intrepid2 {
     };
   }
   
-    template<typename ExecSpaceType = void,
+    template<typename Device = void,
            typename outputValueType = double,
            typename pointValueType = double>
   class Basis_HVOL_TET_Cn_FEM
-    : public Basis<ExecSpaceType,outputValueType,pointValueType> {
+    : public Basis<Device,outputValueType,pointValueType> {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
+    using BasisSuper = Basis<Device,outputValueType,pointValueType>;
+    
+    using OrdinalTypeArray1DHost = typename BasisSuper::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename BasisSuper::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray3DHost = typename BasisSuper::OrdinalTypeArray3DHost;
 
+    using DeviceType      = typename BasisSuper::DeviceType;
+    using ExecutionSpace  = typename BasisSuper::ExecutionSpace;
+    using OutputValueType = typename BasisSuper::OutputValueType;
+    using PointValueType  = typename BasisSuper::PointValueType;
+
+    using OutputViewType = typename BasisSuper::OutputViewType;
+    using PointViewType  = typename BasisSuper::PointViewType;
+    using ScalarViewType = typename BasisSuper::ScalarViewType;
+    
+    using BasisSuper::getValues;
+    using scalarType = typename BasisSuper::scalarType;
+      
     /** \brief  Constructor.
      */
     Basis_HVOL_TET_Cn_FEM(const ordinal_type order,
                            const EPointType   pointType = POINTTYPE_EQUISPACED);
-
-
-    using OutputViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<ExecSpaceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::ScalarViewType;
-
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarType  scalarType;
-
-    using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
 
     virtual
     void
@@ -221,10 +226,10 @@ namespace Intrepid2 {
 #endif
       constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
       Impl::Basis_HVOL_TET_Cn_FEM::
-        getValues<ExecSpaceType,numPtsPerEval>( outputValues,
-                                                inputPoints,
-                                                this->vinv_,
-                                                operatorType);
+        getValues<ExecutionSpace,numPtsPerEval>( outputValues,
+                                                 inputPoints,
+                                                 this->vinv_,
+                                                 operatorType);
     }
 
     virtual
@@ -280,7 +285,7 @@ namespace Intrepid2 {
 
     /** \brief inverse of Generalized Vandermonde matrix, whose columns store the expansion
         coefficients of the nodal basis in terms of phis_ */
-    Kokkos::DynRankView<scalarType,ExecSpaceType> vinv_;
+    Kokkos::DynRankView<scalarType,DeviceType> vinv_;
 
   };
 

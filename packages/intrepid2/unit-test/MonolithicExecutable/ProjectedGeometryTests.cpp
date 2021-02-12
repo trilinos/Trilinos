@@ -64,12 +64,12 @@ namespace
 {
   using namespace Intrepid2;
 
-  template<typename PointScalar, typename ExecutionSpace>
+  template<typename PointScalar, typename DeviceType>
   void testCircularGeometryProjectionConvergesInP(int meshWidth, Teuchos::FancyOStream &out, bool &success)
   {
     constexpr int spaceDim = 2;
-    using BasisFamily = DerivedNodalBasisFamily<ExecutionSpace,PointScalar,PointScalar>;
-    using ProjectedGeometry = ProjectedGeometry<spaceDim,PointScalar,ExecutionSpace>;
+    using BasisFamily = DerivedNodalBasisFamily<DeviceType,PointScalar,PointScalar>;
+    using ProjectedGeometry = ProjectedGeometry<spaceDim,PointScalar,DeviceType>;
     
     constexpr PointScalar R = 1.0; // unit circle centered at origin
     constexpr PointScalar exactArea = M_PI * R * R;
@@ -89,17 +89,18 @@ namespace
       numCells *= meshWidth;
     }
     
-    CellGeometry<PointScalar, spaceDim> flatCellGeometry(origin,extent,cellCount);
+    CellGeometry<PointScalar, spaceDim, DeviceType> flatCellGeometry(origin,extent,cellCount);
     shards::CellTopology cellTopo = flatCellGeometry.cellTopology();
     
-    auto cubature = Intrepid2::DefaultCubatureFactory::create<ExecutionSpace>(cellTopo,Intrepid2::Parameters::MaxOrder);
+    auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellTopo,Intrepid2::Parameters::MaxOrder);
     auto cubatureWeights = cubature->allocateCubatureWeights();
-    TensorPoints<PointScalar,ExecutionSpace> cubaturePoints  = cubature->allocateCubaturePoints();
+    TensorPoints<PointScalar,DeviceType> cubaturePoints  = cubature->allocateCubaturePoints();
     cubature->getCubature(cubaturePoints, cubatureWeights);
     
     const int numPoints = cubaturePoints.extent_int(0);
     
     PointScalar previousError = exactArea; // we check that for each p, its error is less than that for (p-1); initialize as 100% error
+    using ExecutionSpace = typename DeviceType::execution_space;
     for (int p=1; p<=Intrepid2::Parameters::MaxOrder; p++)
     {
       auto basisForNodes = getBasis<BasisFamily>(cellTopo, FUNCTION_SPACE_HGRAD, p);
@@ -110,10 +111,10 @@ namespace
       
       ProjectedGeometry::projectOntoHGRADBasis(projectedNodes, basisForNodes, flatCellGeometry, circularGeometry, circularGeometry);
 
-      CellGeometry<PointScalar, spaceDim> projectedGeometry(basisForNodes,projectedNodes);
+      CellGeometry<PointScalar, spaceDim, DeviceType> projectedGeometry(basisForNodes,projectedNodes);
 
       auto jacobian = projectedGeometry.allocateJacobianData(cubaturePoints);
-      auto jacobianDet = CellTools<ExecutionSpace>::allocateJacobianDet(jacobian);
+      auto jacobianDet = CellTools<ExecutionSpace>::allocateJacobianDet(jacobian); // TODO: once CellTools uses DeviceType template args, replace <ExecutionSpace> with <DeviceType>, here and elsewhere
       
       // sanity checks on the allocations:
       TEST_EQUALITY(numCells,  jacobian.extent_int(0));
@@ -143,13 +144,13 @@ namespace
       }, actualArea);
       
       PointScalar error = std::abs(actualArea - exactArea);
-      std::cout << "error for p = " << p << ": " << error << std::endl;
+//      std::cout << "error for p = " << p << ": " << error << std::endl;
       
       TEST_COMPARE(error, <, previousError);
     }
   }
 
-  template<typename PointScalar, int spaceDim, typename ExecutionSpace>
+  template<typename PointScalar, int spaceDim, typename DeviceType>
   void testLinearGeometryIsExact(int meshWidth, const double &relTol, const double &absTol,
                                  Teuchos::FancyOStream &out, bool &success)
   {
@@ -178,14 +179,14 @@ namespace
     
     ViewType<PointScalar> projectedNodes("projected nodes", numCells, nodesPerCell, spaceDim);
     
-    using ProjectedGeometry = ProjectedGeometry<spaceDim,PointScalar,ExecutionSpace>;
+    using ProjectedGeometry = ProjectedGeometry<spaceDim,PointScalar,DeviceType>;
     ProjectedGeometry::projectOntoHGRADBasis(projectedNodes, linearBasis, flatCellGeometry, exactGeometry, exactGeometry);
     
     printFunctor3(projectedNodes, out, "projectedNodes");
     testFloatingEquality3(projectedNodes, flatCellGeometry, relTol, absTol, out, success, "projected geometry", "original CellGeometry");
   }
 
-  template<typename PointScalar, int spaceDim, typename ExecutionSpace>
+  template<typename PointScalar, int spaceDim, typename DeviceType>
   void testLinearGeometryIsExact(int meshWidth, int polyOrderForBasis, const double &relTol, const double &absTol,
                                  Teuchos::FancyOStream &out, bool &success)
   {
@@ -202,9 +203,9 @@ namespace
     
     CellGeometry<PointScalar, spaceDim> flatCellGeometry(origin,extent,cellCount);
     
-    using BasisPtr = Teuchos::RCP< Basis<ExecutionSpace,PointScalar,PointScalar> >;
+    using BasisPtr = Teuchos::RCP< Basis<DeviceType,PointScalar,PointScalar> >;
     
-    using BasisFamily = DerivedNodalBasisFamily<ExecutionSpace,PointScalar,PointScalar>;
+    using BasisFamily = DerivedNodalBasisFamily<DeviceType,PointScalar,PointScalar>;
     BasisPtr hgradBasisForProjection = getBasis<BasisFamily>(flatCellGeometry.cellTopology(), FUNCTION_SPACE_HGRAD, polyOrderForBasis);
     
     ProjectedGeometryIdentityMap<PointScalar, spaceDim> exactGeometry;
@@ -217,19 +218,19 @@ namespace
     const int nodesPerCell = hgradBasisForProjection->getCardinality();
     ViewType<PointScalar> projectedNodes("projected nodes", numCells, nodesPerCell, spaceDim);
     
-    using ProjectedGeometry = ProjectedGeometry<spaceDim,PointScalar,ExecutionSpace>;
+    using ProjectedGeometry = ProjectedGeometry<spaceDim,PointScalar,DeviceType>;
     ProjectedGeometry::projectOntoHGRADBasis(projectedNodes, hgradBasisForProjection, flatCellGeometry, exactGeometry, exactGeometry);
     
     auto cellTopo = flatCellGeometry.cellTopology();
     
     // get reference-element points at which we can evaluate the projected basis
     const int numNodesPerFlatCell = flatCellGeometry.numNodesPerCell();
-    ScalarView<PointScalar,ExecutionSpace> refCellNodes("ref cell nodes", numNodesPerFlatCell, spaceDim);
+    ScalarView<PointScalar,DeviceType> refCellNodes("ref cell nodes", numNodesPerFlatCell, spaceDim);
     
     for (int node=0; node<numNodesPerFlatCell; node++)
     {
       auto nodeSubview = Kokkos::subdynrankview(refCellNodes, node, Kokkos::ALL());
-      CellTools<ExecutionSpace>::getReferenceNode(nodeSubview, cellTopo, node);
+      CellTools<DeviceType>::getReferenceNode(nodeSubview, cellTopo, node);
     }
     
     auto hgradValuesAtNodes = hgradBasisForProjection->allocateOutputView(numNodesPerFlatCell);
@@ -237,6 +238,7 @@ namespace
 
     ViewType<PointScalar> evaluatedNodes("projected nodes evaluated on flat cell", numCells, numNodesPerFlatCell, spaceDim);
     
+    using ExecutionSpace = typename DeviceType::execution_space;
     auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numCells,numNodesPerFlatCell});
     Kokkos::parallel_for("evaluate projected nodes", policy,
     KOKKOS_LAMBDA (const int &cellOrdinal, const int &nodeOrdinalInFlatCell) {
@@ -269,17 +271,17 @@ namespace
   TEUCHOS_UNIT_TEST( ProjectedGeometry, CircularGeometryConvergesInP_SingleCell )
   {
     using Scalar = double;
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = typename Kokkos::DefaultExecutionSpace::device_type;
     const int meshWidth = 1;
-    testCircularGeometryProjectionConvergesInP<Scalar, ExecSpace>(meshWidth, out, success);
+    testCircularGeometryProjectionConvergesInP<Scalar, DeviceType>(meshWidth, out, success);
   }
 
   TEUCHOS_UNIT_TEST( ProjectedGeometry, CircularGeometryConvergesInP_MultiCell )
   {
     using Scalar = double;
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = typename Kokkos::DefaultExecutionSpace::device_type;
     const int meshWidth = 4;
-    testCircularGeometryProjectionConvergesInP<Scalar, ExecSpace>(meshWidth, out, success);
+    testCircularGeometryProjectionConvergesInP<Scalar, DeviceType>(meshWidth, out, success);
   }
 
   TEUCHOS_UNIT_TEST( ProjectedGeometry, LinearGeometryIsExact_Line )
@@ -287,19 +289,19 @@ namespace
     // 1D test that linear geometry is exactly recovered by the projection
     using PointScalar = double;
     const int spaceDim = 1;
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = typename Kokkos::DefaultExecutionSpace::device_type;
     
     const int meshWidth = 4;
     
     // these tolerances are fairly tight; we may need to loosen them to pass on all platforms
     const double relTol = 1e-15;
     const double absTol = 1e-15;
-    testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, relTol, absTol, out, success);
+    testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, relTol, absTol, out, success);
     
     // now, test with a higher-order basis (but still linear geometry)
     for (int polyOrder=2; polyOrder<8; polyOrder++)
     {
-      testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, polyOrder, relTol, absTol, out, success);
+      testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, relTol, absTol, out, success);
     }
   }
 
@@ -308,19 +310,19 @@ namespace
     // 2D test that linear geometry is exactly recovered by the projection
     using PointScalar = double;
     const int spaceDim = 2;
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = typename Kokkos::DefaultExecutionSpace::device_type;
     
     const int meshWidth = 4;
     
     // these tolerances are fairly tight; we may need to loosen them to pass on all platforms
     const double relTol = 1e-14;
     const double absTol = 1e-14;
-    testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, relTol, absTol, out, success);
+    testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, relTol, absTol, out, success);
     
     // now, test with a higher-order basis (but still linear geometry)
     for (int polyOrder=2; polyOrder<5; polyOrder++)
     {
-      testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, polyOrder, relTol, absTol, out, success);
+      testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, relTol, absTol, out, success);
     }
   }
 
@@ -329,19 +331,19 @@ namespace
     // 3D test that linear geometry is exactly recovered by the projection
     using PointScalar = double;
     const int spaceDim = 3;
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = typename Kokkos::DefaultExecutionSpace::device_type;
     
     const int meshWidth = 2;
     
     // these tolerances are fairly tight; we may need to loosen them to pass on all platforms
     const double relTol = 1e-14;
     const double absTol = 1e-14;
-    testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, relTol, absTol, out, success);
+    testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, relTol, absTol, out, success);
     
     // now, test with a higher-order basis (but still linear geometry)
     for (int polyOrder=2; polyOrder<4; polyOrder++)
     {
-      testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, polyOrder, relTol, absTol, out, success);
+      testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, relTol, absTol, out, success);
     }
   }
 

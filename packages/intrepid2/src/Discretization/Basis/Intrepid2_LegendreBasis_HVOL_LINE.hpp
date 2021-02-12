@@ -177,19 +177,19 @@ namespace Intrepid2
                Computers & Mathematics with Applications, Volume 70, Issue 4, 2015, Pages 353-458, ISSN 0898-1221.
                https://doi.org/10.1016/j.camwa.2015.04.027.
   */
-  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType = typename Kokkos::DefaultExecutionSpace::device_type,
            typename OutputScalar = double,
            typename PointScalar  = double>
   class LegendreBasis_HVOL_LINE
-  : public Basis<ExecutionSpace,OutputScalar,PointScalar>
+  : public Basis<DeviceType,OutputScalar,PointScalar>
   {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray1DHost = typename Basis<DeviceType,OutputScalar,PointScalar>::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename Basis<DeviceType,OutputScalar,PointScalar>::OrdinalTypeArray2DHost;
     
-    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OutputViewType OutputViewType;
-    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::PointViewType  PointViewType;
-    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::ScalarViewType ScalarViewType;
+    typedef typename Basis<DeviceType,OutputScalar,PointScalar>::OutputViewType OutputViewType;
+    typedef typename Basis<DeviceType,OutputScalar,PointScalar>::PointViewType  PointViewType;
+    typedef typename Basis<DeviceType,OutputScalar,PointScalar>::ScalarViewType ScalarViewType;
   protected:
     int polyOrder_; // the maximum order of the polynomial
   public:
@@ -257,7 +257,7 @@ namespace Intrepid2
     // since the getValues() below only overrides the FEM variant, we specify that
     // we use the base class's getValues(), which implements the FVD variant by throwing an exception.
     // (It's an error to use the FVD variant on this basis.)
-    using Basis<ExecutionSpace,OutputScalar,PointScalar>::getValues;
+    using Basis<DeviceType,OutputScalar,PointScalar>::getValues;
     
     /** \brief  Returns basis name
      
@@ -292,6 +292,7 @@ namespace Intrepid2
     {
       auto numPoints = inputPoints.extent_int(0);
       
+      using ExecutionSpace = typename DeviceType::execution_space;
       using FunctorType = Hierarchical_HVOL_LINE_Functor<ExecutionSpace, OutputScalar, PointScalar, OutputViewType, PointViewType>;
       
       FunctorType functor(outputValues, inputPoints, polyOrder_, operatorType);

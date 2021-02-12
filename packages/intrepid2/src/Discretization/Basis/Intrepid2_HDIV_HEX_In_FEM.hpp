@@ -164,26 +164,33 @@ namespace Intrepid2 {
               cardinality 3(n+1)n^2 and spans a INCOMPLETE polynomial space.
 
   */
-  template<typename ExecSpaceType = void,
+  template<typename Device = void,
            typename outputValueType = double,
            typename pointValueType = double>
   class Basis_HDIV_HEX_In_FEM
-    : public Basis<ExecSpaceType,outputValueType,pointValueType> {
+    : public Basis<Device,outputValueType,pointValueType> {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
+    using BasisSuper = Basis<Device,outputValueType,pointValueType>;
+    
+    using OrdinalTypeArray1DHost = typename BasisSuper::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename BasisSuper::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray3DHost = typename BasisSuper::OrdinalTypeArray3DHost;
+
+    using DeviceType      = typename BasisSuper::DeviceType;
+    using ExecutionSpace  = typename BasisSuper::ExecutionSpace;
+    using OutputValueType = typename BasisSuper::OutputValueType;
+    using PointValueType  = typename BasisSuper::PointValueType;
+
+    using OutputViewType = typename BasisSuper::OutputViewType;
+    using PointViewType  = typename BasisSuper::PointViewType;
+    using ScalarViewType = typename BasisSuper::ScalarViewType;
+    
+    using BasisSuper::getValues;
 
     /** \brief  Constructor.
      */
     Basis_HDIV_HEX_In_FEM(const ordinal_type order,
                           const EPointType   pointType = POINTTYPE_EQUISPACED);
-
-    using OutputViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<ExecSpaceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::ScalarViewType;
-
-    using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
 
     virtual
     void
@@ -199,11 +206,11 @@ namespace Intrepid2 {
 #endif
       constexpr ordinal_type numPtsPerEval = 1;
       Impl::Basis_HDIV_HEX_In_FEM::
-        getValues<ExecSpaceType,numPtsPerEval>( outputValues,
-                                                inputPoints,
-                                                this->vinvLine_,
-                                                this->vinvBubble_,
-                                                operatorType );
+        getValues<ExecutionSpace,numPtsPerEval>( outputValues,
+                                                 inputPoints,
+                                                 this->vinvLine_,
+                                                 this->vinvBubble_,
+                                                 operatorType );
     }
 
     virtual
@@ -262,12 +269,12 @@ namespace Intrepid2 {
         \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
         \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
      */
-    BasisPtr<ExecSpaceType,outputValueType,pointValueType>
+    BasisPtr<DeviceType,outputValueType,pointValueType>
       getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
 
       if(subCellDim == 2) {
         return Teuchos::rcp(new
-            Basis_HGRAD_QUAD_Cn_FEM<ExecSpaceType,outputValueType,pointValueType>
+            Basis_HGRAD_QUAD_Cn_FEM<DeviceType,outputValueType,pointValueType>
             (this->basisDegree_-1,POINTTYPE_GAUSS));
       }
       INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
@@ -276,7 +283,7 @@ namespace Intrepid2 {
   private:
 
     /** \brief inverse of Generalized Vandermonde matrix (isotropic order) */
-    Kokkos::DynRankView<typename ScalarViewType::value_type,ExecSpaceType> vinvLine_, vinvBubble_;
+    Kokkos::DynRankView<typename ScalarViewType::value_type,DeviceType> vinvLine_, vinvBubble_;
   };
 
 }// namespace Intrepid2
