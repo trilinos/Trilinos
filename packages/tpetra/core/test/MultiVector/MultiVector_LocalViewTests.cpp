@@ -57,7 +57,7 @@ namespace {
   //
 
 ////
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, basic, LO, GO, Scalar , Node )
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, HostView, LO, GO, Scalar , Node )
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
@@ -74,7 +74,58 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, basic, LO, GO, Scalar , Node )
   Teuchos::Array<GO> myEntries(nGlobalEntries); 
 
   // Default one-to-one linear block map in Trilinos
+  Teuchos::RCP<const map_t> defaultMap = 
+           rcp(new map_t(nGlobalEntries, 0, comm));
 
+  std::cout << me << " DEFAULT MAP" << std::endl;
+  defaultMap->describe(foo, Teuchos::VERB_EXTREME);
+
+  // Create vector
+  vector_t defaultVec(defaultMap);
+  defaultVec.putScalar(scalar);
+
+<<<<<<< HEAD
+  // Check result; all vector entries should be 0
+  auto data = defaultVec.getLocalViewHost(Tpetra::Access::ReadOnly);
+=======
+  // Check result; all vector entries should be scalar
+  auto data = defaultVec.getLocalViewHost(Tpetra::Access::ReadOnly());
+>>>>>>> test changes
+
+  for (size_t i = 0; i < defaultVec.getLocalLength(); i++) {
+    if (data(i,0) != scalar) { 
+      ierr++;
+      std::cout << "Expected: " << scalar << ", got: "<< data(i, 0) << std::endl;
+    }
+  }
+
+  if (ierr > 0) 
+    std::cout << "TEST FAILED:  HOSTVIEW TEST HAD " << ierr 
+              << " FAILURES ON RANK " << me << std::endl;
+
+  int gerr;
+  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
+
+  TEST_ASSERT(gerr == 0);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeviceView, LO, GO, Scalar , Node )
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  int me = comm->getRank();
+  int np = comm->getSize();
+  int ierr = 0;
+
+  Teuchos::FancyOStream foo(Teuchos::rcp(&std::cout,false));
+
+  using vector_t = Tpetra::Vector<Scalar,LO,GO,Node>;
+  using map_t = Tpetra::Map<LO,GO,Node>;
+
+  const size_t nGlobalEntries = 8 * np;
+  const Scalar scalar = 100. * (me+1);
+  Teuchos::Array<GO> myEntries(nGlobalEntries); 
+
+  // Default one-to-one linear block map in Trilinos
   Teuchos::RCP<const map_t> defaultMap = 
            rcp(new map_t(nGlobalEntries, 0, comm));
 
@@ -86,16 +137,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, basic, LO, GO, Scalar , Node )
   defaultVec.putScalar(scalar);
 
   // Check result; all vector entries should be 0
-  auto data = defaultVec.getLocalViewHost(Tpetra::Access::ReadOnly);
+  auto data = defaultVec.getLocalViewDevice(Tpetra::Access::ReadOnly());
+  auto data_old = defaultVec.getLocalView();
 
-  for (size_t i = 0; i < defaultVec.getLocalLength(); i++) {
-    if (data(i,0) != scalar) { 
-      ierr++;
-      std::cout << "Expected: " << scalar << ", got: "<< data(i, 0) << std::endl;
-    }
+  if (data != data_old) {
+    ierr++;
   }
-    
-
   if (ierr > 0) 
     std::cout << "TEST FAILED:  DEFAULT-TO-DEFAULT TEST HAD " << ierr 
               << " FAILURES ON RANK " << me << std::endl;
@@ -106,14 +153,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, basic, LO, GO, Scalar , Node )
   TEST_ASSERT(gerr == 0);
 }
 
-
-
 //
 // INSTANTIATIONS
 //
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, basic             , LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, HostView, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DeviceView, LO, GO, SCALAR, NODE ) \
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
