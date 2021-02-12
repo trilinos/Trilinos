@@ -766,9 +766,9 @@ blockWiseMultiply (const Scalar& alpha,
   else { // alpha != 0
     const LO blockSize = this->getBlockSize ();
     const impl_scalar_type alphaImpl = static_cast<impl_scalar_type> (alpha);
-    auto X_lcl = X.mv_.template getLocalView<memory_space> (Access::ReadOnly());
+    auto X_lcl = X.mv_.template getLocalView<memory_space> (Access::ReadOnly);
     auto Y_lcl = 
-         this->mv_.template getLocalView<memory_space> (Access::ReadWrite());
+         this->mv_.template getLocalView<memory_space> (Access::ReadWrite);
     auto bwm = Impl::createBlockWiseMultiply (blockSize, alphaImpl, Y_lcl, D, X_lcl);
 
     // Use an explicit RangePolicy with the desired execution space.
@@ -801,8 +801,8 @@ blockJacobiUpdate (const Scalar& alpha,
 
   // auto X_lcl = X.mv_.template getLocalView<memory_space> ();
   auto Y_lcl = 
-       this->mv_.template getLocalView<memory_space> (Access::ReadWrite());
-  auto Z_lcl = Z.mv_.template getLocalView<memory_space> (Access::ReadWrite());
+       this->mv_.template getLocalView<memory_space> (Access::ReadWrite);
+  auto Z_lcl = Z.mv_.template getLocalView<memory_space> (Access::ReadWrite);
 
   if (alpha == STS::zero ()) { // Y := beta * Y
     this->scale (beta);

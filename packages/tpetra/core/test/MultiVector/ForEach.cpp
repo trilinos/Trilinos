@@ -109,7 +109,7 @@ namespace { // (anonymous)
         X_ij = 418.0;
       });
     {
-      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly);
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << std::endl;
         bool ok = true;
@@ -140,7 +140,7 @@ namespace { // (anonymous)
                 X_ij = 777.0;
               });
     {
-      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly);
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << std::endl;
         bool ok = true;
@@ -170,7 +170,7 @@ namespace { // (anonymous)
         X_ij = 666.0;
       });
     {
-      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly);
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << std::endl;
         bool ok = true;
@@ -201,7 +201,7 @@ namespace { // (anonymous)
                 X_ij = 44.0;
               });
     {
-      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly);
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << std::endl;
         bool ok = true;
@@ -232,7 +232,7 @@ namespace { // (anonymous)
         X_ij = 31.0;
       });
     {
-      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly);
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << std::endl;
         bool ok = true;
@@ -262,7 +262,7 @@ namespace { // (anonymous)
         X_ij = 93.0;
       });
     {
-      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly);
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
         out << "Column " << j << std::endl;
         bool ok = true;
@@ -294,7 +294,7 @@ namespace { // (anonymous)
     for_each ("X_i=418 (Vec)", vec,
               KOKKOS_LAMBDA (double& X_i) { X_i = 418.0; });
     {
-      auto X_lcl_2d = vec.getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto X_lcl_2d = vec.getLocalViewHost(Tpetra::Access::ReadOnly);
       auto X_lcl_1d = Kokkos::subview (X_lcl_2d, Kokkos::ALL (), 0);
       bool ok = true;
       for (LO i = 0; i < LO (vec.getLocalLength ()); ++i) {
@@ -321,7 +321,7 @@ namespace { // (anonymous)
     for_each ("X_i=666 (Vec)", Kokkos::DefaultHostExecutionSpace (), vec,
               KOKKOS_LAMBDA (double& X_i) { X_i = 666.0; });
     {
-      auto X_lcl_2d = vec.getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto X_lcl_2d = vec.getLocalViewHost(Tpetra::Access::ReadOnly);
       auto X_lcl_1d = Kokkos::subview (X_lcl_2d, Kokkos::ALL (), 0);
       bool ok = true;
       for (LO i = 0; i < LO (vec.getLocalLength ()); ++i) {

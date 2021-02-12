@@ -2407,7 +2407,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
 
   // Jacobi-specific inner stuff
   auto Dvals = 
-       Dinv.template getLocalView<scalar_memory_space>(Access::ReadOnly());
+       Dinv.template getLocalView<scalar_memory_space>(Access::ReadOnly);
 
   // Teuchos::ArrayView::operator[].
   // The status array will contain the index into colind where this entry was last deposited.
@@ -2744,7 +2744,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
 
   // Jacobi-specific inner stuff
   auto Dvals = 
-       Dinv.template getLocalView<scalar_memory_space>(Access::ReadOnly());
+       Dinv.template getLocalView<scalar_memory_space>(Access::ReadOnly);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse SerialCore - Compare"))));

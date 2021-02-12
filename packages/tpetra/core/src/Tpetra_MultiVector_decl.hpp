@@ -1419,27 +1419,27 @@ namespace Tpetra {
 
     /// \brief Return a read-only, up-to-date view of this MultiVector's local data on host.
     /// This requires that there are no live device-space views.
-    typename dual_view_type::t_host::const_type getLocalViewHost(Tpetra::Access::ReadOnly) const;
+    typename dual_view_type::t_host::const_type getLocalViewHost(Tpetra::Access::ReadOnlyStruct) const;
 
     /// \brief Return a mutable, up-to-date view of this MultiVector's local data on host.
     /// This requires that there are no live device-space views.
-    typename dual_view_type::t_host getLocalViewHost(Tpetra::Access::ReadWrite);
+    typename dual_view_type::t_host getLocalViewHost(Tpetra::Access::ReadWriteStruct);
 
     /// \brief Return a mutable view of this MultiVector's local data on host, assuming all existing data will be overwritten.
     /// This requires that there are no live device-space views.
-    typename dual_view_type::t_host getLocalViewHost(Tpetra::Access::WriteOnly);
+    typename dual_view_type::t_host getLocalViewHost(Tpetra::Access::WriteOnlyStruct);
 
     /// \brief Return a read-only, up-to-date view of this MultiVector's local data on device.
     /// This requires that there are no live host-space views.
-    typename dual_view_type::t_dev::const_type getLocalViewDevice(Tpetra::Access::ReadOnly) const;
+    typename dual_view_type::t_dev::const_type getLocalViewDevice(Tpetra::Access::ReadOnlyStruct) const;
 
     /// \brief Return a mutable, up-to-date view of this MultiVector's local data on device.
     /// This requires that there are no live host-space views.
-    typename dual_view_type::t_dev getLocalViewDevice(Tpetra::Access::ReadWrite);
+    typename dual_view_type::t_dev getLocalViewDevice(Tpetra::Access::ReadWriteStruct);
 
     /// \brief Return a mutable view of this MultiVector's local data on device, assuming all existing data will be overwritten.
     /// This requires that there are no live host-space views.
-    typename dual_view_type::t_dev getLocalViewDevice(Tpetra::Access::WriteOnly);
+    typename dual_view_type::t_dev getLocalViewDevice(Tpetra::Access::WriteOnlyStruct);
 
     //! Clear "modified" flags on both host and device sides.
     void clear_sync_state ();
@@ -1531,7 +1531,7 @@ namespace Tpetra {
     /// \endcode
     template<class TargetDeviceType>
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type::const_type
-    getLocalView (Tpetra::Access::ReadOnly) const
+    getLocalView (Tpetra::Access::ReadOnlyStruct) const
     {
       //This type is only used to see what the DualView::view<TargetDeviceType>() will return.
       //That logic inside DualView is too complicated to replicate here.
@@ -1559,7 +1559,7 @@ namespace Tpetra {
 
     template<class TargetDeviceType>
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
-    getLocalView (Tpetra::Access::ReadWrite)
+    getLocalView (Tpetra::Access::ReadWriteStruct)
     {
       bool returnDevice = true;
       {
@@ -1587,7 +1587,7 @@ namespace Tpetra {
 
     template<class TargetDeviceType>
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
-    getLocalView (Tpetra::Access::WriteOnly)
+    getLocalView (Tpetra::Access::WriteOnlyStruct)
     {
       bool returnDevice = true;
       {
@@ -2587,13 +2587,13 @@ namespace Tpetra {
     if (src.isConstantStride () && dst.isConstantStride ()) {
       if (srcMostUpToDateOnDevice) {
         Details::localDeepCopyConstStride (
-                 dst.getLocalViewDevice (Access::WriteOnly()),
-                 src.getLocalViewDevice (Access::ReadOnly()));
+                 dst.getLocalViewDevice (Access::WriteOnly),
+                 src.getLocalViewDevice (Access::ReadOnly));
       }
       else {
         Details::localDeepCopyConstStride (
-                 dst.getLocalViewDevice (Access::WriteOnly()),
-                 src.getLocalViewHost (Access::ReadOnly()));
+                 dst.getLocalViewDevice (Access::WriteOnly),
+                 src.getLocalViewHost (Access::ReadOnly));
       }
     }
     else {
@@ -2601,16 +2601,16 @@ namespace Tpetra {
       auto srcWhichVecs = getMultiVectorWhichVectors (src);
 
       if (srcMostUpToDateOnDevice) {
-        Details::localDeepCopy (dst.getLocalViewDevice (Access::WriteOnly()),
-                                src.getLocalViewDevice (Access::ReadOnly()),
+        Details::localDeepCopy (dst.getLocalViewDevice (Access::WriteOnly),
+                                src.getLocalViewDevice (Access::ReadOnly),
                                 dst.isConstantStride (),
                                 src.isConstantStride (),
                                 dstWhichVecs,
                                 srcWhichVecs);
       }
       else {
-        Details::localDeepCopy (dst.getLocalViewDevice (Access::WriteOnly()),
-                                src.getLocalViewHost (Access::ReadOnly()),
+        Details::localDeepCopy (dst.getLocalViewDevice (Access::WriteOnly),
+                                src.getLocalViewHost (Access::ReadOnly),
                                 dst.isConstantStride (),
                                 src.isConstantStride (),
                                 dstWhichVecs,

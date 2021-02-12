@@ -97,7 +97,7 @@ namespace { // (anonymous)
 
     bool allInRange = true;
     if (! STS::isComplex) {
-      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadOnly);
 
       for (LO j = 0; j < numVecs; ++j) {
         auto X_lcl_j = Kokkos::subview (X_lcl, Kokkos::ALL (), j);

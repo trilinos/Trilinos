@@ -105,7 +105,7 @@ namespace { // (anonymous)
 
     X.putScalar(ZERO);
     auto X_lcl =
-         X.template getLocalView<cur_memory_space>(Tpetra::Access::ReadWrite());
+         X.template getLocalView<cur_memory_space>(Tpetra::Access::ReadWrite);
     auto Y_lcl = Y.template getLocalView<cur_memory_space> ();
 
 

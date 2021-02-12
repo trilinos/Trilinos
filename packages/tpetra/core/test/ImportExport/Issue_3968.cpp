@@ -116,7 +116,7 @@ namespace { // (anonymous)
   void
   fillSourceVector (vec_type& srcVector)
   {
-    auto X_lcl_2d_h = srcVector.getLocalViewHost(Tpetra::Access::WriteOnly());
+    auto X_lcl_2d_h = srcVector.getLocalViewHost(Tpetra::Access::WriteOnly);
     auto X_lcl_1d_h = Kokkos::subview (X_lcl_2d_h, Kokkos::ALL (), 0);
     const LO lclNumRows = static_cast<LO> (srcVector.getLocalLength ());
 
@@ -158,7 +158,7 @@ namespace { // (anonymous)
     fillSourceVector (srcVector);
     tgtVector.doExport (srcVector, exporter, Tpetra::ABSMAX);
 
-    auto X_lcl_2d_h = tgtVector.getLocalViewHost(Tpetra::Access::ReadOnly());
+    auto X_lcl_2d_h = tgtVector.getLocalViewHost(Tpetra::Access::ReadOnly);
     auto X_lcl_1d_h = Kokkos::subview (X_lcl_2d_h, Kokkos::ALL (), 0);
 
     auto comm = tgtVector.getMap ()->getComm ();

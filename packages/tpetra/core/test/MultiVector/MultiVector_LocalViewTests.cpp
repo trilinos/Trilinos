@@ -86,7 +86,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, basic, LO, GO, Scalar , Node )
   defaultVec.putScalar(scalar);
 
   // Check result; all vector entries should be 0
-  auto data = defaultVec.getLocalViewHost(Tpetra::Access::ReadOnly());
+  auto data = defaultVec.getLocalViewHost(Tpetra::Access::ReadOnly);
 
   for (size_t i = 0; i < defaultVec.getLocalLength(); i++) {
     if (data(i,0) != scalar) { 

@@ -151,8 +151,8 @@ namespace Tpetra {
          ::Tpetra::MultiVector<SC, LO, GO, NT>& output,
          UnaryFunctionType f)
       {
-        auto input_lcl = input.template getLocalView<ExecutionSpace>(Access::ReadOnly());
-        auto output_lcl = output.template getLocalView<ExecutionSpace>(Access::ReadWrite());
+        auto input_lcl = input.template getLocalView<ExecutionSpace>(Access::ReadOnly);
+        auto output_lcl = output.template getLocalView<ExecutionSpace>(Access::ReadWrite);
 
         using functor_type = MultiVectorUnaryTransformLoopBody<
           decltype(input_lcl), decltype(output_lcl), UnaryFunctionType, LO>;
@@ -179,9 +179,9 @@ namespace Tpetra {
       {
         // Generic lambdas need C++14, so we need typedefs here.
 
-        auto input1_lcl = input1.template getLocalView<ExecutionSpace>(Access::ReadOnly());
-        auto input2_lcl = input2.template getLocalView<ExecutionSpace>(Access::ReadOnly());
-        auto output_lcl = output.template getLocalView<ExecutionSpace>(Access::ReadWrite());
+        auto input1_lcl = input1.template getLocalView<ExecutionSpace>(Access::ReadOnly);
+        auto input2_lcl = input2.template getLocalView<ExecutionSpace>(Access::ReadOnly);
+        auto output_lcl = output.template getLocalView<ExecutionSpace>(Access::ReadWrite);
 
         using functor_type = MultiVectorBinaryTransformLoopBody<
           decltype(input1_lcl), decltype(input2_lcl), decltype(output_lcl), BinaryFunctionType, LO>;

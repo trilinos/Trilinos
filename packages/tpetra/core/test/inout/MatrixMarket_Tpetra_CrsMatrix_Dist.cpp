@@ -432,8 +432,8 @@ private:
     if (ierr == 0) {
       y_test->sync_host();
       yout_baseline->sync_host();
-      auto ytestData = y_test->getLocalViewHost(Tpetra::Access::ReadOnly());
-      auto ybaseData = yout_baseline->getLocalViewHost(Tpetra::Access::ReadOnly());
+      auto ytestData = y_test->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto ybaseData = yout_baseline->getLocalViewHost(Tpetra::Access::ReadOnly);
       for (size_t i = 0; i < y_test->getLocalLength(); i++) {
         if (std::abs(ytestData(i,0) - ybaseData(i,0)) > epsilon) ierr++;
       }

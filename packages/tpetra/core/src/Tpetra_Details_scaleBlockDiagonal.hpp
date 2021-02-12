@@ -85,8 +85,8 @@ void inverseScaleBlockDiagonal(MultiVectorType & blockDiagonal, bool doTranspose
 
   // Get Kokkos versions of objects
 
-  auto blockDiag = blockDiagonal.getLocalViewDevice(Tpetra::Access::WriteOnly());
-  auto toScale   = multiVectorToBeScaled.getLocalViewDevice(Tpetra::Access::ReadWrite());
+  auto blockDiag = blockDiagonal.getLocalViewDevice(Tpetra::Access::WriteOnly);
+  auto toScale   = multiVectorToBeScaled.getLocalViewDevice(Tpetra::Access::ReadWrite);
   
   typedef Algo::Level3::Unblocked algo_type;
   Kokkos::parallel_for("scaleBlockDiagonal",range_type(0,numblocks),KOKKOS_LAMBDA(const LO i){

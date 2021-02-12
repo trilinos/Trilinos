@@ -114,7 +114,7 @@ namespace { // (anonymous)
       {
         using local_access_type =
           LocalAccess<multivec_type, dev_mem_space,
-                      Tpetra::Access::ReadOnly>;
+                      Tpetra::Access::ReadOnlyStruct>;
 
         using mv_mlo = GetMasterLocalObject<local_access_type>::
           master_local_object_type;
@@ -125,7 +125,7 @@ namespace { // (anonymous)
         // We print the alias' name in order to avoid "unused typedef"
         // compiler warnings.  It may also help with debugging.
         myOut << "<MultiVector," << TypeNameTraits<dev_mem_space>::name ()
-              << ",ReadOnly> master_local_object_type: "
+              << ",ReadOnlyStruct> master_local_object_type: "
               << TypeNameTraits<mv_mlo>::name () << endl;
 
         using mv_nlo = typename GetNonowningLocalObject<
@@ -134,7 +134,7 @@ namespace { // (anonymous)
                        "GetNonowningLocalObject::nonowning_local_object_type "
                        "for MultiVector must be a Kokkos::View.");
         myOut << "<MultiVector," << TypeNameTraits<dev_mem_space>::name ()
-              << ",ReadOnly> nonowning_local_object_type: "
+              << ",ReadOnlyStruct> nonowning_local_object_type: "
               << TypeNameTraits<mv_nlo>::name () << endl;
       }
     }
@@ -291,7 +291,7 @@ namespace { // (anonymous)
 
       using local_access_type = decltype (lclAccess);
       static_assert(std::is_same<local_access_type::access_mode,
-        Tpetra::Access::WriteOnly>::value, "Incorrect AccessMode");
+        Tpetra::Access::WriteOnlyStruct>::value, "Incorrect AccessMode");
       static_assert
         (std::is_same<local_access_type::global_object_type, vec_type>::value,
          "Incorrect global_object_type");

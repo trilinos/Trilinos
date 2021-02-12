@@ -54,7 +54,7 @@ namespace { // (anonymous)
 // FIXME (mfh 29 Sep 2016) Return type is only correct if LayoutLeft.
 template<class VectorType>
 auto getHostViewOfVector (const VectorType& X) ->
-  decltype (Kokkos::subview (X.template getLocalView<Kokkos::HostSpace> (Tpetra::Access::ReadOnly()), Kokkos::ALL (), 0))
+  decltype (Kokkos::subview (X.template getLocalView<Kokkos::HostSpace> (Tpetra::Access::ReadOnly), Kokkos::ALL (), 0))
 {
   // Don't change the sync status of the input Vector.  If it needs
   // sync to device, then the host version is the current one, so we

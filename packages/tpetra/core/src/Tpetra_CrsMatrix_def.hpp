@@ -3959,7 +3959,7 @@ namespace Tpetra {
 
     if (this->isFillComplete ()) {
       diag.template modify<device_type> ();
-      const auto D_lcl = diag.template getLocalView<device_type> (Access::ReadWrite());
+      const auto D_lcl = diag.template getLocalView<device_type> (Access::ReadWrite);
       // 1-D subview of the first (and only) column of D_lcl.
       const auto D_lcl_1d =
         Kokkos::subview (D_lcl, Kokkos::make_pair (LO (0), myNumRows), 0);
@@ -4005,7 +4005,7 @@ namespace Tpetra {
     // we write a device kernel, it will not need to assume UVM.
 
     diag.template modify<device_type> ();
-    auto D_lcl = diag.template getLocalView<device_type> (Access::ReadWrite());
+    auto D_lcl = diag.template getLocalView<device_type> (Access::ReadWrite);
     const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
     // Get 1-D subview of the first (and only) column of D_lcl.
     auto D_lcl_1d =
@@ -4044,7 +4044,7 @@ namespace Tpetra {
     // For now, we fill the Vector on the host and sync to device.
     // Later, we may write a parallel kernel that works entirely on
     // device.
-    auto lclVecHost = diag.getLocalViewHost(Access::ReadWrite());
+    auto lclVecHost = diag.getLocalViewHost(Access::ReadWrite);
     // 1-D subview of the first (and only) column of lclVecHost.
     auto lclVecHost1d = Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
 
@@ -4118,7 +4118,7 @@ namespace Tpetra {
         using Teuchos::rcp_const_cast;
         rcp_const_cast<vec_type> (xp)->template sync<dev_memory_space> ();
       }
-      auto x_lcl = xp->template getLocalView<dev_memory_space> (Access::ReadOnly());
+      auto x_lcl = xp->template getLocalView<dev_memory_space> (Access::ReadOnly);
       auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
       using ::Tpetra::Details::leftScaleLocalCrsMatrix;
       leftScaleLocalCrsMatrix (lclMatrix_->getLocalMatrix (),
@@ -4177,7 +4177,7 @@ namespace Tpetra {
         using Teuchos::rcp_const_cast;
         rcp_const_cast<vec_type> (xp)->template sync<dev_memory_space> ();
       }
-      auto x_lcl = xp->template getLocalView<dev_memory_space> (Access::ReadOnly());
+      auto x_lcl = xp->template getLocalView<dev_memory_space> (Access::ReadOnly);
       auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
       using ::Tpetra::Details::rightScaleLocalCrsMatrix;
       rightScaleLocalCrsMatrix (lclMatrix_->getLocalMatrix (),
@@ -5385,8 +5385,8 @@ namespace Tpetra {
     using Teuchos::NO_TRANS;
     ProfilingRegion regionLocalApply ("Tpetra::CrsMatrix::localApply");
 
-    auto X_lcl = X.getLocalViewDevice(Access::ReadOnly());
-    auto Y_lcl = Y.getLocalViewDevice(Access::ReadWrite());
+    auto X_lcl = X.getLocalViewDevice(Access::ReadOnly);
+    auto Y_lcl = Y.getLocalViewDevice(Access::ReadWrite);
     // TODO (24 Jul 2019) uncomment later; this line of code wasn't
     // here before, so we need to test it separately before pushing.
     //
@@ -5949,8 +5949,8 @@ namespace Tpetra {
       X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
 
 #ifdef HAVE_TPETRA_DEBUG
-      auto X_colMap_host_view = X_colMap->getLocalViewHost(Access::ReadOnly());
-      auto X_domainMap_host_view = X_domainMap->getLocalViewHost(Access::ReadOnly());
+      auto X_colMap_host_view = X_colMap->getLocalViewHost(Access::ReadOnly);
+      auto X_domainMap_host_view = X_domainMap->getLocalViewHost(Access::ReadOnly);
 
       if (X_colMap->getLocalLength () != 0 && X_domainMap->getLocalLength ()) {
         TEUCHOS_TEST_FOR_EXCEPTION
