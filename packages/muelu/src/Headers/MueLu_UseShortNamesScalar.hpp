@@ -206,6 +206,9 @@ typedef MueLu::PermutingSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Permuti
 #ifdef MUELU_PGPFACTORY_SHORT
 typedef MueLu::PgPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> PgPFactory;
 #endif
+#ifdef MUELU_PLANEDETECTIONFACTORY_SHORT
+typedef MueLu::PlaneDetectionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> PlaneDetectionFactory;
+#endif
 #ifdef MUELU_PREDROPFUNCTIONBASECLASS_SHORT
 typedef MueLu::PreDropFunctionBaseClass<Scalar,LocalOrdinal,GlobalOrdinal,Node> PreDropFunctionBaseClass;
 #endif

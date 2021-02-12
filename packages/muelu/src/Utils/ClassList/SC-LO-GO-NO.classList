@@ -66,6 +66,7 @@ PerfUtils
 PermutationFactory
 PermutingSmoother
 PgPFactory
+PlaneDetectionFactory
 PreDropFunctionBaseClass
 PreDropFunctionConstVal
 ProjectorSmoother
