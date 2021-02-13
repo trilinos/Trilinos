@@ -188,6 +188,17 @@ protected:
   Teuchos::RCP<StepperNewmarkExplicitAFormAppAction<Scalar> > stepperNewmarkExpAppAction_;
 
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperNewmarkExplicitAForm<Scalar> >
+createStepperNewmarkExplicitAForm(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl);
+
+
 } // namespace Tempus
 
 #endif // Tempus_StepperNewmarkExplicitAForm_decl_hpp

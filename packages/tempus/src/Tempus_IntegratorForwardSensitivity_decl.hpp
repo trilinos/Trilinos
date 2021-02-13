@@ -10,6 +10,7 @@
 #define Tempus_IntegratorForwardSensitivity_decl_hpp
 
 // Tempus
+#include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_SensitivityModelEvaluatorBase.hpp"
 #include "Tempus_StepperStaggeredForwardSensitivity.hpp"

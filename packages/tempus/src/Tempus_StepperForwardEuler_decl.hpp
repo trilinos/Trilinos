@@ -127,6 +127,16 @@ protected:
 
 };
 
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperForwardEuler<Scalar> >
+createStepperForwardEuler(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl);
+
+
 } // namespace Tempus
 
 #endif // Tempus_StepperForwardEuler_decl_hpp

@@ -9,18 +9,13 @@
 #ifndef Tempus_StepperIMEX_RK_Partition_impl_hpp
 #define Tempus_StepperIMEX_RK_Partition_impl_hpp
 
-#include "Tempus_config.hpp"
-#include "Tempus_StepperFactory.hpp"
-#include "Tempus_WrapperModelEvaluatorPairPartIMEX_Basic.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
-#include "NOX_Thyra.H"
+
+#include "Tempus_StepperFactory.hpp"
+#include "Tempus_StepperRKButcherTableau.hpp"
 
 
 namespace Tempus {
-
-// Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
-template<class Scalar> class StepperFactory;
 
 
 template<class Scalar>
@@ -249,6 +244,64 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
     << "    number of stages = " << implicitTableau_->numStages() << "\n");
 
   this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void
+StepperIMEX_RK_Partition<Scalar>::
+setTableausPartition(
+  Teuchos::RCP<Teuchos::ParameterList> pl,
+  std::string stepperType)
+{
+  using Teuchos::RCP;
+  if (stepperType == "") {
+    if (pl == Teuchos::null)
+      stepperType = "Partitioned IMEX RK SSP2";
+    else
+      stepperType = pl->get<std::string>("Stepper Type", "Partitioned IMEX RK SSP2");
+  }
+
+  if (stepperType != "General Partitioned IMEX RK") {
+    this->setTableaus(stepperType);
+  } else {
+    if (pl != Teuchos::null) {
+      Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau;
+      Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau;
+      if (pl->isSublist("IMEX-RK Explicit Stepper")) {
+        RCP<Teuchos::ParameterList> explicitPL = Teuchos::rcp(
+            new Teuchos::ParameterList(pl->sublist("IMEX-RK Explicit Stepper")));
+        auto sf = Teuchos::rcp(new StepperFactory<Scalar>());
+        auto stepperTemp = sf->createStepper(explicitPL, Teuchos::null);
+        auto stepperERK = Teuchos::rcp_dynamic_cast<StepperExplicitRK<Scalar> > (
+                        stepperTemp,true);
+        TEUCHOS_TEST_FOR_EXCEPTION(stepperERK == Teuchos::null, std::logic_error,
+            "Error - The explicit component of a general partitioned IMEX RK stepper was not specified as an ExplicitRK stepper");
+        explicitTableau = stepperERK->getTableau();
+      }
+
+      if (pl->isSublist("IMEX-RK Implicit Stepper")) {
+        RCP<Teuchos::ParameterList> implicitPL = Teuchos::rcp(
+            new Teuchos::ParameterList(pl->sublist("IMEX-RK Implicit Stepper")));
+        auto sf = Teuchos::rcp(new StepperFactory<Scalar>());
+        auto stepperTemp = sf->createStepper(implicitPL, Teuchos::null);
+        auto stepperDIRK = Teuchos::rcp_dynamic_cast<StepperDIRK<Scalar> > (
+            stepperTemp,true);
+        TEUCHOS_TEST_FOR_EXCEPTION(stepperDIRK == Teuchos::null, std::logic_error,
+            "Error - The implicit component of a general partitioned IMEX RK stepper was not specified as an DIRK stepper");
+        implicitTableau = stepperDIRK->getTableau();
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        !(explicitTableau!=Teuchos::null && implicitTableau!=Teuchos::null), std::logic_error,
+        "Error - A parameter list was used to setup a general partitioned IMEX RK stepper, but did not "
+        "specify both an explicit and an implicit tableau!\n");
+
+      this->setTableaus(stepperType, explicitTableau, implicitTableau);
+
+      this->setOrder(pl->get<int>("overall order", 1));
+    }
+  }
 }
 
 
@@ -776,6 +829,29 @@ StepperIMEX_RK_Partition<Scalar>::getValidParameters() const
   pl->set("Default Solver", *solverPL);
 
   return pl;
+}
+
+
+// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperIMEX_RK_Partition<Scalar> >
+createStepperIMEX_RK_Partition(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  std::string stepperType,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperIMEX_RK_Partition<Scalar>());
+  stepper->setStepperType(stepperType);
+  stepper->setStepperImplicitValues(pl);
+  stepper->setTableausPartition(pl, stepperType);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
 }
 
 

@@ -10,6 +10,7 @@
 #define Tempus_InterpolatorFactory_hpp
 
 #include "Teuchos_ParameterList.hpp"
+#include "Tempus_config.hpp"
 #include "Tempus_InterpolatorLagrange.hpp"
 
 namespace Tempus {

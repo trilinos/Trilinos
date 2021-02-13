@@ -17,6 +17,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 
 // Tempus
+#include "Tempus_config.hpp"
 #include "Tempus_SolutionState.hpp"
 
 #include <vector>

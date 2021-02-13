@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperSubcyclingAppActionComposite_hpp
 #define Tempus_StepperSubcyclingAppActionComposite_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_StepperSubcyclingAppAction.hpp"
 #include "Tempus_TimeStepControl.hpp"
 #include <vector>

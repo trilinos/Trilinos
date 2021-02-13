@@ -9,11 +9,9 @@
 #ifndef Tempus_IntegratorBasic_impl_hpp
 #define Tempus_IntegratorBasic_impl_hpp
 
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
+#include "Thyra_VectorStdOps.hpp"
+
 #include "Tempus_StepperFactory.hpp"
-#include "Tempus_TimeStepControl.hpp"
-#include <ctime>
 
 
 namespace Tempus {
@@ -97,16 +95,12 @@ void IntegratorBasic<Scalar>::setStepper(
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
-  if (stepper_ == Teuchos::null) {
-    // Construct from Integrator ParameterList
-    RCP<StepperFactory<Scalar> > sf =Teuchos::rcp(new StepperFactory<Scalar>());
-    std::string stepperName = integratorPL_->get<std::string>("Stepper Name");
+  // Construct from Integrator ParameterList
+  RCP<StepperFactory<Scalar> > sf =Teuchos::rcp(new StepperFactory<Scalar>());
+  std::string stepperName = integratorPL_->get<std::string>("Stepper Name");
 
-    RCP<ParameterList> stepperPL = Teuchos::sublist(tempusPL_,stepperName,true);
-    stepper_ = sf->createStepper(stepperPL, models);
-  } else {
-    stepper_->createSubSteppers(models);
-  }
+  RCP<ParameterList> stepperPL = Teuchos::sublist(tempusPL_,stepperName,true);
+  stepper_ = sf->createStepper(stepperPL, models);
 }
 
 

@@ -9,6 +9,7 @@
 #ifndef Tempus_InterpolatorLagrange_decl_hpp
 #define Tempus_InterpolatorLagrange_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_Interpolator.hpp"
 
 namespace Tempus {
