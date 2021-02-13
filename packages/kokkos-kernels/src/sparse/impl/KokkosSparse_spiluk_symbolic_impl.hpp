@@ -97,8 +97,10 @@ void level_sched ( IlukHandle& thandle,
     level_ptr(level_list(i)-1) += 1;
   }
 
-  for ( size_type i = nlevels-1; i > 0; --i ) {
-    level_ptr(i) = level_ptr(i-1);
+  if (nlevels>0) {//note: to avoid wrapping around to the max of size_t when nlevels = 0.
+    for ( size_type i = nlevels-1; i > 0; --i ) {
+      level_ptr(i) = level_ptr(i-1);
+    }
   }
 
   level_ptr(0) = 0;

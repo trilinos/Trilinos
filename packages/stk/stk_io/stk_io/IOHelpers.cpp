@@ -83,7 +83,6 @@
 #include "boost/any.hpp"                             // for any_cast, any
 #include "stk_io/DatabasePurpose.hpp"                // for DatabasePurpose, etc
 #include "stk_io/MeshField.hpp"                      // for MeshField, etc
-#include "stk_io/SidesetUpdater.hpp"
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"               // for FieldBase
@@ -420,7 +419,8 @@ size_t get_entities(const stk::mesh::Part &part,
     stk::mesh::Selector selector = part & own;
     if (subset_selector) selector &= *subset_selector;
 
-    get_selected_entities(selector, bulk.buckets(type), entities);
+    const bool sortById = true;
+    stk::mesh::get_entities(bulk, type, selector, entities, sortById);
     return entities.size();
 }
 
@@ -663,13 +663,6 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
                 continue;
             }
 
-            stk::topology topo = part->topology();
-            if (topo == stk::topology::INVALID_TOPOLOGY) {
-                std::ostringstream msg ;
-                msg << " INTERNAL_ERROR: Part " << part->name() << " has invalid topology";
-                throw std::runtime_error( msg.str() );
-            }
-
             // See if we need to get the list of elements...
             bool elements_needed = false;
             Ioss::NameList names;
@@ -695,8 +688,8 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
 
             std::vector<INT> elem_ids ;
             entity->get_field_data("ids", elem_ids);
-
             size_t element_count = elem_ids.size();
+
             std::vector<stk::mesh::Entity> elements;
             elements.reserve(element_count);
 

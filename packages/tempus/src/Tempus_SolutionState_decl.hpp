@@ -9,17 +9,17 @@
 #ifndef Tempus_SolutionState_decl_hpp
 #define Tempus_SolutionState_decl_hpp
 
-// Teuchos
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
-// Thrya
+
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
-// Tempus
+
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionStateMetaData.hpp"
 #include "Tempus_StepperState.hpp"
 #include "Tempus_PhysicsState.hpp"
+
 
 namespace Tempus {
 

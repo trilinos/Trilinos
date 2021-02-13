@@ -75,7 +75,6 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/memory_util.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <string>                       // for string, basic_string, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc

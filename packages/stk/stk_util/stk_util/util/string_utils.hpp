@@ -35,9 +35,8 @@
 #ifndef stk_util_string_utils_hpp
 #define stk_util_string_utils_hpp
 
-#include <stk_util/stk_config.h>
-#include <string>
-#include <vector>
+#include <string>  // for string
+#include <vector>  // for vector
 
 namespace stk {
 
@@ -53,6 +52,12 @@ std::string tailname(const std::string& filename);
 std::string basename(const std::string& filename);
 
 std::vector<std::string> make_vector_of_strings(const std::string& inputString, char separator, int maxStringLength);
+
+std::string ltrim_string(std::string s);
+std::string rtrim_string(std::string s);
+std::string trim_string(std::string s);
+std::vector<std::string> split_string(const std::string & input, const char separator);
+std::vector<std::string> split_csv_string(const std::string & input);
 
 } // namespace stk
 

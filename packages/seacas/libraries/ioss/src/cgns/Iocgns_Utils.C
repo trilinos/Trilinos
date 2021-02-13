@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -2366,30 +2366,21 @@ void Iocgns::Utils::set_line_decomposition(int cgns_file_ptr, const std::string 
         int sum = (i ? 1 : 0) + (j ? 1 : 0) + (k ? 1 : 0);
         // Only set m_lineOrdinal if only a single ordinal selected.
         if (sum == 1) {
-          int ordinal = -1;
+          unsigned int ordinal = 0;
           if (i) {
-            ordinal = 0;
+            ordinal = Ordinal::I;
           }
           else if (j) {
-            ordinal = 1;
+            ordinal = Ordinal::J;
           }
           else if (k) {
-            ordinal = 2;
+            ordinal = Ordinal::K;
           }
-          if (zone->m_lineOrdinal == -1) {
-            zone->m_lineOrdinal = ordinal;
-            if (verbose && rank == 0) {
-              fmt::print(Ioss::DEBUG(), "Setting line ordinal to {} on {} for surface: {}\n",
-                         zone->m_lineOrdinal, zone->m_name, boconame);
-            }
-          }
-          else if (zone->m_lineOrdinal != ordinal && rank == 0) {
-            fmt::print(
-                Ioss::WARNING(),
-                "CGNS: Zone {0} named {1} has multiple line decomposition ordinal "
-                "specifications. Both ordinal {2} and {3} have been specified.  Keeping {3}\n",
-                izone, zone->m_name, ordinal, zone->m_lineOrdinal);
-          }
+	  zone->m_lineOrdinal |= ordinal;
+	  if (verbose && rank == 0) {
+	    fmt::print(Ioss::DEBUG(), "Setting line ordinal to {} on {} for surface: {}\n",
+		       zone->m_lineOrdinal, zone->m_name, boconame);
+	  }
         }
       }
     }

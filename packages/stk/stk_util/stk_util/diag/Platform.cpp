@@ -34,72 +34,49 @@
 // 
  */
 
-#include <pwd.h>
-#include <unistd.h>
-
-#include <iostream>
-#include <ostream>
-#include <fstream>
-#include <sstream>
-#include <cstring>
-#include <cstdlib>
-#include <stdexcept>
-#include <iomanip>
-#include <algorithm>
-#include <locale>
-
-#include <stk_util/util/FeatureTest.hpp>
-#include <stk_util/environment/Env.hpp>
-#include <stk_util/diag/Platform.hpp>
-#include <stk_util/parallel/MPI.hpp>
-
-#include <stk_util/util/Writer.hpp>
-#include <stk_util/diag/SlibDiagWriter.hpp>
-#include <stk_util/diag/Timer.hpp>
-#include <stk_util/environment/Trace.hpp>
-
-#include <fcntl.h>
+#include "stk_util/diag/Platform.hpp"
+#include "stk_util/diag/SlibDiagWriter.hpp"  // for dendl, slibout
+#include "stk_util/environment/Env.hpp"      // IWYU pragma: keep
+#include "stk_util/util/FeatureTest.hpp"     // for SIERRA_HEAP_INFO, SIERRA_MEMORY_INFO
+#include "stk_util/util/Writer.hpp"          // for operator<<, Writer, dendl
+#include "stk_util/util/Writer_fwd.hpp"      // for LOG_MEMORY
+#include <pwd.h>                             // for getpwuid, passwd
+#include <unistd.h>                          // for access, getdomainname, geteuid, gethostname
+#include <cstdlib>                           // for getenv
+#include <cstring>                           // for strlen
+#include <fstream>                           // for ifstream, basic_istream, operator|, ios_base
 
 #if defined(__GNUC__)
-#ifndef __APPLE__
-#include <malloc.h>
-#else
-#include <sys/malloc.h>
-#endif
-#include <sys/time.h>
-#include <sys/resource.h>
-#if __GNUC__ == 3 || __GNUC__ == 4 || __GNUC__ == 5
-#include <cxxabi.h>
-#endif
+  #include <sys/time.h>
+  #include <sys/resource.h>
 
+  #ifndef __APPLE__
+    #include <malloc.h>                          // for mallinfo
+  #else
+    #include <sys/malloc.h>
+  #endif
+
+  #if __GNUC__ == 3 || __GNUC__ == 4 || __GNUC__ == 5
+    #include <cxxabi.h>
+  #endif
 #elif defined(__PGI)
-#include <malloc.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-
+  #include <malloc.h>
+  #include <sys/time.h>
+  #include <sys/resource.h>
 #endif
 
-#if defined(__JVN)
-#include <sys/param.h>
-#include <sys/utsname.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <sys/wait.h>
-#include <unistd.h>
-
-#elif defined(__IBMC__) || defined(__IBMCPP__)
-#include <sys/utsname.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <netdb.h>
-
+#if defined(__IBMC__) || defined(__IBMCPP__)
+  #include <sys/utsname.h>
+  #include <sys/time.h>
+  #include <sys/resource.h>
+  #include <netdb.h>
 #else
-#include <sys/utsname.h>
-#include <sys/time.h>
-#include <netdb.h>
+  #include <sys/utsname.h>                     // for uname, utsname
+  #include <sys/time.h>
+  #include <netdb.h>
 #endif
 
-#include <stk_util/util/MallocUsed.h>
+#include "stk_util/util/MallocUsed.h"
 
 namespace sierra {
 namespace Env {

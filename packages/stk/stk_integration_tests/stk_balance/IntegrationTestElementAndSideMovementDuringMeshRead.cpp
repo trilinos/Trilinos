@@ -141,7 +141,7 @@ TEST(MeshWithElementAndSide, elementIsMovedDuringReadWhileEnforcingPMR1_sideIsAl
         EXPECT_NO_THROW(read_from_serial_file_and_decompose_using_pmr_tester("ARefLA.e", bulk, "cyclic"));
 
         stk::mesh::EntityVector elements;
-        stk::mesh::get_selected_entities(meta.locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), elements);
+        stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, meta.locally_owned_part(), elements);
         for(stk::mesh::Entity element : elements)
         {
             if(bulk.bucket(element).topology().is_shell())

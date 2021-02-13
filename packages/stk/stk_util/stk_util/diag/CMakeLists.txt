@@ -47,12 +47,11 @@
 SET(HEADERS "")
 SET(SOURCES "")
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
 #
 # Core headers
 #
+
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
 
 FILE(GLOB HEADERS *.hpp *.h)
 #removing references to mpih which is not available in Trilinos

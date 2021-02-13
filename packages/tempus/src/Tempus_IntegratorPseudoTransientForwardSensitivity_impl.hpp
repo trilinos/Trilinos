@@ -9,11 +9,12 @@
 #ifndef Tempus_IntegratorPseudoTransientForwardSensitivity_impl_hpp
 #define Tempus_IntegratorPseudoTransientForwardSensitivity_impl_hpp
 
-#include "Tempus_WrapStaggeredFSAModelEvaluator.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+
+#include "Tempus_WrapStaggeredFSAModelEvaluator.hpp"
+
 
 namespace Tempus {
 
@@ -544,7 +545,7 @@ buildSolutionHistory()
   }
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
 integratorPseudoTransientForwardSensitivity(
@@ -556,7 +557,7 @@ integratorPseudoTransientForwardSensitivity(
   return(integrator);
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
 integratorPseudoTransientForwardSensitivity(
@@ -568,7 +569,7 @@ integratorPseudoTransientForwardSensitivity(
   return(integrator);
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
 integratorPseudoTransientForwardSensitivity()

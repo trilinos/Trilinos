@@ -1643,6 +1643,28 @@ void connect_face_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity face)
                   "Face with id: " << bulk.identifier(face) << " has no valid connectivity to elements");
 }
 
+bool has_upward_connectivity(const stk::mesh::BulkData &bulk, stk::mesh::Entity entity)
+{
+  if(!bulk.is_valid(entity))
+    return false;
+
+  const stk::mesh::EntityRank entityRank = bulk.entity_rank(entity);
+  const stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bulk.mesh_meta_data().entity_rank_count());
+  for(stk::mesh::EntityRank conRank = static_cast<stk::mesh::EntityRank>(entityRank + 1); conRank <= endRank; ++conRank)
+  {
+    unsigned numConnected = bulk.num_connectivity(entity, conRank);
+    if(numConnected > 0)
+      return true;
+  }
+
+  return false;
+}
+
+bool can_destroy_entity(const stk::mesh::BulkData &bulk, stk::mesh::Entity entity)
+{
+  return bulk.is_valid(entity) && !impl::has_upward_connectivity(bulk, entity);
+}
+  
 } // namespace impl
 } // namespace mesh
 } // namespace stk

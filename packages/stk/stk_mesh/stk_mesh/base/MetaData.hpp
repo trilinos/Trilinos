@@ -527,8 +527,10 @@ public:
   void set_surface_to_block_mapping(const stk::mesh::Part* surface, const std::vector<const stk::mesh::Part*> &blocks)
   {
       std::vector<unsigned> partOrdinals(blocks.size());
-      for(size_t i=0;i<blocks.size();++i)
+      for(size_t i=0;i<blocks.size();++i) {
           partOrdinals[i] = blocks[i]->mesh_meta_data_ordinal();
+      }
+      std::sort(partOrdinals.begin(), partOrdinals.end());
       m_surfaceToBlock[surface->mesh_meta_data_ordinal()] = partOrdinals;
   }
 
@@ -547,6 +549,17 @@ public:
       return blockParts;
   }
 
+  size_t count_blocks_touching_surface(const stk::mesh::Part* surface) const
+  {
+      size_t numBlocks = 0;
+      const auto entry = m_surfaceToBlock.find(surface->mesh_meta_data_ordinal());
+      if(entry != m_surfaceToBlock.end())
+      {
+        numBlocks = entry->second.size();
+      }
+      return numBlocks;
+  }
+
   std::vector<const stk::mesh::Part *> get_surfaces_in_surface_to_block_map() const
   {
       std::vector<const stk::mesh::Part *> surfaces;
@@ -555,6 +568,11 @@ public:
       for(; iter != m_surfaceToBlock.end();++iter)
           surfaces.push_back(this->get_parts()[iter->first]);
       return surfaces;
+  }
+
+  size_t count_surfaces_in_surface_to_block_map() const
+  {
+    return m_surfaceToBlock.size();
   }
 
 protected:

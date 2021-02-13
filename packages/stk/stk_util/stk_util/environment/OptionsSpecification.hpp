@@ -34,17 +34,15 @@
 #ifndef STK_UTIL_COMMANDLINE_OPTIONSSPECIFICATION_HPP
 #define STK_UTIL_COMMANDLINE_OPTIONSSPECIFICATION_HPP
 
-#include <stk_util/stk_config.h>
-#include <stk_util/util/string_utils.hpp>
-#include <stk_util/util/ReportHandler.hpp>
-#include <stk_util/command_line/CommandLineParserUtils.hpp>
-#include <ostream>
-#include <iomanip>
-#include <sstream>
-#include <string>
-#include <map>
-#include <vector>
-#include <memory>
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
+#include "stk_util/util/string_utils.hpp"   // for get_substring_after_comma, get_substring_befo...
+#include <cstddef>                          // for size_t
+#include <algorithm>                        // for max
+#include <memory>                           // for shared_ptr, __shared_ptr_access
+#include <sstream>                          // for ostream, ostringstream, istringstream, operat...
+#include <string>                           // for string, operator==, operator<<, basic_string
+#include <type_traits>                      // for is_same
+#include <vector>                           // for vector
 
 namespace stk {
 

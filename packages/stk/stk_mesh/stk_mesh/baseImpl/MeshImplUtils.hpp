@@ -300,6 +300,10 @@ void check_declare_element_side_inputs(const BulkData & mesh,
 void connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge);
 void connect_face_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity face);
 
+bool has_upward_connectivity(const stk::mesh::BulkData &bulk, stk::mesh::Entity entity);
+
+bool can_destroy_entity(const stk::mesh::BulkData &bulk, stk::mesh::Entity entity);
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

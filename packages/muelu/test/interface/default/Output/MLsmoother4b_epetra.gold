@@ -440,13 +440,13 @@ level  rows  nnz    nnz/row  c ratio  procs
   3  371   1111   2.99     2.99         1  
   4  124   370    2.98     2.99         1  
 
-Smoother (level 0) both : MueLu::IfpackSmoother{type = Chebyshev}
+Smoother (level 0) both : "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}
 
-Smoother (level 1) both : MueLu::IfpackSmoother{type = Chebyshev}
+Smoother (level 1) both : "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}
 
-Smoother (level 2) both : MueLu::IfpackSmoother{type = Chebyshev}
+Smoother (level 2) both : "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}
 
-Smoother (level 3) both : MueLu::IfpackSmoother{type = Chebyshev}
+Smoother (level 3) both : "Ifpack Chebyshev polynomial": {Initialized: true, Computed: true, degree: 2, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>}
 
 Smoother (level 4) pre  : MueLu::AmesosSmoother{type = <ignored>}
 Smoother (level 4) post : no smoother

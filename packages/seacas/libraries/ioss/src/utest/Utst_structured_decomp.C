@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -208,7 +208,46 @@ TEST_CASE("single block line", "[single_block_line]")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
   zones.push_back(new Iocgns::StructuredZoneData(1, "40x40x1"));
-  zones.back()->m_lineOrdinal = 0;
+  zones.back()->m_lineOrdinal = Iocgns::Ordinal::I;
+
+  int    proc_count             = 4;
+  double load_balance_tolerance = 1.05;
+
+  check_split_assign(zones, load_balance_tolerance, proc_count);
+  cleanup(zones);
+}
+
+TEST_CASE("single block ij-line", "[single_block_ij_line]")
+{
+  std::vector<Iocgns::StructuredZoneData *> zones;
+  zones.push_back(new Iocgns::StructuredZoneData(1, "40x40x40"));
+  zones.back()->m_lineOrdinal = Iocgns::Ordinal::I | Iocgns::Ordinal::J;
+
+  int    proc_count             = 4;
+  double load_balance_tolerance = 1.05;
+
+  check_split_assign(zones, load_balance_tolerance, proc_count);
+  cleanup(zones);
+}
+
+TEST_CASE("single block jk-line", "[single_block_jk_line]")
+{
+  std::vector<Iocgns::StructuredZoneData *> zones;
+  zones.push_back(new Iocgns::StructuredZoneData(1, "40x40x40"));
+  zones.back()->m_lineOrdinal = Iocgns::Ordinal::J | Iocgns::Ordinal::K;
+
+  int    proc_count             = 4;
+  double load_balance_tolerance = 1.05;
+
+  check_split_assign(zones, load_balance_tolerance, proc_count);
+  cleanup(zones);
+}
+
+TEST_CASE("single block ik-line", "[single_block_ik_line]")
+{
+  std::vector<Iocgns::StructuredZoneData *> zones;
+  zones.push_back(new Iocgns::StructuredZoneData(1, "40x40x40"));
+  zones.back()->m_lineOrdinal = Iocgns::Ordinal::I | Iocgns::Ordinal::K;
 
   int    proc_count             = 4;
   double load_balance_tolerance = 1.05;
@@ -516,33 +555,33 @@ TEST_CASE("grv-large-ordinal", "[grv-large-ordinal]")
 
   int zone = 1;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x32x32"));
-  zones.back()->m_lineOrdinal = 1;
+  zones.back()->m_lineOrdinal = Iocgns::Ordinal::J;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x32x32"));
-  zones.back()->m_lineOrdinal = 1;
+  zones.back()->m_lineOrdinal = Iocgns::Ordinal::J;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x32x32"));
-  zones.back()->m_lineOrdinal = 1;
+  zones.back()->m_lineOrdinal =Iocgns::Ordinal::J;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x16x64"));
-  zones.back()->m_lineOrdinal = 1;
+  zones.back()->m_lineOrdinal =Iocgns::Ordinal::J;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x64x64"));
-  zones.back()->m_lineOrdinal = 1;
+  zones.back()->m_lineOrdinal =Iocgns::Ordinal::J;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x64x64"));
-  zones.back()->m_lineOrdinal = 1;
+  zones.back()->m_lineOrdinal =Iocgns::Ordinal::J;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x64x64"));
-  zones.back()->m_lineOrdinal = 1;
+  zones.back()->m_lineOrdinal =Iocgns::Ordinal::J;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x32x32"));
-  zones.back()->m_lineOrdinal = 1;
+  zones.back()->m_lineOrdinal =Iocgns::Ordinal::J;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x32x32"));
-  zones.back()->m_lineOrdinal = 1;
+  zones.back()->m_lineOrdinal =Iocgns::Ordinal::J;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x32x32"));
-  zones.back()->m_lineOrdinal = 1;
+  zones.back()->m_lineOrdinal =Iocgns::Ordinal::J;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x16x64"));
-  zones.back()->m_lineOrdinal = 1;
+  zones.back()->m_lineOrdinal =Iocgns::Ordinal::J;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x64x64"));
-  zones.back()->m_lineOrdinal = 1;
+  zones.back()->m_lineOrdinal =Iocgns::Ordinal::J;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x64x64"));
-  zones.back()->m_lineOrdinal = 1;
+  zones.back()->m_lineOrdinal =Iocgns::Ordinal::J;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x64x64"));
-  zones.back()->m_lineOrdinal = 1;
+  zones.back()->m_lineOrdinal =Iocgns::Ordinal::J;
 
   for (size_t proc_count = 2; proc_count < 8192; proc_count *= 2) {
     std::string name = "GRV-LARGE_ORDINAL_ProcCount_" + std::to_string(proc_count);
@@ -1000,7 +1039,7 @@ TEST_CASE("bc-257x129x2", "[bc-257x129x2]")
   // Failing for line decomposition on 84 processors; 72 works
   int zone = 1;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "257x129x2"));
-  zones.back()->m_lineOrdinal = 1;
+  zones.back()->m_lineOrdinal = Iocgns::Ordinal::J;
 
   double load_balance_tolerance = 1.2;
 
@@ -1018,7 +1057,7 @@ TEST_CASE("carnes-mesh", "[carnes-mesh]")
   // Failing for decomposition on 64 processors
   int zone = 1;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "66x2x200"));
-  zones.back()->m_lineOrdinal = 1;
+  zones.back()->m_lineOrdinal = Iocgns::Ordinal::J;
 
   double load_balance_tolerance = 1.2;
 
@@ -1036,7 +1075,7 @@ TEST_CASE("carnes-blunt-wedge", "[carnes-blunt-wedge]")
   // Failing for decomposition on 64 processors
   int zone = 1;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "80x74x1"));
-  zones.back()->m_lineOrdinal = 2;
+  zones.back()->m_lineOrdinal = Iocgns::Ordinal::K;
 
   double load_balance_tolerance = 1.2;
 

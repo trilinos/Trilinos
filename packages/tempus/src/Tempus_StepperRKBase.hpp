@@ -11,6 +11,7 @@
 
 #include "Thyra_VectorBase.hpp"
 
+#include "Tempus_config.hpp"
 #include "Tempus_Stepper.hpp"
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperRKAppAction.hpp"
@@ -59,6 +60,124 @@ public:
 
   virtual Teuchos::RCP<StepperRKAppAction<Scalar> > getAppAction() const
     { return stepperRKAppAction_; }
+
+  /// Set StepperRK member data from the ParameterList.
+  virtual void setStepperRKValues(Teuchos::RCP<Teuchos::ParameterList> pl)
+  {
+    if (pl != Teuchos::null) {
+      pl->validateParametersAndSetDefaults(*this->getValidParameters());
+      this->setStepperValues(pl);
+      if (pl->isParameter("Use Embedded"))
+        this->setUseEmbedded(pl->get<bool>("Use Embedded"));
+    }
+  }
+
+  virtual Teuchos::RCP<RKButcherTableau<Scalar> >
+  createTableau(Teuchos::RCP<Teuchos::ParameterList> pl)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(pl == Teuchos::null,std::runtime_error,
+      "Error parsing general tableau.  ParameterList is null.\n");
+
+    Teuchos::RCP<RKButcherTableau<Scalar> > tableau;
+
+    Teuchos::RCP<Teuchos::ParameterList> tableauPL = sublist(pl,"Tableau",true);
+    std::size_t numStages = 0;
+    int order = tableauPL->get<int>("order");
+    Teuchos::SerialDenseMatrix<int,Scalar> A;
+    Teuchos::SerialDenseVector<int,Scalar> b;
+    Teuchos::SerialDenseVector<int,Scalar> c;
+    Teuchos::SerialDenseVector<int,Scalar> bstar;
+
+    // read in the A matrix
+    {
+      std::vector<std::string> A_row_tokens;
+      Tempus::StringTokenizer(A_row_tokens, tableauPL->get<std::string>("A"),
+                              ";",true);
+
+      // this is the only place where numStages is set
+      numStages = A_row_tokens.size();
+
+      // allocate the matrix
+      A.shape(Teuchos::as<int>(numStages),Teuchos::as<int>(numStages));
+
+      // fill the rows
+      for(std::size_t row=0;row<numStages;row++) {
+        // parse the row (tokenize on space)
+        std::vector<std::string> tokens;
+        Tempus::StringTokenizer(tokens,A_row_tokens[row]," ",true);
+
+        std::vector<double> values;
+        Tempus::TokensToDoubles(values,tokens);
+
+        TEUCHOS_TEST_FOR_EXCEPTION(values.size()!=numStages,std::runtime_error,
+          "Error parsing A matrix, wrong number of stages in row "
+          << row << ".\n");
+
+        for(std::size_t col=0;col<numStages;col++)
+          A(row,col) = values[col];
+      }
+    }
+
+    // size b and c vectors
+    b.size(Teuchos::as<int>(numStages));
+    c.size(Teuchos::as<int>(numStages));
+
+    // read in the b vector
+    {
+      std::vector<std::string> tokens;
+      Tempus::StringTokenizer(tokens,tableauPL->get<std::string>("b")," ",true);
+      std::vector<double> values;
+      Tempus::TokensToDoubles(values,tokens);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(values.size()!=numStages,std::runtime_error,
+        "Error parsing b vector, wrong number of stages.\n");
+
+      for(std::size_t i=0;i<numStages;i++)
+        b(i) = values[i];
+    }
+
+    // read in the c vector
+    {
+      std::vector<std::string> tokens;
+      Tempus::StringTokenizer(tokens,tableauPL->get<std::string>("c")," ",true);
+      std::vector<double> values;
+      Tempus::TokensToDoubles(values,tokens);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(values.size()!=numStages,std::runtime_error,
+        "Error parsing c vector, wrong number of stages.\n");
+
+      for(std::size_t i=0;i<numStages;i++)
+        c(i) = values[i];
+    }
+
+    if (tableauPL->isParameter("bstar") and
+        tableauPL->get<std::string>("bstar") != "") {
+      bstar.size(Teuchos::as<int>(numStages));
+      // read in the bstar vector
+      {
+        std::vector<std::string> tokens;
+        Tempus::StringTokenizer(
+          tokens, tableauPL->get<std::string>("bstar"), " ", true);
+        std::vector<double> values;
+        Tempus::TokensToDoubles(values,tokens);
+
+        TEUCHOS_TEST_FOR_EXCEPTION(values.size()!=numStages,std::runtime_error,
+          "Error parsing bstar vector, wrong number of stages.\n"
+          "      Number of RK stages    = " << numStages << "\n"
+          "      Number of bstar values = " << values.size() << "\n");
+
+        for(std::size_t i=0;i<numStages;i++)
+          bstar(i) = values[i];
+      }
+      tableau = rcp(new RKButcherTableau<Scalar>(
+        "From ParameterList",A,b,c,order,order,order,bstar));
+    } else {
+      tableau = rcp(new RKButcherTableau<Scalar>(
+        "From ParameterList",A,b,c,order,order,order));
+    }
+    return tableau;
+  }
+
 
 protected:
 

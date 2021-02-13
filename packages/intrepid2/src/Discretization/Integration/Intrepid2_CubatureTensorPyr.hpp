@@ -56,11 +56,11 @@ namespace Intrepid2 {
   /** \class Intrepid2::CubatureTensorPyr
       \brief Defines tensor-product cubature (integration) rules in Intrepid.
   */
-  template<typename ExecSpaceType = void,
+  template<typename DeviceType = void,
            typename pointValueType = double,
            typename weightValueType = double>
   class CubatureTensorPyr
-    : public CubatureTensor<ExecSpaceType,pointValueType,weightValueType> {
+    : public CubatureTensor<DeviceType,pointValueType,weightValueType> {
   public:
 
     template<typename cubPointViewType,
@@ -92,10 +92,10 @@ namespace Intrepid2 {
     getCubatureImpl( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
                      Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const;
 
-    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::PointViewType  PointViewType;
-    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
+    typedef typename Cubature<DeviceType,pointValueType,weightValueType>::PointViewType  PointViewType;
+    typedef typename Cubature<DeviceType,pointValueType,weightValueType>::weightViewType weightViewType;
 
-    using CubatureTensor<ExecSpaceType,pointValueType,weightValueType>::getCubature;
+    using CubatureTensor<DeviceType,pointValueType,weightValueType>::getCubature;
 
     virtual
     void
@@ -106,14 +106,14 @@ namespace Intrepid2 {
     }
 
     CubatureTensorPyr()
-      : CubatureTensor<ExecSpaceType,pointValueType,weightValueType>() {}
+      : CubatureTensor<DeviceType,pointValueType,weightValueType>() {}
     
     CubatureTensorPyr(const CubatureTensorPyr &b)
-      : CubatureTensor<ExecSpaceType,pointValueType,weightValueType>(b) {}
+      : CubatureTensor<DeviceType,pointValueType,weightValueType>(b) {}
 
     template<typename CubatureLineType>
     CubatureTensorPyr( const CubatureLineType line ) 
-      : CubatureTensor<ExecSpaceType,pointValueType,weightValueType>(line, line, line) {}
+      : CubatureTensor<DeviceType,pointValueType,weightValueType>(line, line, line) {}
 
     template<typename CubatureLineType0,
              typename CubatureLineType1,
@@ -121,7 +121,7 @@ namespace Intrepid2 {
     CubatureTensorPyr( const CubatureLineType0 line0,
                        const CubatureLineType1 line1,
                        const CubatureLineType2 line2 ) 
-      : CubatureTensor<ExecSpaceType,pointValueType,weightValueType>(line0, line1, line2) {}
+      : CubatureTensor<DeviceType,pointValueType,weightValueType>(line0, line1, line2) {}
     
   };
 } 

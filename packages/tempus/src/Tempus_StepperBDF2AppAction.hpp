@@ -11,12 +11,11 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperBDF2.hpp"
 
 
 namespace Tempus {
 
-// Forward Declaration for recursive includes (this AppAction <--> Stepper)
+// Forward Declaration
 template<class Scalar> class StepperBDF2;
 
 /** \brief Application Action for StepperBDF2.
@@ -36,13 +35,13 @@ template<class Scalar> class StepperBDF2;
  *  that the following algorithm in only applied after the first two steps (where
  *  the appAction for the start-up stepper is used)}
  *  \begin{algorithmic}[1]
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}                                          
- *    \State Set old values of $x_{n}$, $x_{n-1}$ to the new values of $x_{n-1}$, $x_{n-2}$ respectively. 
- *    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}                                        
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *    \State Set old values of $x_{n}$, $x_{n-1}$ to the new values of $x_{n-1}$, $x_{n-2}$ respectively.
+ *    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
  *    \State Solve $F( (3 x_{n} - 4 x _{n-1} + x_{n-2})/(3\Delta t),x_{n},t_{n}) for $x_n$
- *    \State {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}                                         
- *    \State $\dot{x}_{n} \leftarrow (3 x_{n} - 4 x_{n-1} + x_{n-2})/(3\Delta t)$                                    
- *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}  
+ *    \State {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
+ *    \State $\dot{x}_{n} \leftarrow (3 x_{n} - 4 x_{n-1} + x_{n-2})/(3\Delta t)$
+ *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
  *  \end{algorithmic}
  *  \f}
  */

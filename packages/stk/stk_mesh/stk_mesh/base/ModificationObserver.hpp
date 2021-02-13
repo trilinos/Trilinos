@@ -105,6 +105,14 @@ public:
     virtual void set_reduced_values(const std::vector<size_t> &reducedValues)
     {
     }
+
+    virtual void relation_destroyed(Entity from, Entity to, ConnectivityOrdinal ordinal)
+    {
+    }
+
+    virtual void relation_declared(Entity from, Entity to, ConnectivityOrdinal ordinal)
+    {
+    }
 };
 
 }

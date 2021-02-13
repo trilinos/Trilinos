@@ -32,10 +32,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stddef.h>                     // for size_t, ptrdiff_t
-#include <stk_util/environment/memory_util.hpp>  // for cpu_time
-#include <gtest/gtest.h>
-#include <iostream>
+#include "gtest/gtest.h"
+#include "stk_util/environment/memory_util.hpp"  // for get_gpu_memory_info
+#include <Kokkos_Core.hpp>
+#include <cstddef>                               // for size_t
 
 #ifdef __CUDACC__
 TEST(GPUMemoryInfo, singleAllocationOnGPU)

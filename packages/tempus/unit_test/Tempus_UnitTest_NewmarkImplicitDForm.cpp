@@ -13,9 +13,12 @@
 
 #include "Thyra_VectorStdOps.hpp"
 
+#include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_UnitTest_Utils.hpp"
+#include "Tempus_TimeStepControl.hpp"
 
+#include "Tempus_StepperNewmarkImplicitDForm.hpp"
 #include "Tempus_StepperNewmarkImplicitDFormModifierBase.hpp"
 #include "Tempus_StepperNewmarkImplicitDFormModifierXBase.hpp"
 #include "Tempus_StepperNewmarkImplicitDFormModifierDefault.hpp"
@@ -253,13 +256,12 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitDForm, AppAction_Modifier)
 
   // Setup the HarmonicOscillatorModel
   RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
-  RCP<Tempus_Test::HarmonicOscillatorModel<double> > model =
+  RCP<const Thyra::ModelEvaluator<double> > model =
     Teuchos::rcp(new Tempus_Test::HarmonicOscillatorModel<double>(hom_pl));
 
   // Setup Stepper for field solve ----------------------------
-  auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
   RCP<Tempus::StepperNewmarkImplicitDForm<double> > stepper =
-    sf->createStepperNewmarkImplicitDForm(model, Teuchos::null);
+    Tempus::createStepperNewmarkImplicitDForm(model, Teuchos::null);
 
   auto modifier = rcp(new StepperNewmarkImplicitDFormModifierTest());
   stepper->setAppAction(modifier);
@@ -270,7 +272,6 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitDForm, AppAction_Modifier)
     Teuchos::rcp(new Tempus::TimeStepControl<double>());
   ParameterList tscPL = pl->sublist("Default Integrator")
                            .sublist("Time Step Control");
-  timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
   timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
   timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
   timeStepControl->setFinalTime(dt);
@@ -346,13 +347,12 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitDForm, AppAction_ModifierX)
 
   // Setup the HarmonicOscillatorModel
   RCP<ParameterList> hom_pl = sublist(pList, "HarmonicOscillatorModel", true);
-  RCP<Tempus_Test::HarmonicOscillatorModel<double> > model =
+  RCP<const Thyra::ModelEvaluator<double> > model =
     Teuchos::rcp(new Tempus_Test::HarmonicOscillatorModel<double>(hom_pl));
 
   // Setup Stepper for field solve ----------------------------
-  auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
   RCP<Tempus::StepperNewmarkImplicitDForm<double> > stepper =
-    sf->createStepperNewmarkImplicitDForm(model, Teuchos::null);
+    Tempus::createStepperNewmarkImplicitDForm(model, Teuchos::null);
 
   auto modifierX = rcp(new StepperNewmarkImplicitDFormModifierXTest());
   stepper->setAppAction(modifierX);
@@ -363,7 +363,6 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitDForm, AppAction_ModifierX)
     Teuchos::rcp(new Tempus::TimeStepControl<double>());
   ParameterList tscPL = pl->sublist("Default Integrator")
                            .sublist("Time Step Control");
-  timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
   timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
   timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
   timeStepControl->setFinalTime(dt);

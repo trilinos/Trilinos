@@ -174,8 +174,8 @@ getCoeffMatrix_HGRAD(OutputViewType &output,
   PointTools::getLattice(refPtsSubcell, subcellTopo, subcellBasis.getDegree(), 1, POINTTYPE_WARPBLEND);
 
   // map the points into the parent, cell accounting for orientation
-  typename CellTools<ExecutionSpace>::subcellParamViewType subcellParam;
-  CellTools<ExecutionSpace>::getSubcellParametrization(subcellParam, subcellDim, cellTopo);
+  typename Intrepid2::CellTools<ExecutionSpace>::subcellParamViewType subcellParam;
+  Intrepid2::CellTools<ExecutionSpace>::getSubcellParametrization(subcellParam, subcellDim, cellTopo);
   PointViewType refPtsCell("refPtsCell", ndofSubcell, cellDim);
   // refPtsCell = F_s (\eta_o (refPtsSubcell))
   mapSubcellCoordsToRefCell(refPtsCell,refPtsSubcell, subcellParam, subcellBaseKey, subcellId, subcellOrt);

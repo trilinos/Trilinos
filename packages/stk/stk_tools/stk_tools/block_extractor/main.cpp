@@ -67,13 +67,13 @@ int main(int argc, const char**argv)
     if (commandLine.is_option_provided("extract-blocks")) {
       csvBlocks = commandLine.get_option_value<std::string>("extract-blocks");
     }
-    std::vector<int> block_ids = stk::tools::get_ids_from_strings(stk::tools::get_csv(csvBlocks));
+    std::vector<int> block_ids = stk::tools::get_ids_from_strings(stk::split_csv_string(csvBlocks));
 
     std::string csvNodesets;
     if (commandLine.is_option_provided("extract-nodesets")) {
       csvNodesets = commandLine.get_option_value<std::string>("extract-nodesets");
     }
-    std::vector<int> nodeset_ids = stk::tools::get_ids_from_strings(stk::tools::get_csv(csvNodesets));
+    std::vector<int> nodeset_ids = stk::tools::get_ids_from_strings(stk::split_csv_string(csvNodesets));
 
     print_ids_to_extract("blocks", block_ids);
 

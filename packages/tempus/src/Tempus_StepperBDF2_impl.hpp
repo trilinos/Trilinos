@@ -9,18 +9,12 @@
 #ifndef Tempus_StepperBDF2_impl_hpp
 #define Tempus_StepperBDF2_impl_hpp
 
-#include "Tempus_config.hpp"
-#include "Tempus_StepperFactory.hpp"
 #include "Tempus_WrapperModelEvaluatorBasic.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "NOX_Thyra.H"
 #include "Tempus_StepperBDF2ModifierDefault.hpp"
+#include "Tempus_StepperFactory.hpp"
 
 
 namespace Tempus {
-
-// Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
-template<class Scalar> class StepperFactory;
 
 
 template<class Scalar>
@@ -35,6 +29,7 @@ StepperBDF2<Scalar>::StepperBDF2()
   this->setAppAction(Teuchos::null);
   this->setDefaultSolver();
   this->setStartUpStepper("DIRK 1 Stage Theta Method");
+
 }
 
 template<class Scalar>
@@ -78,16 +73,14 @@ void StepperBDF2<Scalar>::setModel(
 }
 
 
-/// Set the startup stepper to a default stepper.
 template<class Scalar>
 void StepperBDF2<Scalar>::setStartUpStepper(std::string startupStepperType)
 {
-  using Teuchos::RCP;
-  RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
+  auto sf = Teuchos::rcp(new StepperFactory<Scalar>());
   if (this->wrapperModel_ != Teuchos::null &&
       this->wrapperModel_->getAppModel() != Teuchos::null) {
-  startUpStepper_ =
-    sf->createStepper(startupStepperType, this->wrapperModel_->getAppModel());
+    startUpStepper_ = sf->createStepper(startupStepperType,
+                                        this->wrapperModel_->getAppModel());
   } else {
     startUpStepper_ = sf->createStepper(startupStepperType);
   }
@@ -96,7 +89,6 @@ void StepperBDF2<Scalar>::setStartUpStepper(std::string startupStepperType)
 }
 
 
-/// Set the start up stepper.
 template<class Scalar>
 void StepperBDF2<Scalar>::setStartUpStepper(
      Teuchos::RCP<Stepper<Scalar> > startUpStepper)
@@ -105,8 +97,8 @@ void StepperBDF2<Scalar>::setStartUpStepper(
 
   if (this->wrapperModel_ != Teuchos::null) {
     TEUCHOS_TEST_FOR_EXCEPTION(
-                               this->wrapperModel_->getAppModel() == Teuchos::null, std::logic_error,
-                               "Error - Can not set the startUpStepper to Teuchos::null.\n");
+      this->wrapperModel_->getAppModel() == Teuchos::null, std::logic_error,
+      "Error - Can not set the startUpStepper to Teuchos::null.\n");
 
     if (startUpStepper->getModel() == Teuchos::null  &&
         this->wrapperModel_->getAppModel() != Teuchos::null) {
@@ -334,6 +326,31 @@ StepperBDF2<Scalar>::getValidParameters() const
   pl->set("Default Solver", *solverPL);
 
   return pl;
+}
+
+
+// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperBDF2<Scalar> >
+createStepperBDF2(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperBDF2<Scalar>());
+  stepper->setStepperImplicitValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+
+    std::string startUpStepperName = "DIRK 1 Stage Theta Method";
+    if (pl != Teuchos::null) startUpStepperName =
+      pl->get<std::string>("Start Up Stepper Type", startUpStepperName);
+    stepper->setStartUpStepper(startUpStepperName);
+    stepper->initialize();
+  }
+
+  return stepper;
 }
 
 

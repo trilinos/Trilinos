@@ -37,6 +37,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_sum
+#include "stk_util/parallel/ParallelComm.hpp"
 #include "stk_mesh/base/Bucket.hpp"     // for has_superset, Bucket
 #include "stk_mesh/base/Types.hpp"      // for EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc

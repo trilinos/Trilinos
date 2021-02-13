@@ -334,6 +334,8 @@ namespace MueLu {
     syncTimers_                = list.get("sync timers",                       false);
     numItersH_                 = list.get("refmaxwell: num iters H",           1);
     numIters22_                = list.get("refmaxwell: num iters 22",          1);
+    applyBCsToH_               = list.get("refmaxwell: apply BCs to H",        true);
+    applyBCsTo22_              = list.get("refmaxwell: apply BCs to 22",       true);
 
     if(list.isSublist("refmaxwell: 11list"))
       precList11_     =  list.sublist("refmaxwell: 11list");
@@ -691,13 +693,15 @@ namespace MueLu {
 
         A_nodal_Matrix_ = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
 
-        // Apply boundary conditions to A_nodal
+        if (applyBCsToH_) {
+          // Apply boundary conditions to A_nodal
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-        if (useKokkos_)
-          Utilities_kokkos::ApplyOAZToMatrixRows(A_nodal_Matrix_,BCdomainKokkos_);
-        else
+          if (useKokkos_)
+            Utilities_kokkos::ApplyOAZToMatrixRows(A_nodal_Matrix_,BCdomainKokkos_);
+          else
 #endif
-          Utilities::ApplyOAZToMatrixRows(A_nodal_Matrix_,BCdomain_);
+            Utilities::ApplyOAZToMatrixRows(A_nodal_Matrix_,BCdomain_);
+        }
         dump(*A_nodal_Matrix_, "A_nodal.m");
       }
 
@@ -958,7 +962,7 @@ namespace MueLu {
 
     }
 
-    if(!reuse) {
+    if(!reuse && applyBCsTo22_) {
       GetOStream(Runtime0) << "RefMaxwell::compute(): nuking BC nodes of D0" << std::endl;
 
       D0_Matrix_->resumeFill();
@@ -2341,7 +2345,8 @@ namespace MueLu {
       magnitudeType rowSumTol = parameterList_.get("refmaxwell: row sum drop tol (1,1)",-1.0);
       if (rowSumTol > 0.)
         ApplyRowSumCriterion(*AH_, rowSumTol, AHBCrows);
-      Utilities::ApplyOAZToMatrixRows(AH_, AHBCrows);
+      if (applyBCsToH_)
+        Utilities::ApplyOAZToMatrixRows(AH_, AHBCrows);
     }
 
     if (!AH_.is_null()) {

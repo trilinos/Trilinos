@@ -84,10 +84,10 @@ namespace Intrepid2 {
         \return
         - RCP to cubature with given specifications.
     */
-    template<typename ExecSpaceType,
+    template<typename DeviceType,
              typename pointValueType = double,
              typename weightValueType = double>
-    static Teuchos::RCP<Cubature<ExecSpaceType,pointValueType,weightValueType> > 
+    static Teuchos::RCP<Cubature<DeviceType,pointValueType,weightValueType> > 
     create( unsigned                         topologyKey,
             const std::vector<ordinal_type> &degree,
             const EPolyType                  polytype = POLYTYPE_MAX );
@@ -100,10 +100,10 @@ namespace Intrepid2 {
         \return
         - RCP to cubature with given specifications.
     */
-    template<typename ExecSpaceType,
+    template<typename DeviceType,
              typename pointValueType = double,
              typename weightValueType = double>
-    static Teuchos::RCP<Cubature<ExecSpaceType,pointValueType,weightValueType> >
+    static Teuchos::RCP<Cubature<DeviceType,pointValueType,weightValueType> >
     create( const shards::CellTopology       cellTopology,
             const std::vector<ordinal_type> &degree,
             const EPolyType                  polytype = POLYTYPE_MAX );
@@ -117,10 +117,10 @@ namespace Intrepid2 {
         \return
         - RCP to cubature with given specifications.
     */
-    template<typename ExecSpaceType,
+    template<typename DeviceType,
              typename pointValueType = double,
              typename weightValueType = double>
-    static Teuchos::RCP<Cubature<ExecSpaceType,pointValueType,weightValueType> >
+    static Teuchos::RCP<Cubature<DeviceType,pointValueType,weightValueType> >
     create( unsigned                    topologyKey,
             const ordinal_type          degree,
             const EPolyType             polytype = POLYTYPE_MAX );
@@ -133,10 +133,10 @@ namespace Intrepid2 {
         \return
         - RCP to cubature with given specifications.
     */
-    template<typename ExecSpaceType,
+    template<typename DeviceType,
              typename pointValueType = double,
              typename weightValueType = double>
-    static Teuchos::RCP<Cubature<ExecSpaceType,pointValueType,weightValueType> > 
+    static Teuchos::RCP<Cubature<DeviceType,pointValueType,weightValueType> > 
     create( const shards::CellTopology  cellTopology,
             const ordinal_type          degree,
             const EPolyType             polytype = POLYTYPE_MAX );
@@ -151,7 +151,7 @@ namespace Intrepid2 {
         \return 
         - RCP to cubature with given specifications.
     */
-    // template<typename ExecSpaceType>
+    // template<typename DeviceType>
     // template<typename cellVertexValueType, class ...cellVertexProperties>
     // static Teuchos::RCP<Cubature<ExecSpace> > 
     // create( const shards::CellTopology &cellTopology,

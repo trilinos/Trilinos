@@ -139,7 +139,7 @@ public:
         this->set_entity_key(entity, key);
     }
 
-    void my_internal_change_entity_owner( const std::vector<stk::mesh::EntityProc> & arg_change, bool regenerate_aura = true, stk::mesh::impl::MeshModification::modification_optimization mod_optimization = stk::mesh::impl::MeshModification::MOD_END_SORT )
+    void my_internal_change_entity_owner( const std::vector<stk::mesh::EntityProc> & arg_change, bool regenerate_aura = true, stk::mesh::ModEndOptimizationFlag mod_optimization = stk::mesh::ModEndOptimizationFlag::MOD_END_SORT )
     {
         this->internal_change_entity_owner(arg_change,mod_optimization);
     }
@@ -179,12 +179,12 @@ public:
         BulkData::entity_comm_map_clear_ghosting(key);
     }
 
-    bool my_internal_modification_end_for_change_entity_owner(stk::mesh::impl::MeshModification::modification_optimization opt )
+    bool my_internal_modification_end_for_change_entity_owner(stk::mesh::ModEndOptimizationFlag opt )
     {
         return this->internal_modification_end_for_change_entity_owner(opt);
     }
 
-    bool my_modification_end_for_entity_creation( const std::vector<stk::mesh::EntityRank> & entityRanks, stk::mesh::impl::MeshModification::modification_optimization opt = stk::mesh::impl::MeshModification::MOD_END_SORT)
+    bool my_modification_end_for_entity_creation( const std::vector<stk::mesh::EntityRank> & entityRanks, stk::mesh::ModEndOptimizationFlag opt = stk::mesh::ModEndOptimizationFlag::MOD_END_SORT)
     {
         return this->modification_end_for_entity_creation(entityRanks, opt);
     }

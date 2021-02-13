@@ -48,10 +48,10 @@
 
 namespace Intrepid2 {
 
-  template <typename SpT, typename PT, typename WT>
-  CubatureDirectTetDefault<SpT,PT,WT>::
+  template <typename DT, typename PT, typename WT>
+  CubatureDirectTetDefault<DT,PT,WT>::
   CubatureDirectTetDefault(const ordinal_type degree)
-    : CubatureDirect<SpT>(degree, 3) {
+    : CubatureDirect<DT>(degree, 3) {
 
     INTREPID2_TEST_FOR_EXCEPTION( degree < 0 ||
                                   degree > static_cast<ordinal_type>(Parameters::MaxCubatureDegreeTet), std::out_of_range,
@@ -68,12 +68,12 @@ namespace Intrepid2 {
                                           pointRange.second,
                                           Parameters::MaxDimension);
 
-      auto points = Kokkos::create_mirror_view(typename SpT::memory_space(), points_host);
+      auto points = Kokkos::create_mirror_view(typename DT::memory_space(), points_host);
 
       Kokkos::deep_copy(points,points_host);
 
       // dst
-      this->cubatureData_.points_ = Kokkos::DynRankView<PT,SpT>("CubatureDirectTetDefault::cubatureData_::points_",
+      this->cubatureData_.points_ = Kokkos::DynRankView<PT,DT>("CubatureDirectTetDefault::cubatureData_::points_",
                                                                 pointRange.second,
                                                                 Parameters::MaxDimension);
       // copy
@@ -85,7 +85,7 @@ namespace Intrepid2 {
                                        pointRange.second);
 
       // dst
-      this->cubatureData_.weights_ = Kokkos::DynRankView<WT,SpT>("CubatureDirectTetDefault::cubatureData_::weights_",
+      this->cubatureData_.weights_ = Kokkos::DynRankView<WT,DT>("CubatureDirectTetDefault::cubatureData_::weights_",
                                                                  pointRange.second);
       // copy
       Kokkos::deep_copy(Kokkos::subdynrankview(this->cubatureData_.weights_, Kokkos::ALL()) , Kokkos::subdynrankview(weights, Kokkos::ALL()));
@@ -106,9 +106,9 @@ namespace Intrepid2 {
     This static const member contains templates for default tetrahedron rules.
   */
   
-  template<typename SpT, typename PT, typename WT>
-  const typename CubatureDirect<SpT,PT,WT>::CubatureDataStatic
-  CubatureDirectTetDefault<SpT,PT,WT>::
+  template<typename DT, typename PT, typename WT>
+  const typename CubatureDirect<DT,PT,WT>::CubatureDataStatic
+  CubatureDirectTetDefault<DT,PT,WT>::
   cubatureDataStatic_[cubatureDataStaticSize] = {
     // Cubature templates for the reference tet {(0,0,0), (1,0,0), (0,1,0), (0,0,1)}
     //
