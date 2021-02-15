@@ -1,5 +1,6 @@
 #ifndef BELOS_TPETRA_GMRES_SINGLE_REDUCE_HPP
 #define BELOS_TPETRA_GMRES_SINGLE_REDUCE_HPP
+#define HAVE_TPETRA_DEBUG
 
 #include "Belos_Tpetra_Gmres.hpp"
 #include "Belos_Tpetra_UpdateNewton.hpp"
@@ -168,7 +169,194 @@ private:
     Teuchos::RCP< Teuchos::Time > projTimer = Teuchos::TimeMonitor::getNewCounter ("GmresSingleReduce::LowSynch::project");
 
     int rank = 1;
-    // ----------------------------------------------------------
+
+
+if( n==0 ){
+
+    Teuchos::Range1D index_prev (n, n);
+    Teuchos::Range1D index_next (n+1, n+1);
+
+    MV q = * (Q.subView (index_next));
+    Teuchos::RCP< const MV > Qi = MVT::CloneView(Q, index_prev);
+
+    Teuchos::RCP< dense_matrix_type > tj
+      = Teuchos::rcp (new dense_matrix_type (Teuchos::View, T, 1, 1, 0, 0));
+
+    {
+      Teuchos::TimeMonitor LocalTimer (*dotsTimer);
+      MVT::MvTransMv (one, *Qi, q, *tj);
+    }
+    MVT::MvTimesMatAddMv( -one, *Qi, *tj, one, q );
+
+    H(n,n) = T(n,n);
+
+}
+
+
+if( n>0 ){
+//if( n>=0 ){
+
+    std::vector<SC> dot(1);
+
+    Teuchos::Range1D index_next (n, n+1);
+    MV Qnext = * (Q.subView (index_next));
+
+
+    Teuchos::Range1D index (0, n);
+    Teuchos::RCP< const MV > Qi = MVT::CloneView (Q, index);
+
+
+    Teuchos::RCP< dense_matrix_type > tj
+      = Teuchos::rcp (new dense_matrix_type (Teuchos::View, T, n+1, 2, 0, n));
+
+
+    {
+      Teuchos::TimeMonitor LocalTimer (*dotsTimer);
+      MVT::MvTransMv (one, *Qi, Qnext, *tj);
+    }
+
+    H(n,n-1) = 0.0e+00;
+    for(int i = 0; i < n; i++){
+       H(n,n-1) = H(n,n-1) + T(i,n) * T(i,n);
+    }
+    H(n,n-1) = sqrt( T(n,n) - H(n,n-1) );
+
+    SC tmp=0.0e+00;
+    for(int i = 0; i < n; i++){
+        tmp = tmp + T(i,n) * T(i,n+1);
+    }
+    T(n,n+1) = ( T(n,n+1) - tmp ) / ( H(n,n-1) * H (n,n-1) );
+
+    for(int i = 0; i < n; i++){
+        T(i,n) = T(i,n) / H(n,n-1);
+    }
+
+
+    Teuchos::Range1D index_update (0, n-1);
+    Teuchos::Range1D index_Qj (n, n);
+
+    Teuchos::RCP< const MV > Qupdate = MVT::CloneView (Q, index_update);
+    MV Qj = * (Q.subView (index_Qj));
+    
+    Teuchos::RCP< dense_matrix_type > tp
+      = Teuchos::rcp (new dense_matrix_type (Teuchos::View, T, n, 1, 0, n));
+
+    MVT::MvTimesMatAddMv( -one, *Qupdate, *tp, one, Qj );
+    MVT::MvScale( Qj, ( one / H(n,n-1) ) );
+
+
+    Teuchos::RCP< const MV > QNew = MVT::CloneView (Q, index);    
+    Teuchos::Range1D index_Wj (n+1, n+1);
+
+    MV Wj = * (Q.subView (index_Wj));
+    
+    Teuchos::RCP< dense_matrix_type > tn
+      = Teuchos::rcp (new dense_matrix_type (Teuchos::View, T, n+1, 1, 0, n+1));
+
+    MVT::MvTimesMatAddMv( -(one/H(n,n-1)), *QNew, *tn, one, Wj );
+
+    for(int i = 0; i < n; i++ ){
+        H(i,n-1) = H(i,n-1) + T(i,n);
+    }
+
+    Teuchos::BLAS<LO ,SC> blas;
+
+    Teuchos::RCP< dense_matrix_type > Hnew
+      = Teuchos::rcp ( new dense_matrix_type (Teuchos::View, H, n, n-1, 0, 0));
+
+    blas.TRMV ( Teuchos::UPPER_TRI, 
+      Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG, n,
+      Hnew.values(), Hnew.stride(),
+      tp.values(), 1 );
+      
+      
+    for(int i = 0; i < n; i++ ){
+        H(i,n) = T(i,n+1) - ( T(i,n) / H(n,n-1) );
+    }
+      
+      
+      
+      
+      
+}
+
+
+
+
+/*
+/// CGS2
+if( n==0 ){
+    
+    std::vector<SC> dot(1);
+
+    Teuchos::Range1D index_prev (0, 0);
+    Teuchos::Range1D index_next (1, 1);
+
+    MV q = * (Q.subView (index_next));
+    Teuchos::RCP< const MV > Qi = MVT::CloneView(Q, index_prev);
+
+    Teuchos::RCP< dense_matrix_type > tj
+      = Teuchos::rcp (new dense_matrix_type (Teuchos::View, T, n+1, 1, 0, n));
+
+    {
+      Teuchos::TimeMonitor LocalTimer (*dotsTimer);
+      MVT::MvTransMv (one, *Qi, q, *tj);
+    }
+    MVT::MvTimesMatAddMv( -one, *Qi, *tj, one, q );  
+
+    H(0,0) = T(0,0);
+    MVT::MvDot( q, q, dot );
+    H(1,0) = sqrt( dot[0] );
+    MVT::MvScale( q, ( one / H(1,0) ) );
+
+}
+
+
+if( n>0 ){
+
+    std::vector<SC> dot(1);
+
+    Teuchos::Range1D index_next (n+1, n+1);
+    MV Qnext = * (Q.subView (index_next));
+
+    Teuchos::Range1D index (0, n);
+    Teuchos::RCP< const MV > Qi = MVT::CloneView (Q, index);
+
+    Teuchos::RCP< dense_matrix_type > tj
+      = Teuchos::rcp (new dense_matrix_type (Teuchos::View, T, n+1, 1, 0, n));
+
+    {
+      Teuchos::TimeMonitor LocalTimer (*dotsTimer);
+      MVT::MvTransMv (one, *Qi, Qnext, *tj);
+    }
+    MVT::MvTimesMatAddMv( -one, *Qi, *tj, one, Qnext );  
+
+    for(int i = 0; i < n+1; i++){
+      H(i,n) = T(i,n);
+    }
+
+    {
+      Teuchos::TimeMonitor LocalTimer (*dotsTimer);
+      MVT::MvTransMv (one, *Qi, Qnext, *tj);
+    }
+    MVT::MvTimesMatAddMv( -one, *Qi, *tj, one, Qnext );  
+
+    for(int i = 0; i < n+1; i++){
+      H(i,n) += T(i,n);
+    }
+
+    MVT::MvDot( Qnext, Qnext, dot );    
+    H(n+1,n) = sqrt( dot[0] );
+    MVT::MvScale( Qnext, ( one / H(n+1,n) ) );
+
+}
+
+
+
+
+////// ICHI's MGS and CGS2 1-synch
+*/
+/*    // ----------------------------------------------------------
     // dot-product for single-reduce orthogonalization
     // ----------------------------------------------------------
     Teuchos::Range1D index_next (n, n+1);
@@ -326,6 +514,8 @@ private:
       MVT::MvScale (Qnew, one / H (n+1, n)); // normalize
       rank = 1;
     }
+
+*/
     /*printf( " T = [\n" );
     for (int i = 0; i <= n; i++) {
       for (int j = 0; j <= n; j++) {
@@ -343,6 +533,33 @@ private:
     }
     printf( "];\n" );*/
 
+//    printf("\n %3.2d \n",n);
+
+/*      if(n>1){  
+      Teuchos::Range1D index_prev(0, n-2);
+      const MV QQ = * (Q.subView(index_prev));
+
+      real_type orth;
+      Teuchos::RCP< dense_matrix_type > orth_check = Teuchos::rcp (new dense_matrix_type (n-1,n-1,true));
+      orth_check->putScalar();
+      MVT::MvTransMv( (+1.0e+00), QQ, QQ, *orth_check );
+      //for(int i=0;i<n-1;i++){(*orth_check)(i,i) =  1.0e+00 - (*orth_check)(i,i);}
+      orth = orth_check->normFrobenius();
+      for(int i=0;i<n-1;i++){printf("%3.2e, ",(*orth_check)(i,i));}
+      printf("  orth check --> %3.2e\n",orth);
+
+      Teuchos::RCP<Tpetra::Map<>> map;// = getMap(Q);
+      //Teuchos::RCP<MV> repres_check = rcp( new MV(m,n) );
+
+      //MVT::MvTimesMatAddMv( (1.0e+00), QQ, H, (0.0e+00), *repres_check );
+      //MVT::MvAddMv( (1.0e+00), *A, (-1.0e+00), *repres_check, *Q );
+      //MVT::MvNorm(QQ,dot,Belos::TwoNorm);
+      //for(i=0;i<n;i++){ dot[i] = dot[i] * dot[i]; if(i!=0){ dot[0] += dot[i]; } } 
+      //repres = sqrt(dot[0]);
+      //printf("repres check --> %3.2e\n",repres);
+
+      }
+*/
     return rank;
   }
 
@@ -603,6 +820,7 @@ private:
         output.numIters++; 
 
         // Orthogonalization
+
         projectAndNormalizeSingleReduce (outPtr, iter, input, Q, H, T);
 
         // Convergence check
