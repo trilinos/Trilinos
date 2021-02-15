@@ -156,7 +156,7 @@ TEUCHOS_UNIT_TEST(TimeStepControlStrategyIntegralController, setNextTimeStep)
 
   // Setup the SolutionHistory --------------------------------
   auto model = rcp(new Tempus_Test::DahlquistTestModel<double>());
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =model->getNominalValues();
+  auto inArgsIC = model->getNominalValues();
   auto icSolution = rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX<double>(icSolution);
   auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());

@@ -62,6 +62,7 @@ template<class Scalar>
 StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm()
   : gammaDefault_(Scalar(0.5)), gamma_(Scalar(0.5))
 {
+  this->setStepperName(        "Newmark Explicit a-Form");
   this->setStepperType(        "Newmark Explicit a-Form");
   this->setUseFSAL(            true);
   this->setICConsistency(      "Consistent");
@@ -79,6 +80,7 @@ StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm(
   const Teuchos::RCP<StepperNewmarkExplicitAFormAppAction<Scalar> >& stepperAppAction)
   : gammaDefault_(Scalar(0.5)), gamma_(Scalar(0.5))
 {
+  this->setStepperName(        "Newmark Explicit a-Form");
   this->setStepperType(        "Newmark Explicit a-Form");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
@@ -367,13 +369,10 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperNewmarkExplicitAForm<Scalar>::getValidParameters() const
 {
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>("Use FSAL", true);
-  pl->set<std::string>("Initial Condition Consistency", "Consistent");
+  auto pl = this->getValidParametersBasic();
   pl->sublist("Newmark Explicit Parameters", false, "");
   pl->sublist("Newmark Explicit Parameters", false, "").set("Gamma",
-               0.5, "Newmark Explicit parameter");
+               gamma_, "Newmark Explicit parameter");
   return pl;
 }
 

@@ -196,9 +196,6 @@ public:
 
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
 
-    void getValidParametersBasicDIRK(
-      Teuchos::RCP<Teuchos::ParameterList> pl) const;
-
     virtual std::string getDescription() const = 0;
   //@}
 
@@ -214,7 +211,9 @@ public:
   /// Return beta  = d(x)/dx.
   virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
 
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+
+  Teuchos::RCP<Teuchos::ParameterList> getValidParametersBasicDIRK() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{

@@ -245,6 +245,7 @@ StepperHHTAlpha<Scalar>::StepperHHTAlpha() :
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
 
+  this->setStepperName(        "HHT-Alpha");
   this->setStepperType(        "HHT-Alpha");
   this->setUseFSAL(            false);
   this->setICConsistency(      "None");
@@ -273,6 +274,7 @@ StepperHHTAlpha<Scalar>::StepperHHTAlpha(
   const Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> >& stepperHHTAlphaAppAction)
   : out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
+  this->setStepperName(        "HHT-Alpha");
   this->setStepperType(        "HHT-Alpha");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
@@ -541,17 +543,15 @@ StepperHHTAlpha<Scalar>::getValidParameters() const
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<std::string>("Scheme Name", "Newmark Beta Average Acceleration");
-  pl->set<double>     ("Beta",    0.25);
-  pl->set<double>     ("Gamma",   0.5 );
-  pl->set<double>     ("Alpha_f", 0.0 );
-  pl->set<double>     ("Alpha_m", 0.0 );
-  pl->set<std::string>("Solver Name", "Default Solver");
-  pl->set<bool>       ("Zero Initial Guess", false);
-  Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
-  pl->set("Default Solver", *solverPL);
+  auto pl = this->getValidParametersBasicImplicit();
+
+  auto hhtalphaPL = Teuchos::parameterList("HHT-Alpha Parameters");
+  hhtalphaPL->set<std::string>("Scheme Name", schemeName_);
+  hhtalphaPL->set<double>     ("Beta",    beta_);
+  hhtalphaPL->set<double>     ("Gamma",   gamma_ );
+  hhtalphaPL->set<double>     ("Alpha_f", alpha_f_ );
+  hhtalphaPL->set<double>     ("Alpha_m", alpha_m_ );
+  pl->set("HHT-Alpha Parameters", *hhtalphaPL);
 
   return pl;
 }

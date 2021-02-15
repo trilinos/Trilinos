@@ -164,20 +164,19 @@ public:
   std::string testType;
 };
 
-  TEUCHOS_UNIT_TEST(BDF2, AppAction_Modifier)
-  {
-    auto model = rcp(new Tempus_Test::SinCosModel<double>());
+TEUCHOS_UNIT_TEST(BDF2, AppAction_Modifier)
+{
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
 
-    // Setup Stepper for field solve ----------------------------
-    auto stepper = rcp(new Tempus::StepperBDF2<double>());
-    stepper->setModel(model);
-    auto modifier = rcp(new StepperBDF2ModifierTest());
-    stepper->setAppAction(modifier);
-    stepper->initialize();
+  // Setup Stepper for field solve ----------------------------
+  auto stepper = rcp(new Tempus::StepperBDF2<double>());
+  stepper->setModel(model);
+  auto modifier = rcp(new StepperBDF2ModifierTest());
+  stepper->setAppAction(modifier);
+  stepper->initialize();
 
-    // Setup initial condition SolutionState --------------------
-    Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-      stepper->getModel()->getNominalValues();
+  // Setup initial condition SolutionState --------------------
+  auto inArgsIC = model->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);
@@ -304,8 +303,7 @@ TEUCHOS_UNIT_TEST(BDF2, AppAction_Observer)
   stepper->initialize();
 
   // Setup initial condition SolutionState --------------------
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
+  auto inArgsIC = model->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);
@@ -428,8 +426,7 @@ TEUCHOS_UNIT_TEST(BDF2, AppAction_ModifierX)
   stepper->initialize();
 
   // Setup initial condition SolutionState --------------------
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
+  auto inArgsIC = model->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);

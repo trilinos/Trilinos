@@ -49,6 +49,7 @@ public:
   */
   StepperERK_ForwardEuler()
   {
+    this->setStepperName("RK Forward Euler");
     this->setStepperType("RK Forward Euler");
     this->setupTableau();
     this->setupDefault();
@@ -65,6 +66,7 @@ public:
     bool useEmbedded,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("RK Forward Euler");
     this->setStepperType("RK Forward Euler");
     this->setupTableau();
     this->setup(appModel, useFSAL, ICConsistency,
@@ -153,6 +155,7 @@ public:
   */
   StepperERK_4Stage4thOrder()
   {
+    this->setStepperName("RK Explicit 4 Stage");
     this->setStepperType("RK Explicit 4 Stage");
     this->setupTableau();
     this->setupDefault();
@@ -169,6 +172,7 @@ public:
     bool useEmbedded,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("RK Explicit 4 Stage");
     this->setStepperType("RK Explicit 4 Stage");
     this->setupTableau();
     this->setup(appModel, useFSAL, ICConsistency,
@@ -281,6 +285,7 @@ public:
   */
   StepperERK_BogackiShampine32()
   {
+    this->setStepperName("Bogacki-Shampine 3(2) Pair");
     this->setStepperType("Bogacki-Shampine 3(2) Pair");
     this->setupTableau();
     this->setupDefault();
@@ -297,6 +302,7 @@ public:
     bool useEmbedded,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("Bogacki-Shampine 3(2) Pair");
     this->setStepperType("Bogacki-Shampine 3(2) Pair");
     this->setupTableau();
     this->setup(appModel, useFSAL, ICConsistency,
@@ -424,6 +430,7 @@ public:
   */
   StepperERK_Merson45()
   {
+    this->setStepperName("Merson 4(5) Pair");
     this->setStepperType("Merson 4(5) Pair");
     this->setupTableau();
     this->setupDefault();
@@ -440,6 +447,7 @@ public:
     bool useEmbedded,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("Merson 4(5) Pair");
     this->setStepperType("Merson 4(5) Pair");
     this->setupTableau();
     this->setup(appModel, useFSAL, ICConsistency,
@@ -568,6 +576,7 @@ public:
 
   StepperERK_3_8Rule()
   {
+    this->setStepperName("RK Explicit 3/8 Rule");
     this->setStepperType("RK Explicit 3/8 Rule");
     this->setupTableau();
     this->setupDefault();
@@ -584,6 +593,7 @@ public:
     bool useEmbedded,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("RK Explicit 3/8 Rule");
     this->setStepperType("RK Explicit 3/8 Rule");
     this->setupTableau();
     this->setup(appModel, useFSAL, ICConsistency,
@@ -699,6 +709,7 @@ public:
   */
   StepperERK_4Stage3rdOrderRunge()
   {
+    this->setStepperName("RK Explicit 4 Stage 3rd order by Runge");
     this->setStepperType("RK Explicit 4 Stage 3rd order by Runge");
     this->setupTableau();
     this->setupDefault();
@@ -715,6 +726,7 @@ public:
     bool useEmbedded,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("RK Explicit 4 Stage 3rd order by Runge");
     this->setStepperType("RK Explicit 4 Stage 3rd order by Runge");
     this->setupTableau();
     this->setup(appModel, useFSAL, ICConsistency,
@@ -825,6 +837,7 @@ public:
   */
   StepperERK_5Stage3rdOrderKandG()
   {
+    this->setStepperName("RK Explicit 5 Stage 3rd order by Kinnmark and Gray");
     this->setStepperType("RK Explicit 5 Stage 3rd order by Kinnmark and Gray");
     this->setupTableau();
     this->setupDefault();
@@ -841,6 +854,7 @@ public:
     bool useEmbedded,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("RK Explicit 5 Stage 3rd order by Kinnmark and Gray");
     this->setStepperType("RK Explicit 5 Stage 3rd order by Kinnmark and Gray");
     this->setupTableau();
     this->setup(appModel, useFSAL, ICConsistency,
@@ -951,6 +965,7 @@ public:
   */
   StepperERK_3Stage3rdOrder()
   {
+    this->setStepperName("RK Explicit 3 Stage 3rd order");
     this->setStepperType("RK Explicit 3 Stage 3rd order");
     this->setupTableau();
     this->setupDefault();
@@ -967,6 +982,7 @@ public:
     bool useEmbedded,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("RK Explicit 3 Stage 3rd order");
     this->setStepperType("RK Explicit 3 Stage 3rd order");
     this->setupTableau();
     this->setup(appModel, useFSAL, ICConsistency,
@@ -1080,6 +1096,7 @@ public:
   */
   StepperERK_3Stage3rdOrderTVD()
   {
+    this->setStepperName("RK Explicit 3 Stage 3rd order TVD");
     this->setStepperType("RK Explicit 3 Stage 3rd order TVD");
     this->setupTableau();
     this->setupDefault();
@@ -1096,6 +1113,7 @@ public:
     bool useEmbedded,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("RK Explicit 3 Stage 3rd order TVD");
     this->setStepperType("RK Explicit 3 Stage 3rd order TVD");
     this->setupTableau();
     this->setup(appModel, useFSAL, ICConsistency,
@@ -1222,6 +1240,7 @@ public:
   */
   StepperERK_3Stage3rdOrderHeun()
   {
+    this->setStepperName("RK Explicit 3 Stage 3rd order by Heun");
     this->setStepperType("RK Explicit 3 Stage 3rd order by Heun");
     this->setupTableau();
     this->setupDefault();
@@ -1238,6 +1257,7 @@ public:
     bool useEmbedded,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("RK Explicit 3 Stage 3rd order by Heun");
     this->setStepperType("RK Explicit 3 Stage 3rd order by Heun");
     this->setupTableau();
     this->setup(appModel, useFSAL, ICConsistency,
@@ -1347,6 +1367,7 @@ public:
   */
   StepperERK_Midpoint()
   {
+    this->setStepperName("RK Explicit Midpoint");
     this->setStepperType("RK Explicit Midpoint");
     this->setupTableau();
     this->setupDefault();
@@ -1363,6 +1384,7 @@ public:
     bool useEmbedded,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("RK Explicit Midpoint");
     this->setStepperType("RK Explicit Midpoint");
     this->setupTableau();
     this->setup(appModel, useFSAL, ICConsistency,
@@ -1463,6 +1485,7 @@ public:
   */
   StepperERK_Ralston()
   {
+    this->setStepperName("RK Explicit Ralston");
     this->setStepperType("RK Explicit Ralston");
     this->setupTableau();
     this->setupDefault();
@@ -1479,6 +1502,7 @@ public:
     bool useEmbedded,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("RK Explicit Ralston");
     this->setStepperType("RK Explicit Ralston");
     this->setupTableau();
     this->setup(appModel, useFSAL, ICConsistency,
@@ -1582,6 +1606,7 @@ public:
   */
   StepperERK_Trapezoidal()
   {
+    this->setStepperName("RK Explicit Trapezoidal");
     this->setStepperType("RK Explicit Trapezoidal");
     this->setupTableau();
     this->setupDefault();
@@ -1598,6 +1623,7 @@ public:
     bool useEmbedded,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("RK Explicit Trapezoidal");
     this->setStepperType("RK Explicit Trapezoidal");
     this->setupTableau();
     this->setup(appModel, useFSAL, ICConsistency,
@@ -1704,6 +1730,7 @@ class StepperERK_SSPERK54 :
   public:
   StepperERK_SSPERK54()
   {
+    this->setStepperName("SSPERK54");
     this->setStepperType("SSPERK54");
     this->setupTableau();
     this->setupDefault();
@@ -1720,6 +1747,7 @@ class StepperERK_SSPERK54 :
     bool useEmbedded,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("SSPERK54");
     this->setStepperType("SSPERK54");
     this->setupTableau();
     this->setup(appModel, useFSAL, ICConsistency,
@@ -1856,6 +1884,7 @@ class StepperERK_General :
 public:
   StepperERK_General()
   {
+    this->setStepperName("General ERK");
     this->setStepperType("General ERK");
     this->setupTableau();
     this->setupDefault();
@@ -1879,6 +1908,7 @@ public:
     const Teuchos::SerialDenseVector<int,Scalar>& bstar,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction=Teuchos::null)
   {
+    this->setStepperName("General ERK");
     this->setStepperType("General ERK");
     this->setTableau(A,b,c,order,orderMin,orderMax,bstar);
 
@@ -1946,20 +1976,57 @@ public:
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicERK(pl);
-    pl->set<std::string>("Initial Condition Consistency",
-                         this->getDefaultICConsistency());
+    auto pl = this->getValidParametersBasicERK();
 
     // Tableau ParameterList
+    Teuchos::SerialDenseMatrix<int,Scalar> A = this->tableau_->A();
+    Teuchos::SerialDenseVector<int,Scalar> b = this->tableau_->b();
+    Teuchos::SerialDenseVector<int,Scalar> c = this->tableau_->c();
+    Teuchos::SerialDenseVector<int,Scalar> bstar = this->tableau_->bstar();
+
     Teuchos::RCP<Teuchos::ParameterList> tableauPL = Teuchos::parameterList();
-    tableauPL->set<std::string>("A",
-     "0.0 0.0 0.0 0.0; 0.5 0.0 0.0 0.0; 0.0 0.5 0.0 0.0; 0.0 0.0 1.0 0.0");
-    tableauPL->set<std::string>("b",
-     "0.166666666666667 0.333333333333333 0.333333333333333 0.166666666666667");
-    tableauPL->set<std::string>("c", "0.0 0.5 0.5 1.0");
-    tableauPL->set<int>("order", 4);
-    tableauPL->set<std::string>("bstar", "");
+
+    std::ostringstream Astream;
+    Astream.precision(15);
+    for(int i = 0; i < A.numRows(); i++) {
+      for(int j = 0; j < A.numCols()-1; j++) {
+        Astream << A(i,j) << " ";
+      }
+      Astream << A(i,A.numCols()-1);
+      if ( i != A.numRows()-1 ) Astream << "; ";
+    }
+    tableauPL->set<std::string>("A", Astream.str());
+
+    std::ostringstream bstream;
+    bstream.precision(15);
+    for(int i = 0; i < b.length()-1; i++) {
+        bstream << b(i) << " ";
+    }
+    bstream << b(b.length()-1);
+    tableauPL->set<std::string>("b", bstream.str());
+
+    std::ostringstream cstream;
+    cstream.precision(15);
+    for(int i = 0; i < c.length()-1; i++) {
+        cstream << c(i) << " ";
+    }
+    cstream << c(c.length()-1);
+    tableauPL->set<std::string>("c", cstream.str());
+
+    tableauPL->set<int>("order", this->tableau_->order());
+
+    if ( bstar.length() == 0 ) {
+      tableauPL->set("bstar", "");
+    } else {
+      std::ostringstream bstarstream;
+      bstarstream.precision(15);
+      for(int i = 0; i < bstar.length()-1; i++) {
+          bstarstream << bstar(i) << " ";
+      }
+      bstarstream << bstar(bstar.length()-1);
+      tableauPL->set<std::string>("bstar", bstarstream.str());
+    }
+
     pl->set("Tableau", *tableauPL);
 
     return pl;
@@ -2025,6 +2092,7 @@ public:
   */
   StepperDIRK_BackwardEuler()
   {
+    this->setStepperName("RK Backward Euler");
     this->setStepperType("RK Backward Euler");
     this->setupTableau();
     this->setupDefault();
@@ -2043,6 +2111,7 @@ public:
     bool zeroInitialGuess,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("RK Backward Euler");
     this->setStepperType("RK Backward Euler");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
@@ -2057,14 +2126,6 @@ public:
                 << "A = [ 1 ]\n"
                 << "b = [ 1 ]'";
     return Description.str();
-  }
-
-  Teuchos::RCP<const Teuchos::ParameterList>
-  getValidParameters() const
-  {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
-    return pl;
   }
 
 protected:
@@ -2156,6 +2217,7 @@ public:
     const Scalar one = ST::one();
     gammaDefault_ = Teuchos::as<Scalar>((2*one-ST::squareroot(2*one))/(2*one));
 
+    this->setStepperName("SDIRK 2 Stage 2nd order");
     this->setStepperType("SDIRK 2 Stage 2nd order");
     this->setGamma(gammaDefault_);
     this->setupTableau();
@@ -2180,6 +2242,7 @@ public:
     const Scalar one = ST::one();
     gammaDefault_ = Teuchos::as<Scalar>((2*one-ST::squareroot(2*one))/(2*one));
 
+    this->setStepperName("SDIRK 2 Stage 2nd order");
     this->setStepperType("SDIRK 2 Stage 2nd order");
     this->setGamma(gamma);
     this->setupTableau();
@@ -2194,7 +2257,7 @@ public:
     this->setupTableau();
   }
 
-  Scalar getGamma() { return gamma_; }
+  Scalar getGamma() const { return gamma_; }
 
   std::string getDescription() const
   {
@@ -2214,9 +2277,8 @@ public:
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
-    pl->set<double>("gamma",gammaDefault_,
+    auto pl = this->getValidParametersBasicDIRK();
+    pl->template set<double>("gamma", this->getGamma(),
       "The default value is gamma = (2-sqrt(2))/2. "
       "This will produce an L-stable 2nd order method with the stage "
       "times within the timestep.  Other values of gamma will still "
@@ -2323,6 +2385,7 @@ public:
   */
   StepperSDIRK_3Stage2ndOrder()
   {
+    this->setStepperName("SDIRK 3 Stage 2nd order");
     this->setStepperType("SDIRK 3 Stage 2nd order");
     this->setupTableau();
     this->setupDefault();
@@ -2342,6 +2405,7 @@ public:
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
 
+    this->setStepperName("SDIRK 3 Stage 2nd order");
     this->setStepperType("SDIRK 3 Stage 2nd order");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
@@ -2364,14 +2428,6 @@ public:
                 << "    [ 1/2-gamma   0      gamma  ]\n"
                 << "b = [  1/6       1/6       2/3  ]'";
     return Description.str();
-  }
-
-  Teuchos::RCP<const Teuchos::ParameterList>
-  getValidParameters() const
-  {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
-    return pl;
   }
 
 protected:
@@ -2479,6 +2535,7 @@ public:
     gammaDefault_ = as<Scalar>((3*one+ST::squareroot(3*one))/(6*one));
     gammaTypeDefault_ = "3rd Order A-stable";
 
+    this->setStepperName("SDIRK 2 Stage 3rd order");
     this->setStepperType("SDIRK 2 Stage 3rd order");
     this->setGammaType(gammaTypeDefault_);
     this->setGamma(gammaDefault_);
@@ -2507,6 +2564,7 @@ public:
     gammaDefault_ = as<Scalar>((3*one+ST::squareroot(3*one))/(6*one));
     gammaTypeDefault_ = "3rd Order A-stable";
 
+    this->setStepperName("SDIRK 2 Stage 3rd order");
     this->setStepperType("SDIRK 2 Stage 3rd order");
     this->setGammaType(gammaType);
     this->setGamma(gamma);
@@ -2529,7 +2587,7 @@ public:
     this->setupTableau();
   }
 
-  std::string getGammaType() { return gammaType_; }
+  std::string getGammaType() const { return gammaType_; }
 
   void setGamma(Scalar gamma)
   {
@@ -2540,7 +2598,7 @@ public:
     this->isInitialized_ = false;
   }
 
-  Scalar getGamma() { return gamma_; }
+  Scalar getGamma() const { return gamma_; }
 
   std::string getDescription() const
   {
@@ -2562,15 +2620,13 @@ public:
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
+    auto pl = this->getValidParametersBasicDIRK();
 
-    pl->set<bool>("Initial Condition Consistency Check", false);
-    pl->set<std::string>("Gamma Type", gammaTypeDefault_,
+    pl->template set<std::string>("Gamma Type", this->getGammaType(),
       "Valid values are '3rd Order A-stable' ((3+sqrt(3))/6.), "
       "'2nd Order L-stable' ((2-sqrt(2))/2) and 'gamma' (user defined).  "
       "The default value is '3rd Order A-stable'.");
-    pl->set<double>("gamma", gammaDefault_,
+    pl->template set<double>("gamma", this->getGamma(),
       "Equal to (3+sqrt(3))/6 if 'Gamma Type' = '3rd Order A-stable', or "
       "(2-sqrt(2))/2 if 'Gamma Type' = '2nd Order L-stable', or "
       "user-defined gamma value if 'Gamma Type = 'gamma'.  "
@@ -2683,6 +2739,7 @@ public:
   */
   StepperEDIRK_2Stage3rdOrder()
   {
+    this->setStepperName("EDIRK 2 Stage 3rd order");
     this->setStepperType("EDIRK 2 Stage 3rd order");
     this->setupTableau();
     this->setupDefault();
@@ -2701,6 +2758,7 @@ public:
     bool zeroInitialGuess,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("EDIRK 2 Stage 3rd order");
     this->setStepperType("EDIRK 2 Stage 3rd order");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
@@ -2721,14 +2779,6 @@ public:
                 << "    [ 1/3  1/3 ]\n"
                 << "b = [ 1/4  3/4 ]'";
     return Description.str();
-  }
-
-  Teuchos::RCP<const Teuchos::ParameterList>
-  getValidParameters() const
-  {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
-    return pl;
   }
 
 protected:
@@ -2823,6 +2873,7 @@ public:
     typedef Teuchos::ScalarTraits<Scalar> ST;
     thetaDefault_ = ST::one()/(2*ST::one());
 
+    this->setStepperName("DIRK 1 Stage Theta Method");
     this->setStepperType("DIRK 1 Stage Theta Method");
     this->setTheta(thetaDefault_);
     this->setupTableau();
@@ -2846,6 +2897,7 @@ public:
     typedef Teuchos::ScalarTraits<Scalar> ST;
     thetaDefault_ = ST::one()/(2*ST::one());
 
+    this->setStepperName("DIRK 1 Stage Theta Method");
     this->setStepperType("DIRK 1 Stage Theta Method");
     this->setTheta(theta);
     this->setupTableau();
@@ -2864,7 +2916,7 @@ public:
     this->isInitialized_ = false;
   }
 
-  Scalar getTheta() { return theta_; }
+  Scalar getTheta() const { return theta_; }
 
   std::string getDescription() const
   {
@@ -2883,10 +2935,9 @@ public:
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
+    auto pl = this->getValidParametersBasicDIRK();
 
-    pl->set<double>("theta",thetaDefault_,
+    pl->template set<double>("theta", getTheta(),
       "Valid values are 0 <= theta <= 1, where theta = 0 "
       "implies Forward Euler, theta = 1/2 implies implicit midpoint "
       "method (default), and theta = 1 implies Backward Euler. "
@@ -2989,6 +3040,7 @@ public:
     typedef Teuchos::ScalarTraits<Scalar> ST;
     thetaDefault_ = ST::one()/(2*ST::one());
 
+    this->setStepperName("EDIRK 2 Stage Theta Method");
     this->setStepperType("EDIRK 2 Stage Theta Method");
     this->setTheta(thetaDefault_);
     this->setupTableau();
@@ -3012,6 +3064,7 @@ public:
     typedef Teuchos::ScalarTraits<Scalar> ST;
     thetaDefault_ = ST::one()/(2*ST::one());
 
+    this->setStepperName("EDIRK 2 Stage Theta Method");
     this->setStepperType("EDIRK 2 Stage Theta Method");
     this->setTheta(theta);
     this->setupTableau();
@@ -3030,7 +3083,7 @@ public:
     this->setupTableau();
   }
 
-  Scalar getTheta() { return theta_; }
+  Scalar getTheta() const { return theta_; }
 
   std::string getDescription() const
   {
@@ -3049,10 +3102,9 @@ public:
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
+    auto pl = this->getValidParametersBasicDIRK();
 
-    pl->set<double>("theta",thetaDefault_,
+    pl->template set<double>("theta", getTheta(),
       "Valid values are 0 < theta <= 1, where theta = 0 "
       "implies Forward Euler, theta = 1/2 implies trapezoidal "
       "method (default), and theta = 1 implies Backward Euler. "
@@ -3160,6 +3212,7 @@ public:
   */
   StepperEDIRK_TrapezoidalRule()
   {
+    this->setStepperName("RK Trapezoidal Rule");
     this->setStepperType("RK Trapezoidal Rule");
     this->setupTableau();
     this->setupDefault();
@@ -3178,6 +3231,7 @@ public:
     bool zeroInitialGuess,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("RK Trapezoidal Rule");
     this->setStepperType("RK Trapezoidal Rule");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
@@ -3194,14 +3248,6 @@ public:
                 << "    [ 1/2  1/2 ]\n"
                 << "b = [ 1/2  1/2 ]'";
     return Description.str();
-  }
-
-  Teuchos::RCP<const Teuchos::ParameterList>
-  getValidParameters() const
-  {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
-    return pl;
   }
 
   void setUseFSAL(bool a) { this->useFSAL_ = a; this->isInitialized_ = false; }
@@ -3253,7 +3299,7 @@ createStepperEDIRK_TrapezoidalRule(
   // This stepper goes by various names (e.g., 'RK Trapezoidal Rule'
   // and 'RK Crank-Nicolson').  Make sure it is set to the default name.
   if (pl != Teuchos::null)
-    pl->set<std::string>("Stepper Type", "RK Trapezoidal Rule");
+    pl->set("Stepper Type", "RK Trapezoidal Rule");
 
   auto stepper = Teuchos::rcp(new StepperEDIRK_TrapezoidalRule<Scalar>());
   stepper->setStepperDIRKValues(pl);
@@ -3304,6 +3350,7 @@ public:
   */
   StepperSDIRK_ImplicitMidpoint()
   {
+    this->setStepperName("RK Implicit Midpoint");
     this->setStepperType("RK Implicit Midpoint");
     this->setupTableau();
     this->setupDefault();
@@ -3322,6 +3369,7 @@ public:
     bool zeroInitialGuess,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("RK Implicit Midpoint");
     this->setStepperType("RK Implicit Midpoint");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
@@ -3346,14 +3394,6 @@ public:
                 << "A = [ 1/2 ]\n"
                 << "b = [  1  ]'";
     return Description.str();
-  }
-
-  Teuchos::RCP<const Teuchos::ParameterList>
-  getValidParameters() const
-  {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
-    return pl;
   }
 
 protected:
@@ -3433,6 +3473,7 @@ class StepperSDIRK_SSPDIRK22 :
   public:
   StepperSDIRK_SSPDIRK22()
   {
+    this->setStepperName("SSPDIRK22");
     this->setStepperType("SSPDIRK22");
     this->setupTableau();
     this->setupDefault();
@@ -3451,6 +3492,7 @@ class StepperSDIRK_SSPDIRK22 :
     bool zeroInitialGuess,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("SSPDIRK22");
     this->setStepperType("SSPDIRK22");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
@@ -3468,14 +3510,6 @@ class StepperSDIRK_SSPDIRK22 :
       << "        [ 1/2   1/4 ]\n"
       << "b     = [ 1/2   1/2 ]\n" << std::endl;
     return Description.str();
-  }
-
-  Teuchos::RCP<const Teuchos::ParameterList>
-  getValidParameters() const
-  {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
-    return pl;
   }
 
 protected:
@@ -3562,6 +3596,7 @@ class StepperSDIRK_SSPDIRK32 :
   public:
   StepperSDIRK_SSPDIRK32()
   {
+    this->setStepperName("SSPDIRK32");
     this->setStepperType("SSPDIRK32");
     this->setupTableau();
     this->setupDefault();
@@ -3580,6 +3615,7 @@ class StepperSDIRK_SSPDIRK32 :
     bool zeroInitialGuess,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("SSPDIRK32");
     this->setStepperType("SSPDIRK32");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
@@ -3598,14 +3634,6 @@ class StepperSDIRK_SSPDIRK32 :
                 << "    [ 1/3   1/3   1/6 ]\n"
                 << "b = [ 1/3   1/3   1/3 ]\n" << std::endl;
     return Description.str();
-  }
-
-  Teuchos::RCP<const Teuchos::ParameterList>
-  getValidParameters() const
-  {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
-    return pl;
   }
 
 protected:
@@ -3693,6 +3721,7 @@ class StepperSDIRK_SSPDIRK23 :
   public:
   StepperSDIRK_SSPDIRK23()
   {
+    this->setStepperName("SSPDIRK23");
     this->setStepperType("SSPDIRK23");
     this->setupTableau();
     this->setupDefault();
@@ -3711,6 +3740,7 @@ class StepperSDIRK_SSPDIRK23 :
     bool zeroInitialGuess,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("SSPDIRK23");
     this->setStepperType("SSPDIRK23");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
@@ -3728,14 +3758,6 @@ class StepperSDIRK_SSPDIRK23 :
       << "        [ 1/sqrt( 3 )        1/(3 + sqrt( 3 ))    ] \n"
       << "b     = [ 1/2                   1/2               ] \n" << std::endl;
     return Description.str();
-  }
-
-  Teuchos::RCP<const Teuchos::ParameterList>
-  getValidParameters() const
-  {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
-    return pl;
   }
 
 protected:
@@ -3824,6 +3846,7 @@ class StepperSDIRK_SSPDIRK33 :
   public:
   StepperSDIRK_SSPDIRK33()
   {
+    this->setStepperName("SSPDIRK33");
     this->setStepperType("SSPDIRK33");
     this->setupTableau();
     this->setupDefault();
@@ -3842,6 +3865,7 @@ class StepperSDIRK_SSPDIRK33 :
     bool zeroInitialGuess,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("SSPDIRK33");
     this->setStepperType("SSPDIRK33");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
@@ -3861,14 +3885,6 @@ class StepperSDIRK_SSPDIRK33 :
       << "b     = [ 1/3                    1/3                1/3           ] \n"
       << std::endl;
     return Description.str();
-  }
-
-  Teuchos::RCP<const Teuchos::ParameterList>
-  getValidParameters() const
-  {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
-    return pl;
   }
 
 protected:
@@ -3962,6 +3978,7 @@ public:
   */
   StepperDIRK_1Stage1stOrderRadauIA()
   {
+    this->setStepperName("RK Implicit 1 Stage 1st order Radau IA");
     this->setStepperType("RK Implicit 1 Stage 1st order Radau IA");
     this->setupTableau();
     this->setupDefault();
@@ -3980,6 +3997,7 @@ public:
     bool zeroInitialGuess,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("RK Implicit 1 Stage 1st order Radau IA");
     this->setStepperType("RK Implicit 1 Stage 1st order Radau IA");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
@@ -4000,14 +4018,6 @@ public:
                 << "A = [ 1 ]\n"
                 << "b = [ 1 ]'";
     return Description.str();
-  }
-
-  Teuchos::RCP<const Teuchos::ParameterList>
-  getValidParameters() const
-  {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
-    return pl;
   }
 
 protected:
@@ -4086,6 +4096,7 @@ public:
   */
   StepperDIRK_2Stage2ndOrderLobattoIIIB()
   {
+    this->setStepperName("RK Implicit 2 Stage 2nd order Lobatto IIIB");
     this->setStepperType("RK Implicit 2 Stage 2nd order Lobatto IIIB");
     this->setupTableau();
     this->setupDefault();
@@ -4104,6 +4115,7 @@ public:
     bool zeroInitialGuess,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("RK Implicit 2 Stage 2nd order Lobatto IIIB");
     this->setStepperType("RK Implicit 2 Stage 2nd order Lobatto IIIB");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
@@ -4125,14 +4137,6 @@ public:
                 << "    [ 1/2   0   ]\n"
                 << "b = [ 1/2  1/2  ]'";
     return Description.str();
-  }
-
-  Teuchos::RCP<const Teuchos::ParameterList>
-  getValidParameters() const
-  {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
-    return pl;
   }
 
 protected:
@@ -4230,6 +4234,7 @@ public:
   */
   StepperSDIRK_5Stage4thOrder()
   {
+    this->setStepperName("SDIRK 5 Stage 4th order");
     this->setStepperType("SDIRK 5 Stage 4th order");
     this->setupTableau();
     this->setupDefault();
@@ -4248,6 +4253,7 @@ public:
     bool zeroInitialGuess,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("SDIRK 5 Stage 4th order");
     this->setStepperType("SDIRK 5 Stage 4th order");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
@@ -4273,14 +4279,6 @@ public:
       << "b     = [ 25/24     -49/48     125/16  -85/12  1/4 ]'";
       // << "b     = [ 59/48     -17/96     225/32  -85/12  0   ]'";
     return Description.str();
-  }
-
-  Teuchos::RCP<const Teuchos::ParameterList>
-  getValidParameters() const
-  {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
-    return pl;
   }
 
 protected:
@@ -4414,6 +4412,7 @@ public:
   */
   StepperSDIRK_3Stage4thOrder()
   {
+    this->setStepperName("SDIRK 3 Stage 4th order");
     this->setStepperType("SDIRK 3 Stage 4th order");
     this->setupTableau();
     this->setupDefault();
@@ -4432,6 +4431,7 @@ public:
     bool zeroInitialGuess,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("SDIRK 3 Stage 4th order");
     this->setStepperType("SDIRK 3 Stage 4th order");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
@@ -4456,14 +4456,6 @@ public:
                 << "    [ 2*gamma    1-4*gamma  gamma   ]\n"
                 << "b = [ delta      1-2*delta  delta   ]'";
     return Description.str();
-  }
-
-  Teuchos::RCP<const Teuchos::ParameterList>
-  getValidParameters() const
-  {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
-    return pl;
   }
 
 protected:
@@ -4569,6 +4561,7 @@ public:
   */
   StepperSDIRK_5Stage5thOrder()
   {
+    this->setStepperName("SDIRK 5 Stage 5th order");
     this->setStepperType("SDIRK 5 Stage 5th order");
     this->setupTableau();
     this->setupDefault();
@@ -4587,6 +4580,7 @@ public:
     bool zeroInitialGuess,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("SDIRK 5 Stage 5th order");
     this->setStepperType("SDIRK 5 Stage 5th order");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
@@ -4639,14 +4633,6 @@ public:
       << "    [ (16-sqrt(6))/36 ]\n"
       << "    [ (16+sqrt(6))/36 ]'";
     return Description.str();
-  }
-
-  Teuchos::RCP<const Teuchos::ParameterList>
-  getValidParameters() const
-  {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
-    return pl;
   }
 
 protected:
@@ -4766,6 +4752,7 @@ public:
   */
   StepperSDIRK_21Pair()
   {
+    this->setStepperName("SDIRK 2(1) Pair");
     this->setStepperType("SDIRK 2(1) Pair");
     this->setupTableau();
     this->setupDefault();
@@ -4784,6 +4771,7 @@ public:
     bool zeroInitialGuess,
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction)
   {
+    this->setStepperName("SDIRK 2(1) Pair");
     this->setStepperType("SDIRK 2(1) Pair");
     this->setupTableau();
     this->setup(appModel, solver, useFSAL, ICConsistency, ICConsistencyCheck,
@@ -4800,14 +4788,6 @@ public:
                 << "b     = [ 1/2 1/2 ]'\n"
                 << "bstar = [  1  0   ]'";
     return Description.str();
-  }
-
-  Teuchos::RCP<const Teuchos::ParameterList>
-  getValidParameters() const
-  {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
-    return pl;
   }
 
 protected:
@@ -4911,6 +4891,7 @@ public:
   */
   StepperDIRK_General()
   {
+    this->setStepperName("General DIRK");
     this->setStepperType("General DIRK");
     this->setupTableau();
     this->setupDefault();
@@ -4936,6 +4917,7 @@ public:
     const int orderMax,
     const Teuchos::SerialDenseVector<int,Scalar>& bstar)
   {
+    this->setStepperName("General DIRK");
     this->setStepperType("General DIRK");
     this->setTableau(A,b,c,order,orderMin,orderMax,bstar);
 
@@ -5004,18 +4986,57 @@ public:
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters() const
   {
-    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    this->getValidParametersBasicDIRK(pl);
+    auto pl = this->getValidParametersBasicDIRK();
 
     // Tableau ParameterList
+    Teuchos::SerialDenseMatrix<int,Scalar> A = this->tableau_->A();
+    Teuchos::SerialDenseVector<int,Scalar> b = this->tableau_->b();
+    Teuchos::SerialDenseVector<int,Scalar> c = this->tableau_->c();
+    Teuchos::SerialDenseVector<int,Scalar> bstar = this->tableau_->bstar();
+
     Teuchos::RCP<Teuchos::ParameterList> tableauPL = Teuchos::parameterList();
-    tableauPL->set<std::string>("A",
-     "0.2928932188134524 0.0; 0.7071067811865476 0.2928932188134524");
-    tableauPL->set<std::string>("b",
-     "0.7071067811865476 0.2928932188134524");
-    tableauPL->set<std::string>("c", "0.2928932188134524 1.0");
-    tableauPL->set<int>("order", 2);
-    tableauPL->set<std::string>("bstar", "");
+
+    std::ostringstream Astream;
+    Astream.precision(15);
+    for(int i = 0; i < A.numRows(); i++) {
+      for(int j = 0; j < A.numCols()-1; j++) {
+        Astream << A(i,j) << " ";
+      }
+      Astream << A(i,A.numCols()-1);
+      if ( i != A.numRows()-1 ) Astream << "; ";
+    }
+    tableauPL->set<std::string>("A", Astream.str());
+
+    std::ostringstream bstream;
+    bstream.precision(15);
+    for(int i = 0; i < b.length()-1; i++) {
+        bstream << b(i) << " ";
+    }
+    bstream << b(b.length()-1);
+    tableauPL->set<std::string>("b", bstream.str());
+
+    std::ostringstream cstream;
+    cstream.precision(15);
+    for(int i = 0; i < c.length()-1; i++) {
+        cstream << c(i) << " ";
+    }
+    cstream << c(c.length()-1);
+    tableauPL->set<std::string>("c", cstream.str());
+
+    tableauPL->set<int>("order", this->tableau_->order());
+
+    if ( bstar.length() == 0 ) {
+      tableauPL->set("bstar", "");
+    } else {
+      std::ostringstream bstarstream;
+      bstarstream.precision(15);
+      for(int i = 0; i < bstar.length()-1; i++) {
+          bstarstream << bstar(i) << " ";
+      }
+      bstarstream << bstar(bstar.length()-1);
+      tableauPL->set<std::string>("bstar", bstarstream.str());
+    }
+
     pl->set("Tableau", *tableauPL);
 
     return pl;

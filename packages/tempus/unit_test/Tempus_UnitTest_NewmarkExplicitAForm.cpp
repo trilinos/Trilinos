@@ -209,7 +209,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, AppAction_Modifier)
 
   pl->sublist("Default Integrator")
     .sublist("Time Step Control").set("Initial Time Step", dt);
-  integrator = Tempus::integratorBasic<double>(pl, model);
+  integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
   RCP<Tempus::StepperNewmarkExplicitAForm<double> > stepper =
     Teuchos::rcp_dynamic_cast<Tempus::StepperNewmarkExplicitAForm<double> >(integrator->getStepper(), true);
@@ -269,7 +269,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, AppAction_ModifierX)
 
   pl->sublist("Default Integrator")
     .sublist("Time Step Control").set("Initial Time Step", dt);
-  integrator = Tempus::integratorBasic<double>(pl, model);
+  integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
   RCP<Tempus::StepperNewmarkExplicitAForm<double> > stepper =
     Teuchos::rcp_dynamic_cast<Tempus::StepperNewmarkExplicitAForm<double> >(integrator->getStepper(), true);

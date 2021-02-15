@@ -281,8 +281,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, AppAction_Modifier)
 
   // Setup initial condition SolutionState --------------------
   using Teuchos::rcp_const_cast;
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
+  auto inArgsIC = model->getNominalValues();
   RCP<Thyra::VectorBase<double> > icX =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   RCP<Thyra::VectorBase<double> > icXDot =
@@ -307,8 +306,8 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, AppAction_Modifier)
 
   // Setup Integrator -----------------------------------------
   RCP<Tempus::IntegratorBasic<double> > integrator =
-    Tempus::integratorBasic<double>();
-  integrator->setStepperWStepper(stepper);
+    Tempus::createIntegratorBasic<double>();
+  integrator->setStepper(stepper);
   integrator->setTimeStepControl(timeStepControl);
   integrator->setSolutionHistory(solutionHistory);
   integrator->initialize();
@@ -373,8 +372,7 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, AppAction_ModifierX)
 
   // Setup initial condition SolutionState --------------------
   using Teuchos::rcp_const_cast;
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
+  auto inArgsIC = model->getNominalValues();
   RCP<Thyra::VectorBase<double> > icX =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   RCP<Thyra::VectorBase<double> > icXDot =
@@ -399,8 +397,8 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, AppAction_ModifierX)
 
   // Setup Integrator -----------------------------------------
   RCP<Tempus::IntegratorBasic<double> > integrator =
-    Tempus::integratorBasic<double>();
-  integrator->setStepperWStepper(stepper);
+    Tempus::createIntegratorBasic<double>();
+  integrator->setStepper(stepper);
   integrator->setTimeStepControl(timeStepControl);
   integrator->setSolutionHistory(solutionHistory);
   integrator->initialize();

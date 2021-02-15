@@ -67,7 +67,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, BallParabolic)
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
 
   RCP<Tempus::IntegratorBasic<double> > integrator =
-    Tempus::integratorBasic<double>(pl, model);
+    Tempus::createIntegratorBasic<double>(pl, model);
 
   // Integrate to timeMax
   bool integratorStatus = integrator->advanceTime();
@@ -145,8 +145,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
   timeStepControl->initialize();
 
   // Setup initial condition SolutionState --------------------
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
+  auto inArgsIC = model->getNominalValues();
   auto icX = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
   auto icXDotDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot_dot());
@@ -166,8 +165,8 @@ TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
 
   // Setup Integrator -----------------------------------------
   RCP<Tempus::IntegratorBasic<double> > integrator =
-    Tempus::integratorBasic<double>();
-  integrator->setStepperWStepper(stepper);
+    Tempus::createIntegratorBasic<double>();
+  integrator->setStepper(stepper);
   integrator->setTimeStepControl(timeStepControl);
   integrator->setSolutionHistory(solutionHistory);
   //integrator->setObserver(...);
@@ -246,7 +245,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
               << nTimeStepSizes-1 << "), dt = " << dt << "\n";
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
-    integrator = Tempus::integratorBasic<double>(pl, model);
+    integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
@@ -391,7 +390,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
               << nTimeStepSizes-1 << "), dt = " << dt << "\n";
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
-    integrator = Tempus::integratorBasic<double>(pl, model);
+    integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
@@ -537,7 +536,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_CD)
               << nTimeStepSizes-1 << "), dt = " << dt << "\n";
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
-    integrator = Tempus::integratorBasic<double>(pl, model);
+    integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();

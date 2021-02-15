@@ -48,7 +48,7 @@ createStepper(
 {
   std::string stepperType = "Forward Euler";
   if (stepperPL != Teuchos::null)
-    stepperType = stepperPL->get<std::string>("Stepper Type","Forward Euler");
+    stepperType = stepperPL->get<std::string>("Stepper Type", "Forward Euler");
   return this->createStepper(stepperType, stepperPL, model);
 }
 

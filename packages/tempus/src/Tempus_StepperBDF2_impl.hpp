@@ -20,6 +20,7 @@ namespace Tempus {
 template<class Scalar>
 StepperBDF2<Scalar>::StepperBDF2()
 {
+  this->setStepperName(        "BDF2");
   this->setStepperType(        "BDF2");
   this->setUseFSAL(            false);
   this->setICConsistency(      "None");
@@ -43,6 +44,7 @@ StepperBDF2<Scalar>::StepperBDF2(
   bool zeroInitialGuess,
   const Teuchos::RCP<StepperBDF2AppAction<Scalar> >& stepperBDF2AppAction)
 {
+  this->setStepperName(        "BDF2");
   this->setStepperType(        "BDF2");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
@@ -321,15 +323,8 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperBDF2<Scalar>::getValidParameters() const
 {
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>("Initial Condition Consistency Check", false);
-  pl->set<std::string>("Solver Name", "Default Solver");
-  pl->set<bool>("Zero Initial Guess", false);
-  pl->set<std::string>("Start Up Stepper Type", "DIRK 1 Stage Theta Method");
-  Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
-  pl->set("Default Solver", *solverPL);
-
+  auto pl = this->getValidParametersBasicImplicit();
+  pl->set("Start Up Stepper Type", startUpStepper_->getStepperType());
   return pl;
 }
 

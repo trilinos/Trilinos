@@ -138,8 +138,6 @@ public:
   /// Return beta  = d(x)/dx.
   virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
 
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-
   /// \name Overridden from Teuchos::Describable
   //@{
     virtual void describe(Teuchos::FancyOStream        & out,

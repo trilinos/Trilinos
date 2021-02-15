@@ -134,15 +134,25 @@ Scalar StepperExplicitRK<Scalar>::getInitTimeStep(
 
 
 template<class Scalar>
-void StepperExplicitRK<Scalar>::getValidParametersBasicERK(
-  Teuchos::RCP<Teuchos::ParameterList> pl) const
+Teuchos::RCP<const Teuchos::ParameterList>
+StepperExplicitRK<Scalar>::getValidParameters() const
 {
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>("Use Embedded", false,
+  return this->getValidParametersBasicERK();
+}
+
+
+template<class Scalar>
+Teuchos::RCP<Teuchos::ParameterList>
+StepperExplicitRK<Scalar>::getValidParametersBasicERK() const
+{
+  auto pl = this->getValidParametersBasic();
+  pl->template set<bool>("Use Embedded", this->getUseEmbedded(),
     "'Whether to use Embedded Stepper (if available) or not\n"
     "  'true' - Stepper will compute embedded solution and is adaptive.\n"
     "  'false' - Stepper is not embedded(adaptive).\n");
-  pl->set<std::string>("Description", this->getDescription());
+  pl->template set<std::string>("Description", this->getDescription());
+
+  return pl;
 }
 
 
@@ -402,16 +412,6 @@ bool StepperExplicitRK<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
   }
 
   return isValidSetup;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
-StepperExplicitRK<Scalar>::getValidParameters() const
-{
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  this->getValidParametersBasicERK(pl);
-  return pl;
 }
 
 

@@ -164,8 +164,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Modifier)
   stepper->initialize();
 
   // Setup initial condition SolutionState --------------------
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
+  auto inArgsIC = model->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);
@@ -264,20 +263,19 @@ public:
   std::string testType;
 };
 
-  TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Observer)
-  {
-    auto model = rcp(new Tempus_Test::SinCosModel<double>());
+TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Observer)
+{
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
 
-    // Setup Stepper for field solve ----------------------------
-    auto stepper = rcp(new Tempus::StepperForwardEuler<double>());
-    stepper->setModel(model);
-    auto observer = rcp(new StepperForwardEulerObserverTest());
-    stepper->setAppAction(observer);
-    stepper->initialize();
+  // Setup Stepper for field solve ----------------------------
+  auto stepper = rcp(new Tempus::StepperForwardEuler<double>());
+  stepper->setModel(model);
+  auto observer = rcp(new StepperForwardEulerObserverTest());
+  stepper->setAppAction(observer);
+  stepper->initialize();
 
-    // Setup initial condition SolutionState --------------------
-    Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-      stepper->getModel()->getNominalValues();
+  // Setup initial condition SolutionState --------------------
+  auto inArgsIC = model->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);
@@ -372,20 +370,19 @@ public:
   double testTime;
 };
 
-  TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_ModifierX)
-  {
-    auto model = rcp(new Tempus_Test::SinCosModel<double>());
+TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_ModifierX)
+{
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
 
-    // Setup Stepper for field solve ----------------------------
-    auto stepper = rcp(new Tempus::StepperForwardEuler<double>());
-    stepper->setModel(model);
-    auto modifierX = rcp(new StepperForwardEulerModifierXTest());
-    stepper->setAppAction(modifierX);
-    stepper->initialize();
+  // Setup Stepper for field solve ----------------------------
+  auto stepper = rcp(new Tempus::StepperForwardEuler<double>());
+  stepper->setModel(model);
+  auto modifierX = rcp(new StepperForwardEulerModifierXTest());
+  stepper->setAppAction(modifierX);
+  stepper->initialize();
 
-    // Setup initial condition SolutionState --------------------
-    Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-      stepper->getModel()->getNominalValues();
+  // Setup initial condition SolutionState --------------------
+  auto inArgsIC = model->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);

@@ -299,8 +299,8 @@ public:
     virtual bool getZeroInitialGuess() const { return zeroInitialGuess_; }
 
     virtual Scalar getInitTimeStep(
-        const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */) const
-      {return Scalar(1.0e+99);}
+      const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */) const
+    {return Scalar(1.0e+99);}
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -311,11 +311,20 @@ public:
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
+  virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+
+  Teuchos::RCP<Teuchos::ParameterList> getValidParametersBasicImplicit() const;
+
   /// Set StepperImplicit member data from the ParameterList.
   void setStepperImplicitValues(Teuchos::RCP<Teuchos::ParameterList> pl);
 
   /// Set solver from ParameterList.
   void setStepperSolverValues(Teuchos::RCP<Teuchos::ParameterList> pl);
+
+  /// Set the Solver Name
+  void setSolverName(std::string i) { solverName_ = i; }
+  /// Get the Solver Name.
+  std::string getSolverName() const { return solverName_; }
 
 protected:
 
@@ -323,6 +332,7 @@ protected:
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >   solver_;
   Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initialGuess_;
   bool zeroInitialGuess_;
+  std::string solverName_;
 
 };
 

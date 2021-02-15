@@ -146,8 +146,6 @@ public:
     virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
 
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-
   /// \name Overridden from Teuchos::Describable
   //@{
     virtual void describe(Teuchos::FancyOStream        & out,

@@ -167,7 +167,11 @@ public:
     /// Promote the working state to current state
     void promoteWorkingState();
 
+    /// Clear the history.
     void clear() {history_->clear(); isInitialized_ = false;}
+
+    /// Make a shallow copy of SolutionHistory (i.e., only RCPs to states and interpolator).
+    void copy(Teuchos::RCP<const SolutionHistory<Scalar> > sh);
   //@}
 
   /// \name Accessor methods
@@ -305,7 +309,8 @@ public:
   /// \name Interpolation Methods
   //@{
     /// Set the interpolator for this history
-    void setInterpolator(const Teuchos::RCP<Interpolator<Scalar> >& interpolator);
+    void setInterpolator(
+      const Teuchos::RCP<Interpolator<Scalar> >& interpolator);
     Teuchos::RCP<Interpolator<Scalar> > getNonconstInterpolator();
     Teuchos::RCP<const Interpolator<Scalar> > getInterpolator() const;
     /// Unset the interpolator for this history

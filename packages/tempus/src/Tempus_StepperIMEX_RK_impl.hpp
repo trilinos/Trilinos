@@ -21,6 +21,7 @@ namespace Tempus {
 template<class Scalar>
 StepperIMEX_RK<Scalar>::StepperIMEX_RK()
 {
+  this->setStepperName(        "IMEX RK SSP2");
   this->setStepperType(        "IMEX RK SSP2");
   this->setUseFSAL(            false);
   this->setICConsistency(      "None");
@@ -49,6 +50,7 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK(
   Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau,
   Scalar order)
 {
+  this->setStepperName(        stepperType);
   this->setStepperType(        stepperType);
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
@@ -139,6 +141,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 
       this->setImplicitTableau(impTableau);
     }
+    this->setStepperName("IMEX RK 1st order");
     this->setStepperType("IMEX RK 1st order");
     this->setOrder(1);
 
@@ -199,6 +202,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 
       this->setImplicitTableau(impTableau);
     }
+    this->setStepperName("IMEX RK 1st order (SSP1_111)");
     this->setStepperType("IMEX RK 1st order (SSP1_111)");
     this->setOrder(1);
 
@@ -212,6 +216,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
     stepperSDIRK->setGammaType("2nd Order L-stable");
     this->setImplicitTableau(stepperSDIRK->getTableau());
 
+    this->setStepperName("IMEX RK SSP2");
     this->setStepperType("IMEX RK SSP2");
     this->setOrder(2);
   } else if (stepperType == "SSP2_222" || stepperType == "SSP2_222_A" ) {
@@ -225,6 +230,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
     stepperSDIRK->setGamma( 0.5 );
     this->setImplicitTableau(stepperSDIRK->getTableau());
 
+    this->setStepperName("IMEX RK SSP2( A-Stable, gamma = 0.5) ");
     this->setStepperType("IMEX RK SSP2( A-Stable, gamma = 0.5) ");
     this->setOrder(2);
   } else if (stepperType == "IMEX RK SSP3" || stepperType == "SSP3_332" ) {
@@ -236,6 +242,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
     auto stepperSDIRK = Teuchos::rcp(new StepperSDIRK_3Stage2ndOrder<Scalar>());
     this->setImplicitTableau(stepperSDIRK->getTableau());
 
+    this->setStepperName("IMEX RK SSP3");
     this->setStepperType("IMEX RK SSP3");
     this->setOrder(2);
   } else if (stepperType == "IMEX RK ARS 233" || stepperType == "ARS 233" ) {
@@ -288,12 +295,14 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 
       this->setImplicitTableau(impTableau);
     }
+    this->setStepperName("IMEX RK ARS 233");
     this->setStepperType("IMEX RK ARS 233");
     this->setOrder(3);
 
   } else if (stepperType == "General IMEX RK") {
     this->setExplicitTableau(explicitTableau);
     this->setImplicitTableau(implicitTableau);
+    this->setStepperName("General IMEX RK");
     this->setStepperType("General IMEX RK");
     this->setOrder(1);
 
@@ -852,13 +861,22 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperIMEX_RK<Scalar>::getValidParameters() const
 {
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>("Initial Condition Consistency Check", false);
-  pl->set<std::string>("Solver Name", "Default Solver");
-  pl->set<bool>       ("Zero Initial Guess", false);
-  Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
-  pl->set("Default Solver", *solverPL);
+  auto pl = this->getValidParametersBasicImplicit();
+  pl->template set<int>("overall order", this->getOrder());
+
+  auto explicitStepper = Teuchos::rcp(new StepperERK_General<Scalar>());
+  explicitStepper->setTableau(
+    explicitTableau_->A(), explicitTableau_->b(), explicitTableau_->c(),
+    explicitTableau_->order(), explicitTableau_->orderMin(),
+    explicitTableau_->orderMax(), explicitTableau_->bstar() );
+  pl->set("IMEX-RK Explicit Stepper", *explicitStepper->getValidParameters());
+
+  auto implicitStepper = Teuchos::rcp(new StepperERK_General<Scalar>());
+  implicitStepper->setTableau(
+    implicitTableau_->A(), implicitTableau_->b(), implicitTableau_->c(),
+    implicitTableau_->order(), implicitTableau_->orderMin(),
+    implicitTableau_->orderMax(), implicitTableau_->bstar() );
+  pl->set("IMEX-RK Implicit Stepper", *implicitStepper->getValidParameters());
 
   return pl;
 }
